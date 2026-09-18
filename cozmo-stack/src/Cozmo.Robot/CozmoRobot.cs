@@ -1,5 +1,6 @@
 using System.Net;
 using Cozmo.Protocol;
+using Cozmo.Robot.Animation;
 using Cozmo.Transport;
 
 namespace Cozmo.Robot;
@@ -114,6 +115,10 @@ public sealed class CozmoRobot : IDisposable
     public CozmoSensors Sensors { get; }
     /// <summary>Light cube discovery, connection state and basic telemetry.</summary>
     public CozmoCubes Cubes { get; }
+    /// <summary>Cozmo's own animation clips and groups, on one deterministic timeline.</summary>
+    public CozmoAnimations Animations { get; }
+    /// <summary>The procedural face: nineteen parameters per eye, and named expressions.</summary>
+    public CozmoFace Face { get; }
 
     /// <summary>Every decoded robot message, after the devices have seen it.</summary>
     public event Action<RobotMessage>? Message;
@@ -142,6 +147,8 @@ public sealed class CozmoRobot : IDisposable
         Lights = new CozmoLights(this);
         Sensors = new CozmoSensors(this, State);
         Cubes = new CozmoCubes(this);
+        Animations = new CozmoAnimations(this);
+        Face = new CozmoFace(this);
         Transport.DataReceived += OnData;
     }
 
@@ -318,6 +325,7 @@ public sealed class CozmoRobot : IDisposable
     /// <summary>Stops the motors before dropping the link, so disposing never leaves the robot driving.</summary>
     public void Dispose()
     {
+        try { Animations.Dispose(); } catch { }
         try { if (Transport.State == LinkState.Connected) EmergencyStop(); } catch { }
         Transport.Dispose();
     }

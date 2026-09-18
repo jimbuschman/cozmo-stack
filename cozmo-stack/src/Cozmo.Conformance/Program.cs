@@ -26,6 +26,9 @@ return args.Length == 0 ? Usage() : args[0] switch
     "lights" => Control.Lights(args).GetAwaiter().GetResult(),
     "sensors" => Control.Sensors(args).GetAwaiter().GetResult(),
     "cubes" => Control.Cubes(args).GetAwaiter().GetResult(),
+    "animlist" => Anim.List(args),
+    "anim" => Anim.Play(args).GetAwaiter().GetResult(),
+    "face-expressions" => Anim.Face(args).GetAwaiter().GetResult(),
     _ => Usage(),
 };
 
@@ -160,6 +163,15 @@ static int Usage()
           cubes <robot-ip> [--seconds 15] [--acceptance [file.json]]
                                              hardware acceptance for cubes: turns discovery on and reports
                                              every cube heard, with connection state and telemetry
+
+          animlist <assets-dir> [filter]     decode Cozmo's own animation assets and list what is in them,
+                                             with no robot involved
+          anim <robot-ip> --assets <dir> (--name <clip> | --group <group>)
+                                             play one of Cozmo's own animations on the robot, on the single
+                                             30 Hz timeline that also drives the face
+          face-expressions <robot-ip> [--seconds 2]
+                                             show every built-in procedural expression, printing the art it
+                                             sent so the robot's face can be compared against it
         """);
     return 1;
 }
