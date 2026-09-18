@@ -180,7 +180,7 @@ Legend for the "PyCozmo" column uses §0 letters. "Rebuild" = must exist in our 
 
 ### 3.13 Audio playback
 * **Official**: robot receives `animAudioSample`(0x8e, 744 samples/frame ≈ 22.05 kHz at 30 fps) and `animAudioSilence`(0x8f), `setAudioVolume`(0x64). Engine runs **Audiokinetic Wwise** (banks `Init.bnk`, `Cozmo.bnk`, `SFX.bnk`, `Music.bnk`, `UI.bnk`, `Dev_Debug.bnk` in `sound/`) and a "HijackAudioPlugin" that captures the Wwise robot bus into `RobotAudioBuffer` → `RobotAudioFrameStream` → audio keyframes (`RobotAudioClient`, `RobotAudioAnimation`, on-device vs on-robot output `RobotAudioOutputSource`). Audio events are posted by animations (`AnimEvent`) and game code (`PostAudioEvent`, 1,000+ event names).
-* **PyCozmo**: raw sample streaming **H**, `audiokinetic` .bnk/.wem parsing **S**; no mixer/event model; codec claimed µ-law 8-bit (**H**, not **V**). *M3 implements the streaming side (mu-law, 744-sample frames, paced); the codec is now **V** — a generated tone played cleanly on the real robot 2026-09-18.*
+* **PyCozmo**: raw sample streaming **H**, `audiokinetic` .bnk/.wem parsing **S**; no mixer/event model; codec claimed µ-law 8-bit (**H**, not **V**). *M3 implements the streaming side (mu-law, 744-sample frames, paced); the codec stays **H** but is close to confirmed — a generated tone produced audible sound of the right character on the real robot 2026-09-18. Also learned: the robot buffers only ~14 audio frames.*
 * **OBB**: yes (all sound).
 * **Rebuild**: an event→sound mapping and mixer replacing Wwise (bank format parsing partially exists in PyCozmo; WEM → PCM decoding needs a Vorbis/ww2ogg path); confirm codec by disassembling `RobotAudioBuffer`/`AudioSample` producers.
 * **OBB update**: `sound/AudioAssets.zip` holds the six banks named by the engine plus 2,214 `.wem` (1,987 Wwise Vorbis, 227 ADPCM; mostly 48 kHz mono), `SoundbanksInfo.xml` (835 events) and `PluginInfo.xml`. The plugin list settles the voice chain: **Anki Hijack** (robot-bus capture), **Anki Wave Portal** (TTS PCM input), Wwise **Harmonizer** (the Cozmo pitch effect), Parametric EQ, Compressor, Expander, Peak Limiter. Bank `.txt` dumps give human-readable event/switch/RTPC tables, so the event→source mapping can be built from data rather than RE.
@@ -405,9 +405,11 @@ IMU, camera, animation, cubes and head motion are all confirmed on the real firm
 Tests assert every fixed message serialises to the engine's own `Size()`, every message round-trips, and every CLAD
 payload in the 20 s hardware capture decodes and re-encodes byte-identically. Full detail: `PROTOCOL_STATUS.md`.
 
-**M3 status (2026-09-18): COMPLETE, verified on hardware.** All three pipelines passed on the
-firmware-2457 robot: a real photograph captured and saved, a known image shown on the OLED, and a generated
-440 Hz tone played cleanly through the speaker. Two faults were found and fixed on the first run: the robot
+**M3 status (2026-09-18): camera and display verified on hardware, audio re-run pending.** On the
+firmware-2457 robot a real photograph was captured and saved and a known image was shown on the OLED. The
+speaker produced audible sound of the right character but the tone was cut short: the robot buffers only
+about 14 audio frames and the acceptance command was pushing all 61 at once instead of using the library's
+paced path. Fixed, re-run pending. Three faults found on hardware so far: the robot
 silently discards face and audio keyframes until `initAnimController` (0x9F) starts its animation
 controller, and the first ~11 camera frames after a stream starts are torn while the sensor locks (they
 decode perfectly but roll by one macroblock row per frame). The mu-law audio codec moves from hypothesis to

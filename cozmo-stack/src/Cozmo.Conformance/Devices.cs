@@ -218,10 +218,19 @@ public static class Devices
         int before = robot.State.Animation?.NumAudioFramesPlayed ?? 0;
         Console.WriteLine("playing ...");
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        foreach (var f in frames) robot.Audio.SendFrame(f);
+        robot.Audio.Play(pcm);            // paced at the animation tick; the robot buffers only ~14 frames
         robot.Audio.SendSilence();
         sw.Stop();
-        await Task.Delay(300);
+
+        // let the robot finish what is still in its buffer before dropping the connection
+        int last = -1;
+        for (int i = 0; i < 40; i++)
+        {
+            await Task.Delay(50);
+            int now = robot.State.Animation?.NumAudioFramesPlayed ?? 0;
+            if (now == last) break;
+            last = now;
+        }
         robot.Disconnect();
         log.Dispose();
 

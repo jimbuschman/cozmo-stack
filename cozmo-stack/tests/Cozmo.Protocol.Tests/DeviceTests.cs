@@ -109,6 +109,29 @@ public class DeviceTests
         Assert.Equal(1 + CozmoAudio.SamplesPerFrame, samples[0].ToBytes().Length);
     }
 
+    /// <summary>
+    /// The robot buffers only about 14 audio frames, so a whole tone has to be fed at the animation tick
+    /// rather than pushed at once. The first hardware run dumped 61 frames in 2 ms and the robot played 14.
+    /// </summary>
+    [Fact]
+    public void PlayPacesFramesAtTheAnimationTickInsteadOfSendingThemAtOnce()
+    {
+        var sent = new List<RobotMessage>();
+        var audio = new CozmoAudio(sent.Add);
+        var pcm = CozmoAudio.Tone(440, TimeSpan.FromMilliseconds(300));
+        int expected = CozmoAudio.ToFrames(pcm).Count;
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        audio.Play(pcm);
+        sw.Stop();
+
+        Assert.Equal(expected, sent.Count);
+        // the first frame goes immediately, so the floor is one interval short of the audio length
+        var floor = CozmoAudio.FrameInterval * (expected - 1) * 0.8;
+        Assert.True(sw.Elapsed >= floor,
+            $"{expected} frames went out in {sw.ElapsedMilliseconds} ms, which is faster than the robot can consume them");
+    }
+
     [Fact]
     public void SendFrameRejectsAFrameThatIsNotExactlyOneAnimationTick()
     {

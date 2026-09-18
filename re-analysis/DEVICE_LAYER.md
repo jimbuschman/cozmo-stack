@@ -1,6 +1,6 @@
 # M3 — `Cozmo.Robot` device layer
 
-Status: **complete — all three pipelines verified on a real robot** (2026-09-18)
+Status: **camera and display verified on a real robot; audio re-run pending** (2026-09-18)
 
 This is the first layer above the frozen M1 transport and M2 protocol baseline. It turns the verified wire
 messages into three stateful pipelines plus a live view of robot state, as ordinary library components.
@@ -93,10 +93,14 @@ message. `CozmoDisplay` rejects those with a clear error instead of sending a tr
 `setAudioVolume` (0x64) takes a u16 level. 744 samples per animation tick at about 30 Hz is 22.05 kHz, which
 matches the sample rate of the app's own voice assets.
 
-The codec is G.711 mu-law. This is now **confirmed on hardware**: a generated 440 Hz tone played as a clean
-steady note through the robot's speaker. A wrong codec would have produced noise of the right duration, so
-this settles the one assumption the audio pipeline rested on. It had been hypothesis-level up to this point,
-asserted by PyCozmo and consistent with the frame arithmetic but never checked against a robot.
+The codec is G.711 mu-law. The second hardware run produced **audible sound of the right character**, which
+is strong evidence the codec is right, but the tone was cut short by a separate bug and the full test has
+not yet been repeated. It stays **hypothesis-level, close to confirmed**.
+
+**The robot buffers only about 14 audio frames**, roughly half a second. The acceptance command was pushing
+every frame as fast as the socket would take it, 61 frames in 2 ms, so the robot played 14 and dropped the
+rest while reporting a drop count of zero. The library always had the paced path; the command was not using
+it. A test now fails if frames go out faster than the robot can consume them.
 
 `CozmoAudio.Play` paces frames at the frame interval so the robot's buffer is not overrun.
 
@@ -153,15 +157,17 @@ dotnet build -c Release
 src\Cozmo.Conformance\bin\Release\net9.0\cozmo-conformance.exe camera 172.31.1.1 --count 10 --out shots
 ```
 
-Pass criteria, **all three met on a hardware-1.5 robot running firmware 2457 on 2026-09-18**:
+Pass criteria. **Camera and display met on a hardware-1.5 robot running firmware 2457 on 2026-09-18;
+audio pending a re-run after the pacing fix:**
 
 1. **Camera** — the saved `.jpg` files open in any viewer and show the room from Cozmo's point of view.
    Warm-up frames are printed but not saved; they are torn by design.
 2. **Display** — the pattern on the robot's face matches the ASCII art the command prints.
 3. **Audio** — a clean, steady 440 Hz tone with no clicks or stutter, lasting two seconds.
 
-The first run failed 2 and 3 outright and produced only torn images for 1. Both causes are described above:
-the animation controller was never started, and the saved frames were all sensor warm-up.
+The first run failed 2 and 3 outright and produced only torn images for 1: the animation controller was
+never started, and the saved frames were all sensor warm-up. The second run passed 1 and 2, and revealed
+the audio pacing bug above.
 
 Each command writes a full frame log and prints its absolute path.
 
