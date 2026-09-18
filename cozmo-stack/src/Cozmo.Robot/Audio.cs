@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Cozmo.Protocol;
 
 namespace Cozmo.Robot;
@@ -67,8 +68,26 @@ public sealed class CozmoAudio
     public const int SamplesPerFrame = 744;
     /// <summary>Nominal sample rate: 744 samples at the 30 Hz animation tick.</summary>
     public const int SampleRate = 22050;
-    /// <summary>Time covered by one frame at <see cref="SampleRate"/>.</summary>
-    public static readonly TimeSpan FrameInterval = TimeSpan.FromSeconds(SamplesPerFrame / (double)SampleRate);
+    /// <summary>
+    /// The animation tick the engine runs at, 30 per second. Frames are sent on this schedule, which is very
+    /// slightly faster than the 33.74 ms of audio a frame actually holds, so the robot's short buffer stays
+    /// topped up rather than running dry.
+    /// </summary>
+    public static readonly TimeSpan FrameInterval = TimeSpan.FromSeconds(1.0 / 30);
+    /// <summary>Audio actually carried by one frame at <see cref="SampleRate"/>: 33.74 ms.</summary>
+    public static readonly TimeSpan FrameDuration = TimeSpan.FromSeconds(SamplesPerFrame / (double)SampleRate);
+    /// <summary>
+    /// Frames the robot will hold. Measured at about 14 on firmware 2457: sending a whole tone at once made
+    /// it play the first 14 frames and silently discard the rest, with its own drop counter still at zero.
+    /// </summary>
+    public const int RobotBufferFrames = 14;
+    /// <summary>
+    /// Frames sent back to back at the start of a stream, before pacing begins. Feeding an empty robot at
+    /// exactly the rate it drains leaves no slack: one late frame is an underrun, which is heard as a
+    /// stutter. Priming builds about a third of a second of cushion first, so scheduling jitter stops
+    /// mattering. Kept below <see cref="RobotBufferFrames"/> so nothing is dropped on the way in.
+    /// </summary>
+    public int PrimeFrames { get; set; } = 10;
 
     private readonly Action<RobotMessage> _send;
     public int FramesSent { get; private set; }
@@ -76,6 +95,12 @@ public sealed class CozmoAudio
     public DateTime LastSentUtc { get; private set; } = DateTime.MinValue;
     /// <summary>True while frames are actively being streamed.</summary>
     public bool Busy => DateTime.UtcNow - LastSentUtc < TimeSpan.FromMilliseconds(200);
+
+    /// <summary>
+    /// Invoked after each paced frame. The engine fills every animation tick with both an audio frame and a
+    /// face keyframe, so <see cref="CozmoRobot"/> uses this to keep the face alive while sound is playing.
+    /// </summary>
+    public Action? OnFrameSent { get; set; }
 
     public CozmoAudio(Action<RobotMessage> send) => _send = send;
 
@@ -128,21 +153,75 @@ public sealed class CozmoAudio
     /// <summary>Streams PCM to the speaker in real time, pacing frames at the animation rate.</summary>
     public void Play(ReadOnlySpan<short> pcm)
     {
-        foreach (var f in ToFrames(pcm)) PlayFramePaced(f);
+        var frames = ToFrames(pcm);
+        using var _ = new HighResolutionTimer();
+        _clock.Restart();
+        _scheduled = 0;
+        foreach (var f in frames) PlayFramePaced(f);
+    }
+
+    /// <summary>
+    /// Raises the system timer resolution to 1 ms for as long as it is held.
+    ///
+    /// Windows schedules sleeps on a 15.6 ms tick by default, which is half an audio frame, so without this
+    /// every frame lands up to half a slot late and the tone stutters audibly. Does nothing off Windows,
+    /// where sleeps are already fine-grained.
+    /// </summary>
+    private readonly struct HighResolutionTimer : IDisposable
+    {
+        [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]
+        private static extern uint BeginPeriod(uint ms);
+        [DllImport("winmm.dll", EntryPoint = "timeEndPeriod")]
+        private static extern uint EndPeriod(uint ms);
+
+        private readonly bool _raised;
+        public HighResolutionTimer()
+        {
+            _raised = false;
+            if (!OperatingSystem.IsWindows()) return;
+            try { _raised = BeginPeriod(1) == 0; } catch (DllNotFoundException) { } catch (EntryPointNotFoundException) { }
+        }
+        public void Dispose()
+        {
+            if (!_raised) return;
+            try { EndPeriod(1); } catch (DllNotFoundException) { } catch (EntryPointNotFoundException) { }
+        }
     }
 
     public void PlayTone(double frequencyHz, TimeSpan duration, double amplitude = 0.5)
         => Play(Tone(frequencyHz, duration, amplitude));
 
-    private DateTime _next = DateTime.MinValue;
+    private readonly System.Diagnostics.Stopwatch _clock = new();
+    private long _scheduled;
+
     private void PlayFramePaced(byte[] frame)
     {
-        var now = DateTime.UtcNow;
-        if (_next == DateTime.MinValue) _next = now;
-        var wait = _next - now;
-        if (wait > TimeSpan.Zero) Thread.Sleep(wait);
+        if (!_clock.IsRunning) { _clock.Restart(); _scheduled = 0; }
+        // The first PrimeFrames go out at once to fill the robot's buffer; the rest are paced.
+        var due = TimeSpan.FromTicks(FrameInterval.Ticks * Math.Max(0, _scheduled - PrimeFrames));
+        WaitUntil(due);
         SendFrame(frame);
-        _next += FrameInterval;
-        if (_next < DateTime.UtcNow - FrameInterval) _next = DateTime.UtcNow;  // recover from a long stall
+        OnFrameSent?.Invoke();
+        _scheduled++;
+        // If something stalled us badly, start a fresh schedule rather than firing a burst to catch up.
+        if (_clock.Elapsed - due > FrameInterval * 4) { _clock.Restart(); _scheduled = 0; }
+    }
+
+    /// <summary>
+    /// Waits until the frame is due, on the high-resolution clock.
+    ///
+    /// Thread.Sleep and DateTime.UtcNow are both quantised to about 15.6 ms on Windows, which is half a
+    /// frame, so scheduling on them makes the stream audibly stutter. The bulk of the wait still goes to
+    /// Sleep to keep the thread off the CPU; only the last couple of milliseconds are spun.
+    /// </summary>
+    private void WaitUntil(TimeSpan due)
+    {
+        while (true)
+        {
+            var remaining = due - _clock.Elapsed;
+            if (remaining <= TimeSpan.Zero) return;
+            if (remaining > TimeSpan.FromMilliseconds(3)) Thread.Sleep(remaining - TimeSpan.FromMilliseconds(2));
+            else Thread.SpinWait(50);
+        }
     }
 }

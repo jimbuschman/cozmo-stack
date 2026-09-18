@@ -97,10 +97,27 @@ The codec is G.711 mu-law. The second hardware run produced **audible sound of t
 is strong evidence the codec is right, but the tone was cut short by a separate bug and the full test has
 not yet been repeated. It stays **hypothesis-level, close to confirmed**.
 
+### Streaming audio without stutter
+
+Three separate things had to be right, each found on hardware:
+
 **The robot buffers only about 14 audio frames**, roughly half a second. The acceptance command was pushing
 every frame as fast as the socket would take it, 61 frames in 2 ms, so the robot played 14 and dropped the
-rest while reporting a drop count of zero. The library always had the paced path; the command was not using
-it. A test now fails if frames go out faster than the robot can consume them.
+rest while reporting a drop count of zero. Its own drop counter does not catch buffer overrun.
+
+**Windows schedules sleeps on a 15.6 ms tick**, half an audio frame, and `DateTime.UtcNow` has the same
+granularity. Pacing on either makes every frame land up to half a slot late. Playback now schedules against
+a `Stopwatch` on an absolute timeline, sleeps for the bulk of each wait and spins the last two milliseconds,
+and raises the system timer resolution to 1 ms while it runs. Measured jitter went from about 10 ms to
+3.7 ms, and a test fails if any frame lands more than 8 ms from its slot.
+
+**A stream that starts from an empty buffer has no slack**: feeding at exactly the drain rate means one late
+frame is an underrun, heard as a stutter. The first ten frames now go out back to back to build about a
+third of a second of cushion before pacing begins, which is what makes the jitter harmless. That is
+`CozmoAudio.PrimeFrames`, deliberately under the 14-frame buffer so nothing is dropped going in.
+
+The engine also fills every animation tick with both an audio frame and a face keyframe, so the two
+pipelines now keep each other's half of the tick occupied.
 
 `CozmoAudio.Play` paces frames at the frame interval so the robot's buffer is not overrun.
 

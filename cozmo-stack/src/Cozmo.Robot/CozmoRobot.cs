@@ -92,8 +92,11 @@ public sealed class CozmoRobot : IDisposable
         Transport = new ReliableTransport(options);
         Display = new CozmoDisplay(m => Transport.Send(m, flush: true));
         Audio = new CozmoAudio(m => Transport.Send(m, flush: true));
-        // The engine emits one audio frame per animation tick whether or not there is sound to play.
+        // The engine fills every animation tick with both an audio frame and a face keyframe. Mirror that
+        // in both directions, so neither pipeline leaves the robot's animation tick half empty.
         Display.BeforeFrame = () => { if (!Audio.Busy) Transport.Send(new AudioSilence(), flush: true); };
+        Audio.OnFrameSent = () =>
+            Transport.Send(new Protocol.FaceImage { Image = Display.LastPayload ?? BlankFace }, flush: true);
         Transport.DataReceived += OnData;
     }
 
@@ -207,6 +210,9 @@ public sealed class CozmoRobot : IDisposable
 
     public void Disconnect() => Transport.Disconnect();
     public void Dispose() => Transport.Dispose();
+
+    /// <summary>The engine's idle face: two "skip 64 columns" commands, i.e. nothing lit.</summary>
+    private static readonly byte[] BlankFace = { 0x3F, 0x3F };
 
     private void OnData(byte[] payload)
     {
