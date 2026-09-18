@@ -99,11 +99,27 @@ public class MessageTests
     public void FirmwareVersionParsesSignatureJson()
     {
         string json = "{\"version\": 2381, \"messageEngineToRobotHash\": \"9e4a965ace4e09d86997b87ba14235d5\", \"messageRobotToEngineHash\": \"a259247f16231db440957215baba12ab\"}";
-        var body = new CladWriter().U8((byte)RobotMessageId.FirmwareVersion).String16(json).ToArray();
+        var body = new CladWriter().U8((byte)RobotMessageId.FirmwareVersion).U16(0x4d9d).String16(json).ToArray();
         var fw = Assert.IsType<FirmwareVersion>(RobotMessage.Parse(body));
         Assert.Equal(2381, fw.Version);
+        Assert.Equal(0x4d9d, fw.RobotId);
         Assert.Equal("9e4a965ace4e09d86997b87ba14235d5", fw.EngineToRobotHash);
-        Assert.Equal("string16", fw.LayoutNote);
+        Assert.Equal(body, fw.ToBytes());
+    }
+
+    [Fact]
+    public void HardwareCaptureFirmwareVersionAndTraceDecode()
+    {
+        // From the 2026-09-18 hardware run (fw 2457): FirmwareVersion body prefix 9d4d bd01 then 445-byte JSON.
+        var json = "{\"version\": 2457, \"git-rev\": \"1f716924703f5a8167e4812ebe0fb16991f23484\"}";
+        var body = new CladWriter().U8(0xee).U16(0x4d9d).String16(json).ToArray();
+        var fw = Assert.IsType<FirmwareVersion>(RobotMessage.Parse(body));
+        Assert.Equal(2457, fw.Version); Assert.Equal(0x4d9d, fw.RobotId);
+        // Trace: fmt 624 name 409 level 2, 6 args = soft-AP MAC address bytes
+        var tr = Assert.IsType<Trace>(RobotMessage.Parse(Hex.Parse("b0 70020000990102062e0000003a000000e800000014000000e90000005f000000")));
+        Assert.Equal(624, tr.FormatId); Assert.Equal(409, tr.NameId); Assert.Equal(2, tr.Level);
+        Assert.Equal(new uint[] { 0x2e, 0x3a, 0xe8, 0x14, 0xe9, 0x5f }, tr.Args);
+        Assert.Equal(Hex.Parse("b0 70020000990102062e0000003a000000e800000014000000e90000005f000000"), tr.ToBytes());
     }
 
     private sealed class CladWriterHelper { public int Size(Action<CladWriter> f) { var w = new CladWriter(); f(w); return w.Length; } }

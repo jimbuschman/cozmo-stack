@@ -33,6 +33,13 @@ dotnet run --project src/Cozmo.Conformance -- fakerobot --seconds 30 &
 dotnet run --project src/Cozmo.Conformance -- connect 127.0.0.1 --seconds 6 --head 0.3 --led --log frames.log
 ```
 
+## Status
+
+**Hardware smoke test passed on 2026-09-18** (Cozmo hardware 1.5, firmware 2457): connect in 16 ms, identity and
+handshake, RobotState at 33.5 Hz for 20 s with 0 resends, SetHeadAngle acked and reached, clean disconnect.
+Captures: `../re-analysis/captures/`; findings: `../re-analysis/TRANSPORT_SPEC.md §10`. The first 120 frames of the
+capture are a test fixture (`tests/.../Fixtures/hw_fw2457_first120.log`).
+
 ## Hardware smoke test (milestone success criterion)
 
 1. Power the robot on its charger; join its Wi-Fi network `Cozmo_XXXXXX` with the password shown on its face

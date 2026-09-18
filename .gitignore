@@ -22,6 +22,8 @@
 .vs/
 TestResults/
 
-# scratch
+# scratch (but keep hardware captures and test fixtures)
 *.log
 *.tmp
+!/re-analysis/captures/*.log
+!/cozmo-stack/tests/Cozmo.Protocol.Tests/Fixtures/*.log

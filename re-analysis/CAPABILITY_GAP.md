@@ -390,4 +390,12 @@ pcap/replay/fakerobot/connect). 69 unit tests pass, PyCozmo's hardware-captured 
 and the loopback smoke test against the fake robot passes (connect, identity, handshake, telemetry, SetHeadAngle
 acked and reflected, clean disconnect). Deliverable 1 is scoped to the conformance set as instructed; the full
 161-message field layouts are the next stage (official field widths for 78 of them are already in
-`protocol/robot_msg_field_widths_official.json`). Deliverable 3 (hardware) is pending a robot.
+`protocol/robot_msg_field_widths_official.json`).
+
+**M1 hardware smoke test: PASSED (2026-09-18)** on a hardware-1.5 Cozmo running firmware **2457** (a 2025 Digital
+Dream Labs build, newer than the 2381 shipped in this APK): direct connection from our code, stable handshake, 722
+RobotState frames at 33.5 Hz over 20 s with zero resends, SetHeadAngle acked and reached, clean disconnect; no
+Android app, engine library or Python in the path. Details and captures: `TRANSPORT_SPEC.md §10`, `captures/`.
+Two consequences for the plan: (a) fw 2457's CLAD hashes differ from 2381, so the replacement stack must tolerate the
+mismatch and the next stage must verify each message layout against the robot rather than assume 2381; (b) the robot
+recalibrates head and lift on every connect, which the engine layer must wait out before issuing motor commands.

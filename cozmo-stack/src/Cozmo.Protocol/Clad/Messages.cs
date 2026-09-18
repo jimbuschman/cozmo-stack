@@ -37,6 +37,8 @@ public abstract class RobotMessage
         [RobotMessageId.FallingStarted] = r => new FallingStarted(r.U32()),
         [RobotMessageId.FallingStopped] = r => new FallingStopped(r.U32(), r.U32(), r.U32()),
         [RobotMessageId.RobotStopped] = r => new RobotStopped(r.U8()),
+        [RobotMessageId.WifiFlashID] = r => new WifiFlashId(r.U32()),
+        [RobotMessageId.Trace] = Trace.Read,
         // engine->robot messages (so captures of the official app decode too)
         [RobotMessageId.SyncTime] = r => new SyncTime(r.U32(), r.U32()),
         [RobotMessageId.GetMfgInfo] = _ => new GetManufacturingInfo(),
@@ -143,24 +145,20 @@ public sealed class RobotAvailable : RobotMessage
     public override string ToString() => $"RobotAvailable serial=0x{SerialNumberHead:x8} hw=0x{HardwareRevisionUnverified:x4}";
 }
 
-/// <summary>RobotToEngine.firmwareVersion 0xEE, variable (official: u16 + string). The string is the JSON signature header of cozmo.safe.</summary>
+/// <summary>
+/// RobotToEngine.firmwareVersion 0xEE, variable. Official Unpack: u16 + string. Confirmed on hardware (fw 2457):
+/// u16 = low 16 bits of the head serial number (robot id), then CLAD string[uint_16] (u16 length + UTF-8 JSON),
+/// e.g. 9d4d | bd01 | {"version": 2457, ...} (445 bytes). The JSON is the signature header of cozmo.safe.
+/// </summary>
 public sealed class FirmwareVersion : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.FirmwareVersion;
-    public ushort LeadingU16; public string SignatureJson = ""; public string LayoutNote = "";
+    public ushort RobotId; public string SignatureJson = ""; public string LayoutNote = "u16+string16";
     public int? Version => TryInt("\"version\"");
     public string? EngineToRobotHash => TryStr("\"messageEngineToRobotHash\"");
     public string? RobotToEngineHash => TryStr("\"messageRobotToEngineHash\"");
-    public static FirmwareVersion Read(CladReader r)
-    {
-        var m = new FirmwareVersion { LeadingU16 = r.U16() };
-        // Official Unpack reads a u16 then a string. CLAD string[uint_16] would make that u16 the length itself.
-        if (m.LeadingU16 == r.Remaining) { m.SignatureJson = System.Text.Encoding.UTF8.GetString(r.Rest()); m.LayoutNote = "string16"; }
-        else if (r.Remaining >= 1 && r.Remaining - 1 == 0) { m.SignatureJson = ""; m.LayoutNote = "u16+empty"; }
-        else { m.SignatureJson = System.Text.Encoding.UTF8.GetString(r.Rest()).TrimEnd('\0'); m.LayoutNote = "u16+rest"; }
-        return m;
-    }
-    public override void WriteBody(CladWriter w) { var b = System.Text.Encoding.UTF8.GetBytes(SignatureJson); w.U16((ushort)b.Length).Bytes(b); }
+    public static FirmwareVersion Read(CladReader r) => new() { RobotId = r.U16(), SignatureJson = r.String16() };
+    public override void WriteBody(CladWriter w) => w.U16(RobotId).String16(SignatureJson);
     private string? TryStr(string key) { int i = SignatureJson.IndexOf(key, StringComparison.Ordinal); if (i < 0) return null; int q = SignatureJson.IndexOf('"', i + key.Length + 1); if (q < 0) return null; int e = SignatureJson.IndexOf('"', q + 1); return e < 0 ? null : SignatureJson[(q + 1)..e]; }
     private int? TryInt(string key) { int i = SignatureJson.IndexOf(key, StringComparison.Ordinal); if (i < 0) return null; int c = SignatureJson.IndexOf(':', i); int s = c + 1; while (s < SignatureJson.Length && SignatureJson[s] == ' ') s++; int e = s; while (e < SignatureJson.Length && char.IsDigit(SignatureJson[e])) e++; return int.TryParse(SignatureJson.AsSpan(s, e - s), out var v) ? v : null; }
     public override string ToString() => $"FirmwareVersion v{Version?.ToString() ?? "?"} ({LayoutNote}) {SignatureJson}";
@@ -177,6 +175,42 @@ public sealed class ManufacturingId : RobotMessage
 }
 
 public sealed class SyncTimeAck : RobotMessage { public override RobotMessageId Id => RobotMessageId.SyncTimeAck; public override void WriteBody(CladWriter w) { } }
+
+/// <summary>RobotToEngine.wifiFlashID 0xEC, 4 bytes (u32 flash chip id). Seen on hardware right after FirmwareVersion.</summary>
+public sealed class WifiFlashId : RobotMessage
+{
+    public override RobotMessageId Id => RobotMessageId.WifiFlashID; public uint FlashId;
+    public WifiFlashId(uint id) { FlashId = id; }
+    public override void WriteBody(CladWriter w) => w.U32(FlashId);
+    public override string ToString() => $"WifiFlashId 0x{FlashId:x8}";
+}
+
+/// <summary>
+/// RobotToEngine.trace 0xB0 (PrintTrace), variable: firmware log line. Layout confirmed on hardware and decodable with
+/// the OBB's config/engine/AnkiLogStringTables.json (format/name ids were stable between fw 2381 and 2457):
+/// u16 formatId, u16 unused(0), u16 nameId, i8 level, u8 argCount, u32 args[argCount] (float args are raw IEEE bits).
+/// </summary>
+public sealed class Trace : RobotMessage
+{
+    public override RobotMessageId Id => RobotMessageId.Trace;
+    public ushort FormatId, Unused, NameId; public sbyte Level; public uint[] Args = Array.Empty<uint>();
+    public static Trace Read(CladReader r)
+    {
+        var t = new Trace { FormatId = r.U16(), Unused = r.U16(), NameId = r.U16(), Level = r.I8() };
+        int n = r.U8(); t.Args = new uint[n]; for (int i = 0; i < n; i++) t.Args[i] = r.U32();
+        return t;
+    }
+    public override void WriteBody(CladWriter w) { w.U16(FormatId).U16(Unused).U16(NameId).I8(Level).U8((byte)Args.Length); foreach (var a in Args) w.U32(a); }
+    /// <summary>Resolve with the OBB's AnkiLogStringTables (nameTable/formatTable); returns null if tables are absent.</summary>
+    public string Format(IReadOnlyDictionary<int, string>? names, IReadOnlyDictionary<int, (string fmt, int argc)>? formats)
+    {
+        string name = names is not null && names.TryGetValue(NameId, out var nm) ? nm : $"name#{NameId}";
+        string body = formats is not null && formats.TryGetValue(FormatId, out var f) ? f.fmt : $"fmt#{FormatId}";
+        string args = Args.Length == 0 ? "" : " [" + string.Join(", ", Args.Select(a => a.ToString())) + "]";
+        return $"[{name}] {body}{args}";
+    }
+    public override string ToString() => $"Trace fmt={FormatId} name={NameId} level={Level} args=[{string.Join(",", Args.Select(a => "0x" + a.ToString("x")))}]";
+}
 public sealed class RobotPoked : RobotMessage { public override RobotMessageId Id => RobotMessageId.RobotPoked; public override void WriteBody(CladWriter w) { } }
 public sealed record class MotorActionAckData(byte ActionId);
 public sealed class MotorActionAck : RobotMessage

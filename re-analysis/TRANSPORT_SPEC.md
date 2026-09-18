@@ -170,12 +170,38 @@ new socket, counters back to 1, new ConnectionRequest (the robot resets its stat
 | frame size | 1051 total (robot-measured) | engine can build up to 1420 total |
 | seq representation | wire−1 | wire |
 
-## 10. Still to confirm on hardware
+## 10. Hardware results (2026-09-18, Cozmo hardware 1.5, firmware 2457, captures in `captures/`)
 
-* Whether the robot honours frames up to 1420 bytes (engine limit) or only 1051 (PyCozmo observation).
-* Whether robot ping echoes set `isReply` for official 17-byte pings.
-* Robot-side resend cadence/timeout (only the 5 s "COZMO 01" is documented).
-* Exact robot behaviour on a second ConnectionRequest while connected (expected: reset).
+Confirmed by two 20 s runs of `cozmo-conformance connect 172.31.1.1 --head 0.4` from a Windows laptop on the robot's AP:
+
+* **Connection**: ConnectionRequest answered in 16 ms with a frame `type 9, seqMin 1, seqMax 1, ack 1` containing a
+  ConnectionResponse sub-message. **Every robot frame is MultipleMixedMessages (type 9)**, even when it holds one message.
+* **Cadence**: the robot emits exactly one frame per 33 ms tick (mean 33.5 ms, max gap 66 ms); each carries the
+  unreliable RobotState (91 B, parses cleanly) plus whatever reliable events are pending. RX frames up to 584 B seen.
+* **Robot resends**: unacked reliable messages are repeated in **every** subsequent 33 ms frame until our header ack
+  covers them (e.g. the second frame re-sent seq 1..9 = ConnectionResponse, RobotAvailable, FirmwareVersion, traces, WifiFlashID).
+  Our receive path dropped the duplicates as designed (2 per run).
+* **Ack latency** for our reliable messages: 22–31 ms, i.e. the next robot tick. 0 resends were needed on our side.
+* **Pings**: the robot echoes our 17-byte ping payload **verbatim** (`isReply` stays 0, our counters unchanged);
+  RTT 7–28 ms over Wi-Fi. Our transport treats an echo of the last sent timestamp as a reply (RTT tracked).
+* **Handshake**: after ConnectionResponse the robot spontaneously sends RobotAvailable (serial, hw u16 = 5),
+  FirmwareVersion, several `trace` log lines (soft-AP MAC, boot count, client.connections_since_boot,
+  "hardware.revision: Hardware 1.5", CozmoBot.Radio.Connected) and WifiFlashID; GetManufacturingInfo → MfgId
+  (body HW 5, colour 2); SyncTime → SyncTimeAck + "Messages.Process_syncTime.Recvd" trace, then RobotState streaming.
+  It also recalibrates head and lift on connect (MotorCalibration motor 2/3 started/finished; the head dips to −0.436 rad).
+* **Command**: SetHeadAngle 0.4 → MotorActionAck(1) within one tick, RobotState head angle settles at 0.399 rad;
+  SetHeadAngle 0 → MotorActionAck(2), final 0.020 rad. Status word 0x3310 while on the charger
+  (LIFT_IN_POS | HEAD_IN_POS | IS_ON_CHARGER | IS_CHARGING | bit 4).
+* **FirmwareVersion layout** (was uncertain): `u16 robotId` (= low 16 bits of head serial, 0x4d9d) + `string[uint_16]`
+  (445-byte JSON). **Trace layout**: `u16 formatId, u16 unused, u16 nameId, i8 level, u8 argc, u32 args[]`, and the
+  3.4.0 OBB's `AnkiLogStringTables.json` still resolves fw 2457's ids.
+* **Firmware 2457** (Digital Dream Labs build, 2025-02-11) has different CLAD hashes than 2381
+  (`fedb4b12…` / `5a721109…`). All messages exercised here are layout-compatible with the 3.4.0 engine's definitions;
+  a replacement engine must not hard-fail on the hash mismatch the way the official engine would.
+* Cubes advertise unprompted: ObjectAvailable for three objects (types 1 and 2, RSSI 44–75) every ~1 s.
+
+Still open: robot tolerance of frames > 1051 B (our frames stayed ≤ 32 B), the robot's own resend/timeout limits beyond
+"repeat every tick", and behaviour on a second ConnectionRequest while connected.
 
 ## 11. Conformance harness (`cozmo-conformance`)
 
