@@ -88,6 +88,20 @@ public sealed class CozmoAudio
     /// mattering. Kept below <see cref="RobotBufferFrames"/> so nothing is dropped on the way in.
     /// </summary>
     public int PrimeFrames { get; set; } = 10;
+    /// <summary>
+    /// How many frames the robot should have queued at any moment while a stream is running. Kept under
+    /// <see cref="RobotBufferFrames"/> so nothing is dropped going in, and high enough that network jitter
+    /// and a lost frame or two cannot empty it.
+    /// </summary>
+    public int TargetInFlight { get; set; } = 10;
+    /// <summary>
+    /// Reports how many audio frames the robot says it has played, from its AnimationState stream. When this
+    /// is set, <see cref="Play"/> feeds the robot at the rate it actually drains rather than at a fixed
+    /// schedule. It does not drain at the rate arithmetic suggests: measured on firmware 2457 it takes a
+    /// frame every 28.6 ms, not the 33.3 ms of an animation tick, so a fixed schedule slowly starves it and
+    /// the sound breaks into a dashed tone. Leave null to fall back to clock pacing.
+    /// </summary>
+    public Func<int>? PlayedFrames { get; set; }
 
     private readonly Action<RobotMessage> _send;
     public int FramesSent { get; private set; }
@@ -157,7 +171,36 @@ public sealed class CozmoAudio
         using var _ = new HighResolutionTimer();
         _clock.Restart();
         _scheduled = 0;
-        foreach (var f in frames) PlayFramePaced(f);
+        if (PlayedFrames is null) { foreach (var f in frames) PlayFramePaced(f); return; }
+        PlayWithFeedback(frames);
+    }
+
+    /// <summary>
+    /// Feeds the robot from its own report of what it has played, keeping <see cref="TargetInFlight"/>
+    /// frames queued. This tracks whatever rate the robot really drains at instead of assuming one.
+    /// </summary>
+    private void PlayWithFeedback(List<byte[]> frames)
+    {
+        int baseline = PlayedFrames!();
+        int sent = 0;
+        var lastProgress = _clock.Elapsed;
+        int lastPlayed = 0;
+
+        foreach (var f in frames)
+        {
+            while (true)
+            {
+                int played = PlayedFrames() - baseline;
+                if (played != lastPlayed) { lastPlayed = played; lastProgress = _clock.Elapsed; }
+                if (sent - played < TargetInFlight) break;
+                // If the robot stops reporting progress it is not playing; send anyway rather than hang.
+                if (_clock.Elapsed - lastProgress > TimeSpan.FromSeconds(1)) break;
+                Thread.Sleep(2);
+            }
+            SendFrame(f);
+            OnFrameSent?.Invoke();
+            sent++;
+        }
     }
 
     /// <summary>

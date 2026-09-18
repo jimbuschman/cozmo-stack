@@ -166,6 +166,60 @@ public class DeviceTests
             $"the second call took only {sw.ElapsedMilliseconds} ms");
     }
 
+    /// <summary>
+    /// With the robot reporting what it has played, the stream follows that rather than a fixed schedule.
+    /// The robot does not drain at the rate the frame arithmetic suggests, so a fixed schedule starves it.
+    /// </summary>
+    [Fact]
+    public void PlayFollowsTheRobotsPlayedCounterAndKeepsTheBufferTopped()
+    {
+        var sent = new List<RobotMessage>();
+        int played = 0, maxInFlight = 0;
+        var audio = new CozmoAudio(sent.Add) { PlayedFrames = () => Volatile.Read(ref played) };
+        audio.OnFrameSent += () => maxInFlight = Math.Max(maxInFlight, sent.Count - Volatile.Read(ref played));
+
+        // A robot that drains a frame every 5 ms, faster than an animation tick.
+        var stop = false;
+        var drain = new Thread(() =>
+        {
+            while (!Volatile.Read(ref stop))
+            {
+                Thread.Sleep(5);
+                if (Volatile.Read(ref played) < sent.Count) Interlocked.Increment(ref played);
+            }
+        }) { IsBackground = true };
+        drain.Start();
+
+        var pcm = CozmoAudio.Tone(440, TimeSpan.FromMilliseconds(600));
+        int expected = CozmoAudio.ToFrames(pcm).Count;
+        audio.Play(pcm);
+        Volatile.Write(ref stop, true);
+        drain.Join();
+
+        Assert.Equal(expected, sent.Count);
+        Assert.True(maxInFlight <= audio.TargetInFlight,
+            $"{maxInFlight} frames were queued at the robot, over the target of {audio.TargetInFlight}");
+        Assert.True(maxInFlight >= audio.TargetInFlight - 2,
+            $"only {maxInFlight} frames were ever queued, so the robot was being starved");
+    }
+
+    /// <summary>A robot that never reports progress must not hang the caller.</summary>
+    [Fact]
+    public void PlayDoesNotHangWhenTheRobotReportsNothing()
+    {
+        var sent = new List<RobotMessage>();
+        var audio = new CozmoAudio(sent.Add) { PlayedFrames = () => 0 };
+        var pcm = CozmoAudio.Tone(440, TimeSpan.FromMilliseconds(600));
+        int expected = CozmoAudio.ToFrames(pcm).Count;
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        audio.Play(pcm);
+        sw.Stop();
+
+        Assert.Equal(expected, sent.Count);
+        Assert.True(sw.Elapsed < TimeSpan.FromSeconds(15), $"it took {sw.Elapsed.TotalSeconds:F1}s to give up");
+    }
+
     [Fact]
     public void SendFrameRejectsAFrameThatIsNotExactlyOneAnimationTick()
     {

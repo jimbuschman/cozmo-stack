@@ -113,8 +113,22 @@ and raises the system timer resolution to 1 ms while it runs. Measured jitter we
 
 **A stream that starts from an empty buffer has no slack**: feeding at exactly the drain rate means one late
 frame is an underrun, heard as a stutter. The first ten frames now go out back to back to build about a
-third of a second of cushion before pacing begins, which is what makes the jitter harmless. That is
-`CozmoAudio.PrimeFrames`, deliberately under the 14-frame buffer so nothing is dropped going in.
+third of a second of cushion before pacing begins. That is `CozmoAudio.PrimeFrames`, deliberately under the
+14-frame buffer so nothing is dropped going in.
+
+**The robot does not drain at the rate the arithmetic suggests.** A frame holds 744 samples, which at
+22050 Hz is 33.74 ms, and the animation tick is 33.3 ms, so one frame per tick should be slightly more than
+real time. Measured from the robot's own report over four runs, it takes a frame every **28.6 ms**. Feeding
+it on a 33.3 ms schedule loses about 5 ms of cushion per frame, which drains the priming burst partway
+through a two-second tone and breaks the sound into a dashed tone.
+
+So the stream is no longer paced on a clock at all. `CozmoAudio.PlayedFrames` reads the robot's played
+counter out of its `AnimationState` stream and `Play` keeps `TargetInFlight` frames queued, following
+whatever rate the robot really drains at. A clock-paced fallback remains for callers with no counter, and a
+robot that stops reporting progress does not hang the caller.
+
+The frame logs settled where the fault was: in the unreliable run the sends were textbook, ten primed then
+exactly 33.3 ms apart with no gap over 50 ms, so delivery was never the problem.
 
 The engine also fills every animation tick with both an audio frame and a face keyframe, so the two
 pipelines now keep each other's half of the tick occupied.
