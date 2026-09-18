@@ -102,12 +102,21 @@ added, so full-scale samples wrapped to silence, and negating `short.MinValue` o
 
 ## 5. Hardware acceptance
 
-Three commands, to be run against a real robot on its own Wi-Fi:
+Three commands, to be run against a real robot on its own Wi-Fi. There is no installed
+`cozmo-conformance` on the PATH: run the project from the `cozmo-stack` folder, and put `--` before the
+tool's own arguments so the SDK does not try to interpret them.
 
 ```
-cozmo-conformance camera 172.31.1.1 --count 10 --out shots
-cozmo-conformance face   172.31.1.1 --pattern test --seconds 8
-cozmo-conformance tone   172.31.1.1 --hz 440 --seconds 2 --save tone.wav
+dotnet run --project src/Cozmo.Conformance -- camera 172.31.1.1 --count 10 --out shots
+dotnet run --project src/Cozmo.Conformance -- face   172.31.1.1 --pattern test --seconds 8
+dotnet run --project src/Cozmo.Conformance -- tone   172.31.1.1 --hz 440 --seconds 2 --save tone.wav
+```
+
+Or build once and call the executable directly, which starts faster and can be run from anywhere:
+
+```
+dotnet build -c Release
+src\Cozmo.Conformance\bin\Release\net9.0\cozmo-conformance.exe camera 172.31.1.1 --count 10 --out shots
 ```
 
 Pass criteria:

@@ -172,7 +172,7 @@ new socket, counters back to 1, new ConnectionRequest (the robot resets its stat
 
 ## 10. Hardware results (2026-09-18, Cozmo hardware 1.5, firmware 2457, captures in `captures/`)
 
-Confirmed by two 20 s runs of `cozmo-conformance connect 172.31.1.1 --head 0.4` from a Windows laptop on the robot's AP:
+Confirmed by two 20 s runs of `dotnet run --project src/Cozmo.Conformance -- connect 172.31.1.1 --head 0.4` from a Windows laptop on the robot's AP:
 
 * **Connection**: ConnectionRequest answered in 16 ms with a frame `type 9, seqMin 1, seqMax 1, ack 1` containing a
   ConnectionResponse sub-message. **Every robot frame is MultipleMixedMessages (type 9)**, even when it holds one message.
