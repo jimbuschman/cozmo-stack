@@ -11,7 +11,10 @@ public sealed class RobotStateTracker
     public FirmwareVersion? Firmware { get; private set; }
     public ManufacturingID? Manufacturing { get; private set; }
     public RobotState? Latest { get; private set; }
+    public AnimationState? Animation { get; private set; }
     public bool TimeSynced { get; private set; }
+    /// <summary>True once the robot has answered the animation-controller init with its own state stream.</summary>
+    public bool AnimationsEnabled => Animation is not null;
 
     public int StateCount { get; private set; }
     public DateTime? FirstStateUtc { get; private set; }
@@ -45,6 +48,7 @@ public sealed class RobotStateTracker
             case FirmwareVersion f: Firmware = f; break;
             case ManufacturingID i: Manufacturing = i; break;
             case SyncTimeAck: TimeSynced = true; break;
+            case AnimationState a: Animation = a; break;
             case MotorCalibration c:
                 CalibrationSeen = true;
                 CalibratingMotors = c.CalibStarted;
@@ -88,6 +92,8 @@ public sealed class CozmoRobot : IDisposable
         Transport = new ReliableTransport(options);
         Display = new CozmoDisplay(m => Transport.Send(m, flush: true));
         Audio = new CozmoAudio(m => Transport.Send(m, flush: true));
+        // The engine emits one audio frame per animation tick whether or not there is sound to play.
+        Display.BeforeFrame = () => { if (!Audio.Busy) Transport.Send(new AudioSilence(), flush: true); };
         Transport.DataReceived += OnData;
     }
 
@@ -96,7 +102,8 @@ public sealed class CozmoRobot : IDisposable
     /// </summary>
     public static async Task<CozmoRobot> ConnectAsync(IPAddress address, int? port = null,
                                                       TransportOptions? options = null,
-                                                      TimeSpan? timeout = null)
+                                                      TimeSpan? timeout = null,
+                                                      bool enableAnimations = true)
     {
         var robot = new CozmoRobot(options);
         var connected = new TaskCompletionSource();
@@ -121,8 +128,32 @@ public sealed class CozmoRobot : IDisposable
         // identity arrives unprompted; ask for the rest and start telemetry
         robot.Transport.Send(new GetManufacturingInfo(), flush: true);
         robot.Transport.Send(new SyncTime(0), flush: true);
+        // Without this the robot accepts face and audio frames but never renders or plays them: the
+        // animation controller is not running. The robot answers by streaming AnimationState (0xF1).
+        if (enableAnimations) robot.EnableAnimations();
         for (int i = 0; i < 40 && robot.State.StateCount == 0; i++) await Task.Delay(50);
         return robot;
+    }
+
+    /// <summary>
+    /// Starts the robot's animation controller. Face images and audio frames are animation keyframes: until
+    /// this is sent the robot receives them and does nothing visible. It answers by streaming AnimationState.
+    /// </summary>
+    public void EnableAnimations() => Transport.Send(new InitController(), flush: true);
+
+    /// <summary>Stops whatever animation is playing and clears the robot's keyframe buffer.</summary>
+    public void EndAnimation() => Transport.Send(new EndOfAnimation(), flush: true);
+
+    /// <summary>Waits until the robot confirms the animation controller is running.</summary>
+    public async Task<bool> WaitForAnimationsAsync(TimeSpan? timeout = null)
+    {
+        var end = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(3));
+        while (DateTime.UtcNow < end)
+        {
+            if (State.AnimationsEnabled) return true;
+            await Task.Delay(25);
+        }
+        return false;
     }
 
     /// <summary>Waits for the head and lift calibration the robot runs on connect, so motor commands are not fought.</summary>
@@ -139,23 +170,28 @@ public sealed class CozmoRobot : IDisposable
     /// <summary>Starts the camera. Grayscale QVGA by default, which is what the engine uses.</summary>
     public void StartCamera(bool color = false, bool singleShot = false)
     {
+        Camera.Restart();
         Transport.Send(new EnableColorImages { Enable = color }, flush: true);
         Transport.Send(new ImageRequest { Mode = singleShot ? ImageSendMode.SingleShot : ImageSendMode.Stream }, flush: true);
     }
 
     public void StopCamera() => Transport.Send(new ImageRequest { Mode = ImageSendMode.Off }, flush: true);
 
-    /// <summary>Waits for the next complete camera frame.</summary>
-    public async Task<CameraFrame> NextFrameAsync(TimeSpan? timeout = null)
+    /// <summary>
+    /// Waits for the next usable camera frame. Frames from the sensor's warm-up are torn and are skipped
+    /// unless <paramref name="includeWarmUp"/> says otherwise, so this can take about half a second longer
+    /// than the frame interval right after the camera starts.
+    /// </summary>
+    public async Task<CameraFrame> NextFrameAsync(TimeSpan? timeout = null, bool includeWarmUp = false)
     {
         var tcs = new TaskCompletionSource<CameraFrame>();
-        void handler(CameraFrame f) => tcs.TrySetResult(f);
+        void handler(CameraFrame f) { if (includeWarmUp || !f.IsWarmUp) tcs.TrySetResult(f); }
         Camera.FrameReceived += handler;
         try
         {
             var t = timeout ?? TimeSpan.FromSeconds(5);
             if (await Task.WhenAny(tcs.Task, Task.Delay(t)) != tcs.Task)
-                throw new TimeoutException($"no camera frame within {t.TotalSeconds:F1}s");
+                throw new TimeoutException($"no usable camera frame within {t.TotalSeconds:F1}s");
             return await tcs.Task;
         }
         finally { Camera.FrameReceived -= handler; }

@@ -43,6 +43,15 @@ public sealed class CameraFrame
     /// at half the resolution's width and have to be stretched back to <see cref="Width"/> when displayed.
     /// </summary>
     public bool IsColor { get; init; }
+    /// <summary>The second payload byte. Not entropy data; its meaning is not established.</summary>
+    public byte StreamMarker { get; init; }
+    /// <summary>
+    /// True if this frame arrived while the sensor was still settling, when the picture is torn and rolls
+    /// by 8 pixels per frame. Such frames are not usable images. See <see cref="CozmoCamera.WarmUpFrames"/>.
+    /// </summary>
+    public bool IsWarmUp { get; init; }
+    /// <summary>Position of this frame in the stream, counting from the request that started it.</summary>
+    public int FrameIndex { get; init; }
     /// <summary>Width the JPEG itself carries: half of <see cref="Width"/> for a colour frame.</summary>
     public int JpegWidth { get; init; }
     public int ChunkCount { get; init; }
@@ -56,7 +65,8 @@ public sealed class CameraFrame
 
     public void Save(string path) => File.WriteAllBytes(path, Jpeg);
     public override string ToString() =>
-        $"CameraFrame #{ImageId} {Width}x{Height} {(IsColor ? "colour" : "gray")} enc={Encoding} chunks={ChunkCount} jpeg={Jpeg.Length}B";
+        $"CameraFrame #{ImageId} {Width}x{Height} {(IsColor ? "colour" : "gray")} chunks={ChunkCount} " +
+        $"jpeg={Jpeg.Length}B{(IsWarmUp ? " (warm-up, torn)" : "")}";
 }
 
 /// <summary>
@@ -82,7 +92,18 @@ public sealed class CozmoCamera
     /// <summary>Raised when a frame had to be abandoned (missing or out-of-order chunks).</summary>
     public event Action<uint, string>? FrameDropped;
 
+    /// <summary>
+    /// Frames to discard after the camera is started. The sensor takes about eleven frames to lock: until
+    /// then every picture is torn and rolls by exactly one macroblock row per frame, and after it every
+    /// picture is clean. Measured on the firmware-2457 capture of 2026-09-18 and reproduced on a live run.
+    /// </summary>
+    public int WarmUpFrames { get; set; } = 15;
+
     public CameraFrame? LastFrame { get; private set; }
+    /// <summary>Frames completed since <see cref="Restart"/>, warm-up included.</summary>
+    public int FrameIndex { get; private set; }
+    /// <summary>True once the sensor has settled and frames are usable.</summary>
+    public bool Settled => FrameIndex > WarmUpFrames;
     public int FramesCompleted { get; private set; }
     public int FramesDropped { get; private set; }
     public int ChunksReceived { get; private set; }
@@ -94,6 +115,14 @@ public sealed class CozmoCamera
         public byte Encoding, Resolution;
         public int Expected = -1;
         public DateTime Started = DateTime.UtcNow;
+    }
+
+    /// <summary>Call when the camera is (re)started, so the warm-up count begins again.</summary>
+    public void Restart()
+    {
+        _pending.Clear();
+        _imu.Clear();
+        FrameIndex = 0;
     }
 
     /// <summary>Feed every robot message here; the camera ignores the ones it does not care about.</summary>
@@ -145,10 +174,13 @@ public sealed class CozmoCamera
                 ImageId = c.ImageId, Timestamp = p.Timestamp, Width = w, Height = h,
                 Encoding = p.Encoding, Resolution = p.Resolution,
                 IsColor = color, JpegWidth = jpegWidth,
+                StreamMarker = payload.Length > 1 ? payload[1] : (byte)0,
+                FrameIndex = FrameIndex, IsWarmUp = FrameIndex < WarmUpFrames,
                 ChunkCount = p.Expected, RawPayload = payload,
                 Jpeg = MiniJpeg.ToJpeg(payload, jpegWidth, h, encoding),
             };
             if (_imu.Remove(c.ImageId, out var g)) frame.GyroRates = g;
+            FrameIndex++;
             LastFrame = frame;
             FramesCompleted++;
             FrameReceived?.Invoke(frame);

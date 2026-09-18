@@ -72,6 +72,10 @@ public sealed class CozmoAudio
 
     private readonly Action<RobotMessage> _send;
     public int FramesSent { get; private set; }
+    /// <summary>When the last frame went out, so a caller can tell whether audio is currently streaming.</summary>
+    public DateTime LastSentUtc { get; private set; } = DateTime.MinValue;
+    /// <summary>True while frames are actively being streamed.</summary>
+    public bool Busy => DateTime.UtcNow - LastSentUtc < TimeSpan.FromMilliseconds(200);
 
     public CozmoAudio(Action<RobotMessage> send) => _send = send;
 
@@ -85,9 +89,10 @@ public sealed class CozmoAudio
             throw new ArgumentException($"an audio frame must be exactly {SamplesPerFrame} samples", nameof(mulawFrame));
         _send(new AudioSample { Samples = mulawFrame });
         FramesSent++;
+        LastSentUtc = DateTime.UtcNow;
     }
 
-    public void SendSilence() { _send(new AudioSilence()); FramesSent++; }
+    public void SendSilence() { _send(new AudioSilence()); FramesSent++; LastSentUtc = DateTime.UtcNow; }
 
     /// <summary>Splits 16-bit PCM at <see cref="SampleRate"/> into mu-law frames, padding the last one with silence.</summary>
     public static List<byte[]> ToFrames(ReadOnlySpan<short> pcm)

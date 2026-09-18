@@ -378,6 +378,26 @@ public class DeviceTests
         throw new InvalidOperationException($"marker 0xFF{marker:X2} not found");
     }
 
+    [Fact]
+    public void TheDisplayPairsEachFaceFrameWithAnAudioFrameWhenAskedTo()
+    {
+        var sent = new List<RobotMessage>();
+        var display = new CozmoDisplay(sent.Add) { BeforeFrame = () => sent.Add(new AudioSilence()) };
+        display.Show(FaceBitmap.TestPattern());
+        Assert.Equal(2, sent.Count);
+        Assert.IsType<AudioSilence>(sent[0]);       // the engine sends audio first on each animation tick
+        Assert.IsType<FaceMsg>(sent[1]);
+    }
+
+    [Fact]
+    public void AudioReportsWhetherItIsStreaming()
+    {
+        var audio = new CozmoAudio(_ => { });
+        Assert.False(audio.Busy);
+        audio.SendSilence();
+        Assert.True(audio.Busy);
+    }
+
     // ------------------------------------------------- capture replay (real robot data)
 
     private static readonly Regex Line = new(@"^(\S+) (TX|RX) ((?:[0-9a-f]{2} ?)+)$", RegexOptions.Compiled);
@@ -474,6 +494,62 @@ public class DeviceTests
         Assert.Equal(240, (got.Jpeg[sof + 5] << 8) | got.Jpeg[sof + 6]);
         Assert.Equal(160, (got.Jpeg[sof + 7] << 8) | got.Jpeg[sof + 8]);
         Assert.Equal(3, got.Jpeg[sof + 9]);
+    }
+
+    /// <summary>
+    /// The second payload byte is captured, not interpreted. It is not entropy data: it changes by small
+    /// amounts from frame to frame while the picture rotates, and pinning down what it means is what will
+    /// let the rotation be corrected. See re-analysis/DEVICE_LAYER.md.
+    /// </summary>
+    [Fact]
+    public void TheStreamMarkerIsRecordedAndIsNotConstant()
+    {
+        var cam = new CozmoCamera();
+        var frames = new List<CameraFrame>();
+        cam.FrameReceived += frames.Add;
+        foreach (var m in Replay("hw_fw2457_probe.log")) cam.Handle(m);
+        Assert.True(frames.Count >= 4);
+        Assert.Equal(frames[0].RawPayload[1], frames[0].StreamMarker);
+        Assert.True(frames.Select(f => f.StreamMarker).Distinct().Count() > 1);
+    }
+
+    /// <summary>
+    /// The sensor takes about eleven frames to lock after the camera starts; during that time each picture
+    /// is torn and rolls by one macroblock row per frame. Those frames decode perfectly but are not usable
+    /// images, so the camera flags them and callers skip them.
+    /// </summary>
+    [Fact]
+    public void WarmUpFramesAreFlaggedAndUsableFramesFollow()
+    {
+        var cam = new CozmoCamera();
+        var frames = new List<CameraFrame>();
+        cam.FrameReceived += frames.Add;
+        foreach (var m in Replay("hw_fw2457_probe.log")) cam.Handle(m);
+
+        Assert.True(frames.Count > cam.WarmUpFrames, "the capture must run past the warm-up");
+        Assert.True(cam.Settled);
+        for (int i = 0; i < frames.Count; i++)
+        {
+            Assert.Equal(i, frames[i].FrameIndex);
+            Assert.Equal(i < cam.WarmUpFrames, frames[i].IsWarmUp);
+        }
+        Assert.Contains(frames, f => !f.IsWarmUp);
+    }
+
+    [Fact]
+    public void RestartingTheCameraBeginsTheWarmUpAgain()
+    {
+        var cam = new CozmoCamera { WarmUpFrames = 2 };
+        var frames = new List<CameraFrame>();
+        cam.FrameReceived += frames.Add;
+        for (uint id = 1; id <= 4; id++) cam.Handle(Chunk(id, 0, new byte[] { 0, 0x11, 0x22 }, total: 1));
+        Assert.Equal(new[] { true, true, false, false }, frames.Select(f => f.IsWarmUp));
+        Assert.True(cam.Settled);
+
+        cam.Restart();
+        Assert.False(cam.Settled);
+        cam.Handle(Chunk(5, 0, new byte[] { 0, 0x11, 0x22 }, total: 1));
+        Assert.True(frames[^1].IsWarmUp);
     }
 
     [Fact]

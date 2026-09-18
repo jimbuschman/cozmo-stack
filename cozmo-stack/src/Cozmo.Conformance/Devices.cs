@@ -33,6 +33,9 @@ public static class Devices
         robot.Transport.Disconnected += r => Console.WriteLine($"  disconnected: {r}");
         Console.WriteLine($"connected: firmware v{robot.State.FirmwareVersionNumber?.ToString() ?? "?"} " +
                           $"serial 0x{robot.State.SerialNumber:x8} states={robot.State.StateCount}");
+        Console.WriteLine(await robot.WaitForAnimationsAsync()
+            ? $"animation controller running (enabled tracks 0x{robot.State.Animation!.EnabledAnimTracks:x2})"
+            : "WARNING: the robot never answered the animation-controller init; faces and audio will be ignored");
         return robot;
     }
 
@@ -77,6 +80,11 @@ public static class Devices
         robot.Camera.FrameDropped += (id, why) => Console.WriteLine($"  dropped image {id}: {why}");
         robot.Camera.FrameReceived += f =>
         {
+            if (f.IsWarmUp)
+            {
+                Console.WriteLine($"  {f}");
+                return;
+            }
             if (saved.Count >= count) return;
             var path = Path.Combine(outDir, $"cozmo-{f.ImageId:D5}.jpg");
             f.Save(path);
@@ -86,7 +94,7 @@ public static class Devices
 
         Console.WriteLine($"starting camera ({(color ? "colour" : "grayscale")} stream) ...");
         robot.StartCamera(color);
-        var end = DateTime.UtcNow.AddSeconds(20);
+        var end = DateTime.UtcNow.AddSeconds(30);
         while (saved.Count < count && DateTime.UtcNow < end) await Task.Delay(50);
         robot.StopCamera();
         await Task.Delay(200);
@@ -95,6 +103,7 @@ public static class Devices
 
         Console.WriteLine();
         Console.WriteLine($"chunks={robot.Camera.ChunksReceived} complete={robot.Camera.FramesCompleted} dropped={robot.Camera.FramesDropped} saved={saved.Count}");
+        Console.WriteLine($"({robot.Camera.WarmUpFrames} warm-up frames were discarded: the sensor is still locking and those pictures are torn.)");
         bool ok = saved.Count >= Math.Min(count, 1) && robot.Camera.FramesCompleted > 0;
         foreach (var p in saved.Take(3)) Console.WriteLine($"  {p}");
         Console.WriteLine(ok
@@ -147,7 +156,8 @@ public static class Devices
 
         Console.WriteLine($"holding the image on the face for {seconds:F1}s ...");
         robot.Display.Hold(image, TimeSpan.FromSeconds(seconds));
-        Console.WriteLine($"sent {robot.Display.FramesSent} face frames");
+        Console.WriteLine($"sent {robot.Display.FramesSent} face frames; " +
+                          $"robot reports {robot.State.Animation?.NumAnimBytesPlayed ?? -1} animation bytes played");
         robot.Display.Clear();
         await Task.Delay(200);
         robot.Disconnect();
@@ -205,6 +215,7 @@ public static class Devices
         using var robot = await ConnectAsync(c.Value.ip, c.Value.port, log);
         if (volume is { } v) { Console.WriteLine($"SetAudioVolume {v}"); robot.Audio.SetVolume((ushort)v); }
 
+        int before = robot.State.Animation?.NumAudioFramesPlayed ?? 0;
         Console.WriteLine("playing ...");
         var sw = System.Diagnostics.Stopwatch.StartNew();
         foreach (var f in frames) robot.Audio.SendFrame(f);
@@ -215,11 +226,15 @@ public static class Devices
         log.Dispose();
 
         double expected = seconds * 1000;
+        int played = (robot.State.Animation?.NumAudioFramesPlayed ?? 0) - before;
         Console.WriteLine($"sent {robot.Audio.FramesSent} frames in {sw.ElapsedMilliseconds} ms (the audio itself is {expected:F0} ms)");
-        bool ok = robot.Audio.FramesSent == frames.Count + 1;
+        Console.WriteLine($"robot reports {played} audio frames played, drop count {robot.State.Animation?.ClientDropCount ?? 0}");
+        bool ok = robot.Audio.FramesSent == frames.Count + 1 && played > frames.Count / 2;
         Console.WriteLine(ok
             ? $"PASS audio: you should have heard a steady {hz:F0} Hz tone with no clicks."
-            : "FAIL audio: not every frame was sent.");
+            : played <= 0
+                ? "FAIL audio: the robot played none of the frames we sent."
+                : "FAIL audio: not every frame was sent or played.");
         return ok ? 0 : 22;
     }
 

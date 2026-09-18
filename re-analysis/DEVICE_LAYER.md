@@ -1,6 +1,6 @@
 # M3 — `Cozmo.Robot` device layer
 
-Status: **implemented, unit- and capture-verified; hardware acceptance pending** (2026-09-18)
+Status: **implemented and capture-verified; first hardware run done, two faults found and fixed** (2026-09-18)
 
 This is the first layer above the frozen M1 transport and M2 protocol baseline. It turns the verified wire
 messages into three stateful pipelines plus a live view of robot state, as ordinary library components.
@@ -29,6 +29,26 @@ What the robot actually sends, confirmed against the 2026-09-18 firmware-2457 ca
 | Encoding 8 (`JPEGMinimizedGray`), resolution 4 (QVGA) | same |
 | Chunk count varies 4..7 as auto-exposure settles; each chunk ~1 kB | same |
 | Payload byte 0 is a colour flag, not entropy data | PyCozmo `client.py::_process_completed_image`, and it is 0 on every grayscale frame captured |
+
+### Sensor warm-up
+
+The first frames after the camera is started are **torn**: the picture is cyclically rotated and the
+rotation advances by exactly one macroblock row, 8 pixels, on every frame. Measured on the firmware-2457
+capture, the drift runs for 11 frames and then stops dead, and every frame after that is a clean, sharp
+photograph. A live run reproduced the same drift over its first 10 frames.
+
+| Frame | 660 | 661 | 662 | 663 | ... | 670 | 671 | 672+ |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Rotation vs first frame, pixels | 0 | -8 | -16 | -24 | ... | -80 | -88 | -88 |
+
+The torn frames are not corrupt: they decode to exactly 1200 macroblocks with no trailing bytes, like every
+other frame. They are simply captured while the sensor is still locking. `CozmoCamera.WarmUpFrames`
+(default 15) marks them with `CameraFrame.IsWarmUp`, `NextFrameAsync` skips them, and the camera acceptance
+command discards them before saving. This was the whole of the "kinda messed up pictures" in the first
+hardware run: it saved the first 10 frames, which were all warm-up.
+
+The second payload byte is not entropy data either, but it does not track the rotation and its meaning is
+still open. It is preserved as `CameraFrame.StreamMarker` rather than guessed at.
 
 Reconstruction: prepend the fixed JFIF + quantisation + Huffman header the encoder assumed, patch height at
 offset 0x5E and width at 0x60, drop payload byte 0, strip trailing 0xFF padding, re-insert the 0x00 that JPEG
@@ -80,6 +100,20 @@ noise at the right duration.
 
 `CozmoAudio.Play` paces frames at the frame interval so the robot's buffer is not overrun.
 
+## 3a. Starting the animation controller
+
+Face images and audio frames are animation keyframes, and the robot ignores them until its animation
+controller is running. `initAnimController` (0x9F, PyCozmo calls it `EnableAnimationState`) starts it; the
+robot answers by streaming `AnimationState` (0xF1). `CozmoRobot.ConnectAsync` now sends it, and
+`WaitForAnimationsAsync` waits for the answer.
+
+Without it the first hardware run sent a full 8 seconds of face frames and 2 seconds of audio and the robot
+did nothing at all, with no error. `AnimationState` also gives the acceptance tests real evidence: it
+reports animation bytes and audio frames played, and a client drop count.
+
+The engine emits one audio frame per animation tick whether or not there is sound, so `CozmoRobot` pairs
+each face frame with `AudioSilence` when the audio pipeline is idle.
+
 Two encoder bugs were found and fixed while writing the tests: clipping was applied before the bias was
 added, so full-scale samples wrapped to silence, and negating `short.MinValue` overflowed.
 
@@ -122,6 +156,7 @@ src\Cozmo.Conformance\bin\Release\net9.0\cozmo-conformance.exe camera 172.31.1.1
 Pass criteria:
 
 1. **Camera** — the saved `.jpg` files open in any viewer and show the room from Cozmo's point of view.
+   Warm-up frames are printed but not saved; they are torn by design.
 2. **Display** — the pattern on the robot's face matches the ASCII art the command prints.
 3. **Audio** — a clean, steady 440 Hz tone with no clicks or stutter, lasting two seconds.
 
@@ -131,6 +166,9 @@ Each command writes a full frame log and prints its absolute path.
 
 * Colour streaming is implemented from the flag semantics but has never been exercised; the capture is
   grayscale only.
+* The warm-up length is taken from one capture (11 frames) with margin (15). Whether it varies with
+  lighting or resolution is untested, and there is no positive "sensor locked" signal from the robot.
+* The meaning of the second payload byte is unknown.
 * `ImageRequest.ImageResolution` is sent as 0 (what the probe used); the robot chose QVGA regardless. Which
   resolutions it honours is untested.
 * The procedural face (the 19-parameter eye model) is not implemented; this layer takes bitmaps.

@@ -207,6 +207,13 @@ public sealed class CozmoDisplay
     public int FramesSent { get; private set; }
     public byte[]? LastPayload { get; private set; }
 
+    /// <summary>
+    /// Invoked immediately before each face frame goes out. The engine pairs every face keyframe with an
+    /// audio frame on the same animation tick, so <see cref="CozmoRobot"/> uses this to send silence when
+    /// nothing is playing. Leave it null to send face frames on their own.
+    /// </summary>
+    public Action? BeforeFrame { get; set; }
+
     public CozmoDisplay(Action<RobotMessage> send) => _send = send;
 
     /// <summary>Sends one face image, honouring the minimum interval.</summary>
@@ -225,6 +232,7 @@ public sealed class CozmoDisplay
                 nameof(payload));
         var wait = MinInterval - (DateTime.UtcNow - _last);
         if (wait > TimeSpan.Zero) Thread.Sleep(wait);
+        BeforeFrame?.Invoke();
         _send(new Protocol.FaceImage { Image = payload });
         LastPayload = payload;
         FramesSent++;
