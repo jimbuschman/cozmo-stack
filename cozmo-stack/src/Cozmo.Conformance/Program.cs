@@ -22,6 +22,10 @@ return args.Length == 0 ? Usage() : args[0] switch
     "camera" => Devices.Camera(args).GetAwaiter().GetResult(),
     "face" => Devices.Face(args).GetAwaiter().GetResult(),
     "tone" => Devices.Tone(args).GetAwaiter().GetResult(),
+    "drive" => Control.Drive(args).GetAwaiter().GetResult(),
+    "lights" => Control.Lights(args).GetAwaiter().GetResult(),
+    "sensors" => Control.Sensors(args).GetAwaiter().GetResult(),
+    "cubes" => Control.Cubes(args).GetAwaiter().GetResult(),
     _ => Usage(),
 };
 
@@ -122,13 +126,13 @@ static int Usage()
                                              read-only/safe-visible messages by default, decodes and re-encodes every
                                              reply, and writes a per-message hardware-verification report
 
-          camera <robot-ip> [--count 10] [--out <dir>] [--color] [--acceptance <file.json>] [--log <file>]
+          camera <robot-ip> [--count 10] [--out <dir>] [--color] [--acceptance [file.json]] [--log <file>]
                                              hardware acceptance for the camera: stream frames and save them as JPEG files
           face <robot-ip> [--pattern test|eyes|full|blank] [--file <ascii-art>] [--seconds 5]
-                          [--acceptance <file.json>] [--log <file>]
+                          [--acceptance [file.json]] [--log <file>]
                                              hardware acceptance for the OLED: draw a known image and hold it
           tone <robot-ip> [--sound steady|beeps|sweep] [--codec anki|mulaw|pcm8u|pcm8s] [--hz 440]
-                          [--seconds 2] [--amplitude 0.5] [--acceptance <file.json>]
+                          [--seconds 2] [--amplitude 0.5] [--acceptance [file.json]]
                           [--volume <n>] [--save <file.wav>] [--unreliable] [--in-flight <n>] [--log <file>]
                                              hardware acceptance for the speaker: play a generated sine tone.
                                              All three write an acceptance record: what was measured here is
@@ -141,6 +145,21 @@ static int Usage()
                                              tests continuity without having to judge tone quality;
                                              --codec anki (the default) is the companding transcribed from
                                              the engine itself; the others are for comparison only
+
+          drive <robot-ip> [--allow-drive] [--speed 40] [--drive-seconds 1] [--acceptance [file.json]]
+                                             hardware acceptance for motion: head and lift, confirmed by the
+                                             robot's own action acknowledgement, then a short forward and
+                                             back only if --allow-drive is given, then a checked stop
+          lights <robot-ip> [--seconds 1.5] [--acceptance [file.json]]
+                                             hardware acceptance for the backpack LEDs and the infrared
+                                             headlight. The robot reports nothing about either, so the
+                                             verdict is entirely yours
+          sensors <robot-ip> [--seconds 8] [--acceptance [file.json]]
+                                             hardware acceptance for battery, charger, cliff and IMU: reads
+                                             what the robot reports about itself and prints it once a second
+          cubes <robot-ip> [--seconds 15] [--acceptance [file.json]]
+                                             hardware acceptance for cubes: turns discovery on and reports
+                                             every cube heard, with connection state and telemetry
         """);
     return 1;
 }

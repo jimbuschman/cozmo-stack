@@ -106,6 +106,14 @@ public sealed class CozmoRobot : IDisposable
     public CozmoDisplay Display { get; }
     public CozmoAudio Audio { get; }
     public RobotStateTracker State { get; } = new();
+    /// <summary>Wheels, head and lift.</summary>
+    public CozmoMotion Motion { get; }
+    /// <summary>Backpack LEDs and the infrared headlight.</summary>
+    public CozmoLights Lights { get; }
+    /// <summary>Everything the robot reports about itself: power, motion, IMU and cliffs.</summary>
+    public CozmoSensors Sensors { get; }
+    /// <summary>Light cube discovery, connection state and basic telemetry.</summary>
+    public CozmoCubes Cubes { get; }
 
     /// <summary>Every decoded robot message, after the devices have seen it.</summary>
     public event Action<RobotMessage>? Message;
@@ -118,9 +126,9 @@ public sealed class CozmoRobot : IDisposable
     /// </summary>
     public bool AudioReliable { get; set; } = true;
 
-    private CozmoRobot(TransportOptions? options)
+    private CozmoRobot(TransportOptions? options, ReliableTransport? transport = null)
     {
-        Transport = new ReliableTransport(options);
+        Transport = transport ?? new ReliableTransport(options);
         Display = new CozmoDisplay(m => Transport.Send(m, flush: true),
                                    Transport.Options.MaxFramePayloadBytes - CozmoDisplay.MessageOverhead);
         Audio = new CozmoAudio(m => Transport.Send(m, reliable: AudioReliable, flush: true));
@@ -130,7 +138,23 @@ public sealed class CozmoRobot : IDisposable
         Audio.PlayedFrames = () => State.Animation?.NumAudioFramesPlayed ?? 0;
         Audio.OnFrameSent += () =>
             Transport.Send(new Protocol.FaceImage { Image = Display.LastPayload ?? BlankFace }, flush: true);
+        Motion = new CozmoMotion(this);
+        Lights = new CozmoLights(this);
+        Sensors = new CozmoSensors(this, State);
+        Cubes = new CozmoCubes(this);
         Transport.DataReceived += OnData;
+    }
+
+    /// <summary>
+    /// A robot with no socket, driven by feeding datagrams to <see cref="ReliableTransport.ProcessIncoming"/>.
+    /// Used by the replay tool and by tests, so the whole device layer can be exercised against captured
+    /// traffic without a robot present. Outgoing messages land in the transport's offline frame list.
+    /// </summary>
+    public static CozmoRobot CreateOffline(TransportOptions? options = null, INetClock? clock = null)
+    {
+        var robot = new CozmoRobot(options, ReliableTransport.CreateOffline(options, clock));
+        robot.Transport.OfflineConnect();
+        return robot;
     }
 
     /// <summary>
@@ -192,6 +216,41 @@ public sealed class CozmoRobot : IDisposable
         return false;
     }
 
+    /// <summary>
+    /// Waits until the robot is ready to be driven: telemetry flowing, the animation controller running and
+    /// the head and lift calibration it performs on every connect finished. Returns false if any of that
+    /// does not happen in time, with <paramref name="why"/> saying which.
+    ///
+    /// Motion commands refuse to run before this completes, so a program that drives the robot should await
+    /// it once after connecting rather than sleeping and hoping.
+    /// </summary>
+    public async Task<bool> WaitUntilReadyAsync(TimeSpan? timeout = null)
+    {
+        var (ok, _) = await WaitUntilReadyAsync(timeout, describe: true);
+        return ok;
+    }
+
+    /// <summary>As <see cref="WaitUntilReadyAsync(TimeSpan?)"/>, but also says what it was still waiting for.</summary>
+    public async Task<(bool Ready, string Detail)> WaitUntilReadyAsync(TimeSpan? timeout, bool describe)
+    {
+        _ = describe;
+        var end = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(15));
+        while (DateTime.UtcNow < end)
+        {
+            bool telemetry = State.StateCount > 0;
+            bool anim = State.AnimationsEnabled;
+            bool calibrated = State.CalibrationSeen && !State.CalibratingMotors;
+            if (telemetry && anim && calibrated) return (true, "telemetry, animation controller and motor calibration all ready");
+            await Task.Delay(50);
+        }
+        var missing = new List<string>();
+        if (State.StateCount == 0) missing.Add("no telemetry");
+        if (!State.AnimationsEnabled) missing.Add("animation controller not running");
+        if (!State.CalibrationSeen) missing.Add("motor calibration never reported");
+        else if (State.CalibratingMotors) missing.Add("motor calibration still running");
+        return (false, missing.Count == 0 ? "timed out" : string.Join("; ", missing));
+    }
+
     /// <summary>Waits for the head and lift calibration the robot runs on connect, so motor commands are not fought.</summary>
     public async Task WaitForMotorCalibrationAsync(TimeSpan? timeout = null)
     {
@@ -233,16 +292,35 @@ public sealed class CozmoRobot : IDisposable
         finally { Camera.FrameReceived -= handler; }
     }
 
+    /// <summary>Sends a head angle without waiting for the acknowledgement. Prefer <see cref="Motion"/>.</summary>
     public void SetHeadAngle(float radians, byte actionId = 1)
         => Transport.Send(new SetHeadAngle(radians, actionId: actionId), flush: true);
 
+    /// <summary>Sets the backpack from raw light states. Prefer <see cref="Lights"/>.</summary>
     public void SetBackpackLights(LightState top, LightState middle, LightState bottom)
         => Transport.Send(new BackpackLightsMiddle(top, middle, bottom), flush: true);
 
-    public void SetHeadlight(bool on) => Transport.Send(new SetHeadlight(on), flush: true);
+    /// <summary>Prefer <see cref="Lights"/>.</summary>
+    public void SetHeadlight(bool on) => Lights.SetHeadlight(on);
+
+    /// <summary>
+    /// Stops every motor immediately. Safe to call at any time, including before the robot is ready, and
+    /// does not wait for confirmation; <see cref="CozmoMotion.StopAllAsync"/> is the checked version.
+    /// </summary>
+    public void EmergencyStop()
+    {
+        Transport.Send(new StopAllMotors(), flush: true);
+        Transport.Send(new DriveWheels(0f, 0f, 0f, 0f), flush: true);
+    }
 
     public void Disconnect() => Transport.Disconnect();
-    public void Dispose() => Transport.Dispose();
+
+    /// <summary>Stops the motors before dropping the link, so disposing never leaves the robot driving.</summary>
+    public void Dispose()
+    {
+        try { if (Transport.State == LinkState.Connected) EmergencyStop(); } catch { }
+        Transport.Dispose();
+    }
 
     /// <summary>The engine's idle face: two "skip 64 columns" commands, i.e. nothing lit.</summary>
     private static readonly byte[] BlankFace = { 0x3F, 0x3F };
@@ -253,6 +331,8 @@ public sealed class CozmoRobot : IDisposable
         try { m = RobotMessage.Parse(payload); } catch (FormatException) { return; }
         State.Handle(m);
         Camera.Handle(m);
+        Sensors.Handle(m);
+        Cubes.Handle(m);
         Message?.Invoke(m);
     }
 }

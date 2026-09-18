@@ -24,7 +24,8 @@ public static class Devices
     private static string WriteAcceptance(string device, string? path, bool automatedPass, string humanCheck,
                                           object detail, CozmoRobot robot)
     {
-        path = Path.GetFullPath(path ?? $"cozmo-acceptance-{device}-{DateTime.Now:yyyyMMdd-HHmmss}.json");
+        path = Path.GetFullPath(string.IsNullOrEmpty(path)
+            ? $"cozmo-acceptance-{device}-{DateTime.Now:yyyyMMdd-HHmmss}.json" : path);
         var doc = new
         {
             utc = DateTime.UtcNow,
@@ -60,6 +61,22 @@ public static class Devices
         Console.WriteLine($"HUMAN CHECK REQUIRED: {humanCheck}");
         Console.WriteLine("This tool cannot see or hear the robot, so it does not claim the run succeeded.");
         Console.WriteLine($"acceptance record: {acceptancePath}");
+    }
+
+    /// <summary>
+    /// Reads a flag that may be given bare or with a value. <c>--acceptance</c> on its own means "write the
+    /// record where you like"; <c>--acceptance foo.json</c> names the file. Returns null when absent, and
+    /// the sentinel when present with no value, so the caller can tell "off" from "on, default path".
+    /// </summary>
+    private static string? OptionalValue(string[] a, string flag, string whenBare)
+    {
+        for (int i = 2; i < a.Length; i++)
+        {
+            if (a[i] != flag) continue;
+            bool hasValue = i + 1 < a.Length && !a[i + 1].StartsWith("--");
+            return hasValue ? a[i + 1] : whenBare;
+        }
+        return null;
     }
 
     private static (string log, StreamWriter writer) OpenLog(string? path, string prefix)
@@ -108,13 +125,12 @@ public static class Devices
         if (c is null) return 1;
         int count = 10;
         string outDir = ".";
-        string? acceptanceOut = null;
+        string? acceptanceOut = OptionalValue(a, "--acceptance", "");
         bool color = a.Contains("--color");
         for (int i = 2; i < a.Length - 1; i++)
         {
             if (a[i] == "--count") count = int.Parse(a[i + 1]);
             else if (a[i] == "--out") outDir = a[i + 1];
-            else if (a[i] == "--acceptance") acceptanceOut = a[i + 1];
         }
         outDir = Path.GetFullPath(outDir);
         Directory.CreateDirectory(outDir);
@@ -178,13 +194,13 @@ public static class Devices
         if (c is null) return 1;
         double seconds = 5;
         string pattern = "test";
-        string? artFile = null, acceptanceOut = null;
+        string? artFile = null;
+        string? acceptanceOut = OptionalValue(a, "--acceptance", "");
         for (int i = 2; i < a.Length - 1; i++)
         {
             if (a[i] == "--seconds") seconds = double.Parse(a[i + 1], CultureInfo.InvariantCulture);
             else if (a[i] == "--pattern") pattern = a[i + 1];
             else if (a[i] == "--file") artFile = a[i + 1];
-            else if (a[i] == "--acceptance") acceptanceOut = a[i + 1];
         }
 
         var image = artFile is not null
@@ -254,7 +270,8 @@ public static class Devices
         if (c is null) return 1;
         double hz = 440, seconds = 2, amplitude = 0.5;
         int? volume = null;
-        string? wav = null, acceptanceOut = null;
+        string? wav = null;
+        string? acceptanceOut = OptionalValue(a, "--acceptance", "");
         for (int i = 2; i < a.Length - 1; i++)
         {
             if (a[i] == "--hz") hz = double.Parse(a[i + 1], CultureInfo.InvariantCulture);
@@ -262,7 +279,6 @@ public static class Devices
             else if (a[i] == "--amplitude") amplitude = double.Parse(a[i + 1], CultureInfo.InvariantCulture);
             else if (a[i] == "--volume") volume = int.Parse(a[i + 1]);
             else if (a[i] == "--save") wav = a[i + 1];
-            else if (a[i] == "--acceptance") acceptanceOut = a[i + 1];
         }
         bool unreliable = a.Contains("--unreliable");
         int inFlight = -1;

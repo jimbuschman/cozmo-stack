@@ -1,0 +1,217 @@
+using Cozmo.Protocol;
+
+namespace Cozmo.Robot;
+
+/// <summary>Why a motion call finished.</summary>
+public enum MotionResult
+{
+    /// <summary>The robot acknowledged the action, or the state it reports matches what was asked for.</summary>
+    Acknowledged,
+    /// <summary>Nothing came back in time. The command was sent; whether it took effect is unknown.</summary>
+    TimedOut,
+    /// <summary>Refused before anything was sent, because the robot was not in a state to accept it.</summary>
+    Refused,
+}
+
+/// <summary>Outcome of a motion call, with whatever the robot said about it.</summary>
+public sealed record MotionOutcome(MotionResult Result, string Detail)
+{
+    public bool Ok => Result == MotionResult.Acknowledged;
+    public override string ToString() => $"{Result}: {Detail}";
+}
+
+/// <summary>
+/// Cozmo's motors: wheels, head and lift.
+///
+/// Positioning commands carry an action id and the robot answers with <see cref="MotorActionAck"/> carrying
+/// the same id, so these wait for that rather than reporting success because a datagram left the socket.
+/// Wheel commands have no acknowledgement, so they are confirmed against the wheel speeds and the
+/// ARE_WHEELS_MOVING flag the robot reports in its state stream instead.
+///
+/// The robot recalibrates head and lift on every connect and ignores or fights motion commands while that
+/// runs, so every method here refuses to move until calibration is done unless explicitly told otherwise.
+/// </summary>
+public sealed class CozmoMotion
+{
+    private readonly CozmoRobot _robot;
+    private byte _nextActionId = 1;
+    private readonly object _gate = new();
+
+    internal CozmoMotion(CozmoRobot robot) => _robot = robot;
+
+    /// <summary>Action ids cycle 1..255; 0 is left alone because the robot uses it for unsolicited acks.</summary>
+    private byte NextActionId()
+    {
+        lock (_gate)
+        {
+            byte id = _nextActionId;
+            _nextActionId = _nextActionId == 255 ? (byte)1 : (byte)(_nextActionId + 1);
+            return id;
+        }
+    }
+
+    /// <summary>The robot's own limits, from PyCozmo's robot.py. Not independently confirmed against the engine.</summary>
+    public const float MinHeadAngleRad = -0.4363323f;   // -25 degrees
+    public const float MaxHeadAngleRad = 0.7766715f;    // +44.5 degrees
+    public const float MinLiftHeightMm = 32.0f;
+    public const float MaxLiftHeightMm = 92.0f;
+    /// <summary>Wheel speed the robot is documented to accept. Beyond this it clamps, it does not fault.</summary>
+    public const float MaxWheelSpeedMmps = 200.0f;
+
+    /// <summary>True while the robot says at least one wheel is turning.</summary>
+    public bool WheelsMoving => _robot.State.Latest?.Has(RobotStatusFlag.AreWheelsMoving) ?? false;
+    /// <summary>Left and right wheel speed in mm/s, as the robot reports them.</summary>
+    public (float Left, float Right) WheelSpeeds =>
+        _robot.State.Latest is { } s ? (s.LwheelSpeedMmps, s.RwheelSpeedMmps) : (0f, 0f);
+
+    private MotionOutcome? NotReady(bool requireCalibration)
+    {
+        if (_robot.State.Latest is null)
+            return new MotionOutcome(MotionResult.Refused, "the robot has not sent any state yet");
+        if (requireCalibration && _robot.State.CalibratingMotors)
+            return new MotionOutcome(MotionResult.Refused, "head and lift are still calibrating");
+        return null;
+    }
+
+    // ------------------------------------------------------------------- wheels
+
+    /// <summary>
+    /// Drives the wheels at the given speeds in mm/s until told otherwise. Negative drives backwards.
+    /// Confirmed against the wheel speeds the robot reports, not against the send succeeding.
+    /// </summary>
+    public async Task<MotionOutcome> DriveWheelsAsync(float leftMmps, float rightMmps,
+                                                      float leftAccelMmps2 = 0f, float rightAccelMmps2 = 0f,
+                                                      TimeSpan? confirmWithin = null,
+                                                      bool requireCalibration = true)
+    {
+        if (NotReady(requireCalibration) is { } refused) return refused;
+        _robot.Transport.Send(new DriveWheels(leftMmps, rightMmps, leftAccelMmps2, rightAccelMmps2), flush: true);
+
+        bool wantMotion = Math.Abs(leftMmps) > 0.01f || Math.Abs(rightMmps) > 0.01f;
+        var outcome = await AwaitState(
+            s => wantMotion
+                ? s.Has(RobotStatusFlag.AreWheelsMoving) || Math.Abs(s.LwheelSpeedMmps) > 1f || Math.Abs(s.RwheelSpeedMmps) > 1f
+                : !s.Has(RobotStatusFlag.AreWheelsMoving),
+            confirmWithin ?? TimeSpan.FromSeconds(2));
+
+        var (l, r) = WheelSpeeds;
+        return outcome
+            ? new MotionOutcome(MotionResult.Acknowledged, $"robot reports wheels at {l:F0}/{r:F0} mm/s")
+            : new MotionOutcome(MotionResult.TimedOut, $"robot still reports wheels at {l:F0}/{r:F0} mm/s");
+    }
+
+    /// <summary>Stops the wheels by commanding zero speed. Does not touch head or lift.</summary>
+    public Task<MotionOutcome> StopWheelsAsync(TimeSpan? confirmWithin = null)
+        => DriveWheelsAsync(0f, 0f, confirmWithin: confirmWithin, requireCalibration: false);
+
+    // --------------------------------------------------------------- head and lift
+
+    /// <summary>
+    /// Moves the head to an absolute angle in radians and waits for the robot to acknowledge the action.
+    /// The angle is clamped to the robot's documented range.
+    /// </summary>
+    public Task<MotionOutcome> SetHeadAngleAsync(float radians, float maxSpeedRadPerSec = 10f,
+                                                 float accelRadPerSec2 = 10f, float durationSec = 0f,
+                                                 TimeSpan? timeout = null, bool requireCalibration = true)
+    {
+        float clamped = Math.Clamp(radians, MinHeadAngleRad, MaxHeadAngleRad);
+        return ActAsync(id => new SetHeadAngle(clamped, maxSpeedRadPerSec, accelRadPerSec2, durationSec, id),
+                        $"head to {clamped:F3} rad", timeout, requireCalibration);
+    }
+
+    /// <summary>
+    /// Moves the lift to an absolute height and waits for the robot to acknowledge the action.
+    ///
+    /// The height is in millimetres, which is what the engine's own field name says. Note that the robot
+    /// reports the lift back as <c>liftAngle</c> and it is not established whether that value is an angle or
+    /// a height, so <see cref="CozmoRobot.State"/> exposes it without converting.
+    /// </summary>
+    public Task<MotionOutcome> SetLiftHeightAsync(float heightMm, float maxSpeedRadPerSec = 3f,
+                                                  float accelRadPerSec2 = 20f, float durationSec = 0f,
+                                                  TimeSpan? timeout = null, bool requireCalibration = true)
+    {
+        float clamped = Math.Clamp(heightMm, MinLiftHeightMm, MaxLiftHeightMm);
+        return ActAsync(id => new SetLiftHeight(clamped, maxSpeedRadPerSec, accelRadPerSec2, durationSec, id),
+                        $"lift to {clamped:F1} mm", timeout, requireCalibration);
+    }
+
+    /// <summary>Turns the head at a speed in rad/s until stopped. No acknowledgement is defined for this one.</summary>
+    public MotionOutcome MoveHead(float radPerSec, bool requireCalibration = true)
+    {
+        if (NotReady(requireCalibration) is { } refused) return refused;
+        _robot.Transport.Send(new MoveHead { SpeedRadPerSec = radPerSec }, flush: true);
+        return new MotionOutcome(MotionResult.Acknowledged, $"head moving at {radPerSec:F2} rad/s (no ack is defined)");
+    }
+
+    /// <summary>Raises or lowers the lift at a speed in rad/s until stopped. No acknowledgement is defined.</summary>
+    public MotionOutcome MoveLift(float radPerSec, bool requireCalibration = true)
+    {
+        if (NotReady(requireCalibration) is { } refused) return refused;
+        _robot.Transport.Send(new MoveLift { SpeedRadPerSec = radPerSec }, flush: true);
+        return new MotionOutcome(MotionResult.Acknowledged, $"lift moving at {radPerSec:F2} rad/s (no ack is defined)");
+    }
+
+    // ------------------------------------------------------------------ stopping
+
+    /// <summary>
+    /// Stops every motor at once and confirms the robot reports itself stopped.
+    ///
+    /// This is the safe exit: it is never gated on calibration, because the whole point is to be able to
+    /// stop whatever the robot is currently doing.
+    /// </summary>
+    public async Task<MotionOutcome> StopAllAsync(TimeSpan? confirmWithin = null)
+    {
+        _robot.Transport.Send(new StopAllMotors(), flush: true);
+        // belt and braces: an explicit zero wheel command as well, in case StopAllMotors only halts actions
+        _robot.Transport.Send(new DriveWheels(0f, 0f, 0f, 0f), flush: true);
+
+        bool stopped = await AwaitState(
+            s => !s.Has(RobotStatusFlag.AreWheelsMoving) && Math.Abs(s.LwheelSpeedMmps) < 1f && Math.Abs(s.RwheelSpeedMmps) < 1f,
+            confirmWithin ?? TimeSpan.FromSeconds(2));
+
+        var (l, r) = WheelSpeeds;
+        return stopped
+            ? new MotionOutcome(MotionResult.Acknowledged, "robot reports all wheels stopped")
+            : new MotionOutcome(MotionResult.TimedOut, $"robot still reports wheels at {l:F0}/{r:F0} mm/s");
+    }
+
+    // ------------------------------------------------------------------ plumbing
+
+    /// <summary>Sends an action carrying a fresh id and waits for the matching <see cref="MotorActionAck"/>.</summary>
+    private async Task<MotionOutcome> ActAsync(Func<byte, RobotMessage> build, string what,
+                                               TimeSpan? timeout, bool requireCalibration)
+    {
+        if (NotReady(requireCalibration) is { } refused) return refused;
+
+        byte id = NextActionId();
+        var acked = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        void watch(RobotMessage m)
+        {
+            if (m is MotorActionAck a && a.ActionId == id) acked.TrySetResult(true);
+        }
+        _robot.Message += watch;
+        try
+        {
+            _robot.Transport.Send(build(id), flush: true);
+            var t = timeout ?? TimeSpan.FromSeconds(5);
+            if (await Task.WhenAny(acked.Task, Task.Delay(t)) == acked.Task)
+                return new MotionOutcome(MotionResult.Acknowledged, $"{what}: robot acknowledged action {id}");
+            return new MotionOutcome(MotionResult.TimedOut, $"{what}: no acknowledgement of action {id} within {t.TotalSeconds:F1}s");
+        }
+        finally { _robot.Message -= watch; }
+    }
+
+    /// <summary>Waits until the robot's reported state satisfies a condition.</summary>
+    private async Task<bool> AwaitState(Func<RobotState, bool> condition, TimeSpan within)
+    {
+        var done = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        void watch(RobotState s) { if (condition(s)) done.TrySetResult(true); }
+        _robot.State.StateUpdated += watch;
+        try
+        {
+            if (_robot.State.Latest is { } now && condition(now)) return true;
+            return await Task.WhenAny(done.Task, Task.Delay(within)) == done.Task;
+        }
+        finally { _robot.State.StateUpdated -= watch; }
+    }
+}

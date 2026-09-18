@@ -425,6 +425,16 @@ Cozmo's own face encoder and a full Huffman decode of every camera frame in the 
 acceptance commands `camera`, `face` and `tone` are in the conformance CLI and not yet run. Detail and the
 open gaps: `DEVICE_LAYER.md`.
 
+**M4 status (2026-09-18): physical control layer implemented, replay-verified, hardware acceptance not yet
+run.** `Cozmo.Robot` now exposes `Motion`, `Lights`, `Sensors` and `Cubes` over the frozen M1/M2 baseline:
+wheels, head, lift, a checked stop, cliff sensing, IMU, charger and battery state, backpack LEDs, the
+headlight, and cube discovery with connection state and basic telemetry. Positioning waits for the robot's
+own `MotorActionAck` carrying that action's id; wheel commands are confirmed against the reported wheel
+speeds; a command that is not confirmed reports a timeout rather than success, and one issued before the
+robot is ready sends nothing at all. 177 tests pass, 27 of them new, all offline. Uncertainties are
+preserved rather than resolved by guesswork: the lift reading, the IMU units, which physical corner each
+cliff sensor is, and the cube battery scale are all surfaced raw. Detail: `CONTROL_LAYER.md`.
+
 **M1 hardware smoke test: PASSED (2026-09-18)** on a hardware-1.5 Cozmo running firmware **2457** (a 2025 Digital
 Dream Labs build, newer than the 2381 shipped in this APK): direct connection from our code, stable handshake, 722
 RobotState frames at 33.5 Hz over 20 s with zero resends, SetHeadAngle acked and reached, clean disconnect; no
