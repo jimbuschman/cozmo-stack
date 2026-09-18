@@ -1,5 +1,5 @@
-using System.Runtime.InteropServices;
 using Cozmo.Protocol;
+using Cozmo.Transport;
 
 namespace Cozmo.Robot;
 
@@ -331,37 +331,6 @@ public sealed class CozmoAudio
             sent++;
         }
     }
-
-    /// <summary>
-    /// Raises the system timer resolution to 1 ms for as long as it is held.
-    ///
-    /// Windows schedules sleeps on a 15.6 ms tick by default, which is half an audio frame, so without this
-    /// every frame lands up to half a slot late and the tone stutters audibly. Does nothing off Windows,
-    /// where sleeps are already fine-grained.
-    /// </summary>
-    private readonly struct HighResolutionTimer : IDisposable
-    {
-        [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]
-        private static extern uint BeginPeriod(uint ms);
-        [DllImport("winmm.dll", EntryPoint = "timeEndPeriod")]
-        private static extern uint EndPeriod(uint ms);
-
-        private readonly bool _raised;
-        public HighResolutionTimer()
-        {
-            _raised = false;
-            if (!OperatingSystem.IsWindows()) return;
-            try { _raised = BeginPeriod(1) == 0; } catch (DllNotFoundException) { } catch (EntryPointNotFoundException) { }
-        }
-        public void Dispose()
-        {
-            if (!_raised) return;
-            try { EndPeriod(1); } catch (DllNotFoundException) { } catch (EntryPointNotFoundException) { }
-        }
-    }
-
-    public void PlayTone(double frequencyHz, TimeSpan duration, double amplitude = 0.5)
-        => Play(Tone(frequencyHz, duration, amplitude));
 
     private readonly System.Diagnostics.Stopwatch _clock = new();
     private long _scheduled;
