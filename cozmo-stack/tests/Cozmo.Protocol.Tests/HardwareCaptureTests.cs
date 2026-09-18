@@ -103,7 +103,7 @@ public class HardwareCaptureTests
     {
         var seen = new Dictionary<RobotMessageId, int>();
         var failures = new List<string>();
-        foreach (var (_, _, raw) in Load("hw_fw2457_full.log"))
+        foreach (var (_, _, raw) in Load("hw_fw2457_full.log").Concat(Load("hw_fw2457_probe.log")))
         {
             if (!FrameCodec.TryDecode(raw, out var f, out _)) continue;
             foreach (var sm in f!.Messages)
@@ -124,13 +124,17 @@ public class HardwareCaptureTests
         }
         Assert.Empty(failures);
         // the run exercised these, so the fixture is meaningful
-        Assert.True(seen.Count >= 12, $"only {seen.Count} distinct messages in the capture");
+        Assert.True(seen.Count >= 20, $"only {seen.Count} distinct messages in the captures");
         Assert.True(seen[RobotMessageId.State] > 500, $"only {seen.GetValueOrDefault(RobotMessageId.State)} RobotState");
         foreach (var id in new[] { RobotMessageId.RobotAvailable, RobotMessageId.FirmwareVersion, RobotMessageId.MfgId,
                                    RobotMessageId.SyncTimeAck, RobotMessageId.Trace, RobotMessageId.MotorActionAck,
                                    RobotMessageId.MotorCalibration, RobotMessageId.ActiveObjectAvailable,
                                    RobotMessageId.WifiFlashID, RobotMessageId.HeadAngle, RobotMessageId.GetMfgInfo,
-                                   RobotMessageId.SyncTime })
+                                   RobotMessageId.SyncTime,
+                                   // added by the 2026-09-18 subsystem probe
+                                   RobotMessageId.Image, RobotMessageId.ImageGyro, RobotMessageId.ImuRawDataChunk,
+                                   RobotMessageId.AnimState, RobotMessageId.CrashReport, RobotMessageId.ImuRequest,
+                                   RobotMessageId.ImageRequest, RobotMessageId.InitAnimController })
             Assert.True(seen.ContainsKey(id), $"{id} not present in the capture");
     }
 }

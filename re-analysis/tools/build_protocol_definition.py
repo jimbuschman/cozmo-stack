@@ -18,7 +18,98 @@ nat   = json.load(open(os.path.join(SP, "native_layouts.json")))
 tw    = json.load(open(os.path.join(SP, "csharp_twins.json")))
 enums = json.load(open(os.path.join(SP, "csharp_enums.json")))
 pyc   = json.load(open(os.path.join(SP, "pycozmo_decl.json")))
-obs   = json.load(open(os.path.join(SP, "capture_observed.json")))
+
+
+def scan_captures(ra):
+    """Observed message tags, body lengths and directions, read straight out of the frame logs in
+    captures/ so the definition is reproducible from the repository alone."""
+    import glob
+    import struct as _s
+    out = {}
+    for path in sorted(glob.glob(os.path.join(ra, "captures", "*.log"))):
+        for line in open(path, encoding="utf-8-sig"):
+            m = re.match(r"\S+ (TX|RX) ((?:[0-9a-f]{2} ?)+)", line.strip())
+            if not m:
+                continue
+            d, raw = m.group(1), bytes.fromhex(m.group(2).replace(" ", ""))
+            if len(raw) < 14 or raw[:7] != b"COZ\x03RE\x01":
+                continue
+            t, body = raw[7], raw[14:]
+            subs = []
+            if t in (7, 8, 9):
+                o = 0
+                while o + 3 <= len(body):
+                    st = body[o]
+                    sz = _s.unpack_from("<H", body, o + 1)[0]
+                    o += 3
+                    subs.append((st, body[o:o + sz]))
+                    o += sz
+            else:
+                subs.append((t, body))
+            for st, pl in subs:
+                if st in (4, 5) and pl:
+                    e = out.setdefault("0x%02x" % pl[0], {"count": 0, "lengths": {}, "dirs": set()})
+                    e["count"] += 1
+                    e["lengths"][str(len(pl) - 1)] = e["lengths"].get(str(len(pl) - 1), 0) + 1
+                    e["dirs"].add(d)
+    for e in out.values():
+        e["dirs"] = sorted(e["dirs"])
+    return out
+
+
+def scan_probe_results(ra):
+    """Per-message verdicts written by `cozmo-conformance probe`: a message is hardware verified when a
+    real robot sent it and our generated codec re-encoded it byte-identically."""
+    import glob
+    verified, conflicts = {}, {}
+    for path in sorted(glob.glob(os.path.join(ra, "captures", "*probe-results*.json"))):
+        p = json.load(open(path))
+        fw = (p.get("robot") or {}).get("firmware")
+        for m in p.get("messages", []):
+            tag = int(m["tag"], 16)
+            if m.get("status") == "hardware_verified":
+                verified[tag] = {"firmware": fw, "count": m.get("count"),
+                                 "byteIdentical": m.get("byteIdenticalRoundTrips")}
+            else:
+                conflicts[tag] = m.get("problem")
+    return verified, conflicts
+
+
+obs = scan_captures(RA)
+if not obs:
+    obs = json.load(open(os.path.join(SP, "capture_observed.json")))
+PROBED, PROBE_CONFLICTS = scan_probe_results(RA)
+
+# Engine->robot messages the robot demonstrably acted on during the 2026-09-18 runs. We generate these
+# bytes ourselves, so appearing in a capture proves nothing on its own; what promotes them is the robot's
+# observed response, recorded here.
+ROBOT_ACCEPTED = {
+    0x25: "robot answered with ManufacturingID (0xED)",
+    0x37: "robot answered MotorActionAck (0xC4) and RobotState head angle reached the commanded 0.4 rad",
+    0x4A: "robot answered with a 264-sample IMURawDataChunk (0xC7) burst",
+    0x4B: "robot answered SyncTimeAck (0xC2) and began streaming RobotState",
+    0x4C: "robot answered with 28 images as ImageChunk (0xF2) + ImageImuData (0xF4)",
+    0x66: "sent before the image request; the frames that arrived were grayscale (encoding 8) as asked",
+    0x80: "robot answered with CrashReport (0xCF)",
+    0x0A: "robot reported cube advertisements as ObjectAvailable (0xF3) afterwards",
+    0x9F: "robot began streaming AnimationState (0xF1)",
+    0x45: "accepted without error; RobotState kept streaming with the requested pose origin",
+}
+
+# Semantics confirmed by decoding the probe capture (no byte-layout change; these record what the
+# fields actually mean on firmware 2457).
+HARDWARE_NOTES = {
+    0xF2: "probe 2026-09-18: 28 images, 7 chunks each, ~6.6 kB per image, encoding 8 (JPEGMinimizedGray), "
+          "resolution 4 (QVGA); chunkId counts 0..6 and imageChunkCount carries the total only in the final chunk; "
+          "status was 2 throughout",
+    0xC7: "probe 2026-09-18: 264 samples in one burst; the first i16 triple is the gyro (near zero at rest), the "
+          "second the accelerometer (Z about 9.7k at rest); order is 0 on the first sample, 1 in the middle, 2 on the last",
+    0xD1: "probe 2026-09-18: observed as motor 2 then 3 with calibStarted true, then both again with false, "
+          "confirming the MotorID enum (2 = lift, 3 = head) and the start/finish pairing",
+    0xF1: "probe 2026-09-18: streamed at ~30 Hz with enabledAnimTracks 0xFF and zero counters while idle",
+    0xCF: "probe 2026-09-18: answered with an all-zero header and an empty array when the robot holds no crash reports",
+    0xF4: "probe 2026-09-18: one per camera frame, carrying the gyro rates sampled with the image",
+}
 
 W = {"u8": 1, "i8": 1, "bool": 1, "u16": 2, "i16": 2, "u32": 4, "i32": 4,
      "f32": 4, "f64": 8, "u64": 8, "i64": 8}
@@ -399,8 +490,21 @@ for union, dirname in (("EngineToRobot", "engine_to_robot"), ("RobotToEngine", "
             ver = "unresolved"
         if o:
             lens = set(int(k) for k in o["lengths"])
-            fits = (nsize in (None, "variable")) or (lens == {nsize})
-            ver = "hardware_verified" if fits else "capture_conflict"
+            fits = (effective is None) or (lens == {effective}) or variable
+            ver = "capture_verified" if fits else "capture_conflict"
+        if tag in PROBED:
+            ver = "hardware_verified"
+            p = PROBED[tag]
+            notes.append("hardware verified on firmware %s: %d received, %d re-encoded byte-identically"
+                         % (p["firmware"], p["count"], p["byteIdentical"]))
+        elif tag in PROBE_CONFLICTS:
+            ver = "capture_conflict"
+            notes.append("probe conflict: %s" % PROBE_CONFLICTS[tag])
+        if tag in ROBOT_ACCEPTED:
+            ver = "hardware_verified"
+            notes.append("hardware verified: %s" % ROBOT_ACCEPTED[tag])
+        if tag in HARDWARE_NOTES:
+            notes.append(HARDWARE_NOTES[tag])
         messages["0x%02X" % tag] = {
             "tag": tag, "member": member, "clad_type": ctype, "direction": dirname,
             "subsystem": SUBSYSTEM.get(tag, "unclassified"), "safety": SAFETY.get(tag, "state_change"),

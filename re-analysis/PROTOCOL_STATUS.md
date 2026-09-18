@@ -23,9 +23,10 @@ Evidence order: (1) official decompiled C# CLAD structs, (2) `libcozmoEngine.so`
 
 | status | count | meaning |
 |---|---|---|
-| hardware verified | 13 | seen on the firmware-2457 robot; decoded and re-encoded byte-identically |
-| statically verified | 65 | layout matches an official C# CLAD struct field for field, or is empty |
-| layout known, semantics uncertain | 81 | widths/order from the engine binary; some field names are guesses |
+| hardware verified | 24 | exercised on the firmware-2457 robot: the robot sent it and our codec re-encoded it byte-identically, or the robot demonstrably acted on it |
+| capture verified | 4 | seen on the wire in a real session with a consistent length, but no response ties it to robot behaviour |
+| statically verified | 56 | layout matches an official C# CLAD struct field for field, or is empty |
+| layout known, semantics uncertain | 75 | widths/order from the engine binary; some field names are guesses |
 | unresolved | 2 | one or more fields not attributed; the bytes are preserved in a raw tail |
 | capture conflict | 0 | observed bytes disagree with the static layout |
 
@@ -46,7 +47,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 
 ### Identity / version / logging (21 messages)
 
-11 layout known, semantics uncertain, 8 hardware verified, 2 statically verified
+10 hardware verified, 9 layout known, semantics uncertain, 2 statically verified
 
 | tag | dir | CLAD type | size | layout | verification | probe safety |
 |---|---|---|---|---|---|---|
@@ -54,7 +55,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0x24` | E->R | GetBodySerialNumber | 0 | empty | statically verified | read_only |
 | `0x25` | E->R | GetManufacturingInfo | 0 | empty | hardware verified | read_only |
 | `0x4B` | E->R | SyncTime | 8 | native_named | hardware verified | state_change |
-| `0x80` | E->R | RequestCrashReports | 4 | native_only | layout known, semantics uncertain | read_only |
+| `0x80` | E->R | RequestCrashReports | 4 | native_only | hardware verified | read_only |
 | `0x82` | E->R | EnableWiFiTelemetry | 0 | empty | statically verified | state_change |
 | `0x89` | E->R | DebugSetRTTO | 2 | native_only | layout known, semantics uncertain | destructive |
 | `0xA0` | E->R | SetAppRunID | 16 | native_only | layout known, semantics uncertain | state_change |
@@ -66,7 +67,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0xBE` | R->E | TimeProfileStat | var | native_only | layout known, semantics uncertain | state_change |
 | `0xC2` | R->E | SyncTimeAck | 0 | empty | hardware verified | state_change |
 | `0xC9` | R->E | RobotAvailable | 6 | hardware_refined | hardware verified | state_change |
-| `0xCF` | R->E | CrashReport | var | native_only | layout known, semantics uncertain | state_change |
+| `0xCF` | R->E | CrashReport | var | native_only | hardware verified | state_change |
 | `0xD2` | R->E | FWVersionInfo | 44 | native_only | layout known, semantics uncertain | state_change |
 | `0xEC` | R->E | WiFiFlashID | 4 | native_only | hardware verified | state_change |
 | `0xED` | R->E | ManufacturingID | 12 | native_named | hardware verified | state_change |
@@ -74,11 +75,11 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 
 ### Robot state and sensors (20 messages)
 
-14 statically verified, 5 layout known, semantics uncertain, 1 hardware verified
+12 statically verified, 5 layout known, semantics uncertain, 3 hardware verified
 
 | tag | dir | CLAD type | size | layout | verification | probe safety |
 |---|---|---|---|---|---|---|
-| `0x4A` | E->R | IMURequest | 4 | exact | statically verified | read_only |
+| `0x4A` | E->R | IMURequest | 4 | exact | hardware verified | read_only |
 | `0x4F` | E->R | CheckLiftLoad | 0 | empty | statically verified | read_only |
 | `0x52` | E->R | EnterSleepMode | 0 | empty | statically verified | destructive |
 | `0x53` | E->R | PowerState | 17 | exact | statically verified | destructive |
@@ -89,7 +90,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0xC0` | R->E | CliffEvent | 6 | exact | statically verified | state_change |
 | `0xC1` | R->E | PotentialCliff | 0 | exact | statically verified | state_change |
 | `0xC3` | R->E | RobotPoked | 0 | exact | statically verified | state_change |
-| `0xC7` | R->E | IMURawDataChunk | 14 | exact | statically verified | state_change |
+| `0xC7` | R->E | IMURawDataChunk | 14 | exact | hardware verified | state_change |
 | `0xD4` | R->E | RobotStopped | 1 | prefix | statically verified | state_change |
 | `0xD9` | R->E | RobotErrorReport | 5 | native_only | layout known, semantics uncertain | state_change |
 | `0xDA` | R->E | LiftLoad | 1 | native_only | layout known, semantics uncertain | state_change |
@@ -101,7 +102,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 
 ### Head / lift / wheels (19 messages)
 
-11 statically verified, 5 layout known, semantics uncertain, 3 hardware verified
+11 statically verified, 5 layout known, semantics uncertain, 2 hardware verified, 1 capture verified
 
 | tag | dir | CLAD type | size | layout | verification | probe safety |
 |---|---|---|---|---|---|---|
@@ -121,38 +122,38 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0x51` | E->R | SetMotionModelParams | 4 | exact | statically verified | state_change |
 | `0x58` | E->R | StartMotorCalibration | 2 | native_named | layout known, semantics uncertain | motion |
 | `0x59` | E->R | RollActionParams | 20 | exact | statically verified | state_change |
-| `0xC4` | R->E | MotorActionAck | 1 | native_named | hardware verified | state_change |
+| `0xC4` | R->E | MotorActionAck | 1 | native_named | capture verified | state_change |
 | `0xD1` | R->E | MotorCalibration | 3 | exact | hardware verified | state_change |
 | `0xD8` | R->E | MotorAutoEnabled | 2 | exact | statically verified | state_change |
 
 ### LEDs and display (7 messages)
 
-6 layout known, semantics uncertain, 1 statically verified
+4 layout known, semantics uncertain, 3 capture verified
 
 | tag | dir | CLAD type | size | layout | verification | probe safety |
 |---|---|---|---|---|---|---|
 | `0x02` | E->R | BackpackSetLayer | 1 | native_only | layout known, semantics uncertain | safe_visible |
-| `0x03` | E->R | BackpackLightsMiddle | 31 | native_only | layout known, semantics uncertain | safe_visible |
-| `0x0B` | E->R | SetHeadlight | 1 | exact | statically verified | safe_visible |
-| `0x11` | E->R | BackpackLightsTurnSignals | 21 | native_only | layout known, semantics uncertain | safe_visible |
+| `0x03` | E->R | BackpackLightsMiddle | 31 | native_only | capture verified | safe_visible |
+| `0x0B` | E->R | SetHeadlight | 1 | exact | capture verified | safe_visible |
+| `0x11` | E->R | BackpackLightsTurnSignals | 21 | native_only | capture verified | safe_visible |
 | `0x97` | E->R | FaceImage | var | native_named | layout known, semantics uncertain | safe_visible |
 | `0x98` | E->R | BackpackLights | 10 | native_only | layout known, semantics uncertain | safe_visible |
 | `0xA3` | E->R | DisplayNumber | 7 | native_only | layout known, semantics uncertain | safe_visible |
 
 ### Camera (8 messages)
 
-5 layout known, semantics uncertain, 3 statically verified
+4 hardware verified, 4 layout known, semantics uncertain
 
 | tag | dir | CLAD type | size | layout | verification | probe safety |
 |---|---|---|---|---|---|---|
-| `0x4C` | E->R | ImageRequest | 2 | prefix | statically verified | read_only |
+| `0x4C` | E->R | ImageRequest | 2 | prefix | hardware verified | read_only |
 | `0x55` | E->R | EnableReadToolCodeMode | 9 | native_only | layout known, semantics uncertain | state_change |
 | `0x57` | E->R | SetCameraParams | 7 | native_named | layout known, semantics uncertain | state_change |
 | `0x5A` | E->R | CameraFOVInfo | 8 | native_only | layout known, semantics uncertain | read_only |
-| `0x66` | E->R | EnableColorImages | 1 | exact | statically verified | state_change |
+| `0x66` | E->R | EnableColorImages | 1 | exact | hardware verified | state_change |
 | `0xC8` | R->E | DefaultCameraParams | 29 | native_only | layout known, semantics uncertain | state_change |
-| `0xF2` | R->E | ImageChunk | var | native_named | layout known, semantics uncertain | state_change |
-| `0xF4` | R->E | ImageImuData | 17 | exact | statically verified | state_change |
+| `0xF2` | R->E | ImageChunk | var | native_named | hardware verified | state_change |
+| `0xF4` | R->E | ImageImuData | 17 | exact | hardware verified | state_change |
 
 ### Audio (4 messages)
 
@@ -167,7 +168,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 
 ### Animation (17 messages)
 
-11 layout known, semantics uncertain, 6 statically verified
+11 layout known, semantics uncertain, 4 statically verified, 2 hardware verified
 
 | tag | dir | CLAD type | size | layout | verification | probe safety |
 |---|---|---|---|---|---|---|
@@ -183,15 +184,15 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0x9B` | E->R | StartOfAnimation | 1 | native_named | layout known, semantics uncertain | motion |
 | `0x9D` | E->R | DisableAnimTracks | 1 | native_only | layout known, semantics uncertain | state_change |
 | `0x9E` | E->R | EnableAnimTracks | 1 | native_only | layout known, semantics uncertain | state_change |
-| `0x9F` | E->R | InitController | 0 | empty | statically verified | state_change |
+| `0x9F` | E->R | InitController | 0 | empty | hardware verified | state_change |
 | `0xCA` | R->E | AnimationStarted | 1 | native_named | layout known, semantics uncertain | state_change |
 | `0xCB` | R->E | AnimationEnded | 1 | native_named | layout known, semantics uncertain | state_change |
 | `0xD5` | R->E | AnimationEvent | 6 | prefix | statically verified | state_change |
-| `0xF1` | R->E | AnimationState | 15 | exact | statically verified | state_change |
+| `0xF1` | R->E | AnimationState | 15 | exact | hardware verified | state_change |
 
 ### Cubes and BLE (24 messages)
 
-20 statically verified, 3 layout known, semantics uncertain, 1 hardware verified
+19 statically verified, 3 layout known, semantics uncertain, 2 hardware verified
 
 | tag | dir | CLAD type | size | layout | verification | probe safety |
 |---|---|---|---|---|---|---|
@@ -199,7 +200,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0x05` | E->R | SetPropSlot | 5 | native_named | layout known, semantics uncertain | state_change |
 | `0x07` | E->R | SetBodyRadioMode | 2 | exact | statically verified | destructive |
 | `0x08` | E->R | StreamObjectAccel | 5 | exact | statically verified | state_change |
-| `0x0A` | E->R | SetAccessoryDiscovery | 1 | exact | statically verified | state_change |
+| `0x0A` | E->R | SetAccessoryDiscovery | 1 | exact | hardware verified | state_change |
 | `0x0C` | E->R | SetCubeGamma | 1 | native_only | layout known, semantics uncertain | state_change |
 | `0x10` | E->R | CubeID | 5 | exact | statically verified | safe_visible |
 | `0x12` | E->R | SendDTMCommand | 16 | native_only | layout known, semantics uncertain | destructive |
@@ -222,7 +223,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 
 ### Localization and navigation (22 messages)
 
-18 layout known, semantics uncertain, 4 statically verified
+17 layout known, semantics uncertain, 4 statically verified, 1 hardware verified
 
 | tag | dir | CLAD type | size | layout | verification | probe safety |
 |---|---|---|---|---|---|---|
@@ -235,7 +236,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0x42` | E->R | DockWithObject | 21 | native_only | layout known, semantics uncertain | motion |
 | `0x43` | E->R | AbortDocking | 0 | empty | statically verified | motion |
 | `0x44` | E->R | PlaceObjectOnGround | 25 | native_only | layout known, semantics uncertain | motion |
-| `0x45` | E->R | AbsoluteLocalizationUpdate | 24 | native_named | layout known, semantics uncertain | state_change |
+| `0x45` | E->R | AbsoluteLocalizationUpdate | 24 | native_named | hardware verified | state_change |
 | `0x48` | E->R | DockingErrorSignal | 22 | prefix | statically verified | state_change |
 | `0x49` | E->R | CarryStateUpdate | 1 | exact | statically verified | state_change |
 | `0x61` | E->R | ForceDelocalizeSimulatedRobot | 0 | empty | statically verified | destructive |
@@ -365,15 +366,15 @@ the safe ones; motion, state-change and destructive messages need an explicit op
 
 | subsystem | not yet hardware verified | of which safe to probe |
 |---|---|---|
-| Identity / version / logging | 13 | 2 |
-| Robot state and sensors | 19 | 2 |
-| Head / lift / wheels | 16 | 0 |
+| Identity / version / logging | 11 | 1 |
+| Robot state and sensors | 17 | 1 |
+| Head / lift / wheels | 17 | 0 |
 | LEDs and display | 7 | 7 |
-| Camera | 8 | 2 |
+| Camera | 4 | 1 |
 | Audio | 4 | 1 |
-| Animation | 17 | 0 |
-| Cubes and BLE | 23 | 3 |
-| Localization and navigation | 22 | 0 |
+| Animation | 15 | 0 |
+| Cubes and BLE | 22 | 3 |
+| Localization and navigation | 21 | 0 |
 | Firmware / update / recovery | 11 | 0 |
 | Factory / debug / storage | 8 | 0 |
 

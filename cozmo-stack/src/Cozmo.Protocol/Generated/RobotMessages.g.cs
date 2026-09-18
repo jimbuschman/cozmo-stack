@@ -329,7 +329,7 @@ public sealed partial class BackpackSetLayer : RobotMessage
     }
 }
 
-/// <summary>setBackpackLightsMiddle 0x03 (engine_to_robot), 31 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack LightState[3]: native loop bound, C# twin size and capture body length agree</summary>
+/// <summary>setBackpackLightsMiddle 0x03 (engine_to_robot), 31 bytes. Confidence: native_only. Verification: capture_verified. names generated; widths from native Unpack LightState[3]: native loop bound, C# twin size and capture body length agree</summary>
 public sealed partial class BackpackLightsMiddle : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.SetBackpackLightsMiddle;
@@ -445,7 +445,7 @@ public sealed partial class StreamObjectAccel : RobotMessage
     }
 }
 
-/// <summary>setAccessoryDiscovery 0x0A (engine_to_robot), 1 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.SetAccessoryDiscovery (exact match)</summary>
+/// <summary>setAccessoryDiscovery 0x0A (engine_to_robot), 1 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.SetAccessoryDiscovery (exact match) hardware verified: robot reported cube advertisements as ObjectAvailable (0xF3) afterwards</summary>
 public sealed partial class SetAccessoryDiscovery : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.SetAccessoryDiscovery;
@@ -462,7 +462,7 @@ public sealed partial class SetAccessoryDiscovery : RobotMessage
     }
 }
 
-/// <summary>setHeadlight 0x0B (engine_to_robot), 1 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ExternalInterface.SetHeadlight (exact match)</summary>
+/// <summary>setHeadlight 0x0B (engine_to_robot), 1 bytes. Confidence: exact. Verification: capture_verified. C# twin Anki.Cozmo.ExternalInterface.SetHeadlight (exact match)</summary>
 public sealed partial class SetHeadlight : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.SetHeadlight;
@@ -573,7 +573,7 @@ public sealed partial class CubeID : RobotMessage
     }
 }
 
-/// <summary>setBackpackLightsTurnSignals 0x11 (engine_to_robot), 21 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack LightState[2]: native loop bound, C# twin size and capture body length agree</summary>
+/// <summary>setBackpackLightsTurnSignals 0x11 (engine_to_robot), 21 bytes. Confidence: native_only. Verification: capture_verified. names generated; widths from native Unpack LightState[2]: native loop bound, C# twin size and capture body length agree</summary>
 public sealed partial class BackpackLightsTurnSignals : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.SetBackpackLightsTurnSignals;
@@ -637,7 +637,7 @@ public sealed partial class GetBodySerialNumber : RobotMessage
     }
 }
 
-/// <summary>getMfgInfo 0x25 (engine_to_robot), 0 bytes. Confidence: empty. Verification: hardware_verified.</summary>
+/// <summary>getMfgInfo 0x25 (engine_to_robot), 0 bytes. Confidence: empty. Verification: hardware_verified. hardware verified: robot answered with ManufacturingID (0xED)</summary>
 public sealed partial class GetManufacturingInfo : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.GetMfgInfo;
@@ -822,7 +822,7 @@ public sealed partial class SetLiftHeight : RobotMessage
     }
 }
 
-/// <summary>headAngle 0x37 (engine_to_robot), 17 bytes. Confidence: prefix. Verification: hardware_verified. C# twin Anki.Cozmo.ExternalInterface.SetHeadAngle (prefix match)</summary>
+/// <summary>headAngle 0x37 (engine_to_robot), 17 bytes. Confidence: prefix. Verification: hardware_verified. C# twin Anki.Cozmo.ExternalInterface.SetHeadAngle (prefix match) hardware verified: robot answered MotorActionAck (0xC4) and RobotState head angle reached the commanded 0.4 rad</summary>
 public sealed partial class SetHeadAngle : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.HeadAngle;
@@ -1216,7 +1216,7 @@ public sealed partial class PlaceObjectOnGround : RobotMessage
     }
 }
 
-/// <summary>absLocalizationUpdate 0x45 (engine_to_robot), 24 bytes. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
+/// <summary>absLocalizationUpdate 0x45 (engine_to_robot), 24 bytes. Confidence: native_named. Verification: hardware_verified. field names from PyCozmo (widths agree with native) hardware verified: accepted without error; RobotState kept streaming with the requested pose origin</summary>
 public sealed partial class AbsoluteLocalizationUpdate : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.AbsLocalizationUpdate;
@@ -1373,7 +1373,7 @@ public sealed partial class CarryStateUpdate : RobotMessage
     }
 }
 
-/// <summary>imuRequest 0x4A (engine_to_robot), 4 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.IMURequest (exact match)</summary>
+/// <summary>imuRequest 0x4A (engine_to_robot), 4 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.IMURequest (exact match) hardware verified: robot answered with a 264-sample IMURawDataChunk (0xC7) burst</summary>
 public sealed partial class IMURequest : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.ImuRequest;
@@ -1390,7 +1390,7 @@ public sealed partial class IMURequest : RobotMessage
     }
 }
 
-/// <summary>syncTime 0x4B (engine_to_robot), 8 bytes. Confidence: native_named. Verification: hardware_verified. field names from PyCozmo (widths agree with native)</summary>
+/// <summary>syncTime 0x4B (engine_to_robot), 8 bytes. Confidence: native_named. Verification: hardware_verified. field names from PyCozmo (widths agree with native) hardware verified: robot answered SyncTimeAck (0xC2) and began streaming RobotState</summary>
 public sealed partial class SyncTime : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.SyncTime;
@@ -1411,7 +1411,7 @@ public sealed partial class SyncTime : RobotMessage
     }
 }
 
-/// <summary>imageRequest 0x4C (engine_to_robot), 2 bytes. Confidence: prefix. Verification: statically_verified. C# twin Anki.Cozmo.ExternalInterface.ImageRequest (prefix match)</summary>
+/// <summary>imageRequest 0x4C (engine_to_robot), 2 bytes. Confidence: prefix. Verification: hardware_verified. C# twin Anki.Cozmo.ExternalInterface.ImageRequest (prefix match) hardware verified: robot answered with 28 images as ImageChunk (0xF2) + ImageImuData (0xF4)</summary>
 public sealed partial class ImageRequest : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.ImageRequest;
@@ -1827,7 +1827,7 @@ public sealed partial class GenerateTestTone : RobotMessage
     }
 }
 
-/// <summary>enableColorImages 0x66 (engine_to_robot), 1 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ExternalInterface.EnableColorImages (exact match)</summary>
+/// <summary>enableColorImages 0x66 (engine_to_robot), 1 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.ExternalInterface.EnableColorImages (exact match) hardware verified: sent before the image request; the frames that arrived were grayscale (encoding 8) as asked</summary>
 public sealed partial class EnableColorImages : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.EnableColorImages;
@@ -1844,7 +1844,7 @@ public sealed partial class EnableColorImages : RobotMessage
     }
 }
 
-/// <summary>requestCrashReports 0x80 (engine_to_robot), 4 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+/// <summary>requestCrashReports 0x80 (engine_to_robot), 4 bytes. Confidence: native_only. Verification: hardware_verified. names generated; widths from native Unpack hardware verified: robot answered with CrashReport (0xCF)</summary>
 public sealed partial class RequestCrashReports : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.RequestCrashReports;
@@ -2258,7 +2258,7 @@ public sealed partial class EnableAnimTracks : RobotMessage
     }
 }
 
-/// <summary>initAnimController 0x9F (engine_to_robot), 0 bytes. Confidence: empty. Verification: statically_verified.</summary>
+/// <summary>initAnimController 0x9F (engine_to_robot), 0 bytes. Confidence: empty. Verification: hardware_verified. hardware verified: robot began streaming AnimationState (0xF1)</summary>
 public sealed partial class InitController : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.InitAnimController;
@@ -2612,7 +2612,7 @@ public sealed partial class Write : RobotMessage
     }
 }
 
-/// <summary>trace 0xB0 (robot_to_engine), variable length. Confidence: hardware_refined. Verification: hardware_verified. names generated; widths from native Unpack capture 2026-09-18: decoded against the OBB AnkiLogStringTables; the engine reads formatId+unused as one 4-byte block</summary>
+/// <summary>trace 0xB0 (robot_to_engine), variable length. Confidence: hardware_refined. Verification: hardware_verified. names generated; widths from native Unpack capture 2026-09-18: decoded against the OBB AnkiLogStringTables; the engine reads formatId+unused as one 4-byte block hardware verified on firmware 2457: 14 received, 14 re-encoded byte-identically</summary>
 public sealed partial class PrintTrace : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.Trace;
@@ -3082,7 +3082,7 @@ public sealed partial class PotentialCliff : RobotMessage
     }
 }
 
-/// <summary>syncTimeAck 0xC2 (robot_to_engine), 0 bytes. Confidence: empty. Verification: hardware_verified.</summary>
+/// <summary>syncTimeAck 0xC2 (robot_to_engine), 0 bytes. Confidence: empty. Verification: hardware_verified. hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically</summary>
 public sealed partial class SyncTimeAck : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.SyncTimeAck;
@@ -3108,7 +3108,7 @@ public sealed partial class RobotPoked : RobotMessage
     }
 }
 
-/// <summary>motorActionAck 0xC4 (robot_to_engine), 1 bytes. Confidence: native_named. Verification: hardware_verified. field names from PyCozmo (widths agree with native)</summary>
+/// <summary>motorActionAck 0xC4 (robot_to_engine), 1 bytes. Confidence: native_named. Verification: capture_verified. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class MotorActionAck : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.MotorActionAck;
@@ -3163,7 +3163,7 @@ public sealed partial class PathFollowingEvent : RobotMessage
     }
 }
 
-/// <summary>imuRawDataChunk 0xC7 (robot_to_engine), 14 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.RobotInterface.IMURawDataChunk (exact match)</summary>
+/// <summary>imuRawDataChunk 0xC7 (robot_to_engine), 14 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.RobotInterface.IMURawDataChunk (exact match) hardware verified on firmware 2457: 200 received, 200 re-encoded byte-identically probe 2026-09-18: 264 samples in one burst; the first i16 triple is the gyro (near zero at rest), the second the accelerometer (Z about 9.7k at rest); order is 0 on the first sample, 1 in the middle, 2 on the last</summary>
 public sealed partial class IMURawDataChunk : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.ImuRawDataChunk;
@@ -3228,7 +3228,7 @@ public sealed partial class DefaultCameraParams : RobotMessage
     }
 }
 
-/// <summary>robotAvailable 0xC9 (robot_to_engine), 6 bytes. Confidence: hardware_refined. Verification: hardware_verified. names generated; widths from native Unpack capture 2026-09-18: u32 head serial (0x41d04d9d) then hardware revision 5, matching the robot's own hardware.revision trace and MfgId.body_hw_version</summary>
+/// <summary>robotAvailable 0xC9 (robot_to_engine), 6 bytes. Confidence: hardware_refined. Verification: hardware_verified. names generated; widths from native Unpack capture 2026-09-18: u32 head serial (0x41d04d9d) then hardware revision 5, matching the robot's own hardware.revision trace and MfgId.body_hw_version hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically</summary>
 public sealed partial class RobotAvailable : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.RobotAvailable;
@@ -3342,7 +3342,7 @@ public sealed partial class ObjectPowerLevel : RobotMessage
     }
 }
 
-/// <summary>crashReport 0xCF (robot_to_engine), variable length. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+/// <summary>crashReport 0xCF (robot_to_engine), variable length. Confidence: native_only. Verification: hardware_verified. names generated; widths from native Unpack hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically probe 2026-09-18: answered with an all-zero header and an empty array when the robot holds no crash reports</summary>
 public sealed partial class CrashReport : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.CrashReport;
@@ -3401,7 +3401,7 @@ public sealed partial class ObjectConnectionState : RobotMessage
     }
 }
 
-/// <summary>motorCalibration 0xD1 (robot_to_engine), 3 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.MotorCalibration (exact match)</summary>
+/// <summary>motorCalibration 0xD1 (robot_to_engine), 3 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.MotorCalibration (exact match) hardware verified on firmware 2457: 4 received, 4 re-encoded byte-identically probe 2026-09-18: observed as motor 2 then 3 with calibStarted true, then both again with false, confirming the MotorID enum (2 = lift, 3 = head) and the start/finish pairing</summary>
 public sealed partial class MotorCalibration : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.MotorCalibration;
@@ -3701,7 +3701,7 @@ public sealed partial class FallingStopped : RobotMessage
     }
 }
 
-/// <summary>wifiFlashID 0xEC (robot_to_engine), 4 bytes. Confidence: native_only. Verification: hardware_verified. names generated; widths from native Unpack</summary>
+/// <summary>wifiFlashID 0xEC (robot_to_engine), 4 bytes. Confidence: native_only. Verification: hardware_verified. names generated; widths from native Unpack hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically</summary>
 public sealed partial class WiFiFlashID : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.WifiFlashID;
@@ -3718,7 +3718,7 @@ public sealed partial class WiFiFlashID : RobotMessage
     }
 }
 
-/// <summary>mfgId 0xED (robot_to_engine), 12 bytes. Confidence: native_named. Verification: hardware_verified. field names from PyCozmo (widths agree with native)</summary>
+/// <summary>mfgId 0xED (robot_to_engine), 12 bytes. Confidence: native_named. Verification: hardware_verified. field names from PyCozmo (widths agree with native) hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically</summary>
 public sealed partial class ManufacturingID : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.MfgId;
@@ -3743,7 +3743,7 @@ public sealed partial class ManufacturingID : RobotMessage
     }
 }
 
-/// <summary>firmwareVersion 0xEE (robot_to_engine), variable length. Confidence: hardware_refined. Verification: hardware_verified. field names from PyCozmo (widths agree with native) capture 2026-09-18: leading u16 is the low half of the head serial number; the byte array is the cozmo.safe JSON signature header</summary>
+/// <summary>firmwareVersion 0xEE (robot_to_engine), variable length. Confidence: hardware_refined. Verification: hardware_verified. field names from PyCozmo (widths agree with native) capture 2026-09-18: leading u16 is the low half of the head serial number; the byte array is the cozmo.safe JSON signature header hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically</summary>
 public sealed partial class FirmwareVersion : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.FirmwareVersion;
@@ -3790,7 +3790,7 @@ public sealed partial class Ack : RobotMessage
     }
 }
 
-/// <summary>state 0xF0 (robot_to_engine), 91 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.RobotState (exact match)</summary>
+/// <summary>state 0xF0 (robot_to_engine), 91 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.RobotState (exact match) hardware verified on firmware 2457: 383 received, 383 re-encoded byte-identically</summary>
 public sealed partial class RobotState : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.State;
@@ -3864,7 +3864,7 @@ public sealed partial class RobotState : RobotMessage
     }
 }
 
-/// <summary>animState 0xF1 (robot_to_engine), 15 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.RobotInterface.AnimationState (exact match)</summary>
+/// <summary>animState 0xF1 (robot_to_engine), 15 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.RobotInterface.AnimationState (exact match) hardware verified on firmware 2457: 81 received, 81 re-encoded byte-identically probe 2026-09-18: streamed at ~30 Hz with enabledAnimTracks 0xFF and zero counters while idle</summary>
 public sealed partial class AnimationState : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.AnimState;
@@ -3901,7 +3901,7 @@ public sealed partial class AnimationState : RobotMessage
     }
 }
 
-/// <summary>image 0xF2 (robot_to_engine), variable length. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
+/// <summary>image 0xF2 (robot_to_engine), variable length. Confidence: native_named. Verification: hardware_verified. field names from PyCozmo (widths agree with native) hardware verified on firmware 2457: 143 received, 143 re-encoded byte-identically probe 2026-09-18: 28 images, 7 chunks each, ~6.6 kB per image, encoding 8 (JPEGMinimizedGray), resolution 4 (QVGA); chunkId counts 0..6 and imageChunkCount carries the total only in the final chunk; status was 2 throughout</summary>
 public sealed partial class ImageChunk : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.Image;
@@ -3951,7 +3951,7 @@ public sealed partial class ImageChunk : RobotMessage
     }
 }
 
-/// <summary>activeObjectAvailable 0xF3 (robot_to_engine), 9 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.ObjectAvailable (exact match)</summary>
+/// <summary>activeObjectAvailable 0xF3 (robot_to_engine), 9 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.ObjectAvailable (exact match) hardware verified on firmware 2457: 31 received, 31 re-encoded byte-identically</summary>
 public sealed partial class ObjectAvailable : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.ActiveObjectAvailable;
@@ -3976,7 +3976,7 @@ public sealed partial class ObjectAvailable : RobotMessage
     }
 }
 
-/// <summary>imageGyro 0xF4 (robot_to_engine), 17 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ImageImuData (exact match)</summary>
+/// <summary>imageGyro 0xF4 (robot_to_engine), 17 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.ImageImuData (exact match) hardware verified on firmware 2457: 79 received, 79 re-encoded byte-identically probe 2026-09-18: one per camera frame, carrying the gyro rates sampled with the image</summary>
 public sealed partial class ImageImuData : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.ImageGyro;

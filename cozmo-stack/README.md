@@ -65,8 +65,12 @@ dotnet run --project src/Cozmo.Conformance -- connect 127.0.0.1 --seconds 6 --he
 
 **Hardware smoke test passed on 2026-09-18** (Cozmo hardware 1.5, firmware 2457): connect in 16 ms, identity and
 handshake, RobotState at 33.5 Hz for 20 s with 0 resends, SetHeadAngle acked and reached, clean disconnect.
-Captures: `../re-analysis/captures/`; findings: `../re-analysis/TRANSPORT_SPEC.md §10`. The first 120 frames of the
-capture are a test fixture (`tests/.../Fixtures/hw_fw2457_first120.log`).
+**Protocol verified by subsystem on 2026-09-18**: 14 distinct robot messages received across identity, logging,
+state, IMU, camera, animation and cubes; every one decoded and re-encoded byte-identically, zero conflicts.
+24 of 161 messages are now hardware verified (`../re-analysis/PROTOCOL_STATUS.md`).
+
+Captures: `../re-analysis/captures/`; findings: `../re-analysis/TRANSPORT_SPEC.md §10`. Both hardware logs are
+test fixtures, so every captured payload is re-verified on each `dotnet test`.
 
 ## Hardware smoke test (milestone success criterion)
 

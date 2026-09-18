@@ -1299,13 +1299,21 @@
     }
    ],
    "confidence": "native_only",
-   "verification": "layout_known_semantics_uncertain",
+   "verification": "capture_verified",
    "evidence": {
     "native_unpack": "0x7a4232",
     "native_namespace": "RobotInterface",
     "csharp": false,
     "pycozmo_name": "LightStateCenter",
-    "capture": null
+    "capture": {
+     "count": 3,
+     "lengths": {
+      "31": 3
+     },
+     "dirs": [
+      "TX"
+     ]
+    }
    },
    "notes": [
     "names generated; widths from native Unpack",
@@ -1507,16 +1515,25 @@
     }
    ],
    "confidence": "exact",
-   "verification": "statically_verified",
+   "verification": "hardware_verified",
    "evidence": {
     "native_unpack": "0x7b74c8",
     "native_namespace": "",
     "csharp": true,
     "pycozmo_name": "SetAccessoryDiscovery",
-    "capture": null
+    "capture": {
+     "count": 1,
+     "lengths": {
+      "1": 1
+     },
+     "dirs": [
+      "TX"
+     ]
+    }
    },
    "notes": [
-    "C# twin Anki.Cozmo.SetAccessoryDiscovery (exact match)"
+    "C# twin Anki.Cozmo.SetAccessoryDiscovery (exact match)",
+    "hardware verified: robot reported cube advertisements as ObjectAvailable (0xF3) afterwards"
    ]
   },
   "0x0B": {
@@ -1539,13 +1556,21 @@
     }
    ],
    "confidence": "exact",
-   "verification": "statically_verified",
+   "verification": "capture_verified",
    "evidence": {
     "native_unpack": "0x7a1c28",
     "native_namespace": "RobotInterface",
     "csharp": true,
     "pycozmo_name": "SetHeadLight",
-    "capture": null
+    "capture": {
+     "count": 2,
+     "lengths": {
+      "1": 2
+     },
+     "dirs": [
+      "TX"
+     ]
+    }
    },
    "notes": [
     "C# twin Anki.Cozmo.ExternalInterface.SetHeadlight (exact match)"
@@ -1757,13 +1782,21 @@
     }
    ],
    "confidence": "native_only",
-   "verification": "layout_known_semantics_uncertain",
+   "verification": "capture_verified",
    "evidence": {
     "native_unpack": "0x7a43de",
     "native_namespace": "RobotInterface",
     "csharp": false,
     "pycozmo_name": "LightStateSide",
-    "capture": null
+    "capture": {
+     "count": 1,
+     "lengths": {
+      "21": 1
+     },
+     "dirs": [
+      "TX"
+     ]
+    }
    },
    "notes": [
     "names generated; widths from native Unpack",
@@ -1867,16 +1900,18 @@
     "csharp": false,
     "pycozmo_name": "Enable",
     "capture": {
-     "count": 3,
+     "count": 4,
      "lengths": {
-      "0": 3
+      "0": 4
      },
      "dirs": [
       "TX"
      ]
     }
    },
-   "notes": []
+   "notes": [
+    "hardware verified: robot answered with ManufacturingID (0xED)"
+   ]
   },
   "0x26": {
    "tag": 38,
@@ -2255,7 +2290,8 @@
     }
    },
    "notes": [
-    "C# twin Anki.Cozmo.ExternalInterface.SetHeadAngle (prefix match)"
+    "C# twin Anki.Cozmo.ExternalInterface.SetHeadAngle (prefix match)",
+    "hardware verified: robot answered MotorActionAck (0xC4) and RobotState head angle reached the commanded 0.4 rad"
    ]
   },
   "0x38": {
@@ -2982,16 +3018,25 @@
     }
    ],
    "confidence": "native_named",
-   "verification": "layout_known_semantics_uncertain",
+   "verification": "hardware_verified",
    "evidence": {
     "native_unpack": "0x7a3794",
     "native_namespace": "RobotInterface",
     "csharp": false,
     "pycozmo_name": "SetOrigin",
-    "capture": null
+    "capture": {
+     "count": 1,
+     "lengths": {
+      "24": 1
+     },
+     "dirs": [
+      "TX"
+     ]
+    }
    },
    "notes": [
-    "field names from PyCozmo (widths agree with native)"
+    "field names from PyCozmo (widths agree with native)",
+    "hardware verified: accepted without error; RobotState kept streaming with the requested pose origin"
    ]
   },
   "0x46": {
@@ -3223,16 +3268,25 @@
     }
    ],
    "confidence": "exact",
-   "verification": "statically_verified",
+   "verification": "hardware_verified",
    "evidence": {
     "native_unpack": "0x7c81d0",
     "native_namespace": "",
     "csharp": true,
     "pycozmo_name": null,
-    "capture": null
+    "capture": {
+     "count": 1,
+     "lengths": {
+      "4": 1
+     },
+     "dirs": [
+      "TX"
+     ]
+    }
    },
    "notes": [
-    "C# twin Anki.Cozmo.IMURequest (exact match)"
+    "C# twin Anki.Cozmo.IMURequest (exact match)",
+    "hardware verified: robot answered with a 264-sample IMURawDataChunk (0xC7) burst"
    ]
   },
   "0x4B": {
@@ -3270,9 +3324,9 @@
     "csharp": false,
     "pycozmo_name": "SyncTime",
     "capture": {
-     "count": 2,
+     "count": 3,
      "lengths": {
-      "8": 2
+      "8": 3
      },
      "dirs": [
       "TX"
@@ -3280,7 +3334,8 @@
     }
    },
    "notes": [
-    "field names from PyCozmo (widths agree with native)"
+    "field names from PyCozmo (widths agree with native)",
+    "hardware verified: robot answered SyncTimeAck (0xC2) and began streaming RobotState"
    ]
   },
   "0x4C": {
@@ -3310,16 +3365,25 @@
     }
    ],
    "confidence": "prefix",
-   "verification": "statically_verified",
+   "verification": "hardware_verified",
    "evidence": {
     "native_unpack": "0x7a3b50",
     "native_namespace": "RobotInterface",
     "csharp": true,
     "pycozmo_name": "EnableCamera",
-    "capture": null
+    "capture": {
+     "count": 2,
+     "lengths": {
+      "2": 2
+     },
+     "dirs": [
+      "TX"
+     ]
+    }
    },
    "notes": [
-    "C# twin Anki.Cozmo.ExternalInterface.ImageRequest (prefix match)"
+    "C# twin Anki.Cozmo.ExternalInterface.ImageRequest (prefix match)",
+    "hardware verified: robot answered with 28 images as ImageChunk (0xF2) + ImageImuData (0xF4)"
    ]
   },
   "0x4D": {
@@ -4061,16 +4125,25 @@
     }
    ],
    "confidence": "exact",
-   "verification": "statically_verified",
+   "verification": "hardware_verified",
    "evidence": {
     "native_unpack": "0x7a3c96",
     "native_namespace": "RobotInterface",
     "csharp": true,
     "pycozmo_name": "EnableColorImages",
-    "capture": null
+    "capture": {
+     "count": 1,
+     "lengths": {
+      "1": 1
+     },
+     "dirs": [
+      "TX"
+     ]
+    }
    },
    "notes": [
-    "C# twin Anki.Cozmo.ExternalInterface.EnableColorImages (exact match)"
+    "C# twin Anki.Cozmo.ExternalInterface.EnableColorImages (exact match)",
+    "hardware verified: sent before the image request; the frames that arrived were grayscale (encoding 8) as asked"
    ]
   },
   "0x80": {
@@ -4094,16 +4167,25 @@
     }
    ],
    "confidence": "native_only",
-   "verification": "layout_known_semantics_uncertain",
+   "verification": "hardware_verified",
    "evidence": {
     "native_unpack": "0x7a5538",
     "native_namespace": "RobotInterface",
     "csharp": false,
     "pycozmo_name": null,
-    "capture": null
+    "capture": {
+     "count": 2,
+     "lengths": {
+      "4": 2
+     },
+     "dirs": [
+      "TX"
+     ]
+    }
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "names generated; widths from native Unpack",
+    "hardware verified: robot answered with CrashReport (0xCF)"
    ]
   },
   "0x81": {
@@ -4868,15 +4950,25 @@
    "declared_size": 0,
    "fields": [],
    "confidence": "empty",
-   "verification": "statically_verified",
+   "verification": "hardware_verified",
    "evidence": {
     "native_unpack": "0x7bdd44",
     "native_namespace": "AnimKeyFrame",
     "csharp": false,
     "pycozmo_name": "EnableAnimationState",
-    "capture": null
+    "capture": {
+     "count": 1,
+     "lengths": {
+      "0": 1
+     },
+     "dirs": [
+      "TX"
+     ]
+    }
    },
-   "notes": []
+   "notes": [
+    "hardware verified: robot began streaming AnimationState (0xF1)"
+   ]
   },
   "0xA0": {
    "tag": 160,
@@ -5578,12 +5670,13 @@
     "csharp": false,
     "pycozmo_name": "DebugData",
     "capture": {
-     "count": 22,
+     "count": 39,
      "lengths": {
       "32": 2,
-      "12": 9,
-      "8": 7,
-      "20": 4
+      "12": 17,
+      "8": 12,
+      "20": 6,
+      "16": 2
      },
      "dirs": [
       "RX"
@@ -5592,7 +5685,8 @@
    },
    "notes": [
     "names generated; widths from native Unpack",
-    "capture 2026-09-18: decoded against the OBB AnkiLogStringTables; the engine reads formatId+unused as one 4-byte block"
+    "capture 2026-09-18: decoded against the OBB AnkiLogStringTables; the engine reads formatId+unused as one 4-byte block",
+    "hardware verified on firmware 2457: 14 received, 14 re-encoded byte-identically"
    ]
   },
   "0xB1": {
@@ -6410,16 +6504,18 @@
     "csharp": false,
     "pycozmo_name": "RobotDelocalized",
     "capture": {
-     "count": 2,
+     "count": 3,
      "lengths": {
-      "0": 2
+      "0": 3
      },
      "dirs": [
       "RX"
      ]
     }
    },
-   "notes": []
+   "notes": [
+    "hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically"
+   ]
   },
   "0xC3": {
    "tag": 195,
@@ -6467,7 +6563,7 @@
     }
    ],
    "confidence": "native_named",
-   "verification": "hardware_verified",
+   "verification": "capture_verified",
    "evidence": {
     "native_unpack": "0x7b1292",
     "native_namespace": "RobotInterface",
@@ -6602,16 +6698,26 @@
     }
    ],
    "confidence": "exact",
-   "verification": "statically_verified",
+   "verification": "hardware_verified",
    "evidence": {
     "native_unpack": "0x7c9094",
     "native_namespace": "RobotInterface",
     "csharp": true,
     "pycozmo_name": null,
-    "capture": null
+    "capture": {
+     "count": 264,
+     "lengths": {
+      "14": 264
+     },
+     "dirs": [
+      "RX"
+     ]
+    }
    },
    "notes": [
-    "C# twin Anki.Cozmo.RobotInterface.IMURawDataChunk (exact match)"
+    "C# twin Anki.Cozmo.RobotInterface.IMURawDataChunk (exact match)",
+    "hardware verified on firmware 2457: 200 received, 200 re-encoded byte-identically",
+    "probe 2026-09-18: 264 samples in one burst; the first i16 triple is the gyro (near zero at rest), the second the accelerometer (Z about 9.7k at rest); order is 0 on the first sample, 1 in the middle, 2 on the last"
    ]
   },
   "0xC8": {
@@ -6711,9 +6817,9 @@
     "csharp": false,
     "pycozmo_name": "HardwareInfo",
     "capture": {
-     "count": 2,
+     "count": 3,
      "lengths": {
-      "6": 2
+      "6": 3
      },
      "dirs": [
       "RX"
@@ -6722,7 +6828,8 @@
    },
    "notes": [
     "names generated; widths from native Unpack",
-    "capture 2026-09-18: u32 head serial (0x41d04d9d) then hardware revision 5, matching the robot's own hardware.revision trace and MfgId.body_hw_version"
+    "capture 2026-09-18: u32 head serial (0x41d04d9d) then hardware revision 5, matching the robot's own hardware.revision trace and MfgId.body_hw_version",
+    "hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically"
    ]
   },
   "0xCA": {
@@ -6942,16 +7049,26 @@
     }
    ],
    "confidence": "native_only",
-   "verification": "layout_known_semantics_uncertain",
+   "verification": "hardware_verified",
    "evidence": {
     "native_unpack": "0x7d3cca",
     "native_namespace": "RobotInterface",
     "csharp": false,
     "pycozmo_name": null,
-    "capture": null
+    "capture": {
+     "count": 2,
+     "lengths": {
+      "8": 2
+     },
+     "dirs": [
+      "RX"
+     ]
+    }
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "names generated; widths from native Unpack",
+    "hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically",
+    "probe 2026-09-18: answered with an all-zero header and an empty array when the robot holds no crash reports"
    ]
   },
   "0xD0": {
@@ -7043,9 +7160,9 @@
     "csharp": true,
     "pycozmo_name": "MotorCalibration",
     "capture": {
-     "count": 9,
+     "count": 14,
      "lengths": {
-      "3": 9
+      "3": 14
      },
      "dirs": [
       "RX"
@@ -7053,7 +7170,9 @@
     }
    },
    "notes": [
-    "C# twin Anki.Cozmo.MotorCalibration (exact match)"
+    "C# twin Anki.Cozmo.MotorCalibration (exact match)",
+    "hardware verified on firmware 2457: 4 received, 4 re-encoded byte-identically",
+    "probe 2026-09-18: observed as motor 2 then 3 with calibStarted true, then both again with false, confirming the MotorID enum (2 = lift, 3 = head) and the start/finish pairing"
    ]
   },
   "0xD2": {
@@ -7599,9 +7718,9 @@
     "csharp": false,
     "pycozmo_name": null,
     "capture": {
-     "count": 2,
+     "count": 3,
      "lengths": {
-      "4": 2
+      "4": 3
      },
      "dirs": [
       "RX"
@@ -7609,7 +7728,8 @@
     }
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "names generated; widths from native Unpack",
+    "hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically"
    ]
   },
   "0xED": {
@@ -7654,9 +7774,9 @@
     "csharp": false,
     "pycozmo_name": "BodyInfo",
     "capture": {
-     "count": 3,
+     "count": 4,
      "lengths": {
-      "12": 3
+      "12": 4
      },
      "dirs": [
       "RX"
@@ -7664,7 +7784,8 @@
     }
    },
    "notes": [
-    "field names from PyCozmo (widths agree with native)"
+    "field names from PyCozmo (widths agree with native)",
+    "hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically"
    ]
   },
   "0xEE": {
@@ -7703,9 +7824,9 @@
     "csharp": false,
     "pycozmo_name": "FirmwareSignature",
     "capture": {
-     "count": 2,
+     "count": 3,
      "lengths": {
-      "449": 2
+      "449": 3
      },
      "dirs": [
       "RX"
@@ -7714,7 +7835,8 @@
    },
    "notes": [
     "field names from PyCozmo (widths agree with native)",
-    "capture 2026-09-18: leading u16 is the low half of the head serial number; the byte array is the cozmo.safe JSON signature header"
+    "capture 2026-09-18: leading u16 is the low half of the head serial number; the byte array is the cozmo.safe JSON signature header",
+    "hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically"
    ]
   },
   "0xEF": {
@@ -7877,9 +7999,9 @@
     "csharp": true,
     "pycozmo_name": "RobotState",
     "capture": {
-     "count": 1452,
+     "count": 1835,
      "lengths": {
-      "91": 1452
+      "91": 1835
      },
      "dirs": [
       "RX"
@@ -7887,7 +8009,8 @@
     }
    },
    "notes": [
-    "C# twin Anki.Cozmo.RobotState (exact match)"
+    "C# twin Anki.Cozmo.RobotState (exact match)",
+    "hardware verified on firmware 2457: 383 received, 383 re-encoded byte-identically"
    ]
   },
   "0xF1": {
@@ -7940,16 +8063,26 @@
     }
    ],
    "confidence": "exact",
-   "verification": "statically_verified",
+   "verification": "hardware_verified",
    "evidence": {
     "native_unpack": "0x7d87b6",
     "native_namespace": "RobotInterface",
     "csharp": true,
     "pycozmo_name": "AnimationState",
-    "capture": null
+    "capture": {
+     "count": 81,
+     "lengths": {
+      "15": 81
+     },
+     "dirs": [
+      "RX"
+     ]
+    }
    },
    "notes": [
-    "C# twin Anki.Cozmo.RobotInterface.AnimationState (exact match)"
+    "C# twin Anki.Cozmo.RobotInterface.AnimationState (exact match)",
+    "hardware verified on firmware 2457: 81 received, 81 re-encoded byte-identically",
+    "probe 2026-09-18: streamed at ~30 Hz with enabledAnimTracks 0xFF and zero counters while idle"
    ]
   },
   "0xF2": {
@@ -8031,16 +8164,58 @@
     }
    ],
    "confidence": "native_named",
-   "verification": "layout_known_semantics_uncertain",
+   "verification": "hardware_verified",
    "evidence": {
     "native_unpack": "0x7c60b4",
     "native_namespace": "",
     "csharp": false,
     "pycozmo_name": "ImageChunk",
-    "capture": null
+    "capture": {
+     "count": 143,
+     "lengths": {
+      "1128": 8,
+      "1112": 22,
+      "1120": 4,
+      "1124": 4,
+      "1108": 22,
+      "88": 2,
+      "1100": 26,
+      "1104": 16,
+      "100": 1,
+      "24": 1,
+      "68": 1,
+      "1116": 8,
+      "1132": 2,
+      "40": 1,
+      "1144": 1,
+      "1088": 1,
+      "920": 1,
+      "1136": 1,
+      "1140": 1,
+      "880": 1,
+      "992": 2,
+      "1028": 4,
+      "1004": 2,
+      "1044": 1,
+      "976": 1,
+      "1020": 1,
+      "1008": 1,
+      "996": 1,
+      "988": 1,
+      "1036": 2,
+      "1024": 1,
+      "960": 1,
+      "1016": 1
+     },
+     "dirs": [
+      "RX"
+     ]
+    }
    },
    "notes": [
-    "field names from PyCozmo (widths agree with native)"
+    "field names from PyCozmo (widths agree with native)",
+    "hardware verified on firmware 2457: 143 received, 143 re-encoded byte-identically",
+    "probe 2026-09-18: 28 images, 7 chunks each, ~6.6 kB per image, encoding 8 (JPEGMinimizedGray), resolution 4 (QVGA); chunkId counts 0..6 and imageChunkCount carries the total only in the final chunk; status was 2 throughout"
    ]
   },
   "0xF3": {
@@ -8082,9 +8257,9 @@
     "csharp": true,
     "pycozmo_name": "ObjectAvailable",
     "capture": {
-     "count": 103,
+     "count": 134,
      "lengths": {
-      "9": 103
+      "9": 134
      },
      "dirs": [
       "RX"
@@ -8092,7 +8267,8 @@
     }
    },
    "notes": [
-    "C# twin Anki.Cozmo.ObjectAvailable (exact match)"
+    "C# twin Anki.Cozmo.ObjectAvailable (exact match)",
+    "hardware verified on firmware 2457: 31 received, 31 re-encoded byte-identically"
    ]
   },
   "0xF4": {
@@ -8139,16 +8315,26 @@
     }
    ],
    "confidence": "exact",
-   "verification": "statically_verified",
+   "verification": "hardware_verified",
    "evidence": {
     "native_unpack": "0x7c62f6",
     "native_namespace": "",
     "csharp": true,
     "pycozmo_name": "ImageImuData",
-    "capture": null
+    "capture": {
+     "count": 79,
+     "lengths": {
+      "17": 79
+     },
+     "dirs": [
+      "RX"
+     ]
+    }
    },
    "notes": [
-    "C# twin Anki.Cozmo.ImageImuData (exact match)"
+    "C# twin Anki.Cozmo.ImageImuData (exact match)",
+    "hardware verified on firmware 2457: 79 received, 79 re-encoded byte-identically",
+    "probe 2026-09-18: one per camera frame, carrying the gyro rates sampled with the image"
    ]
   },
   "0xF5": {

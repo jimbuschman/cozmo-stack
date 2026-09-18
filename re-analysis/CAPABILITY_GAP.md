@@ -399,7 +399,9 @@ layout confidence and hardware-verification status. The C# types and codecs are 
 (`tools/gen_protocol.py` -> `Cozmo.Protocol/Generated/RobotMessages.g.cs`, 161 classes + 7 structs + 24 enums),
 not hand-maintained. 159 of 161 have a complete byte layout; the 2 that do not (TestState 0xA1,
 AppConnectConfigString 0xAA, both factory/destructive) keep an explicit raw tail rather than a guess.
-Verification today: 13 hardware verified, 65 statically verified, 81 layout-known/semantics-uncertain, 2 unresolved.
+Verification after the 2026-09-18 subsystem probe: **24 hardware verified**, 4 capture verified, 56 statically
+verified, 75 layout-known/semantics-uncertain, 2 unresolved, **0 conflicts**. Identity, logging, robot state,
+IMU, camera, animation, cubes and head motion are all confirmed on the real firmware-2457 robot.
 Tests assert every fixed message serialises to the engine's own `Size()`, every message round-trips, and every CLAD
 payload in the 20 s hardware capture decodes and re-encodes byte-identically. Full detail: `PROTOCOL_STATUS.md`.
 
