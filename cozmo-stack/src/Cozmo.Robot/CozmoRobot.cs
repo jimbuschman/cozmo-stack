@@ -87,11 +87,19 @@ public sealed class CozmoRobot : IDisposable
     /// <summary>Every decoded robot message, after the devices have seen it.</summary>
     public event Action<RobotMessage>? Message;
 
+    /// <summary>
+    /// Whether audio frames are sent reliably. Reliable delivery is the engine's default, but the robot
+    /// accepts only strictly in-order reliable messages, so a single lost datagram stalls everything behind
+    /// it until the retransmit lands. For a real-time stream a dropped frame is a click, while a stall is a
+    /// gap, so this can be turned off to trade one for the other.
+    /// </summary>
+    public bool AudioReliable { get; set; } = true;
+
     private CozmoRobot(TransportOptions? options)
     {
         Transport = new ReliableTransport(options);
         Display = new CozmoDisplay(m => Transport.Send(m, flush: true));
-        Audio = new CozmoAudio(m => Transport.Send(m, flush: true));
+        Audio = new CozmoAudio(m => Transport.Send(m, reliable: AudioReliable, flush: true));
         // The engine fills every animation tick with both an audio frame and a face keyframe. Mirror that
         // in both directions, so neither pipeline leaves the robot's animation tick half empty.
         Display.BeforeFrame = () => { if (!Audio.Busy) Transport.Send(new AudioSilence(), flush: true); };

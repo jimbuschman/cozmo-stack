@@ -198,6 +198,9 @@ public static class Devices
             else if (a[i] == "--volume") volume = int.Parse(a[i + 1]);
             else if (a[i] == "--save") wav = a[i + 1];
         }
+        bool unreliable = a.Contains("--unreliable");
+        int prime = -1;
+        for (int i = 2; i < a.Length - 1; i++) if (a[i] == "--prime") prime = int.Parse(a[i + 1]);
 
         var pcm = CozmoAudio.Tone(hz, TimeSpan.FromSeconds(seconds), amplitude);
         var frames = CozmoAudio.ToFrames(pcm);
@@ -214,6 +217,8 @@ public static class Devices
         Console.WriteLine($"frame log: {logPath}");
         using var robot = await ConnectAsync(c.Value.ip, c.Value.port, log);
         if (volume is { } v) { Console.WriteLine($"SetAudioVolume {v}"); robot.Audio.SetVolume((ushort)v); }
+        if (unreliable) { robot.AudioReliable = false; Console.WriteLine("sending audio frames unreliably"); }
+        if (prime >= 0) { robot.Audio.PrimeFrames = prime; Console.WriteLine($"priming {prime} frames"); }
 
         int before = robot.State.Animation?.NumAudioFramesPlayed ?? 0;
 
