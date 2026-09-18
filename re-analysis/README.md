@@ -7,7 +7,7 @@
 > messages (M2), generated from `protocol/cozmo_robot_protocol.json`. The replacement stack itself lives in **`../cozmo-stack/`** (C#).
 > `protocol/robot_protocol_official_vs_pycozmo.txt` is the verified engine↔robot message comparison;
 > `reference/pycozmo-master-2026-09-18/` (PyCozmo) and `reference/anki-util-transport-vector/` (Anki's
-> open-sourced transport library, identical to the engine's) are references only.
+> transport library as released for Vector, identical to the engine's) are references only.
 
 Generated 2026-09-18 from `resources/lib/armeabi-v7a/libcozmoEngine.so` (17,139,336 bytes,
 ELF32 ARM/Thumb-2, built with NDK gold + libc++). Everything here was produced by the scripts
@@ -203,7 +203,7 @@ present, Ghidra's "RecoverClassesFromRTTI" script will rebuild the class hierarc
 
 ## 7. Related upstream
 
-Anki open-sourced the sibling **Vector** engine (`anki/vector` on GitHub, 2019). Vector's engine
+Digital Dream Labs released the source of the sibling **Vector** engine after acquiring Anki. Vector's engine
 shares the `Anki::Cozmo` namespace, `CLAD`, `DAS`, `AnkiLab`, `BehaviorManager`, `Util::Data::DataPlatform`
 etc., so its source is the closest thing to header files for this binary and resolves most
 struct layouts and JSON config keys you will meet in Ghidra.

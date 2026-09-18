@@ -178,7 +178,7 @@ added, so full-scale samples wrapped to silence, and negating `short.MinValue` o
 
 ## 4. Tests
 
-119 tests pass (`dotnet test`), of which the M3 additions are:
+150 tests pass (`dotnet test`). The M3 additions are:
 
 * **mu-law** — reference endpoints, idempotence over all 256 codes (0x7F is mu-law's second zero), round-trip
   error inside the quantisation step, frame splitting and silence padding, tone length/fade/frequency.
@@ -218,6 +218,11 @@ Pass criteria, **all three met on a hardware-1.5 robot running firmware 2457 on 
    Warm-up frames are printed but not saved; they are torn by design.
 2. **Display** — the pattern on the robot's face matches the ASCII art the command prints.
 3. **Audio** — a clean, steady 440 Hz tone with no clicks or stutter, lasting two seconds.
+
+**The acceptance record is not yet in the repository.** The three runs that passed predate the acceptance
+files the commands now write, so M3's hardware verification currently rests on this document and the commit
+history rather than on a committed artifact. One more run of each command with `--acceptance` closes that;
+it is the only outstanding item from the pre-M4 hardening pass.
 
 Getting there took five hardware faults, in this order: the animation controller was never started, so face
 and audio did nothing; the saved camera frames were all sensor warm-up; the tone command bypassed the

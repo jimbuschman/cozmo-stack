@@ -6,7 +6,7 @@ Date: 2026-09-18. Authority order used here: (1) `libcozmoEngine.so` 3.4.0-1204 
 (`reference/anki-util-transport-vector/`), which is the same code the Cozmo engine links — every constant and code
 path checked matches the disassembly byte-for-byte, (3) PyCozmo's capture-derived description, used for
 robot-side behaviour that only hardware shows. Implementation: `cozmo-stack/src/Cozmo.Protocol` and
-`cozmo-stack/src/Cozmo.Transport` (C#, .NET 10); tests in `cozmo-stack/tests`.
+`cozmo-stack/src/Cozmo.Transport` (C#, .NET 9); tests in `cozmo-stack/tests`.
 
 ## 1. The 5551 / 5552 question — resolved
 

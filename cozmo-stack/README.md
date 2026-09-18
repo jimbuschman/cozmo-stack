@@ -1,7 +1,8 @@
 # cozmo-stack
 
 The beginning of the standalone replacement Cozmo stack. No Android app, no `libcozmoEngine.so`, no Python at runtime.
-Everything in here is derived from the official engine binary (authoritative), Anki's open-sourced transport library
+Everything in here is derived from the official engine binary (authoritative), Anki's transport library as
+released for Vector by Digital Dream Labs
 (identical code) and PyCozmo's hardware captures (test fixtures only). See `../re-analysis/TRANSPORT_SPEC.md` for the
 reconstructed protocol and `../re-analysis/CAPABILITY_GAP.md` for the roadmap.
 
@@ -26,7 +27,8 @@ Requires the .NET 9 (or newer) SDK (present on this machine).
 
 ```
 dotnet build Cozmo.sln
-dotnet test  Cozmo.sln                                   # 30 tests incl. all 161 codecs + capture replay
+dotnet test  Cozmo.sln                                   # 150 tests: all 161 codecs, capture replay,
+                                                         # device layer, transport lifecycle
 dotnet run --project src/Cozmo.Conformance -- fixtures  # PyCozmo captures decode + re-encode byte-identically
 dotnet run --project src/Cozmo.Conformance -- catalog 0xc2
 ```

@@ -95,7 +95,7 @@ The official transport is generic `Anki::Util::ReliableTransport` over `Anki::Ut
 (with `HeaderPrefix`, optional CRC, multi-part messages, ping/latency stats, configurable timeouts via
 `RobotConnectionManager::ConfigureReliableTransport` and the game message `ReliableTransportRunMode`).
 The frame magic `COZ\x03RE\x01` is not a literal in the binary; it is assembled by `HeaderPrefix::Set`.
-The same transport code was open-sourced by Anki in the Vector repository (`lib/util/.../transport/`),
+The same transport code appears in the Vector source Digital Dream Labs released (`lib/util/.../transport/`),
 which is the correct reference to verify PyCozmo's `frame.py`/`window.py`/`conn.py` (selective-repeat,
 window 16, ACK timeout 0.1 s, ping 0.5 s, 5 s robot-side timeout, MAX_FRAME 1051 B). Evidence for
 PyCozmo here: **H** (pcap-derived, in daily use by the project) but **not V**; multi-part messages are
@@ -103,7 +103,7 @@ not implemented in PyCozmo.
 
 **Resolved (2026-09-18, M1):** `MessageHandler::AddRobotConnection` selects the destination port on
 `ConnectToRobot.isSimulated`: physical robot → **5551**, Webots simulator → 5552. PyCozmo was right for hardware.
-The transport has since been fully reconstructed from the engine disassembly and Anki's identical open-sourced
+The transport has since been fully reconstructed from the engine disassembly and the identical Vector
 `util/transport` code (fetched from the Vector repository into `reference/anki-util-transport-vector/`); see
 `TRANSPORT_SPEC.md`. PyCozmo's framing is correct; its ping payload (16 vs 17 B), ping cadence, window model and
 type-0x0a naming differ from the official stack, and it lacks multipart messages.
@@ -381,12 +381,13 @@ Why this first: every other subsystem (docking, vision, animation with track loc
 firmware modes) is blocked on messages PyCozmo never defined, and PyCozmo's handshake rests on two
 misidentified packets. Nothing above the protocol can be verified until the wire layer is known to be
 correct. The OBB is now on disk (see `OBB_INVENTORY.md`), so the only remaining external dependency
-for this milestone is a robot on firmware 2381.
+for this milestone is a robot on firmware 2381. In the event the robot available for testing runs 2457,
+a 2025 Digital Dream Labs build; everything below was verified against that, not against 2381.
 
-**M1 status (2026-09-18):** transport core implemented in `../cozmo-stack/` (C#, .NET 10): frame codec,
+**M1 status (2026-09-18):** transport core implemented in `../cozmo-stack/` (C#, .NET 9): frame codec,
 sequence/ack/resend state machine ported from the official code with the engine's tunables, UDP transport,
 typed handshake/telemetry/command messages, official 161-message catalog, conformance CLI (decode/diff/fixtures/
-pcap/replay/fakerobot/connect). 69 unit tests pass, PyCozmo's hardware-captured frames round-trip byte-identically,
+pcap/replay/fakerobot/connect). PyCozmo's hardware-captured frames round-trip byte-identically,
 and the loopback smoke test against the fake robot passes (connect, identity, handshake, telemetry, SetHeadAngle
 acked and reflected, clean disconnect). Deliverable 1 is scoped to the conformance set as instructed; the full
 161-message field layouts are the next stage (official field widths for 78 of them are already in
@@ -396,7 +397,8 @@ acked and reflected, clean disconnect). Deliverable 1 is scoped to the conforman
 `protocol/cozmo_robot_protocol.json` now carries all **161** official robot messages with tag, direction,
 byte layout, field names and their evidence source, variable-length encoding, subsystem, probe-safety class,
 layout confidence and hardware-verification status. The C# types and codecs are **generated** from it
-(`tools/gen_protocol.py` -> `Cozmo.Protocol/Generated/RobotMessages.g.cs`, 161 classes + 7 structs + 24 enums),
+(`tools/gen_protocol.py` -> `Cozmo.Protocol/Generated/RobotMessages.g.cs`, 161 classes + 7 structs + 9 enums;
+the definition records 24 enums, of which 9 are referenced by a field and therefore emitted),
 not hand-maintained. 159 of 161 have a complete byte layout; the 2 that do not (TestState 0xA1,
 AppConnectConfigString 0xAA, both factory/destructive) keep an explicit raw tail rather than a guess.
 Verification after the 2026-09-18 subsystem probe: **24 hardware verified**, 4 capture verified, 56 statically
@@ -405,7 +407,7 @@ IMU, camera, animation, cubes and head motion are all confirmed on the real firm
 Tests assert every fixed message serialises to the engine's own `Size()`, every message round-trips, and every CLAD
 payload in the 20 s hardware capture decodes and re-encodes byte-identically. Full detail: `PROTOCOL_STATUS.md`.
 
-**M3 status (2026-09-18): COMPLETE, all three pipelines verified on hardware.** On the firmware-2457 robot
+**M3 status (2026-09-18): COMPLETE, all three pipelines verified on hardware; acceptance artifact pending.** On the firmware-2457 robot
 a real photograph was captured and saved, a known image was shown on the OLED, and a generated tone played
 cleanly through the speaker. Five faults were found and fixed along the way, the last and only audible one
 being that Cozmo's mu-law is not G.711. Details in `DEVICE_LAYER.md`. Among them: the robot
@@ -418,7 +420,7 @@ decode perfectly but roll by one macroblock row per frame). The mu-law audio cod
 turns the verified protocol into three stateful pipelines plus a live robot-state view: `CozmoCamera`
 (chunk reassembly and minimized-JPEG reconstruction, including the colour flag in payload byte 0),
 `CozmoDisplay` (128x32 face bitmap, exact run-length codec) and `CozmoAudio` (mu-law, 744-sample frames,
-paced at the animation tick). 119 tests pass, including the 28 image/byte-sequence pairs captured from
+paced at the animation tick). 150 tests pass, including the 28 image/byte-sequence pairs captured from
 Cozmo's own face encoder and a full Huffman decode of every camera frame in the hardware capture. Hardware
 acceptance commands `camera`, `face` and `tone` are in the conformance CLI and not yet run. Detail and the
 open gaps: `DEVICE_LAYER.md`.
