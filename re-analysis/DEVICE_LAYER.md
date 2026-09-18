@@ -1,6 +1,6 @@
 # M3 — `Cozmo.Robot` device layer
 
-Status: **camera and display verified on a real robot; audio re-run pending** (2026-09-18)
+Status: **complete — camera, display and audio all verified on a real robot** (2026-09-18)
 
 This is the first layer above the frozen M1 transport and M2 protocol baseline. It turns the verified wire
 messages into three stateful pipelines plus a live view of robot state, as ordinary library components.
@@ -212,17 +212,19 @@ dotnet build -c Release
 src\Cozmo.Conformance\bin\Release\net9.0\cozmo-conformance.exe camera 172.31.1.1 --count 10 --out shots
 ```
 
-Pass criteria. **Camera and display met on a hardware-1.5 robot running firmware 2457 on 2026-09-18;
-audio pending a re-run after the pacing fix:**
+Pass criteria, **all three met on a hardware-1.5 robot running firmware 2457 on 2026-09-18**:
 
 1. **Camera** — the saved `.jpg` files open in any viewer and show the room from Cozmo's point of view.
    Warm-up frames are printed but not saved; they are torn by design.
 2. **Display** — the pattern on the robot's face matches the ASCII art the command prints.
 3. **Audio** — a clean, steady 440 Hz tone with no clicks or stutter, lasting two seconds.
 
-The first run failed 2 and 3 outright and produced only torn images for 1: the animation controller was
-never started, and the saved frames were all sensor warm-up. The second run passed 1 and 2, and revealed
-the audio pacing bug above.
+Getting there took five hardware faults, in this order: the animation controller was never started, so face
+and audio did nothing; the saved camera frames were all sensor warm-up; the tone command bypassed the
+library's paced path and overran the robot's buffer; the pacer ran on a clock too coarse to hold a 33 ms
+slot and fed a robot that drains faster than the arithmetic predicts; and finally the codec was standard
+G.711 rather than the engine's own mu-law. Only the last one was audible as the buzz, and it was the only
+one the engine could have told us about up front.
 
 Each command writes a full frame log and prints its absolute path.
 

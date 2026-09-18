@@ -405,11 +405,10 @@ IMU, camera, animation, cubes and head motion are all confirmed on the real firm
 Tests assert every fixed message serialises to the engine's own `Size()`, every message round-trips, and every CLAD
 payload in the 20 s hardware capture decodes and re-encodes byte-identically. Full detail: `PROTOCOL_STATUS.md`.
 
-**M3 status (2026-09-18): camera and display verified on hardware, audio re-run pending.** On the
-firmware-2457 robot a real photograph was captured and saved and a known image was shown on the OLED. The
-speaker produced audible sound of the right character but the tone was cut short: the robot buffers only
-about 14 audio frames and the acceptance command was pushing all 61 at once instead of using the library's
-paced path. Fixed, re-run pending. Three faults found on hardware so far: the robot
+**M3 status (2026-09-18): COMPLETE, all three pipelines verified on hardware.** On the firmware-2457 robot
+a real photograph was captured and saved, a known image was shown on the OLED, and a generated tone played
+cleanly through the speaker. Five faults were found and fixed along the way, the last and only audible one
+being that Cozmo's mu-law is not G.711. Details in `DEVICE_LAYER.md`. Among them: the robot
 silently discards face and audio keyframes until `initAnimController` (0x9F) starts its animation
 controller, and the first ~11 camera frames after a stream starts are torn while the sensor locks (they
 decode perfectly but roll by one macroblock row per frame). The mu-law audio codec moves from hypothesis to
