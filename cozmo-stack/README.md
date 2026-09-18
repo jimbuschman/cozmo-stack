@@ -17,7 +17,7 @@ src/Cozmo.Conformance   `cozmo-conformance` CLI: decode / diff / fixtures / cata
 tests/                  xunit: PyCozmo hardware fixtures round-trip, official sizes, reliability state machine
 ```
 
-Requires the .NET 10 SDK (present on this machine).
+Requires the .NET 9 (or newer) SDK (present on this machine).
 
 ```
 dotnet build Cozmo.sln

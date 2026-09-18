@@ -5,7 +5,7 @@ Private working repository.
 
 | path | what |
 |---|---|
-| `cozmo-stack/` | **the code**: C#/.NET 10 solution — `Cozmo.Protocol` (wire format, official 161-message catalog, typed messages), `Cozmo.Transport` (Anki reliable UDP transport with the engine's tunables), `Cozmo.Conformance` (CLI: decode/diff/fixtures/catalog/pcap/replay/fakerobot/connect), tests. See `cozmo-stack/README.md` for build and the **hardware smoke test**. |
+| `cozmo-stack/` | **the code**: C#/.NET 9 (or newer) solution — `Cozmo.Protocol` (wire format, official 161-message catalog, typed messages), `Cozmo.Transport` (Anki reliable UDP transport with the engine's tunables), `Cozmo.Conformance` (CLI: decode/diff/fixtures/catalog/pcap/replay/fakerobot/connect), tests. See `cozmo-stack/README.md` for build and the **hardware smoke test**. |
 | `re-analysis/TRANSPORT_SPEC.md` | reconstructed engine↔robot transport specification (frames, sequence ids, acks, resends, pings, handshake) |
 | `re-analysis/CAPABILITY_GAP.md` | official stack vs PyCozmo capability-gap analysis, target architecture, milestones |
 | `re-analysis/OBB_INVENTORY.md` | inventory of the app's OBB resources and the seven official firmware images (hashes only; images are not in the repo) |
@@ -17,7 +17,7 @@ Not in the repo (regenerate locally): the decompiled APK folders (`resources/ so
 (`re-analysis/obb/`, 441 MB incl. `cozmo.safe` firmware), and the large symbol dumps (`re-analysis/tools/*.py` rebuild them
 from the `.so`).
 
-## Quick start (Windows/Linux/macOS with .NET 10 SDK)
+## Quick start (Windows/Linux/macOS with .NET 9 (or newer) SDK)
 
 ```
 cd cozmo-stack
