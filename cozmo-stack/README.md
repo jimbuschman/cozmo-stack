@@ -8,23 +8,51 @@ reconstructed protocol and `../re-analysis/CAPABILITY_GAP.md` for the roadmap.
 ```
 Cozmo.sln
 src/Cozmo.Protocol      wire format: 14-byte frame header, sub-message framing, sequence ids, ping payload,
-                        CLAD reader/writer, official 161-message catalog (generated), typed messages for the
-                        handshake/telemetry/harmless-command set, raw fallback for everything else
+                        CLAD reader/writer, and the GENERATED protocol layer: all 161 official robot messages
+                        with codecs, 7 nested structs, 24 official enums and a metadata catalog (subsystem,
+                        probe safety, layout confidence, hardware-verification status). Generated from
+                        ../re-analysis/protocol/cozmo_robot_protocol.json; never edit Generated/*.g.cs by hand.
+                        Clad/MessageExtras.cs adds hand-written conveniences on the generated partials.
 src/Cozmo.Transport     ReliableConnection (port of Anki::Util::ReliableConnection with the engine's tunables),
                         ReliableTransport (UDP socket, receive + 2 ms update threads, official receive semantics),
                         RobotLink (typed facade: identity, telemetry, handshake, SetHeadAngle/backpack LEDs)
-src/Cozmo.Conformance   `cozmo-conformance` CLI: decode / diff / fixtures / catalog / pcap / replay / fakerobot / connect
-tests/                  xunit: PyCozmo hardware fixtures round-trip, official sizes, reliability state machine
+src/Cozmo.Conformance   `cozmo-conformance` CLI: decode / diff / fixtures / catalog / pcap / replay /
+                        fakerobot / connect / probe
+tests/                  xunit: frame codec, reliability state machine, all 161 generated codecs against the
+                        engine's own Size(), and every CLAD payload from the firmware-2457 capture
 ```
 
 Requires the .NET 9 (or newer) SDK (present on this machine).
 
 ```
 dotnet build Cozmo.sln
-dotnet test  Cozmo.sln                                   # 69 tests
+dotnet test  Cozmo.sln                                   # 30 tests incl. all 161 codecs + capture replay
 dotnet run --project src/Cozmo.Conformance -- fixtures  # PyCozmo captures decode + re-encode byte-identically
 dotnet run --project src/Cozmo.Conformance -- catalog 0xc2
 ```
+
+## Regenerating the protocol layer
+
+The C# in `src/Cozmo.Protocol/Generated/` is produced from the canonical definition; edit the definition or the
+generator, never the output:
+
+```
+python ../re-analysis/tools/gen_protocol.py ../re-analysis .         # codecs + catalog
+python ../re-analysis/tools/gen_protocol_status.py ../re-analysis    # PROTOCOL_STATUS.md
+dotnet test Cozmo.sln
+```
+
+## Verifying the protocol against a robot
+
+```
+dotnet run --project src/Cozmo.Conformance -- probe 172.31.1.1                    # read-only + safe-visible only
+dotnet run --project src/Cozmo.Conformance -- probe 172.31.1.1 --include-state    # adds harmless config messages
+dotnet run --project src/Cozmo.Conformance -- probe 172.31.1.1 --include-motion   # adds small head/lift moves
+```
+
+Every reply is decoded with the generated codec and re-encoded; a byte-identical result marks that message
+hardware verified. Results land in `probe-results.json` plus a full frame log. The probe never sends NV writes,
+firmware updates, recovery, factory-test, shutdown, Wi-Fi-off or body-radio messages.
 
 ## Loopback self-test (no hardware)
 

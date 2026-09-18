@@ -27,7 +27,10 @@ public sealed class CladReader
     public double F64() => BinaryPrimitives.ReadDoubleLittleEndian(Take(8));
     public byte[] Bytes(int n) => Take(n).ToArray();
     public byte[] Rest() => Take(Remaining).ToArray();
+    public long I64() => BinaryPrimitives.ReadInt64LittleEndian(Take(8));
     public ushort[] U16Array(int n) { var a = new ushort[n]; for (int i = 0; i < n; i++) a[i] = U16(); return a; }
+    /// <summary>Reads n elements with the supplied reader, in order.</summary>
+    public T[] Array<T>(int n, Func<T> read) { var a = new T[n]; for (int i = 0; i < n; i++) a[i] = read(); return a; }
     /// <summary>CLAD string[uint_8]: u8 length + bytes.</summary>
     public string String8() { int n = U8(); return Encoding.UTF8.GetString(Take(n)); }
     /// <summary>CLAD string[uint_16]: u16 length + bytes.</summary>
@@ -48,6 +51,8 @@ public sealed class CladWriter
     public CladWriter I16(short v) { Span<byte> t = stackalloc byte[2]; BinaryPrimitives.WriteInt16LittleEndian(t, v); Put(t); return this; }
     public CladWriter U32(uint v) { Span<byte> t = stackalloc byte[4]; BinaryPrimitives.WriteUInt32LittleEndian(t, v); Put(t); return this; }
     public CladWriter I32(int v) { Span<byte> t = stackalloc byte[4]; BinaryPrimitives.WriteInt32LittleEndian(t, v); Put(t); return this; }
+    public CladWriter U64(ulong v) { Span<byte> t = stackalloc byte[8]; BinaryPrimitives.WriteUInt64LittleEndian(t, v); Put(t); return this; }
+    public CladWriter I64(long v) { Span<byte> t = stackalloc byte[8]; BinaryPrimitives.WriteInt64LittleEndian(t, v); Put(t); return this; }
     public CladWriter F32(float v) { Span<byte> t = stackalloc byte[4]; BinaryPrimitives.WriteSingleLittleEndian(t, v); Put(t); return this; }
     public CladWriter F64(double v) { Span<byte> t = stackalloc byte[8]; BinaryPrimitives.WriteDoubleLittleEndian(t, v); Put(t); return this; }
     public CladWriter Bytes(ReadOnlySpan<byte> v) { foreach (var x in v) _b.Add(x); return this; }

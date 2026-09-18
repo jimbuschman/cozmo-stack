@@ -14,9 +14,9 @@ public class HardwareCaptureTests
 {
     private static readonly Regex Line = new(@"^(\S+) (TX|RX) ((?:[0-9a-f]{2} ?)+)$", RegexOptions.Compiled);
 
-    private static List<(DateTime t, bool tx, byte[] raw)> Load()
+    private static List<(DateTime t, bool tx, byte[] raw)> Load(string file = "hw_fw2457_first120.log")
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "Fixtures", "hw_fw2457_first120.log");
+        var path = Path.Combine(AppContext.BaseDirectory, "Fixtures", file);
         var rows = new List<(DateTime, bool, byte[])>();
         foreach (var l in File.ReadAllLines(path))
         {
@@ -82,14 +82,55 @@ public class HardwareCaptureTests
         Assert.Equal("fedb4b12f1b5b45456aec1629cd0b8cc", fw.EngineToRobotHash);
         Assert.Equal(0x41d04d9du, Assert.Single(got.OfType<RobotAvailable>()).SerialNumberHead);
         Assert.Equal(0x4d9d, fw.RobotId); // low 16 bits of the head serial
-        Assert.Single(got.OfType<ManufacturingId>());
+        Assert.Single(got.OfType<ManufacturingID>());
         Assert.Single(got.OfType<SyncTimeAck>());
-        Assert.Single(got.OfType<WifiFlashId>());
-        Assert.True(got.OfType<Trace>().Count() >= 5);
+        Assert.Single(got.OfType<WiFiFlashID>());
+        Assert.True(got.OfType<PrintTrace>().Count() >= 5);
         Assert.True(got.OfType<RobotState>().Count() > 10);
         Assert.Empty(got.OfType<RawRobotMessage>().Where(r => r.ParseNote is not null)); // every modelled message parsed cleanly
         Assert.All(got.OfType<RobotState>(), s => Assert.True(s.Has(RobotStatusFlag.IsOnCharger) && s.BatteryVoltage > 3.5f));
         // duplicates the robot resent (it repeats unacked reliable messages every frame) must have been dropped
         Assert.True(t.Connection!.DuplicateReliableDropped >= 1);
+    }
+
+    /// <summary>
+    /// The strongest layout check available without a robot in the room: take every CLAD payload the real
+    /// firmware-2457 robot sent during the 20 s run, decode it with the generated codecs and re-encode it.
+    /// A wrong field width or order shows up immediately as a length or byte difference.
+    /// </summary>
+    [Fact]
+    public void EveryCapturedCladPayloadDecodesAndReEncodesByteIdentically()
+    {
+        var seen = new Dictionary<RobotMessageId, int>();
+        var failures = new List<string>();
+        foreach (var (_, _, raw) in Load("hw_fw2457_full.log"))
+        {
+            if (!FrameCodec.TryDecode(raw, out var f, out _)) continue;
+            foreach (var sm in f!.Messages)
+            {
+                if (sm.Type is not (ReliableMessageType.SingleReliableMessage or ReliableMessageType.SingleUnreliableMessage)
+                    || sm.Payload.Length == 0) continue;
+                var m = RobotMessage.Parse(sm.Payload);
+                var id = (RobotMessageId)sm.Payload[0];
+                seen[id] = seen.GetValueOrDefault(id) + 1;
+                if (m is RawRobotMessage raw2)
+                {
+                    failures.Add($"0x{(byte)id:x2} {MessageCatalog.Lookup((byte)id)?.CladType}: {raw2.ParseNote}");
+                    continue;
+                }
+                if (!m.ToBytes().SequenceEqual(sm.Payload))
+                    failures.Add($"0x{(byte)id:x2} {m.Info?.CladType}: re-encode differs\n  in  {Hex.Dump(sm.Payload)}\n  out {Hex.Dump(m.ToBytes())}");
+            }
+        }
+        Assert.Empty(failures);
+        // the run exercised these, so the fixture is meaningful
+        Assert.True(seen.Count >= 12, $"only {seen.Count} distinct messages in the capture");
+        Assert.True(seen[RobotMessageId.State] > 500, $"only {seen.GetValueOrDefault(RobotMessageId.State)} RobotState");
+        foreach (var id in new[] { RobotMessageId.RobotAvailable, RobotMessageId.FirmwareVersion, RobotMessageId.MfgId,
+                                   RobotMessageId.SyncTimeAck, RobotMessageId.Trace, RobotMessageId.MotorActionAck,
+                                   RobotMessageId.MotorCalibration, RobotMessageId.ActiveObjectAvailable,
+                                   RobotMessageId.WifiFlashID, RobotMessageId.HeadAngle, RobotMessageId.GetMfgInfo,
+                                   RobotMessageId.SyncTime })
+            Assert.True(seen.ContainsKey(id), $"{id} not present in the capture");
     }
 }

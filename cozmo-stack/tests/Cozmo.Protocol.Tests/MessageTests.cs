@@ -12,115 +12,141 @@ public class MessageTests
         Assert.Equal(56, MessageCatalog.RobotToEngineCount);
         Assert.Equal(161, MessageCatalog.ById.Count);
         Assert.Equal("DriveWheels", MessageCatalog.Lookup(0x32)!.CladType);
-        Assert.Equal("SyncTimeAck", MessageCatalog.Lookup(0xC2)!.CladType); // PyCozmo mislabels this RobotDelocalized
+        Assert.Equal("SyncTimeAck", MessageCatalog.Lookup(0xC2)!.CladType);          // PyCozmo mislabels this RobotDelocalized
         Assert.Equal("DriveWheelsCurvature", MessageCatalog.Lookup(0x33)!.CladType); // PyCozmo mislabels this TurnInPlaceAtSpeed
         Assert.Equal(91, MessageCatalog.Lookup(0xF0)!.OfficialSize);
     }
 
-    public static IEnumerable<object[]> FixedSizeMessages() => new[]
+    [Fact]
+    public void EveryCatalogEntryHasAGeneratedCodec()
     {
-        new object[] { new RobotState() },
-        new object[] { new RobotAvailable() },
-        new object[] { new ManufacturingId() },
-        new object[] { new SyncTime(1, 2) },
-        new object[] { new SyncTimeAck() },
-        new object[] { new InitAnimController() },
-        new object[] { new GetManufacturingInfo() },
-        new object[] { new SetHeadAngle(0.5f, 1, 2, 3, 4) },
-        new object[] { new SetLiftHeight(40f) },
-        new object[] { new MotorActionAck(3) },
-        new object[] { new SetHeadlight(true) },
-        new object[] { new EnableStopOnCliff(true) },
-        new object[] { new StopAllMotors() },
-        new object[] { new DriveWheels(1, 2, 3, 4) },
-        new object[] { new AnimationState() },
-        new object[] { new RobotPoked() },
-        new object[] { new BackpackButton(true) },
-        new object[] { new MotorCalibration(1, true, false) },
-        new object[] { new ObjectAvailable(1, 2, -3) },
-        new object[] { new FallingStarted(1) },
-        new object[] { new FallingStopped(1, 2, 3) },
-        new object[] { new AbsoluteLocalizationUpdate(0, 0, 1, 0, 0, 0x80000000) },
-        new object[] { new ImageRequest(1) },
-        new object[] { new RobotStopped(1) },
-    };
-
-    [Theory]
-    [MemberData(nameof(FixedSizeMessages))]
-    public void TypedMessageBodySizeMatchesOfficialSize(RobotMessage m)
-    {
-        var info = MessageCatalog.Lookup((byte)m.Id)!;
-        Assert.True(info.OfficialSize >= 0, $"{m.Id} is variable in the catalog");
-        Assert.Equal(info.OfficialSize, m.ToBytes().Length - 1);
+        foreach (var info in MessageCatalog.ById.Values)
+            Assert.True(GeneratedMessages.Parsers.ContainsKey(info.Id), $"no codec for {info.CladType}");
+        Assert.Equal(161, GeneratedMessages.Parsers.Count);
     }
 
-    [Theory]
-    [MemberData(nameof(FixedSizeMessages))]
-    public void TypedMessagesRoundTrip(RobotMessage m)
+    /// <summary>Every fixed-size message must serialise to exactly the size the engine's own Size() returns.</summary>
+    [Fact]
+    public void GeneratedCodecsMatchOfficialSizes()
     {
-        var bytes = m.ToBytes();
-        var back = RobotMessage.Parse(bytes);
-        Assert.IsNotType<RawRobotMessage>(back);
-        Assert.Equal(bytes, back.ToBytes());
+        var mismatches = new List<string>();
+        foreach (var info in MessageCatalog.ById.Values.Where(i => !i.VariableLength && i.OfficialSize >= 0
+                                                                  && i.Confidence != LayoutConfidence.Partial))
+        {
+            var msg = GeneratedMessages.Parsers[info.Id](new CladReader(new byte[Math.Max(info.OfficialSize, 1) * 8]));
+            int n = msg.ToBytes().Length - 1;
+            if (n != info.OfficialSize) mismatches.Add($"{info.CladType}: wrote {n}, official {info.OfficialSize}");
+        }
+        Assert.Empty(mismatches);
+    }
+
+    /// <summary>Round-trip every message from a deterministic byte pattern: decode then re-encode must be identical.</summary>
+    [Fact]
+    public void GeneratedCodecsRoundTripFixedSizeMessages()
+    {
+        var rnd = new Random(1234);
+        var bad = new List<string>();
+        foreach (var info in MessageCatalog.ById.Values.Where(i => !i.VariableLength && i.OfficialSize >= 0
+                                                                  && i.Confidence != LayoutConfidence.Partial))
+        {
+            var body = new byte[info.OfficialSize];
+            rnd.NextBytes(body);
+            var full = new byte[body.Length + 1];
+            full[0] = (byte)info.Id;
+            body.CopyTo(full, 1);
+            var m = RobotMessage.Parse(full);
+            if (m is RawRobotMessage raw) { bad.Add($"{info.CladType}: {raw.ParseNote}"); continue; }
+            // Encoding is idempotent: bool/enum fields normalise on the first pass (a bool byte of 0x7f
+            // comes back as 0x01), so compare the second round against the first.
+            var once = m.ToBytes();
+            if (once.Length != full.Length) bad.Add($"{info.CladType}: wrote {once.Length - 1}, expected {info.OfficialSize}");
+            var twice = RobotMessage.Parse(once).ToBytes();
+            if (!twice.SequenceEqual(once)) bad.Add($"{info.CladType}: not idempotent");
+        }
+        Assert.Empty(bad);
+    }
+
+    [Fact]
+    public void VariableLengthMessagesRoundTrip()
+    {
+        var img = new ImageChunk { FrameTimestamp = 7, ImageId = 3, Data = new byte[] { 1, 2, 3, 4, 5 } };
+        Assert.Equal(img.ToBytes(), RobotMessage.Parse(img.ToBytes()).ToBytes());
+        var nv = new NVCommand { Tag = 0x180000, Length = 4, Data = new byte[] { 9, 9 } };
+        Assert.Equal(nv.ToBytes(), RobotMessage.Parse(nv.ToBytes()).ToBytes());
+        var tr = new PrintTrace { FormatId = 1, NameId = 2, Level = 3, Args = new[] { 10, 20 } };
+        Assert.Equal(tr.ToBytes(), RobotMessage.Parse(tr.ToBytes()).ToBytes());
     }
 
     [Fact]
     public void LightStateIs10BytesAndBackpackMessageIs31()
     {
-        Assert.Equal(10, new CladWriterHelper().Size(w => LightState.Solid(0x7fff).Write(w)));
-        var m = new SetBackpackLightsMiddle();
-        Assert.Equal(31, m.ToBytes().Length - 1); // PyCozmo LightStateCenter 3*10+1 (official Size() is variable-length)
+        var w = new CladWriter();
+        LightState.Solid(0x7FFF).Write(w);
+        Assert.Equal(10, w.Length);
+        Assert.Equal(31, new BackpackLightsMiddle().ToBytes().Length - 1);   // 3 * LightState + 1
+        Assert.Equal(21, new BackpackLightsTurnSignals().ToBytes().Length - 1); // 2 * LightState + 1
+        Assert.Equal(40, new CubeLights().ToBytes().Length - 1);             // 4 * LightState
     }
 
     [Fact]
     public void RobotStateDecodesFieldOrder()
     {
         var w = new CladWriter().U8((byte)RobotMessageId.State)
-            .U32(1000).U32(2).U32(3).F32(10).F32(20).F32(30).F32(0.5f).F32(0.1f)
-            .F32(11).F32(12).F32(-0.3f).F32(45).F32(1).F32(2).F32(3).F32(4).F32(5).F32(6)
-            .F32(3.9f).U32(0x1200).U16(100).U16(200).U16(300).U16(400).U16(7).U8(9);
+            .U32(1000).U32(2).U32(3)
+            .F32(10).F32(20).F32(30).F32(0.5f).F32(0.1f)
+            .F32(11).F32(12).F32(-0.3f).F32(45)
+            .F32(1).F32(2).F32(3).F32(4).F32(5).F32(6)
+            .F32(3.9f).U32(0x1200)
+            .U16(100).U16(200).U16(300).U16(400).U16(7).I8(9);
         var s = Assert.IsType<RobotState>(RobotMessage.Parse(w.ToArray()));
-        Assert.Equal(1000u, s.Timestamp); Assert.Equal(3u, s.PoseOriginId); Assert.Equal(-0.3f, s.HeadAngleRad); Assert.Equal(45f, s.LiftHeightMm);
-        Assert.Equal(3.9f, s.BatteryVoltage); Assert.True(s.Has(RobotStatusFlag.IsOnCharger)); Assert.True(s.Has(RobotStatusFlag.HeadInPos));
-        Assert.Equal(new ushort[] { 100, 200, 300, 400 }, s.CliffDataRaw); Assert.Equal(7, s.BackpackTouchSensorRaw); Assert.Equal(9, s.CurrPathSegment);
+        Assert.Equal(1000u, s.Timestamp);
+        Assert.Equal(3u, s.PoseOriginId);
+        Assert.Equal(10f, s.PoseX);
+        Assert.Equal(0.5f, s.PoseAngleRad);
+        Assert.Equal(-0.3f, s.HeadAngle);
+        Assert.Equal(45f, s.LiftAngle);
+        Assert.Equal(3.9f, s.BatteryVoltage);
+        Assert.True(s.Has(RobotStatusFlag.IsOnCharger));
+        Assert.True(s.Has(RobotStatusFlag.HeadInPos));
+        Assert.Equal(new ushort[] { 100, 200, 300, 400 }, s.CliffDataRaw);
+        Assert.Equal(7, s.BackpackTouchSensorRaw);
+        Assert.Equal(9, s.CurrPathSegment);
+        Assert.Equal(91, s.ToBytes().Length - 1);
     }
 
     [Fact]
     public void UnknownTagsBecomeRawAndRoundTrip()
     {
-        var bytes = new byte[] { 0x42, 1, 2, 3, 4 }; // dockWithObject, not modelled yet
-        var m = RobotMessage.Parse(bytes);
-        var raw = Assert.IsType<RawRobotMessage>(m);
-        Assert.Equal(RobotMessageId.DockWithObject, raw.Id);
-        Assert.Equal(bytes, raw.ToBytes());
+        var bytes = new byte[] { 0x99, 1, 2, 3, 4 };   // animBodyMotion is 4 B; give it 4 payload bytes
+        Assert.IsNotType<RawRobotMessage>(RobotMessage.Parse(bytes));
+        var unknown = new byte[] { 0x13, 7, 7 };       // 0x13 is not an official tag
+        var raw = Assert.IsType<RawRobotMessage>(RobotMessage.Parse(unknown));
+        Assert.Equal(unknown, raw.ToBytes());
     }
 
     [Fact]
     public void FirmwareVersionParsesSignatureJson()
     {
-        string json = "{\"version\": 2381, \"messageEngineToRobotHash\": \"9e4a965ace4e09d86997b87ba14235d5\", \"messageRobotToEngineHash\": \"a259247f16231db440957215baba12ab\"}";
-        var body = new CladWriter().U8((byte)RobotMessageId.FirmwareVersion).U16(0x4d9d).String16(json).ToArray();
-        var fw = Assert.IsType<FirmwareVersion>(RobotMessage.Parse(body));
-        Assert.Equal(2381, fw.Version);
-        Assert.Equal(0x4d9d, fw.RobotId);
-        Assert.Equal("9e4a965ace4e09d86997b87ba14235d5", fw.EngineToRobotHash);
-        Assert.Equal(body, fw.ToBytes());
+        string json = "{\"version\": 2381, \"messageEngineToRobotHash\": \"9e4a965ace4e09d86997b87ba14235d5\", " +
+                      "\"messageRobotToEngineHash\": \"a259247f16231db440957215baba12ab\", \"build\": \"DEVELOPMENT\"}";
+        var fw = new FirmwareVersion { RobotId = 0x4D9D, Signature = System.Text.Encoding.UTF8.GetBytes(json) };
+        var back = Assert.IsType<FirmwareVersion>(RobotMessage.Parse(fw.ToBytes()));
+        Assert.Equal(2381, back.Version);
+        Assert.Equal(0x4D9D, back.RobotId);
+        Assert.Equal("9e4a965ace4e09d86997b87ba14235d5", back.EngineToRobotHash);
+        Assert.Equal("DEVELOPMENT", back.Build);
+        Assert.Equal(fw.ToBytes(), back.ToBytes());
     }
 
     [Fact]
-    public void HardwareCaptureFirmwareVersionAndTraceDecode()
+    public void CatalogRecordsSubsystemSafetyAndVerification()
     {
-        // From the 2026-09-18 hardware run (fw 2457): FirmwareVersion body prefix 9d4d bd01 then 445-byte JSON.
-        var json = "{\"version\": 2457, \"git-rev\": \"1f716924703f5a8167e4812ebe0fb16991f23484\"}";
-        var body = new CladWriter().U8(0xee).U16(0x4d9d).String16(json).ToArray();
-        var fw = Assert.IsType<FirmwareVersion>(RobotMessage.Parse(body));
-        Assert.Equal(2457, fw.Version); Assert.Equal(0x4d9d, fw.RobotId);
-        // Trace: fmt 624 name 409 level 2, 6 args = soft-AP MAC address bytes
-        var tr = Assert.IsType<Trace>(RobotMessage.Parse(Hex.Parse("b0 70020000990102062e0000003a000000e800000014000000e90000005f000000")));
-        Assert.Equal(624, tr.FormatId); Assert.Equal(409, tr.NameId); Assert.Equal(2, tr.Level);
-        Assert.Equal(new uint[] { 0x2e, 0x3a, 0xe8, 0x14, 0xe9, 0x5f }, tr.Args);
-        Assert.Equal(Hex.Parse("b0 70020000990102062e0000003a000000e800000014000000e90000005f000000"), tr.ToBytes());
+        var state = MessageCatalog.Lookup(0xF0)!;
+        Assert.Equal(Subsystem.RobotStateSensors, state.Subsystem);
+        Assert.Equal(VerificationStatus.HardwareVerified, state.Verification);
+        Assert.Equal(ProbeSafety.Destructive, MessageCatalog.Lookup(0xAF)!.Safety);   // OTA write
+        Assert.Equal(ProbeSafety.ReadOnly, MessageCatalog.Lookup(0x25)!.Safety);      // GetManufacturingInfo
+        Assert.Equal(Subsystem.CubesBle, MessageCatalog.Lookup(0x04)!.Subsystem);
+        Assert.NotEmpty(MessageCatalog.BySubsystem(Subsystem.Camera));
     }
-
-    private sealed class CladWriterHelper { public int Size(Action<CladWriter> f) { var w = new CladWriter(); f(w); return w.Length; } }
 }

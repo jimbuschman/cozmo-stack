@@ -1,0 +1,341 @@
+"""Generate the C# protocol layer from the canonical definition.
+
+  protocol/cozmo_robot_protocol.json
+      -> cozmo-stack/src/Cozmo.Protocol/Generated/MessageCatalog.g.cs   (ids + metadata)
+      -> cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs    (enums, structs, 161 codecs)
+
+usage: python gen_protocol.py <re-analysis-dir> <cozmo-stack-dir>
+"""
+import json, os, re, sys, keyword
+
+RA, ROOT = sys.argv[1], sys.argv[2]
+doc = json.load(open(os.path.join(RA, "protocol", "cozmo_robot_protocol.json")))
+MSGS, STRUCTS, ENUMS = doc["messages"], doc["structs"], doc["enums"]
+
+CT = {"u8": "byte", "i8": "sbyte", "bool": "bool", "u16": "ushort", "i16": "short", "u32": "uint",
+      "i32": "int", "f32": "float", "f64": "double", "u64": "ulong", "i64": "long", "string": "string"}
+RD = {"u8": "U8", "i8": "I8", "bool": "Bool", "u16": "U16", "i16": "I16", "u32": "U32", "i32": "I32",
+      "f32": "F32", "f64": "F64", "u64": "U64", "i64": "I64"}
+
+
+# The BLE payload struct is called Frame in CLAD; rename it so it does not collide with the
+# transport-level Frame (the UDP datagram) in the same namespace.
+SN = {"Frame": "BleFrame"}
+
+
+def sn(n):
+    return SN.get(n, n)
+
+
+def pascal(s):
+    s = re.sub(r"[^0-9a-zA-Z_]", "_", s)
+    parts = [p for p in s.split("_") if p]
+    out = "".join(p[:1].upper() + p[1:] for p in parts)
+    return out or "Field"
+
+
+def prop_name(field_name, cls, used):
+    n = pascal(field_name)
+    if n == cls:
+        n += "Value"
+    if keyword.iskeyword(n.lower()) and n.lower() in ("class", "event", "base", "object", "string", "return"):
+        n += "Value"
+    base = n
+    i = 2
+    while n in used:
+        n = "%s%d" % (base, i)
+        i += 1
+    used.add(n)
+    return n
+
+
+def cs_type(f):
+    k = f["kind"]
+    if k == "scalar":
+        return CT[f["type"]]
+    if k == "enum":
+        return f["type"]
+    if k == "struct":
+        return sn(f["type"])
+    if k == "string":
+        return "string"
+    if k in ("farray", "varray"):
+        e = f.get("elem") or f["type"]
+        return (CT.get(e) or sn(e)) + "[]"
+    if k == "raw":
+        return "byte[]"
+    return "byte[]"
+
+
+def read_expr(f):
+    k = f["kind"]
+    if k == "scalar":
+        return "r.%s()" % RD[f["type"]]
+    if k == "enum":
+        return "(%s)r.%s()" % (f["type"], RD[ENUMS[f["type"]]["base"]])
+    if k == "struct":
+        return "%s.Read(r)" % sn(f["type"])
+    if k == "string":
+        return "r.String%s()" % ("8" if f.get("count", "u8") == "u8" else "16")
+    if k == "raw":
+        return "r.Rest()"
+    e = f.get("elem") or f["type"]
+    if k == "farray":
+        n = f["length"]
+        if e in STRUCTS:
+            return "ReadStructArray(r, %d, %s.Read)" % (n, sn(e))
+        if e in ENUMS:
+            return "ReadEnumArray<%s>(r, %d, () => (%s)r.%s())" % (e, n, e, RD[ENUMS[e]["base"]])
+        return "r.Array<%s>(%d, () => r.%s())" % (CT[e], n, RD[e])
+    # varray
+    cw = f.get("count", "u16")
+    if e in STRUCTS:
+        return "ReadStructArray(r, (int)r.%s(), %s.Read)" % (RD[cw], sn(e))
+    return "r.Array<%s>((int)r.%s(), () => r.%s())" % (CT[e], RD[cw], RD[e])
+
+
+def write_stmts(f, p):
+    k = f["kind"]
+    if k == "scalar":
+        return ["w.%s(%s);" % (RD[f["type"]], p)]
+    if k == "enum":
+        return ["w.%s((%s)%s);" % (RD[ENUMS[f["type"]]["base"]], CT[ENUMS[f["type"]]["base"]], p)]
+    if k == "struct":
+        return ["%s.Write(w);" % p]
+    if k == "string":
+        return ["w.String%s(%s ?? string.Empty);" % ("8" if f.get("count", "u8") == "u8" else "16", p)]
+    if k == "raw":
+        return ["w.Bytes(%s ?? Array.Empty<byte>());" % p]
+    e = f.get("elem") or f["type"]
+    if k == "farray":
+        n = f["length"]
+        body = ("%s[i].Write(w);" % p) if e in STRUCTS else \
+               ("w.%s((%s)%s[i]);" % (RD[ENUMS[e]["base"]], CT[ENUMS[e]["base"]], p) if e in ENUMS
+                else "w.%s(%s[i]);" % (RD[e], p))
+        return ["FixedLength(%s, %d, nameof(%s));" % (p, n, p),
+                "for (int i = 0; i < %d; i++) %s" % (n, body)]
+    cw = f.get("count", "u16")
+    body = ("%s[i].Write(w);" % p) if e in STRUCTS else "w.%s(%s[i]);" % (RD[e], p)
+    return ["w.%s((%s)(%s?.Length ?? 0));" % (RD[cw], CT[cw], p),
+            "for (int i = 0; i < (%s?.Length ?? 0); i++) %s" % (p, body)]
+
+
+def init_expr(f):
+    k = f["kind"]
+    if k in ("farray",):
+        e = f.get("elem") or f["type"]
+        return " = new %s[%d];" % (CT.get(e) or sn(e), f["length"])
+    if k in ("varray", "raw"):
+        e = f.get("elem") or ("u8" if k == "raw" else f["type"])
+        return " = Array.Empty<%s>();" % (CT.get(e) or sn(e))
+    if k == "string":
+        return " = string.Empty;"
+    return ";"
+
+
+# ---------------------------------------------------------------- catalog
+def enum_member(m, used):
+    n = pascal(m["member"])
+    if n in used:
+        n += "FromRobot" if m["direction"] == "robot_to_engine" else "ToRobot"
+    used.add(n)
+    return n
+
+
+L = ["// <auto-generated> by re-analysis/tools/gen_protocol.py from protocol/cozmo_robot_protocol.json.",
+     "// Source of truth: libcozmoEngine.so 3.4.0-1204 Unpack/Size + decompiled C# CLAD + hardware captures (fw 2457).",
+     "// Do not edit by hand; edit the definition or the generator and re-run.",
+     "#nullable enable", "namespace Cozmo.Protocol;", "",
+     "public enum MessageDirection { EngineToRobot, RobotToEngine }", "",
+     "/// <summary>How much of a message is established. exact/prefix = official C# CLAD twin; hardware_refined = "
+     "confirmed on a real robot; native_* = widths from the engine binary with names from PyCozmo or generated; "
+     "partial = one or more fields unresolved (a raw tail preserves the bytes).</summary>",
+     "public enum LayoutConfidence { Exact, Prefix, HardwareRefined, NativeNamed, NativeOnly, Empty, Partial }", "",
+     "/// <summary>Verification state of a message against the real firmware-2457 robot.</summary>",
+     "public enum VerificationStatus { StaticallyVerified, CaptureVerified, HardwareVerified, "
+     "LayoutKnownSemanticsUncertain, Unresolved, CaptureConflict }", "",
+     "public enum Subsystem { IdentityVersionLogging, RobotStateSensors, Motors, LedsDisplay, Camera, Audio, "
+     "Animation, CubesBle, LocalizationNavigation, FirmwareUpdateRecovery, FactoryDebugStorage, Unclassified }", "",
+     "/// <summary>Probe safety. Only ReadOnly and SafeVisible are used by the automated hardware probe.</summary>",
+     "public enum ProbeSafety { ReadOnly, SafeVisible, Motion, StateChange, Destructive }", "",
+     "/// <summary>Official EngineToRobot / RobotToEngine union tags (u8). 0x01-0xAF engine->robot, "
+     "0xB0-0xFF robot->engine.</summary>",
+     "public enum RobotMessageId : byte", "{"]
+used = set()
+ids = {}
+for k, m in MSGS.items():
+    n = enum_member(m, used)
+    ids[m["tag"]] = n
+    L.append("    /// <summary>%s (%s); size %s; %s</summary>" %
+             (m["clad_type"], m["direction"], m["official_size"], m["verification"]))
+    L.append("    %s = 0x%02X," % (n, m["tag"]))
+L += ["}", "",
+      "public sealed record MessageInfo(RobotMessageId Id, string Member, string CladType, MessageDirection Direction,",
+      "    int OfficialSize, bool VariableLength, Subsystem Subsystem, ProbeSafety Safety,",
+      "    LayoutConfidence Confidence, VerificationStatus Verification, string? PyCozmoName);", "",
+      "public static class MessageCatalog", "{",
+      "    public static readonly IReadOnlyDictionary<RobotMessageId, MessageInfo> ById = new Dictionary<RobotMessageId, MessageInfo>", "    {"]
+
+
+def cs_enum(v, kind):
+    return {"exact": "Exact", "prefix": "Prefix", "hardware_refined": "HardwareRefined",
+            "native_named": "NativeNamed", "native_only": "NativeOnly", "empty": "Empty",
+            "partial": "Partial"}[v] if kind == "conf" else \
+           {"statically_verified": "StaticallyVerified", "capture_verified": "CaptureVerified",
+            "hardware_verified": "HardwareVerified", "capture_conflict": "CaptureConflict",
+            "layout_known_semantics_uncertain": "LayoutKnownSemanticsUncertain",
+            "unresolved": "Unresolved"}[v]
+
+
+for k, m in MSGS.items():
+    n = ids[m["tag"]]
+    sz = -1 if m["official_size"] in (None, "variable") else m["official_size"]
+    L.append('        [RobotMessageId.%s] = new(RobotMessageId.%s, "%s", "%s", MessageDirection.%s, %d, %s, '
+             'Subsystem.%s, ProbeSafety.%s, LayoutConfidence.%s, VerificationStatus.%s, %s),' %
+             (n, n, m["member"], m["clad_type"],
+              "EngineToRobot" if m["direction"] == "engine_to_robot" else "RobotToEngine",
+              sz, "true" if m["variable_length"] else "false",
+              pascal(m["subsystem"]), pascal(m["safety"]),
+              cs_enum(m["confidence"], "conf"), cs_enum(m["verification"], "ver"),
+              ('"%s"' % m["evidence"]["pycozmo_name"]) if m["evidence"].get("pycozmo_name") else "null"))
+L += ["    };", "",
+      "    public static MessageInfo? Lookup(byte tag) => ById.TryGetValue((RobotMessageId)tag, out var i) ? i : null;",
+      "    public static IEnumerable<MessageInfo> BySubsystem(Subsystem s) => ById.Values.Where(i => i.Subsystem == s);",
+      "    public const int EngineToRobotCount = %d;" % doc["meta"]["engine_to_robot"],
+      "    public const int RobotToEngineCount = %d;" % doc["meta"]["robot_to_engine"],
+      "}"]
+cat = "\n".join(L) + "\n"
+
+# ---------------------------------------------------------------- messages
+G = ["// <auto-generated> by re-analysis/tools/gen_protocol.py from protocol/cozmo_robot_protocol.json.",
+     "// Every field width and order comes from the engine's own CLAD Unpack routines; names come from the",
+     "// official decompiled C# structs where they exist, then hardware captures, then PyCozmo. Fields whose",
+     "// meaning is not established keep a generated name and are flagged in the definition file.",
+     "#nullable enable", "using System.Text;", "using static Cozmo.Protocol.ProtoHelpers;",
+     "namespace Cozmo.Protocol;", ""]
+
+usedE = sorted({f["type"] for m in MSGS.values() for f in m["fields"] if f["kind"] == "enum"} |
+               {f.get("elem") for m in MSGS.values() for f in m["fields"] if f.get("elem") in ENUMS})
+for e in usedE:
+    ed = ENUMS[e]
+    G.append("public enum %s : %s" % (e, CT[ed["base"]]))
+    G.append("{")
+    seen = set()
+    for v in ed["values"]:
+        if v["name"] in seen:
+            continue
+        seen.add(v["name"])
+        G.append("    %s = %d," % (pascal(v["name"]) if not v["name"][0].isalpha() else v["name"], v["value"]))
+    G += ["}", ""]
+
+usedS = sorted({f["type"] for m in MSGS.values() for f in m["fields"] if f["kind"] == "struct"} |
+               {f.get("elem") for m in MSGS.values() for f in m["fields"] if f.get("elem") in STRUCTS})
+for s in usedS:
+    flds = STRUCTS[s]
+    G.append("/// <summary>CLAD struct %s.</summary>" % s)
+    G.append("public partial struct %s" % sn(s))
+    G.append("{")
+    props = []
+    u = set()
+    for f in flds:
+        m = re.match(r"(\w+)\[(\d+)\]$", f["type"])
+        t = (CT[m.group(1)] + "[]") if m else CT[f["type"]]
+        pn = prop_name(f["name"], sn(s), u)
+        props.append((pn, f["type"], m))
+        G.append("    public %s %s%s" % (t, pn, (" = new %s[%s];" % (CT[m.group(1)], m.group(2))) if m else ";"))
+    G.append("    public %s() { }" % sn(s))
+    G.append("    public static %s Read(CladReader r) => new()" % sn(s))
+    G.append("    {")
+    for pn, ty, m in props:
+        G.append("        %s = %s," % (pn, ("r.Array<%s>(%s, () => r.%s())" % (CT[m.group(1)], m.group(2), RD[m.group(1)]))
+                                       if m else "r.%s()" % RD[ty]))
+    G.append("    };")
+    G.append("    public void Write(CladWriter w)")
+    G.append("    {")
+    for pn, ty, m in props:
+        if m:
+            G.append("        for (int i = 0; i < %s; i++) w.%s(%s[i]);" % (m.group(2), RD[m.group(1)], pn))
+        else:
+            G.append("        w.%s(%s);" % (RD[ty], pn))
+    G += ["    }", "}", ""]
+
+parsers = []
+for k, m in MSGS.items():
+    cls = m["clad_type"]
+    idn = ids[m["tag"]]
+    G.append("/// <summary>%s 0x%02X (%s), %s. Confidence: %s. Verification: %s.%s</summary>" %
+             (m["member"], m["tag"], m["direction"],
+              "variable length" if m["variable_length"] else "%s bytes" % m["official_size"],
+              m["confidence"], m["verification"],
+              (" " + " ".join(m["notes"])) if m["notes"] else ""))
+    G.append("public sealed partial class %s : RobotMessage" % cls)
+    G.append("{")
+    G.append("    public override RobotMessageId Id => RobotMessageId.%s;" % idn)
+    G.append("    public %s() { }" % cls)
+    u = set()
+    props = []
+    for f in m["fields"]:
+        pn = prop_name(f["name"], cls, u)
+        props.append((pn, f))
+        doc_bits = []
+        if f.get("uncertain"):
+            doc_bits.append("name not established")
+        if f.get("name_source"):
+            doc_bits.append("name from " + f["name_source"])
+        if f.get("note"):
+            doc_bits.append(f["note"])
+        if doc_bits:
+            G.append("    /// <summary>%s</summary>" % "; ".join(doc_bits))
+        G.append("    public %s %s%s" % (cs_type(f), pn, init_expr(f)))
+    G.append("    public static %s Read(CladReader r) => new()" % cls)
+    G.append("    {")
+    for pn, f in props:
+        G.append("        %s = %s," % (pn, read_expr(f)))
+    G.append("    };")
+    G.append("    public override void WriteBody(CladWriter w)")
+    G.append("    {")
+    for pn, f in props:
+        for st in write_stmts(f, pn):
+            G.append("        " + st)
+    G += ["    }", "}", ""]
+    parsers.append("        [RobotMessageId.%s] = %s.Read," % (idn, cls))
+
+G += ["/// <summary>Helpers used by the generated codecs.</summary>",
+      "public static class ProtoHelpers", "{",
+      "    internal static void FixedLength(Array? a, int n, string name)",
+      "    {",
+      "        if ((a?.Length ?? 0) != n) throw new InvalidOperationException($\"{name} must have exactly {n} elements\");",
+      "    }",
+      "    internal static T[] ReadStructArray<T>(CladReader r, int n, Func<CladReader, T> read)",
+      "    {",
+      "        var a = new T[n];",
+      "        for (int i = 0; i < n; i++) a[i] = read(r);",
+      "        return a;",
+      "    }",
+      "    internal static T[] ReadEnumArray<T>(CladReader r, int n, Func<T> read)",
+      "    {",
+      "        var a = new T[n];",
+      "        for (int i = 0; i < n; i++) a[i] = read();",
+      "        return a;",
+      "    }",
+      "}", "",
+      "/// <summary>Generated codec registry: every official robot message, keyed by its union tag.</summary>",
+      "public static class GeneratedMessages", "{",
+      "    public static readonly IReadOnlyDictionary<RobotMessageId, Func<CladReader, RobotMessage>> Parsers =",
+      "        new Dictionary<RobotMessageId, Func<CladReader, RobotMessage>>", "        {"] + \
+     ["    " + p for p in parsers] + \
+     ["        };", "}"]
+msgs = "\n".join(G) + "\n"
+# the helpers are used unqualified inside the generated classes
+msgs = msgs.replace("public sealed partial class", "public sealed partial class", 1)
+
+gen = os.path.join(ROOT, "src", "Cozmo.Protocol", "Generated")
+os.makedirs(gen, exist_ok=True)
+open(os.path.join(gen, "MessageCatalog.g.cs"), "w", encoding="utf-8").write(cat)
+open(os.path.join(gen, "RobotMessages.g.cs"), "w", encoding="utf-8").write(msgs)
+old = os.path.join(gen, "MessageCatalog.cs")
+if os.path.exists(old):
+    os.remove(old)
+print("generated %d messages, %d structs, %d enums" % (len(MSGS), len(usedS), len(usedE)))
+print("  ", os.path.join(gen, "MessageCatalog.g.cs"))
+print("  ", os.path.join(gen, "RobotMessages.g.cs"))

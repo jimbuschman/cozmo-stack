@@ -307,7 +307,7 @@ Use as **reference and test oracle**, never as a runtime dependency:
 
 ## 6. Unknowns that need further reverse engineering (ordered by blocking impact)
 
-1. Field layouts of the 84 missing messages (Pack/Unpack disassembly + C# twins). Blocks docking, IMU, cliff events, anim track control, recovery/OTA modes. *M1 update:* field byte-width sequences for 78 message types are now recovered from their `Unpack` routines (`protocol/robot_msg_field_widths_official.json`); names/semantics still to assign.
+1. ~~Field layouts of the 84 missing messages.~~ *Resolved in M2* — all 161 messages now have layouts in `protocol/cozmo_robot_protocol.json`; what remains is semantics for 173 placeholder-named fields and 2 unresolved messages. See `PROTOCOL_STATUS.md`.
 2. ~~Official transport constants and multi-part message framing; confirm 5551/5552.~~ *Resolved in M1* — see `TRANSPORT_SPEC.md`.
 3. `AbsoluteLocalizationUpdate` and `SetBodyAngle` unknown fields; `RobotAvailable` bytes.
 4. Fiducial marker encoding/decoding tables (`Anki::Vision::MarkerDefinitions` / `Anki::Embedded`).
@@ -391,6 +391,17 @@ and the loopback smoke test against the fake robot passes (connect, identity, ha
 acked and reflected, clean disconnect). Deliverable 1 is scoped to the conformance set as instructed; the full
 161-message field layouts are the next stage (official field widths for 78 of them are already in
 `protocol/robot_msg_field_widths_official.json`).
+
+**M2 status (2026-09-18): protocol layer complete and generated.** The canonical definition
+`protocol/cozmo_robot_protocol.json` now carries all **161** official robot messages with tag, direction,
+byte layout, field names and their evidence source, variable-length encoding, subsystem, probe-safety class,
+layout confidence and hardware-verification status. The C# types and codecs are **generated** from it
+(`tools/gen_protocol.py` -> `Cozmo.Protocol/Generated/RobotMessages.g.cs`, 161 classes + 7 structs + 24 enums),
+not hand-maintained. 159 of 161 have a complete byte layout; the 2 that do not (TestState 0xA1,
+AppConnectConfigString 0xAA, both factory/destructive) keep an explicit raw tail rather than a guess.
+Verification today: 13 hardware verified, 65 statically verified, 81 layout-known/semantics-uncertain, 2 unresolved.
+Tests assert every fixed message serialises to the engine's own `Size()`, every message round-trips, and every CLAD
+payload in the 20 s hardware capture decodes and re-encodes byte-identically. Full detail: `PROTOCOL_STATUS.md`.
 
 **M1 hardware smoke test: PASSED (2026-09-18)** on a hardware-1.5 Cozmo running firmware **2457** (a 2025 Digital
 Dream Labs build, newer than the 2381 shipped in this APK): direct connection from our code, stable handshake, 722

@@ -1,0 +1,8199 @@
+{
+ "meta": {
+  "source": "libcozmoEngine.so 3.4.0-1204 (authoritative) + decompiled C# CLAD + hardware captures (fw 2457) + PyCozmo (names only)",
+  "engine_to_robot": 105,
+  "robot_to_engine": 56,
+  "generated_by": "re-analysis/tools/build_protocol_definition.py"
+ },
+ "structs": {
+  "RobotPose": [
+   {
+    "name": "x",
+    "type": "f32"
+   },
+   {
+    "name": "y",
+    "type": "f32"
+   },
+   {
+    "name": "z",
+    "type": "f32"
+   },
+   {
+    "name": "angle",
+    "type": "f32"
+   },
+   {
+    "name": "pitch",
+    "type": "f32"
+   }
+  ],
+  "AccelData": [
+   {
+    "name": "x",
+    "type": "f32"
+   },
+   {
+    "name": "y",
+    "type": "f32"
+   },
+   {
+    "name": "z",
+    "type": "f32"
+   }
+  ],
+  "GyroData": [
+   {
+    "name": "x",
+    "type": "f32"
+   },
+   {
+    "name": "y",
+    "type": "f32"
+   },
+   {
+    "name": "z",
+    "type": "f32"
+   }
+  ],
+  "ActiveAccel": [
+   {
+    "name": "x",
+    "type": "f32"
+   },
+   {
+    "name": "y",
+    "type": "f32"
+   },
+   {
+    "name": "z",
+    "type": "f32"
+   }
+  ],
+  "LightState": [
+   {
+    "name": "onColor",
+    "type": "u16"
+   },
+   {
+    "name": "offColor",
+    "type": "u16"
+   },
+   {
+    "name": "onFrames",
+    "type": "u8"
+   },
+   {
+    "name": "offFrames",
+    "type": "u8"
+   },
+   {
+    "name": "transitionOnFrames",
+    "type": "u8"
+   },
+   {
+    "name": "transitionOffFrames",
+    "type": "u8"
+   },
+   {
+    "name": "offset",
+    "type": "i16"
+   }
+  ],
+  "PathSegmentSpeed": [
+   {
+    "name": "speed_mmps",
+    "type": "f32"
+   },
+   {
+    "name": "accel_mmps2",
+    "type": "f32"
+   },
+   {
+    "name": "decel_mmps2",
+    "type": "f32"
+   }
+  ],
+  "Frame": [
+   {
+    "name": "flags",
+    "type": "u8"
+   },
+   {
+    "name": "data",
+    "type": "u8[16]"
+   }
+  ]
+ },
+ "enums": {
+  "AnimEvent": {
+   "base": "u8",
+   "values": [
+    {
+     "name": "DEVICE_AUDIO_TRIGGER",
+     "value": 0
+    },
+    {
+     "name": "ENERGY_DRAINCUBE_END",
+     "value": 1
+    },
+    {
+     "name": "TAPPED_BLOCK",
+     "value": 2
+    },
+    {
+     "name": "Count",
+     "value": 3
+    }
+   ]
+  },
+  "BackpackLayer": {
+   "base": "u8",
+   "values": [
+    {
+     "name": "BPL_USER",
+     "value": 0
+    },
+    {
+     "name": "BPL_ANIMATION",
+     "value": 1
+    },
+    {
+     "name": "BPL_IMPULSE",
+     "value": 2
+    },
+    {
+     "name": "BACKPACK_LAYERS",
+     "value": 3
+    }
+   ]
+  },
+  "BodyRadioMode": {
+   "base": "i8",
+   "values": [
+    {
+     "name": "BODY_BLUETOOTH_OPERATING_MODE",
+     "value": 0
+    },
+    {
+     "name": "BODY_ACCESSORY_OPERATING_MODE",
+     "value": 1
+    },
+    {
+     "name": "BODY_LOW_POWER_OPERATING_MODE",
+     "value": 2
+    },
+    {
+     "name": "BODY_FORCE_RECOVERY",
+     "value": 3
+    },
+    {
+     "name": "BODY_STARTUP",
+     "value": 4
+    },
+    {
+     "name": "BODY_DTM_OPERATING_MODE",
+     "value": 32
+    },
+    {
+     "name": "BODY_OTA_MODE",
+     "value": 64
+    },
+    {
+     "name": "BODY_BATTERY_CHARGE_TEST_MODE",
+     "value": 120
+    }
+   ]
+  },
+  "CarryState": {
+   "base": "u8",
+   "values": [
+    {
+     "name": "CARRY_NONE",
+     "value": 0
+    },
+    {
+     "name": "CARRY_1_BLOCK",
+     "value": 1
+    },
+    {
+     "name": "CARRY_2_BLOCK",
+     "value": 2
+    },
+    {
+     "name": "NUM_CARRY_STATES",
+     "value": 3
+    }
+   ]
+  },
+  "CliffSensor": {
+   "base": "u8",
+   "values": [
+    {
+     "name": "CLIFF_FL",
+     "value": 0
+    },
+    {
+     "name": "CLIFF_FR",
+     "value": 1
+    },
+    {
+     "name": "CLIFF_BL",
+     "value": 2
+    },
+    {
+     "name": "CLIFF_BR",
+     "value": 3
+    },
+    {
+     "name": "CLIFF_COUNT",
+     "value": 4
+    }
+   ]
+  },
+  "ControllerChannel": {
+   "base": "u8",
+   "values": [
+    {
+     "name": "controller_wheel",
+     "value": 0
+    },
+    {
+     "name": "controller_head",
+     "value": 1
+    },
+    {
+     "name": "controller_lift",
+     "value": 2
+    },
+    {
+     "name": "controller_steering",
+     "value": 3
+    },
+    {
+     "name": "controller_pointTurn",
+     "value": 4
+    }
+   ]
+  },
+  "DockAction": {
+   "base": "u8",
+   "values": [
+    {
+     "name": "DA_PICKUP_LOW",
+     "value": 0
+    },
+    {
+     "name": "DA_PICKUP_HIGH",
+     "value": 1
+    },
+    {
+     "name": "DA_PLACE_HIGH",
+     "value": 2
+    },
+    {
+     "name": "DA_PLACE_LOW",
+     "value": 3
+    },
+    {
+     "name": "DA_PLACE_LOW_BLIND",
+     "value": 4
+    },
+    {
+     "name": "DA_ROLL_LOW",
+     "value": 5
+    },
+    {
+     "name": "DA_DEEP_ROLL_LOW",
+     "value": 6
+    },
+    {
+     "name": "DA_POST_DOCK_ROLL",
+     "value": 7
+    },
+    {
+     "name": "DA_FACE_PLANT",
+     "value": 8
+    },
+    {
+     "name": "DA_POP_A_WHEELIE",
+     "value": 9
+    },
+    {
+     "name": "DA_ALIGN",
+     "value": 10
+    },
+    {
+     "name": "DA_ALIGN_SPECIAL",
+     "value": 11
+    },
+    {
+     "name": "DA_RAMP_ASCEND",
+     "value": 12
+    },
+    {
+     "name": "DA_RAMP_DESCEND",
+     "value": 13
+    },
+    {
+     "name": "DA_CROSS_BRIDGE",
+     "value": 14
+    }
+   ]
+  },
+  "ImageEncoding": {
+   "base": "u8",
+   "values": [
+    {
+     "name": "NoneImageEncoding",
+     "value": 0
+    },
+    {
+     "name": "RawGray",
+     "value": 1
+    },
+    {
+     "name": "RawRGB",
+     "value": 2
+    },
+    {
+     "name": "YUYV",
+     "value": 3
+    },
+    {
+     "name": "BAYER",
+     "value": 4
+    },
+    {
+     "name": "JPEGGray",
+     "value": 5
+    },
+    {
+     "name": "JPEGColor",
+     "value": 6
+    },
+    {
+     "name": "JPEGColorHalfWidth",
+     "value": 7
+    },
+    {
+     "name": "JPEGMinimizedGray",
+     "value": 8
+    },
+    {
+     "name": "JPEGMinimizedColor",
+     "value": 9
+    }
+   ]
+  },
+  "ImageQuality": {
+   "base": "u8",
+   "values": [
+    {
+     "name": "Unchecked",
+     "value": 0
+    },
+    {
+     "name": "Good",
+     "value": 1
+    },
+    {
+     "name": "TooDark",
+     "value": 2
+    },
+    {
+     "name": "TooBright",
+     "value": 3
+    }
+   ]
+  },
+  "ImageResolution": {
+   "base": "i8",
+   "values": [
+    {
+     "name": "VerificationSnapshot",
+     "value": 0
+    },
+    {
+     "name": "QQQQVGA",
+     "value": 1
+    },
+    {
+     "name": "QQQVGA",
+     "value": 2
+    },
+    {
+     "name": "QQVGA",
+     "value": 3
+    },
+    {
+     "name": "QVGA",
+     "value": 4
+    },
+    {
+     "name": "CVGA",
+     "value": 5
+    },
+    {
+     "name": "VGA",
+     "value": 6
+    },
+    {
+     "name": "SVGA",
+     "value": 7
+    },
+    {
+     "name": "XGA",
+     "value": 8
+    },
+    {
+     "name": "SXGA",
+     "value": 9
+    },
+    {
+     "name": "UXGA",
+     "value": 10
+    },
+    {
+     "name": "QXGA",
+     "value": 11
+    },
+    {
+     "name": "QUXGA",
+     "value": 12
+    },
+    {
+     "name": "ImageResolutionCount",
+     "value": 13
+    },
+    {
+     "name": "ImageResolutionNone",
+     "value": 14
+    }
+   ]
+  },
+  "ImageSendMode": {
+   "base": "u8",
+   "values": [
+    {
+     "name": "Off",
+     "value": 0
+    },
+    {
+     "name": "Stream",
+     "value": 1
+    },
+    {
+     "name": "SingleShot",
+     "value": 2
+    }
+   ]
+  },
+  "IMUConstants": {
+   "base": "u8",
+   "values": [
+    {
+     "name": "IMU_CHUNK_SIZE",
+     "value": 8
+    }
+   ]
+  },
+  "MotorID": {
+   "base": "u8",
+   "values": [
+    {
+     "name": "MOTOR_LEFT_WHEEL",
+     "value": 0
+    },
+    {
+     "name": "MOTOR_RIGHT_WHEEL",
+     "value": 1
+    },
+    {
+     "name": "MOTOR_LIFT",
+     "value": 2
+    },
+    {
+     "name": "MOTOR_HEAD",
+     "value": 3
+    },
+    {
+     "name": "MOTOR_COUNT",
+     "value": 4
+    }
+   ]
+  },
+  "ObjectType": {
+   "base": "i32",
+   "values": [
+    {
+     "name": "InvalidObject",
+     "value": -1
+    },
+    {
+     "name": "UnknownObject",
+     "value": 0
+    },
+    {
+     "name": "Block_LIGHTCUBE1",
+     "value": 1
+    },
+    {
+     "name": "Block_LIGHTCUBE2",
+     "value": 2
+    },
+    {
+     "name": "Block_LIGHTCUBE3",
+     "value": 3
+    },
+    {
+     "name": "Block_LIGHTCUBE_GHOST",
+     "value": 4
+    },
+    {
+     "name": "FlatMat_GEARS_4x4",
+     "value": 5
+    },
+    {
+     "name": "FlatMat_LETTERS_4x4",
+     "value": 6
+    },
+    {
+     "name": "FlatMat_ANKI_LOGO_8BIT",
+     "value": 7
+    },
+    {
+     "name": "FlatMat_LAVA_PLAYTEST",
+     "value": 8
+    },
+    {
+     "name": "Platform_LARGE",
+     "value": 9
+    },
+    {
+     "name": "Bridge_LONG",
+     "value": 10
+    },
+    {
+     "name": "Bridge_SHORT",
+     "value": 11
+    },
+    {
+     "name": "Ramp_Basic",
+     "value": 12
+    },
+    {
+     "name": "Charger_Basic",
+     "value": 13
+    },
+    {
+     "name": "ProxObstacle",
+     "value": 14
+    },
+    {
+     "name": "CliffDetection",
+     "value": 15
+    },
+    {
+     "name": "CollisionObstacle",
+     "value": 16
+    },
+    {
+     "name": "CustomType00",
+     "value": 17
+    },
+    {
+     "name": "CustomType01",
+     "value": 18
+    },
+    {
+     "name": "CustomType02",
+     "value": 19
+    },
+    {
+     "name": "CustomType03",
+     "value": 20
+    },
+    {
+     "name": "CustomType04",
+     "value": 21
+    },
+    {
+     "name": "CustomType05",
+     "value": 22
+    },
+    {
+     "name": "CustomType06",
+     "value": 23
+    },
+    {
+     "name": "CustomType07",
+     "value": 24
+    },
+    {
+     "name": "CustomType08",
+     "value": 25
+    },
+    {
+     "name": "CustomType09",
+     "value": 26
+    },
+    {
+     "name": "CustomType10",
+     "value": 27
+    },
+    {
+     "name": "CustomType11",
+     "value": 28
+    },
+    {
+     "name": "CustomType12",
+     "value": 29
+    },
+    {
+     "name": "CustomType13",
+     "value": 30
+    },
+    {
+     "name": "CustomType14",
+     "value": 31
+    },
+    {
+     "name": "CustomType15",
+     "value": 32
+    },
+    {
+     "name": "CustomType16",
+     "value": 33
+    },
+    {
+     "name": "CustomType17",
+     "value": 34
+    },
+    {
+     "name": "CustomType18",
+     "value": 35
+    },
+    {
+     "name": "CustomType19",
+     "value": 36
+    },
+    {
+     "name": "CustomFixedObstacle",
+     "value": 37
+    }
+   ]
+  },
+  "OffTreadsState": {
+   "base": "i8",
+   "values": [
+    {
+     "name": "OnTreads",
+     "value": 0
+    },
+    {
+     "name": "InAir",
+     "value": 1
+    },
+    {
+     "name": "OnBack",
+     "value": 2
+    },
+    {
+     "name": "OnLeftSide",
+     "value": 3
+    },
+    {
+     "name": "OnRightSide",
+     "value": 4
+    },
+    {
+     "name": "OnFace",
+     "value": 5
+    },
+    {
+     "name": "Falling",
+     "value": 6
+    }
+   ]
+  },
+  "PathEventType": {
+   "base": "u8",
+   "values": [
+    {
+     "name": "PATH_STARTED",
+     "value": 0
+    },
+    {
+     "name": "PATH_INTERRUPTED",
+     "value": 1
+    },
+    {
+     "name": "PATH_COMPLETED",
+     "value": 2
+    }
+   ]
+  },
+  "RobotStatusFlag": {
+   "base": "u32",
+   "values": [
+    {
+     "name": "NoneRobotStatusFlag",
+     "value": 0
+    },
+    {
+     "name": "IS_MOVING",
+     "value": 1
+    },
+    {
+     "name": "IS_CARRYING_BLOCK",
+     "value": 2
+    },
+    {
+     "name": "IS_PICKING_OR_PLACING",
+     "value": 4
+    },
+    {
+     "name": "IS_PICKED_UP",
+     "value": 8
+    },
+    {
+     "name": "IS_BODY_ACC_MODE",
+     "value": 16
+    },
+    {
+     "name": "IS_FALLING",
+     "value": 32
+    },
+    {
+     "name": "IS_ANIMATING",
+     "value": 64
+    },
+    {
+     "name": "IS_PATHING",
+     "value": 128
+    },
+    {
+     "name": "LIFT_IN_POS",
+     "value": 256
+    },
+    {
+     "name": "HEAD_IN_POS",
+     "value": 512
+    },
+    {
+     "name": "IS_ANIM_BUFFER_FULL",
+     "value": 1024
+    },
+    {
+     "name": "IS_ANIMATING_IDLE",
+     "value": 2048
+    },
+    {
+     "name": "IS_ON_CHARGER",
+     "value": 4096
+    },
+    {
+     "name": "IS_CHARGING",
+     "value": 8192
+    },
+    {
+     "name": "CLIFF_DETECTED",
+     "value": 16384
+    },
+    {
+     "name": "ARE_WHEELS_MOVING",
+     "value": 32768
+    },
+    {
+     "name": "IS_CHARGER_OOS",
+     "value": 65536
+    }
+   ]
+  },
+  "TestMode": {
+   "base": "u8",
+   "values": [
+    {
+     "name": "TM_NONE",
+     "value": 0
+    },
+    {
+     "name": "TM_PLACE_BLOCK_ON_GROUND",
+     "value": 1
+    },
+    {
+     "name": "TM_DOCK_PATH",
+     "value": 2
+    },
+    {
+     "name": "TM_PATH_FOLLOW",
+     "value": 3
+    },
+    {
+     "name": "TM_PATH_FOLLOW_CONVENIENCE_FUNCTIONS",
+     "value": 4
+    },
+    {
+     "name": "TM_DIRECT_DRIVE",
+     "value": 5
+    },
+    {
+     "name": "TM_LIFT",
+     "value": 6
+    },
+    {
+     "name": "TM_LIFT_TOGGLE",
+     "value": 7
+    },
+    {
+     "name": "TM_HEAD",
+     "value": 8
+    },
+    {
+     "name": "TM_IMU",
+     "value": 9
+    },
+    {
+     "name": "TM_LIGHTS",
+     "value": 10
+    },
+    {
+     "name": "TM_STOP_TEST",
+     "value": 11
+    },
+    {
+     "name": "TM_MAX_POWER_TEST",
+     "value": 12
+    },
+    {
+     "name": "TM_NUM_TESTS",
+     "value": 13
+    }
+   ]
+  },
+  "UpAxis": {
+   "base": "u8",
+   "values": [
+    {
+     "name": "XNegative",
+     "value": 0
+    },
+    {
+     "name": "XPositive",
+     "value": 1
+    },
+    {
+     "name": "YNegative",
+     "value": 2
+    },
+    {
+     "name": "YPositive",
+     "value": 3
+    },
+    {
+     "name": "ZNegative",
+     "value": 4
+    },
+    {
+     "name": "ZPositive",
+     "value": 5
+    },
+    {
+     "name": "NumAxes",
+     "value": 6
+    },
+    {
+     "name": "UnknownAxis",
+     "value": 7
+    }
+   ]
+  },
+  "BluetoothConnectionState": {
+   "base": "u32",
+   "values": [
+    {
+     "name": "BLE_CONNECTED",
+     "value": 0
+    },
+    {
+     "name": "BLE_DISCONNECTED_NORMALLY",
+     "value": 1
+    },
+    {
+     "name": "BLE_CANNOT_CONFIGURE_CONN_PARAMS",
+     "value": 2
+    }
+   ]
+  },
+  "PayloadFlags": {
+   "base": "u8",
+   "values": [
+    {
+     "name": "START_OF_MESSAGE",
+     "value": 1
+    },
+    {
+     "name": "END_OF_MESSAGE",
+     "value": 2
+    },
+    {
+     "name": "MESSAGE_ENCRYPTED",
+     "value": 4
+    }
+   ]
+  },
+  "NVEntryTag": {
+   "base": "u32",
+   "values": [
+    {
+     "name": "NVEntry_GameSkillLevels",
+     "value": 1572864
+    },
+    {
+     "name": "NVEntry_OnboardingData",
+     "value": 1576960
+    },
+    {
+     "name": "NVEntry_GameUnlocks",
+     "value": 1581056
+    },
+    {
+     "name": "NVEntry_FaceEnrollData",
+     "value": 1585152
+    },
+    {
+     "name": "NVEntry_FaceAlbumData",
+     "value": 1589248
+    },
+    {
+     "name": "NVEntry_NurtureGameData",
+     "value": 1654784
+    },
+    {
+     "name": "NVEntry_InventoryData",
+     "value": 1658880
+    },
+    {
+     "name": "NVEntry_LabAssignments",
+     "value": 1662976
+    },
+    {
+     "name": "NVEntry_SavedCubeIDs",
+     "value": 1667072
+    },
+    {
+     "name": "NVEntry_NEXT_SLOT",
+     "value": 1671168
+    },
+    {
+     "name": "NVEntry_FACTORY_RESERVED1",
+     "value": 1835008
+    },
+    {
+     "name": "NVEntry_FACTORY_RESERVED2",
+     "value": 1957888
+    },
+    {
+     "name": "NVEntry_BirthCertificate",
+     "value": 2147483648
+    },
+    {
+     "name": "NVEntry_CameraCalib",
+     "value": 2147483649
+    },
+    {
+     "name": "NVEntry_ToolCodeInfo",
+     "value": 2147483650
+    },
+    {
+     "name": "NVEntry_CalibPose",
+     "value": 2147483651
+    },
+    {
+     "name": "NVEntry_CalibMetaInfo",
+     "value": 2147483652
+    },
+    {
+     "name": "NVEntry_ObservedCubePose",
+     "value": 2147483653
+    },
+    {
+     "name": "NVEntry_IMUInfo",
+     "value": 2147483654
+    },
+    {
+     "name": "NVEntry_CliffValOnDrop",
+     "value": 2147483655
+    },
+    {
+     "name": "NVEntry_CliffValOnGround",
+     "value": 2147483656
+    },
+    {
+     "name": "NVEntry_PlaypenTestResults",
+     "value": 2147483664
+    },
+    {
+     "name": "NVEntry_FactoryLock",
+     "value": 2147483665
+    },
+    {
+     "name": "NVEntry_VersionMagic",
+     "value": 2147483666
+    },
+    {
+     "name": "NVEntry_CalibImage1",
+     "value": 2147549184
+    },
+    {
+     "name": "NVEntry_CalibImage2",
+     "value": 2147614720
+    },
+    {
+     "name": "NVEntry_CalibImage3",
+     "value": 2147680256
+    },
+    {
+     "name": "NVEntry_CalibImage4",
+     "value": 2147745792
+    },
+    {
+     "name": "NVEntry_CalibImage5",
+     "value": 2147811328
+    },
+    {
+     "name": "NVEntry_CalibImage6",
+     "value": 2147876864
+    },
+    {
+     "name": "NVEntry_ToolCodeImageLeft",
+     "value": 2148532224
+    },
+    {
+     "name": "NVEntry_ToolCodeImageRight",
+     "value": 2148597760
+    },
+    {
+     "name": "NVEntry_PrePlaypenResults",
+     "value": 3221225472
+    },
+    {
+     "name": "NVEntry_PrePlaypenCentroids",
+     "value": 3221225473
+    },
+    {
+     "name": "NVEntry_IMUAverages",
+     "value": 3221225476
+    },
+    {
+     "name": "NVEntry_FactoryBaseTag",
+     "value": 909312
+    },
+    {
+     "name": "NVEntry_FactoryBaseTagWithBCOffset",
+     "value": 909360
+    }
+   ]
+  },
+  "NVOperation": {
+   "base": "u8",
+   "values": [
+    {
+     "name": "NVOP_READ",
+     "value": 0
+    },
+    {
+     "name": "NVOP_WRITE",
+     "value": 1
+    },
+    {
+     "name": "NVOP_ERASE",
+     "value": 2
+    },
+    {
+     "name": "NVOP_WIPEALL",
+     "value": 3
+    }
+   ]
+  },
+  "NVResult": {
+   "base": "i8",
+   "values": [
+    {
+     "name": "NV_OKAY",
+     "value": 0
+    },
+    {
+     "name": "NV_SCHEDULED",
+     "value": 1
+    },
+    {
+     "name": "NV_NO_DO",
+     "value": 2
+    },
+    {
+     "name": "NV_MORE",
+     "value": 3
+    },
+    {
+     "name": "NV_NOT_FOUND",
+     "value": -1
+    },
+    {
+     "name": "NV_NO_ROOM",
+     "value": -2
+    },
+    {
+     "name": "NV_ERROR",
+     "value": -3
+    },
+    {
+     "name": "NV_TIMEOUT",
+     "value": -4
+    },
+    {
+     "name": "NV_BUSY",
+     "value": -5
+    },
+    {
+     "name": "NV_BAD_ARGS",
+     "value": -6
+    },
+    {
+     "name": "NV_NO_MEM",
+     "value": -7
+    },
+    {
+     "name": "NV_LOOP",
+     "value": -8
+    },
+    {
+     "name": "NV_CORRUPT",
+     "value": -9
+    }
+   ]
+  }
+ },
+ "helpers": {
+  "local_0x71a8f6": {
+   "count": "u16",
+   "elem": "u8",
+   "semantic": "bytes"
+  },
+  "local_0x7a17d8": {
+   "count": "u8",
+   "elem": "u8",
+   "semantic": "bytes"
+  },
+  "local_0x6c235c": {
+   "count": "u8",
+   "elem": "i8",
+   "semantic": "string"
+  },
+  "local_0x71283c": {
+   "count": "u8",
+   "elem": "u32",
+   "semantic": "array"
+  },
+  "local_0x73923a": {
+   "count": "u8",
+   "elem": "i32",
+   "semantic": "array"
+  }
+ },
+ "messages": {
+  "0x01": {
+   "tag": 1,
+   "member": "adjustTimestamp",
+   "clad_type": "AdjustTimestamp",
+   "direction": "engine_to_robot",
+   "subsystem": "identity_version_logging",
+   "safety": "state_change",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a5e18",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x02": {
+   "tag": 2,
+   "member": "setBackpackLayer",
+   "clad_type": "BackpackSetLayer",
+   "direction": "engine_to_robot",
+   "subsystem": "leds_display",
+   "safety": "safe_visible",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a458c",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x03": {
+   "tag": 3,
+   "member": "setBackpackLightsMiddle",
+   "clad_type": "BackpackLightsMiddle",
+   "direction": "engine_to_robot",
+   "subsystem": "leds_display",
+   "safety": "safe_visible",
+   "official_size": 31,
+   "native_size": "variable",
+   "variable_length": false,
+   "declared_size": 31,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "farray",
+     "type": "LightState",
+     "name_source": "generated",
+     "uncertain": true,
+     "elem": "LightState",
+     "length": 3
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a4232",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "LightStateCenter",
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack",
+    "LightState[3]: native loop bound, C# twin size and capture body length agree"
+   ]
+  },
+  "0x04": {
+   "tag": 4,
+   "member": "setCubeLights",
+   "clad_type": "CubeLights",
+   "direction": "engine_to_robot",
+   "subsystem": "cubes_ble",
+   "safety": "safe_visible",
+   "official_size": 40,
+   "native_size": "variable",
+   "variable_length": false,
+   "declared_size": 40,
+   "fields": [
+    {
+     "name": "lights",
+     "kind": "farray",
+     "type": "LightState",
+     "length": 4,
+     "elem": "LightState",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b7702",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": "CubeLights",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.CubeLights (exact match)"
+   ]
+  },
+  "0x05": {
+   "tag": 5,
+   "member": "setPropSlot",
+   "clad_type": "SetPropSlot",
+   "direction": "engine_to_robot",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 5,
+   "native_size": 5,
+   "variable_length": false,
+   "declared_size": 5,
+   "fields": [
+    {
+     "name": "factory_id",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "connect",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a111a",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": "ObjectConnect",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0x06": {
+   "tag": 6,
+   "member": "killBodyCode",
+   "clad_type": "KillBodyCode",
+   "direction": "engine_to_robot",
+   "subsystem": "firmware_update_recovery",
+   "safety": "destructive",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b7e6a",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.KillBodyCode (exact match)"
+   ]
+  },
+  "0x07": {
+   "tag": 7,
+   "member": "setBodyRadioMode",
+   "clad_type": "SetBodyRadioMode",
+   "direction": "engine_to_robot",
+   "subsystem": "cubes_ble",
+   "safety": "destructive",
+   "official_size": 2,
+   "native_size": 2,
+   "variable_length": false,
+   "declared_size": 2,
+   "fields": [
+    {
+     "name": "radioMode",
+     "kind": "enum",
+     "type": "BodyRadioMode",
+     "name_source": "csharp"
+    },
+    {
+     "name": "wifiChannel",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7d7c88",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.SetBodyRadioMode (exact match)"
+   ]
+  },
+  "0x08": {
+   "tag": 8,
+   "member": "streamObjectAccel",
+   "clad_type": "StreamObjectAccel",
+   "direction": "engine_to_robot",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 5,
+   "native_size": 5,
+   "variable_length": false,
+   "declared_size": 5,
+   "fields": [
+    {
+     "name": "objectID",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "enable",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b7abc",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": "StreamObjectAccel",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.StreamObjectAccel (exact match)"
+   ]
+  },
+  "0x0A": {
+   "tag": 10,
+   "member": "setAccessoryDiscovery",
+   "clad_type": "SetAccessoryDiscovery",
+   "direction": "engine_to_robot",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "enable",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b74c8",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": "SetAccessoryDiscovery",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.SetAccessoryDiscovery (exact match)"
+   ]
+  },
+  "0x0B": {
+   "tag": 11,
+   "member": "setHeadlight",
+   "clad_type": "SetHeadlight",
+   "direction": "engine_to_robot",
+   "subsystem": "leds_display",
+   "safety": "safe_visible",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "enable",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a1c28",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": "SetHeadLight",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.SetHeadlight (exact match)"
+   ]
+  },
+  "0x0C": {
+   "tag": 12,
+   "member": "setCubeGamma",
+   "clad_type": "SetCubeGamma",
+   "direction": "engine_to_robot",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a144c",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x0D": {
+   "tag": 13,
+   "member": "bodyEnterOTA",
+   "clad_type": "BodyEnterOTA",
+   "direction": "engine_to_robot",
+   "subsystem": "firmware_update_recovery",
+   "safety": "destructive",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "empty",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b8d5c",
+    "native_namespace": "RobotInterface::OTA",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": []
+  },
+  "0x0E": {
+   "tag": 14,
+   "member": "readBodyStorage",
+   "clad_type": "ReadBodyStorage",
+   "direction": "engine_to_robot",
+   "subsystem": "factory_debug_storage",
+   "safety": "destructive",
+   "official_size": 2,
+   "native_size": 2,
+   "variable_length": false,
+   "declared_size": 2,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a1560",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x0F": {
+   "tag": 15,
+   "member": "writeBodyStorage",
+   "clad_type": "WriteBodyStorage",
+   "direction": "engine_to_robot",
+   "subsystem": "factory_debug_storage",
+   "safety": "destructive",
+   "official_size": null,
+   "native_size": "variable",
+   "variable_length": true,
+   "declared_size": null,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "varray",
+     "type": "u8",
+     "count": "u8",
+     "elem": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a16bc",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x10": {
+   "tag": 16,
+   "member": "setCubeID",
+   "clad_type": "CubeID",
+   "direction": "engine_to_robot",
+   "subsystem": "cubes_ble",
+   "safety": "safe_visible",
+   "official_size": 5,
+   "native_size": 5,
+   "variable_length": false,
+   "declared_size": 5,
+   "fields": [
+    {
+     "name": "objectID",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "rotationPeriod_frames",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b75c0",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": "CubeId",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.CubeID (exact match)"
+   ]
+  },
+  "0x11": {
+   "tag": 17,
+   "member": "setBackpackLightsTurnSignals",
+   "clad_type": "BackpackLightsTurnSignals",
+   "direction": "engine_to_robot",
+   "subsystem": "leds_display",
+   "safety": "safe_visible",
+   "official_size": 21,
+   "native_size": "variable",
+   "variable_length": false,
+   "declared_size": 21,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "farray",
+     "type": "LightState",
+     "name_source": "generated",
+     "uncertain": true,
+     "elem": "LightState",
+     "length": 2
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a43de",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "LightStateSide",
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack",
+    "LightState[2]: native loop bound, C# twin size and capture body length agree"
+   ]
+  },
+  "0x12": {
+   "tag": 18,
+   "member": "sendDTMCommand",
+   "clad_type": "SendDTMCommand",
+   "direction": "engine_to_robot",
+   "subsystem": "cubes_ble",
+   "safety": "destructive",
+   "official_size": 16,
+   "native_size": 16,
+   "variable_length": false,
+   "declared_size": 16,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a1a92",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x24": {
+   "tag": 36,
+   "member": "getBodySerialNumber",
+   "clad_type": "GetBodySerialNumber",
+   "direction": "engine_to_robot",
+   "subsystem": "identity_version_logging",
+   "safety": "read_only",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "empty",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a49da",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": []
+  },
+  "0x25": {
+   "tag": 37,
+   "member": "getMfgInfo",
+   "clad_type": "GetManufacturingInfo",
+   "direction": "engine_to_robot",
+   "subsystem": "identity_version_logging",
+   "safety": "read_only",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "empty",
+   "verification": "hardware_verified",
+   "evidence": {
+    "native_unpack": "0x7a46a2",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "Enable",
+    "capture": {
+     "count": 3,
+     "lengths": {
+      "0": 3
+     },
+     "dirs": [
+      "TX"
+     ]
+    }
+   },
+   "notes": []
+  },
+  "0x26": {
+   "tag": 38,
+   "member": "bleSendData",
+   "clad_type": "SendData",
+   "direction": "engine_to_robot",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 17,
+   "native_size": 17,
+   "variable_length": false,
+   "declared_size": 17,
+   "fields": [
+    {
+     "name": "frame",
+     "kind": "struct",
+     "type": "Frame",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x79f348",
+    "native_namespace": "BLE",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.BLE.SendData (exact match)"
+   ]
+  },
+  "0x27": {
+   "tag": 39,
+   "member": "bleDisconnect",
+   "clad_type": "Disconnect",
+   "direction": "engine_to_robot",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "reason",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x79efde",
+    "native_namespace": "BLE",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.BLE.Disconnect (exact match)"
+   ]
+  },
+  "0x30": {
+   "tag": 48,
+   "member": "enterRecoveryMode",
+   "clad_type": "EnterRecoveryMode",
+   "direction": "engine_to_robot",
+   "subsystem": "firmware_update_recovery",
+   "safety": "destructive",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7b8e12",
+    "native_namespace": "RobotInterface::OTA",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x32": {
+   "tag": 50,
+   "member": "drive",
+   "clad_type": "DriveWheels",
+   "direction": "engine_to_robot",
+   "subsystem": "motors",
+   "safety": "motion",
+   "official_size": 16,
+   "native_size": 16,
+   "variable_length": false,
+   "declared_size": 16,
+   "fields": [
+    {
+     "name": "lwheel_speed_mmps",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "rwheel_speed_mmps",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "lwheel_accel_mmps2",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "rwheel_accel_mmps2",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a1e48",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": "DriveWheels",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.DriveWheels (exact match)"
+   ]
+  },
+  "0x33": {
+   "tag": 51,
+   "member": "driveCurvature",
+   "clad_type": "DriveWheelsCurvature",
+   "direction": "engine_to_robot",
+   "subsystem": "motors",
+   "safety": "motion",
+   "official_size": 10,
+   "native_size": 10,
+   "variable_length": false,
+   "declared_size": 10,
+   "fields": [
+    {
+     "name": "wheel_speed_mmps",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "wheel_accel_mmps2",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "direction",
+     "kind": "scalar",
+     "type": "i16",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a2026",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "TurnInPlaceAtSpeed",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0x34": {
+   "tag": 52,
+   "member": "moveLift",
+   "clad_type": "MoveLift",
+   "direction": "engine_to_robot",
+   "subsystem": "motors",
+   "safety": "motion",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "speed_rad_per_sec",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a21be",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": "MoveLift",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.MoveLift (exact match)"
+   ]
+  },
+  "0x35": {
+   "tag": 53,
+   "member": "moveHead",
+   "clad_type": "MoveHead",
+   "direction": "engine_to_robot",
+   "subsystem": "motors",
+   "safety": "motion",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "speed_rad_per_sec",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a22ec",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": "MoveHead",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.MoveHead (exact match)"
+   ]
+  },
+  "0x36": {
+   "tag": 54,
+   "member": "liftHeight",
+   "clad_type": "SetLiftHeight",
+   "direction": "engine_to_robot",
+   "subsystem": "motors",
+   "safety": "motion",
+   "official_size": 17,
+   "native_size": 17,
+   "variable_length": false,
+   "declared_size": 17,
+   "fields": [
+    {
+     "name": "height_mm",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "max_speed_rad_per_sec",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "accel_rad_per_sec2",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "duration_sec",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "action_id",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": true
+    }
+   ],
+   "confidence": "prefix",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a240c",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": "SetLiftHeight",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.SetLiftHeight (prefix match)"
+   ]
+  },
+  "0x37": {
+   "tag": 55,
+   "member": "headAngle",
+   "clad_type": "SetHeadAngle",
+   "direction": "engine_to_robot",
+   "subsystem": "motors",
+   "safety": "motion",
+   "official_size": 17,
+   "native_size": 17,
+   "variable_length": false,
+   "declared_size": 17,
+   "fields": [
+    {
+     "name": "angle_rad",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "max_speed_rad_per_sec",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "accel_rad_per_sec2",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "duration_sec",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "action_id",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": true
+    }
+   ],
+   "confidence": "prefix",
+   "verification": "hardware_verified",
+   "evidence": {
+    "native_unpack": "0x7a25c2",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": "SetHeadAngle",
+    "capture": {
+     "count": 4,
+     "lengths": {
+      "17": 4
+     },
+     "dirs": [
+      "TX"
+     ]
+    }
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.SetHeadAngle (prefix match)"
+   ]
+  },
+  "0x38": {
+   "tag": 56,
+   "member": "headAngleUpdate",
+   "clad_type": "HeadAngleUpdate",
+   "direction": "engine_to_robot",
+   "subsystem": "motors",
+   "safety": "motion",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a2786",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x39": {
+   "tag": 57,
+   "member": "setBodyAngle",
+   "clad_type": "SetBodyAngle",
+   "direction": "engine_to_robot",
+   "subsystem": "motors",
+   "safety": "motion",
+   "official_size": 20,
+   "native_size": 20,
+   "variable_length": false,
+   "declared_size": 20,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field4",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field5",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field6",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a28a6",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "TurnInPlace",
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x3A": {
+   "tag": 58,
+   "member": "turnInPlaceAtSpeed",
+   "clad_type": "TurnInPlaceAtSpeed",
+   "direction": "engine_to_robot",
+   "subsystem": "motors",
+   "safety": "motion",
+   "official_size": 8,
+   "native_size": 8,
+   "variable_length": false,
+   "declared_size": 8,
+   "fields": [
+    {
+     "name": "speed_rad_per_sec",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "accel_rad_per_sec2",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a2a9a",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.TurnInPlaceAtSpeed (exact match)"
+   ]
+  },
+  "0x3B": {
+   "tag": 59,
+   "member": "stop",
+   "clad_type": "StopAllMotors",
+   "direction": "engine_to_robot",
+   "subsystem": "motors",
+   "safety": "motion",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a2bf4",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": "StopAllMotors",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.StopAllMotors (exact match)"
+   ]
+  },
+  "0x3C": {
+   "tag": 60,
+   "member": "clearPath",
+   "clad_type": "ClearPath",
+   "direction": "engine_to_robot",
+   "subsystem": "localization_navigation",
+   "safety": "state_change",
+   "official_size": 2,
+   "native_size": 2,
+   "variable_length": false,
+   "declared_size": 2,
+   "fields": [
+    {
+     "name": "unknown",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a2caa",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "ClearPath",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0x3D": {
+   "tag": 61,
+   "member": "appendPathSegLine",
+   "clad_type": "AppendPathSegmentLine",
+   "direction": "engine_to_robot",
+   "subsystem": "localization_navigation",
+   "safety": "motion",
+   "official_size": 28,
+   "native_size": 28,
+   "variable_length": false,
+   "declared_size": 28,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field4",
+     "kind": "struct",
+     "type": "PathSegmentSpeed",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a2f58",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "AppendPathSegLine",
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x3E": {
+   "tag": 62,
+   "member": "appendPathSegArc",
+   "clad_type": "AppendPathSegmentArc",
+   "direction": "engine_to_robot",
+   "subsystem": "localization_navigation",
+   "safety": "motion",
+   "official_size": 32,
+   "native_size": 32,
+   "variable_length": false,
+   "declared_size": 32,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field4",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field5",
+     "kind": "struct",
+     "type": "PathSegmentSpeed",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a3132",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "AppendPathSegArc",
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x3F": {
+   "tag": 63,
+   "member": "appendPathSegPointTurn",
+   "clad_type": "AppendPathSegmentPointTurn",
+   "direction": "engine_to_robot",
+   "subsystem": "localization_navigation",
+   "safety": "motion",
+   "official_size": 29,
+   "native_size": 29,
+   "variable_length": false,
+   "declared_size": 29,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field4",
+     "kind": "struct",
+     "type": "PathSegmentSpeed",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field5",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a3338",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "AppendPathSegPointTurn",
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x40": {
+   "tag": 64,
+   "member": "trimPath",
+   "clad_type": "TrimPath",
+   "direction": "engine_to_robot",
+   "subsystem": "localization_navigation",
+   "safety": "motion",
+   "official_size": 2,
+   "native_size": 2,
+   "variable_length": false,
+   "declared_size": 2,
+   "fields": [
+    {
+     "name": "head",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "tail",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a352c",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "TrimPath",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0x41": {
+   "tag": 65,
+   "member": "executePath",
+   "clad_type": "ExecutePath",
+   "direction": "engine_to_robot",
+   "subsystem": "localization_navigation",
+   "safety": "motion",
+   "official_size": 3,
+   "native_size": 3,
+   "variable_length": false,
+   "declared_size": 3,
+   "fields": [
+    {
+     "name": "event_id",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "unknown",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a3666",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "ExecutePath",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0x42": {
+   "tag": 66,
+   "member": "dockWithObject",
+   "clad_type": "DockWithObject",
+   "direction": "engine_to_robot",
+   "subsystem": "localization_navigation",
+   "safety": "motion",
+   "official_size": 21,
+   "native_size": 21,
+   "variable_length": false,
+   "declared_size": 21,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field4",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field5",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field6",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field7",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field8",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7c0586",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x43": {
+   "tag": 67,
+   "member": "abortDocking",
+   "clad_type": "AbortDocking",
+   "direction": "engine_to_robot",
+   "subsystem": "localization_navigation",
+   "safety": "motion",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "empty",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7c07ba",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": []
+  },
+  "0x44": {
+   "tag": 68,
+   "member": "placeObjectOnGround",
+   "clad_type": "PlaceObjectOnGround",
+   "direction": "engine_to_robot",
+   "subsystem": "localization_navigation",
+   "safety": "motion",
+   "official_size": 25,
+   "native_size": 25,
+   "variable_length": false,
+   "declared_size": 25,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field4",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field5",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field6",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7c0862",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x45": {
+   "tag": 69,
+   "member": "absLocalizationUpdate",
+   "clad_type": "AbsoluteLocalizationUpdate",
+   "direction": "engine_to_robot",
+   "subsystem": "localization_navigation",
+   "safety": "state_change",
+   "official_size": 24,
+   "native_size": 24,
+   "variable_length": false,
+   "declared_size": 24,
+   "fields": [
+    {
+     "name": "unknown0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "pose_frame_id",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "pose_origin_id",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "pose_x",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "pose_y",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "unknown5",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a3794",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "SetOrigin",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0x46": {
+   "tag": 70,
+   "member": "startControllerTestMode",
+   "clad_type": "StartControllerTestMode",
+   "direction": "engine_to_robot",
+   "subsystem": "motors",
+   "safety": "state_change",
+   "official_size": 13,
+   "native_size": 13,
+   "variable_length": false,
+   "declared_size": 13,
+   "fields": [
+    {
+     "name": "p1",
+     "kind": "scalar",
+     "type": "i32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "p2",
+     "kind": "scalar",
+     "type": "i32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "p3",
+     "kind": "scalar",
+     "type": "i32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "mode",
+     "kind": "enum",
+     "type": "TestMode",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7db606",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.StartControllerTestMode (exact match)"
+   ]
+  },
+  "0x47": {
+   "tag": 71,
+   "member": "setControllerGains",
+   "clad_type": "ControllerGains",
+   "direction": "engine_to_robot",
+   "subsystem": "motors",
+   "safety": "state_change",
+   "official_size": 17,
+   "native_size": 17,
+   "variable_length": false,
+   "declared_size": 17,
+   "fields": [
+    {
+     "name": "kp",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "ki",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "kd",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "maxIntegralError",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "controller",
+     "kind": "enum",
+     "type": "ControllerChannel",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a3d8e",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.ControllerGains (exact match)"
+   ]
+  },
+  "0x48": {
+   "tag": 72,
+   "member": "dockingErrorSignal",
+   "clad_type": "DockingErrorSignal",
+   "direction": "engine_to_robot",
+   "subsystem": "localization_navigation",
+   "safety": "state_change",
+   "official_size": 22,
+   "native_size": 22,
+   "variable_length": false,
+   "declared_size": 22,
+   "fields": [
+    {
+     "name": "x_dist",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "y_dist",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "z_dist",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "angle",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "field4",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field5",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field6",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "prefix",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7c0a64",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.VizInterface.DockingErrorSignal (prefix match)"
+   ]
+  },
+  "0x49": {
+   "tag": 73,
+   "member": "setCarryState",
+   "clad_type": "CarryStateUpdate",
+   "direction": "engine_to_robot",
+   "subsystem": "localization_navigation",
+   "safety": "state_change",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "state",
+     "kind": "enum",
+     "type": "CarryState",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7d6988",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.CarryStateUpdate (exact match)"
+   ]
+  },
+  "0x4A": {
+   "tag": 74,
+   "member": "imuRequest",
+   "clad_type": "IMURequest",
+   "direction": "engine_to_robot",
+   "subsystem": "robot_state_sensors",
+   "safety": "read_only",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "length_ms",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7c81d0",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.IMURequest (exact match)"
+   ]
+  },
+  "0x4B": {
+   "tag": 75,
+   "member": "syncTime",
+   "clad_type": "SyncTime",
+   "direction": "engine_to_robot",
+   "subsystem": "identity_version_logging",
+   "safety": "state_change",
+   "official_size": 8,
+   "native_size": 8,
+   "variable_length": false,
+   "declared_size": 8,
+   "fields": [
+    {
+     "name": "timestamp",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "unknown",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "hardware_verified",
+   "evidence": {
+    "native_unpack": "0x7a3a0a",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "SyncTime",
+    "capture": {
+     "count": 2,
+     "lengths": {
+      "8": 2
+     },
+     "dirs": [
+      "TX"
+     ]
+    }
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0x4C": {
+   "tag": 76,
+   "member": "imageRequest",
+   "clad_type": "ImageRequest",
+   "direction": "engine_to_robot",
+   "subsystem": "camera",
+   "safety": "read_only",
+   "official_size": 2,
+   "native_size": 2,
+   "variable_length": false,
+   "declared_size": 2,
+   "fields": [
+    {
+     "name": "mode",
+     "kind": "enum",
+     "type": "ImageSendMode",
+     "name_source": "csharp"
+    },
+    {
+     "name": "image_resolution",
+     "kind": "scalar",
+     "type": "i8",
+     "name_source": "pycozmo",
+     "uncertain": true
+    }
+   ],
+   "confidence": "prefix",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a3b50",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": "EnableCamera",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.ImageRequest (prefix match)"
+   ]
+  },
+  "0x4D": {
+   "tag": 77,
+   "member": "flashObjectIDs",
+   "clad_type": "FlashObjectIDs",
+   "direction": "engine_to_robot",
+   "subsystem": "cubes_ble",
+   "safety": "safe_visible",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "objectID",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b7886",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.FlashObjectIDs (exact match)"
+   ]
+  },
+  "0x4E": {
+   "tag": 78,
+   "member": "setObjectBeingCarried",
+   "clad_type": "ObjectBeingCarried",
+   "direction": "engine_to_robot",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 5,
+   "native_size": 5,
+   "variable_length": false,
+   "declared_size": 5,
+   "fields": [
+    {
+     "name": "objectID",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "isBeingCarried",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b7992",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ObjectBeingCarried (exact match)"
+   ]
+  },
+  "0x4F": {
+   "tag": 79,
+   "member": "checkLiftLoad",
+   "clad_type": "CheckLiftLoad",
+   "direction": "engine_to_robot",
+   "subsystem": "robot_state_sensors",
+   "safety": "read_only",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "empty",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a4930",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": []
+  },
+  "0x50": {
+   "tag": 80,
+   "member": "enableMotorPower",
+   "clad_type": "EnableMotorPower",
+   "direction": "engine_to_robot",
+   "subsystem": "motors",
+   "safety": "state_change",
+   "official_size": 2,
+   "native_size": 2,
+   "variable_length": false,
+   "declared_size": 2,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a4b9c",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x51": {
+   "tag": 81,
+   "member": "setMotionModelParams",
+   "clad_type": "SetMotionModelParams",
+   "direction": "engine_to_robot",
+   "subsystem": "motors",
+   "safety": "state_change",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "slipFactor",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a4106",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.SetMotionModelParams (exact match)"
+   ]
+  },
+  "0x52": {
+   "tag": 82,
+   "member": "enterSleepMode",
+   "clad_type": "EnterSleepMode",
+   "direction": "engine_to_robot",
+   "subsystem": "robot_state_sensors",
+   "safety": "destructive",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "empty",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a1072",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": []
+  },
+  "0x53": {
+   "tag": 83,
+   "member": "powerState",
+   "clad_type": "PowerState",
+   "direction": "engine_to_robot",
+   "subsystem": "robot_state_sensors",
+   "safety": "destructive",
+   "official_size": 17,
+   "native_size": 17,
+   "variable_length": false,
+   "declared_size": 17,
+   "fields": [
+    {
+     "name": "VBatFixed",
+     "kind": "scalar",
+     "type": "i32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "VExtFixed",
+     "kind": "scalar",
+     "type": "i32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "_unused",
+     "kind": "scalar",
+     "type": "i32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "batteryLevel",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    },
+    {
+     "name": "onCharger",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "csharp"
+    },
+    {
+     "name": "isCharging",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "csharp"
+    },
+    {
+     "name": "operatingMode",
+     "kind": "enum",
+     "type": "BodyRadioMode",
+     "name_source": "csharp"
+    },
+    {
+     "name": "chargerOOS",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7d7dc6",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.PowerState (exact match)"
+   ]
+  },
+  "0x54": {
+   "tag": 84,
+   "member": "setCliffDetectThreshold",
+   "clad_type": "SetCliffDetectThreshold",
+   "direction": "engine_to_robot",
+   "subsystem": "robot_state_sensors",
+   "safety": "state_change",
+   "official_size": 2,
+   "native_size": 2,
+   "variable_length": false,
+   "declared_size": 2,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a5312",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x55": {
+   "tag": 85,
+   "member": "enableReadToolCodeMode",
+   "clad_type": "EnableReadToolCodeMode",
+   "direction": "engine_to_robot",
+   "subsystem": "camera",
+   "safety": "state_change",
+   "official_size": 9,
+   "native_size": 9,
+   "variable_length": false,
+   "declared_size": 9,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a4dce",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x57": {
+   "tag": 87,
+   "member": "setCameraParams",
+   "clad_type": "SetCameraParams",
+   "direction": "engine_to_robot",
+   "subsystem": "camera",
+   "safety": "state_change",
+   "official_size": 7,
+   "native_size": 7,
+   "variable_length": false,
+   "declared_size": 7,
+   "fields": [
+    {
+     "name": "gain",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "exposure_ms",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "auto_exposure_enabled",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7bf3b8",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": "SetCameraParams",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0x58": {
+   "tag": 88,
+   "member": "startMotorCalibration",
+   "clad_type": "StartMotorCalibration",
+   "direction": "engine_to_robot",
+   "subsystem": "motors",
+   "safety": "motion",
+   "official_size": 2,
+   "native_size": 2,
+   "variable_length": false,
+   "declared_size": 2,
+   "fields": [
+    {
+     "name": "head",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "lift",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a1d20",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "StartMotorCalibration",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0x59": {
+   "tag": 89,
+   "member": "rollActionParams",
+   "clad_type": "RollActionParams",
+   "direction": "engine_to_robot",
+   "subsystem": "motors",
+   "safety": "state_change",
+   "official_size": 20,
+   "native_size": 20,
+   "variable_length": false,
+   "declared_size": 20,
+   "fields": [
+    {
+     "name": "liftHeight_mm",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "driveSpeed_mmps",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "driveAccel_mmps2",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "driveDuration_ms",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "backupDist_mm",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a3f44",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.RollActionParams (exact match)"
+   ]
+  },
+  "0x5A": {
+   "tag": 90,
+   "member": "cameraFOVInfo",
+   "clad_type": "CameraFOVInfo",
+   "direction": "engine_to_robot",
+   "subsystem": "camera",
+   "safety": "read_only",
+   "official_size": 8,
+   "native_size": 8,
+   "variable_length": false,
+   "declared_size": 8,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7becc8",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x60": {
+   "tag": 96,
+   "member": "enableStopOnCliff",
+   "clad_type": "EnableStopOnCliff",
+   "direction": "engine_to_robot",
+   "subsystem": "robot_state_sensors",
+   "safety": "state_change",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "enable",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a520c",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": "EnableStopOnCliff",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.EnableStopOnCliff (exact match)"
+   ]
+  },
+  "0x61": {
+   "tag": 97,
+   "member": "forceDelocalizeSimulatedRobot",
+   "clad_type": "ForceDelocalizeSimulatedRobot",
+   "direction": "engine_to_robot",
+   "subsystem": "localization_navigation",
+   "safety": "destructive",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "empty",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a3962",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": []
+  },
+  "0x62": {
+   "tag": 98,
+   "member": "objectConnectionStateToRobot",
+   "clad_type": "ObjectConnectionStateToRobot",
+   "direction": "engine_to_robot",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 13,
+   "native_size": 13,
+   "variable_length": false,
+   "declared_size": 13,
+   "fields": [
+    {
+     "name": "objectID",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "factoryID",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "object_type",
+     "kind": "enum",
+     "type": "ObjectType",
+     "name_source": "csharp"
+    },
+    {
+     "name": "connected",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7affa2",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ObjectConnectionStateToRobot (exact match)"
+   ]
+  },
+  "0x63": {
+   "tag": 99,
+   "member": "enableBraceWhenFalling",
+   "clad_type": "EnableBraceWhenFalling",
+   "direction": "engine_to_robot",
+   "subsystem": "robot_state_sensors",
+   "safety": "state_change",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a5432",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x64": {
+   "tag": 100,
+   "member": "setAudioVolume",
+   "clad_type": "SetAudioVolume",
+   "direction": "engine_to_robot",
+   "subsystem": "audio",
+   "safety": "state_change",
+   "official_size": 2,
+   "native_size": 2,
+   "variable_length": false,
+   "declared_size": 2,
+   "fields": [
+    {
+     "name": "level",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a132a",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": "SetRobotVolume",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0x65": {
+   "tag": 101,
+   "member": "generateTestTone",
+   "clad_type": "GenerateTestTone",
+   "direction": "engine_to_robot",
+   "subsystem": "audio",
+   "safety": "safe_visible",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "empty",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a19ea",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": []
+  },
+  "0x66": {
+   "tag": 102,
+   "member": "enableColorImages",
+   "clad_type": "EnableColorImages",
+   "direction": "engine_to_robot",
+   "subsystem": "camera",
+   "safety": "state_change",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "enable",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a3c96",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": "EnableColorImages",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.EnableColorImages (exact match)"
+   ]
+  },
+  "0x80": {
+   "tag": 128,
+   "member": "requestCrashReports",
+   "clad_type": "RequestCrashReports",
+   "direction": "engine_to_robot",
+   "subsystem": "identity_version_logging",
+   "safety": "read_only",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a5538",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x81": {
+   "tag": 129,
+   "member": "commandNV",
+   "clad_type": "NVCommand",
+   "direction": "engine_to_robot",
+   "subsystem": "factory_debug_storage",
+   "safety": "destructive",
+   "official_size": null,
+   "native_size": "variable",
+   "variable_length": true,
+   "declared_size": null,
+   "fields": [
+    {
+     "name": "tag",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "length",
+     "kind": "scalar",
+     "type": "i32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "op",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "unknown",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "data",
+     "kind": "varray",
+     "type": "u8",
+     "count": "u16",
+     "elem": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7ce590",
+    "native_namespace": "NVStorage",
+    "csharp": false,
+    "pycozmo_name": "NvStorageOp",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0x82": {
+   "tag": 130,
+   "member": "enableWiFiTelemetry",
+   "clad_type": "EnableWiFiTelemetry",
+   "direction": "engine_to_robot",
+   "subsystem": "identity_version_logging",
+   "safety": "state_change",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "empty",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a6066",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": []
+  },
+  "0x86": {
+   "tag": 134,
+   "member": "bleConnectionState",
+   "clad_type": "ConnectionState",
+   "direction": "engine_to_robot",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "state",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x79f0f8",
+    "native_namespace": "BLE",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.BLE.ConnectionState (exact match)"
+   ]
+  },
+  "0x87": {
+   "tag": 135,
+   "member": "bleDataReceived",
+   "clad_type": "DataReceived",
+   "direction": "engine_to_robot",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 17,
+   "native_size": 17,
+   "variable_length": false,
+   "declared_size": 17,
+   "fields": [
+    {
+     "name": "frame",
+     "kind": "struct",
+     "type": "Frame",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x79f20c",
+    "native_namespace": "BLE",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.BLE.DataReceived (exact match)"
+   ]
+  },
+  "0x89": {
+   "tag": 137,
+   "member": "setRTTO",
+   "clad_type": "DebugSetRTTO",
+   "direction": "engine_to_robot",
+   "subsystem": "identity_version_logging",
+   "safety": "destructive",
+   "official_size": 2,
+   "native_size": 2,
+   "variable_length": false,
+   "declared_size": 2,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a4f5a",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x8D": {
+   "tag": 141,
+   "member": "abortAnimation",
+   "clad_type": "AbortAnimation",
+   "direction": "engine_to_robot",
+   "subsystem": "animation",
+   "safety": "motion",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "empty",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7a474c",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "AbortAnimation",
+    "capture": null
+   },
+   "notes": []
+  },
+  "0x8E": {
+   "tag": 142,
+   "member": "animAudioSample",
+   "clad_type": "AudioSample",
+   "direction": "engine_to_robot",
+   "subsystem": "audio",
+   "safety": "state_change",
+   "official_size": 744,
+   "native_size": 744,
+   "variable_length": false,
+   "declared_size": 744,
+   "fields": [
+    {
+     "name": "samples",
+     "kind": "farray",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false,
+     "elem": "u8",
+     "length": 744
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7bcca2",
+    "native_namespace": "AnimKeyFrame",
+    "csharp": false,
+    "pycozmo_name": "OutputAudio",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)",
+    "fixed array lengths [744] solved from native loop bounds; total matches official Size() 744 B"
+   ]
+  },
+  "0x8F": {
+   "tag": 143,
+   "member": "animAudioSilence",
+   "clad_type": "AudioSilence",
+   "direction": "engine_to_robot",
+   "subsystem": "audio",
+   "safety": "state_change",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "empty",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7bcdfa",
+    "native_namespace": "AnimKeyFrame",
+    "csharp": false,
+    "pycozmo_name": "OutputSilence",
+    "capture": null
+   },
+   "notes": []
+  },
+  "0x91": {
+   "tag": 145,
+   "member": "animRecordHeading",
+   "clad_type": "RecordHeading",
+   "direction": "engine_to_robot",
+   "subsystem": "animation",
+   "safety": "motion",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "empty",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7bd75e",
+    "native_namespace": "AnimKeyFrame",
+    "csharp": false,
+    "pycozmo_name": "RecordHeading",
+    "capture": null
+   },
+   "notes": []
+  },
+  "0x92": {
+   "tag": 146,
+   "member": "animTurnToRecordedHeading",
+   "clad_type": "TurnToRecordedHeading",
+   "direction": "engine_to_robot",
+   "subsystem": "animation",
+   "safety": "motion",
+   "official_size": 13,
+   "native_size": 13,
+   "variable_length": false,
+   "declared_size": 13,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field4",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field5",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field6",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7bd806",
+    "native_namespace": "AnimKeyFrame",
+    "csharp": false,
+    "pycozmo_name": "TurnToRecordedHeading",
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x93": {
+   "tag": 147,
+   "member": "animHeadAngle",
+   "clad_type": "HeadAngle",
+   "direction": "engine_to_robot",
+   "subsystem": "animation",
+   "safety": "motion",
+   "official_size": 3,
+   "native_size": 3,
+   "variable_length": false,
+   "declared_size": 3,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7bcea2",
+    "native_namespace": "AnimKeyFrame",
+    "csharp": false,
+    "pycozmo_name": "AnimHead",
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x94": {
+   "tag": 148,
+   "member": "animLiftHeight",
+   "clad_type": "LiftHeight",
+   "direction": "engine_to_robot",
+   "subsystem": "animation",
+   "safety": "motion",
+   "official_size": 3,
+   "native_size": 3,
+   "variable_length": false,
+   "declared_size": 3,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7bcfda",
+    "native_namespace": "AnimKeyFrame",
+    "csharp": false,
+    "pycozmo_name": "AnimLift",
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x95": {
+   "tag": 149,
+   "member": "animEvent",
+   "clad_type": "Event",
+   "direction": "engine_to_robot",
+   "subsystem": "animation",
+   "safety": "state_change",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7bd9ea",
+    "native_namespace": "AnimKeyFrame",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x96": {
+   "tag": 150,
+   "member": "animEventToRTIP",
+   "clad_type": "AnimEventToRTIP",
+   "direction": "engine_to_robot",
+   "subsystem": "animation",
+   "safety": "state_change",
+   "official_size": 2,
+   "native_size": 2,
+   "variable_length": false,
+   "declared_size": 2,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a47f4",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x97": {
+   "tag": 151,
+   "member": "animFaceImage",
+   "clad_type": "FaceImage",
+   "direction": "engine_to_robot",
+   "subsystem": "leds_display",
+   "safety": "safe_visible",
+   "official_size": null,
+   "native_size": "variable",
+   "variable_length": true,
+   "declared_size": null,
+   "fields": [
+    {
+     "name": "image",
+     "kind": "varray",
+     "type": "u8",
+     "count": "u16",
+     "elem": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7bd398",
+    "native_namespace": "AnimKeyFrame",
+    "csharp": false,
+    "pycozmo_name": "DisplayImage",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0x98": {
+   "tag": 152,
+   "member": "animBackpackLights",
+   "clad_type": "BackpackLights",
+   "direction": "engine_to_robot",
+   "subsystem": "leds_display",
+   "safety": "safe_visible",
+   "official_size": 10,
+   "native_size": 10,
+   "variable_length": false,
+   "declared_size": 10,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "farray",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true,
+     "elem": "u16",
+     "length": 5
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7bd4dc",
+    "native_namespace": "AnimKeyFrame",
+    "csharp": false,
+    "pycozmo_name": "AnimBackpackLights",
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack",
+    "fixed array lengths [5] solved from native loop bounds; total matches official Size() 10 B"
+   ]
+  },
+  "0x99": {
+   "tag": 153,
+   "member": "animBodyMotion",
+   "clad_type": "BodyMotion",
+   "direction": "engine_to_robot",
+   "subsystem": "animation",
+   "safety": "motion",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "speed",
+     "kind": "scalar",
+     "type": "i16",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "unknown",
+     "kind": "scalar",
+     "type": "i16",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7bd624",
+    "native_namespace": "AnimKeyFrame",
+    "csharp": false,
+    "pycozmo_name": "AnimBody",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0x9A": {
+   "tag": 154,
+   "member": "animEndOfAnimation",
+   "clad_type": "EndOfAnimation",
+   "direction": "engine_to_robot",
+   "subsystem": "animation",
+   "safety": "motion",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "empty",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7bdf10",
+    "native_namespace": "AnimKeyFrame",
+    "csharp": false,
+    "pycozmo_name": "EndAnimation",
+    "capture": null
+   },
+   "notes": []
+  },
+  "0x9B": {
+   "tag": 155,
+   "member": "animStartOfAnimation",
+   "clad_type": "StartOfAnimation",
+   "direction": "engine_to_robot",
+   "subsystem": "animation",
+   "safety": "motion",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "anim_id",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7bddfa",
+    "native_namespace": "AnimKeyFrame",
+    "csharp": false,
+    "pycozmo_name": "StartAnimation",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0x9D": {
+   "tag": 157,
+   "member": "disableAnimTracks",
+   "clad_type": "DisableAnimTracks",
+   "direction": "engine_to_robot",
+   "subsystem": "animation",
+   "safety": "state_change",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7bdc2e",
+    "native_namespace": "AnimKeyFrame",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x9E": {
+   "tag": 158,
+   "member": "enableAnimTracks",
+   "clad_type": "EnableAnimTracks",
+   "direction": "engine_to_robot",
+   "subsystem": "animation",
+   "safety": "state_change",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7bdb0c",
+    "native_namespace": "AnimKeyFrame",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0x9F": {
+   "tag": 159,
+   "member": "initAnimController",
+   "clad_type": "InitController",
+   "direction": "engine_to_robot",
+   "subsystem": "animation",
+   "safety": "state_change",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "empty",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7bdd44",
+    "native_namespace": "AnimKeyFrame",
+    "csharp": false,
+    "pycozmo_name": "EnableAnimationState",
+    "capture": null
+   },
+   "notes": []
+  },
+  "0xA0": {
+   "tag": 160,
+   "member": "appRunID",
+   "clad_type": "SetAppRunID",
+   "direction": "engine_to_robot",
+   "subsystem": "identity_version_logging",
+   "safety": "state_change",
+   "official_size": 16,
+   "native_size": 16,
+   "variable_length": false,
+   "declared_size": 16,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "farray",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true,
+     "elem": "u32",
+     "length": 4
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a5f24",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack",
+    "fixed array lengths [4] solved from native loop bounds; total matches official Size() 16 B"
+   ]
+  },
+  "0xA1": {
+   "tag": 161,
+   "member": "testState",
+   "clad_type": "TestState",
+   "direction": "engine_to_robot",
+   "subsystem": "factory_debug_storage",
+   "safety": "destructive",
+   "official_size": 49,
+   "native_size": 49,
+   "variable_length": false,
+   "declared_size": 17,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field4",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field5",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field6",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field7",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "unknownTail",
+     "kind": "raw",
+     "type": "u8",
+     "uncertain": true,
+     "note": "32 B unaccounted"
+    }
+   ],
+   "confidence": "partial",
+   "verification": "unresolved",
+   "evidence": {
+    "native_unpack": "0x7c41de",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack",
+    "native loop bounds [4, 4, 3, 3] could not be attributed uniquely",
+    "declared 17 B != official Size() 49 B: unresolved fixed array(s); tail kept as raw"
+   ]
+  },
+  "0xA2": {
+   "tag": 162,
+   "member": "enterTestMode",
+   "clad_type": "EnterFactoryTestMode",
+   "direction": "engine_to_robot",
+   "subsystem": "factory_debug_storage",
+   "safety": "destructive",
+   "official_size": 8,
+   "native_size": 8,
+   "variable_length": false,
+   "declared_size": 8,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7c40a8",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xA3": {
+   "tag": 163,
+   "member": "oledDisplayNumber",
+   "clad_type": "DisplayNumber",
+   "direction": "engine_to_robot",
+   "subsystem": "leds_display",
+   "safety": "safe_visible",
+   "official_size": 7,
+   "native_size": 7,
+   "variable_length": false,
+   "declared_size": 7,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a506e",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xA4": {
+   "tag": 164,
+   "member": "bodyStorageContents",
+   "clad_type": "BodyStorageContents",
+   "direction": "engine_to_robot",
+   "subsystem": "factory_debug_storage",
+   "safety": "destructive",
+   "official_size": null,
+   "native_size": "variable",
+   "variable_length": true,
+   "declared_size": null,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "varray",
+     "type": "u8",
+     "count": "u8",
+     "elem": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a1880",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xA5": {
+   "tag": 165,
+   "member": "bodySerialNum",
+   "clad_type": "BodySerialNumber",
+   "direction": "engine_to_robot",
+   "subsystem": "identity_version_logging",
+   "safety": "destructive",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a4a90",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xA9": {
+   "tag": 169,
+   "member": "shutdownRobot",
+   "clad_type": "ShutdownRobot",
+   "direction": "engine_to_robot",
+   "subsystem": "firmware_update_recovery",
+   "safety": "destructive",
+   "official_size": 32,
+   "native_size": 32,
+   "variable_length": false,
+   "declared_size": 32,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "farray",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true,
+     "elem": "u32",
+     "length": 8
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7a5644",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "ShutdownRobot",
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack",
+    "fixed array lengths [8] solved from native loop bounds; total matches official Size() 32 B"
+   ]
+  },
+  "0xAA": {
+   "tag": 170,
+   "member": "appConCfgString",
+   "clad_type": "AppConnectConfigString",
+   "direction": "engine_to_robot",
+   "subsystem": "firmware_update_recovery",
+   "safety": "destructive",
+   "official_size": 17,
+   "native_size": 17,
+   "variable_length": false,
+   "declared_size": 2,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "unknownTail",
+     "kind": "raw",
+     "type": "u8",
+     "uncertain": true,
+     "note": "15 B unaccounted"
+    }
+   ],
+   "confidence": "partial",
+   "verification": "unresolved",
+   "evidence": {
+    "native_unpack": "0x79d1f6",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack",
+    "native loop bounds [16] could not be attributed uniquely",
+    "declared 2 B != official Size() 17 B: unresolved fixed array(s); tail kept as raw"
+   ]
+  },
+  "0xAB": {
+   "tag": 171,
+   "member": "appConCfgFlags",
+   "clad_type": "AppConnectConfigFlags",
+   "direction": "engine_to_robot",
+   "subsystem": "firmware_update_recovery",
+   "safety": "destructive",
+   "official_size": 17,
+   "native_size": 17,
+   "variable_length": false,
+   "declared_size": 17,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field4",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field5",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field6",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field7",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field8",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field9",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x79d396",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xAC": {
+   "tag": 172,
+   "member": "appConCfgIPInfo",
+   "clad_type": "AppConnectConfigIPInfo",
+   "direction": "engine_to_robot",
+   "subsystem": "firmware_update_recovery",
+   "safety": "destructive",
+   "official_size": 13,
+   "native_size": 13,
+   "variable_length": false,
+   "declared_size": 13,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x79d5fa",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xAD": {
+   "tag": 173,
+   "member": "appConGetRobotIP",
+   "clad_type": "AppConnectGetRobotIP",
+   "direction": "engine_to_robot",
+   "subsystem": "firmware_update_recovery",
+   "safety": "destructive",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x79d796",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xAE": {
+   "tag": 174,
+   "member": "wifiOff",
+   "clad_type": "WiFiOff",
+   "direction": "engine_to_robot",
+   "subsystem": "firmware_update_recovery",
+   "safety": "destructive",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "enable",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x79d8b6",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "WifiOff",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0xAF": {
+   "tag": 175,
+   "member": "otaWrite",
+   "clad_type": "Write",
+   "direction": "engine_to_robot",
+   "subsystem": "firmware_update_recovery",
+   "safety": "destructive",
+   "official_size": 1026,
+   "native_size": 1026,
+   "variable_length": false,
+   "declared_size": 1026,
+   "fields": [
+    {
+     "name": "chunk_id",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "data",
+     "kind": "farray",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false,
+     "elem": "u8",
+     "length": 1024
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7b7f12",
+    "native_namespace": "RobotInterface::OTA",
+    "csharp": false,
+    "pycozmo_name": "FirmwareUpdate",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)",
+    "fixed array lengths [1024] solved from native loop bounds; total matches official Size() 1026 B"
+   ]
+  },
+  "0xB0": {
+   "tag": 176,
+   "member": "trace",
+   "clad_type": "PrintTrace",
+   "direction": "robot_to_engine",
+   "subsystem": "identity_version_logging",
+   "safety": "state_change",
+   "official_size": null,
+   "native_size": "variable",
+   "variable_length": true,
+   "declared_size": null,
+   "fields": [
+    {
+     "name": "formatId",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "hardware"
+    },
+    {
+     "name": "unused",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "hardware"
+    },
+    {
+     "name": "nameId",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "hardware"
+    },
+    {
+     "name": "level",
+     "kind": "scalar",
+     "type": "i8",
+     "name_source": "hardware"
+    },
+    {
+     "name": "args",
+     "kind": "varray",
+     "type": "i32",
+     "count": "u8",
+     "elem": "i32",
+     "name_source": "hardware"
+    }
+   ],
+   "confidence": "hardware_refined",
+   "verification": "hardware_verified",
+   "evidence": {
+    "native_unpack": "0x7d4bea",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "DebugData",
+    "capture": {
+     "count": 22,
+     "lengths": {
+      "32": 2,
+      "12": 9,
+      "8": 7,
+      "20": 4
+     },
+     "dirs": [
+      "RX"
+     ]
+    }
+   },
+   "notes": [
+    "names generated; widths from native Unpack",
+    "capture 2026-09-18: decoded against the OBB AnkiLogStringTables; the engine reads formatId+unused as one 4-byte block"
+   ]
+  },
+  "0xB1": {
+   "tag": 177,
+   "member": "printText",
+   "clad_type": "PrintText",
+   "direction": "robot_to_engine",
+   "subsystem": "identity_version_logging",
+   "safety": "state_change",
+   "official_size": null,
+   "native_size": "variable",
+   "variable_length": true,
+   "declared_size": null,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "string",
+     "type": "string",
+     "count": "u8",
+     "elem": "i8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7d5280",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xB2": {
+   "tag": 178,
+   "member": "mainCycleTimeError",
+   "clad_type": "MainCycleTimeError",
+   "direction": "robot_to_engine",
+   "subsystem": "identity_version_logging",
+   "safety": "state_change",
+   "official_size": 16,
+   "native_size": 16,
+   "variable_length": false,
+   "declared_size": 16,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7d4d7c",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xB3": {
+   "tag": 179,
+   "member": "goalPose",
+   "clad_type": "GoalPose",
+   "direction": "robot_to_engine",
+   "subsystem": "localization_navigation",
+   "safety": "state_change",
+   "official_size": 21,
+   "native_size": "variable",
+   "variable_length": false,
+   "declared_size": 21,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "struct",
+     "type": "RobotPose",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7c21f6",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xB4": {
+   "tag": 180,
+   "member": "activeObjectMoved",
+   "clad_type": "ObjectMoved",
+   "direction": "robot_to_engine",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 21,
+   "native_size": "variable",
+   "variable_length": false,
+   "declared_size": 21,
+   "fields": [
+    {
+     "name": "timestamp",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "objectID",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "accel",
+     "kind": "struct",
+     "type": "ActiveAccel",
+     "name_source": "csharp"
+    },
+    {
+     "name": "axisOfAccel",
+     "kind": "enum",
+     "type": "UpAxis",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b0124",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": "ObjectMoved",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ObjectMoved (exact match)"
+   ]
+  },
+  "0xB5": {
+   "tag": 181,
+   "member": "activeObjectStopped",
+   "clad_type": "ObjectStoppedMoving",
+   "direction": "robot_to_engine",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 8,
+   "native_size": 8,
+   "variable_length": false,
+   "declared_size": 8,
+   "fields": [
+    {
+     "name": "timestamp",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "objectID",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b02a2",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": "ObjectStoppedMoving",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ObjectStoppedMoving (exact match)"
+   ]
+  },
+  "0xB6": {
+   "tag": 182,
+   "member": "activeObjectTapped",
+   "clad_type": "ObjectTapped",
+   "direction": "robot_to_engine",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 12,
+   "native_size": 12,
+   "variable_length": false,
+   "declared_size": 12,
+   "fields": [
+    {
+     "name": "timestamp",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "objectID",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "numTaps",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    },
+    {
+     "name": "tapTime",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    },
+    {
+     "name": "tapNeg",
+     "kind": "scalar",
+     "type": "i8",
+     "name_source": "csharp"
+    },
+    {
+     "name": "tapPos",
+     "kind": "scalar",
+     "type": "i8",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b06ca",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": "ObjectTapped",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ObjectTapped (exact match)"
+   ]
+  },
+  "0xB7": {
+   "tag": 183,
+   "member": "dataDump",
+   "clad_type": "DataDump",
+   "direction": "robot_to_engine",
+   "subsystem": "identity_version_logging",
+   "safety": "state_change",
+   "official_size": null,
+   "native_size": "variable",
+   "variable_length": true,
+   "declared_size": null,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "varray",
+     "type": "u8",
+     "count": "u8",
+     "elem": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7d511c",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xB8": {
+   "tag": 184,
+   "member": "pickAndPlaceResult",
+   "clad_type": "PickAndPlaceResult",
+   "direction": "robot_to_engine",
+   "subsystem": "localization_navigation",
+   "safety": "state_change",
+   "official_size": 7,
+   "native_size": 7,
+   "variable_length": false,
+   "declared_size": 7,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7c1ac6",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xB9": {
+   "tag": 185,
+   "member": "objectTappedFiltered",
+   "clad_type": "ObjectTappedFiltered",
+   "direction": "robot_to_engine",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 10,
+   "native_size": 10,
+   "variable_length": false,
+   "declared_size": 10,
+   "fields": [
+    {
+     "name": "timestamp",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "objectID",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "tapTime",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    },
+    {
+     "name": "tapIntensity",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b0538",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": "ObjectTapFiltered",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ObjectTappedFiltered (exact match)"
+   ]
+  },
+  "0xBA": {
+   "tag": 186,
+   "member": "rampTraverseStarted",
+   "clad_type": "RampTraverseStart",
+   "direction": "robot_to_engine",
+   "subsystem": "localization_navigation",
+   "safety": "state_change",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7c1d7c",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xBB": {
+   "tag": 187,
+   "member": "rampTraverseCompleted",
+   "clad_type": "RampTraverseComplete",
+   "direction": "robot_to_engine",
+   "subsystem": "localization_navigation",
+   "safety": "state_change",
+   "official_size": 5,
+   "native_size": 5,
+   "variable_length": false,
+   "declared_size": 5,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7c1e88",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xBC": {
+   "tag": 188,
+   "member": "bridgeTraverseStarted",
+   "clad_type": "BridgeTraverseStart",
+   "direction": "robot_to_engine",
+   "subsystem": "localization_navigation",
+   "safety": "state_change",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7c1fc0",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xBD": {
+   "tag": 189,
+   "member": "bridgeTraverseCompleted",
+   "clad_type": "BridgeTraverseComplete",
+   "direction": "robot_to_engine",
+   "subsystem": "localization_navigation",
+   "safety": "state_change",
+   "official_size": 5,
+   "native_size": 5,
+   "variable_length": false,
+   "declared_size": 5,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7c20cc",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xBE": {
+   "tag": 190,
+   "member": "timeProfStat",
+   "clad_type": "TimeProfileStat",
+   "direction": "robot_to_engine",
+   "subsystem": "identity_version_logging",
+   "safety": "state_change",
+   "official_size": null,
+   "native_size": "variable",
+   "variable_length": true,
+   "declared_size": null,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "string",
+     "type": "string",
+     "count": "u8",
+     "elem": "i8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7d4f28",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xBF": {
+   "tag": 191,
+   "member": "imuDataChunk",
+   "clad_type": "IMUDataChunk",
+   "direction": "robot_to_engine",
+   "subsystem": "robot_state_sensors",
+   "safety": "state_change",
+   "official_size": 195,
+   "native_size": 195,
+   "variable_length": false,
+   "declared_size": 195,
+   "fields": [
+    {
+     "name": "aX",
+     "kind": "farray",
+     "type": "f32",
+     "length": 8,
+     "elem": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "aY",
+     "kind": "farray",
+     "type": "f32",
+     "length": 8,
+     "elem": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "aZ",
+     "kind": "farray",
+     "type": "f32",
+     "length": 8,
+     "elem": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "gX",
+     "kind": "farray",
+     "type": "f32",
+     "length": 8,
+     "elem": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "gY",
+     "kind": "farray",
+     "type": "f32",
+     "length": 8,
+     "elem": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "gZ",
+     "kind": "farray",
+     "type": "f32",
+     "length": 8,
+     "elem": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "seqId",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    },
+    {
+     "name": "chunkId",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    },
+    {
+     "name": "totalNumChunks",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7c8844",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.RobotInterface.IMUDataChunk (exact match)"
+   ]
+  },
+  "0xC0": {
+   "tag": 192,
+   "member": "cliffEvent",
+   "clad_type": "CliffEvent",
+   "direction": "robot_to_engine",
+   "subsystem": "robot_state_sensors",
+   "safety": "state_change",
+   "official_size": 6,
+   "native_size": 6,
+   "variable_length": false,
+   "declared_size": 6,
+   "fields": [
+    {
+     "name": "timestamp",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "detectedFlags",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    },
+    {
+     "name": "didStopForCliff",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7d2dba",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.CliffEvent (exact match)"
+   ]
+  },
+  "0xC1": {
+   "tag": 193,
+   "member": "potentialCliff",
+   "clad_type": "PotentialCliff",
+   "direction": "robot_to_engine",
+   "subsystem": "robot_state_sensors",
+   "safety": "state_change",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7d2f16",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.PotentialCliff (exact match)"
+   ]
+  },
+  "0xC2": {
+   "tag": 194,
+   "member": "syncTimeAck",
+   "clad_type": "SyncTimeAck",
+   "direction": "robot_to_engine",
+   "subsystem": "identity_version_logging",
+   "safety": "state_change",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "empty",
+   "verification": "hardware_verified",
+   "evidence": {
+    "native_unpack": "0x7b0b46",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "RobotDelocalized",
+    "capture": {
+     "count": 2,
+     "lengths": {
+      "0": 2
+     },
+     "dirs": [
+      "RX"
+     ]
+    }
+   },
+   "notes": []
+  },
+  "0xC3": {
+   "tag": 195,
+   "member": "robotPoked",
+   "clad_type": "RobotPoked",
+   "direction": "robot_to_engine",
+   "subsystem": "robot_state_sensors",
+   "safety": "state_change",
+   "official_size": 0,
+   "native_size": 0,
+   "variable_length": false,
+   "declared_size": 0,
+   "fields": [],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b0cf4",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": "RobotPoked",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.RobotPoked (exact match)"
+   ]
+  },
+  "0xC4": {
+   "tag": 196,
+   "member": "motorActionAck",
+   "clad_type": "MotorActionAck",
+   "direction": "robot_to_engine",
+   "subsystem": "motors",
+   "safety": "state_change",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "action_id",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "hardware_verified",
+   "evidence": {
+    "native_unpack": "0x7b1292",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "AcknowledgeAction",
+    "capture": {
+     "count": 4,
+     "lengths": {
+      "1": 4
+     },
+     "dirs": [
+      "RX"
+     ]
+    }
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0xC5": {
+   "tag": 197,
+   "member": "movingLiftPostDock",
+   "clad_type": "MovingLiftPostDock",
+   "direction": "robot_to_engine",
+   "subsystem": "localization_navigation",
+   "safety": "state_change",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7c1c5a",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xC6": {
+   "tag": 198,
+   "member": "pathFollowingEvent",
+   "clad_type": "PathFollowingEvent",
+   "direction": "robot_to_engine",
+   "subsystem": "localization_navigation",
+   "safety": "state_change",
+   "official_size": 3,
+   "native_size": 3,
+   "variable_length": false,
+   "declared_size": 3,
+   "fields": [
+    {
+     "name": "event_id",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "event_type",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7b114c",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "PathFollowingEvent",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0xC7": {
+   "tag": 199,
+   "member": "imuRawDataChunk",
+   "clad_type": "IMURawDataChunk",
+   "direction": "robot_to_engine",
+   "subsystem": "robot_state_sensors",
+   "safety": "state_change",
+   "official_size": 14,
+   "native_size": 14,
+   "variable_length": false,
+   "declared_size": 14,
+   "fields": [
+    {
+     "name": "g",
+     "kind": "farray",
+     "type": "i16",
+     "length": 3,
+     "elem": "i16",
+     "name_source": "csharp"
+    },
+    {
+     "name": "a",
+     "kind": "farray",
+     "type": "i16",
+     "length": 3,
+     "elem": "i16",
+     "name_source": "csharp"
+    },
+    {
+     "name": "order",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    },
+    {
+     "name": "timestamp",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7c9094",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.RobotInterface.IMURawDataChunk (exact match)"
+   ]
+  },
+  "0xC8": {
+   "tag": 200,
+   "member": "defaultCameraParams",
+   "clad_type": "DefaultCameraParams",
+   "direction": "robot_to_engine",
+   "subsystem": "camera",
+   "safety": "state_change",
+   "official_size": 29,
+   "native_size": 29,
+   "variable_length": false,
+   "declared_size": 29,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field4",
+     "kind": "farray",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true,
+     "elem": "u8",
+     "length": 17
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7bf1d6",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack",
+    "fixed array lengths [17] solved from native loop bounds; total matches official Size() 29 B"
+   ]
+  },
+  "0xC9": {
+   "tag": 201,
+   "member": "robotAvailable",
+   "clad_type": "RobotAvailable",
+   "direction": "robot_to_engine",
+   "subsystem": "identity_version_logging",
+   "safety": "state_change",
+   "official_size": 6,
+   "native_size": 6,
+   "variable_length": false,
+   "declared_size": 6,
+   "fields": [
+    {
+     "name": "serialNumberHead",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "hardware"
+    },
+    {
+     "name": "hwVersion",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "hardware"
+    }
+   ],
+   "confidence": "hardware_refined",
+   "verification": "hardware_verified",
+   "evidence": {
+    "native_unpack": "0x7b8f26",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "HardwareInfo",
+    "capture": {
+     "count": 2,
+     "lengths": {
+      "6": 2
+     },
+     "dirs": [
+      "RX"
+     ]
+    }
+   },
+   "notes": [
+    "names generated; widths from native Unpack",
+    "capture 2026-09-18: u32 head serial (0x41d04d9d) then hardware revision 5, matching the robot's own hardware.revision trace and MfgId.body_hw_version"
+   ]
+  },
+  "0xCA": {
+   "tag": 202,
+   "member": "animStarted",
+   "clad_type": "AnimationStarted",
+   "direction": "robot_to_engine",
+   "subsystem": "animation",
+   "safety": "state_change",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "anim_id",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7b13b4",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "AnimationStarted",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0xCB": {
+   "tag": 203,
+   "member": "animEnded",
+   "clad_type": "AnimationEnded",
+   "direction": "robot_to_engine",
+   "subsystem": "animation",
+   "safety": "state_change",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "anim_id",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7b14d6",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "AnimationEnded",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0xCD": {
+   "tag": 205,
+   "member": "nvOpResult",
+   "clad_type": "NVOpResult",
+   "direction": "robot_to_engine",
+   "subsystem": "factory_debug_storage",
+   "safety": "state_change",
+   "official_size": null,
+   "native_size": "variable",
+   "variable_length": true,
+   "declared_size": null,
+   "fields": [
+    {
+     "name": "tag",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "length",
+     "kind": "scalar",
+     "type": "i32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "op",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "result",
+     "kind": "scalar",
+     "type": "i8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "data",
+     "kind": "varray",
+     "type": "u8",
+     "count": "u16",
+     "elem": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7ce76a",
+    "native_namespace": "NVStorage",
+    "csharp": false,
+    "pycozmo_name": "NvStorageOpResult",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0xCE": {
+   "tag": 206,
+   "member": "objectPowerLevel",
+   "clad_type": "ObjectPowerLevel",
+   "direction": "robot_to_engine",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 9,
+   "native_size": 9,
+   "variable_length": false,
+   "declared_size": 9,
+   "fields": [
+    {
+     "name": "objectID",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "missedPackets",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "batteryLevel",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b0888",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": "ObjectPowerLevel",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ObjectPowerLevel (exact match)"
+   ]
+  },
+  "0xCF": {
+   "tag": 207,
+   "member": "crashReport",
+   "clad_type": "CrashReport",
+   "direction": "robot_to_engine",
+   "subsystem": "identity_version_logging",
+   "safety": "state_change",
+   "official_size": null,
+   "native_size": "variable",
+   "variable_length": true,
+   "declared_size": null,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "varray",
+     "type": "u32",
+     "count": "u8",
+     "elem": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7d3cca",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xD0": {
+   "tag": 208,
+   "member": "activeObjectConnectionState",
+   "clad_type": "ObjectConnectionState",
+   "direction": "robot_to_engine",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 13,
+   "native_size": 13,
+   "variable_length": false,
+   "declared_size": 13,
+   "fields": [
+    {
+     "name": "objectID",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "factoryID",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "object_type",
+     "kind": "enum",
+     "type": "ObjectType",
+     "name_source": "csharp"
+    },
+    {
+     "name": "connected",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7afe20",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": "ObjectConnectionState",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ObjectConnectionState (exact match)"
+   ]
+  },
+  "0xD1": {
+   "tag": 209,
+   "member": "motorCalibration",
+   "clad_type": "MotorCalibration",
+   "direction": "robot_to_engine",
+   "subsystem": "motors",
+   "safety": "state_change",
+   "official_size": 3,
+   "native_size": 3,
+   "variable_length": false,
+   "declared_size": 3,
+   "fields": [
+    {
+     "name": "motorID",
+     "kind": "enum",
+     "type": "MotorID",
+     "name_source": "csharp"
+    },
+    {
+     "name": "calibStarted",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "csharp"
+    },
+    {
+     "name": "autoStarted",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "hardware_verified",
+   "evidence": {
+    "native_unpack": "0x7cdf2e",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": "MotorCalibration",
+    "capture": {
+     "count": 9,
+     "lengths": {
+      "3": 9
+     },
+     "dirs": [
+      "RX"
+     ]
+    }
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.MotorCalibration (exact match)"
+   ]
+  },
+  "0xD2": {
+   "tag": 210,
+   "member": "factoryFirmwareVersion",
+   "clad_type": "FWVersionInfo",
+   "direction": "robot_to_engine",
+   "subsystem": "identity_version_logging",
+   "safety": "state_change",
+   "official_size": 44,
+   "native_size": 44,
+   "variable_length": false,
+   "declared_size": 44,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field3",
+     "kind": "farray",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true,
+     "elem": "u8",
+     "length": 16
+    },
+    {
+     "name": "field4",
+     "kind": "farray",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true,
+     "elem": "u8",
+     "length": 16
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7c32e6",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack",
+    "fixed array lengths [16, 16] solved from native loop bounds; total matches official Size() 44 B"
+   ]
+  },
+  "0xD3": {
+   "tag": 211,
+   "member": "dockingStatus",
+   "clad_type": "DockingStatus",
+   "direction": "robot_to_engine",
+   "subsystem": "localization_navigation",
+   "safety": "state_change",
+   "official_size": 5,
+   "native_size": 5,
+   "variable_length": false,
+   "declared_size": 5,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7c1562",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xD4": {
+   "tag": 212,
+   "member": "robotStopped",
+   "clad_type": "RobotStopped",
+   "direction": "robot_to_engine",
+   "subsystem": "robot_state_sensors",
+   "safety": "state_change",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "prefix",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b1038",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.RobotStopped (prefix match)"
+   ]
+  },
+  "0xD5": {
+   "tag": 213,
+   "member": "animEvent",
+   "clad_type": "AnimationEvent",
+   "direction": "robot_to_engine",
+   "subsystem": "animation",
+   "safety": "state_change",
+   "official_size": 6,
+   "native_size": 6,
+   "variable_length": false,
+   "declared_size": 6,
+   "fields": [
+    {
+     "name": "timestamp",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "event_id",
+     "kind": "enum",
+     "type": "AnimEvent",
+     "name_source": "csharp"
+    },
+    {
+     "name": "field2",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "prefix",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b15ea",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.AnimationEvent (prefix match)"
+   ]
+  },
+  "0xD6": {
+   "tag": 214,
+   "member": "factoryTestParam",
+   "clad_type": "FactoryTestParameter",
+   "direction": "robot_to_engine",
+   "subsystem": "factory_debug_storage",
+   "safety": "state_change",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7c44f2",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xD7": {
+   "tag": 215,
+   "member": "activeObjectUpAxisChanged",
+   "clad_type": "ObjectUpAxisChanged",
+   "direction": "robot_to_engine",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 9,
+   "native_size": 9,
+   "variable_length": false,
+   "declared_size": 9,
+   "fields": [
+    {
+     "name": "timestamp",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "objectID",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "upAxis",
+     "kind": "enum",
+     "type": "UpAxis",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b03d4",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": "ObjectUpAxisChanged",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ObjectUpAxisChanged (exact match)"
+   ]
+  },
+  "0xD8": {
+   "tag": 216,
+   "member": "motorAutoEnabled",
+   "clad_type": "MotorAutoEnabled",
+   "direction": "robot_to_engine",
+   "subsystem": "motors",
+   "safety": "state_change",
+   "official_size": 2,
+   "native_size": 2,
+   "variable_length": false,
+   "declared_size": 2,
+   "fields": [
+    {
+     "name": "motorID",
+     "kind": "enum",
+     "type": "MotorID",
+     "name_source": "csharp"
+    },
+    {
+     "name": "enabled",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7ce080",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.MotorAutoEnabled (exact match)"
+   ]
+  },
+  "0xD9": {
+   "tag": 217,
+   "member": "robotError",
+   "clad_type": "RobotErrorReport",
+   "direction": "robot_to_engine",
+   "subsystem": "robot_state_sensors",
+   "safety": "state_change",
+   "official_size": 5,
+   "native_size": 5,
+   "variable_length": false,
+   "declared_size": 5,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    },
+    {
+     "name": "field1",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7d3e5c",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xDA": {
+   "tag": 218,
+   "member": "liftLoad",
+   "clad_type": "LiftLoad",
+   "direction": "robot_to_engine",
+   "subsystem": "robot_state_sensors",
+   "safety": "state_change",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7b18bc",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xDB": {
+   "tag": 219,
+   "member": "backpackButton",
+   "clad_type": "BackpackButton",
+   "direction": "robot_to_engine",
+   "subsystem": "robot_state_sensors",
+   "safety": "state_change",
+   "official_size": 1,
+   "native_size": 1,
+   "variable_length": false,
+   "declared_size": 1,
+   "fields": [
+    {
+     "name": "pressed",
+     "kind": "scalar",
+     "type": "bool",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7b0bfa",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "ButtonPressed",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0xDC": {
+   "tag": 220,
+   "member": "imuTemperature",
+   "clad_type": "IMUTemperature",
+   "direction": "robot_to_engine",
+   "subsystem": "robot_state_sensors",
+   "safety": "state_change",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "temperature_degC",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7c945e",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": null,
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.RobotInterface.IMUTemperature (exact match)"
+   ]
+  },
+  "0xDD": {
+   "tag": 221,
+   "member": "fallingStarted",
+   "clad_type": "FallingStarted",
+   "direction": "robot_to_engine",
+   "subsystem": "robot_state_sensors",
+   "safety": "state_change",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "unknown",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "pycozmo",
+     "uncertain": true
+    }
+   ],
+   "confidence": "prefix",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b0daa",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": "FallingStarted",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.FallingStarted (prefix match)"
+   ]
+  },
+  "0xDE": {
+   "tag": 222,
+   "member": "fallingStopped",
+   "clad_type": "FallingStopped",
+   "direction": "robot_to_engine",
+   "subsystem": "robot_state_sensors",
+   "safety": "state_change",
+   "official_size": 12,
+   "native_size": 12,
+   "variable_length": false,
+   "declared_size": 12,
+   "fields": [
+    {
+     "name": "duration_ms",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "impactIntensity",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "impact_intensity",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "pycozmo",
+     "uncertain": true
+    }
+   ],
+   "confidence": "prefix",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b0eb6",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": "FallingStopped",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ExternalInterface.FallingStopped (prefix match)"
+   ]
+  },
+  "0xEC": {
+   "tag": 236,
+   "member": "wifiFlashID",
+   "clad_type": "WiFiFlashID",
+   "direction": "robot_to_engine",
+   "subsystem": "identity_version_logging",
+   "safety": "state_change",
+   "official_size": 4,
+   "native_size": 4,
+   "variable_length": false,
+   "declared_size": 4,
+   "fields": [
+    {
+     "name": "field0",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "generated",
+     "uncertain": true
+    }
+   ],
+   "confidence": "native_only",
+   "verification": "hardware_verified",
+   "evidence": {
+    "native_unpack": "0x7b19c2",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": null,
+    "capture": {
+     "count": 2,
+     "lengths": {
+      "4": 2
+     },
+     "dirs": [
+      "RX"
+     ]
+    }
+   },
+   "notes": [
+    "names generated; widths from native Unpack"
+   ]
+  },
+  "0xED": {
+   "tag": 237,
+   "member": "mfgId",
+   "clad_type": "ManufacturingID",
+   "direction": "robot_to_engine",
+   "subsystem": "identity_version_logging",
+   "safety": "state_change",
+   "official_size": 12,
+   "native_size": 12,
+   "variable_length": false,
+   "declared_size": 12,
+   "fields": [
+    {
+     "name": "serial_number",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "body_hw_version",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "body_color",
+     "kind": "scalar",
+     "type": "i32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "hardware_verified",
+   "evidence": {
+    "native_unpack": "0x7b1750",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "BodyInfo",
+    "capture": {
+     "count": 3,
+     "lengths": {
+      "12": 3
+     },
+     "dirs": [
+      "RX"
+     ]
+    }
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0xEE": {
+   "tag": 238,
+   "member": "firmwareVersion",
+   "clad_type": "FirmwareVersion",
+   "direction": "robot_to_engine",
+   "subsystem": "identity_version_logging",
+   "safety": "state_change",
+   "official_size": null,
+   "native_size": "variable",
+   "variable_length": true,
+   "declared_size": null,
+   "fields": [
+    {
+     "name": "robotId",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "hardware"
+    },
+    {
+     "name": "signature",
+     "kind": "varray",
+     "type": "u8",
+     "count": "u16",
+     "elem": "u8",
+     "name_source": "hardware",
+     "note": "UTF-8 JSON"
+    }
+   ],
+   "confidence": "hardware_refined",
+   "verification": "hardware_verified",
+   "evidence": {
+    "native_unpack": "0x7b907e",
+    "native_namespace": "RobotInterface",
+    "csharp": false,
+    "pycozmo_name": "FirmwareSignature",
+    "capture": {
+     "count": 2,
+     "lengths": {
+      "449": 2
+     },
+     "dirs": [
+      "RX"
+     ]
+    }
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)",
+    "capture 2026-09-18: leading u16 is the low half of the head serial number; the byte array is the cozmo.safe JSON signature header"
+   ]
+  },
+  "0xEF": {
+   "tag": 239,
+   "member": "otaAck",
+   "clad_type": "Ack",
+   "direction": "robot_to_engine",
+   "subsystem": "firmware_update_recovery",
+   "safety": "state_change",
+   "official_size": 7,
+   "native_size": 7,
+   "variable_length": false,
+   "declared_size": 7,
+   "fields": [
+    {
+     "name": "byte_count",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "chunk_id",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "status",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7b87a2",
+    "native_namespace": "RobotInterface::OTA",
+    "csharp": false,
+    "pycozmo_name": "FirmwareUpdateResult",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0xF0": {
+   "tag": 240,
+   "member": "state",
+   "clad_type": "RobotState",
+   "direction": "robot_to_engine",
+   "subsystem": "robot_state_sensors",
+   "safety": "state_change",
+   "official_size": 91,
+   "native_size": "variable",
+   "variable_length": false,
+   "declared_size": 91,
+   "fields": [
+    {
+     "name": "timestamp",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "pose_frame_id",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "pose_origin_id",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "pose",
+     "kind": "struct",
+     "type": "RobotPose",
+     "name_source": "csharp"
+    },
+    {
+     "name": "lwheel_speed_mmps",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "rwheel_speed_mmps",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "headAngle",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "liftAngle",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "accel",
+     "kind": "struct",
+     "type": "AccelData",
+     "name_source": "csharp"
+    },
+    {
+     "name": "gyro",
+     "kind": "struct",
+     "type": "GyroData",
+     "name_source": "csharp"
+    },
+    {
+     "name": "batteryVoltage",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "status",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "cliffDataRaw",
+     "kind": "farray",
+     "type": "u16",
+     "length": 4,
+     "elem": "u16",
+     "name_source": "csharp"
+    },
+    {
+     "name": "backpackTouchSensorRaw",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "csharp"
+    },
+    {
+     "name": "currPathSegment",
+     "kind": "scalar",
+     "type": "i8",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "hardware_verified",
+   "evidence": {
+    "native_unpack": "0x7d6e24",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": "RobotState",
+    "capture": {
+     "count": 1452,
+     "lengths": {
+      "91": 1452
+     },
+     "dirs": [
+      "RX"
+     ]
+    }
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.RobotState (exact match)"
+   ]
+  },
+  "0xF1": {
+   "tag": 241,
+   "member": "animState",
+   "clad_type": "AnimationState",
+   "direction": "robot_to_engine",
+   "subsystem": "animation",
+   "safety": "state_change",
+   "official_size": 15,
+   "native_size": 15,
+   "variable_length": false,
+   "declared_size": 15,
+   "fields": [
+    {
+     "name": "timestamp",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "numAnimBytesPlayed",
+     "kind": "scalar",
+     "type": "i32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "numAudioFramesPlayed",
+     "kind": "scalar",
+     "type": "i32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "enabledAnimTracks",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    },
+    {
+     "name": "tag",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    },
+    {
+     "name": "clientDropCount",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7d87b6",
+    "native_namespace": "RobotInterface",
+    "csharp": true,
+    "pycozmo_name": "AnimationState",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.RobotInterface.AnimationState (exact match)"
+   ]
+  },
+  "0xF2": {
+   "tag": 242,
+   "member": "image",
+   "clad_type": "ImageChunk",
+   "direction": "robot_to_engine",
+   "subsystem": "camera",
+   "safety": "state_change",
+   "official_size": null,
+   "native_size": "variable",
+   "variable_length": true,
+   "declared_size": null,
+   "fields": [
+    {
+     "name": "frame_timestamp",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "image_id",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "chunk_debug",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "image_encoding",
+     "kind": "scalar",
+     "type": "i8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "image_resolution",
+     "kind": "scalar",
+     "type": "i8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "image_chunk_count",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "chunk_id",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "status",
+     "kind": "scalar",
+     "type": "u16",
+     "name_source": "pycozmo",
+     "uncertain": false
+    },
+    {
+     "name": "data",
+     "kind": "varray",
+     "type": "u8",
+     "count": "u16",
+     "elem": "u8",
+     "name_source": "pycozmo",
+     "uncertain": false
+    }
+   ],
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
+   "evidence": {
+    "native_unpack": "0x7c60b4",
+    "native_namespace": "",
+    "csharp": false,
+    "pycozmo_name": "ImageChunk",
+    "capture": null
+   },
+   "notes": [
+    "field names from PyCozmo (widths agree with native)"
+   ]
+  },
+  "0xF3": {
+   "tag": 243,
+   "member": "activeObjectAvailable",
+   "clad_type": "ObjectAvailable",
+   "direction": "robot_to_engine",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 9,
+   "native_size": 9,
+   "variable_length": false,
+   "declared_size": 9,
+   "fields": [
+    {
+     "name": "factory_id",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "objectType",
+     "kind": "enum",
+     "type": "ObjectType",
+     "name_source": "csharp"
+    },
+    {
+     "name": "rssi",
+     "kind": "scalar",
+     "type": "i8",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "hardware_verified",
+   "evidence": {
+    "native_unpack": "0x7afcbc",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": "ObjectAvailable",
+    "capture": {
+     "count": 103,
+     "lengths": {
+      "9": 103
+     },
+     "dirs": [
+      "RX"
+     ]
+    }
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ObjectAvailable (exact match)"
+   ]
+  },
+  "0xF4": {
+   "tag": 244,
+   "member": "imageGyro",
+   "clad_type": "ImageImuData",
+   "direction": "robot_to_engine",
+   "subsystem": "camera",
+   "safety": "state_change",
+   "official_size": 17,
+   "native_size": 17,
+   "variable_length": false,
+   "declared_size": 17,
+   "fields": [
+    {
+     "name": "imageId",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "rateX",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "rateY",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "rateZ",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "line2Number",
+     "kind": "scalar",
+     "type": "u8",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7c62f6",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": "ImageImuData",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ImageImuData (exact match)"
+   ]
+  },
+  "0xF5": {
+   "tag": 245,
+   "member": "objectAccel",
+   "clad_type": "ObjectAccel",
+   "direction": "robot_to_engine",
+   "subsystem": "cubes_ble",
+   "safety": "state_change",
+   "official_size": 20,
+   "native_size": "variable",
+   "variable_length": false,
+   "declared_size": 20,
+   "fields": [
+    {
+     "name": "timestamp",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "objectID",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "csharp"
+    },
+    {
+     "name": "accel",
+     "kind": "struct",
+     "type": "ActiveAccel",
+     "name_source": "csharp"
+    }
+   ],
+   "confidence": "exact",
+   "verification": "statically_verified",
+   "evidence": {
+    "native_unpack": "0x7b09ec",
+    "native_namespace": "",
+    "csharp": true,
+    "pycozmo_name": "ObjectAccel",
+    "capture": null
+   },
+   "notes": [
+    "C# twin Anki.Cozmo.ObjectAccel (exact match)"
+   ]
+  }
+ }
+}

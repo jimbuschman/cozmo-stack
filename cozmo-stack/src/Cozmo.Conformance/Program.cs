@@ -18,6 +18,7 @@ return args.Length == 0 ? Usage() : args[0] switch
     "replay" => Replay(args),
     "connect" => Connect(args).GetAwaiter().GetResult(),
     "fakerobot" => FakeRobot(args),
+    "probe" => Probe.Run(args).GetAwaiter().GetResult(),
     _ => Usage(),
 };
 
@@ -63,8 +64,8 @@ static int FakeRobot(string[] a)
                         Console.WriteLine($"  connection request from {from}");
                         var resp = new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), Reliable(Array.Empty<byte>()));
                         SendFrame(Frame.Single(resp, lastInAcked));
-                        var avail = Wrap(new RobotAvailable { SerialNumberHead = 0x0BADF00D, HardwareRevisionUnverified = 5 });
-                        var fw = Wrap(new FirmwareVersion { SignatureJson = "{\"version\": 2381, \"build\": \"FAKE\", \"messageEngineToRobotHash\": \"9e4a965ace4e09d86997b87ba14235d5\", \"messageRobotToEngineHash\": \"a259247f16231db440957215baba12ab\"}" });
+                        var avail = Wrap(new RobotAvailable { SerialNumberHead = 0x0BADF00D, HwVersion = 5 });
+                        var fw = Wrap(new FirmwareVersion { RobotId = 0x4D9D, Signature = Encoding.UTF8.GetBytes("{\"version\": 2381, \"build\": \"FAKE\", \"messageEngineToRobotHash\": \"9e4a965ace4e09d86997b87ba14235d5\", \"messageRobotToEngineHash\": \"a259247f16231db440957215baba12ab\"}") });
                         SendFrame(Frame.Multiple(new[] { SubMessage.Data(avail, true, Reliable(avail)), SubMessage.Data(fw, true, Reliable(fw)) }, lastInAcked));
                         break;
                     case ReliableMessageType.DisconnectRequest: Console.WriteLine("  disconnect request"); connected = false; peer = null; break;
@@ -75,9 +76,9 @@ static int FakeRobot(string[] a)
                         Console.WriteLine($"  <- {msg}");
                         byte[]? reply = msg switch
                         {
-                            GetManufacturingInfo => Wrap(new ManufacturingId { SerialNumber = 0x0BADF00D, BodyHwVersion = 5, BodyColor = 3 }),
+                            GetManufacturingInfo => Wrap(new ManufacturingID { SerialNumber = 0x0BADF00D, BodyHwVersion = 5, BodyColor = 3 }),
                             SyncTime => Wrap(new SyncTimeAck()),
-                            SetHeadAngle sh => Then(() => targetHead = sh.AngleRad, Wrap(new MotorActionAck(sh.ActionId))),
+                            SetHeadAngle sh => Then(() => targetHead = sh.AngleRad, Wrap(new MotorActionAck { ActionId = sh.ActionId })),
                             _ => null,
                         };
                         if (reply is not null) SendFrame(Frame.Single(SubMessage.Data(reply, true, Reliable(reply)), lastInAcked));
@@ -88,14 +89,14 @@ static int FakeRobot(string[] a)
         if (connected && peer is not null && (DateTime.UtcNow - lastState).TotalMilliseconds >= 33)
         {
             lastState = DateTime.UtcNow; ts += 33; head += Math.Clamp(targetHead - head, -0.05f, 0.05f);
-            var st = Wrap(new RobotState { Timestamp = ts, PoseOriginId = 1, HeadAngleRad = head, LiftHeightMm = 32, BatteryVoltage = 3.9f, Status = (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos) });
+            var st = Wrap(new RobotState { Timestamp = ts, PoseOriginId = 1, HeadAngle = head, LiftAngle = 32, BatteryVoltage = 3.9f, Status = (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos) });
             var subs = new List<SubMessage> { SubMessage.Data(st, false) };
             foreach (var p in pendingReliable) subs.Add(SubMessage.Data(p.payload, true, p.seq)); // resend unacked reliable with the state
             SendFrame(Frame.Multiple(subs, lastInAcked));
         }
     }
     return 0;
-    static byte[] Then(Action act, byte[] r) { act(); return r; }
+    byte[] Then(Action act, byte[] r) { act(); return r; }
 }
 
 static int Usage()
@@ -113,6 +114,10 @@ static int Usage()
                                              (a frame log is always written; default cozmo-frames-<timestamp>.log in the current directory, full path printed)
                                              hardware smoke test: connect, handshake, telemetry, one harmless command, disconnect
           fakerobot [--port 5551] [--seconds 60]  loopback stand-in for the robot transport (127.0.0.1) for testing the socket path without hardware
+          probe <robot-ip> [--include-motion] [--include-state] [--only <step>] [--out results.json]
+                                             subsystem-by-subsystem protocol verification on a real robot: sends only
+                                             read-only/safe-visible messages by default, decodes and re-encodes every
+                                             reply, and writes a per-message hardware-verification report
         """);
     return 1;
 }
@@ -284,7 +289,7 @@ static async Task<int> Connect(string[] a)
 
     await Task.Delay(300);
     Console.WriteLine($"identity: {(link.Available is null ? "RobotAvailable NOT received" : link.Available.ToString())}");
-    Console.WriteLine($"firmware: {(link.Firmware is null ? "FirmwareVersion NOT received" : $"v{link.Firmware.Version} e2r={link.Firmware.EngineToRobotHash} r2e={link.Firmware.RobotToEngineHash} ({link.Firmware.LayoutNote})")}");
+    Console.WriteLine($"firmware: {(link.Firmware is null ? "FirmwareVersion NOT received" : $"v{link.Firmware.Version} e2r={link.Firmware.EngineToRobotHash} r2e={link.Firmware.RobotToEngineHash} build={link.Firmware.Build}")}");
 
     Console.WriteLine("handshake: GetManufacturingInfo + SyncTime" + (origin ? " + AbsoluteLocalizationUpdate(PyCozmo default)" : ""));
     link.BeginSession(origin);
