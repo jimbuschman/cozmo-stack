@@ -303,21 +303,60 @@ def py_names(tag, nops):
 
 
 def pick_twin(t, nops):
-    """Best C# candidate: exact op match beats prefix match beats nothing."""
+    """Best C# candidate: exact op match beats prefix match beats nothing.
+
+    A candidate with no fields of its own can only ever be an exact match, against a native layout that is
+    itself empty. The empty op list is a prefix of every layout, so without the guard below a zero-field C#
+    class silently "prefix matches" any message and claims a name and a statically_verified status on the
+    strength of no field evidence at all. 0xD4 RobotStopped and 0xDD FallingStarted were both recorded that
+    way before this check existed.
+    """
     best = None
     for c in tw.get(t, []):
         if c["kind"] != "class":
             continue
         ops, fields = cs_ops(c)
         if ops == nops:
-            return ("exact", c, fields)
-        if len(ops) < len(nops) and ops == nops[:len(ops)] and best is None:
+            return ("exact", c, fields)      # includes both-empty, which genuinely confirms an empty message
+        if 0 < len(ops) < len(nops) and ops == nops[:len(ops)] and best is None:
             best = ("prefix", c, fields)
     return best
 
 
+SCALAR_WIDTHS = {1: "u8", 2: "u16", 4: "u32", 8: "u64"}
+FIELD_KINDS = {"scalar", "enum", "struct", "farray", "varray", "string", "raw", "unresolved"}
+
+
+def norm_name(n):
+    """Names compared for duplication ignoring case and underscores: impactIntensity == impact_intensity."""
+    return n.replace("_", "").lower()
+
+
 def width_name(v):
-    return {1: "u8", 2: "u16", 4: "u32", 8: "u64"}.get(v, "u8")
+    """Name of a scalar of this byte width. Unknown widths are an error, not a u8."""
+    if v not in SCALAR_WIDTHS:
+        raise ValueError("no scalar type is %r bytes wide; the native read was not understood" % (v,))
+    return SCALAR_WIDTHS[v]
+
+
+def validate(tag, ctype, fields):
+    """Refuse to emit a field we cannot represent, rather than truncating it to something plausible."""
+    seen = set()
+    for i, f in enumerate(fields):
+        where = "0x%02X %s field %d (%s)" % (tag, ctype, i, f.get("name"))
+        if f["kind"] not in FIELD_KINDS:
+            raise ValueError("%s: unsupported kind %r" % (where, f["kind"]))
+        if f["kind"] in ("varray", "string"):
+            cw = f.get("count")
+            if cw not in ("u8", "u16", "u32"):
+                raise ValueError("%s: count width %r is not one the codec can emit" % (where, cw))
+        if f["kind"] == "farray" and not isinstance(f.get("length"), int):
+            raise ValueError("%s: fixed array has no resolved length" % where)
+        key = norm_name(f["name"])
+        if key in seen:
+            raise ValueError("%s: duplicate field name" % where)
+        seen.add(key)
+    return fields
 
 
 def elem_width(f, enums_):
@@ -379,12 +418,22 @@ for union, dirname in (("EngineToRobot", "engine_to_robot"), ("RobotToEngine", "
             notes.append("C# twin %s.%s (%s match)" % (c["ns"], ctype, how))
             if how == "prefix":
                 pn = py_names(tag, nops)
+                taken = {norm_name(f["name"]) for f in fields}
                 for i in range(len(cf), len(nops)):
                     k, v = nops[i]
-                    fields.append({"name": pn[i][0] if pn else "field%d" % i,
+                    # PyCozmo's field list can be shorter or shifted relative to the native layout, so a
+                    # borrowed name may collide with one the C# twin already supplied (0xDE FallingStopped
+                    # produced impactIntensity and impact_intensity side by side). Fall back to a positional
+                    # name rather than emit two fields that read as the same thing.
+                    nm = pn[i][0] if pn and i < len(pn) else None
+                    src = "pycozmo"
+                    if nm is None or norm_name(nm) in taken:
+                        nm, src = "field%d" % i, "generated"
+                    taken.add(norm_name(nm))
+                    fields.append({"name": nm,
                                    "kind": "scalar" if k == "w" else k,
-                                   "type": ((pn[i][1] or width_name(v)) if pn else width_name(v)) if k == "w" else v,
-                                   "name_source": "pycozmo" if pn else "generated",
+                                   "type": ((pn[i][1] or width_name(v)) if pn and i < len(pn) else width_name(v)) if k == "w" else v,
+                                   "name_source": src,
                                    "uncertain": True})
         else:
             pn = py_names(tag, nops)
@@ -467,17 +516,18 @@ for union, dirname in (("EngineToRobot", "engine_to_robot"), ("RobotToEngine", "
 
         parts = [fsize(f) for f in fields]
         declared = sum(p for p in parts if p) if all(p is not None for p in parts) else None
-        # A message is only variable-length if it actually carries a counted array or string. Some Size()
-        # implementations are not constant-folded by the compiler even though the struct is fixed
-        # (RobotState is the notable case: native Size() is a call, but every field is fixed = 91 B).
-        variable = any(f["kind"] in ("varray", "string", "raw") for f in fields)
-        effective = nsize if isinstance(nsize, int) else (declared if not variable else None)
         if nsize not in (None, "variable") and declared is not None and declared != nsize:
             confidence = "partial"
             notes.append("declared %d B != official Size() %d B: unresolved fixed array(s); tail kept as raw"
                          % (declared, nsize))
             fields.append({"name": "unknownTail", "kind": "raw", "type": "u8", "uncertain": True,
                            "note": "%d B unaccounted" % (nsize - declared)})
+        # A message is only variable-length if it actually carries a counted array, a string or an
+        # unresolved raw tail. Computed after the tail is appended, or a message that just grew one would
+        # still be reported as fixed. Some Size() implementations are not constant-folded even though the
+        # struct is fixed (RobotState is the notable case: native Size() is a call, every field is fixed).
+        variable = any(f["kind"] in ("varray", "string", "raw") for f in fields)
+        effective = nsize if isinstance(nsize, int) else (declared if not variable else None)
         if nloops and confidence in ("native_only", "native_named") and not any(f["kind"] == "farray" for f in fields):
             notes.append("native Unpack has %d loop(s): one or more fields are fixed arrays not yet attributed" % nloops)
             confidence = "partial"
@@ -510,7 +560,7 @@ for union, dirname in (("EngineToRobot", "engine_to_robot"), ("RobotToEngine", "
             "subsystem": SUBSYSTEM.get(tag, "unclassified"), "safety": SAFETY.get(tag, "state_change"),
             "official_size": effective, "native_size": nsize, "variable_length": variable,
             "declared_size": declared,
-            "fields": [{k: v for k, v in f.items() if v is not None} for f in fields],
+            "fields": [{k: v for k, v in f.items() if v is not None} for f in validate(tag, ctype, fields)],
             "confidence": confidence, "verification": ver,
             "evidence": {"native_unpack": nat.get(ctype, {}).get("addr"),
                          "native_namespace": nat.get(ctype, {}).get("ns"),

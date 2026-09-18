@@ -2289,7 +2289,7 @@ public sealed partial class SetAppRunID : RobotMessage
     }
 }
 
-/// <summary>testState 0xA1 (engine_to_robot), 49 bytes. Confidence: partial. Verification: unresolved. names generated; widths from native Unpack native loop bounds [4, 4, 3, 3] could not be attributed uniquely declared 17 B != official Size() 49 B: unresolved fixed array(s); tail kept as raw</summary>
+/// <summary>testState 0xA1 (engine_to_robot), variable length. Confidence: partial. Verification: unresolved. names generated; widths from native Unpack native loop bounds [4, 4, 3, 3] could not be attributed uniquely declared 17 B != official Size() 49 B: unresolved fixed array(s); tail kept as raw</summary>
 public sealed partial class TestState : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.TestState;
@@ -2449,7 +2449,7 @@ public sealed partial class ShutdownRobot : RobotMessage
     }
 }
 
-/// <summary>appConCfgString 0xAA (engine_to_robot), 17 bytes. Confidence: partial. Verification: unresolved. names generated; widths from native Unpack native loop bounds [16] could not be attributed uniquely declared 2 B != official Size() 17 B: unresolved fixed array(s); tail kept as raw</summary>
+/// <summary>appConCfgString 0xAA (engine_to_robot), variable length. Confidence: partial. Verification: unresolved. names generated; widths from native Unpack native loop bounds [16] could not be attributed uniquely declared 2 B != official Size() 17 B: unresolved fixed array(s); tail kept as raw</summary>
 public sealed partial class AppConnectConfigString : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.AppConCfgString;
@@ -3482,7 +3482,7 @@ public sealed partial class DockingStatus : RobotMessage
     }
 }
 
-/// <summary>robotStopped 0xD4 (robot_to_engine), 1 bytes. Confidence: prefix. Verification: statically_verified. C# twin Anki.Cozmo.ExternalInterface.RobotStopped (prefix match)</summary>
+/// <summary>robotStopped 0xD4 (robot_to_engine), 1 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
 public sealed partial class RobotStopped : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.RobotStopped;
@@ -3659,12 +3659,12 @@ public sealed partial class IMUTemperature : RobotMessage
     }
 }
 
-/// <summary>fallingStarted 0xDD (robot_to_engine), 4 bytes. Confidence: prefix. Verification: statically_verified. C# twin Anki.Cozmo.ExternalInterface.FallingStarted (prefix match)</summary>
+/// <summary>fallingStarted 0xDD (robot_to_engine), 4 bytes. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class FallingStarted : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.FallingStarted;
     public FallingStarted() { }
-    /// <summary>name not established; name from pycozmo</summary>
+    /// <summary>name from pycozmo</summary>
     public uint Unknown;
     public static FallingStarted Read(CladReader r) => new()
     {
@@ -3685,19 +3685,19 @@ public sealed partial class FallingStopped : RobotMessage
     public uint DurationMs;
     /// <summary>name from csharp</summary>
     public float ImpactIntensity;
-    /// <summary>name not established; name from pycozmo</summary>
-    public float ImpactIntensity2;
+    /// <summary>name not established; name from generated</summary>
+    public float Field2;
     public static FallingStopped Read(CladReader r) => new()
     {
         DurationMs = r.U32(),
         ImpactIntensity = r.F32(),
-        ImpactIntensity2 = r.F32(),
+        Field2 = r.F32(),
     };
     public override void WriteBody(CladWriter w)
     {
         w.U32(DurationMs);
         w.F32(ImpactIntensity);
-        w.F32(ImpactIntensity2);
+        w.F32(Field2);
     }
 }
 

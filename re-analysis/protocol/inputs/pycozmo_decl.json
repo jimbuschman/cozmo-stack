@@ -1,0 +1,1751 @@
+{
+ "packets": {
+  "Connect": {
+   "name": "Connect",
+   "kind": "Connect",
+   "group": null,
+   "args": []
+  },
+  "Disconnect": {
+   "name": "Disconnect",
+   "kind": "Disconnect",
+   "group": null,
+   "args": []
+  },
+  "Ping": {
+   "name": "Ping",
+   "kind": "Ping",
+   "group": null,
+   "args": [
+    {
+     "name": "time_sent_ms",
+     "type": "f64"
+    },
+    {
+     "name": "counter",
+     "type": "u32"
+    },
+    {
+     "name": "last",
+     "type": "u32"
+    },
+    {
+     "name": "unknown",
+     "type": "u8"
+    }
+   ]
+  },
+  "Keyframe": {
+   "name": "Keyframe",
+   "kind": "Keyframe",
+   "group": null,
+   "args": []
+  },
+  "0x03": {
+   "name": "LightStateCenter",
+   "kind": "Command",
+   "group": "lights",
+   "args": [
+    {
+     "name": "states",
+     "type": "farray",
+     "length": 3,
+     "elem": "LightState",
+     "desc": "Top, middle, and bottom light state.",
+     "default": "()"
+    },
+    {
+     "name": "unknown",
+     "type": "u8"
+    }
+   ]
+  },
+  "0x04": {
+   "name": "CubeLights",
+   "kind": "Command",
+   "group": "objects",
+   "args": [
+    {
+     "name": "states",
+     "type": "farray",
+     "length": 4,
+     "elem": "LightState",
+     "default": "()"
+    }
+   ]
+  },
+  "0x05": {
+   "name": "ObjectConnect",
+   "kind": "Command",
+   "group": "objects",
+   "args": [
+    {
+     "name": "factory_id",
+     "type": "u32"
+    },
+    {
+     "name": "connect",
+     "type": "bool"
+    }
+   ]
+  },
+  "0x08": {
+   "name": "StreamObjectAccel",
+   "kind": "Command",
+   "group": "objects",
+   "args": [
+    {
+     "name": "object_id",
+     "type": "u32"
+    },
+    {
+     "name": "enable",
+     "type": "bool"
+    }
+   ]
+  },
+  "0x0a": {
+   "name": "SetAccessoryDiscovery",
+   "kind": "Command",
+   "group": "objects",
+   "args": [
+    {
+     "name": "enable",
+     "type": "bool"
+    }
+   ]
+  },
+  "0x0b": {
+   "name": "SetHeadLight",
+   "kind": "Command",
+   "group": "camera",
+   "args": [
+    {
+     "name": "enable",
+     "type": "bool"
+    }
+   ]
+  },
+  "0x10": {
+   "name": "CubeId",
+   "kind": "Command",
+   "group": "objects",
+   "args": [
+    {
+     "name": "object_id",
+     "type": "u32"
+    },
+    {
+     "name": "rotation_period_frames",
+     "type": "u8"
+    }
+   ]
+  },
+  "0x11": {
+   "name": "LightStateSide",
+   "kind": "Command",
+   "group": "lights",
+   "args": [
+    {
+     "name": "states",
+     "type": "farray",
+     "length": 2,
+     "elem": "LightState",
+     "desc": "Left and right light state.",
+     "default": "()"
+    },
+    {
+     "name": "unknown",
+     "type": "u8"
+    }
+   ]
+  },
+  "0x25": {
+   "name": "Enable",
+   "kind": "Command",
+   "group": "system",
+   "args": []
+  },
+  "0x32": {
+   "name": "DriveWheels",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "lwheel_speed_mmps",
+     "type": "f32"
+    },
+    {
+     "name": "rwheel_speed_mmps",
+     "type": "f32"
+    },
+    {
+     "name": "lwheel_accel_mmps2",
+     "type": "f32"
+    },
+    {
+     "name": "rwheel_accel_mmps2",
+     "type": "f32"
+    }
+   ]
+  },
+  "0x33": {
+   "name": "TurnInPlaceAtSpeed",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "wheel_speed_mmps",
+     "type": "f32"
+    },
+    {
+     "name": "wheel_accel_mmps2",
+     "type": "f32"
+    },
+    {
+     "name": "direction",
+     "type": "i16"
+    }
+   ]
+  },
+  "0x34": {
+   "name": "MoveLift",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "speed_rad_per_sec",
+     "type": "f32"
+    }
+   ]
+  },
+  "0x35": {
+   "name": "MoveHead",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "speed_rad_per_sec",
+     "type": "f32"
+    }
+   ]
+  },
+  "0x36": {
+   "name": "SetLiftHeight",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "height_mm",
+     "type": "f32"
+    },
+    {
+     "name": "max_speed_rad_per_sec",
+     "type": "f32",
+     "default": "3.0"
+    },
+    {
+     "name": "accel_rad_per_sec2",
+     "type": "f32",
+     "default": "20.0"
+    },
+    {
+     "name": "duration_sec",
+     "type": "f32"
+    },
+    {
+     "name": "action_id",
+     "type": "u8",
+     "desc": "Not present in v2214 and older."
+    }
+   ]
+  },
+  "0x37": {
+   "name": "SetHeadAngle",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "angle_rad",
+     "type": "f32"
+    },
+    {
+     "name": "max_speed_rad_per_sec",
+     "type": "f32",
+     "default": "15.0"
+    },
+    {
+     "name": "accel_rad_per_sec2",
+     "type": "f32",
+     "default": "20.0"
+    },
+    {
+     "name": "duration_sec",
+     "type": "f32"
+    },
+    {
+     "name": "action_id",
+     "type": "u8",
+     "desc": "Not present in v2214 and older."
+    }
+   ]
+  },
+  "0x39": {
+   "name": "TurnInPlace",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "angle_rad",
+     "type": "f32"
+    },
+    {
+     "name": "speed_rad_per_sec",
+     "type": "f32"
+    },
+    {
+     "name": "accel_rad_per_sec2",
+     "type": "f32"
+    },
+    {
+     "name": "angle_tolerance_rad",
+     "type": "f32"
+    },
+    {
+     "name": "unknown4",
+     "type": "u8"
+    },
+    {
+     "name": "unknown5",
+     "type": "u8"
+    },
+    {
+     "name": "is_absolute",
+     "type": "bool"
+    },
+    {
+     "name": "action_id",
+     "type": "u8"
+    }
+   ]
+  },
+  "0x3b": {
+   "name": "StopAllMotors",
+   "kind": "Command",
+   "group": "motors",
+   "args": []
+  },
+  "0x3c": {
+   "name": "ClearPath",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "unknown",
+     "type": "u16"
+    }
+   ]
+  },
+  "0x3d": {
+   "name": "AppendPathSegLine",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "from_x",
+     "type": "f32"
+    },
+    {
+     "name": "from_y",
+     "type": "f32"
+    },
+    {
+     "name": "to_x",
+     "type": "f32"
+    },
+    {
+     "name": "to_y",
+     "type": "f32"
+    },
+    {
+     "name": "speed_mmps",
+     "type": "f32"
+    },
+    {
+     "name": "accel_mmps2",
+     "type": "f32"
+    },
+    {
+     "name": "decel_mmps2",
+     "type": "f32"
+    }
+   ]
+  },
+  "0x3e": {
+   "name": "AppendPathSegArc",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "center_x",
+     "type": "f32"
+    },
+    {
+     "name": "center_y",
+     "type": "f32"
+    },
+    {
+     "name": "radius_mm",
+     "type": "f32"
+    },
+    {
+     "name": "start_angle_rad",
+     "type": "f32"
+    },
+    {
+     "name": "sweep_rad",
+     "type": "f32"
+    },
+    {
+     "name": "speed_mmps",
+     "type": "f32"
+    },
+    {
+     "name": "accel_mmps2",
+     "type": "f32"
+    },
+    {
+     "name": "decel_mmps2",
+     "type": "f32"
+    }
+   ]
+  },
+  "0x3f": {
+   "name": "AppendPathSegPointTurn",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "x",
+     "type": "f32"
+    },
+    {
+     "name": "y",
+     "type": "f32"
+    },
+    {
+     "name": "angle_rad",
+     "type": "f32"
+    },
+    {
+     "name": "angle_tolerance_rad",
+     "type": "f32"
+    },
+    {
+     "name": "speed_mmps",
+     "type": "f32"
+    },
+    {
+     "name": "accel_mmps2",
+     "type": "f32"
+    },
+    {
+     "name": "decel_mmps2",
+     "type": "f32"
+    },
+    {
+     "name": "unknown",
+     "type": "bool"
+    }
+   ]
+  },
+  "0x40": {
+   "name": "TrimPath",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "head",
+     "type": "u8"
+    },
+    {
+     "name": "tail",
+     "type": "u8"
+    }
+   ]
+  },
+  "0x41": {
+   "name": "ExecutePath",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "event_id",
+     "type": "u16"
+    },
+    {
+     "name": "unknown",
+     "type": "bool"
+    }
+   ]
+  },
+  "0x45": {
+   "name": "SetOrigin",
+   "kind": "Command",
+   "group": "localization",
+   "args": [
+    {
+     "name": "unknown0",
+     "type": "u32"
+    },
+    {
+     "name": "pose_frame_id",
+     "type": "u32"
+    },
+    {
+     "name": "pose_origin_id",
+     "type": "u32",
+     "default": "1"
+    },
+    {
+     "name": "pose_x",
+     "type": "f32"
+    },
+    {
+     "name": "pose_y",
+     "type": "f32"
+    },
+    {
+     "name": "unknown5",
+     "type": "u32",
+     "default": "2147483648"
+    }
+   ]
+  },
+  "0x4b": {
+   "name": "SyncTime",
+   "kind": "Command",
+   "group": "system",
+   "args": [
+    {
+     "name": "timestamp",
+     "type": "u32"
+    },
+    {
+     "name": "unknown",
+     "type": "u32"
+    }
+   ]
+  },
+  "0x4c": {
+   "name": "EnableCamera",
+   "kind": "Command",
+   "group": "camera",
+   "args": [
+    {
+     "name": "image_send_mode",
+     "type": "i8",
+     "enum": "ImageSendMode",
+     "default": "1"
+    },
+    {
+     "name": "image_resolution",
+     "type": "i8",
+     "enum": "ImageResolution",
+     "default": "4"
+    }
+   ]
+  },
+  "0x57": {
+   "name": "SetCameraParams",
+   "kind": "Command",
+   "group": "camera",
+   "args": [
+    {
+     "name": "gain",
+     "type": "f32"
+    },
+    {
+     "name": "exposure_ms",
+     "type": "u16"
+    },
+    {
+     "name": "auto_exposure_enabled",
+     "type": "bool"
+    }
+   ]
+  },
+  "0x58": {
+   "name": "StartMotorCalibration",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "head",
+     "type": "bool"
+    },
+    {
+     "name": "lift",
+     "type": "bool"
+    }
+   ]
+  },
+  "0x60": {
+   "name": "EnableStopOnCliff",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "enable",
+     "type": "bool"
+    }
+   ]
+  },
+  "0x64": {
+   "name": "SetRobotVolume",
+   "kind": "Command",
+   "group": "audio",
+   "args": [
+    {
+     "name": "level",
+     "type": "u16"
+    }
+   ]
+  },
+  "0x66": {
+   "name": "EnableColorImages",
+   "kind": "Command",
+   "group": "camera",
+   "args": [
+    {
+     "name": "enable",
+     "type": "bool"
+    }
+   ]
+  },
+  "0x81": {
+   "name": "NvStorageOp",
+   "kind": "Command",
+   "group": "nv",
+   "args": [
+    {
+     "name": "tag",
+     "type": "u32",
+     "enum": "NvEntryTag",
+     "default": "4294967295"
+    },
+    {
+     "name": "length",
+     "type": "i32"
+    },
+    {
+     "name": "op",
+     "type": "u8",
+     "enum": "NvOperation"
+    },
+    {
+     "name": "unknown",
+     "type": "u8"
+    },
+    {
+     "name": "data",
+     "type": "varray",
+     "count": "u16",
+     "elem": "u8",
+     "default": "()"
+    }
+   ]
+  },
+  "0x8d": {
+   "name": "AbortAnimation",
+   "kind": "Command",
+   "group": "anim",
+   "args": []
+  },
+  "0x8e": {
+   "name": "OutputAudio",
+   "kind": "Command",
+   "group": "audio",
+   "args": [
+    {
+     "name": "samples",
+     "type": "farray",
+     "length": 744,
+     "elem": null,
+     "default": "()"
+    }
+   ]
+  },
+  "0x8f": {
+   "name": "OutputSilence",
+   "kind": "Command",
+   "group": "audio",
+   "args": []
+  },
+  "0x91": {
+   "name": "RecordHeading",
+   "kind": "Command",
+   "group": "anim",
+   "args": []
+  },
+  "0x92": {
+   "name": "TurnToRecordedHeading",
+   "kind": "Command",
+   "group": "anim",
+   "args": []
+  },
+  "0x93": {
+   "name": "AnimHead",
+   "kind": "Command",
+   "group": "anim",
+   "args": [
+    {
+     "name": "duration_ms",
+     "type": "u8"
+    },
+    {
+     "name": "variability_deg",
+     "type": "i8"
+    },
+    {
+     "name": "angle_deg",
+     "type": "i8"
+    }
+   ]
+  },
+  "0x94": {
+   "name": "AnimLift",
+   "kind": "Command",
+   "group": "anim",
+   "args": [
+    {
+     "name": "duration_ms",
+     "type": "u8"
+    },
+    {
+     "name": "variability_mm",
+     "type": "u8"
+    },
+    {
+     "name": "height_mm",
+     "type": "u8"
+    }
+   ]
+  },
+  "0x97": {
+   "name": "DisplayImage",
+   "kind": "Command",
+   "group": "display",
+   "args": [
+    {
+     "name": "image",
+     "type": "varray",
+     "count": "u16",
+     "elem": "u8",
+     "default": "()"
+    }
+   ]
+  },
+  "0x98": {
+   "name": "AnimBackpackLights",
+   "kind": "Command",
+   "group": "anim",
+   "args": [
+    {
+     "name": "colors",
+     "type": "farray",
+     "length": 5,
+     "elem": null,
+     "desc": "Left, front, middle, back, and right.",
+     "default": "()"
+    }
+   ]
+  },
+  "0x99": {
+   "name": "AnimBody",
+   "kind": "Command",
+   "group": "anim",
+   "args": [
+    {
+     "name": "speed",
+     "type": "i16"
+    },
+    {
+     "name": "unknown",
+     "type": "i16"
+    }
+   ]
+  },
+  "0x9a": {
+   "name": "EndAnimation",
+   "kind": "Command",
+   "group": "anim",
+   "args": []
+  },
+  "0x9b": {
+   "name": "StartAnimation",
+   "kind": "Command",
+   "group": "anim",
+   "args": [
+    {
+     "name": "anim_id",
+     "type": "u8"
+    }
+   ]
+  },
+  "0x9f": {
+   "name": "EnableAnimationState",
+   "kind": "Command",
+   "group": "system",
+   "args": []
+  },
+  "0xa9": {
+   "name": "ShutdownRobot",
+   "kind": "Command",
+   "group": "system",
+   "args": []
+  },
+  "0xae": {
+   "name": "WifiOff",
+   "kind": "Command",
+   "group": "system",
+   "args": [
+    {
+     "name": "enable",
+     "type": "bool"
+    }
+   ]
+  },
+  "0xaf": {
+   "name": "FirmwareUpdate",
+   "kind": "Command",
+   "group": "firmware",
+   "args": [
+    {
+     "name": "chunk_id",
+     "type": "u16"
+    },
+    {
+     "name": "data",
+     "type": "farray",
+     "length": 1024,
+     "elem": null,
+     "default": "()"
+    }
+   ]
+  },
+  "0xb0": {
+   "name": "DebugData",
+   "kind": "Command",
+   "group": "debug",
+   "args": [
+    {
+     "name": "format_id",
+     "type": "u16",
+     "desc": "AnkiLogStringTables.json formatTable key."
+    },
+    {
+     "name": "unused",
+     "type": "u16",
+     "desc": "Always 0."
+    },
+    {
+     "name": "name_id",
+     "type": "u16",
+     "desc": "AnkiLogStringTables.json nameTable key."
+    },
+    {
+     "name": "level",
+     "type": "i8",
+     "desc": "Log level. Observed: -1, 1, 2, 3, 5."
+    },
+    {
+     "name": "args",
+     "type": "varray",
+     "count": "u8",
+     "elem": "u32",
+     "default": "()"
+    }
+   ]
+  },
+  "0xb4": {
+   "name": "ObjectMoved",
+   "kind": "Command",
+   "group": "objects",
+   "args": [
+    {
+     "name": "timestamp",
+     "type": "u32"
+    },
+    {
+     "name": "object_id",
+     "type": "u32"
+    },
+    {
+     "name": "active_accel_x",
+     "type": "f32"
+    },
+    {
+     "name": "active_accel_y",
+     "type": "f32"
+    },
+    {
+     "name": "active_accel_z",
+     "type": "f32"
+    },
+    {
+     "name": "axis_of_accel",
+     "type": "u8",
+     "enum": "UpAxis",
+     "default": "7"
+    }
+   ]
+  },
+  "0xb5": {
+   "name": "ObjectStoppedMoving",
+   "kind": "Command",
+   "group": "objects",
+   "args": [
+    {
+     "name": "timestamp",
+     "type": "u32"
+    },
+    {
+     "name": "object_id",
+     "type": "u32"
+    }
+   ]
+  },
+  "0xb6": {
+   "name": "ObjectTapped",
+   "kind": "Command",
+   "group": "objects",
+   "args": [
+    {
+     "name": "timestamp",
+     "type": "u32"
+    },
+    {
+     "name": "object_id",
+     "type": "u32"
+    },
+    {
+     "name": "num_taps",
+     "type": "u8"
+    },
+    {
+     "name": "tap_time",
+     "type": "u8"
+    },
+    {
+     "name": "tap_neg",
+     "type": "i8"
+    },
+    {
+     "name": "tap_pos",
+     "type": "i8"
+    }
+   ]
+  },
+  "0xb9": {
+   "name": "ObjectTapFiltered",
+   "kind": "Command",
+   "group": "objects",
+   "args": [
+    {
+     "name": "timestamp",
+     "type": "u32"
+    },
+    {
+     "name": "object_id",
+     "type": "u32"
+    },
+    {
+     "name": "time",
+     "type": "u8"
+    },
+    {
+     "name": "intensity",
+     "type": "u8"
+    }
+   ]
+  },
+  "0xc4": {
+   "name": "AcknowledgeAction",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "action_id",
+     "type": "u8"
+    }
+   ]
+  },
+  "0xc2": {
+   "name": "RobotDelocalized",
+   "kind": "Command",
+   "group": "localization",
+   "args": []
+  },
+  "0xc3": {
+   "name": "RobotPoked",
+   "kind": "Command",
+   "group": "localization",
+   "args": []
+  },
+  "0xc6": {
+   "name": "PathFollowingEvent",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "event_id",
+     "type": "u16"
+    },
+    {
+     "name": "event_type",
+     "type": "u8",
+     "enum": "PathEventType"
+    }
+   ]
+  },
+  "0xc9": {
+   "name": "HardwareInfo",
+   "kind": "Command",
+   "group": "system",
+   "args": [
+    {
+     "name": "serial_number_head",
+     "type": "u32"
+    },
+    {
+     "name": "unknown1",
+     "type": "u8"
+    },
+    {
+     "name": "unknown2",
+     "type": "u8"
+    }
+   ]
+  },
+  "0xca": {
+   "name": "AnimationStarted",
+   "kind": "Command",
+   "group": "anim",
+   "args": [
+    {
+     "name": "anim_id",
+     "type": "u8"
+    }
+   ]
+  },
+  "0xcb": {
+   "name": "AnimationEnded",
+   "kind": "Command",
+   "group": "anim",
+   "args": [
+    {
+     "name": "anim_id",
+     "type": "u8"
+    }
+   ]
+  },
+  "0xcd": {
+   "name": "NvStorageOpResult",
+   "kind": "Command",
+   "group": "nv",
+   "args": [
+    {
+     "name": "tag",
+     "type": "u32",
+     "enum": "NvEntryTag",
+     "default": "4294967295"
+    },
+    {
+     "name": "length",
+     "type": "i32"
+    },
+    {
+     "name": "op",
+     "type": "u8",
+     "enum": "NvOperation"
+    },
+    {
+     "name": "result",
+     "type": "i8",
+     "enum": "NvResult"
+    },
+    {
+     "name": "data",
+     "type": "varray",
+     "count": "u16",
+     "elem": "u8",
+     "default": "()"
+    }
+   ]
+  },
+  "0xce": {
+   "name": "ObjectPowerLevel",
+   "kind": "Command",
+   "group": "objects",
+   "args": [
+    {
+     "name": "object_id",
+     "type": "u32"
+    },
+    {
+     "name": "missed_packets",
+     "type": "u32"
+    },
+    {
+     "name": "battery_level",
+     "type": "u8"
+    }
+   ]
+  },
+  "0xd0": {
+   "name": "ObjectConnectionState",
+   "kind": "Command",
+   "group": "objects",
+   "args": [
+    {
+     "name": "object_id",
+     "type": "u32"
+    },
+    {
+     "name": "factory_id",
+     "type": "u32"
+    },
+    {
+     "name": "object_type",
+     "type": "i32",
+     "enum": "ObjectType",
+     "default": "-1"
+    },
+    {
+     "name": "connected",
+     "type": "bool"
+    }
+   ]
+  },
+  "0xd1": {
+   "name": "MotorCalibration",
+   "kind": "Command",
+   "group": "motors",
+   "args": [
+    {
+     "name": "motor_id",
+     "type": "u8",
+     "enum": "MotorID"
+    },
+    {
+     "name": "calib_started",
+     "type": "bool"
+    },
+    {
+     "name": "auto_started",
+     "type": "bool"
+    }
+   ]
+  },
+  "0xd7": {
+   "name": "ObjectUpAxisChanged",
+   "kind": "Command",
+   "group": "objects",
+   "args": [
+    {
+     "name": "timestamp",
+     "type": "u32"
+    },
+    {
+     "name": "object_id",
+     "type": "u32"
+    },
+    {
+     "name": "axis",
+     "type": "u8",
+     "enum": "UpAxis",
+     "default": "7"
+    }
+   ]
+  },
+  "0xdb": {
+   "name": "ButtonPressed",
+   "kind": "Command",
+   "group": "system",
+   "args": [
+    {
+     "name": "pressed",
+     "type": "bool"
+    }
+   ]
+  },
+  "0xdd": {
+   "name": "FallingStarted",
+   "kind": "Command",
+   "group": "localization",
+   "args": [
+    {
+     "name": "unknown",
+     "type": "u32"
+    }
+   ]
+  },
+  "0xde": {
+   "name": "FallingStopped",
+   "kind": "Command",
+   "group": "localization",
+   "args": [
+    {
+     "name": "unknown",
+     "type": "u32"
+    },
+    {
+     "name": "duration_ms",
+     "type": "u32"
+    },
+    {
+     "name": "impact_intensity",
+     "type": "f32"
+    }
+   ]
+  },
+  "0xed": {
+   "name": "BodyInfo",
+   "kind": "Command",
+   "group": "system",
+   "args": [
+    {
+     "name": "serial_number",
+     "type": "u32"
+    },
+    {
+     "name": "body_hw_version",
+     "type": "u32",
+     "desc": "Production units report 5. Development units report 7."
+    },
+    {
+     "name": "body_color",
+     "type": "i32",
+     "enum": "BodyColor",
+     "default": "-1"
+    }
+   ]
+  },
+  "0xee": {
+   "name": "FirmwareSignature",
+   "kind": "Command",
+   "group": "system",
+   "args": [
+    {
+     "name": "unknown",
+     "type": "u16",
+     "desc": "Last 2 bytes of head s/n?"
+    },
+    {
+     "name": "signature",
+     "type": "string"
+    }
+   ]
+  },
+  "0xef": {
+   "name": "FirmwareUpdateResult",
+   "kind": "Command",
+   "group": "firmware",
+   "args": [
+    {
+     "name": "byte_count",
+     "type": "u32"
+    },
+    {
+     "name": "chunk_id",
+     "type": "u16"
+    },
+    {
+     "name": "status",
+     "type": "u8",
+     "desc": "0=OK; 0x0a=complete?"
+    }
+   ]
+  },
+  "0xf0": {
+   "name": "RobotState",
+   "kind": "Event",
+   "group": "state",
+   "args": [
+    {
+     "name": "timestamp",
+     "type": "u32"
+    },
+    {
+     "name": "pose_frame_id",
+     "type": "u32"
+    },
+    {
+     "name": "pose_origin_id",
+     "type": "u32"
+    },
+    {
+     "name": "pose_x",
+     "type": "f32"
+    },
+    {
+     "name": "pose_y",
+     "type": "f32"
+    },
+    {
+     "name": "pose_z",
+     "type": "f32"
+    },
+    {
+     "name": "pose_angle_rad",
+     "type": "f32"
+    },
+    {
+     "name": "pose_pitch_rad",
+     "type": "f32"
+    },
+    {
+     "name": "lwheel_speed_mmps",
+     "type": "f32"
+    },
+    {
+     "name": "rwheel_speed_mmps",
+     "type": "f32"
+    },
+    {
+     "name": "head_angle_rad",
+     "type": "f32"
+    },
+    {
+     "name": "lift_height_mm",
+     "type": "f32"
+    },
+    {
+     "name": "accel_x",
+     "type": "f32"
+    },
+    {
+     "name": "accel_y",
+     "type": "f32"
+    },
+    {
+     "name": "accel_z",
+     "type": "f32"
+    },
+    {
+     "name": "gyro_x",
+     "type": "f32"
+    },
+    {
+     "name": "gyro_y",
+     "type": "f32"
+    },
+    {
+     "name": "gyro_z",
+     "type": "f32"
+    },
+    {
+     "name": "battery_voltage",
+     "type": "f32"
+    },
+    {
+     "name": "status",
+     "type": "u32"
+    },
+    {
+     "name": "cliff_data_raw",
+     "type": "farray",
+     "length": 4,
+     "elem": null,
+     "default": "()"
+    },
+    {
+     "name": "backpack_touch_sensor_raw",
+     "type": "u16"
+    },
+    {
+     "name": "curr_path_segment",
+     "type": "u8"
+    }
+   ]
+  },
+  "0xf1": {
+   "name": "AnimationState",
+   "kind": "Event",
+   "group": "state",
+   "args": [
+    {
+     "name": "timestamp",
+     "type": "u32"
+    },
+    {
+     "name": "num_anim_bytes_played",
+     "type": "i32"
+    },
+    {
+     "name": "num_audio_frames_played",
+     "type": "i32"
+    },
+    {
+     "name": "enabled_anim_tracks",
+     "type": "u8"
+    },
+    {
+     "name": "tag",
+     "type": "u8"
+    },
+    {
+     "name": "client_drop_count",
+     "type": "u8",
+     "desc": "Not present in v2214 and older."
+    }
+   ]
+  },
+  "0xf2": {
+   "name": "ImageChunk",
+   "kind": "Event",
+   "group": "state",
+   "args": [
+    {
+     "name": "frame_timestamp",
+     "type": "u32"
+    },
+    {
+     "name": "image_id",
+     "type": "u32"
+    },
+    {
+     "name": "chunk_debug",
+     "type": "u32"
+    },
+    {
+     "name": "image_encoding",
+     "type": "i8",
+     "enum": "ImageEncoding"
+    },
+    {
+     "name": "image_resolution",
+     "type": "i8",
+     "enum": "ImageResolution"
+    },
+    {
+     "name": "image_chunk_count",
+     "type": "u8"
+    },
+    {
+     "name": "chunk_id",
+     "type": "u8"
+    },
+    {
+     "name": "status",
+     "type": "u16"
+    },
+    {
+     "name": "data",
+     "type": "varray",
+     "count": "u16",
+     "elem": "u8",
+     "default": "()"
+    }
+   ]
+  },
+  "0xf3": {
+   "name": "ObjectAvailable",
+   "kind": "Event",
+   "group": "state",
+   "args": [
+    {
+     "name": "factory_id",
+     "type": "u32"
+    },
+    {
+     "name": "object_type",
+     "type": "i32",
+     "enum": "ObjectType",
+     "default": "-1"
+    },
+    {
+     "name": "rssi",
+     "type": "i8"
+    }
+   ]
+  },
+  "0xf4": {
+   "name": "ImageImuData",
+   "kind": "Event",
+   "group": "state",
+   "args": [
+    {
+     "name": "image_id",
+     "type": "u32"
+    },
+    {
+     "name": "rate_x",
+     "type": "f32"
+    },
+    {
+     "name": "rate_y",
+     "type": "f32"
+    },
+    {
+     "name": "rate_z",
+     "type": "f32"
+    },
+    {
+     "name": "line_2_number",
+     "type": "u8"
+    }
+   ]
+  },
+  "0xf5": {
+   "name": "ObjectAccel",
+   "kind": "Event",
+   "group": "state",
+   "args": [
+    {
+     "name": "timestamp",
+     "type": "u32"
+    },
+    {
+     "name": "object_id",
+     "type": "u32"
+    },
+    {
+     "name": "accel_x",
+     "type": "f32"
+    },
+    {
+     "name": "accel_y",
+     "type": "f32"
+    },
+    {
+     "name": "accel_z",
+     "type": "f32"
+    }
+   ]
+  }
+ },
+ "structs": {
+  "LightState": [
+   {
+    "name": "on_color",
+    "type": "u16"
+   },
+   {
+    "name": "off_color",
+    "type": "u16"
+   },
+   {
+    "name": "on_frames",
+    "type": "u8"
+   },
+   {
+    "name": "off_frames",
+    "type": "u8"
+   },
+   {
+    "name": "transition_on_frames",
+    "type": "u8"
+   },
+   {
+    "name": "transition_off_frames",
+    "type": "u8"
+   },
+   {
+    "name": "offset",
+    "type": "i16"
+   }
+  ],
+  "PathSegmentSpeed": [
+   {
+    "name": "speed_mmps",
+    "type": "f32",
+    "desc": "Speed in millimeters per second."
+   },
+   {
+    "name": "accel_mmps2",
+    "type": "f32",
+    "desc": "Acceleration in millimeters per second squared."
+   },
+   {
+    "name": "decel_mmps2",
+    "type": "f32",
+    "desc": "Deceleration in millimeters per second squared."
+   }
+  ]
+ },
+ "enums": {
+  "BodyColor": {
+   "UNKNOWN": -1,
+   "WHITE_v10": 0,
+   "RESERVED": 1,
+   "WHITE_v15": 2,
+   "CE_LM_v15": 3,
+   "LE_BL_v16": 4,
+   "DEV": 5
+  },
+  "NvEntryTag": {
+   "NVEntry_Invalid": 4294967295,
+   "NVEntry_GameSkillLevels": 1572864,
+   "NVEntry_OnboardingData": 1576960,
+   "NVEntry_GameUnlocks": 1581056,
+   "NVEntry_FaceEnrollData": 1585152,
+   "NVEntry_FaceAlbumData": 1589248,
+   "NVEntry_NurtureGameData": 1654784,
+   "NVEntry_InventoryData": 1658880,
+   "NVEntry_LabAssignments": 1662976,
+   "NVEntry_SavedCubeIDs": 1667072,
+   "NVEntry_NEXT_SLOT": 1671168,
+   "NVEntry_FACTORY_RESERVED1": 1835008,
+   "NVEntry_FACTORY_RESERVED2": 1957888,
+   "NVEntry_BirthCertificate": 2147483648,
+   "NVEntry_CameraCalib": 2147483649,
+   "NVEntry_ToolCodeInfo": 2147483650,
+   "NVEntry_CalibPose": 2147483651,
+   "NVEntry_CalibMetaInfo": 2147483652,
+   "NVEntry_ObservedCubePose": 2147483653,
+   "NVEntry_IMUInfo": 2147483654,
+   "NVEntry_CliffValOnDrop": 2147483655,
+   "NVEntry_CliffValOnGround": 2147483656,
+   "NVEntry_PlaypenTestResults": 2147483664,
+   "NVEntry_FactoryLock": 2147483665,
+   "NVEntry_VersionMagic": 2147483666,
+   "NVEntry_CalibImage1": 2147549184,
+   "NVEntry_CalibImage2": 2147614720,
+   "NVEntry_CalibImage3": 2147680256,
+   "NVEntry_CalibImage4": 2147745792,
+   "NVEntry_CalibImage5": 2147811328,
+   "NVEntry_CalibImage6": 2147876864,
+   "NVEntry_ToolCodeImageLeft": 2148532224,
+   "NVEntry_ToolCodeImageRight": 2148597760,
+   "NVEntry_PrePlaypenResults": 3221225472,
+   "NVEntry_PrePlaypenCentroids": 3221225473,
+   "NVEntry_IMUAverages": 3221225476,
+   "NVEntry_FactoryBaseTag": 909312,
+   "NVEntry_FactoryBaseTagWithBCOffset": 909360
+  },
+  "NvOperation": {
+   "NVOP_READ": 0,
+   "NVOP_WRITE": 1,
+   "NVOP_ERASE": 2,
+   "NVOP_WIPEALL": 3
+  },
+  "NvResult": {
+   "NV_OKAY": 0,
+   "NV_SCHEDULED": 1,
+   "NV_NO_DO": 2,
+   "NV_MORE": 3,
+   "NV_UNKNOWN_4": 4,
+   "NV_UNKNOWN_5": 5,
+   "NV_UNKNOWN_6": 6,
+   "NV_UNKNOWN_7": 7,
+   "NV_UNKNOWN_8": 8,
+   "NV_NOT_FOUND": -1,
+   "NV_NO_ROOM": -2,
+   "NV_ERROR": -3,
+   "NV_TIMEOUT": -4,
+   "NV_BUSY": -5,
+   "NV_BAD_ARGS": -6,
+   "NV_NO_MEM": -7,
+   "NV_LOOP": -8,
+   "NV_CORRUPT": -9
+  },
+  "UpAxis": {
+   "XNegative": 0,
+   "XPositive": 1,
+   "YNegative": 2,
+   "YPositive": 3,
+   "ZNegative": 4,
+   "ZPositive": 5,
+   "NumAxes": 6,
+   "UnknownAxis": 7
+  },
+  "ObjectType": {
+   "InvalidObject": -1,
+   "UnknownObject": 0,
+   "Block_LIGHTCUBE1": 1,
+   "Block_LIGHTCUBE2": 2,
+   "Block_LIGHTCUBE3": 3,
+   "Block_LIGHTCUBE_GHOST": 4,
+   "FlatMat_GEARS_4x4": 5,
+   "FlatMat_LETTERS_4x4": 6,
+   "FlatMat_ANKI_LOGO_8BIT": 7,
+   "FlatMat_LAVA_PLAYTEST": 8,
+   "Platform_LARGE": 9,
+   "Bridge_LONG": 10,
+   "Bridge_SHORT": 11,
+   "Ramp_Basic": 12,
+   "Charger_Basic": 13,
+   "ProxObstacle": 14,
+   "CliffDetection": 15,
+   "CollisionObstacle": 16,
+   "CustomType00": 17,
+   "CustomType01": 18,
+   "CustomType02": 19,
+   "CustomType03": 20,
+   "CustomType04": 21,
+   "CustomType05": 22,
+   "CustomType06": 23,
+   "CustomType07": 24,
+   "CustomType08": 25,
+   "CustomType09": 26,
+   "CustomType10": 27,
+   "CustomType11": 28,
+   "CustomType12": 29,
+   "CustomType13": 30,
+   "CustomType14": 31,
+   "CustomType15": 32,
+   "CustomType16": 33,
+   "CustomType17": 34,
+   "CustomType18": 35,
+   "CustomType19": 36,
+   "CustomFixedObstacle": 37
+  },
+  "ImageEncoding": {
+   "NoneImageEncoding": 0,
+   "RawGray": 1,
+   "RawRGB": 2,
+   "YUYV": 3,
+   "BAYER": 4,
+   "JPEGGray": 5,
+   "JPEGColor": 6,
+   "JPEGColorHalfWidth": 7,
+   "JPEGMinimizedGray": 8,
+   "JPEGMinimizedColor": 9
+  },
+  "ImageResolution": {
+   "VerificationSnapshot": 0,
+   "QQQQVGA": 1,
+   "QQQVGA": 2,
+   "QQVGA": 3,
+   "QVGA": 4,
+   "CVGA": 5,
+   "VGA": 6,
+   "SVGA": 7,
+   "XGA": 8,
+   "SXGA": 9,
+   "UXGA": 10,
+   "QXGA": 11,
+   "QUXGA": 12,
+   "ImageResolutionCount": 13,
+   "ImageResolutionNone": 14
+  },
+  "ImageSendMode": {
+   "Off": 0,
+   "Stream": 1,
+   "SingleShot": 2
+  },
+  "MotorID": {
+   "MOTOR_LEFT_WHEEL": 0,
+   "MOTOR_RIGHT_WHEEL": 1,
+   "MOTOR_LIFT": 2,
+   "MOTOR_HEAD": 3
+  },
+  "PathEventType": {
+   "PATH_STARTED": 0,
+   "PATH_INTERRUPTED": 1,
+   "PATH_COMPLETED": 2
+  }
+ }
+}

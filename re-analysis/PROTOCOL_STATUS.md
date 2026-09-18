@@ -25,8 +25,8 @@ Evidence order: (1) official decompiled C# CLAD structs, (2) `libcozmoEngine.so`
 |---|---|---|
 | hardware verified | 24 | exercised on the firmware-2457 robot: the robot sent it and our codec re-encoded it byte-identically, or the robot demonstrably acted on it |
 | capture verified | 4 | seen on the wire in a real session with a consistent length, but no response ties it to robot behaviour |
-| statically verified | 56 | layout matches an official C# CLAD struct field for field, or is empty |
-| layout known, semantics uncertain | 75 | widths/order from the engine binary; some field names are guesses |
+| statically verified | 54 | layout matches an official C# CLAD struct field for field, or is empty |
+| layout known, semantics uncertain | 77 | widths/order from the engine binary; some field names are guesses |
 | unresolved | 2 | one or more fields not attributed; the bytes are preserved in a raw tail |
 | capture conflict | 0 | observed bytes disagree with the static layout |
 
@@ -34,12 +34,12 @@ Evidence order: (1) official decompiled C# CLAD structs, (2) `libcozmoEngine.so`
 
 | source | fields |
 |---|---|
-| generated placeholder | 173 |
+| generated placeholder | 174 |
 | official decompiled C# | 154 |
-| PyCozmo (widths agreed with native) | 68 |
+| PyCozmo (widths agreed with native) | 67 |
 | hardware capture | 9 |
 
-173 of 404 fields still carry a generated placeholder name; 180 fields are flagged uncertain.
+174 of 404 fields still carry a generated placeholder name; 179 fields are flagged uncertain.
 Unknown bytes are never invented: a message whose layout does not add up keeps an explicit `unknownTail`
 raw field, and placeholder names are `field0`, `field1`, ... so they cannot be mistaken for official ones.
 
@@ -75,7 +75,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 
 ### Robot state and sensors (20 messages)
 
-12 statically verified, 5 layout known, semantics uncertain, 3 hardware verified
+10 statically verified, 7 layout known, semantics uncertain, 3 hardware verified
 
 | tag | dir | CLAD type | size | layout | verification | probe safety |
 |---|---|---|---|---|---|---|
@@ -91,12 +91,12 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0xC1` | R->E | PotentialCliff | 0 | exact | statically verified | state_change |
 | `0xC3` | R->E | RobotPoked | 0 | exact | statically verified | state_change |
 | `0xC7` | R->E | IMURawDataChunk | 14 | exact | hardware verified | state_change |
-| `0xD4` | R->E | RobotStopped | 1 | prefix | statically verified | state_change |
+| `0xD4` | R->E | RobotStopped | 1 | native_only | layout known, semantics uncertain | state_change |
 | `0xD9` | R->E | RobotErrorReport | 5 | native_only | layout known, semantics uncertain | state_change |
 | `0xDA` | R->E | LiftLoad | 1 | native_only | layout known, semantics uncertain | state_change |
 | `0xDB` | R->E | BackpackButton | 1 | native_named | layout known, semantics uncertain | state_change |
 | `0xDC` | R->E | IMUTemperature | 4 | exact | statically verified | state_change |
-| `0xDD` | R->E | FallingStarted | 4 | prefix | statically verified | state_change |
+| `0xDD` | R->E | FallingStarted | 4 | native_named | layout known, semantics uncertain | state_change |
 | `0xDE` | R->E | FallingStopped | 12 | prefix | statically verified | state_change |
 | `0xF0` | R->E | RobotState | 91 | exact | hardware verified | state_change |
 
@@ -260,7 +260,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0x0D` | E->R | BodyEnterOTA | 0 | empty | statically verified | destructive |
 | `0x30` | E->R | EnterRecoveryMode | 1 | native_only | layout known, semantics uncertain | destructive |
 | `0xA9` | E->R | ShutdownRobot | 32 | native_only | layout known, semantics uncertain | destructive |
-| `0xAA` | E->R | AppConnectConfigString | 17 | partial | unresolved | destructive |
+| `0xAA` | E->R | AppConnectConfigString | var | partial | unresolved | destructive |
 | `0xAB` | E->R | AppConnectConfigFlags | 17 | native_only | layout known, semantics uncertain | destructive |
 | `0xAC` | E->R | AppConnectConfigIPInfo | 13 | native_only | layout known, semantics uncertain | destructive |
 | `0xAD` | E->R | AppConnectGetRobotIP | 1 | native_only | layout known, semantics uncertain | destructive |
@@ -277,7 +277,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0x0E` | E->R | ReadBodyStorage | 2 | native_only | layout known, semantics uncertain | destructive |
 | `0x0F` | E->R | WriteBodyStorage | var | native_only | layout known, semantics uncertain | destructive |
 | `0x81` | E->R | NVCommand | var | native_named | layout known, semantics uncertain | destructive |
-| `0xA1` | E->R | TestState | 49 | partial | unresolved | destructive |
+| `0xA1` | E->R | TestState | var | partial | unresolved | destructive |
 | `0xA2` | E->R | EnterFactoryTestMode | 8 | native_only | layout known, semantics uncertain | destructive |
 | `0xA4` | E->R | BodyStorageContents | var | native_only | layout known, semantics uncertain | destructive |
 | `0xCD` | R->E | NVOpResult | var | native_named | layout known, semantics uncertain | state_change |
@@ -354,6 +354,7 @@ them, so some field names are placeholders. Sending them is safe; interpreting t
 | `0xCF` | CrashReport | identity_version_logging | field0 u32, field1 u16, field2 u8, field3 u32[u8 count] |
 | `0xD2` | FWVersionInfo | identity_version_logging | field0 u32, field1 u32, field2 u32, field3 u8[16], field4 u8[16] |
 | `0xD3` | DockingStatus | localization_navigation | field0 u32, field1 u8 |
+| `0xD4` | RobotStopped | robot_state_sensors | field0 u8 |
 | `0xD6` | FactoryTestParameter | factory_debug_storage | field0 u32 |
 | `0xD9` | RobotErrorReport | robot_state_sensors | field0 u32, field1 u8 |
 | `0xDA` | LiftLoad | robot_state_sensors | field0 u8 |

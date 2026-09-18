@@ -1,0 +1,3449 @@
+{
+ "AbortAnimation": {
+  "ns": "RobotInterface",
+  "addr": "0x7a474c",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "AbortDocking": {
+  "ns": "",
+  "addr": "0x7c07ba",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "AbsoluteLocalizationUpdate": {
+  "ns": "RobotInterface",
+  "addr": "0x7a3794",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 24,
+  "loop_bounds": []
+ },
+ "Ack": {
+  "ns": "RobotInterface::OTA",
+  "addr": "0x7b87a2",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 7,
+  "loop_bounds": []
+ },
+ "AdjustTimestamp": {
+  "ns": "RobotInterface",
+  "addr": "0x7a5e18",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "AnimEventToRTIP": {
+  "ns": "RobotInterface",
+  "addr": "0x7a47f4",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 2,
+  "loop_bounds": []
+ },
+ "AnimationEnded": {
+  "ns": "RobotInterface",
+  "addr": "0x7b14d6",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "AnimationEvent": {
+  "ns": "RobotInterface",
+  "addr": "0x7b15ea",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 6,
+  "loop_bounds": []
+ },
+ "AnimationStarted": {
+  "ns": "RobotInterface",
+  "addr": "0x7b13b4",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "AnimationState": {
+  "ns": "RobotInterface",
+  "addr": "0x7d87b6",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 15,
+  "loop_bounds": []
+ },
+ "AppConnectConfigFlags": {
+  "ns": "RobotInterface",
+  "addr": "0x79d396",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 17,
+  "loop_bounds": []
+ },
+ "AppConnectConfigIPInfo": {
+  "ns": "RobotInterface",
+  "addr": "0x79d5fa",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 13,
+  "loop_bounds": []
+ },
+ "AppConnectConfigString": {
+  "ns": "RobotInterface",
+  "addr": "0x79d1f6",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 1,
+  "branches": 2,
+  "size": 17,
+  "loop_bounds": [
+   16
+  ]
+ },
+ "AppConnectGetRobotIP": {
+  "ns": "RobotInterface",
+  "addr": "0x79d796",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "AppendPathSegmentArc": {
+  "ns": "RobotInterface",
+  "addr": "0x7a3132",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "struct",
+    "name": "PathSegmentSpeed"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 32,
+  "loop_bounds": []
+ },
+ "AppendPathSegmentLine": {
+  "ns": "RobotInterface",
+  "addr": "0x7a2f58",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "struct",
+    "name": "PathSegmentSpeed"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 28,
+  "loop_bounds": []
+ },
+ "AppendPathSegmentPointTurn": {
+  "ns": "RobotInterface",
+  "addr": "0x7a3338",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "struct",
+    "name": "PathSegmentSpeed"
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 29,
+  "loop_bounds": []
+ },
+ "AudioSample": {
+  "ns": "AnimKeyFrame",
+  "addr": "0x7bcca2",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 1,
+  "branches": 2,
+  "size": 744,
+  "loop_bounds": [
+   744
+  ]
+ },
+ "AudioSilence": {
+  "ns": "AnimKeyFrame",
+  "addr": "0x7bcdfa",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "BackpackButton": {
+  "ns": "RobotInterface",
+  "addr": "0x7b0bfa",
+  "ops": [
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "BackpackLights": {
+  "ns": "AnimKeyFrame",
+  "addr": "0x7bd4dc",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 2
+   }
+  ],
+  "loops": 1,
+  "branches": 2,
+  "size": 10,
+  "loop_bounds": [
+   5
+  ]
+ },
+ "BackpackLightsMiddle": {
+  "ns": "RobotInterface",
+  "addr": "0x7a4232",
+  "ops": [
+   {
+    "op": "struct",
+    "name": "LightState"
+   },
+   {
+    "op": "call",
+    "name": "__aeabi_memcpy"
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 1,
+  "branches": 2,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "BackpackLightsTurnSignals": {
+  "ns": "RobotInterface",
+  "addr": "0x7a43de",
+  "ops": [
+   {
+    "op": "struct",
+    "name": "LightState"
+   },
+   {
+    "op": "call",
+    "name": "__aeabi_memcpy"
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 1,
+  "branches": 2,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "BackpackSetLayer": {
+  "ns": "RobotInterface",
+  "addr": "0x7a458c",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "BodyEnterOTA": {
+  "ns": "RobotInterface::OTA",
+  "addr": "0x7b8d5c",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "BodyMotion": {
+  "ns": "AnimKeyFrame",
+  "addr": "0x7bd624",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "BodySerialNumber": {
+  "ns": "RobotInterface",
+  "addr": "0x7a4a90",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "BodyStorageContents": {
+  "ns": "",
+  "addr": "0x7a1880",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "call",
+    "name": "local_0x7a17d8"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "BridgeTraverseComplete": {
+  "ns": "",
+  "addr": "0x7c20cc",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 5,
+  "loop_bounds": []
+ },
+ "BridgeTraverseStart": {
+  "ns": "",
+  "addr": "0x7c1fc0",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "CameraFOVInfo": {
+  "ns": "",
+  "addr": "0x7becc8",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 8,
+  "loop_bounds": []
+ },
+ "CarryStateUpdate": {
+  "ns": "",
+  "addr": "0x7d6988",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "CheckLiftLoad": {
+  "ns": "RobotInterface",
+  "addr": "0x7a4930",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "ClearPath": {
+  "ns": "RobotInterface",
+  "addr": "0x7a2caa",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 2
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 2,
+  "loop_bounds": []
+ },
+ "CliffEvent": {
+  "ns": "",
+  "addr": "0x7d2dba",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 6,
+  "loop_bounds": []
+ },
+ "ConnectionState": {
+  "ns": "BLE",
+  "addr": "0x79f0f8",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "ControllerGains": {
+  "ns": "RobotInterface",
+  "addr": "0x7a3d8e",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 17,
+  "loop_bounds": []
+ },
+ "CrashReport": {
+  "ns": "RobotInterface",
+  "addr": "0x7d3cca",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "call",
+    "name": "local_0x71283c"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "CubeID": {
+  "ns": "",
+  "addr": "0x7b75c0",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 5,
+  "loop_bounds": []
+ },
+ "CubeLights": {
+  "ns": "",
+  "addr": "0x7b7702",
+  "ops": [
+   {
+    "op": "struct",
+    "name": "LightState"
+   },
+   {
+    "op": "call",
+    "name": "__aeabi_memcpy"
+   }
+  ],
+  "loops": 1,
+  "branches": 2,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "DataDump": {
+  "ns": "RobotInterface",
+  "addr": "0x7d511c",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "call",
+    "name": "local_0x7a17d8"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "DataReceived": {
+  "ns": "BLE",
+  "addr": "0x79f20c",
+  "ops": [
+   {
+    "op": "struct",
+    "name": "Frame"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 17,
+  "loop_bounds": []
+ },
+ "DebugSetRTTO": {
+  "ns": "RobotInterface",
+  "addr": "0x7a4f5a",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 2
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 2,
+  "loop_bounds": []
+ },
+ "DefaultCameraParams": {
+  "ns": "",
+  "addr": "0x7bf1d6",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 1,
+  "branches": 2,
+  "size": 29,
+  "loop_bounds": [
+   17
+  ]
+ },
+ "DisableAnimTracks": {
+  "ns": "AnimKeyFrame",
+  "addr": "0x7bdc2e",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "Disconnect": {
+  "ns": "BLE",
+  "addr": "0x79efde",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "DisplayNumber": {
+  "ns": "RobotInterface",
+  "addr": "0x7a506e",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 7,
+  "loop_bounds": []
+ },
+ "DockWithObject": {
+  "ns": "",
+  "addr": "0x7c0586",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 21,
+  "loop_bounds": []
+ },
+ "DockingErrorSignal": {
+  "ns": "",
+  "addr": "0x7c0a64",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 22,
+  "loop_bounds": []
+ },
+ "DockingStatus": {
+  "ns": "",
+  "addr": "0x7c1562",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 5,
+  "loop_bounds": []
+ },
+ "DriveWheels": {
+  "ns": "RobotInterface",
+  "addr": "0x7a1e48",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 16,
+  "loop_bounds": []
+ },
+ "DriveWheelsCurvature": {
+  "ns": "RobotInterface",
+  "addr": "0x7a2026",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 10,
+  "loop_bounds": []
+ },
+ "EnableAnimTracks": {
+  "ns": "AnimKeyFrame",
+  "addr": "0x7bdb0c",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "EnableBraceWhenFalling": {
+  "ns": "RobotInterface",
+  "addr": "0x7a5432",
+  "ops": [
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "EnableColorImages": {
+  "ns": "RobotInterface",
+  "addr": "0x7a3c96",
+  "ops": [
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "EnableMotorPower": {
+  "ns": "RobotInterface",
+  "addr": "0x7a4b9c",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 2,
+  "loop_bounds": []
+ },
+ "EnableReadToolCodeMode": {
+  "ns": "RobotInterface",
+  "addr": "0x7a4dce",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 9,
+  "loop_bounds": []
+ },
+ "EnableStopOnCliff": {
+  "ns": "RobotInterface",
+  "addr": "0x7a520c",
+  "ops": [
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "EnableWiFiTelemetry": {
+  "ns": "RobotInterface",
+  "addr": "0x7a6066",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "EndOfAnimation": {
+  "ns": "AnimKeyFrame",
+  "addr": "0x7bdf10",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "EnterFactoryTestMode": {
+  "ns": "RobotInterface",
+  "addr": "0x7c40a8",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 8,
+  "loop_bounds": []
+ },
+ "EnterRecoveryMode": {
+  "ns": "RobotInterface::OTA",
+  "addr": "0x7b8e12",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "EnterSleepMode": {
+  "ns": "",
+  "addr": "0x7a1072",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "Event": {
+  "ns": "AnimKeyFrame",
+  "addr": "0x7bd9ea",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "ExecutePath": {
+  "ns": "RobotInterface",
+  "addr": "0x7a3666",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 3,
+  "loop_bounds": []
+ },
+ "FWVersionInfo": {
+  "ns": "RobotInterface",
+  "addr": "0x7c32e6",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 2,
+  "branches": 4,
+  "size": 44,
+  "loop_bounds": [
+   16,
+   16
+  ]
+ },
+ "FaceImage": {
+  "ns": "AnimKeyFrame",
+  "addr": "0x7bd398",
+  "ops": [
+   {
+    "op": "call",
+    "name": "local_0x71a8f6"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "FactoryTestParameter": {
+  "ns": "RobotInterface",
+  "addr": "0x7c44f2",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "FallingStarted": {
+  "ns": "RobotInterface",
+  "addr": "0x7b0daa",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "FallingStopped": {
+  "ns": "RobotInterface",
+  "addr": "0x7b0eb6",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 12,
+  "loop_bounds": []
+ },
+ "FirmwareVersion": {
+  "ns": "RobotInterface",
+  "addr": "0x7b907e",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "call",
+    "name": "local_0x71a8f6"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "FlashObjectIDs": {
+  "ns": "",
+  "addr": "0x7b7886",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "ForceDelocalizeSimulatedRobot": {
+  "ns": "RobotInterface",
+  "addr": "0x7a3962",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "GenerateTestTone": {
+  "ns": "RobotInterface",
+  "addr": "0x7a19ea",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "GetBodySerialNumber": {
+  "ns": "RobotInterface",
+  "addr": "0x7a49da",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "GetManufacturingInfo": {
+  "ns": "RobotInterface",
+  "addr": "0x7a46a2",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "GoalPose": {
+  "ns": "",
+  "addr": "0x7c21f6",
+  "ops": [
+   {
+    "op": "struct",
+    "name": "RobotPose"
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "HeadAngle": {
+  "ns": "AnimKeyFrame",
+  "addr": "0x7bcea2",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 3,
+  "loop_bounds": []
+ },
+ "HeadAngleUpdate": {
+  "ns": "RobotInterface",
+  "addr": "0x7a2786",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "IMUDataChunk": {
+  "ns": "RobotInterface",
+  "addr": "0x7c8844",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 6,
+  "branches": 12,
+  "size": 195,
+  "loop_bounds": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ]
+ },
+ "IMURawDataChunk": {
+  "ns": "RobotInterface",
+  "addr": "0x7c9094",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 2,
+  "branches": 4,
+  "size": 14,
+  "loop_bounds": [
+   3,
+   3
+  ]
+ },
+ "IMURequest": {
+  "ns": "",
+  "addr": "0x7c81d0",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "IMUTemperature": {
+  "ns": "RobotInterface",
+  "addr": "0x7c945e",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "ImageChunk": {
+  "ns": "",
+  "addr": "0x7c60b4",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "call",
+    "name": "local_0x71a8f6"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "ImageImuData": {
+  "ns": "",
+  "addr": "0x7c62f6",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 17,
+  "loop_bounds": []
+ },
+ "ImageRequest": {
+  "ns": "RobotInterface",
+  "addr": "0x7a3b50",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 2,
+  "loop_bounds": []
+ },
+ "InitController": {
+  "ns": "AnimKeyFrame",
+  "addr": "0x7bdd44",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "KillBodyCode": {
+  "ns": "",
+  "addr": "0x7b7e6a",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "LiftHeight": {
+  "ns": "AnimKeyFrame",
+  "addr": "0x7bcfda",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 3,
+  "loop_bounds": []
+ },
+ "LiftLoad": {
+  "ns": "RobotInterface",
+  "addr": "0x7b18bc",
+  "ops": [
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "MainCycleTimeError": {
+  "ns": "RobotInterface",
+  "addr": "0x7d4d7c",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 16,
+  "loop_bounds": []
+ },
+ "ManufacturingID": {
+  "ns": "RobotInterface",
+  "addr": "0x7b1750",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 12,
+  "loop_bounds": []
+ },
+ "MotorActionAck": {
+  "ns": "RobotInterface",
+  "addr": "0x7b1292",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "MotorAutoEnabled": {
+  "ns": "",
+  "addr": "0x7ce080",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 2,
+  "loop_bounds": []
+ },
+ "MotorCalibration": {
+  "ns": "",
+  "addr": "0x7cdf2e",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 3,
+  "loop_bounds": []
+ },
+ "MoveHead": {
+  "ns": "RobotInterface",
+  "addr": "0x7a22ec",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "MoveLift": {
+  "ns": "RobotInterface",
+  "addr": "0x7a21be",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "MovingLiftPostDock": {
+  "ns": "",
+  "addr": "0x7c1c5a",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "NVCommand": {
+  "ns": "NVStorage",
+  "addr": "0x7ce590",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "call",
+    "name": "local_0x71a8f6"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "NVOpResult": {
+  "ns": "NVStorage",
+  "addr": "0x7ce76a",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "call",
+    "name": "local_0x71a8f6"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "ObjectAccel": {
+  "ns": "",
+  "addr": "0x7b09ec",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "struct",
+    "name": "ActiveAccel"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "ObjectAvailable": {
+  "ns": "",
+  "addr": "0x7afcbc",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 9,
+  "loop_bounds": []
+ },
+ "ObjectBeingCarried": {
+  "ns": "",
+  "addr": "0x7b7992",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 5,
+  "loop_bounds": []
+ },
+ "ObjectConnectionState": {
+  "ns": "",
+  "addr": "0x7afe20",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 13,
+  "loop_bounds": []
+ },
+ "ObjectConnectionStateToRobot": {
+  "ns": "",
+  "addr": "0x7affa2",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 13,
+  "loop_bounds": []
+ },
+ "ObjectMoved": {
+  "ns": "",
+  "addr": "0x7b0124",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "struct",
+    "name": "ActiveAccel"
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "ObjectPowerLevel": {
+  "ns": "",
+  "addr": "0x7b0888",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 9,
+  "loop_bounds": []
+ },
+ "ObjectStoppedMoving": {
+  "ns": "",
+  "addr": "0x7b02a2",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 8,
+  "loop_bounds": []
+ },
+ "ObjectTapped": {
+  "ns": "",
+  "addr": "0x7b06ca",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 12,
+  "loop_bounds": []
+ },
+ "ObjectTappedFiltered": {
+  "ns": "",
+  "addr": "0x7b0538",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 10,
+  "loop_bounds": []
+ },
+ "ObjectUpAxisChanged": {
+  "ns": "",
+  "addr": "0x7b03d4",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 9,
+  "loop_bounds": []
+ },
+ "PathFollowingEvent": {
+  "ns": "RobotInterface",
+  "addr": "0x7b114c",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 3,
+  "loop_bounds": []
+ },
+ "PickAndPlaceResult": {
+  "ns": "",
+  "addr": "0x7c1ac6",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 7,
+  "loop_bounds": []
+ },
+ "PlaceObjectOnGround": {
+  "ns": "",
+  "addr": "0x7c0862",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 25,
+  "loop_bounds": []
+ },
+ "PotentialCliff": {
+  "ns": "",
+  "addr": "0x7d2f16",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "PowerState": {
+  "ns": "",
+  "addr": "0x7d7dc6",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 17,
+  "loop_bounds": []
+ },
+ "PrintText": {
+  "ns": "RobotInterface",
+  "addr": "0x7d5280",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "call",
+    "name": "local_0x6c235c"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "PrintTrace": {
+  "ns": "RobotInterface",
+  "addr": "0x7d4bea",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "call",
+    "name": "local_0x73923a"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "RampTraverseComplete": {
+  "ns": "",
+  "addr": "0x7c1e88",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 5,
+  "loop_bounds": []
+ },
+ "RampTraverseStart": {
+  "ns": "",
+  "addr": "0x7c1d7c",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "ReadBodyStorage": {
+  "ns": "",
+  "addr": "0x7a1560",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 2,
+  "loop_bounds": []
+ },
+ "RecordHeading": {
+  "ns": "AnimKeyFrame",
+  "addr": "0x7bd75e",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "RequestCrashReports": {
+  "ns": "RobotInterface",
+  "addr": "0x7a5538",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "RobotAvailable": {
+  "ns": "RobotInterface",
+  "addr": "0x7b8f26",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 6,
+  "loop_bounds": []
+ },
+ "RobotErrorReport": {
+  "ns": "RobotInterface",
+  "addr": "0x7d3e5c",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 5,
+  "loop_bounds": []
+ },
+ "RobotPoked": {
+  "ns": "RobotInterface",
+  "addr": "0x7b0cf4",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "RobotState": {
+  "ns": "",
+  "addr": "0x7d6e24",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "struct",
+    "name": "RobotPose"
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "struct",
+    "name": "AccelData"
+   },
+   {
+    "op": "struct",
+    "name": "GyroData"
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 1,
+  "branches": 2,
+  "size": "variable",
+  "loop_bounds": [
+   4
+  ]
+ },
+ "RobotStopped": {
+  "ns": "RobotInterface",
+  "addr": "0x7b1038",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "RollActionParams": {
+  "ns": "RobotInterface",
+  "addr": "0x7a3f44",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 20,
+  "loop_bounds": []
+ },
+ "SendDTMCommand": {
+  "ns": "RobotInterface",
+  "addr": "0x7a1a92",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 16,
+  "loop_bounds": []
+ },
+ "SendData": {
+  "ns": "BLE",
+  "addr": "0x79f348",
+  "ops": [
+   {
+    "op": "struct",
+    "name": "Frame"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 17,
+  "loop_bounds": []
+ },
+ "SetAccessoryDiscovery": {
+  "ns": "",
+  "addr": "0x7b74c8",
+  "ops": [
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "SetAppRunID": {
+  "ns": "RobotInterface",
+  "addr": "0x7a5f24",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 1,
+  "branches": 2,
+  "size": 16,
+  "loop_bounds": [
+   4
+  ]
+ },
+ "SetAudioVolume": {
+  "ns": "",
+  "addr": "0x7a132a",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 2
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 2,
+  "loop_bounds": []
+ },
+ "SetBodyAngle": {
+  "ns": "RobotInterface",
+  "addr": "0x7a28a6",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 20,
+  "loop_bounds": []
+ },
+ "SetBodyRadioMode": {
+  "ns": "",
+  "addr": "0x7d7c88",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 2,
+  "loop_bounds": []
+ },
+ "SetCameraParams": {
+  "ns": "",
+  "addr": "0x7bf3b8",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 7,
+  "loop_bounds": []
+ },
+ "SetCliffDetectThreshold": {
+  "ns": "RobotInterface",
+  "addr": "0x7a5312",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 2
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 2,
+  "loop_bounds": []
+ },
+ "SetCubeGamma": {
+  "ns": "",
+  "addr": "0x7a144c",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "SetHeadAngle": {
+  "ns": "RobotInterface",
+  "addr": "0x7a25c2",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 17,
+  "loop_bounds": []
+ },
+ "SetHeadlight": {
+  "ns": "RobotInterface",
+  "addr": "0x7a1c28",
+  "ops": [
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "SetLiftHeight": {
+  "ns": "RobotInterface",
+  "addr": "0x7a240c",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 17,
+  "loop_bounds": []
+ },
+ "SetMotionModelParams": {
+  "ns": "RobotInterface",
+  "addr": "0x7a4106",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "SetPropSlot": {
+  "ns": "",
+  "addr": "0x7a111a",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 5,
+  "loop_bounds": []
+ },
+ "ShutdownRobot": {
+  "ns": "RobotInterface",
+  "addr": "0x7a5644",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 1,
+  "branches": 2,
+  "size": 32,
+  "loop_bounds": [
+   8
+  ]
+ },
+ "StartControllerTestMode": {
+  "ns": "",
+  "addr": "0x7db606",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 13,
+  "loop_bounds": []
+ },
+ "StartMotorCalibration": {
+  "ns": "RobotInterface",
+  "addr": "0x7a1d20",
+  "ops": [
+   {
+    "op": "read",
+    "type": "bool"
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 2,
+  "loop_bounds": []
+ },
+ "StartOfAnimation": {
+  "ns": "AnimKeyFrame",
+  "addr": "0x7bddfa",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "StopAllMotors": {
+  "ns": "RobotInterface",
+  "addr": "0x7a2bf4",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "StreamObjectAccel": {
+  "ns": "",
+  "addr": "0x7b7abc",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 5,
+  "loop_bounds": []
+ },
+ "SyncTime": {
+  "ns": "RobotInterface",
+  "addr": "0x7a3a0a",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 8,
+  "loop_bounds": []
+ },
+ "SyncTimeAck": {
+  "ns": "RobotInterface",
+  "addr": "0x7b0b46",
+  "ops": [],
+  "loops": 0,
+  "branches": 0,
+  "size": 0,
+  "loop_bounds": []
+ },
+ "TestState": {
+  "ns": "RobotInterface",
+  "addr": "0x7c41de",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 4,
+  "branches": 8,
+  "size": 49,
+  "loop_bounds": [
+   4,
+   4,
+   3,
+   3
+  ]
+ },
+ "TimeProfileStat": {
+  "ns": "RobotInterface",
+  "addr": "0x7d4f28",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   },
+   {
+    "op": "call",
+    "name": "local_0x6c235c"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "TrimPath": {
+  "ns": "RobotInterface",
+  "addr": "0x7a352c",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 2,
+  "loop_bounds": []
+ },
+ "TurnInPlaceAtSpeed": {
+  "ns": "RobotInterface",
+  "addr": "0x7a2a9a",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 8,
+  "loop_bounds": []
+ },
+ "TurnToRecordedHeading": {
+  "ns": "AnimKeyFrame",
+  "addr": "0x7bd806",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 13,
+  "loop_bounds": []
+ },
+ "WiFiFlashID": {
+  "ns": "RobotInterface",
+  "addr": "0x7b19c2",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 4,
+  "loop_bounds": []
+ },
+ "WiFiOff": {
+  "ns": "RobotInterface",
+  "addr": "0x79d8b6",
+  "ops": [
+   {
+    "op": "read",
+    "type": "bool"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 1,
+  "loop_bounds": []
+ },
+ "Write": {
+  "ns": "RobotInterface::OTA",
+  "addr": "0x7b7f12",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   }
+  ],
+  "loops": 1,
+  "branches": 2,
+  "size": 1026,
+  "loop_bounds": [
+   1024
+  ]
+ },
+ "WriteBodyStorage": {
+  "ns": "",
+  "addr": "0x7a16bc",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "call",
+    "name": "local_0x7a17d8"
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": "variable",
+  "loop_bounds": []
+ },
+ "AccelData": {
+  "ns": "",
+  "addr": "0x7c82dc",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 12,
+  "loop_bounds": []
+ },
+ "ActiveAccel": {
+  "ns": "",
+  "addr": "0x7b993c",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 12,
+  "loop_bounds": []
+ },
+ "CameraCalibration": {
+  "ns": "",
+  "addr": "0x7c64a2",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 1,
+  "branches": 2,
+  "size": 56,
+  "loop_bounds": [
+   8
+  ]
+ },
+ "GyroData": {
+  "ns": "",
+  "addr": "0x7c8590",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 12,
+  "loop_bounds": []
+ },
+ "LightState": {
+  "ns": "",
+  "addr": "0x7cb24c",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 1
+   },
+   {
+    "op": "bytes",
+    "size": 2
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 10,
+  "loop_bounds": []
+ },
+ "PathSegmentSpeed": {
+  "ns": "RobotInterface",
+  "addr": "0x7a2dbe",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 12,
+  "loop_bounds": []
+ },
+ "PoseStruct3d": {
+  "error": "no Unpack symbol"
+ },
+ "RobotPose": {
+  "ns": "",
+  "addr": "0x7d6a9c",
+  "ops": [
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   },
+   {
+    "op": "bytes",
+    "size": 4
+   }
+  ],
+  "loops": 0,
+  "branches": 0,
+  "size": 20,
+  "loop_bounds": []
+ },
+ "RotationVector": {
+  "error": "no Unpack symbol"
+ }
+}

@@ -5015,7 +5015,7 @@
    "safety": "destructive",
    "official_size": 49,
    "native_size": 49,
-   "variable_length": false,
+   "variable_length": true,
    "declared_size": 17,
    "fields": [
     {
@@ -5318,7 +5318,7 @@
    "safety": "destructive",
    "official_size": 17,
    "native_size": 17,
-   "variable_length": false,
+   "variable_length": true,
    "declared_size": 2,
    "fields": [
     {
@@ -7301,17 +7301,17 @@
      "uncertain": true
     }
    ],
-   "confidence": "prefix",
-   "verification": "statically_verified",
+   "confidence": "native_only",
+   "verification": "layout_known_semantics_uncertain",
    "evidence": {
     "native_unpack": "0x7b1038",
     "native_namespace": "RobotInterface",
-    "csharp": true,
+    "csharp": false,
     "pycozmo_name": null,
     "capture": null
    },
    "notes": [
-    "C# twin Anki.Cozmo.ExternalInterface.RobotStopped (prefix match)"
+    "names generated; widths from native Unpack"
    ]
   },
   "0xD5": {
@@ -7629,20 +7629,20 @@
      "kind": "scalar",
      "type": "u32",
      "name_source": "pycozmo",
-     "uncertain": true
+     "uncertain": false
     }
    ],
-   "confidence": "prefix",
-   "verification": "statically_verified",
+   "confidence": "native_named",
+   "verification": "layout_known_semantics_uncertain",
    "evidence": {
     "native_unpack": "0x7b0daa",
     "native_namespace": "RobotInterface",
-    "csharp": true,
+    "csharp": false,
     "pycozmo_name": "FallingStarted",
     "capture": null
    },
    "notes": [
-    "C# twin Anki.Cozmo.ExternalInterface.FallingStarted (prefix match)"
+    "field names from PyCozmo (widths agree with native)"
    ]
   },
   "0xDE": {
@@ -7670,10 +7670,10 @@
      "name_source": "csharp"
     },
     {
-     "name": "impact_intensity",
+     "name": "field2",
      "kind": "scalar",
      "type": "f32",
-     "name_source": "pycozmo",
+     "name_source": "generated",
      "uncertain": true
     }
    ],

@@ -1,0 +1,1677 @@
+{
+ "AccelData": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "x",
+     "cs": "float"
+    },
+    {
+     "name": "y",
+     "cs": "float"
+    },
+    {
+     "name": "z",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "12",
+   "path": "unity/scripts/csharp/Anki.Cozmo/AccelData.cs"
+  }
+ ],
+ "ActiveAccel": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "x",
+     "cs": "float"
+    },
+    {
+     "name": "y",
+     "cs": "float"
+    },
+    {
+     "name": "z",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "12",
+   "path": "unity/scripts/csharp/Anki.Cozmo/ActiveAccel.cs"
+  }
+ ],
+ "AnimationEvent": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "timestamp",
+     "cs": "uint"
+    },
+    {
+     "name": "event_id",
+     "cs": "AnimEvent"
+    }
+   ],
+   "size_expr": "5",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/AnimationEvent.cs"
+  }
+ ],
+ "AnimationState": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.RobotInterface",
+   "fields": [
+    {
+     "name": "timestamp",
+     "cs": "uint"
+    },
+    {
+     "name": "numAnimBytesPlayed",
+     "cs": "int"
+    },
+    {
+     "name": "numAudioFramesPlayed",
+     "cs": "int"
+    },
+    {
+     "name": "enabledAnimTracks",
+     "cs": "byte"
+    },
+    {
+     "name": "tag",
+     "cs": "byte"
+    },
+    {
+     "name": "clientDropCount",
+     "cs": "byte"
+    }
+   ],
+   "size_expr": "15",
+   "path": "unity/scripts/csharp/Anki.Cozmo.RobotInterface/AnimationState.cs"
+  }
+ ],
+ "AppendPathSegmentArc": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.VizInterface",
+   "fields": [
+    {
+     "name": "pathID",
+     "cs": "uint"
+    },
+    {
+     "name": "x_center_m",
+     "cs": "float"
+    },
+    {
+     "name": "y_center_m",
+     "cs": "float"
+    },
+    {
+     "name": "radius_m",
+     "cs": "float"
+    },
+    {
+     "name": "start_rad",
+     "cs": "float"
+    },
+    {
+     "name": "sweep_rad",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "24",
+   "path": "unity/scripts/csharp/Anki.Cozmo.VizInterface/AppendPathSegmentArc.cs"
+  }
+ ],
+ "AppendPathSegmentLine": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.VizInterface",
+   "fields": [
+    {
+     "name": "pathID",
+     "cs": "uint"
+    },
+    {
+     "name": "x_start_m",
+     "cs": "float"
+    },
+    {
+     "name": "y_start_m",
+     "cs": "float"
+    },
+    {
+     "name": "z_start_m",
+     "cs": "float"
+    },
+    {
+     "name": "x_end_m",
+     "cs": "float"
+    },
+    {
+     "name": "y_end_m",
+     "cs": "float"
+    },
+    {
+     "name": "z_end_m",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "28",
+   "path": "unity/scripts/csharp/Anki.Cozmo.VizInterface/AppendPathSegmentLine.cs"
+  }
+ ],
+ "CameraCalibration": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "focalLength_x",
+     "cs": "float"
+    },
+    {
+     "name": "focalLength_y",
+     "cs": "float"
+    },
+    {
+     "name": "center_x",
+     "cs": "float"
+    },
+    {
+     "name": "center_y",
+     "cs": "float"
+    },
+    {
+     "name": "skew",
+     "cs": "float"
+    },
+    {
+     "name": "nrows",
+     "cs": "ushort"
+    },
+    {
+     "name": "ncols",
+     "cs": "ushort"
+    },
+    {
+     "name": "distCoeffs",
+     "cs": "float[]",
+     "fixed": 8
+    }
+   ],
+   "size_expr": "56",
+   "path": "unity/scripts/csharp/Anki.Cozmo/CameraCalibration.cs"
+  }
+ ],
+ "CarryStateUpdate": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "state",
+     "cs": "CarryState"
+    }
+   ],
+   "size_expr": "1",
+   "path": "unity/scripts/csharp/Anki.Cozmo/CarryStateUpdate.cs"
+  }
+ ],
+ "CliffEvent": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "timestamp",
+     "cs": "uint"
+    },
+    {
+     "name": "detectedFlags",
+     "cs": "byte"
+    },
+    {
+     "name": "didStopForCliff",
+     "cs": "bool"
+    }
+   ],
+   "size_expr": "6",
+   "path": "unity/scripts/csharp/Anki.Cozmo/CliffEvent.cs"
+  }
+ ],
+ "ConnectionState": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.BLE",
+   "fields": [
+    {
+     "name": "state",
+     "cs": "uint"
+    }
+   ],
+   "size_expr": "4",
+   "path": "unity/scripts/csharp/Anki.Cozmo.BLE/ConnectionState.cs"
+  }
+ ],
+ "ControllerGains": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "kp",
+     "cs": "float"
+    },
+    {
+     "name": "ki",
+     "cs": "float"
+    },
+    {
+     "name": "kd",
+     "cs": "float"
+    },
+    {
+     "name": "maxIntegralError",
+     "cs": "float"
+    },
+    {
+     "name": "controller",
+     "cs": "ControllerChannel"
+    }
+   ],
+   "size_expr": "17",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/ControllerGains.cs"
+  }
+ ],
+ "CubeID": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "objectID",
+     "cs": "uint"
+    },
+    {
+     "name": "rotationPeriod_frames",
+     "cs": "byte"
+    }
+   ],
+   "size_expr": "5",
+   "path": "unity/scripts/csharp/Anki.Cozmo/CubeID.cs"
+  }
+ ],
+ "CubeLights": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "lights",
+     "cs": "LightState[]",
+     "fixed": 4
+    }
+   ],
+   "size_expr": "40",
+   "path": "unity/scripts/csharp/Anki.Cozmo/CubeLights.cs"
+  }
+ ],
+ "DataReceived": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.BLE",
+   "fields": [
+    {
+     "name": "frame",
+     "cs": "Frame"
+    }
+   ],
+   "size_expr": "17",
+   "path": "unity/scripts/csharp/Anki.Cozmo.BLE/DataReceived.cs"
+  }
+ ],
+ "Disconnect": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.BLE",
+   "fields": [
+    {
+     "name": "reason",
+     "cs": "uint"
+    }
+   ],
+   "size_expr": "4",
+   "path": "unity/scripts/csharp/Anki.Cozmo.BLE/Disconnect.cs"
+  }
+ ],
+ "DockingErrorSignal": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.VizInterface",
+   "fields": [
+    {
+     "name": "x_dist",
+     "cs": "float"
+    },
+    {
+     "name": "y_dist",
+     "cs": "float"
+    },
+    {
+     "name": "z_dist",
+     "cs": "float"
+    },
+    {
+     "name": "angle",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "16",
+   "path": "unity/scripts/csharp/Anki.Cozmo.VizInterface/DockingErrorSignal.cs"
+  }
+ ],
+ "DriveWheels": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "lwheel_speed_mmps",
+     "cs": "float"
+    },
+    {
+     "name": "rwheel_speed_mmps",
+     "cs": "float"
+    },
+    {
+     "name": "lwheel_accel_mmps2",
+     "cs": "float"
+    },
+    {
+     "name": "rwheel_accel_mmps2",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "16",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/DriveWheels.cs"
+  }
+ ],
+ "EnableColorImages": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "enable",
+     "cs": "bool"
+    }
+   ],
+   "size_expr": "1",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/EnableColorImages.cs"
+  }
+ ],
+ "EnableStopOnCliff": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "enable",
+     "cs": "bool"
+    }
+   ],
+   "size_expr": "1",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/EnableStopOnCliff.cs"
+  }
+ ],
+ "FallingStarted": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [],
+   "size_expr": "0",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/FallingStarted.cs"
+  }
+ ],
+ "FallingStopped": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "duration_ms",
+     "cs": "uint"
+    },
+    {
+     "name": "impactIntensity",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "8",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/FallingStopped.cs"
+  }
+ ],
+ "FlashObjectIDs": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "objectID",
+     "cs": "uint"
+    }
+   ],
+   "size_expr": "4",
+   "path": "unity/scripts/csharp/Anki.Cozmo/FlashObjectIDs.cs"
+  }
+ ],
+ "GyroData": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "x",
+     "cs": "float"
+    },
+    {
+     "name": "y",
+     "cs": "float"
+    },
+    {
+     "name": "z",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "12",
+   "path": "unity/scripts/csharp/Anki.Cozmo/GyroData.cs"
+  }
+ ],
+ "IMUDataChunk": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.RobotInterface",
+   "fields": [
+    {
+     "name": "aX",
+     "cs": "float[]",
+     "fixed": 8
+    },
+    {
+     "name": "aY",
+     "cs": "float[]",
+     "fixed": 8
+    },
+    {
+     "name": "aZ",
+     "cs": "float[]",
+     "fixed": 8
+    },
+    {
+     "name": "gX",
+     "cs": "float[]",
+     "fixed": 8
+    },
+    {
+     "name": "gY",
+     "cs": "float[]",
+     "fixed": 8
+    },
+    {
+     "name": "gZ",
+     "cs": "float[]",
+     "fixed": 8
+    },
+    {
+     "name": "seqId",
+     "cs": "byte"
+    },
+    {
+     "name": "chunkId",
+     "cs": "byte"
+    },
+    {
+     "name": "totalNumChunks",
+     "cs": "byte"
+    }
+   ],
+   "size_expr": "195",
+   "path": "unity/scripts/csharp/Anki.Cozmo.RobotInterface/IMUDataChunk.cs"
+  }
+ ],
+ "IMURawDataChunk": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.RobotInterface",
+   "fields": [
+    {
+     "name": "g",
+     "cs": "short[]",
+     "fixed": 3
+    },
+    {
+     "name": "a",
+     "cs": "short[]",
+     "fixed": 3
+    },
+    {
+     "name": "order",
+     "cs": "byte"
+    },
+    {
+     "name": "timestamp",
+     "cs": "byte"
+    }
+   ],
+   "size_expr": "14",
+   "path": "unity/scripts/csharp/Anki.Cozmo.RobotInterface/IMURawDataChunk.cs"
+  }
+ ],
+ "IMURequest": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "length_ms",
+     "cs": "uint"
+    }
+   ],
+   "size_expr": "4",
+   "path": "unity/scripts/csharp/Anki.Cozmo/IMURequest.cs"
+  }
+ ],
+ "IMUTemperature": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.RobotInterface",
+   "fields": [
+    {
+     "name": "temperature_degC",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "4",
+   "path": "unity/scripts/csharp/Anki.Cozmo.RobotInterface/IMUTemperature.cs"
+  }
+ ],
+ "ImageChunk": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "frameTimeStamp",
+     "cs": "uint"
+    },
+    {
+     "name": "imageId",
+     "cs": "uint"
+    },
+    {
+     "name": "chunkDebug",
+     "cs": "int"
+    },
+    {
+     "name": "imageEncoding",
+     "cs": "ImageEncoding"
+    },
+    {
+     "name": "resolution",
+     "cs": "ImageResolution"
+    },
+    {
+     "name": "imageChunkCount",
+     "cs": "byte"
+    },
+    {
+     "name": "chunkId",
+     "cs": "byte"
+    },
+    {
+     "name": "status",
+     "cs": "short"
+    },
+    {
+     "name": "data",
+     "cs": "byte[]"
+    }
+   ],
+   "size_expr": null,
+   "path": "unity/scripts/csharp/Anki.Cozmo/ImageChunk.cs"
+  }
+ ],
+ "ImageImuData": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "imageId",
+     "cs": "uint"
+    },
+    {
+     "name": "rateX",
+     "cs": "float"
+    },
+    {
+     "name": "rateY",
+     "cs": "float"
+    },
+    {
+     "name": "rateZ",
+     "cs": "float"
+    },
+    {
+     "name": "line2Number",
+     "cs": "byte"
+    }
+   ],
+   "size_expr": "17",
+   "path": "unity/scripts/csharp/Anki.Cozmo/ImageImuData.cs"
+  }
+ ],
+ "ImageRequest": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "mode",
+     "cs": "ImageSendMode"
+    }
+   ],
+   "size_expr": "1",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/ImageRequest.cs"
+  }
+ ],
+ "KillBodyCode": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [],
+   "size_expr": "0",
+   "path": "unity/scripts/csharp/Anki.Cozmo/KillBodyCode.cs"
+  }
+ ],
+ "LightState": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "onColor",
+     "cs": "ushort"
+    },
+    {
+     "name": "offColor",
+     "cs": "ushort"
+    },
+    {
+     "name": "onFrames",
+     "cs": "byte"
+    },
+    {
+     "name": "offFrames",
+     "cs": "byte"
+    },
+    {
+     "name": "transitionOnFrames",
+     "cs": "byte"
+    },
+    {
+     "name": "transitionOffFrames",
+     "cs": "byte"
+    },
+    {
+     "name": "offset",
+     "cs": "short"
+    }
+   ],
+   "size_expr": "10",
+   "path": "unity/scripts/csharp/Anki.Cozmo/LightState.cs"
+  }
+ ],
+ "MotorAutoEnabled": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "motorID",
+     "cs": "MotorID"
+    },
+    {
+     "name": "enabled",
+     "cs": "bool"
+    }
+   ],
+   "size_expr": "2",
+   "path": "unity/scripts/csharp/Anki.Cozmo/MotorAutoEnabled.cs"
+  }
+ ],
+ "MotorCalibration": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "motorID",
+     "cs": "MotorID"
+    },
+    {
+     "name": "calibStarted",
+     "cs": "bool"
+    },
+    {
+     "name": "autoStarted",
+     "cs": "bool"
+    }
+   ],
+   "size_expr": "3",
+   "path": "unity/scripts/csharp/Anki.Cozmo/MotorCalibration.cs"
+  }
+ ],
+ "MoveHead": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "speed_rad_per_sec",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "4",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/MoveHead.cs"
+  }
+ ],
+ "MoveLift": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "speed_rad_per_sec",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "4",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/MoveLift.cs"
+  }
+ ],
+ "ObjectAccel": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "timestamp",
+     "cs": "uint"
+    },
+    {
+     "name": "objectID",
+     "cs": "uint"
+    },
+    {
+     "name": "accel",
+     "cs": "ActiveAccel"
+    }
+   ],
+   "size_expr": "20",
+   "path": "unity/scripts/csharp/Anki.Cozmo/ObjectAccel.cs"
+  }
+ ],
+ "ObjectAvailable": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "factory_id",
+     "cs": "uint"
+    },
+    {
+     "name": "objectType",
+     "cs": "ObjectType"
+    },
+    {
+     "name": "rssi",
+     "cs": "sbyte"
+    }
+   ],
+   "size_expr": "9",
+   "path": "unity/scripts/csharp/Anki.Cozmo/ObjectAvailable.cs"
+  }
+ ],
+ "ObjectBeingCarried": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "objectID",
+     "cs": "uint"
+    },
+    {
+     "name": "isBeingCarried",
+     "cs": "bool"
+    }
+   ],
+   "size_expr": "5",
+   "path": "unity/scripts/csharp/Anki.Cozmo/ObjectBeingCarried.cs"
+  }
+ ],
+ "ObjectConnectionState": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "objectID",
+     "cs": "uint"
+    },
+    {
+     "name": "factoryID",
+     "cs": "uint"
+    },
+    {
+     "name": "object_type",
+     "cs": "ObjectType"
+    },
+    {
+     "name": "connected",
+     "cs": "bool"
+    }
+   ],
+   "size_expr": "13",
+   "path": "unity/scripts/csharp/Anki.Cozmo/ObjectConnectionState.cs"
+  },
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.VizInterface",
+   "fields": [
+    {
+     "name": "activeID",
+     "cs": "uint"
+    },
+    {
+     "name": "objectType",
+     "cs": "ObjectType"
+    },
+    {
+     "name": "connected",
+     "cs": "bool"
+    }
+   ],
+   "size_expr": "9",
+   "path": "unity/scripts/csharp/Anki.Cozmo.VizInterface/ObjectConnectionState.cs"
+  }
+ ],
+ "ObjectConnectionStateToRobot": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "objectID",
+     "cs": "uint"
+    },
+    {
+     "name": "factoryID",
+     "cs": "uint"
+    },
+    {
+     "name": "object_type",
+     "cs": "ObjectType"
+    },
+    {
+     "name": "connected",
+     "cs": "bool"
+    }
+   ],
+   "size_expr": "13",
+   "path": "unity/scripts/csharp/Anki.Cozmo/ObjectConnectionStateToRobot.cs"
+  }
+ ],
+ "ObjectMoved": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "timestamp",
+     "cs": "uint"
+    },
+    {
+     "name": "objectID",
+     "cs": "uint"
+    },
+    {
+     "name": "accel",
+     "cs": "ActiveAccel"
+    },
+    {
+     "name": "axisOfAccel",
+     "cs": "UpAxis"
+    }
+   ],
+   "size_expr": "21",
+   "path": "unity/scripts/csharp/Anki.Cozmo/ObjectMoved.cs"
+  }
+ ],
+ "ObjectPowerLevel": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "objectID",
+     "cs": "uint"
+    },
+    {
+     "name": "missedPackets",
+     "cs": "uint"
+    },
+    {
+     "name": "batteryLevel",
+     "cs": "byte"
+    }
+   ],
+   "size_expr": "9",
+   "path": "unity/scripts/csharp/Anki.Cozmo/ObjectPowerLevel.cs"
+  }
+ ],
+ "ObjectStoppedMoving": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "timestamp",
+     "cs": "uint"
+    },
+    {
+     "name": "objectID",
+     "cs": "uint"
+    }
+   ],
+   "size_expr": "8",
+   "path": "unity/scripts/csharp/Anki.Cozmo/ObjectStoppedMoving.cs"
+  }
+ ],
+ "ObjectTapped": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "timestamp",
+     "cs": "uint"
+    },
+    {
+     "name": "objectID",
+     "cs": "uint"
+    },
+    {
+     "name": "numTaps",
+     "cs": "byte"
+    },
+    {
+     "name": "tapTime",
+     "cs": "byte"
+    },
+    {
+     "name": "tapNeg",
+     "cs": "sbyte"
+    },
+    {
+     "name": "tapPos",
+     "cs": "sbyte"
+    }
+   ],
+   "size_expr": "12",
+   "path": "unity/scripts/csharp/Anki.Cozmo/ObjectTapped.cs"
+  }
+ ],
+ "ObjectTappedFiltered": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "timestamp",
+     "cs": "uint"
+    },
+    {
+     "name": "objectID",
+     "cs": "uint"
+    },
+    {
+     "name": "tapTime",
+     "cs": "byte"
+    },
+    {
+     "name": "tapIntensity",
+     "cs": "byte"
+    }
+   ],
+   "size_expr": "10",
+   "path": "unity/scripts/csharp/Anki.Cozmo/ObjectTappedFiltered.cs"
+  }
+ ],
+ "ObjectUpAxisChanged": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "timestamp",
+     "cs": "uint"
+    },
+    {
+     "name": "objectID",
+     "cs": "uint"
+    },
+    {
+     "name": "upAxis",
+     "cs": "UpAxis"
+    }
+   ],
+   "size_expr": "9",
+   "path": "unity/scripts/csharp/Anki.Cozmo/ObjectUpAxisChanged.cs"
+  }
+ ],
+ "PlaceObjectOnGround": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "x_mm",
+     "cs": "float"
+    },
+    {
+     "name": "y_mm",
+     "cs": "float"
+    },
+    {
+     "name": "qw",
+     "cs": "float"
+    },
+    {
+     "name": "qx",
+     "cs": "float"
+    },
+    {
+     "name": "qy",
+     "cs": "float"
+    },
+    {
+     "name": "qz",
+     "cs": "float"
+    },
+    {
+     "name": "motionProf",
+     "cs": "PathMotionProfile"
+    },
+    {
+     "name": "level",
+     "cs": "byte"
+    },
+    {
+     "name": "useManualSpeed",
+     "cs": "bool"
+    },
+    {
+     "name": "useExactRotation",
+     "cs": "bool"
+    },
+    {
+     "name": "checkDestinationFree",
+     "cs": "bool"
+    }
+   ],
+   "size_expr": "69",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/PlaceObjectOnGround.cs"
+  }
+ ],
+ "PoseStruct3d": [
+  {
+   "kind": "class",
+   "ns": "Anki",
+   "fields": [
+    {
+     "name": "x",
+     "cs": "float"
+    },
+    {
+     "name": "y",
+     "cs": "float"
+    },
+    {
+     "name": "z",
+     "cs": "float"
+    },
+    {
+     "name": "q0",
+     "cs": "float"
+    },
+    {
+     "name": "q1",
+     "cs": "float"
+    },
+    {
+     "name": "q2",
+     "cs": "float"
+    },
+    {
+     "name": "q3",
+     "cs": "float"
+    },
+    {
+     "name": "originID",
+     "cs": "uint"
+    }
+   ],
+   "size_expr": "32",
+   "path": "unity/scripts/csharp/Anki/PoseStruct3d.cs"
+  }
+ ],
+ "PotentialCliff": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [],
+   "size_expr": "0",
+   "path": "unity/scripts/csharp/Anki.Cozmo/PotentialCliff.cs"
+  }
+ ],
+ "PowerState": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "VBatFixed",
+     "cs": "int"
+    },
+    {
+     "name": "VExtFixed",
+     "cs": "int"
+    },
+    {
+     "name": "_unused",
+     "cs": "int"
+    },
+    {
+     "name": "batteryLevel",
+     "cs": "byte"
+    },
+    {
+     "name": "onCharger",
+     "cs": "bool"
+    },
+    {
+     "name": "isCharging",
+     "cs": "bool"
+    },
+    {
+     "name": "operatingMode",
+     "cs": "BodyRadioMode"
+    },
+    {
+     "name": "chargerOOS",
+     "cs": "bool"
+    }
+   ],
+   "size_expr": "17",
+   "path": "unity/scripts/csharp/Anki.Cozmo/PowerState.cs"
+  }
+ ],
+ "RobotPoked": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [],
+   "size_expr": "0",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/RobotPoked.cs"
+  }
+ ],
+ "RobotPose": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "x",
+     "cs": "float"
+    },
+    {
+     "name": "y",
+     "cs": "float"
+    },
+    {
+     "name": "z",
+     "cs": "float"
+    },
+    {
+     "name": "angle",
+     "cs": "float"
+    },
+    {
+     "name": "pitch_angle",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "20",
+   "path": "unity/scripts/csharp/Anki.Cozmo/RobotPose.cs"
+  }
+ ],
+ "RobotState": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "timestamp",
+     "cs": "uint"
+    },
+    {
+     "name": "pose_frame_id",
+     "cs": "uint"
+    },
+    {
+     "name": "pose_origin_id",
+     "cs": "uint"
+    },
+    {
+     "name": "pose",
+     "cs": "RobotPose"
+    },
+    {
+     "name": "lwheel_speed_mmps",
+     "cs": "float"
+    },
+    {
+     "name": "rwheel_speed_mmps",
+     "cs": "float"
+    },
+    {
+     "name": "headAngle",
+     "cs": "float"
+    },
+    {
+     "name": "liftAngle",
+     "cs": "float"
+    },
+    {
+     "name": "accel",
+     "cs": "AccelData"
+    },
+    {
+     "name": "gyro",
+     "cs": "GyroData"
+    },
+    {
+     "name": "batteryVoltage",
+     "cs": "float"
+    },
+    {
+     "name": "status",
+     "cs": "uint"
+    },
+    {
+     "name": "cliffDataRaw",
+     "cs": "ushort[]",
+     "fixed": 4
+    },
+    {
+     "name": "backpackTouchSensorRaw",
+     "cs": "ushort"
+    },
+    {
+     "name": "currPathSegment",
+     "cs": "sbyte"
+    }
+   ],
+   "size_expr": "91",
+   "path": "unity/scripts/csharp/Anki.Cozmo/RobotState.cs"
+  },
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "pose",
+     "cs": "PoseStruct3d"
+    },
+    {
+     "name": "poseAngle_rad",
+     "cs": "float"
+    },
+    {
+     "name": "posePitch_rad",
+     "cs": "float"
+    },
+    {
+     "name": "leftWheelSpeed_mmps",
+     "cs": "float"
+    },
+    {
+     "name": "rightWheelSpeed_mmps",
+     "cs": "float"
+    },
+    {
+     "name": "headAngle_rad",
+     "cs": "float"
+    },
+    {
+     "name": "liftHeight_mm",
+     "cs": "float"
+    },
+    {
+     "name": "batteryVoltage",
+     "cs": "float"
+    },
+    {
+     "name": "accel",
+     "cs": "AccelData"
+    },
+    {
+     "name": "gyro",
+     "cs": "GyroData"
+    },
+    {
+     "name": "carryingObjectID",
+     "cs": "int"
+    },
+    {
+     "name": "carryingObjectOnTopID",
+     "cs": "int"
+    },
+    {
+     "name": "headTrackingObjectID",
+     "cs": "int"
+    },
+    {
+     "name": "localizedToObjectID",
+     "cs": "int"
+    },
+    {
+     "name": "lastImageTimeStamp",
+     "cs": "uint"
+    },
+    {
+     "name": "status",
+     "cs": "uint"
+    },
+    {
+     "name": "gameStatus",
+     "cs": "byte"
+    }
+   ],
+   "size_expr": "109",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/RobotState.cs"
+  }
+ ],
+ "RobotStopped": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [],
+   "size_expr": "0",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/RobotStopped.cs"
+  }
+ ],
+ "RollActionParams": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "liftHeight_mm",
+     "cs": "float"
+    },
+    {
+     "name": "driveSpeed_mmps",
+     "cs": "float"
+    },
+    {
+     "name": "driveAccel_mmps2",
+     "cs": "float"
+    },
+    {
+     "name": "driveDuration_ms",
+     "cs": "uint"
+    },
+    {
+     "name": "backupDist_mm",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "20",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/RollActionParams.cs"
+  }
+ ],
+ "SendData": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.BLE",
+   "fields": [
+    {
+     "name": "frame",
+     "cs": "Frame"
+    }
+   ],
+   "size_expr": "17",
+   "path": "unity/scripts/csharp/Anki.Cozmo.BLE/SendData.cs"
+  }
+ ],
+ "SetAccessoryDiscovery": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "enable",
+     "cs": "bool"
+    }
+   ],
+   "size_expr": "1",
+   "path": "unity/scripts/csharp/Anki.Cozmo/SetAccessoryDiscovery.cs"
+  }
+ ],
+ "SetBodyRadioMode": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "radioMode",
+     "cs": "BodyRadioMode"
+    },
+    {
+     "name": "wifiChannel",
+     "cs": "byte"
+    }
+   ],
+   "size_expr": "2",
+   "path": "unity/scripts/csharp/Anki.Cozmo/SetBodyRadioMode.cs"
+  }
+ ],
+ "SetHeadAngle": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "angle_rad",
+     "cs": "float"
+    },
+    {
+     "name": "max_speed_rad_per_sec",
+     "cs": "float"
+    },
+    {
+     "name": "accel_rad_per_sec2",
+     "cs": "float"
+    },
+    {
+     "name": "duration_sec",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "16",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/SetHeadAngle.cs"
+  }
+ ],
+ "SetHeadlight": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "enable",
+     "cs": "bool"
+    }
+   ],
+   "size_expr": "1",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/SetHeadlight.cs"
+  }
+ ],
+ "SetLiftHeight": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "height_mm",
+     "cs": "float"
+    },
+    {
+     "name": "max_speed_rad_per_sec",
+     "cs": "float"
+    },
+    {
+     "name": "accel_rad_per_sec2",
+     "cs": "float"
+    },
+    {
+     "name": "duration_sec",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "16",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/SetLiftHeight.cs"
+  }
+ ],
+ "SetMotionModelParams": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "slipFactor",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "4",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/SetMotionModelParams.cs"
+  }
+ ],
+ "StartControllerTestMode": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "p1",
+     "cs": "int"
+    },
+    {
+     "name": "p2",
+     "cs": "int"
+    },
+    {
+     "name": "p3",
+     "cs": "int"
+    },
+    {
+     "name": "mode",
+     "cs": "TestMode"
+    }
+   ],
+   "size_expr": "13",
+   "path": "unity/scripts/csharp/Anki.Cozmo/StartControllerTestMode.cs"
+  }
+ ],
+ "StopAllMotors": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [],
+   "size_expr": "0",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/StopAllMotors.cs"
+  }
+ ],
+ "StreamObjectAccel": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo",
+   "fields": [
+    {
+     "name": "objectID",
+     "cs": "uint"
+    },
+    {
+     "name": "enable",
+     "cs": "bool"
+    }
+   ],
+   "size_expr": "5",
+   "path": "unity/scripts/csharp/Anki.Cozmo/StreamObjectAccel.cs"
+  },
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "objectID",
+     "cs": "uint"
+    },
+    {
+     "name": "enable",
+     "cs": "bool"
+    }
+   ],
+   "size_expr": "5",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/StreamObjectAccel.cs"
+  }
+ ],
+ "TurnInPlaceAtSpeed": [
+  {
+   "kind": "class",
+   "ns": "Anki.Cozmo.ExternalInterface",
+   "fields": [
+    {
+     "name": "speed_rad_per_sec",
+     "cs": "float"
+    },
+    {
+     "name": "accel_rad_per_sec2",
+     "cs": "float"
+    }
+   ],
+   "size_expr": "8",
+   "path": "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/TurnInPlaceAtSpeed.cs"
+  }
+ ]
+}

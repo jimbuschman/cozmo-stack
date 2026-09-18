@@ -300,7 +300,7 @@ public enum RobotMessageId : byte
     FactoryFirmwareVersion = 0xD2,
     /// <summary>DockingStatus (robot_to_engine); size 5; layout_known_semantics_uncertain</summary>
     DockingStatus = 0xD3,
-    /// <summary>RobotStopped (robot_to_engine); size 1; statically_verified</summary>
+    /// <summary>RobotStopped (robot_to_engine); size 1; layout_known_semantics_uncertain</summary>
     RobotStopped = 0xD4,
     /// <summary>AnimationEvent (robot_to_engine); size 6; statically_verified</summary>
     AnimEventFromRobot = 0xD5,
@@ -318,7 +318,7 @@ public enum RobotMessageId : byte
     BackpackButton = 0xDB,
     /// <summary>IMUTemperature (robot_to_engine); size 4; statically_verified</summary>
     ImuTemperature = 0xDC,
-    /// <summary>FallingStarted (robot_to_engine); size 4; statically_verified</summary>
+    /// <summary>FallingStarted (robot_to_engine); size 4; layout_known_semantics_uncertain</summary>
     FallingStarted = 0xDD,
     /// <summary>FallingStopped (robot_to_engine); size 12; statically_verified</summary>
     FallingStopped = 0xDE,
@@ -445,13 +445,13 @@ public static class MessageCatalog
         [RobotMessageId.EnableAnimTracks] = new(RobotMessageId.EnableAnimTracks, "enableAnimTracks", "EnableAnimTracks", MessageDirection.EngineToRobot, 1, false, Subsystem.Animation, ProbeSafety.StateChange, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
         [RobotMessageId.InitAnimController] = new(RobotMessageId.InitAnimController, "initAnimController", "InitController", MessageDirection.EngineToRobot, 0, false, Subsystem.Animation, ProbeSafety.StateChange, LayoutConfidence.Empty, VerificationStatus.HardwareVerified, "EnableAnimationState"),
         [RobotMessageId.AppRunID] = new(RobotMessageId.AppRunID, "appRunID", "SetAppRunID", MessageDirection.EngineToRobot, 16, false, Subsystem.IdentityVersionLogging, ProbeSafety.StateChange, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
-        [RobotMessageId.TestState] = new(RobotMessageId.TestState, "testState", "TestState", MessageDirection.EngineToRobot, 49, false, Subsystem.FactoryDebugStorage, ProbeSafety.Destructive, LayoutConfidence.Partial, VerificationStatus.Unresolved, null),
+        [RobotMessageId.TestState] = new(RobotMessageId.TestState, "testState", "TestState", MessageDirection.EngineToRobot, 49, true, Subsystem.FactoryDebugStorage, ProbeSafety.Destructive, LayoutConfidence.Partial, VerificationStatus.Unresolved, null),
         [RobotMessageId.EnterTestMode] = new(RobotMessageId.EnterTestMode, "enterTestMode", "EnterFactoryTestMode", MessageDirection.EngineToRobot, 8, false, Subsystem.FactoryDebugStorage, ProbeSafety.Destructive, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
         [RobotMessageId.OledDisplayNumber] = new(RobotMessageId.OledDisplayNumber, "oledDisplayNumber", "DisplayNumber", MessageDirection.EngineToRobot, 7, false, Subsystem.LedsDisplay, ProbeSafety.SafeVisible, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
         [RobotMessageId.BodyStorageContents] = new(RobotMessageId.BodyStorageContents, "bodyStorageContents", "BodyStorageContents", MessageDirection.EngineToRobot, -1, true, Subsystem.FactoryDebugStorage, ProbeSafety.Destructive, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
         [RobotMessageId.BodySerialNum] = new(RobotMessageId.BodySerialNum, "bodySerialNum", "BodySerialNumber", MessageDirection.EngineToRobot, 4, false, Subsystem.IdentityVersionLogging, ProbeSafety.Destructive, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
         [RobotMessageId.ShutdownRobot] = new(RobotMessageId.ShutdownRobot, "shutdownRobot", "ShutdownRobot", MessageDirection.EngineToRobot, 32, false, Subsystem.FirmwareUpdateRecovery, ProbeSafety.Destructive, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, "ShutdownRobot"),
-        [RobotMessageId.AppConCfgString] = new(RobotMessageId.AppConCfgString, "appConCfgString", "AppConnectConfigString", MessageDirection.EngineToRobot, 17, false, Subsystem.FirmwareUpdateRecovery, ProbeSafety.Destructive, LayoutConfidence.Partial, VerificationStatus.Unresolved, null),
+        [RobotMessageId.AppConCfgString] = new(RobotMessageId.AppConCfgString, "appConCfgString", "AppConnectConfigString", MessageDirection.EngineToRobot, 17, true, Subsystem.FirmwareUpdateRecovery, ProbeSafety.Destructive, LayoutConfidence.Partial, VerificationStatus.Unresolved, null),
         [RobotMessageId.AppConCfgFlags] = new(RobotMessageId.AppConCfgFlags, "appConCfgFlags", "AppConnectConfigFlags", MessageDirection.EngineToRobot, 17, false, Subsystem.FirmwareUpdateRecovery, ProbeSafety.Destructive, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
         [RobotMessageId.AppConCfgIPInfo] = new(RobotMessageId.AppConCfgIPInfo, "appConCfgIPInfo", "AppConnectConfigIPInfo", MessageDirection.EngineToRobot, 13, false, Subsystem.FirmwareUpdateRecovery, ProbeSafety.Destructive, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
         [RobotMessageId.AppConGetRobotIP] = new(RobotMessageId.AppConGetRobotIP, "appConGetRobotIP", "AppConnectGetRobotIP", MessageDirection.EngineToRobot, 1, false, Subsystem.FirmwareUpdateRecovery, ProbeSafety.Destructive, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
@@ -492,7 +492,7 @@ public static class MessageCatalog
         [RobotMessageId.MotorCalibration] = new(RobotMessageId.MotorCalibration, "motorCalibration", "MotorCalibration", MessageDirection.RobotToEngine, 3, false, Subsystem.Motors, ProbeSafety.StateChange, LayoutConfidence.Exact, VerificationStatus.HardwareVerified, "MotorCalibration"),
         [RobotMessageId.FactoryFirmwareVersion] = new(RobotMessageId.FactoryFirmwareVersion, "factoryFirmwareVersion", "FWVersionInfo", MessageDirection.RobotToEngine, 44, false, Subsystem.IdentityVersionLogging, ProbeSafety.StateChange, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
         [RobotMessageId.DockingStatus] = new(RobotMessageId.DockingStatus, "dockingStatus", "DockingStatus", MessageDirection.RobotToEngine, 5, false, Subsystem.LocalizationNavigation, ProbeSafety.StateChange, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
-        [RobotMessageId.RobotStopped] = new(RobotMessageId.RobotStopped, "robotStopped", "RobotStopped", MessageDirection.RobotToEngine, 1, false, Subsystem.RobotStateSensors, ProbeSafety.StateChange, LayoutConfidence.Prefix, VerificationStatus.StaticallyVerified, null),
+        [RobotMessageId.RobotStopped] = new(RobotMessageId.RobotStopped, "robotStopped", "RobotStopped", MessageDirection.RobotToEngine, 1, false, Subsystem.RobotStateSensors, ProbeSafety.StateChange, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
         [RobotMessageId.AnimEventFromRobot] = new(RobotMessageId.AnimEventFromRobot, "animEvent", "AnimationEvent", MessageDirection.RobotToEngine, 6, false, Subsystem.Animation, ProbeSafety.StateChange, LayoutConfidence.Prefix, VerificationStatus.StaticallyVerified, null),
         [RobotMessageId.FactoryTestParam] = new(RobotMessageId.FactoryTestParam, "factoryTestParam", "FactoryTestParameter", MessageDirection.RobotToEngine, 4, false, Subsystem.FactoryDebugStorage, ProbeSafety.StateChange, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
         [RobotMessageId.ActiveObjectUpAxisChanged] = new(RobotMessageId.ActiveObjectUpAxisChanged, "activeObjectUpAxisChanged", "ObjectUpAxisChanged", MessageDirection.RobotToEngine, 9, false, Subsystem.CubesBle, ProbeSafety.StateChange, LayoutConfidence.Exact, VerificationStatus.StaticallyVerified, "ObjectUpAxisChanged"),
@@ -501,7 +501,7 @@ public static class MessageCatalog
         [RobotMessageId.LiftLoad] = new(RobotMessageId.LiftLoad, "liftLoad", "LiftLoad", MessageDirection.RobotToEngine, 1, false, Subsystem.RobotStateSensors, ProbeSafety.StateChange, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
         [RobotMessageId.BackpackButton] = new(RobotMessageId.BackpackButton, "backpackButton", "BackpackButton", MessageDirection.RobotToEngine, 1, false, Subsystem.RobotStateSensors, ProbeSafety.StateChange, LayoutConfidence.NativeNamed, VerificationStatus.LayoutKnownSemanticsUncertain, "ButtonPressed"),
         [RobotMessageId.ImuTemperature] = new(RobotMessageId.ImuTemperature, "imuTemperature", "IMUTemperature", MessageDirection.RobotToEngine, 4, false, Subsystem.RobotStateSensors, ProbeSafety.StateChange, LayoutConfidence.Exact, VerificationStatus.StaticallyVerified, null),
-        [RobotMessageId.FallingStarted] = new(RobotMessageId.FallingStarted, "fallingStarted", "FallingStarted", MessageDirection.RobotToEngine, 4, false, Subsystem.RobotStateSensors, ProbeSafety.StateChange, LayoutConfidence.Prefix, VerificationStatus.StaticallyVerified, "FallingStarted"),
+        [RobotMessageId.FallingStarted] = new(RobotMessageId.FallingStarted, "fallingStarted", "FallingStarted", MessageDirection.RobotToEngine, 4, false, Subsystem.RobotStateSensors, ProbeSafety.StateChange, LayoutConfidence.NativeNamed, VerificationStatus.LayoutKnownSemanticsUncertain, "FallingStarted"),
         [RobotMessageId.FallingStopped] = new(RobotMessageId.FallingStopped, "fallingStopped", "FallingStopped", MessageDirection.RobotToEngine, 12, false, Subsystem.RobotStateSensors, ProbeSafety.StateChange, LayoutConfidence.Prefix, VerificationStatus.StaticallyVerified, "FallingStopped"),
         [RobotMessageId.WifiFlashID] = new(RobotMessageId.WifiFlashID, "wifiFlashID", "WiFiFlashID", MessageDirection.RobotToEngine, 4, false, Subsystem.IdentityVersionLogging, ProbeSafety.StateChange, LayoutConfidence.NativeOnly, VerificationStatus.HardwareVerified, null),
         [RobotMessageId.MfgId] = new(RobotMessageId.MfgId, "mfgId", "ManufacturingID", MessageDirection.RobotToEngine, 12, false, Subsystem.IdentityVersionLogging, ProbeSafety.StateChange, LayoutConfidence.NativeNamed, VerificationStatus.HardwareVerified, "BodyInfo"),
