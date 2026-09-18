@@ -407,7 +407,7 @@ IMU, camera, animation, cubes and head motion are all confirmed on the real firm
 Tests assert every fixed message serialises to the engine's own `Size()`, every message round-trips, and every CLAD
 payload in the 20 s hardware capture decodes and re-encodes byte-identically. Full detail: `PROTOCOL_STATUS.md`.
 
-**M3 status (2026-09-18): COMPLETE, all three pipelines verified on hardware; acceptance artifact pending.** On the firmware-2457 robot
+**M3 status (2026-09-18): COMPLETE and FROZEN.** Camera, face display and audio all passed on hardware. On the firmware-2457 robot
 a real photograph was captured and saved, a known image was shown on the OLED, and a generated tone played
 cleanly through the speaker. Five faults were found and fixed along the way, the last and only audible one
 being that Cozmo's mu-law is not G.711. Details in `DEVICE_LAYER.md`. Among them: the robot
@@ -425,8 +425,15 @@ Cozmo's own face encoder and a full Huffman decode of every camera frame in the 
 acceptance commands `camera`, `face` and `tone` are in the conformance CLI and not yet run. Detail and the
 open gaps: `DEVICE_LAYER.md`.
 
-**M4 status (2026-09-18): physical control layer implemented, replay-verified, hardware acceptance not yet
-run.** `Cozmo.Robot` now exposes `Motion`, `Lights`, `Sensors` and `Cubes` over the frozen M1/M2 baseline:
+**M1 through M4 are frozen as of 2026-09-18.** Transport, protocol, device layer and control layer are all
+hardware-verified and are not to be reopened unless a specific failure appears. Work above them builds on
+these APIs rather than changing them.
+
+**M4 status (2026-09-18): COMPLETE and FROZEN.** Sensors and state, lights, head and lift motion, and
+wheel drive all passed on the firmware-2457 robot, the last with `--allow-drive` and with the robot's
+stop-on-cliff reflex enabled first. Cubes are **code-complete and offline-tested with hardware acceptance
+pending**, only because no cube was available; that is not a failure or a gap in the implementation. Results:
+`ACCEPTANCE.md`. Original description: `Cozmo.Robot` now exposes `Motion`, `Lights`, `Sensors` and `Cubes` over the frozen M1/M2 baseline:
 wheels, head, lift, a checked stop, cliff sensing, IMU, charger and battery state, backpack LEDs, the
 headlight, and cube discovery with connection state and basic telemetry. Positioning waits for the robot's
 own `MotorActionAck` carrying that action's id; wheel commands are confirmed against the reported wheel

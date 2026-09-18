@@ -1,6 +1,8 @@
 # M4 — physical control layer
 
-Status: **implemented and replay-verified; hardware acceptance not yet run** (2026-09-18)
+Status: **COMPLETE and FROZEN** (2026-09-18). Sensors, lights, head and lift motion and wheel drive all
+passed on hardware. Cubes are code-complete and offline-tested with hardware acceptance pending, only
+because no cube was available. See `ACCEPTANCE.md`.
 
 Everything here sits above the frozen M1 transport and M2 protocol and the M3 device layer. Nothing in
 those was reopened, and no generated code was hand-edited.
@@ -90,7 +92,7 @@ connection is ticked, which a live transport does on its own thread.
 
 ## Hardware acceptance
 
-One command per capability group. None has been run yet.
+One command per capability group. All but `cubes` have passed on hardware; see `ACCEPTANCE.md`.
 
 ```
 dotnet run --project src/Cozmo.Conformance -- drive   172.31.1.1 --acceptance

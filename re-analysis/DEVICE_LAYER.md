@@ -1,6 +1,7 @@
 # M3 — `Cozmo.Robot` device layer
 
-Status: **complete — camera, display and audio all verified on a real robot** (2026-09-18)
+Status: **COMPLETE and FROZEN** — camera, display and audio all verified on a real robot (2026-09-18).
+See `ACCEPTANCE.md`.
 
 This is the first layer above the frozen M1 transport and M2 protocol baseline. It turns the verified wire
 messages into three stateful pipelines plus a live view of robot state, as ordinary library components.
