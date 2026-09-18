@@ -109,7 +109,8 @@ static int Usage()
           catalog [tag|name]                 print the official 161-message catalog (or one entry)
           pcap <file.pcap> [--raw]           decode every UDP datagram to/from ports 5551/5552 in a capture
           replay <file.pcap|hexfile>         feed robot->engine frames from a capture through our receive path and report what the connection state machine did
-          connect <robot-ip> [--port 5551] [--seconds 20] [--head <rad>] [--led] [--headlight] [--log frames.log] [--origin]
+          connect <robot-ip> [--port 5551] [--seconds 20] [--head <rad>] [--led] [--headlight] [--log <file>] [--origin]
+                                             (a frame log is always written; default cozmo-frames-<timestamp>.log in the current directory, full path printed)
                                              hardware smoke test: connect, handshake, telemetry, one harmless command, disconnect
           fakerobot [--port 5551] [--seconds 60]  loopback stand-in for the robot transport (127.0.0.1) for testing the socket path without hardware
         """);
@@ -261,8 +262,11 @@ static async Task<int> Connect(string[] a)
         else if (a[i] == "--head") head = float.Parse(a[++i], CultureInfo.InvariantCulture);
         else if (a[i] == "--log") log = a[++i];
     }
+    log ??= $"cozmo-frames-{DateTime.Now:yyyyMMdd-HHmmss}.log";
+    log = Path.GetFullPath(log);
     using var link = new RobotLink();
-    StreamWriter? lw = log is null ? null : new StreamWriter(log, false, Encoding.UTF8);
+    StreamWriter? lw = new StreamWriter(log, false, Encoding.UTF8);
+    Console.WriteLine($"frame log: {log}");
     link.Transport.FrameTrace += e =>
     {
         if (lw is null) return;
@@ -275,7 +279,7 @@ static async Task<int> Connect(string[] a)
     Console.WriteLine($"connecting to {ip}:{port} (ConnectionRequest, reliable seq 1) ...");
     var sw = System.Diagnostics.Stopwatch.StartNew();
     try { await link.ConnectAsync(ip, port, TimeSpan.FromSeconds(5)); }
-    catch (Exception e) { Console.WriteLine($"FAIL connect: {e.Message}"); lw?.Dispose(); return 10; }
+    catch (Exception e) { Console.WriteLine($"FAIL connect: {e.Message}"); lw?.Dispose(); Console.WriteLine($"frame log written to: {log}"); return 10; }
     Console.WriteLine($"connected in {sw.ElapsedMilliseconds} ms (ConnectionResponse received)");
 
     await Task.Delay(300);
@@ -321,5 +325,6 @@ static async Task<int> Connect(string[] a)
     Console.WriteLine(pass ? "SMOKE TEST: PASS" : "SMOKE TEST: FAIL");
     link.Disconnect();
     lw?.Dispose();
+    Console.WriteLine($"frame log written to: {log}  (send this file plus the console output)");
     return pass ? 0 : 20;
 }
