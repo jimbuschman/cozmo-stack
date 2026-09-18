@@ -93,9 +93,33 @@ message. `CozmoDisplay` rejects those with a clear error instead of sending a tr
 `setAudioVolume` (0x64) takes a u16 level. 744 samples per animation tick at about 30 Hz is 22.05 kHz, which
 matches the sample rate of the app's own voice assets.
 
-The codec is G.711 mu-law. The second hardware run produced **audible sound of the right character**, which
-is strong evidence the codec is right, but the tone was cut short by a separate bug and the full test has
-not yet been repeated. It stays **hypothesis-level, close to confirmed**.
+### The codec, taken from the engine
+
+The robot uses mu-law, but **not** G.711. Transcribed from `Anki::Cozmo::Audio::encodeMuLaw(float)` at
+0x00597AD8 in `libcozmoEngine.so`, with its segment table copied from .rodata at 0xC5C3F0 and its scale
+constant 32767.0 at 0x00597C18:
+
+```
+if (isnan(f)) return 0;
+s    = f <= -1 ? -32767 : (int)(min(f, 1) * 32767)
+mag  = s ^ (s >> 15)                       // s if positive, ~s if negative; no 132 bias
+hi   = mag >> 8
+exp  = segment[hi]                         // 128-byte table: 0,1,2,2,3x4,4x8,5x16,6x32,7x64
+mant = hi == 0 ? mag >> 4 : (mag >> (exp + 3)) & 0x0F
+byte = (s < 0 ? 0x80 : 0) | (exp << 4) | mant      // NOT complemented
+```
+
+Two differences from G.711 matter. There is no 132 bias, and **the result is never complemented**, so
+silence is 0x00 rather than 0xFF and every code is the inverse of what a standard encoder emits. Sending
+standard G.711 is heard as a loud buzz at roughly the right pitch, which is what every hardware run produced
+until this was found. PyCozmo also omits the complement, so it is closer to the engine than to G.711, but it
+still adds the bias.
+
+This is `AnkiMuLaw` and it is the default. The standard law and plain 8-bit PCM remain selectable for
+comparison only.
+
+Finding this took four tool calls against the engine, after several rounds of hardware experiments that
+could not distinguish the hypotheses. The engine is the authority and is the right place to start.
 
 ### Streaming audio without stutter
 

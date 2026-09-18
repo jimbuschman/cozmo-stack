@@ -16,6 +16,86 @@ public class DeviceTests
 {
     // ---------------------------------------------------------------- audio
 
+    [Theory]
+    [InlineData(AudioCodec.AnkiMuLaw)]
+    [InlineData(AudioCodec.StandardMuLaw)]
+    [InlineData(AudioCodec.UnsignedPcm8)]
+    [InlineData(AudioCodec.SignedPcm8)]
+    public void EveryCandidateCodecRoundTripsAndKeepsSilenceSilent(AudioCodec codec)
+    {
+        // reconstruction lands on the middle of a step, so silence comes back near zero rather than exactly
+        Assert.True(Math.Abs((int)CozmoAudio.Unpack(CozmoAudio.Pack(0, codec), codec)) <= 16);
+        int worst = 0;
+        for (int v = short.MinValue; v <= short.MaxValue; v += 7)
+        {
+            int back = CozmoAudio.Unpack(CozmoAudio.Pack((short)v, codec), codec);
+            worst = Math.Max(worst, Math.Abs(back - v));
+        }
+        // 8 bits over 16 means the coarsest step is 256 for linear and about 1024 at the top of a companded scale
+        Assert.True(worst <= 1100, $"{codec} lost {worst} counts, which is more than 8 bits can explain");
+    }
+
+    [Fact]
+    public void TheCandidateCodecsProduceDifferentBytes()
+    {
+        // otherwise trying them in turn on the robot would prove nothing
+        var pcm = CozmoAudio.Tone(440, TimeSpan.FromMilliseconds(100));
+        var codecs = new[] { AudioCodec.AnkiMuLaw, AudioCodec.StandardMuLaw, AudioCodec.UnsignedPcm8, AudioCodec.SignedPcm8 };
+        var packed = codecs.Select(c => Convert.ToHexString(CozmoAudio.ToFrames(pcm, c)[0])).ToList();
+        Assert.Equal(codecs.Length, packed.Distinct().Count());
+    }
+
+    /// <summary>
+    /// The engine's own encoder, transcribed from libcozmoEngine.so. Silence is 0x00, not the 0xFF a
+    /// standard G.711 encoder produces: the engine never complements the result. Sending the standard form
+    /// is heard as a loud buzz, which is what the first hardware runs did.
+    /// </summary>
+    [Fact]
+    public void TheEnginesMuLawIsNotComplementedAndSilenceIsZero()
+    {
+        Assert.Equal(0x00, AnkiMuLaw.Encode(0));
+        Assert.Equal(0xFF, MuLaw.Encode(0));                       // standard G.711, for contrast
+        Assert.Equal(0x7F, AnkiMuLaw.Encode(short.MaxValue));      // full positive
+        Assert.Equal(0xFF, AnkiMuLaw.Encode(short.MinValue));      // full negative
+        Assert.Equal(0x80, AnkiMuLaw.Encode(-1));                  // the sign bit marks negative
+
+        // the two never agree, which is why sending the standard form produced a buzz rather than a note
+        for (int v = -32000; v <= 32000; v += 97)
+            Assert.NotEqual(MuLaw.Encode((short)v), AnkiMuLaw.Encode((short)v));
+    }
+
+    /// <summary>The float entry point must agree with the engine's, which takes -1..1.</summary>
+    [Fact]
+    public void TheEnginesFloatAndShortEntryPointsAgree()
+    {
+        Assert.Equal(0, AnkiMuLaw.Encode(float.NaN));
+        Assert.Equal(AnkiMuLaw.Encode((short)-32767), AnkiMuLaw.Encode(-1f));
+        Assert.Equal(AnkiMuLaw.Encode((short)-32767), AnkiMuLaw.Encode(-5f));      // clamped
+        Assert.Equal(AnkiMuLaw.Encode((short)32767), AnkiMuLaw.Encode(1f));
+        Assert.Equal(AnkiMuLaw.Encode((short)32767), AnkiMuLaw.Encode(5f));        // clamped
+        for (float f = -0.99f; f < 1f; f += 0.01f)
+            Assert.Equal(AnkiMuLaw.Encode((short)(int)(f * 32767f)), AnkiMuLaw.Encode(f));
+    }
+
+    [Fact]
+    public void TheEnginesMuLawRoundTripsWithinItsQuantisationStep()
+    {
+        for (int v = -32767; v <= 32767; v += 7)
+        {
+            int back = AnkiMuLaw.Decode(AnkiMuLaw.Encode((short)v));
+            int allowed = Math.Max(16, Math.Abs(v) / 16 + 16);
+            Assert.True(Math.Abs(back - v) <= allowed, $"sample {v} came back as {back}");
+        }
+    }
+
+    [Fact]
+    public void TheDefaultCodecIsTheEngines()
+    {
+        Assert.Equal(AudioCodec.AnkiMuLaw, new CozmoAudio(_ => { }).Codec);
+        var frame = CozmoAudio.ToFrames(new short[CozmoAudio.SamplesPerFrame])[0];
+        Assert.All(frame, b => Assert.Equal(0x00, b));    // a frame of silence is all zeros
+    }
+
     [Fact]
     public void MuLawMatchesTheReferenceEndpoints()
     {
@@ -63,9 +143,9 @@ public class DeviceTests
         Assert.Equal(3, frames.Count);
         Assert.All(frames, f => Assert.Equal(CozmoAudio.SamplesPerFrame, f.Length));
         var last = frames[2];
-        Assert.Equal(MuLaw.Encode(1000), last[9]);
-        Assert.Equal(MuLaw.Encode(0), last[10]);   // padding starts right after the real samples
-        Assert.Equal(MuLaw.Encode(0), last[^1]);
+        Assert.Equal(AnkiMuLaw.Encode(1000), last[9]);
+        Assert.Equal(AnkiMuLaw.Encode(0), last[10]);   // padding starts right after the real samples
+        Assert.Equal(AnkiMuLaw.Encode(0), last[^1]);
     }
 
     [Fact]
@@ -218,6 +298,49 @@ public class DeviceTests
 
         Assert.Equal(expected, sent.Count);
         Assert.True(sw.Elapsed < TimeSpan.FromSeconds(15), $"it took {sw.Elapsed.TotalSeconds:F1}s to give up");
+    }
+
+    [Fact]
+    public void BeepsProducesTheRequestedNumberOfSeparatedBursts()
+    {
+        const int count = 4;
+        double on = 0.25, off = 0.25;
+        var pcm = CozmoAudio.Beeps(count, 880, on, off);
+        int onLen = (int)(on * CozmoAudio.SampleRate);
+        int period = onLen + (int)(off * CozmoAudio.SampleRate);
+        Assert.Equal(count * period, pcm.Length);
+
+        for (int i = 0; i < count; i++)
+        {
+            var burst = pcm.AsSpan(i * period, onLen);
+            var gap = pcm.AsSpan(i * period + onLen, period - onLen);
+            int loudest = 0;
+            foreach (var v in burst) loudest = Math.Max(loudest, Math.Abs((int)v));
+            Assert.True(loudest > short.MaxValue / 8, $"beep {i} is too quiet to hear ({loudest})");
+            foreach (var v in gap) Assert.Equal(0, v);     // the gaps are true silence
+        }
+    }
+
+    [Fact]
+    public void SweepRisesInPitchWithoutDiscontinuity()
+    {
+        var pcm = CozmoAudio.Sweep(220, 880, TimeSpan.FromSeconds(1));
+        Assert.Equal(CozmoAudio.SampleRate, pcm.Length);
+
+        int Crossings(int from, int to)
+        {
+            int n = 0;
+            for (int i = from + 1; i < to; i++) if ((pcm[i - 1] < 0) != (pcm[i] < 0)) n++;
+            return n;
+        }
+        // the second half must contain markedly more cycles than the first
+        int early = Crossings(0, pcm.Length / 4), late = Crossings(pcm.Length * 3 / 4, pcm.Length);
+        Assert.True(late > early * 2, $"the sweep barely moved: {early} crossings early, {late} late");
+
+        // phase is continuous, so no sample-to-sample jump anywhere near full scale
+        int biggest = 0;
+        for (int i = 1; i < pcm.Length; i++) biggest = Math.Max(biggest, Math.Abs(pcm[i] - pcm[i - 1]));
+        Assert.True(biggest < short.MaxValue / 2, $"the sweep jumps by {biggest} between samples");
     }
 
     [Fact]

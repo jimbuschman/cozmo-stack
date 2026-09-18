@@ -202,14 +202,50 @@ public static class Devices
         int prime = -1;
         for (int i = 2; i < a.Length - 1; i++) if (a[i] == "--prime") prime = int.Parse(a[i + 1]);
 
-        var pcm = CozmoAudio.Tone(hz, TimeSpan.FromSeconds(seconds), amplitude);
-        var frames = CozmoAudio.ToFrames(pcm);
-        Console.WriteLine($"tone {hz:F1} Hz for {seconds:F1}s: {pcm.Length} samples at {CozmoAudio.SampleRate} Hz " +
-                          $"= {frames.Count} frames of {CozmoAudio.SamplesPerFrame} mu-law samples");
+        string sound = "steady", codecName = "anki";
+        for (int i = 2; i < a.Length - 1; i++)
+        {
+            if (a[i] == "--sound") sound = a[i + 1];
+            else if (a[i] == "--codec") codecName = a[i + 1];
+        }
+        var codec = codecName switch
+        {
+            "anki" => AudioCodec.AnkiMuLaw,
+            "mulaw" => AudioCodec.StandardMuLaw,
+            "pcm8u" => AudioCodec.UnsignedPcm8,
+            "pcm8s" => AudioCodec.SignedPcm8,
+            _ => throw new ArgumentException($"unknown codec '{codecName}'; use anki, mulaw, pcm8u or pcm8s"),
+        };
+        int beeps = Math.Max(1, (int)Math.Round(seconds / 0.5));
+
+        var pcm = sound switch
+        {
+            "beeps" => CozmoAudio.Beeps(beeps, hz, amplitude: amplitude),
+            "sweep" => CozmoAudio.Sweep(220, 880, TimeSpan.FromSeconds(seconds), amplitude),
+            _ => CozmoAudio.Tone(hz, TimeSpan.FromSeconds(seconds), amplitude),
+        };
+        var frames = CozmoAudio.ToFrames(pcm, codec);
+        Console.WriteLine($"sound '{sound}' for {seconds:F1}s as {codecName}: {pcm.Length} samples at " +
+                          $"{CozmoAudio.SampleRate} Hz = {frames.Count} frames of {CozmoAudio.SamplesPerFrame} bytes");
+        Console.WriteLine(sound switch
+        {
+            "beeps" => $"WHAT TO LISTEN FOR: exactly {beeps} separate beeps, evenly spaced, each about a quarter " +
+                       "second long. More than that, or uneven spacing, means the stream is breaking up.",
+            "sweep" => "WHAT TO LISTEN FOR: one smooth rise in pitch, low to high. Steps or stalls mean the " +
+                       "stream is breaking up.",
+            _ => $"WHAT TO LISTEN FOR: one unbroken {hz:F0} Hz note for {seconds:F1}s. It will sound buzzy, " +
+                 "because the robot's speaker is small and the audio is 8-bit companded; that is normal. " +
+                 "What matters is that it does not cut in and out.",
+        });
+        Console.WriteLine("Compare with the file from --save, played on this machine: that is exactly what the " +
+                          "robot is being sent, so it is the reference for how it should sound.");
+        if (codec != AudioCodec.AnkiMuLaw)
+            Console.WriteLine("NOTE: --codec anki is the format the engine itself uses; the others are for comparison.");
         if (wav is not null)
         {
             // Write what the robot will actually hear, so it can be listened to on the machine first.
-            WriteWav(Path.GetFullPath(wav), MuLaw.Decode(frames.SelectMany(f => f).ToArray()));
+            WriteWav(Path.GetFullPath(wav),
+                     frames.SelectMany(f => f).Select(b => CozmoAudio.Unpack(b, codec)).ToArray());
             Console.WriteLine($"companded tone written to {Path.GetFullPath(wav)}");
         }
 
@@ -217,6 +253,7 @@ public static class Devices
         Console.WriteLine($"frame log: {logPath}");
         using var robot = await ConnectAsync(c.Value.ip, c.Value.port, log);
         if (volume is { } v) { Console.WriteLine($"SetAudioVolume {v}"); robot.Audio.SetVolume((ushort)v); }
+        robot.Audio.Codec = codec;
         if (unreliable) { robot.AudioReliable = false; Console.WriteLine("sending audio frames unreliably"); }
         if (prime >= 0) { robot.Audio.PrimeFrames = prime; Console.WriteLine($"priming {prime} frames"); }
 
@@ -270,7 +307,8 @@ public static class Devices
         Console.WriteLine($"robot reports {played} audio frames played, drop count {robot.State.Animation?.ClientDropCount ?? 0}");
         bool ok = robot.Audio.FramesSent == frames.Count + 1 && played > frames.Count / 2;
         Console.WriteLine(ok
-            ? $"PASS audio: you should have heard a steady {hz:F0} Hz tone with no clicks."
+            ? "PASS audio: every frame was sent and the robot reports playing them. Judge the sound against " +
+              "the guidance above."
             : played <= 0
                 ? "FAIL audio: the robot played none of the frames we sent."
                 : "FAIL audio: not every frame was sent or played.");

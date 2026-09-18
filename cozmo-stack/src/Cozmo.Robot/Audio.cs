@@ -4,7 +4,7 @@ using Cozmo.Protocol;
 namespace Cozmo.Robot;
 
 /// <summary>
-/// G.711 mu-law companding, the format the robot's speaker expects.
+/// Standard G.711 mu-law. The robot does <b>not</b> use this: see <see cref="AnkiMuLaw"/>.
 ///
 /// The engine streams one <see cref="AudioSample"/> message per animation frame carrying exactly 744
 /// 8-bit mu-law samples; at the animation rate of about 30 frames per second that is roughly 22 kHz,
@@ -52,6 +52,80 @@ public static class MuLaw
         var o = new short[mulaw.Length];
         for (int i = 0; i < mulaw.Length; i++) o[i] = Decode(mulaw[i]);
         return o;
+    }
+}
+
+/// <summary>How 16-bit samples are packed into the robot's 8-bit audio frames.</summary>
+public enum AudioCodec
+{
+    /// <summary>What the robot actually uses. See <see cref="AnkiMuLaw"/>.</summary>
+    AnkiMuLaw,
+    /// <summary>Standard G.711 mu-law. Cozmo does <b>not</b> use this; kept for comparison.</summary>
+    StandardMuLaw,
+    /// <summary>Plain 8-bit unsigned PCM, silence at 0x80.</summary>
+    UnsignedPcm8,
+    /// <summary>Plain 8-bit signed PCM, silence at 0x00.</summary>
+    SignedPcm8,
+}
+
+/// <summary>
+/// The companding the robot's speaker actually expects, taken from the engine rather than assumed.
+///
+/// Transcribed from <c>Anki::Cozmo::Audio::encodeMuLaw(float)</c> at 0x00597AD8 in libcozmoEngine.so. It is
+/// mu-law in shape but differs from G.711 in two ways that matter:
+///
+/// <list type="bullet">
+/// <item>no 132 bias is added to the magnitude before the segment is chosen;</item>
+/// <item><b>the result is not complemented.</b> Silence encodes to 0x00, not 0xFF, and every code is the
+/// bitwise inverse of what a standard encoder produces.</item>
+/// </list>
+///
+/// Sending standard G.711 instead is heard as a loud buzz at roughly the right pitch, which is exactly what
+/// the first hardware runs produced. PyCozmo also omits the complement, so it is closer to this than to
+/// G.711, though it still adds the bias.
+///
+/// The segment table below is copied byte for byte from the engine's .rodata at 0xC5C3F0.
+/// </summary>
+public static class AnkiMuLaw
+{
+    /// <summary>Segment exponent indexed by the top 7 bits of the magnitude (engine .rodata 0xC5C3F0).</summary>
+    private static readonly byte[] Segment =
+    {
+        0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+        7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+        7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+        7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+        7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    };
+
+    public static byte Encode(short sample)
+    {
+        int s = sample < -32767 ? -32767 : sample;      // the engine clamps at -32767, not -32768
+        int mag = s ^ (s >> 15);                        // s for positive, ~s for negative
+        int hi = mag >> 8;
+        int exp = Segment[hi];
+        int mantissa = hi == 0 ? mag >> 4 : (mag >> (exp + 3)) & 0x0F;
+        return (byte)((s < 0 ? 0x80 : 0) | (exp << 4) | mantissa);
+    }
+
+    /// <summary>The engine's own entry point takes a float in -1..1; this matches it exactly.</summary>
+    public static byte Encode(float sample)
+    {
+        if (float.IsNaN(sample)) return 0;
+        if (sample <= -1f) return Encode((short)-32767);
+        return Encode((short)(int)((sample >= 1f ? 1f : sample) * 32767f));
+    }
+
+    /// <summary>Approximate inverse, for writing a stream out to listen to it locally.</summary>
+    public static short Decode(byte value)
+    {
+        int exp = (value >> 4) & 0x07, mantissa = value & 0x0F;
+        int mag = exp == 0 ? (mantissa << 4) | 0x08
+                           : (1 << (exp + 7)) | (mantissa << (exp + 3)) | (1 << (exp + 2));
+        return (short)((value & 0x80) != 0 ? -mag : mag);
     }
 }
 
@@ -104,6 +178,8 @@ public sealed class CozmoAudio
     public Func<int>? PlayedFrames { get; set; }
 
     private readonly Action<RobotMessage> _send;
+    /// <summary>How samples are packed into a frame. See <see cref="AudioCodec"/>: this is not settled.</summary>
+    public AudioCodec Codec { get; set; } = AudioCodec.AnkiMuLaw;
     public int FramesSent { get; private set; }
     /// <summary>When the last frame went out, so a caller can tell whether audio is currently streaming.</summary>
     public DateTime LastSentUtc { get; private set; } = DateTime.MinValue;
@@ -133,16 +209,34 @@ public sealed class CozmoAudio
 
     public void SendSilence() { _send(new AudioSilence()); FramesSent++; LastSentUtc = DateTime.UtcNow; }
 
-    /// <summary>Splits 16-bit PCM at <see cref="SampleRate"/> into mu-law frames, padding the last one with silence.</summary>
-    public static List<byte[]> ToFrames(ReadOnlySpan<short> pcm)
+    /// <summary>Packs one sample with the chosen law.</summary>
+    public static byte Pack(short sample, AudioCodec codec) => codec switch
+    {
+        AudioCodec.StandardMuLaw => MuLaw.Encode(sample),
+        AudioCodec.UnsignedPcm8 => (byte)((sample >> 8) + 128),
+        AudioCodec.SignedPcm8 => (byte)(sample >> 8),
+        _ => AnkiMuLaw.Encode(sample),
+    };
+
+    /// <summary>Unpacks one sample, so a stream can be written out and listened to locally.</summary>
+    public static short Unpack(byte value, AudioCodec codec) => codec switch
+    {
+        AudioCodec.StandardMuLaw => MuLaw.Decode(value),
+        AudioCodec.UnsignedPcm8 => (short)((value - 128) << 8),
+        AudioCodec.SignedPcm8 => (short)((sbyte)value << 8),
+        _ => AnkiMuLaw.Decode(value),
+    };
+
+    /// <summary>Splits 16-bit PCM at <see cref="SampleRate"/> into frames, padding the last one with silence.</summary>
+    public static List<byte[]> ToFrames(ReadOnlySpan<short> pcm, AudioCodec codec = AudioCodec.AnkiMuLaw)
     {
         var frames = new List<byte[]>();
         for (int off = 0; off < pcm.Length; off += SamplesPerFrame)
         {
             var frame = new byte[SamplesPerFrame];
             int n = Math.Min(SamplesPerFrame, pcm.Length - off);
-            for (int i = 0; i < n; i++) frame[i] = MuLaw.Encode(pcm[off + i]);
-            for (int i = n; i < SamplesPerFrame; i++) frame[i] = MuLaw.Encode(0);
+            for (int i = 0; i < n; i++) frame[i] = Pack(pcm[off + i], codec);
+            for (int i = n; i < SamplesPerFrame; i++) frame[i] = Pack(0, codec);
             frames.Add(frame);
         }
         return frames;
@@ -164,10 +258,45 @@ public sealed class CozmoAudio
         return pcm;
     }
 
+    /// <summary>
+    /// A run of separated beeps. Counting them is an objective test of whether playback is continuous: the
+    /// listener does not have to judge tone quality, only whether the number of beeps is right. Breaks in
+    /// the stream show up as extra beeps or as beeps that arrive at the wrong time.
+    /// </summary>
+    public static short[] Beeps(int count, double frequencyHz = 880, double onSeconds = 0.25,
+                               double offSeconds = 0.25, double amplitude = 0.5)
+    {
+        var on = Tone(frequencyHz, TimeSpan.FromSeconds(onSeconds), amplitude);
+        int off = (int)(offSeconds * SampleRate);
+        var pcm = new short[count * (on.Length + off)];
+        for (int i = 0; i < count; i++) on.CopyTo(pcm, i * (on.Length + off));
+        return pcm;
+    }
+
+    /// <summary>
+    /// A glide from one pitch to another. A continuous stream is heard as one smooth rise; a stream that
+    /// breaks up is heard as steps, which is easier to notice than roughness in a steady tone.
+    /// </summary>
+    public static short[] Sweep(double fromHz, double toHz, TimeSpan duration, double amplitude = 0.5)
+    {
+        int n = (int)(duration.TotalSeconds * SampleRate);
+        var pcm = new short[n];
+        int fade = Math.Min(SampleRate / 100, n / 2);
+        double phase = 0;
+        for (int i = 0; i < n; i++)
+        {
+            double f = fromHz + (toHz - fromHz) * i / n;
+            phase += 2 * Math.PI * f / SampleRate;
+            double env = i < fade ? i / (double)fade : i >= n - fade ? (n - 1 - i) / (double)fade : 1.0;
+            pcm[i] = (short)(Math.Sin(phase) * amplitude * env * short.MaxValue);
+        }
+        return pcm;
+    }
+
     /// <summary>Streams PCM to the speaker in real time, pacing frames at the animation rate.</summary>
     public void Play(ReadOnlySpan<short> pcm)
     {
-        var frames = ToFrames(pcm);
+        var frames = ToFrames(pcm, Codec);
         using var _ = new HighResolutionTimer();
         _clock.Restart();
         _scheduled = 0;

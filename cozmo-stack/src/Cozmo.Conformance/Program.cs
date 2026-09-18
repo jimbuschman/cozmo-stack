@@ -126,12 +126,17 @@ static int Usage()
                                              hardware acceptance for the camera: stream frames and save them as JPEG files
           face <robot-ip> [--pattern test|eyes|full|blank] [--file <ascii-art>] [--seconds 5] [--log <file>]
                                              hardware acceptance for the OLED: draw a known image and hold it
-          tone <robot-ip> [--hz 440] [--seconds 2] [--amplitude 0.5] [--volume <n>] [--save <file.wav>]
-                          [--unreliable] [--prime <n>] [--log <file>]
+          tone <robot-ip> [--sound steady|beeps|sweep] [--codec anki|mulaw|pcm8u|pcm8s] [--hz 440]
+                          [--seconds 2] [--amplitude 0.5]
+                          [--volume <n>] [--save <file.wav>] [--unreliable] [--prime <n>] [--log <file>]
                                              hardware acceptance for the speaker: play a generated sine tone
                                              --save writes exactly what is sent as a .wav, to check the
                                              encoding locally; --unreliable and --prime vary how it is
-                                             delivered, to separate encoding faults from delivery faults
+                                             delivered, to separate encoding faults from delivery faults;
+                                             --sound beeps plays a countable number of separate beeps, which
+                                             tests continuity without having to judge tone quality;
+                                             --codec anki (the default) is the companding transcribed from
+                                             the engine itself; the others are for comparison only
         """);
     return 1;
 }
