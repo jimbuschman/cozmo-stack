@@ -1,0 +1,237 @@
+using System.Globalization;
+using System.Net;
+using System.Text;
+using Cozmo.Protocol;
+using Cozmo.Robot;
+using Cozmo.Transport;
+
+namespace Cozmo.Conformance;
+
+/// <summary>
+/// Hardware acceptance runs for the M3 device layer: one command per stateful pipeline.
+///
+/// Each one connects to a real robot with nothing from the Android app or libcozmoEngine in the path,
+/// exercises a single device, and prints a PASS or FAIL line plus the evidence a person can check by
+/// looking at the robot or the saved files.
+/// </summary>
+public static class Devices
+{
+    private static (string log, StreamWriter writer) OpenLog(string? path, string prefix)
+    {
+        path = Path.GetFullPath(path ?? $"cozmo-{prefix}-{DateTime.Now:yyyyMMdd-HHmmss}.log");
+        return (path, new StreamWriter(path, false, Encoding.UTF8));
+    }
+
+    private static async Task<CozmoRobot> ConnectAsync(IPAddress ip, int port, StreamWriter log)
+    {
+        var robot = await CozmoRobot.ConnectAsync(ip, port);
+        robot.Transport.FrameTrace += e =>
+        {
+            lock (log) log.WriteLine($"{e.Utc:O} {(e.Outbound ? "TX" : "RX")} {Hex.Dump(e.Raw)}{(e.Error is null ? "" : "  !! " + e.Error)}");
+        };
+        robot.Transport.Warning += w => Console.WriteLine("  warn: " + w);
+        robot.Transport.Disconnected += r => Console.WriteLine($"  disconnected: {r}");
+        Console.WriteLine($"connected: firmware v{robot.State.FirmwareVersionNumber?.ToString() ?? "?"} " +
+                          $"serial 0x{robot.State.SerialNumber:x8} states={robot.State.StateCount}");
+        return robot;
+    }
+
+    private static (IPAddress ip, int port, string? log)? Common(string[] a, out string[] rest)
+    {
+        rest = a;
+        if (a.Length < 2 || !IPAddress.TryParse(a[1], out var ip)) return null;
+        int port = 5551; string? log = null;
+        for (int i = 2; i < a.Length - 1; i++)
+        {
+            if (a[i] == "--port") port = int.Parse(a[i + 1]);
+            else if (a[i] == "--log") log = a[i + 1];
+        }
+        return (ip, port, log);
+    }
+
+    /// <summary>
+    /// Camera acceptance: stream frames from the real camera and save them as JPEG files.
+    /// Success means the files open in any image viewer and show the room.
+    /// </summary>
+    public static async Task<int> Camera(string[] a)
+    {
+        var c = Common(a, out _);
+        if (c is null) return 1;
+        int count = 10;
+        string outDir = ".";
+        bool color = a.Contains("--color");
+        for (int i = 2; i < a.Length - 1; i++)
+        {
+            if (a[i] == "--count") count = int.Parse(a[i + 1]);
+            else if (a[i] == "--out") outDir = a[i + 1];
+        }
+        outDir = Path.GetFullPath(outDir);
+        Directory.CreateDirectory(outDir);
+
+        var (logPath, log) = OpenLog(c.Value.log, "camera");
+        Console.WriteLine($"frame log: {logPath}");
+        Console.WriteLine($"images to: {outDir}");
+        using var robot = await ConnectAsync(c.Value.ip, c.Value.port, log);
+
+        var saved = new List<string>();
+        robot.Camera.FrameDropped += (id, why) => Console.WriteLine($"  dropped image {id}: {why}");
+        robot.Camera.FrameReceived += f =>
+        {
+            if (saved.Count >= count) return;
+            var path = Path.Combine(outDir, $"cozmo-{f.ImageId:D5}.jpg");
+            f.Save(path);
+            saved.Add(path);
+            Console.WriteLine($"  {f}  -> {Path.GetFileName(path)}");
+        };
+
+        Console.WriteLine($"starting camera ({(color ? "colour" : "grayscale")} stream) ...");
+        robot.StartCamera(color);
+        var end = DateTime.UtcNow.AddSeconds(20);
+        while (saved.Count < count && DateTime.UtcNow < end) await Task.Delay(50);
+        robot.StopCamera();
+        await Task.Delay(200);
+        robot.Disconnect();
+        log.Dispose();
+
+        Console.WriteLine();
+        Console.WriteLine($"chunks={robot.Camera.ChunksReceived} complete={robot.Camera.FramesCompleted} dropped={robot.Camera.FramesDropped} saved={saved.Count}");
+        bool ok = saved.Count >= Math.Min(count, 1) && robot.Camera.FramesCompleted > 0;
+        foreach (var p in saved.Take(3)) Console.WriteLine($"  {p}");
+        Console.WriteLine(ok
+            ? "PASS camera: open the saved files; each should be a photograph from Cozmo's point of view."
+            : "FAIL camera: no complete frame arrived.");
+        return ok ? 0 : 20;
+    }
+
+    /// <summary>
+    /// Display acceptance: draw a known image on the OLED and hold it long enough to photograph.
+    /// Success means the pattern on the robot's face matches the one printed on the console.
+    /// </summary>
+    public static async Task<int> Face(string[] a)
+    {
+        var c = Common(a, out _);
+        if (c is null) return 1;
+        double seconds = 5;
+        string pattern = "test";
+        string? artFile = null;
+        for (int i = 2; i < a.Length - 1; i++)
+        {
+            if (a[i] == "--seconds") seconds = double.Parse(a[i + 1], CultureInfo.InvariantCulture);
+            else if (a[i] == "--pattern") pattern = a[i + 1];
+            else if (a[i] == "--file") artFile = a[i + 1];
+        }
+
+        var image = artFile is not null
+            ? FaceBitmap.FromText(File.ReadAllText(artFile))
+            : pattern switch
+            {
+                "blank" => new FaceBitmap(),
+                "full" => Filled(),
+                "eyes" => Eyes(),
+                _ => FaceBitmap.TestPattern(),
+            };
+        var payload = FaceBitmapCodec.Encode(image);
+        Console.WriteLine($"face image '{artFile ?? pattern}' encodes to {payload.Length} bytes; it should look like:");
+        Console.WriteLine(image.ToText());
+        Console.WriteLine("decoded back from the payload (must be identical):");
+        Console.WriteLine(FaceBitmapCodec.Decode(payload).ToText());
+        if (image.ToText() != FaceBitmapCodec.Decode(payload).ToText())
+        {
+            Console.WriteLine("FAIL display: the payload does not round-trip; refusing to send.");
+            return 21;
+        }
+
+        var (logPath, log) = OpenLog(c.Value.log, "face");
+        Console.WriteLine($"frame log: {logPath}");
+        using var robot = await ConnectAsync(c.Value.ip, c.Value.port, log);
+
+        Console.WriteLine($"holding the image on the face for {seconds:F1}s ...");
+        robot.Display.Hold(image, TimeSpan.FromSeconds(seconds));
+        Console.WriteLine($"sent {robot.Display.FramesSent} face frames");
+        robot.Display.Clear();
+        await Task.Delay(200);
+        robot.Disconnect();
+        log.Dispose();
+
+        bool ok = robot.Display.FramesSent > 10;
+        Console.WriteLine(ok
+            ? "PASS display: compare the robot's face with the pattern printed above."
+            : "FAIL display: too few frames went out.");
+        return ok ? 0 : 21;
+
+        static FaceBitmap Filled() { var f = new FaceBitmap(); f.Fill(); return f; }
+        static FaceBitmap Eyes()
+        {
+            var f = new FaceBitmap();
+            f.DrawRect(24, 6, 48, 25, filled: true);
+            f.DrawRect(80, 6, 104, 25, filled: true);
+            return f;
+        }
+    }
+
+    /// <summary>
+    /// Audio acceptance: play a generated sine tone through the speaker.
+    /// Success means a clean, steady note with no clicks or stutter.
+    /// </summary>
+    public static async Task<int> Tone(string[] a)
+    {
+        var c = Common(a, out _);
+        if (c is null) return 1;
+        double hz = 440, seconds = 2, amplitude = 0.5;
+        int? volume = null;
+        string? wav = null;
+        for (int i = 2; i < a.Length - 1; i++)
+        {
+            if (a[i] == "--hz") hz = double.Parse(a[i + 1], CultureInfo.InvariantCulture);
+            else if (a[i] == "--seconds") seconds = double.Parse(a[i + 1], CultureInfo.InvariantCulture);
+            else if (a[i] == "--amplitude") amplitude = double.Parse(a[i + 1], CultureInfo.InvariantCulture);
+            else if (a[i] == "--volume") volume = int.Parse(a[i + 1]);
+            else if (a[i] == "--save") wav = a[i + 1];
+        }
+
+        var pcm = CozmoAudio.Tone(hz, TimeSpan.FromSeconds(seconds), amplitude);
+        var frames = CozmoAudio.ToFrames(pcm);
+        Console.WriteLine($"tone {hz:F1} Hz for {seconds:F1}s: {pcm.Length} samples at {CozmoAudio.SampleRate} Hz " +
+                          $"= {frames.Count} frames of {CozmoAudio.SamplesPerFrame} mu-law samples");
+        if (wav is not null)
+        {
+            // Write what the robot will actually hear, so it can be listened to on the machine first.
+            WriteWav(Path.GetFullPath(wav), MuLaw.Decode(frames.SelectMany(f => f).ToArray()));
+            Console.WriteLine($"companded tone written to {Path.GetFullPath(wav)}");
+        }
+
+        var (logPath, log) = OpenLog(c.Value.log, "tone");
+        Console.WriteLine($"frame log: {logPath}");
+        using var robot = await ConnectAsync(c.Value.ip, c.Value.port, log);
+        if (volume is { } v) { Console.WriteLine($"SetAudioVolume {v}"); robot.Audio.SetVolume((ushort)v); }
+
+        Console.WriteLine("playing ...");
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        foreach (var f in frames) robot.Audio.SendFrame(f);
+        robot.Audio.SendSilence();
+        sw.Stop();
+        await Task.Delay(300);
+        robot.Disconnect();
+        log.Dispose();
+
+        double expected = seconds * 1000;
+        Console.WriteLine($"sent {robot.Audio.FramesSent} frames in {sw.ElapsedMilliseconds} ms (the audio itself is {expected:F0} ms)");
+        bool ok = robot.Audio.FramesSent == frames.Count + 1;
+        Console.WriteLine(ok
+            ? $"PASS audio: you should have heard a steady {hz:F0} Hz tone with no clicks."
+            : "FAIL audio: not every frame was sent.");
+        return ok ? 0 : 22;
+    }
+
+    /// <summary>Writes 16-bit mono PCM as a WAV file, for checking the tone on the machine.</summary>
+    private static void WriteWav(string path, short[] pcm)
+    {
+        using var w = new BinaryWriter(File.Create(path));
+        int dataBytes = pcm.Length * 2;
+        w.Write(Encoding.ASCII.GetBytes("RIFF")); w.Write(36 + dataBytes);
+        w.Write(Encoding.ASCII.GetBytes("WAVEfmt ")); w.Write(16); w.Write((short)1); w.Write((short)1);
+        w.Write(CozmoAudio.SampleRate); w.Write(CozmoAudio.SampleRate * 2); w.Write((short)2); w.Write((short)16);
+        w.Write(Encoding.ASCII.GetBytes("data")); w.Write(dataBytes);
+        foreach (var s in pcm) w.Write(s);
+    }
+}

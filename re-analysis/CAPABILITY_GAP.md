@@ -139,13 +139,13 @@ Legend for the "PyCozmo" column uses §0 letters. "Rebuild" = must exist in our 
 
 ### 3.5 OLED display / procedural face
 * **Official**: robot accepts `animFaceImage`(0x97, RLE-compressed 128×32 interlaced frames). Engine `ProceduralFace` (19 params per eye: EyeCenterX/Y, EyeScaleX/Y, EyeAngle, Lower/Upper Inner/Outer RadiusX/Y, Upper/LowerLidY/Angle/Bend; plus face position/scale/angle and a "scanline distorter"), `ProceduralFaceDrawer`, `FaceAnimationManager` (sprite face animations from `assets/faceAnimations`), `FaceLayerManager`, keyframe interpolation (`ProceduralFace::Interpolate`), blink/look-at (`LookAt`), `oledDisplayNumber`(0xa3, service display). C#: `DisplayFaceImage`, `DisplayProceduralFace`.
-* **PyCozmo**: RLE encoder **V-ish** (unit-tested against captured frames, not against the engine's encoder), procedural face renderer **S/D** with matching parameter set (**V** for parameter names), but rendering fidelity, scanline effect and interpolation vs engine unverified; face-animation sprites **✗**.
+* **PyCozmo**: RLE encoder **V-ish** (unit-tested against captured frames, not against the engine's encoder). *Our M3 decoder is verified against all 28 of those Cozmo-produced sequences; our encoder uses only the two run commands so it is exact by construction — see `DEVICE_LAYER.md`.*, procedural face renderer **S/D** with matching parameter set (**V** for parameter names), but rendering fidelity, scanline effect and interpolation vs engine unverified; face-animation sprites **✗**.
 * **OBB**: `assets/faceAnimations` for sprite faces.
 
 ### 3.6 Camera / image streaming
 * **Official**: `imageRequest`(0x4c, `ImageSendMode` Off/Stream/SingleShot), `setCameraParams`(0x57), `enableColorImages`(0x66), `defaultCameraParams`(0xc8), `cameraFOVInfo`(0x5a), `ImageChunk`(0xf2) + `ImageImuData`(0xf4); engine `EncodedImage::AddChunk` handles out-of-order/incomplete/timestamp checks and 5 encodings: JPEGGray, JPEGColor, JPEGColorHalfWidth, JPEGMinimizedGray, JPEGMinimizedColor (`MiniGrayToJpeg`, `MiniColorToJpeg` rebuild the stripped JPEG header). Camera calibration persisted in NV (`NVEntry_CameraCalib`, `CalibImage1-6`), `ComputeCameraCalibration` messages, `Vision::CameraCalibration`.
 * **PyCozmo**: streaming **H**, mini-gray/mini-color header reconstruction **V** (same algorithm names exist in the engine; unit-tested), plain JPEG modes and half-width **✗**, 0xc8/0x5a **✗**, calibration **✗**.
-* **Rebuild**: full chunk reassembly state machine, calibration read from NV, exposure control loop.
+* **Rebuild**: ~~full chunk reassembly state machine~~ *(done in M3: reassembly, minimized-gray/colour reconstruction, colour flag, gyro pairing — verified by Huffman-decoding every captured frame)*; calibration read from NV, exposure control loop, plain and half-width JPEG modes still to do.
 
 ### 3.7 Vision pipeline (engine-only)
 * **Official**: `VisionSystem`/`VisionComponent` with `VisionMode` schedule {DetectingMarkers, DetectingFaces, DetectingMotion, DetectingOverheadEdges, ReadingToolCode, ComputingCalibration, CheckingQuality, ComputingStatistics, DetectingPets, EstimatingFacialExpression, DetectingSmileAmount, DetectingGaze, DetectingBlinkAmount, LimitedExposure, DetectingLaserPoints}; `VisionPoseData` ties images to `RobotStateHistory`; `config/engine/vision_config.json`. Marker detection is Anki's own fixed-point library (`Anki::Embedded::*`, 437 exports, `MarkerDetector`, 40 marker types incl. 3 cubes × 6 faces, charger, custom SDK markers). Ground-plane ROI, overhead edge (drivable area) detection, `ImageQuality`/auto-exposure metering.
@@ -180,7 +180,7 @@ Legend for the "PyCozmo" column uses §0 letters. "Rebuild" = must exist in our 
 
 ### 3.13 Audio playback
 * **Official**: robot receives `animAudioSample`(0x8e, 744 samples/frame ≈ 22.05 kHz at 30 fps) and `animAudioSilence`(0x8f), `setAudioVolume`(0x64). Engine runs **Audiokinetic Wwise** (banks `Init.bnk`, `Cozmo.bnk`, `SFX.bnk`, `Music.bnk`, `UI.bnk`, `Dev_Debug.bnk` in `sound/`) and a "HijackAudioPlugin" that captures the Wwise robot bus into `RobotAudioBuffer` → `RobotAudioFrameStream` → audio keyframes (`RobotAudioClient`, `RobotAudioAnimation`, on-device vs on-robot output `RobotAudioOutputSource`). Audio events are posted by animations (`AnimEvent`) and game code (`PostAudioEvent`, 1,000+ event names).
-* **PyCozmo**: raw sample streaming **H**, `audiokinetic` .bnk/.wem parsing **S**; no mixer/event model; codec claimed µ-law 8-bit (**H**, not **V**).
+* **PyCozmo**: raw sample streaming **H**, `audiokinetic` .bnk/.wem parsing **S**; no mixer/event model; codec claimed µ-law 8-bit (**H**, not **V**). *M3 implements the streaming side (mu-law, 744-sample frames, paced); the codec stays **H** until the hardware tone test confirms it.*
 * **OBB**: yes (all sound).
 * **Rebuild**: an event→sound mapping and mixer replacing Wwise (bank format parsing partially exists in PyCozmo; WEM → PCM decoding needs a Vorbis/ww2ogg path); confirm codec by disassembling `RobotAudioBuffer`/`AudioSample` producers.
 * **OBB update**: `sound/AudioAssets.zip` holds the six banks named by the engine plus 2,214 `.wem` (1,987 Wwise Vorbis, 227 ADPCM; mostly 48 kHz mono), `SoundbanksInfo.xml` (835 events) and `PluginInfo.xml`. The plugin list settles the voice chain: **Anki Hijack** (robot-bus capture), **Anki Wave Portal** (TTS PCM input), Wwise **Harmonizer** (the Cozmo pitch effect), Parametric EQ, Compressor, Expander, Peak Limiter. Bank `.txt` dumps give human-readable event/switch/RTPC tables, so the event→source mapping can be built from data rather than RE.
@@ -404,6 +404,15 @@ verified, 75 layout-known/semantics-uncertain, 2 unresolved, **0 conflicts**. Id
 IMU, camera, animation, cubes and head motion are all confirmed on the real firmware-2457 robot.
 Tests assert every fixed message serialises to the engine's own `Size()`, every message round-trips, and every CLAD
 payload in the 20 s hardware capture decodes and re-encodes byte-identically. Full detail: `PROTOCOL_STATUS.md`.
+
+**M3 status (2026-09-18): first device layer built on the frozen baseline.** `cozmo-stack/src/Cozmo.Robot`
+turns the verified protocol into three stateful pipelines plus a live robot-state view: `CozmoCamera`
+(chunk reassembly and minimized-JPEG reconstruction, including the colour flag in payload byte 0),
+`CozmoDisplay` (128x32 face bitmap, exact run-length codec) and `CozmoAudio` (mu-law, 744-sample frames,
+paced at the animation tick). 119 tests pass, including the 28 image/byte-sequence pairs captured from
+Cozmo's own face encoder and a full Huffman decode of every camera frame in the hardware capture. Hardware
+acceptance commands `camera`, `face` and `tone` are in the conformance CLI and not yet run. Detail and the
+open gaps: `DEVICE_LAYER.md`.
 
 **M1 hardware smoke test: PASSED (2026-09-18)** on a hardware-1.5 Cozmo running firmware **2457** (a 2025 Digital
 Dream Labs build, newer than the 2381 shipped in this APK): direct connection from our code, stable handshake, 722

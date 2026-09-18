@@ -1,12 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>Cozmo.Conformance</RootNamespace>
-    <AssemblyName>cozmo-conformance</AssemblyName>
+    <RootNamespace>Cozmo.Robot</RootNamespace>
+    <Description>Cozmo device layer: camera frames, face display, audio and robot state on top of the verified protocol.</Description>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Cozmo.Protocol\Cozmo.Protocol.csproj" />
     <ProjectReference Include="..\Cozmo.Transport\Cozmo.Transport.csproj" />
-    <ProjectReference Include="..\Cozmo.Robot\Cozmo.Robot.csproj" />
   </ItemGroup>
 </Project>

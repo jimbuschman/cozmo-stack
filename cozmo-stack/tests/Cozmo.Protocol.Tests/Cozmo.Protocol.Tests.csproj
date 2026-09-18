@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Cozmo.Protocol\Cozmo.Protocol.csproj" />
     <ProjectReference Include="..\..\src\Cozmo.Transport\Cozmo.Transport.csproj" />
+    <ProjectReference Include="..\..\src\Cozmo.Robot\Cozmo.Robot.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Fixtures\**" CopyToOutputDirectory="PreserveNewest" />

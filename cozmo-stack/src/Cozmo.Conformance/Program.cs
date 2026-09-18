@@ -19,6 +19,9 @@ return args.Length == 0 ? Usage() : args[0] switch
     "connect" => Connect(args).GetAwaiter().GetResult(),
     "fakerobot" => FakeRobot(args),
     "probe" => Probe.Run(args).GetAwaiter().GetResult(),
+    "camera" => Devices.Camera(args).GetAwaiter().GetResult(),
+    "face" => Devices.Face(args).GetAwaiter().GetResult(),
+    "tone" => Devices.Tone(args).GetAwaiter().GetResult(),
     _ => Usage(),
 };
 
@@ -118,6 +121,13 @@ static int Usage()
                                              subsystem-by-subsystem protocol verification on a real robot: sends only
                                              read-only/safe-visible messages by default, decodes and re-encodes every
                                              reply, and writes a per-message hardware-verification report
+
+          camera <robot-ip> [--count 10] [--out <dir>] [--color] [--log <file>]
+                                             hardware acceptance for the camera: stream frames and save them as JPEG files
+          face <robot-ip> [--pattern test|eyes|full|blank] [--file <ascii-art>] [--seconds 5] [--log <file>]
+                                             hardware acceptance for the OLED: draw a known image and hold it
+          tone <robot-ip> [--hz 440] [--seconds 2] [--amplitude 0.5] [--volume <n>] [--save <file.wav>] [--log <file>]
+                                             hardware acceptance for the speaker: play a generated sine tone
         """);
     return 1;
 }
