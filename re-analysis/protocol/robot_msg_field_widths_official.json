@@ -1,0 +1,721 @@
+{
+ "RobotState": {
+  "sym": "Anki::Cozmo::RobotState::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7d6e24",
+  "reads": [
+   4,
+   4,
+   4,
+   "RobotPose",
+   4,
+   4,
+   4,
+   4,
+   "AccelData",
+   "GyroData",
+   4,
+   4,
+   2,
+   2,
+   1
+  ],
+  "has_branches": true
+ },
+ "RobotPose": {
+  "sym": "Anki::Cozmo::RobotPose::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7d6a9c",
+  "reads": [
+   4,
+   4,
+   4,
+   4,
+   4
+  ],
+  "has_branches": false
+ },
+ "AccelData": {
+  "sym": "Anki::Cozmo::AccelData::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7c82dc",
+  "reads": [
+   4,
+   4,
+   4
+  ],
+  "has_branches": false
+ },
+ "GyroData": {
+  "sym": "Anki::Cozmo::GyroData::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7c8590",
+  "reads": [
+   4,
+   4,
+   4
+  ],
+  "has_branches": false
+ },
+ "RobotAvailable": {
+  "sym": "Anki::Cozmo::RobotInterface::RobotAvailable::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b8f26",
+  "reads": [
+   4,
+   2
+  ],
+  "has_branches": false
+ },
+ "FirmwareVersion": {
+  "sym": "Anki::Cozmo::RobotInterface::FirmwareVersion::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b907e",
+  "reads": [
+   2,
+   "call:"
+  ],
+  "has_branches": false
+ },
+ "ManufacturingID": {
+  "sym": "Anki::Cozmo::RobotInterface::ManufacturingID::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b1750",
+  "reads": [
+   4,
+   4,
+   4
+  ],
+  "has_branches": false
+ },
+ "SyncTime": {
+  "sym": "Anki::Cozmo::RobotInterface::SyncTime::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a3a0a",
+  "reads": [
+   4,
+   4
+  ],
+  "has_branches": false
+ },
+ "SyncTimeAck": {
+  "sym": "Anki::Cozmo::RobotInterface::SyncTimeAck::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b0b46",
+  "reads": [],
+  "has_branches": false
+ },
+ "InitController": {
+  "sym": "Anki::Cozmo::AnimKeyFrame::InitController::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7bdd44",
+  "reads": [],
+  "has_branches": false
+ },
+ "SetHeadAngle": {
+  "sym": "Anki::Cozmo::RobotInterface::SetHeadAngle::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a25c2",
+  "reads": [
+   4,
+   4,
+   4,
+   4,
+   1
+  ],
+  "has_branches": false
+ },
+ "MotorActionAck": {
+  "sym": "Anki::Cozmo::RobotInterface::MotorActionAck::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b1292",
+  "reads": [
+   1
+  ],
+  "has_branches": false
+ },
+ "BackpackLightsMiddle": {
+  "sym": "Anki::Cozmo::RobotInterface::BackpackLightsMiddle::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a4232",
+  "reads": [
+   "LightState",
+   "call:__aeabi_memcpy",
+   1
+  ],
+  "has_branches": true
+ },
+ "LightState": {
+  "sym": "Anki::Cozmo::LightState::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7cb24c",
+  "reads": [
+   2,
+   2,
+   1,
+   1,
+   1,
+   1,
+   2
+  ],
+  "has_branches": false
+ },
+ "SetHeadlight": {
+  "sym": "Anki::Cozmo::RobotInterface::SetHeadlight::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a1c28",
+  "reads": [
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const"
+  ],
+  "has_branches": false
+ },
+ "GetManufacturingInfo": {
+  "sym": "Anki::Cozmo::RobotInterface::GetManufacturingInfo::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a46a2",
+  "reads": [],
+  "has_branches": false
+ },
+ "EnableStopOnCliff": {
+  "sym": "Anki::Cozmo::RobotInterface::EnableStopOnCliff::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a520c",
+  "reads": [
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const"
+  ],
+  "has_branches": false
+ },
+ "DriveWheels": {
+  "sym": "Anki::Cozmo::RobotInterface::DriveWheels::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a1e48",
+  "reads": [
+   4,
+   4,
+   4,
+   4
+  ],
+  "has_branches": false
+ },
+ "ObjectAvailable": {
+  "sym": "Anki::Cozmo::ObjectAvailable::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7afcbc",
+  "reads": [
+   4,
+   4,
+   1
+  ],
+  "has_branches": false
+ },
+ "MotorCalibration": {
+  "sym": "Anki::Cozmo::MotorCalibration::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7cdf2e",
+  "reads": [
+   1,
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const",
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const"
+  ],
+  "has_branches": false
+ },
+ "BackpackButton": {
+  "sym": "Anki::Cozmo::RobotInterface::BackpackButton::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b0bfa",
+  "reads": [
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const"
+  ],
+  "has_branches": false
+ },
+ "AnimationState": {
+  "sym": "Anki::Cozmo::RobotInterface::AnimationState::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7d87b6",
+  "reads": [
+   4,
+   4,
+   4,
+   1,
+   1,
+   1
+  ],
+  "has_branches": false
+ },
+ "FallingStarted": {
+  "sym": "Anki::Cozmo::RobotInterface::FallingStarted::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b0daa",
+  "reads": [
+   4
+  ],
+  "has_branches": false
+ },
+ "FallingStopped": {
+  "sym": "Anki::Cozmo::RobotInterface::FallingStopped::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b0eb6",
+  "reads": [
+   4,
+   4,
+   4
+  ],
+  "has_branches": false
+ },
+ "ImageChunk": {
+  "sym": "Anki::Cozmo::ImageChunk::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7c60b4",
+  "reads": [
+   4,
+   4,
+   4,
+   1,
+   1,
+   1,
+   1,
+   2,
+   "call:"
+  ],
+  "has_branches": false
+ },
+ "AudioSample": {
+  "sym": "Anki::Cozmo::AnimKeyFrame::AudioSample::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7bcca2",
+  "reads": [
+   1
+  ],
+  "has_branches": true
+ },
+ "HeadAngle": {
+  "sym": "Anki::Cozmo::AnimKeyFrame::HeadAngle::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7bcea2",
+  "reads": [
+   2,
+   1
+  ],
+  "has_branches": false
+ },
+ "LiftHeight": {
+  "sym": "Anki::Cozmo::AnimKeyFrame::LiftHeight::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7bcfda",
+  "reads": [
+   2,
+   1
+  ],
+  "has_branches": false
+ },
+ "BodyMotion": {
+  "sym": "Anki::Cozmo::AnimKeyFrame::BodyMotion::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7bd624",
+  "reads": [
+   2,
+   2
+  ],
+  "has_branches": false
+ },
+ "ObjectConnectionState": {
+  "sym": "Anki::Cozmo::ObjectConnectionState::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7afe20",
+  "reads": [
+   4,
+   4,
+   4,
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const"
+  ],
+  "has_branches": false
+ },
+ "ObjectPowerLevel": {
+  "sym": "Anki::Cozmo::ObjectPowerLevel::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b0888",
+  "reads": [
+   4,
+   4,
+   1
+  ],
+  "has_branches": false
+ },
+ "EnableColorImages": {
+  "sym": "Anki::Cozmo::RobotInterface::EnableColorImages::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a3c96",
+  "reads": [
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const"
+  ],
+  "has_branches": false
+ },
+ "ImageRequest": {
+  "sym": "Anki::Cozmo::RobotInterface::ImageRequest::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a3b50",
+  "reads": [
+   1,
+   1
+  ],
+  "has_branches": false
+ },
+ "SetCameraParams": {
+  "sym": "Anki::Cozmo::SetCameraParams::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7bf3b8",
+  "reads": [
+   4,
+   2,
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const"
+  ],
+  "has_branches": false
+ },
+ "ImageImuData": {
+  "sym": "Anki::Cozmo::ImageImuData::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7c62f6",
+  "reads": [
+   4,
+   4,
+   4,
+   4,
+   1
+  ],
+  "has_branches": false
+ },
+ "SetBodyAngle": {
+  "sym": "Anki::Cozmo::RobotInterface::SetBodyAngle::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a28a6",
+  "reads": [
+   4,
+   4,
+   4,
+   4,
+   2,
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const",
+   1
+  ],
+  "has_branches": false
+ },
+ "TurnInPlaceAtSpeed": {
+  "sym": "Anki::Cozmo::RobotInterface::TurnInPlaceAtSpeed::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a2a9a",
+  "reads": [
+   4,
+   4
+  ],
+  "has_branches": false
+ },
+ "StopAllMotors": {
+  "sym": "Anki::Cozmo::RobotInterface::StopAllMotors::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a2bf4",
+  "reads": [],
+  "has_branches": false
+ },
+ "AbsoluteLocalizationUpdate": {
+  "sym": "Anki::Cozmo::RobotInterface::AbsoluteLocalizationUpdate::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a3794",
+  "reads": [
+   4,
+   4,
+   4,
+   4,
+   4,
+   4
+  ],
+  "has_branches": false
+ },
+ "SetAudioVolume": {
+  "sym": "Anki::Cozmo::SetAudioVolume::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a132a",
+  "reads": [
+   2
+  ],
+  "has_branches": false
+ },
+ "StartMotorCalibration": {
+  "sym": "Anki::Cozmo::RobotInterface::StartMotorCalibration::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a1d20",
+  "reads": [
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const",
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const"
+  ],
+  "has_branches": false
+ },
+ "EnableAnimTracks": {
+  "sym": "Anki::Cozmo::AnimKeyFrame::EnableAnimTracks::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7bdb0c",
+  "reads": [
+   1
+  ],
+  "has_branches": false
+ },
+ "DisableAnimTracks": {
+  "sym": "Anki::Cozmo::AnimKeyFrame::DisableAnimTracks::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7bdc2e",
+  "reads": [
+   1
+  ],
+  "has_branches": false
+ },
+ "StartOfAnimation": {
+  "sym": "Anki::Cozmo::AnimKeyFrame::StartOfAnimation::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7bddfa",
+  "reads": [
+   1
+  ],
+  "has_branches": false
+ },
+ "EndOfAnimation": {
+  "sym": "Anki::Cozmo::AnimKeyFrame::EndOfAnimation::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7bdf10",
+  "reads": [],
+  "has_branches": false
+ },
+ "BackpackLights": {
+  "sym": "Anki::Cozmo::AnimKeyFrame::BackpackLights::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7bd4dc",
+  "reads": [
+   2
+  ],
+  "has_branches": true
+ },
+ "RecordHeading": {
+  "sym": "Anki::Cozmo::AnimKeyFrame::RecordHeading::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7bd75e",
+  "reads": [],
+  "has_branches": false
+ },
+ "TurnToRecordedHeading": {
+  "sym": "Anki::Cozmo::AnimKeyFrame::TurnToRecordedHeading::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7bd806",
+  "reads": [
+   2,
+   2,
+   2,
+   2,
+   2,
+   2,
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const"
+  ],
+  "has_branches": false
+ },
+ "AnimationStarted": {
+  "sym": "Anki::Cozmo::RobotInterface::AnimationStarted::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b13b4",
+  "reads": [
+   1
+  ],
+  "has_branches": false
+ },
+ "AnimationEnded": {
+  "sym": "Anki::Cozmo::RobotInterface::AnimationEnded::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b14d6",
+  "reads": [
+   1
+  ],
+  "has_branches": false
+ },
+ "RobotPoked": {
+  "sym": "Anki::Cozmo::RobotInterface::RobotPoked::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b0cf4",
+  "reads": [],
+  "has_branches": false
+ },
+ "PathFollowingEvent": {
+  "sym": "Anki::Cozmo::RobotInterface::PathFollowingEvent::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b114c",
+  "reads": [
+   2,
+   1
+  ],
+  "has_branches": false
+ },
+ "ShutdownRobot": {
+  "sym": "Anki::Cozmo::RobotInterface::ShutdownRobot::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a5644",
+  "reads": [
+   4
+  ],
+  "has_branches": true
+ },
+ "WiFiOff": {
+  "sym": "Anki::Cozmo::RobotInterface::WiFiOff::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x79d8b6",
+  "reads": [
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const"
+  ],
+  "has_branches": false
+ },
+ "ObjectMoved": {
+  "sym": "Anki::Cozmo::ObjectMoved::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b0124",
+  "reads": [
+   4,
+   4,
+   "ActiveAccel",
+   1
+  ],
+  "has_branches": false
+ },
+ "ObjectStoppedMoving": {
+  "sym": "Anki::Cozmo::ObjectStoppedMoving::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b02a2",
+  "reads": [
+   4,
+   4
+  ],
+  "has_branches": false
+ },
+ "ObjectTapped": {
+  "sym": "Anki::Cozmo::ObjectTapped::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b06ca",
+  "reads": [
+   4,
+   4,
+   1,
+   1,
+   1,
+   1
+  ],
+  "has_branches": false
+ },
+ "ObjectTappedFiltered": {
+  "sym": "Anki::Cozmo::ObjectTappedFiltered::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b0538",
+  "reads": [
+   4,
+   4,
+   1,
+   1
+  ],
+  "has_branches": false
+ },
+ "ObjectUpAxisChanged": {
+  "sym": "Anki::Cozmo::ObjectUpAxisChanged::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b03d4",
+  "reads": [
+   4,
+   4,
+   1
+  ],
+  "has_branches": false
+ },
+ "ObjectAccel": {
+  "sym": "Anki::Cozmo::ObjectAccel::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b09ec",
+  "reads": [
+   4,
+   4,
+   "ActiveAccel"
+  ],
+  "has_branches": false
+ },
+ "StreamObjectAccel": {
+  "sym": "Anki::Cozmo::StreamObjectAccel::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b7abc",
+  "reads": [
+   4,
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const"
+  ],
+  "has_branches": false
+ },
+ "CubeID": {
+  "sym": "Anki::Cozmo::CubeID::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b75c0",
+  "reads": [
+   4,
+   1
+  ],
+  "has_branches": false
+ },
+ "SetPropSlot": {
+  "sym": "Anki::Cozmo::SetPropSlot::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7a111a",
+  "reads": [
+   4,
+   1
+  ],
+  "has_branches": false
+ },
+ "SetAccessoryDiscovery": {
+  "sym": "Anki::Cozmo::SetAccessoryDiscovery::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b74c8",
+  "reads": [
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const"
+  ],
+  "has_branches": false
+ },
+ "CubeLights": {
+  "sym": "Anki::Cozmo::CubeLights::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b7702",
+  "reads": [
+   "LightState",
+   "call:__aeabi_memcpy"
+  ],
+  "has_branches": true
+ },
+ "NVCommand": {
+  "sym": "Anki::Cozmo::NVStorage::NVCommand::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7ce590",
+  "reads": [
+   4,
+   4,
+   1,
+   1,
+   "call:"
+  ],
+  "has_branches": false
+ },
+ "NVOpResult": {
+  "sym": "Anki::Cozmo::NVStorage::NVOpResult::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7ce76a",
+  "reads": [
+   4,
+   4,
+   1,
+   1,
+   "call:"
+  ],
+  "has_branches": false
+ },
+ "Write": {
+  "sym": "Anki::Cozmo::RobotInterface::OTA::Write::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b7f12",
+  "reads": [
+   2,
+   1
+  ],
+  "has_branches": true
+ },
+ "Ack": {
+  "sym": "Anki::Cozmo::RobotInterface::OTA::Ack::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b87a2",
+  "reads": [
+   4,
+   2,
+   1
+  ],
+  "has_branches": false
+ },
+ "CliffEvent": {
+  "sym": "Anki::Cozmo::CliffEvent::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7d2dba",
+  "reads": [
+   4,
+   1,
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const"
+  ],
+  "has_branches": false
+ },
+ "PotentialCliff": {
+  "sym": "Anki::Cozmo::PotentialCliff::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7d2f16",
+  "reads": [],
+  "has_branches": false
+ },
+ "RobotStopped": {
+  "sym": "Anki::Cozmo::RobotInterface::RobotStopped::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7b1038",
+  "reads": [
+   1
+  ],
+  "has_branches": false
+ },
+ "DockingErrorSignal": {
+  "sym": "Anki::Cozmo::DockingErrorSignal::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7c0a64",
+  "reads": [
+   4,
+   4,
+   4,
+   4,
+   4,
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const",
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const"
+  ],
+  "has_branches": false
+ },
+ "DockWithObject": {
+  "sym": "Anki::Cozmo::DockWithObject::Unpack(CLAD::SafeMessageBuffer const&)",
+  "addr": "0x7c0586",
+  "reads": [
+   4,
+   4,
+   4,
+   4,
+   1,
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const",
+   1,
+   1,
+   "call:bool CLAD::SafeMessageBuffer::Read<bool>(bool&) const"
+  ],
+  "has_branches": false
+ }
+}

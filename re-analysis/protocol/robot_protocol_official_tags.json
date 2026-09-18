@@ -1,0 +1,650 @@
+{
+ "EngineToRobot": {
+  "1": [
+   "adjustTimestamp",
+   "AdjustTimestamp&&"
+  ],
+  "2": [
+   "setBackpackLayer",
+   "BackpackSetLayer&&"
+  ],
+  "3": [
+   "setBackpackLightsMiddle",
+   "BackpackLightsMiddle&&"
+  ],
+  "4": [
+   "setCubeLights",
+   "CubeLights&&"
+  ],
+  "5": [
+   "setPropSlot",
+   "SetPropSlot&&"
+  ],
+  "6": [
+   "killBodyCode",
+   "KillBodyCode&&"
+  ],
+  "7": [
+   "setBodyRadioMode",
+   "SetBodyRadioMode&&"
+  ],
+  "8": [
+   "streamObjectAccel",
+   "StreamObjectAccel&&"
+  ],
+  "10": [
+   "setAccessoryDiscovery",
+   "SetAccessoryDiscovery&&"
+  ],
+  "11": [
+   "setHeadlight",
+   "SetHeadlight&&"
+  ],
+  "12": [
+   "setCubeGamma",
+   "SetCubeGamma&&"
+  ],
+  "13": [
+   "bodyEnterOTA",
+   "BodyEnterOTA&&"
+  ],
+  "14": [
+   "readBodyStorage",
+   "ReadBodyStorage&&"
+  ],
+  "15": [
+   "writeBodyStorage",
+   "WriteBodyStorage&&"
+  ],
+  "16": [
+   "setCubeID",
+   "CubeID&&"
+  ],
+  "17": [
+   "setBackpackLightsTurnSignals",
+   "BackpackLightsTurnSignals&&"
+  ],
+  "18": [
+   "sendDTMCommand",
+   "SendDTMCommand&&"
+  ],
+  "36": [
+   "getBodySerialNumber",
+   "GetBodySerialNumber&&"
+  ],
+  "37": [
+   "getMfgInfo",
+   "GetManufacturingInfo&&"
+  ],
+  "38": [
+   "bleSendData",
+   "SendData&&"
+  ],
+  "39": [
+   "bleDisconnect",
+   "Disconnect&&"
+  ],
+  "48": [
+   "enterRecoveryMode",
+   "EnterRecoveryMode&&"
+  ],
+  "50": [
+   "drive",
+   "DriveWheels&&"
+  ],
+  "51": [
+   "driveCurvature",
+   "DriveWheelsCurvature&&"
+  ],
+  "52": [
+   "moveLift",
+   "MoveLift&&"
+  ],
+  "53": [
+   "moveHead",
+   "MoveHead&&"
+  ],
+  "54": [
+   "liftHeight",
+   "SetLiftHeight&&"
+  ],
+  "55": [
+   "headAngle",
+   "SetHeadAngle&&"
+  ],
+  "56": [
+   "headAngleUpdate",
+   "HeadAngleUpdate&&"
+  ],
+  "57": [
+   "setBodyAngle",
+   "SetBodyAngle&&"
+  ],
+  "58": [
+   "turnInPlaceAtSpeed",
+   "TurnInPlaceAtSpeed&&"
+  ],
+  "59": [
+   "stop",
+   "StopAllMotors&&"
+  ],
+  "60": [
+   "clearPath",
+   "ClearPath&&"
+  ],
+  "61": [
+   "appendPathSegLine",
+   "AppendPathSegmentLine&&"
+  ],
+  "62": [
+   "appendPathSegArc",
+   "AppendPathSegmentArc&&"
+  ],
+  "63": [
+   "appendPathSegPointTurn",
+   "AppendPathSegmentPointTurn&&"
+  ],
+  "64": [
+   "trimPath",
+   "TrimPath&&"
+  ],
+  "65": [
+   "executePath",
+   "ExecutePath&&"
+  ],
+  "66": [
+   "dockWithObject",
+   "DockWithObject&&"
+  ],
+  "67": [
+   "abortDocking",
+   "AbortDocking&&"
+  ],
+  "68": [
+   "placeObjectOnGround",
+   "PlaceObjectOnGround&&"
+  ],
+  "69": [
+   "absLocalizationUpdate",
+   "AbsoluteLocalizationUpdate&&"
+  ],
+  "70": [
+   "startControllerTestMode",
+   "StartControllerTestMode&&"
+  ],
+  "71": [
+   "setControllerGains",
+   "ControllerGains&&"
+  ],
+  "72": [
+   "dockingErrorSignal",
+   "DockingErrorSignal&&"
+  ],
+  "73": [
+   "setCarryState",
+   "CarryStateUpdate&&"
+  ],
+  "74": [
+   "imuRequest",
+   "IMURequest&&"
+  ],
+  "75": [
+   "syncTime",
+   "SyncTime&&"
+  ],
+  "76": [
+   "imageRequest",
+   "ImageRequest&&"
+  ],
+  "77": [
+   "flashObjectIDs",
+   "FlashObjectIDs&&"
+  ],
+  "78": [
+   "setObjectBeingCarried",
+   "ObjectBeingCarried&&"
+  ],
+  "79": [
+   "checkLiftLoad",
+   "CheckLiftLoad&&"
+  ],
+  "80": [
+   "enableMotorPower",
+   "EnableMotorPower&&"
+  ],
+  "81": [
+   "setMotionModelParams",
+   "SetMotionModelParams&&"
+  ],
+  "82": [
+   "enterSleepMode",
+   "EnterSleepMode&&"
+  ],
+  "83": [
+   "powerState",
+   "PowerState&&"
+  ],
+  "84": [
+   "setCliffDetectThreshold",
+   "SetCliffDetectThreshold&&"
+  ],
+  "85": [
+   "enableReadToolCodeMode",
+   "EnableReadToolCodeMode&&"
+  ],
+  "87": [
+   "setCameraParams",
+   "SetCameraParams&&"
+  ],
+  "88": [
+   "startMotorCalibration",
+   "StartMotorCalibration&&"
+  ],
+  "89": [
+   "rollActionParams",
+   "RollActionParams&&"
+  ],
+  "90": [
+   "cameraFOVInfo",
+   "CameraFOVInfo&&"
+  ],
+  "96": [
+   "enableStopOnCliff",
+   "EnableStopOnCliff&&"
+  ],
+  "97": [
+   "forceDelocalizeSimulatedRobot",
+   "ForceDelocalizeSimulatedRobot&&"
+  ],
+  "98": [
+   "objectConnectionStateToRobot",
+   "ObjectConnectionStateToRobot&&"
+  ],
+  "99": [
+   "enableBraceWhenFalling",
+   "EnableBraceWhenFalling&&"
+  ],
+  "100": [
+   "setAudioVolume",
+   "SetAudioVolume&&"
+  ],
+  "101": [
+   "generateTestTone",
+   "GenerateTestTone&&"
+  ],
+  "102": [
+   "enableColorImages",
+   "EnableColorImages&&"
+  ],
+  "128": [
+   "requestCrashReports",
+   "RequestCrashReports&&"
+  ],
+  "129": [
+   "commandNV",
+   "NVCommand&&"
+  ],
+  "130": [
+   "enableWiFiTelemetry",
+   "EnableWiFiTelemetry&&"
+  ],
+  "134": [
+   "bleConnectionState",
+   "ConnectionState&&"
+  ],
+  "135": [
+   "bleDataReceived",
+   "DataReceived&&"
+  ],
+  "137": [
+   "setRTTO",
+   "DebugSetRTTO&&"
+  ],
+  "141": [
+   "abortAnimation",
+   "AbortAnimation&&"
+  ],
+  "142": [
+   "animAudioSample",
+   "AudioSample&&"
+  ],
+  "143": [
+   "animAudioSilence",
+   "AudioSilence&&"
+  ],
+  "145": [
+   "animRecordHeading",
+   "RecordHeading&&"
+  ],
+  "146": [
+   "animTurnToRecordedHeading",
+   "TurnToRecordedHeading&&"
+  ],
+  "147": [
+   "animHeadAngle",
+   "HeadAngle&&"
+  ],
+  "148": [
+   "animLiftHeight",
+   "LiftHeight&&"
+  ],
+  "149": [
+   "animEvent",
+   "Event&&"
+  ],
+  "150": [
+   "animEventToRTIP",
+   "AnimEventToRTIP&&"
+  ],
+  "151": [
+   "animFaceImage",
+   "FaceImage&&"
+  ],
+  "152": [
+   "animBackpackLights",
+   "BackpackLights&&"
+  ],
+  "153": [
+   "animBodyMotion",
+   "BodyMotion&&"
+  ],
+  "154": [
+   "animEndOfAnimation",
+   "EndOfAnimation&&"
+  ],
+  "155": [
+   "animStartOfAnimation",
+   "StartOfAnimation&&"
+  ],
+  "157": [
+   "disableAnimTracks",
+   "DisableAnimTracks&&"
+  ],
+  "158": [
+   "enableAnimTracks",
+   "EnableAnimTracks&&"
+  ],
+  "159": [
+   "initAnimController",
+   "InitController&&"
+  ],
+  "160": [
+   "appRunID",
+   "SetAppRunID&&"
+  ],
+  "161": [
+   "testState",
+   "TestState&&"
+  ],
+  "162": [
+   "enterTestMode",
+   "EnterFactoryTestMode&&"
+  ],
+  "163": [
+   "oledDisplayNumber",
+   "DisplayNumber&&"
+  ],
+  "164": [
+   "bodyStorageContents",
+   "BodyStorageContents&&"
+  ],
+  "165": [
+   "bodySerialNum",
+   "BodySerialNumber&&"
+  ],
+  "169": [
+   "shutdownRobot",
+   "ShutdownRobot&&"
+  ],
+  "170": [
+   "appConCfgString",
+   "AppConnectConfigString&&"
+  ],
+  "171": [
+   "appConCfgFlags",
+   "AppConnectConfigFlags&&"
+  ],
+  "172": [
+   "appConCfgIPInfo",
+   "AppConnectConfigIPInfo&&"
+  ],
+  "173": [
+   "appConGetRobotIP",
+   "AppConnectGetRobotIP&&"
+  ],
+  "174": [
+   "wifiOff",
+   "WiFiOff&&"
+  ],
+  "175": [
+   "otaWrite",
+   "Write&&"
+  ]
+ },
+ "RobotToEngine": {
+  "176": [
+   "trace",
+   "PrintTrace&&"
+  ],
+  "177": [
+   "printText",
+   "PrintText&&"
+  ],
+  "178": [
+   "mainCycleTimeError",
+   "MainCycleTimeError&&"
+  ],
+  "179": [
+   "goalPose",
+   "GoalPose&&"
+  ],
+  "180": [
+   "activeObjectMoved",
+   "ObjectMoved&&"
+  ],
+  "181": [
+   "activeObjectStopped",
+   "ObjectStoppedMoving&&"
+  ],
+  "182": [
+   "activeObjectTapped",
+   "ObjectTapped&&"
+  ],
+  "183": [
+   "dataDump",
+   "DataDump&&"
+  ],
+  "184": [
+   "pickAndPlaceResult",
+   "PickAndPlaceResult&&"
+  ],
+  "185": [
+   "objectTappedFiltered",
+   "ObjectTappedFiltered&&"
+  ],
+  "186": [
+   "rampTraverseStarted",
+   "RampTraverseStart&&"
+  ],
+  "187": [
+   "rampTraverseCompleted",
+   "RampTraverseComplete&&"
+  ],
+  "188": [
+   "bridgeTraverseStarted",
+   "BridgeTraverseStart&&"
+  ],
+  "189": [
+   "bridgeTraverseCompleted",
+   "BridgeTraverseComplete&&"
+  ],
+  "190": [
+   "timeProfStat",
+   "TimeProfileStat&&"
+  ],
+  "191": [
+   "imuDataChunk",
+   "IMUDataChunk&&"
+  ],
+  "192": [
+   "cliffEvent",
+   "CliffEvent&&"
+  ],
+  "193": [
+   "potentialCliff",
+   "PotentialCliff&&"
+  ],
+  "194": [
+   "syncTimeAck",
+   "SyncTimeAck&&"
+  ],
+  "195": [
+   "robotPoked",
+   "RobotPoked&&"
+  ],
+  "196": [
+   "motorActionAck",
+   "MotorActionAck&&"
+  ],
+  "197": [
+   "movingLiftPostDock",
+   "MovingLiftPostDock&&"
+  ],
+  "198": [
+   "pathFollowingEvent",
+   "PathFollowingEvent&&"
+  ],
+  "199": [
+   "imuRawDataChunk",
+   "IMURawDataChunk&&"
+  ],
+  "200": [
+   "defaultCameraParams",
+   "DefaultCameraParams&&"
+  ],
+  "201": [
+   "robotAvailable",
+   "RobotAvailable&&"
+  ],
+  "202": [
+   "animStarted",
+   "AnimationStarted&&"
+  ],
+  "203": [
+   "animEnded",
+   "AnimationEnded&&"
+  ],
+  "205": [
+   "nvOpResult",
+   "NVOpResult&&"
+  ],
+  "206": [
+   "objectPowerLevel",
+   "ObjectPowerLevel&&"
+  ],
+  "207": [
+   "crashReport",
+   "CrashReport&&"
+  ],
+  "208": [
+   "activeObjectConnectionState",
+   "ObjectConnectionState&&"
+  ],
+  "209": [
+   "motorCalibration",
+   "MotorCalibration&&"
+  ],
+  "210": [
+   "factoryFirmwareVersion",
+   "FWVersionInfo&&"
+  ],
+  "211": [
+   "dockingStatus",
+   "DockingStatus&&"
+  ],
+  "212": [
+   "robotStopped",
+   "RobotStopped&&"
+  ],
+  "213": [
+   "animEvent",
+   "AnimationEvent&&"
+  ],
+  "214": [
+   "factoryTestParam",
+   "FactoryTestParameter&&"
+  ],
+  "215": [
+   "activeObjectUpAxisChanged",
+   "ObjectUpAxisChanged&&"
+  ],
+  "216": [
+   "motorAutoEnabled",
+   "MotorAutoEnabled&&"
+  ],
+  "217": [
+   "robotError",
+   "RobotErrorReport&&"
+  ],
+  "218": [
+   "liftLoad",
+   "LiftLoad&&"
+  ],
+  "219": [
+   "backpackButton",
+   "BackpackButton&&"
+  ],
+  "220": [
+   "imuTemperature",
+   "IMUTemperature&&"
+  ],
+  "221": [
+   "fallingStarted",
+   "FallingStarted&&"
+  ],
+  "222": [
+   "fallingStopped",
+   "FallingStopped&&"
+  ],
+  "236": [
+   "wifiFlashID",
+   "WiFiFlashID&&"
+  ],
+  "237": [
+   "mfgId",
+   "ManufacturingID&&"
+  ],
+  "238": [
+   "firmwareVersion",
+   "FirmwareVersion&&"
+  ],
+  "239": [
+   "otaAck",
+   "Ack&&"
+  ],
+  "240": [
+   "state",
+   "RobotState&&"
+  ],
+  "241": [
+   "animState",
+   "AnimationState&&"
+  ],
+  "242": [
+   "image",
+   "ImageChunk&&"
+  ],
+  "243": [
+   "activeObjectAvailable",
+   "ObjectAvailable&&"
+  ],
+  "244": [
+   "imageGyro",
+   "ImageImuData&&"
+  ],
+  "245": [
+   "objectAccel",
+   "ObjectAccel&&"
+  ]
+ }
+}

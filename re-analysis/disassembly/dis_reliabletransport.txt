@@ -1,0 +1,1228 @@
+
+===== Anki::Util::ReliableTransport::ChangeSyncMode(bool) @ 0x00836850 =====
+0x00836850  push     {r4, r5, r6, r7, lr}
+0x00836852  sub      sp, #0x2c
+0x00836854  mov      r5, r0
+0x00836856  ldr      r0, [pc, #0xbc]  ; =0x807fee
+0x00836858  mov      r4, r1
+0x0083685a  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x0083685c  ldr      r0, [r0]  ; r0=&__stack_chk_guard
+0x0083685e  ldr      r0, [r0]
+0x00836860  str      r0, [sp, #0x28]
+0x00836862  ldrb.w   r0, [r5, #0xa0]
+0x00836866  cbnz     r0, #0x83687e
+0x00836868  cmp      r4, #1
+0x0083686a  bne      #0x83687e
+0x0083686c  ldr      r0, [r5, #0x20]
+0x0083686e  movs     r1, #0
+0x00836870  str      r1, [r5, #0x20]
+0x00836872  cbz      r0, #0x8368de
+0x00836874  bl       #0x83836e
+0x00836878  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x0083687c  b        #0x8368de
+0x0083687e  cbz      r0, #0x8368de
+0x00836880  cbnz     r4, #0x8368de
+0x00836882  ldr      r0, [pc, #0x94]  ; =0x800f94
+0x00836884  add      r6, sp, #0x10
+0x00836886  ldr      r1, [r5, #0x1c]
+0x00836888  add      r0, pc  ; r0=0x1037820 
+0x0083688a  str      r5, [sp, #0x14]
+0x0083688c  adds     r0, #8
+0x0083688e  str      r0, [sp, #0x10]
+0x00836890  str      r6, [sp, #0x20]
+0x00836892  add      r0, sp, #0xc
+0x00836894  movs     r7, #0
+0x00836896  movs     r2, #2
+0x00836898  movs     r3, #0
+0x0083689a  strd     r6, r7, [sp]
+0x0083689e  blx      #0x4cd5a4  ; PLT Anki::Util::Dispatch::ScheduleCallback(Anki::Util::Dispatch::Queue*, std::__ndk1::chrono::duration<long long, std::__ndk1::ratio<(long long)1, (long long)1000> >, std::__ndk1::function<void ()> const&, char const*)
+0x008368a2  ldr      r1, [sp, #0xc]
+0x008368a4  str      r7, [sp, #0xc]
+0x008368a6  ldr      r0, [r5, #0x20]
+0x008368a8  str      r1, [r5, #0x20]
+0x008368aa  cbz      r0, #0x8368c6
+0x008368ac  bl       #0x83836e
+0x008368b0  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x008368b4  ldr      r0, [sp, #0xc]
+0x008368b6  movs     r1, #0
+0x008368b8  str      r1, [sp, #0xc]
+0x008368ba  cbz      r0, #0x8368ca
+0x008368bc  bl       #0x83836e
+0x008368c0  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x008368c4  b        #0x8368ca
+0x008368c6  movs     r0, #0
+0x008368c8  str      r0, [sp, #0xc]
+0x008368ca  ldr      r0, [sp, #0x20]
+0x008368cc  cmp      r6, r0
+0x008368ce  beq      #0x8368d8
+0x008368d0  cbz      r0, #0x8368de
+0x008368d2  ldr      r1, [r0]
+0x008368d4  ldr      r1, [r1, #0x14]
+0x008368d6  b        #0x8368dc
+0x008368d8  ldr      r1, [r0]
+0x008368da  ldr      r1, [r1, #0x10]
+0x008368dc  blx      r1
+0x008368de  ldr      r0, [pc, #0x3c]  ; =0x807f64
+0x008368e0  strb.w   r4, [r5, #0xa0]
+0x008368e4  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x008368e6  ldr      r1, [sp, #0x28]
+0x008368e8  ldr      r0, [r0]  ; r0=&__stack_chk_guard
+0x008368ea  ldr      r0, [r0]
+0x008368ec  subs     r0, r0, r1
+0x008368ee  itt      eq
+0x008368f0  addeq    sp, #0x2c
+0x008368f2  popeq    {r4, r5, r6, r7, pc}
+0x008368f4  blx      #0x4a4fe4  ; PLT __stack_chk_fail
+0x008368f8  mov      r4, r0
+0x008368fa  ldr      r0, [sp, #0x20]
+0x008368fc  cmp      r6, r0
+0x008368fe  bne      #0x836906
+0x00836900  ldr      r1, [r0]
+0x00836902  ldr      r1, [r1, #0x10]
+0x00836904  b        #0x83690c
+0x00836906  cbz      r0, #0x83690e
+0x00836908  ldr      r1, [r0]
+0x0083690a  ldr      r1, [r1, #0x14]
+0x0083690c  blx      r1
+0x0083690e  mov      r0, r4
+0x00836910  blx      #0x4a40a8  ; PLT _Unwind_Resume
+0x00836914  ldrb     r6, [r5, #0x1f]
+0x00836916  lsls     r0, r0, #2
+0x00836918  lsrs     r4, r2, #0x1e
+0x0083691a  lsls     r0, r0, #2
+0x0083691c  ldrb     r4, [r4, #0x1d]
+0x0083691e  lsls     r0, r0, #2
+0x00836920  push     {r4, lr}
+0x00836922  mov      r4, r0
+0x00836924  ldr      r1, [r4, #4]
+0x00836926  blx      #0x4cd598  ; PLT std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, std::__ndk1::__map_value_compare<Anki::Util::TransportAddress, std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, std::__ndk1::less<Anki::Util::TransportAddress>, true>, std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*> > >::destroy(std::__ndk1::__tree_node<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, void*>*)
+0x0083692a  mov      r0, r4
+0x0083692c  pop      {r4, pc}
+
+===== Anki::Util::ReliableTransport::BuildHeader(unsigned char*, unsigned int, unsigned char, unsigned short, unsigned short, unsigned short) @ 0x00836af8 =====
+0x00836af8  cmp      r2, #0xa
+0x00836afa  itt      lo
+0x00836afc  movlo    r0, #0
+0x00836afe  bxlo     lr
+0x00836b00  push     {r7, lr}
+0x00836b02  movs     r2, #1
+0x00836b04  ldrd     r0, lr, [sp, #8]
+0x00836b08  strb     r2, [r1, #2]
+0x00836b0a  movw     r2, #0x4552
+0x00836b0e  strh     r2, [r1]
+0x00836b10  strb     r3, [r1, #3]
+0x00836b12  strh     r0, [r1, #4]
+0x00836b14  movs     r0, #0xa
+0x00836b16  ldr.w    ip, [sp, #0x10]
+0x00836b1a  strh.w   lr, [r1, #6]
+0x00836b1e  strh.w   ip, [r1, #8]
+0x00836b22  pop      {r7, pc}
+
+===== Anki::Util::ReliableTransport::QueueMessage(bool, Anki::Util::TransportAddress const&, unsigned char const*, unsigned int, Anki::Util::EReliableMessageType, bool) @ 0x00836b24 =====
+0x00836b24  push.w   {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0x00836b28  sub      sp, #0x4c
+0x00836b2a  mov      r4, r0
+0x00836b2c  ldr      r0, [pc, #0x100]  ; =0x807d16
+0x00836b2e  mov      r5, r3
+0x00836b30  mov      r7, r2
+0x00836b32  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x00836b34  ldrd     r8, r2, [sp, #0x70]
+0x00836b38  mov      r6, r1
+0x00836b3a  ldr      r1, [sp, #0x78]
+0x00836b3c  ldr      r3, [r0]  ; r3=&__stack_chk_guard
+0x00836b3e  ldr      r3, [r3]
+0x00836b40  str      r3, [sp, #0x48]
+0x00836b42  ldrb.w   r3, [r4, #0xa0]
+0x00836b46  cbz      r3, #0x836b66
+0x00836b48  movs     r3, #0
+0x00836b4a  mov      r0, r4
+0x00836b4c  strd     r3, r3, [sp, #0x10]
+0x00836b50  mov      r3, r5
+0x00836b52  strd     r8, r2, [sp]
+0x00836b56  mov      r2, r7
+0x00836b58  str      r1, [sp, #8]
+0x00836b5a  mov      r1, r6
+0x00836b5c  blx      #0x4cd508  ; PLT Anki::Util::ReliableTransport::SendMessage(bool, Anki::Util::TransportAddress const&, unsigned char const*, unsigned int, Anki::Util::EReliableMessageType, bool, double)
+0x00836b60  ldr      r0, [pc, #0xd0]  ; =0x807ce6
+0x00836b62  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x00836b64  b        #0x836c00
+0x00836b66  mov      r0, r8
+0x00836b68  blx      #0x4a69e8  ; PLT operator new[](unsigned int)
+0x00836b6c  mov      r1, r5
+0x00836b6e  mov      r2, r8
+0x00836b70  mov      sb, r0
+0x00836b72  blx      #0x4a42ac  ; PLT __aeabi_memcpy
+0x00836b76  blx      #0x4b8a30  ; PLT Anki::Util::GetCurrentNetTimeStamp()
+0x00836b7a  str      r0, [sp, #0x2c]
+0x00836b7c  str      r1, [sp, #0x24]
+0x00836b7e  ldrd     fp, r8, [r7]
+0x00836b82  ldr      r0, [r7, #8]
+0x00836b84  str      r0, [sp, #0x1c]
+0x00836b86  ldrd     sl, r0, [r7, #0xc]
+0x00836b8a  str      r0, [sp, #0x28]
+0x00836b8c  ldrd     r5, r0, [r7, #0x14]
+0x00836b90  str      r0, [sp, #0x20]
+0x00836b92  movs     r0, #0x48
+0x00836b94  ldr      r7, [r7, #0x1c]
+0x00836b96  blx      #0x4a42a0  ; PLT operator new(unsigned int)
+0x00836b9a  str.w    r8, [r0, #0x14]
+0x00836b9e  add.w    r3, r0, #0x28
+0x00836ba2  strd     r6, fp, [r0, #0xc]
+0x00836ba6  ldr      r1, [sp, #0x2c]
+0x00836ba8  ldr      r2, [sp, #0x24]
+0x00836baa  str.w    sl, [r0, #0x1c]
+0x00836bae  vmov     d0, r1, r2
+0x00836bb2  ldr      r2, [sp, #0x1c]
+0x00836bb4  str      r2, [r0, #0x18]
+0x00836bb6  ldr      r2, [sp, #0x28]
+0x00836bb8  ldr      r1, [pc, #0x7c]  ; =0x800a9e
+0x00836bba  str      r4, [r0, #8]
+0x00836bbc  str      r5, [r0, #0x24]
+0x00836bbe  add      r1, pc  ; r1=0x1037660 
+0x00836bc0  str      r2, [r0, #0x20]
+0x00836bc2  adds     r1, #8
+0x00836bc4  ldr      r2, [sp, #0x20]
+0x00836bc6  stm.w    r3, {r2, r7, sb}
+0x00836bca  ldr      r2, [sp, #0x70]
+0x00836bcc  str      r2, [r0, #0x34]
+0x00836bce  ldr      r2, [sp, #0x74]
+0x00836bd0  str      r2, [r0, #0x38]
+0x00836bd2  ldr      r2, [sp, #0x78]
+0x00836bd4  str      r2, [r0, #0x3c]
+0x00836bd6  str      r1, [r0]
+0x00836bd8  vstr     d0, [r0, #0x40]
+0x00836bdc  str      r0, [sp, #0x40]
+0x00836bde  add      r5, sp, #0x30
+0x00836be0  mov      r0, r4
+0x00836be2  mov      r1, r5
+0x00836be4  blx      #0x4cd604  ; PLT Anki::Util::ReliableTransport::QueueAction(std::__ndk1::function<void ()>)
+0x00836be8  ldr      r0, [sp, #0x40]
+0x00836bea  cmp      r5, r0
+0x00836bec  beq      #0x836bf6
+0x00836bee  cbz      r0, #0x836bfc
+0x00836bf0  ldr      r1, [r0]  ; r1=&__stack_chk_guard
+0x00836bf2  ldr      r1, [r1, #0x14]
+0x00836bf4  b        #0x836bfa
+0x00836bf6  ldr      r1, [r0]  ; r1=&__stack_chk_guard
+0x00836bf8  ldr      r1, [r1, #0x10]
+0x00836bfa  blx      r1
+0x00836bfc  ldr      r0, [pc, #0x3c]  ; =0x807c4a
+0x00836bfe  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x00836c00  ldr      r0, [r0]  ; r0=&__stack_chk_guard
+0x00836c02  ldr      r1, [sp, #0x48]
+0x00836c04  ldr      r0, [r0]
+0x00836c06  subs     r0, r0, r1
+0x00836c08  itt      eq
+0x00836c0a  addeq    sp, #0x4c
+0x00836c0c  popeq.w  {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0x00836c10  blx      #0x4a4fe4  ; PLT __stack_chk_fail
+0x00836c14  mov      r4, r0
+0x00836c16  ldr      r0, [sp, #0x40]
+0x00836c18  cmp      r5, r0
+0x00836c1a  bne      #0x836c22
+0x00836c1c  ldr      r1, [r0]
+0x00836c1e  ldr      r1, [r1, #0x10]
+0x00836c20  b        #0x836c28
+0x00836c22  cbz      r0, #0x836c2a
+0x00836c24  ldr      r1, [r0]
+0x00836c26  ldr      r1, [r1, #0x14]
+0x00836c28  blx      r1
+0x00836c2a  mov      r0, r4
+0x00836c2c  blx      #0x4a40a8  ; PLT _Unwind_Resume
+0x00836c30  ldrb     r6, [r2, #0x14]
+0x00836c32  lsls     r0, r0, #2
+0x00836c34  ldrb     r6, [r4, #0x13]
+0x00836c36  lsls     r0, r0, #2
+0x00836c38  lsrs     r6, r3, #0xa
+0x00836c3a  lsls     r0, r0, #2
+0x00836c3c  ldrb     r2, [r1, #0x11]
+0x00836c3e  lsls     r0, r0, #2
+  ---- next symbol ----
+
+===== Anki::Util::ReliableTransport::SendMessage(bool, Anki::Util::TransportAddress const&, unsigned char const*, unsigned int, Anki::Util::EReliableMessageType, bool, double) @ 0x00836c40 =====
+0x00836c40  push.w   {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0x00836c44  sub      sp, #4
+0x00836c46  vpush    {d8}
+0x00836c4a  sub      sp, #0x80
+0x00836c4c  mov      r4, r0
+0x00836c4e  ldr      r0, [pc, #0x2e0]  ; =0x807bf4
+0x00836c50  mov      r7, r2
+0x00836c52  ldr      r2, [sp, #0xb4]
+0x00836c54  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x00836c56  str      r3, [sp, #0x28]
+0x00836c58  mov      r5, r1
+0x00836c5a  cmp      r2, #1
+0x00836c5c  ldr      r0, [r0]  ; r0=&__stack_chk_guard
+0x00836c5e  mov      r1, r7
+0x00836c60  ldr      r0, [r0]
+0x00836c62  str      r0, [sp, #0x7c]
+0x00836c64  mov      r0, r2
+0x00836c66  str      r0, [sp, #0x30]
+0x00836c68  it       ne
+0x00836c6a  movne    r2, #0
+0x00836c6c  mov      r0, r4
+0x00836c6e  blx      #0x4cd610  ; PLT Anki::Util::ReliableTransport::FindConnection(Anki::Util::TransportAddress const&, bool)
+0x00836c72  cmp      r0, #0
+0x00836c74  str      r0, [sp, #0x34]
+0x00836c76  beq      #0x836cdc
+0x00836c78  ldr      r0, [r4, #0xc]
+0x00836c7a  ldr      r6, [sp, #0xb0]
+0x00836c7c  ldr      r1, [r0]
+0x00836c7e  ldr      r1, [r1, #0x24]
+0x00836c80  blx      r1
+0x00836c82  mov      r8, r0
+0x00836c84  sub.w    r0, r8, #0xa
+0x00836c88  cmp      r0, r6
+0x00836c8a  str      r0, [sp, #0x38]
+0x00836c8c  bhs      #0x836d58
+0x00836c8e  cmp      r5, #0
+0x00836c90  bne      #0x836d58
+0x00836c92  ldr      r2, [pc, #0x2a0]  ; =0x3f1ade
+0x00836c94  movs     r0, #0
+0x00836c96  strd     r0, r0, [sp, #0x40]
+0x00836c9a  add      r2, pc  ; r2=0xc2877c "Had to split %u byte unreliable message (> %u bytes) - forcing it to be reliable so it can be reassembled!"
+0x00836c9c  str      r0, [sp, #0x48]
+0x00836c9e  ldr      r0, [sp, #0x38]
+0x00836ca0  add      r1, sp, #0x40
+0x00836ca2  str      r0, [sp]
+0x00836ca4  adr      r0, #0x290
+0x00836ca6  mov      r3, r6
+0x00836ca8  blx      #0x4a4540  ; PLT Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00836cac  ldr      r0, [sp, #0x40]
+0x00836cae  cbz      r0, #0x836cce
+0x00836cb0  ldr      r1, [sp, #0x44]
+0x00836cb2  cmp      r1, r0
+0x00836cb4  itttt    ne
+0x00836cb6  subne.w  r2, r1, #8
+0x00836cba  subne    r2, r2, r0
+0x00836cbc  mvnne    r3, #7
+0x00836cc0  bicne.w  r2, r3, r2
+0x00836cc4  itt      ne
+0x00836cc6  addne    r1, r1, r2
+0x00836cc8  strne    r1, [sp, #0x44]
+0x00836cca  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00836cce  ldr      r0, [sp, #0x38]
+0x00836cd0  cmp      r0, r6
+0x00836cd2  ldr      r0, [sp, #0x30]
+0x00836cd4  it       lo
+0x00836cd6  movlo    r0, #6
+0x00836cd8  str      r0, [sp, #0x30]
+0x00836cda  b        #0x836d68
+0x00836cdc  movs     r0, #0
+0x00836cde  strd     r0, r0, [sp, #0x40]
+0x00836ce2  str      r0, [sp, #0x48]
+0x00836ce4  add      r4, sp, #0x64
+0x00836ce6  mov      r1, r7
+0x00836ce8  mov      r0, r4
+0x00836cea  blx      #0x4b8c10  ; PLT Anki::Util::TransportAddress::ToString() const
+0x00836cee  ldrb.w   r0, [sp, #0x64]
+0x00836cf2  ldr      r2, [pc, #0x280]  ; =0x3f1a3c
+0x00836cf4  ldr      r3, [sp, #0x6c]
+0x00836cf6  tst.w    r0, #1
+0x00836cfa  add      r2, pc  ; r2=0xc2873a "Trying to send a normal message to an unconnected destination! %s"
+0x00836cfc  it       eq
+0x00836cfe  orreq    r3, r4, #1
+0x00836d02  adr      r0, #0x274
+0x00836d04  add      r1, sp, #0x40
+0x00836d06  blx      #0x4a4540  ; PLT Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00836d0a  ldrb.w   r0, [sp, #0x64]
+0x00836d0e  lsls     r0, r0, #0x1f
+0x00836d10  itt      ne
+0x00836d12  ldrne    r0, [sp, #0x6c]
+0x00836d14  blxne    #0x4a40cc
+0x00836d18  ldr      r0, [sp, #0x40]
+0x00836d1a  cbz      r0, #0x836d3a
+0x00836d1c  ldr      r1, [sp, #0x44]
+0x00836d1e  cmp      r1, r0
+0x00836d20  itttt    ne
+0x00836d22  subne.w  r2, r1, #8
+0x00836d26  subne    r2, r2, r0
+0x00836d28  mvnne    r3, #7
+0x00836d2c  bicne.w  r2, r3, r2
+0x00836d30  itt      ne
+0x00836d32  addne    r1, r1, r2
+0x00836d34  strne    r1, [sp, #0x44]
+0x00836d36  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00836d3a  ldr      r0, [pc, #0x26c]  ; =0x807b0a
+0x00836d3c  ldr      r1, [sp, #0x7c]
+0x00836d3e  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x00836d40  ldr      r0, [r0]  ; r0=&__stack_chk_guard
+0x00836d42  ldr      r0, [r0]
+0x00836d44  subs     r0, r0, r1
+0x00836d46  itttt    eq
+0x00836d48  addeq    sp, #0x80
+0x00836d4a  vpopeq   {d8}
+0x00836d4e  addeq    sp, #4
+0x00836d50  popeq.w  {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0x00836d54  blx      #0x4a4fe4  ; PLT __stack_chk_fail
+0x00836d58  ldr      r0, [sp, #0x38]
+0x00836d5a  cmp      r0, r6
+0x00836d5c  ldr      r0, [sp, #0x30]
+0x00836d5e  it       lo
+0x00836d60  movlo    r0, #6
+0x00836d62  cmp      r5, #1
+0x00836d64  str      r0, [sp, #0x30]
+0x00836d66  bne      #0x836d76
+0x00836d68  add.w    r0, r4, #0x28
+0x00836d6c  mov      r1, r6
+0x00836d6e  blx      #0x4cd61c  ; PLT Anki::Util::TransportStats::AddSentMessage(unsigned int)
+0x00836d72  movs     r0, #1
+0x00836d74  b        #0x836d78
+0x00836d76  movs     r0, #0
+0x00836d78  str      r0, [sp, #0x2c]
+0x00836d7a  sub.w    r0, r8, #0xc
+0x00836d7e  strd     r7, r4, [sp, #0x18]
+0x00836d82  str      r0, [sp, #0x24]
+0x00836d84  ldr      r0, [sp, #0x38]
+0x00836d86  cmp      r0, r6
+0x00836d88  mov.w    r0, #1
+0x00836d8c  str      r0, [sp, #0x20]
+0x00836d8e  bhs      #0x836d9e
+0x00836d90  add.w    r0, r6, r8
+0x00836d94  ldr      r1, [sp, #0x24]
+0x00836d96  subs     r0, #0xd
+0x00836d98  blx      #0x4be310  ; PLT __aeabi_uidiv
+0x00836d9c  str      r0, [sp, #0x20]
+0x00836d9e  ldr      r0, [pc, #0x1cc]  ; =0x808a3c
+0x00836da0  mov.w    fp, #0
+0x00836da4  ldr      r1, [sp, #0x2c]
+0x00836da6  movs     r7, #1
+0x00836da8  add      r0, pc  ; r0=0x103f7e8 GOT->Anki::Util::ReliableTransport::sSendUnreliableMessagesImmediately
+0x00836daa  vldr     d8, [sp, #0xc0]
+0x00836dae  eor      r1, r1, #1
+0x00836db2  ldr      r0, [r0]  ; r0=&Anki::Util::ReliableTransport::sSendUnreliableMessagesImmediately
+0x00836db4  ldrb     r0, [r0]
+0x00836db6  and      r0, r0, #1
+0x00836dba  str      r0, [sp, #0x14]
+0x00836dbc  and.w    r4, r0, r1
+0x00836dc0  sub.w    r0, r6, fp
+0x00836dc4  ldr      r1, [sp, #0x24]
+0x00836dc6  mov      r8, r6
+0x00836dc8  mov      sb, r0
+0x00836dca  cmp      r0, r1
+0x00836dcc  it       hi
+0x00836dce  movhi    sb, r1
+0x00836dd0  ldr      r1, [sp, #0x38]
+0x00836dd2  cmp      r1, r6
+0x00836dd4  it       hs
+0x00836dd6  movhs    sb, r0
+0x00836dd8  ldr      r6, [sp, #0x28]
+0x00836dda  cmp      r6, #0
+0x00836ddc  it       ne
+0x00836dde  addne    r6, fp
+0x00836de0  ldr      r0, [sp, #0x2c]
+0x00836de2  cmp      r0, #1
+0x00836de4  bne      #0x836df0
+0x00836de6  ldr      r0, [sp, #0x34]
+0x00836de8  blx      #0x4cd628  ; PLT Anki::Util::ReliableConnection::GetNextOutSequenceNumber()
+0x00836dec  mov      sl, r0
+0x00836dee  b        #0x836df4
+0x00836df0  mov.w    sl, #0
+0x00836df4  add      r0, sp, #0x40
+0x00836df6  blx      #0x4cd5d4  ; PLT Anki::Util::SrcBufferSet::SrcBufferSet()
+0x00836dfa  cmp      r4, #1
+0x00836dfc  bne      #0x836e3a
+0x00836dfe  ldr      r0, [sp, #0x34]
+0x00836e00  movs     r1, #1
+0x00836e02  ldrh.w   r0, [r0, #0x42]
+0x00836e06  strb.w   r1, [sp, #0x72]
+0x00836e0a  movw     r1, #0x4552
+0x00836e0e  strh.w   r1, [sp, #0x70]
+0x00836e12  ldr      r1, [sp, #0x30]
+0x00836e14  strb.w   r1, [sp, #0x73]
+0x00836e18  strh.w   sl, [sp, #0x74]
+0x00836e1c  strh.w   sl, [sp, #0x76]
+0x00836e20  strh.w   r0, [sp, #0x78]
+0x00836e24  add      r5, sp, #0x64
+0x00836e26  add      r1, sp, #0x70
+0x00836e28  movs     r2, #0xa
+0x00836e2a  movs     r3, #0
+0x00836e2c  mov      r0, r5
+0x00836e2e  blx      #0x4cd5e0  ; PLT Anki::Util::SizedSrcBuffer::SizedSrcBuffer(unsigned char const*, unsigned int, char const*)
+0x00836e32  add      r0, sp, #0x40
+0x00836e34  mov      r1, r5
+0x00836e36  blx      #0x4cd5ec  ; PLT Anki::Util::SrcBufferSet::AddBuffer(Anki::Util::SizedSrcBuffer const&)
+0x00836e3a  ldr      r0, [sp, #0x38]
+0x00836e3c  cmp      r0, r8
+0x00836e3e  bhs      #0x836e62
+0x00836e40  ldr      r0, [sp, #0x20]
+0x00836e42  strb.w   r0, [sp, #0x3f]
+0x00836e46  strb.w   r7, [sp, #0x3e]
+0x00836e4a  add      r5, sp, #0x64
+0x00836e4c  add.w    r1, sp, #0x3e
+0x00836e50  movs     r2, #2
+0x00836e52  movs     r3, #0
+0x00836e54  mov      r0, r5
+0x00836e56  blx      #0x4cd5e0  ; PLT Anki::Util::SizedSrcBuffer::SizedSrcBuffer(unsigned char const*, unsigned int, char const*)
+0x00836e5a  add      r0, sp, #0x40
+0x00836e5c  mov      r1, r5
+0x00836e5e  blx      #0x4cd5ec  ; PLT Anki::Util::SrcBufferSet::AddBuffer(Anki::Util::SizedSrcBuffer const&)
+0x00836e62  cmp.w    sb, #0
+0x00836e66  beq      #0x836e7e
+0x00836e68  add      r5, sp, #0x64
+0x00836e6a  mov      r1, r6
+0x00836e6c  mov      r2, sb
+0x00836e6e  movs     r3, #0
+0x00836e70  mov      r0, r5
+0x00836e72  blx      #0x4cd5e0  ; PLT Anki::Util::SizedSrcBuffer::SizedSrcBuffer(unsigned char const*, unsigned int, char const*)
+0x00836e76  add      r0, sp, #0x40
+0x00836e78  mov      r1, r5
+0x00836e7a  blx      #0x4cd5ec  ; PLT Anki::Util::SrcBufferSet::AddBuffer(Anki::Util::SizedSrcBuffer const&)
+0x00836e7e  cmp      r4, #1
+0x00836e80  bne      #0x836e98
+0x00836e82  ldr      r0, [sp, #0x34]
+0x00836e84  blx      #0x4cd5f8  ; PLT Anki::Util::ReliableConnection::NotifyAckingMessageSent()
+0x00836e88  ldr      r0, [sp, #0x1c]
+0x00836e8a  ldr      r0, [r0, #0xc]
+0x00836e8c  ldr      r1, [r0]
+0x00836e8e  ldr      r3, [r1, #8]
+0x00836e90  ldr      r1, [sp, #0x18]
+0x00836e92  add      r2, sp, #0x40
+0x00836e94  blx      r3
+0x00836e96  b        #0x836eac
+0x00836e98  ldr      r0, [sp, #0xb8]
+0x00836e9a  add      r1, sp, #0x40
+0x00836e9c  vstr     d8, [sp, #8]
+0x00836ea0  mov      r3, sl
+0x00836ea2  str      r0, [sp]
+0x00836ea4  ldr      r0, [sp, #0x34]
+0x00836ea6  ldr      r2, [sp, #0x30]
+0x00836ea8  blx      #0x4cd634  ; PLT Anki::Util::ReliableConnection::AddMessage(Anki::Util::SrcBufferSet const&, Anki::Util::EReliableMessageType, unsigned short, bool, double)
+0x00836eac  add      fp, sb
+0x00836eae  adds     r7, #1
+0x00836eb0  mov      r6, r8
+0x00836eb2  cmp      fp, r6
+0x00836eb4  blo.w    #0x836dc0
+0x00836eb8  ldr      r1, [sp, #0x14]
+0x00836eba  movs     r0, #0
+0x00836ebc  cmp      r1, #0
+0x00836ebe  it       eq
+0x00836ec0  moveq    r0, #1
+0x00836ec2  ldr      r1, [sp, #0x2c]
+0x00836ec4  orrs     r0, r1
+0x00836ec6  beq.w    #0x836d3a
+0x00836eca  ldr      r0, [pc, #0xa4]  ; =0x808900
+0x00836ecc  add      r0, pc  ; r0=0x103f7d0 GOT->Anki::Util::ReliableTransport::sMaxPacketsToSendOnSendMessage
+0x00836ece  ldr      r0, [r0]  ; r0=&Anki::Util::ReliableTransport::sMaxPacketsToSendOnSendMessage
+0x00836ed0  ldr      r2, [r0]
+0x00836ed2  cmp      r2, #0
+0x00836ed4  beq.w    #0x836d3a
+0x00836ed8  ldr      r0, [sp, #0x34]
+0x00836eda  ldr      r1, [sp, #0x1c]
+0x00836edc  blx      #0x4cd568  ; PLT Anki::Util::ReliableConnection::SendOptimalUnAckedPackets(Anki::Util::ReliableTransport*, unsigned int)
+0x00836ee0  b        #0x836d3a
+0x00836ee2  b        #0x836ef6
+0x00836ee4  mov      r4, r0
+0x00836ee6  ldrb.w   r0, [sp, #0x64]
+0x00836eea  lsls     r0, r0, #0x1f
+0x00836eec  itt      ne
+0x00836eee  ldrne    r0, [sp, #0x6c]
+0x00836ef0  blxne    #0x4a40cc
+0x00836ef4  b        #0x836ef8
+0x00836ef6  mov      r4, r0
+0x00836ef8  ldr      r0, [sp, #0x40]
+0x00836efa  cbz      r0, #0x836f28
+0x00836efc  ldr      r1, [sp, #0x44]
+0x00836efe  cmp      r1, r0
+0x00836f00  beq      #0x836f14
+0x00836f02  sub.w    r2, r1, #8
+0x00836f06  mvn      r3, #7
+0x00836f0a  subs     r2, r2, r0
+0x00836f0c  bic.w    r2, r3, r2
+0x00836f10  add      r1, r2
+0x00836f12  str      r1, [sp, #0x44]
+0x00836f14  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00836f18  b        #0x836f28
+0x00836f1a  b        #0x836f26
+0x00836f1c  b        #0x836f26
+0x00836f1e  b        #0x836f26
+0x00836f20  b        #0x836f26
+0x00836f22  b        #0x836f26
+0x00836f24  b        #0x836f26
+0x00836f26  mov      r4, r0
+0x00836f28  mov      r0, r4
+0x00836f2a  blx      #0x4a40a8  ; PLT _Unwind_Resume
+0x00836f2e  nop      
+0x00836f30  ldrb     r4, [r6, #0xf]
+0x00836f32  lsls     r0, r0, #2
+0x00836f34  subs     r6, r3, r3
+0x00836f36  movs     r7, r7
+0x00836f38  str      r2, [r2, #0x54]
+0x00836f3a  ldr      r4, [r5, #0x14]
+0x00836f3c  str      r1, [r4, #0x24]
+0x00836f3e  str      r4, [r5, #0x54]
+0x00836f40  strb     r4, [r2, #9]
+0x00836f42  ldr      r1, [r4, #0x64]
+0x00836f44  strb     r3, [r6, #1]
+0x00836f46  strb     r7, [r5, #9]
+0x00836f48  cmp      r6, #0x74
+0x00836f4a  str      r3, [r2, #0x54]
+0x00836f4c  str      r6, [r5, #0x44]
+0x00836f4e  str      r5, [r1, #0x54]
+0x00836f50  strb     r3, [r6, #0xd]
+0x00836f52  str      r1, [r4, #0x74]
+0x00836f54  cmp      r6, #0x65
+0x00836f56  ldr      r5, [r2, #0x64]
+0x00836f58  str      r2, [r6, #0x54]
+0x00836f5a  ldr      r4, [r5, #0x14]
+0x00836f5c  str      r1, [r4, #0x24]
+0x00836f5e  str      r4, [r5, #0x54]
+0x00836f60  strb     r5, [r1, #0x15]
+0x00836f62  strb     r4, [r5, #0x11]
+0x00836f64  str      r1, [r5, r1]
+0x00836f66  strb     r1, [r4, #9]
+0x00836f68  lsls     r4, r6, #1
+0x00836f6a  movs     r0, r0
+0x00836f6c  ldrh     r4, [r7, #0x10]
+0x00836f6e  lsls     r0, r0, #2
+0x00836f70  ldrh     r0, [r0, #8]
+0x00836f72  lsls     r0, r0, #2
+0x00836f74  subs     r4, r7, r0
+0x00836f76  movs     r7, r7
+0x00836f78  str      r2, [r2, #0x54]
+0x00836f7a  ldr      r4, [r5, #0x14]
+0x00836f7c  str      r1, [r4, #0x24]
+0x00836f7e  str      r4, [r5, #0x54]
+0x00836f80  strb     r4, [r2, #9]
+0x00836f82  ldr      r1, [r4, #0x64]
+0x00836f84  strb     r3, [r6, #1]
+0x00836f86  strb     r7, [r5, #9]
+0x00836f88  cmp      r6, #0x74
+0x00836f8a  str      r3, [r2, #0x54]
+0x00836f8c  str      r6, [r5, #0x44]
+0x00836f8e  str      r5, [r1, #0x54]
+0x00836f90  strb     r3, [r6, #0xd]
+0x00836f92  str      r1, [r4, #0x74]
+0x00836f94  cmp      r6, #0x65
+0x00836f96  strb     r6, [r1, #0x15]
+0x00836f98  ldr      r4, [r5, #0x44]
+0x00836f9a  ldr      r3, [r0, #0x74]
+0x00836f9c  ldr      r6, [r5, #0x64]
+0x00836f9e  str      r5, [r4, #0x34]
+0x00836fa0  ldr      r4, [r6, #0x14]
+0x00836fa2  ldr      r7, [r5, #0x64]
+0x00836fa4  movs     r0, r0
+0x00836fa6  movs     r0, r0
+0x00836fa8  ldrb     r2, [r1, #0xc]
+0x00836faa  lsls     r0, r0, #2
+  ---- next symbol ----
+
+===== Anki::Util::ReliableTransport::QueueAction(std::__ndk1::function<void ()>) @ 0x00836fac =====
+0x00836fac  push     {r4, r5, r6, lr}
+0x00836fae  sub      sp, #0x40
+0x00836fb0  ldr      r2, [pc, #0xb8]  ; =0x807896
+0x00836fb2  add      r2, pc  ; r2=0x103e84c GOT->__stack_chk_guard
+0x00836fb4  ldr      r2, [r2]  ; r2=&__stack_chk_guard
+0x00836fb6  ldr      r2, [r2]
+0x00836fb8  str      r2, [sp, #0x3c]
+0x00836fba  ldr      r5, [r0, #0x1c]
+0x00836fbc  str      r0, [sp]
+0x00836fbe  mov      r0, sp
+0x00836fc0  add.w    r4, r0, #8
+0x00836fc4  mov      r0, r4
+0x00836fc6  blx      #0x4b2970  ; PLT std::__ndk1::function<void ()>::function(std::__ndk1::function<void ()>&&)
+0x00836fca  movs     r0, #0
+0x00836fcc  str      r0, [sp, #0x30]
+0x00836fce  movs     r0, #0x28
+0x00836fd0  blx      #0x4a42a0  ; PLT operator new(unsigned int)
+0x00836fd4  mov      r6, r0
+0x00836fd6  ldr      r0, [pc, #0x98]  ; =0x8006c2
+0x00836fd8  mov      r1, r4
+0x00836fda  add      r0, pc  ; r0=0x10376a0 
+0x00836fdc  adds     r0, #8
+0x00836fde  str      r0, [r6]
+0x00836fe0  ldr      r0, [sp]
+0x00836fe2  str      r0, [r6, #8]
+0x00836fe4  add.w    r0, r6, #0x10
+0x00836fe8  blx      #0x4b2970  ; PLT std::__ndk1::function<void ()>::function(std::__ndk1::function<void ()>&&)
+0x00836fec  str      r6, [sp, #0x30]
+0x00836fee  add      r6, sp, #0x20
+0x00836ff0  mov      r0, r5
+0x00836ff2  movs     r2, #0
+0x00836ff4  mov      r1, r6
+0x00836ff6  blx      #0x4b774c  ; PLT Anki::Util::Dispatch::Async(Anki::Util::Dispatch::Queue*, std::__ndk1::function<void ()> const&, char const*)
+0x00836ffa  ldr      r0, [sp, #0x30]
+0x00836ffc  cmp      r6, r0
+0x00836ffe  beq      #0x837008
+0x00837000  cbz      r0, #0x83700e
+0x00837002  ldr      r1, [r0]
+0x00837004  ldr      r1, [r1, #0x14]
+0x00837006  b        #0x83700c
+0x00837008  ldr      r1, [r0]
+0x0083700a  ldr      r1, [r1, #0x10]
+0x0083700c  blx      r1
+0x0083700e  ldr      r0, [sp, #0x18]
+0x00837010  cmp      r4, r0
+0x00837012  beq      #0x83701c
+0x00837014  cbz      r0, #0x837022
+0x00837016  ldr      r1, [r0]
+0x00837018  ldr      r1, [r1, #0x14]
+0x0083701a  b        #0x837020
+0x0083701c  ldr      r1, [r0]
+0x0083701e  ldr      r1, [r1, #0x10]
+0x00837020  blx      r1
+0x00837022  ldr      r0, [pc, #0x50]  ; =0x807822
+0x00837024  ldr      r1, [sp, #0x3c]
+0x00837026  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x00837028  ldr      r0, [r0]  ; r0=&__stack_chk_guard
+0x0083702a  ldr      r0, [r0]
+0x0083702c  subs     r0, r0, r1
+0x0083702e  itt      eq
+0x00837030  addeq    sp, #0x40
+0x00837032  popeq    {r4, r5, r6, pc}
+0x00837034  blx      #0x4a4fe4  ; PLT __stack_chk_fail
+0x00837038  mov      r5, r0
+0x0083703a  ldr      r0, [sp, #0x30]
+0x0083703c  cmp      r6, r0
+0x0083703e  bne      #0x837046
+0x00837040  ldr      r1, [r0]
+0x00837042  ldr      r1, [r1, #0x10]
+0x00837044  b        #0x83704c
+0x00837046  cbz      r0, #0x837052
+0x00837048  ldr      r1, [r0]
+0x0083704a  ldr      r1, [r1, #0x14]
+0x0083704c  blx      r1
+0x0083704e  b        #0x837052
+0x00837050  mov      r5, r0
+0x00837052  ldr      r0, [sp, #0x18]
+0x00837054  cmp      r4, r0
+0x00837056  bne      #0x83705e
+0x00837058  ldr      r1, [r0]
+0x0083705a  ldr      r1, [r1, #0x10]
+0x0083705c  b        #0x837064
+0x0083705e  cbz      r0, #0x837066
+0x00837060  ldr      r1, [r0]
+0x00837062  ldr      r1, [r1, #0x14]
+0x00837064  blx      r1
+0x00837066  mov      r0, r5
+0x00837068  blx      #0x4a40a8  ; PLT _Unwind_Resume
+0x0083706c  ldrb     r6, [r2, #2]
+0x0083706e  lsls     r0, r0, #2
+0x00837070  lsls     r2, r0, #0x1b
+0x00837072  lsls     r0, r0, #2
+0x00837074  ldrb     r2, [r4]
+0x00837076  lsls     r0, r0, #2
+  ---- next symbol ----
+
+===== Anki::Util::ReliableTransport::FindConnection(Anki::Util::TransportAddress const&, bool) @ 0x00837078 =====
+0x00837078  push     {r4, r5, r6, r7, lr}
+0x0083707a  sub      sp, #0x1c
+0x0083707c  mov      r7, r0
+0x0083707e  add.w    r6, r7, #0x10
+0x00837082  mov      r5, r2
+0x00837084  mov      r4, r1
+0x00837086  mov      r0, r6
+0x00837088  blx      #0x4cd640  ; PLT std::__ndk1::__tree_iterator<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, std::__ndk1::__tree_node<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, void*>*, int> std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, std::__ndk1::__map_value_compare<Anki::Util::TransportAddress, std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, std::__ndk1::less<Anki::Util::TransportAddress>, true>, std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*> > >::find<Anki::Util::TransportAddress>(Anki::Util::TransportAddress const&)
+0x0083708c  add.w    r1, r7, #0x14
+0x00837090  cmp      r0, r1
+0x00837092  beq      #0x837098
+0x00837094  ldr      r5, [r0, #0x30]
+0x00837096  b        #0x8370cc
+0x00837098  cmp      r5, #1
+0x0083709a  bne      #0x8370ca
+0x0083709c  mov.w    r0, #0x250
+0x008370a0  blx      #0x4a42a0  ; PLT operator new(unsigned int)
+0x008370a4  mov      r5, r0
+0x008370a6  mov      r1, r4
+0x008370a8  blx      #0x4cd64c  ; PLT Anki::Util::ReliableConnection::ReliableConnection(Anki::Util::TransportAddress const&)
+0x008370ac  ldr      r3, [pc, #0x30]  ; =0x45ef64
+0x008370ae  add      r0, sp, #0xc
+0x008370b0  str      r4, [sp, #0x10]
+0x008370b2  add      r1, sp, #0x10
+0x008370b4  strd     r1, r0, [sp]
+0x008370b8  add      r3, pc  ; r3=0xc96020 
+0x008370ba  add      r0, sp, #0x14
+0x008370bc  mov      r1, r6
+0x008370be  mov      r2, r4
+0x008370c0  blx      #0x4cd658  ; PLT std::__ndk1::pair<std::__ndk1::__tree_iterator<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, std::__ndk1::__tree_node<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, void*>*, int>, bool> std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, std::__ndk1::__map_value_compare<Anki::Util::TransportAddress, std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, std::__ndk1::less<Anki::Util::TransportAddress>, true>, std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*> > >::__emplace_unique_key_args<Anki::Util::TransportAddress, std::__ndk1::piecewise_construct_t const&, std::__ndk1::tuple<Anki::Util::TransportAddress const&>, std::__ndk1::tuple<> >(Anki::Util::TransportAddress const&, std::__ndk1::piecewise_construct_t const&, std::__ndk1::tuple<Anki::Util::TransportAddress const&>, std::__ndk1::tuple<>)
+0x008370c4  ldr      r0, [sp, #0x14]
+0x008370c6  str      r5, [r0, #0x30]
+0x008370c8  b        #0x8370cc
+0x008370ca  movs     r5, #0
+0x008370cc  mov      r0, r5
+0x008370ce  add      sp, #0x1c
+0x008370d0  pop      {r4, r5, r6, r7, pc}
+
+===== Anki::Util::ReliableTransport::SendData(bool, Anki::Util::TransportAddress const&, unsigned char const*, unsigned int, bool) @ 0x008370e4 =====
+0x008370e4  push     {r4, lr}
+0x008370e6  sub      sp, #0x10
+0x008370e8  ldrd     ip, lr, [sp, #0x18]
+0x008370ec  movs     r4, #5
+0x008370ee  cmp      r1, #0
+0x008370f0  it       ne
+0x008370f2  movne    r4, #4
+0x008370f4  strd     ip, r4, [sp]
+0x008370f8  str.w    lr, [sp, #8]
+0x008370fc  blx      #0x4cd664  ; PLT Anki::Util::ReliableTransport::QueueMessage(bool, Anki::Util::TransportAddress const&, unsigned char const*, unsigned int, Anki::Util::EReliableMessageType, bool)
+0x00837100  add      sp, #0x10
+0x00837102  pop      {r4, pc}
+
+===== Anki::Util::ReliableTransport::Connect(Anki::Util::TransportAddress const&) @ 0x00837104 =====
+0x00837104  push     {r7, lr}
+0x00837106  sub      sp, #0x10
+0x00837108  mov      r2, r1
+0x0083710a  movs     r1, #0
+0x0083710c  movs     r3, #1
+0x0083710e  strb.w   r1, [r0, #0xa1]
+0x00837112  strd     r1, r3, [sp]
+0x00837116  movs     r1, #1
+0x00837118  str      r3, [sp, #8]
+0x0083711a  movs     r3, #0
+0x0083711c  blx      #0x4cd664  ; PLT Anki::Util::ReliableTransport::QueueMessage(bool, Anki::Util::TransportAddress const&, unsigned char const*, unsigned int, Anki::Util::EReliableMessageType, bool)
+0x00837120  add      sp, #0x10
+0x00837122  pop      {r7, pc}
+
+===== Anki::Util::ReliableTransport::FinishConnection(Anki::Util::TransportAddress const&) @ 0x00837124 =====
+0x00837124  push     {r7, lr}
+0x00837126  sub      sp, #0x10
+0x00837128  mov      r2, r1
+0x0083712a  mov.w    ip, #1
+0x0083712e  movs     r3, #2
+0x00837130  movs     r1, #0
+0x00837132  stm.w    sp, {r1, r3, ip}
+0x00837136  movs     r1, #1
+0x00837138  movs     r3, #0
+0x0083713a  blx      #0x4cd664  ; PLT Anki::Util::ReliableTransport::QueueMessage(bool, Anki::Util::TransportAddress const&, unsigned char const*, unsigned int, Anki::Util::EReliableMessageType, bool)
+0x0083713e  add      sp, #0x10
+0x00837140  pop      {r7, pc}
+
+===== Anki::Util::ReliableTransport::Disconnect(Anki::Util::TransportAddress const&) @ 0x00837144 =====
+0x00837144  push.w   {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0x00837148  sub      sp, #0x24
+0x0083714a  mov      r4, r0
+0x0083714c  ldr      r0, [pc, #0x98]  ; =0x8076fa
+0x0083714e  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x00837150  ldr      r0, [r0]  ; r0=&__stack_chk_guard
+0x00837152  ldr      r0, [r0]
+0x00837154  str      r0, [sp, #0x20]
+0x00837156  ldrd     sl, r6, [r1]
+0x0083715a  ldr      r0, [r1, #8]
+0x0083715c  str      r0, [sp, #4]
+0x0083715e  movs     r0, #0x30
+0x00837160  ldrd     r7, sb, [r1, #0xc]
+0x00837164  ldrd     r5, fp, [r1, #0x14]
+0x00837168  ldr.w    r8, [r1, #0x1c]
+0x0083716c  blx      #0x4a42a0  ; PLT operator new(unsigned int)
+0x00837170  movs     r1, #0
+0x00837172  ldr      r2, [sp, #4]
+0x00837174  str      r1, [r0, #0xc]
+0x00837176  ldr      r1, [pc, #0x74]  ; =0x800562
+0x00837178  str      r6, [r0, #0x14]
+0x0083717a  add      r1, pc  ; r1=0x10376e0 
+0x0083717c  str.w    sl, [r0, #0x10]
+0x00837180  adds     r1, #8
+0x00837182  str      r4, [r0, #8]
+0x00837184  str      r7, [r0, #0x1c]
+0x00837186  str      r2, [r0, #0x18]
+0x00837188  strd     sb, r5, [r0, #0x20]
+0x0083718c  strd     fp, r8, [r0, #0x28]
+0x00837190  str      r1, [r0]
+0x00837192  str      r0, [sp, #0x18]
+0x00837194  add      r5, sp, #8
+0x00837196  mov      r0, r4
+0x00837198  mov      r1, r5
+0x0083719a  blx      #0x4cd604  ; PLT Anki::Util::ReliableTransport::QueueAction(std::__ndk1::function<void ()>)
+0x0083719e  ldr      r0, [sp, #0x18]
+0x008371a0  cmp      r5, r0
+0x008371a2  beq      #0x8371ac
+0x008371a4  cbz      r0, #0x8371b2
+0x008371a6  ldr      r1, [r0]
+0x008371a8  ldr      r1, [r1, #0x14]
+0x008371aa  b        #0x8371b0
+0x008371ac  ldr      r1, [r0]
+0x008371ae  ldr      r1, [r1, #0x10]
+0x008371b0  blx      r1
+0x008371b2  ldr      r0, [pc, #0x3c]  ; =0x807692
+0x008371b4  ldr      r1, [sp, #0x20]
+0x008371b6  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x008371b8  ldr      r0, [r0]  ; r0=&__stack_chk_guard
+0x008371ba  ldr      r0, [r0]
+0x008371bc  subs     r0, r0, r1
+0x008371be  itt      eq
+0x008371c0  addeq    sp, #0x24
+0x008371c2  popeq.w  {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0x008371c6  blx      #0x4a4fe4  ; PLT __stack_chk_fail
+0x008371ca  mov      r4, r0
+0x008371cc  ldr      r0, [sp, #0x18]
+0x008371ce  cmp      r5, r0
+0x008371d0  bne      #0x8371d8
+0x008371d2  ldr      r1, [r0]
+0x008371d4  ldr      r1, [r1, #0x10]
+0x008371d6  b        #0x8371de
+0x008371d8  cbz      r0, #0x8371e0
+0x008371da  ldr      r1, [r0]
+0x008371dc  ldr      r1, [r1, #0x14]
+0x008371de  blx      r1
+0x008371e0  mov      r0, r4
+0x008371e2  blx      #0x4a40a8  ; PLT _Unwind_Resume
+0x008371e6  nop      
+0x008371e8  strb     r2, [r7, #0x1b]
+0x008371ea  lsls     r0, r0, #2
+0x008371ec  lsls     r2, r4, #0x15
+0x008371ee  lsls     r0, r0, #2
+0x008371f0  strb     r2, [r2, #0x1a]
+0x008371f2  lsls     r0, r0, #2
+  ---- next symbol ----
+
+===== Anki::Util::ReliableTransport::StartClient() @ 0x008371f4 =====
+0x008371f4  push     {r4, r5, r7, lr}
+0x008371f6  sub      sp, #0x20
+0x008371f8  ldr      r1, [pc, #0x64]  ; =0x80764a
+0x008371fa  mov      r5, sp
+0x008371fc  ldr      r2, [pc, #0x64]  ; =0x80051a
+0x008371fe  add      r1, pc  ; r1=0x103e84c GOT->__stack_chk_guard
+0x00837200  str      r5, [sp, #0x10]
+0x00837202  add      r2, pc  ; r2=0x1037720 
+0x00837204  ldr      r1, [r1]  ; r1=&__stack_chk_guard
+0x00837206  ldr      r1, [r1]
+0x00837208  str      r0, [sp, #4]
+0x0083720a  str      r1, [sp, #0x1c]
+0x0083720c  add.w    r1, r2, #8
+0x00837210  str      r1, [sp]
+0x00837212  mov      r1, r5
+0x00837214  blx      #0x4cd604  ; PLT Anki::Util::ReliableTransport::QueueAction(std::__ndk1::function<void ()>)
+0x00837218  ldr      r0, [sp, #0x10]
+0x0083721a  cmp      r5, r0
+0x0083721c  beq      #0x837226
+0x0083721e  cbz      r0, #0x83722c
+0x00837220  ldr      r1, [r0]
+0x00837222  ldr      r1, [r1, #0x14]
+0x00837224  b        #0x83722a
+0x00837226  ldr      r1, [r0]
+0x00837228  ldr      r1, [r1, #0x10]
+0x0083722a  blx      r1
+0x0083722c  ldr      r0, [pc, #0x38]  ; =0x807618
+0x0083722e  ldr      r1, [sp, #0x1c]
+0x00837230  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x00837232  ldr      r0, [r0]  ; r0=&__stack_chk_guard
+0x00837234  ldr      r0, [r0]
+0x00837236  subs     r0, r0, r1
+0x00837238  itt      eq
+0x0083723a  addeq    sp, #0x20
+0x0083723c  popeq    {r4, r5, r7, pc}
+0x0083723e  blx      #0x4a4fe4  ; PLT __stack_chk_fail
+0x00837242  mov      r4, r0
+0x00837244  ldr      r0, [sp, #0x10]
+0x00837246  cmp      r5, r0
+0x00837248  bne      #0x837250
+0x0083724a  ldr      r1, [r0]
+0x0083724c  ldr      r1, [r1, #0x10]
+0x0083724e  b        #0x837256
+0x00837250  cbz      r0, #0x837258
+0x00837252  ldr      r1, [r0]
+0x00837254  ldr      r1, [r1, #0x14]
+0x00837256  blx      r1
+0x00837258  mov      r0, r4
+0x0083725a  blx      #0x4a40a8  ; PLT _Unwind_Resume
+0x0083725e  nop      
+0x00837260  strb     r2, [r1, #0x19]
+0x00837262  lsls     r0, r0, #2
+0x00837264  lsls     r2, r3, #0x14
+0x00837266  lsls     r0, r0, #2
+0x00837268  strb     r0, [r3, #0x18]
+0x0083726a  lsls     r0, r0, #2
+  ---- next symbol ----
+
+===== Anki::Util::ReliableTransport::HandleSubMessage(unsigned char const*, unsigned int, unsigned char, unsigned short, Anki::Util::ReliableConnection*, Anki::Util::TransportAddress const&) @ 0x00837418 =====
+0x00837418  push.w   {r4, r5, r6, r7, r8, sb, lr}
+0x0083741c  sub      sp, #0xc
+0x0083741e  add.w    r8, sp, #0x28
+0x00837422  mov      r7, r1
+0x00837424  mov      r4, r3
+0x00837426  mov      r6, r2
+0x00837428  ldm.w    r8, {r1, r5, r8}
+0x0083742c  mov      sb, r0
+0x0083742e  cbz      r1, #0x837440
+0x00837430  mov      r0, r5
+0x00837432  blx      #0x4cd670  ; PLT Anki::Util::ReliableConnection::IsNextInSequenceId(unsigned short) const
+0x00837436  cmp      r0, #1
+0x00837438  bne      #0x837456
+0x0083743a  mov      r0, r5
+0x0083743c  blx      #0x4cd67c  ; PLT Anki::Util::ReliableConnection::AdvanceNextInSequenceId()
+0x00837440  subs     r0, r4, #1
+0x00837442  cmp      r0, #0xa
+0x00837444  bhi      #0x83751a
+0x00837446  tbb      [pc, r0]
+0x0083744a  subs     r3, r2, r0
+0x0083744c  lsrs     r3, r5, #4
+0x0083744e  subs     r6, #9
+0x00837450  lsls     r6, r0, #0x18
+0x00837452  lsls     r6, r0, #0x18
+0x00837454  lsls     r7, r3, #1
+0x00837456  add      sp, #0xc
+0x00837458  pop.w    {r4, r5, r6, r7, r8, sb, pc}
+
+===== Anki::Util::ReliableTransport::DeleteConnection(Anki::Util::TransportAddress const&) @ 0x008375f0 =====
+0x008375f0  push     {r4, r5, r6, lr}
+0x008375f2  mov      r6, r0
+0x008375f4  add.w    r4, r6, #0x10
+0x008375f8  mov      r0, r4
+0x008375fa  blx      #0x4cd640  ; PLT std::__ndk1::__tree_iterator<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, std::__ndk1::__tree_node<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, void*>*, int> std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, std::__ndk1::__map_value_compare<Anki::Util::TransportAddress, std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, std::__ndk1::less<Anki::Util::TransportAddress>, true>, std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*> > >::find<Anki::Util::TransportAddress>(Anki::Util::TransportAddress const&)
+0x008375fe  mov      r5, r0
+0x00837600  add.w    r0, r6, #0x14
+0x00837604  cmp      r5, r0
+0x00837606  it       eq
+0x00837608  popeq    {r4, r5, r6, pc}
+0x0083760a  ldr      r0, [r5, #0x30]
+0x0083760c  cbz      r0, #0x837616
+0x0083760e  blx      #0x4cd5bc  ; PLT Anki::Util::ReliableConnection::~ReliableConnection()
+0x00837612  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00837616  mov      r0, r4
+0x00837618  mov      r1, r5
+0x0083761a  pop.w    {r4, r5, r6, lr}
+0x0083761e  b.w      #0x8d126c
+0x00837622  movs     r0, r0
+  ---- next symbol ----
+
+===== Anki::Util::ReliableTransport::ReceiveData(unsigned char const*, unsigned int, Anki::Util::TransportAddress const&) @ 0x00837624 =====
+0x00837624  push.w   {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0x00837628  sub      sp, #0x44
+0x0083762a  mov      r7, r2
+0x0083762c  mov      r5, r0
+0x0083762e  mov      r6, r1
+0x00837630  movs     r0, #0
+0x00837632  cmp      r7, #0xa
+0x00837634  str      r3, [sp, #0x28]
+0x00837636  blo      #0x837660
+0x00837638  addw     r1, pc, #0x4d0  ; r1=0x837b0c 
+0x0083763c  ldrb     r2, [r6, r0]
+0x0083763e  ldrb     r3, [r1, r0]
+0x00837640  cmp      r2, r3
+0x00837642  bne      #0x8376d4
+0x00837644  adds     r0, #1
+0x00837646  cmp      r0, #2
+0x00837648  bls      #0x83763c
+0x0083764a  ldrh     r1, [r6, #4]
+0x0083764c  cmp      r1, #0
+0x0083764e  mov      r0, r1
+0x00837650  str      r0, [sp, #0x20]
+0x00837652  beq.w    #0x8377a8
+0x00837656  ldrh.w   sb, [r6, #6]
+0x0083765a  ldrb.w   r8, [r6, #3]
+0x0083765e  b        #0x8377b8
+0x00837660  strd     r0, r0, [sp, #0x38]
+0x00837664  str      r0, [sp, #0x40]
+0x00837666  add      r4, sp, #0x2c
+0x00837668  mov.w    r0, #0x100
+0x0083766c  movs     r1, #1
+0x0083766e  mov      r2, r7
+0x00837670  strd     r1, r0, [sp]
+0x00837674  mov      r0, r4
+0x00837676  mov      r1, r6
+0x00837678  movs     r3, #0
+0x0083767a  blx      #0x4aa03c  ; PLT Anki::Util::ConvertMessageBufferToString(unsigned char const*, unsigned int, Anki::Util::EBytesToTextType, bool, unsigned int)
+0x0083767e  ldrb.w   r0, [sp, #0x2c]
+0x00837682  ldr      r3, [sp, #0x34]
+0x00837684  tst.w    r0, #1
+0x00837688  it       eq
+0x0083768a  orreq    r3, r4, #1
+0x0083768e  addw     r0, pc, #0x438  ; r0=0x837ac8 "ReliableTransport.BadPrefix.TooSmall"
+0x00837692  add      r1, sp, #0x38
+0x00837694  addw     r2, pc, #0x458  ; r2=0x837af0 "Header '%s' is too small!"
+0x00837698  blx      #0x4a4540  ; PLT Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0083769c  ldrb.w   r0, [sp, #0x2c]
+0x008376a0  lsls     r0, r0, #0x1f
+0x008376a2  itt      ne
+0x008376a4  ldrne    r0, [sp, #0x34]
+0x008376a6  blxne    #0x4a40cc
+0x008376aa  ldr      r0, [sp, #0x38]
+0x008376ac  cbz      r0, #0x8376cc
+0x008376ae  ldr      r1, [sp, #0x3c]
+0x008376b0  cmp      r1, r0
+0x008376b2  itttt    ne
+0x008376b4  subne.w  r2, r1, #8
+0x008376b8  subne    r2, r2, r0
+0x008376ba  mvnne    r3, #7
+0x008376be  bicne.w  r2, r3, r2
+0x008376c2  itt      ne
+0x008376c4  addne    r1, r1, r2
+0x008376c6  strne    r1, [sp, #0x3c]
+0x008376c8  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x008376cc  add.w    r4, r5, #0x28
+0x008376d0  movs     r1, #0
+0x008376d2  b        #0x837748
+0x008376d4  movs     r0, #0
+0x008376d6  strd     r0, r0, [sp, #0x38]
+0x008376da  str      r0, [sp, #0x40]
+0x008376dc  add      r4, sp, #0x2c
+0x008376de  mov.w    r0, #0x100
+0x008376e2  movs     r1, #1
+0x008376e4  movs     r2, #0xa
+0x008376e6  strd     r1, r0, [sp]
+0x008376ea  mov      r0, r4
+0x008376ec  mov      r1, r6
+0x008376ee  movs     r3, #0
+0x008376f0  blx      #0x4aa03c  ; PLT Anki::Util::ConvertMessageBufferToString(unsigned char const*, unsigned int, Anki::Util::EBytesToTextType, bool, unsigned int)
+0x008376f4  ldrb.w   r0, [sp, #0x2c]
+0x008376f8  ldr      r3, [sp, #0x34]
+0x008376fa  tst.w    r0, #1
+0x008376fe  it       eq
+0x00837700  orreq    r3, r4, #1
+0x00837704  addw     r0, pc, #0x408  ; r0=0x837b10 "ReliableTransport.BadPrefix"
+0x00837708  add      r1, sp, #0x38
+0x0083770a  addw     r2, pc, #0x420  ; r2=0x837b2c "Header '%s' has wrong prefix!"
+0x0083770e  blx      #0x4a4540  ; PLT Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00837712  ldrb.w   r0, [sp, #0x2c]
+0x00837716  lsls     r0, r0, #0x1f
+0x00837718  itt      ne
+0x0083771a  ldrne    r0, [sp, #0x34]
+0x0083771c  blxne    #0x4a40cc
+0x00837720  ldr      r0, [sp, #0x38]
+0x00837722  cbz      r0, #0x837742
+0x00837724  ldr      r1, [sp, #0x3c]
+0x00837726  cmp      r1, r0
+0x00837728  itttt    ne
+0x0083772a  subne.w  r2, r1, #8
+0x0083772e  subne    r2, r2, r0
+0x00837730  mvnne    r3, #7
+0x00837734  bicne.w  r2, r3, r2
+0x00837738  itt      ne
+0x0083773a  addne    r1, r1, r2
+0x0083773c  strne    r1, [sp, #0x3c]
+0x0083773e  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00837742  add.w    r4, r5, #0x28
+0x00837746  movs     r1, #2
+0x00837748  mov      r0, r4
+0x0083774a  blx      #0x4cd6e8  ; PLT Anki::Util::TransportStats::AddRecvError(Anki::Util::EMessageError)
+0x0083774e  mov      r0, r4
+0x00837750  movs     r1, #4
+0x00837752  blx      #0x4cd6e8  ; PLT Anki::Util::TransportStats::AddRecvError(Anki::Util::EMessageError)
+0x00837756  ldr.w    r0, [pc, #0x3f4]  ; =0x3f1170
+0x0083775a  movs     r1, #0
+0x0083775c  ldr.w    r2, [pc, #0x3f0]  ; =0x3f118b
+0x00837760  add      r0, pc  ; r0=0xc288d4 "ReliableTransport.Recv.Unhandled"
+0x00837762  strd     r1, r1, [sp, #0x38]
+0x00837766  add      r2, pc  ; r2=0xc288f5 "Unknown/Unhandled type of message!"
+0x00837768  str      r1, [sp, #0x40]
+0x0083776a  add      r1, sp, #0x38
+0x0083776c  blx      #0x4a4540  ; PLT Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00837770  ldr      r0, [sp, #0x38]
+0x00837772  cbz      r0, #0x837792
+0x00837774  ldr      r1, [sp, #0x3c]
+0x00837776  cmp      r1, r0
+0x00837778  itttt    ne
+0x0083777a  subne.w  r2, r1, #8
+0x0083777e  subne    r2, r2, r0
+0x00837780  mvnne    r3, #7
+0x00837784  bicne.w  r2, r3, r2
+0x00837788  itt      ne
+0x0083778a  addne    r1, r1, r2
+0x0083778c  strne    r1, [sp, #0x3c]
+0x0083778e  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00837792  ldr      r0, [r5, #4]
+0x00837794  cbz      r0, #0x8377a2
+0x00837796  ldr      r1, [r0]
+0x00837798  mov      r2, r7
+0x0083779a  ldr      r3, [sp, #0x28]
+0x0083779c  ldr      r5, [r1, #8]
+0x0083779e  mov      r1, r6
+0x008377a0  blx      r5
+0x008377a2  add      sp, #0x44
+0x008377a4  pop.w    {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+
+===== Anki::Util::ReliableTransport::Update() @ 0x00837b8c =====
+0x00837b8c  push.w   {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0x00837b90  sub      sp, #0x24
+0x00837b92  mov      r5, r0
+0x00837b94  add.w    r0, r5, #0x24
+0x00837b98  str      r0, [sp, #8]
+0x00837b9a  blx      #0x4a6784  ; PLT std::__ndk1::mutex::lock()
+0x00837b9e  ldr      r0, [r5, #0xc]
+0x00837ba0  ldr      r1, [r0]
+0x00837ba2  ldr      r1, [r1, #0x28]
+0x00837ba4  blx      r1
+0x00837ba6  ldr      r0, [pc, #0x148]  ; =0x807c10
+0x00837ba8  mov      r7, r5
+0x00837baa  ldr      sb, [r7, #0x10]!
+0x00837bae  add      r6, sp, #0xc
+0x00837bb0  add      r0, pc  ; r0=0x103f7c4 GOT->Anki::Util::INetTransportDataReceiver::OnDisconnected
+0x00837bb2  add.w    sl, r7, #4
+0x00837bb6  mov.w    r8, #1
+0x00837bba  movs     r4, #0
+0x00837bbc  ldr      r0, [r0]  ; r0=&Anki::Util::INetTransportDataReceiver::OnDisconnected
+0x00837bbe  ldr      r0, [r0]
+0x00837bc0  str      r0, [sp, #4]
+0x00837bc2  b        #0x837c8c
+0x00837bc4  ldr.w    fp, [sb, #0x30]
+0x00837bc8  mov      r0, fp
+0x00837bca  mov      r1, r5
+0x00837bcc  blx      #0x4cd76c  ; PLT Anki::Util::ReliableConnection::Update(Anki::Util::ReliableTransport*)
+0x00837bd0  cbz      r0, #0x837bec
+0x00837bd2  cmp.w    fp, #0
+0x00837bd6  beq      #0x837c8c
+0x00837bd8  ldr.w    r0, [sb, #4]
+0x00837bdc  cmp      r0, #0
+0x00837bde  beq      #0x837c7c
+0x00837be0  mov      sb, r0
+0x00837be2  ldr.w    r0, [sb]
+0x00837be6  cmp      r0, #0
+0x00837be8  bne      #0x837be0
+0x00837bea  b        #0x837c8c
+0x00837bec  strd     r4, r4, [sp, #0x18]
+0x00837bf0  str      r4, [sp, #0x20]
+0x00837bf2  mov      r0, r6
+0x00837bf4  mov      r1, fp
+0x00837bf6  blx      #0x4b8c10  ; PLT Anki::Util::TransportAddress::ToString() const
+0x00837bfa  ldrb.w   r1, [sp, #0xc]
+0x00837bfe  ldr      r0, [sp, #0x14]
+0x00837c00  tst.w    r1, #1
+0x00837c04  it       eq
+0x00837c06  orreq    r0, r6, #1
+0x00837c0a  str      r0, [sp]
+0x00837c0c  adr      r0, #0xe4
+0x00837c0e  adr      r1, #0xec
+0x00837c10  add      r2, sp, #0x18
+0x00837c12  adr      r3, #0x114
+0x00837c14  blx      #0x4a505c  ; PLT Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00837c18  ldrb.w   r0, [sp, #0xc]
+0x00837c1c  lsls     r0, r0, #0x1f
+0x00837c1e  itt      ne
+0x00837c20  ldrne    r0, [sp, #0x14]
+0x00837c22  blxne    #0x4a40cc
+0x00837c26  ldr      r0, [sp, #0x18]
+0x00837c28  cbz      r0, #0x837c48
+0x00837c2a  ldr      r1, [sp, #0x1c]
+0x00837c2c  cmp      r1, r0
+0x00837c2e  itttt    ne
+0x00837c30  subne.w  r2, r1, #8
+0x00837c34  subne    r2, r2, r0
+0x00837c36  mvnne    r3, #7
+0x00837c3a  bicne.w  r2, r3, r2
+0x00837c3e  itt      ne
+0x00837c40  addne    r1, r1, r2
+0x00837c42  strne    r1, [sp, #0x1c]
+0x00837c44  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00837c48  ldr      r0, [r5, #4]
+0x00837c4a  mov      r4, r6
+0x00837c4c  ldr      r1, [r0]
+0x00837c4e  ldr      r6, [r1, #8]
+0x00837c50  ldr      r1, [sp, #4]
+0x00837c52  movs     r2, #0
+0x00837c54  mov      r3, fp
+0x00837c56  blx      r6
+0x00837c58  cmp.w    fp, #0
+0x00837c5c  beq      #0x837c68
+0x00837c5e  mov      r0, fp
+0x00837c60  blx      #0x4cd5bc  ; PLT Anki::Util::ReliableConnection::~ReliableConnection()
+0x00837c64  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00837c68  mov.w    r8, #0
+0x00837c6c  mov      r0, r7
+0x00837c6e  mov      r1, sb
+0x00837c70  blx      #0x4cd6dc  ; PLT std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, std::__ndk1::__map_value_compare<Anki::Util::TransportAddress, std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, std::__ndk1::less<Anki::Util::TransportAddress>, true>, std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*> > >::erase(std::__ndk1::__tree_const_iterator<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, std::__ndk1::__tree_node<std::__ndk1::__value_type<Anki::Util::TransportAddress, Anki::Util::ReliableConnection*>, void*>*, int>)
+0x00837c74  mov      sb, r0
+0x00837c76  mov      r6, r4
+0x00837c78  movs     r4, #0
+0x00837c7a  b        #0x837c8c
+0x00837c7c  mov      r0, sb
+0x00837c7e  ldr.w    sb, [r0, #8]
+0x00837c82  ldr.w    r1, [sb]
+0x00837c86  cmp      r1, r0
+0x00837c88  mov      r0, sb
+0x00837c8a  bne      #0x837c7e
+0x00837c8c  cmp      sb, sl
+0x00837c8e  bne      #0x837bc4
+0x00837c90  ldr      r0, [sp, #8]
+0x00837c92  blx      #0x4a6790  ; PLT std::__ndk1::mutex::unlock()
+0x00837c96  and      r0, r8, #1
+0x00837c9a  add      sp, #0x24
+0x00837c9c  pop.w    {r4, r5, r6, r7, r8, sb, sl, fp, pc}

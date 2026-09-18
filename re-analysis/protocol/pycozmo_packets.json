@@ -1,0 +1,731 @@
+{
+ "type_Connect_Connect": {
+  "name": "Connect",
+  "kind": "Connect",
+  "size": 0,
+  "variable": false,
+  "nargs": 0,
+  "unknown_args": 0,
+  "group": null
+ },
+ "type_Disconnect_Disconnect": {
+  "name": "Disconnect",
+  "kind": "Disconnect",
+  "size": 0,
+  "variable": false,
+  "nargs": 0,
+  "unknown_args": 0,
+  "group": null
+ },
+ "type_Ping_Ping": {
+  "name": "Ping",
+  "kind": "Ping",
+  "size": 17,
+  "variable": false,
+  "nargs": 4,
+  "unknown_args": 1,
+  "group": null
+ },
+ "type_Keyframe_Keyframe": {
+  "name": "Keyframe",
+  "kind": "Keyframe",
+  "size": 0,
+  "variable": false,
+  "nargs": 0,
+  "unknown_args": 0,
+  "group": null
+ },
+ "03": {
+  "name": "LightStateCenter",
+  "kind": "Command",
+  "size": 1,
+  "variable": true,
+  "nargs": 2,
+  "unknown_args": 1,
+  "group": "lights"
+ },
+ "04": {
+  "name": "CubeLights",
+  "kind": "Command",
+  "size": 0,
+  "variable": true,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "objects"
+ },
+ "05": {
+  "name": "ObjectConnect",
+  "kind": "Command",
+  "size": 5,
+  "variable": false,
+  "nargs": 2,
+  "unknown_args": 0,
+  "group": "objects"
+ },
+ "08": {
+  "name": "StreamObjectAccel",
+  "kind": "Command",
+  "size": 5,
+  "variable": false,
+  "nargs": 2,
+  "unknown_args": 0,
+  "group": "objects"
+ },
+ "0a": {
+  "name": "SetAccessoryDiscovery",
+  "kind": "Command",
+  "size": 1,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "objects"
+ },
+ "0b": {
+  "name": "SetHeadLight",
+  "kind": "Command",
+  "size": 1,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "camera"
+ },
+ "10": {
+  "name": "CubeId",
+  "kind": "Command",
+  "size": 5,
+  "variable": false,
+  "nargs": 2,
+  "unknown_args": 0,
+  "group": "objects"
+ },
+ "11": {
+  "name": "LightStateSide",
+  "kind": "Command",
+  "size": 1,
+  "variable": true,
+  "nargs": 2,
+  "unknown_args": 1,
+  "group": "lights"
+ },
+ "25": {
+  "name": "Enable",
+  "kind": "Command",
+  "size": 0,
+  "variable": false,
+  "nargs": 0,
+  "unknown_args": 0,
+  "group": "system"
+ },
+ "32": {
+  "name": "DriveWheels",
+  "kind": "Command",
+  "size": 16,
+  "variable": false,
+  "nargs": 4,
+  "unknown_args": 0,
+  "group": "motors"
+ },
+ "33": {
+  "name": "TurnInPlaceAtSpeed",
+  "kind": "Command",
+  "size": 10,
+  "variable": false,
+  "nargs": 3,
+  "unknown_args": 0,
+  "group": "motors"
+ },
+ "34": {
+  "name": "MoveLift",
+  "kind": "Command",
+  "size": 4,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "motors"
+ },
+ "35": {
+  "name": "MoveHead",
+  "kind": "Command",
+  "size": 4,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "motors"
+ },
+ "36": {
+  "name": "SetLiftHeight",
+  "kind": "Command",
+  "size": 17,
+  "variable": false,
+  "nargs": 5,
+  "unknown_args": 0,
+  "group": "motors"
+ },
+ "37": {
+  "name": "SetHeadAngle",
+  "kind": "Command",
+  "size": 17,
+  "variable": false,
+  "nargs": 5,
+  "unknown_args": 0,
+  "group": "motors"
+ },
+ "39": {
+  "name": "TurnInPlace",
+  "kind": "Command",
+  "size": 20,
+  "variable": false,
+  "nargs": 8,
+  "unknown_args": 2,
+  "group": "motors"
+ },
+ "3b": {
+  "name": "StopAllMotors",
+  "kind": "Command",
+  "size": 0,
+  "variable": false,
+  "nargs": 0,
+  "unknown_args": 0,
+  "group": "motors"
+ },
+ "3c": {
+  "name": "ClearPath",
+  "kind": "Command",
+  "size": 2,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 1,
+  "group": "motors"
+ },
+ "3d": {
+  "name": "AppendPathSegLine",
+  "kind": "Command",
+  "size": 28,
+  "variable": false,
+  "nargs": 7,
+  "unknown_args": 0,
+  "group": "motors"
+ },
+ "3e": {
+  "name": "AppendPathSegArc",
+  "kind": "Command",
+  "size": 32,
+  "variable": false,
+  "nargs": 8,
+  "unknown_args": 0,
+  "group": "motors"
+ },
+ "3f": {
+  "name": "AppendPathSegPointTurn",
+  "kind": "Command",
+  "size": 29,
+  "variable": false,
+  "nargs": 8,
+  "unknown_args": 1,
+  "group": "motors"
+ },
+ "40": {
+  "name": "TrimPath",
+  "kind": "Command",
+  "size": 2,
+  "variable": false,
+  "nargs": 2,
+  "unknown_args": 0,
+  "group": "motors"
+ },
+ "41": {
+  "name": "ExecutePath",
+  "kind": "Command",
+  "size": 3,
+  "variable": false,
+  "nargs": 2,
+  "unknown_args": 1,
+  "group": "motors"
+ },
+ "45": {
+  "name": "SetOrigin",
+  "kind": "Command",
+  "size": 24,
+  "variable": false,
+  "nargs": 6,
+  "unknown_args": 2,
+  "group": "localization"
+ },
+ "4b": {
+  "name": "SyncTime",
+  "kind": "Command",
+  "size": 8,
+  "variable": false,
+  "nargs": 2,
+  "unknown_args": 1,
+  "group": "system"
+ },
+ "4c": {
+  "name": "EnableCamera",
+  "kind": "Command",
+  "size": 2,
+  "variable": false,
+  "nargs": 2,
+  "unknown_args": 0,
+  "group": "camera"
+ },
+ "57": {
+  "name": "SetCameraParams",
+  "kind": "Command",
+  "size": 7,
+  "variable": false,
+  "nargs": 3,
+  "unknown_args": 0,
+  "group": "camera"
+ },
+ "58": {
+  "name": "StartMotorCalibration",
+  "kind": "Command",
+  "size": 2,
+  "variable": false,
+  "nargs": 2,
+  "unknown_args": 0,
+  "group": "motors"
+ },
+ "60": {
+  "name": "EnableStopOnCliff",
+  "kind": "Command",
+  "size": 1,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "motors"
+ },
+ "64": {
+  "name": "SetRobotVolume",
+  "kind": "Command",
+  "size": 2,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "audio"
+ },
+ "66": {
+  "name": "EnableColorImages",
+  "kind": "Command",
+  "size": 1,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "camera"
+ },
+ "81": {
+  "name": "NvStorageOp",
+  "kind": "Command",
+  "size": 10,
+  "variable": true,
+  "nargs": 5,
+  "unknown_args": 1,
+  "group": "nv"
+ },
+ "8d": {
+  "name": "AbortAnimation",
+  "kind": "Command",
+  "size": 0,
+  "variable": false,
+  "nargs": 0,
+  "unknown_args": 0,
+  "group": "anim"
+ },
+ "8e": {
+  "name": "OutputAudio",
+  "kind": "Command",
+  "size": 744,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "audio"
+ },
+ "8f": {
+  "name": "OutputSilence",
+  "kind": "Command",
+  "size": 0,
+  "variable": false,
+  "nargs": 0,
+  "unknown_args": 0,
+  "group": "audio"
+ },
+ "91": {
+  "name": "RecordHeading",
+  "kind": "Command",
+  "size": 0,
+  "variable": false,
+  "nargs": 0,
+  "unknown_args": 0,
+  "group": "anim"
+ },
+ "92": {
+  "name": "TurnToRecordedHeading",
+  "kind": "Command",
+  "size": 0,
+  "variable": false,
+  "nargs": 0,
+  "unknown_args": 0,
+  "group": "anim"
+ },
+ "93": {
+  "name": "AnimHead",
+  "kind": "Command",
+  "size": 3,
+  "variable": false,
+  "nargs": 3,
+  "unknown_args": 0,
+  "group": "anim"
+ },
+ "94": {
+  "name": "AnimLift",
+  "kind": "Command",
+  "size": 3,
+  "variable": false,
+  "nargs": 3,
+  "unknown_args": 0,
+  "group": "anim"
+ },
+ "97": {
+  "name": "DisplayImage",
+  "kind": "Command",
+  "size": 0,
+  "variable": true,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "display"
+ },
+ "98": {
+  "name": "AnimBackpackLights",
+  "kind": "Command",
+  "size": 10,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "anim"
+ },
+ "99": {
+  "name": "AnimBody",
+  "kind": "Command",
+  "size": 4,
+  "variable": false,
+  "nargs": 2,
+  "unknown_args": 1,
+  "group": "anim"
+ },
+ "9a": {
+  "name": "EndAnimation",
+  "kind": "Command",
+  "size": 0,
+  "variable": false,
+  "nargs": 0,
+  "unknown_args": 0,
+  "group": "anim"
+ },
+ "9b": {
+  "name": "StartAnimation",
+  "kind": "Command",
+  "size": 1,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "anim"
+ },
+ "9f": {
+  "name": "EnableAnimationState",
+  "kind": "Command",
+  "size": 0,
+  "variable": false,
+  "nargs": 0,
+  "unknown_args": 0,
+  "group": "system"
+ },
+ "a9": {
+  "name": "ShutdownRobot",
+  "kind": "Command",
+  "size": 0,
+  "variable": false,
+  "nargs": 0,
+  "unknown_args": 0,
+  "group": "system"
+ },
+ "ae": {
+  "name": "WifiOff",
+  "kind": "Command",
+  "size": 1,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "system"
+ },
+ "af": {
+  "name": "FirmwareUpdate",
+  "kind": "Command",
+  "size": 1026,
+  "variable": false,
+  "nargs": 2,
+  "unknown_args": 0,
+  "group": "firmware"
+ },
+ "b0": {
+  "name": "DebugData",
+  "kind": "Command",
+  "size": 7,
+  "variable": true,
+  "nargs": 5,
+  "unknown_args": 1,
+  "group": "debug"
+ },
+ "b4": {
+  "name": "ObjectMoved",
+  "kind": "Command",
+  "size": 21,
+  "variable": false,
+  "nargs": 6,
+  "unknown_args": 0,
+  "group": "objects"
+ },
+ "b5": {
+  "name": "ObjectStoppedMoving",
+  "kind": "Command",
+  "size": 8,
+  "variable": false,
+  "nargs": 2,
+  "unknown_args": 0,
+  "group": "objects"
+ },
+ "b6": {
+  "name": "ObjectTapped",
+  "kind": "Command",
+  "size": 12,
+  "variable": false,
+  "nargs": 6,
+  "unknown_args": 0,
+  "group": "objects"
+ },
+ "b9": {
+  "name": "ObjectTapFiltered",
+  "kind": "Command",
+  "size": 10,
+  "variable": false,
+  "nargs": 4,
+  "unknown_args": 0,
+  "group": "objects"
+ },
+ "c4": {
+  "name": "AcknowledgeAction",
+  "kind": "Command",
+  "size": 1,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "motors"
+ },
+ "c2": {
+  "name": "RobotDelocalized",
+  "kind": "Command",
+  "size": 0,
+  "variable": false,
+  "nargs": 0,
+  "unknown_args": 0,
+  "group": "localization"
+ },
+ "c3": {
+  "name": "RobotPoked",
+  "kind": "Command",
+  "size": 0,
+  "variable": false,
+  "nargs": 0,
+  "unknown_args": 0,
+  "group": "localization"
+ },
+ "c6": {
+  "name": "PathFollowingEvent",
+  "kind": "Command",
+  "size": 3,
+  "variable": false,
+  "nargs": 2,
+  "unknown_args": 0,
+  "group": "motors"
+ },
+ "c9": {
+  "name": "HardwareInfo",
+  "kind": "Command",
+  "size": 6,
+  "variable": false,
+  "nargs": 3,
+  "unknown_args": 2,
+  "group": "system"
+ },
+ "ca": {
+  "name": "AnimationStarted",
+  "kind": "Command",
+  "size": 1,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "anim"
+ },
+ "cb": {
+  "name": "AnimationEnded",
+  "kind": "Command",
+  "size": 1,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "anim"
+ },
+ "cd": {
+  "name": "NvStorageOpResult",
+  "kind": "Command",
+  "size": 10,
+  "variable": true,
+  "nargs": 5,
+  "unknown_args": 0,
+  "group": "nv"
+ },
+ "ce": {
+  "name": "ObjectPowerLevel",
+  "kind": "Command",
+  "size": 9,
+  "variable": false,
+  "nargs": 3,
+  "unknown_args": 0,
+  "group": "objects"
+ },
+ "d0": {
+  "name": "ObjectConnectionState",
+  "kind": "Command",
+  "size": 13,
+  "variable": false,
+  "nargs": 4,
+  "unknown_args": 0,
+  "group": "objects"
+ },
+ "d1": {
+  "name": "MotorCalibration",
+  "kind": "Command",
+  "size": 3,
+  "variable": false,
+  "nargs": 3,
+  "unknown_args": 0,
+  "group": "motors"
+ },
+ "d7": {
+  "name": "ObjectUpAxisChanged",
+  "kind": "Command",
+  "size": 9,
+  "variable": false,
+  "nargs": 3,
+  "unknown_args": 0,
+  "group": "objects"
+ },
+ "db": {
+  "name": "ButtonPressed",
+  "kind": "Command",
+  "size": 1,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 0,
+  "group": "system"
+ },
+ "dd": {
+  "name": "FallingStarted",
+  "kind": "Command",
+  "size": 4,
+  "variable": false,
+  "nargs": 1,
+  "unknown_args": 1,
+  "group": "localization"
+ },
+ "de": {
+  "name": "FallingStopped",
+  "kind": "Command",
+  "size": 12,
+  "variable": false,
+  "nargs": 3,
+  "unknown_args": 1,
+  "group": "localization"
+ },
+ "ed": {
+  "name": "BodyInfo",
+  "kind": "Command",
+  "size": 12,
+  "variable": false,
+  "nargs": 3,
+  "unknown_args": 0,
+  "group": "system"
+ },
+ "ee": {
+  "name": "FirmwareSignature",
+  "kind": "Command",
+  "size": 2,
+  "variable": true,
+  "nargs": 2,
+  "unknown_args": 1,
+  "group": "system"
+ },
+ "ef": {
+  "name": "FirmwareUpdateResult",
+  "kind": "Command",
+  "size": 7,
+  "variable": false,
+  "nargs": 3,
+  "unknown_args": 0,
+  "group": "firmware"
+ },
+ "f0": {
+  "name": "RobotState",
+  "kind": "Event",
+  "size": 91,
+  "variable": false,
+  "nargs": 23,
+  "unknown_args": 0,
+  "group": "state"
+ },
+ "f1": {
+  "name": "AnimationState",
+  "kind": "Event",
+  "size": 15,
+  "variable": false,
+  "nargs": 6,
+  "unknown_args": 0,
+  "group": "state"
+ },
+ "f2": {
+  "name": "ImageChunk",
+  "kind": "Event",
+  "size": 18,
+  "variable": true,
+  "nargs": 9,
+  "unknown_args": 0,
+  "group": "state"
+ },
+ "f3": {
+  "name": "ObjectAvailable",
+  "kind": "Event",
+  "size": 9,
+  "variable": false,
+  "nargs": 3,
+  "unknown_args": 0,
+  "group": "state"
+ },
+ "f4": {
+  "name": "ImageImuData",
+  "kind": "Event",
+  "size": 17,
+  "variable": false,
+  "nargs": 5,
+  "unknown_args": 0,
+  "group": "state"
+ },
+ "f5": {
+  "name": "ObjectAccel",
+  "kind": "Event",
+  "size": 20,
+  "variable": false,
+  "nargs": 5,
+  "unknown_args": 0,
+  "group": "state"
+ }
+}

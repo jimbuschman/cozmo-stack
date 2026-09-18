@@ -1,0 +1,1890 @@
+
+===== Anki::Util::UDPTransport::OpenSocket(int) @ 0x00839a30 =====
+0x00839a30  push.w   {r4, r5, r6, r7, r8, lr}
+0x00839a34  sub      sp, #0x60
+0x00839a36  mov      r5, r1
+0x00839a38  mov      r4, r0
+0x00839a3a  blx      #0x4cd88c  ; PLT Anki::Util::UDPTransport::CloseSocket()
+0x00839a3e  blx      #0x4cd8bc  ; PLT Anki::Util::UDPTransport::GetWifiInterfaceIndex() const
+0x00839a42  str      r0, [sp, #0x5c]
+0x00839a44  movs     r0, #0
+0x00839a46  str.w    r5, [r4, #0x98]
+0x00839a4a  movs     r1, #0x20
+0x00839a4c  strd     r0, r0, [sp, #0x30]
+0x00839a50  add      r0, sp, #0x38
+0x00839a52  ldrh.w   r6, [r4, #0x90]
+0x00839a56  blx      #0x4a48ac  ; PLT __aeabi_memclr8
+0x00839a5a  cmp      r6, #0xa
+0x00839a5c  it       ne
+0x00839a5e  movne    r6, #2
+0x00839a60  str      r6, [sp, #0x3c]
+0x00839a62  bne      #0x839aca
+0x00839a64  movs     r0, #4
+0x00839a66  add      r2, sp, #0x38
+0x00839a68  str      r0, [sp, #0x38]
+0x00839a6a  addw     r0, pc, #0x6b8  ; r0=0x83a124 "ff02::1"
+0x00839a6e  add      r3, sp, #0x34
+0x00839a70  movs     r1, #0
+0x00839a72  movs     r7, #0
+0x00839a74  blx      #0x4cd8c8  ; PLT getaddrinfo
+0x00839a78  mov      r6, r0
+0x00839a7a  cbz      r6, #0x839aca
+0x00839a7c  strd     r7, r7, [sp, #0x18]
+0x00839a80  str      r7, [sp, #0x20]
+0x00839a82  mov      r0, r6
+0x00839a84  blx      #0x4cd8d4  ; PLT gai_strerror
+0x00839a88  str      r0, [sp]
+0x00839a8a  addw     r0, pc, #0x6a0  ; r0=0x83a12c "UDPTransport.BadDefaultIpv6Address"
+0x00839a8e  add      r1, sp, #0x18
+0x00839a90  addw     r2, pc, #0x6bc  ; r2=0x83a150 "Error: getaddrinfo for multicast address. ecode = %d '%s'"
+0x00839a94  mov      r3, r6
+0x00839a96  blx      #0x4a4108  ; PLT Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00839a9a  ldr      r0, [sp, #0x18]
+0x00839a9c  cbz      r0, #0x839abc
+0x00839a9e  ldr      r1, [sp, #0x1c]
+0x00839aa0  cmp      r1, r0
+0x00839aa2  itttt    ne
+0x00839aa4  subne.w  r2, r1, #8
+0x00839aa8  subne    r2, r2, r0
+0x00839aaa  mvnne    r3, #7
+0x00839aae  bicne.w  r2, r3, r2
+0x00839ab2  itt      ne
+0x00839ab4  addne    r1, r1, r2
+0x00839ab6  strne    r1, [sp, #0x1c]
+0x00839ab8  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00839abc  ldr.w    r0, [pc, #0x6cc]  ; =0x804cc8
+0x00839ac0  ldr.w    r1, [pc, #0x6cc]  ; =0x804cc2
+0x00839ac4  add      r0, pc  ; r0=0x103e790 GOT->Anki::Util::_errG
+0x00839ac6  add      r1, pc  ; r1=0x103e78c GOT->Anki::Util::_errBreakOnError
+0x00839ac8  b        #0x839b66
+0x00839aca  movs     r0, #1
+0x00839acc  add      r6, sp, #0x18
+0x00839ace  str      r0, [sp, #0x38]
+0x00839ad0  movs     r0, #2
+0x00839ad2  str      r0, [sp, #0x40]
+0x00839ad4  mov      r0, r6
+0x00839ad6  mov      r1, r5
+0x00839ad8  blx      #0x4a4c18  ; PLT std::__ndk1::to_string(int)
+0x00839adc  ldrb.w   r0, [sp, #0x18]
+0x00839ae0  ldr      r1, [sp, #0x20]
+0x00839ae2  tst.w    r0, #1
+0x00839ae6  it       eq
+0x00839ae8  orreq    r1, r6, #1
+0x00839aec  add      r2, sp, #0x38
+0x00839aee  add      r3, sp, #0x30
+0x00839af0  movs     r0, #0
+0x00839af2  blx      #0x4cd8c8  ; PLT getaddrinfo
+0x00839af6  mov      r6, r0
+0x00839af8  ldrb.w   r0, [sp, #0x18]
+0x00839afc  lsls     r0, r0, #0x1f
+0x00839afe  itt      ne
+0x00839b00  ldrne    r0, [sp, #0x20]
+0x00839b02  blxne    #0x4a40cc
+0x00839b06  cbz      r6, #0x839b7c
+0x00839b08  ldr      r0, [sp, #0x34]
+0x00839b0a  cbz      r0, #0x839b14
+0x00839b0c  blx      #0x4cd8e0  ; PLT freeaddrinfo
+0x00839b10  movs     r0, #0
+0x00839b12  str      r0, [sp, #0x34]
+0x00839b14  movs     r0, #0
+0x00839b16  strd     r0, r0, [sp, #0x18]
+0x00839b1a  str      r0, [sp, #0x20]
+0x00839b1c  mov      r0, r6
+0x00839b1e  blx      #0x4cd8d4  ; PLT gai_strerror
+0x00839b22  ldr.w    r2, [pc, #0x670]  ; =0x3eee93
+0x00839b26  add      r2, pc  ; r2=0xc289bd "Error: getaddrinfo for local address. port = %d, ecode = %d '%s'"
+0x00839b28  strd     r6, r0, [sp]
+0x00839b2c  addw     r0, pc, #0x668  ; r0=0x83a198 "UDPTransport.BadLocalPort"
+0x00839b30  add      r1, sp, #0x18
+0x00839b32  mov      r3, r5
+0x00839b34  blx      #0x4a4108  ; PLT Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00839b38  ldr      r0, [sp, #0x18]
+0x00839b3a  cbz      r0, #0x839b5a
+0x00839b3c  ldr      r1, [sp, #0x1c]
+0x00839b3e  cmp      r1, r0
+0x00839b40  itttt    ne
+0x00839b42  subne.w  r2, r1, #8
+0x00839b46  subne    r2, r2, r0
+0x00839b48  mvnne    r3, #7
+0x00839b4c  bicne.w  r2, r3, r2
+0x00839b50  itt      ne
+0x00839b52  addne    r1, r1, r2
+0x00839b54  strne    r1, [sp, #0x1c]
+0x00839b56  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00839b5a  ldr.w    r0, [pc, #0x658]  ; =0x804c2a
+0x00839b5e  ldr.w    r1, [pc, #0x658]  ; =0x804c24
+0x00839b62  add      r0, pc  ; r0=0x103e790 GOT->Anki::Util::_errG
+0x00839b64  add      r1, pc  ; r1=0x103e78c GOT->Anki::Util::_errBreakOnError
+0x00839b66  ldr      r0, [r0]  ; r0=&Anki::Util::_errG
+0x00839b68  movs     r2, #1
+0x00839b6a  ldr      r1, [r1]  ; r1=&Anki::Util::_errBreakOnError
+0x00839b6c  strb     r2, [r0]
+0x00839b6e  ldrb     r0, [r1]
+0x00839b70  cmp      r0, #0
+0x00839b72  beq.w    #0x839cf6
+0x00839b76  blx      #0x4a4114  ; PLT Anki::Util::sDebugBreakOnError()
+0x00839b7a  b        #0x839cf6
+0x00839b7c  ldr.w    r0, [r4, #0x80]
+0x00839b80  ldr      r3, [sp, #0x30]
+0x00839b82  ldr      r7, [r0]
+0x00839b84  adds     r3, #4
+0x00839b86  ldm      r3, {r1, r2, r3}
+0x00839b88  ldr      r7, [r7, #8]
+0x00839b8a  blx      r7
+0x00839b8c  mov      r5, r0
+0x00839b8e  cmp.w    r5, #-1
+0x00839b92  str.w    r5, [r4, #0x94]
+0x00839b96  ble      #0x839c80
+0x00839b98  ldr.w    r0, [pc, #0x620]  ; =0x3eedf8
+0x00839b9c  movs     r2, #0
+0x00839b9e  ldr.w    r1, [pc, #0x620]  ; =0x3eeea9
+0x00839ba2  ldr.w    r3, [pc, #0x620]  ; =0x3eeebb
+0x00839ba6  add      r0, pc  ; r0=0xc289a2 "Network"
+0x00839ba8  add      r1, pc  ; r1=0xc28a55 "UDPTransport.OpenSocket"
+0x00839baa  strd     r2, r2, [sp, #0x18]
+0x00839bae  add      r3, pc  ; r3=0xc28a6d "Opened Socket %d"
+0x00839bb0  str      r2, [sp, #0x20]
+0x00839bb2  add.w    r8, sp, #0x18
+0x00839bb6  str      r5, [sp]
+0x00839bb8  mov      r2, r8
+0x00839bba  blx      #0x4a505c  ; PLT Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00839bbe  ldr      r0, [sp, #0x18]
+0x00839bc0  cbz      r0, #0x839be0
+0x00839bc2  ldr      r1, [sp, #0x1c]
+0x00839bc4  cmp      r1, r0
+0x00839bc6  itttt    ne
+0x00839bc8  subne.w  r2, r1, #8
+0x00839bcc  subne    r2, r2, r0
+0x00839bce  mvnne    r3, #7
+0x00839bd2  bicne.w  r2, r3, r2
+0x00839bd6  itt      ne
+0x00839bd8  addne    r1, r1, r2
+0x00839bda  strne    r1, [sp, #0x1c]
+0x00839bdc  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00839be0  ldrh.w   r0, [r4, #0x90]
+0x00839be4  cmp      r0, #2
+0x00839be6  beq.w    #0x839d00
+0x00839bea  cmp      r0, #0xa
+0x00839bec  bne.w    #0x839d28
+0x00839bf0  movs     r7, #1
+0x00839bf2  movs     r6, #4
+0x00839bf4  str      r7, [sp, #0xc]
+0x00839bf6  movs     r3, #0x12
+0x00839bf8  ldr.w    r0, [r4, #0x80]
+0x00839bfc  ldr.w    r1, [r4, #0x94]
+0x00839c00  ldr      r2, [r0]
+0x00839c02  ldr      r5, [r2, #0x14]
+0x00839c04  add      r2, sp, #0xc
+0x00839c06  strd     r2, r6, [sp]
+0x00839c0a  movs     r2, #0x29
+0x00839c0c  blx      r5
+0x00839c0e  cmp      r0, #0
+0x00839c10  beq.w    #0x839eb8
+0x00839c14  ldr      r0, [sp, #0x34]
+0x00839c16  cbz      r0, #0x839c20
+0x00839c18  blx      #0x4cd8e0  ; PLT freeaddrinfo
+0x00839c1c  movs     r0, #0
+0x00839c1e  str      r0, [sp, #0x34]
+0x00839c20  movs     r0, #0
+0x00839c22  strd     r0, r0, [sp, #0x18]
+0x00839c26  str      r0, [sp, #0x20]
+0x00839c28  blx      #0x4a6e20  ; PLT __errno
+0x00839c2c  ldr      r5, [r0]
+0x00839c2e  blx      #0x4a6e20  ; PLT __errno
+0x00839c32  ldr      r0, [r0]
+0x00839c34  blx      #0x4a6e2c  ; PLT strerror
+0x00839c38  ldr.w    r3, [pc, #0x58c]  ; =0x3eee98
+0x00839c3c  ldr.w    r2, [pc, #0x58c]  ; =0x3eeebe
+0x00839c40  add      r3, pc  ; r3=0xc28adc "UDPTransport.SetIpv6MulticastHopsFailed"
+0x00839c42  add      r2, pc  ; r2=0xc28b04 "SetSockOpt - IPV6_MULTICAST_HOPS failed, errno = %d '%s'"
+0x00839c44  add      r1, sp, #0x18
+0x00839c46  str      r0, [sp]
+0x00839c48  mov      r0, r3
+0x00839c4a  mov      r3, r5
+0x00839c4c  blx      #0x4a4108  ; PLT Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00839c50  ldr      r0, [sp, #0x18]
+0x00839c52  cbz      r0, #0x839c72
+0x00839c54  ldr      r1, [sp, #0x1c]
+0x00839c56  cmp      r1, r0
+0x00839c58  itttt    ne
+0x00839c5a  subne.w  r2, r1, #8
+0x00839c5e  subne    r2, r2, r0
+0x00839c60  mvnne    r3, #7
+0x00839c64  bicne.w  r2, r3, r2
+0x00839c68  itt      ne
+0x00839c6a  addne    r1, r1, r2
+0x00839c6c  strne    r1, [sp, #0x1c]
+0x00839c6e  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00839c72  ldr.w    r0, [pc, #0x55c]  ; =0x804b0e
+0x00839c76  ldr.w    r1, [pc, #0x55c]  ; =0x804b10
+0x00839c7a  add      r0, pc  ; r0=0x103e78c GOT->Anki::Util::_errBreakOnError
+0x00839c7c  add      r1, pc  ; r1=0x103e790 GOT->Anki::Util::_errG
+0x00839c7e  b        #0x839ce0
+0x00839c80  movs     r0, #0
+0x00839c82  strd     r0, r0, [sp, #0x18]
+0x00839c86  str      r0, [sp, #0x20]
+0x00839c88  blx      #0x4a6e20  ; PLT __errno
+0x00839c8c  ldr      r6, [r0]  ; r6=&Anki::Util::_errBreakOnError
+0x00839c8e  blx      #0x4a6e20  ; PLT __errno
+0x00839c92  ldr      r0, [r0]  ; r0=&Anki::Util::_errBreakOnError
+0x00839c94  blx      #0x4a6e2c  ; PLT strerror
+0x00839c98  ldr.w    r3, [pc, #0x5a8]  ; =0x3eed5a
+0x00839c9c  ldr.w    r2, [pc, #0x5a8]  ; =0x3eed76
+0x00839ca0  add      r3, pc  ; r3=0xc289fe "UDPTransport.OpenSocketFailed"
+0x00839ca2  add      r2, pc  ; r2=0xc28a1c "Error: Unable to open socket - res = %d, errno = %d '%s'"
+0x00839ca4  add      r1, sp, #0x18
+0x00839ca6  strd     r6, r0, [sp]
+0x00839caa  mov      r0, r3
+0x00839cac  mov      r3, r5
+0x00839cae  blx      #0x4a4108  ; PLT Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00839cb2  ldr      r0, [sp, #0x18]
+0x00839cb4  cbz      r0, #0x839cd4
+0x00839cb6  ldr      r1, [sp, #0x1c]
+0x00839cb8  cmp      r1, r0
+0x00839cba  itttt    ne
+0x00839cbc  subne.w  r2, r1, #8
+0x00839cc0  subne    r2, r2, r0
+0x00839cc2  mvnne    r3, #7
+0x00839cc6  bicne.w  r2, r3, r2
+0x00839cca  itt      ne
+0x00839ccc  addne    r1, r1, r2
+0x00839cce  strne    r1, [sp, #0x1c]
+0x00839cd0  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00839cd4  ldr.w    r0, [pc, #0x574]  ; =0x804aac
+0x00839cd8  ldr.w    r1, [pc, #0x574]  ; =0x804aae
+0x00839cdc  add      r0, pc  ; r0=0x103e78c GOT->Anki::Util::_errBreakOnError
+0x00839cde  add      r1, pc  ; r1=0x103e790 GOT->Anki::Util::_errG
+0x00839ce0  ldr      r0, [r0]  ; r0=&Anki::Util::_errBreakOnError
+0x00839ce2  movs     r2, #1
+0x00839ce4  ldr      r1, [r1]  ; r1=&Anki::Util::_errG
+0x00839ce6  ldrb     r0, [r0]
+0x00839ce8  strb     r2, [r1]
+0x00839cea  cbz      r0, #0x839cf0
+0x00839cec  blx      #0x4a4114  ; PLT Anki::Util::sDebugBreakOnError()
+0x00839cf0  mov      r0, r4
+0x00839cf2  blx      #0x4cd88c  ; PLT Anki::Util::UDPTransport::CloseSocket()
+0x00839cf6  movs     r2, #0
+0x00839cf8  mov      r0, r2
+0x00839cfa  add      sp, #0x60
+0x00839cfc  pop.w    {r4, r5, r6, r7, r8, pc}
+0x00839d00  movs     r0, #1
+0x00839d02  add      r3, sp, #0xc
+0x00839d04  str      r0, [sp, #0xc]
+0x00839d06  ldr.w    r0, [r4, #0x80]
+0x00839d0a  ldr.w    r1, [r4, #0x94]
+0x00839d0e  ldr      r2, [r0]
+0x00839d10  ldr      r7, [r2, #0x14]
+0x00839d12  movs     r2, #4
+0x00839d14  strd     r3, r2, [sp]
+0x00839d18  movs     r2, #1
+0x00839d1a  movs     r3, #6
+0x00839d1c  blx      r7
+0x00839d1e  mov      r6, r0
+0x00839d20  cmp.w    r6, #-1
+0x00839d24  ble.w    #0x839f48
+0x00839d28  ldr.w    r0, [r4, #0x80]
+0x00839d2c  ldr      r2, [sp, #0x30]
+0x00839d2e  ldr.w    r1, [r4, #0x94]
+0x00839d32  ldr      r7, [r0]
+0x00839d34  ldr      r3, [r2, #0x10]
+0x00839d36  ldr      r2, [r2, #0x18]
+0x00839d38  ldr      r7, [r7, #0xc]
+0x00839d3a  blx      r7
+0x00839d3c  mov      r6, r0
+0x00839d3e  cmp.w    r6, #-1
+0x00839d42  ble.w    #0x839e6a
+0x00839d46  ldrh.w   r0, [r4, #0x90]
+0x00839d4a  cmp      r0, #0xa
+0x00839d4c  bne      #0x839df2
+0x00839d4e  ldr      r0, [sp, #0x34]
+0x00839d50  mov      r1, r8
+0x00839d52  ldr      r0, [r0, #0x18]
+0x00839d54  adds     r0, #8
+0x00839d56  ldm.w    r0, {r2, r3, r5, r7}
+0x00839d5a  stm      r1!, {r2, r3, r5, r7}
+0x00839d5c  movs     r3, #0x14
+0x00839d5e  ldr      r0, [sp, #0x5c]
+0x00839d60  str      r0, [sp, #0x28]
+0x00839d62  ldr.w    r0, [r4, #0x80]
+0x00839d66  ldr.w    r1, [r4, #0x94]
+0x00839d6a  ldr      r2, [r0]
+0x00839d6c  ldr      r7, [r2, #0x14]
+0x00839d6e  movs     r2, #0x14
+0x00839d70  strd     r8, r2, [sp]
+0x00839d74  movs     r2, #0x29
+0x00839d76  blx      r7
+0x00839d78  cbz      r0, #0x839df2
+0x00839d7a  ldr      r0, [sp, #0x34]
+0x00839d7c  cbz      r0, #0x839d86
+0x00839d7e  blx      #0x4cd8e0  ; PLT freeaddrinfo
+0x00839d82  movs     r0, #0
+0x00839d84  str      r0, [sp, #0x34]
+0x00839d86  ldr      r0, [sp, #0x30]
+0x00839d88  cbz      r0, #0x839d92
+0x00839d8a  blx      #0x4cd8e0  ; PLT freeaddrinfo
+0x00839d8e  movs     r0, #0
+0x00839d90  str      r0, [sp, #0x30]
+0x00839d92  movs     r0, #0
+0x00839d94  strd     r0, r0, [sp, #0xc]
+0x00839d98  str      r0, [sp, #0x14]
+0x00839d9a  blx      #0x4a6e20  ; PLT __errno
+0x00839d9e  ldr      r5, [r0]
+0x00839da0  blx      #0x4a6e20  ; PLT __errno
+0x00839da4  ldr      r0, [r0]
+0x00839da6  blx      #0x4a6e2c  ; PLT strerror
+0x00839daa  ldr.w    r3, [pc, #0x474]  ; =0x3eef2d
+0x00839dae  ldr.w    r2, [pc, #0x474]  ; =0x3eef38
+0x00839db2  add      r3, pc  ; r3=0xc28ce3 "UDPTransport"
+0x00839db4  add      r2, pc  ; r2=0xc28cf0 "SetSockOpt - IPV6_JOIN_GROUP failed, errno = %d '%s'"
+0x00839db6  add      r1, sp, #0xc
+0x00839db8  str      r0, [sp]
+0x00839dba  mov      r0, r3
+0x00839dbc  mov      r3, r5
+0x00839dbe  blx      #0x4a4108  ; PLT Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00839dc2  ldr      r0, [sp, #0xc]
+0x00839dc4  cbz      r0, #0x839de4
+0x00839dc6  ldr      r1, [sp, #0x10]
+0x00839dc8  cmp      r1, r0
+0x00839dca  itttt    ne
+0x00839dcc  subne.w  r2, r1, #8
+0x00839dd0  subne    r2, r2, r0
+0x00839dd2  mvnne    r3, #7
+0x00839dd6  bicne.w  r2, r3, r2
+0x00839dda  itt      ne
+0x00839ddc  addne    r1, r1, r2
+0x00839dde  strne    r1, [sp, #0x10]
+0x00839de0  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00839de4  ldr.w    r0, [pc, #0x440]  ; =0x80499c
+0x00839de8  ldr.w    r1, [pc, #0x440]  ; =0x80499e
+0x00839dec  add      r0, pc  ; r0=0x103e78c GOT->Anki::Util::_errBreakOnError
+0x00839dee  add      r1, pc  ; r1=0x103e790 GOT->Anki::Util::_errG
+0x00839df0  b        #0x839ce0
+0x00839df2  ldr      r0, [sp, #0x30]
+0x00839df4  cbz      r0, #0x839dfe
+0x00839df6  blx      #0x4cd8e0  ; PLT freeaddrinfo
+0x00839dfa  movs     r0, #0
+0x00839dfc  str      r0, [sp, #0x30]
+0x00839dfe  ldr      r0, [sp, #0x34]
+0x00839e00  cbz      r0, #0x839e0a
+0x00839e02  blx      #0x4cd8e0  ; PLT freeaddrinfo
+0x00839e06  movs     r0, #0
+0x00839e08  str      r0, [sp, #0x34]
+0x00839e0a  ldr.w    r0, [pc, #0x424]  ; =0x3eeb84
+0x00839e0e  movs     r7, #0
+0x00839e10  ldr.w    r1, [pc, #0x420]  ; =0x3eeebf
+0x00839e14  cmp      r6, #0
+0x00839e16  ldr.w    r2, [pc, #0x424]  ; =0x3aa0da
+0x00839e1a  add      r0, pc  ; r0=0xc289a2 "Network"
+0x00839e1c  ldr.w    r3, [pc, #0x418]  ; =0x3eeeef
+0x00839e20  add      r1, pc  ; r1=0xc28ce3 "UDPTransport"
+0x00839e22  add      r2, pc  ; r2=0xbe3f00 
+0x00839e24  strd     r7, r7, [sp, #0x18]
+0x00839e28  str      r7, [sp, #0x20]
+0x00839e2a  addw     r7, pc, #0x414  ; r7=0x83a240 "Un"
+0x00839e2e  ldrd     r5, r4, [r4, #0x94]
+0x00839e32  add      r3, pc  ; r3=0xc28d25 "Socket %d open on port %d. Bind %ssuccessful"
+0x00839e34  it       ge
+0x00839e36  movge    r7, r2
+0x00839e38  add      r2, sp, #0x18
+0x00839e3a  strd     r5, r4, [sp]
+0x00839e3e  str      r7, [sp, #8]
+0x00839e40  blx      #0x4a505c  ; PLT Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00839e44  ldr      r0, [sp, #0x18]
+0x00839e46  cbz      r0, #0x839e66
+0x00839e48  ldr      r1, [sp, #0x1c]
+0x00839e4a  cmp      r1, r0
+0x00839e4c  itttt    ne
+0x00839e4e  subne.w  r2, r1, #8
+0x00839e52  subne    r2, r2, r0
+0x00839e54  mvnne    r3, #7
+0x00839e58  bicne.w  r2, r3, r2
+0x00839e5c  itt      ne
+0x00839e5e  addne    r1, r1, r2
+0x00839e60  strne    r1, [sp, #0x1c]
+0x00839e62  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00839e66  movs     r2, #1
+0x00839e68  b        #0x839cf8
+0x00839e6a  blx      #0x4a6e20  ; PLT __errno
+0x00839e6e  ldr      r0, [r0]
+0x00839e70  cmp      r0, #0x62
+0x00839e72  bne.w    #0x839fa2
+0x00839e76  ldr.w    r0, [pc, #0x3a0]  ; =0x3eed68
+0x00839e7a  movs     r1, #0
+0x00839e7c  ldr.w    r2, [pc, #0x39c]  ; =0x3eed84
+0x00839e80  add      r0, pc  ; r0=0xc28bec "UDPTransport.OpenSocket.BindInUse"
+0x00839e82  strd     r1, r1, [sp, #0x18]
+0x00839e86  add      r2, pc  ; r2=0xc28c0e "Warning: Unable to bind to in-use socket, continuing as this is OK in case of running multiple instances on one machine."
+0x00839e88  str      r1, [sp, #0x20]
+0x00839e8a  add      r1, sp, #0x18
+0x00839e8c  blx      #0x4a4540  ; PLT Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00839e90  ldr      r0, [sp, #0x18]
+0x00839e92  cmp      r0, #0
+0x00839e94  beq.w    #0x839d46
+0x00839e98  ldr      r1, [sp, #0x1c]
+0x00839e9a  cmp      r1, r0
+0x00839e9c  itttt    ne
+0x00839e9e  subne.w  r2, r1, #8
+0x00839ea2  subne    r2, r2, r0
+0x00839ea4  mvnne    r3, #7
+0x00839ea8  bicne.w  r2, r3, r2
+0x00839eac  itt      ne
+0x00839eae  addne    r1, r1, r2
+0x00839eb0  strne    r1, [sp, #0x1c]
+0x00839eb2  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00839eb6  b        #0x839d46
+0x00839eb8  str      r7, [sp, #0x2c]
+0x00839eba  movs     r3, #0x1a
+0x00839ebc  ldr.w    r0, [r4, #0x80]
+0x00839ec0  ldr.w    r1, [r4, #0x94]
+0x00839ec4  ldr      r2, [r0]
+0x00839ec6  ldr      r7, [r2, #0x14]
+0x00839ec8  add      r2, sp, #0x2c
+0x00839eca  strd     r2, r6, [sp]
+0x00839ece  movs     r2, #0x29
+0x00839ed0  blx      r7
+0x00839ed2  cmp      r0, #0
+0x00839ed4  beq.w    #0x83a028
+0x00839ed8  ldr      r0, [sp, #0x34]
+0x00839eda  cbz      r0, #0x839ee4
+0x00839edc  blx      #0x4cd8e0  ; PLT freeaddrinfo
+0x00839ee0  movs     r0, #0
+0x00839ee2  str      r0, [sp, #0x34]
+0x00839ee4  ldr      r0, [sp, #0x30]
+0x00839ee6  cbz      r0, #0x839ef0
+0x00839ee8  blx      #0x4cd8e0  ; PLT freeaddrinfo
+0x00839eec  movs     r0, #0
+0x00839eee  str      r0, [sp, #0x30]
+0x00839ef0  movs     r0, #0
+0x00839ef2  strd     r0, r0, [sp, #0x18]
+0x00839ef6  str      r0, [sp, #0x20]
+0x00839ef8  blx      #0x4a6e20  ; PLT __errno
+0x00839efc  ldr      r5, [r0]
+0x00839efe  blx      #0x4a6e20  ; PLT __errno
+0x00839f02  ldr      r0, [r0]
+0x00839f04  blx      #0x4a6e2c  ; PLT strerror
+0x00839f08  ldr      r3, [pc, #0x2cc]  ; =0x3eec2d
+0x00839f0a  ldr      r2, [pc, #0x2d0]  ; =0x3eec4c
+0x00839f0c  add      r3, pc  ; r3=0xc28b3d "UDPTransport.SetIpv6V6OnlyFailed"
+0x00839f0e  add      r2, pc  ; r2=0xc28b5e "SetSockOpt - IPV6_V6ONLY failed, errno = %d '%s'"
+0x00839f10  add      r1, sp, #0x18
+0x00839f12  str      r0, [sp]
+0x00839f14  mov      r0, r3
+0x00839f16  mov      r3, r5
+0x00839f18  blx      #0x4a4108  ; PLT Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00839f1c  ldr      r0, [sp, #0x18]
+0x00839f1e  cbz      r0, #0x839f3e
+0x00839f20  ldr      r1, [sp, #0x1c]
+0x00839f22  cmp      r1, r0
+0x00839f24  itttt    ne
+0x00839f26  subne.w  r2, r1, #8
+0x00839f2a  subne    r2, r2, r0
+0x00839f2c  mvnne    r3, #7
+0x00839f30  bicne.w  r2, r3, r2
+0x00839f34  itt      ne
+0x00839f36  addne    r1, r1, r2
+0x00839f38  strne    r1, [sp, #0x1c]
+0x00839f3a  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00839f3e  ldr      r0, [pc, #0x2a0]  ; =0x804846
+0x00839f40  ldr      r1, [pc, #0x2a0]  ; =0x804848
+0x00839f42  add      r0, pc  ; r0=0x103e78c GOT->Anki::Util::_errBreakOnError
+0x00839f44  add      r1, pc  ; r1=0x103e790 GOT->Anki::Util::_errG
+0x00839f46  b        #0x839ce0
+0x00839f48  movs     r0, #0
+0x00839f4a  strd     r0, r0, [sp, #0x18]
+0x00839f4e  str      r0, [sp, #0x20]
+0x00839f50  blx      #0x4a6e20  ; PLT __errno
+0x00839f54  ldr      r5, [r0]  ; r5=&Anki::Util::_errBreakOnError
+0x00839f56  blx      #0x4a6e20  ; PLT __errno
+0x00839f5a  ldr      r0, [r0]  ; r0=&Anki::Util::_errBreakOnError
+0x00839f5c  blx      #0x4a6e2c  ; PLT strerror
+0x00839f60  ldr      r3, [pc, #0x294]  ; =0x3eeb16
+0x00839f62  ldr      r2, [pc, #0x298]  ; =0x3eeb34
+0x00839f64  add      r3, pc  ; r3=0xc28a7e "UDPTransport.SetBroadcastFailed"
+0x00839f66  add      r2, pc  ; r2=0xc28a9e "Unable to setsockopt SO_BROADCAST - res = %d, errno = %d '%s'"
+0x00839f68  add      r1, sp, #0x18
+0x00839f6a  strd     r5, r0, [sp]
+0x00839f6e  mov      r0, r3
+0x00839f70  mov      r3, r6
+0x00839f72  blx      #0x4a4108  ; PLT Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00839f76  ldr      r0, [sp, #0x18]
+0x00839f78  cbz      r0, #0x839f98
+0x00839f7a  ldr      r1, [sp, #0x1c]
+0x00839f7c  cmp      r1, r0
+0x00839f7e  itttt    ne
+0x00839f80  subne.w  r2, r1, #8
+0x00839f84  subne    r2, r2, r0
+0x00839f86  mvnne    r3, #7
+0x00839f8a  bicne.w  r2, r3, r2
+0x00839f8e  itt      ne
+0x00839f90  addne    r1, r1, r2
+0x00839f92  strne    r1, [sp, #0x1c]
+0x00839f94  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00839f98  ldr      r0, [pc, #0x264]  ; =0x8047ec
+0x00839f9a  ldr      r1, [pc, #0x268]  ; =0x8047ee
+0x00839f9c  add      r0, pc  ; r0=0x103e78c GOT->Anki::Util::_errBreakOnError
+0x00839f9e  add      r1, pc  ; r1=0x103e790 GOT->Anki::Util::_errG
+0x00839fa0  b        #0x839ce0
+0x00839fa2  movs     r0, #0
+0x00839fa4  strd     r0, r0, [sp, #0x18]
+0x00839fa8  str      r0, [sp, #0x20]
+0x00839faa  blx      #0x4a6e20  ; PLT __errno
+0x00839fae  ldr      r5, [r0]  ; r5=&Anki::Util::_errBreakOnError
+0x00839fb0  blx      #0x4a6e20  ; PLT __errno
+0x00839fb4  ldr      r0, [r0]  ; r0=&Anki::Util::_errBreakOnError
+0x00839fb6  blx      #0x4a6e2c  ; PLT strerror
+0x00839fba  ldr      r3, [pc, #0x24c]  ; =0x3eecc5
+0x00839fbc  ldr      r2, [pc, #0x24c]  ; =0x3eece6
+0x00839fbe  add      r3, pc  ; r3=0xc28c87 "UDPTransport.OpenSocket.BindFailed"
+0x00839fc0  add      r2, pc  ; r2=0xc28caa "Error: Unable to bind socket (res = %d), errno = %d '%s'"
+0x00839fc2  add      r1, sp, #0x18
+0x00839fc4  strd     r5, r0, [sp]
+0x00839fc8  mov      r0, r3
+0x00839fca  mov      r3, r6
+0x00839fcc  blx      #0x4a4108  ; PLT Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00839fd0  ldr      r0, [sp, #0x18]
+0x00839fd2  cbz      r0, #0x839ff2
+0x00839fd4  ldr      r1, [sp, #0x1c]
+0x00839fd6  cmp      r1, r0
+0x00839fd8  itttt    ne
+0x00839fda  subne.w  r2, r1, #8
+0x00839fde  subne    r2, r2, r0
+0x00839fe0  mvnne    r3, #7
+0x00839fe4  bicne.w  r2, r3, r2
+0x00839fe8  itt      ne
+0x00839fea  addne    r1, r1, r2
+0x00839fec  strne    r1, [sp, #0x1c]
+0x00839fee  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00839ff2  ldr      r0, [pc, #0x21c]  ; =0x804790
+0x00839ff4  movs     r2, #1
+0x00839ff6  ldr      r1, [pc, #0x21c]  ; =0x804792
+0x00839ff8  add      r0, pc  ; r0=0x103e78c GOT->Anki::Util::_errBreakOnError
+0x00839ffa  add      r1, pc  ; r1=0x103e790 GOT->Anki::Util::_errG
+0x00839ffc  ldr      r0, [r0]  ; r0=&Anki::Util::_errBreakOnError
+0x00839ffe  ldr      r1, [r1]  ; r1=&Anki::Util::_errG
+0x0083a000  ldrb     r0, [r0]
+0x0083a002  strb     r2, [r1]
+0x0083a004  cbz      r0, #0x83a00a
+0x0083a006  blx      #0x4a4114  ; PLT Anki::Util::sDebugBreakOnError()
+0x0083a00a  ldr      r0, [sp, #0x34]
+0x0083a00c  cbz      r0, #0x83a016
+0x0083a00e  blx      #0x4cd8e0  ; PLT freeaddrinfo
+0x0083a012  movs     r0, #0
+0x0083a014  str      r0, [sp, #0x34]
+0x0083a016  ldr      r0, [sp, #0x30]
+0x0083a018  cmp      r0, #0
+0x0083a01a  beq.w    #0x839cf0
+0x0083a01e  blx      #0x4cd8e0  ; PLT freeaddrinfo
+0x0083a022  movs     r0, #0
+0x0083a024  str      r0, [sp, #0x30]
+0x0083a026  b        #0x839cf0
+0x0083a028  ldr.w    r0, [r4, #0x80]
+0x0083a02c  add      r3, sp, #0x5c
+0x0083a02e  ldr.w    r1, [r4, #0x94]
+0x0083a032  ldr      r2, [r0]
+0x0083a034  ldr      r7, [r2, #0x14]
+0x0083a036  movs     r2, #4
+0x0083a038  strd     r3, r2, [sp]
+0x0083a03c  movs     r2, #0x29
+0x0083a03e  movs     r3, #0x11
+0x0083a040  blx      r7
+0x0083a042  cmp      r0, #0
+0x0083a044  beq.w    #0x839d28
+0x0083a048  ldr      r0, [sp, #0x34]
+0x0083a04a  cbz      r0, #0x83a054
+0x0083a04c  blx      #0x4cd8e0  ; PLT freeaddrinfo
+0x0083a050  movs     r0, #0
+0x0083a052  str      r0, [sp, #0x34]
+0x0083a054  ldr      r0, [sp, #0x30]
+0x0083a056  cbz      r0, #0x83a060
+0x0083a058  blx      #0x4cd8e0  ; PLT freeaddrinfo
+0x0083a05c  movs     r0, #0
+0x0083a05e  str      r0, [sp, #0x30]
+0x0083a060  movs     r0, #0
+0x0083a062  strd     r0, r0, [sp, #0x18]
+0x0083a066  str      r0, [sp, #0x20]
+0x0083a068  blx      #0x4a6e20  ; PLT __errno
+0x0083a06c  ldr      r5, [r0]
+0x0083a06e  blx      #0x4a6e20  ; PLT __errno
+0x0083a072  ldr      r0, [r0]
+0x0083a074  blx      #0x4a6e2c  ; PLT strerror
+0x0083a078  ldr      r3, [pc, #0x16c]  ; =0x3eeb0f
+0x0083a07a  ldr      r2, [pc, #0x170]  ; =0x3eeb33
+0x0083a07c  add      r3, pc  ; r3=0xc28b8f "UDPTransport.SetIpv6MulticastIfFailed"
+0x0083a07e  add      r2, pc  ; r2=0xc28bb5 "SetSockOpt - IPV6_MULTICAST_IF failed, errno = %d '%s'"
+0x0083a080  add      r1, sp, #0x18
+0x0083a082  str      r0, [sp]
+0x0083a084  mov      r0, r3
+0x0083a086  mov      r3, r5
+0x0083a088  blx      #0x4a4108  ; PLT Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0083a08c  ldr      r0, [sp, #0x18]
+0x0083a08e  cbz      r0, #0x83a0ae
+0x0083a090  ldr      r1, [sp, #0x1c]
+0x0083a092  cmp      r1, r0
+0x0083a094  itttt    ne
+0x0083a096  subne.w  r2, r1, #8
+0x0083a09a  subne    r2, r2, r0
+0x0083a09c  mvnne    r3, #7
+0x0083a0a0  bicne.w  r2, r3, r2
+0x0083a0a4  itt      ne
+0x0083a0a6  addne    r1, r1, r2
+0x0083a0a8  strne    r1, [sp, #0x1c]
+0x0083a0aa  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x0083a0ae  ldr      r0, [pc, #0x140]  ; =0x8046d6
+0x0083a0b0  ldr      r1, [pc, #0x140]  ; =0x8046d8
+0x0083a0b2  add      r0, pc  ; r0=0x103e78c GOT->Anki::Util::_errBreakOnError
+0x0083a0b4  add      r1, pc  ; r1=0x103e790 GOT->Anki::Util::_errG
+0x0083a0b6  b        #0x839ce0
+0x0083a0b8  b        #0x83a0fa
+0x0083a0ba  b        #0x83a0fa
+0x0083a0bc  b        #0x83a0fa
+0x0083a0be  b        #0x83a0fa
+0x0083a0c0  b        #0x83a0fa
+0x0083a0c2  b        #0x83a0fa
+0x0083a0c4  mov      r4, r0
+0x0083a0c6  ldr      r0, [sp, #0xc]
+0x0083a0c8  cbz      r0, #0x83a11c
+0x0083a0ca  ldr      r1, [sp, #0x10]
+0x0083a0cc  cmp      r1, r0
+0x0083a0ce  beq      #0x83a118
+0x0083a0d0  sub.w    r2, r1, #8
+0x0083a0d4  mvn      r3, #7
+0x0083a0d8  subs     r2, r2, r0
+0x0083a0da  bic.w    r2, r3, r2
+0x0083a0de  add      r1, r2
+0x0083a0e0  str      r1, [sp, #0x10]
+0x0083a0e2  b        #0x83a118
+0x0083a0e4  b        #0x83a0fa
+0x0083a0e6  b        #0x83a0fa
+0x0083a0e8  b        #0x83a0fa
+0x0083a0ea  b        #0x83a0fa
+0x0083a0ec  mov      r4, r0
+0x0083a0ee  ldrb.w   r0, [sp, #0x18]
+0x0083a0f2  lsls     r0, r0, #0x1f
+0x0083a0f4  beq      #0x83a11c
+0x0083a0f6  ldr      r0, [sp, #0x20]
+0x0083a0f8  b        #0x83a118
+0x0083a0fa  mov      r4, r0
+0x0083a0fc  ldr      r0, [sp, #0x18]
+0x0083a0fe  cbz      r0, #0x83a11c
+0x0083a100  ldr      r1, [sp, #0x1c]
+0x0083a102  cmp      r1, r0
+0x0083a104  beq      #0x83a118
+0x0083a106  sub.w    r2, r1, #8
+0x0083a10a  mvn      r3, #7
+0x0083a10e  subs     r2, r2, r0
+0x0083a110  bic.w    r2, r3, r2
+0x0083a114  add      r1, r2
+0x0083a116  str      r1, [sp, #0x1c]
+0x0083a118  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x0083a11c  mov      r0, r4
+0x0083a11e  blx      #0x4a40a8  ; PLT _Unwind_Resume
+0x0083a122  nop      
+0x0083a124  str      r6, [r4, #0x64]
+0x0083a126  adds     r2, #0x30
+0x0083a128  subs     r2, #0x3a
+0x0083a12a  movs     r1, r6
+0x0083a12c  add      r5, sl
+0x0083a12e  strb     r0, [r2, r1]
+0x0083a130  str      r2, [r6, #0x14]
+0x0083a132  strb     r6, [r5, #0xd]
+0x0083a134  ldr      r0, [r6, #0x74]
+0x0083a136  strb     r2, [r6, #0x11]
+0x0083a138  tst      r6, r5
+0x0083a13a  str      r1, [r4, #0x44]
+0x0083a13c  str      r4, [r0, #0x54]
+0x0083a13e  str      r6, [r4, #0x14]
+0x0083a140  ldr      r5, [r6, #0x44]
+0x0083a142  ldr      r1, [pc, #0x1d0]  ; =0x463a0006
+0x0083a144  strb     r0, [r6, #0x19]
+0x0083a146  asrs     r6, r6
+0x0083a148  str      r4, [r4, #0x44]
+0x0083a14a  str      r2, [r6, #0x54]
+0x0083a14c  strb     r3, [r6, #0xd]
+0x0083a14e  movs     r0, r0
+0x0083a150  strb     r5, [r0, #9]
+0x0083a152  ldr      r2, [r6, #0x74]
+0x0083a154  subs     r2, #0x72
+0x0083a156  str      r0, [r4, #0x70]
+0x0083a158  strb     r5, [r4, #0x11]
+0x0083a15a  str      r1, [r4, #0x44]
+0x0083a15c  strb     r4, [r4, #9]
+0x0083a15e  ldr      r1, [r5, #0x64]
+0x0083a160  ldr      r6, [r4, #0x74]
+0x0083a162  str      r0, [r4, #0x60]
+0x0083a164  strb     r7, [r5, #9]
+0x0083a166  ldr      r0, [r4, #0x50]
+0x0083a168  ldr      r5, [r6, #0x44]
+0x0083a16a  ldr      r4, [r6, #0x14]
+0x0083a16c  str      r3, [r4, #0x14]
+0x0083a16e  strb     r3, [r6, #0x11]
+0x0083a170  str      r0, [r4, #0x10]
+0x0083a172  str      r4, [r4, #0x44]
+0x0083a174  str      r2, [r6, #0x54]
+0x0083a176  strb     r3, [r6, #0xd]
+0x0083a178  movs     r0, #0x2e
+0x0083a17a  str      r5, [r4, #0x34]
+0x0083a17c  str      r7, [r5, #0x44]
+0x0083a17e  movs     r0, #0x65
+0x0083a180  movs     r0, #0x3d
+0x0083a182  str      r5, [r4, #0x40]
+0x0083a184  movs     r7, #0x20
+0x0083a186  strb     r5, [r4, #0xc]
+0x0083a188  movs     r7, r4
+0x0083a18a  movs     r0, r0
+0x0083a18c  ldr      r4, [pc, #0x320]  ; =0x1af8ad
+0x0083a18e  lsls     r0, r0, #2
+0x0083a190  ldr      r4, [pc, #0x308]  ; =0x20022400
+0x0083a192  lsls     r0, r0, #2
+0x0083a194  mrc      p0, #4, r0, c3, c14, #1
+0x0083a198  add      r5, sl
+0x0083a19a  strb     r0, [r2, r1]
+0x0083a19c  str      r2, [r6, #0x14]
+0x0083a19e  strb     r6, [r5, #0xd]
+0x0083a1a0  ldr      r0, [r6, #0x74]
+0x0083a1a2  strb     r2, [r6, #0x11]
+0x0083a1a4  tst      r6, r5
+0x0083a1a6  str      r1, [r4, #0x44]
+0x0083a1a8  ldr      r4, [r1, #0x74]
+0x0083a1aa  str      r3, [r4, #0x14]
+0x0083a1ac  str      r4, [r5, r1]
+0x0083a1ae  strb     r7, [r5, #9]
+0x0083a1b0  lsls     r4, r6, #1
+0x0083a1b2  movs     r0, r0
+0x0083a1b4  ldr      r4, [pc, #0xa8]  ; =0x4604b570
+0x0083a1b6  lsls     r0, r0, #2
+0x0083a1b8  ldr      r4, [pc, #0x90]  ; =0x804aac
+0x0083a1ba  lsls     r0, r0, #2
+0x0083a1bc  ldcl     p0, c0, [r8, #0xf8]!
+0x0083a1c0  mcr      p0, #5, r0, c9, c14, #1
+0x0083a1c4  mrc      p0, #5, r0, c11, c14, #1
+0x0083a1c8  mrc      p0, #4, r0, c8, c14, #1
+0x0083a1cc  mrc      p0, #5, r0, c14, c14, #1
+0x0083a1d0  ldr      r3, [pc, #0x38]  ; =0x3eece6
+0x0083a1d2  lsls     r0, r0, #2
+0x0083a1d4  ldr      r3, [pc, #0x40]  ; =0x3eed68
+0x0083a1d6  lsls     r0, r0, #2
+0x0083a1d8  stc      p0, c0, [sp], #-0xf8
+0x0083a1dc  mcrr     p0, #3, r0, ip, c14
+0x0083a1e0  ldr      r0, [pc, #0x118]  ; =0x6a203602
+0x0083a1e2  lsls     r0, r0, #2
+0x0083a1e4  ldr      r0, [pc, #0x120]  ; =0x684f01c5
+0x0083a1e6  lsls     r0, r0, #2
+0x0083a1e8  add.w    r0, pc, lr, rrx
+0x0083a1ec  .byte    0x33, 0xeb
+0x0083a1ee  movs     r6, r7
+0x0083a1f0  mov      lr, sl
+0x0083a1f2  lsls     r0, r0, #2
+0x0083a1f4  mov      r8, fp
+0x0083a1f6  lsls     r0, r0, #2
+0x0083a1f8  adds.w   r0, r6, lr, rrx
+0x0083a1fc  .byte    0x34, 0xeb
+0x0083a1fe  movs     r6, r7
+0x0083a200  blxns    sp
+0x0083a202  lsls     r0, r0, #2
+0x0083a204  blxns    sp
+0x0083a206  lsls     r0, r0, #2
+0x0083a208  stcl     p0, c0, [r5], {0x3e}
+0x0083a20c  stcl     p0, c0, [r6], #0xf8
+0x0083a210  blx      r2
+0x0083a212  lsls     r0, r0, #2
+0x0083a214  .byte    0x92, 0x47
+0x0083a216  lsls     r0, r0, #2
+0x0083a218  stcl     p0, c0, [r8, #-0xf8]!
+0x0083a21c  stc      p0, c0, [r4, #0xf8]
+0x0083a220  vqadd.s32 d0, d13, d30
+0x0083a224  vqadd.s64 d0, d8, d30
+0x0083a228  ldr      r1, [pc, #0x270]  ; =0x20022400
+0x0083a22a  lsls     r0, r0, #2
+0x0083a22c  ldr      r1, [pc, #0x278]  ; =0xf4834628
+0x0083a22e  lsls     r0, r0, #2
+0x0083a230  .byte    0x84, 0xeb
+0x0083a232  movs     r6, r7
+0x0083a234  mrc      p0, #5, r0, c15, c14, #1
+0x0083a238  mcr      p0, #7, r0, c15, c14, #1
+0x0083a23c  adr      r0, #0x368
+0x0083a23e  movs     r2, r7
+0x0083a240  ldr      r5, [r2, #0x64]
+0x0083a242  movs     r0, r0
+0x0083a244  ldcl     p0, c0, [sl, #-0xf8]
+0x0083a248  ldcl     p0, c0, [r6, #-0xf8]!
+0x0083a24c  ldr      r2, [pc, #0x2b0]  ; =0xba40af06
+0x0083a24e  lsls     r0, r0, #2
+0x0083a250  ldr      r2, [pc, #0x2b8]  ; =0xea06f493
+0x0083a252  lsls     r0, r0, #2
+
+===== Anki::Util::UDPTransport::StartClient() @ 0x0083ad4c =====
+0x0083ad4c  ldr.w    r1, [r0, #0x94]
+0x0083ad50  adds     r1, #1
+0x0083ad52  it       ne
+0x0083ad54  bxne     lr
+0x0083ad56  push     {r7, lr}
+0x0083ad58  ldr.w    r1, [r0, #0x98]
+0x0083ad5c  blx      #0x4cd964  ; PLT Anki::Util::UDPTransport::OpenSocket(int)
+0x0083ad60  pop.w    {r7, lr}
+0x0083ad64  bx       lr
+
+===== Anki::Util::UDPTransport::HeaderPrefix::Set(unsigned char const*, unsigned int) @ 0x008393c8 =====
+0x008393c8  push     {r4, r5, r6, lr}
+0x008393ca  sub      sp, #0x10
+0x008393cc  mov      r6, r2
+0x008393ce  mov      r5, r1
+0x008393d0  mov      r4, r0
+0x008393d2  cmp      r6, #5
+0x008393d4  blo      #0x839412
+0x008393d6  movs     r0, #0
+0x008393d8  strd     r0, r0, [sp, #4]
+0x008393dc  str      r0, [sp, #0xc]
+0x008393de  movs     r0, #4
+0x008393e0  add      r1, sp, #4
+0x008393e2  str      r0, [sp]
+0x008393e4  adr      r0, #0x64
+0x008393e6  adr      r2, #0x80
+0x008393e8  mov      r3, r6
+0x008393ea  blx      #0x4a4540  ; PLT Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x008393ee  ldr      r0, [sp, #4]
+0x008393f0  cbz      r0, #0x839410
+0x008393f2  ldr      r1, [sp, #8]
+0x008393f4  cmp      r1, r0
+0x008393f6  itttt    ne
+0x008393f8  subne.w  r2, r1, #8
+0x008393fc  subne    r2, r2, r0
+0x008393fe  mvnne    r3, #7
+0x00839402  bicne.w  r2, r3, r2
+0x00839406  itt      ne
+0x00839408  addne    r1, r1, r2
+0x0083940a  strne    r1, [sp, #8]
+0x0083940c  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00839410  movs     r6, #4
+0x00839412  mov      r0, r4
+0x00839414  mov      r1, r5
+0x00839416  mov      r2, r6
+0x00839418  blx      #0x4a42ac  ; PLT __aeabi_memcpy
+0x0083941c  str      r6, [r4, #4]
+0x0083941e  add      sp, #0x10
+0x00839420  pop      {r4, r5, r6, pc}
+0x00839422  mov      r4, r0
+0x00839424  ldr      r0, [sp, #4]
+0x00839426  cbz      r0, #0x839444
+0x00839428  ldr      r1, [sp, #8]
+0x0083942a  cmp      r1, r0
+0x0083942c  beq      #0x839440
+0x0083942e  sub.w    r2, r1, #8
+0x00839432  mvn      r3, #7
+0x00839436  subs     r2, r2, r0
+0x00839438  bic.w    r2, r3, r2
+0x0083943c  add      r1, r2
+0x0083943e  str      r1, [sp, #8]
+0x00839440  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00839444  mov      r0, r4
+0x00839446  blx      #0x4a40a8  ; PLT _Unwind_Resume
+0x0083944a  nop      
+0x0083944c  add      r5, sl
+0x0083944e  strb     r0, [r2, r1]
+0x00839450  str      r2, [r6, #0x14]
+0x00839452  strb     r6, [r5, #0xd]
+0x00839454  ldr      r0, [r6, #0x74]
+0x00839456  strb     r2, [r6, #0x11]
+0x00839458  ldr      r0, [pc, #0xb8]  ; =0x4605b570
+0x0083945a  str      r5, [r4, #0x14]
+0x0083945c  str      r4, [r4, #0x54]
+0x0083945e  str      r2, [r6, r1]
+0x00839460  str      r2, [r6, #0x54]
+0x00839462  ldr      r6, [r4, #0x14]
+0x00839464  lsls     r0, r7, #1
+0x00839466  movs     r0, r0
+0x00839468  strb     r0, [r6, #9]
+0x0083946a  str      r5, [r4, #0x64]
+0x0083946c  ldrb     r1, [r5, #1]
+0x0083946e  strb     r0, [r4, #0x10]
+0x00839470  ldr      r7, [r5, #0x74]
+0x00839472  ldr      r0, [r4, #0x40]
+0x00839474  ldr      r7, [r5, #0x64]
+0x00839476  movs     r0, #0x67
+0x00839478  movs     r0, #0x2d
+0x0083947a  strb     r4, [r6, #9]
+0x0083947c  ldr      r5, [r6, #0x64]
+0x0083947e  str      r3, [r4, #0x14]
+0x00839480  ldr      r4, [r6, #0x14]
+0x00839482  str      r6, [r5, #0x74]
+0x00839484  str      r0, [r4, #0x60]
+0x00839486  ldr      r2, [r6, #0x74]
+0x00839488  movs     r0, #0x6d
+0x0083948a  strb     r5, [r4, #0x14]
+0x0083948c  strb     r0, [r4, #0x10]
+0x0083948e  movs     r0, #0x6f
+0x00839490  strb     r5, [r4, #0x14]
+0x00839492  movs     r0, r0
+
+===== Anki::Util::UDPTransport::GetHeaderSize() @ 0x008394b4 =====
+0x008394b4  ldr      r0, [pc, #0x14]  ; =0x8068dc
+0x008394b6  ldr      r1, [pc, #0x18]  ; =0x8068de
+0x008394b8  add      r0, pc  ; r0=0x103fd98 GOT->Anki::Util::UDPTransport::sHeaderPrefix
+0x008394ba  add      r1, pc  ; r1=0x103fd9c GOT->Anki::Util::UDPTransport::sDoesHeaderHaveCRC
+0x008394bc  ldr      r0, [r0]  ; r0=&Anki::Util::UDPTransport::sHeaderPrefix
+0x008394be  ldr      r1, [r1]  ; r1=&Anki::Util::UDPTransport::sDoesHeaderHaveCRC
+0x008394c0  ldr      r0, [r0, #4]
+0x008394c2  ldrb     r1, [r1]
+0x008394c4  cmp      r1, #0
+0x008394c6  it       ne
+0x008394c8  addne    r0, #2
+0x008394ca  bx       lr
+0x008394cc  ldr      r4, [r3, #0xc]
+0x008394ce  lsls     r0, r0, #2
+0x008394d0  ldr      r6, [r3, #0xc]
+0x008394d2  lsls     r0, r0, #2
+
+===== Anki::Util::UDPTransport::GetHeaderPrefix() @ 0x008394a8 =====
+0x008394a8  ldr      r0, [pc, #4]  ; =0x8068ea
+0x008394aa  add      r0, pc  ; r0=0x103fd98 GOT->Anki::Util::UDPTransport::sHeaderPrefix
+0x008394ac  ldr      r0, [r0]  ; r0=&Anki::Util::UDPTransport::sHeaderPrefix
+0x008394ae  bx       lr
+0x008394b0  ldr      r2, [r5, #0xc]
+0x008394b2  lsls     r0, r0, #2
+
+===== Anki::Util::UDPTransport::SetHeaderPrefix(unsigned char const*, unsigned int) @ 0x00839494 =====
+0x00839494  mov      r2, r1
+0x00839496  mov      r1, r0
+0x00839498  ldr      r0, [pc, #8]  ; =0x8068fa
+0x0083949a  add      r0, pc  ; r0=0x103fd98 GOT->Anki::Util::UDPTransport::sHeaderPrefix
+0x0083949c  ldr      r0, [r0]  ; r0=&Anki::Util::UDPTransport::sHeaderPrefix
+0x0083949e  b.w      #0x8d12ec
+0x008394a2  nop      
+0x008394a4  ldr      r2, [r7, #0xc]
+0x008394a6  lsls     r0, r0, #2
+
+===== Anki::Util::UDPTransport::TryToReadMessage() @ 0x0083aa44 =====
+0x0083aa44  push.w   {r4, r5, r6, r7, r8, lr}
+0x0083aa48  sub.w    sp, sp, #0x6a0
+0x0083aa4c  mov      r4, r0
+0x0083aa4e  ldr      r0, [pc, #0x1f0]  ; =0x803df4
+0x0083aa50  add      r5, sp, #0x58
+0x0083aa52  movs     r1, #0x80
+0x0083aa54  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x0083aa56  movs     r6, #0x80
+0x0083aa58  ldr      r0, [r0]  ; r0=&__stack_chk_guard
+0x0083aa5a  ldr      r0, [r0]
+0x0083aa5c  str.w    r0, [sp, #0x69c]
+0x0083aa60  mov      r0, r5
+0x0083aa62  blx      #0x4a48ac  ; PLT __aeabi_memclr8
+0x0083aa66  mov.w    r0, #0x5c0
+0x0083aa6a  add      r1, sp, #0x30
+0x0083aa6c  str      r0, [sp, #0x34]
+0x0083aa6e  add      r0, sp, #0xdc
+0x0083aa70  str      r0, [sp, #0x30]
+0x0083aa72  movs     r0, #0
+0x0083aa74  str      r5, [sp, #0x14]
+0x0083aa76  movs     r3, #0x40
+0x0083aa78  str      r0, [sp, #0x2c]
+0x0083aa7a  str      r6, [sp, #0x18]
+0x0083aa7c  str      r1, [sp, #0x1c]
+0x0083aa7e  movs     r1, #1
+0x0083aa80  strd     r1, r0, [sp, #0x20]
+0x0083aa84  str      r0, [sp, #0x28]
+0x0083aa86  ldr.w    r0, [r4, #0x80]
+0x0083aa8a  ldr.w    r1, [r4, #0x94]
+0x0083aa8e  ldr      r2, [r0]
+0x0083aa90  ldr      r7, [r2, #0x20]
+0x0083aa92  add      r2, sp, #0x14
+0x0083aa94  blx      r7
+0x0083aa96  mov      r5, r0
+0x0083aa98  cmp      r5, #1
+0x0083aa9a  blt      #0x83aabe
+0x0083aa9c  add      r6, sp, #0x38
+0x0083aa9e  add      r1, sp, #0x58
+0x0083aaa0  ldr      r7, [sp, #0x2c]
+0x0083aaa2  mov      r0, r6
+0x0083aaa4  blx      #0x4cd94c  ; PLT Anki::Util::TransportAddress::TransportAddress(__kernel_sockaddr_storage const&)
+0x0083aaa8  ubfx     r0, r7, #5, #1
+0x0083aaac  add      r1, sp, #0xdc
+0x0083aaae  str      r0, [sp]
+0x0083aab0  mov      r0, r4
+0x0083aab2  mov      r2, r5
+0x0083aab4  mov      r3, r6
+0x0083aab6  blx      #0x4cd958  ; PLT Anki::Util::UDPTransport::HandleReceivedMessage(unsigned char const*, unsigned int, Anki::Util::TransportAddress const&, bool)
+0x0083aaba  movs     r2, #1
+0x0083aabc  b        #0x83abf6
+0x0083aabe  blx      #0x4a6e20  ; PLT __errno
+0x0083aac2  ldr      r0, [r0]
+0x0083aac4  cmp      r0, #0xb
+0x0083aac6  beq      #0x83ab1c
+0x0083aac8  movs     r0, #0
+0x0083aaca  strd     r0, r0, [sp, #0x38]
+0x0083aace  str      r0, [sp, #0x40]
+0x0083aad0  ldrd     r8, r7, [r4, #0x94]
+0x0083aad4  blx      #0x4a6e20  ; PLT __errno
+0x0083aad8  ldr      r6, [r0]
+0x0083aada  blx      #0x4a6e20  ; PLT __errno
+0x0083aade  ldr      r0, [r0]
+0x0083aae0  blx      #0x4a6e2c  ; PLT strerror
+0x0083aae4  ldr      r2, [pc, #0x15c]  ; =0x3ee39a
+0x0083aae6  add      r2, pc  ; r2=0xc28e84 "recvmsg(_socketId = %d _port = %d) returned %zd, errno = %d '%s'"
+0x0083aae8  strd     r7, r5, [sp]
+0x0083aaec  add      r1, sp, #0x38
+0x0083aaee  strd     r6, r0, [sp, #8]
+0x0083aaf2  adr      r0, #0x154
+0x0083aaf4  mov      r3, r8
+0x0083aaf6  blx      #0x4a4540  ; PLT Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0083aafa  ldr      r0, [sp, #0x38]
+0x0083aafc  cbz      r0, #0x83ab1c
+0x0083aafe  ldr      r1, [sp, #0x3c]
+0x0083ab00  cmp      r1, r0
+0x0083ab02  itttt    ne
+0x0083ab04  subne.w  r2, r1, #8
+0x0083ab08  subne    r2, r2, r0
+0x0083ab0a  mvnne    r3, #7
+0x0083ab0e  bicne.w  r2, r3, r2
+0x0083ab12  itt      ne
+0x0083ab14  addne    r1, r1, r2
+0x0083ab16  strne    r1, [sp, #0x3c]
+0x0083ab18  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x0083ab1c  blx      #0x4a6e20  ; PLT __errno
+0x0083ab20  ldr      r0, [r0]
+0x0083ab22  cmp      r0, #0x6b
+0x0083ab24  bne      #0x83abf4
+0x0083ab26  mov      r0, r4
+0x0083ab28  blx      #0x4cd88c  ; PLT Anki::Util::UDPTransport::CloseSocket()
+0x0083ab2c  cbz      r0, #0x83ab94
+0x0083ab2e  ldr.w    r1, [r4, #0x98]
+0x0083ab32  mov      r0, r4
+0x0083ab34  blx      #0x4cd964  ; PLT Anki::Util::UDPTransport::OpenSocket(int)
+0x0083ab38  movs     r2, #0
+0x0083ab3a  cmp      r0, #0
+0x0083ab3c  bne      #0x83abf6
+0x0083ab3e  strd     r2, r2, [sp, #0x38]
+0x0083ab42  str      r2, [sp, #0x40]
+0x0083ab44  blx      #0x4a6e20  ; PLT __errno
+0x0083ab48  ldr      r4, [r0]
+0x0083ab4a  blx      #0x4a6e20  ; PLT __errno
+0x0083ab4e  ldr      r0, [r0]
+0x0083ab50  blx      #0x4a6e2c  ; PLT strerror
+0x0083ab54  ldr      r3, [pc, #0x178]  ; =0x3ee369
+0x0083ab56  ldr      r2, [pc, #0x17c]  ; =0x3ee392
+0x0083ab58  add      r3, pc  ; r3=0xc28ec5 "UDPTransport.ReadFailed.ReopenSocketFailed"
+0x0083ab5a  add      r2, pc  ; r2=0xc28ef0 "Error: Reopening closed socket failed. errno = %d '%s'"
+0x0083ab5c  add      r1, sp, #0x38
+0x0083ab5e  str      r0, [sp]
+0x0083ab60  mov      r0, r3
+0x0083ab62  mov      r3, r4
+0x0083ab64  blx      #0x4a4108  ; PLT Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0083ab68  ldr      r0, [sp, #0x38]
+0x0083ab6a  cbz      r0, #0x83ab8a
+0x0083ab6c  ldr      r1, [sp, #0x3c]
+0x0083ab6e  cmp      r1, r0
+0x0083ab70  itttt    ne
+0x0083ab72  subne.w  r2, r1, #8
+0x0083ab76  subne    r2, r2, r0
+0x0083ab78  mvnne    r3, #7
+0x0083ab7c  bicne.w  r2, r3, r2
+0x0083ab80  itt      ne
+0x0083ab82  addne    r1, r1, r2
+0x0083ab84  strne    r1, [sp, #0x3c]
+0x0083ab86  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x0083ab8a  ldr      r0, [pc, #0x14c]  ; =0x803bfe
+0x0083ab8c  ldr      r1, [pc, #0x14c]  ; =0x803bf8
+0x0083ab8e  add      r0, pc  ; r0=0x103e790 GOT->Anki::Util::_errG
+0x0083ab90  add      r1, pc  ; r1=0x103e78c GOT->Anki::Util::_errBreakOnError
+0x0083ab92  b        #0x83abe4
+0x0083ab94  movs     r0, #0
+0x0083ab96  strd     r0, r0, [sp, #0x38]
+0x0083ab9a  str      r0, [sp, #0x40]
+0x0083ab9c  blx      #0x4a6e20  ; PLT __errno
+0x0083aba0  ldr      r4, [r0]  ; r4=&Anki::Util::_errG
+0x0083aba2  blx      #0x4a6e20  ; PLT __errno
+0x0083aba6  ldr      r0, [r0]  ; r0=&Anki::Util::_errG
+0x0083aba8  blx      #0x4a6e2c  ; PLT strerror
+0x0083abac  str      r0, [sp]
+0x0083abae  adr      r0, #0xb0
+0x0083abb0  add      r1, sp, #0x38
+0x0083abb2  adr      r2, #0xd8
+0x0083abb4  mov      r3, r4
+0x0083abb6  blx      #0x4a4108  ; PLT Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0083abba  ldr      r0, [sp, #0x38]
+0x0083abbc  cbz      r0, #0x83abdc
+0x0083abbe  ldr      r1, [sp, #0x3c]
+0x0083abc0  cmp      r1, r0
+0x0083abc2  itttt    ne
+0x0083abc4  subne.w  r2, r1, #8
+0x0083abc8  subne    r2, r2, r0
+0x0083abca  mvnne    r3, #7
+0x0083abce  bicne.w  r2, r3, r2
+0x0083abd2  itt      ne
+0x0083abd4  addne    r1, r1, r2
+0x0083abd6  strne    r1, [sp, #0x3c]
+0x0083abd8  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x0083abdc  ldr      r0, [pc, #0xe8]  ; =0x803bac
+0x0083abde  ldr      r1, [pc, #0xec]  ; =0x803ba6
+0x0083abe0  add      r0, pc  ; r0=0x103e790 GOT->Anki::Util::_errG
+0x0083abe2  add      r1, pc  ; r1=0x103e78c GOT->Anki::Util::_errBreakOnError
+0x0083abe4  ldr      r0, [r0]  ; r0=&Anki::Util::_errG
+0x0083abe6  movs     r2, #1
+0x0083abe8  ldr      r1, [r1]  ; r1=&Anki::Util::_errBreakOnError
+0x0083abea  strb     r2, [r0]
+0x0083abec  ldrb     r0, [r1]
+0x0083abee  cbz      r0, #0x83abf4
+0x0083abf0  blx      #0x4a4114  ; PLT Anki::Util::sDebugBreakOnError()
+0x0083abf4  movs     r2, #0
+0x0083abf6  ldr      r0, [pc, #0xe8]  ; =0x803c4c
+0x0083abf8  ldr.w    r1, [sp, #0x69c]
+0x0083abfc  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x0083abfe  ldr      r0, [r0]  ; r0=&__stack_chk_guard
+0x0083ac00  ldr      r0, [r0]
+0x0083ac02  subs     r0, r0, r1
+0x0083ac04  ittt     eq
+0x0083ac06  moveq    r0, r2
+0x0083ac08  addeq.w  sp, sp, #0x6a0
+0x0083ac0c  popeq.w  {r4, r5, r6, r7, r8, pc}
+0x0083ac10  blx      #0x4a4fe4  ; PLT __stack_chk_fail
+0x0083ac14  b        #0x83ac18
+0x0083ac16  b        #0x83ac18
+0x0083ac18  mov      r4, r0
+0x0083ac1a  ldr      r0, [sp, #0x38]
+0x0083ac1c  cbz      r0, #0x83ac3a
+0x0083ac1e  ldr      r1, [sp, #0x3c]
+0x0083ac20  cmp      r1, r0
+0x0083ac22  beq      #0x83ac36
+0x0083ac24  sub.w    r2, r1, #8
+0x0083ac28  mvn      r3, #7
+0x0083ac2c  subs     r2, r2, r0
+0x0083ac2e  bic.w    r2, r3, r2
+0x0083ac32  add      r1, r2
+0x0083ac34  str      r1, [sp, #0x3c]
+0x0083ac36  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x0083ac3a  mov      r0, r4
+0x0083ac3c  blx      #0x4a40a8  ; PLT _Unwind_Resume
+0x0083ac40  subs     r5, #0xf4
+0x0083ac42  lsls     r0, r0, #2
+0x0083ac44  b        #0x83b37c
+0x0083ac46  movs     r6, r7
+0x0083ac48  add      r5, sl
+0x0083ac4a  strb     r0, [r2, r1]
+0x0083ac4c  str      r2, [r6, #0x14]
+0x0083ac4e  strb     r6, [r5, #0xd]
+0x0083ac50  ldr      r0, [r6, #0x74]
+0x0083ac52  strb     r2, [r6, #0x11]
+0x0083ac54  strh     r6, [r5, r0]
+0x0083ac56  str      r5, [r4, #0x14]
+0x0083ac58  mov      r4, ip
+0x0083ac5a  ldr      r1, [r4, #0x14]
+0x0083ac5c  str      r4, [r5, #0x54]
+0x0083ac5e  lsls     r4, r4, #1
+0x0083ac60  add      r5, sl
+0x0083ac62  strb     r0, [r2, r1]
+0x0083ac64  str      r2, [r6, #0x14]
+0x0083ac66  strb     r6, [r5, #0xd]
+0x0083ac68  ldr      r0, [r6, #0x74]
+0x0083ac6a  strb     r2, [r6, #0x11]
+0x0083ac6c  strh     r6, [r5, r0]
+0x0083ac6e  str      r5, [r4, #0x14]
+0x0083ac70  mov      r4, ip
+0x0083ac72  ldr      r1, [r4, #0x14]
+0x0083ac74  str      r4, [r5, #0x54]
+0x0083ac76  cmp      r6, #0x64
+0x0083ac78  ldr      r3, [r0, #0x44]
+0x0083ac7a  strb     r7, [r5, #0xd]
+0x0083ac7c  strh     r5, [r4, r5]
+0x0083ac7e  str      r7, [r5, #0x34]
+0x0083ac80  str      r3, [r5, #0x54]
+0x0083ac82  mov      r4, lr
+0x0083ac84  ldr      r1, [r4, #0x14]
+0x0083ac86  str      r4, [r5, #0x54]
+0x0083ac88  lsls     r4, r4, #1
+0x0083ac8a  movs     r0, r0
+0x0083ac8c  strb     r5, [r0, #9]
+0x0083ac8e  ldr      r2, [r6, #0x74]
+0x0083ac90  subs     r2, #0x72
+0x0083ac92  orrs     r0, r4
+0x0083ac94  ldr      r4, [r5, #0x74]
+0x0083ac96  ldr      r3, [r6, #0x14]
+0x0083ac98  str      r6, [r5, #0x74]
+0x0083ac9a  strb     r0, [r4, #0x14]
+0x0083ac9c  str      r6, [r5, #0x34]
+0x0083ac9e  ldr      r7, [r5, #0x64]
+0x0083aca0  str      r6, [r5, #0x54]
+0x0083aca2  strb     r3, [r4, #0x11]
+0x0083aca4  str      r5, [r4, #0x44]
+0x0083aca6  strb     r0, [r4, #0xc]
+0x0083aca8  str      r7, [r5, #0x34]
+0x0083acaa  str      r3, [r5, #0x54]
+0x0083acac  movs     r0, #0x74
+0x0083acae  str      r6, [r4, #0x14]
+0x0083acb0  ldr      r1, [r5, #0x44]
+0x0083acb2  str      r5, [r4, #0x44]
+0x0083acb4  movs     r0, #0x2e
+0x0083acb6  strb     r5, [r4, #9]
+0x0083acb8  ldr      r2, [r6, #0x64]
+0x0083acba  movs     r0, #0x6f
+0x0083acbc  movs     r0, #0x3d
+0x0083acbe  str      r5, [r4, #0x40]
+0x0083acc0  movs     r7, #0x20
+0x0083acc2  strb     r5, [r4, #0xc]
+0x0083acc4  movs     r7, r4
+0x0083acc6  movs     r0, r0
+0x0083acc8  subs     r3, #0xac
+0x0083acca  lsls     r0, r0, #2
+0x0083accc  subs     r3, #0xa6
+0x0083acce  lsls     r0, r0, #2
+0x0083acd0  b        #0x83b3a6
+0x0083acd2  movs     r6, r7
+0x0083acd4  b        #0x83b3fc
+0x0083acd6  movs     r6, r7
+0x0083acd8  subs     r3, #0xfe
+0x0083acda  lsls     r0, r0, #2
+0x0083acdc  subs     r3, #0xf8
+0x0083acde  lsls     r0, r0, #2
+0x0083ace0  subs     r4, #0x4c
+0x0083ace2  lsls     r0, r0, #2
+
+===== Anki::Util::UDPTransport::GetMaxNetMessageSize() @ 0x008394d4 =====
+0x008394d4  ldr      r0, [pc, #8]  ; =0x8068c6
+0x008394d6  add      r0, pc  ; r0=0x103fda0 GOT->Anki::Util::UDPTransport::sMaxNetMessageSize
+0x008394d8  ldr      r0, [r0]  ; r0=&Anki::Util::UDPTransport::sMaxNetMessageSize
+0x008394da  ldr      r0, [r0]
+0x008394dc  bx       lr
+0x008394de  nop      
+0x008394e0  ldr      r6, [r0, #0xc]
+0x008394e2  lsls     r0, r0, #2
+
+===== Anki::Util::UDPTransport::SetDoesHeaderHaveCRC(bool) @ 0x008394f4 =====
+0x008394f4  ldr      r1, [pc, #8]  ; =0x8068a2
+0x008394f6  add      r1, pc  ; r1=0x103fd9c GOT->Anki::Util::UDPTransport::sDoesHeaderHaveCRC
+0x008394f8  ldr      r1, [r1]  ; r1=&Anki::Util::UDPTransport::sDoesHeaderHaveCRC
+0x008394fa  strb     r0, [r1]
+0x008394fc  bx       lr
+0x008394fe  nop      
+0x00839500  ldr      r2, [r4, #8]
+0x00839502  lsls     r0, r0, #2
+
+===== Anki::Util::UDPTransport::HandleReceivedMessage(unsigned char const*, unsigned int, Anki::Util::TransportAddress const&, bool) @ 0x0083a750 =====
+0x0083a750  push.w   {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0x0083a754  sub      sp, #0x24
+0x0083a756  mov      r8, r0
+0x0083a758  ldr      r0, [pc, #0x240]  ; =0x80563a
+0x0083a75a  mov      sb, r1
+0x0083a75c  ldr      r1, [pc, #0x240]  ; =0x805630
+0x0083a75e  add      r0, pc  ; r0=0x103fd9c GOT->Anki::Util::UDPTransport::sDoesHeaderHaveCRC
+0x0083a760  add.w    sl, r8, #8
+0x0083a764  add      r1, pc  ; r1=0x103fd98 GOT->Anki::Util::UDPTransport::sHeaderPrefix
+0x0083a766  mov      r6, r2
+0x0083a768  ldr      r0, [r0]  ; r0=&Anki::Util::UDPTransport::sDoesHeaderHaveCRC
+0x0083a76a  mov      r5, r3
+0x0083a76c  ldr      r1, [r1]  ; r1=&Anki::Util::UDPTransport::sHeaderPrefix
+0x0083a76e  ldrb     r7, [r0]
+0x0083a770  mov      r0, sl
+0x0083a772  ldr      r4, [r1, #4]
+0x0083a774  mov      r1, r6
+0x0083a776  blx      #0x4cd700  ; PLT Anki::Util::TransportStats::AddRecvMessage(unsigned int)
+0x0083a77a  cmp      r7, #0
+0x0083a77c  it       ne
+0x0083a77e  addne    r4, #2
+0x0083a780  cmp      r4, r6
+0x0083a782  bls      #0x83a7fa
+0x0083a784  movs     r0, #0
+0x0083a786  strd     r0, r0, [sp, #0x18]
+0x0083a78a  str      r0, [sp, #0x20]
+0x0083a78c  add      r4, sp, #0xc
+0x0083a78e  mov.w    r0, #0x100
+0x0083a792  movs     r1, #1
+0x0083a794  mov      r2, r6
+0x0083a796  strd     r1, r0, [sp]
+0x0083a79a  mov      r0, r4
+0x0083a79c  mov      r1, sb
+0x0083a79e  movs     r3, #0
+0x0083a7a0  blx      #0x4aa03c  ; PLT Anki::Util::ConvertMessageBufferToString(unsigned char const*, unsigned int, Anki::Util::EBytesToTextType, bool, unsigned int)
+0x0083a7a4  ldr      r0, [pc, #0x27c]  ; =0x3ee60c
+0x0083a7a6  ldrb.w   r1, [sp, #0xc]
+0x0083a7aa  add      r0, pc  ; r0=0xc28dba "UDPTransport.BadPrefix.TooSmall"
+0x0083a7ac  ldr      r3, [sp, #0x14]
+0x0083a7ae  tst.w    r1, #1
+0x0083a7b2  it       eq
+0x0083a7b4  orreq    r3, r4, #1
+0x0083a7b8  add      r1, sp, #0x18
+0x0083a7ba  adr      r2, #0x26c
+0x0083a7bc  blx      #0x4a4540  ; PLT Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0083a7c0  ldrb.w   r0, [sp, #0xc]
+0x0083a7c4  lsls     r0, r0, #0x1f
+0x0083a7c6  itt      ne
+0x0083a7c8  ldrne    r0, [sp, #0x14]
+0x0083a7ca  blxne    #0x4a40cc
+0x0083a7ce  ldr      r0, [sp, #0x18]
+0x0083a7d0  cbz      r0, #0x83a7f0
+0x0083a7d2  ldr      r1, [sp, #0x1c]
+0x0083a7d4  cmp      r1, r0
+0x0083a7d6  itttt    ne
+0x0083a7d8  subne.w  r2, r1, #8
+0x0083a7dc  subne    r2, r2, r0
+0x0083a7de  mvnne    r3, #7
+0x0083a7e2  bicne.w  r2, r3, r2
+0x0083a7e6  itt      ne
+0x0083a7e8  addne    r1, r1, r2
+0x0083a7ea  strne    r1, [sp, #0x1c]
+0x0083a7ec  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x0083a7f0  mov      r0, sl
+0x0083a7f2  movs     r1, #0
+0x0083a7f4  blx      #0x4cd6e8  ; PLT Anki::Util::TransportStats::AddRecvError(Anki::Util::EMessageError)
+0x0083a7f8  b        #0x83a952
+0x0083a7fa  ldr      r0, [pc, #0x1a8]  ; =0x805592
+0x0083a7fc  mov      r7, sl
+0x0083a7fe  ldr.w    fp, [sp, #0x48]
+0x0083a802  add      r0, pc  ; r0=0x103fd98 GOT->Anki::Util::UDPTransport::sHeaderPrefix
+0x0083a804  ldr      r1, [r0]  ; r1=&Anki::Util::UDPTransport::sHeaderPrefix
+0x0083a806  mov      r0, sb
+0x0083a808  ldr.w    sl, [r1, #4]
+0x0083a80c  mov      r2, sl
+0x0083a80e  blx      #0x4a5728  ; PLT memcmp
+0x0083a812  cbz      r0, #0x83a888
+0x0083a814  movs     r0, #0
+0x0083a816  strd     r0, r0, [sp, #0x18]
+0x0083a81a  str      r0, [sp, #0x20]
+0x0083a81c  add      r6, sp, #0xc
+0x0083a81e  mov.w    r0, #0x100
+0x0083a822  movs     r1, #1
+0x0083a824  mov      r2, r4
+0x0083a826  strd     r1, r0, [sp]
+0x0083a82a  mov      r0, r6
+0x0083a82c  mov      r1, sb
+0x0083a82e  movs     r3, #0
+0x0083a830  blx      #0x4aa03c  ; PLT Anki::Util::ConvertMessageBufferToString(unsigned char const*, unsigned int, Anki::Util::EBytesToTextType, bool, unsigned int)
+0x0083a834  ldrb.w   r0, [sp, #0xc]
+0x0083a838  ldr      r3, [sp, #0x14]
+0x0083a83a  tst.w    r0, #1
+0x0083a83e  it       eq
+0x0083a840  orreq    r3, r6, #1
+0x0083a844  adr      r0, #0x160
+0x0083a846  add      r1, sp, #0x18
+0x0083a848  adr      r2, #0x174
+0x0083a84a  blx      #0x4a4540  ; PLT Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0083a84e  ldrb.w   r0, [sp, #0xc]
+0x0083a852  lsls     r0, r0, #0x1f
+0x0083a854  itt      ne
+0x0083a856  ldrne    r0, [sp, #0x14]
+0x0083a858  blxne    #0x4a40cc
+0x0083a85c  ldr      r0, [sp, #0x18]
+0x0083a85e  cbz      r0, #0x83a87e
+0x0083a860  ldr      r1, [sp, #0x1c]
+0x0083a862  cmp      r1, r0
+0x0083a864  itttt    ne
+0x0083a866  subne.w  r2, r1, #8
+0x0083a86a  subne    r2, r2, r0
+0x0083a86c  mvnne    r3, #7
+0x0083a870  bicne.w  r2, r3, r2
+0x0083a874  itt      ne
+0x0083a876  addne    r1, r1, r2
+0x0083a878  strne    r1, [sp, #0x1c]
+0x0083a87a  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x0083a87e  mov      r0, r7
+0x0083a880  movs     r1, #2
+0x0083a882  blx      #0x4cd6e8  ; PLT Anki::Util::TransportStats::AddRecvError(Anki::Util::EMessageError)
+0x0083a886  b        #0x83a952
+0x0083a888  cmp.w    fp, #1
+0x0083a88c  bne      #0x83a8ce
+0x0083a88e  ldr      r2, [pc, #0x174]  ; =0x3ee540
+0x0083a890  movs     r0, #0
+0x0083a892  strd     r0, r0, [sp, #0x18]
+0x0083a896  add      r2, pc  ; r2=0xc28dda "WARNING - Message buffer was too small to receive entire message and was truncated - ignoring message!"
+0x0083a898  str      r0, [sp, #0x20]
+0x0083a89a  adr      r0, #0x16c
+0x0083a89c  add      r1, sp, #0x18
+0x0083a89e  blx      #0x4a4540  ; PLT Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0083a8a2  ldr      r0, [sp, #0x18]
+0x0083a8a4  cbz      r0, #0x83a8c4
+0x0083a8a6  ldr      r1, [sp, #0x1c]
+0x0083a8a8  cmp      r1, r0
+0x0083a8aa  itttt    ne
+0x0083a8ac  subne.w  r2, r1, #8
+0x0083a8b0  subne    r2, r2, r0
+0x0083a8b2  mvnne    r3, #7
+0x0083a8b6  bicne.w  r2, r3, r2
+0x0083a8ba  itt      ne
+0x0083a8bc  addne    r1, r1, r2
+0x0083a8be  strne    r1, [sp, #0x1c]
+0x0083a8c0  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x0083a8c4  mov      r0, r7
+0x0083a8c6  movs     r1, #1
+0x0083a8c8  blx      #0x4cd6e8  ; PLT Anki::Util::TransportStats::AddRecvError(Anki::Util::EMessageError)
+0x0083a8cc  b        #0x83a952
+0x0083a8ce  ldr      r0, [pc, #0x110]  ; =0x8054c4
+0x0083a8d0  subs     r6, r6, r4
+0x0083a8d2  add      r4, sb
+0x0083a8d4  add      r0, pc  ; r0=0x103fd9c GOT->Anki::Util::UDPTransport::sDoesHeaderHaveCRC
+0x0083a8d6  ldr      r0, [r0]  ; r0=&Anki::Util::UDPTransport::sDoesHeaderHaveCRC
+0x0083a8d8  ldrb     r0, [r0]
+0x0083a8da  cbz      r0, #0x83a8f4
+0x0083a8dc  movs     r0, #0
+0x0083a8de  mov      r1, r4
+0x0083a8e0  mov      r2, r6
+0x0083a8e2  ldrh.w   sl, [sb, sl]
+0x0083a8e6  mov.w    fp, #0
+0x0083a8ea  blx      #0x4cd874  ; PLT calculate_crc_ccitt
+0x0083a8ee  mov      sb, r0
+0x0083a8f0  cmp      sb, sl
+0x0083a8f2  bne      #0x83a90e
+0x0083a8f4  ldr.w    r0, [r8, #4]
+0x0083a8f8  cbz      r0, #0x83a952
+0x0083a8fa  ldr      r1, [r0]
+0x0083a8fc  mov      r2, r6
+0x0083a8fe  mov      r3, r5
+0x0083a900  ldr.w    ip, [r1, #8]
+0x0083a904  mov      r1, r4
+0x0083a906  add      sp, #0x24
+0x0083a908  pop.w    {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0x0083a90c  bx       ip
+0x0083a90e  mov      r0, r7
+0x0083a910  movs     r1, #3
+0x0083a912  blx      #0x4cd6e8  ; PLT Anki::Util::TransportStats::AddRecvError(Anki::Util::EMessageError)
+0x0083a916  ldr      r2, [pc, #0xcc]  ; =0x3ee521
+0x0083a918  strd     fp, fp, [sp, #0x18]
+0x0083a91c  add      r2, pc  ; r2=0xc28e41 "WARNING - Message Has incorrect CRC (%u != %u) - ignoring message!"
+0x0083a91e  str.w    fp, [sp, #0x20]
+0x0083a922  adr      r0, #0xc4
+0x0083a924  add      r1, sp, #0x18
+0x0083a926  mov      r3, sb
+0x0083a928  str.w    sl, [sp]
+0x0083a92c  blx      #0x4a4540  ; PLT Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0083a930  ldr      r0, [sp, #0x18]
+0x0083a932  cbz      r0, #0x83a952
+0x0083a934  ldr      r1, [sp, #0x1c]
+0x0083a936  cmp      r1, r0
+0x0083a938  itttt    ne
+0x0083a93a  subne.w  r2, r1, #8
+0x0083a93e  subne    r2, r2, r0
+0x0083a940  mvnne    r3, #7
+0x0083a944  bicne.w  r2, r3, r2
+0x0083a948  itt      ne
+0x0083a94a  addne    r1, r1, r2
+0x0083a94c  strne    r1, [sp, #0x1c]
+0x0083a94e  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x0083a952  add      sp, #0x24
+0x0083a954  pop.w    {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0x0083a958  b        #0x83a972
+0x0083a95a  b        #0x83a972
+0x0083a95c  b        #0x83a960
+0x0083a95e  b        #0x83a972
+0x0083a960  mov      r4, r0
+0x0083a962  ldrb.w   r0, [sp, #0xc]
+0x0083a966  lsls     r0, r0, #0x1f
+0x0083a968  itt      ne
+0x0083a96a  ldrne    r0, [sp, #0x14]
+0x0083a96c  blxne    #0x4a40cc
+0x0083a970  b        #0x83a974
+0x0083a972  mov      r4, r0
+0x0083a974  ldr      r0, [sp, #0x18]
+0x0083a976  cbz      r0, #0x83a994
+0x0083a978  ldr      r1, [sp, #0x1c]
+0x0083a97a  cmp      r1, r0
+0x0083a97c  beq      #0x83a990
+0x0083a97e  sub.w    r2, r1, #8
+0x0083a982  mvn      r3, #7
+0x0083a986  subs     r2, r2, r0
+0x0083a988  bic.w    r2, r3, r2
+0x0083a98c  add      r1, r2
+0x0083a98e  str      r1, [sp, #0x1c]
+0x0083a990  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x0083a994  mov      r0, r4
+0x0083a996  blx      #0x4a40a8  ; PLT _Unwind_Resume
+0x0083a99a  nop      
+0x0083a99c  ldrsb    r2, [r7, r0]
+0x0083a99e  lsls     r0, r0, #2
+0x0083a9a0  ldrsb    r0, [r6, r0]
+0x0083a9a2  lsls     r0, r0, #2
+0x0083a9a4  strb     r2, [r2, r6]
+0x0083a9a6  lsls     r0, r0, #2
+0x0083a9a8  add      r5, sl
+0x0083a9aa  strb     r0, [r2, r1]
+0x0083a9ac  str      r2, [r6, #0x14]
+0x0083a9ae  strb     r6, [r5, #0xd]
+0x0083a9b0  ldr      r0, [r6, #0x74]
+0x0083a9b2  strb     r2, [r6, #0x11]
+0x0083a9b4  tst      r6, r5
+0x0083a9b6  str      r1, [r4, #0x44]
+0x0083a9b8  strb     r0, [r2, #9]
+0x0083a9ba  str      r5, [r4, #0x64]
+0x0083a9bc  ldrb     r1, [r5, #1]
+0x0083a9be  movs     r0, r0
+0x0083a9c0  str      r0, [r1, #0x54]
+0x0083a9c2  str      r1, [r4, #0x44]
+0x0083a9c4  strb     r5, [r4, #9]
+0x0083a9c6  movs     r7, #0x20
+0x0083a9c8  strb     r5, [r4, #0xc]
+0x0083a9ca  movs     r0, #0x27
+0x0083a9cc  str      r0, [r5, #0x14]
+0x0083a9ce  movs     r0, #0x73
+0x0083a9d0  strb     r7, [r6, #9]
+0x0083a9d2  ldr      r7, [r5, #0x64]
+0x0083a9d4  movs     r0, #0x67
+0x0083a9d6  strb     r0, [r6, #9]
+0x0083a9d8  str      r5, [r4, #0x64]
+0x0083a9da  ldrb     r1, [r5, #1]
+0x0083a9dc  movs     r1, r4
+0x0083a9de  movs     r0, r0
+0x0083a9e0  strb     r4, [r0, r3]
+0x0083a9e2  lsls     r0, r0, #2
+0x0083a9e4  b        #0x83a42a
+0x0083a9e6  movs     r6, r7
+0x0083a9e8  add      r5, sl
+0x0083a9ea  strb     r0, [r2, r1]
+0x0083a9ec  str      r2, [r6, #0x14]
+0x0083a9ee  strb     r6, [r5, #0xd]
+0x0083a9f0  ldr      r0, [r6, #0x74]
+0x0083a9f2  strb     r2, [r6, #0x11]
+0x0083a9f4  strh     r6, [r5, r0]
+0x0083a9f6  str      r5, [r4, #0x34]
+0x0083a9f8  cmp      r6, #0x76
+0x0083a9fa  str      r2, [r0, #0x14]
+0x0083a9fc  muls     r4, r4, r4
+0x0083a9fe  muls     r2, r2, r2
+0x0083aa00  movs     r0, r0
+0x0083aa02  movs     r0, r0
+0x0083aa04  b        #0x83a488
+0x0083aa06  movs     r6, r7
+0x0083aa08  add      r5, sl
+0x0083aa0a  strb     r0, [r2, r1]
+0x0083aa0c  str      r2, [r6, #0x14]
+0x0083aa0e  strb     r6, [r5, #0xd]
+0x0083aa10  ldr      r0, [r6, #0x74]
+0x0083aa12  strb     r2, [r6, #0x11]
+0x0083aa14  strh     r6, [r5, r0]
+0x0083aa16  str      r5, [r4, #0x34]
+0x0083aa18  cmp      r6, #0x76
+0x0083aa1a  strb     r4, [r2, #9]
+0x0083aa1c  ldr      r5, [r6, #0x64]
+0x0083aa1e  str      r3, [r4, #0x14]
+0x0083aa20  str      r4, [r6, #0x54]
+0x0083aa22  lsls     r4, r4, #1
+0x0083aa24  b        #0x83a640
+0x0083aa26  movs     r6, r7
+0x0083aa28  str      r0, [r1, #0x54]
+0x0083aa2a  str      r1, [r4, #0x44]
+0x0083aa2c  strb     r5, [r4, #9]
+0x0083aa2e  movs     r7, #0x20
+0x0083aa30  strb     r5, [r4, #0xc]
+0x0083aa32  movs     r0, #0x27
+0x0083aa34  strb     r1, [r5, #0xd]
+0x0083aa36  strb     r0, [r4, #0x10]
+0x0083aa38  ldr      r7, [r5, #0x74]
+0x0083aa3a  strb     r0, [r4, #0xc]
+0x0083aa3c  str      r5, [r5, #0x14]
+0x0083aa3e  ldr      r4, [r5, #0x44]
+0x0083aa40  movs     r1, r4
+0x0083aa42  movs     r0, r0
+
+===== Anki::Util::UDPTransport::Update() @ 0x0083ace4 =====
+0x0083ace4  push     {r4, lr}
+0x0083ace6  mov      r4, r0
+0x0083ace8  ldrb.w   r0, [r4, #0x9d]
+0x0083acec  cbz      r0, #0x83ad08
+0x0083acee  mov      r0, r4
+0x0083acf0  blx      #0x4cd88c  ; PLT Anki::Util::UDPTransport::CloseSocket()
+0x0083acf4  cmp      r0, #1
+0x0083acf6  bne      #0x83ad02
+0x0083acf8  ldr.w    r1, [r4, #0x98]
+0x0083acfc  mov      r0, r4
+0x0083acfe  blx      #0x4cd964  ; PLT Anki::Util::UDPTransport::OpenSocket(int)
+0x0083ad02  movs     r0, #0
+0x0083ad04  strb.w   r0, [r4, #0x9d]
+0x0083ad08  ldr.w    r0, [r4, #0x94]
+0x0083ad0c  cmp      r0, #0
+0x0083ad0e  blt      #0x83ad1a
+0x0083ad10  mov      r0, r4
+0x0083ad12  blx      #0x4cd970  ; PLT Anki::Util::UDPTransport::TryToReadMessage()
+0x0083ad16  cmp      r0, #0
+0x0083ad18  bne      #0x83ad10
+0x0083ad1a  pop      {r4, pc}
+
+===== Anki::Util::UDPTransport::SendData(Anki::Util::TransportAddress const&, Anki::Util::SrcBufferSet const&) @ 0x0083a478 =====
+0x0083a478  push.w   {r4, r5, r6, r7, r8, sb, sl, lr}
+0x0083a47c  vpush    {d8}
+0x0083a480  sub      sp, #0x68
+0x0083a482  mov      sb, r0
+0x0083a484  ldr      r0, [pc, #0x248]  ; =0x8043be
+0x0083a486  mov      r5, r1
+0x0083a488  mov      sl, r2
+0x0083a48a  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x0083a48c  ldr      r0, [r0]  ; r0=&__stack_chk_guard
+0x0083a48e  ldr      r0, [r0]
+0x0083a490  str      r0, [sp, #0x64]
+0x0083a492  mov      r0, r5
+0x0083a494  blx      #0x4cd904  ; PLT Anki::Util::TransportAddress::IsIPAddress() const
+0x0083a498  cmp      r0, #1
+0x0083a49a  bne      #0x83a4da
+0x0083a49c  movs     r4, #0
+0x0083a49e  movs     r0, #2
+0x0083a4a0  strd     r4, r4, [sp, #0x20]
+0x0083a4a4  strh.w   r0, [sp, #0x18]
+0x0083a4a8  mov      r0, r5
+0x0083a4aa  blx      #0x4be0e8  ; PLT Anki::Util::TransportAddress::GetIPPort() const
+0x0083a4ae  rev16    r0, r0
+0x0083a4b0  strh.w   r0, [sp, #0x1a]
+0x0083a4b4  mov      r0, r5
+0x0083a4b6  blx      #0x4be0dc  ; PLT Anki::Util::TransportAddress::GetIPAddress() const
+0x0083a4ba  add      r7, sp, #0x18
+0x0083a4bc  add      r2, sp, #0x48
+0x0083a4be  adds     r1, r7, #4
+0x0083a4c0  str      r0, [sp, #0x1c]
+0x0083a4c2  movs     r0, #2
+0x0083a4c4  movs     r3, #0x10
+0x0083a4c6  strd     r4, r4, [sp, #0x50]
+0x0083a4ca  strd     r4, r4, [sp, #0x48]
+0x0083a4ce  blx      #0x4cd85c  ; PLT inet_ntop
+0x0083a4d2  mov      r0, sb
+0x0083a4d4  mov      r1, r7
+0x0083a4d6  movs     r2, #0x10
+0x0083a4d8  b        #0x83a53e
+0x0083a4da  mov      r0, r5
+0x0083a4dc  blx      #0x4cd910  ; PLT Anki::Util::TransportAddress::IsIPv6Address() const
+0x0083a4e0  cmp      r0, #1
+0x0083a4e2  bne.w    #0x83a5fa
+0x0083a4e6  add.w    r8, sp, #0x48
+0x0083a4ea  movs     r1, #0x14
+0x0083a4ec  orr      r0, r8, #4
+0x0083a4f0  blx      #0x4a403c  ; PLT __aeabi_memclr4
+0x0083a4f4  movs     r0, #0xa
+0x0083a4f6  strh.w   r0, [sp, #0x48]
+0x0083a4fa  mov      r0, r5
+0x0083a4fc  blx      #0x4be0e8  ; PLT Anki::Util::TransportAddress::GetIPPort() const
+0x0083a500  add      r7, sp, #0x18
+0x0083a502  rev16    r0, r0
+0x0083a504  strh.w   r0, [sp, #0x4a]
+0x0083a508  mov      r1, r5
+0x0083a50a  mov      r0, r7
+0x0083a50c  blx      #0x4cd91c  ; PLT Anki::Util::TransportAddress::GetIPv6Address() const
+0x0083a510  add.w    r4, r8, #8
+0x0083a514  ldm.w    r7, {r1, r2, r3, r6}
+0x0083a518  mov      r0, r4
+0x0083a51a  stm      r0!, {r1, r2, r3, r6}
+0x0083a51c  blx      #0x4cd8bc  ; PLT Anki::Util::UDPTransport::GetWifiInterfaceIndex() const
+0x0083a520  add      r7, sp, #0x18
+0x0083a522  str      r0, [sp, #0x60]
+0x0083a524  movs     r1, #0x2e
+0x0083a526  mov      r0, r7
+0x0083a528  blx      #0x4a48ac  ; PLT __aeabi_memclr8
+0x0083a52c  movs     r0, #0xa
+0x0083a52e  mov      r1, r4
+0x0083a530  mov      r2, r7
+0x0083a532  movs     r3, #0x2e
+0x0083a534  blx      #0x4cd85c  ; PLT inet_ntop
+0x0083a538  mov      r0, sb
+0x0083a53a  mov      r1, r8
+0x0083a53c  movs     r2, #0x1c
+0x0083a53e  mov      r3, sl
+0x0083a540  blx      #0x4cd928  ; PLT Anki::Util::UDPTransport::SendDataToSockAddress(sockaddr const&, unsigned int, Anki::Util::SrcBufferSet const&)
+0x0083a544  mov      r6, r0
+0x0083a546  cmp.w    r6, #-1
+0x0083a54a  bgt.w    #0x83a66a
+0x0083a54e  add.w    r8, sb, #8
+0x0083a552  movs     r1, #6
+0x0083a554  mov      r0, r8
+0x0083a556  blx      #0x4cd934  ; PLT Anki::Util::TransportStats::AddSendError(Anki::Util::EMessageError)
+0x0083a55a  ldr      r0, [pc, #0x1d0]  ; =0x80584c
+0x0083a55c  add      r0, pc  ; r0=0x103fdac GOT->Anki::Util::kEnableVerboseNetworkLogging
+0x0083a55e  ldr      r4, [r0]  ; r4=&Anki::Util::kEnableVerboseNetworkLogging
+0x0083a560  blx      #0x4b8a30  ; PLT Anki::Util::GetCurrentNetTimeStamp()
+0x0083a564  vmov     d8, r0, r1
+0x0083a568  ldrb     r0, [r4]
+0x0083a56a  cmp      r0, #0
+0x0083a56c  beq      #0x83a648
+0x0083a56e  movs     r0, #0
+0x0083a570  strd     r0, r0, [sp, #0x18]
+0x0083a574  str      r0, [sp, #0x20]
+0x0083a576  add      r7, sp, #0x48
+0x0083a578  mov      r1, r5
+0x0083a57a  mov      r0, r7
+0x0083a57c  blx      #0x4b8c10  ; PLT Anki::Util::TransportAddress::ToString() const
+0x0083a580  ldrb.w   r0, [sp, #0x48]
+0x0083a584  ldr      r5, [sp, #0x50]
+0x0083a586  tst.w    r0, #1
+0x0083a58a  it       eq
+0x0083a58c  orreq    r5, r7, #1
+0x0083a590  blx      #0x4a6e20  ; PLT __errno
+0x0083a594  ldr      r4, [r0]  ; r4=&Anki::Util::kEnableVerboseNetworkLogging
+0x0083a596  blx      #0x4a6e20  ; PLT __errno
+0x0083a59a  ldr      r0, [r0]  ; r0=&Anki::Util::kEnableVerboseNetworkLogging
+0x0083a59c  blx      #0x4a6e2c  ; PLT strerror
+0x0083a5a0  mov      r7, r0
+0x0083a5a2  mov      r0, r8
+0x0083a5a4  movs     r1, #6
+0x0083a5a6  blx      #0x4cd940  ; PLT Anki::Util::MessageStats::GetErrorCount(Anki::Util::EMessageError) const
+0x0083a5aa  ldr      r2, [pc, #0x184]  ; =0x3ee7c2
+0x0083a5ac  add      r2, pc  ; r2=0xc28d72 "sendto '%s' returned %zd, errno = %d '%s' (%u sends failed), now = %.1f"
+0x0083a5ae  vstr     d8, [sp, #0x10]
+0x0083a5b2  add      r1, sp, #0x18
+0x0083a5b4  strd     r6, r4, [sp]
+0x0083a5b8  mov      r3, r5
+0x0083a5ba  strd     r7, r0, [sp, #8]
+0x0083a5be  adr      r0, #0x174
+0x0083a5c0  blx      #0x4a4540  ; PLT Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0083a5c4  ldrb.w   r0, [sp, #0x48]
+0x0083a5c8  lsls     r0, r0, #0x1f
+0x0083a5ca  itt      ne
+0x0083a5cc  ldrne    r0, [sp, #0x50]
+0x0083a5ce  blxne    #0x4a40cc
+0x0083a5d2  ldr      r0, [sp, #0x18]
+0x0083a5d4  cbz      r0, #0x83a5f4
+0x0083a5d6  ldr      r1, [sp, #0x1c]
+0x0083a5d8  cmp      r1, r0
+0x0083a5da  itttt    ne
+0x0083a5dc  subne.w  r2, r1, #8
+0x0083a5e0  subne    r2, r2, r0
+0x0083a5e2  mvnne    r3, #7
+0x0083a5e6  bicne.w  r2, r3, r2
+0x0083a5ea  itt      ne
+0x0083a5ec  addne    r1, r1, r2
+0x0083a5ee  strne    r1, [sp, #0x1c]
+0x0083a5f0  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x0083a5f4  vstr     d8, [sb, #0x88]
+0x0083a5f8  b        #0x83a66a
+0x0083a5fa  movs     r0, #0
+0x0083a5fc  strd     r0, r0, [sp, #0x18]
+0x0083a600  str      r0, [sp, #0x20]
+0x0083a602  adr      r0, #0xd0
+0x0083a604  add      r1, sp, #0x18
+0x0083a606  adr      r2, #0xf0
+0x0083a608  blx      #0x4a4108  ; PLT Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0083a60c  ldr      r0, [sp, #0x18]
+0x0083a60e  cbz      r0, #0x83a62e
+0x0083a610  ldr      r1, [sp, #0x1c]
+0x0083a612  cmp      r1, r0
+0x0083a614  itttt    ne
+0x0083a616  subne.w  r2, r1, #8
+0x0083a61a  subne    r2, r2, r0
+0x0083a61c  mvnne    r3, #7
+0x0083a620  bicne.w  r2, r3, r2
+0x0083a624  itt      ne
+0x0083a626  addne    r1, r1, r2
+0x0083a628  strne    r1, [sp, #0x1c]
+0x0083a62a  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x0083a62e  ldr      r0, [pc, #0xf4]  ; =0x804154
+0x0083a630  movs     r2, #1
+0x0083a632  ldr      r1, [pc, #0xf4]  ; =0x804156
+0x0083a634  add      r0, pc  ; r0=0x103e78c GOT->Anki::Util::_errBreakOnError
+0x0083a636  add      r1, pc  ; r1=0x103e790 GOT->Anki::Util::_errG
+0x0083a638  ldr      r0, [r0]  ; r0=&Anki::Util::_errBreakOnError
+0x0083a63a  ldr      r1, [r1]  ; r1=&Anki::Util::_errG
+0x0083a63c  ldrb     r0, [r0]
+0x0083a63e  strb     r2, [r1]
+0x0083a640  cbz      r0, #0x83a66a
+0x0083a642  blx      #0x4a4114  ; PLT Anki::Util::sDebugBreakOnError()
+0x0083a646  b        #0x83a66a
+0x0083a648  vldr     d0, [sb, #0x88]
+0x0083a64c  vcmp.f64 d0, #0
+0x0083a650  vmrs     apsr_nzcv, fpscr
+0x0083a654  beq      #0x83a56e
+0x0083a656  vldr     d1, [pc, #0x70]
+0x0083a65a  vadd.f64 d0, d0, d1
+0x0083a65e  vcmpe.f64 d8, d0
+0x0083a662  vmrs     apsr_nzcv, fpscr
+0x0083a666  bgt.w    #0x83a56e
+0x0083a66a  ldr      r0, [pc, #0xe0]  ; =0x8041da
+0x0083a66c  ldr      r1, [sp, #0x64]
+0x0083a66e  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x0083a670  ldr      r0, [r0]  ; r0=&__stack_chk_guard
+0x0083a672  ldr      r0, [r0]
+0x0083a674  subs     r0, r0, r1
+0x0083a676  ittt     eq
+0x0083a678  addeq    sp, #0x68
+0x0083a67a  vpopeq   {d8}
+0x0083a67e  popeq.w  {r4, r5, r6, r7, r8, sb, sl, pc}
+0x0083a682  blx      #0x4a4fe4  ; PLT __stack_chk_fail
+0x0083a686  b        #0x83a688
+0x0083a688  mov      r4, r0
+0x0083a68a  b        #0x83a69c
+0x0083a68c  mov      r4, r0
+0x0083a68e  ldrb.w   r0, [sp, #0x48]
+0x0083a692  lsls     r0, r0, #0x1f
+0x0083a694  beq      #0x83a69c
+0x0083a696  ldr      r0, [sp, #0x50]
+0x0083a698  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x0083a69c  ldr      r0, [sp, #0x18]
+0x0083a69e  cbz      r0, #0x83a6bc
+0x0083a6a0  ldr      r1, [sp, #0x1c]
+0x0083a6a2  cmp      r1, r0
+0x0083a6a4  beq      #0x83a6b8
+0x0083a6a6  sub.w    r2, r1, #8
+0x0083a6aa  mvn      r3, #7
+0x0083a6ae  subs     r2, r2, r0
+0x0083a6b0  bic.w    r2, r3, r2
+0x0083a6b4  add      r1, r2
+0x0083a6b6  str      r1, [sp, #0x1c]
+0x0083a6b8  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x0083a6bc  mov      r0, r4
+0x0083a6be  blx      #0x4a40a8  ; PLT _Unwind_Resume
+0x0083a6c2  nop      
+0x0083a6c4  nop.w    
+0x0083a6c8  movs     r0, r0
+0x0083a6ca  movs     r0, r0
+0x0083a6cc  ldr      r4, [pc, #0]  ; =0x8043be
+0x0083a6ce  lsrs     r5, r3
+0x0083a6d0  bics     r6, r7
+0x0083a6d2  lsls     r0, r0, #2
+0x0083a6d4  add      r5, sl
+0x0083a6d6  strb     r0, [r2, r1]
+0x0083a6d8  str      r2, [r6, #0x14]
+0x0083a6da  strb     r6, [r5, #0xd]
+0x0083a6dc  ldr      r0, [r6, #0x74]
+0x0083a6de  strb     r2, [r6, #0x11]
+0x0083a6e0  strh     r6, [r5, r4]
+0x0083a6e2  ldr      r5, [r4, #0x64]
+0x0083a6e4  add      r4, ip
+0x0083a6e6  strb     r1, [r4, #0x11]
+0x0083a6e8  cmp      r6, #0x61
+0x0083a6ea  ldr      r6, [r1, #0x74]
+0x0083a6ec  ldr      r1, [pc, #0x1b8]  ; =0xbf1f4281
+0x0083a6ee  adcs     r0, r6
+0x0083a6f0  str      r4, [r4, #0x44]
+0x0083a6f2  str      r2, [r6, #0x54]
+0x0083a6f4  strb     r3, [r6, #0xd]
+0x0083a6f6  movs     r0, r0
+0x0083a6f8  strb     r5, [r0, #9]
+0x0083a6fa  ldr      r2, [r6, #0x74]
+0x0083a6fc  subs     r2, #0x72
+0x0083a6fe  strb     r0, [r4, r4]
+0x0083a700  str      r4, [r0, r1]
+0x0083a702  str      r0, [r4, #0x30]
+0x0083a704  ldr      r1, [r4, #0x64]
+0x0083a706  ldr      r0, [r4, #0x70]
+0x0083a708  ldr      r6, [r5, #0x44]
+0x0083a70a  movs     r0, #0x79
+0x0083a70c  str      r3, [r6, #0x54]
+0x0083a70e  str      r6, [r5, #0x44]
+0x0083a710  strb     r0, [r4, #0x10]
+0x0083a712  movs     r0, #0x6f
+0x0083a714  str      r1, [r1, r1]
+0x0083a716  str      r0, [r4, #0x10]
+0x0083a718  str      r4, [r4, #0x44]
+0x0083a71a  str      r2, [r6, #0x54]
+0x0083a71c  strb     r3, [r6, #0xd]
+0x0083a71e  strb     r5, [r4, #0xd]
+0x0083a720  movs     r1, r4
+0x0083a722  movs     r0, r0
+0x0083a724  adcs     r4, r2
+0x0083a726  lsls     r0, r0, #2
+0x0083a728  adcs     r6, r2
+0x0083a72a  lsls     r0, r0, #2
+0x0083a72c  ldr      r4, [r1, r1]
+0x0083a72e  lsls     r0, r0, #2
+0x0083a730  b        #0x83a6b8
+0x0083a732  movs     r6, r7
+0x0083a734  add      r5, sl
+0x0083a736  strb     r0, [r2, r1]
+0x0083a738  str      r2, [r6, #0x14]
+0x0083a73a  strb     r6, [r5, #0xd]
+0x0083a73c  ldr      r0, [r6, #0x74]
+0x0083a73e  strb     r2, [r6, #0x11]
+0x0083a740  strh     r6, [r5, r4]
+0x0083a742  ldr      r5, [r4, #0x64]
+0x0083a744  mov      r4, ip
+0x0083a746  ldr      r1, [r4, #0x14]
+0x0083a748  str      r4, [r5, #0x54]
+0x0083a74a  lsls     r4, r4, #1
+0x0083a74c  rors     r2, r3
+0x0083a74e  lsls     r0, r0, #2
+
+===== Anki::Util::UDPTransport::StartHost() @ 0x0083ad1e =====
+0x0083ad1e  ldr.w    r1, [r0, #0x94]
+0x0083ad22  adds     r1, #1
+0x0083ad24  it       ne
+0x0083ad26  bxne     lr
+0x0083ad28  push     {r7, lr}
+0x0083ad2a  ldr.w    r1, [r0, #0x98]
+0x0083ad2e  blx      #0x4cd964  ; PLT Anki::Util::UDPTransport::OpenSocket(int)
+0x0083ad32  pop.w    {r7, lr}
+0x0083ad36  bx       lr

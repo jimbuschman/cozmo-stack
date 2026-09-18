@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Cozmo.Protocol</RootNamespace>
+    <Description>Cozmo robot wire protocol: Anki reliable-transport framing and CLAD robot messages (engine &lt;-&gt; robot), reconstructed from libcozmoEngine.so 3.4.0-1204.</Description>
+  </PropertyGroup>
+</Project>

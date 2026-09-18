@@ -1,0 +1,27 @@
+# Decompiler output of the proprietary APK (not redistributed; regenerate locally)
+/resources/
+/sources/
+/smali/
+/unity/
+/DECOMPILATION-NOTES.txt
+
+# Unpacked OBB (441 MB, proprietary assets and firmware) — keep locally, never commit
+/re-analysis/obb/
+/re-analysis/obb/**
+
+# Large derived symbol dumps regenerate with re-analysis/tools/*.py
+/re-analysis/symbols/exports_mangled.txt
+/re-analysis/symbols/exports_demangled.txt
+/re-analysis/symbols/rodata_strings.txt
+/re-analysis/symbols/objects_vtables_typeinfo.txt
+
+# .NET
+**/bin/
+**/obj/
+*.user
+.vs/
+TestResults/
+
+# scratch
+*.log
+*.tmp

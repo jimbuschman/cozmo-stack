@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Cozmo.Conformance</RootNamespace>
+    <AssemblyName>cozmo-conformance</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Cozmo.Protocol\Cozmo.Protocol.csproj" />
+    <ProjectReference Include="..\Cozmo.Transport\Cozmo.Transport.csproj" />
+  </ItemGroup>
+</Project>

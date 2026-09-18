@@ -1,0 +1,260 @@
+
+===== Anki::Cozmo::RobotConnectionManager::Init() @ 0x0062efb0 =====
+0x0062efb0  push.w   {r4, r5, r6, r7, r8, lr}
+0x0062efb4  mov      r8, r0
+0x0062efb6  adr      r0, #0xd0
+0x0062efb8  movs     r1, #4
+0x0062efba  blx      #0x4b8b50  ; PLT Anki::Util::UDPTransport::SetHeaderPrefix(unsigned char const*, unsigned int)
+0x0062efbe  movs     r0, #0
+0x0062efc0  movs     r5, #0
+0x0062efc2  blx      #0x4b8b5c  ; PLT Anki::Util::UDPTransport::SetDoesHeaderHaveCRC(bool)
+0x0062efc6  movw     r0, #0x58c
+0x0062efca  blx      #0x4b8b68  ; PLT Anki::Util::UDPTransport::SetMaxNetMessageSize(unsigned int)
+0x0062efce  ldr      r2, [pc, #0xc8]  ; =0xa10802
+0x0062efd0  ldr      r6, [pc, #0xd0]  ; =0xa1080a
+0x0062efd2  add      r2, pc  ; r2=0x103f7d8 GOT->Anki::Util::ReliableConnection::sMaxTimeSinceLastSend
+0x0062efd4  ldr      r0, [pc, #0xb8]  ; =0xa107f0
+0x0062efd6  add      r6, pc  ; r6=0x103f7e4 GOT->Anki::Util::ReliableTransport::sMaxPacketsToReSendOnAck
+0x0062efd8  ldr      r1, [pc, #0xb8]  ; =0xa107f0
+0x0062efda  ldr      r7, [r2]  ; r7=&Anki::Util::ReliableConnection::sMaxTimeSinceLastSend
+0x0062efdc  add      r0, pc  ; r0=0x103f7d0 GOT->Anki::Util::ReliableTransport::sMaxPacketsToSendOnSendMessage
+0x0062efde  ldr      r2, [r6]  ; r2=&Anki::Util::ReliableTransport::sMaxPacketsToReSendOnAck
+0x0062efe0  add      r1, pc  ; r1=0x103f7d4 GOT->Anki::Util::ReliableConnection::sTimeBetweenPingsInMS
+0x0062efe2  ldr.w    r6, [r8, #0x14]
+0x0062efe6  ldr      r0, [r0]  ; r0=&Anki::Util::ReliableTransport::sMaxPacketsToSendOnSendMessage
+0x0062efe8  ldr      r1, [r1]  ; r1=&Anki::Util::ReliableConnection::sTimeBetweenPingsInMS
+0x0062efea  str.w    r5, [r6, #0x98]
+0x0062efee  ldr      r6, [pc, #0xb8]  ; =0xa107f0
+0x0062eff0  str      r5, [r2]
+0x0062eff2  movs     r2, #1
+0x0062eff4  add      r6, pc  ; r6=0x103f7e8 GOT->Anki::Util::ReliableTransport::sSendUnreliableMessagesImmediately
+0x0062eff6  str      r2, [r0]
+0x0062eff8  movw     r0, #0xa666
+0x0062effc  ldr      r3, [pc, #0x9c]  ; =0xa107d4
+0x0062effe  ldr      r6, [r6]  ; r6=&Anki::Util::ReliableTransport::sSendUnreliableMessagesImmediately
+0x0062f000  movt     r0, #0x4040  ; r0=0x4040a666 
+0x0062f004  add      r3, pc  ; r3=0x103f7dc GOT->Anki::Util::ReliableConnection::sSendPacketsImmediately
+0x0062f006  ldr      r4, [pc, #0x98]  ; =0xa107d2
+0x0062f008  strb     r5, [r6]
+0x0062f00a  add      r4, pc  ; r4=0x103f7e0 GOT->Anki::Util::ReliableConnection::sMaxPacketsToReSendOnUpdate
+0x0062f00c  ldr      r6, [pc, #0x9c]  ; =0xa107d6
+0x0062f00e  ldr.w    ip, [r3]
+0x0062f012  add      r6, pc  ; r6=0x103f7ec GOT->Anki::Util::ReliableTransport::sSendAckOnReceipt
+0x0062f014  ldr      r3, [pc, #0xa8]  ; =0xa107e2
+0x0062f016  ldr      r4, [r4]  ; r4=&Anki::Util::ReliableConnection::sMaxPacketsToReSendOnUpdate
+0x0062f018  ldr      r6, [r6]  ; r6=&Anki::Util::ReliableTransport::sSendAckOnReceipt
+0x0062f01a  add      r3, pc  ; r3=0x103f800 GOT->Anki::Util::ReliableConnection::sPacketSeparationIntervalInMS
+0x0062f01c  strb.w   r5, [ip]
+0x0062f020  ldr      r3, [r3]  ; r3=&Anki::Util::ReliableConnection::sPacketSeparationIntervalInMS
+0x0062f022  strb     r5, [r6]
+0x0062f024  mov.w    r6, #0x66666666
+0x0062f028  strd     r6, r0, [r1]
+0x0062f02c  ldr      r1, [pc, #0x80]  ; =0xa107bc
+0x0062f02e  str      r2, [r4]
+0x0062f030  add      r1, pc  ; r1=0x103f7f0 GOT->Anki::Util::ReliableTransport::sTrackAckLatency
+0x0062f032  ldr      r1, [r1]  ; r1=&Anki::Util::ReliableTransport::sTrackAckLatency
+0x0062f034  strb     r2, [r1]
+0x0062f036  movw     r1, #0x2666
+0x0062f03a  movt     r1, #0x4040  ; r1=0x40402666 
+0x0062f03e  str      r1, [r7, #4]
+0x0062f040  str      r6, [r7]
+0x0062f042  ldr      r7, [pc, #0x74]  ; =0xa107ae
+0x0062f044  ldr      r1, [pc, #0x6c]  ; =0xa107a8
+0x0062f046  add      r7, pc  ; r7=0x103f7f8 GOT->Anki::Util::ReliableConnection::sTimeBetweenResendsInMS
+0x0062f048  add      r1, pc  ; r1=0x103f7f4 GOT->Anki::Util::ReliableConnection::sSendSeparatePingMessages
+0x0062f04a  ldr      r7, [r7]  ; r7=&Anki::Util::ReliableConnection::sTimeBetweenResendsInMS
+0x0062f04c  ldr      r1, [r1]  ; r1=&Anki::Util::ReliableConnection::sSendSeparatePingMessages
+0x0062f04e  str      r0, [r7, #4]
+0x0062f050  str      r6, [r7]
+0x0062f052  mov.w    r7, #0x40000000
+0x0062f056  str      r7, [r3, #4]
+0x0062f058  ldr      r7, [pc, #0x68]  ; =0xa0f9f4
+0x0062f05a  ldr      r0, [pc, #0x60]  ; =0xa10798
+0x0062f05c  add      r7, pc  ; r7=0x103ea54 GOT->Anki::Util::ReliableConnection::sConnectionTimeoutInMS
+0x0062f05e  str      r5, [r3]
+0x0062f060  add      r0, pc  ; r0=0x103f7fc GOT->Anki::Util::ReliableConnection::sMaxPingRoundTripsToTrack
+0x0062f062  movw     r3, #0x8800
+0x0062f066  ldr      r7, [r7]  ; r7=&Anki::Util::ReliableConnection::sConnectionTimeoutInMS
+0x0062f068  movt     r3, #0x40b3  ; r3=0x40b38800 
+0x0062f06c  ldr      r0, [r0]  ; r0=&Anki::Util::ReliableConnection::sMaxPingRoundTripsToTrack
+0x0062f06e  strb     r5, [r1]
+0x0062f070  strd     r5, r3, [r7]
+0x0062f074  movs     r3, #0xa
+0x0062f076  str      r3, [r0]
+0x0062f078  ldr.w    r0, [r8, #0x18]
+0x0062f07c  ldr      r1, [r0]
+0x0062f07e  ldr      r1, [r1, #0x14]
+0x0062f080  pop.w    {r4, r5, r6, r7, r8, lr}
+0x0062f084  bx       r1
+0x0062f086  nop      
+0x0062f088  ldr      r7, [pc, #0x10c]  ; =0xa106e8
+0x0062f08a  lsls     r2, r3, #0xd
+0x0062f08c  movs     r0, r0
+0x0062f08e  movs     r0, r0
+0x0062f090  lsls     r0, r6, #0x1f
+0x0062f092  lsls     r1, r4, #2
+0x0062f094  lsls     r0, r6, #0x1f
+0x0062f096  lsls     r1, r4, #2
+0x0062f098  lsrs     r2, r0, #0x20
+0x0062f09a  lsls     r1, r4, #2
+0x0062f09c  lsls     r4, r2, #0x1f
+0x0062f09e  lsls     r1, r4, #2
+0x0062f0a0  lsls     r2, r2, #0x1f
+0x0062f0a2  lsls     r1, r4, #2
+0x0062f0a4  lsrs     r2, r1, #0x20
+0x0062f0a6  lsls     r1, r4, #2
+0x0062f0a8  lsls     r0, r6, #0x1f
+0x0062f0aa  lsls     r1, r4, #2
+0x0062f0ac  lsls     r6, r2, #0x1f
+0x0062f0ae  lsls     r1, r4, #2
+0x0062f0b0  lsls     r4, r7, #0x1e
+0x0062f0b2  lsls     r1, r4, #2
+0x0062f0b4  lsls     r0, r5, #0x1e
+0x0062f0b6  lsls     r1, r4, #2
+0x0062f0b8  lsls     r6, r5, #0x1e
+0x0062f0ba  lsls     r1, r4, #2
+0x0062f0bc  lsls     r0, r3, #0x1e
+0x0062f0be  lsls     r1, r4, #2
+0x0062f0c0  lsls     r2, r4, #0x1f
+0x0062f0c2  lsls     r1, r4, #2
+
+===== Anki::Cozmo::RobotConnectionManager::ConfigureReliableTransport() @ 0x0062f0c8 =====
+0x0062f0c8  push.w   {r4, r5, r6, r7, r8, lr}
+0x0062f0cc  ldr      r0, [pc, #0xb0]  ; =0xa10714
+0x0062f0ce  ldr      r3, [pc, #0xbc]  ; =0xa1071c
+0x0062f0d0  add      r0, pc  ; r0=0x103f7e8 GOT->Anki::Util::ReliableTransport::sSendUnreliableMessagesImmediately
+0x0062f0d2  ldr      r6, [pc, #0xc8]  ; =0xa10706
+0x0062f0d4  add      r3, pc  ; r3=0x103f7f4 GOT->Anki::Util::ReliableConnection::sSendSeparatePingMessages
+0x0062f0d6  ldr      r5, [pc, #0xc0]  ; =0xa106e8
+0x0062f0d8  ldr      r0, [r0]  ; r0=&Anki::Util::ReliableTransport::sSendUnreliableMessagesImmediately
+0x0062f0da  add      r6, pc  ; r6=0x103f7e4 GOT->Anki::Util::ReliableTransport::sMaxPacketsToReSendOnAck
+0x0062f0dc  ldr.w    ip, [r3]
+0x0062f0e0  movs     r3, #0
+0x0062f0e2  ldr      r1, [pc, #0xa0]  ; =0xa106e6
+0x0062f0e4  add      r5, pc  ; r5=0x103f7d0 GOT->Anki::Util::ReliableTransport::sMaxPacketsToSendOnSendMessage
+0x0062f0e6  strb     r3, [r0]
+0x0062f0e8  ldr      r0, [pc, #0xb4]  ; =0xa106fa
+0x0062f0ea  add      r1, pc  ; r1=0x103f7d4 GOT->Anki::Util::ReliableConnection::sTimeBetweenPingsInMS
+0x0062f0ec  ldr      r6, [r6]  ; r6=&Anki::Util::ReliableTransport::sMaxPacketsToReSendOnAck
+0x0062f0ee  add      r0, pc  ; r0=0x103f7ec GOT->Anki::Util::ReliableTransport::sSendAckOnReceipt
+0x0062f0f0  ldr      r5, [r5]  ; r5=&Anki::Util::ReliableTransport::sMaxPacketsToSendOnSendMessage
+0x0062f0f2  ldr      r7, [r1]  ; r7=&Anki::Util::ReliableConnection::sTimeBetweenPingsInMS
+0x0062f0f4  ldr      r0, [r0]  ; r0=&Anki::Util::ReliableTransport::sSendAckOnReceipt
+0x0062f0f6  str      r3, [r6]
+0x0062f0f8  movw     r6, #0xa666
+0x0062f0fc  movt     r6, #0x4040  ; r6=0x4040a666 
+0x0062f100  ldr      r2, [pc, #0x84]  ; =0xa106c4
+0x0062f102  strb     r3, [r0]
+0x0062f104  movs     r0, #1
+0x0062f106  str      r0, [r5]
+0x0062f108  mov.w    r5, #0x66666666
+0x0062f10c  strd     r5, r6, [r7]
+0x0062f110  add      r2, pc  ; r2=0x103f7d8 GOT->Anki::Util::ReliableConnection::sMaxTimeSinceLastSend
+0x0062f112  ldr      r7, [pc, #0x90]  ; =0xa106d6
+0x0062f114  ldr      r4, [r2]  ; r4=&Anki::Util::ReliableConnection::sMaxTimeSinceLastSend
+0x0062f116  add      r7, pc  ; r7=0x103f7f0 GOT->Anki::Util::ReliableTransport::sTrackAckLatency
+0x0062f118  ldr      r1, [pc, #0x98]  ; =0xa106dc
+0x0062f11a  ldr.w    lr, [pc, #0x74]  ; =0xa106b2
+0x0062f11e  ldr      r7, [r7]  ; r7=&Anki::Util::ReliableTransport::sTrackAckLatency
+0x0062f120  add      r1, pc  ; r1=0x103f800 GOT->Anki::Util::ReliableConnection::sPacketSeparationIntervalInMS
+0x0062f122  ldr.w    r8, [pc, #0x70]  ; =0xa106a8
+0x0062f126  add      lr, pc  ; lr=0x103f7dc GOT->Anki::Util::ReliableConnection::sSendPacketsImmediately
+0x0062f128  ldr      r1, [r1]  ; r1=&Anki::Util::ReliableConnection::sPacketSeparationIntervalInMS
+0x0062f12a  strb     r0, [r7]
+0x0062f12c  movw     r7, #0x2666
+0x0062f130  movt     r7, #0x4040  ; r7=0x40402666 
+0x0062f134  add      r8, pc  ; r8=0x103f7e0 GOT->Anki::Util::ReliableConnection::sMaxPacketsToReSendOnUpdate
+0x0062f136  str      r7, [r4, #4]
+0x0062f138  str      r5, [r4]
+0x0062f13a  ldr      r4, [pc, #0x70]  ; =0xa106b6
+0x0062f13c  ldr      r7, [pc, #0x68]  ; =0xa106b4
+0x0062f13e  add      r4, pc  ; r4=0x103f7f8 GOT->Anki::Util::ReliableConnection::sTimeBetweenResendsInMS
+0x0062f140  ldr.w    lr, [lr]
+0x0062f144  add      r7, pc  ; r7=0x103f7fc GOT->Anki::Util::ReliableConnection::sMaxPingRoundTripsToTrack
+0x0062f146  ldr.w    r2, [r8]
+0x0062f14a  ldr      r4, [r4]  ; r4=&Anki::Util::ReliableConnection::sTimeBetweenResendsInMS
+0x0062f14c  ldr      r7, [r7]  ; r7=&Anki::Util::ReliableConnection::sMaxPingRoundTripsToTrack
+0x0062f14e  strb.w   r3, [ip]
+0x0062f152  str      r6, [r4, #4]
+0x0062f154  ldr      r6, [pc, #0x58]  ; =0xa0f8f4
+0x0062f156  str      r5, [r4]
+0x0062f158  mov.w    r4, #0x40000000
+0x0062f15c  add      r6, pc  ; r6=0x103ea54 GOT->Anki::Util::ReliableConnection::sConnectionTimeoutInMS
+0x0062f15e  strd     r3, r4, [r1]
+0x0062f162  movw     r1, #0x8800
+0x0062f166  strb.w   r3, [lr]
+0x0062f16a  ldr      r6, [r6]  ; r6=&Anki::Util::ReliableConnection::sConnectionTimeoutInMS
+0x0062f16c  movt     r1, #0x40b3  ; r1=0x40b38800 
+0x0062f170  str      r0, [r2]
+0x0062f172  strd     r3, r1, [r6]
+0x0062f176  movs     r1, #0xa
+0x0062f178  str      r1, [r7]
+0x0062f17a  pop.w    {r4, r5, r6, r7, r8, pc}
+
+===== Anki::Cozmo::RobotConnectionManager::Connect(Anki::Util::TransportAddress const&) @ 0x0062f554 =====
+0x0062f554  push     {r4, r5, r6, r7, lr}
+0x0062f556  sub      sp, #4
+0x0062f558  mov      r5, r0
+0x0062f55a  mov      r7, r1
+0x0062f55c  ldr      r0, [r5, #0x10]
+0x0062f55e  blx      #0x4b8bec  ; PLT Anki::Cozmo::RobotConnectionData::Clear()
+0x0062f562  ldr      r0, [r5, #0x10]
+0x0062f564  mov      r1, r7
+0x0062f566  ldm      r1!, {r2, r3, r4, r6}
+0x0062f568  adds     r0, #0x30
+0x0062f56a  stm      r0!, {r2, r3, r4, r6}
+0x0062f56c  ldm.w    r1, {r2, r3, r4, r6}
+0x0062f570  stm      r0!, {r2, r3, r4, r6}
+0x0062f572  ldr      r0, [r5, #0x18]
+0x0062f574  ldr      r1, [r0]
+0x0062f576  ldr      r2, [r1, #0x24]
+0x0062f578  mov      r1, r7
+0x0062f57a  blx      r2
+0x0062f57c  ldr      r0, [r5, #0x18]
+0x0062f57e  ldr      r1, [r0]
+0x0062f580  ldr      r2, [r1, #0x1c]
+0x0062f582  mov      r1, r7
+0x0062f584  blx      r2
+0x0062f586  ldr      r0, [r5, #0x10]
+0x0062f588  movs     r1, #1
+0x0062f58a  str      r1, [r0, #4]
+0x0062f58c  add      sp, #4
+0x0062f58e  pop      {r4, r5, r6, r7, pc}
+
+===== Anki::Cozmo::RobotInterface::MessageHandler::AddRobotConnection(Anki::Cozmo::ExternalInterface::ConnectToRobot const&) @ 0x0069de7c =====
+0x0069de7c  push     {r4, r5, r7, lr}
+0x0069de7e  sub      sp, #0x28
+0x0069de80  mov      r4, r0
+0x0069de82  ldr      r0, [pc, #0x40]  ; =0x9a09be
+0x0069de84  movw     r2, #0x15b0
+0x0069de88  mov      r5, sp
+0x0069de8a  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x0069de8c  ldr      r0, [r0]  ; r0=&__stack_chk_guard
+0x0069de8e  ldr      r0, [r0]
+0x0069de90  str      r0, [sp, #0x24]
+0x0069de92  ldrb     r0, [r1, #0x10]
+0x0069de94  cmp      r0, #0
+0x0069de96  it       eq
+0x0069de98  movweq   r2, #0x15af
+0x0069de9c  mov      r0, r5
+0x0069de9e  blx      #0x4be0d0  ; PLT Anki::Util::TransportAddress::TransportAddress(char const*, int)
+0x0069dea2  ldr      r0, [r4, #0x24]
+0x0069dea4  mov      r1, r5
+0x0069dea6  blx      #0x4be1f0  ; PLT Anki::Cozmo::RobotConnectionManager::Connect(Anki::Util::TransportAddress const&)
+0x0069deaa  ldr      r0, [pc, #0x1c]  ; =0x9a099a
+0x0069deac  ldr      r1, [sp, #0x24]
+0x0069deae  add      r0, pc  ; r0=0x103e84c GOT->__stack_chk_guard
+0x0069deb0  ldr      r0, [r0]  ; r0=&__stack_chk_guard
+0x0069deb2  ldr      r0, [r0]
+0x0069deb4  subs     r0, r0, r1
+0x0069deb6  ittt     eq
+0x0069deb8  moveq    r0, #0
+0x0069deba  addeq    sp, #0x28
+0x0069debc  popeq    {r4, r5, r7, pc}
+0x0069debe  blx      #0x4a4fe4  ; PLT __stack_chk_fail
+0x0069dec2  nop      
+0x0069dec4  lsrs     r6, r7, #6
+0x0069dec6  lsls     r2, r3, #2
+0x0069dec8  lsrs     r2, r3, #6
+0x0069deca  lsls     r2, r3, #2
+  ---- next symbol ----

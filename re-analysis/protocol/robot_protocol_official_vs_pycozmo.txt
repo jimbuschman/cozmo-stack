@@ -1,0 +1,164 @@
+official structs sized: 189 variable: 39
+tag  official member              official type                  osz | pycozmo                      psz unk
+0x01 adjustTimestamp              AdjustTimestamp                  4 | -                              - 0  <-- MISSING in PyCozmo
+0x02 setBackpackLayer             BackpackSetLayer                 1 | -                              - 0  <-- MISSING in PyCozmo
+0x03 setBackpackLightsMiddle      BackpackLightsMiddle         variable | LightStateCenter             var 1
+0x04 setCubeLights                CubeLights                   variable | CubeLights                   var 0
+0x05 setPropSlot                  SetPropSlot                      5 | ObjectConnect                  5 0
+0x06 killBodyCode                 KillBodyCode                     0 | -                              - 0  <-- MISSING in PyCozmo
+0x07 setBodyRadioMode             SetBodyRadioMode                 2 | -                              - 0  <-- MISSING in PyCozmo
+0x08 streamObjectAccel            StreamObjectAccel                5 | StreamObjectAccel              5 0
+0x0a setAccessoryDiscovery        SetAccessoryDiscovery            1 | SetAccessoryDiscovery          1 0
+0x0b setHeadlight                 SetHeadlight                     1 | SetHeadLight                   1 0
+0x0c setCubeGamma                 SetCubeGamma                     1 | -                              - 0  <-- MISSING in PyCozmo
+0x0d bodyEnterOTA                 BodyEnterOTA                     0 | -                              - 0  <-- MISSING in PyCozmo
+0x0e readBodyStorage              ReadBodyStorage                  2 | -                              - 0  <-- MISSING in PyCozmo
+0x0f writeBodyStorage             WriteBodyStorage             variable | -                              - 0  <-- MISSING in PyCozmo
+0x10 setCubeID                    CubeID                           5 | CubeId                         5 0
+0x11 setBackpackLightsTurnSignals BackpackLightsTurnSignals    variable | LightStateSide               var 1
+0x12 sendDTMCommand               SendDTMCommand                  16 | -                              - 0  <-- MISSING in PyCozmo
+0x24 getBodySerialNumber          GetBodySerialNumber              0 | -                              - 0  <-- MISSING in PyCozmo
+0x25 getMfgInfo                   GetManufacturingInfo             0 | Enable                         0 0
+0x26 bleSendData                  SendData                        17 | -                              - 0  <-- MISSING in PyCozmo
+0x27 bleDisconnect                Disconnect                       4 | -                              - 0  <-- MISSING in PyCozmo
+0x30 enterRecoveryMode            EnterRecoveryMode                1 | -                              - 0  <-- MISSING in PyCozmo
+0x32 drive                        DriveWheels                     16 | DriveWheels                   16 0
+0x33 driveCurvature               DriveWheelsCurvature            10 | TurnInPlaceAtSpeed            10 0
+0x34 moveLift                     MoveLift                         4 | MoveLift                       4 0
+0x35 moveHead                     MoveHead                         4 | MoveHead                       4 0
+0x36 liftHeight                   SetLiftHeight                   17 | SetLiftHeight                 17 0
+0x37 headAngle                    SetHeadAngle                    17 | SetHeadAngle                  17 0
+0x38 headAngleUpdate              HeadAngleUpdate                  4 | -                              - 0  <-- MISSING in PyCozmo
+0x39 setBodyAngle                 SetBodyAngle                    20 | TurnInPlace                   20 2
+0x3a turnInPlaceAtSpeed           TurnInPlaceAtSpeed               8 | -                              - 0  <-- MISSING in PyCozmo
+0x3b stop                         StopAllMotors                    0 | StopAllMotors                  0 0
+0x3c clearPath                    ClearPath                        2 | ClearPath                      2 1
+0x3d appendPathSegLine            AppendPathSegmentLine           28 | AppendPathSegLine             28 0
+0x3e appendPathSegArc             AppendPathSegmentArc            32 | AppendPathSegArc              32 0
+0x3f appendPathSegPointTurn       AppendPathSegmentPointTurn      29 | AppendPathSegPointTurn        29 1
+0x40 trimPath                     TrimPath                         2 | TrimPath                       2 0
+0x41 executePath                  ExecutePath                      3 | ExecutePath                    3 1
+0x42 dockWithObject               DockWithObject                  21 | -                              - 0  <-- MISSING in PyCozmo
+0x43 abortDocking                 AbortDocking                     0 | -                              - 0  <-- MISSING in PyCozmo
+0x44 placeObjectOnGround          PlaceObjectOnGround             25 | -                              - 0  <-- MISSING in PyCozmo
+0x45 absLocalizationUpdate        AbsoluteLocalizationUpdate      24 | SetOrigin                     24 2
+0x46 startControllerTestMode      StartControllerTestMode         13 | -                              - 0  <-- MISSING in PyCozmo
+0x47 setControllerGains           ControllerGains                 17 | -                              - 0  <-- MISSING in PyCozmo
+0x48 dockingErrorSignal           DockingErrorSignal              22 | -                              - 0  <-- MISSING in PyCozmo
+0x49 setCarryState                CarryStateUpdate                 1 | -                              - 0  <-- MISSING in PyCozmo
+0x4a imuRequest                   IMURequest                       4 | -                              - 0  <-- MISSING in PyCozmo
+0x4b syncTime                     SyncTime                         8 | SyncTime                       8 1
+0x4c imageRequest                 ImageRequest                     2 | EnableCamera                   2 0
+0x4d flashObjectIDs               FlashObjectIDs                   4 | -                              - 0  <-- MISSING in PyCozmo
+0x4e setObjectBeingCarried        ObjectBeingCarried               5 | -                              - 0  <-- MISSING in PyCozmo
+0x4f checkLiftLoad                CheckLiftLoad                    0 | -                              - 0  <-- MISSING in PyCozmo
+0x50 enableMotorPower             EnableMotorPower                 2 | -                              - 0  <-- MISSING in PyCozmo
+0x51 setMotionModelParams         SetMotionModelParams             4 | -                              - 0  <-- MISSING in PyCozmo
+0x52 enterSleepMode               EnterSleepMode                   0 | -                              - 0  <-- MISSING in PyCozmo
+0x53 powerState                   PowerState                      17 | -                              - 0  <-- MISSING in PyCozmo
+0x54 setCliffDetectThreshold      SetCliffDetectThreshold          2 | -                              - 0  <-- MISSING in PyCozmo
+0x55 enableReadToolCodeMode       EnableReadToolCodeMode           9 | -                              - 0  <-- MISSING in PyCozmo
+0x57 setCameraParams              SetCameraParams                  7 | SetCameraParams                7 0
+0x58 startMotorCalibration        StartMotorCalibration            2 | StartMotorCalibration          2 0
+0x59 rollActionParams             RollActionParams                20 | -                              - 0  <-- MISSING in PyCozmo
+0x5a cameraFOVInfo                CameraFOVInfo                    8 | -                              - 0  <-- MISSING in PyCozmo
+0x60 enableStopOnCliff            EnableStopOnCliff                1 | EnableStopOnCliff              1 0
+0x61 forceDelocalizeSimulatedRobot ForceDelocalizeSimulatedRobot     0 | -                              - 0  <-- MISSING in PyCozmo
+0x62 objectConnectionStateToRobot ObjectConnectionStateToRobot    13 | -                              - 0  <-- MISSING in PyCozmo
+0x63 enableBraceWhenFalling       EnableBraceWhenFalling           1 | -                              - 0  <-- MISSING in PyCozmo
+0x64 setAudioVolume               SetAudioVolume                   2 | SetRobotVolume                 2 0
+0x65 generateTestTone             GenerateTestTone                 0 | -                              - 0  <-- MISSING in PyCozmo
+0x66 enableColorImages            EnableColorImages                1 | EnableColorImages              1 0
+0x80 requestCrashReports          RequestCrashReports              4 | -                              - 0  <-- MISSING in PyCozmo
+0x81 commandNV                    NVCommand                    variable | NvStorageOp                  var 1
+0x82 enableWiFiTelemetry          EnableWiFiTelemetry              0 | -                              - 0  <-- MISSING in PyCozmo
+0x86 bleConnectionState           ConnectionState                  4 | -                              - 0  <-- MISSING in PyCozmo
+0x87 bleDataReceived              DataReceived                    17 | -                              - 0  <-- MISSING in PyCozmo
+0x89 setRTTO                      DebugSetRTTO                     2 | -                              - 0  <-- MISSING in PyCozmo
+0x8d abortAnimation               AbortAnimation                   0 | AbortAnimation                 0 0
+0x8e animAudioSample              AudioSample                    744 | OutputAudio                  744 0
+0x8f animAudioSilence             AudioSilence                     0 | OutputSilence                  0 0
+0x91 animRecordHeading            RecordHeading                    0 | RecordHeading                  0 0
+0x92 animTurnToRecordedHeading    TurnToRecordedHeading           13 | TurnToRecordedHeading          0 0  <-- SIZE MISMATCH
+0x93 animHeadAngle                HeadAngle                        3 | AnimHead                       3 0
+0x94 animLiftHeight               LiftHeight                       3 | AnimLift                       3 0
+0x95 animEvent                    Event                            1 | -                              - 0  <-- MISSING in PyCozmo
+0x96 animEventToRTIP              AnimEventToRTIP                  2 | -                              - 0  <-- MISSING in PyCozmo
+0x97 animFaceImage                FaceImage                    variable | DisplayImage                 var 0
+0x98 animBackpackLights           BackpackLights                  10 | AnimBackpackLights            10 0
+0x99 animBodyMotion               BodyMotion                       4 | AnimBody                       4 1
+0x9a animEndOfAnimation           EndOfAnimation                   0 | EndAnimation                   0 0
+0x9b animStartOfAnimation         StartOfAnimation                 1 | StartAnimation                 1 0
+0x9d disableAnimTracks            DisableAnimTracks                1 | -                              - 0  <-- MISSING in PyCozmo
+0x9e enableAnimTracks             EnableAnimTracks                 1 | -                              - 0  <-- MISSING in PyCozmo
+0x9f initAnimController           InitController                   0 | EnableAnimationState           0 0
+0xa0 appRunID                     SetAppRunID                     16 | -                              - 0  <-- MISSING in PyCozmo
+0xa1 testState                    TestState                       49 | -                              - 0  <-- MISSING in PyCozmo
+0xa2 enterTestMode                EnterFactoryTestMode             8 | -                              - 0  <-- MISSING in PyCozmo
+0xa3 oledDisplayNumber            DisplayNumber                    7 | -                              - 0  <-- MISSING in PyCozmo
+0xa4 bodyStorageContents          BodyStorageContents          variable | -                              - 0  <-- MISSING in PyCozmo
+0xa5 bodySerialNum                BodySerialNumber                 4 | -                              - 0  <-- MISSING in PyCozmo
+0xa9 shutdownRobot                ShutdownRobot                   32 | ShutdownRobot                  0 0  <-- SIZE MISMATCH
+0xaa appConCfgString              AppConnectConfigString          17 | -                              - 0  <-- MISSING in PyCozmo
+0xab appConCfgFlags               AppConnectConfigFlags           17 | -                              - 0  <-- MISSING in PyCozmo
+0xac appConCfgIPInfo              AppConnectConfigIPInfo          13 | -                              - 0  <-- MISSING in PyCozmo
+0xad appConGetRobotIP             AppConnectGetRobotIP             1 | -                              - 0  <-- MISSING in PyCozmo
+0xae wifiOff                      WiFiOff                          1 | WifiOff                        1 0
+0xaf otaWrite                     Write                         1026 | FirmwareUpdate              1026 0
+0xb0 trace                        PrintTrace                   variable | DebugData                    var 1
+0xb1 printText                    PrintText                    variable | -                              - 0  <-- MISSING in PyCozmo
+0xb2 mainCycleTimeError           MainCycleTimeError              16 | -                              - 0  <-- MISSING in PyCozmo
+0xb3 goalPose                     GoalPose                     variable | -                              - 0  <-- MISSING in PyCozmo
+0xb4 activeObjectMoved            ObjectMoved                  variable | ObjectMoved                   21 0
+0xb5 activeObjectStopped          ObjectStoppedMoving              8 | ObjectStoppedMoving            8 0
+0xb6 activeObjectTapped           ObjectTapped                    12 | ObjectTapped                  12 0
+0xb7 dataDump                     DataDump                     variable | -                              - 0  <-- MISSING in PyCozmo
+0xb8 pickAndPlaceResult           PickAndPlaceResult               7 | -                              - 0  <-- MISSING in PyCozmo
+0xb9 objectTappedFiltered         ObjectTappedFiltered            10 | ObjectTapFiltered             10 0
+0xba rampTraverseStarted          RampTraverseStart                4 | -                              - 0  <-- MISSING in PyCozmo
+0xbb rampTraverseCompleted        RampTraverseComplete             5 | -                              - 0  <-- MISSING in PyCozmo
+0xbc bridgeTraverseStarted        BridgeTraverseStart              4 | -                              - 0  <-- MISSING in PyCozmo
+0xbd bridgeTraverseCompleted      BridgeTraverseComplete           5 | -                              - 0  <-- MISSING in PyCozmo
+0xbe timeProfStat                 TimeProfileStat              variable | -                              - 0  <-- MISSING in PyCozmo
+0xbf imuDataChunk                 IMUDataChunk                   195 | -                              - 0  <-- MISSING in PyCozmo
+0xc0 cliffEvent                   CliffEvent                       6 | -                              - 0  <-- MISSING in PyCozmo
+0xc1 potentialCliff               PotentialCliff                   0 | -                              - 0  <-- MISSING in PyCozmo
+0xc2 syncTimeAck                  SyncTimeAck                      0 | RobotDelocalized               0 0
+0xc3 robotPoked                   RobotPoked                       0 | RobotPoked                     0 0
+0xc4 motorActionAck               MotorActionAck                   1 | AcknowledgeAction              1 0
+0xc5 movingLiftPostDock           MovingLiftPostDock               1 | -                              - 0  <-- MISSING in PyCozmo
+0xc6 pathFollowingEvent           PathFollowingEvent               3 | PathFollowingEvent             3 0
+0xc7 imuRawDataChunk              IMURawDataChunk                 14 | -                              - 0  <-- MISSING in PyCozmo
+0xc8 defaultCameraParams          DefaultCameraParams             29 | -                              - 0  <-- MISSING in PyCozmo
+0xc9 robotAvailable               RobotAvailable                   6 | HardwareInfo                   6 2
+0xca animStarted                  AnimationStarted                 1 | AnimationStarted               1 0
+0xcb animEnded                    AnimationEnded                   1 | AnimationEnded                 1 0
+0xcd nvOpResult                   NVOpResult                   variable | NvStorageOpResult            var 0
+0xce objectPowerLevel             ObjectPowerLevel                 9 | ObjectPowerLevel               9 0
+0xcf crashReport                  CrashReport                  variable | -                              - 0  <-- MISSING in PyCozmo
+0xd0 activeObjectConnectionState  ObjectConnectionState           13 | ObjectConnectionState         13 0
+0xd1 motorCalibration             MotorCalibration                 3 | MotorCalibration               3 0
+0xd2 factoryFirmwareVersion       FWVersionInfo                   44 | -                              - 0  <-- MISSING in PyCozmo
+0xd3 dockingStatus                DockingStatus                    5 | -                              - 0  <-- MISSING in PyCozmo
+0xd4 robotStopped                 RobotStopped                     1 | -                              - 0  <-- MISSING in PyCozmo
+0xd5 animEvent                    AnimationEvent                   6 | -                              - 0  <-- MISSING in PyCozmo
+0xd6 factoryTestParam             FactoryTestParameter             4 | -                              - 0  <-- MISSING in PyCozmo
+0xd7 activeObjectUpAxisChanged    ObjectUpAxisChanged              9 | ObjectUpAxisChanged            9 0
+0xd8 motorAutoEnabled             MotorAutoEnabled                 2 | -                              - 0  <-- MISSING in PyCozmo
+0xd9 robotError                   RobotErrorReport                 5 | -                              - 0  <-- MISSING in PyCozmo
+0xda liftLoad                     LiftLoad                         1 | -                              - 0  <-- MISSING in PyCozmo
+0xdb backpackButton               BackpackButton                   1 | ButtonPressed                  1 0
+0xdc imuTemperature               IMUTemperature                   4 | -                              - 0  <-- MISSING in PyCozmo
+0xdd fallingStarted               FallingStarted                   4 | FallingStarted                 4 1
+0xde fallingStopped               FallingStopped                  12 | FallingStopped                12 1
+0xec wifiFlashID                  WiFiFlashID                      4 | -                              - 0  <-- MISSING in PyCozmo
+0xed mfgId                        ManufacturingID                 12 | BodyInfo                      12 0
+0xee firmwareVersion              FirmwareVersion              variable | FirmwareSignature            var 1
+0xef otaAck                       Ack                              7 | FirmwareUpdateResult           7 0
+0xf0 state                        RobotState                   variable | RobotState                    91 0
+0xf1 animState                    AnimationState                  15 | AnimationState                15 0
+0xf2 image                        ImageChunk                   variable | ImageChunk                   var 0
+0xf3 activeObjectAvailable        ObjectAvailable                  9 | ObjectAvailable                9 0
+0xf4 imageGyro                    ImageImuData                    17 | ImageImuData                  17 0
+0xf5 objectAccel                  ObjectAccel                  variable | ObjectAccel                   20 0
+PyCozmo-only IDs: []
