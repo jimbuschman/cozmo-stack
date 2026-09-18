@@ -100,7 +100,7 @@ public sealed class CozmoAudio
     /// Invoked after each paced frame. The engine fills every animation tick with both an audio frame and a
     /// face keyframe, so <see cref="CozmoRobot"/> uses this to keep the face alive while sound is playing.
     /// </summary>
-    public Action? OnFrameSent { get; set; }
+    public event Action? OnFrameSent;
 
     public CozmoAudio(Action<RobotMessage> send) => _send = send;
 

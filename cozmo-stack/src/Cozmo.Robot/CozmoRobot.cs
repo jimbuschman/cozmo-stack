@@ -95,7 +95,7 @@ public sealed class CozmoRobot : IDisposable
         // The engine fills every animation tick with both an audio frame and a face keyframe. Mirror that
         // in both directions, so neither pipeline leaves the robot's animation tick half empty.
         Display.BeforeFrame = () => { if (!Audio.Busy) Transport.Send(new AudioSilence(), flush: true); };
-        Audio.OnFrameSent = () =>
+        Audio.OnFrameSent += () =>
             Transport.Send(new Protocol.FaceImage { Image = Display.LastPayload ?? BlankFace }, flush: true);
         Transport.DataReceived += OnData;
     }

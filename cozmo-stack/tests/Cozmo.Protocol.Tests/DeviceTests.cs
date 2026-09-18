@@ -127,7 +127,7 @@ public class DeviceTests
 
         var ticks = new List<TimeSpan>();
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        audio.OnFrameSent = () => ticks.Add(sw.Elapsed);
+        audio.OnFrameSent += () => ticks.Add(sw.Elapsed);
         audio.Play(pcm);
         sw.Stop();
 

@@ -216,6 +216,18 @@ public static class Devices
         if (volume is { } v) { Console.WriteLine($"SetAudioVolume {v}"); robot.Audio.SetVolume((ushort)v); }
 
         int before = robot.State.Animation?.NumAudioFramesPlayed ?? 0;
+
+        // Record what the robot says it is doing while we play, so a single run explains itself.
+        var trace = new List<(long ms, int played, int sent)>();
+        var timeline = System.Diagnostics.Stopwatch.StartNew();
+        int handed = 0;
+        robot.Audio.OnFrameSent += () => handed++;
+        void watch(RobotMessage m)
+        {
+            if (m is AnimationState a) lock (trace) trace.Add((timeline.ElapsedMilliseconds, a.NumAudioFramesPlayed, handed));
+        }
+        robot.Message += watch;
+
         Console.WriteLine("playing ...");
         var sw = System.Diagnostics.Stopwatch.StartNew();
         robot.Audio.Play(pcm);            // paced at the animation tick; the robot buffers only ~14 frames
@@ -235,7 +247,20 @@ public static class Devices
         log.Dispose();
 
         double expected = seconds * 1000;
+        robot.Message -= watch;
         int played = (robot.State.Animation?.NumAudioFramesPlayed ?? 0) - before;
+
+        // A steady stream shows the played count rising about 3 frames per 100 ms and staying a little
+        // behind what we handed over. Gaps or a flat stretch say where the sound broke up.
+        Console.WriteLine();
+        Console.WriteLine("  time ms   sent   played   in flight");
+        lock (trace)
+            foreach (var t in trace.Where((_, i) => i % 3 == 0))
+                Console.WriteLine($"  {t.ms,7}   {t.sent,4}   {t.played - before,6}   {t.sent - (t.played - before),9}");
+        var conn = robot.Transport.Connection;
+        if (conn is not null)
+            Console.WriteLine($"transport: {conn.FramesSent} frames sent, {conn.ResendFrames} resends, {conn.PendingCount} still unacked");
+        Console.WriteLine();
         Console.WriteLine($"sent {robot.Audio.FramesSent} frames in {sw.ElapsedMilliseconds} ms (the audio itself is {expected:F0} ms)");
         Console.WriteLine($"robot reports {played} audio frames played, drop count {robot.State.Animation?.ClientDropCount ?? 0}");
         bool ok = robot.Audio.FramesSent == frames.Count + 1 && played > frames.Count / 2;
