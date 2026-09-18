@@ -140,7 +140,14 @@ public sealed class CozmoAudio
 {
     /// <summary>Samples in one audio message (official AudioSample is a fixed 744-byte array).</summary>
     public const int SamplesPerFrame = 744;
-    /// <summary>Nominal sample rate: 744 samples at the 30 Hz animation tick.</summary>
+    /// <summary>
+    /// Sample rate assumed when turning PCM into frames. <b>This is an assumption, not a measurement.</b>
+    /// PyCozmo's WAV loader accepts 22050 Hz directly and halves 48000 Hz to reach it, and 744 samples per
+    /// 30 Hz animation tick works out near this figure, but nothing in the engine or on the robot has been
+    /// read to confirm it. The robot is in fact observed to take a frame every 28.6 ms rather than 33.3 ms,
+    /// which does not correspond to this rate, so treat a tone generated here as approximately in tune
+    /// rather than exactly so.
+    /// </summary>
     public const int SampleRate = 22050;
     /// <summary>
     /// The animation tick the engine runs at, 30 per second. Frames are sent on this schedule, which is very
@@ -156,14 +163,9 @@ public sealed class CozmoAudio
     /// </summary>
     public const int RobotBufferFrames = 14;
     /// <summary>
-    /// Frames sent back to back at the start of a stream, before pacing begins. Feeding an empty robot at
-    /// exactly the rate it drains leaves no slack: one late frame is an underrun, which is heard as a
-    /// stutter. Priming builds about a third of a second of cushion first, so scheduling jitter stops
-    /// mattering. Kept below <see cref="RobotBufferFrames"/> so nothing is dropped on the way in.
-    /// </summary>
-    public int PrimeFrames { get; set; } = 10;
-    /// <summary>
-    /// How many frames the robot should have queued at any moment while a stream is running. Kept under
+    /// How many frames the robot should have queued at any moment while a stream is running. This is also
+    /// the opening burst: a stream that starts from an empty buffer and feeds at exactly the drain rate has
+    /// no slack, so one late frame is an underrun and is heard as a stutter. Kept under
     /// <see cref="RobotBufferFrames"/> so nothing is dropped going in, and high enough that network jitter
     /// and a lost frame or two cannot empty it.
     /// </summary>
@@ -338,8 +340,8 @@ public sealed class CozmoAudio
     private void PlayFramePaced(byte[] frame)
     {
         if (!_clock.IsRunning) { _clock.Restart(); _scheduled = 0; }
-        // The first PrimeFrames go out at once to fill the robot's buffer; the rest are paced.
-        var due = TimeSpan.FromTicks(FrameInterval.Ticks * Math.Max(0, _scheduled - PrimeFrames));
+        // The opening TargetInFlight frames go out at once to fill the robot's buffer; the rest are paced.
+        var due = TimeSpan.FromTicks(FrameInterval.Ticks * Math.Max(0, _scheduled - TargetInFlight));
         WaitUntil(due);
         SendFrame(frame);
         OnFrameSent?.Invoke();

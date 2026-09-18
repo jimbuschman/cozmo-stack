@@ -19,7 +19,25 @@ public sealed class RobotStateTracker
     public int StateCount { get; private set; }
     public DateTime? FirstStateUtc { get; private set; }
     public DateTime? LastStateUtc { get; private set; }
-    public readonly Dictionary<RobotMessageId, int> Histogram = new();
+
+    /// <summary>Written on the transport's dispatch thread; read it through the members below.</summary>
+    private readonly Dictionary<RobotMessageId, int> _histogram = new();
+    private readonly object _gate = new();
+
+    /// <summary>A copy of the message counts, safe to enumerate while the robot is still talking.</summary>
+    public Dictionary<RobotMessageId, int> HistogramSnapshot()
+    {
+        lock (_gate) return new Dictionary<RobotMessageId, int>(_histogram);
+    }
+
+    /// <summary>How many of this message have arrived.</summary>
+    public int CountOf(RobotMessageId id)
+    {
+        lock (_gate) return _histogram.GetValueOrDefault(id);
+    }
+
+    /// <summary>How many distinct message types have arrived.</summary>
+    public int DistinctMessageTypes { get { lock (_gate) return _histogram.Count; } }
 
     /// <summary>The robot recalibrates head and lift on every connect; motors should wait for this.</summary>
     public bool CalibratingMotors { get; private set; }
@@ -41,7 +59,10 @@ public sealed class RobotStateTracker
 
     public void Handle(RobotMessage m)
     {
-        Histogram[m.Id] = Histogram.GetValueOrDefault(m.Id) + 1;
+        RobotState? newState = null;
+        lock (_gate)
+        {
+        _histogram[m.Id] = _histogram.GetValueOrDefault(m.Id) + 1;
         switch (m)
         {
             case RobotAvailable a: Available = a; break;
@@ -56,9 +77,11 @@ public sealed class RobotStateTracker
             case RobotState s:
                 Latest = s; StateCount++;
                 LastStateUtc = DateTime.UtcNow; FirstStateUtc ??= LastStateUtc;
-                StateUpdated?.Invoke(s);
+                newState = s;
                 break;
         }
+        }
+        if (newState is not null) StateUpdated?.Invoke(newState);
     }
 }
 
@@ -98,7 +121,8 @@ public sealed class CozmoRobot : IDisposable
     private CozmoRobot(TransportOptions? options)
     {
         Transport = new ReliableTransport(options);
-        Display = new CozmoDisplay(m => Transport.Send(m, flush: true));
+        Display = new CozmoDisplay(m => Transport.Send(m, flush: true),
+                                   Transport.Options.MaxFramePayloadBytes - CozmoDisplay.MessageOverhead);
         Audio = new CozmoAudio(m => Transport.Send(m, reliable: AudioReliable, flush: true));
         // The engine fills every animation tick with both an audio frame and a face keyframe. Mirror that
         // in both directions, so neither pipeline leaves the robot's animation tick half empty.

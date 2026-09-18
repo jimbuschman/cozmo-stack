@@ -1,4 +1,5 @@
 using Cozmo.Protocol;
+using Cozmo.Transport;
 
 namespace Cozmo.Robot;
 
@@ -198,11 +199,20 @@ public sealed class CozmoDisplay
     /// <summary>33.3 ms: one animation frame, matching the engine's streaming rate.</summary>
     public static readonly TimeSpan MinInterval = TimeSpan.FromMilliseconds(33.3);
 
+    /// <summary>Bytes a face message costs on top of its payload: the CLAD tag and the 16-bit array count.</summary>
+    public const int MessageOverhead = 3;
+
     /// <summary>
-    /// Largest encoded face the transport can carry in one message: the engine's 1420-byte limit less the
-    /// reliable header, the message tag and the 16-bit array count.
+    /// Largest encoded face that fits one reliable-layer frame, from
+    /// <see cref="TransportOptions.MaxFramePayloadBytes"/> less <see cref="MessageOverhead"/>.
+    ///
+    /// Anything larger would have to be split across a multipart message. The robot's multipart receive path
+    /// has never been exercised in either direction, so this refuses to send rather than depend on it.
     /// </summary>
-    public const int MaxPayload = 1420 - 14 - 1 - 2;
+    public int MaxPayload { get; }
+
+    /// <summary>The limit for a transport left on engine defaults.</summary>
+    public static int DefaultMaxPayload => TransportOptions.EngineDefaults.MaxFramePayloadBytes - MessageOverhead;
 
     public int FramesSent { get; private set; }
     public byte[]? LastPayload { get; private set; }
@@ -214,7 +224,15 @@ public sealed class CozmoDisplay
     /// </summary>
     public Action? BeforeFrame { get; set; }
 
-    public CozmoDisplay(Action<RobotMessage> send) => _send = send;
+    /// <param name="maxPayload">
+    /// Largest encoded face to send in one message. Pass the owning transport's
+    /// <see cref="TransportOptions.MaxFramePayloadBytes"/> less <see cref="MessageOverhead"/>.
+    /// </param>
+    public CozmoDisplay(Action<RobotMessage> send, int? maxPayload = null)
+    {
+        _send = send;
+        MaxPayload = maxPayload ?? DefaultMaxPayload;
+    }
 
     /// <summary>Sends one face image, honouring the minimum interval.</summary>
     public void Show(FaceBitmap image)
@@ -228,7 +246,8 @@ public sealed class CozmoDisplay
     {
         if (payload.Length > MaxPayload)
             throw new ArgumentException(
-                $"this face is too complex to send: it encodes to {payload.Length} bytes and one message holds {MaxPayload}",
+                $"this face is too complex to send: it encodes to {payload.Length} bytes and one frame holds " +
+                $"{MaxPayload}. Splitting it would need the robot's multipart path, which is unverified.",
                 nameof(payload));
         var wait = MinInterval - (DateTime.UtcNow - _last);
         if (wait > TimeSpan.Zero) Thread.Sleep(wait);

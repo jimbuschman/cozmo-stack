@@ -86,6 +86,8 @@ public sealed class CozmoCamera
 {
     private readonly Dictionary<uint, PartialImage> _pending = new();
     private readonly Dictionary<uint, (float, float, float)> _imu = new();
+    /// <summary>Reassembly runs on the transport's dispatch thread while callers may restart it.</summary>
+    private readonly object _gate = new();
 
     /// <summary>Raised once per complete frame.</summary>
     public event Action<CameraFrame>? FrameReceived;
@@ -120,9 +122,12 @@ public sealed class CozmoCamera
     /// <summary>Call when the camera is (re)started, so the warm-up count begins again.</summary>
     public void Restart()
     {
-        _pending.Clear();
-        _imu.Clear();
-        FrameIndex = 0;
+        lock (_gate)
+        {
+            _pending.Clear();
+            _imu.Clear();
+            FrameIndex = 0;
+        }
     }
 
     /// <summary>Feed every robot message here; the camera ignores the ones it does not care about.</summary>
@@ -131,11 +136,21 @@ public sealed class CozmoCamera
         switch (m)
         {
             case ImageChunk c: Add(c); break;
-            case ImageImuData d: _imu[d.ImageId] = (d.RateX, d.RateY, d.RateZ); break;
+            case ImageImuData d: lock (_gate) _imu[d.ImageId] = (d.RateX, d.RateY, d.RateZ); break;
         }
     }
 
     private void Add(ImageChunk c)
+    {
+        CameraFrame? completed = null;
+        var dropped = new List<(uint Id, string Why)>();
+        lock (_gate) completed = AddLocked(c, dropped);
+        foreach (var d in dropped) FrameDropped?.Invoke(d.Id, d.Why);
+        if (completed is not null) FrameReceived?.Invoke(completed);
+    }
+
+    /// <summary>Reassembly proper. Events are raised by the caller once the lock is released.</summary>
+    private CameraFrame? AddLocked(ImageChunk c, List<(uint Id, string Why)> dropped)
     {
         ChunksReceived++;
         if (!_pending.TryGetValue(c.ImageId, out var p))
@@ -145,7 +160,7 @@ public sealed class CozmoCamera
             {
                 _pending.Remove(stale);
                 FramesDropped++;
-                FrameDropped?.Invoke(stale, "superseded before all chunks arrived");
+                dropped.Add((stale, "superseded before all chunks arrived"));
             }
             p = new PartialImage { Timestamp = c.FrameTimestamp, Encoding = (byte)c.ImageEncoding, Resolution = (byte)c.ImageResolution };
             _pending[c.ImageId] = p;
@@ -160,8 +175,8 @@ public sealed class CozmoCamera
             if (p.Chunks.Keys.First() != 0 || p.Chunks.Keys.Last() != p.Expected - 1)
             {
                 FramesDropped++;
-                FrameDropped?.Invoke(c.ImageId, $"expected chunks 0..{p.Expected - 1}, got [{string.Join(",", p.Chunks.Keys)}]");
-                return;
+                dropped.Add((c.ImageId, $"expected chunks 0..{p.Expected - 1}, got [{string.Join(",", p.Chunks.Keys)}]"));
+                return null;
             }
             var payload = p.Chunks.Values.SelectMany(b => b).ToArray();
             var (w, h) = CameraResolutions.Size(p.Resolution);
@@ -183,7 +198,8 @@ public sealed class CozmoCamera
             FrameIndex++;
             LastFrame = frame;
             FramesCompleted++;
-            FrameReceived?.Invoke(frame);
+            return frame;
         }
+        return null;
     }
 }

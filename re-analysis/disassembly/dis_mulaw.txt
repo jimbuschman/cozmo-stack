@@ -1,0 +1,89 @@
+Anki::Cozmo::Audio::encodeMuLaw(float) @ 0x00597ad8
+segment table @ 0x00c5c3f0, 128 bytes
+scale constant @ 0x00597c18 = 32767.0
+
+segment table:
+  0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
+
+transcribed algorithm (see cozmo-stack/src/Cozmo.Robot/Audio.cs, AnkiMuLaw):
+  if (isnan(f)) return 0;
+  s    = f <= -1 ? -32767 : (int)(min(f, 1) * 32767)
+  mag  = s ^ (s >> 15)          // no 132 bias, unlike G.711
+  exp  = segment[mag >> 8]
+  mant = (mag >> 8) == 0 ? mag >> 4 : (mag >> (exp + 3)) & 0x0F
+  byte = (s < 0 ? 0x80 : 0) | (exp << 4) | mant      // NOT complemented, unlike G.711
+
+consequence: silence encodes to 0x00, where standard G.711 gives 0xFF.
+
+self-check: encode(0)=0x00 encode(32767)=0x7F encode(-32767)=0xFF encode(-1)=0x80  OK
+
+disassembly:
+
+===== Anki::Cozmo::Audio::encodeMuLaw(float) @ 0x00597ad8 =====
+0x00597ad8  push     {r4, lr}
+0x00597ada  sub      sp, #0x10
+0x00597adc  mov      r4, r0
+0x00597ade  blx      #0x4ae3a4  ; PLT isnanf
+0x00597ae2  cbz      r0, #0x597b1c
+0x00597ae4  movs     r0, #0
+0x00597ae6  strd     r0, r0, [sp, #4]
+0x00597aea  str      r0, [sp, #0xc]
+0x00597aec  adr      r0, #0xcc
+0x00597aee  add      r1, sp, #4
+0x00597af0  adr      r2, #0xfc
+0x00597af2  blx      #0x4a4540  ; PLT Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00597af6  ldr      r0, [sp, #4]
+0x00597af8  cbz      r0, #0x597b18
+0x00597afa  ldr      r1, [sp, #8]
+0x00597afc  cmp      r1, r0
+0x00597afe  itttt    ne
+0x00597b00  subne.w  r2, r1, #8
+0x00597b04  subne    r2, r2, r0
+0x00597b06  mvnne    r3, #7
+0x00597b0a  bicne.w  r2, r3, r2
+0x00597b0e  itt      ne
+0x00597b10  addne    r1, r1, r2
+0x00597b12  strne    r1, [sp, #8]
+0x00597b14  blx      #0x4a40cc  ; PLT operator delete(void*)
+0x00597b18  movs     r0, #0
+0x00597b1a  b        #0x597b8e
+0x00597b1c  vmov.f32 s2, #1.000000e+00
+0x00597b20  movw     r0, #0x8001
+0x00597b24  vmov     s0, r4
+0x00597b28  movt     r0, #0xffff  ; r0=0xffff8001 
+0x00597b2c  ldr      r1, [pc, #0xec]  ; =0x6c48ba
+0x00597b2e  vmov.f32 s4, s0
+0x00597b32  add      r1, pc  ; r1=0xc5c3f0 
+0x00597b34  vcmpe.f32 s0, s2
+0x00597b38  vmrs     apsr_nzcv, fpscr
+0x00597b3c  it       ge
+0x00597b3e  vmovge.f32 s4, s2
+0x00597b42  vldr     s2, [pc, #0xd4]
+0x00597b46  vmul.f32 s2, s4, s2
+0x00597b4a  vmov.f32 s4, #-1.000000e+00
+0x00597b4e  vcvt.s32.f32 s2, s2
+0x00597b52  vcmpe.f32 s0, s4
+0x00597b56  vmrs     apsr_nzcv, fpscr
+0x00597b5a  vmov     r2, s2
+0x00597b5e  it       hi
+0x00597b60  movhi    r0, r2
+0x00597b62  eor.w    r2, r0, r0, asr #15
+0x00597b66  sxth     r0, r0
+0x00597b68  asrs     r3, r2, #8
+0x00597b6a  ldrb     r1, [r1, r3]
+0x00597b6c  movs     r3, #0
+0x00597b6e  cmp.w    r3, r2, asr #8
+0x00597b72  iteee    eq
+0x00597b74  lsreq    r2, r2, #4
+0x00597b76  addne    r3, r1, #3
+0x00597b78  asrne    r2, r3
+0x00597b7a  andne    r2, r2, #0xf
+0x00597b7e  lsls     r4, r1, #4
+0x00597b80  movs     r3, #0x80
+0x00597b82  cmp      r0, #0
+0x00597b84  it       lt
+0x00597b86  orrlt.w  r4, r3, r1, lsl #4
+0x00597b8a  orr.w    r0, r4, r2
+0x00597b8e  uxtb     r0, r0
+0x00597b90  add      sp, #0x10
+0x00597b92  pop      {r4, pc}

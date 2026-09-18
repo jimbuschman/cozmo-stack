@@ -16,6 +16,52 @@ namespace Cozmo.Conformance;
 /// </summary>
 public static class Devices
 {
+    /// <summary>
+    /// Writes the machine-checkable half of a hardware acceptance run so the result is repository evidence
+    /// rather than a sentence in a commit message. What a person saw or heard is recorded separately, by
+    /// them, because no automated check here can stand in for it.
+    /// </summary>
+    private static string WriteAcceptance(string device, string? path, bool automatedPass, string humanCheck,
+                                          object detail, CozmoRobot robot)
+    {
+        path = Path.GetFullPath(path ?? $"cozmo-acceptance-{device}-{DateTime.Now:yyyyMMdd-HHmmss}.json");
+        var doc = new
+        {
+            utc = DateTime.UtcNow,
+            device,
+            automatedChecksPassed = automatedPass,
+            humanCheckRequired = humanCheck,
+            humanVerdict = "not recorded: set to pass or fail after looking at or listening to the robot",
+            robot = new
+            {
+                serial = robot.State.SerialNumber is { } sn ? $"0x{sn:x8}" : null,
+                firmware = robot.State.FirmwareVersionNumber,
+                animationControllerRunning = robot.State.AnimationsEnabled,
+                enabledAnimTracks = robot.State.Animation is { } an ? $"0x{an.EnabledAnimTracks:x2}" : null,
+            },
+            detail,
+            transport = robot.Transport.Connection is { } c
+                ? new { framesSent = c.FramesSent, resends = c.ResendFrames, stillUnacked = c.PendingCount }
+                : null,
+            handlerFaults = robot.Transport.HandlerFaults,
+        };
+        File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(doc,
+            new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+        return path;
+    }
+
+    /// <summary>Prints the verdict, keeping what was measured apart from what a person still has to judge.</summary>
+    private static void Verdict(string device, bool automatedPass, string humanCheck, string acceptancePath)
+    {
+        Console.WriteLine();
+        Console.WriteLine(automatedPass
+            ? $"AUTOMATED CHECKS PASSED ({device}): everything measurable from here is correct."
+            : $"AUTOMATED CHECKS FAILED ({device}).");
+        Console.WriteLine($"HUMAN CHECK REQUIRED: {humanCheck}");
+        Console.WriteLine("This tool cannot see or hear the robot, so it does not claim the run succeeded.");
+        Console.WriteLine($"acceptance record: {acceptancePath}");
+    }
+
     private static (string log, StreamWriter writer) OpenLog(string? path, string prefix)
     {
         path = Path.GetFullPath(path ?? $"cozmo-{prefix}-{DateTime.Now:yyyyMMdd-HHmmss}.log");
@@ -62,11 +108,13 @@ public static class Devices
         if (c is null) return 1;
         int count = 10;
         string outDir = ".";
+        string? acceptanceOut = null;
         bool color = a.Contains("--color");
         for (int i = 2; i < a.Length - 1; i++)
         {
             if (a[i] == "--count") count = int.Parse(a[i + 1]);
             else if (a[i] == "--out") outDir = a[i + 1];
+            else if (a[i] == "--acceptance") acceptanceOut = a[i + 1];
         }
         outDir = Path.GetFullPath(outDir);
         Directory.CreateDirectory(outDir);
@@ -106,9 +154,17 @@ public static class Devices
         Console.WriteLine($"({robot.Camera.WarmUpFrames} warm-up frames were discarded: the sensor is still locking and those pictures are torn.)");
         bool ok = saved.Count >= Math.Min(count, 1) && robot.Camera.FramesCompleted > 0;
         foreach (var p in saved.Take(3)) Console.WriteLine($"  {p}");
-        Console.WriteLine(ok
-            ? "PASS camera: open the saved files; each should be a photograph from Cozmo's point of view."
-            : "FAIL camera: no complete frame arrived.");
+        const string cameraCheck = "open the saved .jpg files; each should be a photograph from Cozmo's point of view, not torn";
+        var rec = WriteAcceptance("camera", acceptanceOut, ok, cameraCheck, new
+        {
+            chunksReceived = robot.Camera.ChunksReceived,
+            framesCompleted = robot.Camera.FramesCompleted,
+            framesDropped = robot.Camera.FramesDropped,
+            warmUpFramesDiscarded = robot.Camera.WarmUpFrames,
+            savedFiles = saved.Select(Path.GetFileName).ToArray(),
+            savedBytes = saved.Select(x => new FileInfo(x).Length).ToArray(),
+        }, robot);
+        Verdict("camera", ok, cameraCheck, rec);
         return ok ? 0 : 20;
     }
 
@@ -122,12 +178,13 @@ public static class Devices
         if (c is null) return 1;
         double seconds = 5;
         string pattern = "test";
-        string? artFile = null;
+        string? artFile = null, acceptanceOut = null;
         for (int i = 2; i < a.Length - 1; i++)
         {
             if (a[i] == "--seconds") seconds = double.Parse(a[i + 1], CultureInfo.InvariantCulture);
             else if (a[i] == "--pattern") pattern = a[i + 1];
             else if (a[i] == "--file") artFile = a[i + 1];
+            else if (a[i] == "--acceptance") acceptanceOut = a[i + 1];
         }
 
         var image = artFile is not null
@@ -164,9 +221,17 @@ public static class Devices
         log.Dispose();
 
         bool ok = robot.Display.FramesSent > 10;
-        Console.WriteLine(ok
-            ? "PASS display: compare the robot's face with the pattern printed above."
-            : "FAIL display: too few frames went out.");
+        const string faceCheck = "compare the pattern on the robot's face with the ASCII art printed above; they must match";
+        var rec = WriteAcceptance("display", acceptanceOut, ok, faceCheck, new
+        {
+            pattern = artFile ?? pattern,
+            payloadBytes = payload.Length,
+            maxPayloadBytes = robot.Display.MaxPayload,
+            framesSent = robot.Display.FramesSent,
+            animationBytesPlayed = robot.State.Animation?.NumAnimBytesPlayed,
+            payloadSha256 = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(payload)),
+        }, robot);
+        Verdict("display", ok, faceCheck, rec);
         return ok ? 0 : 21;
 
         static FaceBitmap Filled() { var f = new FaceBitmap(); f.Fill(); return f; }
@@ -189,7 +254,7 @@ public static class Devices
         if (c is null) return 1;
         double hz = 440, seconds = 2, amplitude = 0.5;
         int? volume = null;
-        string? wav = null;
+        string? wav = null, acceptanceOut = null;
         for (int i = 2; i < a.Length - 1; i++)
         {
             if (a[i] == "--hz") hz = double.Parse(a[i + 1], CultureInfo.InvariantCulture);
@@ -197,10 +262,11 @@ public static class Devices
             else if (a[i] == "--amplitude") amplitude = double.Parse(a[i + 1], CultureInfo.InvariantCulture);
             else if (a[i] == "--volume") volume = int.Parse(a[i + 1]);
             else if (a[i] == "--save") wav = a[i + 1];
+            else if (a[i] == "--acceptance") acceptanceOut = a[i + 1];
         }
         bool unreliable = a.Contains("--unreliable");
-        int prime = -1;
-        for (int i = 2; i < a.Length - 1; i++) if (a[i] == "--prime") prime = int.Parse(a[i + 1]);
+        int inFlight = -1;
+        for (int i = 2; i < a.Length - 1; i++) if (a[i] == "--in-flight") inFlight = int.Parse(a[i + 1]);
 
         string sound = "steady", codecName = "anki";
         for (int i = 2; i < a.Length - 1; i++)
@@ -255,7 +321,11 @@ public static class Devices
         if (volume is { } v) { Console.WriteLine($"SetAudioVolume {v}"); robot.Audio.SetVolume((ushort)v); }
         robot.Audio.Codec = codec;
         if (unreliable) { robot.AudioReliable = false; Console.WriteLine("sending audio frames unreliably"); }
-        if (prime >= 0) { robot.Audio.PrimeFrames = prime; Console.WriteLine($"priming {prime} frames"); }
+        if (inFlight >= 0)
+        {
+            robot.Audio.TargetInFlight = inFlight;
+            Console.WriteLine($"keeping {inFlight} frames queued at the robot (its buffer holds about {CozmoAudio.RobotBufferFrames})");
+        }
 
         int before = robot.State.Animation?.NumAudioFramesPlayed ?? 0;
 
@@ -306,12 +376,31 @@ public static class Devices
         Console.WriteLine($"sent {robot.Audio.FramesSent} frames in {sw.ElapsedMilliseconds} ms (the audio itself is {expected:F0} ms)");
         Console.WriteLine($"robot reports {played} audio frames played, drop count {robot.State.Animation?.ClientDropCount ?? 0}");
         bool ok = robot.Audio.FramesSent == frames.Count + 1 && played > frames.Count / 2;
-        Console.WriteLine(ok
-            ? "PASS audio: every frame was sent and the robot reports playing them. Judge the sound against " +
-              "the guidance above."
-            : played <= 0
-                ? "FAIL audio: the robot played none of the frames we sent."
-                : "FAIL audio: not every frame was sent or played.");
+        if (!ok)
+            Console.WriteLine(played <= 0
+                ? "the robot played none of the frames we sent"
+                : "not every frame was sent or played");
+        string audioCheck = sound switch
+        {
+            "beeps" => $"you should have heard exactly {beeps} separate, evenly spaced beeps",
+            "sweep" => "you should have heard one smooth rise in pitch, with no steps or stalls",
+            _ => $"you should have heard one unbroken {hz:F0} Hz note lasting {seconds:F1}s",
+        };
+        var rec = WriteAcceptance("audio", acceptanceOut, ok, audioCheck, new
+        {
+            sound,
+            codec = codecName,
+            frequencyHz = hz,
+            seconds,
+            sampleRateAssumed = CozmoAudio.SampleRate,
+            framesSent = robot.Audio.FramesSent,
+            framesRobotReportsPlayed = played,
+            targetInFlight = robot.Audio.TargetInFlight,
+            clientDropCount = robot.State.Animation?.ClientDropCount,
+            wallClockMs = sw.ElapsedMilliseconds,
+            timeline = trace.Select(t => new { t.ms, t.sent, played = t.played - before }).ToArray(),
+        }, robot);
+        Verdict("audio", ok, audioCheck, rec);
         return ok ? 0 : 22;
     }
 

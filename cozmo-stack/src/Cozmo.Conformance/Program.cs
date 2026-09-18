@@ -122,16 +122,20 @@ static int Usage()
                                              read-only/safe-visible messages by default, decodes and re-encodes every
                                              reply, and writes a per-message hardware-verification report
 
-          camera <robot-ip> [--count 10] [--out <dir>] [--color] [--log <file>]
+          camera <robot-ip> [--count 10] [--out <dir>] [--color] [--acceptance <file.json>] [--log <file>]
                                              hardware acceptance for the camera: stream frames and save them as JPEG files
-          face <robot-ip> [--pattern test|eyes|full|blank] [--file <ascii-art>] [--seconds 5] [--log <file>]
+          face <robot-ip> [--pattern test|eyes|full|blank] [--file <ascii-art>] [--seconds 5]
+                          [--acceptance <file.json>] [--log <file>]
                                              hardware acceptance for the OLED: draw a known image and hold it
           tone <robot-ip> [--sound steady|beeps|sweep] [--codec anki|mulaw|pcm8u|pcm8s] [--hz 440]
-                          [--seconds 2] [--amplitude 0.5]
-                          [--volume <n>] [--save <file.wav>] [--unreliable] [--prime <n>] [--log <file>]
-                                             hardware acceptance for the speaker: play a generated sine tone
+                          [--seconds 2] [--amplitude 0.5] [--acceptance <file.json>]
+                          [--volume <n>] [--save <file.wav>] [--unreliable] [--in-flight <n>] [--log <file>]
+                                             hardware acceptance for the speaker: play a generated sine tone.
+                                             All three write an acceptance record: what was measured here is
+                                             separated from what a person still has to see or hear, because
+                                             this tool can do neither
                                              --save writes exactly what is sent as a .wav, to check the
-                                             encoding locally; --unreliable and --prime vary how it is
+                                             encoding locally; --unreliable and --in-flight vary how it is
                                              delivered, to separate encoding faults from delivery faults;
                                              --sound beeps plays a countable number of separate beeps, which
                                              tests continuity without having to judge tone quality;
@@ -342,9 +346,9 @@ static async Task<int> Connect(string[] a)
     Console.WriteLine("---- result ----");
     Console.WriteLine($"connected: {link.Transport.State == LinkState.Connected}");
     Console.WriteLine($"identity received: available={link.Available is not null} firmware={link.Firmware is not null} mfg={link.Manufacturing is not null}");
-    Console.WriteLine($"telemetry: {link.StateCount} RobotState at {link.StateRateHz:F1} Hz; {link.MessageCount} messages total; histogram: {string.Join(", ", link.Histogram.OrderByDescending(k => k.Value).Select(k => $"{k.Key}={k.Value}"))}");
+    Console.WriteLine($"telemetry: {link.StateCount} RobotState at {link.StateRateHz:F1} Hz; {link.MessageCount} messages total; histogram: {string.Join(", ", link.HistogramSnapshot().OrderByDescending(k => k.Value).Select(k => $"{k.Key}={k.Value}"))}");
     Console.WriteLine($"transport: frames sent={conn.FramesSent} resent={conn.ResendFrames} dupsDropped={conn.DuplicateReliableDropped} pending={conn.PendingCount} lastRTT={conn.LastPingRoundTripMs:F1}ms");
-    if (head is { } h3) Console.WriteLine($"head angle before={headBefore?.ToString("F3") ?? "n/a"} peak during run={headPeak:F3} (target {h3:F3}) final={link.LastState?.HeadAngleRad:F3}; MotorActionAck count={link.Histogram.GetValueOrDefault(RobotMessageId.MotorActionAck)}");
+    if (head is { } h3) Console.WriteLine($"head angle before={headBefore?.ToString("F3") ?? "n/a"} peak during run={headPeak:F3} (target {h3:F3}) final={link.LastState?.HeadAngleRad:F3}; MotorActionAck count={link.CountOf(RobotMessageId.MotorActionAck)}");
     bool pass = link.Transport.State == LinkState.Connected && link.Available is not null && link.Manufacturing is not null && link.StateCount > 20 && conn.PendingCount < 8;
     Console.WriteLine(pass ? "SMOKE TEST: PASS" : "SMOKE TEST: FAIL");
     link.Disconnect();

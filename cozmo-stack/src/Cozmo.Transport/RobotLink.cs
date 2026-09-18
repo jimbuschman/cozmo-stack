@@ -24,7 +24,25 @@ public sealed class RobotLink : IDisposable
     public DateTime? FirstStateUtc { get; private set; }
     public DateTime? LastStateUtc { get; private set; }
     public bool SyncTimeAcked { get; private set; }
-    public readonly Dictionary<RobotMessageId, int> Histogram = new();
+
+    /// <summary>
+    /// Message counts. Written on the transport's dispatch thread, so callers must not enumerate it
+    /// directly; use <see cref="HistogramSnapshot"/>.
+    /// </summary>
+    private readonly Dictionary<RobotMessageId, int> _histogram = new();
+    private readonly object _gate = new();
+
+    /// <summary>A copy of the message counts, safe to enumerate while the robot is still talking.</summary>
+    public Dictionary<RobotMessageId, int> HistogramSnapshot()
+    {
+        lock (_gate) return new Dictionary<RobotMessageId, int>(_histogram);
+    }
+
+    /// <summary>How many of this message have arrived.</summary>
+    public int CountOf(RobotMessageId id)
+    {
+        lock (_gate) return _histogram.GetValueOrDefault(id);
+    }
 
     public event Action<RobotMessage>? Message;
     public event Action<RobotState>? State;
@@ -72,18 +90,23 @@ public sealed class RobotLink : IDisposable
     {
         RobotMessage m;
         try { m = RobotMessage.Parse(clad); } catch (FormatException) { return; }
-        MessageCount++;
-        Histogram[m.Id] = Histogram.GetValueOrDefault(m.Id) + 1;
-        switch (m)
+        RobotState? newState = null;
+        lock (_gate)
         {
-            case RobotAvailable a: Available = a; break;
-            case FirmwareVersion f: Firmware = f; break;
-            case ManufacturingID i: Manufacturing = i; break;
-            case SyncTimeAck: SyncTimeAcked = true; break;
-            case RobotState s:
-                LastState = s; StateCount++; LastStateUtc = DateTime.UtcNow; FirstStateUtc ??= LastStateUtc;
-                State?.Invoke(s); break;
+            MessageCount++;
+            _histogram[m.Id] = _histogram.GetValueOrDefault(m.Id) + 1;
+            switch (m)
+            {
+                case RobotAvailable a: Available = a; break;
+                case FirmwareVersion f: Firmware = f; break;
+                case ManufacturingID i: Manufacturing = i; break;
+                case SyncTimeAck: SyncTimeAcked = true; break;
+                case RobotState s:
+                    LastState = s; StateCount++; LastStateUtc = DateTime.UtcNow; FirstStateUtc ??= LastStateUtc;
+                    newState = s; break;
+            }
         }
+        if (newState is not null) State?.Invoke(newState);
         Message?.Invoke(m);
     }
 

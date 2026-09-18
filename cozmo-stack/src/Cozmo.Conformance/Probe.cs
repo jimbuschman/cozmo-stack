@@ -132,7 +132,10 @@ public static class Probe
         link.Transport.FrameTrace += e => { lock (lw) lw.WriteLine($"{e.Utc:O} {(e.Outbound ? "TX" : "RX")} {Hex.Dump(e.Raw)}"); };
         link.Transport.Warning += w => Console.WriteLine("  warn: " + w);
 
-        // every payload the robot sends is decoded and re-encoded; mismatches are the interesting result
+        // Every payload the robot sends is decoded and re-encoded; mismatches are the interesting result.
+        // These four are written on the transport's dispatch thread and read by the probe loop below, so
+        // every access goes through `gate`.
+        var gate = new object();
         var seen = new Dictionary<RobotMessageId, int>();
         var okBytes = new Dictionary<RobotMessageId, int>();
         var problems = new Dictionary<RobotMessageId, string>();
@@ -140,7 +143,7 @@ public static class Probe
         link.Transport.DataReceived += payload =>
         {
             var id = (RobotMessageId)payload[0];
-            lock (seen)
+            lock (gate)
             {
                 seen[id] = seen.GetValueOrDefault(id) + 1;
                 if (!samples.ContainsKey(id)) samples[id] = Hex.Dump(payload.AsSpan(1), 64);
@@ -163,19 +166,26 @@ public static class Probe
             if (step.Safety == ProbeSafety.Motion && !motion) { Console.WriteLine($"[skip] {step.Name}: needs --include-motion"); continue; }
             if (step.Safety == ProbeSafety.StateChange && !state) { Console.WriteLine($"[skip] {step.Name}: needs --include-state"); continue; }
 
-            var before = seen.ToDictionary(k => k.Key, v => v.Value);
+            Dictionary<RobotMessageId, int> before;
+            lock (gate) before = new Dictionary<RobotMessageId, int>(seen);
             Console.WriteLine($"[{step.Name}] {step.Subsystem} ({step.Safety}): {step.What}");
             try { await step.Run(link); }
             catch (Exception e) { Console.WriteLine($"   !! send failed: {e.Message}"); }
 
-            var got = seen.Where(kv => kv.Value > before.GetValueOrDefault(kv.Key)).Select(kv => kv.Key).ToList();
+            List<RobotMessageId> got;
+            Dictionary<RobotMessageId, string> problemsNow;
+            lock (gate)
+            {
+                got = seen.Where(kv => kv.Value > before.GetValueOrDefault(kv.Key)).Select(kv => kv.Key).ToList();
+                problemsNow = new Dictionary<RobotMessageId, string>(problems);
+            }
             foreach (var id in step.Expect)
             {
                 bool arrived = got.Contains(id);
                 string verdict = !arrived ? "not observed"
-                    : problems.ContainsKey(id) ? $"MISMATCH ({problems[id]})"
+                    : problemsNow.ContainsKey(id) ? $"MISMATCH ({problemsNow[id]})"
                     : "hardware verified";
-                Console.WriteLine($"   {(arrived && !problems.ContainsKey(id) ? "ok " : "-- ")}0x{(byte)id:x2} {MessageCatalog.Lookup((byte)id)?.CladType,-26} {verdict}");
+                Console.WriteLine($"   {(arrived && !problemsNow.ContainsKey(id) ? "ok " : "-- ")}0x{(byte)id:x2} {MessageCatalog.Lookup((byte)id)?.CladType,-26} {verdict}");
             }
             foreach (var id in got.Except(step.Expect))
                 Console.WriteLine($"   +  0x{(byte)id:x2} {MessageCatalog.Lookup((byte)id)?.CladType,-26} also seen");
@@ -193,16 +203,26 @@ public static class Probe
         link.Disconnect();
         await Task.Delay(300);
 
-        var perMessage = seen.Keys.OrderBy(k => (byte)k).Select(id => new
+        // the robot has stopped talking by now, but snapshot anyway rather than rely on that
+        Dictionary<RobotMessageId, int> seenFinal, okFinal;
+        Dictionary<RobotMessageId, string> problemsFinal, samplesFinal;
+        lock (gate)
+        {
+            seenFinal = new Dictionary<RobotMessageId, int>(seen);
+            okFinal = new Dictionary<RobotMessageId, int>(okBytes);
+            problemsFinal = new Dictionary<RobotMessageId, string>(problems);
+            samplesFinal = new Dictionary<RobotMessageId, string>(samples);
+        }
+        var perMessage = seenFinal.Keys.OrderBy(k => (byte)k).Select(id => new
         {
             tag = $"0x{(byte)id:X2}",
             cladType = MessageCatalog.Lookup((byte)id)?.CladType,
             subsystem = MessageCatalog.Lookup((byte)id)?.Subsystem.ToString(),
-            count = seen[id],
-            byteIdenticalRoundTrips = okBytes.GetValueOrDefault(id),
-            status = problems.ContainsKey(id) ? "capture_conflict" : "hardware_verified",
-            problem = problems.GetValueOrDefault(id),
-            sample = samples[id],
+            count = seenFinal[id],
+            byteIdenticalRoundTrips = okFinal.GetValueOrDefault(id),
+            status = problemsFinal.ContainsKey(id) ? "capture_conflict" : "hardware_verified",
+            problem = problemsFinal.GetValueOrDefault(id),
+            sample = samplesFinal[id],
         }).ToList();
 
         var doc = new

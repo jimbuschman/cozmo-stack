@@ -195,14 +195,14 @@ public class DeviceTests
     /// The opening frames are deliberately sent back to back to fill that buffer before pacing starts.
     /// </summary>
     [Fact]
-    public void PlayPrimesTheRobotBufferThenPacesAtTheAnimationTick()
+    public void ClockPacedPlayFillsTheRobotBufferThenPacesAtTheAnimationTick()
     {
         var sent = new List<RobotMessage>();
         var audio = new CozmoAudio(sent.Add);
         var pcm = CozmoAudio.Tone(440, TimeSpan.FromSeconds(1));
         int expected = CozmoAudio.ToFrames(pcm).Count;
-        int prime = audio.PrimeFrames;
-        Assert.True(prime < CozmoAudio.RobotBufferFrames, "priming must not overrun the robot's buffer");
+        int prime = audio.TargetInFlight;
+        Assert.True(prime < CozmoAudio.RobotBufferFrames, "the opening burst must not overrun the robot's buffer");
         Assert.True(expected > prime + 5, "the tone must be long enough to exercise pacing");
 
         var ticks = new List<TimeSpan>();
@@ -215,7 +215,7 @@ public class DeviceTests
         Assert.Equal(expected, ticks.Count);
         // the priming burst goes out at once
         Assert.True(ticks[prime - 1] < CozmoAudio.FrameInterval,
-            $"the {prime} priming frames took {ticks[prime - 1].TotalMilliseconds:F1} ms");
+            $"the {prime} opening frames took {ticks[prime - 1].TotalMilliseconds:F1} ms");
         var floor = CozmoAudio.FrameInterval * (expected - 1 - prime) * 0.8;
         Assert.True(sw.Elapsed >= floor,
             $"{expected} frames went out in {sw.ElapsedMilliseconds} ms, which is faster than the robot can consume them");
@@ -235,7 +235,7 @@ public class DeviceTests
     public void PlayRestartsItsScheduleSoASecondCallIsNotABurst()
     {
         var audio = new CozmoAudio(_ => { });
-        audio.PrimeFrames = 0;
+        audio.TargetInFlight = 0;
         var pcm = CozmoAudio.Tone(440, TimeSpan.FromMilliseconds(150));
         int n = CozmoAudio.ToFrames(pcm).Count;
         audio.Play(pcm);
@@ -401,8 +401,25 @@ public class DeviceTests
             // "noise" and "alternating rows" need a run command per pixel row; see the next test.
             if ((string)row[0] is "noise" or "alternating rows") continue;
             var payload = FaceBitmapCodec.Encode((FaceBitmap)row[1]);
-            Assert.True(payload.Length <= CozmoDisplay.MaxPayload, $"'{row[0]}' encoded to {payload.Length} bytes");
+            Assert.True(payload.Length <= CozmoDisplay.DefaultMaxPayload, $"'{row[0]}' encoded to {payload.Length} bytes");
         }
+    }
+
+    [Fact]
+    public void TheDisplayLimitComesFromTheTransportNotAGuess()
+    {
+        // one reliable-layer frame, less the CLAD tag and the 16-bit array count
+        Assert.Equal(TransportOptions.EngineDefaults.MaxFramePayloadBytes - CozmoDisplay.MessageOverhead,
+                     CozmoDisplay.DefaultMaxPayload);
+        Assert.Equal(CozmoDisplay.DefaultMaxPayload, new CozmoDisplay(_ => { }).MaxPayload);
+        Assert.Equal(500, new CozmoDisplay(_ => { }, 500).MaxPayload);
+
+        // a face at the limit goes out as a single message; nothing here depends on multipart
+        var sent = new List<RobotMessage>();
+        var display = new CozmoDisplay(sent.Add);
+        display.SendRaw(new byte[display.MaxPayload]);
+        var msg = Assert.IsType<FaceMsg>(Assert.Single(sent));
+        Assert.Equal(TransportOptions.EngineDefaults.MaxFramePayloadBytes, msg.ToBytes().Length);
     }
 
     [Fact]
@@ -411,7 +428,7 @@ public class DeviceTests
         // Per-pixel noise needs 32 run commands per column, which no single message can carry. Real faces
         // are nothing like this, but the display must say so instead of sending a partial image.
         var noise = (FaceBitmap)FaceBitmaps().First(r => (string)r[0] == "noise")[1];
-        Assert.True(FaceBitmapCodec.Encode(noise).Length > CozmoDisplay.MaxPayload);
+        Assert.True(FaceBitmapCodec.Encode(noise).Length > CozmoDisplay.DefaultMaxPayload);
         var display = new CozmoDisplay(_ => { });
         var ex = Assert.Throws<ArgumentException>(() => display.Show(noise));
         Assert.Contains("too complex", ex.Message);
@@ -450,7 +467,7 @@ public class DeviceTests
         _ = seq;
         var image = FaceBitmap.FromText(art);
         var payload = FaceBitmapCodec.Encode(image);
-        Assert.True(payload.Length <= CozmoDisplay.MaxPayload, $"'{name}' encoded to {payload.Length} bytes");
+        Assert.True(payload.Length <= CozmoDisplay.DefaultMaxPayload, $"'{name}' encoded to {payload.Length} bytes");
         Assert.True(image.ToText() == FaceBitmapCodec.Decode(payload).ToText(), $"'{name}' did not survive the round trip");
     }
 
@@ -823,8 +840,8 @@ public class DeviceTests
         Assert.True(state.OnCharger);
         Assert.NotNull(state.BatteryVolts);
         Assert.InRange(state.BatteryVolts!.Value, 3.5f, 5.0f);
-        Assert.Equal(state.StateCount, state.Histogram[RobotMessageId.State]);
-        Assert.True(state.Histogram.Count >= 8, "the capture should exercise more than a handful of message types");
+        Assert.Equal(state.StateCount, state.CountOf(RobotMessageId.State));
+        Assert.True(state.DistinctMessageTypes >= 8, "the capture should exercise more than a handful of message types");
     }
 
     [Fact]
