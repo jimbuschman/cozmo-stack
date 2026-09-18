@@ -1,6 +1,6 @@
 # M3 — `Cozmo.Robot` device layer
 
-Status: **implemented and capture-verified; first hardware run done, two faults found and fixed** (2026-09-18)
+Status: **complete — all three pipelines verified on a real robot** (2026-09-18)
 
 This is the first layer above the frozen M1 transport and M2 protocol baseline. It turns the verified wire
 messages into three stateful pipelines plus a live view of robot state, as ordinary library components.
@@ -93,10 +93,10 @@ message. `CozmoDisplay` rejects those with a clear error instead of sending a tr
 `setAudioVolume` (0x64) takes a u16 level. 744 samples per animation tick at about 30 Hz is 22.05 kHz, which
 matches the sample rate of the app's own voice assets.
 
-The codec is G.711 mu-law. This is still **hypothesis-level**: PyCozmo asserts it and the frame arithmetic
-agrees, but we have not disassembled the robot-side consumer, and no capture contains robot-bound audio. The
-hardware tone test is what will confirm it: a correct codec gives a clean steady note, a wrong one gives
-noise at the right duration.
+The codec is G.711 mu-law. This is now **confirmed on hardware**: a generated 440 Hz tone played as a clean
+steady note through the robot's speaker. A wrong codec would have produced noise of the right duration, so
+this settles the one assumption the audio pipeline rested on. It had been hypothesis-level up to this point,
+asserted by PyCozmo and consistent with the frame arithmetic but never checked against a robot.
 
 `CozmoAudio.Play` paces frames at the frame interval so the robot's buffer is not overrun.
 
@@ -153,12 +153,15 @@ dotnet build -c Release
 src\Cozmo.Conformance\bin\Release\net9.0\cozmo-conformance.exe camera 172.31.1.1 --count 10 --out shots
 ```
 
-Pass criteria:
+Pass criteria, **all three met on a hardware-1.5 robot running firmware 2457 on 2026-09-18**:
 
 1. **Camera** — the saved `.jpg` files open in any viewer and show the room from Cozmo's point of view.
    Warm-up frames are printed but not saved; they are torn by design.
 2. **Display** — the pattern on the robot's face matches the ASCII art the command prints.
 3. **Audio** — a clean, steady 440 Hz tone with no clicks or stutter, lasting two seconds.
+
+The first run failed 2 and 3 outright and produced only torn images for 1. Both causes are described above:
+the animation controller was never started, and the saved frames were all sensor warm-up.
 
 Each command writes a full frame log and prints its absolute path.
 
