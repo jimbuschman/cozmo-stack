@@ -231,12 +231,12 @@ works. Whether the firmware clamps it or treats 0 as "fully down" is not establi
 
 ## Uncertainties, kept as uncertainties
 
-* **The renderer is ours, not the engine's.** The parameter names, their order and the asset values are all
-  authoritative. How the engine's `ProceduralFaceDrawer` turns radii, lid angles and bends into pixels has
-  not been disassembled. The renderer here implements what the names and the observed value ranges support:
-  a rounded rectangle per eye with lids cutting in at an angle. Expressions read correctly as expressions but
-  are not pixel-identical to the retail robot. To reproduce an original exactly, play the clip that contains
-  it rather than building a pose by hand.
+* **The renderer is a port of the engine's**, reconstructed from `ProceduralFaceDrawer` and written up in
+  [PROCEDURAL_FACE.md](PROCEDURAL_FACE.md): a 128x64 canvas, eyes at x = 32 and 96 with a nominal 30x40 box,
+  elliptical corner arcs from `cv::ellipse2Poly`, lid quads with bend arcs, and one whole-face affine about
+  (64, 32). Three things in it are still open and are named there rather than guessed: which radius parameter
+  feeds which corner, the polygon fill rule, and which scanline parity to keep when going from the engine's
+  64 rows to our verified 32-row wire image.
 * **The named expressions are ours too.** `Expression.Happy` and the rest are constructed from what the
   parameter names imply. Anki's own named expressions have not been recovered.
 * **`BodyMotion.radius_mm` is a string in the schema**, not a number. The raw token is kept and a numeric
@@ -336,6 +336,10 @@ fault was in this renderer, not in M7.
 stayed at their fixed nominal positions of 40 and 88, and `FaceAngle` was added to each eye's own angle. At
 `FaceScaleX=1.82` each eye widened from 28 px to about 51 px, so the left spanned 14.5–65.5 and the right
 62.5–113.5. They overlapped, which is the rectangle seen on the robot.
+
+Applying the transform over the whole image fixed the mechanism but not the geometry: 40, 88, 28 and 28 were
+all invented. The engine's eyes are 64 px apart on a canvas twice as tall, so the renderer was rebuilt from
+the binary in full — see [PROCEDURAL_FACE.md](PROCEDURAL_FACE.md).
 
 **What the engine does.** `ProceduralFaceDrawer::DrawFace` draws both eyes at their nominal positions, then
 builds one affine with `GetTransformationMatrix(angle, scaleX, scaleY, transX, transY, 64, 32)` and applies

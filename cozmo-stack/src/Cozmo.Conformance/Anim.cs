@@ -288,7 +288,24 @@ public static class Anim
     /// <summary>Shows each built-in procedural expression in turn.</summary>
     public static async Task<int> Face(string[] a)
     {
-        if (Target(a) is not var (ip, port)) { Console.WriteLine("usage: face-expressions <robot-ip> [--seconds 2]"); return 1; }
+        bool offline = a.Contains("--offline");
+        if (!offline && Target(a) is null) { Console.WriteLine("usage: face-expressions <robot-ip> [--seconds 2] | face-expressions --offline"); return 1; }
+
+        // --offline prints the art only. The renderer is a port of ProceduralFaceDrawer and is covered by
+        // tests over the recovered constants; this is for looking at a pose without a robot to hand.
+        if (offline)
+        {
+            foreach (var e in Enum.GetValues<Expression>())
+            {
+                var art = ProceduralFaceRenderer.Render(Expressions.Get(e));
+                Console.WriteLine();
+                Console.WriteLine($"{e}:");
+                Console.WriteLine(art.ToText());
+            }
+            return 0;
+        }
+
+        var (ip, port) = Target(a)!.Value;
         double hold = Num(a, "--seconds", 2);
 
         CozmoRobot robot;

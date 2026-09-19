@@ -198,9 +198,10 @@ static int Usage()
                                              Wwise decoder. --arc plays a synthetic clip that arcs one way
                                              and back, for testing body motion; stop-on-cliff is enabled
                                              before any body motion either way
-          face-expressions <robot-ip> [--seconds 2]
+          face-expressions <robot-ip> [--seconds 2] | face-expressions --offline
                                              show every built-in procedural expression, printing the art it
-                                             sent so the robot's face can be compared against it
+                                             sent so the robot's face can be compared against it;
+                                             --offline prints the art only, with no robot
         """);
     return 1;
 }
