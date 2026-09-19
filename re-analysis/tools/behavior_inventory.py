@@ -51,10 +51,11 @@ RULES = [
      r"(?i)(driveTo|drivePath|pathPlan|planner|goTo[A-Z]|waypoint|navigat)"),
     ("requires localization/world model", "names the world model or localization",
      r"(?i)(worldOrigin|localiz|memoryMap|worldState)"),
-    # M6 resolves Wwise *events*. These behaviours instead select audio by switch state, which needs the
-    # switch-container machinery M6 explicitly does not implement - the same gap that leaves some events
-    # unresolved. The 39 Singing behaviours are all of this kind.
-    ("requires Wwise switch-state audio", "selects audio by switch state rather than event",
+    # M6 resolved Wwise *events*; these behaviours select audio by switch state. M9 (2026-09-19) built the
+    # switch-state path - music switch containers, the MIDI songs and the per-note vocal sampler - and the
+    # Singing class runs through it (SingingBehavior), so the 39 Singing behaviours are implementable.
+    # Hardware acceptance for M9 is pending; the classification is of what the stack can run.
+    ("implementable with M9 (switch-state audio)", "selects audio by switch state, which M9 implements",
      r"(?i)(audioSwitchGroup|audioSwitch)"),
 ]
 
@@ -195,8 +196,9 @@ def render(entries, ids, classes, native):
         "4. text names the charger or docking → requires charger/docking",
         "5. text names driving, paths or poses → requires navigation",
         "6. text names the world, map or origin → requires localization",
-        "7. otherwise, the directory it ships in gives its purpose",
-        "8. plays animations and asks for nothing else → implementable now",
+        "7. text selects audio by switch state → implementable with M9 (switch-state audio)",
+        "8. otherwise, the directory it ships in gives its purpose",
+        "9. plays animations and asks for nothing else → implementable now",
         "",
         "A rule firing on a *mention* is deliberately cautious: a behaviour that merely refers to cubes is",
         "counted as needing them. That overstates the blocked count rather than the implementable one.",

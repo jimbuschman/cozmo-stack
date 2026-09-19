@@ -168,3 +168,18 @@ sounds; the M5 `anim_bored_01` retest covers it).
 The reconciliation that followed (audit §10) changed the animation scheduler's behaviour under stalls and
 late ticks and the lift-height readout. Neither alters what a normally paced animation sends; both are
 offline-verified only.
+
+## M9 — Cozmo sings (2026-09-19): offline complete, hardware pending
+
+| Capability | Automated | Human | Evidence |
+| --- | --- | --- | --- |
+| Music hierarchy read | pass — 3490 of 3490 objects consume exactly | n/a | `WwiseMusicTests`, `wwise --hierarchy` |
+| 39 Singing behaviours resolve to their songs | pass | n/a | `EverySingingBehaviourResolvesToOneMidiSegment` |
+| 39 songs render to sound | pass — every note sung, no clipping after the output stage, deterministic | **not run** — a person can listen to the `--render` WAV on a PC; nobody has | `EveryShippedSongRendersCompletely`, `wwise --validate-music` (82 of 83 music events render; the one is the app soundtrack's silent default) |
+| Singing behaviour sequence | pass — switch first, reactions held, get-in / tempo / get-out | **not run** | `WwiseSongTests` |
+| **Cozmo sings on the robot** | **not run** | **not run** | `sing 172.31.1.1 --obb <dir> --behavior Singing_AbaDaba --acceptance`; `HARDWARE_TEST_PLAN.md` item A |
+
+**M9 is COMPLETE OFFLINE and NOT hardware verified.** The rendering rules are Wwise runtime semantics
+taken from public documentation, tabulated with their provenance class in `WWISE_MUSIC.md` §3; the
+engine's behaviour logic is read from the binary. The robot run is the one check that needs hardware and
+it is not a gate for M10.

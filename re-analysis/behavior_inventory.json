@@ -886,8 +886,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_BeautifulDreamer.json",
@@ -899,8 +899,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_Beethovens5th.json",
@@ -912,8 +912,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_Bingo.json",
@@ -925,8 +925,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_BuffaloGals.json",
@@ -938,8 +938,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_Camptown.json",
@@ -951,8 +951,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_CanCan1.json",
@@ -964,8 +964,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_CanCan2.json",
@@ -977,8 +977,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_DannyBoy.json",
@@ -990,8 +990,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_EntryOfTheGladiators.json",
@@ -1003,8 +1003,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_FarmerInTheDell.json",
@@ -1016,8 +1016,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_FrereJacques.json",
@@ -1029,8 +1029,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_HelloMyBaby.json",
@@ -1042,8 +1042,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_ItsyBitsySpider.json",
@@ -1055,8 +1055,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_LaPaloma.json",
@@ -1068,8 +1068,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_LondonBridge.json",
@@ -1081,8 +1081,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_MaryHadALittleLamb.json",
@@ -1094,8 +1094,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_MountainKing.json",
@@ -1107,8 +1107,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_MuffinMan.json",
@@ -1120,8 +1120,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_MulberryBush.json",
@@ -1133,8 +1133,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_MussIDenn.json",
@@ -1146,8 +1146,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_OdeToJoy.json",
@@ -1159,8 +1159,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_PachebelCanon.json",
@@ -1172,8 +1172,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_PopGoesTheWeasel.json",
@@ -1185,8 +1185,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_RowYourBoat.json",
@@ -1198,8 +1198,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_Sakura.json",
@@ -1211,8 +1211,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_SilveryMoon.json",
@@ -1224,8 +1224,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_TakeMeOutToTheBallgame.json",
@@ -1237,8 +1237,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_TaRaRaBoom.json",
@@ -1250,8 +1250,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_TisketTasket.json",
@@ -1263,8 +1263,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_Toccata.json",
@@ -1276,8 +1276,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_TurkeyInTheStraw.json",
@@ -1289,8 +1289,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_TwinkleTwinkle.json",
@@ -1302,8 +1302,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_VivaldiSpring.json",
@@ -1315,8 +1315,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_WaterMusic.json",
@@ -1328,8 +1328,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_WildAboutHarry.json",
@@ -1341,8 +1341,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_WilliamTell.json",
@@ -1354,8 +1354,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_YankeeDoodle.json",
@@ -1367,8 +1367,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/singing/Singing_YellowRose.json",
@@ -1380,8 +1380,8 @@
    "audioSwitchGroup",
    "requiredUnlockId"
   ],
-  "category": "requires Wwise switch-state audio",
-  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+  "category": "implementable with M9 (switch-state audio)",
+  "reason": "selects audio by switch state, which M9 implements ('audioSwitchGroup')"
  },
  {
   "path": "freeplay/sparkable/sparksBringCubeToBeacon.json",

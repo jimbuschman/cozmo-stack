@@ -20,8 +20,9 @@ on trust. A behaviour matching no rule is **unclear**, not pushed into a plausib
 4. text names the charger or docking → requires charger/docking
 5. text names driving, paths or poses → requires navigation
 6. text names the world, map or origin → requires localization
-7. otherwise, the directory it ships in gives its purpose
-8. plays animations and asks for nothing else → implementable now
+7. text selects audio by switch state → implementable with M9 (switch-state audio)
+8. otherwise, the directory it ships in gives its purpose
+9. plays animations and asks for nothing else → implementable now
 
 A rule firing on a *mention* is deliberately cautious: a behaviour that merely refers to cubes is
 counted as needing them. That overstates the blocked count rather than the implementable one.
@@ -31,7 +32,7 @@ counted as needing them. That overstates the blocked count rather than the imple
 | category | behaviours |
 | --- | ---: |
 | requires cubes | 62 |
-| requires Wwise switch-state audio | 39 |
+| implementable with M9 (switch-state audio) | 39 |
 | requires vision/person detection | 24 |
 | freeplay/explorer-specific | 18 |
 | requires robot state not yet derived | 11 |
@@ -84,45 +85,45 @@ counted as needing them. That overstates the blocked count rather than the imple
 | ReactToCliff | ReactToCliff | implementable with M1-M7 now | its cause is reported by M4 sensors | `reactions/reactToCliff.json` |
 | ReactToObstacle | PlayAnim | implementable with M1-M7 now | plays an animation and asks for nothing else | `reactions/reactToObstacle.json` |
 | ReactToPickup | ReactToPickup | implementable with M1-M7 now | its cause is reported by M4 sensors | `reactions/reactToPickup.json` |
-| Singing_AbaDaba | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_AbaDaba.json` |
-| Singing_BeautifulDreamer | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_BeautifulDreamer.json` |
-| Singing_Beethovens5th | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_Beethovens5th.json` |
-| Singing_Bingo | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_Bingo.json` |
-| Singing_BuffaloGals | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_BuffaloGals.json` |
-| Singing_Camptown | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_Camptown.json` |
-| Singing_CanCan1 | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_CanCan1.json` |
-| Singing_CanCan2 | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_CanCan2.json` |
-| Singing_DannyBoy | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_DannyBoy.json` |
-| Singing_EntryOfTheGladiators | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_EntryOfTheGladiators.json` |
-| Singing_FarmerInTheDell | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_FarmerInTheDell.json` |
-| Singing_FrereJacques | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_FrereJacques.json` |
-| Singing_HelloMyBaby | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_HelloMyBaby.json` |
-| Singing_ItsyBitsySpider | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_ItsyBitsySpider.json` |
-| Singing_LaPaloma | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_LaPaloma.json` |
-| Singing_LondonBridge | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_LondonBridge.json` |
-| Singing_MaryHadALittleLamb | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_MaryHadALittleLamb.json` |
-| Singing_MountainKing | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_MountainKing.json` |
-| Singing_MuffinMan | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_MuffinMan.json` |
-| Singing_MulberryBush | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_MulberryBush.json` |
-| Singing_MussIDenn | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_MussIDenn.json` |
-| Singing_OdeToJoy | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_OdeToJoy.json` |
-| Singing_PachebelCanon | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_PachebelCanon.json` |
-| Singing_PopGoesTheWeasel | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_PopGoesTheWeasel.json` |
-| Singing_RowYourBoat | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_RowYourBoat.json` |
-| Singing_Sakura | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_Sakura.json` |
-| Singing_SilveryMoon | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_SilveryMoon.json` |
-| Singing_TaRaRaBoom | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_TaRaRaBoom.json` |
-| Singing_TakeMeOutToTheBallgame | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_TakeMeOutToTheBallgame.json` |
-| Singing_TisketTasket | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_TisketTasket.json` |
-| Singing_Toccata | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_Toccata.json` |
-| Singing_TurkeyInTheStraw | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_TurkeyInTheStraw.json` |
-| Singing_TwinkleTwinkle | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_TwinkleTwinkle.json` |
-| Singing_VivaldiSpring | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_VivaldiSpring.json` |
-| Singing_WaterMusic | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_WaterMusic.json` |
-| Singing_WildAboutHarry | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_WildAboutHarry.json` |
-| Singing_WilliamTell | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_WilliamTell.json` |
-| Singing_YankeeDoodle | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_YankeeDoodle.json` |
-| Singing_YellowRose | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_YellowRose.json` |
+| Singing_AbaDaba | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_AbaDaba.json` |
+| Singing_BeautifulDreamer | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_BeautifulDreamer.json` |
+| Singing_Beethovens5th | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_Beethovens5th.json` |
+| Singing_Bingo | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_Bingo.json` |
+| Singing_BuffaloGals | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_BuffaloGals.json` |
+| Singing_Camptown | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_Camptown.json` |
+| Singing_CanCan1 | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_CanCan1.json` |
+| Singing_CanCan2 | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_CanCan2.json` |
+| Singing_DannyBoy | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_DannyBoy.json` |
+| Singing_EntryOfTheGladiators | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_EntryOfTheGladiators.json` |
+| Singing_FarmerInTheDell | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_FarmerInTheDell.json` |
+| Singing_FrereJacques | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_FrereJacques.json` |
+| Singing_HelloMyBaby | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_HelloMyBaby.json` |
+| Singing_ItsyBitsySpider | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_ItsyBitsySpider.json` |
+| Singing_LaPaloma | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_LaPaloma.json` |
+| Singing_LondonBridge | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_LondonBridge.json` |
+| Singing_MaryHadALittleLamb | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_MaryHadALittleLamb.json` |
+| Singing_MountainKing | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_MountainKing.json` |
+| Singing_MuffinMan | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_MuffinMan.json` |
+| Singing_MulberryBush | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_MulberryBush.json` |
+| Singing_MussIDenn | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_MussIDenn.json` |
+| Singing_OdeToJoy | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_OdeToJoy.json` |
+| Singing_PachebelCanon | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_PachebelCanon.json` |
+| Singing_PopGoesTheWeasel | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_PopGoesTheWeasel.json` |
+| Singing_RowYourBoat | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_RowYourBoat.json` |
+| Singing_Sakura | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_Sakura.json` |
+| Singing_SilveryMoon | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_SilveryMoon.json` |
+| Singing_TaRaRaBoom | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_TaRaRaBoom.json` |
+| Singing_TakeMeOutToTheBallgame | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_TakeMeOutToTheBallgame.json` |
+| Singing_TisketTasket | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_TisketTasket.json` |
+| Singing_Toccata | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_Toccata.json` |
+| Singing_TurkeyInTheStraw | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_TurkeyInTheStraw.json` |
+| Singing_TwinkleTwinkle | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_TwinkleTwinkle.json` |
+| Singing_VivaldiSpring | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_VivaldiSpring.json` |
+| Singing_WaterMusic | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_WaterMusic.json` |
+| Singing_WildAboutHarry | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_WildAboutHarry.json` |
+| Singing_WilliamTell | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_WilliamTell.json` |
+| Singing_YankeeDoodle | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_YankeeDoodle.json` |
+| Singing_YellowRose | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_YellowRose.json` |
 | DockingTestSimple | DockingTestSimple | requires charger/docking | names the charger or docking ('Docking') | `devBehaviors/dockingTestSimple.json` |
 | DriveOffCharger | DriveOffCharger | requires charger/docking | names the charger or docking ('Charger') | `freeplay/driveOffCharger.json` |
 | Hiking_DriveOffCharger | DriveOffCharger | requires charger/docking | names the charger or docking ('Charger') | `freeplay/hiking/Hiking_driveOffCharger.json` |

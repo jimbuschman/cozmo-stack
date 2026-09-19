@@ -152,3 +152,31 @@ from the same assumption and therefore cannot falsify it.
 Adding M9's 39 behaviours on top of an unswept foundation would mean more code resting on guesses that
 nobody has gone back to check. The inventory analysis above stays valid and M9 stays the right *feature*
 milestone; it simply is not the right *next* one.
+
+## After M9 (2026-09-19): the inventory re-run
+
+`behavior_inventory.py` now files the 39 Singing behaviours as **implementable with M9 (switch-state audio)**:
+
+| blocker | behaviours |
+| --- | ---: |
+| requires cubes | 62 |
+| **implementable with M9 (switch-state audio)** | **39** |
+| requires vision/person detection | 24 |
+| freeplay/explorer-specific | 18 |
+| requires robot state not yet derived | 11 |
+| requires charger/docking | 7 |
+| game-specific | 5 |
+| **implementable with M1-M7 now** | **5** |
+| developer-only | 4 |
+| unclear | 2 |
+| requires localization/world model | 1 |
+
+44 of 178 are now runnable offline. M9's hardware acceptance is pending (`HARDWARE_TEST_PLAN.md` item A)
+and nothing that follows depends on it.
+
+**Recommended next: M10 — derived robot state (11 behaviours) and the cube reactions.** The engine's
+off-treads classifier runs on IMU data the robot already streams, so it can be read from the binary and
+reproduced offline against the committed captures; the cube reactions run on the M4 message path whose
+discovery is hardware-observed. Neither needs a robot to build, and cube acceptance (item B) is what
+freezes the second half. Vision (24) remains the larger subsystem; charger/docking (7) needs hardware to
+verify at every step.

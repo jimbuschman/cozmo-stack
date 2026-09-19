@@ -1,87 +1,75 @@
-# Handoff — 2026-09-19 (M9 increment 1 complete)
+# Handoff — 2026-09-19 (M9 complete offline)
 
 ## Where things stand
 
 | | |
 | --- | --- |
-| Sweep commits | `dbdfa29`..`d483fd2` (five commits, pushed) — see [SOURCE_FIDELITY_AUDIT.md](SOURCE_FIDELITY_AUDIT.md) |
-| Hardware retests | **both passed visually on 2026-09-19** (audit §8); M5 and M7 re-verified, errata cleared |
-| Reconciliation | `0e74c9a`, `7166568` (pushed) — audit §10 |
-| M9 | **IN PROGRESS — increment 1 complete**: the Cozmo_Sings chain recovered and resolved from engine, enums and banks; no sound rendered yet. See [WWISE_MUSIC.md](WWISE_MUSIC.md) |
-| Tests | **462 passed, 0 failed (`dotnet test Cozmo.sln`, 3 m 31 s; 444 before M9)**, all passing offline |
+| Latest commits | M9 increment 1: `bfe2ed7`, `2e8e243`; increment 2: this commit |
+| M9 | **COMPLETE OFFLINE.** The 39 Singing behaviours resolve, render and run; hardware acceptance pending — `HARDWARE_TEST_PLAN.md` item A. See [WWISE_MUSIC.md](WWISE_MUSIC.md) |
+| Tests | **480 passed, 0 failed (`dotnet test Cozmo.sln`, 3 m 41 s; 462 after M9 increment 1)**, all passing offline |
+| Hardware | nothing new has been run since the two post-sweep retests; the consolidated plan is [HARDWARE_TEST_PLAN.md](HARDWARE_TEST_PLAN.md) |
+| Next | **M10 may begin now**; it does not depend on the pending hardware results (see "Next task") |
 
 ## Milestone status
 
 | Milestone | Status |
 | --- | --- |
-| M1 transport core | Frozen. Audited; nothing changed. |
-| M2 protocol catalogue | Frozen. `animHeadAngle` (0x93) and `animLiftHeight` (0x94) carry engine-derived field names and are statically verified. The hand-written `RobotState` helpers now read `liftAngle` as radians and convert to millimetres with the engine's `45 + 66 sin(angle)` (D10). |
-| M3 device layer | Frozen. Audio sample rate 22320 Hz (engine `AnimConstants`); JPEG headers native. |
-| M4 control layer | Frozen. Head and lift limits native. `Sensors.LiftPositionRaw` became `LiftAngleRad` + `LiftHeightMm`. **Cubes:** hardware discovery observed on 2026-09-19 (a real cube appeared during discovery after being tapped); connection, tap, movement, up-axis and battery telemetry acceptance still pending. |
-| M5 animation and expression | **Frozen, hardware re-verified 2026-09-19** (`anim_bored_01 --wwise`, visual). Reconciliation: the scheduler's timeline is now a count of streamed frames × 33 ms as in the engine, frozen while the robot has no room and caught up frame by frame (D11); a second clip is refused while anything streams unless it interrupts, as `SetStreamingAnimation` does (D12). Both offline-verified; neither changes a normally paced stream. |
-| M6 Wwise audio | Frozen. Resampling target 22320 Hz; covered by the M5 retest. |
-| M7 reactive behaviour and idle | **Frozen, hardware re-verified 2026-09-19** (`behavior --seconds 60`, visual): shipped resting face, engine blink table, `LookAt` dart geometry, `ReactToImpact` on landing. |
-| M8 behaviour inventory and framework | Complete offline. Audited; nothing changed. |
-| M9 Wwise switch-state audio | **IN PROGRESS.** Increment 1: `WwiseHierarchy` reads all nine node types with exact consumption (3490 of 3490 objects); music switch trees, playlists, segments, tracks and the 46 MIDI song sources are read; every one of the 39 Singing behaviours resolves to its song; `BehaviorSinging` disassembled (switch first, then GetIn / tempo / GetOut triggers, cube-shake vibrato parameter). Increment 2 (next): render a song through the per-note vocal sampler and wire the behaviour. |
+| M1 transport core | Frozen. |
+| M2 protocol catalogue | Frozen. `RobotState` helpers read `liftAngle` as radians (D10). |
+| M3 device layer | Frozen. 22320 Hz; JPEG headers native. Colour camera frames never exercised on hardware (plan item E). |
+| M4 control layer | Frozen. Cubes: discovery hardware-observed; telemetry acceptance pending (plan item B). |
+| M5 animation and expression | Frozen, hardware re-verified 2026-09-19. Scheduler timeline frame-counted (D11), single-clip refusal (D12): offline-verified, normal case covered by plan item F. |
+| M6 Wwise audio | Frozen. Two M9 corrections recorded in its errata (switch-container parent; source-plug-in sounds; 584 decodable events, not 615). |
+| M7 reactive behaviour and idle | Frozen, hardware re-verified 2026-09-19. Falling → impact never exercised (plan item C). |
+| M8 behaviour inventory and framework | Complete offline. Inventory regenerated after M9: **44 of 178 behaviours implementable** (5 from M1–M7, 39 Singing from M9). |
+| M9 Wwise switch-state audio | **Complete offline; hardware pending.** Hierarchy reader (3490 of 3490 objects exact), music resolver, MIDI reader, per-note vocal sampler, `IAudioSwitchStates` seam, `SingingBehavior`, `sing` acceptance command, `wwise --render / --validate-music`. |
 
-## What the sweep and reconciliation found, in one paragraph
+## What M9 established
 
-Nine confirmed divergences in the sweep (audit §1) and three in the reconciliation (audit §10), all in places
-where a plausible value or mechanism had been chosen and had passed acceptance because acceptance judged
-the code against itself: the sample rate, the falling reaction's animation, the blink, the dart geometry,
-the audio-alternative choice, head and lift keyframes as motor commands, the resting face, a claim that a
-shipped artifact did not exist; then the lift unit, a wall-clock animation timeline that jumped after
-stalls, and a second-clip rule the engine does not have. Every fix carries a regression that names the old
-behaviour. The INFERRED rows of the audit's §5 remain the open list; §2 says what would settle each.
+The engine's `BehaviorSinging` posts the behaviour's switch and plays get-in, tempo and get-out
+animations; the tempo animation's audio event targets a music switch container keyed by the Cozmo_Sings
+switch ids; each leaf is one segment holding one MIDI clip (9600 ticks per beat, tempo from the nearest
+meter override); the notes go to a blend container of Cozmo's own per-note recordings. All of that is
+read from the engine, the enums and the banks. What is **applied** to it — how a note plays through the
+sampler, and an output stage standing in for the robot bus limiter — is Wwise runtime behaviour taken
+from public documentation or our own labelled policy, tabulated in `WWISE_MUSIC.md` §3. The vibrato LFO
+and note-off envelope are read but not interpreted (deferred).
 
 ## Hardware
 
-Both post-sweep retests passed visually (operator report; no JSON record committed):
+Consolidated in [HARDWARE_TEST_PLAN.md](HARDWARE_TEST_PLAN.md): A/A2 Cozmo sings (M9), B cube telemetry
+(M4), C falling → impact (M7), D lift readout (M4), E colour camera (M3), F animation timeline (M5).
+Commit the acceptance JSON files when run.
 
-```
-dotnet run --project src/Cozmo.Conformance -- anim 172.31.1.1 --assets <dir> --name anim_bored_01 --wwise <obb dir>
-dotnet run --project src/Cozmo.Conformance -- behavior 172.31.1.1 --obb <dir> --seconds 60
-```
-
-Not yet on hardware: the reconciliation's scheduler changes (D11, D12: only visible under a stall or a late
-tick), the lift-height readout (D10: `control 172.31.1.1` now prints `lift=<rad>rad/<mm>mm`; with the lift
-down expect about −0.198 rad / 32 mm), the falling → impact reaction (D9), and `cubes --acceptance`.
-
-Deferred and unchanged: full cube telemetry acceptance, enhanced backpack-light keyframes, pre-rendered
-`faceAnimations`, group cooldown enforcement (mechanism recorded in `AnimationLibrary.cs`), lift 0 mm
-semantics, the seven stereo ADPCM files, the music-hierarchy events.
+Deferred and unchanged: enhanced backpack-light keyframes, pre-rendered `faceAnimations`, group cooldown
+enforcement (mechanism recorded in `AnimationLibrary.cs`), lift 0 mm semantics, the seven stereo ADPCM
+files, the app's soundtrack (`Play__Music__Play`), Code Lab.
 
 ## Open unknowns carried forward
 
-From the audit's §2, the ones most worth a bounded look next:
-
-1. **Eye-dart lifecycle** — ramp-then-hold or snap-then-hold; static reading of the persistent-layer
-   replay is ambiguous. A stock-app face capture settles it.
-2. **Scanline parity** — transmitted as the position of the set bit in each run's two draw bits; whether
-   the firmware uses it is not established.
-3. The renderer's corner-radius assignment and fill rule, unchanged.
-4. **Frames per engine update** — the engine streams to the audio budget on every update regardless of the
-   clock; this stack streams one frame per 33 ms tick and makes up late ticks. Recorded as local policy; a
-   wire capture of the stock app's burst pattern would show whether it matters on the robot.
+1. **Eye-dart lifecycle** (M7) — ramp-then-hold or snap-then-hold; a stock-app face capture settles it.
+2. **Scanline parity** (M5) — transmitted; whether the firmware uses it is not established.
+3. Renderer corner-radius assignment and fill rule (M5).
+4. **Frames per engine update** (M5) — the engine streams to the audio budget; we stream one frame per tick.
+5. **Sampler semantics** (M9) — sustain/release, the get-in branch, note tracking: a stock-app recording of
+   one song beside our `--render` WAV would settle them.
+6. **Modulators** (M9) — LFO and envelope objects (types 21, 22): field semantics unread.
 
 ## Next task
 
-**M9 increment 2: make a song audible.** Read `WWISE_MUSIC.md` first; everything below is already recovered
-there and must not be re-derived.
+**M10: derived robot state and the cube reactions**, chosen from the regenerated inventory
+(`NEXT_MILESTONE.md`), and not gated on any pending hardware result:
 
-1. A MIDI sampler over the target blend container 110896138: for each note (from `WwiseMidi.NotesAt` at
-   the segment's effective tempo) pick the note-on child whose `MidiKeyRangeMin..Max` holds the key, choose
-   one of its three recordings as `RandomSequenceContainer` does, apply its `Pitch` (cents) and `Volume`
-   (dB) properties, loop the recording while the note is held when `Loop = 0`, stop at note-off, and play
-   the note-off layer (`MidiPlayOnNoteType = 2`, -14 dB). Mix at `CozmoAudio.SampleRate`. Label the
-   dispatch rules CORROBORATED (public Wwise documentation), not NATIVE.
-2. A switch-state API on `WwiseAudioSource` (`SetSwitch(group, switch)`) so an audio keyframe whose event
-   targets a music switch container renders the selected song; the three tempo events are the only such
-   events an animation raises.
-3. An M8 `Singing` behaviour following `BehaviorSinging`: post the switch, play `Singing_GetIn`, the tempo
-   trigger, `Singing_GetOut`; drive `Cozmo_Singing_Vibrato` from cube shake only if cubes are available,
-   otherwise leave it at 0 and say so.
-4. Decide, and record, what to do about the vibrato LFO and note-off envelope modulators (types 21, 22):
-   read their fields or defer them explicitly.
+* **11 behaviours** need "robot state not yet derived": `ReactToRobotOnBack`, `OnFace`, `OnSide`,
+  `PlacedOnSlope`, `ReturnedToTreads`, `RobotShaken`, `UnexpectedMovement` and friends. The engine derives
+  these in `Robot::UpdateFullRobotState` and the `OffTreadsState` classifier from the IMU the robot already
+  streams (M4 reports it raw). Read the classifier from the binary (thresholds, debounce) and reproduce it;
+  the committed fw2457 capture and the fixtures give offline IMU data to test against.
+* The **cube reactions** (`ReactToCubeMoved`, `AcknowledgeObject`, tap-driven behaviours) run on the cube
+  message path M4 already implements and discovery has been observed on hardware; their engine classes are
+  exported and can be read the same way `BehaviorReactToX` were. Cube *acceptance* (plan item B) is
+  needed to freeze them, not to build them.
 
-Hardware acceptance for M9 is a `behavior` run that sings one song audibly on the robot.
+Start from the engine, not from guesses: disassemble first (`re-analysis/tools/disarm.py`; the session
+scratch disassembler was `engdis.py`, described in the memory notes), and read `BEHAVIOR_LAYER.md` and
+`SOURCE_FIDELITY_AUDIT.md` §2 before writing code.
