@@ -82,19 +82,38 @@ it and the tests check it against the bank files rather than a copied list.
 This matters because **no name table ships**. Without it, `"audioSwitchGroup": "Cozmo_Sings_80Bpm"` is an
 unresolvable string; with it, that name is id 3366294904 and can be looked up in the banks.
 
+### Where the Singing audio actually lives, found with that hash
+
+With the hash established, the two names a `Singing` behaviour carries can be looked for directly in the
+banks. Both appear, once each, in `Cozmo.bnk`:
+
+| name | id | found in |
+| --- | --- | --- |
+| `Cozmo_Sings_80Bpm` | 3366294904 | HIRC object 914766641, payload offset 196 |
+| `Cozmo_Sings_Aba_Daba` | 2234458138 | the same object, payload offset 290 |
+
+That object is **HIRC type 12, `MusicSwitchContainer`** — not the plain `SwitchContainer` (type 6) that
+was expected.
+
+**This joins two gaps that looked separate.** M6 left 90 events unresolved, 46 of them pointing into the
+music hierarchy (`MusicSegment`, `MusicPlaylistContainer`, `MusicSwitchContainer`). The 39 Singing
+behaviours turn out to need that same hierarchy. So one subsystem — reading the music hierarchy and its
+switch resolution — unlocks the Singing behaviours *and* closes most of what M6 could not resolve. That
+makes it a better-value milestone than the behaviour count alone suggested.
+
 ### What remains for that milestone
 
+* **HIRC type 12, `MusicSwitchContainer`**: the switch-group and switch-state ids sit at payload offsets
+  196 and 290 in the one object examined, but the records around them, and the child each state selects,
+  are not yet read. Offsets from a single object are not a layout.
+* **`MusicSegment` (type 10) and `MusicTrack` (type 11)**: music tracks hold their sources differently
+  from `Sound` objects, which is why M6's walk does not reach them.
 * **`STMG` in `Init.bnk`** holds the state and switch group definitions. Its state-group section parses —
-  6 groups, with sane ids and transition times — but the switch-group section that follows does not yet,
-  because the state-group record length is not fully established. This is an ordinary parsing job, not a
+  6 groups, with sane ids and transition times — but the switch-group section after it does not yet,
+  because the state-group record length is not fully established. An ordinary parsing job, not a
   conceptual gap.
-* **HIRC type 6, `SwitchContainer`** (21 in this build) holds the switch-state to child mapping. Its
-  payload layout is not yet read. The earlier parent-offset scan matched only 11 of 21, which is itself a
-  hint that its header differs from the other container types.
-* Once both are read, a `Singing` behaviour's two names resolve to a child, and from there to media through
-  the resolution M6 already has.
 
-Nothing about this was implemented tonight beyond the hash, and nothing claims to work.
+Nothing here was implemented beyond the hash, and nothing claims to work.
 
 ## Not chosen, and why
 
