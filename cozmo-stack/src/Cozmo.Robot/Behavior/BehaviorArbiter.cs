@@ -81,6 +81,13 @@ public sealed class BehaviorArbiter
     /// <summary>
     /// How long a given reaction is suppressed after firing. Stops a flapping sensor — a cliff sensor at
     /// the edge of a table, say — from retriggering the same animation continuously.
+    ///
+    /// This is a local policy, not the engine's. The shipped <c>reactionTrigger_behavior_map.json</c>
+    /// gives no cooldown to <c>CliffDetected</c>, <c>RobotPickedUp</c>, <c>PlacedOnCharger</c> or
+    /// <c>RobotFalling</c>; its cooldowns exist only where a trigger's strategy config names one (60 s for
+    /// minor frustration, 180–300 s for the fist-bump objectives). The engine avoids re-triggering these
+    /// four by other means — the reaction locks its behaviour with <c>SmartDisableReactionsWithLock</c>
+    /// while it runs, and the trigger strategies watch transitions, not levels.
     /// </summary>
     public TimeSpan ReactionCooldown { get; set; } = TimeSpan.FromSeconds(5);
 

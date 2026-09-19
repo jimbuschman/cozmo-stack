@@ -76,6 +76,7 @@ public sealed class ReactiveBehavior : IDisposable
         _robot.Sensors.PickedUpChanged += OnPickedUp;
         _robot.Sensors.OnChargerChanged += OnCharger;
         _robot.Sensors.FallingChanged += OnFalling;
+        _robot.Sensors.FallingStopped += OnFallingStopped;
     }
 
     /// <summary>
@@ -108,16 +109,51 @@ public sealed class ReactiveBehavior : IDisposable
         _robot.Sensors.PickedUpChanged -= OnPickedUp;
         _robot.Sensors.OnChargerChanged -= OnCharger;
         _robot.Sensors.FallingChanged -= OnFalling;
+        _robot.Sensors.FallingStopped -= OnFallingStopped;
     }
 
     private void OnCliff(CliffReport report) => Post(() => Fire(ReactionTrigger.CliffDetected));
 
+    /// <summary>
+    /// The engine does not react to falling; it reacts to landing. The shipped map sends
+    /// <c>RobotFalling</c> to <c>BehaviorReactToImpact</c>, whose <c>AlwaysHandle</c> at 0x00606408 clears
+    /// its flags on <c>FallingStarted</c> and waits for <c>FallingStopped</c>. So the start of a fall is
+    /// reported here and plays nothing.
+    /// </summary>
     private void OnFalling(bool falling)
     {
-        if (falling) Post(() => Fire(ReactionTrigger.RobotFalling));
-        else Post(() => Report(new BehaviorDecision(BehaviorPriority.Reaction, BehaviorOutcome.Unresolved,
-            "stopped falling: the shipped ReactionTrigger set has no member for it")));
+        if (falling) Post(() => Report(new BehaviorDecision(BehaviorPriority.Reaction, BehaviorOutcome.Unresolved,
+            "falling: the engine's ReactToImpact waits for the landing (FallingStopped) before it plays anything")
+        { Reaction = ReactionTrigger.RobotFalling }));
     }
+
+    /// <summary>
+    /// <c>BehaviorReactToImpact</c>: on <c>FallingStopped</c> the impact intensity must exceed
+    /// <see cref="ReactionTable.ImpactIntensityThreshold"/> (1000), and <c>InitInternal</c> at 0x006061F8
+    /// then waits up to 5 s (<c>WaitForLambdaAction</c>, timeout 5.0) for the head and lift to finish the
+    /// recalibration a fall triggers before <c>TransitionToPlayingAnim</c> plays <c>ReactToImpact</c>. A
+    /// landing softer than the threshold ends the behaviour with no animation.
+    /// </summary>
+    private void OnFallingStopped(FallingStoppedReport report)
+    {
+        if (report.ImpactIntensity <= ReactionTable.ImpactIntensityThreshold)
+        {
+            Post(() => Report(new BehaviorDecision(BehaviorPriority.Reaction, BehaviorOutcome.Unresolved,
+                $"landed with impact {report.ImpactIntensity:F0}, at or below the engine's threshold of " +
+                $"{ReactionTable.ImpactIntensityThreshold:F0}: ReactToImpact plays nothing")
+            { Reaction = ReactionTrigger.RobotFalling }));
+            return;
+        }
+        Post(() =>
+        {
+            var deadline = DateTime.UtcNow + ImpactCalibrationWait;
+            while (_robot.State.CalibratingMotors && DateTime.UtcNow < deadline) Thread.Sleep(25);
+            Fire(ReactionTrigger.RobotFalling);
+        });
+    }
+
+    /// <summary>The engine's 5 s allowance for the post-fall motor recalibration (WaitForLambdaAction timeout in InitInternal).</summary>
+    public static readonly TimeSpan ImpactCalibrationWait = TimeSpan.FromSeconds(5);
 
     private void OnPickedUp(bool picked)
     {

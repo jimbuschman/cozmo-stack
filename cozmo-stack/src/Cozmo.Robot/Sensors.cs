@@ -31,6 +31,17 @@ public sealed record CliffReport(uint Timestamp, CliffSensors Sensors, bool Stop
 }
 
 /// <summary>
+/// The end of a fall, as the robot reports it in <see cref="FallingStopped"/> (0xDE): how long it fell and
+/// how hard it landed. The intensity's unit is not established; the engine compares it against 1000
+/// (<c>BehaviorReactToImpact::AlwaysHandle</c> at 0x00606408) to decide whether the landing counts as an
+/// impact worth reacting to.
+/// </summary>
+public sealed record FallingStoppedReport(uint DurationMs, float ImpactIntensity)
+{
+    public override string ToString() => $"fell for {DurationMs} ms, impact {ImpactIntensity:F0}";
+}
+
+/// <summary>
 /// A settled view of everything the robot reports about itself.
 ///
 /// Everything here comes from <see cref="RobotState"/>, which arrives about thirty times a second, except
@@ -63,6 +74,13 @@ public sealed class CozmoSensors
     /// reaction table claimed a falling reaction that nothing could ever raise.
     /// </summary>
     public event Action<bool>? FallingChanged;
+
+    /// <summary>
+    /// Raised when the robot reports the end of a fall with <see cref="FallingStopped"/> (0xDE). This is
+    /// the message the engine's impact reaction keys off, not the status flag: it carries the impact
+    /// intensity the reaction is gated on.
+    /// </summary>
+    public event Action<FallingStoppedReport>? FallingStopped;
 
     // ------------------------------------------------------------------- power
 
@@ -174,6 +192,10 @@ public sealed class CozmoSensors
                     if (_cliffs.Count > 256) _cliffs.RemoveAt(0);
                 }
                 CliffDetected?.Invoke(report);
+                break;
+
+            case Protocol.FallingStopped f:
+                FallingStopped?.Invoke(new FallingStoppedReport(f.DurationMs, f.ImpactIntensity));
                 break;
 
             case RobotState s:
