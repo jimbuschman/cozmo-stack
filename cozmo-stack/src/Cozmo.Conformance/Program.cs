@@ -31,6 +31,7 @@ return args.Length == 0 ? Usage() : args[0] switch
     "anim" => Anim.Play(args).GetAwaiter().GetResult(),
     "face-expressions" => Anim.Face(args).GetAwaiter().GetResult(),
     "wwise" => WwiseTool.Run(args),
+    "triggers" => TriggersTool.Run(args),
     _ => Usage(),
 };
 
@@ -165,6 +166,11 @@ static int Usage()
           cubes <robot-ip> [--seconds 15] [--acceptance [file.json]]
                                              hardware acceptance for cubes: turns discovery on and reports
                                              every cube heard, with connection state and telemetry
+
+          triggers <obb-dir> [--trigger <name>] [--mood <mood>] [--seed N] [--limit 20]
+                                             resolve Anki's own animation triggers through the shipped
+                                             AnimationTriggerMap to a group and a selected animation,
+                                             showing every step. No robot involved
 
           wwise <sound-dir> [--event <id-or-name>] [--clip <name> --assets <dir>] [--coverage] [--limit 20]
                                              resolve Cozmo's own audio events through the shipped Wwise banks
