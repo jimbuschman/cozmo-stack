@@ -18,22 +18,63 @@ public sealed record WwiseMiss(long EventId, string? Name, string Reason, WwiseC
 /// media ids with no file behind them, and bank-embedded blobs that are not audio.
 /// <see cref="WwiseMedia.IsDecodable"/> is the single place that decides. See WWISE_AUDIO.md.
 /// </summary>
-public sealed class WwiseAudioSource : IAnimationAudioSource, IDisposable
+public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates, IDisposable
 {
     private readonly WwiseSoundLibrary _library;
     private readonly bool _ownsLibrary;
     private readonly WwiseCodebookLibrary? _codebooks;
     private readonly Dictionary<uint, short[]?> _cache = new();
+    private readonly Dictionary<uint, short[]?> _mediaCache = new();
+    private readonly Dictionary<(uint Event, uint Node), short[]?> _musicCache = new();
+    private readonly Dictionary<uint, uint> _switches = new();
     private readonly List<WwiseMiss> _misses = new();
     private readonly object _gate = new();
+    private readonly WwiseSongRenderer _renderer;
 
     /// <summary>Wraps an already-loaded library. Without codebooks, Vorbis events cannot be produced.</summary>
+    /// <param name="random">Decides which of a note's recordings plays; pass a seeded instance for a reproducible render.</param>
     public WwiseAudioSource(WwiseSoundLibrary library, bool ownsLibrary = false,
-                            WwiseCodebookLibrary? codebooks = null)
+                            WwiseCodebookLibrary? codebooks = null, Random? random = null)
     {
         _library = library;
         _ownsLibrary = ownsLibrary;
         _codebooks = codebooks ?? TryLoadCodebooks();
+        _renderer = new WwiseSongRenderer(library, DecodeMedia, random);
+    }
+
+    /// <summary>
+    /// Sets a switch group's value, as the engine does before a singing animation starts. A song rendered
+    /// under one switch value is cached by the node it selected, so changing the switch and playing the
+    /// event again renders the newly selected song.
+    /// </summary>
+    public void SetSwitch(uint groupId, uint switchId)
+    {
+        lock (_gate) _switches[groupId] = switchId;
+    }
+
+    public IReadOnlyDictionary<uint, uint> Switches { get { lock (_gate) return new Dictionary<uint, uint>(_switches); } }
+
+    /// <summary>The last music render's report, for tools and acceptance records. Null until a music event was produced.</summary>
+    public WwiseRenderedMusic? LastMusicRender { get; private set; }
+
+    /// <summary>
+    /// Renders a music event under the current switches (or the ones given) and reports what was done,
+    /// without caching: the diagnostic form of what <see cref="GetPcm"/> does for a music event.
+    /// </summary>
+    public WwiseRenderedMusic RenderMusic(uint eventId, IReadOnlyDictionary<uint, uint>? switches = null)
+    {
+        var plan = _library.ResolveMusic(eventId, switches ?? Switches);
+        return _renderer.Render(plan);
+    }
+
+    /// <summary>Whether an event's Play target is in the music hierarchy, so it is produced by the renderer.</summary>
+    public bool IsMusicEvent(uint eventId)
+    {
+        var r = _library.Resolve(eventId);
+        foreach (var a in r.Actions)
+            if (a.ActionType == WwiseBank.PlayAction && _library.Node(a.Target) is WwiseMusicSwitchNode or WwiseMusicPlaylistNode or WwiseMusicSegmentNode)
+                return true;
+        return false;
     }
 
     /// <summary>Loads the banks and media under the given directories and plays from them.</summary>
@@ -100,7 +141,8 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IDisposable
         short[]? pcm;
         lock (_gate)
         {
-            if (!_cache.TryGetValue(id, out pcm))
+            if (IsMusicEvent(id)) pcm = ProduceMusic(id);
+            else if (!_cache.TryGetValue(id, out pcm))
             {
                 pcm = Produce(id);
                 _cache[id] = pcm;
@@ -118,6 +160,58 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IDisposable
     /// <summary>The event's authoring name, from SoundbanksInfo.xml.</summary>
     public string? NameOf(long eventId) =>
         eventId is >= 0 and <= uint.MaxValue ? _library.NameOf((uint)eventId) : null;
+
+    /// <summary>
+    /// A music event: resolved under the current switches, rendered through its MIDI target or its audio
+    /// clips, and cached by the node the switch selected. Recorded as a miss, with the renderer's own
+    /// problems, when nothing comes out.
+    /// </summary>
+    private short[]? ProduceMusic(uint eventId)
+    {
+        var plan = _library.ResolveMusic(eventId, _switches);
+        uint node = plan.SelectedNodeId ?? plan.TargetId;
+        if (_musicCache.TryGetValue((eventId, node), out var cached)) return cached;
+        var rendered = _renderer.Render(plan);
+        LastMusicRender = rendered;
+        short[]? pcm = rendered.Pcm.Length > 0 && (rendered.NotesPlayed > 0 || rendered.AudioClips > 0) ? rendered.Pcm : null;
+        if (pcm is null)
+            _misses.Add(new WwiseMiss(eventId, plan.EventName,
+                rendered.Problems.Count > 0 ? string.Join("; ", rendered.Problems) : "the music plan produced no sound", WwiseCodec.Unknown));
+        _musicCache[(eventId, node)] = pcm;
+        return pcm;
+    }
+
+    /// <summary>One media file decoded to mono PCM at the robot's rate, cached; null when it cannot be decoded.</summary>
+    private short[]? DecodeMedia(uint mediaId)
+    {
+        lock (_gate)
+        {
+            if (_mediaCache.TryGetValue(mediaId, out var cached)) return cached;
+            var refr = _library.Describe(mediaId, "");
+            short[]? pcm = null;
+            if (refr.Media is { } m && m.IsDecodable && !(m.Codec == WwiseCodec.Vorbis && _codebooks is null))
+            {
+                var bytes = _library.ReadMedia(mediaId, out _);
+                if (bytes is not null)
+                {
+                    try
+                    {
+                        var parsed = WwiseMedia.Parse(bytes);
+                        if (parsed.Codec == WwiseCodec.Adpcm)
+                            pcm = ToRobotRate(WwiseAdpcm.Decode(parsed), parsed.Channels, parsed.SampleRate);
+                        else
+                        {
+                            var v = WwiseVorbis.Decode(parsed, _codebooks!);
+                            pcm = ToRobotRate(v.Samples, v.Channels, v.SampleRate);
+                        }
+                    }
+                    catch (Exception ex) when (ex is InvalidDataException or ArgumentException) { pcm = null; }
+                }
+            }
+            _mediaCache[mediaId] = pcm;
+            return pcm;
+        }
+    }
 
     /// <summary>Resolves and decodes, recording why each alternative failed when none works.</summary>
     private short[]? Produce(uint eventId)

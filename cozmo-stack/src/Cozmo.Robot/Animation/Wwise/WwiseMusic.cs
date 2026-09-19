@@ -6,8 +6,12 @@ public sealed record WwiseMusicClipPlan(uint TrackId, uint SourceId, uint Plugin
     public bool IsMidi => PluginId == WwiseMusicTrackNode.MidiPluginId;
 }
 
-/// <summary>One segment in play order, with the clips of every track under it and the tempo it plays at.</summary>
-public sealed record WwiseMusicSegmentPlan(uint SegmentId, double DurationMs, WwiseMeter Meter, float TempoBpm, IReadOnlyList<WwiseMusicClipPlan> Clips);
+/// <summary>One segment in play order, with the clips of every track under it, the tempo it plays at, and where its MIDI notes go.</summary>
+public sealed record WwiseMusicSegmentPlan(uint SegmentId, double DurationMs, WwiseMeter Meter, float TempoBpm, IReadOnlyList<WwiseMusicClipPlan> Clips)
+{
+    /// <summary>The MIDI target for this segment's MIDI clips: the nearest ancestor that sets one (property 56), or null.</summary>
+    public uint? MidiTargetNodeId { get; init; }
+}
 
 /// <summary>
 /// How an event that targets the music hierarchy would play, given the current switch values: the chain
@@ -32,7 +36,7 @@ public sealed record WwiseMusicPlan(uint EventId)
     public bool HasRandomChoice { get; init; }
     /// <summary>The tempo the first segment plays at; see <see cref="WwiseMusic.EffectiveTempo"/>.</summary>
     public float TempoBpm { get; init; }
-    /// <summary>The node MIDI notes are dispatched to, from the switch container's MidiTargetNode property.</summary>
+    /// <summary>The node the first segment's MIDI notes are dispatched to; see <see cref="WwiseMusic.EffectiveMidiTarget"/>.</summary>
     public uint? MidiTargetNodeId { get; init; }
     public string? Problem { get; init; }
 }
@@ -112,10 +116,31 @@ public static class WwiseMusic
 
         return plan with
         {
-            Segments = segments, HasRandomChoice = random, MidiTargetNodeId = midiTarget,
+            Segments = segments, HasRandomChoice = random,
+            MidiTargetNodeId = segments.Count > 0 ? segments[0].MidiTargetNodeId : midiTarget,
             TempoBpm = segments.Count > 0 ? segments[0].TempoBpm : plan.TempoBpm,
             Problem = segments.Count == 0 ? "the playlist reaches no segment" : null,
         };
+    }
+
+    /// <summary>
+    /// The MIDI target a music node's notes go to: its own MidiTargetNode property (56) or the nearest
+    /// ancestor's, the same way the tempo is inherited. The three Cozmo_Sings switch containers set it, so
+    /// a song reached through its playlist directly (the 19 <c>Play__Robot_VO__Singing_*</c> events)
+    /// inherits the container's; the two playlists with no container above them (Happy Birthday,
+    /// Oh My Darlin') set it themselves, as does one segment. Every shipped song has a target.
+    /// </summary>
+    public static uint? EffectiveMidiTarget(WwiseSoundLibrary lib, uint nodeId)
+    {
+        for (int depth = 0; depth < 32; depth++)
+        {
+            var node = lib.Node(nodeId);
+            if (node is not (WwiseMusicSegmentNode or WwiseMusicPlaylistNode or WwiseMusicSwitchNode)) return null;
+            if (node.Params.Raw(WwiseProp.MidiTargetNode) is { } t) return t;
+            if (node.Params.ParentId == 0) return null;
+            nodeId = node.Params.ParentId;
+        }
+        return null;
     }
 
     /// <summary>
@@ -193,6 +218,9 @@ public static class WwiseMusic
                 clips.Add(new WwiseMusicClipPlan(track.Id, clip.SourceId, plugin, clip));
             }
         }
-        return new WwiseMusicSegmentPlan(seg.Id, seg.DurationMs, seg.Meter, EffectiveTempo(lib, seg.Id), clips);
+        return new WwiseMusicSegmentPlan(seg.Id, seg.DurationMs, seg.Meter, EffectiveTempo(lib, seg.Id), clips)
+        {
+            MidiTargetNodeId = EffectiveMidiTarget(lib, seg.Id),
+        };
     }
 }

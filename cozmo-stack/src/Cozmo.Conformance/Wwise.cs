@@ -1,3 +1,4 @@
+using Cozmo.Robot;
 using Cozmo.Robot.Animation;
 using Cozmo.Robot.Animation.Wwise;
 
@@ -44,6 +45,9 @@ public static class WwiseTool
         if (a.Contains("--validate")) return Validate(lib, limit);
         if (a.Contains("--hierarchy")) return Hierarchy(lib);
         if (Arg(a, "--music") is { } music) return Music(lib, Resolve(lib, music), Switches(lib, a), a.Contains("--midi"));
+        int seed = int.TryParse(Arg(a, "--seed"), out var sd) ? sd : 1;
+        if (Arg(a, "--render") is { } render) return Render(lib, Resolve(lib, render), Switches(lib, a), Arg(a, "--wav"), seed);
+        if (a.Contains("--validate-music")) return ValidateMusic(lib, Arg(a, "--obb"), seed);
         if (ev is not null) return Report(lib, Resolve(lib, ev));
         if (clip is not null) return ForClip(lib, clip, assets);
         if (coverage) return Coverage(lib, limit);
@@ -85,6 +89,78 @@ public static class WwiseTool
         }
         Console.WriteLine($"  names read from the bank text files: {lib.Names.Count}");
         return ok ? 0 : 1;
+    }
+
+    /// <summary>Renders one music event offline, reports what the sampler did, and optionally writes the PCM as a WAV.</summary>
+    private static int Render(WwiseSoundLibrary lib, uint? id, IReadOnlyDictionary<uint, uint> switches, string? wav, int seed)
+    {
+        if (id is null) { Console.WriteLine("no event with that id or name"); return 1; }
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(seed));
+        var r = source.RenderMusic(id.Value, switches);
+        Console.WriteLine($"\nrendered {id} {lib.NameOf(id.Value) ?? ""}: {r.DurationMs:F0} ms, {r.Pcm.Length} samples at {CozmoAudio.SampleRate} Hz");
+        Console.WriteLine($"  notes in window {r.NotesInWindow}, sung {r.NotesPlayed}, outside the voice's range {r.NotesSilent}, note-offs {r.NoteOffsPlayed}, audio clips {r.AudioClips}");
+        Console.WriteLine($"  raw peak {r.PreLimitPeak:F0} of {short.MaxValue}; output stage gain {r.OutputGainDb:F1} dB (a stand-in for the robot bus limiter); clipped samples after it {r.ClippedSamples}");
+        foreach (var pr in r.Problems) Console.WriteLine($"  problem: {pr}");
+        if (wav is not null && r.Pcm.Length > 0)
+        {
+            File.WriteAllBytes(wav, Wav(r.Pcm, CozmoAudio.SampleRate));
+            Console.WriteLine($"  wrote {Path.GetFullPath(wav)}");
+        }
+        return r.Problems.Count == 0 && r.Pcm.Length > 0 ? 0 : 1;
+    }
+
+    /// <summary>
+    /// Renders every shipped song and every other music event, so the whole music hierarchy is exercised
+    /// rather than one song: the 39 Singing behaviours' songs when the OBB is given (their configs name
+    /// the switches), the three tempo events on their default path, and every event whose Play target is
+    /// music. Each row says how many notes were sung and how many fell outside the voice's range.
+    /// </summary>
+    private static int ValidateMusic(WwiseSoundLibrary lib, string? obb, int seed)
+    {
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(seed));
+        int ok = 0, bad = 0, silentNotes = 0, sungNotes = 0;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        Console.WriteLine($"\n{"song / event",-48} {"ms",7} {"notes",6} {"sung",5} {"out",4} {"offs",5} {"rawpk",7} {"gain",6}  problems");
+
+        void Row(string label, uint eventId, IReadOnlyDictionary<uint, uint> switches)
+        {
+            var r = source.RenderMusic(eventId, switches);
+            bool good = r.Problems.Count == 0 && r.Pcm.Length > 0 && (r.NotesPlayed > 0 || r.AudioClips > 0);
+            if (good) ok++; else bad++;
+            silentNotes += r.NotesSilent; sungNotes += r.NotesPlayed;
+            Console.WriteLine($"{label,-48} {r.DurationMs,7:F0} {r.NotesInWindow,6} {r.NotesPlayed,5} {r.NotesSilent,4} {r.NoteOffsPlayed,5} {r.PreLimitPeak,7:F0} {r.OutputGainDb,6:F1}  {string.Join("; ", r.Problems)}");
+        }
+
+        if (obb is not null)
+        {
+            foreach (var b in Cozmo.Robot.Behavior.SingingBehavior.LoadShipped(obb))
+            {
+                var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_" + b.SwitchGroupName["Cozmo_Sings_".Length..].ToLowerInvariant());
+                if (ev is null) { Console.WriteLine($"{b.Id,-48} no tempo event"); bad++; continue; }
+                Row(b.Id, ev.Value, new Dictionary<uint, uint> { [b.SwitchGroupId] = b.SwitchId });
+            }
+        }
+        var none = new Dictionary<uint, uint>();
+        foreach (var id in lib.EventIds.OrderBy(x => lib.NameOf(x)))
+        {
+            if (!source.IsMusicEvent(id)) continue;
+            Row(lib.NameOf(id) ?? id.ToString(), id, none);
+        }
+        Console.WriteLine($"\n{ok} rendered, {bad} did not; {sungNotes} notes sung, {silentNotes} outside the voice's range; {sw.Elapsed.TotalSeconds:F1} s");
+        return bad == 0 ? 0 : 1;
+    }
+
+    private static byte[] Wav(short[] pcm, int rate)
+    {
+        using var ms = new MemoryStream();
+        using var w = new BinaryWriter(ms);
+        int dataBytes = pcm.Length * 2;
+        w.Write("RIFF"u8); w.Write(36 + dataBytes); w.Write("WAVE"u8);
+        w.Write("fmt "u8); w.Write(16); w.Write((short)1); w.Write((short)1); w.Write(rate); w.Write(rate * 2); w.Write((short)2); w.Write((short)16);
+        w.Write("data"u8); w.Write(dataBytes);
+        foreach (var v in pcm) w.Write(v);
+        w.Flush();
+        return ms.ToArray();
     }
 
     /// <summary>Prints how a music event plays under the given switch values, down to each clip's source.</summary>

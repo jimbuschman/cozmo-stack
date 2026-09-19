@@ -33,6 +33,7 @@ return args.Length == 0 ? Usage() : args[0] switch
     "wwise" => WwiseTool.Run(args),
     "triggers" => TriggersTool.Run(args),
     "behavior" => BehaviorTool.Run(args).GetAwaiter().GetResult(),
+    "sing" => SingTool.Run(args).GetAwaiter().GetResult(),
     _ => Usage(),
 };
 
@@ -182,6 +183,21 @@ static int Usage()
                                              resolve Cozmo's own audio events through the shipped Wwise banks
                                              to the media files they play, reporting codec and duration.
                                              --coverage reports the whole library. No robot involved
+          wwise <sound-dir> --hierarchy      check that every hierarchy object in the banks reads exactly
+          wwise <sound-dir> --music <event> [--switch Group=State]... [--midi]
+                                             show how a music event plays: switch tree, playlist, segments,
+                                             clips and, with --midi, the notes
+          wwise <sound-dir> --render <event> [--switch Group=State]... [--wav <file>] [--seed N]
+                                             render a music event (a Cozmo_Sings song) to PCM offline and
+                                             report notes played, silent notes, clipping; --wav saves it
+          wwise <sound-dir> --validate-music [--obb <dir>] [--seed N]
+                                             render every shipped song (the 39 behaviours when --obb is
+                                             given) and every other music event, and report each
+          sing <robot-ip> --obb <dir> (--behavior <Singing_X> | --group <G> --switch <S>) [--seconds 45]
+                          [--acceptance [file.json]]
+                                             hardware acceptance for M9: runs the shipped Singing behaviour
+                                             on the robot (switch, get-in, song, get-out) and records what
+                                             was rendered; whether it sang is the human check
 
           animlist <assets-dir> [filter]     decode Cozmo's own animation assets and list what is in them,
                                              with no robot involved

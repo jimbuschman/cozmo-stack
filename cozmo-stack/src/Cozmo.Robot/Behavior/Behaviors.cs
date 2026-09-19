@@ -264,13 +264,18 @@ public sealed class ReactBehavior : IBehavior
 /// <summary>
 /// The behaviours this stack can actually run, built from the shipped configs.
 ///
-/// Five of the 178 shipped behaviours, which is the honest count. The rest are blocked on cubes, vision,
-/// Wwise switch-state audio, or robot state nothing yet derives; see `BEHAVIOR_INVENTORY.md` for each
-/// one's blocker. Nothing is stubbed with a fake input to make this list longer.
+/// Five of the 178 shipped behaviours need no configuration beyond the trigger they name and are built
+/// here; the 39 <c>Singing</c> behaviours are built from their shipped configs by <see cref="Singing"/>,
+/// which M9's switch-state audio unblocked. The rest are blocked on cubes, vision, or robot state nothing
+/// yet derives; see `BEHAVIOR_INVENTORY.md` for each one's blocker. Nothing is stubbed with a fake input
+/// to make this list longer.
 /// </summary>
 public static class ShippedBehaviors
 {
-    /// <summary>Creates the runnable set, matching the shipped configs' ids and classes.</summary>
+    /// <summary>The 39 Singing behaviours, from the OBB's behaviour configs. Empty when the OBB is not there.</summary>
+    public static IReadOnlyList<IBehavior> Singing(string obbRoot) => SingingBehavior.LoadShipped(obbRoot);
+
+    /// <summary>Creates the config-free runnable set, matching the shipped configs' ids and classes.</summary>
     public static IReadOnlyList<IBehavior> Implementable() => new IBehavior[]
     {
         // PlayAnim behaviours: the config names the trigger, so these are faithful to the shipped data.

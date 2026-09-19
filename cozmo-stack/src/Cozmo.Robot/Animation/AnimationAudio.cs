@@ -29,6 +29,19 @@ public interface IAnimationAudioSource
 }
 
 /// <summary>
+/// An audio source that keeps Wwise switch states, so an event whose sound depends on a switch (the
+/// Cozmo_Sings songs) plays what the current state selects. The engine sets these through
+/// <c>RobotAudioClient::PostRobotSwitchState</c> before the animation that raises the event starts.
+/// </summary>
+public interface IAudioSwitchStates
+{
+    /// <summary>Sets a switch group's current value; both are Wwise ids (FNV-1 of the names).</summary>
+    void SetSwitch(uint groupId, uint switchId);
+    /// <summary>The current switch values, group id to switch id.</summary>
+    IReadOnlyDictionary<uint, uint> Switches { get; }
+}
+
+/// <summary>
 /// Reads Cozmo's <c>SoundbanksInfo.xml</c> so an audio event id can at least be named, and says which bank
 /// it belongs to.
 ///
