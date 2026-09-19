@@ -30,6 +30,12 @@ public sealed class RobotAnimationSink : IAnimationSink
         _robot.Transport.Send(new Protocol.FaceImage { Image = payload }, flush: true);
     }
 
+    /// <summary>
+    /// What the robot says it has played, straight out of <c>animState</c>. Null until the first one
+    /// arrives, which leaves the scheduler unpaced rather than stalled.
+    /// </summary>
+    public int? AudioFramesPlayed => _robot.State.Animation?.NumAudioFramesPlayed;
+
     public void Audio(byte[]? mulawFrame)
     {
         if (mulawFrame is null) _robot.Transport.Send(new AudioSilence(), flush: true);

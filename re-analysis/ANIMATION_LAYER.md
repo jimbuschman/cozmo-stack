@@ -161,6 +161,36 @@ replaced, so an interrupted animation is never left open. The robot echoes the t
 so this is checkable rather than assumed: the `anim` command reports whether the robot confirmed the tag it
 was given, and warns when it did not.
 
+### Opening an animation is not enough: it has to be fed
+
+Adding the bracketing did not make the arc move, and it stopped the face displaying during
+`anim_bored_01`. Reading the streamer properly, rather than just `SendStartOfAnimation`, explained both at
+once. The full working is in `DIAGNOSTIC_animation_start_sequence.md`; the finding is:
+
+**Every streamed animation frame carries exactly one audio message.** `UpdateStream` at 0x0057C84C buffers
+`animAudioSample` (0x8E) when the frame has sound and `animAudioSilence` (0x8F) when it does not, with no
+path past it, and `SendBufferedMessages` counts both against the robot's audio budget using
+`(tag & 0xFE) == 0x8E`. `UpdateAmountToSend` at 0x0057C6F0 expresses the engine's entire flow control in
+those frames: `14 - (streamed - played)` audio frames and `8192 - (streamed - played)` bytes, read from
+`animState.numAudioFramesPlayed` and `animState.numAnimBytesPlayed`. The silence frames are not padding —
+they are what carries the animation forward on the robot.
+
+Our player only sent audio for clips with an audio track, so `anim_bored_01` and the arc opened an
+animation and then fed it nothing. The arc never moved because an unfed animation never advances, and the
+face stopped because `animFaceImage` now arrives inside an open animation instead of outside one.
+
+Four things changed as a result, all of them matching what the engine does:
+
+* one audio message per streamed frame, always, silence when there is nothing to play;
+* the frame is skipped entirely when the robot has no room, as `ShouldProcessAnimationFrame` does;
+* `animStartOfAnimation` is buffered on the first frame that streams, after that frame's audio, rather than
+  when the animation is set up — so a clip stopped before it streamed is never opened, and never closed;
+* a trailing `animAudioSilence` follows `animEndOfAnimation`, and the tag counter now skips 0x00 and 0xFF
+  as `IncrementTagCtr` does.
+
+Keyframes within a frame also go out in the engine's fixed per-track order — head, lift, event, face,
+lights, body — rather than in whatever order the clip lists them.
+
 ## Faults found on hardware, and fixed
 
 The first hardware run of `anim_bored_01` played through correctly but rolled backward further than it
@@ -217,13 +247,17 @@ works. Whether the firmware clamps it or treats 0 as "fully down" is not establi
 * **Body encoding** — every radius token the engine understands encodes to the value the engine sends,
   including the `atoi` clamp at both ends of the 16-bit range; an unrecognised token is refused rather than
   guessed at; an arc runs and is stopped like any other move; the wire message carries both fields.
-* **Audio** — streamed on the scheduler tick rather than by a pacer of its own; silent but timeline-intact
-  with no source; no audio at all for a clip without an audio track; the first alternative that can be
-  produced is used; the stream stops when the animation is cancelled; WAV decoding including stereo
-  mixdown, resampling and rejection of non-WAV input; event ids resolve to names through the metadata.
+* **Audio** — streamed on the scheduler tick rather than by a pacer of its own; one message on every
+  streamed frame including clips with no audio track, which stream silence; silent but timeline-intact with
+  no source; the first alternative that can be produced is used; the stream stops when the animation is
+  cancelled; WAV decoding including stereo mixdown, resampling and rejection of non-WAV input; event ids
+  resolve to names through the metadata.
+* **Flow control** — streaming stops once 14 frames are outstanding and resumes as the robot reports them
+  played; a sink that reports nothing runs unpaced, so offline replay is unaffected.
 * **Lights** — the keyframe is decoded and reported with its data intact, and nothing is invented.
-* **Bracketing** — every animation is opened with a non-zero tag and closed again; each gets its own tag;
-  cancelling and replacing both close the previous animation before anything else happens.
+* **Bracketing** — an animation is opened on its first streamed frame and not before, behind that frame's
+  audio; one stopped before it streamed is never opened and never closed; every animation gets its own tag
+  in 1..0xFE; cancelling and replacing both close the previous animation before anything else happens.
 * **The synthetic arc clip** — body-only, two equal and opposite non-overlapping legs, speed and duration
   clamped at both ends, and each leg stopped when its own duration expires.
 * **Track ownership** — a clash is refused when asked to be; a replacement ends the first as `Replaced`;

@@ -10,6 +10,15 @@ public interface IAnimationSink
     void Face(FaceBitmap bitmap);
     /// <summary>One audio frame's worth of samples, or silence when the argument is null.</summary>
     void Audio(byte[]? mulawFrame);
+    /// <summary>
+    /// How many audio frames the robot reports having played, from <c>animState.numAudioFramesPlayed</c>.
+    ///
+    /// The engine paces an animation against this exact counter: UpdateAmountToSend at 0x0057C6F0 computes
+    /// the frames it may still send as <c>14 - (streamed - played)</c>, and ShouldProcessAnimationFrame at
+    /// 0x0057CC6C refuses to process a frame at all until the robot has room. Null means no robot is
+    /// reporting yet, and the scheduler then runs unpaced.
+    /// </summary>
+    int? AudioFramesPlayed => null;
     void Head(float radians, uint durationMs);
     void Lift(float heightMm, uint durationMs);
     /// <summary>
@@ -83,6 +92,8 @@ public sealed class AnimationScheduler
     private short[]? _audioPcm;                // the sound currently streaming, if any
     private int _audioPos;                     // how far into it the last frame reached
     private byte _nextTag = 1;                 // the tag the next animation opens with
+    private bool _startSent;                   // has StartOfAnimation gone out for the running clip
+    private int _playedBaseline;               // robot's audio-frame count when the clip started
 
     public AnimationScheduler(IAnimationSink sink) => _sink = sink;
 
@@ -123,8 +134,6 @@ public sealed class AnimationScheduler
     /// </summary>
     public AnimationHandle? Play(AnimationClip clip, double nowMs, bool replaceRunning = true)
     {
-        byte started;
-        AnimationHandle handle;
         lock (_gate)
         {
             if (_clip is not null)
@@ -136,7 +145,11 @@ public sealed class AnimationScheduler
             _clip = clip;
             _handle = new AnimationHandle(clip.Name, clip.Tracks);
             CurrentTag = _nextTag;
-            _nextTag = _nextTag == 255 ? (byte)1 : (byte)(_nextTag + 1);
+            // IncrementTagCtr at 0x0057B660 keeps incrementing while the value it came from was above
+            // 0xFD, so the engine stores neither 0x00 nor 0xFF. The usable range is 1..0xFE.
+            _nextTag = _nextTag >= 0xFE ? (byte)1 : (byte)(_nextTag + 1);
+            _startSent = false;
+            _playedBaseline = _sink.AudioFramesPlayed ?? 0;
             _startMs = nowMs;
             _nextFrame = 0;
             _facePoses = clip.Keyframes.OfType<FaceKeyframe>().ToList();
@@ -146,13 +159,11 @@ public sealed class AnimationScheduler
             AudioFramesSent = 0;
             KeyframesFired = 0;
             PositionMs = 0;
-            started = CurrentTag;
-            handle = _handle;
+            return _handle;
         }
-        // Opened outside the lock, because the sink talks to the transport. The engine opens every
-        // animation this way and the robot ignores motion keyframes that arrive outside one.
-        _sink.AnimationStarted(started);
-        return handle;
+        // StartOfAnimation is deliberately not sent here. The engine buffers it inside UpdateStream, on the
+        // first frame that actually streams and after that frame's audio message (0x0057C9C8), never at the
+        // moment the animation is set up. Advance does the same.
     }
 
     /// <summary>Stops whatever is running. Returns false when nothing was.</summary>
@@ -177,9 +188,19 @@ public sealed class AnimationScheduler
         _bodyEndsAtMs = null;
         _audioPcm = null; _audioPos = 0;
         CurrentTag = 0;
+        bool wasOpen = _startSent;
+        _startSent = false;
         // An animation that is cut short must not leave the wheels turning.
         if (bodyWasRunning) _sink.BodyStop();
-        _sink.AnimationEnded();
+        // Only close an animation that was actually opened; a clip stopped before its first streamed frame
+        // never sent a StartOfAnimation, and an unmatched EndOfAnimation would close someone else's.
+        if (wasOpen)
+        {
+            _sink.AnimationEnded();
+            // UpdateStream buffers one more AudioSilence straight after SendEndOfAnimation (0x0057CB92),
+            // so the robot's audio buffer is left with a frame rather than running dry on the last sample.
+            _sink.Audio(null);
+        }
         _sink.Finished(name, reason == AnimationEndReason.Completed);
         h?.Complete(reason);
     }
@@ -196,10 +217,50 @@ public sealed class AnimationScheduler
         lock (_gate)
         {
             if (_clip is null) return;
+            // ShouldProcessAnimationFrame at 0x0057CC6C refuses to process a frame until the robot has
+            // room, and UpdateAmountToSend at 0x0057C6F0 measures that room as
+            // 14 - (audioFramesStreamed - audioFramesPlayed). Streaming past it would only pile up frames
+            // the robot drops, and the timeline would drift away from what the robot is actually playing.
+            if (_sink.AudioFramesPlayed is { } played &&
+                AudioFramesSent - (played - _playedBaseline) >= CozmoAudio.RobotBufferFrames)
+                return;
             clip = _clip;
             t = nowMs - _startMs;
             PositionMs = t;
         }
+
+        // Exactly one audio message goes out on every streamed frame: a sample when the clip has sound at
+        // this moment, animAudioSilence when it does not. UpdateStream buffers one or the other with no way
+        // past (0x0057C992 and 0x0057C9AE), and SendBufferedMessages counts 0x8E and 0x8F alike against the
+        // robot's audio budget with (tag & 0xFE) == 0x8E. The silence frames are what carry an animation
+        // forward: a clip streamed without them opens on the robot and then never advances, which is why
+        // body motion did nothing and the face stopped appearing once we started bracketing.
+        byte[]? frame = null;
+        lock (_gate)
+        {
+            if (_clip != clip) return;
+            if (_audioPcm is { } pcm && _audioPos < pcm.Length)
+            {
+                int n = Math.Min(CozmoAudio.SamplesPerFrame, pcm.Length - _audioPos);
+                var samples = new byte[CozmoAudio.SamplesPerFrame];
+                for (int i = 0; i < n; i++) samples[i] = AnkiMuLaw.Encode(pcm[_audioPos + i]);
+                for (int i = n; i < CozmoAudio.SamplesPerFrame; i++) samples[i] = AnkiMuLaw.Encode(0);
+                _audioPos += n;
+                if (_audioPos >= pcm.Length) { _audioPcm = null; _audioPos = 0; }
+                frame = samples;
+            }
+        }
+        _sink.Audio(frame);
+        AudioFramesSent++;
+
+        // The animation is opened here rather than in Play, on the first frame that streams and after that
+        // frame's audio, matching the guarded SendStartOfAnimation at 0x0057C9C8.
+        byte openWith = 0;
+        lock (_gate)
+        {
+            if (_clip == clip && !_startSent) { _startSent = true; openWith = CurrentTag; }
+        }
+        if (openWith != 0) _sink.AnimationStarted(openWith);
 
         var due = new List<Keyframe>();
         lock (_gate)
@@ -214,7 +275,9 @@ public sealed class AnimationScheduler
             KeyframesFired += due.Count;
         }
 
-        foreach (var k in due)
+        // Emitted in the engine's per-frame track order rather than the order the clip happens to list
+        // them: head, lift, event, face, lights, body (UpdateStream 0x0057C9D4 onwards).
+        foreach (var k in due.OrderBy(TrackOrder))
         {
             Dispatch(k);
             KeyframeFired?.Invoke(k);
@@ -233,31 +296,6 @@ public sealed class AnimationScheduler
             }
         }
         if (stopBody) _sink.BodyStop();
-
-        // Audio is streamed on this same tick rather than by a pacer of its own, so a sound stays lined up
-        // with the face and the motors. One frame goes out per tick whether or not there is sound to send,
-        // which is what the engine does and what keeps the robot's buffer fed.
-        byte[]? frame = null;
-        bool wantAudio;
-        lock (_gate)
-        {
-            wantAudio = _clip == clip && (clip.Tracks & AnimationTrack.Audio) != 0;
-            if (wantAudio && _audioPcm is { } pcm && _audioPos < pcm.Length)
-            {
-                int n = Math.Min(CozmoAudio.SamplesPerFrame, pcm.Length - _audioPos);
-                var samples = new byte[CozmoAudio.SamplesPerFrame];
-                for (int i = 0; i < n; i++) samples[i] = AnkiMuLaw.Encode(pcm[_audioPos + i]);
-                for (int i = n; i < CozmoAudio.SamplesPerFrame; i++) samples[i] = AnkiMuLaw.Encode(0);
-                _audioPos += n;
-                if (_audioPos >= pcm.Length) { _audioPcm = null; _audioPos = 0; }
-                frame = samples;
-            }
-        }
-        if (wantAudio)
-        {
-            _sink.Audio(frame);
-            AudioFramesSent++;
-        }
 
         // The face is continuous rather than stepped. A face keyframe is a pose to be AT when its trigger
         // time arrives, so the pose held now is interpolated forward towards the next one, not backwards
@@ -321,6 +359,22 @@ public sealed class AnimationScheduler
         for (int i = 0; i < _facePoses.Count; i++) if (ReferenceEquals(_facePoses[i], f)) return i;
         return _faceIndex;
     }
+
+    /// <summary>
+    /// Where a keyframe sits in the engine's per-frame order. UpdateStream buffers its tracks in a fixed
+    /// sequence from 0x0057C9D4: head, lift, event, face, backpack lights, body motion, record heading,
+    /// turn to recorded heading. Audio is emitted before all of them and is not a keyframe here.
+    /// </summary>
+    private static int TrackOrder(Keyframe k) => k switch
+    {
+        HeadKeyframe => 0,
+        LiftKeyframe => 1,
+        EventKeyframe => 2,
+        FaceKeyframe => 3,
+        LightsKeyframe => 4,
+        BodyKeyframe => 5,
+        _ => 6,
+    };
 
     private void Dispatch(Keyframe k)
     {

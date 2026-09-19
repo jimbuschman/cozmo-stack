@@ -246,9 +246,17 @@ public class AnimationAssetTests
         Assert.Equal(clip.Keyframes.Count, fired.Count);
         Assert.Equal(AnimationEndReason.Completed, handle.Completion.Result);
         Assert.True(faces > clip.DurationMs / 100, "the face should be redrawn on most frames");
-        // fired in timeline order
-        for (int i = 1; i < fired.Count; i++)
-            Assert.True(fired[i].TriggerTimeMs >= fired[i - 1].TriggerTimeMs);
+        // Each track fires in timeline order. Across tracks it does not: keyframes that fall in the same
+        // streamed frame go out in the engine's fixed per-track order (head, lift, event, face, lights,
+        // body), not in the order the clip happens to list them, so a body keyframe at 100 ms can follow a
+        // head keyframe at 130 ms when both land on the same frame.
+        foreach (var track in fired.GroupBy(k => k.GetType()))
+        {
+            var inTrack = track.ToList();
+            for (int i = 1; i < inTrack.Count; i++)
+                Assert.True(inTrack[i].TriggerTimeMs >= inTrack[i - 1].TriggerTimeMs,
+                    $"{track.Key.Name} fired out of order at index {i}");
+        }
     }
 
     private sealed class CountingSink : IAnimationSink

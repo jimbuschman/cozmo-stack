@@ -10,7 +10,7 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class AnimationGapTests
 {
-    private sealed class Recorder : IAnimationSink
+    private class Recorder : IAnimationSink
     {
         public readonly List<string> What = new();
         public readonly List<BodyKeyframe> Bodies = new();
@@ -20,6 +20,7 @@ public class AnimationGapTests
         public readonly List<string> Events = new();
         public int BodyStops, AudioFrames, AudioWithSound;
 
+        public virtual int? AudioFramesPlayed => null;
         public void Face(FaceBitmap bitmap) => What.Add("face");
         public void Audio(byte[]? mulawFrame)
         {
@@ -118,10 +119,17 @@ public class AnimationGapTests
         var s = new AnimationScheduler(r);
         s.Play(Clip("t", new EventKeyframe(0, "a"), new EventKeyframe(100, "b")), 0);
 
+        // Setting an animation up does not open it. The engine buffers StartOfAnimation inside
+        // UpdateStream, on the first frame that actually streams, not in InitStream.
+        Assert.Empty(r.Tags);
+
+        s.Advance(0);
         Assert.Single(r.Tags);
         Assert.NotEqual(0, r.Tags[0]);       // the engine never opens with zero either
         Assert.Equal(r.Tags[0], s.CurrentTag);
         Assert.Equal(0, r.Ends);
+        // and the audio for that frame goes out ahead of the open
+        Assert.Equal("audio", r.What[0]);
 
         Run(s, 0, 200);
         Assert.Equal(1, r.Ends);
@@ -136,11 +144,74 @@ public class AnimationGapTests
         for (int i = 0; i < 4; i++)
         {
             s.Play(Clip($"c{i}", new EventKeyframe(0, "x")), 0);
+            s.Advance(0);                    // the tag only goes out once a frame streams
             s.Stop();
         }
         Assert.Equal(4, r.Tags.Count);
         Assert.Equal(4, r.Tags.Distinct().Count());
+        // IncrementTagCtr stores neither 0x00 nor 0xFF, so the usable range is 1..0xFE.
         Assert.DoesNotContain((byte)0, r.Tags);
+        Assert.DoesNotContain((byte)0xFF, r.Tags);
+    }
+
+    /// <summary>
+    /// A sink that reports what the robot has played, so the scheduler's flow control can be exercised
+    /// without a robot. <see cref="Played"/> stands in for <c>animState.numAudioFramesPlayed</c>.
+    /// </summary>
+    private sealed class PacedRecorder : Recorder
+    {
+        public int? Played;
+        public override int? AudioFramesPlayed => Played;
+    }
+
+    /// <summary>
+    /// UpdateAmountToSend at 0x0057C6F0 gives the engine 14 - (streamed - played) audio frames of room,
+    /// and ShouldProcessAnimationFrame refuses a frame outright when there is none. Streaming past that
+    /// only produces frames the robot drops.
+    /// </summary>
+    [Fact]
+    public void StreamingStopsWhenTheRobotsAudioBufferIsFull()
+    {
+        var r = new PacedRecorder { Played = 0 };
+        var s = new AnimationScheduler(r);
+        s.Play(Clip("t", new EventKeyframe(10_000, "late")), 0);
+
+        for (int i = 0; i < 100; i++) s.Advance(i * 33.0);
+        Assert.Equal(CozmoAudio.RobotBufferFrames, r.AudioFrames);   // filled the buffer and stopped
+
+        r.Played = 5;                                                // the robot drains five
+        for (int i = 0; i < 100; i++) s.Advance(3300 + i * 33.0);
+        Assert.Equal(CozmoAudio.RobotBufferFrames + 5, r.AudioFrames);
+    }
+
+    /// <summary>A sink that reports nothing leaves the scheduler unpaced, so offline replay is unaffected.</summary>
+    [Fact]
+    public void ASinkThatReportsNothingIsNotPaced()
+    {
+        var r = new PacedRecorder { Played = null };
+        var s = new AnimationScheduler(r);
+        s.Play(Clip("t", new EventKeyframe(10_000, "late")), 0);
+        for (int i = 0; i < 100; i++) s.Advance(i * 33.0);
+        Assert.Equal(100, r.AudioFrames);
+    }
+
+    /// <summary>
+    /// The engine's tag counter skips both ends of the byte: IncrementTagCtr at 0x0057B660 keeps
+    /// incrementing while the value it came from was above 0xFD, so it stores 1..0xFE and never 0 or 0xFF.
+    /// </summary>
+    [Fact]
+    public void TheTagCounterWrapsPastZeroAndFf()
+    {
+        var r = new Recorder();
+        var s = new AnimationScheduler(r);
+        for (int i = 0; i < 600; i++)        // more than two full wraps
+        {
+            s.Play(Clip("c", new EventKeyframe(0, "x")), 0);
+            s.Advance(0);
+            s.Stop();
+        }
+        Assert.Equal(600, r.Tags.Count);
+        Assert.All(r.Tags, t => Assert.InRange(t, (byte)1, (byte)0xFE));
     }
 
     [Fact]
@@ -149,9 +220,25 @@ public class AnimationGapTests
         var r = new Recorder();
         var s = new AnimationScheduler(r);
         s.Play(Clip("t", new EventKeyframe(5000, "late")), 0);
+        s.Advance(0);                        // opens it
         Assert.Equal(0, r.Ends);
         s.Stop();
         Assert.Equal(1, r.Ends);             // a cut-short animation must not be left open
+    }
+
+    /// <summary>
+    /// The mirror of the above: an animation stopped before its first streamed frame was never opened on
+    /// the robot, so closing it would close whatever else is open instead.
+    /// </summary>
+    [Fact]
+    public void AnAnimationStoppedBeforeItStreamedIsNeverClosed()
+    {
+        var r = new Recorder();
+        var s = new AnimationScheduler(r);
+        s.Play(Clip("t", new EventKeyframe(5000, "late")), 0);
+        s.Stop();
+        Assert.Empty(r.Tags);
+        Assert.Equal(0, r.Ends);
     }
 
     [Fact]
@@ -160,7 +247,10 @@ public class AnimationGapTests
         var r = new Recorder();
         var s = new AnimationScheduler(r);
         s.Play(Clip("first", new EventKeyframe(5000, "late")), 0);
-        s.Play(Clip("second", new EventKeyframe(0, "now")), 10);
+        s.Advance(0);
+        // the second outlasts the assertions, so the only close here is the first one being replaced
+        s.Play(Clip("second", new EventKeyframe(0, "now"), new EventKeyframe(5000, "later")), 10);
+        s.Advance(10);
 
         Assert.Equal(2, r.Tags.Count);
         Assert.Equal(1, r.Ends);             // the first was closed before the second opened
@@ -260,14 +350,29 @@ public class AnimationGapTests
     }
 
     [Fact]
-    public void AClipWithNoAudioTrackSendsNoAudioAtAll()
+    public void AClipWithNoAudioTrackStillSendsASilenceFrameEveryTick()
     {
         var r = new Recorder();
         var s = new AnimationScheduler(r);
         s.AudioSource = new FixedAudio(CozmoAudio.Tone(440, TimeSpan.FromMilliseconds(100)));
         s.Play(Clip("t", new EventKeyframe(0, "a"), new EventKeyframe(200, "b")), 0);
-        Run(s, 0, 300);
-        Assert.Equal(0, r.AudioFrames);
+        int ticks = 0;
+        for (double t = 0; t <= 300; t += 1000.0 / AnimationScheduler.FrameRateHz)
+        {
+            if (!s.IsPlaying) break;
+            s.Advance(t);
+            ticks++;
+        }
+
+        // UpdateStream buffers animAudioSample or animAudioSilence on every streamed frame with no way
+        // past it (0x0057C992 / 0x0057C9AE), and SendBufferedMessages counts both against the robot's
+        // audio budget. A clip with no audio track streams silence, not nothing: the silence frames are
+        // what carry the animation forward on the robot.
+        Assert.True(ticks > 0);
+        Assert.Equal(1, r.Ends);
+        // one per streamed frame, plus the one UpdateStream buffers straight after SendEndOfAnimation
+        Assert.Equal(ticks + 1, r.AudioFrames);
+        Assert.Equal(0, r.AudioWithSound);   // silence, because no keyframe asked for a sound
     }
 
     [Fact]

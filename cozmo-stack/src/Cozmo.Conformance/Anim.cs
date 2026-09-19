@@ -188,9 +188,12 @@ public static class Anim
 
         Console.WriteLine($"\nfinished: {reason} after {sw.ElapsedMilliseconds} ms (clip is {clip.DurationMs} ms)");
         Console.WriteLine($"keyframes fired: {robot.Animations.Scheduler.KeyframesFired} of {clip.Keyframes.Count}");
-        if ((clip.Tracks & AnimationTrack.Audio) != 0)
-            Console.WriteLine($"audio frames streamed: {robot.Animations.Scheduler.AudioFramesSent}" +
-                              (audio.Count == 0 ? " (all silent: no --audio mapping was given)" : ""));
+        // Every streamed frame carries an audio message, silence included: that is what advances the
+        // animation on the robot, so a count near zero means the animation barely streamed at all.
+        string audioNote = (clip.Tracks & AnimationTrack.Audio) == 0
+            ? " (all silence: the clip has no audio track)"
+            : audio.Count == 0 ? " (all silence: no --audio mapping was given)" : "";
+        Console.WriteLine($"audio frames streamed: {robot.Animations.Scheduler.AudioFramesSent}{audioNote}");
         if (events.Count > 0) Console.WriteLine($"events raised: {string.Join(", ", events.Distinct())}");
         foreach (var s in skipped.Distinct()) Console.WriteLine($"  not implemented: {s}");
 
