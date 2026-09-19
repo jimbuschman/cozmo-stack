@@ -27,6 +27,7 @@ return args.Length == 0 ? Usage() : args[0] switch
     "sensors" => Control.Sensors(args).GetAwaiter().GetResult(),
     "cubes" => Control.Cubes(args).GetAwaiter().GetResult(),
     "animlist" => Anim.List(args),
+    "animdump" => AnimDump.Run(args),
     "anim" => Anim.Play(args).GetAwaiter().GetResult(),
     "face-expressions" => Anim.Face(args).GetAwaiter().GetResult(),
     _ => Usage(),
@@ -166,6 +167,11 @@ static int Usage()
 
           animlist <assets-dir> [filter]     decode Cozmo's own animation assets and list what is in them,
                                              with no robot involved
+          animdump <assets-dir> <clip-name> [--out <file>]
+                                             print every decoded keyframe of one clip in timestamp order,
+                                             which ones the executor acts on and which it ignores, and every
+                                             message the real player would send, taken from the transport.
+                                             No robot involved
           anim <robot-ip> --assets <dir> (--name <clip> | --group <group>)
                                              play one of Cozmo's own animations on the robot, on the single
                                              30 Hz timeline that also drives the face

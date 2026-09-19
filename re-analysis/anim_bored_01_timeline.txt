@@ -1,0 +1,142 @@
+clip: anim_bored_01
+duration: 1089 ms   keyframes: 54   tracks: Face, Audio, Head, Lift, Body, Lights
+
+=== decoded keyframes, in timestamp order ===
+   t_ms  dur_ms track   kind                       executor  detail
+------------------------------------------------------------------------------------------------------------------------
+      0     264 Head    Head                       ACTED ON  angle_deg=0 (0.000 rad) variability_deg=0
+      0       0 Face    Face                       ACTED ON  face angle=0.0 centre=(0.0,0.0) scale=(1.00,1.00) L.scaleY=0.91 R.scaleY=0.91
+      0     132 Lights  Lights                     IGNORED   L=[0.00,0.00,0.00,0.00] R=[0.00,0.00,0.00,0.00] Front=[0.00,0.00,0.00,0.00] Mid=[0.00,0.00,0.00,0.00] Back=[0.00,0.00,0.00,0.00]
+     99       0 Audio   Audio                      IGNORED   eventIds=[1620542011] volume=1.00 hasAlts=True
+    132       0 Face    Face                       ACTED ON  face angle=0.2 centre=(0.0,0.3) scale=(1.00,1.00) L.scaleY=0.91 R.scaleY=0.91
+    132      99 Lights  Lights                     IGNORED   L=[0.00,0.00,0.00,0.00] R=[0.00,0.00,0.00,0.00] Front=[0.00,0.00,0.00,0.00] Mid=[0.00,0.00,0.00,0.00] Back=[0.00,0.00,0.00,0.00]
+    165       0 Face    Face                       ACTED ON  face angle=0.5 centre=(0.0,1.4) scale=(1.00,1.00) L.scaleY=0.91 R.scaleY=0.91
+    198       0 Face    Face                       ACTED ON  face angle=0.8 centre=(0.0,2.6) scale=(1.00,1.00) L.scaleY=0.91 R.scaleY=0.91
+    231       0 Face    Face                       ACTED ON  face angle=1.1 centre=(0.0,3.8) scale=(1.00,1.00) L.scaleY=0.91 R.scaleY=0.91
+    231      33 Lights  Lights                     IGNORED   L=[0.00,0.00,0.00,0.00] R=[0.00,0.00,0.00,0.00] Front=[0.00,0.00,0.00,0.00] Mid=[1.00,0.70,0.00,0.00] Back=[0.00,0.00,0.00,0.00]
+    264       0 Face    Face                       ACTED ON  face angle=1.3 centre=(0.0,5.1) scale=(1.00,1.00) L.scaleY=0.91 R.scaleY=0.91
+    264     198 Head    Head                       ACTED ON  angle_deg=-3 (-0.052 rad) variability_deg=0
+    264      33 Lights  Lights                     IGNORED   L=[0.00,0.00,0.00,0.00] R=[0.00,0.00,0.00,0.00] Front=[0.00,0.00,0.00,0.00] Mid=[1.00,0.70,0.00,0.00] Back=[0.00,0.00,0.00,0.00]
+    272       0 Audio   Audio                      IGNORED   eventIds=[2741090610] volume=1.00 hasAlts=True
+    297     264 Body    Body                       ACTED ON  radius_mm="STRAIGHT" speed=-75 (straight=True, parsed_radius=n/a, direction=BACKWARD)
+    297       0 Face    Face                       ACTED ON  face angle=1.5 centre=(0.0,6.4) scale=(1.00,1.00) L.scaleY=0.91 R.scaleY=0.91
+    297     429 Lights  Lights                     IGNORED   L=[0.00,0.00,0.00,0.00] R=[0.00,0.00,0.00,0.00] Front=[1.00,0.70,0.00,0.00] Mid=[1.00,0.70,0.00,0.00] Back=[1.00,0.70,0.00,0.00]
+    330       0 Face    Face                       ACTED ON  face angle=1.7 centre=(0.0,7.7) scale=(1.00,1.00) L.scaleY=0.87 R.scaleY=0.87
+    363       0 Face    Face                       ACTED ON  face angle=2.0 centre=(0.0,9.2) scale=(1.00,1.00) L.scaleY=0.94 R.scaleY=0.94
+    396      99 Lift    Lift                       ACTED ON  height_mm=40 variability_mm=0
+    396       0 Face    Face                       ACTED ON  face angle=1.9 centre=(0.0,10.2) scale=(1.00,1.00) L.scaleY=1.01 R.scaleY=1.01
+    429       0 Face    Face                       ACTED ON  face angle=1.8 centre=(0.0,11.2) scale=(1.00,1.00) L.scaleY=0.93 R.scaleY=0.93
+    462       0 Face    Face                       ACTED ON  face angle=1.7 centre=(0.0,12.5) scale=(1.00,1.00) L.scaleY=0.85 R.scaleY=0.85
+    462     132 Head    Head                       ACTED ON  angle_deg=-19 (-0.332 rad) variability_deg=0
+    495      99 Lift    Lift                       ACTED ON  height_mm=0 variability_mm=0
+    495       0 Face    Face                       ACTED ON  face angle=1.1 centre=(0.0,8.9) scale=(1.00,1.00) L.scaleY=0.77 R.scaleY=0.77
+    528       0 Face    Face                       ACTED ON  face angle=0.4 centre=(0.0,4.8) scale=(1.01,1.00) L.scaleY=0.84 R.scaleY=0.84
+    561       0 Face    Face                       ACTED ON  face angle=-0.4 centre=(0.0,0.0) scale=(1.01,1.00) L.scaleY=0.91 R.scaleY=0.90
+    594       0 Face    Face                       ACTED ON  face angle=-0.3 centre=(0.0,0.0) scale=(1.02,1.01) L.scaleY=0.91 R.scaleY=0.90
+    594     132 Head    Head                       ACTED ON  angle_deg=-8 (-0.140 rad) variability_deg=0
+    660       0 Face    Face                       ACTED ON  face angle=0.0 centre=(0.0,0.0) scale=(1.04,1.04) L.scaleY=0.91 R.scaleY=0.90
+    693       0 Face    Face                       ACTED ON  face angle=0.0 centre=(0.0,0.0) scale=(1.04,1.04) L.scaleY=0.91 R.scaleY=0.90
+    726      99 Head    Head                       ACTED ON  angle_deg=-15 (-0.262 rad) variability_deg=0
+    726      33 Lights  Lights                     IGNORED   L=[0.00,0.00,0.00,0.00] R=[0.00,0.00,0.00,0.00] Front=[1.00,0.70,0.00,0.00] Mid=[1.00,0.70,0.00,0.00] Back=[1.00,0.70,0.00,0.00]
+    726       0 Face    Face                       ACTED ON  face angle=0.0 centre=(0.0,0.0) scale=(1.04,1.04) L.scaleY=0.91 R.scaleY=0.90
+    759      33 Lights  Lights                     IGNORED   L=[0.00,0.00,0.00,0.00] R=[0.00,0.00,0.00,0.00] Front=[0.00,0.00,0.00,0.00] Mid=[1.00,0.70,0.00,0.00] Back=[0.00,0.00,0.00,0.00]
+    792      33 Lights  Lights                     IGNORED   L=[0.00,0.00,0.00,0.00] R=[0.00,0.00,0.00,0.00] Front=[0.00,0.00,0.00,0.00] Mid=[1.00,0.70,0.00,0.00] Back=[0.00,0.00,0.00,0.00]
+    792       0 Face    Face                       ACTED ON  face angle=0.0 centre=(0.0,0.0) scale=(1.04,1.04) L.scaleY=0.91 R.scaleY=0.91
+    825      33 Lights  Lights                     IGNORED   L=[0.00,0.00,0.00,0.00] R=[0.00,0.00,0.00,0.00] Front=[0.00,0.00,0.00,0.00] Mid=[0.00,0.00,0.00,0.00] Back=[0.00,0.00,0.00,0.00]
+    825      33 Head    Head                       ACTED ON  angle_deg=-15 (-0.262 rad) variability_deg=0
+    825       0 Face    Face                       ACTED ON  face angle=0.0 centre=(0.0,0.0) scale=(1.04,1.04) L.scaleY=0.91 R.scaleY=0.91
+    858      66 Lights  Lights                     IGNORED   L=[0.00,0.00,0.00,0.00] R=[0.00,0.00,0.00,0.00] Front=[0.00,0.00,0.00,0.00] Mid=[0.00,0.00,0.00,0.00] Back=[0.00,0.00,0.00,0.00]
+    858      66 Head    Head                       ACTED ON  angle_deg=-14 (-0.244 rad) variability_deg=0
+    858       0 Face    Face                       ACTED ON  face angle=0.0 centre=(0.0,0.0) scale=(1.04,1.04) L.scaleY=0.91 R.scaleY=0.91
+    891       0 Face    Face                       ACTED ON  face angle=0.0 centre=(0.0,0.0) scale=(1.04,1.03) L.scaleY=0.91 R.scaleY=0.91
+    924      33 Lights  Lights                     IGNORED   L=[0.00,0.00,0.00,0.00] R=[0.00,0.00,0.00,0.00] Front=[0.00,0.00,0.00,0.00] Mid=[0.00,0.00,0.00,0.00] Back=[0.00,0.00,0.00,0.00]
+    924      33 Head    Head                       ACTED ON  angle_deg=-14 (-0.244 rad) variability_deg=0
+    924       0 Face    Face                       ACTED ON  face angle=0.0 centre=(0.0,0.0) scale=(1.04,1.02) L.scaleY=0.91 R.scaleY=0.91
+    957      66 Head    Head                       ACTED ON  angle_deg=-14 (-0.244 rad) variability_deg=0
+    957     132 Lights  Lights                     IGNORED   L=[0.00,0.00,0.00,0.00] R=[0.00,0.00,0.00,0.00] Front=[0.00,0.00,0.00,0.00] Mid=[0.00,0.00,0.00,0.00] Back=[0.00,0.00,0.00,0.00]
+    957       0 Face    Face                       ACTED ON  face angle=0.0 centre=(0.0,0.0) scale=(1.04,1.00) L.scaleY=0.91 R.scaleY=0.91
+   1023       0 Face    Face                       ACTED ON  face angle=0.0 centre=(0.0,0.0) scale=(1.04,1.00) L.scaleY=0.91 R.scaleY=0.91
+   1023      66 Head    Head                       ACTED ON  angle_deg=-14 (-0.244 rad) variability_deg=0
+   1089       0 Face    Face                       ACTED ON  face angle=0.0 centre=(0.0,0.0) scale=(1.04,1.04) L.scaleY=0.91 R.scaleY=0.91
+
+=== per track ===
+  AudioKeyframe                   2  IGNORED   Wwise event ids are not decoded; a silence frame is sent to keep the timeline
+  BodyKeyframe                    1  ACTED ON  STRAIGHT maps to equal wheel speeds; sent as DriveWheels
+  FaceKeyframe                   27  ACTED ON  rendered and sent; blended towards the next face keyframe each frame
+  HeadKeyframe                   10  ACTED ON  sent as SetHeadAngle with the keyframe's duration
+  LiftKeyframe                    2  ACTED ON  sent as SetLiftHeight with the keyframe's duration
+  LightsKeyframe                 12  IGNORED   the colour encoding in the assets is not established
+
+=== what the executor actually sends ===
+The real RobotAnimationSink, driven against an offline robot. Every line below is a message the
+live player would have sent, read back from the transport rather than re-derived.
+
+--- wheel commands: 2 ---
+  t=    300 ms  DriveWheels left=  -75.0 right=  -75.0  BACKWARD
+  t=   1100 ms  DriveWheels left=    0.0 right=    0.0  stop
+  => the wheels were driven from t=300 ms to t=1100 ms, i.e. 800 ms
+  => the asset asks for 264 ms starting at t=297 ms
+
+--- every message, in order ---
+   t_ms  message                detail
+------------------------------------------------------------------------------------------
+      0  SetHeadAngle           angle=0.000 rad duration=0.264s action=0
+      0  FaceImage              254 byte face payload
+     33  FaceImage              254 byte face payload
+     67  FaceImage              254 byte face payload
+    100  AudioSilence           silence frame
+    100  FaceImage              254 byte face payload
+    133  FaceImage              254 byte face payload
+    167  FaceImage              254 byte face payload
+    200  FaceImage              252 byte face payload
+    233  FaceImage              246 byte face payload
+    267  SetHeadAngle           angle=-0.052 rad duration=0.198s action=0
+    267  FaceImage              242 byte face payload
+    300  AudioSilence           silence frame
+    300  DriveWheels            left=-75.0 right=-75.0
+    300  FaceImage              240 byte face payload
+    333  FaceImage              236 byte face payload
+    367  FaceImage              186 byte face payload
+    400  SetLiftHeight          height=40.0 mm duration=0.099s action=0
+    400  FaceImage              177 byte face payload
+    433  FaceImage              180 byte face payload
+    467  SetHeadAngle           angle=-0.332 rad duration=0.132s action=0
+    467  FaceImage              128 byte face payload
+    500  SetLiftHeight          height=0.0 mm duration=0.099s action=0
+    500  FaceImage              128 byte face payload
+    533  FaceImage              195 byte face payload
+    567  FaceImage              201 byte face payload
+    600  SetHeadAngle           angle=-0.140 rad duration=0.132s action=0
+    600  FaceImage              240 byte face payload
+    633  FaceImage              252 byte face payload
+    667  FaceImage              260 byte face payload
+    700  FaceImage              264 byte face payload
+    733  SetHeadAngle           angle=-0.262 rad duration=0.099s action=0
+    733  FaceImage              260 byte face payload
+    767  FaceImage              256 byte face payload
+    800  FaceImage              252 byte face payload
+    833  SetHeadAngle           angle=-0.262 rad duration=0.033s action=0
+    833  FaceImage              250 byte face payload
+    867  SetHeadAngle           angle=-0.244 rad duration=0.066s action=0
+    867  FaceImage              250 byte face payload
+    900  FaceImage              252 byte face payload
+    933  SetHeadAngle           angle=-0.244 rad duration=0.033s action=0
+    933  FaceImage              254 byte face payload
+    967  SetHeadAngle           angle=-0.244 rad duration=0.066s action=0
+    967  FaceImage              254 byte face payload
+   1000  FaceImage              254 byte face payload
+   1033  SetHeadAngle           angle=-0.244 rad duration=0.066s action=0
+   1033  FaceImage              254 byte face payload
+   1067  FaceImage              254 byte face payload
+   1100  FaceImage              254 byte face payload
+   1100  DriveWheels            left=0.0 right=0.0
+
+--- totals ---
+  FaceImage                34
+  SetHeadAngle             10
+  AudioSilence             2
+  DriveWheels              2
+  SetLiftHeight            2
+
+--- reported as not implemented during playback ---
+  backpack lights keyframe: the colour encoding in the assets is not established
