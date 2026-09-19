@@ -102,6 +102,20 @@ idle blinking.
 Timing is taken, not read — `Advance(nowMs)`, as the M5 scheduler does — so the layer is testable offline
 and instantly.
 
+**The face is a base pose plus transient layers, not an accumulating pose.** This is how the engine does
+it and it is what the first attempt here got wrong. `TrackLayerComponent::AddOrUpdateEyeShift(trackMask,
+name, x, y, durationMs, ...)` calls `FaceLayerManager::GenerateEyeShift(..., durationMs,
+ProceduralFaceKeyFrame&)` and stores the result through `AddPersistentLayer(name, Track<...>)`, with
+`RemoveEyeShift` to take it away; blinks go the same route through `AddBlink`. So a dart is a **named,
+time-limited keyframe combined onto a base face that is never itself modified**.
+
+The first implementation read the live face, offset it and wrote it back, so every dart compounded the
+last. On hardware the eyes drifted and grew until they merged into one rectangle — see "Hardening pass".
+
+What is reproduced: a stable base pose, offsets measured from it, an explicit duration, and a return to
+base when it expires. What is **not** claimed is the exact native use of `EyeDartUpMaxScale` and
+`EyeDartDownMinScale`; they bound the result rather than being invented into a formula.
+
 **Body movement is decided and reported but not driven.** 10 mm/s is within the engine's own parameters,
 but sending wheel commands to an unattended robot is not something to switch on without watching it.
 `--allow-motion` on the `behavior` command enables head and lift.
@@ -211,3 +225,31 @@ Wire and timing semantics are unchanged.
   rolling satisfied the check the instant the command was sent — commanding forward while driving backwards
   reported success. Each wheel is now confirmed against the requested speed, with sign and a tolerance that
   allows for ramping.
+
+
+## Idle face defect, found on hardware
+
+The first hardware acceptance run of the idle layer found a reproducible fault: over time the two eyes
+grew and drifted together until they formed one large rectangle, and the distorted face persisted through
+reaction testing.
+
+**Cause, in this layer and not in M5.** `IdleBehavior.Dart` read `Face.Current`, applied an offset, and
+wrote the result back as the new persistent face. Each dart therefore started from the previous one:
+positions random-walked without limit and `EyeScale` gained another `EyeDartOuterEyeScaleIncrease` (0.1)
+every time. `Blink` had the same shape, so a blink restored the corrupted pose rather than a stable one.
+The dart duration was computed, reported, and then ignored — nothing ever put the face back.
+
+The M5 procedural-face renderer was not touched: the earlier `anim_bored_01` face test passed, and nothing
+in this failure implicates the renderer.
+
+**Fix.** Idle now keeps a base pose, captured once, that it never modifies. A dart or blink is a transient
+computed from that base with the duration it was given; when the duration expires the base is put back.
+Eye centres are clamped to `EyeDartMaxDistancePix` of the base and scales to
+`[EyeDartMinScale, EyeDartMaxScale]`, so nothing can accumulate even if the remaining fidelity questions
+are answered differently later. When an animation owns the face, idle forgets its base, because what is on
+screen is no longer what it recorded.
+
+**Regressions.** Six tests, five of which were confirmed to fail against the original code: eye centres
+bounded across hundreds of darts, scales bounded and no larger in the second half of a run than the first,
+the base pose intact after transients expire, blinks restoring the stable face, a dart lasting exactly its
+duration, and the base being forgotten when something else takes the face.
