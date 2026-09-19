@@ -425,19 +425,33 @@ Cozmo's own face encoder and a full Huffman decode of every camera frame in the 
 acceptance commands `camera`, `face` and `tone` are in the conformance CLI and not yet run. Detail and the
 open gaps: `DEVICE_LAYER.md`.
 
-**M5 status (2026-09-18): animation playback hardware-verified; three correctness faults found on hardware and fixed.**
+**M5 original description (superseded by the frozen status above).**
 `robot.Animations` loads Cozmo's own assets (289 FlatBuffers clips and 507 JSON groups in this build) and
 plays them on one 30 Hz scheduler that owns all animation timing; the device classes keep their APIs but no
 longer decide when anything happens. Track ownership stops two animations fighting: a clip claims the tracks
 it touches and a second either replaces it or is refused. `robot.Face` implements the engine's own
 19-parameter eye model, whose names and order come from libcozmoEngine .rodata at 0x00C1D399, with a
-renderer and a set of named expressions that are **ours, not Anki's**. Audio, backpack lights and arc body
-motion are decoded and carried but not acted on, because the Wwise bank, the asset colour encoding and the
-wheel-base geometry are each unestablished. 213 tests pass, 34 new. Detail: `ANIMATION_LAYER.md`.
+renderer and a set of named expressions that are **ours, not Anki's**. Arc body motion is now sent the way the engine
+sends it, as a speed and a 16-bit radius the firmware turns into geometry, and is hardware-verified. Audio
+runs on the scheduler's own tick from a pluggable source; backpack-light keyframes are decoded and carried
+but not acted on, because the asset colour encoding is unestablished. Detail: `ANIMATION_LAYER.md`.
 
-**M1 through M4 are frozen as of 2026-09-18.** Transport, protocol, device layer and control layer are all
-hardware-verified and are not to be reopened unless a specific failure appears. Work above them builds on
-these APIs rather than changing them.
+**M1 through M5 are frozen as of 2026-09-18.** Transport, protocol, device layer, control layer and the
+animation layer are all hardware-verified and are not to be reopened unless a specific failure appears.
+Work above them builds on these APIs rather than changing them.
+
+**M5 status (2026-09-18): COMPLETE and FROZEN.** `anim_bored_01` plays through with head, lift, body and
+face, and `anim --arc` drives a visible curve and an equal arc back. The last two faults were one cause:
+the engine buffers exactly one audio message on every streamed animation frame, `animAudioSample` (0x8E)
+or `animAudioSilence` (0x8F), and those frames are what carry an animation forward on the robot. We were
+sending none for clips with no audio track, so an opened animation was never fed — the arc never moved and
+the face stopped displaying. Working: `DIAGNOSTIC_animation_start_sequence.md`. 255 tests pass.
+
+Seven items are **deferred, not blocking**: Wwise bank and media decoding, enhanced backpack-light
+keyframes, exact Anki procedural-face renderer fidelity, pre-rendered `faceAnimations`, group cooldown
+enforcement, the unresolved lift 0 mm semantics, and M4 cube hardware acceptance when a cube is available.
+Each needs evidence or hardware we do not yet have, rather than being a defect in what is built. The table
+with what would close each one is at the end of `ANIMATION_LAYER.md`.
 
 **M4 status (2026-09-18): COMPLETE and FROZEN.** Sensors and state, lights, head and lift motion, and
 wheel drive all passed on the firmware-2457 robot, the last with `--allow-drive` and with the robot's

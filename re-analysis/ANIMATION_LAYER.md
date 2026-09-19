@@ -1,8 +1,12 @@
 # M5 — animation and expression
 
-Status: **hardware-verified** (2026-09-18). `anim_bored_01` connected, calibrated, played through, moved
-head, lift and body, changed the face and completed normally on the firmware-2457 robot. Three correctness
-faults found by that run were fixed afterwards; see "Faults found on hardware" below.
+Status: **COMPLETE and FROZEN** (2026-09-18). `anim_bored_01` connected, calibrated, played through, moved
+head, lift and body, changed the face and completed normally on the firmware-2457 robot, and `anim --arc`
+drove a visible curve and an equal arc back. Several correctness faults found by those runs were fixed
+afterwards; see "Faults found on hardware" and "Opening an animation is not enough" below.
+
+Frozen means the API and the timing model are settled and are not to be reopened unless a specific failure
+appears. What is deferred rather than missing is listed under "Deferred" at the end of this document.
 
 Built on the frozen M1 transport, M2 protocol, M3 device layer and M4 control layer. None of them was
 reopened and no generated code was hand-edited.
@@ -79,9 +83,9 @@ as `Replaced` and the new one takes over. Two animations never interleave.
 | Lift | Implemented: height and duration sent |
 | Body, straight and arc | Implemented as the engine does it: `animBodyMotion` with speed and a 16-bit radius, stopped when the keyframe's duration expires |
 | Event | Implemented: raised to the caller |
-| Audio | Implemented as a path: streamed on the scheduler tick from a pluggable source. The Wwise bank decoder that would make Cozmo's own sounds available is **not** written, so out of the box the track is silent. |
-| Backpack lights | **Not implementable.** The shipping engine never implemented this track from animation assets either; see below. |
-| Face animation by name | **Not implemented.** The pre-rendered `faceAnimations` assets are not loaded. |
+| Audio | Implemented: one message on every streamed frame, silence when there is nothing to play, which is what advances an animation on the robot. Sounds come from a pluggable source; the Wwise bank decoder that would make Cozmo's own sounds available is **deferred**, so out of the box the frames are silent. |
+| Backpack lights | Decoded and carried, not acted on. The shipping engine never drove this track from animation assets either; acting on it is **deferred** because the asset colour encoding is unestablished. See below. |
+| Face animation by name | **Deferred.** The pre-rendered `faceAnimations` assets are not loaded, so a clip naming one falls back to the procedural face. |
 
 ## The three M5 gaps, closed
 
@@ -191,10 +195,15 @@ Four things changed as a result, all of them matching what the engine does:
 Keyframes within a frame also go out in the engine's fixed per-track order — head, lift, event, face,
 lights, body — rather than in whatever order the clip lists them.
 
-**Confirmed on hardware.** `anim --arc` now drives a visible curve and an equal arc back, where before the
-fix the same command moved the robot not at all. That is the end-to-end proof that the animation stream
-works, and not just that the radius encoding is right. The face half of the same fix — `anim_bored_01`
-displaying again — has not been re-checked yet.
+**Confirmed on hardware, both halves.** `anim --arc` now drives a visible curve and an equal arc back,
+where before the fix the same command moved the robot not at all — the end-to-end proof that the animation
+stream works, and not just that the radius encoding is right. `anim_bored_01` displays its face again and
+the animation reads correctly overall, which closes the regression the bracketing introduced.
+
+That also settles the one inference in `DIAGNOSTIC_animation_start_sequence.md` that the engine could not
+answer on its own: whether the robot holds `animFaceImage` against the animation clock once an animation is
+open. The face returning the moment silence frames started flowing, with nothing else changed, says it
+does.
 
 ## Faults found on hardware, and fixed
 
@@ -284,8 +293,9 @@ silently report the asset tests as passing.
 
 ## Hardware acceptance
 
-`anim` has passed: `anim_bored_01` played through on the firmware-2457 robot, moving head, lift and body and
-changing the face. `face-expressions` has not been run.
+`anim` has passed: `anim_bored_01` played through on the firmware-2457 robot, moving head, lift and body,
+changing the face and reading correctly overall, and `anim --arc` drove a visible curve and an equal arc
+back. `face-expressions` has passed.
 
 ```
 dotnet run --project src/Cozmo.Conformance -- animlist <assets-dir> [filter]
@@ -297,3 +307,20 @@ dotnet run --project src/Cozmo.Conformance -- face-expressions 172.31.1.1 --seco
 `animlist` needs no robot. `anim` checks that every keyframe fired and that the timeline ran to the clip's
 own length; whether the robot looked right is the operator's call. `face-expressions` prints the art it sent
 above each expression so the robot's face can be compared against it directly.
+
+
+## Deferred
+
+M5 is frozen with these items open. None of them blocks it: each is a capability that needs evidence we do
+not yet have, or hardware we do not yet have, not a defect in what is built. They are recorded here so that
+"not implemented" is never mistaken for "overlooked".
+
+| Item | Why it is deferred | What would close it |
+| --- | --- | --- |
+| **Wwise bank and media decoding** | Cozmo's own sounds live in Wwise `.bnk`/`.wem` containers in the OBB. The format is not decoded, so the sound bank index resolves event ids to names only. The animation audio path itself is built and hardware-verified through `WavAudioSource`. | Decode the bank format from the OBB and the engine's Wwise glue, then hang a `IAnimationAudioSource` off it. This is the natural next milestone. |
+| **Enhanced backpack-light keyframes** | The keyframe is decoded and carried with its data intact, but the asset's colour encoding is not established, so acting on it would mean inventing the mapping. The shipping engine never drove this track from animation assets either. | Establish the encoding from the engine's own `BackpackLightsKeyFrame::GetStreamMessage`, or from a capture of the stock app playing a clip that uses the track. |
+| **Exact Anki procedural-face fidelity** | The 19 parameter names and their order are the engine's, from .rodata at 0x00C1D399, and are trustworthy. The renderer that turns them into pixels is **ours**, reconstructed from the parameter meanings, and is not claimed to match `ProceduralFaceDrawer::DrawFace` pixel for pixel. | Port `ProceduralFaceDrawer::DrawFace` properly, and compare against face images captured from the stock app. |
+| **Pre-rendered `faceAnimations`** | The OBB's pre-rendered face assets are not loaded, so a clip whose face track names one falls back to the procedural face. | Decode the `faceAnimations` asset format and feed it through the existing face track. |
+| **Group cooldown enforcement** | Animation groups carry cooldown and mood fields. Selection honours mood; cooldown is parsed and exposed but not enforced, because how the engine measures and resets it is not established. | Read the engine's group selection to establish the cooldown clock, then enforce it in `AnimationGroup.Choose`. |
+| **Lift 0 mm semantics** | What the robot does with a lift height of exactly 0 mm is unresolved: it may mean "lowest position" or "no change". The value is passed through unaltered rather than being reinterpreted. | A hardware experiment, or the engine's own clamping in the lift keyframe path. |
+| **M4 cube hardware acceptance** | Cube support is code-complete and offline-tested through the real message path. No cube has been available to point the robot at. | `dotnet run --project src/Cozmo.Conformance -- cubes 172.31.1.1 --acceptance` with a cube to hand. |

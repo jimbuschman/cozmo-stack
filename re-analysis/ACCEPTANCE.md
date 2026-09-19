@@ -44,7 +44,8 @@ point the robot at. Run `cubes 172.31.1.1 --acceptance` when one is to hand.
 
 | Capability | Automated | Human | Evidence |
 | --- | --- | --- | --- |
-| Animation playback | pass | **pass** — `anim_bored_01` played through, moving head, lift and body and changing the face | operator report, after the body-duration fix |
+| Animation playback | pass | **pass** — `anim_bored_01` played through, moving head, lift and body and changing the face; re-confirmed after the audio-pacing fix | operator report |
+| Face during animation | pass | **pass** — displays correctly, and the animation reads right overall | operator report, after the audio-pacing fix |
 | Multi-clip indexing | pass | **pass** — `anim_bored_02` loaded and played from the same `.bin` | operator report |
 | Procedural expressions | pass | **pass** — the expressions displayed correctly on the robot | operator report |
 | Animation audio | **not run** | **not run** | implemented as a path; silent without a caller-supplied audio source |
@@ -61,12 +62,22 @@ This is the check that proves the animation stream itself works end to end, not 
 before the fix the same command moved the robot not at all. Body motion inside an animation is therefore
 hardware-verified for both straight and arc radii.
 
-## Outstanding
+### The face regression is resolved
 
-**The face during `anim_bored_01` has not been re-checked since the fix.** It stopped displaying when
-bracketing was added, and the same missing audio frames explain it, but only the arc half of that fix has
-been confirmed on hardware. Running `anim --assets <dir> --name anim_bored_01` and watching the face
-settles it.
+`anim_bored_01` was re-run after the streamed-silence fix: the face displays correctly again and the
+animation reads right overall. The regression introduced by animation bracketing is closed, and both halves
+of that fix — body motion and face — are now confirmed on hardware.
+
+That also settles the one claim in `DIAGNOSTIC_animation_start_sequence.md` the engine could not answer by
+itself, namely whether the robot holds `animFaceImage` against the animation clock once an animation is
+open. The face returning the moment silence frames started flowing, with nothing else changed, says it does.
+
+**M5 is COMPLETE and FROZEN as of 2026-09-18.**
+
+## Outstanding
 
 Copy the JSON acceptance records from the machine the runs were made on, and commit them here. Until then
 the table above rests on the operator's report rather than on a committed artifact.
+
+One acceptance item remains unrun for want of hardware, not for want of code: **M4 cubes**. It is deferred,
+not failed — see the deferred list in `ANIMATION_LAYER.md`.
