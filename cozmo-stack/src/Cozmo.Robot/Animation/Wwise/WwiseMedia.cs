@@ -49,6 +49,30 @@ public sealed class WwiseMedia
         _ => null,
     };
 
+    /// <summary>
+    /// Whether this build can turn this file into samples. The one place that answers the question, so a
+    /// diagnostic cannot drift out of step with what the decoder actually does — which it did once, still
+    /// reporting Vorbis as undecodable after Vorbis decoding landed.
+    ///
+    /// Vorbis additionally needs the packed codebook library to be present; see
+    /// <see cref="WwiseAudioSource.CanDecodeVorbis"/>.
+    /// </summary>
+    public bool IsDecodable => Codec switch
+    {
+        WwiseCodec.Vorbis => true,
+        WwiseCodec.Adpcm => Channels == 1,   // the stereo block layout is not established
+        _ => false,
+    };
+
+    /// <summary>Why <see cref="IsDecodable"/> is false, for reporting. Null when it is decodable.</summary>
+    public string? UndecodableReason => Codec switch
+    {
+        WwiseCodec.Vorbis => null,
+        WwiseCodec.Adpcm when Channels == 1 => null,
+        WwiseCodec.Adpcm => $"stereo ADPCM: the block layout is not established",
+        _ => $"unknown codec (format tag 0x{FormatTag:X4})",
+    };
+
     /// <summary>Playing time, where <see cref="SampleCount"/> is known.</summary>
     public TimeSpan? Duration =>
         SampleCount is { } n && SampleRate > 0 ? TimeSpan.FromSeconds(n / (double)SampleRate) : null;

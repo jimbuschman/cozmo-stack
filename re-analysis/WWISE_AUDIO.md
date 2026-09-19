@@ -1,6 +1,11 @@
 # M6 — Cozmo's original sound assets
 
-Status: **complete.** Event resolution, Wwise Vorbis and mono ADPCM all decode from the shipped assets.
+Status: **COMPLETE and FROZEN** (2026-09-18), hardware-verified. Event resolution, Wwise Vorbis and mono
+ADPCM all decode from the shipped assets, and `anim_bored_01` plays its original Cozmo sound on the robot
+with no manual WAV mapping.
+
+Frozen means the decoding path and its API are settled and are not to be reopened unless a specific failure
+appears. What is deferred rather than missing is listed under "Deferred" at the end.
 
 The chain from an animation's audio event id to a media file is decoded and verified across the whole
 shipped library, and so are both codecs those files use. **All 2019 Wwise Vorbis files rebuild and decode,
@@ -193,7 +198,20 @@ All five codebook sets decode with no failures, so no family is being skipped to
 Decoded sample rates are 48000, 44100, 32000, 24000 and 36000 Hz, mono and stereo, and every decoded file
 is non-empty, within one block of its declared length, and free of clipping.
 
-## What remains unsupported
+## Deferred
+
+M6 is frozen with these open. None of them blocks it: each is a case the shipped assets do not need for
+animation audio, or one that would take evidence this build does not contain. They are recorded so that
+"not decoded" is never mistaken for "overlooked".
+
+| case | count | why it is deferred | what would close it |
+| --- | --- | --- | --- |
+| **Stereo ADPCM music** | 7 | The stereo block layout is not established. Under both candidate layouts the step-index byte falls outside the table's 0..88 range and roughly a tenth of the output pins to full scale, so decoding would produce plausible-sounding wrong audio. All seven are 48 kHz music and the robot's speaker is mono, so nothing animation-related depends on them. | A capture of the stock app playing one, or a reference implementation of Wwise's stereo ADPCM interleave. |
+| **Media ids with no file** | 21 | Referenced by a bank but absent from `AudioAssets.zip`. The asset simply is not in this build; nothing can decode what is not there. | A build of the OBB that ships them, if one exists. |
+| **Bank-embedded plugin blobs** | 46 | 173 to 1379 bytes each, beginning `25 80 00 00` rather than `RIFF`. These are Wwise plugin source data, not codec media, so there is no audio in them to decode. | Identifying the plugin source format, only worth doing if something turns out to need it. |
+| **Events reaching no Sound** | 90 | 44 target objects held in banks this build does not ship; 46 target the music hierarchy (MusicSegment, MusicPlaylistContainer, MusicSwitchContainer) or a SwitchContainer, whose own source lists are not parsed. Entirely music, not robot voice or SFX. | Parsing MusicTrack source lists and the switch-container child layout. |
+
+### The same list, as the earlier table
 
 | case | count | why |
 | --- | --- | --- |
@@ -202,17 +220,19 @@ is non-empty, within one block of its declared length, and free of clipping.
 | Bank-embedded non-RIFF blobs | 46 | 173 to 1379 bytes, beginning `25 80 00 00` rather than `RIFF`. These are plugin source data, not codec media, and are reported rather than decoded. |
 | Events reaching no Sound | 90 | 44 target objects in banks this build does not ship; 46 target the music hierarchy or a SwitchContainer, whose own source lists are not parsed. Entirely music, not robot voice or SFX. |
 
-## What this means for the acceptance target
+## The acceptance target, met on hardware
 
-`anim_bored_01` names two audio events, and both now produce audio from the shipped assets with no WAV
-mapping supplied:
+`anim_bored_01` names two audio events, and both produce audio from the shipped assets with no WAV mapping
+supplied:
 
 ```
 at  99 ms  event 1620542011  Play__Robot_Sfx__Scrn_Sad_Long           5 alternatives, ADPCM   -> plays
 at 272 ms  event 2741090610  Play__Robot_Vo__Shared_Bored_Sigh_Short  3 alternatives, Vorbis  -> plays
 ```
 
-Both are covered by an offline test. Hardware verification is the remaining step.
+Both are covered by an offline test, and the clip was **run on the robot on 2026-09-18**: it played the
+animation, displayed the face correctly, and played its original shipped Cozmo sound automatically. That is
+the M6 acceptance target met.
 
 ## Commands
 

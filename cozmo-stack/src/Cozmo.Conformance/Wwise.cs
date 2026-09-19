@@ -38,7 +38,7 @@ public static class WwiseTool
             return 1;
         }
 
-        if (Arg(a, "--decode") is { } one) return DecodeOne(lib, one);
+        if (Arg(a, "--decode") is { } one) return DecodeOne(lib, one, Arg(a, "--ogg"));
         if (a.Contains("--validate")) return Validate(lib, limit);
         if (ev is not null) return Report(lib, Resolve(lib, ev));
         if (clip is not null) return ForClip(lib, clip, assets);
@@ -74,7 +74,7 @@ public static class WwiseTool
             if (m.Media is not { } md) { Console.WriteLine($"     !! {m.Problem}"); continue; }
             string dur = md.Duration is { } d ? $"{d.TotalSeconds:F2}s" : "unknown";
             Console.WriteLine($"     -> codec {Describe(md)}  {md.Channels}ch {md.SampleRate}Hz  duration {dur}");
-            Console.WriteLine($"     -> {(md.Codec == WwiseCodec.Adpcm ? "decodes here" : "NOT DECODED by this build")}");
+            Console.WriteLine($"     -> {(md.IsDecodable ? "decodes here" : $"NOT DECODED: {md.UndecodableReason}")}");
         }
         return 0;
     }
@@ -106,7 +106,7 @@ public static class WwiseTool
                 if (id is < 0 or > uint.MaxValue) { Console.WriteLine($"    event {id}: out of range"); continue; }
                 var r = lib.Resolve((uint)id);
                 var codecs = r.Media.Select(m => m.Media?.Codec).ToList();
-                bool ok = codecs.Any(c => c == WwiseCodec.Adpcm);
+                bool ok = r.Media.Any(m => m.Media?.IsDecodable == true);
                 if (ok) playable++;
                 Console.WriteLine($"    event {id} {r.Name ?? "(unnamed)"}");
                 Console.WriteLine($"      {r.Media.Count} media, codecs: " +
@@ -148,9 +148,9 @@ public static class WwiseTool
                 if (!mediaSeen.Add(m.MediaId)) continue;
                 var c = m.Media?.Codec ?? WwiseCodec.Unknown;
                 perCodec[c] = perCodec.GetValueOrDefault(c) + 1;
-                if (c == WwiseCodec.Adpcm) any = true;
+                if (m.Media?.IsDecodable == true) any = true;
             }
-            if (any || r.Media.Any(m => m.Media?.Codec == WwiseCodec.Adpcm)) playable++;
+            if (any || r.Media.Any(m => m.Media?.IsDecodable == true)) playable++;
         }
 
         Console.WriteLine($"\ncoverage across the whole shipped library");
@@ -162,7 +162,7 @@ public static class WwiseTool
         Console.WriteLine($"  have a decodable alternative  {playable}  ({100.0 * playable / Math.Max(1, shouldPlay):F1}% of those)");
         Console.WriteLine($"  distinct media referenced     {mediaSeen.Count} of {lib.MediaFileCount} on disk");
         foreach (var (c, n) in perCodec.OrderByDescending(kv => kv.Value))
-            Console.WriteLine($"    {c,-8} {n,5}  {(c == WwiseCodec.Adpcm ? "decoded" : "not decoded")}");
+            Console.WriteLine($"    {c,-8} {n,5}");
         if (unresolved.Count > 0)
         {
             Console.WriteLine($"\n  first {unresolved.Count} events that resolve to nothing:");
@@ -295,7 +295,7 @@ public static class WwiseTool
     }
 
     /// <summary>Decodes one media file by id and reports what came out, for checking a single case quickly.</summary>
-    private static int DecodeOne(WwiseSoundLibrary lib, string spec)
+    private static int DecodeOne(WwiseSoundLibrary lib, string spec, string? oggOut)
     {
         if (!uint.TryParse(spec, out var mid)) { Console.WriteLine($"'{spec}' is not a media id"); return 1; }
         var bytes = lib.ReadMedia(mid, out var source);
@@ -316,8 +316,7 @@ public static class WwiseTool
                 var sw = System.Diagnostics.Stopwatch.StartNew();
                 var ogg = WwiseVorbisRebuilder.ToOgg(m, cbl);
                 Console.WriteLine($"  rebuilt to {ogg.Length} bytes of Ogg in {sw.ElapsedMilliseconds} ms");
-                if (Environment.GetEnvironmentVariable("COZMO_OGG_OUT") is { } oggOut)
-                { File.WriteAllBytes(oggOut, ogg); Console.WriteLine($"  wrote {oggOut}"); return 0; }
+                if (oggOut is not null) { File.WriteAllBytes(oggOut, ogg); Console.WriteLine($"  wrote {oggOut}"); }
                 var v = WwiseVorbis.Decode(m, cbl);
                 Console.WriteLine($"  NVorbis finished in {sw.ElapsedMilliseconds} ms");
                 pcm = v.Samples; ch = v.Channels; rate = v.SampleRate;

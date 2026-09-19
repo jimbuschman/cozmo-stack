@@ -48,7 +48,7 @@ point the robot at. Run `cubes 172.31.1.1 --acceptance` when one is to hand.
 | Face during animation | pass | **pass** — displays correctly, and the animation reads right overall | operator report, after the audio-pacing fix |
 | Multi-clip indexing | pass | **pass** — `anim_bored_02` loaded and played from the same `.bin` | operator report |
 | Procedural expressions | pass | **pass** — the expressions displayed correctly on the robot | operator report |
-| Animation audio | **not run** | **not run** | implemented as a path; silent without a caller-supplied audio source |
+| Animation audio, caller-supplied | **not run** | **not run** | the `WavAudioSource` path; superseded in practice by the shipped library below |
 | Arc body motion | pass | **pass** — a visible curved arc, then an equal arc back the other way | operator report, `anim --arc`, after the audio-pacing fix |
 
 ### Arc body motion
@@ -73,6 +73,23 @@ itself, namely whether the robot holds `animFaceImage` against the animation clo
 open. The face returning the moment silence frames started flowing, with nothing else changed, says it does.
 
 **M5 is COMPLETE and FROZEN as of 2026-09-18.**
+
+## M6 — Cozmo's original sound assets
+
+| Capability | Automated | Human | Evidence |
+| --- | --- | --- | --- |
+| Event resolution through the Wwise banks | pass | n/a | 615 of the 705 events that should play resolve to media; offline, whole-library |
+| Wwise Vorbis decoding | pass — 2019 of 2019 rebuilt and decoded | n/a | `wwise --validate`, whole library, all five codebook sets, zero failures |
+| ADPCM decoding | pass — 220 of 227 | n/a | same run; the seven refused are stereo |
+| Cozmo's own sounds in an animation | pass | **pass** — the original shipped sound played automatically, with no manual WAV mapping | operator report, `anim ... --name anim_bored_01 --wwise <obb dir>` |
+
+### The acceptance run
+
+`anim_bored_01` played the animation, displayed the face correctly, and played its original shipped Cozmo
+sound with **no `--audio` mapping supplied**. That is the M6 acceptance target met: the sound came from the
+OBB's own Wwise banks and `.wem` files, resolved and decoded by this stack.
+
+**M6 is COMPLETE and FROZEN as of 2026-09-18.**
 
 ## Outstanding
 

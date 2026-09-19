@@ -539,4 +539,27 @@ public class WwiseTests
                 string.Join("; ", src.Misses.Where(mm => mm.EventId == id).Select(mm => mm.Reason)));
         }
     }
+
+    /// <summary>
+    /// The diagnostics and the decoder must agree on what is decodable. They did not once: the --event
+    /// report still printed "NOT DECODED by this build" for Vorbis after Vorbis decoding landed, because
+    /// each place tested for ADPCM separately. WwiseMedia.IsDecodable is now the only place that decides.
+    /// </summary>
+    [Fact]
+    public void WhatIsDecodableIsDecidedInExactlyOnePlace()
+    {
+        var vorbisExt = new byte[48];
+        vorbisExt[0x28] = 8; vorbisExt[0x29] = 11;
+        var vorbis = WwiseMedia.Parse(Riff("vorbis", 1, 48000, 0, new byte[64], vorbisExt));
+        Assert.Equal(WwiseCodec.Vorbis, vorbis.Codec);
+        Assert.True(vorbis.IsDecodable);
+        Assert.Null(vorbis.UndecodableReason);
+
+        var monoAdpcm = WwiseMedia.Parse(Riff("adpcm", 1, 44100, 36, new byte[36]));
+        Assert.True(monoAdpcm.IsDecodable);
+
+        var stereoAdpcm = WwiseMedia.Parse(Riff("adpcm", 2, 48000, 72, new byte[72]));
+        Assert.False(stereoAdpcm.IsDecodable);
+        Assert.Contains("stereo", stereoAdpcm.UndecodableReason);
+    }
 }

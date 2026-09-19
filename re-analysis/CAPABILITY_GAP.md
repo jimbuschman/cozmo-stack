@@ -436,7 +436,7 @@ sends it, as a speed and a 16-bit radius the firmware turns into geometry, and i
 runs on the scheduler's own tick from a pluggable source; backpack-light keyframes are decoded and carried
 but not acted on, because the asset colour encoding is unestablished. Detail: `ANIMATION_LAYER.md`.
 
-**M6 status (2026-09-18): COMPLETE.** Cozmo's own shipped sounds play from the OBB assets. The chain from
+**M6 status (2026-09-18): COMPLETE and FROZEN, hardware-verified.** Cozmo's own shipped sounds play from the OBB assets. The chain from
 an animation's audio event id through the Wwise banks to a `.wem` is decoded and verified library-wide, and
 both codecs decode: **all 2019 Wwise Vorbis files rebuild and decode (100%)** and 220 of 227 ADPCM files
 decode, totalling 1h40m of audio with no clipping and no empty output. Wwise strips the Ogg container, the
@@ -444,11 +444,13 @@ codebooks and the granule positions; the codebooks come from ww2ogg's packed lib
 with provenance and SHA-256), the rebuild is a port of the parts of ww2ogg these files need, granules are
 computed inline, and NVorbis (MIT) decodes the result. **Unlike M1-M5 there is no native authority here**:
 Wwise is not linked into `libcozmoEngine.so` at all, so the format rests on cross-checks against the assets.
-Remaining unsupported: 7 stereo ADPCM files, 21 media ids with no file, 46 bank-embedded plugin blobs, and
-90 events that reach no Sound (all music). Detail: `WWISE_AUDIO.md`.
+On hardware, `anim_bored_01` played its original shipped Cozmo sound automatically with no manual WAV
+mapping. **Deferred and non-blocking**: 7 stereo ADPCM music files whose block layout is not established,
+21 media ids with no file behind them, 46 bank-embedded plugin blobs that are not audio, and 90 events that
+reach no Sound (all music). Detail: `WWISE_AUDIO.md`.
 
-**M1 through M5 are frozen as of 2026-09-18.** Transport, protocol, device layer, control layer and the
-animation layer are all hardware-verified and are not to be reopened unless a specific failure appears.
+**M1 through M6 are frozen as of 2026-09-18.** Transport, protocol, device layer, control layer, the
+animation layer and the audio-asset layer are all hardware-verified and are not to be reopened unless a specific failure appears.
 Work above them builds on these APIs rather than changing them.
 
 **M5 status (2026-09-18): COMPLETE and FROZEN.** `anim_bored_01` plays through with head, lift, body and

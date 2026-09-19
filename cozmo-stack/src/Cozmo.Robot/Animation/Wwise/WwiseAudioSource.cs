@@ -12,11 +12,11 @@ public sealed record WwiseMiss(long EventId, string? Name, string Reason, WwiseC
 /// The scheduler asks for PCM at <see cref="CozmoAudio.SampleRate"/>; this class resamples and mixes
 /// down to mono to meet that, exactly as the WAV source already does.
 ///
-/// **Codec coverage.** Of the 2214 media files in this build, 227 are ADPCM and decode here. The other
-/// 1987 are Wwise Vorbis, which this class does not decode: it reports them through
-/// <see cref="Misses"/> and returns null rather than substituting anything. An event whose alternatives
-/// are all Vorbis therefore plays silence, and says so. See WWISE_AUDIO.md for why that boundary is where
-/// it is.
+/// **Codec coverage.** Both codecs the shipped library uses decode here: all 2019 Wwise Vorbis files and
+/// the 220 mono ADPCM files. What does not decode is reported through <see cref="Misses"/> and returns
+/// null rather than being substituted — seven stereo ADPCM files whose block layout is not established,
+/// media ids with no file behind them, and bank-embedded blobs that are not audio.
+/// <see cref="WwiseMedia.IsDecodable"/> is the single place that decides. See WWISE_AUDIO.md.
 /// </summary>
 public sealed class WwiseAudioSource : IAnimationAudioSource, IDisposable
 {
@@ -140,9 +140,9 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IDisposable
                 continue;
             }
             lastCodec = m.Codec;
-            if (m.Codec is not (WwiseCodec.Adpcm or WwiseCodec.Vorbis))
+            if (!m.IsDecodable)
             {
-                reasons.Add($"{refr.MediaId}: {m.Codec} is not decoded");
+                reasons.Add($"{refr.MediaId}: {m.UndecodableReason}");
                 continue;
             }
             if (m.Codec == WwiseCodec.Vorbis && _codebooks is null)
