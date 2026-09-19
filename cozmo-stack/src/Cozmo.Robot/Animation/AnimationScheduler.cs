@@ -19,8 +19,19 @@ public interface IAnimationSink
     /// reporting yet, and the scheduler then runs unpaced.
     /// </summary>
     int? AudioFramesPlayed => null;
-    void Head(float radians, uint durationMs);
-    void Lift(float heightMm, uint durationMs);
+    /// <summary>
+    /// A head keyframe, as the engine streams it: <c>HeadAngleKeyFrame::GetStreamMessage</c> at 0x004F8C08
+    /// builds <c>AnimKeyFrame::HeadAngle</c> (animHeadAngle, 0x93) from the keyframe's duration and its
+    /// angle in whole degrees, with the keyframe's variability already applied. It is an animation
+    /// keyframe, not a <c>SetHeadAngle</c> motor command.
+    /// </summary>
+    void Head(sbyte angleDeg, uint durationMs);
+    /// <summary>
+    /// A lift keyframe, as <c>LiftHeightKeyFrame::GetStreamMessage</c> at 0x004F8F80 streams it:
+    /// <c>AnimKeyFrame::LiftHeight</c> (animLiftHeight, 0x94) with the duration and the height in whole
+    /// millimetres, variability already applied.
+    /// </summary>
+    void Lift(byte heightMm, uint durationMs);
     /// <summary>
     /// An animation is about to start streaming. The engine opens every animation with a
     /// StartOfAnimation carrying a tag, and the robot reports that tag back in its AnimationState, so a
@@ -95,8 +106,17 @@ public sealed class AnimationScheduler
     private bool _startSent;                   // has StartOfAnimation gone out for the running clip
     private long _generation;                  // bumped whenever the running animation changes
     private int _playedBaseline;               // robot's audio-frame count when the clip started
+    private readonly Random _random;
 
-    public AnimationScheduler(IAnimationSink sink) => _sink = sink;
+    /// <param name="random">
+    /// The engine's <c>IKeyFrame::sRNG</c>: it decides head and lift variability and which audio
+    /// alternative a keyframe plays. Pass a seeded instance for a reproducible timeline.
+    /// </param>
+    public AnimationScheduler(IAnimationSink sink, Random? random = null)
+    {
+        _sink = sink;
+        _random = random ?? new Random();
+    }
 
     /// <summary>
     /// Where the sound for an audio keyframe comes from. Left null, audio keyframes send silence so the
@@ -369,15 +389,30 @@ public sealed class AnimationScheduler
     }
 
     /// <summary>
-    /// Begins streaming the sound an audio keyframe asks for. A keyframe can name several alternatives; the
-    /// first one the source can produce is used, which mirrors the assets carrying alternates. With no
-    /// source, or none of the alternatives available, the track simply stays silent.
+    /// Begins streaming the sound an audio keyframe asks for.
+    ///
+    /// A keyframe can name several alternatives, and the engine picks <b>one</b> of them by probability:
+    /// <c>RobotAudioKeyFrame::GetAudioRef()</c> at 0x004F9E18 calls <c>GetAudioRefIndex(true)</c>, which
+    /// draws <c>RandDbl(1.0)</c> and walks the references' probabilities cumulatively until the draw falls
+    /// inside one (0x004F9AEC; see <see cref="ChooseAlternative"/>). Choosing the first alternative that
+    /// happened to decode, as this did before, made every clip play the same alternative every time.
+    ///
+    /// If the chosen alternative cannot be produced by this source, the remaining ones are tried in
+    /// order. That fallback is ours: the engine hands the event to Wwise and plays nothing on failure,
+    /// but a decoder gap on our side is not a reason to lose the sound entirely. With no source, or no
+    /// alternative available, the track stays silent and the timeline is unchanged.
     /// </summary>
     private void StartAudio(AudioKeyframe k)
     {
         var source = AudioSource;
-        if (source is null) return;
-        foreach (var id in k.EventIds)
+        if (source is null || k.EventIds.Length == 0) return;
+
+        int chosen = ChooseAlternative(k.EventIds.Length, k.Probabilities, _random.NextDouble());
+        var order = new List<long>(k.EventIds.Length);
+        if (chosen >= 0) order.Add(k.EventIds[chosen]);
+        for (int i = 0; i < k.EventIds.Length; i++) if (i != chosen) order.Add(k.EventIds[i]);
+
+        foreach (var id in order)
         {
             var pcm = source.GetPcm(id, k.Volume);
             if (pcm is null || pcm.Length == 0) continue;
@@ -385,6 +420,49 @@ public sealed class AnimationScheduler
             return;
         }
     }
+
+    /// <summary>
+    /// The engine's alternative selection, from <c>RobotAudioKeyFrame::SetMembersFromFlatBuf</c> at
+    /// 0x004F9E54 and <c>GetAudioRefIndex(bool)</c> at 0x004F9AEC.
+    ///
+    /// Loading: when the clip carries as many probabilities as event ids they are used as given; otherwise
+    /// every alternative gets <c>1 / n</c>. Selecting: with <paramref name="draw"/> uniform in [0, 1),
+    /// probabilities below 1e-5 in magnitude are skipped, and the first alternative whose cumulative range
+    /// <c>[acc, acc + p]</c> contains the draw is chosen. When no range contains it, which happens when the
+    /// probabilities sum to less than one, the engine returns index -1 and plays nothing; this returns -1
+    /// likewise. The engine's branch for probabilities summing above one (0x004F9FFA) was not traced, so
+    /// such a clip is treated as carrying no usable probabilities and falls back to <c>1 / n</c>.
+    /// </summary>
+    internal static int ChooseAlternative(int count, float[] probabilities, double draw)
+    {
+        if (count <= 0) return -1;
+        float[] p;
+        if (probabilities.Length == count && probabilities.Sum() <= 1f + 1e-4f)
+            p = probabilities;
+        else
+        {
+            p = new float[count];
+            Array.Fill(p, 1f / count);
+        }
+
+        float acc = 0f, r = (float)draw;
+        for (int i = 0; i < count; i++)
+        {
+            if (MathF.Abs(p[i]) < 1e-5f) continue;
+            float next = acc + p[i];
+            if (!(acc > r) && next >= r) return i;
+            acc = next;
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// The keyframe's variability, applied as <c>HeadAngleKeyFrame::GetStreamMessage</c> and
+    /// <c>LiftHeightKeyFrame::GetStreamMessage</c> apply it at stream time: <c>RandIntInRange(value - var,
+    /// value + var)</c> when the variability is non-zero, the value itself otherwise.
+    /// </summary>
+    private int WithVariability(int value, int variability) =>
+        variability == 0 ? value : _random.Next(value - variability, value + variability + 1);
 
     private int IndexOfFace(FaceKeyframe f)
     {
@@ -412,8 +490,14 @@ public sealed class AnimationScheduler
     {
         switch (k)
         {
-            case HeadKeyframe h: _sink.Head(h.AngleRad, h.DurationTimeMs); break;
-            case LiftKeyframe l: _sink.Lift(l.HeightMm, l.DurationTimeMs); break;
+            case HeadKeyframe h:
+                _sink.Head((sbyte)Math.Clamp(WithVariability(h.AngleDeg, h.VariabilityDeg), sbyte.MinValue, sbyte.MaxValue),
+                           h.DurationTimeMs);
+                break;
+            case LiftKeyframe l:
+                _sink.Lift((byte)Math.Clamp(WithVariability(l.HeightMm, l.VariabilityMm), byte.MinValue, byte.MaxValue),
+                           l.DurationTimeMs);
+                break;
             case BodyKeyframe b:
                 _sink.Body(b);
                 // Only a keyframe that actually moves the body needs stopping. Any radius the engine

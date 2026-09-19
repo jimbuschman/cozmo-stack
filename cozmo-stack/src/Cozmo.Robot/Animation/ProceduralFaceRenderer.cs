@@ -317,8 +317,13 @@ public static class ProceduralFaceRenderer
         }
     }
 
-    /// <summary>A neutral, wide-open pair of eyes: the face the robot shows when nothing else is happening.</summary>
-    public static ProceduralFacePose Neutral()
+    /// <summary>
+    /// The nominal eye box: both eyes at their base centres, unit scale, every corner half-rounded, lids
+    /// open. This is the pose the renderer's constants are measured against in the tests. It is <b>not</b>
+    /// the face the robot rests on; that is <see cref="ProceduralFacePose.ShippedNeutral"/>, taken from
+    /// the shipped neutral-face animation the engine itself loads.
+    /// </summary>
+    public static ProceduralFacePose Nominal()
     {
         var pose = new ProceduralFacePose();
         foreach (var eye in new[] { pose.Left, pose.Right })

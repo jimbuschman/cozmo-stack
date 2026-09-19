@@ -28,8 +28,10 @@ public class AnimationGapTests
             if (mulawFrame is not null) AudioWithSound++;
             What.Add("audio");
         }
-        public void Head(float radians, uint durationMs) => What.Add("head");
-        public void Lift(float heightMm, uint durationMs) => What.Add("lift");
+        public readonly List<(sbyte Deg, uint Dur)> Heads = new();
+        public readonly List<(byte Mm, uint Dur)> Lifts = new();
+        public void Head(sbyte angleDeg, uint durationMs) { Heads.Add((angleDeg, durationMs)); What.Add("head"); }
+        public void Lift(byte heightMm, uint durationMs) { Lifts.Add((heightMm, durationMs)); What.Add("lift"); }
         public void Body(BodyKeyframe k) { Bodies.Add(k); What.Add("body"); }
         public void AnimationStarted(byte tag) { Tags.Add(tag); }
         public void AnimationEnded() { Ends++; }
@@ -375,29 +377,142 @@ public class AnimationGapTests
         Assert.Equal(0, r.AudioWithSound);   // silence, because no keyframe asked for a sound
     }
 
+    /// <summary>
+    /// The engine picks one alternative by probability: RobotAudioKeyFrame::GetAudioRefIndex(true) at
+    /// 0x004F9AEC draws RandDbl(1.0) and walks the references' probabilities cumulatively, and
+    /// SetMembersFromFlatBuf at 0x004F9E54 gives every alternative 1/n when the clip carries no usable
+    /// probabilities. Before this the first alternative that decoded was always used, so a clip with
+    /// three alternatives always played the same one.
+    /// </summary>
+    [Theory]
+    [InlineData(new float[] { 0f, 1f, 0f }, 0.0, 1)]
+    [InlineData(new float[] { 0f, 1f, 0f }, 0.99, 1)]
+    [InlineData(new float[] { 1f, 0f, 0f }, 0.5, 0)]
+    [InlineData(new float[] { 0.5f, 0.5f, 0f }, 0.25, 0)]
+    [InlineData(new float[] { 0.5f, 0.5f, 0f }, 0.75, 1)]
+    [InlineData(new float[] { 0.2f, 0.3f, 0.5f }, 0.45, 1)]
+    [InlineData(new float[] { 0.2f, 0.3f, 0.5f }, 0.95, 2)]
+    [InlineData(new float[] { 0.5f, 0.2f, 0f }, 0.9, -1)]    // probabilities sum below one: the draw falls in the gap, the engine plays nothing
+    [InlineData(new float[] { }, 0.5, 1)]                    // no probabilities: 1/n each, so 0.5 lands in the second of three
+    [InlineData(new float[] { 1f }, 0.7, 2)]                 // wrong count: also 1/n each
+    public void TheAlternativeIsChosenByProbabilityAsTheEngineDoes(float[] probabilities, double draw, int expected)
+    {
+        Assert.Equal(expected, AnimationScheduler.ChooseAlternative(3, probabilities, draw));
+    }
+
     [Fact]
-    public void TheFirstAlternativeThatCanBeProducedIsUsed()
+    public void AClipWithProbabilitiesPlaysTheWeightedAlternativeNotTheFirst()
     {
         var r = new Recorder();
-        var s = new AnimationScheduler(r);
-        var source = new PickySource(wanted: 22);
+        var s = new AnimationScheduler(r, new Random(1));
+        var source = new PickySource(wanted: null);           // can produce anything
         s.AudioSource = source;
-        s.Play(Clip("t", new AudioKeyframe(0, new long[] { 11, 22, 33 }, 0.5f, Array.Empty<float>(), true),
+        // Only the second alternative carries any probability. The old code asked for 11 first and played it.
+        s.Play(Clip("t", new AudioKeyframe(0, new long[] { 11, 22, 33 }, 0.5f, new[] { 0f, 1f, 0f }, true),
                          new EventKeyframe(200, "end")), 0);
         Run(s, 0, 300);
 
-        Assert.Equal(new long[] { 11, 22 }, source.Asked);   // stops asking once one works
+        Assert.Equal(new long[] { 22 }, source.Asked);
+    }
+
+    /// <summary>
+    /// When the alternative the engine would have chosen cannot be produced by our decoder, the others are
+    /// tried in order. That fallback is ours, not the engine's, and this test names it as such.
+    /// </summary>
+    [Fact]
+    public void AnUnproducibleChosenAlternativeFallsBackToTheOthers()
+    {
+        var r = new Recorder();
+        var s = new AnimationScheduler(r, new Random(1));
+        var source = new PickySource(wanted: 33);
+        s.AudioSource = source;
+        s.Play(Clip("t", new AudioKeyframe(0, new long[] { 11, 22, 33 }, 0.5f, new[] { 0f, 1f, 0f }, true),
+                         new EventKeyframe(200, "end")), 0);
+        Run(s, 0, 300);
+
+        Assert.Equal(new long[] { 22, 11, 33 }, source.Asked);   // the chosen one first, then the rest in order
+    }
+
+    // ------------------------------------------------------- head and lift keyframes
+
+    /// <summary>
+    /// The engine streams a head keyframe as animHeadAngle (0x93) and a lift keyframe as animLiftHeight
+    /// (0x94): HeadAngleKeyFrame::GetStreamMessage at 0x004F8C08 and LiftHeightKeyFrame::GetStreamMessage
+    /// at 0x004F8F80 build exactly those, from the duration and the whole-degree angle or whole-millimetre
+    /// height. Before this the player sent SetHeadAngle and SetLiftHeight motor commands with invented
+    /// speed and acceleration values. The motors moved on hardware, but that is not what the engine sends.
+    /// </summary>
+    [Fact]
+    public void HeadAndLiftKeyframesGoOutAsAnimationKeyframesNotMotorCommands()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        var clip = Clip("t", new HeadKeyframe(0, 120, -7, 0), new LiftKeyframe(0, 250, 60, 0), new EventKeyframe(300, "end"));
+        robot.Animations.Scheduler.Play(clip, 0);
+        Run(robot.Animations.Scheduler, 0, 400);
+        // The engine spaces packets 2 ms apart and batches, so a message queued inside that window waits
+        // for the next connection update. A live transport ticks on its own thread; here it is ticked
+        // by hand so nothing is left pending when the outbound frames are read.
+        for (int i = 0; i < 10; i++) { Thread.Sleep(3); robot.Transport.OfflineTick(); }
+
+        // Nothing acknowledges the offline connection, so every tick re-sends the unacked reliable frames;
+        // each message is counted once by its sequence id.
+        var sent = robot.Transport.OfflineOutbound
+            .SelectMany(f => f.Messages)
+            .Where(m => m.Type is ReliableMessageType.SingleReliableMessage or ReliableMessageType.SingleUnreliableMessage)
+            .DistinctBy(m => m.Seq)
+            .Select(m => RobotMessage.Parse(m.Payload))
+            .ToList();
+
+        var head = Assert.Single(sent.OfType<Protocol.HeadAngle>());
+        Assert.Equal((sbyte)-7, head.AngleDeg);
+        Assert.Equal((ushort)120, head.DurationTimeMs);
+        var lift = Assert.Single(sent.OfType<Protocol.LiftHeight>());
+        Assert.Equal((byte)60, lift.HeightMm);
+        Assert.Equal((ushort)250, lift.DurationTimeMs);
+        Assert.Empty(sent.OfType<SetHeadAngle>());
+        Assert.Empty(sent.OfType<SetLiftHeight>());
+    }
+
+    /// <summary>
+    /// GetStreamMessage applies the keyframe's variability at stream time with
+    /// RandIntInRange(value - var, value + var) from IKeyFrame::sRNG, and leaves the value alone when the
+    /// variability is zero. The old player ignored variability entirely.
+    /// </summary>
+    [Fact]
+    public void VariabilityIsAppliedToHeadAndLiftKeyframesAtStreamTime()
+    {
+        var exact = new Recorder();
+        var s0 = new AnimationScheduler(exact, new Random(7));
+        s0.Play(Clip("t", new HeadKeyframe(0, 100, 10, 0), new LiftKeyframe(0, 100, 40, 0), new EventKeyframe(200, "end")), 0);
+        Run(s0, 0, 300);
+        Assert.Equal((sbyte)10, Assert.Single(exact.Heads).Deg);
+        Assert.Equal((byte)40, Assert.Single(exact.Lifts).Mm);
+
+        var seen = new HashSet<sbyte>();
+        for (int seed = 0; seed < 40; seed++)
+        {
+            var r = new Recorder();
+            var s = new AnimationScheduler(r, new Random(seed));
+            s.Play(Clip("t", new HeadKeyframe(0, 100, 10, 5), new LiftKeyframe(0, 100, 40, 8), new EventKeyframe(200, "end")), 0);
+            Run(s, 0, 300);
+            var head = Assert.Single(r.Heads);
+            Assert.InRange(head.Deg, (sbyte)5, (sbyte)15);
+            Assert.InRange(Assert.Single(r.Lifts).Mm, (byte)32, (byte)48);
+            seen.Add(head.Deg);
+        }
+        Assert.True(seen.Count > 1, "variability must actually vary the angle");
     }
 
     private sealed class PickySource : IAnimationAudioSource
     {
-        private readonly long _wanted;
+        private readonly long? _wanted;
         public readonly List<long> Asked = new();
-        public PickySource(long wanted) => _wanted = wanted;
+        /// <param name="wanted">The only event this source can produce, or null to produce any.</param>
+        public PickySource(long? wanted) => _wanted = wanted;
         public short[]? GetPcm(long eventId, float volume)
         {
             Asked.Add(eventId);
-            return eventId == _wanted ? CozmoAudio.Tone(440, TimeSpan.FromMilliseconds(50)) : null;
+            return _wanted is null || eventId == _wanted ? CozmoAudio.Tone(440, TimeSpan.FromMilliseconds(50)) : null;
         }
         public string? NameOf(long eventId) => null;
     }

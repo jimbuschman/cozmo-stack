@@ -20,10 +20,13 @@ public enum Expression
 /// <summary>
 /// A small set of expressions built from the eye parameters.
 ///
-/// <b>These are ours, not Anki's.</b> The parameter names and order come from the engine, and the values in
-/// the shipped animation assets show the ranges each one moves through, but the engine's named expressions
-/// have not been recovered. What is here is built from the parameter semantics the names imply: a happy face
-/// raises the lower lids, an angry one tilts the upper lids inward, and so on.
+/// <b>All but <see cref="Expression.Neutral"/> are ours, not Anki's.</b> The engine has no named
+/// expressions: Cozmo's faces come from animation clips. The one face the engine does hold as a value is the
+/// resting face, which it loads from the shipped neutral-face animation; <see cref="Expression.Neutral"/> is
+/// exactly that (<see cref="ProceduralFacePose.ShippedNeutral"/>). The rest are built from the parameter
+/// semantics the names imply, on top of that resting face: a happy face raises the lower lids, an angry one
+/// tilts the upper lids inward, and so on. They are a local convenience for exercising the renderer and
+/// are labelled as such; nothing in the stack's behaviour layers depends on them.
 ///
 /// To reproduce an original expression exactly, play the animation clip that contains it rather than using
 /// one of these. <c>robot.Animations.Play("anim_...")</c> uses the real asset data.
@@ -33,7 +36,7 @@ public static class Expressions
     /// <summary>Builds the pose for a named expression.</summary>
     public static ProceduralFacePose Get(Expression e) => e switch
     {
-        Expression.Neutral => ProceduralFaceRenderer.Neutral(),
+        Expression.Neutral => ProceduralFacePose.ShippedNeutral(),
         Expression.Happy => Happy(),
         Expression.Sad => Sad(),
         Expression.Angry => Angry(),
@@ -45,10 +48,11 @@ public static class Expressions
         Expression.LookingRight => Looking(8f, 0f),
         Expression.LookingUp => Looking(0f, -5f),
         Expression.LookingDown => Looking(0f, 5f),
-        _ => ProceduralFaceRenderer.Neutral(),
+        _ => ProceduralFacePose.ShippedNeutral(),
     };
 
-    private static ProceduralFacePose Base() => ProceduralFaceRenderer.Neutral();
+    /// <summary>The shipped resting face, which every local expression is a variation of.</summary>
+    private static ProceduralFacePose Base() => ProceduralFacePose.ShippedNeutral();
 
     private static ProceduralFacePose Both(Action<Eye, bool> apply)
     {

@@ -8,8 +8,10 @@ public enum IdleAction { None, Blink, EyeDart, HeadMove, LiftMove, BodyMove }
 /// <summary>One idle action, with everything needed to reproduce and explain it.</summary>
 public sealed record IdleEvent(IdleAction Action, double AtMs)
 {
-    /// <summary>The value the action used: radians for head, mm for lift, mm/s for body, pixels for a dart.</summary>
+    /// <summary>The value the action used: radians for head, mm for lift, mm/s for body, horizontal pixels for a dart.</summary>
     public double Amount { get; init; }
+    /// <summary>A dart's vertical shift in pixels; zero for every other action.</summary>
+    public double AmountY { get; init; }
     public double DurationMs { get; init; }
     /// <summary>Why nothing happened, when nothing did.</summary>
     public string? Suppressed { get; init; }
@@ -129,10 +131,16 @@ public sealed class IdleBehavior
                 : new IdleEvent(IdleAction.Blink, nowMs) { Suppressed = "the face track is owned" });
 
         if (Due(ref _nextDartMs, nowMs, _p.EyeDartSpacingMinMs, _p.EyeDartSpacingMaxMs))
+        {
+            // GenerateEyeShift draws whole pixels in both axes and a whole-millisecond duration with
+            // RandIntInRange, each end inclusive.
+            int reach = (int)_p.EyeDartMaxDistancePix;
+            int dx = _random.Next(-reach, reach + 1), dy = _random.Next(-reach, reach + 1);
+            int dur = _random.Next((int)_p.EyeDartMinDurationMs, (int)_p.EyeDartMaxDurationMs + 1);
             Raise(done, faceFree
-                ? Do(IdleAction.EyeDart, nowMs, Between(-_p.EyeDartMaxDistancePix, _p.EyeDartMaxDistancePix),
-                     Between(_p.EyeDartMinDurationMs, _p.EyeDartMaxDurationMs))
+                ? Do(IdleAction.EyeDart, nowMs, dx, dur, dy)
                 : new IdleEvent(IdleAction.EyeDart, nowMs) { Suppressed = "the face track is owned" });
+        }
 
         if (mayMove && Due(ref _nextHeadMs, nowMs, _p.HeadMovementSpacingMinMs, _p.HeadMovementSpacingMaxMs))
             Raise(done, headFree
@@ -176,24 +184,26 @@ public sealed class IdleBehavior
     /// </summary>
     public bool ExecuteMotors { get; set; } = true;
 
-    private IdleEvent Do(IdleAction action, double nowMs, double amount = 0, double durationMs = 0)
+    private IdleEvent Do(IdleAction action, double nowMs, double amount = 0, double durationMs = 0, double amountY = 0)
     {
         ActionCount++;
         bool motor = action is IdleAction.HeadMove or IdleAction.LiftMove or IdleAction.BodyMove;
-        if (!motor || ExecuteMotors) Perform(action, nowMs, amount, durationMs);
-        return new IdleEvent(action, nowMs) { Amount = amount, DurationMs = durationMs };
+        if (!motor || ExecuteMotors) Perform(action, nowMs, amount, durationMs, amountY);
+        return new IdleEvent(action, nowMs) { Amount = amount, AmountY = amountY, DurationMs = durationMs };
     }
 
     /// <summary>
     /// Carries out one idle action on the robot.
     ///
-    /// Blinks and eye darts go through the M5 procedural face, which is the closest thing this stack has
-    /// to the engine's face layering. Head and lift use the M4 motion API at the engine's own durations.
+    /// Blinks and eye darts go through the M5 procedural face as transient layers over a base pose, which
+    /// is how the engine's FaceLayerManager composes them. Head and lift use the M4 motion API at the
+    /// engine's own durations; the engine itself streams them as HeadAngle/LiftHeight keyframes of its live
+    /// animation (UpdateLiveAnimation at 0x0057D5F8), a difference that is recorded, not hidden.
     /// Body movement is deliberately **not** driven: a 10 mm/s shuffle is within the engine's parameters,
     /// but sending wheel commands to an unattended robot is not something to switch on without watching
     /// it happen, so it is decided and reported and left for hardware acceptance to enable.
     /// </summary>
-    private void Perform(IdleAction action, double nowMs, double amount, double durationMs)
+    private void Perform(IdleAction action, double nowMs, double amount, double durationMs, double amountY)
     {
         try
         {
@@ -203,7 +213,7 @@ public sealed class IdleBehavior
                     Blink(nowMs);
                     break;
                 case IdleAction.EyeDart:
-                    Dart(amount, nowMs, durationMs);
+                    Dart((int)amount, (int)amountY, nowMs, durationMs);
                     break;
                 case IdleAction.HeadMove when Execute:
                     _ = _robot.Motion.SetHeadAngleAsync(
@@ -227,31 +237,69 @@ public sealed class IdleBehavior
 
     // ---------------------------------------------------------------- the face
     //
-    // How the engine does this, and why the first attempt here was wrong.
+    // How the engine does this. The idle face is the streamer's base face with named, time-limited
+    // layers combined onto it: FaceLayerManager::KeepFaceAlive at 0x0058D374 counts down a blink timer
+    // and an eye-dart timer and, when one expires, generates a layer and adds it with AddLayer (blink)
+    // or AddPersistentLayer / AddToPersistentLayer (dart). ProceduralFace::Combine at 0x005846A8
+    // applies a layer by ADDING its eye centres, eye angles and lid angles, MULTIPLYING its eye scales
+    // and face scales, adding its face angle and adding its face position. A layer built from a
+    // default-constructed ProceduralFace (scales 1, everything else 0) is therefore the identity, and a
+    // blink or dart is expressed purely as multipliers on the scales and offsets on the positions. The
+    // base face is never written.
     //
-    // A dart is not a change to the face; it is a *layer* over it. The engine's
-    // TrackLayerComponent::AddOrUpdateEyeShift(trackMask, name, x, y, durationMs, ...) calls
-    // FaceLayerManager::GenerateEyeShift(..., durationMs, ProceduralFaceKeyFrame&) and stores the result
-    // through AddPersistentLayer(name, Track<ProceduralFaceKeyFrame>). So each shift is a named,
-    // time-limited keyframe combined onto a base face that is never itself modified, and
-    // RemoveEyeShift takes it away again. Blinks work the same way, via AddBlink.
+    // The first implementation here read Face.Current, offset it and wrote it back, so every dart
+    // compounded the last and the eyes drifted and grew until they merged on hardware. The second kept a
+    // base pose but invented both the blink (upper lids shut for 100 ms) and the dart geometry (an
+    // EyeCenterX shift, the eye away from the dart grown by 0.1, scales clamped to 0.92..1.08). Both are
+    // now taken from the binary:
     //
-    // The first implementation here instead read Face.Current, offset it, and wrote it back as the new
-    // persistent face. Every dart therefore compounded the last: positions random-walked away from centre
-    // and EyeScale grew by another 0.1 each time, until on hardware the two eyes merged into one large
-    // rectangle. A blink then restored that corrupted pose rather than a stable one.
+    //   * Blink: ProceduralFaceDrawer::GetNextBlinkFrame at 0x00585F18 steps through a fixed table of
+    //     seven frames (BlinkFrames below), each a pair of multipliers on EyeScaleX and EyeScaleY and a
+    //     duration, then restores the face. FaceLayerManager::GenerateBlink at 0x0058D2AC turns them into
+    //     keyframes whose trigger times are the cumulative durations.
+    //   * Dart: FaceLayerManager::GenerateEyeShift at 0x0058D100 draws x and y in
+    //     [-EyeDartMaxDistance, +EyeDartMaxDistance] pixels and a duration in
+    //     [EyeDartMinDuration, EyeDartMaxDuration], then calls ProceduralFace::LookAt at 0x00584158 with
+    //     (x, y, 5, 5, EyeDartUpMaxScale, EyeDartDownMinScale, EyeDartOuterEyeScaleIncrease). LookAt
+    //     moves the WHOLE FACE by (x, y), scales EyeScaleY only (up looks bigger, down smaller, and the
+    //     eye on the side being looked towards a little bigger than the other), and turns the eyes
+    //     inwards when looking down. See Dart below for the arithmetic.
     //
-    // What is reproduced here: a stable base pose, transient offsets from it with a duration, and a
-    // return to base when the transient expires. What is NOT claimed is the exact native use of
-    // EyeDartUpMaxScale and EyeDartDownMinScale; they are applied as clamps rather than as an invented
-    // formula. Whatever the remaining fidelity question, nothing accumulates.
+    // What is not established is the dart's lifecycle. GenerateEyeShift's keyframe is appended to a
+    // persistent layer whose replay logic (ITrackLayerManager::ApplyLayersToFrame at 0x0058E644) trims
+    // the layer to its last keyframe and resets its stream time once it runs out; read statically, that
+    // does not settle whether the shifted gaze is held until the next dart or dropped. This keeps the
+    // earlier reading, a transient that returns to base when its duration expires, and labels it as a
+    // local reading rather than a recovered fact.
+
+    /// <summary>
+    /// The engine's blink, from the table <c>ProceduralFaceDrawer::GetNextBlinkFrame</c> copies out of
+    /// .rodata at 0x00C5AAD8: seven frames of (EyeScaleX multiplier, EyeScaleY multiplier, duration ms).
+    /// The eyes squash flat while widening, hold shut for one frame, then reopen; the last frame lingers
+    /// for 100 ms before the base face is restored. Each frame lasts one 33 ms animation frame except the
+    /// last.
+    /// </summary>
+    public static readonly IReadOnlyList<(float ScaleX, float ScaleY, uint DurationMs)> BlinkFrames = new[]
+    {
+        (1.05f, 0.85f, 33u),
+        (1.2f, 0.6f, 33u),
+        (2.5f, 0.1f, 33u),
+        (5.0f, 0.05f, 33u),     // the closed frame; the engine also flips its scanline parity here
+        (2.0f, 0.15f, 33u),
+        (1.2f, 0.7f, 33u),
+        (1.0f, 0.9f, 100u),
+    };
+
+    /// <summary>The whole blink, first frame to base restored: 6 x 33 + 100 + 33 = 331 ms.</summary>
+    public static readonly double BlinkTotalMs = BlinkFrames.Sum(f => f.DurationMs) + 33;
 
     /// <summary>The pose every transient is measured from. Never modified by idle.</summary>
     private ProceduralFacePose? _base;
 
-    /// <summary>The transient currently displayed, and when it expires.</summary>
-    private ProceduralFacePose? _transient;
-    private double _transientEndsAtMs = double.NegativeInfinity;
+    /// <summary>The transient in progress: a pose as a function of the time since it started, and when it ends.</summary>
+    private Func<double, ProceduralFacePose>? _transient;
+    private bool _transientVaries;
+    private double _transientStartMs, _transientEndsAtMs = double.NegativeInfinity;
 
     /// <summary>
     /// Captures the base pose the first time idle touches the face, so darts and blinks are measured from
@@ -271,80 +319,163 @@ public sealed class IdleBehavior
         lock (_gate) { _base = null; _transient = null; _transientEndsAtMs = double.NegativeInfinity; }
     }
 
-    /// <summary>Displays a transient pose for a while, after which the face returns to base.</summary>
-    private void ShowTransient(ProceduralFacePose pose, double nowMs, double durationMs)
+    /// <summary>
+    /// Starts a transient that lasts <paramref name="durationMs"/> and then gives way to the base.
+    /// <paramref name="varies"/> says whether the pose changes over the transient's life (a blink) or is
+    /// held (a dart), so a held pose is rendered once rather than every tick.
+    /// </summary>
+    private void ShowTransient(Func<double, ProceduralFacePose> pose, double nowMs, double durationMs, bool varies)
     {
         lock (_gate)
         {
             _transient = pose;
+            _transientVaries = varies;
+            _transientStartMs = nowMs;
             _transientEndsAtMs = nowMs + Math.Max(1, durationMs);
         }
-        if (Execute) _robot.Face.SetParameters(pose);
+        if (Execute) _robot.Face.SetParameters(pose(0));
     }
 
     /// <summary>
-    /// Puts the base pose back when the current transient has run its duration. This is the half that was
-    /// missing: without it a dart stayed on screen until the next one moved it further.
+    /// Advances the transient in progress: re-evaluates a time-varying one, such as a blink stepping
+    /// through its frames, and puts the base pose back once it has run its duration.
     /// </summary>
     private void ExpireTransient(double nowMs)
     {
-        ProceduralFacePose? restore = null;
+        ProceduralFacePose? show = null;
         lock (_gate)
         {
-            if (_transient is null || nowMs < _transientEndsAtMs) return;
-            _transient = null;
-            _transientEndsAtMs = double.NegativeInfinity;
-            restore = _base?.Clone();
+            if (_transient is null) return;
+            if (nowMs < _transientEndsAtMs) show = _transientVaries ? _transient(nowMs - _transientStartMs) : null;
+            else
+            {
+                _transient = null;
+                _transientEndsAtMs = double.NegativeInfinity;
+                show = _base?.Clone();
+            }
         }
-        if (restore is not null && Execute) _robot.Face.SetParameters(restore);
+        if (show is not null && Execute) _robot.Face.SetParameters(show);
     }
 
-    /// <summary>A blink: lids closed over the base pose, then back to the base pose.</summary>
+    /// <summary>
+    /// A blink: the engine's seven-frame squash-and-reopen sequence layered onto the base pose, then the
+    /// base pose again. Between frames the engine interpolates linearly
+    /// (<c>ProceduralFaceKeyFrame::GetInterpolatedFace</c>), which only shows on the 100 ms last frame.
+    /// </summary>
     private void Blink(double nowMs)
     {
-        var shut = Base().Clone();
-        shut.Left[(int)EyeParam.UpperLidY] = 1f;
-        shut.Right[(int)EyeParam.UpperLidY] = 1f;
-        // A blink is brief; the duration bounds it the same way a dart is bounded.
-        ShowTransient(shut, nowMs, BlinkDurationMs);
+        var b = Base();
+        ShowTransient(t => BlinkPose(b, t), nowMs, BlinkTotalMs, varies: true);
     }
 
-    /// <summary>How long the lids stay shut. The shipped parameters do not name a blink duration.</summary>
-    private const double BlinkDurationMs = 100;
+    /// <summary>
+    /// The blink layer at <paramref name="elapsedMs"/> since the blink started, combined onto
+    /// <paramref name="b"/>. Keyframe i is reached at the cumulative time of frames 0..i and the final
+    /// keyframe restores unit multipliers; before the first keyframe is reached the base shows unchanged.
+    /// </summary>
+    internal static ProceduralFacePose BlinkPose(ProceduralFacePose b, double elapsedMs)
+    {
+        // keyframe times and multipliers, the last being the restore frame
+        var times = new double[BlinkFrames.Count + 1];
+        var sx = new float[BlinkFrames.Count + 1];
+        var sy = new float[BlinkFrames.Count + 1];
+        double t = 0;
+        for (int i = 0; i < BlinkFrames.Count; i++)
+        {
+            t += BlinkFrames[i].DurationMs;
+            times[i] = t; sx[i] = BlinkFrames[i].ScaleX; sy[i] = BlinkFrames[i].ScaleY;
+        }
+        times[^1] = t + 33; sx[^1] = 1f; sy[^1] = 1f;
+
+        float mx = 1f, my = 1f;
+        if (elapsedMs >= times[0])
+        {
+            int i = 0;
+            while (i + 1 < times.Length && elapsedMs >= times[i + 1]) i++;
+            if (i + 1 < times.Length)
+            {
+                float k = (float)((elapsedMs - times[i]) / (times[i + 1] - times[i]));
+                mx = sx[i] + (sx[i + 1] - sx[i]) * k;
+                my = sy[i] + (sy[i + 1] - sy[i]) * k;
+            }
+            else { mx = sx[^1]; my = sy[^1]; }
+        }
+
+        var pose = b.Clone();
+        foreach (var eye in new[] { pose.Left, pose.Right })
+        {
+            eye[EyeParam.EyeScaleX] = Eye.Clip(EyeParam.EyeScaleX, eye[EyeParam.EyeScaleX] * mx);
+            eye[EyeParam.EyeScaleY] = Eye.Clip(EyeParam.EyeScaleY, eye[EyeParam.EyeScaleY] * my);
+        }
+        return pose;
+    }
 
     /// <summary>
-    /// An eye dart: both eyes shift from the base by the same amount, and the eye further from the
-    /// direction of travel grows slightly, which is what EyeDartOuterEyeScaleIncrease describes.
-    ///
-    /// Everything is computed from the base and clamped, so repeating it cannot walk the eyes off centre
-    /// or inflate them.
+    /// An eye dart: the engine's <c>GenerateEyeShift</c> draws both a horizontal and a vertical shift in
+    /// pixels, each uniformly in <c>[-EyeDartMaxDistance, +EyeDartMaxDistance]</c> as whole numbers, and
+    /// hands them to <c>ProceduralFace::LookAt</c> with the shipped scale parameters. The result is a
+    /// whole-face move with the eye heights following the gaze; see <see cref="DartPose"/>.
     /// </summary>
-    private void Dart(double pixels, double nowMs, double durationMs)
+    private void Dart(int xPix, int yPix, double nowMs, double durationMs)
     {
         var b = Base();
-        var pose = b.Clone();
-        float shift = (float)Math.Clamp(pixels, -_p.EyeDartMaxDistancePix, _p.EyeDartMaxDistancePix);
-
-        pose.Left[(int)EyeParam.EyeCenterX] = b.Left[(int)EyeParam.EyeCenterX] + shift;
-        pose.Right[(int)EyeParam.EyeCenterX] = b.Right[(int)EyeParam.EyeCenterX] + shift;
-
-        var outer = shift < 0 ? pose.Right : pose.Left;
-        var outerBase = shift < 0 ? b.Right : b.Left;
-        outer[(int)EyeParam.EyeScaleX] = Scale(outerBase[(int)EyeParam.EyeScaleX]);
-        outer[(int)EyeParam.EyeScaleY] = Scale(outerBase[(int)EyeParam.EyeScaleY]);
-
-        ShowTransient(pose, nowMs, durationMs);
+        var pose = DartPose(b, xPix, yPix, _p);
+        ShowTransient(_ => pose, nowMs, durationMs, varies: false);
     }
 
     /// <summary>
-    /// One eye's scale for a dart: the base scale plus the outer-eye increase, held inside the shipped
-    /// min and max. Clamping against the parameters rather than adding freely is what stops the growth;
-    /// the engine's exact use of EyeDartUpMaxScale and EyeDartDownMinScale is not established, so they
-    /// are not invented into a formula here.
+    /// <c>ProceduralFace::LookAt(x, y, xMax, yMax, lookUpMaxScale, lookDownMinScale,
+    /// outerEyeScaleIncrease)</c> at 0x00584158, applied as a layer onto <paramref name="b"/>, with the
+    /// arguments <c>FaceLayerManager::GenerateEyeShift</c> at 0x0058D100 passes: xMax = yMax = 5 and the
+    /// three scale parameters from the idle tunables.
+    ///
+    /// <list type="bullet">
+    /// <item>The face position moves by (x, y): <c>SetFacePosition</c>, added to the base's centre.</item>
+    /// <item>A vertical factor <c>v = down + (up - down) * min(1, (yMax - y) / (2 yMax))</c>: 1.1 looking
+    /// fully up, 0.975 straight ahead, 0.85 looking fully down.</item>
+    /// <item>A horizontal asymmetry <c>h = min(1, |x| / xMax) * outerEyeScaleIncrease</c>. Looking left
+    /// (x &lt; 0) the left eye's EyeScaleY becomes <c>v (1 + h)</c> and the right eye's <c>v (1 - h)</c>;
+    /// looking right the reverse. Only EyeScaleY changes; EyeScaleX does not.</item>
+    /// <item>Looking down (y &gt; 0) the eyes converge: EyeCenterX moves by <c>+2 min(1, y / yMax)</c> on
+    /// the left eye and the negative of that on the right.</item>
+    /// </list>
+    ///
+    /// Two things the engine does that this does not: <c>SetFacePosition</c> clamps the move so the eyes'
+    /// bounding box stays on the 128 x 64 canvas, which a six-pixel shift never reaches from the resting
+    /// face; and every scale passes through <c>ProceduralFace::Clip</c>, which only enforces a floor of
+    /// zero here. <c>EyeDartMinScale</c> and <c>EyeDartMaxScale</c> are not consulted by this path in the
+    /// engine and are not applied.
     /// </summary>
-    private float Scale(float baseScale) =>
-        (float)Math.Clamp(baseScale + _p.EyeDartOuterEyeScaleIncrease,
-                          _p.EyeDartMinScale, _p.EyeDartMaxScale);
+    internal static ProceduralFacePose DartPose(ProceduralFacePose b, int xPix, int yPix, IdleParameters p)
+    {
+        const float xMax = 5f, yMax = 5f;
+        float x = xPix, y = yPix;
+        float up = (float)p.EyeDartUpMaxScale, down = (float)p.EyeDartDownMinScale;
+        float inc = (float)p.EyeDartOuterEyeScaleIncrease;
+
+        float fy = MathF.Min(1f, (yMax - y) / (2f * yMax));
+        float vertical = down + (up - down) * fy;
+        float fx = MathF.Min(1f, MathF.Abs(x) / xMax);
+        float towards = vertical * (1f + fx * inc);   // the eye on the side being looked towards
+        float away = vertical * (1f - fx * inc);
+
+        var pose = b.Clone();
+        pose.FaceCenterX = b.FaceCenterX + x;
+        pose.FaceCenterY = b.FaceCenterY + y;
+
+        float leftFactor = x < 0 ? towards : away;
+        float rightFactor = x < 0 ? away : towards;
+        pose.Left[EyeParam.EyeScaleY] = Eye.Clip(EyeParam.EyeScaleY, b.Left[EyeParam.EyeScaleY] * leftFactor);
+        pose.Right[EyeParam.EyeScaleY] = Eye.Clip(EyeParam.EyeScaleY, b.Right[EyeParam.EyeScaleY] * rightFactor);
+
+        if (y > 0)
+        {
+            float converge = 2f * MathF.Min(1f, y / yMax);
+            pose.Left[EyeParam.EyeCenterX] = b.Left[EyeParam.EyeCenterX] + converge;
+            pose.Right[EyeParam.EyeCenterX] = b.Right[EyeParam.EyeCenterX] - converge;
+        }
+        return pose;
+    }
 
     private void Raise(List<IdleEvent> into, IdleEvent e)
     {

@@ -42,11 +42,21 @@ public sealed class RobotAnimationSink : IAnimationSink
         else _robot.Transport.Send(new AudioSample { Samples = mulawFrame }, flush: true);
     }
 
-    public void Head(float radians, uint durationMs) =>
-        _robot.Transport.Send(new SetHeadAngle(radians, 10f, 10f, durationMs / 1000f, 0), flush: true);
+    /// <summary>
+    /// Sends the head keyframe the way the engine does: as <c>animHeadAngle</c> (0x93), the message
+    /// <c>HeadAngleKeyFrame::GetStreamMessage</c> at 0x004F8C08 builds. The duration is stored as a u16
+    /// there (<c>strh</c>), so it is truncated the same way here.
+    ///
+    /// This replaced a <c>SetHeadAngle</c> motor command carrying invented speed and acceleration values.
+    /// The command moved the head on hardware, but it is not what the engine sends inside an animation and
+    /// it discarded the keyframe's variability.
+    /// </summary>
+    public void Head(sbyte angleDeg, uint durationMs) =>
+        _robot.Transport.Send(new Protocol.HeadAngle { DurationTimeMs = (ushort)durationMs, AngleDeg = angleDeg }, flush: true);
 
-    public void Lift(float heightMm, uint durationMs) =>
-        _robot.Transport.Send(new SetLiftHeight(heightMm, 3f, 20f, durationMs / 1000f, 0), flush: true);
+    /// <summary>As <see cref="Head"/>, for <c>animLiftHeight</c> (0x94) from <c>LiftHeightKeyFrame::GetStreamMessage</c> at 0x004F8F80.</summary>
+    public void Lift(byte heightMm, uint durationMs) =>
+        _robot.Transport.Send(new Protocol.LiftHeight { DurationTimeMs = (ushort)durationMs, HeightMm = heightMm }, flush: true);
 
     /// <summary>
     /// Opens the animation on the robot. AnimationStreamer::SendStartOfAnimation at 0x0057C400 in
@@ -312,7 +322,7 @@ public sealed class CozmoFace
     internal CozmoFace(CozmoRobot robot) => _robot = robot;
 
     /// <summary>The pose last sent, so a caller can read it back and adjust one parameter.</summary>
-    public ProceduralFacePose Current { get; private set; } = ProceduralFaceRenderer.Neutral();
+    public ProceduralFacePose Current { get; private set; } = ProceduralFacePose.ShippedNeutral();
 
     /// <summary>Renders a pose and shows it. Returns the bitmap that was sent, for inspection and tests.</summary>
     public FaceBitmap SetParameters(ProceduralFacePose pose)

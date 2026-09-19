@@ -265,8 +265,8 @@ public class AnimationAssetTests
         public CountingSink(Action onFace) => _onFace = onFace;
         public void Face(FaceBitmap bitmap) => _onFace();
         public void Audio(byte[]? mulawFrame) { }
-        public void Head(float radians, uint durationMs) { }
-        public void Lift(float heightMm, uint durationMs) { }
+        public void Head(sbyte angleDeg, uint durationMs) { }
+        public void Lift(byte heightMm, uint durationMs) { }
         public void Body(BodyKeyframe keyframe) { }
         public void AnimationStarted(byte tag) { }
         public void AnimationEnded() { }

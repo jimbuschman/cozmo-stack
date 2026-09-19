@@ -34,8 +34,8 @@ public class HardeningTests
         private readonly object _gate = new();
         public void Face(FaceBitmap b) { }
         public void Audio(byte[]? f) { }
-        public void Head(float r, uint d) { }
-        public void Lift(float h, uint d) { }
+        public void Head(sbyte r, uint d) { }
+        public void Lift(byte h, uint d) { }
         public void AnimationStarted(byte tag) { }
         public void AnimationEnded() { }
         public void Body(BodyKeyframe k) { }

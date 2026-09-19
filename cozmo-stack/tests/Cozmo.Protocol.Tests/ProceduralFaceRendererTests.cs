@@ -42,7 +42,7 @@ public class ProceduralFaceRendererTests
         return n;
     }
 
-    private static ProceduralFacePose Neutral() => ProceduralFaceRenderer.Neutral();
+    private static ProceduralFacePose Neutral() => ProceduralFaceRenderer.Nominal();
 
     // ---------------------------------------------------------------- the canvas and (64, 32)
 

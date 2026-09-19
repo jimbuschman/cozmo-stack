@@ -15,8 +15,18 @@ public sealed class AnimationGroup
     public IReadOnlyList<AnimationGroupEntry> Entries { get; init; } = Array.Empty<AnimationGroupEntry>();
 
     /// <summary>
-    /// Chooses an entry by weight. Cooldowns are carried in the data but not enforced here: what the engine
-    /// does with them is not established, so honouring them would be a guess.
+    /// Chooses an entry by weight, as <c>AnimationGroup::GetAnimationName</c> at 0x0058A970 in
+    /// libcozmoEngine.so does: the candidates' weights are summed, <c>RandDbl(total)</c> is drawn, and the
+    /// entries are walked subtracting each weight until the draw goes negative. Entries whose mood does
+    /// not match are excluded, and when nothing matches the engine retries with the Default mood, which
+    /// the fallback to the whole pool below reproduces for this build's all-Default assets.
+    ///
+    /// Two things the engine also does are carried in the data but not enforced here, and remain deferred:
+    /// cooldowns (<c>AnimationGroupContainer::IsAnimationOnCooldown</c> excludes an entry until
+    /// <c>now &gt;= selectedAt + CooldownTime_Sec</c>, and when every entry is on cooldown the one soonest to
+    /// come off it is chosen), and the optional head-angle gate (<c>UseHeadAngle</c> with
+    /// <c>HeadAngleMin_Deg</c>/<c>HeadAngleMax_Deg</c>, used by three CozmoSays groups). The mechanism is
+    /// now recovered; enforcing it needs a cooldown clock and the current head angle at selection time.
     /// </summary>
     public AnimationGroupEntry? Choose(Random random, string? mood = null)
     {
@@ -172,8 +182,8 @@ public sealed class AnimationLibrary
                     FaceCenterY = t.F32(3),
                     FaceScaleX = t.F32(4, 1f),
                     FaceScaleY = t.F32(5, 1f),
-                    Left = left.Length == Eye.ParamCount ? new Eye(left) : new Eye(),
-                    Right = right.Length == Eye.ParamCount ? new Eye(right) : new Eye(),
+                    Left = left.Length == Eye.ParamCount ? Eye.FromAsset(left) : new Eye(),
+                    Right = right.Length == Eye.ParamCount ? Eye.FromAsset(right) : new Eye(),
                 }));
             }
 

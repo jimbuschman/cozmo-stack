@@ -19,8 +19,8 @@ public class AnimationTests
         public readonly List<(string What, double At)> Calls = new();
         public readonly List<string> Events = new();
         public readonly List<FaceBitmap> Faces = new();
-        public readonly List<(float Rad, uint Dur)> Heads = new();
-        public readonly List<(float Mm, uint Dur)> Lifts = new();
+        public readonly List<(sbyte Deg, uint Dur)> Heads = new();
+        public readonly List<(byte Mm, uint Dur)> Lifts = new();
         public readonly List<BodyKeyframe> Bodies = new();
         public readonly List<byte> Tags = new();
         public int Ends;
@@ -31,8 +31,8 @@ public class AnimationTests
 
         public void Face(FaceBitmap bitmap) { Faces.Add(bitmap); Calls.Add(("face", Now)); }
         public void Audio(byte[]? mulawFrame) => Calls.Add(("audio", Now));
-        public void Head(float radians, uint durationMs) { Heads.Add((radians, durationMs)); Calls.Add(("head", Now)); }
-        public void Lift(float heightMm, uint durationMs) { Lifts.Add((heightMm, durationMs)); Calls.Add(("lift", Now)); }
+        public void Head(sbyte angleDeg, uint durationMs) { Heads.Add((angleDeg, durationMs)); Calls.Add(("head", Now)); }
+        public void Lift(byte heightMm, uint durationMs) { Lifts.Add((heightMm, durationMs)); Calls.Add(("lift", Now)); }
         public void Body(BodyKeyframe k) { Bodies.Add(k); Calls.Add(("body", Now)); }
         public void AnimationStarted(byte tag) { Tags.Add(tag); }
         public void AnimationEnded() { Ends++; }
@@ -54,7 +54,7 @@ public class AnimationTests
 
     private static FaceKeyframe FaceAt(uint t, float scaleY = 1f)
     {
-        var pose = ProceduralFaceRenderer.Neutral();
+        var pose = ProceduralFaceRenderer.Nominal();
         pose.Left[EyeParam.EyeScaleY] = scaleY;
         pose.Right[EyeParam.EyeScaleY] = scaleY;
         return new FaceKeyframe(t, pose);
@@ -371,8 +371,8 @@ public class AnimationTests
     [Fact]
     public void BlendingAPoseMovesEveryParameterProportionally()
     {
-        var a = ProceduralFaceRenderer.Neutral();
-        var b = ProceduralFaceRenderer.Neutral();
+        var a = ProceduralFaceRenderer.Nominal();
+        var b = ProceduralFaceRenderer.Nominal();
         b.Left[EyeParam.EyeCenterX] = 10f;
         b.FaceScaleX = 2f;
 
@@ -386,7 +386,7 @@ public class AnimationTests
     [Fact]
     public void ANeutralFaceDrawsTwoSeparateEyes()
     {
-        var bmp = ProceduralFaceRenderer.Render(ProceduralFaceRenderer.Neutral());
+        var bmp = ProceduralFaceRenderer.Render(ProceduralFaceRenderer.Nominal());
         int left = 0, right = 0, middle = 0;
         for (int y = 0; y < FaceBitmap.Height; y++)
             for (int x = 0; x < FaceBitmap.Width; x++)
@@ -402,7 +402,7 @@ public class AnimationTests
     [Fact]
     public void ClosingAnEyeDrawsNothingForIt()
     {
-        var pose = ProceduralFaceRenderer.Neutral();
+        var pose = ProceduralFaceRenderer.Nominal();
         pose.Left[EyeParam.EyeScaleY] = 0f;
         var bmp = ProceduralFaceRenderer.Render(pose);
         for (int y = 0; y < FaceBitmap.Height; y++)
