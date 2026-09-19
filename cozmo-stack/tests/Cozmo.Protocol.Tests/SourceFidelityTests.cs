@@ -295,6 +295,53 @@ public class SourceFidelityTests
         Assert.Equal(AnimationTrigger.ReactToImpact, fired.Animation);
     }
 
+    // ================================================================ the lift reading
+
+    /// <summary>
+    /// RobotState.liftAngle is an angle in radians: Robot::UpdateFullRobotState (0x0051291C) stores the
+    /// field at RobotState+0x2C into Robot+0x300, and Robot::GetLiftHeight (0x00516F64) turns that field
+    /// into millimetres with sinf(angle) * 66 + 45 (Robot::ConvertLiftAngleToLiftHeightMM 0x00516F9C).
+    /// The inverse (ConvertLiftHeightToLiftAngleRad 0x005170B0) clamps the height to 32..92 first. The
+    /// previous LiftHeightMm returned the raw field, so an angle of 0 rad read as 0 mm instead of 45.
+    /// </summary>
+    [Fact]
+    public void TheLiftAngleIsAnAngleAndConvertsToHeightAsTheEngineDoes()
+    {
+        Assert.Equal(45f, RobotState.LiftHeightMmFromAngle(0f), 4);
+        Assert.Equal(45f, new RobotState { LiftAngle = 0f }.LiftHeightMm, 4);        // was 0 before
+        foreach (var mm in new[] { 32f, 45f, 60f, 76f, 92f })
+            Assert.Equal(mm, RobotState.LiftHeightMmFromAngle(RobotState.LiftAngleRadFromHeight(mm)), 3);
+        Assert.Equal(MathF.Asin(-13f / 66f), RobotState.LiftAngleRadFromHeight(32f), 5);
+        Assert.Equal(RobotState.LiftAngleRadFromHeight(32f), RobotState.LiftAngleRadFromHeight(10f), 6);   // raised to 32
+        Assert.Equal(MathF.Asin(0.712121f), RobotState.LiftAngleRadFromHeight(120f), 6);                  // the 92 mm constant
+        Assert.Equal(RobotState.LiftAngleRadFromHeight(92f), RobotState.LiftAngleRadFromHeight(200f), 6);
+    }
+
+    /// <summary>
+    /// Corroboration from the wire: the RobotState messages firmware 2457 sent during the committed 20 s
+    /// capture carry lift values in the radian range the engine's arm geometry allows, not values in the
+    /// 32..92 range a height in millimetres would occupy.
+    /// </summary>
+    [Fact]
+    public void TheCapturedRobotReportsItsLiftInRadiansNotMillimetres()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Fixtures", "hw_fw2457_full.log");
+        var line = new System.Text.RegularExpressions.Regex(@"^(\S+) (TX|RX) ((?:[0-9a-f]{2} ?)+)$");
+        var states = new List<RobotState>();
+        foreach (var l in File.ReadAllLines(path))
+        {
+            var m = line.Match(l.Trim('﻿', ' '));
+            if (!m.Success || m.Groups[2].Value == "TX") continue;
+            if (!FrameCodec.TryDecode(Hex.Parse(m.Groups[3].Value), out var f, out _)) continue;
+            foreach (var sm in f!.Messages)
+                if (sm.Payload.Length > 0 && RobotMessage.Parse(sm.Payload) is RobotState s) states.Add(s);
+        }
+        Assert.True(states.Count > 100, $"only {states.Count} RobotState in the capture");
+        float minAngle = RobotState.LiftAngleRadFromHeight(32f) - 0.1f, maxAngle = RobotState.LiftAngleRadFromHeight(92f) + 0.1f;
+        Assert.All(states, s => Assert.InRange(s.LiftAngle, minAngle, maxAngle));
+        Assert.All(states, s => Assert.InRange(s.LiftHeightMm, 30f, 94f));
+    }
+
     private sealed class Rig : IDisposable
     {
         public readonly CozmoRobot Robot = CozmoRobot.CreateOffline();

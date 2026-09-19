@@ -186,6 +186,63 @@ public class AnimationGapTests
         Assert.Equal(CozmoAudio.RobotBufferFrames + 5, r.AudioFrames);
     }
 
+    /// <summary>
+    /// The engine's animation time is a count of streamed frames. UpdateStream at 0x0057C84C adds 33 to its
+    /// stream time (this+0x84) only after a frame has been sent (0x0057CA94..0x0057CA9C), and
+    /// ShouldProcessAnimationFrame at 0x0057CC6C ends the frame loop without touching it while the robot
+    /// has no room. So during a stall the animation stands still, and when room returns it resumes exactly
+    /// where it stopped, one 33 ms frame per audio frame, up to the budget. The old scheduler measured the
+    /// timeline from the wall clock: after this stall it would have jumped to 1353 ms and fired all seven
+    /// events in one frame with one audio message.
+    /// </summary>
+    [Fact]
+    public void TheTimelineFreezesWhileTheRobotHasNoRoomAndResumesWhereItStopped()
+    {
+        var r = new PacedRecorder { Played = 0 };
+        var s = new AnimationScheduler(r);
+        var frames = new List<Keyframe>();
+        for (uint k = 14; k <= 20; k++) frames.Add(new EventKeyframe(k * 33, (k * 33).ToString()));
+        frames.Add(new EventKeyframe(5000, "end"));
+        s.Play(Clip("t", frames.ToArray()), 0);
+
+        for (int i = 0; i < 14; i++) s.Advance(i * 33.0);                // fills the robot's 14-frame budget
+        Assert.Equal(CozmoAudio.RobotBufferFrames, r.AudioFrames);
+        Assert.Empty(r.Events);
+        Assert.Equal(13 * 33, s.PositionMs);
+
+        for (int i = 14; i <= 40; i++) s.Advance(i * 33.0);              // 27 frames of wall time with no room
+        Assert.Empty(r.Events);
+        Assert.Equal(13 * 33, s.PositionMs);                             // the timeline has not moved
+
+        r.Played = 3;                                                    // the robot has played three frames
+        s.Advance(41 * 33.0);
+        Assert.Equal(new[] { "462", "495", "528" }, r.Events);           // three frames, three steps of 33
+        Assert.Equal(CozmoAudio.RobotBufferFrames + 3, r.AudioFrames);
+        Assert.Equal(16 * 33, s.PositionMs);
+    }
+
+    /// <summary>
+    /// A tick that arrives late owes several frames and streams each of them, with its own audio message
+    /// and its own keyframes, rather than firing everything in one frame. The engine streams frame by
+    /// frame to the budget on every update; a late wall-clock tick here is made up the same way.
+    /// </summary>
+    [Fact]
+    public void ALateTickCatchesUpFrameByFrameNotByJumping()
+    {
+        var r = new PacedRecorder { Played = null };
+        var s = new AnimationScheduler(r);
+        s.Play(Clip("t", new EventKeyframe(0, "0"), new EventKeyframe(33, "33"), new EventKeyframe(66, "66"),
+                         new EventKeyframe(99, "99"), new EventKeyframe(5000, "end")), 0);
+        s.Advance(0);
+        Assert.Equal(new[] { "0" }, r.Events);
+
+        s.Advance(133);                                                  // 100 ms late: three frames owed
+        Assert.Equal(new[] { "0", "33", "66", "99" }, r.Events);
+        Assert.Equal(4, r.AudioFrames);                                  // the old timeline sent 2
+        Assert.Equal(new[] { "audio", "event", "audio", "event", "audio", "event", "audio", "event" }, r.What);
+        Assert.Equal(99, s.PositionMs);
+    }
+
     /// <summary>A sink that reports nothing leaves the scheduler unpaced, so offline replay is unaffected.</summary>
     [Fact]
     public void ASinkThatReportsNothingIsNotPaced()

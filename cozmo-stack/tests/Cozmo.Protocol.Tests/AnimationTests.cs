@@ -89,14 +89,16 @@ public class AnimationTests
         Assert.Single(r.Lifts);
         Assert.Equal(new[] { "middle" }, r.Events);
 
-        // each fired no earlier than its trigger time, and within one frame of it
+        // each fired no earlier than its trigger time, and within one frame of it. The timeline steps in
+        // the engine's whole 33 ms frames, so a trigger that falls between two frame times (200 sits
+        // between 198 and 231) fires on the next frame; the tolerance carries a rounding margin for that.
         double frame = 1000.0 / AnimationScheduler.FrameRateHz;
         var head = r.Calls.First(c => c.What == "head").At;
         var evt = r.Calls.First(c => c.What == "event").At;
         var lift = r.Calls.First(c => c.What == "lift").At;
-        Assert.InRange(head, 0, frame);
-        Assert.InRange(evt, 200, 200 + frame);
-        Assert.InRange(lift, 400, 400 + frame);
+        Assert.InRange(head, 0, frame + 0.01);
+        Assert.InRange(evt, 200, 200 + frame + 0.01);
+        Assert.InRange(lift, 400, 400 + frame + 0.01);
         Assert.True(head < evt && evt < lift, "keyframes must fire in timeline order");
     }
 
@@ -117,6 +119,12 @@ public class AnimationTests
         Assert.Single(r.Finishes);
     }
 
+    /// <summary>
+    /// A late tick streams the frames it owes one after another, so nothing is skipped and the order holds.
+    /// The frames are real: the clip here ends on its second frame, and both frames carry an audio message,
+    /// where the old wall-clock timeline collapsed the whole late interval into one frame with one audio
+    /// message.
+    /// </summary>
     [Fact]
     public void ATickThatArrivesLateFiresEverythingItMissedInOrder()
     {
@@ -129,6 +137,9 @@ public class AnimationTests
         s.Advance(1000);                        // one very late tick
 
         Assert.Equal(new[] { "a", "b", "c" }, r.Events);
+        // frame 0 (nothing due), frame 1 (all three), then the trailing silence that follows EndOfAnimation
+        Assert.Equal(3, r.Calls.Count(c => c.What == "audio"));
+        Assert.False(s.IsPlaying);
     }
 
     [Fact]
@@ -269,19 +280,31 @@ public class AnimationTests
         Assert.Empty(r.Finishes);
     }
 
+    /// <summary>
+    /// AnimationStreamer::SetStreamingAnimation at 0x0057B174 holds one streaming animation. When one is
+    /// streaming and the caller does not ask to interrupt, the newcomer is turned away with "Already
+    /// streaming %s, will not interrupt with %s" and nothing changes, whatever tracks it uses; there is no
+    /// side-by-side streaming on disjoint tracks. Before this fix a clip on a free track was let through and
+    /// replaced the running one even though the caller had asked not to replace anything.
+    /// </summary>
     [Fact]
-    public void AClipOnAFreeTrackStillWaitsBecauseOnlyOneAnimationRunsAtATime()
+    public void AClipOnAFreeTrackIsStillRefusedBecauseOnlyOneAnimationStreamsAtATime()
     {
-        // Track ownership is what stops two animations fighting; the scheduler runs one timeline, so a
-        // second clip replaces rather than overlaps even when its tracks do not clash.
         var r = new Recorder();
         var s = new AnimationScheduler(r);
-        s.Play(Clip("head", new HeadKeyframe(0, 5000, 10, 0)), 0);
+        var first = s.Play(Clip("head", new HeadKeyframe(0, 5000, 10, 0)), 0)!;
         var second = s.Play(Clip("lift", new LiftKeyframe(0, 100, 60, 0)), 10, replaceRunning: false);
 
-        Assert.NotNull(second);                  // no clash, so it is allowed
+        Assert.Null(second);                     // no clash, refused all the same
+        Assert.True(first.IsRunning);
+        Assert.Equal("head", s.Playing);
+        Assert.Empty(r.Finishes);
+
+        // Asked to interrupt, the same clip takes over, as the engine's interruptRunning path does.
+        var third = s.Play(Clip("lift", new LiftKeyframe(0, 100, 60, 0)), 20, replaceRunning: true);
+        Assert.NotNull(third);
         Assert.Equal("lift", s.Playing);
-        Assert.Equal(("head", false), Assert.Single(r.Finishes));
+        Assert.Equal(AnimationEndReason.Replaced, first.Completion.Result);
     }
 
     [Fact]

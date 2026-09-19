@@ -75,26 +75,35 @@ public sealed record AnimationHandle(string ClipName, AnimationTrack Tracks)
 /// the motors and the lights stay on one timeline. The device classes underneath keep their own APIs but do
 /// not invent their own animation timing: the scheduler calls them, not the other way round.
 ///
-/// Track ownership is what stops two animations fighting. An animation claims the tracks its keyframes
-/// touch for as long as it runs. A second animation that wants an already-claimed track is refused, or
-/// replaces the first outright, depending on how it is started; it never interleaves with it.
+/// One animation streams at a time, as in the engine: <c>AnimationStreamer</c> holds a single streaming
+/// animation (this+0x38), and <c>SetStreamingAnimation</c> at 0x0057B174 either interrupts it or turns the
+/// newcomer away (see <see cref="Play"/>). Two animations never run side by side, whatever tracks they use.
 ///
-/// The tick is driven by <see cref="Advance"/>, which takes the current time. A live robot gets a thread
-/// calling it; a test calls it directly with whatever times it likes, which is what makes the timeline
-/// deterministic and testable.
+/// Time on the timeline is counted in streamed frames of 33 ms, as the engine counts it (see
+/// <see cref="Advance"/>); the wall clock only decides how many frames a tick is owed. A live robot gets a
+/// thread calling <see cref="Advance"/> every <see cref="FrameInterval"/>; a test calls it directly with
+/// whatever times it likes, which is what makes the timeline deterministic and testable.
 /// </summary>
 public sealed class AnimationScheduler
 {
     /// <summary>The engine's animation tick: 30 frames per second.</summary>
     public const int FrameRateHz = 30;
+    /// <summary>The wall-clock spacing of frames: one robot audio frame, 744 samples at 22320 Hz.</summary>
     public static readonly TimeSpan FrameInterval = TimeSpan.FromSeconds(1.0 / FrameRateHz);
+    /// <summary>
+    /// The engine's stream-time step. <c>AnimationStreamer::UpdateStream</c> at 0x0057C84C adds 33 (0x21)
+    /// to its stream time (this+0x84) after each frame it has sent (0x0057CA94..0x0057CA9C), so animation
+    /// time moves in whole 33 ms steps, one per streamed frame, and never by the wall clock.
+    /// </summary>
+    public const int FrameStepMs = 33;
 
     private readonly IAnimationSink _sink;
     private readonly object _gate = new();
 
     private AnimationClip? _clip;
     private AnimationHandle? _handle;
-    private double _startMs;
+    private int _framesStreamed;               // frames sent for the running clip; the timeline is this x 33 ms
+    private double _nextDueWallMs;             // wall time the next frame is due; falls behind during a stall, so the debt is known
     private int _nextFrame;                    // index of the next keyframe to fire
     private IReadOnlyList<FaceKeyframe> _facePoses = Array.Empty<FaceKeyframe>();
     private int _faceIndex = -1;               // index into _facePoses of the pose currently held
@@ -132,7 +141,10 @@ public sealed class AnimationScheduler
     public bool IsPlaying { get { lock (_gate) return _clip is not null; } }
     /// <summary>Tracks currently claimed by the running animation.</summary>
     public AnimationTrack OwnedTracks { get { lock (_gate) return _clip?.Tracks ?? AnimationTrack.None; } }
-    /// <summary>How far into the current animation the last tick was, in milliseconds.</summary>
+    /// <summary>
+    /// The timeline position of the last streamed frame, in milliseconds: frames streamed times
+    /// <see cref="FrameStepMs"/>, which is the engine's stream time, not elapsed wall time.
+    /// </summary>
     public double PositionMs { get; private set; }
     /// <summary>Keyframes fired since the current animation started.</summary>
     public int KeyframesFired { get; private set; }
@@ -170,9 +182,22 @@ public sealed class AnimationScheduler
     /// <summary>
     /// Starts a clip.
     ///
-    /// With <paramref name="replaceRunning"/> the running animation is cancelled first and this one takes
-    /// its tracks. Without it, a clip that needs a track someone else owns is refused and returns null, so a
-    /// caller can tell "did not play" from "played and finished".
+    /// The engine streams exactly one animation at a time. <c>AnimationStreamer::SetStreamingAnimation</c>
+    /// at 0x0057B174 keeps a single streaming animation, and when one is already streaming a newcomer
+    /// either interrupts it (its <c>interruptRunning</c> flag: "Animation %s is interrupting animation %s",
+    /// then <c>Abort()</c> and <c>InitStream</c>) or is turned away whatever tracks it uses ("Already
+    /// streaming %s, will not interrupt with %s", nothing changes). Nothing in the engine runs two
+    /// animations side by side on disjoint tracks: blinks, eye shifts and squints ride on the streaming
+    /// animation as layers (<c>TrackLayerComponent</c>), the idle animation streams only while nothing else
+    /// does, and the track locks in <c>MovementComponent</c> mute tracks of the one animation rather than
+    /// share them out.
+    ///
+    /// <paramref name="replaceRunning"/> is the engine's <c>interruptRunning</c>. With it the running
+    /// animation ends as <see cref="AnimationEndReason.Replaced"/> and this one starts. Without it the clip
+    /// is refused and null is returned whenever anything is running, even on tracks the running clip does
+    /// not touch, so a caller can tell "did not play" from "played and finished". An earlier version
+    /// refused only on a track clash and otherwise replaced the running clip anyway, which neither mode of
+    /// the engine does.
     /// </summary>
     public AnimationHandle? Play(AnimationClip clip, double nowMs, bool replaceRunning = true)
     {
@@ -180,8 +205,7 @@ public sealed class AnimationScheduler
         {
             if (_clip is not null)
             {
-                bool clash = (_clip.Tracks & clip.Tracks) != 0;
-                if (clash && !replaceRunning) return null;
+                if (!replaceRunning) return null;
                 EndLocked(AnimationEndReason.Replaced);
             }
             _clip = clip;
@@ -193,7 +217,8 @@ public sealed class AnimationScheduler
             _nextTag = _nextTag >= 0xFE ? (byte)1 : (byte)(_nextTag + 1);
             _startSent = false;
             _playedBaseline = _sink.AudioFramesPlayed ?? 0;
-            _startMs = nowMs;
+            _framesStreamed = 0;
+            _nextDueWallMs = nowMs;
             _nextFrame = 0;
             _facePoses = clip.Keyframes.OfType<FaceKeyframe>().ToList();
             _faceIndex = -1;
@@ -250,18 +275,68 @@ public sealed class AnimationScheduler
     }
 
     /// <summary>
-    /// Advances the timeline to this moment, firing every keyframe that is now due and updating the face
-    /// blend. Safe to call at any rate; calling it late fires everything that was missed, in order, rather
-    /// than skipping it.
+    /// Advances the timeline: streams the frames this tick is owed, firing every keyframe each frame
+    /// reaches and updating the face blend.
+    ///
+    /// Animation time is a count of streamed frames, as in the engine. <c>AnimationStreamer::UpdateStream</c>
+    /// at 0x0057C84C hands one stream time (this+0x84) to <c>GetAudioToSend</c>, to the layer component and
+    /// to every track's <c>GetCurrentStreamingMessage</c>, and adds 33 to it only after the frame's messages
+    /// have been sent (0x0057CA94..0x0057CA9C). <c>ShouldProcessAnimationFrame</c> at 0x0057CC6C ends the
+    /// frame loop, leaving the stream time where it is, while the send buffer still holds messages
+    /// (this+0x94) or the audio client reports no room. So while the robot has no room the animation does
+    /// not move at all, and when room returns the engine streams the frames it owes one 33 ms step at a
+    /// time, each with its own audio frame and its own keyframes, up to the audio budget. Wall-clock time
+    /// never enters the stream time; <c>AnimationStreamer::Update</c> at 0x0057CE5C reads the clock only
+    /// for the idle keep-alive timers.
+    ///
+    /// Before this the timeline was <c>nowMs - startMs</c>. A stall let wall time run on, and the first
+    /// frame after it jumped forward, firing every keyframe that had come due in one frame with one audio
+    /// frame, while the audio position, which had always advanced per frame, fell behind the keyframes.
+    ///
+    /// How many frames one call streams is this stack's choice, not the engine's: normally one, because the
+    /// live thread calls this every <see cref="FrameInterval"/>. Frames that could not go, because the tick
+    /// came late or the robot had no room, stay owed, and the next call that can stream makes them up one
+    /// frame at a time, never more than a robot buffer's worth in one call. The engine streams to the
+    /// budget on every update regardless of the clock, which after a stall comes to the same burst. Each
+    /// frame is checked against the robot's audio budget before it goes, whichever way it was owed.
     /// </summary>
     public void Advance(double nowMs)
+    {
+        double interval = FrameInterval.TotalMilliseconds;
+        double maxDebt = CozmoAudio.RobotBufferFrames * interval;
+        int frames;
+        lock (_gate)
+        {
+            if (_clip is null) return;
+            double late = nowMs - _nextDueWallMs;
+            if (late < 0) { _nextDueWallMs = nowMs; late = 0; }                 // ahead of schedule: this tick is the frame
+            frames = Math.Min(1 + (int)Math.Floor(Math.Min(late, maxDebt) / interval), CozmoAudio.RobotBufferFrames);
+        }
+        for (int i = 0; i < frames; i++)
+        {
+            if (!StreamFrame()) break;
+            lock (_gate) { _nextDueWallMs += interval; }
+        }
+        lock (_gate)
+        {
+            // A stall that outlasts the robot's whole buffer is not owed more than that buffer.
+            if (nowMs - _nextDueWallMs > maxDebt) _nextDueWallMs = nowMs - maxDebt;
+        }
+    }
+
+    /// <summary>
+    /// Streams one frame of the running animation at the timeline position the frame count gives. Returns
+    /// false when this call can stream nothing more: nothing running, no room in the robot's audio buffer,
+    /// the animation replaced under us, or the clip completed on this frame.
+    /// </summary>
+    private bool StreamFrame()
     {
         AnimationClip clip;
         double t;
         long generation;
         lock (_gate)
         {
-            if (_clip is null) return;
+            if (_clip is null) return false;
             generation = _generation;
             // ShouldProcessAnimationFrame at 0x0057CC6C refuses to process a frame until the robot has
             // room, and UpdateAmountToSend at 0x0057C6F0 measures that room as
@@ -269,9 +344,9 @@ public sealed class AnimationScheduler
             // the robot drops, and the timeline would drift away from what the robot is actually playing.
             if (_sink.AudioFramesPlayed is { } played &&
                 AudioFramesSent - (played - _playedBaseline) >= CozmoAudio.RobotBufferFrames)
-                return;
+                return false;
             clip = _clip;
-            t = nowMs - _startMs;
+            t = _framesStreamed * (double)FrameStepMs;
             PositionMs = t;
         }
 
@@ -284,7 +359,7 @@ public sealed class AnimationScheduler
         byte[]? frame = null;
         lock (_gate)
         {
-            if (_generation != generation) return;
+            if (_generation != generation) return false;
             if (_audioPcm is { } pcm && _audioPos < pcm.Length)
             {
                 int n = Math.Min(CozmoAudio.SamplesPerFrame, pcm.Length - _audioPos);
@@ -298,6 +373,8 @@ public sealed class AnimationScheduler
         }
         _sink.Audio(frame);
         AudioFramesSent++;
+        // The frame has gone, so the timeline moves one step, as UpdateStream adds 33 after SendBufferedMessages.
+        lock (_gate) { if (_generation == generation) _framesStreamed++; }
 
         // The animation is opened here rather than in Play, on the first frame that streams and after that
         // frame's audio, matching the guarded SendStartOfAnimation at 0x0057C9C8.
@@ -311,7 +388,7 @@ public sealed class AnimationScheduler
         var due = new List<Keyframe>();
         lock (_gate)
         {
-            if (_generation != generation) return;                // replaced while we were looking
+            if (_generation != generation) return false;              // replaced while we were looking
             while (_nextFrame < clip.Keyframes.Count && clip.Keyframes[_nextFrame].TriggerTimeMs <= t)
             {
                 var k = clip.Keyframes[_nextFrame++];
@@ -330,7 +407,7 @@ public sealed class AnimationScheduler
         // on hardware looks like one animation's motion appearing in the middle of another.
         foreach (var k in due.OrderBy(TrackOrder))
         {
-            lock (_gate) { if (_generation != generation) return; }
+            lock (_gate) { if (_generation != generation) return false; }
             Dispatch(k);
             KeyframeFired?.Invoke(k);
         }
@@ -384,7 +461,11 @@ public sealed class AnimationScheduler
         lock (_gate)
         {
             if (_clip == clip && t >= clip.DurationMs && _nextFrame >= clip.Keyframes.Count)
+            {
                 EndLocked(AnimationEndReason.Completed);
+                return false;
+            }
+            return _clip == clip && _generation == generation;
         }
     }
 

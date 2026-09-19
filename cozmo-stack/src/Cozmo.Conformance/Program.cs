@@ -103,7 +103,7 @@ static int FakeRobot(string[] a)
         if (connected && peer is not null && (DateTime.UtcNow - lastState).TotalMilliseconds >= 33)
         {
             lastState = DateTime.UtcNow; ts += 33; head += Math.Clamp(targetHead - head, -0.05f, 0.05f);
-            var st = Wrap(new RobotState { Timestamp = ts, PoseOriginId = 1, HeadAngle = head, LiftAngle = 32, BatteryVoltage = 3.9f, Status = (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos) });
+            var st = Wrap(new RobotState { Timestamp = ts, PoseOriginId = 1, HeadAngle = head, LiftAngle = RobotState.LiftAngleRadFromHeight(32f), BatteryVoltage = 3.9f, Status = (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos) });
             var subs = new List<SubMessage> { SubMessage.Data(st, false) };
             foreach (var p in pendingReliable) subs.Add(SubMessage.Data(p.payload, true, p.seq)); // resend unacked reliable with the state
             SendFrame(Frame.Multiple(subs, lastInAcked));

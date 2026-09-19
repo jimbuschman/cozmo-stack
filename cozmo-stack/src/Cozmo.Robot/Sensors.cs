@@ -101,11 +101,13 @@ public sealed class CozmoSensors
     /// <summary>Head angle in radians, as the robot reports it.</summary>
     public float? HeadAngleRad => _state.Latest?.HeadAngle;
     /// <summary>
-    /// The robot's lift reading. The engine's field is called <c>liftAngle</c> but PyCozmo treats it as a
-    /// height in millimetres, and which it is has not been established, so it is passed through unconverted
-    /// and deliberately not named after either unit.
+    /// The lift arm angle in radians. The unit is settled by the engine: <c>Robot::UpdateFullRobotState</c>
+    /// (0x0051291C) stores <c>RobotState.liftAngle</c> into the field <c>Robot::GetLiftHeight</c>
+    /// (0x00516F64) converts with <c>45 + 66 sin(angle)</c>; see <see cref="RobotState.LiftAngleRad"/>.
     /// </summary>
-    public float? LiftPositionRaw => _state.Latest?.LiftAngle;
+    public float? LiftAngleRad => _state.Latest?.LiftAngle;
+    /// <summary>The lift height in millimetres, converted from the angle as the engine converts it.</summary>
+    public float? LiftHeightMm => _state.Latest?.LiftHeightMm;
     /// <summary>Left and right wheel speeds in mm/s.</summary>
     public (float Left, float Right)? WheelSpeedsMmps =>
         _state.Latest is { } s ? (s.LwheelSpeedMmps, s.RwheelSpeedMmps) : null;

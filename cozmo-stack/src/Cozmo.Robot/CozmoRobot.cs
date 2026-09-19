@@ -71,7 +71,10 @@ public sealed class RobotStateTracker
     public uint? SerialNumber => Available?.SerialNumberHead;
     public int? FirmwareVersionNumber => Firmware?.Version;
     public float? HeadAngleRad => Latest?.HeadAngle;
-    public float? LiftHeight => Latest?.LiftAngle;
+    /// <summary>The lift arm angle in radians, as the robot reports it (see <see cref="RobotState.LiftAngleRad"/>).</summary>
+    public float? LiftAngleRad => Latest?.LiftAngle;
+    /// <summary>The lift height in millimetres, converted as the engine's <c>Robot::GetLiftHeight</c> converts it.</summary>
+    public float? LiftHeightMm => Latest?.LiftHeightMm;
     public float? BatteryVolts => Latest?.BatteryVoltage;
     public bool OnCharger => Latest?.Has(RobotStatusFlag.IsOnCharger) ?? false;
     public bool Charging => Latest?.Has(RobotStatusFlag.IsCharging) ?? false;

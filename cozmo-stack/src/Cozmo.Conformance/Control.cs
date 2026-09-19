@@ -279,7 +279,7 @@ public static class Control
             var s = robot.Sensors;
             Console.WriteLine($"  batt {s.BatteryVolts:F2}V charger={s.OnCharger} charging={s.Charging} " +
                               $"pickedUp={s.PickedUp} cliff={s.CliffDetectedNow} " +
-                              $"head={s.HeadAngleRad:F2} lift={s.LiftPositionRaw:F1} " +
+                              $"head={s.HeadAngleRad:F2} lift={s.LiftAngleRad:F3}rad/{s.LiftHeightMm:F1}mm " +
                               $"accel={s.Accelerometer} gyro={s.Gyroscope} " +
                               $"cliffRaw=[{string.Join(",", s.CliffSensorsRaw ?? Array.Empty<ushort>())}]");
             await Task.Delay(1000);
@@ -305,7 +305,8 @@ public static class Control
             accelerometer = sensors.Accelerometer?.ToString(),
             gyroscope = sensors.Gyroscope?.ToString(),
             headAngleRad = sensors.HeadAngleRad,
-            liftPositionRaw = sensors.LiftPositionRaw,
+            liftAngleRad = sensors.LiftAngleRad,
+            liftHeightMm = sensors.LiftHeightMm,
             imuRawChunks = imuChunks,
             cliffEvents = cliffs,
         }, robot, AcceptancePath(a));

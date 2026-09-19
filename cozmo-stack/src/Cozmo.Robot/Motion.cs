@@ -166,9 +166,10 @@ public sealed class CozmoMotion
     /// <summary>
     /// Moves the lift to an absolute height and waits for the robot to acknowledge the action.
     ///
-    /// The height is in millimetres, which is what the engine's own field name says. Note that the robot
-    /// reports the lift back as <c>liftAngle</c> and it is not established whether that value is an angle or
-    /// a height, so <see cref="CozmoRobot.State"/> exposes it without converting.
+    /// The height is in millimetres, which is what the engine's own field name says. The robot reports the
+    /// lift back as <c>liftAngle</c>, in radians; <see cref="RobotState.LiftHeightMm"/> converts it with the
+    /// engine's <c>45 + 66 sin(angle)</c> (<c>Robot::GetLiftHeight</c> 0x00516F64), and the engine's inverse
+    /// clamps to this same 32..92 mm range (<c>ConvertLiftHeightToLiftAngleRad</c> 0x005170B0).
     /// </summary>
     public Task<MotionOutcome> SetLiftHeightAsync(float heightMm, float maxSpeedRadPerSec = 3f,
                                                   float accelRadPerSec2 = 20f, float durationSec = 0f,

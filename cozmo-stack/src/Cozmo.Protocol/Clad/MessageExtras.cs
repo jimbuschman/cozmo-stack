@@ -13,13 +13,50 @@ public sealed partial class RobotState
     public float PoseAngleRad => Pose.Angle;
     public float PosePitchRad => Pose.Pitch;
     public float HeadAngleRad => HeadAngle;
-    /// <summary>The official robot struct calls this liftAngle; PyCozmo reports it as lift height in mm. Unconfirmed which unit the firmware sends.</summary>
-    public float LiftHeightMm => LiftAngle;
+
+    /// <summary>
+    /// The lift arm's angle in radians, which is what <c>liftAngle</c> carries.
+    ///
+    /// <c>Robot::UpdateFullRobotState</c> at 0x0051291C loads the field at RobotState+0x2C (this one, right
+    /// after <c>headAngle</c> at +0x28) and stores it straight into Robot+0x300 (0x0051295E..0x0051296A),
+    /// then passes it to <c>ComputeLiftPose</c>. Robot+0x300 is what <c>Robot::GetLiftHeight</c> at
+    /// 0x00516F64 turns into millimetres with <c>45 + 66 * sinf(angle)</c>. PyCozmo's reading of the field
+    /// as a height in millimetres was wrong, and an earlier version of this property repeated it.
+    /// </summary>
+    public float LiftAngleRad => LiftAngle;
+
+    /// <summary>The lift height in millimetres, converted from <see cref="LiftAngleRad"/> as the engine converts it.</summary>
+    public float LiftHeightMm => LiftHeightMmFromAngle(LiftAngle);
+
+    /// <summary>Lift arm length: the 66.0 in <c>Robot::ConvertLiftAngleToLiftHeightMM</c> at 0x00516F9C.</summary>
+    public const float LiftArmLengthMm = 66f;
+    /// <summary>Lift pivot height: the 45.0 added in the same function (a third term there is 0.0).</summary>
+    public const float LiftBaseHeightMm = 45f;
+
+    /// <summary>
+    /// <c>Robot::ConvertLiftAngleToLiftHeightMM</c> (0x00516F9C): <c>sinf(angle) * 66 + 45 + 0</c>.
+    /// </summary>
+    public static float LiftHeightMmFromAngle(float angleRad) =>
+        MathF.Sin(angleRad) * LiftArmLengthMm + LiftBaseHeightMm;
+
+    /// <summary>
+    /// <c>Robot::ConvertLiftHeightToLiftAngleRad</c> (0x005170B0): the height is raised to 32 when below it,
+    /// and <c>(height - 45) / 66</c> goes through <c>asinf</c> unless the height is 92 or more, in which case
+    /// the constant 0.712121 (that is, (92 - 45) / 66) is used instead. In effect the height is clamped to
+    /// the 32..92 mm lift range before the inverse.
+    /// </summary>
+    public static float LiftAngleRadFromHeight(float heightMm)
+    {
+        float h = Math.Max(heightMm, 32f);
+        float ratio = h < 92f ? (h - LiftBaseHeightMm) / LiftArmLengthMm : 0.712121f;
+        return MathF.Asin(ratio);
+    }
+
     public bool Has(RobotStatusFlag f) => (Status & (uint)f) != 0;
 
     public override string ToString() =>
         $"RobotState t={Timestamp} pose=({PoseX:F1},{PoseY:F1},{PoseZ:F1} a={PoseAngleRad:F2}) " +
-        $"head={HeadAngle:F3}rad lift={LiftAngle:F1} batt={BatteryVoltage:F2}V status=0x{Status:x} " +
+        $"head={HeadAngle:F3}rad lift={LiftAngle:F3}rad({LiftHeightMm:F1}mm) batt={BatteryVoltage:F2}V status=0x{Status:x} " +
         $"cliff=[{string.Join(",", CliffDataRaw)}] seg={CurrPathSegment}";
 }
 
