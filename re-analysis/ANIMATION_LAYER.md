@@ -396,3 +396,34 @@ extreme squash/stretch, and the resting face is correct. Commit `bf2ddc2`.
 The tests were replaced as well, because the old ones could not have caught this: `FaceTransformTests` only
 asserted that two separate blobs appeared, which was true of the invented geometry and the real geometry
 alike. `ProceduralFaceRendererTests` measures against the recovered constants instead.
+
+## Errata from the Source Fidelity Sweep, 2026-09-19
+
+Four confirmed divergences from the engine in this frozen layer, all fixed with regressions; the working is
+in [SOURCE_FIDELITY_AUDIT.md](SOURCE_FIDELITY_AUDIT.md). **Hardware retest required** before M5 is called
+re-verified: `anim ... --name anim_bored_01 --wwise <obb dir>`.
+
+* **Head and lift keyframes were sent as motor commands.** The text above says head and lift "go out as
+  the direct `SetHeadAngle` and `SetLiftHeight` commands rather than as animation keyframes". The engine
+  does not: `HeadAngleKeyFrame::GetStreamMessage` (0x004F8C08) builds `animHeadAngle` (0x93,
+  `{u16 durationTime_ms, i8 angle_deg}`) and `LiftHeightKeyFrame::GetStreamMessage` (0x004F8F80) builds
+  `animLiftHeight` (0x94, `{u16, u8 height_mm}`), applying the keyframe's variability with
+  `RandIntInRange(value - var, value + var)`. The speed and acceleration the commands carried (10/10 and
+  3/20) were invented. The protocol definition now names those two messages' fields from the engine, and
+  the sink sends them.
+* **Audio alternatives were not chosen by probability.** "The first alternative that can be produced is
+  used" was ours. `RobotAudioKeyFrame::GetAudioRef()` (0x004F9E18) picks one by cumulative probability
+  from `RandDbl(1.0)` (`GetAudioRefIndex` 0x004F9AEC), with `1/n` each when the clip carries no usable
+  probabilities (`SetMembersFromFlatBuf` 0x004F9E54). Ported; falling back to the other alternatives when
+  the chosen one cannot be decoded is kept and labelled as ours.
+* **Interpolation** blends angles as directions and clips every eye parameter; see `PROCEDURAL_FACE.md`.
+* **The named `Neutral` expression was a guess.** The engine's resting face is the `anim_neutral_eyes_01`
+  keyframe; see `PROCEDURAL_FACE.md`. `Expression.Neutral` is now that face; the other expressions remain a
+  labelled local convenience built on it.
+
+Confirmed rather than changed: the body-motion stop message `{speed 0, radius 0x7FFF}` is exactly what the
+engine's `BodyMotionKeyFrame` constructors (0x004FB14C, 0x004FB170) install at +0x16 and send when the
+duration elapses; `AnimationGroup::GetAnimationName` (0x0058A970) chooses by weight as `Choose` does. The
+group cooldown mechanism is now recovered (per-name cooldown set to `now + CooldownTime_Sec` on selection,
+excluded until expiry, all-on-cooldown picks the soonest to expire) and stays deferred as instructed; so
+does the `UseHeadAngle` gate three CozmoSays groups carry.

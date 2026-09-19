@@ -144,3 +144,17 @@ the table above rests on the operator's report rather than on a committed artifa
 
 One acceptance item remains unrun for want of hardware, not for want of code: **M4 cubes**. It is deferred,
 not failed — see the deferred list in `ANIMATION_LAYER.md`.
+
+## Source Fidelity Sweep, 2026-09-19 - retests required
+
+The sweep ([SOURCE_FIDELITY_AUDIT.md](SOURCE_FIDELITY_AUDIT.md)) changed what the robot receives in two
+frozen milestones. They are **offline-verified and awaiting hardware**:
+
+| milestone | what changed on the wire or the display | retest |
+| --- | --- | --- |
+| M5 | head and lift keyframes as `animHeadAngle`/`animLiftHeight` with variability; audio at 22320 Hz; audio alternative chosen by probability; angle interpolation and parameter clipping; resting face from `anim_neutral_eyes_01` | `anim 172.31.1.1 --assets <dir> --name anim_bored_01 --wwise <obb dir>` |
+| M7 | blink as the engine's seven-frame squash; dart moving the whole face with the engine's eye shaping; falling reacts on landing with `ReactToImpact` | `behavior 172.31.1.1 --obb <dir> --seconds 60` |
+
+Until both pass, the M5 and M7 rows above describe the code as accepted on 2026-09-18/19, not the code at
+HEAD. Nothing in M1-M4 or M6 changed on the wire (M3's sample-rate change alters tone pitch by 1.2 % and
+the resampling of shipped sounds; the M6 `anim_bored_01` retest above covers it).

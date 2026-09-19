@@ -50,12 +50,28 @@ public sealed class CozmoMotion
         }
     }
 
-    /// <summary>The robot's own limits, from PyCozmo's robot.py. Not independently confirmed against the engine.</summary>
+    /// <summary>
+    /// The engine's own head limits. <c>Robot::SetHeadAngle(float const&amp;)</c> at 0x00513358 in
+    /// libcozmoEngine.so clamps to -0.436332 rad (-25 degrees, literal 0xBEDF66F3) and 0.776672 rad
+    /// (44.5 degrees, literal 0x3F46D3F2), warning first when the request is more than 3 degrees beyond
+    /// either (-0.488692 and 0.829031). These match the values PyCozmo documents, which is where they were
+    /// first taken from.
+    /// </summary>
     public const float MinHeadAngleRad = -0.4363323f;   // -25 degrees
     public const float MaxHeadAngleRad = 0.7766715f;    // +44.5 degrees
+    /// <summary>
+    /// The engine's lift presets, from the table at 0x00C54688 in .rodata: 32 mm (id 1, the low dock
+    /// height), 76 mm (id 2, high dock) and 92 mm (id 3, carry). The lowest and highest presets are the
+    /// range clamped to here; the engine itself converts a height to an angle before commanding the
+    /// motor (<c>Robot::SetLiftAngle</c> at 0x00513485).
+    /// </summary>
     public const float MinLiftHeightMm = 32.0f;
     public const float MaxLiftHeightMm = 92.0f;
-    /// <summary>Wheel speed the robot is documented to accept. Beyond this it clamps, it does not fault.</summary>
+    /// <summary>
+    /// Wheel speed the robot is documented to accept, from PyCozmo. Beyond this the robot clamps, it does
+    /// not fault, so this is advisory. The engine's own ceiling was not located; 220.0 appears once in
+    /// .rodata (0x00C48F14) without a resolved owner.
+    /// </summary>
     public const float MaxWheelSpeedMmps = 200.0f;
 
     /// <summary>True while the robot says at least one wheel is turning.</summary>

@@ -263,3 +263,53 @@ screen is no longer what it recorded.
 bounded across hundreds of darts, scales bounded and no larger in the second half of a run than the first,
 the base pose intact after transients expire, blinks restoring the stable face, a dart lasting exactly its
 duration, and the base being forgotten when something else takes the face.
+
+## Errata from the Source Fidelity Sweep, 2026-09-19
+
+Working in [SOURCE_FIDELITY_AUDIT.md](SOURCE_FIDELITY_AUDIT.md). **Hardware retest required** before M7 is
+called re-verified: `behavior 172.31.1.1 --obb <dir> --seconds 60`.
+
+* **The reaction map was never unrecoverable.** Section 2 above says the `BehaviorReactToX` classes are
+  not exported and their configs carry no animation, so the trigger-to-animation link had to be inferred
+  from names. Both halves are wrong. The OBB ships
+  `config/engine/behaviorSystem/reactionTrigger_behavior_map.json` (read by
+  `RobotDataLoader::LoadReactionTriggerMap`, 0x00520BC8), which maps every `ReactionTrigger` to a
+  `behaviorID`; and the four behaviour classes are exported (36 symbols), each constructing a
+  `TriggerAnimationAction` or `TriggerLiftSafeAnimationAction` with an `AnimationTrigger` immediate.
+  `ReactionEvidence.NameCorrespondence` applies to no default entry any more.
+* **Falling plays `ReactToImpact`, not `ReactToFalling`, and not on falling.** The map sends
+  `RobotFalling` to the behaviour `ReactToImpact`; `BehaviorReactToImpact::AlwaysHandle` (0x00606408) arms
+  on `FallingStopped` with impact intensity > 1000, `InitInternal` (0x006061F8) waits up to 5 s for the
+  post-fall recalibration, and `TransitionToPlayingAnim` (0x00606348) plays `AnimationTrigger 0x1A0 =
+  ReactToImpact`. The dispatcher now reacts to the landing (`Sensors.FallingStopped`), gated on the
+  threshold; the start of a fall is reported and plays nothing.
+* **The other three are confirmed, with their surroundings recorded:** `ReactToCliff` (0x19D, with
+  `ReactToCliffDetectorStop` first while the wheels stop, severe-needs variants 0x13D/0x131, and a 60 mm
+  back-up at 100 mm/s if still on the cliff); `ReactToPickup` (0x1A9, after 0.5 s, face and pet
+  acknowledgements preferred, `HiccupRobotPickedUp` while hiccuping, repeated every 3-6 s while held);
+  `PlacedOnCharger` (0x189, then after `timeTilSleepAnimation_s` the idle-timeout component plays
+  `GoToSleepGetIn`, `GoToSleepSleeping`, `GoToSleepOff`). The sequencing is not implemented; the animation
+  each one plays is.
+* **The blink was invented.** Upper lids shut for 100 ms is not what the engine does. Its blink is a
+  seven-frame scale table (`ProceduralFaceDrawer::GetNextBlinkFrame` 0x00585F18, table at 0x00C5AAD8):
+  EyeScaleX x EyeScaleY multipliers (1.05, 0.85), (1.2, 0.6), (2.5, 0.1), (5.0, 0.05), (2.0, 0.15),
+  (1.2, 0.7), (1.0, 0.9) at 33 ms each except the last at 100 ms, then the base restored; 331 ms in all.
+  Ported as `IdleBehavior.BlinkFrames`.
+* **The dart geometry was invented.** The engine's `GenerateEyeShift` (0x0058D100) draws x and y in
+  +/-EyeDartMaxDistance and calls `ProceduralFace::LookAt` (0x00584158) with xMax = yMax = 5: the whole
+  face moves by (x, y); only EyeScaleY changes, by a vertical factor from 1.1 (up) to 0.85 (down) times
+  (1 +/- 0.1 min(1, |x|/5)) with the eye on the side looked *towards* the larger; looking down turns the
+  eyes inward by up to 2 px. `EyeDartMinScale` and `EyeDartMaxScale` are not read on this path. Ported as
+  `IdleBehavior.DartPose`. The section above that says the dart shifts `EyeCenterX` and grows the outer eye
+  describes the old code.
+* **Not settled: the dart's lifecycle.** The engine schedules the shift keyframe `duration + 33` ms after
+  the previous one on a persistent layer, so it ramps in; what the persistent layer does once it has run
+  out (`ITrackLayerManager::ApplyLayersToFrame` 0x0058E644 trims it to its last keyframe and resets its
+  stream time) could not be read to a definite hold-or-drop. The transient-then-return lifecycle above is
+  kept and labelled a local reading.
+* **Idle head and lift** are streamed by the engine as `HeadAngleKeyFrame(currentDeg, 6, duration)` and
+  `LiftHeightKeyFrame(35, 8, duration)` inside its live animation (`UpdateLiveAnimation` 0x0057D5F8);
+  ours use the motion API with the same numbers. Recorded, not changed. **Idle body** is now recovered:
+  speed uniform in +/-10 mm/s, 250-1500 ms, straight with probability `BodyMovementStraightFraction` else a
+  turn in place accompanied by a 33 ms `LiveIdleTurn` eye shift; still not driven.
+* **The 5 s reaction cooldown is ours.** The shipped map gives none of these four reactions a cooldown.

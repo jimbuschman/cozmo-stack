@@ -110,3 +110,15 @@ what a person still has to watch.
 
 Animations and animation groups, navigation, mapping, docking, vision, behaviours, speech and cube lights.
 Cube support here is discovery, connection state and basic telemetry only.
+
+## Errata from the Source Fidelity Sweep, 2026-09-19
+
+* **Head and lift limits are the engine's**, not only PyCozmo's. `Robot::SetHeadAngle` (0x00513358) clamps
+  to -0.436332 rad (-25 degrees) and 0.776672 rad (44.5 degrees), warning when the request is more than 3
+  degrees beyond either; the lift presets sit in a table at 0x00C54688: 32 mm (low dock), 76 mm (high
+  dock), 92 mm (carry). The "Taken from PyCozmo, not confirmed against the engine" line above is
+  superseded. The wheel-speed ceiling of 200 mm/s remains PyCozmo's.
+* **`liftAngle` in `RobotState` is an angle.** The engine has `Robot::SetLiftAngle(float const&)`
+  (0x00513485) and no height setter of its own, converting height to angle before commanding the motor,
+  while the `SetLiftHeight` message the robot accepts carries millimetres. `Sensors.LiftPositionRaw` stays
+  unconverted because the conversion constants were not read.

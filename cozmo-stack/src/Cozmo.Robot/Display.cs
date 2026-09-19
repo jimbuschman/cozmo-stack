@@ -156,6 +156,20 @@ public static class FaceBitmapCodec
     /// deliberately avoided: their interaction with the decoder's "last draw" and "repeat shift" state is
     /// position-dependent, and the saving (a blank image is 128 bytes instead of 2) is irrelevant next to
     /// the 1420-byte message limit. The result is exact for every possible image.
+    ///
+    /// This is a local choice, and it differs from the engine's encoder in three ways that are recorded
+    /// here rather than reproduced. <c>FaceAnimationManager::CompressRLE</c> at 0x00581904 in
+    /// libcozmoEngine.so works from its 128 x 64 canvas: it builds one 64-bit mask per column (bit r = row
+    /// r), emits a skip command for a run of empty columns and a repeat command for a run of columns equal
+    /// to the previous one, and otherwise walks the mask two rows at a time so that each robot pixel is a
+    /// pair of canvas rows and the two draw bits <c>dd</c> of a run command are those two rows' pixels.
+    /// Because the engine blanks alternate canvas rows before compressing, only one of the two bits is
+    /// ever set in a pair, and which one alternates with <c>_firstScanLine</c>. The robot's decoder as
+    /// PyCozmo recovered it lights the pixel for either bit, which is the reading this encoder relies on;
+    /// whether the firmware also uses the bit position to choose a physical OLED row is not established.
+    /// Finally, when the RLE output exceeds <c>MAX_FACE_FRAME_SIZE</c> (1024, from the engine's
+    /// AnimConstants) the engine sends the raw 1024-byte column-mask buffer instead; this encoder refuses
+    /// such images rather than sending a raw frame it has never seen the robot accept.
     /// </summary>
     public static byte[] Encode(FaceBitmap image)
     {

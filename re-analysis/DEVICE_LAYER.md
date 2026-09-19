@@ -246,3 +246,18 @@ Each command writes a full frame log and prints its absolute path.
 * The procedural face (the 19-parameter eye model) is not implemented; this layer takes bitmaps.
 * `setAudioVolume` range is unknown. Nothing here writes it by default.
 * Frame timestamps arrive as 0 on firmware 2457, so `CameraFrame.Timestamp` is not usable for pairing.
+
+## Errata from the Source Fidelity Sweep, 2026-09-19
+
+* **The audio sample rate is 22320 Hz, not 22050.** Section 3 above derives "about 22 kHz" and the code
+  carried 22050 from PyCozmo, marked as an assumption. The engine's `AnimConstants` enum has
+  `AUDIO_SAMPLE_RATE = 22320` and `AUDIO_SAMPLE_SIZE = 744` (EnumToString at 0x007BC7D8), and
+  `CozmoAudioController::SetupPlugins` (0x005942B0) configures the audio plugin with 22320. A 744-sample
+  frame is therefore exactly one 30 Hz animation frame. The 22050 that does occur in the binary is the
+  text-to-speech provider's. The measured 28.6 ms drain on firmware 2457 is a separate observation of the
+  robot and is unchanged. Fixed in `CozmoAudio.SampleRate`; every resampler targets it.
+* **The JPEG header tables are the engine's own**, byte-identical to the tables `MiniGrayToJpeg`
+  (0x00C48C40, 0x144 bytes) and `MiniColorToJpeg` (0x00C48D84, 0x14E bytes) hand to `MiniToJpegHelper`,
+  apart from the height and width the engine also patches. Upgraded from "matches PyCozmo's transcription".
+* **The engine's face encoder** uses skip and repeat commands and a raw fallback; see `Display.cs` and
+  `PROCEDURAL_FACE.md`. Ours stays run-only, a labelled local choice verified on hardware.

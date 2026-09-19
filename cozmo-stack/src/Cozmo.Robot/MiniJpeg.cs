@@ -11,6 +11,13 @@ namespace Cozmo.Robot;
 /// patched in. Grayscale (official ImageEncoding 8) has one component; colour (9) has three with 2x1
 /// chroma subsampling.
 ///
+/// The two tables are the engine's own. <c>EncodedImage::MiniGrayToJpeg</c> at 0x004F31A4 hands
+/// <c>MiniToJpegHelper</c> a 0x144-byte header at 0x00C48C40 and <c>MiniColorToJpeg</c> at 0x004F32D0 a
+/// 0x14E-byte one at 0x00C48D84; both are byte-identical to <see cref="GrayHeader"/> and
+/// <see cref="ColorHeader"/> apart from the height and width fields, which the engine also patches per
+/// frame (its template happens to hold 296 x 400 where ours holds 240 x 320). They were first transcribed
+/// from PyCozmo's camera.py and are now confirmed against the binary.
+///
 /// Verified on 28 frames captured from a firmware-2457 robot: output decodes as 320x240 grayscale.
 /// </summary>
 public static class MiniJpeg

@@ -196,3 +196,38 @@ Named rather than guessed:
    on hardware, encodes 32. The renderer therefore keeps every other row of the 64-row canvas. Which parity
    to keep is the open question; `_firstScanLine` is fixed at 0 here rather than alternated, since the
    alternation reads as burn-in protection rather than geometry.
+
+## Errata from the Source Fidelity Sweep, 2026-09-19
+
+Recorded in [SOURCE_FIDELITY_AUDIT.md](SOURCE_FIDELITY_AUDIT.md); summarised here so this document stays
+the renderer's reference.
+
+* **Interpolation.** `ProceduralFace::Interpolate` at 0x00584290 blends `EyeAngle` and `FaceAngle` as
+  directions (cos and sin blended, then `atan2f`), not as numbers; a face scale that would come out negative
+  is set to 0 with a warning; and every eye parameter passes through `ProceduralFace::Clip`. Ported.
+* **Clip ranges.** The 16-entry table `Clip` (0x005847A8) builds at 0x00C5A97C: `UpperLidAngle` and
+  `LowerLidAngle` in [-45, 45]; `EyeScaleX/Y` in [0, FLT_MAX]; the eight corner radii and `UpperLidY`,
+  `UpperLidBend`, `LowerLidY`, `LowerLidBend` in [0, 1]. `EyeCenterX/Y` and `EyeAngle` are unbounded.
+  `SetEyeArrayHelper` (0x00583790) clips every asset value on load. Ported (`Eye.Clip`, `Eye.FromAsset`).
+* **The resting face is an asset, not a constant.** `AnimationStreamer::AnimationStreamer` (0x00579F78)
+  takes the animation group mapped to `AnimationTrigger::NeutralFace`, requires it to hold exactly one clip,
+  and installs that clip's procedural face keyframe with `ProceduralFace::SetResetData` (0x00583550). In
+  this build: `ag_neutral_face` -> `anim_neutral_eyes_01` (in `anim_singlepose_01.bin`): left eye centre
+  +9.17, scale 1.214 x 0.905; right eye centre -10.21, scale 1.222 x 0.905; all radii 0.5; lids open; face
+  transform identity. The default-constructed `ProceduralFace` (0x00583660) is different again: scales 1
+  and everything else 0, i.e. sharp-cornered 30 x 40 boxes; it is what layers are built on, not what is
+  shown. The renderer's former `Neutral()` (radii 0.5 on the nominal box) is renamed `Nominal()` and is a
+  measurement pose only; `ProceduralFacePose.ShippedNeutral()` is the resting face.
+* **Parity, made precise.** `CompressRLE` (0x00581904) builds a 64-bit mask per column with bit r = row
+  r, then walks the mask two rows at a time: each robot pixel is a pair of canvas rows and the two draw
+  bits of a run command are those two rows' pixels. With alternate rows blanked exactly one bit of each
+  pair is set, and which one alternates with `_firstScanLine`, which `GetNextBlinkFrame` also flips on the
+  closed frame of every blink (0x005861BE). So the toggle is transmitted. Whether the firmware lights a
+  different physical OLED row for `01` and `10` is not established; PyCozmo's decoder, which matches the
+  28 captured sequences, lights the pixel for either. The engine's encoder also emits skip-column and
+  repeat-column commands, and above `MAX_FACE_FRAME_SIZE` (1024, `AnimConstants`) sends the raw 1024-byte
+  mask buffer instead of RLE.
+* **Layer composition.** `ProceduralFace::Combine` (0x005846A8) adds a layer's `EyeCenterX/Y`, `EyeAngle`,
+  `UpperLidAngle` and `LowerLidAngle`, multiplies `EyeScaleX/Y`, adds `FaceAngle`, multiplies the face
+  scales and adds the face position. Lid Y and bend values in a layer are ignored. This is what makes the
+  engine's blink a pure scale sequence (see `BEHAVIOR_LAYER.md`).
