@@ -1,0 +1,2288 @@
+[
+ {
+  "path": "devBehaviors/devTurnInPlaceTest.json",
+  "behaviorID": "DevTurnInPlaceTest",
+  "behaviorClass": "DevTurnInPlaceTest",
+  "animTriggers": [],
+  "extraKeys": [
+   "gapBetweenTests_s",
+   "loopForever",
+   "nRunsPerTest",
+   "tests"
+  ],
+  "category": "developer-only",
+  "reason": "ships under devBehaviors/"
+ },
+ {
+  "path": "devBehaviors/dockingTestSimple.json",
+  "behaviorID": "DockingTestSimple",
+  "behaviorClass": "DockingTestSimple",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "requires charger/docking",
+  "reason": "names the charger or docking ('Docking')"
+ },
+ {
+  "path": "devBehaviors/factoryCentroidExtractor.json",
+  "behaviorID": "FactoryCentroidExtractor",
+  "behaviorClass": "FactoryCentroidExtractor",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "developer-only",
+  "reason": "ships under devBehaviors/"
+ },
+ {
+  "path": "devBehaviors/factoryTest.json",
+  "behaviorID": "FactoryTest",
+  "behaviorClass": "FactoryTest",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "developer-only",
+  "reason": "ships under devBehaviors/"
+ },
+ {
+  "path": "devBehaviors/liftLoadTest.json",
+  "behaviorID": "LiftLoadTest",
+  "behaviorClass": "LiftLoadTest",
+  "animTriggers": [],
+  "extraKeys": [
+   "executableBehaviorType"
+  ],
+  "category": "developer-only",
+  "reason": "ships under devBehaviors/"
+ },
+ {
+  "path": "feeding/feedingAnims/feedingPlayRequestAtFace.json",
+  "behaviorID": "FeedingPlayRequestAtFace",
+  "behaviorClass": "PlayAnimWithFace",
+  "animTriggers": [
+   "NeedsMildLowEnergyRequest"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "feeding/feedingAnims/feedingPlayRequestAtFace_Severe.json",
+  "behaviorID": "FeedingPlayRequestAtFace_Severe",
+  "behaviorClass": "PlayAnimWithFace",
+  "animTriggers": [
+   "NeedsSevereLowEnergyRequest"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "feeding/feedingAnims/feedingReactCubeShake.json",
+  "behaviorID": "FeedingReactCubeShake",
+  "behaviorClass": "PlayAnim",
+  "animTriggers": [
+   "FeedingReactToShake_Normal"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "feeding/feedingAnims/feedingReactCubeShake_Severe.json",
+  "behaviorID": "FeedingReactCubeShake_Severe",
+  "behaviorClass": "PlayAnim",
+  "animTriggers": [
+   "FeedingReactToShake_Severe"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "feeding/feedingAnims/feedingReactFullCube.json",
+  "behaviorID": "FeedingReactFullCube",
+  "behaviorClass": "PlayAnim",
+  "animTriggers": [
+   "FeedingReactToFullCube_Normal"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "feeding/feedingAnims/feedingReactFullCube_Severe.json",
+  "behaviorID": "FeedingReactFullCube_Severe",
+  "behaviorClass": "PlayAnim",
+  "animTriggers": [
+   "FeedingReactToFullCube_Severe"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "feeding/feedingAnims/feedingReactSeeCharged.json",
+  "behaviorID": "FeedingReactSeeCharged",
+  "behaviorClass": "PlayAnim",
+  "animTriggers": [
+   "FeedingReactToSeeCube_Normal"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "feeding/feedingAnims/feedingReactSeeCharged_Severe.json",
+  "behaviorID": "FeedingReactSeeCharged_Severe",
+  "behaviorClass": "PlayAnim",
+  "animTriggers": [
+   "FeedingReactToSeeCube_Severe"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "feeding/feedingEat.json",
+  "behaviorID": "FeedingEat",
+  "behaviorClass": "FeedingEat",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "game-specific",
+  "reason": "ships under feeding/"
+ },
+ {
+  "path": "feeding/feedingFindFacesSevere.json",
+  "behaviorID": "FeedingFindFacesSevere",
+  "behaviorClass": "FindFaces",
+  "animTriggers": [],
+  "extraKeys": [
+   "maxFaceAgeToLook_ms",
+   "params"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "feeding/feedingSearchForCube.json",
+  "behaviorID": "FeedingSearchForCube",
+  "behaviorClass": "FeedingSearchForCube",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "freeplay/buildPyramid/buildPyramid.json",
+  "behaviorID": "BuildPyramid",
+  "behaviorClass": "BuildPyramid",
+  "animTriggers": [],
+  "extraKeys": [
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Pyramid')"
+ },
+ {
+  "path": "freeplay/buildPyramid/buildPyramidBase.json",
+  "behaviorID": "BuildPyramidBase",
+  "behaviorClass": "BuildPyramidBase",
+  "animTriggers": [],
+  "extraKeys": [
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Pyramid')"
+ },
+ {
+  "path": "freeplay/buildPyramid/pyramidPutDownBlock.json",
+  "behaviorID": "PyramidPutDownBlock",
+  "behaviorClass": "PutDownBlock",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Block')"
+ },
+ {
+  "path": "freeplay/buildPyramid/pyramidRespondPossiblyRoll.json",
+  "behaviorID": "PyramidRespondPossiblyRoll",
+  "behaviorClass": "RespondPossiblyRoll",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Pyramid')"
+ },
+ {
+  "path": "freeplay/buildPyramid/pyramidThankYou.json",
+  "behaviorID": "PyramidThankYou",
+  "behaviorClass": "PyramidThankYou",
+  "animTriggers": [],
+  "extraKeys": [
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Pyramid')"
+ },
+ {
+  "path": "freeplay/buildPyramid/respondToPyramidBase.json",
+  "behaviorID": "RespondToPyramidBase",
+  "behaviorClass": "OnConfigSeen",
+  "animTriggers": [
+   "BuildPyramidReactToBase"
+  ],
+  "extraKeys": [
+   "animTriggers",
+   "configTriggers",
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Pyramid')"
+ },
+ {
+  "path": "freeplay/cantHandleTallStack.json",
+  "behaviorID": "CantHandleTallStack",
+  "behaviorClass": "CantHandleTallStack",
+  "animTriggers": [],
+  "extraKeys": [
+   "lookingDownWait_s",
+   "lookingInitialWait_s",
+   "lookingUpWait_s",
+   "minBlockMovedThreshold_mm",
+   "minimumStackHeight"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Stack')"
+ },
+ {
+  "path": "freeplay/cubeLiftWorkout.json",
+  "behaviorID": "CubeLiftWorkout",
+  "behaviorClass": "CubeLiftWorkout",
+  "animTriggers": [],
+  "extraKeys": [
+   "considerThisHasRunForBehaviorObjective",
+   "needsActionID",
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "freeplay/driveOffCharger.json",
+  "behaviorID": "DriveOffCharger",
+  "behaviorClass": "DriveOffCharger",
+  "animTriggers": [],
+  "extraKeys": [
+   "extraDistanceToDrive_mm"
+  ],
+  "category": "requires charger/docking",
+  "reason": "names the charger or docking ('Charger')"
+ },
+ {
+  "path": "freeplay/EarnedSparks.json",
+  "behaviorID": "EarnedSparks",
+  "behaviorClass": "EarnedSparks",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/findFaces_socialize.json",
+  "behaviorID": "FindFaces_socialize",
+  "behaviorClass": "FindFaces",
+  "animTriggers": [],
+  "extraKeys": [
+   "executableBehaviorType",
+   "maxFaceAgeToLook_ms",
+   "params"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "freeplay/FPpeekAboo.json",
+  "behaviorID": "FPPeekABoo",
+  "behaviorClass": "PeekABoo",
+  "animTriggers": [],
+  "extraKeys": [
+   "maxTimeOldestFaceToConsider_Sec",
+   "maxTimesPeekBeforeQuit",
+   "minCooldown_Sec",
+   "minTimesPeekBeforeQuit",
+   "needsActionID",
+   "noUserInteractionTimeout_numIdles",
+   "numReRequestsPerTimeout",
+   "playGetIn",
+   "requireFaceConfirmBeforeRequest",
+   "requiredUnlockId"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "freeplay/hiking/Hiking_bringCubeToBeacon.json",
+  "behaviorID": "Hiking_BringCubeToBeacon",
+  "behaviorClass": "BringCubeToBeacon",
+  "animTriggers": [],
+  "extraKeys": [
+   "params"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "freeplay/hiking/Hiking_driveOffCharger.json",
+  "behaviorID": "Hiking_DriveOffCharger",
+  "behaviorClass": "DriveOffCharger",
+  "animTriggers": [],
+  "extraKeys": [
+   "extraDistanceToDrive_mm"
+  ],
+  "category": "requires charger/docking",
+  "reason": "names the charger or docking ('Charger')"
+ },
+ {
+  "path": "freeplay/hiking/Hiking_firstLookIntro.json",
+  "behaviorID": "Hiking_FirstLookIntro",
+  "behaviorClass": "PlayAnim",
+  "animTriggers": [
+   "HikingIntro"
+  ],
+  "extraKeys": [
+   "animTriggers",
+   "requiredRecentSwitchToParent_sec"
+  ],
+  "category": "requires charger/docking",
+  "reason": "names the charger or docking ('charger')"
+ },
+ {
+  "path": "freeplay/hiking/Hiking_firstLookWakeUp.json",
+  "behaviorID": "Hiking_FirstLookWakeUp",
+  "behaviorClass": "PlayAnim",
+  "animTriggers": [
+   "HikingWakeUpOffCharger"
+  ],
+  "extraKeys": [
+   "animTriggers",
+   "requiredRecentDriveOffCharger_sec"
+  ],
+  "category": "requires charger/docking",
+  "reason": "names the charger or docking ('charger')"
+ },
+ {
+  "path": "freeplay/hiking/Hiking_lookInPlace360.json",
+  "behaviorID": "Hiking_LookInPlace360",
+  "behaviorClass": "ExploreLookAroundInPlace",
+  "animTriggers": [],
+  "extraKeys": [
+   "params"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('cube')"
+ },
+ {
+  "path": "freeplay/hiking/Hiking_lookInPlaceForUnknown.json",
+  "behaviorID": "Hiking_LookInPlaceForUnknown",
+  "behaviorClass": "LookInPlaceMemoryMap",
+  "animTriggers": [],
+  "extraKeys": [
+   "params"
+  ],
+  "category": "requires localization/world model",
+  "reason": "names the world model or localization ('MemoryMap')"
+ },
+ {
+  "path": "freeplay/hiking/Hiking_pounceOnMotion.json",
+  "behaviorID": "Hiking_PounceOnMotion",
+  "behaviorClass": "PounceOnMotion",
+  "animTriggers": [],
+  "extraKeys": [
+   "TimeBeforeRotate_Sec",
+   "backUpDistance",
+   "maxNoGroundMotionBeforeBored_notRunning_Sec",
+   "maxNoGroundMotionBeforeBored_running_Sec",
+   "needsActionID",
+   "requiredUnlockId",
+   "searchAmplitudeDeg"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Pounce')"
+ },
+ {
+  "path": "freeplay/hiking/Hiking_rollCube.json",
+  "behaviorID": "Hiking_RollCube",
+  "behaviorClass": "RollBlock",
+  "animTriggers": [],
+  "extraKeys": [
+   "needsActionID",
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Block')"
+ },
+ {
+  "path": "freeplay/hiking/Hiking_thinkAboutBeacons.json",
+  "behaviorID": "Hiking_ThinkAboutBeacons",
+  "behaviorClass": "ThinkAboutBeacons",
+  "animTriggers": [],
+  "extraKeys": [
+   "params"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Beacon')"
+ },
+ {
+  "path": "freeplay/hiking/Hiking_visitInterestingEdge.json",
+  "behaviorID": "Hiking_VisitInterestingEdge",
+  "behaviorClass": "VisitInterestingEdge",
+  "animTriggers": [],
+  "extraKeys": [
+   "params"
+  ],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/interactWithFaces.json",
+  "behaviorID": "InteractWithFaces",
+  "behaviorClass": "InteractWithFaces",
+  "animTriggers": [],
+  "extraKeys": [
+   "params"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "freeplay/knockOverCubes.json",
+  "behaviorID": "KnockOverCubes",
+  "behaviorClass": "KnockOverCubes",
+  "animTriggers": [],
+  "extraKeys": [
+   "knockOverEyesTrigger",
+   "knockOverFailureTrigger",
+   "knockOverPutDownTrigger",
+   "knockOverSuccessTrigger",
+   "minimumStackHeight",
+   "needsActionID",
+   "reachForBlockTrigger",
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "freeplay/needs/needs_MildLowEnergyRequest.json",
+  "behaviorID": "Needs_MildLowEnergyRequest",
+  "behaviorClass": "ExpressNeeds",
+  "animTriggers": [
+   "NeedsMildLowEnergyRequest"
+  ],
+  "extraKeys": [
+   "animTriggers",
+   "cooldown",
+   "need",
+   "needBracket"
+  ],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/needs/needs_MildLowPlayRequest.json",
+  "behaviorID": "Needs_MildLowPlayRequest",
+  "behaviorClass": "ExpressNeeds",
+  "animTriggers": [
+   "NeedsMildLowPlayRequest"
+  ],
+  "extraKeys": [
+   "animTriggers",
+   "cooldown",
+   "need",
+   "needBracket"
+  ],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/needs/needs_MildLowRepairRequest.json",
+  "behaviorID": "Needs_MildLowRepairRequest",
+  "behaviorClass": "ExpressNeeds",
+  "animTriggers": [
+   "NeedsMildLowRepairRequest"
+  ],
+  "extraKeys": [
+   "animTriggers",
+   "cooldown",
+   "need",
+   "needBracket"
+  ],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/needs/needs_SevereLowEnergyForcedGetOut.json",
+  "behaviorID": "Needs_SevereLowEnergyForcedGetOut",
+  "behaviorClass": "ExpressNeeds",
+  "animTriggers": [
+   "NeedsSevereLowEnergyForceGetOut"
+  ],
+  "extraKeys": [
+   "animTriggers",
+   "caresAboutExpressedState",
+   "cooldown",
+   "need",
+   "needBracket",
+   "shouldClearExpressedState"
+  ],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/needs/needs_SevereLowEnergyGetIn.json",
+  "behaviorID": "Needs_SevereLowEnergyGetIn",
+  "behaviorClass": "PlayAnimOnNeedsChange",
+  "animTriggers": [
+   "NeedsSevereLowEnergyGetIn"
+  ],
+  "extraKeys": [
+   "animTriggers",
+   "need"
+  ],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/needs/needs_SevereLowEnergyState.json",
+  "behaviorID": "Needs_SevereLowEnergyState",
+  "behaviorClass": "DriveInDesperation",
+  "animTriggers": [],
+  "extraKeys": [
+   "maxTimeToIdle",
+   "minTimeToIdle",
+   "motionProfile",
+   "requestAnimTrigger",
+   "useCubes"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "freeplay/needs/needs_SevereLowPlayBored.json",
+  "behaviorID": "Needs_SevereLowPlayBored",
+  "behaviorClass": "ExpressNeeds",
+  "animTriggers": [
+   "NothingToDoBoredIntro",
+   "NothingToDoBoredEvent",
+   "NothingToDoBoredOutro"
+  ],
+  "extraKeys": [
+   "animTriggers",
+   "cooldown",
+   "need",
+   "needBracket",
+   "requiredSevereNeedsState"
+  ],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/needs/needs_SevereLowPlayGetIn.json",
+  "behaviorID": "Needs_SevereLowPlayGetIn",
+  "behaviorClass": "PlayAnimOnNeedsChange",
+  "animTriggers": [
+   "NeedsSevereLowPlayGetIn"
+  ],
+  "extraKeys": [
+   "animTriggers",
+   "need"
+  ],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/needs/needs_SevereLowPlayRequest.json",
+  "behaviorID": "Needs_SevereLowPlayRequest",
+  "behaviorClass": "ExpressNeeds",
+  "animTriggers": [
+   "NeedsSevereLowPlayRequest"
+  ],
+  "extraKeys": [
+   "animTriggers",
+   "cooldown",
+   "need",
+   "needBracket",
+   "requiredSevereNeedsState"
+  ],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/needs/needs_SevereLowRepairGetIn.json",
+  "behaviorID": "Needs_SevereLowRepairGetIn",
+  "behaviorClass": "PlayAnimOnNeedsChange",
+  "animTriggers": [
+   "NeedsSevereLowRepairGetIn"
+  ],
+  "extraKeys": [
+   "animTriggers",
+   "need"
+  ],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/needs/needs_SevereLowRepairState.json",
+  "behaviorID": "Needs_SevereLowRepairState",
+  "behaviorClass": "DriveInDesperation",
+  "animTriggers": [],
+  "extraKeys": [
+   "maxTimeToIdle",
+   "minTimeToIdle",
+   "motionProfile",
+   "requestAnimTrigger",
+   "useCubes"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "freeplay/needs/needs_Wait.json",
+  "behaviorID": "Needs_Wait",
+  "behaviorClass": "Wait",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/NothingToDo_BoredAnim.json",
+  "behaviorID": "NothingToDo_BoredAnim",
+  "behaviorClass": "PlayAnim",
+  "animTriggers": [
+   "NothingToDoBoredIntro",
+   "NothingToDoBoredEvent",
+   "NothingToDoBoredOutro"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/NothingToDo_Idle.json",
+  "behaviorID": "NothingToDo_Idle",
+  "behaviorClass": "PlayAnim",
+  "animTriggers": [
+   "NothingToDoBoredIdle"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/popAWheelie.json",
+  "behaviorID": "PopAWheelie",
+  "behaviorClass": "PopAWheelie",
+  "animTriggers": [],
+  "extraKeys": [
+   "considerThisHasRunForBehaviorObjective",
+   "needsActionID",
+   "requiredUnlockId",
+   "shouldHandleConfirmedObject",
+   "shouldHandlePossibleObject"
+  ],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/pounceOnMotion_socialize.json",
+  "behaviorID": "PounceOnMotion_Socialize",
+  "behaviorClass": "PounceOnMotion",
+  "animTriggers": [],
+  "extraKeys": [
+   "backUpDistance",
+   "maxNoGroundMotionBeforeBored_notRunning_Sec",
+   "maxNoGroundMotionBeforeBored_running_Sec",
+   "needsActionID",
+   "oddsOfPouncingOnTurn",
+   "requiredUnlockId",
+   "searchAmplitudeDeg",
+   "timeBeforeRotate_Sec"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Pounce')"
+ },
+ {
+  "path": "freeplay/putDownBlock.json",
+  "behaviorID": "PutDownBlock",
+  "behaviorClass": "PutDownBlock",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Block')"
+ },
+ {
+  "path": "freeplay/putDownBlockNothingToDo.json",
+  "behaviorID": "PutDownBlockNothingToDo",
+  "behaviorClass": "PutDownBlock",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Block')"
+ },
+ {
+  "path": "freeplay/putDownDispatch/PutDownDispatch_LookForFaceAndCube.json",
+  "behaviorID": "PutDownDispatch_LookForFaceAndCube",
+  "behaviorClass": "LookForFaceAndCube",
+  "animTriggers": [],
+  "extraKeys": [
+   "params"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "freeplay/requestGame/requestCozmoPerforms.json",
+  "behaviorID": "RequestCozmoPerforms",
+  "behaviorClass": "RequestGameSimple",
+  "animTriggers": [],
+  "extraKeys": [
+   "after_place_backup_dist_mm",
+   "after_place_backup_speed_mmps",
+   "one_block_config",
+   "pickup_motion_profile",
+   "place_motion_profile",
+   "place_position_threshold_mm",
+   "place_position_threshold_rads",
+   "requiredUnlockId",
+   "zero_block_config"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('block')"
+ },
+ {
+  "path": "freeplay/requestGame/requestDroneMode.json",
+  "behaviorID": "RequestDroneMode",
+  "behaviorClass": "RequestGameSimple",
+  "animTriggers": [],
+  "extraKeys": [
+   "after_place_backup_dist_mm",
+   "after_place_backup_speed_mmps",
+   "one_block_config",
+   "pickup_motion_profile",
+   "place_motion_profile",
+   "place_position_threshold_mm",
+   "place_position_threshold_rads",
+   "requiredUnlockId",
+   "zero_block_config"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('block')"
+ },
+ {
+  "path": "freeplay/requestGame/requestKeepAway.json",
+  "behaviorID": "RequestKeepAway",
+  "behaviorClass": "RequestGameSimple",
+  "animTriggers": [],
+  "extraKeys": [
+   "after_place_backup_dist_mm",
+   "after_place_backup_speed_mmps",
+   "one_block_config",
+   "pickup_motion_profile",
+   "place_motion_profile",
+   "place_position_threshold_mm",
+   "place_position_threshold_rads",
+   "requiredUnlockId",
+   "zero_block_config"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('block')"
+ },
+ {
+  "path": "freeplay/requestGame/requestMemoryMatch.json",
+  "behaviorID": "RequestMemoryMatch",
+  "behaviorClass": "RequestGameSimple",
+  "animTriggers": [],
+  "extraKeys": [
+   "after_place_backup_dist_mm",
+   "after_place_backup_speed_mmps",
+   "one_block_config",
+   "pickup_motion_profile",
+   "place_motion_profile",
+   "place_position_threshold_mm",
+   "place_position_threshold_rads",
+   "requiredUnlockId",
+   "zero_block_config"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('block')"
+ },
+ {
+  "path": "freeplay/requestGame/requestSpeedTap.json",
+  "behaviorID": "RequestSpeedTap",
+  "behaviorClass": "RequestGameSimple",
+  "animTriggers": [],
+  "extraKeys": [
+   "after_place_backup_dist_mm",
+   "after_place_backup_speed_mmps",
+   "one_block_config",
+   "pickup_motion_profile",
+   "place_motion_profile",
+   "place_position_threshold_mm",
+   "place_position_threshold_rads",
+   "requiredUnlockId",
+   "zero_block_config"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('block')"
+ },
+ {
+  "path": "freeplay/rollBlockOnSide.json",
+  "behaviorID": "RollBlockOnSide",
+  "behaviorClass": "RollBlock",
+  "animTriggers": [],
+  "extraKeys": [
+   "needsActionID",
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Block')"
+ },
+ {
+  "path": "freeplay/rollBlockOnSideLowScore.json",
+  "behaviorID": "RollBlockOnSideLowScore",
+  "behaviorClass": "RollBlock",
+  "animTriggers": [],
+  "extraKeys": [
+   "needsActionID",
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Block')"
+ },
+ {
+  "path": "freeplay/singing/Singing_AbaDaba.json",
+  "behaviorID": "Singing_AbaDaba",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_BeautifulDreamer.json",
+  "behaviorID": "Singing_BeautifulDreamer",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_Beethovens5th.json",
+  "behaviorID": "Singing_Beethovens5th",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_Bingo.json",
+  "behaviorID": "Singing_Bingo",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_BuffaloGals.json",
+  "behaviorID": "Singing_BuffaloGals",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_Camptown.json",
+  "behaviorID": "Singing_Camptown",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_CanCan1.json",
+  "behaviorID": "Singing_CanCan1",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_CanCan2.json",
+  "behaviorID": "Singing_CanCan2",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_DannyBoy.json",
+  "behaviorID": "Singing_DannyBoy",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_EntryOfTheGladiators.json",
+  "behaviorID": "Singing_EntryOfTheGladiators",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_FarmerInTheDell.json",
+  "behaviorID": "Singing_FarmerInTheDell",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_FrereJacques.json",
+  "behaviorID": "Singing_FrereJacques",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_HelloMyBaby.json",
+  "behaviorID": "Singing_HelloMyBaby",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_ItsyBitsySpider.json",
+  "behaviorID": "Singing_ItsyBitsySpider",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_LaPaloma.json",
+  "behaviorID": "Singing_LaPaloma",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_LondonBridge.json",
+  "behaviorID": "Singing_LondonBridge",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_MaryHadALittleLamb.json",
+  "behaviorID": "Singing_MaryHadALittleLamb",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_MountainKing.json",
+  "behaviorID": "Singing_MountainKing",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_MuffinMan.json",
+  "behaviorID": "Singing_MuffinMan",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_MulberryBush.json",
+  "behaviorID": "Singing_MulberryBush",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_MussIDenn.json",
+  "behaviorID": "Singing_MussIDenn",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_OdeToJoy.json",
+  "behaviorID": "Singing_OdeToJoy",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_PachebelCanon.json",
+  "behaviorID": "Singing_PachebelCanon",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_PopGoesTheWeasel.json",
+  "behaviorID": "Singing_PopGoesTheWeasel",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_RowYourBoat.json",
+  "behaviorID": "Singing_RowYourBoat",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_Sakura.json",
+  "behaviorID": "Singing_Sakura",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_SilveryMoon.json",
+  "behaviorID": "Singing_SilveryMoon",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_TakeMeOutToTheBallgame.json",
+  "behaviorID": "Singing_TakeMeOutToTheBallgame",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_TaRaRaBoom.json",
+  "behaviorID": "Singing_TaRaRaBoom",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_TisketTasket.json",
+  "behaviorID": "Singing_TisketTasket",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_Toccata.json",
+  "behaviorID": "Singing_Toccata",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_TurkeyInTheStraw.json",
+  "behaviorID": "Singing_TurkeyInTheStraw",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_TwinkleTwinkle.json",
+  "behaviorID": "Singing_TwinkleTwinkle",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_VivaldiSpring.json",
+  "behaviorID": "Singing_VivaldiSpring",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_WaterMusic.json",
+  "behaviorID": "Singing_WaterMusic",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_WildAboutHarry.json",
+  "behaviorID": "Singing_WildAboutHarry",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_WilliamTell.json",
+  "behaviorID": "Singing_WilliamTell",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_YankeeDoodle.json",
+  "behaviorID": "Singing_YankeeDoodle",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/singing/Singing_YellowRose.json",
+  "behaviorID": "Singing_YellowRose",
+  "behaviorClass": "Singing",
+  "animTriggers": [],
+  "extraKeys": [
+   "audioSwitch",
+   "audioSwitchGroup",
+   "requiredUnlockId"
+  ],
+  "category": "requires Wwise switch-state audio",
+  "reason": "selects audio by switch state rather than event ('audioSwitchGroup')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksBringCubeToBeacon.json",
+  "behaviorID": "SparksBringCubeToBeacon",
+  "behaviorClass": "BringCubeToBeacon",
+  "animTriggers": [],
+  "extraKeys": [
+   "params"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksCheckForStackAtInterval.json",
+  "behaviorID": "SparksCheckForStackAtInterval",
+  "behaviorClass": "CheckForStackAtInterval",
+  "animTriggers": [],
+  "extraKeys": [
+   "delayBetweenChecks"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Stack')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksCubeLiftWorkout.json",
+  "behaviorID": "SparksCubeLiftWorkout",
+  "behaviorClass": "CubeLiftWorkout",
+  "animTriggers": [],
+  "extraKeys": [
+   "needsActionID",
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksFindFaces.json",
+  "behaviorID": "SparksFindFaces",
+  "behaviorClass": "FindFaces",
+  "animTriggers": [],
+  "extraKeys": [
+   "maxFaceAgeToLook_ms",
+   "params"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksFireTruckAlarm.json",
+  "behaviorID": "SparksFireTruckAlarm",
+  "behaviorClass": "FireTruckAlarm",
+  "animTriggers": [],
+  "extraKeys": [
+   "CSharpTrickFreeplayCooldown",
+   "executableBehaviorType",
+   "isBlockRotationImportant",
+   "needsActionID",
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Block')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksFistBump.json",
+  "behaviorID": "SparksFistBump",
+  "behaviorClass": "FistBump",
+  "animTriggers": [],
+  "extraKeys": [
+   "abortIfNoFaceFound",
+   "maxTimeToLookForFace_s",
+   "needsActionID",
+   "requiredUnlockId"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksKnockOverCubes.json",
+  "behaviorID": "SparksKnockOverCubes",
+  "behaviorClass": "KnockOverCubes",
+  "animTriggers": [],
+  "extraKeys": [
+   "executableBehaviorType",
+   "knockOverEyesTrigger",
+   "knockOverFailureTrigger",
+   "knockOverPutDownTrigger",
+   "knockOverSuccessTrigger",
+   "minimumStackHeight",
+   "needsActionID",
+   "reachForBlockTrigger",
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksLookInPlace.json",
+  "behaviorID": "SparksLookInPlace",
+  "behaviorClass": "ExploreLookAroundInPlace",
+  "animTriggers": [],
+  "extraKeys": [
+   "executableBehaviorType",
+   "params"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksPeekAboo.json",
+  "behaviorID": "SparksPeekABoo",
+  "behaviorClass": "PeekABoo",
+  "animTriggers": [],
+  "extraKeys": [
+   "maxTimeOldestFaceToConsider_Sec",
+   "maxTimesPeekBeforeQuit",
+   "minCooldown_Sec",
+   "minTimesPeekBeforeQuit",
+   "needsActionID",
+   "noUserInteractionTimeout_numIdles",
+   "numReRequestsPerTimeout",
+   "playGetIn",
+   "requireFaceConfirmBeforeRequest",
+   "requiredUnlockId"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksPickupCube.json",
+  "behaviorID": "SparksPickUpCube",
+  "behaviorClass": "PickUpAndPutDownCube",
+  "animTriggers": [],
+  "extraKeys": [
+   "needsActionID",
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksPickupSingleCubeForPyramid.json",
+  "behaviorID": "SparksPickupSingleCubeForPyramid",
+  "behaviorClass": "PickUpCube",
+  "animTriggers": [],
+  "extraKeys": [
+   "ignoreCubesInBlockConfigTypes",
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksPickupSingleCubeToStack.json",
+  "behaviorID": "SparksPickupSingleCubeToStack",
+  "behaviorClass": "PickUpCube",
+  "animTriggers": [],
+  "extraKeys": [
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksPopAWheelie.json",
+  "behaviorID": "SparksPopAWheelie",
+  "behaviorClass": "PopAWheelie",
+  "animTriggers": [],
+  "extraKeys": [
+   "needsActionID",
+   "requiredUnlockId",
+   "shouldHandleConfirmedObject",
+   "shouldHandlePossibleObject"
+  ],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/sparkable/sparksPounceOnMotion.json",
+  "behaviorID": "SparksPounceOnMotion",
+  "behaviorClass": "PounceOnMotion",
+  "animTriggers": [],
+  "extraKeys": [
+   "backUpDistance",
+   "executableBehaviorType",
+   "maxNoGroundMotionBeforeBored_notRunning_Sec",
+   "maxNoGroundMotionBeforeBored_running_Sec",
+   "maxTimeBehaviorTimeout_Sec",
+   "needsActionID",
+   "oddsOfPouncingOnTurn",
+   "searchAmplitudeDeg",
+   "timeBeforeRotate_Sec"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Pounce')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksPutDownBlock.json",
+  "behaviorID": "SparksPutDownBlock",
+  "behaviorClass": "PutDownBlock",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Block')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksRollBlock.json",
+  "behaviorID": "SparksRollBlock",
+  "behaviorClass": "RollBlock",
+  "animTriggers": [],
+  "extraKeys": [
+   "executableBehaviorType",
+   "isBlockRotationImportant",
+   "needsActionID",
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Block')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksStackBlock.json",
+  "behaviorID": "SparksStackBlock",
+  "behaviorClass": "StackBlocks",
+  "animTriggers": [],
+  "extraKeys": [
+   "needsActionID",
+   "requiredUnlockId",
+   "stackInAnyOrientation"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Stack')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksThinkAboutBeacons.json",
+  "behaviorID": "SparksThinkAboutBeacons",
+  "behaviorClass": "ThinkAboutBeacons",
+  "animTriggers": [],
+  "extraKeys": [
+   "params"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Beacon')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksTrackLaser.json",
+  "behaviorID": "SparksTrackLaser",
+  "behaviorClass": "TrackLaser",
+  "animTriggers": [],
+  "extraKeys": [
+   "alwaysStreamline",
+   "backupDistAfterPounce_mm",
+   "backupDurationAfterPounce_sec",
+   "darkenedExposure_ms",
+   "darkenedGain",
+   "executableBehaviorType",
+   "imageMeanFractionForExposureChange",
+   "maxDistToGetAttention_mm",
+   "maxLostLaserTimeoutGraph_sec",
+   "maxPanDuration_sec",
+   "maxTimeBeforeRotate_sec",
+   "maxTimeBehaviorTimeout_sec",
+   "maxTimeToConfirm_ms",
+   "maxTimeToReachLaser_sec",
+   "minPanDuration_sec",
+   "minTimeToReachLaser_sec",
+   "needsActionID",
+   "numImagesToWaitForExposureChange",
+   "pounceAfterTrackingFor_sec",
+   "pounceIfWithinDist_mm",
+   "pouncePanTol_deg",
+   "pounceTiltTol_deg",
+   "predictionDuration_sec",
+   "randomInitialSearchPanMax_deg",
+   "randomInitialSearchPanMin_deg",
+   "searchAmplitude_deg",
+   "skipGetOutAnim",
+   "startIfLaserSeenWithin_sec",
+   "trackingTimeToAchieveObjective_sec",
+   "trackingTimeout_sec"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('pounce')"
+ },
+ {
+  "path": "freeplay/sparkable/sparksVisitPossibleMarker.json",
+  "behaviorID": "SparksVisitPossibleMarker",
+  "behaviorClass": "ExploreVisitPossibleMarker",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "freeplay/stackBlocks.json",
+  "behaviorID": "StackBlocks",
+  "behaviorClass": "StackBlocks",
+  "animTriggers": [],
+  "extraKeys": [
+   "executableBehaviorType",
+   "needsActionID",
+   "requiredUnlockId"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Stack')"
+ },
+ {
+  "path": "freeplay/userInteractive/bouncer.json",
+  "behaviorID": "Bouncer",
+  "behaviorClass": "Bouncer",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Pyramid')"
+ },
+ {
+  "path": "freeplay/userInteractive/fistBump.json",
+  "behaviorID": "FistBump",
+  "behaviorClass": "FistBump",
+  "animTriggers": [],
+  "extraKeys": [
+   "abortIfNoFaceFound",
+   "executableBehaviorType",
+   "maxTimeToLookForFace_s",
+   "needsActionID",
+   "requiredUnlockId",
+   "updateLastCompletionTime"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "freeplay/userInteractive/guardDog.json",
+  "behaviorID": "GuardDog",
+  "behaviorClass": "GuardDog",
+  "animTriggers": [],
+  "extraKeys": [
+   "requiredUnlockId"
+  ],
+  "category": "freeplay/explorer-specific",
+  "reason": "ships under freeplay/"
+ },
+ {
+  "path": "meetCozmo/enrollFace.json",
+  "behaviorID": "EnrollFace",
+  "behaviorClass": "EnrollFace",
+  "animTriggers": [],
+  "extraKeys": [
+   "executableBehaviorType",
+   "maxFacesVisible",
+   "tooManyFacesRecentTime_sec",
+   "tooManyFacesTimeout_sec"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "meetCozmo/meetCozmo_findFaces_socialize.json",
+  "behaviorID": "MeetCozmo_FindFaces_Socialize",
+  "behaviorClass": "FindFaces",
+  "animTriggers": [],
+  "extraKeys": [
+   "maxFaceAgeToLook_ms",
+   "params"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "meetCozmo/meetCozmo_interactWithFaces.json",
+  "behaviorID": "MeetCozmo_InteractWithFaces",
+  "behaviorClass": "InteractWithFaces",
+  "animTriggers": [],
+  "extraKeys": [
+   "params"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "meetCozmo/respondToRenameFace.json",
+  "behaviorID": "RespondToRenameFace",
+  "behaviorClass": "RespondToRenameFace",
+  "animTriggers": [],
+  "extraKeys": [
+   "animationTrigger"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "onboarding/onboardingShowCube.json",
+  "behaviorID": "OnboardingShowCube",
+  "behaviorClass": "OnboardingShowCube",
+  "animTriggers": [],
+  "extraKeys": [
+   "MaxErrorsPickup",
+   "MaxErrorsTotal",
+   "Timeout_Sec",
+   "flatScore"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "playArbitraryAnim.json",
+  "behaviorID": "PlayArbitraryAnim",
+  "behaviorClass": "PlayArbitraryAnim",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "implementable with M1-M7 now",
+  "reason": "no parameters beyond class and id"
+ },
+ {
+  "path": "reactions/acknowledgeFace.json",
+  "behaviorID": "AcknowledgeFace",
+  "behaviorClass": "AcknowledgeFace",
+  "animTriggers": [],
+  "extraKeys": [
+   "ReactionAnimGroup"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Block')"
+ },
+ {
+  "path": "reactions/acknowledgeObject.json",
+  "behaviorID": "AcknowledgeObject",
+  "behaviorClass": "AcknowledgeObject",
+  "animTriggers": [],
+  "extraKeys": [
+   "NumImagesToWaitFor",
+   "ReactionAnimGroup"
+  ],
+  "category": "unclear",
+  "reason": "no rule matched; carries ['NumImagesToWaitFor', 'ReactionAnimGroup']"
+ },
+ {
+  "path": "reactions/hiccup.json",
+  "behaviorID": "Hiccup",
+  "behaviorClass": "PlayAnim",
+  "animTriggers": [
+   "Hiccup"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "implementable with M1-M7 now",
+  "reason": "plays animations and asks for nothing else"
+ },
+ {
+  "path": "reactions/ramIntoBlock.json",
+  "behaviorID": "RamIntoBlock",
+  "behaviorClass": "RamIntoBlock",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Block')"
+ },
+ {
+  "path": "reactions/reactToCliff.json",
+  "behaviorID": "ReactToCliff",
+  "behaviorClass": "ReactToCliff",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "implementable with M1-M7 now",
+  "reason": "no parameters beyond class and id"
+ },
+ {
+  "path": "reactions/reactToCubeMoved.json",
+  "behaviorID": "ReactToCubeMoved",
+  "behaviorClass": "ReactToCubeMoved",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Cube')"
+ },
+ {
+  "path": "reactions/reactToFrustrationMajor.json",
+  "behaviorID": "ReactToFrustrationMajor",
+  "behaviorClass": "ReactToFrustration",
+  "animTriggers": [],
+  "extraKeys": [
+   "anim",
+   "finalEmotionEvent",
+   "randomDriveMaxAngle_deg",
+   "randomDriveMaxDist_mm",
+   "randomDriveMinAngle_deg",
+   "randomDriveMinDist_mm"
+  ],
+  "category": "unclear",
+  "reason": "no rule matched; carries ['anim', 'finalEmotionEvent', 'randomDriveMaxAngle_deg', 'randomDriveMaxDist_mm']"
+ },
+ {
+  "path": "reactions/reactToFrustrationMinor.json",
+  "behaviorID": "ReactToFrustrationMinor",
+  "behaviorClass": "ReactToFrustration",
+  "animTriggers": [],
+  "extraKeys": [
+   "anim",
+   "finalEmotionEvent"
+  ],
+  "category": "unclear",
+  "reason": "no rule matched; carries ['anim', 'finalEmotionEvent']"
+ },
+ {
+  "path": "reactions/reactToImpact.json",
+  "behaviorID": "ReactToImpact",
+  "behaviorClass": "ReactToImpact",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "implementable with M1-M7 now",
+  "reason": "no parameters beyond class and id"
+ },
+ {
+  "path": "reactions/reactToMotorCalibration.json",
+  "behaviorID": "ReactToMotorCalibration",
+  "behaviorClass": "ReactToMotorCalibration",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "implementable with M1-M7 now",
+  "reason": "no parameters beyond class and id"
+ },
+ {
+  "path": "reactions/reactToObstacle.json",
+  "behaviorID": "ReactToObstacle",
+  "behaviorClass": "PlayAnim",
+  "animTriggers": [
+   "ReactToObstacle"
+  ],
+  "extraKeys": [
+   "animTriggers",
+   "wantsToRunStrategyConfig"
+  ],
+  "category": "implementable with M1-M7 now",
+  "reason": "plays animations and asks for nothing else"
+ },
+ {
+  "path": "reactions/reactToOnCharger.json",
+  "behaviorID": "ReactToOnCharger",
+  "behaviorClass": "ReactToOnCharger",
+  "animTriggers": [],
+  "extraKeys": [
+   "timeTilDisconnection_s",
+   "timeTilSleepAnimation_s"
+  ],
+  "category": "requires charger/docking",
+  "reason": "names the charger or docking ('Charger')"
+ },
+ {
+  "path": "reactions/reactToPet.json",
+  "behaviorID": "ReactToPet",
+  "behaviorClass": "ReactToPet",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Pet')"
+ },
+ {
+  "path": "reactions/reactToPickup.json",
+  "behaviorID": "ReactToPickup",
+  "behaviorClass": "ReactToPickup",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "implementable with M1-M7 now",
+  "reason": "no parameters beyond class and id"
+ },
+ {
+  "path": "reactions/reactToPlacedOnSlope.json",
+  "behaviorID": "ReactToPlacedOnSlope",
+  "behaviorClass": "ReactToPlacedOnSlope",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "implementable with M1-M7 now",
+  "reason": "no parameters beyond class and id"
+ },
+ {
+  "path": "reactions/reactToPyramid.json",
+  "behaviorID": "ReactToPyramid",
+  "behaviorClass": "ReactToPyramid",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Pyramid')"
+ },
+ {
+  "path": "reactions/reactToReturnedToTreads.json",
+  "behaviorID": "ReactToReturnedToTreads",
+  "behaviorClass": "ReactToReturnedToTreads",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "implementable with M1-M7 now",
+  "reason": "no parameters beyond class and id"
+ },
+ {
+  "path": "reactions/reactToRobotOnBack.json",
+  "behaviorID": "ReactToRobotOnBack",
+  "behaviorClass": "ReactToRobotOnBack",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "implementable with M1-M7 now",
+  "reason": "no parameters beyond class and id"
+ },
+ {
+  "path": "reactions/reactToRobotOnFace.json",
+  "behaviorID": "ReactToRobotOnFace",
+  "behaviorClass": "ReactToRobotOnFace",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "reactions/reactToRobotOnSide.json",
+  "behaviorID": "ReactToRobotOnSide",
+  "behaviorClass": "ReactToRobotOnSide",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "implementable with M1-M7 now",
+  "reason": "no parameters beyond class and id"
+ },
+ {
+  "path": "reactions/reactToRobotShaken.json",
+  "behaviorID": "ReactToRobotShaken",
+  "behaviorClass": "ReactToRobotShaken",
+  "animTriggers": [],
+  "extraKeys": [
+   "disableByDefault"
+  ],
+  "category": "unclear",
+  "reason": "no rule matched; carries ['disableByDefault']"
+ },
+ {
+  "path": "reactions/reactToSparked.json",
+  "behaviorID": "ReactToSparked",
+  "behaviorClass": "ReactToSparked",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "implementable with M1-M7 now",
+  "reason": "no parameters beyond class and id"
+ },
+ {
+  "path": "reactions/reactToStackOfCubes.json",
+  "behaviorID": "ReactToStackOfCubes",
+  "behaviorClass": "ReactToStackOfCubes",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('Stack')"
+ },
+ {
+  "path": "reactions/reactToUnexpectedMovement.json",
+  "behaviorID": "ReactToUnexpectedMovement",
+  "behaviorClass": "ReactToUnexpectedMovement",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "implementable with M1-M7 now",
+  "reason": "no parameters beyond class and id"
+ },
+ {
+  "path": "voiceCommands/dance_mambo.json",
+  "behaviorID": "Dance_Mambo",
+  "behaviorClass": "Dance",
+  "animTriggers": [
+   "DanceMambo"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "game-specific",
+  "reason": "ships under voiceCommands/"
+ },
+ {
+  "path": "voiceCommands/howAreYouDoing/VC_HowAreYouDoing_AllGood.json",
+  "behaviorID": "VC_HowAreYouDoing_AllGood",
+  "behaviorClass": "PlayAnimWithFace",
+  "animTriggers": [
+   "VC_HowAreYouDoing_AllGood"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Energy.json",
+  "behaviorID": "VC_HowAreYouDoing_Energy",
+  "behaviorClass": "PlayAnimWithFace",
+  "animTriggers": [
+   "NeutralFace"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Play.json",
+  "behaviorID": "VC_HowAreYouDoing_Play",
+  "behaviorClass": "PlayAnimWithFace",
+  "animTriggers": [
+   "NeutralFace"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Repair.json",
+  "behaviorID": "VC_HowAreYouDoing_Repair",
+  "behaviorClass": "PlayAnimWithFace",
+  "animTriggers": [
+   "NeutralFace"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "voiceCommands/VC_AlrightyResponse.json",
+  "behaviorID": "VC_AlrightyResponse",
+  "behaviorClass": "PlayAnimWithFace",
+  "animTriggers": [
+   "VC_Alrighty"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "voiceCommands/VC_ComeHere.json",
+  "behaviorID": "VC_ComeHere",
+  "behaviorClass": "DriveToFace",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "voiceCommands/VC_GoToSleep.json",
+  "behaviorID": "VC_GoToSleep",
+  "behaviorClass": "ReactToOnCharger",
+  "animTriggers": [],
+  "extraKeys": [
+   "timeTilDisconnection_s",
+   "timeTilSleepAnimation_s",
+   "triggeredFromVoiceCommand"
+  ],
+  "category": "requires charger/docking",
+  "reason": "names the charger or docking ('Charger')"
+ },
+ {
+  "path": "voiceCommands/VC_PounceOnMotion.json",
+  "behaviorID": "VC_PounceOnMotion",
+  "behaviorClass": "PounceOnMotion",
+  "animTriggers": [],
+  "extraKeys": [
+   "alwaysStreamline",
+   "backUpDistance",
+   "maxNoGroundMotionBeforeBored_notRunning_Sec",
+   "maxNoGroundMotionBeforeBored_running_Sec",
+   "oddsOfPouncingOnTurn",
+   "searchAmplitudeDeg",
+   "skipGetOutAnim",
+   "timeBeforeRotate_Sec"
+  ],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Pounce')"
+ },
+ {
+  "path": "voiceCommands/VC_Refuse_Energy.json",
+  "behaviorID": "VC_Refuse_Energy",
+  "behaviorClass": "PlayAnim",
+  "animTriggers": [
+   "VC_Refuse_energy"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "game-specific",
+  "reason": "ships under voiceCommands/"
+ },
+ {
+  "path": "voiceCommands/VC_Refuse_Repair.json",
+  "behaviorID": "VC_Refuse_Repair",
+  "behaviorClass": "PlayAnim",
+  "animTriggers": [
+   "VC_Refuse_repair"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "game-specific",
+  "reason": "ships under voiceCommands/"
+ },
+ {
+  "path": "voiceCommands/VC_Refuse_Sparks.json",
+  "behaviorID": "VC_Refuse_Sparks",
+  "behaviorClass": "PlayAnim",
+  "animTriggers": [
+   "VC_Refuse_sparks"
+  ],
+  "extraKeys": [
+   "animTriggers"
+  ],
+  "category": "game-specific",
+  "reason": "ships under voiceCommands/"
+ },
+ {
+  "path": "voiceCommands/VC_RequestCozmoPerforms.json",
+  "behaviorID": "VC_RequestCozmoPerforms",
+  "behaviorClass": "RequestGameSimple",
+  "animTriggers": [],
+  "extraKeys": [
+   "disable_reactions_early",
+   "requiredUnlockId",
+   "use_block",
+   "zero_block_config"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('block')"
+ },
+ {
+  "path": "voiceCommands/VC_RequestDroneMode.json",
+  "behaviorID": "VC_RequestDroneMode",
+  "behaviorClass": "RequestGameSimple",
+  "animTriggers": [],
+  "extraKeys": [
+   "disable_reactions_early",
+   "requiredUnlockId",
+   "use_block",
+   "zero_block_config"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('block')"
+ },
+ {
+  "path": "voiceCommands/VC_RequestKeepAway.json",
+  "behaviorID": "VC_RequestKeepAway",
+  "behaviorClass": "RequestGameSimple",
+  "animTriggers": [],
+  "extraKeys": [
+   "disable_reactions_early",
+   "requiredUnlockId",
+   "use_block",
+   "zero_block_config"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('block')"
+ },
+ {
+  "path": "voiceCommands/VC_RequestMemoryMatch.json",
+  "behaviorID": "VC_RequestMemoryMatch",
+  "behaviorClass": "RequestGameSimple",
+  "animTriggers": [],
+  "extraKeys": [
+   "disable_reactions_early",
+   "requiredUnlockId",
+   "use_block",
+   "zero_block_config"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('block')"
+ },
+ {
+  "path": "voiceCommands/VC_RequestSpeedTap.json",
+  "behaviorID": "VC_RequestSpeedTap",
+  "behaviorClass": "RequestGameSimple",
+  "animTriggers": [],
+  "extraKeys": [
+   "disable_reactions_early",
+   "requiredUnlockId",
+   "use_block",
+   "zero_block_config"
+  ],
+  "category": "requires cubes",
+  "reason": "names cubes, blocks or objects ('block')"
+ },
+ {
+  "path": "voiceCommands/VC_SearchForFace.json",
+  "behaviorID": "VC_SearchForFace",
+  "behaviorClass": "SearchForFace",
+  "animTriggers": [],
+  "extraKeys": [],
+  "category": "requires vision/person detection",
+  "reason": "names faces, people, pets or motion sensing ('Face')"
+ },
+ {
+  "path": "wait.json",
+  "behaviorID": "Wait",
+  "behaviorClass": "Wait",
+  "animTriggers": [],
+  "extraKeys": [
+   "executableBehaviorType"
+  ],
+  "category": "unclear",
+  "reason": "no rule matched; carries ['executableBehaviorType']"
+ }
+]
