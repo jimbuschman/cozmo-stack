@@ -323,7 +323,7 @@ not yet have, or hardware we do not yet have, not a defect in what is built. The
 | **Pre-rendered `faceAnimations`** | The OBB's pre-rendered face assets are not loaded, so a clip whose face track names one falls back to the procedural face. | Decode the `faceAnimations` asset format and feed it through the existing face track. |
 | **Group cooldown enforcement** | Animation groups carry cooldown and mood fields. Selection honours mood; cooldown is parsed and exposed but not enforced, because how the engine measures and resets it is not established. | Read the engine's group selection to establish the cooldown clock, then enforce it in `AnimationGroup.Choose`. |
 | **Lift 0 mm semantics** | What the robot does with a lift height of exactly 0 mm is unresolved: it may mean "lowest position" or "no change". The value is passed through unaltered rather than being reinterpreted. | A hardware experiment, or the engine's own clamping in the lift keyframe path. |
-| **M4 cube hardware acceptance** | Cube support is code-complete and offline-tested through the real message path. No cube has been available to point the robot at. | `dotnet run --project src/Cozmo.Conformance -- cubes 172.31.1.1 --acceptance` with a cube to hand. |
+| **M4 cube hardware acceptance** | Cube support is code-complete and offline-tested through the real message path. Hardware discovery has been observed (a real cube appeared during discovery after being tapped, 2026-09-19); connection state, tap, movement, up-axis and battery telemetry have not been exercised on a robot. | `dotnet run --project src/Cozmo.Conformance -- cubes 172.31.1.1 --acceptance` with a cube to hand. |
 
 
 ## The whole-face transform, corrected after hardware

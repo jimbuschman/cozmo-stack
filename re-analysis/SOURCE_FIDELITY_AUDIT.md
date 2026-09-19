@@ -1,5 +1,9 @@
 # Source Fidelity Audit — 2026-09-19
 
+Reconciled later the same day after both hardware retests passed: counts corrected, retests and the cube
+observation recorded, and three further questions settled from the binary (§10). Where this document and
+the code disagree, the code and its tests are current.
+
 Scope: every hand-written production file in `cozmo-stack/src` through M8 (about 12,500 lines across
 `Cozmo.Protocol` hand-written helpers, `Cozmo.Transport`, `Cozmo.Robot` and the `Cozmo.Conformance`
 acceptance harness). Generated code (`Generated/*.g.cs`, `AnimationTrigger.g.cs`, `ReactionTrigger.g.cs`)
@@ -27,25 +31,32 @@ relevant instructions are quoted in the code comments and tests that rest on the
 
 ## Provenance counts
 
-136 implementation decisions were classified (the table in §5). Counts **after** this sweep's fixes,
-with the movement the sweep caused in parentheses:
+**120 rows** in the classification table (§5), one per implementation decision or tightly bound group of
+decisions, counted after the sweep's fixes and the reconciliation's additions. The first version of this
+document said 136 and printed per-class numbers summing to 134; neither was the row count. The numbers below
+are computed from the table by a script and sum to the row count.
 
-| class | count | movement |
+| class | rows | note |
 | --- | ---: | --- |
-| NATIVE | 55 | +11: seven items moved here from INVENTED/INFERRED by fixes, four by confirming what was already there (head and lift limits, JPEG headers, group weighting, body stop message) |
-| UNITY | 4 | |
-| ASSET | 7 | +2 (neutral face; reaction-trigger map) |
-| WIRE | 8 | |
-| CORROBORATED | 12 | |
-| INFERRED | 16 | -4 |
-| LOCAL_POLICY | 30 | +2 (two INVENTED items re-labelled as explicit local choices once the native behaviour was recovered and recorded beside them) |
-| INVENTED | 2 | -9. The two that remain are `Expressions` (a labelled local convenience) and the M8 behaviour scores (configs carry none) |
+| NATIVE | 53 | 14 rows marked ✱ arrived here in the sweep (D1–D5, D7–D9 and the four confirmations: head and lift limits, JPEG headers, group weighting, body stop message); 3 marked ✱✱ added by the reconciliation |
+| UNITY | 3 |  |
+| ASSET | 6 | 2 rows marked ✱ (neutral face; reaction-trigger map) |
+| WIRE | 8 |  |
+| CORROBORATED | 11 |  |
+| INFERRED | 13 | includes the one row still labelled deferred (`faceAnimations`, lift 0 mm) |
+| LOCAL_POLICY | 24 | includes the one row labelled deferred (cooldown and head-angle gate) and the reconciliation's frames-per-tick row |
+| INVENTED | 2 | `Expressions` (a labelled local convenience) and the M8 behaviour scores (configs carry none) |
+
+A row that names two classes (`WIRE / NATIVE`, `CORROBORATED / LOCAL_POLICY`) is counted under the first; a
+row qualified in parentheses (`NATIVE (names)`, `NATIVE, not reproduced`, `LOCAL_POLICY (deferred)`,
+`deferred (INFERRED)`) is counted under its class. The open questions behind the INFERRED rows are listed in
+§2, which also names two areas (idle body shuffle, colour camera frames) that are not separate rows.
 
 ## 1. Confirmed discrepancies
 
 Each of these is a place where the code differed from the recovered original and the original could be
-read. All eight are fixed in this sweep, each with a regression that fails against the old behaviour
-(§6). The frozen milestones touched are in §7.
+read. All nine are fixed in this sweep, each with a regression that fails against the old behaviour
+(§6); three more found by the reconciliation are D10–D12 in §10. The frozen milestones touched are in §7.
 
 | # | where | what the code did | what the original does | evidence |
 | --- | --- | --- | --- | --- |
@@ -118,18 +129,18 @@ Deliberate choices, labelled in the code, kept:
 
 ## 4. Acceptance-evidence quality
 
-`ACCEPTANCE.md` is explicit that **every** hardware pass through M7 rests on operator report: the per-run
-JSON records "are not yet in the repository". Specifically:
+M1 and M2 rest on committed artifacts. Every hardware pass from **M3 through M7** rests on operator report:
+`ACCEPTANCE.md` says the per-run JSON records "are not yet in the repository". Specifically:
 
 | milestone | hardware pass | evidence in the repository |
 | --- | --- | --- |
 | M1 transport | 2026-09-18 | **committed**: two 20 s frame logs and a console transcript in `captures/`, replayed by `HardwareCaptureTests` on every test run |
 | M2 protocol | 2026-09-18 | **committed**: `2026-09-18_fw2457_probe.log` and `probe-results.json` |
 | M3 device | camera, face, tone 2026-09-18 | operator report; camera frames are replayed from the probe capture offline, the face codec is checked against 28 Cozmo-produced sequences; no `--acceptance` JSON |
-| M4 control | 2026-09-18 | operator report; cubes not run |
-| M5 animation | 2026-09-18/19 | operator report, including the renderer retest of 2026-09-19 |
-| M6 Wwise | 2026-09-18 | operator report for the on-robot half; the offline halves are whole-library tests |
-| M7 behaviour | 2026-09-19 | operator report |
+| M4 control | 2026-09-18 | operator report; cubes: discovery **observed** on 2026-09-19 (a real cube appeared during discovery after being tapped), the rest of the cube telemetry not yet exercised |
+| M5 animation | 2026-09-18/19 | operator report, including the renderer retest of 2026-09-19 and the post-sweep retest of 2026-09-19 (`anim_bored_01 --wwise`, passed visually) |
+| M6 Wwise | 2026-09-18 | operator report for the on-robot half; the offline halves are whole-library tests; the M5 retest above covers the 22320 Hz change |
+| M7 behaviour | 2026-09-19 | operator report, including the post-sweep retest of 2026-09-19 (`behavior --seconds 60`, passed visually) |
 
 Per the instruction, verified behaviour is **not** downgraded for the missing JSON; the runs happened and
 were reported by the operator. What the sweep adds is the observation that the two faults it found in
@@ -140,7 +151,8 @@ D6; nothing short of comparing with a stock Cozmo would have caught D7. The reco
 
 ## 5. Classification table
 
-Grouped by layer. Items changed by this sweep are marked ✱.
+Grouped by layer. Items changed by the sweep are marked ✱; items added or changed by the reconciliation
+(§10) are marked ✱✱. A row that names two classes is counted under the first.
 
 **M1/M2 — transport and protocol helpers**
 
@@ -166,6 +178,7 @@ Grouped by layer. Items changed by this sweep are marked ✱.
 | `FirmwareVersion` JSON fields | WIRE | fw2457 capture |
 | `LightState.Rgb` 5-5-5 packing | CORROBORATED | PyCozmo; LEDs lit on hardware; bit order not confirmed |
 | `SetHeadAngle`/`SetLiftHeight` default speed and accel | INFERRED | PyCozmo defaults; engine action defaults not read |
+| `RobotState.liftAngle` is an angle in radians; height = 45 + 66·sin(angle) ✱✱ | NATIVE | `Robot::UpdateFullRobotState` 0x0051291C stores RobotState+0x2C into Robot+0x300; `Robot::GetLiftHeight` 0x00516F64 and `ConvertLiftAngleToLiftHeightMM` 0x00516F9C; inverse `ConvertLiftHeightToLiftAngleRad` 0x005170B0 clamps 32..92. The fw2457 capture's values lie in the radian range (`SourceFidelityTests`) |
 | CLAD reader/writer, `string[uint_8/16]` | NATIVE | CLAD |
 
 **M3 — device layer**
@@ -211,7 +224,7 @@ Grouped by layer. Items changed by this sweep are marked ✱.
 | success = `MotorActionAck` with the same id | WIRE | |
 | cliff sensors by index; IMU raw; cube battery raw; `IS_CHARGER_OOS` raw | LOCAL_POLICY | uncertainty preserved |
 | pick-up / charger / falling transitions from flags, first state as baseline | LOCAL_POLICY | |
-| cube tracking from `ObjectAvailable` / `ObjectConnectionState` | WIRE | |
+| cube tracking from `ObjectAvailable` / `ObjectConnectionState` | WIRE | a real cube appeared in discovery on hardware after being tapped (2026-09-19, operator report); connection state, tap, movement, up-axis and battery telemetry not yet exercised on hardware |
 
 **M5 — animation**
 
@@ -243,7 +256,10 @@ Grouped by layer. Items changed by this sweep are marked ✱.
 | resting face ✱ | ASSET | `anim_neutral_eyes_01` via `AnimationTrigger::NeutralFace` |
 | `Nominal()` test pose | LOCAL_POLICY | measurement pose, labelled |
 | `Expressions` | INVENTED, labelled | local convenience, now built on the shipped neutral |
-| late tick fires missed keyframes; last face held; `Finished` zero wheels; oversize face dropped | LOCAL_POLICY | |
+| timeline is a count of streamed frames × 33 ms, frozen while the robot has no room ✱✱ | NATIVE | `UpdateStream` 0x0057C84C adds 33 to the stream time only after a frame is sent (0x0057CA94..9C); `ShouldProcessAnimationFrame` 0x0057CC6C ends the loop without touching it |
+| frames per tick: one per 33 ms wall tick, a late tick made up frame by frame within the budget | LOCAL_POLICY | the engine streams to the audio budget on every update regardless of the clock |
+| one streaming animation; a newcomer interrupts it or is refused whatever its tracks ✱✱ | NATIVE | `SetStreamingAnimation` 0x0057B174 ("will not interrupt" / "is interrupting" then `Abort`); concurrency only through `TrackLayerComponent` layers and the idle slot |
+| last face held after the last face keyframe; `Finished` zero wheels; oversize face dropped | LOCAL_POLICY | |
 
 **M6 — Wwise**
 
@@ -316,7 +332,8 @@ native with addresses; `MiniJpeg.cs` headers marked native; `Display.cs` records
 reaction cooldown as local; `PROCEDURAL_FACE.md`, `ANIMATION_LAYER.md`, `BEHAVIOR_LAYER.md`,
 `DEVICE_LAYER.md`, `CONTROL_LAYER.md`, `ACCEPTANCE.md` and `HANDOFF.md` carry errata sections pointing here.
 
-Test suite after the sweep: **440 passed, 0 failed** (`dotnet test Cozmo.sln`, 3 m 40 s; 406 before the sweep). One pre-existing test,
+Test suite after the sweep: **440 passed, 0 failed** (`dotnet test Cozmo.sln`, 3 m 40 s; 406 before the sweep);
+after the reconciliation: **444 passed, 0 failed (`dotnet test Cozmo.sln`, 3 m 36 s; 440 after the sweep)** (§10). One pre-existing test,
 `DeviceTests.DisplaySendsAnimFaceImageAndPacesAtTheAnimationRate`, failed once under a full parallel run
 and passed in isolation; it measures a 33 ms sleep with `DateTime.UtcNow` and is timing-sensitive on
 Windows. It is unrelated to the sweep and is noted rather than changed.
@@ -333,37 +350,32 @@ Windows. It is unrelated to the sweep and is noted rather than changed.
 None is an aesthetic rewrite. Every change is a confirmed divergence from a read original with a
 regression, as instructed.
 
-## 8. Hardware still required
+## 8. Hardware retests — passed
 
-The sweep is offline. These changes alter what the robot receives and must be seen on hardware before
-M5 and M7 can be called re-verified:
+The sweep changed what the robot receives in two frozen milestones. Both retests were run on 2026-09-19 and
+**passed visually** (operator report; no JSON record committed, consistent with §4):
 
-1. **Head and lift keyframes as 0x93/0x94 (D2, D3)** and **audio at 22320 Hz with probability-chosen
-   alternatives (D1, D4)**, in one run:
-   ```
-   dotnet run --project src/Cozmo.Conformance -- anim 172.31.1.1 --assets <dir> --name anim_bored_01 --wwise <obb dir>
-   ```
-   Expect the same head dip and lift twitch as before, now via animation keyframes (the `anim` command's
-   frame log will show `AnimHeadAngle`/`AnimLiftHeight` instead of `SetHeadAngle`/`SetLiftHeight`), and the
-   sound alternative varying between runs.
-2. **Resting face, blink and dart (D6, D7, D8)**:
-   ```
-   dotnet run --project src/Cozmo.Conformance -- behavior 172.31.1.1 --obb <dir> --seconds 60
-   ```
-   Expect wider, slightly shorter eyes set closer together than before; blinks as a quick squash rather
-   than lids closing; darts that move the whole face, including vertically.
-3. **Falling → impact (D9)**: optional; a drop onto a soft surface from a few centimetres while the
-   `behavior` command runs should print an `Unresolved ... waits for the landing` line on the fall and a
-   `ReactToImpact` decision on landing if the impact exceeds 1000. Not required for freezing.
-4. Unchanged and still deferred: cube acceptance.
+| retest | what it covered | result |
+| --- | --- | --- |
+| `anim 172.31.1.1 --assets <dir> --name anim_bored_01 --wwise <obb dir>` | head and lift keyframes as 0x93/0x94 with variability (D2, D3); audio at 22320 Hz with probability-chosen alternatives (D1, D4) | **passed visually** |
+| `behavior 172.31.1.1 --obb <dir> --seconds 60` | resting face, blink and dart (D6, D7, D8) | **passed visually** |
+
+The falling → impact reaction (D9) was not exercised on hardware and is not required for freezing. M5 and
+M7 are therefore **frozen and hardware re-verified at the sweep's HEAD**; the errata status is cleared in
+`HANDOFF.md` and `ACCEPTANCE.md`. The reconciliation's own changes (§10) alter the scheduler's timing under
+stalls and late ticks and the lift-height readout; neither changes what a normally paced animation sends,
+and neither has been retested on hardware. They are offline-verified.
+
+Cube acceptance remains **pending**. Hardware discovery has now been observed (a real cube appeared during
+discovery after being tapped, 2026-09-19); connection state, tap, movement, up-axis and battery telemetry
+have not been exercised on a robot, and `cubes 172.31.1.1 --acceptance` has not been run.
 
 ## 9. Recommendation on resuming M9
 
-**Resume M9 after the two retest commands in §8 pass.** Everything M9 builds on (M6 bank reading, the
-FNV-1 hash, the scheduler's audio path) is offline-verified and unaffected by the sweep except D4, which
-M9's switch-container work will extend rather than fight. The retests are needed to re-freeze M5 and M7,
-not to unblock M9, so the two can overlap if hardware time is scarce; but starting M9 before the errata
-are seen on the robot would repeat the pattern this sweep was run to break.
+**M9 may resume.** The two retests that gated it have passed. Everything M9 builds on (M6 bank reading,
+the FNV-1 hash, the scheduler's audio path) is offline-verified; D4 and the reconciliation's frame-counted
+timeline are the only sweep changes on that path, and M9's switch-container work extends rather than fights
+them.
 
 Two process changes are recommended alongside:
 
@@ -372,3 +384,48 @@ Two process changes are recommended alongside:
 * Where a face or sound is judged "correct" by eye, name the shipped artifact it is being judged against
   (a clip's face keyframe, a `.wem`) in the acceptance table. D6 and D7 passed acceptance because there was
   no such reference.
+
+## 10. Post-sweep reconciliation, 2026-09-19
+
+A bounded pass after the retests: arithmetic and wording in this document, the retest and cube records, and
+three questions resolved from the binary. No feature was added; M9 was not started.
+
+### Corrections to this document
+
+* Provenance counts now come from the table and sum to its row count (see "Provenance counts").
+* §1 said "all eight" against a list of nine.
+* §4 said every hardware pass through M7 rested on operator report; M1 and M2 have committed evidence.
+
+### Discrepancies found and fixed
+
+| # | where | what the code did | what the original does | evidence |
+| --- | --- | --- | --- | --- |
+| D10 | `RobotState.LiftHeightMm` (M2 helpers), `Sensors.LiftPositionRaw`, `CozmoRobot.LiftHeight` (M4) | returned `liftAngle` unconverted under a millimetre name, while its own comment said the unit was unconfirmed | `liftAngle` is an angle in radians. `Robot::UpdateFullRobotState` 0x0051291C loads RobotState+0x2C (the field after `headAngle` at +0x28) and stores it into Robot+0x300 (0x0051295E..0x0051296A), then calls `ComputeLiftPose` with it; `Robot::GetLiftHeight` 0x00516F64 and `ConvertLiftAngleToLiftHeightMM` 0x00516F9C convert that field with `sinf(angle) * 66 + 45 (+ 0)`; `ConvertLiftHeightToLiftAngleRad` 0x005170B0 raises the height to 32, uses `(h - 45) / 66` through `asinf` below 92 and the constant 0.712121 = (92 − 45)/66 at or above it. The fw2457 capture's 500+ `RobotState` messages carry lift values inside the radian range, not 32..92 | now `LiftAngleRad`, `LiftHeightMm` (converted), `LiftHeightMmFromAngle`, `LiftAngleRadFromHeight`; the raw pass-through and its "unit unknown" comments are gone |
+| D11 | `AnimationScheduler.Advance` (M5) | timeline `t = nowMs − startMs`: while the audio budget refused a frame the wall clock ran on, and the first frame after a stall jumped forward, firing every keyframe that had come due in one frame with one audio frame, the audio position (always per frame) falling behind the keyframes | animation time is a count of streamed frames. `UpdateStream` 0x0057C84C passes one stream time (this+0x84) to `GetAudioToSend`, `ApplyLayersToAnim` and every track's `GetCurrentStreamingMessage`, and adds 33 (0x21) to it only after `SendBufferedMessages` succeeds (0x0057CA94..0x0057CA9C, then loops to 0x0057C92E); `ShouldProcessAnimationFrame` 0x0057CC6C returns false, leaving the stream time untouched, while the send buffer (this+0x94) is non-empty or the audio client has no room. `AnimationStreamer::Update` 0x0057CE5C reads the clock only for the keep-alive timers. So the timeline **freezes** during a stall and catches up frame by frame, never by jumping | `FrameStepMs = 33`; `PositionMs = framesStreamed × 33`; a stalled call leaves the timeline where it is; a late call streams the frames the wall clock owes, each against the budget (the count per call is local policy; the engine streams to the budget every update) |
+| D12 | `AnimationScheduler.Play` (M5) | `replaceRunning: false` refused only when the new clip's tracks clashed with the running clip's; on disjoint tracks it replaced the running clip anyway | the engine has exactly one streaming animation (`AnimationStreamer` this+0x38). `SetStreamingAnimation` 0x0057B174: with one streaming and `interruptRunning` false, "Already streaming %s, will not interrupt with %s" and nothing changes, whatever the tracks; with it true, "Animation %s is interrupting animation %s", `Abort()`, then `InitStream`. Nothing runs two animations side by side: blinks, eye shifts and squints are `TrackLayerComponent` layers on the streaming animation, the idle animation (this+0x34) streams only when nothing else does, and `MovementComponent::LockTracks` mutes tracks of the one animation rather than sharing them out | `replaceRunning` is now the engine's `interruptRunning`: false refuses whenever anything is running; true interrupts. No production caller passed false |
+
+Neither D11 nor D12 changes what a normally paced animation sends: one frame per 33 ms tick with its audio
+message and the keyframes due at that frame time, exactly as before.
+
+### Classification changes
+
+Three NATIVE rows added (✱✱ in §5), one LOCAL_POLICY row split so that the late-tick behaviour is no longer
+listed as local policy (it is now the engine's), one LOCAL_POLICY row added for how many frames one tick
+streams, and the M4 cube row's basis updated. Totals in "Provenance counts".
+
+### Tests
+
+| fix | regression |
+| --- | --- |
+| D10 | `SourceFidelityTests.TheLiftAngleIsAnAngleAndConvertsToHeightAsTheEngineDoes` (an angle of 0 read as 0 mm before, now 45), `TheCapturedRobotReportsItsLiftInRadiansNotMillimetres` (500+ captured states inside the radian range) |
+| D11 | `AnimationGapTests.TheTimelineFreezesWhileTheRobotHasNoRoomAndResumesWhereItStopped` (old code jumped to 1353 ms and fired seven events in one frame), `ALateTickCatchesUpFrameByFrameNotByJumping` (old code sent 2 audio frames for 4 keyframes); `AnimationTests.ATickThatArrivesLateFiresEverythingItMissedInOrder` now also asserts the frame count |
+| D12 | `AnimationTests.AClipOnAFreeTrackIsStillRefusedBecauseOnlyOneAnimationStreamsAtATime` (replaces the test that asserted the old replacement) |
+
+Test suite after the reconciliation: **444 passed, 0 failed (`dotnet test Cozmo.sln`, 3 m 36 s; 440 after the sweep)**.
+
+### Frozen milestones touched
+
+| milestone | change |
+| --- | --- |
+| M2 helpers / M4 | lift readout renamed and converted (D10); conformance `control` prints angle and height |
+| M5 | scheduler timeline and refusal semantics (D11, D12) |

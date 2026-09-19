@@ -31,14 +31,18 @@ here as reported by the operator, which is weaker evidence than a committed arti
 | Head and lift motion | pass — the robot acknowledged each action by its id | pass | operator report |
 | Wheel drive | pass — confirmed from the wheel speeds the robot reported | **pass** — moved forward and back correctly | operator report, run with `--allow-drive` |
 | Stop-on-cliff | enabled before any wheel motion | n/a | operator report |
-| Cubes | **not run** | **not run** | no cube was available |
+| Cubes | discovery **observed**; acceptance **not run** | **observed** — a real cube appeared during discovery after being tapped (2026-09-19) | operator report; `cubes --acceptance` not yet run |
 
 ### Cubes
 
 Cube support is **code-complete and offline-tested, with hardware acceptance pending**. It is not failed and
 not unimplemented. Discovery, connection state, tap, movement, up-axis and battery telemetry are all
-implemented and covered by tests driven through the real message path. What is missing is only a cube to
-point the robot at. Run `cubes 172.31.1.1 --acceptance` when one is to hand.
+implemented and covered by tests driven through the real message path.
+
+On 2026-09-19 **hardware discovery was observed**: a real cube appeared during discovery after being tapped.
+That is the first hardware evidence for the cube path and no more than that. Connection state, tap, movement,
+up-axis and battery telemetry have not been exercised on a robot, and `cubes 172.31.1.1 --acceptance` has not
+been run; full cube telemetry acceptance stays pending.
 
 ## M5 — animation and expression
 
@@ -142,19 +146,25 @@ M7, but it was not the only fault, and the renderer was also at fault.
 Copy the JSON acceptance records from the machine the runs were made on, and commit them here. Until then
 the table above rests on the operator's report rather than on a committed artifact.
 
-One acceptance item remains unrun for want of hardware, not for want of code: **M4 cubes**. It is deferred,
-not failed — see the deferred list in `ANIMATION_LAYER.md`.
+One acceptance item remains unrun: **M4 cubes**. Discovery has been observed on hardware (above); the
+`--acceptance` run covering the rest of the cube telemetry has not been made. It is deferred, not failed — see
+the deferred list in `ANIMATION_LAYER.md`.
 
-## Source Fidelity Sweep, 2026-09-19 - retests required
+## Source Fidelity Sweep, 2026-09-19 - retests passed
 
 The sweep ([SOURCE_FIDELITY_AUDIT.md](SOURCE_FIDELITY_AUDIT.md)) changed what the robot receives in two
-frozen milestones. They are **offline-verified and awaiting hardware**:
+frozen milestones. Both retests were run on 2026-09-19 and **passed visually**:
 
-| milestone | what changed on the wire or the display | retest |
-| --- | --- | --- |
-| M5 | head and lift keyframes as `animHeadAngle`/`animLiftHeight` with variability; audio at 22320 Hz; audio alternative chosen by probability; angle interpolation and parameter clipping; resting face from `anim_neutral_eyes_01` | `anim 172.31.1.1 --assets <dir> --name anim_bored_01 --wwise <obb dir>` |
-| M7 | blink as the engine's seven-frame squash; dart moving the whole face with the engine's eye shaping; falling reacts on landing with `ReactToImpact` | `behavior 172.31.1.1 --obb <dir> --seconds 60` |
+| milestone | what changed on the wire or the display | retest | result |
+| --- | --- | --- | --- |
+| M5 | head and lift keyframes as `animHeadAngle`/`animLiftHeight` with variability; audio at 22320 Hz; audio alternative chosen by probability; angle interpolation and parameter clipping; resting face from `anim_neutral_eyes_01` | `anim 172.31.1.1 --assets <dir> --name anim_bored_01 --wwise <obb dir>` | **pass** — operator report, visual |
+| M7 | blink as the engine's seven-frame squash; dart moving the whole face with the engine's eye shaping; falling reacts on landing with `ReactToImpact` | `behavior 172.31.1.1 --obb <dir> --seconds 60` | **pass** — operator report, visual |
 
-Until both pass, the M5 and M7 rows above describe the code as accepted on 2026-09-18/19, not the code at
-HEAD. Nothing in M1-M4 or M6 changed on the wire (M3's sample-rate change alters tone pitch by 1.2 % and
-the resampling of shipped sounds; the M6 `anim_bored_01` retest above covers it).
+M5 and M7 are hardware re-verified at the sweep's HEAD; the "frozen with errata" status is cleared. As with
+the earlier rows, the evidence is operator report and no JSON record is committed. Nothing in M1-M4 or M6
+changed on the wire (M3's sample-rate change alters tone pitch by 1.2 % and the resampling of shipped
+sounds; the M5 `anim_bored_01` retest covers it).
+
+The reconciliation that followed (audit §10) changed the animation scheduler's behaviour under stalls and
+late ticks and the lift-height readout. Neither alters what a normally paced animation sends; both are
+offline-verified only.

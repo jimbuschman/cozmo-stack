@@ -1,8 +1,9 @@
 # M4 — physical control layer
 
 Status: **COMPLETE and FROZEN** (2026-09-18). Sensors, lights, head and lift motion and wheel drive all
-passed on hardware. Cubes are code-complete and offline-tested with hardware acceptance pending, only
-because no cube was available. See `ACCEPTANCE.md`.
+passed on hardware. Cubes are code-complete and offline-tested; hardware discovery has been observed (a real
+cube appeared during discovery after being tapped, 2026-09-19) and the rest of the cube telemetry acceptance
+is pending. See `ACCEPTANCE.md`.
 
 Everything here sits above the frozen M1 transport and M2 protocol and the M3 device layer. Nothing in
 those was reopened, and no generated code was hand-edited.
@@ -50,10 +51,9 @@ motion method refuses until `MotorCalibration` has been seen and has finished, u
 
 These are surfaced with their ambiguity intact rather than converted into something that reads cleanly:
 
-* **`liftAngle`.** The engine's field is called an angle; PyCozmo treats it as a height in millimetres.
-  Which it is has not been established, so `Sensors.LiftPositionRaw` passes it through unconverted and is
-  deliberately not named after either unit. The setter takes millimetres, which is what the engine's own
-  `SetLiftHeight.height_mm` field says.
+* **`liftAngle`** — no longer uncertain. It is an angle in radians (see the erratum below);
+  `Sensors.LiftAngleRad` carries it and `Sensors.LiftHeightMm` converts it with the engine's own arithmetic.
+  The setter takes millimetres, which is what the engine's own `SetLiftHeight.height_mm` field says.
 * **Accelerometer and gyroscope units.** Not established. At rest the accelerometer magnitude is about 9800,
   which suggests millimetres per second squared, but nothing confirms it. Reported as raw floats.
 * **Cliff sensor identity.** The four raw readings arrive in a fixed order but which physical corner each
@@ -118,7 +118,12 @@ Cube support here is discovery, connection state and basic telemetry only.
   degrees beyond either; the lift presets sit in a table at 0x00C54688: 32 mm (low dock), 76 mm (high
   dock), 92 mm (carry). The "Taken from PyCozmo, not confirmed against the engine" line above is
   superseded. The wheel-speed ceiling of 200 mm/s remains PyCozmo's.
-* **`liftAngle` in `RobotState` is an angle.** The engine has `Robot::SetLiftAngle(float const&)`
-  (0x00513485) and no height setter of its own, converting height to angle before commanding the motor,
-  while the `SetLiftHeight` message the robot accepts carries millimetres. `Sensors.LiftPositionRaw` stays
-  unconverted because the conversion constants were not read.
+* **`liftAngle` in `RobotState` is an angle in radians, and the conversion is read.**
+  `Robot::UpdateFullRobotState` (0x0051291C) loads RobotState+0x2C, the field after `headAngle`, and stores it
+  into Robot+0x300 (0x0051295E..0x0051296A); `Robot::GetLiftHeight` (0x00516F64) and
+  `ConvertLiftAngleToLiftHeightMM` (0x00516F9C) turn that field into millimetres with
+  `sinf(angle) * 66 + 45`, and `ConvertLiftHeightToLiftAngleRad` (0x005170B0) inverts it after clamping the
+  height to 32..92 mm (0.712121 = (92 − 45)/66 is its ceiling constant). `RobotState.LiftHeightMm` now
+  applies the same arithmetic, `Sensors.LiftPositionRaw` has become `LiftAngleRad` plus `LiftHeightMm`, and
+  the fw2457 capture's `RobotState` values lie in the radian range (`SourceFidelityTests`). Reconciliation of
+  2026-09-19, audit §10 (D10).
