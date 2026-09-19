@@ -4564,22 +4564,22 @@
    "declared_size": 3,
    "fields": [
     {
-     "name": "field0",
+     "name": "durationTimeMs",
      "kind": "scalar",
      "type": "u16",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine",
+     "note": "the keyframe's durationTime_ms, truncated to 16 bits (strh)"
     },
     {
-     "name": "field1",
+     "name": "angleDeg",
      "kind": "scalar",
-     "type": "u8",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "i8",
+     "name_source": "engine",
+     "note": "angle_deg, with the keyframe's variability already applied: RandIntInRange(angle - var, angle + var) when var != 0"
     }
    ],
    "confidence": "native_only",
-   "verification": "layout_known_semantics_uncertain",
+   "verification": "statically_verified",
    "evidence": {
     "native_unpack": "0x7bcea2",
     "native_namespace": "AnimKeyFrame",
@@ -4588,7 +4588,8 @@
     "capture": null
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "widths from native Unpack",
+    "engine 2026-09-19: HeadAngleKeyFrame::GetStreamMessage at 0x004F8C08 stores durationTime_ms (this+0xC) as a u16 at +0x12 and angle_deg (i8 at this+0x10) at +0x14 after applying variability (this+0x11) through IKeyFrame::sRNG RandIntInRange(angle-var, angle+var); the three bytes at +0x12 are moved into AnimKeyFrame::HeadAngle. SetMembersFromFlatBuf at 0x004F8C90 reads FlatBuffer field 1 durationTime_ms (vtable slot +6, u32 -> this+0xC), field 2 angle_deg (slot +8, byte -> this+0x10) and field 3 variability_deg (slot +10, byte -> this+0x11)"
    ]
   },
   "0x94": {
@@ -4604,22 +4605,22 @@
    "declared_size": 3,
    "fields": [
     {
-     "name": "field0",
+     "name": "durationTimeMs",
      "kind": "scalar",
      "type": "u16",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine",
+     "note": "the keyframe's durationTime_ms, truncated to 16 bits (strh)"
     },
     {
-     "name": "field1",
+     "name": "heightMm",
      "kind": "scalar",
      "type": "u8",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine",
+     "note": "height_mm, with the keyframe's variability already applied: RandIntInRange(height - var, height + var) when var != 0"
     }
    ],
    "confidence": "native_only",
-   "verification": "layout_known_semantics_uncertain",
+   "verification": "statically_verified",
    "evidence": {
     "native_unpack": "0x7bcfda",
     "native_namespace": "AnimKeyFrame",
@@ -4628,7 +4629,8 @@
     "capture": null
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "widths from native Unpack",
+    "engine 2026-09-19: LiftHeightKeyFrame::GetStreamMessage at 0x004F8F80 mirrors HeadAngleKeyFrame::GetStreamMessage: durationTime_ms (this+0xC) as u16 at +0x12, height_mm (u8 at this+0x10) at +0x14 after RandIntInRange(height-var, height+var) with variability at this+0x11; SetMembersFromFlatBuf at 0x004F9004 reads FlatBuffer field 1 durationTime_ms (slot +6 -> this+0xC), field 2 height_mm (slot +8 -> this+0x10) and field 3 variability_mm (slot +10 -> this+0x11)"
    ]
   },
   "0x95": {

@@ -59,8 +59,8 @@ public static class AnimDump
     /// <summary>What the executor does with each kind of keyframe, and why.</summary>
     private static (string Verdict, string Why) Handling(Keyframe k) => k switch
     {
-        HeadKeyframe => ("ACTED ON", "sent as SetHeadAngle with the keyframe's duration"),
-        LiftKeyframe => ("ACTED ON", "sent as SetLiftHeight with the keyframe's duration"),
+        HeadKeyframe => ("ACTED ON", "sent as animHeadAngle (0x93) with the duration and the angle plus variability, as the engine streams it"),
+        LiftKeyframe => ("ACTED ON", "sent as animLiftHeight (0x94) with the duration and the height plus variability, as the engine streams it"),
         FaceKeyframe => ("ACTED ON", "rendered and sent; blended towards the next face keyframe each frame"),
         BodyKeyframe b when b.EncodedRadius is { } rr =>
             ("ACTED ON", $"sent as animBodyMotion speed={b.Speed} radius={rr}, as the engine does"),
@@ -237,6 +237,8 @@ public static class AnimDump
             {
                 SetHeadAngle h => $"angle={h.AngleRad:F3} rad duration={h.DurationSec:F3}s action={h.ActionId}",
                 SetLiftHeight l => $"height={l.HeightMm:F1} mm duration={l.DurationSec:F3}s action={l.ActionId}",
+                Protocol.HeadAngle ha => $"angle_deg={ha.AngleDeg} duration={ha.DurationTimeMs} ms (animation keyframe)",
+                Protocol.LiftHeight lh => $"height_mm={lh.HeightMm} duration={lh.DurationTimeMs} ms (animation keyframe)",
                 DriveWheels d => $"left={d.LwheelSpeedMmps:F1} right={d.RwheelSpeedMmps:F1}",
                 Protocol.BodyMotion b2 => $"speed={b2.Speed} radius={b2.RadiusMm}",
                 Protocol.FaceImage f => $"{f.Image.Length} byte face payload",

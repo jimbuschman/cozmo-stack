@@ -2057,45 +2057,45 @@ public sealed partial class TurnToRecordedHeading : RobotMessage
     }
 }
 
-/// <summary>animHeadAngle 0x93 (engine_to_robot), 3 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+/// <summary>animHeadAngle 0x93 (engine_to_robot), 3 bytes. Confidence: native_only. Verification: statically_verified. widths from native Unpack engine 2026-09-19: HeadAngleKeyFrame::GetStreamMessage at 0x004F8C08 stores durationTime_ms (this+0xC) as a u16 at +0x12 and angle_deg (i8 at this+0x10) at +0x14 after applying variability (this+0x11) through IKeyFrame::sRNG RandIntInRange(angle-var, angle+var); the three bytes at +0x12 are moved into AnimKeyFrame::HeadAngle. SetMembersFromFlatBuf at 0x004F8C90 reads FlatBuffer field 1 durationTime_ms (vtable slot +6, u32 -> this+0xC), field 2 angle_deg (slot +8, byte -> this+0x10) and field 3 variability_deg (slot +10, byte -> this+0x11)</summary>
 public sealed partial class HeadAngle : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.AnimHeadAngle;
     public HeadAngle() { }
-    /// <summary>name not established; name from generated</summary>
-    public ushort Field0;
-    /// <summary>name not established; name from generated</summary>
-    public byte Field1;
+    /// <summary>name from engine; the keyframe's durationTime_ms, truncated to 16 bits (strh)</summary>
+    public ushort DurationTimeMs;
+    /// <summary>name from engine; angle_deg, with the keyframe's variability already applied: RandIntInRange(angle - var, angle + var) when var != 0</summary>
+    public sbyte AngleDeg;
     public static HeadAngle Read(CladReader r) => new()
     {
-        Field0 = r.U16(),
-        Field1 = r.U8(),
+        DurationTimeMs = r.U16(),
+        AngleDeg = r.I8(),
     };
     public override void WriteBody(CladWriter w)
     {
-        w.U16(Field0);
-        w.U8(Field1);
+        w.U16(DurationTimeMs);
+        w.I8(AngleDeg);
     }
 }
 
-/// <summary>animLiftHeight 0x94 (engine_to_robot), 3 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+/// <summary>animLiftHeight 0x94 (engine_to_robot), 3 bytes. Confidence: native_only. Verification: statically_verified. widths from native Unpack engine 2026-09-19: LiftHeightKeyFrame::GetStreamMessage at 0x004F8F80 mirrors HeadAngleKeyFrame::GetStreamMessage: durationTime_ms (this+0xC) as u16 at +0x12, height_mm (u8 at this+0x10) at +0x14 after RandIntInRange(height-var, height+var) with variability at this+0x11; SetMembersFromFlatBuf at 0x004F9004 reads FlatBuffer field 1 durationTime_ms (slot +6 -> this+0xC), field 2 height_mm (slot +8 -> this+0x10) and field 3 variability_mm (slot +10 -> this+0x11)</summary>
 public sealed partial class LiftHeight : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.AnimLiftHeight;
     public LiftHeight() { }
-    /// <summary>name not established; name from generated</summary>
-    public ushort Field0;
-    /// <summary>name not established; name from generated</summary>
-    public byte Field1;
+    /// <summary>name from engine; the keyframe's durationTime_ms, truncated to 16 bits (strh)</summary>
+    public ushort DurationTimeMs;
+    /// <summary>name from engine; height_mm, with the keyframe's variability already applied: RandIntInRange(height - var, height + var) when var != 0</summary>
+    public byte HeightMm;
     public static LiftHeight Read(CladReader r) => new()
     {
-        Field0 = r.U16(),
-        Field1 = r.U8(),
+        DurationTimeMs = r.U16(),
+        HeightMm = r.U8(),
     };
     public override void WriteBody(CladWriter w)
     {
-        w.U16(Field0);
-        w.U8(Field1);
+        w.U16(DurationTimeMs);
+        w.U8(HeightMm);
     }
 }
 

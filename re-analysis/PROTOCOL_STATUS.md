@@ -25,8 +25,8 @@ Evidence order: (1) official decompiled C# CLAD structs, (2) `libcozmoEngine.so`
 |---|---|---|
 | hardware verified | 24 | exercised on the firmware-2457 robot: the robot sent it and our codec re-encoded it byte-identically, or the robot demonstrably acted on it |
 | capture verified | 4 | seen on the wire in a real session with a consistent length, but no response ties it to robot behaviour |
-| statically verified | 55 | layout matches an official C# CLAD struct field for field, or is empty |
-| layout known, semantics uncertain | 76 | widths/order from the engine binary; some field names are guesses |
+| statically verified | 57 | layout matches an official C# CLAD struct field for field, or is empty |
+| layout known, semantics uncertain | 74 | widths/order from the engine binary; some field names are guesses |
 | unresolved | 2 | one or more fields not attributed; the bytes are preserved in a raw tail |
 | capture conflict | 0 | observed bytes disagree with the static layout |
 
@@ -34,13 +34,13 @@ Evidence order: (1) official decompiled C# CLAD structs, (2) `libcozmoEngine.so`
 
 | source | fields |
 |---|---|
-| generated placeholder | 174 |
+| generated placeholder | 170 |
 | official decompiled C# | 154 |
 | PyCozmo (widths agreed with native) | 65 |
 | hardware capture | 9 |
-| engine | 2 |
+| engine | 6 |
 
-174 of 404 fields still carry a generated placeholder name; 179 fields are flagged uncertain.
+170 of 404 fields still carry a generated placeholder name; 175 fields are flagged uncertain.
 Unknown bytes are never invented: a message whose layout does not add up keeps an explicit `unknownTail`
 raw field, and placeholder names are `field0`, `field1`, ... so they cannot be mistaken for official ones.
 
@@ -169,15 +169,15 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 
 ### Animation (17 messages)
 
-10 layout known, semantics uncertain, 5 statically verified, 2 hardware verified
+8 layout known, semantics uncertain, 7 statically verified, 2 hardware verified
 
 | tag | dir | CLAD type | size | layout | verification | probe safety |
 |---|---|---|---|---|---|---|
 | `0x8D` | E->R | AbortAnimation | 0 | empty | statically verified | motion |
 | `0x91` | E->R | RecordHeading | 0 | empty | statically verified | motion |
 | `0x92` | E->R | TurnToRecordedHeading | 13 | native_only | layout known, semantics uncertain | motion |
-| `0x93` | E->R | HeadAngle | 3 | native_only | layout known, semantics uncertain | motion |
-| `0x94` | E->R | LiftHeight | 3 | native_only | layout known, semantics uncertain | motion |
+| `0x93` | E->R | HeadAngle | 3 | native_only | statically verified | motion |
+| `0x94` | E->R | LiftHeight | 3 | native_only | statically verified | motion |
 | `0x95` | E->R | Event | 1 | native_only | layout known, semantics uncertain | state_change |
 | `0x96` | E->R | AnimEventToRTIP | 2 | native_only | layout known, semantics uncertain | state_change |
 | `0x99` | E->R | BodyMotion | 4 | hardware_refined | statically verified | motion |
@@ -324,8 +324,8 @@ them, so some field names are placeholders. Sending them is safe; interpreting t
 | `0x80` | RequestCrashReports | identity_version_logging | field0 u32 |
 | `0x89` | DebugSetRTTO | identity_version_logging | field0 u16 |
 | `0x92` | TurnToRecordedHeading | animation | field0 u16, field1 u16, field2 u16, field3 u16, field4 u16, field5 u16, field6 u8 |
-| `0x93` | HeadAngle | animation | field0 u16, field1 u8 |
-| `0x94` | LiftHeight | animation | field0 u16, field1 u8 |
+| `0x93` | HeadAngle | animation | durationTimeMs u16, angleDeg i8 |
+| `0x94` | LiftHeight | animation | durationTimeMs u16, heightMm u8 |
 | `0x95` | Event | animation | field0 u8 |
 | `0x96` | AnimEventToRTIP | animation | field0 u8, field1 u8 |
 | `0x98` | BackpackLights | leds_display | field0 u16[5] |

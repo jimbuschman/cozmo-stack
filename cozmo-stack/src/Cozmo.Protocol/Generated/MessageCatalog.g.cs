@@ -180,9 +180,9 @@ public enum RobotMessageId : byte
     AnimRecordHeading = 0x91,
     /// <summary>TurnToRecordedHeading (engine_to_robot); size 13; layout_known_semantics_uncertain</summary>
     AnimTurnToRecordedHeading = 0x92,
-    /// <summary>HeadAngle (engine_to_robot); size 3; layout_known_semantics_uncertain</summary>
+    /// <summary>HeadAngle (engine_to_robot); size 3; statically_verified</summary>
     AnimHeadAngle = 0x93,
-    /// <summary>LiftHeight (engine_to_robot); size 3; layout_known_semantics_uncertain</summary>
+    /// <summary>LiftHeight (engine_to_robot); size 3; statically_verified</summary>
     AnimLiftHeight = 0x94,
     /// <summary>Event (engine_to_robot); size 1; layout_known_semantics_uncertain</summary>
     AnimEvent = 0x95,
@@ -432,8 +432,8 @@ public static class MessageCatalog
         [RobotMessageId.AnimAudioSilence] = new(RobotMessageId.AnimAudioSilence, "animAudioSilence", "AudioSilence", MessageDirection.EngineToRobot, 0, false, Subsystem.Audio, ProbeSafety.StateChange, LayoutConfidence.Empty, VerificationStatus.StaticallyVerified, "OutputSilence"),
         [RobotMessageId.AnimRecordHeading] = new(RobotMessageId.AnimRecordHeading, "animRecordHeading", "RecordHeading", MessageDirection.EngineToRobot, 0, false, Subsystem.Animation, ProbeSafety.Motion, LayoutConfidence.Empty, VerificationStatus.StaticallyVerified, "RecordHeading"),
         [RobotMessageId.AnimTurnToRecordedHeading] = new(RobotMessageId.AnimTurnToRecordedHeading, "animTurnToRecordedHeading", "TurnToRecordedHeading", MessageDirection.EngineToRobot, 13, false, Subsystem.Animation, ProbeSafety.Motion, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, "TurnToRecordedHeading"),
-        [RobotMessageId.AnimHeadAngle] = new(RobotMessageId.AnimHeadAngle, "animHeadAngle", "HeadAngle", MessageDirection.EngineToRobot, 3, false, Subsystem.Animation, ProbeSafety.Motion, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, "AnimHead"),
-        [RobotMessageId.AnimLiftHeight] = new(RobotMessageId.AnimLiftHeight, "animLiftHeight", "LiftHeight", MessageDirection.EngineToRobot, 3, false, Subsystem.Animation, ProbeSafety.Motion, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, "AnimLift"),
+        [RobotMessageId.AnimHeadAngle] = new(RobotMessageId.AnimHeadAngle, "animHeadAngle", "HeadAngle", MessageDirection.EngineToRobot, 3, false, Subsystem.Animation, ProbeSafety.Motion, LayoutConfidence.NativeOnly, VerificationStatus.StaticallyVerified, "AnimHead"),
+        [RobotMessageId.AnimLiftHeight] = new(RobotMessageId.AnimLiftHeight, "animLiftHeight", "LiftHeight", MessageDirection.EngineToRobot, 3, false, Subsystem.Animation, ProbeSafety.Motion, LayoutConfidence.NativeOnly, VerificationStatus.StaticallyVerified, "AnimLift"),
         [RobotMessageId.AnimEvent] = new(RobotMessageId.AnimEvent, "animEvent", "Event", MessageDirection.EngineToRobot, 1, false, Subsystem.Animation, ProbeSafety.StateChange, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
         [RobotMessageId.AnimEventToRTIP] = new(RobotMessageId.AnimEventToRTIP, "animEventToRTIP", "AnimEventToRTIP", MessageDirection.EngineToRobot, 2, false, Subsystem.Animation, ProbeSafety.StateChange, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
         [RobotMessageId.AnimFaceImage] = new(RobotMessageId.AnimFaceImage, "animFaceImage", "FaceImage", MessageDirection.EngineToRobot, -1, true, Subsystem.LedsDisplay, ProbeSafety.SafeVisible, LayoutConfidence.NativeNamed, VerificationStatus.LayoutKnownSemanticsUncertain, "DisplayImage"),
