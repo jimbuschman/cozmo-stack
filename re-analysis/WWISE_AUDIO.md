@@ -1,11 +1,11 @@
 # M6 — Cozmo's original sound assets
 
-Status: **event resolution complete; ADPCM decoded; Wwise Vorbis blocked on a decision, not on analysis.**
+Status: **complete.** Event resolution, Wwise Vorbis and mono ADPCM all decode from the shipped assets.
 
-The chain from an animation's audio event id to a media file is fully decoded and verified across the whole
-shipped library. Of the two codecs those files use, one is decoded here and one is not, for a reason set out
-under "The Vorbis boundary" below. Nothing is substituted or faked: an event that cannot be produced returns
-null and is named.
+The chain from an animation's audio event id to a media file is decoded and verified across the whole
+shipped library, and so are both codecs those files use. **All 2019 Wwise Vorbis files rebuild and decode,
+and 220 of 227 ADPCM files decode**; what remains unsupported is listed at the end. Nothing is substituted
+or faked: an event that cannot be produced returns null and is named.
 
 ## There is no engine to check against
 
@@ -71,12 +71,13 @@ events in banks               835
 of those, Stop/Pause/Resume   130  (correctly play nothing)
 events that should play       705
 resolved to media             615  (87.2% of those)
-have a decodable alternative   94  (13.3% of those)
 distinct media referenced     2037 of 2214 on disk
-  Vorbis    1789  not decoded
-  Adpcm      227  decoded
-  Unknown     21  not decoded
+  Vorbis    1789
+  Adpcm      227
+  Unknown     21  (referenced but absent from the archive)
 ```
+
+All 615 of those resolved events now have a decodable alternative; see the validation section below.
 
 The 130 Stop, Pause and Resume events resolve to nothing because they *play* nothing; counting them as
 failures would understate the result, so they are counted apart.
@@ -96,9 +97,12 @@ Of the 2214 media files:
 
 | codec | files | state |
 | --- | --- | --- |
-| Wwise Vorbis (format tag 0xFFFF) | 1987 | **not decoded** |
+| Wwise Vorbis (format tag 0xFFFF) | 2019 | **decoded** |
 | IMA ADPCM (format tag 2), mono | 220 | decoded |
 | IMA ADPCM (format tag 2), stereo | 7 | **not decoded** |
+
+The Vorbis count is 2019 rather than the 1987 in `AudioAssets.zip` because 32 more are embedded in the
+banks themselves.
 
 ### ADPCM
 
@@ -117,59 +121,107 @@ pins to full scale for roughly a tenth of its samples. Whatever Wwise does for s
 arrangement of IMA. All seven are 48 kHz music, and the robot's speaker is mono, so this is recorded rather
 than pursued.
 
-### The Vorbis boundary
+### Wwise Vorbis
 
-These files are Wwise Vorbis with the Ogg container and the codebooks stripped. The header is the Wwise
-`vorb` block, which in bank version 120 lives inside the `fmt` chunk: it begins at `fmt + 0x18`, is 0x2A
-bytes long, and holds the sample count at +0x00, the setup packet offset at +0x10, the first audio packet
-offset at +0x14, a codebook-set id at +0x24, and the two blocksize exponents at +0x28 and +0x29.
+These files are Wwise Vorbis with the Ogg container, the codebooks and the granule positions all stripped.
+The header is the Wwise `vorb` block, which in bank version 120 lives inside the `fmt` chunk: it begins at
+`fmt + 0x18`, is 0x2A bytes long, and holds the sample count at +0x00, a flag at +0x04 saying whether the
+audio packets were stripped further, the setup packet offset at +0x10, the first audio packet offset at
++0x14, a codebook-set id at +0x24, and the two blocksize exponents at +0x28 and +0x29.
 
 The layout is confirmed by the assets: those last two bytes decode to 2^8/2^11 in 1955 files and 2^9/2^10 in
 32, and those are the only legal Vorbis blocksize pairs — a mis-read offset could not produce them.
 
-**The blocker is the codebooks, and it is measured, not assumed.** Across all 1987 files:
+**The codebooks are external, measured rather than assumed.** Across all the Vorbis files: setup packets are
+185 to 230 bytes, mean 221; **none** contains the `BCV` codebook sync that an inline setup would carry; and
+they reference 5 distinct codebook-set ids. A setup packet carrying real codebooks runs to kilobytes, so at
+~221 bytes these hold codebook *indices* into a library that ships nowhere in the APK or OBB.
 
-* setup packets are 185 to 230 bytes, mean 221;
-* **none** of them contains the `BCV` codebook sync pattern that an inline Vorbis setup would carry;
-* they reference 5 distinct external codebook-set ids.
+Three pieces put the stream back together:
 
-A Vorbis setup packet carrying real codebooks runs to kilobytes. At ~221 bytes these carry codebook
-*indices* into an external library that is not shipped in the APK or the OBB.
+1. **The packed codebook library**, `packed_codebooks_aoTuV_603.bin`, vendored from
+   [ww2ogg](https://github.com/hcs64/ww2ogg) under BSD-3-Clause. Provenance, revision and SHA-256 are in
+   `cozmo-stack/third-party/ww2ogg/README.md`. It is generic Vorbis codec data, not a Cozmo asset.
+2. **`WwiseVorbisRebuilder`**, a port of the parts of ww2ogg these files need. It writes the identification
+   and comment headers Wwise discards, expands each 10-bit codebook index back into a full codebook, widens
+   the fields Wwise packed into fewer bits than the specification uses, and re-frames the audio packets into
+   Ogg pages. Only this build's shape is ported — external codebooks, `vorb` size 0x2A, no granule — and any
+   file that is not that shape is refused rather than guessed at.
+3. **NVorbis** 0.10.5 (MIT) decodes the rebuilt stream. It is confined to `WwiseVorbis.cs`, so nothing else
+   in the stack depends on it.
 
-Decoding them therefore needs three things, and the first is a decision rather than a task:
+**Granule positions have to be computed.** Wwise strips them, so every packet header carries only a size.
+ww2ogg leaves them zero and users then run the separate `revorb` tool to fix them up; this does that inline
+instead, accumulating `(previous blocksize + current blocksize) / 4` samples per packet. This is not
+cosmetic: with every granule zero the container is still structurally valid — all 61 pages of a test file
+passed their CRCs — but NVorbis will not produce samples from a stream whose final granule is zero, and
+hangs instead of failing. That cost an hour to find.
 
-1. **A packed codebook library.** The usual source is `packed_codebooks_aoTuV_603.bin` from
-   [ww2ogg](https://github.com/hcs64/ww2ogg) (BSD-3-Clause, so redistributable with attribution). It is a
-   third-party binary blob derived from the aoTuV codebooks, and committing one into this repository changes
-   what this project redistributes. That is not a call to make unilaterally.
-2. **A port of ww2ogg's bitstream rebuilder**, roughly a thousand lines of bit-level work, to turn a Wwise
-   packet stream back into a standard Ogg Vorbis one.
-3. **A Vorbis decoder** to turn that into PCM — either a dependency such as NVorbis (MIT), or writing one,
-   which is a large piece of work in its own right. Every layer so far has been dependency-free by choice,
-   so this is also a decision about the project's posture rather than a detail.
+## Library-wide validation
 
-Steps 2 and 3 are ordinary work. Step 1 is the one that needs an answer first, which is why M6 stops here
-rather than guessing at it.
+From `wwise <sound-dir> --validate`, decoding **every** media file present rather than only those an event
+references, so that a codebook family no event happens to name is still exercised:
+
+```
+library-wide decode of all 2313 media files
+  Vorbis            2019
+    rebuilt to Ogg  2019  (100.0%)
+    decoded by NVorbis 2019  (100.0%)
+  ADPCM             227
+    decoded         220  (96.9%)
+  missing on disk   21
+  other/unreadable  46
+
+sanity checks
+  total decoded audio   01:40:38
+  files >1% clipped     0
+  files decoding empty  0
+
+per codebook set (uid)
+  uid 471264238    ok  1832   failed 0
+  uid 1069932774   ok   103   failed 0
+  uid 103219657    ok    52   failed 0
+  uid 2141838623   ok    26   failed 0
+  uid 3312772280   ok     6   failed 0
+
+failures grouped by reason
+     46  header: not a RIFF file
+      7  adpcm: ADPCM with 2 channels is not decoded: the stereo block layout is not established
+```
+
+All five codebook sets decode with no failures, so no family is being skipped to flatter the percentage.
+Decoded sample rates are 48000, 44100, 32000, 24000 and 36000 Hz, mono and stereo, and every decoded file
+is non-empty, within one block of its declared length, and free of clipping.
+
+## What remains unsupported
+
+| case | count | why |
+| --- | --- | --- |
+| Stereo ADPCM | 7 | The stereo block layout is not established. Under both candidate layouts the step-index byte falls outside the table's 0..88 range and a tenth of the output pins to full scale, so it is refused rather than guessed. All seven are 48 kHz music; the robot's speaker is mono. |
+| Media ids with no file | 21 | Referenced by a bank but absent from `AudioAssets.zip`. Reported as missing. |
+| Bank-embedded non-RIFF blobs | 46 | 173 to 1379 bytes, beginning `25 80 00 00` rather than `RIFF`. These are plugin source data, not codec media, and are reported rather than decoded. |
+| Events reaching no Sound | 90 | 44 target objects in banks this build does not ship; 46 target the music hierarchy or a SwitchContainer, whose own source lists are not parsed. Entirely music, not robot voice or SFX. |
 
 ## What this means for the acceptance target
 
-`anim_bored_01` names two audio events, and they fall on either side of the boundary:
+`anim_bored_01` names two audio events, and both now produce audio from the shipped assets with no WAV
+mapping supplied:
 
 ```
-at  99 ms  event 1620542011  Play__Robot_Sfx__Scrn_Sad_Long        5 alternatives, all ADPCM   -> PLAYABLE
-at 272 ms  event 2741090610  Play__Robot_Vo__Shared_Bored_Sigh_Short  3 alternatives, all Vorbis -> not decodable
+at  99 ms  event 1620542011  Play__Robot_Sfx__Scrn_Sad_Long           5 alternatives, ADPCM   -> plays
+at 272 ms  event 2741090610  Play__Robot_Vo__Shared_Bored_Sigh_Short  3 alternatives, Vorbis  -> plays
 ```
 
-So the clip plays **one of its two original shipped sounds** with no WAV mapping supplied, at its encoded
-timestamp, and reports the other as not produced. That is a partial result against the stated acceptance and
-is not claimed as more.
+Both are covered by an offline test. Hardware verification is the remaining step.
 
 ## Commands
 
 ```
 dotnet run --project src/Cozmo.Conformance -- wwise <sound-dir> --event Play__Robot_Vo__Shared_Bored_Sigh_Short
+dotnet run --project src/Cozmo.Conformance -- wwise <sound-dir> --decode <media-id>
 dotnet run --project src/Cozmo.Conformance -- wwise <sound-dir> --clip anim_bored_01 --assets <animations-dir>
 dotnet run --project src/Cozmo.Conformance -- wwise <sound-dir> --coverage
+dotnet run --project src/Cozmo.Conformance -- wwise <sound-dir> --validate
 dotnet run --project src/Cozmo.Conformance -- anim <robot-ip> --assets <dir> --name anim_bored_01 --wwise <sound-dir>
 ```
 
@@ -177,5 +229,10 @@ dotnet run --project src/Cozmo.Conformance -- anim <robot-ip> --assets <dir> --n
 `AudioAssets.zip` is under `assets/cozmo_resources/sound`, so either pass a directory holding both or copy
 them together. No robot is involved except in the last command.
 
-`--wwise` takes precedence over `--audio`, which stays for supplying a sound the shipped library cannot yet
+`--wwise` takes precedence over `--audio`, which stays for supplying a sound the shipped library cannot
 produce. Anything not produced is named on the console; it is never passed over in silence.
+
+## Assets stay out of the repository
+
+No `.bnk`, `.wem` or OBB file is committed. They are excluded by `.gitignore` and the tools read them from
+a local path. The only vendored third-party artifact is the generic codebook blob described above.

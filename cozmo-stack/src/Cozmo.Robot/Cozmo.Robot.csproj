@@ -7,4 +7,21 @@
     <ProjectReference Include="..\Cozmo.Protocol\Cozmo.Protocol.csproj" />
     <ProjectReference Include="..\Cozmo.Transport\Cozmo.Transport.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Managed Vorbis decoder, MIT. Confined to WwiseVorbis.cs. -->
+    <PackageReference Include="NVorbis" Version="0.10.5" />
+  </ItemGroup>
+  <ItemGroup>
+    <!--
+      Generic Vorbis codebook data from ww2ogg (BSD-3-Clause), needed to rebuild Wwise Vorbis streams.
+      Provenance and SHA-256: third-party/ww2ogg/README.md. Not a Cozmo asset.
+    -->
+    <Content Include="..\..\third-party\ww2ogg\packed_codebooks_aoTuV_603.bin"
+             Link="packed_codebooks_aoTuV_603.bin"
+             CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The codec internals are tested directly; QuantVals in particular guards a regression that hung the decoder. -->
+    <InternalsVisibleTo Include="Cozmo.Protocol.Tests" />
+  </ItemGroup>
 </Project>

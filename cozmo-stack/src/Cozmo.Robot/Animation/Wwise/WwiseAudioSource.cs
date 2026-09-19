@@ -22,20 +22,57 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IDisposable
 {
     private readonly WwiseSoundLibrary _library;
     private readonly bool _ownsLibrary;
+    private readonly WwiseCodebookLibrary? _codebooks;
     private readonly Dictionary<uint, short[]?> _cache = new();
     private readonly List<WwiseMiss> _misses = new();
     private readonly object _gate = new();
 
-    /// <summary>Wraps an already-loaded library.</summary>
-    public WwiseAudioSource(WwiseSoundLibrary library, bool ownsLibrary = false)
+    /// <summary>Wraps an already-loaded library. Without codebooks, Vorbis events cannot be produced.</summary>
+    public WwiseAudioSource(WwiseSoundLibrary library, bool ownsLibrary = false,
+                            WwiseCodebookLibrary? codebooks = null)
     {
         _library = library;
         _ownsLibrary = ownsLibrary;
+        _codebooks = codebooks ?? TryLoadCodebooks();
     }
 
     /// <summary>Loads the banks and media under the given directories and plays from them.</summary>
     public static WwiseAudioSource Load(params string[] directories) =>
         new(WwiseSoundLibrary.Load(directories), ownsLibrary: true);
+
+    /// <summary>
+    /// Finds the vendored packed codebook library, which Wwise Vorbis streams index into. It ships with
+    /// the build output; if it is missing, Vorbis events report that rather than failing obscurely.
+    /// </summary>
+    public static WwiseCodebookLibrary? TryLoadCodebooks()
+    {
+        foreach (var dir in CodebookSearchPath())
+        {
+            var path = Path.Combine(dir, CodebookFileName);
+            if (!File.Exists(path)) continue;
+            try { return WwiseCodebookLibrary.Load(path); }
+            catch (Exception ex) when (ex is IOException or InvalidDataException) { }
+        }
+        return null;
+    }
+
+    /// <summary>The name of the vendored codebook file; see third-party/ww2ogg/README.md.</summary>
+    public const string CodebookFileName = "packed_codebooks_aoTuV_603.bin";
+
+    private static IEnumerable<string> CodebookSearchPath()
+    {
+        yield return AppContext.BaseDirectory;
+        yield return Path.Combine(AppContext.BaseDirectory, "third-party", "ww2ogg");
+        var d = new DirectoryInfo(AppContext.BaseDirectory);
+        while (d is not null)
+        {
+            yield return Path.Combine(d.FullName, "third-party", "ww2ogg");
+            d = d.Parent;
+        }
+    }
+
+    /// <summary>Whether the packed codebooks were found, and so whether Vorbis can be decoded at all.</summary>
+    public bool CanDecodeVorbis => _codebooks is not null;
 
     /// <summary>The library behind this source, for diagnostics.</summary>
     public WwiseSoundLibrary Library => _library;
@@ -103,9 +140,14 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IDisposable
                 continue;
             }
             lastCodec = m.Codec;
-            if (m.Codec != WwiseCodec.Adpcm)
+            if (m.Codec is not (WwiseCodec.Adpcm or WwiseCodec.Vorbis))
             {
                 reasons.Add($"{refr.MediaId}: {m.Codec} is not decoded");
+                continue;
+            }
+            if (m.Codec == WwiseCodec.Vorbis && _codebooks is null)
+            {
+                reasons.Add($"{refr.MediaId}: Vorbis needs {CodebookFileName}, which was not found");
                 continue;
             }
             var bytes = _library.ReadMedia(refr.MediaId, out _);
@@ -113,8 +155,10 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IDisposable
             try
             {
                 var parsed = WwiseMedia.Parse(bytes);
-                var raw = WwiseAdpcm.Decode(parsed);
-                return ToRobotRate(raw, parsed.Channels, parsed.SampleRate);
+                if (parsed.Codec == WwiseCodec.Adpcm)
+                    return ToRobotRate(WwiseAdpcm.Decode(parsed), parsed.Channels, parsed.SampleRate);
+                var v = WwiseVorbis.Decode(parsed, _codebooks!);
+                return ToRobotRate(v.Samples, v.Channels, v.SampleRate);
             }
             catch (Exception ex) when (ex is InvalidDataException or ArgumentException)
             {

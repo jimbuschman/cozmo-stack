@@ -26,6 +26,8 @@ public sealed class WwiseMedia
     public required int SampleRate { get; init; }
     /// <summary>Bytes per ADPCM block. Zero for Vorbis, which is not block-aligned.</summary>
     public required int BlockAlign { get; init; }
+    /// <summary>The header's own average byte rate, used for the rebuilt stream's nominal bitrate.</summary>
+    public required int AvgBytesPerSecond { get; init; }
     /// <summary>The <c>data</c> chunk.</summary>
     public required ReadOnlyMemory<byte> Data { get; init; }
     /// <summary>Vorbis only: the parsed vorb extension. Null for every other codec.</summary>
@@ -79,6 +81,7 @@ public sealed class WwiseMedia
         ushort tagVal = BinaryPrimitives.ReadUInt16LittleEndian(f[..2]);
         int channels = BinaryPrimitives.ReadUInt16LittleEndian(f.Slice(2, 2));
         int rate = (int)BinaryPrimitives.ReadUInt32LittleEndian(f.Slice(4, 4));
+        int avgBps = (int)BinaryPrimitives.ReadUInt32LittleEndian(f.Slice(8, 4));
         int blockAlign = BinaryPrimitives.ReadUInt16LittleEndian(f.Slice(12, 2));
 
         WwiseVorbisHeader? vorb = null;
@@ -93,7 +96,7 @@ public sealed class WwiseMedia
         return new WwiseMedia
         {
             Codec = codec, FormatTag = tagVal, Channels = channels, SampleRate = rate,
-            BlockAlign = blockAlign, Data = data, Vorbis = vorb,
+            AvgBytesPerSecond = avgBps, BlockAlign = blockAlign, Data = data, Vorbis = vorb,
         };
     }
 }
@@ -119,6 +122,15 @@ public sealed class WwiseVorbisHeader
     public required uint FirstAudioPacketOffset { get; init; }
     /// <summary>Identifies which packed codebook set the setup packet indexes into.</summary>
     public required uint Uid { get; init; }
+    /// <summary>
+    /// The value at +0x04, which says whether Wwise stripped the packet type and window bits from each
+    /// audio packet. ww2ogg treats 0x4A, 0x4B, 0x69 and 0x70 as "left alone" and anything else as
+    /// "stripped"; every file in this build falls in the second group.
+    /// </summary>
+    public required uint ModSignal { get; init; }
+
+    /// <summary>Whether the audio packets need their leading bits rebuilt.</summary>
+    public bool ModPackets => ModSignal is not (0x4A or 0x4B or 0x69 or 0x70);
     /// <summary>log2 of the short block size. 8 in all but 32 files, which use 9.</summary>
     public required byte BlockSize0Pow { get; init; }
     /// <summary>log2 of the long block size. 11 in all but 32 files, which use 10.</summary>
@@ -135,6 +147,7 @@ public sealed class WwiseVorbisHeader
         return new WwiseVorbisHeader
         {
             SampleCount = BinaryPrimitives.ReadUInt32LittleEndian(v.Slice(0x00, 4)),
+            ModSignal = BinaryPrimitives.ReadUInt32LittleEndian(v.Slice(0x04, 4)),
             SetupPacketOffset = BinaryPrimitives.ReadUInt32LittleEndian(v.Slice(0x10, 4)),
             FirstAudioPacketOffset = BinaryPrimitives.ReadUInt32LittleEndian(v.Slice(0x14, 4)),
             Uid = BinaryPrimitives.ReadUInt32LittleEndian(v.Slice(0x24, 4)),

@@ -38,6 +38,8 @@ public static class WwiseTool
             return 1;
         }
 
+        if (Arg(a, "--decode") is { } one) return DecodeOne(lib, one);
+        if (a.Contains("--validate")) return Validate(lib, limit);
         if (ev is not null) return Report(lib, Resolve(lib, ev));
         if (clip is not null) return ForClip(lib, clip, assets);
         if (coverage) return Coverage(lib, limit);
@@ -168,6 +170,172 @@ public static class WwiseTool
         }
         return 0;
     }
+
+    /// <summary>
+    /// Decodes every media file in the library and reports what happened, grouped by reason and by
+    /// codebook set. This is the check that matters: one clip decoding proves nothing, and a percentage
+    /// that improves because a whole codebook family was skipped would be worse than useless, so failures
+    /// are counted and named rather than filtered out.
+    /// </summary>
+    private static int Validate(WwiseSoundLibrary lib, int limit)
+    {
+        var codebooks = WwiseAudioSource.TryLoadCodebooks();
+        Console.WriteLine($"\ncodebooks: {(codebooks is null ? "NOT FOUND" : $"{codebooks.Count} entries")}");
+        if (codebooks is null)
+        {
+            Console.WriteLine($"  {WwiseAudioSource.CodebookFileName} must be alongside the binary or in third-party/ww2ogg");
+            return 1;
+        }
+
+        // Every media file the banks reference, not just those an event resolves to.
+        // Every media file present, not only those an event names: a codebook family that no event
+        // happens to reference would otherwise go untested, and a percentage that looks better because a
+        // whole family was skipped is worse than no percentage at all.
+        var referenced = new HashSet<uint>();
+        foreach (var id in lib.EventIds)
+            foreach (var m in lib.ResolveMediaIds(id)) referenced.Add(m);
+        var media = new SortedSet<uint>(lib.AllMediaIds);
+        media.UnionWith(referenced);
+        Console.WriteLine($"decoding all {media.Count} media files " +
+                          $"({referenced.Count} of them referenced by an event), this takes a minute...");
+
+        int vorbisTotal = 0, rebuilt = 0, decoded = 0, adpcmTotal = 0, adpcmOk = 0, missing = 0, other = 0;
+        var failReasons = new Dictionary<string, int>();
+        var failByUid = new Dictionary<uint, int>();
+        var okByUid = new Dictionary<uint, int>();
+        var rates = new Dictionary<(int Rate, int Ch), int>();
+        double totalSeconds = 0;
+        int clippedFiles = 0, emptyFiles = 0;
+        var examples = new List<string>();
+
+        foreach (var mid in media)
+        {
+            var bytes = lib.ReadMedia(mid, out _);
+            if (bytes is null) { missing++; continue; }
+            WwiseMedia parsed;
+            try { parsed = WwiseMedia.Parse(bytes); }
+            catch (InvalidDataException ex) { other++; Bump(failReasons, $"header: {ex.Message}"); continue; }
+
+            if (parsed.Codec == WwiseCodec.Adpcm)
+            {
+                adpcmTotal++;
+                try { var p = WwiseAdpcm.Decode(parsed); adpcmOk++; Measure(p, parsed.Channels, parsed.SampleRate); }
+                catch (InvalidDataException ex) { Bump(failReasons, $"adpcm: {ex.Message}"); }
+                continue;
+            }
+            if (parsed.Codec != WwiseCodec.Vorbis) { other++; continue; }
+
+            vorbisTotal++;
+            uint uid = parsed.Vorbis?.Uid ?? 0;
+            byte[] ogg;
+            try { ogg = WwiseVorbisRebuilder.ToOgg(parsed, codebooks); rebuilt++; }
+            catch (Exception ex)
+            {
+                Bump(failReasons, $"rebuild: {Short(ex.Message)}");
+                Bump(failByUid, uid);
+                if (examples.Count < limit) examples.Add($"{mid} (uid {uid}): rebuild: {ex.Message}");
+                continue;
+            }
+            try
+            {
+                var v = WwiseVorbis.Decode(parsed, codebooks);
+                decoded++;
+                Bump(okByUid, uid);
+                Measure(v.Samples, v.Channels, v.SampleRate);
+                _ = ogg;
+            }
+            catch (Exception ex)
+            {
+                Bump(failReasons, $"decode: {Short(ex.Message)}");
+                Bump(failByUid, uid);
+                if (examples.Count < limit) examples.Add($"{mid} (uid {uid}): decode: {ex.Message}");
+            }
+        }
+
+        void Measure(short[] pcm, int ch, int rate)
+        {
+            if (pcm.Length == 0) { emptyFiles++; return; }
+            Bump(rates, (rate, ch));
+            totalSeconds += pcm.Length / (double)Math.Max(1, ch) / Math.Max(1, rate);
+            int clipped = 0;
+            foreach (var s in pcm) if (s is short.MaxValue or short.MinValue) clipped++;
+            if (clipped > pcm.Length / 100) clippedFiles++;
+        }
+
+        Console.WriteLine($"\nlibrary-wide decode of {media.Count} referenced media files");
+        Console.WriteLine($"  Vorbis            {vorbisTotal}");
+        Console.WriteLine($"    rebuilt to Ogg  {rebuilt}  ({Pct(rebuilt, vorbisTotal)})");
+        Console.WriteLine($"    decoded by NVorbis {decoded}  ({Pct(decoded, vorbisTotal)})");
+        Console.WriteLine($"  ADPCM             {adpcmTotal}");
+        Console.WriteLine($"    decoded         {adpcmOk}  ({Pct(adpcmOk, adpcmTotal)})");
+        Console.WriteLine($"  missing on disk   {missing}");
+        Console.WriteLine($"  other/unreadable  {other}");
+
+        Console.WriteLine($"\nsanity checks");
+        Console.WriteLine($"  total decoded audio   {TimeSpan.FromSeconds(totalSeconds):hh\\:mm\\:ss}");
+        Console.WriteLine($"  files >1% clipped     {clippedFiles}");
+        Console.WriteLine($"  files decoding empty  {emptyFiles}");
+        Console.WriteLine($"  decoded rate/channels:");
+        foreach (var ((rate, ch), n) in rates.OrderByDescending(kv => kv.Value))
+            Console.WriteLine($"    {rate,6} Hz {ch}ch  {n}");
+
+        Console.WriteLine($"\nper codebook set (uid)");
+        foreach (var uid in okByUid.Keys.Union(failByUid.Keys).OrderByDescending(u => okByUid.GetValueOrDefault(u)))
+            Console.WriteLine($"  uid {uid,-12} ok {okByUid.GetValueOrDefault(uid),5}   failed {failByUid.GetValueOrDefault(uid),5}");
+
+        if (failReasons.Count > 0)
+        {
+            Console.WriteLine($"\nfailures grouped by reason");
+            foreach (var (r, n) in failReasons.OrderByDescending(kv => kv.Value))
+                Console.WriteLine($"  {n,5}  {r}");
+            Console.WriteLine($"\nfirst {examples.Count} failing files");
+            foreach (var e in examples) Console.WriteLine($"  {e}");
+        }
+        return decoded == vorbisTotal && adpcmOk == adpcmTotal ? 0 : 1;
+    }
+
+    /// <summary>Decodes one media file by id and reports what came out, for checking a single case quickly.</summary>
+    private static int DecodeOne(WwiseSoundLibrary lib, string spec)
+    {
+        if (!uint.TryParse(spec, out var mid)) { Console.WriteLine($"'{spec}' is not a media id"); return 1; }
+        var bytes = lib.ReadMedia(mid, out var source);
+        if (bytes is null) { Console.WriteLine($"media {mid} is not in the archive"); return 1; }
+        var m = WwiseMedia.Parse(bytes);
+        Console.WriteLine($"\nmedia {mid} from {source}");
+        Console.WriteLine($"  {Describe(m)}  {m.Channels}ch {m.SampleRate}Hz  " +
+                          $"declared duration {m.Duration?.TotalSeconds ?? 0:F2}s");
+
+        short[] pcm; int ch, rate;
+        try
+        {
+            if (m.Codec == WwiseCodec.Adpcm) { pcm = WwiseAdpcm.Decode(m); ch = m.Channels; rate = m.SampleRate; }
+            else
+            {
+                var cbl = WwiseAudioSource.TryLoadCodebooks();
+                if (cbl is null) { Console.WriteLine($"  !! {WwiseAudioSource.CodebookFileName} not found"); return 1; }
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                var ogg = WwiseVorbisRebuilder.ToOgg(m, cbl);
+                Console.WriteLine($"  rebuilt to {ogg.Length} bytes of Ogg in {sw.ElapsedMilliseconds} ms");
+                if (Environment.GetEnvironmentVariable("COZMO_OGG_OUT") is { } oggOut)
+                { File.WriteAllBytes(oggOut, ogg); Console.WriteLine($"  wrote {oggOut}"); return 0; }
+                var v = WwiseVorbis.Decode(m, cbl);
+                Console.WriteLine($"  NVorbis finished in {sw.ElapsedMilliseconds} ms");
+                pcm = v.Samples; ch = v.Channels; rate = v.SampleRate;
+            }
+        }
+        catch (Exception ex) { Console.WriteLine($"  !! {ex.Message}"); return 1; }
+
+        int clipped = pcm.Count(s => s is short.MaxValue or short.MinValue);
+        int peak = pcm.Length == 0 ? 0 : pcm.Max(s => Math.Abs((int)s));
+        Console.WriteLine($"  decoded {pcm.Length} samples, {ch}ch {rate}Hz, " +
+                          $"{pcm.Length / (double)Math.Max(1, ch) / Math.Max(1, rate):F2}s");
+        Console.WriteLine($"  peak {peak}, clipped {clipped}");
+        return 0;
+    }
+
+    private static string Pct(int n, int of) => of == 0 ? "n/a" : $"{100.0 * n / of:F1}%";
+    private static string Short(string s) => s.Length <= 70 ? s : s[..70] + "...";
+    private static void Bump<T>(Dictionary<T, int> d, T k) where T : notnull => d[k] = d.GetValueOrDefault(k) + 1;
 
     private static string? Arg(string[] a, string name)
     {

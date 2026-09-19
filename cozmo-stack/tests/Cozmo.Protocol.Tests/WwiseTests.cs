@@ -416,4 +416,127 @@ public class WwiseTests
             Assert.All(r.Media, m => Assert.NotNull(m.Media));
         }
     }
+
+    // ------------------------------------------------------------------ Wwise Vorbis
+
+    /// <summary>
+    /// The vendored packed codebook library must be present and intact. Everything Vorbis depends on it,
+    /// and a wrong or truncated copy would show up as mass decode failure rather than as a clear error.
+    /// </summary>
+    [Fact]
+    public void ThePackedCodebookLibraryLoads()
+    {
+        var cbl = WwiseAudioSource.TryLoadCodebooks();
+        Assert.NotNull(cbl);
+        Assert.True(cbl!.Count > 500, $"only {cbl.Count} codebooks; expected the full aoTuV 6.03 set");
+    }
+
+    [Fact]
+    public void ACorruptCodebookLibraryIsRefusedRatherThanUsed()
+    {
+        Assert.Throws<InvalidDataException>(() => WwiseCodebookLibrary.Parse(new byte[] { 1, 2, 3 }));
+        // an offset table that points outside the data
+        var bad = new byte[32];
+        BitConverter.GetBytes(999u).CopyTo(bad, 28);
+        Assert.Throws<InvalidDataException>(() => WwiseCodebookLibrary.Parse(bad));
+    }
+
+    /// <summary>
+    /// QuantVals must converge. An earlier version stopped the product loop early, which left partial
+    /// products, made the convergence test unsatisfiable and hung the decoder rather than failing it.
+    /// </summary>
+    [Theory]
+    [InlineData(16u, 2u)]
+    [InlineData(256u, 4u)]
+    [InlineData(1024u, 2u)]
+    [InlineData(81u, 4u)]
+    public void QuantValsConverges(uint entries, uint dimensions)
+    {
+        uint v = WwiseCodebookLibrary.QuantVals(entries, dimensions);
+        ulong acc = 1, acc1 = 1;
+        for (uint i = 0; i < dimensions; i++) { acc *= v; acc1 *= v + 1; }
+        Assert.True(acc <= entries, $"{v}^{dimensions} = {acc} exceeds {entries}");
+        Assert.True(acc1 > entries, $"({v}+1)^{dimensions} = {acc1} does not exceed {entries}");
+    }
+
+    /// <summary>
+    /// Every Vorbis file in the shipped library rebuilds into a well-formed Ogg stream and decodes.
+    ///
+    /// This is the check that matters. Wwise strips the Ogg container, the codebooks and the granule
+    /// positions, and a mistake in any of those shows up as a stream that a decoder either rejects or
+    /// silently turns into noise. Decoding all of them and checking the results are bounded, non-empty and
+    /// close to their declared length is what tells the difference.
+    /// </summary>
+    [Fact]
+    public void EveryShippedVorbisFileRebuildsAndDecodes()
+    {
+        var dirs = SoundDirs();
+        if (dirs is null) return;
+        using var lib = WwiseSoundLibrary.Load(dirs);
+        if (lib.MediaFileCount == 0) return;
+        var cbl = WwiseAudioSource.TryLoadCodebooks();
+        Assert.NotNull(cbl);
+
+        int seen = 0, decoded = 0, clipped = 0, lengthOff = 0;
+        var failures = new List<string>();
+        foreach (var mid in lib.AllMediaIds)
+        {
+            var bytes = lib.ReadMedia(mid, out _);
+            if (bytes is null) continue;
+            WwiseMedia m;
+            try { m = WwiseMedia.Parse(bytes); } catch (InvalidDataException) { continue; }
+            if (m.Codec != WwiseCodec.Vorbis) continue;
+            seen++;
+            try
+            {
+                var v = WwiseVorbis.Decode(m, cbl!);
+                decoded++;
+                Assert.NotEmpty(v.Samples);
+                Assert.Equal(m.SampleRate, v.SampleRate);
+                Assert.Equal(m.Channels, v.Channels);
+                if (v.Samples.Count(x => x is short.MaxValue or short.MinValue) > v.Samples.Length / 100) clipped++;
+                // the decoded length should be within a block of what the header declared
+                int frames = v.Samples.Length / Math.Max(1, v.Channels);
+                if (Math.Abs(frames - (int)(m.Vorbis?.SampleCount ?? 0)) > 4096) lengthOff++;
+            }
+            catch (Exception ex) { if (failures.Count < 5) failures.Add($"{mid}: {ex.Message}"); }
+        }
+
+        Assert.True(seen > 1500, $"only found {seen} Vorbis files");
+        Assert.True(failures.Count == 0, $"{failures.Count} failed, e.g. {string.Join("; ", failures)}");
+        Assert.Equal(seen, decoded);
+        Assert.Equal(0, clipped);
+        Assert.Equal(0, lengthOff);
+    }
+
+    /// <summary>
+    /// The verification clip's own events now produce audio, including the Vorbis one. Same resolution
+    /// path as every other event; nothing about this clip is special-cased.
+    /// </summary>
+    [Fact]
+    public void TheVerificationClipsEventsAllProduceAudio()
+    {
+        var dirs = SoundDirs();
+        if (dirs is null) return;
+        var assets = AssetRoots()
+            .Select(r => Path.Combine(r, "assets", "cozmo_resources", "assets", "animations"))
+            .FirstOrDefault(Directory.Exists);
+        if (assets is null) return;
+        var animLib = AnimationLibrary.Open(assets);
+        if (!animLib.HasClip("anim_bored_01")) return;
+
+        using var src = new WwiseAudioSource(WwiseSoundLibrary.Load(dirs), ownsLibrary: true);
+        if (src.Library.MediaFileCount == 0) return;
+
+        var ids = animLib.GetClip("anim_bored_01").Keyframes.OfType<AudioKeyframe>()
+                         .SelectMany(k => k.EventIds).ToList();
+        Assert.NotEmpty(ids);
+        foreach (var id in ids)
+        {
+            var pcm = src.GetPcm(id, 1f);
+            Assert.True(pcm is { Length: > 0 },
+                $"event {id} ({src.NameOf(id)}) produced nothing: " +
+                string.Join("; ", src.Misses.Where(mm => mm.EventId == id).Select(mm => mm.Reason)));
+        }
+    }
 }

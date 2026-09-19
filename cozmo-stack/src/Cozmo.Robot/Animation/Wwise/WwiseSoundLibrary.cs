@@ -61,6 +61,21 @@ public sealed class WwiseSoundLibrary : IDisposable
 
     /// <summary>How many media files the archive holds.</summary>
     public int MediaFileCount => _mediaEntries.Count + _mediaFiles.Count;
+
+    /// <summary>
+    /// Every media id present, whether or not an event references it. Validation uses this rather than
+    /// the referenced set, so a codebook family that no event happens to name is still exercised.
+    /// </summary>
+    public IReadOnlyCollection<uint> AllMediaIds
+    {
+        get
+        {
+            var all = new SortedSet<uint>(_mediaEntries.Keys);
+            all.UnionWith(_mediaFiles.Keys);
+            foreach (var b in _banks) all.UnionWith(b.EmbeddedMedia.Keys);
+            return all;
+        }
+    }
     /// <summary>The banks that were loaded.</summary>
     public IReadOnlyList<WwiseBank> Banks => _banks;
     /// <summary>How many event names were read from SoundbanksInfo.xml.</summary>
@@ -171,6 +186,29 @@ public sealed class WwiseSoundLibrary : IDisposable
             if (o.Type == WwiseObjectType.Sound && WwiseBank.SoundMediaId(o) is { } m) media.Add(m);
             if (_children.TryGetValue(id, out var kids))
                 for (int i = kids.Count - 1; i >= 0; i--) stack.Push(kids[i]);
+        }
+        return media;
+    }
+
+    /// <summary>
+    /// The media ids an event can play, without opening a single media file.
+    ///
+    /// <see cref="Resolve"/> reads each file's header so it can report codec and duration, which is right
+    /// for showing one event but ruinous across the whole library: it would read every referenced file
+    /// once per event that names it, including multi-megabyte music. Anything that only needs the ids
+    /// should use this.
+    /// </summary>
+    public IReadOnlyList<uint> ResolveMediaIds(uint eventId)
+    {
+        if (!_objects.TryGetValue(eventId, out var ev) || ev.Type != WwiseObjectType.Event)
+            return Array.Empty<uint>();
+        var media = new List<uint>();
+        var seen = new HashSet<uint>();
+        foreach (var aid in WwiseBank.EventActions(ev))
+        {
+            if (!_objects.TryGetValue(aid, out var act)) continue;
+            if (WwiseBank.PlayActionTarget(act) is not { } target) continue;
+            foreach (var m in MediaUnder(target)) if (seen.Add(m)) media.Add(m);
         }
         return media;
     }
