@@ -191,6 +191,11 @@ Four things changed as a result, all of them matching what the engine does:
 Keyframes within a frame also go out in the engine's fixed per-track order — head, lift, event, face,
 lights, body — rather than in whatever order the clip lists them.
 
+**Confirmed on hardware.** `anim --arc` now drives a visible curve and an equal arc back, where before the
+fix the same command moved the robot not at all. That is the end-to-end proof that the animation stream
+works, and not just that the radius encoding is right. The face half of the same fix — `anim_bored_01`
+displaying again — has not been re-checked yet.
+
 ## Faults found on hardware, and fixed
 
 The first hardware run of `anim_bored_01` played through correctly but rolled backward further than it

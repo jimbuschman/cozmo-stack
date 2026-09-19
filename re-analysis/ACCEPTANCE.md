@@ -48,9 +48,25 @@ point the robot at. Run `cubes 172.31.1.1 --acceptance` when one is to hand.
 | Multi-clip indexing | pass | **pass** — `anim_bored_02` loaded and played from the same `.bin` | operator report |
 | Procedural expressions | pass | **pass** — the expressions displayed correctly on the robot | operator report |
 | Animation audio | **not run** | **not run** | implemented as a path; silent without a caller-supplied audio source |
-| Arc body motion | **not run** | **not run** | implemented from the engine's own encoding; no shipped clip in this build uses an arc |
+| Arc body motion | pass | **pass** — a visible curved arc, then an equal arc back the other way | operator report, `anim --arc`, after the audio-pacing fix |
+
+### Arc body motion
+
+Verified on 2026-09-18 with `anim --arc`, after the fix in `DIAGNOSTIC_animation_start_sequence.md`. The
+robot drove a visible curve and returned along the mirror arc, which is what the synthetic clip asks for.
+The operator described the arc as small; the defaults are deliberately conservative (60 mm radius, 30 mm/s,
+1 s per leg) and `--arc-radius`, `--arc-speed` and `--arc-seconds` widen it.
+
+This is the check that proves the animation stream itself works end to end, not just the radius encoding:
+before the fix the same command moved the robot not at all. Body motion inside an animation is therefore
+hardware-verified for both straight and arc radii.
 
 ## Outstanding
+
+**The face during `anim_bored_01` has not been re-checked since the fix.** It stopped displaying when
+bracketing was added, and the same missing audio frames explain it, but only the arc half of that fix has
+been confirmed on hardware. Running `anim --assets <dir> --name anim_bored_01` and watching the face
+settles it.
 
 Copy the JSON acceptance records from the machine the runs were made on, and commit them here. Until then
 the table above rests on the operator's report rather than on a committed artifact.
