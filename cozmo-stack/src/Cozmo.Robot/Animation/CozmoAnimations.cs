@@ -42,6 +42,18 @@ public sealed class RobotAnimationSink : IAnimationSink
     public void Lift(float heightMm, uint durationMs) =>
         _robot.Transport.Send(new SetLiftHeight(heightMm, 3f, 20f, durationMs / 1000f, 0), flush: true);
 
+    /// <summary>
+    /// Opens the animation on the robot. AnimationStreamer::SendStartOfAnimation at 0x0057C400 in
+    /// libcozmoEngine.so does exactly this, sending the tag as a single byte, and the robot reports that
+    /// tag back in its AnimationState. Keyframes that arrive outside an open animation are ignored, which
+    /// is why body motion did nothing before this was sent.
+    /// </summary>
+    public void AnimationStarted(byte tag) =>
+        _robot.Transport.Send(new StartOfAnimation { AnimId = tag }, flush: true);
+
+    /// <summary>Closes it, as AnimationStreamer::SendEndOfAnimation does.</summary>
+    public void AnimationEnded() => _robot.Transport.Send(new EndOfAnimation(), flush: true);
+
     public void Body(BodyKeyframe k)
     {
         // The engine does not synthesise wheel speeds: it sends the speed and a 16-bit radius and lets the
@@ -123,6 +135,15 @@ public sealed class CozmoAnimations : IDisposable
     public bool IsPlaying => _scheduler.IsPlaying;
     public string? Playing => _scheduler.Playing;
     public AnimationTrack OwnedTracks => _scheduler.OwnedTracks;
+
+    /// <summary>The tag the running animation was opened with.</summary>
+    public byte CurrentTag => _scheduler.CurrentTag;
+
+    /// <summary>
+    /// The tag the robot says it is playing, from its AnimationState stream. When this matches
+    /// <see cref="CurrentTag"/> the robot has accepted the animation; while they differ it has not.
+    /// </summary>
+    public byte? RobotReportedTag => _robot.State.Animation?.Tag;
 
     /// <summary>Named events raised by a running animation.</summary>
     public event Action<string>? Event;

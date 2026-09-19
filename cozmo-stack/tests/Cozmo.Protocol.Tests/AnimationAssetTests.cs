@@ -260,6 +260,9 @@ public class AnimationAssetTests
         public void Head(float radians, uint durationMs) { }
         public void Lift(float heightMm, uint durationMs) { }
         public void Body(BodyKeyframe keyframe) { }
+        public void AnimationStarted(byte tag) { }
+        public void AnimationEnded() { }
+
         public void BodyStop() { }
         public void Lights(LightsKeyframe keyframe) { }
         public void Event(string eventId) { }

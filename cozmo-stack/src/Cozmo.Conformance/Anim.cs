@@ -163,8 +163,28 @@ public static class Anim
 
         var sw = System.Diagnostics.Stopwatch.StartNew();
         var done = robot.Animations.Play(clip);
+
+        // The robot echoes the tag the animation was opened with, so this is its own confirmation that it
+        // accepted the animation rather than merely that the datagram left the socket.
+        byte opened = robot.Animations.CurrentTag;
+        byte? acknowledged = null;
+        var watchTag = Task.Run(async () =>
+        {
+            var until = DateTime.UtcNow.AddSeconds(3);
+            while (DateTime.UtcNow < until && acknowledged is null)
+            {
+                if (robot.Animations.RobotReportedTag == opened) acknowledged = opened;
+                await Task.Delay(25);
+            }
+        });
+
         var reason = done is null ? AnimationEndReason.Error : await done;
         sw.Stop();
+        await watchTag;
+        Console.WriteLine(acknowledged is not null
+            ? $"robot confirmed the animation: it reported tag {opened}"
+            : $"WARNING: the robot never reported tag {opened}; it may not have accepted the animation " +
+              $"(it last reported {robot.Animations.RobotReportedTag?.ToString() ?? "nothing"})");
 
         Console.WriteLine($"\nfinished: {reason} after {sw.ElapsedMilliseconds} ms (clip is {clip.DurationMs} ms)");
         Console.WriteLine($"keyframes fired: {robot.Animations.Scheduler.KeyframesFired} of {clip.Keyframes.Count}");

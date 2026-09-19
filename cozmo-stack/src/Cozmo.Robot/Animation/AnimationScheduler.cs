@@ -12,6 +12,14 @@ public interface IAnimationSink
     void Audio(byte[]? mulawFrame);
     void Head(float radians, uint durationMs);
     void Lift(float heightMm, uint durationMs);
+    /// <summary>
+    /// An animation is about to start streaming. The engine opens every animation with a
+    /// StartOfAnimation carrying a tag, and the robot reports that tag back in its AnimationState, so a
+    /// caller can tell the robot really accepted it.
+    /// </summary>
+    void AnimationStarted(byte tag);
+    /// <summary>The animation has finished streaming, however it ended.</summary>
+    void AnimationEnded();
     void Body(BodyKeyframe keyframe);
     /// <summary>
     /// Stop the body. DriveWheels runs until countermanded, so unlike head and lift the scheduler has to
@@ -74,6 +82,7 @@ public sealed class AnimationScheduler
     private double? _bodyEndsAtMs;             // when the running body keyframe should stop, if one is running
     private short[]? _audioPcm;                // the sound currently streaming, if any
     private int _audioPos;                     // how far into it the last frame reached
+    private byte _nextTag = 1;                 // the tag the next animation opens with
 
     public AnimationScheduler(IAnimationSink sink) => _sink = sink;
 
@@ -96,6 +105,12 @@ public sealed class AnimationScheduler
     /// <summary>Keyframes fired since the current animation started.</summary>
     public int KeyframesFired { get; private set; }
 
+    /// <summary>
+    /// The tag the running animation was opened with, which the robot echoes in its AnimationState. Zero
+    /// when nothing is running; the engine never uses zero for a running animation either.
+    /// </summary>
+    public byte CurrentTag { get; private set; }
+
     /// <summary>Raised for every keyframe as it fires, for logging and tests.</summary>
     public event Action<Keyframe>? KeyframeFired;
 
@@ -108,6 +123,8 @@ public sealed class AnimationScheduler
     /// </summary>
     public AnimationHandle? Play(AnimationClip clip, double nowMs, bool replaceRunning = true)
     {
+        byte started;
+        AnimationHandle handle;
         lock (_gate)
         {
             if (_clip is not null)
@@ -118,6 +135,8 @@ public sealed class AnimationScheduler
             }
             _clip = clip;
             _handle = new AnimationHandle(clip.Name, clip.Tracks);
+            CurrentTag = _nextTag;
+            _nextTag = _nextTag == 255 ? (byte)1 : (byte)(_nextTag + 1);
             _startMs = nowMs;
             _nextFrame = 0;
             _facePoses = clip.Keyframes.OfType<FaceKeyframe>().ToList();
@@ -127,8 +146,13 @@ public sealed class AnimationScheduler
             AudioFramesSent = 0;
             KeyframesFired = 0;
             PositionMs = 0;
-            return _handle;
+            started = CurrentTag;
+            handle = _handle;
         }
+        // Opened outside the lock, because the sink talks to the transport. The engine opens every
+        // animation this way and the robot ignores motion keyframes that arrive outside one.
+        _sink.AnimationStarted(started);
+        return handle;
     }
 
     /// <summary>Stops whatever is running. Returns false when nothing was.</summary>
@@ -152,8 +176,10 @@ public sealed class AnimationScheduler
         bool bodyWasRunning = _bodyEndsAtMs is not null;
         _bodyEndsAtMs = null;
         _audioPcm = null; _audioPos = 0;
+        CurrentTag = 0;
         // An animation that is cut short must not leave the wheels turning.
         if (bodyWasRunning) _sink.BodyStop();
+        _sink.AnimationEnded();
         _sink.Finished(name, reason == AnimationEndReason.Completed);
         h?.Complete(reason);
     }

@@ -142,6 +142,25 @@ asset set and a different feature.
 Mapping the five float arrays onto the 10-byte wire message would be inventing behaviour Anki never shipped.
 The keyframes are decoded and preserved, and reported through `NotImplemented` when reached.
 
+### Animations must be opened on the robot
+
+The first arc test produced no visible motion at all, at settings that should have turned the robot about
+115 degrees. Inspecting the transmitted stream showed the body message going out correctly, so the robot was
+ignoring it.
+
+The engine brackets every animation. `AnimationStreamer::SendStartOfAnimation` at 0x0057C400 in
+libcozmoEngine.so sends `animStartOfAnimation` (0x9B) carrying a one-byte tag before any keyframe, and
+`SendEndOfAnimation` closes it afterwards. **Keyframes that arrive outside an open animation are ignored.**
+
+We were never sending either. Face images worked anyway, and head and lift worked because they go out as
+the direct `SetHeadAngle` and `SetLiftHeight` commands rather than as animation keyframes, which is why the
+gap only showed once body motion moved onto the animation path.
+
+The scheduler now opens each animation with its own tag and closes it, including when one is cancelled or
+replaced, so an interrupted animation is never left open. The robot echoes the tag in its `AnimationState`,
+so this is checkable rather than assumed: the `anim` command reports whether the robot confirmed the tag it
+was given, and warns when it did not.
+
 ## Faults found on hardware, and fixed
 
 The first hardware run of `anim_bored_01` played through correctly but rolled backward further than it
@@ -187,7 +206,7 @@ works. Whether the firmware clamps it or treats 0 as "fully down" is not establi
 
 ## Tests
 
-241 pass, 62 of them new, all offline.
+251 pass, 72 of them new, all offline.
 
 * **Scheduling** — keyframes fire in order within one frame of their trigger time; a late tick fires
   everything it missed in order; an animation completes exactly once; position and count track the timeline.
@@ -203,6 +222,10 @@ works. Whether the firmware clamps it or treats 0 as "fully down" is not establi
   produced is used; the stream stops when the animation is cancelled; WAV decoding including stereo
   mixdown, resampling and rejection of non-WAV input; event ids resolve to names through the metadata.
 * **Lights** — the keyframe is decoded and reported with its data intact, and nothing is invented.
+* **Bracketing** — every animation is opened with a non-zero tag and closed again; each gets its own tag;
+  cancelling and replacing both close the previous animation before anything else happens.
+* **The synthetic arc clip** — body-only, two equal and opposite non-overlapping legs, speed and duration
+  clamped at both ends, and each leg stopped when its own duration expires.
 * **Track ownership** — a clash is refused when asked to be; a replacement ends the first as `Replaced`;
   owned tracks are reported.
 * **Face blending** — the eyes shrink steadily across a blend rather than in one jump; the last face is held

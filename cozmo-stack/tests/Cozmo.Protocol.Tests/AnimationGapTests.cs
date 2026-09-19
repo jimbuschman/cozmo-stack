@@ -14,6 +14,8 @@ public class AnimationGapTests
     {
         public readonly List<string> What = new();
         public readonly List<BodyKeyframe> Bodies = new();
+        public readonly List<byte> Tags = new();
+        public int Ends;
         public readonly List<LightsKeyframe> Lights_ = new();
         public readonly List<string> Events = new();
         public int BodyStops, AudioFrames, AudioWithSound;
@@ -28,6 +30,9 @@ public class AnimationGapTests
         public void Head(float radians, uint durationMs) => What.Add("head");
         public void Lift(float heightMm, uint durationMs) => What.Add("lift");
         public void Body(BodyKeyframe k) { Bodies.Add(k); What.Add("body"); }
+        public void AnimationStarted(byte tag) { Tags.Add(tag); }
+        public void AnimationEnded() { Ends++; }
+
         public void BodyStop() { BodyStops++; What.Add("bodystop"); }
         public void Lights(LightsKeyframe k) { Lights_.Add(k); What.Add("lights"); }
         public void Event(string eventId) { Events.Add(eventId); What.Add("event"); }
@@ -97,6 +102,69 @@ public class AnimationGapTests
         var back = (Protocol.BodyMotion)Protocol.RobotMessage.Parse(bytes);
         Assert.Equal((short)-75, back.Speed);
         Assert.Equal(BodyKeyframe.StraightRadius, back.RadiusMm);
+    }
+
+    // ------------------------------------------------------- animation bracketing
+
+    /// <summary>
+    /// The engine opens every animation with StartOfAnimation carrying a tag and closes it with
+    /// EndOfAnimation. AnimationStreamer::SendStartOfAnimation at 0x0057C400 does the first. Keyframes that
+    /// arrive outside an open animation are ignored by the robot, which is why body motion did nothing.
+    /// </summary>
+    [Fact]
+    public void EveryAnimationIsOpenedWithATagAndClosedAgain()
+    {
+        var r = new Recorder();
+        var s = new AnimationScheduler(r);
+        s.Play(Clip("t", new EventKeyframe(0, "a"), new EventKeyframe(100, "b")), 0);
+
+        Assert.Single(r.Tags);
+        Assert.NotEqual(0, r.Tags[0]);       // the engine never opens with zero either
+        Assert.Equal(r.Tags[0], s.CurrentTag);
+        Assert.Equal(0, r.Ends);
+
+        Run(s, 0, 200);
+        Assert.Equal(1, r.Ends);
+        Assert.Equal(0, s.CurrentTag);       // nothing is running, so there is no tag
+    }
+
+    [Fact]
+    public void EachAnimationGetsItsOwnTagAndNeverZero()
+    {
+        var r = new Recorder();
+        var s = new AnimationScheduler(r);
+        for (int i = 0; i < 4; i++)
+        {
+            s.Play(Clip($"c{i}", new EventKeyframe(0, "x")), 0);
+            s.Stop();
+        }
+        Assert.Equal(4, r.Tags.Count);
+        Assert.Equal(4, r.Tags.Distinct().Count());
+        Assert.DoesNotContain((byte)0, r.Tags);
+    }
+
+    [Fact]
+    public void CancellingAlsoClosesTheAnimationOnTheRobot()
+    {
+        var r = new Recorder();
+        var s = new AnimationScheduler(r);
+        s.Play(Clip("t", new EventKeyframe(5000, "late")), 0);
+        Assert.Equal(0, r.Ends);
+        s.Stop();
+        Assert.Equal(1, r.Ends);             // a cut-short animation must not be left open
+    }
+
+    [Fact]
+    public void ReplacingClosesTheFirstAndOpensTheSecond()
+    {
+        var r = new Recorder();
+        var s = new AnimationScheduler(r);
+        s.Play(Clip("first", new EventKeyframe(5000, "late")), 0);
+        s.Play(Clip("second", new EventKeyframe(0, "now")), 10);
+
+        Assert.Equal(2, r.Tags.Count);
+        Assert.Equal(1, r.Ends);             // the first was closed before the second opened
+        Assert.NotEqual(r.Tags[0], r.Tags[1]);
     }
 
     // ------------------------------------------------------- the synthetic arc clip

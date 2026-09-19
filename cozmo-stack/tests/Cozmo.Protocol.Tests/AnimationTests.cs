@@ -22,6 +22,8 @@ public class AnimationTests
         public readonly List<(float Rad, uint Dur)> Heads = new();
         public readonly List<(float Mm, uint Dur)> Lifts = new();
         public readonly List<BodyKeyframe> Bodies = new();
+        public readonly List<byte> Tags = new();
+        public int Ends;
         public readonly List<double> BodyStops = new();
         public readonly List<LightsKeyframe> Lights_ = new();
         public readonly List<(string Clip, bool Completed)> Finishes = new();
@@ -32,6 +34,9 @@ public class AnimationTests
         public void Head(float radians, uint durationMs) { Heads.Add((radians, durationMs)); Calls.Add(("head", Now)); }
         public void Lift(float heightMm, uint durationMs) { Lifts.Add((heightMm, durationMs)); Calls.Add(("lift", Now)); }
         public void Body(BodyKeyframe k) { Bodies.Add(k); Calls.Add(("body", Now)); }
+        public void AnimationStarted(byte tag) { Tags.Add(tag); }
+        public void AnimationEnded() { Ends++; }
+
         public void BodyStop() { BodyStops.Add(Now); Calls.Add(("bodystop", Now)); }
         public void Lights(LightsKeyframe k) { Lights_.Add(k); Calls.Add(("lights", Now)); }
         public void Event(string eventId) { Events.Add(eventId); Calls.Add(("event", Now)); }
