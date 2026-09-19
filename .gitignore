@@ -27,3 +27,8 @@ TestResults/
 *.tmp
 !/re-analysis/captures/*.log
 !/cozmo-stack/tests/Cozmo.Protocol.Tests/Fixtures/*.log
+
+# scratch disassembly dumps
+crle.txt
+de.txt
+df.txt
