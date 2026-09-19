@@ -449,6 +449,16 @@ mapping. **Deferred and non-blocking**: 7 stereo ADPCM music files whose block l
 21 media ids with no file behind them, 46 bank-embedded plugin blobs that are not audio, and 90 events that
 reach no Sound (all music). Detail: `WWISE_AUDIO.md`.
 
+**M7 status (2026-09-18): CODE COMPLETE - HARDWARE ACCEPTANCE PENDING.** The reactive foundation, built
+on frozen M1-M6. Anki's own trigger table resolves all 573 shipped triggers to a present animation; four
+reactions (cliff, picked up, placed on charger, falling) run through M5 and M6; the keep-alive layer uses
+all 30 tunables disassembled out of AnimationStreamer::SetDefaultParams and yields per track as the engine
+does; and an explicit arbiter puts caller above reaction above idle with autonomy off by default. Mood was
+recovered as data and stopped there, because every one of the 1047 shipped animation-group entries is
+"Mood": "Default" and so selection is mood-invariant in this build. One assumption is carried openly: that
+each ReactionTrigger plays the identically-named AnimationTrigger, since the native BehaviorReactToX
+classes are not exported. Nothing has been run on a robot. Detail: `BEHAVIOR_LAYER.md`.
+
 **M1 through M6 are frozen as of 2026-09-18.** Transport, protocol, device layer, control layer, the
 animation layer and the audio-asset layer are all hardware-verified and are not to be reopened unless a specific failure appears.
 Work above them builds on these APIs rather than changing them.

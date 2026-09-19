@@ -32,6 +32,7 @@ return args.Length == 0 ? Usage() : args[0] switch
     "face-expressions" => Anim.Face(args).GetAwaiter().GetResult(),
     "wwise" => WwiseTool.Run(args),
     "triggers" => TriggersTool.Run(args),
+    "behavior" => BehaviorTool.Run(args).GetAwaiter().GetResult(),
     _ => Usage(),
 };
 
@@ -166,6 +167,11 @@ static int Usage()
           cubes <robot-ip> [--seconds 15] [--acceptance [file.json]]
                                              hardware acceptance for cubes: turns discovery on and reports
                                              every cube heard, with connection state and telemetry
+
+          behavior <robot-ip> --obb <dir> [--seconds 60] [--no-idle] [--no-react] [--allow-motion]
+                                             hardware acceptance for the reactive and idle layers: reacts
+                                             to being picked up, cliffs and the charger, and keeps an idle
+                                             robot alive. Prints every decision, including suppressed ones
 
           triggers <obb-dir> [--trigger <name>] [--mood <mood>] [--seed N] [--limit 20]
                                              resolve Anki's own animation triggers through the shipped
