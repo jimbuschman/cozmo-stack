@@ -175,8 +175,9 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IDisposable
     ///
     /// Deliberately the same treatment <see cref="WavAudioSource"/> gives its input — nearest sample, and
     /// an average across channels — so that swapping sources does not change how a clip sounds for any
-    /// reason other than the clip itself. Cozmo's own sounds are 44100 Hz here and the robot takes 22050,
-    /// so this is a halving in the common case.
+    /// reason other than the clip itself. Cozmo's own sounds are 44100 Hz here and the robot takes 22320
+    /// (<see cref="CozmoAudio.SampleRate"/>, the engine's <c>AnimConstants::AUDIO_SAMPLE_RATE</c>), so this
+    /// is very nearly a halving in the common case.
     /// </summary>
     private static short[] ToRobotRate(short[] interleaved, int channels, int sourceRate)
     {

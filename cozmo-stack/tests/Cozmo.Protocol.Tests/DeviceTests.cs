@@ -148,6 +148,22 @@ public class DeviceTests
         Assert.Equal(AnkiMuLaw.Encode(0), last[^1]);
     }
 
+    /// <summary>
+    /// The robot audio rate is the engine's AnimConstants::AUDIO_SAMPLE_RATE, 22320 Hz (EnumToString at
+    /// 0x007BC7D8 compares against 0x5730; CozmoAudioController::SetupPlugins at 0x005942B0 passes the same
+    /// value to the audio plugin), and AUDIO_SAMPLE_SIZE is 744. One frame is therefore exactly one 30 Hz
+    /// animation tick. The previous value, 22050, came from PyCozmo and was never read from the engine.
+    /// </summary>
+    [Fact]
+    public void TheSampleRateIsTheEnginesAudioSampleRate()
+    {
+        Assert.Equal(22320, CozmoAudio.SampleRate);
+        Assert.Equal(744, CozmoAudio.SamplesPerFrame);
+        Assert.Equal(CozmoAudio.SamplesPerFrame, CozmoAudio.SampleRate / 30);
+        Assert.Equal(CozmoAudio.FrameInterval.TotalMilliseconds, CozmoAudio.FrameDuration.TotalMilliseconds, 6);
+        Assert.Equal(22320, CozmoAudio.Tone(440, TimeSpan.FromSeconds(1)).Length);   // 22050 before
+    }
+
     [Fact]
     public void ToneHasTheRequestedLengthAndFadesInAndOut()
     {

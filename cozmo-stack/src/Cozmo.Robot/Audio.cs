@@ -7,8 +7,8 @@ namespace Cozmo.Robot;
 /// Standard G.711 mu-law. The robot does <b>not</b> use this: see <see cref="AnkiMuLaw"/>.
 ///
 /// The engine streams one <see cref="AudioSample"/> message per animation frame carrying exactly 744
-/// 8-bit mu-law samples; at the animation rate of about 30 frames per second that is roughly 22 kHz,
-/// which matches the 22.05 kHz voices in the app's own TTS assets.
+/// 8-bit mu-law samples at 22320 Hz (<see cref="CozmoAudio.SampleRate"/>), which is 33.33 ms of audio per
+/// 30 Hz animation frame.
 /// </summary>
 public static class MuLaw
 {
@@ -141,21 +141,26 @@ public sealed class CozmoAudio
     /// <summary>Samples in one audio message (official AudioSample is a fixed 744-byte array).</summary>
     public const int SamplesPerFrame = 744;
     /// <summary>
-    /// Sample rate assumed when turning PCM into frames. <b>This is an assumption, not a measurement.</b>
-    /// PyCozmo's WAV loader accepts 22050 Hz directly and halves 48000 Hz to reach it, and 744 samples per
-    /// 30 Hz animation tick works out near this figure, but nothing in the engine or on the robot has been
-    /// read to confirm it. The robot is in fact observed to take a frame every 28.6 ms rather than 33.3 ms,
-    /// which does not correspond to this rate, so treat a tone generated here as approximately in tune
-    /// rather than exactly so.
+    /// The robot audio sample rate, taken from the engine. The CLAD enum <c>AnimConstants</c> carries
+    /// <c>AUDIO_SAMPLE_RATE = 22320</c> alongside <c>AUDIO_SAMPLE_SIZE = 744</c> (its EnumToString at
+    /// 0x007BC7D8 in libcozmoEngine.so compares against 0x5730 and 0x2E8), and
+    /// <c>CozmoAudioController::SetupPlugins</c> at 0x005942B0 hands the same 22320 to the audio plugin
+    /// twice (movw #0x5730 at 0x005942CE and 0x005942E2). 744 samples at 22320 Hz is exactly one 30 Hz
+    /// animation frame, 33.33 ms.
+    ///
+    /// This replaces an earlier assumption of 22050 Hz, which was taken from PyCozmo's WAV loader and was
+    /// never read from the engine. The 22050 that does appear in the engine belongs to the text-to-speech
+    /// provider (<c>TextToSpeechProviderImpl::CreateAudioData</c> at 0x006A0210), not to the robot stream.
+    /// The observed drain rate of one frame per 28.6 ms on firmware 2457 is a separate measurement of the
+    /// robot and is unaffected by this constant.
     /// </summary>
-    public const int SampleRate = 22050;
+    public const int SampleRate = 22320;
     /// <summary>
-    /// The animation tick the engine runs at, 30 per second. Frames are sent on this schedule, which is very
-    /// slightly faster than the 33.74 ms of audio a frame actually holds, so the robot's short buffer stays
-    /// topped up rather than running dry.
+    /// The animation tick the engine runs at, 30 per second. Frames are sent on this schedule; at
+    /// <see cref="SampleRate"/> a frame holds exactly one tick of audio.
     /// </summary>
     public static readonly TimeSpan FrameInterval = TimeSpan.FromSeconds(1.0 / 30);
-    /// <summary>Audio actually carried by one frame at <see cref="SampleRate"/>: 33.74 ms.</summary>
+    /// <summary>Audio carried by one frame at <see cref="SampleRate"/>: 744 / 22320 s = 33.33 ms.</summary>
     public static readonly TimeSpan FrameDuration = TimeSpan.FromSeconds(SamplesPerFrame / (double)SampleRate);
     /// <summary>
     /// Frames the robot will hold. Measured at about 14 on firmware 2457: sending a whole tone at once made
