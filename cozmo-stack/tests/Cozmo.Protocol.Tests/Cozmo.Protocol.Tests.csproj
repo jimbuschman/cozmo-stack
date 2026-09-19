@@ -12,6 +12,8 @@
     <ProjectReference Include="..\..\src\Cozmo.Protocol\Cozmo.Protocol.csproj" />
     <ProjectReference Include="..\..\src\Cozmo.Transport\Cozmo.Transport.csproj" />
     <ProjectReference Include="..\..\src\Cozmo.Robot\Cozmo.Robot.csproj" />
+    <!-- the conformance tool builds the synthetic test clips, so its safety limits are tested here too -->
+    <ProjectReference Include="..\..\src\Cozmo.Conformance\Cozmo.Conformance.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Fixtures\**" CopyToOutputDirectory="PreserveNewest" />

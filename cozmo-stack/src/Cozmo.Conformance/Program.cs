@@ -172,9 +172,14 @@ static int Usage()
                                              which ones the executor acts on and which it ignores, and every
                                              message the real player would send, taken from the transport.
                                              No robot involved
-          anim <robot-ip> --assets <dir> (--name <clip> | --group <group>)
-                                             play one of Cozmo's own animations on the robot, on the single
-                                             30 Hz timeline that also drives the face
+          anim <robot-ip> (--assets <dir> (--name <clip> | --group <group>) | --arc)
+                          [--audio <eventId>=<file.wav>]... [--arc-radius 60] [--arc-speed 30] [--arc-seconds 1]
+                                             play an animation on the robot, on the single 30 Hz timeline
+                                             that also drives the face. --audio maps a sound to an audio
+                                             event id, repeatable, so animation audio can be heard without a
+                                             Wwise decoder. --arc plays a synthetic clip that arcs one way
+                                             and back, for testing body motion; stop-on-cliff is enabled
+                                             before any body motion either way
           face-expressions <robot-ip> [--seconds 2]
                                              show every built-in procedural expression, printing the art it
                                              sent so the robot's face can be compared against it

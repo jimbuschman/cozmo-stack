@@ -99,6 +99,55 @@ public class AnimationGapTests
         Assert.Equal(BodyKeyframe.StraightRadius, back.RadiusMm);
     }
 
+    // ------------------------------------------------------- the synthetic arc clip
+
+    [Fact]
+    public void TheSyntheticArcClipIsConservativeAndReturnsWhereItStarted()
+    {
+        var clip = Cozmo.Conformance.Anim.BuildArcClip(60, 30, 1.0);
+        var bodies = clip.Keyframes.OfType<BodyKeyframe>().ToList();
+        Assert.Equal(2, bodies.Count);
+        Assert.Equal(AnimationTrack.Body, clip.Tracks);      // nothing but the body: no face, no audio
+
+        // equal and opposite arcs at the same speed, so the robot ends roughly where it began
+        Assert.Equal((short)60, bodies[0].EncodedRadius);
+        Assert.Equal((short)-60, bodies[1].EncodedRadius);
+        Assert.Equal(bodies[0].Speed, bodies[1].Speed);
+        Assert.Equal(bodies[0].DurationTimeMs, bodies[1].DurationTimeMs);
+        Assert.True(bodies[1].TriggerTimeMs > bodies[0].EndTimeMs, "the two arcs must not overlap");
+    }
+
+    [Theory]
+    [InlineData(60, 9999, 1.0, 100)]      // speed is clamped well below what the robot accepts
+    [InlineData(60, -9999, 1.0, -100)]
+    public void TheSyntheticArcClampsSpeed(float radius, float speed, double seconds, int expected)
+    {
+        var clip = Cozmo.Conformance.Anim.BuildArcClip(radius, speed, seconds);
+        Assert.Equal((short)expected, clip.Keyframes.OfType<BodyKeyframe>().First().Speed);
+    }
+
+    [Theory]
+    [InlineData(0.01, 100)]               // and duration is clamped at both ends
+    [InlineData(999.0, 5000)]
+    public void TheSyntheticArcClampsDuration(double seconds, uint expected)
+    {
+        var clip = Cozmo.Conformance.Anim.BuildArcClip(60, 30, seconds);
+        Assert.Equal(expected, clip.Keyframes.OfType<BodyKeyframe>().First().DurationTimeMs);
+    }
+
+    [Fact]
+    public void TheSyntheticArcStopsAfterEachLeg()
+    {
+        var r = new Recorder();
+        var s = new AnimationScheduler(r);
+        var clip = Cozmo.Conformance.Anim.BuildArcClip(60, 30, 1.0);
+        s.Play(clip, 0);
+        Run(s, 0, clip.DurationMs + 200);
+
+        Assert.Equal(2, r.Bodies.Count);
+        Assert.Equal(2, r.BodyStops);     // each leg is stopped when its own duration expires
+    }
+
     // ------------------------------------------------------------------- audio
 
     private sealed class FixedAudio : IAnimationAudioSource

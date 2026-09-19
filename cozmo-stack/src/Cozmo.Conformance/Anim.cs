@@ -66,9 +66,20 @@ public static class Anim
         var assets = Arg(a, "--assets");
         var name = Arg(a, "--name");
         var group = Arg(a, "--group");
-        if (assets is null || (name is null && group is null))
+        bool arc = a.Contains("--arc");
+        float arcRadius = (float)Num(a, "--arc-radius", 60);
+        float arcSpeed = (float)Num(a, "--arc-speed", 30);
+        double arcSeconds = Num(a, "--arc-seconds", 1.0);
+        var audio = ParseAudioMappings(a);
+
+        if (!arc && assets is null)
         {
-            Console.WriteLine("need --assets <dir> and one of --name <clip> or --group <group>");
+            Console.WriteLine("need --assets <dir> and one of --name <clip> or --group <group>, or --arc");
+            return 1;
+        }
+        if (!arc && name is null && group is null)
+        {
+            Console.WriteLine("need one of --name <clip> or --group <group>, or --arc");
             return 1;
         }
 
@@ -86,26 +97,64 @@ public static class Anim
         Console.WriteLine(ready ? $"ready: {why}" : $"NOT READY: {why}");
         if (!ready) { robot.Disconnect(); return 10; }
 
-        var lib = robot.Animations.LoadFrom(assets);
-        Console.WriteLine($"{lib.ClipNames.Count} clips, {lib.GroupNames.Count} groups loaded");
+        AnimationLibrary? lib = null;
+        if (assets is not null)
+        {
+            lib = robot.Animations.LoadFrom(assets);
+            Console.WriteLine($"{lib.ClipNames.Count} clips, {lib.GroupNames.Count} groups loaded");
+            var names = robot.Animations.LoadSoundNames(Path.Combine(assets, "..", "sound"))
+                        ?? robot.Animations.LoadSoundNames(assets);
+            if (names is not null)
+                Console.WriteLine($"sound metadata: {names.EventCount} events, {names.FileCount} files (names only)");
+        }
+
+        if (audio.Count > 0)
+        {
+            var source = new WavAudioSource(robot.Animations.SoundNames);
+            foreach (var (id, path) in audio)
+            {
+                source.Add(id, path);
+                var evName = robot.Animations.SoundNames?.NameOf(id);
+                Console.WriteLine($"audio: event {id}{(evName is null ? "" : $" ({evName})")} -> {Path.GetFileName(path)}");
+            }
+            robot.Animations.AudioSource = source;
+        }
 
         var events = new List<string>();
         var skipped = new List<string>();
         robot.Animations.Event += e => { Console.WriteLine($"  event: {e}"); events.Add(e); };
         robot.Animations.NotImplemented += w => { if (skipped.Count < 20) skipped.Add(w); };
 
-        string clipName = name ?? "";
         AnimationClip clip;
-        if (group is not null)
+        if (arc)
         {
-            var g = lib.GetGroup(group);
-            if (g is null) { Console.WriteLine($"no group '{group}'"); robot.Disconnect(); return 1; }
-            var pick = g.Choose(new Random());
-            clipName = pick!.Name;
-            Console.WriteLine($"group '{group}' chose '{clipName}'");
+            clip = BuildArcClip(arcRadius, arcSpeed, arcSeconds);
+            Console.WriteLine($"synthetic arc clip: radius {arcRadius:F0} mm, speed {arcSpeed:F0} mm/s, " +
+                              $"{arcSeconds:F1}s, then an equal arc back the other way");
         }
-        if (!lib.HasClip(clipName)) { Console.WriteLine($"no clip '{clipName}'"); robot.Disconnect(); return 1; }
-        clip = lib.GetClip(clipName);
+        else
+        {
+            string clipName = name ?? "";
+            if (group is not null)
+            {
+                var g = lib!.GetGroup(group);
+                if (g is null) { Console.WriteLine($"no group '{group}'"); robot.Disconnect(); return 1; }
+                var pick = g.Choose(new Random());
+                clipName = pick!.Name;
+                Console.WriteLine($"group '{group}' chose '{clipName}'");
+            }
+            if (!lib!.HasClip(clipName)) { Console.WriteLine($"no clip '{clipName}'"); robot.Disconnect(); return 1; }
+            clip = lib.GetClip(clipName);
+        }
+
+        // Anything that moves the body gets the robot's own cliff reflex switched on first, exactly as the
+        // drive acceptance command does. This is never skipped, including for the synthetic arc.
+        if ((clip.Tracks & AnimationTrack.Body) != 0)
+        {
+            robot.Sensors.SetStopOnCliff(true);
+            Console.WriteLine("stop-on-cliff enabled before any body motion");
+            await Task.Delay(100);
+        }
 
         Console.WriteLine($"playing {clip}");
         Console.WriteLine($"  tracks: {clip.Tracks}");
@@ -119,6 +168,9 @@ public static class Anim
 
         Console.WriteLine($"\nfinished: {reason} after {sw.ElapsedMilliseconds} ms (clip is {clip.DurationMs} ms)");
         Console.WriteLine($"keyframes fired: {robot.Animations.Scheduler.KeyframesFired} of {clip.Keyframes.Count}");
+        if ((clip.Tracks & AnimationTrack.Audio) != 0)
+            Console.WriteLine($"audio frames streamed: {robot.Animations.Scheduler.AudioFramesSent}" +
+                              (audio.Count == 0 ? " (all silent: no --audio mapping was given)" : ""));
         if (events.Count > 0) Console.WriteLine($"events raised: {string.Join(", ", events.Distinct())}");
         foreach (var s in skipped.Distinct()) Console.WriteLine($"  not implemented: {s}");
 
@@ -138,6 +190,53 @@ public static class Anim
                           "so their keyframes pass silently.");
         robot.Disconnect();
         return pass ? 0 : 30;
+    }
+
+
+    /// <summary>Parses repeated <c>--audio &lt;eventId&gt;=&lt;file.wav&gt;</c> options.</summary>
+    private static List<(long Id, string Path)> ParseAudioMappings(string[] a)
+    {
+        var list = new List<(long, string)>();
+        for (int i = 2; i < a.Length - 1; i++)
+        {
+            if (a[i] != "--audio") continue;
+            var spec = a[i + 1];
+            int eq = spec.IndexOf('=');
+            if (eq <= 0) { Console.WriteLine($"ignoring --audio '{spec}': expected <eventId>=<file.wav>"); continue; }
+            if (!long.TryParse(spec[..eq], out var id))
+            { Console.WriteLine($"ignoring --audio '{spec}': '{spec[..eq]}' is not an event id"); continue; }
+            list.Add((id, spec[(eq + 1)..]));
+        }
+        return list;
+    }
+
+    /// <summary>
+    /// A synthetic clip that exercises arc body motion and nothing else.
+    ///
+    /// Deliberately conservative: it arcs one way for the given time, pauses, arcs back the other way by
+    /// the same amount, and ends stopped, so the robot finishes roughly where it started. Speed and
+    /// duration default well below the 200 mm/s the robot accepts. No shipped clip in this build uses an
+    /// arc, which is why this has to be built rather than chosen.
+    /// </summary>
+    public static AnimationClip BuildArcClip(float radiusMm, float speedMmps, double seconds)
+    {
+        uint dur = (uint)Math.Clamp(seconds * 1000, 100, 5000);
+        short speed = (short)Math.Clamp(speedMmps, -100, 100);
+        short radius = (short)Math.Clamp(radiusMm, 1, short.MaxValue - 1);
+        uint gap = 500;
+
+        var frames = new List<Keyframe>
+        {
+            new BodyKeyframe(0, dur, radius.ToString(), speed),
+            new BodyKeyframe(dur + gap, dur, (-radius).ToString(), speed),
+        };
+        return new AnimationClip
+        {
+            Name = "synthetic_arc_test",
+            Keyframes = frames,
+            Tracks = AnimationTrack.Body,
+            DurationMs = dur + gap + dur,
+        };
     }
 
     /// <summary>Shows each built-in procedural expression in turn.</summary>
