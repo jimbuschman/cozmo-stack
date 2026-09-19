@@ -21,6 +21,8 @@ public sealed class ReactiveBehavior : IDisposable
     private readonly AnimationTriggerMap _map;
     private readonly ReactionTable _table;
     private readonly Random _random;
+    private readonly System.Collections.Concurrent.BlockingCollection<Action> _work = new();
+    private Thread? _worker;
     private bool _subscribed;
 
     public ReactiveBehavior(CozmoRobot robot, AnimationTriggerMap map,
@@ -32,7 +34,24 @@ public sealed class ReactiveBehavior : IDisposable
         _table = table ?? ReactionTable.Default;
         Arbiter = arbiter ?? new BehaviorArbiter();
         _random = random ?? new Random();
+
+        // The arbiter cannot see an animation the application started directly through
+        // robot.Animations.Play, so without this a reaction would happily replace one.
+        Arbiter.CallerAnimationRunning ??= () => _robot.Animations.IsPlaying;
     }
+
+    /// <summary>
+    /// Whether reaction work runs on this layer's own thread rather than on the caller's.
+    ///
+    /// Sensor callbacks arrive on the transport's dispatch thread, which also carries robot state. Doing
+    /// animation selection and playback there stalls telemetry for everything else, so reactions are
+    /// queued onto a serialized worker and the dispatch thread returns immediately. Turned off in tests
+    /// that want <see cref="Fire"/> to complete before they assert.
+    /// </summary>
+    public bool Asynchronous { get; set; } = true;
+
+    /// <summary>How many reactions are waiting to be handled. For tests and diagnostics.</summary>
+    public int Queued => _work.Count;
 
     /// <summary>Decides what is allowed to run. Shared with the idle layer.</summary>
     public BehaviorArbiter Arbiter { get; }
@@ -48,9 +67,36 @@ public sealed class ReactiveBehavior : IDisposable
     {
         if (_subscribed) return;
         _subscribed = true;
+        if (Asynchronous && _worker is null)
+        {
+            _worker = new Thread(WorkLoop) { IsBackground = true, Name = "cozmo-reactions" };
+            _worker.Start();
+        }
         _robot.Sensors.CliffDetected += OnCliff;
         _robot.Sensors.PickedUpChanged += OnPickedUp;
         _robot.Sensors.OnChargerChanged += OnCharger;
+        _robot.Sensors.FallingChanged += OnFalling;
+    }
+
+    /// <summary>
+    /// Runs queued reactions one at a time, in the order they arrived, so ordering is preserved and a
+    /// slow one cannot overlap the next.
+    /// </summary>
+    private void WorkLoop()
+    {
+        foreach (var job in _work.GetConsumingEnumerable())
+        {
+            try { job(); }
+            catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { }
+        }
+    }
+
+    /// <summary>Queues work, or runs it inline when asynchronous handling is off.</summary>
+    private void Post(Action job)
+    {
+        if (!Asynchronous || _work.IsAddingCompleted) { job(); return; }
+        try { _work.Add(job); }
+        catch (InvalidOperationException) { job(); }   // completed while we were adding
     }
 
     /// <summary>Stops watching. Anything already playing is left to finish.</summary>
@@ -61,25 +107,33 @@ public sealed class ReactiveBehavior : IDisposable
         _robot.Sensors.CliffDetected -= OnCliff;
         _robot.Sensors.PickedUpChanged -= OnPickedUp;
         _robot.Sensors.OnChargerChanged -= OnCharger;
+        _robot.Sensors.FallingChanged -= OnFalling;
     }
 
-    private void OnCliff(CliffReport report) => Fire(ReactionTrigger.CliffDetected);
+    private void OnCliff(CliffReport report) => Post(() => Fire(ReactionTrigger.CliffDetected));
+
+    private void OnFalling(bool falling)
+    {
+        if (falling) Post(() => Fire(ReactionTrigger.RobotFalling));
+        else Post(() => Report(new BehaviorDecision(BehaviorPriority.Reaction, BehaviorOutcome.Unresolved,
+            "stopped falling: the shipped ReactionTrigger set has no member for it")));
+    }
 
     private void OnPickedUp(bool picked)
     {
         // Only the pick-up has a shipped reaction. Being put down is a real transition and is reported,
         // but the shipped ReactionTrigger set has no "put down" member, so nothing is played for it
         // rather than something being chosen to fill the gap.
-        if (picked) Fire(ReactionTrigger.RobotPickedUp);
-        else Report(new BehaviorDecision(BehaviorPriority.Reaction, BehaviorOutcome.Unresolved,
-            "put down: the shipped ReactionTrigger set has no member for it"));
+        if (picked) Post(() => Fire(ReactionTrigger.RobotPickedUp));
+        else Post(() => Report(new BehaviorDecision(BehaviorPriority.Reaction, BehaviorOutcome.Unresolved,
+            "put down: the shipped ReactionTrigger set has no member for it")));
     }
 
     private void OnCharger(bool onCharger)
     {
-        if (onCharger) Fire(ReactionTrigger.PlacedOnCharger);
-        else Report(new BehaviorDecision(BehaviorPriority.Reaction, BehaviorOutcome.Unresolved,
-            "off charger: the shipped ReactionTrigger set has no member for it"));
+        if (onCharger) Post(() => Fire(ReactionTrigger.PlacedOnCharger));
+        else Post(() => Report(new BehaviorDecision(BehaviorPriority.Reaction, BehaviorOutcome.Unresolved,
+            "off charger: the shipped ReactionTrigger set has no member for it")));
     }
 
     /// <summary>
@@ -141,5 +195,12 @@ public sealed class ReactiveBehavior : IDisposable
         return d;
     }
 
-    public void Dispose() => Stop();
+    public void Dispose()
+    {
+        Stop();
+        _work.CompleteAdding();
+        _worker?.Join(TimeSpan.FromSeconds(1));
+        _worker = null;
+        _work.Dispose();
+    }
 }

@@ -215,6 +215,30 @@ public sealed class CozmoAnimations : IDisposable
     /// <summary>Stops whatever is playing. Returns false when nothing was.</summary>
     public bool Stop() => _scheduler.Stop();
 
+    /// <summary>
+    /// Which animation is running, as an opaque token. A caller that starts an animation can keep this
+    /// and later ask whether that same one is still playing.
+    /// </summary>
+    public long Generation => _scheduler.Generation;
+
+    /// <summary>
+    /// Stops the running animation only if it is still the one this token identifies.
+    ///
+    /// This is what lets a behaviour clean up after itself without harm: stopping a behaviour must end the
+    /// animation it started, but must not end an unrelated one that has since replaced it.
+    /// </summary>
+    public bool StopIfCurrent(long generation) => _scheduler.StopIfCurrent(generation);
+
+    /// <summary>
+    /// Plays a clip and reports which animation it became, so the caller can stop exactly that one.
+    /// Returns null when the scheduler refused it.
+    /// </summary>
+    public AnimationTicket? PlayTracked(string name, bool replaceRunning = true)
+    {
+        var task = Play(name, replaceRunning);
+        return task is null ? null : new AnimationTicket(task, _scheduler.Generation);
+    }
+
     private static double NowMs() => Environment.TickCount64;
 
     private void StartTicker()
@@ -236,10 +260,27 @@ public sealed class CozmoAnimations : IDisposable
         var sw = System.Diagnostics.Stopwatch.StartNew();
         double next = 0;
         double origin = NowMs();
-        while (_running)
+        while (true)
         {
             _scheduler.Advance(origin + sw.Elapsed.TotalMilliseconds);
-            if (!_scheduler.IsPlaying) break;
+
+            // Deciding to stop and clearing _running must happen under the same lock StartTicker takes.
+            // Previously the loop broke out first and cleared _running afterwards, which left a window
+            // where a Play arriving in between saw _running still true, started no ticker, and left the
+            // new animation with nothing to advance it.
+            lock (_gate)
+            {
+                if (!_running) { _ticker = null; return; }       // Dispose asked us to stop
+                if (!_scheduler.IsPlaying)
+                {
+                    // Play sets the clip before calling StartTicker, so anything started before this
+                    // check is seen here and keeps the loop alive; anything after it finds _running
+                    // false and starts a fresh ticker.
+                    _running = false;
+                    _ticker = null;
+                    return;
+                }
+            }
 
             next += FrameIntervalMs;
             double wait = next - sw.Elapsed.TotalMilliseconds;
@@ -247,7 +288,6 @@ public sealed class CozmoAnimations : IDisposable
             else if (wait > 0) Thread.SpinWait(200);
             else next = sw.Elapsed.TotalMilliseconds;
         }
-        lock (_gate) { _running = false; _ticker = null; }
     }
 
     private const double FrameIntervalMs = 1000.0 / AnimationScheduler.FrameRateHz;
@@ -294,3 +334,8 @@ public sealed class CozmoFace
         _robot.Display.Hold(bmp, duration);
     }
 }
+
+/// <summary>
+/// A started animation and the token identifying it, so a caller can stop that one and no other.
+/// </summary>
+public sealed record AnimationTicket(Task<AnimationEndReason> Completion, long Generation);

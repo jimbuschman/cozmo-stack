@@ -41,8 +41,30 @@ public sealed class RobotStateTracker
     public int DistinctMessageTypes { get { lock (_gate) return _histogram.Count; } }
 
     /// <summary>The robot recalibrates head and lift on every connect; motors should wait for this.</summary>
-    public bool CalibratingMotors { get; private set; }
+    public bool CalibratingMotors => HeadCalibrating || LiftCalibrating;
+
+    /// <summary>Whether any MotorCalibration message has arrived at all.</summary>
     public bool CalibrationSeen { get; private set; }
+
+    /// <summary>Whether the head is calibrating right now.</summary>
+    public bool HeadCalibrating { get; private set; }
+    /// <summary>Whether the lift is calibrating right now.</summary>
+    public bool LiftCalibrating { get; private set; }
+
+    /// <summary>Whether the head has been seen to start and then finish calibrating.</summary>
+    public bool HeadCalibrated { get; private set; }
+    /// <summary>Whether the lift has been seen to start and then finish calibrating.</summary>
+    public bool LiftCalibrated { get; private set; }
+
+    /// <summary>
+    /// Whether both motors have completed calibration.
+    ///
+    /// Head and lift are tracked apart because the robot calibrates them separately and reports each with
+    /// its own <c>MotorID</c>. Collapsing both into one flag meant the lift finishing cleared it while the
+    /// head was still moving, so motion was allowed too early. It also means an arriving RobotState is not
+    /// on its own evidence of readiness: the calibration messages are.
+    /// </summary>
+    public bool CalibrationComplete => HeadCalibrated && LiftCalibrated;
 
     public event Action<RobotState>? StateUpdated;
 
@@ -73,7 +95,17 @@ public sealed class RobotStateTracker
             case AnimationState a: Animation = a; break;
             case MotorCalibration c:
                 CalibrationSeen = true;
-                CalibratingMotors = c.CalibStarted;
+                switch (c.MotorID)
+                {
+                    case MotorID.MOTOR_HEAD:
+                        HeadCalibrating = c.CalibStarted;
+                        if (!c.CalibStarted) HeadCalibrated = true;
+                        break;
+                    case MotorID.MOTOR_LIFT:
+                        LiftCalibrating = c.CalibStarted;
+                        if (!c.CalibStarted) LiftCalibrated = true;
+                        break;
+                }
                 break;
             case RobotState s:
                 Latest = s; StateCount++;
@@ -246,7 +278,7 @@ public sealed class CozmoRobot : IDisposable
         {
             bool telemetry = State.StateCount > 0;
             bool anim = State.AnimationsEnabled;
-            bool calibrated = State.CalibrationSeen && !State.CalibratingMotors;
+            bool calibrated = State.CalibrationComplete;
             if (telemetry && anim && calibrated) return (true, "telemetry, animation controller and motor calibration all ready");
             await Task.Delay(50);
         }
@@ -254,7 +286,13 @@ public sealed class CozmoRobot : IDisposable
         if (State.StateCount == 0) missing.Add("no telemetry");
         if (!State.AnimationsEnabled) missing.Add("animation controller not running");
         if (!State.CalibrationSeen) missing.Add("motor calibration never reported");
-        else if (State.CalibratingMotors) missing.Add("motor calibration still running");
+        else if (State.CalibratingMotors)
+            missing.Add($"motor calibration still running ({(State.HeadCalibrating ? "head" : "")}" +
+                        $"{(State.HeadCalibrating && State.LiftCalibrating ? " and " : "")}" +
+                        $"{(State.LiftCalibrating ? "lift" : "")})");
+        else if (!State.CalibrationComplete)
+            missing.Add($"waiting for calibration to complete (head {(State.HeadCalibrated ? "done" : "pending")}, " +
+                        $"lift {(State.LiftCalibrated ? "done" : "pending")})");
         return (false, missing.Count == 0 ? "timed out" : string.Join("; ", missing));
     }
 
@@ -264,7 +302,7 @@ public sealed class CozmoRobot : IDisposable
         var end = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(8));
         while (DateTime.UtcNow < end)
         {
-            if (State.CalibrationSeen && !State.CalibratingMotors) return;
+            if (State.CalibrationComplete) return;
             await Task.Delay(50);
         }
     }

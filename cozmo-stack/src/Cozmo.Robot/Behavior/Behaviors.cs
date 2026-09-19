@@ -15,7 +15,10 @@ namespace Cozmo.Robot.Behavior;
 public sealed class PlayAnimBehavior : IBehavior
 {
     private readonly IReadOnlyList<AnimationTrigger> _triggers;
-    private Task<AnimationEndReason>? _playing;
+    private readonly object _gate = new();
+    private CozmoAnimations? _animations;
+    private long _generation;
+    private bool _owns;
     private volatile bool _finished;
 
     public PlayAnimBehavior(string id, string behaviorClass, IEnumerable<AnimationTrigger> triggers,
@@ -56,9 +59,19 @@ public sealed class PlayAnimBehavior : IBehavior
             var clip = lib.GetClip(resolved.Selected!);
             scope.LockTracks(clip.Tracks);
             LastSelected = resolved.Selected;
-            _playing = context.Robot.Animations.Play(resolved.Selected!);
-            if (_playing is null) { _finished = true; return Task.CompletedTask; }
-            _playing.ContinueWith(_ => _finished = true, TaskScheduler.Default);
+            var ticket = context.Robot.Animations.PlayTracked(resolved.Selected!);
+            if (ticket is null) { _finished = true; return Task.CompletedTask; }
+            lock (_gate)
+            {
+                _animations = context.Robot.Animations;
+                _generation = ticket.Generation;
+                _owns = true;
+            }
+            ticket.Completion.ContinueWith(_ =>
+            {
+                lock (_gate) _owns = false;
+                _finished = true;
+            }, TaskScheduler.Default);
             return Task.CompletedTask;
         }
 
@@ -73,7 +86,30 @@ public sealed class PlayAnimBehavior : IBehavior
     public void Stop(BehaviorStopReason reason)
     {
         _finished = true;
-        _playing = null;
+        StopOwnAnimation(ref _animations, ref _generation, ref _owns, _gate);
+    }
+
+    /// <summary>
+    /// Ends the animation this behaviour started, and only that one.
+    ///
+    /// Stopping a behaviour must not leave its animation running, and equally must not cancel an unrelated
+    /// animation that has since replaced it. The generation token the scheduler hands back identifies
+    /// exactly which animation was started, so StopIfCurrent is a no-op once something else has taken over.
+    /// </summary>
+    internal static void StopOwnAnimation(ref CozmoAnimations? animations, ref long generation,
+                                          ref bool owns, object gate)
+    {
+        CozmoAnimations? target;
+        long gen;
+        lock (gate)
+        {
+            if (!owns) return;
+            owns = false;
+            target = animations;
+            gen = generation;
+            animations = null;
+        }
+        target?.StopIfCurrent(gen);
     }
 }
 
@@ -86,7 +122,10 @@ public sealed class PlayAnimBehavior : IBehavior
 /// </summary>
 public sealed class PlayArbitraryAnimBehavior : IBehavior
 {
-    private Task<AnimationEndReason>? _playing;
+    private readonly object _gate = new();
+    private CozmoAnimations? _animations;
+    private long _generation;
+    private bool _owns;
     private volatile bool _finished = true;
 
     public string Id => "PlayArbitraryAnim";
@@ -113,15 +152,29 @@ public sealed class PlayArbitraryAnimBehavior : IBehavior
             return Task.CompletedTask;
         }
         scope.LockTracks(lib.GetClip(ClipName).Tracks);
-        _playing = context.Robot.Animations.Play(ClipName);
-        if (_playing is null) { _finished = true; return Task.CompletedTask; }
-        _playing.ContinueWith(_ => _finished = true, TaskScheduler.Default);
+        var ticket = context.Robot.Animations.PlayTracked(ClipName);
+        if (ticket is null) { _finished = true; return Task.CompletedTask; }
+        lock (_gate)
+        {
+            _animations = context.Robot.Animations;
+            _generation = ticket.Generation;
+            _owns = true;
+        }
+        ticket.Completion.ContinueWith(_ =>
+        {
+            lock (_gate) _owns = false;
+            _finished = true;
+        }, TaskScheduler.Default);
         return Task.CompletedTask;
     }
 
     public bool Update(BehaviorContext context, double nowMs) => !_finished;
 
-    public void Stop(BehaviorStopReason reason) { _finished = true; _playing = null; }
+    public void Stop(BehaviorStopReason reason)
+    {
+        _finished = true;
+        PlayAnimBehavior.StopOwnAnimation(ref _animations, ref _generation, ref _owns, _gate);
+    }
 }
 
 /// <summary>
@@ -135,7 +188,10 @@ public sealed class ReactBehavior : IBehavior
 {
     private readonly ReactionTable _table;
     private readonly Func<CozmoRobot, bool> _condition;
-    private Task<AnimationEndReason>? _playing;
+    private readonly object _gate = new();
+    private CozmoAnimations? _animations;
+    private long _generation;
+    private bool _owns;
     private volatile bool _finished = true;
 
     public ReactBehavior(string id, string behaviorClass, ReactionTrigger trigger,
@@ -180,15 +236,29 @@ public sealed class ReactBehavior : IBehavior
         // A reaction should not be interrupted by another reaction part way through.
         scope.DisableReactions();
         LastSelected = resolved.Selected;
-        _playing = context.Robot.Animations.Play(resolved.Selected!);
-        if (_playing is null) { _finished = true; return Task.CompletedTask; }
-        _playing.ContinueWith(_ => _finished = true, TaskScheduler.Default);
+        var ticket = context.Robot.Animations.PlayTracked(resolved.Selected!);
+        if (ticket is null) { _finished = true; return Task.CompletedTask; }
+        lock (_gate)
+        {
+            _animations = context.Robot.Animations;
+            _generation = ticket.Generation;
+            _owns = true;
+        }
+        ticket.Completion.ContinueWith(_ =>
+        {
+            lock (_gate) _owns = false;
+            _finished = true;
+        }, TaskScheduler.Default);
         return Task.CompletedTask;
     }
 
     public bool Update(BehaviorContext context, double nowMs) => !_finished;
 
-    public void Stop(BehaviorStopReason reason) { _finished = true; _playing = null; }
+    public void Stop(BehaviorStopReason reason)
+    {
+        _finished = true;
+        PlayAnimBehavior.StopOwnAnimation(ref _animations, ref _generation, ref _owns, _gate);
+    }
 }
 
 /// <summary>

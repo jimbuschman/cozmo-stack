@@ -57,6 +57,13 @@ public sealed class CozmoSensors
     /// <summary>Raised when the robot arrives on, or leaves, the charger contacts.</summary>
     public event Action<bool>? OnChargerChanged;
 
+    /// <summary>
+    /// Raised when the robot starts or stops reporting that it is falling, derived from
+    /// <c>RobotStatusFlag.IsFalling</c> the same way pick-up and charger transitions are. Without this the
+    /// reaction table claimed a falling reaction that nothing could ever raise.
+    /// </summary>
+    public event Action<bool>? FallingChanged;
+
     // ------------------------------------------------------------------- power
 
     /// <summary>Battery voltage in volts. A charged Cozmo reads about 4.1 V, a flat one about 3.5 V.</summary>
@@ -151,6 +158,7 @@ public sealed class CozmoSensors
 
     private bool Flag(RobotStatusFlag f) => _state.Latest?.Has(f) ?? false;
 
+    private bool _lastFalling;
     private bool _lastPickedUp, _lastOnCharger, _haveBaseline;
 
     /// <summary>Fed every robot message by <see cref="CozmoRobot"/>.</summary>
@@ -171,13 +179,18 @@ public sealed class CozmoSensors
             case RobotState s:
                 bool picked = s.Has(RobotStatusFlag.IsPickedUp);
                 bool charger = s.Has(RobotStatusFlag.IsOnCharger);
+                bool falling = s.Has(RobotStatusFlag.IsFalling);
                 if (!_haveBaseline)
                 {
-                    _lastPickedUp = picked; _lastOnCharger = charger; _haveBaseline = true;
+                    // The first state is a baseline, not a transition: reporting it as one would fire a
+                    // reaction merely for connecting to a robot that was already on its charger.
+                    _lastPickedUp = picked; _lastOnCharger = charger; _lastFalling = falling;
+                    _haveBaseline = true;
                     break;
                 }
                 if (picked != _lastPickedUp) { _lastPickedUp = picked; PickedUpChanged?.Invoke(picked); }
                 if (charger != _lastOnCharger) { _lastOnCharger = charger; OnChargerChanged?.Invoke(charger); }
+                if (falling != _lastFalling) { _lastFalling = falling; FallingChanged?.Invoke(falling); }
                 break;
         }
     }

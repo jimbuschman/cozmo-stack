@@ -99,7 +99,14 @@ public sealed class BehaviorScope : IDisposable
 {
     private readonly List<Action> _undo = new();
     private readonly object _gate = new();
+    private readonly BehaviorArbiter? _arbiter;
     private bool _disposed;
+
+    /// <summary>
+    /// A scope with no arbiter models the locks without enforcing them, which is only useful in tests.
+    /// Pass the arbiter for the locks to actually take effect.
+    /// </summary>
+    public BehaviorScope(BehaviorArbiter? arbiter = null) => _arbiter = arbiter;
 
     /// <summary>Tracks this behaviour has claimed, released when it stops.</summary>
     public Animation.AnimationTrack LockedTracks { get; private set; }
@@ -119,14 +126,24 @@ public sealed class BehaviorScope : IDisposable
         }
     }
 
-    /// <summary>The engine's SmartDisableReactionsWithLock: stop reactions interrupting this behaviour.</summary>
+    /// <summary>
+    /// The engine's SmartDisableReactionsWithLock: stop reactions interrupting this behaviour.
+    ///
+    /// The lock is taken on the arbiter, so it actually suppresses reactions rather than only recording
+    /// that it was asked for, and it is released with the scope.
+    /// </summary>
     public void DisableReactions()
     {
         lock (_gate)
         {
             if (_disposed || ReactionsDisabled) return;
             ReactionsDisabled = true;
-            _undo.Add(() => ReactionsDisabled = false);
+            _arbiter?.DisableReactions(this);
+            _undo.Add(() =>
+            {
+                ReactionsDisabled = false;
+                _arbiter?.EnableReactions(this);
+            });
         }
     }
 

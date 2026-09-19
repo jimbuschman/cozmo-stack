@@ -1,6 +1,9 @@
 # M7 — Reactive behaviour and idle personality
 
-Status: **CODE COMPLETE — HARDWARE ACCEPTANCE PENDING.**
+Status: **CODE COMPLETE — HARDWARE ACCEPTANCE PENDING.** Not frozen.
+
+A correctness pass was run over this layer before acceptance; what it changed is at the end under
+"Hardening pass".
 
 Everything below is established offline and covered by tests. Nothing here has been run on a robot, and no
 claim about how it behaves physically should be read into it until it has.
@@ -152,3 +155,59 @@ dotnet run --project src/Cozmo.Conformance -- behavior <robot-ip> --obb <dir> [-
 ```
 
 `triggers` needs no robot.
+
+
+## Hardening pass
+
+A review of HEAD 60b4b01 found seven defects in this layer and two in frozen M5. All are fixed, each with a
+regression test; three of those tests were checked against the unfixed code to confirm they actually fail.
+
+### Behaviour layer
+
+* **Idle could not blink without `--allow-motion`.** The flag drove `IdleBehavior.Execute`, which gated the
+  face as well as the motors, so the documented no-motion acceptance run had nothing visible to watch.
+  `ExecuteMotors` now gates head, lift and body separately; blinks and eye darts always run.
+* **Falling was claimed but never watched.** `ReactionTable` mapped `RobotFalling`, but nothing subscribed to
+  a falling transition, so it could never fire. `Sensors.FallingChanged` is now derived from
+  `RobotStatusFlag.IsFalling` exactly as pick-up and charger are, and the dispatcher subscribes to it.
+* **Caller animations were invisible to the arbiter.** The hierarchy claimed caller beats reaction, but the
+  arbiter only ever saw requests made through itself — an application calling `robot.Animations.Play` could
+  be replaced by a reaction. The arbiter now asks the scheduler whether an animation it did not start is
+  running, and treats one as the caller holding the floor.
+* **The reaction lock was modelled, not operational.** `BehaviorScope.DisableReactions` recorded a flag and
+  nothing consulted it. Scopes now take the lock on the arbiter, which suppresses reactions while any is
+  held and restores them when the scope is released.
+* **Behaviours leaked their animation.** `Stop` dropped the task and left the robot animating. Behaviours now
+  hold the scheduler's generation token for the animation they started, so stopping ends exactly that one and
+  is a no-op once something else has replaced it.
+* **Reaction work ran on the transport dispatch thread.** Sensor callbacks arrive on the path that also
+  carries robot state, so animation selection there stalled telemetry. Reactions are queued onto the
+  behaviour layer's own serialized worker; ordering is preserved and a slow consumer no longer blocks state.
+
+### Frozen M5 — two specific defects, not a refactor
+
+Wire and timing semantics are unchanged.
+
+* **Ticker shutdown race.** `TickLoop` broke out of its loop and only then cleared `_running`, so a `Play`
+  arriving in that window saw `_running` still true, started no ticker, and left the new animation with
+  nothing advancing it. The decision to stop and the clearing now happen under the same lock `StartTicker`
+  takes.
+* **Dispatch after unlock.** `Advance` collected due keyframes under the lock and dispatched them outside
+  it, so an animation replaced in that window received the outgoing clip's keyframes. A generation token is
+  now re-checked before each dispatch.
+
+### Elsewhere
+
+* **Motor readiness.** Head and lift calibrate separately and report separate `MotorID`s, but both were
+  collapsed into one `CalibratingMotors` flag, so the lift finishing cleared it while the head was still
+  moving. They are tracked independently, and motion now requires `CalibrationComplete` rather than merely
+  "nothing is calibrating right now" — an arriving `RobotState` before any calibration message is no longer
+  mistaken for readiness. The existing test helper had been calibrating only the head, which is what let
+  this pass.
+* **Transport event isolation.** `Safe()` invoked a multicast event as one call, so a throwing subscriber
+  prevented every later subscriber from running. Each subscriber is now invoked individually and a fault is
+  counted against its own handler.
+* **Wheel confirmation.** `DriveWheelsAsync` accepted any wheel motion as confirmation, so a robot already
+  rolling satisfied the check the instant the command was sent — commanding forward while driving backwards
+  reported success. Each wheel is now confirmed against the requested speed, with sign and a tolerance that
+  allows for ramping.

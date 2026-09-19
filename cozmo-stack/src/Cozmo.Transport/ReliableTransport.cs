@@ -80,7 +80,38 @@ public sealed class ReliableTransport : IDisposable
         catch (InvalidOperationException) { Safe(a); }   // adding completed during shutdown
     }
 
-    private void Safe(Action a)
+    /// <summary>
+    /// Raises an event, isolating its subscribers from one another.
+    ///
+    /// A plain <c>Handler?.Invoke(x)</c> runs the whole multicast list as a single call, so a subscriber
+    /// that throws stops every subscriber registered after it from running at all — one bad handler
+    /// silently disabling the rest. Each target is invoked separately instead, and a fault is counted and
+    /// reported against that handler alone.
+    /// </summary>
+    private void Fan<T>(Action<T>? handler, T arg)
+    {
+        if (handler is null) return;
+        var targets = handler.GetInvocationList();
+        if (targets.Length == 1) { SafeOne(() => handler(arg)); return; }
+        foreach (var t in targets)
+        {
+            var one = (Action<T>)t;
+            SafeOne(() => one(arg));
+        }
+    }
+
+    /// <summary>The argument-less form of <see cref="Fan{T}"/>.</summary>
+    private void Fan(Action? handler)
+    {
+        if (handler is null) return;
+        var targets = handler.GetInvocationList();
+        if (targets.Length == 1) { SafeOne((Action)targets[0]); return; }
+        foreach (var t in targets) SafeOne((Action)t);
+    }
+
+    private void Safe(Action a) => SafeOne(a);
+
+    private void SafeOne(Action a)
     {
         try { a(); }
         catch (Exception e)
@@ -113,7 +144,7 @@ public sealed class ReliableTransport : IDisposable
             var raw = new byte[ReliableHeader.Length + body.Length]; hdr.Write(raw); body.CopyTo(raw, ReliableHeader.Length);
             FrameCodec.TryDecode(raw, out var f, out _);
             if (f is not null) t.OfflineOutbound.Add(f);
-            t.Raise(() => t.FrameTrace?.Invoke(new FrameEvent(true, DateTime.UtcNow, raw, f, null)));
+            t.Raise(() => t.Fan(t.FrameTrace, new FrameEvent(true, DateTime.UtcNow, raw, f, null)));
         });
         t._running = true; t.State = LinkState.Connecting;
         return t;
@@ -209,7 +240,7 @@ public sealed class ReliableTransport : IDisposable
         }
 
         Join(rx); Join(tick);
-        if (notify) Raise(() => Disconnected?.Invoke(reason));
+        if (notify) Raise(() => Fan(Disconnected, reason));
 
         if (q is not null)
         {
@@ -240,12 +271,12 @@ public sealed class ReliableTransport : IDisposable
         hdr.Write(raw); body.CopyTo(raw, ReliableHeader.Length);
         try { _sock?.SendTo(raw, _peer!); }
         catch (ObjectDisposedException) { return; }                       // closed under us during shutdown
-        catch (SocketException e) { Raise(() => Warning?.Invoke($"sendto failed: {e.SocketErrorCode} ({e.Message})")); }
+        catch (SocketException e) { Raise(() => Fan(Warning, $"sendto failed: {e.SocketErrorCode} ({e.Message})")); }
         if (FrameTrace is not null)
         {
             FrameCodec.TryDecode(raw, out var f, out var err);
             var utc = DateTime.UtcNow;
-            Raise(() => FrameTrace?.Invoke(new FrameEvent(true, utc, raw, f, err)));
+            Raise(() => Fan(FrameTrace, new FrameEvent(true, utc, raw, f, err)));
         }
     }
 
@@ -268,7 +299,7 @@ public sealed class ReliableTransport : IDisposable
                 // port-unreachable because the robot is not listening yet), not a dead socket. Keep going and
                 // let the connection timeout decide, exactly as the engine does.
                 var code = e.SocketErrorCode;
-                Raise(() => Warning?.Invoke($"datagram rejected by the network: {code}"));
+                Raise(() => Fan(Warning, $"datagram rejected by the network: {code}"));
                 continue;
             }
             catch (ObjectDisposedException) { return; }                   // socket closed by Shutdown
@@ -286,7 +317,7 @@ public sealed class ReliableTransport : IDisposable
             if (from is IPEndPoint ip && !ip.Address.Equals(_peer!.Address))
             {
                 var seen = ip;
-                Raise(() => Warning?.Invoke($"datagram from unexpected {seen}"));
+                Raise(() => Fan(Warning, $"datagram from unexpected {seen}"));
                 continue;
             }
             ProcessIncoming(buf.AsSpan(0, n).ToArray());
@@ -299,11 +330,11 @@ public sealed class ReliableTransport : IDisposable
         var utc = DateTime.UtcNow;
         if (!FrameCodec.TryDecode(raw, out var frame, out var err))
         {
-            Raise(() => FrameTrace?.Invoke(new FrameEvent(false, utc, raw, null, err)));
-            Raise(() => Warning?.Invoke($"bad frame: {err}"));
+            Raise(() => Fan(FrameTrace, new FrameEvent(false, utc, raw, null, err)));
+            Raise(() => Fan(Warning, $"bad frame: {err}"));
             return;
         }
-        Raise(() => FrameTrace?.Invoke(new FrameEvent(false, utc, raw, frame, null)));
+        Raise(() => Fan(FrameTrace, new FrameEvent(false, utc, raw, frame, null)));
 
         var deliver = new List<byte[]>();
         var warnings = new List<string>();
@@ -365,9 +396,9 @@ public sealed class ReliableTransport : IDisposable
                 }
             }
         }
-        foreach (var w in warnings) Raise(() => Warning?.Invoke(w));
-        if (connected) Raise(() => Connected?.Invoke());
-        foreach (var d in deliver) Raise(() => DataReceived?.Invoke(d));
+        foreach (var w in warnings) { var msg = w; Raise(() => Fan(Warning, msg)); }
+        if (connected) Raise(() => Fan(Connected));
+        foreach (var d in deliver) { var payload = d; Raise(() => Fan(DataReceived, payload)); }
         if (disc is not null) Shutdown(disc);
     }
 

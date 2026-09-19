@@ -68,8 +68,14 @@ public sealed class CozmoMotion
     {
         if (_robot.State.Latest is null)
             return new MotionOutcome(MotionResult.Refused, "the robot has not sent any state yet");
-        if (requireCalibration && _robot.State.CalibratingMotors)
-            return new MotionOutcome(MotionResult.Refused, "head and lift are still calibrating");
+        // Not merely "is not calibrating right now": a RobotState arriving before any MotorCalibration
+        // message would otherwise look like readiness, and normal motion would be allowed during the
+        // window before calibration has even been reported as started.
+        if (requireCalibration && !_robot.State.CalibrationComplete)
+            return new MotionOutcome(MotionResult.Refused,
+                _robot.State.CalibratingMotors
+                    ? "head and lift are still calibrating"
+                    : "head and lift have not finished calibrating yet");
         return null;
     }
 
@@ -87,17 +93,39 @@ public sealed class CozmoMotion
         if (NotReady(requireCalibration) is { } refused) return refused;
         _robot.Transport.Send(new DriveWheels(leftMmps, rightMmps, leftAccelMmps2, rightAccelMmps2), flush: true);
 
-        bool wantMotion = Math.Abs(leftMmps) > 0.01f || Math.Abs(rightMmps) > 0.01f;
+        // Confirmed against what was actually asked for, per wheel.
+        //
+        // This used to accept any wheel motion at all, which meant a robot already rolling satisfied the
+        // check the instant the command was sent. Commanding forward while it was driving backwards would
+        // report success without anything having changed. Each wheel now has to be turning the way it was
+        // told to, at roughly the speed it was told.
         var outcome = await AwaitState(
-            s => wantMotion
-                ? s.Has(RobotStatusFlag.AreWheelsMoving) || Math.Abs(s.LwheelSpeedMmps) > 1f || Math.Abs(s.RwheelSpeedMmps) > 1f
-                : !s.Has(RobotStatusFlag.AreWheelsMoving),
+            s => WheelMatches(s.LwheelSpeedMmps, leftMmps) && WheelMatches(s.RwheelSpeedMmps, rightMmps),
             confirmWithin ?? TimeSpan.FromSeconds(2));
 
         var (l, r) = WheelSpeeds;
         return outcome
-            ? new MotionOutcome(MotionResult.Acknowledged, $"robot reports wheels at {l:F0}/{r:F0} mm/s")
-            : new MotionOutcome(MotionResult.TimedOut, $"robot still reports wheels at {l:F0}/{r:F0} mm/s");
+            ? new MotionOutcome(MotionResult.Acknowledged,
+                $"robot reports wheels at {l:F0}/{r:F0} mm/s, asked for {leftMmps:F0}/{rightMmps:F0}")
+            : new MotionOutcome(MotionResult.TimedOut,
+                $"robot reports wheels at {l:F0}/{r:F0} mm/s, asked for {leftMmps:F0}/{rightMmps:F0}");
+    }
+
+    /// <summary>
+    /// Whether one wheel's reported speed matches what it was asked for.
+    ///
+    /// A stop must actually be stopped. A move must be turning the right way — sign matters, because the
+    /// difference between forwards and backwards is the whole point — and be within a tolerance of the
+    /// requested speed, generous enough to allow for the robot still ramping up and for its own reporting
+    /// resolution.
+    /// </summary>
+    internal static bool WheelMatches(float reported, float requested)
+    {
+        const float stopped = 5f;          // mm/s the robot may still report while coasting to a halt
+        if (Math.Abs(requested) <= 0.01f) return Math.Abs(reported) <= stopped;
+        if (Math.Sign(reported) != Math.Sign(requested)) return false;
+        float tolerance = Math.Max(stopped, Math.Abs(requested) * 0.35f);
+        return Math.Abs(Math.Abs(reported) - Math.Abs(requested)) <= tolerance;
     }
 
     /// <summary>Stops the wheels by commanding zero speed. Does not touch head or lift.</summary>

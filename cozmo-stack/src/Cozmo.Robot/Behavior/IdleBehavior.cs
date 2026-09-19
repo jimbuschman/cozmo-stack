@@ -156,13 +156,26 @@ public sealed class IdleBehavior
     /// <summary>
     /// Whether idle actually drives the robot, or only decides and reports. Off in tests and offline
     /// replay; on when something is actually connected.
+    ///
+    /// This is the master switch. <see cref="ExecuteMotors"/> gates the motors separately.
     /// </summary>
     public bool Execute { get; set; } = true;
+
+    /// <summary>
+    /// Whether idle may drive the head, lift and body, as distinct from the face.
+    ///
+    /// These are deliberately separate. Blinking and eye darts are the visible sign that keep-alive is
+    /// working at all, and they move nothing; head and lift movement is real motion that an operator may
+    /// not want from an unattended robot. Tying them together meant a no-motion idle run could not blink,
+    /// so there was nothing to watch.
+    /// </summary>
+    public bool ExecuteMotors { get; set; } = true;
 
     private IdleEvent Do(IdleAction action, double nowMs, double amount = 0, double durationMs = 0)
     {
         ActionCount++;
-        if (Execute) Perform(action, amount, durationMs);
+        bool motor = action is IdleAction.HeadMove or IdleAction.LiftMove or IdleAction.BodyMove;
+        if (Execute && (!motor || ExecuteMotors)) Perform(action, amount, durationMs);
         return new IdleEvent(action, nowMs) { Amount = amount, DurationMs = durationMs };
     }
 

@@ -133,7 +133,7 @@ public sealed class BehaviorManager : IDisposable
             // Actually switch. Without this the method would only ever name a winner, and nothing would
             // become current, so no behaviour would ever be recorded as having run and the repetition
             // penalty would never apply.
-            scope = new BehaviorScope();
+            scope = new BehaviorScope(_context.Arbiter);
             _current = best;
             _scope = scope;
             _startedSec = nowSec;
@@ -158,7 +158,7 @@ public sealed class BehaviorManager : IDisposable
         lock (_gate)
         {
             if (_current is not null) StopCurrentLocked(BehaviorStopReason.Interrupted, nowSec);
-            scope = new BehaviorScope();
+            scope = new BehaviorScope(_context.Arbiter);
             _current = b;
             _scope = scope;
             _startedSec = nowSec;

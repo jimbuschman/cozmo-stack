@@ -84,8 +84,50 @@ public sealed class BehaviorArbiter
     /// </summary>
     public TimeSpan ReactionCooldown { get; set; } = TimeSpan.FromSeconds(5);
 
-    /// <summary>What is running now, if anything.</summary>
-    public BehaviorPriority? Running { get { lock (_gate) return _running; } }
+    /// <summary>
+    /// Whether a direct caller animation counts as the caller holding the floor.
+    ///
+    /// The arbiter only ever saw requests made through itself, so an application calling
+    /// <c>robot.Animations.Play(...)</c> — the ordinary public path — was invisible to it and a reaction
+    /// would happily replace that animation. This closes that hole without changing frozen M5: the arbiter
+    /// asks the scheduler whether an animation is running that it did not itself start, and treats one as
+    /// a caller.
+    /// </summary>
+    public Func<bool>? CallerAnimationRunning { get; set; }
+
+    /// <summary>What is running now, if anything, including a caller animation the arbiter did not start.</summary>
+    public BehaviorPriority? Running
+    {
+        get
+        {
+            lock (_gate)
+            {
+                if (_running is { } r) return r;
+            }
+            return CallerAnimationRunning?.Invoke() == true ? BehaviorPriority.Caller : null;
+        }
+    }
+
+    /// <summary>
+    /// Behaviours currently holding the reaction lock, the engine's SmartDisableReactionsWithLock. While
+    /// any is held, reactions are suppressed; releasing the last one restores them.
+    /// </summary>
+    private readonly HashSet<object> _reactionLocks = new();
+
+    /// <summary>Whether anything is currently holding reactions off.</summary>
+    public bool ReactionsDisabled { get { lock (_gate) return _reactionLocks.Count > 0; } }
+
+    /// <summary>Takes a reaction lock on behalf of <paramref name="owner"/>.</summary>
+    public void DisableReactions(object owner)
+    {
+        lock (_gate) _reactionLocks.Add(owner);
+    }
+
+    /// <summary>Releases that owner's reaction lock.</summary>
+    public void EnableReactions(object owner)
+    {
+        lock (_gate) _reactionLocks.Remove(owner);
+    }
 
     /// <summary>Raised for every decision, including the ones that played nothing.</summary>
     public event Action<BehaviorDecision>? Decided;
@@ -99,9 +141,28 @@ public sealed class BehaviorArbiter
     {
         var at = now ?? DateTime.UtcNow;
         BehaviorDecision decision;
+
+        // Asked before taking the lock, because the callback reaches into the scheduler.
+        bool callerAnimating = priority != BehaviorPriority.Caller
+                               && CallerAnimationRunning?.Invoke() == true;
+
         lock (_gate)
         {
-            if (priority != BehaviorPriority.Caller && !AutonomyEnabled)
+            if (priority == BehaviorPriority.Reaction && _reactionLocks.Count > 0)
+            {
+                decision = new BehaviorDecision(priority, BehaviorOutcome.Suppressed,
+                    $"{_reactionLocks.Count} reaction lock(s) are held")
+                { Reaction = reaction };
+            }
+            else if (callerAnimating && _running is null)
+            {
+                // An animation the application started directly. It outranks everything autonomous, and
+                // the arbiter never started it, so there is nothing of its own to compare against.
+                decision = new BehaviorDecision(priority, BehaviorOutcome.Suppressed,
+                    "a caller animation is already running")
+                { Reaction = reaction, Displaced = "caller animation" };
+            }
+            else if (priority != BehaviorPriority.Caller && !AutonomyEnabled)
             {
                 decision = new BehaviorDecision(priority, BehaviorOutcome.Disabled,
                     "autonomous behaviour is switched off") { Reaction = reaction };

@@ -93,6 +93,7 @@ public sealed class AnimationScheduler
     private int _audioPos;                     // how far into it the last frame reached
     private byte _nextTag = 1;                 // the tag the next animation opens with
     private bool _startSent;                   // has StartOfAnimation gone out for the running clip
+    private long _generation;                  // bumped whenever the running animation changes
     private int _playedBaseline;               // robot's audio-frame count when the clip started
 
     public AnimationScheduler(IAnimationSink sink) => _sink = sink;
@@ -122,6 +123,27 @@ public sealed class AnimationScheduler
     /// </summary>
     public byte CurrentTag { get; private set; }
 
+    /// <summary>
+    /// Identifies the animation currently running. Changes whenever one starts or ends, so a caller that
+    /// started an animation can tell whether it is still the one playing.
+    /// </summary>
+    public long Generation { get { lock (_gate) return _generation; } }
+
+    /// <summary>
+    /// Stops the running animation, but only if it is still the one identified by
+    /// <paramref name="generation"/>. Returns false when something else has taken over, which is what
+    /// stops one caller cancelling an animation that replaced its own.
+    /// </summary>
+    public bool StopIfCurrent(long generation)
+    {
+        lock (_gate)
+        {
+            if (_clip is null || _generation != generation) return false;
+            EndLocked(AnimationEndReason.Cancelled);
+            return true;
+        }
+    }
+
     /// <summary>Raised for every keyframe as it fires, for logging and tests.</summary>
     public event Action<Keyframe>? KeyframeFired;
 
@@ -143,6 +165,7 @@ public sealed class AnimationScheduler
                 EndLocked(AnimationEndReason.Replaced);
             }
             _clip = clip;
+            _generation++;
             _handle = new AnimationHandle(clip.Name, clip.Tracks);
             CurrentTag = _nextTag;
             // IncrementTagCtr at 0x0057B660 keeps incrementing while the value it came from was above
@@ -181,6 +204,7 @@ public sealed class AnimationScheduler
     {
         var name = _clip?.Name ?? "";
         _clip = null;
+        _generation++;
         var h = _handle; _handle = null;
         _facePoses = Array.Empty<FaceKeyframe>();
         _faceIndex = -1;
@@ -214,9 +238,11 @@ public sealed class AnimationScheduler
     {
         AnimationClip clip;
         double t;
+        long generation;
         lock (_gate)
         {
             if (_clip is null) return;
+            generation = _generation;
             // ShouldProcessAnimationFrame at 0x0057CC6C refuses to process a frame until the robot has
             // room, and UpdateAmountToSend at 0x0057C6F0 measures that room as
             // 14 - (audioFramesStreamed - audioFramesPlayed). Streaming past it would only pile up frames
@@ -238,7 +264,7 @@ public sealed class AnimationScheduler
         byte[]? frame = null;
         lock (_gate)
         {
-            if (_clip != clip) return;
+            if (_generation != generation) return;
             if (_audioPcm is { } pcm && _audioPos < pcm.Length)
             {
                 int n = Math.Min(CozmoAudio.SamplesPerFrame, pcm.Length - _audioPos);
@@ -258,14 +284,14 @@ public sealed class AnimationScheduler
         byte openWith = 0;
         lock (_gate)
         {
-            if (_clip == clip && !_startSent) { _startSent = true; openWith = CurrentTag; }
+            if (_generation == generation && !_startSent) { _startSent = true; openWith = CurrentTag; }
         }
         if (openWith != 0) _sink.AnimationStarted(openWith);
 
         var due = new List<Keyframe>();
         lock (_gate)
         {
-            if (_clip != clip) return;                            // replaced while we were looking
+            if (_generation != generation) return;                // replaced while we were looking
             while (_nextFrame < clip.Keyframes.Count && clip.Keyframes[_nextFrame].TriggerTimeMs <= t)
             {
                 var k = clip.Keyframes[_nextFrame++];
@@ -277,8 +303,14 @@ public sealed class AnimationScheduler
 
         // Emitted in the engine's per-frame track order rather than the order the clip happens to list
         // them: head, lift, event, face, lights, body (UpdateStream 0x0057C9D4 onwards).
+        //
+        // Dispatch has to happen outside the lock, because it talks to the transport. That leaves a window
+        // in which the animation can be replaced, so the generation is re-checked before every keyframe:
+        // without it, keyframes collected for the outgoing clip were emitted into the incoming one, which
+        // on hardware looks like one animation's motion appearing in the middle of another.
         foreach (var k in due.OrderBy(TrackOrder))
         {
+            lock (_gate) { if (_generation != generation) return; }
             Dispatch(k);
             KeyframeFired?.Invoke(k);
         }
@@ -289,7 +321,7 @@ public sealed class AnimationScheduler
         bool stopBody = false;
         lock (_gate)
         {
-            if (_clip == clip && _bodyEndsAtMs is { } end && t >= end)
+            if (_generation == generation && _bodyEndsAtMs is { } end && t >= end)
             {
                 _bodyEndsAtMs = null;
                 stopBody = true;

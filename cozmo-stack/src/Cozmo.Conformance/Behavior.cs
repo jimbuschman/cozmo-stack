@@ -53,24 +53,19 @@ public static class BehaviorTool
         using var reactive = new ReactiveBehavior(robot, map, arbiter: arbiter);
         var idle = new IdleBehavior(robot, arbiter) { Execute = true };
 
-        if (!allowMotion)
+        // Head and lift movements are small, but they are still movement, so they stay opt-in. The face
+        // is not: blinking and eye darts are the only visible sign that keep-alive is running, and
+        // switching them off with the motors left a no-motion acceptance run with nothing to watch.
+        idle.Execute = true;
+        idle.ExecuteMotors = allowMotion;
+        idle.Acted += e =>
         {
-            // Head and lift movements are small, but they are still movement; keep them opt-in so an
-            // unattended run cannot surprise anyone.
-            idle.Acted += e =>
-            {
-                if (e.Action is IdleAction.HeadMove or IdleAction.LiftMove or IdleAction.BodyMove)
-                    Console.WriteLine($"  [idle] {e.Action} decided but not driven (--allow-motion is off)");
-            };
-            idle.Execute = false;
-        }
-        else
-        {
-            idle.Acted += e =>
-            {
-                if (e.Suppressed is null) Console.WriteLine($"  [idle] {e.Action} {e.Amount:F1} over {e.DurationMs:F0} ms");
-            };
-        }
+            if (e.Suppressed is not null) return;
+            bool motor = e.Action is IdleAction.HeadMove or IdleAction.LiftMove or IdleAction.BodyMove;
+            Console.WriteLine(motor && !allowMotion
+                ? $"  [idle] {e.Action} decided but not driven (--allow-motion is off)"
+                : $"  [idle] {e.Action} {e.Amount:F1} over {e.DurationMs:F0} ms");
+        };
 
         if (reactOn) reactive.Start();
         Console.WriteLine($"\nwatching for {seconds}s. " +

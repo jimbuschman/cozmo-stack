@@ -133,11 +133,19 @@ public class ControlTests
             CliffDataRaw = cliffs ?? new ushort[] { 500, 500, 500, 500 },
         };
 
-        /// <summary>Gets the robot past calibration and into a ready state.</summary>
+        /// <summary>
+        /// Gets the robot past calibration and into a ready state.
+        ///
+        /// Both motors, because the robot calibrates head and lift separately and reports each with its
+        /// own MotorID. This used to calibrate only the head, which passed while readiness was a single
+        /// flag that either motor could clear.
+        /// </summary>
         public void MakeReady()
         {
             Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true });
+            Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = true });
             Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false });
+            Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false });
             Send(StateWith());
         }
     }
@@ -492,6 +500,14 @@ public class ControlTests
         rig.Send(new AnimationState { EnabledAnimTracks = 0xFF });
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true });
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false });
+
+        // The head alone is not readiness: the lift calibrates separately and has not reported yet.
+        var (early, whyNot) = await rig.Robot.WaitUntilReadyAsync(TimeSpan.FromMilliseconds(200), describe: true);
+        Assert.False(early);
+        Assert.Contains("lift", whyNot);
+
+        rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = true });
+        rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false });
 
         var (ready, why) = await rig.Robot.WaitUntilReadyAsync(TimeSpan.FromSeconds(2), describe: true);
         Assert.True(ready, why);
