@@ -134,8 +134,9 @@ Nothing here was implemented beyond the hash, and nothing claims to work.
 
 ## What is actually next: the Source Fidelity Sweep
 
-**M9 is NOT STARTED and is not the next task.** Feature development is paused until a fidelity sweep has
-been run over what already exists.
+**Superseded again on 2026-09-19: the sweep ran (SOURCE_FIDELITY_AUDIT.md), both hardware retests passed, and M9
+began; increment 1 is in [WWISE_MUSIC.md](WWISE_MUSIC.md).** The paragraphs below are kept as the record of why the
+sweep came first.
 
 The reason comes out of M5's procedural face renderer. It shipped as "ours, an interpretation of the
 parameter names", passed its tests, and survived two hardware failures in that state — because nothing ever

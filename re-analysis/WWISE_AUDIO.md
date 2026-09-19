@@ -256,3 +256,31 @@ produce. Anything not produced is named on the console; it is never passed over 
 
 No `.bnk`, `.wem` or OBB file is committed. They are excluded by `.gitignore` and the tools read them from
 a local path. The only vendored third-party artifact is the generic codebook blob described above.
+
+## Errata from M9 increment 1, 2026-09-19
+
+M9's hierarchy reader (`WwiseHierarchy`, see [WWISE_MUSIC.md](WWISE_MUSIC.md)) replaced the scanned parent
+offsets with the full node-block layout, which every object of nine types consumes exactly. Two statements
+above are corrected by it:
+
+* **SwitchContainer's parent is at offset 11, not 8.** Offset 8 read the bus id. The table above did not
+  claim an agreement count for it; the value was a scan result that was never validated.
+* **The 46 Sounds "whose parent lives in a bank this build does not ship" are source plug-ins** (Wwise
+  Sine, Wwise Silence, Anki Wave Portal). Their plugin id has type 2, and such a Sound carries a four-byte
+  parameter-block size before its node block, so its parent sits at 29, not 25. All 2360 Sounds now place.
+* **The 46 "bank-embedded plugin blobs beginning `25 80 00 00`" are MIDI sequences**, the sources of the
+  46 MusicTracks in Cozmo.bnk: the Cozmo_Sings songs. They are not audio and were right to be left out of
+  the codec path; they are read by `WwiseMidi`.
+* **Banks load from inside `AudioAssets.zip`.** The shipped archive holds the six banks and their
+  definition text files as well as the media, so a sound directory holding only the archive is complete.
+
+Effect on the numbers, measured by running the coverage tool over the same banks with the old offsets and
+the new reader: resolved playable events 615 → 618 (the three gained are `Play__Robot_Vo__External_*`, whose
+sources are Wave Portal and Silence plug-ins with no media); events with a decodable alternative **584 →
+584**. Nothing decodable changed. The 46 music-hierarchy events counted as unresolved above are now resolved
+by the music reader (43 reach a clip on the default switch path).
+
+One sentence above is withdrawn by the same run: "All 615 of those resolved events now have a decodable
+alternative" does not match the tool's own output, which reports 584 both before and after this change. The
+other 31 resolve to media that is absent from the archive or is among the seven stereo ADPCM files. The
+codec counts (2019 Vorbis, 220 of 227 ADPCM) stand.

@@ -1,4 +1,4 @@
-# Handoff — 2026-09-19 (after the Source Fidelity Sweep, its hardware retests and the reconciliation)
+# Handoff — 2026-09-19 (M9 increment 1 complete)
 
 ## Where things stand
 
@@ -6,9 +6,9 @@
 | --- | --- |
 | Sweep commits | `dbdfa29`..`d483fd2` (five commits, pushed) — see [SOURCE_FIDELITY_AUDIT.md](SOURCE_FIDELITY_AUDIT.md) |
 | Hardware retests | **both passed visually on 2026-09-19** (audit §8); M5 and M7 re-verified, errata cleared |
-| Reconciliation | this commit — audit §10: counts and wording corrected, retests and cube observation recorded, D10–D12 fixed |
-| Tests | **444 passed, 0 failed (`dotnet test Cozmo.sln`, 3 m 36 s; 440 after the sweep)**, all passing offline |
-| M9 | **NOT STARTED**, as instructed. The gate has been passed: **M9 may begin** |
+| Reconciliation | `0e74c9a`, `7166568` (pushed) — audit §10 |
+| M9 | **IN PROGRESS — increment 1 complete**: the Cozmo_Sings chain recovered and resolved from engine, enums and banks; no sound rendered yet. See [WWISE_MUSIC.md](WWISE_MUSIC.md) |
+| Tests | **462 passed, 0 failed (`dotnet test Cozmo.sln`, 3 m 31 s; 444 before M9)**, all passing offline |
 
 ## Milestone status
 
@@ -22,7 +22,7 @@
 | M6 Wwise audio | Frozen. Resampling target 22320 Hz; covered by the M5 retest. |
 | M7 reactive behaviour and idle | **Frozen, hardware re-verified 2026-09-19** (`behavior --seconds 60`, visual): shipped resting face, engine blink table, `LookAt` dart geometry, `ReactToImpact` on landing. |
 | M8 behaviour inventory and framework | Complete offline. Audited; nothing changed. |
-| M9 Wwise switch-state audio | **NOT STARTED — cleared to start** |
+| M9 Wwise switch-state audio | **IN PROGRESS.** Increment 1: `WwiseHierarchy` reads all nine node types with exact consumption (3490 of 3490 objects); music switch trees, playlists, segments, tracks and the 46 MIDI song sources are read; every one of the 39 Singing behaviours resolves to its song; `BehaviorSinging` disassembled (switch first, then GetIn / tempo / GetOut triggers, cube-shake vibrato parameter). Increment 2 (next): render a song through the per-note vocal sampler and wire the behaviour. |
 
 ## What the sweep and reconciliation found, in one paragraph
 
@@ -66,6 +66,22 @@ From the audit's §2, the ones most worth a bounded look next:
 
 ## Next task
 
-Begin **M9** (Wwise switch-state audio) on top of `AnimationScheduler.StartAudio` and the M6 bank reader.
-Read `ANIMATION_LAYER.md` §Wwise and the audit's §2 rows on Wwise container semantics and keyframe volume
-first; both are M9 territory.
+**M9 increment 2: make a song audible.** Read `WWISE_MUSIC.md` first; everything below is already recovered
+there and must not be re-derived.
+
+1. A MIDI sampler over the target blend container 110896138: for each note (from `WwiseMidi.NotesAt` at
+   the segment's effective tempo) pick the note-on child whose `MidiKeyRangeMin..Max` holds the key, choose
+   one of its three recordings as `RandomSequenceContainer` does, apply its `Pitch` (cents) and `Volume`
+   (dB) properties, loop the recording while the note is held when `Loop = 0`, stop at note-off, and play
+   the note-off layer (`MidiPlayOnNoteType = 2`, -14 dB). Mix at `CozmoAudio.SampleRate`. Label the
+   dispatch rules CORROBORATED (public Wwise documentation), not NATIVE.
+2. A switch-state API on `WwiseAudioSource` (`SetSwitch(group, switch)`) so an audio keyframe whose event
+   targets a music switch container renders the selected song; the three tempo events are the only such
+   events an animation raises.
+3. An M8 `Singing` behaviour following `BehaviorSinging`: post the switch, play `Singing_GetIn`, the tempo
+   trigger, `Singing_GetOut`; drive `Cozmo_Singing_Vibrato` from cube shake only if cubes are available,
+   otherwise leave it at 0 and say so.
+4. Decide, and record, what to do about the vibrato LFO and note-off envelope modulators (types 21, 22):
+   read their fields or defer them explicitly.
+
+Hardware acceptance for M9 is a `behavior` run that sings one song audibly on the robot.
