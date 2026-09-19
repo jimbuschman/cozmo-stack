@@ -1,6 +1,8 @@
 # M5 — animation and expression
 
-Status: **code-complete; hardware acceptance not yet run** (2026-09-18)
+Status: **hardware-verified** (2026-09-18). `anim_bored_01` connected, calibrated, played through, moved
+head, lift and body, changed the face and completed normally on the firmware-2457 robot. Three correctness
+faults found by that run were fixed afterwards; see "Faults found on hardware" below.
 
 Built on the frozen M1 transport, M2 protocol, M3 device layer and M4 control layer. None of them was
 reopened and no generated code was hand-edited.
@@ -75,12 +77,36 @@ as `Replaced` and the new one takes over. Two animations never interleave.
 | Face, procedural | Implemented: parsed, blended, rendered and sent |
 | Head | Implemented: angle and duration sent as an animation keyframe |
 | Lift | Implemented: height and duration sent |
-| Body, straight | Implemented: speed sent as equal wheel speeds |
+| Body, straight | Implemented: speed sent as equal wheel speeds, stopped when the keyframe's duration expires |
 | Body, arc | **Not implemented.** The schema gives a speed and a radius token, not wheel speeds, and the wheel-base geometry needed to convert is not established. Reported through `NotImplemented` rather than approximated. |
 | Event | Implemented: raised to the caller |
 | Audio | **Not implemented.** The keyframes carry Wwise event ids into the sound banks, which this milestone does not decode. Ids are preserved for a later milestone; a silence frame goes out so the timeline stays intact. |
 | Backpack lights | **Not implemented.** The five arrays are colours but their channel order and scale are not established, so nothing is sent rather than flashing the wrong colour. |
 | Face animation by name | **Not implemented.** The pre-rendered `faceAnimations` assets are not loaded. |
+
+## Faults found on hardware, and fixed
+
+The first hardware run of `anim_bored_01` played through correctly but rolled backward further than it
+should have. `animdump` was written to compare the asset against what the player actually sends, and found
+three faults. All three are now fixed and covered by tests.
+
+**Body motion ignored its own duration.** `DriveWheels` runs until countermanded, and the only stop came
+from the animation ending. The wheels ran for 800 ms where the asset asked for 264. Unlike head and lift,
+whose duration the robot itself honours, a body keyframe has to be stopped explicitly. The scheduler now
+does that, because the scheduler owns timing: it records when the keyframe expires and calls `BodyStop` at
+that moment, and also when an animation is cancelled or replaced mid-move so a cut-short clip can never
+leave the wheels turning. Measured after the fix: 267 ms against 264 asked, and 500 against 495 on
+`anim_bored_02`.
+
+**Clips sharing a file were unreachable.** `anim_bored_01.bin` holds both `anim_bored_01` and
+`anim_bored_02`, but the library indexed by filename, so the second could not be loaded despite decoding
+cleanly. Every clip name inside every file is now registered, and the whole file is cached when any clip in
+it is first read.
+
+**The lift is commanded to 0 mm**, below the 32 mm minimum the M4 control layer clamps to, because the
+animation path does not clamp. This was left alone deliberately: the asset genuinely asks for 0, the
+hardware run performed the lift twitch correctly, and clamping would change behaviour that demonstrably
+works. Whether the firmware clamps it or treats 0 as "fully down" is not established.
 
 ## Uncertainties, kept as uncertainties
 
@@ -101,11 +127,14 @@ as `Replaced` and the new one takes over. Two animations never interleave.
 
 ## Tests
 
-213 pass, 34 of them new, all offline.
+220 pass, 41 of them new, all offline.
 
 * **Scheduling** — keyframes fire in order within one frame of their trigger time; a late tick fires
   everything it missed in order; an animation completes exactly once; position and count track the timeline.
 * **Cancellation** — stop ends the animation, reports it as cancelled, and later keyframes never fire.
+* **Body duration** — a body keyframe stops when its own duration expires rather than when the clip ends,
+  using the shape of `anim_bored_01`; cancelling or replacing mid-move stops the wheels; an arc never starts
+  them so never needs stopping; a zero-length or stationary keyframe is not scheduled for a stop.
 * **Track ownership** — a clash is refused when asked to be; a replacement ends the first as `Replaced`;
   owned tracks are reported.
 * **Face blending** — the eyes shrink steadily across a blend rather than in one jump; the last face is held
@@ -125,7 +154,8 @@ silently report the asset tests as passing.
 
 ## Hardware acceptance
 
-Not yet run.
+`anim` has passed: `anim_bored_01` played through on the firmware-2457 robot, moving head, lift and body and
+changing the face. `face-expressions` has not been run.
 
 ```
 dotnet run --project src/Cozmo.Conformance -- animlist <assets-dir> [filter]

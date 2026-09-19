@@ -13,6 +13,11 @@ public interface IAnimationSink
     void Head(float radians, uint durationMs);
     void Lift(float heightMm, uint durationMs);
     void Body(BodyKeyframe keyframe);
+    /// <summary>
+    /// Stop the body. DriveWheels runs until countermanded, so unlike head and lift the scheduler has to
+    /// end a body keyframe explicitly when its duration expires.
+    /// </summary>
+    void BodyStop();
     void Lights(LightsKeyframe keyframe);
     void Event(string eventId);
     /// <summary>Called once when an animation ends, whether it finished or was cancelled.</summary>
@@ -66,6 +71,7 @@ public sealed class AnimationScheduler
     private IReadOnlyList<FaceKeyframe> _facePoses = Array.Empty<FaceKeyframe>();
     private int _faceIndex = -1;               // index into _facePoses of the pose currently held
     private FaceBitmap? _lastFace;
+    private double? _bodyEndsAtMs;             // when the running body keyframe should stop, if one is running
 
     public AnimationScheduler(IAnimationSink sink) => _sink = sink;
 
@@ -105,6 +111,7 @@ public sealed class AnimationScheduler
             _nextFrame = 0;
             _facePoses = clip.Keyframes.OfType<FaceKeyframe>().ToList();
             _faceIndex = -1;
+            _bodyEndsAtMs = null;
             KeyframesFired = 0;
             PositionMs = 0;
             return _handle;
@@ -129,6 +136,10 @@ public sealed class AnimationScheduler
         var h = _handle; _handle = null;
         _facePoses = Array.Empty<FaceKeyframe>();
         _faceIndex = -1;
+        bool bodyWasRunning = _bodyEndsAtMs is not null;
+        _bodyEndsAtMs = null;
+        // An animation that is cut short must not leave the wheels turning.
+        if (bodyWasRunning) _sink.BodyStop();
         _sink.Finished(name, reason == AnimationEndReason.Completed);
         h?.Complete(reason);
     }
@@ -168,6 +179,20 @@ public sealed class AnimationScheduler
             Dispatch(k);
             KeyframeFired?.Invoke(k);
         }
+
+        // A body keyframe drives the wheels for its own duration and no longer. DriveWheels runs until
+        // countermanded, so without this the wheels keep turning until the whole animation ends, which on
+        // anim_bored_01 meant 800 ms of backward travel where the asset asked for 264 ms.
+        bool stopBody = false;
+        lock (_gate)
+        {
+            if (_clip == clip && _bodyEndsAtMs is { } end && t >= end)
+            {
+                _bodyEndsAtMs = null;
+                stopBody = true;
+            }
+        }
+        if (stopBody) _sink.BodyStop();
 
         // The face is continuous rather than stepped. A face keyframe is a pose to be AT when its trigger
         // time arrives, so the pose held now is interpolated forward towards the next one, not backwards
@@ -220,7 +245,15 @@ public sealed class AnimationScheduler
         {
             case HeadKeyframe h: _sink.Head(h.AngleRad, h.DurationTimeMs); break;
             case LiftKeyframe l: _sink.Lift(l.HeightMm, l.DurationTimeMs); break;
-            case BodyKeyframe b: _sink.Body(b); break;
+            case BodyKeyframe b:
+                _sink.Body(b);
+                // Only a keyframe that actually moves the body needs stopping, and only a straight one is
+                // acted on; an arc is reported as unimplemented and never starts the wheels.
+                lock (_gate)
+                    _bodyEndsAtMs = b.IsStraight && b.DurationTimeMs > 0 && b.Speed != 0
+                        ? b.TriggerTimeMs + b.DurationTimeMs
+                        : null;
+                break;
             case LightsKeyframe li: _sink.Lights(li); break;
             case EventKeyframe e: _sink.Event(e.EventId); break;
             case AudioKeyframe: _sink.Audio(null); break;         // the bank is not decoded yet; see below

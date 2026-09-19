@@ -179,15 +179,29 @@ public static class AnimDump
             string dir = d.LwheelSpeedMmps < 0 ? "BACKWARD" : d.LwheelSpeedMmps > 0 ? "forward" : "stop";
             W($"  t={t,7:F0} ms  DriveWheels left={d.LwheelSpeedMmps,7:F1} right={d.RwheelSpeedMmps,7:F1}  {dir}");
         }
-        if (wheels.Count >= 2)
+        // Measure each moving stretch: from a non-zero command to the first zero after it. Taking the last
+        // command instead would count the belt-and-braces stop at the end of the clip and report the wheels
+        // as running for the whole animation.
+        var moves = new List<(double Start, double Stop, float Speed)>();
+        for (int i = 0; i < wheels.Count; i++)
         {
-            double first = wheels.First(e => ((DriveWheels)e.M).LwheelSpeedMmps != 0).T;
-            double stop = wheels.Last().T;
-            W($"  => the wheels were driven from t={first:F0} ms to t={stop:F0} ms, i.e. {stop - first:F0} ms");
-            var body = clip.Keyframes.OfType<BodyKeyframe>().FirstOrDefault();
-            if (body is not null)
-                W($"  => the asset asks for {body.DurationTimeMs} ms starting at t={body.TriggerTimeMs} ms");
+            float sp = ((DriveWheels)wheels[i].M).LwheelSpeedMmps;
+            if (sp == 0) continue;
+            double stop = wheels.Skip(i + 1).FirstOrDefault(e => ((DriveWheels)e.M).LwheelSpeedMmps == 0).T;
+            moves.Add((wheels[i].T, stop, sp));
+            while (i + 1 < wheels.Count && ((DriveWheels)wheels[i + 1].M).LwheelSpeedMmps == sp) i++;
         }
+        var bodies = clip.Keyframes.OfType<BodyKeyframe>().ToList();
+        for (int i = 0; i < moves.Count; i++)
+        {
+            var m = moves[i];
+            W($"  => moving stretch {i + 1}: t={m.Start:F0} ms to t={m.Stop:F0} ms at {m.Speed:F0} mm/s, " +
+              $"i.e. {m.Stop - m.Start:F0} ms");
+            if (i < bodies.Count)
+                W($"     the asset asks for {bodies[i].DurationTimeMs} ms starting at t={bodies[i].TriggerTimeMs} ms");
+        }
+        if (moves.Count == 0 && bodies.Count > 0)
+            W($"  => the asset has {bodies.Count} body keyframe(s) but the wheels were never driven");
 
         W("");
         W("--- every message, in order ---");

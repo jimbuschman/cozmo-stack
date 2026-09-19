@@ -1,5 +1,9 @@
 # Diagnostic: anim_bored_01 on hardware
 
+> **Resolved.** All three faults below were fixed after this was written; the fixes and their tests are in
+> `ANIMATION_LAYER.md`. The wheels now stop at 267 ms against the 264 ms the asset asks for. This document
+> is kept as the record of how the fault was found.
+
 Reported behaviour: the lift twitches, the head moves, and the robot rolls backward.
 
 Reproduce this for any clip with:

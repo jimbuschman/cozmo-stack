@@ -22,6 +22,7 @@ public class AnimationTests
         public readonly List<(float Rad, uint Dur)> Heads = new();
         public readonly List<(float Mm, uint Dur)> Lifts = new();
         public readonly List<BodyKeyframe> Bodies = new();
+        public readonly List<double> BodyStops = new();
         public readonly List<LightsKeyframe> Lights_ = new();
         public readonly List<(string Clip, bool Completed)> Finishes = new();
         public double Now;
@@ -31,6 +32,7 @@ public class AnimationTests
         public void Head(float radians, uint durationMs) { Heads.Add((radians, durationMs)); Calls.Add(("head", Now)); }
         public void Lift(float heightMm, uint durationMs) { Lifts.Add((heightMm, durationMs)); Calls.Add(("lift", Now)); }
         public void Body(BodyKeyframe k) { Bodies.Add(k); Calls.Add(("body", Now)); }
+        public void BodyStop() { BodyStops.Add(Now); Calls.Add(("bodystop", Now)); }
         public void Lights(LightsKeyframe k) { Lights_.Add(k); Calls.Add(("lights", Now)); }
         public void Event(string eventId) { Events.Add(eventId); Calls.Add(("event", Now)); }
         public void Finished(string clipName, bool completed) { Finishes.Add((clipName, completed)); Calls.Add(("finished", Now)); }
@@ -134,6 +136,80 @@ public class AnimationTests
         Run(s, r, 0, 300);
         Assert.InRange(s.PositionMs, 280, 320);
         Assert.Equal(1, s.KeyframesFired);
+    }
+
+    // ------------------------------------------------------------- body duration
+
+    /// <summary>
+    /// DriveWheels runs until countermanded, so a body keyframe has to be stopped when its own duration
+    /// expires. On anim_bored_01 the wheels ran 800 ms against the 264 ms the asset asked for, because the
+    /// only stop came from the animation ending.
+    /// </summary>
+    [Fact]
+    public void ABodyKeyframeStopsWhenItsOwnDurationExpiresNotWhenTheClipEnds()
+    {
+        var r = new Recorder();
+        var s = new AnimationScheduler(r);
+        // the shape of anim_bored_01: a short backward move early in a much longer clip
+        s.Play(Clip("t",
+            new BodyKeyframe(297, 264, "STRAIGHT", -75),
+            new EventKeyframe(1089, "end")), 0);
+
+        Run(s, r, 0, 1200);
+
+        Assert.Single(r.Bodies);
+        var stop = Assert.Single(r.BodyStops);
+        double frame = 1000.0 / AnimationScheduler.FrameRateHz;
+        Assert.InRange(stop, 297 + 264, 297 + 264 + frame);   // stopped at 561 ms, not at 1089
+    }
+
+    [Fact]
+    public void CancellingMidBodyMotionStopsTheWheels()
+    {
+        var r = new Recorder();
+        var s = new AnimationScheduler(r);
+        s.Play(Clip("t", new BodyKeyframe(0, 5000, "STRAIGHT", 60)), 0);
+
+        Run(s, r, 0, 200);
+        Assert.Empty(r.BodyStops);                // still within its duration
+        s.Stop();
+        Assert.Single(r.BodyStops);               // cancelling must not leave the wheels turning
+    }
+
+    [Fact]
+    public void ReplacingAnAnimationMidBodyMotionStopsTheWheels()
+    {
+        var r = new Recorder();
+        var s = new AnimationScheduler(r);
+        s.Play(Clip("first", new BodyKeyframe(0, 5000, "STRAIGHT", 60)), 0);
+        Run(s, r, 0, 100);
+        s.Play(Clip("second", new EventKeyframe(0, "x")), 100);
+        Assert.Single(r.BodyStops);
+    }
+
+    [Fact]
+    public void AnArcBodyKeyframeNeverStartsTheWheelsSoItNeverNeedsStopping()
+    {
+        var r = new Recorder();
+        var s = new AnimationScheduler(r);
+        s.Play(Clip("t", new BodyKeyframe(0, 100, "40.0", 60), new EventKeyframe(500, "end")), 0);
+        Run(s, r, 0, 600);
+
+        Assert.Single(r.Bodies);                  // the keyframe is still reported to the sink
+        Assert.Empty(r.BodyStops);                // but the sink refuses arcs, so there is nothing to stop
+    }
+
+    [Fact]
+    public void AStationaryOrZeroLengthBodyKeyframeIsNotScheduledForAStop()
+    {
+        var r = new Recorder();
+        var s = new AnimationScheduler(r);
+        s.Play(Clip("t",
+            new BodyKeyframe(0, 0, "STRAIGHT", 60),      // no duration
+            new BodyKeyframe(100, 200, "STRAIGHT", 0),   // no speed
+            new EventKeyframe(500, "end")), 0);
+        Run(s, r, 0, 600);
+        Assert.Empty(r.BodyStops);
     }
 
     // -------------------------------------------------------------- cancellation

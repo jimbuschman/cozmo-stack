@@ -55,6 +55,8 @@ public sealed class RobotAnimationSink : IAnimationSink
         NotImplemented?.Invoke($"body motion with radius '{k.RadiusRaw}': arc geometry is not established");
     }
 
+    public void BodyStop() => _robot.Transport.Send(new DriveWheels(0f, 0f, 0f, 0f), flush: true);
+
     public void Lights(LightsKeyframe k)
     {
         // The five arrays are colours but their channel order and scale are not established, so nothing is
@@ -66,7 +68,9 @@ public sealed class RobotAnimationSink : IAnimationSink
 
     public void Finished(string clipName, bool completed)
     {
-        // Leave the robot in a defined state: stop the wheels the animation may have started.
+        // The scheduler stops the body when its keyframe expires and again if an animation is cut short,
+        // so there is nothing to undo here. One last zero command is still cheap insurance against a
+        // keyframe the scheduler did not know had started the wheels.
         _robot.Transport.Send(new DriveWheels(0f, 0f, 0f, 0f), flush: true);
         _ = _lastFacePayload;
     }

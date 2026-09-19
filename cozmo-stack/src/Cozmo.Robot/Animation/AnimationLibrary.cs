@@ -82,7 +82,19 @@ public sealed class AnimationLibrary
 
         if (animations is not null)
             foreach (var f in Directory.EnumerateFiles(animations, "*.bin", SearchOption.AllDirectories))
-                lib._clipFiles[Path.GetFileNameWithoutExtension(f)] = f;
+            {
+                // A file can hold more than one clip: anim_bored_01.bin holds anim_bored_01 and
+                // anim_bored_02. Indexing by filename alone leaves the others unreachable, so every clip
+                // name inside the file is registered. The filename is kept as a fallback for a file whose
+                // contents cannot be read.
+                try
+                {
+                    foreach (var clip in ParseFile(f))
+                        if (clip.Name.Length > 0) lib._clipFiles[clip.Name] = f;
+                }
+                catch (Exception) { /* fall back to the filename below */ }
+                lib._clipFiles.TryAdd(Path.GetFileNameWithoutExtension(f), f);
+            }
 
         if (groups is not null)
             foreach (var f in Directory.EnumerateFiles(groups, "*.json", SearchOption.AllDirectories))
@@ -113,8 +125,13 @@ public sealed class AnimationLibrary
             if (_clipCache.TryGetValue(name, out var cached)) return cached;
             if (!_clipFiles.TryGetValue(name, out var path))
                 throw new KeyNotFoundException($"no animation called '{name}'. {_clipFiles.Count} clips are loaded.");
-            var clip = ParseFile(path).FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase))
-                       ?? ParseFile(path).First();
+            var all = ParseFile(path);
+            // cache every clip in the file, since parsing it again for its sibling would be wasteful
+            foreach (var c in all)
+                if (c.Name.Length > 0) _clipCache.TryAdd(c.Name, c);
+            var clip = all.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase))
+                       ?? all.FirstOrDefault()
+                       ?? throw new InvalidDataException($"'{path}' holds no animation clips");
             _clipCache[name] = clip;
             return clip;
         }

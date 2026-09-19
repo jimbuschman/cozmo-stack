@@ -425,7 +425,7 @@ Cozmo's own face encoder and a full Huffman decode of every camera frame in the 
 acceptance commands `camera`, `face` and `tone` are in the conformance CLI and not yet run. Detail and the
 open gaps: `DEVICE_LAYER.md`.
 
-**M5 status (2026-09-18): animation and expression code-complete, hardware acceptance not yet run.**
+**M5 status (2026-09-18): animation playback hardware-verified; three correctness faults found on hardware and fixed.**
 `robot.Animations` loads Cozmo's own assets (289 FlatBuffers clips and 507 JSON groups in this build) and
 plays them on one 30 Hz scheduler that owns all animation timing; the device classes keep their APIs but no
 longer decide when anything happens. Track ownership stops two animations fighting: a clip claims the tracks

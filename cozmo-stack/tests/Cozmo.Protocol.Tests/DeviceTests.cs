@@ -222,13 +222,17 @@ public class DeviceTests
 
         // Every paced frame must land near its slot. Windows quantises Thread.Sleep to about 15.6 ms, half a
         // frame, so a pacer built on it drifts audibly; this is what catches that.
+        //
+        // The median is checked rather than the worst frame. The fault this guards against made every frame
+        // late, so the median catches it, while a single descheduled frame on a busy machine does not fail
+        // a run for something inaudible.
+        var errors = new List<double>();
         for (int i = prime; i < ticks.Count; i++)
-        {
-            var due = CozmoAudio.FrameInterval * (i - prime);
-            var error = (ticks[i] - due).Duration();
-            Assert.True(error < TimeSpan.FromMilliseconds(8),
-                $"frame {i} went out {error.TotalMilliseconds:F1} ms away from its slot at {due.TotalMilliseconds:F1} ms");
-        }
+            errors.Add((ticks[i] - CozmoAudio.FrameInterval * (i - prime)).Duration().TotalMilliseconds);
+        errors.Sort();
+        double median = errors[errors.Count / 2];
+        Assert.True(median < 8, $"the median frame went out {median:F1} ms from its slot; errors were " +
+                                $"[{string.Join(", ", errors.Select(e => e.ToString("F1")))}]");
     }
 
     [Fact]

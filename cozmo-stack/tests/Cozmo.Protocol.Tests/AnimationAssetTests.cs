@@ -197,6 +197,33 @@ public class AnimationAssetTests
             "every single group pick named a clip that does not exist, which suggests a decode fault");
     }
 
+    /// <summary>
+    /// A file can hold more than one clip. anim_bored_01.bin holds anim_bored_01 and anim_bored_02, and
+    /// indexing by filename alone left the second unreachable.
+    /// </summary>
+    [Fact]
+    public void EveryClipInsideAFileIsReachableNotJustTheOneNamedAfterIt()
+    {
+        var lib = Library();
+        if (lib is null) return;
+        if (!lib.HasClip("anim_bored_01")) return;
+
+        Assert.True(lib.HasClip("anim_bored_02"), "anim_bored_02 lives inside anim_bored_01.bin");
+        var second = lib.GetClip("anim_bored_02");
+        Assert.Equal("anim_bored_02", second.Name);
+        Assert.NotEqual(lib.GetClip("anim_bored_01").DurationMs, second.DurationMs);
+
+        // its own body keyframe, distinct from its sibling's
+        var body = Assert.Single(second.Keyframes.OfType<BodyKeyframe>());
+        Assert.Equal(693u, body.TriggerTimeMs);
+        Assert.Equal(495u, body.DurationTimeMs);
+        Assert.Equal(-38, body.Speed);
+        Assert.True(body.IsStraight);
+
+        // and the index is now larger than the file count, because of files like this one
+        Assert.True(lib.ClipNames.Count > 289, $"only {lib.ClipNames.Count} clips indexed");
+    }
+
     /// <summary>A real clip driven through the scheduler, to prove the timeline works on real data.</summary>
     [Fact]
     public void ARealClipPlaysThroughTheSchedulerOnItsOwnTimeline()
@@ -233,6 +260,7 @@ public class AnimationAssetTests
         public void Head(float radians, uint durationMs) { }
         public void Lift(float heightMm, uint durationMs) { }
         public void Body(BodyKeyframe keyframe) { }
+        public void BodyStop() { }
         public void Lights(LightsKeyframe keyframe) { }
         public void Event(string eventId) { }
         public void Finished(string clipName, bool completed) { }

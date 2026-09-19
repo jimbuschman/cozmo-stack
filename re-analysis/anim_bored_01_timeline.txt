@@ -71,11 +71,12 @@ duration: 1089 ms   keyframes: 54   tracks: Face, Audio, Head, Lift, Body, Light
 The real RobotAnimationSink, driven against an offline robot. Every line below is a message the
 live player would have sent, read back from the transport rather than re-derived.
 
---- wheel commands: 2 ---
+--- wheel commands: 3 ---
   t=    300 ms  DriveWheels left=  -75.0 right=  -75.0  BACKWARD
+  t=    567 ms  DriveWheels left=    0.0 right=    0.0  stop
   t=   1100 ms  DriveWheels left=    0.0 right=    0.0  stop
-  => the wheels were driven from t=300 ms to t=1100 ms, i.e. 800 ms
-  => the asset asks for 264 ms starting at t=297 ms
+  => moving stretch 1: t=300 ms to t=567 ms at -75 mm/s, i.e. 267 ms
+     the asset asks for 264 ms starting at t=297 ms
 
 --- every message, in order ---
    t_ms  message                detail
@@ -105,6 +106,7 @@ live player would have sent, read back from the transport rather than re-derived
     500  SetLiftHeight          height=0.0 mm duration=0.099s action=0
     500  FaceImage              128 byte face payload
     533  FaceImage              195 byte face payload
+    567  DriveWheels            left=0.0 right=0.0
     567  FaceImage              201 byte face payload
     600  SetHeadAngle           angle=-0.140 rad duration=0.132s action=0
     600  FaceImage              240 byte face payload
@@ -134,8 +136,8 @@ live player would have sent, read back from the transport rather than re-derived
 --- totals ---
   FaceImage                34
   SetHeadAngle             10
+  DriveWheels              3
   AudioSilence             2
-  DriveWheels              2
   SetLiftHeight            2
 
 --- reported as not implemented during playback ---
