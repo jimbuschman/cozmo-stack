@@ -1791,7 +1791,7 @@
   "animTriggers": [],
   "extraKeys": [],
   "category": "implementable with M1-M7 now",
-  "reason": "no parameters beyond class and id"
+  "reason": "plays an animation and asks for nothing else"
  },
  {
   "path": "reactions/acknowledgeFace.json",
@@ -1827,7 +1827,7 @@
    "animTriggers"
   ],
   "category": "implementable with M1-M7 now",
-  "reason": "plays animations and asks for nothing else"
+  "reason": "plays an animation and asks for nothing else"
  },
  {
   "path": "reactions/ramIntoBlock.json",
@@ -1845,7 +1845,7 @@
   "animTriggers": [],
   "extraKeys": [],
   "category": "implementable with M1-M7 now",
-  "reason": "no parameters beyond class and id"
+  "reason": "its cause is reported by M4 sensors"
  },
  {
   "path": "reactions/reactToCubeMoved.json",
@@ -1869,8 +1869,8 @@
    "randomDriveMinAngle_deg",
    "randomDriveMinDist_mm"
   ],
-  "category": "unclear",
-  "reason": "no rule matched; carries ['anim', 'finalEmotionEvent', 'randomDriveMaxAngle_deg', 'randomDriveMaxDist_mm']"
+  "category": "requires robot state not yet derived",
+  "reason": "nothing yet derives the state 'ReactToFrustration' reacts to"
  },
  {
   "path": "reactions/reactToFrustrationMinor.json",
@@ -1881,8 +1881,8 @@
    "anim",
    "finalEmotionEvent"
   ],
-  "category": "unclear",
-  "reason": "no rule matched; carries ['anim', 'finalEmotionEvent']"
+  "category": "requires robot state not yet derived",
+  "reason": "nothing yet derives the state 'ReactToFrustration' reacts to"
  },
  {
   "path": "reactions/reactToImpact.json",
@@ -1890,8 +1890,8 @@
   "behaviorClass": "ReactToImpact",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "implementable with M1-M7 now",
-  "reason": "no parameters beyond class and id"
+  "category": "requires robot state not yet derived",
+  "reason": "nothing yet derives the state 'ReactToImpact' reacts to"
  },
  {
   "path": "reactions/reactToMotorCalibration.json",
@@ -1899,8 +1899,8 @@
   "behaviorClass": "ReactToMotorCalibration",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "implementable with M1-M7 now",
-  "reason": "no parameters beyond class and id"
+  "category": "requires robot state not yet derived",
+  "reason": "nothing yet derives the state 'ReactToMotorCalibration' reacts to"
  },
  {
   "path": "reactions/reactToObstacle.json",
@@ -1914,7 +1914,7 @@
    "wantsToRunStrategyConfig"
   ],
   "category": "implementable with M1-M7 now",
-  "reason": "plays animations and asks for nothing else"
+  "reason": "plays an animation and asks for nothing else"
  },
  {
   "path": "reactions/reactToOnCharger.json",
@@ -1944,7 +1944,7 @@
   "animTriggers": [],
   "extraKeys": [],
   "category": "implementable with M1-M7 now",
-  "reason": "no parameters beyond class and id"
+  "reason": "its cause is reported by M4 sensors"
  },
  {
   "path": "reactions/reactToPlacedOnSlope.json",
@@ -1952,8 +1952,8 @@
   "behaviorClass": "ReactToPlacedOnSlope",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "implementable with M1-M7 now",
-  "reason": "no parameters beyond class and id"
+  "category": "requires robot state not yet derived",
+  "reason": "nothing yet derives the state 'ReactToPlacedOnSlope' reacts to"
  },
  {
   "path": "reactions/reactToPyramid.json",
@@ -1970,8 +1970,8 @@
   "behaviorClass": "ReactToReturnedToTreads",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "implementable with M1-M7 now",
-  "reason": "no parameters beyond class and id"
+  "category": "requires robot state not yet derived",
+  "reason": "nothing yet derives the state 'ReactToReturnedToTreads' reacts to"
  },
  {
   "path": "reactions/reactToRobotOnBack.json",
@@ -1979,8 +1979,8 @@
   "behaviorClass": "ReactToRobotOnBack",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "implementable with M1-M7 now",
-  "reason": "no parameters beyond class and id"
+  "category": "requires robot state not yet derived",
+  "reason": "nothing yet derives the state 'ReactToRobotOnBack' reacts to"
  },
  {
   "path": "reactions/reactToRobotOnFace.json",
@@ -1997,8 +1997,8 @@
   "behaviorClass": "ReactToRobotOnSide",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "implementable with M1-M7 now",
-  "reason": "no parameters beyond class and id"
+  "category": "requires robot state not yet derived",
+  "reason": "nothing yet derives the state 'ReactToRobotOnSide' reacts to"
  },
  {
   "path": "reactions/reactToRobotShaken.json",
@@ -2008,8 +2008,8 @@
   "extraKeys": [
    "disableByDefault"
   ],
-  "category": "unclear",
-  "reason": "no rule matched; carries ['disableByDefault']"
+  "category": "requires robot state not yet derived",
+  "reason": "nothing yet derives the state 'ReactToRobotShaken' reacts to"
  },
  {
   "path": "reactions/reactToSparked.json",
@@ -2017,8 +2017,8 @@
   "behaviorClass": "ReactToSparked",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "implementable with M1-M7 now",
-  "reason": "no parameters beyond class and id"
+  "category": "requires robot state not yet derived",
+  "reason": "nothing yet derives the state 'ReactToSparked' reacts to"
  },
  {
   "path": "reactions/reactToStackOfCubes.json",
@@ -2035,8 +2035,8 @@
   "behaviorClass": "ReactToUnexpectedMovement",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "implementable with M1-M7 now",
-  "reason": "no parameters beyond class and id"
+  "category": "requires robot state not yet derived",
+  "reason": "nothing yet derives the state 'ReactToUnexpectedMovement' reacts to"
  },
  {
   "path": "voiceCommands/dance_mambo.json",

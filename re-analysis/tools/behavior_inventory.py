@@ -72,9 +72,24 @@ DIR_CATEGORIES = {
 # Behaviour classes that do nothing themselves but run other behaviours.
 COMPOSITE = re.compile(r"(?i)(dispatcher|chooser|composite|wrapper|sequence|container|activity)")
 
-# What M1-M7 can actually do: animation, face, head, lift, wheels, lights, sensors, sound. A behaviour
-# whose config asks for nothing beyond those is runnable today.
+# What M1-M7 can actually do: animation, face, head, lift, wheels, lights, sensors, sound.
 IMPLEMENTABLE = "implementable with M1-M7 now"
+
+# A ReactToX behaviour is only runnable if something can tell it to run. These are the reaction causes
+# M4 actually reports - the same four ReactionTable maps - so only these ReactToX classes count as
+# implementable. The rest are blocked on robot state this stack does not yet derive, which is a real
+# blocker and not a thin config.
+#
+# An earlier version of this file counted "no parameters beyond class and id" as implementable, which
+# quietly promoted ReactToRobotOnBack, ReactToImpact, ReactToSparked and friends. A thin config means the
+# behaviour is native-driven, not that it is easy.
+DETECTABLE_REACTIONS = {
+    "ReactToCliff",       # RobotStatusFlag.CliffDetected
+    "ReactToPickup",      # RobotStatusFlag.IsPickedUp
+    "ReactToOnCharger",   # RobotStatusFlag.IsOnCharger
+}
+
+UNDETECTED_STATE = "requires robot state not yet derived"
 
 
 def strip_comments(text):
@@ -119,10 +134,13 @@ def classify(entry):
     for part in entry["path"].split("/"):
         if part in DIR_CATEGORIES:
             return DIR_CATEGORIES[part]
-    if entry["animTriggers"] or entry["behaviorClass"] in ("PlayAnimWithFace", "PlayAnim"):
-        return IMPLEMENTABLE, "plays animations and asks for nothing else"
+    cls = entry["behaviorClass"]
+    if cls.startswith("ReactTo"):
+        return (IMPLEMENTABLE, "its cause is reported by M4 sensors") if cls in DETECTABLE_REACTIONS             else (UNDETECTED_STATE, f"nothing yet derives the state '{cls}' reacts to")
+    if entry["animTriggers"] or cls in ("PlayAnimWithFace", "PlayAnim", "PlayArbitraryAnim"):
+        return IMPLEMENTABLE, "plays an animation and asks for nothing else"
     if not entry["extraKeys"]:
-        return IMPLEMENTABLE, "no parameters beyond class and id"
+        return "unclear", "a thin config: the behaviour is native-driven, so what it needs is not stated"
     return "unclear", f"no rule matched; carries {sorted(entry['extraKeys'])[:4]}"
 
 

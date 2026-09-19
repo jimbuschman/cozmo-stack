@@ -34,11 +34,12 @@ counted as needing them. That overstates the blocked count rather than the imple
 | requires Wwise switch-state audio | 39 |
 | requires vision/person detection | 24 |
 | freeplay/explorer-specific | 18 |
-| implementable with M1-M7 now | 13 |
+| requires robot state not yet derived | 11 |
 | requires charger/docking | 7 |
 | game-specific | 5 |
-| unclear | 5 |
+| implementable with M1-M7 now | 5 |
 | developer-only | 4 |
+| unclear | 2 |
 | requires localization/world model | 1 |
 | **total** | **178** |
 
@@ -78,19 +79,11 @@ counted as needing them. That overstates the blocked count rather than the imple
 | VC_Refuse_Energy | PlayAnim | game-specific | ships under voiceCommands/ | `voiceCommands/VC_Refuse_Energy.json` |
 | VC_Refuse_Repair | PlayAnim | game-specific | ships under voiceCommands/ | `voiceCommands/VC_Refuse_Repair.json` |
 | VC_Refuse_Sparks | PlayAnim | game-specific | ships under voiceCommands/ | `voiceCommands/VC_Refuse_Sparks.json` |
-| Hiccup | PlayAnim | implementable with M1-M7 now | plays animations and asks for nothing else | `reactions/hiccup.json` |
-| PlayArbitraryAnim | PlayArbitraryAnim | implementable with M1-M7 now | no parameters beyond class and id | `playArbitraryAnim.json` |
-| ReactToCliff | ReactToCliff | implementable with M1-M7 now | no parameters beyond class and id | `reactions/reactToCliff.json` |
-| ReactToImpact | ReactToImpact | implementable with M1-M7 now | no parameters beyond class and id | `reactions/reactToImpact.json` |
-| ReactToMotorCalibration | ReactToMotorCalibration | implementable with M1-M7 now | no parameters beyond class and id | `reactions/reactToMotorCalibration.json` |
-| ReactToObstacle | PlayAnim | implementable with M1-M7 now | plays animations and asks for nothing else | `reactions/reactToObstacle.json` |
-| ReactToPickup | ReactToPickup | implementable with M1-M7 now | no parameters beyond class and id | `reactions/reactToPickup.json` |
-| ReactToPlacedOnSlope | ReactToPlacedOnSlope | implementable with M1-M7 now | no parameters beyond class and id | `reactions/reactToPlacedOnSlope.json` |
-| ReactToReturnedToTreads | ReactToReturnedToTreads | implementable with M1-M7 now | no parameters beyond class and id | `reactions/reactToReturnedToTreads.json` |
-| ReactToRobotOnBack | ReactToRobotOnBack | implementable with M1-M7 now | no parameters beyond class and id | `reactions/reactToRobotOnBack.json` |
-| ReactToRobotOnSide | ReactToRobotOnSide | implementable with M1-M7 now | no parameters beyond class and id | `reactions/reactToRobotOnSide.json` |
-| ReactToSparked | ReactToSparked | implementable with M1-M7 now | no parameters beyond class and id | `reactions/reactToSparked.json` |
-| ReactToUnexpectedMovement | ReactToUnexpectedMovement | implementable with M1-M7 now | no parameters beyond class and id | `reactions/reactToUnexpectedMovement.json` |
+| Hiccup | PlayAnim | implementable with M1-M7 now | plays an animation and asks for nothing else | `reactions/hiccup.json` |
+| PlayArbitraryAnim | PlayArbitraryAnim | implementable with M1-M7 now | plays an animation and asks for nothing else | `playArbitraryAnim.json` |
+| ReactToCliff | ReactToCliff | implementable with M1-M7 now | its cause is reported by M4 sensors | `reactions/reactToCliff.json` |
+| ReactToObstacle | PlayAnim | implementable with M1-M7 now | plays an animation and asks for nothing else | `reactions/reactToObstacle.json` |
+| ReactToPickup | ReactToPickup | implementable with M1-M7 now | its cause is reported by M4 sensors | `reactions/reactToPickup.json` |
 | Singing_AbaDaba | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_AbaDaba.json` |
 | Singing_BeautifulDreamer | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_BeautifulDreamer.json` |
 | Singing_Beethovens5th | Singing | requires Wwise switch-state audio | selects audio by switch state rather than event ('audioSwitchGroup') | `freeplay/singing/Singing_Beethovens5th.json` |
@@ -200,6 +193,17 @@ counted as needing them. That overstates the blocked count rather than the imple
 | VC_RequestMemoryMatch | RequestGameSimple | requires cubes | names cubes, blocks or objects ('block') | `voiceCommands/VC_RequestMemoryMatch.json` |
 | VC_RequestSpeedTap | RequestGameSimple | requires cubes | names cubes, blocks or objects ('block') | `voiceCommands/VC_RequestSpeedTap.json` |
 | Hiking_LookInPlaceForUnknown | LookInPlaceMemoryMap | requires localization/world model | names the world model or localization ('MemoryMap') | `freeplay/hiking/Hiking_lookInPlaceForUnknown.json` |
+| ReactToFrustrationMajor | ReactToFrustration | requires robot state not yet derived | nothing yet derives the state 'ReactToFrustration' reacts to | `reactions/reactToFrustrationMajor.json` |
+| ReactToFrustrationMinor | ReactToFrustration | requires robot state not yet derived | nothing yet derives the state 'ReactToFrustration' reacts to | `reactions/reactToFrustrationMinor.json` |
+| ReactToImpact | ReactToImpact | requires robot state not yet derived | nothing yet derives the state 'ReactToImpact' reacts to | `reactions/reactToImpact.json` |
+| ReactToMotorCalibration | ReactToMotorCalibration | requires robot state not yet derived | nothing yet derives the state 'ReactToMotorCalibration' reacts to | `reactions/reactToMotorCalibration.json` |
+| ReactToPlacedOnSlope | ReactToPlacedOnSlope | requires robot state not yet derived | nothing yet derives the state 'ReactToPlacedOnSlope' reacts to | `reactions/reactToPlacedOnSlope.json` |
+| ReactToReturnedToTreads | ReactToReturnedToTreads | requires robot state not yet derived | nothing yet derives the state 'ReactToReturnedToTreads' reacts to | `reactions/reactToReturnedToTreads.json` |
+| ReactToRobotOnBack | ReactToRobotOnBack | requires robot state not yet derived | nothing yet derives the state 'ReactToRobotOnBack' reacts to | `reactions/reactToRobotOnBack.json` |
+| ReactToRobotOnSide | ReactToRobotOnSide | requires robot state not yet derived | nothing yet derives the state 'ReactToRobotOnSide' reacts to | `reactions/reactToRobotOnSide.json` |
+| ReactToRobotShaken | ReactToRobotShaken | requires robot state not yet derived | nothing yet derives the state 'ReactToRobotShaken' reacts to | `reactions/reactToRobotShaken.json` |
+| ReactToSparked | ReactToSparked | requires robot state not yet derived | nothing yet derives the state 'ReactToSparked' reacts to | `reactions/reactToSparked.json` |
+| ReactToUnexpectedMovement | ReactToUnexpectedMovement | requires robot state not yet derived | nothing yet derives the state 'ReactToUnexpectedMovement' reacts to | `reactions/reactToUnexpectedMovement.json` |
 | EnrollFace | EnrollFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `meetCozmo/enrollFace.json` |
 | FPPeekABoo | PeekABoo | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `freeplay/FPpeekAboo.json` |
 | FeedingPlayRequestAtFace | PlayAnimWithFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `feeding/feedingAnims/feedingPlayRequestAtFace.json` |
@@ -225,9 +229,6 @@ counted as needing them. That overstates the blocked count rather than the imple
 | VC_PounceOnMotion | PounceOnMotion | requires vision/person detection | names faces, people, pets or motion sensing ('Pounce') | `voiceCommands/VC_PounceOnMotion.json` |
 | VC_SearchForFace | SearchForFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `voiceCommands/VC_SearchForFace.json` |
 | AcknowledgeObject | AcknowledgeObject | unclear | no rule matched; carries ['NumImagesToWaitFor', 'ReactionAnimGroup'] | `reactions/acknowledgeObject.json` |
-| ReactToFrustrationMajor | ReactToFrustration | unclear | no rule matched; carries ['anim', 'finalEmotionEvent', 'randomDriveMaxAngle_deg', 'randomDriveMaxDist_mm'] | `reactions/reactToFrustrationMajor.json` |
-| ReactToFrustrationMinor | ReactToFrustration | unclear | no rule matched; carries ['anim', 'finalEmotionEvent'] | `reactions/reactToFrustrationMinor.json` |
-| ReactToRobotShaken | ReactToRobotShaken | unclear | no rule matched; carries ['disableByDefault'] | `reactions/reactToRobotShaken.json` |
 | Wait | Wait | unclear | no rule matched; carries ['executableBehaviorType'] | `wait.json` |
 
 ## BehaviorClass values with no shipped config
