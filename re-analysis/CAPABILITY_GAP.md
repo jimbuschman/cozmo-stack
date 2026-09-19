@@ -436,6 +436,17 @@ sends it, as a speed and a 16-bit radius the firmware turns into geometry, and i
 runs on the scheduler's own tick from a pluggable source; backpack-light keyframes are decoded and carried
 but not acted on, because the asset colour encoding is unestablished. Detail: `ANIMATION_LAYER.md`.
 
+**M6 status (2026-09-18): event resolution complete, ADPCM decoded, Vorbis blocked on a decision.**
+The chain from an animation's audio event id through the Wwise banks to a `.wem` file is decoded and
+verified across the whole shipped library: 615 of the 705 events that should play resolve to media, and the
+remaining 90 are music or objects in banks this build does not ship. Of the 2214 media files, the 220 mono
+ADPCM files decode here; the 1987 Wwise Vorbis files do not, because their setup packets are ~221 bytes and
+carry codebook *indices* into an external library that ships nowhere in the APK or OBB. Closing that needs a
+third-party codebook blob committed to this repository and a Vorbis decoder, which are decisions about what
+this project redistributes and depends on rather than tasks. **Unlike M1–M5 there is no native authority
+here**: Wwise is not linked into `libcozmoEngine.so` at all, so the format rests on cross-checks against the
+assets. Detail, evidence and the exact blocker: `WWISE_AUDIO.md`.
+
 **M1 through M5 are frozen as of 2026-09-18.** Transport, protocol, device layer, control layer and the
 animation layer are all hardware-verified and are not to be reopened unless a specific failure appears.
 Work above them builds on these APIs rather than changing them.

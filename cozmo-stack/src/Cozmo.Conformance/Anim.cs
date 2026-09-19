@@ -108,6 +108,18 @@ public static class Anim
                 Console.WriteLine($"sound metadata: {names.EventCount} events, {names.FileCount} files (names only)");
         }
 
+        // Cozmo's own sounds, resolved through the shipped Wwise banks. Takes precedence over --audio,
+        // which exists for supplying a sound the shipped library cannot yet produce.
+        var wwiseDir = Arg(a, "--wwise");
+        Cozmo.Robot.Animation.Wwise.WwiseAudioSource? wwise = null;
+        if (wwiseDir is not null)
+        {
+            wwise = Cozmo.Robot.Animation.Wwise.WwiseAudioSource.Load(wwiseDir);
+            Console.WriteLine($"wwise: {wwise.Library.Banks.Count} banks, {wwise.Library.EventIds.Count} events, " +
+                              $"{wwise.Library.MediaFileCount} media files from {wwiseDir}");
+            robot.Animations.AudioSource = wwise;
+        }
+
         if (audio.Count > 0)
         {
             var source = new WavAudioSource(robot.Animations.SoundNames);
@@ -194,6 +206,17 @@ public static class Anim
             ? " (all silence: the clip has no audio track)"
             : audio.Count == 0 ? " (all silence: no --audio mapping was given)" : "";
         Console.WriteLine($"audio frames streamed: {robot.Animations.Scheduler.AudioFramesSent}{audioNote}");
+
+        // Anything the shipped library could not produce is named, never passed over in silence.
+        if (wwise is not null)
+        {
+            var misses = wwise.Misses;
+            if (misses.Count == 0) Console.WriteLine("wwise: every audio event this clip raised was produced");
+            else
+                foreach (var m in misses)
+                    Console.WriteLine($"wwise: event {m.EventId} {m.Name ?? "(unnamed)"} NOT produced - {m.Reason}");
+            wwise.Dispose();
+        }
         if (events.Count > 0) Console.WriteLine($"events raised: {string.Join(", ", events.Distinct())}");
         foreach (var s in skipped.Distinct()) Console.WriteLine($"  not implemented: {s}");
 

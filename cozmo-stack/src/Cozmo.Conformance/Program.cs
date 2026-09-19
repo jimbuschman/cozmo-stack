@@ -30,6 +30,7 @@ return args.Length == 0 ? Usage() : args[0] switch
     "animdump" => AnimDump.Run(args),
     "anim" => Anim.Play(args).GetAwaiter().GetResult(),
     "face-expressions" => Anim.Face(args).GetAwaiter().GetResult(),
+    "wwise" => WwiseTool.Run(args),
     _ => Usage(),
 };
 
@@ -164,6 +165,11 @@ static int Usage()
           cubes <robot-ip> [--seconds 15] [--acceptance [file.json]]
                                              hardware acceptance for cubes: turns discovery on and reports
                                              every cube heard, with connection state and telemetry
+
+          wwise <sound-dir> [--event <id-or-name>] [--clip <name> --assets <dir>] [--coverage] [--limit 20]
+                                             resolve Cozmo's own audio events through the shipped Wwise banks
+                                             to the media files they play, reporting codec and duration.
+                                             --coverage reports the whole library. No robot involved
 
           animlist <assets-dir> [filter]     decode Cozmo's own animation assets and list what is in them,
                                              with no robot involved
