@@ -11,6 +11,8 @@ public static class WwiseTool
 {
     /// <summary>
     /// <c>wwise &lt;sound-dir&gt; [--event &lt;id-or-name&gt;] [--clip &lt;name&gt; --assets &lt;dir&gt;] [--coverage] [--limit N]</c>
+    /// <c>wwise &lt;sound-dir&gt; --music &lt;id-or-name&gt; [--switch Group=State ...] [--midi]</c>
+    /// <c>wwise &lt;sound-dir&gt; --hierarchy</c>
     /// </summary>
     public static int Run(string[] a)
     {
@@ -40,6 +42,8 @@ public static class WwiseTool
 
         if (Arg(a, "--decode") is { } one) return DecodeOne(lib, one, Arg(a, "--ogg"));
         if (a.Contains("--validate")) return Validate(lib, limit);
+        if (a.Contains("--hierarchy")) return Hierarchy(lib);
+        if (Arg(a, "--music") is { } music) return Music(lib, Resolve(lib, music), Switches(lib, a), a.Contains("--midi"));
         if (ev is not null) return Report(lib, Resolve(lib, ev));
         if (clip is not null) return ForClip(lib, clip, assets);
         if (coverage) return Coverage(lib, limit);
@@ -50,6 +54,80 @@ public static class WwiseTool
 
     private static uint? Resolve(WwiseSoundLibrary lib, string spec) =>
         uint.TryParse(spec, out var id) ? id : lib.IdOf(spec);
+
+    /// <summary>Every <c>--switch Group=State</c> on the command line, by name (from the bank text files or the FNV-1 hash) or by id.</summary>
+    private static Dictionary<uint, uint> Switches(WwiseSoundLibrary lib, string[] a)
+    {
+        var sw = new Dictionary<uint, uint>();
+        for (int i = 0; i < a.Length - 1; i++)
+        {
+            if (a[i] != "--switch") continue;
+            var parts = a[i + 1].Split('=', 2);
+            if (parts.Length != 2) continue;
+            sw[NameOrId(lib, parts[0])] = NameOrId(lib, parts[1]);
+        }
+        return sw;
+    }
+
+    private static uint NameOrId(WwiseSoundLibrary lib, string s) =>
+        uint.TryParse(s, out var id) ? id : lib.Names.SwitchGroupId(s) ?? lib.Names.SwitchId(s) ?? WwiseHash.Of(s);
+
+    /// <summary>Runs the hierarchy reader over every object and prints, per type, how many consumed exactly.</summary>
+    private static int Hierarchy(WwiseSoundLibrary lib)
+    {
+        Console.WriteLine("\nhierarchy objects consumed exactly by the node reader");
+        bool ok = true;
+        foreach (var (type, count, exact, problems) in lib.CheckHierarchy())
+        {
+            Console.WriteLine($"  {type,-26} {exact,5} of {count,5}");
+            foreach (var p in problems) Console.WriteLine($"      {p}");
+            ok &= exact == count;
+        }
+        Console.WriteLine($"  names read from the bank text files: {lib.Names.Count}");
+        return ok ? 0 : 1;
+    }
+
+    /// <summary>Prints how a music event plays under the given switch values, down to each clip's source.</summary>
+    private static int Music(WwiseSoundLibrary lib, uint? id, IReadOnlyDictionary<uint, uint> switches, bool showMidi)
+    {
+        if (id is null) { Console.WriteLine("no event with that id or name"); return 1; }
+        var plan = lib.ResolveMusic(id.Value, switches);
+        string Name(uint x) => lib.Names.NameOf(x) is { } n ? $"{x} ({n})" : x.ToString();
+        Console.WriteLine($"\nevent {plan.EventId} {plan.EventName ?? ""}");
+        Console.WriteLine($"  Play target {plan.TargetId} type {plan.TargetType}");
+        if (plan.Switch is { } sw)
+        {
+            Console.WriteLine($"  music switch: tempo {sw.Meter.TempoBpm} bpm, grid {sw.Meter.GridPeriodMs} ms, " +
+                              $"arguments [{string.Join(", ", sw.Arguments.Select(g => Name(g.GroupId)))}], " +
+                              $"{sw.Tree.Count} tree nodes, MIDI target {(sw.MidiTargetNode is { } m ? Name(m) : "none")}");
+            foreach (var g in sw.Arguments)
+                Console.WriteLine($"    current value of {Name(g.GroupId)}: {(switches.TryGetValue(g.GroupId, out var v) ? Name(v) : "not set (key 0 path)")}");
+            Console.WriteLine($"  selected node {(plan.SelectedNodeId is { } s ? s.ToString() : "none")}");
+        }
+        if (plan.Playlist is { } pl)
+            Console.WriteLine($"  playlist {pl.Id}: {pl.Playlist.Count} items, {pl.Children.Count} segments" + (plan.HasRandomChoice ? " (random choice; one alternative shown)" : ""));
+        foreach (var seg in plan.Segments)
+        {
+            Console.WriteLine($"  segment {seg.SegmentId}: {seg.DurationMs} ms, plays at {seg.TempoBpm} bpm" +
+                              (seg.Meter.OverridesParent ? "" : $" (inherited; its own meter says {seg.Meter.TempoBpm})"));
+            foreach (var c in seg.Clips)
+            {
+                var kind = c.IsMidi ? "MIDI" : lib.Describe(c.SourceId, "").Media?.Codec.ToString() ?? "missing";
+                Console.WriteLine($"    track {c.TrackId} source {c.SourceId} [{kind}] play at {c.Clip.PlayAtMs} ms, " +
+                                  $"trim {c.Clip.BeginTrimMs}..{c.Clip.EndTrimMs} of {c.Clip.SourceDurationMs} ms -> {c.Clip.LengthMs} ms");
+                if (c.IsMidi && showMidi && lib.ReadMedia(c.SourceId, out _) is { } bytes)
+                {
+                    var midi = WwiseMidi.Parse(bytes);
+                    Console.WriteLine($"      {midi.TicksPerBeat} ticks per beat, file tempo {midi.FileTempoBpm}, end tick {midi.EndTick}, {midi.Notes.Count} notes");
+                    foreach (var n in midi.NotesAt(plan.TempoBpm).Take(12))
+                        Console.WriteLine($"        {n.StartMs,9:F1} ms  key {n.Key,3}  vel {n.Velocity,3}  {n.LengthMs,8:F1} ms");
+                    if (midi.Notes.Count > 12) Console.WriteLine($"        ... {midi.Notes.Count - 12} more");
+                }
+            }
+        }
+        if (plan.Problem is not null) Console.WriteLine($"  problem: {plan.Problem}");
+        return plan.Problem is null ? 0 : 1;
+    }
 
     /// <summary>Prints the whole chain for one event, as evidence rather than as a claim.</summary>
     private static int Report(WwiseSoundLibrary lib, uint? id)
@@ -153,6 +231,18 @@ public static class WwiseTool
             if (any || r.Media.Any(m => m.Media?.IsDecodable == true)) playable++;
         }
 
+        // The events M6 could not resolve because their Play target is in the music hierarchy: count the
+        // ones the music resolver now carries to a clip source (audio or MIDI), with no switch values set.
+        int musicResolved = 0;
+        var noSwitches = new Dictionary<uint, uint>();
+        foreach (var id in lib.EventIds)
+        {
+            var r = lib.Resolve(id);
+            if (r.Media.Count > 0 || !r.Actions.Any(a => a.ActionType == 0x0403)) continue;
+            var plan = lib.ResolveMusic(id, noSwitches);
+            if (plan.Problem is null && plan.Segments.Any(s => s.Clips.Count > 0)) musicResolved++;
+        }
+
         Console.WriteLine($"\ncoverage across the whole shipped library");
         int shouldPlay = events - playsNothing;
         Console.WriteLine($"  events in banks               {events}");
@@ -160,6 +250,7 @@ public static class WwiseTool
         Console.WriteLine($"  events that should play       {shouldPlay}");
         Console.WriteLine($"  resolved to media             {resolved}  ({100.0 * resolved / Math.Max(1, shouldPlay):F1}% of those)");
         Console.WriteLine($"  have a decodable alternative  {playable}  ({100.0 * playable / Math.Max(1, shouldPlay):F1}% of those)");
+        Console.WriteLine($"  music events reaching a clip  {musicResolved}  (through the music hierarchy, default switch path)");
         Console.WriteLine($"  distinct media referenced     {mediaSeen.Count} of {lib.MediaFileCount} on disk");
         foreach (var (c, n) in perCodec.OrderByDescending(kv => kv.Value))
             Console.WriteLine($"    {c,-8} {n,5}");

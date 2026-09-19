@@ -58,11 +58,18 @@ public class WwiseTests
         return b.ToArray();
     }
 
+    /// <summary>
+    /// A minimal complete Sound: source block, then an empty node block. The node block's shape is the
+    /// one every shipped object consumes exactly (see WwiseHierarchy): fx (3 bytes), bus and parent, one
+    /// bits byte, two empty property bundles, positioning, aux, six bytes of advanced settings, a 32-bit
+    /// state-group count and a 16-bit RTPC count. 46 bytes, the size of the smallest shipped Sound.
+    /// </summary>
     private static byte[] Sound(uint id, uint mediaId, uint parent)
     {
-        var b = new byte[40];
+        var b = new byte[46];
         BitConverter.GetBytes(id).CopyTo(b, 0);
-        BitConverter.GetBytes(mediaId).CopyTo(b, 9);   // after the plugin id and stream type
+        BitConverter.GetBytes(0x00040001u).CopyTo(b, 4);   // Vorbis codec plug-in
+        BitConverter.GetBytes(mediaId).CopyTo(b, 9);       // after the plugin id and stream type
         BitConverter.GetBytes(parent).CopyTo(b, 25);
         return b;
     }
@@ -230,10 +237,13 @@ public class WwiseTests
         finally { dir.Delete(true); }
     }
 
-    /// <summary>A container body long enough to hold a parent id at the offset the real ones use.</summary>
+    /// <summary>
+    /// A minimal complete random container: id, the 28-byte empty node block, the container's own 24
+    /// bytes (loop counts, transition times, modes), no children and an empty playlist. 62 bytes.
+    /// </summary>
     private static byte[] Container(uint id, uint parent = 0)
     {
-        var b = new byte[32];
+        var b = new byte[62];
         BitConverter.GetBytes(id).CopyTo(b, 0);
         BitConverter.GetBytes(parent).CopyTo(b, 11);
         return b;

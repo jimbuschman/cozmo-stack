@@ -49,6 +49,7 @@ public sealed class WwiseSoundLibrary : IDisposable
     private readonly List<WwiseBank> _banks = new();
     private readonly Dictionary<uint, WwiseObject> _objects = new();
     private readonly Dictionary<uint, List<uint>> _children = new();
+    private readonly Dictionary<uint, WwiseNode?> _nodes = new();
     private readonly Dictionary<uint, string> _eventNames = new();
     private readonly Dictionary<uint, string> _mediaEntries = new();   // media id -> archive entry
     private readonly Dictionary<uint, string> _mediaFiles = new();     // media id -> loose file path
@@ -80,11 +81,61 @@ public sealed class WwiseSoundLibrary : IDisposable
     public IReadOnlyList<WwiseBank> Banks => _banks;
     /// <summary>How many event names were read from SoundbanksInfo.xml.</summary>
     public int NamedEventCount => _eventNames.Count;
+    /// <summary>Switch, state, parameter and bus names from the banks' definition text files.</summary>
+    public WwiseNames Names { get; } = new();
+
+    /// <summary>
+    /// The parsed hierarchy node for an object, or null when the object is absent, of a type the reader
+    /// does not cover, or does not consume exactly. Parsed once and cached.
+    /// </summary>
+    public WwiseNode? Node(uint id)
+    {
+        lock (_gate)
+        {
+            if (_nodes.TryGetValue(id, out var n)) return n;
+            n = _objects.TryGetValue(id, out var o) ? WwiseHierarchy.TryRead(o, out _) : null;
+            _nodes[id] = n;
+            return n;
+        }
+    }
+
+    /// <summary>
+    /// Runs the hierarchy reader over every object of the types it covers and reports, per type, how
+    /// many there are and how many consumed their payload exactly, with the first problems. This is the
+    /// check that makes the music layout trustworthy, the way the media-id check did for Sounds.
+    /// </summary>
+    public IReadOnlyList<(WwiseObjectType Type, int Count, int Exact, IReadOnlyList<string> Problems)> CheckHierarchy()
+    {
+        var result = new List<(WwiseObjectType, int, int, IReadOnlyList<string>)>();
+        foreach (var group in _objects.Values.GroupBy(o => o.Type).OrderBy(g => (byte)g.Key))
+        {
+            int count = 0, exact = 0;
+            var problems = new List<string>();
+            bool covered = false;
+            foreach (var o in group)
+            {
+                var node = WwiseHierarchy.TryRead(o, out var problem);
+                if (problem is not null && problem.EndsWith("is not read")) break;
+                covered = true; count++;
+                if (node is not null) exact++;
+                else if (problems.Count < 5) problems.Add(problem!);
+            }
+            if (covered) result.Add((group.Key, count, exact, problems));
+        }
+        return result;
+    }
+
+    /// <summary>How an event that targets the music hierarchy plays under the given switch values. See <see cref="WwiseMusic"/>.</summary>
+    public WwiseMusicPlan ResolveMusic(uint eventId, IReadOnlyDictionary<uint, uint> switches) =>
+        WwiseMusic.Resolve(this, eventId, switches);
 
     /// <summary>
     /// Loads everything found under a sound directory: every <c>.bnk</c>, any <c>SoundbanksInfo.xml</c>
-    /// for names, and the media, either from <c>AudioAssets.zip</c> or as loose <c>.wem</c> files.
-    /// Directories are searched recursively, because the localised bank sits in its own subdirectory.
+    /// for names, the bank definition <c>.txt</c> files for switch and state names, and the media, either
+    /// from <c>AudioAssets.zip</c> or as loose <c>.wem</c> files. Directories are searched recursively,
+    /// because the localised bank sits in its own subdirectory. The shipped <c>AudioAssets.zip</c> holds
+    /// the banks and their text files as well as the media, so a directory holding only that archive is
+    /// a complete library; loose banks, when present, take precedence over the archive's copies.
     /// </summary>
     public static WwiseSoundLibrary Load(params string[] directories)
     {
@@ -99,6 +150,8 @@ public sealed class WwiseSoundLibrary : IDisposable
             }
             foreach (var xml in Directory.EnumerateFiles(dir, "SoundbanksInfo.xml", SearchOption.AllDirectories))
                 lib.AddNames(xml);
+            foreach (var txt in Directory.EnumerateFiles(dir, "*.txt", SearchOption.AllDirectories))
+                lib.AddDefinitionText(txt);
             foreach (var zip in Directory.EnumerateFiles(dir, "*.zip", SearchOption.AllDirectories))
                 lib.AddArchive(zip);
             foreach (var wem in Directory.EnumerateFiles(dir, "*.wem", SearchOption.AllDirectories))
@@ -111,19 +164,36 @@ public sealed class WwiseSoundLibrary : IDisposable
 
     private void AddBank(WwiseBank bank)
     {
+        if (_banks.Any(b => b.BankId == bank.BankId)) return;     // a loose copy already loaded wins
         _banks.Add(bank);
         foreach (var (id, o) in bank.Objects) _objects[id] = o;
     }
 
     private void AddNames(string xmlPath)
     {
-        try
-        {
-            foreach (var e in XDocument.Load(xmlPath).Descendants("Event"))
-                if (uint.TryParse(e.Attribute("Id")?.Value, out var id))
-                    _eventNames[id] = e.Attribute("Name")?.Value ?? "";
-        }
+        try { AddNames(XDocument.Load(xmlPath)); }
         catch (Exception ex) when (ex is IOException or System.Xml.XmlException) { }
+    }
+
+    private void AddNames(XDocument doc)
+    {
+        foreach (var e in doc.Descendants("Event"))
+            if (uint.TryParse(e.Attribute("Id")?.Value, out var id))
+                _eventNames[id] = e.Attribute("Name")?.Value ?? "";
+    }
+
+    private void AddDefinitionText(string path)
+    {
+        try { Names.AddDefinitionText(File.ReadAllText(path)); }
+        catch (IOException) { }
+    }
+
+    private static byte[] ReadAll(ZipArchiveEntry e)
+    {
+        using var s = e.Open();
+        using var ms = new MemoryStream((int)Math.Min(e.Length, int.MaxValue));
+        s.CopyTo(ms);
+        return ms.ToArray();
     }
 
     private void AddArchive(string zipPath)
@@ -134,10 +204,26 @@ public sealed class WwiseSoundLibrary : IDisposable
             bool used = false;
             foreach (var entry in a.Entries)
             {
-                if (!entry.Name.EndsWith(".wem", StringComparison.OrdinalIgnoreCase)) continue;
-                if (uint.TryParse(Path.GetFileNameWithoutExtension(entry.Name), out var id))
+                if (entry.Name.EndsWith(".wem", StringComparison.OrdinalIgnoreCase))
                 {
-                    _mediaEntries[id] = entry.FullName; used = true;
+                    if (uint.TryParse(Path.GetFileNameWithoutExtension(entry.Name), out var id))
+                    {
+                        _mediaEntries[id] = entry.FullName; used = true;
+                    }
+                }
+                else if (entry.Name.EndsWith(".bnk", StringComparison.OrdinalIgnoreCase))
+                {
+                    try { AddBank(WwiseBank.Parse(ReadAll(entry), entry.Name)); used = true; }
+                    catch (InvalidDataException) { }
+                }
+                else if (entry.Name.Equals("SoundbanksInfo.xml", StringComparison.OrdinalIgnoreCase))
+                {
+                    try { using var s = entry.Open(); AddNames(XDocument.Load(s)); }
+                    catch (System.Xml.XmlException) { }
+                }
+                else if (entry.Name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
+                {
+                    Names.AddDefinitionText(System.Text.Encoding.UTF8.GetString(ReadAll(entry)));
                 }
             }
             if (used && _archive is null) _archive = a; else if (!used) a.Dispose();

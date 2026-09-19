@@ -218,32 +218,15 @@ public sealed class WwiseBank
     private const int SoundMediaIdOffset = 9;
 
     /// <summary>
-    /// Where an object records its parent in the hierarchy, by object type.
+    /// The id of this object's parent, read from its node block by <see cref="WwiseHierarchy"/>.
     ///
-    /// These offsets were found by scanning each object body for a position whose 32-bit value is another
-    /// object's id, across every object of that type in all six banks. The winning offset is unambiguous
-    /// for the types that matter — every one of the 468 random/sequence containers and all 209 music
-    /// segments agree, and 2314 of 2360 sounds do, the remainder being objects whose parent lives in a
-    /// bank this build does not ship. Types not listed here are not walked, so they contribute nothing
-    /// rather than contributing a guess.
+    /// M6 found the parent by scanning each object type for the offset whose 32-bit value was another
+    /// object's id (Sound 25, containers 11, music nodes 12) and walked only the types where that scan was
+    /// unambiguous. M9 replaced the scan with the full node-block layout, which every object of the nine
+    /// hierarchy types consumes exactly. Two of M6's offsets were corrected by it: SwitchContainer's parent
+    /// is at 11, not 8 (8 read the bus id), and the 46 Sounds M6 could not place are source plug-ins
+    /// (Wwise Sine, Silence, Anki Wave Portal), whose parent sits four bytes later behind a plug-in
+    /// parameter size. Objects whose type is not read here have no parent to report.
     /// </summary>
-    private static readonly Dictionary<WwiseObjectType, int> ParentOffsets = new()
-    {
-        [WwiseObjectType.Sound] = 25,
-        [WwiseObjectType.RandomSequenceContainer] = 11,
-        [WwiseObjectType.SwitchContainer] = 8,
-        [WwiseObjectType.ActorMixer] = 11,
-        [WwiseObjectType.BlendContainer] = 11,
-        [WwiseObjectType.MusicSegment] = 12,
-        [WwiseObjectType.MusicPlaylistContainer] = 12,
-    };
-
-    /// <summary>The id of this object's parent, where the layout for its type is known.</summary>
-    public static uint? ParentId(WwiseObject o)
-    {
-        if (!ParentOffsets.TryGetValue(o.Type, out int off)) return null;
-        var s = o.Payload.Span;
-        if (s.Length < off + 4) return null;
-        return BinaryPrimitives.ReadUInt32LittleEndian(s.Slice(off, 4));
-    }
+    public static uint? ParentId(WwiseObject o) => WwiseHierarchy.TryRead(o, out _)?.Params.ParentId;
 }
