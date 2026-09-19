@@ -324,3 +324,51 @@ not yet have, or hardware we do not yet have, not a defect in what is built. The
 | **Group cooldown enforcement** | Animation groups carry cooldown and mood fields. Selection honours mood; cooldown is parsed and exposed but not enforced, because how the engine measures and resets it is not established. | Read the engine's group selection to establish the cooldown clock, then enforce it in `AnimationGroup.Choose`. |
 | **Lift 0 mm semantics** | What the robot does with a lift height of exactly 0 mm is unresolved: it may mean "lowest position" or "no change". The value is passed through unaltered rather than being reinterpreted. | A hardware experiment, or the engine's own clamping in the lift keyframe path. |
 | **M4 cube hardware acceptance** | Cube support is code-complete and offline-tested through the real message path. No cube has been available to point the robot at. | `dotnet run --project src/Cozmo.Conformance -- cubes 172.31.1.1 --acceptance` with a cube to hand. |
+
+
+## The whole-face transform, corrected after hardware
+
+Hardware testing of `anim_reacttocliff_pickup_01` — which deliberately holds extreme squash/stretch poses
+such as `FaceScaleX=1.82, FaceScaleY=0.07` — showed the two eyes merging into one large rectangle. The
+fault was in this renderer, not in M7.
+
+**What the renderer did.** `FaceScaleX/Y` were applied to each eye's width and height while the eye centres
+stayed at their fixed nominal positions of 40 and 88, and `FaceAngle` was added to each eye's own angle. At
+`FaceScaleX=1.82` each eye widened from 28 px to about 51 px, so the left spanned 14.5–65.5 and the right
+62.5–113.5. They overlapped, which is the rectangle seen on the robot.
+
+**What the engine does.** `ProceduralFaceDrawer::DrawFace` draws both eyes at their nominal positions, then
+builds one affine with `GetTransformationMatrix(angle, scaleX, scaleY, transX, transY, 64, 32)` and applies
+it with `cv::warpAffine` over the whole image. Disassembling that function at 0x00584FF8 gives the matrix
+directly:
+
+```
+row0:  cos*sx    sin*sy    (1 - cos*sx)*cx - sin*sy*cy + tx
+row1: -sin*sx    cos*sy      sin*sx*cx + (1 - cos*sy)*cy + ty
+```
+
+which is the familiar rotate-and-scale-about-a-centre form. The call site passes the centre as the
+constants 64 and 32 — the centre of the canvas being drawn — rather than anything from the face
+parameters, so `FaceCenterX/Y` is the translation applied afterwards.
+
+That answers the three questions directly:
+
+* **`FaceScaleX/Y` scale eye positions as well as eye geometry**, because the centre terms move every
+  coordinate away from the canvas centre. At 1.82 the eyes move to about x=20 and x=108: further apart as
+  they widen, not overlapping.
+* **`FaceAngle` rotates the eye centres around the face centre**, not just each eye in place.
+* **`FaceCenterX/Y` is a translation** applied after the centred scale and rotation.
+
+**The fix** applies that same matrix, inverting it per output pixel rather than warping a second buffer,
+which is the same result as nearest-neighbour `warpAffine` without the intermediate image. The 19 eye
+parameters keep their meanings and the corner and lid behaviour is untouched; only the composition of the
+whole-face parameters changed. Wire and timing behaviour are unchanged — this affects what is drawn into a
+frame, not when or how frames are sent.
+
+One sign error was caught by a rotation test during the work: the row-1 centre term is `+sin*sx*cx`, not
+the row's own `-sin*sx` coefficient. With the wrong sign the face centre does not map to itself and the
+vertical half of a rotation cancels out.
+
+**Regressions** use the clip's own poses. Three of them fail against the previous renderer: the 1.82 pose
+keeping two separate eyes, a wider face increasing the gap between them, and a face angle moving the eyes
+to different heights.

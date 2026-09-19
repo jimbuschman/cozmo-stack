@@ -142,22 +142,81 @@ public static class ProceduralFaceRenderer
     public const int RightEyeCenterX = 88;
     public const int EyeCenterY = 16;
 
-    /// <summary>Renders a pose to a fresh bitmap.</summary>
+    /// <summary>
+    /// Renders a pose to a fresh bitmap.
+    ///
+    /// The whole-face parameters are an affine transform over the finished face, not a change to each
+    /// eye. <c>ProceduralFaceDrawer::DrawFace</c> draws both eyes at their nominal positions, builds a 2x3
+    /// matrix with <c>GetTransformationMatrix(angle, scaleX, scaleY, transX, transY, 64, 32)</c>, and
+    /// applies it with <c>cv::warpAffine</c> over the whole image. That matrix is the familiar
+    /// rotate-and-scale-about-a-centre form — its translation column is
+    /// <c>(1 - cos*sx)*cx - sin*sy*cy + tx</c> — so the centre terms move eye **positions** as well as
+    /// stretching eye geometry, and the angle rotates the eyes around the face rather than spinning each
+    /// one in place. The centre Anki passes is the centre of the canvas being drawn.
+    ///
+    /// Rendering here inverts that matrix per output pixel instead of warping a second buffer, which is
+    /// the same result as nearest-neighbour warpAffine without the intermediate image.
+    /// </summary>
     public static FaceBitmap Render(ProceduralFacePose pose)
     {
         var bmp = new FaceBitmap();
-        DrawEye(bmp, pose, pose.Left, LeftEyeCenterX);
-        DrawEye(bmp, pose, pose.Right, RightEyeCenterX);
+
+        float sx = pose.FaceScaleX, sy = pose.FaceScaleY;
+        // A face scaled to nothing in either axis has no area to draw.
+        if (MathF.Abs(sx) < 1e-4f || MathF.Abs(sy) < 1e-4f) return bmp;
+
+        float angle = pose.FaceAngle * MathF.PI / 180f;
+        float cos = MathF.Cos(angle), sin = MathF.Sin(angle);
+        const float centreX = FaceBitmap.Width / 2f;
+        const float centreY = FaceBitmap.Height / 2f;
+
+        // The forward matrix, exactly as GetTransformationMatrix builds it.
+        float a = cos * sx, b = sin * sy;
+        float c = -sin * sx, d = cos * sy;
+        // The translation column exactly as the engine builds it:
+        //   row0: (1 - cos*sx)*cx - sin*sy*cy + tx
+        //   row1: + sin*sx*cx + (1 - cos*sy)*cy + ty
+        // Note the sign on the row-1 centre term is POSITIVE sin*sx, not the row's own -sin*sx
+        // coefficient. Getting that wrong makes the face centre fail to map to itself and cancels the
+        // vertical half of a rotation, which is exactly what a rotation test caught here.
+        float tx = (1f - a) * centreX - b * centreY + pose.FaceCenterX;
+        float ty = (sin * sx) * centreX + (1f - d) * centreY + pose.FaceCenterY;
+
+        // Its inverse. The determinant of the 2x2 part is scaleX * scaleY, because the rotation is
+        // orthonormal, so this is well conditioned wherever the face has any area at all.
+        float det = a * d - b * c;
+        if (MathF.Abs(det) < 1e-6f) return bmp;
+        float ia = d / det, ib = -b / det, ic = -c / det, id = a / det;
+
+        for (int py = 0; py < FaceBitmap.Height; py++)
+        for (int px = 0; px < FaceBitmap.Width; px++)
+        {
+            // This output pixel, carried back into the un-transformed face.
+            float ox = px + 0.5f - tx, oy = py + 0.5f - ty;
+            float fx = ia * ox + ib * oy;
+            float fy = ic * ox + id * oy;
+
+            if (InEye(pose, pose.Left, LeftEyeCenterX, fx, fy) ||
+                InEye(pose, pose.Right, RightEyeCenterX, fx, fy))
+                bmp[px, py] = 1;
+        }
         return bmp;
     }
 
-    private static void DrawEye(FaceBitmap bmp, ProceduralFacePose pose, Eye eye, int baseCenterX)
+    /// <summary>
+    /// Whether a point in the un-transformed face falls inside one eye.
+    ///
+    /// Only that eye's own 19 parameters are consulted. The whole-face scale, angle and centre have
+    /// already been dealt with by the transform, so applying them again here would double them — which is
+    /// what made a face-wide stretch widen both eyes without moving them apart.
+    /// </summary>
+    private static bool InEye(ProceduralFacePose pose, Eye eye, int baseCenterX, float fx, float fy)
     {
-        float cx = baseCenterX + eye[EyeParam.EyeCenterX] + pose.FaceCenterX;
-        float cy = EyeCenterY + eye[EyeParam.EyeCenterY] + pose.FaceCenterY;
-        float w = NominalEyeWidth * Math.Max(0f, eye[EyeParam.EyeScaleX]) * pose.FaceScaleX;
-        float h = NominalEyeHeight * Math.Max(0f, eye[EyeParam.EyeScaleY]) * pose.FaceScaleY;
-        if (w < 0.5f || h < 0.5f) return;                       // a closed eye draws nothing
+        float cx = baseCenterX + eye[EyeParam.EyeCenterX];
+        float cy = EyeCenterY + eye[EyeParam.EyeCenterY];
+        float w = NominalEyeWidth * Math.Max(0f, eye[EyeParam.EyeScaleX]);
+        float h = NominalEyeHeight * Math.Max(0f, eye[EyeParam.EyeScaleY]);
+        if (w < 0.5f || h < 0.5f) return false;                 // a closed eye draws nothing
 
         float halfW = w / 2f, halfH = h / 2f;
         // Corner radii are fractions of the half-size; the assets hold values around 0.5 for a neutral eye.
@@ -172,19 +231,15 @@ public static class ProceduralFaceRenderer
         float upperLidAngle = eye[EyeParam.UpperLidAngle] * MathF.PI / 180f;
         float lowerLidAngle = eye[EyeParam.LowerLidAngle] * MathF.PI / 180f;
 
-        float eyeAngle = (eye[EyeParam.EyeAngle] + pose.FaceAngle) * MathF.PI / 180f;
+        // Only the eye's own angle here; the face angle is part of the whole-face transform.
+        float eyeAngle = eye[EyeParam.EyeAngle] * MathF.PI / 180f;
         float ca = MathF.Cos(-eyeAngle), sa = MathF.Sin(-eyeAngle);
 
-        int x0 = (int)MathF.Floor(cx - halfW - 2), x1 = (int)MathF.Ceiling(cx + halfW + 2);
-        int y0 = (int)MathF.Floor(cy - halfH - 2), y1 = (int)MathF.Ceiling(cy + halfH + 2);
-
-        for (int py = Math.Max(0, y0); py <= Math.Min(FaceBitmap.Height - 1, y1); py++)
-        for (int px = Math.Max(0, x0); px <= Math.Min(FaceBitmap.Width - 1, x1); px++)
         {
             // into the eye's own frame
-            float dx = px + 0.5f - cx, dy = py + 0.5f - cy;
+            float dx = fx - cx, dy = fy - cy;
             float ex = dx * ca - dy * sa, ey = dx * sa + dy * ca;
-            if (MathF.Abs(ex) > halfW || MathF.Abs(ey) > halfH) continue;
+            if (MathF.Abs(ex) > halfW || MathF.Abs(ey) > halfH) return false;
 
             // rounded corner test, using the radius pair for whichever corner this pixel is in
             bool outer = (baseCenterX == LeftEyeCenterX) ? ex < 0 : ex > 0;   // outer is away from the nose
@@ -198,15 +253,15 @@ public static class ProceduralFaceRenderer
             {
                 float nx = (ax - cornerX) / MathF.Max(0.001f, halfW - cornerX);
                 float ny = (ay - cornerY) / MathF.Max(0.001f, halfH - cornerY);
-                if (nx * nx + ny * ny > 1f) continue;           // outside the rounded corner
+                if (nx * nx + ny * ny > 1f) return false;       // outside the rounded corner
             }
 
             // lids, measured from the top and bottom edges and tilted by their angle
             float lidTop = -halfH + upperLid * h + MathF.Tan(upperLidAngle) * ex;
             float lidBottom = halfH - lowerLid * h + MathF.Tan(lowerLidAngle) * ex;
-            if (ey < lidTop || ey > lidBottom) continue;
+            if (ey < lidTop || ey > lidBottom) return false;
 
-            bmp[px, py] = 1;
+            return true;
         }
 
         static float Frac(float v) => Math.Clamp(v, 0f, 1f);
