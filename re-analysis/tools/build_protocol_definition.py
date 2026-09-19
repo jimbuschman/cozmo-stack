@@ -196,6 +196,14 @@ REFINEMENTS = {
            "fields": [{"name": "robotId", "kind": "scalar", "type": "u16", "name_source": "hardware"},
                       {"name": "signature", "kind": "varray", "type": "u8", "count": "u16", "elem": "u8",
                        "name_source": "hardware", "note": "UTF-8 JSON"}]},
+    0x99: {"note": "engine 2026-09-18: BodyMotionKeyFrame::SetMembersFromFlatBuf at 0x004FB494 packs the "
+                   "clip's speed and its radius_mm into this pair of i16s, and GetStreamMessage at "
+                   "0x004FBA8C sends them. ProcessRadiusString at 0x004FB588 resolves the symbolic radius "
+                   "tokens: TURN_IN_PLACE and POINT_TURN give 0, STRAIGHT gives 0x7FFF, anything with "
+                   "digits is atoi() clamped to i16",
+           "fields": [{"name": "speed", "kind": "scalar", "type": "i16", "name_source": "engine"},
+                      {"name": "radiusMm", "kind": "scalar", "type": "i16", "name_source": "engine",
+                       "note": "0 = turn in place, 0x7FFF = straight, otherwise a radius in mm"}]},
     0xC9: {"note": "capture 2026-09-18: u32 head serial (0x41d04d9d) then hardware revision 5, "
                    "matching the robot's own hardware.revision trace and MfgId.body_hw_version",
            "fields": [{"name": "serialNumberHead", "kind": "scalar", "type": "u32", "name_source": "hardware"},

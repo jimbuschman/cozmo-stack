@@ -77,12 +77,70 @@ as `Replaced` and the new one takes over. Two animations never interleave.
 | Face, procedural | Implemented: parsed, blended, rendered and sent |
 | Head | Implemented: angle and duration sent as an animation keyframe |
 | Lift | Implemented: height and duration sent |
-| Body, straight | Implemented: speed sent as equal wheel speeds, stopped when the keyframe's duration expires |
-| Body, arc | **Not implemented.** The schema gives a speed and a radius token, not wheel speeds, and the wheel-base geometry needed to convert is not established. Reported through `NotImplemented` rather than approximated. |
+| Body, straight and arc | Implemented as the engine does it: `animBodyMotion` with speed and a 16-bit radius, stopped when the keyframe's duration expires |
 | Event | Implemented: raised to the caller |
-| Audio | **Not implemented.** The keyframes carry Wwise event ids into the sound banks, which this milestone does not decode. Ids are preserved for a later milestone; a silence frame goes out so the timeline stays intact. |
-| Backpack lights | **Not implemented.** The five arrays are colours but their channel order and scale are not established, so nothing is sent rather than flashing the wrong colour. |
+| Audio | Implemented as a path: streamed on the scheduler tick from a pluggable source. The Wwise bank decoder that would make Cozmo's own sounds available is **not** written, so out of the box the track is silent. |
+| Backpack lights | **Not implementable.** The shipping engine never implemented this track from animation assets either; see below. |
 | Face animation by name | **Not implemented.** The pre-rendered `faceAnimations` assets are not loaded. |
+
+## The three M5 gaps, closed
+
+Each was blocked on something unknown. All three were resolved by reading the engine rather than guessing,
+which changed the answer in every case.
+
+### Body motion, including arcs
+
+The earlier implementation synthesised wheel speeds and refused arcs, on the grounds that converting a
+radius to wheel speeds needs the wheel base. **The engine does not do that.** It sends the speed and a
+16-bit radius to the robot and lets the firmware do the geometry:
+
+* `BodyMotionKeyFrame::GetStreamMessage` at 0x004FBA8C builds `AnimKeyFrame::BodyMotion`, which is
+  `animBodyMotion` 0x99: `{ speed: i16, radius_mm: i16 }`.
+* `SetMembersFromFlatBuf` at 0x004FB494 packs the clip's speed and its radius into that pair.
+* `ProcessRadiusString` at 0x004FB588 resolves the symbolic tokens.
+
+| Token | Radius sent |
+| --- | --- |
+| `STRAIGHT` | 32767 (`0x7FFF`) |
+| `TURN_IN_PLACE` | 0 |
+| `POINT_TURN` | 0 |
+| anything containing a digit | `atoi`, clamped to a signed 16-bit range |
+| anything else | the engine logs an error and drops the keyframe |
+
+The resolution order matters and is reproduced exactly: a token with any digit is parsed numerically first,
+then the two turn tokens, then `STRAIGHT`. Arcs now run, so they are stopped when their duration expires
+like any other body move. The protocol definition was updated with this evidence and regenerated, so
+`BodyMotion.RadiusMm` is a named field rather than `unknown`.
+
+### Animation audio
+
+The audio path is implemented and runs on the scheduler's own tick, so a sound stays lined up with the face
+and the motors. One frame goes out per tick whether or not there is sound, which keeps the robot's buffer
+fed, and the stream stops when an animation is cancelled.
+
+What is **not** implemented is the Wwise decoder, and the reason is specific. The keyframes carry event ids.
+`SoundbanksInfo.xml` maps an id to an event name and a bank, and `SoundBankIndex` reads that, so the two
+events in `anim_bored_01` resolve to `Play__Robot_Sfx__Scrn_Sad_Long` and
+`Play__Robot_Vo__Shared_Bored_Sigh_Short`. But that metadata **lists events and files without linking
+them**: the event-to-file mapping lives in each bank's HIRC section, which is not parsed. Beyond that, 1987
+of the 2214 `.wem` files are Wwise Vorbis, which needs codebook reconstruction and a Vorbis decoder.
+
+So the seam is `IAnimationAudioSource`. `WavAudioSource` lets a caller map their own WAV files to event ids
+and hear them play on the timeline today. With no source, the track is silent and the timeline is unchanged.
+
+### Backpack lights
+
+**The shipping engine never implemented this.** `BackpackLightsKeyFrame::SetMembersFromFlatBuf` at
+0x004FAAD4 is a stub whose entire body logs:
+
+> The BackpackLightsKeyFrame::SetMembersFromFlatBuf() method still needs to be implemented
+
+and returns failure. The light track of a `.bin` animation therefore does nothing on a retail robot. The
+JSON path is implemented and is used by the separate `backpackLightAnimations` assets, which is a different
+asset set and a different feature.
+
+Mapping the five float arrays onto the 10-byte wire message would be inventing behaviour Anki never shipped.
+The keyframes are decoded and preserved, and reported through `NotImplemented` when reached.
 
 ## Faults found on hardware, and fixed
 
@@ -120,6 +178,8 @@ works. Whether the firmware clamps it or treats 0 as "fully down" is not establi
   parameter names imply. Anki's own named expressions have not been recovered.
 * **`BodyMotion.radius_mm` is a string in the schema**, not a number. The raw token is kept and a numeric
   value offered only when it parses.
+* **The 10-byte `animBackpackLights` layout** is known only as a length. `GetStreamMessage` memcpies ten
+  bytes, but since the FlatBuffers path is a stub there is nothing to map onto it.
 * **Cooldowns are carried but not enforced.** `CooldownTime_Sec` is in the group data; what the engine does
   with it is not established, so honouring it would be a guess.
 * **Lid bend, eye angle and the radius pairs** are read and blended but their exact geometric meaning is
@@ -127,14 +187,22 @@ works. Whether the firmware clamps it or treats 0 as "fully down" is not establi
 
 ## Tests
 
-220 pass, 41 of them new, all offline.
+241 pass, 62 of them new, all offline.
 
 * **Scheduling** — keyframes fire in order within one frame of their trigger time; a late tick fires
   everything it missed in order; an animation completes exactly once; position and count track the timeline.
 * **Cancellation** — stop ends the animation, reports it as cancelled, and later keyframes never fire.
 * **Body duration** — a body keyframe stops when its own duration expires rather than when the clip ends,
-  using the shape of `anim_bored_01`; cancelling or replacing mid-move stops the wheels; an arc never starts
-  them so never needs stopping; a zero-length or stationary keyframe is not scheduled for a stop.
+  using the shape of `anim_bored_01`; cancelling or replacing mid-move stops the body; a zero-length or
+  stationary keyframe is not scheduled for a stop.
+* **Body encoding** — every radius token the engine understands encodes to the value the engine sends,
+  including the `atoi` clamp at both ends of the 16-bit range; an unrecognised token is refused rather than
+  guessed at; an arc runs and is stopped like any other move; the wire message carries both fields.
+* **Audio** — streamed on the scheduler tick rather than by a pacer of its own; silent but timeline-intact
+  with no source; no audio at all for a clip without an audio track; the first alternative that can be
+  produced is used; the stream stops when the animation is cancelled; WAV decoding including stereo
+  mixdown, resampling and rejection of non-WAV input; event ids resolve to names through the metadata.
+* **Lights** — the keyframe is decoded and reported with its data intact, and nothing is invented.
 * **Track ownership** — a clash is refused when asked to be; a replacement ends the first as `Replaced`;
   owned tracks are reported.
 * **Face blending** — the eyes shrink steadily across a blend rather than in one jump; the last face is held

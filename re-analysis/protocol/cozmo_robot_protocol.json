@@ -4791,19 +4791,18 @@
      "name": "speed",
      "kind": "scalar",
      "type": "i16",
-     "name_source": "pycozmo",
-     "uncertain": false
+     "name_source": "engine"
     },
     {
-     "name": "unknown",
+     "name": "radiusMm",
      "kind": "scalar",
      "type": "i16",
-     "name_source": "pycozmo",
-     "uncertain": false
+     "name_source": "engine",
+     "note": "0 = turn in place, 0x7FFF = straight, otherwise a radius in mm"
     }
    ],
-   "confidence": "native_named",
-   "verification": "layout_known_semantics_uncertain",
+   "confidence": "hardware_refined",
+   "verification": "statically_verified",
    "evidence": {
     "native_unpack": "0x7bd624",
     "native_namespace": "AnimKeyFrame",
@@ -4812,7 +4811,8 @@
     "capture": null
    },
    "notes": [
-    "field names from PyCozmo (widths agree with native)"
+    "field names from PyCozmo (widths agree with native)",
+    "engine 2026-09-18: BodyMotionKeyFrame::SetMembersFromFlatBuf at 0x004FB494 packs the clip's speed and its radius_mm into this pair of i16s, and GetStreamMessage at 0x004FBA8C sends them. ProcessRadiusString at 0x004FB588 resolves the symbolic radius tokens: TURN_IN_PLACE and POINT_TURN give 0, STRAIGHT gives 0x7FFF, anything with digits is atoi() clamped to i16"
    ]
   },
   "0x9A": {

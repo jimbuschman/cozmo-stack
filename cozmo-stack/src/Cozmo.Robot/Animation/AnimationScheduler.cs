@@ -72,8 +72,19 @@ public sealed class AnimationScheduler
     private int _faceIndex = -1;               // index into _facePoses of the pose currently held
     private FaceBitmap? _lastFace;
     private double? _bodyEndsAtMs;             // when the running body keyframe should stop, if one is running
+    private short[]? _audioPcm;                // the sound currently streaming, if any
+    private int _audioPos;                     // how far into it the last frame reached
 
     public AnimationScheduler(IAnimationSink sink) => _sink = sink;
+
+    /// <summary>
+    /// Where the sound for an audio keyframe comes from. Left null, audio keyframes send silence so the
+    /// timeline stays intact but nothing is heard. See <see cref="IAnimationAudioSource"/>.
+    /// </summary>
+    public IAnimationAudioSource? AudioSource { get; set; }
+
+    /// <summary>Audio frames streamed since the current animation started.</summary>
+    public int AudioFramesSent { get; private set; }
 
     /// <summary>The animation currently running, or null.</summary>
     public string? Playing { get { lock (_gate) return _clip?.Name; } }
@@ -112,6 +123,8 @@ public sealed class AnimationScheduler
             _facePoses = clip.Keyframes.OfType<FaceKeyframe>().ToList();
             _faceIndex = -1;
             _bodyEndsAtMs = null;
+            _audioPcm = null; _audioPos = 0;
+            AudioFramesSent = 0;
             KeyframesFired = 0;
             PositionMs = 0;
             return _handle;
@@ -138,6 +151,7 @@ public sealed class AnimationScheduler
         _faceIndex = -1;
         bool bodyWasRunning = _bodyEndsAtMs is not null;
         _bodyEndsAtMs = null;
+        _audioPcm = null; _audioPos = 0;
         // An animation that is cut short must not leave the wheels turning.
         if (bodyWasRunning) _sink.BodyStop();
         _sink.Finished(name, reason == AnimationEndReason.Completed);
@@ -194,6 +208,31 @@ public sealed class AnimationScheduler
         }
         if (stopBody) _sink.BodyStop();
 
+        // Audio is streamed on this same tick rather than by a pacer of its own, so a sound stays lined up
+        // with the face and the motors. One frame goes out per tick whether or not there is sound to send,
+        // which is what the engine does and what keeps the robot's buffer fed.
+        byte[]? frame = null;
+        bool wantAudio;
+        lock (_gate)
+        {
+            wantAudio = _clip == clip && (clip.Tracks & AnimationTrack.Audio) != 0;
+            if (wantAudio && _audioPcm is { } pcm && _audioPos < pcm.Length)
+            {
+                int n = Math.Min(CozmoAudio.SamplesPerFrame, pcm.Length - _audioPos);
+                var samples = new byte[CozmoAudio.SamplesPerFrame];
+                for (int i = 0; i < n; i++) samples[i] = AnkiMuLaw.Encode(pcm[_audioPos + i]);
+                for (int i = n; i < CozmoAudio.SamplesPerFrame; i++) samples[i] = AnkiMuLaw.Encode(0);
+                _audioPos += n;
+                if (_audioPos >= pcm.Length) { _audioPcm = null; _audioPos = 0; }
+                frame = samples;
+            }
+        }
+        if (wantAudio)
+        {
+            _sink.Audio(frame);
+            AudioFramesSent++;
+        }
+
         // The face is continuous rather than stepped. A face keyframe is a pose to be AT when its trigger
         // time arrives, so the pose held now is interpolated forward towards the next one, not backwards
         // from the previous one. Interpolating backwards would leave the face frozen on one keyframe until
@@ -233,6 +272,24 @@ public sealed class AnimationScheduler
         }
     }
 
+    /// <summary>
+    /// Begins streaming the sound an audio keyframe asks for. A keyframe can name several alternatives; the
+    /// first one the source can produce is used, which mirrors the assets carrying alternates. With no
+    /// source, or none of the alternatives available, the track simply stays silent.
+    /// </summary>
+    private void StartAudio(AudioKeyframe k)
+    {
+        var source = AudioSource;
+        if (source is null) return;
+        foreach (var id in k.EventIds)
+        {
+            var pcm = source.GetPcm(id, k.Volume);
+            if (pcm is null || pcm.Length == 0) continue;
+            lock (_gate) { _audioPcm = pcm; _audioPos = 0; }
+            return;
+        }
+    }
+
     private int IndexOfFace(FaceKeyframe f)
     {
         for (int i = 0; i < _facePoses.Count; i++) if (ReferenceEquals(_facePoses[i], f)) return i;
@@ -247,16 +304,16 @@ public sealed class AnimationScheduler
             case LiftKeyframe l: _sink.Lift(l.HeightMm, l.DurationTimeMs); break;
             case BodyKeyframe b:
                 _sink.Body(b);
-                // Only a keyframe that actually moves the body needs stopping, and only a straight one is
-                // acted on; an arc is reported as unimplemented and never starts the wheels.
+                // Only a keyframe that actually moves the body needs stopping. Any radius the engine
+                // understands now runs, arcs included, because the robot does the geometry.
                 lock (_gate)
-                    _bodyEndsAtMs = b.IsStraight && b.DurationTimeMs > 0 && b.Speed != 0
+                    _bodyEndsAtMs = b.RadiusIsKnown && b.DurationTimeMs > 0 && b.Speed != 0
                         ? b.TriggerTimeMs + b.DurationTimeMs
                         : null;
                 break;
             case LightsKeyframe li: _sink.Lights(li); break;
             case EventKeyframe e: _sink.Event(e.EventId); break;
-            case AudioKeyframe: _sink.Audio(null); break;         // the bank is not decoded yet; see below
+            case AudioKeyframe a: StartAudio(a); break;
             case FaceKeyframe: break;                             // handled by the blend above
             case FaceAnimationKeyframe: break;                    // pre-rendered face clips are not loaded yet
             case RecordHeadingKeyframe: break;

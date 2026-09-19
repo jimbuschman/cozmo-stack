@@ -7,7 +7,7 @@ duration: 1089 ms   keyframes: 54   tracks: Face, Audio, Head, Lift, Body, Light
       0     264 Head    Head                       ACTED ON  angle_deg=0 (0.000 rad) variability_deg=0
       0       0 Face    Face                       ACTED ON  face angle=0.0 centre=(0.0,0.0) scale=(1.00,1.00) L.scaleY=0.91 R.scaleY=0.91
       0     132 Lights  Lights                     IGNORED   L=[0.00,0.00,0.00,0.00] R=[0.00,0.00,0.00,0.00] Front=[0.00,0.00,0.00,0.00] Mid=[0.00,0.00,0.00,0.00] Back=[0.00,0.00,0.00,0.00]
-     99       0 Audio   Audio                      IGNORED   eventIds=[1620542011] volume=1.00 hasAlts=True
+     99       0 Audio   Audio                      ACTED ON  eventIds=[1620542011] volume=1.00 hasAlts=True
     132       0 Face    Face                       ACTED ON  face angle=0.2 centre=(0.0,0.3) scale=(1.00,1.00) L.scaleY=0.91 R.scaleY=0.91
     132      99 Lights  Lights                     IGNORED   L=[0.00,0.00,0.00,0.00] R=[0.00,0.00,0.00,0.00] Front=[0.00,0.00,0.00,0.00] Mid=[0.00,0.00,0.00,0.00] Back=[0.00,0.00,0.00,0.00]
     165       0 Face    Face                       ACTED ON  face angle=0.5 centre=(0.0,1.4) scale=(1.00,1.00) L.scaleY=0.91 R.scaleY=0.91
@@ -17,8 +17,8 @@ duration: 1089 ms   keyframes: 54   tracks: Face, Audio, Head, Lift, Body, Light
     264       0 Face    Face                       ACTED ON  face angle=1.3 centre=(0.0,5.1) scale=(1.00,1.00) L.scaleY=0.91 R.scaleY=0.91
     264     198 Head    Head                       ACTED ON  angle_deg=-3 (-0.052 rad) variability_deg=0
     264      33 Lights  Lights                     IGNORED   L=[0.00,0.00,0.00,0.00] R=[0.00,0.00,0.00,0.00] Front=[0.00,0.00,0.00,0.00] Mid=[1.00,0.70,0.00,0.00] Back=[0.00,0.00,0.00,0.00]
-    272       0 Audio   Audio                      IGNORED   eventIds=[2741090610] volume=1.00 hasAlts=True
-    297     264 Body    Body                       ACTED ON  radius_mm="STRAIGHT" speed=-75 (straight=True, parsed_radius=n/a, direction=BACKWARD)
+    272       0 Audio   Audio                      ACTED ON  eventIds=[2741090610] volume=1.00 hasAlts=True
+    297     264 Body    Body                       ACTED ON  radius_mm="STRAIGHT" speed=-75 (encoded_radius=32767, straight=True, turnInPlace=False, direction=BACKWARD)
     297       0 Face    Face                       ACTED ON  face angle=1.5 centre=(0.0,6.4) scale=(1.00,1.00) L.scaleY=0.91 R.scaleY=0.91
     297     429 Lights  Lights                     IGNORED   L=[0.00,0.00,0.00,0.00] R=[0.00,0.00,0.00,0.00] Front=[1.00,0.70,0.00,0.00] Mid=[1.00,0.70,0.00,0.00] Back=[1.00,0.70,0.00,0.00]
     330       0 Face    Face                       ACTED ON  face angle=1.7 centre=(0.0,7.7) scale=(1.00,1.00) L.scaleY=0.87 R.scaleY=0.87
@@ -60,85 +60,121 @@ duration: 1089 ms   keyframes: 54   tracks: Face, Audio, Head, Lift, Body, Light
    1089       0 Face    Face                       ACTED ON  face angle=0.0 centre=(0.0,0.0) scale=(1.04,1.04) L.scaleY=0.91 R.scaleY=0.91
 
 === per track ===
-  AudioKeyframe                   2  IGNORED   Wwise event ids are not decoded; a silence frame is sent to keep the timeline
-  BodyKeyframe                    1  ACTED ON  STRAIGHT maps to equal wheel speeds; sent as DriveWheels
+  AudioKeyframe                   2  ACTED ON  streamed through the audio source on the scheduler tick; silent with no source
+  BodyKeyframe                    1  ACTED ON  sent as animBodyMotion speed=-75 radius=32767, as the engine does
   FaceKeyframe                   27  ACTED ON  rendered and sent; blended towards the next face keyframe each frame
   HeadKeyframe                   10  ACTED ON  sent as SetHeadAngle with the keyframe's duration
   LiftKeyframe                    2  ACTED ON  sent as SetLiftHeight with the keyframe's duration
-  LightsKeyframe                 12  IGNORED   the colour encoding in the assets is not established
+  LightsKeyframe                 12  IGNORED   the shipping engine never implemented this track from animation assets
 
 === what the executor actually sends ===
 The real RobotAnimationSink, driven against an offline robot. Every line below is a message the
 live player would have sent, read back from the transport rather than re-derived.
 
---- wheel commands: 3 ---
-  t=    300 ms  DriveWheels left=  -75.0 right=  -75.0  BACKWARD
-  t=    567 ms  DriveWheels left=    0.0 right=    0.0  stop
-  t=   1100 ms  DriveWheels left=    0.0 right=    0.0  stop
-  => moving stretch 1: t=300 ms to t=567 ms at -75 mm/s, i.e. 267 ms
+--- body motion commands: 2 ---
+  t=    300 ms  BodyMotion speed=   -75 radius= 32767  straight  BACKWARD
+  t=    567 ms  BodyMotion speed=     0 radius= 32767  straight  (stop)
+  => moving stretch 1: t=300 ms to t=567 ms, i.e. 267 ms
      the asset asks for 264 ms starting at t=297 ms
+
+--- wheel commands: 1 ---
+  t=   1100 ms  DriveWheels left=    0.0 right=    0.0  stop
+  => the asset has 1 body keyframe(s) but the wheels were never driven
 
 --- every message, in order ---
    t_ms  message                detail
 ------------------------------------------------------------------------------------------
       0  SetHeadAngle           angle=0.000 rad duration=0.264s action=0
+      0  AudioSilence           silence frame
       0  FaceImage              254 byte face payload
+     33  AudioSilence           silence frame
      33  FaceImage              254 byte face payload
+     67  AudioSilence           silence frame
      67  FaceImage              254 byte face payload
     100  AudioSilence           silence frame
     100  FaceImage              254 byte face payload
+    133  AudioSilence           silence frame
     133  FaceImage              254 byte face payload
+    167  AudioSilence           silence frame
     167  FaceImage              254 byte face payload
+    200  AudioSilence           silence frame
     200  FaceImage              252 byte face payload
+    233  AudioSilence           silence frame
     233  FaceImage              246 byte face payload
     267  SetHeadAngle           angle=-0.052 rad duration=0.198s action=0
+    267  AudioSilence           silence frame
     267  FaceImage              242 byte face payload
+    300  BodyMotion             speed=-75 radius=32767
     300  AudioSilence           silence frame
-    300  DriveWheels            left=-75.0 right=-75.0
     300  FaceImage              240 byte face payload
+    333  AudioSilence           silence frame
     333  FaceImage              236 byte face payload
+    367  AudioSilence           silence frame
     367  FaceImage              186 byte face payload
     400  SetLiftHeight          height=40.0 mm duration=0.099s action=0
+    400  AudioSilence           silence frame
     400  FaceImage              177 byte face payload
+    433  AudioSilence           silence frame
     433  FaceImage              180 byte face payload
     467  SetHeadAngle           angle=-0.332 rad duration=0.132s action=0
+    467  AudioSilence           silence frame
     467  FaceImage              128 byte face payload
     500  SetLiftHeight          height=0.0 mm duration=0.099s action=0
+    500  AudioSilence           silence frame
     500  FaceImage              128 byte face payload
+    533  AudioSilence           silence frame
     533  FaceImage              195 byte face payload
-    567  DriveWheels            left=0.0 right=0.0
+    567  BodyMotion             speed=0 radius=32767
+    567  AudioSilence           silence frame
     567  FaceImage              201 byte face payload
     600  SetHeadAngle           angle=-0.140 rad duration=0.132s action=0
+    600  AudioSilence           silence frame
     600  FaceImage              240 byte face payload
+    633  AudioSilence           silence frame
     633  FaceImage              252 byte face payload
+    667  AudioSilence           silence frame
     667  FaceImage              260 byte face payload
+    700  AudioSilence           silence frame
     700  FaceImage              264 byte face payload
     733  SetHeadAngle           angle=-0.262 rad duration=0.099s action=0
+    733  AudioSilence           silence frame
     733  FaceImage              260 byte face payload
+    767  AudioSilence           silence frame
     767  FaceImage              256 byte face payload
+    800  AudioSilence           silence frame
     800  FaceImage              252 byte face payload
     833  SetHeadAngle           angle=-0.262 rad duration=0.033s action=0
+    833  AudioSilence           silence frame
     833  FaceImage              250 byte face payload
     867  SetHeadAngle           angle=-0.244 rad duration=0.066s action=0
+    867  AudioSilence           silence frame
     867  FaceImage              250 byte face payload
+    900  AudioSilence           silence frame
     900  FaceImage              252 byte face payload
     933  SetHeadAngle           angle=-0.244 rad duration=0.033s action=0
+    933  AudioSilence           silence frame
     933  FaceImage              254 byte face payload
     967  SetHeadAngle           angle=-0.244 rad duration=0.066s action=0
+    967  AudioSilence           silence frame
     967  FaceImage              254 byte face payload
+   1000  AudioSilence           silence frame
    1000  FaceImage              254 byte face payload
    1033  SetHeadAngle           angle=-0.244 rad duration=0.066s action=0
+   1033  AudioSilence           silence frame
    1033  FaceImage              254 byte face payload
+   1067  AudioSilence           silence frame
    1067  FaceImage              254 byte face payload
+   1100  AudioSilence           silence frame
    1100  FaceImage              254 byte face payload
    1100  DriveWheels            left=0.0 right=0.0
 
 --- totals ---
+  AudioSilence             34
   FaceImage                34
   SetHeadAngle             10
-  DriveWheels              3
-  AudioSilence             2
+  BodyMotion               2
   SetLiftHeight            2
+  DriveWheels              1
 
 --- reported as not implemented during playback ---
-  backpack lights keyframe: the colour encoding in the assets is not established
+  backpack lights keyframe ignored: the shipping engine never implemented this track from animation assets (SetMembersFromFlatBuf is a stub), so there is no behaviour to reproduce

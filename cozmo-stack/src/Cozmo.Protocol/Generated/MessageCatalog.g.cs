@@ -192,7 +192,7 @@ public enum RobotMessageId : byte
     AnimFaceImage = 0x97,
     /// <summary>BackpackLights (engine_to_robot); size 10; layout_known_semantics_uncertain</summary>
     AnimBackpackLights = 0x98,
-    /// <summary>BodyMotion (engine_to_robot); size 4; layout_known_semantics_uncertain</summary>
+    /// <summary>BodyMotion (engine_to_robot); size 4; statically_verified</summary>
     AnimBodyMotion = 0x99,
     /// <summary>EndOfAnimation (engine_to_robot); size 0; statically_verified</summary>
     AnimEndOfAnimation = 0x9A,
@@ -438,7 +438,7 @@ public static class MessageCatalog
         [RobotMessageId.AnimEventToRTIP] = new(RobotMessageId.AnimEventToRTIP, "animEventToRTIP", "AnimEventToRTIP", MessageDirection.EngineToRobot, 2, false, Subsystem.Animation, ProbeSafety.StateChange, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
         [RobotMessageId.AnimFaceImage] = new(RobotMessageId.AnimFaceImage, "animFaceImage", "FaceImage", MessageDirection.EngineToRobot, -1, true, Subsystem.LedsDisplay, ProbeSafety.SafeVisible, LayoutConfidence.NativeNamed, VerificationStatus.LayoutKnownSemanticsUncertain, "DisplayImage"),
         [RobotMessageId.AnimBackpackLights] = new(RobotMessageId.AnimBackpackLights, "animBackpackLights", "BackpackLights", MessageDirection.EngineToRobot, 10, false, Subsystem.LedsDisplay, ProbeSafety.SafeVisible, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, "AnimBackpackLights"),
-        [RobotMessageId.AnimBodyMotion] = new(RobotMessageId.AnimBodyMotion, "animBodyMotion", "BodyMotion", MessageDirection.EngineToRobot, 4, false, Subsystem.Animation, ProbeSafety.Motion, LayoutConfidence.NativeNamed, VerificationStatus.LayoutKnownSemanticsUncertain, "AnimBody"),
+        [RobotMessageId.AnimBodyMotion] = new(RobotMessageId.AnimBodyMotion, "animBodyMotion", "BodyMotion", MessageDirection.EngineToRobot, 4, false, Subsystem.Animation, ProbeSafety.Motion, LayoutConfidence.HardwareRefined, VerificationStatus.StaticallyVerified, "AnimBody"),
         [RobotMessageId.AnimEndOfAnimation] = new(RobotMessageId.AnimEndOfAnimation, "animEndOfAnimation", "EndOfAnimation", MessageDirection.EngineToRobot, 0, false, Subsystem.Animation, ProbeSafety.Motion, LayoutConfidence.Empty, VerificationStatus.StaticallyVerified, "EndAnimation"),
         [RobotMessageId.AnimStartOfAnimation] = new(RobotMessageId.AnimStartOfAnimation, "animStartOfAnimation", "StartOfAnimation", MessageDirection.EngineToRobot, 1, false, Subsystem.Animation, ProbeSafety.Motion, LayoutConfidence.NativeNamed, VerificationStatus.LayoutKnownSemanticsUncertain, "StartAnimation"),
         [RobotMessageId.DisableAnimTracks] = new(RobotMessageId.DisableAnimTracks, "disableAnimTracks", "DisableAnimTracks", MessageDirection.EngineToRobot, 1, false, Subsystem.Animation, ProbeSafety.StateChange, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),

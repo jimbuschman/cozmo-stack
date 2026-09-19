@@ -25,8 +25,8 @@ Evidence order: (1) official decompiled C# CLAD structs, (2) `libcozmoEngine.so`
 |---|---|---|
 | hardware verified | 24 | exercised on the firmware-2457 robot: the robot sent it and our codec re-encoded it byte-identically, or the robot demonstrably acted on it |
 | capture verified | 4 | seen on the wire in a real session with a consistent length, but no response ties it to robot behaviour |
-| statically verified | 54 | layout matches an official C# CLAD struct field for field, or is empty |
-| layout known, semantics uncertain | 77 | widths/order from the engine binary; some field names are guesses |
+| statically verified | 55 | layout matches an official C# CLAD struct field for field, or is empty |
+| layout known, semantics uncertain | 76 | widths/order from the engine binary; some field names are guesses |
 | unresolved | 2 | one or more fields not attributed; the bytes are preserved in a raw tail |
 | capture conflict | 0 | observed bytes disagree with the static layout |
 
@@ -36,8 +36,9 @@ Evidence order: (1) official decompiled C# CLAD structs, (2) `libcozmoEngine.so`
 |---|---|
 | generated placeholder | 174 |
 | official decompiled C# | 154 |
-| PyCozmo (widths agreed with native) | 67 |
+| PyCozmo (widths agreed with native) | 65 |
 | hardware capture | 9 |
+| engine | 2 |
 
 174 of 404 fields still carry a generated placeholder name; 179 fields are flagged uncertain.
 Unknown bytes are never invented: a message whose layout does not add up keeps an explicit `unknownTail`
@@ -168,7 +169,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 
 ### Animation (17 messages)
 
-11 layout known, semantics uncertain, 4 statically verified, 2 hardware verified
+10 layout known, semantics uncertain, 5 statically verified, 2 hardware verified
 
 | tag | dir | CLAD type | size | layout | verification | probe safety |
 |---|---|---|---|---|---|---|
@@ -179,7 +180,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0x94` | E->R | LiftHeight | 3 | native_only | layout known, semantics uncertain | motion |
 | `0x95` | E->R | Event | 1 | native_only | layout known, semantics uncertain | state_change |
 | `0x96` | E->R | AnimEventToRTIP | 2 | native_only | layout known, semantics uncertain | state_change |
-| `0x99` | E->R | BodyMotion | 4 | native_named | layout known, semantics uncertain | motion |
+| `0x99` | E->R | BodyMotion | 4 | hardware_refined | statically verified | motion |
 | `0x9A` | E->R | EndOfAnimation | 0 | empty | statically verified | motion |
 | `0x9B` | E->R | StartOfAnimation | 1 | native_named | layout known, semantics uncertain | motion |
 | `0x9D` | E->R | DisableAnimTracks | 1 | native_only | layout known, semantics uncertain | state_change |

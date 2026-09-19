@@ -187,16 +187,27 @@ public class AnimationTests
         Assert.Single(r.BodyStops);
     }
 
+    /// <summary>
+    /// An arc used to be refused because it seemed to need the wheel base. The engine in fact sends the
+    /// radius to the robot and lets the firmware do the geometry, so arcs run and therefore need stopping
+    /// like any other body move. A token the engine does not recognise still never starts anything.
+    /// </summary>
     [Fact]
-    public void AnArcBodyKeyframeNeverStartsTheWheelsSoItNeverNeedsStopping()
+    public void AnArcIsStoppedLikeAnyOtherBodyMoveButAnUnknownTokenIsNot()
     {
         var r = new Recorder();
         var s = new AnimationScheduler(r);
-        s.Play(Clip("t", new BodyKeyframe(0, 100, "40.0", 60), new EventKeyframe(500, "end")), 0);
+        s.Play(Clip("arc", new BodyKeyframe(0, 100, "40", 60), new EventKeyframe(500, "end")), 0);
         Run(s, r, 0, 600);
+        Assert.Single(r.Bodies);
+        Assert.Single(r.BodyStops);
 
-        Assert.Single(r.Bodies);                  // the keyframe is still reported to the sink
-        Assert.Empty(r.BodyStops);                // but the sink refuses arcs, so there is nothing to stop
+        var r2 = new Recorder();
+        var s2 = new AnimationScheduler(r2);
+        s2.Play(Clip("nonsense", new BodyKeyframe(0, 100, "SPIRAL", 60), new EventKeyframe(500, "end")), 0);
+        Run(s2, r2, 0, 600);
+        Assert.Single(r2.Bodies);                 // still reported to the sink, which refuses it
+        Assert.Empty(r2.BodyStops);               // nothing started, so nothing to stop
     }
 
     [Fact]

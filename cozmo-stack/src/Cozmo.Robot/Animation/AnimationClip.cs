@@ -47,22 +47,82 @@ public sealed record HeadKeyframe(uint TriggerTimeMs, uint DurationTimeMs, sbyte
 }
 
 /// <summary>
-/// Drive the body. <c>radius_mm</c> is a string in the schema, not a number, so the raw token is kept and a
-/// numeric value offered only when it parses. Observed tokens include <c>STRAIGHT</c>.
+/// Drive the body. <c>radius_mm</c> is a string in the schema, not a number.
+///
+/// The engine turns that string into a 16-bit radius and sends it to the robot with the speed, letting the
+/// firmware do the geometry. <c>BodyMotionKeyFrame::ProcessRadiusString</c> at 0x004FB588 in
+/// libcozmoEngine.so resolves the symbolic tokens, and <c>SetMembersFromFlatBuf</c> at 0x004FB494 parses a
+/// numeric one with <c>atoi</c> clamped to a signed 16-bit range. That mapping is reproduced exactly by
+/// <see cref="EncodedRadius"/>.
 /// </summary>
 public sealed record BodyKeyframe(uint TriggerTimeMs, uint DurationTimeMs, string RadiusRaw, short Speed)
     : Keyframe(TriggerTimeMs)
 {
+    /// <summary>The radius the engine sends for a straight line.</summary>
+    public const short StraightRadius = short.MaxValue;      // 0x7FFF
+    /// <summary>The radius the engine sends for a turn on the spot.</summary>
+    public const short TurnInPlaceRadius = 0;
+
     public override AnimationTrack Track => AnimationTrack.Body;
     public override uint DurationMs => DurationTimeMs;
 
     /// <summary>True when the clip asks for a straight line rather than an arc.</summary>
     public bool IsStraight => RadiusRaw.Equals("STRAIGHT", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>True when the clip asks the robot to turn on the spot.</summary>
+    public bool IsTurnInPlace =>
+        RadiusRaw.Equals("TURN_IN_PLACE", StringComparison.OrdinalIgnoreCase) ||
+        RadiusRaw.Equals("POINT_TURN", StringComparison.OrdinalIgnoreCase);
+
     /// <summary>The turn radius in mm when the token is a number, otherwise null.</summary>
     public float? RadiusMm =>
         float.TryParse(RadiusRaw, System.Globalization.NumberStyles.Float,
                        System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : null;
+
+    /// <summary>True when the token is one the engine understands.</summary>
+    public bool RadiusIsKnown => IsStraight || IsTurnInPlace || HasDigits(RadiusRaw);
+
+    /// <summary>
+    /// The 16-bit radius the engine puts on the wire, reproducing its own resolution order: a token with
+    /// any digit is parsed numerically first, then the two symbolic turn tokens, then STRAIGHT. A token the
+    /// engine does not recognise makes it log an error and drop the keyframe, which is what null means here.
+    /// </summary>
+    public short? EncodedRadius
+    {
+        get
+        {
+            if (HasDigits(RadiusRaw))
+            {
+                // the engine uses atoi, which stops at the first non-digit and yields 0 on nonsense
+                long v = Atoi(RadiusRaw);
+                return (short)Math.Clamp(v, short.MinValue, short.MaxValue);
+            }
+            if (IsTurnInPlace) return TurnInPlaceRadius;
+            if (IsStraight) return StraightRadius;
+            return null;
+        }
+    }
+
+    private static bool HasDigits(string s)
+    {
+        foreach (var c in s) if (c is >= '0' and <= '9') return true;
+        return false;
+    }
+
+    /// <summary>C's atoi: optional sign, then digits, stopping at the first character that is not one.</summary>
+    private static long Atoi(string s)
+    {
+        int i = 0;
+        while (i < s.Length && char.IsWhiteSpace(s[i])) i++;
+        bool neg = i < s.Length && (s[i] == '-' || s[i] == '+') && s[i++] == '-';
+        long v = 0;
+        while (i < s.Length && s[i] is >= '0' and <= '9')
+        {
+            v = v * 10 + (s[i++] - '0');
+            if (v > int.MaxValue) { v = int.MaxValue; break; }
+        }
+        return neg ? -v : v;
+    }
 }
 
 /// <summary>

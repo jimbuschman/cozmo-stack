@@ -2173,24 +2173,24 @@ public sealed partial class BackpackLights : RobotMessage
     }
 }
 
-/// <summary>animBodyMotion 0x99 (engine_to_robot), 4 bytes. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
+/// <summary>animBodyMotion 0x99 (engine_to_robot), 4 bytes. Confidence: hardware_refined. Verification: statically_verified. field names from PyCozmo (widths agree with native) engine 2026-09-18: BodyMotionKeyFrame::SetMembersFromFlatBuf at 0x004FB494 packs the clip's speed and its radius_mm into this pair of i16s, and GetStreamMessage at 0x004FBA8C sends them. ProcessRadiusString at 0x004FB588 resolves the symbolic radius tokens: TURN_IN_PLACE and POINT_TURN give 0, STRAIGHT gives 0x7FFF, anything with digits is atoi() clamped to i16</summary>
 public sealed partial class BodyMotion : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.AnimBodyMotion;
     public BodyMotion() { }
-    /// <summary>name from pycozmo</summary>
+    /// <summary>name from engine</summary>
     public short Speed;
-    /// <summary>name from pycozmo</summary>
-    public short Unknown;
+    /// <summary>name from engine; 0 = turn in place, 0x7FFF = straight, otherwise a radius in mm</summary>
+    public short RadiusMm;
     public static BodyMotion Read(CladReader r) => new()
     {
         Speed = r.I16(),
-        Unknown = r.I16(),
+        RadiusMm = r.I16(),
     };
     public override void WriteBody(CladWriter w)
     {
         w.I16(Speed);
-        w.I16(Unknown);
+        w.I16(RadiusMm);
     }
 }
 

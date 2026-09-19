@@ -44,24 +44,32 @@ public sealed class RobotAnimationSink : IAnimationSink
 
     public void Body(BodyKeyframe k)
     {
-        // The schema gives a speed and a radius token rather than wheel speeds. A straight move maps
-        // cleanly; an arc would need the wheel-base geometry, which is not established, so it is reported
-        // as not implemented rather than approximated.
-        if (k.IsStraight)
+        // The engine does not synthesise wheel speeds: it sends the speed and a 16-bit radius and lets the
+        // firmware do the geometry, which is what makes an arc work without knowing the wheel base.
+        // BodyMotionKeyFrame::GetStreamMessage at 0x004FBA8C builds exactly this message.
+        if (k.EncodedRadius is not { } radius)
         {
-            _robot.Transport.Send(new DriveWheels(k.Speed, k.Speed, 0f, 0f), flush: true);
+            NotImplemented?.Invoke($"body motion radius '{k.RadiusRaw}' is not a token the engine understands");
             return;
         }
-        NotImplemented?.Invoke($"body motion with radius '{k.RadiusRaw}': arc geometry is not established");
+        _robot.Transport.Send(new BodyMotion { Speed = k.Speed, RadiusMm = radius }, flush: true);
     }
 
-    public void BodyStop() => _robot.Transport.Send(new DriveWheels(0f, 0f, 0f, 0f), flush: true);
+    /// <summary>Zero speed on the straight radius, which is how the engine's own keyframe ends.</summary>
+    public void BodyStop() =>
+        _robot.Transport.Send(new BodyMotion { Speed = 0, RadiusMm = BodyKeyframe.StraightRadius }, flush: true);
 
     public void Lights(LightsKeyframe k)
     {
-        // The five arrays are colours but their channel order and scale are not established, so nothing is
-        // sent rather than guessing and flashing the wrong colour.
-        NotImplemented?.Invoke("backpack lights keyframe: the colour encoding in the assets is not established");
+        // The official engine does not implement this either. BackpackLightsKeyFrame::SetMembersFromFlatBuf
+        // at 0x004FAAD4 in libcozmoEngine.so is a stub whose whole body logs "The
+        // BackpackLightsKeyFrame::SetMembersFromFlatBuf() method still needs to be implemented" and returns
+        // failure, so the light track of a .bin animation does nothing on a retail robot. Mapping these
+        // five float arrays onto the wire message would be inventing behaviour Anki never shipped, so it is
+        // reported rather than guessed.
+        NotImplemented?.Invoke(
+            "backpack lights keyframe ignored: the shipping engine never implemented this track from " +
+            "animation assets (SetMembersFromFlatBuf is a stub), so there is no behaviour to reproduce");
     }
 
     public void Event(string eventId) => AnimationEvent?.Invoke(eventId);
@@ -123,6 +131,26 @@ public sealed class CozmoAnimations : IDisposable
 
     /// <summary>Loads Cozmo's own animation assets from an unpacked resources tree.</summary>
     public AnimationLibrary LoadFrom(string assetsRoot) => Library = AnimationLibrary.Open(assetsRoot);
+
+    /// <summary>
+    /// Where the sound for an audio keyframe comes from. Left null, audio keyframes keep the timeline but
+    /// are silent. See <see cref="IAnimationAudioSource"/> and <see cref="WavAudioSource"/>.
+    /// </summary>
+    public IAnimationAudioSource? AudioSource
+    {
+        get => _scheduler.AudioSource;
+        set => _scheduler.AudioSource = value;
+    }
+
+    /// <summary>
+    /// Reads Cozmo's own sound metadata so audio events can at least be named. This resolves ids to names,
+    /// not to audio: the event-to-file mapping lives in the banks, which are not parsed. Returns null when
+    /// no metadata is found.
+    /// </summary>
+    public SoundBankIndex? LoadSoundNames(string soundRoot) => SoundNames = SoundBankIndex.Open(soundRoot);
+
+    /// <summary>The sound metadata, once loaded.</summary>
+    public SoundBankIndex? SoundNames { get; private set; }
 
     /// <summary>Names of every clip available.</summary>
     public IReadOnlyCollection<string> ClipNames => Library?.ClipNames ?? Array.Empty<string>();

@@ -40,6 +40,16 @@ not unimplemented. Discovery, connection state, tap, movement, up-axis and batte
 implemented and covered by tests driven through the real message path. What is missing is only a cube to
 point the robot at. Run `cubes 172.31.1.1 --acceptance` when one is to hand.
 
+## M5 — animation and expression
+
+| Capability | Automated | Human | Evidence |
+| --- | --- | --- | --- |
+| Animation playback | pass | **pass** — `anim_bored_01` played through, moving head, lift and body and changing the face | operator report, after the body-duration fix |
+| Multi-clip indexing | pass | **pass** — `anim_bored_02` loaded and played from the same `.bin` | operator report |
+| Procedural expressions | pass | **pass** — the expressions displayed correctly on the robot | operator report |
+| Animation audio | **not run** | **not run** | implemented as a path; silent without a caller-supplied audio source |
+| Arc body motion | **not run** | **not run** | implemented from the engine's own encoding; no shipped clip in this build uses an arc |
+
 ## Outstanding
 
 Copy the JSON acceptance records from the machine the runs were made on, and commit them here. Until then

@@ -62,11 +62,12 @@ public static class AnimDump
         HeadKeyframe => ("ACTED ON", "sent as SetHeadAngle with the keyframe's duration"),
         LiftKeyframe => ("ACTED ON", "sent as SetLiftHeight with the keyframe's duration"),
         FaceKeyframe => ("ACTED ON", "rendered and sent; blended towards the next face keyframe each frame"),
-        BodyKeyframe b when b.IsStraight => ("ACTED ON", "STRAIGHT maps to equal wheel speeds; sent as DriveWheels"),
-        BodyKeyframe b => ("IGNORED", $"radius '{b.RadiusRaw}' is an arc; wheel-base geometry is not established"),
+        BodyKeyframe b when b.EncodedRadius is { } rr =>
+            ("ACTED ON", $"sent as animBodyMotion speed={b.Speed} radius={rr}, as the engine does"),
+        BodyKeyframe b => ("IGNORED", $"radius '{b.RadiusRaw}' is not a token the engine understands"),
         EventKeyframe => ("ACTED ON", "raised to the caller"),
-        AudioKeyframe => ("IGNORED", "Wwise event ids are not decoded; a silence frame is sent to keep the timeline"),
-        LightsKeyframe => ("IGNORED", "the colour encoding in the assets is not established"),
+        AudioKeyframe => ("ACTED ON", "streamed through the audio source on the scheduler tick; silent with no source"),
+        LightsKeyframe => ("IGNORED", "the shipping engine never implemented this track from animation assets"),
         FaceAnimationKeyframe => ("IGNORED", "pre-rendered faceAnimations assets are not loaded"),
         RecordHeadingKeyframe => ("IGNORED", "no heading is recorded"),
         TurnToRecordedHeadingKeyframe => ("IGNORED", "depends on a recorded heading"),
@@ -88,7 +89,8 @@ public static class AnimDump
                 HeadKeyframe h => $"angle_deg={h.AngleDeg} ({h.AngleRad:F3} rad) variability_deg={h.VariabilityDeg}",
                 LiftKeyframe l => $"height_mm={l.HeightMm} variability_mm={l.VariabilityMm}",
                 BodyKeyframe b => $"radius_mm=\"{b.RadiusRaw}\" speed={b.Speed} " +
-                                  $"(straight={b.IsStraight}, parsed_radius={(b.RadiusMm is { } r ? r.ToString("F1") : "n/a")}, " +
+                                  $"(encoded_radius={(b.EncodedRadius is { } rr ? rr.ToString() : "unrecognised")}, " +
+                                  $"straight={b.IsStraight}, turnInPlace={b.IsTurnInPlace}, " +
                                   $"direction={(b.Speed < 0 ? "BACKWARD" : b.Speed > 0 ? "forward" : "stationary")})",
                 AudioKeyframe au => $"eventIds=[{string.Join(",", au.EventIds)}] volume={au.Volume:F2} hasAlts={au.HasAlts}",
                 LightsKeyframe li => $"L=[{F(li.Left)}] R=[{F(li.Right)}] Front=[{F(li.Front)}] Mid=[{F(li.Middle)}] Back=[{F(li.Back)}]",
@@ -169,8 +171,30 @@ public static class AnimDump
             }
         }
 
-        // wheel commands first, because that is what the robot visibly did
+        // body commands first, because that is what the robot visibly did
+        var bodyMsgs = log.Where(e => e.M is Protocol.BodyMotion).ToList();
+        W($"--- body motion commands: {bodyMsgs.Count} ---");
+        foreach (var (t, m) in bodyMsgs)
+        {
+            var b = (Protocol.BodyMotion)m;
+            string shape = b.RadiusMm == BodyKeyframe.StraightRadius ? "straight"
+                         : b.RadiusMm == 0 ? "turn in place" : $"arc r={b.RadiusMm} mm";
+            W($"  t={t,7:F0} ms  BodyMotion speed={b.Speed,6} radius={b.RadiusMm,6}  {shape}" +
+              (b.Speed == 0 ? "  (stop)" : b.Speed < 0 ? "  BACKWARD" : ""));
+        }
+        var moving = bodyMsgs.Where(e => ((Protocol.BodyMotion)e.M).Speed != 0).ToList();
+        var bodyFrames = clip.Keyframes.OfType<BodyKeyframe>().ToList();
+        for (int i = 0; i < moving.Count; i++)
+        {
+            double stop = bodyMsgs.SkipWhile(e => e.T <= moving[i].T)
+                                  .FirstOrDefault(e => ((Protocol.BodyMotion)e.M).Speed == 0).T;
+            W($"  => moving stretch {i + 1}: t={moving[i].T:F0} ms to t={stop:F0} ms, i.e. {stop - moving[i].T:F0} ms");
+            if (i < bodyFrames.Count)
+                W($"     the asset asks for {bodyFrames[i].DurationTimeMs} ms starting at t={bodyFrames[i].TriggerTimeMs} ms");
+        }
+
         var wheels = log.Where(e => e.M is DriveWheels).ToList();
+        W("");
         W($"--- wheel commands: {wheels.Count} ---");
         if (wheels.Count == 0) W("  none");
         foreach (var (t, m) in wheels)
@@ -214,6 +238,7 @@ public static class AnimDump
                 SetHeadAngle h => $"angle={h.AngleRad:F3} rad duration={h.DurationSec:F3}s action={h.ActionId}",
                 SetLiftHeight l => $"height={l.HeightMm:F1} mm duration={l.DurationSec:F3}s action={l.ActionId}",
                 DriveWheels d => $"left={d.LwheelSpeedMmps:F1} right={d.RwheelSpeedMmps:F1}",
+                Protocol.BodyMotion b2 => $"speed={b2.Speed} radius={b2.RadiusMm}",
                 Protocol.FaceImage f => $"{f.Image.Length} byte face payload",
                 AudioSilence => "silence frame",
                 AudioSample => "audio frame",
