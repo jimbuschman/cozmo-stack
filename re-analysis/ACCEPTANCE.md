@@ -48,6 +48,7 @@ point the robot at. Run `cubes 172.31.1.1 --acceptance` when one is to hand.
 | Face during animation | pass | **pass** — displays correctly, and the animation reads right overall | operator report, after the audio-pacing fix |
 | Multi-clip indexing | pass | **pass** — `anim_bored_02` loaded and played from the same `.bin` | operator report |
 | Procedural expressions | pass | **pass** — the expressions displayed correctly on the robot | operator report |
+| Procedural face renderer, reconstructed | pass — 392 tests | **pass** — `anim_reacttocliff_pickup_01` holds through the extreme squash/stretch with the eyes distinct, and the resting face reads correctly | operator report 2026-09-19, commit `bf2ddc2` |
 | Animation audio, caller-supplied | **not run** | **not run** | the `WavAudioSource` path; superseded in practice by the shipped library below |
 | Arc body motion | pass | **pass** — a visible curved arc, then an equal arc back the other way | operator report, `anim --arc`, after the audio-pacing fix |
 
@@ -72,7 +73,27 @@ That also settles the one claim in `DIAGNOSTIC_animation_start_sequence.md` the 
 itself, namely whether the robot holds `animFaceImage` against the animation clock once an animation is
 open. The face returning the moment silence frames started flowing, with nothing else changed, says it does.
 
-**M5 is COMPLETE and FROZEN as of 2026-09-18.**
+### The procedural-face erratum is closed
+
+M5 was frozen on 2026-09-18 with one erratum against it: the procedural face **renderer** — not the
+parameter model, not the wire codec, not the timeline — was our own construction, and hardware testing of
+`anim_reacttocliff_pickup_01` showed it was materially wrong. Two rounds of work were needed. The first
+corrected the *mechanism*, applying the whole-face transform over the image as the engine does. The second,
+after the same clip still looked wrong on the robot, established that the *geometry* was invented as well:
+the eye size, both eye positions and the canvas height were all chosen rather than recovered.
+
+The renderer is now a port of `ProceduralFaceDrawer`, reconstructed from the binary and written up in
+[PROCEDURAL_FACE.md](PROCEDURAL_FACE.md). Retested on hardware on 2026-09-19 with the same clip: the eyes
+stay distinct through the extreme squash/stretch, and the resting face is correct.
+
+**The erratum is closed.** Three low-level details inside the renderer remain unresolved and are named as
+such rather than guessed — the corner-radius parameter assignment, the polygon fill rule and the scanline
+parity. None of them is a defect, and the handoff carries them forward.
+
+Nothing in the M5 wire format or timing was reopened by any of this. The face codec stays verified against
+the 28 Cozmo-produced byte sequences it was verified against in M3.
+
+**M5 is COMPLETE and FROZEN.** Frozen 2026-09-18; procedural-face erratum closed 2026-09-19.
 
 ## M6 — Cozmo's original sound assets
 
@@ -90,6 +111,31 @@ sound with **no `--audio` mapping supplied**. That is the M6 acceptance target m
 OBB's own Wwise banks and `.wem` files, resolved and decoded by this stack.
 
 **M6 is COMPLETE and FROZEN as of 2026-09-18.**
+
+## M7 — reactive behaviour and idle personality
+
+| Capability | Automated | Human | Evidence |
+| --- | --- | --- | --- |
+| Idle face: darts and blinks | pass | **pass** — the resting face is correct and stays correct | operator report 2026-09-19 |
+| Idle does not accumulate | pass — hundreds of darts, centres and scales bounded | **pass** — no drift or growth observed on the robot | `IdleFaceTests`, plus operator report |
+| Reactive dispatch and arbitration | pass | pass | operator report |
+| Behaviour execution and hardening fixes | pass — 392 tests | pass | operator report |
+
+### What it took to get here
+
+M7's first hardware run found the eyes growing and merging over time. That turned out to be **two
+independent faults that presented as one symptom**, and separating them took two more hardware rounds:
+
+1. **In M7.** `IdleBehavior` read the live face, offset it, and wrote it back, so every dart compounded the
+   last. Fixed with an untouched base pose plus time-limited transients.
+2. **In M5.** The procedural face renderer's geometry was invented. Fixed by reconstructing
+   `ProceduralFaceDrawer` from the binary.
+
+The M7 write-up originally recorded that "nothing in this failure implicates the renderer". That was wrong,
+and is corrected in `BEHAVIOR_LAYER.md` rather than quietly edited away: the idle fault was real and was in
+M7, but it was not the only fault, and the renderer was also at fault.
+
+**M7 is COMPLETE, HARDWARE VERIFIED and FROZEN as of 2026-09-19.**
 
 ## Outstanding
 

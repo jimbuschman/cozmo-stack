@@ -126,6 +126,28 @@ Nothing here was implemented beyond the hash, and nothing claims to work.
 
 ## Recommended order
 
+**Superseded as of 2026-09-19 — see below.** M9 is analysed and ready, but it is not next.
+
 1. **Run cube hardware acceptance.** Largest unlock in the inventory, code already written.
 2. **M9: Wwise switch-state audio.** 39 behaviours, offline-testable, foundation established.
 3. Re-run the inventory afterwards; both of the above change the numbers it reports.
+
+## What is actually next: the Source Fidelity Sweep
+
+**M9 is NOT STARTED and is not the next task.** Feature development is paused until a fidelity sweep has
+been run over what already exists.
+
+The reason comes out of M5's procedural face renderer. It shipped as "ours, an interpretation of the
+parameter names", passed its tests, and survived two hardware failures in that state — because nothing ever
+forced the question of whether `libcozmoEngine.so` could simply answer it. It could: the canvas size, both
+eye positions, the nominal eye box, the corner construction, the lid maths and the rounding mode were all
+sitting in `ProceduralFaceDrawer`, and every invented constant turned out to be wrong. See
+[PROCEDURAL_FACE.md](PROCEDURAL_FACE.md) and [HANDOFF.md](HANDOFF.md).
+
+That is a process failure, not a one-off bug, and the sweep is what checks whether it happened elsewhere:
+values chosen because they looked right, behind comments that admit it, in code whose tests were written
+from the same assumption and therefore cannot falsify it.
+
+Adding M9's 39 behaviours on top of an unswept foundation would mean more code resting on guesses that
+nobody has gone back to check. The inventory analysis above stays valid and M9 stays the right *feature*
+milestone; it simply is not the right *next* one.

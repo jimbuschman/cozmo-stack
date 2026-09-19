@@ -319,7 +319,7 @@ not yet have, or hardware we do not yet have, not a defect in what is built. The
 | --- | --- | --- |
 | ~~Wwise bank and media decoding~~ | **Closed by M6.** Event resolution, all 2019 Wwise Vorbis files and the 220 mono ADPCM files decode from the shipped assets. See `WWISE_AUDIO.md`. | Done. |
 | **Enhanced backpack-light keyframes** | The keyframe is decoded and carried with its data intact, but the asset's colour encoding is not established, so acting on it would mean inventing the mapping. The shipping engine never drove this track from animation assets either. | Establish the encoding from the engine's own `BackpackLightsKeyFrame::GetStreamMessage`, or from a capture of the stock app playing a clip that uses the track. |
-| **Exact Anki procedural-face fidelity** | The 19 parameter names and their order are the engine's, from .rodata at 0x00C1D399, and are trustworthy. The renderer that turns them into pixels is **ours**, reconstructed from the parameter meanings, and is not claimed to match `ProceduralFaceDrawer::DrawFace` pixel for pixel. | Port `ProceduralFaceDrawer::DrawFace` properly, and compare against face images captured from the stock app. |
+| ~~**Exact Anki procedural-face fidelity**~~ | **Closed 2026-09-19.** `ProceduralFaceDrawer` was disassembled and ported: canvas, eye geometry, corner arcs, lids, both transforms and `roundf` semantics. Hardware-verified with `anim_reacttocliff_pickup_01`. Three low-level details remain open and are named in `PROCEDURAL_FACE.md` rather than guessed — corner-radius parameter assignment, polygon fill rule, scanline parity. | Done, apart from those three. Closing them needs either a finer trace of `DrawEye`'s register plumbing or face images captured from the stock app to compare against. |
 | **Pre-rendered `faceAnimations`** | The OBB's pre-rendered face assets are not loaded, so a clip whose face track names one falls back to the procedural face. | Decode the `faceAnimations` asset format and feed it through the existing face track. |
 | **Group cooldown enforcement** | Animation groups carry cooldown and mood fields. Selection honours mood; cooldown is parsed and exposed but not enforced, because how the engine measures and resets it is not established. | Read the engine's group selection to establish the cooldown clock, then enforce it in `AnimationGroup.Choose`. |
 | **Lift 0 mm semantics** | What the robot does with a lift height of exactly 0 mm is unresolved: it may mean "lowest position" or "no change". The value is passed through unaltered rather than being reinterpreted. | A hardware experiment, or the engine's own clamping in the lift keyframe path. |
@@ -376,3 +376,23 @@ vertical half of a rotation cancels out.
 **Regressions** use the clip's own poses. Three of them fail against the previous renderer: the 1.82 pose
 keeping two separate eyes, a wider face increasing the gap between them, and a face angle moving the eyes
 to different heights.
+
+### That fixed the mechanism but not the geometry
+
+Hardware retesting after the above still showed a materially wrong face. The reason is that correcting how
+the whole-face parameters compose did nothing about the numbers they compose *over*, and those numbers —
+`NominalEyeWidth`/`Height` of 28x28, eye centres at 40 and 88, a 128x32 canvas — were invented. The source
+said so: "chosen so a neutral face fills the panel sensibly".
+
+The renderer was therefore rebuilt from `ProceduralFaceDrawer` in full rather than adjusted again. The
+canvas is 128x64, the eyes sit at x = 32 and 96 with a nominal 30x40 box, corners are `cv::ellipse2Poly`
+arcs, lids are quads with bend arcs, each eye has its own transform about its own origin, and the second
+eye is the first mirrored. [PROCEDURAL_FACE.md](PROCEDURAL_FACE.md) has every constant with the address it
+came from, and names the three things that could not be recovered.
+
+**Hardware-verified 2026-09-19** with `anim_reacttocliff_pickup_01`: the eyes stay distinct through the
+extreme squash/stretch, and the resting face is correct. Commit `bf2ddc2`.
+
+The tests were replaced as well, because the old ones could not have caught this: `FaceTransformTests` only
+asserted that two separate blobs appeared, which was true of the invented geometry and the real geometry
+alike. `ProceduralFaceRendererTests` measures against the recovered constants instead.

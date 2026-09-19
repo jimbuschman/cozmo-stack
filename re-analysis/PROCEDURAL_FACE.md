@@ -1,7 +1,12 @@
 # The procedural face renderer, reconstructed from libcozmoEngine.so
 
+Status: **HARDWARE VERIFIED 2026-09-19.** Retested with `anim_reacttocliff_pickup_01`, the clip holding the
+most extreme squash and stretch in the library: the eyes stay distinct throughout and the resting face is
+correct. Commit `bf2ddc2`. This closes the procedural-face erratum against M5.
+
 Every constant and every step below is read out of the binary. Where something could not be recovered it is
-named as missing rather than filled in with a plausible value.
+named as missing rather than filled in with a plausible value — three such items are listed at the end, and
+they are carried forward in [HANDOFF.md](HANDOFF.md).
 
 Addresses are in `resources/lib/armeabi-v7a/libcozmoEngine.so` from the official 3.4.0-1204 APK.
 

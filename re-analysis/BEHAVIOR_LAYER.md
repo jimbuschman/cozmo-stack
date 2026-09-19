@@ -1,12 +1,13 @@
 # M7 — Reactive behaviour and idle personality
 
-Status: **CODE COMPLETE — HARDWARE ACCEPTANCE PENDING.** Not frozen.
+Status: **COMPLETE — HARDWARE VERIFIED — FROZEN as of 2026-09-19.**
 
 A correctness pass was run over this layer before acceptance; what it changed is at the end under
-"Hardening pass".
+"Hardening pass". Acceptance took three hardware rounds, because the first failure had two independent
+causes — one here, one in M5's face renderer. Both are fixed and re-verified; see `ACCEPTANCE.md`.
 
-Everything below is established offline and covered by tests. Nothing here has been run on a robot, and no
-claim about how it behaves physically should be read into it until it has.
+Everything below is established offline and covered by tests, and the behaviour of the idle and reactive
+layers has now been confirmed on the firmware-2457 robot.
 
 Built on frozen M1–M6. None of them was reopened.
 
@@ -239,8 +240,17 @@ positions random-walked without limit and `EyeScale` gained another `EyeDartOute
 every time. `Blink` had the same shape, so a blink restored the corrupted pose rather than a stable one.
 The dart duration was computed, reported, and then ignored — nothing ever put the face back.
 
-The M5 procedural-face renderer was not touched: the earlier `anim_bored_01` face test passed, and nothing
-in this failure implicates the renderer.
+**That was not the whole story, and this paragraph originally said it was.** What stood here was: "The M5
+procedural-face renderer was not touched: the earlier `anim_bored_01` face test passed, and nothing in this
+failure implicates the renderer." The first half was the right call at the time — the accumulation fault
+was genuinely in this layer, and fixing it was necessary. The second half was too strong. `anim_bored_01`
+passing only showed the renderer survived *that* clip's poses; it did not clear the renderer generally, and
+a later hardware run on `anim_reacttocliff_pickup_01` showed the renderer's geometry was invented and
+wrong. Two faults, one symptom.
+
+The renderer has since been reconstructed from `ProceduralFaceDrawer` and re-verified on hardware — see
+[PROCEDURAL_FACE.md](PROCEDURAL_FACE.md). The idle fix below stands on its own regardless: it is what stops
+the face accumulating, whatever the renderer draws.
 
 **Fix.** Idle now keeps a base pose, captured once, that it never modifies. A dart or blink is a transient
 computed from that base with the duration it was given; when the duration expires the base is put back.

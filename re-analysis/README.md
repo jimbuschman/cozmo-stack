@@ -1,10 +1,15 @@
 # libcozmoEngine.so — reverse-engineering notes (Cozmo 3.4.0-1204, armeabi-v7a)
 
+> **Current state (2026-09-19): [`HANDOFF.md`](HANDOFF.md)** — milestone status, clean HEAD, what closed
+> last, what is still open, and what to do next. Start there.
+>
 > Project goal (2026-09-18): build a complete standalone replacement Cozmo stack. See
 > **`CAPABILITY_GAP.md`** for the official-vs-PyCozmo gap analysis, proposed architecture and the
 > next milestone; **`OBB_INVENTORY.md`** for the unpacked resources/firmware; **`TRANSPORT_SPEC.md`** for the
 > reconstructed engine↔robot transport (M1); **`PROTOCOL_STATUS.md`** for the state of all 161 robot
-> messages (M2), generated from `protocol/cozmo_robot_protocol.json`. The replacement stack itself lives in **`../cozmo-stack/`** (C#).
+> messages (M2), generated from `protocol/cozmo_robot_protocol.json`; **`PROCEDURAL_FACE.md`** for the
+> procedural face renderer reconstructed from `ProceduralFaceDrawer`; **`ACCEPTANCE.md`** for what has and
+> has not been verified on real hardware. The replacement stack itself lives in **`../cozmo-stack/`** (C#).
 > `protocol/robot_protocol_official_vs_pycozmo.txt` is the verified engine↔robot message comparison;
 > `reference/pycozmo-master-2026-09-18/` (PyCozmo) and `reference/anki-util-transport-vector/` (Anki's
 > transport library as released for Vector, identical to the engine's) are references only.
