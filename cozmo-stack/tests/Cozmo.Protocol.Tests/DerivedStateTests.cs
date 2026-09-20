@@ -1072,6 +1072,10 @@ public class DerivedStateTests
 
         using var rig = new Rig();
         var ctx = rig.Context(obb);
+        // the gated configs: ReactToObstacle (ObstacleDetected), Hiking_FirstLookWakeUp (1 s off the charger), Hiking_FirstLookIntro (0.25 s into the activity)
+        foreach (var gated in new[] { "ReactToObstacle", "Hiking_FirstLookWakeUp", "Hiking_FirstLookIntro" })
+            Assert.False(built.Single(b => b.Id == gated).IsRunnable(ctx), gated);
+        ctx.ObstacleDetected = () => true; ctx.ClockSec = () => 10; ctx.LastDriveOffChargerSec = 9.5; ctx.LastActivitySwitchSec = 9.9;
         foreach (var b in built)
         {
             Assert.True(b.IsRunnable(ctx), b.Id);

@@ -39,6 +39,23 @@ public sealed class BehaviorContext
     public BehaviorArbiter? Arbiter { get; init; }
     public MoodState? Mood { get; init; }
     public Random Random { get; init; } = new();
+    /// <summary>
+    /// The engine's <c>StrategyObstacleDetected</c> (0x006141F8) is a wants-to-run strategy built from a robot
+    /// component flag (its lambda 0x006143CA reads one byte off a <c>Robot</c> member); which component sets it
+    /// was not traced. This hook stands in: true while an obstacle stop is pending (LOCAL hook, INFERRED trigger).
+    /// </summary>
+    public Func<bool>? ObstacleDetected { get; set; }
+
+    /// <summary>The behaviour clock (seconds), for the recent-event windows below. Null: the windows cannot be met.</summary>
+    public Func<double>? ClockSec { get; set; }
+    /// <summary>
+    /// The timestamps <c>IBehavior::IsRunnableBase</c> (0x005BD778) compares against <c>requiredRecentDriveOffCharger_sec</c>,
+    /// <c>requiredRecentOnTreadsEventSecs</c> and <c>requiredRecentSwitchToParent_sec</c> (the engine reads them off robot
+    /// components; the freeplay layer stamps them here). Null: the event has not happened.
+    /// </summary>
+    public double? LastDriveOffChargerSec { get; set; }
+    public double? LastOnTreadsEventSec { get; set; }
+    public double? LastActivitySwitchSec { get; set; }
 }
 
 /// <summary>

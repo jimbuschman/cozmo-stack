@@ -45,7 +45,16 @@ public sealed class PlayAnimBehavior : IBehavior
                     else problems?.Add($"{id}: animTrigger '{name}' is not in the AnimationTrigger enum");
                 }
                 if (parsed.Count == 0) { problems?.Add($"{id}: no usable animTriggers"); continue; }
-                list.Add(new PlayAnimBehavior(id, "PlayAnim", parsed));
+                string? strategy = null;
+                if (root.TryGetProperty("wantsToRunStrategyConfig", out var wtr) && wtr.TryGetProperty("strategyType", out var st)) strategy = st.GetString();
+                double? Sec(string key) => root.TryGetProperty(key, out var v) && v.ValueKind == System.Text.Json.JsonValueKind.Number ? v.GetDouble() : null;
+                list.Add(new PlayAnimBehavior(id, "PlayAnim", parsed)
+                {
+                    WantsToRunStrategy = strategy,
+                    RequiredRecentDriveOffChargerSec = Sec("requiredRecentDriveOffCharger_sec"),
+                    RequiredRecentOnTreadsEventSec = Sec("requiredRecentOnTreadsEventSecs"),
+                    RequiredRecentSwitchToParentSec = Sec("requiredRecentSwitchToParent_sec"),
+                });
             }
             catch (System.Text.Json.JsonException e) { problems?.Add($"{Path.GetFileName(f)}: {e.Message}"); }
         }
@@ -77,8 +86,45 @@ public sealed class PlayAnimBehavior : IBehavior
     /// <summary>The animation actually selected on the last start, for tracing.</summary>
     public string? LastSelected { get; private set; }
 
+    /// <summary>
+    /// The config's <c>wantsToRunStrategyConfig.strategyType</c> (<c>IBehavior::ReadFromJson</c> →
+    /// <c>WantsToRunStrategyFactory::CreateWantsToRunStrategy</c>; <c>IsRunnableBase</c> 0x005BD778 asks it
+    /// <c>WantsToRun</c>). The factory's types: AlwaysRun, ExpressNeedsTransition, Generic, InNeedsBracket,
+    /// ObstacleDetected, PlacedOnCharger, RobotShaken, RobotPlacedOnSlope. Only ObstacleDetected occurs on a shipped
+    /// PlayAnim (reactToObstacle.json); null means the default AlwaysRun.
+    /// </summary>
+    public string? WantsToRunStrategy { get; init; }
+
+    /// <summary>
+    /// <c>IBehavior::IsRunnableBase</c>'s recent-event windows (0x005BD81A..0x005BD862 and 0x005BD8AC..: the config value
+    /// minus 1e-5 against now minus the event's timestamp): <c>requiredRecentDriveOffCharger_sec</c>
+    /// (Hiking_FirstLookWakeUp 1.0), <c>requiredRecentOnTreadsEventSecs</c>, <c>requiredRecentSwitchToParent_sec</c>
+    /// (Hiking_FirstLookIntro 0.25). Null: no window.
+    /// </summary>
+    public double? RequiredRecentDriveOffChargerSec { get; init; }
+    public double? RequiredRecentOnTreadsEventSec { get; init; }
+    public double? RequiredRecentSwitchToParentSec { get; init; }
+
     public bool IsRunnable(BehaviorContext context) =>
-        context.Robot.Animations.Library is not null && _triggers.Count > 0;
+        context.Robot.Animations.Library is not null && _triggers.Count > 0 && WantsToRun(context) && RecentEventsAllow(context);
+
+    private bool RecentEventsAllow(BehaviorContext ctx)
+    {
+        if (RequiredRecentDriveOffChargerSec is null && RequiredRecentOnTreadsEventSec is null && RequiredRecentSwitchToParentSec is null) return true;
+        if (ctx.ClockSec is null) return false;
+        double now = ctx.ClockSec();
+        static bool Within(double? window, double? stamp, double now) => window is not { } w || w < 0 || (stamp is { } s && now - s <= w + 1e-5);
+        return Within(RequiredRecentDriveOffChargerSec, ctx.LastDriveOffChargerSec, now)
+            && Within(RequiredRecentOnTreadsEventSec, ctx.LastOnTreadsEventSec, now)
+            && Within(RequiredRecentSwitchToParentSec, ctx.LastActivitySwitchSec, now);
+    }
+
+    private bool WantsToRun(BehaviorContext context) => WantsToRunStrategy switch
+    {
+        null or "AlwaysRun" => true,
+        "ObstacleDetected" => context.ObstacleDetected?.Invoke() ?? false,
+        _ => false,   // a strategy this stack does not model: not runnable rather than always (labelled DEFERRED)
+    };
 
     public double EvaluateScore(BehaviorContext context) => Score;
 
@@ -421,7 +467,7 @@ public static class ShippedBehaviors
     {
         // PlayAnim behaviours: the config names the trigger, so these are faithful to the shipped data.
         new PlayAnimBehavior("Hiccup", "PlayAnim", new[] { AnimationTrigger.Hiccup }),
-        new PlayAnimBehavior("ReactToObstacle", "PlayAnim", new[] { AnimationTrigger.ReactToObstacle }),
+        new PlayAnimBehavior("ReactToObstacle", "PlayAnim", new[] { AnimationTrigger.ReactToObstacle }) { WantsToRunStrategy = "ObstacleDetected" },
         new PlayArbitraryAnimBehavior(),
         // The feeding game's reaction animations: PlayAnim configs under feeding/feedingAnims/. They mention a
         // cube in their names, but each one only plays the trigger it names; the game that decides when is

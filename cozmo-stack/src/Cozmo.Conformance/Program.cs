@@ -39,6 +39,7 @@ return args.Length == 0 ? Usage() : args[0] switch
     "vision" => VisionTool.Run(args).GetAwaiter().GetResult(),
     "bodyangle" => VisionTool.BodyAngle(args).GetAwaiter().GetResult(),
     "manip" => ManipTool.Run(args).GetAwaiter().GetResult(),
+    "freeplay" => FreeplayTool.Run(args).GetAwaiter().GetResult(),
     _ => Usage(),
 };
 
@@ -225,6 +226,12 @@ static int Usage()
           manip --plan <x> <y> <angleDeg> [--obb <dir>] [--obstacle <x> <y>]...
                                              print the path segments and wire messages the planner sends for a goal (offline; with --obb
                                              the lattice planner plans around the listed cube obstacles)
+          freeplay --tree --obb <dir>          M15: print the shipped activity tree (activities_config.json + activities/**) with the
+                                             behaviours this stack binds and the ones it does not
+          freeplay --simulate --obb <dir> [--ticks 200]   run the freeplay decision loop offline and print every activity/behaviour choice
+          freeplay <robot-ip> --obb <dir> [--seconds 300] [--acceptance [file]]
+                                             M15 acceptance: the whole stack autonomous on the robot (vision, cubes, reactions, needs,
+                                             activities), printing each activity and behaviour decision with its reason
           bodyangle <robot-ip> [--deg 45] [--acceptance [file]]
                                              M11 check: send SetBodyAngle and watch the pose angle, to confirm the absolute-angle semantics
 

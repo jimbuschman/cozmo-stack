@@ -151,6 +151,22 @@ M14_CLASSES = {
     "PyramidThankYou": "BehaviorPyramidThankYou: TurnTowardsFace, BuildPyramidThankUser, TurnTowardsObject(pyramid top), BuildPyramidThankUser",
 }
 
+# M15 (2026-09-20) built the autonomy layer (activities, choosers, strategies, the needs system, FreeplaySystem)
+# and the explorer / needs behaviours below (Behavior/ExplorerBehaviors.cs). FindFaces extends the look-around
+# scan but branches on the face pipeline, so it stays in the face row.
+M15_FREEPLAY = "implementable with M15 (freeplay, needs, look-around)"
+M15_CLASSES = {
+    "ExploreLookAroundInPlace": "BehaviorExploreLookAroundInPlace: the s1-s7 scan from the config's params (opposite turn, pause, main turn, head-only up/down, final turn, iteration end with the cone / 2 pi rule)",
+    "DriveInDesperation": "BehaviorDriveInDesperation: idle 1.5-6.5 / 5-20 s, 1-3 random drives (40-100 mm at 50-150 deg) or a drive to a cube, then the request animation facing the last face",
+    "ExpressNeeds": "BehaviorExpressNeeds: runnable in the config's need bracket past the level-dependent cooldown; turns to the last face and plays the animTriggers",
+    "PlayAnimOnNeedsChange": "BehaviorPlayAnimOnNeedsChange: the get-in when the need becomes Critical, once per severe state",
+    "Wait": "BehaviorWait: holds the needs activity's last slot",
+    "EarnedSparks": "BehaviorEarnedSparks: plays EarnedSparks when a freeplay sparks reward is pending",
+}
+M14_FACE_CLASSES_ON_LOOKAROUND = {
+    "FindFaces": "BehaviorFindFaces on the look-around scan: turn to a face younger than maxFaceAgeToLook_ms, else look up, then scan; the face branch needs the detector",
+}
+
 M13_NAVIGATION = "implementable with M13 (navigation, cube games, charger)"
 M13_CLASSES = {
     "KnockOverCubes": "BehaviorKnockOverCubes: turn to the stack's bottom block, drive to 85 mm at 60 mm/s, KnockOverGrabAttempt, DriveAndFlipBlockAction (blind FlipBlockAction on a failed drive), success/failure trigger",
@@ -229,6 +245,10 @@ def classify(entry):
         return BY_ID[entry["behaviorID"]]
     if entry["behaviorClass"] in M14_CLASSES:
         return M14_FACE_PIPELINE, M14_CLASSES[entry["behaviorClass"]]
+    if entry["behaviorClass"] in M14_FACE_CLASSES_ON_LOOKAROUND:
+        return M14_FACE_PIPELINE, M14_FACE_CLASSES_ON_LOOKAROUND[entry["behaviorClass"]]
+    if entry["behaviorClass"] in M15_CLASSES:
+        return M15_FREEPLAY, M15_CLASSES[entry["behaviorClass"]]
     if entry["behaviorClass"] in PLAY_ANIM_CLASSES and (entry["animTriggers"] or entry["behaviorClass"] == "PlayArbitraryAnim"):
         return IMPLEMENTABLE, "plays the animation trigger its config names and reads nothing else"
     if entry["behaviorClass"] in M10_REACTIONS:
@@ -238,8 +258,6 @@ def classify(entry):
         return "requires vision/person detection", f"class '{cls_name}' names faces; face detection is Omron OKAO code in the engine, not transcribable"
     if cls_name == "RequestGameSimple":
         return "requires the app (game request)", "BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's"
-    if cls_name in ("ExploreLookAroundInPlace", "DriveInDesperation"):
-        return "requires navigation/path planning", f"class '{cls_name}' names a drive or search pattern (TurnInPlace/DriveStraight sequences)"
     if cls_name in M12_CLASSES:
         return M12_MANIPULATION, M12_CLASSES[cls_name]
     if cls_name in M13_CLASSES:
@@ -317,7 +335,7 @@ def render(entries, ids, classes, native):
         "1b. PlayAnimWithFace, AcknowledgeFace, InteractWithFaces, DriveToFace, SearchForFace, ReactToPet, PyramidThankYou → implemented on the face pipeline (M14), runnable only with a face detector: OKAO is unavailable, so they are not counted as implementable; PlayAnim / PlayArbitraryAnim with animTriggers → implementable now",
         "1c. a ReactTo class whose input M10 derives → implementable with M10 (derived robot state)",
         "1d. AcknowledgeObject and ReactToCubeMoved → implementable with M11 (cube localisation)",
-        "1e. a class naming faces → requires vision; RequestGameSimple → requires the app; ExploreLookAroundInPlace / DriveInDesperation → requires navigation",
+        "1e. a class naming faces → requires vision; RequestGameSimple → requires the app; ExploreLookAroundInPlace, DriveInDesperation, ExpressNeeds, PlayAnimOnNeedsChange, Wait, EarnedSparks → implementable with M15 (freeplay, needs, look-around); FindFaces → the face pipeline row",
         "1f. PickUpCube, PutDownBlock, RollBlock, StackBlocks, PickUpAndPutDownCube → implementable with M12 (cube manipulation)",
         "1g. KnockOverCubes, PopAWheelie, RamIntoBlock, CubeLiftWorkout, BuildPyramid(Base), RespondPossiblyRoll, OnConfigSeen, CantHandleTallStack, CheckForStackAtInterval, ReactToPyramid, ReactToStackOfCubes, ThinkAboutBeacons, BringCubeToBeacon, DriveOffCharger, ReactToOnCharger, DockingTestSimple → implementable with M13 (navigation, cube games, charger)",
         "1h. a class naming another cube manipulation (feeding, bouncer, fire truck) → requires cube manipulation beyond M13 (faces or the app)",
