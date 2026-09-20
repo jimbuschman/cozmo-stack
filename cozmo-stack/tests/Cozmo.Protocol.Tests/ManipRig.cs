@@ -36,6 +36,9 @@ internal sealed class Rig : IDisposable
     public Pose3d? Charger;
     public bool OnCharger;
     public float LiftMm = 32f;
+    public int FaceTurns;
+    /// <summary>A fake face detector: faces placed in the world are "detected" where the camera would see them.</summary>
+    public readonly FakeFaceDetector FaceDetector = new();
 
     public Rig()
     {
@@ -55,6 +58,17 @@ internal sealed class Rig : IDisposable
                 Head = (float)Math.Clamp(TurnTowardsPose.HeadAngleToSee(Cal, new Pose3d(Mat3.AboutZ(Angle), new Vec3(X, Y, 0)), o.Pose.Translation), -0.436332, 0.776672);
                 State();
             }
+            return Task.FromResult(true);
+        };
+        Vision.TurnOverride = (target, max, ct) =>
+        {
+            // the face actions' turn: face the pose (unless it is beyond the maximum) and tilt the head to it
+            var d = target.Translation - new Vec3(X, Y, 0);
+            double rel = Math.Atan2(Math.Sin(Math.Atan2(d.Y, d.X) - Angle), Math.Cos(Math.Atan2(d.Y, d.X) - Angle));
+            if (max > 0 && Math.Abs(rel) <= max) Angle = (float)Math.Atan2(d.Y, d.X);
+            Head = (float)Math.Clamp(TurnTowardsPose.HeadAngleToSee(Cal, new Pose3d(Mat3.AboutZ(Angle), new Vec3(X, Y, 0)), target.Translation), -0.436332, 0.776672);
+            State();
+            FaceTurns++;
             return Task.FromResult(true);
         };
         Send(new ObjectConnectionState { ObjectID = 7, FactoryID = 0xABCD, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
@@ -86,6 +100,7 @@ internal sealed class Rig : IDisposable
         var frame = new GrayImage(Cal.Columns, Cal.Rows);
         frame.Fill(150);
         var cam = new CameraModel(Cal, pd.CameraPose);
+        FaceDetector.Camera = cam;
         if (Cube is { } c && Lib is not null) MarkerRenderer.DrawCube(frame, Lib, cam, ObjectType.Block_LIGHTCUBE1, c);
         if (Lib is not null) foreach (var (type, pose) in MoreCubes) MarkerRenderer.DrawObject(frame, Lib, cam, type, pose);
         if (Charger is { } ch && Lib is not null) MarkerRenderer.DrawObject(frame, Lib, cam, ObjectType.Charger_Basic, ch);
@@ -214,3 +229,36 @@ internal sealed class Rig : IDisposable
     public void Dispose() { M.Dispose(); Vision.Dispose(); Robot.Dispose(); }
 }
 
+/// <summary>
+/// Stands in for a face detector in tests: faces are placed in the world (head position, optional name), and each
+/// frame reports those the camera would see as rectangles sized from the 62 mm inter-pupil distance, so the
+/// stack's own TrackedFace geometry recovers the placed position.
+/// </summary>
+internal sealed class FakeFaceDetector : IFaceDetector
+{
+    public readonly List<(int Id, Vec3 Head, string? Name)> Faces = new();
+    public CameraModel? Camera;
+    public bool IsAvailable => true;
+    public string Description => "fake detector for tests";
+    public int Detections;
+
+    public IReadOnlyList<DetectedFace> Detect(GrayImage image, uint timestamp)
+    {
+        var out_ = new List<DetectedFace>();
+        if (Camera is null) return out_;
+        foreach (var (id, head, name) in Faces)
+        {
+            var c = Camera.ToCamera(head);
+            if (c.Z <= 50) continue;
+            var px = Camera.Project(head);
+            if (px is null || px.Value.X < 0 || px.Value.Y < 0 || px.Value.X >= image.Width || px.Value.Y >= image.Height) continue;
+            double eyePx = TrackedFace.InterPupilDistanceMm * Camera.Calibration.FocalLengthX / c.Z;
+            double w = 2 * eyePx, h = w;
+            // the rectangle's eye midpoint (centre − 0.125 h) is the projected head point
+            var rect = new FaceRect(px.Value.X - w / 2, px.Value.Y + 0.125 * h - h / 2, w, h);
+            out_.Add(new DetectedFace(id, rect, Name: name));
+            Detections++;
+        }
+        return out_;
+    }
+}

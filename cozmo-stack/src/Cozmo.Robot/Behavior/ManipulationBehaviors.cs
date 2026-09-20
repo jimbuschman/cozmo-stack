@@ -10,35 +10,15 @@ namespace Cozmo.Robot.Behavior;
 /// <c>StartActing(action, callback)</c> does. Target selection (the engine's <c>ObjectInteractionInfoCache::
 /// GetBestObjectForIntention</c>) is LOCAL: the closest located, upright, unconnected-to-lift cube.
 /// </summary>
-public abstract class ManipulationBehavior : SteppedBehavior
+public abstract class ManipulationBehavior : ActionBehavior
 {
     protected readonly ManipulationSystem M;
-    private CancellationTokenSource? _cancel;
 
     protected ManipulationBehavior(string id, string behaviorClass, ManipulationSystem m) : base(id, behaviorClass) => M = m;
 
-    protected override bool KeepsRunningWithoutAction => _cancel is not null;
-
     /// <summary>Runs an action; <paramref name="onDone"/> is posted on the behaviour's tick with the result.</summary>
-    protected void RunAction(string what, Func<CancellationToken, Task<ActionResult>> action, Action<ActionResult> onDone)
-    {
-        _cancel?.Cancel();
-        var cts = _cancel = new CancellationTokenSource();
-        Log($"start {what}");
-        Task.Run(() => action(cts.Token)).ContinueWith(t =>
-        {
-            var r = t.Status == TaskStatus.RanToCompletion ? t.Result : ActionResult.Abort;
-            Post(() =>
-            {
-                if (_cancel != cts) return;          // stopped meanwhile
-                _cancel = null;
-                Log($"{what} -> {r}");
-                onDone(r);
-            });
-        }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-    }
-
-    protected void CancelAction() { _cancel?.Cancel(); _cancel = null; }
+    protected void RunAction(string what, Func<CancellationToken, Task<ActionResult>> action, Action<ActionResult> onDone) =>
+        RunAction(what, action, onDone, ActionResult.Abort);
 
     /// <summary>The closest located cube that is not being carried, or null.</summary>
     protected ObservableObject? ClosestCube(Func<ObservableObject, bool>? filter = null)
@@ -50,8 +30,6 @@ public abstract class ManipulationBehavior : SteppedBehavior
             .OrderBy(o => (o.Pose.Translation - robot.Value.Translation).Length)
             .FirstOrDefault();
     }
-
-    protected override void OnStop(BehaviorStopReason reason) => CancelAction();
 }
 
 /// <summary>

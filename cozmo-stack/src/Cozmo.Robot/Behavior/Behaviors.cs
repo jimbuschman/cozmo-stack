@@ -384,6 +384,38 @@ public static class ShippedBehaviors
         ReactToFrustrationBehavior.Major(m),
     };
 
+    /// <summary>
+    /// The M14 face behaviours: 14 shipped configs transcribed on <see cref="Cozmo.Robot.Vision.FaceWorld"/> and
+    /// the face actions. They are runnable only while a face detector is attached to the vision system; the
+    /// stock detector is Omron's OKAO library, which this stack does not have, so the inventory counts them
+    /// separately from the implemented set.
+    /// </summary>
+    public static IReadOnlyList<IBehavior> Faces(Cozmo.Robot.Vision.VisionSystem v, Cozmo.Robot.Manipulation.ManipulationSystem? m = null)
+    {
+        var list = new List<IBehavior>
+        {
+            new PlayAnimWithFaceBehavior(v, "FeedingPlayRequestAtFace", new[] { AnimationTrigger.NeedsMildLowEnergyRequest }),
+            new PlayAnimWithFaceBehavior(v, "FeedingPlayRequestAtFace_Severe", new[] { AnimationTrigger.NeedsSevereLowEnergyRequest }),
+            new PlayAnimWithFaceBehavior(v, "VC_AlrightyResponse", new[] { AnimationTrigger.VC_Alrighty }),
+            new PlayAnimWithFaceBehavior(v, "VC_HowAreYouDoing_AllGood", new[] { AnimationTrigger.VC_HowAreYouDoing_AllGood }),
+            // the three needs variants ship with NeutralFace and are "overridden programmatically" from the needs level (the needs system is M15's)
+            new PlayAnimWithFaceBehavior(v, "VC_HowAreYouDoing_Energy", new[] { AnimationTrigger.NeutralFace }),
+            new PlayAnimWithFaceBehavior(v, "VC_HowAreYouDoing_Play", new[] { AnimationTrigger.NeutralFace }),
+            new PlayAnimWithFaceBehavior(v, "VC_HowAreYouDoing_Repair", new[] { AnimationTrigger.NeutralFace }),
+            new AcknowledgeFaceBehavior(v, "AcknowledgeFace"),
+            new InteractWithFacesBehavior(v, "InteractWithFaces", m),
+            new InteractWithFacesBehavior(v, "MeetCozmo_InteractWithFaces", m),
+            new SearchForFaceBehavior(v, "VC_SearchForFace"),
+            new ReactToPetBehavior(v, "ReactToPet"),
+        };
+        if (m is not null)
+        {
+            list.Add(new DriveToFaceBehavior(v, m, "VC_ComeHere"));
+            list.Add(new PyramidThankYouBehavior(v, m, "PyramidThankYou"));
+        }
+        return list;
+    }
+
     /// <summary>Creates the config-free runnable set, matching the shipped configs' ids and classes.</summary>
     public static IReadOnlyList<IBehavior> Implementable() => new IBehavior[]
     {

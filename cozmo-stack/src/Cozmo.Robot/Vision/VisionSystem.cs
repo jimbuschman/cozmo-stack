@@ -35,6 +35,7 @@ public sealed class VisionSystem : IDisposable
         _robot = robot;
         Calibration = calibration;
         Detector = detector ?? new MarkerDetector();
+        Faces.Log += l => Log?.Invoke(l);
         World = new BlockWorld(() => robot.Cubes.ConnectedCubes.Where(c => c.ObjectId is not null).Select(c => (c.ObjectId!.Value, c.Type)));
         History = new RobotStateHistory();
         Locator = new CubeLocator(this);
@@ -52,6 +53,18 @@ public sealed class VisionSystem : IDisposable
     public RobotStateHistory History { get; }
     /// <summary>The real <see cref="ICubeLocator"/> the M10 cube reaction was built against.</summary>
     public CubeLocator Locator { get; }
+    /// <summary>The face world (M14); filled only while a <see cref="FaceDetector"/> that is available is attached.</summary>
+    public FaceWorld Faces { get; } = new();
+    public PetWorld Pets { get; } = new();
+    /// <summary>The face detector: the stock one is the OKAO boundary and reports itself unavailable.</summary>
+    public IFaceDetector FaceDetector { get; set; } = new OkaoFaceDetector();
+    public IPetDetector PetDetector { get; set; } = new OkaoPetDetector();
+    /// <summary>Replaceable body-and-head turn for the face actions (tests move a fake robot with it).</summary>
+    public Func<Pose3d, double, CancellationToken, Task<bool>>? TurnOverride { get; set; }
+    /// <summary>Replaceable pan-and-tilt (absolute body heading, head angle) for the explorer behaviours.</summary>
+    public Func<double, double, CancellationToken, Task<bool>>? PanTiltOverride { get; set; }
+    /// <summary>Faces seen in the last processed frame.</summary>
+    public IReadOnlyList<TrackedFace> LastFaces { get; private set; } = Array.Empty<TrackedFace>();
     /// <summary>Whether frames from the camera are processed as they arrive.</summary>
     public bool Enabled { get; set; } = true;
     public int FramesProcessed { get; private set; }
@@ -130,6 +143,21 @@ public sealed class VisionSystem : IDisposable
             markers = Detector.Detect(gray, timestamp);
             objects = World.UpdateObservedMarkers(markers, camera, timestamp);
             forgotten = World.CheckForUnobservedObjects(camera, timestamp, objects.Select(o => o.Object.ObjectId).ToHashSet(), pd.Moving, pd.RotatingTooFast);
+            // VisionSystem::Update in DetectingFaces mode: FaceTracker::Update, TrackedFace::UpdateTranslation(camera), FaceWorld::AddOrUpdateFace
+            if (FaceDetector.IsAvailable)
+            {
+                var faces = new List<TrackedFace>();
+                foreach (var d in FaceDetector.Detect(gray, timestamp))
+                {
+                    var tf = new TrackedFace(d, timestamp);
+                    tf.UpdateTranslation(camera);
+                    faces.Add(tf);
+                    Faces.AddOrUpdateFace(tf, pd.RobotPose, pd.RotatingTooFast);
+                }
+                LastFaces = faces;
+                Faces.Update(timestamp);
+            }
+            if (PetDetector.IsAvailable) Pets.Update(PetDetector.Detect(gray, timestamp), timestamp, pd.RotatingTooFast);
         }
         var result = new VisionFrameResult(imageId, timestamp, pd, markers, objects, forgotten, sw.Elapsed);
         FramesProcessed++;
