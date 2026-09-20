@@ -1,5 +1,11 @@
 # libcozmoEngine.so — reverse-engineering notes (Cozmo 3.4.0-1204, armeabi-v7a)
 
+> **What rests on primary source, and what does not: [`fidelity_manifest.json`](fidelity_manifest.json)**,
+> rendered as [`FIDELITY_GAPS.md`](FIDELITY_GAPS.md) by `tools/fidelity.py` and checked by
+> `FidelityManifestTests` on every `dotnet test` run. The manifest, not the prose below, is authoritative:
+> where a document in this directory claims a milestone is complete, read the manifest first. Progress
+> against it is in [`FIDELITY_PROGRESS.md`](FIDELITY_PROGRESS.md).
+>
 > **Current state (2026-09-20): [`HANDOFF.md`](HANDOFF.md)** — milestone status, clean HEAD, what closed
 > last, what is still open, and what to do next. Start there.
 >

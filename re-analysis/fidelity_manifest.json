@@ -1,0 +1,3050 @@
+{
+  "schema": 1,
+  "title": "Cozmo stack source-fidelity manifest",
+  "generated": "2026-09-20",
+  "about": [
+    "One record per behaviour-affecting decision, or tightly bound group of decisions, in the hand-written",
+    "production code of cozmo-stack. Platform plumbing that cannot change what the robot does (logging,",
+    "collection choices, string formatting, file layout) is not recorded.",
+    "The manifest, not the prose documents, is the authoritative statement of what rests on primary source.",
+    "re-analysis/tools/fidelity.py validates it and regenerates FIDELITY_GAPS.md from it."
+  ],
+  "authority_order": [
+    "libcozmoEngine.so 3.4.0-1204 (resources/lib/armeabi-v7a) and its symbol table",
+    "the decompiled Unity C# (unity/scripts/csharp) and managed assemblies",
+    "the shipped Wwise banks, their .txt definition files, SoundbanksInfo.xml and PluginInfo.xml",
+    "the shipped OBB assets, configuration and animation data",
+    "CLAD / message schemas and the code generated from them",
+    "captures taken from the original app (re-analysis/captures)",
+    "existing reverse-engineering notes, only after checking them against the primary evidence above"
+  ],
+  "statuses": {
+    "EXACT_SOURCE": "Read from primary source and reproduced. The record names the address, asset or schema it was read from.",
+    "EQUIVALENT_IMPLEMENTATION": "The native behaviour is known from primary source; this stack reaches the same observable effect by a different mechanism, and the record names the difference.",
+    "RECOVERABLE_GAP": "A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. Blocks source-completeness on a live path.",
+    "COMPATIBILITY_POLICY": "A deliberate choice of this stack on a path that does not claim to be the engine's: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for.",
+    "HARDWARE_ONLY": "No shipped artifact can settle it; only a robot, or a recording of the stock app, can.",
+    "BLOCKED_EXTERNAL": "The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine)."
+  },
+  "gate": {
+    "rule": "A subsystem may assert source_complete only when it holds no RECOVERABLE_GAP with live_path true.",
+    "enforced_by": [
+      "re-analysis/tools/fidelity.py --check",
+      "cozmo-stack/tests/Cozmo.Protocol.Tests/FidelityManifestTests.cs (runs with dotnet test)"
+    ]
+  },
+  "field_notes": {
+    "location": "repository-relative path, optionally with :line, of the code the record is about",
+    "effect": "what a listener, viewer or the robot would observe if this decision were wrong",
+    "provenance": "what the current implementation actually rests on",
+    "authority": "the best available original evidence for this decision",
+    "evidence": "concrete references: native addresses, asset paths, bank object ids, capture files",
+    "unresolved": "what is still not established; empty string when nothing is",
+    "hardware_required": "whether a robot is genuinely needed to settle it",
+    "live_path": "whether the decision is reached on a normal run against a robot",
+    "test": "the regression that would fail if the recovered behaviour were undone"
+  },
+  "subsystems": [
+    {
+      "id": "M1-transport",
+      "name": "UDP transport and reliability",
+      "milestone": "M1",
+      "source_complete": false
+    },
+    {
+      "id": "M2-protocol",
+      "name": "CLAD messages and protocol helpers",
+      "milestone": "M2",
+      "source_complete": false
+    },
+    {
+      "id": "M3-device",
+      "name": "Camera, display and audio device layer",
+      "milestone": "M3",
+      "source_complete": false
+    },
+    {
+      "id": "M4-control",
+      "name": "Motion, sensors, lights and cubes",
+      "milestone": "M4",
+      "source_complete": false
+    },
+    {
+      "id": "M5-animation",
+      "name": "Animation clips, scheduler and face",
+      "milestone": "M5",
+      "source_complete": false
+    },
+    {
+      "id": "M6-wwise-bank",
+      "name": "Wwise bank reading and codecs",
+      "milestone": "M6",
+      "source_complete": false
+    },
+    {
+      "id": "M7-behaviour",
+      "name": "Idle, mood and reactions",
+      "milestone": "M7",
+      "source_complete": false
+    },
+    {
+      "id": "M8-framework",
+      "name": "Behaviour framework and scoring",
+      "milestone": "M8",
+      "source_complete": false
+    },
+    {
+      "id": "M9-wwise-music",
+      "name": "Wwise music, the MIDI sampler and singing",
+      "milestone": "M9",
+      "source_complete": false
+    },
+    {
+      "id": "M10-derived",
+      "name": "Derived robot state and reaction strategies",
+      "milestone": "M10",
+      "source_complete": false
+    },
+    {
+      "id": "M11-vision",
+      "name": "Markers, camera geometry and BlockWorld",
+      "milestone": "M11",
+      "source_complete": false
+    },
+    {
+      "id": "M12-manipulation",
+      "name": "Docking, carrying and pre-action poses",
+      "milestone": "M12",
+      "source_complete": false
+    },
+    {
+      "id": "M13-navigation",
+      "name": "Planning, charger and block configurations",
+      "milestone": "M13",
+      "source_complete": false
+    },
+    {
+      "id": "M14-faces",
+      "name": "Face and pet pipeline",
+      "milestone": "M14",
+      "source_complete": false
+    },
+    {
+      "id": "M15-freeplay",
+      "name": "Needs, activities and freeplay",
+      "milestone": "M15",
+      "source_complete": false
+    },
+    {
+      "id": "tools",
+      "name": "Conformance CLI and offline tools",
+      "milestone": "-",
+      "source_complete": true
+    }
+  ],
+  "records": [
+    {
+      "id": "M1-001",
+      "subsystem": "M1-transport",
+      "title": "UDP 5551 physical / 5552 simulated",
+      "location": "cozmo-stack/src/Cozmo.Transport/TransportConstants.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "MessageHandler::AddRobotConnection",
+        "re-analysis/disassembly/dis_robotconn.txt"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M1-002",
+      "subsystem": "M1-transport",
+      "title": "COZ + RE 14-byte frame header, no CRC",
+      "location": "cozmo-stack/src/Cozmo.Protocol/Wire/Frame.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "RobotConnectionManager::Init",
+        "BuildHeader",
+        "re-analysis/disassembly/dis_udptransport.txt"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M1-003",
+      "subsystem": "M1-transport",
+      "title": "Message types 1..11, always-unreliable set, container types",
+      "location": "cozmo-stack/src/Cozmo.Protocol/Wire/ReliableMessageType.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "IsMessageTypeAlwaysSentUnreliably",
+        "HandleSubMessage"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M1-004",
+      "subsystem": "M1-transport",
+      "title": "Sequence ids 1..65534, wrap and in-range test",
+      "location": "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "NextSequenceId",
+        "IsSequenceIdInRange",
+        "re-analysis/disassembly/dis_reliableconn.txt"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M1-005",
+      "subsystem": "M1-transport",
+      "title": "Reliable-transport tunables (windows, timeouts, resend)",
+      "location": "cozmo-stack/src/Cozmo.Transport/TransportConstants.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "ConfigureReliableTransport",
+        "re-analysis/disassembly/dis_robotconn.txt"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M1-006",
+      "subsystem": "M1-transport",
+      "title": "Send / resend / batching algorithm",
+      "location": "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "re-analysis/disassembly/dis_reliableconn.txt"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M1-007",
+      "subsystem": "M1-transport",
+      "title": "Receive path: in-order delivery only; mixed frames still walked",
+      "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "ReceiveData",
+        "re-analysis/disassembly/dis_reliabletransport.txt"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M1-008",
+      "subsystem": "M1-transport",
+      "title": "17-byte ping payload",
+      "location": "cozmo-stack/src/Cozmo.Protocol/Wire/PingPayload.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "SendPing"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M1-009",
+      "subsystem": "M1-transport",
+      "title": "Multipart [idx][count] reassembly",
+      "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "HandleSubMessage"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M1-010",
+      "subsystem": "M1-transport",
+      "title": "2 ms transport update cadence",
+      "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "ReliableTransport::Update scheduling"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M1-011",
+      "subsystem": "M1-transport",
+      "title": "An echoed ping with isReply 0 is treated as a reply",
+      "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
+      "effect": "round-trip time is measured, or is never measured at all",
+      "provenance": "robot behaviour in the fw2457 capture",
+      "authority": "libcozmoEngine.so ping handling; the capture corroborates",
+      "evidence": [
+        "re-analysis/captures fw2457 frame logs"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "whether the engine also accepts isReply 0 as a reply, or ignores it and relies on its own timer; the ping handler was not disassembled",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "HardwareCaptureTests"
+    },
+    {
+      "id": "M1-012",
+      "subsystem": "M1-transport",
+      "title": "MaxFramePayloadBytes 1037",
+      "location": "cozmo-stack/src/Cozmo.Transport/TransportConstants.cs",
+      "effect": "a larger message is split, or refused, at a different size than the engine would",
+      "provenance": "PyCozmo robot-side measurement",
+      "authority": "libcozmoEngine.so builds frames up to 1406 bytes; the robot own limit is the binding one",
+      "evidence": [
+        "dis_udptransport.txt 1420-byte maximum"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the robot firmware real limit; the engine 1406 and PyCozmo 1037 disagree and neither was traced to the firmware",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M1-013",
+      "subsystem": "M1-transport",
+      "title": "Windows high-resolution timer and the tick loop",
+      "location": "cozmo-stack/src/Cozmo.Transport/HighResolutionTimer.cs",
+      "effect": "jitter in the 2 ms cadence",
+      "provenance": "a choice of this stack",
+      "authority": "none needed: the engine runs on Android and this is the local equivalent",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M1-014",
+      "subsystem": "M1-transport",
+      "title": "Three-thread dispatch, handler isolation, socket error handling",
+      "location": "cozmo-stack/src/Cozmo.Transport/RobotLink.cs",
+      "effect": "ordering and latency of delivered messages",
+      "provenance": "a choice of this stack",
+      "authority": "the engine threading is its own; nothing on the wire depends on it",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "TransportHardeningTests"
+    },
+    {
+      "id": "M1-015",
+      "subsystem": "M1-transport",
+      "title": "5 s connect timeout",
+      "location": "cozmo-stack/src/Cozmo.Transport/RobotLink.cs",
+      "effect": "how long a failed connect takes to report",
+      "provenance": "a choice of this stack",
+      "authority": "the engine connect timeout was not read; nothing the robot does depends on it",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M2-001",
+      "subsystem": "M2-protocol",
+      "title": "CLAD reader/writer and string length prefixes",
+      "location": "cozmo-stack/src/Cozmo.Protocol/Clad/Clad.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "CLAD schema and generated serialisation",
+      "evidence": [
+        "re-analysis/protocol"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M2-002",
+      "subsystem": "M2-protocol",
+      "title": "RobotStatusFlag bit meanings",
+      "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "decompiled Unity",
+      "evidence": [
+        "Anki.Cozmo.RobotStatusFlag"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M2-003",
+      "subsystem": "M2-protocol",
+      "title": "liftAngle is an angle in radians; height = 45 + 66 sin(angle), clamped 32..92",
+      "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "Robot::UpdateFullRobotState 0x0051291C",
+        "Robot::GetLiftHeight 0x00516F64",
+        "ConvertLiftAngleToLiftHeightMM 0x00516F9C",
+        "ConvertLiftHeightToLiftAngleRad 0x005170B0"
+      ],
+      "live_path": true,
+      "test": "SourceFidelityTests.TheLiftAngleIsAnAngleAndConvertsToHeightAsTheEngineDoes"
+    },
+    {
+      "id": "M2-004",
+      "subsystem": "M2-protocol",
+      "title": "Handshake order: GetManufacturingInfo, SyncTime, InitController",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+      "effect": "the robot refuses to come up, or comes up in a different state",
+      "provenance": "PyCozmo handshake, confirmed by a successful hardware connect",
+      "authority": "libcozmoEngine.so connect sequence",
+      "evidence": [
+        "re-analysis/captures 2026-09-18_fw2457_probe.log"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the engine own connect sequence was not disassembled end to end; the order works but is not read from the binary",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "ConnectionTests"
+    },
+    {
+      "id": "M2-005",
+      "subsystem": "M2-protocol",
+      "title": "LightState RGB packed 5-5-5",
+      "location": "cozmo-stack/src/Cozmo.Robot/Lights.cs",
+      "effect": "cube and backpack lights show the wrong colour",
+      "provenance": "PyCozmo packing; lights did light on hardware",
+      "authority": "the CLAD definition of LightState and the engine light code",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the bit order within the 16-bit field was never confirmed against the engine or a capture of a known colour",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M2-006",
+      "subsystem": "M2-protocol",
+      "title": "FirmwareVersion JSON fields",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "fw2457 capture",
+      "evidence": [
+        "re-analysis/captures"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M3-001",
+      "subsystem": "M3-device",
+      "title": "JPEG header tables and the size field at offset 94",
+      "location": "cozmo-stack/src/Cozmo.Robot/MiniJpeg.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "MiniGrayToJpeg table 0x00C48C40",
+        "MiniColorToJpeg table 0x00C48D84"
+      ],
+      "live_path": true,
+      "test": "DeviceTests"
+    },
+    {
+      "id": "M3-002",
+      "subsystem": "M3-device",
+      "title": "Image chunk reassembly: the count arrives only on the last chunk",
+      "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
+      "effect": "frames are assembled short, or never completed",
+      "provenance": "the fw2457 capture",
+      "authority": "the engine image-chunk handler",
+      "evidence": [
+        "re-analysis/captures"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the engine own reassembly rule was not read; the capture shows what the robot sends, not what the engine accepts",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "DeviceTests"
+    },
+    {
+      "id": "M3-003",
+      "subsystem": "M3-device",
+      "title": "Trailing 0xFF strip, byte re-stuffing and EOI append",
+      "location": "cozmo-stack/src/Cozmo.Robot/MiniJpeg.cs",
+      "effect": "decoded frames are corrupt or refused by a decoder",
+      "provenance": "PyCozmo transcription; every captured frame Huffman-decodes",
+      "authority": "the engine JPEG assembly next to the header tables already read",
+      "evidence": [
+        "re-analysis/captures"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the engine assembly code was not disassembled, only its constant tables",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "JpegCheck"
+    },
+    {
+      "id": "M3-004",
+      "subsystem": "M3-device",
+      "title": "15 warm-up frames discarded",
+      "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
+      "effect": "the first usable frame arrives later or earlier than the engine would deliver it",
+      "provenance": "a choice of this stack; one capture measured 11",
+      "authority": "the engine camera start-up handling",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "whether the engine discards anything at all, and how many",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M3-005",
+      "subsystem": "M3-device",
+      "title": "Images older than the newest two are dropped",
+      "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
+      "effect": "vision runs on a stale frame, or never sees a frame under load",
+      "provenance": "a choice of this stack",
+      "authority": "the engine image queue",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the engine queue depth and drop rule",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M3-006",
+      "subsystem": "M3-device",
+      "title": "Face wire image 128x32, canvas 128x64, 33.3 ms interval",
+      "location": "cozmo-stack/src/Cozmo.Robot/Display.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "CompressRLE 0x00581904",
+        "DrawFace"
+      ],
+      "live_path": true,
+      "test": "DeviceTests"
+    },
+    {
+      "id": "M3-007",
+      "subsystem": "M3-device",
+      "title": "RLE encoder emits runs only; the engine also uses skip and repeat and falls back to a raw 1024-byte frame",
+      "location": "cozmo-stack/src/Cozmo.Robot/Display.cs",
+      "effect": "a face that the engine would send in one frame is refused here, or sent larger",
+      "provenance": "a deliberate reduction, recorded in Display.cs",
+      "authority": "CompressRLE 0x00581904, which was read; the raw fallback path above MAX_FACE_FRAME_SIZE was read but not built",
+      "evidence": [
+        "CompressRLE 0x00581904"
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "the raw fallback is not implemented, so an image the engine would still send is dropped here",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "DeviceTests"
+    },
+    {
+      "id": "M3-008",
+      "subsystem": "M3-device",
+      "title": "Scanline parity: dd written as 01",
+      "location": "cozmo-stack/src/Cozmo.Robot/Display.cs",
+      "effect": "each face pixel lights one of two physical rows, or both",
+      "provenance": "a fixed choice; PyCozmo reading is that either bit lights the pixel",
+      "authority": "CompressRLE 0x00581904 shows dd carries the bits of a pair of canvas rows; the firmware use of them is not in the engine",
+      "evidence": [
+        "CompressRLE 0x00581904"
+      ],
+      "status": "HARDWARE_ONLY",
+      "unresolved": "whether the firmware selects a physical row from the bit position; only the panel can show this",
+      "hardware_required": true,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M3-009",
+      "subsystem": "M3-device",
+      "title": "Blank face encoded as two skip-64 commands",
+      "location": "cozmo-stack/src/Cozmo.Robot/Display.cs",
+      "effect": "a blank face is sent as something the robot may not accept",
+      "provenance": "plausible and decodes to blank; not executed against the engine encoder",
+      "authority": "CompressRLE 0x00581904 on an empty image",
+      "evidence": [
+        "CompressRLE 0x00581904"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the encoder was read but not run on an empty image to confirm the two bytes",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M3-010",
+      "subsystem": "M3-device",
+      "title": "mu-law codec is Anki own companding, not G.711",
+      "location": "cozmo-stack/src/Cozmo.Robot/Audio.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "encodeMuLaw 0x00597AD8",
+        "re-analysis/disassembly/dis_mulaw.txt"
+      ],
+      "live_path": true,
+      "test": "DeviceTests"
+    },
+    {
+      "id": "M3-011",
+      "subsystem": "M3-device",
+      "title": "22320 Hz sample rate, 744 samples per frame, 30 Hz frames",
+      "location": "cozmo-stack/src/Cozmo.Robot/Audio.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "AnimConstants::AUDIO_SAMPLE_RATE and AUDIO_SAMPLE_SIZE via EnumToString 0x007BC7D8",
+        "CozmoAudioController::SetupPlugins 0x005942B0"
+      ],
+      "live_path": true,
+      "test": "SourceFidelityTests"
+    },
+    {
+      "id": "M3-012",
+      "subsystem": "M3-device",
+      "title": "14-frame robot audio buffer",
+      "location": "cozmo-stack/src/Cozmo.Robot/Audio.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "UpdateAmountToSend 0x0057C6F0"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M3-013",
+      "subsystem": "M3-device",
+      "title": "TargetInFlight 10, counter-paced feed, Busy window 200 ms, priming",
+      "location": "cozmo-stack/src/Cozmo.Robot/Audio.cs",
+      "effect": "audio underruns or the robot buffer overflows",
+      "provenance": "a choice of this stack, under the engine 14-frame budget",
+      "authority": "the engine feeds to its own budget every update (UpdateStream 0x0057C84C)",
+      "evidence": [
+        "UpdateAmountToSend 0x0057C6F0"
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "DeviceTests"
+    },
+    {
+      "id": "M3-014",
+      "subsystem": "M3-device",
+      "title": "Audio frames are sent reliably",
+      "location": "cozmo-stack/src/Cozmo.Robot/Audio.cs",
+      "effect": "audio frames are retransmitted under loss, adding latency, or are dropped",
+      "provenance": "an assumption that the engine sends everything reliable",
+      "authority": "AnimationStreamer::SendBufferedMessages, which was not read",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "whether the audio path is reliable or unreliable in the engine",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M3-015",
+      "subsystem": "M3-device",
+      "title": "One face frame and one audio frame per animation tick",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "AnimationStreamer::UpdateStream 0x0057C84C"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M3-016",
+      "subsystem": "M3-device",
+      "title": "Colour camera frames are half-width three-component JPEG",
+      "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
+      "effect": "a colour frame decodes to the wrong geometry",
+      "provenance": "the colour header table, never exercised",
+      "authority": "MiniColorToJpeg table 0x00C48D84",
+      "evidence": [
+        "MiniColorToJpeg table 0x00C48D84"
+      ],
+      "status": "HARDWARE_ONLY",
+      "unresolved": "no colour capture exists; the robot has only ever been asked for grayscale",
+      "hardware_required": true,
+      "live_path": false,
+      "test": null
+    },
+    {
+      "id": "M3-017",
+      "subsystem": "M3-device",
+      "title": "Test tones, beeps and sweeps",
+      "location": "cozmo-stack/src/Cozmo.Robot/Audio.cs",
+      "effect": "none on the robot behaviour under test",
+      "provenance": "harness signals of this stack",
+      "authority": "not applicable",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": false,
+      "test": null
+    },
+    {
+      "id": "M4-001",
+      "subsystem": "M4-control",
+      "title": "Head angle limits -25 deg to 44.5 deg",
+      "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "Robot::SetHeadAngle 0x00513358"
+      ],
+      "live_path": true,
+      "test": "ControlTests"
+    },
+    {
+      "id": "M4-002",
+      "subsystem": "M4-control",
+      "title": "Lift presets 32 / 76 / 92 mm and the 32..92 range",
+      "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "preset table 0x00C54688",
+        "MoveLiftToHeightAction::GetPresetName 0x00548CD4"
+      ],
+      "live_path": true,
+      "test": "CorrectionTests"
+    },
+    {
+      "id": "M4-003",
+      "subsystem": "M4-control",
+      "title": "Head and lift motor command default speed and acceleration",
+      "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
+      "effect": "the head and lift move faster or slower than the app moves them",
+      "provenance": "PyCozmo defaults (head 10/10, lift 3/20)",
+      "authority": "MoveHeadToAngleAction and MoveLiftToHeightAction constructors in libcozmoEngine.so",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the engine action constructor defaults were never disassembled",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M4-004",
+      "subsystem": "M4-control",
+      "title": "Motion refused until both motors report calibrated",
+      "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
+      "effect": "commands are sent into a robot that is still calibrating and are lost",
+      "provenance": "observed robot behaviour on connect",
+      "authority": "the engine calibration gate",
+      "evidence": [
+        "re-analysis/captures"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "whether the engine gates motion the same way, or simply queues",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "ControlTests"
+    },
+    {
+      "id": "M4-005",
+      "subsystem": "M4-control",
+      "title": "Action ids cycle 1..255",
+      "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
+      "effect": "an ack is matched to the wrong action after 255 actions",
+      "provenance": "a choice of this stack",
+      "authority": "the engine action id allocation",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M4-006",
+      "subsystem": "M4-control",
+      "title": "Wheel confirmation tolerance 35 percent / 5 mm per s",
+      "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
+      "effect": "a drive command is reported confirmed when it is not",
+      "provenance": "a choice of this stack",
+      "authority": "not applicable: the engine does not confirm wheel speeds this way",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "ControlTests"
+    },
+    {
+      "id": "M4-007",
+      "subsystem": "M4-control",
+      "title": "StopAll sends StopAllMotors and a zero DriveWheels",
+      "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
+      "effect": "one extra message on the wire at stop",
+      "provenance": "a choice of this stack, belt and braces",
+      "authority": "the engine stop path",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M4-008",
+      "subsystem": "M4-control",
+      "title": "Cliff sensors named by index; IMU and cube battery left in raw units",
+      "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
+      "effect": "a caller reading a named sensor reads the wrong one",
+      "provenance": "uncertainty deliberately preserved rather than guessed",
+      "authority": "the engine cliff sensor indexing and IMU scaling",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "which physical sensor each index is, and the IMU scale factors",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M4-009",
+      "subsystem": "M4-control",
+      "title": "Cube tracking from ObjectAvailable and ObjectConnectionState",
+      "location": "cozmo-stack/src/Cozmo.Robot/Cubes.cs",
+      "effect": "cubes appear or disappear from the world model at the wrong moment",
+      "provenance": "observed discovery of a real cube on hardware",
+      "authority": "the engine cube connection handling",
+      "evidence": [
+        "operator report 2026-09-19"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "connection state, tap, movement, up-axis and battery telemetry have not been exercised or read from the engine",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M5-001",
+      "subsystem": "M5-animation",
+      "title": "FlatBuffers animation reader and field indices",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/FlatBufferReader.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "shipped schema, confirmed against the engine vtable slots",
+      "evidence": [
+        "SetMembersFromFlatBuf vtable slots for head, lift, body and audio"
+      ],
+      "live_path": true,
+      "test": "AnimationAssetTests"
+    },
+    {
+      "id": "M5-002",
+      "subsystem": "M5-animation",
+      "title": "19 procedural-face eye parameters and their order",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFace.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        ".rodata 0x00C1D399"
+      ],
+      "live_path": true,
+      "test": "ProceduralFaceRendererTests"
+    },
+    {
+      "id": "M5-003",
+      "subsystem": "M5-animation",
+      "title": "Face interpolation blends angles as directions and clips every eye parameter",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFace.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "ProceduralFace::Interpolate 0x00584290",
+        "ProceduralFace::Clip 0x005847A8",
+        "clip table 0x00C5A97C"
+      ],
+      "live_path": true,
+      "test": "ProceduralFaceRendererTests"
+    },
+    {
+      "id": "M5-004",
+      "subsystem": "M5-animation",
+      "title": "Head and lift keyframes stream as animHeadAngle 0x93 and animLiftHeight 0x94",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "HeadAngleKeyFrame::GetStreamMessage 0x004F8C08",
+        "LiftHeightKeyFrame::GetStreamMessage 0x004F8F80"
+      ],
+      "live_path": true,
+      "test": "AnimationTests"
+    },
+    {
+      "id": "M5-005",
+      "subsystem": "M5-animation",
+      "title": "Keyframe variability applied at stream time with RandIntInRange",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "GetStreamMessage 0x004F8C08"
+      ],
+      "live_path": true,
+      "test": "AnimationTests"
+    },
+    {
+      "id": "M5-006",
+      "subsystem": "M5-animation",
+      "title": "Body radius string encoding and the stop message at duration end",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationClip.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "ProcessRadiusString 0x004FB588",
+        "BodyMotionKeyFrame constructors 0x004FB14C and 0x004FB170",
+        "IsDone 0x004FBAEC"
+      ],
+      "live_path": true,
+      "test": "AnimationTests"
+    },
+    {
+      "id": "M5-007",
+      "subsystem": "M5-animation",
+      "title": "Animation timeline is a count of streamed frames times 33 ms and freezes during a stall",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "UpdateStream 0x0057C84C adds 33 only after a frame is sent (0x0057CA94)",
+        "ShouldProcessAnimationFrame 0x0057CC6C"
+      ],
+      "live_path": true,
+      "test": "AnimationGapTests.TheTimelineFreezesWhileTheRobotHasNoRoomAndResumesWhereItStopped"
+    },
+    {
+      "id": "M5-008",
+      "subsystem": "M5-animation",
+      "title": "One streaming animation at a time; a newcomer interrupts it or is refused",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "SetStreamingAnimation 0x0057B174"
+      ],
+      "live_path": true,
+      "test": "AnimationTests.AClipOnAFreeTrackIsStillRefusedBecauseOnlyOneAnimationStreamsAtATime"
+    },
+    {
+      "id": "M5-009",
+      "subsystem": "M5-animation",
+      "title": "Audio alternative chosen by cumulative probability",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "RobotAudioKeyFrame::GetAudioRefIndex 0x004F9AEC",
+        "SetMembersFromFlatBuf 0x004F9E54"
+      ],
+      "live_path": true,
+      "test": "AnimationTests"
+    },
+    {
+      "id": "M5-010",
+      "subsystem": "M5-animation",
+      "title": "Resting face is the shipped anim_neutral_eyes_01 through AnimationTrigger NeutralFace",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFaceRenderer.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "shipped OBB animation, installed by the engine",
+      "evidence": [
+        "AnimationStreamer::AnimationStreamer 0x00579F78",
+        "ProceduralFace::SetResetData 0x00583550",
+        "assets ag_neutral_face"
+      ],
+      "live_path": true,
+      "test": "IdleFaceTests"
+    },
+    {
+      "id": "M5-011",
+      "subsystem": "M5-animation",
+      "title": "Animation group choice by weight with a mood fallback to Default",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "AnimationGroup::GetAnimationName 0x0058A970"
+      ],
+      "live_path": true,
+      "test": "AnimationAssetTests"
+    },
+    {
+      "id": "M5-012",
+      "subsystem": "M5-animation",
+      "title": "Keyframe volume applied as a linear PCM gain",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "effect": "animation audio plays at the wrong level",
+      "provenance": "a straight linear reading of the keyframe field",
+      "authority": "the engine passes the keyframe volume to Wwise, which maps it through an RTPC curve",
+      "evidence": [
+        "RobotAudioKeyFrame::SetMembersFromFlatBuf 0x004F9E54"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the RTPC or parameter the engine posts the keyframe volume to, and the curve on it; RobotAudioClient::SetCozmoEventParameter was not traced",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M5-013",
+      "subsystem": "M5-animation",
+      "title": "faceAnimations track is not loaded; a lift value of 0 mm is passed through",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationClip.cs",
+      "effect": "clips that carry a face animation play without it",
+      "provenance": "deferred",
+      "authority": "the engine face-animation track loader",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "what the faceAnimations track carries and how the engine plays it",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M5-014",
+      "subsystem": "M5-animation",
+      "title": "Animation cooldown and head-angle gate are not enforced",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs",
+      "effect": "a clip the engine would refuse still plays",
+      "provenance": "deferred; the mechanism is recorded in AnimationLibrary.cs",
+      "authority": "the engine cooldown and head-angle checks in the animation group loader",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the cooldown clock and the head-angle window are read from the asset but not applied",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M5-015",
+      "subsystem": "M5-animation",
+      "title": "Procedural-face corner-radius parameter assignment and polygon fill rule",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFaceRenderer.cs",
+      "effect": "eye corners are rounded on the wrong corners, or filled differently",
+      "provenance": "a reading of DrawEye that stopped short",
+      "authority": "ProceduralFaceDrawer::DrawEye in libcozmoEngine.so",
+      "evidence": [
+        "re-analysis/PROCEDURAL_FACE.md"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "which radius parameter belongs to which corner, and the fill rule for the eye polygon",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "ProceduralFaceRendererTests"
+    },
+    {
+      "id": "M5-016",
+      "subsystem": "M5-animation",
+      "title": "Backpack lights track is read and not acted on",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationClip.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "BackpackLightsKeyFrame::SetMembersFromFlatBuf is a stub in the engine too"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M5-017",
+      "subsystem": "M5-animation",
+      "title": "Fallback to another audio alternative when the chosen one cannot be decoded",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "effect": "a clip makes a sound where the engine would make none",
+      "provenance": "a choice of this stack, labelled",
+      "authority": "the engine does not fall back; it plays what Wwise resolves",
+      "evidence": [
+        "GetAudioRefIndex 0x004F9AEC"
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "AnimationTests"
+    },
+    {
+      "id": "M5-018",
+      "subsystem": "M5-animation",
+      "title": "How many frames one wall-clock tick streams",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "effect": "a late tick catches up at a different rate than the engine",
+      "provenance": "a choice of this stack: one frame per 33 ms tick, a late tick made up frame by frame",
+      "authority": "the engine streams to the audio budget on every update regardless of the clock (UpdateStream 0x0057C84C)",
+      "evidence": [
+        "UpdateStream 0x0057C84C"
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "AnimationGapTests.ALateTickCatchesUpFrameByFrameNotByJumping"
+    },
+    {
+      "id": "M5-019",
+      "subsystem": "M5-animation",
+      "title": "The last face is held after the last face keyframe; an oversize face payload is dropped",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "effect": "the screen holds a face the engine would have cleared, or drops a frame it would have split",
+      "provenance": "a choice of this stack",
+      "authority": "the engine display path, partly read (see M3-007)",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "AnimationTests"
+    },
+    {
+      "id": "M5-020",
+      "subsystem": "M5-animation",
+      "title": "Expressions helper faces",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Expressions.cs",
+      "effect": "none unless a caller asks for one",
+      "provenance": "a local convenience built on the shipped neutral, labelled as such",
+      "authority": "not applicable",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": false,
+      "test": null
+    },
+    {
+      "id": "M6-001",
+      "subsystem": "M6-wwise-bank",
+      "title": "Bank chunk and HIRC object layout for the nine types the music path needs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHierarchy.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "the shipped banks themselves: every one of 3490 objects of these types consumes exactly",
+      "evidence": [
+        "re-analysis/obb/sound_meta"
+      ],
+      "live_path": true,
+      "test": "WwiseTests.EveryHierarchyObjectInTheShippedBanksConsumesExactly"
+    },
+    {
+      "id": "M6-002",
+      "subsystem": "M6-wwise-bank",
+      "title": "Vorbis rebuild with external codebooks and granule computation",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseVorbisRebuilder.cs",
+      "effect": "a voice clip fails to decode or decodes to noise",
+      "provenance": "a port of ww2ogg, self-verifying: 2019 of 2019 clips decode",
+      "authority": "the Wwise Vorbis packing; no runtime in the package to check against",
+      "evidence": [],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseTests"
+    },
+    {
+      "id": "M6-003",
+      "subsystem": "M6-wwise-bank",
+      "title": "IMA ADPCM mono decode; stereo refused",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAdpcm.cs",
+      "effect": "a stereo ADPCM clip is silent",
+      "provenance": "a port, self-verifying on the shipped mono clips",
+      "authority": "no stereo ADPCM clip is reachable from any robot event in the shipped banks",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseTests"
+    },
+    {
+      "id": "M6-004",
+      "subsystem": "M6-wwise-bank",
+      "title": "Nearest-sample resampling and channel averaging",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMedia.cs",
+      "effect": "audible aliasing that the product would not have",
+      "provenance": "a choice of this stack",
+      "authority": "the Wwise runtime resampler, which is not in the package",
+      "evidence": [],
+      "status": "BLOCKED_EXTERNAL",
+      "unresolved": "the Wwise resampler quality setting and algorithm; no Wwise runtime ships in the APK (verified: no AkSoundEngine, CAk* or Wwise strings in any .so)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M6-005",
+      "subsystem": "M6-wwise-bank",
+      "title": "FNV-1 32-bit name hash",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHash.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "the shipped bank definition tables: every name in them hashes to its id",
+      "evidence": [
+        "re-analysis/obb/sound_meta/English(US)/Cozmo.txt"
+      ],
+      "live_path": true,
+      "test": "WwiseHashTests"
+    },
+    {
+      "id": "M6-006",
+      "subsystem": "M6-wwise-bank",
+      "title": "An event Play target is flattened to every Sound beneath it, ignoring container type",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSoundLibrary.cs:306",
+      "effect": "an event that should play a sequence of several recordings plays one, and an event under a switch container can play a recording the current switch does not select. Play__Robot_VO__Singing_Getin_1 is a random of a random of a two-item sequence, and reaches the robot as a single syllable instead of a two-note phrase",
+      "provenance": "MediaUnder walks the whole subtree and every Sound found is treated as an alternative",
+      "authority": "the shipped banks carry each container type, its playlist, weights, avoid-repeat count and play mode, all of which WwiseHierarchy already reads exactly and the song renderer already honours",
+      "evidence": [
+        "Cozmo.bnk 403781184 random of 399004754 / 693270200 / 201436547",
+        "each of those a random of three, each of those a sequence (mode 1) of two per-key containers"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the walk has not been rewritten onto the container fields that are already parsed",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M6-007",
+      "subsystem": "M6-wwise-bank",
+      "title": "The first decodable alternative is played, every time",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs:327",
+      "effect": "a voice line that has three recordings always uses the same one, so the robot repeats itself where the app varies",
+      "provenance": "Produce iterates the flattened media list and returns the first that decodes",
+      "authority": "the container carries the playlist weights and the avoid-repeat count; the engine leaves the choice to Wwise, and RobotAudioClient::GetRandomGenerator shows the engine hands Wwise a generator rather than choosing itself",
+      "evidence": [
+        "Anki::Cozmo::Audio::RobotAudioClient::GetRandomGenerator"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "no draw is made at all; the keyframe-level probability (D4) chooses between audio refs, not between a container children",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M7-001",
+      "subsystem": "M7-behaviour",
+      "title": "AnimationTrigger and ReactionTrigger enums",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/AnimationTrigger.g.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "decompiled Unity",
+      "evidence": [
+        "Anki.Cozmo.AnimationTrigger",
+        "Anki.Cozmo.ReactionTrigger"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M7-002",
+      "subsystem": "M7-behaviour",
+      "title": "AnimationTriggerMap.json and reactionTrigger_behavior_map.json are the shipped maps",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/AnimationTriggerMap.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "shipped OBB configuration",
+      "evidence": [
+        "config/engine/behaviorSystem/reactionTrigger_behavior_map.json",
+        "RobotDataLoader::LoadReactionTriggerMap 0x00520BC8"
+      ],
+      "live_path": true,
+      "test": "TriggerTests"
+    },
+    {
+      "id": "M7-003",
+      "subsystem": "M7-behaviour",
+      "title": "ReactToImpact gating: FallingStopped, impact intensity over 1000, up to 5 s recalibration",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ReactionTable.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "BehaviorReactToImpact::TransitionToPlayingAnim 0x00606348",
+        "AlwaysHandle 0x00606408"
+      ],
+      "live_path": true,
+      "test": "CorrectionTests"
+    },
+    {
+      "id": "M7-004",
+      "subsystem": "M7-behaviour",
+      "title": "All 30 idle tunables",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleParameters.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "SetDefaultParams 0x0057DB40"
+      ],
+      "live_path": true,
+      "test": "IdleTests"
+    },
+    {
+      "id": "M7-005",
+      "subsystem": "M7-behaviour",
+      "title": "Blink is a fixed seven-frame squash multiplied onto the base face",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "ProceduralFaceDrawer::GetNextBlinkFrame 0x00585F18",
+        "table 0x00C5AAD8",
+        "FaceLayerManager::GenerateBlink 0x0058D2AC",
+        "ProceduralFace::Combine 0x005846A8"
+      ],
+      "live_path": true,
+      "test": "IdleFaceTests"
+    },
+    {
+      "id": "M7-006",
+      "subsystem": "M7-behaviour",
+      "title": "Eye dart moves the whole face by (x,y) through LookAt with xMax = yMax = 5",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "FaceLayerManager::GenerateEyeShift 0x0058D100",
+        "ProceduralFace::LookAt 0x00584158"
+      ],
+      "live_path": true,
+      "test": "IdleFaceTests"
+    },
+    {
+      "id": "M7-007",
+      "subsystem": "M7-behaviour",
+      "title": "Eye-dart lifecycle: ramp-then-hold or snap-then-hold",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
+      "effect": "the eyes jump to the dart or slide to it, and may or may not hold there",
+      "provenance": "snap to the shifted pose and hold for the drawn duration",
+      "authority": "GenerateEyeShift 0x0058D100 with AddToPersistentLayer 0x0058EAA0 and ITrackLayerManager::ApplyLayersToFrame 0x0058E644, which were read and contradict each other when read statically",
+      "evidence": [
+        "AddToPersistentLayer 0x0058EAA0",
+        "ApplyLayersToFrame 0x0058E644"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the two readings were not separated; a deeper trace of ApplyLayersToFrame trimming a finished persistent layer would settle it",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "IdleFaceTests"
+    },
+    {
+      "id": "M7-008",
+      "subsystem": "M7-behaviour",
+      "title": "Idle timers are counted in wall-clock milliseconds",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
+      "effect": "blinks and darts come at a different rate than the app",
+      "provenance": "wall-clock ms",
+      "authority": "the engine decrements each keep-alive countdown by 60 per Update call (UpdateLiveAnimation 0x0057D5F8, KeepFaceAlive 0x0058D374), so the unit is engine ticks",
+      "evidence": [
+        "UpdateLiveAnimation 0x0057D5F8",
+        "KeepFaceAlive 0x0058D374"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the engine tick period, readable from CozmoEngine::Update 0x004ED4D4",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "IdleTests"
+    },
+    {
+      "id": "M7-009",
+      "subsystem": "M7-behaviour",
+      "title": "Idle head and lift move through the motion API instead of the live animation",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
+      "effect": "different messages on the wire for the same visible motion",
+      "provenance": "SetHeadAngle and SetLiftHeight commands",
+      "authority": "the engine adds HeadAngleKeyFrame(currentDeg, variability 6, duration) and LiftHeightKeyFrame(35, 8, duration) to its live animation and streams them as 0x93 / 0x94",
+      "evidence": [
+        "UpdateLiveAnimation 0x0057D5F8"
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "IdleTests"
+    },
+    {
+      "id": "M7-010",
+      "subsystem": "M7-behaviour",
+      "title": "Idle body shuffle is recorded but not driven",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
+      "effect": "the robot sits still where the app would shuffle",
+      "provenance": "a deliberate omission; the engine numbers are recorded in the file",
+      "authority": "UpdateLiveAnimation 0x0057D6CC onward: speed uniform in plus or minus 10 mm per s, duration 250..1500 ms, straight with probability BodyMovementStraightFraction",
+      "evidence": [
+        "UpdateLiveAnimation 0x0057D6CC"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "nothing in the source; it is read and simply not implemented",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M7-011",
+      "subsystem": "M7-behaviour",
+      "title": "Arbitration order caller over reaction over idle; autonomy off by default; 5 s per-reaction cooldown",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorArbiter.cs",
+      "effect": "reactions fire more or less often than the app",
+      "provenance": "a choice of this stack; the engine has no such cooldown for cliff, pickup or charger",
+      "authority": "the engine per-trigger cooldowns exist only where the shipped map gives one",
+      "evidence": [
+        "reactionTrigger_behavior_map.json"
+      ],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "BehaviorTests"
+    },
+    {
+      "id": "M7-012",
+      "subsystem": "M7-behaviour",
+      "title": "Mood axes, events and decay curves",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Mood.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "shipped mood_config.json",
+      "evidence": [
+        "config/engine/mood_config.json"
+      ],
+      "live_path": true,
+      "test": "MoodTests"
+    },
+    {
+      "id": "M7-013",
+      "subsystem": "M7-behaviour",
+      "title": "Mood clamp to plus or minus 1 and flat extrapolation outside decay-graph nodes",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Mood.cs",
+      "effect": "emotion values saturate differently and decay differently at the edges",
+      "provenance": "a plausible reading",
+      "authority": "MoodManager::UpdateEmotions in libcozmoEngine.so",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the clamp and the edge behaviour were never disassembled",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "MoodTests"
+    },
+    {
+      "id": "M7-014",
+      "subsystem": "M7-behaviour",
+      "title": "SmartDisableReactionsWithLock is held for the duration of a reaction",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ReactiveBehavior.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "called in each BehaviorReactToX InitInternal"
+      ],
+      "live_path": true
+    },
+    {
+      "id": "M7-015",
+      "subsystem": "M7-behaviour",
+      "title": "Pick-up falls back to the raw status flag until the off-treads classifier is enabled",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs:372",
+      "effect": "pick-up reactions fire on the raw flag rather than on derived InAir",
+      "provenance": "a labelled fallback of this stack, used only before the robot reports head calibration",
+      "authority": "Robot::CheckAndUpdateTreadsState 0x00511E00, which is implemented and used once calibration is reported",
+      "evidence": [
+        "Robot::CheckAndUpdateTreadsState 0x00511E00"
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "DerivedStateTests"
+    },
+    {
+      "id": "M8-001",
+      "subsystem": "M8-framework",
+      "title": "Behaviour lifecycle and the Smart* scope helpers",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so exported names and their call sites",
+      "evidence": [
+        "IBehavior::IsRunnableBase 0x005BD778"
+      ],
+      "live_path": true,
+      "test": "BehaviorFrameworkTests"
+    },
+    {
+      "id": "M8-002",
+      "subsystem": "M8-framework",
+      "title": "Repetition penalty graph",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "shipped mood_config.json",
+      "evidence": [
+        "config/engine/mood_config.json"
+      ],
+      "live_path": true,
+      "test": "BehaviorFrameworkTests"
+    },
+    {
+      "id": "M8-003",
+      "subsystem": "M8-framework",
+      "title": "Scored selection: score times repetition penalty, highest wins",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs",
+      "effect": "a different behaviour is chosen at every decision point",
+      "provenance": "structure inferred from exported names",
+      "authority": "IBehavior::ReadFromScoredJson 0x005BC489 and ScoringBSRunnableChooser::GetDesiredActiveBehavior 0x0060B23E, of which the chooser has since been read",
+      "evidence": [
+        "ScoringBSRunnableChooser::GetDesiredActiveBehavior"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "ReadFromScoredJson has not been disassembled, so how a shipped config turns into a score is still not read",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "FreeplayTests"
+    },
+    {
+      "id": "M8-004",
+      "subsystem": "M8-framework",
+      "title": "Behaviour scores 1.0 and 5.0 where the shipped configs carry none",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs",
+      "effect": "the scoring chooser ranks behaviours by numbers that are not the app numbers",
+      "provenance": "chosen because they looked right",
+      "authority": "IBehavior::ReadFromScoredJson 0x005BC489 and the shipped behaviour configs",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "where the engine gets a score for a behaviour whose config carries none",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M8-005",
+      "subsystem": "M8-framework",
+      "title": "PlayAnim uses the first trigger that resolves",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs",
+      "effect": "a different clip plays when several triggers are listed",
+      "provenance": "inferred",
+      "authority": "the engine PlayAnim behaviour class",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the engine selection rule among several triggers",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M8-006",
+      "subsystem": "M8-framework",
+      "title": "A strategy type this stack does not model reports not runnable",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs:126",
+      "effect": "a behaviour whose config names an unmodelled strategy never runs",
+      "provenance": "a deliberate fail-closed choice, labelled",
+      "authority": "WantsToRunStrategyFactory in libcozmoEngine.so, which names every strategy type",
+      "evidence": [
+        "IBehavior::ReadFromJson"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the strategy types not yet modelled and what each one tests",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "FreeplayTests"
+    },
+    {
+      "id": "M8-007",
+      "subsystem": "M8-framework",
+      "title": "Per-play track lock is recorded and not applied",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.cs:205",
+      "effect": "a track the engine would mute for one play still moves",
+      "provenance": "deferred; the scheduler has no per-play track mask",
+      "authority": "MovementComponent::LockTracks in libcozmoEngine.so",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the mask the engine applies per play and where it is released",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M8-008",
+      "subsystem": "M8-framework",
+      "title": "The 5 s calibration allowance borrowed from ReactToImpact",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.cs:265",
+      "effect": "behaviours wait 5 s for recalibration where the engine may not",
+      "provenance": "a choice of this stack, borrowed from a place where the engine does use 5 s",
+      "authority": "BehaviorReactToImpact 0x00606348",
+      "evidence": [
+        "BehaviorReactToImpact::TransitionToPlayingAnim 0x00606348"
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M8-009",
+      "subsystem": "M8-framework",
+      "title": "Behaviour scope undo order",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs",
+      "effect": "locks are released in a different order at behaviour exit",
+      "provenance": "a choice of this stack",
+      "authority": "the engine Smart* destructor order",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "BehaviorFrameworkTests"
+    },
+    {
+      "id": "M8-010",
+      "subsystem": "M8-framework",
+      "title": "Behaviour inventory classifier rules",
+      "location": "re-analysis/tools/behavior_inventory.py",
+      "effect": "the count of implemented behaviours in the documents",
+      "provenance": "rules of this stack, stated per row",
+      "authority": "not applicable: this is bookkeeping, not robot behaviour",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": false,
+      "test": null
+    },
+    {
+      "id": "M9-001",
+      "subsystem": "M9-wwise-music",
+      "title": "BehaviorSinging reads audioSwitchGroup and audioSwitch and picks a tempo trigger",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SingingBehavior.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "BehaviorSinging constructor 0x005EE8DC",
+        "group ids 0xC8A59578 / 0xE017E775 / 0xB215BB17",
+        "triggers 0x1FF / 0x200 / 0x201"
+      ],
+      "live_path": true,
+      "test": "WwiseSongTests"
+    },
+    {
+      "id": "M9-002",
+      "subsystem": "M9-wwise-music",
+      "title": "The switch state is posted before any animation, then get-in, tempo, get-out",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SingingBehavior.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "BehaviorSinging::InitInternal 0x005EEB30",
+        "PostRobotSwitchState at 0x005EEB4E",
+        "triggers 0x202 and 0x203"
+      ],
+      "live_path": true,
+      "test": "WwiseSongTests.StartingTheBehaviourPostsTheSwitchThenPlaysTheGetIn"
+    },
+    {
+      "id": "M9-003",
+      "subsystem": "M9-wwise-music",
+      "title": "Vibrato value: largest cube shake over 3000, clamped 0..1, smoothed 0.5 old plus 0.5 new",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SingingBehavior.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "BehaviorSinging::UpdateInternal 0x005EF0C8",
+        "PostRobotParameter Cozmo_Singing_Vibrato 0xC20F49DF",
+        "StopInternal 0x005EF2B0 posts 0"
+      ],
+      "live_path": true,
+      "test": "WwiseSongTests"
+    },
+    {
+      "id": "M9-004",
+      "subsystem": "M9-wwise-music",
+      "title": "Music switch containers, their decision trees, meters and MIDI target",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMusic.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "the shipped banks",
+      "evidence": [
+        "Cozmo.bnk music switch containers 914766641 / 139286641 / 602865028",
+        "property 56 MidiTargetNode = 110896138"
+      ],
+      "live_path": true,
+      "test": "WwiseMusicTests"
+    },
+    {
+      "id": "M9-005",
+      "subsystem": "M9-wwise-music",
+      "title": "MIDI sources are Standard MIDI File tracks at 9600 ticks per beat at the effective meter tempo",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMidi.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "the shipped banks: for all 46 tracks the end-of-track tick at the effective tempo equals the clip duration Wwise wrote",
+      "evidence": [
+        "plugin id 0x00100001",
+        "division 0x2580"
+      ],
+      "live_path": true,
+      "test": "WwiseMusicTests"
+    },
+    {
+      "id": "M9-006",
+      "subsystem": "M9-wwise-music",
+      "title": "HIRC modulator objects (type 21 LFO, type 22 Envelope) are not read",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHierarchy.cs",
+      "effect": "every modulator the banks carry is invisible to the renderer, so nothing they drive is heard",
+      "provenance": "the types are skipped; TryRead returns null for them",
+      "authority": "the shipped Cozmo.bnk carries 4 type-21 and 7 type-22 objects, and Cozmo.txt names them under Modulator LFO and Modulator Envelope",
+      "evidence": [
+        "re-analysis/obb/sound_meta/English(US)/Cozmo.bnk",
+        "re-analysis/obb/sound_meta/English(US)/Cozmo.txt lines 578-591"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the object layout and the property numbering for modulators",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M9-007",
+      "subsystem": "M9-wwise-music",
+      "title": "cozmo_singing_note_off envelope modulator (381606890) is not applied",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
+      "effect": "sung notes have no release shaping; they stop dead at the end of a loop iteration",
+      "provenance": "the RTPC binding on blend 462443456 is parsed and then ignored",
+      "authority": "the shipped bank: object 381606890 is an envelope modulator, and blend container 462443456 binds it to Volume",
+      "evidence": [
+        "Cozmo.bnk object 381606890",
+        "Cozmo.bnk object 462443456 RTPC src=381606890 type=2 param=0"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the envelope property numbering, the modulator output range and the accumulation mode",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M9-008",
+      "subsystem": "M9-wwise-music",
+      "title": "cozmo_singing_vibrato_lfo (528935089) is not applied",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
+      "effect": "shaking a cube while Cozmo sings changes nothing",
+      "provenance": "the RTPC binding on blend 110896138 is parsed and then ignored",
+      "authority": "the shipped bank: object 528935089 is an LFO modulator whose own RTPC is driven by game parameter Cozmo_Singing_Vibrato, and blend 110896138 binds it to Pitch",
+      "evidence": [
+        "Cozmo.bnk object 528935089",
+        "Cozmo.bnk object 110896138 RTPC src=528935089 type=2 param=2"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the LFO property numbering, waveform default, output range and how depth is driven by the game parameter",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M9-009",
+      "subsystem": "M9-wwise-music",
+      "title": "RTPC and modulator bindings are parsed but no accumulation is performed",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
+      "effect": "every game parameter and modulator in the singing path is inert",
+      "provenance": "WwiseRtpc records are read and never consulted by the renderer",
+      "authority": "the shipped banks carry the source id, source type, accumulation byte, target property, curve and points for each binding",
+      "evidence": [
+        "WwiseHierarchy.ReadRtpc"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the meaning of the accumulation byte and of the curve scaling byte, and how a bound value combines with the property value already summed down the path",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M9-010",
+      "subsystem": "M9-wwise-music",
+      "title": "Note release: a Loop 0 sound plays out its current iteration after note-off",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
+      "effect": "held notes end at the wrong moment and with no tail",
+      "provenance": "a reading of the public documentation of break-on-note-off",
+      "authority": "the shipped bank sets bIsMidiBreakLoopOnNoteOff in the node bits of the note layers; the bit position itself was assumed",
+      "evidence": [
+        "Cozmo.bnk blend 462443456 and 774902407 node bits 0x24"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "which bit of the node bit vector is break-on-note-off, and whether the release is instant or shaped by the note-off envelope",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseSongTests"
+    },
+    {
+      "id": "M9-011",
+      "subsystem": "M9-wwise-music",
+      "title": "Output stage: the whole render is scaled so its peak sits at full scale",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs:59",
+      "effect": "a song is quieter or louder, and differently shaped, than the app made it; a quiet song is pulled up and a loud one squashed uniformly",
+      "provenance": "a deliberate stand-in of this stack, labelled LOCAL_POLICY",
+      "authority": "Init.bnk carries the whole bus tree and the parameters of every bus effect; the robot buses each end in an Anki Hijack capture",
+      "evidence": [
+        "Init.bnk bus 2678428988 Robot_Bus_1",
+        "Init.txt effect plug-ins table"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the effect chain on the bus the singing voice reaches, and the parameters of each effect in it",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseSongTests"
+    },
+    {
+      "id": "M9-012",
+      "subsystem": "M9-wwise-music",
+      "title": "MIDI note tracking is off",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
+      "effect": "if tracking were on, every recording would be transposed away from its recorded pitch",
+      "provenance": "inferred from no node setting a root note and from the per-key containers covering one key each",
+      "authority": "the node bit vector of every node in the MIDI target, which carries the override and enable bits for note tracking",
+      "evidence": [
+        "Cozmo.bnk blend 110896138 bits 0x00"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the bit positions of bOverrideMidiNoteTracking and bEnableMidiNoteTracking, so the conclusion rests on the data rather than on the absence of a root note",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M9-013",
+      "subsystem": "M9-wwise-music",
+      "title": "The get-in branch under the MIDI target receives notes like any other child",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
+      "effect": "a get-in phrase recording is layered onto ordinary sung notes during a song",
+      "provenance": "uniform application of the container rules; nothing was special-cased",
+      "authority": "the shipped bank: random container 403781184 is a child of the MIDI target and carries no key or velocity filter of its own",
+      "evidence": [
+        "Cozmo.bnk 403781184 parent 110896138",
+        "Cozmo.txt path Robot_VO__Singing\\Robot_VO__Sing\\Robot_VO__Singing_Getin"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "how far down the get-in branch a note actually reaches, and whether the shipped songs use the keys that branch can answer",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M9-014",
+      "subsystem": "M9-wwise-music",
+      "title": "Velocity is ignored",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
+      "effect": "loud and soft notes sound the same",
+      "provenance": "nothing in the target binds an RTPC to velocity",
+      "authority": "the shipped bank: no node under the MIDI target carries a velocity RTPC, and only one velocity layer of recordings ships",
+      "evidence": [
+        "Cozmo.txt In Memory Audio names Robot_VO__Singing_*_Vel2_*"
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseSongTests"
+    },
+    {
+      "id": "M9-015",
+      "subsystem": "M9-wwise-music",
+      "title": "The final-PCM cache freezes the renderer random choices for the life of a source",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs:260",
+      "effect": "a song sounds identical every time it is played in one session, where Wwise would draw fresh recordings",
+      "provenance": "a deliberate choice of this stack, labelled, to keep seconds of rendering off the streaming path",
+      "authority": "the container avoid-repeat and weight fields are read and honoured within a render",
+      "evidence": [],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseSongTests.TheMusicCacheFreezesTheRenderersRandomChoices"
+    },
+    {
+      "id": "M9-016",
+      "subsystem": "M9-wwise-music",
+      "title": "The song is rendered whole, ahead of playback, on a worker",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
+      "effect": "the first audio frame of a song can be silent if the render has not finished",
+      "provenance": "a choice of this stack; Wwise streams a song voice by voice",
+      "authority": "not applicable: this is a local architecture decision, and the observable output is the same once the render completes",
+      "evidence": [],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseSongTests.PrewarmRendersOffTheStreamingPathAndGetPcmFindsIt"
+    },
+    {
+      "id": "M9-017",
+      "subsystem": "M9-wwise-music",
+      "title": "The cube-shake input to the vibrato is never measured",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SingingBehavior.cs",
+      "effect": "the vibrato parameter is always 0",
+      "provenance": "M4 receives cube movement reports, not the accelerometer stream the engine averages",
+      "authority": "BehaviorSinging::UpdateInternal 0x005EF0C8 reads a per-cube rolling average fed by a ShakeListener",
+      "evidence": [
+        "BehaviorSinging::InitInternal 0x005EEB30 ShakeListener registration"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "which cube message carries the value the ShakeListener averages, and its scale; the listener was not disassembled",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M9-018",
+      "subsystem": "M9-wwise-music",
+      "title": "A Stop action ends the streaming song when its target is the Play target or an ancestor",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
+      "effect": "the song keeps playing past the end of the tempo clip, or is cut short",
+      "provenance": "Wwise action semantics applied to the bank parent chain",
+      "authority": "the shipped bank: Stop__Robot_VO__Cozmo_Singing_Stop holds three action-type-1 actions targeting the three music switch containers",
+      "evidence": [
+        "Cozmo.bnk event 3704466058 actions 498550800 / 796618166 / 618270711"
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseSongTests.TheSingingStopEventEndsTheSongOnTheScheduler"
+    },
+    {
+      "id": "M9-019",
+      "subsystem": "M9-wwise-music",
+      "title": "Blend container layers and their crossfade curves are skipped",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHierarchy.cs",
+      "effect": "a blend container whose children are crossfaded by an RTPC plays all of them at full level",
+      "provenance": "the layer block is walked to keep the object consuming exactly, and discarded",
+      "authority": "the shipped bank carries each layer crossfade RTPC and per-child curve",
+      "evidence": [
+        "WwiseHierarchy.ReadBlend"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "whether any blend container on a robot path has layers at all; the three singing blends were read and have none, the other three were not checked",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M9-020",
+      "subsystem": "M9-wwise-music",
+      "title": "A clip plays its source from BeginTrim for its length; a note still held at the clip end is released there",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
+      "effect": "notes at the end of a segment are cut or left hanging",
+      "provenance": "documented clip semantics; every shipped clip has PlayAt 0 and BeginTrim 0, so the rule is barely exercised",
+      "authority": "the shipped clip fields, which are read exactly",
+      "evidence": [
+        "WwiseTrackClip"
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseMusicTests"
+    },
+    {
+      "id": "M9-021",
+      "subsystem": "M9-wwise-music",
+      "title": "A Play event with several Play actions renders only the first",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
+      "effect": "Play__Codelab__Music_Tiny_Orchestra_Init plays one of its nine layers",
+      "provenance": "a reduction of this stack",
+      "authority": "the shipped bank lists all nine actions",
+      "evidence": [
+        "Cozmo.bnk event Play__Codelab__Music_Tiny_Orchestra_Init"
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": false,
+      "test": null
+    },
+    {
+      "id": "M9-022",
+      "subsystem": "M9-wwise-music",
+      "title": "Container semantics: blend and actor-mixer play all children, random picks one by weight avoiding the last, sequence steps its playlist",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
+      "effect": "the wrong recording, or too many recordings, sound for a note",
+      "provenance": "the public description of Wwise container playback, applied to fields read exactly from the bank",
+      "authority": "the Wwise runtime, which is not in the package; the container fields themselves are read exactly",
+      "evidence": [
+        "WwiseRandomSequenceNode",
+        "verified: no AkSoundEngine or CAk* symbols or strings in any shipped .so"
+      ],
+      "status": "BLOCKED_EXTERNAL",
+      "unresolved": "the runtime dispatch rule, in particular whether a container pre-filters its playlist to children that accept a MIDI note or picks first and then filters",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseSongTests"
+    },
+    {
+      "id": "M9-023",
+      "subsystem": "M9-wwise-music",
+      "title": "How the stock app sounded when it sang",
+      "location": "re-analysis/WWISE_MUSIC.md",
+      "effect": "no reference exists to judge the rendered song against",
+      "provenance": "nothing: no recording of the stock app singing is available",
+      "authority": "a recording of a stock Cozmo singing, or the app running against a robot",
+      "evidence": [],
+      "status": "HARDWARE_ONLY",
+      "unresolved": "sustain, release tails, level and whether the get-in branch is audible during a song",
+      "hardware_required": true,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M10-001",
+      "subsystem": "M10-derived",
+      "title": "Off-treads classifier: every threshold, filter constant and debounce",
+      "location": "cozmo-stack/src/Cozmo.Robot/OffTreads.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "Robot::CheckAndUpdateTreadsState 0x00511E00",
+        "Robot::UpdateFullRobotState 0x0051291C"
+      ],
+      "live_path": true,
+      "test": "DerivedStateTests"
+    },
+    {
+      "id": "M10-002",
+      "subsystem": "M10-derived",
+      "title": "Unexpected-movement detector constants",
+      "location": "cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "MovementComponent::CheckForUnexpectedMovement 0x0063E398"
+      ],
+      "live_path": true,
+      "test": "DerivedStateTests"
+    },
+    {
+      "id": "M10-003",
+      "subsystem": "M10-derived",
+      "title": "Reaction-strategy factory rules per trigger",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ReactionStrategies.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "reaction strategy factory 0x0060D5A0 and its lambdas"
+      ],
+      "live_path": true,
+      "test": "DerivedStateTests"
+    },
+    {
+      "id": "M10-004",
+      "subsystem": "M10-derived",
+      "title": "CheckReactionTriggerStrategies order: strategy predicates, then ShouldTriggerBehavior, then switch",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "CheckReactionTriggerStrategies 0x005A3550",
+        "IReactionTriggerStrategy::ShouldTriggerBehavior 0x0060B63A"
+      ],
+      "live_path": true,
+      "test": "CorrectionTests"
+    },
+    {
+      "id": "M10-005",
+      "subsystem": "M10-derived",
+      "title": "The off-treads debounce runs on the local clock",
+      "location": "cozmo-stack/src/Cozmo.Robot/OffTreads.cs:58",
+      "effect": "a transition is debounced against a different clock than the engine uses",
+      "provenance": "a choice of this stack, labelled",
+      "authority": "the engine debounces against its own base-station clock in milliseconds; the same quantity, a different source",
+      "evidence": [
+        "Robot::CheckAndUpdateTreadsState 0x00511E00"
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "DerivedStateTests"
+    },
+    {
+      "id": "M10-006",
+      "subsystem": "M10-derived",
+      "title": "The unexpected-movement detector is gated on direct drive",
+      "location": "cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs:47",
+      "effect": "the detector fires, or fails to fire, during commanded motion",
+      "provenance": "inferred as to which locks the engine tests; the skip itself is native",
+      "authority": "MovementComponent::CheckForUnexpectedMovement 0x0063E398 and the lock it reads",
+      "evidence": [
+        "MovementComponent::CheckForUnexpectedMovement 0x0063E398"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "which track locks the engine tests before skipping the check",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M10-007",
+      "subsystem": "M10-derived",
+      "title": "The pose rewind after unexpected movement is not reproduced",
+      "location": "cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs:66",
+      "effect": "the robot pose is not corrected back to the start timestamp, so later odometry is off",
+      "provenance": "deferred",
+      "authority": "MovementComponent::CheckForUnexpectedMovement 0x0063E398 continues into the rewind",
+      "evidence": [
+        "MovementComponent::CheckForUnexpectedMovement 0x0063E398"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the rewind itself, which is in the same function that was read for the detector",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M10-008",
+      "subsystem": "M10-derived",
+      "title": "Resume-last mechanics after a reaction",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs",
+      "effect": "the behaviour that was interrupted does or does not come back",
+      "provenance": "inferred structure",
+      "authority": "the engine behaviour manager resume path",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "whether the engine resumes the interrupted behaviour, and under what conditions",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "BehaviorHardeningTests"
+    },
+    {
+      "id": "M10-009",
+      "subsystem": "M10-derived",
+      "title": "The obstacle-detected flag has a local source",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs:45",
+      "effect": "ReactToObstacle runs at the wrong times",
+      "provenance": "a local hook: true while an obstacle stop is pending",
+      "authority": "StrategyObstacleDetected in libcozmoEngine.so and whatever writes the flag it reads",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "what sets the engine obstacle-detected flag",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "FreeplayTests"
+    },
+    {
+      "id": "M11-001",
+      "subsystem": "M11-vision",
+      "title": "Marker type table and the nearest-neighbour library, extracted byte for byte",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MarkerLibrary.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "re-analysis/tools/extract_marker_library.py records the addresses and the check"
+      ],
+      "live_path": true,
+      "test": "VisionTests"
+    },
+    {
+      "id": "M11-002",
+      "subsystem": "M11-vision",
+      "title": "Marker decoder algorithm: probe values, nearest neighbour, extract",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "GetProbeValues",
+        "GetNearestNeighbor",
+        "Extract"
+      ],
+      "live_path": true,
+      "test": "VisionTests"
+    },
+    {
+      "id": "M11-003",
+      "subsystem": "M11-vision",
+      "title": "Camera pose on the robot, cube size, marker size, face poses and codes",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/CubeGeometry.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "Robot::Robot _kDefaultHeadCamRotation",
+        "GetCameraPose",
+        "Block::LookupBlockInfo",
+        "Block::AddFace",
+        "KnownMarker::_canonicalCorners3d"
+      ],
+      "live_path": true,
+      "test": "VisionTests"
+    },
+    {
+      "id": "M11-004",
+      "subsystem": "M11-vision",
+      "title": "BlockWorld connected-object rule, moving and rotating gates, position-update thresholds",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "80 mm, 45 degrees, 600000 ms thresholds in the position-update strategy"
+      ],
+      "live_path": true,
+      "test": "VisionTests"
+    },
+    {
+      "id": "M11-005",
+      "subsystem": "M11-vision",
+      "title": "Front-end pixel algorithms, the 0.75 dark multiplier and PnP numerics",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/QuadDetector.cs",
+      "effect": "markers are found at slightly different places, or not found",
+      "provenance": "local implementations of steps the engine parameterises",
+      "authority": "MarkerDetector::Parameters::Initialize gives the parameters, which are read; the pixel loops themselves were not transcribed",
+      "evidence": [
+        "MarkerDetector::Parameters::Initialize"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the engine own quad extraction and refinement, which is in the binary",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "VisionTests"
+    },
+    {
+      "id": "M11-006",
+      "subsystem": "M11-vision",
+      "title": "Clustering tolerances, the flat-snap angle, history windows, verification timeout",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
+      "effect": "observations merge into the wrong object, or fail to merge",
+      "provenance": "chosen locally (20 mm / 10 degrees, 8 degrees)",
+      "authority": "the engine BlockWorld clustering",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the engine own tolerances",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "VisionTests"
+    },
+    {
+      "id": "M11-007",
+      "subsystem": "M11-vision",
+      "title": "Two misses before an object pose is forgotten",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs:127",
+      "effect": "a cube is forgotten too early or too late",
+      "provenance": "read as cmp r3, #1 and taken as 2 misses",
+      "authority": "MarkObjectUnknown in libcozmoEngine.so",
+      "evidence": [
+        "MarkObjectUnknown"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the comparison was read but the counter it compares was not traced",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "VisionTests"
+    },
+    {
+      "id": "M11-008",
+      "subsystem": "M11-vision",
+      "title": "Minimum projected marker size for the visibility test, 10 pixels",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs:140",
+      "effect": "a distant cube is or is not counted as visible",
+      "provenance": "inferred",
+      "authority": "the engine visibility test",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the engine threshold",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M11-009",
+      "subsystem": "M11-vision",
+      "title": "A located cube that reports movement over the radio is marked Dirty",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs:319",
+      "effect": "the pose of a moved cube is trusted or distrusted differently",
+      "provenance": "inferred",
+      "authority": "the engine ObjectMoved handling",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "what the engine does to the pose on ObjectMoved",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "VisionTests"
+    },
+    {
+      "id": "M11-010",
+      "subsystem": "M11-vision",
+      "title": "Occlusion is not modelled; a marker that passes the geometric tests counts as visible",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs:65",
+      "effect": "a hidden cube is reported visible",
+      "provenance": "deferred",
+      "authority": "the engine occluder list and IsAnythingBehind",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the occluder list and the IsAnythingBehind test",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M11-011",
+      "subsystem": "M11-vision",
+      "title": "NV storage request framing and MORE chunking for the camera calibration",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/CameraCalibration.cs:112",
+      "effect": "the calibration read fails, so live vision falls back or refuses",
+      "provenance": "inferred framing",
+      "authority": "the engine NV storage client and the CLAD definition",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the request Length field and second byte, and the chunking rule",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M11-012",
+      "subsystem": "M11-vision",
+      "title": "The nominal camera calibration stand-in",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/CameraCalibration.cs:90",
+      "effect": "poses are approximate",
+      "provenance": "a number from no Anki source, used only when the operator asks with --nominal",
+      "authority": "not applicable: the live path reads the robot own calibration and fails closed without it",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": false,
+      "test": "VisionTests"
+    },
+    {
+      "id": "M11-013",
+      "subsystem": "M11-vision",
+      "title": "AllowUnconnectedObjects switch",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs:145",
+      "effect": "objects are created for cubes that are not connected",
+      "provenance": "an explicit switch for offline tools and tests, off on the live path",
+      "authority": "the engine connected-object rule, which is implemented",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": false,
+      "test": "VisionTests"
+    },
+    {
+      "id": "M11-014",
+      "subsystem": "M11-vision",
+      "title": "SetBodyAngle is read as an absolute body angle in the robot pose frame",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs:264",
+      "effect": "the robot turns to the wrong heading",
+      "provenance": "the packing is native; the frame of reference is inferred",
+      "authority": "the engine SetBodyAngle caller",
+      "evidence": [
+        "packing read from libcozmoEngine.so"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "whether the angle is absolute or relative; hardware item L would also show it",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "VisionTests"
+    },
+    {
+      "id": "M11-015",
+      "subsystem": "M11-vision",
+      "title": "Turn speed 100 deg per s and acceleration 10 rad per s squared",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs:265",
+      "effect": "turns are faster or slower than the app",
+      "provenance": "chosen locally",
+      "authority": "the engine turn action constants",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the engine own speed and acceleration for this turn",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M11-016",
+      "subsystem": "M11-vision",
+      "title": "Face, pet and motion detection",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs",
+      "effect": "no face, pet or motion is ever detected",
+      "provenance": "IFaceDetector and IPetDetector seams that report unavailable",
+      "authority": "Omron OKAO, 177 OKAO_* exports of proprietary code; no Anki algorithm exists to transcribe",
+      "evidence": [
+        "FaceTracker::Impl::Update",
+        "FaceRecognizer",
+        "OKAO_DT_* exports"
+      ],
+      "status": "BLOCKED_EXTERNAL",
+      "unresolved": "nothing recoverable: the detector is third-party binary code",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "FaceTests"
+    },
+    {
+      "id": "M12-001",
+      "subsystem": "M12-manipulation",
+      "title": "Pre-action pose types and distances (75 / 40 / 49 mm)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/PreActionPose.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "pre-action pose table and the actions that ask for each type"
+      ],
+      "live_path": true,
+      "test": "ManipulationTests"
+    },
+    {
+      "id": "M12-002",
+      "subsystem": "M12-manipulation",
+      "title": "Path segment and ExecutePath packings; DriveToPose and DriveToObject constants",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/RobotPath.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "packing at 0x00632BAE..0x00632BEE"
+      ],
+      "live_path": true,
+      "test": "ManipulationTests"
+    },
+    {
+      "id": "M12-003",
+      "subsystem": "M12-manipulation",
+      "title": "Dock message order, docking error signal formula and gates, pick-and-place result layout",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "IDockAction and the firmware exchange"
+      ],
+      "live_path": true,
+      "test": "ManipulationTests"
+    },
+    {
+      "id": "M12-004",
+      "subsystem": "M12-manipulation",
+      "title": "The dock retry drops the pose it just failed from",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "IBehavior::UseSecondClosestPreActionPose 0x005BEE40",
+        "IDockAction::RemoveMatchingPredockPose 0x00551418"
+      ],
+      "live_path": true,
+      "test": "CorrectionTests"
+    },
+    {
+      "id": "M12-005",
+      "subsystem": "M12-manipulation",
+      "title": "Unread DockWithObject fields are sent as zero",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs:75",
+      "effect": "the firmware receives a zero where the app sends something else, and may dock differently",
+      "provenance": "the fourth float and the last two bytes are sent as zero because they were not traced",
+      "authority": "the engine DockWithObject packing, which was read for the other fields",
+      "evidence": [
+        "packing at 0x00632BAE..0x00632BEE"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "what the engine puts in the fourth float and the two trailing bytes",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M12-006",
+      "subsystem": "M12-manipulation",
+      "title": "A carried object is released in the world model when the put-down animation completes",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ManipulationBehaviors.cs:92",
+      "effect": "the world model believes the robot is carrying a cube it has put down, or the reverse",
+      "provenance": "inferred; the engine learns it from the robot carry state",
+      "authority": "the robot carry state in RobotState and the engine handling of it",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "which field of RobotState carries the carry state and how the engine reacts to it",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "ManipulationTests"
+    },
+    {
+      "id": "M12-007",
+      "subsystem": "M12-manipulation",
+      "title": "Lift-load timeout and the accelerometer object-did-not-move check are not implemented",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs:135",
+      "effect": "a failed pick-up is reported as a success",
+      "provenance": "deferred",
+      "authority": "the engine pick-up verification in IDockAction",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "both checks, which are in the dock action already partly read",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M12-008",
+      "subsystem": "M12-manipulation",
+      "title": "The pose of a carried object is parented to the lift by a reduction",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs:48",
+      "effect": "a carried cube is drawn or reasoned about in the wrong place",
+      "provenance": "a reduction of the engine pose-parent chain to the lift",
+      "authority": "the engine pose tree",
+      "evidence": [],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "ManipulationTests"
+    },
+    {
+      "id": "M12-009",
+      "subsystem": "M12-manipulation",
+      "title": "Retry limits: 3 attempts for manipulation, 2 for the charger, 3 for the wheelie",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs:125",
+      "effect": "the robot gives up sooner or later than the app",
+      "provenance": "inferred numbers",
+      "authority": "the engine behaviour classes, which carry their own retry counts",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the retry count each engine behaviour uses",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M12-010",
+      "subsystem": "M12-manipulation",
+      "title": "The search-for-block fallback is not implemented",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs:125",
+      "effect": "the robot stops where the app would look around for the cube",
+      "provenance": "deferred",
+      "authority": "the engine search behaviour",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the search pattern",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M12-011",
+      "subsystem": "M12-manipulation",
+      "title": "A failed final turn fails DriveToObjectAction as DidNotReachPreActionPose",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DriveActions.cs",
+      "effect": "the caller sees the nearest shipped result rather than the engine own",
+      "provenance": "a labelled reduction to the nearest shipped ActionResult",
+      "authority": "the engine DriveToObjectAction result for this case",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "which ActionResult the engine reports",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "CorrectionTests"
+    },
+    {
+      "id": "M12-012",
+      "subsystem": "M12-manipulation",
+      "title": "Non-upright stacking needs a progression unlock and is not implemented",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ManipulationBehaviors.cs:229",
+      "effect": "the robot refuses placements the app would attempt",
+      "provenance": "deferred, uprights only",
+      "authority": "the engine placement rules",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the unlock condition and the non-upright placement geometry",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M13-001",
+      "subsystem": "M13-navigation",
+      "title": "Lattice planner motion primitives read from cozmo_mprim.json",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "shipped OBB asset",
+      "evidence": [
+        "config/engine/cozmo_mprim.json"
+      ],
+      "live_path": true,
+      "test": "NavigationTests"
+    },
+    {
+      "id": "M13-002",
+      "subsystem": "M13-navigation",
+      "title": "FlipBlockAction, charger geometry, AlignWithObjectAction and MountChargerAction constants",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/FlipBlockAction.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "FlipBlockAction 0x0055EC80",
+        "charger 0x004E9B6C"
+      ],
+      "live_path": true,
+      "test": "NavigationTests"
+    },
+    {
+      "id": "M13-003",
+      "subsystem": "M13-navigation",
+      "title": "Obstacle padding and the soft-ring penalty",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs:110",
+      "effect": "paths hug or avoid obstacles differently, and some plans fail that would succeed",
+      "provenance": "inferred from the robot 56 by 70 mm body",
+      "authority": "xythetaEnvironment in libcozmoEngine.so, whose interface was read but whose padding and penalty were not",
+      "evidence": [
+        "xythetaEnvironment"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the engine padding radius and penalty weight",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NavigationTests"
+    },
+    {
+      "id": "M13-004",
+      "subsystem": "M13-navigation",
+      "title": "In-place turn cost and the arc reconstruction from the primitive file",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs:71",
+      "effect": "the planner prefers different primitives, so the robot takes a different route",
+      "provenance": "inferred reconstruction",
+      "authority": "the engine planner cost function and its precomputed heuristic table",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the cost of an in-place turn and the exact arc the engine builds from each primitive",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NavigationTests"
+    },
+    {
+      "id": "M13-005",
+      "subsystem": "M13-navigation",
+      "title": "A lattice-planner failure falls back to the straight line when the same environment reports it clear",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DriveActions.cs:71",
+      "effect": "the robot drives a straight line where the app would report a planning failure",
+      "provenance": "a labelled fallback of this stack",
+      "authority": "the engine returns a planning failure",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NavigationTests"
+    },
+    {
+      "id": "M13-006",
+      "subsystem": "M13-navigation",
+      "title": "One active beacon at a time in AIWhiteboard",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/AIWhiteboard.cs:31",
+      "effect": "the robot returns to the wrong place",
+      "provenance": "inferred from GetActiveBeacon being singular",
+      "authority": "the engine AIWhiteboard, whose interface is exported",
+      "evidence": [
+        "AIWhiteboard exports"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "whether the engine keeps more than one beacon, and how failures are recorded",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NavigationTests"
+    },
+    {
+      "id": "M13-007",
+      "subsystem": "M13-navigation",
+      "title": "Stack detection tolerance of 15 mm above a cube height of 44",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/BlockConfigurations.cs:41",
+      "effect": "a stack is or is not recognised",
+      "provenance": "inferred tolerance",
+      "authority": "FindObjectOnTopOrUnderneathHelper in libcozmoEngine.so",
+      "evidence": [
+        "FindObjectOnTopOrUnderneathHelper"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the engine tolerance",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NavigationTests"
+    },
+    {
+      "id": "M13-008",
+      "subsystem": "M13-navigation",
+      "title": "The charger drive-off is allowed to end short when the contacts report",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs:54",
+      "effect": "the robot stops at a different distance from the charger",
+      "provenance": "inferred",
+      "authority": "DriveOffChargerContactsAction CheckIfDone in libcozmoEngine.so",
+      "evidence": [
+        "Robot::IsOnChargerContacts"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "whether the engine ends the drive early or always drives the full distance",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M13-009",
+      "subsystem": "M13-navigation",
+      "title": "Charger length and the pre-dock pose derived from the drive-off distance",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/ChargerGeometry.cs:8",
+      "effect": "the robot aims at the wrong point when mounting",
+      "provenance": "inferred from the drive-off distance",
+      "authority": "the charger object definition at 0x004E9B6C, partly read",
+      "evidence": [
+        "charger 0x004E9B6C"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the charger real dimensions and the pose the mount action aligns to",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NavigationTests"
+    },
+    {
+      "id": "M13-010",
+      "subsystem": "M13-navigation",
+      "title": "Workout selection by index, medium by default",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Workouts.cs:43",
+      "effect": "the robot does a different workout than the app would pick",
+      "provenance": "chosen locally; the selection input is inferred to be the energy need",
+      "authority": "WorkoutComponent in libcozmoEngine.so and the shipped workout config",
+      "evidence": [
+        "WorkoutComponent"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "what the engine selects on",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M14-001",
+      "subsystem": "M14-faces",
+      "title": "TrackedFace geometry, FaceWorld match and forgetting rules",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "TrackedFace 0x0087DE24",
+        "FaceWorld 220 mm match, 15 s forgetting"
+      ],
+      "live_path": true,
+      "test": "FaceTests"
+    },
+    {
+      "id": "M14-002",
+      "subsystem": "M14-faces",
+      "title": "Frame counts waited by VisuallyVerifyFaceAction and TurnTowardsFaceAction",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs:69",
+      "effect": "a face is declared verified too early or too late",
+      "provenance": "inferred (5 frames)",
+      "authority": "the engine face actions",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the engine frame budget for each",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M14-003",
+      "subsystem": "M14-faces",
+      "title": "TrackFaceAction update period of 100 ms; eye shift and driving animation not implemented",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs:156",
+      "effect": "tracking is jerkier and the face does not react while tracking",
+      "provenance": "chosen locally; the extra layers are deferred",
+      "authority": "the engine TrackFaceAction",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the engine update period and the layers it adds",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M14-004",
+      "subsystem": "M14-faces",
+      "title": "PetInitialDetection strategy shape",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs:524",
+      "effect": "the pet reaction fires at the wrong times",
+      "provenance": "inferred shape: the first sighting of a pet id",
+      "authority": "the engine strategy class for PetInitialDetection",
+      "evidence": [
+        "reactionTrigger_behavior_map.json"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the strategy class was not disassembled",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "FaceTests"
+    },
+    {
+      "id": "M14-005",
+      "subsystem": "M14-faces",
+      "title": "TurnTowardsImagePoint aims at a ray 200 mm out",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs:573",
+      "effect": "the robot turns to the wrong angle for a detected pet",
+      "provenance": "inferred range",
+      "authority": "the engine TurnTowardsImagePointAction",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the range the engine assumes",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M14-006",
+      "subsystem": "M14-faces",
+      "title": "Text to speech is not implemented",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs:69",
+      "effect": "SayTextAction says nothing",
+      "provenance": "deferred; the app owns text to speech",
+      "authority": "Acapela (libacattsandroid.so) plus the Anki Wave Portal Wwise source plug-in; both third-party binaries",
+      "evidence": [
+        "libacattsandroid.so",
+        "PluginInfo.xml Anki Wave Portal"
+      ],
+      "status": "BLOCKED_EXTERNAL",
+      "unresolved": "the voice model and the plug-in are third-party binaries",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M14-007",
+      "subsystem": "M14-faces",
+      "title": "The memory map is not modelled, so CanDriveIdealDistanceForward always allows the drive",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs:256",
+      "effect": "the robot drives towards a face into an obstacle it should have known about",
+      "provenance": "deferred",
+      "authority": "the engine memory map",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the memory map structure and the query",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M15-001",
+      "subsystem": "M15-freeplay",
+      "title": "NeedsManager update and bracket rules; the shipped activity tree",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "shipped configs plus libcozmoEngine.so",
+      "evidence": [
+        "activities_config.json",
+        "ActivityFreeplay::CreateFromConfig"
+      ],
+      "live_path": true,
+      "test": "FreeplayTests"
+    },
+    {
+      "id": "M15-002",
+      "subsystem": "M15-freeplay",
+      "title": "Scoring and strict-priority choosers, including the running bonus and the is-running byte at +0xA1",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "ScoringBSRunnableChooser::GetDesiredActiveBehavior",
+        "StrictPriorityBSRunnableChooser::GetDesiredActiveBehavior 0x0060B23E"
+      ],
+      "live_path": true,
+      "test": "FreeplayTests"
+    },
+    {
+      "id": "M15-003",
+      "subsystem": "M15-freeplay",
+      "title": "Activity start and end rules and the cooldown lifecycle",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "IActivityStrategy::WantsToEnd 0x005B5444",
+        "WantsToStart 0x005B529C",
+        "RandomizeCooldown at 0x005B5336",
+        "constructor 0x005B5004"
+      ],
+      "live_path": true,
+      "test": "FreeplayTests"
+    },
+    {
+      "id": "M15-004",
+      "subsystem": "M15-freeplay",
+      "title": "Needs decay modifiers, damaged parts and persistence are not implemented",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs:45",
+      "effect": "needs decay at the wrong rate and do not survive a restart",
+      "provenance": "deferred",
+      "authority": "the shipped needs config carries DecayModifiers; the engine reads them",
+      "evidence": [
+        "needs config"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "how one need level scales another decay, the damaged-parts bookkeeping, and where the engine persists the state",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "FreeplayTests"
+    },
+    {
+      "id": "M15-005",
+      "subsystem": "M15-freeplay",
+      "title": "The flat 3 s recent-end cooldown case is not reproduced",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs",
+      "effect": "an activity that just ended can restart sooner than the app allows",
+      "provenance": "read in WantsToStart and left out because the second time argument was not identified",
+      "authority": "IActivityStrategy::WantsToStart 0x005B529C",
+      "evidence": [
+        "WantsToStart 0x005B529C"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "what the second time argument is measured from",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "CorrectionTests"
+    },
+    {
+      "id": "M15-006",
+      "subsystem": "M15-freeplay",
+      "title": "Activity deselection hook and the null-pick path",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs:23",
+      "effect": "state is cleared at the wrong moment when an activity ends or picks nothing",
+      "provenance": "inferred; IActivity::OnDeselected reads it but the exact hook was not traced",
+      "authority": "ActivityFreeplay::GetDesiredActiveBehaviorInternal 0x005AE2xx and IActivity::OnDeselected",
+      "evidence": [
+        "ActivityFreeplay::GetDesiredActiveBehaviorInternal"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the hook and the null-pick path, instruction by instruction",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "FreeplayTests"
+    },
+    {
+      "id": "M15-007",
+      "subsystem": "M15-freeplay",
+      "title": "boredomMultiplier, feature gates and the pyramid strategy random factor are not applied",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs",
+      "effect": "activity scores differ from the app",
+      "provenance": "deferred",
+      "authority": "the shipped activity configs carry them",
+      "evidence": [
+        "activities/**"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "how the engine applies each",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M15-008",
+      "subsystem": "M15-freeplay",
+      "title": "The needsActionID hook and desired-from-objects ordering",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs:139",
+      "effect": "a different behaviour is picked when several objects are desirable",
+      "provenance": "inferred ordering",
+      "authority": "the engine activity strategy",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the ordering rule and what needsActionID does",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M15-009",
+      "subsystem": "M15-freeplay",
+      "title": "Emotion event names fired when a cube is placed in a beacon",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs:825",
+      "effect": "mood does not move where the app moves it",
+      "provenance": "deferred: the names were not read",
+      "authority": "FireEmotionEvents call sites in libcozmoEngine.so and mood_config.json",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the event names",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M15-010",
+      "subsystem": "M15-freeplay",
+      "title": "A block whose location is no longer valid goes straight to the upset reaction",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeReactions.cs:259",
+      "effect": "the robot reacts where the app might search first",
+      "provenance": "inferred: the engine log string was found, the branch after it was not read",
+      "authority": "the engine behaviour that logs the location is no longer valid",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "what the engine does after that log line",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M15-011",
+      "subsystem": "M15-freeplay",
+      "title": "The beacon is centred on the robot",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs:793",
+      "effect": "cubes are gathered to the wrong place",
+      "provenance": "inferred; the engine selection logic was not read further",
+      "authority": "the engine beacon selection",
+      "evidence": [],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "how the engine chooses the beacon centre",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M15-012",
+      "subsystem": "M15-freeplay",
+      "title": "Images waited for after a put-down, and the CantHandleTallStack trigger name",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs:636",
+      "effect": "a stack check runs on too few frames, or the wrong animation plays",
+      "provenance": "inferred from acknowledgeObject.json and from the trigger name",
+      "authority": "the engine behaviour classes",
+      "evidence": [
+        "acknowledgeObject.json"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the engine image count and trigger",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "CorrectionTests"
+    },
+    {
+      "id": "TOOL-001",
+      "subsystem": "tools",
+      "title": "Conformance CLI pass and fail criteria",
+      "location": "cozmo-stack/src/Cozmo.Conformance/Program.cs",
+      "effect": "a run is reported as passing or failing",
+      "provenance": "criteria of this harness",
+      "authority": "not applicable: the harness is not part of the app",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": false,
+      "test": "HardwareRunnerTests"
+    },
+    {
+      "id": "TOOL-002",
+      "subsystem": "tools",
+      "title": "The fake robot side answers place docks without a marker signal",
+      "location": "cozmo-stack/tests/Cozmo.Protocol.Tests/ManipRig.cs",
+      "effect": "offline manipulation tests pass a step the firmware would decide",
+      "provenance": "a test-harness decision, labelled; the firmware PLACE_LOW and PLACE_HIGH still track the marker when it is visible",
+      "authority": "not applicable: this is the test double, not the robot",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": false,
+      "test": "ManipulationTests"
+    },
+    {
+      "id": "TOOL-003",
+      "subsystem": "tools",
+      "title": "The --nominal calibration override in the vision, manipulation and freeplay tools",
+      "location": "cozmo-stack/src/Cozmo.Conformance/VisionTool.cs:138",
+      "effect": "poses are approximate in a tool run",
+      "provenance": "an explicit, labelled operator override recorded in the acceptance file",
+      "authority": "the live path fails closed without a real calibration",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": false,
+      "test": null
+    }
+  ]
+}
