@@ -38,6 +38,7 @@ return args.Length == 0 ? Usage() : args[0] switch
     "reactions" => ReactionsTool.Run(args).GetAwaiter().GetResult(),
     "vision" => VisionTool.Run(args).GetAwaiter().GetResult(),
     "bodyangle" => VisionTool.BodyAngle(args).GetAwaiter().GetResult(),
+    "manip" => ManipTool.Run(args).GetAwaiter().GetResult(),
     _ => Usage(),
 };
 
@@ -214,6 +215,10 @@ static int Usage()
           vision <robot-ip> [--seconds 60] [--nominal] [--unconnected] [--acceptance [file]] [--out <dir>]
                                              M11 acceptance: read the camera calibration from NV storage, stream the camera, print markers,
                                              objects and pose-state changes (--nominal: fall back to a stand-in calibration)
+          manip <robot-ip> --driveto|--pickup|--putdown|--roll|--stack [--seconds 120] [--nominal] [--acceptance [file]]
+                                             M12 acceptance: drive to a located cube's pre-dock pose, pick it up, place it, roll it or
+                                             stack two, printing every path/dock message and the robot's results
+          manip --plan <x> <y> <angleDeg>     print the path segments and wire messages the planner sends for a goal (offline)
           bodyangle <robot-ip> [--deg 45] [--acceptance [file]]
                                              M11 check: send SetBodyAngle and watch the pose angle, to confirm the absolute-angle semantics
 

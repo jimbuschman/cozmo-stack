@@ -328,6 +328,28 @@ public static class ShippedBehaviors
     public static bool PickedUpForReaction(CozmoRobot r) =>
         r.Sensors.OffTreadsClassifierEnabled ? r.Sensors.OffTreadsState == OffTreadsState.InAir : r.Sensors.PickedUp;
 
+    /// <summary>
+    /// The 13 shipped manipulation behaviours (M12), by their config ids: two PickUpCube, four PutDownBlock,
+    /// four RollBlock, two StackBlocks and the PickUpAndPutDownCube spark. Their parameters beyond the class
+    /// (block configurations to ignore, isBlockRotationImportant) are read where the class uses them.
+    /// </summary>
+    public static IReadOnlyList<IBehavior> Manipulation(Cozmo.Robot.Manipulation.ManipulationSystem m) => new IBehavior[]
+    {
+        new PickUpCubeBehavior(m, "SparksPickupSingleCubeForPyramid"),
+        new PickUpCubeBehavior(m, "SparksPickupSingleCubeToStack"),
+        new PutDownBlockBehavior(m, "PutDownBlock"),
+        new PutDownBlockBehavior(m, "PutDownBlockNothingToDo"),
+        new PutDownBlockBehavior(m, "PyramidPutDownBlock"),
+        new PutDownBlockBehavior(m, "SparksPutDownBlock"),
+        new RollBlockBehavior(m, "RollBlockOnSide"),
+        new RollBlockBehavior(m, "RollBlockOnSideLowScore"),
+        new RollBlockBehavior(m, "Hiking_RollCube", blockRotationImportant: false),
+        new RollBlockBehavior(m, "SparksRollBlock", blockRotationImportant: false),
+        new StackBlocksBehavior(m, "StackBlocks"),
+        new StackBlocksBehavior(m, "SparksStackBlock"),
+        new PickUpAndPutDownCubeBehavior(m, "SparksPickUpCube"),
+    };
+
     /// <summary>Creates the config-free runnable set, matching the shipped configs' ids and classes.</summary>
     public static IReadOnlyList<IBehavior> Implementable() => new IBehavior[]
     {
