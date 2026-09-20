@@ -128,14 +128,38 @@ M12_CLASSES = {
     "StackBlocks": "BehaviorStackBlocks: PickupBlockHelper then PlaceRelObjectHelper on the closest upright bottom, StackBlocksSuccess; failure backs up and places on the ground",
     "PickUpAndPutDownCube": "BehaviorPickUpCube followed by BehaviorPutDownBlock (the class name's two halves, both transcribed)",
 }
-M12_BLOCKED = {
-    "KnockOverCubes": ("requires the flip action (M12 follow-up)", "BehaviorKnockOverCubes drives a DriveAndFlipBlockAction / FlipBlockAction whose dock action and lift choreography were not recovered"),
+M12_BLOCKED = {}
+
+# M13 (2026-09-20) built the lattice planner over cozmo_mprim.json, FlipBlockAction / DriveAndFlipBlockAction, the
+# charger object with AlignWithObjectAction / MountChargerAction / DriveOffChargerContactsAction, the block
+# configurations (stacks, pyramid bases, pyramids), the AIWhiteboard's beacons and failure memory and the
+# WorkoutComponent; the classes below are transcribed on them (Behavior/CubeGameBehaviors.cs,
+# Behavior/ChargerBehaviors.cs). Hardware acceptance pending (HARDWARE_TEST_PLAN items S-X).
+M13_NAVIGATION = "implementable with M13 (navigation, cube games, charger)"
+M13_CLASSES = {
+    "KnockOverCubes": "BehaviorKnockOverCubes: turn to the stack's bottom block, drive to 85 mm at 60 mm/s, KnockOverGrabAttempt, DriveAndFlipBlockAction (blind FlipBlockAction on a failed drive), success/failure trigger",
+    "PopAWheelie": "BehaviorPopAWheelie: PopAWheelieInitial, drive to the dock pose and the POP_A_WHEELIE dock, retries with PopAWheelieRealign/Retry, EnableStopOnCliff on stop",
+    "RamIntoBlock": "BehaviorRamIntoBlock: turn to the block, lift low, drive its distance at 100 mm/s with SoundOnlyRamIntoBlock, back up 100 mm",
+    "CubeLiftWorkout": "BehaviorCubeLiftWorkout over WorkoutComponent (workout_config.json): pick up, pre-lift, strong lifts from Confident, transition, weak lifts, put down, post-lift, emotion event and objectives",
+    "BuildPyramidBase": "BehaviorBuildPyramidBase: pick up the base block, PlaceRelObjectHelper beside the static block (dimension + 12 mm), back up 40 mm, BuildPyramidReactToBase",
+    "BuildPyramid": "BehaviorBuildPyramid: the base, then pick up the top block and PlaceRelObjectHelper over the base's interior midpoint, BuildPyramidSuccess, objective BuiltPyramid",
+    "RespondPossiblyRoll": "BehaviorRespondPossiblyRoll: upright -> turn and BuildPyramidNthBlockUpright; on its side -> BuildPyramidNthBlockOnSide then the roll helper",
+    "OnConfigSeen": "BehaviorOnConfigSeen: a listed block configuration first seen within 5 s -> the listed animations (RespondToPyramidBase: PyramidBase -> BuildPyramidReactToBase)",
+    "CantHandleTallStack": "BehaviorCantHandleTallStack: a stack of 3, wait 1 s, head -25 deg, wait, head +45 deg, wait, CantHandleTallStack; stops when a block moves 20 mm",
+    "CheckForStackAtInterval": "BehaviorCheckForStackAtInterval: every 15 s turn to a known block, look at the ghost pose one block up, pan back",
+    "ReactToPyramid": "BehaviorReactToPyramid: runnable with a pyramid in the configuration cache; InitInternal arms a 100 s cooldown and nothing else",
+    "ReactToStackOfCubes": "BehaviorReactToStackOfCubes: runnable with a stack in the configuration cache; InitInternal arms a 100 s cooldown and nothing else",
+    "ThinkAboutBeacons": "BehaviorThinkAboutBeacons: no active beacon -> AIWhiteboard::AddBeacon at the robot (175 / 75 mm), HikingReactToNewArea",
+    "BringCubeToBeacon": "BehaviorExploreBringCubeToBeacon: a usable cube outside the beacons -> pick up, stack on a cube in the beacon or place at a free pose inside it; failures remembered for the cooldown",
+    "DriveOffCharger": "BehaviorDriveOffCharger: DriveOffChargerContactsAction for 96 mm + extraDistanceToDrive_mm at 20 mm/s, wait for treads, emotion event DriveOffCharger",
+    "ReactToOnCharger": "BehaviorReactToOnCharger: PlacedOnCharger, then GoingToSleep at 300 s and StartIdleTimeout at 330 s (engine-to-app broadcasts, logged)",
+    "DockingTestSimple": "the dev docking test, run as MountChargerAction on a located charger (AlignWithObjectAction 120 mm CUSTOM, turn, back 120 mm at 30 mm/s, retry forward 120 mm)",
 }
 
 BY_ID = {
     "AcknowledgeObject": (M11_LOCALISED, "BehaviorAcknowledgeObject (0x00602FA4) turns to a located object, verifies it in two images and plays AcknowledgeObject; ObjectPositionUpdated fires on a new located pose (80 mm / 45 deg)"),
     "ReactToFrustrationMinor": (M10_DERIVED, "mood confidence below -0.6 plus one animation and an emotion event; both exist"),
-    "ReactToFrustrationMajor": ("requires navigation/path planning", "its random drive is a DriveToPoseAction (BehaviorReactToFrustration::AnimationComplete)"),
+    "ReactToFrustrationMajor": (M13_NAVIGATION, "ReactToFrustrationBehavior.Major: FrustratedByFailureMajor, FinishedMajorFrustration, then a DriveToPoseAction to a random pose 150-400 mm away at 80-180 deg (M13 planner)"),
     "ReactToSparked": ("requires the app's spark system", "triggered by the app's ActivateSpark request (BehaviorManager::HandleMessage), which this stack does not receive"),
     "ReactToCubeMoved": (M11_LOCALISED,
                          "BehaviorAcknowledgeCubeMoved and ReactionTriggerStrategyCubeMoved are transcribed; BlockWorld (M11) supplies the located pose, visibility and the turn"),
@@ -202,10 +226,12 @@ def classify(entry):
         return "requires navigation/path planning", f"class '{cls_name}' names a drive or search pattern (TurnInPlace/DriveStraight sequences)"
     if cls_name in M12_CLASSES:
         return M12_MANIPULATION, M12_CLASSES[cls_name]
+    if cls_name in M13_CLASSES:
+        return M13_NAVIGATION, M13_CLASSES[cls_name]
     if cls_name in M12_BLOCKED:
         return M12_BLOCKED[cls_name]
     if MANIPULATION.search(cls_name) and re.search(r"(?i)(cube|block|pyramid|stack|beacon)", blob):
-        return "requires cube manipulation beyond M12 (pyramids, beacons, games)", f"class '{entry['behaviorClass']}' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+        return "requires cube manipulation beyond M13 (faces or the app)", f"class '{entry['behaviorClass']}' needs a tracked face (Bouncer, PyramidThankYou) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions"
     for category, reason, pattern in RULES:
         m = re.search(pattern, blob)
         if m:
@@ -276,8 +302,9 @@ def render(entries, ids, classes, native):
         "1c. a ReactTo class whose input M10 derives → implementable with M10 (derived robot state)",
         "1d. AcknowledgeObject and ReactToCubeMoved → implementable with M11 (cube localisation)",
         "1e. a class naming faces → requires vision; RequestGameSimple → requires the app; ExploreLookAroundInPlace / DriveInDesperation → requires navigation",
-        "1f. PickUpCube, PutDownBlock, RollBlock, StackBlocks, PickUpAndPutDownCube → implementable with M12 (cube manipulation); KnockOverCubes → requires the flip action",
-        "1g. a class naming another cube manipulation (pyramid, beacon, ram, workout, ...) → requires cube manipulation (M12 follow-up)",
+        "1f. PickUpCube, PutDownBlock, RollBlock, StackBlocks, PickUpAndPutDownCube → implementable with M12 (cube manipulation)",
+        "1g. KnockOverCubes, PopAWheelie, RamIntoBlock, CubeLiftWorkout, BuildPyramid(Base), RespondPossiblyRoll, OnConfigSeen, CantHandleTallStack, CheckForStackAtInterval, ReactToPyramid, ReactToStackOfCubes, ThinkAboutBeacons, BringCubeToBeacon, DriveOffCharger, ReactToOnCharger, DockingTestSimple → implementable with M13 (navigation, cube games, charger)",
+        "1h. a class naming another cube manipulation (feeding, bouncer, fire truck) → requires cube manipulation beyond M13 (faces or the app)",
         "2. text names cubes, blocks or objects → requires cubes (localisable since M11; what else they need is per class)",
         "3. text names faces, people or pets → requires vision",
         "4. text names the charger or docking → requires charger/docking",

@@ -500,3 +500,26 @@ retry limit, the carried object's release on the put-down animation; DEFERRED �
 lift-load / accelerometer checks, face turns, non-upright stacking, the search-for-block fallback; NOT
 RECOVERED — KnockOverCubes' flip action. Offline evidence: `ManipulationTests` (14) on a fake robot side.
 Hardware evidence: none yet; `HARDWARE_TEST_PLAN.md` items N–R. Inventory regenerated at 82 of 178.
+
+## 14. M13 additions and one correction, 2026-09-20
+
+**Added** (`NAVIGATION.md` §1): the lattice planner over `cozmo_mprim.json` (ASSET) with `xythetaEnvironment`'s
+obstacle structure (NATIVE interface; padding and penalty INFERRED), `FlipBlockAction` (0x0055EC80, NATIVE
+values), the charger (0x004E9B6C, NATIVE geometry), `AlignWithObjectAction` and `MountChargerAction`
+(NATIVE constants), `DriveOffChargerContactsAction`, the block configurations (NATIVE rules), `AIWhiteboard`
+(NATIVE interface), `WorkoutComponent` (ASSET), and 16 behaviour classes.
+
+**Correction to M12** (`MANIPULATION.md` §2, `DockActionBase`): the M12 dock base ran a
+`VisuallyVerifyObjectAction` before every dock. The engine's `IDockAction::SetupTurnAndVerifyAction` uses
+`VisuallyVerifyNoObjectAtPoseAction` (0x00569015) for the place actions. The difference matters: from the 40 mm
+place-relative pose the camera (neck at z = 49, 4° built-in tilt, head range to −25°) cannot hold a side marker
+fully in view, so the M12 rule refused every stack and every pyramid placement on the offline rig, and would
+have on the robot. `PlaceRelObjectAction` now checks that no other located object sits within half a cube of
+the placement pose and docks on the marker facing the robot. The fake robot side answers place docks without a
+marker signal for the same reason (`ManipRig`), which is a test-harness decision, not engine behaviour: the
+firmware's `PLACE_LOW` / `PLACE_HIGH` still track the marker when it is visible (item R).
+
+**Tests:** 606 after M13 (578 after M12). **Classification changes:** 25 configs move from
+"requires cube manipulation beyond M12", "requires charger/docking", "requires navigation" and "freeplay" to
+"implementable with M13"; four remain beyond M13 for faces or the app (Bouncer, PyramidThankYou,
+FeedingSearchForCube, FireTruckAlarm).

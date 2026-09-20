@@ -1,17 +1,18 @@
-# Handoff — 2026-09-20 (M12 complete offline)
+# Handoff — 2026-09-20 (M13 complete offline)
 
 ## Where things stand
 
 | | |
 | --- | --- |
-| Latest commits | M11: `19d1417`, `39b27d6`; corrections: `981ce8c`; M12: this series |
+| Latest commits | M11: `19d1417`, `39b27d6`; corrections: `981ce8c`; M12: `de08930`, `e35675d`; M13: this series |
 | M10 | Complete offline; hardware pending (items G–J). See [DERIVED_STATE.md](DERIVED_STATE.md) |
 | M11 | Complete offline; hardware pending (items K–M). See [VISION.md](VISION.md) |
 | M9/M10 corrections | Done 2026-09-19 (`981ce8c`): Wwise Stop ends the streaming song, songs prewarmed off the scheduler thread, reactions hold against scoring, latched strategies not consumed while unrunnable, one clock for the frustration cooldown, strategies disposed and stale resume state cleared, DizzyShakeLoop gap recorded |
-| M12 | **COMPLETE OFFLINE.** Pre-action poses, path sender + planner, drive-to-pose / drive-to-object, the firmware docking exchange with the per-frame error signal, carrying, the dock actions and five behaviour classes (13 shipped configs). Hardware acceptance pending — items N–R. See [MANIPULATION.md](MANIPULATION.md) |
-| Tests | **578 tests** (`dotnet test Cozmo.sln`, about 3 m 40 s; 554 after M11, 564 after the corrections), all passing offline |
-| Hardware | nothing new has been run since the two post-sweep retests; the consolidated plan is [HARDWARE_TEST_PLAN.md](HARDWARE_TEST_PLAN.md) (items A–R) |
-| Next | **M13 may begin now**: the remaining cube behaviours (pyramids, beacons, workouts), KnockOverCubes' flip action, the lattice planner, charger docking (see "Next task"). It does not depend on any pending hardware result |
+| M12 | Complete offline; hardware pending (items N–R). See [MANIPULATION.md](MANIPULATION.md) |
+| M13 | **COMPLETE OFFLINE.** The lattice planner over the shipped motion primitives, the flip action, the charger object with align / mount / drive-off, block configurations (stacks, pyramid bases, pyramids), the whiteboard's beacons, the workouts, and 16 behaviour classes (25 shipped configs). Hardware acceptance pending — items S–X. See [NAVIGATION.md](NAVIGATION.md) |
+| Tests | **606 tests** (`dotnet test Cozmo.sln`, about 4 m; 578 after M12), all passing offline |
+| Hardware | nothing new has been run since the two post-sweep retests; the consolidated plan is [HARDWARE_TEST_PLAN.md](HARDWARE_TEST_PLAN.md) (items A–X) |
+| Next | **M14 may begin now**: the face / person / pet pipeline around the OKAO boundary (see "Next task"). It does not depend on any pending hardware result |
 
 ## Milestone status
 
@@ -27,8 +28,29 @@
 | M8 behaviour inventory and framework | Complete offline. `BehaviorManager` now runs reactions (`AddReaction`, `CheckReactions`, resume-last). `SteppedBehavior` is the transcription base for the engine's action-chain classes. Inventory regenerated: **67 of 178 implementable** (19 M1–M7, 39 Singing, 9 M10) plus `ReactToCubeMoved` implemented and waiting on localisation. **M10 correction:** `PlayAnimWithFace` needs a face (`TurnTowardsFaceAction` first) and is filed under vision. |
 | M9 Wwise switch-state audio | Complete offline; hardware pending (items A, A2). |
 | M10 derived robot state and reactions | Complete offline; hardware pending (items G–J). `OffTreadsClassifier`, `UnexpectedMovementDetector`, `ShippedReactionStrategies`, eight `ReactToX` classes + `ReactToFrustrationBehavior.Minor`, the cube-moved path behind `ICubeLocator`, `PlayAnimBehavior.LoadShipped`, `offtreads` and `reactions` commands. |
+| M13 navigation, cube games, charger | **Complete offline; hardware pending (items S–X).** `Manipulation/`: `MotionPrimitiveSet`, `LatticeEnvironment`, `LatticePlanner` (+ `DriveToPoseAction.Goals` / `IgnoreObstacleIds`, `ManipulationSystem.Planner` / `LoadPlanner`), `FlipBlockAction`, `DriveAndFlipBlockAction`, `AlignWithObjectAction`, `MountChargerAction`, `DriveOffChargerContactsAction`, `BlockConfigurationManager` (+ `StackOfCubes`, `PyramidBase`, `Pyramid`), `AIWhiteboard` / `AIBeacon`, `WorkoutComponent` / `WorkoutConfig`; `Vision/ChargerGeometry.cs`, rectangular `KnownMarker`s, passive objects in `BlockWorld`; `Behavior/CubeGameBehaviors.cs` (KnockOverCubes, PopAWheelie, RamIntoBlock, CubeLiftWorkout, BuildPyramidBase/BuildPyramid, RespondPossiblyRoll, OnConfigSeen, CantHandleTallStack, CheckForStackAtInterval, ReactToConfiguration, ThinkAboutBeacons, BringCubeToBeacon), `ChargerBehaviors.cs` (DriveOffCharger, ReactToOnCharger, MountCharger), `ReactToFrustrationBehavior.Major`; `ShippedBehaviors.Navigation`; `manip --flip/--knockover/--wheelie/--mount/--driveoff`, `manip --plan --obb`. Inventory **107 of 178**. |
 | M12 cube manipulation | **Complete offline; hardware pending (items N–R).** `Cozmo.Robot.Manipulation`: `PreActionPose` / `CubePreActionPoses`, `PathMotionProfile`, `PathSegment`, `PathSender`, `StraightLinePlanner`, `PathFollower`, `DriveToPoseAction`, `DriveToObjectAction`, `DriveStraightAction`, `DockingSystem`, `CarryingComponent`, `LiftPresets`, `DockActionBase` + `PickupObjectAction` / `PlaceRelObjectAction` / `RollObjectAction` / `PopAWheelieAction`, `PlaceObjectOnGroundAction`, `MoveLiftToHeightAction`, `ManipulationSystem`, `DockHelper`; `Behavior/ManipulationBehaviors.cs` (PickUpCube, PutDownBlock, RollBlock, StackBlocks, PickUpAndPutDownCube); `ShippedBehaviors.Manipulation`; `manip` command. Inventory **82 of 178**. |
 | M11 vision and world state | Complete offline; hardware pending (items K–M; K is the only positive real-cube detection evidence). `Cozmo.Robot.Vision`: `MarkerLibrary` (Anki's data: extracted from the user's own binary by the build, not committed), `MarkerDecoder`, `QuadDetector`, `MarkerDetector`, `CameraCalibration` + `NvCalibrationReader`, `HeadGeometry`, `CameraModel`, `CubeGeometry`, `PoseEstimation`, `BlockWorld` / `ObservableObject`, `RobotStateHistory`, `VisionSystem`, `CubeLocator`, `TurnTowardsPose`; `Behavior/ObjectBehaviors.cs` (`ObjectPositionUpdatedStrategy`, `AcknowledgeObjectBehavior`); `vision` and `bodyangle` commands; `re-analysis/tools/extract_marker_library.py`. Inventory **69 of 178**. |
+
+## What M13 established
+
+The robot can plan around what it knows, flip, build, and go home. The engine's planner is a lattice over
+the shipped `cozmo_mprim.json` (10 mm cells, 16 lattice headings, nine costed primitives) searched by
+`xythetaPlanner` with the world's objects imported as expanded convex obstacles; this stack reproduces that
+structure (`LatticePlanner`), reconstructs the primitives' segments as line + arc, and keeps the straight-line
+planner only as a labelled fallback. `FlipBlockAction` is not a dock: it drives through the cube at 150 mm/s
+with the lift at 40 mm and raises it to carry height within 45 mm, then forgets the cube's pose. The charger
+is a passive 96 × 80 × 31 object with one 20 × 27 mm marker on its back wall; `MountChargerAction` aligns to
+120 mm (CUSTOM = −27), turns to the docked pose, backs 120 mm at 30 mm/s and retries forward. Stacks, pyramid
+bases (≤ 60 mm apart, same height) and pyramids (one cube up over the interior midpoint) are recognised from
+poses by `BlockConfigurationManager`, which the pyramid, tall-stack and configuration-seen behaviours read.
+Beacons and object-failure memory live on `AIWhiteboard`; the workouts on `WorkoutComponent`. Sixteen
+behaviour classes (25 configs) were transcribed transition by transition; `NAVIGATION.md` lists each one's
+evidence and what is labelled.
+
+One source-backed correction (audit §14): the place actions verify the placement pose is clear
+(`VisuallyVerifyNoObjectAtPoseAction`), not that the target is visible; the M12 transcription would have
+refused every stack from the 40 mm place pose.
 
 ## What M12 established
 
@@ -121,6 +143,12 @@ planner, the pick-up lift-load and accelerometer checks, KnockOverCubes' flip ac
 11. **The 30.0 beside the position-update thresholds** (M11) — stored in the strategy, use not traced.
 12. **The NV read framing** (M11) — `CommandNV` length/second byte and `MORE` chunking unverified; no capture
     holds an NV exchange.
+16. **Planner padding and heuristic** (M13) — "robot padding %f, obstacle padding %f" logged, values not read;
+    45 / 20 mm and the Euclidean heuristic stand in. Item X compares the real drive with `manip --plan`.
+17. **The charger's pre-dock pose** (M13) — a static `Pose2d` plus −15.5 mm; on-axis at the align distance
+    stands in. Item V settles whether the align reaches the marker from there.
+18. **`FlipBlockAction` member roles, `MountChargerAction` retries, the wheelie retry limit, workout
+    selection** (M13) — values NATIVE, roles / limits INFERRED (`NAVIGATION.md` §3).
 13. **`DockWithObject`'s fourth float and trailing bytes, `PlaceObjectOnGround`'s field names,
     `DockingErrorSignal`'s trailing bytes** (M12) — packing order read, semantics of those fields not; sent as
     zero. Items N and O settle whether the firmware accepts them.
@@ -129,14 +157,17 @@ planner, the pick-up lift-load and accelerometer checks, KnockOverCubes' flip ac
 
 ## Next task
 
-**M13: the remaining cube behaviours, the flip action, the planner, and charger docking.** 19 behaviours
-still need pyramids, beacons, workouts or games on top of the M12 actions; KnockOverCubes needs
-`FlipBlockAction` (a dock action plus lift choreography not yet recovered); driving among obstacles needs the
-engine's `xythetaPlanner` in place of the straight-line stand-in; and the 5 charger behaviours use the same
-dock exchange through `MountChargerAction` / `AlignWithObjectAction`. Start from `FlipBlockAction::Init`,
-`DriveAndFlipBlockAction`, `MountChargerAction::ConfigureAlignWithChargerAction` and `xythetaPlanner`'s
-exports; `MANIPULATION.md` §2 has the dock exchange the charger will reuse.
+**M14: the face / person / pet pipeline.** The stock recognition is Omron OKAO (194 `OKAO_*` exports, a hard
+boundary: no replacement recogniser is to be invented). Reproduce the surrounding architecture faithfully —
+`FaceWorld` (faces with ids, poses, visibility and age semantics; `GetLastObservedFace`, `HasAnyFaces`,
+`GetFaceIDs`, `GetSmartFaceID`, `GetBestFaceToTrack`), `Vision::TrackedFace`, `SmartFaceID`,
+`TurnTowardsFaceAction`, `TurnTowardsLastFacePoseAction`, `BehaviorPlayAnimSequenceWithFace`,
+`BehaviorFindFaces`, `BehaviorPyramidThankYou`, `BehaviorBouncer` (paddle from the face's position) — with an
+`IFaceDetector` seam whose OKAO implementation is explicitly unavailable, so the behaviours count as
+implemented only when a detector is attached. Start from `FaceWorld::Update`, `FaceWorld::GetLastObservedFace`,
+`TurnTowardsFaceAction::Init` and the `Anki::Vision::FaceTracker` exports; `VISION.md` has the camera model
+and `BlockWorld` the world-model conventions to mirror.
 
 Start from the engine, not from guesses: disassemble first (`re-analysis/tools/disarm.py`; the session scratch
-disassembler was `engdis.py`, described in the memory notes), and read `MANIPULATION.md`, `VISION.md`,
-`DERIVED_STATE.md` and `SOURCE_FIDELITY_AUDIT.md` §2 before writing code.
+disassembler was `engdis.py`, described in the memory notes), and read `NAVIGATION.md`, `MANIPULATION.md`,
+`VISION.md`, `DERIVED_STATE.md` and `SOURCE_FIDELITY_AUDIT.md` §2 before writing code.

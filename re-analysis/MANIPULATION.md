@@ -112,6 +112,11 @@ That is items N–R.
 
 ## 7. Next
 
+> **Done (2026-09-20):** M13 built these — see `NAVIGATION.md`. The lattice planner replaces the straight-line
+> stand-in when `ManipulationSystem.Planner` is loaded; `FlipBlockAction` is recovered (0x0055EC80); the
+> charger docks through `AlignWithObjectAction` / `MountChargerAction`. One correction to §4 of this document:
+> the place actions verify the placement pose is clear rather than seeing the target (audit §14).
+
 **M13: the remaining cube behaviours and the planner.** 19 behaviours need pyramids, beacons, workouts or
 games on top of these actions (`BuildPyramid*`, `BringCubeToBeacon`, `CubeLiftWorkout`, `RamIntoBlock`, …),
 KnockOverCubes needs the flip action, and driving among obstacles needs the engine's lattice planner

@@ -28,10 +28,16 @@ directory needs only `cozmo_resources/sound/AudioAssets.zip`), commands run from
 | P | roll a cube | M12 | `dotnet run --project src/Cozmo.Conformance -- manip 172.31.1.1 --roll --acceptance` (cube on its side or upright) | `Roll -> Success; up axis X -> Y` (any change) | he docks and the cube rolls onto another face |
 | Q | drive to the pre-dock pose | M12 | `dotnet run --project src/Cozmo.Conformance -- manip 172.31.1.1 --driveto --acceptance` (also `manip --plan 150 80 90` offline shows the messages) | `path 1: Started`, `Completed`, `DriveToPoseAction.CheckIfDone.Success`, `DriveToObject -> Success` | he turns, drives straight, turns to face the cube and stops about 75 mm from its face; no jerks between segments |
 | R | stack two cubes | M12 | `dotnet run --project src/Cozmo.Conformance -- manip 172.31.1.1 --stack --acceptance --obb <obb>` with two connected upright cubes in view | phases `PickingUpBlock` → `StackingBlock` → `PlayingFinalAnim` | he picks one up, carries it to the other and places it on top |
+| S | **flip a cube** | M13 | `dotnet run --project src/Cozmo.Conformance -- manip 172.31.1.1 --flip --acceptance` (a connected cube 20–30 cm ahead) | `DriveToPoseAction.CheckIfDone.Success` at a Flipping pre-action pose (a corner, 135°), `FlipBlockAction: driving N mm at 150 mm/s with the lift at 40 mm`, `within 45 mm, lift to carry height`, `DriveAndFlipBlock -> Success`, the cube `Unknown` | he drives at the cube's corner with the lift low, the lift comes up as he reaches it and the cube tips over his shoulder; he does not stall on the cube |
+| T | knock over a stack | M13 | `manip 172.31.1.1 --knockover --obb <obb> --acceptance` with two connected cubes stacked | `stacks: 7/8`, `reach for block`, `KnockOverGrabAttempt`, `DriveAndFlipBlockAction`, `the stack came apart`, `KnockOverSuccess` | he turns to the stack, drives to 85 mm, reaches, flips the bottom cube and the stack falls; the success animation plays |
+| U | pop a wheelie | M13 | `manip 172.31.1.1 --wheelie --obb <obb> --acceptance` (an upright cube ahead) | `PopAWheelieInitial`, `Docking with marker … using action PopAWheelie`, `PoppedWheelie`, `EnableStopOnCliff(true)` on stop | he docks, rides up onto the cube's edge and drops back; a miss plays the realign/retry animation and tries again (up to 3) |
+| V | **mount the charger** | M13 | `manip 172.31.1.1 --mount --acceptance` (the charger 20–40 cm ahead, its back-wall marker facing him) | `charger: object 100 Charger_Basic Known at …`, `Docking with marker Charger using action Align`, the point turn, a −30 mm/s line, `MountChargerAction: on the charger contacts`, `on charger: True` | he stops in front of the charger, turns his back to it, backs on and the contacts engage (his backpack lights change); a miss drives forward 120 mm and retries. If the align never starts, the pre-dock pose (INFERRED) or the align distance is the suspect |
+| W | drive off the charger | M13 | `manip 172.31.1.1 --driveoff --acceptance` with him sitting on the charger | `on charger: True`, one line of 156 mm at 20 mm/s, `emotion event DriveOffCharger`, `IS_ON_CHARGER` cleared | he drives forward off the charger at a crawl and stops on his treads |
+| X | the lattice planner on the robot | M13 | `manip 172.31.1.1 --driveto --obb <obb> --acceptance` with a second cube between him and the target (also `manip --plan 300 0 0 --obb <obb> --obstacle 150 0` offline) | `lattice plan: N primitive(s) … 1 obstacle(s)`, `AppendPathSegmentArc` messages, `path 1: Completed`, `DriveToPoseAction.CheckIfDone.Success` | he curves around the cube in the way instead of driving through it, and arrives at the pre-dock pose; the arcs are smooth (the firmware accepted the arc layouts: centre, radius, start angle, sweep) |
 | J | unexpected movement while driving | M10 | `dotnet run --project src/Cozmo.Conformance -- drive 172.31.1.1 ...` in one window is not enough because the detector suspends during direct drive; instead run H and, while a behaviour's animation drives the body, hold him so he cannot turn, or twist him against the turn | `unexpected movement TurnedButStopped from <side>` or `TurnedInOppositeDirection` printed, then `REACTION UnexpectedMovement -> ReactToUnexpectedMovement` | he plays the startled reaction once, on the side the push came from; no report while he drives freely |
 
 Items A and A2 are the M9 acceptance; G–J are the M10 acceptance; K–M are the M11 acceptance (`VISION.md` §9);
-N–R are the M12 acceptance (`MANIPULATION.md` §6). Run K before N–R: docking needs a located cube. Items B–F are carried over from the fidelity
+N–R are the M12 acceptance (`MANIPULATION.md` §6); S–X are the M13 acceptance (`NAVIGATION.md` §5). Run K before N–X: docking needs a located cube (V needs a located charger). Items B–F are carried over from the fidelity
 sweep and its reconciliation (`SOURCE_FIDELITY_AUDIT.md` §8, §10) and were never gated on M9 or M10.
 
 ## What G and H cannot tell you, and what would
@@ -58,6 +64,15 @@ The exchange is the engine's, but three messages carry fields whose meaning was 
 `DockWithObject`'s fourth float or trailing bytes; the `result` byte printed is the firmware's `DockingResult`,
 whose enum this build does not decode, so record it. A path the robot drives but ends off-pose points at the
 planner's segment endpoints (the layouts are the engine's; the planner is ours).
+
+## What S–X cannot tell you, and what would
+
+The lattice planner's padding, heuristic and arc reconstruction are labelled (`NAVIGATION.md` §3): a robot that
+clips the cube it plans around points at the padding; one that overshoots an arc's end points at the arc layout
+or the reconstruction. The charger's pre-dock pose is INFERRED: if the align refuses to start from where he
+stops, move him by hand to about 120 mm in front of the marker and rerun; success from there isolates the
+pose. Mount success is judged from IS_ON_CHARGER; the firmware's own charger-contact handling (stopping the
+backwards drive) is what a real mount depends on and cannot be seen offline.
 
 ## What A cannot tell you, and what would
 
@@ -93,3 +108,9 @@ freeze depends on it: M9 is complete offline, and the next milestone does not us
 | P | | | | | |
 | Q | | | | | |
 | R | | | | | |
+| S | | | | | |
+| T | | | | | |
+| U | | | | | |
+| V | | | | | |
+| W | | | | | |
+| X | | | | | |

@@ -1,9 +1,9 @@
 # Choosing the next milestone, from the behaviour dependency inventory
 
-> **2026-09-20, after M12:** M9–M12 are complete offline (`WWISE_MUSIC.md`, `DERIVED_STATE.md`, `VISION.md`,
-> `MANIPULATION.md`). The inventory is 82 of 178 implementable. The next milestone is **M13**: the remaining
-> cube behaviours (pyramids, beacons, workouts), KnockOverCubes' flip action, the lattice planner and charger
-> docking; see `HANDOFF.md` "Next task". The analysis below is the original record and is superseded where it
+> **2026-09-20, after M13:** M9–M13 are complete offline (`WWISE_MUSIC.md`, `DERIVED_STATE.md`, `VISION.md`,
+> `MANIPULATION.md`, `NAVIGATION.md`). The inventory is 107 of 178 implementable. The next milestone is
+> **M14**: the face / person / pet pipeline around the OKAO boundary, then **M15**: the freeplay / explorer
+> layer; see `HANDOFF.md` "Next task". The analysis below is the original record and is superseded where it
 > says otherwise.
 
 

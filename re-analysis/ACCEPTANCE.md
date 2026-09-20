@@ -237,3 +237,20 @@ Cozmo's camera; that is item K. None of K–M gates M12. The extracted marker li
 **M12 is COMPLETE OFFLINE and NOT hardware verified.** The exchange, constants and behaviour transitions are
 the engine's (`MANIPULATION.md`); the planner is a labelled stand-in and three messages carry fields sent as
 zero whose meaning was not read. None of N–R gates M13.
+
+## M13 — navigation, cube games, charger (2026-09-20): offline complete, hardware pending
+
+| Capability | Automated | Human | Evidence |
+| --- | --- | --- | --- |
+| Motion primitives and lattice planner | pass — the shipped file parses as the engine reads it; straights, line + arc reconstruction landing on the lattice, obstacle avoidance, goal-in-obstacle refusal | **not run** (X): the firmware's arc following and the padding | `TheShippedMotionPrimitives…`, `AnEmptyWorldPlans…`, `TurningPrimitivesBecome…`, `ThePlannerRoutesAround…`, `manip --plan --obb` |
+| Planner integration | pass — `DriveToPoseAction` plans with it and the fake robot arrives through arcs; the target is not an obstacle | **not run** (X) | `DriveToPoseUsesTheLatticePlanner…`, `DriveToObjectWithThePlanner…` |
+| Charger object | pass — rectangular marker geometry, lookup, docked pose; a rendered charger localised unconnected | **not run** (V) | `TheChargerIsAPassiveObject…`, `AChargerInViewIsLocalised…` |
+| Mount / drive off / on-charger | pass — align (`ALIGN`), turn, back at −30 mm/s, contacts; 156 mm at 20 mm/s and the event; sleep / disconnect timers | **not run** (V, W) | `MountChargerAligns…`, `DriveOffChargerDrives…`, `ReactToOnChargerPlays…` |
+| Flip | pass — distance + 20 at 150, lift 40 then carry, pose Unknown; refusal away from a flipping pose | **not run** (S) | `FlipDrivesThroughTheCube…` |
+| Block configurations, whiteboard, workouts | pass — stacks / bases / pyramids from poses; first-seen stamps and windows; beacons and failure memory; lift counts from Confident | n/a | `StacksBasesAndPyramids…`, `TheConfigurationManagerTracks…`, `BeaconsAndFailureMemory…`, `TheWorkoutConfigParses…` |
+| Behaviours | pass — KnockOverCubes, PopAWheelie (+ retries), RamIntoBlock, CubeLiftWorkout, BuildPyramidBase, RespondPossiblyRoll, OnConfigSeen, CantHandleTallStack, CheckForStackAtInterval, ReactToPyramid, ThinkAboutBeacons + BringCubeToBeacon, the Major frustration drive; 25 configs | **not run** (S, T, U) | `KnockOverCubesReaches…`, `PopAWheelieDrives…`, `TheWorkoutBehaviourLifts…`, `BuildPyramidBasePicks…`, `TheShippedNavigationSet…` |
+| Inventory | pass — regenerated, 107 of 178 | n/a | `behavior_inventory.py --check` |
+
+**M13 is COMPLETE OFFLINE and NOT hardware verified.** The primitives, constants and behaviour transitions are
+the engine's (`NAVIGATION.md`); the planner's padding, heuristic and arc reconstruction, the charger's pre-dock
+pose and several limits are labelled INFERRED / LOCAL. None of S–X gates M14.
