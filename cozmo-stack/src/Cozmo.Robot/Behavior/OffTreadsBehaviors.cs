@@ -299,6 +299,13 @@ public sealed class ReactToRobotShakenBehavior : SteppedBehavior
         LoopShake();
     }
 
+    /// <summary>
+    /// FIDELITY GAP (DERIVED_STATE.md §5): the engine starts DizzyShakeLoop once with <c>numLoops = 0</c> and its
+    /// streamer loops the clip seamlessly. This scheduler plays a clip once, so the loop is restarted from the
+    /// completion callback: every pass closes the animation (EndOfAnimation, a silence frame) and opens a new
+    /// one, a gap of a frame or two at each loop boundary. Looping natively would reopen the frozen M5
+    /// timeline; recorded rather than done.
+    /// </summary>
     private void LoopShake()
     {
         if (CurrentPhase != Phase.Shaking) return;
@@ -467,7 +474,13 @@ public sealed class ReactToFrustrationBehavior : SteppedBehavior
             double nowSec = Clock() / 1000.0;
             bool known = Context.Mood?.Trigger(FinalEmotionEvent, nowSec) ?? false;
             Log($"emotion event {FinalEmotionEvent}: {(Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model")}");
-            _strategy?.AnimationComplete(nowSec);
+            // The strategy stamps the clock it also evaluates the cooldown on (ShippedReactionStrategies hands
+            // one clock to every strategy); a strategy built without one is stamped with this behaviour's
+            // clock in seconds, and its caller must drive the manager from that same clock.
+            if (_strategy is not null)
+            {
+                if (_strategy.HasClock) _strategy.AnimationComplete(); else _strategy.AnimationComplete(nowSec);
+            }
             Finish();
         });
     }

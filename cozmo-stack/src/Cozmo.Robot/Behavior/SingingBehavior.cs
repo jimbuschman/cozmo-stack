@@ -90,6 +90,17 @@ public sealed class SingingBehavior : IBehavior
     public static (uint Group, uint Switch) EffectiveSwitch(uint groupId, uint switchId) =>
         groupId is Group80 or Group100 or Group120 ? (groupId, switchId) : (Group80, 0u);
 
+    /// <summary>The render started when the switch was posted, or null when no Wwise source is attached.</summary>
+    public Task? Prewarm { get; private set; }
+
+    /// <summary>The audio event the tempo animation's keyframe raises for a group.</summary>
+    public static string TempoEventName(uint groupId) => groupId switch
+    {
+        Group100 => "Play__Robot_VO__Cozmo_Singing_100bpm",
+        Group120 => "Play__Robot_VO__Cozmo_Singing_120bpm",
+        _ => "Play__Robot_VO__Cozmo_Singing_80bpm",
+    };
+
     /// <summary>The three triggers, in the order the engine's compound action runs them.</summary>
     public static IReadOnlyList<AnimationTrigger> Sequence(uint groupId) =>
         new[] { AnimationTrigger.Singing_GetIn, TempoTriggerFor(groupId), AnimationTrigger.Singing_GetOut };
@@ -114,6 +125,15 @@ public sealed class SingingBehavior : IBehavior
         {
             sink.SetSwitch(SwitchGroupId, SwitchId);
             Trace?.Invoke($"switch {SwitchGroupName} = {SwitchName} posted ({SwitchGroupId} = {SwitchId})");
+            // The song is rendered whole before it streams (a 462 s sequence takes seconds). Rendering it on
+            // the scheduler's thread when the tempo clip's audio keyframe fires would stall the timeline, so
+            // the render starts here, on a worker, while the get-in animation plays. LOCAL: the engine hands
+            // the event to Wwise, which streams; this stack renders ahead and says so.
+            if (sink is WwiseAudioSource wwise && wwise.Library.IdOf(TempoEventName(SwitchGroupId)) is { } ev)
+            {
+                Prewarm = wwise.Prewarm(ev);
+                Trace?.Invoke($"prewarming {TempoEventName(SwitchGroupId)} on a worker");
+            }
         }
         else Trace?.Invoke("no switch-capable audio source is attached; the song cannot be selected and the tempo animation's audio event will not resolve");
 

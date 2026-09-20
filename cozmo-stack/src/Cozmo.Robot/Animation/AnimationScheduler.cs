@@ -110,6 +110,7 @@ public sealed class AnimationScheduler
     private FaceBitmap? _lastFace;
     private double? _bodyEndsAtMs;             // when the running body keyframe should stop, if one is running
     private short[]? _audioPcm;                // the sound currently streaming, if any
+    private long? _audioEventId;               // the event that started it, for a Stop event to match
     private int _audioPos;                     // how far into it the last frame reached
     private byte _nextTag = 1;                 // the tag the next animation opens with
     private bool _startSent;                   // has StartOfAnimation gone out for the running clip
@@ -223,8 +224,9 @@ public sealed class AnimationScheduler
             _facePoses = clip.Keyframes.OfType<FaceKeyframe>().ToList();
             _faceIndex = -1;
             _bodyEndsAtMs = null;
-            _audioPcm = null; _audioPos = 0;
+            _audioPcm = null; _audioPos = 0; _audioEventId = null;
             AudioFramesSent = 0;
+            AudioStops = 0;
             KeyframesFired = 0;
             PositionMs = 0;
             return _handle;
@@ -255,7 +257,7 @@ public sealed class AnimationScheduler
         _faceIndex = -1;
         bool bodyWasRunning = _bodyEndsAtMs is not null;
         _bodyEndsAtMs = null;
-        _audioPcm = null; _audioPos = 0;
+        _audioPcm = null; _audioPos = 0; _audioEventId = null;
         CurrentTag = 0;
         bool wasOpen = _startSent;
         _startSent = false;
@@ -367,7 +369,7 @@ public sealed class AnimationScheduler
                 for (int i = 0; i < n; i++) samples[i] = AnkiMuLaw.Encode(pcm[_audioPos + i]);
                 for (int i = n; i < CozmoAudio.SamplesPerFrame; i++) samples[i] = AnkiMuLaw.Encode(0);
                 _audioPos += n;
-                if (_audioPos >= pcm.Length) { _audioPcm = null; _audioPos = 0; }
+                if (_audioPos >= pcm.Length) { _audioPcm = null; _audioPos = 0; _audioEventId = null; }
                 frame = samples;
             }
         }
@@ -495,12 +497,34 @@ public sealed class AnimationScheduler
 
         foreach (var id in order)
         {
+            // A Stop action is not a silent alternative: Wwise stops the target's playing voices. The songs
+            // end this way (Stop__Robot_VO__Cozmo_Singing_Stop at the tempo clip's end); before this the
+            // event returned null, was skipped, and a 462 s song kept streaming past the animation.
+            if (source.IsStopEvent(id))
+            {
+                bool stopped = false;
+                lock (_gate)
+                {
+                    if (_audioPcm is not null && (_audioEventId is not { } playing || source.StopAffects(id, playing)))
+                    {
+                        _audioPcm = null; _audioPos = 0; _audioEventId = null; stopped = true;
+                    }
+                }
+                if (stopped) AudioStops++;
+                return;
+            }
             var pcm = source.GetPcm(id, k.Volume);
             if (pcm is null || pcm.Length == 0) continue;
-            lock (_gate) { _audioPcm = pcm; _audioPos = 0; }
+            lock (_gate) { _audioPcm = pcm; _audioPos = 0; _audioEventId = id; }
             return;
         }
     }
+
+    /// <summary>Whether a sound is streaming right now (audio frames carry samples rather than silence).</summary>
+    public bool AudioStreaming { get { lock (_gate) return _audioPcm is not null; } }
+
+    /// <summary>How many times a Stop event ended a streaming sound in the current or last animation.</summary>
+    public int AudioStops { get; private set; }
 
     /// <summary>
     /// The engine's alternative selection, from <c>RobotAudioKeyFrame::SetMembersFromFlatBuf</c> at

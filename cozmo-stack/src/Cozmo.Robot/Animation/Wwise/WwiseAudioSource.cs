@@ -67,6 +67,96 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
         return _renderer.Render(plan);
     }
 
+    /// <summary>
+    /// A Wwise Stop action (<c>WwiseBank.IsStopAction</c>): the event starts nothing and ends its target's
+    /// voices. <c>Stop__Robot_VO__Cozmo_Singing_Stop</c> is one; the tempo animations raise it at their end.
+    /// </summary>
+    public bool IsStopEvent(long eventId)
+    {
+        if (eventId is < 0 or > uint.MaxValue) return false;
+        var r = _library.Resolve((uint)eventId);
+        return r.Actions.Count > 0 && r.Actions.All(a => !WwiseBank.IsPlayAction(a.ActionType)) && r.Actions.Any(a => WwiseBank.IsStopAction(a.ActionType));
+    }
+
+    /// <summary>
+    /// Whether a Stop event's target is the playing event's Play target or one of its ancestors in the
+    /// hierarchy (Wwise stops the target node's voices, which includes everything below it). True when either
+    /// side cannot be resolved, so an unmatched Stop still ends the one voice this stack streams.
+    /// </summary>
+    public bool StopAffects(long stopEventId, long playingEventId)
+    {
+        if (stopEventId is < 0 or > uint.MaxValue || playingEventId is < 0 or > uint.MaxValue) return true;
+        var stopTargets = _library.Resolve((uint)stopEventId).Actions.Where(a => WwiseBank.IsStopAction(a.ActionType)).Select(a => a.Target).ToHashSet();
+        var playTargets = _library.Resolve((uint)playingEventId).Actions.Where(a => WwiseBank.IsPlayAction(a.ActionType)).Select(a => a.Target).ToList();
+        if (stopTargets.Count == 0 || playTargets.Count == 0) return true;
+        foreach (var start in playTargets)
+        {
+            uint id = start;
+            for (int depth = 0; depth < 64 && id != 0; depth++)
+            {
+                if (stopTargets.Contains(id)) return true;
+                if (_library.Node(id) is not { } n) break;
+                id = n.Params.ParentId;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Renders a music event under the given switches on a worker and caches the result, so the first
+    /// <see cref="GetPcm"/> from the scheduler's thread finds it ready. A song is rendered whole (a 462 s
+    /// sequence takes seconds), which on the scheduler thread would stall the animation timeline; the
+    /// singing behaviour calls this when it posts the switch, before its get-in animation. <see cref="GetPcm"/>
+    /// waits for an in-flight prewarm of the same song rather than rendering it a second time.
+    /// </summary>
+    public Task Prewarm(uint eventId, IReadOnlyDictionary<uint, uint>? switches = null)
+    {
+        var sw = switches is null ? Switches : new Dictionary<uint, uint>(switches);
+        var plan = _library.ResolveMusic(eventId, sw);
+        uint node = plan.SelectedNodeId ?? plan.TargetId;
+        var key = (eventId, node);
+        lock (_gate)
+        {
+            if (_musicCache.ContainsKey(key)) return Task.CompletedTask;
+            if (_prewarms.TryGetValue(key, out var running)) return running;
+            var task = Task.Run(() =>
+            {
+                var rendered = RenderTimed(plan);
+                lock (_gate)
+                {
+                    if (!_musicCache.ContainsKey(key)) StoreMusic(eventId, plan, rendered);
+                    _prewarms.Remove(key);
+                }
+            });
+            _prewarms[key] = task;
+            return task;
+        }
+    }
+
+    private readonly Dictionary<(uint Event, uint Node), Task> _prewarms = new();
+
+    /// <summary>Wall time of the last music render, for the tool and the scheduler-safety test.</summary>
+    public TimeSpan LastMusicRenderTime { get; private set; }
+
+    private WwiseRenderedMusic RenderTimed(WwiseMusicPlan plan)
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var r = _renderer.Render(plan);
+        LastMusicRenderTime = sw.Elapsed;
+        return r;
+    }
+
+    private void StoreMusic(uint eventId, WwiseMusicPlan plan, WwiseRenderedMusic rendered)
+    {
+        uint node = plan.SelectedNodeId ?? plan.TargetId;
+        LastMusicRender = rendered;
+        short[]? pcm = rendered.Pcm.Length > 0 && (rendered.NotesPlayed > 0 || rendered.AudioClips > 0) ? rendered.Pcm : null;
+        if (pcm is null)
+            _misses.Add(new WwiseMiss(eventId, plan.EventName,
+                rendered.Problems.Count > 0 ? string.Join("; ", rendered.Problems) : "the music plan produced no sound", WwiseCodec.Unknown));
+        _musicCache[(eventId, node)] = pcm;
+    }
+
     /// <summary>Whether an event's Play target is in the music hierarchy, so it is produced by the renderer.</summary>
     public bool IsMusicEvent(uint eventId)
     {
@@ -139,10 +229,10 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
         uint id = (uint)eventId;
 
         short[]? pcm;
-        lock (_gate)
+        if (IsMusicEvent(id)) pcm = ProduceMusic(id);
+        else lock (_gate)
         {
-            if (IsMusicEvent(id)) pcm = ProduceMusic(id);
-            else if (!_cache.TryGetValue(id, out pcm))
+            if (!_cache.TryGetValue(id, out pcm))
             {
                 pcm = Produce(id);
                 _cache[id] = pcm;
@@ -164,21 +254,39 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     /// <summary>
     /// A music event: resolved under the current switches, rendered through its MIDI target or its audio
     /// clips, and cached by the node the switch selected. Recorded as a miss, with the renderer's own
-    /// problems, when nothing comes out.
+    /// problems, when nothing comes out. An in-flight <see cref="Prewarm"/> of the same song is awaited
+    /// instead of rendering twice.
+    ///
+    /// LOCAL_POLICY: the cache holds the final PCM, so the random choices the renderer made (which of a
+    /// note's three recordings plays) are frozen for the life of this source: the same song sounds the same
+    /// every time it is sung in a session. Wwise would draw again on every play. Stated in WWISE_MUSIC.md §3
+    /// and pinned by <c>TheMusicCacheFreezesTheRenderersRandomChoices</c>; a fresh source (or a new seed)
+    /// draws afresh.
     /// </summary>
     private short[]? ProduceMusic(uint eventId)
     {
-        var plan = _library.ResolveMusic(eventId, _switches);
-        uint node = plan.SelectedNodeId ?? plan.TargetId;
-        if (_musicCache.TryGetValue((eventId, node), out var cached)) return cached;
-        var rendered = _renderer.Render(plan);
-        LastMusicRender = rendered;
-        short[]? pcm = rendered.Pcm.Length > 0 && (rendered.NotesPlayed > 0 || rendered.AudioClips > 0) ? rendered.Pcm : null;
-        if (pcm is null)
-            _misses.Add(new WwiseMiss(eventId, plan.EventName,
-                rendered.Problems.Count > 0 ? string.Join("; ", rendered.Problems) : "the music plan produced no sound", WwiseCodec.Unknown));
-        _musicCache[(eventId, node)] = pcm;
-        return pcm;
+        WwiseMusicPlan plan;
+        Task? pending;
+        uint node;
+        lock (_gate)
+        {
+            plan = _library.ResolveMusic(eventId, _switches);
+            node = plan.SelectedNodeId ?? plan.TargetId;
+            if (_musicCache.TryGetValue((eventId, node), out var cached)) return cached;
+            _prewarms.TryGetValue((eventId, node), out pending);
+        }
+        if (pending is not null)
+        {
+            try { pending.Wait(); } catch (AggregateException) { }
+            lock (_gate) if (_musicCache.TryGetValue((eventId, node), out var cached)) return cached;
+        }
+        var rendered = RenderTimed(plan);
+        lock (_gate)
+        {
+            if (_musicCache.TryGetValue((eventId, node), out var cached)) return cached;
+            StoreMusic(eventId, plan, rendered);
+            return _musicCache[(eventId, node)];
+        }
     }
 
     /// <summary>One media file decoded to mono PCM at the robot's rate, cached; null when it cannot be decoded.</summary>

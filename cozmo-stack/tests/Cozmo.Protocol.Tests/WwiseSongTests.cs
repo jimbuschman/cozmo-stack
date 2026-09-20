@@ -142,7 +142,8 @@ public class WwiseSongTests
 
     /// <summary>
     /// The seam: the same GetPcm the scheduler calls returns the selected song once the switch is set, the
-    /// default song when it is not, and a Stop event nothing.
+    /// default song when it is not; the Stop event is recognised as a Stop action that covers the song (it
+    /// produces no PCM, and the scheduler ends the streaming song on it, see <see cref="TheSingingStopEventEndsTheSongOnTheScheduler"/>).
     /// </summary>
     [Fact]
     public void TheAudioSourcePlaysTheSongTheSwitchSelects()
@@ -165,6 +166,111 @@ public class WwiseSongTests
 
         var stop = lib.IdOf("Stop__Robot_VO__Cozmo_Singing_Stop")!.Value;
         Assert.Null(source.GetPcm(stop, 1f));
+        Assert.True(source.IsStopEvent(stop));
+        Assert.False(source.IsStopEvent(ev));
+        Assert.True(source.StopAffects(stop, ev));                       // the Stop targets the singing container the song plays under
+        Assert.False(source.StopAffects(stop, lib.IdOf("Play__Robot_Sfx__Scrn_Happy")!.Value));
+    }
+
+    /// <summary>
+    /// The regression the Stop fix is for: the tempo clip raises the song at its start and
+    /// <c>Stop__Robot_VO__Cozmo_Singing_Stop</c> at its end. Before, the Stop resolved to no PCM, was skipped as
+    /// a silent alternative, and a 462 s Bingo kept streaming after the animation. Now it ends the song.
+    /// </summary>
+    [Fact]
+    public void TheSingingStopEventEndsTheSongOnTheScheduler()
+    {
+        if (Library.Value is not { } lib) return;
+        var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_100bpm")!.Value;
+        var stop = lib.IdOf("Stop__Robot_VO__Cozmo_Singing_Stop")!.Value;
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(2));
+        source.SetSwitch(SingingBehavior.Group100, WwiseHash.Of("Cozmo_Sings_Bingo"));
+        source.Prewarm(ev).Wait();                                     // the behaviour's prewarm; rendered off the scheduler
+        var sink = new CountingSink();
+        var s = new AnimationScheduler(sink) { AudioSource = source };
+        var clip = new AnimationClip
+        {
+            Name = "sing", Tracks = AnimationTrack.Audio, DurationMs = 9800,
+            Keyframes = new Keyframe[]
+            {
+                new AudioKeyframe(0, new long[] { ev }, 1f, Array.Empty<float>(), false),
+                new AudioKeyframe(9800, new long[] { stop }, 1f, Array.Empty<float>(), false),
+            },
+        };
+        s.Play(clip, 0);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        s.Advance(0);
+        Assert.True(sw.ElapsedMilliseconds < 500, $"the first frame took {sw.ElapsedMilliseconds} ms: the song was rendered on the scheduler thread");
+        Assert.True(s.AudioStreaming);
+        for (double t = 33; t <= 9700; t += 33) s.Advance(t);
+        Assert.True(s.AudioStreaming);                                 // still singing just before the Stop
+        for (double t = 9733; t <= 10100; t += 33) s.Advance(t);
+        Assert.False(s.AudioStreaming);                                // the 462 s render is cut at the clip's Stop
+        Assert.Equal(1, s.AudioStops);
+        Assert.InRange(sink.Frames, 290, 300);                         // about 9.8 s of frames carried sound
+    }
+
+    /// <summary>
+    /// A song is rendered whole before it streams. The prewarm the behaviour starts when it posts the switch
+    /// does that on a worker; the scheduler's GetPcm then finds it cached (or waits for the in-flight render
+    /// rather than starting a second one). The render time is reported so the cost is on record.
+    /// </summary>
+    [Fact]
+    public void PrewarmRendersOffTheStreamingPathAndGetPcmFindsIt()
+    {
+        if (Library.Value is not { } lib) return;
+        var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_100bpm")!.Value;
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(5));
+        source.SetSwitch(SingingBehavior.Group100, WwiseHash.Of("Cozmo_Sings_Bingo"));
+        var prewarm = source.Prewarm(ev);
+        Assert.Same(prewarm, source.Prewarm(ev));                      // one render per song, not one per call
+        prewarm.Wait();
+        var renderTime = source.LastMusicRenderTime;
+        Assert.True(renderTime > TimeSpan.Zero);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var pcm = source.GetPcm(ev, 1f);
+        Assert.NotNull(pcm);
+        Assert.True(sw.ElapsedMilliseconds < 100, $"GetPcm after a prewarm took {sw.ElapsedMilliseconds} ms (render itself took {renderTime.TotalMilliseconds:F0} ms)");
+        Assert.Equal((int)(462000L * CozmoAudio.SampleRate / 1000), pcm!.Length);
+        Assert.True(source.Prewarm(ev).IsCompleted);                   // already cached
+    }
+
+    /// <summary>
+    /// LOCAL_POLICY, stated in WWISE_MUSIC.md §3: the music cache holds final PCM, so the renderer's random
+    /// recording choices are frozen for the life of a source. Wwise would draw again on each play.
+    /// </summary>
+    [Fact]
+    public void TheMusicCacheFreezesTheRenderersRandomChoices()
+    {
+        if (Library.Value is not { } lib) return;
+        var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_80bpm")!.Value;
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(9));
+        source.SetSwitch(Group80, AbaDaba);
+        var first = source.GetPcm(ev, 1f)!;
+        var second = source.GetPcm(ev, 1f)!;
+        Assert.Same(first, second);                                    // the same buffer: no second draw
+        // a fresh source with another seed draws afresh, as a new Wwise play would
+        using var other = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(10));
+        other.SetSwitch(Group80, AbaDaba);
+        var third = other.GetPcm(ev, 1f)!;
+        Assert.Equal(first.Length, third.Length);
+        Assert.False(first.SequenceEqual(third), "two seeds rendered the same recordings; the random choice is not exercised");
+    }
+
+    private sealed class CountingSink : IAnimationSink
+    {
+        public int Frames, Silent;
+        public void Face(FaceBitmap bitmap) { }
+        public void Audio(byte[]? mulawFrame) { if (mulawFrame is null) Silent++; else Frames++; }
+        public void Head(sbyte angleDeg, uint durationMs) { }
+        public void Lift(byte heightMm, uint durationMs) { }
+        public void Body(BodyKeyframe k) { }
+        public void AnimationStarted(byte tag) { }
+        public void AnimationEnded() { }
+        public void BodyStop() { }
+        public void Lights(LightsKeyframe k) { }
+        public void Event(string eventId) { }
+        public void Finished(string clipName, bool completed) { }
     }
 
     // ------------------------------------------------------------------ the behaviour

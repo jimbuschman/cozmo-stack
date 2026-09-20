@@ -26,6 +26,19 @@ public interface IAnimationAudioSource
 
     /// <summary>A human-readable name for the event, for logs and diagnostics. Null when unknown.</summary>
     string? NameOf(long eventId);
+
+    /// <summary>
+    /// Whether this event is a Wwise <b>Stop</b> action (type 0x01xx) rather than a Play: it produces no PCM
+    /// and instead terminates what its target is playing. The scheduler asks before <see cref="GetPcm"/> so a
+    /// Stop event ends the sound currently streaming instead of being taken for a silent alternative.
+    /// </summary>
+    bool IsStopEvent(long eventId) => false;
+
+    /// <summary>
+    /// Whether a Stop event's target covers the sound started by <paramref name="playingEventId"/> (the Play
+    /// target is the Stop target or sits under it in the hierarchy). A source that cannot tell says yes.
+    /// </summary>
+    bool StopAffects(long stopEventId, long playingEventId) => true;
 }
 
 /// <summary>

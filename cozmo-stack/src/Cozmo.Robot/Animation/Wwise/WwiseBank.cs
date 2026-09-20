@@ -203,6 +203,10 @@ public sealed class WwiseBank
     /// <summary>The action type of a Play action: the high byte is the action, the low byte its scope.</summary>
     public const ushort PlayAction = 0x0403;
 
+    /// <summary>The action type's high byte is its kind: 0x01 Stop, 0x02 Pause, 0x03 Resume, 0x04 Play (the shipped Stop actions are 0x0102/0x0103).</summary>
+    public static bool IsStopAction(ushort actionType) => (actionType >> 8) == 0x01;
+    public static bool IsPlayAction(ushort actionType) => (actionType >> 8) == 0x04;
+
     /// <summary>
     /// The media id a Sound object plays. It sits ten bytes in, after the object id, a four-byte plugin
     /// id and a one-byte stream type. Read this way, 2282 of the 2360 Sound objects in this build name a

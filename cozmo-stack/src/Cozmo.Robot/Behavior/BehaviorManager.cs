@@ -83,12 +83,18 @@ public sealed class BehaviorManager : IDisposable
     /// </summary>
     public void AddReaction(IReactionTriggerStrategy strategy, IBehavior behavior, bool resumeLast = false)
     {
+        List<ReactionRegistration> replaced;
         lock (_gate)
         {
+            replaced = _reactions.Where(r => r.Strategy.Trigger == strategy.Trigger).ToList();
             _reactions.RemoveAll(r => r.Strategy.Trigger == strategy.Trigger);
             _reactions.Add(new ReactionRegistration(strategy, behavior, resumeLast));
             _behaviors.RemoveAll(b => b.Id == behavior.Id);
         }
+        // A registered strategy is owned by the manager: the message-subscribing ones (latched events, cube
+        // moved, object position) hold a robot subscription that must be released when they are replaced.
+        foreach (var r in replaced)
+            if (!ReferenceEquals(r.Strategy, strategy) && r.Strategy is IDisposable d) d.Dispose();
     }
 
     /// <summary>The engine's per-trigger enable (<c>IsReactionTriggerEnabled</c>). Every trigger starts enabled.</summary>
@@ -117,8 +123,11 @@ public sealed class BehaviorManager : IDisposable
         foreach (var reg in regs)
         {
             if (!IsTriggerEnabled(reg.Strategy.Trigger)) continue;
-            if (!reg.Strategy.ShouldTrigger(_context, current, nowSec)) continue;
+            // The engine asks IsRunnable before WantsToRun (CheckReactionTriggerStrategies 0x005A3550): a
+            // strategy that latches an event is only consumed once its behaviour can actually run, so a cliff
+            // or calibration report seen while the behaviour is unrunnable is not lost.
             if (!reg.Behavior.IsRunnable(_context)) continue;
+            if (!reg.Strategy.ShouldTrigger(_context, current, nowSec)) continue;
 
             string? interrupted;
             bool willResume;
@@ -129,8 +138,9 @@ public sealed class BehaviorManager : IDisposable
                 interrupted = _current?.Id;
                 // Only a non-reaction behaviour is resumed; a reaction interrupted by a reaction is not.
                 willResume = reg.ResumeLast && _current is not null && _currentReaction is null;
-                _resumeAfterReaction = willResume ? _current : null;
-                if (_current is not null) StopCurrentLocked(BehaviorStopReason.Interrupted, nowSec);
+                var interruptedBehavior = _current;
+                if (_current is not null) StopCurrentLocked(BehaviorStopReason.Interrupted, nowSec);   // clears any parked resume
+                _resumeAfterReaction = willResume ? interruptedBehavior : null;
                 scope = new BehaviorScope(_context.Arbiter);
                 _current = reg.Behavior;
                 _scope = scope;
@@ -182,6 +192,15 @@ public sealed class BehaviorManager : IDisposable
 
         lock (_gate)
         {
+            // A reaction runs to its end or until another reaction takes over; ordinary scoring does not
+            // replace it (the engine's ChooseNextScoredBehaviorAndSwitch is not entered while a reaction
+            // trigger is current). Scoring resumes once the reaction finishes.
+            if (_currentReaction is { } reacting && _current is { } reaction)
+            {
+                var held = new BehaviorSelection(reaction.Id, $"reaction {reacting} is running; scoring waits");
+                Selected?.Invoke(held);
+                return held;
+            }
             foreach (var b in _behaviors)
             {
                 if (!b.IsRunnable(_context))
@@ -320,6 +339,10 @@ public sealed class BehaviorManager : IDisposable
         _scope = null;
         _current = null;
         _currentReaction = null;
+        // A behaviour parked for "resume last" is only resumed by the reaction that interrupted it finishing
+        // (Update reads it before calling here). Any other stop, external or a replacement, drops it, so a
+        // later completion cannot restart a behaviour nobody interrupted.
+        _resumeAfterReaction = null;
     }
 
     /// <summary>How long the running behaviour has been going, in seconds.</summary>
@@ -328,5 +351,12 @@ public sealed class BehaviorManager : IDisposable
         lock (_gate) return _current is null ? 0 : nowSec - _startedSec;
     }
 
-    public void Dispose() => Stop(BehaviorStopReason.Cancelled, 0);
+    /// <summary>Stops what is running and releases the registered strategies' subscriptions.</summary>
+    public void Dispose()
+    {
+        Stop(BehaviorStopReason.Cancelled, 0);
+        List<ReactionRegistration> regs;
+        lock (_gate) { regs = _reactions.ToList(); _reactions.Clear(); }
+        foreach (var r in regs) if (r.Strategy is IDisposable d) d.Dispose();
+    }
 }

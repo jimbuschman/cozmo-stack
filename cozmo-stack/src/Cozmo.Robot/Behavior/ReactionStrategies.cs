@@ -185,30 +185,55 @@ public sealed class PlacedOnSlopeStrategy : IReactionTriggerStrategy
 /// </summary>
 public sealed class FrustrationStrategy : IReactionTriggerStrategy
 {
-    public FrustrationStrategy(float maxConfidence, float cooldownSec)
+    private readonly Func<double>? _clock;
+
+    /// <param name="clockSec">
+    /// The clock both the cooldown stamp and its evaluation use. When given, <see cref="ShouldTrigger"/>
+    /// ignores the manager's <c>nowSec</c> and <see cref="AnimationComplete()"/> stamps this clock, so the
+    /// behaviour's completion and the strategy's test share one time base (the engine's is BaseStationTimer
+    /// for both). Without one, the manager's <c>nowSec</c> is the time base and the behaviour must stamp
+    /// through <see cref="AnimationComplete(double)"/> with a value from that same source.
+    /// </param>
+    public FrustrationStrategy(float maxConfidence, float cooldownSec, Func<double>? clockSec = null)
     {
-        MaxConfidence = maxConfidence; CooldownSec = cooldownSec;
+        MaxConfidence = maxConfidence; CooldownSec = cooldownSec; _clock = clockSec;
     }
 
     public float MaxConfidence { get; }
     public float CooldownSec { get; }
-    /// <summary>When a frustration animation last completed, seconds; 0 until one has.</summary>
-    public double LastAnimationCompleteSec { get; private set; }
+    /// <summary>Whether the strategy was built with its own clock (the shipped construction).</summary>
+    public bool HasClock => _clock is not null;
+    /// <summary>When a frustration animation last completed, seconds on the strategy's time base; null until one has.</summary>
+    public double? LastAnimationCompleteSec { get; private set; }
+
+    /// <summary>The engine's <c>AnimationComplete</c>, stamped on the strategy's own clock (requires one).</summary>
+    public void AnimationComplete()
+    {
+        if (_clock is null) throw new InvalidOperationException("FrustrationStrategy has no clock; stamp with AnimationComplete(nowSec) on the manager's time base");
+        LastAnimationCompleteSec = _clock();
+    }
 
     public ReactionTrigger Trigger => ReactionTrigger.Frustration;
     public string Basis => "ReactionTriggerStrategyFrustration::ShouldTriggerBehaviorInternal 0x0060EE6E: current != Frustration, " +
                            $"mood.Confident < {MaxConfidence}, cooldown {CooldownSec}s since AnimationComplete";
 
-    /// <summary>The engine's <c>AnimationComplete</c>: the behaviour calls this when its animation ends.</summary>
-    public void AnimationComplete(double nowSec) => LastAnimationCompleteSec = nowSec;
+    /// <summary>The engine's <c>AnimationComplete</c> with an explicit time on the manager's time base (a strategy with a clock ignores the argument).</summary>
+    public void AnimationComplete(double nowSec) => LastAnimationCompleteSec = _clock?.Invoke() ?? nowSec;
+
+    /// <summary>Whether the cooldown has elapsed, on the strategy's clock when it has one, else at the manager time given.</summary>
+    public bool CooldownElapsed(double nowSec)
+    {
+        if (LastAnimationCompleteSec is not { } last) return true;
+        double now = _clock?.Invoke() ?? nowSec;
+        return now - last > CooldownSec;
+    }
 
     public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec)
     {
         if (current == ReactionTrigger.Frustration) return false;
         if (context.Mood is not { } mood) return false;
         if (!(mood[EmotionType.Confident] < MaxConfidence)) return false;
-        if (LastAnimationCompleteSec > 0 && !(nowSec - LastAnimationCompleteSec > CooldownSec)) return false;
-        return true;
+        return CooldownElapsed(nowSec);
     }
 }
 
@@ -276,7 +301,7 @@ public static class ShippedReactionStrategies
             // RobotPlacedOnSlope (0x0060D878): purpose-built strategy
             new PlacedOnSlopeStrategy(),
             // Frustration (0x0060D73C): frustrationParams from the shipped map, Minor entry
-            new FrustrationStrategy(maxConfidence: -0.6f, cooldownSec: 60f),
+            new FrustrationStrategy(maxConfidence: -0.6f, cooldownSec: 60f, clockSec),
         };
     }
 }

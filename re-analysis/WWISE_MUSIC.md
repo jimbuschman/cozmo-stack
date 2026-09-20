@@ -58,8 +58,10 @@ The same shape holds for the 100 bpm (139286641, grid 9600, 17 leaves) and 120 b
 14 leaves) containers and for all 39 behaviours: every `(audioSwitchGroup, audioSwitch)` pair is a key in
 its container's tree, every leaf is a playlist of exactly one segment holding exactly one MIDI clip trimmed
 to the segment's length. The 19 standalone `Play__Robot_VO__Singing_*` events target playlists in the same
-family directly. Two songs, Bingo and Tisket Tasket, are full-length sequences (462 s); on the robot the
-animation's Stop event cuts them at 9.8 s like every other song.
+family directly. Two songs, Bingo and Tisket Tasket, are full-length sequences (462 s); the tempo animation
+raises `Stop__Robot_VO__Cozmo_Singing_Stop` at its end (9.8 s), and the scheduler ends the streaming song on
+that Stop action (`AnimationScheduler.StartAudio`; corrected 2026-09-19, when a Stop still resolved to "no
+PCM" and was skipped as a silent alternative, leaving the song streaming).
 
 **The 46 "plugin blobs" M6 set aside are the songs.** `25 80 00 00 xx xx`: a big-endian SMF division,
 0x2580 = **9600 ticks per beat**, then a little-endian float tempo, then a Standard MIDI File track
@@ -129,6 +131,9 @@ The banks and their definition text files are read from inside `AudioAssets.zip`
 | vibrato LFO (528935089) and note-off envelope (381606890) not applied | DEFERRED | modulator objects (types 21, 22) are read as raw property bundles only; their semantics were not settled, so nothing is guessed. Effect: notes sustain by looping with no release shaping, and cube shaking has no audible effect |
 | switch state posted before the animations; get-in, tempo, get-out in order; vibrato formula | NATIVE | `BehaviorSinging` (§1) |
 | the vibrato *input* (cube shake) not measured | LOCAL_POLICY | the engine uses a streamed cube accelerometer this stack does not receive; `SingingBehavior.ShakeInput` is left for a caller and the value is reported in the acceptance record as not driven |
+| **the song is rendered whole, ahead of playback, on a worker** (`WwiseAudioSource.Prewarm`, started by `SingingBehavior` when it posts the switch) | LOCAL | Wwise streams a song; this stack renders it to PCM first. A 462 s sequence takes seconds to render, which on the scheduler thread stalled the animation timeline at the tempo clip's first audio frame; the prewarm runs during the get-in animation and `GetPcm` waits for an in-flight render rather than starting another (`PrewarmRendersOffTheStreamingPathAndGetPcmFindsIt`, `TheSingingStopEventEndsTheSongOnTheScheduler`) |
+| **the final-PCM cache freezes the renderer's random choices** (which of a note's three recordings plays) for the life of a source | LOCAL_POLICY | Wwise draws afresh on every play; this stack caches the rendered PCM per selected node, so a song sounds the same every time in one session (`TheMusicCacheFreezesTheRenderersRandomChoices`). Kept: re-rendering per play would put seconds of work back on the streaming path |
+| a Stop action (`Stop__Robot_VO__Cozmo_Singing_Stop`) ends the voices under its target; the scheduler ends the streaming song when the Stop's target is the song's Play target or an ancestor of it | CORROBORATED | Wwise action semantics; the hierarchy walk is the bank's parent chain (`WwiseAudioSource.IsStopEvent` / `StopAffects`) |
 
 `WwiseAudioSource` implements `IAudioSwitchStates`: `SetSwitch(group, switch)` is what the behaviour calls,
 and `GetPcm` for an event whose Play target is music renders the plan under the current switches (cached
@@ -150,8 +155,11 @@ builds the 39 from their configs.
   three tempo defaults, the 19 standalone songs, 26 Code Lab music pieces from Vorbis clips); the one that
   does not is `Play__Music__Play`, whose default path is a 1 s silent segment (the app's soundtrack, out of
   scope).
-* The seam: `GetPcm` returns the default song without a switch, the selected song with one, and nothing
-  for the Stop event (`TheAudioSourcePlaysTheSongTheSwitchSelects`).
+* The seam: `GetPcm` returns the default song without a switch, the selected song with one; the Stop event
+  is recognised as a Stop action covering the song and ends it on the scheduler at the clip's end
+  (`TheAudioSourcePlaysTheSongTheSwitchSelects`, `TheSingingStopEventEndsTheSongOnTheScheduler`). An earlier
+  version of this line equated "the Stop event resolves to no PCM" with correct behaviour; it was not: the
+  scheduler skipped the Stop and kept streaming.
 * The behaviour posts the switch before any animation, holds reactions off, plays a get-in clip first, and
   stops cleanly with the vibrato reset (`StartingTheBehaviourPostsTheSwitchThenPlaysTheGetIn`); the
   engine's constructor table, fallback and vibrato formula are pinned by pure-function tests.
