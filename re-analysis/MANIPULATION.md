@@ -30,7 +30,7 @@ Code: `cozmo-stack/src/Cozmo.Robot/Manipulation/`, `Behavior/ManipulationBehavio
 | `DockWithObject {speed, accel, decel, ?, dockAction, numRetries, doLiftLoadCheck, ?, ?}` | `DockingSystem.Message` | NATIVE field order (0x0063BD50); the fourth float and last two bytes INFERRED as zero |
 | docking error signal: marker pose w.r.t. the robot at the frame time, clamp-flat 40°, x − offX, y + offY, z, yaw + π/2 + offAngle, timestamp; skipped when rotating > 22.9°/s | `DockingSystem.OnFrame` | NATIVE (`UpdateDockingErrorSignal` 0x0063BE80..0x0063C1F0); the two trailing bytes INFERRED zero |
 | `CarryingComponent`: set on `BlockPickedUp`, cleared on `BlockPlaced` | `Docking.cs` | NATIVE (`HandlePickAndPlaceResult` → `SetDockObjectAsAttachedToLift` / `SetCarriedObjectAsUnattached`) |
-| lift presets LowDock 32, HighDock 92, Carry 72, OutOfFOV | `LiftPresets` | names NATIVE (`GetPresetName`); heights INFERRED (SDK range limits; carry from Anki's later open engine; out-of-view not found) |
+| lift presets LowDock 32, HighDock 76, Carry 92, OutOfFOV | `LiftPresets` | NATIVE: names and order from `GetPresetName` 0x00548CD4 (0 LowDock, 1 HighDock, 2 HeightCarry, 3 OutOfFOV), heights from the preset table at 0x00C54688 (32, 76, 92, −1). **Corrected 2026-09-20**: M12 had 32 / 92 / 72 from the lift range limits and a later open-source constant. OutOfFOV is unresolved (−1 is not a height); the carry height stands in |
 | `IDockAction` base: object located, within (100 mm, 30°) of a pre-action pose unless skipped, turn + visual verify, dock, subclass verify | `DockActions.cs` | NATIVE (0x005502D8..0x00552560: 0x42C80000, 0x3F060A92) |
 | `PickupObjectAction`: high dock above 33.85 mm; verify carrying and not still seen in the original pose | `DockActions.cs` | NATIVE (0x00553648..0x00554540, 0x42076666); lift-load timeout and accelerometer checks DEFERRED |
 | `PlaceRelObjectAction` (PlaceHigh / PlaceLow), `RollObjectAction` (RollLow / DeepRollLow), `PopAWheelieAction` | `DockActions.cs` | NATIVE selection; verification reduced to the dock result (+ up axis in the behaviour) |
@@ -77,8 +77,8 @@ as the engine's `StartActing(action, callback)` does. `ShippedBehaviors.Manipula
 | the planner (straight line with point turns; no obstacles) | LOCAL (engine's lattice planner DEFERRED) |
 | planning and traversal timeouts | INFERRED / LOCAL |
 | `DockWithObject`'s fourth float and trailing bytes; `DockingErrorSignal`'s trailing bytes; `PlaceObjectOnGround`'s field names | INFERRED (hardware items N, O) |
-| lift preset heights | INFERRED |
-| dock helper attempt limit (3) | INFERRED; search-for-block fallback DEFERRED |
+| OutOfFOV lift preset height | unresolved (the native table holds −1); the carry height stands in |
+| dock helper attempt limit (3) | INFERRED; search-for-block fallback DEFERRED. The retry's **different** pre-dock pose is NATIVE (`IBehavior::UseSecondClosestPreActionPose` 0x005BEE40 re-reads the possible poses and calls `IDockAction::RemoveMatchingPredockPose` 0x00551418, which drops the pose matching within 100 mm per axis and 0.523599 rad, only while more than one remains) |
 | target selection (closest located cube; up-axis preference for rolls) | LOCAL for `ObjectInteractionInfoCache` |
 | pick-up verification's lift-load timeout and accelerometer checks; place verification beyond the dock result | DEFERRED |
 | carried object released on the put-down animation | INFERRED |

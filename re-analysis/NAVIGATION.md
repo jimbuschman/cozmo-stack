@@ -51,7 +51,12 @@ side `ManipRig.cs`. Read `MANIPULATION.md` first: everything here sits on the M1
 
 ## 3. What is not native, and is labelled
 
-* The planner's heuristic, expansion bound, padding values, soft penalty and the straight-line fallback.
+* The planner's heuristic, expansion bound, padding values and soft penalty. **Corrected 2026-09-20:** a
+  configured lattice planner that finds no route no longer falls back to driving straight at the goal. The
+  straight line is used only when the same environment reports it collision-free end to end
+  (`DriveToPoseAction.PathIsClear`, sampled every 10 mm); otherwise the action returns
+  `PathPlanningFailedAbort` and sends no path. The straight-line planner remains the labelled LOCAL stand-in
+  when no lattice planner is configured.
 * The arc reconstruction of turning primitives (end poses exact; the engine's segment tables not read).
 * The charger's pre-dock pose and size order; mount success by the IS_ON_CHARGER flag; 2 retries.
 * Flip member roles; the wheelie retry limit; the ram's lift preset; the workout selection; one active beacon;

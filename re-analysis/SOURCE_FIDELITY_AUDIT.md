@@ -487,7 +487,10 @@ and a class-name rule for manipulation behaviours; regenerated at 69 of 178. Har
 correct behaviour. Songs are rendered on a worker when the switch is posted (`Prewarm`), keeping seconds of
 rendering off the scheduler thread; the final-PCM cache freezing the renderer's random choices is labelled
 LOCAL_POLICY and tested. `BehaviorManager` no longer scores away an active reaction, asks IsRunnable before
-WantsToRun (native order), disposes replaced strategies and clears stale resume-last state. The frustration
+WantsToRun for latched strategies, disposes replaced strategies and clears stale resume-last state. (**Superseded
+in part, 2026-09-20:** "native order" was wrong — see §17 finding 1. The engine asks `ShouldTriggerBehavior`
+first and tests the behaviour afterwards; runnable-before-consume is this stack's own rule for latched
+strategies and is kept for them, while target-producing strategies now follow the native order.) The frustration
 cooldown stamp and test share one clock. DizzyShakeLoop's repeated restarts are recorded as a fidelity gap.
 
 **M12** NATIVE rows are tabulated in [MANIPULATION.md](MANIPULATION.md) §1: the pre-action pose types and
@@ -566,3 +569,88 @@ flag's source (INFERRED / LOCAL); `boredomMultiplier`, feature gates, the pyrami
 decay modifiers, damaged parts, persistence (DEFERRED).
 
 **Tests:** 630 after M15.
+
+## 17. Correction and hardening pass, 2026-09-20 (after M15)
+
+One bounded pass against head `8ccd694`, from an independent review. Each finding was checked against the code
+before anything changed, and the smallest source lookup needed was done where native semantics decided the
+answer. Twenty-three findings were confirmed and fixed, one was disproved.
+
+### Recovered from the binary during this pass
+
+| what | where | effect |
+| --- | --- | --- |
+| `CheckReactionTriggerStrategies` order | 0x005A3550: two strategy predicates (vtable +0x0C / +0x10, `return true` on every strategy read), then `IReactionTriggerStrategy::ShouldTriggerBehavior(robot, behavior)` (0x0060B63A — the behaviour is an argument), then `SwitchToReactionTrigger`, whose failure logs "Trigger strategy %s tried to trigger behavior %s, but init failed" | the behaviour's runnability is tested **after** the strategy fills it in, not before |
+| `StrictPriorityBSRunnableChooser::GetDesiredActiveBehavior` | 0x0060B23E: reads the candidate's is-running byte (`IBehavior` +0xA1, the one `IsRunnableBase` logs "Behavior %s is already running" from) at 0x0060B250 and selects it **without** calling `IsRunnable` | disproves finding 18's first half |
+| `IActivityStrategy::WantsToEnd` | 0x005B5444: `activityCanEndDurationSecs` (+0x14) is a floor, `activityShouldEndDurationSecs` (+0x18) a ceiling, the subclass's `WantsToEndInternal` (vtable +0x0C) decides between them; epsilon 1e-5 | the can-end duration is now used |
+| `IActivityStrategy::WantsToStart` cooldown | 0x005B529C: the cooldown applies while +0x20 > 0 and (last end time > 0 or `startInCooldown` +0x28), measured from the last end time (0 when never run); `RandomizeCooldown` runs inline **after** the check passes (0x005B5336), and the constructor seeds +0x20 with `cooldownBaseSecs` (0x005B5004) | the cooldown lifecycle is corrected; the flat-3 s recent-end special case is labelled not reproduced |
+| `IBehavior::UseSecondClosestPreActionPose` / `IDockAction::RemoveMatchingPredockPose` | 0x005BEE40 and 0x00551418: re-read the possible poses, and while more than one remains drop the one matching `Pose3d::IsSameAs(pose, (100,100,100), 0.523599)` | the dock retry really changes the approach |
+| `MoveLiftToHeightAction::GetPresetName` | 0x00548CD4: 0 LowDock, 1 HighDock, 2 HeightCarry, 3 OutOfFOV, against the table at 0x00C54688 (32, 76, 92, −1) | confirms the sweep's 32 / 76 / 92 and the M12 regression |
+| `BehaviorDriveInDesperation::IsRunnableInternal` | 0x005D90AC: `movs r0, #1` | the desperation drive never stops itself; the activity ends by another path |
+
+### Confirmed and fixed
+
+1. **Target-producing strategies were unreachable.** `ITargetPreparingStrategy` (prepare → test the behaviour →
+   commit or abandon) reproduces the native order for `CubeMoved` and `ObjectPositionUpdated`; latched
+   strategies keep runnable-before-consume, which is this stack's rule, not the engine's.
+2. **CubeMoved saw no real sightings.** The strategy now subscribes to `BlockWorld.ObjectObserved` and
+   unsubscribes on dispose.
+3. **Two reaction dispatchers.** `ReactToImpact` (new `ReactToImpactBehavior`, the 5 s recalibration allowance
+   and the >1000 impact gate in its latch) and `ReactToOnCharger` are registered with `BehaviorManager`;
+   `ReactiveBehavior` stands down when a manager shares its arbiter (`BehaviorArbiter.ManagerDispatchesReactions`).
+4. **Recalibration readiness.** A `CalibStarted` report clears that motor's calibrated flag, and
+   `CalibrationComplete` is false while either motor calibrates.
+5. **Shutdown motor stop.** `ReliableTransport.FlushPending` drives the send path until everything queued has
+   reached the socket; `CozmoRobot.Dispose` waits up to 250 ms and records `ShutdownStopFlushed`.
+6. **Wwise on the scheduler thread.** `ProduceMusic` never waits and never renders: an unprepared song starts a
+   worker render and plays silent (counted in `UnpreparedMusicEvents`); `SingingBehavior` holds the tempo step
+   until its prewarm completes; `WwiseSongRenderer.Render` serialises its random and sequence state.
+7. **Disconnected cubes.** `ObjectConnectionState` with `Connected` false marks the object's pose Unknown.
+8. **The fw2457 timestamp.** Once the zero-timestamp fallback picks a state, that state's timestamp dates every
+   observation in the frame; the camera's raw value is kept in `VisionSystem.LastRawFrameTimestamp`.
+9. **Path lifecycle.** `PathFollower.Reserve` registers before the path is sent, terminal events are retained
+   for late waiters, cancellation removes the waiter, and `ManipulationSystem.StartPath` returns a `PathRun`
+   that clears the path when its wait ends without a terminal event. Every direct path user went through it.
+10. **A failed final turn** fails `DriveToObjectAction` (`DidNotReachPreActionPose`, the nearest shipped result;
+    reduction labelled) instead of reporting Success.
+11. **The dock retry** excludes the pose it just failed from, by the native rule above.
+12. **`WaitForImagesAction`** snapshots the frame counter and waits for frames that arrive after it
+    (`PutDownBlockBehavior.ImagesToWaitFor` = 2, INFERRED from `acknowledgeObject.json`); the same snapshot bug
+    in `CheckForStackAtInterval` is fixed.
+13. **Lift presets** are the native 32 / 76 / 92; `FlipBlockAction` now raises to the real 92 mm carry height.
+14. **`RobotAnimationSink.Finished`** no longer stops the wheels for every clip: it stops only body motion this
+    animation started and nothing has stopped, and with the keyframe's own `BodyMotion` zero.
+15. **A lattice-planner failure** returns `PathPlanningFailedAbort` and sends no path unless the same
+    environment reports the straight line clear.
+16. **`FlipBlockAction`** awaits the carry-height lift before reporting a result.
+17. **`BlockConfigurationManager`** builds a whole snapshot and swaps it under a short lock.
+18. **(second half)** `FreeplaySystem` refreshes the running behaviour after an activity switch, so a shared
+    behaviour id is not treated as already running when the manager has nothing.
+19. **One repetition history.** `ScoringChooser` reads and writes the manager's shared `RepetitionPenalty`;
+    `FreeplaySystem` no longer records an interrupted behaviour as having run.
+20. **Activity durations and cooldowns** follow `WantsToEnd` / `WantsToStart` as recovered above.
+21. **`FreeplayStack`** subscribes the put-down re-pick itself and unsubscribes on dispose; the conformance tool
+    no longer installs its own.
+22. **Live freeplay fails closed** without a camera calibration; `--nominal` is an explicit, labelled override
+    recorded in the acceptance file.
+23. **`manip --stack / --knockover / --wheelie / --putdown`** load the animation library from `--obb`, wait for
+    the number of cubes they need, check for the stack they need, and say exactly what is missing otherwise.
+24. **Face pipeline.** `TrackFaceAction` sends the pan and tilt it computed (through `PanAndTilt`) instead of
+    re-solving the head angle; `SmartFaceID` is disposable and every face action releases it;
+    `FacePositionUpdated` → `AcknowledgeFace` and `PetInitialDetection` → `ReactToPet` are registered with the
+    manager (they cannot fire without a detector, which is the OKAO boundary, not missing wiring).
+
+### Disproved
+
+**Finding 18, first half.** `StrictPriorityChooser` treating the running behaviour as eligible is the native
+behaviour: `StrictPriorityBSRunnableChooser::GetDesiredActiveBehavior` (0x0060B23E) tests the is-running byte at
++0xA1 and selects without calling `IsRunnable`. The code is unchanged and now cites the address.
+
+### Still labelled after this pass
+
+The obstacle-detected flag's source, `StrategyObstacleDetected`'s writer, the flat-3 s recent-end cooldown case
+and its second time argument, `PetInitialDetection`'s strategy class, the put-down image count, and the
+`DriveToObjectAction` result for a failed final turn.
+
+**Tests:** 651 (630 before the pass; 21 new in `CorrectionTests.cs`, and six existing tests updated where a
+corrected rule changed what they should assert).

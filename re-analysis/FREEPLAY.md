@@ -79,7 +79,7 @@ interlude, ends an activity on its duration and respects cooldowns (fakes); a Cr
 NeedsSevereLowEnergy activity, plays the get-in once and runs the desperation drive until feeding refills it,
 then Hiking resumes (the real tree and behaviours); and the whole stack on the fake robot side, sitting on the
 charger with a cube on its side in view, picks PlayAlone, drives off the charger (score 1000) and rolls the
-cube (RollBlockOnSide). Regression: the full suite, 630 tests.
+cube (RollBlockOnSide). Regression: the full suite, 630 tests at the end of M15.
 
 ## 5. Hardware pending
 

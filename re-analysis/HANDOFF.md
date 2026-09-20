@@ -1,4 +1,4 @@
-# Handoff — 2026-09-20 (M15 complete offline)
+# Handoff — 2026-09-20 (M15 complete offline, correction pass applied)
 
 ## Where things stand
 
@@ -12,8 +12,9 @@
 | M13 | **COMPLETE OFFLINE.** The lattice planner over the shipped motion primitives, the flip action, the charger object with align / mount / drive-off, block configurations (stacks, pyramid bases, pyramids), the whiteboard's beacons, the workouts, and 16 behaviour classes (25 shipped configs). Hardware acceptance pending — items S–X. See [NAVIGATION.md](NAVIGATION.md) |
 | M14 | **COMPLETE OFFLINE at the OKAO boundary.** `FaceWorld`, `TrackedFace` geometry, `SmartFaceID`, `PetWorld`, the turn / track / verify face actions and seven behaviour classes (14 configs) on an `IFaceDetector` seam; the stock detector (Omron OKAO, 177 exports) is recorded as unavailable, so the face behaviours are implemented but not counted as implementable. See [FACES.md](FACES.md) |
 | M15 | **COMPLETE OFFLINE.** The engine's decision architecture over the systems built so far: `NeedsManager` (the three needs, brackets, decay, action deltas), the shipped activity tree (`activities_config.json` + `activities/**`: 24 freeplay sub-activities with priorities, strategies, scoring / strict-priority choosers, interludes), `FreeplaySystem` (`ActivityFreeplay`'s keep / end / pick and `BehaviorManager::Update`'s reactions-then-activity order), `FreeplayStack` (binds every implemented behaviour by id), six new behaviour classes (16 configs) plus `FindFaces` on the face pipeline, and the `freeplay` command (`--tree`, `--simulate`, live). Hardware acceptance pending — item Z. See [FREEPLAY.md](FREEPLAY.md) |
-| Tests | **630 tests** (`dotnet test Cozmo.sln`, about 5 m; 619 after M14, 606 after M13), all passing offline |
+| Tests | **651 tests** (`dotnet test Cozmo.sln`, about 5 m; 630 after M15, 619 after M14, 606 after M13), all passing offline |
 | Hardware | nothing new has been run since the two post-sweep retests; the consolidated plan is [HARDWARE_TEST_PLAN.md](HARDWARE_TEST_PLAN.md) (items A–Z) |
+| Correction pass | **Done 2026-09-20** (this series), from an independent review of `8ccd694`: the reaction manager's two-phase contract for target-producing strategies, CubeMoved fed from real observations, the last two M7 reactions moved under the manager, recalibration readiness, a bounded shutdown flush, the Wwise scheduler path, disconnected cubes, the fw2457 observation timestamp, the path start/wait/cancel lifecycle, failed final turns, the native different-pose dock retry, the put-down image wait, the native lift presets (32 / 76 / 92), the animation wheel stop, planner-failure safety, the flip's carry lift, thread-safe block configurations, the freeplay activity-transition and repetition lifecycle, the activity duration and cooldown rules, the stack's own put-down wiring, fail-closed live freeplay, and the manipulation hardware commands. One review finding was disproved by the binary. See [SOURCE_FIDELITY_AUDIT.md](SOURCE_FIDELITY_AUDIT.md) §17 |
 | Next | **The hardware / integration validation phase** (items A–Z, Y blocked), then the architectural work listed under "Next task" |
 
 ## Milestone status
@@ -50,7 +51,7 @@ deltas from the shipped configs; the brackets gate the needs activities, `Expres
 behaviour classes were read transition by transition (the S1–S7 look-around, the desperation drive's random
 points and request, the needs expressions, the sparks reward). `freeplay --simulate --obb <obb>` prints every
 decision offline; the whole stack on the fake robot drives off the charger and rolls the cube it sees
-(`TheWholeStackDrivesOffTheChargerAndPlaysWithTheCubeItSees`). 630 tests in the full suite.
+(`TheWholeStackDrivesOffTheChargerAndPlaysWithTheCubeItSees`). 630 tests in the full suite at that point.
 
 Corrections found on the way: a shipped PlayAnim can carry a `wantsToRunStrategyConfig` (ReactToObstacle:
 ObstacleDetected), which `PlayAnimBehavior` had ignored and which made it always runnable; the shipped strategy
