@@ -369,7 +369,7 @@ public static class ShippedBehaviors
     /// entry appears when a <paramref name="cubes"/> world model is attached.
     /// </summary>
     public static IReadOnlyList<BehaviorManager.ReactionRegistration> Reactions(CozmoRobot robot, ICubeLocator? cubes = null,
-                                                                                Func<double>? clockSec = null)
+                                                                                Func<double>? clockSec = null, Cozmo.Robot.Vision.VisionSystem? vision = null)
     {
         var strategies = ShippedReactionStrategies.ForRobot(robot, clockSec).ToDictionary(s => s.Trigger);
         var frustration = (FrustrationStrategy)strategies[ReactionTrigger.Frustration];
@@ -400,10 +400,17 @@ public static class ShippedBehaviors
             new(frustration, ReactToFrustrationBehavior.Minor(frustration), ResumeLast: false),
         };
 
+        if (cubes is null && vision is not null) cubes = vision.Locator;
         if (cubes is not null)
         {
             var behavior = new AcknowledgeCubeMovedBehavior(cubes);
             list.Add(new(new CubeMovedReactionStrategy(robot, behavior, cubes), behavior, ResumeLast: false));
+        }
+        if (vision is not null)
+        {
+            // ObjectPositionUpdated -> AcknowledgeObject (shouldResumeLast false in the shipped map)
+            var ack = new AcknowledgeObjectBehavior(vision.World, vision.Locator);
+            list.Add(new(new ObjectPositionUpdatedStrategy(vision.World, ack), ack, ResumeLast: false));
         }
         return list;
     }

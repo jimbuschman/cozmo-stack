@@ -9,6 +9,10 @@
 /re-analysis/obb/
 /re-analysis/obb/**
 
+# The fiducial-marker library is Anki's data, extracted from libcozmoEngine.so; regenerate locally with
+# re-analysis/tools/extract_marker_library.py (the build does it when python and the .so are present)
+/cozmo-stack/src/Cozmo.Robot/Vision/Data/marker_nn_library.bin
+
 # Large derived symbol dumps regenerate with re-analysis/tools/*.py
 /re-analysis/symbols/exports_mangled.txt
 /re-analysis/symbols/exports_demangled.txt

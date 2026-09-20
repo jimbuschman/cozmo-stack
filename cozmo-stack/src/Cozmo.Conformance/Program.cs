@@ -36,6 +36,8 @@ return args.Length == 0 ? Usage() : args[0] switch
     "sing" => SingTool.Run(args).GetAwaiter().GetResult(),
     "offtreads" => ReactionsTool.OffTreads(args).GetAwaiter().GetResult(),
     "reactions" => ReactionsTool.Run(args).GetAwaiter().GetResult(),
+    "vision" => VisionTool.Run(args).GetAwaiter().GetResult(),
+    "bodyangle" => VisionTool.BodyAngle(args).GetAwaiter().GetResult(),
     _ => Usage(),
 };
 
@@ -206,6 +208,14 @@ static int Usage()
           reactions <robot-ip> --obb <dir> [--seconds 120] [--acceptance [file]]
                                              M10 acceptance: the derived-state reactions (on back, face, side, slope, shaken, pushed,
                                              calibration, frustration) under the behaviour manager; every trigger and step printed
+          vision --synthetic [--out <dir>]      M11 offline conformance: cubes rendered from the engine's marker library, detected and localised
+          vision --replay <frame-log> [--out <dir>]   run the marker detector over the camera frames in a capture
+          vision --images <jpeg...> [--out <dir>]     run it over saved camera JPEGs, printing every quad and why it was accepted or rejected
+          vision <robot-ip> [--seconds 60] [--nominal] [--unconnected] [--acceptance [file]] [--out <dir>]
+                                             M11 acceptance: read the camera calibration from NV storage, stream the camera, print markers,
+                                             objects and pose-state changes (--nominal: fall back to a stand-in calibration)
+          bodyangle <robot-ip> [--deg 45] [--acceptance [file]]
+                                             M11 check: send SetBodyAngle and watch the pose angle, to confirm the absolute-angle semantics
 
           animlist <assets-dir> [filter]     decode Cozmo's own animation assets and list what is in them,
                                              with no robot involved

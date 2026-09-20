@@ -10,15 +10,36 @@
   <ItemGroup>
     <!-- Managed Vorbis decoder, MIT. Confined to WwiseVorbis.cs. -->
     <PackageReference Include="NVorbis" Version="0.10.5" />
+    <PackageReference Include="StbImageSharp" Version="2.30.16" />
   </ItemGroup>
   <ItemGroup>
     <!--
       Generic Vorbis codebook data from ww2ogg (BSD-3-Clause), needed to rebuild Wwise Vorbis streams.
       Provenance and SHA-256: third-party/ww2ogg/README.md. Not a Cozmo asset.
     -->
-    <Content Include="..\..\third-party\ww2ogg\packed_codebooks_aoTuV_603.bin"
-             Link="packed_codebooks_aoTuV_603.bin"
-             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\third-party\ww2ogg\packed_codebooks_aoTuV_603.bin" Link="packed_codebooks_aoTuV_603.bin" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <!--
+    The engine's fiducial-marker nearest-neighbour library is Anki's data. It is NOT in the repository: the
+    build regenerates it locally from the user's own libcozmoEngine.so with
+    re-analysis/tools/extract_marker_library.py (addresses, layout and the expected SHA-256 are in the script)
+    and embeds it when present. Without the .so (or python) the library is absent, MarkerLibrary.Embedded
+    says so, and the vision tests that need it skip.
+  -->
+  <PropertyGroup>
+    <MarkerLibraryFile>$(MSBuildProjectDirectory)\Vision\Data\marker_nn_library.bin</MarkerLibraryFile>
+    <MarkerLibraryExtractor>$(MSBuildProjectDirectory)\..\..\..\re-analysis\tools\extract_marker_library.py</MarkerLibraryExtractor>
+    <MarkerLibrarySource>$(MSBuildProjectDirectory)\..\..\..\resources\lib\armeabi-v7a\libcozmoEngine.so</MarkerLibrarySource>
+  </PropertyGroup>
+  <Target Name="ExtractMarkerLibrary" BeforeTargets="BeforeBuild;PrepareForBuild;PrepareResources" Condition="!Exists('$(MarkerLibraryFile)') And Exists('$(MarkerLibrarySource)') And Exists('$(MarkerLibraryExtractor)')">
+    <Exec Command="python &quot;$(MarkerLibraryExtractor)&quot; &quot;$(MarkerLibrarySource)&quot;" ContinueOnError="true" IgnoreExitCode="true" StandardOutputImportance="low" />
+    <!-- the static item below was evaluated while the file was still absent; add it now for this first build -->
+    <ItemGroup Condition="Exists('$(MarkerLibraryFile)')">
+      <EmbeddedResource Include="Vision\Data\marker_nn_library.bin" LogicalName="Cozmo.Robot.Vision.marker_nn_library.bin" />
+    </ItemGroup>
+  </Target>
+  <ItemGroup Condition="Exists('$(MarkerLibraryFile)')">
+    <EmbeddedResource Include="Vision\Data\marker_nn_library.bin" LogicalName="Cozmo.Robot.Vision.marker_nn_library.bin" />
   </ItemGroup>
   <ItemGroup>
     <!-- The codec internals are tested directly; QuantVals in particular guards a regression that hung the decoder. -->

@@ -704,7 +704,7 @@ public class DerivedStateTests
         SpinUntil(() => !rig.Robot.Animations.IsPlaying);
         var sw = System.Diagnostics.Stopwatch.StartNew();
         bool running = true;
-        while (sw.ElapsedMilliseconds < 3000)
+        while (sw.ElapsedMilliseconds < 8000)     // generous: one run of the full suite in parallel starved this at 3 s
         {
             t += 33;
             running = b.Update(ctx, t);
