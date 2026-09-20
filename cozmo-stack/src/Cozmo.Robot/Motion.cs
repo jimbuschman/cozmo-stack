@@ -196,6 +196,18 @@ public sealed class CozmoMotion
         return new MotionOutcome(MotionResult.Acknowledged, $"lift moving at {radPerSec:F2} rad/s (no ack is defined)");
     }
 
+    // -------------------------------------------------------------- calibration
+
+    /// <summary>
+    /// Asks the robot to recalibrate its head and/or lift: the engine's <c>CalibrateMotorAction</c>
+    /// sends <see cref="StartMotorCalibration"/> (0x58) with a flag per motor. The robot answers with
+    /// <see cref="MotorCalibration"/> reports, started and then finished, which the state tracker records.
+    /// The message's layout is known and the flags are named in the CLAD; that the robot honours them is
+    /// hardware-pending (the plan's calibration item).
+    /// </summary>
+    public void RequestMotorCalibration(bool head, bool lift) =>
+        _robot.Transport.Send(new StartMotorCalibration { Head = head, Lift = lift }, flush: true);
+
     // ------------------------------------------------------------------ stopping
 
     /// <summary>

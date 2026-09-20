@@ -82,6 +82,50 @@ public sealed class CozmoSensors
     /// </summary>
     public event Action<FallingStoppedReport>? FallingStopped;
 
+    // ------------------------------------------------------------ derived state (M10)
+
+    /// <summary>
+    /// The engine's off-treads classifier, fed every robot state. Its thresholds and debounce are read
+    /// from <c>Robot::CheckAndUpdateTreadsState</c>; see <see cref="OffTreadsClassifier"/>.
+    /// </summary>
+    public OffTreadsClassifier OffTreads { get; } = new();
+
+    /// <summary>How the robot is sitting, as the engine would classify it.</summary>
+    public OffTreadsState OffTreadsState => OffTreads.Current;
+
+    /// <summary>
+    /// Whether the classifier is running. It is gated on the head having reported a completed calibration,
+    /// as the engine gates it (<c>Robot+0x314</c>); until then <see cref="OffTreadsState"/> stays OnTreads.
+    /// </summary>
+    public bool OffTreadsClassifierEnabled => OffTreads.HeadCalibrated;
+
+    /// <summary>Raised when the classified off-treads state changes: the engine's <c>RobotOffTreadsStateChanged</c>.</summary>
+    public event Action<OffTreadsState, OffTreadsState>? OffTreadsStateChanged;
+
+    /// <summary>|accelerometer| after the engine's 0.95/0.05 filter, the value its shaken strategies compare.</summary>
+    public float FilteredAccelMagnitude => OffTreads.FilteredAccelMagnitude;
+    /// <summary>The pose pitch of the last state, radians, as the engine keeps it on Robot.</summary>
+    public float? PitchRad => _state.Latest is { } s ? s.Pose.Pitch : null;
+
+    /// <summary>
+    /// The engine's unexpected-movement detector, fed every robot state; see
+    /// <see cref="UnexpectedMovementDetector"/>.
+    /// </summary>
+    public UnexpectedMovementDetector UnexpectedMovement { get; } = new();
+
+    /// <summary>Raised when the detector decides the body moved against its wheels: the engine's <c>UnexpectedMovement</c>.</summary>
+    public event Action<UnexpectedMovementReport>? UnexpectedMovementDetected;
+
+    /// <summary>
+    /// Raised for a <see cref="MotorCalibration"/> report that says a calibration <b>started</b> and was
+    /// <b>auto-started</b> by the robot. That pair is exactly what the engine's MotorCalibration reaction
+    /// strategy filters on (factory lambda at 0x0060DCFA: <c>calibStarted &amp;&amp; autoStarted</c>).
+    /// </summary>
+    public event Action<MotorCalibration>? AutoCalibrationStarted;
+
+    /// <summary>Raised for every MotorCalibration report, started or finished.</summary>
+    public event Action<MotorCalibration>? MotorCalibrationReported;
+
     // ------------------------------------------------------------------- power
 
     /// <summary>Battery voltage in volts. A charged Cozmo reads about 4.1 V, a flat one about 3.5 V.</summary>
@@ -200,7 +244,22 @@ public sealed class CozmoSensors
                 FallingStopped?.Invoke(new FallingStoppedReport(f.DurationMs, f.ImpactIntensity));
                 break;
 
+            case MotorCalibration mc:
+                MotorCalibrationReported?.Invoke(mc);
+                if (mc.CalibStarted && mc.AutoStarted) AutoCalibrationStarted?.Invoke(mc);
+                break;
+
             case RobotState s:
+                // The engine runs its IMU filters and the off-treads classifier inside UpdateFullRobotState
+                // before it looks at the status flags; the same order here. The classifier's gate is the
+                // head calibration the tracker has already recorded from the robot's own report.
+                OffTreads.HeadCalibrated = _state.HeadCalibrated;
+                var before = OffTreads.Current;
+                if (OffTreads.Update(s, s.Timestamp))
+                    OffTreadsStateChanged?.Invoke(before, OffTreads.Current);
+                var movement = UnexpectedMovement.Update(s);
+                if (movement is not null) UnexpectedMovementDetected?.Invoke(movement);
+
                 bool picked = s.Has(RobotStatusFlag.IsPickedUp);
                 bool charger = s.Has(RobotStatusFlag.IsOnCharger);
                 bool falling = s.Has(RobotStatusFlag.IsFalling);

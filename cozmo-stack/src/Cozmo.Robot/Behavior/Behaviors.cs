@@ -5,15 +5,53 @@ namespace Cozmo.Robot.Behavior;
 /// <summary>
 /// A behaviour that plays one animation, chosen from the shipped trigger map.
 ///
-/// This is the reconstruction of the engine's config-driven <c>PlayAnim</c> and <c>PlayAnimWithFace</c>
-/// classes, which name their animation in an <c>animTriggers</c> field rather than in code — 33 shipped
-/// configs do exactly that. Where a config lists more than one trigger the first that resolves is used.
+/// This is the reconstruction of the engine's config-driven <c>PlayAnim</c> class
+/// (<c>BehaviorPlayAnimSequence</c>), which names its animation in an <c>animTriggers</c> field rather than
+/// in code. Where a config lists more than one trigger the first that resolves is used. It is <b>not</b> the
+/// <c>PlayAnimWithFace</c> class: <c>BehaviorPlayAnimSequenceWithFace::InitInternal</c> (0x005C0648) runs a
+/// <c>TurnTowardsFaceAction</c> (0x005C0686) before the animation, so that class needs a tracked face and is
+/// left to the vision milestone. An earlier version of this comment claimed both; M10 read the binary.
 ///
 /// It claims the tracks its clip touches for as long as it runs, through the scope, so the idle layer
 /// yields those tracks and only those, which is what the engine's <c>SmartLockTracks</c> does.
 /// </summary>
 public sealed class PlayAnimBehavior : IBehavior
 {
+    /// <summary>
+    /// Every shipped <c>PlayAnim</c> config with an <c>animTriggers</c> list, built from the OBB. A trigger
+    /// name the generated <see cref="AnimationTrigger"/> enum does not know is skipped and reported in
+    /// <paramref name="problems"/> rather than guessed at.
+    /// </summary>
+    public static IReadOnlyList<PlayAnimBehavior> LoadShipped(string obbRoot, List<string>? problems = null)
+    {
+        var list = new List<PlayAnimBehavior>();
+        var dir = Path.Combine(obbRoot, "assets", "cozmo_resources", "config", "engine", "behaviorSystem", "behaviors");
+        if (!Directory.Exists(dir)) return list;
+        foreach (var f in Directory.EnumerateFiles(dir, "*.json", SearchOption.AllDirectories).OrderBy(x => x, StringComparer.Ordinal))
+        {
+            var text = System.Text.RegularExpressions.Regex.Replace(File.ReadAllText(f), "//[^\n\r]*", "");
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(text);
+                var root = doc.RootElement;
+                if (!root.TryGetProperty("behaviorClass", out var cls) || cls.GetString() != "PlayAnim") continue;
+                if (!root.TryGetProperty("animTriggers", out var triggers) || triggers.ValueKind != System.Text.Json.JsonValueKind.Array) continue;
+                var id = root.GetProperty("behaviorID").GetString()!;
+                var parsed = new List<AnimationTrigger>();
+                foreach (var t in triggers.EnumerateArray())
+                {
+                    var name = t.GetString();
+                    if (name is not null && Enum.TryParse<AnimationTrigger>(name, out var trigger)) parsed.Add(trigger);
+                    else problems?.Add($"{id}: animTrigger '{name}' is not in the AnimationTrigger enum");
+                }
+                if (parsed.Count == 0) { problems?.Add($"{id}: no usable animTriggers"); continue; }
+                list.Add(new PlayAnimBehavior(id, "PlayAnim", parsed));
+            }
+            catch (System.Text.Json.JsonException e) { problems?.Add($"{Path.GetFileName(f)}: {e.Message}"); }
+        }
+        return list;
+    }
+
     private readonly IReadOnlyList<AnimationTrigger> _triggers;
     private readonly object _gate = new();
     private CozmoAnimations? _animations;
@@ -264,16 +302,31 @@ public sealed class ReactBehavior : IBehavior
 /// <summary>
 /// The behaviours this stack can actually run, built from the shipped configs.
 ///
-/// Five of the 178 shipped behaviours need no configuration beyond the trigger they name and are built
-/// here; the 39 <c>Singing</c> behaviours are built from their shipped configs by <see cref="Singing"/>,
-/// which M9's switch-state audio unblocked. The rest are blocked on cubes, vision, or robot state nothing
-/// yet derives; see `BEHAVIOR_INVENTORY.md` for each one's blocker. Nothing is stubbed with a fake input
-/// to make this list longer.
+/// Twenty of the 178 shipped behaviours are built here without an OBB: eight play one animation named in
+/// their config, two react to raw robot reports, and ten are the M10 reactions to derived robot state
+/// (the off-treads classifier, the shake detector, the unexpected-movement detector, the robot's own
+/// calibration reports and the mood). The 39 <c>Singing</c> behaviours are built from their shipped configs
+/// by <see cref="Singing"/>. The cube-moved reaction is built by <see cref="Reactions"/> only when a world
+/// model is attached, because every step of it needs the cube's located pose. The rest are blocked on
+/// cubes, vision or navigation; see `BEHAVIOR_INVENTORY.md` for each one's blocker. Nothing is stubbed with a
+/// fake input to make this list longer.
 /// </summary>
 public static class ShippedBehaviors
 {
     /// <summary>The 39 Singing behaviours, from the OBB's behaviour configs. Empty when the OBB is not there.</summary>
     public static IReadOnlyList<IBehavior> Singing(string obbRoot) => SingingBehavior.LoadShipped(obbRoot);
+
+    /// <summary>Every shipped PlayAnim config with triggers, from the OBB. Empty when the OBB is not there.</summary>
+    public static IReadOnlyList<IBehavior> PlayAnims(string obbRoot, List<string>? problems = null) =>
+        PlayAnimBehavior.LoadShipped(obbRoot, problems);
+
+    /// <summary>
+    /// The engine's RobotPickedUp reaction fires on the derived off-treads state being InAir (factory lambda
+    /// 0x0060DDCE), not on the raw IS_PICKED_UP flag. Until the classifier is running (it waits for the head
+    /// calibration report, as the engine's does) the raw flag stands in, and says so (LOCAL_POLICY fallback).
+    /// </summary>
+    public static bool PickedUpForReaction(CozmoRobot r) =>
+        r.Sensors.OffTreadsClassifierEnabled ? r.Sensors.OffTreadsState == OffTreadsState.InAir : r.Sensors.PickedUp;
 
     /// <summary>Creates the config-free runnable set, matching the shipped configs' ids and classes.</summary>
     public static IReadOnlyList<IBehavior> Implementable() => new IBehavior[]
@@ -282,11 +335,76 @@ public static class ShippedBehaviors
         new PlayAnimBehavior("Hiccup", "PlayAnim", new[] { AnimationTrigger.Hiccup }),
         new PlayAnimBehavior("ReactToObstacle", "PlayAnim", new[] { AnimationTrigger.ReactToObstacle }),
         new PlayArbitraryAnimBehavior(),
+        // The feeding game's reaction animations: PlayAnim configs under feeding/feedingAnims/. They mention a
+        // cube in their names, but each one only plays the trigger it names; the game that decides when is
+        // the app's, not this stack's.
+        new PlayAnimBehavior("FeedingReactCubeShake", "PlayAnim", new[] { AnimationTrigger.FeedingReactToShake_Normal }),
+        new PlayAnimBehavior("FeedingReactCubeShake_Severe", "PlayAnim", new[] { AnimationTrigger.FeedingReactToShake_Severe }),
+        new PlayAnimBehavior("FeedingReactFullCube", "PlayAnim", new[] { AnimationTrigger.FeedingReactToFullCube_Normal }),
+        new PlayAnimBehavior("FeedingReactFullCube_Severe", "PlayAnim", new[] { AnimationTrigger.FeedingReactToFullCube_Severe }),
+        new PlayAnimBehavior("FeedingReactSeeCharged", "PlayAnim", new[] { AnimationTrigger.FeedingReactToSeeCube_Normal }),
+        new PlayAnimBehavior("FeedingReactSeeCharged_Severe", "PlayAnim", new[] { AnimationTrigger.FeedingReactToSeeCube_Severe }),
 
         // Reactions whose cause M4 reports.
         new ReactBehavior("ReactToCliff", "ReactToCliff", ReactionTrigger.CliffDetected,
                           r => r.Sensors.CliffDetectedNow),
-        new ReactBehavior("ReactToPickup", "ReactToPickup", ReactionTrigger.RobotPickedUp,
-                          r => r.Sensors.PickedUp),
+        new ReactBehavior("ReactToPickup", "ReactToPickup", ReactionTrigger.RobotPickedUp, PickedUpForReaction),
+
+        // M10: reactions to derived robot state, transcribed from the engine's BehaviorReactToX classes.
+        new ReactToRobotOnBackBehavior(),
+        new ReactToRobotOnFaceBehavior(),
+        new ReactToRobotOnSideBehavior(),
+        new ReactToPlacedOnSlopeBehavior(),
+        new ReactToReturnedToTreadsBehavior(),
+        new ReactToRobotShakenBehavior(),
+        new ReactToUnexpectedMovementBehavior(),
+        new ReactToMotorCalibrationBehavior(),
+        ReactToFrustrationBehavior.Minor(),
     };
+
+    /// <summary>
+    /// The shipped reaction map (<c>reactionTrigger_behavior_map.json</c>) as registrations for a
+    /// <see cref="BehaviorManager"/>: each trigger's engine strategy paired with the behaviour the map names,
+    /// and its <c>shouldResumeLast</c>. Only triggers whose input this stack has are included; the cube-moved
+    /// entry appears when a <paramref name="cubes"/> world model is attached.
+    /// </summary>
+    public static IReadOnlyList<BehaviorManager.ReactionRegistration> Reactions(CozmoRobot robot, ICubeLocator? cubes = null,
+                                                                                Func<double>? clockSec = null)
+    {
+        var strategies = ShippedReactionStrategies.ForRobot(robot, clockSec).ToDictionary(s => s.Trigger);
+        var frustration = (FrustrationStrategy)strategies[ReactionTrigger.Frustration];
+        var sensors = robot.Sensors;
+
+        var list = new List<BehaviorManager.ReactionRegistration>
+        {
+            // CliffDetected: shouldResumeLast true; the engine latches CliffEvent / RobotStopped (tags 34, 52)
+            new(new LatchedEventStrategy(ReactionTrigger.CliffDetected, latch =>
+                {
+                    void on(CliffReport _) => latch();
+                    sensors.CliffDetected += on;
+                    return () => sensors.CliffDetected -= on;
+                }, "CreateReactionTriggerStrategy 0x0060D6A4 -> ConfigureRelevantEvents({CliffEvent, RobotStopped}), filter lambda 0x0060DC76", clockSec: clockSec),
+                new ReactBehavior("ReactToCliff", "ReactToCliff", ReactionTrigger.CliffDetected, r => r.Sensors.CliffDetectedNow),
+                ResumeLast: true),
+            new(strategies[ReactionTrigger.RobotPickedUp],
+                new ReactBehavior("ReactToPickup", "ReactToPickup", ReactionTrigger.RobotPickedUp, PickedUpForReaction),
+                ResumeLast: false),
+            new(strategies[ReactionTrigger.RobotOnBack], new ReactToRobotOnBackBehavior(), ResumeLast: false),
+            new(strategies[ReactionTrigger.RobotOnFace], new ReactToRobotOnFaceBehavior(), ResumeLast: false),
+            new(strategies[ReactionTrigger.RobotOnSide], new ReactToRobotOnSideBehavior(), ResumeLast: false),
+            new(strategies[ReactionTrigger.RobotPlacedOnSlope], new ReactToPlacedOnSlopeBehavior(), ResumeLast: false),
+            new(strategies[ReactionTrigger.ReturnedToTreads], new ReactToReturnedToTreadsBehavior(), ResumeLast: false),
+            new(strategies[ReactionTrigger.RobotShaken], new ReactToRobotShakenBehavior(), ResumeLast: false),
+            new(strategies[ReactionTrigger.UnexpectedMovement], new ReactToUnexpectedMovementBehavior(), ResumeLast: true),
+            new(strategies[ReactionTrigger.MotorCalibration], new ReactToMotorCalibrationBehavior(), ResumeLast: true),
+            new(frustration, ReactToFrustrationBehavior.Minor(frustration), ResumeLast: false),
+        };
+
+        if (cubes is not null)
+        {
+            var behavior = new AcknowledgeCubeMovedBehavior(cubes);
+            list.Add(new(new CubeMovedReactionStrategy(robot, behavior, cubes), behavior, ResumeLast: false));
+        }
+        return list;
+    }
 }

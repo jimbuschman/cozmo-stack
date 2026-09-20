@@ -74,9 +74,22 @@ public sealed class ReactiveBehavior : IDisposable
         }
         _robot.Sensors.CliffDetected += OnCliff;
         _robot.Sensors.PickedUpChanged += OnPickedUp;
+        _robot.Sensors.OffTreadsStateChanged += OnOffTreads;
         _robot.Sensors.OnChargerChanged += OnCharger;
         _robot.Sensors.FallingChanged += OnFalling;
         _robot.Sensors.FallingStopped += OnFallingStopped;
+    }
+
+    /// <summary>
+    /// The engine's RobotPickedUp reaction is triggered by the derived off-treads state becoming InAir
+    /// (<c>ReactionTriggerStrategyFactory</c> lambda at 0x0060DDCE: <c>Robot+0x355 == 1</c>), not by the raw
+    /// IS_PICKED_UP flag. This is the M10 correction to M7, which used the flag. The classifier only runs
+    /// once the head has reported a calibration, as the engine's does; until then <see cref="OnPickedUp"/>
+    /// keeps firing on the flag and says so.
+    /// </summary>
+    private void OnOffTreads(OffTreadsState from, OffTreadsState to)
+    {
+        if (to == OffTreadsState.InAir) Post(() => Fire(ReactionTrigger.RobotPickedUp));
     }
 
     /// <summary>
@@ -107,6 +120,7 @@ public sealed class ReactiveBehavior : IDisposable
         _subscribed = false;
         _robot.Sensors.CliffDetected -= OnCliff;
         _robot.Sensors.PickedUpChanged -= OnPickedUp;
+        _robot.Sensors.OffTreadsStateChanged -= OnOffTreads;
         _robot.Sensors.OnChargerChanged -= OnCharger;
         _robot.Sensors.FallingChanged -= OnFalling;
         _robot.Sensors.FallingStopped -= OnFallingStopped;
@@ -160,9 +174,23 @@ public sealed class ReactiveBehavior : IDisposable
         // Only the pick-up has a shipped reaction. Being put down is a real transition and is reported,
         // but the shipped ReactionTrigger set has no "put down" member, so nothing is played for it
         // rather than something being chosen to fill the gap.
-        if (picked) Post(() => Fire(ReactionTrigger.RobotPickedUp));
-        else Post(() => Report(new BehaviorDecision(BehaviorPriority.Reaction, BehaviorOutcome.Unresolved,
-            "put down: the shipped ReactionTrigger set has no member for it")));
+        if (!picked)
+        {
+            Post(() => Report(new BehaviorDecision(BehaviorPriority.Reaction, BehaviorOutcome.Unresolved,
+                "put down: the shipped ReactionTrigger set has no member for it")));
+            return;
+        }
+        if (_robot.Sensors.OffTreadsClassifierEnabled)
+        {
+            // The derived state fires the reaction (OnOffTreads); the flag alone is only recorded.
+            Post(() => Report(new BehaviorDecision(BehaviorPriority.Reaction, BehaviorOutcome.Unresolved,
+                "IS_PICKED_UP set: the engine reacts to the derived InAir state, which follows from the classifier")
+            { Reaction = ReactionTrigger.RobotPickedUp }));
+            return;
+        }
+        // LOCAL_POLICY fallback: no head calibration has been reported, so the classifier is off (as the
+        // engine's would be) and the raw flag stands in for it.
+        Post(() => Fire(ReactionTrigger.RobotPickedUp));
     }
 
     private void OnCharger(bool onCharger)

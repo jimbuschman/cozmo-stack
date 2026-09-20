@@ -53,6 +53,99 @@ public sealed class BehaviorManager : IDisposable
     /// <summary>Raised for every selection, including the ones that chose nothing.</summary>
     public event Action<BehaviorSelection>? Selected;
 
+    // ------------------------------------------------------------------ reactions (M10)
+
+    /// <summary>One shipped reaction: the strategy that decides it, the behaviour it runs, and whether the
+    /// behaviour it interrupted is resumed afterwards (<c>genericStrategyParams.shouldResumeLast</c>).</summary>
+    public sealed record ReactionRegistration(IReactionTriggerStrategy Strategy, IBehavior Behavior, bool ResumeLast);
+
+    /// <summary>What happened when a reaction fired.</summary>
+    public sealed record ReactionSwitch(ReactionTrigger Trigger, string Behavior, string? Interrupted, bool WillResume);
+
+    private readonly List<ReactionRegistration> _reactions = new();
+    private readonly HashSet<ReactionTrigger> _disabledTriggers = new();
+    private ReactionTrigger? _currentReaction;
+    private IBehavior? _resumeAfterReaction;
+
+    /// <summary>The engine's reaction trigger map, one registration per trigger this stack can drive.</summary>
+    public IReadOnlyList<ReactionRegistration> Reactions { get { lock (_gate) return _reactions.ToList(); } }
+
+    /// <summary>The reaction that is running, if the current behaviour was started by one (<c>GetCurrentReactionTrigger</c>).</summary>
+    public ReactionTrigger? CurrentReactionTrigger { get { lock (_gate) return _currentReaction; } }
+
+    /// <summary>Raised when a reaction takes over.</summary>
+    public event Action<ReactionSwitch>? ReactionTriggered;
+
+    /// <summary>
+    /// Registers a reaction. The engine builds one strategy per entry of <c>reactionTrigger_behavior_map.json</c>
+    /// and looks the behaviour up by id; here both are handed in. A second registration for the same trigger
+    /// replaces the first.
+    /// </summary>
+    public void AddReaction(IReactionTriggerStrategy strategy, IBehavior behavior, bool resumeLast = false)
+    {
+        lock (_gate)
+        {
+            _reactions.RemoveAll(r => r.Strategy.Trigger == strategy.Trigger);
+            _reactions.Add(new ReactionRegistration(strategy, behavior, resumeLast));
+            _behaviors.RemoveAll(b => b.Id == behavior.Id);
+        }
+    }
+
+    /// <summary>The engine's per-trigger enable (<c>IsReactionTriggerEnabled</c>). Every trigger starts enabled.</summary>
+    public void SetTriggerEnabled(ReactionTrigger trigger, bool enabled)
+    {
+        lock (_gate) { if (enabled) _disabledTriggers.Remove(trigger); else _disabledTriggers.Add(trigger); }
+    }
+
+    public bool IsTriggerEnabled(ReactionTrigger trigger) { lock (_gate) return !_disabledTriggers.Contains(trigger); }
+
+    /// <summary>
+    /// The engine's <c>BehaviorManager::CheckReactionTriggerStrategies</c> (0x005A3550): unless a behaviour
+    /// holds the reaction lock, ask every enabled strategy whether it should fire; the first that does, and
+    /// whose behaviour is runnable, takes over from whatever is running (<c>SwitchToReactionTrigger</c>). The
+    /// engine stops all motors and unlocks the tracks before switching; stopping the interrupted behaviour does
+    /// that here. Returns the switch, or null when nothing fired.
+    /// </summary>
+    public ReactionSwitch? CheckReactions(double nowSec)
+    {
+        if (_context.Arbiter?.ReactionsDisabled == true) return null;
+
+        List<ReactionRegistration> regs;
+        ReactionTrigger? current;
+        lock (_gate) { regs = _reactions.ToList(); current = _currentReaction; }
+
+        foreach (var reg in regs)
+        {
+            if (!IsTriggerEnabled(reg.Strategy.Trigger)) continue;
+            if (!reg.Strategy.ShouldTrigger(_context, current, nowSec)) continue;
+            if (!reg.Behavior.IsRunnable(_context)) continue;
+
+            string? interrupted;
+            bool willResume;
+            BehaviorScope scope;
+            lock (_gate)
+            {
+                if (_current is { } running && running.Id == reg.Behavior.Id) return null;   // already reacting to this
+                interrupted = _current?.Id;
+                // Only a non-reaction behaviour is resumed; a reaction interrupted by a reaction is not.
+                willResume = reg.ResumeLast && _current is not null && _currentReaction is null;
+                _resumeAfterReaction = willResume ? _current : null;
+                if (_current is not null) StopCurrentLocked(BehaviorStopReason.Interrupted, nowSec);
+                scope = new BehaviorScope(_context.Arbiter);
+                _current = reg.Behavior;
+                _scope = scope;
+                _startedSec = nowSec;
+                _currentReaction = reg.Strategy.Trigger;
+            }
+            _ = reg.Behavior.StartAsync(_context, scope, CancellationToken.None);
+            var sw = new ReactionSwitch(reg.Strategy.Trigger, reg.Behavior.Id, interrupted, willResume);
+            ReactionTriggered?.Invoke(sw);
+            Selected?.Invoke(new BehaviorSelection(reg.Behavior.Id, $"reaction {reg.Strategy.Trigger}") { Replaced = interrupted });
+            return sw;
+        }
+        return null;
+    }
+
     /// <summary>Adds a behaviour. Ids are unique; adding the same id twice replaces the first.</summary>
     public void Add(IBehavior behavior)
     {
@@ -181,7 +274,30 @@ public sealed class BehaviorManager : IDisposable
         IBehavior? current;
         lock (_gate) current = _current;
         if (current is null) return;
-        if (!current.Update(_context, nowMs)) Stop(BehaviorStopReason.Completed, nowSec);
+        if (current.Update(_context, nowMs)) return;
+
+        IBehavior? resume;
+        lock (_gate)
+        {
+            resume = _resumeAfterReaction;
+            _resumeAfterReaction = null;
+            StopCurrentLocked(BehaviorStopReason.Completed, nowSec);
+        }
+        // The engine's "resume last": a reaction whose map entry says shouldResumeLast restarts the
+        // behaviour it interrupted, if that behaviour still wants to run.
+        if (resume is not null && resume.IsRunnable(_context))
+        {
+            BehaviorScope scope;
+            lock (_gate)
+            {
+                scope = new BehaviorScope(_context.Arbiter);
+                _current = resume;
+                _scope = scope;
+                _startedSec = nowSec;
+            }
+            _ = resume.StartAsync(_context, scope, CancellationToken.None);
+            Selected?.Invoke(new BehaviorSelection(resume.Id, "resumed after the reaction"));
+        }
     }
 
     /// <summary>The engine's FinishCurrentBehavior.</summary>
@@ -203,6 +319,7 @@ public sealed class BehaviorManager : IDisposable
         _scope?.Dispose();
         _scope = null;
         _current = null;
+        _currentReaction = null;
     }
 
     /// <summary>How long the running behaviour has been going, in seconds.</summary>

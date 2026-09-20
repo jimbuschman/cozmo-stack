@@ -199,16 +199,24 @@ public class BehaviorFrameworkTests
     // ------------------------------------------------------------------ the shipped behaviours
 
     /// <summary>
-    /// The runnable set is small and honest. If this number grows it should be because a blocker was
-    /// removed, not because something was stubbed with a fake input.
+    /// The runnable set is honest: it grew from 5 to 20 in M10 because the off-treads classifier, the shake
+    /// and unexpected-movement detectors and the calibration reports removed real blockers, and because six
+    /// PlayAnim configs only ever needed their trigger. If it grows again it should be for the same kind of
+    /// reason, not because something was stubbed with a fake input.
     /// </summary>
     [Fact]
     public void OnlyTheBehavioursWhoseInputsExistAreBuilt()
     {
         var built = ShippedBehaviors.Implementable();
-        Assert.Equal(5, built.Count);
-        Assert.Equal(new[] { "Hiccup", "PlayArbitraryAnim", "ReactToCliff", "ReactToObstacle", "ReactToPickup" },
-                     built.Select(b => b.Id).OrderBy(x => x));
+        Assert.Equal(20, built.Count);
+        Assert.Equal(new[]
+        {
+            "FeedingReactCubeShake", "FeedingReactCubeShake_Severe", "FeedingReactFullCube", "FeedingReactFullCube_Severe",
+            "FeedingReactSeeCharged", "FeedingReactSeeCharged_Severe", "Hiccup", "PlayArbitraryAnim",
+            "ReactToCliff", "ReactToFrustrationMinor", "ReactToMotorCalibration", "ReactToObstacle", "ReactToPickup",
+            "ReactToPlacedOnSlope", "ReactToReturnedToTreads", "ReactToRobotOnBack", "ReactToRobotOnFace",
+            "ReactToRobotOnSide", "ReactToRobotShaken", "ReactToUnexpectedMovement",
+        }, built.Select(b => b.Id).OrderBy(x => x, StringComparer.Ordinal));
     }
 
     /// <summary>Every built behaviour's id and class must match a shipped config, not be made up.</summary>

@@ -111,21 +111,22 @@ public sealed class ReactionTable
             "BehaviorReactToImpact::TransitionToPlayingAnim at 0x00606348 passes 0x1A0 (ReactToImpact) to TriggerAnimationAction " +
             "(mov.w r2, #0x1a0 at 0x0060637E) = AnimationTrigger.ReactToImpact, gated on FallingStopped.impactIntensity > 1000 in AlwaysHandle at 0x00606408");
 
-        // Deliberately absent, and why. The shipped map names a behaviour for every one of these; what
-        // is missing is the input, not the mapping.
+        // Absent from this table, and why. This table is the M7 dispatcher's: one animation per trigger.
+        // The reactions the shipped map names for the triggers below are multi-step behaviours and run as
+        // SteppedBehavior classes under BehaviorManager.CheckReactions (M10, ShippedBehaviors.Reactions):
         //
-        //   CubeMoved -> ReactToCubeMoved, ObjectPositionUpdated -> AcknowledgeObject,
-        //   NoPreDockPoses -> RamIntoBlock, FistBump -> FistBump      - need cubes (M4 cube acceptance
-        //                                                                is still pending hardware)
-        //   FacePositionUpdated -> AcknowledgeFace,
-        //   PetInitialDetection -> ReactToPet                          - need vision, which does not exist yet
         //   RobotOnBack, RobotOnFace, RobotOnSide, RobotPlacedOnSlope,
-        //   ReturnedToTreads, RobotShaken, UnexpectedMovement           - need IMU orientation classification
-        //                                                                that M4 reports raw but does not classify
-        //   Frustration -> ReactToFrustrationMinor/Major,
-        //   Sparked -> ReactToSparked, Hiccup -> Hiccup                 - need the mood, spark and hiccup systems
-        //   MotorCalibration -> ReactToMotorCalibration                 - its AnimationTrigger exists but the
-        //                                                                shipped map gives it no group
+        //   ReturnedToTreads, RobotShaken, UnexpectedMovement,
+        //   MotorCalibration, Frustration (Minor)                      - M10, from the derived robot state
+        //   CubeMoved -> ReactToCubeMoved                               - M10, transcribed; waits on a cube pose
+        //
+        // Still absent because the input does not exist here:
+        //
+        //   ObjectPositionUpdated -> AcknowledgeObject,
+        //   NoPreDockPoses -> RamIntoBlock, FistBump -> FistBump      - need located cubes and objectives
+        //   FacePositionUpdated -> AcknowledgeFace,
+        //   PetInitialDetection -> ReactToPet                          - need vision
+        //   Sparked -> ReactToSparked, Hiccup -> Hiccup                 - need the app's spark request and the hiccup system
         //
         // None of these is mapped to a plausible-looking animation to pad the table.
     }
