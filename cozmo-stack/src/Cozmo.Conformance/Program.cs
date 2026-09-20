@@ -40,6 +40,7 @@ return args.Length == 0 ? Usage() : args[0] switch
     "bodyangle" => VisionTool.BodyAngle(args).GetAwaiter().GetResult(),
     "manip" => ManipTool.Run(args).GetAwaiter().GetResult(),
     "freeplay" => FreeplayTool.Run(args).GetAwaiter().GetResult(),
+    "hardware-test" => HardwareRunner.Run(args).GetAwaiter().GetResult(),
     _ => Usage(),
 };
 
@@ -229,6 +230,13 @@ static int Usage()
           freeplay --tree --obb <dir>          M15: print the shipped activity tree (activities_config.json + activities/**) with the
                                              behaviours this stack binds and the ones it does not
           freeplay --simulate --obb <dir> [--ticks 200]   run the freeplay decision loop offline and print every activity/behaviour choice
+          hardware-test <robot-ip> [--obb <dir>] [--resume] [--from <ID>] [--only <ID[,ID]>] [--nominal]
+                                             THE way to run hardware acceptance: walks through every check in
+                                             HARDWARE_TEST_PLAN.md, briefing you before each, running it, collecting the
+                                             evidence and asking for your verdict, which is recorded separately from the
+                                             tool's own. Saves after every check; --resume carries on after a disconnect.
+                                             The commands below stay available for debugging one check on its own.
+
           freeplay <robot-ip> --obb <dir> [--seconds 300] [--nominal] [--acceptance [file]]
                                              M15 acceptance: the whole stack autonomous on the robot (vision, cubes, reactions, needs,
                                              activities), printing each activity and behaviour decision with its reason. Refuses to run

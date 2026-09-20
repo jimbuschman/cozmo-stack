@@ -1,18 +1,53 @@
-# Consolidated hardware test plan — pending checks as of M10 (2026-09-19)
+# Consolidated hardware test plan
 
-Everything below is offline-verified in the repository and waits only for a robot. Run in the order given
-(each item is independent; the order puts the cheapest and most informative first). Every command writes
-an acceptance JSON when `--acceptance` is given: **commit those files** (`re-analysis/acceptance/`), which
-is the process change the fidelity audit asked for.
+Everything below is offline-verified in the repository and waits only for a robot.
+
+## Run it with the runner, not by hand
+
+```
+cd cozmo-stack
+dotnet run --project src/Cozmo.Conformance -- hardware-test 172.31.1.1 --obb <obb>
+```
+
+That walks through every check below in a safe order: it briefs you on what is being tested and why, tells
+you how to set the robot up and what to do while it runs, runs the check, shows what the tooling concluded,
+and then asks you for the verdict. Your verdict is recorded separately from the tool's and is never inferred
+from it, because the two disagreeing is exactly the case worth knowing about (A and A2 are the standing
+example: the tooling is satisfied and the song is wrong).
+
+The session is saved after every check, so a disconnect, a flat battery or a reboot costs at most the check
+that was running:
+
+```
+hardware-test 172.31.1.1 --obb <obb> --resume     carry on where it stopped
+hardware-test 172.31.1.1 --only N,O               just those checks, for debugging
+hardware-test 172.31.1.1 --from Q                 skip everything before Q
+hardware-test 172.31.1.1 --obb <obb> --nominal    allow the stand-in camera calibration (diagnostics only)
+```
+
+Safety: passive telemetry checks run first, anything that moves the robot asks for confirmation first, Ctrl+C
+stops the current check and saves, and the motors are stopped after every check that moved him. A check whose
+prerequisite failed is recorded Blocked and not started; the runner never walks past a failed prerequisite.
+`--only` and `--from` are the exception, and then only for a prerequisite that has not run: a failed one still
+blocks.
+
+Results land in `re-analysis/acceptance/`: one session JSON plus each check's own acceptance record and log.
+**Commit those files**, which is the process change the fidelity audit asked for.
+
+The individual commands stay available and are listed in the table below, for debugging a single check or for
+running one outside the runner. `src/Cozmo.Conformance/HardwareCatalog.cs` is the table below in code; keep
+the two in step.
 
 Setup for all items: robot on its own access point at 172.31.1.1, the OBB unpacked at `<obb>` (the sound
 directory needs only `cozmo_resources/sound/AudioAssets.zip`), commands run from `cozmo-stack/`.
+
+## The checks
 
 | # | check | milestone | command | automated verdict | human verdict |
 | --- | --- | --- | --- | --- | --- |
 | A | **Cozmo sings** | M9 | `dotnet run --project src/Cozmo.Conformance -- sing 172.31.1.1 --obb <obb> --behavior Singing_AbaDaba --acceptance` | switch posted; get-in, song and get-out animations completed; the song rendered with N notes | he sang a tune for about 12 s between a get-in and a get-out, in his own voice, one note per note, at a sensible level; no bursts of get-in phrases during the song |
 | A2 | one song from each tempo group | M9 | as A with `--behavior Singing_Bingo` (100 bpm, cut at 9.8 s by the clip's Stop event) and `--behavior Singing_TwinkleTwinkle` (120 bpm) | as A | as A; the three tempos audibly differ |
-| B | **cube telemetry** | M4 | `dotnet run --project src/Cozmo.Conformance -- cubes 172.31.1.1 --acceptance` (tap, roll and lift a cube during the 15 s) | connection state, tap, movement, up-axis and battery reported for the cube | the events match what you did to the cube. Discovery is already hardware-observed (2026-09-19); this completes it |
+| B | **cube telemetry** | M4 | `dotnet run --project src/Cozmo.Conformance -- cubes 172.31.1.1 --acceptance` (tap, roll and lift a cube during the 15 s) | **a cube CONNECTED and at least one telemetry signal** (tap, movement, up axis or battery). Corrected 2026-09-20: the tool used to pass on discovery alone, which is already hardware-observed and is not what this check is for | the events match what you did to the cube |
 | C | falling → impact | M7 (D9) | `dotnet run --project src/Cozmo.Conformance -- behavior 172.31.1.1 --obb <obb> --seconds 60`, then drop the robot a few centimetres onto a soft surface | an `Unresolved … waits for the landing` line on the fall and a `ReactToImpact` decision on landing when the impact exceeds 1000 | he reacts on landing, not while falling |
 | D | lift readout in radians | M4 (D10) | `dotnet run --project src/Cozmo.Conformance -- sensors 172.31.1.1 --acceptance` with the lift down, then raised by hand | `lift=` prints about −0.198 rad / 32 mm with the lift down and about 0.712 rad / 92 mm raised | the printed millimetres match where the lift is |
 | E | colour camera frames | M3 | `dotnet run --project src/Cozmo.Conformance -- camera 172.31.1.1 --color --acceptance` | frames decode | the saved images are colour photographs of the room |

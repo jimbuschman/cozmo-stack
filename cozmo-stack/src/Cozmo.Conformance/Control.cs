@@ -329,8 +329,9 @@ public static class Control
 
         robot.Cubes.CubeDiscovered += c => Console.WriteLine($"  discovered {c}");
         robot.Cubes.ConnectionChanged += c => Console.WriteLine($"  {(c.Connected ? "connected" : "disconnected")} {c}");
-        robot.Cubes.CubeTapped += c => Console.WriteLine($"  tapped {c}");
-        robot.Cubes.CubeMoved += c => Console.WriteLine($"  {(c.Moving ? "moving" : "still")} {c}");
+        int taps = 0, movements = 0;
+        robot.Cubes.CubeTapped += c => { taps++; Console.WriteLine($"  tapped {c}"); };
+        robot.Cubes.CubeMoved += c => { movements++; Console.WriteLine($"  {(c.Moving ? "moving" : "still")} {c}"); };
 
         Console.WriteLine($"discovery on for {watch:F0}s. Put a cube nearby, and tap it to exercise telemetry.");
         robot.Cubes.SetDiscovery(true);
@@ -342,11 +343,29 @@ public static class Control
         Console.WriteLine($"\n{cubes.Count} cube(s) heard, {robot.Cubes.ConnectedCubes.Count} connected");
         foreach (var c in cubes) Console.WriteLine($"  {c}");
 
-        bool pass = cubes.Count > 0;
-        if (!pass) Console.WriteLine("No cube was heard. A cube out of range or with a flat battery looks the same from here.");
-        const string human = "the cubes you placed nearby should appear above; if you tapped one, its tap count should be non-zero";
+        // Hearing a cube advertise says nothing about the parts of M4 this check exists to accept. A pass
+        // needs a cube actually CONNECTED and at least one piece of telemetry from it: a tap, a movement
+        // report, an up axis or a battery level. Discovery alone was already observed on 2026-09-19 and is
+        // not what is pending here.
+        var connected = robot.Cubes.ConnectedCubes;
+        bool telemetry = taps > 0 || movements > 0
+                         || cubes.Any(c => c.Taps > 0 || c.UpAxis is not null || c.BatteryLevelRaw > 0);
+        bool pass = cubes.Count > 0 && connected.Count > 0 && telemetry;
+        if (cubes.Count == 0)
+            Console.WriteLine("No cube was heard. A cube out of range or with a flat battery looks the same from here.");
+        else if (connected.Count == 0)
+            Console.WriteLine("Cubes were heard but none connected: discovery alone does not accept this check. " +
+                              "Bring a cube closer, check its battery, and run again.");
+        else if (!telemetry)
+            Console.WriteLine("A cube connected but sent no telemetry: no tap, movement, up axis or battery level. " +
+                              "Tap and roll the cube while the check runs.");
+        const string human = "the cubes you placed nearby should appear above, one of them connected, and the tap, " +
+                             "movement and up-axis lines should match what you did to it";
         var rec = Acceptance("cubes", pass, human, new
         {
+            connectedCount = connected.Count,
+            tapEvents = taps,
+            movementEvents = movements,
             discovered = cubes.Select(c => new
             {
                 factoryId = $"0x{c.FactoryId:x8}",

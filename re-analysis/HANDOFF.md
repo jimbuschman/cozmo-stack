@@ -15,7 +15,8 @@
 | Tests | **651 tests** (`dotnet test Cozmo.sln`, about 5 m; 630 after M15, 619 after M14, 606 after M13), all passing offline |
 | Hardware | nothing new has been run since the two post-sweep retests; the consolidated plan is [HARDWARE_TEST_PLAN.md](HARDWARE_TEST_PLAN.md) (items A–Z) |
 | Correction pass | **Done 2026-09-20** (this series), from an independent review of `8ccd694`: the reaction manager's two-phase contract for target-producing strategies, CubeMoved fed from real observations, the last two M7 reactions moved under the manager, recalibration readiness, a bounded shutdown flush, the Wwise scheduler path, disconnected cubes, the fw2457 observation timestamp, the path start/wait/cancel lifecycle, failed final turns, the native different-pose dock retry, the put-down image wait, the native lift presets (32 / 76 / 92), the animation wheel stop, planner-failure safety, the flip's carry lift, thread-safe block configurations, the freeplay activity-transition and repetition lifecycle, the activity duration and cooldown rules, the stack's own put-down wiring, fail-closed live freeplay, and the manipulation hardware commands. One review finding was disproved by the binary. See [SOURCE_FIDELITY_AUDIT.md](SOURCE_FIDELITY_AUDIT.md) §17 |
-| Next | **The hardware / integration validation phase** (items A–Z, Y blocked), then the architectural work listed under "Next task" |
+| Hardware runner | **`hardware-test <robot-ip> --obb <dir>`** is now the way to run the plan: one interactive command that briefs, runs, collects evidence and asks for a human verdict per check, saving after each so a run survives a disconnect (`--resume`, `--from`, `--only`). See [HARDWARE_TEST_PLAN.md](HARDWARE_TEST_PLAN.md) |
+| Next | **The hardware / integration validation phase** (items A–Z, Y blocked) through `hardware-test`, then the architectural work listed under "Next task" |
 
 ## Milestone status
 
