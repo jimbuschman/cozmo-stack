@@ -135,6 +135,22 @@ M12_BLOCKED = {}
 # configurations (stacks, pyramid bases, pyramids), the AIWhiteboard's beacons and failure memory and the
 # WorkoutComponent; the classes below are transcribed on them (Behavior/CubeGameBehaviors.cs,
 # Behavior/ChargerBehaviors.cs). Hardware acceptance pending (HARDWARE_TEST_PLAN items S-X).
+# M14 (2026-09-20) reproduced the face pipeline around the OKAO boundary: FaceWorld, TrackedFace geometry,
+# SmartFaceID, PetWorld, TurnTowardsPoseAction / TurnTowardsFaceAction / TrackFaceAction / VisuallyVerifyFaceAction,
+# and the classes below (Behavior/FaceBehaviors.cs). They are transcribed and tested against a fake detector, but
+# their input - faces from Omron's OKAO library (177 OKAO_* exports) - is proprietary and not in this stack, so
+# they are NOT counted as implementable: they run only when a face detector is attached.
+M14_FACE_PIPELINE = "implemented on the face pipeline; runnable only with a face detector (OKAO unavailable)"
+M14_CLASSES = {
+    "PlayAnimWithFace": "BehaviorPlayAnimSequenceWithFace: TurnTowardsFaceAction(last face, pi) then the config's animTriggers",
+    "AcknowledgeFace": "BehaviorAcknowledgeFace: TurnTowardsFaceAction with AcknowledgeFaceNamed/Unnamed, no greeting when turned to within 60 s, objective ReactedAcknowledgedFace",
+    "InteractWithFaces": "BehaviorInteractWithFaces: verify (InteractWithFacesInitialNamed/Unnamed), drive 40 mm with TrackFaceAction, track 8-15 s with InteractWithFaceTrackingIdle, emotion event InteractWith(Un)namedFace",
+    "DriveToFace": "BehaviorDriveToFace: turn, VisuallyVerifyFace, turn, DriveStraight(distance - 200 @ 60), track 5 s",
+    "SearchForFace": "BehaviorSearchForFace: ComeHere_SearchForFace until FaceWorld::HasAnyFaces, then ComeHere_SearchForFace_FoundFace",
+    "ReactToPet": "BehaviorReactToPet over PetWorld: TurnTowardsImagePoint at the pet, PetDetectionCat/Dog (1 in 20 PetDetectionSneeze); the pet detector is OKAO too",
+    "PyramidThankYou": "BehaviorPyramidThankYou: TurnTowardsFace, BuildPyramidThankUser, TurnTowardsObject(pyramid top), BuildPyramidThankUser",
+}
+
 M13_NAVIGATION = "implementable with M13 (navigation, cube games, charger)"
 M13_CLASSES = {
     "KnockOverCubes": "BehaviorKnockOverCubes: turn to the stack's bottom block, drive to 85 mm at 60 mm/s, KnockOverGrabAttempt, DriveAndFlipBlockAction (blind FlipBlockAction on a failed drive), success/failure trigger",
@@ -211,8 +227,8 @@ def classify(entry):
         return "wrapper/composite behavior", f"class name '{entry['behaviorClass']}' names a composite"
     if entry["behaviorID"] in BY_ID:
         return BY_ID[entry["behaviorID"]]
-    if entry["behaviorClass"] == "PlayAnimWithFace":
-        return "requires vision/person detection", "BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays"
+    if entry["behaviorClass"] in M14_CLASSES:
+        return M14_FACE_PIPELINE, M14_CLASSES[entry["behaviorClass"]]
     if entry["behaviorClass"] in PLAY_ANIM_CLASSES and (entry["animTriggers"] or entry["behaviorClass"] == "PlayArbitraryAnim"):
         return IMPLEMENTABLE, "plays the animation trigger its config names and reads nothing else"
     if entry["behaviorClass"] in M10_REACTIONS:
@@ -231,7 +247,7 @@ def classify(entry):
     if cls_name in M12_BLOCKED:
         return M12_BLOCKED[cls_name]
     if MANIPULATION.search(cls_name) and re.search(r"(?i)(cube|block|pyramid|stack|beacon)", blob):
-        return "requires cube manipulation beyond M13 (faces or the app)", f"class '{entry['behaviorClass']}' needs a tracked face (Bouncer, PyramidThankYou) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions"
+        return "requires cube manipulation beyond M13 (faces or the app)", f"class '{entry['behaviorClass']}' needs a tracked face and the display game (Bouncer) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions"
     for category, reason, pattern in RULES:
         m = re.search(pattern, blob)
         if m:
@@ -298,7 +314,7 @@ def render(entries, ids, classes, native):
         "",
         "1. class name names a composite → wrapper/composite",
         "1a. a per-behaviour verdict from reading its class in the binary (the two frustration configs, ReactToSparked, ReactToCubeMoved, AcknowledgeObject)",
-        "1b. PlayAnimWithFace → requires vision (the engine turns to a face first); PlayAnim / PlayArbitraryAnim with animTriggers → implementable now",
+        "1b. PlayAnimWithFace, AcknowledgeFace, InteractWithFaces, DriveToFace, SearchForFace, ReactToPet, PyramidThankYou → implemented on the face pipeline (M14), runnable only with a face detector: OKAO is unavailable, so they are not counted as implementable; PlayAnim / PlayArbitraryAnim with animTriggers → implementable now",
         "1c. a ReactTo class whose input M10 derives → implementable with M10 (derived robot state)",
         "1d. AcknowledgeObject and ReactToCubeMoved → implementable with M11 (cube localisation)",
         "1e. a class naming faces → requires vision; RequestGameSimple → requires the app; ExploreLookAroundInPlace / DriveInDesperation → requires navigation",

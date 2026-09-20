@@ -61,8 +61,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "requires vision/person detection",
-  "reason": "BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays"
+  "category": "implemented on the face pipeline; runnable only with a face detector (OKAO unavailable)",
+  "reason": "BehaviorPlayAnimSequenceWithFace: TurnTowardsFaceAction(last face, pi) then the config's animTriggers"
  },
  {
   "path": "feeding/feedingAnims/feedingPlayRequestAtFace_Severe.json",
@@ -74,8 +74,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "requires vision/person detection",
-  "reason": "BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays"
+  "category": "implemented on the face pipeline; runnable only with a face detector (OKAO unavailable)",
+  "reason": "BehaviorPlayAnimSequenceWithFace: TurnTowardsFaceAction(last face, pi) then the config's animTriggers"
  },
  {
   "path": "feeding/feedingAnims/feedingReactCubeShake.json",
@@ -183,7 +183,7 @@
   "animTriggers": [],
   "extraKeys": [],
   "category": "requires cube manipulation beyond M13 (faces or the app)",
-  "reason": "class 'FeedingSearchForCube' needs a tracked face (Bouncer, PyramidThankYou) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions"
+  "reason": "class 'FeedingSearchForCube' needs a tracked face and the display game (Bouncer) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions"
  },
  {
   "path": "freeplay/buildPyramid/buildPyramid.json",
@@ -233,8 +233,8 @@
   "extraKeys": [
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation beyond M13 (faces or the app)",
-  "reason": "class 'PyramidThankYou' needs a tracked face (Bouncer, PyramidThankYou) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions"
+  "category": "implemented on the face pipeline; runnable only with a face detector (OKAO unavailable)",
+  "reason": "BehaviorPyramidThankYou: TurnTowardsFace, BuildPyramidThankUser, TurnTowardsObject(pyramid top), BuildPyramidThankUser"
  },
  {
   "path": "freeplay/buildPyramid/respondToPyramidBase.json",
@@ -463,8 +463,8 @@
   "extraKeys": [
    "params"
   ],
-  "category": "requires vision/person detection",
-  "reason": "class 'InteractWithFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable"
+  "category": "implemented on the face pipeline; runnable only with a face detector (OKAO unavailable)",
+  "reason": "BehaviorInteractWithFaces: verify (InteractWithFacesInitialNamed/Unnamed), drive 40 mm with TrackFaceAction, track 8-15 s with InteractWithFaceTrackingIdle, emotion event InteractWith(Un)namedFace"
  },
  {
   "path": "freeplay/knockOverCubes.json",
@@ -1442,7 +1442,7 @@
    "requiredUnlockId"
   ],
   "category": "requires cube manipulation beyond M13 (faces or the app)",
-  "reason": "class 'FireTruckAlarm' needs a tracked face (Bouncer, PyramidThankYou) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions"
+  "reason": "class 'FireTruckAlarm' needs a tracked face and the display game (Bouncer) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions"
  },
  {
   "path": "freeplay/sparkable/sparksFistBump.json",
@@ -1693,7 +1693,7 @@
   "animTriggers": [],
   "extraKeys": [],
   "category": "requires cube manipulation beyond M13 (faces or the app)",
-  "reason": "class 'Bouncer' needs a tracked face (Bouncer, PyramidThankYou) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions"
+  "reason": "class 'Bouncer' needs a tracked face and the display game (Bouncer) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions"
  },
  {
   "path": "freeplay/userInteractive/fistBump.json",
@@ -1756,8 +1756,8 @@
   "extraKeys": [
    "params"
   ],
-  "category": "requires vision/person detection",
-  "reason": "class 'InteractWithFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable"
+  "category": "implemented on the face pipeline; runnable only with a face detector (OKAO unavailable)",
+  "reason": "BehaviorInteractWithFaces: verify (InteractWithFacesInitialNamed/Unnamed), drive 40 mm with TrackFaceAction, track 8-15 s with InteractWithFaceTrackingIdle, emotion event InteractWith(Un)namedFace"
  },
  {
   "path": "meetCozmo/respondToRenameFace.json",
@@ -1801,8 +1801,8 @@
   "extraKeys": [
    "ReactionAnimGroup"
   ],
-  "category": "requires vision/person detection",
-  "reason": "class 'AcknowledgeFace' names faces; face detection is Omron OKAO code in the engine, not transcribable"
+  "category": "implemented on the face pipeline; runnable only with a face detector (OKAO unavailable)",
+  "reason": "BehaviorAcknowledgeFace: TurnTowardsFaceAction with AcknowledgeFaceNamed/Unnamed, no greeting when turned to within 60 s, objective ReactedAcknowledgedFace"
  },
  {
   "path": "reactions/acknowledgeObject.json",
@@ -1934,8 +1934,8 @@
   "behaviorClass": "ReactToPet",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires vision/person detection",
-  "reason": "names faces, people, pets or motion sensing ('Pet')"
+  "category": "implemented on the face pipeline; runnable only with a face detector (OKAO unavailable)",
+  "reason": "BehaviorReactToPet over PetWorld: TurnTowardsImagePoint at the pet, PetDetectionCat/Dog (1 in 20 PetDetectionSneeze); the pet detector is OKAO too"
  },
  {
   "path": "reactions/reactToPickup.json",
@@ -2061,8 +2061,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "requires vision/person detection",
-  "reason": "BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays"
+  "category": "implemented on the face pipeline; runnable only with a face detector (OKAO unavailable)",
+  "reason": "BehaviorPlayAnimSequenceWithFace: TurnTowardsFaceAction(last face, pi) then the config's animTriggers"
  },
  {
   "path": "voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Energy.json",
@@ -2074,8 +2074,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "requires vision/person detection",
-  "reason": "BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays"
+  "category": "implemented on the face pipeline; runnable only with a face detector (OKAO unavailable)",
+  "reason": "BehaviorPlayAnimSequenceWithFace: TurnTowardsFaceAction(last face, pi) then the config's animTriggers"
  },
  {
   "path": "voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Play.json",
@@ -2087,8 +2087,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "requires vision/person detection",
-  "reason": "BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays"
+  "category": "implemented on the face pipeline; runnable only with a face detector (OKAO unavailable)",
+  "reason": "BehaviorPlayAnimSequenceWithFace: TurnTowardsFaceAction(last face, pi) then the config's animTriggers"
  },
  {
   "path": "voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Repair.json",
@@ -2100,8 +2100,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "requires vision/person detection",
-  "reason": "BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays"
+  "category": "implemented on the face pipeline; runnable only with a face detector (OKAO unavailable)",
+  "reason": "BehaviorPlayAnimSequenceWithFace: TurnTowardsFaceAction(last face, pi) then the config's animTriggers"
  },
  {
   "path": "voiceCommands/VC_AlrightyResponse.json",
@@ -2113,8 +2113,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "requires vision/person detection",
-  "reason": "BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays"
+  "category": "implemented on the face pipeline; runnable only with a face detector (OKAO unavailable)",
+  "reason": "BehaviorPlayAnimSequenceWithFace: TurnTowardsFaceAction(last face, pi) then the config's animTriggers"
  },
  {
   "path": "voiceCommands/VC_ComeHere.json",
@@ -2122,8 +2122,8 @@
   "behaviorClass": "DriveToFace",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires vision/person detection",
-  "reason": "class 'DriveToFace' names faces; face detection is Omron OKAO code in the engine, not transcribable"
+  "category": "implemented on the face pipeline; runnable only with a face detector (OKAO unavailable)",
+  "reason": "BehaviorDriveToFace: turn, VisuallyVerifyFace, turn, DriveStraight(distance - 200 @ 60), track 5 s"
  },
  {
   "path": "voiceCommands/VC_GoToSleep.json",
@@ -2271,8 +2271,8 @@
   "behaviorClass": "SearchForFace",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires vision/person detection",
-  "reason": "class 'SearchForFace' names faces; face detection is Omron OKAO code in the engine, not transcribable"
+  "category": "implemented on the face pipeline; runnable only with a face detector (OKAO unavailable)",
+  "reason": "BehaviorSearchForFace: ComeHere_SearchForFace until FaceWorld::HasAnyFaces, then ComeHere_SearchForFace_FoundFace"
  },
  {
   "path": "wait.json",

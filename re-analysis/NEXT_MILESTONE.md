@@ -1,8 +1,8 @@
 # Choosing the next milestone, from the behaviour dependency inventory
 
-> **2026-09-20, after M13:** M9–M13 are complete offline (`WWISE_MUSIC.md`, `DERIVED_STATE.md`, `VISION.md`,
-> `MANIPULATION.md`, `NAVIGATION.md`). The inventory is 107 of 178 implementable. The next milestone is
-> **M14**: the face / person / pet pipeline around the OKAO boundary, then **M15**: the freeplay / explorer
+> **2026-09-20, after M14:** M9–M14 are complete offline (`WWISE_MUSIC.md`, `DERIVED_STATE.md`, `VISION.md`,
+> `MANIPULATION.md`, `NAVIGATION.md`, `FACES.md`). The inventory is 107 of 178 implementable plus 14 face
+> behaviours implemented behind the OKAO boundary. The next milestone is **M15**: the freeplay / explorer
 > layer; see `HANDOFF.md` "Next task". The analysis below is the original record and is superseded where it
 > says otherwise.
 

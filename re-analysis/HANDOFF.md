@@ -1,18 +1,19 @@
-# Handoff — 2026-09-20 (M13 complete offline)
+# Handoff — 2026-09-20 (M14 complete offline)
 
 ## Where things stand
 
 | | |
 | --- | --- |
-| Latest commits | M11: `19d1417`, `39b27d6`; corrections: `981ce8c`; M12: `de08930`, `e35675d`; M13: this series |
+| Latest commits | M11: `19d1417`, `39b27d6`; corrections: `981ce8c`; M12: `de08930`, `e35675d`; M13: `bdfc96a`, `f115117`; M14: this series |
 | M10 | Complete offline; hardware pending (items G–J). See [DERIVED_STATE.md](DERIVED_STATE.md) |
 | M11 | Complete offline; hardware pending (items K–M). See [VISION.md](VISION.md) |
 | M9/M10 corrections | Done 2026-09-19 (`981ce8c`): Wwise Stop ends the streaming song, songs prewarmed off the scheduler thread, reactions hold against scoring, latched strategies not consumed while unrunnable, one clock for the frustration cooldown, strategies disposed and stale resume state cleared, DizzyShakeLoop gap recorded |
 | M12 | Complete offline; hardware pending (items N–R). See [MANIPULATION.md](MANIPULATION.md) |
 | M13 | **COMPLETE OFFLINE.** The lattice planner over the shipped motion primitives, the flip action, the charger object with align / mount / drive-off, block configurations (stacks, pyramid bases, pyramids), the whiteboard's beacons, the workouts, and 16 behaviour classes (25 shipped configs). Hardware acceptance pending — items S–X. See [NAVIGATION.md](NAVIGATION.md) |
-| Tests | **606 tests** (`dotnet test Cozmo.sln`, about 4 m; 578 after M12), all passing offline |
+| M14 | **COMPLETE OFFLINE at the OKAO boundary.** `FaceWorld`, `TrackedFace` geometry, `SmartFaceID`, `PetWorld`, the turn / track / verify face actions and seven behaviour classes (14 configs) on an `IFaceDetector` seam; the stock detector (Omron OKAO, 177 exports) is recorded as unavailable, so the face behaviours are implemented but not counted as implementable. See [FACES.md](FACES.md) |
+| Tests | **619 tests** (`dotnet test Cozmo.sln`, about 5 m; 606 after M13), all passing offline |
 | Hardware | nothing new has been run since the two post-sweep retests; the consolidated plan is [HARDWARE_TEST_PLAN.md](HARDWARE_TEST_PLAN.md) (items A–X) |
-| Next | **M14 may begin now**: the face / person / pet pipeline around the OKAO boundary (see "Next task"). It does not depend on any pending hardware result |
+| Next | **M15 may begin now**: the freeplay / explorer / autonomy layer (see "Next task"). It does not depend on any pending hardware result |
 
 ## Milestone status
 
@@ -28,9 +29,22 @@
 | M8 behaviour inventory and framework | Complete offline. `BehaviorManager` now runs reactions (`AddReaction`, `CheckReactions`, resume-last). `SteppedBehavior` is the transcription base for the engine's action-chain classes. Inventory regenerated: **67 of 178 implementable** (19 M1–M7, 39 Singing, 9 M10) plus `ReactToCubeMoved` implemented and waiting on localisation. **M10 correction:** `PlayAnimWithFace` needs a face (`TurnTowardsFaceAction` first) and is filed under vision. |
 | M9 Wwise switch-state audio | Complete offline; hardware pending (items A, A2). |
 | M10 derived robot state and reactions | Complete offline; hardware pending (items G–J). `OffTreadsClassifier`, `UnexpectedMovementDetector`, `ShippedReactionStrategies`, eight `ReactToX` classes + `ReactToFrustrationBehavior.Minor`, the cube-moved path behind `ICubeLocator`, `PlayAnimBehavior.LoadShipped`, `offtreads` and `reactions` commands. |
+| M14 faces around the OKAO boundary | **Complete offline; nothing runnable on hardware without a detector (item Y).** `Vision/Faces.cs` (`IFaceDetector`, `OkaoFaceDetector`, `DetectedFace`, `TrackedFace`, `FaceWorld`, `FaceEntry`, `SmartFaceID`, `IPetDetector`, `PetWorld`), `Vision/FaceActions.cs` (`TurnTowardsPoseAction`, `TurnTowardsFaceAction`, `TrackFaceAction`, `VisuallyVerifyFaceAction`), `VisionSystem.Faces/Pets/FaceDetector/PetDetector`; `Behavior/FaceBehaviors.cs` (`ActionBehavior` base shared with the manipulation behaviours, PlayAnimWithFace, AcknowledgeFace, InteractWithFaces, DriveToFace, SearchForFace, ReactToPet, PyramidThankYou); `ShippedBehaviors.Faces`. Inventory **107 of 178 implementable + 14 implemented on the face pipeline**. |
 | M13 navigation, cube games, charger | **Complete offline; hardware pending (items S–X).** `Manipulation/`: `MotionPrimitiveSet`, `LatticeEnvironment`, `LatticePlanner` (+ `DriveToPoseAction.Goals` / `IgnoreObstacleIds`, `ManipulationSystem.Planner` / `LoadPlanner`), `FlipBlockAction`, `DriveAndFlipBlockAction`, `AlignWithObjectAction`, `MountChargerAction`, `DriveOffChargerContactsAction`, `BlockConfigurationManager` (+ `StackOfCubes`, `PyramidBase`, `Pyramid`), `AIWhiteboard` / `AIBeacon`, `WorkoutComponent` / `WorkoutConfig`; `Vision/ChargerGeometry.cs`, rectangular `KnownMarker`s, passive objects in `BlockWorld`; `Behavior/CubeGameBehaviors.cs` (KnockOverCubes, PopAWheelie, RamIntoBlock, CubeLiftWorkout, BuildPyramidBase/BuildPyramid, RespondPossiblyRoll, OnConfigSeen, CantHandleTallStack, CheckForStackAtInterval, ReactToConfiguration, ThinkAboutBeacons, BringCubeToBeacon), `ChargerBehaviors.cs` (DriveOffCharger, ReactToOnCharger, MountCharger), `ReactToFrustrationBehavior.Major`; `ShippedBehaviors.Navigation`; `manip --flip/--knockover/--wheelie/--mount/--driveoff`, `manip --plan --obb`. Inventory **107 of 178**. |
 | M12 cube manipulation | **Complete offline; hardware pending (items N–R).** `Cozmo.Robot.Manipulation`: `PreActionPose` / `CubePreActionPoses`, `PathMotionProfile`, `PathSegment`, `PathSender`, `StraightLinePlanner`, `PathFollower`, `DriveToPoseAction`, `DriveToObjectAction`, `DriveStraightAction`, `DockingSystem`, `CarryingComponent`, `LiftPresets`, `DockActionBase` + `PickupObjectAction` / `PlaceRelObjectAction` / `RollObjectAction` / `PopAWheelieAction`, `PlaceObjectOnGroundAction`, `MoveLiftToHeightAction`, `ManipulationSystem`, `DockHelper`; `Behavior/ManipulationBehaviors.cs` (PickUpCube, PutDownBlock, RollBlock, StackBlocks, PickUpAndPutDownCube); `ShippedBehaviors.Manipulation`; `manip` command. Inventory **82 of 178**. |
 | M11 vision and world state | Complete offline; hardware pending (items K–M; K is the only positive real-cube detection evidence). `Cozmo.Robot.Vision`: `MarkerLibrary` (Anki's data: extracted from the user's own binary by the build, not committed), `MarkerDecoder`, `QuadDetector`, `MarkerDetector`, `CameraCalibration` + `NvCalibrationReader`, `HeadGeometry`, `CameraModel`, `CubeGeometry`, `PoseEstimation`, `BlockWorld` / `ObservableObject`, `RobotStateHistory`, `VisionSystem`, `CubeLocator`, `TurnTowardsPose`; `Behavior/ObjectBehaviors.cs` (`ObjectPositionUpdatedStrategy`, `AcknowledgeObjectBehavior`); `vision` and `bodyangle` commands; `re-analysis/tools/extract_marker_library.py`. Inventory **69 of 178**. |
+
+## What M14 established
+
+The engine's face pipeline is Omron OKAO from the image to the identity; this stack reproduces the world
+model, geometry, actions and behaviours around it and refuses to fake the detector. `TrackedFace` places a
+head at 62 mm × f / intra-eye pixels along the camera ray (0x0087DE24); `FaceWorld` matches by id or by pose
+within 220 mm, skips fast turns and faces below the robot, and forgets unnamed faces after 15 s;
+`TurnTowardsFaceAction` turns, waits a few frames for a fresh observation, fine-tunes within 45°, fires
+"LookAtFaceVerified" and greets by name or with the no-name trigger; `TrackFaceAction` pans to atan2 and
+tilts to atan((z − 49) / d). Seven behaviour classes (14 configs) were read transition by transition and
+run offline against a fake detector (619 tests in the full suite). On the robot nothing in M14 acts until an `IFaceDetector` is attached;
+that is the recorded boundary, and the inventory keeps these 14 out of the implementable total.
 
 ## What M13 established
 
@@ -143,6 +157,8 @@ planner, the pick-up lift-load and accelerometer checks, KnockOverCubes' flip ac
 11. **The 30.0 beside the position-update thresholds** (M11) — stored in the strategy, use not traced.
 12. **The NV read framing** (M11) — `CommandNV` length/second byte and `MORE` chunking unverified; no capture
     holds an NV exchange.
+19. **Face-detector availability** (M14) — the whole face path waits on an `IFaceDetector`; OKAO is not
+    reproducible. `FaceWorld`'s below-robot test and the fine-tune frame budget are INFERRED (`FACES.md` §2).
 16. **Planner padding and heuristic** (M13) — "robot padding %f, obstacle padding %f" logged, values not read;
     45 / 20 mm and the Euclidean heuristic stand in. Item X compares the real drive with `manip --plan`.
 17. **The charger's pre-dock pose** (M13) — a static `Pose2d` plus −15.5 mm; on-axis at the align distance
@@ -157,17 +173,22 @@ planner, the pick-up lift-load and accelerometer checks, KnockOverCubes' flip ac
 
 ## Next task
 
-**M14: the face / person / pet pipeline.** The stock recognition is Omron OKAO (194 `OKAO_*` exports, a hard
-boundary: no replacement recogniser is to be invented). Reproduce the surrounding architecture faithfully —
-`FaceWorld` (faces with ids, poses, visibility and age semantics; `GetLastObservedFace`, `HasAnyFaces`,
-`GetFaceIDs`, `GetSmartFaceID`, `GetBestFaceToTrack`), `Vision::TrackedFace`, `SmartFaceID`,
-`TurnTowardsFaceAction`, `TurnTowardsLastFacePoseAction`, `BehaviorPlayAnimSequenceWithFace`,
-`BehaviorFindFaces`, `BehaviorPyramidThankYou`, `BehaviorBouncer` (paddle from the face's position) — with an
-`IFaceDetector` seam whose OKAO implementation is explicitly unavailable, so the behaviours count as
-implemented only when a detector is attached. Start from `FaceWorld::Update`, `FaceWorld::GetLastObservedFace`,
-`TurnTowardsFaceAction::Init` and the `Anki::Vision::FaceTracker` exports; `VISION.md` has the camera model
-and `BlockWorld` the world-model conventions to mirror.
+**M15: the freeplay / explorer / autonomy layer.** The engine's decision architecture is
+`BehaviorManager::Update` → the current `IActivity` (`ActivityFreeplay` with prioritised sub-activities from
+`activities_config.json`: sparks, needs, PutDownDispatch, Socialize, Singing, PlayWithHumans, BuildPyramid,
+PlayAlone, Hiking, NothingToDo) → its `IActivityStrategy` (`WantsToStart` / `WantsToEnd`: cooldowns, durations,
+mood scorers, needs brackets) and its chooser (`ScoringBSRunnableChooser`: flatScore × repetition penalty ×
+running penalty + the running behaviour's bonus; `StrictPriorityBSRunnableChooser`; interludes) →
+`IBehavior::EvaluateScore` → `SwitchToBehaviorBase`. `CalculateDesiredActivityFromObjects` picks
+Socialize / PlayAlone / Hiking on put-down from faces and cubes. The needs system (`NeedsManager`,
+`NeedsState`: levels, brackets Full / Normal / Warning / Critical from `needs_config.json`, decay from
+`needs_decay_config.json`, action deltas from `needs_action_config.json`) gates the needs activities and
+`ExpressNeeds` / `PlayAnimOnNeedsChange`. Behaviours to add: `ExploreLookAroundInPlace` (the s1–s7 scan from
+its params; unlocks `FindFaces` on the face pipeline), `DriveInDesperation`, `ExpressNeeds`,
+`PlayAnimOnNeedsChange`, `Wait`, `EarnedSparks`. Build a `FreeplaySystem` that loads the shipped activity tree,
+binds the behaviour ids to the implemented set and drives the `BehaviorManager`, with an offline simulation
+that shows the stack choosing and running behaviours on its own.
 
 Start from the engine, not from guesses: disassemble first (`re-analysis/tools/disarm.py`; the session scratch
-disassembler was `engdis.py`, described in the memory notes), and read `NAVIGATION.md`, `MANIPULATION.md`,
-`VISION.md`, `DERIVED_STATE.md` and `SOURCE_FIDELITY_AUDIT.md` §2 before writing code.
+disassembler was `engdis.py`, described in the memory notes), and read `FACES.md`, `NAVIGATION.md`,
+`MANIPULATION.md`, `VISION.md`, `DERIVED_STATE.md` and `SOURCE_FIDELITY_AUDIT.md` §2 before writing code.

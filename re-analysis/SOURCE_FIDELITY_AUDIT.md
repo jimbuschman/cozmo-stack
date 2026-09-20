@@ -523,3 +523,21 @@ firmware's `PLACE_LOW` / `PLACE_HIGH` still track the marker when it is visible 
 "requires cube manipulation beyond M12", "requires charger/docking", "requires navigation" and "freeplay" to
 "implementable with M13"; four remain beyond M13 for faces or the app (Bouncer, PyramidThankYou,
 FeedingSearchForCube, FireTruckAlarm).
+
+## 15. M14 additions and the OKAO boundary, 2026-09-20
+
+**Added** (`FACES.md`): `TrackedFace` (NATIVE geometry, 0x0087DE24), `FaceWorld` (NATIVE rules: 220 mm match,
+15 s forgetting, rotating-too-fast and below-robot skips), `SmartFaceID`, `PetWorld`, `TurnTowardsPoseAction`,
+`TurnTowardsFaceAction`, `TrackFaceAction`, `VisuallyVerifyFaceAction`, seven behaviour classes (14 configs), and
+an `ActionBehavior` base now shared by the manipulation behaviours (no behavioural change).
+
+**Boundary recorded:** face and pet detection, parts, expression, smile, gaze and recognition are Omron OKAO
+(`FaceTracker::Impl::Update` → `OKAO_DT_*`, `FaceRecognizer`), 177 exports of proprietary code. The stack's
+`IFaceDetector` / `IPetDetector` seams hold `OkaoFaceDetector` / `OkaoPetDetector`, which report unavailable. No
+replacement algorithm was written. **Classification:** the 14 face configs move from "requires vision/person
+detection" to their own row, "implemented on the face pipeline; runnable only with a face detector (OKAO
+unavailable)", and are not counted as implementable (107 of 178 unchanged). 16 configs stay under vision
+(FindFaces ×3 and LookForFaceAndCube for the M15 look-around base; PeekABoo ×2, FistBump ×2; PounceOnMotion ×3
+and TrackLaser for motion / laser detection; EnrollFace, RespondToRenameFace for recognition).
+
+**Tests:** 619 after M14 (606 after M13).

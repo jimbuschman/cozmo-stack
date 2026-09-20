@@ -16,7 +16,7 @@ on trust. A behaviour matching no rule is **unclear**, not pushed into a plausib
 
 1. class name names a composite → wrapper/composite
 1a. a per-behaviour verdict from reading its class in the binary (the two frustration configs, ReactToSparked, ReactToCubeMoved, AcknowledgeObject)
-1b. PlayAnimWithFace → requires vision (the engine turns to a face first); PlayAnim / PlayArbitraryAnim with animTriggers → implementable now
+1b. PlayAnimWithFace, AcknowledgeFace, InteractWithFaces, DriveToFace, SearchForFace, ReactToPet, PyramidThankYou → implemented on the face pipeline (M14), runnable only with a face detector: OKAO is unavailable, so they are not counted as implementable; PlayAnim / PlayArbitraryAnim with animTriggers → implementable now
 1c. a ReactTo class whose input M10 derives → implementable with M10 (derived robot state)
 1d. AcknowledgeObject and ReactToCubeMoved → implementable with M11 (cube localisation)
 1e. a class naming faces → requires vision; RequestGameSimple → requires the app; ExploreLookAroundInPlace / DriveInDesperation → requires navigation
@@ -40,16 +40,17 @@ counted as needing them. That overstates the blocked count rather than the imple
 | category | behaviours |
 | --- | ---: |
 | implementable with M9 (switch-state audio) | 39 |
-| requires vision/person detection | 29 |
 | implementable with M13 (navigation, cube games, charger) | 25 |
 | implementable with M1-M7 now | 19 |
+| requires vision/person detection | 16 |
+| implemented on the face pipeline; runnable only with a face detector (OKAO unavailable) | 14 |
 | freeplay/explorer-specific | 14 |
 | implementable with M12 (cube manipulation) | 13 |
 | requires the app (game request) | 10 |
 | implementable with M10 (derived robot state) | 9 |
 | developer-only | 4 |
-| requires cube manipulation beyond M13 (faces or the app) | 4 |
 | requires navigation/path planning | 4 |
+| requires cube manipulation beyond M13 (faces or the app) | 3 |
 | game-specific | 2 |
 | implementable with M11 (cube localisation) | 2 |
 | requires localization/world model | 1 |
@@ -194,10 +195,23 @@ counted as needing them. That overstates the blocked count rather than the imple
 | Singing_WilliamTell | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_WilliamTell.json` |
 | Singing_YankeeDoodle | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_YankeeDoodle.json` |
 | Singing_YellowRose | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_YellowRose.json` |
-| Bouncer | Bouncer | requires cube manipulation beyond M13 (faces or the app) | class 'Bouncer' needs a tracked face (Bouncer, PyramidThankYou) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions | `freeplay/userInteractive/bouncer.json` |
-| FeedingSearchForCube | FeedingSearchForCube | requires cube manipulation beyond M13 (faces or the app) | class 'FeedingSearchForCube' needs a tracked face (Bouncer, PyramidThankYou) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions | `feeding/feedingSearchForCube.json` |
-| PyramidThankYou | PyramidThankYou | requires cube manipulation beyond M13 (faces or the app) | class 'PyramidThankYou' needs a tracked face (Bouncer, PyramidThankYou) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions | `freeplay/buildPyramid/pyramidThankYou.json` |
-| SparksFireTruckAlarm | FireTruckAlarm | requires cube manipulation beyond M13 (faces or the app) | class 'FireTruckAlarm' needs a tracked face (Bouncer, PyramidThankYou) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions | `freeplay/sparkable/sparksFireTruckAlarm.json` |
+| AcknowledgeFace | AcknowledgeFace | implemented on the face pipeline; runnable only with a face detector (OKAO unavailable) | BehaviorAcknowledgeFace: TurnTowardsFaceAction with AcknowledgeFaceNamed/Unnamed, no greeting when turned to within 60 s, objective ReactedAcknowledgedFace | `reactions/acknowledgeFace.json` |
+| FeedingPlayRequestAtFace | PlayAnimWithFace | implemented on the face pipeline; runnable only with a face detector (OKAO unavailable) | BehaviorPlayAnimSequenceWithFace: TurnTowardsFaceAction(last face, pi) then the config's animTriggers | `feeding/feedingAnims/feedingPlayRequestAtFace.json` |
+| FeedingPlayRequestAtFace_Severe | PlayAnimWithFace | implemented on the face pipeline; runnable only with a face detector (OKAO unavailable) | BehaviorPlayAnimSequenceWithFace: TurnTowardsFaceAction(last face, pi) then the config's animTriggers | `feeding/feedingAnims/feedingPlayRequestAtFace_Severe.json` |
+| InteractWithFaces | InteractWithFaces | implemented on the face pipeline; runnable only with a face detector (OKAO unavailable) | BehaviorInteractWithFaces: verify (InteractWithFacesInitialNamed/Unnamed), drive 40 mm with TrackFaceAction, track 8-15 s with InteractWithFaceTrackingIdle, emotion event InteractWith(Un)namedFace | `freeplay/interactWithFaces.json` |
+| MeetCozmo_InteractWithFaces | InteractWithFaces | implemented on the face pipeline; runnable only with a face detector (OKAO unavailable) | BehaviorInteractWithFaces: verify (InteractWithFacesInitialNamed/Unnamed), drive 40 mm with TrackFaceAction, track 8-15 s with InteractWithFaceTrackingIdle, emotion event InteractWith(Un)namedFace | `meetCozmo/meetCozmo_interactWithFaces.json` |
+| PyramidThankYou | PyramidThankYou | implemented on the face pipeline; runnable only with a face detector (OKAO unavailable) | BehaviorPyramidThankYou: TurnTowardsFace, BuildPyramidThankUser, TurnTowardsObject(pyramid top), BuildPyramidThankUser | `freeplay/buildPyramid/pyramidThankYou.json` |
+| ReactToPet | ReactToPet | implemented on the face pipeline; runnable only with a face detector (OKAO unavailable) | BehaviorReactToPet over PetWorld: TurnTowardsImagePoint at the pet, PetDetectionCat/Dog (1 in 20 PetDetectionSneeze); the pet detector is OKAO too | `reactions/reactToPet.json` |
+| VC_AlrightyResponse | PlayAnimWithFace | implemented on the face pipeline; runnable only with a face detector (OKAO unavailable) | BehaviorPlayAnimSequenceWithFace: TurnTowardsFaceAction(last face, pi) then the config's animTriggers | `voiceCommands/VC_AlrightyResponse.json` |
+| VC_ComeHere | DriveToFace | implemented on the face pipeline; runnable only with a face detector (OKAO unavailable) | BehaviorDriveToFace: turn, VisuallyVerifyFace, turn, DriveStraight(distance - 200 @ 60), track 5 s | `voiceCommands/VC_ComeHere.json` |
+| VC_HowAreYouDoing_AllGood | PlayAnimWithFace | implemented on the face pipeline; runnable only with a face detector (OKAO unavailable) | BehaviorPlayAnimSequenceWithFace: TurnTowardsFaceAction(last face, pi) then the config's animTriggers | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_AllGood.json` |
+| VC_HowAreYouDoing_Energy | PlayAnimWithFace | implemented on the face pipeline; runnable only with a face detector (OKAO unavailable) | BehaviorPlayAnimSequenceWithFace: TurnTowardsFaceAction(last face, pi) then the config's animTriggers | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Energy.json` |
+| VC_HowAreYouDoing_Play | PlayAnimWithFace | implemented on the face pipeline; runnable only with a face detector (OKAO unavailable) | BehaviorPlayAnimSequenceWithFace: TurnTowardsFaceAction(last face, pi) then the config's animTriggers | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Play.json` |
+| VC_HowAreYouDoing_Repair | PlayAnimWithFace | implemented on the face pipeline; runnable only with a face detector (OKAO unavailable) | BehaviorPlayAnimSequenceWithFace: TurnTowardsFaceAction(last face, pi) then the config's animTriggers | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Repair.json` |
+| VC_SearchForFace | SearchForFace | implemented on the face pipeline; runnable only with a face detector (OKAO unavailable) | BehaviorSearchForFace: ComeHere_SearchForFace until FaceWorld::HasAnyFaces, then ComeHere_SearchForFace_FoundFace | `voiceCommands/VC_SearchForFace.json` |
+| Bouncer | Bouncer | requires cube manipulation beyond M13 (faces or the app) | class 'Bouncer' needs a tracked face and the display game (Bouncer) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions | `freeplay/userInteractive/bouncer.json` |
+| FeedingSearchForCube | FeedingSearchForCube | requires cube manipulation beyond M13 (faces or the app) | class 'FeedingSearchForCube' needs a tracked face and the display game (Bouncer) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions | `feeding/feedingSearchForCube.json` |
+| SparksFireTruckAlarm | FireTruckAlarm | requires cube manipulation beyond M13 (faces or the app) | class 'FireTruckAlarm' needs a tracked face and the display game (Bouncer) or the app's game (Feeding, FireTruckAlarm) beyond the M13 actions | `freeplay/sparkable/sparksFireTruckAlarm.json` |
 | OnboardingShowCube | OnboardingShowCube | requires cubes | names cubes, blocks or objects ('Cube') | `onboarding/onboardingShowCube.json` |
 | Hiking_LookInPlaceForUnknown | LookInPlaceMemoryMap | requires localization/world model | names the world model or localization ('MemoryMap') | `freeplay/hiking/Hiking_lookInPlaceForUnknown.json` |
 | Hiking_LookInPlace360 | ExploreLookAroundInPlace | requires navigation/path planning | class 'ExploreLookAroundInPlace' names a drive or search pattern (TurnInPlace/DriveStraight sequences) | `freeplay/hiking/Hiking_lookInPlace360.json` |
@@ -215,35 +229,22 @@ counted as needing them. That overstates the blocked count rather than the imple
 | VC_RequestMemoryMatch | RequestGameSimple | requires the app (game request) | BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's | `voiceCommands/VC_RequestMemoryMatch.json` |
 | VC_RequestSpeedTap | RequestGameSimple | requires the app (game request) | BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's | `voiceCommands/VC_RequestSpeedTap.json` |
 | ReactToSparked | ReactToSparked | requires the app's spark system | triggered by the app's ActivateSpark request (BehaviorManager::HandleMessage), which this stack does not receive | `reactions/reactToSparked.json` |
-| AcknowledgeFace | AcknowledgeFace | requires vision/person detection | class 'AcknowledgeFace' names faces; face detection is Omron OKAO code in the engine, not transcribable | `reactions/acknowledgeFace.json` |
 | EnrollFace | EnrollFace | requires vision/person detection | class 'EnrollFace' names faces; face detection is Omron OKAO code in the engine, not transcribable | `meetCozmo/enrollFace.json` |
 | FPPeekABoo | PeekABoo | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `freeplay/FPpeekAboo.json` |
 | FeedingFindFacesSevere | FindFaces | requires vision/person detection | class 'FindFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable | `feeding/feedingFindFacesSevere.json` |
-| FeedingPlayRequestAtFace | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `feeding/feedingAnims/feedingPlayRequestAtFace.json` |
-| FeedingPlayRequestAtFace_Severe | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `feeding/feedingAnims/feedingPlayRequestAtFace_Severe.json` |
 | FindFaces_socialize | FindFaces | requires vision/person detection | class 'FindFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable | `freeplay/findFaces_socialize.json` |
 | FistBump | FistBump | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `freeplay/userInteractive/fistBump.json` |
 | Hiking_PounceOnMotion | PounceOnMotion | requires vision/person detection | names faces, people, pets or motion sensing ('Pounce') | `freeplay/hiking/Hiking_pounceOnMotion.json` |
-| InteractWithFaces | InteractWithFaces | requires vision/person detection | class 'InteractWithFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable | `freeplay/interactWithFaces.json` |
 | MeetCozmo_FindFaces_Socialize | FindFaces | requires vision/person detection | class 'FindFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable | `meetCozmo/meetCozmo_findFaces_socialize.json` |
-| MeetCozmo_InteractWithFaces | InteractWithFaces | requires vision/person detection | class 'InteractWithFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable | `meetCozmo/meetCozmo_interactWithFaces.json` |
 | PounceOnMotion_Socialize | PounceOnMotion | requires vision/person detection | names faces, people, pets or motion sensing ('Pounce') | `freeplay/pounceOnMotion_socialize.json` |
 | PutDownDispatch_LookForFaceAndCube | LookForFaceAndCube | requires vision/person detection | class 'LookForFaceAndCube' names faces; face detection is Omron OKAO code in the engine, not transcribable | `freeplay/putDownDispatch/PutDownDispatch_LookForFaceAndCube.json` |
-| ReactToPet | ReactToPet | requires vision/person detection | names faces, people, pets or motion sensing ('Pet') | `reactions/reactToPet.json` |
 | RespondToRenameFace | RespondToRenameFace | requires vision/person detection | class 'RespondToRenameFace' names faces; face detection is Omron OKAO code in the engine, not transcribable | `meetCozmo/respondToRenameFace.json` |
 | SparksFindFaces | FindFaces | requires vision/person detection | class 'FindFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable | `freeplay/sparkable/sparksFindFaces.json` |
 | SparksFistBump | FistBump | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `freeplay/sparkable/sparksFistBump.json` |
 | SparksPeekABoo | PeekABoo | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `freeplay/sparkable/sparksPeekAboo.json` |
 | SparksPounceOnMotion | PounceOnMotion | requires vision/person detection | names faces, people, pets or motion sensing ('Pounce') | `freeplay/sparkable/sparksPounceOnMotion.json` |
 | SparksTrackLaser | TrackLaser | requires vision/person detection | names faces, people, pets or motion sensing ('pounce') | `freeplay/sparkable/sparksTrackLaser.json` |
-| VC_AlrightyResponse | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `voiceCommands/VC_AlrightyResponse.json` |
-| VC_ComeHere | DriveToFace | requires vision/person detection | class 'DriveToFace' names faces; face detection is Omron OKAO code in the engine, not transcribable | `voiceCommands/VC_ComeHere.json` |
-| VC_HowAreYouDoing_AllGood | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_AllGood.json` |
-| VC_HowAreYouDoing_Energy | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Energy.json` |
-| VC_HowAreYouDoing_Play | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Play.json` |
-| VC_HowAreYouDoing_Repair | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Repair.json` |
 | VC_PounceOnMotion | PounceOnMotion | requires vision/person detection | names faces, people, pets or motion sensing ('Pounce') | `voiceCommands/VC_PounceOnMotion.json` |
-| VC_SearchForFace | SearchForFace | requires vision/person detection | class 'SearchForFace' names faces; face detection is Omron OKAO code in the engine, not transcribable | `voiceCommands/VC_SearchForFace.json` |
 | Wait | Wait | unclear | no rule matched; carries ['executableBehaviorType'] | `wait.json` |
 
 ## BehaviorClass values with no shipped config

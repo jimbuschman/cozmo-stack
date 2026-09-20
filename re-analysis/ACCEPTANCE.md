@@ -251,6 +251,20 @@ zero whose meaning was not read. None of N–R gates M13.
 | Behaviours | pass — KnockOverCubes, PopAWheelie (+ retries), RamIntoBlock, CubeLiftWorkout, BuildPyramidBase, RespondPossiblyRoll, OnConfigSeen, CantHandleTallStack, CheckForStackAtInterval, ReactToPyramid, ThinkAboutBeacons + BringCubeToBeacon, the Major frustration drive; 25 configs | **not run** (S, T, U) | `KnockOverCubesReaches…`, `PopAWheelieDrives…`, `TheWorkoutBehaviourLifts…`, `BuildPyramidBasePicks…`, `TheShippedNavigationSet…` |
 | Inventory | pass — regenerated, 107 of 178 | n/a | `behavior_inventory.py --check` |
 
+## M14 — faces around the OKAO boundary (2026-09-20): offline complete, not hardware-testable
+
+| Capability | Automated | Human | Evidence |
+| --- | --- | --- | --- |
+| The boundary | pass — the stock detector is unavailable, nothing runs without one, no face behaviour is runnable | n/a | `TheStockFaceDetectorIsAnExplicitUnavailableBoundary` |
+| TrackedFace geometry | pass — 62 mm / f / eye px, rectangle fallback, 6 px floor, max expression | **cannot run** (Y) | `AFaceRectangleBecomesAHeadPose…` |
+| FaceWorld | pass — pose matching 220 mm, new person, skips, stale rejection, 15 s forgetting, named kept, ChangeFaceID, delocalisation | **cannot run** (Y) | `TheFaceWorldMatchesByPose…`, `FramesWithAFakeDetector…` |
+| Face actions | pass — turn, fine-tune, emotion event, greeting choice, NoFace failure; tracking follows a moving face | **cannot run** (Y) | `TurnTowardsFaceTurns…`, `TrackFaceFollows…` |
+| Behaviours | pass — PlayAnimWithFace, AcknowledgeFace (60 s greeting rule), InteractWithFaces (verify, drive, track, event), DriveToFace (200 mm), SearchForFace, ReactToPet; 14 configs need a detector | **cannot run** (Y) | `PlayAnimWithFaceTurns…`, `AcknowledgeFaceGreets…`, `InteractWithFacesVerifies…`, `DriveToFaceDrives…`, `SearchForFacePlays…`, `ReactToPetTurns…`, `TheFaceSetHasFourteen…` |
+| Inventory | pass — 107 of 178 implementable, 14 on the face pipeline (separate row) | n/a | `behavior_inventory.py --check` |
+
+**M14 is COMPLETE OFFLINE at the OKAO boundary.** The world model, geometry, actions and behaviours are the
+engine's (`FACES.md`); their input is not available in this stack and nothing pretends otherwise.
+
 **M13 is COMPLETE OFFLINE and NOT hardware verified.** The primitives, constants and behaviour transitions are
 the engine's (`NAVIGATION.md`); the planner's padding, heuristic and arc reconstruction, the charger's pre-dock
 pose and several limits are labelled INFERRED / LOCAL. None of S–X gates M14.
