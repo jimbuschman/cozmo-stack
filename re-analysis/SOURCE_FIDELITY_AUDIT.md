@@ -452,3 +452,30 @@ were rewritten from the implemented set (`DERIVED_STATE.md` §9); the regenerate
 Offline evidence added: `DerivedStateTests` (40 tests) and `offtreads --replay` over the three committed fw2457
 captures (0 transitions, 0 detections on a robot sitting on its treads; classifier enabled by the robot's own
 calibration report). Hardware evidence: none yet; `HARDWARE_TEST_PLAN.md` items G–J.
+
+## 12. M11 additions, 2026-09-19
+
+M11's NATIVE rows are tabulated in [VISION.md](VISION.md) §1–§6 rather than folded into §5: the marker type table,
+the nearest-neighbour library and every table it uses (extracted byte for byte, `extract_marker_library.py`
+records the addresses and the check), the decoder's algorithm (`GetProbeValues`, `GetNearestNeighbor`, `Extract`),
+the front-end parameters (`MarkerDetector::Parameters::Initialize`), the camera's place on the robot
+(`Robot::Robot`, `_kDefaultHeadCamRotation`, `GetCameraPose`), the calibration's NV tag and CLAD struct, the cube's
+size, marker size, face poses and codes (`Block::LookupBlockInfo`, `Block::AddFace`,
+`KnownMarker::_canonicalCorners3d`), BlockWorld's connected-object rule, moving/rotating gates and visibility test,
+the position-update strategy's thresholds (80 mm, 45°, 600000 ms), AcknowledgeObject's constants, and the
+`SetBodyAngle` packing.
+
+Non-native, all labelled in the code and in `VISION.md`: LOCAL — the front end's pixel algorithms and its 0.75
+dark multiplier, PnP numerics, the clustering tolerances (20 mm / 10°), the flat-snap angle (8°), the history
+windows, the turn's speed and acceleration, the verification timeout, the synthetic renderer's border width, the
+untimestamped-frame fallback; LOCAL_POLICY — the nominal calibration stand-in and the `AllowUnconnectedObjects`
+switch, both off the real-robot path unless asked for; INFERRED — the NV request framing and `MORE` chunking,
+the two-miss forgetting count, the 10 px minimum marker size, first-sight Known (pose confirmer not transcribed),
+Dirty on `ObjectMoved`, the absolute reading of `SetBodyAngle`, AcknowledgeObject's failure paths; DEFERRED — the
+occluder list, `IsAnythingBehind`, the stacked-cube search; OUT OF SCOPE — face, pet and motion detection (Omron
+OKAO, 194 `OKAO_*` exports; no Anki algorithm exists to transcribe).
+
+Offline evidence added: `VisionTests` (34 tests), `vision --synthetic` (five cubes, 0.2–3.4 mm), `vision --replay`
+over the fw2457 probe capture (28 frames, 0 markers, no cube in the room). The inventory tool gained the M11 verdicts
+and a class-name rule for manipulation behaviours; regenerated at 69 of 178. Hardware evidence: none yet;
+`HARDWARE_TEST_PLAN.md` items K–M.

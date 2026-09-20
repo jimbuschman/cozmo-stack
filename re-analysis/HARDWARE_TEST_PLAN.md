@@ -20,9 +20,12 @@ directory needs only `cozmo_resources/sound/AudioAssets.zip`), commands run from
 | G | **off-treads transitions** | M10 | `dotnet run --project src/Cozmo.Conformance -- offtreads 172.31.1.1 --seconds 90 --acceptance` (pick him up, put him down, lay him on his back, each side, his face; hold him still tilted 20–40°) | classifier enabled after the calibration report; a transition printed for each handling; on-back arrives about 1 s after laying him down, sides and face after 0.25 s, pick-up and put-down at once | every printed transition matches what was done, in that order, and nothing prints while he sits still |
 | H | **the derived-state reactions** | M10 | `dotnet run --project src/Cozmo.Conformance -- reactions 172.31.1.1 --obb <obb> --seconds 120 --acceptance` | `REACTION RobotOnBack -> ReactToRobotOnBack` (and OnFace, OnSide, RobotPlacedOnSlope, RobotShaken, ReturnedToTreads) print as he is handled, each with its animation steps | on his back he flips down; on his face he rolls; on a side he asks to be righted and waits; put down on a slope he reacts then checks his pitch; shaken then set down he acts dizzy (soft under 2.5 s, medium under 5 s, hard beyond); nothing fires for a state he is not in |
 | I | StartMotorCalibration honoured | M4/M10 | during H, lay him on his back with a finger over cliff sensor 0, or watch `ReactToReturnedToTreads` after setting him down tilted: the trace prints `calibrate head (StartMotorCalibration head=1 lift=0)` | a `MotorCalibration` report with `CalibStarted=true` for the head follows within the 5 s allowance, then one with `CalibStarted=false` | the head visibly recalibrates (nods to its stop) |
+| K | **camera calibration and cube localisation** (the only positive-detection evidence for the LOCAL front end: the offline tests render markers from the recovered library and the real captures hold no cube) | M11 | `dotnet run --project src/Cozmo.Conformance -- vision 172.31.1.1 --seconds 90 --acceptance --out frames` (a cube connected — run `cubes` first or leave discovery on — then show him the cube at 10–30 cm, turn it, move it 10 cm, hide it) | `camera calibration from robot: fx=… ` printed (the NV read worked); markers print with the face codes; `new object N Block_LIGHTCUBE1 Known at (x, y, 22)` with a pose in millimetres in his frame; hiding the cube in view prints `miss 1`, `miss 2 -> Unknown`; a cube moved out of view stays located | the codes match the faces shown (front/left/right/top), the printed distance matches a ruler within about 5 %, the yaw matches how the cube is turned. If the NV read fails, rerun with `--nominal` and note the calibration is a stand-in |
+| L | `SetBodyAngle` semantics | M11 | `dotnet run --project src/Cozmo.Conformance -- bodyangle 172.31.1.1 --deg 45 --acceptance` | `turned 45.0 deg for a 45.0 deg request: ABSOLUTE body angle confirmed` (or the RELATIVE / did-not-turn verdicts, which mean `TurnTowardsPose` needs its angle or fields changed) | he turns 45° left in place, smoothly, and stops |
+| M | the cube reactions with a real cube | M11 | `dotnet run --project src/Cozmo.Conformance -- reactions 172.31.1.1 --obb <obb> --seconds 180 --acceptance` after K has passed, with the cube in view; then slide the cube 10 cm while he looks (AcknowledgeObject), then turn him away and roll the cube (ReactToCubeMoved) | `REACTION ObjectPositionUpdated -> AcknowledgeObject` with `turning towards`, `VisuallyVerifyObjectAction`, the animation; `REACTION CubeMoved -> ReactToCubeMoved` with `CubeMovedSense`, the turn, then `AcknowledgeObject` if he finds it or `CubeMovedUpset` if not | he looks at the cube's new place and nods to it; turned away and hearing the cube move, he turns back to where it was and reacts to finding or not finding it |
 | J | unexpected movement while driving | M10 | `dotnet run --project src/Cozmo.Conformance -- drive 172.31.1.1 ...` in one window is not enough because the detector suspends during direct drive; instead run H and, while a behaviour's animation drives the body, hold him so he cannot turn, or twist him against the turn | `unexpected movement TurnedButStopped from <side>` or `TurnedInOppositeDirection` printed, then `REACTION UnexpectedMovement -> ReactToUnexpectedMovement` | he plays the startled reaction once, on the side the push came from; no report while he drives freely |
 
-Items A and A2 are the M9 acceptance; G–J are the M10 acceptance. Items B–F are carried over from the fidelity
+Items A and A2 are the M9 acceptance; G–J are the M10 acceptance; K–M are the M11 acceptance (`VISION.md` §9). Items B–F are carried over from the fidelity
 sweep and its reconciliation (`SOURCE_FIDELITY_AUDIT.md` §8, §10) and were never gated on M9 or M10.
 
 ## What G and H cannot tell you, and what would
@@ -32,6 +35,15 @@ its resting states where the engine expects them (gravity read about 10500, not 
 which the 3000-wide side band still accommodates). If a state never appears, or appears for the wrong handling,
 the first place to look is `offtreads` output's pitch and filtered-accel columns against `DERIVED_STATE.md` §2.3,
 not the constants.
+
+## What K cannot tell you, and what would
+
+The decoder and the tables are the engine's; what K settles is the LOCAL front end against real optics — whether
+the black squares are found at Cozmo's exposure and blur. If markers are missed, `vision --images <saved jpeg>`
+prints every quad and why it was rejected, and `--out` writes the dark mask; the first knob is
+`QuadDetectorParameters.DarkThresholdMultiplier` (0.75, ours), not the decoder. Pose accuracy against a ruler
+tests the calibration read from NV and the head-camera geometry together; a constant offset in X with a good yaw
+points at the calibration, a distance error growing with head angle at the camera pose.
 
 ## What A cannot tell you, and what would
 
@@ -59,3 +71,6 @@ freeze depends on it: M9 is complete offline, and the next milestone does not us
 | H | | | | | |
 | I | | | | | |
 | J | | | | | |
+| K | | | | | |
+| L | | | | | |
+| M | | | | | |

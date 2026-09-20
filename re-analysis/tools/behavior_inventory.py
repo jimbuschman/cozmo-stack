@@ -105,12 +105,24 @@ M10_DERIVED = "implementable with M10 (derived robot state)"
 # Per-behaviour verdicts where the class alone does not decide: the two ReactToFrustration configs differ
 # in what they need, ReactToSparked needs the app's spark request, and ReactToCubeMoved is transcribed but
 # every step of it asks the world model where the cube is.
+# M11 (2026-09-19) made cube localisation real: marker detection over the engine's own nearest-neighbour
+# library, BlockWorld's located/visible semantics and the TurnTowardsPose action. The two reactions that need
+# only a located cube run on it (CubeReactions.cs, ObjectBehaviors.cs).
+M11_LOCALISED = "implementable with M11 (cube localisation)"
+
+# Cube behaviours that drive to, dock with, lift, roll or stack a cube. The class names are Anki's and name the
+# manipulation; the engine performs it with DriveToObjectAction / dock actions / the lift, which this stack has
+# not built (M12). Localisation alone does not make them runnable.
+MANIPULATION = re.compile(r"(?i)(PickUp|PutDown|Roll|Stack|KnockOver|Pyramid|BringCube|RamInto|CubeLift|Bouncer|"
+                          r"FireTruck|Workout|RespondPossibly|CantHandle|OnConfigSeen|Feeding|ThinkAboutBeacons)")
+
 BY_ID = {
+    "AcknowledgeObject": (M11_LOCALISED, "BehaviorAcknowledgeObject (0x00602FA4) turns to a located object, verifies it in two images and plays AcknowledgeObject; ObjectPositionUpdated fires on a new located pose (80 mm / 45 deg)"),
     "ReactToFrustrationMinor": (M10_DERIVED, "mood confidence below -0.6 plus one animation and an emotion event; both exist"),
     "ReactToFrustrationMajor": ("requires navigation/path planning", "its random drive is a DriveToPoseAction (BehaviorReactToFrustration::AnimationComplete)"),
     "ReactToSparked": ("requires the app's spark system", "triggered by the app's ActivateSpark request (BehaviorManager::HandleMessage), which this stack does not receive"),
-    "ReactToCubeMoved": ("implemented; waits on cube localization (vision)",
-                         "BehaviorAcknowledgeCubeMoved and ReactionTriggerStrategyCubeMoved are transcribed; the trigger and the turn need BlockWorld's located pose"),
+    "ReactToCubeMoved": (M11_LOCALISED,
+                         "BehaviorAcknowledgeCubeMoved and ReactionTriggerStrategyCubeMoved are transcribed; BlockWorld (M11) supplies the located pose, visibility and the turn"),
 }
 
 # PlayAnim and PlayArbitraryAnim only ever play the trigger their config names; what they mention in that
@@ -165,6 +177,15 @@ def classify(entry):
         return IMPLEMENTABLE, "plays the animation trigger its config names and reads nothing else"
     if entry["behaviorClass"] in M10_REACTIONS:
         return M10_DERIVED, f"'{entry['behaviorClass']}' is transcribed from the engine and its input is derived in M10"
+    cls_name = entry["behaviorClass"]
+    if re.search(r"Face", cls_name):
+        return "requires vision/person detection", f"class '{cls_name}' names faces; face detection is Omron OKAO code in the engine, not transcribable"
+    if cls_name == "RequestGameSimple":
+        return "requires the app (game request)", "BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's"
+    if cls_name in ("ExploreLookAroundInPlace", "DriveInDesperation"):
+        return "requires navigation/path planning", f"class '{cls_name}' names a drive or search pattern (TurnInPlace/DriveStraight sequences)"
+    if MANIPULATION.search(cls_name) and re.search(r"(?i)(cube|block|pyramid|stack|beacon)", blob):
+        return "requires cube manipulation (docking/lift/path, M12)", f"class '{entry['behaviorClass']}' names a manipulation the engine drives and docks for; the cube itself is now localisable"
     for category, reason, pattern in RULES:
         m = re.search(pattern, blob)
         if m:
@@ -230,10 +251,13 @@ def render(entries, ids, classes, native):
         "on trust. A behaviour matching no rule is **unclear**, not pushed into a plausible bucket.",
         "",
         "1. class name names a composite → wrapper/composite",
-        "1a. a per-behaviour verdict from reading its class in the binary (the two frustration configs, ReactToSparked, ReactToCubeMoved)",
+        "1a. a per-behaviour verdict from reading its class in the binary (the two frustration configs, ReactToSparked, ReactToCubeMoved, AcknowledgeObject)",
         "1b. PlayAnimWithFace → requires vision (the engine turns to a face first); PlayAnim / PlayArbitraryAnim with animTriggers → implementable now",
         "1c. a ReactTo class whose input M10 derives → implementable with M10 (derived robot state)",
-        "2. text names cubes, blocks or objects → requires cubes",
+        "1d. AcknowledgeObject and ReactToCubeMoved → implementable with M11 (cube localisation)",
+        "1e. a class naming faces → requires vision; RequestGameSimple → requires the app; ExploreLookAroundInPlace / DriveInDesperation → requires navigation",
+        "1f. a class naming a cube manipulation (pick up, put down, roll, stack, knock over, ...) → requires cube manipulation (M12)",
+        "2. text names cubes, blocks or objects → requires cubes (localisable since M11; what else they need is per class)",
         "3. text names faces, people or pets → requires vision",
         "4. text names the charger or docking → requires charger/docking",
         "5. text names driving, paths or poses → requires navigation",

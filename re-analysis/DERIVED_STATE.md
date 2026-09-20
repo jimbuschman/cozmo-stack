@@ -203,6 +203,8 @@ Ported as `UnexpectedMovementDetector`; `CozmoSensors.UnexpectedMovementDetected
 | `StartMotorCalibration` (0x58) semantics | native_named, hardware-pending | layout known, honoured-by-robot not yet observed (plan item I) |
 | Resume-last after a reaction = restart the interrupted behaviour if still runnable | INFERRED | `shouldResumeLast` is read from the shipped map; `BehaviorManager::SwitchToReactionTrigger`'s bookkeeping was not read |
 | Per-play track lock (`tracksToLock = 4` = body, on a push from behind) | DEFERRED | the scheduler has no per-play track mask; the behaviour logs it |
+| **DizzyShakeLoop played as repeated restarts** | FIDELITY GAP | the engine starts the loop once with `numLoops = 0` and its streamer loops the clip seamlessly; this scheduler plays a clip once, so `ReactToRobotShakenBehavior.LoopShake` restarts it from the completion callback, closing and reopening the animation at every pass (a frame or two of gap per loop). Looping natively would reopen the frozen M5 timeline; recorded, not done |
+| Frustration cooldown clock | corrected 2026-09-19 | the strategy's `AnimationComplete` stamp and its `ShouldTrigger` test are now on one clock (`FrustrationStrategy(…, clockSec)`, handed the same clock as the manager by `ShippedReactionStrategies.ForRobot`); before, the behaviour stamped its own millisecond clock while the manager evaluated its seconds |
 | Needs-system variants (severe Energy/Repair animations), hiccup variants, needs actions, objectives, DAS | not modelled | those systems do not exist here; the normal-need animation is played and the rest is written to the trace |
 | Cube "location no longer valid" → treat as absent | INFERRED | the engine logs it (0x0060233E); its next transition was not read |
 | Reaction codes 0 and 4 of the shaken behaviour named `None`, `NotBackOnTreads` | LOCAL naming | values native (`EReaction`), the string table was not decoded |
@@ -224,11 +226,9 @@ target → `StopActing`, `AcknowledgeObject` (3), `ReactingToBlockPresence`; the
 `CubeMovedUpset` (0x73), objective achieved.
 
 All of this is transcribed (`CubeMotionTracker`, `CubeMovedReactionStrategy`, `AcknowledgeCubeMovedBehavior`) behind
-`ICubeLocator` — located?, distance, visible?, turn towards — which nothing implements yet: cube pose is the
-vision pipeline's. Without a locator the strategy cannot fire, which is exactly the engine's behaviour before it
-has seen a cube. The inventory files `ReactToCubeMoved` as **implemented; waits on cube localization (vision)**,
-not as implementable. The other 55 "requires cubes" behaviours are docking, stacking, rolling and games; none can
-be built on telemetry alone.
+`ICubeLocator` — located?, distance, visible?, turn towards. **M11 (2026-09-19) implemented it**: `CubeLocator`
+over `BlockWorld` (`VISION.md` §5–§6), and the inventory now files `ReactToCubeMoved` as implementable with M11.
+The M10 tests against the fake locator stand; `VisionTests` runs the same strategy against the real one.
 
 ## 7. The behaviours, transition by transition
 
@@ -291,7 +291,5 @@ robot honours `StartMotorCalibration`), J (unexpected movement while driving). N
 
 ## 11. Next
 
-The largest remaining blockers are vision: 23 behaviours need faces or pets, 55 need cubes and every cube
-behaviour, this one included, needs the cube's located pose. M11 should be the vision pipeline's first slice —
-marker detection and cube localisation (`BlockWorld`) — which turns `ICubeLocator` real and unblocks the
-cube-moved reaction that is already built and tested against a fake locator.
+Done: M11 built the vision pipeline's marker slice and `BlockWorld` (`VISION.md`), which made `ICubeLocator` real
+and the cube-moved reaction live. What follows is M12, cube manipulation (`HANDOFF.md`).

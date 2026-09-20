@@ -15,10 +15,13 @@ which rule fired and what triggered it, so a classification can be argued with r
 on trust. A behaviour matching no rule is **unclear**, not pushed into a plausible bucket.
 
 1. class name names a composite → wrapper/composite
-1a. a per-behaviour verdict from reading its class in the binary (the two frustration configs, ReactToSparked, ReactToCubeMoved)
+1a. a per-behaviour verdict from reading its class in the binary (the two frustration configs, ReactToSparked, ReactToCubeMoved, AcknowledgeObject)
 1b. PlayAnimWithFace → requires vision (the engine turns to a face first); PlayAnim / PlayArbitraryAnim with animTriggers → implementable now
 1c. a ReactTo class whose input M10 derives → implementable with M10 (derived robot state)
-2. text names cubes, blocks or objects → requires cubes
+1d. AcknowledgeObject and ReactToCubeMoved → implementable with M11 (cube localisation)
+1e. a class naming faces → requires vision; RequestGameSimple → requires the app; ExploreLookAroundInPlace / DriveInDesperation → requires navigation
+1f. a class naming a cube manipulation (pick up, put down, roll, stack, knock over, ...) → requires cube manipulation (M12)
+2. text names cubes, blocks or objects → requires cubes (localisable since M11; what else they need is per class)
 3. text names faces, people or pets → requires vision
 4. text names the charger or docking → requires charger/docking
 5. text names driving, paths or poses → requires navigation
@@ -34,20 +37,22 @@ counted as needing them. That overstates the blocked count rather than the imple
 
 | category | behaviours |
 | --- | ---: |
-| requires cubes | 55 |
 | implementable with M9 (switch-state audio) | 39 |
-| requires vision/person detection | 23 |
+| requires cube manipulation (docking/lift/path, M12) | 34 |
+| requires vision/person detection | 29 |
 | implementable with M1-M7 now | 19 |
 | freeplay/explorer-specific | 16 |
+| requires the app (game request) | 10 |
 | implementable with M10 (derived robot state) | 9 |
 | requires charger/docking | 5 |
+| requires navigation/path planning | 5 |
 | developer-only | 4 |
 | game-specific | 2 |
-| unclear | 2 |
+| implementable with M11 (cube localisation) | 2 |
 | requires localization/world model | 1 |
-| implemented; waits on cube localization (vision) | 1 |
-| requires navigation/path planning | 1 |
+| requires cubes | 1 |
 | requires the app's spark system | 1 |
+| unclear | 1 |
 | **total** | **178** |
 
 ## Coverage of the enums
@@ -109,6 +114,8 @@ counted as needing them. That overstates the blocked count rather than the imple
 | ReactToRobotOnSide | ReactToRobotOnSide | implementable with M10 (derived robot state) | 'ReactToRobotOnSide' is transcribed from the engine and its input is derived in M10 | `reactions/reactToRobotOnSide.json` |
 | ReactToRobotShaken | ReactToRobotShaken | implementable with M10 (derived robot state) | 'ReactToRobotShaken' is transcribed from the engine and its input is derived in M10 | `reactions/reactToRobotShaken.json` |
 | ReactToUnexpectedMovement | ReactToUnexpectedMovement | implementable with M10 (derived robot state) | 'ReactToUnexpectedMovement' is transcribed from the engine and its input is derived in M10 | `reactions/reactToUnexpectedMovement.json` |
+| AcknowledgeObject | AcknowledgeObject | implementable with M11 (cube localisation) | BehaviorAcknowledgeObject (0x00602FA4) turns to a located object, verifies it in two images and plays AcknowledgeObject; ObjectPositionUpdated fires on a new located pose (80 mm / 45 deg) | `reactions/acknowledgeObject.json` |
+| ReactToCubeMoved | ReactToCubeMoved | implementable with M11 (cube localisation) | BehaviorAcknowledgeCubeMoved and ReactionTriggerStrategyCubeMoved are transcribed; BlockWorld (M11) supplies the located pose, visibility and the turn | `reactions/reactToCubeMoved.json` |
 | Singing_AbaDaba | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_AbaDaba.json` |
 | Singing_BeautifulDreamer | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_BeautifulDreamer.json` |
 | Singing_Beethovens5th | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_Beethovens5th.json` |
@@ -148,94 +155,92 @@ counted as needing them. That overstates the blocked count rather than the imple
 | Singing_WilliamTell | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_WilliamTell.json` |
 | Singing_YankeeDoodle | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_YankeeDoodle.json` |
 | Singing_YellowRose | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_YellowRose.json` |
-| ReactToCubeMoved | ReactToCubeMoved | implemented; waits on cube localization (vision) | BehaviorAcknowledgeCubeMoved and ReactionTriggerStrategyCubeMoved are transcribed; the trigger and the turn need BlockWorld's located pose | `reactions/reactToCubeMoved.json` |
 | DockingTestSimple | DockingTestSimple | requires charger/docking | names the charger or docking ('Docking') | `devBehaviors/dockingTestSimple.json` |
 | DriveOffCharger | DriveOffCharger | requires charger/docking | names the charger or docking ('Charger') | `freeplay/driveOffCharger.json` |
 | Hiking_DriveOffCharger | DriveOffCharger | requires charger/docking | names the charger or docking ('Charger') | `freeplay/hiking/Hiking_driveOffCharger.json` |
 | ReactToOnCharger | ReactToOnCharger | requires charger/docking | names the charger or docking ('Charger') | `reactions/reactToOnCharger.json` |
 | VC_GoToSleep | ReactToOnCharger | requires charger/docking | names the charger or docking ('Charger') | `voiceCommands/VC_GoToSleep.json` |
-| AcknowledgeFace | AcknowledgeFace | requires cubes | names cubes, blocks or objects ('Block') | `reactions/acknowledgeFace.json` |
-| Bouncer | Bouncer | requires cubes | names cubes, blocks or objects ('Pyramid') | `freeplay/userInteractive/bouncer.json` |
-| BuildPyramid | BuildPyramid | requires cubes | names cubes, blocks or objects ('Pyramid') | `freeplay/buildPyramid/buildPyramid.json` |
-| BuildPyramidBase | BuildPyramidBase | requires cubes | names cubes, blocks or objects ('Pyramid') | `freeplay/buildPyramid/buildPyramidBase.json` |
-| CantHandleTallStack | CantHandleTallStack | requires cubes | names cubes, blocks or objects ('Stack') | `freeplay/cantHandleTallStack.json` |
-| CubeLiftWorkout | CubeLiftWorkout | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/cubeLiftWorkout.json` |
-| FeedingFindFacesSevere | FindFaces | requires cubes | names cubes, blocks or objects ('Cube') | `feeding/feedingFindFacesSevere.json` |
-| FeedingSearchForCube | FeedingSearchForCube | requires cubes | names cubes, blocks or objects ('Cube') | `feeding/feedingSearchForCube.json` |
-| FindFaces_socialize | FindFaces | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/findFaces_socialize.json` |
-| Hiking_BringCubeToBeacon | BringCubeToBeacon | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/hiking/Hiking_bringCubeToBeacon.json` |
-| Hiking_LookInPlace360 | ExploreLookAroundInPlace | requires cubes | names cubes, blocks or objects ('cube') | `freeplay/hiking/Hiking_lookInPlace360.json` |
-| Hiking_RollCube | RollBlock | requires cubes | names cubes, blocks or objects ('Block') | `freeplay/hiking/Hiking_rollCube.json` |
-| Hiking_ThinkAboutBeacons | ThinkAboutBeacons | requires cubes | names cubes, blocks or objects ('Beacon') | `freeplay/hiking/Hiking_thinkAboutBeacons.json` |
-| KnockOverCubes | KnockOverCubes | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/knockOverCubes.json` |
-| MeetCozmo_FindFaces_Socialize | FindFaces | requires cubes | names cubes, blocks or objects ('Cube') | `meetCozmo/meetCozmo_findFaces_socialize.json` |
-| Needs_SevereLowEnergyState | DriveInDesperation | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/needs/needs_SevereLowEnergyState.json` |
-| Needs_SevereLowRepairState | DriveInDesperation | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/needs/needs_SevereLowRepairState.json` |
+| Bouncer | Bouncer | requires cube manipulation (docking/lift/path, M12) | class 'Bouncer' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/userInteractive/bouncer.json` |
+| BuildPyramid | BuildPyramid | requires cube manipulation (docking/lift/path, M12) | class 'BuildPyramid' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/buildPyramid.json` |
+| BuildPyramidBase | BuildPyramidBase | requires cube manipulation (docking/lift/path, M12) | class 'BuildPyramidBase' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/buildPyramidBase.json` |
+| CantHandleTallStack | CantHandleTallStack | requires cube manipulation (docking/lift/path, M12) | class 'CantHandleTallStack' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/cantHandleTallStack.json` |
+| CubeLiftWorkout | CubeLiftWorkout | requires cube manipulation (docking/lift/path, M12) | class 'CubeLiftWorkout' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/cubeLiftWorkout.json` |
+| FeedingSearchForCube | FeedingSearchForCube | requires cube manipulation (docking/lift/path, M12) | class 'FeedingSearchForCube' names a manipulation the engine drives and docks for; the cube itself is now localisable | `feeding/feedingSearchForCube.json` |
+| Hiking_BringCubeToBeacon | BringCubeToBeacon | requires cube manipulation (docking/lift/path, M12) | class 'BringCubeToBeacon' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/hiking/Hiking_bringCubeToBeacon.json` |
+| Hiking_RollCube | RollBlock | requires cube manipulation (docking/lift/path, M12) | class 'RollBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/hiking/Hiking_rollCube.json` |
+| Hiking_ThinkAboutBeacons | ThinkAboutBeacons | requires cube manipulation (docking/lift/path, M12) | class 'ThinkAboutBeacons' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/hiking/Hiking_thinkAboutBeacons.json` |
+| KnockOverCubes | KnockOverCubes | requires cube manipulation (docking/lift/path, M12) | class 'KnockOverCubes' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/knockOverCubes.json` |
+| PutDownBlock | PutDownBlock | requires cube manipulation (docking/lift/path, M12) | class 'PutDownBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/putDownBlock.json` |
+| PutDownBlockNothingToDo | PutDownBlock | requires cube manipulation (docking/lift/path, M12) | class 'PutDownBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/putDownBlockNothingToDo.json` |
+| PyramidPutDownBlock | PutDownBlock | requires cube manipulation (docking/lift/path, M12) | class 'PutDownBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/pyramidPutDownBlock.json` |
+| PyramidRespondPossiblyRoll | RespondPossiblyRoll | requires cube manipulation (docking/lift/path, M12) | class 'RespondPossiblyRoll' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/pyramidRespondPossiblyRoll.json` |
+| PyramidThankYou | PyramidThankYou | requires cube manipulation (docking/lift/path, M12) | class 'PyramidThankYou' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/pyramidThankYou.json` |
+| RamIntoBlock | RamIntoBlock | requires cube manipulation (docking/lift/path, M12) | class 'RamIntoBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `reactions/ramIntoBlock.json` |
+| ReactToPyramid | ReactToPyramid | requires cube manipulation (docking/lift/path, M12) | class 'ReactToPyramid' names a manipulation the engine drives and docks for; the cube itself is now localisable | `reactions/reactToPyramid.json` |
+| ReactToStackOfCubes | ReactToStackOfCubes | requires cube manipulation (docking/lift/path, M12) | class 'ReactToStackOfCubes' names a manipulation the engine drives and docks for; the cube itself is now localisable | `reactions/reactToStackOfCubes.json` |
+| RespondToPyramidBase | OnConfigSeen | requires cube manipulation (docking/lift/path, M12) | class 'OnConfigSeen' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/respondToPyramidBase.json` |
+| RollBlockOnSide | RollBlock | requires cube manipulation (docking/lift/path, M12) | class 'RollBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/rollBlockOnSide.json` |
+| RollBlockOnSideLowScore | RollBlock | requires cube manipulation (docking/lift/path, M12) | class 'RollBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/rollBlockOnSideLowScore.json` |
+| SparksBringCubeToBeacon | BringCubeToBeacon | requires cube manipulation (docking/lift/path, M12) | class 'BringCubeToBeacon' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksBringCubeToBeacon.json` |
+| SparksCheckForStackAtInterval | CheckForStackAtInterval | requires cube manipulation (docking/lift/path, M12) | class 'CheckForStackAtInterval' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksCheckForStackAtInterval.json` |
+| SparksCubeLiftWorkout | CubeLiftWorkout | requires cube manipulation (docking/lift/path, M12) | class 'CubeLiftWorkout' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksCubeLiftWorkout.json` |
+| SparksFireTruckAlarm | FireTruckAlarm | requires cube manipulation (docking/lift/path, M12) | class 'FireTruckAlarm' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksFireTruckAlarm.json` |
+| SparksKnockOverCubes | KnockOverCubes | requires cube manipulation (docking/lift/path, M12) | class 'KnockOverCubes' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksKnockOverCubes.json` |
+| SparksPickUpCube | PickUpAndPutDownCube | requires cube manipulation (docking/lift/path, M12) | class 'PickUpAndPutDownCube' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksPickupCube.json` |
+| SparksPickupSingleCubeForPyramid | PickUpCube | requires cube manipulation (docking/lift/path, M12) | class 'PickUpCube' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksPickupSingleCubeForPyramid.json` |
+| SparksPickupSingleCubeToStack | PickUpCube | requires cube manipulation (docking/lift/path, M12) | class 'PickUpCube' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksPickupSingleCubeToStack.json` |
+| SparksPutDownBlock | PutDownBlock | requires cube manipulation (docking/lift/path, M12) | class 'PutDownBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksPutDownBlock.json` |
+| SparksRollBlock | RollBlock | requires cube manipulation (docking/lift/path, M12) | class 'RollBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksRollBlock.json` |
+| SparksStackBlock | StackBlocks | requires cube manipulation (docking/lift/path, M12) | class 'StackBlocks' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksStackBlock.json` |
+| SparksThinkAboutBeacons | ThinkAboutBeacons | requires cube manipulation (docking/lift/path, M12) | class 'ThinkAboutBeacons' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksThinkAboutBeacons.json` |
+| StackBlocks | StackBlocks | requires cube manipulation (docking/lift/path, M12) | class 'StackBlocks' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/stackBlocks.json` |
 | OnboardingShowCube | OnboardingShowCube | requires cubes | names cubes, blocks or objects ('Cube') | `onboarding/onboardingShowCube.json` |
-| PutDownBlock | PutDownBlock | requires cubes | names cubes, blocks or objects ('Block') | `freeplay/putDownBlock.json` |
-| PutDownBlockNothingToDo | PutDownBlock | requires cubes | names cubes, blocks or objects ('Block') | `freeplay/putDownBlockNothingToDo.json` |
-| PutDownDispatch_LookForFaceAndCube | LookForFaceAndCube | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/putDownDispatch/PutDownDispatch_LookForFaceAndCube.json` |
-| PyramidPutDownBlock | PutDownBlock | requires cubes | names cubes, blocks or objects ('Block') | `freeplay/buildPyramid/pyramidPutDownBlock.json` |
-| PyramidRespondPossiblyRoll | RespondPossiblyRoll | requires cubes | names cubes, blocks or objects ('Pyramid') | `freeplay/buildPyramid/pyramidRespondPossiblyRoll.json` |
-| PyramidThankYou | PyramidThankYou | requires cubes | names cubes, blocks or objects ('Pyramid') | `freeplay/buildPyramid/pyramidThankYou.json` |
-| RamIntoBlock | RamIntoBlock | requires cubes | names cubes, blocks or objects ('Block') | `reactions/ramIntoBlock.json` |
-| ReactToPyramid | ReactToPyramid | requires cubes | names cubes, blocks or objects ('Pyramid') | `reactions/reactToPyramid.json` |
-| ReactToStackOfCubes | ReactToStackOfCubes | requires cubes | names cubes, blocks or objects ('Stack') | `reactions/reactToStackOfCubes.json` |
-| RequestCozmoPerforms | RequestGameSimple | requires cubes | names cubes, blocks or objects ('block') | `freeplay/requestGame/requestCozmoPerforms.json` |
-| RequestDroneMode | RequestGameSimple | requires cubes | names cubes, blocks or objects ('block') | `freeplay/requestGame/requestDroneMode.json` |
-| RequestKeepAway | RequestGameSimple | requires cubes | names cubes, blocks or objects ('block') | `freeplay/requestGame/requestKeepAway.json` |
-| RequestMemoryMatch | RequestGameSimple | requires cubes | names cubes, blocks or objects ('block') | `freeplay/requestGame/requestMemoryMatch.json` |
-| RequestSpeedTap | RequestGameSimple | requires cubes | names cubes, blocks or objects ('block') | `freeplay/requestGame/requestSpeedTap.json` |
-| RespondToPyramidBase | OnConfigSeen | requires cubes | names cubes, blocks or objects ('Pyramid') | `freeplay/buildPyramid/respondToPyramidBase.json` |
-| RollBlockOnSide | RollBlock | requires cubes | names cubes, blocks or objects ('Block') | `freeplay/rollBlockOnSide.json` |
-| RollBlockOnSideLowScore | RollBlock | requires cubes | names cubes, blocks or objects ('Block') | `freeplay/rollBlockOnSideLowScore.json` |
-| SparksBringCubeToBeacon | BringCubeToBeacon | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/sparkable/sparksBringCubeToBeacon.json` |
-| SparksCheckForStackAtInterval | CheckForStackAtInterval | requires cubes | names cubes, blocks or objects ('Stack') | `freeplay/sparkable/sparksCheckForStackAtInterval.json` |
-| SparksCubeLiftWorkout | CubeLiftWorkout | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/sparkable/sparksCubeLiftWorkout.json` |
-| SparksFindFaces | FindFaces | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/sparkable/sparksFindFaces.json` |
-| SparksFireTruckAlarm | FireTruckAlarm | requires cubes | names cubes, blocks or objects ('Block') | `freeplay/sparkable/sparksFireTruckAlarm.json` |
-| SparksKnockOverCubes | KnockOverCubes | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/sparkable/sparksKnockOverCubes.json` |
-| SparksLookInPlace | ExploreLookAroundInPlace | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/sparkable/sparksLookInPlace.json` |
-| SparksPickUpCube | PickUpAndPutDownCube | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/sparkable/sparksPickupCube.json` |
-| SparksPickupSingleCubeForPyramid | PickUpCube | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/sparkable/sparksPickupSingleCubeForPyramid.json` |
-| SparksPickupSingleCubeToStack | PickUpCube | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/sparkable/sparksPickupSingleCubeToStack.json` |
-| SparksPutDownBlock | PutDownBlock | requires cubes | names cubes, blocks or objects ('Block') | `freeplay/sparkable/sparksPutDownBlock.json` |
-| SparksRollBlock | RollBlock | requires cubes | names cubes, blocks or objects ('Block') | `freeplay/sparkable/sparksRollBlock.json` |
-| SparksStackBlock | StackBlocks | requires cubes | names cubes, blocks or objects ('Stack') | `freeplay/sparkable/sparksStackBlock.json` |
-| SparksThinkAboutBeacons | ThinkAboutBeacons | requires cubes | names cubes, blocks or objects ('Beacon') | `freeplay/sparkable/sparksThinkAboutBeacons.json` |
-| StackBlocks | StackBlocks | requires cubes | names cubes, blocks or objects ('Stack') | `freeplay/stackBlocks.json` |
-| VC_RequestCozmoPerforms | RequestGameSimple | requires cubes | names cubes, blocks or objects ('block') | `voiceCommands/VC_RequestCozmoPerforms.json` |
-| VC_RequestDroneMode | RequestGameSimple | requires cubes | names cubes, blocks or objects ('block') | `voiceCommands/VC_RequestDroneMode.json` |
-| VC_RequestKeepAway | RequestGameSimple | requires cubes | names cubes, blocks or objects ('block') | `voiceCommands/VC_RequestKeepAway.json` |
-| VC_RequestMemoryMatch | RequestGameSimple | requires cubes | names cubes, blocks or objects ('block') | `voiceCommands/VC_RequestMemoryMatch.json` |
-| VC_RequestSpeedTap | RequestGameSimple | requires cubes | names cubes, blocks or objects ('block') | `voiceCommands/VC_RequestSpeedTap.json` |
 | Hiking_LookInPlaceForUnknown | LookInPlaceMemoryMap | requires localization/world model | names the world model or localization ('MemoryMap') | `freeplay/hiking/Hiking_lookInPlaceForUnknown.json` |
+| Hiking_LookInPlace360 | ExploreLookAroundInPlace | requires navigation/path planning | class 'ExploreLookAroundInPlace' names a drive or search pattern (TurnInPlace/DriveStraight sequences) | `freeplay/hiking/Hiking_lookInPlace360.json` |
+| Needs_SevereLowEnergyState | DriveInDesperation | requires navigation/path planning | class 'DriveInDesperation' names a drive or search pattern (TurnInPlace/DriveStraight sequences) | `freeplay/needs/needs_SevereLowEnergyState.json` |
+| Needs_SevereLowRepairState | DriveInDesperation | requires navigation/path planning | class 'DriveInDesperation' names a drive or search pattern (TurnInPlace/DriveStraight sequences) | `freeplay/needs/needs_SevereLowRepairState.json` |
 | ReactToFrustrationMajor | ReactToFrustration | requires navigation/path planning | its random drive is a DriveToPoseAction (BehaviorReactToFrustration::AnimationComplete) | `reactions/reactToFrustrationMajor.json` |
+| SparksLookInPlace | ExploreLookAroundInPlace | requires navigation/path planning | class 'ExploreLookAroundInPlace' names a drive or search pattern (TurnInPlace/DriveStraight sequences) | `freeplay/sparkable/sparksLookInPlace.json` |
+| RequestCozmoPerforms | RequestGameSimple | requires the app (game request) | BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's | `freeplay/requestGame/requestCozmoPerforms.json` |
+| RequestDroneMode | RequestGameSimple | requires the app (game request) | BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's | `freeplay/requestGame/requestDroneMode.json` |
+| RequestKeepAway | RequestGameSimple | requires the app (game request) | BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's | `freeplay/requestGame/requestKeepAway.json` |
+| RequestMemoryMatch | RequestGameSimple | requires the app (game request) | BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's | `freeplay/requestGame/requestMemoryMatch.json` |
+| RequestSpeedTap | RequestGameSimple | requires the app (game request) | BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's | `freeplay/requestGame/requestSpeedTap.json` |
+| VC_RequestCozmoPerforms | RequestGameSimple | requires the app (game request) | BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's | `voiceCommands/VC_RequestCozmoPerforms.json` |
+| VC_RequestDroneMode | RequestGameSimple | requires the app (game request) | BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's | `voiceCommands/VC_RequestDroneMode.json` |
+| VC_RequestKeepAway | RequestGameSimple | requires the app (game request) | BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's | `voiceCommands/VC_RequestKeepAway.json` |
+| VC_RequestMemoryMatch | RequestGameSimple | requires the app (game request) | BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's | `voiceCommands/VC_RequestMemoryMatch.json` |
+| VC_RequestSpeedTap | RequestGameSimple | requires the app (game request) | BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's | `voiceCommands/VC_RequestSpeedTap.json` |
 | ReactToSparked | ReactToSparked | requires the app's spark system | triggered by the app's ActivateSpark request (BehaviorManager::HandleMessage), which this stack does not receive | `reactions/reactToSparked.json` |
-| EnrollFace | EnrollFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `meetCozmo/enrollFace.json` |
+| AcknowledgeFace | AcknowledgeFace | requires vision/person detection | class 'AcknowledgeFace' names faces; face detection is Omron OKAO code in the engine, not transcribable | `reactions/acknowledgeFace.json` |
+| EnrollFace | EnrollFace | requires vision/person detection | class 'EnrollFace' names faces; face detection is Omron OKAO code in the engine, not transcribable | `meetCozmo/enrollFace.json` |
 | FPPeekABoo | PeekABoo | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `freeplay/FPpeekAboo.json` |
+| FeedingFindFacesSevere | FindFaces | requires vision/person detection | class 'FindFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable | `feeding/feedingFindFacesSevere.json` |
 | FeedingPlayRequestAtFace | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `feeding/feedingAnims/feedingPlayRequestAtFace.json` |
 | FeedingPlayRequestAtFace_Severe | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `feeding/feedingAnims/feedingPlayRequestAtFace_Severe.json` |
+| FindFaces_socialize | FindFaces | requires vision/person detection | class 'FindFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable | `freeplay/findFaces_socialize.json` |
 | FistBump | FistBump | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `freeplay/userInteractive/fistBump.json` |
 | Hiking_PounceOnMotion | PounceOnMotion | requires vision/person detection | names faces, people, pets or motion sensing ('Pounce') | `freeplay/hiking/Hiking_pounceOnMotion.json` |
-| InteractWithFaces | InteractWithFaces | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `freeplay/interactWithFaces.json` |
-| MeetCozmo_InteractWithFaces | InteractWithFaces | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `meetCozmo/meetCozmo_interactWithFaces.json` |
+| InteractWithFaces | InteractWithFaces | requires vision/person detection | class 'InteractWithFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable | `freeplay/interactWithFaces.json` |
+| MeetCozmo_FindFaces_Socialize | FindFaces | requires vision/person detection | class 'FindFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable | `meetCozmo/meetCozmo_findFaces_socialize.json` |
+| MeetCozmo_InteractWithFaces | InteractWithFaces | requires vision/person detection | class 'InteractWithFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable | `meetCozmo/meetCozmo_interactWithFaces.json` |
 | PounceOnMotion_Socialize | PounceOnMotion | requires vision/person detection | names faces, people, pets or motion sensing ('Pounce') | `freeplay/pounceOnMotion_socialize.json` |
+| PutDownDispatch_LookForFaceAndCube | LookForFaceAndCube | requires vision/person detection | class 'LookForFaceAndCube' names faces; face detection is Omron OKAO code in the engine, not transcribable | `freeplay/putDownDispatch/PutDownDispatch_LookForFaceAndCube.json` |
 | ReactToPet | ReactToPet | requires vision/person detection | names faces, people, pets or motion sensing ('Pet') | `reactions/reactToPet.json` |
-| RespondToRenameFace | RespondToRenameFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `meetCozmo/respondToRenameFace.json` |
+| RespondToRenameFace | RespondToRenameFace | requires vision/person detection | class 'RespondToRenameFace' names faces; face detection is Omron OKAO code in the engine, not transcribable | `meetCozmo/respondToRenameFace.json` |
+| SparksFindFaces | FindFaces | requires vision/person detection | class 'FindFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable | `freeplay/sparkable/sparksFindFaces.json` |
 | SparksFistBump | FistBump | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `freeplay/sparkable/sparksFistBump.json` |
 | SparksPeekABoo | PeekABoo | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `freeplay/sparkable/sparksPeekAboo.json` |
 | SparksPounceOnMotion | PounceOnMotion | requires vision/person detection | names faces, people, pets or motion sensing ('Pounce') | `freeplay/sparkable/sparksPounceOnMotion.json` |
 | SparksTrackLaser | TrackLaser | requires vision/person detection | names faces, people, pets or motion sensing ('pounce') | `freeplay/sparkable/sparksTrackLaser.json` |
 | VC_AlrightyResponse | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `voiceCommands/VC_AlrightyResponse.json` |
-| VC_ComeHere | DriveToFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `voiceCommands/VC_ComeHere.json` |
+| VC_ComeHere | DriveToFace | requires vision/person detection | class 'DriveToFace' names faces; face detection is Omron OKAO code in the engine, not transcribable | `voiceCommands/VC_ComeHere.json` |
 | VC_HowAreYouDoing_AllGood | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_AllGood.json` |
 | VC_HowAreYouDoing_Energy | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Energy.json` |
 | VC_HowAreYouDoing_Play | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Play.json` |
 | VC_HowAreYouDoing_Repair | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Repair.json` |
 | VC_PounceOnMotion | PounceOnMotion | requires vision/person detection | names faces, people, pets or motion sensing ('Pounce') | `voiceCommands/VC_PounceOnMotion.json` |
-| VC_SearchForFace | SearchForFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `voiceCommands/VC_SearchForFace.json` |
-| AcknowledgeObject | AcknowledgeObject | unclear | no rule matched; carries ['NumImagesToWaitFor', 'ReactionAnimGroup'] | `reactions/acknowledgeObject.json` |
+| VC_SearchForFace | SearchForFace | requires vision/person detection | class 'SearchForFace' names faces; face detection is Omron OKAO code in the engine, not transcribable | `voiceCommands/VC_SearchForFace.json` |
 | Wait | Wait | unclear | no rule matched; carries ['executableBehaviorType'] | `wait.json` |
 
 ## BehaviorClass values with no shipped config

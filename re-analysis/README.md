@@ -9,7 +9,8 @@
 > reconstructed engine↔robot transport (M1); **`PROTOCOL_STATUS.md`** for the state of all 161 robot
 > messages (M2), generated from `protocol/cozmo_robot_protocol.json`; **`PROCEDURAL_FACE.md`** for the
 > procedural face renderer reconstructed from `ProceduralFaceDrawer`; **`DERIVED_STATE.md`** for the engine's
-> off-treads classifier, unexpected-movement detector and reaction strategies (M10); **`ACCEPTANCE.md`** for what
+> off-treads classifier, unexpected-movement detector and reaction strategies (M10); **`VISION.md`** for marker
+> detection, the extracted marker library, camera and cube geometry and `BlockWorld` (M11); **`ACCEPTANCE.md`** for what
 > has and has not been verified on real hardware. The replacement stack itself lives in **`../cozmo-stack/`** (C#).
 > `protocol/robot_protocol_official_vs_pycozmo.txt` is the verified engine↔robot message comparison;
 > `reference/pycozmo-master-2026-09-18/` (PyCozmo) and `reference/anki-util-transport-vector/` (Anki's

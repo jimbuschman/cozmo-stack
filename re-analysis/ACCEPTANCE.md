@@ -200,3 +200,24 @@ it is not a gate for M10.
 **M10 is COMPLETE OFFLINE and NOT hardware verified.** Every threshold is read from the binary
 (`DERIVED_STATE.md`); the labelled non-native items are in its §5. The robot runs are the checks that need
 hardware and none gates M11.
+
+## M11 — vision and world state (2026-09-19): offline complete, hardware pending
+
+| Capability | Automated | Human | Evidence |
+| --- | --- | --- | --- |
+| Marker library (598 × 1024, 150 labels, tables, probe geometry) | pass — extracted byte for byte from the binary, layout and rotation structure pinned | n/a | `extract_marker_library.py --check`, `TheEmbeddedLibraryHasTheEnginesShape` |
+| Marker decoder | pass — every library row decodes to its label; rotated quads decode with reordered corners; blanks rejected | **not run** on real frames with a cube | `VisionTests` (decoder) |
+| Quad front end (LOCAL) | pass on **rendered** markers only — sub-pixel corners; three sizes and places; two per frame; none in a synthetic room; none in 28 real room frames (no cube present: a no-false-positive result, not a detection) | **not run** — positive detection of a real cube is item K and is not claimed | `VisionTests` (front end), `vision --replay` |
+| Camera and cube geometry | pass — optical axis 4° down at head 0, +20° at head 20°; face normals outward; PnP < 1 mm / 0.5° | **not run** (K) | `VisionTests` (geometry), `vision --synthetic` (0.2–0.7 mm to 200 mm) |
+| Calibration from NV storage | pass — struct round trip, chunked results assemble | **not run** (K): no capture holds an NV exchange | `TheCalibrationStructRoundTripsAndChunkedNvResultsAssemble` |
+| BlockWorld located / visible / unobserved | pass — located on sight, unconnected dropped, forgotten after two misses, untouched out of view or while moving, Dirty on ObjectMoved, two faces one object | **not run** (K) | `VisionTests` (world model) |
+| Cube-moved reaction on the real locator | pass — fires only when the located cube is out of the camera's view | **not run** (M) | `TheRealLocatorFiresTheCubeMovedReactionOnlyWhenTheCubeIsOutOfSight` |
+| ObjectPositionUpdated → AcknowledgeObject | pass — 80 mm / 45° rule; turn → two images → reaction; unlocated target dropped | **not run** (M) | `VisionTests` (AcknowledgeObject) |
+| `SetBodyAngle` | pass — byte layout matches `MovementComponent::TurnInPlace`'s packing | **not run** (L): absolute-angle semantics | `TheSetBodyAngleMessagePacksTheEnginesFieldOrder`, `bodyangle` |
+| Inventory | pass — regenerated from the implemented set, 69 of 178 | n/a | `behavior_inventory.py --check` |
+
+**M11 is COMPLETE OFFLINE and NOT hardware verified.** The decoder, tables and geometry are the engine's
+(`VISION.md`); the front end's pixel algorithms and the items in `VISION.md` §5–§6 are labelled LOCAL or INFERRED.
+The synthetic tests render from the recovered library itself and do not stand in for a real cube seen through
+Cozmo's camera; that is item K. None of K–M gates M12. The extracted marker library is not in the repository
+(Anki's data); the build regenerates it from the user's `libcozmoEngine.so` (`VISION.md` §2).

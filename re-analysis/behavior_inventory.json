@@ -173,8 +173,8 @@
    "maxFaceAgeToLook_ms",
    "params"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires vision/person detection",
+  "reason": "class 'FindFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable"
  },
  {
   "path": "feeding/feedingSearchForCube.json",
@@ -182,8 +182,8 @@
   "behaviorClass": "FeedingSearchForCube",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'FeedingSearchForCube' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/buildPyramid/buildPyramid.json",
@@ -193,8 +193,8 @@
   "extraKeys": [
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Pyramid')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'BuildPyramid' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/buildPyramid/buildPyramidBase.json",
@@ -204,8 +204,8 @@
   "extraKeys": [
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Pyramid')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'BuildPyramidBase' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/buildPyramid/pyramidPutDownBlock.json",
@@ -213,8 +213,8 @@
   "behaviorClass": "PutDownBlock",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Block')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'PutDownBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/buildPyramid/pyramidRespondPossiblyRoll.json",
@@ -222,8 +222,8 @@
   "behaviorClass": "RespondPossiblyRoll",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Pyramid')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'RespondPossiblyRoll' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/buildPyramid/pyramidThankYou.json",
@@ -233,8 +233,8 @@
   "extraKeys": [
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Pyramid')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'PyramidThankYou' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/buildPyramid/respondToPyramidBase.json",
@@ -248,8 +248,8 @@
    "configTriggers",
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Pyramid')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'OnConfigSeen' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/cantHandleTallStack.json",
@@ -263,8 +263,8 @@
    "minBlockMovedThreshold_mm",
    "minimumStackHeight"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Stack')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'CantHandleTallStack' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/cubeLiftWorkout.json",
@@ -276,8 +276,8 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'CubeLiftWorkout' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/driveOffCharger.json",
@@ -309,8 +309,8 @@
    "maxFaceAgeToLook_ms",
    "params"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires vision/person detection",
+  "reason": "class 'FindFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable"
  },
  {
   "path": "freeplay/FPpeekAboo.json",
@@ -340,8 +340,8 @@
   "extraKeys": [
    "params"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'BringCubeToBeacon' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/hiking/Hiking_driveOffCharger.json",
@@ -390,8 +390,8 @@
   "extraKeys": [
    "params"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('cube')"
+  "category": "requires navigation/path planning",
+  "reason": "class 'ExploreLookAroundInPlace' names a drive or search pattern (TurnInPlace/DriveStraight sequences)"
  },
  {
   "path": "freeplay/hiking/Hiking_lookInPlaceForUnknown.json",
@@ -430,8 +430,8 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Block')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'RollBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/hiking/Hiking_thinkAboutBeacons.json",
@@ -441,8 +441,8 @@
   "extraKeys": [
    "params"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Beacon')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'ThinkAboutBeacons' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/hiking/Hiking_visitInterestingEdge.json",
@@ -464,7 +464,7 @@
    "params"
   ],
   "category": "requires vision/person detection",
-  "reason": "names faces, people, pets or motion sensing ('Face')"
+  "reason": "class 'InteractWithFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable"
  },
  {
   "path": "freeplay/knockOverCubes.json",
@@ -481,8 +481,8 @@
    "reachForBlockTrigger",
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'KnockOverCubes' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/needs/needs_MildLowEnergyRequest.json",
@@ -576,8 +576,8 @@
    "requestAnimTrigger",
    "useCubes"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires navigation/path planning",
+  "reason": "class 'DriveInDesperation' names a drive or search pattern (TurnInPlace/DriveStraight sequences)"
  },
  {
   "path": "freeplay/needs/needs_SevereLowPlayBored.json",
@@ -655,8 +655,8 @@
    "requestAnimTrigger",
    "useCubes"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires navigation/path planning",
+  "reason": "class 'DriveInDesperation' names a drive or search pattern (TurnInPlace/DriveStraight sequences)"
  },
  {
   "path": "freeplay/needs/needs_Wait.json",
@@ -734,8 +734,8 @@
   "behaviorClass": "PutDownBlock",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Block')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'PutDownBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/putDownBlockNothingToDo.json",
@@ -743,8 +743,8 @@
   "behaviorClass": "PutDownBlock",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Block')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'PutDownBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/putDownDispatch/PutDownDispatch_LookForFaceAndCube.json",
@@ -754,8 +754,8 @@
   "extraKeys": [
    "params"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires vision/person detection",
+  "reason": "class 'LookForFaceAndCube' names faces; face detection is Omron OKAO code in the engine, not transcribable"
  },
  {
   "path": "freeplay/requestGame/requestCozmoPerforms.json",
@@ -773,8 +773,8 @@
    "requiredUnlockId",
    "zero_block_config"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('block')"
+  "category": "requires the app (game request)",
+  "reason": "BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's"
  },
  {
   "path": "freeplay/requestGame/requestDroneMode.json",
@@ -792,8 +792,8 @@
    "requiredUnlockId",
    "zero_block_config"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('block')"
+  "category": "requires the app (game request)",
+  "reason": "BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's"
  },
  {
   "path": "freeplay/requestGame/requestKeepAway.json",
@@ -811,8 +811,8 @@
    "requiredUnlockId",
    "zero_block_config"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('block')"
+  "category": "requires the app (game request)",
+  "reason": "BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's"
  },
  {
   "path": "freeplay/requestGame/requestMemoryMatch.json",
@@ -830,8 +830,8 @@
    "requiredUnlockId",
    "zero_block_config"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('block')"
+  "category": "requires the app (game request)",
+  "reason": "BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's"
  },
  {
   "path": "freeplay/requestGame/requestSpeedTap.json",
@@ -849,8 +849,8 @@
    "requiredUnlockId",
    "zero_block_config"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('block')"
+  "category": "requires the app (game request)",
+  "reason": "BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's"
  },
  {
   "path": "freeplay/rollBlockOnSide.json",
@@ -861,8 +861,8 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Block')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'RollBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/rollBlockOnSideLowScore.json",
@@ -873,8 +873,8 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Block')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'RollBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/singing/Singing_AbaDaba.json",
@@ -1391,8 +1391,8 @@
   "extraKeys": [
    "params"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'BringCubeToBeacon' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/sparkable/sparksCheckForStackAtInterval.json",
@@ -1402,8 +1402,8 @@
   "extraKeys": [
    "delayBetweenChecks"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Stack')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'CheckForStackAtInterval' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/sparkable/sparksCubeLiftWorkout.json",
@@ -1414,8 +1414,8 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'CubeLiftWorkout' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/sparkable/sparksFindFaces.json",
@@ -1426,8 +1426,8 @@
    "maxFaceAgeToLook_ms",
    "params"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires vision/person detection",
+  "reason": "class 'FindFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable"
  },
  {
   "path": "freeplay/sparkable/sparksFireTruckAlarm.json",
@@ -1441,8 +1441,8 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Block')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'FireTruckAlarm' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/sparkable/sparksFistBump.json",
@@ -1474,8 +1474,8 @@
    "reachForBlockTrigger",
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'KnockOverCubes' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/sparkable/sparksLookInPlace.json",
@@ -1486,8 +1486,8 @@
    "executableBehaviorType",
    "params"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires navigation/path planning",
+  "reason": "class 'ExploreLookAroundInPlace' names a drive or search pattern (TurnInPlace/DriveStraight sequences)"
  },
  {
   "path": "freeplay/sparkable/sparksPeekAboo.json",
@@ -1518,8 +1518,8 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'PickUpAndPutDownCube' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/sparkable/sparksPickupSingleCubeForPyramid.json",
@@ -1530,8 +1530,8 @@
    "ignoreCubesInBlockConfigTypes",
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'PickUpCube' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/sparkable/sparksPickupSingleCubeToStack.json",
@@ -1541,8 +1541,8 @@
   "extraKeys": [
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'PickUpCube' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/sparkable/sparksPopAWheelie.json",
@@ -1583,8 +1583,8 @@
   "behaviorClass": "PutDownBlock",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Block')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'PutDownBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/sparkable/sparksRollBlock.json",
@@ -1597,8 +1597,8 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Block')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'RollBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/sparkable/sparksStackBlock.json",
@@ -1610,8 +1610,8 @@
    "requiredUnlockId",
    "stackInAnyOrientation"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Stack')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'StackBlocks' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/sparkable/sparksThinkAboutBeacons.json",
@@ -1621,8 +1621,8 @@
   "extraKeys": [
    "params"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Beacon')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'ThinkAboutBeacons' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/sparkable/sparksTrackLaser.json",
@@ -1683,8 +1683,8 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Stack')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'StackBlocks' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/userInteractive/bouncer.json",
@@ -1692,8 +1692,8 @@
   "behaviorClass": "Bouncer",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Pyramid')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'Bouncer' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "freeplay/userInteractive/fistBump.json",
@@ -1734,7 +1734,7 @@
    "tooManyFacesTimeout_sec"
   ],
   "category": "requires vision/person detection",
-  "reason": "names faces, people, pets or motion sensing ('Face')"
+  "reason": "class 'EnrollFace' names faces; face detection is Omron OKAO code in the engine, not transcribable"
  },
  {
   "path": "meetCozmo/meetCozmo_findFaces_socialize.json",
@@ -1745,8 +1745,8 @@
    "maxFaceAgeToLook_ms",
    "params"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "requires vision/person detection",
+  "reason": "class 'FindFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable"
  },
  {
   "path": "meetCozmo/meetCozmo_interactWithFaces.json",
@@ -1757,7 +1757,7 @@
    "params"
   ],
   "category": "requires vision/person detection",
-  "reason": "names faces, people, pets or motion sensing ('Face')"
+  "reason": "class 'InteractWithFaces' names faces; face detection is Omron OKAO code in the engine, not transcribable"
  },
  {
   "path": "meetCozmo/respondToRenameFace.json",
@@ -1768,7 +1768,7 @@
    "animationTrigger"
   ],
   "category": "requires vision/person detection",
-  "reason": "names faces, people, pets or motion sensing ('Face')"
+  "reason": "class 'RespondToRenameFace' names faces; face detection is Omron OKAO code in the engine, not transcribable"
  },
  {
   "path": "onboarding/onboardingShowCube.json",
@@ -1801,8 +1801,8 @@
   "extraKeys": [
    "ReactionAnimGroup"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Block')"
+  "category": "requires vision/person detection",
+  "reason": "class 'AcknowledgeFace' names faces; face detection is Omron OKAO code in the engine, not transcribable"
  },
  {
   "path": "reactions/acknowledgeObject.json",
@@ -1813,8 +1813,8 @@
    "NumImagesToWaitFor",
    "ReactionAnimGroup"
   ],
-  "category": "unclear",
-  "reason": "no rule matched; carries ['NumImagesToWaitFor', 'ReactionAnimGroup']"
+  "category": "implementable with M11 (cube localisation)",
+  "reason": "BehaviorAcknowledgeObject (0x00602FA4) turns to a located object, verifies it in two images and plays AcknowledgeObject; ObjectPositionUpdated fires on a new located pose (80 mm / 45 deg)"
  },
  {
   "path": "reactions/hiccup.json",
@@ -1835,8 +1835,8 @@
   "behaviorClass": "RamIntoBlock",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Block')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'RamIntoBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "reactions/reactToCliff.json",
@@ -1853,8 +1853,8 @@
   "behaviorClass": "ReactToCubeMoved",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "implemented; waits on cube localization (vision)",
-  "reason": "BehaviorAcknowledgeCubeMoved and ReactionTriggerStrategyCubeMoved are transcribed; the trigger and the turn need BlockWorld's located pose"
+  "category": "implementable with M11 (cube localisation)",
+  "reason": "BehaviorAcknowledgeCubeMoved and ReactionTriggerStrategyCubeMoved are transcribed; BlockWorld (M11) supplies the located pose, visibility and the turn"
  },
  {
   "path": "reactions/reactToFrustrationMajor.json",
@@ -1961,8 +1961,8 @@
   "behaviorClass": "ReactToPyramid",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Pyramid')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'ReactToPyramid' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "reactions/reactToReturnedToTreads.json",
@@ -2026,8 +2026,8 @@
   "behaviorClass": "ReactToStackOfCubes",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Stack')"
+  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "reason": "class 'ReactToStackOfCubes' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
   "path": "reactions/reactToUnexpectedMovement.json",
@@ -2123,7 +2123,7 @@
   "animTriggers": [],
   "extraKeys": [],
   "category": "requires vision/person detection",
-  "reason": "names faces, people, pets or motion sensing ('Face')"
+  "reason": "class 'DriveToFace' names faces; face detection is Omron OKAO code in the engine, not transcribable"
  },
  {
   "path": "voiceCommands/VC_GoToSleep.json",
@@ -2206,8 +2206,8 @@
    "use_block",
    "zero_block_config"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('block')"
+  "category": "requires the app (game request)",
+  "reason": "BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's"
  },
  {
   "path": "voiceCommands/VC_RequestDroneMode.json",
@@ -2220,8 +2220,8 @@
    "use_block",
    "zero_block_config"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('block')"
+  "category": "requires the app (game request)",
+  "reason": "BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's"
  },
  {
   "path": "voiceCommands/VC_RequestKeepAway.json",
@@ -2234,8 +2234,8 @@
    "use_block",
    "zero_block_config"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('block')"
+  "category": "requires the app (game request)",
+  "reason": "BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's"
  },
  {
   "path": "voiceCommands/VC_RequestMemoryMatch.json",
@@ -2248,8 +2248,8 @@
    "use_block",
    "zero_block_config"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('block')"
+  "category": "requires the app (game request)",
+  "reason": "BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's"
  },
  {
   "path": "voiceCommands/VC_RequestSpeedTap.json",
@@ -2262,8 +2262,8 @@
    "use_block",
    "zero_block_config"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('block')"
+  "category": "requires the app (game request)",
+  "reason": "BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's"
  },
  {
   "path": "voiceCommands/VC_SearchForFace.json",
@@ -2272,7 +2272,7 @@
   "animTriggers": [],
   "extraKeys": [],
   "category": "requires vision/person detection",
-  "reason": "names faces, people, pets or motion sensing ('Face')"
+  "reason": "class 'SearchForFace' names faces; face detection is Omron OKAO code in the engine, not transcribable"
  },
  {
   "path": "wait.json",
