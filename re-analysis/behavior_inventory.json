@@ -182,7 +182,7 @@
   "behaviorClass": "FeedingSearchForCube",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'FeedingSearchForCube' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -193,7 +193,7 @@
   "extraKeys": [
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'BuildPyramid' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -204,7 +204,7 @@
   "extraKeys": [
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'BuildPyramidBase' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -213,8 +213,8 @@
   "behaviorClass": "PutDownBlock",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
-  "reason": "class 'PutDownBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+  "category": "implementable with M12 (cube manipulation)",
+  "reason": "BehaviorPutDownBlock: back up 45-75 mm, PutDownBlockPutDown, look down (-20 deg), PutDownBlockKeepAlive"
  },
  {
   "path": "freeplay/buildPyramid/pyramidRespondPossiblyRoll.json",
@@ -222,7 +222,7 @@
   "behaviorClass": "RespondPossiblyRoll",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'RespondPossiblyRoll' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -233,7 +233,7 @@
   "extraKeys": [
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'PyramidThankYou' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -248,7 +248,7 @@
    "configTriggers",
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'OnConfigSeen' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -263,7 +263,7 @@
    "minBlockMovedThreshold_mm",
    "minimumStackHeight"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'CantHandleTallStack' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -276,7 +276,7 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'CubeLiftWorkout' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -340,7 +340,7 @@
   "extraKeys": [
    "params"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'BringCubeToBeacon' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -430,8 +430,8 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
-  "reason": "class 'RollBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+  "category": "implementable with M12 (cube manipulation)",
+  "reason": "BehaviorRollBlock: RollBlockHelper (drive, RollObjectAction), success on the up axis changing, RollBlockSuccess"
  },
  {
   "path": "freeplay/hiking/Hiking_thinkAboutBeacons.json",
@@ -441,7 +441,7 @@
   "extraKeys": [
    "params"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'ThinkAboutBeacons' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -481,8 +481,8 @@
    "reachForBlockTrigger",
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
-  "reason": "class 'KnockOverCubes' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+  "category": "requires the flip action (M12 follow-up)",
+  "reason": "BehaviorKnockOverCubes drives a DriveAndFlipBlockAction / FlipBlockAction whose dock action and lift choreography were not recovered"
  },
  {
   "path": "freeplay/needs/needs_MildLowEnergyRequest.json",
@@ -734,8 +734,8 @@
   "behaviorClass": "PutDownBlock",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
-  "reason": "class 'PutDownBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+  "category": "implementable with M12 (cube manipulation)",
+  "reason": "BehaviorPutDownBlock: back up 45-75 mm, PutDownBlockPutDown, look down (-20 deg), PutDownBlockKeepAlive"
  },
  {
   "path": "freeplay/putDownBlockNothingToDo.json",
@@ -743,8 +743,8 @@
   "behaviorClass": "PutDownBlock",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
-  "reason": "class 'PutDownBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+  "category": "implementable with M12 (cube manipulation)",
+  "reason": "BehaviorPutDownBlock: back up 45-75 mm, PutDownBlockPutDown, look down (-20 deg), PutDownBlockKeepAlive"
  },
  {
   "path": "freeplay/putDownDispatch/PutDownDispatch_LookForFaceAndCube.json",
@@ -861,8 +861,8 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
-  "reason": "class 'RollBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+  "category": "implementable with M12 (cube manipulation)",
+  "reason": "BehaviorRollBlock: RollBlockHelper (drive, RollObjectAction), success on the up axis changing, RollBlockSuccess"
  },
  {
   "path": "freeplay/rollBlockOnSideLowScore.json",
@@ -873,8 +873,8 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
-  "reason": "class 'RollBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+  "category": "implementable with M12 (cube manipulation)",
+  "reason": "BehaviorRollBlock: RollBlockHelper (drive, RollObjectAction), success on the up axis changing, RollBlockSuccess"
  },
  {
   "path": "freeplay/singing/Singing_AbaDaba.json",
@@ -1391,7 +1391,7 @@
   "extraKeys": [
    "params"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'BringCubeToBeacon' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -1402,7 +1402,7 @@
   "extraKeys": [
    "delayBetweenChecks"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'CheckForStackAtInterval' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -1414,7 +1414,7 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'CubeLiftWorkout' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -1441,7 +1441,7 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'FireTruckAlarm' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -1474,8 +1474,8 @@
    "reachForBlockTrigger",
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
-  "reason": "class 'KnockOverCubes' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+  "category": "requires the flip action (M12 follow-up)",
+  "reason": "BehaviorKnockOverCubes drives a DriveAndFlipBlockAction / FlipBlockAction whose dock action and lift choreography were not recovered"
  },
  {
   "path": "freeplay/sparkable/sparksLookInPlace.json",
@@ -1518,8 +1518,8 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
-  "reason": "class 'PickUpAndPutDownCube' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+  "category": "implementable with M12 (cube manipulation)",
+  "reason": "BehaviorPickUpCube followed by BehaviorPutDownBlock (the class name's two halves, both transcribed)"
  },
  {
   "path": "freeplay/sparkable/sparksPickupSingleCubeForPyramid.json",
@@ -1530,8 +1530,8 @@
    "ignoreCubesInBlockConfigTypes",
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
-  "reason": "class 'PickUpCube' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+  "category": "implementable with M12 (cube manipulation)",
+  "reason": "BehaviorPickUpCube: initial reaction, PickupBlockHelper (drive to the pre-dock pose, PickupObjectAction, retries), success reaction"
  },
  {
   "path": "freeplay/sparkable/sparksPickupSingleCubeToStack.json",
@@ -1541,8 +1541,8 @@
   "extraKeys": [
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
-  "reason": "class 'PickUpCube' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+  "category": "implementable with M12 (cube manipulation)",
+  "reason": "BehaviorPickUpCube: initial reaction, PickupBlockHelper (drive to the pre-dock pose, PickupObjectAction, retries), success reaction"
  },
  {
   "path": "freeplay/sparkable/sparksPopAWheelie.json",
@@ -1583,8 +1583,8 @@
   "behaviorClass": "PutDownBlock",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
-  "reason": "class 'PutDownBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+  "category": "implementable with M12 (cube manipulation)",
+  "reason": "BehaviorPutDownBlock: back up 45-75 mm, PutDownBlockPutDown, look down (-20 deg), PutDownBlockKeepAlive"
  },
  {
   "path": "freeplay/sparkable/sparksRollBlock.json",
@@ -1597,8 +1597,8 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
-  "reason": "class 'RollBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+  "category": "implementable with M12 (cube manipulation)",
+  "reason": "BehaviorRollBlock: RollBlockHelper (drive, RollObjectAction), success on the up axis changing, RollBlockSuccess"
  },
  {
   "path": "freeplay/sparkable/sparksStackBlock.json",
@@ -1610,8 +1610,8 @@
    "requiredUnlockId",
    "stackInAnyOrientation"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
-  "reason": "class 'StackBlocks' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+  "category": "implementable with M12 (cube manipulation)",
+  "reason": "BehaviorStackBlocks: PickupBlockHelper then PlaceRelObjectHelper on the closest upright bottom, StackBlocksSuccess; failure backs up and places on the ground"
  },
  {
   "path": "freeplay/sparkable/sparksThinkAboutBeacons.json",
@@ -1621,7 +1621,7 @@
   "extraKeys": [
    "params"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'ThinkAboutBeacons' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -1683,8 +1683,8 @@
    "needsActionID",
    "requiredUnlockId"
   ],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
-  "reason": "class 'StackBlocks' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+  "category": "implementable with M12 (cube manipulation)",
+  "reason": "BehaviorStackBlocks: PickupBlockHelper then PlaceRelObjectHelper on the closest upright bottom, StackBlocksSuccess; failure backs up and places on the ground"
  },
  {
   "path": "freeplay/userInteractive/bouncer.json",
@@ -1692,7 +1692,7 @@
   "behaviorClass": "Bouncer",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'Bouncer' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -1835,7 +1835,7 @@
   "behaviorClass": "RamIntoBlock",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'RamIntoBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -1961,7 +1961,7 @@
   "behaviorClass": "ReactToPyramid",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'ReactToPyramid' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {
@@ -2026,7 +2026,7 @@
   "behaviorClass": "ReactToStackOfCubes",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cube manipulation (docking/lift/path, M12)",
+  "category": "requires cube manipulation beyond M12 (pyramids, beacons, games)",
   "reason": "class 'ReactToStackOfCubes' names a manipulation the engine drives and docks for; the cube itself is now localisable"
  },
  {

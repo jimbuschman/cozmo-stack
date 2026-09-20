@@ -221,3 +221,19 @@ hardware and none gates M11.
 The synthetic tests render from the recovered library itself and do not stand in for a real cube seen through
 Cozmo's camera; that is item K. None of K–M gates M12. The extracted marker library is not in the repository
 (Anki's data); the build regenerates it from the user's `libcozmoEngine.so` (`VISION.md` §2).
+
+## M12 — cube manipulation (2026-09-20): offline complete, hardware pending
+
+| Capability | Automated | Human | Evidence |
+| --- | --- | --- | --- |
+| Pre-action poses | pass — four docking poses 75 mm out facing the sides, none for top/bottom, closest selection, sin-threshold | **not run** (Q) | `ACubeHasFourDockingPoses…` |
+| Path sender and planner | pass — segments and wire layouts (ClearPath, point turn, line, ExecutePath) as the doler packs them | **not run** (Q): the firmware's acceptance of the layouts | `ThePlannerTurnsDrivesAndTurns…`, `manip --plan` |
+| DriveToPose / DriveToObject | pass — head to −15°, success at the goal, closest pre-dock pose, then pick-up | **not run** (Q) | `DriveToPoseSucceeds…`, `DriveToObjectGoesToTheClosestPreDockPose…` |
+| Docking exchange | pass — `DockWithObject` bytes; error signal per frame with the marker 128 mm ahead and the frame timestamp; carrying set on `BlockPickedUp`; failure leaves nothing carried | **not run** (N): the unread fields | `TheDockMessagePacks…`, `DockingStreamsTheErrorSignal…`, `AFailedDock…` |
+| Dock actions | pass — pre-action refusal, high dock above 33.85 mm, place on ground needs and releases a carried object | **not run** (N, O, P) | `ADockActionRefuses…`, `PickupSelectsHighDock…`, `PlaceOnGroundNeeds…` |
+| Behaviours | pass — PickUpCube, PutDownBlock, RollBlock end to end on the fake robot side; 13 shipped configs | **not run** (N, O, P, R) | `PickUpCubeReacts…`, `PutDownBlockBacksUp…`, `RollBlockSucceeds…`, `TheShippedManipulationSet…` |
+| Inventory | pass — regenerated, 82 of 178 | n/a | `behavior_inventory.py --check` |
+
+**M12 is COMPLETE OFFLINE and NOT hardware verified.** The exchange, constants and behaviour transitions are
+the engine's (`MANIPULATION.md`); the planner is a labelled stand-in and three messages carry fields sent as
+zero whose meaning was not read. None of N–R gates M13.

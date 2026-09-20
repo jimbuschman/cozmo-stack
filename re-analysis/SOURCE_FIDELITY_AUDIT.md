@@ -479,3 +479,24 @@ Offline evidence added: `VisionTests` (34 tests), `vision --synthetic` (five cub
 over the fw2457 probe capture (28 frames, 0 markers, no cube in the room). The inventory tool gained the M11 verdicts
 and a class-name rule for manipulation behaviours; regenerated at 69 of 178. Hardware evidence: none yet;
 `HARDWARE_TEST_PLAN.md` items K–M.
+
+## 13. M9/M10 corrections and M12 additions, 2026-09-19/20
+
+**Corrections** (`981ce8c`): a Wwise Stop action now ends the streaming sound (`AnimationScheduler.StartAudio`,
+`WwiseAudioSource.IsStopEvent` / `StopAffects`); `WWISE_MUSIC.md` no longer equates "Stop resolves to no PCM" with
+correct behaviour. Songs are rendered on a worker when the switch is posted (`Prewarm`), keeping seconds of
+rendering off the scheduler thread; the final-PCM cache freezing the renderer's random choices is labelled
+LOCAL_POLICY and tested. `BehaviorManager` no longer scores away an active reaction, asks IsRunnable before
+WantsToRun (native order), disposes replaced strategies and clears stale resume-last state. The frustration
+cooldown stamp and test share one clock. DizzyShakeLoop's repeated restarts are recorded as a fidelity gap.
+
+**M12** NATIVE rows are tabulated in [MANIPULATION.md](MANIPULATION.md) §1: the pre-action pose types and
+distances, the path segment and ExecutePath packings, DriveToPose / DriveToObject constants, the dock message
+order, the docking error signal's formula and gates, the pick-and-place result layout and its effect on
+carrying, the IDockAction pre-action box, the pick-up high/low threshold, the behaviour transitions and their
+animation triggers, and the helpers' retry structure. Non-native, labelled (§4): LOCAL — the straight-line
+planner, timeouts, target selection; INFERRED — unread message fields sent as zero, lift preset heights, the
+retry limit, the carried object's release on the put-down animation; DEFERRED — the lattice planner, pick-up
+lift-load / accelerometer checks, face turns, non-upright stacking, the search-for-block fallback; NOT
+RECOVERED — KnockOverCubes' flip action. Offline evidence: `ManipulationTests` (14) on a fake robot side.
+Hardware evidence: none yet; `HARDWARE_TEST_PLAN.md` items N–R. Inventory regenerated at 82 of 178.

@@ -116,6 +116,22 @@ M11_LOCALISED = "implementable with M11 (cube localisation)"
 MANIPULATION = re.compile(r"(?i)(PickUp|PutDown|Roll|Stack|KnockOver|Pyramid|BringCube|RamInto|CubeLift|Bouncer|"
                           r"FireTruck|Workout|RespondPossibly|CantHandle|OnConfigSeen|Feeding|ThinkAboutBeacons)")
 
+# M12 (2026-09-20) built the manipulation foundation: pre-action poses, a path sender with a LOCAL planner,
+# the firmware docking exchange (DockWithObject / DockingErrorSignal / PickAndPlaceResult), carrying state and
+# the pick-up, place, roll and stack actions; the behaviour classes below are transcribed on it
+# (Behavior/ManipulationBehaviors.cs). Hardware acceptance pending (HARDWARE_TEST_PLAN items N-R).
+M12_MANIPULATION = "implementable with M12 (cube manipulation)"
+M12_CLASSES = {
+    "PickUpCube": "BehaviorPickUpCube: initial reaction, PickupBlockHelper (drive to the pre-dock pose, PickupObjectAction, retries), success reaction",
+    "PutDownBlock": "BehaviorPutDownBlock: back up 45-75 mm, PutDownBlockPutDown, look down (-20 deg), PutDownBlockKeepAlive",
+    "RollBlock": "BehaviorRollBlock: RollBlockHelper (drive, RollObjectAction), success on the up axis changing, RollBlockSuccess",
+    "StackBlocks": "BehaviorStackBlocks: PickupBlockHelper then PlaceRelObjectHelper on the closest upright bottom, StackBlocksSuccess; failure backs up and places on the ground",
+    "PickUpAndPutDownCube": "BehaviorPickUpCube followed by BehaviorPutDownBlock (the class name's two halves, both transcribed)",
+}
+M12_BLOCKED = {
+    "KnockOverCubes": ("requires the flip action (M12 follow-up)", "BehaviorKnockOverCubes drives a DriveAndFlipBlockAction / FlipBlockAction whose dock action and lift choreography were not recovered"),
+}
+
 BY_ID = {
     "AcknowledgeObject": (M11_LOCALISED, "BehaviorAcknowledgeObject (0x00602FA4) turns to a located object, verifies it in two images and plays AcknowledgeObject; ObjectPositionUpdated fires on a new located pose (80 mm / 45 deg)"),
     "ReactToFrustrationMinor": (M10_DERIVED, "mood confidence below -0.6 plus one animation and an emotion event; both exist"),
@@ -184,8 +200,12 @@ def classify(entry):
         return "requires the app (game request)", "BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's"
     if cls_name in ("ExploreLookAroundInPlace", "DriveInDesperation"):
         return "requires navigation/path planning", f"class '{cls_name}' names a drive or search pattern (TurnInPlace/DriveStraight sequences)"
+    if cls_name in M12_CLASSES:
+        return M12_MANIPULATION, M12_CLASSES[cls_name]
+    if cls_name in M12_BLOCKED:
+        return M12_BLOCKED[cls_name]
     if MANIPULATION.search(cls_name) and re.search(r"(?i)(cube|block|pyramid|stack|beacon)", blob):
-        return "requires cube manipulation (docking/lift/path, M12)", f"class '{entry['behaviorClass']}' names a manipulation the engine drives and docks for; the cube itself is now localisable"
+        return "requires cube manipulation beyond M12 (pyramids, beacons, games)", f"class '{entry['behaviorClass']}' names a manipulation the engine drives and docks for; the cube itself is now localisable"
     for category, reason, pattern in RULES:
         m = re.search(pattern, blob)
         if m:
@@ -256,7 +276,8 @@ def render(entries, ids, classes, native):
         "1c. a ReactTo class whose input M10 derives → implementable with M10 (derived robot state)",
         "1d. AcknowledgeObject and ReactToCubeMoved → implementable with M11 (cube localisation)",
         "1e. a class naming faces → requires vision; RequestGameSimple → requires the app; ExploreLookAroundInPlace / DriveInDesperation → requires navigation",
-        "1f. a class naming a cube manipulation (pick up, put down, roll, stack, knock over, ...) → requires cube manipulation (M12)",
+        "1f. PickUpCube, PutDownBlock, RollBlock, StackBlocks, PickUpAndPutDownCube → implementable with M12 (cube manipulation); KnockOverCubes → requires the flip action",
+        "1g. a class naming another cube manipulation (pyramid, beacon, ram, workout, ...) → requires cube manipulation (M12 follow-up)",
         "2. text names cubes, blocks or objects → requires cubes (localisable since M11; what else they need is per class)",
         "3. text names faces, people or pets → requires vision",
         "4. text names the charger or docking → requires charger/docking",

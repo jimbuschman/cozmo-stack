@@ -23,9 +23,15 @@ directory needs only `cozmo_resources/sound/AudioAssets.zip`), commands run from
 | K | **camera calibration and cube localisation** (the only positive-detection evidence for the LOCAL front end: the offline tests render markers from the recovered library and the real captures hold no cube) | M11 | `dotnet run --project src/Cozmo.Conformance -- vision 172.31.1.1 --seconds 90 --acceptance --out frames` (a cube connected — run `cubes` first or leave discovery on — then show him the cube at 10–30 cm, turn it, move it 10 cm, hide it) | `camera calibration from robot: fx=… ` printed (the NV read worked); markers print with the face codes; `new object N Block_LIGHTCUBE1 Known at (x, y, 22)` with a pose in millimetres in his frame; hiding the cube in view prints `miss 1`, `miss 2 -> Unknown`; a cube moved out of view stays located | the codes match the faces shown (front/left/right/top), the printed distance matches a ruler within about 5 %, the yaw matches how the cube is turned. If the NV read fails, rerun with `--nominal` and note the calibration is a stand-in |
 | L | `SetBodyAngle` semantics | M11 | `dotnet run --project src/Cozmo.Conformance -- bodyangle 172.31.1.1 --deg 45 --acceptance` | `turned 45.0 deg for a 45.0 deg request: ABSOLUTE body angle confirmed` (or the RELATIVE / did-not-turn verdicts, which mean `TurnTowardsPose` needs its angle or fields changed) | he turns 45° left in place, smoothly, and stops |
 | M | the cube reactions with a real cube | M11 | `dotnet run --project src/Cozmo.Conformance -- reactions 172.31.1.1 --obb <obb> --seconds 180 --acceptance` after K has passed, with the cube in view; then slide the cube 10 cm while he looks (AcknowledgeObject), then turn him away and roll the cube (ReactToCubeMoved) | `REACTION ObjectPositionUpdated -> AcknowledgeObject` with `turning towards`, `VisuallyVerifyObjectAction`, the animation; `REACTION CubeMoved -> ReactToCubeMoved` with `CubeMovedSense`, the turn, then `AcknowledgeObject` if he finds it or `CubeMovedUpset` if not | he looks at the cube's new place and nods to it; turned away and hearing the cube move, he turns back to where it was and reacts to finding or not finding it |
+| N | **pick up a cube** | M12 | `dotnet run --project src/Cozmo.Conformance -- manip 172.31.1.1 --pickup --acceptance` (a connected cube 15–30 cm ahead, face towards him) | `path N: Completed`, `Docking with marker ... using action PickupLow`, docking error signals sent, `PickAndPlaceResult: succeeded ... status=BlockPickedUp`, `Pickup -> Success ... carrying=7` | he drives to about 75 mm in front of the face, docks smoothly, lifts the cube and holds it. If the robot ignores `DockWithObject` or reports failure at once, the unread fields of that message are the first suspect (MANIPULATION.md §4) |
+| O | place a carried cube on the ground | M12 | `dotnet run --project src/Cozmo.Conformance -- manip 172.31.1.1 --putdown --acceptance` right after N (or with the cube set on the lift by hand) | `PickAndPlaceResult ... status=BlockPlaced`, `PlaceObjectOnGround -> Success; carrying=False` | he lowers the lift and backs off the cube |
+| P | roll a cube | M12 | `dotnet run --project src/Cozmo.Conformance -- manip 172.31.1.1 --roll --acceptance` (cube on its side or upright) | `Roll -> Success; up axis X -> Y` (any change) | he docks and the cube rolls onto another face |
+| Q | drive to the pre-dock pose | M12 | `dotnet run --project src/Cozmo.Conformance -- manip 172.31.1.1 --driveto --acceptance` (also `manip --plan 150 80 90` offline shows the messages) | `path 1: Started`, `Completed`, `DriveToPoseAction.CheckIfDone.Success`, `DriveToObject -> Success` | he turns, drives straight, turns to face the cube and stops about 75 mm from its face; no jerks between segments |
+| R | stack two cubes | M12 | `dotnet run --project src/Cozmo.Conformance -- manip 172.31.1.1 --stack --acceptance --obb <obb>` with two connected upright cubes in view | phases `PickingUpBlock` → `StackingBlock` → `PlayingFinalAnim` | he picks one up, carries it to the other and places it on top |
 | J | unexpected movement while driving | M10 | `dotnet run --project src/Cozmo.Conformance -- drive 172.31.1.1 ...` in one window is not enough because the detector suspends during direct drive; instead run H and, while a behaviour's animation drives the body, hold him so he cannot turn, or twist him against the turn | `unexpected movement TurnedButStopped from <side>` or `TurnedInOppositeDirection` printed, then `REACTION UnexpectedMovement -> ReactToUnexpectedMovement` | he plays the startled reaction once, on the side the push came from; no report while he drives freely |
 
-Items A and A2 are the M9 acceptance; G–J are the M10 acceptance; K–M are the M11 acceptance (`VISION.md` §9). Items B–F are carried over from the fidelity
+Items A and A2 are the M9 acceptance; G–J are the M10 acceptance; K–M are the M11 acceptance (`VISION.md` §9);
+N–R are the M12 acceptance (`MANIPULATION.md` §6). Run K before N–R: docking needs a located cube. Items B–F are carried over from the fidelity
 sweep and its reconciliation (`SOURCE_FIDELITY_AUDIT.md` §8, §10) and were never gated on M9 or M10.
 
 ## What G and H cannot tell you, and what would
@@ -44,6 +50,14 @@ prints every quad and why it was rejected, and `--out` writes the dark mask; the
 `QuadDetectorParameters.DarkThresholdMultiplier` (0.75, ours), not the decoder. Pose accuracy against a ruler
 tests the calibration read from NV and the head-camera geometry together; a constant offset in X with a good yaw
 points at the calibration, a distance error growing with head angle at the camera pose.
+
+## What N–R cannot tell you, and what would
+
+The exchange is the engine's, but three messages carry fields whose meaning was not read and are sent as zero
+(`MANIPULATION.md` §4). A dock that never starts, or a `PickAndPlaceResult` with `result` ≠ 0 at once, points at
+`DockWithObject`'s fourth float or trailing bytes; the `result` byte printed is the firmware's `DockingResult`,
+whose enum this build does not decode, so record it. A path the robot drives but ends off-pose points at the
+planner's segment endpoints (the layouts are the engine's; the planner is ours).
 
 ## What A cannot tell you, and what would
 
@@ -74,3 +88,8 @@ freeze depends on it: M9 is complete offline, and the next milestone does not us
 | K | | | | | |
 | L | | | | | |
 | M | | | | | |
+| N | | | | | |
+| O | | | | | |
+| P | | | | | |
+| Q | | | | | |
+| R | | | | | |

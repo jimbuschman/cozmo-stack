@@ -20,7 +20,8 @@ on trust. A behaviour matching no rule is **unclear**, not pushed into a plausib
 1c. a ReactTo class whose input M10 derives → implementable with M10 (derived robot state)
 1d. AcknowledgeObject and ReactToCubeMoved → implementable with M11 (cube localisation)
 1e. a class naming faces → requires vision; RequestGameSimple → requires the app; ExploreLookAroundInPlace / DriveInDesperation → requires navigation
-1f. a class naming a cube manipulation (pick up, put down, roll, stack, knock over, ...) → requires cube manipulation (M12)
+1f. PickUpCube, PutDownBlock, RollBlock, StackBlocks, PickUpAndPutDownCube → implementable with M12 (cube manipulation); KnockOverCubes → requires the flip action
+1g. a class naming another cube manipulation (pyramid, beacon, ram, workout, ...) → requires cube manipulation (M12 follow-up)
 2. text names cubes, blocks or objects → requires cubes (localisable since M11; what else they need is per class)
 3. text names faces, people or pets → requires vision
 4. text names the charger or docking → requires charger/docking
@@ -38,16 +39,18 @@ counted as needing them. That overstates the blocked count rather than the imple
 | category | behaviours |
 | --- | ---: |
 | implementable with M9 (switch-state audio) | 39 |
-| requires cube manipulation (docking/lift/path, M12) | 34 |
 | requires vision/person detection | 29 |
 | implementable with M1-M7 now | 19 |
+| requires cube manipulation beyond M12 (pyramids, beacons, games) | 19 |
 | freeplay/explorer-specific | 16 |
+| implementable with M12 (cube manipulation) | 13 |
 | requires the app (game request) | 10 |
 | implementable with M10 (derived robot state) | 9 |
 | requires charger/docking | 5 |
 | requires navigation/path planning | 5 |
 | developer-only | 4 |
 | game-specific | 2 |
+| requires the flip action (M12 follow-up) | 2 |
 | implementable with M11 (cube localisation) | 2 |
 | requires localization/world model | 1 |
 | requires cubes | 1 |
@@ -116,6 +119,19 @@ counted as needing them. That overstates the blocked count rather than the imple
 | ReactToUnexpectedMovement | ReactToUnexpectedMovement | implementable with M10 (derived robot state) | 'ReactToUnexpectedMovement' is transcribed from the engine and its input is derived in M10 | `reactions/reactToUnexpectedMovement.json` |
 | AcknowledgeObject | AcknowledgeObject | implementable with M11 (cube localisation) | BehaviorAcknowledgeObject (0x00602FA4) turns to a located object, verifies it in two images and plays AcknowledgeObject; ObjectPositionUpdated fires on a new located pose (80 mm / 45 deg) | `reactions/acknowledgeObject.json` |
 | ReactToCubeMoved | ReactToCubeMoved | implementable with M11 (cube localisation) | BehaviorAcknowledgeCubeMoved and ReactionTriggerStrategyCubeMoved are transcribed; BlockWorld (M11) supplies the located pose, visibility and the turn | `reactions/reactToCubeMoved.json` |
+| Hiking_RollCube | RollBlock | implementable with M12 (cube manipulation) | BehaviorRollBlock: RollBlockHelper (drive, RollObjectAction), success on the up axis changing, RollBlockSuccess | `freeplay/hiking/Hiking_rollCube.json` |
+| PutDownBlock | PutDownBlock | implementable with M12 (cube manipulation) | BehaviorPutDownBlock: back up 45-75 mm, PutDownBlockPutDown, look down (-20 deg), PutDownBlockKeepAlive | `freeplay/putDownBlock.json` |
+| PutDownBlockNothingToDo | PutDownBlock | implementable with M12 (cube manipulation) | BehaviorPutDownBlock: back up 45-75 mm, PutDownBlockPutDown, look down (-20 deg), PutDownBlockKeepAlive | `freeplay/putDownBlockNothingToDo.json` |
+| PyramidPutDownBlock | PutDownBlock | implementable with M12 (cube manipulation) | BehaviorPutDownBlock: back up 45-75 mm, PutDownBlockPutDown, look down (-20 deg), PutDownBlockKeepAlive | `freeplay/buildPyramid/pyramidPutDownBlock.json` |
+| RollBlockOnSide | RollBlock | implementable with M12 (cube manipulation) | BehaviorRollBlock: RollBlockHelper (drive, RollObjectAction), success on the up axis changing, RollBlockSuccess | `freeplay/rollBlockOnSide.json` |
+| RollBlockOnSideLowScore | RollBlock | implementable with M12 (cube manipulation) | BehaviorRollBlock: RollBlockHelper (drive, RollObjectAction), success on the up axis changing, RollBlockSuccess | `freeplay/rollBlockOnSideLowScore.json` |
+| SparksPickUpCube | PickUpAndPutDownCube | implementable with M12 (cube manipulation) | BehaviorPickUpCube followed by BehaviorPutDownBlock (the class name's two halves, both transcribed) | `freeplay/sparkable/sparksPickupCube.json` |
+| SparksPickupSingleCubeForPyramid | PickUpCube | implementable with M12 (cube manipulation) | BehaviorPickUpCube: initial reaction, PickupBlockHelper (drive to the pre-dock pose, PickupObjectAction, retries), success reaction | `freeplay/sparkable/sparksPickupSingleCubeForPyramid.json` |
+| SparksPickupSingleCubeToStack | PickUpCube | implementable with M12 (cube manipulation) | BehaviorPickUpCube: initial reaction, PickupBlockHelper (drive to the pre-dock pose, PickupObjectAction, retries), success reaction | `freeplay/sparkable/sparksPickupSingleCubeToStack.json` |
+| SparksPutDownBlock | PutDownBlock | implementable with M12 (cube manipulation) | BehaviorPutDownBlock: back up 45-75 mm, PutDownBlockPutDown, look down (-20 deg), PutDownBlockKeepAlive | `freeplay/sparkable/sparksPutDownBlock.json` |
+| SparksRollBlock | RollBlock | implementable with M12 (cube manipulation) | BehaviorRollBlock: RollBlockHelper (drive, RollObjectAction), success on the up axis changing, RollBlockSuccess | `freeplay/sparkable/sparksRollBlock.json` |
+| SparksStackBlock | StackBlocks | implementable with M12 (cube manipulation) | BehaviorStackBlocks: PickupBlockHelper then PlaceRelObjectHelper on the closest upright bottom, StackBlocksSuccess; failure backs up and places on the ground | `freeplay/sparkable/sparksStackBlock.json` |
+| StackBlocks | StackBlocks | implementable with M12 (cube manipulation) | BehaviorStackBlocks: PickupBlockHelper then PlaceRelObjectHelper on the closest upright bottom, StackBlocksSuccess; failure backs up and places on the ground | `freeplay/stackBlocks.json` |
 | Singing_AbaDaba | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_AbaDaba.json` |
 | Singing_BeautifulDreamer | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_BeautifulDreamer.json` |
 | Singing_Beethovens5th | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_Beethovens5th.json` |
@@ -160,40 +176,25 @@ counted as needing them. That overstates the blocked count rather than the imple
 | Hiking_DriveOffCharger | DriveOffCharger | requires charger/docking | names the charger or docking ('Charger') | `freeplay/hiking/Hiking_driveOffCharger.json` |
 | ReactToOnCharger | ReactToOnCharger | requires charger/docking | names the charger or docking ('Charger') | `reactions/reactToOnCharger.json` |
 | VC_GoToSleep | ReactToOnCharger | requires charger/docking | names the charger or docking ('Charger') | `voiceCommands/VC_GoToSleep.json` |
-| Bouncer | Bouncer | requires cube manipulation (docking/lift/path, M12) | class 'Bouncer' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/userInteractive/bouncer.json` |
-| BuildPyramid | BuildPyramid | requires cube manipulation (docking/lift/path, M12) | class 'BuildPyramid' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/buildPyramid.json` |
-| BuildPyramidBase | BuildPyramidBase | requires cube manipulation (docking/lift/path, M12) | class 'BuildPyramidBase' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/buildPyramidBase.json` |
-| CantHandleTallStack | CantHandleTallStack | requires cube manipulation (docking/lift/path, M12) | class 'CantHandleTallStack' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/cantHandleTallStack.json` |
-| CubeLiftWorkout | CubeLiftWorkout | requires cube manipulation (docking/lift/path, M12) | class 'CubeLiftWorkout' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/cubeLiftWorkout.json` |
-| FeedingSearchForCube | FeedingSearchForCube | requires cube manipulation (docking/lift/path, M12) | class 'FeedingSearchForCube' names a manipulation the engine drives and docks for; the cube itself is now localisable | `feeding/feedingSearchForCube.json` |
-| Hiking_BringCubeToBeacon | BringCubeToBeacon | requires cube manipulation (docking/lift/path, M12) | class 'BringCubeToBeacon' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/hiking/Hiking_bringCubeToBeacon.json` |
-| Hiking_RollCube | RollBlock | requires cube manipulation (docking/lift/path, M12) | class 'RollBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/hiking/Hiking_rollCube.json` |
-| Hiking_ThinkAboutBeacons | ThinkAboutBeacons | requires cube manipulation (docking/lift/path, M12) | class 'ThinkAboutBeacons' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/hiking/Hiking_thinkAboutBeacons.json` |
-| KnockOverCubes | KnockOverCubes | requires cube manipulation (docking/lift/path, M12) | class 'KnockOverCubes' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/knockOverCubes.json` |
-| PutDownBlock | PutDownBlock | requires cube manipulation (docking/lift/path, M12) | class 'PutDownBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/putDownBlock.json` |
-| PutDownBlockNothingToDo | PutDownBlock | requires cube manipulation (docking/lift/path, M12) | class 'PutDownBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/putDownBlockNothingToDo.json` |
-| PyramidPutDownBlock | PutDownBlock | requires cube manipulation (docking/lift/path, M12) | class 'PutDownBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/pyramidPutDownBlock.json` |
-| PyramidRespondPossiblyRoll | RespondPossiblyRoll | requires cube manipulation (docking/lift/path, M12) | class 'RespondPossiblyRoll' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/pyramidRespondPossiblyRoll.json` |
-| PyramidThankYou | PyramidThankYou | requires cube manipulation (docking/lift/path, M12) | class 'PyramidThankYou' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/pyramidThankYou.json` |
-| RamIntoBlock | RamIntoBlock | requires cube manipulation (docking/lift/path, M12) | class 'RamIntoBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `reactions/ramIntoBlock.json` |
-| ReactToPyramid | ReactToPyramid | requires cube manipulation (docking/lift/path, M12) | class 'ReactToPyramid' names a manipulation the engine drives and docks for; the cube itself is now localisable | `reactions/reactToPyramid.json` |
-| ReactToStackOfCubes | ReactToStackOfCubes | requires cube manipulation (docking/lift/path, M12) | class 'ReactToStackOfCubes' names a manipulation the engine drives and docks for; the cube itself is now localisable | `reactions/reactToStackOfCubes.json` |
-| RespondToPyramidBase | OnConfigSeen | requires cube manipulation (docking/lift/path, M12) | class 'OnConfigSeen' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/respondToPyramidBase.json` |
-| RollBlockOnSide | RollBlock | requires cube manipulation (docking/lift/path, M12) | class 'RollBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/rollBlockOnSide.json` |
-| RollBlockOnSideLowScore | RollBlock | requires cube manipulation (docking/lift/path, M12) | class 'RollBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/rollBlockOnSideLowScore.json` |
-| SparksBringCubeToBeacon | BringCubeToBeacon | requires cube manipulation (docking/lift/path, M12) | class 'BringCubeToBeacon' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksBringCubeToBeacon.json` |
-| SparksCheckForStackAtInterval | CheckForStackAtInterval | requires cube manipulation (docking/lift/path, M12) | class 'CheckForStackAtInterval' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksCheckForStackAtInterval.json` |
-| SparksCubeLiftWorkout | CubeLiftWorkout | requires cube manipulation (docking/lift/path, M12) | class 'CubeLiftWorkout' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksCubeLiftWorkout.json` |
-| SparksFireTruckAlarm | FireTruckAlarm | requires cube manipulation (docking/lift/path, M12) | class 'FireTruckAlarm' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksFireTruckAlarm.json` |
-| SparksKnockOverCubes | KnockOverCubes | requires cube manipulation (docking/lift/path, M12) | class 'KnockOverCubes' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksKnockOverCubes.json` |
-| SparksPickUpCube | PickUpAndPutDownCube | requires cube manipulation (docking/lift/path, M12) | class 'PickUpAndPutDownCube' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksPickupCube.json` |
-| SparksPickupSingleCubeForPyramid | PickUpCube | requires cube manipulation (docking/lift/path, M12) | class 'PickUpCube' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksPickupSingleCubeForPyramid.json` |
-| SparksPickupSingleCubeToStack | PickUpCube | requires cube manipulation (docking/lift/path, M12) | class 'PickUpCube' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksPickupSingleCubeToStack.json` |
-| SparksPutDownBlock | PutDownBlock | requires cube manipulation (docking/lift/path, M12) | class 'PutDownBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksPutDownBlock.json` |
-| SparksRollBlock | RollBlock | requires cube manipulation (docking/lift/path, M12) | class 'RollBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksRollBlock.json` |
-| SparksStackBlock | StackBlocks | requires cube manipulation (docking/lift/path, M12) | class 'StackBlocks' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksStackBlock.json` |
-| SparksThinkAboutBeacons | ThinkAboutBeacons | requires cube manipulation (docking/lift/path, M12) | class 'ThinkAboutBeacons' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksThinkAboutBeacons.json` |
-| StackBlocks | StackBlocks | requires cube manipulation (docking/lift/path, M12) | class 'StackBlocks' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/stackBlocks.json` |
+| Bouncer | Bouncer | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'Bouncer' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/userInteractive/bouncer.json` |
+| BuildPyramid | BuildPyramid | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'BuildPyramid' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/buildPyramid.json` |
+| BuildPyramidBase | BuildPyramidBase | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'BuildPyramidBase' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/buildPyramidBase.json` |
+| CantHandleTallStack | CantHandleTallStack | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'CantHandleTallStack' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/cantHandleTallStack.json` |
+| CubeLiftWorkout | CubeLiftWorkout | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'CubeLiftWorkout' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/cubeLiftWorkout.json` |
+| FeedingSearchForCube | FeedingSearchForCube | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'FeedingSearchForCube' names a manipulation the engine drives and docks for; the cube itself is now localisable | `feeding/feedingSearchForCube.json` |
+| Hiking_BringCubeToBeacon | BringCubeToBeacon | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'BringCubeToBeacon' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/hiking/Hiking_bringCubeToBeacon.json` |
+| Hiking_ThinkAboutBeacons | ThinkAboutBeacons | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'ThinkAboutBeacons' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/hiking/Hiking_thinkAboutBeacons.json` |
+| PyramidRespondPossiblyRoll | RespondPossiblyRoll | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'RespondPossiblyRoll' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/pyramidRespondPossiblyRoll.json` |
+| PyramidThankYou | PyramidThankYou | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'PyramidThankYou' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/pyramidThankYou.json` |
+| RamIntoBlock | RamIntoBlock | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'RamIntoBlock' names a manipulation the engine drives and docks for; the cube itself is now localisable | `reactions/ramIntoBlock.json` |
+| ReactToPyramid | ReactToPyramid | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'ReactToPyramid' names a manipulation the engine drives and docks for; the cube itself is now localisable | `reactions/reactToPyramid.json` |
+| ReactToStackOfCubes | ReactToStackOfCubes | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'ReactToStackOfCubes' names a manipulation the engine drives and docks for; the cube itself is now localisable | `reactions/reactToStackOfCubes.json` |
+| RespondToPyramidBase | OnConfigSeen | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'OnConfigSeen' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/buildPyramid/respondToPyramidBase.json` |
+| SparksBringCubeToBeacon | BringCubeToBeacon | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'BringCubeToBeacon' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksBringCubeToBeacon.json` |
+| SparksCheckForStackAtInterval | CheckForStackAtInterval | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'CheckForStackAtInterval' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksCheckForStackAtInterval.json` |
+| SparksCubeLiftWorkout | CubeLiftWorkout | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'CubeLiftWorkout' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksCubeLiftWorkout.json` |
+| SparksFireTruckAlarm | FireTruckAlarm | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'FireTruckAlarm' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksFireTruckAlarm.json` |
+| SparksThinkAboutBeacons | ThinkAboutBeacons | requires cube manipulation beyond M12 (pyramids, beacons, games) | class 'ThinkAboutBeacons' names a manipulation the engine drives and docks for; the cube itself is now localisable | `freeplay/sparkable/sparksThinkAboutBeacons.json` |
 | OnboardingShowCube | OnboardingShowCube | requires cubes | names cubes, blocks or objects ('Cube') | `onboarding/onboardingShowCube.json` |
 | Hiking_LookInPlaceForUnknown | LookInPlaceMemoryMap | requires localization/world model | names the world model or localization ('MemoryMap') | `freeplay/hiking/Hiking_lookInPlaceForUnknown.json` |
 | Hiking_LookInPlace360 | ExploreLookAroundInPlace | requires navigation/path planning | class 'ExploreLookAroundInPlace' names a drive or search pattern (TurnInPlace/DriveStraight sequences) | `freeplay/hiking/Hiking_lookInPlace360.json` |
@@ -212,6 +213,8 @@ counted as needing them. That overstates the blocked count rather than the imple
 | VC_RequestMemoryMatch | RequestGameSimple | requires the app (game request) | BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's | `voiceCommands/VC_RequestMemoryMatch.json` |
 | VC_RequestSpeedTap | RequestGameSimple | requires the app (game request) | BehaviorRequestGameSimple asks the app to start a game; the cube it names is the game's | `voiceCommands/VC_RequestSpeedTap.json` |
 | ReactToSparked | ReactToSparked | requires the app's spark system | triggered by the app's ActivateSpark request (BehaviorManager::HandleMessage), which this stack does not receive | `reactions/reactToSparked.json` |
+| KnockOverCubes | KnockOverCubes | requires the flip action (M12 follow-up) | BehaviorKnockOverCubes drives a DriveAndFlipBlockAction / FlipBlockAction whose dock action and lift choreography were not recovered | `freeplay/knockOverCubes.json` |
+| SparksKnockOverCubes | KnockOverCubes | requires the flip action (M12 follow-up) | BehaviorKnockOverCubes drives a DriveAndFlipBlockAction / FlipBlockAction whose dock action and lift choreography were not recovered | `freeplay/sparkable/sparksKnockOverCubes.json` |
 | AcknowledgeFace | AcknowledgeFace | requires vision/person detection | class 'AcknowledgeFace' names faces; face detection is Omron OKAO code in the engine, not transcribable | `reactions/acknowledgeFace.json` |
 | EnrollFace | EnrollFace | requires vision/person detection | class 'EnrollFace' names faces; face detection is Omron OKAO code in the engine, not transcribable | `meetCozmo/enrollFace.json` |
 | FPPeekABoo | PeekABoo | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `freeplay/FPpeekAboo.json` |

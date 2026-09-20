@@ -1,9 +1,9 @@
 # Choosing the next milestone, from the behaviour dependency inventory
 
-> **2026-09-19, after M11:** M9, M10 and M11 are complete offline (`WWISE_MUSIC.md`, `DERIVED_STATE.md`,
-> `VISION.md`). The inventory is 69 of 178 implementable. The next milestone is **M12: cube manipulation**
-> (`DriveToObjectAction`, docking, the lift) — 34 behaviours now have a localised target and lack only the
-> actions; see `HANDOFF.md` "Next task". The analysis below is the original record and is superseded where it
+> **2026-09-20, after M12:** M9–M12 are complete offline (`WWISE_MUSIC.md`, `DERIVED_STATE.md`, `VISION.md`,
+> `MANIPULATION.md`). The inventory is 82 of 178 implementable. The next milestone is **M13**: the remaining
+> cube behaviours (pyramids, beacons, workouts), KnockOverCubes' flip action, the lattice planner and charger
+> docking; see `HANDOFF.md` "Next task". The analysis below is the original record and is superseded where it
 > says otherwise.
 
 
