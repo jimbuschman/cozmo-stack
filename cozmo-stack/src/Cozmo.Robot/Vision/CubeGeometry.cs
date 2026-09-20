@@ -14,6 +14,10 @@ public enum ObjectFamily : sbyte { Invalid = -1, Unknown = 0, Block = 1, LightCu
 /// <summary>One marker on a known object: which marker, where it sits on the object, and how big it is.</summary>
 public sealed record KnownMarker(MarkerType Code, BlockFace Face, Pose3d PoseOnObject, double SizeMm)
 {
+    /// <summary>The marker's height when it is not square (the charger's marker is 20 x 27 mm); defaults to <see cref="SizeMm"/>.</summary>
+    public double HeightMm { get; init; } = double.NaN;
+    private double H => double.IsNaN(HeightMm) ? SizeMm : HeightMm;
+
     /// <summary>
     /// <c>KnownMarker::_canonicalCorners3d</c> (initialiser 0x004DD7D8): the unit marker lies in the X–Z plane
     /// with its normal along −Y; in marker coordinates the corners are TL(−½, 0, +½), BL(−½, 0, −½),
@@ -26,7 +30,7 @@ public sealed record KnownMarker(MarkerType Code, BlockFace Face, Pose3d PoseOnO
     };
 
     /// <summary>The marker's four corners in the object's frame, TL, BL, TR, BR.</summary>
-    public Vec3[] CornersOnObject() => CanonicalCorners.Select(c => PoseOnObject.Apply(c * SizeMm)).ToArray();
+    public Vec3[] CornersOnObject() => CanonicalCorners.Select(c => PoseOnObject.Apply(new Vec3(c.X * SizeMm, 0, c.Z * H))).ToArray();
 
     /// <summary>The marker's four corners in the world for an object pose.</summary>
     public Vec3[] CornersInWorld(Pose3d objectPose) => CornersOnObject().Select(objectPose.Apply).ToArray();
@@ -106,9 +110,20 @@ public static class CubeGeometry
         return list;
     }
 
-    /// <summary>The known marker for a code, with its object type; null for non-cube codes.</summary>
+    /// <summary>Whether this object type is an active (radio-connected) object: only the light cubes are.</summary>
+    public static bool IsActiveObjectType(ObjectType t) => IsCube(t);
+
+    /// <summary>The known markers of any object type this stack models: a light cube's six, the charger's one.</summary>
+    public static IReadOnlyList<KnownMarker> MarkersFor(ObjectType type) =>
+        type == ObjectType.Charger_Basic ? ChargerGeometry.Markers : CubeMarkers(type);
+
+    /// <summary>The object's size (x, y, z) in its own frame.</summary>
+    public static Vec3 SizeOf(ObjectType type) => type == ObjectType.Charger_Basic ? ChargerGeometry.Size : CubeSize;
+
+    /// <summary>The known marker for a code, with its object type; null for codes no modelled object carries.</summary>
     public static (ObjectType Type, KnownMarker Marker)? LookupMarker(MarkerType code)
     {
+        if (code == MarkerType.Charger) return (ObjectType.Charger_Basic, ChargerGeometry.Markers[0]);
         if (CubeTypeForMarker(code) is not { } type) return null;
         var m = CubeMarkers(type).First(k => k.Code == code);
         return (type, m);

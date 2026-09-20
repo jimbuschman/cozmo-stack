@@ -38,6 +38,40 @@ public abstract class DockActionBase
     protected abstract ActionResult Verify(ObservableObject? target, DockResult result);
     protected virtual (double X, double Y, double Angle) PlacementOffset => (0, 0, 0);
     protected virtual bool DoLiftLoadCheck => false;
+    /// <summary>False for the place actions: they verify the placement pose is clear instead of seeing the target.</summary>
+    protected virtual bool VerifiesTargetVisually => true;
+
+    /// <summary>The target's side marker whose outward normal points most towards the robot.</summary>
+    protected static KnownMarker? MarkerFacing(ObservableObject target, Pose3d robot)
+    {
+        KnownMarker? best = null; double bestDot = 0.2;
+        foreach (var m in target.Markers)
+        {
+            var n = (target.Pose.Rotation * m.NormalOnObject).Normalized();
+            if (Math.Abs(n.Z) > 0.5) continue;
+            var toRobot = (robot.Translation - target.Pose.Apply(m.PoseOnObject.Translation)) with { Z = 0 };
+            double dot = n.Dot(toRobot.Normalized());
+            if (dot > bestDot) { bestDot = dot; best = m; }
+        }
+        return best;
+    }
+
+    /// <summary><c>VisuallyVerifyNoObjectAtPoseAction</c> against the world model: no other located object within half a cube of where the carried object goes.</summary>
+    protected bool VerifyNoObjectAtPlacementPose(ObservableObject target, Pose3d robot)
+    {
+        var (ox, oy, _) = PlacementOffset;
+        var toTarget = (target.Pose.Translation - robot.Translation) with { Z = 0 };
+        var ahead = toTarget.Normalized(); var side = new Vec3(-ahead.Y, ahead.X, 0);
+        var where = target.Pose.Translation + ahead * ox + side * oy;
+        uint? carried = M.Docking.Carrying.CarriedObjectId;
+        foreach (var o in M.World.LocatedObjects)
+        {
+            if (o.ObjectId == target.ObjectId || o.ObjectId == carried) continue;
+            var d = (o.Pose.Translation - where) with { Z = 0 };
+            if (d.Length < CubeGeometry.CubeSizeMm / 2) return false;
+        }
+        return true;
+    }
 
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
@@ -61,10 +95,24 @@ public abstract class DockActionBase
         if (action is null) { _trace.Add("IDockAction.Init.DockActionSelectionFailure"); return ActionResult.Abort; }
         SelectedDockAction = action;
 
-        // SetupTurnAndVerifyAction: face the object and see it (two images, as VisuallyVerifyObjectAction)
+        // SetupTurnAndVerifyAction: face the object and see it (two images, as VisuallyVerifyObjectAction); a
+        // place verifies instead that nothing is located where the carried object will go
+        // (VisuallyVerifyNoObjectAtPoseAction) and docks on the marker facing the robot
         await M.TurnTowardsObjectAsync(ObjectId, Math.PI, cancel);
-        var marker = await M.WaitForVisibleMarkerAsync(ObjectId, TimeSpan.FromSeconds(2), cancel);
-        if (marker is null) { _trace.Add("IDockAction.CheckIfDone.VisualVerifyFailed: VisualVerification of object failed, stopping IDockAction."); return ActionResult.VisualObservationFailed; }
+        KnownMarker? marker;
+        if (VerifiesTargetVisually)
+        {
+            marker = await M.WaitForVisibleMarkerAsync(ObjectId, TimeSpan.FromSeconds(2), cancel);
+            if (marker is null) { _trace.Add("IDockAction.CheckIfDone.VisualVerifyFailed: VisualVerification of object failed, stopping IDockAction."); return ActionResult.VisualObservationFailed; }
+        }
+        else
+        {
+            var robotNow = M.RobotPose() ?? robot.Value;
+            marker = MarkerFacing(target, robotNow);
+            if (marker is null) { _trace.Add("IDockAction.CheckIfDone.NoMarkerFacingRobot"); return ActionResult.VisualObservationFailed; }
+            if (!VerifyNoObjectAtPlacementPose(target, robotNow)) { _trace.Add("IDockAction.CheckIfDone.VisualVerifyFailed: an object is located at the placement pose"); return ActionResult.VisualObservationFailed; }
+            _trace.Add("VisuallyVerifyNoObjectAtPose: the placement pose is clear");
+        }
         _trace.Add($"IDockAction.DockWithObjectHelper.BeginDocking: Docking with marker {marker.Code} using action {action}.");
         var (ox, oy, oa) = PlacementOffset;
         var result = await M.Docking.DockAsync(target, marker, action.Value, Profile, ox, oy, oa, numRetries: 0, DoLiftLoadCheck, cancel: cancel);
@@ -128,7 +176,11 @@ public sealed class PlaceRelObjectAction : DockActionBase
 {
     public PlaceRelObjectAction(ManipulationSystem m, uint targetObjectId, bool onTop = true) : base(m, targetObjectId) => OnTop = onTop;
     public bool OnTop { get; }
+    /// <summary>The placement offsets relative to the target (x along the approach, y sideways, angle), the engine's <c>placementOffsetX/Y_mm</c>.</summary>
+    public (double X, double Y, double Angle) Offsets { get; set; }
+    protected override (double X, double Y, double Angle) PlacementOffset => Offsets;
     protected override PreActionType PreActionType => PreActionType.PlaceRelative;
+    protected override bool VerifiesTargetVisually => false;
 
     protected override DockAction? SelectDockAction(ObservableObject target)
     {

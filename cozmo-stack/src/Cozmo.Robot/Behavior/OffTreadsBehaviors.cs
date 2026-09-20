@@ -444,12 +444,30 @@ public sealed class ReactToMotorCalibrationBehavior : SteppedBehavior
 /// <c>finalEmotionEvent</c>; <c>TransitionToReaction</c> plays the animation with a
 /// <c>TriggerLiftSafeAnimationAction</c>; <c>AnimationComplete</c> fires the final emotion event on the mood
 /// manager and, when <c>randomDriveMaxDist_mm</c> is above 1e-5, drives to a random pose. The Minor config has
-/// no drive, so it completes there; the Major config's random <c>DriveToPoseAction</c> needs path planning and
-/// is not built. <c>InitInternal</c> also pushes driving animations, which only matter for the drive.
+/// no drive, so it completes there. The Major config (<c>randomDriveMinDist_mm</c> 150, <c>randomDriveMaxDist_mm</c>
+/// 400, <c>randomDriveMinAngle_deg</c> 80, <c>randomDriveMaxAngle_deg</c> 180) drives to a random pose: a
+/// distance in [min, max] at a heading offset of ±[minAngle, maxAngle] from the robot's, through a
+/// <c>DriveToPoseAction</c> (M13, on the lattice planner when loaded). <c>InitInternal</c> also pushes driving
+/// animations, which only matter for the drive (DEFERRED).
 /// </summary>
 public sealed class ReactToFrustrationBehavior : SteppedBehavior
 {
     private readonly FrustrationStrategy? _strategy;
+    private Cozmo.Robot.Manipulation.ManipulationSystem? _m;
+    private CancellationTokenSource? _driveCancel;
+
+    /// <summary>The shipped Major configuration, with its random drive on the manipulation system's paths.</summary>
+    public static ReactToFrustrationBehavior Major(Cozmo.Robot.Manipulation.ManipulationSystem m, FrustrationStrategy? strategy = null) =>
+        new("ReactToFrustrationMajor", AnimationTrigger.FrustratedByFailureMajor, "FinishedMajorFrustration", strategy)
+            { _m = m, RandomDriveMinDistMm = 150, RandomDriveMaxDistMm = 400, RandomDriveMinAngleDeg = 80, RandomDriveMaxAngleDeg = 180 };
+
+    public double RandomDriveMinDistMm { get; init; }
+    public double RandomDriveMaxDistMm { get; init; }
+    public double RandomDriveMinAngleDeg { get; init; }
+    public double RandomDriveMaxAngleDeg { get; init; }
+    /// <summary>The random goal of the last drive, for tests and the log.</summary>
+    public Cozmo.Robot.Vision.Pose3d? DriveGoal { get; private set; }
+    protected override bool KeepsRunningWithoutAction => _driveCancel is not null;
 
     public ReactToFrustrationBehavior(string id, AnimationTrigger animation, string finalEmotionEvent,
                                       FrustrationStrategy? strategy = null)
@@ -481,7 +499,35 @@ public sealed class ReactToFrustrationBehavior : SteppedBehavior
             {
                 if (_strategy.HasClock) _strategy.AnimationComplete(); else _strategy.AnimationComplete(nowSec);
             }
+            if (RandomDriveMaxDistMm > 1e-5 && _m is not null && _m.RobotPose() is { } robot)
+            {
+                var rnd = Context.Random;
+                double dist = RandomDriveMinDistMm + rnd.NextDouble() * (RandomDriveMaxDistMm - RandomDriveMinDistMm);
+                double ang = (RandomDriveMinAngleDeg + rnd.NextDouble() * (RandomDriveMaxAngleDeg - RandomDriveMinAngleDeg)) * Math.PI / 180 * (rnd.Next(2) == 0 ? 1 : -1);
+                double heading = robot.AngleAroundZ + ang;
+                var goal = new Cozmo.Robot.Vision.Pose3d(Cozmo.Robot.Vision.Mat3.AboutZ(heading),
+                    robot.Translation + new Cozmo.Robot.Vision.Vec3(Math.Cos(heading) * dist, Math.Sin(heading) * dist, 0));
+                DriveGoal = goal;
+                Log($"random drive: {dist:F0} mm at {ang * 180 / Math.PI:F0} deg");
+                var cts = _driveCancel = new CancellationTokenSource();
+                var drive = new Cozmo.Robot.Manipulation.DriveToPoseAction(_m) { Goal = goal };
+                Task.Run(() => drive.RunAsync(cts.Token)).ContinueWith(t =>
+                {
+                    var r = t.Status == TaskStatus.RanToCompletion ? t.Result : Cozmo.Robot.Manipulation.ActionResult.Abort;
+                    Post(() =>
+                    {
+                        if (_driveCancel != cts) return;
+                        _driveCancel = null;
+                        foreach (var l in drive.Trace) Log("  " + l);
+                        Log($"random drive -> {r}");
+                        Finish();
+                    });
+                }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+                return;
+            }
             Finish();
         });
     }
+
+    protected override void OnStop(BehaviorStopReason reason) { _driveCancel?.Cancel(); _driveCancel = null; }
 }

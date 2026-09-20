@@ -18,9 +18,10 @@ public static class ManipTool
 {
     public static async Task<int> Run(string[] a)
     {
-        if (a.Length < 2) { Console.WriteLine("manip <robot-ip> --driveto|--pickup|--putdown|--roll|--stack [--seconds 120] [--nominal] [--acceptance [file]]  |  manip --plan <x> <y> <angleDeg>"); return 1; }
+        if (a.Length < 2) { Console.WriteLine(Usage); return 1; }
         if (a[1] == "--plan") return Plan(a);
-        string mode = a.Skip(2).FirstOrDefault(x => x is "--driveto" or "--pickup" or "--putdown" or "--roll" or "--stack") ?? "--driveto";
+        string mode = a.Skip(2).FirstOrDefault(x => x is "--driveto" or "--pickup" or "--putdown" or "--roll" or "--stack" or "--flip" or "--knockover" or "--wheelie" or "--mount" or "--driveoff") ?? "--driveto";
+        string? obb = Arg(a, "--obb");
         int seconds = int.TryParse(Arg(a, "--seconds"), out var s) ? s : 120;
         string? acceptance = AcceptancePath(a);
         Console.WriteLine($"connecting to {a[1]}...");
@@ -29,6 +30,12 @@ public static class ManipTool
         using var m = new ManipulationSystem(robot, vision);
         var log = new List<string>();
         void Say(string line) { Console.WriteLine(line); log.Add(line); }
+        if (obb is not null)
+        {
+            Say(m.LoadPlanner(obb) ? "lattice planner loaded from cozmo_mprim.json (M13)" : "no cozmo_mprim.json under --obb: straight-line planner");
+            m.Workouts = WorkoutComponent.FromObb(obb);
+        }
+        else Say("no --obb: straight-line planner (LOCAL); pass --obb <dir> for the engine's lattice planner");
         vision.Log += l => Say("  vision: " + l);
         vision.World.Log += l => Say("  world: " + l);
         m.Log += l => Say("  manip: " + l);
@@ -43,18 +50,67 @@ public static class ManipTool
         await robot.WaitForMotorCalibrationAsync(TimeSpan.FromSeconds(10));
         robot.StartCamera();
 
-        Say("waiting for a located cube (show Cozmo a connected cube)...");
-        var deadline = DateTime.UtcNow.AddSeconds(30);
-        while (DateTime.UtcNow < deadline && vision.World.LocatedObjects.Count == 0) await Task.Delay(200);
-        var cube = vision.World.LocatedObjects.FirstOrDefault();
-        if (cube is null) { Say("no cube located in 30 s"); robot.StopCamera(); robot.Disconnect(); return 2; }
-        Say($"target: {cube}");
-
         var sw = System.Diagnostics.Stopwatch.StartNew();
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(seconds));
         string outcome;
+        if (mode == "--driveoff")
+        {
+            Say($"on charger: {robot.Sensors.OnCharger}");
+            var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap() };
+            var b = new DriveOffChargerBehavior(m, "DriveOffCharger", 60);
+            b.Step += l => Say("  driveoff: " + l);
+            outcome = await RunBehavior(b, ctx, cts.Token, "on the charger");
+            return Finish(outcome, "he drives forward off the charger about 156 mm at 20 mm/s and stops on his treads; IS_ON_CHARGER clears", mode);
+        }
+        if (mode == "--mount")
+        {
+            Say("waiting for a located charger (show Cozmo the charger's back-wall marker)...");
+            var deadlineC = DateTime.UtcNow.AddSeconds(30);
+            while (DateTime.UtcNow < deadlineC && vision.World.GetLocatedObjectById(ChargerGeometry.ObjectId) is null) await Task.Delay(200);
+            var charger = vision.World.GetLocatedObjectById(ChargerGeometry.ObjectId);
+            if (charger is null) { Say("no charger located in 30 s"); robot.StopCamera(); robot.Disconnect(); return 2; }
+            Say($"charger: {charger}; docked robot pose {ChargerGeometry.DockedRobotPose(charger.Pose)}");
+            var act = new MountChargerAction(m, ChargerGeometry.ObjectId);
+            var r = await act.RunAsync(cts.Token);
+            foreach (var l in act.Trace) Say("  " + l);
+            outcome = $"MountCharger -> {r} after {act.Attempts} attempt(s); on charger: {robot.Sensors.OnCharger}";
+            return Finish(outcome, "he aligns 120 mm in front of the charger's marker, turns around, backs onto the charger and the contacts report; a miss drives forward 120 mm and retries", mode);
+        }
+
+        Say("waiting for a located cube (show Cozmo a connected cube)...");
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (DateTime.UtcNow < deadline && vision.World.LocatedObjects.Count == 0) await Task.Delay(200);
+        var cube = vision.World.LocatedObjects.FirstOrDefault(o => CubeGeometry.IsCube(o.Type));
+        if (cube is null) { Say("no cube located in 30 s"); robot.StopCamera(); robot.Disconnect(); return 2; }
+        Say($"target: {cube}");
+
         switch (mode)
         {
+            case "--flip":
+            {
+                var f = new DriveAndFlipBlockAction(m, cube.ObjectId);
+                var r = await f.RunAsync(cts.Token);
+                foreach (var l in f.Trace) Say("  " + l);
+                outcome = $"DriveAndFlipBlock -> {r}; lift raised: {f.Flip?.LiftRaised}; cube now {vision.World.GetObjectById(cube.ObjectId)?.PoseState}";
+                break;
+            }
+            case "--wheelie":
+            {
+                var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap() };
+                var b = new PopAWheelieBehavior(m);
+                b.Step += l => Say("  wheelie: " + l);
+                outcome = await RunBehavior(b, ctx, cts.Token, "an upright located cube and the animation library");
+                break;
+            }
+            case "--knockover":
+            {
+                var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap() };
+                var b = new KnockOverCubesBehavior(m, "SparksKnockOverCubes", 2);
+                b.Step += l => Say("  knockover: " + l);
+                Say($"stacks: {string.Join("; ", m.Configurations.Stacks.Select(s => string.Join("/", s.BlockIds)))}");
+                outcome = await RunBehavior(b, ctx, cts.Token, "a located stack of two and the animation library");
+                break;
+            }
             case "--driveto":
             {
                 var d = new DriveToObjectAction(m, cube.ObjectId, PreActionType.Docking);
@@ -101,25 +157,56 @@ public static class ManipTool
                 break;
             }
         }
-        Say($"\n[{sw.Elapsed.TotalSeconds:F1}s] {outcome}");
-        robot.StopCamera();
-        if (acceptance is not null)
+        return Finish(outcome, "the robot drove to the pre-dock pose in front of the cube's face, docked smoothly using the marker, and the lift/cube did what the action says; " +
+                              "no path or dock message was rejected; the printed carrying state matches reality", mode);
+
+        int Finish(string result, string humanCheck, string what)
         {
-            var record = WriteAcceptance("manip", acceptance, !outcome.Contains("Abort") && !outcome.Contains("Timeout"), robot,
-                "the robot drove to the pre-dock pose in front of the cube's face, docked smoothly using the marker, and the lift/cube did what the action says; " +
-                "no path or dock message was rejected; the printed carrying state matches reality",
-                new { mode, outcome, messagesSent = m.Paths.Sent.Count + m.Docking.Sent.Count, log });
-            Console.WriteLine($"acceptance record: {record}");
+            Say($"\n[{sw.Elapsed.TotalSeconds:F1}s] {result}");
+            robot.StopCamera();
+            if (acceptance is not null)
+            {
+                var record = WriteAcceptance("manip", acceptance, !result.Contains("Abort") && !result.Contains("Timeout") && !result.Contains("not runnable"), robot, humanCheck,
+                    new { mode = what, outcome = result, messagesSent = m.Paths.Sent.Count + m.Docking.Sent.Count, log }, what is "--flip" or "--knockover" or "--wheelie" or "--mount" or "--driveoff" ? "M13" : "M12");
+                Console.WriteLine($"acceptance record: {record}");
+            }
+            robot.Disconnect();
+            return 0;
         }
-        robot.Disconnect();
-        return 0;
+
+        async Task<string> RunBehavior(SteppedBehavior b, BehaviorContext ctx, CancellationToken ct, string needs)
+        {
+            if (!b.IsRunnable(ctx)) return $"{b.Id} not runnable (needs {needs})";
+            await b.StartAsync(ctx, new BehaviorScope(), ct);
+            double t = 0;
+            while (b.Update(ctx, t) && !ct.IsCancellationRequested) { await Task.Delay(33); t += 33; }
+            return $"{b.Id} ended; last steps: {string.Join(" | ", b.Trace.TakeLast(3))}";
+        }
     }
+
+    private const string Usage = "manip <robot-ip> --driveto|--pickup|--putdown|--roll|--stack|--flip|--knockover|--wheelie|--mount|--driveoff [--obb <dir>] [--seconds 120] [--nominal] [--acceptance [file]]  |  manip --plan <x> <y> <angleDeg> [--obb <dir>] [--obstacle <x> <y>]";
 
     private static int Plan(string[] a)
     {
-        if (a.Length < 5) { Console.WriteLine("manip --plan <x> <y> <angleDeg>"); return 1; }
+        if (a.Length < 5) { Console.WriteLine(Usage); return 1; }
         var goal = new Pose3d(Mat3.AboutZ(double.Parse(a[4]) * Math.PI / 180), new Vec3(double.Parse(a[2]), double.Parse(a[3]), 0));
-        var path = StraightLinePlanner.Plan(Pose3d.Identity, goal);
+        IReadOnlyList<PathSegment> path;
+        string? obb = Arg(a, "--obb");
+        var prims = obb is null ? null : MotionPrimitiveSet.FromObb(obb);
+        if (prims is not null)
+        {
+            var env = new LatticeEnvironment(prims);
+            for (int i = 2; i < a.Length - 2; i++)
+                if (a[i] == "--obstacle") env.AddRectangleObstacle(new Pose3d(Mat3.Identity, new Vec3(double.Parse(a[i + 1]), double.Parse(a[i + 2]), 0)), CubeGeometry.CubeSizeMm, CubeGeometry.CubeSizeMm, "cube");
+            var planner = new LatticePlanner(env);
+            var res = planner.PlanTo(Pose3d.Identity, new[] { goal }, PathMotionProfile.Default);
+            if (res is null) { Console.WriteLine("the lattice planner found no plan"); return 2; }
+            Console.WriteLine($"lattice plan: {res.Value.Plan.Actions.Count} primitive(s), cost {res.Value.Plan.Cost:F0}, {res.Value.Plan.Expansions} expansions, {env.ObstacleCount} obstacle(s)");
+            foreach (var s in res.Value.Plan.States()) Console.Write($" ({s.X},{s.Y},{s.Theta})");
+            Console.WriteLine();
+            path = res.Value.Path;
+        }
+        else path = StraightLinePlanner.Plan(Pose3d.Identity, goal);
         Console.WriteLine($"{path.Count} segment(s) from the origin to {goal}:");
         foreach (var s in path) Console.WriteLine("  " + s);
         using var robot = CozmoRobot.CreateOffline();
@@ -142,12 +229,12 @@ public static class ManipTool
         return null;
     }
 
-    private static string WriteAcceptance(string tool, string path, bool automatedPass, CozmoRobot robot, string humanCheck, object detail)
+    private static string WriteAcceptance(string tool, string path, bool automatedPass, CozmoRobot robot, string humanCheck, object detail, string milestone = "M12")
     {
         var file = Path.GetFullPath(string.IsNullOrEmpty(path) ? $"cozmo-acceptance-{tool}-{DateTime.Now:yyyyMMdd-HHmmss}.json" : path);
         var record = new
         {
-            tool, milestone = "M12", timestampUtc = DateTime.UtcNow, firmware = robot.State.FirmwareVersionNumber, serial = robot.State.SerialNumber,
+            tool, milestone, timestampUtc = DateTime.UtcNow, firmware = robot.State.FirmwareVersionNumber, serial = robot.State.SerialNumber,
             automated = new { pass = automatedPass, detail },
             human = new { check = humanCheck, verdict = "PENDING - fill in after watching the robot" },
         };

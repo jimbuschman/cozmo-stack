@@ -32,6 +32,10 @@ public sealed class DriveToPoseAction
     public DriveToPoseAction(ManipulationSystem m) => _m = m;
 
     public Pose3d? Goal { get; set; }
+    /// <summary>Alternative goals for the lattice planner (a cube's pre-action poses); the reached one becomes <see cref="Goal"/>.</summary>
+    public IReadOnlyList<Pose3d>? Goals { get; set; }
+    /// <summary>Objects not to treat as obstacles (the one being docked with).</summary>
+    public IEnumerable<uint>? IgnoreObstacleIds { get; set; }
     public double DistanceToleranceMm { get; set; } = DefaultGoalDistanceToleranceMm;
     public PathMotionProfile Profile { get; set; } = PathMotionProfile.Default;
     public IReadOnlyList<string> Trace => _trace;
@@ -43,12 +47,34 @@ public sealed class DriveToPoseAction
         var start = _m.RobotPose();
         if (start is null) { _trace.Add("no robot state"); return ActionResult.Abort; }
         _ = _m.Robot.Motion.SetHeadAngleAsync((float)PathFollowingHeadAngleRad, requireCalibration: false);
-        var path = StraightLinePlanner.Plan(start.Value, goal, Profile);
+        IReadOnlyList<PathSegment> path;
+        if (_m.Planner is { } planner)
+        {
+            // LatticePlannerImpl::StartPlanning: import the world's obstacles, plan, and turn the plan into segments
+            planner.Env.ImportBlockWorldObstacles(_m.World, _m.Docking.Carrying.CarriedObjectId, IgnoreObstacleIds);
+            var goals = Goals is { Count: > 0 } ? Goals : new[] { goal };
+            var planned = planner.PlanTo(start.Value, goals, Profile);
+            if (planned is { } pl)
+            {
+                path = pl.Path; goal = pl.Goal;
+                _trace.Add($"lattice plan: {pl.Plan.Actions.Count} primitive(s), cost {pl.Plan.Cost:F0}, {pl.Plan.Expansions} expansions, {planner.Env.ObstacleCount} obstacle(s)");
+            }
+            else
+            {
+                _trace.Add("lattice planner found no plan; straight-line fallback (LOCAL_POLICY)");
+                path = StraightLinePlanner.Plan(start.Value, goal, Profile);
+            }
+        }
+        else path = StraightLinePlanner.Plan(start.Value, goal, Profile);
         if (path.Count == 0) { _trace.Add("already at the goal"); return ActionResult.Success; }
         ushort id = _m.Paths.Execute(path);
         _trace.Add($"path {id}: {path.Count} segment(s) from {start.Value.Translation} to {goal.Translation}");
         double lengthMm = 0;
-        foreach (var s in path) if (s is PathSegment.Line l) lengthMm += Math.Sqrt((l.ToX - l.FromX) * (l.ToX - l.FromX) + (l.ToY - l.FromY) * (l.ToY - l.FromY));
+        foreach (var s in path)
+        {
+            if (s is PathSegment.Line l) lengthMm += Math.Sqrt((l.ToX - l.FromX) * (l.ToX - l.FromX) + (l.ToY - l.FromY) * (l.ToY - l.FromY));
+            else if (s is PathSegment.Arc a) lengthMm += Math.Abs(a.SweepRad) * a.RadiusMm;
+        }
         var timeout = TimeSpan.FromSeconds(5 + lengthMm / Math.Max(20, Profile.SpeedMmps) * 2 + path.Count * 3);
         var ev = await _m.Follower.WaitForEndAsync(id, timeout, cancel);
         if (ev is null) { _trace.Add("DriveToPoseAction.CheckIfDone.Failure: no path completion"); _m.Paths.Abort(); return cancel.IsCancellationRequested ? ActionResult.CancelledWhileRunning : ActionResult.FailedTraversingPath; }
@@ -61,6 +87,7 @@ public sealed class DriveToPoseAction
         if (dist <= DistanceToleranceMm && dAngle <= GoalAngleToleranceRad)
         {
             _trace.Add($"DriveToPoseAction.CheckIfDone.Success: Tdiff={dist:F1}mm");
+            Goal = goal;
             return ActionResult.Success;
         }
         _trace.Add($"DriveToPoseAction.CheckIfDone.DoneNotInPlace: dist={dist:F1}mm angle={dAngle * 180 / Math.PI:F1}deg");
@@ -112,10 +139,12 @@ public sealed class DriveToObjectAction
         if (close) _trace.Add($"DriveToObjectAction.GetPossiblePoses.UseRobotPose: within ({thresh:F1},{thresh:F1}) of the pre-action pose");
         else
         {
-            var drive = new DriveToPoseAction(_m) { Goal = closest.WorldPose, DistanceToleranceMm = Math.Max(thresh, DriveToPoseAction.DefaultGoalDistanceToleranceMm), Profile = Profile };
+            var drive = new DriveToPoseAction(_m) { Goal = closest.WorldPose, Goals = poses.Select(p => p.WorldPose).ToList(), IgnoreObstacleIds = new[] { ObjectId },
+                                                     DistanceToleranceMm = Math.Max(thresh, DriveToPoseAction.DefaultGoalDistanceToleranceMm), Profile = Profile };
             var r = await drive.RunAsync(cancel);
             _trace.AddRange(drive.Trace);
             if (r != ActionResult.Success) return r;
+            if (drive.Goal is { } reached) Chosen = poses.FirstOrDefault(p => p.WorldPose.Equals(reached)) ?? closest;
         }
         if (!_m.Docking.Carrying.IsCarrying(ObjectId))
         {

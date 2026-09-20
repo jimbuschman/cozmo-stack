@@ -21,7 +21,7 @@ public sealed class ObservableObject
     public ObservableObject(uint objectId, ObjectType type, IReadOnlyList<KnownMarker> markers)
     {
         ObjectId = objectId; Type = type; Markers = markers;
-        Family = CubeGeometry.IsCube(type) ? ObjectFamily.LightCube : ObjectFamily.Unknown;
+        Family = CubeGeometry.IsCube(type) ? ObjectFamily.LightCube : type == ObjectType.Charger_Basic ? ObjectFamily.Charger : ObjectFamily.Unknown;
     }
 
     public uint ObjectId { get; }
@@ -231,19 +231,20 @@ public sealed class BlockWorld
         foreach (var (oid, t) in _connected()) if (t == type) { id = oid; break; }
         if (id is null)
         {
-            if (!AllowUnconnectedObjects)
+            if (!AllowUnconnectedObjects && CubeGeometry.IsActiveObjectType(type))
             {
                 Log?.Invoke($"Observed active object of type {type} but it's not connected");
                 return null;
             }
-            id = type switch { ObjectType.Block_LIGHTCUBE1 => 1u, ObjectType.Block_LIGHTCUBE2 => 2u, ObjectType.Block_LIGHTCUBE3 => 3u, _ => 0u };
+            // passive objects (the charger) get fixed ids; unconnected cubes theirs by type (LOCAL)
+            id = type switch { ObjectType.Block_LIGHTCUBE1 => 1u, ObjectType.Block_LIGHTCUBE2 => 2u, ObjectType.Block_LIGHTCUBE3 => 3u, ObjectType.Charger_Basic => ChargerGeometry.ObjectId, _ => 0u };
         }
         pose = ClampPoseToFlat(pose);
         ObservableObject obj; bool isNew; Pose3d prevPose; PoseState prevState;
         lock (_gate)
         {
             isNew = !_objects.TryGetValue(id.Value, out obj!);
-            if (isNew) { obj = new ObservableObject(id.Value, type, CubeGeometry.CubeMarkers(type)); _objects[id.Value] = obj; }
+            if (isNew) { obj = new ObservableObject(id.Value, type, CubeGeometry.MarkersFor(type)); _objects[id.Value] = obj; }
             prevPose = obj.Pose; prevState = obj.PoseState;
             obj.Pose = pose;
             obj.PoseState = PoseState.Known;

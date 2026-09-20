@@ -75,10 +75,13 @@ public static class MarkerRenderer
     /// Renders a cube's visible markers into a frame as the camera would see them: each marker whose face turns
     /// towards the camera is projected and painted with its library image. Returns the codes drawn.
     /// </summary>
-    public static IReadOnlyList<MarkerType> DrawCube(GrayImage frame, MarkerLibrary lib, CameraModel camera, ObjectType type, Pose3d cubePose)
+    public static IReadOnlyList<MarkerType> DrawCube(GrayImage frame, MarkerLibrary lib, CameraModel camera, ObjectType type, Pose3d cubePose) => DrawObject(frame, lib, camera, type, cubePose);
+
+    /// <summary>Draws every camera-facing marker of any modelled object (a cube's six, the charger's one) at its pose.</summary>
+    public static IReadOnlyList<MarkerType> DrawObject(GrayImage frame, MarkerLibrary lib, CameraModel camera, ObjectType type, Pose3d cubePose)
     {
         var drawn = new List<MarkerType>();
-        foreach (var m in CubeGeometry.CubeMarkers(type))
+        foreach (var m in CubeGeometry.MarkersFor(type))
         {
             var world = m.CornersInWorld(cubePose);
             var centre = (world[0] + world[1] + world[2] + world[3]) / 4;

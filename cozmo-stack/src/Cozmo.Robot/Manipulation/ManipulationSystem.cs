@@ -17,7 +17,38 @@ public sealed class ManipulationSystem : IDisposable
         Follower = new PathFollower(robot);
         Docking = new DockingSystem(robot, vision);
         Docking.Log += l => Log?.Invoke(l);
+        Configurations = new BlockConfigurationManager(vision.World, () => ClockSec());
+        Whiteboard = new AIWhiteboard(vision.World, () => ClockSec());
+        vision.World.ObjectObserved += _ => Configurations.Update();
+        vision.World.PoseStateChanged += (_, _, _) => Configurations.Update();
     }
+
+    /// <summary>Seconds on the clock the components stamp with (the robot's clock by default; tests inject theirs).</summary>
+    public Func<double> ClockSec { get; set; } = () => Environment.TickCount64 / 1000.0;
+
+    /// <summary>
+    /// The engine's lattice planner (M13), when the motion-primitive set is available: <see cref="DriveToPoseAction"/>
+    /// plans with it around the world's located objects and falls back to <see cref="StraightLinePlanner"/> when
+    /// it is null or finds no plan (the engine's <c>PathComponent::SelectPlanner</c> also keeps a simpler planner
+    /// for short, clear goals; LOCAL_POLICY fallback).
+    /// </summary>
+    public LatticePlanner? Planner { get; set; }
+
+    /// <summary>Attaches the lattice planner from an OBB root's <c>cozmo_mprim.json</c>; false when the file is missing.</summary>
+    public bool LoadPlanner(string obbRoot)
+    {
+        var prims = MotionPrimitiveSet.FromObb(obbRoot);
+        if (prims is null) return false;
+        Planner = new LatticePlanner(new LatticeEnvironment(prims));
+        return true;
+    }
+
+    /// <summary>The block configurations (stacks, pyramid bases, pyramids) over the world model, rebuilt on every observation.</summary>
+    public BlockConfigurationManager Configurations { get; }
+    /// <summary>Beacons and object-failure memory shared by the behaviours.</summary>
+    public AIWhiteboard Whiteboard { get; }
+    /// <summary>The workout configs, when loaded from the OBB.</summary>
+    public WorkoutComponent? Workouts { get; set; }
 
     public CozmoRobot Robot { get; }
     public VisionSystem Vision { get; }

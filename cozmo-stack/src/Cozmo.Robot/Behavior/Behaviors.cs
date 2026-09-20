@@ -350,6 +350,40 @@ public static class ShippedBehaviors
         new PickUpAndPutDownCubeBehavior(m, "SparksPickUpCube"),
     };
 
+    /// <summary>
+    /// The M13 behaviours on the planner, the flip action, the block configurations, the whiteboard, the
+    /// workouts and the charger: 24 shipped configs. The workout behaviours are runnable only when
+    /// <see cref="Cozmo.Robot.Manipulation.ManipulationSystem.Workouts"/> is loaded from the OBB.
+    /// </summary>
+    public static IReadOnlyList<IBehavior> Navigation(Cozmo.Robot.Manipulation.ManipulationSystem m) => new IBehavior[]
+    {
+        new KnockOverCubesBehavior(m, "KnockOverCubes", minimumStackHeight: 3),
+        new KnockOverCubesBehavior(m, "SparksKnockOverCubes", minimumStackHeight: 2),
+        new PopAWheelieBehavior(m, "PopAWheelie"),
+        new PopAWheelieBehavior(m, "SparksPopAWheelie"),
+        new RamIntoBlockBehavior(m, "RamIntoBlock"),
+        new CubeLiftWorkoutBehavior(m, "CubeLiftWorkout"),
+        new CubeLiftWorkoutBehavior(m, "SparksCubeLiftWorkout"),
+        new BuildPyramidBaseBehavior(m, "BuildPyramidBase"),
+        new BuildPyramidBaseBehavior(m, "BuildPyramid", buildTop: true),
+        new RespondPossiblyRollBehavior(m, "PyramidRespondPossiblyRoll"),
+        OnConfigSeenBehavior.RespondToPyramidBase(m),
+        new CantHandleTallStackBehavior(m, "CantHandleTallStack"),
+        new CheckForStackAtIntervalBehavior(m, "SparksCheckForStackAtInterval", 15),
+        ReactToConfigurationBehavior.ReactToPyramid(m),
+        ReactToConfigurationBehavior.ReactToStackOfCubes(m),
+        new ThinkAboutBeaconsBehavior(m, "Hiking_ThinkAboutBeacons", 175),
+        new ThinkAboutBeaconsBehavior(m, "SparksThinkAboutBeacons", 75),
+        new BringCubeToBeaconBehavior(m, "Hiking_BringCubeToBeacon", 45),
+        new BringCubeToBeaconBehavior(m, "SparksBringCubeToBeacon", 5),
+        new DriveOffChargerBehavior(m, "DriveOffCharger", 60),
+        new DriveOffChargerBehavior(m, "Hiking_DriveOffCharger", 45),
+        new ReactToOnChargerBehavior("ReactToOnCharger", 300, 330),
+        new ReactToOnChargerBehavior("VC_GoToSleep", 300, 330, triggeredFromVoiceCommand: true),
+        new MountChargerBehavior(m, "DockingTestSimple"),
+        ReactToFrustrationBehavior.Major(m),
+    };
+
     /// <summary>Creates the config-free runnable set, matching the shipped configs' ids and classes.</summary>
     public static IReadOnlyList<IBehavior> Implementable() => new IBehavior[]
     {
