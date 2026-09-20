@@ -86,9 +86,38 @@ IMPLEMENTABLE = "implementable with M1-M7 now"
 # behaviour is native-driven, not that it is easy.
 DETECTABLE_REACTIONS = {
     "ReactToCliff",       # RobotStatusFlag.CliffDetected
-    "ReactToPickup",      # RobotStatusFlag.IsPickedUp
+    "ReactToPickup",      # OffTreadsState.InAir (M10; M7 used RobotStatusFlag.IsPickedUp)
     "ReactToOnCharger",   # RobotStatusFlag.IsOnCharger
+    "ReactToImpact",      # FallingStopped.impactIntensity > 1000 (M7, ReactiveBehavior)
 }
+
+# M10 (2026-09-19) derived the engine's robot state from the streamed IMU and calibration reports: the
+# off-treads classifier (Robot::CheckAndUpdateTreadsState), the shake test (StrategyRobotShaken), the
+# slope test (StrategyRobotPlacedOnSlope), the unexpected-movement detector
+# (MovementComponent::CheckForUnexpectedMovement) and the auto-calibration report. These reaction classes
+# were transcribed from the binary and run in the M8 framework (OffTreadsBehaviors.cs).
+M10_REACTIONS = {
+    "ReactToRobotOnBack", "ReactToRobotOnFace", "ReactToRobotOnSide", "ReactToPlacedOnSlope",
+    "ReactToReturnedToTreads", "ReactToRobotShaken", "ReactToUnexpectedMovement", "ReactToMotorCalibration",
+}
+M10_DERIVED = "implementable with M10 (derived robot state)"
+
+# Per-behaviour verdicts where the class alone does not decide: the two ReactToFrustration configs differ
+# in what they need, ReactToSparked needs the app's spark request, and ReactToCubeMoved is transcribed but
+# every step of it asks the world model where the cube is.
+BY_ID = {
+    "ReactToFrustrationMinor": (M10_DERIVED, "mood confidence below -0.6 plus one animation and an emotion event; both exist"),
+    "ReactToFrustrationMajor": ("requires navigation/path planning", "its random drive is a DriveToPoseAction (BehaviorReactToFrustration::AnimationComplete)"),
+    "ReactToSparked": ("requires the app's spark system", "triggered by the app's ActivateSpark request (BehaviorManager::HandleMessage), which this stack does not receive"),
+    "ReactToCubeMoved": ("implemented; waits on cube localization (vision)",
+                         "BehaviorAcknowledgeCubeMoved and ReactionTriggerStrategyCubeMoved are transcribed; the trigger and the turn need BlockWorld's located pose"),
+}
+
+# PlayAnim and PlayArbitraryAnim only ever play the trigger their config names; what they mention in that
+# name (a cube) is the game's business, not an input the behaviour reads. PlayAnimWithFace is not in this
+# set: the engine's BehaviorPlayAnimSequenceWithFace::InitInternal (0x005C0648) runs a TurnTowardsFaceAction
+# (0x005C0686) before the animation, so it needs a tracked face.
+PLAY_ANIM_CLASSES = {"PlayAnim", "PlayArbitraryAnim"}
 
 UNDETECTED_STATE = "requires robot state not yet derived"
 
@@ -128,6 +157,14 @@ def classify(entry):
     blob = entry["behaviorClass"] + " " + entry["behaviorID"] + "\n" + entry["raw"]
     if COMPOSITE.search(entry["behaviorClass"]):
         return "wrapper/composite behavior", f"class name '{entry['behaviorClass']}' names a composite"
+    if entry["behaviorID"] in BY_ID:
+        return BY_ID[entry["behaviorID"]]
+    if entry["behaviorClass"] == "PlayAnimWithFace":
+        return "requires vision/person detection", "BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays"
+    if entry["behaviorClass"] in PLAY_ANIM_CLASSES and (entry["animTriggers"] or entry["behaviorClass"] == "PlayArbitraryAnim"):
+        return IMPLEMENTABLE, "plays the animation trigger its config names and reads nothing else"
+    if entry["behaviorClass"] in M10_REACTIONS:
+        return M10_DERIVED, f"'{entry['behaviorClass']}' is transcribed from the engine and its input is derived in M10"
     for category, reason, pattern in RULES:
         m = re.search(pattern, blob)
         if m:
@@ -136,6 +173,8 @@ def classify(entry):
         if part in DIR_CATEGORIES:
             return DIR_CATEGORIES[part]
     cls = entry["behaviorClass"]
+    if cls in M10_REACTIONS:
+        return M10_DERIVED, f"'{cls}' is transcribed from the engine and its input is derived in M10"
     if cls.startswith("ReactTo"):
         return (IMPLEMENTABLE, "its cause is reported by M4 sensors") if cls in DETECTABLE_REACTIONS             else (UNDETECTED_STATE, f"nothing yet derives the state '{cls}' reacts to")
     if entry["animTriggers"] or cls in ("PlayAnimWithFace", "PlayAnim", "PlayArbitraryAnim"):
@@ -191,6 +230,9 @@ def render(entries, ids, classes, native):
         "on trust. A behaviour matching no rule is **unclear**, not pushed into a plausible bucket.",
         "",
         "1. class name names a composite → wrapper/composite",
+        "1a. a per-behaviour verdict from reading its class in the binary (the two frustration configs, ReactToSparked, ReactToCubeMoved)",
+        "1b. PlayAnimWithFace → requires vision (the engine turns to a face first); PlayAnim / PlayArbitraryAnim with animTriggers → implementable now",
+        "1c. a ReactTo class whose input M10 derives → implementable with M10 (derived robot state)",
         "2. text names cubes, blocks or objects → requires cubes",
         "3. text names faces, people or pets → requires vision",
         "4. text names the charger or docking → requires charger/docking",

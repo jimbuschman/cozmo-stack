@@ -183,3 +183,20 @@ offline-verified only.
 taken from public documentation, tabulated with their provenance class in `WWISE_MUSIC.md` §3; the
 engine's behaviour logic is read from the binary. The robot run is the one check that needs hardware and
 it is not a gate for M10.
+
+## M10 — derived robot state and reactions (2026-09-19): offline complete, hardware pending
+
+| Capability | Automated | Human | Evidence |
+| --- | --- | --- | --- |
+| Off-treads classifier | pass — every branch and constant pinned; the three committed fw2457 captures replay with the classifier enabled, all states classified, 0 transitions | **not run** | `DerivedStateTests` (classifier section), `TheCapturedRobotStaysOnTreadsThroughTheWholeLog`, `offtreads --replay` |
+| Unexpected-movement detector | pass — turn-that-does-not-turn at 11 states, spun-against-command at 6, resets and decay | **not run** | `DerivedStateTests` (detector section) |
+| Reaction strategies | pass — state callbacks, latches, shaken 16000, slope timing, frustration cooldown | n/a | `DerivedStateTests` (strategies) |
+| Nine reaction behaviours | pass — transitions, waits, recalibration, the shaken machine, on the shipped assets | **not run** | `DerivedStateTests` (behaviours), `EveryTriggerTheDerivedStateReactionsPlayResolves` |
+| Reaction dispatch (manager) | pass — switch, resume-last, disabled trigger, reaction lock | n/a | `DerivedStateTests` (manager) |
+| Whole-config | pass — 12 registrations match `reactionTrigger_behavior_map.json`; 15 PlayAnim configs load, resolve, and match the inventory; inventory regenerated (67 of 178) | n/a | `EveryRegisteredReactionMatchesTheShippedMap`, `EveryShippedPlayAnimConfigLoadsAndResolves`, `behavior_inventory.py --check` |
+| Cube-moved path | pass against a fake locator — cannot fire without one, fires on a located cube moved > 1 s out of view, sense → turn → presence/absence | n/a until vision | `DerivedStateTests` (cube path) |
+| **Transitions and reactions on the robot** | **not run** | **not run** | `offtreads` / `reactions … --acceptance`; `HARDWARE_TEST_PLAN.md` items G–J |
+
+**M10 is COMPLETE OFFLINE and NOT hardware verified.** Every threshold is read from the binary
+(`DERIVED_STATE.md`); the labelled non-native items are in its §5. The robot runs are the checks that need
+hardware and none gates M11.

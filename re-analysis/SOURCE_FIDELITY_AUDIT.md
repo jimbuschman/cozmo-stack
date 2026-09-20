@@ -429,3 +429,26 @@ Test suite after the reconciliation: **444 passed, 0 failed (`dotnet test Cozmo.
 | --- | --- |
 | M2 helpers / M4 | lift readout renamed and converted (D10); conformance `control` prints angle and height |
 | M5 | scheduler timeline and refusal semantics (D11, D12) |
+
+## 11. M10 additions, 2026-09-19
+
+M10 added a body of NATIVE rows that are tabulated in [DERIVED_STATE.md](DERIVED_STATE.md) rather than folded
+into §5: the off-treads classifier (every threshold, filter constant and debounce of `Robot::CheckAndUpdateTreadsState`
+0x00511E00 and `Robot::UpdateFullRobotState` 0x0051291C), the unexpected-movement detector
+(`MovementComponent::CheckForUnexpectedMovement` 0x0063E398 and its constructor), the reaction-strategy factory's
+per-trigger rules (0x0060D5A0 and its lambdas), the shaken / slope / frustration wants-to-run strategies, and
+eight `BehaviorReactToX` classes transition by transition. Its non-native items are its §5: two LOCAL_POLICY (the
+debounce clock source, the 5 s calibration allowance), one LOCAL_POLICY fallback (pick-up on the raw flag until the
+classifier is enabled), three INFERRED (the direct-drive gate on the detector, resume-last mechanics, the cube
+path's unlocated transition), one DEFERRED (the per-play body-track lock), and the unmodelled needs/hiccup/DAS
+systems.
+
+Two earlier readings were corrected from the binary and are recorded in `BEHAVIOR_LAYER.md`'s M10 errata: the
+pick-up reaction's trigger (derived InAir, not the raw flag — a change to frozen M7, kept with a labelled
+fallback) and `PlayAnimWithFace` (turns to a face first; not a `PlayAnim`). One session note was corrected
+against the shipped file: `reactToRobotShaken.json` has `disableByDefault: false`. The inventory tool's rules
+were rewritten from the implemented set (`DERIVED_STATE.md` §9); the regenerated inventory is 67 of 178.
+
+Offline evidence added: `DerivedStateTests` (40 tests) and `offtreads --replay` over the three committed fw2457
+captures (0 transitions, 0 detections on a robot sitting on its treads; classifier enabled by the robot's own
+calibration report). Hardware evidence: none yet; `HARDWARE_TEST_PLAN.md` items G–J.

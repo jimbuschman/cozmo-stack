@@ -180,3 +180,33 @@ reproduced offline against the committed captures; the cube reactions run on the
 discovery is hardware-observed. Neither needs a robot to build, and cube acceptance (item B) is what
 freezes the second half. Vision (24) remains the larger subsystem; charger/docking (7) needs hardware to
 verify at every step.
+
+## After M10 (2026-09-19): the inventory re-run
+
+`behavior_inventory.py` now classifies from what is implemented: the M10 reaction classes, the corrected
+`PlayAnim` / `PlayAnimWithFace` reading, and per-behaviour verdicts read from the binary:
+
+| blocker | behaviours |
+| --- | ---: |
+| requires cubes | 55 |
+| **implementable with M9 (switch-state audio)** | **39** |
+| requires vision/person detection | 23 |
+| **implementable with M1-M7 now** | **19** |
+| freeplay/explorer-specific | 16 |
+| **implementable with M10 (derived robot state)** | **9** |
+| requires charger/docking | 5 |
+| developer-only | 4 |
+| game-specific | 2 |
+| unclear | 2 |
+| requires localization/world model | 1 |
+| implemented; waits on cube localization (vision) | 1 |
+| requires navigation/path planning | 1 |
+| requires the app's spark system | 1 |
+
+**67 of 178 are runnable offline** (44 after M9). `ReactToCubeMoved` is built and waits only for a cube pose.
+M10's hardware acceptance is pending (`HARDWARE_TEST_PLAN.md` items G–J) and nothing that follows depends on it.
+
+**Recommended next: M11 — vision, first slice: marker detection and cube localisation.** It is the single
+largest unblocker left: 55 cube behaviours and the finished cube-moved reaction need a located cube, and the
+face/pet set (23) is the same pipeline's next stage. The engine's `VisionSystem`, `BlockWorld` and marker code
+are exported; M3 already delivers camera frames. Charger/docking (5) and navigation (1) come after a world model.

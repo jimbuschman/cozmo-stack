@@ -62,7 +62,7 @@
    "animTriggers"
   ],
   "category": "requires vision/person detection",
-  "reason": "names faces, people, pets or motion sensing ('Face')"
+  "reason": "BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays"
  },
  {
   "path": "feeding/feedingAnims/feedingPlayRequestAtFace_Severe.json",
@@ -75,7 +75,7 @@
    "animTriggers"
   ],
   "category": "requires vision/person detection",
-  "reason": "names faces, people, pets or motion sensing ('Face')"
+  "reason": "BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays"
  },
  {
   "path": "feeding/feedingAnims/feedingReactCubeShake.json",
@@ -87,8 +87,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "implementable with M1-M7 now",
+  "reason": "plays the animation trigger its config names and reads nothing else"
  },
  {
   "path": "feeding/feedingAnims/feedingReactCubeShake_Severe.json",
@@ -100,8 +100,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "implementable with M1-M7 now",
+  "reason": "plays the animation trigger its config names and reads nothing else"
  },
  {
   "path": "feeding/feedingAnims/feedingReactFullCube.json",
@@ -113,8 +113,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "implementable with M1-M7 now",
+  "reason": "plays the animation trigger its config names and reads nothing else"
  },
  {
   "path": "feeding/feedingAnims/feedingReactFullCube_Severe.json",
@@ -126,8 +126,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "implementable with M1-M7 now",
+  "reason": "plays the animation trigger its config names and reads nothing else"
  },
  {
   "path": "feeding/feedingAnims/feedingReactSeeCharged.json",
@@ -139,8 +139,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "implementable with M1-M7 now",
+  "reason": "plays the animation trigger its config names and reads nothing else"
  },
  {
   "path": "feeding/feedingAnims/feedingReactSeeCharged_Severe.json",
@@ -152,8 +152,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "implementable with M1-M7 now",
+  "reason": "plays the animation trigger its config names and reads nothing else"
  },
  {
   "path": "feeding/feedingEat.json",
@@ -365,8 +365,8 @@
    "animTriggers",
    "requiredRecentSwitchToParent_sec"
   ],
-  "category": "requires charger/docking",
-  "reason": "names the charger or docking ('charger')"
+  "category": "implementable with M1-M7 now",
+  "reason": "plays the animation trigger its config names and reads nothing else"
  },
  {
   "path": "freeplay/hiking/Hiking_firstLookWakeUp.json",
@@ -379,8 +379,8 @@
    "animTriggers",
    "requiredRecentDriveOffCharger_sec"
   ],
-  "category": "requires charger/docking",
-  "reason": "names the charger or docking ('charger')"
+  "category": "implementable with M1-M7 now",
+  "reason": "plays the animation trigger its config names and reads nothing else"
  },
  {
   "path": "freeplay/hiking/Hiking_lookInPlace360.json",
@@ -679,8 +679,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "freeplay/explorer-specific",
-  "reason": "ships under freeplay/"
+  "category": "implementable with M1-M7 now",
+  "reason": "plays the animation trigger its config names and reads nothing else"
  },
  {
   "path": "freeplay/NothingToDo_Idle.json",
@@ -692,8 +692,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "freeplay/explorer-specific",
-  "reason": "ships under freeplay/"
+  "category": "implementable with M1-M7 now",
+  "reason": "plays the animation trigger its config names and reads nothing else"
  },
  {
   "path": "freeplay/popAWheelie.json",
@@ -1791,7 +1791,7 @@
   "animTriggers": [],
   "extraKeys": [],
   "category": "implementable with M1-M7 now",
-  "reason": "plays an animation and asks for nothing else"
+  "reason": "plays the animation trigger its config names and reads nothing else"
  },
  {
   "path": "reactions/acknowledgeFace.json",
@@ -1827,7 +1827,7 @@
    "animTriggers"
   ],
   "category": "implementable with M1-M7 now",
-  "reason": "plays an animation and asks for nothing else"
+  "reason": "plays the animation trigger its config names and reads nothing else"
  },
  {
   "path": "reactions/ramIntoBlock.json",
@@ -1853,8 +1853,8 @@
   "behaviorClass": "ReactToCubeMoved",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires cubes",
-  "reason": "names cubes, blocks or objects ('Cube')"
+  "category": "implemented; waits on cube localization (vision)",
+  "reason": "BehaviorAcknowledgeCubeMoved and ReactionTriggerStrategyCubeMoved are transcribed; the trigger and the turn need BlockWorld's located pose"
  },
  {
   "path": "reactions/reactToFrustrationMajor.json",
@@ -1869,8 +1869,8 @@
    "randomDriveMinAngle_deg",
    "randomDriveMinDist_mm"
   ],
-  "category": "requires robot state not yet derived",
-  "reason": "nothing yet derives the state 'ReactToFrustration' reacts to"
+  "category": "requires navigation/path planning",
+  "reason": "its random drive is a DriveToPoseAction (BehaviorReactToFrustration::AnimationComplete)"
  },
  {
   "path": "reactions/reactToFrustrationMinor.json",
@@ -1881,8 +1881,8 @@
    "anim",
    "finalEmotionEvent"
   ],
-  "category": "requires robot state not yet derived",
-  "reason": "nothing yet derives the state 'ReactToFrustration' reacts to"
+  "category": "implementable with M10 (derived robot state)",
+  "reason": "mood confidence below -0.6 plus one animation and an emotion event; both exist"
  },
  {
   "path": "reactions/reactToImpact.json",
@@ -1890,8 +1890,8 @@
   "behaviorClass": "ReactToImpact",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires robot state not yet derived",
-  "reason": "nothing yet derives the state 'ReactToImpact' reacts to"
+  "category": "implementable with M1-M7 now",
+  "reason": "its cause is reported by M4 sensors"
  },
  {
   "path": "reactions/reactToMotorCalibration.json",
@@ -1899,8 +1899,8 @@
   "behaviorClass": "ReactToMotorCalibration",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires robot state not yet derived",
-  "reason": "nothing yet derives the state 'ReactToMotorCalibration' reacts to"
+  "category": "implementable with M10 (derived robot state)",
+  "reason": "'ReactToMotorCalibration' is transcribed from the engine and its input is derived in M10"
  },
  {
   "path": "reactions/reactToObstacle.json",
@@ -1914,7 +1914,7 @@
    "wantsToRunStrategyConfig"
   ],
   "category": "implementable with M1-M7 now",
-  "reason": "plays an animation and asks for nothing else"
+  "reason": "plays the animation trigger its config names and reads nothing else"
  },
  {
   "path": "reactions/reactToOnCharger.json",
@@ -1952,8 +1952,8 @@
   "behaviorClass": "ReactToPlacedOnSlope",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires robot state not yet derived",
-  "reason": "nothing yet derives the state 'ReactToPlacedOnSlope' reacts to"
+  "category": "implementable with M10 (derived robot state)",
+  "reason": "'ReactToPlacedOnSlope' is transcribed from the engine and its input is derived in M10"
  },
  {
   "path": "reactions/reactToPyramid.json",
@@ -1970,8 +1970,8 @@
   "behaviorClass": "ReactToReturnedToTreads",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires robot state not yet derived",
-  "reason": "nothing yet derives the state 'ReactToReturnedToTreads' reacts to"
+  "category": "implementable with M10 (derived robot state)",
+  "reason": "'ReactToReturnedToTreads' is transcribed from the engine and its input is derived in M10"
  },
  {
   "path": "reactions/reactToRobotOnBack.json",
@@ -1979,8 +1979,8 @@
   "behaviorClass": "ReactToRobotOnBack",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires robot state not yet derived",
-  "reason": "nothing yet derives the state 'ReactToRobotOnBack' reacts to"
+  "category": "implementable with M10 (derived robot state)",
+  "reason": "'ReactToRobotOnBack' is transcribed from the engine and its input is derived in M10"
  },
  {
   "path": "reactions/reactToRobotOnFace.json",
@@ -1988,8 +1988,8 @@
   "behaviorClass": "ReactToRobotOnFace",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires vision/person detection",
-  "reason": "names faces, people, pets or motion sensing ('Face')"
+  "category": "implementable with M10 (derived robot state)",
+  "reason": "'ReactToRobotOnFace' is transcribed from the engine and its input is derived in M10"
  },
  {
   "path": "reactions/reactToRobotOnSide.json",
@@ -1997,8 +1997,8 @@
   "behaviorClass": "ReactToRobotOnSide",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires robot state not yet derived",
-  "reason": "nothing yet derives the state 'ReactToRobotOnSide' reacts to"
+  "category": "implementable with M10 (derived robot state)",
+  "reason": "'ReactToRobotOnSide' is transcribed from the engine and its input is derived in M10"
  },
  {
   "path": "reactions/reactToRobotShaken.json",
@@ -2008,8 +2008,8 @@
   "extraKeys": [
    "disableByDefault"
   ],
-  "category": "requires robot state not yet derived",
-  "reason": "nothing yet derives the state 'ReactToRobotShaken' reacts to"
+  "category": "implementable with M10 (derived robot state)",
+  "reason": "'ReactToRobotShaken' is transcribed from the engine and its input is derived in M10"
  },
  {
   "path": "reactions/reactToSparked.json",
@@ -2017,8 +2017,8 @@
   "behaviorClass": "ReactToSparked",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires robot state not yet derived",
-  "reason": "nothing yet derives the state 'ReactToSparked' reacts to"
+  "category": "requires the app's spark system",
+  "reason": "triggered by the app's ActivateSpark request (BehaviorManager::HandleMessage), which this stack does not receive"
  },
  {
   "path": "reactions/reactToStackOfCubes.json",
@@ -2035,8 +2035,8 @@
   "behaviorClass": "ReactToUnexpectedMovement",
   "animTriggers": [],
   "extraKeys": [],
-  "category": "requires robot state not yet derived",
-  "reason": "nothing yet derives the state 'ReactToUnexpectedMovement' reacts to"
+  "category": "implementable with M10 (derived robot state)",
+  "reason": "'ReactToUnexpectedMovement' is transcribed from the engine and its input is derived in M10"
  },
  {
   "path": "voiceCommands/dance_mambo.json",
@@ -2062,7 +2062,7 @@
    "animTriggers"
   ],
   "category": "requires vision/person detection",
-  "reason": "names faces, people, pets or motion sensing ('Face')"
+  "reason": "BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays"
  },
  {
   "path": "voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Energy.json",
@@ -2075,7 +2075,7 @@
    "animTriggers"
   ],
   "category": "requires vision/person detection",
-  "reason": "names faces, people, pets or motion sensing ('Face')"
+  "reason": "BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays"
  },
  {
   "path": "voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Play.json",
@@ -2088,7 +2088,7 @@
    "animTriggers"
   ],
   "category": "requires vision/person detection",
-  "reason": "names faces, people, pets or motion sensing ('Face')"
+  "reason": "BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays"
  },
  {
   "path": "voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Repair.json",
@@ -2101,7 +2101,7 @@
    "animTriggers"
   ],
   "category": "requires vision/person detection",
-  "reason": "names faces, people, pets or motion sensing ('Face')"
+  "reason": "BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays"
  },
  {
   "path": "voiceCommands/VC_AlrightyResponse.json",
@@ -2114,7 +2114,7 @@
    "animTriggers"
   ],
   "category": "requires vision/person detection",
-  "reason": "names faces, people, pets or motion sensing ('Face')"
+  "reason": "BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays"
  },
  {
   "path": "voiceCommands/VC_ComeHere.json",
@@ -2166,8 +2166,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "game-specific",
-  "reason": "ships under voiceCommands/"
+  "category": "implementable with M1-M7 now",
+  "reason": "plays the animation trigger its config names and reads nothing else"
  },
  {
   "path": "voiceCommands/VC_Refuse_Repair.json",
@@ -2179,8 +2179,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "game-specific",
-  "reason": "ships under voiceCommands/"
+  "category": "implementable with M1-M7 now",
+  "reason": "plays the animation trigger its config names and reads nothing else"
  },
  {
   "path": "voiceCommands/VC_Refuse_Sparks.json",
@@ -2192,8 +2192,8 @@
   "extraKeys": [
    "animTriggers"
   ],
-  "category": "game-specific",
-  "reason": "ships under voiceCommands/"
+  "category": "implementable with M1-M7 now",
+  "reason": "plays the animation trigger its config names and reads nothing else"
  },
  {
   "path": "voiceCommands/VC_RequestCozmoPerforms.json",

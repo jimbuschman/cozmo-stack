@@ -1,4 +1,4 @@
-# Consolidated hardware test plan — pending checks as of M9 (2026-09-19)
+# Consolidated hardware test plan — pending checks as of M10 (2026-09-19)
 
 Everything below is offline-verified in the repository and waits only for a robot. Run in the order given
 (each item is independent; the order puts the cheapest and most informative first). Every command writes
@@ -17,9 +17,21 @@ directory needs only `cozmo_resources/sound/AudioAssets.zip`), commands run from
 | D | lift readout in radians | M4 (D10) | `dotnet run --project src/Cozmo.Conformance -- sensors 172.31.1.1 --acceptance` with the lift down, then raised by hand | `lift=` prints about −0.198 rad / 32 mm with the lift down and about 0.712 rad / 92 mm raised | the printed millimetres match where the lift is |
 | E | colour camera frames | M3 | `dotnet run --project src/Cozmo.Conformance -- camera 172.31.1.1 --color --acceptance` | frames decode | the saved images are colour photographs of the room |
 | F | animation timeline under a stall | M5 (D11, D12) | `dotnet run --project src/Cozmo.Conformance -- anim 172.31.1.1 --assets <obb>/assets/cozmo_resources/assets --name anim_bored_01 --wwise <obb>/assets/cozmo_resources/sound` | keyframes fired = keyframes in clip; no stalls reported | the clip plays as before. There is no way to force a stall from the tool; this confirms nothing regressed in the normal case |
+| G | **off-treads transitions** | M10 | `dotnet run --project src/Cozmo.Conformance -- offtreads 172.31.1.1 --seconds 90 --acceptance` (pick him up, put him down, lay him on his back, each side, his face; hold him still tilted 20–40°) | classifier enabled after the calibration report; a transition printed for each handling; on-back arrives about 1 s after laying him down, sides and face after 0.25 s, pick-up and put-down at once | every printed transition matches what was done, in that order, and nothing prints while he sits still |
+| H | **the derived-state reactions** | M10 | `dotnet run --project src/Cozmo.Conformance -- reactions 172.31.1.1 --obb <obb> --seconds 120 --acceptance` | `REACTION RobotOnBack -> ReactToRobotOnBack` (and OnFace, OnSide, RobotPlacedOnSlope, RobotShaken, ReturnedToTreads) print as he is handled, each with its animation steps | on his back he flips down; on his face he rolls; on a side he asks to be righted and waits; put down on a slope he reacts then checks his pitch; shaken then set down he acts dizzy (soft under 2.5 s, medium under 5 s, hard beyond); nothing fires for a state he is not in |
+| I | StartMotorCalibration honoured | M4/M10 | during H, lay him on his back with a finger over cliff sensor 0, or watch `ReactToReturnedToTreads` after setting him down tilted: the trace prints `calibrate head (StartMotorCalibration head=1 lift=0)` | a `MotorCalibration` report with `CalibStarted=true` for the head follows within the 5 s allowance, then one with `CalibStarted=false` | the head visibly recalibrates (nods to its stop) |
+| J | unexpected movement while driving | M10 | `dotnet run --project src/Cozmo.Conformance -- drive 172.31.1.1 ...` in one window is not enough because the detector suspends during direct drive; instead run H and, while a behaviour's animation drives the body, hold him so he cannot turn, or twist him against the turn | `unexpected movement TurnedButStopped from <side>` or `TurnedInOppositeDirection` printed, then `REACTION UnexpectedMovement -> ReactToUnexpectedMovement` | he plays the startled reaction once, on the side the push came from; no report while he drives freely |
 
-Items A and A2 are the M9 acceptance. Items B–F are carried over from the fidelity sweep and its
-reconciliation (`SOURCE_FIDELITY_AUDIT.md` §8, §10) and were never gated on M9.
+Items A and A2 are the M9 acceptance; G–J are the M10 acceptance. Items B–F are carried over from the fidelity
+sweep and its reconciliation (`SOURCE_FIDELITY_AUDIT.md` §8, §10) and were never gated on M9 or M10.
+
+## What G and H cannot tell you, and what would
+
+The classifier's thresholds are the engine's; what a run settles is that this robot's IMU units and mounting put
+its resting states where the engine expects them (gravity read about 10500, not 9800, in the committed captures,
+which the 3000-wide side band still accommodates). If a state never appears, or appears for the wrong handling,
+the first place to look is `offtreads` output's pitch and filtered-accel columns against `DERIVED_STATE.md` §2.3,
+not the constants.
 
 ## What A cannot tell you, and what would
 
@@ -43,3 +55,7 @@ freeze depends on it: M9 is complete offline, and the next milestone does not us
 | D | | | | | |
 | E | | | | | |
 | F | | | | | |
+| G | | | | | |
+| H | | | | | |
+| I | | | | | |
+| J | | | | | |

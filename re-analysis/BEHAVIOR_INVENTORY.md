@@ -15,6 +15,9 @@ which rule fired and what triggered it, so a classification can be argued with r
 on trust. A behaviour matching no rule is **unclear**, not pushed into a plausible bucket.
 
 1. class name names a composite → wrapper/composite
+1a. a per-behaviour verdict from reading its class in the binary (the two frustration configs, ReactToSparked, ReactToCubeMoved)
+1b. PlayAnimWithFace → requires vision (the engine turns to a face first); PlayAnim / PlayArbitraryAnim with animTriggers → implementable now
+1c. a ReactTo class whose input M10 derives → implementable with M10 (derived robot state)
 2. text names cubes, blocks or objects → requires cubes
 3. text names faces, people or pets → requires vision
 4. text names the charger or docking → requires charger/docking
@@ -31,17 +34,20 @@ counted as needing them. That overstates the blocked count rather than the imple
 
 | category | behaviours |
 | --- | ---: |
-| requires cubes | 62 |
+| requires cubes | 55 |
 | implementable with M9 (switch-state audio) | 39 |
-| requires vision/person detection | 24 |
-| freeplay/explorer-specific | 18 |
-| requires robot state not yet derived | 11 |
-| requires charger/docking | 7 |
-| game-specific | 5 |
-| implementable with M1-M7 now | 5 |
+| requires vision/person detection | 23 |
+| implementable with M1-M7 now | 19 |
+| freeplay/explorer-specific | 16 |
+| implementable with M10 (derived robot state) | 9 |
+| requires charger/docking | 5 |
 | developer-only | 4 |
+| game-specific | 2 |
 | unclear | 2 |
 | requires localization/world model | 1 |
+| implemented; waits on cube localization (vision) | 1 |
+| requires navigation/path planning | 1 |
+| requires the app's spark system | 1 |
 | **total** | **178** |
 
 ## Coverage of the enums
@@ -70,21 +76,39 @@ counted as needing them. That overstates the blocked count rather than the imple
 | Needs_SevereLowPlayRequest | ExpressNeeds | freeplay/explorer-specific | ships under freeplay/ | `freeplay/needs/needs_SevereLowPlayRequest.json` |
 | Needs_SevereLowRepairGetIn | PlayAnimOnNeedsChange | freeplay/explorer-specific | ships under freeplay/ | `freeplay/needs/needs_SevereLowRepairGetIn.json` |
 | Needs_Wait | Wait | freeplay/explorer-specific | ships under freeplay/ | `freeplay/needs/needs_Wait.json` |
-| NothingToDo_BoredAnim | PlayAnim | freeplay/explorer-specific | ships under freeplay/ | `freeplay/NothingToDo_BoredAnim.json` |
-| NothingToDo_Idle | PlayAnim | freeplay/explorer-specific | ships under freeplay/ | `freeplay/NothingToDo_Idle.json` |
 | PopAWheelie | PopAWheelie | freeplay/explorer-specific | ships under freeplay/ | `freeplay/popAWheelie.json` |
 | SparksPopAWheelie | PopAWheelie | freeplay/explorer-specific | ships under freeplay/ | `freeplay/sparkable/sparksPopAWheelie.json` |
 | SparksVisitPossibleMarker | ExploreVisitPossibleMarker | freeplay/explorer-specific | ships under freeplay/ | `freeplay/sparkable/sparksVisitPossibleMarker.json` |
 | Dance_Mambo | Dance | game-specific | ships under voiceCommands/ | `voiceCommands/dance_mambo.json` |
 | FeedingEat | FeedingEat | game-specific | ships under feeding/ | `feeding/feedingEat.json` |
-| VC_Refuse_Energy | PlayAnim | game-specific | ships under voiceCommands/ | `voiceCommands/VC_Refuse_Energy.json` |
-| VC_Refuse_Repair | PlayAnim | game-specific | ships under voiceCommands/ | `voiceCommands/VC_Refuse_Repair.json` |
-| VC_Refuse_Sparks | PlayAnim | game-specific | ships under voiceCommands/ | `voiceCommands/VC_Refuse_Sparks.json` |
-| Hiccup | PlayAnim | implementable with M1-M7 now | plays an animation and asks for nothing else | `reactions/hiccup.json` |
-| PlayArbitraryAnim | PlayArbitraryAnim | implementable with M1-M7 now | plays an animation and asks for nothing else | `playArbitraryAnim.json` |
+| FeedingReactCubeShake | PlayAnim | implementable with M1-M7 now | plays the animation trigger its config names and reads nothing else | `feeding/feedingAnims/feedingReactCubeShake.json` |
+| FeedingReactCubeShake_Severe | PlayAnim | implementable with M1-M7 now | plays the animation trigger its config names and reads nothing else | `feeding/feedingAnims/feedingReactCubeShake_Severe.json` |
+| FeedingReactFullCube | PlayAnim | implementable with M1-M7 now | plays the animation trigger its config names and reads nothing else | `feeding/feedingAnims/feedingReactFullCube.json` |
+| FeedingReactFullCube_Severe | PlayAnim | implementable with M1-M7 now | plays the animation trigger its config names and reads nothing else | `feeding/feedingAnims/feedingReactFullCube_Severe.json` |
+| FeedingReactSeeCharged | PlayAnim | implementable with M1-M7 now | plays the animation trigger its config names and reads nothing else | `feeding/feedingAnims/feedingReactSeeCharged.json` |
+| FeedingReactSeeCharged_Severe | PlayAnim | implementable with M1-M7 now | plays the animation trigger its config names and reads nothing else | `feeding/feedingAnims/feedingReactSeeCharged_Severe.json` |
+| Hiccup | PlayAnim | implementable with M1-M7 now | plays the animation trigger its config names and reads nothing else | `reactions/hiccup.json` |
+| Hiking_FirstLookIntro | PlayAnim | implementable with M1-M7 now | plays the animation trigger its config names and reads nothing else | `freeplay/hiking/Hiking_firstLookIntro.json` |
+| Hiking_FirstLookWakeUp | PlayAnim | implementable with M1-M7 now | plays the animation trigger its config names and reads nothing else | `freeplay/hiking/Hiking_firstLookWakeUp.json` |
+| NothingToDo_BoredAnim | PlayAnim | implementable with M1-M7 now | plays the animation trigger its config names and reads nothing else | `freeplay/NothingToDo_BoredAnim.json` |
+| NothingToDo_Idle | PlayAnim | implementable with M1-M7 now | plays the animation trigger its config names and reads nothing else | `freeplay/NothingToDo_Idle.json` |
+| PlayArbitraryAnim | PlayArbitraryAnim | implementable with M1-M7 now | plays the animation trigger its config names and reads nothing else | `playArbitraryAnim.json` |
 | ReactToCliff | ReactToCliff | implementable with M1-M7 now | its cause is reported by M4 sensors | `reactions/reactToCliff.json` |
-| ReactToObstacle | PlayAnim | implementable with M1-M7 now | plays an animation and asks for nothing else | `reactions/reactToObstacle.json` |
+| ReactToImpact | ReactToImpact | implementable with M1-M7 now | its cause is reported by M4 sensors | `reactions/reactToImpact.json` |
+| ReactToObstacle | PlayAnim | implementable with M1-M7 now | plays the animation trigger its config names and reads nothing else | `reactions/reactToObstacle.json` |
 | ReactToPickup | ReactToPickup | implementable with M1-M7 now | its cause is reported by M4 sensors | `reactions/reactToPickup.json` |
+| VC_Refuse_Energy | PlayAnim | implementable with M1-M7 now | plays the animation trigger its config names and reads nothing else | `voiceCommands/VC_Refuse_Energy.json` |
+| VC_Refuse_Repair | PlayAnim | implementable with M1-M7 now | plays the animation trigger its config names and reads nothing else | `voiceCommands/VC_Refuse_Repair.json` |
+| VC_Refuse_Sparks | PlayAnim | implementable with M1-M7 now | plays the animation trigger its config names and reads nothing else | `voiceCommands/VC_Refuse_Sparks.json` |
+| ReactToFrustrationMinor | ReactToFrustration | implementable with M10 (derived robot state) | mood confidence below -0.6 plus one animation and an emotion event; both exist | `reactions/reactToFrustrationMinor.json` |
+| ReactToMotorCalibration | ReactToMotorCalibration | implementable with M10 (derived robot state) | 'ReactToMotorCalibration' is transcribed from the engine and its input is derived in M10 | `reactions/reactToMotorCalibration.json` |
+| ReactToPlacedOnSlope | ReactToPlacedOnSlope | implementable with M10 (derived robot state) | 'ReactToPlacedOnSlope' is transcribed from the engine and its input is derived in M10 | `reactions/reactToPlacedOnSlope.json` |
+| ReactToReturnedToTreads | ReactToReturnedToTreads | implementable with M10 (derived robot state) | 'ReactToReturnedToTreads' is transcribed from the engine and its input is derived in M10 | `reactions/reactToReturnedToTreads.json` |
+| ReactToRobotOnBack | ReactToRobotOnBack | implementable with M10 (derived robot state) | 'ReactToRobotOnBack' is transcribed from the engine and its input is derived in M10 | `reactions/reactToRobotOnBack.json` |
+| ReactToRobotOnFace | ReactToRobotOnFace | implementable with M10 (derived robot state) | 'ReactToRobotOnFace' is transcribed from the engine and its input is derived in M10 | `reactions/reactToRobotOnFace.json` |
+| ReactToRobotOnSide | ReactToRobotOnSide | implementable with M10 (derived robot state) | 'ReactToRobotOnSide' is transcribed from the engine and its input is derived in M10 | `reactions/reactToRobotOnSide.json` |
+| ReactToRobotShaken | ReactToRobotShaken | implementable with M10 (derived robot state) | 'ReactToRobotShaken' is transcribed from the engine and its input is derived in M10 | `reactions/reactToRobotShaken.json` |
+| ReactToUnexpectedMovement | ReactToUnexpectedMovement | implementable with M10 (derived robot state) | 'ReactToUnexpectedMovement' is transcribed from the engine and its input is derived in M10 | `reactions/reactToUnexpectedMovement.json` |
 | Singing_AbaDaba | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_AbaDaba.json` |
 | Singing_BeautifulDreamer | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_BeautifulDreamer.json` |
 | Singing_Beethovens5th | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_Beethovens5th.json` |
@@ -124,11 +148,10 @@ counted as needing them. That overstates the blocked count rather than the imple
 | Singing_WilliamTell | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_WilliamTell.json` |
 | Singing_YankeeDoodle | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_YankeeDoodle.json` |
 | Singing_YellowRose | Singing | implementable with M9 (switch-state audio) | selects audio by switch state, which M9 implements ('audioSwitchGroup') | `freeplay/singing/Singing_YellowRose.json` |
+| ReactToCubeMoved | ReactToCubeMoved | implemented; waits on cube localization (vision) | BehaviorAcknowledgeCubeMoved and ReactionTriggerStrategyCubeMoved are transcribed; the trigger and the turn need BlockWorld's located pose | `reactions/reactToCubeMoved.json` |
 | DockingTestSimple | DockingTestSimple | requires charger/docking | names the charger or docking ('Docking') | `devBehaviors/dockingTestSimple.json` |
 | DriveOffCharger | DriveOffCharger | requires charger/docking | names the charger or docking ('Charger') | `freeplay/driveOffCharger.json` |
 | Hiking_DriveOffCharger | DriveOffCharger | requires charger/docking | names the charger or docking ('Charger') | `freeplay/hiking/Hiking_driveOffCharger.json` |
-| Hiking_FirstLookIntro | PlayAnim | requires charger/docking | names the charger or docking ('charger') | `freeplay/hiking/Hiking_firstLookIntro.json` |
-| Hiking_FirstLookWakeUp | PlayAnim | requires charger/docking | names the charger or docking ('charger') | `freeplay/hiking/Hiking_firstLookWakeUp.json` |
 | ReactToOnCharger | ReactToOnCharger | requires charger/docking | names the charger or docking ('Charger') | `reactions/reactToOnCharger.json` |
 | VC_GoToSleep | ReactToOnCharger | requires charger/docking | names the charger or docking ('Charger') | `voiceCommands/VC_GoToSleep.json` |
 | AcknowledgeFace | AcknowledgeFace | requires cubes | names cubes, blocks or objects ('Block') | `reactions/acknowledgeFace.json` |
@@ -138,12 +161,6 @@ counted as needing them. That overstates the blocked count rather than the imple
 | CantHandleTallStack | CantHandleTallStack | requires cubes | names cubes, blocks or objects ('Stack') | `freeplay/cantHandleTallStack.json` |
 | CubeLiftWorkout | CubeLiftWorkout | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/cubeLiftWorkout.json` |
 | FeedingFindFacesSevere | FindFaces | requires cubes | names cubes, blocks or objects ('Cube') | `feeding/feedingFindFacesSevere.json` |
-| FeedingReactCubeShake | PlayAnim | requires cubes | names cubes, blocks or objects ('Cube') | `feeding/feedingAnims/feedingReactCubeShake.json` |
-| FeedingReactCubeShake_Severe | PlayAnim | requires cubes | names cubes, blocks or objects ('Cube') | `feeding/feedingAnims/feedingReactCubeShake_Severe.json` |
-| FeedingReactFullCube | PlayAnim | requires cubes | names cubes, blocks or objects ('Cube') | `feeding/feedingAnims/feedingReactFullCube.json` |
-| FeedingReactFullCube_Severe | PlayAnim | requires cubes | names cubes, blocks or objects ('Cube') | `feeding/feedingAnims/feedingReactFullCube_Severe.json` |
-| FeedingReactSeeCharged | PlayAnim | requires cubes | names cubes, blocks or objects ('Cube') | `feeding/feedingAnims/feedingReactSeeCharged.json` |
-| FeedingReactSeeCharged_Severe | PlayAnim | requires cubes | names cubes, blocks or objects ('Cube') | `feeding/feedingAnims/feedingReactSeeCharged_Severe.json` |
 | FeedingSearchForCube | FeedingSearchForCube | requires cubes | names cubes, blocks or objects ('Cube') | `feeding/feedingSearchForCube.json` |
 | FindFaces_socialize | FindFaces | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/findFaces_socialize.json` |
 | Hiking_BringCubeToBeacon | BringCubeToBeacon | requires cubes | names cubes, blocks or objects ('Cube') | `freeplay/hiking/Hiking_bringCubeToBeacon.json` |
@@ -162,7 +179,6 @@ counted as needing them. That overstates the blocked count rather than the imple
 | PyramidRespondPossiblyRoll | RespondPossiblyRoll | requires cubes | names cubes, blocks or objects ('Pyramid') | `freeplay/buildPyramid/pyramidRespondPossiblyRoll.json` |
 | PyramidThankYou | PyramidThankYou | requires cubes | names cubes, blocks or objects ('Pyramid') | `freeplay/buildPyramid/pyramidThankYou.json` |
 | RamIntoBlock | RamIntoBlock | requires cubes | names cubes, blocks or objects ('Block') | `reactions/ramIntoBlock.json` |
-| ReactToCubeMoved | ReactToCubeMoved | requires cubes | names cubes, blocks or objects ('Cube') | `reactions/reactToCubeMoved.json` |
 | ReactToPyramid | ReactToPyramid | requires cubes | names cubes, blocks or objects ('Pyramid') | `reactions/reactToPyramid.json` |
 | ReactToStackOfCubes | ReactToStackOfCubes | requires cubes | names cubes, blocks or objects ('Stack') | `reactions/reactToStackOfCubes.json` |
 | RequestCozmoPerforms | RequestGameSimple | requires cubes | names cubes, blocks or objects ('block') | `freeplay/requestGame/requestCozmoPerforms.json` |
@@ -194,39 +210,29 @@ counted as needing them. That overstates the blocked count rather than the imple
 | VC_RequestMemoryMatch | RequestGameSimple | requires cubes | names cubes, blocks or objects ('block') | `voiceCommands/VC_RequestMemoryMatch.json` |
 | VC_RequestSpeedTap | RequestGameSimple | requires cubes | names cubes, blocks or objects ('block') | `voiceCommands/VC_RequestSpeedTap.json` |
 | Hiking_LookInPlaceForUnknown | LookInPlaceMemoryMap | requires localization/world model | names the world model or localization ('MemoryMap') | `freeplay/hiking/Hiking_lookInPlaceForUnknown.json` |
-| ReactToFrustrationMajor | ReactToFrustration | requires robot state not yet derived | nothing yet derives the state 'ReactToFrustration' reacts to | `reactions/reactToFrustrationMajor.json` |
-| ReactToFrustrationMinor | ReactToFrustration | requires robot state not yet derived | nothing yet derives the state 'ReactToFrustration' reacts to | `reactions/reactToFrustrationMinor.json` |
-| ReactToImpact | ReactToImpact | requires robot state not yet derived | nothing yet derives the state 'ReactToImpact' reacts to | `reactions/reactToImpact.json` |
-| ReactToMotorCalibration | ReactToMotorCalibration | requires robot state not yet derived | nothing yet derives the state 'ReactToMotorCalibration' reacts to | `reactions/reactToMotorCalibration.json` |
-| ReactToPlacedOnSlope | ReactToPlacedOnSlope | requires robot state not yet derived | nothing yet derives the state 'ReactToPlacedOnSlope' reacts to | `reactions/reactToPlacedOnSlope.json` |
-| ReactToReturnedToTreads | ReactToReturnedToTreads | requires robot state not yet derived | nothing yet derives the state 'ReactToReturnedToTreads' reacts to | `reactions/reactToReturnedToTreads.json` |
-| ReactToRobotOnBack | ReactToRobotOnBack | requires robot state not yet derived | nothing yet derives the state 'ReactToRobotOnBack' reacts to | `reactions/reactToRobotOnBack.json` |
-| ReactToRobotOnSide | ReactToRobotOnSide | requires robot state not yet derived | nothing yet derives the state 'ReactToRobotOnSide' reacts to | `reactions/reactToRobotOnSide.json` |
-| ReactToRobotShaken | ReactToRobotShaken | requires robot state not yet derived | nothing yet derives the state 'ReactToRobotShaken' reacts to | `reactions/reactToRobotShaken.json` |
-| ReactToSparked | ReactToSparked | requires robot state not yet derived | nothing yet derives the state 'ReactToSparked' reacts to | `reactions/reactToSparked.json` |
-| ReactToUnexpectedMovement | ReactToUnexpectedMovement | requires robot state not yet derived | nothing yet derives the state 'ReactToUnexpectedMovement' reacts to | `reactions/reactToUnexpectedMovement.json` |
+| ReactToFrustrationMajor | ReactToFrustration | requires navigation/path planning | its random drive is a DriveToPoseAction (BehaviorReactToFrustration::AnimationComplete) | `reactions/reactToFrustrationMajor.json` |
+| ReactToSparked | ReactToSparked | requires the app's spark system | triggered by the app's ActivateSpark request (BehaviorManager::HandleMessage), which this stack does not receive | `reactions/reactToSparked.json` |
 | EnrollFace | EnrollFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `meetCozmo/enrollFace.json` |
 | FPPeekABoo | PeekABoo | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `freeplay/FPpeekAboo.json` |
-| FeedingPlayRequestAtFace | PlayAnimWithFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `feeding/feedingAnims/feedingPlayRequestAtFace.json` |
-| FeedingPlayRequestAtFace_Severe | PlayAnimWithFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `feeding/feedingAnims/feedingPlayRequestAtFace_Severe.json` |
+| FeedingPlayRequestAtFace | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `feeding/feedingAnims/feedingPlayRequestAtFace.json` |
+| FeedingPlayRequestAtFace_Severe | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `feeding/feedingAnims/feedingPlayRequestAtFace_Severe.json` |
 | FistBump | FistBump | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `freeplay/userInteractive/fistBump.json` |
 | Hiking_PounceOnMotion | PounceOnMotion | requires vision/person detection | names faces, people, pets or motion sensing ('Pounce') | `freeplay/hiking/Hiking_pounceOnMotion.json` |
 | InteractWithFaces | InteractWithFaces | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `freeplay/interactWithFaces.json` |
 | MeetCozmo_InteractWithFaces | InteractWithFaces | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `meetCozmo/meetCozmo_interactWithFaces.json` |
 | PounceOnMotion_Socialize | PounceOnMotion | requires vision/person detection | names faces, people, pets or motion sensing ('Pounce') | `freeplay/pounceOnMotion_socialize.json` |
 | ReactToPet | ReactToPet | requires vision/person detection | names faces, people, pets or motion sensing ('Pet') | `reactions/reactToPet.json` |
-| ReactToRobotOnFace | ReactToRobotOnFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `reactions/reactToRobotOnFace.json` |
 | RespondToRenameFace | RespondToRenameFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `meetCozmo/respondToRenameFace.json` |
 | SparksFistBump | FistBump | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `freeplay/sparkable/sparksFistBump.json` |
 | SparksPeekABoo | PeekABoo | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `freeplay/sparkable/sparksPeekAboo.json` |
 | SparksPounceOnMotion | PounceOnMotion | requires vision/person detection | names faces, people, pets or motion sensing ('Pounce') | `freeplay/sparkable/sparksPounceOnMotion.json` |
 | SparksTrackLaser | TrackLaser | requires vision/person detection | names faces, people, pets or motion sensing ('pounce') | `freeplay/sparkable/sparksTrackLaser.json` |
-| VC_AlrightyResponse | PlayAnimWithFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `voiceCommands/VC_AlrightyResponse.json` |
+| VC_AlrightyResponse | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `voiceCommands/VC_AlrightyResponse.json` |
 | VC_ComeHere | DriveToFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `voiceCommands/VC_ComeHere.json` |
-| VC_HowAreYouDoing_AllGood | PlayAnimWithFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_AllGood.json` |
-| VC_HowAreYouDoing_Energy | PlayAnimWithFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Energy.json` |
-| VC_HowAreYouDoing_Play | PlayAnimWithFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Play.json` |
-| VC_HowAreYouDoing_Repair | PlayAnimWithFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Repair.json` |
+| VC_HowAreYouDoing_AllGood | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_AllGood.json` |
+| VC_HowAreYouDoing_Energy | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Energy.json` |
+| VC_HowAreYouDoing_Play | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Play.json` |
+| VC_HowAreYouDoing_Repair | PlayAnimWithFace | requires vision/person detection | BehaviorPlayAnimSequenceWithFace turns towards a face (TurnTowardsFaceAction, 0x005C0686) before it plays | `voiceCommands/howAreYouDoing/VC_HowAreYouDoing_Repair.json` |
 | VC_PounceOnMotion | PounceOnMotion | requires vision/person detection | names faces, people, pets or motion sensing ('Pounce') | `voiceCommands/VC_PounceOnMotion.json` |
 | VC_SearchForFace | SearchForFace | requires vision/person detection | names faces, people, pets or motion sensing ('Face') | `voiceCommands/VC_SearchForFace.json` |
 | AcknowledgeObject | AcknowledgeObject | unclear | no rule matched; carries ['NumImagesToWaitFor', 'ReactionAnimGroup'] | `reactions/acknowledgeObject.json` |

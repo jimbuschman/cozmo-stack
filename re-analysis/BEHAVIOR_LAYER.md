@@ -313,3 +313,26 @@ called re-verified: `behavior 172.31.1.1 --obb <dir> --seconds 60`.
   speed uniform in +/-10 mm/s, 250-1500 ms, straight with probability `BodyMovementStraightFraction` else a
   turn in place accompanied by a 33 ms `LiveIdleTurn` eye shift; still not driven.
 * **The 5 s reaction cooldown is ours.** The shipped map gives none of these four reactions a cooldown.
+
+## Errata from M10, 2026-09-19
+
+Working in [DERIVED_STATE.md](DERIVED_STATE.md).
+
+* **The pick-up reaction is triggered by the derived state, not the flag.** The factory's RobotPickedUp
+  strategy is a callback over `Robot+0x355 == InAir` (lambda 0x0060DDCE), where InAir is what
+  `Robot::CheckAndUpdateTreadsState` (0x00511E00) makes of `IS_PICKED_UP` together with the pose and the filtered
+  accelerometer. Section 2's "the engine's reaction strategies watch exactly those [status flags]" holds for the
+  cliff and charger; for pick-up it watches the classifier. `ReactiveBehavior` and `ReactBehavior("ReactToPickup")`
+  now fire on InAir once the classifier is enabled (it waits for the head-calibration report, as the engine's
+  does) and on the flag until then, saying which.
+* **`PlayAnimWithFace` is not `PlayAnim` with a face drawn.** `BehaviorPlayAnimSequenceWithFace::InitInternal`
+  (0x005C0648) runs a `TurnTowardsFaceAction` (0x005C0686) before the animation; the seven configs of that class
+  need a tracked face and are filed under vision. `PlayAnimBehavior` reconstructs `PlayAnim` only.
+* **What section 2 called "deliberately not mapped" is now largely mapped**, through behaviours rather than the
+  reaction table: RobotOnBack, RobotOnFace, RobotOnSide, RobotPlacedOnSlope, ReturnedToTreads, RobotShaken,
+  UnexpectedMovement, MotorCalibration and Frustration (Minor) run as `SteppedBehavior` classes under
+  `BehaviorManager.CheckReactions`. `ReactionTable.Default` keeps its four single-animation entries for the M7
+  dispatcher; the reaction map itself is honoured by `ShippedBehaviors.Reactions`.
+* **The 5 s reaction cooldown is still ours** and applies only to the M7 dispatcher path; the manager path has
+  the engine's per-strategy rules (the frustration cooldown, the slope timing, the shaken threshold) and no
+  blanket cooldown, as the engine has none.

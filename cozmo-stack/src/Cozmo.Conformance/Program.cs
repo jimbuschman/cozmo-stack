@@ -34,6 +34,8 @@ return args.Length == 0 ? Usage() : args[0] switch
     "triggers" => TriggersTool.Run(args),
     "behavior" => BehaviorTool.Run(args).GetAwaiter().GetResult(),
     "sing" => SingTool.Run(args).GetAwaiter().GetResult(),
+    "offtreads" => ReactionsTool.OffTreads(args).GetAwaiter().GetResult(),
+    "reactions" => ReactionsTool.Run(args).GetAwaiter().GetResult(),
     _ => Usage(),
 };
 
@@ -198,6 +200,12 @@ static int Usage()
                                              hardware acceptance for M9: runs the shipped Singing behaviour
                                              on the robot (switch, get-in, song, get-out) and records what
                                              was rendered; whether it sang is the human check
+          offtreads <robot-ip> [--seconds 60] [--acceptance [file]]
+                                             M10: print every off-treads state change and unexpected-movement report the engine's
+                                             classifier and detector derive from the streamed state; --replay <frame-log> runs them offline
+          reactions <robot-ip> --obb <dir> [--seconds 120] [--acceptance [file]]
+                                             M10 acceptance: the derived-state reactions (on back, face, side, slope, shaken, pushed,
+                                             calibration, frustration) under the behaviour manager; every trigger and step printed
 
           animlist <assets-dir> [filter]     decode Cozmo's own animation assets and list what is in them,
                                              with no robot involved
