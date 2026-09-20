@@ -14,7 +14,8 @@
 > for pre-action poses, paths, the firmware docking exchange, carrying and the manipulation behaviours (M12);
 > **`NAVIGATION.md`** for the lattice planner, the flip action, the charger, block configurations, beacons,
 > workouts and the cube-game / charger behaviours (M13); **`FACES.md`** for the face / pet pipeline around the
-> OKAO boundary (M14);
+> OKAO boundary (M14); **`FREEPLAY.md`** for the needs system, the activity tree, the choosers and the freeplay
+> decision layer (M15);
 > **`ACCEPTANCE.md`** for what
 > has and has not been verified on real hardware. The replacement stack itself lives in **`../cozmo-stack/`** (C#).
 > `protocol/robot_protocol_official_vs_pycozmo.txt` is the verified engine↔robot message comparison;

@@ -34,6 +34,7 @@ directory needs only `cozmo_resources/sound/AudioAssets.zip`), commands run from
 | V | **mount the charger** | M13 | `manip 172.31.1.1 --mount --acceptance` (the charger 20–40 cm ahead, its back-wall marker facing him) | `charger: object 100 Charger_Basic Known at …`, `Docking with marker Charger using action Align`, the point turn, a −30 mm/s line, `MountChargerAction: on the charger contacts`, `on charger: True` | he stops in front of the charger, turns his back to it, backs on and the contacts engage (his backpack lights change); a miss drives forward 120 mm and retries. If the align never starts, the pre-dock pose (INFERRED) or the align distance is the suspect |
 | W | drive off the charger | M13 | `manip 172.31.1.1 --driveoff --acceptance` with him sitting on the charger | `on charger: True`, one line of 156 mm at 20 mm/s, `emotion event DriveOffCharger`, `IS_ON_CHARGER` cleared | he drives forward off the charger at a crawl and stops on his treads |
 | X | the lattice planner on the robot | M13 | `manip 172.31.1.1 --driveto --obb <obb> --acceptance` with a second cube between him and the target (also `manip --plan 300 0 0 --obb <obb> --obstacle 150 0` offline) | `lattice plan: N primitive(s) … 1 obstacle(s)`, `AppendPathSegmentArc` messages, `path 1: Completed`, `DriveToPoseAction.CheckIfDone.Success` | he curves around the cube in the way instead of driving through it, and arrives at the pre-dock pose; the arcs are smooth (the firmware accepted the arc layouts: centre, radius, start angle, sweep) |
+| Z | freeplay on the robot | M15 | `freeplay 172.31.1.1 --obb <obb> --seconds 300 --acceptance` with him on the charger, one cube in view and no face; then pick him up and put him down next to the cube | the decision log shows `robot.freeplay_goal_started PlayAlone` or `Hiking`, `DriveOffCharger` first, then scored picks with their reasons, an interlude between two behaviours, `Kicking out '…' on put down` followed by `robot.goal_from_face_and_cube 0:1 -> PlayAlone`; no `NoActivityAvailableError` | he leaves the charger, looks around, goes to the cube and plays with it (roll, pick up, pop a wheelie), pauses and looks around again between games, and after the put-down heads for the cube; nothing repeats back-to-back |
 | Y | the face pipeline with a detector | M14 | not runnable with the shipped stack: `VisionSystem.FaceDetector` is the OKAO boundary and reports itself unavailable. When an `IFaceDetector` exists, attach it and run `reactions 172.31.1.1 --obb <obb>` with a person in view | `FaceWorld.UpdateFace.NewFace: Added new face with ID=…`, `REACTION FacePositionUpdated -> AcknowledgeFace`, the turn and `LookAtFaceVerified` | he turns to the person, looks up at their face, greets (by name if the detector supplies one), and follows them with his head |
 | J | unexpected movement while driving | M10 | `dotnet run --project src/Cozmo.Conformance -- drive 172.31.1.1 ...` in one window is not enough because the detector suspends during direct drive; instead run H and, while a behaviour's animation drives the body, hold him so he cannot turn, or twist him against the turn | `unexpected movement TurnedButStopped from <side>` or `TurnedInOppositeDirection` printed, then `REACTION UnexpectedMovement -> ReactToUnexpectedMovement` | he plays the startled reaction once, on the side the push came from; no report while he drives freely |
 
@@ -65,6 +66,16 @@ The exchange is the engine's, but three messages carry fields whose meaning was 
 `DockWithObject`'s fourth float or trailing bytes; the `result` byte printed is the firmware's `DockingResult`,
 whose enum this build does not decode, so record it. A path the robot drives but ends off-pose points at the
 planner's segment endpoints (the layouts are the engine's; the planner is ours).
+
+## What Z cannot tell you, and what would
+
+The tree, the scores, the penalties and the needs configs are the engine's; the ordering of the
+desired-from-objects activity against the priority order, the null-pick switch and the obstacle hook are
+INFERRED (`FREEPLAY.md` §3). A robot that never leaves Hiking while a cube is in view points at
+`DesiredActivityFromObjects` / the PlayAlone strategy inputs; one that repeats the same behaviour points at the
+repetition penalty's clock; one that stalls with "Picked no activity" points at a strategy's cooldown or an
+unbound behaviour id (`freeplay --tree` lists them). The needs decay is per minute: a five-minute run shows
+almost none of it, so judge the needs activities by forcing a level (`--simulate` does this offline).
 
 ## What S–X cannot tell you, and what would
 
@@ -116,3 +127,4 @@ freeze depends on it: M9 is complete offline, and the next milestone does not us
 | W | | | | | |
 | X | | | | | |
 | Y | (blocked: no detector) | | | | |
+| Z | | | | | |

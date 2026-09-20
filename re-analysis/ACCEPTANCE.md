@@ -251,6 +251,23 @@ zero whose meaning was not read. None of N–R gates M13.
 | Behaviours | pass — KnockOverCubes, PopAWheelie (+ retries), RamIntoBlock, CubeLiftWorkout, BuildPyramidBase, RespondPossiblyRoll, OnConfigSeen, CantHandleTallStack, CheckForStackAtInterval, ReactToPyramid, ThinkAboutBeacons + BringCubeToBeacon, the Major frustration drive; 25 configs | **not run** (S, T, U) | `KnockOverCubesReaches…`, `PopAWheelieDrives…`, `TheWorkoutBehaviourLifts…`, `BuildPyramidBasePicks…`, `TheShippedNavigationSet…` |
 | Inventory | pass — regenerated, 107 of 178 | n/a | `behavior_inventory.py --check` |
 
+## M15 — freeplay, needs, autonomy (2026-09-20): offline complete, hardware pending
+
+| Capability | Automated | Human | Evidence |
+| --- | --- | --- | --- |
+| Needs | pass — shipped brackets, per-minute decay, Feed refills, severe flags | pending (Z) | `NeedsDecayIntoBracketsAndActionsRefillThem` |
+| Choosers | pass — scoring with penalties and the running bonus, strict priority, not-built / not-runnable reasons | pending (Z) | `TheScoringChooserWeighs…`, `TheStrictPriorityChooser…` |
+| Strategies | pass — cooldowns, durations, mood gate, needs brackets, severe transition, pyramid rule | pending (Z) | `StrategiesRespectCooldownsDurationsMoodAndNeeds` |
+| Activity tree | pass — 24 freeplay sub-activities with priorities, choosers, strategies, triggers; most ids bound, the rest listed | n/a | `TheShippedActivityTreeLoadsWithItsPrioritiesAndChoosers`, `TheStackBindsTheImplementedBehaviours…` |
+| Behaviours | pass — look-around S1–S7 one full turn, desperation drive, ExpressNeeds / get-in / EarnedSparks | pending (Z) | `LookAroundInPlaceScansOneFullTurnAndStops`, `DriveInDesperation…`, `ExpressNeeds…` |
+| Freeplay selection | pass — Hiking for nothing, PlayAlone after a put-down with a cube, interludes, duration end, cooldowns; a Critical need wins and the get-in plays once | pending (Z) | `FreeplayPicksTheDesiredActivity…`, `ASevereNeedTakesPriority…` |
+| The whole stack | pass — on the charger with a cube on its side: PlayAlone, DriveOffCharger, RollBlockOnSide with a real dock exchange (fake robot) | pending (Z) | `TheWholeStackDrivesOffTheChargerAndPlaysWithTheCubeItSees` |
+| Inventory | pass — 123 of 178 implementable, 18 on the face pipeline | n/a | `behavior_inventory.py --check` |
+
+**M15 is COMPLETE OFFLINE and NOT hardware verified.** The tree, scores, penalties, needs and behaviour
+transitions are the engine's (`FREEPLAY.md`); the desired-activity ordering, the null-pick switch, the needs
+action hook and the obstacle flag are labelled INFERRED / LOCAL. Item Z runs it on the robot.
+
 ## M14 — faces around the OKAO boundary (2026-09-20): offline complete, not hardware-testable
 
 | Capability | Automated | Human | Evidence |

@@ -541,3 +541,28 @@ unavailable)", and are not counted as implementable (107 of 178 unchanged). 16 c
 and TrackLaser for motion / laser detection; EnrollFace, RespondToRenameFace for recognition).
 
 **Tests:** 619 after M14 (606 after M13).
+
+## 16. M15 additions and three corrections, 2026-09-20
+
+**Added** (`FREEPLAY.md`): `NeedsManager` / `NeedsState` (ASSET configs, NATIVE update and bracket rules),
+the activity tree loader (ASSET `activities_config.json` + `activities/**`, NATIVE keys from
+`ActivityFreeplay::CreateFromConfig` and `IActivityStrategy`), `ScoringChooser` (NATIVE
+`ScoringBSRunnableChooser::GetDesiredActiveBehavior` incl. the running bonus and interrupt line),
+`StrictPriorityChooser`, `ActivityStrategy` (NATIVE `WantsToStart` / `WantsToEnd` / `RandomizeCooldown`;
+`ActivityStrategyNeedBasedCooldown` 0x005B4298 graphs), `FreeplaySystem` (NATIVE flow and log strings of
+`ActivityFreeplay::GetDesiredActiveBehaviorInternal` 0x005AE2xx), six behaviour classes (NATIVE transitions
+and constants), `PlayAnimBehavior.WantsToRunStrategy`.
+
+**Corrections:** (1) shipped PlayAnim configs can carry `wantsToRunStrategyConfig` (`IBehavior::ReadFromJson`
+→ `WantsToRunStrategyFactory`; `IsRunnableBase` 0x005BD778 asks `WantsToRun`): ReactToObstacle is gated on
+ObstacleDetected and had been always runnable, which let it hijack every scoring chooser it appears in.
+(2) The strategy type strings are the config's `PlayWithHumans` and `NeedBasedCooldown`, not the class names.
+(3) A severe-needs activity's desperation drive is always runnable (`IsRunnableInternal` 0x005D90AC returns 1)
+and the activity ends only through "wants to end, and behavior finished", a spark, a put-down or the requested
+path (+0x90); the refill happens in the app's Feeding activity, outside freeplay.
+
+**Labelled:** desired-from-objects ordering, the `needsActionID` hook, the null-pick switch, the obstacle
+flag's source (INFERRED / LOCAL); `boredomMultiplier`, feature gates, the pyramid strategy's random factor,
+decay modifiers, damaged parts, persistence (DEFERRED).
+
+**Tests:** 630 after M15.
