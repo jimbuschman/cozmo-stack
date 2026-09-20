@@ -733,7 +733,9 @@ public sealed class CheckForStackAtIntervalBehavior : ManipulationBehavior
             double head = TurnTowardsPose.HeadAngleToSee(M.Vision.Calibration, robot, ghost);
             Log($"looking at the ghost pose above block {block.ObjectId}: head {head * 180 / Math.PI:F0} deg");
             M.Robot.Motion.SetHeadAngleAsync((float)head, requireCalibration: false);
-            WaitUntil(() => M.Vision.FramesProcessed > 0, 1.0, _ => ReturnToSearch(), "a frame looking above the block");
+            // as in PutDownBlock: the wait is for frames that arrive after the head moved, not for any frame ever
+            int framesBefore = M.Vision.FramesProcessed;
+            WaitUntil(() => M.Vision.FramesProcessed > framesBefore, 1.0, _ => ReturnToSearch(), "a frame looking above the block");
         });
     }
 
@@ -747,8 +749,8 @@ public sealed class CheckForStackAtIntervalBehavior : ManipulationBehavior
                                              p.PointTurnSpeedRadPerSec, p.PointTurnAccelRadPerSec2, p.PointTurnDecelRadPerSec2, true);
         RunAction("PanAndTilt back", async ct =>
         {
-            ushort id = M.Paths.Execute(new PathSegment[] { turn });
-            var ev = await M.Follower.WaitForEndAsync(id, TimeSpan.FromSeconds(5), ct);
+            using var run = M.StartPath(new PathSegment[] { turn });
+            var ev = await run.WaitAsync(TimeSpan.FromSeconds(5), ct);
             return ev == PathEventType.Completed ? ActionResult.Success : ActionResult.Timeout;
         }, _ => Done());
     }

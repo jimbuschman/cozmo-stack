@@ -102,6 +102,10 @@ public sealed class FreeplaySystem
             if (picked is null) return Record(nowSec, null, null, $"ActivityFreeplay.NoActivitySelected: Picked no activity ({pickReason})");
             Current = picked; Current.OnSelected(nowSec); _ctx.LastActivitySwitchSec = nowSec;
             Log?.Invoke($"robot.freeplay_goal_started {Current.Id}: {pickReason}");
+            // EndActivity stopped whatever was running, so the local snapshot taken above is stale. Handing it
+            // to the new activity's chooser would present a stopped behaviour as running, and a behaviour id
+            // that both activities name would be treated as "already running" while the manager has nothing.
+            current = _manager.Current;
         }
 
         // the behaviour the activity wants
@@ -122,7 +126,9 @@ public sealed class FreeplaySystem
             }
             if (_pendingInterlude is not null && desired.Id == _pendingInterlude.Id) _pendingInterlude = null;
             bool started = _manager.StartAsync(desired.Id, nowSec).GetAwaiter().GetResult();
-            if (Current.Chooser is ScoringChooser sc && current is not null) sc.Ran(current.Id, nowSec);
+            // The interrupted behaviour is NOT recorded as having run: the engine keeps
+            // StopWithoutImmediateRepetitionPenalty for exactly this case, and the manager records the
+            // repetition only for a behaviour that reached Completed.
             if (_pendingInterlude is null) _lastBehaviorId = desired.Id;
             Record(nowSec, Current.Id, started ? desired.Id : null, started ? decision.Reason : $"{desired.Id} refused to start");
         }
@@ -141,10 +147,8 @@ public sealed class FreeplaySystem
         var before = _manager.Current;
         _manager.Update(nowMs, nowSec);
         if (before is not null && _manager.Current is null)
-        {
+            // the manager has already recorded the completion in the shared repetition history
             Log?.Invoke($"BehaviorManager.Update.BehaviorComplete: Behavior '{before.Id}' returned Status::Complete");
-            if (Current.Chooser is ScoringChooser sc2) sc2.Ran(before.Id, nowSec);
-        }
         return _decisions[^1];
     }
 

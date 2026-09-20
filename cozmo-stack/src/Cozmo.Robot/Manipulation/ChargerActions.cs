@@ -98,8 +98,8 @@ public sealed class MountChargerAction
             double heading = StraightLinePlanner.Wrap(Math.Atan2(v.Y, v.X) + Math.PI);      // the robot backs towards the docked pose
             var turn = new PathSegment.PointTurn(robot.Value.Translation.X, robot.Value.Translation.Y, heading, StraightLinePlanner.PointTurnToleranceRad,
                                                  (float)TurnMaxSpeedRadPerSec, (float)TurnAccelRadPerSec2, (float)TurnAccelRadPerSec2, true);
-            ushort id = _m.Paths.Execute(new PathSegment[] { turn });
-            var ev = await _m.Follower.WaitForEndAsync(id, TimeSpan.FromSeconds(6), cancel);
+            using var run = _m.StartPath(new PathSegment[] { turn });
+            var ev = await run.WaitAsync(TimeSpan.FromSeconds(6), cancel);
             if (ev != PathEventType.Completed) { _trace.Add("MountChargerAction: the turn did not complete"); continue; }
             if (_m.Robot.Sensors.LiftHeightMm is { } lift && lift > LiftHeightForMountMm)
                 await _m.Robot.Motion.SetLiftHeightAsync((float)LiftHeightForMountMm, maxSpeedRadPerSec: 5f, requireCalibration: false);

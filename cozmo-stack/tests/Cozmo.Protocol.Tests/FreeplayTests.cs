@@ -134,7 +134,8 @@ public class FreeplayTests
         var simple = new ActivityStrategy { Type = "Simple", ShouldEndDurationSec = 25, CooldownBaseSec = 30, Random = new Random(1) };
         Assert.True(simple.WantsToStart(inputs, 0, out _));
         Assert.False(simple.WantsToEnd(inputs, 10, out _));
-        Assert.True(simple.WantsToEnd(inputs, 25, out var why)); Assert.Contains("should end", why);
+        Assert.False(simple.WantsToEnd(inputs, 25, out _));                                  // at the duration, not past it
+        Assert.True(simple.WantsToEnd(inputs, 25.5, out var why)); Assert.Contains("should end", why);
         simple.OnEnded(100);
         Assert.False(simple.WantsToStart(inputs, 110, out var cd)); Assert.Contains("cooldown", cd);
         Assert.True(simple.WantsToStart(inputs, 131, out _));
@@ -346,17 +347,19 @@ public class FreeplayTests
         var ctx = Ctx(rig);
         var hikeA = new Fake("hikeA", ticks: 2); var hikeB = new Fake("hikeB", ticks: 2); var playA = new Fake("playA", ticks: 2); var interlude = new Fake("interlude", ticks: 1);
         var bound = new Dictionary<string, IBehavior> { ["hikeA"] = hikeA, ["hikeB"] = hikeB, ["playA"] = playA, ["interlude"] = interlude };
+        // one repetition history for the whole tree, the manager's, as FreeplayStack wires it
+        var manager = new BehaviorManager(ctx);
+        var penalty = manager.Penalty;
         var hiking = new Activity
         {
             Id = "Hiking", Priority = 16, Strategy = new ActivityStrategy { ShouldEndDurationSec = 60, CooldownBaseSec = 15 },
             Chooser = new ScoringChooser(new[] { new ScoredBehaviorEntry("hikeA", 2, new Graph2d(new[] { (0.0, 0.0), (30.0, 1.0) }), null, null, Array.Empty<(EmotionType, Graph2d)>()),
-                                                 new ScoredBehaviorEntry("hikeB", 1, null, null, null, Array.Empty<(EmotionType, Graph2d)>()) }, bound),
+                                                 new ScoredBehaviorEntry("hikeB", 1, null, null, null, Array.Empty<(EmotionType, Graph2d)>()) }, bound, penalty: penalty),
             InterludeChooser = new StrictPriorityChooser(new[] { "interlude" }, bound),
         };
         var playAlone = new Activity { Id = "PlayAlone", Priority = 15, Strategy = new ActivityStrategy { ShouldEndDurationSec = 25, CooldownBaseSec = 30 },
-                                       Chooser = new ScoringChooser(new[] { new ScoredBehaviorEntry("playA", 1, null, null, null, Array.Empty<(EmotionType, Graph2d)>()) }, bound) };
+                                       Chooser = new ScoringChooser(new[] { new ScoredBehaviorEntry("playA", 1, null, null, null, Array.Empty<(EmotionType, Graph2d)>()) }, bound, penalty: penalty) };
         var nothing = new Activity { Id = "NothingToDo", Priority = 17, Strategy = new ActivityStrategy(), Chooser = new StrictPriorityChooser(new[] { "hikeB" }, bound) };
-        var manager = new BehaviorManager(ctx);
         var inputs = new FreeplayInputs();
         var fp = new FreeplaySystem(manager, ctx, Fp(hiking, playAlone, nothing), bound, inputs);
         var log = new List<string>(); fp.Log += log.Add;

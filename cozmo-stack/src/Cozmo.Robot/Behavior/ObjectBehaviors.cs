@@ -14,7 +14,7 @@ namespace Cozmo.Robot.Behavior;
 /// beside them was not traced to a use (unlabelled). The strategy does not fire while AcknowledgeObject itself
 /// is the running behaviour.
 /// </summary>
-public sealed class ObjectPositionUpdatedStrategy : IReactionTriggerStrategy, IDisposable
+public sealed class ObjectPositionUpdatedStrategy : IReactionTriggerStrategy, ITargetPreparingStrategy, IDisposable
 {
     public const double SameDistanceMm = 80.0;
     public const double SameAngleRad = 0.785398;
@@ -85,12 +85,37 @@ public sealed class ObjectPositionUpdatedStrategy : IReactionTriggerStrategy, ID
 
     public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec)
     {
+        if (!PrepareTarget(context, current, nowSec)) return false;
+        CommitTarget();
+        return true;
+    }
+
+    /// <summary>
+    /// <c>GetDesiredReactionTargets</c> put on the behaviour, which is how the engine's
+    /// <c>ShouldTriggerBehavior(robot, behavior)</c> hands them over. Nothing here is consumed: the strategy's
+    /// reacted-to record only moves when the behaviour reports an acknowledgement.
+    /// </summary>
+    public bool PrepareTarget(BehaviorContext context, ReactionTrigger? current, double nowSec)
+    {
         if (current == ReactionTrigger.ObjectPositionUpdated) return false;
         var targets = DesiredTargets();
         if (targets.Count == 0) return false;
+        _stagedBefore = _behavior.PendingTargets;
         _behavior.SetTargets(targets);
+        _staged = true;
         return true;
     }
+
+    public void CommitTarget() { _staged = false; _stagedBefore = null; }
+
+    public void AbandonTarget()
+    {
+        if (_staged && _stagedBefore is { } before) _behavior.ResetTargets(before);
+        _staged = false; _stagedBefore = null;
+    }
+
+    private bool _staged;
+    private IReadOnlyList<uint>? _stagedBefore;
 
     /// <summary><c>ClearDesiredTargets</c>: everything currently desired counts as reacted to.</summary>
     public void ClearDesiredTargets() { foreach (var id in DesiredTargets()) ReactedToId(id); }
@@ -145,6 +170,16 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
 
     /// <summary>Raised when a target has been acknowledged (the strategy's <c>ReactedToID</c>).</summary>
     public event Action<uint>? ReactedTo;
+
+    /// <summary>Replaces the pending queue (used to undo a staged trigger the behaviour could not take).</summary>
+    public void ResetTargets(IEnumerable<uint> ids)
+    {
+        lock (_targets)
+        {
+            _targets.Clear();
+            foreach (var id in ids) _targets.Enqueue(id);
+        }
+    }
 
     public void SetTargets(IEnumerable<uint> ids)
     {

@@ -119,18 +119,28 @@ public sealed class PutDownBlockBehavior : ManipulationBehavior
         });
     }
 
+    /// <summary>
+    /// <c>WaitForImagesAction</c>'s frame count. The engine takes it as a constructor argument and the value
+    /// this behaviour passes was not read; <c>acknowledgeObject.json</c>'s <c>NumImagesToWaitFor</c> is 2, so 2
+    /// stands in (INFERRED).
+    /// </summary>
+    public const int ImagesToWaitFor = 2;
+
     private void LookDownAtBlock()
     {
         CurrentPhase = Phase.LookingDown;
         _ = M.Robot.Motion.SetHeadAngleAsync(-0.349066f, requireCalibration: false);
+        // WaitForImagesAction waits for images that arrive *after* it starts. Taking the count now and
+        // comparing against it is the difference between waiting for the placed cube to be re-observed and
+        // waiting for nothing at all, because by this point in a run frames have always been processed.
+        int framesBefore = M.Vision.FramesProcessed;
         RunAction("DriveStraight(-30 mm)", ct => new DriveStraightAction(M, -30, 100f).RunAsync(ct), _ =>
         {
-            // WaitForImagesAction: let a couple of frames arrive so the placed cube is re-observed
-            WaitUntil(() => M.Vision.FramesProcessed > 0, 1.0, _ =>
+            WaitUntil(() => M.Vision.FramesProcessed >= framesBefore + ImagesToWaitFor, 1.0, _ =>
             {
                 CurrentPhase = Phase.KeepAlive;
                 PlayTrigger(AnimationTrigger.PutDownBlockKeepAlive, () => { Log("TurnTowardsFace skipped (no face tracking; DEFERRED)"); CurrentPhase = Phase.Idle; Finish(); });
-            }, "images after the place");
+            }, $"{ImagesToWaitFor} image(s) after the place");
         });
     }
 }

@@ -101,9 +101,26 @@ public static class FreeplayTool
         using var vision = new VisionSystem(robot);
         using var m = new ManipulationSystem(robot, vision);
         var log = new List<string>();
+        bool nominal = false;
         void Say(string line) { Console.WriteLine(line); log.Add(line); }
         var cal = await vision.ReadCalibrationAsync(TimeSpan.FromSeconds(3));
-        if (cal is null) { vision.Calibration = CameraCalibration.Nominal(); Say("camera calibration not read: nominal stand-in"); }
+        if (cal is null)
+        {
+            // Freeplay drives and manipulates cubes on its own. Substituting a made-up camera geometry here
+            // would put every object in the wrong place while the robot acts on it, so this fails closed the
+            // way the engine refuses to run vision without a calibration. --nominal is an explicit,
+            // labelled diagnostic override, as it already is for the manipulation tool.
+            if (!a.Contains("--nominal"))
+            {
+                Say("camera calibration NOT READ from NV storage: refusing to run autonomous freeplay on a made-up geometry.");
+                Say("re-run with --nominal to force the LOCAL nominal stand-in (diagnostics only; he will misjudge where cubes are).");
+                robot.Disconnect();
+                return 2;
+            }
+            vision.Calibration = CameraCalibration.Nominal();
+            Say("UNSAFE: camera calibration not read; using the nominal stand-in because --nominal was given (LOCAL_POLICY)");
+            nominal = true;
+        }
         var arbiter = new BehaviorArbiter { AutonomyEnabled = true };
         var ctx = new BehaviorContext { Robot = robot, Triggers = AnimationTriggerMap.Load(obb), Arbiter = arbiter, Mood = new MoodState(MoodModel.Load(obb)) };
         var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -111,7 +128,7 @@ public static class FreeplayTool
         stack.Freeplay.Log += l => Say("  " + l);
         stack.Manager.Selected += sel => Say($"  [manager] {sel.Chosen ?? "-"}: {sel.Reason}");
         stack.Manager.ReactionTriggered += r => Say($"  REACTION {r.Trigger} -> {r.Behavior}");
-        robot.Sensors.OffTreadsStateChanged += (from, to) => { if (to == OffTreadsState.OnTreads) stack.Freeplay.OnRobotPutDown(sw.Elapsed.TotalSeconds); };
+        // the put-down re-pick is wired by FreeplayStack itself; nothing to install here
         robot.Cubes.SetDiscovery(true);
         await robot.WaitForMotorCalibrationAsync(TimeSpan.FromSeconds(10));
         robot.StartCamera();
@@ -136,6 +153,7 @@ public static class FreeplayTool
             var record = new
             {
                 tool = "freeplay", milestone = "M15", timestampUtc = DateTime.UtcNow, firmware = robot.State.FirmwareVersionNumber, serial = robot.State.SerialNumber,
+                cameraCalibration = nominal ? "NOMINAL STAND-IN (--nominal; not the robot's)" : "read from the robot's NV storage",
                 automated = new { pass = behaviours.Count >= 2 && activities.Count >= 1, detail = new { activities, behaviours, log } },
                 human = new { check = "left alone with a cube he chose an activity from what he saw, ran several behaviours in turn (drove off the charger first if he was on it), reacted to being handled, and expressed a need when one ran low; nothing looked stuck or repeated back to back", verdict = "PENDING - fill in after watching the robot" },
             };

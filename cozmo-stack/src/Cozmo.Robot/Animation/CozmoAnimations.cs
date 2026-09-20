@@ -81,11 +81,18 @@ public sealed class RobotAnimationSink : IAnimationSink
             return;
         }
         _robot.Transport.Send(new BodyMotion { Speed = k.Speed, RadiusMm = radius }, flush: true);
+        _bodyMoving = k.Speed != 0;
     }
 
     /// <summary>Zero speed on the straight radius, which is how the engine's own keyframe ends.</summary>
-    public void BodyStop() =>
+    public void BodyStop()
+    {
+        _bodyMoving = false;
         _robot.Transport.Send(new BodyMotion { Speed = 0, RadiusMm = BodyKeyframe.StraightRadius }, flush: true);
+    }
+
+    /// <summary>Whether a body keyframe this sink sent is still driving (nothing has stopped it yet).</summary>
+    private bool _bodyMoving;
 
     public void Lights(LightsKeyframe k)
     {
@@ -104,10 +111,13 @@ public sealed class RobotAnimationSink : IAnimationSink
 
     public void Finished(string clipName, bool completed)
     {
-        // The scheduler stops the body when its keyframe expires and again if an animation is cut short,
-        // so there is nothing to undo here. One last zero command is still cheap insurance against a
-        // keyframe the scheduler did not know had started the wheels.
-        _robot.Transport.Send(new DriveWheels(0f, 0f, 0f, 0f), flush: true);
+        // The scheduler stops the body when its keyframe expires and again if an animation is cut short
+        // (AnimationScheduler: BodyStop on both paths), so normally there is nothing to undo. What this
+        // must not do is stop the wheels for every clip: a face or audio animation ending would then kill
+        // a path or a direct drive that has nothing to do with it, which with M13 navigation and M15
+        // autonomy running underneath is a real collision. Only body motion this animation started and
+        // nothing has stopped is cleaned up, and with the keyframe's own stop rather than DriveWheels.
+        if (_bodyMoving) BodyStop();
         _ = _lastFacePayload;
     }
 }

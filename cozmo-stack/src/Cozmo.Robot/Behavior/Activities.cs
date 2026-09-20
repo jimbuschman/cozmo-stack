@@ -100,7 +100,6 @@ public sealed class ScoringChooser : IBehaviorChooser
 {
     private readonly Dictionary<string, IBehavior> _bound;
     private readonly RepetitionPenalty _penalty;
-    private readonly Dictionary<string, double> _lastRun = new();
 
     public ScoringChooser(IReadOnlyList<ScoredBehaviorEntry> entries, IReadOnlyDictionary<string, IBehavior> bound, Graph2d? scoreBonusForCurrent = null, RepetitionPenalty? penalty = null)
     {
@@ -115,8 +114,13 @@ public sealed class ScoringChooser : IBehaviorChooser
     public IReadOnlyList<string> Unbound => Entries.Where(e => !_bound.ContainsKey(e.BehaviorId)).Select(e => e.BehaviorId).ToList();
     public Random Random { get; set; } = new();
 
-    /// <summary>Records a completed run for the repetition penalty (the manager tells the chooser).</summary>
-    public void Ran(string behaviorId, double nowSec) => _lastRun[behaviorId] = nowSec;
+    /// <summary>
+    /// Records a completed run in the shared repetition history. The manager already does this for every
+    /// behaviour that reaches <c>BehaviorStopReason.Completed</c> — the engine's
+    /// <c>StopWithoutImmediateRepetitionPenalty</c> exists precisely so an interrupted one is not penalised —
+    /// so this is only for callers driving a chooser without a manager.
+    /// </summary>
+    public void Ran(string behaviorId, double nowSec) => _penalty.Ran(behaviorId, nowSec);
 
     public ChooserDecision GetDesiredActiveBehavior(IBehavior? current, double currentRunningSec, BehaviorContext ctx, double nowSec)
     {
@@ -126,7 +130,7 @@ public sealed class ScoringChooser : IBehaviorChooser
         {
             if (!_bound.TryGetValue(e.BehaviorId, out var b)) { scores.Add((e.BehaviorId, 0, "not built")); continue; }
             bool running = current is not null && current.Id == b.Id;
-            double s = e.Evaluate(b, ctx, nowSec, _lastRun.TryGetValue(b.Id, out var lr) ? lr : null, running ? currentRunningSec : null, _penalty);
+            double s = e.Evaluate(b, ctx, nowSec, _penalty.LastRunSec(b.Id), running ? currentRunningSec : null, _penalty);
             if (running && s > 0 && ScoreBonusForCurrent is { } bonus) s += bonus.EvaluateY(currentRunningSec);
             scores.Add((b.Id, s, running ? "running" : s <= 0 ? (b.IsRunnable(ctx) ? "scored 0" : "not runnable") : ""));
             if (running) currentScore = s;
@@ -155,6 +159,10 @@ public sealed class StrictPriorityChooser : IBehaviorChooser
         foreach (var id in BehaviorIds)
         {
             if (!_bound.TryGetValue(id, out var b)) { scores.Add((id, 0, "not built")); continue; }
+            // NATIVE (StrictPriorityBSRunnableChooser::GetDesiredActiveBehavior 0x0060B23E): the loop reads the
+            // candidate's is-running flag (IBehavior +0xA1, the same byte IsRunnableBase logs "Behavior %s is
+            // already running" from) at 0x0060B250 and selects it without calling IsRunnable at all. Only a
+            // behaviour that is not running is asked whether it is runnable.
             bool running = current is not null && current.Id == id;
             if (running || b.IsRunnable(ctx)) { scores.Add((id, 1, running ? "running" : "first runnable")); return new ChooserDecision(b, running ? "already running" : $"first runnable in priority order", scores); }
             scores.Add((id, 0, "not runnable"));
@@ -212,8 +220,17 @@ public sealed class ActivityStrategy
     public Func<NeedId, double>? NeedLevels { get; set; }
 
     public double? LastEndedSec { get; private set; }
-    public double CurrentCooldownSec { get; private set; }
+    /// <summary>
+    /// <c>IActivityStrategy</c> +0x20: the cooldown actually in force. The constructor sets it to
+    /// <c>cooldownBaseSecs</c> (0x005B5004) and <c>WantsToStart</c> re-randomises it (inline
+    /// <c>RandomizeCooldown</c>, 0x005B5336..0x005B5360) every time the cooldown check passes — not when the
+    /// activity ends.
+    /// </summary>
+    public double CurrentCooldownSec { get; private set; } = double.NaN;
     public Random Random { get; set; } = new();
+
+    /// <summary>The engine's float epsilon in these comparisons (0x3727C5AC).</summary>
+    public const double Epsilon = 1e-5;
 
     public static ActivityStrategy FromJson(JsonElement e)
     {
@@ -245,10 +262,12 @@ public sealed class ActivityStrategy
         };
     }
 
-    /// <summary><c>RandomizeCooldown</c>: base plus a random share of the randomness.</summary>
-    public void OnEnded(double nowSec)
+    /// <summary>The activity ended: only the end time is recorded (the engine re-randomises on the next start).</summary>
+    public void OnEnded(double nowSec) => LastEndedSec = nowSec;
+
+    /// <summary><c>RandomizeCooldown</c> (0x005B5408): base plus a random share of the randomness.</summary>
+    public void RandomizeCooldown()
     {
-        LastEndedSec = nowSec;
         double baseSec = CooldownBaseSec, randSec = CooldownRandomnessSec;
         if (Type == "NeedBasedCooldown" && Need is { } n && NeedLevels is { } levels)
         {
@@ -259,15 +278,32 @@ public sealed class ActivityStrategy
         CurrentCooldownSec = baseSec + Random.NextDouble() * randSec;
     }
 
+    /// <summary>The cooldown in force, the constructor's <c>cooldownBaseSecs</c> until the first randomisation.</summary>
+    public double EffectiveCooldownSec => double.IsNaN(CurrentCooldownSec) ? CooldownBaseSec : CurrentCooldownSec;
+
+    /// <summary>
+    /// <c>WantsToStart</c>'s cooldown test (0x005B52C8..0x005B5334): it applies while the cooldown is above
+    /// zero and either the activity has ended before or <c>startInCooldown</c> is set, and it measures from the
+    /// last end time — which is 0 for an activity that has never run, so <c>startInCooldown</c> holds the
+    /// activity back for the first cooldown of the session.
+    ///
+    /// Not reproduced: the engine substitutes a flat 3 s when the activity ended within the last two
+    /// base-station ticks (0x005B52EA..0x005B5316); that needs the tick length and the second time argument,
+    /// whose meaning was not traced.
+    /// </summary>
     public bool InCooldown(double nowSec)
     {
-        if (LastEndedSec is { } ended) return nowSec - ended < CurrentCooldownSec;
-        return StartInCooldown && nowSec < CooldownBaseSec;
+        double cooldown = EffectiveCooldownSec;
+        if (cooldown <= Epsilon) return false;
+        double ended = LastEndedSec ?? 0;
+        if (ended <= Epsilon && !StartInCooldown) return false;
+        return nowSec < ended + cooldown;
     }
 
     public bool WantsToStart(FreeplayInputs inputs, double nowSec, out string reason)
     {
-        if (InCooldown(nowSec)) { reason = $"in cooldown ({CurrentCooldownSec:F0} s)"; return false; }
+        if (InCooldown(nowSec)) { reason = $"in cooldown ({EffectiveCooldownSec:F0} s)"; return false; }
+        RandomizeCooldown();     // the engine randomises here, once the cooldown has passed
         if (RequiredRecentOnTreadsEventSec > 0 && (inputs.LastOnTreadsEventSec is not { } t || nowSec - t > RequiredRecentOnTreadsEventSec)) { reason = "no recent on-treads event"; return false; }
         if (!double.IsNaN(RequiredMinStartMoodScore) && StartMoodScorer.Count > 0)
         {
@@ -300,9 +336,18 @@ public sealed class ActivityStrategy
         }
     }
 
+    /// <summary>
+    /// <c>IActivityStrategy::WantsToEnd(robot, startTime)</c> (0x005B5444), in its three steps:
+    /// <c>activityCanEndDurationSecs</c> is a floor — before it the activity does not want to end whatever the
+    /// subclass thinks (0x005B5450..0x005B548A); <c>activityShouldEndDurationSecs</c> is a ceiling — past it it
+    /// does (0x005B548C..0x005B54BC); in between, the subclass's <c>WantsToEndInternal</c> decides
+    /// (the vtable +0x0C tail call at 0x005B54C0).
+    /// </summary>
     public bool WantsToEnd(FreeplayInputs inputs, double runningSec, out string reason)
     {
-        if (ShouldEndDurationSec >= 0 && runningSec >= ShouldEndDurationSec) { reason = $"ran {runningSec:F0} s, should end after {ShouldEndDurationSec:F0}"; return true; }
+        if (CanEndDurationSec > Epsilon && runningSec < CanEndDurationSec - Epsilon)
+        { reason = $"ran {runningSec:F0} s, cannot end before {CanEndDurationSec:F0}"; return false; }
+        if (ShouldEndDurationSec > Epsilon && runningSec > ShouldEndDurationSec + Epsilon) { reason = $"ran {runningSec:F0} s, should end after {ShouldEndDurationSec:F0}"; return true; }
         switch (Type)
         {
             case "Needs":

@@ -211,15 +211,27 @@ public sealed class RepetitionPenalty
             new (double, double)[] { (0, 0), (30, 1) });
 
     /// <summary>The multiplier for a behaviour, 0 immediately after it ran and 1 once recovered.</summary>
-    public double For(string behaviorId, double nowSec) =>
-        _lastRunSec.TryGetValue(behaviorId, out var last) ? _graph.At(nowSec - last) : 1.0;
+    public double For(string behaviorId, double nowSec)
+    {
+        lock (_lastRunSec) return _lastRunSec.TryGetValue(behaviorId, out var last) ? _graph.At(nowSec - last) : 1.0;
+    }
+
+    /// <summary>
+    /// When a behaviour last ran to completion, or null. The repetition history belongs to the behaviour, not
+    /// to whichever activity's chooser happened to pick it, so a behaviour named by two activities carries one
+    /// history between them.
+    /// </summary>
+    public double? LastRunSec(string behaviorId)
+    {
+        lock (_lastRunSec) return _lastRunSec.TryGetValue(behaviorId, out var last) ? last : (double?)null;
+    }
 
     /// <summary>Records that a behaviour ran.</summary>
-    public void Ran(string behaviorId, double nowSec) => _lastRunSec[behaviorId] = nowSec;
+    public void Ran(string behaviorId, double nowSec) { lock (_lastRunSec) _lastRunSec[behaviorId] = nowSec; }
 
     /// <summary>
     /// The engine's <c>StopWithoutImmediateRepetitionPenalty</c>: a behaviour that was interrupted rather
     /// than completed is not penalised for it.
     /// </summary>
-    public void Forget(string behaviorId) => _lastRunSec.Remove(behaviorId);
+    public void Forget(string behaviorId) { lock (_lastRunSec) _lastRunSec.Remove(behaviorId); }
 }

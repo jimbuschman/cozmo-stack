@@ -53,8 +53,21 @@ public sealed class BlockConfigurationManager
 
     private readonly BlockWorld _world;
     private readonly Func<double> _clockSec;
-    private readonly Dictionary<BlockConfigurationType, List<BlockConfiguration>> _cache = new();
-    private readonly Dictionary<string, double> _firstSeenSec = new();
+    /// <summary>
+    /// One consistent view of every configuration. <see cref="Update"/> runs on the vision worker (it is
+    /// driven from <c>BlockWorld.ObjectObserved</c> / <c>PoseStateChanged</c>) while behaviours and the
+    /// freeplay loop read from their own threads, so a new view is built off to the side and swapped in whole
+    /// rather than mutated in place.
+    /// </summary>
+    private sealed record Snapshot(IReadOnlyDictionary<BlockConfigurationType, IReadOnlyList<BlockConfiguration>> Cache,
+                                   IReadOnlyDictionary<string, double> FirstSeenSec)
+    {
+        public static readonly Snapshot Empty =
+            new(new Dictionary<BlockConfigurationType, IReadOnlyList<BlockConfiguration>>(), new Dictionary<string, double>());
+    }
+
+    private Snapshot _snapshot = Snapshot.Empty;
+    private readonly object _updateGate = new();
 
     public BlockConfigurationManager(BlockWorld world, Func<double> clockSec) { _world = world; _clockSec = clockSec; }
 
@@ -64,10 +77,12 @@ public sealed class BlockConfigurationManager
     public IReadOnlyList<Pyramid> Pyramids => Cache(BlockConfigurationType.Pyramid).Cast<Pyramid>().ToList();
 
     /// <summary><c>GetCacheByType</c>.</summary>
-    public IReadOnlyList<BlockConfiguration> Cache(BlockConfigurationType t) => _cache.TryGetValue(t, out var l) ? l : Array.Empty<BlockConfiguration>();
+    public IReadOnlyList<BlockConfiguration> Cache(BlockConfigurationType t) =>
+        Volatile.Read(ref _snapshot).Cache.TryGetValue(t, out var l) ? l : Array.Empty<BlockConfiguration>();
 
     /// <summary>When a configuration with these blocks was first seen (seconds on the manager's clock), or null.</summary>
-    public double? FirstSeenSec(BlockConfiguration c) => _firstSeenSec.TryGetValue(Key(c), out var t) ? t : null;
+    public double? FirstSeenSec(BlockConfiguration c) =>
+        Volatile.Read(ref _snapshot).FirstSeenSec.TryGetValue(Key(c), out var t) ? t : (double?)null;
 
     /// <summary><c>IsObjectPartOfConfigurationType</c>.</summary>
     public bool IsObjectPartOfConfigurationType(uint objectId, BlockConfigurationType t) => Cache(t).Any(c => c.ContainsBlock(objectId));
@@ -75,8 +90,20 @@ public sealed class BlockConfigurationManager
     /// <summary><c>StackConfigurationContainer::GetTallestStack</c>.</summary>
     public StackOfCubes? GetTallestStack() => Stacks.OrderByDescending(s => s.StackHeight).FirstOrDefault();
 
-    /// <summary>Rebuilds every configuration from the located cubes.</summary>
+    /// <summary>
+    /// Rebuilds every configuration from the located cubes and publishes the result as one snapshot, so a
+    /// reader on another thread never sees stacks from one pass beside pyramids from the next.
+    /// </summary>
     public void Update()
+    {
+        List<BlockConfiguration> newlySeen;
+        double now;
+        lock (_updateGate) (newlySeen, now) = BuildLocked();
+        // the event goes out after the swap, so a handler that reads the manager sees the new view
+        foreach (var c in newlySeen) ConfigurationSeen?.Invoke(c, now);
+    }
+
+    private (List<BlockConfiguration> NewlySeen, double Now) BuildLocked()
     {
         var cubes = _world.LocatedObjects.Where(o => CubeGeometry.IsCube(o.Type)).ToList();
         var stacks = new List<BlockConfiguration>();
@@ -94,20 +121,26 @@ public sealed class BlockConfigurationManager
         foreach (PyramidBase b in bases)
             foreach (var top in cubes)
                 if (!b.ContainsBlock(top.ObjectId) && ObjectIsOnTopOfBase(b, top)) pyramids.Add(new Pyramid(b, top.ObjectId));
-        _cache[BlockConfigurationType.StackOfCubes] = stacks;
-        _cache[BlockConfigurationType.PyramidBase] = bases;
-        _cache[BlockConfigurationType.Pyramid] = pyramids;
+        var cache = new Dictionary<BlockConfigurationType, IReadOnlyList<BlockConfiguration>>
+        {
+            [BlockConfigurationType.StackOfCubes] = stacks,
+            [BlockConfigurationType.PyramidBase] = bases,
+            [BlockConfigurationType.Pyramid] = pyramids,
+        };
         double now = _clockSec();
+        var previous = Volatile.Read(ref _snapshot).FirstSeenSec;
+        var firstSeen = new Dictionary<string, double>();
+        var newlySeen = new List<BlockConfiguration>();
         foreach (var c in stacks.Concat(bases).Concat(pyramids))
         {
             var k = Key(c);
-            if (_firstSeenSec.ContainsKey(k)) continue;
-            _firstSeenSec[k] = now;
-            ConfigurationSeen?.Invoke(c, now);
+            if (firstSeen.ContainsKey(k)) continue;
+            // an arrangement that is gone is forgotten, so a rebuilt one counts as newly seen
+            if (previous.TryGetValue(k, out var seen)) firstSeen[k] = seen;
+            else { firstSeen[k] = now; newlySeen.Add(c); }
         }
-        // forget arrangements that are gone so a rebuilt one counts as newly seen
-        var live = new HashSet<string>(stacks.Concat(bases).Concat(pyramids).Select(Key));
-        foreach (var k in _firstSeenSec.Keys.Where(k => !live.Contains(k)).ToList()) _firstSeenSec.Remove(k);
+        Volatile.Write(ref _snapshot, new Snapshot(cache, firstSeen));
+        return (newlySeen, now);
     }
 
     /// <summary><c>StackOfCubes::BuildTallestStackForObject</c>: walk down to the bottom, then up, bound 8 each way.</summary>

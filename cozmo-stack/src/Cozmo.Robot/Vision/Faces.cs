@@ -112,10 +112,10 @@ public sealed class TrackedFace
 /// <c>Anki::Cozmo::SmartFaceID</c>: a face reference that follows <c>FaceWorld::ChangeFaceID</c> (a tracking
 /// id merged into a recognised id) so a behaviour holding it keeps pointing at the same person.
 /// </summary>
-public sealed class SmartFaceID
+public sealed class SmartFaceID : IDisposable
 {
     public const int Invalid = -1;
-    private readonly FaceWorld? _world;
+    private FaceWorld? _world;
     internal SmartFaceID(FaceWorld? world, int id) { _world = world; Id = id; if (world is not null) world.FaceIdChanged += OnChanged; }
     public SmartFaceID() : this(null, Invalid) { }
     public int Id { get; private set; }
@@ -125,6 +125,16 @@ public sealed class SmartFaceID
     private void OnChanged(int oldId, int newId) { if (Id == oldId) Id = newId; }
     public string DebugStr => IsValid ? $"face {Id}" : "no face";
     public override string ToString() => DebugStr;
+
+    /// <summary>
+    /// Releases the <see cref="FaceWorld.FaceIdChanged"/> subscription. A smart id lives as long as the action
+    /// holding it; without this every face action ever run would stay subscribed for the life of the world.
+    /// </summary>
+    public void Dispose()
+    {
+        var world = Interlocked.Exchange(ref _world, null);
+        if (world is not null) world.FaceIdChanged -= OnChanged;
+    }
 }
 
 /// <summary>An entry of the face world (<c>FaceWorld::FaceEntry</c>).</summary>

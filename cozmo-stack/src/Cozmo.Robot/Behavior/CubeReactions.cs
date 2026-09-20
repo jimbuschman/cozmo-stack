@@ -143,19 +143,30 @@ public sealed class CubeMotionTracker
 /// and is <b>not</b> where the camera can see it fires the reaction, after resetting its record and handing its
 /// id to the behaviour. Every test needs the located pose, so without a locator the strategy never fires.
 /// </summary>
-public sealed class CubeMovedReactionStrategy : IReactionTriggerStrategy, IDisposable
+public sealed class CubeMovedReactionStrategy : IReactionTriggerStrategy, ITargetPreparingStrategy, IDisposable
 {
     private readonly CozmoRobot _robot;
     private readonly ICubeLocator? _locator;
     private readonly AcknowledgeCubeMovedBehavior _behavior;
+    private readonly Cozmo.Robot.Vision.BlockWorld? _world;
+    private uint? _staged, _targetBeforeStaging;
 
-    public CubeMovedReactionStrategy(CozmoRobot robot, AcknowledgeCubeMovedBehavior behavior, ICubeLocator? locator)
+    /// <param name="world">
+    /// The world model whose <c>ObjectObserved</c> is the engine's <c>RobotObservedObject</c> (tag 0x44) for
+    /// this strategy's <c>AlwaysHandleInternal</c>. Without it the sighting path has to be driven by hand.
+    /// </param>
+    public CubeMovedReactionStrategy(CozmoRobot robot, AcknowledgeCubeMovedBehavior behavior, ICubeLocator? locator,
+                                     Cozmo.Robot.Vision.BlockWorld? world = null)
     {
         _robot = robot;
         _behavior = behavior;
         _locator = locator;
+        _world = world;
         robot.Message += OnMessage;
+        if (_world is not null) _world.ObjectObserved += OnWorldObserved;
     }
+
+    private void OnWorldObserved(Cozmo.Robot.Vision.ObjectObservation o) => ObjectObserved(o.Object.ObjectId);
 
     public CubeMotionTracker Tracker { get; } = new();
     public ReactionTrigger Trigger => ReactionTrigger.CubeMoved;
@@ -186,6 +197,18 @@ public sealed class CubeMovedReactionStrategy : IReactionTriggerStrategy, IDispo
 
     public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec)
     {
+        if (!PrepareTarget(context, current, nowSec)) return false;
+        CommitTarget();
+        return true;
+    }
+
+    /// <summary>
+    /// <c>ShouldTriggerBehaviorInternal</c> (0x0060BC80) without the <c>ResetObject</c> at the end: the
+    /// candidate's id is put on the behaviour (the engine passes the behaviour in) but the tracker entry is
+    /// left alone until the manager has seen that the behaviour can run.
+    /// </summary>
+    public bool PrepareTarget(BehaviorContext context, ReactionTrigger? current, double nowSec)
+    {
         if (_locator is null) return false;
         uint robotTimestamp = _robot.State.Latest?.Timestamp ?? 0;
         foreach (var e in Tracker.Entries)
@@ -195,14 +218,32 @@ public sealed class CubeMovedReactionStrategy : IReactionTriggerStrategy, IDispo
             if (!CubeMotionTracker.OutsideIgnoreArea(_locator.DistanceFromRobotMm(e.ObjectId))) continue;
             if (!Tracker.HasMovedLongEnough(e, located, robotTimestamp) && !Tracker.UpAxisHasChanged(e, located)) continue;
             if (_locator.IsVisibleFromCamera(e.ObjectId)) continue;
-            Tracker.Reset(e.ObjectId);
+            _targetBeforeStaging = _behavior.TargetObjectId;
+            _staged = e.ObjectId;
             _behavior.TargetObjectId = e.ObjectId;
             return true;
         }
         return false;
     }
 
-    public void Dispose() => _robot.Message -= OnMessage;
+    /// <summary>The <c>ResetObject</c> the engine does once the reaction is taken.</summary>
+    public void CommitTarget()
+    {
+        if (_staged is { } id) Tracker.Reset(id);
+        _staged = null; _targetBeforeStaging = null;
+    }
+
+    public void AbandonTarget()
+    {
+        if (_staged is not null) _behavior.TargetObjectId = _targetBeforeStaging;
+        _staged = null; _targetBeforeStaging = null;
+    }
+
+    public void Dispose()
+    {
+        _robot.Message -= OnMessage;
+        if (_world is not null) _world.ObjectObserved -= OnWorldObserved;
+    }
 }
 
 /// <summary>

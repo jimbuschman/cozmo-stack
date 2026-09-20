@@ -61,11 +61,17 @@ public sealed class PathSender
 
     private static uint F(double v) => BitConverter.SingleToUInt32Bits((float)v);
 
-    /// <summary>Clears the robot's path, appends the segments and starts execution. Returns the path id.</summary>
-    public ushort Execute(IReadOnlyList<PathSegment> path)
+    /// <summary>
+    /// Clears the robot's path, appends the segments and starts execution. Returns the path id.
+    ///
+    /// <paramref name="reserve"/> is called with the new id before anything is sent, so a caller can register
+    /// for the path's terminal event before the robot can possibly report it.
+    /// </summary>
+    public ushort Execute(IReadOnlyList<PathSegment> path, Action<ushort>? reserve = null)
     {
         _pathId++;
         if (_pathId == 0) _pathId = 1;
+        reserve?.Invoke(_pathId);
         Send(new ClearPath { Unknown = _pathId });
         foreach (var s in path)
         {
@@ -134,9 +140,14 @@ public static class StraightLinePlanner
 /// <summary>Waits for the robot's <c>PathFollowingEvent</c> for a path id.</summary>
 public sealed class PathFollower : IDisposable
 {
+    /// <summary>How many recently finished path ids keep their terminal event for a late waiter.</summary>
+    public const int RetainedTerminalEvents = 16;
+
     private readonly CozmoRobot _robot;
     private readonly object _gate = new();
     private readonly Dictionary<ushort, TaskCompletionSource<PathEventType>> _waits = new();
+    private readonly Dictionary<ushort, PathEventType> _finished = new();
+    private readonly Queue<ushort> _finishedOrder = new();
 
     public PathFollower(CozmoRobot robot) { _robot = robot; robot.Message += OnMessage; }
 
@@ -148,19 +159,74 @@ public sealed class PathFollower : IDisposable
         var type = (PathEventType)e.EventType;
         Event?.Invoke(e.EventId, type);
         if (type == PathEventType.Started) return;
-        lock (_gate) if (_waits.Remove(e.EventId, out var tcs)) tcs.TrySetResult(type);
+        lock (_gate)
+        {
+            if (_waits.Remove(e.EventId, out var tcs)) { tcs.TrySetResult(type); return; }
+            // Nobody is waiting yet. A path can finish before the caller that started it has awaited, so the
+            // terminal event is retained for a short while instead of being dropped on the floor.
+            if (!_finished.ContainsKey(e.EventId)) _finishedOrder.Enqueue(e.EventId);
+            _finished[e.EventId] = type;
+            while (_finishedOrder.Count > RetainedTerminalEvents) _finished.Remove(_finishedOrder.Dequeue());
+        }
     }
 
-    /// <summary>Completes with Completed or Interrupted, or null on timeout.</summary>
-    public async Task<PathEventType?> WaitForEndAsync(ushort pathId, TimeSpan timeout, CancellationToken cancel)
+    /// <summary>
+    /// Registers interest in a path id before the path is started, so its terminal event cannot arrive
+    /// before there is somewhere to put it. Dispose removes the registration.
+    /// </summary>
+    public Reservation Reserve(ushort pathId)
     {
         var tcs = new TaskCompletionSource<PathEventType>(TaskCreationOptions.RunContinuationsAsynchronously);
-        lock (_gate) _waits[pathId] = tcs;
-        using var reg = cancel.Register(() => tcs.TrySetCanceled());
-        var done = await Task.WhenAny(tcs.Task, Task.Delay(timeout, CancellationToken.None));
-        if (done != tcs.Task) { lock (_gate) _waits.Remove(pathId); return null; }
-        if (tcs.Task.IsCanceled) return null;
-        return tcs.Task.Result;
+        lock (_gate)
+        {
+            if (_finished.Remove(pathId, out var already)) tcs.TrySetResult(already);
+            else _waits[pathId] = tcs;
+        }
+        return new Reservation(this, pathId, tcs);
+    }
+
+    private void Release(ushort pathId, TaskCompletionSource<PathEventType> tcs)
+    {
+        lock (_gate) if (_waits.TryGetValue(pathId, out var held) && ReferenceEquals(held, tcs)) _waits.Remove(pathId);
+    }
+
+    /// <summary>A registered interest in one path id's terminal event.</summary>
+    public sealed class Reservation : IDisposable
+    {
+        private readonly PathFollower _follower;
+        private readonly TaskCompletionSource<PathEventType> _tcs;
+        private int _disposed;
+
+        internal Reservation(PathFollower follower, ushort pathId, TaskCompletionSource<PathEventType> tcs)
+        { _follower = follower; PathId = pathId; _tcs = tcs; }
+
+        public ushort PathId { get; }
+
+        /// <summary>Completes with Completed or Interrupted; null on timeout or cancellation.</summary>
+        public async Task<PathEventType?> WaitAsync(TimeSpan timeout, CancellationToken cancel)
+        {
+            using var reg = cancel.Register(() => _tcs.TrySetCanceled());
+            var done = await Task.WhenAny(_tcs.Task, Task.Delay(timeout, CancellationToken.None));
+            if (done != _tcs.Task || _tcs.Task.IsCanceled) { Dispose(); return null; }
+            return _tcs.Task.Result;
+        }
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+            _follower.Release(PathId, _tcs);
+        }
+    }
+
+    /// <summary>
+    /// Completes with Completed or Interrupted, or null on timeout. Registering after the path has started
+    /// is safe for a short window (see <see cref="RetainedTerminalEvents"/>), but a caller that owns the path
+    /// should <see cref="Reserve"/> before starting it.
+    /// </summary>
+    public async Task<PathEventType?> WaitForEndAsync(ushort pathId, TimeSpan timeout, CancellationToken cancel)
+    {
+        using var reservation = Reserve(pathId);
+        return await reservation.WaitAsync(timeout, cancel);
     }
 
     public void Dispose() => _robot.Message -= OnMessage;

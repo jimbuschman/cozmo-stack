@@ -180,6 +180,43 @@ public sealed class ReactToRobotOnSideBehavior : SteppedBehavior
 /// needs system says so, which this stack does not model) and then <c>CheckPitch</c> records whether the
 /// pitch is still above 10°. The run time is stamped at the end of <c>InitInternal</c> either way.
 /// </summary>
+/// <summary>
+/// <c>BehaviorReactToImpact</c>, the behaviour the shipped map runs for <c>ReactionTrigger.RobotFalling</c>.
+/// <c>AlwaysHandle</c> (0x00606408) clears the flags on <c>FallingStarted</c> and only acts on
+/// <c>FallingStopped</c> with <c>impactIntensity &gt; 1000</c> — the gate lives in the strategy here, as it does
+/// in the engine's handler. <c>InitInternal</c> (0x006061F8) then waits up to 5 s (a <c>WaitForLambdaAction</c>
+/// with timeout 5.0) for the head and lift to finish the recalibration a fall triggers, and
+/// <c>TransitionToPlayingAnim</c> (0x00606348) plays 0x1A0 <see cref="AnimationTrigger.ReactToImpact"/>.
+///
+/// This is the M7 dispatcher's falling reaction moved under <see cref="BehaviorManager"/>, so the freeplay
+/// stack keeps it and nothing runs two dispatchers over the same robot.
+/// </summary>
+public sealed class ReactToImpactBehavior : SteppedBehavior
+{
+    /// <summary>The engine's 5 s allowance for the post-fall motor recalibration.</summary>
+    public const double CalibrationWaitSec = 5.0;
+
+    public ReactToImpactBehavior(string id = "ReactToImpact") : base(id, "ReactToImpact") { }
+
+    /// <summary>Whether the last run waited for a recalibration rather than playing at once.</summary>
+    public bool WaitedForCalibration { get; private set; }
+
+    protected override void OnStart()
+    {
+        Scope.DisableReactions();
+        WaitedForCalibration = Context.Robot.State.CalibratingMotors;
+        if (!WaitedForCalibration) { PlayImpact(); return; }
+        Log("landed while the motors are recalibrating: waiting for them (WaitForLambdaAction, 5 s)");
+        WaitUntil(() => !Context.Robot.State.CalibratingMotors, CalibrationWaitSec, _ => PlayImpact(), "the motor recalibration a fall triggers");
+    }
+
+    private void PlayImpact()
+    {
+        Log("TransitionToPlayingAnim");
+        PlayTrigger(AnimationTrigger.ReactToImpact, Finish);
+    }
+}
+
 public sealed class ReactToPlacedOnSlopeBehavior : SteppedBehavior
 {
     public const double RepeatWithinSec = 10.0;

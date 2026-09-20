@@ -79,6 +79,16 @@ public sealed class BehaviorArbiter
     public bool AutonomyEnabled { get; set; }
 
     /// <summary>
+    /// Whether a <see cref="BehaviorManager"/> is dispatching reactions over this arbiter.
+    ///
+    /// The engine has one reaction dispatcher (<c>BehaviorManager::CheckReactionTriggerStrategies</c>). This
+    /// stack grew a second one first (the M7 <c>ReactiveBehavior</c>), and every source-backed reaction now
+    /// lives under the manager, so the older dispatcher stands down when a manager shares its arbiter rather
+    /// than firing the same trigger a second time.
+    /// </summary>
+    public bool ManagerDispatchesReactions { get; set; }
+
+    /// <summary>
     /// How long a given reaction is suppressed after firing. Stops a flapping sensor — a cliff sensor at
     /// the edge of a table, say — from retriggering the same animation continuously.
     ///

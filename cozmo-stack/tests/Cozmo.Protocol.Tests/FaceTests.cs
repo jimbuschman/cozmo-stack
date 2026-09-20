@@ -187,6 +187,14 @@ public class FaceTests
         Assert.True(track.Updates >= 3);
         Assert.True(track.Turns >= 1, $"turns {track.Turns}");
         Assert.InRange(rig.Angle, 0.3, 0.6);                                          // ended facing about atan(200/400)
+        // the command that went out is the recovered tracking pan and tilt, not a look-at solve done again:
+        // atan((z - 49) / planar distance) for the head, the body's heading plus the pan for the body
+        Assert.NotEmpty(rig.PanTilts);
+        var (pan, tilt) = rig.PanTilts[^1];
+        Assert.Equal(track.LastCommand!.Value.Pan, pan, 6);
+        Assert.Equal(track.LastCommand!.Value.Tilt, tilt, 6);
+        Assert.InRange(tilt, 0.3, 0.6);                                               // atan(201/~447)
+        track.Dispose();
     }
 
     // ------------------------------------------------------------------ the behaviours

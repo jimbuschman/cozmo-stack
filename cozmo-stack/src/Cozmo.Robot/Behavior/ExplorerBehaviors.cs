@@ -273,7 +273,7 @@ public sealed class FindFacesBehavior : ExploreLookAroundInPlaceBehavior
         {
             LookedAtLastFace = true;
             Log("FindFacesLookAtLast");
-            var turn = new TurnTowardsFaceAction(V, last.Id);
+            using var turn = new TurnTowardsFaceAction(V, last.Id);
             RunAction("TurnTowardsFace(last)", turn.RunAsync, _ => { Log("BehaviorFindFaces.TransitionToBaseClass"); base.BeginStateMachine(); }, FaceActionResult.Abort);
         }
         else
@@ -372,7 +372,7 @@ public sealed class DriveInDesperationBehavior : ActionBehavior
     {
         CurrentPhase = Phase.Request;
         Requests++;
-        var turn = new TurnTowardsFaceAction(_v, SmartFaceID.Invalid);
+        using var turn = new TurnTowardsFaceAction(_v, SmartFaceID.Invalid);
         RunAction("TurnTowardsFaceWrapper", turn.RunAsync, _ => PlayTrigger(RequestAnim, TransitionToIdle), FaceActionResult.Abort);
     }
 }
@@ -424,7 +424,7 @@ public sealed class ExpressNeedsBehavior : ActionBehavior
         }
         if (_v is not null && _v.Faces.HasAnyFaces())
         {
-            var turn = new TurnTowardsFaceAction(_v, SmartFaceID.Invalid);
+            using var turn = new TurnTowardsFaceAction(_v, SmartFaceID.Invalid);
             RunAction("TurnTowardsFace(last)", turn.RunAsync, _ => Play(), FaceActionResult.Abort);
         }
         else Play();

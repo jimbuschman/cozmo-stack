@@ -30,6 +30,7 @@ public sealed class FlipBlockAction
     /// <summary><c>SetShouldCheckPreActionPose</c>: false when the behaviour flips blindly after a failed drive.</summary>
     public bool CheckPreActionPose { get; set; } = true;
     public bool LiftRaised { get; private set; }
+    private Task? _raise;
     public IReadOnlyList<string> Trace => _trace;
     private readonly List<string> _trace = new();
 
@@ -71,14 +72,18 @@ public sealed class FlipBlockAction
         if (!LiftRaised) RaiseLift();          // the fake or a fast robot may finish the drive before a state showed it close
         var r = await drive;
         await lift;
+        // The lift-up is the operation that actually flips the cube, so it belongs to the action's lifetime:
+        // the engine's compound action does not report done until every part of it is. Reporting Success while
+        // this was still in flight meant the caller could start the next action mid-flip.
+        if (_raise is { } raise) await raise;
         _trace.Add($"FlipBlockAction: drive {r}; object {ObjectId} marked Unknown");
         return r == ActionResult.Success ? ActionResult.Success : r;
 
         void RaiseLift()
         {
             LiftRaised = true;
-            _trace.Add($"FlipBlockAction.CheckIfDone: within {LiftTriggerDistanceMm} mm, lift to carry height");
-            _ = _m.Robot.Motion.SetLiftHeightAsync(LiftPresets.CarryMm, maxSpeedRadPerSec: LiftSpeedRadPerSec, requireCalibration: false);
+            _trace.Add($"FlipBlockAction.CheckIfDone: within {LiftTriggerDistanceMm} mm, lift to carry height ({LiftPresets.CarryMm} mm)");
+            _raise = _m.Robot.Motion.SetLiftHeightAsync(LiftPresets.CarryMm, maxSpeedRadPerSec: LiftSpeedRadPerSec, requireCalibration: false);
             _m.World.MarkUnknown(ObjectId);
         }
     }

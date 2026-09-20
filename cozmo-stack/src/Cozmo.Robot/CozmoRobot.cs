@@ -64,7 +64,7 @@ public sealed class RobotStateTracker
     /// head was still moving, so motion was allowed too early. It also means an arriving RobotState is not
     /// on its own evidence of readiness: the calibration messages are.
     /// </summary>
-    public bool CalibrationComplete => HeadCalibrated && LiftCalibrated;
+    public bool CalibrationComplete => HeadCalibrated && LiftCalibrated && !CalibratingMotors;
 
     public event Action<RobotState>? StateUpdated;
 
@@ -101,12 +101,15 @@ public sealed class RobotStateTracker
                 switch (c.MotorID)
                 {
                     case MotorID.MOTOR_HEAD:
+                        // A motor that starts calibrating is no longer calibrated: CalibrationComplete must not
+                        // stay true while the head or lift is being re-zeroed, or normal motion would be accepted
+                        // in the middle of it.
                         HeadCalibrating = c.CalibStarted;
-                        if (!c.CalibStarted) HeadCalibrated = true;
+                        if (c.CalibStarted) HeadCalibrated = false; else HeadCalibrated = true;
                         break;
                     case MotorID.MOTOR_LIFT:
                         LiftCalibrating = c.CalibStarted;
-                        if (!c.CalibStarted) LiftCalibrated = true;
+                        if (c.CalibStarted) LiftCalibrated = false; else LiftCalibrated = true;
                         break;
                 }
                 break;
@@ -363,11 +366,35 @@ public sealed class CozmoRobot : IDisposable
 
     public void Disconnect() => Transport.Disconnect();
 
-    /// <summary>Stops the motors before dropping the link, so disposing never leaves the robot driving.</summary>
+    /// <summary>How long <see cref="Dispose"/> waits for the stop commands to reach the wire.</summary>
+    public static readonly TimeSpan ShutdownFlushTimeout = TimeSpan.FromMilliseconds(250);
+
+    /// <summary>
+    /// Whether the stop commands <see cref="Dispose"/> sent had all reached the socket before the link was
+    /// dropped. Null until a connected dispose happens.
+    /// </summary>
+    public bool? ShutdownStopFlushed { get; private set; }
+
+    /// <summary>
+    /// Stops the motors before dropping the link, so disposing never leaves the robot driving.
+    ///
+    /// Queuing the stop is not enough: the reliable layer only writes when its packet-separation interval has
+    /// passed (<c>SendOptimalUnAckedPackets</c>), so closing the socket straight after the queue call could
+    /// drop a stop that had never been sent. <see cref="IRobotTransport.FlushPending"/> waits, bounded, until
+    /// everything queued has actually gone out.
+    /// </summary>
     public void Dispose()
     {
         try { Animations.Dispose(); } catch { }
-        try { if (Transport.State == LinkState.Connected) EmergencyStop(); } catch { }
+        try
+        {
+            if (Transport.State == LinkState.Connected)
+            {
+                EmergencyStop();
+                ShutdownStopFlushed = Transport.FlushPending(ShutdownFlushTimeout);
+            }
+        }
+        catch { }
         Transport.Dispose();
     }
 

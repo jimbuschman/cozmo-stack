@@ -61,13 +61,27 @@ public sealed class DriveToPoseAction
             }
             else
             {
-                _trace.Add("lattice planner found no plan; straight-line fallback (LOCAL_POLICY)");
-                path = StraightLinePlanner.Plan(start.Value, goal, Profile);
+                // A configured lattice planner saying there is no route is the one moment obstacle planning
+                // matters, so this must not become "drive at the goal anyway". The straight line is used only
+                // when the same environment says it is clear end to end; otherwise the action fails the way
+                // the engine's planner failure does.
+                var straight = StraightLinePlanner.Plan(start.Value, goal, Profile);
+                if (PathIsClear(planner.Env, straight))
+                {
+                    _trace.Add("lattice planner found no plan; the straight line is collision-free in the same environment (LOCAL_POLICY)");
+                    path = straight;
+                }
+                else
+                {
+                    _trace.Add($"DriveToPoseAction.Init.PlanningFailed: no lattice plan and the straight line crosses an obstacle ({planner.Env.ObstacleCount} obstacle(s)); no path sent");
+                    return ActionResult.PathPlanningFailedAbort;
+                }
             }
         }
         else path = StraightLinePlanner.Plan(start.Value, goal, Profile);
         if (path.Count == 0) { _trace.Add("already at the goal"); return ActionResult.Success; }
-        ushort id = _m.Paths.Execute(path);
+        using var run = _m.StartPath(path);
+        ushort id = run.PathId;
         _trace.Add($"path {id}: {path.Count} segment(s) from {start.Value.Translation} to {goal.Translation}");
         double lengthMm = 0;
         foreach (var s in path)
@@ -76,8 +90,8 @@ public sealed class DriveToPoseAction
             else if (s is PathSegment.Arc a) lengthMm += Math.Abs(a.SweepRad) * a.RadiusMm;
         }
         var timeout = TimeSpan.FromSeconds(5 + lengthMm / Math.Max(20, Profile.SpeedMmps) * 2 + path.Count * 3);
-        var ev = await _m.Follower.WaitForEndAsync(id, timeout, cancel);
-        if (ev is null) { _trace.Add("DriveToPoseAction.CheckIfDone.Failure: no path completion"); _m.Paths.Abort(); return cancel.IsCancellationRequested ? ActionResult.CancelledWhileRunning : ActionResult.FailedTraversingPath; }
+        var ev = await run.WaitAsync(timeout, cancel);
+        if (ev is null) { _trace.Add("DriveToPoseAction.CheckIfDone.Failure: no path completion; path aborted"); return cancel.IsCancellationRequested ? ActionResult.CancelledWhileRunning : ActionResult.FailedTraversingPath; }
         if (ev == PathEventType.Interrupted) { _trace.Add("path interrupted"); return ActionResult.FailedTraversingPath; }
         var now = _m.RobotPose();
         if (now is null) return ActionResult.Abort;
@@ -92,6 +106,46 @@ public sealed class DriveToPoseAction
         }
         _trace.Add($"DriveToPoseAction.CheckIfDone.DoneNotInPlace: dist={dist:F1}mm angle={dAngle * 180 / Math.PI:F1}deg");
         return ActionResult.DidNotReachPreActionPose;
+    }
+
+    /// <summary>
+    /// Whether every point of a planned path stays out of the lattice environment's obstacles. Sampled every
+    /// <see cref="ClearanceStepMm"/> along lines and arcs; point turns do not move the robot.
+    /// </summary>
+    public const double ClearanceStepMm = 10.0;
+
+    internal static bool PathIsClear(LatticeEnvironment env, IReadOnlyList<PathSegment> path)
+    {
+        foreach (var s in path)
+        {
+            switch (s)
+            {
+                case PathSegment.Line l:
+                {
+                    double dx = l.ToX - l.FromX, dy = l.ToY - l.FromY;
+                    double len = Math.Sqrt(dx * dx + dy * dy);
+                    int steps = Math.Max(1, (int)Math.Ceiling(len / ClearanceStepMm));
+                    for (int i = 0; i <= steps; i++)
+                    {
+                        double t = (double)i / steps;
+                        if (env.IsInCollision(l.FromX + dx * t, l.FromY + dy * t)) return false;
+                    }
+                    break;
+                }
+                case PathSegment.Arc a:
+                {
+                    double len = Math.Abs(a.SweepRad) * a.RadiusMm;
+                    int steps = Math.Max(1, (int)Math.Ceiling(len / ClearanceStepMm));
+                    for (int i = 0; i <= steps; i++)
+                    {
+                        double ang = a.StartAngleRad + a.SweepRad * i / steps;
+                        if (env.IsInCollision(a.CenterX + Math.Cos(ang) * a.RadiusMm, a.CenterY + Math.Sin(ang) * a.RadiusMm)) return false;
+                    }
+                    break;
+                }
+            }
+        }
+        return true;
     }
 }
 
@@ -119,6 +173,18 @@ public sealed class DriveToObjectAction
     public PreActionType Type { get; }
     public PathMotionProfile Profile { get; set; } = PathMotionProfile.Default;
     public PreActionPose? Chosen { get; private set; }
+    /// <summary>
+    /// Pre-action poses a previous attempt already failed from, excluded here the way
+    /// <c>IBehavior::UseSecondClosestPreActionPose</c> (0x005BEE40) does it: it re-reads the possible poses and
+    /// calls <c>IDockAction::RemoveMatchingPredockPose</c> (0x00551418), which drops the entry that
+    /// <c>Pose3d::IsSameAs</c> matches within 100 mm on each axis and 0.523599 rad, but only while more than
+    /// one pose remains.
+    /// </summary>
+    public IReadOnlyList<Pose3d> ExcludePoses { get; set; } = Array.Empty<Pose3d>();
+    /// <summary>NATIVE, <c>RemoveMatchingPredockPose</c> 0x00551438: the axis tolerance of the match.</summary>
+    public const double SamePoseDistanceMm = 100.0;
+    /// <summary>NATIVE, <c>RemoveMatchingPredockPose</c> 0x0055143C: the angle tolerance of the match.</summary>
+    public const double SamePoseAngleRad = 0.523599;
     public IReadOnlyList<string> Trace => _trace;
     private readonly List<string> _trace = new();
 
@@ -130,6 +196,14 @@ public sealed class DriveToObjectAction
         if (robot is null) return ActionResult.Abort;
         var poses = CubePreActionPoses.For(obj, Type);
         if (poses.Count == 0) { _trace.Add($"DriveToObjectAction.CheckPreconditions.NoPreActionPoses for {Type}"); return ActionResult.NoPreActionPoses; }
+        foreach (var used in ExcludePoses)
+        {
+            if (poses.Count <= 1) break;                       // the engine only removes while more than one remains
+            var match = poses.FirstOrDefault(p => IsSamePredockPose(p.WorldPose, used));
+            if (match is null) continue;
+            poses = poses.Where(p => !ReferenceEquals(p, match)).ToList();
+            _trace.Add("Trying again with a different predock pose");
+        }
         var closest = CubePreActionPoses.Closest(poses, robot.Value)!;
         Chosen = closest;
         double thresh = CubePreActionPoses.DistanceThresholdMm(obj.Pose, closest.WorldPose, PreActionAngleToleranceRad);
@@ -149,10 +223,28 @@ public sealed class DriveToObjectAction
         if (!_m.Docking.Carrying.IsCarrying(ObjectId))
         {
             bool turned = await _m.TurnTowardsObjectAsync(ObjectId, Math.PI, cancel);
-            _trace.Add(turned ? "turned towards the object" : "TurnTowardsObjectAction did not complete");
+            if (!turned)
+            {
+                // The final orientation is part of this action: the engine runs the TurnTowardsObjectAction as
+                // the second half of a compound action, and a compound action fails when a part of it fails.
+                // Reporting Success here let DockHelper dock from an orientation the robot never reached.
+                // The engine's own result for that turn was not read; DidNotReachPreActionPose is the nearest
+                // shipped result and keeps the outcome retryable (reduction labelled).
+                _trace.Add("TurnTowardsObjectAction did not complete: the robot is not facing the object");
+                return ActionResult.DidNotReachPreActionPose;
+            }
+            _trace.Add("turned towards the object");
         }
         // the object must still be located where we expect it
         return _m.World.GetLocatedObjectById(ObjectId) is null ? ActionResult.BadObject : ActionResult.Success;
+    }
+
+    /// <summary><c>IDockAction::RemoveMatchingPredockPose</c>'s <c>Pose3d::IsSameAs(pose, (100,100,100), 0.523599)</c>.</summary>
+    internal static bool IsSamePredockPose(Pose3d a, Pose3d b)
+    {
+        var d = a.Translation - b.Translation;
+        return Math.Abs(d.X) <= SamePoseDistanceMm && Math.Abs(d.Y) <= SamePoseDistanceMm && Math.Abs(d.Z) <= SamePoseDistanceMm
+               && Math.Abs(StraightLinePlanner.Wrap(a.AngleAroundZ - b.AngleAroundZ)) <= SamePoseAngleRad;
     }
 }
 
@@ -175,8 +267,12 @@ public sealed class DriveStraightAction
         var to = robot.Value.Translation + new Vec3(Math.Cos(h) * DistanceMm, Math.Sin(h) * DistanceMm, 0);
         var p = PathMotionProfile.Default;
         float speed = DistanceMm < 0 ? -Math.Abs(SpeedMmps) : Math.Abs(SpeedMmps);
-        ushort id = _m.Paths.Execute(new PathSegment[] { new PathSegment.Line(robot.Value.Translation.X, robot.Value.Translation.Y, to.X, to.Y, speed, p.AccelMmps2, p.DecelMmps2) });
-        var ev = await _m.Follower.WaitForEndAsync(id, TimeSpan.FromSeconds(3 + Math.Abs(DistanceMm) / Math.Max(10, Math.Abs(SpeedMmps)) * 2), cancel);
-        return ev == PathEventType.Completed ? ActionResult.Success : ev is null ? ActionResult.Timeout : ActionResult.FailedTraversingPath;
+        using var run = _m.StartPath(new PathSegment[] { new PathSegment.Line(robot.Value.Translation.X, robot.Value.Translation.Y, to.X, to.Y, speed, p.AccelMmps2, p.DecelMmps2) });
+        // WaitAsync clears the path when it ends without a terminal event, so a behaviour interrupted mid-drive
+        // does not leave the firmware following this line.
+        var ev = await run.WaitAsync(TimeSpan.FromSeconds(3 + Math.Abs(DistanceMm) / Math.Max(10, Math.Abs(SpeedMmps)) * 2), cancel);
+        return ev == PathEventType.Completed ? ActionResult.Success
+             : ev is null ? (cancel.IsCancellationRequested ? ActionResult.CancelledWhileRunning : ActionResult.Timeout)
+             : ActionResult.FailedTraversingPath;
     }
 }

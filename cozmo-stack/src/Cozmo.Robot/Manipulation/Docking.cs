@@ -20,19 +20,25 @@ public sealed record DockResult(uint Timestamp, bool Succeeded, byte DockingResu
 }
 
 /// <summary>
-/// <c>MoveLiftToHeightAction::Preset</c>: LowDock, HighDock, HeightCarry, OutOfFOV (names from
-/// <c>GetPresetName</c> 0x00548D04). Heights INFERRED: the low-dock and high-dock heights are the robot's lift
-/// range limits (32 / 92 mm, the SDK's <c>MIN_LIFT_HEIGHT</c> / <c>MAX_LIFT_HEIGHT</c>, also this stack's
-/// <c>CozmoMotion.MinLiftHeightMm</c> / <c>MaxLiftHeightMm</c>); the carry height (72 mm) is the value the same
-/// constant carries in Anki's later open-sourced engine; the out-of-view height was not found (taken as the
-/// carry height). The engine fills its preset map at runtime from constants this build does not export.
+/// <c>MoveLiftToHeightAction::Preset</c>: LowDock, HighDock, HeightCarry, OutOfFOV (names and order from
+/// <c>GetPresetName</c> 0x00548CD4: 0 LowDock, 1 HighDock, 2 HeightCarry, 3 OutOfFOV).
+///
+/// NATIVE heights, from the preset table at 0x00C54688: 32, 76, 92 and −1. This is the reading the source
+/// fidelity sweep settled (CONTROL_LAYER.md "Errata", SOURCE_FIDELITY_AUDIT §"lift limits"); M12 regressed it
+/// to 32 / 92 / 72 by taking the lift range limits for the dock heights and a later open-source constant for
+/// the carry height. HighDock is 76 mm, and the carry height is 92 mm — which is what
+/// <see cref="FlipBlockAction"/> raises the lift to, so the wrong value went straight into M13.
+///
+/// OutOfFOV is unresolved: the table's fourth entry is −1, which is not a height, and no other constant was
+/// found. The carry height stands in for it and says so.
 /// </summary>
 public static class LiftPresets
 {
     public const float LowDockMm = 32f;
-    public const float HighDockMm = 92f;
-    public const float CarryMm = 72f;
-    public const float OutOfFovMm = 72f;
+    public const float HighDockMm = 76f;
+    public const float CarryMm = 92f;
+    /// <summary>Unresolved (the table holds −1); the carry height stands in.</summary>
+    public const float OutOfFovMm = CarryMm;
 }
 
 /// <summary>

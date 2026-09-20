@@ -97,7 +97,19 @@ public sealed class VisionSystem : IDisposable
         {
             case RobotState s: History.Add(s); break;
             case ObjectMoved mv: World.MarkDirty(mv.ObjectID); break;
+            // A cube that has dropped its radio link cannot be tracked or docked with any more, and its last
+            // pose will go stale the moment someone moves it. The engine drops such an object from the world
+            // model; here its pose goes Unknown, which is what every located-object query already tests
+            // (LOCAL: the engine's ObjectConnectionState handling was not transcribed, only its effect).
+            case ObjectConnectionState cs when !cs.Connected: OnCubeDisconnected(cs.ObjectID); break;
         }
+    }
+
+    private void OnCubeDisconnected(uint objectId)
+    {
+        if (World.GetObjectById(objectId) is not { } o || o.PoseState == PoseState.Unknown) return;
+        Log?.Invoke($"object {objectId} disconnected: its pose is no longer known");
+        World.MarkUnknown(objectId);
     }
 
     private void OnFrame(CameraFrame f)
@@ -112,6 +124,12 @@ public sealed class VisionSystem : IDisposable
         });
     }
 
+    /// <summary>
+    /// The camera timestamp of the last frame whose timestamp had to be replaced by the paired robot state's
+    /// (0 on fw2457 captures). Diagnostics only: the world model is dated by the state's timestamp.
+    /// </summary>
+    public uint? LastRawFrameTimestamp { get; private set; }
+
     /// <summary>Processes one camera frame against the recorded robot state; null without calibration or state.</summary>
     public VisionFrameResult? ProcessFrame(CameraFrame f)
     {
@@ -120,12 +138,31 @@ public sealed class VisionSystem : IDisposable
             if (!_warnedNoCalibration) { _warnedNoCalibration = true; Log?.Invoke("Must be initialized and have calibrated camera to Update (no calibration set)"); }
             return null;
         }
+        return ProcessCapture(GrayImage.FromFrame(f), f.ImageId, f.Timestamp);
+    }
+
+    /// <summary>
+    /// The camera path with the image already decoded: pairs the capture with the robot state at its
+    /// timestamp and processes it. Split out from <see cref="ProcessFrame(CameraFrame)"/> so the fw2457
+    /// timestamp-zero path can be driven without a JPEG.
+    /// </summary>
+    public VisionFrameResult? ProcessCapture(GrayImage gray, uint imageId, uint cameraTimestamp)
+    {
+        if (Calibration is null)
+        {
+            if (!_warnedNoCalibration) { _warnedNoCalibration = true; Log?.Invoke("Must be initialized and have calibrated camera to Update (no calibration set)"); }
+            return null;
+        }
         // the fw2457 captures carry FrameTimestamp 0 on every chunk; a frame with no timestamp is paired with the
         // latest state (LOCAL fallback; the engine's EncodedImage rejects a bad timestamp instead)
-        var pd = f.Timestamp == 0 ? History.Latest : History.At(f.Timestamp);
-        if (pd is null) { Log?.Invoke($"frame {f.ImageId}: no robot state to pair with"); return null; }
-        var gray = GrayImage.FromFrame(f);
-        return ProcessImage(gray, f.ImageId, f.Timestamp, pd.Value);
+        var pd = cameraTimestamp == 0 ? History.Latest : History.At(cameraTimestamp);
+        if (pd is null) { Log?.Invoke($"frame {imageId}: no robot state to pair with"); return null; }
+        // Once the fallback has chosen a state, that state's timestamp is the observation time for the whole
+        // frame. Passing the camera's zero through would date every marker, object and face at 0, which makes
+        // observation age, face expiry and object-position age meaningless on real fw2457 hardware.
+        uint effective = cameraTimestamp == 0 ? pd.Value.Timestamp : cameraTimestamp;
+        if (effective != cameraTimestamp) LastRawFrameTimestamp = cameraTimestamp;
+        return ProcessImage(gray, imageId, effective, pd.Value);
     }
 
     /// <summary>The core update over a decoded image and the robot's pose data for it (usable offline).</summary>

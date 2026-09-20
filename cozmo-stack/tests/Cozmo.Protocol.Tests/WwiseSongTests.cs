@@ -154,10 +154,16 @@ public class WwiseSongTests
         Assert.True(source.IsMusicEvent(ev));
         Assert.False(source.IsMusicEvent(lib.IdOf("Play__Robot_Sfx__Scrn_Happy")!.Value));
 
+        // GetPcm runs on the animation scheduler's thread and never renders there: an unprepared song comes
+        // back silent and starts its render on a worker, so the caller prewarms first (as SingingBehavior does)
+        Assert.Null(source.GetPcm(ev, 1f));
+        Assert.Equal(1, source.UnpreparedMusicEvents);
+        source.Prewarm(ev).Wait();
         var byDefault = source.GetPcm(ev, 1f);                          // key-0 path: Yankee Doodle
         Assert.NotNull(byDefault);
         source.SetSwitch(Group80, AbaDaba);
         Assert.Equal(AbaDaba, source.Switches[Group80]);
+        source.Prewarm(ev).Wait();
         var abaDaba = source.GetPcm(ev, 1f);
         Assert.NotNull(abaDaba);
         Assert.Equal(12000 * CozmoAudio.SampleRate / 1000, abaDaba!.Length);
@@ -246,12 +252,14 @@ public class WwiseSongTests
         var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_80bpm")!.Value;
         using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(9));
         source.SetSwitch(Group80, AbaDaba);
+        source.Prewarm(ev).Wait();
         var first = source.GetPcm(ev, 1f)!;
         var second = source.GetPcm(ev, 1f)!;
         Assert.Same(first, second);                                    // the same buffer: no second draw
         // a fresh source with another seed draws afresh, as a new Wwise play would
         using var other = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(10));
         other.SetSwitch(Group80, AbaDaba);
+        other.Prewarm(ev).Wait();
         var third = other.GetPcm(ev, 1f)!;
         Assert.Equal(first.Length, third.Length);
         Assert.False(first.SequenceEqual(third), "two seeds rendered the same recordings; the random choice is not exercised");

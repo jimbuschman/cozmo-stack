@@ -229,9 +229,10 @@ static int Usage()
           freeplay --tree --obb <dir>          M15: print the shipped activity tree (activities_config.json + activities/**) with the
                                              behaviours this stack binds and the ones it does not
           freeplay --simulate --obb <dir> [--ticks 200]   run the freeplay decision loop offline and print every activity/behaviour choice
-          freeplay <robot-ip> --obb <dir> [--seconds 300] [--acceptance [file]]
+          freeplay <robot-ip> --obb <dir> [--seconds 300] [--nominal] [--acceptance [file]]
                                              M15 acceptance: the whole stack autonomous on the robot (vision, cubes, reactions, needs,
-                                             activities), printing each activity and behaviour decision with its reason
+                                             activities), printing each activity and behaviour decision with its reason. Refuses to run
+                                             without the robot's camera calibration; --nominal forces the stand-in (diagnostics only)
           bodyangle <robot-ip> [--deg 45] [--acceptance [file]]
                                              M11 check: send SetBodyAngle and watch the pose angle, to confirm the absolute-angle semantics
 

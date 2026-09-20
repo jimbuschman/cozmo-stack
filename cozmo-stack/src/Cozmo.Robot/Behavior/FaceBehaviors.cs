@@ -89,7 +89,7 @@ public sealed class PlayAnimWithFaceBehavior : FaceBehavior
 
     protected override void OnStart()
     {
-        var turn = new TurnTowardsFaceAction(V, SmartFaceID.Invalid, Math.PI, sayName: false);
+        using var turn = new TurnTowardsFaceAction(V, SmartFaceID.Invalid, Math.PI, sayName: false);
         RunFaceAction("TurnTowardsFace(last face)", turn.RunAsync, r =>
         {
             foreach (var l in turn.Trace) Log("  " + l);
@@ -123,8 +123,19 @@ public sealed class AcknowledgeFaceBehavior : FaceBehavior
         // a face that is forgotten and seen again is a new acknowledgement
         v.Faces.FaceDeleted += id2 => { lock (_acknowledged) _acknowledged.Remove(id2); };
     }
+    /// <summary>The face this run acknowledged, for tracing.</summary>
     public int? TargetFaceId { get; private set; }
+
+    /// <summary>
+    /// The face the strategy asked for, consumed when the behaviour starts. The engine hands the behaviour to
+    /// <c>ShouldTriggerBehavior</c> and the strategy fills it in there; left null the behaviour picks the best
+    /// unacknowledged face itself.
+    /// </summary>
+    public int? RequestedFaceId { get; set; }
     public bool? PlayedGreeting { get; private set; }
+
+    /// <summary>A face has been acknowledged: the strategy's <c>FinishedReactingToFace</c>.</summary>
+    public event Action<int>? Acknowledged;
 
     /// <summary>
     /// The engine runs this as the reaction to <c>FacePositionUpdated</c> (a face newly seen or moved); this stack
@@ -135,6 +146,7 @@ public sealed class AcknowledgeFaceBehavior : FaceBehavior
 
     private FaceEntry? BestFace()
     {
+        if (RequestedFaceId is { } wanted && V.Faces.GetFace(wanted) is { } asked) return asked;
         lock (_acknowledged) return V.Faces.Faces.Where(f => !_acknowledged.Contains(f.Id)).OrderByDescending(f => f.LastObservedTimestamp).FirstOrDefault();
     }
 
@@ -145,19 +157,25 @@ public sealed class AcknowledgeFaceBehavior : FaceBehavior
         var face = BestFace();
         if (face is null) { Finish(); return; }
         TargetFaceId = face.Id;
+        RequestedFaceId = null;
         lock (_acknowledged) _acknowledged.Add(face.Id);
         double nowSec = Clock() / 1000.0;
         bool alreadyTurned = V.Faces.HasTurnedTowardsFace(face.Id) && _lastGreetedSec.TryGetValue(face.Id, out var t) && nowSec - t < GreetingCooldownSec;
         bool greet = !alreadyTurned;
         Log($"AcknowledgeFace.DoAcknowledgement: currTime = {nowSec:F1}, alreadyTurned:{(alreadyTurned ? 1 : 0)}, shouldPlayGreeting:{(greet ? 1 : 0)}");
-        var turn = new TurnTowardsFaceAction(V, face.Id, Math.PI, sayName: greet) { SayNameTrigger = AnimationTrigger.AcknowledgeFaceNamed, NoNameTrigger = AnimationTrigger.AcknowledgeFaceUnnamed };
+        using var turn = new TurnTowardsFaceAction(V, face.Id, Math.PI, sayName: greet) { SayNameTrigger = AnimationTrigger.AcknowledgeFaceNamed, NoNameTrigger = AnimationTrigger.AcknowledgeFaceUnnamed };
         turn.EmotionEvent += EmotionEvent;
         RunFaceAction($"TurnTowardsFace({face.Id})", turn.RunAsync, r =>
         {
             foreach (var l in turn.Trace) Log("  " + l);
             PlayedGreeting = greet && turn.Reaction is not null;
             if (greet) _lastGreetedSec[face.Id] = Clock() / 1000.0;
-            PlayReaction(turn.Reaction, () => { Log("objective achieved: ReactedAcknowledgedFace"); Finish(); });
+            PlayReaction(turn.Reaction, () =>
+            {
+                Log("objective achieved: ReactedAcknowledgedFace");
+                Acknowledged?.Invoke(face.Id);
+                Finish();
+            });
         });
     }
 }
@@ -198,6 +216,14 @@ public sealed class InteractWithFacesBehavior : FaceBehavior
     public double? TrackSeconds { get; private set; }
     public TrackFaceAction? Tracker { get; private set; }
 
+    /// <summary>The tracker holds a smart face id subscribed to the face world; stopping releases it.</summary>
+    protected override void OnStop(BehaviorStopReason reason)
+    {
+        Tracker?.Dispose();
+        Tracker = null;
+        base.OnStop(reason);
+    }
+
     private int? SelectFaceToTrack()
     {
         uint now = V.History.Latest?.Timestamp ?? 0;
@@ -212,7 +238,7 @@ public sealed class InteractWithFacesBehavior : FaceBehavior
         TargetFaceId = SelectFaceToTrack();
         if (TargetFaceId is null) { Log("BehaviorInteractWithFaces.Init.NoValidTarget"); Finish(); return; }
         CurrentPhase = Phase.VerifyFace;
-        var turn = new TurnTowardsFaceAction(V, TargetFaceId.Value, Math.PI, sayName: true) { SayNameTrigger = AnimationTrigger.InteractWithFacesInitialNamed, NoNameTrigger = AnimationTrigger.InteractWithFacesInitialUnnamed };
+        using var turn = new TurnTowardsFaceAction(V, TargetFaceId.Value, Math.PI, sayName: true) { SayNameTrigger = AnimationTrigger.InteractWithFacesInitialNamed, NoNameTrigger = AnimationTrigger.InteractWithFacesInitialUnnamed };
         turn.EmotionEvent += EmotionEvent;
         RunFaceAction($"VerifyFace: TurnTowardsFace({TargetFaceId})", turn.RunAsync, r =>
         {
@@ -228,6 +254,7 @@ public sealed class InteractWithFacesBehavior : FaceBehavior
         if (_m is null) { Log("no manipulation system: skipping the glance and the drive forward"); TransitionToTrackingFace(); return; }
         CurrentPhase = Phase.DrivingForward;
         // CanDriveIdealDistanceForward reads the memory map (not modelled: DEFERRED); the ideal 40 mm is driven
+        Tracker?.Dispose();
         Tracker = new TrackFaceAction(V, TargetFaceId!.Value) { PanToleranceRad = TrackToleranceRad, TiltToleranceRad = TrackToleranceRad };
         RunAction($"DriveStraight({DriveForwardMm} mm) with TrackFace", async ct =>
         {
@@ -245,6 +272,7 @@ public sealed class InteractWithFacesBehavior : FaceBehavior
         CurrentPhase = Phase.TrackingFace;
         TrackSeconds = (MinTrackSec + Context.Random.NextDouble() * (MaxTrackSec - MinTrackSec)) * TrackTimeScale;
         Log($"BehaviorInteractWithFaces.TrackTime: will track for {TrackSeconds / TrackTimeScale:F1} seconds");
+        Tracker?.Dispose();
         Tracker = new TrackFaceAction(V, TargetFaceId!.Value) { PanToleranceRad = TrackToleranceRad, TiltToleranceRad = TrackToleranceRad };
         PlayTrigger(AnimationTrigger.InteractWithFaceTrackingIdle, () => { });
         RunAction("TrackFaceAction", ct => Tracker.RunAsync(TimeSpan.FromSeconds(TrackSeconds.Value), ct), _ => TransitionToTriggerEmotionEvent(), false);
@@ -295,11 +323,11 @@ public sealed class DriveToFaceBehavior : FaceBehavior
         CurrentPhase = Phase.TurningTowardsFace;
         RunFaceAction($"TurnTowardsFace({face.Id}), verify, turn", async ct =>
         {
-            var t1 = new TurnTowardsFaceAction(V, face.Id); var r = await t1.RunAsync(ct); foreach (var l in t1.Trace) Log("  " + l);
+            using var t1 = new TurnTowardsFaceAction(V, face.Id); var r = await t1.RunAsync(ct); foreach (var l in t1.Trace) Log("  " + l);
             if (r != FaceActionResult.Success) return r;
             var v = await new VisuallyVerifyFaceAction(V, face.Id).RunAsync(ct);
             Log($"  VisuallyVerifyFace -> {v}");
-            var t2 = new TurnTowardsFaceAction(V, face.Id); return await t2.RunAsync(ct);
+            using var t2 = new TurnTowardsFaceAction(V, face.Id); return await t2.RunAsync(ct);
         }, r =>
         {
             if (r != FaceActionResult.Success) { Finish(); return; }
@@ -383,6 +411,144 @@ public sealed class SearchForFaceBehavior : FaceBehavior
 /// DEFERRED (no head pose for pets); the turn towards the image point is a head-and-body turn to the ray
 /// through the rectangle centre.
 /// </summary>
+/// <summary>
+/// <c>ReactionTriggerStrategyFacePositionUpdated</c> (vtable at 0x0102CE4C) over the same base as the object
+/// one, <c>ReactionTriggerStrategyPositionUpdate</c> (0x0061216E..0x00612A0C): its <c>AlwaysHandleInternal</c>
+/// and <c>AlwaysHandlePoseBasedInternal</c> feed the base's per-target record from the observations, and the
+/// base decides a target is desired when its last observed pose is not the pose last reacted to within 80 mm
+/// and 45 degrees and the observation is no older than 600000 ms. The shipped map sends this trigger to
+/// <c>AcknowledgeFace</c>; <c>FinishedReactingToFace</c> is the behaviour reporting back, which here is
+/// <see cref="AcknowledgeFaceBehavior.Acknowledged"/>.
+///
+/// Runnable only with a face detector: without one <see cref="FaceWorld"/> never sees a face and this never
+/// fires, which is the OKAO boundary, not a gap in the wiring.
+/// </summary>
+public sealed class FacePositionUpdatedStrategy : IReactionTriggerStrategy, ITargetPreparingStrategy, IDisposable
+{
+    public const double SameDistanceMm = ObjectPositionUpdatedStrategy.SameDistanceMm;
+    public const double SameAngleRad = ObjectPositionUpdatedStrategy.SameAngleRad;
+    public const uint MaxObservationAgeMs = ObjectPositionUpdatedStrategy.MaxObservationAgeMs;
+
+    private sealed class Data { public Pose3d? LastReacted; public Pose3d LastObserved; public uint Timestamp; }
+
+    private readonly FaceWorld _world;
+    private readonly AcknowledgeFaceBehavior _behavior;
+    private readonly Dictionary<int, Data> _data = new();
+    private readonly object _gate = new();
+    private uint _lastImageTimestamp;
+    private int? _staged, _targetBefore;
+
+    public FacePositionUpdatedStrategy(FaceWorld world, AcknowledgeFaceBehavior behavior)
+    {
+        _world = world; _behavior = behavior;
+        world.FaceObserved += OnObserved;
+        behavior.Acknowledged += ReactedTo;
+    }
+
+    public ReactionTrigger Trigger => ReactionTrigger.FacePositionUpdated;
+    public string Basis => "ReactionTriggerStrategyPositionUpdate ctor 0x0061216E (shared with ObjectPositionUpdated): " +
+                           "IsSameAs(lastReacted, observed, 80 mm, 0.785398 rad) false && age <= 600000 ms; " +
+                           "reactionTrigger_behavior_map.json: FacePositionUpdated -> AcknowledgeFace";
+
+    private void OnObserved(FaceObservation o)
+    {
+        lock (_gate)
+        {
+            _lastImageTimestamp = o.Timestamp;
+            if (!_data.TryGetValue(o.Face.Id, out var d)) _data[o.Face.Id] = d = new Data();
+            d.LastObserved = o.Face.HeadPose;
+            d.Timestamp = o.Timestamp;
+        }
+    }
+
+    /// <summary><c>FinishedReactingToFace</c> / the base's <c>ReactedToID</c>.</summary>
+    public void ReactedTo(int faceId)
+    {
+        lock (_gate) if (_data.TryGetValue(faceId, out var d)) d.LastReacted = d.LastObserved;
+    }
+
+    public bool ShouldReactTo(int faceId)
+    {
+        lock (_gate)
+        {
+            if (!_data.TryGetValue(faceId, out var d)) return false;
+            if (_world.GetFace(faceId) is null) return false;
+            if (unchecked(_lastImageTimestamp - d.Timestamp) > MaxObservationAgeMs) return false;
+            return d.LastReacted is not { } reacted || !reacted.IsSameAs(d.LastObserved, SameDistanceMm, SameAngleRad);
+        }
+    }
+
+    /// <summary><c>GetDesiredReactionTargets</c>.</summary>
+    public IReadOnlyList<int> DesiredTargets()
+    {
+        List<int> ids;
+        lock (_gate) ids = _data.Keys.ToList();
+        return ids.Where(ShouldReactTo).OrderBy(i => i).ToList();
+    }
+
+    public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec)
+    {
+        if (!PrepareTarget(context, current, nowSec)) return false;
+        CommitTarget();
+        return true;
+    }
+
+    public bool PrepareTarget(BehaviorContext context, ReactionTrigger? current, double nowSec)
+    {
+        if (current == ReactionTrigger.FacePositionUpdated) return false;
+        var targets = DesiredTargets();
+        if (targets.Count == 0) return false;
+        _targetBefore = _behavior.RequestedFaceId;
+        _staged = targets[0];
+        _behavior.RequestedFaceId = targets[0];
+        return true;
+    }
+
+    public void CommitTarget() { _staged = null; _targetBefore = null; }
+
+    public void AbandonTarget()
+    {
+        if (_staged is not null) _behavior.RequestedFaceId = _targetBefore;
+        _staged = null; _targetBefore = null;
+    }
+
+    public void Dispose()
+    {
+        _world.FaceObserved -= OnObserved;
+        _behavior.Acknowledged -= ReactedTo;
+    }
+}
+
+/// <summary>
+/// <c>PetInitialDetection</c> -> <c>ReactToPet</c> in the shipped map: a pet the world model has not seen
+/// before. INFERRED shape (the engine's strategy class was not disassembled): the first sighting of a pet id
+/// latches the trigger, as every other "initial" trigger in this stack does.
+/// </summary>
+public sealed class PetInitialDetectionStrategy : IReactionTriggerStrategy, IDisposable
+{
+    private readonly PetWorld _world;
+    private readonly HashSet<int> _seen = new();
+    private readonly object _gate = new();
+    private bool _latched;
+
+    public PetInitialDetectionStrategy(PetWorld world) { _world = world; world.PetObserved += OnObserved; }
+
+    public ReactionTrigger Trigger => ReactionTrigger.PetInitialDetection;
+    public string Basis => "reactionTrigger_behavior_map.json: PetInitialDetection -> ReactToPet; first sighting of a pet id (INFERRED)";
+
+    private void OnObserved(PetEntry pet, bool isNew)
+    {
+        lock (_gate) if (_seen.Add(pet.Id) || isNew) _latched = true;
+    }
+
+    public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec)
+    {
+        lock (_gate) { bool w = _latched; _latched = false; return w; }
+    }
+
+    public void Dispose() => _world.PetObserved -= OnObserved;
+}
+
 public sealed class ReactToPetBehavior : FaceBehavior
 {
     public ReactToPetBehavior(VisionSystem v, string id = "ReactToPet") : base(id, "ReactToPet", v) { }

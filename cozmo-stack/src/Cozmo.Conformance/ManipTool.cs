@@ -36,6 +36,13 @@ public static class ManipTool
             m.Workouts = WorkoutComponent.FromObb(obb);
         }
         else Say("no --obb: straight-line planner (LOCAL); pass --obb <dir> for the engine's lattice planner");
+        // The behaviour commands are animation-driven: SteppedBehavior.IsRunnable refuses without a library,
+        // so without the assets they could only ever report "not runnable".
+        if (obb is not null && TriggersTool.FindAssetsRoot(obb) is { } assets)
+        {
+            robot.Animations.LoadFrom(assets);
+            Say($"animation library loaded from {assets}");
+        }
         vision.Log += l => Say("  vision: " + l);
         vision.World.Log += l => Say("  world: " + l);
         m.Log += l => Say("  manip: " + l);
@@ -77,12 +84,35 @@ public static class ManipTool
             return Finish(outcome, "he aligns 120 mm in front of the charger's marker, turns around, backs onto the charger and the contacts report; a miss drives forward 120 mm and retries", mode);
         }
 
-        Say("waiting for a located cube (show Cozmo a connected cube)...");
+        // What each command actually needs before it can do anything, rather than "one cube and hope".
+        int cubesNeeded = mode switch { "--stack" => 2, "--knockover" => 2, _ => 1 };
+        bool needsAnimations = mode is "--stack" or "--knockover" or "--wheelie" or "--putdown";
+        bool needsStack = mode == "--knockover";
+        Say($"waiting for {cubesNeeded} located cube(s) (show Cozmo the connected cube(s))...");
         var deadline = DateTime.UtcNow.AddSeconds(30);
-        while (DateTime.UtcNow < deadline && vision.World.LocatedObjects.Count == 0) await Task.Delay(200);
-        var cube = vision.World.LocatedObjects.FirstOrDefault(o => CubeGeometry.IsCube(o.Type));
-        if (cube is null) { Say("no cube located in 30 s"); robot.StopCamera(); robot.Disconnect(); return 2; }
-        Say($"target: {cube}");
+        while (DateTime.UtcNow < deadline && vision.World.LocatedObjects.Count(o => CubeGeometry.IsCube(o.Type)) < cubesNeeded) await Task.Delay(200);
+        var cubes = vision.World.LocatedObjects.Where(o => CubeGeometry.IsCube(o.Type)).ToList();
+        var cube = cubes.FirstOrDefault();
+        if (cube is null || cubes.Count < cubesNeeded)
+        {
+            Say($"{mode} needs {cubesNeeded} located cube(s); {cubes.Count} located in 30 s. Nothing to run.");
+            robot.StopCamera(); robot.Disconnect(); return 2;
+        }
+        Say($"target: {cube}" + (cubes.Count > 1 ? $" (+{cubes.Count - 1} more located)" : ""));
+        if (needsAnimations && robot.Animations.Library is null)
+        {
+            Say($"{mode} runs an animation-driven behaviour and no animation library is loaded: pass --obb <dir> with cozmo_resources/assets. Nothing to run.");
+            robot.StopCamera(); robot.Disconnect(); return 2;
+        }
+        if (needsStack)
+        {
+            m.Configurations.Update();
+            if (m.Configurations.Stacks.Count == 0)
+            {
+                Say($"{mode} needs a located stack of {cubesNeeded}; the world model has {cubes.Count} cube(s) and no stack. Build the stack in view and re-run.");
+                robot.StopCamera(); robot.Disconnect(); return 2;
+            }
+        }
 
         switch (mode)
         {
@@ -96,7 +126,7 @@ public static class ManipTool
             }
             case "--wheelie":
             {
-                var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap() };
+                var ctx = new BehaviorContext { Robot = robot, Triggers = obb is null ? new AnimationTriggerMap() : AnimationTriggerMap.Load(obb) };
                 var b = new PopAWheelieBehavior(m);
                 b.Step += l => Say("  wheelie: " + l);
                 outcome = await RunBehavior(b, ctx, cts.Token, "an upright located cube and the animation library");
@@ -104,7 +134,7 @@ public static class ManipTool
             }
             case "--knockover":
             {
-                var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap() };
+                var ctx = new BehaviorContext { Robot = robot, Triggers = obb is null ? new AnimationTriggerMap() : AnimationTriggerMap.Load(obb) };
                 var b = new KnockOverCubesBehavior(m, "SparksKnockOverCubes", 2);
                 b.Step += l => Say("  knockover: " + l);
                 Say($"stacks: {string.Join("; ", m.Configurations.Stacks.Select(s => string.Join("/", s.BlockIds)))}");

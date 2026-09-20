@@ -145,12 +145,31 @@ public sealed class SingingBehavior : IBehavior
         return Task.CompletedTask;
     }
 
+    /// <summary>The index of the tempo animation in <see cref="Sequence"/> (get-in, tempo, get-out).</summary>
+    private const int TempoStepIndex = 1;
+
     private void StartStep(int index)
     {
         if (_stopped) return;
         var context = _context!;
         var sequence = Sequence(SwitchGroupId);
         if (index >= sequence.Count) { _finished = true; Trace?.Invoke("finished"); return; }
+
+        // The tempo animation is the one whose audio keyframe asks for the song. Waiting here, on the
+        // behaviour's own continuation, is the difference between a late get-in and a stalled animation
+        // scheduler: the keyframe must find the render already in the cache, because the scheduler thread
+        // will not render or block for it.
+        if (index == TempoStepIndex && Prewarm is { IsCompleted: false } pending)
+        {
+            Trace?.Invoke("waiting for the song render before the tempo animation");
+            pending.ContinueWith(_ =>
+            {
+                if (_stopped) return;
+                Trace?.Invoke("song render ready");
+                StartStep(index);
+            }, TaskScheduler.Default);
+            return;
+        }
 
         var lib = context.Robot.Animations.Library;
         if (lib is null) { _finished = true; return; }

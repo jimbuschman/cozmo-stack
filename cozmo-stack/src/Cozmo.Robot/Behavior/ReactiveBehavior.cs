@@ -62,10 +62,22 @@ public sealed class ReactiveBehavior : IDisposable
     /// <summary>Raised for every reaction considered, played or not.</summary>
     public event Action<BehaviorDecision>? Reacted;
 
-    /// <summary>Starts watching the robot's state. Idempotent.</summary>
+    /// <summary>
+    /// Starts watching the robot's state. Idempotent.
+    ///
+    /// No-op when a <see cref="BehaviorManager"/> is already dispatching reactions over the same arbiter
+    /// (<see cref="BehaviorArbiter.ManagerDispatchesReactions"/>): every reaction this layer plays now has a
+    /// behaviour registered with the manager, and two dispatchers over one robot would play each one twice.
+    /// </summary>
     public void Start()
     {
         if (_subscribed) return;
+        if (Arbiter.ManagerDispatchesReactions)
+        {
+            Report(new BehaviorDecision(BehaviorPriority.Reaction, BehaviorOutcome.Unresolved,
+                "a BehaviorManager is dispatching reactions over this arbiter; the M7 dispatcher stands down so nothing fires twice"));
+            return;
+        }
         _subscribed = true;
         if (Asynchronous && _worker is null)
         {

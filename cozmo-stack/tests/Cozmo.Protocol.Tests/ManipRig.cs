@@ -37,6 +37,8 @@ internal sealed class Rig : IDisposable
     public bool OnCharger;
     public float LiftMm = 32f;
     public int FaceTurns;
+    /// <summary>Every absolute (pan, tilt) the stack commanded through PanAndTilt.</summary>
+    public readonly List<(double Pan, double Tilt)> PanTilts = new();
     /// <summary>A fake face detector: faces placed in the world are "detected" where the camera would see them.</summary>
     public readonly FakeFaceDetector FaceDetector = new();
 
@@ -67,6 +69,17 @@ internal sealed class Rig : IDisposable
             double rel = Math.Atan2(Math.Sin(Math.Atan2(d.Y, d.X) - Angle), Math.Cos(Math.Atan2(d.Y, d.X) - Angle));
             if (max > 0 && Math.Abs(rel) <= max) Angle = (float)Math.Atan2(d.Y, d.X);
             Head = (float)Math.Clamp(TurnTowardsPose.HeadAngleToSee(Cal, new Pose3d(Mat3.AboutZ(Angle), new Vec3(X, Y, 0)), target.Translation), -0.436332, 0.776672);
+            State();
+            FaceTurns++;
+            return Task.FromResult(true);
+        };
+        // the tracking pan/tilt path: the body goes to an absolute heading and the head to the angle the
+        // caller computed, which is what TrackFaceAction must actually send
+        Vision.PanTiltOverride = (pan, tilt, ct) =>
+        {
+            PanTilts.Add((pan, tilt));
+            Angle = (float)pan;
+            Head = (float)Math.Clamp(tilt, -0.436332, 0.776672);
             State();
             FaceTurns++;
             return Task.FromResult(true);

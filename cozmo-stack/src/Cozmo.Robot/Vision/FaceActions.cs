@@ -68,8 +68,11 @@ public static class FaceTurns
 /// 0x23F, none), an unnamed one the no-name trigger through <c>TriggerLiftSafeAnimationAction</c>; finally
 /// <c>FaceWorld::SetTurnedTowardsFace(id, true)</c>. INFERRED: the frame count waited (5).
 /// </summary>
-public sealed class TurnTowardsFaceAction
+public sealed class TurnTowardsFaceAction : IDisposable
 {
+    /// <summary>Releases the smart face id's subscription to the face world.</summary>
+    public void Dispose() => FaceId.Dispose();
+
     public const double FineTuneMaxTurnRad = 0.785398;
     public const int FramesToWaitForFace = 5;
     private readonly VisionSystem _v;
@@ -152,12 +155,13 @@ public sealed class TurnTowardsFaceAction
 /// (<c>SetClampSmallAnglesToTolerances</c>, period 0.4/0.15 default) and shifts the eyes (±32/±16 px). The eye
 /// shift and driving animation are DEFERRED. Update period LOCAL (100 ms).
 /// </summary>
-public sealed class TrackFaceAction
+public sealed class TrackFaceAction : IDisposable
 {
     public const double NeckHeightMm = 49.0;
     public const double MinToleranceRad = 0.0349066;
     private readonly VisionSystem _v;
     public TrackFaceAction(VisionSystem v, int faceId) { _v = v; FaceId = v.Faces.GetSmartFaceID(faceId); }
+    public void Dispose() => FaceId.Dispose();
     public SmartFaceID FaceId { get; }
     public double PanToleranceRad { get; set; } = MinToleranceRad;
     public double TiltToleranceRad { get; set; } = MinToleranceRad;
@@ -184,7 +188,10 @@ public sealed class TrackFaceAction
             {
                 Turns++;
                 LastCommand = (robot.Value.AngleAroundZ + pan, tilt);
-                await FaceTurns.TurnAsync(_v, face.HeadPose, Math.PI, cancel);
+                // The tracking tilt is the one computed just above, atan((z − 49) / planar distance). Handing
+                // the head pose to the generic look-at solve instead would recompute a different head angle
+                // and throw this away, which is not what the recovered TrackFaceAction does.
+                await PanAndTilt.RunAsync(_v, LastCommand.Value.Pan, LastCommand.Value.Tilt, TurnTowardsPose.MaxSpeedRadPerSec, cancel);
             }
             await Task.Delay(100, CancellationToken.None);
         }

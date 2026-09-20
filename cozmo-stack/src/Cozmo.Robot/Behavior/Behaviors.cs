@@ -532,19 +532,45 @@ public static class ShippedBehaviors
             new(strategies[ReactionTrigger.UnexpectedMovement], new ReactToUnexpectedMovementBehavior(), ResumeLast: true),
             new(strategies[ReactionTrigger.MotorCalibration], new ReactToMotorCalibrationBehavior(), ResumeLast: true),
             new(frustration, ReactToFrustrationBehavior.Minor(frustration), ResumeLast: false),
+
+            // RobotFalling -> ReactToImpact. The engine's AlwaysHandle (0x00606408) ignores the start of the
+            // fall and gates the landing on impactIntensity > 1000; that filter is the latch's here.
+            new(new LatchedEventStrategy(ReactionTrigger.RobotFalling, latch =>
+                {
+                    void on(FallingStoppedReport r) { if (r.ImpactIntensity > ReactionTable.ImpactIntensityThreshold) latch(); }
+                    sensors.FallingStopped += on;
+                    return () => sensors.FallingStopped -= on;
+                }, "BehaviorReactToImpact::AlwaysHandle 0x00606408: FallingStopped with impactIntensity > 1000 (0x447A0000)", clockSec: clockSec),
+                new ReactToImpactBehavior(), ResumeLast: false),
+
+            // PlacedOnCharger -> ReactToOnCharger, latched on the IS_ON_CHARGER flag rising.
+            new(new LatchedEventStrategy(ReactionTrigger.PlacedOnCharger, latch =>
+                {
+                    void on(bool onCharger) { if (onCharger) latch(); }
+                    sensors.OnChargerChanged += on;
+                    return () => sensors.OnChargerChanged -= on;
+                }, "reactionTrigger_behavior_map.json: PlacedOnCharger -> ReactToOnCharger; BehaviorReactToOnCharger::InitInternal 0x00606C94", clockSec: clockSec),
+                new ReactToOnChargerBehavior(), ResumeLast: false),
         };
 
         if (cubes is null && vision is not null) cubes = vision.Locator;
         if (cubes is not null)
         {
             var behavior = new AcknowledgeCubeMovedBehavior(cubes);
-            list.Add(new(new CubeMovedReactionStrategy(robot, behavior, cubes), behavior, ResumeLast: false));
+            list.Add(new(new CubeMovedReactionStrategy(robot, behavior, cubes, vision?.World), behavior, ResumeLast: false));
         }
         if (vision is not null)
         {
             // ObjectPositionUpdated -> AcknowledgeObject (shouldResumeLast false in the shipped map)
             var ack = new AcknowledgeObjectBehavior(vision.World, vision.Locator);
             list.Add(new(new ObjectPositionUpdatedStrategy(vision.World, ack), ack, ResumeLast: false));
+
+            // FacePositionUpdated -> AcknowledgeFace and PetInitialDetection -> ReactToPet. Registered
+            // whenever there is a vision system: with no face detector the worlds stay empty and neither ever
+            // fires, which is the OKAO boundary doing its job rather than the wiring being absent.
+            var ackFace = new AcknowledgeFaceBehavior(vision);
+            list.Add(new(new FacePositionUpdatedStrategy(vision.Faces, ackFace), ackFace, ResumeLast: false));
+            list.Add(new(new PetInitialDetectionStrategy(vision.Pets), new ReactToPetBehavior(vision), ResumeLast: false));
         }
         return list;
     }

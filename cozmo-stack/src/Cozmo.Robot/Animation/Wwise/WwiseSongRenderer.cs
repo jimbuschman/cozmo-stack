@@ -67,6 +67,13 @@ public sealed class WwiseSongRenderer
     private readonly Random _random;
     private readonly Dictionary<uint, int> _sequenceCursor = new();
     private readonly Dictionary<uint, uint> _lastPick = new();
+    /// <summary>
+    /// One render at a time. <c>_random</c>, <c>_sequenceCursor</c> and <c>_lastPick</c> carry Wwise's
+    /// play-to-play state across a render, and two prewarms can now be in flight at once (a song and a
+    /// get-in, or two songs queued back to back), which would tear those dictionaries and draw from
+    /// <see cref="Random"/> concurrently.
+    /// </summary>
+    private readonly object _renderGate = new();
 
     /// <param name="decode">Media id to mono PCM at <see cref="CozmoAudio.SampleRate"/>, or null when it cannot be decoded.</param>
     public WwiseSongRenderer(WwiseSoundLibrary lib, Func<uint, short[]?> decode, Random? random = null)
@@ -80,6 +87,11 @@ public sealed class WwiseSongRenderer
     private static int Samples(double ms) => (int)Math.Round(ms * Rate / 1000.0);
 
     public WwiseRenderedMusic Render(WwiseMusicPlan plan)
+    {
+        lock (_renderGate) return RenderLocked(plan);
+    }
+
+    private WwiseRenderedMusic RenderLocked(WwiseMusicPlan plan)
     {
         var problems = new List<string>();
         if (plan.Problem is not null) return new WwiseRenderedMusic(Array.Empty<short>(), 0) { Problems = new[] { plan.Problem } };

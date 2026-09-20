@@ -994,7 +994,11 @@ public class DerivedStateTests
         var map = ShippedReactionMap(obb);
         using var rig = new Rig();
         var regs = ShippedBehaviors.Reactions(rig.Robot, new FakeLocator());
-        Assert.Equal(12, regs.Count);
+        // 12 from M10 plus RobotFalling -> ReactToImpact and PlacedOnCharger -> ReactToOnCharger, which the
+        // correction pass moved off the standalone M7 dispatcher and under the manager
+        Assert.Equal(14, regs.Count);
+        Assert.Equal("ReactToImpact", regs.Single(r => r.Strategy.Trigger == ReactionTrigger.RobotFalling).Behavior.Id);
+        Assert.Equal("ReactToOnCharger", regs.Single(r => r.Strategy.Trigger == ReactionTrigger.PlacedOnCharger).Behavior.Id);
         foreach (var r in regs)
         {
             Assert.True(map.TryGetValue(r.Strategy.Trigger.ToString(), out var id), $"{r.Strategy.Trigger} is not in the shipped map");

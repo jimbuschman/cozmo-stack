@@ -12,6 +12,8 @@ namespace Cozmo.Robot.Behavior;
 /// </summary>
 public sealed class FreeplayStack : IDisposable
 {
+    private readonly List<Action> _unsubscribe = new();
+
     private FreeplayStack(BehaviorManager manager, FreeplaySystem freeplay, IReadOnlyList<Activity> tree, IReadOnlyDictionary<string, IBehavior> bound, NeedsManager needs, BehaviorContext ctx)
     {
         Manager = manager; Freeplay = freeplay; Tree = tree; Bound = bound; Needs = needs; Context = ctx;
@@ -68,12 +70,24 @@ public sealed class FreeplayStack : IDisposable
         if (withReactions)
             foreach (var reg in ShippedBehaviors.Reactions(robot, vision?.Locator, clockSec, vision)) manager.AddReaction(reg.Strategy, reg.Behavior, reg.ResumeLast);
 
-        var tree = ActivityTreeLoader.Load(obbRoot, bound, null, random);
+        // one repetition history for the whole stack: the manager records it, every chooser reads it
+        var tree = ActivityTreeLoader.Load(obbRoot, bound, manager.Penalty, random);
         foreach (var s in tree.SelectMany(a => a.SubActivities.Prepend(a)).Select(a => a.Strategy)) s.NeedLevels ??= n => needs.State.GetNeedLevel(n);
         var freeplayActivity = tree.FirstOrDefault(a => a.Id == "Freeplay") ?? throw new InvalidOperationException("activities_config.json has no Freeplay activity");
         var inputs = new FreeplayInputs { Needs = needs, Mood = ctx.Mood };
         var system = new FreeplaySystem(manager, ctx, freeplayActivity, bound, inputs);
-        return new FreeplayStack(manager, system, tree, bound, needs, ctx) { Problems = problems };
+        var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx) { Problems = problems };
+
+        // ActivityFreeplay::HandleMessage<RobotOffTreadsStateChanged>: being put back down kicks the activity
+        // out and re-picks from what is around. That is part of what this stack assembles, so it is wired here
+        // rather than left to whichever tool happens to remember it.
+        void onTreads(OffTreadsState from, OffTreadsState to)
+        {
+            if (to == OffTreadsState.OnTreads && from != OffTreadsState.OnTreads) system.OnRobotPutDown(clockSec());
+        }
+        robot.Sensors.OffTreadsStateChanged += onTreads;
+        stack._unsubscribe.Add(() => robot.Sensors.OffTreadsStateChanged -= onTreads);
+        return stack;
     }
 
     /// <summary>One tick with the inputs refreshed from the robot and the world.</summary>
@@ -83,5 +97,10 @@ public sealed class FreeplayStack : IDisposable
         return Freeplay.Tick(nowSec, nowMs);
     }
 
-    public void Dispose() => Manager.Dispose();
+    public void Dispose()
+    {
+        foreach (var off in _unsubscribe) { try { off(); } catch { } }
+        _unsubscribe.Clear();
+        Manager.Dispose();
+    }
 }

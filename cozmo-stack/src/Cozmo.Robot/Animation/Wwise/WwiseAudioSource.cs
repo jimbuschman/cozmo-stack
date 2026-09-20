@@ -262,32 +262,34 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     /// every time it is sung in a session. Wwise would draw again on every play. Stated in WWISE_MUSIC.md §3
     /// and pinned by <c>TheMusicCacheFreezesTheRenderersRandomChoices</c>; a fresh source (or a new seed)
     /// draws afresh.
+    ///
+    /// This runs on the animation scheduler's tick, when an audio keyframe fires, so it must never block and
+    /// never render: a whole song is seconds of work and the timeline would stall. A song that is not ready
+    /// starts its render on a worker and this play is silent; the singing behaviour avoids that by awaiting
+    /// <see cref="Prewarm"/> before it enters the tempo animation.
     /// </summary>
     private short[]? ProduceMusic(uint eventId)
     {
         WwiseMusicPlan plan;
-        Task? pending;
+        bool prewarming;
         uint node;
         lock (_gate)
         {
             plan = _library.ResolveMusic(eventId, _switches);
             node = plan.SelectedNodeId ?? plan.TargetId;
             if (_musicCache.TryGetValue((eventId, node), out var cached)) return cached;
-            _prewarms.TryGetValue((eventId, node), out pending);
+            prewarming = _prewarms.ContainsKey((eventId, node));
         }
-        if (pending is not null)
-        {
-            try { pending.Wait(); } catch (AggregateException) { }
-            lock (_gate) if (_musicCache.TryGetValue((eventId, node), out var cached)) return cached;
-        }
-        var rendered = RenderTimed(plan);
-        lock (_gate)
-        {
-            if (_musicCache.TryGetValue((eventId, node), out var cached)) return cached;
-            StoreMusic(eventId, plan, rendered);
-            return _musicCache[(eventId, node)];
-        }
+        UnpreparedMusicEvents++;
+        if (!prewarming) Prewarm(eventId, _switches);          // starts on a worker; this play stays silent
+        return null;
     }
+
+    /// <summary>
+    /// How many times a music event was asked for on the scheduler thread before its render was ready. Every
+    /// one of those plays is silent; the singing behaviour is expected to keep this at zero.
+    /// </summary>
+    public int UnpreparedMusicEvents { get; private set; }
 
     /// <summary>One media file decoded to mono PCM at the robot's rate, cached; null when it cannot be decoded.</summary>
     private short[]? DecodeMedia(uint mediaId)

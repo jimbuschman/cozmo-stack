@@ -259,6 +259,32 @@ public sealed class ReliableTransport : IDisposable
         }
     }
 
+    /// <summary>
+    /// Waits, bounded, until everything queued has been written to the socket at least once.
+    ///
+    /// <c>SendData</c> only queues: the connection writes on its own tick and refuses while the packet
+    /// separation interval (2 ms) since the last write has not passed, so a caller that queues a stop and
+    /// closes the socket immediately can lose it. This drives the same send path the tick thread uses until
+    /// the queue has gone out or the deadline passes, and reports which. Reliable messages are not waited on
+    /// for their acks — an acked stop is not what shutdown needs, an emitted one is.
+    /// </summary>
+    public bool FlushPending(TimeSpan timeout)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        while (true)
+        {
+            lock (_lock)
+            {
+                if (_conn is null || State is not (LinkState.Connected or LinkState.Connecting)) return true;
+                if (_conn.AllPendingSent) return true;
+                _conn.SendOptimalUnAckedPackets(_o.MaxPacketsToSendOnSendMessage > 0 ? _o.MaxPacketsToSendOnSendMessage : 1);
+                if (_conn.AllPendingSent) return true;
+            }
+            if (DateTime.UtcNow >= deadline) return false;
+            Thread.Sleep(1);
+        }
+    }
+
     public void Dispose() => Shutdown("disposed");
 
     // ------------------------------------------------------------------ wire

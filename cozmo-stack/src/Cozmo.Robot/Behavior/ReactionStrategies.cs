@@ -39,6 +39,36 @@ public interface IReactionTriggerStrategy
 }
 
 /// <summary>
+/// A strategy whose behaviour cannot be runnable until the strategy has given it a target.
+///
+/// The engine has no ordering problem here because <c>IReactionTriggerStrategy::ShouldTriggerBehavior(robot,
+/// behavior)</c> (0x0060B63A) takes the behaviour as an argument: <c>CheckReactionTriggerStrategies</c>
+/// (0x005A3550) calls it first, and only then <c>BehaviorManager::SwitchToReactionTrigger</c>, which reports
+/// "Trigger strategy %s tried to trigger behavior %s, but init failed" when the behaviour cannot start. So
+/// the behaviour's runnability is tested <b>after</b> the strategy has filled it in, not before. (The check
+/// the engine does run before <c>ShouldTriggerBehavior</c> is a pair of strategy-level predicates, vtable
+/// +0x0C and +0x10, both <c>return true</c> on every strategy read here.)
+///
+/// This stack keeps the runnable-before-consume order for latched strategies, because a latch consumed for a
+/// behaviour that then refuses to start would be lost (the engine's latches live in the message handler and it
+/// can afford to drop one). A strategy that produces a target implements this interface instead and is driven
+/// in three phases: <see cref="PrepareTarget"/> stages a candidate on the behaviour without consuming any
+/// strategy state, the manager tests the behaviour, and then exactly one of <see cref="CommitTarget"/> or
+/// <see cref="AbandonTarget"/> runs.
+/// </summary>
+public interface ITargetPreparingStrategy
+{
+    /// <summary>Stages a candidate target on the behaviour. Must not consume or reset any strategy state.</summary>
+    bool PrepareTarget(BehaviorContext context, ReactionTrigger? current, double nowSec);
+
+    /// <summary>The behaviour is runnable and is being switched to: consume what <see cref="PrepareTarget"/> staged.</summary>
+    void CommitTarget();
+
+    /// <summary>The behaviour could not run: undo the staging, leaving the strategy as it was.</summary>
+    void AbandonTarget();
+}
+
+/// <summary>
 /// A trigger decided by a predicate over the robot's current state: the engine's
 /// <c>SetShouldTriggerCallback</c> lambdas.
 /// </summary>

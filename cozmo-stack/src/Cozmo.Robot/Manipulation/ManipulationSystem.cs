@@ -55,6 +55,17 @@ public sealed class ManipulationSystem : IDisposable
     public BlockWorld World => Vision.World;
     public PathSender Paths { get; }
     public PathFollower Follower { get; }
+
+    /// <summary>
+    /// Starts a path and returns its owner: the terminal-event reservation is taken before the first message
+    /// goes out, and an unfinished wait clears the path instead of leaving the firmware driving.
+    /// </summary>
+    public PathRun StartPath(IReadOnlyList<PathSegment> path)
+    {
+        PathFollower.Reservation? reservation = null;
+        ushort id = Paths.Execute(path, newId => reservation = Follower.Reserve(newId));
+        return new PathRun(this, id, reservation!);
+    }
     public DockingSystem Docking { get; }
     public event Action<string>? Log;
 
@@ -113,6 +124,47 @@ public sealed class ManipulationSystem : IDisposable
 /// object marks the target as failed and tries another; other failures retry from a different pre-dock pose.
 /// INFERRED: the attempt limit (3). The search-for-block fallback is DEFERRED.
 /// </summary>
+/// <summary>
+/// A path this process started and owns until it ends: the reservation is taken before the path is sent, the
+/// wait cannot miss an immediate terminal event, and a wait that is cancelled or times out clears the path on
+/// the robot instead of leaving firmware motion running behind an abandoned action.
+/// </summary>
+public sealed class PathRun : IDisposable
+{
+    private readonly ManipulationSystem _m;
+    private readonly PathFollower.Reservation _reservation;
+    private int _ended;
+
+    internal PathRun(ManipulationSystem m, ushort pathId, PathFollower.Reservation reservation)
+    { _m = m; PathId = pathId; _reservation = reservation; }
+
+    public ushort PathId { get; }
+    /// <summary>Whether the path was aborted because the wait was cancelled or timed out.</summary>
+    public bool Aborted { get; private set; }
+
+    /// <summary>
+    /// Waits for the path's terminal event. Null means the wait ended without one (timeout or cancellation),
+    /// and the path is cleared on the robot before returning.
+    /// </summary>
+    public async Task<PathEventType?> WaitAsync(TimeSpan timeout, CancellationToken cancel)
+    {
+        var ev = await _reservation.WaitAsync(timeout, cancel);
+        if (ev is null) Abort();
+        else Interlocked.Exchange(ref _ended, 1);
+        return ev;
+    }
+
+    /// <summary>Clears the path on the robot. Safe to call more than once.</summary>
+    public void Abort()
+    {
+        if (Interlocked.Exchange(ref _ended, 1) != 0) return;
+        Aborted = true;
+        _m.Paths.Abort();
+    }
+
+    public void Dispose() => _reservation.Dispose();
+}
+
 public sealed class DockHelper
 {
     public const int MaxAttempts = 3;
@@ -123,17 +175,31 @@ public sealed class DockHelper
     public IReadOnlyList<string> Trace => _trace;
     private readonly List<string> _trace = new();
     public int Attempts { get; private set; }
+    /// <summary>The pre-action poses already tried and failed, excluded from the next attempt.</summary>
+    public IReadOnlyList<Pose3d> ExcludedPoses => _excluded;
+    private readonly List<Pose3d> _excluded = new();
 
-    /// <summary>Drive to the object (for the action's pre-action type) and run the dock action, with retries.</summary>
+    /// <summary>
+    /// Drive to the object (for the action's pre-action type) and run the dock action, with retries.
+    ///
+    /// A retry approaches from a different pre-dock pose, as <c>IBehavior::UseSecondClosestPreActionPose</c>
+    /// (0x005BEE40) does: it asks <c>DriveToObjectAction::GetPossiblePoses</c> again and, while more than one
+    /// pose remains (<c>cmp r0, #2</c> at 0x005BEE80), removes the one just used through
+    /// <c>IDockAction::RemoveMatchingPredockPose</c>. Retrying from the identical geometry that just failed is
+    /// what the engine avoids; the pose to exclude is the one the failed attempt actually drove to.
+    /// </summary>
     public async Task<ActionResult> RunAsync(uint objectId, PreActionType type, Func<DockActionBase> makeAction, CancellationToken cancel)
     {
         ActionResult last = ActionResult.Abort;
+        _excluded.Clear();
         for (Attempts = 1; Attempts <= MaxAttempts; Attempts++)
         {
             if (cancel.IsCancellationRequested) return ActionResult.CancelledWhileRunning;
-            var drive = new DriveToObjectAction(_m, objectId, type);
+            var drive = new DriveToObjectAction(_m, objectId, type) { ExcludePoses = _excluded.ToList() };
             var d = await drive.RunAsync(cancel);
             _trace.AddRange(drive.Trace);
+            if (drive.Chosen is { } tried && !_excluded.Any(p => DriveToObjectAction.IsSamePredockPose(p, tried.WorldPose)))
+                _excluded.Add(tried.WorldPose);
             if (d != ActionResult.Success)
             {
                 _trace.Add($"drive to pre-action pose: {d}");

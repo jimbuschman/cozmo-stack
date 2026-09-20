@@ -42,6 +42,7 @@ public sealed class BehaviorManager : IDisposable
     {
         _context = context;
         _penalty = penalty ?? new RepetitionPenalty();
+        if (context.Arbiter is { } arb) arb.ManagerDispatchesReactions = true;
     }
 
     /// <summary>Every behaviour this manager knows.</summary>
@@ -74,7 +75,19 @@ public sealed class BehaviorManager : IDisposable
     public ReactionTrigger? CurrentReactionTrigger { get { lock (_gate) return _currentReaction; } }
 
     /// <summary>Raised when a reaction takes over.</summary>
+    /// <summary>
+    /// The repetition history this manager records on completion, shared with every chooser so a behaviour's
+    /// recovery curve is the behaviour's and not one copy per activity.
+    /// </summary>
+    public RepetitionPenalty Penalty => _penalty;
+
     public event Action<ReactionSwitch>? ReactionTriggered;
+
+    /// <summary>
+    /// A strategy wanted to trigger but its behaviour could not start: the engine's
+    /// "Trigger strategy %s tried to trigger behavior %s, but init failed".
+    /// </summary>
+    public event Action<string>? ReactionRefused;
 
     /// <summary>
     /// Registers a reaction. The engine builds one strategy per entry of <c>reactionTrigger_behavior_map.json</c>
@@ -123,11 +136,29 @@ public sealed class BehaviorManager : IDisposable
         foreach (var reg in regs)
         {
             if (!IsTriggerEnabled(reg.Strategy.Trigger)) continue;
-            // The engine asks IsRunnable before WantsToRun (CheckReactionTriggerStrategies 0x005A3550): a
-            // strategy that latches an event is only consumed once its behaviour can actually run, so a cliff
-            // or calibration report seen while the behaviour is unrunnable is not lost.
-            if (!reg.Behavior.IsRunnable(_context)) continue;
-            if (!reg.Strategy.ShouldTrigger(_context, current, nowSec)) continue;
+            // The engine's order (CheckReactionTriggerStrategies 0x005A3550) is ShouldTriggerBehavior(robot,
+            // behavior) first — the behaviour is an argument, so a strategy fills in its target there — and the
+            // behaviour's runnability only afterwards, inside SwitchToReactionTrigger ("...but init failed").
+            // A strategy that produces a target follows that order through ITargetPreparingStrategy. A latched
+            // strategy keeps runnable-before-consume, so a cliff or calibration report seen while its behaviour
+            // cannot run is not thrown away (this stack's latches are the strategy's own state, not the
+            // engine's message queue).
+            if (reg.Strategy is ITargetPreparingStrategy prep)
+            {
+                if (!prep.PrepareTarget(_context, current, nowSec)) continue;
+                if (!reg.Behavior.IsRunnable(_context))
+                {
+                    prep.AbandonTarget();
+                    ReactionRefused?.Invoke($"Trigger strategy {reg.Strategy.Trigger} tried to trigger behavior {reg.Behavior.Id}, but init failed");
+                    continue;
+                }
+                prep.CommitTarget();
+            }
+            else
+            {
+                if (!reg.Behavior.IsRunnable(_context)) continue;
+                if (!reg.Strategy.ShouldTrigger(_context, current, nowSec)) continue;
+            }
 
             string? interrupted;
             bool willResume;
