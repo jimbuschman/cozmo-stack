@@ -28,23 +28,31 @@ public sealed record Graph2d(IReadOnlyList<(double X, double Y)> Nodes)
 }
 
 /// <summary>
-/// One behaviour's scoring entry in a Scoring chooser (<c>IBehavior::ReadFromScoredJson</c>, 0x005BC4xx:
-/// <c>flatScore</c>, <c>emotionScorers</c>, <c>repetitionPenalty</c> (a graph over seconds since the behaviour
-/// last ran, 0..1), <c>runningPenalty</c> (a graph over the running duration), <c>boredomMultiplier</c>,
-/// <c>considerThisHasRunForBehaviorObjective</c>).
+/// One behaviour's scoring entry in a Scoring chooser. <c>IBehavior::ReadFromScoredJson</c> 0x005BC488
+/// reads <c>emotionScorers</c> into a MoodScorer, <c>flatScore</c> into a float, <c>repetitionPenalty</c>
+/// into a graph over seconds since the behaviour last ran, and
+/// <c>considerThisHasRunForBehaviorObjective</c> into a behaviour objective; the activity configs add
+/// <c>runningPenalty</c> and <c>boredomMultiplier</c>. A behaviour whose config carries no scoring keeps
+/// the constructor's zero (<c>IBehavior::IBehavior</c> writes 0 to +0x100 at 0x005BBD28), so it scores
+/// nothing in a scoring chooser.
 /// </summary>
 public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Graph2d? RepetitionPenalty, Graph2d? RunningPenalty, double? BoredomMultiplier,
-                                         IReadOnlyList<(EmotionType Emotion, Graph2d Graph)> EmotionScorers)
+                                         IReadOnlyList<EmotionScorer> EmotionScorers)
 {
     /// <summary>
-    /// <c>IBehavior::EvaluateScore</c> (0x005BEF60): (flat score + emotion scorers) × running penalty (when running)
-    /// × repetition penalty (from the last run), 0 when not runnable.
+    /// <c>IBehavior::EvaluateScore</c> 0x005BEF60 over
+    /// <c>IBehavior::EvaluateScoreInternal</c> 0x005BEEC2: the emotion scorers if there are any,
+    /// <b>otherwise</b> the flat score - not the two added - times the running penalty while running and
+    /// the repetition penalty from the last run, and zero when the behaviour will not run.
+    ///
+    /// EvaluateScoreInternal is three instructions: if the MoodScorer's list is not empty it tail-calls
+    /// <c>MoodScorer::EvaluateEmotionScore(moodManager)</c>, and only an empty list falls through to the
+    /// float at +0x100, the flat score.
     /// </summary>
     public double Evaluate(IBehavior b, BehaviorContext ctx, double nowSec, double? lastRunSec, double? runningSec, RepetitionPenalty? defaultPenalty)
     {
         if (!b.IsRunnable(ctx)) return 0;
-        double score = FlatScore;
-        if (ctx.Mood is { } mood) foreach (var (e, g) in EmotionScorers) score += g.EvaluateY(mood[e]);
+        double score = EmotionScorers.Count > 0 ? EmotionScore(ctx) : FlatScore;
         if (runningSec is { } r && RunningPenalty is { } rp) score *= rp.EvaluateY(r);
         if (lastRunSec is { } last)
         {
@@ -54,11 +62,32 @@ public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Gr
         return score;
     }
 
+    /// <summary>
+    /// <c>MoodScorer::EvaluateEmotionScore</c> 0x0067C9B8: each scorer reads its emotion, takes the graph
+    /// at that value, and the result is the <b>mean</b> of those - the sum divided by how many scored
+    /// (0x0067CA6E..0x0067CA72). A scorer whose graph comes out within 1e-05 of zero (0x0067CA50) ends the
+    /// whole thing at zero, so one emotion out of range vetoes the behaviour. No scorers at all is zero.
+    /// </summary>
+    private double EmotionScore(BehaviorContext ctx)
+    {
+        if (ctx.Mood is not { } mood) return 0;
+        double sum = 0;
+        int counted = 0;
+        foreach (var scorer in EmotionScorers)
+        {
+            double y = scorer.Graph.EvaluateY(scorer.ValueFor(mood));
+            if (Math.Abs(y) < 1e-5) return 0;
+            sum += y;
+            counted++;
+        }
+        return counted == 0 ? 0 : sum / counted;
+    }
+
     public static ScoredBehaviorEntry FromJson(JsonElement e)
     {
         string id = e.GetProperty("behaviorID").GetString()!;
         double flat = 0; Graph2d? rep = null, run = null; double? boredom = null;
-        var scorers = new List<(EmotionType, Graph2d)>();
+        var scorers = new List<EmotionScorer>();
         if (e.TryGetProperty("scoring", out var sc))
         {
             if (sc.TryGetProperty("flatScore", out var f)) flat = f.GetDouble();
@@ -68,10 +97,28 @@ public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Gr
             if (sc.TryGetProperty("emotionScorers", out var es))
                 foreach (var s in es.EnumerateArray())
                     if (Enum.TryParse<EmotionType>(s.GetProperty("emotionType").GetString(), true, out var et) && s.TryGetProperty("scoreGraph", out var sg) && Graph2d.FromJson(sg) is { } g)
-                        scorers.Add((et, g));
+                        scorers.Add(new EmotionScorer(et, g,
+                            s.TryGetProperty("trackDelta", out var td) && td.ValueKind == JsonValueKind.True));
         }
         return new ScoredBehaviorEntry(id, flat, rep, run, boredom, scorers);
     }
+}
+
+/// <summary>
+/// One entry of a behaviour's MoodScorer: which emotion, the graph over its value, and whether the value
+/// is taken as a change rather than a level. <c>EmotionScorer::ReadFromJson</c> 0x0067AABC reads
+/// <c>emotionType</c>, <c>scoreGraph</c> and <c>trackDelta</c>.
+///
+/// LOCAL_POLICY: with <c>trackDelta</c> set the engine subtracts the emotion's value sixty ticks ago
+/// (<c>Emotion::GetHistoryValueTicksAgo(60)</c> at 0x0067C9F4) from its value now. This stack's
+/// <see cref="MoodState"/> keeps no history, so the level is used as it stands. Nothing shipped exercises
+/// it: not one of the behaviour or activity configs in cozmo_resources carries an <c>emotionScorers</c>
+/// block, so every scored behaviour in the app is scored by its flat score alone.
+/// </summary>
+public sealed record EmotionScorer(EmotionType Emotion, Graph2d Graph, bool TrackDelta)
+{
+    /// <summary>The value the graph is evaluated at.</summary>
+    public double ValueFor(MoodState mood) => mood[Emotion];
 }
 
 /// <summary>Why a chooser picked (or kept, or found nothing).</summary>
@@ -205,6 +252,14 @@ public sealed class ActivityStrategy
     public double RequiredRecentOnTreadsEventSec { get; init; } = -1;
     public double RequiredMinStartMoodScore { get; init; } = double.NaN;
     public IReadOnlyList<(EmotionType Emotion, Graph2d Graph)> StartMoodScorer { get; init; } = Array.Empty<(EmotionType, Graph2d)>();
+    /// <summary>
+    /// The config's <c>featureGate</c>: the name of a feature that has to be enabled before the activity
+    /// may start. <c>WantsToStart</c> 0x005B529C tests the flag at strategy+0x38 first and, when it is
+    /// set, asks <c>CozmoFeatureGate::IsFeatureEnabled(featureType)</c> and refuses outright if the answer
+    /// is no (0x005B52A8..0x005B52BC). Two shipped activities use it, both naming Singing.
+    /// </summary>
+    public string? FeatureGate { get; init; }
+
     public string? WantsToRunStrategyType { get; init; }
     public NeedId? Need { get; init; }
     public NeedBracketId? NeedBracket { get; init; }
@@ -258,6 +313,7 @@ public sealed class ActivityStrategy
             StartInCooldown = e.TryGetProperty("startInCooldown", out var sic) && sic.ValueKind == JsonValueKind.True,
             RequiredRecentOnTreadsEventSec = D("requiredRecentOnTreadsEventSecs", -1), RequiredMinStartMoodScore = D("requiredMinStartMoodScore", double.NaN),
             StartMoodScorer = scorers, WantsToRunStrategyType = wtr, Need = need, NeedBracket = bracket, HigherPriorityStrategy = higher,
+            FeatureGate = e.TryGetProperty("featureGate", out var fg) ? fg.GetString() : null,
             NeedCooldownGraph = cd, NeedCooldownRandomnessGraph = cdr,
         };
     }
@@ -282,14 +338,36 @@ public sealed class ActivityStrategy
     public double EffectiveCooldownSec => double.IsNaN(CurrentCooldownSec) ? CooldownBaseSec : CurrentCooldownSec;
 
     /// <summary>
-    /// <c>WantsToStart</c>'s cooldown test (0x005B52C8..0x005B5334): it applies while the cooldown is above
-    /// zero and either the activity has ended before or <c>startInCooldown</c> is set, and it measures from the
-    /// last end time — which is 0 for an activity that has never run, so <c>startInCooldown</c> holds the
-    /// activity back for the first cooldown of the session.
+    /// The flat cooldown an activity gets when its last run lasted no longer than two ticks: 3 seconds
+    /// (<c>vmov.f32 s0, #3.0</c> at 0x005B5312).
+    /// </summary>
+    public const double ShortRunCooldownSec = 3.0;
+
+    /// <summary>
+    /// One basestation tick, the engine's <c>GetTimeSinceLastTickInSeconds</c>. The comparison at
+    /// 0x005B5308 is against twice it, so an activity that ran for at most two ticks counts as having
+    /// ended the moment it started.
+    /// </summary>
+    public const double TickSec = 1.0 / 30;
+
+    /// <summary>When the activity last started, which with the end time gives the length of the last run.</summary>
+    public double? LastStartedSec { get; private set; }
+
+    /// <summary>The activity started: the engine keeps this at +0x54 beside the end time at +0x58.</summary>
+    public void OnStarted(double nowSec) => LastStartedSec = nowSec;
+
+    /// <summary>
+    /// <c>WantsToStart</c>'s cooldown test (0x005B52C8..0x005B5334). It applies while the cooldown is above
+    /// zero and either the activity has ended before or <c>startInCooldown</c> is set, and it measures from
+    /// the last end time - which is 0 for an activity that has never run, so <c>startInCooldown</c> holds
+    /// the activity back for the first cooldown of the session.
     ///
-    /// Not reproduced: the engine substitutes a flat 3 s when the activity ended within the last two
-    /// base-station ticks (0x005B52EA..0x005B5316); that needs the tick length and the second time argument,
-    /// whose meaning was not traced.
+    /// The two times it is given are the activity's own, read together at the call site
+    /// (<c>ldrd r3, r2, [r1, #0x54]</c> at 0x005B26FE): the start at +0x54 and the end at +0x58. Their
+    /// difference is how long the last run lasted, and when that is positive but no more than two
+    /// basestation ticks (0x005B52EA..0x005B5316) the engine throws the configured cooldown away and uses
+    /// a flat 3 seconds instead - an activity that ended as soon as it started waits three seconds before
+    /// it may try again.
     /// </summary>
     public bool InCooldown(double nowSec)
     {
@@ -297,11 +375,19 @@ public sealed class ActivityStrategy
         if (cooldown <= Epsilon) return false;
         double ended = LastEndedSec ?? 0;
         if (ended <= Epsilon && !StartInCooldown) return false;
+        double ran = ended - (LastStartedSec ?? 0);
+        if (ran > 0 && ran <= 2 * TickSec) cooldown = ShortRunCooldownSec;
         return nowSec < ended + cooldown;
     }
 
     public bool WantsToStart(FreeplayInputs inputs, double nowSec, out string reason)
     {
+        // The engine asks the feature gate first (0x005B52A8), before it looks at the cooldown.
+        if (FeatureGate is { } gate && inputs.Features is { } features && !features.IsEnabled(gate))
+        {
+            reason = $"the {gate} feature is off";
+            return false;
+        }
         if (InCooldown(nowSec)) { reason = $"in cooldown ({EffectiveCooldownSec:F0} s)"; return false; }
         RandomizeCooldown();     // the engine randomises here, once the cooldown has passed
         if (RequiredRecentOnTreadsEventSec > 0 && (inputs.LastOnTreadsEventSec is not { } t || nowSec - t > RequiredRecentOnTreadsEventSec)) { reason = "no recent on-treads event"; return false; }
@@ -374,6 +460,59 @@ public sealed class FreeplayInputs
     public bool FaceKnown { get; set; }
     public bool OnCharger { get; set; }
     public string? RequestedSpark { get; set; }
+
+    /// <summary>
+    /// The feature gates, from <c>config/features.json</c>. Null means no gate is consulted, which is
+    /// what a stack with no config loaded can honestly say.
+    /// </summary>
+    public FeatureGates? Features { get; init; }
+}
+
+/// <summary>
+/// The engine's <c>CozmoFeatureGate</c> as the activities use it: a name from
+/// <c>config/features.json</c> - the path the binary holds at 0x00BE8449 - and whether it is enabled.
+/// <c>IsFeatureEnabled</c> 0x006A679C turns the enum into its name, lowercases it and looks it up, so the
+/// comparison is case-insensitive here too.
+///
+/// The shipped file lists seventeen features, of which Invalid, SparksGatherCubes and Bouncer are off and
+/// the rest, Singing among them, are on.
+/// </summary>
+public sealed class FeatureGates
+{
+    private readonly Dictionary<string, bool> _byName = new(StringComparer.OrdinalIgnoreCase);
+
+    public FeatureGates(IEnumerable<(string Name, bool Enabled)> features)
+    {
+        foreach (var (name, enabled) in features) _byName[name] = enabled;
+    }
+
+    /// <summary>Whether a feature is on. A name the file does not list is off, as the engine's lookup is.</summary>
+    public bool IsEnabled(string feature) => _byName.TryGetValue(feature, out var on) && on;
+
+    /// <summary>The names the file carried, for diagnostics.</summary>
+    public IReadOnlyCollection<string> Names => _byName.Keys;
+
+    /// <summary>Reads <c>config/features.json</c> under an unpacked OBB; null when it is not there.</summary>
+    public static FeatureGates? Load(string obbRoot)
+    {
+        foreach (var candidate in new[]
+                 {
+                     Path.Combine(obbRoot, "assets", "cozmo_resources", "config", "features.json"),
+                     Path.Combine(obbRoot, "config", "features.json"),
+                     Path.Combine(obbRoot, "features.json"),
+                 })
+        {
+            if (!File.Exists(candidate)) continue;
+            using var doc = JsonDocument.Parse(File.ReadAllText(candidate),
+                                               new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+            var list = new List<(string, bool)>();
+            foreach (var f in doc.RootElement.EnumerateArray())
+                if (f.TryGetProperty("feature", out var n) && n.GetString() is { } name)
+                    list.Add((name, f.TryGetProperty("enabled", out var e) && e.ValueKind == JsonValueKind.True));
+            return new FeatureGates(list);
+        }
+        return null;
+    }
 }
 
 /// <summary>
@@ -399,13 +538,21 @@ public sealed class Activity
     public AnimationTrigger? DriveEndAnim { get; init; }
     public AnimationTrigger? IdleAnim { get; init; }
     public string? RequireSpark { get; init; }
+
+    /// <summary>
+    /// The config's <c>needsActionID</c>, kept because the shipped activities carry it - but nothing reads
+    /// it. <c>IActivity::ReadConfig</c> parses it into <c>IActivity+0x1C</c> (0x005B2A9C) and no code in the
+    /// build loads that word again: the needs actions are reported by the behaviours
+    /// (<see cref="BehaviorNeedsActions"/>) and, in one case, by <c>ActivityGatherCubes</c> naming
+    /// <c>GatherCubes</c> itself.
+    /// </summary>
     public string? NeedsActionId { get; init; }
     public IReadOnlyList<Activity> SubActivities { get; init; } = Array.Empty<Activity>();
     /// <summary>Freeplay's <c>desiredActivityNames</c>: face+cube, face only, cube only, neither.</summary>
     public (string FaceAndCube, string FaceOnly, string CubeOnly, string None)? DesiredActivityNames { get; init; }
 
     public double? SelectedAtSec { get; private set; }
-    public void OnSelected(double nowSec) => SelectedAtSec = nowSec;
+    public void OnSelected(double nowSec) { SelectedAtSec = nowSec; Strategy.OnStarted(nowSec); }
     public void OnDeselected(double nowSec) { SelectedAtSec = null; Strategy.OnEnded(nowSec); }
     public double RunningSec(double nowSec) => SelectedAtSec is { } s ? nowSec - s : 0;
 

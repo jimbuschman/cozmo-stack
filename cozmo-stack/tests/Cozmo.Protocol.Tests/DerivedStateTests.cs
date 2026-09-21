@@ -1,6 +1,7 @@
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
 using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Vision;
 using Cozmo.Transport;
 using Xunit;
 
@@ -385,6 +386,53 @@ public class DerivedStateTests
         Assert.Equal(UnexpectedMovementSide.Left, r.Side);
         Assert.Equal(100u, r.Timestamp);
         Assert.Equal(0, d.Count);
+    }
+
+    /// <summary>
+    /// What the engine does with the report (0x0063E6BC..0x0063E8E6): it asks the state history where the
+    /// robot was when the disagreement began, puts it back there with the heading it ended up with
+    /// (SetNewPose, the rotation copied over the historical transform at 0x0063E868), and leaves a
+    /// collision obstacle on the side the wheel averages point to - the object's own 20 mm plus 5 mm of
+    /// clearance, then 22.1 mm in front, 55.9 mm behind, or 27.1 mm to a side with the pose turned a
+    /// right angle. MarkerlessObject::GetSizeByType gives the box: 20 x 54.2 x 67.7 mm, standing on the
+    /// ground.
+    /// </summary>
+    [Fact]
+    public void TheReportRewindsThePoseAndLeavesACollisionObstacle()
+    {
+        var history = new RobotStateHistory();
+        history.Add(new RobotState { Timestamp = 100, Pose = new RobotPose { X = 100, Y = 0, Angle = 0 } });
+        var now = new Pose3d(Mat3.AboutZ(0.2), new Vec3(140, 5, 0));                 // where it drifted to
+        var world = new BlockWorld(Array.Empty<(uint, ObjectType)>);
+        var report = new UnexpectedMovementReport(100, UnexpectedMovementType.TurnedInOppositeDirection,
+                                                  UnexpectedMovementSide.Front, 50, 60, 12);
+
+        var applied = UnexpectedMovementResponse.Apply(report, history, world, now);
+        Assert.NotNull(applied);
+        var (rewound, obstacle) = applied!.Value;
+        Assert.Equal(100, rewound.Translation.X, 3);
+        Assert.Equal(0, rewound.Translation.Y, 3);
+        Assert.Equal(0.2, rewound.AngleAroundZ, 3);                                   // the heading it has now
+
+        Assert.Equal(ObjectType.CollisionObstacle, obstacle.Type);
+        Assert.Single(world.Objects);
+        var ahead = obstacle.Pose.Translation - rewound.Translation;
+        Assert.Equal(20 + 5 + 22.1, Math.Sqrt(ahead.X * ahead.X + ahead.Y * ahead.Y), 3);
+        Assert.Equal(67.7 / 2, obstacle.Pose.Translation.Z, 3);                       // standing on the ground
+
+        var left = UnexpectedMovementResponse.ObstacleInRobotFrame(UnexpectedMovementSide.Left);
+        Assert.Equal(20 + 5 + 27.1, left.Translation.Y, 3);
+        Assert.Equal(Math.PI / 2, left.AngleAroundZ, 3);
+        var right = UnexpectedMovementResponse.ObstacleInRobotFrame(UnexpectedMovementSide.Right);
+        Assert.Equal(-(20 + 5 + 27.1), right.Translation.Y, 3);
+        Assert.Equal(-Math.PI / 2, right.AngleAroundZ, 3);
+        Assert.Equal(-55.9 - 25, UnexpectedMovementResponse.ObstacleInRobotFrame(UnexpectedMovementSide.Back).Translation.X, 3);
+
+        // no state at that timestamp: neither the rewind nor the obstacle happens
+        var log = new List<string>();
+        Assert.Null(UnexpectedMovementResponse.Apply(report with { Timestamp = 5000 }, new RobotStateHistory(), world, now, log.Add));
+        Assert.Contains(log, l => l.Contains("Could not get robot pose at t=5000"));
+        Assert.Single(world.Objects);
     }
 
     /// <summary>

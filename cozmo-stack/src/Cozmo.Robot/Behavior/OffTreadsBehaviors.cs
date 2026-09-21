@@ -105,8 +105,9 @@ public sealed class ReactToRobotOnFaceBehavior : SteppedBehavior
 /// it plays <see cref="AnimationTrigger.WaitOnSideLoop"/> (0x22B) over and over; when the 15 s are up it
 /// plays the bored sequence <see cref="AnimationTrigger.NothingToDoBoredIntro"/>, <c>Event</c>, <c>Outro</c>
 /// (0x149, 0x147, 0x14A) as a <c>CompoundActionSequential</c>, clears the deadline and loops. Any transition
-/// finding the robot no longer on a side ends the behaviour. The engine also reports the needs actions
-/// <c>PlacedOnSide</c> (0x2F) and <c>BoredOnSide</c> (0x30); there is no needs system here.
+/// finding the robot no longer on a side ends the behaviour. It reports two needs actions by name:
+/// <c>PlacedOnSide</c> (0x2F) from <c>InitInternal</c> (0x00608D70) and <c>BoredOnSide</c> (0x30) each time
+/// the hold runs out and the bored sequence plays (0x00608F78).
 /// </summary>
 public sealed class ReactToRobotOnSideBehavior : SteppedBehavior
 {
@@ -122,6 +123,7 @@ public sealed class ReactToRobotOnSideBehavior : SteppedBehavior
     {
         _deadlineMs = -1;
         BoredSequences = 0;
+        if (NeedActionCompleted("PlacedOnSide") is { } action) Log($"needs action {action}");
         ReactToBeingOnSide();
     }
 
@@ -163,7 +165,8 @@ public sealed class ReactToRobotOnSideBehavior : SteppedBehavior
         }
         _deadlineMs = -1;
         BoredSequences++;
-        Log("held for 15 s: bored sequence (needs action BoredOnSide)");
+        Log("held for 15 s: bored sequence");
+        if (NeedActionCompleted("BoredOnSide") is { } action) Log($"needs action {action}");
         PlayTrigger(AnimationTrigger.NothingToDoBoredIntro, () =>
             PlayTrigger(AnimationTrigger.NothingToDoBoredEvent, () =>
                 PlayTrigger(AnimationTrigger.NothingToDoBoredOutro, HoldingLoop)));
@@ -389,7 +392,10 @@ public sealed class ReactToRobotShakenBehavior : SteppedBehavior
                 if (ShakenDurationSec > HardAboveSec) { Played = Reaction.Hard; trigger = AnimationTrigger.DizzyReactionHard; }
                 else if (ShakenDurationSec > MediumAboveSec) { Played = Reaction.Medium; trigger = AnimationTrigger.DizzyReactionMedium; }
                 else { Played = Reaction.Soft; trigger = AnimationTrigger.DizzyReactionSoft; }
-                Log($"back on treads: dizzy reaction {Played} (needs action Dizzy{Played})");
+                Log($"back on treads: dizzy reaction {Played}");
+                // 0x00609460 / 0x0060946C name DizzyMedium (0x0F) and DizzySoft (0x10); the hard tier's
+                // DizzyHard (0x0E) follows the same naming.
+                if (NeedActionCompleted($"Dizzy{Played}") is { } action) Log($"needs action {action}");
                 PlayTrigger(trigger, () => { });
                 CurrentPhase = Phase.Finishing;
                 break;
@@ -414,7 +420,9 @@ public sealed class ReactToRobotShakenBehavior : SteppedBehavior
 /// <c>+0x11c</c>). <c>InitInternal</c> fires the emotion event <c>"ReactToUnexpectedMovement"</c> on the
 /// mood manager, then plays <see cref="AnimationTrigger.ReactToUnexpectedMovement"/> (0x1AC) with a
 /// <c>TriggerLiftSafeAnimationAction</c>, locking the body track (<c>tracksToLock = 4</c>) when the movement
-/// came from <see cref="UnexpectedMovementSide.Back"/> so the robot does not drive during the reaction; when
+/// came from <see cref="UnexpectedMovementSide.Back"/> - a lock, which IActionRunner::Update takes through
+/// <c>MovementComponent::LockTracks</c> before the action runs, so nothing else drives the body while the
+/// reaction plays; when
 /// it ends, objective <c>ReactedToUnexpectedMovement</c>. The severe-needs variants
 /// (<c>_Severe_Energy</c> 0x1AD, <c>_Severe_Repair</c> 0x1AE) depend on the needs system and are not modelled.
 /// </summary>
@@ -433,12 +441,14 @@ public sealed class ReactToUnexpectedMovementBehavior : SteppedBehavior
         Side = report?.Side ?? UnexpectedMovementSide.Unknown;
         bool known = Context.Mood?.Trigger(EmotionEventName, Clock() / 1000.0) ?? false;
         Log($"emotion event {EmotionEventName}: {(Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model")}");
-        var suppress = Side == UnexpectedMovementSide.Back ? AnimationTrack.Body : AnimationTrack.None;
+        // tracksToLock = 4, the body, when the movement came from behind: the reaction holds that track
+        // so nothing else drives the wheels while it plays.
+        var alsoLock = Side == UnexpectedMovementSide.Back ? AnimationTrack.Body : AnimationTrack.None;
         PlayTrigger(AnimationTrigger.ReactToUnexpectedMovement, () =>
         {
             Log("objective ReactedToUnexpectedMovement");
             Finish();
-        }, suppress);
+        }, alsoLock);
     }
 }
 

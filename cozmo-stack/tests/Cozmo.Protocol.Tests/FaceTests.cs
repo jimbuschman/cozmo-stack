@@ -169,6 +169,88 @@ public class FaceTests
         Assert.Equal(FaceActionResult.NoFace, new TurnTowardsFaceAction(empty.Vision, SmartFaceID.Invalid).RunAsync(default).GetAwaiter().GetResult());
     }
 
+    /// <summary>
+    /// The numbers the face actions wait and turn by, as the engine's constructors set them.
+    /// TurnTowardsFaceAction puts 10 at +0x188 (0x0054B798) and IVisuallyVerifyAction the same 10 at +0x8C
+    /// (0x0056873E); ITrackAction's constructor sets the tolerances to 2 degrees, the pan duration to 0.4 s
+    /// and the tilt duration to 0.15 s (0x00564758), the maximum head angle to 0.776672 rad, the sound
+    /// thresholds to 10 degrees, and leaves the eye movement and the driving animation off. This stack had
+    /// five frames and a hundred-millisecond poll, both invented.
+    /// </summary>
+    [Fact]
+    public void TheFaceActionConstantsAreTheEnginesOwn()
+    {
+        Assert.Equal(10, TurnTowardsFaceAction.FramesToWaitForFace);
+        Assert.Equal(0.4, TrackFaceAction.PanDurationSec, 6);
+        Assert.Equal(0.15, TrackFaceAction.TiltDurationSec, 6);
+        Assert.Equal(0.5, TrackFaceAction.DesiredTimeToReachTargetSec, 6);
+        Assert.Equal(0.0349066, TrackFaceAction.MinToleranceRad, 6);
+        Assert.Equal(0.776672, TrackFaceAction.MaxHeadAngleRad, 6);
+        Assert.Equal(0.174533, TrackFaceAction.MinAngleForSoundRad, 6);
+        Assert.Equal(10000, TrackFaceAction.TrackAccelRadPerSec2);
+        Assert.Equal(33, TrackFaceAction.UpdateIntervalMs);
+
+        using var rig = FaceRig((7, new Vec3(400, 0, 250), null));
+        var track = new TrackFaceAction(rig.Vision, 7);
+        Assert.False(track.MoveEyes);
+        Assert.False(track.DrivingAnimation);
+        track.Dispose();
+    }
+
+    /// <summary>
+    /// TurnTowardsImagePointAction turns by the angle the pixel subtends and nothing else:
+    /// Robot::ComputeTurnTowardsImagePointAngles 0x0051879C is atan2(-(u - cx), fx) added to the heading
+    /// and atan2(-(v - cy), fy) added to the head angle. A point at the image centre asks for no turn at
+    /// all, whatever the distance to whatever is there - which is what the 200 mm ray this stack used to
+    /// build could not say.
+    /// </summary>
+    [Fact]
+    public void TurnTowardsImagePointIsTheAngleThePixelSubtends()
+    {
+        var cal = CameraCalibration.Nominal();
+        var (body, head) = TurnTowardsImagePoint.Angles(cal, cal.CenterX, cal.CenterY, 0.5, 0.2);
+        Assert.Equal(0.5, body, 9);
+        Assert.Equal(0.2, head, 9);
+
+        // a point to the right of centre turns the body right (negative), one above centre lifts the head
+        var (right, _) = TurnTowardsImagePoint.Angles(cal, cal.CenterX + cal.FocalLengthX, cal.CenterY, 0, 0);
+        Assert.Equal(-Math.PI / 4, right, 6);
+        var (_, up) = TurnTowardsImagePoint.Angles(cal, cal.CenterX, cal.CenterY - cal.FocalLengthY, 0, 0);
+        Assert.Equal(Math.PI / 4, up, 6);
+    }
+
+    /// <summary>
+    /// The pet strategy waits a minute between reactions: ReactionTriggerStrategyPetInitialDetection's
+    /// RecentlyReacted 0x00611DD0 is true while the last reaction plus 60 (0x00611DE8) is ahead of now,
+    /// and UpdateReactedTo 0x00611E1C records the pet ids it has already reacted to.
+    /// </summary>
+    [Fact]
+    public void ThePetStrategyRemembersWhatItReactedToAndWaitsAMinute()
+    {
+        using var rig = FaceRig();
+        var world = rig.Vision.Pets;
+        using var strategy = new PetInitialDetectionStrategy(world);
+        Assert.Equal(60.0, PetInitialDetectionStrategy.RecentlyReactedSec, 6);
+        var cat = new DetectedPet(3, PetType.Cat, new FaceRect(10, 10, 20, 20));
+        var dog = new DetectedPet(4, PetType.Dog, new FaceRect(50, 10, 20, 20));
+
+        world.Update(new[] { cat }, 100, false);
+        Assert.True(strategy.ShouldTrigger(null!, null, 0));
+
+        // reacting to it records the id and starts the minute
+        strategy.ReactedTo(3, 10);
+        Assert.True(strategy.RecentlyReacted(11));
+        world.Update(new[] { cat, dog }, 200, false);
+        Assert.False(strategy.ShouldTrigger(null!, null, 11));      // inside the minute, even for a new pet
+        Assert.False(strategy.RecentlyReacted(71));
+
+        world.Update(new[] { cat, dog }, 300, false);
+        Assert.True(strategy.ShouldTrigger(null!, null, 71));       // the minute is up and pet 4 is new
+        strategy.ReactedTo(4, 71);
+        world.Update(new[] { cat, dog }, 400, false);
+        Assert.False(strategy.ShouldTrigger(null!, null, 200));     // both have been reacted to now
+    }
+
     [Fact]
     public void TrackFaceFollowsTheFaceWithinItsTolerances()
     {

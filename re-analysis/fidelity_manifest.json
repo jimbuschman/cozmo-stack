@@ -99,7 +99,7 @@
       "id": "M8-framework",
       "name": "Behaviour framework and scoring",
       "milestone": "M8",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true
     },
     {
@@ -113,7 +113,7 @@
       "id": "M10-derived",
       "name": "Derived robot state and reaction strategies",
       "milestone": "M10",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true
     },
     {
@@ -148,7 +148,7 @@
       "id": "M15-freeplay",
       "name": "Needs, activities and freeplay",
       "milestone": "M15",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true
     },
     {
@@ -1585,100 +1585,122 @@
       "test": "BehaviorFrameworkTests"
     },
     {
-      "id": "M8-003",
       "subsystem": "M8-framework",
-      "title": "Scored selection: score times repetition penalty, highest wins",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs",
-      "effect": "a different behaviour is chosen at every decision point",
-      "provenance": "structure inferred from exported names",
-      "authority": "IBehavior::ReadFromScoredJson 0x005BC489 and ScoringBSRunnableChooser::GetDesiredActiveBehavior 0x0060B23E, of which the chooser has since been read",
+      "title": "Scored selection: emotion scorers or the flat score, times the penalties",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs",
+      "effect": null,
+      "provenance": "ReadFromScoredJson, EvaluateScore, EvaluateScoreInternal and MoodScorer, read",
+      "authority": "IBehavior::ReadFromScoredJson 0x005BC488, IBehavior::EvaluateScore 0x005BEF60, IBehavior::EvaluateScoreInternal 0x005BEEC2 and MoodScorer::EvaluateEmotionScore 0x0067C9B8, read",
       "evidence": [
-        "ScoringBSRunnableChooser::GetDesiredActiveBehavior"
+        "ReadFromScoredJson 0x005BC488 reads four things: \"emotionScorers\" into a MoodScorer at +0xDC, \"flatScore\" into the float at +0x100, \"repetitionPenalty\" into the GraphEvaluator2d at +0xE8, and \"considerThisHasRunForBehaviorObjective\" into a behaviour objective. A repetitionPenalty that is missing or unreadable warns (IScoredBehavior.BadRepetitionPenalty) and leaves the graph empty, and an empty graph gets the single node AddNode(0, 1, true) at 0x005BC55E - a flat penalty of one.",
+        "EvaluateScoreInternal 0x005BEEC2 is the rule this stack had wrong: if the MoodScorer's list is not empty it tail-calls MoodScorer::EvaluateEmotionScore and that is the score; only an empty list falls through to the flat score at +0x100. The two are alternatives, not addends.",
+        "MoodScorer::EvaluateEmotionScore 0x0067C9B8 walks the scorers, evaluates each one's graph at its emotion's value - or at the value minus the value sixty ticks ago when trackDelta is set (Emotion::GetHistoryValueTicksAgo(60) at 0x0067C9F4) - and returns the mean of the results (0x0067CA6E..0x0067CA72). A scorer whose graph comes out within 1e-05 of zero (0x0067CA50) ends the walk and the whole score is zero.",
+        "EvaluateScore 0x005BEF60 wraps it: while the behaviour runs it uses the running score plus the float at +0x104 and multiplies by EvaluateRunningPenalty when +0x111 is set; otherwise it scores only a behaviour that IsRunnableBase and wants to run.",
+        "EmotionScorer::ReadFromJson 0x0067AABC names the three keys: emotionType, scoreGraph, trackDelta. Not one shipped behaviour or activity config carries an emotionScorers block, so every scored behaviour in the app is scored by its flatScore alone; the sixty-tick history this stack does not keep is therefore never reached, and is marked LOCAL_POLICY where it would be."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "ReadFromScoredJson has not been disassembled, so how a shipped config turns into a score is still not read",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "FreeplayTests"
+      "test": "FreeplayTests.AScoredEntryUsesItsEmotionScorersInsteadOfItsFlatScore",
+      "id": "M8-003"
     },
     {
-      "id": "M8-004",
       "subsystem": "M8-framework",
-      "title": "Behaviour scores 1.0 and 5.0 where the shipped configs carry none",
+      "title": "Behaviours built in code carry a score of their own; the engine's default is zero",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs",
-      "effect": "the scoring chooser ranks behaviours by numbers that are not the app numbers",
-      "provenance": "chosen because they looked right",
-      "authority": "IBehavior::ReadFromScoredJson 0x005BC489 and the shipped behaviour configs",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "where the engine gets a score for a behaviour whose config carries none",
+      "effect": "the order this stack's simple manager picks behaviours in",
+      "provenance": "the engine's default read from IBehavior's constructor; the numbers themselves are this stack's",
+      "authority": "IBehavior::IBehavior 0x005BBB74 and IBehavior::EvaluateScoreInternal 0x005BEEC2, read",
+      "evidence": [
+        "There is no engine default to copy. IBehavior's constructor writes zero to the flat score at +0x100 (strd of the zero register at 0x005BBD28, alongside +0x104 and +0x108), and EvaluateScoreInternal returns that float when the behaviour has no emotion scorers. So a behaviour whose config carries no scoring scores zero and a scoring chooser never picks it - which is consistent, because the app's scored behaviours are the ones an activity config lists with a flatScore.",
+        "This stack's ScoredBehaviorEntry.FromJson already defaults flatScore to zero, so the config-driven path matches. The 1 and 5 are on behaviours built in code, where this stack's simple BehaviorManager ranks every behaviour by EvaluateScore and the engine would instead have an activity chooser or the reaction map decide. They are named LOCAL_POLICY in both constructors."
+      ],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "BehaviorTests",
+      "id": "M8-004"
     },
     {
-      "id": "M8-005",
       "subsystem": "M8-framework",
-      "title": "PlayAnim uses the first trigger that resolves",
+      "title": "PlayAnim plays every trigger it lists, in order, num_loops times",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs",
-      "effect": "a different clip plays when several triggers are listed",
-      "provenance": "inferred",
-      "authority": "the engine PlayAnim behaviour class",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the engine selection rule among several triggers",
-      "hardware_required": false,
-      "live_path": true,
-      "test": null
-    },
-    {
-      "id": "M8-006",
-      "subsystem": "M8-framework",
-      "title": "A strategy type this stack does not model reports not runnable",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs:126",
-      "effect": "a behaviour whose config names an unmodelled strategy never runs",
-      "provenance": "a deliberate fail-closed choice, labelled",
-      "authority": "WantsToRunStrategyFactory in libcozmoEngine.so, which names every strategy type",
+      "effect": null,
+      "provenance": "BehaviorPlayAnimSequence, read",
+      "authority": "BehaviorPlayAnimSequence::StartPlayingAnimations 0x005C0158 and BehaviorPlayAnimSequence::StartSequenceLoop 0x005C0294, read",
       "evidence": [
-        "IBehavior::ReadFromJson"
+        "StartPlayingAnimations 0x005C0158 measures the trigger vector at +0x11C: a byte length of exactly 4 - one trigger - is special-cased and played as a single TriggerLiftSafeAnimationAction with the loop count from +0x128 (0x005C0190). Anything else falls through to StartSequenceLoop.",
+        "StartSequenceLoop 0x005C0294 runs while the counter at +0x12C is below the loop count at +0x128: it makes a CompoundActionSequential and walks the whole trigger vector, adding one TriggerLiftSafeAnimationAction per trigger (0x005C02CA..0x005C030E), then runs the compound and increments the counter. So every trigger plays, in the config's order, and the list repeats.",
+        "The loop count is the config's num_loops, read with a default of 1: Json::Value::Value(1) then Json::Value::get(\"num_loops\", default) at 0x005C001C..0x005C0036.",
+        "Of the fifteen shipped PlayAnim configs, one lists more than one trigger - NothingToDo_BoredAnim, whose own comment calls its intro, event and outro a \"sequence of anims\" - and none sets num_loops. This stack played the first trigger that resolved and stopped; it now plays the list."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the strategy types not yet modelled and what each one tests",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "FreeplayTests"
+      "test": "BehaviorFrameworkTests.APlayAnimBehaviourWithSeveralTriggersTakesThemAll",
+      "id": "M8-005"
     },
     {
-      "id": "M8-007",
       "subsystem": "M8-framework",
-      "title": "Per-play track lock is recorded and not applied",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.cs:205",
-      "effect": "a track the engine would mute for one play still moves",
-      "provenance": "deferred; the scheduler has no per-play track mask",
-      "authority": "MovementComponent::LockTracks in libcozmoEngine.so",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the mask the engine applies per play and where it is released",
-      "hardware_required": false,
-      "live_path": true,
-      "test": null
-    },
-    {
-      "id": "M8-008",
-      "subsystem": "M8-framework",
-      "title": "A 5 s calibration allowance is borrowed from ReactToImpact for other behaviours",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.cs:265",
-      "effect": "behaviours wait 5 s for recalibration where the engine may wait a different time, or not wait",
-      "provenance": "a number borrowed from the one place the engine is known to use it",
-      "authority": "BehaviorReactToImpact 0x00606348 uses 5 s. What the other behaviour classes do about recalibration was not read",
+      "title": "The wants-to-run strategy types, and what each one tests",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs",
+      "effect": null,
+      "provenance": "WantsToRunStrategyFactory and the strategy classes, read",
+      "authority": "WantsToRunStrategyFactory::CreateWantsToRunStrategy 0x00614710, StrategyInNeedsBracket::WantsToRunInternal 0x006141A0 and StrategyExpressNeedsTransition::WantsToRunInternal 0x006136D8, read",
       "evidence": [
-        "BehaviorReactToImpact::TransitionToPlayingAnim 0x00606348"
+        "The nine WantsToRunStrategyType values are the table EnumToString 0x007716A4 indexes at 0x01033820: Invalid, AlwaysRun, ExpressNeedsTransition, Generic, InNeedsBracket, ObstacleDetected, PlacedOnCharger, RobotPlacedOnSlope, RobotShaken. CreateWantsToRunStrategy 0x00614710 dispatches on that value through a tbb and constructs the matching Strategy class.",
+        "StrategyInNeedsBracket::WantsToRunInternal 0x006141A0 is one call: NeedsManager::GetCurNeedsStateMutable() then NeedsState::IsNeedAtBracket(need, bracket), the pair held at strategy+0x18 and +0x1C from the config's need and needBracket.",
+        "StrategyExpressNeedsTransition::WantsToRunInternal 0x006136D8 asks IsNeedAtBracket(need, Critical) - the literal 3 at 0x006136EC, Critical being index 3 of the NeedBracketId table at 0x01033EE0 (Full, Normal, Warning, Critical) - and then returns false when the need equals the one the AI component is already expressing (0x006136FC). Both are implemented here now.",
+        "Of the shipped configs only reactToObstacle.json gives a behaviour a strategy, and it is ObstacleDetected, whose flag nothing in this build ever sets (recorded under M8 already). The needs strategies appear on activity configs - needsSevereLowEnergy, needsSevereLowRepair, needsSevereLowPlayGetIn - which the activity layer models, and PlacedOnCharger, RobotPlacedOnSlope and RobotShaken appear in reactionTrigger_behavior_map.json, which the reaction system dispatches. Nothing shipped reaches the refusal for an unmodelled type."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "what each behaviour class actually waits for, which is in the classes themselves",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "BehaviorFrameworkTests.TheNeedsWantsToRunStrategiesFollowTheNeedsState",
+      "id": "M8-006"
+    },
+    {
+      "subsystem": "M8-framework",
+      "title": "An action's track mask is a lock, taken while it runs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.cs",
+      "effect": null,
+      "provenance": "IActionRunner::Update and MovementComponent::LockTracks, read",
+      "authority": "IActionRunner::Update 0x00540370, MovementComponent::LockTracks 0x00640098 and MovementComponent::UnlockTracks 0x0063FE5C, read",
+      "evidence": [
+        "Every action carries a track mask at +0x54. IActionRunner::Update 0x00540370 reads it and asks MovementComponent::AreAnyTracksLocked(mask) at 0x00540440: while any of those tracks is held it warns \"Action %s [%d] not running because required tracks are locked\" (0x005404A8) and does not run the action - it stays queued and is tried again on the next tick. Otherwise it locks them through the helper at 0x004F0F4C, which calls MovementComponent::LockTracks(mask, tag, name), and then runs the action.",
+        "LockTracks 0x00640098 walks the bits of the mask and inserts one LockInfo - the owner's name and reason - per track into a multiset at component+0x30; UnlockTracks 0x0063FE5C removes them. So a track is held by a set of owners and is free when the last one lets go.",
+        "The mask is therefore mutual exclusion, not muting: the animation plays its tracks and nothing else may drive them while it does. This stack claims the clip's tracks on the behaviour's scope and the scheduler refuses a play whose tracks are owned, which is the same arrangement; the refusal now waits and retries, as IActionRunner does, instead of treating the play as done.",
+        "The third argument of PlayTrigger was a suppressTracks mask whose note claimed the engine mutes a track for one play. It is now alsoLock, and it is added to the scope's claim: BehaviorReactToUnexpectedMovement's tracksToLock of 4 means the reaction holds the body track while it plays, which keeps the keep-alive and anything else off the wheels - not that the animation's own body track is silenced."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
+      "hardware_required": false,
+      "live_path": true,
+      "test": "BehaviorHardeningTests",
+      "id": "M8-007"
+    },
+    {
+      "subsystem": "M8-framework",
+      "title": "The head recalibration wait: the engine has no timeout, this stack keeps a backstop",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.cs",
+      "effect": "how long a behaviour sits out a recalibration that never finishes",
+      "provenance": "CalibrateMotorAction and IAction's default timeout, read; the five seconds is this stack's",
+      "authority": "CalibrateMotorAction::CheckIfDone 0x00547D38 and IAction::IAction 0x00540C44, read",
+      "evidence": [
+        "CalibrateMotorAction::CheckIfDone 0x00547D38 is the whole completion rule: it stays running until the motors it was asked for report calibrated, testing Robot::IsHeadCalibrated and IsLiftCalibrated against the request flags at +0x78 and +0x79 and the already-started flags at +0x7A and +0x7B, and returns the running marker 0x01000000 until then.",
+        "There is no timeout behind it. IAction's constructor writes -1 to the action's timeout at +0x74 (movs r1, #0 / movt r1, #0xbf80 at 0x00540CA2), which is the engine's \"no timeout\", and CalibrateMotorAction does not override it. So the engine waits as long as it takes.",
+        "This stack waits five seconds and carries on. That is a backstop, not a reading: a wait that never ends is not worth reproducing, and five seconds is what the engine's own behaviours give a recalibration when they sit one out - BehaviorReactToImpact's WaitAction and BehaviorReactToMotorCalibration's, both 0x40A00000. The robot reports in about two."
+      ],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": null,
+      "hardware_required": false,
+      "live_path": true,
+      "test": "BehaviorTests",
+      "id": "M8-008"
     },
     {
       "id": "M8-009",
@@ -2246,22 +2268,21 @@
       "subsystem": "M10-derived",
       "title": "What the engine does after unexpected movement: a history lookup, an obstacle and a new pose",
       "location": "cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs",
-      "status": "RECOVERABLE_GAP",
-      "effect": "the robot keeps the pose it drifted to, and nothing is left in the world where it was blocked",
-      "provenance": "nothing: this stack raises the event and stops there",
-      "authority": "MovementComponent::CheckForUnexpectedMovement 0x0063E398 continues past the event, and the shape of what it does is read now",
+      "effect": null,
+      "provenance": "CheckForUnexpectedMovement's tail, GetSizeByType, AddMarkerlessObject and SetNewPose, read",
+      "authority": "MovementComponent::CheckForUnexpectedMovement 0x0063E6BC..0x0063E8E6, MarkerlessObject::GetSizeByType 0x005026EC, BlockWorld::AddCollisionObstacle 0x00624A16, BlockWorld::AddMarkerlessObject 0x00622380, Robot::SetNewPose 0x005126EC, MovementComponent::UnexpectedMovement::GetAvgWheelSpeeds 0x0063EC3C, read",
       "evidence": [
-        "on the event it checks BehaviorManager::IsReactionTriggerEnabled(0x14) (0x0063E60A) and does nothing further when that trigger is off",
-        "it asks RobotStateHistory::ComputeStateAt(startTimestamp, ...) 0x0063E63E for the robot's state at the tick the disagreement began - the timestamp it stored at +0x94 - and warns \"Could not get robot pose at t=%u\" when it cannot",
-        "it divides the accumulated wheel speeds at +0x98 and +0x9C by the count at +0xA0 to get mean left and right speeds (0x0063E6C0, 0x0063E6CE)",
-        "it takes MarkerlessObject::GetSizeByType(0x10) and adds 5 mm to its first component (0x0063E6BC..0x0063E6D4), then picks one of four offsets from the robot's own footprint - +22.1 ahead, -55.9 behind, +/-27.1 to the sides, with a +/-pi/2 rotation about Z for the two turned-in-place cases - and a name for each",
-        "it ends with Robot::SetNewPose (0x0063E87E), having copied the robot's current rotation over the constructed pose's (the 32-byte loop at 0x0063E868, the transform's translation living at +0x20)",
-        "the three UnexpectedMovementType values are read: TURNED_BUT_STOPPED, TURNED_IN_SAME_DIRECTION, TURNED_IN_OPPOSITE_DIRECTION"
+        "The wheel averages decide the side, and which accumulator is which is settled by GetAvgWheelSpeeds 0x0063EC3C: it writes +4 / count into its first argument and +8 / count into its second, so the struct at MovementComponent+0x94 is {timestamp, left, right, count} and the pose code's s2 = +0x98 is the left mean, s0 = +0x9c the right (0x0063E6C0, 0x0063E6CE). Both above 1e-05 is front, neither is back, left alone is a turn to the right, right alone a turn to the left - which is what the four names say: \" front of\", \"behind\", \" left of\", \" right of\" (0x0063EAC8..0x0063EAF2), logged as \"Adding obstacle %s robot\".",
+        "The obstacle's depth is its own. MarkerlessObject::GetSizeByType 0x005026EC builds one static map of three sixteen-byte entries - ProxObstacle (10, 10, 50), CliffDetection (20, 40, 50), CollisionObstacle (20, 54.2, 67.7) - and the code takes the first component, 20 mm, and adds 5 (0x0063E6C6, 0x0063E6D4). The four poses are then: front, +(depth + 22.1) along x (0x41B0CCCC at 0x0063E7A4); back, -55.9 - depth (0xC25F999A at 0x0063E81A); left, the pose turned +pi/2 about Z and +(depth + 27.1) along its y (0x0063E7D4); right, turned -pi/2 and -(depth + 27.1) (0x0063E704). The translation is written straight into the rotated pose's transform at +0x20, so the two side cases carry both the rotation and the sign.",
+        "BlockWorld::AddCollisionObstacle 0x00624A16 is one call to AddMarkerlessObject(pose, 0x10) 0x00622380, which makes the object, builds a local pose of no rotation and translation (0, 0, size.z / 2) - the 0.5 multiply at 0x006223CC, standing the box on the ground - and multiplies the given pose by it.",
+        "The pose the robot is put back to is the historical one with the current heading. RobotStateHistory::ComputeStateAt is asked for the state at the timestamp the disagreement began (+0x94); the 32-byte loop at 0x0063E868 copies the robot's current transform over the copy's rotation and leaves its translation, which lives at +0x20; and Robot::SetNewPose 0x005126EC calls Robot::SetPose and AddVisionOnlyStateToHistory, which is what Robot::Update's SendAbsLocalizationUpdate 0x00514710 later sends to the robot. Without a state at that time the engine logs \"Could not get robot pose at t=%u\" and does neither.",
+        "Implemented as UnexpectedMovementResponse: the four offsets, the rewound pose and BlockWorld.AddCollisionObstacle. The engine owns the robot's pose and this stack reads it from the state stream, so the rewound pose is returned to the caller rather than written into a pose this stack does not own."
       ],
-      "unresolved": "the exact composition of the four offset poses and which of them SetNewPose finally receives; the reading above is of the branches, not yet of the arithmetic that assembles them",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "DerivedStateTests",
+      "test": "DerivedStateTests.TheReportRewindsThePoseAndLeavesACollisionObstacle",
       "id": "M10-007"
     },
     {
@@ -3000,66 +3021,81 @@
       "test": "FaceTests"
     },
     {
-      "id": "M14-002",
       "subsystem": "M14-faces",
       "title": "Frame counts waited by VisuallyVerifyFaceAction and TurnTowardsFaceAction",
-      "location": "cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs:69",
-      "effect": "a face is declared verified too early or too late",
-      "provenance": "inferred (5 frames)",
-      "authority": "the engine face actions",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the engine frame budget for each",
-      "hardware_required": false,
-      "live_path": true,
-      "test": null
-    },
-    {
-      "id": "M14-003",
-      "subsystem": "M14-faces",
-      "title": "TrackFaceAction update period of 100 ms; eye shift and driving animation not implemented",
-      "location": "cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs:156",
-      "effect": "tracking is jerkier and the face does not react while tracking",
-      "provenance": "chosen locally; the extra layers are deferred",
-      "authority": "the engine TrackFaceAction",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the engine update period and the layers it adds",
-      "hardware_required": false,
-      "live_path": true,
-      "test": null
-    },
-    {
-      "id": "M14-004",
-      "subsystem": "M14-faces",
-      "title": "PetInitialDetection strategy shape",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs:524",
-      "effect": "the pet reaction fires at the wrong times",
-      "provenance": "inferred shape: the first sighting of a pet id",
-      "authority": "the engine strategy class for PetInitialDetection",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs",
+      "effect": null,
+      "provenance": "the two constructors, read",
+      "authority": "TurnTowardsFaceAction::TurnTowardsFaceAction 0x0054B754 and IVisuallyVerifyAction::IVisuallyVerifyAction 0x005686D8, read",
       "evidence": [
-        "reactionTrigger_behavior_map.json"
+        "TurnTowardsFaceAction's constructor writes 10 into the action at +0x188: movs r1, #0xa at 0x0054B798, stored at 0x0054B79E, beside the zero and 0xFFFF it puts at +0x180 and +0x184.",
+        "IVisuallyVerifyAction's constructor writes the same 10 at +0x8C (movs r1, #0xa / str.w r1, [r4, #0x8c] at 0x0056873E), and VisuallyVerifyFaceAction 0x00568EB8 does not override it - it passes its vision mode (2) and lift preset (0) and nothing else.",
+        "So both wait ten frames, not the five this stack guessed."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the strategy class was not disassembled",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "FaceTests"
+      "test": "FaceTests",
+      "id": "M14-002"
     },
     {
-      "id": "M14-005",
       "subsystem": "M14-faces",
-      "title": "TurnTowardsImagePoint aims at a ray 200 mm out",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs:573",
-      "effect": "the robot turns to the wrong angle for a detected pet",
-      "provenance": "inferred range",
-      "authority": "the engine TurnTowardsImagePointAction",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the range the engine assumes",
+      "title": "TrackFaceAction: the durations it turns in, and the flags it starts with",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs",
+      "effect": null,
+      "provenance": "ITrackAction's constructor and CheckIfDone, read",
+      "authority": "ITrackAction::ITrackAction 0x0056465C and ITrackAction::CheckIfDone 0x00564F08, read",
+      "evidence": [
+        "There is no update period. Tracking happens inside CheckIfDone, which the action list calls every basestation tick; the constructor leaves the three times at +0xE4..+0xEC at -1 and the update timeout at +0x7C is not a period either. The 100 ms this stack polled at was invented; it now runs on the 33 ms tick.",
+        "What the constructor does set (0x0056465C..0x0056478A): the pan and tilt tolerances at +0x84 and +0x8C to 0.0349066 rad, two degrees; the maximum head angle at +0x94 to 0.776672 rad; the minimum pan and tilt angles for a sound at +0xC0 and +0xC8 to 0.174533 rad, ten degrees; the tilt duration at +0xD0 to 0.15 s and the pan duration at +0xD4 to 0.4 s (strd r1, r0 at 0x00564758, with SetTiltDuration 0x00564ADA writing +0xD0 and SetPanDuration 0x00564AD4 writing +0xD4); the desired time to reach the target at +0xD8 to 0.5 s; and the flags off - move eyes at +0xA1 (SetMoveEyes 0x00564B40), driving animation at +0xA8 (EnableDrivingAnimation 0x00564AEA), clamp small angles at +0xE0.",
+        "CheckIfDone 0x00564F08 turns by giving each axis its own duration: MoveHeadToAngle at 0x00565104 takes the speed |delta| / tiltDuration computed at 0x005650F2 and the acceleration 10000 (0x005650EE), and it does not wait for the turn - the next tick recomputes the target. The driving animation's end plays only when +0xA8 is set (0x0056510E).",
+        "This stack now turns with those speeds and does not wait, and carries the flags and the limits as named constants; the eye shift and the driving animation are off, as they are in the engine unless a caller asks."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "FaceTests",
+      "id": "M14-003"
+    },
+    {
+      "subsystem": "M14-faces",
+      "title": "PetInitialDetection: a pet not reacted to, and a minute between reactions",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs",
+      "effect": null,
+      "provenance": "ReactionTriggerStrategyPetInitialDetection, read",
+      "authority": "ReactionTriggerStrategyPetInitialDetection::RecentlyReacted 0x00611DD0, ::UpdateReactedTo 0x00611E1C and ::InitReactedTo 0x00611FA4, read",
+      "evidence": [
+        "The strategy keeps the pet ids it has reacted to in a tree at +0x34: UpdateReactedTo 0x00611E1C walks the pets the robot knows and inserts each id, and InitReactedTo 0x00611FA4 fills it when the strategy starts, so a pet that was already known is not treated as new.",
+        "RecentlyReacted 0x00611DD0 is the cooldown: the last reaction time sits at +0x40 as a float, -1 meaning never, and the answer is true while lastReacted + 60 is still ahead of BaseStationTimer::GetCurrentTimeInSeconds - the 60 is the 0x42700000 loaded at 0x00611DE8.",
+        "This stack latched on the first sighting of any pet id and had no cooldown; it now keeps the reacted-to set and the sixty seconds."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
+      "hardware_required": false,
+      "live_path": true,
+      "test": "FaceTests",
+      "id": "M14-004"
+    },
+    {
+      "subsystem": "M14-faces",
+      "title": "TurnTowardsImagePoint turns by the angle the pixel subtends",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs",
+      "effect": null,
+      "provenance": "Robot::ComputeTurnTowardsImagePointAngles and TurnTowardsImagePointAction::Init, read",
+      "authority": "Robot::ComputeTurnTowardsImagePointAngles 0x0051879C and TurnTowardsImagePointAction::Init 0x0054B664, read",
+      "evidence": [
+        "There is no distance in it. ComputeTurnTowardsImagePointAngles 0x0051879C subtracts the calibration's centre from the point (the two-float loop at 0x005187CC), takes the historical state at the image's timestamp through RobotStateHistory::ComputeStateAt, and computes atan2(-(v - cy), fy) for the head (0x0054886C with the focal length at calibration+8) and atan2(-(u - cx), fx) for the body (0x0051888E, focal length at +4). The head angle is added to the head angle in that state and the body angle to its heading, so both come out absolute.",
+        "TurnTowardsImagePointAction 0x0054B59C is a PanAndTiltAction: Init 0x0054B664 asks for those two angles, writes them into the pan and tilt fields at +0x114 and +0x11C, and runs PanAndTiltAction::Init. When the history cannot answer it warns \"TurnTowardsImagePointAction.Init.ComputeTurnTowardsImagePointAnglesFailed\" and turns nowhere.",
+        "This stack aimed at a point 200 mm along the ray through the pixel, a range it invented, and then turned towards that pose. It now computes the same two angles and pans and tilts to them."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
+      "hardware_required": false,
+      "live_path": true,
+      "test": "FaceTests",
+      "id": "M14-005"
     },
     {
       "id": "M14-006",
@@ -3139,149 +3175,177 @@
       "test": "FreeplayTests"
     },
     {
-      "id": "M15-004",
       "subsystem": "M15-freeplay",
-      "title": "Needs decay modifiers, damaged parts and persistence are not implemented",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs:45",
-      "effect": "needs decay at the wrong rate and do not survive a restart",
-      "provenance": "deferred",
-      "authority": "the shipped needs config carries DecayModifiers; the engine reads them",
+      "title": "Needs decay modifiers, damaged parts and persistence",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs",
+      "effect": null,
+      "provenance": "NeedsState::GetDecayMultipliers, NumDamagedPartsForRepairLevel and the NeedsManager's device write, read, with the shipped configs",
+      "authority": "NeedsState::GetDecayMultipliers 0x0069C214, NeedsState::NumDamagedPartsForRepairLevel 0x0069CCAC, NeedsManager::WriteToDevice 0x00693BB0 and NeedsFilenameFromSerialNumber 0x00695224, read",
       "evidence": [
-        "needs config"
+        "One need scales another's decay through an array of three multipliers. NeedsState::GetDecayMultipliers 0x0069C214 starts them at one and, for each need, takes its level and walks that need's modifier list: every entry whose threshold the level is at or under multiplies the listed other need's entry (the compare at 0x0069C270, the multiply and store at 0x0069C2A4). ApplyDecayAllNeeds 0x00695CFE asks for them once and passes the array to NeedsState::ApplyDecay, so the whole pass uses one set.",
+        "The shipped needs_decay_config.json carries ConnectedDecayModifiersEnergy and ConnectedDecayModifiersRepair. Every entry multiplies by one except Repair's at 0.03, which doubles Play: while Repair is at or below 0.03, Play decays twice as fast. That is the only modifier in the shipped data that changes anything.",
+        "Damaged parts follow the Repair level. NumDamagedPartsForRepairLevel 0x0069CCAC walks the broken-part thresholds in order and counts the leading run that is at or above the level, stopping at the first below it (0x0069CCC8). The thresholds are needs_config.json's BrokenPartThreshold0..2 - 0.98, 0.6 and 0.3 - so a full robot has none damaged, below 0.98 one, below 0.6 two and below 0.3 three. RepairRounds is 1. Which part is picked (PickPartToDamage 0x0069CCDE, PickPartToRepair 0x0069CD30) is cosmetic and is not modelled.",
+        "Persistence is per robot and carries a timestamp. NeedsFilenameFromSerialNumber 0x00695224 builds a prefix, an underscore (0x006952FC) and the serial with \".json\" on the end; WriteToDevice 0x00693BB0 writes the levels with system_clock::now() divided by a million, that is whole seconds; and ApplyDecayForTimeSinceLastDeviceWrite 0x00695304 decays for the elapsed time when the file is read back, with InitAfterSerialNumberAcquired, StartReadFromRobot and InitAfterReadFromRobotAttempt ordering the startup. NeedsManager.Save and Load are that, with the path left to the host as the engine leaves it to the app."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "how one need level scales another decay, the damaged-parts bookkeeping, and where the engine persists the state",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "FreeplayTests"
+      "test": "FreeplayTests.TheNeedsDecayModifiersAndDamagedPartsFollowTheConfig",
+      "id": "M15-004"
     },
     {
-      "id": "M15-005",
       "subsystem": "M15-freeplay",
-      "title": "The flat 3 s recent-end cooldown case is not reproduced",
+      "title": "The flat 3 s cooldown for an activity that ended as soon as it started",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs",
-      "effect": "an activity that just ended can restart sooner than the app allows",
-      "provenance": "read in WantsToStart and left out because the second time argument was not identified",
-      "authority": "IActivityStrategy::WantsToStart 0x005B529C",
+      "effect": null,
+      "provenance": "IActivityStrategy::WantsToStart and its call site, read",
+      "authority": "IActivityStrategy::WantsToStart 0x005B529C and ActivityStrictPriority::GetDesiredActiveBehaviorInternal 0x005B2704, read",
       "evidence": [
-        "WantsToStart 0x005B529C"
+        "The two float arguments are the activity's own times, read together at the call site: ldrd r3, r2, [r1, #0x54] at 0x005B26FE gives r3 = +0x54 and r2 = +0x58, and WantsToStart measures the cooldown from the second (0x005B531C adds the cooldown to it) - so +0x58 is the last end time and +0x54 the last start.",
+        "Their difference is the length of the last run: s22 = arg2 - arg3 at 0x005B52EA. The engine asks BaseStationTimer::GetTimeSinceLastTickInSeconds (0x005B52F2), doubles it (0x005B5304), and when the run was positive but no longer than that - two ticks - it uses a flat 3 seconds (vmov.f32 s0, #3.0 at 0x005B5312) in place of the configured cooldown at +0x20.",
+        "The rest of the test is as recorded: no cooldown at all below the 1e-05 epsilon, no wait for an activity that has never ended unless startInCooldown is set (+0x28), and on passing, the cooldown is re-randomised as base (+0x1C) plus RandDbl(randomness at +0x24).",
+        "This stack now records the start time alongside the end time and applies the three seconds."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "what the second time argument is measured from",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "CorrectionTests"
+      "test": "FreeplayTests.StrategiesRespectCooldownsDurationsMoodAndNeeds",
+      "id": "M15-005"
     },
     {
-      "id": "M15-006",
       "subsystem": "M15-freeplay",
       "title": "Activity deselection hook and the null-pick path",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs:23",
-      "effect": "state is cleared at the wrong moment when an activity ends or picks nothing",
-      "provenance": "inferred; IActivity::OnDeselected reads it but the exact hook was not traced",
-      "authority": "ActivityFreeplay::GetDesiredActiveBehaviorInternal 0x005AE2xx and IActivity::OnDeselected",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs",
+      "effect": null,
+      "provenance": "IActivity::OnDeselected, IActivity::GetDesiredActiveBehavior and ActivityFreeplay::GetDesiredActiveBehaviorInternal, read end to end",
+      "authority": "IActivity::OnDeselected 0x005B33B8, IActivity::OnSelected 0x005B312C, IActivity::GetDesiredActiveBehavior 0x005B387C, ActivityFreeplay::GetDesiredActiveBehaviorInternal 0x005AE29C, ActivityFreeplay::PickNewActivityForSpark 0x005ADC44, SelectionBSRunnableChooser::OnDeselected 0x0060AF64, NeedsManager::SparksRewardCommunicatedToUser 0x00696E64, BehaviorEarnedSparks::StopInternal 0x005DAF70, read",
       "evidence": [
-        "ActivityFreeplay::GetDesiredActiveBehaviorInternal"
+        "The deselection hook is IActivity::OnDeselected 0x005B33B8, and it runs in this order: stamp the end time at +0x58 (OnSelected stamps the start at +0x54, 0x005B3142); call the chooser's hook, its vtable +0x24, of which only SelectionBSRunnableChooser::OnDeselected 0x0060AF64 does anything - it disables its selected behaviour's info-analyzer process, the mirror of OnSelected 0x0060AF20; remove the idle animation from the AnimationStreamer (robot+0x60) and the driving animations from the handler (robot+0x24c), each keyed by the activity's debug name and each only if the config named one (+0x44, +0x38 against 0x23f); drop the AIInformationAnalyzer enable request (+0x48); release every SmartDisableReactions lock in the set at +0x5c and destroy the set; SmartRemoveIdleAnimation if the pushed flag at +0x50 is set; clear the current-behaviour shared_ptr at +0x2c; and log robot.freeplay_goal_ended with the duration in whole seconds, a negative one raising \"IActivity.Exit.NegativeDuration\".",
+        "One thing in that list was missing here: if the needs manager still has a freeplay sparks reward pending (+0x3d8), OnDeselected calls NeedsManager::SparksRewardCommunicatedToUser (0x005B3548). That routine 0x00696E64 clears the flag and sends FreeplaySparksAwarded with the amount at +0x3dc. Its other two callers are BehaviorEarnedSparks::StopInternal 0x005DAF70 - which tests the byte and tail-calls it, so the reward is communicated when that behaviour *stops*, not when it starts, as this stack had it - and RegisterNeedsActionCompleted 0x006963C0, which sends a pending reward before creating a new one (\"About to create freeplay sparks reward message but there was a pending one, so sending that one now\").",
+        "The null-pick path is the second half of GetDesiredActiveBehaviorInternal 0x005AE29C. Before asking the activity it decides, in order: a debug-forced activity (+0x91) that is not the current one; the requested activity (+0x90) that is not the current one; a spark change or no current activity at all; then, only when no behaviour is running (0x005AE352) and no sparks reward is pending (0x005AE362), the strategy's WantsToEnd. Then it asks IActivity::GetDesiredActiveBehavior 0x005B387C and decides again on the answer: a null pick logs \"ActivityFreeplay.ChooseNextBehavior.NoBehaviorChosenWhileRunning: Picking new activity because '%s' chose behavior '%s'. This activity is not allowed to be repicked.\" and jumps back to the pick with PickNewActivityForSpark's third argument false (0x005AE75C); a pick that is not the behaviour already running - IBehavior+0xa1, the flag Init sets (0x005BCD06) and Stop clears (0x005BD10C) - logs \"NewBehaviorChosenWhileRunning\" and jumps back with it true (0x005AE702), unless a sparks reward is pending. That third argument is read at 0x005ADCA2: the activity that is still current is only eligible again when it is passed true and its strategy does not want to end.",
+        "So an activity whose chooser yields nothing is dropped at once and barred from the re-pick, and an activity that wants to end survives only while the same behaviour keeps running - the moment its chooser would start a different one, the activity goes instead. This stack kept the activity and only stopped the unrunnable behaviour; the tick's middle is now the engine's loop."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the hook and the null-pick path, instruction by instruction",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "FreeplayTests"
+      "test": "FreeplayTests.AnActivityThatChoosesNoBehaviourIsDroppedAndNotRepicked",
+      "id": "M15-006"
     },
     {
-      "id": "M15-007",
       "subsystem": "M15-freeplay",
-      "title": "boredomMultiplier, feature gates and the pyramid strategy random factor are not applied",
+      "title": "The feature gate, and where boredomMultiplier is actually read",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs",
-      "effect": "activity scores differ from the app",
-      "provenance": "deferred",
-      "authority": "the shipped activity configs carry them",
+      "effect": null,
+      "provenance": "WantsToStart, CozmoFeatureGate and BehaviorPounceOnMotion, read, against the shipped configs",
+      "authority": "IActivityStrategy::WantsToStart 0x005B529C, CozmoFeatureGate::IsFeatureEnabled 0x006A679C and BehaviorPounceOnMotion's constructor 0x005F7F91, read",
       "evidence": [
-        "activities/**"
+        "The feature gate is the first thing WantsToStart tests: the flag at strategy+0x38 and then CozmoFeatureGate::IsFeatureEnabled(featureType), refusing outright when it says no (0x005B52A8..0x005B52BC). IsFeatureEnabled 0x006A679C turns the enum into its name, lowercases it and looks it up; the list comes from config/features.json, the path at 0x00BE8449. The shipped file has seventeen entries, with Invalid, SparksGatherCubes and Bouncer off and the rest on, and the only two activities that name a gate - singing.json and sparksCozmoSings.json - name Singing, which is on. This stack now parses featureGate and consults FeatureGates.",
+        "boredomMultiplier is not a scoring field at all. The string appears once in the whole binary, inside BehaviorPounceOnMotion's constructor (0x005F8384, among that class's own keys maxNoGroundMotionBeforeBored_* and maxTimeBehaviorTimeout_Sec), so the only reader is that behaviour, reading its own config. The one place the shipped data sets it is hiking.json's scoring block for Hiking_PounceOnMotion, which is an activity's scoring entry and never reaches the behaviour's config - neither pounceOnMotion config carries the key. So the value is dead data, and recording it without applying it is correct.",
+        "The pyramid strategy's 300 s cooldown (0x43960000) is already recorded; there is no separate random factor in it beyond the RandDbl(randomness) every strategy gets when its cooldown passes, which this stack applies in RandomizeCooldown."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "how the engine applies each",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "FreeplayTests.AnActivityWhoseFeatureIsOffDoesNotStart",
+      "id": "M15-007"
     },
     {
-      "id": "M15-008",
       "subsystem": "M15-freeplay",
       "title": "The needsActionID hook and desired-from-objects ordering",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs:139",
-      "effect": "a different behaviour is picked when several objects are desirable",
-      "provenance": "inferred ordering",
-      "authority": "the engine activity strategy",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the ordering rule and what needsActionID does",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs",
+      "effect": null,
+      "provenance": "CalculateDesiredActivityFromObjects, IBehavior::NeedActionCompleted, the two ExtractNeedsActionIDFromConfig routines and every call site, read",
+      "authority": "ActivityFreeplay::CalculateDesiredActivityFromObjects 0x005ADF4C, IBehavior::NeedActionCompleted 0x005BE40C, IBehavior::IBehavior 0x005BBCAA, IBehavior::ExtractNeedsActionIDFromConfig 0x005BBAE8, IActivity::ReadConfig 0x005B2A9C, IActivity::ExtractNeedsActionIDFromConfig 0x005B3094, the sixteen NeedActionCompleted call sites and ActivityGatherCubes::Update 0x005AF2F0, read",
+      "evidence": [
+        "The desired activity from what is around is a plain four-way switch. CalculateDesiredActivityFromObjects 0x005ADF4C takes the two booleans and reads the name at +0x68 for face and cube, +0x69 for a face alone, +0x6A for a cube alone and +0x6B for neither, storing the pick at +0x90. That is the order DesiredActivityNames carries here - faceAndCube, faceOnly, cubeOnly, noFaceNoCube - and DesiredActivityFromObjects already matched it.",
+        "The needs-action hook belongs to the behaviour, not the activity. IBehavior::NeedActionCompleted 0x005BE40C is four instructions: when the caller passes Invalid the behaviour's own id at +0x68 is used (the cbnz at 0x005BE40C), and the result goes to NeedsManager::RegisterNeedsActionCompleted through the robot. IBehavior's constructor fills +0x68 at 0x005BBCAA from ExtractNeedsActionIDFromConfig 0x005BBAE8, which reads the config's needsActionID string and converts it; twenty-two shipped behaviour configs carry the key.",
+        "Sixteen behaviours call it. Ten pass Invalid and so report their own configured action - KnockOverCubes at TransitionToPlayingReaction but only when the stack came apart (the flag at +0x14c gates the objective and the report together, 0x005C3950), PopAWheelie on the docking success beside objective PoppedWheelie (0x005C7E14), RollBlock::TransitionToRollSuccess, StackBlocks::TransitionToPlayingFinalAnim, CubeLiftWorkout::EndIteration, BuildPyramid::TransitionToReactingToPyramid, FistBump::UpdateInternal, PeekABoo::TransitionExit, TrackLaser::StopInternal and the singing behaviour's last step, which falls back to CozmoSings when its config has none (0x005EF7CA). Six name one outright: PickupCube 0x1F from BehaviorExploreBringCubeToBeacon::TransitionToObjectPickedUp, StackCube 0x2A from the explorer's stacking callback (0x005E14B6), GuardDogLose/Win/NoInteraction 0x15/0x16/0x17 from BehaviorGuardDog::RecordResult, PlacedOnSide 0x2F and BoredOnSide 0x30 from BehaviorReactToRobotOnSide, and DizzyMedium/DizzySoft 0x0F/0x10 from BehaviorReactToRobotShaken. One activity reports directly to the manager: ActivityGatherCubes::Update passes GatherCubes 0x14 when every cube is in a beacon (0x005AF2F0). The enum names come from the EnumToString table at 0x01033D40, 0x57 entries.",
+        "An activity's own needsActionID is dead data. IActivity::ReadConfig stores it at IActivity+0x1C (0x005B2A9C) and nothing loads that word again: no IActivity or Activity* method reads +0x1C on the activity, and the one activity that reports an action names it itself. So the three shipped activity-level ids - PyramidCompleted, PyramidCompleted_Sparked, CozmoSingsCompleted_Sparked - are never reported, and neither is the pyramid behaviour's, since no pyramid behaviour config carries the key. This stack reported the activity's id when the activity ended; that call is gone, and the behaviours report their own through BehaviorNeedsActions."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "FreeplayTests.NeedsActionsAreReportedByTheBehavioursAndNotByTheActivity",
+      "id": "M15-008"
     },
     {
-      "id": "M15-009",
       "subsystem": "M15-freeplay",
       "title": "Emotion event names fired when a cube is placed in a beacon",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs:825",
-      "effect": "mood does not move where the app moves it",
-      "provenance": "deferred: the names were not read",
-      "authority": "FireEmotionEvents call sites in libcozmoEngine.so and mood_config.json",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the event names",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
+      "effect": null,
+      "provenance": "BehaviorExploreBringCubeToBeacon::FireEmotionEvents, read",
+      "authority": "BehaviorExploreBringCubeToBeacon::FireEmotionEvents 0x005E002C, read",
+      "evidence": [
+        "FireEmotionEvents 0x005E002C asks AIWhiteboard::AreAllCubesInBeacons (0x005E0038) and fires one of two names on the mood manager at Robot+0x440 with MoodManager::GetCurrentTimeInSeconds: \"HikingBroughtLastCubeToBeacon\" when every cube is in a beacon (the 29-character string at 0x005E00CC, built at 0x005E0046) and \"HikingBroughtCubeToBeacon\" otherwise (25 characters at 0x005E00B0, built at 0x005E0068).",
+        "The behaviour logged the placement with the names deferred; it now fires them, as the constants BringCubeToBeaconBehavior.CubeEmotionEvent and LastCubeEmotionEvent."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "NavigationTests.ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside",
+      "id": "M15-009"
     },
     {
-      "id": "M15-010",
       "subsystem": "M15-freeplay",
-      "title": "A block whose location is no longer valid goes straight to the upset reaction",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeReactions.cs:259",
-      "effect": "the robot reacts where the app might search first",
-      "provenance": "inferred: the engine log string was found, the branch after it was not read",
-      "authority": "the engine behaviour that logs the location is no longer valid",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "what the engine does after that log line",
+      "title": "A block whose location is no longer valid ends the behaviour, with no reaction",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeReactions.cs",
+      "effect": null,
+      "provenance": "BehaviorAcknowledgeCubeMoved::TransitionToTurningToLastLocationOfBlock, read",
+      "authority": "BehaviorAcknowledgeCubeMoved::TransitionToTurningToLastLocationOfBlock 0x00602270, read",
+      "evidence": [
+        "The transition looks the object up with BlockWorld::GetLocatedObjectByIdHelper (0x006022B4). With an object it builds the TurnTowardsPoseAction and the 0.5 s WaitAction into a CompoundActionParallel and starts acting (0x006022E8..0x00602328).",
+        "Without one it warns BehaviorAcknowledgeCubeMoved.TransitionToTurningToLastLocationOfBlock.NullObject with \"The robot's context has changed and the block's location is no longer valid. (ObjectID=%d)\" (0x00602336..0x0060234A) and returns at 0x00602370. Nothing is started and no state is set, so the behaviour is left with no action and ends.",
+        "This stack went to the absence reaction and played CubeMovedUpset there, which was marked INFERRED; it now ends the behaviour."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "BehaviorTests",
+      "id": "M15-010"
     },
     {
-      "id": "M15-011",
       "subsystem": "M15-freeplay",
       "title": "The beacon is centred on the robot",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs:793",
-      "effect": "cubes are gathered to the wrong place",
-      "provenance": "inferred; the engine selection logic was not read further",
-      "authority": "the engine beacon selection",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "how the engine chooses the beacon centre",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
+      "effect": null,
+      "provenance": "BehaviorThinkAboutBeacons::SelectNewBeacon, read",
+      "authority": "BehaviorThinkAboutBeacons::SelectNewBeacon 0x005E5F0C and AIWhiteboard::AddBeacon 0x0056C39C, read",
+      "evidence": [
+        "SelectNewBeacon 0x005E5F0C is four calls: it takes the AIWhiteboard from the AI component at Robot+0x264, asks the robot for its pose (0x005E5F1A, which reads Robot+0x298), copies that pose into a local (0x005E5F24), and calls AIWhiteboard::AddBeacon(pose, radius) with the float the behaviour keeps at +0x128 from its config (0x005E5F28).",
+        "So the centre is the robot's pose at the moment the beacon is placed and the radius is the configured one - which is what this stack does. AddBeacon 0x0056C39C is the only caller of the whiteboard's beacon list, so no other centre is ever chosen."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "NavigationTests.ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside",
+      "id": "M15-011"
     },
     {
-      "id": "M15-012",
       "subsystem": "M15-freeplay",
-      "title": "Images waited for after a put-down, and the CantHandleTallStack trigger name",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs:636",
-      "effect": "a stack check runs on too few frames, or the wrong animation plays",
-      "provenance": "inferred from acknowledgeObject.json and from the trigger name",
-      "authority": "the engine behaviour classes",
+      "title": "Images waited for after a put-down, and the CantHandleTallStack trigger",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ManipulationBehaviors.cs",
+      "effect": null,
+      "provenance": "BehaviorPutDownBlock::CreateLookAfterPlaceAction and BehaviorCantHandleTallStack::TransitionToDisapointment, read",
+      "authority": "BehaviorPutDownBlock::CreateLookAfterPlaceAction 0x005C8174 and BehaviorCantHandleTallStack::TransitionToDisapointment 0x005ED0F0, read",
       "evidence": [
-        "acknowledgeObject.json"
+        "CreateLookAfterPlaceAction 0x005C8174 builds the sequence: a parallel pair of MoveHeadToAngleAction(-0.349066 rad, tolerance 0.0349066) and DriveStraightAction, then WaitForImagesAction(robot, 2, VisionMode 1, ...) - the movs r2, #2 at 0x005C8242 - then TriggerAnimationAction with trigger 0x199, PutDownBlockKeepAlive (0x005C828E). So the image count is two, which is what this stack had stood in from acknowledgeObject.json.",
+        "TransitionToDisapointment 0x005ED0F0 plays TriggerAnimationAction with trigger 0x1B (0x005ED14A..0x005ED14E), and 0x1B is CantHandleTallStack's place in the AnimationTrigger enum - the same enum whose 0x18 is BuildPyramidThankUser, already confirmed elsewhere. The guess by name was right.",
+        "TransitionToLookingUpAndDown 0x005ECEA4 is confirmed too: WaitAction(+0x138), MoveHeadToAngleAction(-0.436332, tol 0.0349066), WaitAction(+0x13C), MoveHeadToAngleAction(0.785398), WaitAction(+0x140) in a sequential compound, with the three waits coming from the config's lookingInitialWait_s, lookingDownWait_s and lookingUpWait_s, all 1 s in cantHandleTallStack.json."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the engine image count and trigger",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "CorrectionTests"
+      "test": "ManipulationTests.PutDownBlockBacksUpPlaysThePutDownAndLooksDown",
+      "id": "M15-012"
     },
     {
       "id": "TOOL-001",

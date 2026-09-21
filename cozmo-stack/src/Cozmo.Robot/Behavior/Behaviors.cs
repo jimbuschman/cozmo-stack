@@ -6,8 +6,20 @@ namespace Cozmo.Robot.Behavior;
 /// A behaviour that plays one animation, chosen from the shipped trigger map.
 ///
 /// This is the reconstruction of the engine's config-driven <c>PlayAnim</c> class
-/// (<c>BehaviorPlayAnimSequence</c>), which names its animation in an <c>animTriggers</c> field rather than
-/// in code. Where a config lists more than one trigger the first that resolves is used. It is <b>not</b> the
+/// (<c>BehaviorPlayAnimSequence</c>), which names its animations in an <c>animTriggers</c> field rather
+/// than in code.
+///
+/// Every trigger in that list is played, in order, and the list is played <c>num_loops</c> times - the
+/// engine reads that key with a default of 1 (<c>Json::Value::Value(1)</c> then <c>get("num_loops", ...)</c>
+/// at 0x005C001C..0x005C0036). <c>StartPlayingAnimations</c> 0x005C0158 special-cases a list of exactly
+/// one trigger - <c>cmp r1, #4</c> on the vector's byte length - and plays it as a single
+/// <c>TriggerLiftSafeAnimationAction</c>; anything else goes to <c>StartSequenceLoop</c> 0x005C0294, which
+/// builds a <c>CompoundActionSequential</c> with one such action per trigger and runs the whole sequence
+/// again until the loop counter reaches <c>num_loops</c>. Only one shipped config lists more than one
+/// trigger (NothingToDo_BoredAnim, three), and none sets num_loops. This stack used to play the first
+/// trigger that resolved and stop there.
+///
+/// It is <b>not</b> the
 /// <c>PlayAnimWithFace</c> class: <c>BehaviorPlayAnimSequenceWithFace::InitInternal</c> (0x005C0648) runs a
 /// <c>TurnTowardsFaceAction</c> (0x005C0686) before the animation, so that class needs a tracked face and is
 /// left to the vision milestone. An earlier version of this comment claimed both; M10 read the binary.
@@ -46,11 +58,25 @@ public sealed class PlayAnimBehavior : IBehavior
                 }
                 if (parsed.Count == 0) { problems?.Add($"{id}: no usable animTriggers"); continue; }
                 string? strategy = null;
-                if (root.TryGetProperty("wantsToRunStrategyConfig", out var wtr) && wtr.TryGetProperty("strategyType", out var st)) strategy = st.GetString();
+                NeedId? strategyNeed = null;
+                NeedBracketId? strategyBracket = null;
+                if (root.TryGetProperty("wantsToRunStrategyConfig", out var wtr))
+                {
+                    if (wtr.TryGetProperty("strategyType", out var st)) strategy = st.GetString();
+                    if (wtr.TryGetProperty("need", out var nd) && Enum.TryParse<NeedId>(nd.GetString(), true, out var parsedNeed))
+                        strategyNeed = parsedNeed;
+                    if (wtr.TryGetProperty("needBracket", out var nb) && Enum.TryParse<NeedBracketId>(nb.GetString(), true, out var parsedBracket))
+                        strategyBracket = parsedBracket;
+                }
                 double? Sec(string key) => root.TryGetProperty(key, out var v) && v.ValueKind == System.Text.Json.JsonValueKind.Number ? v.GetDouble() : null;
+                int loops = root.TryGetProperty("num_loops", out var nl) && nl.ValueKind == System.Text.Json.JsonValueKind.Number
+                    ? nl.GetInt32() : 1;
                 list.Add(new PlayAnimBehavior(id, "PlayAnim", parsed)
                 {
+                    NumLoops = loops,
                     WantsToRunStrategy = strategy,
+                    StrategyNeed = strategyNeed,
+                    StrategyBracket = strategyBracket,
                     RequiredRecentDriveOffChargerSec = Sec("requiredRecentDriveOffCharger_sec"),
                     RequiredRecentOnTreadsEventSec = Sec("requiredRecentOnTreadsEventSecs"),
                     RequiredRecentSwitchToParentSec = Sec("requiredRecentSwitchToParent_sec"),
@@ -68,6 +94,13 @@ public sealed class PlayAnimBehavior : IBehavior
     private bool _owns;
     private volatile bool _finished;
 
+    /// <param name="score">
+    /// LOCAL_POLICY. The engine has no default score: a behaviour whose config carries no scoring keeps
+    /// the zero <c>IBehavior::IBehavior</c> writes at 0x005BBD28, and a scoring chooser therefore never
+    /// picks it - the app's scored behaviours all carry a flatScore in their activity config. This stack's
+    /// simple manager ranks behaviours directly, so one built in code needs a number; 1 is the plain
+    /// behaviour's and 5 the reaction's, which keeps a reaction ahead of ordinary play.
+    /// </param>
     public PlayAnimBehavior(string id, string behaviorClass, IEnumerable<AnimationTrigger> triggers,
                             double score = 1.0)
     {
@@ -88,12 +121,36 @@ public sealed class PlayAnimBehavior : IBehavior
 
     /// <summary>
     /// The config's <c>wantsToRunStrategyConfig.strategyType</c> (<c>IBehavior::ReadFromJson</c> →
-    /// <c>WantsToRunStrategyFactory::CreateWantsToRunStrategy</c>; <c>IsRunnableBase</c> 0x005BD778 asks it
-    /// <c>WantsToRun</c>). The factory's types: AlwaysRun, ExpressNeedsTransition, Generic, InNeedsBracket,
-    /// ObstacleDetected, PlacedOnCharger, RobotShaken, RobotPlacedOnSlope. Only ObstacleDetected occurs on a shipped
-    /// PlayAnim (reactToObstacle.json); null means the default AlwaysRun.
+    /// <c>WantsToRunStrategyFactory::CreateWantsToRunStrategy</c> 0x00614710; <c>IsRunnableBase</c>
+    /// 0x005BD778 asks it <c>WantsToRun</c>).
+    ///
+    /// The factory dispatches on <c>WantsToRunStrategyType</c>, whose nine names are the table
+    /// <c>EnumToString</c> 0x007716A4 indexes at 0x01033820: Invalid, AlwaysRun, ExpressNeedsTransition,
+    /// Generic, InNeedsBracket, ObstacleDetected, PlacedOnCharger, RobotPlacedOnSlope, RobotShaken. Of
+    /// those, the two that read the needs are settled here:
+    ///
+    /// <list type="bullet">
+    /// <item><c>StrategyInNeedsBracket::WantsToRunInternal</c> 0x006141A0 is one call -
+    /// <c>NeedsState::IsNeedAtBracket(need, bracket)</c> on the current needs state, with the pair read
+    /// from the config's <c>need</c> and <c>needBracket</c>.</item>
+    /// <item><c>StrategyExpressNeedsTransition::WantsToRunInternal</c> 0x006136D8 asks
+    /// <c>IsNeedAtBracket(need, Critical)</c> - the literal 3 at 0x006136EC - and then compares the need
+    /// against the one the AI component is already expressing (0x006136FC), so it wants to run only while
+    /// its need is critical and is not the one already being expressed.</item>
+    /// </list>
+    ///
+    /// Of the shipped configs only <c>reactToObstacle.json</c> gives a <i>behaviour</i> a strategy, and it
+    /// is ObstacleDetected. The needs strategies appear on activities, which have their own
+    /// <see cref="ActivityStrategy"/>, and PlacedOnCharger, RobotPlacedOnSlope and RobotShaken appear in
+    /// the reaction trigger map, which the reaction system handles. Null means the default AlwaysRun.
     /// </summary>
     public string? WantsToRunStrategy { get; init; }
+
+    /// <summary>The <c>need</c> the strategy names, for InNeedsBracket and ExpressNeedsTransition.</summary>
+    public NeedId? StrategyNeed { get; init; }
+
+    /// <summary>The <c>needBracket</c> InNeedsBracket wants that need to be in.</summary>
+    public NeedBracketId? StrategyBracket { get; init; }
 
     /// <summary>
     /// <c>IBehavior::IsRunnableBase</c>'s recent-event windows (0x005BD81A..0x005BD862 and 0x005BD8AC..: the config value
@@ -107,6 +164,9 @@ public sealed class PlayAnimBehavior : IBehavior
 
     public bool IsRunnable(BehaviorContext context) =>
         context.Robot.Animations.Library is not null && _triggers.Count > 0 && WantsToRun(context) && RecentEventsAllow(context);
+
+    /// <summary>What the behaviour's wants-to-run strategy says right now, on its own.</summary>
+    public bool WantsToRunNow(BehaviorContext context) => WantsToRun(context);
 
     private bool RecentEventsAllow(BehaviorContext ctx)
     {
@@ -123,10 +183,24 @@ public sealed class PlayAnimBehavior : IBehavior
     {
         null or "AlwaysRun" => true,
         "ObstacleDetected" => context.ObstacleDetected?.Invoke() ?? false,
-        _ => false,   // a strategy this stack does not model: not runnable rather than always (labelled DEFERRED)
+        "InNeedsBracket" => context.Needs is { } needs && StrategyNeed is { } need && StrategyBracket is { } bracket
+                            && needs.State.IsNeedAtBracket(need, bracket),
+        "ExpressNeedsTransition" => context.Needs is { } n && StrategyNeed is { } severe
+                                    && n.State.IsNeedAtBracket(severe, NeedBracketId.Critical)
+                                    && !n.IsSevereExpressed(severe),
+        // Generic, PlacedOnCharger, RobotPlacedOnSlope and RobotShaken reach a behaviour only through the
+        // reaction map, which dispatches them itself; a behaviour config that named one here would be
+        // outside anything shipped, so it does not run rather than always running.
+        _ => false,
     };
 
     public double EvaluateScore(BehaviorContext context) => Score;
+
+    /// <summary>How many times the whole list is played: the config's <c>num_loops</c>, default 1.</summary>
+    public int NumLoops { get; init; } = 1;
+
+    /// <summary>The triggers this behaviour plays, in the order the config lists them.</summary>
+    public IReadOnlyList<AnimationTrigger> Triggers => _triggers;
 
     public Task StartAsync(BehaviorContext context, BehaviorScope scope, CancellationToken cancel)
     {
@@ -135,34 +209,54 @@ public sealed class PlayAnimBehavior : IBehavior
         var lib = context.Robot.Animations.Library;
         if (lib is null) { _finished = true; return Task.CompletedTask; }
 
+        // Every trigger that resolves, in the config's order. A trigger the library cannot satisfy is
+        // skipped rather than ending the sequence: the engine's action for it would fail and the compound
+        // action would carry on.
+        var clips = new List<string>();
         foreach (var trigger in _triggers)
         {
             var resolved = context.Triggers.Resolve(trigger, lib, context.Random);
-            if (!resolved.Resolved) continue;
-
-            var clip = lib.GetClip(resolved.Selected!);
-            scope.LockTracks(clip.Tracks);
-            LastSelected = resolved.Selected;
-            var ticket = context.Robot.Animations.PlayTracked(resolved.Selected!);
-            if (ticket is null) { _finished = true; return Task.CompletedTask; }
-            lock (_gate)
-            {
-                _animations = context.Robot.Animations;
-                _generation = ticket.Generation;
-                _owns = true;
-            }
-            ticket.Completion.ContinueWith(_ =>
-            {
-                lock (_gate) _owns = false;
-                _finished = true;
-            }, TaskScheduler.Default);
+            if (resolved.Resolved) clips.Add(resolved.Selected!);
+        }
+        if (clips.Count == 0)
+        {
+            // Nothing resolved. Finishing immediately is the honest outcome; it is not an error and it is
+            // not a reason to play something else.
+            _finished = true;
             return Task.CompletedTask;
         }
 
-        // Nothing resolved. Finishing immediately is the honest outcome; it is not an error and it is
-        // not a reason to play something else.
-        _finished = true;
+        foreach (var name in clips) scope.LockTracks(lib.GetClip(name).Tracks);
+        _ = PlaySequence(context, clips, cancel);
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// The sequence <c>StartSequenceLoop</c> runs: each clip in turn, the whole list <c>num_loops</c>
+    /// times, stopping as soon as the behaviour is stopped or an animation will not start.
+    /// </summary>
+    private async Task PlaySequence(BehaviorContext context, List<string> clips, CancellationToken cancel)
+    {
+        try
+        {
+            for (int loop = 0; loop < Math.Max(1, NumLoops); loop++)
+                foreach (var name in clips)
+                {
+                    if (_finished || cancel.IsCancellationRequested) return;
+                    var ticket = context.Robot.Animations.PlayTracked(name);
+                    if (ticket is null) return;
+                    LastSelected = name;
+                    lock (_gate)
+                    {
+                        _animations = context.Robot.Animations;
+                        _generation = ticket.Generation;
+                        _owns = true;
+                    }
+                    await ticket.Completion.ConfigureAwait(false);
+                    lock (_gate) _owns = false;
+                }
+        }
+        finally { _finished = true; }
     }
 
     public bool Update(BehaviorContext context, double nowMs) => !_finished;
@@ -278,6 +372,9 @@ public sealed class ReactBehavior : IBehavior
     private bool _owns;
     private volatile bool _finished = true;
 
+    /// <param name="score">LOCAL_POLICY, as <see cref="PlayAnimBehavior"/>'s is: 5 keeps a reaction ahead
+    /// of ordinary play in this stack's manager. The engine dispatches a reaction by its trigger and never
+    /// scores it.</param>
     public ReactBehavior(string id, string behaviorClass, ReactionTrigger trigger,
                          Func<CozmoRobot, bool> condition, ReactionTable? table = null, double score = 5.0)
     {
@@ -570,7 +667,8 @@ public static class ShippedBehaviors
             // fires, which is the OKAO boundary doing its job rather than the wiring being absent.
             var ackFace = new AcknowledgeFaceBehavior(vision);
             list.Add(new(new FacePositionUpdatedStrategy(vision.Faces, ackFace), ackFace, ResumeLast: false));
-            list.Add(new(new PetInitialDetectionStrategy(vision.Pets), new ReactToPetBehavior(vision), ResumeLast: false));
+            var reactToPet = new ReactToPetBehavior(vision);
+            list.Add(new(new PetInitialDetectionStrategy(vision.Pets, reactToPet, clockSec ?? (() => 0)), reactToPet, ResumeLast: false));
         }
         return list;
     }

@@ -117,6 +117,9 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
         KnockedOver = _upAxisChanged || still is null || still.StackHeight < TargetStack!.StackHeight;
         Log(KnockedOver.Value ? "the stack came apart" : "the stack is still standing");
         var trigger = KnockedOver.Value ? SuccessTrigger : FailureTrigger;
+        // the flag at +0x14c gates both the objective and the needs action (0x005C3950): a stack still
+        // standing reports neither
+        if (KnockedOver.Value && NeedActionCompleted() is { } action) Log($"needs action {action}");
         PlayTrigger(trigger, () =>
         {
             if (KnockedOver.Value) Log("objective achieved: KnockedOverBlocks");
@@ -180,7 +183,15 @@ public sealed class PopAWheelieBehavior : ManipulationBehavior
             return r;
         }, r =>
         {
-            if (r == ActionResult.Success) { Succeeded = true; Log("objective achieved: PoppedWheelie"); Finish(); return; }
+            if (r == ActionResult.Success)
+            {
+                Succeeded = true;
+                Log("objective achieved: PoppedWheelie");
+                // 0x005C7E14, right after the objective
+                if (NeedActionCompleted() is { } action) Log($"needs action {action}");
+                Finish();
+                return;
+            }
             if (r is ActionResult.BadObject or ActionResult.CancelledWhileRunning || Retries >= MaxRetries) { Log($"giving up: {r}"); Finish(); return; }
             Retries++;
             Log($"Retry {Retries} of {MaxRetries}");
@@ -347,6 +358,8 @@ public sealed class CubeLiftWorkoutBehavior : ManipulationBehavior
         PlayTrigger(Workout!.PostLift, () =>
         {
             M.Workouts!.CompleteCurrentWorkout();
+            // EndIteration reports the behaviour's own action here (0x005D8A18): Workout, or Workout_Sparked
+            if (NeedActionCompleted() is { } action) Log($"needs action {action}");
             double nowSec = Clock() / 1000.0;
             bool known = Context.Mood?.Trigger(Workout.EmotionEventOnComplete, nowSec) ?? false;
             Log($"emotion event {Workout.EmotionEventOnComplete}: {(Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model")}");
@@ -512,6 +525,10 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
     {
         CurrentPhase = Phase.ReactingToPyramid;
         Log("objective achieved: BuiltPyramid");
+        // 0x005DBFDA calls the hook with Invalid, and no pyramid behaviour config carries a needsActionID,
+        // so nothing is reported - the activity's "PyramidCompleted" is read into IActivity+0x1C and never
+        // looked at again.
+        if (NeedActionCompleted() is { } action) Log($"needs action {action}");
         PlayTrigger(AnimationTrigger.BuildPyramidSuccess, () => { CurrentPhase = Phase.Idle; Finish(); });
     }
 }
@@ -633,8 +650,10 @@ public sealed class OnConfigSeenBehavior : ManipulationBehavior
 /// block's pose is known (the unlock check is the app's). <c>InitInternal</c> records the stack pose;
 /// <c>TransitionToLookingUpAndDown</c>: <c>WaitAction(initial)</c>, <c>MoveHeadToAngleAction(−25° (−0.436332), tol 2°)</c>,
 /// <c>WaitAction(down)</c>, <c>MoveHeadToAngleAction(+45° (0.785398))</c>, <c>WaitAction(up)</c>; then
-/// <c>TransitionToDisapointment</c> plays <see cref="AnimationTrigger.CantHandleTallStack"/> (INFERRED by name;
-/// the id was not read). <c>AlwaysHandle</c>: an <c>ObjectMoved</c> of a stack block past the threshold ends it.
+/// <c>TransitionToDisapointment</c> 0x005ED0F0 plays
+/// <see cref="AnimationTrigger.CantHandleTallStack"/>: the <c>TriggerAnimationAction</c> at 0x005ED14E
+/// carries trigger 0x1B, which is that name's place in the enum, so the guess by name was right.
+/// <c>AlwaysHandle</c>: an <c>ObjectMoved</c> of a stack block past the threshold ends it.
 /// </summary>
 public sealed class CantHandleTallStackBehavior : ManipulationBehavior
 {
@@ -789,7 +808,10 @@ public sealed class ReactToConfigurationBehavior : ManipulationBehavior
 /// <summary>
 /// <c>BehaviorThinkAboutBeacons</c> (config: <c>newAreaAnimTrigger</c> HikingReactToNewArea, <c>beaconRadius_mm</c>
 /// 175 hiking / 75 sparks): runnable when the whiteboard has no active beacon; <c>SelectNewBeacon</c> adds one
-/// at the robot's pose with the configured radius (<c>AIWhiteboard::AddBeacon</c>) and the new-area animation
+/// at the robot's pose with the configured radius - <c>BehaviorThinkAboutBeacons::SelectNewBeacon</c>
+/// 0x005E5F0C takes the robot's pose, copies it, and calls
+/// <c>AIWhiteboard::AddBeacon(pose, radius)</c> with the float at behaviour+0x128 (0x005E5F28), so the
+/// centre is wherever the robot stood - and the new-area animation
 /// plays. INFERRED: the beacon is centred on the robot (the engine's selection logic was not read further).
 /// </summary>
 public sealed class ThinkAboutBeaconsBehavior : ManipulationBehavior
@@ -845,6 +867,16 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
             .OrderBy(o => robot is null ? 0 : (o.Pose.Translation - robot.Value.Translation).Length).FirstOrDefault();
     }
 
+    /// <summary>
+    /// The emotion event a placed cube fires when others are still out:
+    /// <c>BehaviorExploreBringCubeToBeacon::FireEmotionEvents</c> 0x005E002C takes this branch when
+    /// <c>AIWhiteboard::AreAllCubesInBeacons</c> says no (0x005E0068).
+    /// </summary>
+    public const string CubeEmotionEvent = "HikingBroughtCubeToBeacon";
+
+    /// <summary>And the one it fires when that was the last cube (0x005E0046).</summary>
+    public const string LastCubeEmotionEvent = "HikingBroughtLastCubeToBeacon";
+
     protected override bool IsRunnableInternal(BehaviorContext context) => M.Whiteboard.GetActiveBeacon() is not null && !M.Docking.Carrying.IsCarryingObject && GetCandidate() is not null;
 
     protected override void OnStart()
@@ -865,6 +897,8 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
 
     private void TransitionToObjectPickedUp()
     {
+        // 0x005DF5A0 names the action outright: PickupCube (0x1F), whatever the config says
+        if (NeedActionCompleted("PickupCube") is { } action) Log($"needs action {action}");
         var beacon = M.Whiteboard.GetActiveBeacon();
         if (beacon is null) { Finish(); return; }
         var stackOn = M.Whiteboard.FindCubesInBeacon(beacon)
@@ -923,7 +957,15 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
             return await new PlaceObjectOnGroundAction(M).RunAsync(ct);
         }, r =>
         {
-            if (r == ActionResult.Success) { PlacedAt = target; Log("placed in the beacon (FireEmotionEvents: names DEFERRED)"); }
+            if (r == ActionResult.Success)
+            {
+                PlacedAt = target;
+                // FireEmotionEvents 0x005E002C: one name or the other, on the mood manager at Robot+0x440.
+                string ev = M.Whiteboard.AreAllCubesInBeacons() ? LastCubeEmotionEvent : CubeEmotionEvent;
+                bool known = Context.Mood?.Trigger(ev, Clock() / 1000.0) ?? false;
+                Log($"placed in the beacon; emotion event {ev}: " +
+                    (Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model"));
+            }
             else if (Candidate is { } c) { M.Whiteboard.SetFailedToUse(c, ObjectActionFailure.PlaceObjectAt); Log($"placing failed: {r}"); }
             CurrentPhase = Phase.Idle; Finish();
         });

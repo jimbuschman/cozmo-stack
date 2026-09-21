@@ -36,6 +36,44 @@ public sealed class TurnTowardsPoseAction
     }
 }
 
+/// <summary>
+/// The engine's <c>TurnTowardsImagePointAction</c> 0x0054B59C: a <c>PanAndTiltAction</c> whose two angles
+/// come from the pixel itself, with no distance anywhere in it.
+///
+/// <c>Robot::ComputeTurnTowardsImagePointAngles</c> 0x0051879C subtracts the calibration's centre from the
+/// point (the two-float loop at 0x005187CC), takes the historical state at the image's timestamp, and then
+/// computes <c>atan2(-(u - cx), fx)</c> for the body and <c>atan2(-(v - cy), fy)</c> for the head
+/// (0x0051886C and 0x0051888E, the focal lengths read from the calibration at +4 and +8). The head angle
+/// is added to the head angle in that historical state and the body angle to its heading, so both come out
+/// absolute; <c>Init</c> 0x0054B664 writes them into the PanAndTilt fields at +0x114 and +0x11C and runs
+/// the pan and tilt. When the history cannot answer, the action warns
+/// "TurnTowardsImagePointAction.Init.ComputeTurnTowardsImagePointAnglesFailed" and does not turn.
+/// </summary>
+public static class TurnTowardsImagePoint
+{
+    /// <summary>
+    /// The absolute body and head angles for a point in the image, given the calibration and the robot
+    /// state the image was taken in.
+    /// </summary>
+    public static (double BodyRad, double HeadRad) Angles(CameraCalibration cal, double u, double v,
+                                                          double headingRad, double headAngleRad)
+    {
+        double du = u - cal.CenterX, dv = v - cal.CenterY;
+        return (headingRad + Math.Atan2(-du, cal.FocalLengthX),
+                headAngleRad + Math.Atan2(-dv, cal.FocalLengthY));
+    }
+
+    /// <summary>Turns to those angles, the way the action's PanAndTilt does.</summary>
+    public static async Task<bool> RunAsync(VisionSystem v, double u, double v_, CancellationToken cancel)
+    {
+        if (v.Calibration is not { } cal) return false;
+        if (v.History.Latest is not { } state) return false;
+        var (body, head) = Angles(cal, u, v_, state.RobotPose.AngleAroundZ, state.HeadAngleRad);
+        head = Math.Clamp(head, HeadGeometry.MinHeadAngleRad, HeadGeometry.MaxHeadAngleRad);
+        return await PanAndTilt.RunAsync(v, body, head, TurnTowardsPose.MaxSpeedRadPerSec, cancel);
+    }
+}
+
 /// <summary>The body-and-head turn the face actions use, replaceable through <see cref="VisionSystem.TurnOverride"/> for tests.</summary>
 public static class FaceTurns
 {
@@ -74,7 +112,14 @@ public sealed class TurnTowardsFaceAction : IDisposable
     public void Dispose() => FaceId.Dispose();
 
     public const double FineTuneMaxTurnRad = 0.785398;
-    public const int FramesToWaitForFace = 5;
+    /// <summary>
+    /// How many frames the action will wait for the face to be seen: 10.
+    /// <c>TurnTowardsFaceAction</c>'s constructor writes it at +0x188 (<c>movs r1, #0xa</c> at 0x0054B798),
+    /// and <c>IVisuallyVerifyAction</c>'s writes the same 10 at +0x8C (0x0054B79E's counterpart at
+    /// 0x0056873E), which <c>VisuallyVerifyFaceAction</c> 0x00568EB8 does not override - it passes only
+    /// its vision mode and lift preset. This stack used 5, which was a guess.
+    /// </summary>
+    public const int FramesToWaitForFace = 10;
     private readonly VisionSystem _v;
 
     public TurnTowardsFaceAction(VisionSystem v, int faceId, double maxTurnAngleRad = Math.PI, bool sayName = false)
@@ -158,13 +203,72 @@ public sealed class TurnTowardsFaceAction : IDisposable
 public sealed class TrackFaceAction : IDisposable
 {
     public const double NeckHeightMm = 49.0;
+
+    /// <summary>
+    /// The pan and tilt tolerances an <c>ITrackAction</c> starts with, 0.0349066 rad (2 degrees), written
+    /// into the action at +0x84 and +0x8C by its constructor (0x005646BC and 0x005646CC).
+    /// </summary>
     public const double MinToleranceRad = 0.0349066;
+
+    /// <summary>
+    /// How long the body turn is given, 0.4 s: the constructor's <c>strd r1, r0, [r4, #0xd0]</c> at
+    /// 0x00564758 puts 0.15 at +0xD0 and 0.4 at +0xD4, and <c>SetPanDuration</c> 0x00564AD4 writes +0xD4.
+    /// </summary>
+    public const double PanDurationSec = 0.4;
+
+    /// <summary>The head's, 0.15 s, from the same pair - <c>SetTiltDuration</c> 0x00564ADA writes +0xD0.</summary>
+    public const double TiltDurationSec = 0.15;
+
+    /// <summary>
+    /// The acceleration a tracking turn asks for: 10000, the immediate one
+    /// (<c>movt r3, #0x461c</c> at 0x005650EE).
+    /// </summary>
+    public const double TrackAccelRadPerSec2 = 10000;
+
+    /// <summary>
+    /// How high the head may go while tracking, 0.776672 rad, at +0x94 (0x005646DC).
+    /// </summary>
+    public const double MaxHeadAngleRad = 0.776672;
+
+    /// <summary>
+    /// The turn a sound needs before it plays, 0.174533 rad (10 degrees) for both axes, at +0xC0 and
+    /// +0xC8 (0x00564722 and 0x00564732). No sound is set by default.
+    /// </summary>
+    public const double MinAngleForSoundRad = 0.174533;
+
+    /// <summary>
+    /// The time the action aims to reach the target in, 0.5 s, at +0xD8 (0x0056475C);
+    /// <c>SetDesiredTimeToReachTarget</c> 0x00564AE4 writes it.
+    /// </summary>
+    public const double DesiredTimeToReachTargetSec = 0.5;
+
+    /// <summary>
+    /// The action tick. The engine's tracking runs inside <c>CheckIfDone</c>, which the action list calls
+    /// every basestation tick; there is no update period of its own (its update timeout at +0x7C is not
+    /// one, and the constructor leaves the three times at +0xE4..+0xEC at -1). This stack polled at 100 ms,
+    /// which was invented.
+    /// </summary>
+    public const int UpdateIntervalMs = 33;
     private readonly VisionSystem _v;
     public TrackFaceAction(VisionSystem v, int faceId) { _v = v; FaceId = v.Faces.GetSmartFaceID(faceId); }
     public void Dispose() => FaceId.Dispose();
     public SmartFaceID FaceId { get; }
     public double PanToleranceRad { get; set; } = MinToleranceRad;
     public double TiltToleranceRad { get; set; } = MinToleranceRad;
+
+    /// <summary>
+    /// Whether the eyes shift towards the target as well as the head turning: <c>SetMoveEyes</c>
+    /// 0x00564B40 writes the byte at +0xA1, which the constructor zeroes (the <c>strh</c> at 0x0056470E),
+    /// so it is off unless something asks for it. Nothing this stack drives asks.
+    /// </summary>
+    public bool MoveEyes { get; set; }
+
+    /// <summary>
+    /// Whether the driving animation plays around the turn: <c>EnableDrivingAnimation</c> 0x00564AEA
+    /// writes +0xA8, which the constructor zeroes (0x00564716), and <c>CheckIfDone</c> only calls
+    /// <c>DrivingAnimationHandler::PlayEndAnim</c> when it is set (0x0056510E).
+    /// </summary>
+    public bool DrivingAnimation { get; set; }
     public int Updates { get; private set; }
     public int Turns { get; private set; }
     public (double Pan, double Tilt)? LastCommand { get; private set; }
@@ -187,21 +291,31 @@ public sealed class TrackFaceAction : IDisposable
             if (Math.Abs(pan) > PanToleranceRad || Math.Abs(tilt - headNow) > TiltToleranceRad)
             {
                 Turns++;
-                LastCommand = (robot.Value.AngleAroundZ + pan, tilt);
+                double targetHead = Math.Clamp(tilt, HeadGeometry.MinHeadAngleRad, Math.Min(MaxHeadAngleRad, HeadGeometry.MaxHeadAngleRad));
+                LastCommand = (robot.Value.AngleAroundZ + pan, targetHead);
                 // The tracking tilt is the one computed just above, atan((z − 49) / planar distance). Handing
                 // the head pose to the generic look-at solve instead would recompute a different head angle
                 // and throw this away, which is not what the recovered TrackFaceAction does.
-                await PanAndTilt.RunAsync(_v, LastCommand.Value.Pan, LastCommand.Value.Tilt, TurnTowardsPose.MaxSpeedRadPerSec, cancel);
+                //
+                // The speeds are the engine's: each axis is given its own duration to cover the angle it
+                // has to cover, so the speed is |delta| / duration and the acceleration is the immediate
+                // 10000 (MoveHeadToAngle at 0x00565104 with the speed computed at 0x005650F2). Nothing
+                // waits for the turn to settle - the next tick recomputes the target.
+                double headSpeed = Math.Max(0.01, Math.Abs(targetHead - headNow) / TiltDurationSec);
+                double bodySpeed = Math.Max(0.01, Math.Abs(pan) / PanDurationSec);
+                await PanAndTilt.RunAsync(_v, LastCommand.Value.Pan, LastCommand.Value.Tilt, bodySpeed, cancel,
+                                          headSpeed, TrackAccelRadPerSec2, waitForSettle: false);
             }
-            await Task.Delay(100, CancellationToken.None);
+            await Task.Delay(UpdateIntervalMs, CancellationToken.None);
         }
         return true;
     }
 }
 
 /// <summary>
-/// <c>VisuallyVerifyFaceAction(robot, faceId)</c>: waits for an observation of the face within a few frames
-/// (as <c>VisuallyVerifyObjectAction</c> does for objects). INFERRED: the frame budget (5).
+/// <c>VisuallyVerifyFaceAction(robot, faceId)</c> 0x00568EB8: waits for an observation of the face within
+/// <see cref="TurnTowardsFaceAction.FramesToWaitForFace"/> frames, the 10 its base
+/// <c>IVisuallyVerifyAction</c> puts at +0x8C, as <c>VisuallyVerifyObjectAction</c> does for objects.
 /// </summary>
 public sealed class VisuallyVerifyFaceAction
 {

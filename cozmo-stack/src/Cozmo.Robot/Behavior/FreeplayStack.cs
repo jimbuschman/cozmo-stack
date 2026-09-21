@@ -66,6 +66,10 @@ public sealed class FreeplayStack : IDisposable
         foreach (var b in all) bound.TryAdd(b.Id, b);
 
         ctx.ClockSec ??= clockSec;
+        // the behaviours report needs actions themselves (IBehavior::NeedActionCompleted 0x005BE40C), so the
+        // context carries both the manager and every shipped behaviour's own needsActionID
+        ctx.Needs ??= needs;
+        ctx.NeedsActionIds ??= BehaviorNeedsActions.Load(obbRoot);
         var manager = new BehaviorManager(ctx);
         if (withReactions)
             foreach (var reg in ShippedBehaviors.Reactions(robot, vision?.Locator, clockSec, vision)) manager.AddReaction(reg.Strategy, reg.Behavior, reg.ResumeLast);
@@ -74,7 +78,9 @@ public sealed class FreeplayStack : IDisposable
         var tree = ActivityTreeLoader.Load(obbRoot, bound, manager.Penalty, random);
         foreach (var s in tree.SelectMany(a => a.SubActivities.Prepend(a)).Select(a => a.Strategy)) s.NeedLevels ??= n => needs.State.GetNeedLevel(n);
         var freeplayActivity = tree.FirstOrDefault(a => a.Id == "Freeplay") ?? throw new InvalidOperationException("activities_config.json has no Freeplay activity");
-        var inputs = new FreeplayInputs { Needs = needs, Mood = ctx.Mood };
+        // config/features.json, which WantsToStart consults before anything else when an activity names a
+        // featureGate (0x005B52A8).
+        var inputs = new FreeplayInputs { Needs = needs, Mood = ctx.Mood, Features = FeatureGates.Load(obbRoot) };
         var system = new FreeplaySystem(manager, ctx, freeplayActivity, bound, inputs);
         var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx) { Problems = problems };
 

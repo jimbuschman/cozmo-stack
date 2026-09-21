@@ -57,6 +57,21 @@ public sealed class BehaviorContext
     /// </summary>
     public Func<bool>? ObstacleDetected { get; set; }
 
+    /// <summary>
+    /// The needs, for the two wants-to-run strategies that read them: <c>InNeedsBracket</c> and
+    /// <c>ExpressNeedsTransition</c>. Null means a behaviour with one of those strategies cannot say yes,
+    /// which is what a robot with no needs manager would mean.
+    /// </summary>
+    public NeedsManager? Needs { get; set; }
+
+    /// <summary>
+    /// The <c>needsActionID</c> each shipped behaviour config carries, by <c>behaviorID</c>
+    /// (<see cref="BehaviorNeedsActions.Load"/>). <c>IBehavior::NeedActionCompleted</c> 0x005BE40C reports
+    /// the running behaviour's own id when the caller names none, so the hook has to know it. Null: no
+    /// behaviour has one, and only the explicitly named actions are reported.
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? NeedsActionIds { get; set; }
+
     /// <summary>The behaviour clock (seconds), for the recent-event windows below. Null: the windows cannot be met.</summary>
     public Func<double>? ClockSec { get; set; }
     /// <summary>
@@ -98,7 +113,13 @@ public interface IBehavior
     bool IsRunnable(BehaviorContext context);
 
     /// <summary>
-    /// How much this wants to run, before penalties. The engine's <c>EvaluateScoreInternal</c>. Zero or
+    /// How much this wants to run, before penalties. The engine's <c>EvaluateScoreInternal</c> 0x005BEEC2:
+    /// the behaviour's emotion scorers if its config gave it any, otherwise its <c>flatScore</c>, which
+    /// <c>IBehavior::IBehavior</c> leaves at zero when the config carries no scoring (0x005BBD28). A
+    /// behaviour built in code here carries a score of its own instead - see
+    /// <see cref="Behavior.ReactBehavior"/> and <see cref="Behavior.PlayAnimBehavior"/> - because this
+    /// stack's simple manager ranks behaviours directly where the engine ranks only what an activity's
+    /// scoring chooser lists. Zero or
     /// less means it does not want to run at all.
     /// </summary>
     double EvaluateScore(BehaviorContext context);

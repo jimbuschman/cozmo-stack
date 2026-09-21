@@ -65,6 +65,14 @@ public abstract class SteppedBehavior : IBehavior
 
     /// <summary>The context and scope of the current run. Valid from <see cref="OnStart"/> until stopped.</summary>
     protected BehaviorContext Context { get; private set; } = null!;
+
+    /// <summary>
+    /// <c>IBehavior::NeedActionCompleted</c> 0x005BE40C: report a needs action to the needs manager - the one
+    /// named here, or this behaviour's own <c>needsActionID</c> from its shipped config when none is named.
+    /// Returns what was reported, or null when there was nothing to report.
+    /// </summary>
+    protected string? NeedActionCompleted(string? actionId = null, string? fallback = null) =>
+        BehaviorNeedsActions.Complete(this, Context, actionId, fallback);
     protected BehaviorScope Scope { get; private set; } = null!;
 
     /// <summary>The manager's clock as of the current <see cref="Update"/>, milliseconds.</summary>
@@ -185,8 +193,27 @@ public abstract class SteppedBehavior : IBehavior
     /// tracks, play it, and call <paramref name="onDone"/> when it ends. A trigger that resolves to nothing
     /// is reported and its callback still runs (the engine's action fails and its completion still fires),
     /// on the next tick rather than inline so a retry loop cannot recurse.
+    ///
+    /// The tracks are a lock, not a mute. Every action carries a track mask at +0x54 and
+    /// <c>IActionRunner::Update</c> 0x00540370 does two things with it: while
+    /// <c>MovementComponent::AreAnyTracksLocked(mask)</c> is true it refuses to run the action at all,
+    /// warning "Action %s [%d] not running because required tracks are locked" (0x005404A8) and trying
+    /// again on the next tick; otherwise it calls <c>MovementComponent::LockTracks(mask, tag, name)</c>
+    /// through the helper at 0x004F0F4C and then runs it. LockTracks 0x00640098 walks the bits of the mask
+    /// and records one owner per track in a multiset, and UnlockTracks 0x0063FE5C takes them out again, so
+    /// a track can be held by several owners at once and is free when the last of them lets go.
+    ///
+    /// So an animation's tracks are claimed for the duration of the play and nothing else may drive them;
+    /// they are not silenced in the animation itself. That is what the scope does here, and a play whose
+    /// tracks are owned waits rather than being skipped.
     /// </summary>
-    protected void PlayTrigger(AnimationTrigger trigger, Action onDone, AnimationTrack suppressTracks = AnimationTrack.None)
+    /// <param name="alsoLock">
+    /// Tracks the engine's action locks on top of the ones the clip uses - its <c>tracksToLock</c>
+    /// argument, which <c>BehaviorReactToUnexpectedMovement</c> sets to 4 (the body) when the movement
+    /// came from behind. They are added to the scope's claim, which is what keeps the keep-alive off them
+    /// for the length of the play.
+    /// </param>
+    protected void PlayTrigger(AnimationTrigger trigger, Action onDone, AnimationTrack alsoLock = AnimationTrack.None)
     {
         var lib = Context.Robot.Animations.Library;
         if (lib is null) { Log($"{trigger}: no animation assets are loaded"); _pending.Enqueue(onDone); return; }
@@ -200,15 +227,15 @@ public abstract class SteppedBehavior : IBehavior
         }
 
         var clip = lib.GetClip(resolved.Selected!);
-        Scope.LockTracks(clip.Tracks);
-        if (suppressTracks != AnimationTrack.None)
-            Log($"{trigger}: the engine locks {suppressTracks} for this play; the scheduler has no per-play track mask, so the track plays (DEFERRED)");
+        Scope.LockTracks(clip.Tracks | alsoLock);
 
         var ticket = Context.Robot.Animations.PlayTracked(resolved.Selected!);
         if (ticket is null)
         {
-            Log($"{trigger} -> {resolved.Selected}: the scheduler refused it (a track it needs is owned)");
-            _pending.Enqueue(onDone);
+            // A track it needs is owned. The engine waits: IActionRunner::Update leaves the action queued
+            // and tries again next tick rather than failing it, so the play is deferred, not skipped.
+            Log($"{trigger} -> {resolved.Selected}: a track it needs is owned; waiting for it");
+            _pending.Enqueue(() => PlayTrigger(trigger, onDone, alsoLock));
             return;
         }
 
@@ -260,9 +287,19 @@ public abstract class SteppedBehavior : IBehavior
 
     /// <summary>
     /// The engine's <c>CalibrateMotorAction(head: true, lift: false)</c>: ask the robot to recalibrate the
-    /// head and wait for its report that the calibration started and then finished. The action's own
-    /// timeout was not read from the binary; 5 s is the allowance the engine gives the post-fall
-    /// recalibration in ReactToImpact and is used here as well (LOCAL_POLICY).
+    /// head and wait for its report that the calibration started and then finished.
+    ///
+    /// <c>CalibrateMotorAction::CheckIfDone</c> 0x00547D38 is the whole rule - it stays running until the
+    /// motors it was asked for report calibrated, testing <c>Robot::IsHeadCalibrated</c> and
+    /// <c>IsLiftCalibrated</c> against the two request flags at +0x78 and +0x79 and the two
+    /// already-started flags at +0x7A and +0x7B - and it has no timeout to cut it short: the action's
+    /// timeout, at <c>IAction</c>+0x74, is the -1 the constructor writes there
+    /// (<c>movt r1, #0xbf80</c> at 0x00540CA2), which is the engine's "no timeout".
+    ///
+    /// LOCAL_POLICY: the five seconds here is this stack's backstop, not the engine's. Waiting for ever on
+    /// a robot that never answers is not something to reproduce; the engine's own behaviours that sit out
+    /// a recalibration - ReactToImpact and ReactToMotorCalibration - both wait five seconds, so that is
+    /// the number used. On hardware the report arrives in about two.
     /// </summary>
     protected void CalibrateHead(Action onDone)
     {

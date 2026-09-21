@@ -514,7 +514,7 @@ public class CorrectionTests
     }
 
     private static ScoredBehaviorEntry Entry(string id, double flat, Graph2d? repetition = null) =>
-        new(id, flat, repetition, null, null, Array.Empty<(EmotionType, Graph2d)>());
+        new(id, flat, repetition, null, null, Array.Empty<EmotionScorer>());
 
     private sealed class Fake : IBehavior
     {

@@ -207,7 +207,16 @@ public sealed class SingingBehavior : IBehavior
         if (_stopped) return;
         var context = _context!;
         var sequence = Sequence(SwitchGroupId);
-        if (index >= sequence.Count) { _finished = true; Trace?.Invoke("finished"); return; }
+        if (index >= sequence.Count)
+        {
+            _finished = true;
+            Trace?.Invoke("finished");
+            // the singing behaviour's completion callback reads its own needsActionID first and falls back
+            // to CozmoSings (0x0D) when the config has none (0x005EF7CA), beside objective 0x27
+            if (BehaviorNeedsActions.Complete(this, context, fallback: "CozmoSings") is { } action)
+                Trace?.Invoke($"needs action {action}");
+            return;
+        }
 
         // The tempo animation is the one whose audio keyframe asks for the song. Waiting here, on the
         // behaviour's own continuation, is the difference between a late get-in and a stalled animation

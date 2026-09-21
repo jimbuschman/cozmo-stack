@@ -1,4 +1,5 @@
 using Cozmo.Protocol;
+using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot;
 
@@ -74,9 +75,100 @@ public sealed record UnexpectedMovementReport(
 /// forward → Front, otherwise Back (0x0063E6C0..0x0063E83A), and everything resets.
 /// <see cref="UnexpectedMovementType.TurnedInSameDirection"/> is never produced by this function.
 ///
-/// <b>Not reproduced (DEFERRED):</b> the engine then rewinds the robot's pose to the start timestamp and
-/// adds a collision obstacle to its world model on that side; this stack has no world model.
+/// What the engine does next - rewind the pose and leave an obstacle behind - is
+/// <see cref="UnexpectedMovementResponse"/>.
 /// </summary>
+public static class UnexpectedMovementResponse
+{
+    /// <summary>Clearance added to the obstacle's own depth: 5 mm (<c>vmov.f32 s4, #5.0</c> at 0x0063E6C6).</summary>
+    public const float ClearanceMm = 5f;
+    /// <summary>The obstacle sits this far in front of the robot's origin, past its own depth: 22.1 mm (0x41B0CCCC).</summary>
+    public const float FrontOffsetMm = 22.1f;
+    /// <summary>...or this far behind: −55.9 mm (0xC25F999A).</summary>
+    public const float BackOffsetMm = -55.9f;
+    /// <summary>...or this far to one side: ±27.1 mm (0x41D8CCCD / 0xC1D8CCCD), with the pose turned ±90°.</summary>
+    public const float SideOffsetMm = 27.1f;
+
+    /// <summary>
+    /// Where the obstacle goes, in the robot's own frame
+    /// (<c>MovementComponent::CheckForUnexpectedMovement</c> 0x0063E6BC..0x0063E842). The depth is the
+    /// collision obstacle's own x, 20 mm, plus the 5 mm clearance; the four cases are the four the wheel
+    /// averages pick out:
+    /// <list type="bullet">
+    /// <item>Front (both wheels forward): +(depth + 22.1) along x, no rotation (0x0063E7A4).</item>
+    /// <item>Back (neither): −55.9 − depth along x, no rotation (0x0063E81A).</item>
+    /// <item>Left (only the right wheel forward, so the robot turned left): the pose turned +π/2 about Z
+    /// and moved +(depth + 27.1) along its y (0x0063E7D4).</item>
+    /// <item>Right (only the left wheel forward): turned −π/2 and moved −(depth + 27.1) (0x0063E704).</item>
+    /// </list>
+    /// The translation is written straight into the rotated pose's transform, so it is in the rotated
+    /// frame, which is why the two side cases carry a sign as well as a rotation.
+    /// </summary>
+    public static Pose3d ObstacleInRobotFrame(UnexpectedMovementSide side)
+    {
+        double depth = (MarkerlessObject.SizeByType(ObjectType.CollisionObstacle)!.Value.X) + ClearanceMm;
+        return side switch
+        {
+            UnexpectedMovementSide.Front => new Pose3d(Mat3.Identity, new Vec3(depth + FrontOffsetMm, 0, 0)),
+            UnexpectedMovementSide.Back => new Pose3d(Mat3.Identity, new Vec3(BackOffsetMm - depth, 0, 0)),
+            UnexpectedMovementSide.Left => new Pose3d(Math.PI / 2, new Vec3(0, 0, 1), new Vec3(0, depth + SideOffsetMm, 0)),
+            UnexpectedMovementSide.Right => new Pose3d(-Math.PI / 2, new Vec3(0, 0, 1), new Vec3(0, -(depth + SideOffsetMm), 0)),
+            _ => throw new ArgumentOutOfRangeException(nameof(side), side, "no obstacle is placed for this side"),
+        };
+    }
+
+    /// <summary>The same pose in the world, parented to the robot as <c>SetParent</c> does at 0x0063E8C4.</summary>
+    public static Pose3d ObstacleInWorld(Pose3d robotPose, UnexpectedMovementSide side) =>
+        robotPose.Compose(ObstacleInRobotFrame(side));
+
+    /// <summary>
+    /// The pose <c>Robot::SetNewPose</c> receives (0x0063E842..0x0063E87E): the robot's pose at the
+    /// timestamp the disagreement began, with the rotation it has now copied over it - the 32-byte loop at
+    /// 0x0063E868 overwrites the historical transform's rotation and leaves its translation, which lives
+    /// at +0x20. So the robot is put back where it was and keeps the heading it ended up with.
+    /// </summary>
+    public static Pose3d RewoundPose(Pose3d atStartOfMovement, Pose3d now) =>
+        new(now.Rotation, atStartOfMovement.Translation);
+
+    /// <summary>
+    /// The whole response, in the engine's order: look the start timestamp up in the state history, rewind
+    /// the pose, then leave a collision obstacle on the side the wheels point to. Returns null - and logs
+    /// the engine's "Could not get robot pose at t=%u" - when the history has nothing at that time, which
+    /// is the one case where the engine does neither.
+    ///
+    /// Only the obstacle is applied here. The engine owns the robot's pose and hands the rewound one to
+    /// <c>Robot::SetPose</c>, which its own <c>Robot::Update</c> then sends on to the robot as an
+    /// <c>AbsoluteLocalizationUpdate</c> (<c>SendAbsLocalizationUpdate</c> 0x00514710 takes the latest
+    /// vision-only state, which <c>SetNewPose</c> has just added). This stack reads the robot's pose from
+    /// its state stream, so the rewound pose is returned for the caller to send.
+    /// </summary>
+    public static (Pose3d Rewound, ObservableObject Obstacle)? Apply(
+        UnexpectedMovementReport report, RobotStateHistory history, BlockWorld world, Pose3d currentRobotPose,
+        Action<string>? log = null)
+    {
+        if (report.Side == UnexpectedMovementSide.Unknown) return null;
+        if (history.At(report.Timestamp) is not { } at)
+        {
+            log?.Invoke($"MovementComponent.CheckForUnexpectedMovement.PoseHistoryFailure: Could not get robot pose at t={report.Timestamp}");
+            return null;
+        }
+        var rewound = RewoundPose(at.RobotPose, currentRobotPose);
+        var obstacle = world.AddCollisionObstacle(ObstacleInWorld(rewound, report.Side));
+        log?.Invoke($"MovementComponent.CheckForUnexpectedMovement.AddingCollisionObstacle: Adding obstacle {Name(report.Side)} robot");
+        return (rewound, obstacle);
+    }
+
+    /// <summary>The word the engine puts in "Adding obstacle %s robot" (0x0063EAC8..0x0063EAF2).</summary>
+    private static string Name(UnexpectedMovementSide side) => side switch
+    {
+        UnexpectedMovementSide.Front => " front of",
+        UnexpectedMovementSide.Back => "behind",
+        UnexpectedMovementSide.Left => " left of",
+        UnexpectedMovementSide.Right => " right of",
+        _ => "",
+    };
+}
+
 public sealed class UnexpectedMovementDetector
 {
     // ---------------------------------------------------------------- NATIVE constants

@@ -235,12 +235,30 @@ public class ExploreLookAroundInPlaceBehavior : ActionBehavior
 /// </summary>
 public static class PanAndTilt
 {
-    public static async Task<bool> RunAsync(VisionSystem v, double absoluteBodyRad, double headRad, double bodySpeedRadPerSec, CancellationToken cancel)
+    /// <param name="headSpeedRadPerSec">
+    /// The head speed. A tracking action works one out per update - <c>ITrackAction::CheckIfDone</c> sends
+    /// <c>MoveHeadToAngle</c> with <c>|delta| / tiltDuration</c> for the speed and 10000 for the
+    /// acceleration (0x005650E2..0x00565104) - so it is a parameter rather than the fixed 10 a pan and
+    /// tilt to a pose uses.
+    /// </param>
+    /// <param name="headAccelRadPerSec2">The head acceleration, 10 for a plain turn and 10000 while tracking.</param>
+    /// <param name="waitForSettle">
+    /// Whether to wait for the heading to arrive. A tracking action does not: it sends the commands and
+    /// comes back on the next tick with a fresh target.
+    /// </param>
+    public static async Task<bool> RunAsync(VisionSystem v, double absoluteBodyRad, double headRad, double bodySpeedRadPerSec,
+                                            CancellationToken cancel, double headSpeedRadPerSec = 10,
+                                            double headAccelRadPerSec2 = 10, bool waitForSettle = true)
     {
         if (v.PanTiltOverride is not null) return await v.PanTiltOverride(absoluteBodyRad, headRad, cancel);
         var t = v.Robot.Transport;
         t.Send(TurnTowardsPose.Message(absoluteBodyRad, bodySpeedRadPerSec, TurnTowardsPose.AccelRadPerSec2, TurnTowardsPose.ToleranceRad, 0, true, 2), flush: true);
-        t.Send(new SetHeadAngle { AngleRad = (float)headRad, MaxSpeedRadPerSec = 10f, AccelRadPerSec2 = 10f, DurationSec = 0f, ActionId = 3 }, flush: true);
+        t.Send(new SetHeadAngle
+        {
+            AngleRad = (float)headRad, MaxSpeedRadPerSec = (float)headSpeedRadPerSec,
+            AccelRadPerSec2 = (float)headAccelRadPerSec2, DurationSec = 0f, ActionId = 3,
+        }, flush: true);
+        if (!waitForSettle) return true;
         var deadline = DateTime.UtcNow.AddSeconds(6);
         while (DateTime.UtcNow < deadline && !cancel.IsCancellationRequested)
         {
@@ -473,18 +491,26 @@ public sealed class WaitBehavior : SteppedBehavior
 /// <summary>
 /// <c>BehaviorEarnedSparks</c> (0x005DAEC2..0x005DAF80): runnable when the needs manager has a freeplay sparks
 /// reward pending (the byte at +0x3D8 read by <c>IsRunnableInternal</c>); <c>InitInternal</c> plays 0xA4
-/// <see cref="AnimationTrigger.EarnedSparks"/> lift-safe and the reward is communicated
-/// (<c>SparksRewardCommunicatedToUser</c>). The sparks economy itself is the app's.
+/// <see cref="AnimationTrigger.EarnedSparks"/> lift-safe, and the reward is communicated when the behaviour
+/// <b>stops</b> - <c>StopInternal</c> 0x005DAF70 tests the pending byte and tail-calls
+/// <c>NeedsManager::SparksRewardCommunicatedToUser</c> (0x005DAF7C). So the flag stays up for as long as the
+/// animation plays. The sparks economy itself is the app's.
 /// </summary>
 public sealed class EarnedSparksBehavior : SteppedBehavior
 {
     private readonly NeedsManager _needs;
     public EarnedSparksBehavior(NeedsManager needs, string id = "EarnedSparks") : base(id, "EarnedSparks") => _needs = needs;
     protected override bool IsRunnableInternal(BehaviorContext context) => _needs.SparksRewardPending;
-    protected override void OnStart()
+    protected override void OnStart() => PlayTrigger(AnimationTrigger.EarnedSparks, Finish);
+
+    protected override void OnStop(BehaviorStopReason reason)
     {
-        _needs.SparksRewardPending = false;
-        PlayTrigger(AnimationTrigger.EarnedSparks, () => { Log("SparksRewardCommunicatedToUser"); Finish(); });
+        if (_needs.SparksRewardPending)
+        {
+            Log("SparksRewardCommunicatedToUser");
+            _needs.SparksRewardCommunicatedToUser();
+        }
+        base.OnStop(reason);
     }
 }
 

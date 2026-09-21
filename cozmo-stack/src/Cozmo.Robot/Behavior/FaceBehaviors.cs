@@ -520,38 +520,99 @@ public sealed class FacePositionUpdatedStrategy : IReactionTriggerStrategy, ITar
 }
 
 /// <summary>
-/// <c>PetInitialDetection</c> -> <c>ReactToPet</c> in the shipped map: a pet the world model has not seen
-/// before. INFERRED shape (the engine's strategy class was not disassembled): the first sighting of a pet id
-/// latches the trigger, as every other "initial" trigger in this stack does.
+/// <c>PetInitialDetection</c> -> <c>ReactToPet</c> in the shipped map: a pet the world model has not
+/// reacted to yet, and not too soon after the last reaction.
+///
+/// <c>ReactionTriggerStrategyPetInitialDetection</c> 0x0061175C keeps two things. The first is the set of
+/// pet ids it has already reacted to: <c>UpdateReactedTo</c> 0x00611E1C walks the pets the robot knows and
+/// inserts each id into the tree at +0x34, and <c>InitReactedTo</c> 0x00611FA4 fills it when the strategy
+/// starts, so a pet that was already there when it began is not new. The second is the time of the last
+/// reaction at +0x40: <c>RecentlyReacted</c> 0x00611DD0 answers true while that time is not -1 and
+/// <c>lastReacted + 60</c> is still ahead of now - the 60 built at 0x00611DE8 - so a reaction is followed
+/// by a minute in which no pet triggers another.
 /// </summary>
 public sealed class PetInitialDetectionStrategy : IReactionTriggerStrategy, IDisposable
 {
+    /// <summary>The minute after a reaction in which no pet triggers another (0x42700000 at 0x00611DE8).</summary>
+    public const double RecentlyReactedSec = 60.0;
+
     private readonly PetWorld _world;
-    private readonly HashSet<int> _seen = new();
+    private readonly HashSet<int> _reactedTo = new();
     private readonly object _gate = new();
     private bool _latched;
+    private double _lastReactedSec = double.NegativeInfinity;
+
+    private readonly ReactToPetBehavior? _behavior;
+    private readonly Func<double>? _clockSec;
 
     public PetInitialDetectionStrategy(PetWorld world) { _world = world; world.PetObserved += OnObserved; }
 
+    /// <summary>
+    /// The strategy paired with the behaviour it triggers, so a reaction records the pet and starts the
+    /// minute. <paramref name="clockSec"/> is the behaviour clock the cooldown is measured on.
+    /// </summary>
+    public PetInitialDetectionStrategy(PetWorld world, ReactToPetBehavior behavior, Func<double> clockSec)
+        : this(world)
+    {
+        _behavior = behavior;
+        _clockSec = clockSec;
+        behavior.Reacted += OnReacted;
+    }
+
+    private void OnReacted(int petId) => ReactedTo(petId, _clockSec?.Invoke() ?? 0);
+
     public ReactionTrigger Trigger => ReactionTrigger.PetInitialDetection;
-    public string Basis => "reactionTrigger_behavior_map.json: PetInitialDetection -> ReactToPet; first sighting of a pet id (INFERRED)";
+    public string Basis => "reactionTrigger_behavior_map.json: PetInitialDetection -> ReactToPet; a pet id not " +
+                           "reacted to yet, and not within 60 s of the last reaction (RecentlyReacted 0x00611DD0)";
+
+    /// <summary>True while the engine's <c>RecentlyReacted</c> would be.</summary>
+    public bool RecentlyReacted(double nowSec) => nowSec < _lastReactedSec + RecentlyReactedSec;
+
+    /// <summary>What <c>UpdateReactedTo</c> records when the reaction runs.</summary>
+    public void ReactedTo(int petId, double nowSec)
+    {
+        lock (_gate)
+        {
+            _reactedTo.Add(petId);
+            _lastReactedSec = nowSec;
+            _latched = false;
+        }
+    }
 
     private void OnObserved(PetEntry pet, bool isNew)
     {
-        lock (_gate) if (_seen.Add(pet.Id) || isNew) _latched = true;
+        lock (_gate) if (!_reactedTo.Contains(pet.Id)) _latched = true;
     }
 
     public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec)
     {
-        lock (_gate) { bool w = _latched; _latched = false; return w; }
+        lock (_gate)
+        {
+            if (nowSec < _lastReactedSec + RecentlyReactedSec) return false;
+            bool w = _latched;
+            _latched = false;
+            return w;
+        }
     }
 
-    public void Dispose() => _world.PetObserved -= OnObserved;
+    public void Dispose()
+    {
+        _world.PetObserved -= OnObserved;
+        if (_behavior is not null) _behavior.Reacted -= OnReacted;
+    }
 }
 
 public sealed class ReactToPetBehavior : FaceBehavior
 {
     public ReactToPetBehavior(VisionSystem v, string id = "ReactToPet") : base(id, "ReactToPet", v) { }
+
+    /// <summary>
+    /// The pet this run reacted to, raised when the reaction starts.
+    /// <see cref="PetInitialDetectionStrategy"/> listens so it can record the id and start its minute, as
+    /// the engine's UpdateReactedTo and the time at +0x40 do.
+    /// </summary>
+    public event Action<int>? Reacted;
+
     public int? TargetPetId { get; private set; }
     public AnimationTrigger? Trigger { get; private set; }
 
@@ -570,15 +631,14 @@ public sealed class ReactToPetBehavior : FaceBehavior
         TargetPetId = pet.Id;
         Trigger = GetAnimationTrigger(pet.Type, Context.Random);
         Log($"ReactToPet.BeginIteration: Reacting to petID {pet.Id} type {pet.Type}");
-        // TurnTowardsImagePointAction: aim the head/body at the ray through the rectangle centre (200 mm out, INFERRED range)
-        var cam = V.CurrentCamera();
-        if (cam is not null)
-        {
-            var (o, d) = cam.Ray(pet.Rect.Center);
-            var target = new Pose3d(Mat3.Identity, o + d.Normalized() * 200);
-            RunFaceAction("TurnTowardsImagePoint", ct => new TurnTowardsPoseAction(V, target).RunAsync(ct), _ => PlayTrigger(Trigger.Value, Finish));
-        }
-        else PlayTrigger(Trigger.Value, Finish);
+        Reacted?.Invoke(pet.Id);
+        // TurnTowardsImagePointAction: the angles the pixel subtends, with no distance in it at all -
+        // see TurnTowardsImagePoint, which is Robot::ComputeTurnTowardsImagePointAngles 0x0051879C.
+        var centre = pet.Rect.Center;
+        RunFaceAction("TurnTowardsImagePoint",
+                      async ct => await TurnTowardsImagePoint.RunAsync(V, centre.X, centre.Y, ct)
+                                  ? FaceActionResult.Success : FaceActionResult.Abort,
+                      _ => PlayTrigger(Trigger.Value, Finish));
     }
 }
 

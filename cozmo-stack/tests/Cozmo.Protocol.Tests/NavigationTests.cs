@@ -486,6 +486,21 @@ public class NavigationTests
         Assert.Null(wb.GetActiveBeacon());
     }
 
+    /// <summary>
+    /// The two emotion events a beacon placement fires, and the two constants the tall-stack and put-down
+    /// behaviours were missing. FireEmotionEvents 0x005E002C picks between them on
+    /// AIWhiteboard::AreAllCubesInBeacons; CreateLookAfterPlaceAction 0x005C8174 waits for two images
+    /// (movs r2, #2 at 0x005C8242); TransitionToDisapointment 0x005ED0F0 plays trigger 0x1B.
+    /// </summary>
+    [Fact]
+    public void TheBeaconAndStackConstantsAreTheEnginesOwn()
+    {
+        Assert.Equal("HikingBroughtCubeToBeacon", BringCubeToBeaconBehavior.CubeEmotionEvent);
+        Assert.Equal("HikingBroughtLastCubeToBeacon", BringCubeToBeaconBehavior.LastCubeEmotionEvent);
+        Assert.Equal(2, PutDownBlockBehavior.ImagesToWaitFor);
+        Assert.Equal(0x1B, (int)AnimationTrigger.CantHandleTallStack);
+    }
+
     [Fact]
     public void ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside()
     {

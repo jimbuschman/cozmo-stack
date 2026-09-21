@@ -10,6 +10,26 @@ namespace Cozmo.Robot.Vision;
 public enum PoseState { Unknown = 0, Known = 1, Dirty = 2 }
 
 /// <summary>
+/// The markerless objects the engine can put in the world without having seen a marker: a proximity
+/// obstacle, a cliff, and the collision obstacle an unexpected movement leaves behind.
+///
+/// <c>MarkerlessObject::GetSizeByType</c> 0x005026EC builds one static map on first use - three entries of
+/// sixteen bytes, walked at 0x0050276A until the offset reaches 0x30 - and the sizes are the literals it
+/// stores: ProxObstacle (10, 10, 50), CliffDetection (20, 40, 50) and CollisionObstacle
+/// (20, 54.2, 67.7), in millimetres.
+/// </summary>
+public static class MarkerlessObject
+{
+    public static (float X, float Y, float Z)? SizeByType(ObjectType type) => type switch
+    {
+        ObjectType.ProxObstacle => (10f, 10f, 50f),
+        ObjectType.CliffDetection => (20f, 40f, 50f),
+        ObjectType.CollisionObstacle => (20f, 54.2f, 67.7f),
+        _ => null,
+    };
+}
+
+/// <summary>
 /// Why a marker or object is not visible: the engine's <c>KnownMarker::NotVisibleReason</c>, with its own
 /// names and its own values.
 ///
@@ -298,6 +318,38 @@ public sealed class BlockWorld
     public event Action<string>? Log;
 
     public IReadOnlyList<ObservableObject> Objects { get { lock (_gate) return _objects.Values.ToList(); } }
+
+    /// <summary>
+    /// <c>BlockWorld::AddCollisionObstacle</c> 0x00624A16 is one call:
+    /// <c>AddMarkerlessObject(pose, ObjectType::CollisionObstacle)</c>. That routine 0x00622380 makes a
+    /// <c>MarkerlessObject</c> of the type, builds a local pose of no rotation about Z and translation
+    /// (0, 0, size.z / 2) - the <c>vmov.f32 s0, #0.5</c> and the multiply at 0x006223CC, which stands the
+    /// box on the ground - and multiplies the pose given by it before adding it to the world.
+    ///
+    /// The object id is this stack's (LOCAL): markerless objects are counted from
+    /// <see cref="FirstMarkerlessObjectId"/> upwards, since they have no marker and no cube radio to take
+    /// an id from.
+    /// </summary>
+    public ObservableObject AddMarkerlessObject(Pose3d pose, ObjectType type)
+    {
+        var size = MarkerlessObject.SizeByType(type) ?? throw new ArgumentException($"{type} is not a markerless object type", nameof(type));
+        var standing = pose.Compose(new Pose3d(Mat3.Identity, new Vec3(0, 0, size.Z * 0.5)));
+        lock (_gate)
+        {
+            uint id = _nextMarkerlessId++;
+            var obj = new ObservableObject(id, type, Array.Empty<KnownMarker>()) { Pose = standing, PoseState = PoseState.Known };
+            _objects[id] = obj;
+            Log?.Invoke($"BlockWorld.AddMarkerlessObject: {type} {id} at {standing}");
+            return obj;
+        }
+    }
+
+    /// <summary>The collision obstacle an unexpected movement leaves where the robot was blocked.</summary>
+    public ObservableObject AddCollisionObstacle(Pose3d pose) => AddMarkerlessObject(pose, ObjectType.CollisionObstacle);
+
+    /// <summary>LOCAL: where this stack starts numbering markerless objects, clear of the cube ids.</summary>
+    public const uint FirstMarkerlessObjectId = 1000;
+    private uint _nextMarkerlessId = FirstMarkerlessObjectId;
     public IReadOnlyList<ObservableObject> LocatedObjects { get { lock (_gate) return _objects.Values.Where(o => o.IsLocated).ToList(); } }
 
     /// <summary><c>BlockWorld::GetLocatedObjectByIdHelper</c>: the object when it has a located pose, else null.</summary>

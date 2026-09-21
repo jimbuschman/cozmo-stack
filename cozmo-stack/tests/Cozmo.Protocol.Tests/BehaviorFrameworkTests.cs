@@ -250,6 +250,104 @@ public class BehaviorFrameworkTests
         }
     }
 
+    /// <summary>
+    /// A PlayAnim config that lists several triggers plays all of them, in order.
+    /// BehaviorPlayAnimSequence::StartPlayingAnimations 0x005C0158 special-cases a list of exactly one
+    /// trigger (cmp r1, #4 on the vector's byte length) and sends everything else to StartSequenceLoop
+    /// 0x005C0294, which puts one TriggerLiftSafeAnimationAction per trigger into a
+    /// CompoundActionSequential and repeats the whole list until the counter reaches num_loops (default 1,
+    /// from Json::Value::Value(1) at 0x005C001C). NothingToDo_BoredAnim is the one shipped config that
+    /// lists more than one - its own comment calls them a "sequence of anims" - and this stack used to
+    /// play only the first.
+    /// </summary>
+    [Fact]
+    public void APlayAnimBehaviourWithSeveralTriggersTakesThemAll()
+    {
+        var obb = ObbRoot();
+        if (obb is null) return;
+        var shipped = PlayAnimBehavior.LoadShipped(obb);
+        var bored = shipped.FirstOrDefault(b => b.Id == "NothingToDo_BoredAnim");
+        Assert.NotNull(bored);
+        Assert.Equal(new[] { AnimationTrigger.NothingToDoBoredIntro, AnimationTrigger.NothingToDoBoredEvent,
+                             AnimationTrigger.NothingToDoBoredOutro }, bored!.Triggers);
+        Assert.Equal(1, bored.NumLoops);
+
+        using var robot = CozmoRobot.CreateOffline();
+        robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
+        var ctx = new BehaviorContext
+        {
+            Robot = robot,
+            Triggers = AnimationTriggerMap.Load(obb),
+            Random = new Random(4),
+        };
+
+        // every trigger's clip is resolved, which is why the scope ends up holding the union of their
+        // tracks rather than only the first clip's
+        using var scope = new BehaviorScope();
+        bored.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
+        var lib = robot.Animations.Library!;
+        AnimationTrack union = AnimationTrack.None;
+        foreach (var t in bored.Triggers)
+        {
+            var r = ctx.Triggers.Resolve(t, lib, new Random(4));
+            if (r.Resolved) union |= lib.GetClip(r.Selected!).Tracks;
+        }
+        Assert.Equal(union, scope.LockedTracks);
+        bored.Stop(BehaviorStopReason.Interrupted);
+    }
+
+    /// <summary>
+    /// The two wants-to-run strategies that read the needs, as the engine evaluates them.
+    /// StrategyInNeedsBracket::WantsToRunInternal 0x006141A0 is a single call to
+    /// NeedsState::IsNeedAtBracket(need, bracket); StrategyExpressNeedsTransition::WantsToRunInternal
+    /// 0x006136D8 asks IsNeedAtBracket(need, Critical) - the literal 3 at 0x006136EC - and then refuses
+    /// when that need is the one already being expressed (0x006136FC). Before this, a behaviour with
+    /// either strategy reported not runnable whatever the needs said.
+    /// </summary>
+    [Fact]
+    public void TheNeedsWantsToRunStrategiesFollowTheNeedsState()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        double now = 0;
+        var needs = new NeedsManager(() => now);
+        var ctx = new BehaviorContext
+        {
+            Robot = robot,
+            Triggers = new AnimationTriggerMap(),
+            Needs = needs,
+            Random = new Random(1),
+        };
+
+        var inBracket = new PlayAnimBehavior("b", "PlayAnim", new[] { AnimationTrigger.Hiccup })
+        {
+            WantsToRunStrategy = "InNeedsBracket", StrategyNeed = NeedId.Energy, StrategyBracket = NeedBracketId.Critical,
+        };
+        var transition = new PlayAnimBehavior("t", "PlayAnim", new[] { AnimationTrigger.Hiccup })
+        {
+            WantsToRunStrategy = "ExpressNeedsTransition", StrategyNeed = NeedId.Energy,
+        };
+
+        needs.SetLevel(NeedId.Energy, 1.0);
+        Assert.False(inBracket.WantsToRunNow(ctx));
+        Assert.False(transition.WantsToRunNow(ctx));
+
+        needs.SetLevel(NeedId.Energy, 0.0);                       // Critical
+        Assert.Equal(NeedBracketId.Critical, needs.State.GetNeedBracket(NeedId.Energy));
+        Assert.True(inBracket.WantsToRunNow(ctx));
+        Assert.True(transition.WantsToRunNow(ctx));
+
+        needs.SetSevereExpressed(NeedId.Energy, true);            // already being expressed
+        Assert.True(inBracket.WantsToRunNow(ctx));
+        Assert.False(transition.WantsToRunNow(ctx));
+
+        // a strategy that only ever reaches a behaviour through the reaction map still says no here
+        var shaken = new PlayAnimBehavior("s", "PlayAnim", new[] { AnimationTrigger.Hiccup })
+        {
+            WantsToRunStrategy = "RobotShaken",
+        };
+        Assert.False(shaken.WantsToRunNow(ctx));
+    }
+
     [Fact]
     public void APlayAnimBehaviourResolvesItsTriggerAgainstTheShippedAssets()
     {

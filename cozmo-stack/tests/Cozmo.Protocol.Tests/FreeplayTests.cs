@@ -85,7 +85,111 @@ public class FreeplayTests
         }
     }
 
+    /// <summary>
+    /// Needs actions are reported by the behaviours, not by the activity.
+    /// <c>IBehavior::NeedActionCompleted</c> 0x005BE40C uses the behaviour's own <c>needsActionID</c>
+    /// (+0x68, filled at 0x005BBCAA from <c>ExtractNeedsActionIDFromConfig</c> 0x005BBAE8) when the caller
+    /// names none, and sixteen behaviours call it. An activity's <c>needsActionID</c> is parsed into
+    /// <c>IActivity+0x1C</c> (<c>ReadConfig</c>, 0x005B2A9C) and never read again anywhere in the build, so
+    /// ending an activity reports nothing - which this stack used to get wrong.
+    /// </summary>
+    [Fact]
+    public void NeedsActionsAreReportedByTheBehavioursAndNotByTheActivity()
+    {
+        var obb = ObbRoot();
+        if (obb is null) return;
+        var ids = BehaviorNeedsActions.Load(obb);
+        Assert.Equal(22, ids.Count);
+        Assert.Equal("KnockDownCubes", ids["KnockOverCubes"]);
+        Assert.Equal("KnockDownCubes_Sparked", ids["SparksKnockOverCubes"]);
+        Assert.Equal("StackCube", ids["StackBlocks"]);
+        Assert.Equal("Workout_Sparked", ids["SparksCubeLiftWorkout"]);
+        Assert.False(ids.ContainsKey("BuildPyramid"));                 // the pyramid behaviour reports nothing
+
+        using var rig = new Rig();
+        double clock = 0;
+        var needs = NeedsManager.FromObb(obb, () => clock, new Random(1));
+        var ctx = Ctx(rig);
+        ctx.Needs = needs;
+        ctx.NeedsActionIds = ids;
+
+        // the caller's action wins, then the behaviour's own, then the fallback; a behaviour with none and
+        // no fallback reports nothing
+        Assert.Equal("StackCube", BehaviorNeedsActions.Complete(new Fake("StackBlocks"), ctx));
+        Assert.Equal("PickupCube", BehaviorNeedsActions.Complete(new Fake("Hiking_BringCubeToBeacon"), ctx, "PickupCube"));
+        Assert.Equal("CozmoSings", BehaviorNeedsActions.Complete(new Fake("Singing"), ctx, fallback: "CozmoSings"));
+        Assert.Null(BehaviorNeedsActions.Complete(new Fake("BuildPyramid"), ctx));
+
+        // and it reaches the manager: KnockDownCubes is +0.2 play, give or take its 0.01 range
+        needs.SetLevel(NeedId.Play, 0.5);
+        Assert.Equal("KnockDownCubes", BehaviorNeedsActions.Complete(new Fake("KnockOverCubes"), ctx));
+        Assert.InRange(needs.State.GetNeedLevel(NeedId.Play), 0.69, 0.71);
+
+        // the activity keeps its parsed id and reports nothing with it
+        var tree = ActivityTreeLoader.Load(obb, new Dictionary<string, IBehavior>());
+        var pyramid = tree.SelectMany(a => a.SubActivities.Prepend(a)).First(a => a.Id == "BuildPyramid");
+        Assert.Equal("PyramidCompleted", pyramid.NeedsActionId);
+
+        var fake = new Fake("only", ticks: 2);
+        var bound = new Dictionary<string, IBehavior> { ["only"] = fake };
+        var manager = new BehaviorManager(ctx);
+        var activity = new Activity
+        {
+            Id = "Hiking", Priority = 1, Strategy = new ActivityStrategy(), NeedsActionId = "Feed",
+            Chooser = new StrictPriorityChooser(new[] { "only" }, bound),
+        };
+        var fp = new FreeplaySystem(manager, ctx, Fp(activity), bound, new FreeplayInputs { Needs = needs });
+        needs.SetLevel(NeedId.Energy, 0.5);
+        fp.Tick(0, 0);
+        Assert.Equal("Hiking", fp.Decisions[^1].Activity);
+        fp.OnRobotPutDown(1);
+        fp.Tick(1, 1000);
+        // "Feed" would have been +0.33 energy had the activity reported its id when it ended
+        Assert.Equal(0.5, needs.State.GetNeedLevel(NeedId.Energy), 6);
+    }
+
     // ------------------------------------------------------------------ choosers and strategies
+
+    /// <summary>
+    /// A behaviour with emotion scorers is scored by them and not by its flat score.
+    /// IBehavior::EvaluateScoreInternal 0x005BEEC2 tail-calls MoodScorer::EvaluateEmotionScore as soon as
+    /// the scorer list is non-empty and only an empty list reaches the flat score at +0x100, and
+    /// EvaluateEmotionScore 0x0067C9B8 returns the mean of the graphs - with any graph that comes out
+    /// within 1e-05 of zero ending the whole thing at zero. This stack added the two together.
+    /// </summary>
+    [Fact]
+    public void AScoredEntryUsesItsEmotionScorersInsteadOfItsFlatScore()
+    {
+        using var rig = new Rig();
+        var model = new MoodModel();
+        model.AddEvent(new EmotionEvent("makeHappy", new[] { new EmotionAffector(EmotionType.Happy, 1.0) }));
+        var mood = new MoodState(model);
+        Assert.True(mood.Trigger("makeHappy", 0));
+        var ctx = Ctx(rig, mood);
+        var b = new Fake("a");
+
+        // one scorer: the mean of one graph, and the flat score of 7 is not part of it
+        var happy = new Graph2d(new[] { (0.0, 0.0), (1.0, 4.0) });
+        var one = new ScoredBehaviorEntry("a", 7.0, null, null, null,
+                                          new[] { new EmotionScorer(EmotionType.Happy, happy, false) });
+        Assert.Equal(4.0, one.Evaluate(b, ctx, 0, null, null, null), 3);
+
+        // two scorers: the mean of the two, so a second graph at 2 gives 3
+        var social = new Graph2d(new[] { (0.0, 2.0), (1.0, 2.0) });
+        var two = one with { EmotionScorers = new[] { new EmotionScorer(EmotionType.Happy, happy, false),
+                                                      new EmotionScorer(EmotionType.Social, social, false) } };
+        Assert.Equal(3.0, two.Evaluate(b, ctx, 0, null, null, null), 3);
+
+        // a scorer that comes out at zero vetoes the behaviour outright
+        var zero = new Graph2d(new[] { (0.0, 0.0), (1.0, 0.0) });
+        var vetoed = one with { EmotionScorers = new[] { new EmotionScorer(EmotionType.Happy, happy, false),
+                                                         new EmotionScorer(EmotionType.Social, zero, false) } };
+        Assert.Equal(0.0, vetoed.Evaluate(b, ctx, 0, null, null, null), 6);
+
+        // no scorers at all: the flat score, which is what every shipped config uses
+        var flat = one with { EmotionScorers = Array.Empty<EmotionScorer>() };
+        Assert.Equal(7.0, flat.Evaluate(b, ctx, 0, null, null, null), 3);
+    }
 
     [Fact]
     public void TheScoringChooserWeighsFlatScoresPenaltiesAndTheRunningBonus()
@@ -96,10 +200,10 @@ public class FreeplayTests
         var bound = new Dictionary<string, IBehavior> { ["a"] = a, ["b"] = b, ["c"] = c };
         var entries = new[]
         {
-            new ScoredBehaviorEntry("a", 1.0, new Graph2d(new[] { (0.0, 0.0), (30.0, 1.0) }), null, null, Array.Empty<(EmotionType, Graph2d)>()),
-            new ScoredBehaviorEntry("b", 0.8, null, null, null, Array.Empty<(EmotionType, Graph2d)>()),
-            new ScoredBehaviorEntry("c", 5.0, null, null, null, Array.Empty<(EmotionType, Graph2d)>()),
-            new ScoredBehaviorEntry("missing", 9.0, null, null, null, Array.Empty<(EmotionType, Graph2d)>()),
+            new ScoredBehaviorEntry("a", 1.0, new Graph2d(new[] { (0.0, 0.0), (30.0, 1.0) }), null, null, Array.Empty<EmotionScorer>()),
+            new ScoredBehaviorEntry("b", 0.8, null, null, null, Array.Empty<EmotionScorer>()),
+            new ScoredBehaviorEntry("c", 5.0, null, null, null, Array.Empty<EmotionScorer>()),
+            new ScoredBehaviorEntry("missing", 9.0, null, null, null, Array.Empty<EmotionScorer>()),
         };
         var chooser = new ScoringChooser(entries, bound, scoreBonusForCurrent: new Graph2d(new[] { (0.0, 1.0) }));
         Assert.Equal(new[] { "missing" }, chooser.Unbound);
@@ -123,6 +227,113 @@ public class FreeplayTests
         Assert.Equal("a", strict.GetDesiredActiveBehavior(a, 3, ctx, 0).Behavior!.Id);
         c.Runnable = true;
         Assert.Equal("c", strict.GetDesiredActiveBehavior(a, 3, ctx, 0).Behavior!.Id);      // a higher priority became runnable
+    }
+
+    /// <summary>
+    /// An activity that ended as soon as it started waits a flat three seconds, whatever its configured
+    /// cooldown. IActivityStrategy::WantsToStart 0x005B529C takes the activity's start and end times
+    /// together (ldrd r3, r2, [r1, #0x54] at its call site 0x005B26FE), subtracts them at 0x005B52EA, and
+    /// when the run was positive but no longer than two basestation ticks it uses 3.0 (0x005B5312) in
+    /// place of the cooldown at +0x20.
+    /// </summary>
+    /// <summary>
+    /// An activity whose featureGate names a feature that is off never starts. WantsToStart 0x005B529C
+    /// tests the gate before anything else (0x005B52A8) and refuses when
+    /// CozmoFeatureGate::IsFeatureEnabled says no; the names and their states come from
+    /// config/features.json, which the binary points at from 0x00BE8449.
+    /// </summary>
+    /// <summary>
+    /// The decay modifiers, the damaged parts and the saved file.
+    /// GetDecayMultipliers 0x0069C214 multiplies in every entry whose threshold the level is at or under,
+    /// and the shipped config's only working entry doubles Play's decay while Repair is at or below 0.03;
+    /// NumDamagedPartsForRepairLevel 0x0069CCAC counts the leading broken-part thresholds at or above the
+    /// repair level (0.98, 0.6, 0.3); WriteToDevice 0x00693BB0 writes the levels with a timestamp and
+    /// ApplyDecayForTimeSinceLastDeviceWrite 0x00695304 decays for the gap on the way back in.
+    /// </summary>
+    [Fact]
+    public void TheNeedsDecayModifiersAndDamagedPartsFollowTheConfig()
+    {
+        var cfg = NeedsConfig.Default;
+        var decay = new DecayConfig(
+            new Dictionary<NeedId, IReadOnlyList<(double, double)>>
+            {
+                [NeedId.Play] = new[] { (0.0, 0.6) }, [NeedId.Repair] = new[] { (0.0, 0.0) }, [NeedId.Energy] = new[] { (0.0, 0.0) },
+            },
+            new Dictionary<NeedId, IReadOnlyList<(double, double)>>(),
+            new Dictionary<NeedId, IReadOnlyList<(double, NeedId, double)>>
+            {
+                [NeedId.Repair] = new[] { (0.3, NeedId.Play, 1.0), (0.03, NeedId.Play, 2.0) },
+            });
+
+        var state = new NeedsState(cfg);
+        state.SetNeedLevel(NeedId.Repair, 1.0);
+        state.SetNeedLevel(NeedId.Play, 1.0);
+        state.ApplyDecay(decay, 60, connected: true);
+        Assert.Equal(0.4, state.GetNeedLevel(NeedId.Play), 3);      // 0.6 a minute, no modifier
+
+        state.SetNeedLevel(NeedId.Repair, 0.02);                     // at or under 0.03: Play decays twice
+        state.SetNeedLevel(NeedId.Play, 1.0);
+        state.ApplyDecay(decay, 60, connected: true);
+        Assert.Equal(1.0 - 1.2, state.GetNeedLevel(NeedId.Play), 3 - 3);   // clamped at the minimum
+        Assert.Equal(cfg.MinimumNeedLevel, state.GetNeedLevel(NeedId.Play), 3);
+
+        // the damaged parts follow the repair level against 0.98, 0.6, 0.3
+        Assert.Equal(new[] { 0.98, 0.6, 0.3 }, cfg.BrokenPartThresholds);
+        Assert.Equal(0, state.NumDamagedPartsForRepairLevel(1.0));
+        Assert.Equal(1, state.NumDamagedPartsForRepairLevel(0.7));
+        Assert.Equal(2, state.NumDamagedPartsForRepairLevel(0.5));
+        Assert.Equal(3, state.NumDamagedPartsForRepairLevel(0.1));
+
+        // and the file round-trips, decaying for the time between the write and the read
+        double now = 0;
+        var needs = new NeedsManager(() => now, cfg, decay);
+        needs.SetLevel(NeedId.Play, 1.0);
+        var path = Path.Combine(Path.GetTempPath(), NeedsManager.FileNameForSerial(0x41d04d9d));
+        try
+        {
+            needs.Save(path, unixTimeSec: 1000);
+            var back = new NeedsManager(() => now, cfg, decay);
+            Assert.True(back.Load(path, unixTimeSec: 1060));         // a minute later
+            Assert.Equal(0.4, back.State.GetNeedLevel(NeedId.Play), 3);
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    [Fact]
+    public void AnActivityWhoseFeatureIsOffDoesNotStart()
+    {
+        var gates = new FeatureGates(new[] { ("Singing", true), ("Bouncer", false) });
+        Assert.True(gates.IsEnabled("singing"));          // the engine lowercases before it looks up
+        Assert.False(gates.IsEnabled("Bouncer"));
+        Assert.False(gates.IsEnabled("NotListed"));
+
+        var inputs = new FreeplayInputs { Features = gates };
+        var singing = new ActivityStrategy { Type = "Simple", FeatureGate = "Singing" };
+        var bouncer = new ActivityStrategy { Type = "Simple", FeatureGate = "Bouncer" };
+        Assert.True(singing.WantsToStart(inputs, 0, out _));
+        Assert.False(bouncer.WantsToStart(inputs, 0, out var why));
+        Assert.Contains("Bouncer", why);
+
+        // with no gates loaded nothing is consulted, which is what this stack can honestly say
+        Assert.True(bouncer.WantsToStart(new FreeplayInputs(), 0, out _));
+    }
+
+    [Fact]
+    public void AnActivityThatEndedAsSoonAsItStartedWaitsThreeSeconds()
+    {
+        Assert.Equal(3.0, ActivityStrategy.ShortRunCooldownSec, 6);
+
+        var quick = new ActivityStrategy { Type = "Simple", CooldownBaseSec = 30 };
+        quick.OnStarted(10);
+        quick.OnEnded(10 + ActivityStrategy.TickSec);       // one tick: under the two-tick bar
+        Assert.True(quick.InCooldown(12));                   // inside the three seconds
+        Assert.False(quick.InCooldown(13.2));                // and out of them, not waiting the 30
+
+        var normal = new ActivityStrategy { Type = "Simple", CooldownBaseSec = 30 };
+        normal.OnStarted(10);
+        normal.OnEnded(20);                                  // a real run: the configured cooldown stands
+        Assert.True(normal.InCooldown(45));
+        Assert.False(normal.InCooldown(51));
     }
 
     [Fact]
@@ -353,12 +564,12 @@ public class FreeplayTests
         var hiking = new Activity
         {
             Id = "Hiking", Priority = 16, Strategy = new ActivityStrategy { ShouldEndDurationSec = 60, CooldownBaseSec = 15 },
-            Chooser = new ScoringChooser(new[] { new ScoredBehaviorEntry("hikeA", 2, new Graph2d(new[] { (0.0, 0.0), (30.0, 1.0) }), null, null, Array.Empty<(EmotionType, Graph2d)>()),
-                                                 new ScoredBehaviorEntry("hikeB", 1, null, null, null, Array.Empty<(EmotionType, Graph2d)>()) }, bound, penalty: penalty),
+            Chooser = new ScoringChooser(new[] { new ScoredBehaviorEntry("hikeA", 2, new Graph2d(new[] { (0.0, 0.0), (30.0, 1.0) }), null, null, Array.Empty<EmotionScorer>()),
+                                                 new ScoredBehaviorEntry("hikeB", 1, null, null, null, Array.Empty<EmotionScorer>()) }, bound, penalty: penalty),
             InterludeChooser = new StrictPriorityChooser(new[] { "interlude" }, bound),
         };
         var playAlone = new Activity { Id = "PlayAlone", Priority = 15, Strategy = new ActivityStrategy { ShouldEndDurationSec = 25, CooldownBaseSec = 30 },
-                                       Chooser = new ScoringChooser(new[] { new ScoredBehaviorEntry("playA", 1, null, null, null, Array.Empty<(EmotionType, Graph2d)>()) }, bound, penalty: penalty) };
+                                       Chooser = new ScoringChooser(new[] { new ScoredBehaviorEntry("playA", 1, null, null, null, Array.Empty<EmotionScorer>()) }, bound, penalty: penalty) };
         var nothing = new Activity { Id = "NothingToDo", Priority = 17, Strategy = new ActivityStrategy(), Chooser = new StrictPriorityChooser(new[] { "hikeB" }, bound) };
         var inputs = new FreeplayInputs();
         var fp = new FreeplaySystem(manager, ctx, Fp(hiking, playAlone, nothing), bound, inputs);
@@ -386,6 +597,65 @@ public class FreeplayTests
         Assert.Contains(log, l => l.Contains("'PlayAlone' wants to end"));
         Assert.Contains(fp.Decisions, x => x.Activity == "Hiking" && x.AtSec > 25);       // Hiking's 15 s cooldown from t=10 has passed
         Assert.Contains(log, l => l.Contains("robot.freeplay_goal_started PlayAlone"));
+    }
+
+    /// <summary>
+    /// The second gate on the activity, <c>GetDesiredActiveBehaviorInternal</c> 0x005AE68C..0x005AE704.
+    /// An activity that chooses no behaviour is dropped and barred from the re-pick
+    /// ("NoBehaviorChosenWhileRunning ... This activity is not allowed to be repicked", the third argument of
+    /// PickNewActivityForSpark going false at 0x005AE75C); an activity that chooses a behaviour it is not
+    /// already running is dropped too when its strategy wants to end ("NewBehaviorChosenWhileRunning"). And
+    /// <c>IActivity::OnDeselected</c> 0x005B3548 hands a pending freeplay sparks reward to the app on the way
+    /// out (<c>NeedsManager::SparksRewardCommunicatedToUser</c> 0x00696E64).
+    /// </summary>
+    [Fact]
+    public void AnActivityThatChoosesNoBehaviourIsDroppedAndNotRepicked()
+    {
+        using var rig = new Rig();
+        var ctx = Ctx(rig);
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        ctx.Needs = needs;
+        var a = new Fake("a", ticks: 1);
+        var b = new Fake("b", ticks: 40);
+        var c = new Fake("c", runnable: false, ticks: 40);
+        var bound = new Dictionary<string, IBehavior> { ["a"] = a, ["b"] = b, ["c"] = c };
+        var manager = new BehaviorManager(ctx);
+        var first = new Activity { Id = "First", Priority = 1, Strategy = new ActivityStrategy(), Chooser = new StrictPriorityChooser(new[] { "a" }, bound) };
+        // a scoring chooser, because only a chooser that can displace a running behaviour reaches the second
+        // gate: StrictPriorityBSRunnableChooser takes the running one without even asking (0x0060B250)
+        var second = new Activity
+        {
+            Id = "Second", Priority = 2, Strategy = new ActivityStrategy { ShouldEndDurationSec = 1 },
+            Chooser = new ScoringChooser(new[] { new ScoredBehaviorEntry("b", 1, null, null, null, Array.Empty<EmotionScorer>()),
+                                                 new ScoredBehaviorEntry("c", 5, null, null, null, Array.Empty<EmotionScorer>()) }, bound),
+        };
+        var fp = new FreeplaySystem(manager, ctx, Fp(first, second), bound, new FreeplayInputs { Needs = needs });
+        var log = new List<string>(); fp.Log += log.Add;
+
+        Assert.Equal("First", fp.Tick(0, 0).Activity);
+        Assert.Equal(1, a.Started);
+
+        // 'a' stops wanting to run: First chooses nothing, is dropped and is barred from the re-pick, so the
+        // same tick lands on Second. The sparks reward pending when First ends goes to the app.
+        a.Runnable = false;
+        needs.SparksRewardPending = true;
+        var d = fp.Tick(1, 1000);
+        Assert.Contains(log, l => l.Contains("NoBehaviorChosenWhileRunning") && l.Contains("not allowed to be repicked"));
+        Assert.Equal("Second", d.Activity);
+        Assert.Equal("b", d.Behavior);
+        Assert.False(needs.SparksRewardPending);
+
+        // Second has wanted to end since t=2, and 'b' running keeps it alive.
+        Assert.Equal("Second", fp.Tick(3, 3000).Activity);
+        Assert.Equal("b", manager.Current?.Id);
+
+        // the moment its chooser wants a behaviour that is not the one running, it goes instead
+        c.Runnable = true;
+        fp.Tick(4, 4000);
+        Assert.True(log.Any(l => l.Contains("NewBehaviorChosenWhileRunning") && l.Contains("'Second'")), string.Join(" | ", log));
+        Assert.Null(fp.Current);                                               // nothing else can be picked
+        Assert.Equal(0, c.Started);
     }
 
     [Fact]

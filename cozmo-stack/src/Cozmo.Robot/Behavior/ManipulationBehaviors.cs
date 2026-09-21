@@ -120,9 +120,11 @@ public sealed class PutDownBlockBehavior : ManipulationBehavior
     }
 
     /// <summary>
-    /// <c>WaitForImagesAction</c>'s frame count. The engine takes it as a constructor argument and the value
-    /// this behaviour passes was not read; <c>acknowledgeObject.json</c>'s <c>NumImagesToWaitFor</c> is 2, so 2
-    /// stands in (INFERRED).
+    /// <c>WaitForImagesAction</c>'s frame count: 2, the <c>movs r2, #2</c> at 0x005C8242 in
+    /// <c>BehaviorPutDownBlock::CreateLookAfterPlaceAction</c>, which builds
+    /// <c>WaitForImagesAction(robot, 2, VisionMode 1, ...)</c> into the sequence after the head-down and
+    /// back-up pair. It matches <c>acknowledgeObject.json</c>'s <c>NumImagesToWaitFor</c>, which is what
+    /// this stack had stood in for it.
     /// </summary>
     public const int ImagesToWaitFor = 2;
 
@@ -216,6 +218,9 @@ public sealed class RollBlockBehavior : ManipulationBehavior
         double nowSec = Clock() / 1000.0;
         bool known = Context.Mood?.Trigger("RollSucceeded", nowSec) ?? false;
         Log($"emotion event RollSucceeded: {(Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model")}");
+        // TransitionToRollSuccess reports the behaviour's own needs action here (0x005C8C1A): RollACube for
+        // the three freeplay configs, RollACube_Sparked for the spark.
+        if (NeedActionCompleted() is { } action) Log($"needs action {action}");
         PlayTrigger(AnimationTrigger.RollBlockSuccess, () => { Log("objective achieved: rolled the block"); CurrentPhase = Phase.Idle; Finish(); });
     }
 }
@@ -301,6 +306,8 @@ public sealed class StackBlocksBehavior : ManipulationBehavior
     {
         CurrentPhase = Phase.PlayingFinalAnim;
         Log("objective achieved: stacked");
+        // 0x005C9F14, beside the objective: StackCube, or StackCube_Sparked for the spark
+        if (NeedActionCompleted() is { } action) Log($"needs action {action}");
         PlayTrigger(AnimationTrigger.StackBlocksSuccess, () => { CurrentPhase = Phase.Idle; Finish(); });
     }
 

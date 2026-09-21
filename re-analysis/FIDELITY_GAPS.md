@@ -3,15 +3,15 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **203 records** over 16 subsystems.
+Manifest of **204 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 135 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 13 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 26 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| EXACT_SOURCE | 156 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EQUIVALENT_IMPLEMENTATION | 14 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| RECOVERABLE_GAP | 3 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 1 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 17 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| COMPATIBILITY_POLICY | 19 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -28,50 +28,22 @@ remains after both, and they do not go away by working harder on this repository
 | M2-protocol — CLAD messages and protocol helpers | 6 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 17 | 0 | 0 | 0 | 1 | yes | yes |
 | M4-control — Motion, sensors, lights and cubes | 9 | 0 | 0 | 0 | 0 | yes | yes |
-| M5-animation — Animation clips, scheduler and face | 20 | 3 | 0 | 0 | 0 | no | yes |
+| M5-animation — Animation clips, scheduler and face | 21 | 0 | 0 | 0 | 0 | yes | yes |
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 1 | 0 | 0 | 0 | no | yes |
 | M7-behaviour — Idle, mood and reactions | 16 | 0 | 0 | 0 | 0 | yes | yes |
-| M8-framework — Behaviour framework and scoring | 10 | 6 | 0 | 0 | 0 | no | yes |
+| M8-framework — Behaviour framework and scoring | 10 | 0 | 0 | 0 | 0 | yes | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
-| M10-derived — Derived robot state and reaction strategies | 9 | 1 | 0 | 0 | 0 | no | yes |
+| M10-derived — Derived robot state and reaction strategies | 9 | 0 | 0 | 0 | 0 | yes | yes |
 | M11-vision — Markers, camera geometry and BlockWorld | 16 | 1 | 0 | 1 | 0 | no | yes |
 | M12-manipulation — Docking, carrying and pre-action poses | 16 | 0 | 0 | 0 | 0 | yes | yes |
 | M13-navigation — Planning, charger and block configurations | 12 | 0 | 0 | 0 | 0 | yes | yes |
-| M14-faces — Face and pet pipeline | 7 | 5 | 0 | 1 | 0 | no | yes |
-| M15-freeplay — Needs, activities and freeplay | 12 | 9 | 0 | 0 | 0 | no | yes |
+| M14-faces — Face and pet pipeline | 7 | 1 | 0 | 1 | 0 | no | yes |
+| M15-freeplay — Needs, activities and freeplay | 12 | 0 | 0 | 0 | 0 | yes | yes |
 | tools — Conformance CLI and offline tools | 4 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Still to read: every RECOVERABLE_GAP
 
 Each of these is a question the original can answer and nobody has asked it yet.
-
-### M5-animation — Animation clips, scheduler and face
-
-**M5-012 — Keyframe volume applied as a linear PCM gain** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
-* effect: animation audio plays at the wrong level
-* rests on: a straight linear reading of the keyframe field
-* best authority: the engine passes the keyframe volume to Wwise, which maps it through an RTPC curve
-* evidence: RobotAudioKeyFrame::SetMembersFromFlatBuf 0x004F9E54
-* outstanding: the RTPC or parameter the engine posts the keyframe volume to, and the curve on it; RobotAudioClient::SetCozmoEventParameter was not traced
-
-**M5-015 — Procedural-face corner-radius parameter assignment and polygon fill rule** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFaceRenderer.cs`
-* effect: eye corners are rounded on the wrong corners, or filled differently
-* rests on: a reading of DrawEye that stopped short
-* best authority: ProceduralFaceDrawer::DrawEye in libcozmoEngine.so
-* evidence: re-analysis/PROCEDURAL_FACE.md
-* outstanding: which radius parameter belongs to which corner, and the fill rule for the eye polygon
-
-**M5-019 — The last face is held after the last face keyframe; an oversize face payload is dropped** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
-* effect: the screen holds a face the engine would have cleared, or drops a frame the engine would have sent another way
-* rests on: a choice of this stack
-* best authority: the engine display path, read only as far as CompressRLE; what it does with the screen at the end of a clip was not established
-* outstanding: what the engine leaves on the screen after a clip ends. The oversize half of this is M3-007, which is known and unbuilt
 
 ### M6-wwise-bank — Wwise bank reading and codecs
 
@@ -83,70 +55,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: the seven shipped stereo ADPCM files themselves, which are the thing that would settle the layout: IMA ADPCM block packing is arithmetic that a file either fits or does not
 * evidence: wwise --coverage: Play__Robot_SFX__Effort_Long, Effort_Medium, Effort_Fail, Spark_Launch, Scan_Loop_Play, Scan_Start, Scan_Stop, Scan_Single; wwise --validate: 7 files, "ADPCM with 2 channels is not decoded"
 * outstanding: the stereo block layout. An earlier version of this record said no robot event reaches such a file; the coverage tool now lists the eight that do, which is what corrected it
-
-### M8-framework — Behaviour framework and scoring
-
-**M8-003 — Scored selection: score times repetition penalty, highest wins** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs`
-* effect: a different behaviour is chosen at every decision point
-* rests on: structure inferred from exported names
-* best authority: IBehavior::ReadFromScoredJson 0x005BC489 and ScoringBSRunnableChooser::GetDesiredActiveBehavior 0x0060B23E, of which the chooser has since been read
-* evidence: ScoringBSRunnableChooser::GetDesiredActiveBehavior
-* outstanding: ReadFromScoredJson has not been disassembled, so how a shipped config turns into a score is still not read
-
-**M8-004 — Behaviour scores 1.0 and 5.0 where the shipped configs carry none** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs`
-* effect: the scoring chooser ranks behaviours by numbers that are not the app numbers
-* rests on: chosen because they looked right
-* best authority: IBehavior::ReadFromScoredJson 0x005BC489 and the shipped behaviour configs
-* outstanding: where the engine gets a score for a behaviour whose config carries none
-
-**M8-005 — PlayAnim uses the first trigger that resolves** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs`
-* effect: a different clip plays when several triggers are listed
-* rests on: inferred
-* best authority: the engine PlayAnim behaviour class
-* outstanding: the engine selection rule among several triggers
-
-**M8-006 — A strategy type this stack does not model reports not runnable** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs:126`
-* effect: a behaviour whose config names an unmodelled strategy never runs
-* rests on: a deliberate fail-closed choice, labelled
-* best authority: WantsToRunStrategyFactory in libcozmoEngine.so, which names every strategy type
-* evidence: IBehavior::ReadFromJson
-* outstanding: the strategy types not yet modelled and what each one tests
-
-**M8-007 — Per-play track lock is recorded and not applied** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.cs:205`
-* effect: a track the engine would mute for one play still moves
-* rests on: deferred; the scheduler has no per-play track mask
-* best authority: MovementComponent::LockTracks in libcozmoEngine.so
-* outstanding: the mask the engine applies per play and where it is released
-
-**M8-008 — A 5 s calibration allowance is borrowed from ReactToImpact for other behaviours** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.cs:265`
-* effect: behaviours wait 5 s for recalibration where the engine may wait a different time, or not wait
-* rests on: a number borrowed from the one place the engine is known to use it
-* best authority: BehaviorReactToImpact 0x00606348 uses 5 s. What the other behaviour classes do about recalibration was not read
-* evidence: BehaviorReactToImpact::TransitionToPlayingAnim 0x00606348
-* outstanding: what each behaviour class actually waits for, which is in the classes themselves
-
-### M10-derived — Derived robot state and reaction strategies
-
-**M10-007 — What the engine does after unexpected movement: a history lookup, an obstacle and a new pose** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs`
-* effect: the robot keeps the pose it drifted to, and nothing is left in the world where it was blocked
-* rests on: nothing: this stack raises the event and stops there
-* best authority: MovementComponent::CheckForUnexpectedMovement 0x0063E398 continues past the event, and the shape of what it does is read now
-* evidence: on the event it checks BehaviorManager::IsReactionTriggerEnabled(0x14) (0x0063E60A) and does nothing further when that trigger is off; it asks RobotStateHistory::ComputeStateAt(startTimestamp, ...) 0x0063E63E for the robot's state at the tick the disagreement began - the timestamp it stored at +0x94 - and warns "Could not get robot pose at t=%u" when it cannot; it divides the accumulated wheel speeds at +0x98 and +0x9C by the count at +0xA0 to get mean left and right speeds (0x0063E6C0, 0x0063E6CE); it takes MarkerlessObject::GetSizeByType(0x10) and adds 5 mm to its first component (0x0063E6BC..0x0063E6D4), then picks one of four offsets from the robot's own footprint - +22.1 ahead, -55.9 behind, +/-27.1 to the sides, with a +/-pi/2 rotation about Z for the two turned-in-place cases - and a name for each; it ends with Robot::SetNewPose (0x0063E87E), having copied the robot's current rotation over the constructed pose's (the 32-byte loop at 0x0063E868, the transform's translation living at +0x20); the three UnexpectedMovementType values are read: TURNED_BUT_STOPPED, TURNED_IN_SAME_DIRECTION, TURNED_IN_OPPOSITE_DIRECTION
-* outstanding: the exact composition of the four offset poses and which of them SetNewPose finally receives; the reading above is of the branches, not yet of the arithmetic that assembles them
 
 ### M11-vision — Markers, camera geometry and BlockWorld
 
@@ -161,39 +69,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 
 ### M14-faces — Face and pet pipeline
 
-**M14-002 — Frame counts waited by VisuallyVerifyFaceAction and TurnTowardsFaceAction** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs:69`
-* effect: a face is declared verified too early or too late
-* rests on: inferred (5 frames)
-* best authority: the engine face actions
-* outstanding: the engine frame budget for each
-
-**M14-003 — TrackFaceAction update period of 100 ms; eye shift and driving animation not implemented** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs:156`
-* effect: tracking is jerkier and the face does not react while tracking
-* rests on: chosen locally; the extra layers are deferred
-* best authority: the engine TrackFaceAction
-* outstanding: the engine update period and the layers it adds
-
-**M14-004 — PetInitialDetection strategy shape** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs:524`
-* effect: the pet reaction fires at the wrong times
-* rests on: inferred shape: the first sighting of a pet id
-* best authority: the engine strategy class for PetInitialDetection
-* evidence: reactionTrigger_behavior_map.json
-* outstanding: the strategy class was not disassembled
-
-**M14-005 — TurnTowardsImagePoint aims at a ray 200 mm out** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs:573`
-* effect: the robot turns to the wrong angle for a detected pet
-* rests on: inferred range
-* best authority: the engine TurnTowardsImagePointAction
-* outstanding: the range the engine assumes
-
 **M14-007 — The memory map is not modelled, so CanDriveIdealDistanceForward always allows the drive** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs:256`
@@ -201,85 +76,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * rests on: deferred
 * best authority: the engine memory map
 * outstanding: the memory map structure and the query
-
-### M15-freeplay — Needs, activities and freeplay
-
-**M15-004 — Needs decay modifiers, damaged parts and persistence are not implemented** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs:45`
-* effect: needs decay at the wrong rate and do not survive a restart
-* rests on: deferred
-* best authority: the shipped needs config carries DecayModifiers; the engine reads them
-* evidence: needs config
-* outstanding: how one need level scales another decay, the damaged-parts bookkeeping, and where the engine persists the state
-
-**M15-005 — The flat 3 s recent-end cooldown case is not reproduced** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs`
-* effect: an activity that just ended can restart sooner than the app allows
-* rests on: read in WantsToStart and left out because the second time argument was not identified
-* best authority: IActivityStrategy::WantsToStart 0x005B529C
-* evidence: WantsToStart 0x005B529C
-* outstanding: what the second time argument is measured from
-
-**M15-006 — Activity deselection hook and the null-pick path** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs:23`
-* effect: state is cleared at the wrong moment when an activity ends or picks nothing
-* rests on: inferred; IActivity::OnDeselected reads it but the exact hook was not traced
-* best authority: ActivityFreeplay::GetDesiredActiveBehaviorInternal 0x005AE2xx and IActivity::OnDeselected
-* evidence: ActivityFreeplay::GetDesiredActiveBehaviorInternal
-* outstanding: the hook and the null-pick path, instruction by instruction
-
-**M15-007 — boredomMultiplier, feature gates and the pyramid strategy random factor are not applied** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs`
-* effect: activity scores differ from the app
-* rests on: deferred
-* best authority: the shipped activity configs carry them
-* evidence: activities/**
-* outstanding: how the engine applies each
-
-**M15-008 — The needsActionID hook and desired-from-objects ordering** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs:139`
-* effect: a different behaviour is picked when several objects are desirable
-* rests on: inferred ordering
-* best authority: the engine activity strategy
-* outstanding: the ordering rule and what needsActionID does
-
-**M15-009 — Emotion event names fired when a cube is placed in a beacon** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs:825`
-* effect: mood does not move where the app moves it
-* rests on: deferred: the names were not read
-* best authority: FireEmotionEvents call sites in libcozmoEngine.so and mood_config.json
-* outstanding: the event names
-
-**M15-010 — A block whose location is no longer valid goes straight to the upset reaction** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeReactions.cs:259`
-* effect: the robot reacts where the app might search first
-* rests on: inferred: the engine log string was found, the branch after it was not read
-* best authority: the engine behaviour that logs the location is no longer valid
-* outstanding: what the engine does after that log line
-
-**M15-011 — The beacon is centred on the robot** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs:793`
-* effect: cubes are gathered to the wrong place
-* rests on: inferred; the engine selection logic was not read further
-* best authority: the engine beacon selection
-* outstanding: how the engine chooses the beacon centre
-
-**M15-012 — Images waited for after a put-down, and the CantHandleTallStack trigger name** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs:636`
-* effect: a stack check runs on too few frames, or the wrong animation plays
-* rests on: inferred from acknowledgeObject.json and from the trigger name
-* best authority: the engine behaviour classes
-* evidence: acknowledgeObject.json
-* outstanding: the engine image count and trigger
 
 ## Still to build: every IMPLEMENTATION_GAP
 
@@ -329,9 +125,12 @@ Each of these is a question already answered. The original's behaviour is establ
 | M4-009 | M4-control | EQUIVALENT_IMPLEMENTATION | Cube tracking from ObjectAvailable and ObjectConnectionState | HandleActiveObjectAvailable 0x0053391C, HandleActiveObjectConnectionState 0x00533B3C, HandleActiveObjectMoved 0x00533E30 and HandleObjectPowerLevel 0x00537130, read |
 | M5-018 | M5-animation | EQUIVALENT_IMPLEMENTATION | How many frames one wall-clock tick streams | the engine streams to the audio budget on every update regardless of the clock (UpdateStream 0x0057C84C) |
 | M5-020 | M5-animation | COMPATIBILITY_POLICY | Expressions helper faces | not applicable |
+| M5-021 | M5-animation | EQUIVALENT_IMPLEMENTATION | The eye and its lids are filled by scanline, not by cv::fillConvexPoly | ProceduralFaceDrawer::DrawEye 0x005850E0, read |
 | M6-002 | M6-wwise-bank | EQUIVALENT_IMPLEMENTATION | Vorbis rebuild with external codebooks and granule computation | the Wwise Vorbis packing; no runtime in the package to check against |
 | M6-004 | M6-wwise-bank | EQUIVALENT_IMPLEMENTATION | Resampling to the robot rate is a band-limited windowed sinc, not Audiokinetic resampler | the Wwise runtime resampler, which does not ship in the APK. What was fixed here is a defect of this stack, not a reproduction of theirs: nearest-sample decimation aliases, and no competent resampler does |
 | M7-015 | M7-behaviour | EQUIVALENT_IMPLEMENTATION | Pick-up falls back to the raw status flag until the off-treads classifier is enabled | Robot::CheckAndUpdateTreadsState 0x00511E00, which is implemented and used once calibration is reported |
+| M8-004 | M8-framework | COMPATIBILITY_POLICY | Behaviours built in code carry a score of their own; the engine's default is zero | IBehavior::IBehavior 0x005BBB74 and IBehavior::EvaluateScoreInternal 0x005BEEC2, read |
+| M8-008 | M8-framework | COMPATIBILITY_POLICY | The head recalibration wait: the engine has no timeout, this stack keeps a backstop | CalibrateMotorAction::CheckIfDone 0x00547D38 and IAction::IAction 0x00540C44, read |
 | M8-009 | M8-framework | COMPATIBILITY_POLICY | Behaviour scope undo order | the engine Smart* destructor order |
 | M8-010 | M8-framework | COMPATIBILITY_POLICY | Behaviour inventory classifier rules | not applicable: this is bookkeeping, not robot behaviour |
 | M9-011 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | The render goes through the effect chain the robot bus carries, not a local peak normalisation | libcozmoEngine.so for the routing and Init.bnk for the chain and its parameters |
