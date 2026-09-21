@@ -196,7 +196,15 @@ public sealed partial class EnableStopOnCliff
 
 public sealed partial class SyncTime
 {
-    public SyncTime(uint timestamp, uint unknown = 0) { Timestamp = timestamp; Unknown = unknown; }
+    /// <summary>
+    /// The second word is not spare and it is not zero: <c>Robot::SendSyncTime</c> 0x0051524C builds the
+    /// message from <c>BaseStationTimer::GetCurrentTimeStamp()</c> and the literal <c>0xC1A00000</c>,
+    /// which is -20.0f (<c>movs r0, #0</c> / <c>movt r0, #0xc1a0</c> at 0x0051526C). This stack had been
+    /// sending zero there.
+    /// </summary>
+    public const uint EngineConstant = 0xC1A00000;
+
+    public SyncTime(uint timestamp, uint unknown = EngineConstant) { Timestamp = timestamp; Unknown = unknown; }
 }
 
 public sealed partial class BackpackLightsMiddle

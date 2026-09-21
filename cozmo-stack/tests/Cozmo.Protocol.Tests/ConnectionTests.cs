@@ -141,13 +141,19 @@ public class ConnectionTests
         t.OfflineConnect();
         t.ProcessIncoming(RobotFrame(1, 1, 1, new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), 1)));
         t.OfflineOutbound.Clear();
-        var payload = new byte[2500];
+        // The split follows the engine's frame bound rather than a number written down here: each part
+        // carries a two-byte {index, total} header, so the count falls out of MaxFramePayloadBytes.
+        const int total = 2500;
+        int perPart = new TransportOptions().MaxFramePayloadBytes - 2;
+        int expected = (total + perPart - 1) / perPart;
+        Assert.Equal(2, expected);                                  // 1406 a frame, where 1037 gave three
+        var payload = new byte[total];
         t.SendData(payload, reliable: true, flush: true);
         for (int i = 0; i < 40; i++) { clk.Advance(5); t.OfflineTick(); }
         var parts = t.OfflineOutbound.SelectMany(f => f.Messages).Where(m => m.Type == ReliableMessageType.MultiPartMessage).DistinctBy(m => m.Seq).OrderBy(m => m.Seq).ToList();
-        Assert.Equal(3, parts.Count);
-        Assert.Equal(new byte[] { 1, 3 }, parts[0].Payload.Take(2));
-        Assert.Equal(new byte[] { 3, 3 }, parts[2].Payload.Take(2));
-        Assert.Equal(2500, parts.Sum(p => p.Payload.Length - 2));
+        Assert.Equal(expected, parts.Count);
+        Assert.Equal(new byte[] { 1, (byte)expected }, parts[0].Payload.Take(2));
+        Assert.Equal(new byte[] { (byte)expected, (byte)expected }, parts[^1].Payload.Take(2));
+        Assert.Equal(total, parts.Sum(p => p.Payload.Length - 2));
     }
 }

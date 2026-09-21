@@ -7,9 +7,9 @@ Manifest of **200 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 88 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 91 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 65 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 62 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 9 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -24,8 +24,8 @@ remains after both, and they do not go away by working harder on this repository
 
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| M1-transport — UDP transport and reliability | 15 | 2 | 0 | 0 | 0 | no | yes |
-| M2-protocol — CLAD messages and protocol helpers | 6 | 1 | 0 | 0 | 0 | no | yes |
+| M1-transport — UDP transport and reliability | 15 | 0 | 0 | 0 | 0 | yes | yes |
+| M2-protocol — CLAD messages and protocol helpers | 6 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 17 | 6 | 1 | 0 | 1 | no | no |
 | M4-control — Motion, sensors, lights and cubes | 9 | 4 | 0 | 0 | 0 | no | yes |
 | M5-animation — Animation clips, scheduler and face | 20 | 4 | 2 | 0 | 0 | no | no |
@@ -44,37 +44,6 @@ remains after both, and they do not go away by working harder on this repository
 ## Still to read: every RECOVERABLE_GAP
 
 Each of these is a question the original can answer and nobody has asked it yet.
-
-### M1-transport — UDP transport and reliability
-
-**M1-011 — An echoed ping with isReply 0 is treated as a reply** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs`
-* effect: round-trip time is measured, or is never measured at all
-* rests on: robot behaviour in the fw2457 capture
-* best authority: libcozmoEngine.so ping handling; the capture corroborates
-* evidence: re-analysis/captures fw2457 frame logs
-* outstanding: whether the engine also accepts isReply 0 as a reply, or ignores it and relies on its own timer; the ping handler was not disassembled
-
-**M1-012 — MaxFramePayloadBytes 1037** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/TransportConstants.cs`
-* effect: a larger message is split, or refused, at a different size than the engine would
-* rests on: PyCozmo robot-side measurement
-* best authority: libcozmoEngine.so builds frames up to 1406 bytes; the robot own limit is the binding one
-* evidence: dis_udptransport.txt 1420-byte maximum
-* outstanding: the robot firmware real limit; the engine 1406 and PyCozmo 1037 disagree and neither was traced to the firmware
-
-### M2-protocol — CLAD messages and protocol helpers
-
-**M2-004 — Handshake order: GetManufacturingInfo, SyncTime, InitController** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
-* effect: the robot refuses to come up, or comes up in a different state
-* rests on: PyCozmo handshake, confirmed by a successful hardware connect
-* best authority: libcozmoEngine.so connect sequence
-* evidence: re-analysis/captures 2026-09-18_fw2457_probe.log
-* outstanding: the engine own connect sequence was not disassembled end to end; the order works but is not read from the binary
 
 ### M3-device — Camera, display and audio device layer
 

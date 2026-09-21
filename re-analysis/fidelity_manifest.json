@@ -50,14 +50,14 @@
       "id": "M1-transport",
       "name": "UDP transport and reliability",
       "milestone": "M1",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true
     },
     {
       "id": "M2-protocol",
       "name": "CLAD messages and protocol helpers",
       "milestone": "M2",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true
     },
     {
@@ -289,38 +289,34 @@
       "live_path": true
     },
     {
-      "id": "M1-011",
       "subsystem": "M1-transport",
-      "title": "An echoed ping with isReply 0 is treated as a reply",
-      "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
-      "effect": "round-trip time is measured, or is never measured at all",
-      "provenance": "robot behaviour in the fw2457 capture",
-      "authority": "libcozmoEngine.so ping handling; the capture corroborates",
+      "title": "Only a ping marked as a reply measures the round trip",
+      "location": "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "ReliableConnection::ReceivePing 0x00835C70 branches on the byte at payload+0x10. Non-zero: the round trip is now - payload.timeSent, warned about if negative (\"Ping has returned before it was sent!?\") and added to a RecentStatsAccumulator sized by sMaxPingRoundTripsToTrack. Zero: the engine answers with SendPing(transport, payload.timeSent, true), but only when sSendSeparatePingMessages is set, and measures nothing. There is no third case",
       "evidence": [
-        "re-analysis/captures fw2457 frame logs"
+        "the payload is 17 bytes: f64 timeSent, u32 numPingsSent, u32 numPingsReceived, u8 isReply, and SendPing 0x00835BF2 writes exactly that, sending it as message type 0x0B",
+        "the counter bookkeeping matches too: numPingsReceived is incremented on receipt, and the pair is kept only when the incoming numPingsSent exceeds the last one seen",
+        "this stack also treated an echo of a timestamp it had sent as a reply, on the strength of a PyCozmo capture of the robot echoing with isReply clear. Against such a robot the app measures no round trip at all, so that clause is gone"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "whether the engine also accepts isReply 0 as a reply, or ignores it and relies on its own timer; the ping handler was not disassembled",
-      "hardware_required": false,
       "live_path": true,
-      "test": "HardwareCaptureTests"
+      "test": "TransportSourceTests.OnlyAPingMarkedAsAReplyMeasuresTheRoundTrip",
+      "id": "M1-011"
     },
     {
-      "id": "M1-012",
       "subsystem": "M1-transport",
-      "title": "MaxFramePayloadBytes 1037",
+      "title": "The frame payload bound is the engine 1406",
       "location": "cozmo-stack/src/Cozmo.Transport/TransportConstants.cs",
-      "effect": "a larger message is split, or refused, at a different size than the engine would",
-      "provenance": "PyCozmo robot-side measurement",
-      "authority": "libcozmoEngine.so builds frames up to 1406 bytes; the robot own limit is the binding one",
+      "status": "EXACT_SOURCE",
+      "authority": "RobotConnectionManager::Init calls UDPTransport::SetMaxNetMessageSize(0x58C) = 1420 at 0x0062EFC6, after SetHeaderPrefix(4 bytes) and SetDoesHeaderHaveCRC(false). The reliable payload per frame is 1420 less the 4-byte prefix and the 10-byte header, so 1406",
       "evidence": [
-        "dis_udptransport.txt 1420-byte maximum"
+        "the static default UDPTransport::sMaxNetMessageSize is 0x5C0 = 1472; the robot connection lowers it to 1420",
+        "this stack had 1037, from a PyCozmo robot-side measurement. Nothing in the package supports it, the shipped app plainly sends up to 1406, and what PyCozmo was measuring is not established; it is not authority over the app own transport",
+        "the multipart split follows from the bound rather than from a number written into the test"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the robot firmware real limit; the engine 1406 and PyCozmo 1037 disagree and neither was traced to the firmware",
-      "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "ConnectionTests.LargeOutgoingPayloadIsSplitIntoMultipartParts",
+      "id": "M1-012"
     },
     {
       "id": "M1-013",
@@ -408,21 +404,18 @@
       "test": "SourceFidelityTests.TheLiftAngleIsAnAngleAndConvertsToHeightAsTheEngineDoes"
     },
     {
-      "id": "M2-004",
       "subsystem": "M2-protocol",
-      "title": "Handshake order: GetManufacturingInfo, SyncTime, InitController",
+      "title": "The connect sequence, and the constant in SyncTime second word",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
-      "effect": "the robot refuses to come up, or comes up in a different state",
-      "provenance": "PyCozmo handshake, confirmed by a successful hardware connect",
-      "authority": "libcozmoEngine.so connect sequence",
+      "status": "EXACT_SOURCE",
+      "authority": "RobotInitialConnection::OnNotified sends GetManufacturingInfo (0x0052DE6C). On a successful RobotConnectionResponse, RobotEventHandler::HandleMessage 0x005289AC calls Robot::SyncTime 0x0051521E, which clears the state history and calls SendSyncTime 0x0051524C; that sends SyncTime and then, only if the SyncTime send succeeded, InitController (0x0051529A). So the order this stack uses - GetManufacturingInfo, SyncTime, InitController - is the engine order",
       "evidence": [
-        "re-analysis/captures 2026-09-18_fw2457_probe.log"
+        "SendSyncTime builds the message from BaseStationTimer::GetCurrentTimeStamp() and the literal 0xC1A00000, which is -20.0f (movs r0,#0 / movt r0,#0xc1a0 at 0x0051526C). This stack sent zero in that word",
+        "after SyncTime the engine also queues SetReadyToStreamAnims"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the engine own connect sequence was not disassembled end to end; the order works but is not read from the binary",
-      "hardware_required": false,
       "live_path": true,
-      "test": "ConnectionTests"
+      "test": "TransportSourceTests.SyncTimeCarriesTheEnginesConstantInItsSecondWord",
+      "id": "M2-004"
     },
     {
       "subsystem": "M2-protocol",

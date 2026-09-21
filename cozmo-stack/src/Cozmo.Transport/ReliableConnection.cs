@@ -245,10 +245,15 @@ public sealed class ReliableConnection
         double now = _clock.NowMs;
         NumPingsReceived++;
         if (p.NumPingsSent > NumPingsSentTowardsUs) { NumPingsSentTowardsUs = p.NumPingsSent; NumPingsSentThatArrived = p.NumPingsReceived; }
-        // Official: RTT only when isReply is set. The robot firmware has been observed (PyCozmo capture) to echo the
-        // ping payload verbatim, i.e. with isReply still 0; treat an echo of a timestamp we sent as a reply as well.
-        bool echoOfOurs = !p.IsReply && p.TimeSentMs != 0 && p.TimeSentMs == LatestPingSentMs;
-        if (p.IsReply || echoOfOurs) { LastPingRoundTripMs = now - p.TimeSentMs; PingRepliesSeen++; }
+        // ReliableConnection::ReceivePing 0x00835C70: the byte at payload+0x10 decides everything. Non-zero
+        // and it is a reply, so the round trip is now - payload.timeSent and goes into the stats
+        // accumulator; zero and the engine answers it with a ping of its own carrying the same timestamp
+        // and isReply set, but only when sSendSeparatePingMessages is on, and measures nothing.
+        //
+        // There is no third case. This stack used to treat an echo of a timestamp it had sent as a reply
+        // too, on the strength of a PyCozmo capture showing the robot echoing with isReply still 0. The
+        // engine does not do that: against a robot that echoes, the app measures no round trip at all.
+        if (p.IsReply) { LastPingRoundTripMs = now - p.TimeSentMs; PingRepliesSeen++; }
         else if (_o.SendSeparatePingMessages) SendPing(p.TimeSentMs, true);
     }
 

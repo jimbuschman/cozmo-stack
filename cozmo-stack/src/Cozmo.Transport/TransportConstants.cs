@@ -48,13 +48,16 @@ public sealed class TransportOptions
     /// <summary>engine: true.</summary>
     public bool TrackAckLatency { get; init; } = true;
 
-    /// <summary>engine: UDPTransport::SetMaxNetMessageSize(1420) → reliable payload per frame = 1420 - 4 (prefix) - 10 (header) = 1406.</summary>
-    public int EngineMaxNetMessageSize { get; init; } = 1420;
     /// <summary>
-    /// Effective maximum reliable-layer body per frame we will build. PyCozmo reports the robot drops frames whose
-    /// payload exceeds 1037 bytes (1051 total); until that is re-measured we stay under it. Set to 1406 to mimic the engine.
+    /// The engine's own bound, read rather than guessed at: <c>RobotConnectionManager::Init</c> calls
+    /// <c>UDPTransport::SetMaxNetMessageSize(0x58C)</c> = 1420 at 0x0062EFC6, and the reliable payload per
+    /// frame is that less the 4-byte prefix and the 10-byte header, so 1406.
+    ///
+    /// This had been 1037, a figure from PyCozmo's robot-side measurement. Nothing in the package supports
+    /// it and the shipped app plainly sends up to 1406, so the engine's number is the one to match; what
+    /// PyCozmo was measuring is not established and is not authority over the app's own transport.
     /// </summary>
-    public int MaxFramePayloadBytes { get; init; } = 1037;
+    public int MaxFramePayloadBytes { get; init; } = 1406;
 
     /// <summary>How often the reliable connection is ticked. The engine's ReliableTransport schedules Update every 2 ms.</summary>
     public double UpdateIntervalMs { get; init; } = 2.0;
