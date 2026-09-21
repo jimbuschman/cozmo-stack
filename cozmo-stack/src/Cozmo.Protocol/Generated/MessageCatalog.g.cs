@@ -100,7 +100,7 @@ public enum RobotMessageId : byte
     DockWithObject = 0x42,
     /// <summary>AbortDocking (engine_to_robot); size 0; statically_verified</summary>
     AbortDocking = 0x43,
-    /// <summary>PlaceObjectOnGround (engine_to_robot); size 25; layout_known_semantics_uncertain</summary>
+    /// <summary>PlaceObjectOnGround (engine_to_robot); size 25; statically_verified</summary>
     PlaceObjectOnGround = 0x44,
     /// <summary>AbsoluteLocalizationUpdate (engine_to_robot); size 24; hardware_verified</summary>
     AbsLocalizationUpdate = 0x45,
@@ -392,7 +392,7 @@ public static class MessageCatalog
         [RobotMessageId.ExecutePath] = new(RobotMessageId.ExecutePath, "executePath", "ExecutePath", MessageDirection.EngineToRobot, 3, false, Subsystem.LocalizationNavigation, ProbeSafety.Motion, LayoutConfidence.NativeNamed, VerificationStatus.LayoutKnownSemanticsUncertain, "ExecutePath"),
         [RobotMessageId.DockWithObject] = new(RobotMessageId.DockWithObject, "dockWithObject", "DockWithObject", MessageDirection.EngineToRobot, 21, false, Subsystem.LocalizationNavigation, ProbeSafety.Motion, LayoutConfidence.HardwareRefined, VerificationStatus.StaticallyVerified, null),
         [RobotMessageId.AbortDocking] = new(RobotMessageId.AbortDocking, "abortDocking", "AbortDocking", MessageDirection.EngineToRobot, 0, false, Subsystem.LocalizationNavigation, ProbeSafety.Motion, LayoutConfidence.Empty, VerificationStatus.StaticallyVerified, null),
-        [RobotMessageId.PlaceObjectOnGround] = new(RobotMessageId.PlaceObjectOnGround, "placeObjectOnGround", "PlaceObjectOnGround", MessageDirection.EngineToRobot, 25, false, Subsystem.LocalizationNavigation, ProbeSafety.Motion, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
+        [RobotMessageId.PlaceObjectOnGround] = new(RobotMessageId.PlaceObjectOnGround, "placeObjectOnGround", "PlaceObjectOnGround", MessageDirection.EngineToRobot, 25, false, Subsystem.LocalizationNavigation, ProbeSafety.Motion, LayoutConfidence.HardwareRefined, VerificationStatus.StaticallyVerified, null),
         [RobotMessageId.AbsLocalizationUpdate] = new(RobotMessageId.AbsLocalizationUpdate, "absLocalizationUpdate", "AbsoluteLocalizationUpdate", MessageDirection.EngineToRobot, 24, false, Subsystem.LocalizationNavigation, ProbeSafety.StateChange, LayoutConfidence.NativeNamed, VerificationStatus.HardwareVerified, "SetOrigin"),
         [RobotMessageId.StartControllerTestMode] = new(RobotMessageId.StartControllerTestMode, "startControllerTestMode", "StartControllerTestMode", MessageDirection.EngineToRobot, 13, false, Subsystem.Motors, ProbeSafety.StateChange, LayoutConfidence.Exact, VerificationStatus.StaticallyVerified, null),
         [RobotMessageId.SetControllerGains] = new(RobotMessageId.SetControllerGains, "setControllerGains", "ControllerGains", MessageDirection.EngineToRobot, 17, false, Subsystem.Motors, ProbeSafety.StateChange, LayoutConfidence.Exact, VerificationStatus.StaticallyVerified, null),

@@ -248,16 +248,31 @@ public sealed class PlaceObjectOnGroundAction
     public IReadOnlyList<string> Trace => _trace;
     private readonly List<string> _trace = new();
 
-    public static PlaceObjectOnGround Message(PathMotionProfile p) => new()
+    /// <summary>
+    /// The engine's put-down message, from the builder at 0x00632B88 that
+    /// <c>CarryingComponent::PlaceObjectOnGround</c> 0x00632A88 is the only caller of.
+    ///
+    /// The three offsets come first and the caller always passes zero for all three - they are integer
+    /// locals it sets to 0 and the builder converts with <c>vcvt.f32.s32</c>. The speeds follow, and they
+    /// are not the motion profile's: they are a constant triple at 0xC7CD90, 100 / 200 / 500. The last
+    /// byte is the <c>bool</c> the component was called with.
+    ///
+    /// This stack had the speeds in the first three words and zeros in the rest, so the robot was handed
+    /// a docking speed where it reads a placement offset and nothing at all where it reads the speed.
+    /// </summary>
+    public const float SpeedMmps = 100f, AccelMmps2 = 200f, DecelMmps2 = 500f;
+
+    public static PlaceObjectOnGround Message(bool flag = false) => new()
     {
-        Field0 = BitConverter.SingleToUInt32Bits(p.DockSpeedMmps), Field1 = BitConverter.SingleToUInt32Bits(p.DockAccelMmps2), Field2 = BitConverter.SingleToUInt32Bits(p.DockDecelMmps2),
-        Field3 = 0, Field4 = 0, Field5 = 0, Field6 = 0,
+        RelX = 0f, RelY = 0f, RelAngle = 0f,
+        SpeedMmps = SpeedMmps, AccelMmps2 = AccelMmps2, DecelMmps2 = DecelMmps2,
+        Field6 = (byte)(flag ? 1 : 0),
     };
 
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
         if (!_m.Docking.Carrying.IsCarryingObject) { _trace.Add("PlaceObjectOnGroundAction.CheckPreconditions.NotCarryingObject"); return ActionResult.NotCarryingObjectAbort; }
-        var result = await _m.Docking.PlaceOnGroundAsync(Message(PathMotionProfile.Default), TimeSpan.FromSeconds(10), cancel);
+        var result = await _m.Docking.PlaceOnGroundAsync(Message(), TimeSpan.FromSeconds(10), cancel);
         if (result is null) return ActionResult.Timeout;
         _trace.Add($"PlaceObjectOnGround result {result}");
         return result.Status == BlockStatus.BlockPlaced && !_m.Docking.Carrying.IsCarryingObject ? ActionResult.Success : ActionResult.StillCarryingObject;

@@ -1175,43 +1175,43 @@ public sealed partial class AbortDocking : RobotMessage
     }
 }
 
-/// <summary>placeObjectOnGround 0x44 (engine_to_robot), 25 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+/// <summary>placeObjectOnGround 0x44 (engine_to_robot), 25 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-20: the builder at 0x00632B88, reached only from CarryingComponent::PlaceObjectOnGround 0x00632A88. The first three words are three zero ints converted to float (vcvt.f32.s32 of locals the caller sets to 0); the next three are a constant triple at 0xC7CD90 - 100, 200, 500 - and the last byte is the function's bool argument</summary>
 public sealed partial class PlaceObjectOnGround : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.PlaceObjectOnGround;
     public PlaceObjectOnGround() { }
-    /// <summary>name not established; name from generated</summary>
-    public uint Field0;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field1;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field2;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field3;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field4;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field5;
-    /// <summary>name not established; name from generated</summary>
+    /// <summary>name from engine; the caller always passes 0</summary>
+    public float RelX;
+    /// <summary>name from engine; the caller always passes 0</summary>
+    public float RelY;
+    /// <summary>name from engine; the caller always passes 0</summary>
+    public float RelAngle;
+    /// <summary>name from engine; 100, from the constant triple at 0xC7CD90</summary>
+    public float SpeedMmps;
+    /// <summary>name from engine; 200</summary>
+    public float AccelMmps2;
+    /// <summary>name from engine; 500</summary>
+    public float DecelMmps2;
+    /// <summary>name not established; name from engine; CarryingComponent::PlaceObjectOnGround's bool argument</summary>
     public byte Field6;
     public static PlaceObjectOnGround Read(CladReader r) => new()
     {
-        Field0 = r.U32(),
-        Field1 = r.U32(),
-        Field2 = r.U32(),
-        Field3 = r.U32(),
-        Field4 = r.U32(),
-        Field5 = r.U32(),
+        RelX = r.F32(),
+        RelY = r.F32(),
+        RelAngle = r.F32(),
+        SpeedMmps = r.F32(),
+        AccelMmps2 = r.F32(),
+        DecelMmps2 = r.F32(),
         Field6 = r.U8(),
     };
     public override void WriteBody(CladWriter w)
     {
-        w.U32(Field0);
-        w.U32(Field1);
-        w.U32(Field2);
-        w.U32(Field3);
-        w.U32(Field4);
-        w.U32(Field5);
+        w.F32(RelX);
+        w.F32(RelY);
+        w.F32(RelAngle);
+        w.F32(SpeedMmps);
+        w.F32(AccelMmps2);
+        w.F32(DecelMmps2);
         w.U8(Field6);
     }
 }

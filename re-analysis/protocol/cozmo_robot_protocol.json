@@ -2897,57 +2897,58 @@
    "declared_size": 25,
    "fields": [
     {
-     "name": "field0",
+     "name": "relX",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine",
+     "note": "the caller always passes 0"
     },
     {
-     "name": "field1",
+     "name": "relY",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine",
+     "note": "the caller always passes 0"
     },
     {
-     "name": "field2",
+     "name": "relAngle",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine",
+     "note": "the caller always passes 0"
     },
     {
-     "name": "field3",
+     "name": "speedMmps",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine",
+     "note": "100, from the constant triple at 0xC7CD90"
     },
     {
-     "name": "field4",
+     "name": "accelMmps2",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine",
+     "note": "200"
     },
     {
-     "name": "field5",
+     "name": "decelMmps2",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine",
+     "note": "500"
     },
     {
      "name": "field6",
      "kind": "scalar",
      "type": "u8",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine",
+     "uncertain": true,
+     "note": "CarryingComponent::PlaceObjectOnGround's bool argument"
     }
    ],
-   "confidence": "native_only",
-   "verification": "layout_known_semantics_uncertain",
+   "confidence": "hardware_refined",
+   "verification": "statically_verified",
    "evidence": {
     "native_unpack": "0x7c0862",
     "native_namespace": "",
@@ -2956,7 +2957,8 @@
     "capture": null
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "names generated; widths from native Unpack",
+    "engine 2026-09-20: the builder at 0x00632B88, reached only from CarryingComponent::PlaceObjectOnGround 0x00632A88. The first three words are three zero ints converted to float (vcvt.f32.s32 of locals the caller sets to 0); the next three are a constant triple at 0xC7CD90 - 100, 200, 500 - and the last byte is the function's bool argument"
    ]
   },
   "0x45": {

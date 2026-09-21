@@ -206,6 +206,25 @@ REFINEMENTS = {
                       {"name": "heightMm", "kind": "scalar", "type": "u8", "name_source": "engine",
                        "note": "height_mm, with the keyframe's variability already applied: "
                                "RandIntInRange(height - var, height + var) when var != 0"}]},
+    0x44: {"note": "engine 2026-09-20: the builder at 0x00632B88, reached only from "
+                   "CarryingComponent::PlaceObjectOnGround 0x00632A88. The first three words are three "
+                   "zero ints converted to float (vcvt.f32.s32 of locals the caller sets to 0); the next "
+                   "three are a constant triple at 0xC7CD90 - 100, 200, 500 - and the last byte is the "
+                   "function's bool argument",
+           "fields": [{"name": "relX", "kind": "scalar", "type": "f32", "name_source": "engine",
+                       "note": "the caller always passes 0"},
+                      {"name": "relY", "kind": "scalar", "type": "f32", "name_source": "engine",
+                       "note": "the caller always passes 0"},
+                      {"name": "relAngle", "kind": "scalar", "type": "f32", "name_source": "engine",
+                       "note": "the caller always passes 0"},
+                      {"name": "speedMmps", "kind": "scalar", "type": "f32", "name_source": "engine",
+                       "note": "100, from the constant triple at 0xC7CD90"},
+                      {"name": "accelMmps2", "kind": "scalar", "type": "f32", "name_source": "engine",
+                       "note": "200"},
+                      {"name": "decelMmps2", "kind": "scalar", "type": "f32", "name_source": "engine",
+                       "note": "500"},
+                      {"name": "field6", "kind": "scalar", "type": "u8", "name_source": "engine",
+                       "uncertain": True, "note": "CarryingComponent::PlaceObjectOnGround's bool argument"}]},
     0x48: {"note": "engine 2026-09-20: DockingComponent::UpdateDockingErrorSignal 0x0063BE80 builds this "
                    "message at sp+0xa0 and the timestamp goes in first - 'mov r6, r1' takes the function's "
                    "only argument and 'str r6, [sp, #0xa0]' at 0x0063C14A writes it to word 0 - then "

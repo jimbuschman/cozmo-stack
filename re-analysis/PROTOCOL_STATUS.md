@@ -25,8 +25,8 @@ Evidence order: (1) official decompiled C# CLAD structs, (2) `libcozmoEngine.so`
 |---|---|---|
 | hardware verified | 24 | exercised on the firmware-2457 robot: the robot sent it and our codec re-encoded it byte-identically, or the robot demonstrably acted on it |
 | capture verified | 4 | seen on the wire in a real session with a consistent length, but no response ties it to robot behaviour |
-| statically verified | 59 | layout matches an official C# CLAD struct field for field, or is empty |
-| layout known, semantics uncertain | 72 | widths/order from the engine binary; some field names are guesses |
+| statically verified | 60 | layout matches an official C# CLAD struct field for field, or is empty |
+| layout known, semantics uncertain | 71 | widths/order from the engine binary; some field names are guesses |
 | unresolved | 2 | one or more fields not attributed; the bytes are preserved in a raw tail |
 | capture conflict | 0 | observed bytes disagree with the static layout |
 
@@ -34,13 +34,13 @@ Evidence order: (1) official decompiled C# CLAD structs, (2) `libcozmoEngine.so`
 
 | source | fields |
 |---|---|
-| generated placeholder | 153 |
 | official decompiled C# | 150 |
+| generated placeholder | 146 |
 | PyCozmo (widths agreed with native) | 65 |
-| engine | 27 |
+| engine | 34 |
 | hardware capture | 9 |
 
-153 of 404 fields still carry a generated placeholder name; 161 fields are flagged uncertain.
+146 of 404 fields still carry a generated placeholder name; 155 fields are flagged uncertain.
 Unknown bytes are never invented: a message whose layout does not add up keeps an explicit `unknownTail`
 raw field, and placeholder names are `field0`, `field1`, ... so they cannot be mistaken for official ones.
 
@@ -224,7 +224,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 
 ### Localization and navigation (22 messages)
 
-16 layout known, semantics uncertain, 5 statically verified, 1 hardware verified
+15 layout known, semantics uncertain, 6 statically verified, 1 hardware verified
 
 | tag | dir | CLAD type | size | layout | verification | probe safety |
 |---|---|---|---|---|---|---|
@@ -236,7 +236,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0x41` | E->R | ExecutePath | 3 | native_named | layout known, semantics uncertain | motion |
 | `0x42` | E->R | DockWithObject | 21 | hardware_refined | statically verified | motion |
 | `0x43` | E->R | AbortDocking | 0 | empty | statically verified | motion |
-| `0x44` | E->R | PlaceObjectOnGround | 25 | native_only | layout known, semantics uncertain | motion |
+| `0x44` | E->R | PlaceObjectOnGround | 25 | hardware_refined | statically verified | motion |
 | `0x45` | E->R | AbsoluteLocalizationUpdate | 24 | native_named | hardware verified | state_change |
 | `0x48` | E->R | DockingErrorSignal | 22 | prefix | statically verified | state_change |
 | `0x49` | E->R | CarryStateUpdate | 1 | exact | statically verified | state_change |
@@ -313,7 +313,6 @@ them, so some field names are placeholders. Sending them is safe; interpreting t
 | `0x3D` | AppendPathSegmentLine | localization_navigation | field0 u32, field1 u32, field2 u32, field3 u32, field4 PathSegmentSpeed |
 | `0x3E` | AppendPathSegmentArc | localization_navigation | field0 u32, field1 u32, field2 u32, field3 u32, field4 u32, field5 PathSegmentSpeed |
 | `0x3F` | AppendPathSegmentPointTurn | localization_navigation | field0 u32, field1 u32, field2 u32, field3 u32, field4 PathSegmentSpeed, field5 u8 |
-| `0x44` | PlaceObjectOnGround | localization_navigation | field0 u32, field1 u32, field2 u32, field3 u32, field4 u32, field5 u32, field6 u8 |
 | `0x50` | EnableMotorPower | motors | field0 u8, field1 u8 |
 | `0x54` | SetCliffDetectThreshold | robot_state_sensors | field0 u16 |
 | `0x55` | EnableReadToolCodeMode | camera | field0 u32, field1 u32, field2 u8 |

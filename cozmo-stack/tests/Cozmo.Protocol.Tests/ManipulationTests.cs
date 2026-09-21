@@ -276,8 +276,18 @@ public class ManipulationTests
         SpinUntil(() => t.IsCompleted, () => rig.Pump());
         Assert.Equal(ActionResult.Success, t.Result);
         Assert.False(rig.M.Docking.Carrying.IsCarryingObject);
+        // The three offsets come first and are always zero; the speeds are the engine's constant
+        // triple at 0xC7CD90, not the motion profile's (builder 0x00632B88).
         var msg = rig.Sent.OfType<PlaceObjectOnGround>().Single();
-        Assert.Equal(60f, BitConverter.UInt32BitsToSingle(msg.Field0));
+        var b = msg.ToBytes();
+        Assert.Equal(26, b.Length);                        // tag + 25
+        Assert.Equal(0f, BitConverter.ToSingle(b, 1));
+        Assert.Equal(0f, BitConverter.ToSingle(b, 5));
+        Assert.Equal(0f, BitConverter.ToSingle(b, 9));
+        Assert.Equal(100f, BitConverter.ToSingle(b, 13));
+        Assert.Equal(200f, BitConverter.ToSingle(b, 17));
+        Assert.Equal(500f, BitConverter.ToSingle(b, 21));
+        Assert.Equal(0, b[25]);
     }
 
     // ------------------------------------------------------------------ behaviours

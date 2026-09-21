@@ -2659,6 +2659,21 @@
       "id": "M12-014"
     },
     {
+      "subsystem": "M12-manipulation",
+      "title": "PlaceObjectOnGround sends three zero offsets and a constant speed triple",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "the builder at 0x00632B88, reached only from CarryingComponent::PlaceObjectOnGround 0x00632A88. The first three words are integer locals the caller sets to zero, converted with vcvt.f32.s32; the next three are a constant triple at 0xC7CD90 - 100, 200, 500 - and the last byte is the component bool argument",
+      "evidence": [
+        "0xC7CD90: 0x42C80000 100, 0x43480000 200, 0x43FA0000 500",
+        "the speeds are not the path motion profile: they are fixed in rodata",
+        "this stack had put the docking speeds in the first three words and zeros in the rest, so the robot read a speed where the offsets go and nothing where the speeds go"
+      ],
+      "live_path": true,
+      "test": "ManipulationTests",
+      "id": "M12-015"
+    },
+    {
       "id": "M13-001",
       "subsystem": "M13-navigation",
       "title": "Lattice planner motion primitives read from cozmo_mprim.json",
