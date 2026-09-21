@@ -23,6 +23,29 @@ public class TransportSourceTests
     }
 
     /// <summary>
+    /// AbsoluteLocalizationUpdate's last word is the heading, not an unknown integer.
+    /// Robot::SendAbsLocalizationUpdate 0x00512734 packs the message in order: its two unsigned
+    /// arguments (the timestamp and the pose frame id, strd at 0x0051279E), the pose's parent id from
+    /// PoseBase::GetID, the transform's x and y at +0x20 and +0x24, and Rotation3d::GetAngleAroundZaxis
+    /// (0x00512796). Its no-argument twin 0x00514710 supplies the timestamp from the latest vision-only
+    /// state, which is what fixes the order of the first two.
+    /// </summary>
+    [Fact]
+    public void AbsoluteLocalizationUpdateEndsWithTheHeadingInRadians()
+    {
+        var b = new AbsoluteLocalizationUpdate { Timestamp = 7, PoseFrameId = 3, PoseOriginId = 1, PoseX = 100.5f, PoseY = -20.25f, PoseAngleRad = 1.5f }.ToBytes();
+        Assert.Equal(25, b.Length);                                 // tag + 24
+        Assert.Equal(7u, BitConverter.ToUInt32(b, 1));
+        Assert.Equal(3u, BitConverter.ToUInt32(b, 5));
+        Assert.Equal(1u, BitConverter.ToUInt32(b, 9));
+        Assert.Equal(100.5f, BitConverter.ToSingle(b, 13));
+        Assert.Equal(-20.25f, BitConverter.ToSingle(b, 17));
+        Assert.Equal(1.5f, BitConverter.ToSingle(b, 21));
+        // and pycozmo's 0x80000000 in that last word is -0.0 radians
+        Assert.Equal(0x80000000u, BitConverter.ToUInt32(BitConverter.GetBytes(-0.0f), 0));
+    }
+
+    /// <summary>
     /// The frame bound is the engine's 1406, from SetMaxNetMessageSize(1420) at 0x0062EFC6 less the
     /// 4-byte prefix and the 10-byte header.
     /// </summary>

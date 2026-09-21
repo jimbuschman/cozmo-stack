@@ -73,7 +73,7 @@ public sealed class RobotLink : IDisposable
     public void BeginSession(bool sendOriginLikePyCozmo = false)
     {
         Transport.Send(new GetManufacturingInfo(), flush: true);
-        if (sendOriginLikePyCozmo) Transport.Send(new AbsoluteLocalizationUpdate { PoseOriginId = 1, Unknown5 = 0x80000000 });
+        if (sendOriginLikePyCozmo) Transport.Send(new AbsoluteLocalizationUpdate { PoseOriginId = 1, PoseAngleRad = -0.0f });   // pycozmo's 0x80000000 is -0.0 as the angle
         Transport.Send(new SyncTime(0, 0), flush: true);
     }
 

@@ -1216,40 +1216,40 @@ public sealed partial class PlaceObjectOnGround : RobotMessage
     }
 }
 
-/// <summary>absLocalizationUpdate 0x45 (engine_to_robot), 24 bytes. Confidence: native_named. Verification: hardware_verified. field names from PyCozmo (widths agree with native) hardware verified: accepted without error; RobotState kept streaming with the requested pose origin</summary>
+/// <summary>absLocalizationUpdate 0x45 (engine_to_robot), 24 bytes. Confidence: hardware_refined. Verification: hardware_verified. field names from PyCozmo (widths agree with native) engine 2026-09-21: Robot::SendAbsLocalizationUpdate(pose, timestamp, poseFrameId) 0x00512734 packs the message word by word from 0x00512774: the first two words are its two unsigned arguments (strd r8, sb at 0x0051279E), then the pose's parent id from PoseBase::GetID (0x00512762), then the transform's translation x and y at +0x20 and +0x24, then Rotation3d::GetAngleAroundZaxis (0x00512796) - so the last word is a float angle in radians, not an unknown u32. Robot::SendAbsLocalizationUpdate() 0x00514710 fixes the argument order: it takes the latest vision-only state (GetLatestVisionOnlyState, the timestamp out-parameter at sp+0x7c) and passes that timestamp as the second argument and the state's frame id as the third hardware verified: accepted without error; RobotState kept streaming with the requested pose origin</summary>
 public sealed partial class AbsoluteLocalizationUpdate : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.AbsLocalizationUpdate;
     public AbsoluteLocalizationUpdate() { }
-    /// <summary>name from pycozmo</summary>
-    public uint Unknown0;
-    /// <summary>name from pycozmo</summary>
+    /// <summary>name from engine; the vision-only state's timestamp; pycozmo called it unknown0</summary>
+    public uint Timestamp;
+    /// <summary>name from engine</summary>
     public uint PoseFrameId;
-    /// <summary>name from pycozmo</summary>
+    /// <summary>name from engine; the pose's parent id, PoseBase::GetID</summary>
     public uint PoseOriginId;
-    /// <summary>name from pycozmo</summary>
+    /// <summary>name from engine</summary>
     public float PoseX;
-    /// <summary>name from pycozmo</summary>
+    /// <summary>name from engine</summary>
     public float PoseY;
-    /// <summary>name from pycozmo</summary>
-    public uint Unknown5;
+    /// <summary>name from engine; GetAngleAroundZaxis of the pose's rotation; pycozmo called it unknown5 and read it as a u32</summary>
+    public float PoseAngleRad;
     public static AbsoluteLocalizationUpdate Read(CladReader r) => new()
     {
-        Unknown0 = r.U32(),
+        Timestamp = r.U32(),
         PoseFrameId = r.U32(),
         PoseOriginId = r.U32(),
         PoseX = r.F32(),
         PoseY = r.F32(),
-        Unknown5 = r.U32(),
+        PoseAngleRad = r.F32(),
     };
     public override void WriteBody(CladWriter w)
     {
-        w.U32(Unknown0);
+        w.U32(Timestamp);
         w.U32(PoseFrameId);
         w.U32(PoseOriginId);
         w.F32(PoseX);
         w.F32(PoseY);
-        w.U32(Unknown5);
+        w.F32(PoseAngleRad);
     }
 }
 

@@ -2961,49 +2961,46 @@
    "declared_size": 24,
    "fields": [
     {
-     "name": "unknown0",
+     "name": "timestamp",
      "kind": "scalar",
      "type": "u32",
-     "name_source": "pycozmo",
-     "uncertain": false
+     "name_source": "engine",
+     "note": "the vision-only state's timestamp; pycozmo called it unknown0"
     },
     {
-     "name": "pose_frame_id",
+     "name": "poseFrameId",
      "kind": "scalar",
      "type": "u32",
-     "name_source": "pycozmo",
-     "uncertain": false
+     "name_source": "engine"
     },
     {
-     "name": "pose_origin_id",
+     "name": "poseOriginId",
      "kind": "scalar",
      "type": "u32",
-     "name_source": "pycozmo",
-     "uncertain": false
+     "name_source": "engine",
+     "note": "the pose's parent id, PoseBase::GetID"
     },
     {
-     "name": "pose_x",
+     "name": "poseX",
      "kind": "scalar",
      "type": "f32",
-     "name_source": "pycozmo",
-     "uncertain": false
+     "name_source": "engine"
     },
     {
-     "name": "pose_y",
+     "name": "poseY",
      "kind": "scalar",
      "type": "f32",
-     "name_source": "pycozmo",
-     "uncertain": false
+     "name_source": "engine"
     },
     {
-     "name": "unknown5",
+     "name": "poseAngleRad",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "pycozmo",
-     "uncertain": false
+     "type": "f32",
+     "name_source": "engine",
+     "note": "GetAngleAroundZaxis of the pose's rotation; pycozmo called it unknown5 and read it as a u32"
     }
    ],
-   "confidence": "native_named",
+   "confidence": "hardware_refined",
    "verification": "hardware_verified",
    "evidence": {
     "native_unpack": "0x7a3794",
@@ -3022,6 +3019,7 @@
    },
    "notes": [
     "field names from PyCozmo (widths agree with native)",
+    "engine 2026-09-21: Robot::SendAbsLocalizationUpdate(pose, timestamp, poseFrameId) 0x00512734 packs the message word by word from 0x00512774: the first two words are its two unsigned arguments (strd r8, sb at 0x0051279E), then the pose's parent id from PoseBase::GetID (0x00512762), then the transform's translation x and y at +0x20 and +0x24, then Rotation3d::GetAngleAroundZaxis (0x00512796) - so the last word is a float angle in radians, not an unknown u32. Robot::SendAbsLocalizationUpdate() 0x00514710 fixes the argument order: it takes the latest vision-only state (GetLatestVisionOnlyState, the timestamp out-parameter at sp+0x7c) and passes that timestamp as the second argument and the state's frame id as the third",
     "hardware verified: accepted without error; RobotState kept streaming with the requested pose origin"
    ]
   },

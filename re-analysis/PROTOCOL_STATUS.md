@@ -36,8 +36,8 @@ Evidence order: (1) official decompiled C# CLAD structs, (2) `libcozmoEngine.so`
 |---|---|
 | official decompiled C# | 150 |
 | generated placeholder | 129 |
-| PyCozmo (widths agreed with native) | 65 |
-| engine | 51 |
+| PyCozmo (widths agreed with native) | 59 |
+| engine | 57 |
 | hardware capture | 9 |
 
 129 of 404 fields still carry a generated placeholder name; 138 fields are flagged uncertain.
@@ -237,7 +237,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0x42` | E->R | DockWithObject | 21 | hardware_refined | statically verified | motion |
 | `0x43` | E->R | AbortDocking | 0 | empty | statically verified | motion |
 | `0x44` | E->R | PlaceObjectOnGround | 25 | hardware_refined | statically verified | motion |
-| `0x45` | E->R | AbsoluteLocalizationUpdate | 24 | native_named | hardware verified | state_change |
+| `0x45` | E->R | AbsoluteLocalizationUpdate | 24 | hardware_refined | hardware verified | state_change |
 | `0x48` | E->R | DockingErrorSignal | 22 | prefix | statically verified | state_change |
 | `0x49` | E->R | CarryStateUpdate | 1 | exact | statically verified | state_change |
 | `0x61` | E->R | ForceDelocalizeSimulatedRobot | 0 | empty | statically verified | destructive |

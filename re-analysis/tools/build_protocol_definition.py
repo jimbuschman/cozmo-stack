@@ -238,6 +238,25 @@ REFINEMENTS = {
                       {"name": "angleToleranceRad", "kind": "scalar", "type": "f32", "name_source": "engine"},
                       {"name": "speed", "kind": "struct", "type": "PathSegmentSpeed", "name_source": "engine"},
                       {"name": "useShortestDirection", "kind": "scalar", "type": "u8", "name_source": "engine", "note": "PathSegment+0x14, the bool DefinePointTurn takes"}]},
+    0x45: {"note": "engine 2026-09-21: Robot::SendAbsLocalizationUpdate(pose, timestamp, poseFrameId) "
+                   "0x00512734 packs the message word by word from 0x00512774: the first two words are "
+                   "its two unsigned arguments (strd r8, sb at 0x0051279E), then the pose's parent id "
+                   "from PoseBase::GetID (0x00512762), then the transform's translation x and y at +0x20 "
+                   "and +0x24, then Rotation3d::GetAngleAroundZaxis (0x00512796) - so the last word is a "
+                   "float angle in radians, not an unknown u32. Robot::SendAbsLocalizationUpdate() "
+                   "0x00514710 fixes the argument order: it takes the latest vision-only state "
+                   "(GetLatestVisionOnlyState, the timestamp out-parameter at sp+0x7c) and passes that "
+                   "timestamp as the second argument and the state's frame id as the third",
+           "fields": [{"name": "timestamp", "kind": "scalar", "type": "u32", "name_source": "engine",
+                       "note": "the vision-only state's timestamp; pycozmo called it unknown0"},
+                      {"name": "poseFrameId", "kind": "scalar", "type": "u32", "name_source": "engine"},
+                      {"name": "poseOriginId", "kind": "scalar", "type": "u32", "name_source": "engine",
+                       "note": "the pose's parent id, PoseBase::GetID"},
+                      {"name": "poseX", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "poseY", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "poseAngleRad", "kind": "scalar", "type": "f32", "name_source": "engine",
+                       "note": "GetAngleAroundZaxis of the pose's rotation; pycozmo called it unknown5 "
+                               "and read it as a u32"}]},
     0x44: {"note": "engine 2026-09-20: the builder at 0x00632B88, reached only from "
                    "CarryingComponent::PlaceObjectOnGround 0x00632A88. The first three words are three "
                    "zero ints converted to float (vcvt.f32.s32 of locals the caller sets to 0); the next "

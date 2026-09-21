@@ -3405,6 +3405,25 @@
       "live_path": true,
       "test": "regenerate_protocol.py --check",
       "id": "TOOL-004"
+    },
+    {
+      "subsystem": "M2-protocol",
+      "title": "absLocalizationUpdate: the timestamp first and the heading last",
+      "location": "cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs",
+      "effect": null,
+      "provenance": "Robot::SendAbsLocalizationUpdate, read; the field names had been pycozmo guesses",
+      "authority": "Robot::SendAbsLocalizationUpdate(Pose3d const&, unsigned int const&, unsigned int const&) 0x00512734 and Robot::SendAbsLocalizationUpdate() 0x00514710, read",
+      "evidence": [
+        "The packer 0x00512734 fills the 24 bytes in order from 0x00512774: its two unsigned arguments (strd r8, sb at 0x0051279E), the pose parent id from PoseBase::GetID (0x00512762), the transform translation x and y at +0x20 and +0x24 (0x00512782, 0x0051278A), and Rotation3d::GetAngleAroundZaxis (0x00512796). So the last word is a float heading in radians, which pycozmo had as an unknown u32 - and pycozmo sending 0x80000000 there is sending -0.0.",
+        "The argument order comes from the no-argument twin 0x00514710: it asks RobotStateHistory::GetLatestVisionOnlyState for the latest vision-only state with the timestamp in an out-parameter at sp+0x7c, and passes that as the second argument and the state word at +0x10 as the third (0x00514770..0x0051477C). So the first field is the timestamp and the second the pose frame id.",
+        "That is also the path a corrected pose takes to the robot: Robot::SetNewPose 0x005126EC calls SetPose and AddVisionOnlyStateToHistory, and Robot::Update calls SendAbsLocalizationUpdate (0x00513CC6), which sends the state just added."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
+      "hardware_required": false,
+      "live_path": true,
+      "test": "TransportSourceTests.AbsoluteLocalizationUpdateEndsWithTheHeadingInRadians",
+      "id": "M2-007"
     }
   ]
 }

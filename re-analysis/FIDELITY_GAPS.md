@@ -3,11 +3,11 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **204 records** over 16 subsystems.
+Manifest of **205 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 156 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 157 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 14 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 3 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 1 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
@@ -25,7 +25,7 @@ remains after both, and they do not go away by working harder on this repository
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | M1-transport — UDP transport and reliability | 15 | 0 | 0 | 0 | 0 | yes | yes |
-| M2-protocol — CLAD messages and protocol helpers | 6 | 0 | 0 | 0 | 0 | yes | yes |
+| M2-protocol — CLAD messages and protocol helpers | 7 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 17 | 0 | 0 | 0 | 1 | yes | yes |
 | M4-control — Motion, sensors, lights and cubes | 9 | 0 | 0 | 0 | 0 | yes | yes |
 | M5-animation — Animation clips, scheduler and face | 21 | 0 | 0 | 0 | 0 | yes | yes |

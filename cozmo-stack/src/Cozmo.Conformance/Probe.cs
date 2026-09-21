@@ -99,7 +99,7 @@ public static class Probe
             "AbsoluteLocalizationUpdate (sets the pose origin, no movement)",
             async l =>
             {
-                l.Transport.Send(new AbsoluteLocalizationUpdate { PoseOriginId = 1, Unknown5 = 0x80000000 }, flush: true);
+                l.Transport.Send(new AbsoluteLocalizationUpdate { PoseOriginId = 1, PoseAngleRad = -0.0f }, flush: true);
                 await Idle(1200);
             },
             new[] { RobotMessageId.State }),
