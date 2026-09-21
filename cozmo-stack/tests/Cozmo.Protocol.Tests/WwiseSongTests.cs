@@ -115,6 +115,44 @@ public class WwiseSongTests
             "most of the notes are a fraction of a second long");
     }
 
+    /// <summary>
+    /// The one thing about the render that the shipped data cannot settle, kept in plain sight instead of
+    /// buried in the mix: the get-in branch is a child of the MIDI target and carries no filter of its
+    /// own, so under the container rules a note reaches it, and on Aba Daba it contributes about one extra
+    /// voice per note. Whether Wwise's MIDI dispatch really routes notes there is Wwise runtime behaviour
+    /// and no Wwise runtime ships in the package (fidelity manifest M9-013). The render reports each
+    /// branch's share, and a branch can be left out so the two readings can be heard side by side.
+    /// </summary>
+    [Fact]
+    public void TheRenderSaysHowManyVoicesEachBranchOfTheSamplerContributed()
+    {
+        if (Library.Value is not { } lib) return;
+        var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_80bpm")!.Value;
+        var switches = new Dictionary<uint, uint> { [Group80] = AbaDaba };
+        const uint noteOn = 462443456, noteOff = 774902407, getIn = 403781184;
+
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(7));
+        var all = source.RenderMusic(ev, switches);
+        Assert.Equal(all.NotesPlayed, all.VoicesByBranch[noteOn]);
+        Assert.Equal(all.NoteOffsPlayed, all.VoicesByBranch[noteOff]);
+        Assert.True(all.VoicesByBranch[getIn] > 0,
+            "under the container rules the get-in branch does receive notes; if that ever stops being true, M9-013 has been decided");
+
+        using var without = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(7))
+        {
+            ExcludeBranches = new HashSet<uint> { getIn },
+        };
+        var trimmed = without.RenderMusic(ev, switches);
+        Assert.False(trimmed.VoicesByBranch.ContainsKey(getIn));
+        Assert.Equal(all.VoicesByBranch[noteOn], trimmed.VoicesByBranch[noteOn]);
+        Assert.Equal(all.VoicesByBranch[noteOff], trimmed.VoicesByBranch[noteOff]);
+        Assert.True(trimmed.PreLimitPeak < all.PreLimitPeak,
+            "leaving the branch out takes voices out of the mix, so the sum cannot be louder");
+        // The settled part of the mix - the two note layers alone - lands just under full scale, whatever
+        // the draw, because nothing in it is drawn: one sustain and one release per note.
+        Assert.InRange(trimmed.PreLimitPeak / short.MaxValue, 0.5, 1.05);
+    }
+
     /// <summary>BehaviorSinging::UpdateInternal at 0x005EF0C8: half the old value plus half the shake clamped to 0..1 after dividing by 3000.</summary>
     [Theory]
     [InlineData(0f, 3000f, 0.5f)]
@@ -165,12 +203,14 @@ public class WwiseSongTests
         Assert.Equal(0, r.NotesSilent);
         Assert.Equal(42, r.NoteOffsPlayed);
         Assert.Equal(0, r.ClippedSamples);
-        // The level the shipped mix actually produces once a note sounds for its own length: a little over
-        // full scale, which is where a mix feeding a bus limiter whose threshold is -1 dB belongs. Before
-        // the M9 fidelity pass every note played out a whole 5.79-second recording and the sum ran about
-        // 13 dB over, which is what the output stage was pulling down.
-        Assert.InRange(r.PreLimitPeak / short.MaxValue, 1.0, 1.3);
-        Assert.InRange(r.OutputGainDb, -1.0, 0.0);
+        // The level the shipped mix produces once a note sounds for its own length: within a few decibels
+        // of full scale, where a mix feeding a bus limiter whose threshold is -1 dB belongs. Before the M9
+        // fidelity pass every note played out a whole 5.79-second recording and the sum ran about 13 dB
+        // over, which is what the output stage was quietly pulling down. How far over full scale it lands
+        // now depends on the draw, because the get-in branch's share does (M9-013); the settled part of
+        // the mix is measured in TheRenderSaysHowManyVoicesEachBranchOfTheSamplerContributed.
+        Assert.InRange(r.PreLimitPeak / short.MaxValue, 0.7, 2.0);
+        Assert.InRange(r.OutputGainDb, -6.0, 0.0);
         Assert.Equal(short.MaxValue, r.Peak);
         Assert.Contains(r.Pcm.Take(CozmoAudio.SampleRate / 2), s => Math.Abs(s) > 500);   // sound in the first half second
 

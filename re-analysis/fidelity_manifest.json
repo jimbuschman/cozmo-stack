@@ -79,7 +79,7 @@
       "id": "M6-wwise-bank",
       "name": "Wwise bank reading and codecs",
       "milestone": "M6",
-      "source_complete": false
+      "source_complete": true
     },
     {
       "id": "M7-behaviour",
@@ -1195,37 +1195,31 @@
     {
       "id": "M6-006",
       "subsystem": "M6-wwise-bank",
-      "title": "An event Play target is flattened to every Sound beneath it, ignoring container type",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSoundLibrary.cs:306",
-      "effect": "an event that should play a sequence of several recordings plays one, and an event under a switch container can play a recording the current switch does not select. Play__Robot_VO__Singing_Getin_1 is a random of a random of a two-item sequence, and reaches the robot as a single syllable instead of a two-note phrase",
-      "provenance": "MediaUnder walks the whole subtree and every Sound found is treated as an alternative",
-      "authority": "the shipped banks carry each container type, its playlist, weights, avoid-repeat count and play mode, all of which WwiseHierarchy already reads exactly and the song renderer already honours",
+      "title": "An event Play target is walked with each container type semantics, not flattened",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwisePlayback.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "the shipped banks carry the play type, the play mode, the playlist with its weights and avoid-repeat count, and the switch assignments, and the reader already parsed all of them; the walk now uses them",
       "evidence": [
-        "Cozmo.bnk 403781184 random of 399004754 / 693270200 / 201436547",
-        "each of those a random of three, each of those a sequence (mode 1) of two per-key containers"
+        "Play__Robot_VO__Singing_Getin_1 targets random 399004754, a random of three continuous sequence containers of two per-key containers of three takes",
+        "across the banks 12 of 13 sequence containers and 13 of 455 random ones set the continuous play-mode bit",
+        "the same bit is now read the same way on the MIDI path (WwiseSongRenderer.Trigger)"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the walk has not been rewritten onto the container fields that are already parsed",
-      "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "WwisePlaybackTests.TheGetInEventPlaysATwoPartPhraseRatherThanOneRecording"
     },
     {
       "id": "M6-007",
       "subsystem": "M6-wwise-bank",
-      "title": "The first decodable alternative is played, every time",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs:327",
-      "effect": "a voice line that has three recordings always uses the same one, so the robot repeats itself where the app varies",
-      "provenance": "Produce iterates the flattened media list and returns the first that decodes",
-      "authority": "the container carries the playlist weights and the avoid-repeat count; the engine leaves the choice to Wwise, and RobotAudioClient::GetRandomGenerator shows the engine hands Wwise a generator rather than choosing itself",
+      "title": "A container that chooses draws, rather than the first alternative that decodes being played",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "the playlist weights and the avoid-repeat count are in the bank; the engine hands Wwise a generator rather than choosing itself (Anki::Cozmo::Audio::RobotAudioClient::GetRandomGenerator)",
       "evidence": [
-        "Anki::Cozmo::Audio::RobotAudioClient::GetRandomGenerator"
+        "twelve draws from the first get-in reach more than two of its eighteen recordings",
+        "only decoded media are cached now, so a draw is not frozen for the session"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "no draw is made at all; the keyframe-level probability (D4) chooses between audio refs, not between a container children",
-      "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "WwisePlaybackTests.DifferentDrawsReachDifferentRecordings"
     },
     {
       "id": "M7-001",
@@ -1789,20 +1783,22 @@
     {
       "id": "M9-013",
       "subsystem": "M9-wwise-music",
-      "title": "The get-in branch under the MIDI target receives notes like any other child",
+      "title": "Whether Wwise routes MIDI notes into the get-in branch of the singing sampler",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
-      "effect": "a get-in phrase recording is layered onto ordinary sung notes during a song",
-      "provenance": "uniform application of the container rules; nothing was special-cased",
-      "authority": "the shipped bank: random container 403781184 is a child of the MIDI target and carries no key or velocity filter of its own",
+      "effect": "a get-in recording is layered onto roughly every sung note of every song, or none at all",
+      "provenance": "the uniform reading of the container rules: the branch is a child of the MIDI target and carries no filter of its own, so a note reaches it. Every render reports the branch share, and the branch can be left out with --without-branch get-in so the two readings can be heard side by side",
+      "authority": "the Wwise MIDI dispatch rule, which is runtime behaviour. No Wwise runtime ships in the APK: no AkSoundEngine, CAk*, AkModulator or Wwise string occurs in libcozmoEngine.so, libunity.so or libmain.so, and there is no separate Wwise library. The shipped data was searched to exhaustion: the branch parent and the target child list, the key and velocity ranges on all 18 containers under it, the play-on-note property, the channel mask, the node bit vectors, the blend container layers (there are none), and the Wwise object paths in Cozmo.txt",
       "evidence": [
-        "Cozmo.bnk 403781184 parent 110896138",
-        "Cozmo.txt path Robot_VO__Singing\\Robot_VO__Sing\\Robot_VO__Singing_Getin"
+        "Cozmo.bnk 403781184 parent 110896138, and in that node children list",
+        "four of its 18 take containers carry no MIDI key range, so under this reading they answer every note of every song",
+        "measured on Aba Daba: get-in 41 voices against note-on 42 and note-off 42; leaving it out takes the raw peak from 36984 to 21516",
+        "the three Play__Robot_VO__Singing_Getin_* events target its children directly, and BehaviorSinging plays one of them through the get-in animation before the song (0x005EEB30)"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "how far down the get-in branch a note actually reaches, and whether the shipped songs use the keys that branch can answer",
+      "status": "BLOCKED_EXTERNAL",
+      "unresolved": "the dispatch rule itself. Only a recording of the stock app singing, or a Wwise runtime of this bank version, can settle it. This is the largest remaining doubt about how a rendered song sounds",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "WwiseSongTests.TheRenderSaysHowManyVoicesEachBranchOfTheSamplerContributed"
     },
     {
       "id": "M9-014",

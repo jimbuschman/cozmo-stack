@@ -29,6 +29,12 @@ public sealed record WwiseRenderedMusic(short[] Pcm, double DurationMs)
     public double ModulationPeakDb { get; init; }
     /// <summary>The largest pitch change any modulator made, in cents. 0 when none had any effect.</summary>
     public double ModulationPeakCents { get; init; }
+    /// <summary>
+    /// How many voices each immediate child of the MIDI target contributed. For the singing sampler that
+    /// is the note-on layer, the note-off layer and the get-in branch, and the get-in branch's share is
+    /// the open question the fidelity manifest records as M9-013: it is reported rather than buried.
+    /// </summary>
+    public IReadOnlyDictionary<uint, int> VoicesByBranch { get; init; } = new Dictionary<uint, int>();
 }
 
 /// <summary>
@@ -106,6 +112,22 @@ public sealed class WwiseSongRenderer
     /// </summary>
     public IReadOnlyDictionary<uint, float> Parameters { get; set; } = new Dictionary<uint, float>();
 
+    /// <summary>
+    /// Immediate children of the MIDI target to leave out of a render. Empty by default, and the renderer
+    /// leaves nothing out on its own: every child of the target receives notes, which is what the container
+    /// rules give and what <see cref="WwiseRenderedMusic.VoicesByBranch"/> reports.
+    ///
+    /// It exists because of one unresolved question. The singing sampler's third child is the get-in
+    /// branch, the phrases the three <c>Play__Robot_VO__Singing_Getin_*</c> events play and that the
+    /// behaviour's get-in animation raises before the song starts. It carries no MIDI filter of its own,
+    /// and four of the eighteen containers under it carry no key range either, so under the rules above a
+    /// note can reach it; measured on Aba Daba it adds 41 voices to a 42-note song. Whether Wwise's MIDI
+    /// dispatch really routes notes into it is Wwise runtime behaviour, and no Wwise runtime ships in the
+    /// package (fidelity manifest M9-013). Only a recording of the stock app singing can settle it, so this
+    /// lets the two readings be rendered and listened to side by side rather than argued about.
+    /// </summary>
+    public IReadOnlySet<uint> ExcludeBranches { get; set; } = new HashSet<uint>();
+
     private const int Rate = CozmoAudio.SampleRate;
     private static int Samples(double ms) => (int)Math.Round(ms * Rate / 1000.0);
 
@@ -116,7 +138,7 @@ public sealed class WwiseSongRenderer
 
     private WwiseRenderedMusic RenderLocked(WwiseMusicPlan plan)
     {
-        _modulations = 0; _modPeakDb = 0; _modPeakCents = 0;
+        _modulations = 0; _modPeakDb = 0; _modPeakCents = 0; _branchVoices.Clear();
         var problems = new List<string>();
         if (plan.Problem is not null) return new WwiseRenderedMusic(Array.Empty<short>(), 0) { Problems = new[] { plan.Problem } };
 
@@ -151,10 +173,10 @@ public sealed class WwiseSongRenderer
                         double heldMs = Math.Min(n.StartMs + n.LengthMs, windowEnd) - n.StartMs;
                         double onset = clipStartOnTimeline + n.StartMs;
                         int voices = 0;
-                        Trigger(target, n.Key, n.Velocity, onset, heldMs, noteOff: false, 0, 0, 1, NoModulators, mix, ref voices, problems, 0);
+                        Trigger(target, n.Key, n.Velocity, onset, heldMs, noteOff: false, 0, 0, 1, NoModulators, mix, ref voices, problems, 0, 0);
                         if (voices > 0) played++; else silent++;
                         int offVoices = 0;
-                        Trigger(target, n.Key, n.Velocity, onset + heldMs, 0, noteOff: true, 0, 0, 1, NoModulators, mix, ref offVoices, problems, 0);
+                        Trigger(target, n.Key, n.Velocity, onset + heldMs, 0, noteOff: true, 0, 0, 1, NoModulators, mix, ref offVoices, problems, 0, 0);
                         offs += offVoices;
                     }
                 }
@@ -191,6 +213,7 @@ public sealed class WwiseSongRenderer
             AudioClips = audioClips, ClippedSamples = clipped, Problems = problems, Peak = peak,
             PreLimitPeak = rawPeak, OutputGainDb = gain < 1.0 ? 20 * Math.Log10(gain) : 0,
             ModulationsApplied = _modulations, ModulationPeakDb = _modPeakDb, ModulationPeakCents = _modPeakCents,
+            VoicesByBranch = new Dictionary<uint, int>(_branchVoices),
         };
     }
 
@@ -200,6 +223,7 @@ public sealed class WwiseSongRenderer
     private static readonly IReadOnlyList<Bound> NoModulators = Array.Empty<Bound>();
     private int _modulations;
     private double _modPeakDb, _modPeakCents;
+    private readonly Dictionary<uint, int> _branchVoices = new();
 
     /// <summary>
     /// The modulators bound on one node, with each one's depth already resolved: an LFO's depth can itself
@@ -230,20 +254,25 @@ public sealed class WwiseSongRenderer
         return added ?? inherited;
     }
 
-    /// <summary>Walks the MIDI target for one note event, in either its note-on or its note-off phase.</summary>
-    private void Trigger(uint nodeId, byte key, byte velocity, double startMs, double heldMs, bool noteOff,
-                         double gainDb, double cents, uint playOn, IReadOnlyList<Bound> modulators,
-                         double[] mix, ref int voices, List<string> problems, int depth)
+    /// <summary>
+    /// Walks the MIDI target for one note event, in either its note-on or its note-off phase, and returns
+    /// how long what it placed occupies, so that a container whose play mode is continuous can lay its
+    /// items out one after another. That is the same reading of the play-mode bit that
+    /// <see cref="WwisePlayback"/> gives an ordinary event play, so one bank field is not read two ways.
+    /// </summary>
+    private double Trigger(uint nodeId, byte key, byte velocity, double startMs, double heldMs, bool noteOff,
+                           double gainDb, double cents, uint playOn, IReadOnlyList<Bound> modulators,
+                           double[] mix, ref int voices, List<string> problems, int depth, uint branch)
     {
-        if (depth > 16) return;
+        if (depth > 16) return 0;
         var node = _lib.Node(nodeId);
-        if (node is null) { problems.Add($"MIDI target node {nodeId} is not readable"); return; }
+        if (node is null) { problems.Add($"MIDI target node {nodeId} is not readable"); return 0; }
         var p = node.Params;
 
-        if (p.Raw(WwiseProp.MidiKeyRangeMin) is { } kmin && key < kmin) return;
-        if (p.Raw(WwiseProp.MidiKeyRangeMax) is { } kmax && key > kmax) return;
-        if (p.Raw(WwiseProp.MidiVelocityRangeMin) is { } vmin && velocity < vmin) return;
-        if (p.Raw(WwiseProp.MidiVelocityRangeMax) is { } vmax && velocity > vmax) return;
+        if (p.Raw(WwiseProp.MidiKeyRangeMin) is { } kmin && key < kmin) return 0;
+        if (p.Raw(WwiseProp.MidiKeyRangeMax) is { } kmax && key > kmax) return 0;
+        if (p.Raw(WwiseProp.MidiVelocityRangeMin) is { } vmin && velocity < vmin) return 0;
+        if (p.Raw(WwiseProp.MidiVelocityRangeMax) is { } vmax && velocity > vmax) return 0;
         if (p.Raw(WwiseProp.MidiPlayOnNoteType) is { } po) playOn = po;
         gainDb += p.Float(WwiseProp.Volume) ?? 0;
         cents += p.Float(WwiseProp.Pitch) ?? 0;
@@ -252,21 +281,42 @@ public sealed class WwiseSongRenderer
         switch (node)
         {
             case WwiseBlendNode or WwiseActorMixerNode:
+            {
+                double longest = 0;
                 foreach (var c in node.Children)
-                    Trigger(c, key, velocity, startMs, heldMs, noteOff, gainDb, cents, playOn, modulators, mix, ref voices, problems, depth + 1);
-                break;
+                {
+                    if (depth == 0 && ExcludeBranches.Contains(c)) continue;
+                    longest = Math.Max(longest, Trigger(c, key, velocity, startMs, heldMs, noteOff, gainDb, cents,
+                        playOn, modulators, mix, ref voices, problems, depth + 1, depth == 0 ? c : branch));
+                }
+                return longest;
+            }
 
             case WwiseRandomSequenceNode rs:
-                if (rs.Playlist.Count == 0) return;
+            {
+                if (rs.Playlist.Count == 0) return 0;
+                if ((rs.Flags & WwisePlayback.ContinuousFlag) != 0)
+                {
+                    double at = startMs, total = 0;
+                    foreach (var (child, _) in rs.Playlist)
+                    {
+                        double n = Trigger(child, key, velocity, at, heldMs, noteOff, gainDb, cents, playOn,
+                                           modulators, mix, ref voices, problems, depth + 1, branch);
+                        at += n; total += n;
+                    }
+                    return total;
+                }
                 uint pick = rs.IsSequence ? NextInSequence(rs) : WeightedPick(rs);
-                Trigger(pick, key, velocity, startMs, heldMs, noteOff, gainDb, cents, playOn, modulators, mix, ref voices, problems, depth + 1);
-                break;
+                return Trigger(pick, key, velocity, startMs, heldMs, noteOff, gainDb, cents, playOn, modulators,
+                               mix, ref voices, problems, depth + 1, branch);
+            }
 
             case WwiseSoundNode s:
+            {
                 bool playsAtNoteOff = playOn == 2;
-                if (playsAtNoteOff != noteOff) return;
+                if (playsAtNoteOff != noteOff) return 0;
                 var pcm = _decode(s.MediaId);
-                if (pcm is null || pcm.Length == 0) { problems.Add($"sound {s.Id} media {s.MediaId} could not be decoded"); return; }
+                if (pcm is null || pcm.Length == 0) { problems.Add($"sound {s.Id} media {s.MediaId} could not be decoded"); return 0; }
                 double gain = Math.Pow(10, gainDb / 20.0);
                 double ratio = Math.Pow(2, cents / 1200.0);
                 double sampleMs = pcm.Length * 1000.0 / Rate / ratio;
@@ -274,11 +324,13 @@ public sealed class WwiseSongRenderer
                 var modulation = Modulation(modulators, heldMs, problems);
                 Place(mix, pcm, startMs, 0, lengthMs, gain, ratio, modulation);
                 voices++;
-                break;
+                _branchVoices[branch] = _branchVoices.GetValueOrDefault(branch) + 1;
+                return lengthMs;
+            }
 
             default:
                 problems.Add($"node {nodeId} is a {node.Type}, which the sampler does not dispatch into");
-                break;
+                return 0;
         }
     }
 

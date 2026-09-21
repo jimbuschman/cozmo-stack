@@ -23,11 +23,14 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     private readonly WwiseSoundLibrary _library;
     private readonly bool _ownsLibrary;
     private readonly WwiseCodebookLibrary? _codebooks;
-    private readonly Dictionary<uint, short[]?> _cache = new();
     private readonly Dictionary<uint, short[]?> _mediaCache = new();
     private readonly Dictionary<(uint Event, uint Node), short[]?> _musicCache = new();
     private readonly Dictionary<uint, uint> _switches = new();
     private readonly Dictionary<uint, float> _parameters = new();
+    /// <summary>The draw, the sequence positions and the last pick a container play carries between plays.</summary>
+    private readonly Random _eventRandom;
+    private readonly Dictionary<uint, int> _eventCursor = new();
+    private readonly Dictionary<uint, uint> _eventLastPick = new();
     private readonly List<WwiseMiss> _misses = new();
     private readonly object _gate = new();
     private readonly WwiseSongRenderer _renderer;
@@ -41,6 +44,7 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
         _ownsLibrary = ownsLibrary;
         _codebooks = codebooks ?? TryLoadCodebooks();
         _renderer = new WwiseSongRenderer(library, DecodeMedia, random);
+        _eventRandom = random ?? new Random();
     }
 
     /// <summary>
@@ -71,6 +75,17 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     }
 
     public IReadOnlyDictionary<uint, float> Parameters { get { lock (_gate) return new Dictionary<uint, float>(_parameters); } }
+
+    /// <summary>
+    /// Children of the singing sampler's MIDI target to leave out of a render, for listening to the two
+    /// readings of the get-in branch side by side. Empty by default; see
+    /// <see cref="WwiseSongRenderer.ExcludeBranches"/>.
+    /// </summary>
+    public IReadOnlySet<uint> ExcludeBranches
+    {
+        get => _renderer.ExcludeBranches;
+        set { lock (_gate) { _renderer.ExcludeBranches = value; _musicCache.Clear(); } }
+    }
 
     /// <summary>The last music render's report, for tools and acceptance records. Null until a music event was produced.</summary>
     public WwiseRenderedMusic? LastMusicRender { get; private set; }
@@ -237,9 +252,11 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     /// cannot be produced. The scheduler treats null as "try the next alternative", which is the same
     /// contract <see cref="WavAudioSource"/> honours.
     ///
-    /// Where an event resolves to several media files, they are that event's alternatives — a Wwise
-    /// container picks between them at play time. The first that decodes is used, so an event with a mix
-    /// of codecs still plays as long as one alternative is decodable.
+    /// What the event plays is worked out by walking the containers under its Play target with their own
+    /// semantics (<see cref="WwisePlayback"/>): a random container draws, a sequence container plays its
+    /// items one after another, a switch container follows the switch. So a play is drawn afresh each
+    /// time, as Wwise draws it, and an event whose phrase is several recordings long plays all of them.
+    /// Only the decoded media are cached, not the mix, so the draw is not frozen.
     /// </summary>
     public short[]? GetPcm(long eventId, float volume)
     {
@@ -248,14 +265,7 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
 
         short[]? pcm;
         if (IsMusicEvent(id)) pcm = ProduceMusic(id);
-        else lock (_gate)
-        {
-            if (!_cache.TryGetValue(id, out pcm))
-            {
-                pcm = Produce(id);
-                _cache[id] = pcm;
-            }
-        }
+        else lock (_gate) pcm = Produce(id);
         if (pcm is null) return null;
         if (Math.Abs(volume - 1f) < 0.001f) return pcm;
 
@@ -341,55 +351,111 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
         }
     }
 
-    /// <summary>Resolves and decodes, recording why each alternative failed when none works.</summary>
+    /// <summary>
+    /// Resolves the event to a plan and renders it: each recording decoded, its summed level and pitch
+    /// applied, laid out where the plan puts it. A recording that cannot be decoded is named in
+    /// <see cref="Misses"/> and left out; the rest of the phrase still plays.
+    /// </summary>
     private short[]? Produce(uint eventId)
     {
-        var resolved = _library.Resolve(eventId);
-        if (resolved.Media.Count == 0)
+        var plan = WwisePlayback.Resolve(_library, eventId, _switches, _eventRandom, _eventCursor, _eventLastPick);
+        var reasons = new List<string>(plan.Problems);
+        if (plan.Root is null)
         {
-            _misses.Add(new WwiseMiss(eventId, resolved.Name,
-                resolved.Problem ?? "the event resolves to no media", WwiseCodec.Unknown));
+            _misses.Add(new WwiseMiss(eventId, plan.Name,
+                reasons.Count > 0 ? string.Join("; ", reasons) : "the event resolves to no media", WwiseCodec.Unknown));
             return null;
         }
 
-        var reasons = new List<string>();
+        // Decode first, so the layout can use the lengths the decoder actually produced.
+        var decoded = new Dictionary<uint, short[]>();
         var lastCodec = WwiseCodec.Unknown;
-        foreach (var refr in resolved.Media)
+        foreach (var s in plan.Sounds)
         {
-            if (refr.Media is not { } m)
+            if (decoded.ContainsKey(s.MediaId)) continue;
+            var pcm = DecodeMedia(s.MediaId);
+            if (pcm is null || pcm.Length == 0)
             {
-                reasons.Add($"{refr.MediaId}: {refr.Problem ?? "unreadable"}");
+                var refr = _library.Describe(s.MediaId, "");
+                if (refr.Media is { } m) lastCodec = m.Codec;
+                reasons.Add($"{s.MediaId}: " + (refr.Problem
+                    ?? refr.Media?.UndecodableReason
+                    ?? (refr.Media?.Codec == WwiseCodec.Vorbis && _codebooks is null
+                        ? $"Vorbis needs {CodebookFileName}, which was not found"
+                        : "could not be decoded")));
                 continue;
             }
-            lastCodec = m.Codec;
-            if (!m.IsDecodable)
+            decoded[s.MediaId] = pcm;
+        }
+        if (decoded.Count == 0)
+        {
+            _misses.Add(new WwiseMiss(eventId, plan.Name, string.Join("; ", reasons), lastCodec));
+            return null;
+        }
+
+        int rate = CozmoAudio.SampleRate;
+        var voices = new List<(int Start, short[] Pcm, double Gain, double Ratio)>();
+        int total = 0;
+
+        int Lay(WwisePlayNode node, int startSample)
+        {
+            switch (node)
             {
-                reasons.Add($"{refr.MediaId}: {m.UndecodableReason}");
-                continue;
-            }
-            if (m.Codec == WwiseCodec.Vorbis && _codebooks is null)
-            {
-                reasons.Add($"{refr.MediaId}: Vorbis needs {CodebookFileName}, which was not found");
-                continue;
-            }
-            var bytes = _library.ReadMedia(refr.MediaId, out _);
-            if (bytes is null) { reasons.Add($"{refr.MediaId}: file went missing"); continue; }
-            try
-            {
-                var parsed = WwiseMedia.Parse(bytes);
-                if (parsed.Codec == WwiseCodec.Adpcm)
-                    return ToRobotRate(WwiseAdpcm.Decode(parsed), parsed.Channels, parsed.SampleRate);
-                var v = WwiseVorbis.Decode(parsed, _codebooks!);
-                return ToRobotRate(v.Samples, v.Channels, v.SampleRate);
-            }
-            catch (Exception ex) when (ex is InvalidDataException or ArgumentException)
-            {
-                reasons.Add($"{refr.MediaId}: {ex.Message}");
+                case WwisePlaySound s:
+                {
+                    if (!decoded.TryGetValue(s.MediaId, out var pcm)) return 0;
+                    double ratio = Math.Pow(2, s.Cents / 1200.0);
+                    double gain = Math.Pow(10, s.GainDb / 20.0);
+                    int length = (int)Math.Round(pcm.Length / ratio);
+                    voices.Add((startSample, pcm, gain, ratio));
+                    total = Math.Max(total, startSample + length);
+                    return length;
+                }
+                case WwisePlaySequence q:
+                {
+                    int at = startSample, length = 0;
+                    foreach (var part in q.Parts) { int n = Lay(part, at); at += n; length += n; }
+                    return length;
+                }
+                case WwisePlayTogether t:
+                {
+                    int longest = 0;
+                    foreach (var part in t.Parts) longest = Math.Max(longest, Lay(part, startSample));
+                    return longest;
+                }
+                default: return 0;
             }
         }
 
-        _misses.Add(new WwiseMiss(eventId, resolved.Name, string.Join("; ", reasons), lastCodec));
-        return null;
+        Lay(plan.Root, 0);
+        if (total <= 0)
+        {
+            _misses.Add(new WwiseMiss(eventId, plan.Name, string.Join("; ", reasons), lastCodec));
+            return null;
+        }
+        if (reasons.Count > 0) _misses.Add(new WwiseMiss(eventId, plan.Name, string.Join("; ", reasons), lastCodec));
+
+        // One voice at unity with nothing to mix into is the common case; hand back its samples unchanged.
+        if (voices.Count == 1 && voices[0].Start == 0 && Math.Abs(voices[0].Gain - 1) < 1e-9
+            && Math.Abs(voices[0].Ratio - 1) < 1e-9)
+            return voices[0].Pcm;
+
+        var mix = new double[total];
+        foreach (var (start, pcm, gain, ratio) in voices)
+        {
+            double src = 0;
+            for (int i = start; i < mix.Length; i++)
+            {
+                int index = (int)src;
+                if (index >= pcm.Length) break;
+                mix[i] += pcm[index] * gain;
+                src += ratio;
+            }
+        }
+        var outPcm = new short[total];
+        for (int i = 0; i < total; i++)
+            outPcm[i] = (short)Math.Clamp(Math.Round(mix[i]), short.MinValue, short.MaxValue);
+        return outPcm;
     }
 
     /// <summary>

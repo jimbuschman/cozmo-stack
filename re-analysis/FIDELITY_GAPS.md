@@ -7,12 +7,12 @@ Manifest of **193 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 75 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 77 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 16 | The native behaviour is known from primary source; this stack reaches the same observable effect by a different mechanism, and the record names the difference. |
-| RECOVERABLE_GAP | 74 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. Blocks source-completeness on a live path. |
+| RECOVERABLE_GAP | 71 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. Blocks source-completeness on a live path. |
 | COMPATIBILITY_POLICY | 19 | A deliberate choice of this stack on a path that does not claim to be the engine's: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
-| BLOCKED_EXTERNAL | 6 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
+| BLOCKED_EXTERNAL | 7 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
 ## Source-completeness by subsystem
 
@@ -25,10 +25,10 @@ A subsystem is source-complete when nothing on its normal live execution path is
 | M3-device — Camera, display and audio device layer | 17 | 6 | no |
 | M4-control — Motion, sensors, lights and cubes | 9 | 4 | no |
 | M5-animation — Animation clips, scheduler and face | 20 | 4 | no |
-| M6-wwise-bank — Wwise bank reading and codecs | 7 | 2 | no |
+| M6-wwise-bank — Wwise bank reading and codecs | 7 | 0 | yes |
 | M7-behaviour — Idle, mood and reactions | 15 | 4 | no |
 | M8-framework — Behaviour framework and scoring | 10 | 5 | no |
-| M9-wwise-music — Wwise music, the MIDI sampler and singing | 25 | 4 | no |
+| M9-wwise-music — Wwise music, the MIDI sampler and singing | 25 | 3 | no |
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 16 | 9 | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 12 | 7 | no |
@@ -203,26 +203,6 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * evidence: re-analysis/PROCEDURAL_FACE.md
 * unresolved: which radius parameter belongs to which corner, and the fill rule for the eye polygon
 
-### M6-wwise-bank — Wwise bank reading and codecs
-
-**M6-006 — An event Play target is flattened to every Sound beneath it, ignoring container type** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSoundLibrary.cs:306`
-* effect: an event that should play a sequence of several recordings plays one, and an event under a switch container can play a recording the current switch does not select. Play__Robot_VO__Singing_Getin_1 is a random of a random of a two-item sequence, and reaches the robot as a single syllable instead of a two-note phrase
-* rests on: MediaUnder walks the whole subtree and every Sound found is treated as an alternative
-* best authority: the shipped banks carry each container type, its playlist, weights, avoid-repeat count and play mode, all of which WwiseHierarchy already reads exactly and the song renderer already honours
-* evidence: Cozmo.bnk 403781184 random of 399004754 / 693270200 / 201436547; each of those a random of three, each of those a sequence (mode 1) of two per-key containers
-* unresolved: the walk has not been rewritten onto the container fields that are already parsed
-
-**M6-007 — The first decodable alternative is played, every time** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs:327`
-* effect: a voice line that has three recordings always uses the same one, so the robot repeats itself where the app varies
-* rests on: Produce iterates the flattened media list and returns the first that decodes
-* best authority: the container carries the playlist weights and the avoid-repeat count; the engine leaves the choice to Wwise, and RobotAudioClient::GetRandomGenerator shows the engine hands Wwise a generator rather than choosing itself
-* evidence: Anki::Cozmo::Audio::RobotAudioClient::GetRandomGenerator
-* unresolved: no draw is made at all; the keyframe-level probability (D4) chooses between audio refs, not between a container children
-
 ### M7-behaviour — Idle, mood and reactions
 
 **M7-007 — Eye-dart lifecycle: ramp-then-hold or snap-then-hold** (live path)
@@ -314,15 +294,6 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * best authority: Init.bnk carries the whole bus tree and the parameters of every bus effect; the robot buses each end in an Anki Hijack capture
 * evidence: Init.bnk bus 2678428988 Robot_Bus_1; Init.txt effect plug-ins table
 * unresolved: the effect chain on the bus the singing voice reaches, and the parameters of each effect in it
-
-**M9-013 — The get-in branch under the MIDI target receives notes like any other child** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
-* effect: a get-in phrase recording is layered onto ordinary sung notes during a song
-* rests on: uniform application of the container rules; nothing was special-cased
-* best authority: the shipped bank: random container 403781184 is a child of the MIDI target and carries no key or velocity filter of its own
-* evidence: Cozmo.bnk 403781184 parent 110896138; Cozmo.txt path Robot_VO__Singing\Robot_VO__Sing\Robot_VO__Singing_Getin
-* unresolved: how far down the get-in branch a note actually reaches, and whether the shipped songs use the keys that branch can answer
 
 **M9-017 — The cube-shake input to the vibrato is never measured** (live path)
 
@@ -728,6 +699,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 | M8-008 | M8-framework | EQUIVALENT_IMPLEMENTATION | The 5 s calibration allowance borrowed from ReactToImpact | BehaviorReactToImpact 0x00606348 |
 | M8-009 | M8-framework | COMPATIBILITY_POLICY | Behaviour scope undo order | the engine Smart* destructor order |
 | M8-010 | M8-framework | COMPATIBILITY_POLICY | Behaviour inventory classifier rules | not applicable: this is bookkeeping, not robot behaviour |
+| M9-013 | M9-wwise-music | BLOCKED_EXTERNAL | Whether Wwise routes MIDI notes into the get-in branch of the singing sampler | the Wwise MIDI dispatch rule, which is runtime behaviour. No Wwise runtime ships in the APK: no AkSoundEngine, CAk*, AkModulator or Wwise string occurs in libcozmoEngine.so, libunity.so or libmain.so, and there is no separate Wwise library. The shipped data was searched to exhaustion: the branch parent and the target child list, the key and velocity ranges on all 18 containers under it, the play-on-note property, the channel mask, the node bit vectors, the blend container layers (there are none), and the Wwise object paths in Cozmo.txt |
 | M9-014 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | Velocity is ignored | the shipped bank: no node under the MIDI target carries a velocity RTPC, and only one velocity layer of recordings ships |
 | M9-015 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | The final-PCM cache freezes the renderer random choices for the life of a source | the container avoid-repeat and weight fields are read and honoured within a render |
 | M9-016 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | The song is rendered whole, ahead of playback, on a worker | not applicable: this is a local architecture decision, and the observable output is the same once the render completes |

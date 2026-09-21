@@ -47,7 +47,7 @@ public static class WwiseTool
         if (a.Contains("--sampler")) return Sampler(lib);
         if (Arg(a, "--music") is { } music) return Music(lib, Resolve(lib, music), Switches(lib, a), a.Contains("--midi"));
         int seed = int.TryParse(Arg(a, "--seed"), out var sd) ? sd : 1;
-        if (Arg(a, "--render") is { } render) return Render(lib, Resolve(lib, render), Switches(lib, a), Arg(a, "--wav"), seed);
+        if (Arg(a, "--render") is { } render) return Render(lib, Resolve(lib, render), Switches(lib, a), Arg(a, "--wav"), seed, BranchArg(a));
         if (a.Contains("--validate-music")) return ValidateMusic(lib, Arg(a, "--obb"), seed);
         if (ev is not null) return Report(lib, Resolve(lib, ev));
         if (clip is not null) return ForClip(lib, clip, assets);
@@ -154,15 +154,23 @@ public static class WwiseTool
     }
 
     /// <summary>Renders one music event offline, reports what the sampler did, and optionally writes the PCM as a WAV.</summary>
-    private static int Render(WwiseSoundLibrary lib, uint? id, IReadOnlyDictionary<uint, uint> switches, string? wav, int seed)
+    private static int Render(WwiseSoundLibrary lib, uint? id, IReadOnlyDictionary<uint, uint> switches, string? wav, int seed, uint? without)
     {
         if (id is null) { Console.WriteLine("no event with that id or name"); return 1; }
         using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(seed));
+        if (without is not null)
+        {
+            source.ExcludeBranches = new HashSet<uint> { without.Value };
+            Console.WriteLine($"  leaving out branch {BranchName(without.Value)} of the MIDI target (see WWISE_MUSIC.md, M9-013)");
+        }
         var r = source.RenderMusic(id.Value, switches);
         Console.WriteLine($"\nrendered {id} {lib.NameOf(id.Value) ?? ""}: {r.DurationMs:F0} ms, {r.Pcm.Length} samples at {CozmoAudio.SampleRate} Hz");
         Console.WriteLine($"  notes in window {r.NotesInWindow}, sung {r.NotesPlayed}, outside the voice's range {r.NotesSilent}, note-offs {r.NoteOffsPlayed}, audio clips {r.AudioClips}");
         Console.WriteLine($"  raw peak {r.PreLimitPeak:F0} of {short.MaxValue}; output stage gain {r.OutputGainDb:F1} dB (a stand-in for the robot bus limiter); clipped samples after it {r.ClippedSamples}");
         Console.WriteLine($"  modulator bindings acted on {r.ModulationsApplied}; deepest level change {r.ModulationPeakDb:F2} dB, largest pitch change {r.ModulationPeakCents:F0} cents");
+        if (r.VoicesByBranch.Count > 0)
+            Console.WriteLine("  voices by branch of the MIDI target: " +
+                string.Join(", ", r.VoicesByBranch.OrderBy(k => k.Key).Select(k => $"{BranchName(k.Key)} {k.Value}")));
         foreach (var pr in r.Problems) Console.WriteLine($"  problem: {pr}");
         if (wav is not null && r.Pcm.Length > 0)
         {
@@ -283,7 +291,16 @@ public static class WwiseTool
         }
         if (r.Media.Count == 0) { Console.WriteLine($"  !! {r.Problem}"); return 1; }
         if (r.Media.Count > 1)
-            Console.WriteLine($"  -> {r.Media.Count} alternatives (a container chooses one at play time)");
+            Console.WriteLine($"  -> {r.Media.Count} recordings are reachable from the target");
+
+        // What one play actually does, as the containers say: which child a random draws, the order a
+        // sequence plays its items in, which branch a switch selects. See WwisePlayback.
+        var plan = WwisePlayback.Resolve(lib, id.Value, new Dictionary<uint, uint>(), new Random(1),
+                                         new Dictionary<uint, int>(), new Dictionary<uint, uint>());
+        Console.WriteLine("  -> one play, with no switches set and a fixed draw:");
+        PrintPlan(plan.Root, 5);
+        foreach (var p in plan.Problems) Console.WriteLine($"     !! {p}");
+
         foreach (var m in r.Media)
         {
             Console.WriteLine($"  -> media id {m.MediaId}");
@@ -294,6 +311,48 @@ public static class WwiseTool
             Console.WriteLine($"     -> {(md.IsDecodable ? "decodes here" : $"NOT DECODED: {md.UndecodableReason}")}");
         }
         return 0;
+    }
+
+    /// <summary><c>--without-branch get-in|note-on|note-off|&lt;id&gt;</c>: a child of the MIDI target to leave out.</summary>
+    private static uint? BranchArg(string[] a) => Arg(a, "--without-branch") switch
+    {
+        null => null,
+        "get-in" => 403781184u,
+        "note-on" => 462443456u,
+        "note-off" => 774902407u,
+        var s2 when uint.TryParse(s2, out var v) => v,
+        _ => null,
+    };
+
+    /// <summary>The three children of the singing sampler, by the names the Wwise project gives them.</summary>
+    private static string BranchName(uint id) => id switch
+    {
+        462443456 => "note-on", 774902407 => "note-off", 403781184 => "get-in", _ => id.ToString(),
+    };
+
+    /// <summary>Prints one play plan: what sounds, in what order, and what starts together.</summary>
+    private static void PrintPlan(WwisePlayNode? node, int indent)
+    {
+        string pad = new(' ', indent);
+        switch (node)
+        {
+            case null:
+                Console.WriteLine($"{pad}(nothing)");
+                break;
+            case WwisePlaySound s:
+                string level = s.GainDb != 0 ? $" {s.GainDb:+0.#;-0.#} dB" : "";
+                string pitch = s.Cents != 0 ? $" {s.Cents:+0;-0} cents" : "";
+                Console.WriteLine($"{pad}sound {s.SoundId} media {s.MediaId}{level}{pitch}");
+                break;
+            case WwisePlaySequence q:
+                Console.WriteLine($"{pad}then, one after another:");
+                foreach (var p in q.Parts) PrintPlan(p, indent + 2);
+                break;
+            case WwisePlayTogether t:
+                Console.WriteLine($"{pad}all at once:");
+                foreach (var p in t.Parts) PrintPlan(p, indent + 2);
+                break;
+        }
     }
 
     private static string Describe(WwiseMedia m) => m.Codec switch

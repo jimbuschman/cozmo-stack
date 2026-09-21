@@ -17,5 +17,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Fixtures\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Several rigs drive a behaviour against a wall-clock budget while sleeping between ticks, and the
+         Wwise tests decode and mix whole songs. On a four-core machine xUnit's default parallelism
+         oversubscribes the box enough to starve those rigs, and they fail in a different place on every
+         run. Capping the runner keeps the suite honest; it costs about two minutes. -->
+    <None Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
