@@ -872,44 +872,44 @@ public sealed partial class HeadAngleUpdate : RobotMessage
     }
 }
 
-/// <summary>setBodyAngle 0x39 (engine_to_robot), 20 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+/// <summary>setBodyAngle 0x39 (engine_to_robot), 20 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-20: MovementComponent::TurnInPlace 0x00640898 and its builder 0x006408F4. TurnInPlaceAction::Init 0x00545FA0 puts an absolute heading in the first word on both its paths. On the relative path the sign of the turn is stuffed into bit 31 of the speed (bfi at 0x0054610C) and numHalfRevolutions is floor(|relative| / pi)</summary>
 public sealed partial class SetBodyAngle : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.SetBodyAngle;
     public SetBodyAngle() { }
-    /// <summary>name not established; name from generated</summary>
-    public uint Field0;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field1;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field2;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field3;
-    /// <summary>name not established; name from generated</summary>
-    public ushort Field4;
-    /// <summary>name not established; name from generated</summary>
-    public byte Field5;
-    /// <summary>name not established; name from generated</summary>
-    public byte Field6;
+    /// <summary>name from engine; absolute body angle in the robot's pose frame</summary>
+    public float AngleRad;
+    /// <summary>name from engine; bit 31 carries the turn direction on a relative turn</summary>
+    public float MaxSpeedRadPerSec;
+    /// <summary>name from engine</summary>
+    public float AccelRadPerSec2;
+    /// <summary>name from engine</summary>
+    public float ToleranceRad;
+    /// <summary>name from engine</summary>
+    public ushort NumHalfRevolutions;
+    /// <summary>name from engine</summary>
+    public byte IsAbsolute;
+    /// <summary>name from engine; MovementComponent's own counter at +8, incremented per command</summary>
+    public byte ActionId;
     public static SetBodyAngle Read(CladReader r) => new()
     {
-        Field0 = r.U32(),
-        Field1 = r.U32(),
-        Field2 = r.U32(),
-        Field3 = r.U32(),
-        Field4 = r.U16(),
-        Field5 = r.U8(),
-        Field6 = r.U8(),
+        AngleRad = r.F32(),
+        MaxSpeedRadPerSec = r.F32(),
+        AccelRadPerSec2 = r.F32(),
+        ToleranceRad = r.F32(),
+        NumHalfRevolutions = r.U16(),
+        IsAbsolute = r.U8(),
+        ActionId = r.U8(),
     };
     public override void WriteBody(CladWriter w)
     {
-        w.U32(Field0);
-        w.U32(Field1);
-        w.U32(Field2);
-        w.U32(Field3);
-        w.U16(Field4);
-        w.U8(Field5);
-        w.U8(Field6);
+        w.F32(AngleRad);
+        w.F32(MaxSpeedRadPerSec);
+        w.F32(AccelRadPerSec2);
+        w.F32(ToleranceRad);
+        w.U16(NumHalfRevolutions);
+        w.U8(IsAbsolute);
+        w.U8(ActionId);
     }
 }
 
@@ -1113,51 +1113,51 @@ public sealed partial class ExecutePath : RobotMessage
     }
 }
 
-/// <summary>dockWithObject 0x42 (engine_to_robot), 21 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+/// <summary>dockWithObject 0x42 (engine_to_robot), 21 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-20: the builder at 0x0063BD50, reached only through DockingComponent::DockWithObject 0x0063BA44 from IDockAction::CheckIfDone 0x005521AC. Word 0 is a literal zero; the speeds are IDockAction +0xAC, +0xB0, +0xB4, named by SetSpeed, SetAccel and SetSpeedAndAccel</summary>
 public sealed partial class DockWithObject : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.DockWithObject;
     public DockWithObject() { }
-    /// <summary>name not established; name from generated</summary>
-    public uint Field0;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field1;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field2;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field3;
-    /// <summary>name not established; name from generated</summary>
-    public byte Field4;
-    /// <summary>name not established; name from generated</summary>
+    /// <summary>name from engine; the engine writes a literal zero here</summary>
+    public uint UnusedZero;
+    /// <summary>name from engine</summary>
+    public float SpeedMmps;
+    /// <summary>name from engine</summary>
+    public float AccelMmps2;
+    /// <summary>name from engine</summary>
+    public float DecelMmps2;
+    /// <summary>name from engine</summary>
+    public byte DockAction;
+    /// <summary>name not established; name from engine; IDockAction +0x95, the constructor's bool</summary>
     public byte Field5;
-    /// <summary>name not established; name from generated</summary>
+    /// <summary>name not established; name from engine; IDockAction +0xBA, never written after the constructor</summary>
     public byte Field6;
-    /// <summary>name not established; name from generated</summary>
-    public byte Field7;
-    /// <summary>name not established; name from generated</summary>
+    /// <summary>name from engine; IDockAction +0xBB, named by DriveToPickupObjectAction::SetDockingMethod</summary>
+    public byte DockingMethod;
+    /// <summary>name not established; name from engine; IDockAction +0xC1; PickupObjectAction sets it</summary>
     public byte Field8;
     public static DockWithObject Read(CladReader r) => new()
     {
-        Field0 = r.U32(),
-        Field1 = r.U32(),
-        Field2 = r.U32(),
-        Field3 = r.U32(),
-        Field4 = r.U8(),
+        UnusedZero = r.U32(),
+        SpeedMmps = r.F32(),
+        AccelMmps2 = r.F32(),
+        DecelMmps2 = r.F32(),
+        DockAction = r.U8(),
         Field5 = r.U8(),
         Field6 = r.U8(),
-        Field7 = r.U8(),
+        DockingMethod = r.U8(),
         Field8 = r.U8(),
     };
     public override void WriteBody(CladWriter w)
     {
-        w.U32(Field0);
-        w.U32(Field1);
-        w.U32(Field2);
-        w.U32(Field3);
-        w.U8(Field4);
+        w.U32(UnusedZero);
+        w.F32(SpeedMmps);
+        w.F32(AccelMmps2);
+        w.F32(DecelMmps2);
+        w.U8(DockAction);
         w.U8(Field5);
         w.U8(Field6);
-        w.U8(Field7);
+        w.U8(DockingMethod);
         w.U8(Field8);
     }
 }
@@ -1315,42 +1315,42 @@ public sealed partial class ControllerGains : RobotMessage
     }
 }
 
-/// <summary>dockingErrorSignal 0x48 (engine_to_robot), 22 bytes. Confidence: prefix. Verification: statically_verified. C# twin Anki.Cozmo.VizInterface.DockingErrorSignal (prefix match)</summary>
+/// <summary>dockingErrorSignal 0x48 (engine_to_robot), 22 bytes. Confidence: prefix. Verification: statically_verified. C# twin Anki.Cozmo.VizInterface.DockingErrorSignal (prefix match) engine 2026-09-20: DockingComponent::UpdateDockingErrorSignal 0x0063BE80 builds this message at sp+0xa0 and the timestamp goes in first - 'mov r6, r1' takes the function's only argument and 'str r6, [sp, #0xa0]' at 0x0063C14A writes it to word 0 - then x at +0xa4, y at +0xa8, z at +0xac and the angle at +0xb0. The name table had matched the 16-byte VizInterface::DockingErrorSignal by prefix, which put x_dist at word 0 and shifted every field of this 22-byte message by one word. The last two bytes are not written by the builder at all</summary>
 public sealed partial class DockingErrorSignal : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.DockingErrorSignal;
     public DockingErrorSignal() { }
-    /// <summary>name from csharp</summary>
+    /// <summary>name from engine</summary>
+    public uint Timestamp;
+    /// <summary>name from engine; marker x with respect to the robot, less the placement offset</summary>
     public float XDist;
-    /// <summary>name from csharp</summary>
+    /// <summary>name from engine; marker y with respect to the robot, plus the placement offset</summary>
     public float YDist;
-    /// <summary>name from csharp</summary>
+    /// <summary>name from engine</summary>
     public float ZDist;
-    /// <summary>name from csharp</summary>
+    /// <summary>name from engine; yaw of the flat-clamped pose + pi/2 + the placement offset angle</summary>
     public float Angle;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field4;
-    /// <summary>name not established; name from generated</summary>
+    /// <summary>name not established; name from generated; never written by the builder</summary>
     public byte Field5;
-    /// <summary>name not established; name from generated</summary>
+    /// <summary>name not established; name from generated; never written by the builder</summary>
     public byte Field6;
     public static DockingErrorSignal Read(CladReader r) => new()
     {
+        Timestamp = r.U32(),
         XDist = r.F32(),
         YDist = r.F32(),
         ZDist = r.F32(),
         Angle = r.F32(),
-        Field4 = r.U32(),
         Field5 = r.U8(),
         Field6 = r.U8(),
     };
     public override void WriteBody(CladWriter w)
     {
+        w.U32(Timestamp);
         w.F32(XDist);
         w.F32(YDist);
         w.F32(ZDist);
         w.F32(Angle);
-        w.U32(Field4);
         w.U8(Field5);
         w.U8(Field6);
     }
@@ -2057,7 +2057,7 @@ public sealed partial class TurnToRecordedHeading : RobotMessage
     }
 }
 
-/// <summary>animHeadAngle 0x93 (engine_to_robot), 3 bytes. Confidence: native_only. Verification: statically_verified. widths from native Unpack engine 2026-09-19: HeadAngleKeyFrame::GetStreamMessage at 0x004F8C08 stores durationTime_ms (this+0xC) as a u16 at +0x12 and angle_deg (i8 at this+0x10) at +0x14 after applying variability (this+0x11) through IKeyFrame::sRNG RandIntInRange(angle-var, angle+var); the three bytes at +0x12 are moved into AnimKeyFrame::HeadAngle. SetMembersFromFlatBuf at 0x004F8C90 reads FlatBuffer field 1 durationTime_ms (vtable slot +6, u32 -> this+0xC), field 2 angle_deg (slot +8, byte -> this+0x10) and field 3 variability_deg (slot +10, byte -> this+0x11)</summary>
+/// <summary>animHeadAngle 0x93 (engine_to_robot), 3 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-19: HeadAngleKeyFrame::GetStreamMessage at 0x004F8C08 stores durationTime_ms (this+0xC) as a u16 at +0x12 and angle_deg (i8 at this+0x10) at +0x14 after applying variability (this+0x11) through IKeyFrame::sRNG RandIntInRange(angle-var, angle+var); the three bytes at +0x12 are moved into AnimKeyFrame::HeadAngle. SetMembersFromFlatBuf at 0x004F8C90 reads FlatBuffer field 1 durationTime_ms (vtable slot +6, u32 -> this+0xC), field 2 angle_deg (slot +8, byte -> this+0x10) and field 3 variability_deg (slot +10, byte -> this+0x11)</summary>
 public sealed partial class HeadAngle : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.AnimHeadAngle;
@@ -2078,7 +2078,7 @@ public sealed partial class HeadAngle : RobotMessage
     }
 }
 
-/// <summary>animLiftHeight 0x94 (engine_to_robot), 3 bytes. Confidence: native_only. Verification: statically_verified. widths from native Unpack engine 2026-09-19: LiftHeightKeyFrame::GetStreamMessage at 0x004F8F80 mirrors HeadAngleKeyFrame::GetStreamMessage: durationTime_ms (this+0xC) as u16 at +0x12, height_mm (u8 at this+0x10) at +0x14 after RandIntInRange(height-var, height+var) with variability at this+0x11; SetMembersFromFlatBuf at 0x004F9004 reads FlatBuffer field 1 durationTime_ms (slot +6 -> this+0xC), field 2 height_mm (slot +8 -> this+0x10) and field 3 variability_mm (slot +10 -> this+0x11)</summary>
+/// <summary>animLiftHeight 0x94 (engine_to_robot), 3 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-19: LiftHeightKeyFrame::GetStreamMessage at 0x004F8F80 mirrors HeadAngleKeyFrame::GetStreamMessage: durationTime_ms (this+0xC) as u16 at +0x12, height_mm (u8 at this+0x10) at +0x14 after RandIntInRange(height-var, height+var) with variability at this+0x11; SetMembersFromFlatBuf at 0x004F9004 reads FlatBuffer field 1 durationTime_ms (slot +6 -> this+0xC), field 2 height_mm (slot +8 -> this+0x10) and field 3 variability_mm (slot +10 -> this+0x11)</summary>
 public sealed partial class LiftHeight : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.AnimLiftHeight;

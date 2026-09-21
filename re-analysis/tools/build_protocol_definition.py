@@ -179,10 +179,84 @@ S("localization_navigation", 0x3C, 0x3D, 0x3E, 0x3F, 0x40, 0x41, 0x42, 0x43, 0x4
 S("firmware_update_recovery", 0x06, 0x0D, 0x30, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, 0xEF)
 S("factory_debug_storage", 0x0E, 0x0F, 0x81, 0xA1, 0xA2, 0xA4, 0xCD, 0xD6)
 
-# Refinements derived from the 2026-09-18 firmware-2457 captures. Each is byte-compatible with the
-# native Unpack (it only splits or renames fields the engine reads as one block) and is marked as
-# hardware evidence in the output.
+# Refinements: each is byte-compatible with the native Unpack (it only splits or renames fields the
+# engine reads as one block) and records where the better evidence came from. Most are from the
+# 2026-09-18 firmware-2457 captures; the engine-sourced ones name the function that fills the message.
 REFINEMENTS = {
+    0x93: {"note": "engine 2026-09-19: HeadAngleKeyFrame::GetStreamMessage at 0x004F8C08 stores "
+                   "durationTime_ms (this+0xC) as a u16 at +0x12 and angle_deg (i8 at this+0x10) at +0x14 "
+                   "after applying variability (this+0x11) through IKeyFrame::sRNG "
+                   "RandIntInRange(angle-var, angle+var); the three bytes at +0x12 are moved into "
+                   "AnimKeyFrame::HeadAngle. SetMembersFromFlatBuf at 0x004F8C90 reads FlatBuffer field 1 "
+                   "durationTime_ms (vtable slot +6, u32 -> this+0xC), field 2 angle_deg (slot +8, byte -> "
+                   "this+0x10) and field 3 variability_deg (slot +10, byte -> this+0x11)",
+           "fields": [{"name": "durationTimeMs", "kind": "scalar", "type": "u16", "name_source": "engine",
+                       "note": "the keyframe's durationTime_ms, truncated to 16 bits (strh)"},
+                      {"name": "angleDeg", "kind": "scalar", "type": "i8", "name_source": "engine",
+                       "note": "angle_deg, with the keyframe's variability already applied: "
+                               "RandIntInRange(angle - var, angle + var) when var != 0"}]},
+    0x94: {"note": "engine 2026-09-19: LiftHeightKeyFrame::GetStreamMessage at 0x004F8F80 mirrors "
+                   "HeadAngleKeyFrame::GetStreamMessage: durationTime_ms (this+0xC) as u16 at +0x12, "
+                   "height_mm (u8 at this+0x10) at +0x14 after RandIntInRange(height-var, height+var) with "
+                   "variability at this+0x11; SetMembersFromFlatBuf at 0x004F9004 reads FlatBuffer field 1 "
+                   "durationTime_ms (slot +6 -> this+0xC), field 2 height_mm (slot +8 -> this+0x10) and "
+                   "field 3 variability_mm (slot +10 -> this+0x11)",
+           "fields": [{"name": "durationTimeMs", "kind": "scalar", "type": "u16", "name_source": "engine",
+                       "note": "the keyframe's durationTime_ms, truncated to 16 bits (strh)"},
+                      {"name": "heightMm", "kind": "scalar", "type": "u8", "name_source": "engine",
+                       "note": "height_mm, with the keyframe's variability already applied: "
+                               "RandIntInRange(height - var, height + var) when var != 0"}]},
+    0x48: {"note": "engine 2026-09-20: DockingComponent::UpdateDockingErrorSignal 0x0063BE80 builds this "
+                   "message at sp+0xa0 and the timestamp goes in first - 'mov r6, r1' takes the function's "
+                   "only argument and 'str r6, [sp, #0xa0]' at 0x0063C14A writes it to word 0 - then "
+                   "x at +0xa4, y at +0xa8, z at +0xac and the angle at +0xb0. The name table had matched "
+                   "the 16-byte VizInterface::DockingErrorSignal by prefix, which put x_dist at word 0 and "
+                   "shifted every field of this 22-byte message by one word. The last two bytes are not "
+                   "written by the builder at all",
+           "fields": [{"name": "timestamp", "kind": "scalar", "type": "u32", "name_source": "engine"},
+                      {"name": "xDist", "kind": "scalar", "type": "f32", "name_source": "engine",
+                       "note": "marker x with respect to the robot, less the placement offset"},
+                      {"name": "yDist", "kind": "scalar", "type": "f32", "name_source": "engine",
+                       "note": "marker y with respect to the robot, plus the placement offset"},
+                      {"name": "zDist", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "angle", "kind": "scalar", "type": "f32", "name_source": "engine",
+                       "note": "yaw of the flat-clamped pose + pi/2 + the placement offset angle"},
+                      {"name": "field5", "kind": "scalar", "type": "u8", "name_source": "generated",
+                       "uncertain": True, "note": "never written by the builder"},
+                      {"name": "field6", "kind": "scalar", "type": "u8", "name_source": "generated",
+                       "uncertain": True, "note": "never written by the builder"}]},
+    0x39: {"note": "engine 2026-09-20: MovementComponent::TurnInPlace 0x00640898 and its builder 0x006408F4. "
+                   "TurnInPlaceAction::Init 0x00545FA0 puts an absolute heading in the first word on both "
+                   "its paths. On the relative path the sign of the turn is stuffed into bit 31 of the "
+                   "speed (bfi at 0x0054610C) and numHalfRevolutions is floor(|relative| / pi)",
+           "fields": [{"name": "angleRad", "kind": "scalar", "type": "f32", "name_source": "engine",
+                       "note": "absolute body angle in the robot's pose frame"},
+                      {"name": "maxSpeedRadPerSec", "kind": "scalar", "type": "f32", "name_source": "engine",
+                       "note": "bit 31 carries the turn direction on a relative turn"},
+                      {"name": "accelRadPerSec2", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "toleranceRad", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "numHalfRevolutions", "kind": "scalar", "type": "u16", "name_source": "engine"},
+                      {"name": "isAbsolute", "kind": "scalar", "type": "u8", "name_source": "engine"},
+                      {"name": "actionId", "kind": "scalar", "type": "u8", "name_source": "engine",
+                       "note": "MovementComponent's own counter at +8, incremented per command"}]},
+    0x42: {"note": "engine 2026-09-20: the builder at 0x0063BD50, reached only through "
+                   "DockingComponent::DockWithObject 0x0063BA44 from IDockAction::CheckIfDone 0x005521AC. "
+                   "Word 0 is a literal zero; the speeds are IDockAction +0xAC, +0xB0, +0xB4, named by "
+                   "SetSpeed, SetAccel and SetSpeedAndAccel",
+           "fields": [{"name": "unusedZero", "kind": "scalar", "type": "u32", "name_source": "engine",
+                       "note": "the engine writes a literal zero here"},
+                      {"name": "speedMmps", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "accelMmps2", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "decelMmps2", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "dockAction", "kind": "scalar", "type": "u8", "name_source": "engine"},
+                      {"name": "field5", "kind": "scalar", "type": "u8", "name_source": "engine",
+                       "uncertain": True, "note": "IDockAction +0x95, the constructor's bool"},
+                      {"name": "field6", "kind": "scalar", "type": "u8", "name_source": "engine",
+                       "uncertain": True, "note": "IDockAction +0xBA, never written after the constructor"},
+                      {"name": "dockingMethod", "kind": "scalar", "type": "u8", "name_source": "engine",
+                       "note": "IDockAction +0xBB, named by DriveToPickupObjectAction::SetDockingMethod"},
+                      {"name": "field8", "kind": "scalar", "type": "u8", "name_source": "engine",
+                       "uncertain": True, "note": "IDockAction +0xC1; PickupObjectAction sets it"}]},
     0xB0: {"note": "capture 2026-09-18: decoded against the OBB AnkiLogStringTables; the engine reads "
                    "formatId+unused as one 4-byte block",
            "fields": [{"name": "formatId", "kind": "scalar", "type": "u16", "name_source": "hardware"},

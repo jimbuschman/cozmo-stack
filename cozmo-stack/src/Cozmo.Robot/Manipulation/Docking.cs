@@ -84,8 +84,10 @@ public sealed class CarryingComponent
 /// placementOffsetAngle, timestamp}; the signal is skipped while the body rotated faster than 22.9 deg/s
 /// (0x41B758B4) around the frame time. Message field order is the engine's packing (0x0063BD50 / 0x0063C548);
 /// Every field of <c>DockWithObject</c> is now read from the engine rather than guessed - see
-/// <see cref="Message"/> - including the two words that are genuinely zero there. The two trailing bytes
-/// of the error signal are still unread (hardware item N).
+/// <see cref="Message"/> - including the two words that are genuinely zero there. So is the error
+/// signal's, and its timestamp turned out to come first: the name table had matched the 16-byte
+/// <c>VizInterface::DockingErrorSignal</c> by prefix, which shifted every field of this 22-byte message
+/// by one word. Its last two bytes the builder never writes at all.
 /// </summary>
 public sealed class DockingSystem : IDisposable
 {
@@ -150,14 +152,14 @@ public sealed class DockingSystem : IDisposable
                                          bool unlockLiftTrack = false, DockingMethod method = DockingMethod.Default,
                                          bool flag8 = false) => new()
     {
-        Field0 = 0,
-        Field1 = BitConverter.SingleToUInt32Bits(speedMmps),
-        Field2 = BitConverter.SingleToUInt32Bits(accelMmps2),
-        Field3 = BitConverter.SingleToUInt32Bits(decelMmps2),
-        Field4 = (byte)action,
+        UnusedZero = 0,
+        SpeedMmps = speedMmps,
+        AccelMmps2 = accelMmps2,
+        DecelMmps2 = decelMmps2,
+        DockAction = (byte)action,
         Field5 = (byte)(unlockLiftTrack ? 1 : 0),
         Field6 = 0,
-        Field7 = (byte)method,
+        DockingMethod = (byte)method,
         Field8 = (byte)(flag8 ? 1 : 0),
     };
 
@@ -242,7 +244,10 @@ public sealed class DockingSystem : IDisposable
         var flat = BlockWorld.ClampPoseToFlat(wrtRobot, ClampToFlatAngleRad);
         double x = wrtRobot.Translation.X - active.OffX, y = wrtRobot.Translation.Y + active.OffY, z = wrtRobot.Translation.Z;
         double angle = flat.AngleAroundZ + Math.PI / 2 + active.OffAngle;
-        Send(new DockingErrorSignal { XDist = (float)x, YDist = (float)y, ZDist = (float)z, Angle = (float)angle, Field4 = r.Timestamp, Field5 = 0, Field6 = 0 });
+        // The timestamp is the first word, not the last: UpdateDockingErrorSignal writes its only
+        // argument straight into it at 0x0063C14A, before any of the geometry.
+        Send(new DockingErrorSignal { Timestamp = r.Timestamp, XDist = (float)x, YDist = (float)y, ZDist = (float)z,
+                                      Angle = (float)angle, Field5 = 0, Field6 = 0 });
         ErrorSignalsSent++;
     }
 

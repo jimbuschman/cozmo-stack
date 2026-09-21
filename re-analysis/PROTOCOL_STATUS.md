@@ -25,8 +25,8 @@ Evidence order: (1) official decompiled C# CLAD structs, (2) `libcozmoEngine.so`
 |---|---|---|
 | hardware verified | 24 | exercised on the firmware-2457 robot: the robot sent it and our codec re-encoded it byte-identically, or the robot demonstrably acted on it |
 | capture verified | 4 | seen on the wire in a real session with a consistent length, but no response ties it to robot behaviour |
-| statically verified | 57 | layout matches an official C# CLAD struct field for field, or is empty |
-| layout known, semantics uncertain | 74 | widths/order from the engine binary; some field names are guesses |
+| statically verified | 59 | layout matches an official C# CLAD struct field for field, or is empty |
+| layout known, semantics uncertain | 72 | widths/order from the engine binary; some field names are guesses |
 | unresolved | 2 | one or more fields not attributed; the bytes are preserved in a raw tail |
 | capture conflict | 0 | observed bytes disagree with the static layout |
 
@@ -34,13 +34,13 @@ Evidence order: (1) official decompiled C# CLAD structs, (2) `libcozmoEngine.so`
 
 | source | fields |
 |---|---|
-| generated placeholder | 170 |
-| official decompiled C# | 154 |
+| generated placeholder | 153 |
+| official decompiled C# | 150 |
 | PyCozmo (widths agreed with native) | 65 |
+| engine | 27 |
 | hardware capture | 9 |
-| engine | 6 |
 
-170 of 404 fields still carry a generated placeholder name; 175 fields are flagged uncertain.
+153 of 404 fields still carry a generated placeholder name; 161 fields are flagged uncertain.
 Unknown bytes are never invented: a message whose layout does not add up keeps an explicit `unknownTail`
 raw field, and placeholder names are `field0`, `field1`, ... so they cannot be mistaken for official ones.
 
@@ -103,7 +103,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 
 ### Head / lift / wheels (19 messages)
 
-11 statically verified, 5 layout known, semantics uncertain, 2 hardware verified, 1 capture verified
+12 statically verified, 4 layout known, semantics uncertain, 2 hardware verified, 1 capture verified
 
 | tag | dir | CLAD type | size | layout | verification | probe safety |
 |---|---|---|---|---|---|---|
@@ -114,7 +114,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0x36` | E->R | SetLiftHeight | 17 | prefix | statically verified | motion |
 | `0x37` | E->R | SetHeadAngle | 17 | prefix | hardware verified | motion |
 | `0x38` | E->R | HeadAngleUpdate | 4 | native_only | layout known, semantics uncertain | motion |
-| `0x39` | E->R | SetBodyAngle | 20 | native_only | layout known, semantics uncertain | motion |
+| `0x39` | E->R | SetBodyAngle | 20 | hardware_refined | statically verified | motion |
 | `0x3A` | E->R | TurnInPlaceAtSpeed | 8 | exact | statically verified | motion |
 | `0x3B` | E->R | StopAllMotors | 0 | exact | statically verified | motion |
 | `0x46` | E->R | StartControllerTestMode | 13 | exact | statically verified | state_change |
@@ -176,8 +176,8 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0x8D` | E->R | AbortAnimation | 0 | empty | statically verified | motion |
 | `0x91` | E->R | RecordHeading | 0 | empty | statically verified | motion |
 | `0x92` | E->R | TurnToRecordedHeading | 13 | native_only | layout known, semantics uncertain | motion |
-| `0x93` | E->R | HeadAngle | 3 | native_only | statically verified | motion |
-| `0x94` | E->R | LiftHeight | 3 | native_only | statically verified | motion |
+| `0x93` | E->R | HeadAngle | 3 | hardware_refined | statically verified | motion |
+| `0x94` | E->R | LiftHeight | 3 | hardware_refined | statically verified | motion |
 | `0x95` | E->R | Event | 1 | native_only | layout known, semantics uncertain | state_change |
 | `0x96` | E->R | AnimEventToRTIP | 2 | native_only | layout known, semantics uncertain | state_change |
 | `0x99` | E->R | BodyMotion | 4 | hardware_refined | statically verified | motion |
@@ -224,7 +224,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 
 ### Localization and navigation (22 messages)
 
-17 layout known, semantics uncertain, 4 statically verified, 1 hardware verified
+16 layout known, semantics uncertain, 5 statically verified, 1 hardware verified
 
 | tag | dir | CLAD type | size | layout | verification | probe safety |
 |---|---|---|---|---|---|---|
@@ -234,7 +234,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0x3F` | E->R | AppendPathSegmentPointTurn | 29 | native_only | layout known, semantics uncertain | motion |
 | `0x40` | E->R | TrimPath | 2 | native_named | layout known, semantics uncertain | motion |
 | `0x41` | E->R | ExecutePath | 3 | native_named | layout known, semantics uncertain | motion |
-| `0x42` | E->R | DockWithObject | 21 | native_only | layout known, semantics uncertain | motion |
+| `0x42` | E->R | DockWithObject | 21 | hardware_refined | statically verified | motion |
 | `0x43` | E->R | AbortDocking | 0 | empty | statically verified | motion |
 | `0x44` | E->R | PlaceObjectOnGround | 25 | native_only | layout known, semantics uncertain | motion |
 | `0x45` | E->R | AbsoluteLocalizationUpdate | 24 | native_named | hardware verified | state_change |
@@ -310,11 +310,9 @@ them, so some field names are placeholders. Sending them is safe; interpreting t
 | `0x12` | SendDTMCommand | cubes_ble | field0 u32, field1 u32, field2 u32, field3 u32 |
 | `0x30` | EnterRecoveryMode | firmware_update_recovery | field0 u8 |
 | `0x38` | HeadAngleUpdate | motors | field0 u32 |
-| `0x39` | SetBodyAngle | motors | field0 u32, field1 u32, field2 u32, field3 u32, field4 u16, field5 u8, field6 u8 |
 | `0x3D` | AppendPathSegmentLine | localization_navigation | field0 u32, field1 u32, field2 u32, field3 u32, field4 PathSegmentSpeed |
 | `0x3E` | AppendPathSegmentArc | localization_navigation | field0 u32, field1 u32, field2 u32, field3 u32, field4 u32, field5 PathSegmentSpeed |
 | `0x3F` | AppendPathSegmentPointTurn | localization_navigation | field0 u32, field1 u32, field2 u32, field3 u32, field4 PathSegmentSpeed, field5 u8 |
-| `0x42` | DockWithObject | localization_navigation | field0 u32, field1 u32, field2 u32, field3 u32, field4 u8, field5 u8, field6 u8, field7 u8, field8 u8 |
 | `0x44` | PlaceObjectOnGround | localization_navigation | field0 u32, field1 u32, field2 u32, field3 u32, field4 u32, field5 u32, field6 u8 |
 | `0x50` | EnableMotorPower | motors | field0 u8, field1 u8 |
 | `0x54` | SetCliffDetectThreshold | robot_state_sensors | field0 u16 |
@@ -324,8 +322,6 @@ them, so some field names are placeholders. Sending them is safe; interpreting t
 | `0x80` | RequestCrashReports | identity_version_logging | field0 u32 |
 | `0x89` | DebugSetRTTO | identity_version_logging | field0 u16 |
 | `0x92` | TurnToRecordedHeading | animation | field0 u16, field1 u16, field2 u16, field3 u16, field4 u16, field5 u16, field6 u8 |
-| `0x93` | HeadAngle | animation | durationTimeMs u16, angleDeg i8 |
-| `0x94` | LiftHeight | animation | durationTimeMs u16, heightMm u8 |
 | `0x95` | Event | animation | field0 u8 |
 | `0x96` | AnimEventToRTIP | animation | field0 u8, field1 u8 |
 | `0x98` | BackpackLights | leds_display | field0 u16[5] |

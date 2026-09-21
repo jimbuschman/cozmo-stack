@@ -2340,57 +2340,53 @@
    "declared_size": 20,
    "fields": [
     {
-     "name": "field0",
+     "name": "angleRad",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine",
+     "note": "absolute body angle in the robot's pose frame"
     },
     {
-     "name": "field1",
+     "name": "maxSpeedRadPerSec",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine",
+     "note": "bit 31 carries the turn direction on a relative turn"
     },
     {
-     "name": "field2",
+     "name": "accelRadPerSec2",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field3",
+     "name": "toleranceRad",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field4",
+     "name": "numHalfRevolutions",
      "kind": "scalar",
      "type": "u16",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine"
     },
     {
-     "name": "field5",
+     "name": "isAbsolute",
      "kind": "scalar",
      "type": "u8",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine"
     },
     {
-     "name": "field6",
+     "name": "actionId",
      "kind": "scalar",
      "type": "u8",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine",
+     "note": "MovementComponent's own counter at +8, incremented per command"
     }
    ],
-   "confidence": "native_only",
-   "verification": "layout_known_semantics_uncertain",
+   "confidence": "hardware_refined",
+   "verification": "statically_verified",
    "evidence": {
     "native_unpack": "0x7a28a6",
     "native_namespace": "RobotInterface",
@@ -2399,7 +2395,8 @@
     "capture": null
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "names generated; widths from native Unpack",
+    "engine 2026-09-20: MovementComponent::TurnInPlace 0x00640898 and its builder 0x006408F4. TurnInPlaceAction::Init 0x00545FA0 puts an absolute heading in the first word on both its paths. On the relative path the sign of the turn is stuffed into bit 31 of the speed (bfi at 0x0054610C) and numHalfRevolutions is floor(|relative| / pi)"
    ]
   },
   "0x3A": {
@@ -2788,71 +2785,70 @@
    "declared_size": 21,
    "fields": [
     {
-     "name": "field0",
+     "name": "unusedZero",
      "kind": "scalar",
      "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine",
+     "note": "the engine writes a literal zero here"
     },
     {
-     "name": "field1",
+     "name": "speedMmps",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field2",
+     "name": "accelMmps2",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field3",
+     "name": "decelMmps2",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field4",
+     "name": "dockAction",
      "kind": "scalar",
      "type": "u8",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine"
     },
     {
      "name": "field5",
      "kind": "scalar",
      "type": "u8",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine",
+     "uncertain": true,
+     "note": "IDockAction +0x95, the constructor's bool"
     },
     {
      "name": "field6",
      "kind": "scalar",
      "type": "u8",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine",
+     "uncertain": true,
+     "note": "IDockAction +0xBA, never written after the constructor"
     },
     {
-     "name": "field7",
+     "name": "dockingMethod",
      "kind": "scalar",
      "type": "u8",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine",
+     "note": "IDockAction +0xBB, named by DriveToPickupObjectAction::SetDockingMethod"
     },
     {
      "name": "field8",
      "kind": "scalar",
      "type": "u8",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine",
+     "uncertain": true,
+     "note": "IDockAction +0xC1; PickupObjectAction sets it"
     }
    ],
-   "confidence": "native_only",
-   "verification": "layout_known_semantics_uncertain",
+   "confidence": "hardware_refined",
+   "verification": "statically_verified",
    "evidence": {
     "native_unpack": "0x7c0586",
     "native_namespace": "",
@@ -2861,7 +2857,8 @@
     "capture": null
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "names generated; widths from native Unpack",
+    "engine 2026-09-20: the builder at 0x0063BD50, reached only through DockingComponent::DockWithObject 0x0063BA44 from IDockAction::CheckIfDone 0x005521AC. Word 0 is a literal zero; the speeds are IDockAction +0xAC, +0xB0, +0xB4, named by SetSpeed, SetAccel and SetSpeedAndAccel"
    ]
   },
   "0x43": {
@@ -3158,49 +3155,53 @@
    "declared_size": 22,
    "fields": [
     {
-     "name": "x_dist",
+     "name": "timestamp",
      "kind": "scalar",
-     "type": "f32",
-     "name_source": "csharp"
+     "type": "u32",
+     "name_source": "engine"
     },
     {
-     "name": "y_dist",
+     "name": "xDist",
      "kind": "scalar",
      "type": "f32",
-     "name_source": "csharp"
+     "name_source": "engine",
+     "note": "marker x with respect to the robot, less the placement offset"
     },
     {
-     "name": "z_dist",
+     "name": "yDist",
      "kind": "scalar",
      "type": "f32",
-     "name_source": "csharp"
+     "name_source": "engine",
+     "note": "marker y with respect to the robot, plus the placement offset"
+    },
+    {
+     "name": "zDist",
+     "kind": "scalar",
+     "type": "f32",
+     "name_source": "engine"
     },
     {
      "name": "angle",
      "kind": "scalar",
      "type": "f32",
-     "name_source": "csharp"
-    },
-    {
-     "name": "field4",
-     "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine",
+     "note": "yaw of the flat-clamped pose + pi/2 + the placement offset angle"
     },
     {
      "name": "field5",
      "kind": "scalar",
      "type": "u8",
      "name_source": "generated",
-     "uncertain": true
+     "uncertain": true,
+     "note": "never written by the builder"
     },
     {
      "name": "field6",
      "kind": "scalar",
      "type": "u8",
      "name_source": "generated",
-     "uncertain": true
+     "uncertain": true,
+     "note": "never written by the builder"
     }
    ],
    "confidence": "prefix",
@@ -3213,7 +3214,8 @@
     "capture": null
    },
    "notes": [
-    "C# twin Anki.Cozmo.VizInterface.DockingErrorSignal (prefix match)"
+    "C# twin Anki.Cozmo.VizInterface.DockingErrorSignal (prefix match)",
+    "engine 2026-09-20: DockingComponent::UpdateDockingErrorSignal 0x0063BE80 builds this message at sp+0xa0 and the timestamp goes in first - 'mov r6, r1' takes the function's only argument and 'str r6, [sp, #0xa0]' at 0x0063C14A writes it to word 0 - then x at +0xa4, y at +0xa8, z at +0xac and the angle at +0xb0. The name table had matched the 16-byte VizInterface::DockingErrorSignal by prefix, which put x_dist at word 0 and shifted every field of this 22-byte message by one word. The last two bytes are not written by the builder at all"
    ]
   },
   "0x49": {
@@ -4578,7 +4580,7 @@
      "note": "angle_deg, with the keyframe's variability already applied: RandIntInRange(angle - var, angle + var) when var != 0"
     }
    ],
-   "confidence": "native_only",
+   "confidence": "hardware_refined",
    "verification": "statically_verified",
    "evidence": {
     "native_unpack": "0x7bcea2",
@@ -4588,7 +4590,7 @@
     "capture": null
    },
    "notes": [
-    "widths from native Unpack",
+    "names generated; widths from native Unpack",
     "engine 2026-09-19: HeadAngleKeyFrame::GetStreamMessage at 0x004F8C08 stores durationTime_ms (this+0xC) as a u16 at +0x12 and angle_deg (i8 at this+0x10) at +0x14 after applying variability (this+0x11) through IKeyFrame::sRNG RandIntInRange(angle-var, angle+var); the three bytes at +0x12 are moved into AnimKeyFrame::HeadAngle. SetMembersFromFlatBuf at 0x004F8C90 reads FlatBuffer field 1 durationTime_ms (vtable slot +6, u32 -> this+0xC), field 2 angle_deg (slot +8, byte -> this+0x10) and field 3 variability_deg (slot +10, byte -> this+0x11)"
    ]
   },
@@ -4619,7 +4621,7 @@
      "note": "height_mm, with the keyframe's variability already applied: RandIntInRange(height - var, height + var) when var != 0"
     }
    ],
-   "confidence": "native_only",
+   "confidence": "hardware_refined",
    "verification": "statically_verified",
    "evidence": {
     "native_unpack": "0x7bcfda",
@@ -4629,7 +4631,7 @@
     "capture": null
    },
    "notes": [
-    "widths from native Unpack",
+    "names generated; widths from native Unpack",
     "engine 2026-09-19: LiftHeightKeyFrame::GetStreamMessage at 0x004F8F80 mirrors HeadAngleKeyFrame::GetStreamMessage: durationTime_ms (this+0xC) as u16 at +0x12, height_mm (u8 at this+0x10) at +0x14 after RandIntInRange(height-var, height+var) with variability at this+0x11; SetMembersFromFlatBuf at 0x004F9004 reads FlatBuffer field 1 durationTime_ms (slot +6 -> this+0xC), field 2 height_mm (slot +8 -> this+0x10) and field 3 variability_mm (slot +10 -> this+0x11)"
    ]
   },

@@ -302,13 +302,13 @@ public static class TurnTowardsPose
     public static SetBodyAngle Message(double absoluteAngleRad, double maxSpeed, double accel, double tolerance,
                                        ushort numHalfRevolutions, bool isAbsolute, byte actionId) => new()
     {
-        Field0 = BitConverter.SingleToUInt32Bits((float)absoluteAngleRad),
-        Field1 = BitConverter.SingleToUInt32Bits((float)maxSpeed),
-        Field2 = BitConverter.SingleToUInt32Bits((float)accel),
-        Field3 = BitConverter.SingleToUInt32Bits((float)tolerance),
-        Field4 = numHalfRevolutions,
-        Field5 = (byte)(isAbsolute ? 1 : 0),
-        Field6 = actionId,
+        AngleRad = (float)absoluteAngleRad,
+        MaxSpeedRadPerSec = (float)maxSpeed,
+        AccelRadPerSec2 = (float)accel,
+        ToleranceRad = (float)tolerance,
+        NumHalfRevolutions = numHalfRevolutions,
+        IsAbsolute = (byte)(isAbsolute ? 1 : 0),
+        ActionId = actionId,
     };
 
     /// <summary>
@@ -325,13 +325,13 @@ public static class TurnTowardsPose
         if (relativeTurnRad < 0) bits |= 0x8000_0000u;
         return new SetBodyAngle
         {
-            Field0 = BitConverter.SingleToUInt32Bits((float)absolute),
-            Field1 = bits,
-            Field2 = BitConverter.SingleToUInt32Bits((float)accel),
-            Field3 = BitConverter.SingleToUInt32Bits((float)tolerance),
-            Field4 = (ushort)Math.Floor(Math.Abs(relativeTurnRad) / Math.PI),
-            Field5 = 0,
-            Field6 = actionId,
+            AngleRad = (float)absolute,
+            MaxSpeedRadPerSec = BitConverter.UInt32BitsToSingle(bits),
+            AccelRadPerSec2 = (float)accel,
+            ToleranceRad = (float)tolerance,
+            NumHalfRevolutions = (ushort)Math.Floor(Math.Abs(relativeTurnRad) / Math.PI),
+            IsAbsolute = 0,
+            ActionId = actionId,
         };
     }
 

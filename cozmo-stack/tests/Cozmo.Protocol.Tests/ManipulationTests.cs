@@ -182,7 +182,13 @@ public class ManipulationTests
         Assert.InRange(signal.XDist, 120, 135);            // the front face is 128 mm ahead
         Assert.InRange(Math.Abs(signal.YDist), 0, 5);
         Assert.InRange(Math.Abs(StraightLinePlanner.Wrap(signal.Angle)), 0, 0.1);   // yaw + pi/2 of the marker frame: facing squarely
-        Assert.Equal(rig.T - 33, signal.Field4);           // the frame's timestamp
+        Assert.Equal(rig.T - 33, signal.Timestamp);        // the frame's timestamp, and it comes first
+        // the timestamp is word 0 and the geometry follows it: UpdateDockingErrorSignal 0x0063C14A
+        var bytes = signal.ToBytes();
+        Assert.Equal(23, bytes.Length);                    // tag + 22
+        Assert.Equal(rig.T - 33, BitConverter.ToUInt32(bytes, 1));
+        Assert.Equal(signal.XDist, BitConverter.ToSingle(bytes, 5));
+        Assert.Equal(signal.Angle, BitConverter.ToSingle(bytes, 17));
         var result = dock.Result!;
         Assert.True(result.Succeeded);
         Assert.Equal(BlockStatus.BlockPickedUp, result.Status);
