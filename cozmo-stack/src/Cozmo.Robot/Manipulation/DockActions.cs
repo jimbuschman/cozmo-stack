@@ -142,15 +142,38 @@ public abstract class DockActionBase
 /// <c>PickupObjectAction</c> (0x00553648): <c>SelectDockAction</c> compares the object's height with 33.85
 /// (0x42076666): a block resting on the ground (its centre at 22 mm) is a <c>PickupLow</c>, one on top of
 /// another (66 mm) a <c>PickupHigh</c>; already carrying → "Already carrying object. Can't pickup object."
-/// <c>Verify</c>: the robot must think it is carrying the object ("Expecting robot to think it's carrying an
-/// object at this point"), and seeing the object still in its original pose means the pick-up failed
-/// ("Object pick-up FAILED! (Still seeing object in same place.)"); otherwise "Object pick-up SUCCEEDED!".
-/// The lift-load timeout check and the "object didn't move as expected" accelerometer check are DEFERRED.
+/// <c>Verify</c> (0x00553BE0): the robot must think it is carrying the object ("Expecting robot to think
+/// it's carrying an object at this point"), and seeing the object still in its original pose means the
+/// pick-up failed ("Object pick-up FAILED! (Still seeing object in same place.)"); otherwise "Object
+/// pick-up SUCCEEDED!".
+///
+/// Two timed checks sit alongside those, both of which end with
+/// <c>CarryingComponent::SetCarriedObjectAsUnattached(true)</c>. <c>Verify</c> stamps the time of its
+/// first call at +0x10C and then:
+///
+/// <list type="bullet">
+/// <item>if the object still reports itself moving, and more than +0x118 = <b>500 ms</b> have passed
+///   since that stamp, the pick-up failed: "PickupObjectAction.Verify.ObjectStillMoving" (0x00553C98);</item>
+/// <item>otherwise the object must have been seen recently enough - the stamp must not be later than the
+///   object's last-observed time plus a timeout picked by the dock action at +0x80: +0x11C =
+///   <b>500 ms</b> for a low dock, +0x120 = <b>2000 ms</b> for a high one (0x00553D0A).</item>
+/// </list>
+///
+/// The constructor sets all four numbers at 0x005536CC onwards.
 /// </summary>
 public sealed class PickupObjectAction : DockActionBase
 {
     public const double HighDockHeightMm = 33.85;
+
+    /// <summary>+0x118: how long the object may still be moving after the verify starts.</summary>
+    public const uint StillMovingAllowanceMs = 500;
+    /// <summary>+0x11C: how stale the last sighting may be for a low dock.</summary>
+    public const uint LowDockObservationTimeoutMs = 500;
+    /// <summary>+0x120: and for a high one.</summary>
+    public const uint HighDockObservationTimeoutMs = 2000;
+
     private Pose3d _originalPose;
+    private uint _verifyStartedAt;
 
     public PickupObjectAction(ManipulationSystem m, uint objectId) : base(m, objectId) { }
     protected override PreActionType PreActionType => PreActionType.Docking;
@@ -168,11 +191,44 @@ public sealed class PickupObjectAction : DockActionBase
     {
         if (!result.Succeeded) return ActionResult.Retry;
         if (!M.Docking.Carrying.IsCarrying(ObjectId)) { _trace.Add("PickupObjectAction.Verify.ExpectedCarryingObject"); return ActionResult.Retry; }
-        if (target is { IsLocated: true } && target.LastObservedTimestamp > result.Timestamp && target.Pose.IsSameAs(_originalPose, 20, 0.35))
+
+        // 0x00553BEE: the first Verify stamps the time and every later one measures against that stamp.
+        uint now = M.Robot.State.Latest?.Timestamp ?? result.Timestamp;
+        if (_verifyStartedAt == 0) _verifyStartedAt = now;
+
+        if (target is { IsLocated: true })
         {
-            _trace.Add("PickupObjectAction.Verify.SeeingCarriedObjectInOrigPose: Object pick-up FAILED! (Still seeing object in same place.)");
-            M.Docking.Carrying.UnsetCarrying();
-            return ActionResult.Retry;
+            if (target.IsMoving)
+            {
+                // 0x00553C98: still moving past the allowance, so nothing was picked up.
+                if (now > _verifyStartedAt + StillMovingAllowanceMs)
+                {
+                    _trace.Add("PickupObjectAction.Verify.ObjectStillMoving");
+                    M.Docking.Carrying.UnsetCarrying();
+                    return ActionResult.Retry;
+                }
+            }
+            else
+            {
+                // 0x00553D0A: the sighting the verify rests on has to be recent enough, and how recent
+                // depends on which dock this was.
+                uint timeout = SelectedDockAction == DockAction.PickupLow
+                    ? LowDockObservationTimeoutMs : HighDockObservationTimeoutMs;
+                if (_verifyStartedAt > target.LastObservedTimestamp + timeout)
+                {
+                    _trace.Add($"PickupObjectAction.Verify.ObjectNotSeenRecentlyEnough: last seen " +
+                               $"{target.LastObservedTimestamp}, verify began {_verifyStartedAt}, allowed {timeout} ms");
+                    M.Docking.Carrying.UnsetCarrying();
+                    return ActionResult.Retry;
+                }
+            }
+
+            if (target.LastObservedTimestamp > result.Timestamp && target.Pose.IsSameAs(_originalPose, 20, 0.35))
+            {
+                _trace.Add("PickupObjectAction.Verify.SeeingCarriedObjectInOrigPose: Object pick-up FAILED! (Still seeing object in same place.)");
+                M.Docking.Carrying.UnsetCarrying();
+                return ActionResult.Retry;
+            }
         }
         _trace.Add("PickupObjectAction.Verify.Success: Object pick-up SUCCEEDED!");
         return ActionResult.Success;

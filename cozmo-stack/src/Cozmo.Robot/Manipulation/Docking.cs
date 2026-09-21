@@ -105,6 +105,7 @@ public sealed class DockingSystem : IDisposable
         _robot = robot; _vision = vision;
         robot.Message += OnMessage;
         vision.FrameProcessed += OnFrame;
+        vision.IsCarryingObject = Carrying.IsCarrying;   // the guard at 0x00534116 needs this
     }
 
     public CarryingComponent Carrying { get; } = new();

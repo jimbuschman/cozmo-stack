@@ -2320,19 +2320,19 @@
       "test": null
     },
     {
-      "id": "M11-009",
       "subsystem": "M11-vision",
-      "title": "A located cube that reports movement over the radio is marked Dirty",
-      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs:319",
-      "effect": "the pose of a moved cube is trusted or distrusted differently",
-      "provenance": "inferred",
-      "authority": "the engine ObjectMoved handling",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "what the engine does to the pose on ObjectMoved",
-      "hardware_required": false,
+      "title": "A cube that reports movement is marked Dirty, unless the robot is carrying it",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "RobotToEngineImplMessaging::HandleActiveObjectMoved 0x00533E30 calls ObjectPoseConfirmer::MarkObjectDirty(object, false) at 0x0053413C behind a single guard at 0x00534116: CarryingComponent::IsCarryingObject(id) must be false and the object pose state must be exactly 1 (Known). Either failing skips the call",
+      "evidence": [
+        "the message is {u32 timestamp, u32 activeId, f32 x, f32 y, f32 z, u8 axis}, read at 0x00533E54",
+        "this stack dirtied the pose whatever the carrying state, so a cube on the lift reporting its own motion dirtied the pose the lift was holding it at",
+        "the motion flag itself is what PickupObjectAction::Verify reads, so both records rest on it"
+      ],
       "live_path": true,
-      "test": "VisionTests"
+      "test": "PickupVerifyTests.ACarriedCubeReportingMotionDoesNotGoDirty",
+      "id": "M11-009"
     },
     {
       "id": "M11-010",
@@ -2528,19 +2528,18 @@
       "test": "ManipulationTests"
     },
     {
-      "id": "M12-007",
       "subsystem": "M12-manipulation",
-      "title": "Lift-load timeout and the accelerometer object-did-not-move check are not implemented",
-      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs:135",
-      "effect": "a failed pick-up is reported as a success",
-      "provenance": "deferred",
-      "authority": "the engine pick-up verification in IDockAction",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "both checks, which are in the dock action already partly read",
-      "hardware_required": false,
+      "title": "The two timed checks a pick-up is verified against",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "PickupObjectAction::Verify 0x00553BE0 stamps the time of its first call at +0x10C and then runs two checks, both ending in CarryingComponent::SetCarriedObjectAsUnattached(true). At 0x00553C98, if the object still reports itself moving and more than +0x118 = 500 ms have passed since the stamp, the pick-up failed (\"PickupObjectAction.Verify.ObjectStillMoving\"). Otherwise, at 0x00553D0A, the stamp must not be later than the object last-observed time plus a timeout chosen by the dock action at +0x80: +0x11C = 500 ms for a low dock, +0x120 = 2000 ms for a high one. The constructor sets all four at 0x005536CC onwards",
+      "evidence": [
+        "the object is asked whether it is moving through a virtual on ObservableObject (0x00553C8E), which is why the flag lives on the object here rather than in a tracker beside it",
+        "the same function also holds the checks this stack already had: carrying, and seeing the object still in its original pose"
+      ],
       "live_path": true,
-      "test": null
+      "test": "PickupVerifyTests.TheVerifyTimeoutsAreTheEngines",
+      "id": "M12-007"
     },
     {
       "id": "M12-008",

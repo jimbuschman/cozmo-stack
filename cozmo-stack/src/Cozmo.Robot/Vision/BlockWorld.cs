@@ -34,6 +34,14 @@ public sealed class ObservableObject
     public bool IsLocated => PoseState != PoseState.Unknown;
     /// <summary>Robot timestamp of the frame that last observed the object.</summary>
     public uint LastObservedTimestamp { get; internal set; }
+
+    /// <summary>
+    /// Whether the cube is reporting itself in motion: true between an <c>ObjectMoved</c> and the
+    /// <c>ObjectStoppedMoving</c> that ends it. The engine asks the object this through a virtual on
+    /// <c>ObservableObject</c> - <c>PickupObjectAction::Verify</c> 0x00553C8E calls it - so it lives on
+    /// the object here too rather than in a tracker beside it.
+    /// </summary>
+    public bool IsMoving { get; internal set; }
     public int TimesObserved { get; internal set; }
     /// <summary><c>BlockWorld::MarkObjectUnobserved</c> counter: frames in which the object should have been seen but was not.</summary>
     public int UnobservedCount { get; internal set; }
@@ -316,7 +324,21 @@ public sealed class BlockWorld
         return forgotten;
     }
 
-    /// <summary>INFERRED: a located cube that reports movement over the radio has a Dirty pose until seen again.</summary>
+    /// <summary>
+    /// A cube that reports movement over the radio has a Dirty pose until it is seen again.
+    ///
+    /// <c>RobotToEngineImplMessaging::HandleActiveObjectMoved</c> 0x00533E30 calls
+    /// <c>ObjectPoseConfirmer::MarkObjectDirty(object, false)</c> at 0x0053413C behind one guard, at
+    /// 0x00534116: the robot must not be carrying the object <em>and</em> its pose state must be exactly
+    /// Known. Either condition failing skips the call, which is why a cube on the lift reporting its own
+    /// motion does not dirty the pose the lift is holding it at.
+    /// </summary>
+    /// <summary>Records what the cube's radio says about its own motion; see <see cref="ObservableObject.IsMoving"/>.</summary>
+    public void SetMoving(uint objectId, bool moving)
+    {
+        lock (_gate) { if (_objects.TryGetValue(objectId, out var o)) o.IsMoving = moving; }
+    }
+
     public void MarkDirty(uint objectId)
     {
         ObservableObject? o; PoseState prev;

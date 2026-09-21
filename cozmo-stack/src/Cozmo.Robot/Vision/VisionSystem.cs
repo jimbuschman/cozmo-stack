@@ -91,12 +91,27 @@ public sealed class VisionSystem : IDisposable
         return new CameraModel(Calibration, pd.CameraPose);
     }
 
+    /// <summary>
+    /// Whether the robot is carrying an object, so the movement handler can apply the engine's guard.
+    /// The carrying component lives in the docking system, which is built on top of this one, so it
+    /// hands the question down rather than this reaching up for it.
+    /// </summary>
+    public Func<uint, bool>? IsCarryingObject { get; set; }
+
+    private bool Carrying(uint objectId) => IsCarryingObject?.Invoke(objectId) ?? false;
+
     private void OnMessage(RobotMessage m)
     {
         switch (m)
         {
             case RobotState s: History.Add(s); break;
-            case ObjectMoved mv: World.MarkDirty(mv.ObjectID); break;
+            // HandleActiveObjectMoved 0x00533E30 dirties the pose only when the robot is not carrying
+            // the object (the guard at 0x00534116); a cube on the lift reporting motion is ignored.
+            case ObjectMoved mv:
+                World.SetMoving(mv.ObjectID, true);
+                if (!Carrying(mv.ObjectID)) World.MarkDirty(mv.ObjectID);
+                break;
+            case ObjectStoppedMoving sm: World.SetMoving(sm.ObjectID, false); break;
             // A cube that has dropped its radio link cannot be tracked or docked with any more, and its last
             // pose will go stale the moment someone moves it. The engine drops such an object from the world
             // model; here its pose goes Unknown, which is what every located-object query already tests

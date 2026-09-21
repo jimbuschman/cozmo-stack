@@ -17,7 +17,7 @@ public class ManipulationTests
 {
     private static readonly MarkerLibrary? Lib = MarkerLibrary.EmbeddedOrNull;
 
-    private static Pose3d CubeAt(double x, double y, double yaw = 0) => new(Mat3.AboutZ(yaw), new Vec3(x, y, CubeGeometry.CubeSizeMm / 2));
+    internal static Pose3d CubeAt(double x, double y, double yaw = 0) => new(Mat3.AboutZ(yaw), new Vec3(x, y, CubeGeometry.CubeSizeMm / 2));
 
     private static void SpinUntil(Func<bool> cond, Action? tick = null, int ms = 5000)
     {

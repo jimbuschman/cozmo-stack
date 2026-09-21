@@ -7,9 +7,9 @@ Manifest of **200 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 91 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 93 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 62 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 60 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 9 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -34,8 +34,8 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 10 | 6 | 0 | 0 | 0 | no | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | 0 | 0 | 0 | no | yes |
-| M11-vision — Markers, camera geometry and BlockWorld | 16 | 7 | 0 | 1 | 0 | no | yes |
-| M12-manipulation — Docking, carrying and pre-action poses | 15 | 6 | 1 | 0 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 16 | 6 | 0 | 1 | 0 | no | yes |
+| M12-manipulation — Docking, carrying and pre-action poses | 15 | 5 | 1 | 0 | 0 | no | no |
 | M13-navigation — Planning, charger and block configurations | 11 | 7 | 1 | 0 | 0 | no | no |
 | M14-faces — Face and pet pipeline | 7 | 5 | 0 | 1 | 0 | no | yes |
 | M15-freeplay — Needs, activities and freeplay | 12 | 9 | 0 | 0 | 0 | no | yes |
@@ -334,14 +334,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: the engine visibility test
 * outstanding: the engine threshold
 
-**M11-009 — A located cube that reports movement over the radio is marked Dirty** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs:319`
-* effect: the pose of a moved cube is trusted or distrusted differently
-* rests on: inferred
-* best authority: the engine ObjectMoved handling
-* outstanding: what the engine does to the pose on ObjectMoved
-
 **M11-010 — Occlusion is not modelled; a marker that passes the geometric tests counts as visible** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs:65`
@@ -367,14 +359,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * rests on: inferred; the engine learns it from the robot carry state
 * best authority: the robot carry state in RobotState and the engine handling of it
 * outstanding: which field of RobotState carries the carry state and how the engine reacts to it
-
-**M12-007 — Lift-load timeout and the accelerometer object-did-not-move check are not implemented** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs:135`
-* effect: a failed pick-up is reported as a success
-* rests on: deferred
-* best authority: the engine pick-up verification in IDockAction
-* outstanding: both checks, which are in the dock action already partly read
 
 **M12-009 — Retry limits: 3 attempts for manipulation, 2 for the charger, 3 for the wheelie** (live path)
 
