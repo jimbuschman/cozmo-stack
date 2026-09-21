@@ -24,7 +24,6 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     private readonly bool _ownsLibrary;
     private readonly WwiseCodebookLibrary? _codebooks;
     private readonly Dictionary<uint, short[]?> _mediaCache = new();
-    private readonly Dictionary<(uint Event, uint Node), short[]?> _musicCache = new();
     private readonly Dictionary<uint, uint> _switches = new();
     private readonly Dictionary<uint, float> _parameters = new();
     /// <summary>The draw, the sequence positions and the last pick a container play carries between plays.</summary>
@@ -75,7 +74,11 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
         lock (_gate)
         {
             _parameters[parameterId] = value;
-            _renderer.Parameters = new Dictionary<uint, float>(_parameters);
+            var snapshot = new Dictionary<uint, float>(_parameters);
+            _renderer.Parameters = snapshot;
+            // and to every song already playing, which is the point: the vibrato reaches a song that has
+            // already started rather than only one that has not.
+            foreach (var stream in _streams.Values) stream.SetParameters(snapshot);
         }
     }
 
@@ -89,7 +92,15 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     public IReadOnlySet<uint> ExcludeBranches
     {
         get => _renderer.ExcludeBranches;
-        set { lock (_gate) { _renderer.ExcludeBranches = value; _musicCache.Clear(); } }
+        set
+        {
+            lock (_gate)
+            {
+                _renderer.ExcludeBranches = value;
+                foreach (var stream in _streams.Values) stream.Dispose();
+                _streams.Clear();                       // a song already prepared was prepared the other way
+            }
+        }
     }
 
     /// <summary>The last music render's report, for tools and acceptance records. Null until a music event was produced.</summary>
@@ -141,30 +152,44 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     }
 
     /// <summary>
-    /// Renders a music event under the given switches on a worker and caches the result, so the first
-    /// <see cref="GetPcm"/> from the scheduler's thread finds it ready. A song is rendered whole (a 462 s
-    /// sequence takes seconds), which on the scheduler thread would stall the animation timeline; the
-    /// singing behaviour calls this when it posts the switch, before its get-in animation. <see cref="GetPcm"/>
-    /// waits for an in-flight prewarm of the same song rather than rendering it a second time.
+    /// Prepares a music event under the given switches on a worker, so the first <see cref="GetPcm"/> from
+    /// the scheduler's thread finds samples waiting. Resolving the plan, parsing the MIDI and decoding the
+    /// recordings is the slow part and none of it may happen on the scheduler's thread; the singing
+    /// behaviour calls this when it posts the switch, before its get-in animation.
+    ///
+    /// What it does <b>not</b> do is render the whole song. The song is rendered as it plays
+    /// (<see cref="WwiseMusicStream"/>), a little ahead of the clock, because
+    /// <c>Cozmo_Singing_Vibrato</c> is posted every tick while Cozmo sings and a song rendered whole and
+    /// cached could never hear it.
     /// </summary>
     public Task Prewarm(uint eventId, IReadOnlyDictionary<uint, uint>? switches = null)
     {
         var sw = switches is null ? Switches : new Dictionary<uint, uint>(switches);
-        var plan = _library.ResolveMusic(eventId, sw);
-        uint node = plan.SelectedNodeId ?? plan.TargetId;
-        var key = (eventId, node);
+        // Keyed by the node the switch selected, not by the event: the same tempo event plays a different
+        // song for every Cozmo_Sings switch value, and preparing one must not answer for another.
+        var key = (eventId, _library.ResolveMusic(eventId, sw) is { } p ? p.SelectedNodeId ?? p.TargetId : 0u);
         lock (_gate)
         {
-            if (_musicCache.ContainsKey(key)) return Task.CompletedTask;
+            // A stream that has already been played is not reused: Wwise draws a note's recording again
+            // on every play, so preparing the same song a second time prepares it again.
+            if (_streams.TryGetValue(key, out var existing))
+            {
+                if (!existing.HasBegun) return Task.CompletedTask;
+                existing.Dispose();
+                _streams.Remove(key);
+            }
             if (_prewarms.TryGetValue(key, out var running)) return running;
             var task = Task.Run(() =>
             {
-                var rendered = RenderTimed(plan);
+                var stream = BuildStream(eventId, sw, 1f);
                 lock (_gate)
                 {
-                    if (!_musicCache.ContainsKey(key)) StoreMusic(eventId, plan, rendered);
                     _prewarms.Remove(key);
+                    if (stream is null) return;
+                    if (_streams.TryGetValue(key, out var old)) old.Dispose();
+                    _streams[key] = stream;
                 }
+                stream.Start();
             });
             _prewarms[key] = task;
             return task;
@@ -172,27 +197,36 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     }
 
     private readonly Dictionary<(uint Event, uint Node), Task> _prewarms = new();
+    private readonly Dictionary<(uint Event, uint Node), WwiseMusicStream> _streams = new();
 
-    /// <summary>Wall time of the last music render, for the tool and the scheduler-safety test.</summary>
+    /// <summary>Wall time of the last music preparation, for the tool and the scheduler-safety test.</summary>
     public TimeSpan LastMusicRenderTime { get; private set; }
 
-    private WwiseRenderedMusic RenderTimed(WwiseMusicPlan plan)
+    /// <summary>
+    /// Resolves and prepares one song. Everything expensive happens here: the plan, the MIDI, the draws
+    /// and the decoding. Nothing is mixed, so this is bounded by the recordings rather than the length of
+    /// the song, which is what makes a 462-second sequence affordable.
+    /// </summary>
+    private WwiseMusicStream? BuildStream(uint eventId, IReadOnlyDictionary<uint, uint> switches, float volume)
     {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        var r = _renderer.Render(plan);
-        LastMusicRenderTime = sw.Elapsed;
-        return r;
-    }
-
-    private void StoreMusic(uint eventId, WwiseMusicPlan plan, WwiseRenderedMusic rendered)
-    {
-        uint node = plan.SelectedNodeId ?? plan.TargetId;
-        LastMusicRender = rendered;
-        short[]? pcm = rendered.Pcm.Length > 0 && (rendered.NotesPlayed > 0 || rendered.AudioClips > 0) ? rendered.Pcm : null;
-        if (pcm is null)
-            _misses.Add(new WwiseMiss(eventId, plan.EventName,
-                rendered.Problems.Count > 0 ? string.Join("; ", rendered.Problems) : "the music plan produced no sound", WwiseCodec.Unknown));
-        _musicCache[(eventId, node)] = pcm;
+        var timer = System.Diagnostics.Stopwatch.StartNew();
+        var plan = _library.ResolveMusic(eventId, switches);
+        var voices = _renderer.BuildVoices(plan);
+        LastMusicRenderTime = timer.Elapsed;
+        if (voices.TotalMs <= 0 || (voices.NotesPlayed == 0 && voices.AudioClips == 0))
+        {
+            lock (_gate)
+                _misses.Add(new WwiseMiss(eventId, plan.EventName,
+                    voices.Problems.Count > 0 ? string.Join("; ", voices.Problems) : "the music plan produced no sound",
+                    WwiseCodec.Unknown));
+            return null;
+        }
+        IReadOnlyDictionary<uint, float> parameters;
+        lock (_gate) parameters = new Dictionary<uint, float>(_parameters);
+        // Its own chain: the filters and the limiter carry state from block to block, so two songs must
+        // not share one. Building it is reading a handful of bank objects.
+        var chain = WwiseBusChain.For(_library, WwiseBusChain.RobotBus1, CozmoAudio.SampleRate);
+        return new WwiseMusicStream(voices, chain, parameters, _renderer.ExcludeBranches, volume);
     }
 
     /// <summary>Whether an event's Play target is in the music hierarchy, so it is produced by the renderer.</summary>
@@ -268,9 +302,12 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
         if (eventId is < 0 or > uint.MaxValue) return null;
         uint id = (uint)eventId;
 
+        // A music event streams: its buffer is filled in as the song plays, so the keyframe volume is
+        // applied inside the stream rather than by copying and scaling what has been rendered so far.
+        if (IsMusicEvent(id)) return ProduceMusic(id, volume);
+
         short[]? pcm;
-        if (IsMusicEvent(id)) pcm = ProduceMusic(id);
-        else lock (_gate) pcm = Produce(id);
+        lock (_gate) pcm = Produce(id);
         if (pcm is null) return null;
         if (Math.Abs(volume - 1f) < 0.001f) return pcm;
 
@@ -301,21 +338,34 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     /// starts its render on a worker and this play is silent; the singing behaviour avoids that by awaiting
     /// <see cref="Prewarm"/> before it enters the tempo animation.
     /// </summary>
-    private short[]? ProduceMusic(uint eventId)
+    private short[]? ProduceMusic(uint eventId, float volume)
     {
-        WwiseMusicPlan plan;
+        WwiseMusicStream? stream;
         bool prewarming;
-        uint node;
+        var plan = _library.ResolveMusic(eventId, Switches);
+        var key = (eventId, plan.SelectedNodeId ?? plan.TargetId);
         lock (_gate)
         {
-            plan = _library.ResolveMusic(eventId, _switches);
-            node = plan.SelectedNodeId ?? plan.TargetId;
-            if (_musicCache.TryGetValue((eventId, node), out var cached)) return cached;
-            prewarming = _prewarms.ContainsKey((eventId, node));
+            _streams.TryGetValue(key, out stream);
+            prewarming = _prewarms.ContainsKey(key);
+        }
+        if (stream is not null)
+        {
+            stream.Volume = volume;
+            stream.BeginPlayback();
+            LastMusicRender = stream.Snapshot();
+            return stream.Pcm;
         }
         UnpreparedMusicEvents++;
         if (!prewarming) Prewarm(eventId, _switches);          // starts on a worker; this play stays silent
         return null;
+    }
+
+    /// <summary>The stream for an event under the current switches, if one has been prepared. Tests and tools.</summary>
+    public WwiseMusicStream? StreamFor(uint eventId)
+    {
+        var plan = _library.ResolveMusic(eventId, Switches);
+        lock (_gate) return _streams.GetValueOrDefault((eventId, plan.SelectedNodeId ?? plan.TargetId));
     }
 
     /// <summary>
@@ -546,6 +596,11 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
 
     public void Dispose()
     {
+        lock (_gate)
+        {
+            foreach (var stream in _streams.Values) stream.Dispose();
+            _streams.Clear();
+        }
         if (_ownsLibrary) _library.Dispose();
     }
 }

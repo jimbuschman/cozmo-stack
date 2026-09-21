@@ -332,52 +332,71 @@ public class WwiseSongTests
     }
 
     /// <summary>
-    /// A song is rendered whole before it streams. The prewarm the behaviour starts when it posts the switch
-    /// does that on a worker; the scheduler's GetPcm then finds it cached (or waits for the in-flight render
-    /// rather than starting a second one). The render time is reported so the cost is on record.
+    /// Preparation happens on a worker and the scheduler's GetPcm is cheap, which is the property the
+    /// animation timeline depends on: a song that took seconds to produce on the scheduler's thread
+    /// stalled it at the tempo clip's first audio frame.
+    ///
+    /// Bingo is the case that makes the point. It is a 462-second sequence, and preparing it now costs
+    /// what its recordings cost to decode rather than what 462 seconds cost to mix, because the mixing
+    /// happens as it plays. Calling the prewarm twice before the song starts prepares it once.
     /// </summary>
     [Fact]
-    public void PrewarmRendersOffTheStreamingPathAndGetPcmFindsIt()
+    public void PreparingASongHappensOffTheSchedulerPathAndGetPcmIsCheap()
     {
         if (Library.Value is not { } lib) return;
         var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_100bpm")!.Value;
         using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(5));
         source.SetSwitch(SingingBehavior.Group100, WwiseHash.Of("Cozmo_Sings_Bingo"));
+
         var prewarm = source.Prewarm(ev);
-        Assert.Same(prewarm, source.Prewarm(ev));                      // one render per song, not one per call
+        Assert.Same(prewarm, source.Prewarm(ev));                      // one preparation per song, not one per call
         prewarm.Wait();
-        var renderTime = source.LastMusicRenderTime;
-        Assert.True(renderTime > TimeSpan.Zero);
+        Assert.True(source.Prewarm(ev).IsCompleted);                   // and still one, until it has played
+        var prepare = source.LastMusicRenderTime;
+        Assert.True(prepare > TimeSpan.Zero);
+
         var sw = System.Diagnostics.Stopwatch.StartNew();
         var pcm = source.GetPcm(ev, 1f);
         Assert.NotNull(pcm);
-        Assert.True(sw.ElapsedMilliseconds < 100, $"GetPcm after a prewarm took {sw.ElapsedMilliseconds} ms (render itself took {renderTime.TotalMilliseconds:F0} ms)");
+        Assert.True(sw.ElapsedMilliseconds < 100,
+            $"GetPcm after a prewarm took {sw.ElapsedMilliseconds} ms (preparing took {prepare.TotalMilliseconds:F0} ms)");
         Assert.Equal((int)(462000L * CozmoAudio.SampleRate / 1000), pcm!.Length);
-        Assert.True(source.Prewarm(ev).IsCompleted);                   // already cached
+
+        // the first block is ready before the song starts, and the rest is not yet mixed
+        var stream = source.StreamFor(ev)!;
+        Assert.InRange(stream.Ready, 1, pcm.Length - 1);
     }
 
     /// <summary>
-    /// LOCAL_POLICY, stated in WWISE_MUSIC.md §3: the music cache holds final PCM, so the renderer's random
-    /// recording choices are frozen for the life of a source. Wwise would draw again on each play.
+    /// Wwise draws which of a note's three recordings sounds again on every play, and so does this now: a
+    /// stream is good for one play, and preparing the same song a second time prepares it again rather
+    /// than replaying the samples the first one produced. Before the M9 fidelity pass the final PCM was
+    /// cached, which froze the draws for the life of the source.
+    ///
+    /// Within one play the buffer is of course the same buffer — the scheduler reads it as it fills.
     /// </summary>
     [Fact]
-    public void TheMusicCacheFreezesTheRenderersRandomChoices()
+    public void EachPlayOfASongDrawsItsRecordingsAfresh()
     {
         if (Library.Value is not { } lib) return;
         var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_80bpm")!.Value;
         using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(9));
         source.SetSwitch(Group80, AbaDaba);
+
         source.Prewarm(ev).Wait();
         var first = source.GetPcm(ev, 1f)!;
+        Assert.Same(first, source.GetPcm(ev, 1f));                     // one play, one buffer
+        source.StreamFor(ev)!.RenderAll();
+        var firstPlay = first.ToArray();
+
+        source.Prewarm(ev).Wait();                                     // a second play prepares again
         var second = source.GetPcm(ev, 1f)!;
-        Assert.Same(first, second);                                    // the same buffer: no second draw
-        // a fresh source with another seed draws afresh, as a new Wwise play would
-        using var other = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(10));
-        other.SetSwitch(Group80, AbaDaba);
-        other.Prewarm(ev).Wait();
-        var third = other.GetPcm(ev, 1f)!;
-        Assert.Equal(first.Length, third.Length);
-        Assert.False(first.SequenceEqual(third), "two seeds rendered the same recordings; the random choice is not exercised");
+        Assert.NotSame(first, second);
+        source.StreamFor(ev)!.RenderAll();
+
+        Assert.Equal(firstPlay.Length, second.Length);
+        Assert.False(firstPlay.SequenceEqual(second),
+            "the second play rendered the same recordings; the draw is frozen again");
     }
 
     private sealed class CountingSink : IAnimationSink

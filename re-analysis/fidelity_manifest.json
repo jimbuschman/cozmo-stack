@@ -1827,34 +1827,35 @@
     {
       "id": "M9-015",
       "subsystem": "M9-wwise-music",
-      "title": "The final-PCM cache freezes the renderer random choices for the life of a music source",
+      "title": "Each play of a song draws its recordings afresh",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
-      "effect": "a song sounds identical every time it is sung in one session, where Wwise would draw fresh recordings for each note",
-      "provenance": "a knowing deviation of this stack, labelled in the code and kept for a stated reason: re-rendering per play would put seconds of work back on the animation streaming path",
-      "authority": "the container avoid-repeat and weight fields are read and honoured within a render, so the draw itself is right; only its repetition across plays is not",
+      "status": "EXACT_SOURCE",
+      "authority": "the containers carry the weights and the avoid-repeat count that the draw uses, and the engine hands Wwise a generator rather than choosing itself (Anki::Cozmo::Audio::RobotAudioClient::GetRandomGenerator)",
       "evidence": [
-        "ordinary events are no longer cached this way after this pass - only their decoded media are - so a voice line does draw afresh each time"
+        "a stream is good for one play; preparing the same song again prepares it again",
+        "until the M9 fidelity pass the final PCM was cached, which froze the draws for the life of the source"
       ],
-      "status": "COMPATIBILITY_POLICY",
-      "unresolved": "",
-      "hardware_required": false,
       "live_path": true,
-      "test": "WwiseSongTests.TheMusicCacheFreezesTheRenderersRandomChoices"
+      "test": "WwiseSongTests.EachPlayOfASongDrawsItsRecordingsAfresh"
     },
     {
       "id": "M9-016",
       "subsystem": "M9-wwise-music",
-      "title": "The song is rendered whole, ahead of playback, on a worker",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
-      "effect": "the first audio frame of a song can be silent if the render has not finished",
-      "provenance": "a choice of this stack; Wwise streams a song voice by voice",
-      "authority": "not applicable: this is a local architecture decision, and the observable output is the same once the render completes",
-      "evidence": [],
+      "title": "A song is rendered as it plays, a block at a time, about 66 ms ahead of the clock",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMusicStream.cs",
+      "effect": "a vibrato posted while Cozmo sings reaches the audio, or does not reach it at all",
+      "provenance": "the song is mixed block by block on a worker, each block reading the game parameters as they stand when it is rendered, kept WwiseMusicStream.LeadMs (66 ms, two animation frames) ahead of the playback clock. Each voice keeps its own read position, so a note already sounding picks up a shake mid-note rather than keeping the depth it started with",
+      "authority": "BehaviorSinging::UpdateInternal 0x005EF0C8 posts Cozmo_Singing_Vibrato every tick, and the bank binds that parameter to the depth of the LFO on the sampler pitch. Continuous is what the engine does; this reproduces it up to the lead",
+      "evidence": [
+        "rendering in blocks with nothing changing is sample-for-sample the same song as rendering it whole (RenderingASongInBlocksGivesTheSameSongAsRenderingItWhole)",
+        "a vibrato posted after the song has begun changes every block rendered after it and none before it",
+        "before this pass the whole song was rendered up front and its samples cached, so the parameter could not reach it at all"
+      ],
       "status": "EQUIVALENT_IMPLEMENTATION",
       "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "WwiseSongTests.PrewarmRendersOffTheStreamingPathAndGetPcmFindsIt"
+      "test": "WwiseLiveVibratoTests.AVibratoPostedAfterTheSongHasBegunChangesTheRestOfIt"
     },
     {
       "id": "M9-017",
@@ -1975,19 +1976,19 @@
       "subsystem": "M9-wwise-music",
       "title": "Whether cozmo_singing_note_off also stops the voice it is attached to",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseModulator.cs",
-      "effect": "a held note is cut the instant it is released, or plays out the looping iteration it is in",
-      "provenance": "the renderer ends a looping note by finishing its current iteration, which is the break-on-note-off rule the note layer's bit vector asks for",
-      "authority": "the shipped bank: this modulator alone of the eleven sets property 15, to the integer 2. The two readings that fit the numbering argued from the data agree on what a listener hears - under either one the voice ends when the note is released, which is also what the note layer's break-on-note-off bit asks for",
+      "effect": "a held note is cut when it is released, or plays on past it",
+      "provenance": "the renderer ends a note at the moment it is released: LoopedLength returns the held duration for a sound that loops until stopped, so the sustain stops with the note and the note-off layer supplies the tail",
+      "authority": "the shipped bank: this modulator alone of the eleven sets property 15, to the integer 2. Both readings that fit the numbering argued from the data agree with what the renderer does - the voice ends when the note is released - and so does the break-on-note-off bit on the note layer",
       "evidence": [
         "Cozmo.bnk object 381606890 property 15 = 2",
         "no other modulator in any bank sets property 15",
         "blend 462443456 node bits 0x24"
       ],
       "status": "BLOCKED_EXTERNAL",
-      "unresolved": "the name of modulator property 15 and the enumeration of its values, which live in the Wwise SDK; no Wwise runtime or header ships in the APK",
+      "unresolved": "the name of modulator property 15 and the enumeration of its values, which live in the Wwise SDK; no Wwise runtime or header ships in the APK. What is left open is only whether the stop is this modulator or the break-on-note-off bit, not whether the note stops",
       "hardware_required": false,
       "live_path": true,
-      "test": "WwiseModulatorTests.TheTwoSingingModulatorsReadOutOfTheBankAtTheirShippedValues"
+      "test": "WwiseSongTests.ALoopingSoundSoundsForAsLongAsTheNoteIsHeld"
     },
     {
       "id": "M9-025",
@@ -2002,10 +2003,10 @@
         "its binding curve spans 0 to 1 exactly"
       ],
       "status": "BLOCKED_EXTERNAL",
-      "unresolved": "whether the output is unipolar or bipolar, and the exact waveform. Unreachable on any live path while the depth is 0, which it is until the cube-shake stream exists (M9-017)",
+      "unresolved": "whether the output is unipolar or bipolar, and the exact waveform. This is on the live path: the cube shake is measured and the vibrato reaches a playing song, so any shake exercises this shape",
       "hardware_required": false,
-      "live_path": false,
-      "test": "WwiseModulatorTests.WithTheShakeParameterAtFullTheVibratoReachesTheBindingsFullRange"
+      "live_path": true,
+      "test": "WwiseLiveVibratoTests.TheChangeIsThePitchModulationTheBindingDescribes"
     },
     {
       "id": "M9-026",

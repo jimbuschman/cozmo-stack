@@ -139,19 +139,33 @@ public sealed class WwiseSongRenderer
     private const int Rate = CozmoAudio.SampleRate;
     private static int Samples(double ms) => (int)Math.Round(ms * Rate / 1000.0);
 
+    /// <summary>
+    /// Renders a whole plan in one go: the diagnostic and offline form. What a robot actually plays goes
+    /// through <see cref="WwiseMusicStream"/> instead, which renders the same voices a block at a time so
+    /// that a game parameter posted while the song plays can still reach it.
+    /// </summary>
     public WwiseRenderedMusic Render(WwiseMusicPlan plan)
     {
         lock (_renderGate) return RenderLocked(plan);
     }
 
-    private WwiseRenderedMusic RenderLocked(WwiseMusicPlan plan)
+    /// <summary>
+    /// Resolves a plan to the voices it will play, without mixing any of them. Every draw a container
+    /// makes happens here, once, so the same voice list can be rendered whole or a block at a time.
+    /// </summary>
+    public WwiseVoicePlan BuildVoices(WwiseMusicPlan plan)
     {
-        _modulations = 0; _modPeakDb = 0; _modPeakCents = 0; _branchVoices.Clear();
+        lock (_renderGate) return BuildVoicesLocked(plan);
+    }
+
+    private WwiseVoicePlan BuildVoicesLocked(WwiseMusicPlan plan)
+    {
         var problems = new List<string>();
-        if (plan.Problem is not null) return new WwiseRenderedMusic(Array.Empty<short>(), 0) { Problems = new[] { plan.Problem } };
+        if (plan.Problem is not null)
+            return new WwiseVoicePlan(Array.Empty<WwiseVoice>(), 0) { Problems = new[] { plan.Problem } };
 
         double totalMs = plan.Segments.Sum(s => s.DurationMs);
-        var mix = new double[Samples(totalMs)];
+        var sink = new List<WwiseVoice>();
         int inWindow = 0, played = 0, silent = 0, offs = 0, audioClips = 0;
 
         double segOffsetMs = 0;
@@ -181,10 +195,10 @@ public sealed class WwiseSongRenderer
                         double heldMs = Math.Min(n.StartMs + n.LengthMs, windowEnd) - n.StartMs;
                         double onset = clipStartOnTimeline + n.StartMs;
                         int voices = 0;
-                        Trigger(target, n.Key, n.Velocity, onset, heldMs, noteOff: false, 0, 0, 1, NoModulators, mix, ref voices, problems, 0, 0);
+                        Trigger(target, n.Key, n.Velocity, onset, heldMs, noteOff: false, 0, 0, 1, NoModulators, sink, ref voices, problems, 0, 0);
                         if (voices > 0) played++; else silent++;
                         int offVoices = 0;
-                        Trigger(target, n.Key, n.Velocity, onset + heldMs, 0, noteOff: true, 0, 0, 1, NoModulators, mix, ref offVoices, problems, 0, 0);
+                        Trigger(target, n.Key, n.Velocity, onset + heldMs, 0, noteOff: true, 0, 0, 1, NoModulators, sink, ref offVoices, problems, 0, 0);
                         offs += offVoices;
                     }
                 }
@@ -193,11 +207,42 @@ public sealed class WwiseSongRenderer
                     var pcm = _decode(clip.SourceId);
                     if (pcm is null) { problems.Add($"audio source {clip.SourceId} could not be decoded"); continue; }
                     audioClips++;
-                    Place(mix, pcm, clipStartOnTimeline + windowBegin, windowBegin, clip.Clip.LengthMs, 1.0, 1.0);
+                    sink.Add(new WwiseVoice(clip.SourceId, pcm, clipStartOnTimeline + windowBegin, windowBegin,
+                                            clip.Clip.LengthMs, 1.0, 1.0, clip.Clip.LengthMs, 0, NoModulators));
                 }
             }
             segOffsetMs += seg.DurationMs;
         }
+
+        sink.Sort((a, b) => a.StartMs.CompareTo(b.StartMs));
+        return new WwiseVoicePlan(sink, totalMs)
+        {
+            NotesInWindow = inWindow, NotesPlayed = played, NotesSilent = silent,
+            NoteOffsPlayed = offs, AudioClips = audioClips, Problems = problems,
+        };
+    }
+
+    private WwiseRenderedMusic RenderLocked(WwiseMusicPlan plan)
+    {
+        _modulations = 0; _modPeakDb = 0; _modPeakCents = 0; _branchVoices.Clear();
+        var built = BuildVoicesLocked(plan);
+        var problems = new List<string>(built.Problems);
+        if (built.Voices.Count == 0 && problems.Count > 0 && built.TotalMs <= 0)
+            return new WwiseRenderedMusic(Array.Empty<short>(), 0) { Problems = problems };
+
+        double totalMs = built.TotalMs;
+        var mix = new double[Samples(totalMs)];
+        int inWindow = built.NotesInWindow, played = built.NotesPlayed, silent = built.NotesSilent;
+        int offs = built.NoteOffsPlayed, audioClips = built.AudioClips;
+
+        var stats = new WwiseModulationStats();
+        foreach (var v in built.Voices)
+        {
+            if (ExcludeBranches.Contains(v.Branch)) continue;
+            v.RenderInto(mix, 0, mix.Length, Parameters, stats);
+            _branchVoices[v.Branch] = _branchVoices.GetValueOrDefault(v.Branch) + 1;
+        }
+        _modulations = stats.Applied; _modPeakDb = stats.PeakDb; _modPeakCents = stats.PeakCents;
 
         // The output stage: the robot bus's own effect chain, or a stand-in when the banks are not loaded.
         double rawPeak = 0;
@@ -240,22 +285,21 @@ public sealed class WwiseSongRenderer
         };
     }
 
-    /// <summary>One modulator and the binding that says what it drives on the node that named it.</summary>
-    private readonly record struct Bound(WwiseModulatorNode Modulator, WwiseRtpc Binding, double Depth);
-
-    private static readonly IReadOnlyList<Bound> NoModulators = Array.Empty<Bound>();
+    private static readonly IReadOnlyList<WwiseBoundModulator> NoModulators = Array.Empty<WwiseBoundModulator>();
     private int _modulations;
     private double _modPeakDb, _modPeakCents;
     private readonly Dictionary<uint, int> _branchVoices = new();
 
     /// <summary>
-    /// The modulators bound on one node, with each one's depth already resolved: an LFO's depth can itself
-    /// be driven by a game parameter, and a modulator that names one reads it from <see cref="Parameters"/>
-    /// through its own curve. A modulator this reader cannot find is named rather than skipped silently.
+    /// The modulators bound on one node. The depth is <b>not</b> resolved here: an LFO's depth can be
+    /// driven by a game parameter, and that parameter changes while the song plays, so what is kept is the
+    /// binding that reads it. The depth is worked out again whenever a block of the voice is rendered,
+    /// which is what lets shaking a cube change a song that is already playing. A modulator this reader
+    /// cannot find is named rather than skipped silently.
     /// </summary>
-    private IReadOnlyList<Bound> BindingsOn(WwiseNodeParams p, IReadOnlyList<Bound> inherited, List<string> problems)
+    private IReadOnlyList<WwiseBoundModulator> BindingsOn(WwiseNodeParams p, IReadOnlyList<WwiseBoundModulator> inherited, List<string> problems)
     {
-        List<Bound>? added = null;
+        List<WwiseBoundModulator>? added = null;
         foreach (var r in p.Rtpcs)
         {
             if (r.SourceType != WwiseRtpc.ModulatorSource) continue;
@@ -264,15 +308,13 @@ public sealed class WwiseSongRenderer
                 problems.Add($"modulator {r.SourceId} is bound but could not be read");
                 continue;
             }
-            double depth = mod.Value(WwiseModulatorProp.LfoDepth, 0);
+            WwiseRtpc? depthFrom = null;
             foreach (var own in mod.Params.Rtpcs)
             {
                 if (own.SourceType != WwiseRtpc.GameParameterSource || own.ParamId != 0) continue;
-                float value = Parameters.TryGetValue(own.SourceId, out var v) ? v : 0f;
-                depth = own.Evaluate(value, out bool reduced);
-                if (reduced) problems.Add($"modulator {mod.Id}: depth curve uses an interpolation this reader reads as linear");
+                depthFrom = own;
             }
-            (added ??= new List<Bound>(inherited)).Add(new Bound(mod, r, depth));
+            (added ??= new List<WwiseBoundModulator>(inherited)).Add(new WwiseBoundModulator(mod, r, depthFrom));
         }
         return added ?? inherited;
     }
@@ -284,8 +326,8 @@ public sealed class WwiseSongRenderer
     /// <see cref="WwisePlayback"/> gives an ordinary event play, so one bank field is not read two ways.
     /// </summary>
     private double Trigger(uint nodeId, byte key, byte velocity, double startMs, double heldMs, bool noteOff,
-                           double gainDb, double cents, uint playOn, IReadOnlyList<Bound> modulators,
-                           double[] mix, ref int voices, List<string> problems, int depth, uint branch)
+                           double gainDb, double cents, uint playOn, IReadOnlyList<WwiseBoundModulator> modulators,
+                           List<WwiseVoice> sink, ref int voices, List<string> problems, int depth, uint branch)
     {
         if (depth > 16) return 0;
         var node = _lib.Node(nodeId);
@@ -310,7 +352,7 @@ public sealed class WwiseSongRenderer
                 {
                     if (depth == 0 && ExcludeBranches.Contains(c)) continue;
                     longest = Math.Max(longest, Trigger(c, key, velocity, startMs, heldMs, noteOff, gainDb, cents,
-                        playOn, modulators, mix, ref voices, problems, depth + 1, depth == 0 ? c : branch));
+                        playOn, modulators, sink, ref voices, problems, depth + 1, depth == 0 ? c : branch));
                 }
                 return longest;
             }
@@ -324,14 +366,14 @@ public sealed class WwiseSongRenderer
                     foreach (var (child, _) in rs.Playlist)
                     {
                         double n = Trigger(child, key, velocity, at, heldMs, noteOff, gainDb, cents, playOn,
-                                           modulators, mix, ref voices, problems, depth + 1, branch);
+                                           modulators, sink, ref voices, problems, depth + 1, branch);
                         at += n; total += n;
                     }
                     return total;
                 }
                 uint pick = rs.IsSequence ? NextInSequence(rs) : WeightedPick(rs);
                 return Trigger(pick, key, velocity, startMs, heldMs, noteOff, gainDb, cents, playOn, modulators,
-                               mix, ref voices, problems, depth + 1, branch);
+                               sink, ref voices, problems, depth + 1, branch);
             }
 
             case WwiseSoundNode s:
@@ -344,10 +386,9 @@ public sealed class WwiseSongRenderer
                 double ratio = Math.Pow(2, cents / 1200.0);
                 double sampleMs = pcm.Length * 1000.0 / Rate / ratio;
                 double lengthMs = noteOff ? sampleMs : LoopedLength(p.Raw(WwiseProp.Loop), sampleMs, heldMs);
-                var modulation = Modulation(modulators, heldMs, problems);
-                Place(mix, pcm, startMs, 0, lengthMs, gain, ratio, modulation);
+                sink.Add(new WwiseVoice(s.Id, pcm, startMs, 0, lengthMs, gain, ratio, heldMs, branch,
+                                        Applicable(modulators, problems)));
                 voices++;
-                _branchVoices[branch] = _branchVoices.GetValueOrDefault(branch) + 1;
                 return lengthMs;
             }
 
@@ -358,41 +399,20 @@ public sealed class WwiseSongRenderer
     }
 
     /// <summary>
-    /// Turns the modulators bound on a voice's path into the two things a voice needs while it sounds: a
-    /// level offset in dB and a pitch offset in cents, both as functions of the seconds since the voice
-    /// started. Returns null when nothing bound to this voice can have any effect, which is the ordinary
-    /// case for the vibrato LFO with no cube being shaken, so that the rendering loop keeps its fast path.
+    /// The bindings on a voice's path that this sampler can act on: those that drive Volume or Pitch. A
+    /// modulator driving anything else is named rather than passed over. Nothing is resolved here, because
+    /// an LFO's depth is read again at every block a voice is rendered in.
     /// </summary>
-    private Func<double, (double Db, double Cents)>? Modulation(IReadOnlyList<Bound> modulators, double heldMs, List<string> problems)
+    private static IReadOnlyList<WwiseBoundModulator> Applicable(IReadOnlyList<WwiseBoundModulator> modulators, List<string> problems)
     {
-        if (modulators.Count == 0) return null;
-        var live = new List<Bound>();
+        if (modulators.Count == 0) return NoModulators;
+        List<WwiseBoundModulator>? keep = null;
         foreach (var b in modulators)
         {
-            if (b.Modulator.IsLfo && b.Depth <= 0) continue;          // depth 0: no output, at any instant
-            if (b.Binding.ParamId is not ((byte)WwiseProp.Volume or (byte)WwiseProp.Pitch))
-            {
-                problems.Add($"modulator {b.Modulator.Id} drives property {b.Binding.ParamId}, which the sampler does not apply");
-                continue;
-            }
-            live.Add(b);
+            if (b.Binding.ParamId is (byte)WwiseProp.Volume or (byte)WwiseProp.Pitch) { (keep ??= new()).Add(b); continue; }
+            problems.Add($"modulator {b.Modulator.Id} drives property {b.Binding.ParamId}, which the sampler does not apply");
         }
-        if (live.Count == 0) return null;
-        _modulations += live.Count;
-        double held = heldMs / 1000.0;
-        return t =>
-        {
-            double db = 0, cents = 0;
-            foreach (var b in live)
-            {
-                double value = b.Modulator.ValueAt(t, held, b.Depth);
-                double mapped = b.Binding.Evaluate(value, out _);
-                if (b.Binding.ParamId == (byte)WwiseProp.Volume) db += mapped; else cents += mapped;
-            }
-            if (db < _modPeakDb) _modPeakDb = db;
-            if (Math.Abs(cents) > Math.Abs(_modPeakCents)) _modPeakCents = cents;
-            return (db, cents);
-        };
+        return keep ?? NoModulators;
     }
 
     /// <summary>
@@ -454,35 +474,4 @@ public sealed class WwiseSongRenderer
         return chosen;
     }
 
-    /// <summary>
-    /// Adds a sound into the mix from <paramref name="startMs"/> on the timeline, reading the source from
-    /// <paramref name="sourceOffsetMs"/> for <paramref name="lengthMs"/>, looping the source when the
-    /// length exceeds it, at a gain and a resampling ratio (2 for an octave up).
-    /// </summary>
-    private static void Place(double[] mix, short[] pcm, double startMs, double sourceOffsetMs, double lengthMs,
-                              double gain, double ratio, Func<double, (double Db, double Cents)>? modulation = null)
-    {
-        if (pcm.Length == 0 || lengthMs <= 0) return;
-        int start = Samples(startMs);
-        int count = Samples(lengthMs);
-        double srcPos = sourceOffsetMs * Rate / 1000.0;
-        for (int i = 0; i < count; i++)
-        {
-            int dst = start + i;
-            if (dst >= mix.Length) break;
-            double step = ratio, g = gain;
-            if (modulation is not null)
-            {
-                var (db, cents) = modulation(i / (double)Rate);
-                if (db != 0) g *= Math.Pow(10, db / 20.0);
-                if (cents != 0) step *= Math.Pow(2, cents / 1200.0);
-            }
-            if (dst >= 0)
-            {
-                int s = (int)srcPos % pcm.Length;
-                mix[dst] += pcm[s] * g;
-            }
-            srcPos += step;
-        }
-    }
 }

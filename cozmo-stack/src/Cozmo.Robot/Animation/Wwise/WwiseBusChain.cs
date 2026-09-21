@@ -54,7 +54,8 @@ public sealed class WwiseBusChain
     /// <summary>The bus a singing voice reaches, from the engine's own registration table.</summary>
     public const uint RobotBus1 = 2678428988;
 
-    private readonly List<(string Name, Action<double[]> Apply)> _stages = new();
+    private readonly List<(string Name, Action<double[], int, int> Apply)> _stages = new();
+    private readonly List<Action> _resets = new();
     private readonly List<string> _problems = new();
     private readonly List<string> _notes = new();
     private readonly int _rate;
@@ -105,37 +106,52 @@ public sealed class WwiseBusChain
                 else _problems.Add($"{name}: filter type {type} is not one of the four the shipped banks use");
             }
             double output = Math.Pow(10, eq.OutputDb / 20.0);
-            _stages.Add((name, buffer =>
+            _resets.Add(() => { foreach (var f in filters) f.Reset(); });
+            _stages.Add((name, (buffer, from, count) =>
             {
-                foreach (var f in filters) f.Process(buffer);
+                foreach (var f in filters) f.Process(buffer, from, count);
                 if (Math.Abs(output - 1) > 1e-9)
-                    for (int i = 0; i < buffer.Length; i++) buffer[i] *= output;
+                    for (int i = from; i < from + count; i++) buffer[i] *= output;
             }));
             return;
         }
 
         if (fx.PeakLimiter() is { } limiter && fx.PluginId == WwiseEffectNode.PeakLimiterPlugin)
         {
-            _stages.Add((name, buffer => _reductionDb = Math.Min(_reductionDb, ApplyLimiter(buffer, limiter, _rate))));
+            var state = new LimiterState();
+            _resets.Add(() => state.Gain = 1.0);
+            _stages.Add((name, (buffer, from, count) =>
+                _reductionDb = Math.Min(_reductionDb, ApplyLimiter(buffer, from, count, limiter, _rate, state))));
             return;
         }
 
         if (fx.HijackIndex() is { } index)
         {
-            _stages.Add(($"{name} (tap for robot {index})", _ => { }));
+            _stages.Add(($"{name} (tap for robot {index})", (_, _, _) => { }));
             return;
         }
 
         _problems.Add($"{name}: plug-in 0x{fx.PluginId:X8} is not applied by this build");
     }
 
-    /// <summary>Applies the chain in place and reports what it did.</summary>
-    public WwiseBusChainReport Process(double[] buffer)
+    /// <summary>Applies the chain to a whole buffer in place and reports what it did.</summary>
+    public WwiseBusChainReport Process(double[] buffer) => ProcessBlock(buffer, 0, buffer.Length);
+
+    /// <summary>
+    /// Applies the chain to <c>[from, from + count)</c> in place, keeping every effect's state between
+    /// calls, so a song can be run through it a block at a time as it plays. Blocks must be given in
+    /// order: the filters carry their previous samples and the limiter carries its gain.
+    /// </summary>
+    public WwiseBusChainReport ProcessBlock(double[] buffer, int from, int count)
     {
-        double inPeak = Peak(buffer);
+        // Starting at the top of a buffer means a new piece of audio, so nothing of the last one carries
+        // into it: a filter that remembered the end of the previous song would colour the start of this.
+        if (from == 0) Reset();
+        count = Math.Max(0, Math.Min(count, buffer.Length - from));
+        double inPeak = Peak(buffer, from, count);
         _reductionDb = 0;
-        foreach (var (_, apply) in _stages) apply(buffer);
-        return new WwiseBusChainReport(inPeak, Peak(buffer), _reductionDb)
+        foreach (var (_, apply) in _stages) apply(buffer, from, count);
+        return new WwiseBusChainReport(inPeak, Peak(buffer, from, count), _reductionDb)
         {
             Stages = _stages.Select(s => s.Name).ToList(),
             Problems = _problems.ToList(),
@@ -146,12 +162,18 @@ public sealed class WwiseBusChain
     /// <summary>The chain with nothing in it: used when the banks are not loaded, so a render still works.</summary>
     public bool IsEmpty => _stages.Count == 0;
 
-    private static double Peak(double[] b)
+    /// <summary>Forgets every filter's history and the limiter's gain, ready for a fresh piece of audio.</summary>
+    public void Reset() { foreach (var r in _resets) r(); }
+
+    private static double Peak(double[] b, int from, int count)
     {
         double p = 0;
-        foreach (var v in b) p = Math.Max(p, Math.Abs(v));
+        for (int i = from; i < from + count; i++) p = Math.Max(p, Math.Abs(b[i]));
         return p;
     }
+
+    /// <summary>What a limiter carries from one block to the next.</summary>
+    private sealed class LimiterState { public double Gain = 1.0; }
 
     /// <summary>
     /// A look-ahead peak limiter. The gain for each sample is worked out from the loudest sample in the
@@ -166,9 +188,11 @@ public sealed class WwiseBusChain
     /// Full scale here is 32767, because that is what the render sums into and what the robot's frames
     /// carry; the threshold is in dB relative to it.
     /// </summary>
-    private static double ApplyLimiter(double[] buffer, (float ThresholdDb, float Ratio, float LookAheadSeconds, float ReleaseSeconds, float OutputDb) p, int rate)
+    private static double ApplyLimiter(double[] buffer, int from, int count,
+                                       (float ThresholdDb, float Ratio, float LookAheadSeconds, float ReleaseSeconds, float OutputDb) p,
+                                       int rate, LimiterState state)
     {
-        if (buffer.Length == 0) return 0;
+        if (count <= 0) return 0;
         double threshold = short.MaxValue * Math.Pow(10, p.ThresholdDb / 20.0);
         double ratio = Math.Max(1.0, p.Ratio);
         int look = Math.Max(1, (int)Math.Round(p.LookAheadSeconds * rate));
@@ -177,28 +201,19 @@ public sealed class WwiseBusChain
             : 0.0;
         double output = Math.Pow(10, p.OutputDb / 20.0);
 
-        var input = (double[])buffer.Clone();
+        // The look-ahead window may run past this block; what is beyond it has not been rendered yet, so
+        // the window is clamped to what exists. A peak arriving in the next block is caught when that
+        // block is processed, which is what the limiter's instantaneous attack is for.
+        int end = from + count;
+        var input = new double[count];
+        Array.Copy(buffer, from, input, 0, count);
 
-        // A running maximum over the look-ahead window, kept as a monotonic deque so the pass is linear
-        // rather than quadratic: a nine-millisecond window at 22320 Hz is 201 samples, and a long song is
-        // ten million of them.
-        var window = new int[buffer.Length == 0 ? 1 : buffer.Length];
-        int head = 0, tail = 0;
-        double gain = 1.0, deepest = 0;
-        int filled = -1;
-
-        for (int i = 0; i < buffer.Length; i++)
+        double gain = state.Gain, deepest = 0;
+        for (int i = 0; i < count; i++)
         {
-            int windowEnd = Math.Min(i + look - 1, buffer.Length - 1);
-            while (filled < windowEnd)
-            {
-                filled++;
-                double v = Math.Abs(input[filled]);
-                while (tail > head && Math.Abs(input[window[tail - 1]]) <= v) tail--;
-                window[tail++] = filled;
-            }
-            while (head < tail && window[head] < i) head++;
-            double ahead = head < tail ? Math.Abs(input[window[head]]) : 0;
+            double ahead = 0;
+            int windowEnd = Math.Min(i + look, count);
+            for (int k = i; k < windowEnd; k++) ahead = Math.Max(ahead, Math.Abs(input[k]));
 
             double wanted = 1.0;
             if (ahead > threshold)
@@ -209,8 +224,9 @@ public sealed class WwiseBusChain
             // attack is instantaneous, which the look-ahead is what makes musical; release is exponential
             gain = wanted < gain ? wanted : wanted + (gain - wanted) * releaseCoefficient;
             deepest = Math.Min(deepest, 20 * Math.Log10(Math.Max(gain, 1e-6)));
-            buffer[i] = input[i] * gain * output;
+            buffer[from + i] = input[i] * gain * output;
         }
+        state.Gain = gain;
         return deepest;
     }
 
@@ -266,14 +282,22 @@ public sealed class WwiseBusChain
             return new Biquad { _b0 = b0 / a0, _b1 = b1 / a0, _b2 = b2 / a0, _a1 = a1 / a0, _a2 = a2 / a0 };
         }
 
-        public void Process(double[] buffer)
+        private double _x1, _x2, _y1, _y2;
+
+        public void Reset() { _x1 = _x2 = _y1 = _y2 = 0; }
+
+        /// <summary>
+        /// Filters <c>[from, from + count)</c> in place. The two previous inputs and outputs are kept on
+        /// the filter rather than on the stack, so a buffer can be run through a block at a time and hear
+        /// the same thing it would have heard in one pass.
+        /// </summary>
+        public void Process(double[] buffer, int from, int count)
         {
-            double x1 = 0, x2 = 0, y1 = 0, y2 = 0;
-            for (int i = 0; i < buffer.Length; i++)
+            for (int i = from; i < from + count; i++)
             {
                 double x = buffer[i];
-                double y = _b0 * x + _b1 * x1 + _b2 * x2 - _a1 * y1 - _a2 * y2;
-                x2 = x1; x1 = x; y2 = y1; y1 = y;
+                double y = _b0 * x + _b1 * _x1 + _b2 * _x2 - _a1 * _y1 - _a2 * _y2;
+                _x2 = _x1; _x1 = x; _y2 = _y1; _y1 = y;
                 buffer[i] = y;
             }
         }
