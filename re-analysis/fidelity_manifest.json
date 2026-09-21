@@ -2288,36 +2288,32 @@
       "test": "VisionTests"
     },
     {
-      "id": "M11-007",
       "subsystem": "M11-vision",
-      "title": "Two misses before an object pose is forgotten",
-      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs:127",
-      "effect": "a cube is forgotten too early or too late",
-      "provenance": "read as cmp r3, #1 and taken as 2 misses",
-      "authority": "MarkObjectUnknown in libcozmoEngine.so",
+      "title": "Two misses before an object pose is forgotten, and two sightings before one is confirmed",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "ObjectPoseConfirmer::MarkObjectUnobserved 0x00506FBC finds the object PoseConfirmation, reads the miss count at +0x28, writes back count + 1 while zeroing the confirmed count at +0x24 (strd r2, r1, [r0, #0x24] at 0x00506FE0), and takes the forgetting branch only when the value it read was already 1 or more (cmp r3, #1 / blt at 0x00506FDE). The first miss counts and the second acts. The confirming side at 0x00506A04 mirrors it exactly: the observed count at +0x24 is incremented and the pose is accepted on the second",
       "evidence": [
-        "MarkObjectUnknown"
+        "the two counters reset each other, so the misses have to be consecutive",
+        "this stack already used two; what was missing was the counter it rests on"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the comparison was read but the counter it compares was not traced",
-      "hardware_required": false,
       "live_path": true,
-      "test": "VisionTests"
+      "test": "VisionTests",
+      "id": "M11-007"
     },
     {
-      "id": "M11-008",
       "subsystem": "M11-vision",
-      "title": "Minimum projected marker size for the visibility test, 10 pixels",
-      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs:140",
-      "effect": "a distant cube is or is not counted as visible",
-      "provenance": "inferred",
-      "authority": "the engine visibility test",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the engine threshold",
-      "hardware_required": false,
+      "title": "The minimum projected marker size for deciding an object should have been seen is 40 pixels",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "BlockWorld::CheckForUnobservedObjects 0x00621C6C calls ObservableObject::IsVisibleFrom with a face-normal angle of 0.785398 and a minimum marker size of 40.0 (0x42200000 at 0x006220F0), then marks the object unobserved when it should have been visible and was not, or when nothing is behind it and its pose is Dirty",
+      "evidence": [
+        "40, where this stack had 10, so it was calling objects missing that the app would not have expected to see at all",
+        "the same argument is 0 at the engine other two call sites - SearchForBlockHelper::ShouldBeAbleToFindTarget 0x005BB760 and the ghost-block check 0x00603E48 - so the threshold belongs to this call rather than to the visibility test"
+      ],
       "live_path": true,
-      "test": null
+      "test": "VisionTests",
+      "id": "M11-008"
     },
     {
       "subsystem": "M11-vision",

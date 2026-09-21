@@ -160,10 +160,25 @@ public sealed class BlockWorld
     public const double MaxRotationRateRadPerSec = 0.174533;
     /// <summary>The visibility angle the world model and the cube-moved strategy use: 0.785398 rad (45 deg).</summary>
     public const double VisibilityNormalAngleRad = 0.785398;
-    /// <summary>INFERRED: misses before an object's pose is forgotten.</summary>
+    /// <summary>
+    /// Two misses before an object's pose is forgotten, which is the engine's count traced to its
+    /// counter. <c>ObjectPoseConfirmer::MarkObjectUnobserved</c> 0x00506FBC reads the miss count at
+    /// <c>PoseConfirmation+0x28</c>, writes back <c>count + 1</c> while zeroing the confirmed count at
+    /// +0x24, and takes the forgetting branch only when the value it read was already at least 1
+    /// (<c>cmp r3, #1 / blt</c> at 0x00506FDE). So the first miss only counts, and the second acts.
+    /// The confirming side at 0x00506A04 is the mirror image of it.
+    /// </summary>
     public int UnobservedMissesToUnknown { get; set; } = 2;
-    /// <summary>INFERRED: minimum projected marker size for the visibility test, pixels.</summary>
-    public double MinVisibleMarkerSizePx { get; set; } = 10;
+
+    /// <summary>
+    /// 40 pixels: what <c>BlockWorld::CheckForUnobservedObjects</c> 0x006220F0 passes as the minimum
+    /// projected marker size (0x42200000), alongside a face-normal angle of 0.785398. This had been 10.
+    ///
+    /// It is not the only value the engine uses for that argument - <c>SearchForBlockHelper</c> and the
+    /// ghost-block check both pass 0 - but this is the call that decides whether a located object should
+    /// have been seen, which is what this threshold is for here.
+    /// </summary>
+    public double MinVisibleMarkerSizePx { get; set; } = 40;
     /// <summary>Markers whose pose solve leaves more than this reprojection error are ignored (LOCAL, 3 px).</summary>
     public double MaxReprojectionRmsPx { get; set; } = 3.0;
     /// <summary>

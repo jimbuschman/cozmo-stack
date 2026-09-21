@@ -7,9 +7,9 @@ Manifest of **201 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 103 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 105 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 51 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 49 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 9 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -34,7 +34,7 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 10 | 6 | 0 | 0 | 0 | no | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | 0 | 0 | 0 | no | yes |
-| M11-vision — Markers, camera geometry and BlockWorld | 16 | 6 | 0 | 1 | 0 | no | yes |
+| M11-vision — Markers, camera geometry and BlockWorld | 16 | 4 | 0 | 1 | 0 | no | yes |
 | M12-manipulation — Docking, carrying and pre-action poses | 16 | 1 | 1 | 0 | 0 | no | no |
 | M13-navigation — Planning, charger and block configurations | 11 | 2 | 1 | 0 | 0 | no | no |
 | M14-faces — Face and pet pipeline | 7 | 5 | 0 | 1 | 0 | no | yes |
@@ -316,23 +316,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * rests on: chosen locally (20 mm / 10 degrees, 8 degrees)
 * best authority: the engine BlockWorld clustering
 * outstanding: the engine own tolerances
-
-**M11-007 — Two misses before an object pose is forgotten** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs:127`
-* effect: a cube is forgotten too early or too late
-* rests on: read as cmp r3, #1 and taken as 2 misses
-* best authority: MarkObjectUnknown in libcozmoEngine.so
-* evidence: MarkObjectUnknown
-* outstanding: the comparison was read but the counter it compares was not traced
-
-**M11-008 — Minimum projected marker size for the visibility test, 10 pixels** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs:140`
-* effect: a distant cube is or is not counted as visible
-* rests on: inferred
-* best authority: the engine visibility test
-* outstanding: the engine threshold
 
 **M11-010 — Occlusion is not modelled; a marker that passes the geometric tests counts as visible** (live path)
 
