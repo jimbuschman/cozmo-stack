@@ -2074,23 +2074,22 @@
       "test": "WwiseClipWindowTests.TheClipEndDecidesWhichNotesAreSungAtAll"
     },
     {
-      "id": "M9-021",
       "subsystem": "M9-wwise-music",
-      "title": "A music event with several Play actions renders only the first",
+      "title": "An event with several Play actions plays all of them",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMusic.cs",
-      "effect": "Play__Codelab__Music_Tiny_Orchestra_Init plays one of its nine layers",
-      "provenance": "a reduction of this stack on the music path. Ordinary events no longer reduce this way: WwisePlayback plays every Play target together",
-      "authority": "the shipped bank lists all nine Play actions, and the ordinary-event walk already shows the shape the music path needs. Singing is unaffected, which is why this is off the live path: each of the three tempo events holds exactly one Play action",
+      "effect": null,
+      "provenance": "the shipped bank's action lists; the resolver now walks every Play action, as the ordinary-event path already did",
+      "authority": "the event hierarchy in the shipped banks: Play__Codelab__Music_Tiny_Orchestra_Init fires nine Play actions, the three singing tempo events one each",
       "evidence": [
-        "Play__Codelab__Music_Tiny_Orchestra_Init: 9 Play actions and 9 of type 0x1901",
-        "Play__Robot_VO__Cozmo_Singing_80bpm, _100bpm and _120bpm: one Play action each",
-        "nothing in cozmo-stack posts a Codelab music event"
+        "WwiseMusic.Resolve took the first Play target and dropped the rest. It now resolves each one and keeps them: the first is the plan, the others are its AdditionalPlays, and the song renderer lays every layer on the same timeline from zero - which is what Wwise does with several Play actions on one event - with the total length the longest of them.",
+        "Play__Codelab__Music_Tiny_Orchestra_Init has nine Play actions and now resolves nine targets, each reaching segments of its own; the three Play__Robot_VO__Cozmo_Singing_* events have one each and are unchanged, which is why the singing path never saw this."
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "the music resolver has to carry every Play action rather than the first; nothing is left to read",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": false,
-      "test": null
+      "test": "WwiseMusicTests.AnEventWithSeveralPlayActionsResolvesAllOfThem",
+      "id": "M9-021"
     },
     {
       "id": "M9-022",
@@ -2401,21 +2400,30 @@
       "test": "VisionTests"
     },
     {
-      "id": "M11-005",
       "subsystem": "M11-vision",
-      "title": "Front-end pixel algorithms, the 0.75 dark multiplier and PnP numerics",
+      "title": "Corner extraction by line fits, the refinement and the PnP numerics",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/QuadDetector.cs",
-      "effect": "markers are found at slightly different places, or not found",
-      "provenance": "local implementations of steps the engine parameterises",
-      "authority": "MarkerDetector::Parameters::Initialize gives the parameters, which are read; the pixel loops themselves were not transcribed",
+      "effect": "a marker's corners land in slightly different places, so its pose does too",
+      "provenance": "the binarization, the component rules and the quad acceptance test are now the engine's (M11-018); the corner extraction and refinement are still local",
+      "authority": "ComputeQuadrilateralsFromConnectedComponents 0x00892D70 and the corner-method switch at 0x00892E24, read; ExtractLineFitsPeaks 0x008A5DB8 and TraceNextExteriorBoundary 0x008C6B18 read to their structure and constants but not transcribed; ExtractLaplacianPeaks 0x008A75C8 not read",
       "evidence": [
-        "MarkerDetector::Parameters::Initialize"
+        "The corner method is settled: the parameters' +0x28 is 1 (0x00875338) and the switch at 0x00892E24 sends 1 to ExtractLineFitsPeaks 0x008A5DB8 and 0 to ExtractLaplacianPeaks; a quad is kept only when that returns exactly four corners (0x00892E60). The boundary it works on comes from TraceNextExteriorBoundary 0x008C6B18.",
+        "This stack takes the four extreme points of the component's boundary instead, then refines each side to the sub-pixel edge with its own line fit. The engine's ExtractLineFitsPeaks is 6160 bytes of fixed-point code and has not been transcribed.",
+        "Its shape is read even though its arithmetic is not. ExtractLineFitsPeaks copies the boundary into an n-by-2 float matrix (0x008A5E96), smooths it with an OpenCV Gaussian whose sigma is the boundary length over 64 (0x3C800000 at 0x008A616C) and whose size is OpenCV's own inverse of that relation, ceil(((sigma - 0.8) / 0.3 + 1) * 2 + 1) forced odd (0x008A5EDE..0x008A5F1A), transposes the kernel and runs cv::filter2D at CV_32F with border type 4 (0x008A60B4); then cv::kmeans splits the boundary into four clusters - the four sides - (0x008A6490), cv::solve fits a line to each (0x008A68E0), and Quadrilateral<float>::ComputeClockwiseCorners orders the four intersections (0x008A6C0E). It also refuses to start unless the four initial corners are already there (the count test at 0x008A5E18).",
+        "The refinement parameters are already the engine's - 25 iterations (+0x48), 1.01 step growth (+0x3c), 0.005 minimum change (+0x54), 5.0 maximum (+0x50) - but the loop they drive is this stack's own.",
+        "The pose solve from the four corners (the PnP numerics) is likewise local.",
+        "Its clustering is deterministic, which decides whether this can be reproduced exactly at all: the cv::kmeans call at 0x008A6490 passes K = 4, criteria {COUNT|EPS, 15, 0.1}, attempts 1 and flags 1 - KMEANS_USE_INITIAL_LABELS - and the labels are seeded just above it by splitting the boundary into four equal arcs by index: [0, n/4) = 0, [n/4, n/2) = 1, [n/2, 3n/4) = 2, [3n/4, n) = 3 (0x008A62D8..0x008A63EE, with n < 4 falling through to the halves). So nothing in it is drawn at random.",
+        "The boundary it works on is a staircase contour of the component, not its pixel edge. TraceNextExteriorBoundary 0x008C6B18 takes the component's bounding box, builds four short arrays - the least and greatest y in each column and the least and greatest x in each row, filled from the runs at 0x008C6E68..0x008C6E8E - refuses the component if any column or row in the box is empty (0x008C6F70..0x008C6FC6), and then walks the four sides in turn, emitting a point per column or row and filling the vertical or horizontal gap between neighbours (0x008C6FF0 onwards) - four passes in turn: the columns left to right on the least y (0x008C6FF0), the rows on the greatest x (0x008C70A6), the columns right to left on the greatest y (0x008C7158) and the rows back up on the least x (0x008C7208).",
+        "What the Gaussian smooths is the boundary's derivative. The matrix handed to cv::filter2D is 1 by 3 and holds -0.5, 0, +0.5 (0xBF000000, 0, 0x3F000000 written at 0x008A602C..0x008A603E) - the central difference - so the filter2D turns the n-by-2 boundary into (dx, dy) per point. The manual convolution at 0x008A61C4 then smooths that pair with the Gaussian, wrapping round the ends, and normalises it: a unit tangent per boundary point, which is what the four clusters are clusters of.",
+        "The line fit is an ordinary least squares through cv::solve with DECOMP_SVD (flags 1 at 0x008A68DE): each cluster builds an A of rows [x, 1] - the 1.0 written at +4 of every row, 0x008A6846 and 0x008A6878 - and a B of the matching y, so the solution is the slope and intercept of that side.",
+        "Its output is integer corners. The four line intersections are copied into a Quadrilateral<float>, ordered by ComputeClockwiseCorners 0x008A6C0E, then rounded with a +/- 0.5 and clamped to the short range (0x008A6C12..0x008A6C24) - the list it fills is FixedLengthList<Quadrilateral<short>>. So the sub-pixel work is the separate refinement stage the parameters at +0x48..+0x54 drive, which is where this stack's own line fits sit."
       ],
       "status": "RECOVERABLE_GAP",
-      "unresolved": "the engine own quad extraction and refinement, which is in the binary",
+      "unresolved": "the index bookkeeping of TraceNextExteriorBoundary's four passes, and how near-vertical clusters are handled in the least-squares fit; everything else in the chain is read - the staircase boundary's shape, the [-0.5, 0, 0.5] derivative, the Gaussian of sigma = n / 64, the four-arc initial labels, the kmeans settings, the [x 1] least squares and the integer rounding of the result",
       "hardware_required": false,
       "live_path": true,
-      "test": "VisionTests"
+      "test": "VisionTests.TheQuadGeometryTestIsTheEngines",
+      "id": "M11-005"
     },
     {
       "subsystem": "M11-vision",
@@ -2598,21 +2606,44 @@
     },
     {
       "subsystem": "M11-vision",
-      "title": "The memory map's vision-derived content: overhead edges and the explored region",
+      "title": "The memory map's vision-derived content: the overhead edges",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs",
-      "effect": "the map holds obstacles but no edges and no explored region, so a query that would be blocked by an unexplored edge is answered clear, and the behaviours that look for edges have nothing to look at",
-      "provenance": "the obstacle content is implemented (M14-007); the vision-derived content is not",
-      "authority": "MapComponent::AddVisionOverheadEdges 0x0067F814, ProcessVisionOverheadEdges 0x0067F7AC, MapComponent::UpdateRobotPose 0x0067E224, MapComponent::FlagGroundPlaneROIInterestingEdgesAsUncertain 0x0067E50C and QuadTreeProcessor::FillBorder 0x00689FAC, none of them read yet",
+      "effect": "the map has no InterestingEdge or NotInterestingEdge regions, so a ray that should be blocked by the boundary of what has been explored is answered clear, and the two behaviours built on those edges have nothing to visit",
+      "provenance": "the obstacles (M14-007) and the robot's own passage are implemented; the overhead edges are not",
+      "authority": "MapComponent::UpdateRobotPose 0x0067E224, read; OverheadEdgesDetector::Detect 0x006ABE34 (7620 bytes), VisionComponent::UpdateOverheadEdges 0x006553FC, MapComponent::ProcessVisionOverheadEdges 0x0067F7AC and AddVisionOverheadEdges 0x0067F814 (3724 bytes), FlagGroundPlaneROIInterestingEdgesAsUncertain 0x0067E50C, FlagQuadAsNotInterestingEdges 0x0067E6B0 and QuadTreeProcessor::FillBorder 0x00689FAC, not read",
       "evidence": [
-        "The types are known and in place: InterestingEdge (9) and NotInterestingEdge (10) both block a drive in the mask at 0x00C67962, and BehaviorVisitInterestingEdge and BehaviorLookInPlaceMemoryMap are built on them.",
-        "What produces them is not: MapComponent::AddVisionOverheadEdges 0x0067F814 takes an OverheadEdgeFrame from the vision system, which this stack's vision front end does not produce (see M11-005), and MapComponent::UpdateRobotPose 0x0067E224 is what lays down the cleared ground the robot has driven over."
+        "The robot's own passage is now read and implemented. UpdateRobotPose 0x0067E224 does nothing while the robot is within 8 mm (0x41000000) and 0.349066 rad of where it last wrote itself (Pose3d::IsSameAs at 0x0067E27C); otherwise it halves the ProxObstacle markerless size, (10, 10, 50) from GetSizeByType, builds that square at the robot's pose and inserts it - ClearOfCliff (the type byte 2 at 0x0067E3C2) when nothing reports a cliff, Cliff with the robot's X axis as the data's direction (0x0067E342..0x0067E358) when something does.",
+        "The edges are what is left. InterestingEdge (9) and NotInterestingEdge (10) both block a drive in the mask at 0x00C67962, and BehaviorVisitInterestingEdge and BehaviorLookInPlaceMemoryMap are built on them, but what produces them is MapComponent::AddVisionOverheadEdges 0x0067F814 - which takes an OverheadEdgeFrame from the vision system's ground-plane processing, and this stack's vision front end does not produce one (M11-005).",
+        "The detector's four tuning constants are read even though its code is not: kOverheadEdgeCloseMaxLenForTriangle_mm 15 (0x00C8764C), kOverheadEdgeFarMaxLenForLine_mm 15, kOverheadEdgeFarMinLenForClearReport_mm 3 and kOverheadEdgeSegmentNoiseLen_mm 6. The work is OverheadEdgesDetector::Detect (7620 bytes) followed by MapComponent::AddVisionOverheadEdges (3724 bytes), so it is a subsystem rather than a correction."
       ],
       "status": "RECOVERABLE_GAP",
-      "unresolved": "the overhead-edge frames and the explored-region update, instruction by instruction",
+      "unresolved": "the overhead-edge frames the vision system produces and the four MapComponent routines that turn them into edge regions",
       "hardware_required": false,
       "live_path": true,
-      "test": null,
+      "test": "FaceTests.TheRobotWritesTheGroundItHasBeenOverIntoTheMemoryMap",
       "id": "M11-017"
+    },
+    {
+      "subsystem": "M11-vision",
+      "title": "The dark mask and the quad acceptance test are the engine's",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/QuadDetector.cs",
+      "effect": null,
+      "provenance": "ExtractComponentsViaCharacteristicScale_binomial, BinomialFilter, IsQuadrilateralReasonable and the parameters they are given, read",
+      "authority": "ExtractComponentsViaCharacteristicScale_binomial 0x00890448, ImageProcessing::BinomialFilter 0x008A2344, IsQuadrilateralReasonable 0x00892B18, ComputeQuadrilateralsFromConnectedComponents 0x00892D70, MarkerDetector::Parameters::Initialize 0x008752F8 and the call in DetectFiducialMarkers at 0x00898C18, read",
+      "evidence": [
+        "The dark test is a filtered value and a Q16 multiplier, not a fraction of a box mean. ExtractComponentsViaCharacteristicScale_binomial 0x00890448 runs one pass per pyramid level - DownsampleByTwo, BinomialFilter, |filtered - image| as the response (Matrix::Elementwise::ApplyOperation<SumOfAbsDiff> at 0x008907F4), UpsampleByPowerOfTwoBilinear back to full size - and its \"ecvcsB_scale_select\" loop at 0x00890B14 keeps the filtered value wherever the response beats the best so far. Its \"ecvcsB_binarize\" loop at 0x00890BB6 then marks a pixel dark when (scale * multiplier) >> 16 > pixel.",
+        "The two numbers come from the parameters DetectFiducialMarkers hands it at 0x00898C18: the word at +4 is the number of pyramid levels and Initialize sets it to 1 (0x0087530E), and the word at +0xC is the threshold multiplier, 0xCCCC (0x00875314), which is 0.79998779 in Q16. This stack had a three-level box pyramid and a local guess of 0.75.",
+        "BinomialFilter 0x008A2344 (coretech vision/robot/src/filtering.cpp) is the separable five-tap [1 4 6 4 1] with a >> 4 after each pass (the interior at 0x008A2490..0x008A24A6), and at the borders the off-image taps take the edge pixel: the first column's weights fold into 11, 4, 1 (0x008A243C) and the second's into 5, 6, 4, 1 (0x008A2458).",
+        "IsQuadrilateralReasonable 0x00892B18 is four tests in order: the cross product of the first three corners must reach quads_minQuadArea in absolute value (0x00892B5C), the cross products the diagonals make must agree in sign (0x00892C68, 0x00892CCA), one diagonal's two triangles must satisfy max << 8 < threshold * min (0x00892CFC..0x00892D22), and every corner must be at least the margin from each edge (0x00892D3A). ComputeQuadrilateralsFromConnectedComponents passes them from the parameters' +0x30, +0x34 and +0x38: 25, 512 - which is 2.0 in 8.8, not the maximum number of quads this stack had recorded - and 2.",
+        "The side-length floor this stack applied instead (six pixels, and a tenth of the longest side) is not in the engine's test and is gone.",
+        "The stricter mask moves the smallest marker the front end will take. Rendered squares are found down to twenty pixels a side and lost at sixteen, where the dark run falls under component_minimumNumPixels (100, the parameters' +0x4C); the looser local mask had been scraping past that floor. One navigation test had a cube at 400 mm, far enough that its marker is under the floor, and now stands it at 300."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
+      "hardware_required": false,
+      "live_path": true,
+      "test": "VisionTests.TheDarkMaskIsABinomialFilterAndAQ16Threshold",
+      "id": "M11-018"
     },
     {
       "id": "M12-001",

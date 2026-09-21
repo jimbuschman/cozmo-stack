@@ -6,34 +6,53 @@ Counts come from `re-analysis/fidelity_manifest.json`; the manifest and the comm
 
 | status | records |
 | --- | ---: |
-| EXACT_SOURCE | 105 |
-| EQUIVALENT_IMPLEMENTATION | 12 |
-| RECOVERABLE_GAP | 49 |
-| IMPLEMENTATION_GAP | 9 |
-| COMPATIBILITY_POLICY | 15 |
+| EXACT_SOURCE | 161 |
+| EQUIVALENT_IMPLEMENTATION | 14 |
+| RECOVERABLE_GAP | 2 |
+| IMPLEMENTATION_GAP | 0 |
+| COMPATIBILITY_POLICY | 19 |
 | HARDWARE_ONLY | 3 |
 | BLOCKED_EXTERNAL | 8 |
-| **total** | **201** |
+| **total** | **207** |
 
-Live-path work outstanding: **49 RECOVERABLE_GAP + 8 IMPLEMENTATION_GAP = 57**, down from 77 when the
-repository-wide pass began.
+Live-path work outstanding: **2 RECOVERABLE_GAP + 0 IMPLEMENTATION_GAP = 2**, down from 77 when
+the repository-wide pass began and from 57 when these counts were last written. No
+IMPLEMENTATION_GAP record is left anywhere in the manifest, on or off the live path.
 
 | subsystem | open |
 | --- | ---: |
-| M15 freeplay | 9 |
-| M3 device | 7 |
-| M5 animation | 6 |
-| M7 behaviour | 6 |
-| M8 framework | 6 |
-| M14 faces | 5 |
-| M10 derived state | 4 |
-| M11 vision | 4 |
-| M4 control | 4 |
-| M13 navigation | 3 |
-| M12 manipulation | 2 |
-| M6 Wwise bank | 1 |
+| M11-vision | 2 |
 
-M1, M2 and M9 hold none.
+Every other subsystem holds none.
+
+## 2026-09-21: the last of the live-path gaps
+
+* **M15-008** the needs-action hook belongs to the behaviour, not the activity.
+  `IBehavior::NeedActionCompleted` 0x005BE40C falls back to the behaviour's own `needsActionID` and
+  sixteen behaviours call it; an activity's is read into `IActivity+0x1C` and never looked at again, so
+  reporting it when the activity ended was something the engine never does.
+* **M15-006** `IActivity::OnDeselected` hands a pending sparks reward to the app on the way out, and
+  `GetDesiredActiveBehaviorInternal` decides twice: an activity that chooses no behaviour is dropped and
+  barred from the re-pick, and one that chooses a behaviour it is not already running is dropped too when
+  its strategy wants to end.
+* **M10-007** what the engine does after unexpected movement: the robot goes back to where it was when the
+  wheels and the gyro started disagreeing, keeping the heading it drifted to, and a collision obstacle is
+  left on the side the wheel averages point to.
+* **M2-007** (new) `absLocalizationUpdate`'s first word is a timestamp and its last is a heading in
+  radians, not two unknown integers - which also means pycozmo's `0x80000000` there is -0.0.
+* **M14-007** the memory map: the eleven content types, the family mapping, the collision mask and the ray
+  query the face behaviour makes before driving in, with the polygons kept rather than the engine's quad
+  tree. A blocked robot backs off 15 mm instead of driving 40.
+* **M6-003** the stereo ADPCM block is two mono blocks side by side; eight Robot_SFX events that were
+  silent now make sound.
+* **M11-018** (new) the dark mask is a binomial filter and a Q16 threshold of 0xCCCC, not a box pyramid and
+  a guessed 0.75, and the quad acceptance test is the engine's four rules with its own constants.
+* **M9-021** an event with several Play actions plays all of them, which was the last IMPLEMENTATION_GAP
+  anywhere.
+
+What is left is the vision front end: **M11-005**, the corner extraction by line fits (the engine smooths
+the boundary's tangent, clusters it into four with `cv::kmeans` and fits a line to each), and **M11-017**,
+the overhead edges the map gets from the vision system's ground-plane processing.
 
 ## The transmitted-unknowns sweep
 

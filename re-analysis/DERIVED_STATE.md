@@ -187,10 +187,15 @@ Per state, with `l`, `r` the wheel speeds and `gz` the gyro z:
 * count > 10 → the side from the averages (1e-5 threshold): left forward ≠ right forward → `Right` if the left
   wheel is the forward one, else `Left`; both forward → `Front`; else `Back`. The engine then rewinds its pose to
   the start timestamp and adds a collision obstacle 22.1 / 27.1 / 55.9 mm beyond the robot's half-size on that
-  side (0x0063E6C0..0x0063E83A) — **DEFERRED**, no world model here — and broadcasts `UnexpectedMovement`
-  (timestamp, type, side). `TURNED_IN_SAME_DIRECTION` is never produced by this function.
+  side (0x0063E6C0..0x0063E83A) and broadcasts `UnexpectedMovement` (timestamp, type, side).
+  `TURNED_IN_SAME_DIRECTION` is never produced by this function.
 
-Ported as `UnexpectedMovementDetector`; `CozmoSensors.UnexpectedMovementDetected` is the broadcast.
+Ported as `UnexpectedMovementDetector`; `CozmoSensors.UnexpectedMovementDetected` is the broadcast. The rest
+of it is `UnexpectedMovementResponse` (2026-09-21, M10-007): the rewound pose - the historical translation
+with the heading the robot ended up with - and the collision obstacle, which is the markerless
+`CollisionObstacle` (20 x 54.2 x 67.7 mm) standing on the ground at 22.1 mm ahead, 55.9 mm behind or 27.1 mm
+to a side of the robot's own footprint, plus its own 20 mm and 5 mm of clearance. It goes into `BlockWorld`
+and, as in the engine, never into the memory map.
 
 ## 5. What is not native, and is labelled
 

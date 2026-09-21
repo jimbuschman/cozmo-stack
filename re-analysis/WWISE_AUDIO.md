@@ -104,7 +104,7 @@ Of the 2214 media files:
 | --- | --- | --- |
 | Wwise Vorbis (format tag 0xFFFF) | 2019 | **decoded** |
 | IMA ADPCM (format tag 2), mono | 220 | decoded |
-| IMA ADPCM (format tag 2), stereo | 7 | **not decoded** |
+| IMA ADPCM (format tag 2), stereo | 7 | decoded (2026-09-21) |
 
 The Vorbis count is 2019 rather than the 1987 in `AudioAssets.zip` because 32 more are embedded in the
 banks themselves.
@@ -120,11 +120,16 @@ The decoding is self-verifying. IMA is a feedback loop: a wrong nibble order, st
 makes the predictor run away and pin to full scale within a few dozen samples. All 220 mono files decode
 with peaks just under full scale and **zero** clipped samples.
 
-The seven stereo files are refused. Both candidate stereo block layouts fail on the same evidence: the byte
-that should hold each channel's starting step index falls outside the table's 0..88 range, and the output
-pins to full scale for roughly a tenth of its samples. Whatever Wwise does for stereo here, it is not either
-arrangement of IMA. All seven are 48 kHz music, and the robot's speaker is mono, so this is recorded rather
-than pursued.
+The seven stereo files use a 72-byte block, and it is two of those 36-byte mono blocks side by side: the
+left channel's header and nibbles, then the right channel's. The header says so before the bytes do - 54000
+bytes a second at 48000 Hz over a 72-byte block is 750 blocks a second, so 64 samples per channel in each,
+exactly what one half holds. Read that way all 226 per-channel headers across the seven files carry a step
+index inside the table, and the decode stays off the rails: five files never reach full scale and the other
+two touch it 2 and 14 times in 14464 samples. Read as two four-byte headers followed by one run of nibbles -
+the arrangement an earlier pass tried - between 50 and 67 of every 226 step indices are out of range.
+
+Eight Robot_SFX events reach those files (the effort grunts, the spark launch and the four scan sounds) and
+were silent until this was settled (M6-003).
 
 ### Wwise Vorbis
 
@@ -191,8 +196,9 @@ per codebook set (uid)
 
 failures grouped by reason
      46  header: not a RIFF file
-      7  adpcm: ADPCM with 2 channels is not decoded: the stereo block layout is not established
 ```
+
+(that listing predates 2026-09-21; the seven stereo ADPCM failures are gone)
 
 All five codebook sets decode with no failures, so no family is being skipped to flatter the percentage.
 Decoded sample rates are 48000, 44100, 32000, 24000 and 36000 Hz, mono and stereo, and every decoded file

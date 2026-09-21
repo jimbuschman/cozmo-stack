@@ -4,8 +4,10 @@ Status, as of the 2026-09-20 fidelity pass and its re-audit, in the four terms t
 rather than one word:
 
 * **source investigation exhausted** — nothing on M9's live execution path is a RECOVERABLE_GAP;
-* **implementation fidelity complete** — nothing on it is an IMPLEMENTATION_GAP either. The one M9
-  record that is, M9-021, is off the live path: each tempo event holds exactly one Play action;
+* **implementation fidelity complete** — nothing anywhere in M9 is an IMPLEMENTATION_GAP. M9-021, the
+  last one, was closed on 2026-09-21: an event with several Play actions now resolves and renders all of
+  them as layers on one timeline (the nine of `Play__Codelab__Music_Tiny_Orchestra_Init`), where it used
+  to take the first. Each singing tempo event holds exactly one, so the singing path is unchanged;
 * **six records blocked externally** — every one of them inside the Wwise runtime, which does not ship
   in this package;
 * **hardware validation pending** — M9-023, a recording of the stock app singing. The robot run is item

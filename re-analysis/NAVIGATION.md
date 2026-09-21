@@ -49,6 +49,33 @@ side `ManipRig.cs`. Read `MANIPULATION.md` first: everything here sits on the M1
 | `MountChargerBehavior` (DockingTestSimple) | dev config | `MountChargerAction` on a located charger |
 | `ReactToFrustrationBehavior.Major` (ReactToFrustrationMajor) | 0x00605904.., config | the random `DriveToPoseAction` in [150, 400] mm at ±[80°, 180°] |
 
+## 2a. The memory map (2026-09-21)
+
+`Vision/MemoryMap.cs` is the engine's `MemoryMap`, the thing `MapComponent::GetCurrentMemoryMapHelper`
+0x0067EA5C hands out: what is known about the ground around the robot, as regions with a content type.
+
+* The eleven `MemoryMapTypes::EContentType` values in the engine's order (its own name table at 0x00BFFAC8).
+* `ObjectFamilyToMemoryMapContentType` 0x0067F4C0: cubes and custom objects give `ObstacleObservable` when
+  added and `ClearOfObstacle` when removed, the charger gives `ObstacleCharger` / `ObstacleChargerRemoved`,
+  and a **markerless object is refused** - which is why the collision obstacle an unexpected movement leaves
+  in `BlockWorld` never reaches the map.
+* `BlockWorld::AddMarkerlessObject` 0x00622380 inserts `Cliff` (8) for a `CliffDetection` object and
+  `ObstacleProx` (6) for a `ProxObstacle` one, and nothing for a `CollisionObstacle`.
+* `MapComponent::UpdateRobotPose` 0x0067E224: once the robot has moved 8 mm or turned 20 degrees it writes
+  its own 10 x 10 footprint - the `ProxObstacle` size halved - as `ClearOfCliff`, or as `Cliff` when
+  something is reporting one.
+* `HasCollisionRayWithTypes` 0x0068176E and the eleven-entry mask at 0x00C67962: everything blocks except
+  Unknown, ClearOfObstacle, ClearOfCliff and ObstacleChargerRemoved.
+
+The engine keeps its regions in a quad tree (`QuadTree` 0x00684C08) subdivided to `GetContentPrecisionMM`;
+this keeps the polygons, which answers the same ray exactly rather than to the tree's precision. The one
+thing missing is the content vision contributes - the overhead edges that become `InterestingEdge` and
+`NotInterestingEdge` (M11-017).
+
+`BehaviorInteractWithFaces` is the first caller: `CanDriveIdealDistanceForward` 0x005C2420 asks whether the
+40 mm ahead are clear, and `TransitionToDrivingForward` drives 40 mm when they are and -15 mm when they are
+not, both at 40 mm/s.
+
 ## 3. What is not native, and is labelled
 
 * The planner's heuristic, expansion bound, padding values and soft penalty. **Corrected 2026-09-20:** a

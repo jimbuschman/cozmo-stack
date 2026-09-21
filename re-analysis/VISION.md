@@ -18,7 +18,7 @@ ASSET (OBB file), INFERRED (a reading not confirmed in code), LOCAL / LOCAL_POLI
 | marker codes `MarkerType` (0..39) | `Vision/MarkerLibrary.cs` | NATIVE: name table indexed by `Marker::GetNameForCode` 0x0087E0D4 (GOT 0x1038220) |
 | the nearest-neighbour library: 598 probe images × 1024, labels, label→code, corner reorder, orientation, probe geometry | `re-analysis/tools/extract_marker_library.py` → `Vision/Data/marker_nn_library.bin` (git-ignored; **not in the repository**, see §2) | NATIVE: `VisionMarker::GetNearestNeighborLibrary` 0x0089ED1C and the tables it passes (addresses in the script) |
 | decoder: probe sampling, min-max normalisation, L1 nearest neighbour, ambiguity test, label tables | `MarkerDecoder` | NATIVE algorithm (§2) |
-| quad front end | `QuadDetector` | engine's pipeline structure and parameters NATIVE (`MarkerDetector::Parameters::Initialize` 0x008752F8); pixel algorithms LOCAL (§3) |
+| quad front end | `QuadDetector` | pipeline, parameters, dark mask and quad acceptance NATIVE (`Parameters::Initialize` 0x008752F8, `ExtractComponentsViaCharacteristicScale_binomial` 0x00890448, `BinomialFilter` 0x008A2344, `IsQuadrilateralReasonable` 0x00892B18); corner extraction and refinement LOCAL (§3, M11-005) |
 | camera calibration struct, NV read | `CameraCalibration`, `NvCalibrationReader` | UNITY struct, NATIVE tag 0x80000001; request framing INFERRED |
 | camera pose on the robot | `HeadGeometry` | NATIVE: `Robot::Robot` neck (−13, 0, 49), head cam (17.52, 0, 17.52), `_kDefaultHeadCamRotation` at 0xC4A854, `GetCameraPose` |
 | projection and distortion | `CameraModel` | OpenCV model the engine's `Vision::Camera` uses; numerics LOCAL |
@@ -77,17 +77,28 @@ dark/bright gate.
 The engine's `DetectFiducialMarkers` runs `ExtractComponentsViaCharacteristicScale_binomial →
 InvalidateSmallOrLargeComponents → InvalidateSolidOrSparseComponents → InvalidateFilledCenterComponents_hollowRows →
 ComputeQuadrilateralsFromConnectedComponents → (corner refinement) → ComputeHomographyFromQuad` (profiler labels
-in the binary). Its parameters (`MarkerDetector::Parameters::Initialize` 0x008752F8): 3 pyramid levels ("Only 3
-pyramid levels"), component pixel bounds 100 and 39000, 32000 segments, 512 quads, 500 markers, fill ratio
-bounds 0.03 and 0.8, rounded-corner fraction 0.15, side-length fractions 0.1, hollow-row fill 0.97, 25 refinement
-iterations, corner change bounds 0.005 and 5.0, image-edge distance 2.
+in the binary). Its parameters (`MarkerDetector::Parameters::Initialize` 0x008752F8), re-read on 2026-09-21
+against the call sites that consume them: **1** pyramid level (+4), threshold multiplier **0xCCCC** in Q16
+(+0xC), component pixel bounds 100 and 39000, 32000 segments, minimum quad area 25 (+0x30), quad symmetry
+threshold 512 in 8.8 - two - (+0x34), image-edge distance 2 (+0x38), 500 markers, fill ratio bounds 0.03 and
+0.8, rounded-corner fraction 0.15, side-length fractions 0.1, hollow-row fill 0.97, 25 refinement iterations,
+corner change bounds 0.005 and 5.0. (The 512 had been recorded as a maximum number of quads, and the dark
+multiplier as a local 0.75.)
 
-`QuadDetector` follows that structure with those numbers. The pixel algorithms are LOCAL re-implementations,
-not transcriptions of Anki's fixed-point embedded code: a 3-level box pyramid gives each pixel a local mean at
-its characteristic scale and marks it dark below 0.75 of that mean (the multiplier is ours); 8-connected
-components; corners from the boundary's convex hull (farthest pair, then farthest from that diagonal on each
-side); each side refined to the sub-pixel dark-to-light edge by a line fit and intersected. On rendered markers
-the corners land within 1 px (test) and PnP reprojection is 0.1–0.4 px (§7).
+`QuadDetector` follows that structure with those numbers, and two of its stages are now the engine's rather
+than local (M11-018): the dark mask is `BinomialFilter` - the separable five-tap [1 4 6 4 1] with `>> 4` and
+the edge pixel standing in at the borders - followed by `(filtered * 0xCCCC) >> 16 > pixel`, and the quad
+acceptance test is `IsQuadrilateralReasonable`'s four rules (minimum area, convexity, one diagonal's
+triangles within a factor of two, every corner two pixels clear of the image edge).
+
+What is still local is the corner extraction and the refinement (M11-005). The engine traces the component's
+exterior boundary and hands it to `ExtractLineFitsPeaks`, which smooths the boundary's tangent with a Gaussian
+of sigma = length / 64, clusters the smoothed directions into four with `cv::kmeans`, fits a line to each with
+`cv::solve` and intersects them; this stack takes the boundary's extreme points and refines each side to the
+sub-pixel dark-to-light edge by its own line fit. On rendered markers the corners land within 1 px (test) and
+PnP reprojection is 0.1-0.4 px (§7). The engine's own `component_minimumNumPixels` of 100 puts a floor
+under how small a marker can be: rendered squares are found down to twenty pixels a side and lost at
+sixteen, which is roughly a cube at 350 mm in this camera.
 
 ## 4. Camera and cube geometry — NATIVE
 

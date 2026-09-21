@@ -117,7 +117,7 @@ Deliberate choices, labelled in the code, kept:
 * Animation: a late tick fires every missed keyframe in order; the last face is held after the clip's last
   face keyframe; `Finished` sends one zero `DriveWheels`; an oversize face payload is dropped rather than sent
   in parts; the chosen-alternative fallback in D4.
-* Wwise: nearest-sample resampling and channel averaging; stereo ADPCM refused.
+* Wwise: nearest-sample resampling and channel averaging; stereo ADPCM refused. (Both corrected since: M6-004 and M6-003.)
 * Behaviour: caller > reaction > idle arbitration; autonomy off by default; a 5 s per-reaction cooldown
   (**the engine has no such cooldown for cliff, pickup or charger**; its per-trigger cooldowns exist only
   where the shipped map gives one, e.g. 60 s for minor frustration — the label in `BehaviorArbiter` is
@@ -269,7 +269,7 @@ Grouped by layer. Items changed by the sweep are marked ✱; items added or chan
 | parent offsets per type | CORROBORATED | scanned from assets, agreement counts recorded |
 | all Sounds under a Play target are alternatives; sorted child order | INFERRED | container playlists not parsed |
 | Vorbis rebuild, external codebooks, granule computation | CORROBORATED | ww2ogg port; 2019 of 2019 decode |
-| IMA ADPCM mono; stereo refused | CORROBORATED / LOCAL_POLICY | self-verifying decode |
+| IMA ADPCM mono and stereo | CORROBORATED | self-verifying decode; the stereo block is two mono blocks (§20) |
 | resampling and mix-down | LOCAL_POLICY | |
 | FNV-1 name hash | CORROBORATED | six bank ids |
 
@@ -564,9 +564,10 @@ ObstacleDetected and had been always runnable, which let it hijack every scoring
 and the activity ends only through "wants to end, and behavior finished", a spark, a put-down or the requested
 path (+0x90); the refill happens in the app's Feeding activity, outside freeplay.
 
-**Labelled:** desired-from-objects ordering, the `needsActionID` hook, the null-pick switch, the obstacle
-flag's source (INFERRED / LOCAL); `boredomMultiplier`, feature gates, the pyramid strategy's random factor,
-decay modifiers, damaged parts, persistence (DEFERRED).
+**Labelled:** the obstacle flag's source (INFERRED / LOCAL). Everything else in this list - the
+desired-from-objects ordering, the `needsActionID` hook, the null-pick switch, `boredomMultiplier`, feature
+gates, the pyramid strategy's randomness, decay modifiers, damaged parts and persistence - was read and
+settled in the passes that followed (§20).
 
 **Tests:** 630 after M15.
 
@@ -795,3 +796,42 @@ own text, changed four.
 recorded once. `--validate-music` also stopped calling `Play__Music__Play` a failure: with no switch set
 it selects the switch tree's key-0 path, a one-second segment holding nothing, which is the container
 answering correctly.
+
+## 20. The last of the live-path gaps, 2026-09-21
+
+The manifest's live path came down to two records, both in the vision front end. What was settled on the way:
+
+* **The needs-action hook is the behaviour's.** `IBehavior::NeedActionCompleted` 0x005BE40C uses the running
+  behaviour's own `needsActionID` when the caller names none, and sixteen behaviours call it - ten reporting
+  their configured action, six naming one outright (`PickupCube`, `StackCube`, the three GuardDog results,
+  `PlacedOnSide`, `BoredOnSide`, the dizzy tiers). An **activity's** `needsActionID` is read into
+  `IActivity+0x1C` by `ReadConfig` and nothing in the build ever loads that word again, so the three shipped
+  activity-level ids are dead data and reporting one when the activity ended - which this stack did - is
+  something the engine never does (M15-008).
+* **An activity is decided twice.** `ActivityFreeplay::GetDesiredActiveBehaviorInternal` tests the forced and
+  requested activities, the spark, a missing activity and then `WantsToEnd` before asking the activity for a
+  behaviour - and then decides again on the answer: a null pick ends the activity and bars it from the
+  re-pick, and a pick that is not the behaviour already running ends it when the strategy wants to end,
+  unless a sparks reward is still to be communicated. `IActivity::OnDeselected` hands that reward to the app
+  on the way out, which is also where `BehaviorEarnedSparks` does it - on stop, not on start (M15-006).
+* **Unexpected movement has a second half.** The robot goes back to where the state history says it was when
+  the wheels and the gyro started disagreeing, keeping the heading it drifted to, and a collision obstacle -
+  the markerless `CollisionObstacle`, 20 x 54.2 x 67.7 mm - is left 22.1 mm ahead, 55.9 mm behind or 27.1 mm
+  to a side, past its own depth and 5 mm of clearance (M10-007).
+* **`absLocalizationUpdate` was two-thirds guessed.** Its first word is the vision-only state's timestamp and
+  its last is the pose's heading in radians; pycozmo had both as unknown integers, and its `0x80000000` in
+  the last word is -0.0 (M2-007, a newly found gap).
+* **The memory map is in.** The eleven content types, the family mapping, the cliff and prox insertions, the
+  robot's own passage and the ray query the face behaviour makes before driving in - which drives -15 mm
+  instead of 40 when the way is not clear (M14-007). Its vision-derived edges are M11-017.
+* **Stereo ADPCM.** The 72-byte block is two 36-byte mono blocks side by side; the arithmetic says so before
+  the bytes do, and eight Robot_SFX events stop being silent (M6-003).
+* **The dark mask was a guess.** The engine binomial-filters the image and marks a pixel dark when
+  `(filtered * 0xCCCC) >> 16 > pixel`; this stack had a three-level box pyramid and 0.75. The quad acceptance
+  test is now the engine's four rules too, and the 512 recorded as "maximum quads" turned out to be the quad
+  symmetry threshold, 2.0 in 8.8 (M11-018).
+* **The last IMPLEMENTATION_GAP anywhere.** An event with several Play actions renders all of them (M9-021).
+
+What remains, both read far enough to say exactly what is missing: `ExtractLineFitsPeaks` and the boundary
+trace behind the corner extraction (M11-005), and the overhead edges the map gets from the vision system's
+ground-plane processing (M11-017).

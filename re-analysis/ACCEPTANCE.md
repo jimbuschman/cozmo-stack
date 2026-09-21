@@ -105,7 +105,7 @@ the 28 Cozmo-produced byte sequences it was verified against in M3.
 | --- | --- | --- | --- |
 | Event resolution through the Wwise banks | pass | n/a | 615 of the 705 events that should play resolve to media; offline, whole-library |
 | Wwise Vorbis decoding | pass — 2019 of 2019 rebuilt and decoded | n/a | `wwise --validate`, whole library, all five codebook sets, zero failures |
-| ADPCM decoding | pass — 220 of 227 | n/a | same run; the seven refused are stereo |
+| ADPCM decoding | pass — 227 of 227 | n/a | same run; the seven stereo files decode as of 2026-09-21 (M6-003) |
 | Cozmo's own sounds in an animation | pass | **pass** — the original shipped sound played automatically, with no manual WAV mapping | operator report, `anim ... --name anim_bored_01 --wwise <obb dir>` |
 
 ### The acceptance run

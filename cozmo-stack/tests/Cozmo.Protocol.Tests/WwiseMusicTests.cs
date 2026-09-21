@@ -167,6 +167,33 @@ public class WwiseMusicTests
     }
 
     /// <summary>
+    /// An event can fire more than one Play action, and all of them play. The nine layers of
+    /// <c>Play__Codelab__Music_Tiny_Orchestra_Init</c> are nine Play actions on one event; the resolver
+    /// used to take the first and drop the other eight.
+    /// </summary>
+    [Fact]
+    public void AnEventWithSeveralPlayActionsResolvesAllOfThem()
+    {
+        if (Library.Value is not { } lib) return;
+        var eventId = lib.IdOf("Play__Codelab__Music_Tiny_Orchestra_Init");
+        if (eventId is null) return;
+        var plan = lib.ResolveMusic(eventId.Value, new Dictionary<uint, uint>());
+        Assert.Equal(9, plan.Targets.Count);
+        Assert.Equal(8, plan.AdditionalPlays.Count);
+        Assert.Equal(plan.Targets[0], plan.TargetId);
+        Assert.All(plan.AdditionalPlays, p => Assert.Contains(p.TargetId, plan.Targets));
+        // every layer reaches segments of its own
+        Assert.All(plan.AdditionalPlays, p => Assert.NotEmpty(p.Segments));
+
+        // and a single-Play event is unchanged
+        var singing = lib.IdOf("Play__Robot_VO__Cozmo_Singing_100bpm");
+        Assert.NotNull(singing);
+        var one = lib.ResolveMusic(singing!.Value, new Dictionary<uint, uint>());
+        Assert.Single(one.Targets);
+        Assert.Empty(one.AdditionalPlays);
+    }
+
+    /// <summary>
     /// Every one of the 39 shipped Singing behaviours resolves: its audioSwitchGroup names a container, its
     /// audioSwitch is a key in that container's decision tree (not the key-0 fallback), the leaf is a
     /// playlist of exactly one segment, and that segment holds exactly one clip, which is MIDI and exactly

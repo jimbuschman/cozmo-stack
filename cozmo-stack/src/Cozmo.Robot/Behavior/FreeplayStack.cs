@@ -103,7 +103,13 @@ public sealed class FreeplayStack : IDisposable
     {
         // the object content of the memory map follows the world model, as MapComponent's
         // AddObservableObject / RemoveObservableObject keep it following BlockWorld
-        if (Context.Map is { } map && vision?.World is { } world) map.SyncFromWorld(world, robot.State.Latest?.Timestamp ?? 0);
+        if (Context.Map is { } map)
+        {
+            if (vision?.World is { } world) map.SyncFromWorld(world, robot.State.Latest?.Timestamp ?? 0);
+            // MapComponent::UpdateRobotPose: the ground the robot has been over, once it has moved far enough
+            if (m?.RobotPose() is { } here)
+                map.UpdateRobotPose(here, robot.Sensors.CliffDetectedNow, robot.State.Latest?.Timestamp ?? 0);
+        }
         Freeplay.RefreshInputs(robot, vision, m, nowSec);
         return Freeplay.Tick(nowSec, nowMs);
     }

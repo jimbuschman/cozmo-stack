@@ -67,6 +67,37 @@ public class FaceTests
         Assert.Equal(40f, InteractWithFacesBehavior.DriveSpeedMmps);
     }
 
+    /// <summary>
+    /// <c>MapComponent::UpdateRobotPose</c> 0x0067E224: the robot lays its own footprint into the map as
+    /// ClearOfCliff - the ProxObstacle size halved, so a 10 by 10 square - but only once it has moved 8 mm
+    /// or turned 20 degrees from where it last did (the <c>IsSameAs</c> at 0x0067E27C), and as Cliff
+    /// instead when something is reporting one (the type byte 2 against the cliff data at 0x0067E3C2).
+    /// </summary>
+    [Fact]
+    public void TheRobotWritesTheGroundItHasBeenOverIntoTheMemoryMap()
+    {
+        var map = new MemoryMap();
+        Assert.NotNull(map.UpdateRobotPose(new Pose3d(Mat3.Identity, new Vec3(0, 0, 0))));
+        var first = map.Regions[^1];
+        Assert.Equal(MemoryMapContentType.ClearOfCliff, first.Type);
+        Assert.Equal(4, first.Polygon.Length);
+        Assert.Equal(10, first.Polygon.Max(p => p.X) - first.Polygon.Min(p => p.X), 3);
+        Assert.Equal(10, first.Polygon.Max(p => p.Y) - first.Polygon.Min(p => p.Y), 3);
+
+        Assert.Null(map.UpdateRobotPose(new Pose3d(Mat3.Identity, new Vec3(5, 0, 0))));     // not far enough
+        Assert.Single(map.Regions);
+        Assert.NotNull(map.UpdateRobotPose(new Pose3d(Mat3.Identity, new Vec3(9, 0, 0))));  // 9 mm is
+        Assert.Null(map.UpdateRobotPose(new Pose3d(Mat3.AboutZ(0.3), new Vec3(9, 0, 0))));  // 17 degrees is not
+        // turning far enough on the spot writes nothing either: that ground is already recorded, which is
+        // what the engine's quad tree does with a repeat
+        Assert.Null(map.UpdateRobotPose(new Pose3d(Mat3.AboutZ(0.4), new Vec3(9, 0, 0))));
+        Assert.Equal(2, map.Regions.Count);
+
+        var cliff = map.UpdateRobotPose(new Pose3d(Mat3.Identity, new Vec3(60, 0, 0)), cliffDetected: true);
+        Assert.Equal(MemoryMapContentType.Cliff, cliff!.Type);
+        Assert.True(map.HasCollisionRayWithTypes(new Vec2(50, 0), new Vec2(70, 0)));         // and it blocks
+    }
+
     private static bool Runnable(SteppedBehavior b, BehaviorContext ctx) =>
         (bool)typeof(SteppedBehavior).GetMethod("IsRunnableInternal", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(b, new object[] { ctx })!;
 

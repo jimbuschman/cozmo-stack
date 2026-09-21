@@ -7,17 +7,46 @@ namespace Cozmo.Robot.Vision;
 /// </summary>
 public sealed record QuadDetectorParameters
 {
-    /// <summary>"Only 3 pyramid levels" (0x00875 region assert string).</summary>
-    public int PyramidLevels { get; init; } = 3;
+    /// <summary>
+    /// <c>scaleImage_numPyramidLevels</c>, the second argument
+    /// <c>DetectFiducialMarkers</c> hands <c>ExtractComponentsViaCharacteristicScale_binomial</c>: the word
+    /// at the parameters' +4, which <c>Initialize</c> sets to 1 (0x0087530E). One level, so the
+    /// characteristic-scale search has a single scale to choose from and the "local mean" is simply the
+    /// binomial-filtered image. The engine's loop is general - it downsamples by two per level and
+    /// upsamples back with <c>UpsampleByPowerOfTwoBilinear&lt;1..5&gt;</c> - but this build runs it once.
+    /// </summary>
+    public int PyramidLevels { get; init; } = 1;
     /// <summary>Components with fewer pixels than this are dropped (100).</summary>
     public int MinComponentPixels { get; init; } = 100;
     /// <summary>Components with more pixels than this are dropped (39000).</summary>
     public int MaxComponentPixels { get; init; } = 39000;
     /// <summary>Upper bound on 1-D segments per image (32000).</summary>
     public int MaxSegments { get; init; } = 32000;
-    /// <summary>Upper bound on quads per image (512) and on extracted markers (500).</summary>
+    /// <summary>
+    /// LOCAL guard on quads per image. The engine's own bound is the capacity of the list it fills - the
+    /// 10000-entry scratch list <c>ComputeQuadrilateralsFromConnectedComponents</c> allocates at
+    /// 0x00892DA8 - not a parameter; the 512 that used to be recorded here is the quad symmetry
+    /// threshold, <see cref="QuadSymmetryThresholdQ8"/>.
+    /// </summary>
     public int MaxQuads { get; init; } = 512;
+    /// <summary>Upper bound on extracted markers: 500 at the parameters' +0x44 (0x00875386).</summary>
     public int MaxMarkers { get; init; } = 500;
+
+    /// <summary>
+    /// <c>quads_minQuadArea</c>, 25 at the parameters' +0x30 (0x00875338), the second argument of
+    /// <c>ComputeQuadrilateralsFromConnectedComponents</c> and the first test
+    /// <c>IsQuadrilateralReasonable</c> 0x00892B18 makes: the cross product of the first three corners,
+    /// taken as an absolute value, must reach it (0x00892B5C).
+    /// </summary>
+    public int MinQuadArea { get; init; } = 25;
+
+    /// <summary>
+    /// <c>quads_quadSymmetryThreshold</c> in 8.8 fixed point: 512 at the parameters' +0x34, so 2.0. The
+    /// test at 0x00892CFC..0x00892D22 compares the two triangles either diagonal splits the quad into -
+    /// <c>max &lt;&lt; 8</c> against <c>threshold * min</c> - and the quad passes when one of the two
+    /// splits is within that factor.
+    /// </summary>
+    public int QuadSymmetryThresholdQ8 { get; init; } = 512;
     /// <summary>Solid/sparse test: a component's fill of its bounding box must lie in (0.03, 0.8).</summary>
     public double MinFillRatio { get; init; } = 0.03;
     public double MaxFillRatio { get; init; } = 0.8;
@@ -33,8 +62,12 @@ public sealed record QuadDetectorParameters
     public double MaxCornerChange { get; init; } = 5.0;
     /// <summary>Quads closer than this to the image edge are dropped (2 px; NATIVE flag block <c>0x101, 1, 4, 2</c> — the 2).</summary>
     public int MinDistanceFromEdge { get; init; } = 2;
-    /// <summary>LOCAL: a pixel is "dark" when below this fraction of the local mean at its characteristic scale.</summary>
-    public double DarkThresholdMultiplier { get; init; } = 0.75;
+    /// <summary>
+    /// <c>scaleImage_thresholdMultiplier</c> in Q16: 0xCCCC at the parameters' +0xC (0x00875314), which is
+    /// 0.79998779, and the binarize loop uses it as integers - a pixel is dark when
+    /// <c>(scale * 0xCCCC) &gt;&gt; 16 &gt; pixel</c> (0x00890BBE..0x00890BC4). This had been a local guess of 0.75.
+    /// </summary>
+    public int DarkThresholdQ16 { get; init; } = 0xCCCC;
 }
 
 /// <summary>A candidate quadrilateral from the front end, corners in the decoder's order TL, BL, TR, BR.</summary>
@@ -61,11 +94,21 @@ public sealed record DetectedQuad(Vec2[] Corners, int ComponentPixels)
 /// follows that structure with the engine's parameters, but the pixel-level algorithms are LOCAL
 /// re-implementations (the originals are Anki's embedded fixed-point code, not transcribed):
 ///
-/// 1. a 3-level box pyramid gives each pixel a local mean at its characteristic scale (the scale with the
-///    largest deviation); pixels below 0.75 of that mean are "dark";
+/// 1. the image is binomial-filtered and each pixel compared with its own filtered value: dark when
+///    <c>(filtered * 0xCCCC) &gt;&gt; 16 &gt; pixel</c>. That is the engine's
+///    <c>ExtractComponentsViaCharacteristicScale_binomial</c> 0x00890448 with the one pyramid level its
+///    parameters ask for - the level loop filters, measures <c>|filtered - image|</c> and keeps the
+///    filtered value of the level with the largest response ("ecvcsB_scale_select", 0x00890B14), then
+///    binarizes ("ecvcsB_binarize", 0x00890BB6);
 /// 2. 8-connected components of dark pixels, filtered by size, fill ratio and hollowness;
 /// 3. the four corners are the extreme points of the component's boundary (farthest pair, then farthest from
-///    that diagonal on each side), ordered clockwise on screen;
+///    that diagonal on each side), ordered clockwise on screen. The engine does this differently and the
+///    difference is recorded as M11-005: <c>ComputeQuadrilateralsFromConnectedComponents</c> traces the
+///    component's exterior boundary (<c>TraceNextExteriorBoundary</c> 0x008C6B18) and, with the corner
+///    method its parameters select (+0x28 = 1, the switch at 0x00892E24), hands it to
+///    <c>ExtractLineFitsPeaks</c> 0x008A5DB8 - which smooths the boundary's tangent with a Gaussian whose
+///    sigma is the boundary length over 64, clusters the smoothed directions into four with cv::kmeans,
+///    fits a line to each cluster with cv::solve and intersects them;
 /// 4. each side is refined to the sub-pixel edge by fitting a line to gradient maxima, up to 25 times.
 /// </summary>
 public sealed class QuadDetector
@@ -123,51 +166,104 @@ public sealed class QuadDetector
 
     // ------------------------------------------------------------------ characteristic scale
 
+    /// <summary>
+    /// The engine's characteristic-scale binarization, <c>ExtractComponentsViaCharacteristicScale_binomial</c>
+    /// 0x00890448. Per level it downsamples by two, binomial-filters, takes <c>|filtered - image|</c> as the
+    /// response (<c>Matrix::Elementwise::ApplyOperation&lt;SumOfAbsDiff&gt;</c> at 0x008907F4), upsamples both
+    /// back to full size, and keeps the filtered value wherever the response beats the best so far
+    /// (0x00890B14: <c>if (dog &gt; best) { best = dog; scale = filtered; }</c>, with both buffers starting at
+    /// zero). Then a pixel is dark when <c>(scale * thresholdQ16) &gt;&gt; 16 &gt; pixel</c> (0x00890BBE).
+    ///
+    /// With <see cref="QuadDetectorParameters.PyramidLevels"/> at the shipped 1 there is one level and no
+    /// downsampling, so the scale image is the binomial-filtered image everywhere the response is non-zero
+    /// - a flat neighbourhood leaves the scale at zero and the pixel is never dark, which is the engine's
+    /// behaviour and not a special case here.
+    /// </summary>
     private GrayImage CharacteristicScaleMask(GrayImage img)
     {
         int w = img.Width, h = img.Height;
-        var integral = Integral(img);
         var mask = new GrayImage(w, h);
-        // box radii for the pyramid levels: 2, 4, 8 (a 3-level binomial pyramid's support)
-        int[] radii = Enumerable.Range(1, Parameters.PyramidLevels).Select(l => 1 << l).ToArray();
-        for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
+        var scale = new byte[w * h];
+        var best = new byte[w * h];
+
+        for (int level = 0; level < Math.Max(1, Parameters.PyramidLevels); level++)
+        {
+            var atLevel = level == 0 ? img : DownsampleByTwo(img, level);
+            var filtered = BinomialFilter(atLevel);
+            int lw = atLevel.Width, lh = atLevel.Height;
+            for (int y = 0; y < h; y++)
             {
-                int v = img.Pixels[y * w + x];
-                double bestMean = v, bestDev = -1;
-                foreach (var r in radii)
+                int sy = Math.Min(lh - 1, y >> level);
+                for (int x = 0; x < w; x++)
                 {
-                    double mean = BoxMean(integral, w, h, x, y, r);
-                    double dev = Math.Abs(mean - v);
-                    if (dev > bestDev) { bestDev = dev; bestMean = mean; }
+                    int sx = Math.Min(lw - 1, x >> level);
+                    int f = filtered.Pixels[sy * lw + sx];
+                    int response = Math.Abs(f - atLevel.Pixels[sy * lw + sx]);
+                    int i = y * w + x;
+                    if (response > best[i]) { best[i] = (byte)Math.Min(255, response); scale[i] = (byte)f; }
                 }
-                if (v < bestMean * Parameters.DarkThresholdMultiplier) mask.Pixels[y * w + x] = 1;
             }
+        }
+
+        for (int i = 0; i < mask.Pixels.Length; i++)
+            if ((scale[i] * Parameters.DarkThresholdQ16) >> 16 > img.Pixels[i]) mask.Pixels[i] = 1;
         return mask;
     }
 
-    private static long[] Integral(GrayImage img)
+    /// <summary>
+    /// <c>ImageProcessing::BinomialFilter&lt;u8,u8,u8&gt;</c> 0x008A2344 (coretech
+    /// <c>vision/robot/src/filtering.cpp</c>): the separable five-tap binomial [1 4 6 4 1] / 16, run along
+    /// the rows and then down the columns, each pass truncating with <c>&gt;&gt; 4</c>
+    /// (0x008A24A2..0x008A24A6). At the borders the off-image taps take the edge pixel's value, which is
+    /// what the engine's first two columns do by folding their weights onto it: 11, 4, 1 for the first
+    /// column (0x008A243C) and 5, 6, 4, 1 for the second (0x008A2458..0x008A246A).
+    /// </summary>
+    public static GrayImage BinomialFilter(GrayImage src)
     {
-        int w = img.Width + 1, h = img.Height + 1;
-        var s = new long[w * h];
-        for (int y = 1; y < h; y++)
-        {
-            long row = 0;
-            for (int x = 1; x < w; x++)
+        int w = src.Width, h = src.Height;
+        var tmp = new GrayImage(w, h);
+        var dst = new GrayImage(w, h);
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
             {
-                row += img.Pixels[(y - 1) * img.Width + (x - 1)];
-                s[y * w + x] = s[(y - 1) * w + x] + row;
+                int p0 = src.Pixels[y * w + Math.Max(0, x - 2)], p1 = src.Pixels[y * w + Math.Max(0, x - 1)];
+                int p2 = src.Pixels[y * w + x];
+                int p3 = src.Pixels[y * w + Math.Min(w - 1, x + 1)], p4 = src.Pixels[y * w + Math.Min(w - 1, x + 2)];
+                tmp.Pixels[y * w + x] = (byte)((p0 + 4 * p1 + 6 * p2 + 4 * p3 + p4) >> 4);
             }
-        }
-        return s;
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                int p0 = tmp.Pixels[Math.Max(0, y - 2) * w + x], p1 = tmp.Pixels[Math.Max(0, y - 1) * w + x];
+                int p2 = tmp.Pixels[y * w + x];
+                int p3 = tmp.Pixels[Math.Min(h - 1, y + 1) * w + x], p4 = tmp.Pixels[Math.Min(h - 1, y + 2) * w + x];
+                dst.Pixels[y * w + x] = (byte)((p0 + 4 * p1 + 6 * p2 + 4 * p3 + p4) >> 4);
+            }
+        return dst;
     }
 
-    private static double BoxMean(long[] integral, int w, int h, int x, int y, int r)
+    /// <summary>
+    /// <c>ImageProcessing::DownsampleByTwo</c>, applied <paramref name="times"/> times: each pass averages
+    /// two-by-two blocks (the u16 accumulator in the template argument).
+    /// </summary>
+    public static GrayImage DownsampleByTwo(GrayImage src, int times)
     {
-        int x0 = Math.Max(0, x - r), y0 = Math.Max(0, y - r), x1 = Math.Min(w - 1, x + r), y1 = Math.Min(h - 1, y + r);
-        int iw = w + 1;
-        long sum = integral[(y1 + 1) * iw + (x1 + 1)] - integral[y0 * iw + (x1 + 1)] - integral[(y1 + 1) * iw + x0] + integral[y0 * iw + x0];
-        return sum / (double)((x1 - x0 + 1) * (y1 - y0 + 1));
+        var cur = src;
+        for (int t = 0; t < times; t++)
+        {
+            int w = cur.Width / 2, h = cur.Height / 2;
+            if (w < 1 || h < 1) break;
+            var next = new GrayImage(w, h);
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    int a = cur.Pixels[(2 * y) * cur.Width + 2 * x], b = cur.Pixels[(2 * y) * cur.Width + 2 * x + 1];
+                    int c = cur.Pixels[(2 * y + 1) * cur.Width + 2 * x], d = cur.Pixels[(2 * y + 1) * cur.Width + 2 * x + 1];
+                    next.Pixels[y * w + x] = (byte)((a + b + c + d) >> 2);
+                }
+            cur = next;
+        }
+        return cur;
     }
 
     // ------------------------------------------------------------------ connected components
@@ -385,27 +481,60 @@ public sealed class QuadDetector
 
     // ------------------------------------------------------------------ geometry checks
 
-    private bool GeometryOk(Vec2[] c, GrayImage img)
+    /// <summary>
+    /// <c>IsQuadrilateralReasonable(quad, minQuadArea, symmetryThreshold, minDistanceFromEdge, width,
+    /// height, out isClockwise)</c> 0x00892B18, in its order:
+    /// <list type="number">
+    /// <item>the cross product of the first three corners must reach <c>minQuadArea</c> in absolute value
+    /// (0x00892B42..0x00892B5E); its sign is also what the engine reports as the winding and uses to put
+    /// the corners in a canonical order.</item>
+    /// <item>the cross products either diagonal makes with the remaining corners must agree in sign - the
+    /// two comparisons at 0x00892C68 and 0x00892CCA, each rejecting the quad when the signs differ. That
+    /// is convexity.</item>
+    /// <item>the two triangles a diagonal splits the quad into must be within the symmetry threshold:
+    /// <c>max &lt;&lt; 8 &lt; threshold * min</c>, and one of the two splits passing is enough
+    /// (0x00892CFC..0x00892D22).</item>
+    /// <item>every corner must be at least <c>minDistanceFromEdge</c> from each side of the image, the
+    /// loop at 0x00892D3A comparing against the margin and against width/height less the margin and one.</item>
+    /// </list>
+    /// The side-length rules this stack used to apply here - a six-pixel floor and a tenth of the longest
+    /// side - are not in the engine's test and are gone; <c>minQuadArea</c> is what rejects a degenerate
+    /// quad.
+    /// </summary>
+    private bool GeometryOk(Vec2[] c, GrayImage img) => IsQuadrilateralReasonable(c, img.Width, img.Height, Parameters);
+
+    /// <summary>The same test, on corners and an image size, so it can be exercised on its own.</summary>
+    public static bool IsQuadrilateralReasonable(Vec2[] c, int width, int height, QuadDetectorParameters? parameters = null)
     {
+        var Parameters = parameters ?? new QuadDetectorParameters();
+        static double Cross(Vec2 a, Vec2 b, Vec2 o) => (a.X - o.X) * (b.Y - o.Y) - (b.X - o.X) * (a.Y - o.Y);
+
+        if (Math.Abs(Cross(c[1], c[2], c[0])) < Parameters.MinQuadArea) return false;
+
+        // the four triangles, one per corner; convexity is their signs agreeing
+        var areas = new double[4];
+        int sign = 0;
+        for (int i = 0; i < 4; i++)
+        {
+            double z = Cross(c[(i + 1) % 4], c[(i + 3) % 4], c[i]);
+            areas[i] = Math.Abs(z);
+            int sz = Math.Sign(z);
+            if (sz == 0) return false;
+            if (sign == 0) sign = sz; else if (sz != sign) return false;
+        }
+
+        // one diagonal's two triangles within the threshold, in the engine's fixed point
+        bool Symmetric(double a, double b)
+        {
+            double lo = Math.Min(a, b), hi = Math.Max(a, b);
+            return hi * 256 < Parameters.QuadSymmetryThresholdQ8 * lo;
+        }
+        if (!Symmetric(areas[0], areas[2]) && !Symmetric(areas[1], areas[3])) return false;
+
+        int margin = Parameters.MinDistanceFromEdge;
         foreach (var p in c)
-            if (p.X < Parameters.MinDistanceFromEdge || p.Y < Parameters.MinDistanceFromEdge
-                || p.X > img.Width - 1 - Parameters.MinDistanceFromEdge || p.Y > img.Height - 1 - Parameters.MinDistanceFromEdge) return false;
-        double minSide = double.MaxValue, maxSide = 0;
-        for (int i = 0; i < 4; i++)
-        {
-            double s = (c[(i + 1) % 4] - c[i]).Length;
-            minSide = Math.Min(minSide, s); maxSide = Math.Max(maxSide, s);
-        }
-        if (minSide < 6 || minSide < Parameters.MinSideLengthFraction * maxSide) return false;
-        // convex and consistently oriented
-        double sign = 0;
-        for (int i = 0; i < 4; i++)
-        {
-            var a = c[(i + 1) % 4] - c[i]; var b = c[(i + 2) % 4] - c[(i + 1) % 4];
-            double z = a.X * b.Y - a.Y * b.X;
-            if (sign == 0) sign = Math.Sign(z);
-            else if (Math.Sign(z) != sign) return false;
-        }
+            if (p.X < margin || p.Y < margin || p.X > width - 1 - margin || p.Y > height - 1 - margin)
+                return false;
         return true;
     }
 

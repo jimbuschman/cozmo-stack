@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **206 records** over 16 subsystems.
+Manifest of **207 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 159 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 161 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 14 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 2 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 1 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 0 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 19 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -34,7 +34,7 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 10 | 0 | 0 | 0 | 0 | yes | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 9 | 0 | 0 | 0 | 0 | yes | yes |
-| M11-vision — Markers, camera geometry and BlockWorld | 17 | 2 | 0 | 1 | 0 | no | yes |
+| M11-vision — Markers, camera geometry and BlockWorld | 18 | 2 | 0 | 1 | 0 | no | yes |
 | M12-manipulation — Docking, carrying and pre-action poses | 16 | 0 | 0 | 0 | 0 | yes | yes |
 | M13-navigation — Planning, charger and block configurations | 12 | 0 | 0 | 0 | 0 | yes | yes |
 | M14-faces — Face and pet pipeline | 7 | 0 | 0 | 1 | 0 | yes | yes |
@@ -47,38 +47,27 @@ Each of these is a question the original can answer and nobody has asked it yet.
 
 ### M11-vision — Markers, camera geometry and BlockWorld
 
-**M11-005 — Front-end pixel algorithms, the 0.75 dark multiplier and PnP numerics** (live path)
+**M11-005 — Corner extraction by line fits, the refinement and the PnP numerics** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/QuadDetector.cs`
-* effect: markers are found at slightly different places, or not found
-* rests on: local implementations of steps the engine parameterises
-* best authority: MarkerDetector::Parameters::Initialize gives the parameters, which are read; the pixel loops themselves were not transcribed
-* evidence: MarkerDetector::Parameters::Initialize
-* outstanding: the engine own quad extraction and refinement, which is in the binary
+* effect: a marker's corners land in slightly different places, so its pose does too
+* rests on: the binarization, the component rules and the quad acceptance test are now the engine's (M11-018); the corner extraction and refinement are still local
+* best authority: ComputeQuadrilateralsFromConnectedComponents 0x00892D70 and the corner-method switch at 0x00892E24, read; ExtractLineFitsPeaks 0x008A5DB8 and TraceNextExteriorBoundary 0x008C6B18 read to their structure and constants but not transcribed; ExtractLaplacianPeaks 0x008A75C8 not read
+* evidence: The corner method is settled: the parameters' +0x28 is 1 (0x00875338) and the switch at 0x00892E24 sends 1 to ExtractLineFitsPeaks 0x008A5DB8 and 0 to ExtractLaplacianPeaks; a quad is kept only when that returns exactly four corners (0x00892E60). The boundary it works on comes from TraceNextExteriorBoundary 0x008C6B18.; This stack takes the four extreme points of the component's boundary instead, then refines each side to the sub-pixel edge with its own line fit. The engine's ExtractLineFitsPeaks is 6160 bytes of fixed-point code and has not been transcribed.; Its shape is read even though its arithmetic is not. ExtractLineFitsPeaks copies the boundary into an n-by-2 float matrix (0x008A5E96), smooths it with an OpenCV Gaussian whose sigma is the boundary length over 64 (0x3C800000 at 0x008A616C) and whose size is OpenCV's own inverse of that relation, ceil(((sigma - 0.8) / 0.3 + 1) * 2 + 1) forced odd (0x008A5EDE..0x008A5F1A), transposes the kernel and runs cv::filter2D at CV_32F with border type 4 (0x008A60B4); then cv::kmeans splits the boundary into four clusters - the four sides - (0x008A6490), cv::solve fits a line to each (0x008A68E0), and Quadrilateral<float>::ComputeClockwiseCorners orders the four intersections (0x008A6C0E). It also refuses to start unless the four initial corners are already there (the count test at 0x008A5E18).; The refinement parameters are already the engine's - 25 iterations (+0x48), 1.01 step growth (+0x3c), 0.005 minimum change (+0x54), 5.0 maximum (+0x50) - but the loop they drive is this stack's own.; The pose solve from the four corners (the PnP numerics) is likewise local.; Its clustering is deterministic, which decides whether this can be reproduced exactly at all: the cv::kmeans call at 0x008A6490 passes K = 4, criteria {COUNT|EPS, 15, 0.1}, attempts 1 and flags 1 - KMEANS_USE_INITIAL_LABELS - and the labels are seeded just above it by splitting the boundary into four equal arcs by index: [0, n/4) = 0, [n/4, n/2) = 1, [n/2, 3n/4) = 2, [3n/4, n) = 3 (0x008A62D8..0x008A63EE, with n < 4 falling through to the halves). So nothing in it is drawn at random.; The boundary it works on is a staircase contour of the component, not its pixel edge. TraceNextExteriorBoundary 0x008C6B18 takes the component's bounding box, builds four short arrays - the least and greatest y in each column and the least and greatest x in each row, filled from the runs at 0x008C6E68..0x008C6E8E - refuses the component if any column or row in the box is empty (0x008C6F70..0x008C6FC6), and then walks the four sides in turn, emitting a point per column or row and filling the vertical or horizontal gap between neighbours (0x008C6FF0 onwards) - four passes in turn: the columns left to right on the least y (0x008C6FF0), the rows on the greatest x (0x008C70A6), the columns right to left on the greatest y (0x008C7158) and the rows back up on the least x (0x008C7208).; What the Gaussian smooths is the boundary's derivative. The matrix handed to cv::filter2D is 1 by 3 and holds -0.5, 0, +0.5 (0xBF000000, 0, 0x3F000000 written at 0x008A602C..0x008A603E) - the central difference - so the filter2D turns the n-by-2 boundary into (dx, dy) per point. The manual convolution at 0x008A61C4 then smooths that pair with the Gaussian, wrapping round the ends, and normalises it: a unit tangent per boundary point, which is what the four clusters are clusters of.; The line fit is an ordinary least squares through cv::solve with DECOMP_SVD (flags 1 at 0x008A68DE): each cluster builds an A of rows [x, 1] - the 1.0 written at +4 of every row, 0x008A6846 and 0x008A6878 - and a B of the matching y, so the solution is the slope and intercept of that side.; Its output is integer corners. The four line intersections are copied into a Quadrilateral<float>, ordered by ComputeClockwiseCorners 0x008A6C0E, then rounded with a +/- 0.5 and clamped to the short range (0x008A6C12..0x008A6C24) - the list it fills is FixedLengthList<Quadrilateral<short>>. So the sub-pixel work is the separate refinement stage the parameters at +0x48..+0x54 drive, which is where this stack's own line fits sit.
+* outstanding: the index bookkeeping of TraceNextExteriorBoundary's four passes, and how near-vertical clusters are handled in the least-squares fit; everything else in the chain is read - the staircase boundary's shape, the [-0.5, 0, 0.5] derivative, the Gaussian of sigma = n / 64, the four-arc initial labels, the kmeans settings, the [x 1] least squares and the integer rounding of the result
 
-**M11-017 — The memory map's vision-derived content: overhead edges and the explored region** (live path)
+**M11-017 — The memory map's vision-derived content: the overhead edges** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs`
-* effect: the map holds obstacles but no edges and no explored region, so a query that would be blocked by an unexplored edge is answered clear, and the behaviours that look for edges have nothing to look at
-* rests on: the obstacle content is implemented (M14-007); the vision-derived content is not
-* best authority: MapComponent::AddVisionOverheadEdges 0x0067F814, ProcessVisionOverheadEdges 0x0067F7AC, MapComponent::UpdateRobotPose 0x0067E224, MapComponent::FlagGroundPlaneROIInterestingEdgesAsUncertain 0x0067E50C and QuadTreeProcessor::FillBorder 0x00689FAC, none of them read yet
-* evidence: The types are known and in place: InterestingEdge (9) and NotInterestingEdge (10) both block a drive in the mask at 0x00C67962, and BehaviorVisitInterestingEdge and BehaviorLookInPlaceMemoryMap are built on them.; What produces them is not: MapComponent::AddVisionOverheadEdges 0x0067F814 takes an OverheadEdgeFrame from the vision system, which this stack's vision front end does not produce (see M11-005), and MapComponent::UpdateRobotPose 0x0067E224 is what lays down the cleared ground the robot has driven over.
-* outstanding: the overhead-edge frames and the explored-region update, instruction by instruction
+* effect: the map has no InterestingEdge or NotInterestingEdge regions, so a ray that should be blocked by the boundary of what has been explored is answered clear, and the two behaviours built on those edges have nothing to visit
+* rests on: the obstacles (M14-007) and the robot's own passage are implemented; the overhead edges are not
+* best authority: MapComponent::UpdateRobotPose 0x0067E224, read; OverheadEdgesDetector::Detect 0x006ABE34 (7620 bytes), VisionComponent::UpdateOverheadEdges 0x006553FC, MapComponent::ProcessVisionOverheadEdges 0x0067F7AC and AddVisionOverheadEdges 0x0067F814 (3724 bytes), FlagGroundPlaneROIInterestingEdgesAsUncertain 0x0067E50C, FlagQuadAsNotInterestingEdges 0x0067E6B0 and QuadTreeProcessor::FillBorder 0x00689FAC, not read
+* evidence: The robot's own passage is now read and implemented. UpdateRobotPose 0x0067E224 does nothing while the robot is within 8 mm (0x41000000) and 0.349066 rad of where it last wrote itself (Pose3d::IsSameAs at 0x0067E27C); otherwise it halves the ProxObstacle markerless size, (10, 10, 50) from GetSizeByType, builds that square at the robot's pose and inserts it - ClearOfCliff (the type byte 2 at 0x0067E3C2) when nothing reports a cliff, Cliff with the robot's X axis as the data's direction (0x0067E342..0x0067E358) when something does.; The edges are what is left. InterestingEdge (9) and NotInterestingEdge (10) both block a drive in the mask at 0x00C67962, and BehaviorVisitInterestingEdge and BehaviorLookInPlaceMemoryMap are built on them, but what produces them is MapComponent::AddVisionOverheadEdges 0x0067F814 - which takes an OverheadEdgeFrame from the vision system's ground-plane processing, and this stack's vision front end does not produce one (M11-005).; The detector's four tuning constants are read even though its code is not: kOverheadEdgeCloseMaxLenForTriangle_mm 15 (0x00C8764C), kOverheadEdgeFarMaxLenForLine_mm 15, kOverheadEdgeFarMinLenForClearReport_mm 3 and kOverheadEdgeSegmentNoiseLen_mm 6. The work is OverheadEdgesDetector::Detect (7620 bytes) followed by MapComponent::AddVisionOverheadEdges (3724 bytes), so it is a subsystem rather than a correction.
+* outstanding: the overhead-edge frames the vision system produces and the four MapComponent routines that turn them into edge regions
 
 ## Still to build: every IMPLEMENTATION_GAP
 
 Each of these is a question already answered. The original's behaviour is established and this stack knowingly does something else, so the work outstanding is writing it, not reading.
-
-### M9-wwise-music — Wwise music, the MIDI sampler and singing
-
-**M9-021 — A music event with several Play actions renders only the first** (not on the live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMusic.cs`
-* effect: Play__Codelab__Music_Tiny_Orchestra_Init plays one of its nine layers
-* rests on: a reduction of this stack on the music path. Ordinary events no longer reduce this way: WwisePlayback plays every Play target together
-* best authority: the shipped bank lists all nine Play actions, and the ordinary-event walk already shows the shape the music path needs. Singing is unaffected, which is why this is off the live path: each of the three tempo events holds exactly one Play action
-* evidence: Play__Codelab__Music_Tiny_Orchestra_Init: 9 Play actions and 9 of type 0x1901; Play__Robot_VO__Cozmo_Singing_80bpm, _100bpm and _120bpm: one Play action each; nothing in cozmo-stack posts a Codelab music event
-* outstanding: the music resolver has to carry every Play action rather than the first; nothing is left to read
 
 ## What remains after both: blocked externally, or needing hardware
 

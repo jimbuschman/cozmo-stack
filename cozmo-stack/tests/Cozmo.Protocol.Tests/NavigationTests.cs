@@ -390,8 +390,10 @@ public class NavigationTests
         Assert.Equal(new[] { 40f, LiftPresets.CarryMm }, rig.LiftHeights);
         Assert.True(flip.LiftRaised);
         Assert.Equal(PoseState.Unknown, obj.PoseState);
-        // with the check on, a robot away from every flipping pose is refused
-        rig.Cube = CubeAt(400, 100); rig.X = 0; rig.Y = 0; rig.Angle = 0; rig.State(); rig.Frame();
+        // with the check on, a robot away from every flipping pose is refused. The cube is at 300 mm
+        // rather than 400: past about 350 mm its marker covers fewer than the hundred pixels
+        // component_minimumNumPixels asks for, so the engine's own front end would not see it either.
+        rig.Cube = CubeAt(300, 80); rig.X = 0; rig.Y = 0; rig.Angle = 0; rig.State(); rig.Frame();
         var strict = new FlipBlockAction(rig.M, 7);
         Assert.Equal(ActionResult.DidNotReachPreActionPose, strict.RunAsync(default).GetAwaiter().GetResult());
     }

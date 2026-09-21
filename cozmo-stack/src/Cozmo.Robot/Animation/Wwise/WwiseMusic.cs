@@ -21,8 +21,16 @@ public sealed record WwiseMusicSegmentPlan(uint SegmentId, double DurationMs, Ww
 public sealed record WwiseMusicPlan(uint EventId)
 {
     public string? EventName { get; init; }
-    /// <summary>The Play action's target: a music switch, playlist or segment.</summary>
+    /// <summary>The first Play action's target: a music switch, playlist or segment.</summary>
     public uint TargetId { get; init; }
+    /// <summary>Every Play action's target, in bank order. <see cref="TargetId"/> is the first.</summary>
+    public IReadOnlyList<uint> Targets { get; init; } = Array.Empty<uint>();
+    /// <summary>
+    /// The plans for the Play actions after the first. An event can fire several - the nine layers of
+    /// <c>Play__Codelab__Music_Tiny_Orchestra_Init</c> are nine Play actions on one event - and Wwise
+    /// starts them together, so these are layers of the same performance rather than anything sequential.
+    /// </summary>
+    public IReadOnlyList<WwiseMusicPlan> AdditionalPlays { get; init; } = Array.Empty<WwiseMusicPlan>();
     public WwiseObjectType? TargetType { get; init; }
     /// <summary>The music switch container, when the target is one.</summary>
     public WwiseMusicSwitchNode? Switch { get; init; }
@@ -65,14 +73,29 @@ public static class WwiseMusic
     /// <summary>Sequence types of a playlist group, as the bank numbers them.</summary>
     public const int ContinuousSequence = 0, StepSequence = 1, ContinuousRandom = 2, StepRandom = 3;
 
-    /// <summary>Builds the play plan for an event under the given switch values (group id to switch id).</summary>
+    /// <summary>
+    /// Builds the play plan for an event under the given switch values (group id to switch id). An event
+    /// with several Play actions gets a plan for each: the first is this one and the rest are in
+    /// <see cref="WwiseMusicPlan.AdditionalPlays"/>, all starting together.
+    /// </summary>
     public static WwiseMusicPlan Resolve(WwiseSoundLibrary lib, uint eventId, IReadOnlyDictionary<uint, uint> switches)
     {
         var res = lib.Resolve(eventId);
-        var plan = new WwiseMusicPlan(eventId) { EventName = res.Name };
+        var empty = new WwiseMusicPlan(eventId) { EventName = res.Name };
         var play = res.Actions.Where(a => a.ActionType == WwiseBank.PlayAction).Select(a => a.Target).ToList();
-        if (play.Count == 0) return plan with { Problem = res.Problem ?? "the event fires no Play action" };
-        uint target = play[0];
+        if (play.Count == 0) return empty with { Problem = res.Problem ?? "the event fires no Play action" };
+
+        var first = ResolveTarget(lib, eventId, res.Name, play[0], switches);
+        if (play.Count == 1) return first with { Targets = play };
+        var rest = new List<WwiseMusicPlan>();
+        for (int i = 1; i < play.Count; i++) rest.Add(ResolveTarget(lib, eventId, res.Name, play[i], switches));
+        return first with { Targets = play, AdditionalPlays = rest };
+    }
+
+    private static WwiseMusicPlan ResolveTarget(WwiseSoundLibrary lib, uint eventId, string? eventName, uint target,
+                                                IReadOnlyDictionary<uint, uint> switches)
+    {
+        var plan = new WwiseMusicPlan(eventId) { EventName = eventName };
         var node = lib.Node(target);
         plan = plan with { TargetId = target, TargetType = node?.Type };
         if (node is null) return plan with { Problem = $"the Play target {target} is in no loaded bank or is not a hierarchy node" };

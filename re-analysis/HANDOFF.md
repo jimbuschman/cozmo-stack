@@ -15,9 +15,9 @@
 > not. Neither means the behaviour is reproduced: BLOCKED_EXTERNAL and HARDWARE_ONLY records outlive both,
 > and `FIDELITY_GAPS.md` counts them per subsystem for that reason.
 >
-> **M9** and the offline tools answer yes to both. M6 answers no to the first: eight shipped Robot_SFX
-> events are silent because stereo ADPCM is refused (M6-003). M3, M5, M7, M12 and M13 answer no to the
-> second, with nine IMPLEMENTATION_GAP records between them.
+> **M9**, **M6** and the offline tools answer yes to both. Two live-path RECOVERABLE_GAP records are left
+> in the whole manifest, both in the vision front end: the corner extraction by line fits (M11-005) and
+> the memory map's overhead edges (M11-017). No IMPLEMENTATION_GAP record remains anywhere.
 
 | | |
 | --- | --- |
@@ -44,7 +44,7 @@
 | M3 device layer | Frozen. Colour camera frames never exercised on hardware (plan item E). |
 | M4 control layer | Frozen. Cubes: discovery hardware-observed; telemetry acceptance pending (plan item B). `Motion.RequestMotorCalibration` added in M10 (StartMotorCalibration 0x58; honoured-by-robot pending, item I). |
 | M5 animation and expression | Frozen, hardware re-verified 2026-09-19. |
-| M6 Wwise audio | Frozen except where the fidelity pass corrected it: an event's Play target is walked with each container's semantics rather than flattened, a container that chooses now draws, and resampling to the robot rate is band-limited. One live-path gap remains (M6-003, stereo ADPCM: eight Robot_SFX events are silent). |
+| M6 Wwise audio | Frozen except where the fidelity pass corrected it: an event's Play target is walked with each container's semantics rather than flattened, a container that chooses now draws, and resampling to the robot rate is band-limited. **2026-09-21:** the stereo ADPCM block turned out to be two mono blocks side by side, so the eight Robot_SFX events that were silent - the effort grunts, the spark launch and the four scan sounds - now make sound (M6-003). |
 | M7 reactive behaviour and idle | Frozen, hardware re-verified 2026-09-19. **M10 correction:** the pick-up reaction fires on the derived `InAir` state (factory lambda 0x0060DDCE), with the raw flag as a labelled fallback until the classifier runs. Falling → impact never exercised (item C). |
 | M8 behaviour inventory and framework | Complete offline. `BehaviorManager` now runs reactions (`AddReaction`, `CheckReactions`, resume-last). `SteppedBehavior` is the transcription base for the engine's action-chain classes. Inventory regenerated: **67 of 178 implementable** (19 M1–M7, 39 Singing, 9 M10) plus `ReactToCubeMoved` implemented and waiting on localisation. **M10 correction:** `PlayAnimWithFace` needs a face (`TurnTowardsFaceAction` first) and is filed under vision. |
 | M9 Wwise switch-state audio | **Source-complete under the fidelity gate** (2026-09-20): nothing on its live path is a RECOVERABLE_GAP. The pass found and fixed the fault that made every rendered song unlistenable — a sung note was playing a whole 5.8-second recording instead of lasting the note — read the modulators, replaced the local output stage with the robot bus's own EQ and limiter chain, gave the vibrato its cube-shake input, and made an event's containers play as the bank says. Four open items are in the Wwise runtime, which does not ship; one needs a recording of the stock app singing. Hardware pending (items A, A2). See [WWISE_MUSIC.md](WWISE_MUSIC.md) and audit §18 |
@@ -179,10 +179,11 @@ the pre-dock pose, R stack (M12)**, S–X navigation / cube games / charger (M13
 blocked without a detector), **Z freeplay on the robot (M15)**. Commit the acceptance JSON files when run.
 
 Deferred and unchanged: enhanced backpack-light keyframes, pre-rendered `faceAnimations`, group cooldown
-enforcement, lift 0 mm semantics, the seven stereo ADPCM files, the app's soundtrack, Code Lab, the world-model
-side of unexpected movement (pose rewind and collision obstacle), BlockWorld's occluder list and
+enforcement, lift 0 mm semantics, the app's soundtrack, Code Lab, BlockWorld's occluder list and
 `IsAnythingBehind`, AcknowledgeObject's stacked-cube search, face/pet/motion detection (OKAO), the lattice
-planner, the pick-up lift-load and accelerometer checks, KnockOverCubes' flip action.
+planner, the pick-up lift-load and accelerometer checks, KnockOverCubes' flip action. **Done 2026-09-21:**
+the stereo ADPCM files, and the world-model side of unexpected movement (the pose rewind and the collision
+obstacle, M10-007).
 
 ## Open unknowns carried forward
 
@@ -223,9 +224,10 @@ planner, the pick-up lift-load and accelerometer checks, KnockOverCubes' flip ac
 
 **The dedicated hardware / integration validation phase**: items A–Z of `HARDWARE_TEST_PLAN.md` in order, with the
 acceptance JSON files committed. Architectural work that remains before or beside it, in the order the
-inventory suggests: the memory map and possible-object exploration (`VisitInterestingEdge`,
-`LookInPlaceMemoryMap`, `ExploreVisitPossibleMarker`, `ExploreBumpObject`: the engine's `MemoryMap` quad tree
-and `INavMap` were not transcribed), motion and laser detection (PounceOnMotion, TrackLaser: OKAO-adjacent
+inventory suggests: possible-object exploration (`VisitInterestingEdge`, `LookInPlaceMemoryMap`,
+`ExploreVisitPossibleMarker`, `ExploreBumpObject`), which now waits only on the memory map's overhead edges
+(M11-017; the map itself, its content types and its ray query are in as of 2026-09-21, as polygons rather
+than the engine's quad tree), motion and laser detection (PounceOnMotion, TrackLaser: OKAO-adjacent
 image processing, not started), GuardDog and the app-driven sparks / games / Selection flow (the app's
 `RequestGame` and unlock messages), face recognition and enrolment (OKAO, blocked), text-to-speech, and the
 persistence the engine keeps across sessions (needs levels, stars, face albums).

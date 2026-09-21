@@ -445,9 +445,10 @@ with provenance and SHA-256), the rebuild is a port of the parts of ww2ogg these
 computed inline, and NVorbis (MIT) decodes the result. **Unlike M1-M5 there is no native authority here**:
 Wwise is not linked into `libcozmoEngine.so` at all, so the format rests on cross-checks against the assets.
 On hardware, `anim_bored_01` played its original shipped Cozmo sound automatically with no manual WAV
-mapping. **Deferred and non-blocking**: 7 stereo ADPCM music files whose block layout is not established,
-21 media ids with no file behind them, 46 bank-embedded plugin blobs that are not audio, and 90 events that
-reach no Sound (all music). Detail: `WWISE_AUDIO.md`.
+mapping. The 7 stereo ADPCM files decode as of 2026-09-21: the 72-byte block is two 36-byte mono blocks
+side by side (M6-003). **Deferred and non-blocking**: 21 media ids with no file behind them, 46
+bank-embedded plugin blobs that are not audio, and 90 events that reach no Sound (all music). Detail:
+`WWISE_AUDIO.md`.
 
 **M7 status (2026-09-18): CODE COMPLETE - HARDWARE ACCEPTANCE PENDING.** The reactive foundation, built
 on frozen M1-M6. Anki's own trigger table resolves all 573 shipped triggers to a present animation; four

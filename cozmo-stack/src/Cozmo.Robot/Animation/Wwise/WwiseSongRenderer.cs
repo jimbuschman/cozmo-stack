@@ -168,59 +168,15 @@ public sealed class WwiseSongRenderer
         if (plan.Problem is not null)
             return new WwiseVoicePlan(Array.Empty<WwiseVoice>(), 0) { Problems = new[] { plan.Problem } };
 
-        double totalMs = plan.Segments.Sum(s => s.DurationMs);
         var sink = new List<WwiseVoice>();
         int inWindow = 0, played = 0, silent = 0, offs = 0, audioClips = 0;
         // Whether the clip-window rules do anything to the shipped songs, counted rather than assumed: M9-020.
         int outside = 0, cutByClipEnd = 0;
 
-        double segOffsetMs = 0;
-        foreach (var seg in plan.Segments)
-        {
-            foreach (var clip in seg.Clips)
-            {
-                double windowBegin = clip.Clip.BeginTrimMs, windowEnd = windowBegin + clip.Clip.LengthMs;
-                double clipStartOnTimeline = segOffsetMs + clip.Clip.PlayAtMs;     // where source time 0 falls
-
-                if (clip.IsMidi)
-                {
-                    var bytes = _lib.ReadMedia(clip.SourceId, out _);
-                    if (bytes is null) { problems.Add($"MIDI source {clip.SourceId} is missing"); continue; }
-                    WwiseMidi midi;
-                    try { midi = WwiseMidi.Parse(bytes); }
-                    catch (InvalidDataException ex) { problems.Add($"MIDI source {clip.SourceId}: {ex.Message}"); continue; }
-                    if (seg.MidiTargetNodeId is not { } target)
-                    {
-                        problems.Add($"track {clip.TrackId} is MIDI but no node above segment {seg.SegmentId} sets a MIDI target");
-                        continue;
-                    }
-                    foreach (var n in midi.NotesAt(seg.TempoBpm))
-                    {
-                        if (n.StartMs < windowBegin || n.StartMs >= windowEnd) { outside++; continue; }
-                        inWindow++;
-                        double heldMs = Math.Min(n.StartMs + n.LengthMs, windowEnd) - n.StartMs;
-                        if (n.StartMs + n.LengthMs > windowEnd) cutByClipEnd++;
-                        double onset = clipStartOnTimeline + n.StartMs;
-                        int voices = 0;
-                        Trigger(target, n.Key, n.Velocity, onset, heldMs, noteOff: false, 0, 0, 1, NoModulators, sink, ref voices, problems, 0, 0);
-                        if (voices > 0) played++; else silent++;
-                        int offVoices = 0;
-                        Trigger(target, n.Key, n.Velocity, onset + heldMs, 0, noteOff: true, 0, 0, 1, NoModulators, sink, ref offVoices, problems, 0, 0);
-                        offs += offVoices;
-                    }
-                }
-                else
-                {
-                    var pcm = _decode(clip.SourceId);
-                    if (pcm is null) { problems.Add($"audio source {clip.SourceId} could not be decoded"); continue; }
-                    audioClips++;
-                    sink.Add(new WwiseVoice(clip.SourceId, pcm, clipStartOnTimeline + windowBegin, windowBegin,
-                                            clip.Clip.LengthMs, 1.0, 1.0, clip.Clip.LengthMs, 0, NoModulators));
-                }
-            }
-            segOffsetMs += seg.DurationMs;
-        }
-
+        // Every Play action the event fires, starting together: the first plan and its layers. The
+        // timeline is as long as the longest of them.
+        double totalMs = 0;
+        foreach (var layer in Layers(plan)) totalMs = Math.Max(totalMs, AddLayer(layer));
         sink.Sort((a, b) => a.StartMs.CompareTo(b.StartMs));
         return new WwiseVoicePlan(sink, totalMs)
         {
@@ -228,6 +184,64 @@ public sealed class WwiseSongRenderer
             NotesPlayed = played, NotesSilent = silent,
             NoteOffsPlayed = offs, AudioClips = audioClips, Problems = problems,
         };
+
+        static IEnumerable<WwiseMusicPlan> Layers(WwiseMusicPlan p)
+        {
+            yield return p;
+            foreach (var extra in p.AdditionalPlays) yield return extra;
+        }
+
+        double AddLayer(WwiseMusicPlan layerPlan)
+        {
+            if (layerPlan.Problem is not null) { problems.Add(layerPlan.Problem); return 0; }
+            double segOffsetMs = 0;
+            foreach (var seg in layerPlan.Segments)
+            {
+                foreach (var clip in seg.Clips)
+                {
+                    double windowBegin = clip.Clip.BeginTrimMs, windowEnd = windowBegin + clip.Clip.LengthMs;
+                    double clipStartOnTimeline = segOffsetMs + clip.Clip.PlayAtMs;     // where source time 0 falls
+
+                    if (clip.IsMidi)
+                    {
+                        var bytes = _lib.ReadMedia(clip.SourceId, out _);
+                        if (bytes is null) { problems.Add($"MIDI source {clip.SourceId} is missing"); continue; }
+                        WwiseMidi midi;
+                        try { midi = WwiseMidi.Parse(bytes); }
+                        catch (InvalidDataException ex) { problems.Add($"MIDI source {clip.SourceId}: {ex.Message}"); continue; }
+                        if (seg.MidiTargetNodeId is not { } target)
+                        {
+                            problems.Add($"track {clip.TrackId} is MIDI but no node above segment {seg.SegmentId} sets a MIDI target");
+                            continue;
+                        }
+                        foreach (var n in midi.NotesAt(seg.TempoBpm))
+                        {
+                            if (n.StartMs < windowBegin || n.StartMs >= windowEnd) { outside++; continue; }
+                            inWindow++;
+                            double heldMs = Math.Min(n.StartMs + n.LengthMs, windowEnd) - n.StartMs;
+                            if (n.StartMs + n.LengthMs > windowEnd) cutByClipEnd++;
+                            double onset = clipStartOnTimeline + n.StartMs;
+                            int voices = 0;
+                            Trigger(target, n.Key, n.Velocity, onset, heldMs, noteOff: false, 0, 0, 1, NoModulators, sink, ref voices, problems, 0, 0);
+                            if (voices > 0) played++; else silent++;
+                            int offVoices = 0;
+                            Trigger(target, n.Key, n.Velocity, onset + heldMs, 0, noteOff: true, 0, 0, 1, NoModulators, sink, ref offVoices, problems, 0, 0);
+                            offs += offVoices;
+                        }
+                    }
+                    else
+                    {
+                        var pcm = _decode(clip.SourceId);
+                        if (pcm is null) { problems.Add($"audio source {clip.SourceId} could not be decoded"); continue; }
+                        audioClips++;
+                        sink.Add(new WwiseVoice(clip.SourceId, pcm, clipStartOnTimeline + windowBegin, windowBegin,
+                                                clip.Clip.LengthMs, 1.0, 1.0, clip.Clip.LengthMs, 0, NoModulators));
+                    }
+                }
+                segOffsetMs += seg.DurationMs;
+            }
+            return segOffsetMs;
+        }
     }
 
     private WwiseRenderedMusic RenderLocked(WwiseMusicPlan plan)

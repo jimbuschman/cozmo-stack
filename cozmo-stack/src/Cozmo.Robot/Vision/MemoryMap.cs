@@ -73,12 +73,11 @@ public sealed record MemoryMapRegion(MemoryMapContentType Type, Vec2[] Polygon, 
 /// The engine stores those regions in a quad tree (<c>QuadTree</c> 0x00684C08, nodes subdividing down to
 /// <c>GetContentPrecisionMM</c>); this keeps the polygons themselves, which answers the same questions
 /// exactly rather than to the tree's precision. What is <b>not</b> here is the content the engine gets from
-/// places this stack has no source for: the overhead-edge processing that produces
+/// one place this stack has no source for: the overhead-edge processing that produces
 /// <see cref="MemoryMapContentType.InterestingEdge"/> and <see cref="MemoryMapContentType.NotInterestingEdge"/>
 /// (<c>MapComponent::AddVisionOverheadEdges</c> 0x0067F814, which needs the vision system's ground-plane
-/// edge frames), and the explored/clear regions the robot's own passage leaves behind
-/// (<c>MapComponent::UpdateRobotPose</c> 0x0067E224). The obstacles are here, and those are what the ray
-/// queries ask about.
+/// edge frames). The obstacles are here, and so is the ground the robot has been over
+/// (<see cref="UpdateRobotPose"/>).
 ///
 /// <b>What goes in.</b> <c>MapComponent::AddObservableObject</c> 0x0067ECFC takes the object's bounding
 /// quad (its virtual <c>GetBoundingQuadXY(pose, 0)</c>, the vtable slot at +0x50), turns it into a polygon
@@ -109,6 +108,52 @@ public sealed class MemoryMap
     }
 
     public void Clear() { lock (_gate) _regions.Clear(); }
+
+    /// <summary>How far the robot must move before it writes itself into the map again: 8 mm on any axis
+    /// (0x41000000) or 0.349066 rad, 20 degrees (0x3EB2B8C2), the thresholds
+    /// <c>MapComponent::UpdateRobotPose</c> 0x0067E23A gives <c>Pose3d::IsSameAs</c>.</summary>
+    public const double RobotPoseMoveMm = 8.0, RobotPoseTurnRad = 0.349066;
+
+    private Pose3d? _lastRobotPose;
+
+    /// <summary>
+    /// <c>MapComponent::UpdateRobotPose</c> 0x0067E224: the ground the robot itself has been over.
+    ///
+    /// It does nothing while the robot is within 8 mm and 20 degrees of where it last wrote itself
+    /// (<c>IsSameAs</c> at 0x0067E27C). Otherwise it takes the <c>ProxObstacle</c> markerless size halved
+    /// - (5, 5, 25) from the (10, 10, 50) at <c>GetSizeByType</c> - builds the square those half-extents
+    /// describe, puts it at the robot's pose (0x0067E2F6..0x0067E32C), and inserts it: as
+    /// <see cref="MemoryMapContentType.ClearOfCliff"/> when nothing is reporting a cliff (the type byte 2
+    /// written at 0x0067E3C2) and as <see cref="MemoryMapContentType.Cliff"/> when something is, with the
+    /// robot's own X axis as the cliff data's direction (0x0067E342..0x0067E358).
+    ///
+    /// Returns the region it laid down, or null when there was none to lay: the robot had not moved far
+    /// enough, or the ground it is on is recorded already.
+    /// </summary>
+    public MemoryMapRegion? UpdateRobotPose(Pose3d robotPose, bool cliffDetected = false, uint timestamp = 0)
+    {
+        if (_lastRobotPose is { } last && last.IsSameAs(robotPose, RobotPoseMoveMm, RobotPoseTurnRad)) return null;
+        _lastRobotPose = robotPose;
+        // the half-extents are (5, 5, 25); the square they describe is 10 by 10
+        var size = MarkerlessObject.SizeByType(ObjectType.ProxObstacle)!.Value;
+        var quad = Rectangle(new Pose3d(Mat3.AboutZ(robotPose.AngleAroundZ), robotPose.Translation with { Z = 0 }),
+                             size.X, size.Y);
+        var type = cliffDetected ? MemoryMapContentType.Cliff : MemoryMapContentType.ClearOfCliff;
+        lock (_gate)
+        {
+            // The engine's quad tree absorbs a repeat: inserting the same content where that content
+            // already is changes no node. Here the regions are a list, so the same thing is said by not
+            // adding a square whose centre is already inside one of its own type - otherwise a long drive
+            // would leave thousands of overlapping squares behind and slow every query down.
+            var centre = new Vec2(robotPose.Translation.X, robotPose.Translation.Y);
+            foreach (var r in _regions)
+                if (r.Type == type && r.ObjectId is null && SegmentTouchesPolygon(centre, centre, r.Polygon))
+                    return null;
+            var region = new MemoryMapRegion(type, quad, null, timestamp);
+            _regions.Add(region);
+            return region;
+        }
+    }
 
     /// <summary>
     /// <c>MemoryMap::HasCollisionRayWithTypes(from, to, types)</c> 0x0068176E: the types are folded into a

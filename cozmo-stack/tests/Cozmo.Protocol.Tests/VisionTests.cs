@@ -136,6 +136,98 @@ public class VisionTests
 
     // ------------------------------------------------------------------ front end
 
+    /// <summary>
+    /// The dark mask is the engine's: <c>BinomialFilter</c> 0x008A2344 is the separable five-tap
+    /// [1 4 6 4 1] with a <c>&gt;&gt; 4</c> after each pass and the edge pixel standing in for the taps that
+    /// fall outside, and the binarize loop 0x00890BB6 marks a pixel dark when
+    /// <c>(filtered * 0xCCCC) &gt;&gt; 16 &gt; pixel</c> - 0xCCCC being <c>scaleImage_thresholdMultiplier</c> at
+    /// the parameters' +0xC (0x00875314), with one pyramid level from +4.
+    /// </summary>
+    [Fact]
+    public void TheDarkMaskIsABinomialFilterAndAQ16Threshold()
+    {
+        var p = new QuadDetectorParameters();
+        Assert.Equal(0xCCCC, p.DarkThresholdQ16);
+        Assert.Equal(1, p.PyramidLevels);
+
+        var flat = new GrayImage(8, 8);
+        flat.Fill(100);
+        Assert.All(QuadDetector.BinomialFilter(flat).Pixels, v => Assert.Equal(100, v));
+
+        // one bright pixel in a dark row: the kernel's own weights, 1 4 6 4 1 over 16
+        var spike = new GrayImage(9, 1);
+        spike.Pixels[4] = 160;
+        var f = QuadDetector.BinomialFilter(spike);
+        Assert.Equal(new byte[] { 0, 0, 10, 40, 60, 40, 10, 0, 0 }, f.Pixels);
+
+        // and the threshold: 130 filtered against 100 is dark, against 105 is not
+        Assert.True((130 * p.DarkThresholdQ16) >> 16 > 100);
+        Assert.False((130 * p.DarkThresholdQ16) >> 16 > 105);
+    }
+
+    /// <summary>
+    /// <c>IsQuadrilateralReasonable</c> 0x00892B18: the first three corners' cross product must reach
+    /// <c>quads_minQuadArea</c> (25, the parameters' +0x30), the four corner cross products must agree in
+    /// sign, one diagonal's two triangles must be within the symmetry threshold
+    /// (<c>max &lt;&lt; 8 &lt; 512 * min</c>, +0x34 being 512 in 8.8) and every corner must be at least two
+    /// pixels from the image's edge (+0x38).
+    /// </summary>
+    [Fact]
+    public void TheQuadGeometryTestIsTheEngines()
+    {
+        var p = new QuadDetectorParameters();
+        Assert.Equal(25, p.MinQuadArea);
+        Assert.Equal(512, p.QuadSymmetryThresholdQ8);
+        Assert.Equal(2, p.MinDistanceFromEdge);
+
+        // a square well inside the image passes
+        var square = new[] { new Vec2(50, 50), new Vec2(90, 50), new Vec2(90, 90), new Vec2(50, 90) };
+        Assert.True(QuadDetector.IsQuadrilateralReasonable(square, 320, 240));
+
+        // too small: the first cross product is under 25
+        var tiny = new[] { new Vec2(50, 50), new Vec2(54, 50), new Vec2(54, 53), new Vec2(50, 53) };
+        Assert.False(QuadDetector.IsQuadrilateralReasonable(tiny, 320, 240));
+
+        // not convex
+        var dart = new[] { new Vec2(50, 50), new Vec2(90, 50), new Vec2(60, 60), new Vec2(50, 90) };
+        Assert.False(QuadDetector.IsQuadrilateralReasonable(dart, 320, 240));
+
+        // convex but lopsided: neither diagonal splits it within a factor of two
+        var wedge = new[] { new Vec2(50, 50), new Vec2(250, 50), new Vec2(250, 56), new Vec2(50, 200) };
+        Assert.False(QuadDetector.IsQuadrilateralReasonable(wedge, 320, 240));
+
+        // against the edge
+        var atEdge = new[] { new Vec2(1, 50), new Vec2(41, 50), new Vec2(41, 90), new Vec2(1, 90) };
+        Assert.False(QuadDetector.IsQuadrilateralReasonable(atEdge, 320, 240));
+    }
+
+    /// <summary>
+    /// How small a marker the front end will take, which is decided by <c>component_minimumNumPixels</c>
+    /// (100, the parameters' +0x4C): a marker twenty pixels on a side leaves enough dark pixels and one of
+    /// sixteen does not. That floor is the engine's, and it is what puts a ceiling on how far away a cube
+    /// can be seen.
+    /// </summary>
+    [Fact]
+    public void AMarkerSmallerThanTheComponentFloorIsNotFound()
+    {
+        if (NoLibrary) return;
+        var found = new List<(int Side, int Markers)>();
+        foreach (int side in new[] { 20, 16 })
+        {
+            var frame = new GrayImage(320, 240);
+            frame.Fill(140);
+            double x0 = 150, y0 = 100;
+            // the renderer takes TL, BL, TR, BR
+            var order = new[] { new Vec2(x0, y0), new Vec2(x0, y0 + side), new Vec2(x0 + side, y0), new Vec2(x0 + side, y0 + side) };
+            MarkerRenderer.Draw(frame, Lib, MarkerRenderer.RowForCode(Lib, MarkerType.LightCubeI_Top), order);
+            var det = new MarkerDetector(new QuadDetector(), new MarkerDecoder(Lib));
+            found.Add((side, det.Detect(frame, 1).Count));
+        }
+        Assert.Equal(1, found[0].Markers);
+        Assert.Equal(0, found[1].Markers);
+        Assert.Equal(100, new QuadDetectorParameters().MinComponentPixels);
+    }
+
     [Fact]
     public void TheQuadDetectorFindsARenderedMarkerToSubPixelAccuracy()
     {
