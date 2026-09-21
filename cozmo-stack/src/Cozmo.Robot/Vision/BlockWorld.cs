@@ -66,6 +66,23 @@ public sealed class ObservableObject
     }
 
     /// <summary>
+    /// Whether the object is sitting squarely on one of its faces, within <paramref name="toleranceRad"/>.
+    ///
+    /// <c>ObservableObject::IsRestingFlat</c> 0x0087751C takes the object's rotation matrix, asks
+    /// <c>GetRotatedParentAxis&lt;'Z'&gt;</c> which parent axis its own Z lies closest to and how closely
+    /// (the dot product), and returns <c>acos(|dot|) &lt; tolerance</c>. The absolute value is what makes
+    /// a cube resting on any of its six faces count: only one balanced on an edge or a corner fails.
+    /// </summary>
+    public bool IsRestingFlat(double toleranceRad)
+    {
+        var r = Pose.Rotation;
+        // the object's own Z in the parent frame is the third column of R
+        double x = Math.Abs(r[0, 2]), y = Math.Abs(r[1, 2]), z = Math.Abs(r[2, 2]);
+        double dot = Math.Max(z, Math.Max(x, y));
+        return Math.Acos(Math.Min(1.0, dot)) < toleranceRad;
+    }
+
+    /// <summary>
     /// <c>ObservableObject::IsVisibleFromWithReason(camera, maxFaceNormalAngle, minMarkerImageSize, requireSomethingBehind,
     /// xBorderPad, yBorderPad)</c>: any of the object's markers passes <c>KnownMarker::IsVisibleFrom</c>: its normal
     /// faces the camera within the angle, its projected size is at least the minimum, all four corners are within

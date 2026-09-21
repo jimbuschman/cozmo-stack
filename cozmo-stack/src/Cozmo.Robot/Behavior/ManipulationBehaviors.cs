@@ -226,7 +226,15 @@ public sealed class RollBlockBehavior : ManipulationBehavior
 /// (<c>PlaceRelObjectHelper</c> onto the closest valid bottom, <c>GetClosestValidBottom</c>); success →
 /// <c>TransitionToPlayingFinalAnim</c> with 0x21A <see cref="AnimationTrigger.StackBlocksSuccess"/> and the
 /// objective; a failed stack → <c>TransitionToFailedToStack</c>: drive straight back and
-/// <c>PlaceObjectOnGroundAction</c>. Non-upright bottoms need the progression unlock (DEFERRED: uprights only).
+/// <c>PlaceObjectOnGroundAction</c>.
+///
+/// What makes a bottom valid is <c>DockingComponent::CanStackOnTopOfObject</c> 0x0063C5C4, and it is not
+/// an uprightness flag or a progression unlock. It is
+/// <c>CanInteractWithObjectHelper</c> 0x0063C654 - the object located, and
+/// <c>IsRestingFlat(Radians(0.174533))</c>, ten degrees - followed by
+/// <c>!IsPoseTooHigh(pose, 1.0, 15.0, 0.5)</c>. Resting flat is measured against the object's own Z
+/// against the nearest parent axis with the sign thrown away, so a cube on any of its six faces
+/// qualifies and only one balanced on an edge does not.
 /// </summary>
 public sealed class StackBlocksBehavior : ManipulationBehavior
 {
@@ -238,8 +246,12 @@ public sealed class StackBlocksBehavior : ManipulationBehavior
     public uint? TopObjectId { get; private set; }
     public uint? BottomObjectId { get; private set; }
 
+    /// <summary>Ten degrees: <c>CanInteractWithObjectHelper</c> 0x0063C670 passes Radians(0.174533).</summary>
+    public const double RestingFlatToleranceRad = 0.174533;
+
     private ObservableObject? ClosestUpright(uint? except = null) =>
-        ClosestCube(o => o.ObjectId != except && o.UpAxisFromPose() == UpAxis.ZPositive && o.Pose.Translation.Z < PickupObjectAction.HighDockHeightMm);
+        ClosestCube(o => o.ObjectId != except && o.IsRestingFlat(RestingFlatToleranceRad)
+                         && o.Pose.Translation.Z < PickupObjectAction.HighDockHeightMm);
 
     protected override bool IsRunnableInternal(BehaviorContext context)
     {

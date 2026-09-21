@@ -128,7 +128,7 @@
       "name": "Docking, carrying and pre-action poses",
       "milestone": "M12",
       "source_investigation_exhausted": false,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": false
     },
     {
       "id": "M13-navigation",
@@ -2572,19 +2572,22 @@
       "id": "M12-009"
     },
     {
-      "id": "M12-010",
       "subsystem": "M12-manipulation",
-      "title": "The search-for-block fallback is not implemented",
-      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs:125",
+      "title": "The search-for-block pattern is recovered and not built",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs",
+      "status": "IMPLEMENTATION_GAP",
       "effect": "the robot stops where the app would look around for the cube",
-      "provenance": "deferred",
-      "authority": "the engine search behaviour",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the search pattern",
+      "provenance": "nothing: this stack gives up instead of searching",
+      "authority": "SearchForBlockHelper::SearchForBlock 0x005BAF24 is a three-state machine, and all three states are read. State 0 (0x005BAF9A): SearchForNearbyObjectAction(target, -0.0872665 rad = -5 degrees of head angle, 100.0, -20.0), followed by TurnTowardsObjectAction(target, Radians(pi)) when the target id is set. State 1 (0x005BB1AA): DriveStraightAction(-20 mm at 20 mm/s), TurnInPlaceAction(+0.785398 = +45 degrees) twice, another SearchForNearbyObjectAction on the same three numbers, then the drive again. State 2 (0x005BB066) is the mirror: the same drive with TurnInPlaceAction(-0.785398 = -45 degrees) twice. SearchForNearbyObjectAction 0x005469C0 defaults its search angle to 0.261799..0.349066 rad (15..20 degrees) and its wait to 0.8..1.2 s, with SetSearchAngle and SetSearchWaitTime as the setters",
+      "evidence": [
+        "SearchForBlockHelper::ShouldBeAbleToFindTarget 0x005BB73C decides whether searching is worth it: ObservableObject::IsVisibleFromWithReason with 0.785398 rad, checking the reason against 7",
+        "every action the pattern needs already exists in this stack except the nearby-object search"
+      ],
+      "unresolved": "the three states have to be built, and SearchForNearbyObjectAction with them; nothing is left to read for the pattern itself",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": null,
+      "id": "M12-010"
     },
     {
       "subsystem": "M12-manipulation",
@@ -2601,19 +2604,19 @@
       "id": "M12-011"
     },
     {
-      "id": "M12-012",
       "subsystem": "M12-manipulation",
-      "title": "Non-upright stacking needs a progression unlock and is not implemented",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ManipulationBehaviors.cs:229",
-      "effect": "the robot refuses placements the app would attempt",
-      "provenance": "deferred, uprights only",
-      "authority": "the engine placement rules",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the unlock condition and the non-upright placement geometry",
-      "hardware_required": false,
+      "title": "What makes a cube a valid bottom to stack on: resting flat within ten degrees",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ManipulationBehaviors.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "DockingComponent::CanStackOnTopOfObject 0x0063C5C4 is CanInteractWithObjectHelper 0x0063C654 followed by !IsPoseTooHigh(pose, 1.0, 15.0, 0.5). The helper checks the object is located and then IsRestingFlat(Radians(0.174533)) - ten degrees (0x3E32B8C2 at 0x0063C670). ObservableObject::IsRestingFlat 0x0087751C asks GetRotatedParentAxis for the parent axis the object own Z lies closest to and returns acos(|dot|) < tolerance",
+      "evidence": [
+        "the absolute value is the point: a cube resting on any of its six faces is flat, and only one balanced on an edge or a corner is not",
+        "there is no progression unlock and no uprightness flag in the path; the record had supposed both. This stack tested UpAxisFromPose() == ZPositive, which refuses a cube lying on its side that the engine would happily stack on",
+        "the 15.0 in the height check is the same stack tolerance M13-007 records"
+      ],
       "live_path": true,
-      "test": null
+      "test": "RestingFlatTests.ACubeIsFlatWhenItsZLiesNearAParentAxis",
+      "id": "M12-012"
     },
     {
       "subsystem": "M12-manipulation",
