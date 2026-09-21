@@ -258,6 +258,8 @@ public static class WwiseHierarchy
                 WwiseObjectType.MusicSwitchContainer => ReadMusicSwitch(ref r, o),
                 WwiseObjectType.MusicPlaylistContainer => ReadPlaylist(ref r, o),
                 WwiseObjectType.LfoModulator or WwiseObjectType.EnvelopeModulator => ReadModulator(ref r, o),
+                WwiseObjectType.AudioBus => ReadBus(ref r, o),
+                WwiseObjectType.FxShareSet or WwiseObjectType.FxCustom => ReadEffect(ref r, o),
                 _ => null,
             };
             if (node is null) { problem = $"type {(byte)o.Type} is not read"; return null; }
@@ -542,6 +544,80 @@ public static class WwiseHierarchy
         var p = new WwiseNodeParams(0, 0, 0, props, ranged, rtpcs,
             Array.Empty<(uint, byte, IReadOnlyList<(uint, uint)>)>());
         return new WwiseModulatorNode(id, o.Type, o.Bank, p);
+    }
+
+    /// <summary>
+    /// An audio bus. Its two variable parts were settled by requiring all fifteen shipped buses to consume
+    /// exactly: the positioning byte carries one more byte when it is non-zero, and the ducked-bus list is
+    /// a count followed by eighteen bytes each. See <see cref="WwiseBusNode"/>.
+    /// </summary>
+    private static WwiseBusNode ReadBus(ref Reader r, WwiseObject o)
+    {
+        uint id = r.U32();
+        uint parent = r.U32();
+        int n = r.U8();
+        var ids = new byte[n];
+        for (int i = 0; i < n; i++) ids[i] = r.U8();
+        var props = new Dictionary<byte, uint>(n);
+        for (int i = 0; i < n; i++) props[ids[i]] = r.U32();
+        n = r.U8();
+        ids = new byte[n];
+        for (int i = 0; i < n; i++) ids[i] = r.U8();
+        var ranged = new Dictionary<byte, (float, float)>(n);
+        for (int i = 0; i < n; i++) ranged[ids[i]] = (r.F32(), r.F32());
+
+        if (r.U8() != 0) r.Skip(1);                        // positioning: one byte, two when it overrides
+        r.Skip(15);                                        // instance limits, virtual behaviour, volume threshold
+        uint ducks = r.U32();
+        var ducked = new List<(uint, float, uint, uint)>((int)Math.Min(ducks, 32));
+        for (uint i = 0; i < ducks; i++)
+        {
+            uint bus = r.U32(); float volume = r.F32(); uint fadeOut = r.U32(); uint fadeIn = r.U32();
+            r.U8(); r.U8();                                // fade curve and the property it ducks
+            ducked.Add((bus, volume, fadeOut, fadeIn));
+        }
+
+        int numFx = r.U8();
+        var effects = new List<WwiseBusEffect>(numFx);
+        if (numFx > 0)
+        {
+            r.U8();                                        // bypass bits
+            for (int i = 0; i < numFx; i++)
+                effects.Add(new WwiseBusEffect(r.U8(), r.U32(), r.U8() != 0, r.U8() != 0));
+        }
+        r.Skip(6);
+        int curves = r.U16();
+        var rtpcs = new List<WwiseRtpc>(curves);
+        for (int c = 0; c < curves; c++) rtpcs.Add(ReadRtpc(ref r));
+        uint groups = r.U32();
+        var stateGroups = new List<(uint, byte, IReadOnlyList<(uint, uint)>)>((int)Math.Min(groups, 64));
+        for (uint g = 0; g < groups; g++)
+        {
+            uint gid = r.U32(); byte sync = r.U8(); int ns = r.U16();
+            var states = new List<(uint, uint)>(ns);
+            for (int i = 0; i < ns; i++) states.Add((r.U32(), r.U32()));
+            stateGroups.Add((gid, sync, states));
+        }
+        var p = new WwiseNodeParams(0, parent, 0, props, ranged, rtpcs, stateGroups);
+        return new WwiseBusNode(id, o.Bank, p, effects, ducked);
+    }
+
+    /// <summary>
+    /// An effect share set or custom instance: id, plug-in, and the plug-in's own parameter block, then a
+    /// media list, an RTPC list and a two-byte trailer. All 89 shipped effects consume exactly.
+    /// </summary>
+    private static WwiseEffectNode ReadEffect(ref Reader r, WwiseObject o)
+    {
+        uint id = r.U32();
+        uint plugin = r.U32();
+        int size = (int)r.U32();
+        var parameters = r.Bytes(size).ToArray();
+        int media = r.U8();
+        for (int i = 0; i < media; i++) { r.U8(); r.U32(); }
+        int curves = r.U16();
+        for (int c = 0; c < curves; c++) ReadRtpc(ref r);
+        r.U16();
+        return new WwiseEffectNode(id, o.Type, o.Bank, plugin, parameters);
     }
 
     private static WwiseMusicPlaylistNode ReadPlaylist(ref Reader r, WwiseObject o)

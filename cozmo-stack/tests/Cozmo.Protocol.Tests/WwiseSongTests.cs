@@ -210,8 +210,11 @@ public class WwiseSongTests
         // now depends on the draw, because the get-in branch's share does (M9-013); the settled part of
         // the mix is measured in TheRenderSaysHowManyVoicesEachBranchOfTheSamplerContributed.
         Assert.InRange(r.PreLimitPeak / short.MaxValue, 0.7, 2.0);
-        Assert.InRange(r.OutputGainDb, -6.0, 0.0);
-        Assert.Equal(short.MaxValue, r.Peak);
+        // and where the robot bus's own limiter leaves it: just under full scale, not pinned to it as the
+        // local peak normalisation used to leave every song
+        Assert.InRange(r.Peak, 28000, short.MaxValue);
+        Assert.NotNull(r.BusChain);
+        Assert.True(r.BusChain!.LimiterReductionDb < 0, "the sum was over the limiter's threshold, so it acted");
         Assert.Contains(r.Pcm.Take(CozmoAudio.SampleRate / 2), s => Math.Abs(s) > 500);   // sound in the first half second
 
         using var again = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(7));

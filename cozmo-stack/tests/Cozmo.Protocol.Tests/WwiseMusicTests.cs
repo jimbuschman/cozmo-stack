@@ -56,10 +56,11 @@ public class WwiseMusicTests
     // ------------------------------------------------------------------ the shipped banks
 
     /// <summary>
-    /// The layout check: every object of the eleven hierarchy types, in all six banks, consumes its payload
-    /// to the last byte. A field of the wrong width anywhere in the shared node block would fail hundreds
-    /// of these at once. The counts are the banks' own. The two modulator types were added to the reader in
-    /// the M9 fidelity pass; the eleven LFO and envelope objects they cover consume exactly as well.
+    /// The layout check: every object of the fourteen hierarchy types, in all six banks, consumes its
+    /// payload to the last byte. A field of the wrong width anywhere in the shared node block would fail
+    /// hundreds of these at once. The counts are the banks' own. The modulator, bus and effect types were
+    /// added to the reader in the M9 fidelity pass, and the fifteen buses are what settled the two
+    /// variable parts of a bus's layout.
     /// </summary>
     [Fact]
     public void EveryHierarchyObjectInTheShippedBanksConsumesExactly()
@@ -74,6 +75,7 @@ public class WwiseMusicTests
             [WwiseObjectType.MusicTrack] = 258, [WwiseObjectType.MusicSwitchContainer] = 14,
             [WwiseObjectType.MusicPlaylistContainer] = 123,
             [WwiseObjectType.LfoModulator] = 4, [WwiseObjectType.EnvelopeModulator] = 7,
+            [WwiseObjectType.AudioBus] = 15, [WwiseObjectType.FxShareSet] = 23, [WwiseObjectType.FxCustom] = 65,
         };
         foreach (var (type, count, exact, problems) in report)
         {

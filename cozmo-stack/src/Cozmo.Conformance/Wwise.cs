@@ -168,6 +168,13 @@ public static class WwiseTool
         Console.WriteLine($"  notes in window {r.NotesInWindow}, sung {r.NotesPlayed}, outside the voice's range {r.NotesSilent}, note-offs {r.NoteOffsPlayed}, audio clips {r.AudioClips}");
         Console.WriteLine($"  raw peak {r.PreLimitPeak:F0} of {short.MaxValue}; output stage gain {r.OutputGainDb:F1} dB (a stand-in for the robot bus limiter); clipped samples after it {r.ClippedSamples}");
         Console.WriteLine($"  modulator bindings acted on {r.ModulationsApplied}; deepest level change {r.ModulationPeakDb:F2} dB, largest pitch change {r.ModulationPeakCents:F0} cents");
+        if (r.BusChain is { } bc)
+        {
+            Console.WriteLine($"  robot bus chain: {string.Join(" -> ", bc.Stages)}");
+            Console.WriteLine($"  chain in {bc.InputPeak:F0}, out {bc.OutputPeak:F0}, deepest limiter reduction {bc.LimiterReductionDb:F1} dB");
+            foreach (var nt in bc.Notes) Console.WriteLine($"    note: {nt}");
+            foreach (var pr in bc.Problems) Console.WriteLine($"    problem: {pr}");
+        }
         if (r.VoicesByBranch.Count > 0)
             Console.WriteLine("  voices by branch of the MIDI target: " +
                 string.Join(", ", r.VoicesByBranch.OrderBy(k => k.Key).Select(k => $"{BranchName(k.Key)} {k.Value}")));
@@ -191,7 +198,7 @@ public static class WwiseTool
         using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(seed));
         int ok = 0, bad = 0, silentNotes = 0, sungNotes = 0;
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        Console.WriteLine($"\n{"song / event",-48} {"ms",7} {"notes",6} {"sung",5} {"out",4} {"offs",5} {"rawpk",7} {"gain",6}  problems");
+        Console.WriteLine($"\n{"song / event",-48} {"ms",7} {"notes",6} {"sung",5} {"out",4} {"offs",5} {"rawpk",7} {"outpk",7} {"limit",6}  problems");
 
         void Row(string label, uint eventId, IReadOnlyDictionary<uint, uint> switches)
         {
@@ -199,7 +206,7 @@ public static class WwiseTool
             bool good = r.Problems.Count == 0 && r.Pcm.Length > 0 && (r.NotesPlayed > 0 || r.AudioClips > 0);
             if (good) ok++; else bad++;
             silentNotes += r.NotesSilent; sungNotes += r.NotesPlayed;
-            Console.WriteLine($"{label,-48} {r.DurationMs,7:F0} {r.NotesInWindow,6} {r.NotesPlayed,5} {r.NotesSilent,4} {r.NoteOffsPlayed,5} {r.PreLimitPeak,7:F0} {r.OutputGainDb,6:F1}  {string.Join("; ", r.Problems)}");
+            Console.WriteLine($"{label,-48} {r.DurationMs,7:F0} {r.NotesInWindow,6} {r.NotesPlayed,5} {r.NotesSilent,4} {r.NoteOffsPlayed,5} {r.PreLimitPeak,7:F0} {r.Peak,7} {(r.BusChain?.LimiterReductionDb ?? r.OutputGainDb),6:F1}  {string.Join("; ", r.Problems)}");
         }
 
         if (obb is not null)

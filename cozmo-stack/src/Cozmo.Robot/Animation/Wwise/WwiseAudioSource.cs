@@ -43,7 +43,12 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
         _library = library;
         _ownsLibrary = ownsLibrary;
         _codebooks = codebooks ?? TryLoadCodebooks();
-        _renderer = new WwiseSongRenderer(library, DecodeMedia, random);
+        _renderer = new WwiseSongRenderer(library, DecodeMedia, random)
+        {
+            // What the robot hears is the output of Robot_Bus_1, which the engine's own registration
+            // table binds to the robot game object a singing behaviour posts on. See WwiseBusChain.
+            BusChain = WwiseBusChain.For(library, WwiseBusChain.RobotBus1, CozmoAudio.SampleRate),
+        };
         _eventRandom = random ?? new Random();
     }
 

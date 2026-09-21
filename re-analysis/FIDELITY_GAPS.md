@@ -3,16 +3,16 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **193 records** over 16 subsystems.
+Manifest of **195 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 77 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 16 | The native behaviour is known from primary source; this stack reaches the same observable effect by a different mechanism, and the record names the difference. |
-| RECOVERABLE_GAP | 71 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. Blocks source-completeness on a live path. |
+| EQUIVALENT_IMPLEMENTATION | 18 | The native behaviour is known from primary source; this stack reaches the same observable effect by a different mechanism, and the record names the difference. |
+| RECOVERABLE_GAP | 70 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. Blocks source-completeness on a live path. |
 | COMPATIBILITY_POLICY | 19 | A deliberate choice of this stack on a path that does not claim to be the engine's: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
-| BLOCKED_EXTERNAL | 7 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
+| BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
 ## Source-completeness by subsystem
 
@@ -28,7 +28,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 0 | yes |
 | M7-behaviour — Idle, mood and reactions | 15 | 4 | no |
 | M8-framework — Behaviour framework and scoring | 10 | 5 | no |
-| M9-wwise-music — Wwise music, the MIDI sampler and singing | 25 | 3 | no |
+| M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 2 | no |
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 16 | 9 | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 12 | 7 | no |
@@ -285,15 +285,6 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * unresolved: the mask the engine applies per play and where it is released
 
 ### M9-wwise-music — Wwise music, the MIDI sampler and singing
-
-**M9-011 — Output stage: the whole render is scaled so its peak sits at full scale** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs:59`
-* effect: a song is quieter or louder, and differently shaped, than the app made it; a quiet song is pulled up and a loud one squashed uniformly
-* rests on: a deliberate stand-in of this stack, labelled LOCAL_POLICY
-* best authority: Init.bnk carries the whole bus tree and the parameters of every bus effect; the robot buses each end in an Anki Hijack capture
-* evidence: Init.bnk bus 2678428988 Robot_Bus_1; Init.txt effect plug-ins table
-* unresolved: the effect chain on the bus the singing voice reaches, and the parameters of each effect in it
 
 **M9-017 — The cube-shake input to the vibrato is never measured** (live path)
 
@@ -699,6 +690,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 | M8-008 | M8-framework | EQUIVALENT_IMPLEMENTATION | The 5 s calibration allowance borrowed from ReactToImpact | BehaviorReactToImpact 0x00606348 |
 | M8-009 | M8-framework | COMPATIBILITY_POLICY | Behaviour scope undo order | the engine Smart* destructor order |
 | M8-010 | M8-framework | COMPATIBILITY_POLICY | Behaviour inventory classifier rules | not applicable: this is bookkeeping, not robot behaviour |
+| M9-011 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | The render goes through the effect chain the robot bus carries, not a local peak normalisation | libcozmoEngine.so for the routing and Init.bnk for the chain and its parameters |
 | M9-013 | M9-wwise-music | BLOCKED_EXTERNAL | Whether Wwise routes MIDI notes into the get-in branch of the singing sampler | the Wwise MIDI dispatch rule, which is runtime behaviour. No Wwise runtime ships in the APK: no AkSoundEngine, CAk*, AkModulator or Wwise string occurs in libcozmoEngine.so, libunity.so or libmain.so, and there is no separate Wwise library. The shipped data was searched to exhaustion: the branch parent and the target child list, the key and velocity ranges on all 18 containers under it, the play-on-note property, the channel mask, the node bit vectors, the blend container layers (there are none), and the Wwise object paths in Cozmo.txt |
 | M9-014 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | Velocity is ignored | the shipped bank: no node under the MIDI target carries a velocity RTPC, and only one velocity layer of recordings ships |
 | M9-015 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | The final-PCM cache freezes the renderer random choices for the life of a source | the container avoid-repeat and weight fields are read and honoured within a render |
@@ -710,6 +702,8 @@ A subsystem is source-complete when nothing on its normal live execution path is
 | M9-023 | M9-wwise-music | HARDWARE_ONLY | How the stock app sounded when it sang | a recording of a stock Cozmo singing, or the app running against a robot |
 | M9-024 | M9-wwise-music | BLOCKED_EXTERNAL | Whether cozmo_singing_note_off also stops the voice it is attached to | the shipped bank: this modulator alone of the eleven sets property 15, to the integer 2. The two readings that fit the numbering argued from the data agree on what a listener hears - under either one the voice ends when the note is released, which is also what the note layer's break-on-note-off bit asks for |
 | M9-025 | M9-wwise-music | BLOCKED_EXTERNAL | The shape a Wwise LFO produces between its extremes | the Wwise runtime, which does not ship in the APK (no AkSoundEngine, CAk* or Wwise strings occur in any .so). The bank settles the frequency, the attack, the pulse width and the range the curve maps the output onto; it cannot settle the waveform Wwise draws |
+| M9-026 | M9-wwise-music | BLOCKED_EXTERNAL | The filter and limiter arithmetic between the shipped settings | Audiokinetic's own ParametricEQ and AkPeakLimiter, which are in the Wwise runtime; no Wwise runtime ships in the APK |
+| M9-027 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | Robot_Bus_Eq_HiLowPass low-pass at 14298 Hz is above Nyquist for the robot's rate | Init.bnk gives 14298 Hz; AnimConstants::AUDIO_SAMPLE_RATE gives 22320 Hz, so Nyquist is 11160 Hz in the engine too |
 | M10-005 | M10-derived | EQUIVALENT_IMPLEMENTATION | The off-treads debounce runs on the local clock | the engine debounces against its own base-station clock in milliseconds; the same quantity, a different source |
 | M11-012 | M11-vision | COMPATIBILITY_POLICY | The nominal camera calibration stand-in | not applicable: the live path reads the robot own calibration and fails closed without it |
 | M11-013 | M11-vision | COMPATIBILITY_POLICY | AllowUnconnectedObjects switch | the engine connected-object rule, which is implemented |

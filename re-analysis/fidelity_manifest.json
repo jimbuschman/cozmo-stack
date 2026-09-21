@@ -1751,20 +1751,22 @@
     {
       "id": "M9-011",
       "subsystem": "M9-wwise-music",
-      "title": "Output stage: the whole render is scaled so its peak sits at full scale",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs:59",
-      "effect": "a song is quieter or louder, and differently shaped, than the app made it; a quiet song is pulled up and a loud one squashed uniformly",
-      "provenance": "a deliberate stand-in of this stack, labelled LOCAL_POLICY",
-      "authority": "Init.bnk carries the whole bus tree and the parameters of every bus effect; the robot buses each end in an Anki Hijack capture",
+      "title": "The render goes through the effect chain the robot bus carries, not a local peak normalisation",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs",
+      "effect": "a song is quieter or louder, and differently shaped, than the app made it",
+      "provenance": "the three effects on Robot_Bus_1 with their shipped settings, applied in the order the bus lists them. The settings are the product; the biquad and limiter arithmetic between them is standard, because Audiokinetic implementations are in the Wwise runtime, which does not ship",
+      "authority": "libcozmoEngine.so for the routing and Init.bnk for the chain and its parameters",
       "evidence": [
-        "Init.bnk bus 2678428988 Robot_Bus_1",
-        "Init.txt effect plug-ins table"
+        "RobotAudioClient::RobotAudioClient 0x005994A0, 0x0059962A..0x0059966A: game objects 7..10 to plug-in indices 1..4 and buses 0x9FA59539 plus 3, 6, 5, 0",
+        "each Robot_Bus_N carries Robot_Bus_Eq_MasterCurve, Robot_Bus_Eq_HiLowPass, Robot_Bus_Peak_Limiter and its own Anki Hijack, whose parameter is the same index 1..4",
+        "limiter threshold -1 dB, ratio 10.8, look-ahead 9 ms, release 41 ms",
+        "across all 39 songs the output now lands between 30000 and 32000 of full scale with 2.5 to 7.3 dB of limiting, where the local stage had been attenuating by 10 to 13 dB"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the effect chain on the bus the singing voice reaches, and the parameters of each effect in it",
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "WwiseSongTests"
+      "test": "WwiseBusTests.EverySongLeavesTheChainAtAboutTheSameLevel"
     },
     {
       "id": "M9-012",
@@ -2001,6 +2003,41 @@
       "hardware_required": false,
       "live_path": false,
       "test": "WwiseModulatorTests.WithTheShakeParameterAtFullTheVibratoReachesTheBindingsFullRange"
+    },
+    {
+      "id": "M9-026",
+      "subsystem": "M9-wwise-music",
+      "title": "The filter and limiter arithmetic between the shipped settings",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs",
+      "effect": "the EQ curves and the limiter's knee differ in detail from the product's, at the same settings",
+      "provenance": "standard bilinear-transform biquads and a look-ahead peak limiter",
+      "authority": "Audiokinetic's own ParametricEQ and AkPeakLimiter, which are in the Wwise runtime; no Wwise runtime ships in the APK",
+      "evidence": [
+        "PluginInfo.xml names the plug-ins (Wwise Parametric EQ 6881283, Wwise Peak Limiter 7208963) and Init.bnk carries every one of their parameters"
+      ],
+      "status": "BLOCKED_EXTERNAL",
+      "unresolved": "the exact coefficient formulas and detector behaviour. The settings they act on are exact, so the shape is right and the detail is not",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseBusTests.TheRobotBusEffectsReadTheirShippedSettings"
+    },
+    {
+      "id": "M9-027",
+      "subsystem": "M9-wwise-music",
+      "title": "Robot_Bus_Eq_HiLowPass low-pass at 14298 Hz is above Nyquist for the robot's rate",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs",
+      "effect": "none: the band cannot act at 22320 Hz and is reported rather than applied at a frequency it cannot have",
+      "provenance": "the band is skipped and named in the chain report",
+      "authority": "Init.bnk gives 14298 Hz; AnimConstants::AUDIO_SAMPLE_RATE gives 22320 Hz, so Nyquist is 11160 Hz in the engine too",
+      "evidence": [
+        "Init.bnk effect 390660550 band 2",
+        "AUDIO_SAMPLE_RATE 22320"
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseBusTests.TheLowPassAboveNyquistIsReportedRatherThanApplied"
     },
     {
       "id": "M10-001",

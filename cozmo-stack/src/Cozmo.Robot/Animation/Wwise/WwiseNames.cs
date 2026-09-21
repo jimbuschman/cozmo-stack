@@ -20,6 +20,8 @@ public sealed class WwiseNames
     private readonly Dictionary<uint, string> _gameParameters = new();
     private readonly Dictionary<uint, string> _buses = new();
     private readonly Dictionary<uint, string> _events = new();
+    private readonly Dictionary<uint, string> _effects = new();
+    private readonly Dictionary<uint, string> _modulators = new();
 
     public IReadOnlyDictionary<uint, string> SwitchGroups => _switchGroups;
     public IReadOnlyDictionary<uint, (string Name, string Group)> Switches => _switches;
@@ -29,9 +31,13 @@ public sealed class WwiseNames
     public IReadOnlyDictionary<uint, string> Buses => _buses;
     /// <summary>Event names from the text files; SoundbanksInfo.xml names the same events.</summary>
     public IReadOnlyDictionary<uint, string> Events => _events;
+    /// <summary>Effect share sets and custom instances, from the "Effect plug-ins" tables.</summary>
+    public IReadOnlyDictionary<uint, string> Effects => _effects;
+    /// <summary>LFO and envelope modulators, from the "Modulator LFO" and "Modulator Envelope" tables.</summary>
+    public IReadOnlyDictionary<uint, string> Modulators => _modulators;
 
     /// <summary>How many rows of any kind were read.</summary>
-    public int Count => _switchGroups.Count + _switches.Count + _stateGroups.Count + _states.Count + _gameParameters.Count + _buses.Count + _events.Count;
+    public int Count => _switchGroups.Count + _switches.Count + _stateGroups.Count + _states.Count + _gameParameters.Count + _buses.Count + _events.Count + _effects.Count + _modulators.Count;
 
     /// <summary>The id of a switch group or switch by name, case-insensitively, or null.</summary>
     public uint? SwitchGroupId(string name) => Find(_switchGroups, name);
@@ -48,6 +54,8 @@ public sealed class WwiseNames
         if (_gameParameters.TryGetValue(id, out var e)) return e;
         if (_buses.TryGetValue(id, out var f)) return f;
         if (_events.TryGetValue(id, out var g)) return g;
+        if (_effects.TryGetValue(id, out var h)) return h;
+        if (_modulators.TryGetValue(id, out var i)) return i;
         return null;
     }
 
@@ -85,6 +93,9 @@ public sealed class WwiseNames
                 case "State": _states[id] = (name, group); break;
                 case "Game Parameter": _gameParameters[id] = name; break;
                 case "Audio Bus": _buses[id] = name; break;
+                case "Effect plug-ins": _effects[id] = name; break;
+                case "Modulator LFO":
+                case "Modulator Envelope": _modulators[id] = name; break;
             }
         }
     }

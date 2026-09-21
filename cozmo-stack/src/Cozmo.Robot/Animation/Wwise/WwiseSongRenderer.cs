@@ -29,6 +29,8 @@ public sealed record WwiseRenderedMusic(short[] Pcm, double DurationMs)
     public double ModulationPeakDb { get; init; }
     /// <summary>The largest pitch change any modulator made, in cents. 0 when none had any effect.</summary>
     public double ModulationPeakCents { get; init; }
+    /// <summary>What the robot bus's effect chain did, or null when no chain was applied.</summary>
+    public WwiseBusChainReport? BusChain { get; init; }
     /// <summary>
     /// How many voices each immediate child of the MIDI target contributed. For the singing sampler that
     /// is the note-on layer, the note-off layer and the get-in branch, and the get-in branch's share is
@@ -69,14 +71,14 @@ public sealed record WwiseRenderedMusic(short[] Pcm, double DurationMs)
 /// * A clip plays its source from BeginTrim for its length, starting at PlayAt + BeginTrim on the
 ///   segment's timeline; a MIDI note that is still held when the clip ends is released there.
 ///
-/// Mixing is additive into a wide accumulator. The raw sum of the shipped recordings exceeds full scale
-/// on every song (three layers of near-full-scale voice, notes overlapping their predecessors' tails), and
-/// in the product the robot's bus carries a peak limiter and a master compressor (Init.txt effects
-/// 3743559935 <c>Robot_Bus_Peak_Limiter</c> and 2313011259 <c>Cozmo_Voice_Master_Compressor</c>) whose
-/// parameters this build does not read. The output stage here is a stand-in for them and is
-/// <b>LOCAL_POLICY</b>, not a reproduction: when the raw peak exceeds full scale the whole render is scaled
-/// down so its peak sits at full scale, and both the raw peak and the gain applied are reported, so a
-/// listener knows the level was ours. Nothing is hard-clipped silently.
+/// Mixing is additive into a wide accumulator, and the sum then goes through the effect chain the robot's
+/// own bus carries: two parametric EQs and a peak limiter, built from the shipped <c>Init.bnk</c> by
+/// <see cref="WwiseBusChain"/>, on the bus the engine's own registration table names for a robot game
+/// object. Their settings are the product's; the filter and limiter arithmetic between them is this
+/// stack's, because the Wwise runtime does not ship (fidelity manifest M9-011).
+///
+/// When the banks are not loaded there is no chain, and the render falls back to scaling the whole buffer
+/// so its peak sits at full scale — a stand-in, reported as such in <see cref="WwiseRenderedMusic"/>.
 /// </summary>
 public sealed class WwiseSongRenderer
 {
@@ -127,6 +129,12 @@ public sealed class WwiseSongRenderer
     /// lets the two readings be rendered and listened to side by side rather than argued about.
     /// </summary>
     public IReadOnlySet<uint> ExcludeBranches { get; set; } = new HashSet<uint>();
+
+    /// <summary>
+    /// The bus effect chain the render goes through last: what the robot hears rather than what the
+    /// sampler summed. Null leaves the fallback stand-in in place. See <see cref="WwiseBusChain"/>.
+    /// </summary>
+    public WwiseBusChain? BusChain { get; set; }
 
     private const int Rate = CozmoAudio.SampleRate;
     private static int Samples(double ms) => (int)Math.Round(ms * Rate / 1000.0);
@@ -191,16 +199,30 @@ public sealed class WwiseSongRenderer
             segOffsetMs += seg.DurationMs;
         }
 
-        // The output stage: see the class summary. Static, so a whole song keeps its dynamics.
+        // The output stage: the robot bus's own effect chain, or a stand-in when the banks are not loaded.
         double rawPeak = 0;
         for (int i = 0; i < mix.Length; i++) rawPeak = Math.Max(rawPeak, Math.Abs(mix[i]));
-        double gain = rawPeak > short.MaxValue ? short.MaxValue / rawPeak : 1.0;
+
+        var chain = BusChain;
+        WwiseBusChainReport? chainReport = null;
+        double gain = 1.0;
+        if (chain is not null && !chain.IsEmpty)
+        {
+            chainReport = chain.Process(mix);
+            problems.AddRange(chainReport.Problems);
+        }
+        else
+        {
+            gain = rawPeak > short.MaxValue ? short.MaxValue / rawPeak : 1.0;
+            if (gain < 1.0) problems.Add("no bus chain was loaded; the peak was scaled to full scale instead");
+            if (gain < 1.0) for (int i = 0; i < mix.Length; i++) mix[i] *= gain;
+        }
 
         var outPcm = new short[mix.Length];
         int clipped = 0; short peak = 0;
         for (int i = 0; i < mix.Length; i++)
         {
-            double v = Math.Round(mix[i] * gain);
+            double v = Math.Round(mix[i]);
             if (v > short.MaxValue) { v = short.MaxValue; clipped++; }
             else if (v < short.MinValue) { v = short.MinValue; clipped++; }
             outPcm[i] = (short)v;
@@ -212,6 +234,7 @@ public sealed class WwiseSongRenderer
             NotesInWindow = inWindow, NotesPlayed = played, NotesSilent = silent, NoteOffsPlayed = offs,
             AudioClips = audioClips, ClippedSamples = clipped, Problems = problems, Peak = peak,
             PreLimitPeak = rawPeak, OutputGainDb = gain < 1.0 ? 20 * Math.Log10(gain) : 0,
+            BusChain = chainReport,
             ModulationsApplied = _modulations, ModulationPeakDb = _modPeakDb, ModulationPeakCents = _modPeakCents,
             VoicesByBranch = new Dictionary<uint, int>(_branchVoices),
         };
