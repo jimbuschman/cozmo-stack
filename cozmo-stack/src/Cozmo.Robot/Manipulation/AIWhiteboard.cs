@@ -32,6 +32,12 @@ public enum ObjectActionFailure { PickUpObject, StackOnObject, PlaceObjectAt, Ro
 /// are stamped with the clock so <c>DidFailToUse(object, failure, withinSec)</c> can implement the behaviours'
 /// recent-failure cooldowns. Possible objects (<c>ConsiderNewPossibleObject</c>) belong to the explorer and are
 /// not modelled here.
+///
+/// The beacons are a list, not a single slot: <c>AddBeacon</c> 0x0056C39C appends to a
+/// <c>vector&lt;AIBeacon&gt;</c> at whiteboard+0x60, twenty bytes an entry, and <c>ClearAllBeacons</c>
+/// 0x0056AA08 pops them all. <c>GetActiveBeacon</c> 0x0056C404 returns the <b>first</b> - it compares
+/// begin against end and hands back begin, or null when they are equal - so the active beacon is the
+/// oldest one still standing, not the newest.
 /// </summary>
 public sealed class AIWhiteboard
 {
@@ -43,7 +49,8 @@ public sealed class AIWhiteboard
     public AIWhiteboard(BlockWorld world, Func<double> clockSec) { _world = world; _clockSec = clockSec; }
 
     public IReadOnlyList<AIBeacon> Beacons => _beacons;
-    public AIBeacon? GetActiveBeacon() => _beacons.Count > 0 ? _beacons[^1] : null;
+    /// <summary>The first beacon, as <c>GetActiveBeacon</c> 0x0056C404 returns begin rather than back.</summary>
+    public AIBeacon? GetActiveBeacon() => _beacons.Count > 0 ? _beacons[0] : null;
     public AIBeacon AddBeacon(Pose3d pose, double radiusMm) { var b = new AIBeacon(pose, radiusMm); _beacons.Add(b); return b; }
     public void ClearAllBeacons() => _beacons.Clear();
 

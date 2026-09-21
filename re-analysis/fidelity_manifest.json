@@ -2711,21 +2711,22 @@
       "test": "NavigationTests"
     },
     {
-      "id": "M13-003",
       "subsystem": "M13-navigation",
       "title": "Obstacle padding and the soft-ring penalty",
-      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs:110",
-      "effect": "paths hug or avoid obstacles differently, and some plans fail that would succeed",
-      "provenance": "inferred from the robot 56 by 70 mm body",
-      "authority": "xythetaEnvironment in libcozmoEngine.so, whose interface was read but whose padding and penalty were not",
-      "evidence": [
-        "xythetaEnvironment"
-      ],
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs",
       "status": "RECOVERABLE_GAP",
-      "unresolved": "the engine padding radius and penalty weight",
+      "effect": "paths hug or avoid obstacles differently, and some plans fail that would succeed",
+      "provenance": "a padding radius and penalty weight chosen here",
+      "authority": "the structure is now read, which narrows what is left. The penalty is not a global: xythetaEnvironment::GetCollisionPenalty 0x008517B0 walks the obstacle list for the state theta bucket, each entry a 72-byte FastPolygon, and returns the float at entry+0x44 of the first one containing the point - so every obstacle carries its own penalty, supplied when it is added through AddObstacleAllThetas(shape, float) 0x008549E0 / 0x00854D4E. LatticePlannerImpl::ImportBlockworldObstaclesIfNeeded 0x004FD4B8 carries a pair of floats it logs together - 7.0 and 6.0, or 2.0 and 1.0 when its bool argument is set (0x004FD4EE)",
+      "evidence": [
+        "IsInCollision 0x008515BC and IsInSoftCollision 0x00851708 are separate entry points over the same per-theta polygon lists, so the hard and soft rings are separate obstacle sets",
+        "the obstacles are expanded per theta bucket, which is what AddObstacleAllThetas means"
+      ],
+      "unresolved": "which of the two floats is the padding and which the penalty, and how the import turns an object bounding box into the hard and soft polygons. The pair is in hand; the use is not",
       "hardware_required": false,
       "live_path": true,
-      "test": "NavigationTests"
+      "test": null,
+      "id": "M13-003"
     },
     {
       "id": "M13-004",
@@ -2758,21 +2759,18 @@
       "test": "NavigationTests"
     },
     {
-      "id": "M13-006",
       "subsystem": "M13-navigation",
-      "title": "One active beacon at a time in AIWhiteboard",
-      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/AIWhiteboard.cs:31",
-      "effect": "the robot returns to the wrong place",
-      "provenance": "inferred from GetActiveBeacon being singular",
-      "authority": "the engine AIWhiteboard, whose interface is exported",
+      "title": "The whiteboard keeps a list of beacons and the active one is the first",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/AIWhiteboard.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "AIWhiteboard::AddBeacon 0x0056C39C appends to a vector<AIBeacon> at whiteboard+0x60, twenty bytes an entry (a Pose3d, a float radius at +0xC and an int at +0x10), growing it through __emplace_back_slow_path when it is full. ClearAllBeacons 0x0056AA08 walks it back to begin. GetActiveBeacon 0x0056C404 compares begin against end and returns begin, or null when they are equal, so the active beacon is the oldest still standing",
       "evidence": [
-        "AIWhiteboard exports"
+        "this stack kept a list already but returned the newest beacon, not the oldest",
+        "failures are recorded against a particular beacon: FailedToFindLocationInBeacon 0x0056C3F0 forwards to AIBeacon::FailedToFindLocation, which this stack already counts"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "whether the engine keeps more than one beacon, and how failures are recorded",
-      "hardware_required": false,
       "live_path": true,
-      "test": "NavigationTests"
+      "test": "BeaconTests.TheActiveBeaconIsTheFirstOneAdded",
+      "id": "M13-006"
     },
     {
       "subsystem": "M13-navigation",

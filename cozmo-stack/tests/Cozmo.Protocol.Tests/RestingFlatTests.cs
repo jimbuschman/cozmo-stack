@@ -47,3 +47,28 @@ public class RestingFlatTests
     public void SpinningACubeOnTheTableLeavesItFlat(double yaw) =>
         Assert.True(CubeWith(Mat3.AboutZ(yaw)).IsRestingFlat(StackBlocksBehavior.RestingFlatToleranceRad));
 }
+
+// The whiteboard's beacon list (fidelity manifest M13-006).
+public class BeaconTests
+{
+    /// <summary>
+    /// AddBeacon appends and GetActiveBeacon returns begin, so the active beacon is the oldest one
+    /// still standing. This stack returned the newest.
+    /// </summary>
+    [Fact]
+    public void TheActiveBeaconIsTheFirstOneAdded()
+    {
+        var world = new BlockWorld(() => Array.Empty<(uint, ObjectType)>());
+        var wb = new Cozmo.Robot.Manipulation.AIWhiteboard(world, () => 0);
+        Assert.Null(wb.GetActiveBeacon());
+
+        var first = wb.AddBeacon(new Pose3d(Mat3.Identity, new Vec3(100, 0, 0)), 50);
+        var second = wb.AddBeacon(new Pose3d(Mat3.Identity, new Vec3(200, 0, 0)), 50);
+        Assert.Equal(2, wb.Beacons.Count);
+        Assert.Same(first, wb.GetActiveBeacon());
+        Assert.NotSame(second, wb.GetActiveBeacon());
+
+        wb.ClearAllBeacons();
+        Assert.Null(wb.GetActiveBeacon());
+    }
+}
