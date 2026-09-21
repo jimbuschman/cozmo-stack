@@ -39,9 +39,18 @@ public sealed record WorkoutConfig(AnimationTrigger PreLift, AnimationTrigger Po
 /// <summary>
 /// The engine's <c>WorkoutComponent</c> (<c>InitConfiguration</c>, <c>GetCurrentWorkout</c>,
 /// <c>CompleteCurrentWorkout</c>, <c>ShouldPlayEightiesMusic</c>): holds the shipped workouts and the current
-/// one. The shipped file has four entries (high, medium and two weak-energy variants; only the first names an extra objective). How the engine picks the current one
-/// was not read (INFERRED: from the energy need); <see cref="Selector"/> chooses by index, medium by default
-/// (LOCAL_POLICY). <c>CompleteCurrentWorkout</c> advances a completion count.
+/// one. The shipped file has four entries (high, medium and two weak-energy variants; only the first
+/// names an extra objective).
+///
+/// The engine does not pick one: it walks them. <c>GetCurrentWorkout</c> 0x00573DE8 returns a pointer
+/// held at +0xC, and <c>CompleteCurrentWorkout</c> 0x00573DEC fires the finished workout's emotion
+/// event through <c>MoodManager::TriggerEmotionEvent</c> and then steps that pointer on by one entry -
+/// 0x40 bytes - unless it is already the last (<c>r1 = end - 0x40; if (current != last) current +=
+/// 0x40</c> at 0x00573E24). So the workouts run in file order and the last one repeats for ever.
+///
+/// <c>ShouldPlayEightiesMusic</c> 0x00573E30 caches its answer in a flag at +0x11: the first time it is
+/// asked it scores the current workout's mood scorer and, if that passes, rolls <c>RandDbl(1.0)</c>
+/// against a constant.
 /// </summary>
 public sealed class WorkoutComponent
 {
@@ -50,11 +59,23 @@ public sealed class WorkoutComponent
     public WorkoutComponent(IReadOnlyList<WorkoutConfig> workouts) => Workouts = workouts;
 
     public IReadOnlyList<WorkoutConfig> Workouts { get; }
-    public Func<int> Selector { get; set; } = () => 1;
     public int CompletedWorkouts { get; private set; }
 
-    public WorkoutConfig? GetCurrentWorkout() => Workouts.Count == 0 ? null : Workouts[Math.Clamp(Selector(), 0, Workouts.Count - 1)];
-    public void CompleteCurrentWorkout() => CompletedWorkouts++;
+    /// <summary>Which entry is current: the engine starts at the first and never goes back.</summary>
+    public int CurrentIndex { get; private set; }
+
+    public WorkoutConfig? GetCurrentWorkout() => Workouts.Count == 0 ? null : Workouts[CurrentIndex];
+
+    /// <summary>
+    /// Finishes the current workout and moves to the next, stopping on the last - the engine's
+    /// <c>if (current != last) current += 0x40</c> at 0x00573E24. The emotion event the config names is
+    /// the caller's to fire, as it is in the engine, where CompleteCurrentWorkout triggers it directly.
+    /// </summary>
+    public void CompleteCurrentWorkout()
+    {
+        CompletedWorkouts++;
+        if (CurrentIndex < Workouts.Count - 1) CurrentIndex++;
+    }
 
     public static WorkoutComponent? FromObb(string obbRoot)
     {

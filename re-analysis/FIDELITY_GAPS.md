@@ -7,9 +7,9 @@ Manifest of **201 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 102 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 103 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 52 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 51 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 9 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -36,7 +36,7 @@ remains after both, and they do not go away by working harder on this repository
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | 0 | 0 | 0 | no | yes |
 | M11-vision — Markers, camera geometry and BlockWorld | 16 | 6 | 0 | 1 | 0 | no | yes |
 | M12-manipulation — Docking, carrying and pre-action poses | 16 | 1 | 1 | 0 | 0 | no | no |
-| M13-navigation — Planning, charger and block configurations | 11 | 3 | 1 | 0 | 0 | no | no |
+| M13-navigation — Planning, charger and block configurations | 11 | 2 | 1 | 0 | 0 | no | no |
 | M14-faces — Face and pet pipeline | 7 | 5 | 0 | 1 | 0 | no | yes |
 | M15-freeplay — Needs, activities and freeplay | 12 | 9 | 0 | 0 | 0 | no | yes |
 | tools — Conformance CLI and offline tools | 4 | 0 | 0 | 0 | 0 | yes | yes |
@@ -380,15 +380,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: Charger::Charger 0x004E9B6C settles the object: 96 x 80 x 31 mm stored at +0xF0 (0x42C00000, 0x42A00000, 0x41F80000) and one marker added with a pose rotated -90 degrees about Z (0xBFC90FDB) at (86, 0, 22) - 0x42AC0000 and 0x41B00000, which is 22 and not the 11 this stack had - sized 20 x 27 (0x41A00000, 0x41D80000). Charger::GetRobotDockedPose 0x004EA1A0 is a single branchless function: Pose3d(Radians(3.14159), Z_AXIS, (30, 0, 0)) on the charger pose, so a docked robot faces out, half a turn from the charger heading, 30 mm along its +X. Charger::GeneratePreActionPoses 0x004E9FB0 has not been read through
 * evidence: the marker height was wrong by half, which moves where the charger is placed from a sighting; the docked pose being chargerYaw + pi sits awkwardly against the mount check in M13-008, which compares the charger yaw with the robot yaw against pi/2; both readings are from source and they cannot both mean what they appear to
 * outstanding: Charger::GeneratePreActionPoses, which is the pre-dock pose the mount aligns to; and the contradiction between GetRobotDockedPose and the mount heading check
-
-**M13-010 — Workout selection by index, medium by default** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/Workouts.cs:43`
-* effect: the robot does a different workout than the app would pick
-* rests on: chosen locally; the selection input is inferred to be the energy need
-* best authority: WorkoutComponent in libcozmoEngine.so and the shipped workout config
-* evidence: WorkoutComponent
-* outstanding: what the engine selects on
 
 ### M14-faces — Face and pet pipeline
 

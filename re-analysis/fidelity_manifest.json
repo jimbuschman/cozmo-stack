@@ -2820,21 +2820,18 @@
       "id": "M13-009"
     },
     {
-      "id": "M13-010",
       "subsystem": "M13-navigation",
-      "title": "Workout selection by index, medium by default",
-      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Workouts.cs:43",
-      "effect": "the robot does a different workout than the app would pick",
-      "provenance": "chosen locally; the selection input is inferred to be the energy need",
-      "authority": "WorkoutComponent in libcozmoEngine.so and the shipped workout config",
+      "title": "The workouts run in file order and the last one repeats",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Workouts.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "WorkoutComponent::GetCurrentWorkout 0x00573DE8 returns a pointer kept at +0xC - it selects nothing. CompleteCurrentWorkout 0x00573DEC fires the finished workout emotion event through MoodManager::TriggerEmotionEvent and then steps that pointer on by one 0x40-byte entry unless it already points at the last: r1 = end - 0x40, and the advance is predicated on current != last (0x00573E24). The constructor 0x00573BA8 clears the component and leaves the pointer at the first entry",
       "evidence": [
-        "WorkoutComponent"
+        "this stack picked by index with medium as a default, which is neither the order the engine runs them in nor a default it has",
+        "ShouldPlayEightiesMusic 0x00573E30 caches its answer in a flag at +0x11 and otherwise scores the current workout mood scorer and rolls RandDbl(1.0) against a constant"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "what the engine selects on",
-      "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "NavigationTests",
+      "id": "M13-010"
     },
     {
       "subsystem": "M13-navigation",

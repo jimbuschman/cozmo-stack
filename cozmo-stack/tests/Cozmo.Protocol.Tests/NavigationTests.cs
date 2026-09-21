@@ -454,9 +454,15 @@ public class NavigationTests
         Assert.Equal(7, high.GetNumStrongLifts(_ => 0.3));
         Assert.Equal(2, high.GetNumStrongLifts(_ => -1));
         Assert.Equal(1, high.GetNumWeakLifts(_ => -0.2));
-        Assert.Equal(w.Workouts[1], w.GetCurrentWorkout());                           // medium by default (LOCAL_POLICY)
-        w.Selector = () => 0;
+        // The engine walks the list rather than picking: GetCurrentWorkout 0x00573DE8 returns the
+        // pointer at +0xC and CompleteCurrentWorkout 0x00573DEC steps it on by one entry unless it is
+        // already the last (0x00573E24), so the first is current and the last repeats.
         Assert.Equal(high, w.GetCurrentWorkout());
+        Assert.Equal(0, w.CurrentIndex);
+        w.CompleteCurrentWorkout();
+        Assert.Equal(w.Workouts[1], w.GetCurrentWorkout());
+        for (int i = 0; i < 10; i++) w.CompleteCurrentWorkout();
+        Assert.Equal(w.Workouts[^1], w.GetCurrentWorkout());                         // and it sticks there
     }
 
     [Fact]
@@ -466,7 +472,7 @@ public class NavigationTests
         if (obb is null || Lib is null) return;
         using var rig = new Rig();
         rig.M.Workouts = WorkoutComponent.FromObb(obb);
-        rig.M.Workouts!.Selector = () => 0;
+
         rig.Cube = CubeAt(220, 10);
         Assert.Single(rig.Frame().Objects);
         var ctx = Ctx(rig);
