@@ -100,18 +100,63 @@ public class ManipulationTests
 
     // ------------------------------------------------------------------ docking
 
+    /// <summary>
+    /// Every byte of <c>DockWithObject</c>, where the engine puts it (fidelity manifest M12-005).
+    ///
+    /// The three speeds start at the <em>second</em> word, not the first: the builder at 0x0063BD50
+    /// dereferences a local the caller has just set to zero into word 0, then speed, acceleration and
+    /// deceleration from <c>IDockAction</c> +0xAC, +0xB0 and +0xB4. This stack used to write them one
+    /// word early, so every dock it sent carried its speed in word 0 and no deceleration at all.
+    /// </summary>
     [Fact]
-    public void TheDockMessagePacksSpeedsActionAndRetries()
+    public void TheDockMessagePutsEveryFieldWhereTheEngineDoes()
     {
-        var m = DockingSystem.Message(60f, 200f, 500f, DockAction.PickupLow, 2, true);
+        var m = DockingSystem.Message(60f, 200f, 500f, DockAction.PickupLow,
+                                      unlockLiftTrack: true, method: DockingMethod.Method2, flag8: true);
         var b = m.ToBytes();
         Assert.Equal(22, b.Length);                        // tag + 21
-        Assert.Equal(60f, BitConverter.ToSingle(b, 1));
-        Assert.Equal(200f, BitConverter.ToSingle(b, 5));
-        Assert.Equal(500f, BitConverter.ToSingle(b, 9));
-        Assert.Equal((byte)DockAction.PickupLow, b[17]);
-        Assert.Equal(2, b[18]);
-        Assert.Equal(1, b[19]);
+        Assert.Equal(0u, BitConverter.ToUInt32(b, 1));     // the engine's literal zero, not a placeholder
+        Assert.Equal(60f, BitConverter.ToSingle(b, 5));    // speed        IDockAction +0xAC
+        Assert.Equal(200f, BitConverter.ToSingle(b, 9));   // accel        +0xB0
+        Assert.Equal(500f, BitConverter.ToSingle(b, 13));  // decel        +0xB4
+        Assert.Equal((byte)DockAction.PickupLow, b[17]);   // DockAction   +0x80
+        Assert.Equal(1, b[18]);                            // ctor bool    +0x95
+        Assert.Equal(0, b[19]);                            //              +0xBA, never written
+        Assert.Equal(2, b[20]);                            // DockingMethod +0xBB
+        Assert.Equal(1, b[21]);                            //              +0xC1
+    }
+
+    /// <summary>
+    /// And that field 6 stays zero however the dock is asked for: nothing in the engine writes
+    /// <c>IDockAction</c> +0xBA after the constructor clears it, so zero there is the engine's value.
+    /// </summary>
+    [Theory]
+    [InlineData(DockAction.PickupLow)]
+    [InlineData(DockAction.PlaceLow)]
+    [InlineData(DockAction.RollLow)]
+    [InlineData(DockAction.PopAWheelie)]
+    public void FieldSixIsZeroForEveryDockAction(DockAction action)
+    {
+        var b = DockingSystem.Message(1f, 2f, 3f, action, true, DockingMethod.Method2, true).ToBytes();
+        Assert.Equal(0, b[19]);
+        Assert.Equal((byte)action, b[17]);
+    }
+
+    /// <summary>
+    /// The action classes carry the values their engine counterparts write: a pickup sends docking
+    /// method 2 and sets field 8, where the base constructor leaves both at zero.
+    /// </summary>
+    [Fact]
+    public void APickupSendsTheDockingMethodAndFlagTheEnginesPickupSets()
+    {
+        var b = DockingSystem.Message(60f, 200f, 500f, DockAction.PickupLow,
+                                      method: DockingMethod.Method2, flag8: true).ToBytes();
+        Assert.Equal(2, b[20]);
+        Assert.Equal(1, b[21]);
+
+        var plain = DockingSystem.Message(60f, 200f, 500f, DockAction.PlaceLow).ToBytes();
+        Assert.Equal(0, plain[20]);
+        Assert.Equal(0, plain[21]);
     }
 
     [Fact]
@@ -124,7 +169,7 @@ public class ManipulationTests
         var obj = Assert.Single(r.Objects).Object;
         var marker = obj.Markers.First(k => k.Code == MarkerType.LightCubeI_Front);
         rig.ErrorSignalsBeforeResult = 2;
-        var dock = rig.M.Docking.DockAsync(obj, marker, DockAction.PickupLow, PathMotionProfile.Default, doLiftLoadCheck: true, timeout: TimeSpan.FromSeconds(5));
+        var dock = rig.M.Docking.DockAsync(obj, marker, DockAction.PickupLow, PathMotionProfile.Default, flag8: true, timeout: TimeSpan.FromSeconds(5));
         rig.Pump();
         Assert.Contains(rig.Sent, m => m is DockWithObject);
         Assert.Equal(PoseState.Dirty, obj.PoseState);

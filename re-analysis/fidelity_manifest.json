@@ -2506,21 +2506,20 @@
       "test": "CorrectionTests"
     },
     {
-      "id": "M12-005",
       "subsystem": "M12-manipulation",
-      "title": "Unread DockWithObject fields are sent as zero",
-      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs:75",
-      "effect": "the firmware receives a zero where the app sends something else, and may dock differently",
-      "provenance": "the fourth float and the last two bytes are sent as zero because they were not traced",
-      "authority": "the engine DockWithObject packing, which was read for the other fields",
+      "title": "Every field of DockWithObject, read from the engine that fills it",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "three functions settle the whole 21 bytes. IDockAction::CheckIfDone 0x005521AC is the only caller of DockingComponent::DockWithObject 0x0063BA44, which is the only caller of the builder at 0x0063BD50, which is the only place the message is constructed. Word 0 is a literal zero (movs r4,#0 / str r4,[sp,#0x1c], and the builder dereferences that local into it). Words 1 to 3 are IDockAction +0xAC, +0xB0, +0xB4, named by SetSpeed 0x00550426, SetAccel 0x00550432 and SetSpeedAndAccel 0x00550416, defaulting to 60, 200 and 500. Byte 4 is the DockAction at +0x80. Byte 5 is +0x95, the IDockAction constructor bool, which also picks tracks 7 or 3. Byte 6 is +0xBA, cleared by the constructor and written by nothing else. Byte 7 is the docking method at +0xBB, named by DriveToPickupObjectAction::SetDockingMethod 0x0055C5A2. Byte 8 is +0xC1",
       "evidence": [
-        "packing at 0x00632BAE..0x00632BEE"
+        "builder 0x0063BD50; caller 0x0063BA44; only caller of that 0x005521AC",
+        "IDockAction constructor 0x005502D8 defaults: speed 60 (0x42700000), accel 200 (0x43480000), decel 500 (0x43FA0000), +0xBA 0, +0xBB 0, +0xC1 0",
+        "PickupObjectAction 0x005536EA writes +0xBB = 2 and 0x005536F8 writes +0xC1 = 1; RollObjectAction 0x005565DC writes DockAction 5, which matches this stack RollLow = 5",
+        "the three speeds were being written one word early, so every dock this stack sent carried its speed in word 0 and no deceleration at all; robot acceptance had not caught it"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "what the engine puts in the fourth float and the two trailing bytes",
-      "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "ManipulationTests.TheDockMessagePutsEveryFieldWhereTheEngineDoes",
+      "id": "M12-005"
     },
     {
       "id": "M12-006",

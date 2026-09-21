@@ -37,7 +37,19 @@ public abstract class DockActionBase
     protected abstract DockAction? SelectDockAction(ObservableObject target);
     protected abstract ActionResult Verify(ObservableObject? target, DockResult result);
     protected virtual (double X, double Y, double Angle) PlacementOffset => (0, 0, 0);
-    protected virtual bool DoLiftLoadCheck => false;
+    /// <summary>
+    /// <c>DockWithObject</c> field 7, held at <c>IDockAction</c> +0xBB. The engine's constructor leaves 0
+    /// and each action overwrites it: <c>PickupObjectAction</c> 0x005536EA writes 2,
+    /// <c>AlignWithObjectAction</c> 0x005533F6 writes 2, <c>PlaceRelObjectAction</c> 0x005554D0 writes 0,
+    /// <c>RollObjectAction</c> 0x005565D6 writes its own constructor flag.
+    /// </summary>
+    protected virtual DockingMethod DockingMethod => DockingMethod.Default;
+
+    /// <summary>
+    /// <c>DockWithObject</c> field 8, held at <c>IDockAction</c> +0xC1. The constructor leaves 0 and
+    /// <c>PickupObjectAction</c> 0x005536F8 writes 1. Its CLAD name is not established.
+    /// </summary>
+    protected virtual bool DockFlag8 => false;
     /// <summary>False for the place actions: they verify the placement pose is clear instead of seeing the target.</summary>
     protected virtual bool VerifiesTargetVisually => true;
 
@@ -115,7 +127,8 @@ public abstract class DockActionBase
         }
         _trace.Add($"IDockAction.DockWithObjectHelper.BeginDocking: Docking with marker {marker.Code} using action {action}.");
         var (ox, oy, oa) = PlacementOffset;
-        var result = await M.Docking.DockAsync(target, marker, action.Value, Profile, ox, oy, oa, numRetries: 0, DoLiftLoadCheck, cancel: cancel);
+        var result = await M.Docking.DockAsync(target, marker, action.Value, Profile, ox, oy, oa,
+                                               method: DockingMethod, flag8: DockFlag8, cancel: cancel);
         if (result is null) return cancel.IsCancellationRequested ? ActionResult.CancelledWhileRunning : ActionResult.Timeout;
         Result = result;
         _trace.Add($"dock result {result}");
@@ -141,7 +154,8 @@ public sealed class PickupObjectAction : DockActionBase
 
     public PickupObjectAction(ManipulationSystem m, uint objectId) : base(m, objectId) { }
     protected override PreActionType PreActionType => PreActionType.Docking;
-    protected override bool DoLiftLoadCheck => true;
+    protected override DockingMethod DockingMethod => DockingMethod.Method2;   // 0x005536EA
+    protected override bool DockFlag8 => true;                                 // 0x005536F8
 
     protected override DockAction? SelectDockAction(ObservableObject target)
     {

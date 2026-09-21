@@ -10,6 +10,17 @@ public enum DockAction : byte
     FacePlant = 8, PopAWheelie = 9, Align = 10, AlignSpecial = 11, RampAscend = 12, RampDescend = 13, CrossBridge = 14,
 }
 
+/// <summary>
+/// The docking method the engine sends in <c>DockWithObject</c> field 7, held at <c>IDockAction</c> +0xBB
+/// and named by <c>DriveToPickupObjectAction::SetDockingMethod</c> 0x0055C5A2.
+///
+/// Only two values are observed in shipped code: the constructor leaves 0, and
+/// <c>PickupObjectAction</c> 0x005536EA writes 2. The names of the values are not established, so they
+/// are numbered; <c>AlignWithObjectAction</c>, <c>PlaceRelObjectAction</c> and <c>RollObjectAction</c>
+/// each write this field too.
+/// </summary>
+public enum DockingMethod : byte { Default = 0, Method1 = 1, Method2 = 2 }
+
 /// <summary><c>PickAndPlaceResult.blockStatus</c>: 0 no block, 1 block picked up, 2 block placed (<c>HandlePickAndPlaceResult</c> 0x00533781).</summary>
 public enum BlockStatus : byte { NoBlock = 0, BlockPickedUp = 1, BlockPlaced = 2 }
 
@@ -72,8 +83,9 @@ public sealed class CarryingComponent
 /// signal is {x = pose.x − placementOffsetX, y = pose.y + placementOffsetY, z = pose.z, angle = yaw + π/2 +
 /// placementOffsetAngle, timestamp}; the signal is skipped while the body rotated faster than 22.9 deg/s
 /// (0x41B758B4) around the frame time. Message field order is the engine's packing (0x0063BD50 / 0x0063C548);
-/// INFERRED: the fourth float of <c>DockWithObject</c> and its last two bytes are sent as zero, the two trailing
-/// bytes of the error signal likewise (hardware item N).
+/// Every field of <c>DockWithObject</c> is now read from the engine rather than guessed - see
+/// <see cref="Message"/> - including the two words that are genuinely zero there. The two trailing bytes
+/// of the error signal are still unread (hardware item N).
 /// </summary>
 public sealed class DockingSystem : IDisposable
 {
@@ -102,11 +114,51 @@ public sealed class DockingSystem : IDisposable
 
     private void Send(RobotMessage m) { Sent.Add(m); _robot.Transport.Send(m, flush: true); }
 
-    /// <summary>The engine's message for a dock (<c>DockingComponent::DockWithObject</c> → 0x0063BD50).</summary>
-    public static DockWithObject Message(float speedMmps, float accelMmps2, float decelMmps2, DockAction action, byte numRetries, bool doLiftLoadCheck) => new()
+    /// <summary>
+    /// The engine's message for a dock, field for field.
+    ///
+    /// The builder at 0x0063BD50 fills the 21 bytes from arguments <c>DockingComponent::DockWithObject</c>
+    /// 0x0063BA44 hands it, and <c>IDockAction::CheckIfDone</c> 0x005521AC is the only thing that calls
+    /// that. Following the three of them through gives every field a source:
+    ///
+    /// <list type="bullet">
+    /// <item><b>0</b> — a literal zero. <c>movs r4, #0</c> / <c>str r4, [sp, #0x1c]</c>, and that local is
+    ///   what the builder dereferences into the first word. The engine has no other path here, so this
+    ///   word is zero on every dock the app has ever sent.</item>
+    /// <item><b>1, 2, 3</b> — speed, acceleration, deceleration, from <c>IDockAction</c> +0xAC, +0xB0 and
+    ///   +0xB4. Named by their setters: <c>SetSpeed</c> writes +0xAC, <c>SetAccel</c> writes +0xB0 and
+    ///   +0xB4, <c>SetSpeedAndAccel</c> writes all three. Defaults 60, 200, 500.</item>
+    /// <item><b>4</b> — the <see cref="DockAction"/>, from +0x80.</item>
+    /// <item><b>5</b> — <c>IDockAction</c> +0x95, the constructor's <c>bool</c>, passed straight down by
+    ///   <c>PickupObjectAction</c>, <c>PopAWheelieAction</c> and <c>RollObjectAction</c> from their own
+    ///   third argument. The same flag decides whether the lift track is locked (tracks 7 when it is
+    ///   false, 3 when true), so the lift is left to whatever this asks for. Its CLAD name is not
+    ///   established; its source is.</item>
+    /// <item><b>6</b> — <c>IDockAction</c> +0xBA. The constructor clears it and no shipped action writes
+    ///   it, so it is zero on every dock. Zero here is the engine's value, not a stand-in for one.</item>
+    /// <item><b>7</b> — the docking method, +0xBB, named by
+    ///   <c>DriveToPickupObjectAction::SetDockingMethod</c> 0x0055C5A2. <c>PickupObjectAction</c> sets 2.</item>
+    /// <item><b>8</b> — <c>IDockAction</c> +0xC1, a <c>bool</c>; <c>PickupObjectAction</c> sets 1,
+    ///   the constructor 0.</item>
+    /// </list>
+    ///
+    /// Until this was read, the three speeds were written one field early — into words 0, 1 and 2, with
+    /// zero in word 3 — so every dock this stack sent had its speed where the robot reads whatever word 0
+    /// is, and no deceleration at all.
+    /// </summary>
+    public static DockWithObject Message(float speedMmps, float accelMmps2, float decelMmps2, DockAction action,
+                                         bool unlockLiftTrack = false, DockingMethod method = DockingMethod.Default,
+                                         bool flag8 = false) => new()
     {
-        Field0 = BitConverter.SingleToUInt32Bits(speedMmps), Field1 = BitConverter.SingleToUInt32Bits(accelMmps2), Field2 = BitConverter.SingleToUInt32Bits(decelMmps2),
-        Field3 = 0, Field4 = (byte)action, Field5 = numRetries, Field6 = (byte)(doLiftLoadCheck ? 1 : 0), Field7 = 0, Field8 = 0,
+        Field0 = 0,
+        Field1 = BitConverter.SingleToUInt32Bits(speedMmps),
+        Field2 = BitConverter.SingleToUInt32Bits(accelMmps2),
+        Field3 = BitConverter.SingleToUInt32Bits(decelMmps2),
+        Field4 = (byte)action,
+        Field5 = (byte)(unlockLiftTrack ? 1 : 0),
+        Field6 = 0,
+        Field7 = (byte)method,
+        Field8 = (byte)(flag8 ? 1 : 0),
     };
 
     /// <summary>
@@ -115,7 +167,8 @@ public sealed class DockingSystem : IDisposable
     /// </summary>
     public async Task<DockResult?> DockAsync(ObservableObject target, KnownMarker marker, DockAction action, PathMotionProfile profile,
                                              double placementOffsetX = 0, double placementOffsetY = 0, double placementOffsetAngle = 0,
-                                             byte numRetries = 0, bool doLiftLoadCheck = false, TimeSpan? timeout = null, CancellationToken cancel = default)
+                                             bool unlockLiftTrack = false, DockingMethod method = DockingMethod.Default,
+                                             bool flag8 = false, TimeSpan? timeout = null, CancellationToken cancel = default)
     {
         TaskCompletionSource<DockResult> tcs;
         lock (_gate)
@@ -127,7 +180,7 @@ public sealed class DockingSystem : IDisposable
         }
         _vision.World.MarkDirty(target.ObjectId);                          // ObjectPoseConfirmer::MarkObjectDirty in DockWithObject
         Log?.Invoke($"Docking with marker {marker.Code} using action {action}.");
-        Send(Message(profile.DockSpeedMmps, profile.DockAccelMmps2, profile.DockDecelMmps2, action, numRetries, doLiftLoadCheck));
+        Send(Message(profile.DockSpeedMmps, profile.DockAccelMmps2, profile.DockDecelMmps2, action, unlockLiftTrack, method, flag8));
         // the error signal for the current frame, if the marker is in it right now
         if (_vision.LastResult is { } last) OnFrame(last);
         using var reg = cancel.Register(() => tcs.TrySetCanceled());
