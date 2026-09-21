@@ -88,7 +88,8 @@ public class BehaviorTests
     [Fact]
     public void ARepeatedReactionIsHeldOffByItsCooldown()
     {
-        var a = new BehaviorArbiter { AutonomyEnabled = true, ReactionCooldown = TimeSpan.FromSeconds(5) };
+        var a = new BehaviorArbiter { AutonomyEnabled = true };
+        a.TriggerCooldowns[ReactionTrigger.CliffDetected] = TimeSpan.FromSeconds(5);
         var t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         Assert.True(a.Request(BehaviorPriority.Reaction, "x", ReactionTrigger.CliffDetected, t0).Started);
         a.Finished(BehaviorPriority.Reaction);
@@ -103,7 +104,8 @@ public class BehaviorTests
     [Fact]
     public void ADifferentReactionIsNotHeldOffByAnothersCooldown()
     {
-        var a = new BehaviorArbiter { AutonomyEnabled = true, ReactionCooldown = TimeSpan.FromSeconds(5) };
+        var a = new BehaviorArbiter { AutonomyEnabled = true };
+        a.TriggerCooldowns[ReactionTrigger.CliffDetected] = TimeSpan.FromSeconds(5);
         var t0 = DateTime.UtcNow;
         a.Request(BehaviorPriority.Reaction, "x", ReactionTrigger.CliffDetected, t0);
         a.Finished(BehaviorPriority.Reaction);
@@ -235,5 +237,33 @@ public class BehaviorTests
         var d = reactive.Fire(ReactionTrigger.CliffDetected);
         Assert.Equal(BehaviorOutcome.Disabled, d.Outcome);
         Assert.False(robot.Animations.IsPlaying);
+    }
+
+    /// <summary>
+    /// There is no blanket reaction cooldown. The shipped reactionTrigger_behavior_map gives none to
+    /// CliffDetected, RobotPickedUp, PlacedOnCharger or RobotFalling, and the engine keeps them from
+    /// re-triggering by locking the reaction's behaviour while it runs and by watching transitions
+    /// rather than levels. A cooldown applies only where a trigger's own config names one.
+    /// </summary>
+    [Fact]
+    public void AReactionHasNoCooldownUnlessItsTriggerNamesOne()
+    {
+        var t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var a = new BehaviorArbiter { AutonomyEnabled = true };
+
+        Assert.True(a.Request(BehaviorPriority.Reaction, "x", ReactionTrigger.CliffDetected, t0).Started);
+        a.Finished(BehaviorPriority.Reaction);
+        // straight away again: the engine would allow this
+        Assert.True(a.Request(BehaviorPriority.Reaction, "x", ReactionTrigger.CliffDetected,
+                              t0.AddMilliseconds(1)).Started);
+        a.Finished(BehaviorPriority.Reaction);
+
+        // and where a trigger does name one, it is honoured
+        a.TriggerCooldowns[ReactionTrigger.CliffDetected] = TimeSpan.FromSeconds(60);
+        var d = a.Request(BehaviorPriority.Reaction, "x", ReactionTrigger.CliffDetected, t0.AddSeconds(1));
+        Assert.False(d.Started);
+        Assert.Equal(BehaviorOutcome.OnCooldown, d.Outcome);
+        Assert.True(a.Request(BehaviorPriority.Reaction, "x", ReactionTrigger.CliffDetected,
+                              t0.AddSeconds(61)).Started);
     }
 }

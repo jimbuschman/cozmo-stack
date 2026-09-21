@@ -92,14 +92,26 @@ public sealed class BehaviorArbiter
     /// How long a given reaction is suppressed after firing. Stops a flapping sensor — a cliff sensor at
     /// the edge of a table, say — from retriggering the same animation continuously.
     ///
-    /// This is a local policy, not the engine's. The shipped <c>reactionTrigger_behavior_map.json</c>
+    /// No blanket cooldown: the default is zero, because the engine has none. The shipped
+    /// <c>reactionTrigger_behavior_map.json</c>
     /// gives no cooldown to <c>CliffDetected</c>, <c>RobotPickedUp</c>, <c>PlacedOnCharger</c> or
     /// <c>RobotFalling</c>; its cooldowns exist only where a trigger's strategy config names one (60 s for
     /// minor frustration, 180–300 s for the fist-bump objectives). The engine avoids re-triggering these
     /// four by other means — the reaction locks its behaviour with <c>SmartDisableReactionsWithLock</c>
     /// while it runs, and the trigger strategies watch transitions, not levels.
     /// </summary>
-    public TimeSpan ReactionCooldown { get; set; } = TimeSpan.FromSeconds(5);
+    public TimeSpan ReactionCooldown { get; set; } = TimeSpan.Zero;
+
+    /// <summary>
+    /// A cooldown for one trigger, where the shipped strategy config names one - 60 s on minor
+    /// frustration, 180 to 300 s on the fist-bump objectives. A trigger with no entry has no cooldown,
+    /// which is the case for every reaction this stack drives, so the table is empty until something
+    /// loads one in.
+    /// </summary>
+    public Dictionary<ReactionTrigger, TimeSpan> TriggerCooldowns { get; } = new();
+
+    private TimeSpan CooldownFor(ReactionTrigger t) =>
+        TriggerCooldowns.TryGetValue(t, out var c) ? c : ReactionCooldown;
 
     /// <summary>
     /// Whether a direct caller animation counts as the caller holding the floor.
@@ -184,11 +196,11 @@ public sealed class BehaviorArbiter
                 decision = new BehaviorDecision(priority, BehaviorOutcome.Disabled,
                     "autonomous behaviour is switched off") { Reaction = reaction };
             }
-            else if (reaction is { } r && _lastFired.TryGetValue(r, out var last)
-                     && at - last < ReactionCooldown)
+            else if (reaction is { } r && CooldownFor(r) > TimeSpan.Zero
+                     && _lastFired.TryGetValue(r, out var last) && at - last < CooldownFor(r))
             {
                 decision = new BehaviorDecision(priority, BehaviorOutcome.OnCooldown,
-                    $"fired {(at - last).TotalSeconds:F1}s ago, cooldown is {ReactionCooldown.TotalSeconds:F0}s")
+                    $"fired {(at - last).TotalSeconds:F1}s ago, cooldown is {CooldownFor(r).TotalSeconds:F0}s")
                 { Reaction = reaction };
             }
             else if (_running is { } current && current >= priority)

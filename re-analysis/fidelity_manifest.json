@@ -1387,21 +1387,21 @@
       "test": null
     },
     {
-      "id": "M7-011",
       "subsystem": "M7-behaviour",
-      "title": "A 5 s cooldown is imposed on every reaction, which the engine does not have",
+      "title": "A reaction is held off only where its own strategy config names a cooldown",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorArbiter.cs",
-      "effect": "cliff, pick-up and charger reactions fire less often than the app fires them",
-      "provenance": "a blanket cooldown added by this stack; the arbitration order and autonomy default around it are its own product choices and are kept",
-      "authority": "the engine has no cooldown for those three. Its per-trigger cooldowns exist only where the shipped reaction map gives one, such as the 60 s on minor frustration",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so + config/engine/behaviorSystem/reactionTrigger_behavior_map.json",
       "evidence": [
-        "config/engine/behaviorSystem/reactionTrigger_behavior_map.json"
+        "reactionTrigger_behavior_map.json holds exactly one reaction cooldown: Frustration -> ReactToFrustrationMinor, frustrationParams.cooldownTime_s 60.0. CliffDetected, RobotPickedUp, PlacedOnCharger, RobotFalling and the rest carry genericStrategyParams or wantsToRunStrategyConfig with no cooldown at all",
+        "the fist-bump cooldowns in the same file (180-300 s) are behaviorObjectiveTriggerParams, per objective rather than per trigger",
+        "the 60 s lives in ReactionTriggerStrategyFrustration::ShouldTriggerBehaviorInternal 0x0060EE6E, and this stack keeps it there too (FrustrationStrategy), not in the arbiter",
+        "re-triggering of the uncooled reactions is prevented instead by SmartDisableReactionsWithLock, held for the reaction's duration (M7-014), and by strategies that watch transitions rather than levels"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "the blanket cooldown has to go and the shipped per-trigger cooldowns have to be read from the map instead",
-      "hardware_required": false,
+      "prior": "this stack imposed a blanket 5 s cooldown on every reaction, so cliff, pick-up and charger reactions fired less often than the app fires them",
       "live_path": true,
-      "test": "BehaviorTests"
+      "test": "BehaviorTests.AReactionHasNoCooldownUnlessItsTriggerNamesOne",
+      "id": "M7-011"
     },
     {
       "id": "M7-012",

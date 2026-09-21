@@ -7,10 +7,10 @@ Manifest of **201 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 107 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 108 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 49 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 7 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 6 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -30,7 +30,7 @@ remains after both, and they do not go away by working harder on this repository
 | M4-control — Motion, sensors, lights and cubes | 9 | 4 | 0 | 0 | 0 | no | yes |
 | M5-animation — Animation clips, scheduler and face | 20 | 4 | 0 | 0 | 0 | no | yes |
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 1 | 0 | 0 | 0 | no | yes |
-| M7-behaviour — Idle, mood and reactions | 15 | 3 | 3 | 0 | 0 | no | no |
+| M7-behaviour — Idle, mood and reactions | 15 | 3 | 2 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 10 | 6 | 0 | 0 | 0 | no | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | 0 | 0 | 0 | no | yes |
@@ -521,15 +521,6 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: UpdateLiveAnimation 0x0057D6CC onward: speed uniform in plus or minus 10 mm per s, duration 250 to 1500 ms, straight with probability BodyMovementStraightFraction else a turn in place, with a 33 ms eye shift
 * evidence: UpdateLiveAnimation 0x0057D6CC
 * outstanding: nothing is left to read; it has to be built
-
-**M7-011 — A 5 s cooldown is imposed on every reaction, which the engine does not have** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorArbiter.cs`
-* effect: cliff, pick-up and charger reactions fire less often than the app fires them
-* rests on: a blanket cooldown added by this stack; the arbitration order and autonomy default around it are its own product choices and are kept
-* best authority: the engine has no cooldown for those three. Its per-trigger cooldowns exist only where the shipped reaction map gives one, such as the 60 s on minor frustration
-* evidence: config/engine/behaviorSystem/reactionTrigger_behavior_map.json
-* outstanding: the blanket cooldown has to go and the shipped per-trigger cooldowns have to be read from the map instead
 
 ### M9-wwise-music — Wwise music, the MIDI sampler and singing
 
