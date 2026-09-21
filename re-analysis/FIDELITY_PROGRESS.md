@@ -6,28 +6,34 @@ Counts come from `re-analysis/fidelity_manifest.json`; the manifest and the comm
 
 | status | records |
 | --- | ---: |
-| EXACT_SOURCE | 93 |
+| EXACT_SOURCE | 101 |
 | EQUIVALENT_IMPLEMENTATION | 12 |
-| RECOVERABLE_GAP | 60 |
+| RECOVERABLE_GAP | 53 |
 | IMPLEMENTATION_GAP | 9 |
 | COMPATIBILITY_POLICY | 15 |
 | HARDWARE_ONLY | 3 |
 | BLOCKED_EXTERNAL | 8 |
-| **total** | **200** |
+| **total** | **201** |
 
-Live-path work outstanding: **60 RECOVERABLE_GAP + 8 IMPLEMENTATION_GAP = 68**, down from 77 when the
+Live-path work outstanding: **53 RECOVERABLE_GAP + 8 IMPLEMENTATION_GAP = 61**, down from 77 when the
 repository-wide pass began.
 
-| subsystem | open | | subsystem | open |
-| --- | ---: | --- | --- | ---: |
-| M3 device | 7 | | M10 derived state | 4 |
-| M4 control | 4 | | M11 vision | 6 |
-| M5 animation | 6 | | M12 manipulation | 6 |
-| M6 Wwise bank | 1 | | M13 navigation | 8 |
-| M7 behaviour | 6 | | M14 faces | 5 |
-| M8 framework | 6 | | M15 freeplay | 9 |
+| subsystem | open |
+| --- | ---: |
+| M15 freeplay | 9 |
+| M3 device | 7 |
+| M11 vision | 6 |
+| M5 animation | 6 |
+| M7 behaviour | 6 |
+| M8 framework | 6 |
+| M13 navigation | 5 |
+| M14 faces | 5 |
+| M10 derived state | 4 |
+| M4 control | 4 |
+| M12 manipulation | 2 |
+| M6 Wwise bank | 1 |
 
-M1, M2 and M9 hold none. M1 and M2 were cleared in this pass; M9 in the one before it.
+M1, M2 and M9 hold none.
 
 ## The transmitted-unknowns sweep
 
