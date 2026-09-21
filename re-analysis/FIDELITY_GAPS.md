@@ -8,36 +8,42 @@ Manifest of **195 records** over 16 subsystems.
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 80 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 17 | The native behaviour is known from primary source; this stack reaches the same observable effect by a different mechanism, and the record names the difference. |
-| RECOVERABLE_GAP | 69 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. Blocks source-completeness on a live path. |
-| COMPATIBILITY_POLICY | 19 | A deliberate choice of this stack on a path that does not claim to be the engine's: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. |
+| EQUIVALENT_IMPLEMENTATION | 11 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| RECOVERABLE_GAP | 69 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 9 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
-| BLOCKED_EXTERNAL | 7 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
+| BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
-## Source-completeness by subsystem
+## Where each subsystem stands
 
-A subsystem is source-complete when nothing on its normal live execution path is a RECOVERABLE_GAP.
+Four separate things, because one word cannot carry them. **Source read** means nothing is left that
+reading the original would settle. **Built** means nothing the original is known to do is knowingly
+not done here. Neither says the behaviour is faithfully reproduced: the last two columns are what
+remains after both, and they do not go away by working harder on this repository.
 
-| subsystem | records | live-path gaps | source-complete |
-| --- | ---: | ---: | --- |
-| M1-transport — UDP transport and reliability | 15 | 2 | no |
-| M2-protocol — CLAD messages and protocol helpers | 6 | 2 | no |
-| M3-device — Camera, display and audio device layer | 17 | 6 | no |
-| M4-control — Motion, sensors, lights and cubes | 9 | 4 | no |
-| M5-animation — Animation clips, scheduler and face | 20 | 4 | no |
-| M6-wwise-bank — Wwise bank reading and codecs | 7 | 1 | no |
-| M7-behaviour — Idle, mood and reactions | 15 | 4 | no |
-| M8-framework — Behaviour framework and scoring | 10 | 5 | no |
-| M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | yes |
-| M10-derived — Derived robot state and reaction strategies | 9 | 4 | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 16 | 9 | no |
-| M12-manipulation — Docking, carrying and pre-action poses | 12 | 7 | no |
-| M13-navigation — Planning, charger and block configurations | 10 | 7 | no |
-| M14-faces — Face and pet pipeline | 7 | 5 | no |
-| M15-freeplay — Needs, activities and freeplay | 12 | 9 | no |
-| tools — Conformance CLI and offline tools | 3 | 0 | yes |
+| subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| M1-transport — UDP transport and reliability | 15 | 2 | 0 | 0 | 0 | no | yes |
+| M2-protocol — CLAD messages and protocol helpers | 6 | 2 | 0 | 0 | 0 | no | yes |
+| M3-device — Camera, display and audio device layer | 17 | 6 | 1 | 0 | 1 | no | no |
+| M4-control — Motion, sensors, lights and cubes | 9 | 4 | 0 | 0 | 0 | no | yes |
+| M5-animation — Animation clips, scheduler and face | 20 | 4 | 2 | 0 | 0 | no | no |
+| M6-wwise-bank — Wwise bank reading and codecs | 7 | 1 | 0 | 0 | 0 | no | yes |
+| M7-behaviour — Idle, mood and reactions | 15 | 3 | 3 | 0 | 0 | no | no |
+| M8-framework — Behaviour framework and scoring | 10 | 6 | 0 | 0 | 0 | no | yes |
+| M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
+| M10-derived — Derived robot state and reaction strategies | 9 | 4 | 0 | 0 | 0 | no | yes |
+| M11-vision — Markers, camera geometry and BlockWorld | 16 | 9 | 0 | 1 | 0 | no | yes |
+| M12-manipulation — Docking, carrying and pre-action poses | 12 | 7 | 1 | 0 | 0 | no | no |
+| M13-navigation — Planning, charger and block configurations | 10 | 7 | 1 | 0 | 0 | no | no |
+| M14-faces — Face and pet pipeline | 7 | 5 | 0 | 1 | 0 | no | yes |
+| M15-freeplay — Needs, activities and freeplay | 12 | 9 | 0 | 0 | 0 | no | yes |
+| tools — Conformance CLI and offline tools | 3 | 0 | 0 | 0 | 0 | yes | yes |
 
-## Every RECOVERABLE_GAP
+## Still to read: every RECOVERABLE_GAP
+
+Each of these is a question the original can answer and nobody has asked it yet.
 
 ### M1-transport — UDP transport and reliability
 
@@ -48,7 +54,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: robot behaviour in the fw2457 capture
 * best authority: libcozmoEngine.so ping handling; the capture corroborates
 * evidence: re-analysis/captures fw2457 frame logs
-* unresolved: whether the engine also accepts isReply 0 as a reply, or ignores it and relies on its own timer; the ping handler was not disassembled
+* outstanding: whether the engine also accepts isReply 0 as a reply, or ignores it and relies on its own timer; the ping handler was not disassembled
 
 **M1-012 — MaxFramePayloadBytes 1037** (live path)
 
@@ -57,7 +63,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: PyCozmo robot-side measurement
 * best authority: libcozmoEngine.so builds frames up to 1406 bytes; the robot own limit is the binding one
 * evidence: dis_udptransport.txt 1420-byte maximum
-* unresolved: the robot firmware real limit; the engine 1406 and PyCozmo 1037 disagree and neither was traced to the firmware
+* outstanding: the robot firmware real limit; the engine 1406 and PyCozmo 1037 disagree and neither was traced to the firmware
 
 ### M2-protocol — CLAD messages and protocol helpers
 
@@ -68,7 +74,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: PyCozmo handshake, confirmed by a successful hardware connect
 * best authority: libcozmoEngine.so connect sequence
 * evidence: re-analysis/captures 2026-09-18_fw2457_probe.log
-* unresolved: the engine own connect sequence was not disassembled end to end; the order works but is not read from the binary
+* outstanding: the engine own connect sequence was not disassembled end to end; the order works but is not read from the binary
 
 **M2-005 — LightState RGB packed 5-5-5** (live path)
 
@@ -76,7 +82,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: cube and backpack lights show the wrong colour
 * rests on: PyCozmo packing; lights did light on hardware
 * best authority: the CLAD definition of LightState and the engine light code
-* unresolved: the bit order within the 16-bit field was never confirmed against the engine or a capture of a known colour
+* outstanding: the bit order within the 16-bit field was never confirmed against the engine or a capture of a known colour
 
 ### M3-device — Camera, display and audio device layer
 
@@ -87,7 +93,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: the fw2457 capture
 * best authority: the engine image-chunk handler
 * evidence: re-analysis/captures
-* unresolved: the engine own reassembly rule was not read; the capture shows what the robot sends, not what the engine accepts
+* outstanding: the engine own reassembly rule was not read; the capture shows what the robot sends, not what the engine accepts
 
 **M3-003 — Trailing 0xFF strip, byte re-stuffing and EOI append** (live path)
 
@@ -96,7 +102,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: PyCozmo transcription; every captured frame Huffman-decodes
 * best authority: the engine JPEG assembly next to the header tables already read
 * evidence: re-analysis/captures
-* unresolved: the engine assembly code was not disassembled, only its constant tables
+* outstanding: the engine assembly code was not disassembled, only its constant tables
 
 **M3-004 — 15 warm-up frames discarded** (live path)
 
@@ -104,7 +110,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: the first usable frame arrives later or earlier than the engine would deliver it
 * rests on: a choice of this stack; one capture measured 11
 * best authority: the engine camera start-up handling
-* unresolved: whether the engine discards anything at all, and how many
+* outstanding: whether the engine discards anything at all, and how many
 
 **M3-005 — Images older than the newest two are dropped** (live path)
 
@@ -112,7 +118,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: vision runs on a stale frame, or never sees a frame under load
 * rests on: a choice of this stack
 * best authority: the engine image queue
-* unresolved: the engine queue depth and drop rule
+* outstanding: the engine queue depth and drop rule
 
 **M3-009 — Blank face encoded as two skip-64 commands** (live path)
 
@@ -121,7 +127,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: plausible and decodes to blank; not executed against the engine encoder
 * best authority: CompressRLE 0x00581904 on an empty image
 * evidence: CompressRLE 0x00581904
-* unresolved: the encoder was read but not run on an empty image to confirm the two bytes
+* outstanding: the encoder was read but not run on an empty image to confirm the two bytes
 
 **M3-014 — Audio frames are sent reliably** (live path)
 
@@ -129,7 +135,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: audio frames are retransmitted under loss, adding latency, or are dropped
 * rests on: an assumption that the engine sends everything reliable
 * best authority: AnimationStreamer::SendBufferedMessages, which was not read
-* unresolved: whether the audio path is reliable or unreliable in the engine
+* outstanding: whether the audio path is reliable or unreliable in the engine
 
 ### M4-control — Motion, sensors, lights and cubes
 
@@ -139,7 +145,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: the head and lift move faster or slower than the app moves them
 * rests on: PyCozmo defaults (head 10/10, lift 3/20)
 * best authority: MoveHeadToAngleAction and MoveLiftToHeightAction constructors in libcozmoEngine.so
-* unresolved: the engine action constructor defaults were never disassembled
+* outstanding: the engine action constructor defaults were never disassembled
 
 **M4-004 — Motion refused until both motors report calibrated** (live path)
 
@@ -148,7 +154,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: observed robot behaviour on connect
 * best authority: the engine calibration gate
 * evidence: re-analysis/captures
-* unresolved: whether the engine gates motion the same way, or simply queues
+* outstanding: whether the engine gates motion the same way, or simply queues
 
 **M4-008 — Cliff sensors named by index; IMU and cube battery left in raw units** (live path)
 
@@ -156,7 +162,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: a caller reading a named sensor reads the wrong one
 * rests on: uncertainty deliberately preserved rather than guessed
 * best authority: the engine cliff sensor indexing and IMU scaling
-* unresolved: which physical sensor each index is, and the IMU scale factors
+* outstanding: which physical sensor each index is, and the IMU scale factors
 
 **M4-009 — Cube tracking from ObjectAvailable and ObjectConnectionState** (live path)
 
@@ -165,7 +171,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: observed discovery of a real cube on hardware
 * best authority: the engine cube connection handling
 * evidence: operator report 2026-09-19
-* unresolved: connection state, tap, movement, up-axis and battery telemetry have not been exercised or read from the engine
+* outstanding: connection state, tap, movement, up-axis and battery telemetry have not been exercised or read from the engine
 
 ### M5-animation — Animation clips, scheduler and face
 
@@ -176,7 +182,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: a straight linear reading of the keyframe field
 * best authority: the engine passes the keyframe volume to Wwise, which maps it through an RTPC curve
 * evidence: RobotAudioKeyFrame::SetMembersFromFlatBuf 0x004F9E54
-* unresolved: the RTPC or parameter the engine posts the keyframe volume to, and the curve on it; RobotAudioClient::SetCozmoEventParameter was not traced
+* outstanding: the RTPC or parameter the engine posts the keyframe volume to, and the curve on it; RobotAudioClient::SetCozmoEventParameter was not traced
 
 **M5-013 — faceAnimations track is not loaded; a lift value of 0 mm is passed through** (live path)
 
@@ -184,15 +190,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: clips that carry a face animation play without it
 * rests on: deferred
 * best authority: the engine face-animation track loader
-* unresolved: what the faceAnimations track carries and how the engine plays it
-
-**M5-014 — Animation cooldown and head-angle gate are not enforced** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs`
-* effect: a clip the engine would refuse still plays
-* rests on: deferred; the mechanism is recorded in AnimationLibrary.cs
-* best authority: the engine cooldown and head-angle checks in the animation group loader
-* unresolved: the cooldown clock and the head-angle window are read from the asset but not applied
+* outstanding: what the faceAnimations track carries and how the engine plays it
 
 **M5-015 — Procedural-face corner-radius parameter assignment and polygon fill rule** (live path)
 
@@ -201,7 +199,15 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: a reading of DrawEye that stopped short
 * best authority: ProceduralFaceDrawer::DrawEye in libcozmoEngine.so
 * evidence: re-analysis/PROCEDURAL_FACE.md
-* unresolved: which radius parameter belongs to which corner, and the fill rule for the eye polygon
+* outstanding: which radius parameter belongs to which corner, and the fill rule for the eye polygon
+
+**M5-019 — The last face is held after the last face keyframe; an oversize face payload is dropped** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
+* effect: the screen holds a face the engine would have cleared, or drops a frame the engine would have sent another way
+* rests on: a choice of this stack
+* best authority: the engine display path, read only as far as CompressRLE; what it does with the screen at the end of a clip was not established
+* outstanding: what the engine leaves on the screen after a clip ends. The oversize half of this is M3-007, which is known and unbuilt
 
 ### M6-wwise-bank — Wwise bank reading and codecs
 
@@ -212,7 +218,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: mono ADPCM decodes; stereo is refused because the block layout was not established
 * best authority: the seven shipped stereo ADPCM files themselves, which are the thing that would settle the layout: IMA ADPCM block packing is arithmetic that a file either fits or does not
 * evidence: wwise --coverage: Play__Robot_SFX__Effort_Long, Effort_Medium, Effort_Fail, Spark_Launch, Scan_Loop_Play, Scan_Start, Scan_Stop, Scan_Single; wwise --validate: 7 files, "ADPCM with 2 channels is not decoded"
-* unresolved: the stereo block layout. An earlier version of this record said no robot event reaches such a file; the coverage tool now lists the eight that do, which is what corrected it
+* outstanding: the stereo block layout. An earlier version of this record said no robot event reaches such a file; the coverage tool now lists the eight that do, which is what corrected it
 
 ### M7-behaviour — Idle, mood and reactions
 
@@ -223,7 +229,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: snap to the shifted pose and hold for the drawn duration
 * best authority: GenerateEyeShift 0x0058D100 with AddToPersistentLayer 0x0058EAA0 and ITrackLayerManager::ApplyLayersToFrame 0x0058E644, which were read and contradict each other when read statically
 * evidence: AddToPersistentLayer 0x0058EAA0; ApplyLayersToFrame 0x0058E644
-* unresolved: the two readings were not separated; a deeper trace of ApplyLayersToFrame trimming a finished persistent layer would settle it
+* outstanding: the two readings were not separated; a deeper trace of ApplyLayersToFrame trimming a finished persistent layer would settle it
 
 **M7-008 — Idle timers are counted in wall-clock milliseconds** (live path)
 
@@ -232,16 +238,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: wall-clock ms
 * best authority: the engine decrements each keep-alive countdown by 60 per Update call (UpdateLiveAnimation 0x0057D5F8, KeepFaceAlive 0x0058D374), so the unit is engine ticks
 * evidence: UpdateLiveAnimation 0x0057D5F8; KeepFaceAlive 0x0058D374
-* unresolved: the engine tick period, readable from CozmoEngine::Update 0x004ED4D4
-
-**M7-010 — Idle body shuffle is recorded but not driven** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
-* effect: the robot sits still where the app would shuffle
-* rests on: a deliberate omission; the engine numbers are recorded in the file
-* best authority: UpdateLiveAnimation 0x0057D6CC onward: speed uniform in plus or minus 10 mm per s, duration 250..1500 ms, straight with probability BodyMovementStraightFraction
-* evidence: UpdateLiveAnimation 0x0057D6CC
-* unresolved: nothing in the source; it is read and simply not implemented
+* outstanding: the engine tick period, readable from CozmoEngine::Update 0x004ED4D4
 
 **M7-013 — Mood clamp to plus or minus 1 and flat extrapolation outside decay-graph nodes** (live path)
 
@@ -249,7 +246,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: emotion values saturate differently and decay differently at the edges
 * rests on: a plausible reading
 * best authority: MoodManager::UpdateEmotions in libcozmoEngine.so
-* unresolved: the clamp and the edge behaviour were never disassembled
+* outstanding: the clamp and the edge behaviour were never disassembled
 
 ### M8-framework — Behaviour framework and scoring
 
@@ -260,7 +257,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: structure inferred from exported names
 * best authority: IBehavior::ReadFromScoredJson 0x005BC489 and ScoringBSRunnableChooser::GetDesiredActiveBehavior 0x0060B23E, of which the chooser has since been read
 * evidence: ScoringBSRunnableChooser::GetDesiredActiveBehavior
-* unresolved: ReadFromScoredJson has not been disassembled, so how a shipped config turns into a score is still not read
+* outstanding: ReadFromScoredJson has not been disassembled, so how a shipped config turns into a score is still not read
 
 **M8-004 — Behaviour scores 1.0 and 5.0 where the shipped configs carry none** (live path)
 
@@ -268,7 +265,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: the scoring chooser ranks behaviours by numbers that are not the app numbers
 * rests on: chosen because they looked right
 * best authority: IBehavior::ReadFromScoredJson 0x005BC489 and the shipped behaviour configs
-* unresolved: where the engine gets a score for a behaviour whose config carries none
+* outstanding: where the engine gets a score for a behaviour whose config carries none
 
 **M8-005 — PlayAnim uses the first trigger that resolves** (live path)
 
@@ -276,7 +273,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: a different clip plays when several triggers are listed
 * rests on: inferred
 * best authority: the engine PlayAnim behaviour class
-* unresolved: the engine selection rule among several triggers
+* outstanding: the engine selection rule among several triggers
 
 **M8-006 — A strategy type this stack does not model reports not runnable** (live path)
 
@@ -285,7 +282,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: a deliberate fail-closed choice, labelled
 * best authority: WantsToRunStrategyFactory in libcozmoEngine.so, which names every strategy type
 * evidence: IBehavior::ReadFromJson
-* unresolved: the strategy types not yet modelled and what each one tests
+* outstanding: the strategy types not yet modelled and what each one tests
 
 **M8-007 — Per-play track lock is recorded and not applied** (live path)
 
@@ -293,7 +290,16 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: a track the engine would mute for one play still moves
 * rests on: deferred; the scheduler has no per-play track mask
 * best authority: MovementComponent::LockTracks in libcozmoEngine.so
-* unresolved: the mask the engine applies per play and where it is released
+* outstanding: the mask the engine applies per play and where it is released
+
+**M8-008 — A 5 s calibration allowance is borrowed from ReactToImpact for other behaviours** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.cs:265`
+* effect: behaviours wait 5 s for recalibration where the engine may wait a different time, or not wait
+* rests on: a number borrowed from the one place the engine is known to use it
+* best authority: BehaviorReactToImpact 0x00606348 uses 5 s. What the other behaviour classes do about recalibration was not read
+* evidence: BehaviorReactToImpact::TransitionToPlayingAnim 0x00606348
+* outstanding: what each behaviour class actually waits for, which is in the classes themselves
 
 ### M10-derived — Derived robot state and reaction strategies
 
@@ -304,7 +310,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: inferred as to which locks the engine tests; the skip itself is native
 * best authority: MovementComponent::CheckForUnexpectedMovement 0x0063E398 and the lock it reads
 * evidence: MovementComponent::CheckForUnexpectedMovement 0x0063E398
-* unresolved: which track locks the engine tests before skipping the check
+* outstanding: which track locks the engine tests before skipping the check
 
 **M10-007 — The pose rewind after unexpected movement is not reproduced** (live path)
 
@@ -313,7 +319,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: deferred
 * best authority: MovementComponent::CheckForUnexpectedMovement 0x0063E398 continues into the rewind
 * evidence: MovementComponent::CheckForUnexpectedMovement 0x0063E398
-* unresolved: the rewind itself, which is in the same function that was read for the detector
+* outstanding: the rewind itself, which is in the same function that was read for the detector
 
 **M10-008 — Resume-last mechanics after a reaction** (live path)
 
@@ -321,7 +327,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: the behaviour that was interrupted does or does not come back
 * rests on: inferred structure
 * best authority: the engine behaviour manager resume path
-* unresolved: whether the engine resumes the interrupted behaviour, and under what conditions
+* outstanding: whether the engine resumes the interrupted behaviour, and under what conditions
 
 **M10-009 — The obstacle-detected flag has a local source** (live path)
 
@@ -329,7 +335,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: ReactToObstacle runs at the wrong times
 * rests on: a local hook: true while an obstacle stop is pending
 * best authority: StrategyObstacleDetected in libcozmoEngine.so and whatever writes the flag it reads
-* unresolved: what sets the engine obstacle-detected flag
+* outstanding: what sets the engine obstacle-detected flag
 
 ### M11-vision — Markers, camera geometry and BlockWorld
 
@@ -340,7 +346,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: local implementations of steps the engine parameterises
 * best authority: MarkerDetector::Parameters::Initialize gives the parameters, which are read; the pixel loops themselves were not transcribed
 * evidence: MarkerDetector::Parameters::Initialize
-* unresolved: the engine own quad extraction and refinement, which is in the binary
+* outstanding: the engine own quad extraction and refinement, which is in the binary
 
 **M11-006 — Clustering tolerances, the flat-snap angle, history windows, verification timeout** (live path)
 
@@ -348,7 +354,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: observations merge into the wrong object, or fail to merge
 * rests on: chosen locally (20 mm / 10 degrees, 8 degrees)
 * best authority: the engine BlockWorld clustering
-* unresolved: the engine own tolerances
+* outstanding: the engine own tolerances
 
 **M11-007 — Two misses before an object pose is forgotten** (live path)
 
@@ -357,7 +363,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: read as cmp r3, #1 and taken as 2 misses
 * best authority: MarkObjectUnknown in libcozmoEngine.so
 * evidence: MarkObjectUnknown
-* unresolved: the comparison was read but the counter it compares was not traced
+* outstanding: the comparison was read but the counter it compares was not traced
 
 **M11-008 — Minimum projected marker size for the visibility test, 10 pixels** (live path)
 
@@ -365,7 +371,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: a distant cube is or is not counted as visible
 * rests on: inferred
 * best authority: the engine visibility test
-* unresolved: the engine threshold
+* outstanding: the engine threshold
 
 **M11-009 — A located cube that reports movement over the radio is marked Dirty** (live path)
 
@@ -373,7 +379,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: the pose of a moved cube is trusted or distrusted differently
 * rests on: inferred
 * best authority: the engine ObjectMoved handling
-* unresolved: what the engine does to the pose on ObjectMoved
+* outstanding: what the engine does to the pose on ObjectMoved
 
 **M11-010 — Occlusion is not modelled; a marker that passes the geometric tests counts as visible** (live path)
 
@@ -381,7 +387,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: a hidden cube is reported visible
 * rests on: deferred
 * best authority: the engine occluder list and IsAnythingBehind
-* unresolved: the occluder list and the IsAnythingBehind test
+* outstanding: the occluder list and the IsAnythingBehind test
 
 **M11-011 — NV storage request framing and MORE chunking for the camera calibration** (live path)
 
@@ -389,7 +395,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: the calibration read fails, so live vision falls back or refuses
 * rests on: inferred framing
 * best authority: the engine NV storage client and the CLAD definition
-* unresolved: the request Length field and second byte, and the chunking rule
+* outstanding: the request Length field and second byte, and the chunking rule
 
 **M11-014 — SetBodyAngle is read as an absolute body angle in the robot pose frame** (live path)
 
@@ -398,7 +404,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: the packing is native; the frame of reference is inferred
 * best authority: the engine SetBodyAngle caller
 * evidence: packing read from libcozmoEngine.so
-* unresolved: whether the angle is absolute or relative; hardware item L would also show it
+* outstanding: whether the angle is absolute or relative; hardware item L would also show it
 
 **M11-015 — Turn speed 100 deg per s and acceleration 10 rad per s squared** (live path)
 
@@ -406,7 +412,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: turns are faster or slower than the app
 * rests on: chosen locally
 * best authority: the engine turn action constants
-* unresolved: the engine own speed and acceleration for this turn
+* outstanding: the engine own speed and acceleration for this turn
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 
@@ -417,7 +423,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: the fourth float and the last two bytes are sent as zero because they were not traced
 * best authority: the engine DockWithObject packing, which was read for the other fields
 * evidence: packing at 0x00632BAE..0x00632BEE
-* unresolved: what the engine puts in the fourth float and the two trailing bytes
+* outstanding: what the engine puts in the fourth float and the two trailing bytes
 
 **M12-006 — A carried object is released in the world model when the put-down animation completes** (live path)
 
@@ -425,7 +431,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: the world model believes the robot is carrying a cube it has put down, or the reverse
 * rests on: inferred; the engine learns it from the robot carry state
 * best authority: the robot carry state in RobotState and the engine handling of it
-* unresolved: which field of RobotState carries the carry state and how the engine reacts to it
+* outstanding: which field of RobotState carries the carry state and how the engine reacts to it
 
 **M12-007 — Lift-load timeout and the accelerometer object-did-not-move check are not implemented** (live path)
 
@@ -433,7 +439,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: a failed pick-up is reported as a success
 * rests on: deferred
 * best authority: the engine pick-up verification in IDockAction
-* unresolved: both checks, which are in the dock action already partly read
+* outstanding: both checks, which are in the dock action already partly read
 
 **M12-009 — Retry limits: 3 attempts for manipulation, 2 for the charger, 3 for the wheelie** (live path)
 
@@ -441,7 +447,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: the robot gives up sooner or later than the app
 * rests on: inferred numbers
 * best authority: the engine behaviour classes, which carry their own retry counts
-* unresolved: the retry count each engine behaviour uses
+* outstanding: the retry count each engine behaviour uses
 
 **M12-010 — The search-for-block fallback is not implemented** (live path)
 
@@ -449,7 +455,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: the robot stops where the app would look around for the cube
 * rests on: deferred
 * best authority: the engine search behaviour
-* unresolved: the search pattern
+* outstanding: the search pattern
 
 **M12-011 — A failed final turn fails DriveToObjectAction as DidNotReachPreActionPose** (live path)
 
@@ -457,7 +463,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: the caller sees the nearest shipped result rather than the engine own
 * rests on: a labelled reduction to the nearest shipped ActionResult
 * best authority: the engine DriveToObjectAction result for this case
-* unresolved: which ActionResult the engine reports
+* outstanding: which ActionResult the engine reports
 
 **M12-012 — Non-upright stacking needs a progression unlock and is not implemented** (live path)
 
@@ -465,7 +471,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: the robot refuses placements the app would attempt
 * rests on: deferred, uprights only
 * best authority: the engine placement rules
-* unresolved: the unlock condition and the non-upright placement geometry
+* outstanding: the unlock condition and the non-upright placement geometry
 
 ### M13-navigation — Planning, charger and block configurations
 
@@ -476,7 +482,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: inferred from the robot 56 by 70 mm body
 * best authority: xythetaEnvironment in libcozmoEngine.so, whose interface was read but whose padding and penalty were not
 * evidence: xythetaEnvironment
-* unresolved: the engine padding radius and penalty weight
+* outstanding: the engine padding radius and penalty weight
 
 **M13-004 — In-place turn cost and the arc reconstruction from the primitive file** (live path)
 
@@ -484,7 +490,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: the planner prefers different primitives, so the robot takes a different route
 * rests on: inferred reconstruction
 * best authority: the engine planner cost function and its precomputed heuristic table
-* unresolved: the cost of an in-place turn and the exact arc the engine builds from each primitive
+* outstanding: the cost of an in-place turn and the exact arc the engine builds from each primitive
 
 **M13-006 — One active beacon at a time in AIWhiteboard** (live path)
 
@@ -493,7 +499,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: inferred from GetActiveBeacon being singular
 * best authority: the engine AIWhiteboard, whose interface is exported
 * evidence: AIWhiteboard exports
-* unresolved: whether the engine keeps more than one beacon, and how failures are recorded
+* outstanding: whether the engine keeps more than one beacon, and how failures are recorded
 
 **M13-007 — Stack detection tolerance of 15 mm above a cube height of 44** (live path)
 
@@ -502,7 +508,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: inferred tolerance
 * best authority: FindObjectOnTopOrUnderneathHelper in libcozmoEngine.so
 * evidence: FindObjectOnTopOrUnderneathHelper
-* unresolved: the engine tolerance
+* outstanding: the engine tolerance
 
 **M13-008 — The charger drive-off is allowed to end short when the contacts report** (live path)
 
@@ -511,7 +517,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: inferred
 * best authority: DriveOffChargerContactsAction CheckIfDone in libcozmoEngine.so
 * evidence: Robot::IsOnChargerContacts
-* unresolved: whether the engine ends the drive early or always drives the full distance
+* outstanding: whether the engine ends the drive early or always drives the full distance
 
 **M13-009 — Charger length and the pre-dock pose derived from the drive-off distance** (live path)
 
@@ -520,7 +526,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: inferred from the drive-off distance
 * best authority: the charger object definition at 0x004E9B6C, partly read
 * evidence: charger 0x004E9B6C
-* unresolved: the charger real dimensions and the pose the mount action aligns to
+* outstanding: the charger real dimensions and the pose the mount action aligns to
 
 **M13-010 — Workout selection by index, medium by default** (live path)
 
@@ -529,7 +535,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: chosen locally; the selection input is inferred to be the energy need
 * best authority: WorkoutComponent in libcozmoEngine.so and the shipped workout config
 * evidence: WorkoutComponent
-* unresolved: what the engine selects on
+* outstanding: what the engine selects on
 
 ### M14-faces — Face and pet pipeline
 
@@ -539,7 +545,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: a face is declared verified too early or too late
 * rests on: inferred (5 frames)
 * best authority: the engine face actions
-* unresolved: the engine frame budget for each
+* outstanding: the engine frame budget for each
 
 **M14-003 — TrackFaceAction update period of 100 ms; eye shift and driving animation not implemented** (live path)
 
@@ -547,7 +553,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: tracking is jerkier and the face does not react while tracking
 * rests on: chosen locally; the extra layers are deferred
 * best authority: the engine TrackFaceAction
-* unresolved: the engine update period and the layers it adds
+* outstanding: the engine update period and the layers it adds
 
 **M14-004 — PetInitialDetection strategy shape** (live path)
 
@@ -556,7 +562,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: inferred shape: the first sighting of a pet id
 * best authority: the engine strategy class for PetInitialDetection
 * evidence: reactionTrigger_behavior_map.json
-* unresolved: the strategy class was not disassembled
+* outstanding: the strategy class was not disassembled
 
 **M14-005 — TurnTowardsImagePoint aims at a ray 200 mm out** (live path)
 
@@ -564,7 +570,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: the robot turns to the wrong angle for a detected pet
 * rests on: inferred range
 * best authority: the engine TurnTowardsImagePointAction
-* unresolved: the range the engine assumes
+* outstanding: the range the engine assumes
 
 **M14-007 — The memory map is not modelled, so CanDriveIdealDistanceForward always allows the drive** (live path)
 
@@ -572,7 +578,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: the robot drives towards a face into an obstacle it should have known about
 * rests on: deferred
 * best authority: the engine memory map
-* unresolved: the memory map structure and the query
+* outstanding: the memory map structure and the query
 
 ### M15-freeplay — Needs, activities and freeplay
 
@@ -583,7 +589,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: deferred
 * best authority: the shipped needs config carries DecayModifiers; the engine reads them
 * evidence: needs config
-* unresolved: how one need level scales another decay, the damaged-parts bookkeeping, and where the engine persists the state
+* outstanding: how one need level scales another decay, the damaged-parts bookkeeping, and where the engine persists the state
 
 **M15-005 — The flat 3 s recent-end cooldown case is not reproduced** (live path)
 
@@ -592,7 +598,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: read in WantsToStart and left out because the second time argument was not identified
 * best authority: IActivityStrategy::WantsToStart 0x005B529C
 * evidence: WantsToStart 0x005B529C
-* unresolved: what the second time argument is measured from
+* outstanding: what the second time argument is measured from
 
 **M15-006 — Activity deselection hook and the null-pick path** (live path)
 
@@ -601,7 +607,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: inferred; IActivity::OnDeselected reads it but the exact hook was not traced
 * best authority: ActivityFreeplay::GetDesiredActiveBehaviorInternal 0x005AE2xx and IActivity::OnDeselected
 * evidence: ActivityFreeplay::GetDesiredActiveBehaviorInternal
-* unresolved: the hook and the null-pick path, instruction by instruction
+* outstanding: the hook and the null-pick path, instruction by instruction
 
 **M15-007 — boredomMultiplier, feature gates and the pyramid strategy random factor are not applied** (live path)
 
@@ -610,7 +616,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: deferred
 * best authority: the shipped activity configs carry them
 * evidence: activities/**
-* unresolved: how the engine applies each
+* outstanding: how the engine applies each
 
 **M15-008 — The needsActionID hook and desired-from-objects ordering** (live path)
 
@@ -618,7 +624,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: a different behaviour is picked when several objects are desirable
 * rests on: inferred ordering
 * best authority: the engine activity strategy
-* unresolved: the ordering rule and what needsActionID does
+* outstanding: the ordering rule and what needsActionID does
 
 **M15-009 — Emotion event names fired when a cube is placed in a beacon** (live path)
 
@@ -626,7 +632,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: mood does not move where the app moves it
 * rests on: deferred: the names were not read
 * best authority: FireEmotionEvents call sites in libcozmoEngine.so and mood_config.json
-* unresolved: the event names
+* outstanding: the event names
 
 **M15-010 — A block whose location is no longer valid goes straight to the upset reaction** (live path)
 
@@ -634,7 +640,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: the robot reacts where the app might search first
 * rests on: inferred: the engine log string was found, the branch after it was not read
 * best authority: the engine behaviour that logs the location is no longer valid
-* unresolved: what the engine does after that log line
+* outstanding: what the engine does after that log line
 
 **M15-011 — The beacon is centred on the robot** (live path)
 
@@ -642,7 +648,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * effect: cubes are gathered to the wrong place
 * rests on: inferred; the engine selection logic was not read further
 * best authority: the engine beacon selection
-* unresolved: how the engine chooses the beacon centre
+* outstanding: how the engine chooses the beacon centre
 
 **M15-012 — Images waited for after a put-down, and the CantHandleTallStack trigger name** (live path)
 
@@ -651,55 +657,147 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: inferred from acknowledgeObject.json and from the trigger name
 * best authority: the engine behaviour classes
 * evidence: acknowledgeObject.json
-* unresolved: the engine image count and trigger
+* outstanding: the engine image count and trigger
 
-## Items that are not gaps but are not the engine either
+## Still to build: every IMPLEMENTATION_GAP
 
-| id | subsystem | status | what | why it is not a gap |
+Each of these is a question already answered. The original's behaviour is established and this stack knowingly does something else, so the work outstanding is writing it, not reading.
+
+### M3-device — Camera, display and audio device layer
+
+**M3-007 — The face encoder emits runs only; the engine also uses skip and repeat and has a raw fallback** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Display.cs`
+* effect: a face the engine would send in one frame is refused here, or sent larger than it needs to be
+* rests on: a deliberate reduction, recorded in Display.cs, that has never been built out
+* best authority: CompressRLE 0x00581904 was read and its skip and repeat commands and its raw 1024-byte fallback above MAX_FACE_FRAME_SIZE are known; none of the three is implemented
+* evidence: CompressRLE 0x00581904
+* outstanding: the skip and repeat commands and the raw fallback have to be written; nothing more has to be read first
+
+### M5-animation — Animation clips, scheduler and face
+
+**M5-014 — The animation cooldown and head-angle gate are read and not enforced** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs`
+* effect: a clip the engine would refuse still plays
+* rests on: the cooldown clock and the head-angle window are parsed out of the shipped animation groups and then ignored
+* best authority: the shipped animation group files carry both, and AnimationLibrary.cs records the mechanism
+* evidence: the fields are read by the loader and never consulted
+* outstanding: the gate has to be applied at selection time; the values are already in hand
+
+**M5-017 — A clip falls back to another audio alternative when the chosen one cannot be decoded** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
+* effect: a clip makes a sound where the engine would make none
+* rests on: a fallback of this stack, papering over media this build cannot decode (M6-003)
+* best authority: RobotAudioKeyFrame::GetAudioRefIndex 0x004F9AEC picks one alternative by cumulative probability and the engine plays what Wwise resolves; there is no second draw
+* evidence: GetAudioRefIndex 0x004F9AEC
+* outstanding: the fallback has to go once the media it covers for decode; it is a workaround for M6-003, not a decision worth keeping
+
+### M7-behaviour — Idle, mood and reactions
+
+**M7-009 — Idle head and lift move through the motion API instead of the live animation** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
+* effect: different messages on the wire for the same visible motion, and none of the keyframe variability the engine applies at stream time
+* rests on: SetHeadAngle and SetLiftHeight commands, because the idle here is not built on the animation scheduler
+* best authority: UpdateLiveAnimation 0x0057D5F8 adds HeadAngleKeyFrame(currentDeg, variability 6, duration) and LiftHeightKeyFrame(35, 8, duration) to the engine live animation and streams them as 0x93 and 0x94
+* evidence: UpdateLiveAnimation 0x0057D5F8
+* outstanding: the idle has to be built as a live clip on the scheduler; the keyframes and their variability are already recovered
+
+**M7-010 — The idle body shuffle is recovered and not driven** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
+* effect: the robot sits still where the app shuffles
+* rests on: a deliberate omission; the engine numbers are written down in the file and nothing uses them
+* best authority: UpdateLiveAnimation 0x0057D6CC onward: speed uniform in plus or minus 10 mm per s, duration 250 to 1500 ms, straight with probability BodyMovementStraightFraction else a turn in place, with a 33 ms eye shift
+* evidence: UpdateLiveAnimation 0x0057D6CC
+* outstanding: nothing is left to read; it has to be built
+
+**M7-011 — A 5 s cooldown is imposed on every reaction, which the engine does not have** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorArbiter.cs`
+* effect: cliff, pick-up and charger reactions fire less often than the app fires them
+* rests on: a blanket cooldown added by this stack; the arbitration order and autonomy default around it are its own product choices and are kept
+* best authority: the engine has no cooldown for those three. Its per-trigger cooldowns exist only where the shipped reaction map gives one, such as the 60 s on minor frustration
+* evidence: config/engine/behaviorSystem/reactionTrigger_behavior_map.json
+* outstanding: the blanket cooldown has to go and the shipped per-trigger cooldowns have to be read from the map instead
+
+### M9-wwise-music — Wwise music, the MIDI sampler and singing
+
+**M9-021 — A music event with several Play actions renders only the first** (not on the live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMusic.cs`
+* effect: Play__Codelab__Music_Tiny_Orchestra_Init plays one of its nine layers
+* rests on: a reduction of this stack on the music path. Ordinary events no longer reduce this way: WwisePlayback plays every Play target together
+* best authority: the shipped bank lists all nine Play actions, and the ordinary-event walk already shows the shape the music path needs. Singing is unaffected, which is why this is off the live path: each of the three tempo events holds exactly one Play action
+* evidence: Play__Codelab__Music_Tiny_Orchestra_Init: 9 Play actions and 9 of type 0x1901; Play__Robot_VO__Cozmo_Singing_80bpm, _100bpm and _120bpm: one Play action each; nothing in cozmo-stack posts a Codelab music event
+* outstanding: the music resolver has to carry every Play action rather than the first; nothing is left to read
+
+### M12-manipulation — Docking, carrying and pre-action poses
+
+**M12-008 — A carried object is parented straight to the lift** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs:48`
+* effect: a carried cube is placed slightly wrong in the world model, and so is anything reasoned from it
+* rests on: a reduction of the engine pose-parent chain to a single link
+* best authority: the engine parents a carried object through its pose tree rather than directly to the lift; the chain was seen when the docking path was read
+* evidence: the pose-parent chain in the engine docking code
+* outstanding: the chain has to be reproduced rather than collapsed
+
+### M13-navigation — Planning, charger and block configurations
+
+**M13-005 — A lattice-planner failure drives the straight line anyway when the environment reports it clear** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/DriveActions.cs:71`
+* effect: the robot drives where the app would stop and report that it could not plan a path
+* rests on: a labelled fallback of this stack
+* best authority: the engine returns a planning failure and the action fails; it does not substitute a path of its own
+* outstanding: the fallback has to go, which means the planner has to be good enough without it - the padding and penalty of M13-003 are the same work
+
+## What remains after both: blocked externally, or needing hardware
+
+| id | subsystem | status | what | why it cannot be settled here |
+| --- | --- | --- | --- | --- |
+| M3-008 | M3-device | HARDWARE_ONLY | Scanline parity: dd written as 01 | whether the firmware selects a physical row from the bit position; only the panel can show this |
+| M3-016 | M3-device | HARDWARE_ONLY | Colour camera frames are half-width three-component JPEG | no colour capture exists; the robot has only ever been asked for grayscale |
+| M9-013 | M9-wwise-music | BLOCKED_EXTERNAL | Whether Wwise routes MIDI notes into the get-in branch of the singing sampler | the dispatch rule itself. Only a recording of the stock app singing, or a Wwise runtime of this bank version, can settle it. This is the largest remaining doubt about how a rendered song sounds |
+| M9-014 | M9-wwise-music | BLOCKED_EXTERNAL | Whether a note's velocity changes anything, when nothing in the bank binds it | whether Wwise applies a velocity-to-level mapping of its own to a MIDI voice. The shipped songs vary velocity over about 20 units, so if it does, some notes are a few dB quieter than this renders them. Only a Wwise runtime of this bank version, or a recording of the stock app, can settle it. Until the M9 re-audit this was recorded as an equivalent implementation, which the varying velocities do not support |
+| M9-022 | M9-wwise-music | BLOCKED_EXTERNAL | Container semantics: blend and actor-mixer play all children, random picks one by weight avoiding the last, sequence steps its playlist | the runtime dispatch rule, in particular whether a container pre-filters its playlist to children that accept a MIDI note or picks first and then filters |
+| M9-023 | M9-wwise-music | HARDWARE_ONLY | How the stock app sounded when it sang | sustain, release tails, level and whether the get-in branch is audible during a song |
+| M9-024 | M9-wwise-music | BLOCKED_EXTERNAL | Whether cozmo_singing_note_off also stops the voice it is attached to | the name of modulator property 15 and the enumeration of its values, which live in the Wwise SDK; no Wwise runtime or header ships in the APK. What is left open is only whether the stop is this modulator or the break-on-note-off bit, not whether the note stops |
+| M9-025 | M9-wwise-music | BLOCKED_EXTERNAL | The shape a Wwise LFO produces between its extremes | whether the output is unipolar or bipolar, and the exact waveform. This is on the live path: the cube shake is measured and the vibrato reaches a playing song, so any shake exercises this shape |
+| M9-026 | M9-wwise-music | BLOCKED_EXTERNAL | The filter and limiter arithmetic between the shipped settings | the exact coefficient formulas and detector behaviour. The settings they act on are exact, so the shape is right and the detail is not |
+| M11-016 | M11-vision | BLOCKED_EXTERNAL | Face, pet and motion detection | nothing recoverable: the detector is third-party binary code |
+| M14-006 | M14-faces | BLOCKED_EXTERNAL | Text to speech is not implemented | the voice model and the plug-in are third-party binaries |
+
+## Settled differences: equivalent implementations and kept policies
+
+| id | subsystem | status | what | why it is settled |
 | --- | --- | --- | --- | --- |
 | M1-013 | M1-transport | COMPATIBILITY_POLICY | Windows high-resolution timer and the tick loop | none needed: the engine runs on Android and this is the local equivalent |
 | M1-014 | M1-transport | COMPATIBILITY_POLICY | Three-thread dispatch, handler isolation, socket error handling | the engine threading is its own; nothing on the wire depends on it |
 | M1-015 | M1-transport | COMPATIBILITY_POLICY | 5 s connect timeout | the engine connect timeout was not read; nothing the robot does depends on it |
-| M3-007 | M3-device | EQUIVALENT_IMPLEMENTATION | RLE encoder emits runs only; the engine also uses skip and repeat and falls back to a raw 1024-byte frame | CompressRLE 0x00581904, which was read; the raw fallback path above MAX_FACE_FRAME_SIZE was read but not built |
-| M3-008 | M3-device | HARDWARE_ONLY | Scanline parity: dd written as 01 | CompressRLE 0x00581904 shows dd carries the bits of a pair of canvas rows; the firmware use of them is not in the engine |
 | M3-013 | M3-device | EQUIVALENT_IMPLEMENTATION | TargetInFlight 10, counter-paced feed, Busy window 200 ms, priming | the engine feeds to its own budget every update (UpdateStream 0x0057C84C) |
-| M3-016 | M3-device | HARDWARE_ONLY | Colour camera frames are half-width three-component JPEG | MiniColorToJpeg table 0x00C48D84 |
 | M3-017 | M3-device | COMPATIBILITY_POLICY | Test tones, beeps and sweeps | not applicable |
 | M4-005 | M4-control | COMPATIBILITY_POLICY | Action ids cycle 1..255 | the engine action id allocation |
 | M4-006 | M4-control | COMPATIBILITY_POLICY | Wheel confirmation tolerance 35 percent / 5 mm per s | not applicable: the engine does not confirm wheel speeds this way |
 | M4-007 | M4-control | COMPATIBILITY_POLICY | StopAll sends StopAllMotors and a zero DriveWheels | the engine stop path |
-| M5-017 | M5-animation | EQUIVALENT_IMPLEMENTATION | Fallback to another audio alternative when the chosen one cannot be decoded | the engine does not fall back; it plays what Wwise resolves |
 | M5-018 | M5-animation | EQUIVALENT_IMPLEMENTATION | How many frames one wall-clock tick streams | the engine streams to the audio budget on every update regardless of the clock (UpdateStream 0x0057C84C) |
-| M5-019 | M5-animation | COMPATIBILITY_POLICY | The last face is held after the last face keyframe; an oversize face payload is dropped | the engine display path, partly read (see M3-007) |
 | M5-020 | M5-animation | COMPATIBILITY_POLICY | Expressions helper faces | not applicable |
 | M6-002 | M6-wwise-bank | EQUIVALENT_IMPLEMENTATION | Vorbis rebuild with external codebooks and granule computation | the Wwise Vorbis packing; no runtime in the package to check against |
 | M6-004 | M6-wwise-bank | EQUIVALENT_IMPLEMENTATION | Resampling to the robot rate is a band-limited windowed sinc, not Audiokinetic resampler | the Wwise runtime resampler, which does not ship in the APK. What was fixed here is a defect of this stack, not a reproduction of theirs: nearest-sample decimation aliases, and no competent resampler does |
-| M7-009 | M7-behaviour | EQUIVALENT_IMPLEMENTATION | Idle head and lift move through the motion API instead of the live animation | the engine adds HeadAngleKeyFrame(currentDeg, variability 6, duration) and LiftHeightKeyFrame(35, 8, duration) to its live animation and streams them as 0x93 / 0x94 |
-| M7-011 | M7-behaviour | COMPATIBILITY_POLICY | Arbitration order caller over reaction over idle; autonomy off by default; 5 s per-reaction cooldown | the engine per-trigger cooldowns exist only where the shipped map gives one |
 | M7-015 | M7-behaviour | EQUIVALENT_IMPLEMENTATION | Pick-up falls back to the raw status flag until the off-treads classifier is enabled | Robot::CheckAndUpdateTreadsState 0x00511E00, which is implemented and used once calibration is reported |
-| M8-008 | M8-framework | EQUIVALENT_IMPLEMENTATION | The 5 s calibration allowance borrowed from ReactToImpact | BehaviorReactToImpact 0x00606348 |
 | M8-009 | M8-framework | COMPATIBILITY_POLICY | Behaviour scope undo order | the engine Smart* destructor order |
 | M8-010 | M8-framework | COMPATIBILITY_POLICY | Behaviour inventory classifier rules | not applicable: this is bookkeeping, not robot behaviour |
 | M9-011 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | The render goes through the effect chain the robot bus carries, not a local peak normalisation | libcozmoEngine.so for the routing and Init.bnk for the chain and its parameters |
-| M9-013 | M9-wwise-music | BLOCKED_EXTERNAL | Whether Wwise routes MIDI notes into the get-in branch of the singing sampler | the Wwise MIDI dispatch rule, which is runtime behaviour. No Wwise runtime ships in the APK: no AkSoundEngine, CAk*, AkModulator or Wwise string occurs in libcozmoEngine.so, libunity.so or libmain.so, and there is no separate Wwise library. The shipped data was searched to exhaustion: the branch parent and the target child list, the key and velocity ranges on all 18 containers under it, the play-on-note property, the channel mask, the node bit vectors, the blend container layers (there are none), and the Wwise object paths in Cozmo.txt |
-| M9-014 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | Velocity is ignored | the shipped bank: no node under the MIDI target carries a velocity RTPC, and only one velocity layer of recordings ships |
-| M9-016 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A song is rendered as it plays, a block at a time, about 66 ms ahead of the clock | BehaviorSinging::UpdateInternal 0x005EF0C8 posts Cozmo_Singing_Vibrato every tick, and the bank binds that parameter to the depth of the LFO on the sampler pitch. Continuous is what the engine does; this reproduces it up to the lead |
-| M9-018 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A Stop action ends the streaming song when its target is the Play target or an ancestor | the shipped bank: Stop__Robot_VO__Cozmo_Singing_Stop holds three action-type-1 actions targeting the three music switch containers |
-| M9-020 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A clip plays its source from BeginTrim for its length; a note still held at the clip end is released there | the shipped clip fields, which are read exactly |
-| M9-021 | M9-wwise-music | COMPATIBILITY_POLICY | A music event with several Play actions renders only the first | the shipped bank lists all nine actions |
-| M9-022 | M9-wwise-music | BLOCKED_EXTERNAL | Container semantics: blend and actor-mixer play all children, random picks one by weight avoiding the last, sequence steps its playlist | the Wwise runtime, which is not in the package; the container fields themselves are read exactly |
-| M9-023 | M9-wwise-music | HARDWARE_ONLY | How the stock app sounded when it sang | a recording of a stock Cozmo singing, or the app running against a robot |
-| M9-024 | M9-wwise-music | BLOCKED_EXTERNAL | Whether cozmo_singing_note_off also stops the voice it is attached to | the shipped bank: this modulator alone of the eleven sets property 15, to the integer 2. Both readings that fit the numbering argued from the data agree with what the renderer does - the voice ends when the note is released - and so does the break-on-note-off bit on the note layer |
-| M9-025 | M9-wwise-music | BLOCKED_EXTERNAL | The shape a Wwise LFO produces between its extremes | the Wwise runtime, which does not ship in the APK (no AkSoundEngine, CAk* or Wwise strings occur in any .so). The bank settles the frequency, the attack, the pulse width and the range the curve maps the output onto; it cannot settle the waveform Wwise draws |
-| M9-026 | M9-wwise-music | BLOCKED_EXTERNAL | The filter and limiter arithmetic between the shipped settings | Audiokinetic's own ParametricEQ and AkPeakLimiter, which are in the Wwise runtime; no Wwise runtime ships in the APK |
+| M9-016 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A song is rendered as it plays, a block at a time, about 66 ms ahead of the clock | BehaviorSinging::UpdateInternal 0x005EF0C8 posts Cozmo_Singing_Vibrato every tick, and the bank binds that parameter to the depth of the LFO on the sampler pitch. Continuous is what the engine does, and this reproduces it. The 66 ms is this stack's choice, and it is small against the engine's own: UpdateAmountToSend 0x0057C6F0 lets the engine run up to 14 audio frames ahead of what the robot has played, which at 744 samples and 22320 Hz is 467 ms of audio already committed before it is heard. A parameter cannot reach audio either stack has already sent |
+| M9-018 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A Stop action ends the streaming song when its target is the Play target or an ancestor | the shipped bank. The three tempo events play targets 914766641, 139286641 and 602865028, and Stop__Robot_VO__Cozmo_Singing_Stop holds three action-type-1 actions targeting exactly those three, so every stop the product can post is a direct hit on the container that is playing |
+| M9-020 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A clip plays its source from BeginTrim for its length; a note still held at the clip end is released there | the shipped clip fields, which are read exactly. Every clip in every bank has PlayAt 0 and BeginTrim 0, so the start of the window is never moved; the end of it is what makes a twelve-second song out of a MIDI source minutes long, and is far from decorative. The one part of the rule that is a runtime judgement - what becomes of a note still held at the end - reaches two notes in the whole product, and the segment ends at the same instant, so what they would have sounded past it is outside the rendered song under either reading |
 | M9-027 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | Robot_Bus_Eq_HiLowPass low-pass at 14298 Hz is above Nyquist for the robot's rate | Init.bnk gives 14298 Hz; AnimConstants::AUDIO_SAMPLE_RATE gives 22320 Hz, so Nyquist is 11160 Hz in the engine too |
 | M10-005 | M10-derived | EQUIVALENT_IMPLEMENTATION | The off-treads debounce runs on the local clock | the engine debounces against its own base-station clock in milliseconds; the same quantity, a different source |
 | M11-012 | M11-vision | COMPATIBILITY_POLICY | The nominal camera calibration stand-in | not applicable: the live path reads the robot own calibration and fails closed without it |
 | M11-013 | M11-vision | COMPATIBILITY_POLICY | AllowUnconnectedObjects switch | the engine connected-object rule, which is implemented |
-| M11-016 | M11-vision | BLOCKED_EXTERNAL | Face, pet and motion detection | Omron OKAO, 177 OKAO_* exports of proprietary code; no Anki algorithm exists to transcribe |
-| M12-008 | M12-manipulation | EQUIVALENT_IMPLEMENTATION | The pose of a carried object is parented to the lift by a reduction | the engine pose tree |
-| M13-005 | M13-navigation | COMPATIBILITY_POLICY | A lattice-planner failure falls back to the straight line when the same environment reports it clear | the engine returns a planning failure |
-| M14-006 | M14-faces | BLOCKED_EXTERNAL | Text to speech is not implemented | Acapela (libacattsandroid.so) plus the Anki Wave Portal Wwise source plug-in; both third-party binaries |
 | TOOL-001 | tools | COMPATIBILITY_POLICY | Conformance CLI pass and fail criteria | not applicable: the harness is not part of the app |
 | TOOL-002 | tools | COMPATIBILITY_POLICY | The fake robot side answers place docks without a marker signal | not applicable: this is the test double, not the robot |
 | TOOL-003 | tools | COMPATIBILITY_POLICY | The --nominal calibration override in the vision, manipulation and freeplay tools | the live path fails closed without a real calibration |

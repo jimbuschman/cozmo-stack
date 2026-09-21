@@ -664,8 +664,11 @@ the repository; Pass 2 worked M9 and the animation-audio gaps immediately around
 record per behaviour-affecting decision, with what it rests on, the best available authority, what is
 still unresolved and whether hardware is really needed. `tools/fidelity.py` validates it and regenerates
 [`FIDELITY_GAPS.md`](FIDELITY_GAPS.md); `FidelityManifestTests` asserts the same rules on every
-`dotnet test`. The gate is that a subsystem may assert source-completeness only when nothing on its live
-execution path is a RECOVERABLE_GAP, and the flag is checked in both directions so it cannot go stale.
+`dotnet test`. There are two gates, checked in both directions so neither flag can go stale: a subsystem
+has exhausted its **source investigation** only when nothing on its live execution path is a
+RECOVERABLE_GAP, and its **implementation fidelity** is complete only when nothing there is an
+IMPLEMENTATION_GAP. Neither says the behaviour is reproduced; BLOCKED_EXTERNAL and HARDWARE_ONLY records
+survive both and are counted separately.
 Sections 1 to 17 above stand as the record of how the code got here; where they and the manifest disagree,
 the manifest is current.
 
@@ -716,6 +719,79 @@ no filter of its own, so under the container rules a note reaches it — 41 extr
 Every render reports each branch's share and `--without-branch get-in` renders the other reading, so the
 two can be listened to side by side; only a recording of the stock app singing can settle it.
 
-**Tests:** 710 (651 before the pass). The runner is capped at two parallel threads: several behaviour rigs
+**Tests:** 721 (651 before the pass; 710 before the review in section 19). The runner is capped at two parallel threads: several behaviour rigs
 drive against a wall-clock budget while sleeping between ticks, and on a four-core machine the default
 parallelism starved them into failing somewhere different on every run.
+
+## 19. The review of `461b900`, and what it found in the fidelity system itself
+
+The pass above produced a manifest that could describe a subsystem as finished while it knowingly did
+something the original does not. Three faults, all in the apparatus rather than in the audio.
+
+### 19.1 One word was carrying two questions
+
+`source_complete` meant "no RECOVERABLE_GAP on the live path" — nothing left to read. It said nothing
+about whether what had been read was built, so a subsystem could assert it while a dozen recovered
+behaviours sat unimplemented. Worse, `COMPATIBILITY_POLICY` had become the place those went: a status
+meant for deliberate product decisions was absorbing fidelity work that was merely hard, and
+`EQUIVALENT_IMPLEMENTATION` was absorbing substitutions nobody had shown to be equivalent.
+
+`IMPLEMENTATION_GAP` now names them: the native behaviour is established from primary evidence and the
+production code knowingly does something else. Nine records moved into it, each read on its own terms —
+the RLE skip and repeat commands (M3-007), the animation cooldown and head-angle gate that are parsed and
+never consulted (M5-014), the audio fallback that papers over M6-003 (M5-017), the idle head and lift that
+go through the motion API instead of a live clip (M7-009), the idle body shuffle that is recovered and not
+driven (M7-010), the blanket 5 s reaction cooldown the engine does not have (M7-011), the music event that
+renders one of nine Play actions (M9-021), the carried-object pose chain collapsed to one link (M12-008),
+and the planner's straight-line fallback (M13-005). Two went the other way, into RECOVERABLE_GAP, because
+the original had not in fact been read: what the engine leaves on the screen after a clip (M5-019) and
+what each behaviour class waits for during recalibration (M8-008).
+
+Both gates are enforced in both directions, by `tools/fidelity.py --check` and by `FidelityManifestTests`,
+and `source_complete` is gone. A test fails if it comes back.
+
+### 19.2 The vibrato could not reach the song
+
+`Prewarm` rendered the whole song and cached its samples; `SetParameter` wrote into a dictionary the
+render had already finished reading. The engine posts `Cozmo_Singing_Vibrato` on every tick
+(`BehaviorSinging::UpdateInternal` 0x005EF0C8) and the bank binds it to the depth of the LFO on the
+sampler's pitch, so a continuously posted parameter met audio that was already decided. The test that
+covered it set the parameter *before* rendering and passed.
+
+The song is now rendered a block at a time as it plays, each block reading the parameters as they stand,
+on a worker, `WwiseMusicStream.LeadMs` ahead of the playback clock; each voice keeps its own read
+position, so a note already sounding picks a shake up mid-note. The scheduler still gets a buffer it can
+read without blocking. The regression test prepares a song, begins it, posts the vibrato afterwards and
+checks that everything rendered after that point differs and everything before it does not.
+
+The 66 ms lead is this stack's choice and it is stated as one. It is small against the engine's own:
+`UpdateAmountToSend` 0x0057C6F0 lets the engine run up to 14 audio frames ahead of what the robot has
+played, which at 744 samples and 22320 Hz is 467 ms of audio committed before it is heard. Neither stack
+can change audio it has already sent. The unknown LFO waveform stays BLOCKED_EXTERNAL (M9-025) and is now
+marked live, because a shake reaches a playing song.
+
+### 19.3 Four M9 records said more than the data supports
+
+Re-auditing every non-EXACT_SOURCE record on M9's live path against the banks, rather than against its
+own text, changed four.
+
+* **M9-014, velocity.** "Velocity is ignored" was recorded as an equivalent implementation. The data half
+  holds: of the 199 nodes under the MIDI target none carries a velocity range, and the only binding of
+  any kind under it is the vibrato modulator. But the songs vary velocity — 119..127 in Aba Daba,
+  104..116 in Frère Jacques — so whether Wwise maps velocity to level with nothing asking it to is an
+  open question about an audible difference. BLOCKED_EXTERNAL.
+* **M9-020, the clip window.** "Barely exercised, because every clip has PlayAt 0 and BeginTrim 0." The
+  start of the window is never moved; the end of it drops 1835 notes across the 83 music events, 762 of
+  them in William Tell alone, whose MIDI holds a full-length rendition the clip takes twelve seconds of.
+  The part that is a runtime judgement — what becomes of a note still held at the end — reaches two notes
+  in the whole product, and the segment ends at the same instant, so both readings sound the same.
+* **M9-018, the Stop action.** The ancestor half of the rule is this stack's generalisation and no
+  shipped event reaches it: the three tempo events play 914766641, 139286641 and 602865028 and the stop
+  event targets exactly those three.
+* **M9-011, the bus chain.** Now separates what is read — routing, chain order, every setting — from what
+  is not, the arithmetic inside each effect, which is M9-026.
+
+`wwise --sampler` and `wwise --validate-music` print these counts, so they are reproducible rather than
+recorded once. `--validate-music` also stopped calling `Play__Music__Play` a failure: with no switch set
+it selects the switch tree's key-0 path, a one-second segment holding nothing, which is the container
+answering correctly.

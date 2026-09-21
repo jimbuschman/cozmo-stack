@@ -20,14 +20,15 @@
   ],
   "statuses": {
     "EXACT_SOURCE": "Read from primary source and reproduced. The record names the address, asset or schema it was read from.",
-    "EQUIVALENT_IMPLEMENTATION": "The native behaviour is known from primary source; this stack reaches the same observable effect by a different mechanism, and the record names the difference.",
-    "RECOVERABLE_GAP": "A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. Blocks source-completeness on a live path.",
-    "COMPATIBILITY_POLICY": "A deliberate choice of this stack on a path that does not claim to be the engine's: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for.",
+    "EQUIVALENT_IMPLEMENTATION": "The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart.",
+    "RECOVERABLE_GAP": "A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering.",
+    "IMPLEMENTATION_GAP": "The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy.",
+    "COMPATIBILITY_POLICY": "A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard.",
     "HARDWARE_ONLY": "No shipped artifact can settle it; only a robot, or a recording of the stock app, can.",
     "BLOCKED_EXTERNAL": "The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine)."
   },
   "gate": {
-    "rule": "A subsystem may assert source_complete only when it holds no RECOVERABLE_GAP with live_path true.",
+    "rule": "Two separate questions, and neither may be answered by the other. A subsystem's source investigation is exhausted only when it holds no RECOVERABLE_GAP on a live execution path; its implementation fidelity is complete only when it holds no IMPLEMENTATION_GAP there. A subsystem can have exhausted the source and still not reproduce what the source says, and neither state means the behaviour is faithfully reproduced: BLOCKED_EXTERNAL and HARDWARE_ONLY items can remain in both cases, and are counted separately so that they cannot be lost behind a single word.",
     "enforced_by": [
       "re-analysis/tools/fidelity.py --check",
       "cozmo-stack/tests/Cozmo.Protocol.Tests/FidelityManifestTests.cs (runs with dotnet test)"
@@ -39,7 +40,7 @@
     "provenance": "what the current implementation actually rests on",
     "authority": "the best available original evidence for this decision",
     "evidence": "concrete references: native addresses, asset paths, bank object ids, capture files",
-    "unresolved": "what is still not established; empty string when nothing is",
+    "unresolved": "for a RECOVERABLE_GAP, what has still to be read; for an IMPLEMENTATION_GAP, what has still to be built; empty string when nothing is",
     "hardware_required": "whether a robot is genuinely needed to settle it",
     "live_path": "whether the decision is reached on a normal run against a robot",
     "test": "the regression that would fail if the recovered behaviour were undone"
@@ -49,97 +50,113 @@
       "id": "M1-transport",
       "name": "UDP transport and reliability",
       "milestone": "M1",
-      "source_complete": false
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M2-protocol",
       "name": "CLAD messages and protocol helpers",
       "milestone": "M2",
-      "source_complete": false
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M3-device",
       "name": "Camera, display and audio device layer",
       "milestone": "M3",
-      "source_complete": false
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": false
     },
     {
       "id": "M4-control",
       "name": "Motion, sensors, lights and cubes",
       "milestone": "M4",
-      "source_complete": false
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M5-animation",
       "name": "Animation clips, scheduler and face",
       "milestone": "M5",
-      "source_complete": false
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": false
     },
     {
       "id": "M6-wwise-bank",
       "name": "Wwise bank reading and codecs",
       "milestone": "M6",
-      "source_complete": false
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M7-behaviour",
       "name": "Idle, mood and reactions",
       "milestone": "M7",
-      "source_complete": false
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": false
     },
     {
       "id": "M8-framework",
       "name": "Behaviour framework and scoring",
       "milestone": "M8",
-      "source_complete": false
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M9-wwise-music",
       "name": "Wwise music, the MIDI sampler and singing",
       "milestone": "M9",
-      "source_complete": true
+      "source_investigation_exhausted": true,
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M10-derived",
       "name": "Derived robot state and reaction strategies",
       "milestone": "M10",
-      "source_complete": false
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M11-vision",
       "name": "Markers, camera geometry and BlockWorld",
       "milestone": "M11",
-      "source_complete": false
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M12-manipulation",
       "name": "Docking, carrying and pre-action poses",
       "milestone": "M12",
-      "source_complete": false
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": false
     },
     {
       "id": "M13-navigation",
       "name": "Planning, charger and block configurations",
       "milestone": "M13",
-      "source_complete": false
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": false
     },
     {
       "id": "M14-faces",
       "name": "Face and pet pipeline",
       "milestone": "M14",
-      "source_complete": false
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M15-freeplay",
       "name": "Needs, activities and freeplay",
       "milestone": "M15",
-      "source_complete": false
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": true
     },
     {
       "id": "tools",
       "name": "Conformance CLI and offline tools",
       "milestone": "-",
-      "source_complete": true
+      "source_investigation_exhausted": true,
+      "implementation_fidelity_complete": true
     }
   ],
   "records": [
@@ -529,16 +546,16 @@
     {
       "id": "M3-007",
       "subsystem": "M3-device",
-      "title": "RLE encoder emits runs only; the engine also uses skip and repeat and falls back to a raw 1024-byte frame",
+      "title": "The face encoder emits runs only; the engine also uses skip and repeat and has a raw fallback",
       "location": "cozmo-stack/src/Cozmo.Robot/Display.cs",
-      "effect": "a face that the engine would send in one frame is refused here, or sent larger",
-      "provenance": "a deliberate reduction, recorded in Display.cs",
-      "authority": "CompressRLE 0x00581904, which was read; the raw fallback path above MAX_FACE_FRAME_SIZE was read but not built",
+      "effect": "a face the engine would send in one frame is refused here, or sent larger than it needs to be",
+      "provenance": "a deliberate reduction, recorded in Display.cs, that has never been built out",
+      "authority": "CompressRLE 0x00581904 was read and its skip and repeat commands and its raw 1024-byte fallback above MAX_FACE_FRAME_SIZE are known; none of the three is implemented",
       "evidence": [
         "CompressRLE 0x00581904"
       ],
-      "status": "EQUIVALENT_IMPLEMENTATION",
-      "unresolved": "the raw fallback is not implemented, so an image the engine would still send is dropped here",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "the skip and repeat commands and the raw fallback have to be written; nothing more has to be read first",
       "hardware_required": false,
       "live_path": true,
       "test": "DeviceTests"
@@ -1016,14 +1033,16 @@
     {
       "id": "M5-014",
       "subsystem": "M5-animation",
-      "title": "Animation cooldown and head-angle gate are not enforced",
+      "title": "The animation cooldown and head-angle gate are read and not enforced",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs",
       "effect": "a clip the engine would refuse still plays",
-      "provenance": "deferred; the mechanism is recorded in AnimationLibrary.cs",
-      "authority": "the engine cooldown and head-angle checks in the animation group loader",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the cooldown clock and the head-angle window are read from the asset but not applied",
+      "provenance": "the cooldown clock and the head-angle window are parsed out of the shipped animation groups and then ignored",
+      "authority": "the shipped animation group files carry both, and AnimationLibrary.cs records the mechanism",
+      "evidence": [
+        "the fields are read by the loader and never consulted"
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "the gate has to be applied at selection time; the values are already in hand",
       "hardware_required": false,
       "live_path": true,
       "test": null
@@ -1060,16 +1079,16 @@
     {
       "id": "M5-017",
       "subsystem": "M5-animation",
-      "title": "Fallback to another audio alternative when the chosen one cannot be decoded",
+      "title": "A clip falls back to another audio alternative when the chosen one cannot be decoded",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
       "effect": "a clip makes a sound where the engine would make none",
-      "provenance": "a choice of this stack, labelled",
-      "authority": "the engine does not fall back; it plays what Wwise resolves",
+      "provenance": "a fallback of this stack, papering over media this build cannot decode (M6-003)",
+      "authority": "RobotAudioKeyFrame::GetAudioRefIndex 0x004F9AEC picks one alternative by cumulative probability and the engine plays what Wwise resolves; there is no second draw",
       "evidence": [
         "GetAudioRefIndex 0x004F9AEC"
       ],
-      "status": "EQUIVALENT_IMPLEMENTATION",
-      "unresolved": "",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "the fallback has to go once the media it covers for decode; it is a workaround for M6-003, not a decision worth keeping",
       "hardware_required": false,
       "live_path": true,
       "test": "AnimationTests"
@@ -1096,12 +1115,12 @@
       "subsystem": "M5-animation",
       "title": "The last face is held after the last face keyframe; an oversize face payload is dropped",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "effect": "the screen holds a face the engine would have cleared, or drops a frame it would have split",
+      "effect": "the screen holds a face the engine would have cleared, or drops a frame the engine would have sent another way",
       "provenance": "a choice of this stack",
-      "authority": "the engine display path, partly read (see M3-007)",
+      "authority": "the engine display path, read only as far as CompressRLE; what it does with the screen at the end of a clip was not established",
       "evidence": [],
-      "status": "COMPATIBILITY_POLICY",
-      "unresolved": "",
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "what the engine leaves on the screen after a clip ends. The oversize half of this is M3-007, which is known and unbuilt",
       "hardware_required": false,
       "live_path": true,
       "test": "AnimationTests"
@@ -1351,14 +1370,14 @@
       "subsystem": "M7-behaviour",
       "title": "Idle head and lift move through the motion API instead of the live animation",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "effect": "different messages on the wire for the same visible motion",
-      "provenance": "SetHeadAngle and SetLiftHeight commands",
-      "authority": "the engine adds HeadAngleKeyFrame(currentDeg, variability 6, duration) and LiftHeightKeyFrame(35, 8, duration) to its live animation and streams them as 0x93 / 0x94",
+      "effect": "different messages on the wire for the same visible motion, and none of the keyframe variability the engine applies at stream time",
+      "provenance": "SetHeadAngle and SetLiftHeight commands, because the idle here is not built on the animation scheduler",
+      "authority": "UpdateLiveAnimation 0x0057D5F8 adds HeadAngleKeyFrame(currentDeg, variability 6, duration) and LiftHeightKeyFrame(35, 8, duration) to the engine live animation and streams them as 0x93 and 0x94",
       "evidence": [
         "UpdateLiveAnimation 0x0057D5F8"
       ],
-      "status": "EQUIVALENT_IMPLEMENTATION",
-      "unresolved": "",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "the idle has to be built as a live clip on the scheduler; the keyframes and their variability are already recovered",
       "hardware_required": false,
       "live_path": true,
       "test": "IdleTests"
@@ -1366,16 +1385,16 @@
     {
       "id": "M7-010",
       "subsystem": "M7-behaviour",
-      "title": "Idle body shuffle is recorded but not driven",
+      "title": "The idle body shuffle is recovered and not driven",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "effect": "the robot sits still where the app would shuffle",
-      "provenance": "a deliberate omission; the engine numbers are recorded in the file",
-      "authority": "UpdateLiveAnimation 0x0057D6CC onward: speed uniform in plus or minus 10 mm per s, duration 250..1500 ms, straight with probability BodyMovementStraightFraction",
+      "effect": "the robot sits still where the app shuffles",
+      "provenance": "a deliberate omission; the engine numbers are written down in the file and nothing uses them",
+      "authority": "UpdateLiveAnimation 0x0057D6CC onward: speed uniform in plus or minus 10 mm per s, duration 250 to 1500 ms, straight with probability BodyMovementStraightFraction else a turn in place, with a 33 ms eye shift",
       "evidence": [
         "UpdateLiveAnimation 0x0057D6CC"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "nothing in the source; it is read and simply not implemented",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "nothing is left to read; it has to be built",
       "hardware_required": false,
       "live_path": true,
       "test": null
@@ -1383,16 +1402,16 @@
     {
       "id": "M7-011",
       "subsystem": "M7-behaviour",
-      "title": "Arbitration order caller over reaction over idle; autonomy off by default; 5 s per-reaction cooldown",
+      "title": "A 5 s cooldown is imposed on every reaction, which the engine does not have",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorArbiter.cs",
-      "effect": "reactions fire more or less often than the app",
-      "provenance": "a choice of this stack; the engine has no such cooldown for cliff, pickup or charger",
-      "authority": "the engine per-trigger cooldowns exist only where the shipped map gives one",
+      "effect": "cliff, pick-up and charger reactions fire less often than the app fires them",
+      "provenance": "a blanket cooldown added by this stack; the arbitration order and autonomy default around it are its own product choices and are kept",
+      "authority": "the engine has no cooldown for those three. Its per-trigger cooldowns exist only where the shipped reaction map gives one, such as the 60 s on minor frustration",
       "evidence": [
-        "reactionTrigger_behavior_map.json"
+        "config/engine/behaviorSystem/reactionTrigger_behavior_map.json"
       ],
-      "status": "COMPATIBILITY_POLICY",
-      "unresolved": "",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "the blanket cooldown has to go and the shipped per-trigger cooldowns have to be read from the map instead",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorTests"
@@ -1562,16 +1581,16 @@
     {
       "id": "M8-008",
       "subsystem": "M8-framework",
-      "title": "The 5 s calibration allowance borrowed from ReactToImpact",
+      "title": "A 5 s calibration allowance is borrowed from ReactToImpact for other behaviours",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.cs:265",
-      "effect": "behaviours wait 5 s for recalibration where the engine may not",
-      "provenance": "a choice of this stack, borrowed from a place where the engine does use 5 s",
-      "authority": "BehaviorReactToImpact 0x00606348",
+      "effect": "behaviours wait 5 s for recalibration where the engine may wait a different time, or not wait",
+      "provenance": "a number borrowed from the one place the engine is known to use it",
+      "authority": "BehaviorReactToImpact 0x00606348 uses 5 s. What the other behaviour classes do about recalibration was not read",
       "evidence": [
         "BehaviorReactToImpact::TransitionToPlayingAnim 0x00606348"
       ],
-      "status": "EQUIVALENT_IMPLEMENTATION",
-      "unresolved": "",
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "what each behaviour class actually waits for, which is in the classes themselves",
       "hardware_required": false,
       "live_path": true,
       "test": null
@@ -1759,13 +1778,11 @@
       "title": "The render goes through the effect chain the robot bus carries, not a local peak normalisation",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs",
       "effect": "a song is quieter or louder, and differently shaped, than the app made it",
-      "provenance": "the three effects on Robot_Bus_1 with their shipped settings, applied in the order the bus lists them. The settings are the product; the biquad and limiter arithmetic between them is standard, because Audiokinetic implementations are in the Wwise runtime, which does not ship",
+      "provenance": "the three effects on Robot_Bus_1 with their shipped settings, applied in the order the bus lists them. Routing, chain order and every setting are read from the banks; the only part that is not is the arithmetic inside each effect, which is recorded separately as M9-026",
       "authority": "libcozmoEngine.so for the routing and Init.bnk for the chain and its parameters",
       "evidence": [
-        "RobotAudioClient::RobotAudioClient 0x005994A0, 0x0059962A..0x0059966A: game objects 7..10 to plug-in indices 1..4 and buses 0x9FA59539 plus 3, 6, 5, 0",
-        "each Robot_Bus_N carries Robot_Bus_Eq_MasterCurve, Robot_Bus_Eq_HiLowPass, Robot_Bus_Peak_Limiter and its own Anki Hijack, whose parameter is the same index 1..4",
-        "limiter threshold -1 dB, ratio 10.8, look-ahead 9 ms, release 41 ms",
-        "across all 39 songs the output now lands between 30000 and 32000 of full scale with 2.5 to 7.3 dB of limiting, where the local stage had been attenuating by 10 to 13 dB"
+        "all 15 shipped buses and all 89 effect objects are consumed exactly by the reader, so the settings are not guessed at",
+        "the 39 shipped songs now leave the chain between 29867 and 31879 of 32767 - a spread of about 0.6 dB - where peak normalisation put every one of them at exactly full scale"
       ],
       "status": "EQUIVALENT_IMPLEMENTATION",
       "unresolved": "",
@@ -1810,19 +1827,20 @@
     {
       "id": "M9-014",
       "subsystem": "M9-wwise-music",
-      "title": "Velocity is ignored",
+      "title": "Whether a note's velocity changes anything, when nothing in the bank binds it",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
-      "effect": "loud and soft notes sound the same",
-      "provenance": "nothing in the target binds an RTPC to velocity",
-      "authority": "the shipped bank: no node under the MIDI target carries a velocity RTPC, and only one velocity layer of recordings ships",
+      "effect": "the softer notes of a song come out quieter, or every note comes out at the same level",
+      "provenance": "velocity is read from the MIDI and used only to test the key and velocity ranges, both of which every shipped node leaves open, so it reaches nothing",
+      "authority": "the shipped banks, searched exhaustively: of the 199 nodes under the MIDI target not one carries a velocity range, and the only binding of any kind anywhere under it is the vibrato modulator on the pitch. Whether the Wwise runtime nonetheless scales a MIDI voice by its velocity with nothing asking it to is runtime behaviour, and no Wwise runtime ships in the APK",
       "evidence": [
-        "Cozmo.txt In Memory Audio names Robot_VO__Singing_*_Vel2_*"
+        "wwise --sampler: 199 nodes under the target, 0 with a velocity range, 1 binding and it is a modulator",
+        "the songs do vary velocity: Aba Daba spans 119..127 and Frere Jacques 104..116, so an implicit mapping would not be a no-op"
       ],
-      "status": "EQUIVALENT_IMPLEMENTATION",
-      "unresolved": "",
+      "status": "BLOCKED_EXTERNAL",
+      "unresolved": "whether Wwise applies a velocity-to-level mapping of its own to a MIDI voice. The shipped songs vary velocity over about 20 units, so if it does, some notes are a few dB quieter than this renders them. Only a Wwise runtime of this bank version, or a recording of the stock app, can settle it. Until the M9 re-audit this was recorded as an equivalent implementation, which the varying velocities do not support",
       "hardware_required": false,
       "live_path": true,
-      "test": "WwiseSongTests"
+      "test": "WwiseClipWindowTests.NothingUnderTheSamplerAsksForTheNoteVelocity"
     },
     {
       "id": "M9-015",
@@ -1845,10 +1863,11 @@
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMusicStream.cs",
       "effect": "a vibrato posted while Cozmo sings reaches the audio, or does not reach it at all",
       "provenance": "the song is mixed block by block on a worker, each block reading the game parameters as they stand when it is rendered, kept WwiseMusicStream.LeadMs (66 ms, two animation frames) ahead of the playback clock. Each voice keeps its own read position, so a note already sounding picks up a shake mid-note rather than keeping the depth it started with",
-      "authority": "BehaviorSinging::UpdateInternal 0x005EF0C8 posts Cozmo_Singing_Vibrato every tick, and the bank binds that parameter to the depth of the LFO on the sampler pitch. Continuous is what the engine does; this reproduces it up to the lead",
+      "authority": "BehaviorSinging::UpdateInternal 0x005EF0C8 posts Cozmo_Singing_Vibrato every tick, and the bank binds that parameter to the depth of the LFO on the sampler pitch. Continuous is what the engine does, and this reproduces it. The 66 ms is this stack's choice, and it is small against the engine's own: UpdateAmountToSend 0x0057C6F0 lets the engine run up to 14 audio frames ahead of what the robot has played, which at 744 samples and 22320 Hz is 467 ms of audio already committed before it is heard. A parameter cannot reach audio either stack has already sent",
       "evidence": [
         "rendering in blocks with nothing changing is sample-for-sample the same song as rendering it whole (RenderingASongInBlocksGivesTheSameSongAsRenderingItWhole)",
         "a vibrato posted after the song has begun changes every block rendered after it and none before it",
+        "a note already sounding when the shake arrives picks it up (AShakeReachesANoteThatHasAlreadyStarted)",
         "before this pass the whole song was rendered up front and its samples cached, so the parameter could not reach it at all"
       ],
       "status": "EQUIVALENT_IMPLEMENTATION",
@@ -1880,10 +1899,12 @@
       "title": "A Stop action ends the streaming song when its target is the Play target or an ancestor",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
       "effect": "the song keeps playing past the end of the tempo clip, or is cut short",
-      "provenance": "Wwise action semantics applied to the bank parent chain",
-      "authority": "the shipped bank: Stop__Robot_VO__Cozmo_Singing_Stop holds three action-type-1 actions targeting the three music switch containers",
+      "provenance": "Wwise action semantics applied to the bank parent chain. The ancestor half of that rule is a generalisation of this stack, and no shipped event reaches it",
+      "authority": "the shipped bank. The three tempo events play targets 914766641, 139286641 and 602865028, and Stop__Robot_VO__Cozmo_Singing_Stop holds three action-type-1 actions targeting exactly those three, so every stop the product can post is a direct hit on the container that is playing",
       "evidence": [
-        "Cozmo.bnk event 3704466058 actions 498550800 / 796618166 / 618270711"
+        "Play__Robot_VO__Cozmo_Singing_80bpm -> 914766641, _100bpm -> 139286641, _120bpm -> 602865028",
+        "Stop__Robot_VO__Cozmo_Singing_Stop -> 914766641, 139286641, 602865028",
+        "there is no fourth singing event and no other Stop event targets these containers"
       ],
       "status": "EQUIVALENT_IMPLEMENTATION",
       "unresolved": "",
@@ -1909,17 +1930,20 @@
       "subsystem": "M9-wwise-music",
       "title": "A clip plays its source from BeginTrim for its length; a note still held at the clip end is released there",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
-      "effect": "notes at the end of a segment are cut or left hanging",
-      "provenance": "documented clip semantics; every shipped clip has PlayAt 0 and BeginTrim 0, so the rule is barely exercised",
-      "authority": "the shipped clip fields, which are read exactly",
+      "effect": "the wrong part of a song is sung, or its last note is cut or left hanging",
+      "provenance": "the clip window is read from the clip fields and applied literally: a note that starts outside it is not played, and one still held when the window ends is released there",
+      "authority": "the shipped clip fields, which are read exactly. Every clip in every bank has PlayAt 0 and BeginTrim 0, so the start of the window is never moved; the end of it is what makes a twelve-second song out of a MIDI source minutes long, and is far from decorative. The one part of the rule that is a runtime judgement - what becomes of a note still held at the end - reaches two notes in the whole product, and the segment ends at the same instant, so what they would have sounded past it is outside the rendered song under either reading",
       "evidence": [
-        "WwiseTrackClip"
+        "over all 83 music events, 1835 notes start past their clip end and are not played, 762 of them in Singing_William_Tell alone, whose MIDI holds a full-length rendition the clip takes twelve seconds of",
+        "exactly 2 notes in the product are still held when their clip ends, both in Take_Me_Out_Ballgame",
+        "a song that fits inside its clip loses nothing: Aba Daba drops 0 and cuts 0 of its 42",
+        "until the M9 re-audit this record said the rule was barely exercised, on the strength of the PlayAt and BeginTrim zeros alone"
       ],
       "status": "EQUIVALENT_IMPLEMENTATION",
       "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "WwiseMusicTests"
+      "test": "WwiseClipWindowTests.TheClipEndDecidesWhichNotesAreSungAtAll"
     },
     {
       "id": "M9-021",
@@ -1928,12 +1952,14 @@
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMusic.cs",
       "effect": "Play__Codelab__Music_Tiny_Orchestra_Init plays one of its nine layers",
       "provenance": "a reduction of this stack on the music path. Ordinary events no longer reduce this way: WwisePlayback plays every Play target together",
-      "authority": "the shipped bank lists all nine actions",
+      "authority": "the shipped bank lists all nine Play actions, and the ordinary-event walk already shows the shape the music path needs. Singing is unaffected, which is why this is off the live path: each of the three tempo events holds exactly one Play action",
       "evidence": [
-        "Cozmo.bnk event Play__Codelab__Music_Tiny_Orchestra_Init"
+        "Play__Codelab__Music_Tiny_Orchestra_Init: 9 Play actions and 9 of type 0x1901",
+        "Play__Robot_VO__Cozmo_Singing_80bpm, _100bpm and _120bpm: one Play action each",
+        "nothing in cozmo-stack posts a Codelab music event"
       ],
-      "status": "COMPATIBILITY_POLICY",
-      "unresolved": "",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "the music resolver has to carry every Play action rather than the first; nothing is left to read",
       "hardware_required": false,
       "live_path": false,
       "test": null
@@ -2529,14 +2555,16 @@
     {
       "id": "M12-008",
       "subsystem": "M12-manipulation",
-      "title": "The pose of a carried object is parented to the lift by a reduction",
+      "title": "A carried object is parented straight to the lift",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs:48",
-      "effect": "a carried cube is drawn or reasoned about in the wrong place",
-      "provenance": "a reduction of the engine pose-parent chain to the lift",
-      "authority": "the engine pose tree",
-      "evidence": [],
-      "status": "EQUIVALENT_IMPLEMENTATION",
-      "unresolved": "",
+      "effect": "a carried cube is placed slightly wrong in the world model, and so is anything reasoned from it",
+      "provenance": "a reduction of the engine pose-parent chain to a single link",
+      "authority": "the engine parents a carried object through its pose tree rather than directly to the lift; the chain was seen when the docking path was read",
+      "evidence": [
+        "the pose-parent chain in the engine docking code"
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "the chain has to be reproduced rather than collapsed",
       "hardware_required": false,
       "live_path": true,
       "test": "ManipulationTests"
@@ -2663,14 +2691,14 @@
     {
       "id": "M13-005",
       "subsystem": "M13-navigation",
-      "title": "A lattice-planner failure falls back to the straight line when the same environment reports it clear",
+      "title": "A lattice-planner failure drives the straight line anyway when the environment reports it clear",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DriveActions.cs:71",
-      "effect": "the robot drives a straight line where the app would report a planning failure",
+      "effect": "the robot drives where the app would stop and report that it could not plan a path",
       "provenance": "a labelled fallback of this stack",
-      "authority": "the engine returns a planning failure",
+      "authority": "the engine returns a planning failure and the action fails; it does not substitute a path of its own",
       "evidence": [],
-      "status": "COMPATIBILITY_POLICY",
-      "unresolved": "",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "the fallback has to go, which means the planner has to be good enough without it - the padding and penalty of M13-003 are the same work",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests"

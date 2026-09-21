@@ -1,11 +1,19 @@
 # M9 — Wwise switch-state audio: Cozmo sings
 
-Status: **source-complete offline as of the 2026-09-20 fidelity pass**, in the sense the fidelity gate
-defines: nothing on M9's live execution path is a RECOVERABLE_GAP. What is left is named, and named as
-what it is — three things that live in the Wwise runtime, which does not ship in this package, and one
-that only a recording of the stock app singing can settle. The authoritative list is
-[`fidelity_manifest.json`](fidelity_manifest.json), rendered as [`FIDELITY_GAPS.md`](FIDELITY_GAPS.md).
-Hardware acceptance is still pending; the robot run is item A of `HARDWARE_TEST_PLAN.md`.
+Status, as of the 2026-09-20 fidelity pass and its re-audit, in the four terms the fidelity gate uses
+rather than one word:
+
+* **source investigation exhausted** — nothing on M9's live execution path is a RECOVERABLE_GAP;
+* **implementation fidelity complete** — nothing on it is an IMPLEMENTATION_GAP either. The one M9
+  record that is, M9-021, is off the live path: each tempo event holds exactly one Play action;
+* **six records blocked externally** — every one of them inside the Wwise runtime, which does not ship
+  in this package;
+* **hardware validation pending** — M9-023, a recording of the stock app singing. The robot run is item
+  A of `HARDWARE_TEST_PLAN.md`.
+
+That is as far as this repository can take M9 offline, and it is not the same as saying the singing is
+faithfully reproduced. The authoritative list is [`fidelity_manifest.json`](fidelity_manifest.json),
+rendered as [`FIDELITY_GAPS.md`](FIDELITY_GAPS.md).
 
 > **What the 2026-09-20 pass changed, and why the document below is not what it was.** The pass found one
 > fault that made every rendered song unlistenable and several claims that were wrong:

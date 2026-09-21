@@ -9,9 +9,15 @@
 > disagree, the manifest is current. [`FIDELITY_GAPS.md`](FIDELITY_GAPS.md) is it rendered;
 > [`FIDELITY_PROGRESS.md`](FIDELITY_PROGRESS.md) is the running count.
 >
-> Two subsystems assert source-completeness under the gate (nothing on the live path is a
-> RECOVERABLE_GAP): **M9** and the offline tools. M6 does not: eight shipped Robot_SFX events are silent
-> because stereo ADPCM is refused (M6-003).
+> The gate asks two questions, not one. **Source investigation exhausted** means no RECOVERABLE_GAP on
+> a live path — nothing left that reading the original would settle. **Implementation fidelity complete**
+> means no IMPLEMENTATION_GAP there — nothing the original is known to do that this stack knowingly does
+> not. Neither means the behaviour is reproduced: BLOCKED_EXTERNAL and HARDWARE_ONLY records outlive both,
+> and `FIDELITY_GAPS.md` counts them per subsystem for that reason.
+>
+> **M9** and the offline tools answer yes to both. M6 answers no to the first: eight shipped Robot_SFX
+> events are silent because stereo ADPCM is refused (M6-003). M3, M5, M7, M12 and M13 answer no to the
+> second, with nine IMPLEMENTATION_GAP records between them.
 
 | | |
 | --- | --- |
