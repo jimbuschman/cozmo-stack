@@ -64,21 +64,21 @@
       "id": "M3-device",
       "name": "Camera, display and audio device layer",
       "milestone": "M3",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true
     },
     {
       "id": "M4-control",
       "name": "Motion, sensors, lights and cubes",
       "milestone": "M4",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true
     },
     {
       "id": "M5-animation",
       "name": "Animation clips, scheduler and face",
       "milestone": "M5",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true
     },
     {
@@ -459,68 +459,84 @@
       "test": "DeviceTests"
     },
     {
-      "id": "M3-002",
       "subsystem": "M3-device",
-      "title": "Image chunk reassembly: the count arrives only on the last chunk",
+      "title": "Image chunk reassembly follows EncodedImage::AddChunk",
       "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
-      "effect": "frames are assembled short, or never completed",
-      "provenance": "the fw2457 capture",
-      "authority": "the engine image-chunk handler",
+      "effect": null,
+      "provenance": "EncodedImage::AddChunk 0x004F1CE0, read instruction by instruction",
+      "authority": "EncodedImage::AddChunk, read",
       "evidence": [
-        "re-analysis/captures"
+        "EncodedImage::AddChunk 0x004F1CE0 is the whole reassembly rule. A chunk whose payload is larger than 0x4B0 = 1200 bytes is refused before any bookkeeping (cmp.w r1, #0x4b0 at 0x004F1CF0, warning EncodedImage.AddChunk.ChunkTooBig).",
+        "One image is collected at a time: the chunk's image id is compared with the id held at +0x1C (0x004F1D38) and, when they differ, a new image starts there and then - buffer cleared, reserve(0x38400), chunk counter at +0x23 zeroed, expected chunk id at +0x21 zeroed. Whatever was being collected is simply gone; there is no queue of partial images.",
+        "The new image is valid (+0x22) only if its first chunk is chunk 0: cmp r0, #0 / moveq r0, #1 at 0x004F1D68. Its resolution must be 4, and the engine then writes 320 x 240 into the image (0x004F1D4E..0x004F1D58); any other resolution warns through EnumToString(ImageResolution) and the chunk goes no further.",
+        "The encoding at +0x20 is the chunk's own except that JPEGMinimizedGray (8) with a non-zero first payload byte becomes JPEGMinimizedColor (9): cmp r2, #0 / movne r2, #9 / cmp r1, #8 / movne r2, r1 at 0x004F1D8C.",
+        "Every chunk must carry the expected id or it warns ChunkOutOfOrder and clears the valid flag (0x004F1DB2..0x004F1DF4); the expected id becomes chunkId + 1 and the chunk counter rises. The last chunk is the one whose id is the announced count minus one (0x004F1E12), not simply one that carries a count - which is why a robot that sends the count only on the final chunk works.",
+        "On the last chunk the engine checks that it took exactly that many chunks (UnexpectedNumberOfChunks, 0x004F1E6A) and that the timestamp did not go backwards (TimestampNotIncreasing, 0x004F1E30), so the frame's timestamp is the one on its last chunk. Data is appended only while the image is valid (0x004F1EAE), and a last chunk on an invalidated image is the channel note \"Received last chunk of invalidated image\" rather than a frame.",
+        "The chunk field offsets the engine reads - +0 timestamp, +4 image id, +0xC encoding, +0xD resolution, +0xE chunk count, +0xF chunk id, +0x14 data - match this stack's ImageChunk layout field for field."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the engine own reassembly rule was not read; the capture shows what the robot sends, not what the engine accepts",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "DeviceTests"
+      "test": "DeviceTests.ANewImageIdAbandonsWhateverWasBeingCollected",
+      "id": "M3-002"
     },
     {
-      "id": "M3-003",
       "subsystem": "M3-device",
       "title": "Trailing 0xFF strip, byte re-stuffing and EOI append",
       "location": "cozmo-stack/src/Cozmo.Robot/MiniJpeg.cs",
-      "effect": "decoded frames are corrupt or refused by a decoder",
-      "provenance": "PyCozmo transcription; every captured frame Huffman-decodes",
-      "authority": "the engine JPEG assembly next to the header tables already read",
+      "effect": null,
+      "provenance": "EncodedImage::MiniToJpegHelper 0x004F31C4",
+      "authority": "EncodedImage::MiniToJpegHelper, read",
       "evidence": [
-        "re-analysis/captures"
+        "MiniGrayToJpeg 0x004F31A4 and MiniColorToJpeg 0x004F32D0 both call MiniToJpegHelper 0x004F31C4 with their header - 0x144 bytes at 0x00C48C40 and 0x14E bytes at 0x00C48D84 - which are the tables this stack already carries.",
+        "The helper reserves headerLen + 2 * size (0x004F31DE), inserts the header at the front, and patches the two 16-bit dimensions at output offsets 0x5E..0x61 (0x004F31F4..0x004F320C): its second argument first, which is the height, then the width. That is the 94 this stack uses.",
+        "It then walks back over the trailing 0xFF bytes (0x004F3214..0x004F321C), copies from index 1 rather than 0 - the loop counter starts at 2 and reads data[i - 1] at 0x004F3226, so the colour flag byte is dropped - appends a 0x00 after every 0xFF it copies (0x004F325A), and finishes with 0xFF 0xD9 at 0x004F3286 and 0x004F32AA. A payload of fewer than two bytes after the strip skips the copy (cmp r5, #2 at 0x004F321E).",
+        "Every step matches MiniJpeg.ToJpeg as it already stood; what was a PyCozmo transcription is now read from the engine."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the engine assembly code was not disassembled, only its constant tables",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "JpegCheck"
+      "test": "DeviceTests.MiniJpegPatchesTheFrameSizeAndRestoresByteStuffing",
+      "id": "M3-003"
     },
     {
-      "id": "M3-004",
       "subsystem": "M3-device",
-      "title": "15 warm-up frames discarded",
+      "title": "Warm-up frames are flagged, and delivered like any other",
       "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
-      "effect": "the first usable frame arrives later or earlier than the engine would deliver it",
-      "provenance": "a choice of this stack; one capture measured 11",
-      "authority": "the engine camera start-up handling",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "whether the engine discards anything at all, and how many",
+      "effect": "which frame a caller that asks for a picture gets first",
+      "provenance": "a measurement of this hardware, kept as a flag on top of the engine's behaviour",
+      "authority": "RobotToEngineImplMessaging::HandleImageChunk and VisionComponent::SetNextImage, read",
+      "evidence": [
+        "The engine discards nothing at camera start-up. HandleImageChunk 0x00535A64 hands every image AddChunk completes to VisionComponent::SetNextImage (0x00535B94), and SetNextImage decodes it on the spot; the only drops on that path are invalid images and the per-tick cap recorded under M3-005. No symbol or string in libcozmoEngine.so speaks of skipping, warming up or settling frames.",
+        "So the fifteen-frame warm-up is this stack's own: the frames are flagged IsWarmUp and delivered like any other, the vision path sees all of them, and only CozmoRobot.CaptureFrameAsync waits past them, at its caller's option. The count comes from the firmware-2457 capture of 2026-09-18, where the picture is torn and rolls by one macroblock row per frame for about eleven frames."
+      ],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "DeviceTests.WarmUpFramesAreFlaggedAndUsableFramesFollow",
+      "id": "M3-004"
     },
     {
-      "id": "M3-005",
       "subsystem": "M3-device",
-      "title": "Images older than the newest two are dropped",
+      "title": "One image is collected at a time, and three a tick reach vision",
       "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
-      "effect": "vision runs on a stale frame, or never sees a frame under load",
-      "provenance": "a choice of this stack",
-      "authority": "the engine image queue",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the engine queue depth and drop rule",
+      "effect": null,
+      "provenance": "EncodedImage::AddChunk 0x004F1CE0 and HandleImageChunk 0x00535A64",
+      "authority": "EncodedImage::AddChunk and RobotToEngineImplMessaging::HandleImageChunk, read",
+      "evidence": [
+        "There is no image queue to have a depth. AddChunk holds one image, keyed by the id at +0x1C, and a chunk with a different id starts a new one immediately (0x004F1D38), so a partial image is abandoned the moment the next one begins. This stack kept the newest two, which was a guess; it now keeps one.",
+        "The only other drop is per basestation tick. HandleImageChunk 0x00535A64 compares the event's time with the last tick it saw (the double at +0x130): a new tick zeroes the counter at +0x128 and the image goes to VisionComponent::SetNextImage; within one tick the counter rises and an image whose count reaches 3 is dropped with \"Ignoring %dth image (with t=%u) received during basestation tick at %fsec\" (0x00535B46..0x00535B6C). The same counter gates forwarding chunks to the game at 0x00535AAC.",
+        "At the 15 frames a second this camera produces against a 30 Hz tick a second complete image inside one tick cannot arise, so the cap is recorded as CozmoCamera.MaxImagesPerTick and not counted."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "DeviceTests.ANewImageIdAbandonsWhateverWasBeingCollected",
+      "id": "M3-005"
     },
     {
       "id": "M3-006",
@@ -738,36 +754,45 @@
       "test": "CorrectionTests"
     },
     {
-      "id": "M4-003",
       "subsystem": "M4-control",
       "title": "Head and lift motor command default speed and acceleration",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
-      "effect": "the head and lift move faster or slower than the app moves them",
-      "provenance": "PyCozmo defaults (head 10/10, lift 3/20)",
-      "authority": "MoveHeadToAngleAction and MoveLiftToHeightAction constructors in libcozmoEngine.so",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the engine action constructor defaults were never disassembled",
+      "effect": null,
+      "provenance": "MoveHeadToAngleAction and MoveLiftToHeightAction constructors, read",
+      "authority": "MoveHeadToAngleAction 0x00547E40 and MoveLiftToHeightAction 0x0054899C, read",
+      "evidence": [
+        "MoveHeadToAngleAction's constructor builds 15 and 20 as immediates - movs r1, #0 / movt r1, #0x4170 and movs r0, #0 / movt r0, #0x41a0 - and stores them with strd r1, r0, [fp, #0x90] at 0x00547F14, leaving the duration at +0x98 zero.",
+        "MoveHeadToAngleAction::Init 0x00548534 passes them straight on: ldrd r2, r3, [r6, #0x18] with r6 = action + 0x78, then MovementComponent::MoveHeadToAngle(angle, speed, accel, duration, flag) at 0x00548570, the duration read from +0x98. So the head default is 15 rad/s and 20 rad/s^2.",
+        "MoveLiftToHeightAction's constructor writes 0 to +0x88, 10 (0x41200000) to +0x8C and 20 (0x41A00000) to +0x90 at 0x00548A68..0x00548A78, and Init 0x0054903C reads ldrd r2, r3, [r4, #0x8c] for MoveLiftToHeight(height, speed, accel, duration, flag) at 0x0054931C with the duration from +0x88. So the lift default is 10 rad/s and 20 rad/s^2.",
+        "This stack sent head 10/10 and lift 3/20, which were PyCozmo's numbers; the defaults now come from the actions, as CozmoMotion.DefaultHeadSpeedRadPerSec and its three companions.",
+        "The same two functions also confirm the limits already recorded elsewhere: the head clips below -0.436332 rad (\"Requested head angle (%.1fdeg) less than min head angle (%.1fdeg). Clipping.\" at 0x00547F44) and the lift warns outside 32..92 mm (0x0054905E and 0x0054906C)."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "ControlTests.TheHeadAndLiftDefaultsAreTheEnginesActionDefaults",
+      "id": "M4-003"
     },
     {
-      "id": "M4-004",
       "subsystem": "M4-control",
-      "title": "Motion refused until both motors report calibrated",
+      "title": "Motion is gated on calibration here; the engine reacts to it instead",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
-      "effect": "commands are sent into a robot that is still calibrating and are lost",
-      "provenance": "observed robot behaviour on connect",
-      "authority": "the engine calibration gate",
+      "effect": "whether a direct motor command during calibration is sent or refused",
+      "provenance": "a default of this stack over the engine's behaviour-layer response, which is implemented",
+      "authority": "HandleMotorCalibration 0x00536A68, BehaviorReactToMotorCalibration 0x006065F0, and the callers of IsHeadCalibrated / IsLiftCalibrated, all read",
       "evidence": [
-        "re-analysis/captures"
+        "The engine does not gate motion on calibration. Robot::IsHeadCalibrated 0x00512378 and Robot::IsLiftCalibrated 0x005151A6 are called only by RobotGyroDriftDetector::DetectGyroDrift, CalibrateMotorAction::CheckIfDone, BehaviorReactToImpact::AlwaysHandle and BehaviorReactToMotorCalibration::HandleWhileRunning; MovementComponent::MoveHeadToAngle 0x006407CC and MoveLiftToHeight 0x00640700 send what they are given.",
+        "RobotToEngineImplMessaging::HandleMotorCalibration 0x00536A68 reads the message's three bytes - motorID, calibStarted, autoStarted - sets the calibrated flag to !calibStarted for MOTOR_HEAD (3) at 0x00536BCE and MOTOR_LIFT (2) at 0x00536BE4, calls CarryingComponent::SetCarriedObjectAsUnattached when the lift starts calibrating while carrying something (0x00536BB8), and broadcasts the message to the game.",
+        "BehaviorReactToMotorCalibration::InitInternal 0x006065F0 is the engine's actual response: SmartDisableReactionsWithLock, then a WaitAction of 5 seconds (0x40A00000 at 0x00606650), with HandleWhileRunning ending it early once both motors report calibrated. This stack implements that as ReactToMotorCalibrationBehavior, with the same 5 seconds and the same reaction lock.",
+        "The message-layer refusal in CozmoMotion.NotReady is therefore this stack's own default, kept because a caller here can command a motor directly where the engine's callers are behaviours the reaction has already displaced. Every caller can pass requireCalibration: false."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "whether the engine gates motion the same way, or simply queues",
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "ControlTests"
+      "test": "ControlTests.MotionIsRefusedWhileTheHeadAndLiftAreStillCalibrating",
+      "id": "M4-004"
     },
     {
       "id": "M4-005",
@@ -815,36 +840,46 @@
       "test": null
     },
     {
-      "id": "M4-008",
       "subsystem": "M4-control",
-      "title": "Cliff sensors named by index; IMU and cube battery left in raw units",
+      "title": "Cliff sensors named from the engine's enum; IMU and cube battery in the engine's units",
       "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
-      "effect": "a caller reading a named sensor reads the wrong one",
-      "provenance": "uncertainty deliberately preserved rather than guessed",
-      "authority": "the engine cliff sensor indexing and IMU scaling",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "which physical sensor each index is, and the IMU scale factors",
+      "effect": null,
+      "provenance": "EnumToString(CliffSensor), DetectGyroDrift, the off-treads classifier and HandleObjectPowerLevel, all read",
+      "authority": "EnumToString(CliffSensor) 0x007D292C, RobotGyroDriftDetector::DetectGyroDrift 0x0052C568 and RobotToEngineImplMessaging::HandleObjectPowerLevel 0x00537130, read",
+      "evidence": [
+        "The cliff order is the engine's CliffSensor enum: EnumToString(CliffSensor) 0x007D292C bounds the value at 4 and indexes the pointer table at 0x01034C50, which holds \"CLIFF_FL\", \"CLIFF_FR\", \"CLIFF_BL\", \"CLIFF_BR\", \"CLIFF_COUNT\" in that order. The same index space reaches the readings: CliffSensorComponent::UpdateRobotData 0x00634016 copies the four 16-bit values out of RobotState at +0x50 and +0x54 as two words, in order, and GetCliffDataRaw(i) reads them back. So bit 0 is front-left and bit 3 back-right, which is what CliffSensors now says.",
+        "The gyro is in radians per second. DetectGyroDrift 0x0052C568 reads the z rate at RobotState +0x44 and calls the robot still only while its magnitude is at or under 0.174533 - 10 degrees a second - at 0x0052C580, then compares successive samples against 0.0174533 (one degree) and a pose delta against 0.00872665 (half a degree). Nothing scales the values on the way in.",
+        "The accelerometer is in millimetres per second squared: the engine's own off-treads classifier takes gravity to be 9800 in these units (OffTreadsClassifier.GravityAccel, already recorded under M10), and Robot::UpdateFullRobotState 0x0051291C reads the three axes at RobotState +0x30, +0x34 and +0x38 and filters them unscaled (0x00512A36..0x00512A6E).",
+        "The cube battery byte is hundredths of a volt: HandleObjectPowerLevel 0x00537130 converts the byte at the message's +8 and divides by 100 (0x00537162..0x00537172), reporting 100 per cent at or above 1.5 V, zero at or below 1 V, and (V - 1) * 200 between (0x00537176..0x0053719E). CozmoCube.BatteryVolts and BatteryPercent are that arithmetic; the raw byte is still exposed.",
+        "The offsets line up with this stack's RobotState layout exactly - status at +0x4C, cliff data at +0x50, accel at +0x30 and gyro at +0x3C - which is a second confirmation of that layout."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "ControlTests.ACliffEventIsRecordedWithWhichSensorsTrippedAndWhetherTheRobotStopped",
+      "id": "M4-008"
     },
     {
-      "id": "M4-009",
       "subsystem": "M4-control",
       "title": "Cube tracking from ObjectAvailable and ObjectConnectionState",
       "location": "cozmo-stack/src/Cozmo.Robot/Cubes.cs",
-      "effect": "cubes appear or disappear from the world model at the wrong moment",
-      "provenance": "observed discovery of a real cube on hardware",
-      "authority": "the engine cube connection handling",
+      "effect": "which cubes the world model holds, and what a cube's id means",
+      "provenance": "the four RobotToEngineImplMessaging handlers for active objects, read",
+      "authority": "HandleActiveObjectAvailable 0x0053391C, HandleActiveObjectConnectionState 0x00533B3C, HandleActiveObjectMoved 0x00533E30 and HandleObjectPowerLevel 0x00537130, read",
       "evidence": [
-        "operator report 2026-09-19"
+        "HandleActiveObjectAvailable 0x0053391C reads the factory id at +0, the object type at +4 and the RSSI at +8, and records the advertisement only when IsValidLightCube 0x007D1D08 or IsCharger 0x007D1D50 says yes (0x00533944 and 0x00533954). IsValidLightCube is a jump table over the type whose only true entries are 1, 2 and 3 - the three light cubes, not the ghost at 4 - and IsCharger is true for Charger_Basic. What it records is the type, the RSSI and the timestamp from Robot+0x2C in an unordered_map<u32, ActiveObjectInfo> at Robot+0x47C keyed by factory id (0x00533978..0x0053398A); the broadcast to the game is behind the flag at Robot+0x490, and the channel log behind an RSSI of 49 or less.",
+        "HandleActiveObjectMoved 0x00533E30 reads the timestamp at +0, the id at +4, three accelerometer floats at +8, +0xC and +0x10 and the axis byte at +0x14, and looks the object up by that id through BlockWorld::GetConnectedActiveObjectByActiveIdHelper (0x00533E96) - so telemetry is keyed on the object id, which is what this stack does.",
+        "HandleObjectPowerLevel 0x00537130 reads the id at +0, the missed packets at +4 and the battery byte at +8; see M4-008 for the voltage.",
+        "HandleActiveObjectConnectionState 0x00533B3C reads the object id at +0, the factory id at +4, the type at +8 and the connected flag at +0xC, and returns immediately when the id is above 4 (cmp r7, #4; bhi at 0x00533B58) - that id is a radio slot, one of the engine's MAX_NUM_ACTIVE_OBJECTS = 5 (ActiveObjectConstants). On a connection it calls BlockWorld::AddConnectedActiveObject(slot, factoryId, type) at 0x00533BD6, which hands back a world object id of its own; on a disconnection BlockWorld::RemoveConnectedActiveObject(slot) and Robot::HandleDisconnectedFromObject at 0x00533CA0 and 0x00533CB2.",
+        "That second id space is the one difference here: this stack keeps one id, the one on the wire, and uses it as the world object id, where the engine keeps the radio slot and the BlockWorld id apart. So the slot bound is recorded as CozmoCubes.MaxActiveObjectSlot and not enforced - enforcing it would refuse a world object rather than an impossible slot, and a robot never sends a slot above 4. Everything else on this path - which advertisements are taken, what is recorded from them, and telemetry keyed on the id the report carries - now follows the engine."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "connection state, tap, movement, up-axis and battery telemetry have not been exercised or read from the engine",
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "ControlTests.OnlyLightCubesAndTheChargerAreTrackedFromAnAdvertisement",
+      "id": "M4-009"
     },
     {
       "id": "M5-001",
@@ -999,36 +1034,45 @@
       "test": "AnimationAssetTests"
     },
     {
-      "id": "M5-012",
       "subsystem": "M5-animation",
-      "title": "Keyframe volume applied as a linear PCM gain",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "effect": "animation audio plays at the wrong level",
-      "provenance": "a straight linear reading of the keyframe field",
-      "authority": "the engine passes the keyframe volume to Wwise, which maps it through an RTPC curve",
+      "title": "An audio keyframe's volume is the Event_Volume trim, not a gain",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
+      "effect": null,
+      "provenance": "RobotAudioAnimationOnRobot::BeginBufferingAudioOnRobotMode and the shipped banks, read",
+      "authority": "RobotAudioAnimationOnRobot::BeginBufferingAudioOnRobotMode 0x00598298 and the Event_Volume bindings in the shipped banks, read",
       "evidence": [
-        "RobotAudioKeyFrame::SetMembersFromFlatBuf 0x004F9E54"
+        "The keyframe volume goes to Wwise as a game parameter, not to the samples. RobotAudioAnimationOnRobot::BeginBufferingAudioOnRobotMode posts the event with RobotAudioClient::PostCozmoEvent (0x0059826C), keeps the playing id it returns, and calls RobotAudioClient::SetCozmoEventParameter(playingId, parameter, value) at 0x00598298 with r2 = 0xD2687048 and the volume from the audio ref at +0xC, then ProcessEvents.",
+        "0xD2687048 is the FNV-1 hash of \"Event_Volume\", which is one of the parameter names in the bank definition text.",
+        "In the shipped banks that parameter is bound to the Volume property of three actor mixers - 62050212 and 682998829 in Cozmo.bnk, 121198006 in Dev_Debug.bnk - with accumulate 1 (additive) and a curve from (0, -1) to (1, 0). Volume is in decibels, so the whole range of the keyframe volume is one decibel of trim: 1.0 leaves the event alone, 0.0 takes one decibel off it, and nothing about it is silence.",
+        "This stack multiplied the PCM by the volume, so a keyframe volume of 0 was silence and 0.5 was half amplitude - about six decibels down where the engine is half of one. WwiseAudioSource now reads the binding out of the loaded banks and converts the volume through its curve, so the gain is 10^(dB/20) and a bank set that binds the parameter differently is followed.",
+        "WavAudioSource, this stack's own source for a wav file on disk, still scales linearly; it is not an engine path and has no Wwise parameter behind it."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the RTPC or parameter the engine posts the keyframe volume to, and the curve on it; RobotAudioClient::SetCozmoEventParameter was not traced",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "WwiseTests.TheKeyframeVolumeIsTheEventVolumeTrimNotAGain",
+      "id": "M5-012"
     },
     {
-      "id": "M5-013",
       "subsystem": "M5-animation",
-      "title": "faceAnimations track is not loaded; a lift value of 0 mm is passed through",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationClip.cs",
-      "effect": "clips that carry a face animation play without it",
-      "provenance": "deferred",
-      "authority": "the engine face-animation track loader",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "what the faceAnimations track carries and how the engine plays it",
+      "title": "The faceAnimations track plays the pre-rendered face assets",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/FaceAnimationLibrary.cs",
+      "effect": null,
+      "provenance": "FaceAnimationKeyFrame and FaceAnimationManager, read, and the shipped assets",
+      "authority": "FaceAnimationKeyFrame::GetStreamMessage 0x004F97C8, FaceAnimationKeyFrame::IsDone 0x004F976C, FaceAnimationManager::ReadFaceAnimationDir 0x00580048 and FaceAnimationManager::AddImage 0x00581440, read",
+      "evidence": [
+        "A faceAnimations keyframe carries a name, not pixels. FaceAnimationKeyFrame::SetMembersFromFlatBuf 0x004F9708 reads the one string field and Process 0x004F9574 trims it; GetStreamMessage 0x004F97C8 asks the FaceAnimationManager singleton for GetFrame(name, index) (0x004F9812), sends the frame it returns as EngineToRobot(AnimKeyFrame::FaceImage) - the 0x408-byte message built at 0x004F984A - and moves the index on. IsDone 0x004F976C is true once the index has reached GetNumFrames(name). So the track plays one pre-rendered frame per streaming tick until the frames run out.",
+        "FaceAnimationManager::ReadFaceAnimationDir 0x00580048 resolves the faceAnimations resource directory and lists the directories inside it (FileUtils::ListAllDirectories at 0x005800B0), one per animation. The shipped tree has two: assets/faceAnimations/face_bored_event_02, 151 frames, and face_bored_event_04, each frame a 128 x 64 eight-bit grayscale PNG numbered in order. The two clips that name them are anim_bored_event_02 and anim_bored_event_04.",
+        "AddImage 0x00581440 is how an image becomes a frame: Image::Threshold(0x80) at 0x00581462, then the helper at 0x00581254 clears every even canvas row - the memclr loop stepping by two from zero - and calls FaceAnimationManager::CompressRLE, the encoder already implemented as FaceBitmapCodec.Encode. Clearing the even rows is what turns the 64-row canvas into the display's 32 rows, so the odd row of each pair is the one that survives.",
+        "This stack now reads the same files: FaceAnimationLibrary opens the directory, MiniPng decodes the grayscale PNGs, each frame is thresholded at 0x80 and takes the odd row of each pair, and AnimationScheduler streams one frame per tick from a faceAnimations keyframe, the pre-rendered frames owning the screen until they run out. It used to ignore the track."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "AnimationAssetTests.AClipWithAFaceAnimationTrackStreamsItsFrames",
+      "id": "M5-013"
     },
     {
       "subsystem": "M5-animation",
@@ -1045,21 +1089,24 @@
       "id": "M5-014"
     },
     {
-      "id": "M5-015",
       "subsystem": "M5-animation",
-      "title": "Procedural-face corner-radius parameter assignment and polygon fill rule",
+      "title": "Procedural-face corner-radius parameter assignment",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFaceRenderer.cs",
-      "effect": "eye corners are rounded on the wrong corners, or filled differently",
-      "provenance": "a reading of DrawEye that stopped short",
-      "authority": "ProceduralFaceDrawer::DrawEye in libcozmoEngine.so",
+      "effect": null,
+      "provenance": "ProceduralFaceDrawer::DrawEye 0x005850E0, read",
+      "authority": "ProceduralFaceDrawer::DrawEye 0x005850E0, read",
       "evidence": [
-        "re-analysis/PROCEDURAL_FACE.md"
+        "DrawEye draws the outline as four elliptical corner arcs through cv::ellipse2Poly, at 0x00585244, 0x0058529A, 0x00585304 and 0x00585372. Each call carries its arc and the centre it turns about: 270..360 about (15 - rx, ry - 20), 0..90 about (15 - rx, 20 - ry), 90..180 about (rx - 15, 20 - ry) and 180..270 about (rx - 15, ry - 20), every one with delta 10. That is the upper-inner corner first and the rest clockwise, on an eye box of x in [-15, 15] and y in [-20, 20].",
+        "The radii come from the eye's parameter block at +0x14, +0x18, +0x1C, +0x20, +0x24, +0x28, +0x2C and +0x30 (loaded at 0x0058513A..0x00585146 and 0x00585106..0x0058512C), which is LowerInnerRadiusX through LowerOuterRadiusY in the order ProceduralEyeParameter declares them - the enum starts at EyeCenterX at +0, so index 5 lands on +0x14. The first arc pairs +0x1C with +0x20, the upper-inner pair, which fixes the whole mapping.",
+        "A corner whose rounded radius is under one pixel in either axis is drawn sharp: the engine pushes the exact box corner instead of calling ellipse2Poly - (15, -20) at 0x00585256, (15, 20) at 0x005852AC. The x radii are scaled by the eye's width and the y radii by 40 before rounding.",
+        "This is the mapping and the order the renderer already drew; it was inferred and is now read."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "which radius parameter belongs to which corner, and the fill rule for the eye polygon",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "ProceduralFaceRendererTests"
+      "test": "ProceduralFaceRendererTests.TheSecondEyeIsTheFirstMirroredSoInnerMeansTheSameOnBoth",
+      "id": "M5-015"
     },
     {
       "id": "M5-016",
@@ -1105,19 +1152,22 @@
       "test": "AnimationGapTests.ALateTickCatchesUpFrameByFrameNotByJumping"
     },
     {
-      "id": "M5-019",
       "subsystem": "M5-animation",
-      "title": "The last face is held after the last face keyframe; an oversize face payload is dropped",
+      "title": "The last face is held after the last face keyframe, and no face the engine sends is oversize",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "effect": "the screen holds a face the engine would have cleared, or drops a frame the engine would have sent another way",
-      "provenance": "a choice of this stack",
-      "authority": "the engine display path, read only as far as CompressRLE; what it does with the screen at the end of a clip was not established",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "what the engine leaves on the screen after a clip ends. The oversize half of this is M3-007, which is known and unbuilt",
+      "effect": null,
+      "provenance": "SendEndOfAnimation and BufferFaceToSend, read",
+      "authority": "AnimationStreamer::SendEndOfAnimation 0x0057C448 and AnimationStreamer::BufferFaceToSend 0x0057C1FC, read",
+      "evidence": [
+        "Nothing clears the face when an animation ends. SendEndOfAnimation 0x0057C448 builds EngineToRobot(AnimKeyFrame::EndOfAnimation) and sends that one message, reliable and not hot (0x0057C476); there is no face message, no blank frame and no reset. The robot keeps showing the last image it was given, so holding the last face is what the engine leaves on the screen. Between animations the next image is the keep-alive's.",
+        "The oversize half cannot arise. BufferFaceToSend 0x0057C1FC draws the procedural face, compresses it with FaceAnimationManager::CompressRLE, and on a non-zero return logs \"Failed to get RLE frame from procedural face\" and buffers nothing (0x0057C272); otherwise it allocates a fixed 0x408-byte EngineToRobot(AnimKeyFrame::FaceImage) at 0x0057C2C2. CompressRLE never returns more than 1024 bytes - above that it throws the RLE away and sends the raw buffer - so the largest face payload is 1024, against the 1403 an engine-default frame carries. This stack's refusal to send a larger payload is therefore unreachable on anything the engine would produce, and a face that cannot be encoded is dropped on both sides."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "AnimationTests"
+      "test": "AnimationTests",
+      "id": "M5-019"
     },
     {
       "id": "M5-020",
@@ -1133,6 +1183,24 @@
       "hardware_required": false,
       "live_path": false,
       "test": null
+    },
+    {
+      "subsystem": "M5-animation",
+      "title": "The eye and its lids are filled by scanline, not by cv::fillConvexPoly",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFaceRenderer.cs",
+      "effect": "a boundary pixel could differ from what the engine would draw",
+      "provenance": "DrawEye's three fills, read; the fill itself is this stack's own scanline code",
+      "authority": "ProceduralFaceDrawer::DrawEye 0x005850E0, read",
+      "evidence": [
+        "DrawEye fills with cv::fillConvexPoly(image, points, colour, lineType, shift) three times: the outline at 0x00585818 with the colour 255 - the double 0x406FE000 assembled at 0x005857F6 - and the two lids at 0x00585860 and 0x00585894 with zero, each with lineType 4 (LINE_4) and shift 0. Between the outline and the lids it calls ScanlineDistorter::AddOffNoise(matrix, 40, 30, image) when the face asks for it (0x0058582C).",
+        "This stack fills the same integer polygons - Place rounds each transformed point as the engine does at 0x00585696 and 0x005856A8 - by an even-odd scanline fill. On a convex integer polygon the left-chain-to-right-chain fill and the even-odd fill are the same, and both round a boundary to the nearest pixel; a polygon that is not convex is where they could part, and the lids at their extremes are the only shapes that could get there."
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "ProceduralFaceRendererTests",
+      "id": "M5-021"
     },
     {
       "id": "M6-001",

@@ -26,6 +26,23 @@ public sealed class Cube
     /// kept rather than converted to a percentage or a voltage.
     /// </summary>
     public byte? BatteryLevelRaw { get; internal set; }
+
+    /// <summary>
+    /// The cube's battery in volts: the raw byte is hundredths of a volt.
+    /// <c>RobotToEngineImplMessaging::HandleObjectPowerLevel</c> 0x00537130 converts the byte at the
+    /// message's +8 with <c>vcvt.f32.u32</c> and divides by 100 (0x00537162..0x00537172) before it reports
+    /// anything about it.
+    /// </summary>
+    public float? BatteryVolts => BatteryLevelRaw is { } b ? b / 100f : null;
+
+    /// <summary>
+    /// The percentage the engine reports for that voltage: 100 at or above 1.5 V, zero at or below 1.0 V,
+    /// and <c>(V - 1) * 200</c> between them - the compare against 1.5 at 0x00537176, the compare against 1
+    /// at 0x00537184, and the <c>(V - 1) * 100</c> doubled at 0x00537196..0x0053719E.
+    /// </summary>
+    public float? BatteryPercent => BatteryVolts is { } v
+        ? v >= 1.5f ? 100f : v <= 1.0f ? 0f : (v - 1f) * 200f
+        : null;
     /// <summary>Packets the robot says it missed from this cube.</summary>
     public uint? MissedPackets { get; internal set; }
 
@@ -55,6 +72,25 @@ public sealed class Cube
 ///
 /// This covers discovery, connection state and basic telemetry only. Cube lights, object pose and anything
 /// that needs the vision pipeline are out of scope.
+///
+/// The engine's side of this is four handlers in <c>RobotToEngineImplMessaging</c>, and the field offsets
+/// they read match this stack's message layouts exactly:
+///
+/// <list type="bullet">
+/// <item><c>HandleActiveObjectAvailable</c> 0x0053391C reads the factory id at +0, the object type at +4
+/// and the RSSI at +8, takes the report only for a light cube or the charger, and writes the type, the
+/// RSSI and the current timestamp into its table of active objects.</item>
+/// <item><c>HandleActiveObjectConnectionState</c> 0x00533B3C reads the object id at +0, the factory id at
+/// +4, the type at +8 and the connected flag at +0xC, drops anything whose object id is above 4, and on a
+/// connection calls <c>BlockWorld::AddConnectedActiveObject(id, factoryId, type)</c> - on a disconnection
+/// <c>RemoveConnectedActiveObject(id)</c> and <c>Robot::HandleDisconnectedFromObject</c>.</item>
+/// <item><c>HandleActiveObjectMoved</c> 0x00533E30 reads the timestamp at +0, the id at +4, the three
+/// accelerometer floats at +8, +0xC and +0x10 and the axis at +0x14, and looks the object up by that id
+/// (<c>BlockWorld::GetConnectedActiveObjectByActiveIdHelper</c>) - which is what keying telemetry on the
+/// object id here means.</item>
+/// <item><c>HandleObjectPowerLevel</c> 0x00537130 reads the id at +0, the missed packets at +4 and the
+/// battery byte at +8, in hundredths of a volt.</item>
+/// </list>
 /// </summary>
 public sealed class CozmoCubes
 {
@@ -62,6 +98,34 @@ public sealed class CozmoCubes
     private readonly object _gate = new();
     private readonly Dictionary<uint, Cube> _byFactoryId = new();
     private readonly Dictionary<uint, Cube> _byObjectId = new();
+
+    /// <summary>
+    /// The object types the engine will take an advertisement for.
+    /// <c>HandleActiveObjectAvailable</c> 0x0053391C asks <c>IsValidLightCube</c> 0x007D1D08 and then
+    /// <c>IsCharger</c> 0x007D1D50, and returns without recording anything when both say no. The cube test
+    /// is a jump table over the object type whose only true entries are 1, 2 and 3 - the three light cubes,
+    /// not the ghost at 4 - and the charger test is true for 13.
+    /// </summary>
+    public static bool IsTrackedActiveObject(ObjectType type) => IsLightCube(type) || type == ObjectType.Charger_Basic;
+
+    /// <summary>The three light cube types, which is what <c>IsValidLightCube</c> 0x007D1D08 accepts.</summary>
+    public static bool IsLightCube(ObjectType type) =>
+        type is ObjectType.Block_LIGHTCUBE1 or ObjectType.Block_LIGHTCUBE2 or ObjectType.Block_LIGHTCUBE3;
+
+    /// <summary>
+    /// The largest id a connection report from the robot may carry, which is the last of the engine's
+    /// <c>MAX_NUM_ACTIVE_OBJECTS</c> = 5 radio slots. <c>HandleActiveObjectConnectionState</c> 0x00533B3C
+    /// reads the id first and returns when it is above 4 (<c>cmp r7, #4; bhi</c> at 0x00533B58), before it
+    /// touches BlockWorld or its DAS event.
+    ///
+    /// It is documented rather than enforced, because the two sides mean different things by "object id".
+    /// The engine has two id spaces: the radio slot the robot reports, which this bounds, and the id
+    /// BlockWorld hands back from <c>AddConnectedActiveObject(slot, factoryId, type)</c>, which is what the
+    /// rest of the engine passes around. This stack keeps one - the id on the wire is the id the world
+    /// model uses - so refusing an id above 4 here would refuse a world object rather than an impossible
+    /// radio slot. A robot never sends one above 4 either way.
+    /// </summary>
+    public const uint MaxActiveObjectSlot = 4;
 
     internal CozmoCubes(CozmoRobot robot) => _robot = robot;
 
@@ -80,13 +144,29 @@ public sealed class CozmoCubes
     /// <summary>Every cube heard from since discovery started, newest advertisement first.</summary>
     public IReadOnlyList<Cube> DiscoveredCubes
     {
-        get { lock (_gate) return _byFactoryId.Values.OrderByDescending(c => c.LastSeenUtc).ToArray(); }
+        get
+        {
+            lock (_gate)
+                return _byFactoryId.Values.Where(c => IsLightCube(c.Type))
+                                          .OrderByDescending(c => c.LastSeenUtc).ToArray();
+        }
     }
 
     /// <summary>The cubes the robot currently reports as connected.</summary>
     public IReadOnlyList<Cube> ConnectedCubes
     {
-        get { lock (_gate) return _byFactoryId.Values.Where(c => c.Connected).ToArray(); }
+        get { lock (_gate) return _byFactoryId.Values.Where(c => c.Connected && IsLightCube(c.Type)).ToArray(); }
+    }
+
+    /// <summary>
+    /// The charger, if the robot has heard it advertise. The engine keeps it in the same table as the
+    /// cubes - one <c>unordered_map&lt;u32, ActiveObjectInfo&gt;</c> at Robot+0x47C, written by
+    /// <c>HandleActiveObjectAvailable</c> with the object type, the RSSI and the timestamp it was heard at
+    /// (0x00533984..0x0053398A) - so it is tracked here and kept out of the cube lists.
+    /// </summary>
+    public Cube? Charger
+    {
+        get { lock (_gate) return _byFactoryId.Values.FirstOrDefault(c => c.Type == ObjectType.Charger_Basic); }
     }
 
     /// <summary>Looks up a cube by its permanent id.</summary>
@@ -167,6 +247,8 @@ public sealed class CozmoCubes
             {
                 case ObjectAvailable a:
                 {
+                    // The engine records an advertisement only for a light cube or the charger.
+                    if (!IsTrackedActiveObject(a.ObjectType)) break;
                     bool isNew = !_byFactoryId.ContainsKey(a.FactoryId);
                     var c = Track(a.FactoryId);
                     c.Type = a.ObjectType;

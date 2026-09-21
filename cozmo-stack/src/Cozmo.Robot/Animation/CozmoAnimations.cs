@@ -177,7 +177,16 @@ public sealed class CozmoAnimations : IDisposable
     public event Action<string>? NotImplemented;
 
     /// <summary>Loads Cozmo's own animation assets from an unpacked resources tree.</summary>
-    public AnimationLibrary LoadFrom(string assetsRoot) => Library = AnimationLibrary.Open(assetsRoot);
+    public AnimationLibrary LoadFrom(string assetsRoot)
+    {
+        // The pre-rendered face animations live beside the clips, and the faceAnimations track names them.
+        FaceAnimations = FaceAnimationLibrary.Open(assetsRoot);
+        _scheduler.FaceAnimations = FaceAnimations.Frames;
+        return Library = AnimationLibrary.Open(assetsRoot);
+    }
+
+    /// <summary>The pre-rendered face animations found beside the clips, once <see cref="LoadFrom"/> has run.</summary>
+    public FaceAnimationLibrary? FaceAnimations { get; private set; }
 
     /// <summary>
     /// Where the sound for an audio keyframe comes from. Left null, audio keyframes keep the timeline but

@@ -9,19 +9,24 @@ public readonly record struct Vector3(float X, float Y, float Z)
     public override string ToString() => $"({X:F2}, {Y:F2}, {Z:F2})";
 }
 
-/// <summary>Which of the four cliff sensors saw a drop, as a bit per sensor.</summary>
+/// <summary>
+/// Which of the four cliff sensors saw a drop, as a bit per sensor.
+///
+/// The order is the engine's <c>CliffSensor</c> enum. <c>EnumToString(CliffSensor)</c> 0x007D292C indexes
+/// the pointer table at 0x01034C50, which holds "CLIFF_FL", "CLIFF_FR", "CLIFF_BL", "CLIFF_BR" and
+/// "CLIFF_COUNT" in that order, and the same index space reaches the raw values:
+/// <c>CliffSensorComponent::UpdateRobotData</c> 0x00634016 copies the four 16-bit readings out of
+/// <c>RobotState</c> at +0x50 and +0x54 as two words, in order, and <c>GetCliffDataRaw(i)</c> reads them
+/// back. So bit 0 is the front-left sensor and bit 3 the back-right.
+/// </summary>
 [Flags]
 public enum CliffSensors : byte
 {
     None = 0,
-    /// <summary>
-    /// Bit positions in the order the robot reports them. Which physical corner each bit is has not been
-    /// established, so they are named by index rather than by a guess at front-left and so on.
-    /// </summary>
-    Sensor0 = 1 << 0,
-    Sensor1 = 1 << 1,
-    Sensor2 = 1 << 2,
-    Sensor3 = 1 << 3,
+    FrontLeft = 1 << 0,
+    FrontRight = 1 << 1,
+    BackLeft = 1 << 2,
+    BackRight = 1 << 3,
 }
 
 /// <summary>A cliff the robot reported, with whether it stopped itself.</summary>
@@ -166,10 +171,22 @@ public sealed class CozmoSensors
 
     // -------------------------------------------------------------------- imu
 
-    /// <summary>Accelerometer reading. Units are not established; at rest the magnitude is about 9800.</summary>
+    /// <summary>
+    /// Accelerometer reading, in millimetres per second squared. The engine's own classifier says so: it
+    /// takes gravity to be <see cref="OffTreadsClassifier.GravityAccel"/>, 9800 in these units, which is
+    /// one g in mm/s^2 (<c>Robot::CheckAndUpdateTreadsState</c>). Nothing scales the values on the way in -
+    /// <c>Robot::UpdateFullRobotState</c> 0x0051291C reads them at RobotState +0x30, +0x34 and +0x38 and
+    /// filters them as they are (0x00512A36..0x00512A6E).
+    /// </summary>
     public Vector3? Accelerometer =>
         _state.Latest is { } s ? new Vector3(s.Accel.X, s.Accel.Y, s.Accel.Z) : null;
-    /// <summary>Gyroscope reading. Units are not established; PyCozmo treats them as radians per second.</summary>
+    /// <summary>
+    /// Gyroscope reading, in radians per second. <c>RobotGyroDriftDetector::DetectGyroDrift</c> 0x0052C568
+    /// takes the z rate straight from RobotState +0x44 and calls the robot still only while its magnitude
+    /// is at or under 0.174533 (0x0052C580), which is 10 degrees a second; the next gate compares
+    /// successive samples against 0.0174533, one degree, and the pose check that follows uses 0.00872665,
+    /// half a degree. Nothing scales the values on the way in.
+    /// </summary>
     public Vector3? Gyroscope =>
         _state.Latest is { } s ? new Vector3(s.Gyro.X, s.Gyro.Y, s.Gyro.Z) : null;
     /// <summary>True while the robot reports it is off the ground.</summary>

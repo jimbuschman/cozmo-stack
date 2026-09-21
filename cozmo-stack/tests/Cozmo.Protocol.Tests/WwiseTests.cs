@@ -307,6 +307,48 @@ public class WwiseTests
     /// The unpacked OBB sound directories, when present on this machine: the banks live in
     /// <c>sound_meta</c> and the media archive under <c>cozmo_resources/sound</c>, so both are needed.
     /// </summary>
+    /// <summary>
+    /// An audio keyframe's volume is a one-decibel trim, not a gain. The engine posts it as the
+    /// Event_Volume game parameter - RobotAudioAnimationOnRobot::BeginBufferingAudioOnRobotMode calls
+    /// SetCozmoEventParameter(playingId, 0xD2687048, volume) at 0x00598298 - and in the shipped banks that
+    /// parameter drives Volume on three actor mixers additively over a curve from (0, -1) to (1, 0). So a
+    /// volume of 1 leaves the event alone and a volume of 0 takes one decibel off it, where this stack
+    /// used to multiply the samples and make 0 silent.
+    /// </summary>
+    [Fact]
+    public void TheKeyframeVolumeIsTheEventVolumeTrimNotAGain()
+    {
+        Assert.Equal(0xD2687048u, WwiseAudioSource.EventVolumeParameter);
+        Assert.Equal(WwiseAudioSource.EventVolumeParameter, WwiseHash.Of("Event_Volume"));
+
+        var dirs = SoundDirs();
+        if (dirs is null) return;
+        using var src = new WwiseAudioSource(WwiseSoundLibrary.Load(dirs), ownsLibrary: true);
+
+        Assert.Equal(1f, src.GainForKeyframeVolume(1f), 3);
+        float quiet = src.GainForKeyframeVolume(0f);
+        Assert.Equal((float)Math.Pow(10, -1 / 20.0), quiet, 3);      // one decibel down, about 0.891
+        Assert.True(quiet > 0.8f, "a volume of zero is not silence in the engine");
+        Assert.True(src.GainForKeyframeVolume(0.5f) > quiet);         // and it rises across the curve
+
+        // the binding itself, so a bank change would be noticed rather than silently followed
+        var bound = src.Library.Banks
+            .SelectMany(b => b.Objects.Keys)
+            .Select(id => src.Library.Node(id))
+            .Where(n => n is not null)
+            .SelectMany(n => n!.Params.Rtpcs)
+            .Where(r => r.SourceType == WwiseRtpc.GameParameterSource
+                        && r.SourceId == WwiseAudioSource.EventVolumeParameter)
+            .ToList();
+        Assert.NotEmpty(bound);
+        Assert.All(bound, r =>
+        {
+            Assert.Equal((byte)WwiseProp.Volume, r.ParamId);
+            Assert.Equal(-1f, r.Points[0].To, 3);
+            Assert.Equal(0f, r.Points[^1].To, 3);
+        });
+    }
+
     private static string[]? SoundDirs()
     {
         foreach (var root in AssetRoots())

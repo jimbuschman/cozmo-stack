@@ -84,10 +84,54 @@ public sealed class CameraFrame
 /// </summary>
 public sealed class CozmoCamera
 {
-    private readonly Dictionary<uint, PartialImage> _pending = new();
+    /// <summary>
+    /// The largest chunk payload the engine will take: <c>cmp.w r1, #0x4b0</c> at 0x004F1CF0, warning
+    /// "EncodedImage.AddChunk.ChunkTooBig", "Expecting chunks of size no more than %d, got %zu." A chunk
+    /// over it is thrown away where it stands, before any bookkeeping, so the next chunk is out of order.
+    /// </summary>
+    public const int MaxChunkBytes = 0x4B0;
+
+    /// <summary>
+    /// The only resolution <c>AddChunk</c> accepts: <c>cmp r0, #4</c> at 0x004F1D4E, after which it writes
+    /// 320 x 240 into the image (<c>movs r0, #0xf0</c>, <c>mov.w r1, #0x140</c>). Anything else warns with
+    /// the resolution name from <c>EnumToString(ImageResolution)</c> and the chunk is dropped.
+    /// </summary>
+    public const int Resolution = 4;
+
+    /// <summary>
+    /// What the engine reserves for one image: <c>reserve(0x38400)</c> at 0x004F1DA6, 320 * 240 * 3. Kept
+    /// as a note - nothing here needs to preallocate.
+    /// </summary>
+    public const int ReserveBytes = 0x38400;
+
+    /// <summary>
+    /// How many finished images the engine will hand to vision within one basestation tick.
+    /// <c>HandleImageChunk</c> 0x00535A64 compares the event time with the last one it saw (the double at
+    /// +0x130); a new tick zeroes the counter at +0x128, and within one tick the counter is incremented and
+    /// an image whose count reaches 3 is dropped with "Ignoring %dth image (with t=%u) received during
+    /// basestation tick at %fsec". At the 15 frames a second this camera produces against a 30 Hz tick, a
+    /// second image inside one tick never happens, so nothing here counts them.
+    /// </summary>
+    public const int MaxImagesPerTick = 3;
+
     private readonly Dictionary<uint, (float, float, float)> _imu = new();
     /// <summary>Reassembly runs on the transport's dispatch thread while callers may restart it.</summary>
     private readonly object _gate = new();
+
+    // The engine's EncodedImage, field for field: the image id it is collecting (+0x1C), whether that image
+    // is still valid (+0x22), the chunk id it expects next (+0x21), how many chunks it has taken (+0x23),
+    // the encoding it settled on (+0x20), and the current and previous timestamps (+0xC and +0x10).
+    private readonly List<byte> _buffer = new();
+    private bool _started;
+    private uint _imageId;
+    private bool _valid;
+    /// <summary>Whether the image in hand was already handed out, so it is finished rather than abandoned.</summary>
+    private bool _delivered;
+    private byte _expectedChunk;
+    private byte _chunksTaken;
+    private byte _encoding;
+    private uint _timestamp, _previousTimestamp;
+    private int _width, _height;
 
     /// <summary>Raised once per complete frame.</summary>
     public event Action<CameraFrame>? FrameReceived;
@@ -95,9 +139,12 @@ public sealed class CozmoCamera
     public event Action<uint, string>? FrameDropped;
 
     /// <summary>
-    /// Frames to discard after the camera is started. The sensor takes about eleven frames to lock: until
-    /// then every picture is torn and rolls by exactly one macroblock row per frame, and after it every
-    /// picture is clean. Measured on the firmware-2457 capture of 2026-09-18 and reproduced on a live run.
+    /// Frames to flag as warm-up after the camera is started. The sensor takes about eleven frames to lock:
+    /// until then every picture is torn and rolls by exactly one macroblock row per frame, and after it
+    /// every picture is clean. Measured on the firmware-2457 capture of 2026-09-18 and reproduced on a live
+    /// run. The engine has no such idea - it hands every image it reassembles to
+    /// <c>VisionComponent::SetNextImage</c> - so these frames are flagged and still delivered; only
+    /// <c>CozmoRobot.CaptureFrameAsync</c> waits past them, at its caller's option.
     /// </summary>
     public int WarmUpFrames { get; set; } = 15;
 
@@ -109,23 +156,22 @@ public sealed class CozmoCamera
     public int FramesCompleted { get; private set; }
     public int FramesDropped { get; private set; }
     public int ChunksReceived { get; private set; }
-
-    private sealed class PartialImage
-    {
-        public readonly SortedDictionary<byte, byte[]> Chunks = new();
-        public uint Timestamp;
-        public byte Encoding, Resolution;
-        public int Expected = -1;
-        public DateTime Started = DateTime.UtcNow;
-    }
+    /// <summary>Chunks thrown away for being larger than <see cref="MaxChunkBytes"/>.</summary>
+    public int ChunksRejected { get; private set; }
 
     /// <summary>Call when the camera is (re)started, so the warm-up count begins again.</summary>
     public void Restart()
     {
         lock (_gate)
         {
-            _pending.Clear();
             _imu.Clear();
+            _buffer.Clear();
+            _started = false;
+            _valid = false;
+            _delivered = false;
+            _expectedChunk = 0;
+            _chunksTaken = 0;
+            _timestamp = _previousTimestamp = 0;
             FrameIndex = 0;
         }
     }
@@ -149,57 +195,111 @@ public sealed class CozmoCamera
         if (completed is not null) FrameReceived?.Invoke(completed);
     }
 
-    /// <summary>Reassembly proper. Events are raised by the caller once the lock is released.</summary>
+    /// <summary>
+    /// <c>EncodedImage::AddChunk</c> 0x004F1CE0, step for step.
+    ///
+    /// One image is collected at a time. A chunk whose image id differs from the one in hand starts a new
+    /// image there and then, so a frame that never finished is simply gone; there is no queue of partial
+    /// images to age out. The new image is valid only if its first chunk is chunk 0 (0x004F1D68), and its
+    /// encoding is the chunk's own except that JPEGMinimizedGray with a non-zero first payload byte is
+    /// really JPEGMinimizedColor (0x004F1D8C).
+    ///
+    /// After that every chunk must carry the id the image expects, or it warns "ChunkOutOfOrder" and the
+    /// image is invalidated (0x004F1DB2). The last chunk is the one whose id is the chunk count minus one,
+    /// and on it the engine checks that it took exactly that many chunks ("UnexpectedNumberOfChunks") and
+    /// that the timestamp did not go backwards ("TimestampNotIncreasing"). Data is appended only while the
+    /// image is still valid, and the function reports a complete image only for a valid last chunk; a last
+    /// chunk on an invalidated image is the "Received last chunk of invalidated image" note instead.
+    /// </summary>
     private CameraFrame? AddLocked(ImageChunk c, List<(uint Id, string Why)> dropped)
     {
         ChunksReceived++;
-        if (!_pending.TryGetValue(c.ImageId, out var p))
+        if (c.Data.Length > MaxChunkBytes)
         {
-            // A new image starts; anything older than the newest two is never going to complete.
-            foreach (var stale in _pending.Keys.Where(k => k + 2 < c.ImageId).ToList())
-            {
-                _pending.Remove(stale);
-                FramesDropped++;
-                dropped.Add((stale, "superseded before all chunks arrived"));
-            }
-            p = new PartialImage { Timestamp = c.FrameTimestamp, Encoding = (byte)c.ImageEncoding, Resolution = (byte)c.ImageResolution };
-            _pending[c.ImageId] = p;
+            // ChunkTooBig: the chunk is refused before any bookkeeping, which leaves the image expecting
+            // this chunk id, so the next one is out of order and takes the image down with it.
+            ChunksRejected++;
+            dropped.Add((c.ImageId, $"chunk of {c.Data.Length} bytes, more than {MaxChunkBytes}"));
+            return null;
         }
-        p.Chunks[c.ChunkId] = c.Data;
-        // The robot reports the total only in the final chunk (firmware 2457, confirmed in capture).
-        if (c.ImageChunkCount > 0) p.Expected = c.ImageChunkCount;
 
-        if (p.Expected > 0 && p.Chunks.Count >= p.Expected)
+        if (!_started || c.ImageId != _imageId)
         {
-            _pending.Remove(c.ImageId);
-            if (p.Chunks.Keys.First() != 0 || p.Chunks.Keys.Last() != p.Expected - 1)
+            if (_started && _valid && !_delivered && _chunksTaken > 0)
             {
                 FramesDropped++;
-                dropped.Add((c.ImageId, $"expected chunks 0..{p.Expected - 1}, got [{string.Join(",", p.Chunks.Keys)}]"));
+                dropped.Add((_imageId, "superseded before all chunks arrived"));
+            }
+            _started = true;
+            _imageId = c.ImageId;
+            if (c.ImageResolution != Resolution)
+            {
+                // The engine records the new id and returns, without touching anything else: whatever it
+                // was collecting stays in hand. Nothing this stack talks to sends another resolution.
+                dropped.Add((c.ImageId, $"resolution {c.ImageResolution}, and the engine only takes {Resolution}"));
                 return null;
             }
-            var payload = p.Chunks.Values.SelectMany(b => b).ToArray();
-            var (w, h) = CameraResolutions.Size(p.Resolution);
-            // Byte 0 flags colour; a colour frame is encoded at half width and stretched back on display.
-            bool color = payload.Length > 0 && payload[0] != 0;
-            int jpegWidth = color ? w / 2 : w;
-            byte encoding = color ? MiniJpeg.EncodingJpegMinimizedColor : p.Encoding;
-            var frame = new CameraFrame
-            {
-                ImageId = c.ImageId, Timestamp = p.Timestamp, Width = w, Height = h,
-                Encoding = p.Encoding, Resolution = p.Resolution,
-                IsColor = color, JpegWidth = jpegWidth,
-                StreamMarker = payload.Length > 1 ? payload[1] : (byte)0,
-                FrameIndex = FrameIndex, IsWarmUp = FrameIndex < WarmUpFrames,
-                ChunkCount = p.Expected, RawPayload = payload,
-                Jpeg = MiniJpeg.ToJpeg(payload, jpegWidth, h, encoding),
-            };
-            if (_imu.Remove(c.ImageId, out var g)) frame.GyroRates = g;
-            FrameIndex++;
-            LastFrame = frame;
-            FramesCompleted++;
-            return frame;
+            (_width, _height) = (320, 240);
+            _valid = c.ChunkId == 0;
+            _delivered = false;
+            _expectedChunk = 0;
+            _chunksTaken = 0;
+            _encoding = (byte)c.ImageEncoding;
+            if (_encoding == MiniJpeg.EncodingJpegMinimizedGray && c.Data.Length > 0 && c.Data[0] != 0)
+                _encoding = MiniJpeg.EncodingJpegMinimizedColor;
+            _buffer.Clear();
         }
-        return null;
+
+        if (c.ChunkId != _expectedChunk)
+            Invalidate(dropped, $"chunk {c.ChunkId} arrived where chunk {_expectedChunk} was expected");
+        _expectedChunk = (byte)(c.ChunkId + 1);
+        _chunksTaken++;
+
+        bool isLast = c.ChunkId == (byte)(c.ImageChunkCount - 1);
+        if (isLast)
+        {
+            if (_chunksTaken != c.ImageChunkCount)
+                Invalidate(dropped, $"expected {c.ImageChunkCount} chunks, received {_chunksTaken}");
+            else
+            {
+                _previousTimestamp = _timestamp;
+                _timestamp = c.FrameTimestamp;
+                if (_previousTimestamp > _timestamp)
+                    Invalidate(dropped, $"timestamp {_timestamp} is behind the previous {_previousTimestamp}");
+            }
+        }
+
+        if (!_valid) return null;                          // invalidated: the data is not even kept
+        _buffer.AddRange(c.Data);
+        if (!isLast) return null;
+
+        var payload = _buffer.ToArray();
+        bool color = _encoding == MiniJpeg.EncodingJpegMinimizedColor;
+        int jpegWidth = color ? _width / 2 : _width;
+        var frame = new CameraFrame
+        {
+            ImageId = _imageId, Timestamp = _timestamp, Width = _width, Height = _height,
+            Encoding = _encoding, Resolution = (byte)c.ImageResolution,
+            IsColor = color, JpegWidth = jpegWidth,
+            StreamMarker = payload.Length > 1 ? payload[1] : (byte)0,
+            FrameIndex = FrameIndex, IsWarmUp = FrameIndex < WarmUpFrames,
+            ChunkCount = c.ImageChunkCount, RawPayload = payload,
+            Jpeg = MiniJpeg.ToJpeg(payload, jpegWidth, _height, _encoding),
+        };
+        if (_imu.Remove(_imageId, out var g)) frame.GyroRates = g;
+        _delivered = true;
+        FrameIndex++;
+        LastFrame = frame;
+        FramesCompleted++;
+        return frame;
+    }
+
+    /// <summary>Takes the image out of play, once, the way each of the engine's warnings clears +0x22.</summary>
+    private void Invalidate(List<(uint Id, string Why)> dropped, string why)
+    {
+        if (!_valid) return;
+        _valid = false;
+        FramesDropped++;
+        dropped.Add((_imageId, why));
     }
 }

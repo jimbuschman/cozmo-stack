@@ -45,6 +45,7 @@ public static class WwiseTool
         if (a.Contains("--validate")) return Validate(lib, limit);
         if (a.Contains("--hierarchy")) return Hierarchy(lib);
         if (a.Contains("--sampler")) return Sampler(lib);
+        if (Arg(a, "--rtpc") is { } rtpc) return Rtpc(lib, uint.TryParse(rtpc, out var rid) ? rid : WwiseHash.Of(rtpc));
         if (Arg(a, "--music") is { } music) return Music(lib, Resolve(lib, music), Switches(lib, a), a.Contains("--midi"));
         int seed = int.TryParse(Arg(a, "--seed"), out var sd) ? sd : 1;
         if (Arg(a, "--render") is { } render) return Render(lib, Resolve(lib, render), Switches(lib, a), Arg(a, "--wav"), seed, BranchArg(a));
@@ -54,6 +55,37 @@ public static class WwiseTool
         if (coverage) return Coverage(lib, limit);
 
         Console.WriteLine("\nnothing asked for. Use --event <id-or-name>, --clip <name> --assets <dir>, or --coverage");
+        return 0;
+    }
+
+    /// <summary>
+    /// Every node in every bank that binds one game parameter, with what it drives and the curve. This is
+    /// how a question like "what does the keyframe volume actually do" gets answered from the banks rather
+    /// than guessed: the engine posts the keyframe volume as the Event_Volume game parameter
+    /// (RobotAudioAnimationOnRobot::BeginBufferingAudioOnRobotMode 0x00598298 calls SetCozmoEventParameter
+    /// with 0xD2687048), so whatever that parameter is bound to here is what the volume means.
+    /// </summary>
+    private static int Rtpc(WwiseSoundLibrary lib, uint parameterId)
+    {
+        Console.WriteLine($"\nnodes bound to game parameter {parameterId} (0x{parameterId:X8})");
+        int found = 0;
+        foreach (var bank in lib.Banks)
+        {
+            foreach (var id in bank.Objects.Keys)
+            {
+                if (lib.Node(id) is not { } n) continue;
+                foreach (var r in n.Params.Rtpcs)
+                {
+                    if (r.SourceType != WwiseRtpc.GameParameterSource || r.SourceId != parameterId) continue;
+                    found++;
+                    var points = string.Join(", ", r.Points.Select(pt => $"({pt.From:0.###} -> {pt.To:0.###}, interp {pt.Interp})"));
+                    Console.WriteLine($"  {bank.Name,-16} node {id,-12} {n.Type,-22} drives param {r.ParamId} " +
+                                      $"({(WwiseProp)r.ParamId}) accumulate {r.Accumulate} scaling {r.Scaling}");
+                    Console.WriteLine($"      curve {r.CurveId}: {points}");
+                }
+            }
+        }
+        if (found == 0) Console.WriteLine("  nothing in these banks binds it");
         return 0;
     }
 

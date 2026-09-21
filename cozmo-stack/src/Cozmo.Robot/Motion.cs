@@ -80,6 +80,26 @@ public sealed class CozmoMotion
     public (float Left, float Right) WheelSpeeds =>
         _robot.State.Latest is { } s ? (s.LwheelSpeedMmps, s.RwheelSpeedMmps) : (0f, 0f);
 
+    /// <summary>
+    /// The readiness gate. The engine has no equivalent: nothing on its motion path consults
+    /// <c>Robot::IsHeadCalibrated</c> 0x00512378 or <c>Robot::IsLiftCalibrated</c> 0x005151A6 - their only
+    /// callers are the gyro drift detector, <c>CalibrateMotorAction::CheckIfDone</c>,
+    /// <c>BehaviorReactToImpact</c> and <c>BehaviorReactToMotorCalibration</c> - and
+    /// <c>MovementComponent::MoveHeadToAngle</c> and <c>MoveLiftToHeight</c> send whatever they are given.
+    ///
+    /// What the engine does instead is at the behaviour layer, and this stack has it:
+    /// <c>HandleMotorCalibration</c> 0x00536A68 sets the two flags from the message (calibrated is
+    /// <c>!calibStarted</c>, at 0x00536BCE and 0x00536BE4), unattaches a carried object when the lift
+    /// starts calibrating, and broadcasts; <c>BehaviorReactToMotorCalibration::InitInternal</c> 0x006065F0
+    /// then locks the reactions off and waits 5 seconds (<c>WaitAction</c> with 0x40A00000 at 0x00606650),
+    /// ending early when both motors report calibrated. That is
+    /// <see cref="Behavior.ReactToMotorCalibrationBehavior"/>.
+    ///
+    /// The gate below is this stack's own, because a caller here can command a motor directly where the
+    /// engine's callers are behaviours that the reaction has already displaced. It is a default, not a
+    /// rule: every caller can pass <c>requireCalibration: false</c>, and the resume path and the
+    /// behaviours that move a motor deliberately do.
+    /// </summary>
     private MotionOutcome? NotReady(bool requireCalibration)
     {
         if (_robot.State.Latest is null)
@@ -151,11 +171,37 @@ public sealed class CozmoMotion
     // --------------------------------------------------------------- head and lift
 
     /// <summary>
-    /// Moves the head to an absolute angle in radians and waits for the robot to acknowledge the action.
-    /// The angle is clamped to the robot's documented range.
+    /// The engine's default head speed, 15 rad/s. <c>MoveHeadToAngleAction</c>'s constructor writes the
+    /// pair 15 and 20 into the action at 0x00547F14 (<c>movt r0, #0x41a0</c> and <c>movt r1, #0x4170</c>,
+    /// stored by <c>strd r1, r0, [fp, #0x90]</c>), and <c>Init</c> 0x00548534 passes them straight on as
+    /// <c>MovementComponent::MoveHeadToAngle(angle, speed, accel, duration, ...)</c> with the duration
+    /// from +0x98, which the constructor leaves at zero.
     /// </summary>
-    public Task<MotionOutcome> SetHeadAngleAsync(float radians, float maxSpeedRadPerSec = 10f,
-                                                 float accelRadPerSec2 = 10f, float durationSec = 0f,
+    public const float DefaultHeadSpeedRadPerSec = 15f;
+
+    /// <summary>The engine's default head acceleration, 20 rad/s^2, from the same pair.</summary>
+    public const float DefaultHeadAccelRadPerSec2 = 20f;
+
+    /// <summary>
+    /// The engine's default lift speed, 10 rad/s. <c>MoveLiftToHeightAction</c>'s constructor writes 0, 10
+    /// and 20 to +0x88, +0x8C and +0x90 (0x00548A68..0x00548A78) and <c>Init</c> 0x0054903C passes them as
+    /// <c>MoveLiftToHeight(height, speed, accel, duration, ...)</c> at 0x00549306: <c>ldrd r2, r3,
+    /// [r4, #0x8c]</c> for the speed and acceleration, the duration from +0x88.
+    /// </summary>
+    public const float DefaultLiftSpeedRadPerSec = 10f;
+
+    /// <summary>The engine's default lift acceleration, 20 rad/s^2, from the same three.</summary>
+    public const float DefaultLiftAccelRadPerSec2 = 20f;
+
+    /// <summary>
+    /// Moves the head to an absolute angle in radians and waits for the robot to acknowledge the action.
+    /// The angle is clamped to the robot's documented range, and the speed and acceleration default to the
+    /// engine's own (<see cref="DefaultHeadSpeedRadPerSec"/>).
+    /// </summary>
+    public Task<MotionOutcome> SetHeadAngleAsync(float radians,
+                                                 float maxSpeedRadPerSec = DefaultHeadSpeedRadPerSec,
+                                                 float accelRadPerSec2 = DefaultHeadAccelRadPerSec2,
+                                                 float durationSec = 0f,
                                                  TimeSpan? timeout = null, bool requireCalibration = true)
     {
         float clamped = Math.Clamp(radians, MinHeadAngleRad, MaxHeadAngleRad);
@@ -170,9 +216,15 @@ public sealed class CozmoMotion
     /// lift back as <c>liftAngle</c>, in radians; <see cref="RobotState.LiftHeightMm"/> converts it with the
     /// engine's <c>45 + 66 sin(angle)</c> (<c>Robot::GetLiftHeight</c> 0x00516F64), and the engine's inverse
     /// clamps to this same 32..92 mm range (<c>ConvertLiftHeightToLiftAngleRad</c> 0x005170B0).
+    ///
+    /// The speed and acceleration default to the engine's own
+    /// (<see cref="DefaultLiftSpeedRadPerSec"/>); the same 32 and 92 mm appear in
+    /// <c>MoveLiftToHeightAction::Init</c> as the bounds it warns about (0x0054905E and 0x0054906C).
     /// </summary>
-    public Task<MotionOutcome> SetLiftHeightAsync(float heightMm, float maxSpeedRadPerSec = 3f,
-                                                  float accelRadPerSec2 = 20f, float durationSec = 0f,
+    public Task<MotionOutcome> SetLiftHeightAsync(float heightMm,
+                                                  float maxSpeedRadPerSec = DefaultLiftSpeedRadPerSec,
+                                                  float accelRadPerSec2 = DefaultLiftAccelRadPerSec2,
+                                                  float durationSec = 0f,
                                                   TimeSpan? timeout = null, bool requireCalibration = true)
     {
         float clamped = Math.Clamp(heightMm, MinLiftHeightMm, MaxLiftHeightMm);

@@ -169,7 +169,17 @@ public static class ProceduralFaceRenderer
     /// <summary>
     /// The eye outline: four elliptical corner arcs, in the engine's own order, traversed clockwise.
     ///
-    /// The corner-to-parameter mapping is the one named in <c>PROCEDURAL_FACE.md</c> as the natural
+    /// The corner-to-parameter mapping is now read from <c>DrawEye</c> rather than inferred. The four
+    /// <c>cv::ellipse2Poly</c> calls are at 0x00585244, 0x0058529A, 0x00585304 and 0x00585372, and each
+    /// carries its arc and its centre: 270..360 about (15 - rx, ry - 20), 0..90 about (15 - rx, 20 - ry),
+    /// 90..180 about (rx - 15, 20 - ry) and 180..270 about (rx - 15, ry - 20), all with delta 10. Their
+    /// radii come from the eye's parameter block at +0x14 .. +0x30, which is
+    /// <c>LowerInnerRadiusX</c> through <c>LowerOuterRadiusY</c> in the order
+    /// <c>ProceduralEyeParameter</c> declares them, so the first arc is the upper-inner corner and the
+    /// rest follow clockwise. A corner whose rounded radius is below one pixel in either axis pushes the
+    /// exact box corner instead - (15, -20) at 0x00585256, (15, 20) at 0x005852AC, and so on.
+    ///
+    /// This was the mapping named in <c>PROCEDURAL_FACE.md</c> as the natural
     /// reading rather than an instruction-level certainty. It is at least self-consistent with the
     /// mirror above: local +x is the inner side for both eyes, and local -y is up.
     /// </summary>
@@ -279,9 +289,20 @@ public static class ProceduralFaceRenderer
     }
 
     /// <summary>
-    /// Fills a closed polygon, even-odd. The engine's fill is neither in <c>DrawFace</c>'s nor
-    /// <c>DrawEye</c>'s imports, so it is inlined or in a helper that was not located; for the simple
-    /// closed outlines these polygons form, even-odd and non-zero winding agree.
+    /// Fills a closed polygon by scanline, even-odd.
+    ///
+    /// The engine's fill is <c>cv::fillConvexPoly(image, points, colour, lineType, shift)</c>, called three
+    /// times from <c>DrawEye</c> - 0x00585818 for the outline with the colour 255 (the double 0x406FE000
+    /// built at 0x005857F6), then 0x00585860 and 0x00585894 for the two lids with zero - each with
+    /// <c>lineType = 4</c> (LINE_4, no anti-aliasing) and <c>shift = 0</c>. Between the outline and the
+    /// lids it calls <c>ScanlineDistorter::AddOffNoise(matrix, 40, 30, image)</c> when the face asks for
+    /// it (0x0058582C).
+    ///
+    /// The points it fills are whole pixels: <see cref="Place"/> rounds each transformed point the way the
+    /// engine does at 0x00585696 and 0x005856A8 before storing it as a <c>cv::Point_&lt;int&gt;</c>. On a
+    /// convex integer polygon, filling from the left chain to the right chain and filling by even-odd
+    /// parity are the same fill, and both round a boundary to the nearest pixel, so this scanline fill
+    /// stands in for OpenCV's.
     /// </summary>
     private static void Fill(byte[] canvas, List<(float X, float Y)> poly, byte value)
     {

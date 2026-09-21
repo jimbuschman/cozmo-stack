@@ -188,6 +188,37 @@ public class ControlTests
         Assert.Single(rig.Sent.OfType<StopAllMotors>());
     }
 
+    /// <summary>
+    /// The speed and acceleration a bare head or lift move carries are the engine's action defaults, not
+    /// PyCozmo's. MoveHeadToAngleAction's constructor writes 15 and 20 into the action at 0x00547F14 and
+    /// Init 0x00548534 hands them to MovementComponent::MoveHeadToAngle; MoveLiftToHeightAction's
+    /// constructor writes 0, 10 and 20 at 0x00548A68 and Init 0x0054903C hands the last two to
+    /// MoveLiftToHeight, with the duration of zero. This stack sent head 10/10 and lift 3/20, which were
+    /// PyCozmo's numbers.
+    /// </summary>
+    [Fact]
+    public async Task TheHeadAndLiftDefaultsAreTheEnginesActionDefaults()
+    {
+        Assert.Equal(15f, CozmoMotion.DefaultHeadSpeedRadPerSec);
+        Assert.Equal(20f, CozmoMotion.DefaultHeadAccelRadPerSec2);
+        Assert.Equal(10f, CozmoMotion.DefaultLiftSpeedRadPerSec);
+        Assert.Equal(20f, CozmoMotion.DefaultLiftAccelRadPerSec2);
+
+        var rig = new Rig();
+        rig.MakeReady();
+        _ = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(200));
+        var head = await WaitFor(() => rig.LastSent<SetHeadAngle>());
+        Assert.Equal(15f, head.MaxSpeedRadPerSec);
+        Assert.Equal(20f, head.AccelRadPerSec2);
+        Assert.Equal(0f, head.DurationSec);
+
+        _ = rig.Robot.Motion.SetLiftHeightAsync(60f, timeout: TimeSpan.FromMilliseconds(200));
+        var lift = await WaitFor(() => rig.LastSent<SetLiftHeight>());
+        Assert.Equal(10f, lift.MaxSpeedRadPerSec);
+        Assert.Equal(20f, lift.AccelRadPerSec2);
+        Assert.Equal(0f, lift.DurationSec);
+    }
+
     [Fact]
     public async Task SetHeadAngleWaitsForTheRobotToAcknowledgeThatExactAction()
     {
@@ -374,7 +405,7 @@ public class ControlTests
 
         var c = Assert.Single(seen);
         Assert.Equal(4242u, c.Timestamp);
-        Assert.Equal(CliffSensors.Sensor0 | CliffSensors.Sensor2, c.Sensors);
+        Assert.Equal(CliffSensors.FrontLeft | CliffSensors.BackLeft, c.Sensors);
         Assert.True(c.StoppedForCliff);
         Assert.Single(rig.Robot.Sensors.CliffHistory);
     }
@@ -431,13 +462,57 @@ public class ControlTests
 
         rig.Send(new ObjectConnectionState
         {
-            ObjectID = 7, FactoryID = 0xAABBCCDD, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true,
+            ObjectID = 2, FactoryID = 0xAABBCCDD, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true,
         });
         Assert.Single(connections);
         Assert.True(cube.Connected);
+        Assert.Equal(2u, cube.ObjectId);
+        Assert.Same(cube, rig.Robot.Cubes.ByObjectId(2));
+        Assert.Single(rig.Robot.Cubes.ConnectedCubes);
+    }
+
+    /// <summary>
+    /// The engine takes an advertisement only from something it can use. HandleActiveObjectAvailable
+    /// 0x0053391C asks IsValidLightCube 0x007D1D08 - a jump table whose only true entries are the three
+    /// light cube types, the ghost at 4 not among them - and then IsCharger 0x007D1D50, which is true for
+    /// Charger_Basic, and returns without recording anything when both say no. The charger is kept in the
+    /// same table as the cubes but is not one of them.
+    /// </summary>
+    [Fact]
+    public void OnlyLightCubesAndTheChargerAreTrackedFromAnAdvertisement()
+    {
+        var rig = new Rig();
+        rig.Send(new ObjectAvailable { FactoryId = 1, ObjectType = ObjectType.Block_LIGHTCUBE3, Rssi = -40 });
+        rig.Send(new ObjectAvailable { FactoryId = 2, ObjectType = ObjectType.Block_LIGHTCUBE_GHOST, Rssi = -40 });
+        rig.Send(new ObjectAvailable { FactoryId = 3, ObjectType = ObjectType.Charger_Basic, Rssi = -40 });
+        rig.Send(new ObjectAvailable { FactoryId = 4, ObjectType = ObjectType.CustomType00, Rssi = -40 });
+
+        var cube = Assert.Single(rig.Robot.Cubes.DiscoveredCubes);
+        Assert.Equal(1u, cube.FactoryId);
+        Assert.Null(rig.Robot.Cubes.ByFactoryId(2));
+        Assert.Null(rig.Robot.Cubes.ByFactoryId(4));
+        Assert.Equal(3u, rig.Robot.Cubes.Charger!.FactoryId);
+    }
+
+    /// <summary>
+    /// The id on a connection report is a radio slot, one of the engine's MAX_NUM_ACTIVE_OBJECTS = 5, and
+    /// HandleActiveObjectConnectionState 0x00533B3C drops a report above that at 0x00533B58 before it
+    /// reaches BlockWorld. This stack uses that id as its world object id as well, so the bound is
+    /// recorded and not enforced - see CozmoCubes.MaxActiveObjectSlot - and a cube keeps whichever id it
+    /// arrived with.
+    /// </summary>
+    [Fact]
+    public void TheConnectionIdIsKeptAsTheObjectIdWhateverItIs()
+    {
+        Assert.Equal(4u, CozmoCubes.MaxActiveObjectSlot);
+        var rig = new Rig();
+        rig.Send(new ObjectConnectionState
+        {
+            ObjectID = 7, FactoryID = 0x1234, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true,
+        });
+        var cube = Assert.Single(rig.Robot.Cubes.ConnectedCubes);
         Assert.Equal(7u, cube.ObjectId);
         Assert.Same(cube, rig.Robot.Cubes.ByObjectId(7));
-        Assert.Single(rig.Robot.Cubes.ConnectedCubes);
     }
 
     [Fact]
@@ -451,7 +526,11 @@ public class ControlTests
         rig.Send(new ObjectMoved { ObjectID = 3, Timestamp = 6, Accel = new ActiveAccel { X = 1, Y = 2, Z = 3 }, AxisOfAccel = UpAxis.ZPositive });
 
         var cube = rig.Robot.Cubes.ByObjectId(3)!;
-        Assert.Equal((byte)140, cube.BatteryLevelRaw!.Value);          // raw, because the scale is not established
+        Assert.Equal((byte)140, cube.BatteryLevelRaw!.Value);
+        // HandleObjectPowerLevel 0x00537130 reads the byte as hundredths of a volt and turns it into a
+        // percentage that is flat at 100 above 1.5 V and at 0 below 1 V.
+        Assert.Equal(1.4f, cube.BatteryVolts!.Value, 3);
+        Assert.Equal(80f, cube.BatteryPercent!.Value, 3);
         Assert.Equal(9u, cube.MissedPackets);
         Assert.Equal(1, (int)cube.Taps);
         Assert.True(cube.Moving);

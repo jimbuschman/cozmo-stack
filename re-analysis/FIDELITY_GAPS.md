@@ -7,11 +7,11 @@ Manifest of **203 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 128 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 36 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| EXACT_SOURCE | 135 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EQUIVALENT_IMPLEMENTATION | 13 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| RECOVERABLE_GAP | 26 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 1 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| COMPATIBILITY_POLICY | 17 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -26,9 +26,9 @@ remains after both, and they do not go away by working harder on this repository
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | M1-transport — UDP transport and reliability | 15 | 0 | 0 | 0 | 0 | yes | yes |
 | M2-protocol — CLAD messages and protocol helpers | 6 | 0 | 0 | 0 | 0 | yes | yes |
-| M3-device — Camera, display and audio device layer | 17 | 5 | 0 | 0 | 1 | no | yes |
-| M4-control — Motion, sensors, lights and cubes | 9 | 4 | 0 | 0 | 0 | no | yes |
-| M5-animation — Animation clips, scheduler and face | 20 | 4 | 0 | 0 | 0 | no | yes |
+| M3-device — Camera, display and audio device layer | 17 | 0 | 0 | 0 | 1 | yes | yes |
+| M4-control — Motion, sensors, lights and cubes | 9 | 0 | 0 | 0 | 0 | yes | yes |
+| M5-animation — Animation clips, scheduler and face | 20 | 3 | 0 | 0 | 0 | no | yes |
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 1 | 0 | 0 | 0 | no | yes |
 | M7-behaviour — Idle, mood and reactions | 16 | 0 | 0 | 0 | 0 | yes | yes |
 | M8-framework — Behaviour framework and scoring | 10 | 6 | 0 | 0 | 0 | no | yes |
@@ -45,86 +45,6 @@ remains after both, and they do not go away by working harder on this repository
 
 Each of these is a question the original can answer and nobody has asked it yet.
 
-### M3-device — Camera, display and audio device layer
-
-**M3-002 — Image chunk reassembly: the count arrives only on the last chunk** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Camera.cs`
-* effect: frames are assembled short, or never completed
-* rests on: the fw2457 capture
-* best authority: the engine image-chunk handler
-* evidence: re-analysis/captures
-* outstanding: the engine own reassembly rule was not read; the capture shows what the robot sends, not what the engine accepts
-
-**M3-003 — Trailing 0xFF strip, byte re-stuffing and EOI append** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/MiniJpeg.cs`
-* effect: decoded frames are corrupt or refused by a decoder
-* rests on: PyCozmo transcription; every captured frame Huffman-decodes
-* best authority: the engine JPEG assembly next to the header tables already read
-* evidence: re-analysis/captures
-* outstanding: the engine assembly code was not disassembled, only its constant tables
-
-**M3-004 — 15 warm-up frames discarded** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Camera.cs`
-* effect: the first usable frame arrives later or earlier than the engine would deliver it
-* rests on: a choice of this stack; one capture measured 11
-* best authority: the engine camera start-up handling
-* outstanding: whether the engine discards anything at all, and how many
-
-**M3-005 — Images older than the newest two are dropped** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Camera.cs`
-* effect: vision runs on a stale frame, or never sees a frame under load
-* rests on: a choice of this stack
-* best authority: the engine image queue
-* outstanding: the engine queue depth and drop rule
-
-**M3-014 — Audio frames are sent reliably** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Audio.cs`
-* effect: audio frames are retransmitted under loss, adding latency, or are dropped
-* rests on: an assumption that the engine sends everything reliable
-* best authority: AnimationStreamer::SendBufferedMessages, which was not read
-* outstanding: whether the audio path is reliable or unreliable in the engine
-
-### M4-control — Motion, sensors, lights and cubes
-
-**M4-003 — Head and lift motor command default speed and acceleration** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
-* effect: the head and lift move faster or slower than the app moves them
-* rests on: PyCozmo defaults (head 10/10, lift 3/20)
-* best authority: MoveHeadToAngleAction and MoveLiftToHeightAction constructors in libcozmoEngine.so
-* outstanding: the engine action constructor defaults were never disassembled
-
-**M4-004 — Motion refused until both motors report calibrated** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
-* effect: commands are sent into a robot that is still calibrating and are lost
-* rests on: observed robot behaviour on connect
-* best authority: the engine calibration gate
-* evidence: re-analysis/captures
-* outstanding: whether the engine gates motion the same way, or simply queues
-
-**M4-008 — Cliff sensors named by index; IMU and cube battery left in raw units** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Sensors.cs`
-* effect: a caller reading a named sensor reads the wrong one
-* rests on: uncertainty deliberately preserved rather than guessed
-* best authority: the engine cliff sensor indexing and IMU scaling
-* outstanding: which physical sensor each index is, and the IMU scale factors
-
-**M4-009 — Cube tracking from ObjectAvailable and ObjectConnectionState** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Cubes.cs`
-* effect: cubes appear or disappear from the world model at the wrong moment
-* rests on: observed discovery of a real cube on hardware
-* best authority: the engine cube connection handling
-* evidence: operator report 2026-09-19
-* outstanding: connection state, tap, movement, up-axis and battery telemetry have not been exercised or read from the engine
-
 ### M5-animation — Animation clips, scheduler and face
 
 **M5-012 — Keyframe volume applied as a linear PCM gain** (live path)
@@ -135,14 +55,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: the engine passes the keyframe volume to Wwise, which maps it through an RTPC curve
 * evidence: RobotAudioKeyFrame::SetMembersFromFlatBuf 0x004F9E54
 * outstanding: the RTPC or parameter the engine posts the keyframe volume to, and the curve on it; RobotAudioClient::SetCozmoEventParameter was not traced
-
-**M5-013 — faceAnimations track is not loaded; a lift value of 0 mm is passed through** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationClip.cs`
-* effect: clips that carry a face animation play without it
-* rests on: deferred
-* best authority: the engine face-animation track loader
-* outstanding: what the faceAnimations track carries and how the engine plays it
 
 **M5-015 — Procedural-face corner-radius parameter assignment and polygon fill rule** (live path)
 
@@ -407,11 +319,14 @@ Each of these is a question already answered. The original's behaviour is establ
 | M1-013 | M1-transport | COMPATIBILITY_POLICY | Windows high-resolution timer and the tick loop | none needed: the engine runs on Android and this is the local equivalent |
 | M1-014 | M1-transport | COMPATIBILITY_POLICY | Three-thread dispatch, handler isolation, socket error handling | the engine threading is its own; nothing on the wire depends on it |
 | M1-015 | M1-transport | COMPATIBILITY_POLICY | 5 s connect timeout | the engine connect timeout was not read; nothing the robot does depends on it |
+| M3-004 | M3-device | COMPATIBILITY_POLICY | Warm-up frames are flagged, and delivered like any other | RobotToEngineImplMessaging::HandleImageChunk and VisionComponent::SetNextImage, read |
 | M3-013 | M3-device | EQUIVALENT_IMPLEMENTATION | TargetInFlight 10, counter-paced feed, Busy window 200 ms, priming | the engine feeds to its own budget every update (UpdateStream 0x0057C84C) |
 | M3-017 | M3-device | COMPATIBILITY_POLICY | Test tones, beeps and sweeps | not applicable |
+| M4-004 | M4-control | COMPATIBILITY_POLICY | Motion is gated on calibration here; the engine reacts to it instead | HandleMotorCalibration 0x00536A68, BehaviorReactToMotorCalibration 0x006065F0, and the callers of IsHeadCalibrated / IsLiftCalibrated, all read |
 | M4-005 | M4-control | COMPATIBILITY_POLICY | Action ids cycle 1..255 | the engine action id allocation |
 | M4-006 | M4-control | COMPATIBILITY_POLICY | Wheel confirmation tolerance 35 percent / 5 mm per s | not applicable: the engine does not confirm wheel speeds this way |
 | M4-007 | M4-control | COMPATIBILITY_POLICY | StopAll sends StopAllMotors and a zero DriveWheels | the engine stop path |
+| M4-009 | M4-control | EQUIVALENT_IMPLEMENTATION | Cube tracking from ObjectAvailable and ObjectConnectionState | HandleActiveObjectAvailable 0x0053391C, HandleActiveObjectConnectionState 0x00533B3C, HandleActiveObjectMoved 0x00533E30 and HandleObjectPowerLevel 0x00537130, read |
 | M5-018 | M5-animation | EQUIVALENT_IMPLEMENTATION | How many frames one wall-clock tick streams | the engine streams to the audio budget on every update regardless of the clock (UpdateStream 0x0057C84C) |
 | M5-020 | M5-animation | COMPATIBILITY_POLICY | Expressions helper faces | not applicable |
 | M6-002 | M6-wwise-bank | EQUIVALENT_IMPLEMENTATION | Vorbis rebuild with external codebooks and granule computation | the Wwise Vorbis packing; no runtime in the package to check against |

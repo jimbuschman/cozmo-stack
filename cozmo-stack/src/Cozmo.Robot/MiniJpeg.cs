@@ -76,13 +76,34 @@ public static class MiniJpeg
         0xFF, 0xDA, 0x00, 0x0C, 0x03, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x00, 0x3F, 0x00,
     };
 
-    /// <summary>Offset of the 16-bit height inside each header (SOF0 marker + 5); width follows it.</summary>
+    /// <summary>
+    /// Offset of the 16-bit height inside each header (SOF0 marker + 5); width follows it. 94 is 0x5E, the
+    /// offset <c>MiniToJpegHelper</c> patches: <c>strb</c> to +0x5E, +0x5F, +0x60 and +0x61 at
+    /// 0x004F31F4..0x004F320C, the first pair from its second argument and the second from its third.
+    /// </summary>
     private const int GraySizeOffset = 94;
     private const int ColorSizeOffset = 94;
 
     /// <summary>
-    /// Converts one reassembled payload into a standalone JPEG file. Encodings 5 and 6 are already
-    /// complete JPEGs and are returned unchanged.
+    /// Converts one reassembled payload into a standalone JPEG file, as
+    /// <c>EncodedImage::MiniToJpegHelper</c> 0x004F31C4 does. Encodings 5 and 6 are already complete JPEGs
+    /// and are returned unchanged; the engine never sees those on this hardware.
+    ///
+    /// The engine reserves <c>headerLen + 2 * size</c> (0x004F31DE), inserts the header at the front,
+    /// patches the two 16-bit dimensions into it, and then:
+    ///
+    /// <list type="bullet">
+    /// <item>walks back over the trailing 0xFF bytes (0x004F3214..0x004F321C) - they are padding, not
+    /// data;</item>
+    /// <item>copies from index 1, not 0, its loop counter starting at 2 and reading <c>data[i - 1]</c>
+    /// (0x004F3226), so the colour flag byte never reaches the entropy stream;</item>
+    /// <item>appends a 0x00 after every 0xFF it copies (0x004F325A), which is the byte stuffing the camera
+    /// stripped;</item>
+    /// <item>and appends 0xFF 0xD9 (0x004F3286 and 0x004F32AA), the end-of-image marker.</item>
+    /// </list>
+    ///
+    /// A payload of fewer than two bytes after the strip skips the copy entirely (<c>cmp r5, #2</c> at
+    /// 0x004F321E), which is what the loop below does anyway.
     /// </summary>
     public static byte[] ToJpeg(ReadOnlySpan<byte> payload, int width, int height, byte encoding)
     {

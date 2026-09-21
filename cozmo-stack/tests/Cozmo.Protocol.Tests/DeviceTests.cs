@@ -595,8 +595,14 @@ public class DeviceTests
         Assert.Equal((0.25f, -0.5f, 1.5f), got!.GyroRates);
     }
 
+    /// <summary>
+    /// The engine collects one image at a time. EncodedImage::AddChunk 0x004F1CE0 compares the chunk's
+    /// image id with the one it holds at +0x1C and, when they differ, starts the new image immediately -
+    /// buffer cleared, counters zeroed - so an image that never finished is gone at that moment. There is
+    /// no queue of partial images and so no rule about how many to keep.
+    /// </summary>
     [Fact]
-    public void CameraDropsAnImageThatIsSupersededBeforeItCompletes()
+    public void ANewImageIdAbandonsWhateverWasBeingCollected()
     {
         var cam = new CozmoCamera();
         var dropped = new List<uint>();
@@ -604,32 +610,175 @@ public class DeviceTests
         cam.FrameDropped += (id, _) => dropped.Add(id);
         cam.FrameReceived += frames.Add;
 
-        cam.Handle(Chunk(1, 0, new byte[] { 1 }));          // image 1 never finishes
+        cam.Handle(Chunk(1, 0, new byte[] { 1 }));          // each of these is abandoned by the next
         cam.Handle(Chunk(2, 0, new byte[] { 2 }));
         cam.Handle(Chunk(3, 0, new byte[] { 3 }));
-        cam.Handle(Chunk(4, 0, new byte[] { 4 }, total: 1)); // image 4 completes and retires image 1
+        cam.Handle(Chunk(4, 0, new byte[] { 4 }, total: 1)); // image 4 is whole
 
-        Assert.Equal(new uint[] { 1 }, dropped);
-        Assert.Single(frames);
-        Assert.Equal(1, cam.FramesDropped);
+        Assert.Equal(new uint[] { 1, 2, 3 }, dropped);
+        var f = Assert.Single(frames);
+        Assert.Equal(4u, f.ImageId);
+        Assert.Equal(new byte[] { 4 }, f.RawPayload);        // nothing of the abandoned images is carried
+        Assert.Equal(3, cam.FramesDropped);
     }
 
+    /// <summary>
+    /// Chunks have to arrive in order. AddChunk keeps the id it expects next at +0x21 and a chunk that is
+    /// not it warns "EncodedImage.AddChunk.ChunkOutOfOrder" and clears the image's valid flag at +0x22
+    /// (0x004F1DB2..0x004F1DF4), after which no further chunk is even appended.
+    /// </summary>
     [Fact]
-    public void CameraRejectsAFrameWithAMissingChunk()
+    public void AChunkOutOfOrderTakesTheImageDown()
     {
         var cam = new CozmoCamera();
         string? reason = null;
         var frames = new List<CameraFrame>();
-        cam.FrameDropped += (_, r) => reason = r;
+        cam.FrameDropped += (_, r) => reason ??= r;
         cam.FrameReceived += frames.Add;
 
         cam.Handle(Chunk(9, 0, new byte[] { 1 }));
-        cam.Handle(Chunk(9, 2, new byte[] { 3 }));
-        cam.Handle(Chunk(9, 3, new byte[] { 4 }, total: 3));  // three chunks arrived, but chunk 1 is missing
+        cam.Handle(Chunk(9, 2, new byte[] { 3 }, total: 3));  // chunk 1 is missing, and 2 is the last one
 
         Assert.Empty(frames);
+        Assert.Equal(1, cam.FramesDropped);                  // invalidated once, not once per warning
+        Assert.Contains("chunk 2 arrived where chunk 1 was expected", reason);
+    }
+
+    /// <summary>
+    /// The last chunk is the one whose id is the announced count minus one (0x004F1E12), not simply the one
+    /// that carries a count. On it the engine also checks that it took exactly that many chunks:
+    /// "UnexpectedNumberOfChunks", "Got last chunk, expected %d chunks but received %d chunks" at
+    /// 0x004F1E6A.
+    /// </summary>
+    [Fact]
+    public void TheLastChunkIsTheOneWhoseIdIsTheCountMinusOne()
+    {
+        var cam = new CozmoCamera();
+        string? reason = null;
+        var frames = new List<CameraFrame>();
+        cam.FrameDropped += (_, r) => reason ??= r;
+        cam.FrameReceived += frames.Add;
+
+        // a one-chunk image: chunk 0 is already the last, since 0 == 1 - 1
+        cam.Handle(Chunk(9, 0, new byte[] { 1 }, total: 1));
+        Assert.Single(frames);
+        cam.Handle(Chunk(10, 0, new byte[] { 1 }));
+        cam.Handle(Chunk(10, 1, new byte[] { 2 }, total: 3));  // says three, two arrived, and 1 != 3 - 1
+
+        Assert.Single(frames);
+        Assert.Equal(0, cam.FramesDropped);                  // chunk 1 of 3 is not the last chunk at all
+        Assert.Null(reason);
+    }
+
+    /// <summary>
+    /// An image whose first chunk is not chunk 0 is never valid: the new-image path sets the valid flag
+    /// from <c>chunkId == 0</c> at 0x004F1D68, and an invalid image is dropped rather than delivered, with
+    /// "Received last chunk of invalidated image" when its last chunk arrives.
+    /// </summary>
+    [Fact]
+    public void AnImageJoinedPartWayThroughIsNeverDelivered()
+    {
+        var cam = new CozmoCamera();
+        var frames = new List<CameraFrame>();
+        cam.FrameReceived += frames.Add;
+
+        cam.Handle(Chunk(4, 1, new byte[] { 2 }));           // the stream was joined at chunk 1
+        cam.Handle(Chunk(4, 2, new byte[] { 3 }, total: 3));
+        Assert.Empty(frames);
+    }
+
+    /// <summary>
+    /// The frame's timestamp is the one on its last chunk, and it may not go backwards:
+    /// "TimestampNotIncreasing", "Got last chunk but current timestamp %u is less than previous timestamp
+    /// %u" at 0x004F1E30, reached only after the chunk count checks out.
+    /// </summary>
+    [Fact]
+    public void TheTimestampComesFromTheLastChunkAndMayNotGoBackwards()
+    {
+        var cam = new CozmoCamera();
+        var frames = new List<CameraFrame>();
+        string? reason = null;
+        cam.FrameReceived += frames.Add;
+        cam.FrameDropped += (_, r) => reason ??= r;
+
+        var first = Chunk(1, 0, new byte[] { 0, 1 });
+        first.FrameTimestamp = 100;
+        var last = Chunk(1, 1, new byte[] { 2 }, total: 2);
+        last.FrameTimestamp = 500;
+        cam.Handle(first);
+        cam.Handle(last);
+        Assert.Equal(500u, Assert.Single(frames).Timestamp);
+
+        var older = Chunk(2, 0, new byte[] { 0, 3 }, total: 1);
+        older.FrameTimestamp = 400;
+        cam.Handle(older);
+        Assert.Single(frames);
         Assert.Equal(1, cam.FramesDropped);
-        Assert.Contains("expected chunks 0..2", reason);
+        Assert.Contains("behind the previous", reason);
+    }
+
+    /// <summary>
+    /// A chunk larger than 1200 bytes is thrown away where it stands: "EncodedImage.AddChunk.ChunkTooBig",
+    /// "Expecting chunks of size no more than %d, got %zu." at 0x004F1CF6, before any bookkeeping - so the
+    /// image is still expecting that chunk id and the next chunk is out of order.
+    /// </summary>
+    [Fact]
+    public void AnOversizeChunkIsRefusedAndLeavesTheImageExpectingIt()
+    {
+        var cam = new CozmoCamera();
+        var frames = new List<CameraFrame>();
+        cam.FrameReceived += frames.Add;
+
+        cam.Handle(Chunk(3, 0, new byte[] { 0, 1 }));
+        cam.Handle(Chunk(3, 1, new byte[CozmoCamera.MaxChunkBytes + 1]));
+        Assert.Equal(1, cam.ChunksRejected);
+        cam.Handle(Chunk(3, 2, new byte[] { 4 }, total: 3));
+        Assert.Empty(frames);
+        Assert.Equal(0x4B0, CozmoCamera.MaxChunkBytes);
+    }
+
+    /// <summary>
+    /// The encoding the engine settles on is the chunk's own, except that JPEGMinimizedGray with a non-zero
+    /// first payload byte is really JPEGMinimizedColor: <c>cmp r2, #0; movne r2, #9; cmp r1, #8; movne r2,
+    /// r1</c> at 0x004F1D8C, read from the first chunk of the image.
+    /// </summary>
+    [Fact]
+    public void ColourIsTheEncodingUpgradeTheEngineMakesFromTheFirstPayloadByte()
+    {
+        var cam = new CozmoCamera();
+        CameraFrame? got = null;
+        cam.FrameReceived += f => got = f;
+
+        cam.Handle(Chunk(1, 0, new byte[] { 0x01, 0x22 }, total: 1));
+        Assert.True(got!.IsColor);
+        Assert.Equal(MiniJpeg.EncodingJpegMinimizedColor, got.Encoding);
+        Assert.Equal(160, got.JpegWidth);                    // colour is encoded at half width
+
+        cam.Handle(Chunk(2, 0, new byte[] { 0x00, 0x22 }, total: 1));
+        Assert.False(got!.IsColor);
+        Assert.Equal(MiniJpeg.EncodingJpegMinimizedGray, got.Encoding);
+        Assert.Equal(320, got.JpegWidth);
+    }
+
+    /// <summary>
+    /// The engine takes 320 x 240 and nothing else: <c>cmp r0, #4</c> on the resolution at 0x004F1D4E, and
+    /// any other value warns through EnumToString(ImageResolution) and the chunk goes no further.
+    /// </summary>
+    [Fact]
+    public void AResolutionOtherThanQvgaIsRefused()
+    {
+        var cam = new CozmoCamera();
+        var frames = new List<CameraFrame>();
+        string? reason = null;
+        cam.FrameReceived += frames.Add;
+        cam.FrameDropped += (_, r) => reason ??= r;
+
+        var c = Chunk(1, 0, new byte[] { 0, 1 }, total: 1);
+        c.ImageResolution = 6;                               // VGA
+        cam.Handle(c);
+        Assert.Empty(frames);
+        Assert.Contains("resolution 6", reason);
+        Assert.Equal(4, CozmoCamera.Resolution);
     }
 
     [Fact]
@@ -769,7 +918,15 @@ public class DeviceTests
         foreach (var m in Replay("hw_fw2457_probe.log")) source.Handle(m);
         var payload = (byte[])gray!.RawPayload.Clone();
         payload[0] = 1;
-        cam.Handle(Chunk(1, 0, payload, total: 1));
+        // A frame is several kilobytes, so it goes in the way the robot sends it: chunks of at most
+        // CozmoCamera.MaxChunkBytes, the count only on the last one.
+        byte chunks = (byte)((payload.Length + CozmoCamera.MaxChunkBytes - 1) / CozmoCamera.MaxChunkBytes);
+        for (byte i = 0; i < chunks; i++)
+        {
+            int at = i * CozmoCamera.MaxChunkBytes;
+            var part = payload[at..Math.Min(at + CozmoCamera.MaxChunkBytes, payload.Length)];
+            cam.Handle(Chunk(1, i, part, total: i == chunks - 1 ? chunks : (byte)0));
+        }
 
         Assert.True(got!.IsColor);
         Assert.Equal(320, got.Width);        // the resolution is still QVGA

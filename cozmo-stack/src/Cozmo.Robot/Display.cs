@@ -301,6 +301,14 @@ public sealed class CozmoDisplay
     ///
     /// Anything larger would have to be split across a multipart message. The robot's multipart receive path
     /// has never been exercised in either direction, so this refuses to send rather than depend on it.
+    ///
+    /// The refusal cannot fire on anything the engine would send. A face payload is at most
+    /// <see cref="FaceBitmapCodec.RawFrameSize"/>: <c>CompressRLE</c> gives up on its RLE above that size
+    /// and sends the 1024-byte buffer instead, and the message the engine builds for it is a fixed 0x408
+    /// bytes (<c>AnimationStreamer::BufferFaceToSend</c> 0x0057C2C2). 1024 plus the three bytes of
+    /// overhead is well under the 1403 an engine-default frame carries. A face the engine could not encode
+    /// at all is dropped at 0x0057C272 with "Failed to get RLE frame from procedural face" and nothing is
+    /// sent in its place - which is also what happens here.
     /// </summary>
     public int MaxPayload { get; }
 

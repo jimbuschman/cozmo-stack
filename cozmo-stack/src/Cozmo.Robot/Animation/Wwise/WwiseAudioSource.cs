@@ -301,20 +301,77 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     {
         if (eventId is < 0 or > uint.MaxValue) return null;
         uint id = (uint)eventId;
+        float gain = GainForKeyframeVolume(volume);
 
         // A music event streams: its buffer is filled in as the song plays, so the keyframe volume is
         // applied inside the stream rather than by copying and scaling what has been rendered so far.
-        if (IsMusicEvent(id)) return ProduceMusic(id, volume);
+        if (IsMusicEvent(id)) return ProduceMusic(id, gain);
 
         short[]? pcm;
         lock (_gate) pcm = Produce(id);
         if (pcm is null) return null;
-        if (Math.Abs(volume - 1f) < 0.001f) return pcm;
+        if (Math.Abs(gain - 1f) < 0.001f) return pcm;
 
         var scaled = new short[pcm.Length];
         for (int i = 0; i < pcm.Length; i++)
-            scaled[i] = (short)Math.Clamp((int)MathF.Round(pcm[i] * volume), short.MinValue, short.MaxValue);
+            scaled[i] = (short)Math.Clamp((int)MathF.Round(pcm[i] * gain), short.MinValue, short.MaxValue);
         return scaled;
+    }
+
+    /// <summary>
+    /// The <c>Event_Volume</c> game parameter, FNV-1 hash 0xD2687048. An audio keyframe's volume is not a
+    /// gain the engine multiplies by: <c>RobotAudioAnimationOnRobot::BeginBufferingAudioOnRobotMode</c>
+    /// posts the event, then calls <c>RobotAudioClient::SetCozmoEventParameter(playingId, 0xD2687048,
+    /// volume)</c> at 0x00598298 and processes the queue. What that parameter does is in the banks.
+    /// </summary>
+    public const uint EventVolumeParameter = 0xD2687048;
+
+    private WwiseRtpc? _eventVolumeRtpc;
+    private bool _eventVolumeSearched;
+
+    /// <summary>
+    /// The amplitude an audio keyframe's volume works out to, through the binding the banks give
+    /// <see cref="EventVolumeParameter"/>.
+    ///
+    /// In the shipped banks that parameter drives the Volume property of three actor mixers -
+    /// 62050212 and 682998829 in Cozmo.bnk and 121198006 in Dev_Debug.bnk - additively, over a curve from
+    /// (0, -1) to (1, 0). Volume is in decibels, so the whole range of the keyframe volume is one decibel
+    /// of trim: 1.0 leaves the event alone and 0.0 takes one decibel off it. It is not the linear gain this
+    /// stack used to apply, under which a volume of 0 was silence.
+    ///
+    /// The curve is read from the loaded banks rather than hard-coded, so a bank set that binds it
+    /// differently is followed. With no binding at all the volume does nothing, which is what Wwise would
+    /// do with a parameter nothing listens to.
+    /// </summary>
+    public float GainForKeyframeVolume(float volume)
+    {
+        var rtpc = EventVolumeBinding();
+        if (rtpc is null) return 1f;
+        double db = rtpc.Evaluate(volume, out _);
+        return (float)Math.Pow(10.0, db / 20.0);
+    }
+
+    /// <summary>The first Event_Volume binding on a Volume property in the loaded banks, if there is one.</summary>
+    private WwiseRtpc? EventVolumeBinding()
+    {
+        lock (_gate)
+        {
+            if (_eventVolumeSearched) return _eventVolumeRtpc;
+            _eventVolumeSearched = true;
+            foreach (var bank in _library.Banks)
+                foreach (var objectId in bank.Objects.Keys)
+                {
+                    if (_library.Node(objectId) is not { } node) continue;
+                    foreach (var r in node.Params.Rtpcs)
+                    {
+                        if (r.SourceType != WwiseRtpc.GameParameterSource) continue;
+                        if (r.SourceId != EventVolumeParameter) continue;
+                        if (r.ParamId != (byte)WwiseProp.Volume) continue;
+                        return _eventVolumeRtpc = r;
+                    }
+                }
+            return _eventVolumeRtpc = null;
+        }
     }
 
     /// <summary>The event's authoring name, from SoundbanksInfo.xml.</summary>

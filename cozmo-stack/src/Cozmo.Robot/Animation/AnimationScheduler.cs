@@ -108,6 +108,8 @@ public sealed class AnimationScheduler
     private IReadOnlyList<FaceKeyframe> _facePoses = Array.Empty<FaceKeyframe>();
     private int _faceIndex = -1;               // index into _facePoses of the pose currently held
     private FaceBitmap? _lastFace;
+    private IReadOnlyList<FaceBitmap>? _faceAnim;   // the pre-rendered face animation being played, if any
+    private int _faceAnimFrame;                     // how many of its frames have gone out
     private double? _bodyEndsAtMs;             // when the running body keyframe should stop, if one is running
     private double? _liveBodyStopsAtMs;        // the same, for a keep-alive body keyframe, on the wall clock
     private short[]? _audioPcm;                // the sound currently streaming, if any
@@ -485,6 +487,33 @@ public sealed class AnimationScheduler
         // time arrives, so the pose held now is interpolated forward towards the next one, not backwards
         // from the previous one. Interpolating backwards would leave the face frozen on one keyframe until
         // the next fired and then snap, which is a step, not an animation.
+        // A pre-rendered face animation owns the screen while it lasts: it puts one frame out per
+        // streaming tick and stops when its frames run out, the way FaceAnimationKeyFrame::IsDone ends the
+        // track. Nothing in the shipped assets runs one over a procedural face track.
+        FaceBitmap? animFrame = null;
+        lock (_gate)
+        {
+            if (_faceAnim is { } anim)
+            {
+                if (_faceAnimFrame < anim.Count) animFrame = anim[_faceAnimFrame++];
+                if (_faceAnimFrame >= anim.Count) _faceAnim = null;
+            }
+        }
+        if (animFrame is not null)
+        {
+            _lastFace = animFrame;
+            _sink.Face(animFrame);
+            lock (_gate)
+            {
+                if (_clip == clip && t >= clip.DurationMs && _nextFrame >= clip.Keyframes.Count)
+                {
+                    EndLocked(AnimationEndReason.Completed);
+                    return false;
+                }
+                return _clip == clip && _generation == generation;
+            }
+        }
+
         FaceKeyframe? current = null, next = null;
         lock (_gate)
         {
@@ -510,7 +539,11 @@ public sealed class AnimationScheduler
         }
         else if (_lastFace is not null)
         {
-            _sink.Face(_lastFace);                                // hold the last face rather than blanking
+            // Hold the last face rather than blanking. Nothing in the engine clears the screen when an
+            // animation ends: SendEndOfAnimation 0x0057C448 sends the EndOfAnimation keyframe and nothing
+            // else, and the robot keeps showing the last image it was given until the next one arrives -
+            // which, between animations, is the keep-alive's.
+            _sink.Face(_lastFace);
         }
 
         lock (_gate)
@@ -618,6 +651,43 @@ public sealed class AnimationScheduler
     /// <c>LiftHeightKeyFrame::GetStreamMessage</c> apply it at stream time: <c>RandIntInRange(value - var,
     /// value + var)</c> when the variability is non-zero, the value itself otherwise.
     /// </summary>
+    /// <summary>
+    /// Where the frames of a <c>faceAnimations</c> keyframe come from, by animation name.
+    /// <see cref="FaceAnimationLibrary.Frames"/> is the one that reads the shipped assets; left unset, a
+    /// face animation keyframe puts nothing on the screen, which is what this stack did before.
+    /// </summary>
+    public Func<string, IReadOnlyList<FaceBitmap>?>? FaceAnimations { get; set; }
+
+    /// <summary>The face animation playing now, if any, and how far into it the stream has reached.</summary>
+    public (string Name, int Frame, int Count)? FaceAnimation
+    {
+        get
+        {
+            lock (_gate)
+                return _faceAnim is null ? null : (_faceAnimName, _faceAnimFrame, _faceAnim.Count);
+        }
+    }
+
+    private string _faceAnimName = "";
+
+    /// <summary>
+    /// <c>FaceAnimationKeyFrame::GetStreamMessage</c> 0x004F97C8 asks the FaceAnimationManager for
+    /// <c>GetFrame(name, index)</c>, sends it as a face image and moves the index on; <c>IsDone</c>
+    /// 0x004F976C is true once the index has reached <c>GetNumFrames(name)</c>. So the track plays one
+    /// pre-rendered frame per streaming tick and then stops, which is what starting one here sets up. A
+    /// name the library does not know logs nothing and plays nothing, as the engine's error path does.
+    /// </summary>
+    private void StartFaceAnimation(FaceAnimationKeyframe k)
+    {
+        var frames = FaceAnimations?.Invoke(k.AnimName);
+        lock (_gate)
+        {
+            _faceAnim = frames is { Count: > 0 } ? frames : null;
+            _faceAnimName = k.AnimName;
+            _faceAnimFrame = 0;
+        }
+    }
+
     private int WithVariability(int value, int variability) =>
         variability == 0 ? value : _random.Next(value - variability, value + variability + 1);
 
@@ -668,7 +738,7 @@ public sealed class AnimationScheduler
             case EventKeyframe e: _sink.Event(e.EventId); break;
             case AudioKeyframe a: StartAudio(a); break;
             case FaceKeyframe: break;                             // handled by the blend above
-            case FaceAnimationKeyframe: break;                    // pre-rendered face clips are not loaded yet
+            case FaceAnimationKeyframe fa: StartFaceAnimation(fa); break;
             case RecordHeadingKeyframe: break;
             case TurnToRecordedHeadingKeyframe: break;
         }

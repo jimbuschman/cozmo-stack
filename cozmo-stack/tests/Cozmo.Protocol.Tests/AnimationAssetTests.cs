@@ -54,6 +54,76 @@ public class AnimationAssetTests
         Assert.True(lib.ClipNames.Count > 0, $"assets found at {root} but no clips loaded");
     }
 
+    /// <summary>
+    /// The faceAnimations track plays pre-rendered frames, and the assets for it ship. ReadFaceAnimationDir
+    /// 0x00580048 lists the directories under faceAnimations - here face_bored_event_02 and
+    /// face_bored_event_04 - and AddImage 0x00581440 thresholds each 128 x 64 grayscale image at 0x80 and
+    /// keeps the odd canvas row of each pair before compressing it. This reads the same files and checks
+    /// the frames are there and are not blank.
+    /// </summary>
+    [Fact]
+    public void TheShippedFaceAnimationsLoadAsFrames()
+    {
+        var root = AssetsRoot();
+        if (root is null) return;
+        var faces = FaceAnimationLibrary.Open(root);
+        Assert.Equal(2, faces.Names.Count);
+        Assert.Contains("face_bored_event_02", faces.Names);
+
+        var frames = faces.Frames("face_bored_event_02");
+        Assert.NotNull(frames);
+        Assert.True(frames!.Count > 100, $"expected the whole run of frames, got {frames.Count}");
+        Assert.All(frames, f => Assert.Equal(FaceBitmap.Width * FaceBitmap.Height, f.Pixels.Length));
+        Assert.Contains(frames, f => f.Pixels.ToArray().Any(px => px != 0));
+        Assert.Null(faces.Frames("no_such_face_animation"));
+    }
+
+    /// <summary>
+    /// The two clips that use the track play those frames one per streaming tick, which is what
+    /// FaceAnimationKeyFrame::GetStreamMessage 0x004F97C8 does with its frame index and what IsDone
+    /// 0x004F976C ends when the index reaches GetNumFrames.
+    /// </summary>
+    [Fact]
+    public void AClipWithAFaceAnimationTrackStreamsItsFrames()
+    {
+        var root = AssetsRoot();
+        if (root is null) return;
+        var lib = AnimationLibrary.Open(root);
+        var faces = FaceAnimationLibrary.Open(root);
+        var clip = lib.GetClip("anim_bored_event_02");
+        var fa = clip.Keyframes.OfType<FaceAnimationKeyframe>().ToList();
+        Assert.NotEmpty(fa);
+        Assert.Contains(fa, k => faces.Has(k.AnimName));
+
+        var seen = new HashSet<string>();
+        int shown = 0;
+        var sink = new FaceRecordingSink(f => { shown++; seen.Add(Convert.ToHexString(FaceBitmapCodec.Encode(f))); });
+        var scheduler = new AnimationScheduler(sink) { FaceAnimations = faces.Frames };
+        scheduler.Play(clip, 0);
+        for (double t = 0; t <= clip.DurationMs + 200; t += AnimationScheduler.FrameStepMs)
+            scheduler.Advance(t);
+
+        Assert.True(shown > 10, $"only {shown} face frames went out");
+        Assert.True(seen.Count > 5, $"the frames did not change: {seen.Count} distinct");
+    }
+
+    private sealed class FaceRecordingSink : IAnimationSink
+    {
+        private readonly Action<FaceBitmap> _onFace;
+        public FaceRecordingSink(Action<FaceBitmap> onFace) => _onFace = onFace;
+        public void Face(FaceBitmap bitmap) => _onFace(bitmap);
+        public void Audio(byte[]? mulawFrame) { }
+        public void Head(sbyte angleDeg, uint durationMs) { }
+        public void Lift(byte heightMm, uint durationMs) { }
+        public void Body(BodyKeyframe keyframe) { }
+        public void AnimationStarted(byte tag) { }
+        public void AnimationEnded() { }
+        public void BodyStop() { }
+        public void Lights(LightsKeyframe keyframe) { }
+        public void Event(string eventId) { }
+        public void Finished(string clipName, bool completed) { }
+    }
+
     [Fact]
     public void TheShippedClipsAllDecode()
     {
