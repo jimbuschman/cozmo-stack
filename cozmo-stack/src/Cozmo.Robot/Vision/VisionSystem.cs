@@ -260,29 +260,87 @@ public sealed class CubeLocator : ICubeLocator
 /// when |turn| exceeds the maximum; the head angle to look at the pose is computed
 /// (<c>GetAbsoluteHeadAngleToLookAtPose</c>) and clamped to −25..44.5 degrees. The body turn goes out as
 /// <c>SetBodyAngle</c> (0x39) through <c>MovementComponent::TurnInPlace(angle, maxSpeed, accel, tolerance,
-/// numHalfRevolutions, useShortestDirection, actionId)</c>, whose field order is the packing read at 0x00640898
-/// (NATIVE). INFERRED, hardware-pending (HARDWARE_TEST_PLAN item L): that the angle is the absolute body angle
-/// in the robot's pose frame. LOCAL_POLICY: speed 100 deg/s and acceleration 10 rad/s²; the engine's
-/// <c>TurnInPlaceAction</c> constructor holds 5.23599 and a 2 degree tolerance (0x3D0EFA35), and the tolerance is
-/// used here.
+/// numHalfRevolutions, isAbsolute, actionId)</c>, packed at 0x00640898 / 0x006408F4.
+///
+/// <b>The angle is absolute, and that is read rather than assumed.</b> <c>TurnInPlaceAction::Init</c>
+/// 0x00545FA0 has two paths and both put an absolute heading in the first word. When the action is
+/// absolute (+0xC0 set) it writes <c>Radians(requested + variability)</c> straight to +0x9C; when it is
+/// relative it computes <c>current + requested</c> into +0x9C at 0x005460EC and keeps the relative amount
+/// separately at +0xA4. Either way +0x9C is what goes on the wire, so the field is the absolute body
+/// angle in the robot's pose frame. Hardware item L was going to ask the robot this; it did not need to.
+///
+/// The two paths differ in the fields that follow, and that is what those fields are for:
+/// <list type="bullet">
+/// <item><c>numHalfRevolutions</c> is 0 on the absolute path and <c>floor(|relative| / π)</c> on the
+///   relative one (0x00546164), so a relative turn of more than half a circle tells the robot how many
+///   half-turns to take before settling on the angle.</item>
+/// <item><c>isAbsolute</c> is +0xC0, normalised to 0 or 1 at 0x0054619C.</item>
+/// <item>on the relative path only, the sign of the turn is stuffed into <b>bit 31 of the speed</b> -
+///   <c>bfi r1, r0, #0x1f, #1</c> at 0x0054610C - so the speed word carries the direction. The absolute
+///   path skips that, which is why a positive speed is right here.</item>
+/// <item>the last byte is a counter <c>MovementComponent</c> keeps at +8, incremented per command and
+///   handed back to the caller through its out-parameter.</item>
+/// </list>
+///
+/// The speeds are the engine's, from the <c>TurnInPlaceAction</c> constructor 0x005459D4, which stores
+/// 5.23599, 10.0 and 25.0 at +0x78 and copies the first two to the action's max speed and acceleration:
+/// <b>300 deg/s and 10 rad/s²</b>, with a 2 degree tolerance (0x3D0EFA35) and a 25 revolution bound.
+/// This stack had been turning at 100 deg/s.
 /// </summary>
 public static class TurnTowardsPose
 {
+    /// <summary>2 degrees; the <c>TurnInPlaceAction</c> constructor's 0x3D0EFA35 at +0xB0.</summary>
     public const double ToleranceRad = 0.0349066;
-    public const double MaxSpeedRadPerSec = 1.745329;
+    /// <summary>300 deg/s: the constructor's 0x40A78D36, copied to the action's max speed at +0xC4.</summary>
+    public const double MaxSpeedRadPerSec = 5.23599;
+    /// <summary>The constructor's 0x41200000 at +0x7C, copied to the action's acceleration at +0xC8.</summary>
     public const double AccelRadPerSec2 = 10.0;
+    /// <summary>The bound a relative turn is refused above: 25 revolutions (+0x80, checked at 0x0054606E).</summary>
+    public const double MaxRevolutions = 25.0;
 
     /// <summary>The engine's message for a body turn; exposed so the conformance tool can show the bytes.</summary>
-    public static SetBodyAngle Message(double absoluteAngleRad, double maxSpeed, double accel, double tolerance, ushort numHalfRevolutions, bool useShortestDirection, byte actionId) => new()
+    public static SetBodyAngle Message(double absoluteAngleRad, double maxSpeed, double accel, double tolerance,
+                                       ushort numHalfRevolutions, bool isAbsolute, byte actionId) => new()
     {
         Field0 = BitConverter.SingleToUInt32Bits((float)absoluteAngleRad),
         Field1 = BitConverter.SingleToUInt32Bits((float)maxSpeed),
         Field2 = BitConverter.SingleToUInt32Bits((float)accel),
         Field3 = BitConverter.SingleToUInt32Bits((float)tolerance),
         Field4 = numHalfRevolutions,
-        Field5 = (byte)(useShortestDirection ? 1 : 0),
+        Field5 = (byte)(isAbsolute ? 1 : 0),
         Field6 = actionId,
     };
+
+    /// <summary>
+    /// The relative form, as <c>TurnInPlaceAction::Init</c> sends it: the absolute target still goes in
+    /// the first word, the half-revolutions are counted off the relative amount, and the sign of that
+    /// amount rides in bit 31 of the speed (0x0054610C).
+    /// </summary>
+    public static SetBodyAngle RelativeMessage(double currentAngleRad, double relativeTurnRad, double maxSpeed,
+                                               double accel, double tolerance, byte actionId)
+    {
+        double absolute = Wrap(currentAngleRad + relativeTurnRad);
+        float speed = (float)Math.Abs(maxSpeed);
+        uint bits = BitConverter.SingleToUInt32Bits(speed);
+        if (relativeTurnRad < 0) bits |= 0x8000_0000u;
+        return new SetBodyAngle
+        {
+            Field0 = BitConverter.SingleToUInt32Bits((float)absolute),
+            Field1 = bits,
+            Field2 = BitConverter.SingleToUInt32Bits((float)accel),
+            Field3 = BitConverter.SingleToUInt32Bits((float)tolerance),
+            Field4 = (ushort)Math.Floor(Math.Abs(relativeTurnRad) / Math.PI),
+            Field5 = 0,
+            Field6 = actionId,
+        };
+    }
+
+    /// <summary>What <c>Anki::Radians</c> does to an angle: wrap it to (-pi, pi].</summary>
+    private static double Wrap(double rad)
+    {
+        double r = Math.IEEERemainder(rad, 2 * Math.PI);
+        return r <= -Math.PI ? r + 2 * Math.PI : r;
+    }
 
     /// <summary>The relative turn to face a world pose from a robot pose: the engine's atan2 over the pose taken with respect to the robot.</summary>
     public static double RelativeTurnRad(Pose3d robot, Pose3d target)

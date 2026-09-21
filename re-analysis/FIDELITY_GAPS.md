@@ -3,13 +3,13 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **195 records** over 16 subsystems.
+Manifest of **196 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 82 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 85 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 11 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 67 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 65 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 9 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -34,9 +34,9 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 10 | 6 | 0 | 0 | 0 | no | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | 0 | 0 | 0 | no | yes |
-| M11-vision — Markers, camera geometry and BlockWorld | 16 | 9 | 0 | 1 | 0 | no | yes |
+| M11-vision — Markers, camera geometry and BlockWorld | 16 | 7 | 0 | 1 | 0 | no | yes |
 | M12-manipulation — Docking, carrying and pre-action poses | 12 | 6 | 1 | 0 | 0 | no | no |
-| M13-navigation — Planning, charger and block configurations | 10 | 7 | 1 | 0 | 0 | no | no |
+| M13-navigation — Planning, charger and block configurations | 11 | 7 | 1 | 0 | 0 | no | no |
 | M14-faces — Face and pet pipeline | 7 | 5 | 0 | 1 | 0 | no | yes |
 | M15-freeplay — Needs, activities and freeplay | 12 | 9 | 0 | 0 | 0 | no | yes |
 | tools — Conformance CLI and offline tools | 3 | 0 | 0 | 0 | 0 | yes | yes |
@@ -388,23 +388,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * rests on: inferred framing
 * best authority: the engine NV storage client and the CLAD definition
 * outstanding: the request Length field and second byte, and the chunking rule
-
-**M11-014 — SetBodyAngle is read as an absolute body angle in the robot pose frame** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs:264`
-* effect: the robot turns to the wrong heading
-* rests on: the packing is native; the frame of reference is inferred
-* best authority: the engine SetBodyAngle caller
-* evidence: packing read from libcozmoEngine.so
-* outstanding: whether the angle is absolute or relative; hardware item L would also show it
-
-**M11-015 — Turn speed 100 deg per s and acceleration 10 rad per s squared** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs:265`
-* effect: turns are faster or slower than the app
-* rests on: chosen locally
-* best authority: the engine turn action constants
-* outstanding: the engine own speed and acceleration for this turn
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 

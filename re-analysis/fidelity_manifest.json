@@ -2402,36 +2402,34 @@
       "test": "VisionTests"
     },
     {
-      "id": "M11-014",
       "subsystem": "M11-vision",
-      "title": "SetBodyAngle is read as an absolute body angle in the robot pose frame",
-      "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs:264",
-      "effect": "the robot turns to the wrong heading",
-      "provenance": "the packing is native; the frame of reference is inferred",
-      "authority": "the engine SetBodyAngle caller",
+      "title": "SetBodyAngle carries an absolute body angle, and the fields that follow say how it was asked for",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "TurnInPlaceAction::Init 0x00545FA0 has an absolute path and a relative one and both put an absolute heading in the first word. Absolute (+0xC0 set) writes Radians(requested + variability) to +0x9C; relative computes current + requested into +0x9C at 0x005460EC and keeps the relative amount at +0xA4. MovementComponent::TurnInPlace 0x00640898 and its builder 0x006408F4 put +0x9C in word 0, the speed in word 1, acceleration in 2, tolerance in 3, then the half-revolution count, the absolute flag and a per-command counter MovementComponent keeps at +8",
       "evidence": [
-        "packing read from libcozmoEngine.so"
+        "numHalfRevolutions is 0 when absolute and floor(|relative| / pi) when relative (0x00546164)",
+        "on the relative path only, the sign of the turn is written into bit 31 of the speed word: bfi r1, r0, #0x1f, #1 at 0x0054610C",
+        "the absolute flag is +0xC0 normalised to 0 or 1 at 0x0054619C",
+        "hardware item L was going to ask a robot whether the angle is absolute; the engine answers it"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "whether the angle is absolute or relative; hardware item L would also show it",
-      "hardware_required": false,
       "live_path": true,
-      "test": "VisionTests"
+      "test": "BodyAngleTests.TheRelativeFormCarriesTheAbsoluteTargetTheHalfRevolutionsAndTheSign",
+      "id": "M11-014"
     },
     {
-      "id": "M11-015",
       "subsystem": "M11-vision",
-      "title": "Turn speed 100 deg per s and acceleration 10 rad per s squared",
-      "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs:265",
-      "effect": "turns are faster or slower than the app",
-      "provenance": "chosen locally",
-      "authority": "the engine turn action constants",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the engine own speed and acceleration for this turn",
-      "hardware_required": false,
+      "title": "The body turn speed, acceleration, tolerance and revolution bound",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "the TurnInPlaceAction constructor 0x005459D4 stores 5.23599, 10.0 and 25.0 as a triple at +0x78 (0x40A78D36, 0x41200000, 0x41C80000) and copies the first two to the action max speed at +0xC4 and acceleration at +0xC8 (strd at 0x00545AB0). The tolerance is Radians(0x3D0EFA35) = 2 degrees at +0xB0, and 25.0 is the revolution bound a relative turn is refused above (0x0054606E compares |angle| against +0x80 times 2 pi)",
+      "evidence": [
+        "5.23599 rad/s is 300 deg/s; this stack had been turning at 100 deg/s, three times too slow",
+        "the acceleration 10.0 and the 2 degree tolerance already matched"
+      ],
       "live_path": true,
-      "test": null
+      "test": "BodyAngleTests.TheTurnConstantsAreTheOnesTheConstructorHolds",
+      "id": "M11-015"
     },
     {
       "id": "M11-016",
@@ -2786,6 +2784,24 @@
       "hardware_required": false,
       "live_path": true,
       "test": null
+    },
+    {
+      "subsystem": "M13-navigation",
+      "title": "The three path segment messages are a Planning::PathSegment copied field for field",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/RobotPath.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "PathDolerOuter::Dole 0x00507E4C switches on the segment type at PathSegment+0 (1 line, 2 arc, 3 point turn) and copies the struct straight into the message: words at +4, +8, +0xC, +0x10 (and +0x14 for an arc), then the speed profile at +0x1C, +0x20, +0x24, then for a point turn the byte at +0x14. The fields are named by their definers - PathSegment::DefineLine 0x0085BC00 (x_start, y_start, x_end, y_end), DefineArc 0x0085BC98 (x_center, y_center, radius, start, sweep), DefinePointTurn 0x0085BD28 (x, y, target angle, tolerance, and a bool at +0x14) - and SetSpeedProfile 0x0085BC90 writes target speed, acceleration and deceleration at +0x1C",
+      "effect": "the robot drives a different path from the one the planner produced",
+      "provenance": "read from the engine; this stack already sent the same values in the same order",
+      "evidence": [
+        "VizManager::AppendPathSegmentLine(unsigned int, float, float, float, float) and AppendPathSegmentArc(unsigned int, float x 5) corroborate the geometry by their own signatures",
+        "DefineLine also stores atan2(dy, dx) at +0x14 and DefineArc a computed end angle at +0x18; neither goes on the wire"
+      ],
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NavigationTests",
+      "id": "M13-011"
     },
     {
       "id": "M14-001",
