@@ -411,6 +411,7 @@ public static class WwiseTool
         var perCodec = new Dictionary<WwiseCodec, int>();
         var mediaSeen = new HashSet<uint>();
         var unresolved = new List<string>();
+        var undecodable = new List<string>();
 
         foreach (var id in lib.EventIds.OrderBy(x => x))
         {
@@ -434,6 +435,13 @@ public static class WwiseTool
                 if (m.Media?.IsDecodable == true) any = true;
             }
             if (any || r.Media.Any(m => m.Media?.IsDecodable == true)) playable++;
+            else
+            {
+                // An event that resolves to media and cannot play any of it: the honest failure to name,
+                // because a percentage hides which events are silent and why.
+                var why = r.Media.Select(m => m.Media?.UndecodableReason ?? m.Problem ?? "unreadable").Distinct();
+                undecodable.Add($"{id} {r.Name ?? ""}: {string.Join("; ", why)}");
+            }
         }
 
         // The events M6 could not resolve because their Play target is in the music hierarchy: count the
@@ -459,6 +467,11 @@ public static class WwiseTool
         Console.WriteLine($"  distinct media referenced     {mediaSeen.Count} of {lib.MediaFileCount} on disk");
         foreach (var (c, n) in perCodec.OrderByDescending(kv => kv.Value))
             Console.WriteLine($"    {c,-8} {n,5}");
+        if (undecodable.Count > 0)
+        {
+            Console.WriteLine($"\n  {undecodable.Count} events resolve to media and can play none of it:");
+            foreach (var u in undecodable.Take(limit)) Console.WriteLine($"    {u}");
+        }
         if (unresolved.Count > 0)
         {
             Console.WriteLine($"\n  first {unresolved.Count} events that resolve to nothing:");

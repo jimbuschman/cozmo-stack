@@ -466,36 +466,82 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     /// <summary>
     /// Mixes to mono and resamples to the rate the robot's audio path expects.
     ///
-    /// Deliberately the same treatment <see cref="WavAudioSource"/> gives its input — nearest sample, and
-    /// an average across channels — so that swapping sources does not change how a clip sounds for any
-    /// reason other than the clip itself. Cozmo's own sounds are 44100 Hz here and the robot takes 22320
-    /// (<see cref="CozmoAudio.SampleRate"/>, the engine's <c>AnimConstants::AUDIO_SAMPLE_RATE</c>), so this
-    /// is very nearly a halving in the common case.
+    /// Cozmo's own recordings are 44100 or 48000 Hz and the robot takes 22320
+    /// (<see cref="CozmoAudio.SampleRate"/>, the engine's <c>AnimConstants::AUDIO_SAMPLE_RATE</c>), so
+    /// every shipped sound is decimated by about two to one on the way in. Taking the nearest sample, as
+    /// this did, folds everything above 11160 Hz in the source back down into the band, which on a sung
+    /// vowel is audible as a hard, gritty edge that is not in the recording. The sung notes are the worst
+    /// case: 48000 Hz, forty-two of them in a song, and they are the content the whole M9 path exists for.
+    ///
+    /// So the kernel is a windowed sinc (Lanczos, three lobes) whose cutoff is the lower of the two
+    /// Nyquists, which band-limits and interpolates in the one pass. That is a standard resampler, not
+    /// Audiokinetic's: Wwise's own is in its runtime, which does not ship in this package, so what is
+    /// fixed here is a defect of this stack rather than a reproduction of theirs (fidelity manifest
+    /// M6-004). <see cref="WavAudioSource"/> is left alone; it carries the harness's own test signals and
+    /// captured WAVs, not shipped content.
     /// </summary>
-    private static short[] ToRobotRate(short[] interleaved, int channels, int sourceRate)
+    public static short[] ToRobotRate(short[] interleaved, int channels, int sourceRate)
     {
         if (channels < 1) channels = 1;
         int frames = interleaved.Length / channels;
         if (frames == 0) return Array.Empty<short>();
 
-        int outFrames = sourceRate == CozmoAudio.SampleRate
-            ? frames
-            : (int)((long)frames * CozmoAudio.SampleRate / Math.Max(1, sourceRate));
+        // to mono first, so the kernel runs once
+        var mono = new double[frames];
+        if (channels == 1)
+            for (int i = 0; i < frames; i++) mono[i] = interleaved[i];
+        else
+            for (int i = 0; i < frames; i++)
+            {
+                int sum = 0;
+                for (int c = 0; c < channels; c++) sum += interleaved[i * channels + c];
+                mono[i] = sum / (double)channels;
+            }
+
+        if (sourceRate == CozmoAudio.SampleRate || sourceRate <= 0)
+        {
+            var same = new short[frames];
+            for (int i = 0; i < frames; i++) same[i] = Clamp(mono[i]);
+            return same;
+        }
+
+        int outFrames = (int)((long)frames * CozmoAudio.SampleRate / sourceRate);
         if (outFrames <= 0) return Array.Empty<short>();
+
+        double ratio = CozmoAudio.SampleRate / (double)sourceRate;   // below 1 when decimating
+        double cutoff = Math.Min(1.0, ratio);                        // of the source Nyquist
+        const int Lobes = 3;
+        double halfWidth = Lobes / cutoff;
 
         var outBuf = new short[outFrames];
         for (int i = 0; i < outFrames; i++)
         {
-            int src = sourceRate == CozmoAudio.SampleRate
-                ? i
-                : (int)((long)i * sourceRate / CozmoAudio.SampleRate);
-            if (src >= frames) src = frames - 1;
-            if (channels == 1) { outBuf[i] = interleaved[src]; continue; }
-            int sum = 0;
-            for (int c = 0; c < channels; c++) sum += interleaved[src * channels + c];
-            outBuf[i] = (short)Math.Clamp(sum / channels, short.MinValue, short.MaxValue);
+            double centre = i / ratio;
+            int lo = (int)Math.Ceiling(centre - halfWidth), hi = (int)Math.Floor(centre + halfWidth);
+            double sum = 0, norm = 0;
+            for (int k = lo; k <= hi; k++)
+            {
+                double w = Lanczos((k - centre) * cutoff, Lobes);
+                if (w == 0) continue;
+                norm += w;
+                if (k >= 0 && k < frames) sum += mono[k] * w;        // outside the clip is silence
+            }
+            outBuf[i] = Clamp(norm > 0 ? sum / norm : 0);
         }
         return outBuf;
+    }
+
+    private static short Clamp(double v) =>
+        (short)Math.Clamp(Math.Round(v), short.MinValue, short.MaxValue);
+
+    /// <summary>sinc(t) windowed by sinc(t / lobes), zero outside the window.</summary>
+    private static double Lanczos(double t, int lobes)
+    {
+        t = Math.Abs(t);
+        if (t < 1e-9) return 1.0;
+        if (t >= lobes) return 0.0;
+        double pt = Math.PI * t;
+        return lobes * Math.Sin(pt) * Math.Sin(pt / lobes) / (pt * pt);
     }
 
     public void Dispose()

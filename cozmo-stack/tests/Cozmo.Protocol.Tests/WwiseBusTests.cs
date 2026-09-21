@@ -114,6 +114,43 @@ public class WwiseBusTests
     }
 
     /// <summary>
+    /// Every shipped recording is decimated by about two to one on the way to the robot's 22320 Hz, and
+    /// taking the nearest sample folded everything above 11160 Hz in the source straight back into the
+    /// band. A 15 kHz tone in a 48 kHz recording would have come out as a 7320 Hz one at nearly full
+    /// strength — a tone that is not in the recording at all. The band-limited kernel leaves it where it
+    /// belongs, which is nowhere, while passing a tone that is inside the band untouched.
+    /// (Fidelity manifest M6-004.)
+    /// </summary>
+    [Fact]
+    public void ResamplingDoesNotFoldWhatIsAboveTheRobotsNyquistBackIntoTheBand()
+    {
+        const int source = 48000, length = 48000;
+
+        static short[] Tone(double hz, int rate, int n)
+        {
+            var s = new short[n];
+            for (int i = 0; i < n; i++) s[i] = (short)Math.Round(20000 * Math.Sin(2 * Math.PI * hz * i / rate));
+            return s;
+        }
+        static double Rms(short[] s, int skip)
+        {
+            double sum = 0;
+            for (int i = skip; i < s.Length - skip; i++) sum += (double)s[i] * s[i];
+            return Math.Sqrt(sum / Math.Max(1, s.Length - 2 * skip));
+        }
+
+        // a 15 kHz tone is above the robot's 11160 Hz Nyquist and has nowhere to go
+        var above = WwiseAudioSource.ToRobotRate(Tone(15000, source, length), 1, source);
+        // a 1 kHz tone is well inside the band and should come through at its own level
+        var inside = WwiseAudioSource.ToRobotRate(Tone(1000, source, length), 1, source);
+
+        double insideRms = Rms(inside, 200);
+        Assert.InRange(insideRms, 20000 / Math.Sqrt(2) * 0.9, 20000 / Math.Sqrt(2) * 1.1);
+        Assert.True(Rms(above, 200) < insideRms * 0.1,
+            $"the out-of-band tone came through at {Rms(above, 200):F0} against {insideRms:F0} in band");
+    }
+
+    /// <summary>
     /// What the chain is for. Every one of the 39 shipped songs comes out of it at about the same level,
     /// just under full scale, however loud the sum that went in was — which is what a bus limiter with a
     /// -1 dB threshold does, and what the local peak normalisation this replaced could not do: that stage

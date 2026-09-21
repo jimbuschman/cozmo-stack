@@ -8,11 +8,11 @@ Manifest of **195 records** over 16 subsystems.
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 79 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 18 | The native behaviour is known from primary source; this stack reaches the same observable effect by a different mechanism, and the record names the difference. |
-| RECOVERABLE_GAP | 68 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. Blocks source-completeness on a live path. |
-| COMPATIBILITY_POLICY | 19 | A deliberate choice of this stack on a path that does not claim to be the engine's: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. |
+| EQUIVALENT_IMPLEMENTATION | 17 | The native behaviour is known from primary source; this stack reaches the same observable effect by a different mechanism, and the record names the difference. |
+| RECOVERABLE_GAP | 69 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. Blocks source-completeness on a live path. |
+| COMPATIBILITY_POLICY | 20 | A deliberate choice of this stack on a path that does not claim to be the engine's: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
-| BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
+| BLOCKED_EXTERNAL | 7 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
 ## Source-completeness by subsystem
 
@@ -25,7 +25,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 | M3-device — Camera, display and audio device layer | 17 | 6 | no |
 | M4-control — Motion, sensors, lights and cubes | 9 | 4 | no |
 | M5-animation — Animation clips, scheduler and face | 20 | 4 | no |
-| M6-wwise-bank — Wwise bank reading and codecs | 7 | 0 | yes |
+| M6-wwise-bank — Wwise bank reading and codecs | 7 | 1 | no |
 | M7-behaviour — Idle, mood and reactions | 15 | 4 | no |
 | M8-framework — Behaviour framework and scoring | 10 | 5 | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | yes |
@@ -202,6 +202,17 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * best authority: ProceduralFaceDrawer::DrawEye in libcozmoEngine.so
 * evidence: re-analysis/PROCEDURAL_FACE.md
 * unresolved: which radius parameter belongs to which corner, and the fill rule for the eye polygon
+
+### M6-wwise-bank — Wwise bank reading and codecs
+
+**M6-003 — Stereo IMA ADPCM is refused, and eight robot sound effects are silent because of it** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAdpcm.cs`
+* effect: eight shipped Robot_SFX events make no sound at all: the effort grunts, the spark launch and the four scan sounds
+* rests on: mono ADPCM decodes; stereo is refused because the block layout was not established
+* best authority: the seven shipped stereo ADPCM files themselves, which are the thing that would settle the layout: IMA ADPCM block packing is arithmetic that a file either fits or does not
+* evidence: wwise --coverage: Play__Robot_SFX__Effort_Long, Effort_Medium, Effort_Fail, Spark_Launch, Scan_Loop_Play, Scan_Start, Scan_Stop, Scan_Single; wwise --validate: 7 files, "ADPCM with 2 channels is not decoded"
+* unresolved: the stereo block layout. An earlier version of this record said no robot event reaches such a file; the coverage tool now lists the eight that do, which is what corrected it
 
 ### M7-behaviour — Idle, mood and reactions
 
@@ -662,8 +673,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 | M5-019 | M5-animation | COMPATIBILITY_POLICY | The last face is held after the last face keyframe; an oversize face payload is dropped | the engine display path, partly read (see M3-007) |
 | M5-020 | M5-animation | COMPATIBILITY_POLICY | Expressions helper faces | not applicable |
 | M6-002 | M6-wwise-bank | EQUIVALENT_IMPLEMENTATION | Vorbis rebuild with external codebooks and granule computation | the Wwise Vorbis packing; no runtime in the package to check against |
-| M6-003 | M6-wwise-bank | COMPATIBILITY_POLICY | IMA ADPCM mono decode; stereo refused | no stereo ADPCM clip is reachable from any robot event in the shipped banks |
-| M6-004 | M6-wwise-bank | BLOCKED_EXTERNAL | Nearest-sample resampling and channel averaging | the Wwise runtime resampler, which is not in the package |
+| M6-004 | M6-wwise-bank | EQUIVALENT_IMPLEMENTATION | Resampling to the robot rate is a band-limited windowed sinc, not Audiokinetic resampler | the Wwise runtime resampler, which does not ship in the APK. What was fixed here is a defect of this stack, not a reproduction of theirs: nearest-sample decimation aliases, and no competent resampler does |
 | M7-009 | M7-behaviour | EQUIVALENT_IMPLEMENTATION | Idle head and lift move through the motion API instead of the live animation | the engine adds HeadAngleKeyFrame(currentDeg, variability 6, duration) and LiftHeightKeyFrame(35, 8, duration) to its live animation and streams them as 0x93 / 0x94 |
 | M7-011 | M7-behaviour | COMPATIBILITY_POLICY | Arbitration order caller over reaction over idle; autonomy off by default; 5 s per-reaction cooldown | the engine per-trigger cooldowns exist only where the shipped map gives one |
 | M7-015 | M7-behaviour | EQUIVALENT_IMPLEMENTATION | Pick-up falls back to the raw status flag until the off-treads classifier is enabled | Robot::CheckAndUpdateTreadsState 0x00511E00, which is implemented and used once calibration is reported |
@@ -673,11 +683,11 @@ A subsystem is source-complete when nothing on its normal live execution path is
 | M9-011 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | The render goes through the effect chain the robot bus carries, not a local peak normalisation | libcozmoEngine.so for the routing and Init.bnk for the chain and its parameters |
 | M9-013 | M9-wwise-music | BLOCKED_EXTERNAL | Whether Wwise routes MIDI notes into the get-in branch of the singing sampler | the Wwise MIDI dispatch rule, which is runtime behaviour. No Wwise runtime ships in the APK: no AkSoundEngine, CAk*, AkModulator or Wwise string occurs in libcozmoEngine.so, libunity.so or libmain.so, and there is no separate Wwise library. The shipped data was searched to exhaustion: the branch parent and the target child list, the key and velocity ranges on all 18 containers under it, the play-on-note property, the channel mask, the node bit vectors, the blend container layers (there are none), and the Wwise object paths in Cozmo.txt |
 | M9-014 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | Velocity is ignored | the shipped bank: no node under the MIDI target carries a velocity RTPC, and only one velocity layer of recordings ships |
-| M9-015 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | The final-PCM cache freezes the renderer random choices for the life of a source | the container avoid-repeat and weight fields are read and honoured within a render |
+| M9-015 | M9-wwise-music | COMPATIBILITY_POLICY | The final-PCM cache freezes the renderer random choices for the life of a music source | the container avoid-repeat and weight fields are read and honoured within a render, so the draw itself is right; only its repetition across plays is not |
 | M9-016 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | The song is rendered whole, ahead of playback, on a worker | not applicable: this is a local architecture decision, and the observable output is the same once the render completes |
 | M9-018 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A Stop action ends the streaming song when its target is the Play target or an ancestor | the shipped bank: Stop__Robot_VO__Cozmo_Singing_Stop holds three action-type-1 actions targeting the three music switch containers |
 | M9-020 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A clip plays its source from BeginTrim for its length; a note still held at the clip end is released there | the shipped clip fields, which are read exactly |
-| M9-021 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A Play event with several Play actions renders only the first | the shipped bank lists all nine actions |
+| M9-021 | M9-wwise-music | COMPATIBILITY_POLICY | A music event with several Play actions renders only the first | the shipped bank lists all nine actions |
 | M9-022 | M9-wwise-music | BLOCKED_EXTERNAL | Container semantics: blend and actor-mixer play all children, random picks one by weight avoiding the last, sequence steps its playlist | the Wwise runtime, which is not in the package; the container fields themselves are read exactly |
 | M9-023 | M9-wwise-music | HARDWARE_ONLY | How the stock app sounded when it sang | a recording of a stock Cozmo singing, or the app running against a robot |
 | M9-024 | M9-wwise-music | BLOCKED_EXTERNAL | Whether cozmo_singing_note_off also stops the voice it is attached to | the shipped bank: this modulator alone of the eleven sets property 15, to the integer 2. The two readings that fit the numbering argued from the data agree on what a listener hears - under either one the voice ends when the note is released, which is also what the note layer's break-on-note-off bit asks for |

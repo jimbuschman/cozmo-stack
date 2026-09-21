@@ -79,7 +79,7 @@
       "id": "M6-wwise-bank",
       "name": "Wwise bank reading and codecs",
       "milestone": "M6",
-      "source_complete": true
+      "source_complete": false
     },
     {
       "id": "M7-behaviour",
@@ -1152,32 +1152,37 @@
     {
       "id": "M6-003",
       "subsystem": "M6-wwise-bank",
-      "title": "IMA ADPCM mono decode; stereo refused",
+      "title": "Stereo IMA ADPCM is refused, and eight robot sound effects are silent because of it",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAdpcm.cs",
-      "effect": "a stereo ADPCM clip is silent",
-      "provenance": "a port, self-verifying on the shipped mono clips",
-      "authority": "no stereo ADPCM clip is reachable from any robot event in the shipped banks",
-      "evidence": [],
-      "status": "COMPATIBILITY_POLICY",
-      "unresolved": "",
+      "effect": "eight shipped Robot_SFX events make no sound at all: the effort grunts, the spark launch and the four scan sounds",
+      "provenance": "mono ADPCM decodes; stereo is refused because the block layout was not established",
+      "authority": "the seven shipped stereo ADPCM files themselves, which are the thing that would settle the layout: IMA ADPCM block packing is arithmetic that a file either fits or does not",
+      "evidence": [
+        "wwise --coverage: Play__Robot_SFX__Effort_Long, Effort_Medium, Effort_Fail, Spark_Launch, Scan_Loop_Play, Scan_Start, Scan_Stop, Scan_Single",
+        "wwise --validate: 7 files, \"ADPCM with 2 channels is not decoded\""
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the stereo block layout. An earlier version of this record said no robot event reaches such a file; the coverage tool now lists the eight that do, which is what corrected it",
       "hardware_required": false,
       "live_path": true,
-      "test": "WwiseTests"
+      "test": null
     },
     {
       "id": "M6-004",
       "subsystem": "M6-wwise-bank",
-      "title": "Nearest-sample resampling and channel averaging",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMedia.cs",
-      "effect": "audible aliasing that the product would not have",
-      "provenance": "a choice of this stack",
-      "authority": "the Wwise runtime resampler, which is not in the package",
-      "evidence": [],
-      "status": "BLOCKED_EXTERNAL",
-      "unresolved": "the Wwise resampler quality setting and algorithm; no Wwise runtime ships in the APK (verified: no AkSoundEngine, CAk* or Wwise strings in any .so)",
+      "title": "Resampling to the robot rate is a band-limited windowed sinc, not Audiokinetic resampler",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
+      "effect": "fine detail of the resampled sound differs from the product; before this pass, everything above 11160 Hz in a 48 kHz recording folded back into the band as audible grit",
+      "provenance": "a three-lobe Lanczos kernel with its cutoff at the lower of the two Nyquists, which band-limits and interpolates in one pass",
+      "authority": "the Wwise runtime resampler, which does not ship in the APK. What was fixed here is a defect of this stack, not a reproduction of theirs: nearest-sample decimation aliases, and no competent resampler does",
+      "evidence": [
+        "a 15 kHz tone in a 48 kHz recording now comes out at under a tenth of the level a 1 kHz one does, where nearest-sample put it at 7320 Hz at nearly full strength"
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "WwiseBusTests.ResamplingDoesNotFoldWhatIsAboveTheRobotsNyquistBackIntoTheBand"
     },
     {
       "id": "M6-005",
@@ -1822,13 +1827,15 @@
     {
       "id": "M9-015",
       "subsystem": "M9-wwise-music",
-      "title": "The final-PCM cache freezes the renderer random choices for the life of a source",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs:260",
-      "effect": "a song sounds identical every time it is played in one session, where Wwise would draw fresh recordings",
-      "provenance": "a deliberate choice of this stack, labelled, to keep seconds of rendering off the streaming path",
-      "authority": "the container avoid-repeat and weight fields are read and honoured within a render",
-      "evidence": [],
-      "status": "EQUIVALENT_IMPLEMENTATION",
+      "title": "The final-PCM cache freezes the renderer random choices for the life of a music source",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
+      "effect": "a song sounds identical every time it is sung in one session, where Wwise would draw fresh recordings for each note",
+      "provenance": "a knowing deviation of this stack, labelled in the code and kept for a stated reason: re-rendering per play would put seconds of work back on the animation streaming path",
+      "authority": "the container avoid-repeat and weight fields are read and honoured within a render, so the draw itself is right; only its repetition across plays is not",
+      "evidence": [
+        "ordinary events are no longer cached this way after this pass - only their decoded media are - so a voice line does draw afresh each time"
+      ],
+      "status": "COMPATIBILITY_POLICY",
       "unresolved": "",
       "hardware_required": false,
       "live_path": true,
@@ -1916,15 +1923,15 @@
     {
       "id": "M9-021",
       "subsystem": "M9-wwise-music",
-      "title": "A Play event with several Play actions renders only the first",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
+      "title": "A music event with several Play actions renders only the first",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMusic.cs",
       "effect": "Play__Codelab__Music_Tiny_Orchestra_Init plays one of its nine layers",
-      "provenance": "a reduction of this stack",
+      "provenance": "a reduction of this stack on the music path. Ordinary events no longer reduce this way: WwisePlayback plays every Play target together",
       "authority": "the shipped bank lists all nine actions",
       "evidence": [
         "Cozmo.bnk event Play__Codelab__Music_Tiny_Orchestra_Init"
       ],
-      "status": "EQUIVALENT_IMPLEMENTATION",
+      "status": "COMPATIBILITY_POLICY",
       "unresolved": "",
       "hardware_required": false,
       "live_path": false,

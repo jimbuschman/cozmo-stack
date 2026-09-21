@@ -654,3 +654,68 @@ and its second time argument, `PetInitialDetection`'s strategy class, the put-do
 
 **Tests:** 651 (630 before the pass; 21 new in `CorrectionTests.cs`, and six existing tests updated where a
 corrected rule changed what they should assert).
+
+## 18. Source-fidelity cleanup, 2026-09-20 (Pass 1 and M9)
+
+A two-pass cleanup run under one rule: **a passing test does not upgrade provenance**. Pass 1 inventoried
+the repository; Pass 2 worked M9 and the animation-audio gaps immediately around it, and nothing else.
+
+**This document is no longer the inventory.** [`fidelity_manifest.json`](fidelity_manifest.json) is: one
+record per behaviour-affecting decision, with what it rests on, the best available authority, what is
+still unresolved and whether hardware is really needed. `tools/fidelity.py` validates it and regenerates
+[`FIDELITY_GAPS.md`](FIDELITY_GAPS.md); `FidelityManifestTests` asserts the same rules on every
+`dotnet test`. The gate is that a subsystem may assert source-completeness only when nothing on its live
+execution path is a RECOVERABLE_GAP, and the flag is checked in both directions so it cannot go stale.
+Sections 1 to 17 above stand as the record of how the code got here; where they and the manifest disagree,
+the manifest is current.
+
+### The M9 fault, and what it was
+
+Every one of the 42 recordings under the singing sampler's note-on layer is a sustained vowel of 4.2 to
+7.4 seconds carrying `Loop = 0`. The notes in the songs are 125 ms to about a second. The renderer let a
+looping sound play out a whole iteration after the note was released, so a 187 ms note sounded for 5.79
+seconds, about thirty overlapped at any moment, and the sum ran 13.2 dB over full scale — which the local
+output stage then quietly pulled back down by 13.2 dB. A note now sounds for as long as it is held, which
+is what the loop property, the break-on-note-off bit and the existence of a half-second note-off layer at
+−14 dB all ask for. Aba Daba's raw peak went from 149572 to 36984.
+
+### Recovered from the binary and the banks during this pass
+
+| what | where | effect |
+| --- | --- | --- |
+| Modulator objects (HIRC 21 and 22) | eleven in `Cozmo.bnk`, all consuming exactly; ids 2..8 occur only on LFOs and 9..15 only on envelopes | the vibrato LFO and the note-off envelope are read and applied |
+| The two singing bindings | blend 110896138 → Pitch over 0..580 cents; blend 462443456 → Volume over 0..−1 dB; neither target sets the property it drives | one decibel is the whole of the note-off envelope's authority over the level, which is not what WWISE_MUSIC.md said it was |
+| MIDI note tracking is off | the node bit vectors: only 0x00, 0x01 and 0x24 occur in any bank, 0x01 on exactly the three nodes that set Priority, 0x24 on exactly the two note layers | no bit is left that could enable it, so this rests on the data rather than on the absence of a root note |
+| The robot's bus | `RobotAudioClient::RobotAudioClient` 0x005994A0, 0x0059962A..0x0059966A: game objects 7..10 to plug-in indices 1..4 and buses 0x9FA59539 + 3, 6, 5, 0 | a singing voice leaves through `Robot_Bus_1`, and each bus's Anki Hijack parameter is the same index, so bank and binary agree from two directions |
+| That bus's effect chain | `Init.bnk`: MasterCurve EQ, HiLowPass EQ, Peak Limiter (−1 dB, 10.8:1, 9 ms, 41 ms), then the hijack | the output stage is the product's, not a local peak normalisation; every song now leaves it between 30000 and 32000 of full scale |
+| The cube shake | `CubeAccelComponent::AddListener` 0x0063547E sends `StreamObjectAccel`; `HighPassFilterListener::UpdateInternal` 0x00636598; `ShakeListener` 0x00636620 and 0x0063679E; `BehaviorSinging::InitInternal` 0x005EECF4 passes 0.5, 2.5, 3.9 | the vibrato has an input; it saturates at a filtered magnitude of about 55 against a start threshold of 3.9 |
+| Container play mode | the play-mode bit, set on 12 of 13 sequence containers and 13 of 455 random ones | an event's target is walked with each container's semantics instead of flattened |
+| Bus and effect object layouts | all 15 buses and all 89 effects now consume exactly | fourteen object types read, every object consumed exactly |
+
+### Corrections to earlier sections
+
+* **§5, M6, "all Sounds under a Play target are alternatives; sorted child order".** They are not
+  alternatives in general: a sequence container whose play mode is continuous plays its items one after
+  another, and a switch container follows the switch. The get-in, a random of three two-note phrases each
+  drawn from three takes, was coming out as one fixed syllable (manifest M6-006, M6-007).
+* **§5, M6, "IMA ADPCM mono; stereo refused".** Recorded here as local policy on the grounds that no robot
+  event reaches a stereo file. Eight do: the three effort grunts, the spark launch and the four scan
+  sounds are silent. Now a RECOVERABLE_GAP (M6-003), and `wwise --coverage` lists them.
+* **§5, M6, "resampling and mix-down | LOCAL_POLICY".** Nearest-sample decimation from 48000 to 22320
+  folds everything above 11160 Hz back into the band. That is not a policy, it is a defect; it is now a
+  band-limited windowed sinc (M6-004).
+* **WWISE_MUSIC.md** said the robot's bus carries a peak limiter and a master compressor. The compressor is
+  on `Cozmo_Robot_External`, the bus for the app's spoken text; `Cozmo_Robot` carries no effects at all.
+
+### Left, and named as what it is
+
+M9 holds no RECOVERABLE_GAP on its live path. Four of its open items are in the Wwise runtime, which does
+not ship in the APK — verified, not assumed: no `AkSoundEngine`, `CAk*`, `AkModulator` or `Wwise` string
+occurs in any `.so`. The largest is **M9-013**: the get-in branch is a child of the MIDI target and carries
+no filter of its own, so under the container rules a note reaches it — 41 extra voices on a 42-note song.
+Every render reports each branch's share and `--without-branch get-in` renders the other reading, so the
+two can be listened to side by side; only a recording of the stock app singing can settle it.
+
+**Tests:** 710 (651 before the pass). The runner is capped at two parallel threads: several behaviour rigs
+drive against a wall-clock budget while sleeping between ticks, and on a four-core machine the default
+parallelism starved them into failing somewhere different on every run.
