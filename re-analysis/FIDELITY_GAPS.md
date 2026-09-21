@@ -3,13 +3,13 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **200 records** over 16 subsystems.
+Manifest of **201 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 94 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 97 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 60 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 58 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 8 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -35,7 +35,7 @@ remains after both, and they do not go away by working harder on this repository
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | 0 | 0 | 0 | no | yes |
 | M11-vision — Markers, camera geometry and BlockWorld | 16 | 6 | 0 | 1 | 0 | no | yes |
-| M12-manipulation — Docking, carrying and pre-action poses | 15 | 5 | 0 | 0 | 0 | no | yes |
+| M12-manipulation — Docking, carrying and pre-action poses | 16 | 3 | 0 | 0 | 0 | no | yes |
 | M13-navigation — Planning, charger and block configurations | 11 | 7 | 1 | 0 | 0 | no | no |
 | M14-faces — Face and pet pipeline | 7 | 5 | 0 | 1 | 0 | no | yes |
 | M15-freeplay — Needs, activities and freeplay | 12 | 9 | 0 | 0 | 0 | no | yes |
@@ -352,22 +352,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 
-**M12-006 — A carried object is released in the world model when the put-down animation completes** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/ManipulationBehaviors.cs:92`
-* effect: the world model believes the robot is carrying a cube it has put down, or the reverse
-* rests on: inferred; the engine learns it from the robot carry state
-* best authority: the robot carry state in RobotState and the engine handling of it
-* outstanding: which field of RobotState carries the carry state and how the engine reacts to it
-
-**M12-009 — Retry limits: 3 attempts for manipulation, 2 for the charger, 3 for the wheelie** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs:125`
-* effect: the robot gives up sooner or later than the app
-* rests on: inferred numbers
-* best authority: the engine behaviour classes, which carry their own retry counts
-* outstanding: the retry count each engine behaviour uses
-
 **M12-010 — The search-for-block fallback is not implemented** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs:125`
@@ -376,14 +360,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: the engine search behaviour
 * outstanding: the search pattern
 
-**M12-011 — A failed final turn fails DriveToObjectAction as DidNotReachPreActionPose** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/DriveActions.cs`
-* effect: the caller sees the nearest shipped result rather than the engine own
-* rests on: a labelled reduction to the nearest shipped ActionResult
-* best authority: the engine DriveToObjectAction result for this case
-* outstanding: which ActionResult the engine reports
-
 **M12-012 — Non-upright stacking needs a progression unlock and is not implemented** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/ManipulationBehaviors.cs:229`
@@ -391,6 +367,15 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * rests on: deferred, uprights only
 * best authority: the engine placement rules
 * outstanding: the unlock condition and the non-upright placement geometry
+
+**M12-016 — The retry limits the roll and charger helpers are configured with** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs`
+* effect: a roll or a charger dock gives up sooner or later than the app
+* rests on: the pickup limit of 2 stands in for them
+* best authority: RollBlockHelper::StartRollingAction 0x005B9F62 compares its attempt count against a register loaded from the helper rather than a literal, and the helper takes that from its RollBlockParameters (copied to helper+0x104 by the constructor, as PickupBlockHelper does at 0x005B7ACA). The behaviours that build those parameters have not been read
+* evidence: PickupBlockHelper hard-codes 2 and is settled (M12-009); the parameter struct is 16 bytes with a u16 at +0xC that the constructor copies to +0x104
+* outstanding: what each behaviour puts in the parameters it hands the roll and charger helpers
 
 ### M13-navigation — Planning, charger and block configurations
 

@@ -167,7 +167,17 @@ public sealed class PathRun : IDisposable
 
 public sealed class DockHelper
 {
-    public const int MaxAttempts = 3;
+    /// <summary>
+    /// Two, which is what <c>PickupBlockHelper::RespondToPickupResult</c> allows: at 0x005B8192 it reads
+    /// the attempt count at +0x108 and takes the retry branch only while it is <c>&lt;= 1</c>, and the
+    /// log beside it is built with a literal 2 (<c>movs r6, #2</c> at 0x005B814A), so it reads
+    /// "attempt 1 / 2" and "attempt 2 / 2". This stack had three.
+    ///
+    /// The roll helper does not hard-code its limit - <c>StartRollingAction</c> 0x005B9F62 compares the
+    /// count against a value carried in its <c>RollBlockParameters</c> - so a roll or a charger dock may
+    /// well differ. Those are recorded separately rather than assumed to be this.
+    /// </summary>
+    public const int MaxAttempts = 2;
     private readonly ManipulationSystem _m;
 
     public DockHelper(ManipulationSystem m) => _m = m;

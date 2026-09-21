@@ -204,7 +204,7 @@ public sealed class PickupObjectAction : DockActionBase
                 if (now > _verifyStartedAt + StillMovingAllowanceMs)
                 {
                     _trace.Add("PickupObjectAction.Verify.ObjectStillMoving");
-                    M.Docking.Carrying.UnsetCarrying();
+                    M.Docking.ReleaseCarriedObject(forget: true);
                     return ActionResult.Retry;
                 }
             }
@@ -218,7 +218,7 @@ public sealed class PickupObjectAction : DockActionBase
                 {
                     _trace.Add($"PickupObjectAction.Verify.ObjectNotSeenRecentlyEnough: last seen " +
                                $"{target.LastObservedTimestamp}, verify began {_verifyStartedAt}, allowed {timeout} ms");
-                    M.Docking.Carrying.UnsetCarrying();
+                    M.Docking.ReleaseCarriedObject(forget: true);
                     return ActionResult.Retry;
                 }
             }
@@ -226,7 +226,7 @@ public sealed class PickupObjectAction : DockActionBase
             if (target.LastObservedTimestamp > result.Timestamp && target.Pose.IsSameAs(_originalPose, 20, 0.35))
             {
                 _trace.Add("PickupObjectAction.Verify.SeeingCarriedObjectInOrigPose: Object pick-up FAILED! (Still seeing object in same place.)");
-                M.Docking.Carrying.UnsetCarrying();
+                M.Docking.ReleaseCarriedObject(forget: true);
                 return ActionResult.Retry;
             }
         }

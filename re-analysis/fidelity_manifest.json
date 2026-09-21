@@ -2513,19 +2513,19 @@
       "id": "M12-005"
     },
     {
-      "id": "M12-006",
       "subsystem": "M12-manipulation",
-      "title": "A carried object is released in the world model when the put-down animation completes",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ManipulationBehaviors.cs:92",
-      "effect": "the world model believes the robot is carrying a cube it has put down, or the reverse",
-      "provenance": "inferred; the engine learns it from the robot carry state",
-      "authority": "the robot carry state in RobotState and the engine handling of it",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "which field of RobotState carries the carry state and how the engine reacts to it",
-      "hardware_required": false,
+      "title": "Letting go of a carried object leaves it Dirty where the lift left it",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "CarryingComponent::SetCarriedObjectAsUnattached(bool) 0x006333D4 takes the object pose with respect to the robot and hands it to ObjectPoseConfirmer::AddRobotRelativeObservation(object, pose, PoseState 2) at 0x00633458, so the object stays located, at the pose it was released at, and Dirty. The bool decides whether that survives: set, 0x00633930 also runs BlockWorld::DeleteLocatedObjects and the object goes",
+      "evidence": [
+        "BehaviorPutDownBlock passes false (0x005C84CE), so a put-down leaves the cube where it was put",
+        "PickupObjectAction::Verify passes true (0x00553CAA, 0x00553D2A), because a pick-up that turned out to have failed leaves nobody knowing where the cube is",
+        "this stack only cleared a flag: the cube stayed Known at whatever pose it last had"
+      ],
       "live_path": true,
-      "test": "ManipulationTests"
+      "test": "PickupVerifyTests.LettingGoLeavesTheCubeDirtyWhereTheLiftLeftIt",
+      "id": "M12-006"
     },
     {
       "subsystem": "M12-manipulation",
@@ -2558,19 +2558,18 @@
       "id": "M12-008"
     },
     {
-      "id": "M12-009",
       "subsystem": "M12-manipulation",
-      "title": "Retry limits: 3 attempts for manipulation, 2 for the charger, 3 for the wheelie",
-      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs:125",
-      "effect": "the robot gives up sooner or later than the app",
-      "provenance": "inferred numbers",
-      "authority": "the engine behaviour classes, which carry their own retry counts",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the retry count each engine behaviour uses",
-      "hardware_required": false,
+      "title": "The dock helper allows two attempts",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "PickupBlockHelper::RespondToPickupResult reads the attempt count at helper+0x108 and takes the retry branch only while it is 1 or less (cmp r0, #1 / bls at 0x005B8192). The log beside it is built with a literal 2 (movs r6, #2 at 0x005B814A), so it reads \"attempt 1 / 2\" then \"attempt 2 / 2\". The count is zeroed in the constructor and in Init",
+      "evidence": [
+        "this stack allowed three, so it kept trying after the app would have given up",
+        "the roll helper does not hard-code its limit: StartRollingAction 0x005B9F62 compares the count against a value carried in its RollBlockParameters, so the roll and charger limits are a separate question - see M12-016"
+      ],
       "live_path": true,
-      "test": null
+      "test": "PickupVerifyTests.TheDockHelperAllowsTwoAttempts",
+      "id": "M12-009"
     },
     {
       "id": "M12-010",
@@ -2588,19 +2587,18 @@
       "test": null
     },
     {
-      "id": "M12-011",
       "subsystem": "M12-manipulation",
-      "title": "A failed final turn fails DriveToObjectAction as DidNotReachPreActionPose",
+      "title": "A drive that ends outside the pre-action pose tolerance reports DidNotReachPreActionPose",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DriveActions.cs",
-      "effect": "the caller sees the nearest shipped result rather than the engine own",
-      "provenance": "a labelled reduction to the nearest shipped ActionResult",
-      "authority": "the engine DriveToObjectAction result for this case",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "which ActionResult the engine reports",
-      "hardware_required": false,
+      "status": "EXACT_SOURCE",
+      "authority": "DriveToObjectAction::CheckIfDone 0x00559880 loads 0x04000001 into r8 at 0x005598E2, compares the distance from the pre-action pose against the tolerance at +0x84, and on the failing side moves r8 into the result (0x005599FE) beside a warning; the passing side returns 0",
+      "evidence": [
+        "0x04000001 is the value this stack already calls DidNotReachPreActionPose",
+        "the same function returns 0x03000004 (BadObject) when the object is not located"
+      ],
       "live_path": true,
-      "test": "CorrectionTests"
+      "test": "NavigationTests",
+      "id": "M12-011"
     },
     {
       "id": "M12-012",
@@ -2663,6 +2661,24 @@
       "live_path": true,
       "test": "ManipulationTests",
       "id": "M12-015"
+    },
+    {
+      "subsystem": "M12-manipulation",
+      "title": "The retry limits the roll and charger helpers are configured with",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs",
+      "status": "RECOVERABLE_GAP",
+      "effect": "a roll or a charger dock gives up sooner or later than the app",
+      "provenance": "the pickup limit of 2 stands in for them",
+      "authority": "RollBlockHelper::StartRollingAction 0x005B9F62 compares its attempt count against a register loaded from the helper rather than a literal, and the helper takes that from its RollBlockParameters (copied to helper+0x104 by the constructor, as PickupBlockHelper does at 0x005B7ACA). The behaviours that build those parameters have not been read",
+      "evidence": [
+        "PickupBlockHelper hard-codes 2 and is settled (M12-009)",
+        "the parameter struct is 16 bytes with a u16 at +0xC that the constructor copies to +0x104"
+      ],
+      "unresolved": "what each behaviour puts in the parameters it hands the roll and charger helpers",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null,
+      "id": "M12-016"
     },
     {
       "id": "M13-001",

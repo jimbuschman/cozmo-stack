@@ -138,6 +138,32 @@ public sealed class DockingSystem : IDisposable
     /// The engine never recomputes this - the object is parented to the lift, so it follows for free -
     /// which is why this is called whenever the robot pose or the lift angle moves as well as on attach.
     /// </summary>
+    /// <summary>
+    /// Lets go of the carried object, as <c>CarryingComponent::SetCarriedObjectAsUnattached(bool)</c>
+    /// 0x006333D4 does.
+    ///
+    /// The object keeps the pose it was being held at: the engine takes that pose with respect to the
+    /// robot and hands it to <c>ObjectPoseConfirmer::AddRobotRelativeObservation(object, pose,
+    /// PoseState 2)</c> at 0x00633458, so it stays located, and Dirty, exactly where the lift left it.
+    /// It is not forgotten and it is not left Known: it is somewhere the robot put down and has not
+    /// looked at since.
+    ///
+    /// <paramref name="forget"/> is the engine's argument, and it decides whether that survives. With it
+    /// set, 0x00633930 also runs <c>BlockWorld::DeleteLocatedObjects</c> and the object goes. A put-down
+    /// passes false (<c>BehaviorPutDownBlock</c> 0x005C84CE); a pick-up that turned out to have failed
+    /// passes true (<c>PickupObjectAction::Verify</c> 0x00553CAA and 0x00553D2A), because then nobody
+    /// knows where the cube is.
+    /// </summary>
+    public void ReleaseCarriedObject(bool forget = false)
+    {
+        if (Carrying.CarriedObjectId is { } id)
+        {
+            if (forget) _vision.World.MarkUnknown(id);
+            else { UpdateCarriedObjectPose(); _vision.World.MarkReleased(id); }
+        }
+        Carrying.UnsetCarrying();
+    }
+
     public void UpdateCarriedObjectPose()
     {
         if (Carrying.CarriedObjectId is not { } id || Carrying.DockMarker is not { } marker) return;
@@ -299,7 +325,7 @@ public sealed class DockingSystem : IDisposable
                     Carrying.SetCarrying(id, dockMarker);
                     UpdateCarriedObjectPose();
                 }
-                if (result.Status == BlockStatus.BlockPlaced) Carrying.UnsetCarrying();
+                if (result.Status == BlockStatus.BlockPlaced) ReleaseCarriedObject();
                 TaskCompletionSource<DockResult>? tcs; lock (_gate) tcs = _pending;
                 tcs?.TrySetResult(result);
                 break;

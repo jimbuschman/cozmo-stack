@@ -112,7 +112,7 @@ public sealed class PutDownBlockBehavior : ManipulationBehavior
             CurrentPhase = Phase.PuttingDown;
             PlayTrigger(AnimationTrigger.PutDownBlockPutDown, () =>
             {
-                M.Docking.Carrying.UnsetCarrying();
+                M.Docking.ReleaseCarriedObject();
                 Log("put down: the carried object is released (INFERRED: from the robot's carry state in the engine)");
                 LookDownAtBlock();
             });

@@ -120,7 +120,7 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
         PlayTrigger(trigger, () =>
         {
             if (KnockedOver.Value) Log("objective achieved: KnockedOverBlocks");
-            if (M.Docking.Carrying.IsCarryingObject) PlayTrigger(PutDownTrigger, () => { M.Docking.Carrying.UnsetCarrying(); Finish(); });
+            if (M.Docking.Carrying.IsCarryingObject) PlayTrigger(PutDownTrigger, () => { M.Docking.ReleaseCarriedObject(); Finish(); });
             else Finish();
         });
     }
@@ -331,7 +331,7 @@ public sealed class CubeLiftWorkoutBehavior : ManipulationBehavior
             CurrentPhase = Phase.CheckPutDown;
             // the put-down animation lowers the lift and releases the cube; the engine learns the carry state
             // from the robot, this stack from the animation's completion (INFERRED, as in PutDownBlock)
-            M.Docking.Carrying.UnsetCarrying();
+            M.Docking.ReleaseCarriedObject();
             if (M.Docking.Carrying.IsCarryingObject)
             {
                 CurrentPhase = Phase.ManualPutDown;

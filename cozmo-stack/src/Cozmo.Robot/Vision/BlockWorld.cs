@@ -343,6 +343,23 @@ public sealed class BlockWorld
         lock (_gate) { if (_objects.TryGetValue(objectId, out var o)) o.Pose = pose; }
     }
 
+    /// <summary>
+    /// An object the robot has just let go of: still located, at the pose it was released at, but Dirty.
+    /// <c>SetCarriedObjectAsUnattached</c> 0x006333D4 re-registers it through
+    /// <c>AddRobotRelativeObservation(object, poseWrtRobot, PoseState 2)</c>, and 2 is Dirty.
+    /// </summary>
+    public void MarkReleased(uint objectId)
+    {
+        ObservableObject? o; PoseState prev;
+        lock (_gate)
+        {
+            if (!_objects.TryGetValue(objectId, out o)) return;
+            prev = o.PoseState; o.PoseState = PoseState.Dirty;
+            if (prev == PoseState.Dirty) return;
+        }
+        PoseStateChanged?.Invoke(o, prev, PoseState.Dirty);
+    }
+
     /// <summary>Records what the cube's radio says about its own motion; see <see cref="ObservableObject.IsMoving"/>.</summary>
     public void SetMoving(uint objectId, bool moving)
     {

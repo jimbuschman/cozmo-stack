@@ -63,4 +63,40 @@ public class PickupVerifyTests
         Assert.True(obj.IsMoving);                       // the motion is still recorded
         Assert.Equal(PoseState.Known, obj.PoseState);    // but the pose is not dirtied
     }
+
+    /// <summary>
+    /// Letting go leaves the cube located and Dirty where the lift left it, not forgotten and not Known:
+    /// SetCarriedObjectAsUnattached(false) re-registers it through AddRobotRelativeObservation with
+    /// PoseState 2 (0x00633458). Forgetting it is the other argument, which a failed pick-up passes.
+    /// </summary>
+    [Fact]
+    public void LettingGoLeavesTheCubeDirtyWhereTheLiftLeftIt()
+    {
+        if (Library.Value is null) return;
+        using var rig = new Rig();
+        rig.Cube = ManipulationTests.CubeAt(150, 0);
+        var obj = Assert.Single(rig.Frame().Objects).Object;
+        rig.M.Docking.Carrying.SetCarrying(obj.ObjectId, obj.Markers[0]);
+
+        rig.M.Docking.ReleaseCarriedObject();
+        Assert.Equal(PoseState.Dirty, obj.PoseState);       // still located, just not trusted
+        Assert.True(obj.IsLocated);
+        Assert.False(rig.M.Docking.Carrying.IsCarryingObject);
+
+        // and the failed-pick-up form, which the engine follows with DeleteLocatedObjects
+        rig.M.Docking.Carrying.SetCarrying(obj.ObjectId, obj.Markers[0]);
+        rig.M.Docking.ReleaseCarriedObject(forget: true);
+        Assert.False(obj.IsLocated);
+    }
+
+    /// <summary>
+    /// The dock helper gives up after two attempts, which is what PickupBlockHelper allows:
+    /// RespondToPickupResult 0x005B8192 retries only while the count is <= 1, and its log is built with
+    /// a literal 2 at 0x005B814A.
+    /// </summary>
+    [Fact]
+    public void TheDockHelperAllowsTwoAttempts()
+    {
+        Assert.Equal(2, Cozmo.Robot.Manipulation.DockHelper.MaxAttempts);
+    }
 }
