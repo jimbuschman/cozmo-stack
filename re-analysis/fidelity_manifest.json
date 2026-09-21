@@ -2627,6 +2627,38 @@
       "test": null
     },
     {
+      "subsystem": "M12-manipulation",
+      "title": "DockingErrorSignal begins with the timestamp, not the geometry",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "DockingComponent::UpdateDockingErrorSignal 0x0063BE80 builds the struct at sp+0xa0. Its only argument is the timestamp - mov r6, r1 at 0x0063BE92, unchanged until 0x0063C17E - and str r6, [sp, #0xa0] at 0x0063C14A writes it into word 0. x follows at +0xa4, y at +0xa8, z at +0xac and the angle at +0xb0, and DockingErrorSignal::Pack 0x007C0B26 reads five words then two bytes",
+      "evidence": [
+        "the name table matched the 16-byte VizInterface::DockingErrorSignal by prefix, which put x_dist in word 0 and shifted every field of this 22-byte message by one word",
+        "the geometry itself was already right: x - placementOffsetX, y + placementOffsetY, z, and yaw of the flat-clamped pose + pi/2 + the placement offset angle"
+      ],
+      "live_path": true,
+      "test": "ManipulationTests.DockingStreamsTheErrorSignalFromEachFrameAndPicksUpOnTheRobotsResult",
+      "id": "M12-013"
+    },
+    {
+      "subsystem": "M12-manipulation",
+      "title": "The docking error signal's last two bytes are whatever was on the engine's stack",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs",
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "effect": "two bytes of every error signal differ from the ones the app sent",
+      "provenance": "this stack sends zero",
+      "authority": "UpdateDockingErrorSignal 0x0063BE80 is the only builder and it never writes the struct bytes at +0x14 and +0x15. Nothing clears the struct either: it is a stack local at sp+0xa0 filled field by field, with no memclr and no constructor call, and Pack 0x007C0B26 reads both bytes and sends them",
+      "evidence": [
+        "the engine value is indeterminate, so the robot cannot be acting on it; sending zero is as faithful as any other value and is at least repeatable",
+        "the other twenty bytes are exact - see M12-013"
+      ],
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "ManipulationTests.DockingStreamsTheErrorSignalFromEachFrameAndPicksUpOnTheRobotsResult",
+      "id": "M12-014"
+    },
+    {
       "id": "M13-001",
       "subsystem": "M13-navigation",
       "title": "Lattice planner motion primitives read from cozmo_mprim.json",
@@ -3145,6 +3177,20 @@
       "hardware_required": false,
       "live_path": false,
       "test": null
+    },
+    {
+      "subsystem": "tools",
+      "title": "The generated protocol had drifted from the inputs that produce it",
+      "location": "re-analysis/tools/build_protocol_definition.py",
+      "status": "EXACT_SOURCE",
+      "authority": "regenerate_protocol.py --check reported four committed files that their inputs no longer produce. Two messages had engine-sourced field names applied to the generated C# by hand rather than through the inputs: animHeadAngle 0x93 (durationTimeMs, angleDeg) and animLiftHeight 0x94 (durationTimeMs, heightMm), both from the 2026-09-19 sweep. They are now REFINEMENTS entries carrying the same evidence, so the generator produces them",
+      "evidence": [
+        "HeadAngleKeyFrame::GetStreamMessage 0x004F8C08 and LiftHeightKeyFrame::GetStreamMessage 0x004F8F80, which is where the names came from in the first place",
+        "the check passes again, so a later regeneration cannot silently drop them"
+      ],
+      "live_path": true,
+      "test": "regenerate_protocol.py --check",
+      "id": "TOOL-004"
     }
   ]
 }
