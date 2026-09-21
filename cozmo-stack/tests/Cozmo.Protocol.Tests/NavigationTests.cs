@@ -199,7 +199,8 @@ public class NavigationTests
         Assert.Equal(27.0, (corners[0] - corners[1]).Length, 6);                   // TL -> BL is the height
         var normal = m.NormalOnObject;
         Assert.Equal(-1.0, normal.X, 6);                                            // facing out of the charger
-        Assert.Equal(86.0, m.PoseOnObject.Translation.X, 6); Assert.Equal(11.0, m.PoseOnObject.Translation.Z, 6);
+        // 0x41B00000 in the charger constructor is 22, not 11
+        Assert.Equal(86.0, m.PoseOnObject.Translation.X, 6); Assert.Equal(22.0, m.PoseOnObject.Translation.Z, 6);
         Assert.Equal(new Vec3(96, 80, 31), CubeGeometry.SizeOf(ObjectType.Charger_Basic));
         var docked = ChargerGeometry.DockedRobotPose(At(200, 0, 0));
         Assert.Equal(230.0, docked.Translation.X, 6);

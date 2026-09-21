@@ -7,13 +7,18 @@ namespace Cozmo.Robot.Vision;
 /// 96 x 80 x 31 mm (0x42C00000, 0x42A00000, 0x41F80000 stored at +0xF0; the order length, width, height is
 /// INFERRED from the robot's drive-off distance being the length), and it carries one marker, code
 /// <see cref="MarkerType.Charger"/> (2), added through <c>AddMarker</c> with a pose rotated −90° about Z
-/// (0xBFC90FDB) and translated (86, 0, 11) mm (0x42AC0000, 0x41B00000) and a marker size of 20 x 27 mm
+/// (0xBFC90FDB) and translated (86, 0, 22) mm (0x42AC0000, 0x41B00000 - which is 22, not the 11 this
+/// stack had) and a marker size of 20 x 27 mm
 /// (0x41A00000, 0x41D80000). In this frame the charger's origin is at its front lip on the floor, +X runs into
 /// the charger towards the back wall, the marker sits on the back wall facing out (its normal is −X), and the
 /// robot drives onto it backwards.
 ///
-/// <c>GetRobotDockedPose</c> (0x004EA1A0): the docked robot is rotated π about Z (facing out of the charger)
-/// and translated 30 mm (0x41F00000) along +X. <c>GeneratePreActionPoses</c> (0x004EA000) makes one Docking
+/// <c>GetRobotDockedPose</c> (0x004EA1A0) is read exactly: <c>Pose3d(Radians(3.14159), Z_AXIS,
+/// (30, 0, 0), parent = the charger's pose)</c> - rotated π about Z, facing out of the charger, 30 mm
+/// along +X. So a docked robot's heading is the charger's plus π, which is worth holding onto: the
+/// mount's own check compares the charger's yaw with the robot's against π/2 (M13-008), and those two
+/// readings cannot both be right. The docked pose is the one that is read from a single function with
+/// no branches, so it is the one trusted here. <c>GeneratePreActionPoses</c> (0x004EA000) makes one Docking
 /// pose; its exact offsets were not fully read (a static pose plus −15.5 mm), so the pre-dock pose here is
 /// INFERRED: on the charger's axis, facing the marker, at the distance the mount action aligns to.
 /// </summary>
@@ -23,7 +28,8 @@ public static class ChargerGeometry
     public const double WidthMm = 80.0;
     public const double HeightMm = 31.0;
     public const double MarkerXMm = 86.0;
-    public const double MarkerZMm = 11.0;
+    /// <summary>22 mm up the back wall: 0x41B00000 in the constructor, which is 22 and not 11.</summary>
+    public const double MarkerZMm = 22.0;
     public const double MarkerWidthMm = 20.0;
     public const double MarkerHeightMm = 27.0;
     public const double DockedXMm = 30.0;

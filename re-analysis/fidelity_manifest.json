@@ -2802,21 +2802,22 @@
       "id": "M13-008"
     },
     {
-      "id": "M13-009",
       "subsystem": "M13-navigation",
-      "title": "Charger length and the pre-dock pose derived from the drive-off distance",
-      "location": "cozmo-stack/src/Cozmo.Robot/Vision/ChargerGeometry.cs:8",
-      "effect": "the robot aims at the wrong point when mounting",
-      "provenance": "inferred from the drive-off distance",
-      "authority": "the charger object definition at 0x004E9B6C, partly read",
-      "evidence": [
-        "charger 0x004E9B6C"
-      ],
+      "title": "The charger dimensions and the docked pose, with the pre-dock pose still unread",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/ChargerGeometry.cs",
       "status": "RECOVERABLE_GAP",
-      "unresolved": "the charger real dimensions and the pose the mount action aligns to",
+      "effect": "the robot aims at the wrong point when mounting",
+      "provenance": "the pre-dock pose is this stack own: on the charger axis, facing the marker, at the distance the mount action aligns to",
+      "authority": "Charger::Charger 0x004E9B6C settles the object: 96 x 80 x 31 mm stored at +0xF0 (0x42C00000, 0x42A00000, 0x41F80000) and one marker added with a pose rotated -90 degrees about Z (0xBFC90FDB) at (86, 0, 22) - 0x42AC0000 and 0x41B00000, which is 22 and not the 11 this stack had - sized 20 x 27 (0x41A00000, 0x41D80000). Charger::GetRobotDockedPose 0x004EA1A0 is a single branchless function: Pose3d(Radians(3.14159), Z_AXIS, (30, 0, 0)) on the charger pose, so a docked robot faces out, half a turn from the charger heading, 30 mm along its +X. Charger::GeneratePreActionPoses 0x004E9FB0 has not been read through",
+      "evidence": [
+        "the marker height was wrong by half, which moves where the charger is placed from a sighting",
+        "the docked pose being chargerYaw + pi sits awkwardly against the mount check in M13-008, which compares the charger yaw with the robot yaw against pi/2; both readings are from source and they cannot both mean what they appear to"
+      ],
+      "unresolved": "Charger::GeneratePreActionPoses, which is the pre-dock pose the mount aligns to; and the contradiction between GetRobotDockedPose and the mount heading check",
       "hardware_required": false,
       "live_path": true,
-      "test": "NavigationTests"
+      "test": "NavigationTests.TheChargerIsAPassiveObjectWithOneRectangularMarker",
+      "id": "M13-009"
     },
     {
       "id": "M13-010",

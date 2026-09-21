@@ -372,14 +372,14 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * evidence: IsInCollision 0x008515BC and IsInSoftCollision 0x00851708 are separate entry points over the same per-theta polygon lists, so the hard and soft rings are separate obstacle sets; the obstacles are expanded per theta bucket, which is what AddObstacleAllThetas means
 * outstanding: which of the two floats is the padding and which the penalty, and how the import turns an object bounding box into the hard and soft polygons. The pair is in hand; the use is not
 
-**M13-009 — Charger length and the pre-dock pose derived from the drive-off distance** (live path)
+**M13-009 — The charger dimensions and the docked pose, with the pre-dock pose still unread** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/ChargerGeometry.cs:8`
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/ChargerGeometry.cs`
 * effect: the robot aims at the wrong point when mounting
-* rests on: inferred from the drive-off distance
-* best authority: the charger object definition at 0x004E9B6C, partly read
-* evidence: charger 0x004E9B6C
-* outstanding: the charger real dimensions and the pose the mount action aligns to
+* rests on: the pre-dock pose is this stack own: on the charger axis, facing the marker, at the distance the mount action aligns to
+* best authority: Charger::Charger 0x004E9B6C settles the object: 96 x 80 x 31 mm stored at +0xF0 (0x42C00000, 0x42A00000, 0x41F80000) and one marker added with a pose rotated -90 degrees about Z (0xBFC90FDB) at (86, 0, 22) - 0x42AC0000 and 0x41B00000, which is 22 and not the 11 this stack had - sized 20 x 27 (0x41A00000, 0x41D80000). Charger::GetRobotDockedPose 0x004EA1A0 is a single branchless function: Pose3d(Radians(3.14159), Z_AXIS, (30, 0, 0)) on the charger pose, so a docked robot faces out, half a turn from the charger heading, 30 mm along its +X. Charger::GeneratePreActionPoses 0x004E9FB0 has not been read through
+* evidence: the marker height was wrong by half, which moves where the charger is placed from a sighting; the docked pose being chargerYaw + pi sits awkwardly against the mount check in M13-008, which compares the charger yaw with the robot yaw against pi/2; both readings are from source and they cannot both mean what they appear to
+* outstanding: Charger::GeneratePreActionPoses, which is the pre-dock pose the mount aligns to; and the contradiction between GetRobotDockedPose and the mount heading check
 
 **M13-010 — Workout selection by index, medium by default** (live path)
 
