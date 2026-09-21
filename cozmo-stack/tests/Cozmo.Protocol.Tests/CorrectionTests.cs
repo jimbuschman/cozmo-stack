@@ -371,27 +371,11 @@ public class CorrectionTests
 
         Assert.Equal(ActionResult.PathPlanningFailedAbort, r);
         Assert.Contains(drive.Trace, l => l.Contains("no path sent"));
+        // and nothing of this stack's own is substituted: the engine returns a planning failure and the
+        // action fails (M13-005). The straight-line fallback that used to sit here is gone.
+        Assert.DoesNotContain(drive.Trace, l => l.Contains("straight line"));
         Assert.DoesNotContain(rig.M.Paths.Sent, m => m is ExecutePath);
         Assert.DoesNotContain(rig.Sent, m => m is ExecutePath);
-    }
-
-    /// <summary>A clear straight line is still allowed when the lattice planner merely gives up.</summary>
-    [Fact]
-    public void AClearStraightLineIsStillAllowedWhenTheLatticePlannerGivesUp()
-    {
-        var obb = ObbRoot();
-        if (obb is null) return;
-        using var rig = new Rig();
-        Assert.True(rig.M.LoadPlanner(obb));
-        var env = rig.M.Planner!.Env;
-        Assert.True(DriveToPoseActionClearance(env));
-
-        static bool DriveToPoseActionClearance(LatticeEnvironment env)
-        {
-            var path = StraightLinePlanner.Plan(new Pose3d(Mat3.Identity, new Vec3(0, 0, 0)),
-                                                new Pose3d(Mat3.Identity, new Vec3(300, 0, 0)), PathMotionProfile.Default);
-            return DriveToPoseAction.PathIsClear(env, path);
-        }
     }
 
     // ---------------------------------------------------------------- 13: the native lift presets

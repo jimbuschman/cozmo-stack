@@ -187,7 +187,7 @@ public sealed class RollBlockBehavior : ManipulationBehavior
     {
         CurrentPhase = Phase.RollingBlock;
         var id = TargetObjectId!.Value;
-        var helper = new DockHelper(M);
+        var helper = new DockHelper(M) { AttemptLimit = DockHelper.MaxRollAttempts };
         RunAction($"RollBlockHelper({id})", ct => helper.RunAsync(id, PreActionType.Rolling, () => new RollObjectAction(M, id), ct), r =>
         {
             foreach (var l in helper.Trace) Log("  " + l);

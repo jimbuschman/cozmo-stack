@@ -126,43 +126,145 @@ public sealed class MotionPrimitiveSet
 public readonly record struct LatticeState(int X, int Y, int Theta);
 
 /// <summary>
-/// The engine's <c>Anki::Planning::xythetaEnvironment</c>: the primitive set plus the obstacles the plan must
-/// avoid, as convex polygons in the plane. <c>AddObstacleWithExpansion(inner, expanded, cost)</c> registers a
-/// hard obstacle and a soft ring around it whose crossing is penalised rather than forbidden
-/// (<c>IsInCollision</c> / <c>IsInSoftCollision</c> / <c>GetCollisionPenalty</c>). The engine expands the
-/// obstacles by the robot's footprint (<c>ExpandCSpace</c>, the robot's bounding quad from
-/// <c>Robot::GetBoundingQuadXY</c> with padding) so that a point test on the robot's origin suffices; the same
-/// is done here with a radial expansion (<c>ConvexPolygon::RadialExpand</c>). Padding values: the import logs
-/// "robot padding %f, obstacle padding %f"; the values were not read, so <see cref="RobotRadiusMm"/> and
-/// <see cref="SoftPaddingMm"/> are INFERRED from the robot's 56 x 70 mm body.
+/// The engine's <c>Anki::Planning::xythetaEnvironment</c>: the primitive set plus the obstacles the plan
+/// must avoid.
+///
+/// <b>One obstacle list, expanded per heading.</b> The environment holds a vector of
+/// <c>FastPolygon</c> per theta bucket (this+0x44), and every accessor reads that same list:
+/// <c>IsInCollision(State)</c> 0x008515BC converts and tail-calls <c>IsInCollision(State_c)</c>
+/// 0x008515F8, which indexes it by the state's theta; <c>IsInSoftCollision</c> 0x00851708 and
+/// <c>GetCollisionPenalty</c> 0x008517B0 walk the same bucket, the latter returning the float at
+/// entry+0x44. (An earlier reading here had the hard and soft rings as separate sets. They are not:
+/// this+0x38, which <c>IsInCollision(State)</c> also reads, is the per-theta table of headings it
+/// passes on as the angle.)
+///
+/// <b>What the import puts in it.</b> <c>LatticePlannerImpl::ImportBlockworldObstaclesIfNeeded</c>
+/// 0x004FD4B8 logs its own numbers - "robot padding %f, obstacle padding %f, didBlocksChange %d" - and
+/// they are <see cref="RobotPaddingMm"/> 7 and <see cref="ObstaclePaddingMm"/> 6, or
+/// <see cref="TightRobotPaddingMm"/> 2 and <see cref="TightObstaclePaddingMm"/> 1 when the planner's
+/// tight flag is set (0x004FD4F6). Neither is a penalty: the penalty is the constant 0.1 the import
+/// passes to every obstacle (0x3DCCCCCD at 0x004FE0CE).
+///
+/// Each object's quad is radially expanded by the obstacle padding
+/// (<c>ConvexPolygon::RadialExpand</c> at 0x004FDF9E), the robot's own bounding quad is taken at each
+/// heading with the robot padding (<c>Robot::GetBoundingQuadXY(pose, padding)</c> at 0x004FE0A4), and
+/// the two are handed to <c>xythetaEnvironment::AddObstacleWithExpansion(obstacle, robot, theta,
+/// 0.1f)</c> 0x00855528, which calls <c>ExpandCSpace</c> and stores the result in that theta's bucket.
+/// So the stored polygon is the configuration-space obstacle for that heading, and a plain point test
+/// on the robot's origin is all the search ever does.
+///
+/// The robot's canonical footprint is the function-local static quad built in
+/// <c>Robot::GetBoundingQuadXY</c> at 0x00514DB0: x from -55.9 to 22.1, y from -27.1 to 27.1. The
+/// origin sits 22.1 mm behind the front and 55.9 mm ahead of the back, which is why a circle of any
+/// radius was never going to stand in for it.
 /// </summary>
 public sealed class LatticeEnvironment
 {
-    public const double RobotRadiusMm = 45.0;
-    public const double SoftPaddingMm = 20.0;
-    /// <summary>Extra cost (in mm-equivalents) for a primitive whose path crosses a soft ring (INFERRED).</summary>
-    public const double SoftPenalty = 100.0;
+    /// <summary>The robot bounding quad's front edge, 22.1 mm ahead of the origin (0x41B0CCCC).</summary>
+    public const double RobotFrontMm = 22.1;
+    /// <summary>Its back edge, 55.9 mm behind the origin (0xC25F999A).</summary>
+    public const double RobotBackMm = -55.9;
+    /// <summary>Half its width, 27.1 mm each side (0x41D8CCCD and 0xC1D8CCCD).</summary>
+    public const double RobotHalfWidthMm = 27.1;
 
-    private readonly List<(Vec2[] Hard, Vec2[] Soft, string Name)> _obstacles = new();
+    /// <summary>7 mm, the padding the import gives the robot's quad.</summary>
+    public const double RobotPaddingMm = 7.0;
+    /// <summary>6 mm, the radial expansion it gives each obstacle.</summary>
+    public const double ObstaclePaddingMm = 6.0;
+    /// <summary>2 mm, the robot padding in the planner's tight mode.</summary>
+    public const double TightRobotPaddingMm = 2.0;
+    /// <summary>1 mm, the obstacle padding in that mode.</summary>
+    public const double TightObstaclePaddingMm = 1.0;
+    /// <summary>0.1, the penalty the import gives every obstacle it adds.</summary>
+    public const double ObstaclePenalty = 0.1;
+
+    /// <summary>One obstacle: the polygon it was built from, and its C-space polygon per heading.</summary>
+    public sealed record Obstacle(Vec2[] Polygon, Vec2[][] ByTheta, double Penalty, string Name);
+
+    private readonly List<Obstacle> _obstacles = new();
 
     public LatticeEnvironment(MotionPrimitiveSet prims) => Primitives = prims;
 
     public MotionPrimitiveSet Primitives { get; }
     public int ObstacleCount => _obstacles.Count;
-    public IReadOnlyList<(Vec2[] Hard, Vec2[] Soft, string Name)> Obstacles => _obstacles;
+    public IReadOnlyList<Obstacle> Obstacles => _obstacles;
+
+    /// <summary>Whether to use the tight padding pair, as the planner's own flag selects it.</summary>
+    public bool TightPadding { get; set; }
+
+    public double RobotPadding => TightPadding ? TightRobotPaddingMm : RobotPaddingMm;
+    public double ObstaclePadding => TightPadding ? TightObstaclePaddingMm : ObstaclePaddingMm;
 
     public void ClearObstacles() => _obstacles.Clear();
 
-    /// <summary>Adds a convex obstacle already expanded for the robot; the soft ring is <paramref name="softPaddingMm"/> further out.</summary>
-    public void AddObstacleWithExpansion(Vec2[] hardPolygon, double softPaddingMm, string name = "")
-        => _obstacles.Add((hardPolygon, RadialExpand(hardPolygon, softPaddingMm), name));
+    /// <summary>
+    /// The robot's bounding quad at a heading, padded: <c>Robot::GetBoundingQuadXY(pose, padding)</c>
+    /// with the canonical quad above.
+    /// </summary>
+    public static Vec2[] RobotQuad(double headingRad, double paddingMm)
+    {
+        double f = RobotFrontMm + paddingMm, b = RobotBackMm - paddingMm, w = RobotHalfWidthMm + paddingMm;
+        var local = new[] { new Vec2(f, -w), new Vec2(f, w), new Vec2(b, w), new Vec2(b, -w) };
+        double c = Math.Cos(headingRad), sn = Math.Sin(headingRad);
+        return local.Select(v => new Vec2(v.X * c - v.Y * sn, v.X * sn + v.Y * c)).ToArray();
+    }
 
-    /// <summary>An axis-aligned-in-its-own-frame rectangle at a pose, expanded by the robot radius, as an obstacle.</summary>
+    /// <summary>
+    /// <c>xythetaEnvironment::ExpandCSpace(obstacle, robot)</c>: the set of robot origins that put the
+    /// robot in the obstacle, which is the Minkowski difference - the convex hull of every obstacle
+    /// vertex less every robot vertex.
+    /// </summary>
+    public static Vec2[] ExpandCSpace(Vec2[] obstacle, Vec2[] robot)
+    {
+        var pts = new List<Vec2>(obstacle.Length * robot.Length);
+        foreach (var o in obstacle)
+            foreach (var r in robot)
+                pts.Add(new Vec2(o.X - r.X, o.Y - r.Y));
+        return ConvexHull(pts);
+    }
+
+    /// <summary>Andrew's monotone chain, counter-clockwise.</summary>
+    public static Vec2[] ConvexHull(List<Vec2> pts)
+    {
+        var p = pts.OrderBy(v => v.X).ThenBy(v => v.Y).ToList();
+        if (p.Count < 3) return p.ToArray();
+        static double Cross(Vec2 o, Vec2 a, Vec2 b) => (a.X - o.X) * (b.Y - o.Y) - (a.Y - o.Y) * (b.X - o.X);
+        var hull = new List<Vec2>();
+        foreach (var v in p)
+        {
+            while (hull.Count >= 2 && Cross(hull[^2], hull[^1], v) <= 0) hull.RemoveAt(hull.Count - 1);
+            hull.Add(v);
+        }
+        int lower = hull.Count + 1;
+        for (int i = p.Count - 2; i >= 0; i--)
+        {
+            var v = p[i];
+            while (hull.Count >= lower && Cross(hull[^2], hull[^1], v) <= 0) hull.RemoveAt(hull.Count - 1);
+            hull.Add(v);
+        }
+        hull.RemoveAt(hull.Count - 1);
+        return hull.ToArray();
+    }
+
+    /// <summary>
+    /// Adds one obstacle: the polygon is radially expanded by the obstacle padding and then expanded
+    /// into configuration space once per heading, as the import does.
+    /// </summary>
+    public void AddObstacle(Vec2[] polygon, string name = "", double? penalty = null)
+    {
+        var padded = RadialExpand(polygon, ObstaclePadding);
+        var byTheta = new Vec2[Primitives.NumAngles][];
+        for (int t = 0; t < Primitives.NumAngles; t++)
+            byTheta[t] = ExpandCSpace(padded, RobotQuad(Primitives.Angles[t], RobotPadding));
+        _obstacles.Add(new Obstacle(padded, byTheta, penalty ?? ObstaclePenalty, name));
+    }
+
+    /// <summary>A rectangle at a pose, as an obstacle.</summary>
     public void AddRectangleObstacle(Pose3d pose, double lengthX, double widthY, string name = "")
     {
         var c = new[] { new Vec3(-lengthX / 2, -widthY / 2, 0), new Vec3(lengthX / 2, -widthY / 2, 0), new Vec3(lengthX / 2, widthY / 2, 0), new Vec3(-lengthX / 2, widthY / 2, 0) }
             .Select(p => { var w = pose.Apply(p); return new Vec2(w.X, w.Y); }).ToArray();
-        AddObstacleWithExpansion(RadialExpand(c, RobotRadiusMm), SoftPaddingMm, name);
+        AddObstacle(c, name);
     }
 
     /// <summary>
@@ -185,38 +287,45 @@ public sealed class LatticeEnvironment
         }
     }
 
-    public bool IsInCollision(double xMm, double yMm)
+    /// <summary>Whether the robot's origin at this point and heading is inside any obstacle.</summary>
+    public bool IsInCollision(double xMm, double yMm, int theta)
     {
         var p = new Vec2(xMm, yMm);
-        foreach (var (hard, _, _) in _obstacles) if (Inside(hard, p)) return true;
+        foreach (var o in _obstacles) if (Inside(o.ByTheta[theta], p)) return true;
         return false;
     }
 
-    public bool IsInSoftCollision(double xMm, double yMm)
+    /// <summary>The penalty of the first obstacle containing the point, or zero.</summary>
+    public double PenaltyAt(double xMm, double yMm, int theta)
     {
         var p = new Vec2(xMm, yMm);
-        foreach (var (_, soft, _) in _obstacles) if (Inside(soft, p)) return true;
-        return false;
+        foreach (var o in _obstacles) if (Inside(o.ByTheta[theta], p)) return o.Penalty;
+        return 0;
     }
 
-    /// <summary>The penalty for driving a primitive from a lattice state: null when it collides, else the soft cost.</summary>
+    /// <summary>
+    /// The penalty for driving a primitive from a lattice state: null when it collides, else the sum of
+    /// the penalties it picked up. Each intermediate pose is tested in its own heading's bucket, which
+    /// is what indexing the obstacle list by the state's theta amounts to.
+    /// </summary>
     public double? GetCollisionPenalty(LatticeState from, MotionPrimitive prim)
     {
         if (_obstacles.Count == 0) return 0;
         double res = Primitives.ResolutionMm;
         double x0 = from.X * res, y0 = from.Y * res;
-        bool soft = false;
-        // every fourth intermediate pose plus the last: the primitives are sampled every 0.5 mm
+        double penalty = 0;
         var inter = prim.Intermediate;
+        // every fourth intermediate pose plus the last: the primitives are sampled every 0.5 mm
         for (int i = 0; i < inter.Count; i += 4)
         {
-            var (x, y, _) = inter[i];
-            if (IsInCollision(x0 + x, y0 + y)) return null;
-            if (!soft && IsInSoftCollision(x0 + x, y0 + y)) soft = true;
+            var (x, y, th) = inter[i];
+            int t = Primitives.ThetaIndex(th);
+            if (IsInCollision(x0 + x, y0 + y, t)) return null;
+            penalty += PenaltyAt(x0 + x, y0 + y, t);
         }
         var last = inter[^1];
-        if (IsInCollision(x0 + last.X, y0 + last.Y)) return null;
-        return soft ? SoftPenalty : 0;
+        if (IsInCollision(x0 + last.X, y0 + last.Y, Primitives.ThetaIndex(last.Theta))) return null;
+        return penalty;
     }
 
     /// <summary>The successors of a state: every primitive from its heading that does not collide.</summary>
@@ -299,7 +408,7 @@ public sealed class LatticePlanner
     public LatticePlanner(LatticeEnvironment env) => Env = env;
     public LatticeEnvironment Env { get; }
 
-    public bool StartIsValid(LatticeState s) { var p = Env.ToPose(s); return !Env.IsInCollision(p.Translation.X, p.Translation.Y); }
+    public bool StartIsValid(LatticeState s) { var p = Env.ToPose(s); return !Env.IsInCollision(p.Translation.X, p.Translation.Y, s.Theta); }
     public bool GoalsAreValid(IEnumerable<LatticeState> goals) => goals.Any(StartIsValid);
 
     public LatticePlan? ComputePath(LatticeState start, IReadOnlyList<LatticeState> goals)

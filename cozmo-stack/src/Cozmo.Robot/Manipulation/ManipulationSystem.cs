@@ -72,6 +72,13 @@ public sealed class ManipulationSystem : IDisposable
     /// <summary>Replaceable turn, for tests without a robot (the locator's own override is used when set).</summary>
     public Func<uint, double, CancellationToken, Task<bool>>? TurnOverride { get; set; }
 
+    /// <summary>
+    /// How an action waits out a real interval - the look-around pauses of
+    /// <see cref="SearchForNearbyObjectAction"/>, for one. Replaceable so a rig can run a search without
+    /// sitting out its three seconds.
+    /// </summary>
+    public Func<TimeSpan, CancellationToken, Task> Wait { get; set; } = (t, c) => Task.Delay(t, c);
+
     public Pose3d? RobotPose() => Vision.History.Latest?.RobotPose;
 
     /// <summary><c>TurnTowardsObjectAction</c>: the located object's pose through <see cref="TurnTowardsPose"/>.</summary>
@@ -172,15 +179,25 @@ public sealed class DockHelper
     /// the attempt count at +0x108 and takes the retry branch only while it is <c>&lt;= 1</c>, and the
     /// log beside it is built with a literal 2 (<c>movs r6, #2</c> at 0x005B814A), so it reads
     /// "attempt 1 / 2" and "attempt 2 / 2". This stack had three.
-    ///
-    /// The roll helper does not hard-code its limit - <c>StartRollingAction</c> 0x005B9F62 compares the
-    /// count against a value carried in its <c>RollBlockParameters</c> - so a roll or a charger dock may
-    /// well differ. Those are recorded separately rather than assumed to be this.
     /// </summary>
     public const int MaxAttempts = 2;
+
+    /// <summary>
+    /// Three, for a roll. <c>RollBlockHelper::StartRollingAction</c> begins by reading its own attempt
+    /// count at helper+0x124 and comparing it with the literal 3 (<c>cmp r0, #3</c> at 0x005B9F0E);
+    /// at or above it the helper calls <c>MarkTargetAsFailedToRoll</c> and stops, and otherwise it
+    /// increments the count and starts another <c>DriveToRollObjectAction</c>. The limit is not carried
+    /// in <c>RollBlockParameters</c> after all - the ctor at 0x005B98D4 copies only the callback, two
+    /// words at +0x110 and a <c>Radians</c> at +0x118, and zeroes the counter at +0x124.
+    /// </summary>
+    public const int MaxRollAttempts = 3;
+
     private readonly ManipulationSystem _m;
 
     public DockHelper(ManipulationSystem m) => _m = m;
+
+    /// <summary>How many attempts this helper makes. The engine's limit is per helper, not shared.</summary>
+    public int AttemptLimit { get; init; } = MaxAttempts;
 
     public IReadOnlyList<string> Trace => _trace;
     private readonly List<string> _trace = new();
@@ -202,7 +219,7 @@ public sealed class DockHelper
     {
         ActionResult last = ActionResult.Abort;
         _excluded.Clear();
-        for (Attempts = 1; Attempts <= MaxAttempts; Attempts++)
+        for (Attempts = 1; Attempts <= AttemptLimit; Attempts++)
         {
             if (cancel.IsCancellationRequested) return ActionResult.CancelledWhileRunning;
             var drive = new DriveToObjectAction(_m, objectId, type) { ExcludePoses = _excluded.ToList() };
@@ -215,6 +232,7 @@ public sealed class DockHelper
                 _trace.Add($"drive to pre-action pose: {d}");
                 if (d is ActionResult.BadObject or ActionResult.NoPreActionPoses) return d;
                 last = d;
+                await SearchAsync(objectId, cancel);
                 continue;
             }
             var action = makeAction();
@@ -224,9 +242,28 @@ public sealed class DockHelper
             if (r == ActionResult.Success) return r;
             last = r;
             if (r is ActionResult.BadObject or ActionResult.CancelledWhileRunning) return r;
-            _trace.Add($"Failed dock attempt {Attempts} / {MaxAttempts}");
+            _trace.Add($"Failed dock attempt {Attempts} / {AttemptLimit}");
+            await SearchAsync(objectId, cancel);
         }
-        _trace.Add($"Failing helper because the action was already attempted {MaxAttempts} times");
+        _trace.Add($"Failing helper because the action was already attempted {AttemptLimit} times");
         return last;
     }
+
+    /// <summary>
+    /// The search a failed stage delegates to. <c>DriveToHelper::RespondToDriveResult</c> at 0x005B5D30
+    /// and <c>PickupBlockHelper::RespondToPickupResult</c> at 0x005B83B6 both build a
+    /// <c>SearchForBlockHelper</c> when their stage has failed and the target is still in the world;
+    /// 0x005B5D3E skips it when the lookup comes back empty.
+    /// </summary>
+    private async Task SearchAsync(uint objectId, CancellationToken cancel)
+    {
+        if (!SearchOnFailure || cancel.IsCancellationRequested) return;
+        if (_m.World.GetLocatedObjectById(objectId) is null) return;
+        var search = new SearchForBlockHelper(_m, objectId) { Wait = _m.Wait };
+        await search.RunAsync(cancel);
+        _trace.AddRange(search.Trace);
+    }
+
+    /// <summary>Whether a failed stage looks around for the target before trying again.</summary>
+    public bool SearchOnFailure { get; init; } = true;
 }

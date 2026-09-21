@@ -48,6 +48,8 @@ internal sealed class Rig : IDisposable
         Deliver(new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), _seq++));
         Vision = new VisionSystem(Robot, Cal) { Enabled = false };
         M = new ManipulationSystem(Robot, Vision);
+        // the look-around waits are real seconds on a robot; a rig takes them instantly
+        M.Wait = (t, c) => Task.CompletedTask;
         M.Log += Log.Add;
         Vision.World.Log += Log.Add;
         M.TurnOverride = (id, max, ct) =>

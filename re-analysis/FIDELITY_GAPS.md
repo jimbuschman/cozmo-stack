@@ -7,10 +7,10 @@ Manifest of **203 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 116 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 120 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 45 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 4 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 43 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 2 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -35,8 +35,8 @@ remains after both, and they do not go away by working harder on this repository
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | 0 | 0 | 0 | no | yes |
 | M11-vision — Markers, camera geometry and BlockWorld | 16 | 4 | 0 | 1 | 0 | no | yes |
-| M12-manipulation — Docking, carrying and pre-action poses | 16 | 1 | 1 | 0 | 0 | no | no |
-| M13-navigation — Planning, charger and block configurations | 12 | 1 | 1 | 0 | 0 | no | no |
+| M12-manipulation — Docking, carrying and pre-action poses | 16 | 0 | 0 | 0 | 0 | yes | yes |
+| M13-navigation — Planning, charger and block configurations | 12 | 0 | 0 | 0 | 0 | yes | yes |
 | M14-faces — Face and pet pipeline | 7 | 5 | 0 | 1 | 0 | no | yes |
 | M15-freeplay — Needs, activities and freeplay | 12 | 9 | 0 | 0 | 0 | no | yes |
 | tools — Conformance CLI and offline tools | 4 | 0 | 0 | 0 | 0 | yes | yes |
@@ -306,28 +306,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: the engine NV storage client and the CLAD definition
 * outstanding: the request Length field and second byte, and the chunking rule
 
-### M12-manipulation — Docking, carrying and pre-action poses
-
-**M12-016 — The retry limits the roll and charger helpers are configured with** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs`
-* effect: a roll or a charger dock gives up sooner or later than the app
-* rests on: the pickup limit of 2 stands in for them
-* best authority: RollBlockHelper::StartRollingAction 0x005B9F62 compares its attempt count against a register loaded from the helper rather than a literal, and the helper takes that from its RollBlockParameters (copied to helper+0x104 by the constructor, as PickupBlockHelper does at 0x005B7ACA). The behaviours that build those parameters have not been read
-* evidence: PickupBlockHelper hard-codes 2 and is settled (M12-009); the parameter struct is 16 bytes with a u16 at +0xC that the constructor copies to +0x104
-* outstanding: what each behaviour puts in the parameters it hands the roll and charger helpers
-
-### M13-navigation — Planning, charger and block configurations
-
-**M13-003 — Obstacle padding and the soft-ring penalty** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs`
-* effect: paths hug or avoid obstacles differently, and some plans fail that would succeed
-* rests on: a padding radius and penalty weight chosen here
-* best authority: the mechanism is settled. AddObstacleAllThetas(quad, penalty) 0x008549E0 builds a FastPolygon from the quad and copies it once per theta bucket, storing the penalty argument at entry+0x44 of each 72-byte entry (vstr s16, [sp, #0x5c] at 0x00854A70, the entry being built at sp+0x18). GetCollisionPenalty 0x008517B0 walks the bucket for the state theta and returns the +0x44 of the first polygon containing the point. So the penalty is per obstacle and supplied by whoever adds it, and the hard and soft rings are separate obstacle sets (IsInCollision 0x008515BC against IsInSoftCollision 0x00851708)
-* evidence: LatticePlannerImpl::ImportBlockworldObstaclesIfNeeded 0x004FD4B8 carries the pair it uses and logs it: 7.0 and 6.0, or 2.0 and 1.0 when its bool argument is set (0x004FD4EE); neither AddObstacleAllThetas overload has a direct caller, so the import expands the obstacles itself rather than going through them
-* outstanding: which of the two floats is padding and which is penalty, and how the import turns an object bounding box into the hard and soft polygons - the expansion is inlined into ImportBlockworldObstaclesIfNeeded rather than going through AddObstacleAllThetas
-
 ### M14-faces — Face and pet pipeline
 
 **M14-002 — Frame counts waited by VisuallyVerifyFaceAction and TurnTowardsFaceAction** (live path)
@@ -475,27 +453,6 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: the shipped bank lists all nine Play actions, and the ordinary-event walk already shows the shape the music path needs. Singing is unaffected, which is why this is off the live path: each of the three tempo events holds exactly one Play action
 * evidence: Play__Codelab__Music_Tiny_Orchestra_Init: 9 Play actions and 9 of type 0x1901; Play__Robot_VO__Cozmo_Singing_80bpm, _100bpm and _120bpm: one Play action each; nothing in cozmo-stack posts a Codelab music event
 * outstanding: the music resolver has to carry every Play action rather than the first; nothing is left to read
-
-### M12-manipulation — Docking, carrying and pre-action poses
-
-**M12-010 — The search-for-block pattern is recovered and not built** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs`
-* effect: the robot stops where the app would look around for the cube
-* rests on: nothing: this stack gives up instead of searching
-* best authority: SearchForBlockHelper::SearchForBlock 0x005BAF24 is a three-state machine, and all three states are read. State 0 (0x005BAF9A): SearchForNearbyObjectAction(target, -0.0872665 rad = -5 degrees of head angle, 100.0, -20.0), followed by TurnTowardsObjectAction(target, Radians(pi)) when the target id is set. State 1 (0x005BB1AA): DriveStraightAction(-20 mm at 20 mm/s), TurnInPlaceAction(+0.785398 = +45 degrees) twice, another SearchForNearbyObjectAction on the same three numbers, then the drive again. State 2 (0x005BB066) is the mirror: the same drive with TurnInPlaceAction(-0.785398 = -45 degrees) twice. SearchForNearbyObjectAction 0x005469C0 defaults its search angle to 0.261799..0.349066 rad (15..20 degrees) and its wait to 0.8..1.2 s, with SetSearchAngle and SetSearchWaitTime as the setters
-* evidence: SearchForBlockHelper::ShouldBeAbleToFindTarget 0x005BB73C decides whether searching is worth it: ObservableObject::IsVisibleFromWithReason with 0.785398 rad, checking the reason against 7; every action the pattern needs already exists in this stack except the nearby-object search
-* outstanding: the three states have to be built, and SearchForNearbyObjectAction with them; nothing is left to read for the pattern itself
-
-### M13-navigation — Planning, charger and block configurations
-
-**M13-005 — A lattice-planner failure drives the straight line anyway when the environment reports it clear** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/DriveActions.cs:71`
-* effect: the robot drives where the app would stop and report that it could not plan a path
-* rests on: a labelled fallback of this stack
-* best authority: the engine returns a planning failure and the action fails; it does not substitute a path of its own
-* outstanding: the fallback has to go, which means the planner has to be good enough without it - the padding and penalty of M13-003 are the same work
 
 ## What remains after both: blocked externally, or needing hardware
 

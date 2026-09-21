@@ -61,21 +61,11 @@ public sealed class DriveToPoseAction
             }
             else
             {
-                // A configured lattice planner saying there is no route is the one moment obstacle planning
-                // matters, so this must not become "drive at the goal anyway". The straight line is used only
-                // when the same environment says it is clear end to end; otherwise the action fails the way
-                // the engine's planner failure does.
-                var straight = StraightLinePlanner.Plan(start.Value, goal, Profile);
-                if (PathIsClear(planner.Env, straight))
-                {
-                    _trace.Add("lattice planner found no plan; the straight line is collision-free in the same environment (LOCAL_POLICY)");
-                    path = straight;
-                }
-                else
-                {
-                    _trace.Add($"DriveToPoseAction.Init.PlanningFailed: no lattice plan and the straight line crosses an obstacle ({planner.Env.ObstacleCount} obstacle(s)); no path sent");
-                    return ActionResult.PathPlanningFailedAbort;
-                }
+                // The engine returns a planning failure and the action fails; it does not substitute a
+                // path of its own. This used to drive the straight line whenever the same environment
+                // reported it clear, which is a path the engine would never have sent.
+                _trace.Add($"DriveToPoseAction.Init.PlanningFailed: no lattice plan ({planner.Env.ObstacleCount} obstacle(s)); no path sent");
+                return ActionResult.PathPlanningFailedAbort;
             }
         }
         else path = StraightLinePlanner.Plan(start.Value, goal, Profile);
@@ -108,45 +98,6 @@ public sealed class DriveToPoseAction
         return ActionResult.DidNotReachPreActionPose;
     }
 
-    /// <summary>
-    /// Whether every point of a planned path stays out of the lattice environment's obstacles. Sampled every
-    /// <see cref="ClearanceStepMm"/> along lines and arcs; point turns do not move the robot.
-    /// </summary>
-    public const double ClearanceStepMm = 10.0;
-
-    internal static bool PathIsClear(LatticeEnvironment env, IReadOnlyList<PathSegment> path)
-    {
-        foreach (var s in path)
-        {
-            switch (s)
-            {
-                case PathSegment.Line l:
-                {
-                    double dx = l.ToX - l.FromX, dy = l.ToY - l.FromY;
-                    double len = Math.Sqrt(dx * dx + dy * dy);
-                    int steps = Math.Max(1, (int)Math.Ceiling(len / ClearanceStepMm));
-                    for (int i = 0; i <= steps; i++)
-                    {
-                        double t = (double)i / steps;
-                        if (env.IsInCollision(l.FromX + dx * t, l.FromY + dy * t)) return false;
-                    }
-                    break;
-                }
-                case PathSegment.Arc a:
-                {
-                    double len = Math.Abs(a.SweepRad) * a.RadiusMm;
-                    int steps = Math.Max(1, (int)Math.Ceiling(len / ClearanceStepMm));
-                    for (int i = 0; i <= steps; i++)
-                    {
-                        double ang = a.StartAngleRad + a.SweepRad * i / steps;
-                        if (env.IsInCollision(a.CenterX + Math.Cos(ang) * a.RadiusMm, a.CenterY + Math.Sin(ang) * a.RadiusMm)) return false;
-                    }
-                    break;
-                }
-            }
-        }
-        return true;
-    }
 }
 
 /// <summary>

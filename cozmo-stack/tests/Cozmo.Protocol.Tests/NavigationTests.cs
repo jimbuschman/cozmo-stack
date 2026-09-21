@@ -135,15 +135,18 @@ public class NavigationTests
         var env = new LatticeEnvironment(prims);
         env.AddRectangleObstacle(At(150, 0, 0), CubeGeometry.CubeSizeMm, CubeGeometry.CubeSizeMm, "cube");
         Assert.Equal(1, env.ObstacleCount);
-        Assert.True(env.IsInCollision(150, 0));
-        Assert.True(env.IsInCollision(150, 60));                                   // the robot's radius is added
-        Assert.False(env.IsInCollision(150, 90));
-        Assert.True(env.IsInSoftCollision(150, 75));
+        // the obstacle is expanded by the obstacle padding and then into configuration space with the
+        // robot's own quad at that heading, so the point tested is the robot's origin
+        Assert.True(env.IsInCollision(150, 0, 0));
+        Assert.True(env.IsInCollision(150, 60, 0));
+        Assert.False(env.IsInCollision(150, 90, 0));
+        Assert.Equal(LatticeEnvironment.ObstaclePenalty, env.PenaltyAt(150, 0, 0), 6);
+        Assert.Equal(0.0, env.PenaltyAt(150, 90, 0), 6);
         var planner = new LatticePlanner(env);
         var res = planner.PlanTo(At(0, 0, 0), new[] { At(300, 0, 0) }, PathMotionProfile.Default);
         Assert.NotNull(res);
         var (plan, path, _) = res!.Value;
-        foreach (var s in plan.States()) Assert.False(env.IsInCollision(s.X * 10, s.Y * 10), $"state {s} collides");
+        foreach (var s in plan.States()) Assert.False(env.IsInCollision(s.X * 10, s.Y * 10, s.Theta), $"state {s} collides");
         Assert.Contains(plan.Actions, a => a.EndTheta != a.StartTheta);            // it had to turn
         Assert.True(path.Count >= 3);
         // the goal itself inside an obstacle is rejected

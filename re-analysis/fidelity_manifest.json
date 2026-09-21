@@ -127,15 +127,15 @@
       "id": "M12-manipulation",
       "name": "Docking, carrying and pre-action poses",
       "milestone": "M12",
-      "source_investigation_exhausted": false,
-      "implementation_fidelity_complete": false
+      "source_investigation_exhausted": true,
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M13-navigation",
       "name": "Planning, charger and block configurations",
       "milestone": "M13",
-      "source_investigation_exhausted": false,
-      "implementation_fidelity_complete": false
+      "source_investigation_exhausted": true,
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M14-faces",
@@ -2589,20 +2589,22 @@
     },
     {
       "subsystem": "M12-manipulation",
-      "title": "The search-for-block pattern is recovered and not built",
-      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs",
-      "status": "IMPLEMENTATION_GAP",
-      "effect": "the robot stops where the app would look around for the cube",
-      "provenance": "nothing: this stack gives up instead of searching",
-      "authority": "SearchForBlockHelper::SearchForBlock 0x005BAF24 is a three-state machine, and all three states are read. State 0 (0x005BAF9A): SearchForNearbyObjectAction(target, -0.0872665 rad = -5 degrees of head angle, 100.0, -20.0), followed by TurnTowardsObjectAction(target, Radians(pi)) when the target id is set. State 1 (0x005BB1AA): DriveStraightAction(-20 mm at 20 mm/s), TurnInPlaceAction(+0.785398 = +45 degrees) twice, another SearchForNearbyObjectAction on the same three numbers, then the drive again. State 2 (0x005BB066) is the mirror: the same drive with TurnInPlaceAction(-0.785398 = -45 degrees) twice. SearchForNearbyObjectAction 0x005469C0 defaults its search angle to 0.261799..0.349066 rad (15..20 degrees) and its wait to 0.8..1.2 s, with SetSearchAngle and SetSearchWaitTime as the setters",
+      "title": "The search-for-block pattern, built",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/SearchActions.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
       "evidence": [
-        "SearchForBlockHelper::ShouldBeAbleToFindTarget 0x005BB73C decides whether searching is worth it: ObservableObject::IsVisibleFromWithReason with 0.785398 rad, checking the reason against 7",
-        "every action the pattern needs already exists in this stack except the nearby-object search"
+        "SearchForNearbyObjectAction's constructor 0x005469C0 writes the defaults 0.8/1.2 s for the wait and 0.261799/0.349066 rad for the angle, and stores its three float arguments as distance (+0x14C), speed (+0x150) and head angle (+0x154)",
+        "Init 0x00546C14 draws three waits and two angles plus a coin against 0.5 (0x00546CCE) and appends: WaitAction(w1); a CompoundActionParallel of DriveStraightAction(distance, speed) and MoveHeadToAngleAction(headAngle, tolerance 0.0349066); WaitAction(w1) again - the same draw; TurnInPlaceAction(sign*a1) with tolerance 0.0698132; WaitAction(w2); TurnInPlaceAction(-sign*(a1+a2)); WaitAction(w3)",
+        "the speed is compared with 100 and the default-speed DriveStraightAction constructor used when it matches (0x00546DE8), which is why 100 is the value the callers pass",
+        "SearchForBlockHelper::SearchForBlock 0x005BAF24 dispatches on the counter at +0x10C: state 0 (0x005BAF9A) is SearchForNearbyObjectAction(target, -20, 100, -0.0872665) then TurnTowardsObjectAction(target, Radians(pi)); state 1 (0x005BB1AA) is DriveStraightAction(-20, 20), two TurnInPlaceAction(+0.785398), the same nearby search, then the drive again; state 2 (0x005BB066) is the mirror with -0.785398",
+        "the search stops before it starts when the target id is set and BlockWorld::GetLocatedObjectByIdHelper returns nothing (0x005BAF3E through 0x005BB05E, which clears the delegate at helper+0x1C and returns)",
+        "SearchFinishedWithoutInterruption 0x005BB478 carries on only when the target is there with the byte at object+0x24 equal to 1, which is PoseState::Known",
+        "DriveToHelper::RespondToDriveResult 0x005B5D30 and PickupBlockHelper::RespondToPickupResult 0x005B83B6 are the two places that delegate to it, both after a failed stage and both only while the target is still in the world"
       ],
-      "unresolved": "the three states have to be built, and SearchForNearbyObjectAction with them; nothing is left to read for the pattern itself",
-      "hardware_required": false,
+      "prior": "nothing: this stack gave up where the app looks around for the cube",
       "live_path": true,
-      "test": null,
+      "test": "SearchForBlockTests",
       "id": "M12-010"
     },
     {
@@ -2683,20 +2685,20 @@
     },
     {
       "subsystem": "M12-manipulation",
-      "title": "The retry limits the roll and charger helpers are configured with",
+      "title": "A roll gets three attempts; the mount gets one",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs",
-      "status": "RECOVERABLE_GAP",
-      "effect": "a roll or a charger dock gives up sooner or later than the app",
-      "provenance": "the pickup limit of 2 stands in for them",
-      "authority": "RollBlockHelper::StartRollingAction 0x005B9F62 compares its attempt count against a register loaded from the helper rather than a literal, and the helper takes that from its RollBlockParameters (copied to helper+0x104 by the constructor, as PickupBlockHelper does at 0x005B7ACA). The behaviours that build those parameters have not been read",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
       "evidence": [
-        "PickupBlockHelper hard-codes 2 and is settled (M12-009)",
-        "the parameter struct is 16 bytes with a u16 at +0xC that the constructor copies to +0x104"
+        "RollBlockHelper::StartRollingAction 0x005B9EF8 opens by reading its own attempt count at helper+0x124 and comparing it with the literal 3 (cmp r0, #3 at 0x005B9F0E); at or above it the helper calls MarkTargetAsFailedToRoll and stops, otherwise it increments the count and starts another DriveToRollObjectAction",
+        "the limit is not carried in RollBlockParameters: the RollBlockHelper constructor 0x005B98D4 copies only the callback (+0xF8), two words at +0x110, a Radians at +0x118 and a flag at +0x121, and zeroes the counter at +0x124",
+        "so the earlier reading, that the count was compared against a register loaded from the parameters, was of the DriveToRollObjectAction setup a few instructions further on, not of the comparison",
+        "PickupBlockHelper keeps its own 2 (M12-009), so the limit is per helper rather than shared",
+        "there is no charger helper in the build - the helpers are PickupBlock, PlaceBlock, PlaceRelObject and RollBlock - and the charger mount's own retry behaviour is settled in M13-008: one attempt, then a retryable result"
       ],
-      "unresolved": "what each behaviour puts in the parameters it hands the roll and charger helpers",
-      "hardware_required": false,
+      "prior": "the pickup limit of 2 stood in for the roll as well",
       "live_path": true,
-      "test": null,
+      "test": "PickupVerifyTests.ARollGetsThreeAttempts",
       "id": "M12-016"
     },
     {
@@ -2728,20 +2730,21 @@
     },
     {
       "subsystem": "M13-navigation",
-      "title": "Obstacle padding and the soft-ring penalty",
+      "title": "Obstacle expansion: two paddings, a constant penalty, and one C-space polygon per heading",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs",
-      "status": "RECOVERABLE_GAP",
-      "effect": "paths hug or avoid obstacles differently, and some plans fail that would succeed",
-      "provenance": "a padding radius and penalty weight chosen here",
-      "authority": "the mechanism is settled. AddObstacleAllThetas(quad, penalty) 0x008549E0 builds a FastPolygon from the quad and copies it once per theta bucket, storing the penalty argument at entry+0x44 of each 72-byte entry (vstr s16, [sp, #0x5c] at 0x00854A70, the entry being built at sp+0x18). GetCollisionPenalty 0x008517B0 walks the bucket for the state theta and returns the +0x44 of the first polygon containing the point. So the penalty is per obstacle and supplied by whoever adds it, and the hard and soft rings are separate obstacle sets (IsInCollision 0x008515BC against IsInSoftCollision 0x00851708)",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
       "evidence": [
-        "LatticePlannerImpl::ImportBlockworldObstaclesIfNeeded 0x004FD4B8 carries the pair it uses and logs it: 7.0 and 6.0, or 2.0 and 1.0 when its bool argument is set (0x004FD4EE)",
-        "neither AddObstacleAllThetas overload has a direct caller, so the import expands the obstacles itself rather than going through them"
+        "LatticePlannerImpl::ImportBlockworldObstaclesIfNeeded 0x004FD4B8 names its own two floats in the message it logs them with: \"robot padding %f, obstacle padding %f , didBlocksChange %d\" at 0x004FE3CE. They are 7.0 and 6.0, or 2.0 and 1.0 when the planner's flag at impl+0xA1 is set (0x004FD4F6)",
+        "neither is a penalty: the penalty is the constant 0.1 (0x3DCCCCCD at 0x004FE0CE) passed to every obstacle the import adds",
+        "each obstacle polygon is radially expanded by the obstacle padding: ConvexPolygon::RadialExpand at 0x004FDF9E",
+        "the robot's quad at each heading is Robot::GetBoundingQuadXY(pose, robotPadding) at 0x004FE0A4, and the canonical quad is the function-local static built at 0x00514DB0: x from -55.9 to 22.1, y from -27.1 to 27.1",
+        "the two go to xythetaEnvironment::AddObstacleWithExpansion(obstacle, robot, theta, 0.1f) 0x00855528, which calls ExpandCSpace and stores the result in that theta's bucket with the penalty at entry+0x44",
+        "there is one obstacle list, not two: IsInCollision(State) 0x008515BC tail-calls IsInCollision(State_c) 0x008515F8, which reads env+0x44 exactly as IsInSoftCollision 0x00851708 and GetCollisionPenalty 0x008517B0 do. The env+0x38 that IsInCollision(State) also reads is the per-theta table of headings it passes on as the angle"
       ],
-      "unresolved": "which of the two floats is padding and which is penalty, and how the import turns an object bounding box into the hard and soft polygons - the expansion is inlined into ImportBlockworldObstaclesIfNeeded rather than going through AddObstacleAllThetas",
-      "hardware_required": false,
+      "prior": "a 45 mm robot radius, a 20 mm soft ring and a penalty of 100, all chosen here, with the obstacles expanded once rather than per heading; the record also had the hard and soft rings as separate obstacle sets",
       "live_path": true,
-      "test": null,
+      "test": "NavigationTests.ThePlannerRoutesAroundACubeInTheWay",
       "id": "M13-003"
     },
     {
@@ -2760,19 +2763,20 @@
       "id": "M13-004"
     },
     {
-      "id": "M13-005",
       "subsystem": "M13-navigation",
-      "title": "A lattice-planner failure drives the straight line anyway when the environment reports it clear",
-      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DriveActions.cs:71",
-      "effect": "the robot drives where the app would stop and report that it could not plan a path",
-      "provenance": "a labelled fallback of this stack",
-      "authority": "the engine returns a planning failure and the action fails; it does not substitute a path of its own",
-      "evidence": [],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "the fallback has to go, which means the planner has to be good enough without it - the padding and penalty of M13-003 are the same work",
-      "hardware_required": false,
+      "title": "A lattice-planner failure sends no path",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DriveActions.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "the engine returns a planning failure and the action fails; nothing in LatticePlannerImpl substitutes a path of its own",
+        "the fallback that drove the straight line when the same environment reported it clear is gone",
+        "it was standing in for a planner that expanded obstacles by a guessed radius; with M13-003 read, the planner works on the engine's own geometry"
+      ],
+      "prior": "a labelled fallback of this stack: the straight line was driven whenever the lattice planner gave up and the line was clear",
       "live_path": true,
-      "test": "NavigationTests"
+      "test": "CorrectionTests.APlannerFailureSendsNoPathEvenWhenTheStraightLineIsClear",
+      "id": "M13-005"
     },
     {
       "subsystem": "M13-navigation",
