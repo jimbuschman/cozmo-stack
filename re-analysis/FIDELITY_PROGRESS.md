@@ -6,30 +6,30 @@ Counts come from `re-analysis/fidelity_manifest.json`; the manifest and the comm
 
 | status | records |
 | --- | ---: |
-| EXACT_SOURCE | 74 |
+| EXACT_SOURCE | 75 |
 | EQUIVALENT_IMPLEMENTATION | 16 |
-| RECOVERABLE_GAP | 75 |
+| RECOVERABLE_GAP | 74 |
 | COMPATIBILITY_POLICY | 19 |
 | HARDWARE_ONLY | 3 |
 | BLOCKED_EXTERNAL | 6 |
 | **total** | **193** |
 
-Remaining RECOVERABLE_GAP: **75** (all on a live execution path). M9 holds 5 of them.
+Remaining RECOVERABLE_GAP: **74** (all on a live execution path). M9 holds 4 of them.
 
 ## Current M9 item
 
-M9-010, note release: what ends a held note, and when.
+M6-006 and M6-007: an event Play target is flattened to every Sound beneath it, and the first
+alternative that decodes is played every time. Both are on the singing path: they are what turns
+the get-in phrase into one fixed syllable.
 
 ## M9 items resolved since the previous commit
 
-* **M9-006** modulator objects (types 21 and 22) are read; all eleven consume exactly.
-* **M9-007** the note-off envelope is applied. Its whole authority over the level is 1 dB, and at the
-  shipped sustain level it moves a note by 0.095 dB. It is not what makes notes sustain without release.
-* **M9-008** the vibrato LFO is applied, with its depth driven by the game parameter the behaviour posts.
-* **M9-009** modulator bindings are applied through their own curves; the accumulation question does not
-  arise, because neither target node sets the property its modulator drives.
-* **M9-012** MIDI note tracking is off everywhere, from the node bit vectors rather than from the absence
-  of a root note.
+* **M9-010** a sung note sounds for as long as it is held. Every sustain recording is a 4-to-7-second
+  vowel that loops until stopped, and every note in every song is shorter than the shortest of them;
+  playing a whole recording per note ran the sum 13 dB over full scale. It now peaks 0.6 dB over, which
+  is where a mix feeding a limiter with a -1 dB threshold belongs.
+
+Resolved earlier in this pass: M9-006, M9-007, M9-008, M9-009, M9-012.
 
 ## Blocked M9 items
 

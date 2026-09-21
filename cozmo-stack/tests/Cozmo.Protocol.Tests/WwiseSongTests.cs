@@ -36,16 +36,84 @@ public class WwiseSongTests
 
     // ------------------------------------------------------------------ pure functions
 
-    /// <summary>The loop rule: once, N times, or until released and the current iteration completes.</summary>
+    /// <summary>
+    /// The loop rule: once, N times, or — for the Loop = 0 the whole note-on layer carries — for exactly as
+    /// long as the note is held. The 5.79-second average recording under a 187-millisecond note is why
+    /// this matters; see <see cref="WwiseSongRenderer.LoopedLength"/>. The last three rows are the ones
+    /// that changed: before the M9 fidelity pass they expected a whole iteration of the recording.
+    /// </summary>
     [Theory]
     [InlineData(null, 500.0, 2000.0, 500.0)]      // no Loop property: plays once, however long the note
     [InlineData(1u, 500.0, 2000.0, 500.0)]
     [InlineData(3u, 500.0, 100.0, 1500.0)]        // a finite count plays out
-    [InlineData(0u, 500.0, 1200.0, 1500.0)]       // held 1200 ms: the third iteration is under way at release and finishes
+    [InlineData(0u, 5790.0, 187.5, 187.5)]        // the shipped case: a 5.79 s vowel sounds for the note
+    [InlineData(0u, 500.0, 1200.0, 1200.0)]       // a note longer than the recording sustains by looping
     [InlineData(0u, 500.0, 1000.0, 1000.0)]       // released exactly at an iteration boundary
-    [InlineData(0u, 500.0, 0.0, 500.0)]           // a zero-length hold still sounds once
-    public void ALoopingSoundFinishesTheIterationPlayingWhenTheNoteIsReleased(uint? loop, double sampleMs, double heldMs, double expected) =>
+    [InlineData(0u, 500.0, 0.0, 0.0)]             // a zero-length hold sounds for no time at all
+    public void ALoopingSoundSoundsForAsLongAsTheNoteIsHeld(uint? loop, double sampleMs, double heldMs, double expected) =>
         Assert.Equal(expected, WwiseSongRenderer.LoopedLength(loop, sampleMs, heldMs), 6);
+
+    /// <summary>
+    /// The shape of the shipped sampler, which is what makes the loop rule above the one it has to be:
+    /// every recording under the note-on layer is a sustained vowel of several seconds that loops until
+    /// stopped, every recording under the note-off layer is about half a second and does not loop, and the
+    /// notes in the songs are a fraction of a second. Read from the bank and the media headers, so a
+    /// change to any of the three shows up here rather than only in how a rendered song sounds.
+    /// </summary>
+    [Fact]
+    public void TheSustainRecordingsAreSecondsLongAndLoop_TheReleaseRecordingsAreShortAndDoNot()
+    {
+        if (Library.Value is not { } lib) return;
+
+        (int Count, double Min, double Max, int Looping) Layer(uint id)
+        {
+            int count = 0, looping = 0; double min = double.MaxValue, max = 0;
+            void Walk(uint node)
+            {
+                if (lib.Node(node) is not { } n) return;
+                if (n is WwiseSoundNode s)
+                {
+                    var bytes = lib.ReadMedia(s.MediaId, out _);
+                    if (bytes is null) return;
+                    var m = WwiseMedia.Parse(bytes);
+                    if (m.SampleCount is not { } samples || m.SampleRate == 0) return;
+                    double ms = samples * 1000.0 / m.SampleRate;
+                    count++; min = Math.Min(min, ms); max = Math.Max(max, ms);
+                    if (n.Params.Raw(WwiseProp.Loop) == 0) looping++;
+                    return;
+                }
+                foreach (var c in n.Children) Walk(c);
+            }
+            Walk(id);
+            return (count, min, max, looping);
+        }
+
+        var on = Layer(462443456);
+        Assert.Equal(42, on.Count);
+        Assert.Equal(42, on.Looping);                       // every sustain recording loops until stopped
+        Assert.True(on.Min > 4000, $"the shortest sustain recording is {on.Min:F0} ms");
+        Assert.True(on.Max < 8000, $"the longest sustain recording is {on.Max:F0} ms");
+
+        var off = Layer(774902407);
+        Assert.Equal(42, off.Count);
+        Assert.Equal(0, off.Looping);                       // release tails do not loop
+        Assert.True(off.Max < 1000, $"the longest release recording is {off.Max:F0} ms");
+
+        // and the notes those recordings have to serve
+        var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_80bpm")!.Value;
+        var plan = lib.ResolveMusic(ev, new Dictionary<uint, uint> { [Group80] = AbaDaba });
+        var clip = plan.Segments[0].Clips[0];
+        var midi = WwiseMidi.Parse(lib.ReadMedia(clip.SourceId, out _)!);
+        var notes = midi.NotesAt(plan.Segments[0].TempoBpm).ToList();
+        Assert.Equal(42, notes.Count);
+        double longest = notes.Max(n => n.LengthMs);
+        Assert.True(longest < on.Min,
+            $"the longest note in Aba Daba is {longest:F0} ms and the shortest sustain recording {on.Min:F0} ms; " +
+            "every note in the song is shorter than every recording that sings it, which is why the note, not " +
+            "the recording, has to set how long the voice sounds");
+        Assert.True(notes.Count(n => n.LengthMs < 400) > notes.Count / 2,
+            "most of the notes are a fraction of a second long");
+    }
 
     /// <summary>BehaviorSinging::UpdateInternal at 0x005EF0C8: half the old value plus half the shake clamped to 0..1 after dividing by 3000.</summary>
     [Theory]
@@ -97,8 +165,12 @@ public class WwiseSongTests
         Assert.Equal(0, r.NotesSilent);
         Assert.Equal(42, r.NoteOffsPlayed);
         Assert.Equal(0, r.ClippedSamples);
-        Assert.True(r.PreLimitPeak > short.MaxValue, "the raw sum of the recordings exceeds full scale; the output stage is what keeps it clean");
-        Assert.True(r.OutputGainDb < 0);
+        // The level the shipped mix actually produces once a note sounds for its own length: a little over
+        // full scale, which is where a mix feeding a bus limiter whose threshold is -1 dB belongs. Before
+        // the M9 fidelity pass every note played out a whole 5.79-second recording and the sum ran about
+        // 13 dB over, which is what the output stage was pulling down.
+        Assert.InRange(r.PreLimitPeak / short.MaxValue, 1.0, 1.3);
+        Assert.InRange(r.OutputGainDb, -1.0, 0.0);
         Assert.Equal(short.MaxValue, r.Peak);
         Assert.Contains(r.Pcm.Take(CozmoAudio.SampleRate / 2), s => Math.Abs(s) > 500);   // sound in the first half second
 

@@ -46,10 +46,10 @@ public sealed record WwiseRenderedMusic(short[] Pcm, double DurationMs)
 /// * At every node the note is filtered by that node's MIDI key range and velocity range properties
 ///   (49..52), where set; a node without them passes everything. A node whose MIDI play-on property (46)
 ///   is 2 plays at note-off instead of note-on; the setting is inherited down the tree, default note-on.
-/// * A sound with a Loop property of 0 loops while the note is held and then plays out its current
-///   iteration ("break on note-off"); one with no Loop property plays once; a finite count plays that
-///   many times. Volume (dB) and Pitch (cents) properties are summed down the path and applied as gain
-///   and a resampling ratio.
+/// * A sound with a Loop property of 0 sounds for exactly as long as the note is held, looping if the
+///   note outlasts the recording; one with no Loop property plays once; a finite count plays that many
+///   times. See <see cref="LoopedLength"/>, which sets out why. Volume (dB) and Pitch (cents) properties
+///   are summed down the path and applied as gain and a resampling ratio.
 /// * Every modulator bound to a node on the path (an RTPC whose source type is 2) is evaluated over the
 ///   life of the voice and mapped through that binding's curve onto the property it drives: the note-off
 ///   envelope onto Volume, the vibrato LFO onto Pitch. Neither target node sets the property its modulator
@@ -323,15 +323,33 @@ public sealed class WwiseSongRenderer
     /// <summary>
     /// How long a sound sounds for a note held <paramref name="heldMs"/>: once when it does not loop, the
     /// full count when it loops a finite number of times, and, when it loops indefinitely (Loop = 0),
-    /// until the note is released and the iteration then playing has finished.
+    /// <b>for as long as the note is held</b>.
+    ///
+    /// That last rule is what the shipped sampler is built around, and getting it wrong is audible from
+    /// the first note. Every one of the 42 recordings under the note-on layer is a sustained vowel of
+    /// between 4.2 and 7.4 seconds and every one of them carries Loop = 0, while the notes in the shipped
+    /// songs are between about 125 and 190 milliseconds long. A rule that let a note play out a whole
+    /// iteration of its recording therefore played roughly five and three quarter seconds of vowel for a
+    /// note lasting a fifth of a second, and with a note starting every fifth of a second some thirty of
+    /// them sounded at once: the sum ran about 13 dB over full scale and the melody was not audible in it.
+    ///
+    /// What the bank says instead: the recording loops so that a note longer than the recording can be
+    /// sustained, the note layer carries the bit that governs a looping sound at note-off, and a separate
+    /// note-off layer of half-second recordings at -14 dB plays when the note is released — a release
+    /// tail, which is only a release tail if the sustain it follows has stopped.
+    ///
+    /// A sound that does not loop is left alone: it plays once, or its finite count. None of the note-on
+    /// recordings is such a sound, and the note-off and get-in recordings, which are, are played whole.
+    ///
+    /// Whether Wwise fades the last few milliseconds of a cut voice is a runtime detail that does not ship
+    /// in the package; nothing is faded here (fidelity manifest M9-010).
     /// </summary>
     public static double LoopedLength(uint? loopProp, double sampleMs, double heldMs)
     {
         if (sampleMs <= 0) return 0;
         if (loopProp is null || loopProp == 1) return sampleMs;
         if (loopProp > 1) return sampleMs * loopProp.Value;
-        int iterations = Math.Max(1, (int)Math.Ceiling(heldMs / sampleMs));
-        return iterations * sampleMs;
+        return Math.Max(0, heldMs);
     }
 
     private uint NextInSequence(WwiseRandomSequenceNode rs)

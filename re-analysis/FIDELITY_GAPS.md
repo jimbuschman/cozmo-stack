@@ -7,9 +7,9 @@ Manifest of **193 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 74 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 75 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 16 | The native behaviour is known from primary source; this stack reaches the same observable effect by a different mechanism, and the record names the difference. |
-| RECOVERABLE_GAP | 75 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. Blocks source-completeness on a live path. |
+| RECOVERABLE_GAP | 74 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. Blocks source-completeness on a live path. |
 | COMPATIBILITY_POLICY | 19 | A deliberate choice of this stack on a path that does not claim to be the engine's: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 6 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -28,7 +28,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 2 | no |
 | M7-behaviour — Idle, mood and reactions | 15 | 4 | no |
 | M8-framework — Behaviour framework and scoring | 10 | 5 | no |
-| M9-wwise-music — Wwise music, the MIDI sampler and singing | 25 | 5 | no |
+| M9-wwise-music — Wwise music, the MIDI sampler and singing | 25 | 4 | no |
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 16 | 9 | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 12 | 7 | no |
@@ -305,15 +305,6 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * unresolved: the mask the engine applies per play and where it is released
 
 ### M9-wwise-music — Wwise music, the MIDI sampler and singing
-
-**M9-010 — Note release: a Loop 0 sound plays out its current iteration after note-off** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
-* effect: held notes end at the wrong moment and with no tail
-* rests on: a reading of the public documentation of break-on-note-off
-* best authority: the shipped bank sets bIsMidiBreakLoopOnNoteOff in the node bits of the note layers; the bit position itself was assumed
-* evidence: Cozmo.bnk blend 462443456 and 774902407 node bits 0x24
-* unresolved: which bit of the node bit vector is break-on-note-off, and whether the release is instant or shaped by the note-off envelope
 
 **M9-011 — Output stage: the whole render is scaled so its peak sits at full scale** (live path)
 

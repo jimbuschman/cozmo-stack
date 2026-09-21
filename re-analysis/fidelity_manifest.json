@@ -1742,19 +1742,17 @@
     {
       "id": "M9-010",
       "subsystem": "M9-wwise-music",
-      "title": "Note release: a Loop 0 sound plays out its current iteration after note-off",
+      "title": "A sung note sounds for as long as it is held, not for a whole iteration of its recording",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
-      "effect": "held notes end at the wrong moment and with no tail",
-      "provenance": "a reading of the public documentation of break-on-note-off",
-      "authority": "the shipped bank sets bIsMidiBreakLoopOnNoteOff in the node bits of the note layers; the bit position itself was assumed",
+      "status": "EXACT_SOURCE",
+      "authority": "the shipped sampler: all 42 recordings under the note-on layer are sustained vowels of 4.21 to 7.40 s (mean 5.79) and all 42 carry Loop = 0; all 42 under the note-off layer are 0.34 to 0.65 s, do not loop, sit at -14 dB and play at note-off; the note-on layer carries the bit that governs a looping sound at note-off; and every note in every shipped song is shorter than the shortest sustain recording",
       "evidence": [
-        "Cozmo.bnk blend 462443456 and 774902407 node bits 0x24"
+        "wwise --sampler over the shipped banks",
+        "Aba Daba: 42 notes of 125 to 1078 ms against recordings of 4.21 to 7.40 s",
+        "rendering the same song took the raw peak from 149572 (13.2 dB over full scale) to 34961 (0.6 dB over), which is where a mix feeding a limiter whose threshold is -1 dB belongs"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "which bit of the node bit vector is break-on-note-off, and whether the release is instant or shaped by the note-off envelope",
-      "hardware_required": false,
       "live_path": true,
-      "test": "WwiseSongTests"
+      "test": "WwiseSongTests.ALoopingSoundSoundsForAsLongAsTheNoteIsHeld"
     },
     {
       "id": "M9-011",

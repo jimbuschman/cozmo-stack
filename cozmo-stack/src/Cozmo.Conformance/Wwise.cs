@@ -44,6 +44,7 @@ public static class WwiseTool
         if (Arg(a, "--decode") is { } one) return DecodeOne(lib, one, Arg(a, "--ogg"));
         if (a.Contains("--validate")) return Validate(lib, limit);
         if (a.Contains("--hierarchy")) return Hierarchy(lib);
+        if (a.Contains("--sampler")) return Sampler(lib);
         if (Arg(a, "--music") is { } music) return Music(lib, Resolve(lib, music), Switches(lib, a), a.Contains("--midi"));
         int seed = int.TryParse(Arg(a, "--seed"), out var sd) ? sd : 1;
         if (Arg(a, "--render") is { } render) return Render(lib, Resolve(lib, render), Switches(lib, a), Arg(a, "--wav"), seed);
@@ -75,6 +76,67 @@ public static class WwiseTool
 
     private static uint NameOrId(WwiseSoundLibrary lib, string s) =>
         uint.TryParse(s, out var id) ? id : lib.Names.SwitchGroupId(s) ?? lib.Names.SwitchId(s) ?? WwiseHash.Of(s);
+
+    /// <summary>
+    /// Walks the singing sampler and prints what is actually under it: every layer, every per-key
+    /// container with its MIDI key range and level, and every recording with the length it decodes to.
+    ///
+    /// The lengths are the point. The note-on layer's recordings are around five seconds each and carry
+    /// Loop = 0, so how a held note ends decides whether a quarter note at 160 bpm sounds for its 375 ms
+    /// or for five seconds. The note-off layer's are around six tenths of a second at -14 dB, which is a
+    /// release tail. See WWISE_MUSIC.md and the fidelity manifest, M9-010.
+    /// </summary>
+    private static int Sampler(WwiseSoundLibrary lib)
+    {
+        const uint target = 110896138;
+        if (lib.Node(target) is not { } root) { Console.WriteLine($"node {target} is not readable"); return 1; }
+        Console.WriteLine($"\nsinging sampler, MIDI target {target}");
+        var totals = new Dictionary<string, (int Count, double TotalMs, double Min, double Max)>();
+
+        void Walk(uint id, int depth, string layer)
+        {
+            if (lib.Node(id) is not { } n) return;
+            string pad = new(' ', 2 + depth * 2);
+            var p = n.Params;
+            string keys = p.Raw(WwiseProp.MidiKeyRangeMin) is { } lo
+                ? $" key {lo}..{p.Raw(WwiseProp.MidiKeyRangeMax)}" : "";
+            string vol = p.Float(WwiseProp.Volume) is { } v ? $" {v:+0.#;-0.#;0} dB" : "";
+            string pitch = p.Float(WwiseProp.Pitch) is { } c ? $" {c:+0;-0;0} cents" : "";
+            string loop = p.Raw(WwiseProp.Loop) is { } l ? $" loop {(l == 0 ? "until stopped" : l.ToString())}" : "";
+            string playOn = p.Raw(WwiseProp.MidiPlayOnNoteType) is { } po ? (po == 2 ? " on note-off" : " on note-on") : "";
+
+            if (n is WwiseSoundNode s)
+            {
+                double ms = 0;
+                var bytes = lib.ReadMedia(s.MediaId, out _);
+                if (bytes is not null)
+                {
+                    try { var m = WwiseMedia.Parse(bytes); ms = m.SampleCount is { } n2 && m.SampleRate > 0 ? n2 * 1000.0 / m.SampleRate : 0; }
+                    catch (InvalidDataException) { }
+                }
+                Console.WriteLine($"{pad}sound {s.Id} media {s.MediaId}{vol}{pitch}{loop}  {ms / 1000:F2} s");
+                var t = totals.GetValueOrDefault(layer, (0, 0, double.MaxValue, 0));
+                totals[layer] = (t.Count + 1, t.TotalMs + ms, Math.Min(t.Min, ms), Math.Max(t.Max, ms));
+                return;
+            }
+
+            string kind = n.Type.ToString();
+            if (n is WwiseRandomSequenceNode rs) kind = rs.IsSequence ? "sequence" : "random";
+            Console.WriteLine($"{pad}{kind} {id}{keys}{vol}{pitch}{playOn}{loop}");
+            foreach (var kid in n.Children) Walk(kid, depth + 1, layer);
+        }
+
+        static string LayerName(uint child) => child switch
+        {
+            462443456 => "note-on", 774902407 => "note-off", 403781184 => "get-in", _ => child.ToString(),
+        };
+
+        foreach (var c in root.Children) Walk(c, 0, LayerName(c));
+        Console.WriteLine("\nrecordings per layer");
+        foreach (var (layer, t) in totals.OrderBy(k => k.Key))
+            Console.WriteLine($"  {layer,-10} {t.Count,4} recordings, {t.Min / 1000:F2}..{t.Max / 1000:F2} s, mean {t.TotalMs / t.Count / 1000:F2} s");
+        return 0;
+    }
 
     /// <summary>Runs the hierarchy reader over every object and prints, per type, how many consumed exactly.</summary>
     private static int Hierarchy(WwiseSoundLibrary lib)
