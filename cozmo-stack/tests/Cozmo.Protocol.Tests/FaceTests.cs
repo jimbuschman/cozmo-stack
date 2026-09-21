@@ -257,7 +257,7 @@ public class FaceTests
         Assert.Contains(b.Trace, l => l.Contains("InteractWithFaceTrackingIdle"));
         Assert.Contains(b.Trace, l => l.Contains("emotion event InteractWithUnnamedFace"));
         Assert.Contains(b.Trace, l => l.Contains("InteractedWithFace"));
-        Assert.Contains(rig.Sent, m => m is AppendPathSegmentLine l && Math.Abs(BitConverter.UInt32BitsToSingle(l.Field2) - BitConverter.UInt32BitsToSingle(l.Field0)) is > 39 and < 41);
+        Assert.Contains(rig.Sent, m => m is AppendPathSegmentLine l && Math.Abs(l.XEndMm - l.XStartMm) is > 39 and < 41);
     }
 
     [Fact]
@@ -272,7 +272,7 @@ public class FaceTests
         Assert.Equal(DriveToFaceBehavior.Phase.Idle, b.CurrentPhase);
         Assert.InRange(b.DistanceMm!.Value, 590, 610);
         var line = rig.Sent.OfType<AppendPathSegmentLine>().Single();
-        Assert.Equal(60f, line.Field4.SpeedMmps);
+        Assert.Equal(60f, line.Speed.SpeedMmps);
         Assert.InRange(rig.X, 390, 410);                                              // stopped 200 mm from the face
         Assert.Contains(b.Trace, l => l.Contains("VisuallyVerifyFace -> Success"));
         // close already: no drive

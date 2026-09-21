@@ -245,7 +245,7 @@ public class NavigationTests
         Assert.Contains(mount.Trace, l => l.Contains("on the charger"));
         Assert.Contains(rig.Sent, m => m is AppendPathSegmentPointTurn);
         var back = rig.Sent.OfType<AppendPathSegmentLine>().Last();
-        Assert.Equal(-30f, back.Field4.SpeedMmps);                                  // backwards at 30 mm/s
+        Assert.Equal(-30f, back.Speed.SpeedMmps);                                  // backwards at 30 mm/s
         Assert.Equal(1, mount.Attempts);
     }
 
@@ -262,8 +262,8 @@ public class NavigationTests
         Assert.Equal(156.0, b.DistanceMm);
         RunToEnd(rig, b, ctx);
         var line = rig.Sent.OfType<AppendPathSegmentLine>().Single();
-        Assert.Equal(156f, Math.Abs(BitConverter.UInt32BitsToSingle(line.Field2) - BitConverter.UInt32BitsToSingle(line.Field0)), 0);
-        Assert.Equal(20f, line.Field4.SpeedMmps);
+        Assert.Equal(156f, Math.Abs(line.XEndMm - line.XStartMm), 0);
+        Assert.Equal(20f, line.Speed.SpeedMmps);
         Assert.False(rig.OnCharger);
         Assert.Contains(b.Trace, l => l.Contains("emotion event DriveOffCharger"));
         Assert.False(Runnable(b, ctx));
@@ -309,8 +309,8 @@ public class NavigationTests
         SpinUntil(() => task.IsCompleted, () => rig.Pump());
         Assert.Equal(ActionResult.Success, task.Result);
         var line = rig.Sent.OfType<AppendPathSegmentLine>().Single();
-        Assert.InRange(BitConverter.UInt32BitsToSingle(line.Field2), 217, 224);          // distance + 20
-        Assert.Equal(150f, line.Field4.SpeedMmps);
+        Assert.InRange(line.XEndMm, 217, 224);          // distance + 20
+        Assert.Equal(150f, line.Speed.SpeedMmps);
         Assert.Equal(new[] { 40f, LiftPresets.CarryMm }, rig.LiftHeights);
         Assert.True(flip.LiftRaised);
         Assert.Equal(PoseState.Unknown, obj.PoseState);
@@ -516,8 +516,8 @@ public class NavigationTests
         Assert.Contains(b.Trace, l => l.Contains("KnockedOverBlocks"));
         // the reach: 85 mm short of the bottom block at 60 mm/s
         var reach = rig.Sent.OfType<AppendPathSegmentLine>().First();
-        Assert.Equal(60f, reach.Field4.SpeedMmps);
-        Assert.InRange(BitConverter.UInt32BitsToSingle(reach.Field2), 170, 180);
+        Assert.Equal(60f, reach.Speed.SpeedMmps);
+        Assert.InRange(reach.XEndMm, 170, 180);
     }
 
     [Fact]
@@ -571,9 +571,9 @@ public class NavigationTests
         RunToEnd(rig, b, ctx);
         var lines = rig.Sent.OfType<AppendPathSegmentLine>().ToList();
         Assert.Equal(2, lines.Count);
-        Assert.Equal(100f, lines[0].Field4.SpeedMmps);
-        Assert.Equal(-100f, lines[1].Field4.SpeedMmps);
-        Assert.InRange(BitConverter.UInt32BitsToSingle(lines[0].Field2), 245, 255);   // to the block's centre
+        Assert.Equal(100f, lines[0].Speed.SpeedMmps);
+        Assert.Equal(-100f, lines[1].Speed.SpeedMmps);
+        Assert.InRange(lines[0].XEndMm, 245, 255);   // to the block's centre
         Assert.Contains(rig.LiftHeights, h => h == LiftPresets.LowDockMm);
         Assert.Contains(b.Trace, l => l.Contains("SoundOnlyRamIntoBlock"));
         Assert.Equal(PoseState.Dirty, obj.PoseState);

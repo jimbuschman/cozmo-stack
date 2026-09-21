@@ -161,19 +161,19 @@ internal sealed class Rig : IDisposable
             {
                 case ExecutePath ep:
                     // the fake robot follows the path perfectly: its pose becomes the last segment's end
-                    foreach (var s in Sent.OfType<AppendPathSegmentLine>().TakeLast(CountSince<AppendPathSegmentLine>(ep))) { X = BitConverter.UInt32BitsToSingle(s.Field2); Y = BitConverter.UInt32BitsToSingle(s.Field3); }
+                    foreach (var s in Sent.OfType<AppendPathSegmentLine>().TakeLast(CountSince<AppendPathSegmentLine>(ep))) { X = s.XEndMm; Y = s.YEndMm; }
                     // arcs end at their sweep's end point, heading tangent
                     int clearIdx = Sent.IndexOf(Sent.OfType<ClearPath>().Last());
                     foreach (var seg in Sent.Skip(clearIdx).TakeWhile(x => x != ep))
                     {
                         if (seg is AppendPathSegmentArc arc)
                         {
-                            double cx = BitConverter.UInt32BitsToSingle(arc.Field0), cy = BitConverter.UInt32BitsToSingle(arc.Field1), r = BitConverter.UInt32BitsToSingle(arc.Field2);
-                            double a0 = BitConverter.UInt32BitsToSingle(arc.Field3), sw = BitConverter.UInt32BitsToSingle(arc.Field4);
+                            double cx = arc.XCenterMm, cy = arc.YCenterMm, r = arc.RadiusMm;
+                            double a0 = arc.StartRad, sw = arc.SweepRad;
                             X = (float)(cx + r * Math.Cos(a0 + sw)); Y = (float)(cy + r * Math.Sin(a0 + sw)); Angle = (float)(a0 + sw + Math.Sign(sw) * Math.PI / 2);
                         }
-                        else if (seg is AppendPathSegmentLine ln) { X = BitConverter.UInt32BitsToSingle(ln.Field2); Y = BitConverter.UInt32BitsToSingle(ln.Field3); }
-                        else if (seg is AppendPathSegmentPointTurn pt) Angle = BitConverter.UInt32BitsToSingle(pt.Field2);
+                        else if (seg is AppendPathSegmentLine ln) { X = ln.XEndMm; Y = ln.YEndMm; }
+                        else if (seg is AppendPathSegmentPointTurn pt) Angle = pt.TargetAngleRad;
                     }
                     UpdateChargerContact();
                     State();

@@ -86,11 +86,11 @@ public enum RobotMessageId : byte
     Stop = 0x3B,
     /// <summary>ClearPath (engine_to_robot); size 2; layout_known_semantics_uncertain</summary>
     ClearPath = 0x3C,
-    /// <summary>AppendPathSegmentLine (engine_to_robot); size 28; layout_known_semantics_uncertain</summary>
+    /// <summary>AppendPathSegmentLine (engine_to_robot); size 28; statically_verified</summary>
     AppendPathSegLine = 0x3D,
-    /// <summary>AppendPathSegmentArc (engine_to_robot); size 32; layout_known_semantics_uncertain</summary>
+    /// <summary>AppendPathSegmentArc (engine_to_robot); size 32; statically_verified</summary>
     AppendPathSegArc = 0x3E,
-    /// <summary>AppendPathSegmentPointTurn (engine_to_robot); size 29; layout_known_semantics_uncertain</summary>
+    /// <summary>AppendPathSegmentPointTurn (engine_to_robot); size 29; statically_verified</summary>
     AppendPathSegPointTurn = 0x3F,
     /// <summary>TrimPath (engine_to_robot); size 2; layout_known_semantics_uncertain</summary>
     TrimPath = 0x40,
@@ -385,9 +385,9 @@ public static class MessageCatalog
         [RobotMessageId.TurnInPlaceAtSpeed] = new(RobotMessageId.TurnInPlaceAtSpeed, "turnInPlaceAtSpeed", "TurnInPlaceAtSpeed", MessageDirection.EngineToRobot, 8, false, Subsystem.Motors, ProbeSafety.Motion, LayoutConfidence.Exact, VerificationStatus.StaticallyVerified, null),
         [RobotMessageId.Stop] = new(RobotMessageId.Stop, "stop", "StopAllMotors", MessageDirection.EngineToRobot, 0, false, Subsystem.Motors, ProbeSafety.Motion, LayoutConfidence.Exact, VerificationStatus.StaticallyVerified, "StopAllMotors"),
         [RobotMessageId.ClearPath] = new(RobotMessageId.ClearPath, "clearPath", "ClearPath", MessageDirection.EngineToRobot, 2, false, Subsystem.LocalizationNavigation, ProbeSafety.StateChange, LayoutConfidence.NativeNamed, VerificationStatus.LayoutKnownSemanticsUncertain, "ClearPath"),
-        [RobotMessageId.AppendPathSegLine] = new(RobotMessageId.AppendPathSegLine, "appendPathSegLine", "AppendPathSegmentLine", MessageDirection.EngineToRobot, 28, false, Subsystem.LocalizationNavigation, ProbeSafety.Motion, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, "AppendPathSegLine"),
-        [RobotMessageId.AppendPathSegArc] = new(RobotMessageId.AppendPathSegArc, "appendPathSegArc", "AppendPathSegmentArc", MessageDirection.EngineToRobot, 32, false, Subsystem.LocalizationNavigation, ProbeSafety.Motion, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, "AppendPathSegArc"),
-        [RobotMessageId.AppendPathSegPointTurn] = new(RobotMessageId.AppendPathSegPointTurn, "appendPathSegPointTurn", "AppendPathSegmentPointTurn", MessageDirection.EngineToRobot, 29, false, Subsystem.LocalizationNavigation, ProbeSafety.Motion, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, "AppendPathSegPointTurn"),
+        [RobotMessageId.AppendPathSegLine] = new(RobotMessageId.AppendPathSegLine, "appendPathSegLine", "AppendPathSegmentLine", MessageDirection.EngineToRobot, 28, false, Subsystem.LocalizationNavigation, ProbeSafety.Motion, LayoutConfidence.HardwareRefined, VerificationStatus.StaticallyVerified, "AppendPathSegLine"),
+        [RobotMessageId.AppendPathSegArc] = new(RobotMessageId.AppendPathSegArc, "appendPathSegArc", "AppendPathSegmentArc", MessageDirection.EngineToRobot, 32, false, Subsystem.LocalizationNavigation, ProbeSafety.Motion, LayoutConfidence.HardwareRefined, VerificationStatus.StaticallyVerified, "AppendPathSegArc"),
+        [RobotMessageId.AppendPathSegPointTurn] = new(RobotMessageId.AppendPathSegPointTurn, "appendPathSegPointTurn", "AppendPathSegmentPointTurn", MessageDirection.EngineToRobot, 29, false, Subsystem.LocalizationNavigation, ProbeSafety.Motion, LayoutConfidence.HardwareRefined, VerificationStatus.StaticallyVerified, "AppendPathSegPointTurn"),
         [RobotMessageId.TrimPath] = new(RobotMessageId.TrimPath, "trimPath", "TrimPath", MessageDirection.EngineToRobot, 2, false, Subsystem.LocalizationNavigation, ProbeSafety.Motion, LayoutConfidence.NativeNamed, VerificationStatus.LayoutKnownSemanticsUncertain, "TrimPath"),
         [RobotMessageId.ExecutePath] = new(RobotMessageId.ExecutePath, "executePath", "ExecutePath", MessageDirection.EngineToRobot, 3, false, Subsystem.LocalizationNavigation, ProbeSafety.Motion, LayoutConfidence.NativeNamed, VerificationStatus.LayoutKnownSemanticsUncertain, "ExecutePath"),
         [RobotMessageId.DockWithObject] = new(RobotMessageId.DockWithObject, "dockWithObject", "DockWithObject", MessageDirection.EngineToRobot, 21, false, Subsystem.LocalizationNavigation, ProbeSafety.Motion, LayoutConfidence.HardwareRefined, VerificationStatus.StaticallyVerified, null),

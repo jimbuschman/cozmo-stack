@@ -964,110 +964,110 @@ public sealed partial class ClearPath : RobotMessage
     }
 }
 
-/// <summary>appendPathSegLine 0x3D (engine_to_robot), 28 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+/// <summary>appendPathSegLine 0x3D (engine_to_robot), 28 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-20: PathDolerOuter::Dole 0x00507E4C switches on Planning::PathSegment+0 (1 line, 2 arc, 3 point turn) and copies the struct into the message. The fields are named by their definers: PathSegment::DefineLine 0x0085BC00, DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, and SetSpeedProfile 0x0085BC90 for the speed triple at +0x1C</summary>
 public sealed partial class AppendPathSegmentLine : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.AppendPathSegLine;
     public AppendPathSegmentLine() { }
-    /// <summary>name not established; name from generated</summary>
-    public uint Field0;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field1;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field2;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field3;
-    /// <summary>name not established; name from generated</summary>
-    public PathSegmentSpeed Field4;
+    /// <summary>name from engine</summary>
+    public float XStartMm;
+    /// <summary>name from engine</summary>
+    public float YStartMm;
+    /// <summary>name from engine</summary>
+    public float XEndMm;
+    /// <summary>name from engine</summary>
+    public float YEndMm;
+    /// <summary>name from engine</summary>
+    public PathSegmentSpeed Speed;
     public static AppendPathSegmentLine Read(CladReader r) => new()
     {
-        Field0 = r.U32(),
-        Field1 = r.U32(),
-        Field2 = r.U32(),
-        Field3 = r.U32(),
-        Field4 = PathSegmentSpeed.Read(r),
+        XStartMm = r.F32(),
+        YStartMm = r.F32(),
+        XEndMm = r.F32(),
+        YEndMm = r.F32(),
+        Speed = PathSegmentSpeed.Read(r),
     };
     public override void WriteBody(CladWriter w)
     {
-        w.U32(Field0);
-        w.U32(Field1);
-        w.U32(Field2);
-        w.U32(Field3);
-        Field4.Write(w);
+        w.F32(XStartMm);
+        w.F32(YStartMm);
+        w.F32(XEndMm);
+        w.F32(YEndMm);
+        Speed.Write(w);
     }
 }
 
-/// <summary>appendPathSegArc 0x3E (engine_to_robot), 32 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+/// <summary>appendPathSegArc 0x3E (engine_to_robot), 32 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-20: PathDolerOuter::Dole 0x00507E4C switches on Planning::PathSegment+0 (1 line, 2 arc, 3 point turn) and copies the struct into the message. The fields are named by their definers: PathSegment::DefineLine 0x0085BC00, DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, and SetSpeedProfile 0x0085BC90 for the speed triple at +0x1C</summary>
 public sealed partial class AppendPathSegmentArc : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.AppendPathSegArc;
     public AppendPathSegmentArc() { }
-    /// <summary>name not established; name from generated</summary>
-    public uint Field0;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field1;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field2;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field3;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field4;
-    /// <summary>name not established; name from generated</summary>
-    public PathSegmentSpeed Field5;
+    /// <summary>name from engine</summary>
+    public float XCenterMm;
+    /// <summary>name from engine</summary>
+    public float YCenterMm;
+    /// <summary>name from engine</summary>
+    public float RadiusMm;
+    /// <summary>name from engine</summary>
+    public float StartRad;
+    /// <summary>name from engine</summary>
+    public float SweepRad;
+    /// <summary>name from engine</summary>
+    public PathSegmentSpeed Speed;
     public static AppendPathSegmentArc Read(CladReader r) => new()
     {
-        Field0 = r.U32(),
-        Field1 = r.U32(),
-        Field2 = r.U32(),
-        Field3 = r.U32(),
-        Field4 = r.U32(),
-        Field5 = PathSegmentSpeed.Read(r),
+        XCenterMm = r.F32(),
+        YCenterMm = r.F32(),
+        RadiusMm = r.F32(),
+        StartRad = r.F32(),
+        SweepRad = r.F32(),
+        Speed = PathSegmentSpeed.Read(r),
     };
     public override void WriteBody(CladWriter w)
     {
-        w.U32(Field0);
-        w.U32(Field1);
-        w.U32(Field2);
-        w.U32(Field3);
-        w.U32(Field4);
-        Field5.Write(w);
+        w.F32(XCenterMm);
+        w.F32(YCenterMm);
+        w.F32(RadiusMm);
+        w.F32(StartRad);
+        w.F32(SweepRad);
+        Speed.Write(w);
     }
 }
 
-/// <summary>appendPathSegPointTurn 0x3F (engine_to_robot), 29 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+/// <summary>appendPathSegPointTurn 0x3F (engine_to_robot), 29 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-20: PathDolerOuter::Dole 0x00507E4C switches on Planning::PathSegment+0 (1 line, 2 arc, 3 point turn) and copies the struct into the message. The fields are named by their definers: PathSegment::DefineLine 0x0085BC00, DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, and SetSpeedProfile 0x0085BC90 for the speed triple at +0x1C</summary>
 public sealed partial class AppendPathSegmentPointTurn : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.AppendPathSegPointTurn;
     public AppendPathSegmentPointTurn() { }
-    /// <summary>name not established; name from generated</summary>
-    public uint Field0;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field1;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field2;
-    /// <summary>name not established; name from generated</summary>
-    public uint Field3;
-    /// <summary>name not established; name from generated</summary>
-    public PathSegmentSpeed Field4;
-    /// <summary>name not established; name from generated</summary>
-    public byte Field5;
+    /// <summary>name from engine</summary>
+    public float XMm;
+    /// <summary>name from engine</summary>
+    public float YMm;
+    /// <summary>name from engine</summary>
+    public float TargetAngleRad;
+    /// <summary>name from engine</summary>
+    public float AngleToleranceRad;
+    /// <summary>name from engine</summary>
+    public PathSegmentSpeed Speed;
+    /// <summary>name from engine; PathSegment+0x14, the bool DefinePointTurn takes</summary>
+    public byte UseShortestDirection;
     public static AppendPathSegmentPointTurn Read(CladReader r) => new()
     {
-        Field0 = r.U32(),
-        Field1 = r.U32(),
-        Field2 = r.U32(),
-        Field3 = r.U32(),
-        Field4 = PathSegmentSpeed.Read(r),
-        Field5 = r.U8(),
+        XMm = r.F32(),
+        YMm = r.F32(),
+        TargetAngleRad = r.F32(),
+        AngleToleranceRad = r.F32(),
+        Speed = PathSegmentSpeed.Read(r),
+        UseShortestDirection = r.U8(),
     };
     public override void WriteBody(CladWriter w)
     {
-        w.U32(Field0);
-        w.U32(Field1);
-        w.U32(Field2);
-        w.U32(Field3);
-        Field4.Write(w);
-        w.U8(Field5);
+        w.F32(XMm);
+        w.F32(YMm);
+        w.F32(TargetAngleRad);
+        w.F32(AngleToleranceRad);
+        Speed.Write(w);
+        w.U8(UseShortestDirection);
     }
 }
 

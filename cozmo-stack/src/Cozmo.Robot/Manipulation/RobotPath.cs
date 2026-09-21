@@ -78,17 +78,20 @@ public sealed class PathSender
             switch (s)
             {
                 case PathSegment.Line l:
-                    Send(new AppendPathSegmentLine { Field0 = F(l.FromX), Field1 = F(l.FromY), Field2 = F(l.ToX), Field3 = F(l.ToY),
-                                                     Field4 = new PathSegmentSpeed { SpeedMmps = l.SpeedMmps, AccelMmps2 = l.AccelMmps2, DecelMmps2 = l.DecelMmps2 } });
+                    Send(new AppendPathSegmentLine { XStartMm = (float)l.FromX, YStartMm = (float)l.FromY,
+                                                     XEndMm = (float)l.ToX, YEndMm = (float)l.ToY,
+                                                     Speed = new PathSegmentSpeed { SpeedMmps = l.SpeedMmps, AccelMmps2 = l.AccelMmps2, DecelMmps2 = l.DecelMmps2 } });
                     break;
                 case PathSegment.Arc a:
-                    Send(new AppendPathSegmentArc { Field0 = F(a.CenterX), Field1 = F(a.CenterY), Field2 = F(a.RadiusMm), Field3 = F(a.StartAngleRad), Field4 = F(a.SweepRad),
-                                                    Field5 = new PathSegmentSpeed { SpeedMmps = a.SpeedMmps, AccelMmps2 = a.AccelMmps2, DecelMmps2 = a.DecelMmps2 } });
+                    Send(new AppendPathSegmentArc { XCenterMm = (float)a.CenterX, YCenterMm = (float)a.CenterY,
+                                                    RadiusMm = (float)a.RadiusMm, StartRad = (float)a.StartAngleRad, SweepRad = (float)a.SweepRad,
+                                                    Speed = new PathSegmentSpeed { SpeedMmps = a.SpeedMmps, AccelMmps2 = a.AccelMmps2, DecelMmps2 = a.DecelMmps2 } });
                     break;
                 case PathSegment.PointTurn t:
-                    Send(new AppendPathSegmentPointTurn { Field0 = F(t.X), Field1 = F(t.Y), Field2 = F(t.TargetAngleRad), Field3 = F(t.AngleToleranceRad),
-                                                          Field4 = new PathSegmentSpeed { SpeedMmps = t.SpeedRadPerSec, AccelMmps2 = t.AccelRadPerSec2, DecelMmps2 = t.DecelRadPerSec2 },
-                                                          Field5 = (byte)(t.UseShortestDirection ? 1 : 0) });
+                    Send(new AppendPathSegmentPointTurn { XMm = (float)t.X, YMm = (float)t.Y,
+                                                          TargetAngleRad = (float)t.TargetAngleRad, AngleToleranceRad = (float)t.AngleToleranceRad,
+                                                          Speed = new PathSegmentSpeed { SpeedMmps = t.SpeedRadPerSec, AccelMmps2 = t.AccelRadPerSec2, DecelMmps2 = t.DecelRadPerSec2 },
+                                                          UseShortestDirection = (byte)(t.UseShortestDirection ? 1 : 0) });
                     break;
             }
         }

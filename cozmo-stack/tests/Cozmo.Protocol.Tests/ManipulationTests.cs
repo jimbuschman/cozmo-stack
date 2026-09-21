@@ -77,8 +77,8 @@ public class ManipulationTests
             string.Join(" | ", rig.Robot.Transport.OfflineOutbound.Select(f => f.Type + ":" + string.Join(",", f.Messages.Select(m => m.Type + "/" + m.Seq + "/" + m.Payload.Length)))));
         Assert.Collection(sent.Where(m => m is ClearPath or AppendPathSegmentPointTurn or AppendPathSegmentLine or ExecutePath),
             m => Assert.Equal(1, Assert.IsType<ClearPath>(m).Unknown),
-            m => { var pt = Assert.IsType<AppendPathSegmentPointTurn>(m); Assert.Equal((float)(Math.PI / 4), BitConverter.UInt32BitsToSingle(pt.Field2)); Assert.Equal(2f, pt.Field4.SpeedMmps); Assert.Equal(1, pt.Field5); },
-            m => { var l = Assert.IsType<AppendPathSegmentLine>(m); Assert.Equal(100f, BitConverter.UInt32BitsToSingle(l.Field2)); Assert.Equal(200f, l.Field4.AccelMmps2); Assert.Equal(500f, l.Field4.DecelMmps2); Assert.Equal(28, l.ToBytes().Length - 1); },
+            m => { var pt = Assert.IsType<AppendPathSegmentPointTurn>(m); Assert.Equal((float)(Math.PI / 4), pt.TargetAngleRad); Assert.Equal(2f, pt.Speed.SpeedMmps); Assert.Equal(1, pt.UseShortestDirection); },
+            m => { var l = Assert.IsType<AppendPathSegmentLine>(m); Assert.Equal(100f, l.XEndMm); Assert.Equal(200f, l.Speed.AccelMmps2); Assert.Equal(500f, l.Speed.DecelMmps2); Assert.Equal(28, l.ToBytes().Length - 1); },
             m => Assert.IsType<AppendPathSegmentPointTurn>(m),
             m => { var e = Assert.IsType<ExecutePath>(m); Assert.Equal(1, e.EventId); Assert.False(e.Unknown); });
         // the fake robot followed it

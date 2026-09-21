@@ -2508,43 +2508,38 @@
    "declared_size": 28,
    "fields": [
     {
-     "name": "field0",
+     "name": "xStartMm",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field1",
+     "name": "yStartMm",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field2",
+     "name": "xEndMm",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field3",
+     "name": "yEndMm",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field4",
+     "name": "speed",
      "kind": "struct",
      "type": "PathSegmentSpeed",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine"
     }
    ],
-   "confidence": "native_only",
-   "verification": "layout_known_semantics_uncertain",
+   "confidence": "hardware_refined",
+   "verification": "statically_verified",
    "evidence": {
     "native_unpack": "0x7a2f58",
     "native_namespace": "RobotInterface",
@@ -2553,7 +2548,8 @@
     "capture": null
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "names generated; widths from native Unpack",
+    "engine 2026-09-20: PathDolerOuter::Dole 0x00507E4C switches on Planning::PathSegment+0 (1 line, 2 arc, 3 point turn) and copies the struct into the message. The fields are named by their definers: PathSegment::DefineLine 0x0085BC00, DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, and SetSpeedProfile 0x0085BC90 for the speed triple at +0x1C"
    ]
   },
   "0x3E": {
@@ -2569,50 +2565,44 @@
    "declared_size": 32,
    "fields": [
     {
-     "name": "field0",
+     "name": "xCenterMm",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field1",
+     "name": "yCenterMm",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field2",
+     "name": "radiusMm",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field3",
+     "name": "startRad",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field4",
+     "name": "sweepRad",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field5",
+     "name": "speed",
      "kind": "struct",
      "type": "PathSegmentSpeed",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine"
     }
    ],
-   "confidence": "native_only",
-   "verification": "layout_known_semantics_uncertain",
+   "confidence": "hardware_refined",
+   "verification": "statically_verified",
    "evidence": {
     "native_unpack": "0x7a3132",
     "native_namespace": "RobotInterface",
@@ -2621,7 +2611,8 @@
     "capture": null
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "names generated; widths from native Unpack",
+    "engine 2026-09-20: PathDolerOuter::Dole 0x00507E4C switches on Planning::PathSegment+0 (1 line, 2 arc, 3 point turn) and copies the struct into the message. The fields are named by their definers: PathSegment::DefineLine 0x0085BC00, DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, and SetSpeedProfile 0x0085BC90 for the speed triple at +0x1C"
    ]
   },
   "0x3F": {
@@ -2637,50 +2628,45 @@
    "declared_size": 29,
    "fields": [
     {
-     "name": "field0",
+     "name": "xMm",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field1",
+     "name": "yMm",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field2",
+     "name": "targetAngleRad",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field3",
+     "name": "angleToleranceRad",
      "kind": "scalar",
-     "type": "u32",
-     "name_source": "generated",
-     "uncertain": true
+     "type": "f32",
+     "name_source": "engine"
     },
     {
-     "name": "field4",
+     "name": "speed",
      "kind": "struct",
      "type": "PathSegmentSpeed",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine"
     },
     {
-     "name": "field5",
+     "name": "useShortestDirection",
      "kind": "scalar",
      "type": "u8",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine",
+     "note": "PathSegment+0x14, the bool DefinePointTurn takes"
     }
    ],
-   "confidence": "native_only",
-   "verification": "layout_known_semantics_uncertain",
+   "confidence": "hardware_refined",
+   "verification": "statically_verified",
    "evidence": {
     "native_unpack": "0x7a3338",
     "native_namespace": "RobotInterface",
@@ -2689,7 +2675,8 @@
     "capture": null
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "names generated; widths from native Unpack",
+    "engine 2026-09-20: PathDolerOuter::Dole 0x00507E4C switches on Planning::PathSegment+0 (1 line, 2 arc, 3 point turn) and copies the struct into the message. The fields are named by their definers: PathSegment::DefineLine 0x0085BC00, DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, and SetSpeedProfile 0x0085BC90 for the speed triple at +0x1C"
    ]
   },
   "0x40": {

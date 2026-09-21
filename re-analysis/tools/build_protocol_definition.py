@@ -206,6 +206,38 @@ REFINEMENTS = {
                       {"name": "heightMm", "kind": "scalar", "type": "u8", "name_source": "engine",
                        "note": "height_mm, with the keyframe's variability already applied: "
                                "RandIntInRange(height - var, height + var) when var != 0"}]},
+    0x3D: {"note": "engine 2026-09-20: PathDolerOuter::Dole 0x00507E4C switches on Planning::PathSegment+0 "
+                   "(1 line, 2 arc, 3 point turn) and copies the struct into the message. The "
+                   "fields are named by their definers: PathSegment::DefineLine 0x0085BC00, "
+                   "DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, and SetSpeedProfile "
+                   "0x0085BC90 for the speed triple at +0x1C",
+           "fields": [{"name": "xStartMm", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "yStartMm", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "xEndMm", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "yEndMm", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "speed", "kind": "struct", "type": "PathSegmentSpeed", "name_source": "engine"}]},
+    0x3E: {"note": "engine 2026-09-20: PathDolerOuter::Dole 0x00507E4C switches on Planning::PathSegment+0 "
+                   "(1 line, 2 arc, 3 point turn) and copies the struct into the message. The "
+                   "fields are named by their definers: PathSegment::DefineLine 0x0085BC00, "
+                   "DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, and SetSpeedProfile "
+                   "0x0085BC90 for the speed triple at +0x1C",
+           "fields": [{"name": "xCenterMm", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "yCenterMm", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "radiusMm", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "startRad", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "sweepRad", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "speed", "kind": "struct", "type": "PathSegmentSpeed", "name_source": "engine"}]},
+    0x3F: {"note": "engine 2026-09-20: PathDolerOuter::Dole 0x00507E4C switches on Planning::PathSegment+0 "
+                   "(1 line, 2 arc, 3 point turn) and copies the struct into the message. The "
+                   "fields are named by their definers: PathSegment::DefineLine 0x0085BC00, "
+                   "DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, and SetSpeedProfile "
+                   "0x0085BC90 for the speed triple at +0x1C",
+           "fields": [{"name": "xMm", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "yMm", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "targetAngleRad", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "angleToleranceRad", "kind": "scalar", "type": "f32", "name_source": "engine"},
+                      {"name": "speed", "kind": "struct", "type": "PathSegmentSpeed", "name_source": "engine"},
+                      {"name": "useShortestDirection", "kind": "scalar", "type": "u8", "name_source": "engine", "note": "PathSegment+0x14, the bool DefinePointTurn takes"}]},
     0x44: {"note": "engine 2026-09-20: the builder at 0x00632B88, reached only from "
                    "CarryingComponent::PlaceObjectOnGround 0x00632A88. The first three words are three "
                    "zero ints converted to float (vcvt.f32.s32 of locals the caller sets to 0); the next "
