@@ -53,25 +53,36 @@ public static class LiftPresets
 }
 
 /// <summary>
-/// The engine's <c>CarryingComponent</c>: which object is on the lift. <c>SetDockObjectAsAttachedToLift</c>
-/// runs when a pick-up result reports <c>BlockPickedUp</c>, <c>SetCarriedObjectAsUnattached</c> when a place
-/// reports <c>BlockPlaced</c> (<c>HandlePickAndPlaceResult</c>). The carried object's pose follows the robot
-/// while carried (INFERRED reduction of the engine's pose-parent chain to the lift).
+/// The engine's <c>CarryingComponent</c>: which object is on the lift, and where the lift is holding it.
+/// <c>SetDockObjectAsAttachedToLift</c> runs when a pick-up result reports <c>BlockPickedUp</c>,
+/// <c>SetCarriedObjectAsUnattached</c> when a place reports <c>BlockPlaced</c>
+/// (<c>HandlePickAndPlaceResult</c>).
+///
+/// The engine keeps the object in its pose tree, hanging off the lift, so it moves with the robot without
+/// anyone recomputing it. This stack has no pose tree, so the same chain is composed on demand - see
+/// <see cref="LiftGeometry"/>, which holds every link of it with the address it came from.
 /// </summary>
 public sealed class CarryingComponent
 {
     private readonly object _gate = new();
     private uint? _carried;
+    private KnownMarker? _dockMarker;
 
     public bool IsCarryingObject { get { lock (_gate) return _carried is not null; } }
     public uint? CarriedObjectId { get { lock (_gate) return _carried; } }
+    /// <summary>The marker the object was picked up by; the engine measures the hold from it.</summary>
+    public KnownMarker? DockMarker { get { lock (_gate) return _dockMarker; } }
     public event Action<uint?>? Changed;
 
     public bool IsCarrying(uint objectId) { lock (_gate) return _carried == objectId; }
 
-    public void SetCarrying(uint objectId) { lock (_gate) _carried = objectId; Changed?.Invoke(objectId); }
+    public void SetCarrying(uint objectId, KnownMarker? dockMarker = null)
+    {
+        lock (_gate) { _carried = objectId; _dockMarker = dockMarker; }
+        Changed?.Invoke(objectId);
+    }
 
-    public void UnsetCarrying() { lock (_gate) _carried = null; Changed?.Invoke(null); }
+    public void UnsetCarrying() { lock (_gate) { _carried = null; _dockMarker = null; } Changed?.Invoke(null); }
 }
 
 /// <summary>
@@ -98,7 +109,7 @@ public sealed class DockingSystem : IDisposable
     private readonly VisionSystem _vision;
     private readonly object _gate = new();
     private TaskCompletionSource<DockResult>? _pending;
-    private (uint ObjectId, MarkerType Marker, double OffX, double OffY, double OffAngle)? _active;
+    private (uint ObjectId, KnownMarker Marker, double OffX, double OffY, double OffAngle)? _active;
 
     public DockingSystem(CozmoRobot robot, VisionSystem vision)
     {
@@ -106,6 +117,9 @@ public sealed class DockingSystem : IDisposable
         robot.Message += OnMessage;
         vision.FrameProcessed += OnFrame;
         vision.IsCarryingObject = Carrying.IsCarrying;   // the guard at 0x00534116 needs this
+        // The engine parents the carried object to the lift, so it follows for free; here the chain is
+        // recomposed whenever a new state arrives.
+        vision.FrameProcessed += _ => UpdateCarriedObjectPose();
     }
 
     public CarryingComponent Carrying { get; } = new();
@@ -116,6 +130,22 @@ public sealed class DockingSystem : IDisposable
     public event Action<bool>? MovingLiftPostDock;
 
     private void Send(RobotMessage m) { Sent.Add(m); _robot.Transport.Send(m, flush: true); }
+
+    /// <summary>
+    /// Puts the carried object where the lift is holding it, composing the chain the engine keeps as a
+    /// pose tree: robot origin, lift pivot, arm, object. See <see cref="LiftGeometry"/>.
+    ///
+    /// The engine never recomputes this - the object is parented to the lift, so it follows for free -
+    /// which is why this is called whenever the robot pose or the lift angle moves as well as on attach.
+    /// </summary>
+    public void UpdateCarriedObjectPose()
+    {
+        if (Carrying.CarriedObjectId is not { } id || Carrying.DockMarker is not { } marker) return;
+        if (_vision.World.GetObjectById(id) is not { } obj) return;
+        if (_vision.History.Latest is not { } state) return;
+        _vision.World.SetCarriedPose(id, LiftGeometry.CarriedObjectWorldPose(
+            state.RobotPose, state.LiftAngleRad, marker));
+    }
 
     /// <summary>
     /// The engine's message for a dock, field for field.
@@ -178,7 +208,7 @@ public sealed class DockingSystem : IDisposable
         {
             if (_pending is not null) throw new InvalidOperationException("a dock is already running");
             tcs = _pending = new TaskCompletionSource<DockResult>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _active = (target.ObjectId, marker.Code, placementOffsetX, placementOffsetY, placementOffsetAngle);
+            _active = (target.ObjectId, marker, placementOffsetX, placementOffsetY, placementOffsetAngle);
             ErrorSignalsSent = 0;
         }
         _vision.World.MarkDirty(target.ObjectId);                          // ObjectPoseConfirmer::MarkObjectDirty in DockWithObject
@@ -227,13 +257,13 @@ public sealed class DockingSystem : IDisposable
 
     private void OnFrame(VisionFrameResult r)
     {
-        (uint ObjectId, MarkerType Marker, double OffX, double OffY, double OffAngle) active;
+        (uint ObjectId, KnownMarker Marker, double OffX, double OffY, double OffAngle) active;
         lock (_gate) { if (_active is not { } a) return; active = a; }
         if (r.PoseData.RotatingTooFast) return;
-        var seen = r.Markers.FirstOrDefault(m => m.Code == active.Marker);
+        var seen = r.Markers.FirstOrDefault(m => m.Code == active.Marker.Code);
         if (seen is null) return;
         var obj = _vision.World.GetObjectById(active.ObjectId);
-        var known = obj?.Markers.FirstOrDefault(k => k.Code == active.Marker);
+        var known = obj?.Markers.FirstOrDefault(k => k.Code == active.Marker.Code);
         if (obj is null || known is null || _vision.Calibration is null) return;
         // the marker's pose from this frame: solve it directly from the observed corners
         var cal = _vision.Calibration;
@@ -260,8 +290,15 @@ public sealed class DockingSystem : IDisposable
             {
                 var result = new DockResult(r.Field0, r.Field1 != 0, r.Field2, (BlockStatus)r.Field3);
                 Log?.Invoke($"PickAndPlaceResult: {result}");
-                uint? objectId; lock (_gate) objectId = _active?.ObjectId;
-                if (result.Succeeded && result.Status == BlockStatus.BlockPickedUp && objectId is { } id) Carrying.SetCarrying(id);
+                uint? objectId; KnownMarker? dockMarker;
+                lock (_gate) { objectId = _active?.ObjectId; dockMarker = _active?.Marker; }
+                if (result.Succeeded && result.Status == BlockStatus.BlockPickedUp && objectId is { } id)
+                {
+                    // SetObjectAsAttachedToLift 0x00632CC4 also places the object on the lift, so the
+                    // world model stops holding it where it was last seen on the table.
+                    Carrying.SetCarrying(id, dockMarker);
+                    UpdateCarriedObjectPose();
+                }
                 if (result.Status == BlockStatus.BlockPlaced) Carrying.UnsetCarrying();
                 TaskCompletionSource<DockResult>? tcs; lock (_gate) tcs = _pending;
                 tcs?.TrySetResult(result);

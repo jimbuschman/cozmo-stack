@@ -128,7 +128,7 @@
       "name": "Docking, carrying and pre-action poses",
       "milestone": "M12",
       "source_investigation_exhausted": false,
-      "implementation_fidelity_complete": false
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M13-navigation",
@@ -2542,21 +2542,20 @@
       "id": "M12-007"
     },
     {
-      "id": "M12-008",
       "subsystem": "M12-manipulation",
-      "title": "A carried object is parented straight to the lift",
-      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs:48",
-      "effect": "a carried cube is placed slightly wrong in the world model, and so is anything reasoned from it",
-      "provenance": "a reduction of the engine pose-parent chain to a single link",
-      "authority": "the engine parents a carried object through its pose tree rather than directly to the lift; the chain was seen when the docking path was read",
+      "title": "The pose chain that holds a carried object",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LiftGeometry.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "Robot::Robot 0x0050FBF0 builds the tree: a lift pivot at robot+0x2E4, child of the robot origin at translation (-41, 0, 45) - 0xC2240000, 0, 0x42340000 at 0x0050FFE0 - and the lift pose at robot+0x2F0, child of the pivot at (66, 0, 0) (0x42840000 at 0x00510038). Robot::ComputeLiftPose 0x005151AC swings that arm about Y by the lift angle and rotates the orientation back by the same angle, so the plate stays level. CarryingComponent::SetObjectAsAttachedToLift 0x00632CC4 then places the object with respect to the lift pose at (|dockMarkerOffset| + 4, 0, -12.5): it takes the norm of the dock marker translation on the object at 0x00632E42 and pairs it with -12.5 (0xC1480000 at 0x00632E82)",
       "evidence": [
-        "the pose-parent chain in the engine docking code"
+        "45 and 66 are the numbers the height conversion already used, and the chain reproduces it exactly: 45 + 66 sin(angle) is what Robot::GetLiftHeight reports",
+        "the -41 was the missing one, which is why a carried cube could not be placed from the lift height alone",
+        "the object was not being placed at all before this: the world model held it where it was last seen on the table for as long as the robot carried it",
+        "the same function calls FindObjectOnTopOrUnderneathHelper with 15.0 (0x41700000), which is the stack tolerance M13-007 records"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "the chain has to be reproduced rather than collapsed",
-      "hardware_required": false,
       "live_path": true,
-      "test": "ManipulationTests"
+      "test": "LiftGeometryTests.TheCarriedObjectFollowsTheRobot",
+      "id": "M12-008"
     },
     {
       "id": "M12-009",

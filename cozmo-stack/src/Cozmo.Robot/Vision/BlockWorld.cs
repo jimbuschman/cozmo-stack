@@ -333,6 +333,16 @@ public sealed class BlockWorld
     /// Known. Either condition failing skips the call, which is why a cube on the lift reporting its own
     /// motion does not dirty the pose the lift is holding it at.
     /// </summary>
+    /// <summary>
+    /// Places an object the robot is holding. The engine does not do this by assignment - the object is
+    /// parented to the lift and follows it - but the effect on the world model is the same, and this is
+    /// the only way anything moves an object here without having seen it.
+    /// </summary>
+    public void SetCarriedPose(uint objectId, Pose3d pose)
+    {
+        lock (_gate) { if (_objects.TryGetValue(objectId, out var o)) o.Pose = pose; }
+    }
+
     /// <summary>Records what the cube's radio says about its own motion; see <see cref="ObservableObject.IsMoving"/>.</summary>
     public void SetMoving(uint objectId, bool moving)
     {

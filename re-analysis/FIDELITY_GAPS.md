@@ -7,10 +7,10 @@ Manifest of **200 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 93 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 94 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 60 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 9 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 8 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -35,7 +35,7 @@ remains after both, and they do not go away by working harder on this repository
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | 0 | 0 | 0 | no | yes |
 | M11-vision — Markers, camera geometry and BlockWorld | 16 | 6 | 0 | 1 | 0 | no | yes |
-| M12-manipulation — Docking, carrying and pre-action poses | 15 | 5 | 1 | 0 | 0 | no | no |
+| M12-manipulation — Docking, carrying and pre-action poses | 15 | 5 | 0 | 0 | 0 | no | yes |
 | M13-navigation — Planning, charger and block configurations | 11 | 7 | 1 | 0 | 0 | no | no |
 | M14-faces — Face and pet pipeline | 7 | 5 | 0 | 1 | 0 | no | yes |
 | M15-freeplay — Needs, activities and freeplay | 12 | 9 | 0 | 0 | 0 | no | yes |
@@ -652,17 +652,6 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: the shipped bank lists all nine Play actions, and the ordinary-event walk already shows the shape the music path needs. Singing is unaffected, which is why this is off the live path: each of the three tempo events holds exactly one Play action
 * evidence: Play__Codelab__Music_Tiny_Orchestra_Init: 9 Play actions and 9 of type 0x1901; Play__Robot_VO__Cozmo_Singing_80bpm, _100bpm and _120bpm: one Play action each; nothing in cozmo-stack posts a Codelab music event
 * outstanding: the music resolver has to carry every Play action rather than the first; nothing is left to read
-
-### M12-manipulation — Docking, carrying and pre-action poses
-
-**M12-008 — A carried object is parented straight to the lift** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs:48`
-* effect: a carried cube is placed slightly wrong in the world model, and so is anything reasoned from it
-* rests on: a reduction of the engine pose-parent chain to a single link
-* best authority: the engine parents a carried object through its pose tree rather than directly to the lift; the chain was seen when the docking path was read
-* evidence: the pose-parent chain in the engine docking code
-* outstanding: the chain has to be reproduced rather than collapsed
 
 ### M13-navigation — Planning, charger and block configurations
 
