@@ -480,10 +480,11 @@ public sealed class AnimationScheduler
     /// inside one (0x004F9AEC; see <see cref="ChooseAlternative"/>). Choosing the first alternative that
     /// happened to decode, as this did before, made every clip play the same alternative every time.
     ///
-    /// If the chosen alternative cannot be produced by this source, the remaining ones are tried in
-    /// order. That fallback is ours: the engine hands the event to Wwise and plays nothing on failure,
-    /// but a decoder gap on our side is not a reason to lose the sound entirely. With no source, or no
-    /// alternative available, the track stays silent and the timeline is unchanged.
+    /// The draw is the whole of it. The engine hands the chosen event to Wwise and, if nothing comes
+    /// back, plays nothing - there is no second draw and no walk down the remaining alternatives. This
+    /// stack used to try the rest in order, which turned a decoder gap of its own (M6-003) into a
+    /// different alternative being heard than the app would have played. With no source, or nothing
+    /// produced for the chosen event, the track stays silent and the timeline is unchanged.
     /// </summary>
     private void StartAudio(AudioKeyframe k)
     {
@@ -491,12 +492,10 @@ public sealed class AnimationScheduler
         if (source is null || k.EventIds.Length == 0) return;
 
         int chosen = ChooseAlternative(k.EventIds.Length, k.Probabilities, _random.NextDouble());
-        var order = new List<long>(k.EventIds.Length);
-        if (chosen >= 0) order.Add(k.EventIds[chosen]);
-        for (int i = 0; i < k.EventIds.Length; i++) if (i != chosen) order.Add(k.EventIds[i]);
+        if (chosen < 0) return;
 
-        foreach (var id in order)
         {
+            long id = k.EventIds[chosen];
             // A Stop action is not a silent alternative: Wwise stops the target's playing voices. The songs
             // end this way (Stop__Robot_VO__Cozmo_Singing_Stop at the tempo clip's end); before this the
             // event returned null, was skipped, and a 462 s song kept streaming past the animation.
@@ -514,7 +513,7 @@ public sealed class AnimationScheduler
                 return;
             }
             var pcm = source.GetPcm(id, k.Volume);
-            if (pcm is null || pcm.Length == 0) continue;
+            if (pcm is null || pcm.Length == 0) return;
             lock (_gate) { _audioPcm = pcm; _audioPos = 0; _audioEventId = id; }
             return;
         }

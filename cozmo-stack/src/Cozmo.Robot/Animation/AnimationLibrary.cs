@@ -3,7 +3,30 @@ using System.Text.Json;
 namespace Cozmo.Robot.Animation;
 
 /// <summary>One choice inside an animation group.</summary>
-public sealed record AnimationGroupEntry(string Name, float Weight, float CooldownSec, string Mood);
+public sealed record AnimationGroupEntry(string Name, float Weight, float CooldownSec, string Mood)
+{
+    /// <summary>Whether this entry is only eligible while the head sits inside its window.</summary>
+    public bool UseHeadAngle { get; init; }
+    /// <summary>The window, in degrees, when <see cref="UseHeadAngle"/> is set.</summary>
+    public float HeadAngleMinDeg { get; init; }
+    public float HeadAngleMaxDeg { get; init; }
+
+    /// <summary>When this entry was last chosen, in the caller's seconds; negative infinity until it is.</summary>
+    internal double LastSelectedSec { get; set; } = double.NegativeInfinity;
+
+    /// <summary>
+    /// <c>AnimationGroupContainer::IsAnimationOnCooldown</c>: an entry is unavailable until
+    /// <c>now &gt;= selectedAt + CooldownTime_Sec</c>.
+    /// </summary>
+    public bool IsOnCooldown(double nowSec) => nowSec < LastSelectedSec + CooldownSec;
+
+    /// <summary>When this entry next comes off cooldown, for the all-on-cooldown case.</summary>
+    public double CooldownEndsSec => LastSelectedSec + CooldownSec;
+
+    /// <summary>Whether the head angle allows this entry; always true when it does not use the gate.</summary>
+    public bool HeadAngleAllows(double? headAngleDeg) =>
+        !UseHeadAngle || headAngleDeg is not { } a || (a >= HeadAngleMinDeg && a <= HeadAngleMaxDeg);
+}
 
 /// <summary>
 /// A named set of interchangeable animations, as the robot's own <c>animationGroups</c> assets define them.
@@ -21,14 +44,18 @@ public sealed class AnimationGroup
     /// not match are excluded, and when nothing matches the engine retries with the Default mood, which
     /// the fallback to the whole pool below reproduces for this build's all-Default assets.
     ///
-    /// Two things the engine also does are carried in the data but not enforced here, and remain deferred:
-    /// cooldowns (<c>AnimationGroupContainer::IsAnimationOnCooldown</c> excludes an entry until
-    /// <c>now &gt;= selectedAt + CooldownTime_Sec</c>, and when every entry is on cooldown the one soonest to
-    /// come off it is chosen), and the optional head-angle gate (<c>UseHeadAngle</c> with
-    /// <c>HeadAngleMin_Deg</c>/<c>HeadAngleMax_Deg</c>, used by three CozmoSays groups). The mechanism is
-    /// now recovered; enforcing it needs a cooldown clock and the current head angle at selection time.
+    /// Two more filters run before the draw, both carried in the shipped data.
+    /// <c>AnimationGroupContainer::IsAnimationOnCooldown</c> excludes an entry until
+    /// <c>now &gt;= selectedAt + CooldownTime_Sec</c>, and when every candidate is on cooldown the one
+    /// soonest to come off it is taken rather than none. The head-angle gate (<c>UseHeadAngle</c> with
+    /// <c>HeadAngleMin_Deg</c> and <c>HeadAngleMax_Deg</c>, used by the CozmoSays groups) drops an entry
+    /// whose window the head is outside of.
+    ///
+    /// <paramref name="nowSec"/> and <paramref name="headAngleDeg"/> are what makes those two work; pass
+    /// neither and the selection is the weighted draw alone, which is what this did before.
     /// </summary>
-    public AnimationGroupEntry? Choose(Random random, string? mood = null)
+    public AnimationGroupEntry? Choose(Random random, string? mood = null,
+                                       double? nowSec = null, double? headAngleDeg = null)
     {
         var pool = mood is null
             ? Entries
@@ -36,6 +63,34 @@ public sealed class AnimationGroup
         if (pool.Count == 0) pool = Entries;
         if (pool.Count == 0) return null;
 
+        // the head-angle gate: an entry outside its window is simply not a candidate
+        if (headAngleDeg is not null)
+        {
+            var gated = pool.Where(e => e.HeadAngleAllows(headAngleDeg)).ToList();
+            if (gated.Count > 0) pool = gated;
+        }
+
+        // the cooldown: skip entries still on it, unless that leaves nothing, in which case the engine
+        // takes the one that comes off soonest
+        if (nowSec is { } now)
+        {
+            var ready = pool.Where(e => !e.IsOnCooldown(now)).ToList();
+            if (ready.Count == 0)
+            {
+                var soonest = pool.OrderBy(e => e.CooldownEndsSec).First();
+                soonest.LastSelectedSec = now;
+                return soonest;
+            }
+            pool = ready;
+        }
+
+        var chosen = Draw(random, pool);
+        if (nowSec is { } t && chosen is not null) chosen.LastSelectedSec = t;
+        return chosen;
+    }
+
+    private static AnimationGroupEntry? Draw(Random random, IReadOnlyList<AnimationGroupEntry> pool)
+    {
         float total = pool.Sum(e => MathF.Max(0f, e.Weight));
         if (total <= 0f) return pool[random.Next(pool.Count)];
         float pick = (float)random.NextDouble() * total;
@@ -244,7 +299,12 @@ public sealed class AnimationLibrary
                     name,
                     e.TryGetProperty("Weight", out var w) ? (float)w.GetDouble() : 1f,
                     e.TryGetProperty("CooldownTime_Sec", out var c) ? (float)c.GetDouble() : 0f,
-                    e.TryGetProperty("Mood", out var m) ? m.GetString() ?? "Default" : "Default"));
+                    e.TryGetProperty("Mood", out var m) ? m.GetString() ?? "Default" : "Default")
+                {
+                    UseHeadAngle = e.TryGetProperty("UseHeadAngle", out var uh) && uh.GetBoolean(),
+                    HeadAngleMinDeg = e.TryGetProperty("HeadAngleMin_Deg", out var hmin) ? (float)hmin.GetDouble() : float.NegativeInfinity,
+                    HeadAngleMaxDeg = e.TryGetProperty("HeadAngleMax_Deg", out var hmax) ? (float)hmax.GetDouble() : float.PositiveInfinity,
+                });
             }
             return new AnimationGroup { Name = Path.GetFileNameWithoutExtension(path), Entries = entries };
         }

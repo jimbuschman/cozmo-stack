@@ -79,7 +79,7 @@
       "name": "Animation clips, scheduler and face",
       "milestone": "M5",
       "source_investigation_exhausted": false,
-      "implementation_fidelity_complete": false
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M6-wwise-bank",
@@ -1024,21 +1024,18 @@
       "test": null
     },
     {
-      "id": "M5-014",
       "subsystem": "M5-animation",
-      "title": "The animation cooldown and head-angle gate are read and not enforced",
+      "title": "The animation cooldown and head-angle gate are enforced at selection time",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs",
-      "effect": "a clip the engine would refuse still plays",
-      "provenance": "the cooldown clock and the head-angle window are parsed out of the shipped animation groups and then ignored",
-      "authority": "the shipped animation group files carry both, and AnimationLibrary.cs records the mechanism",
+      "status": "EXACT_SOURCE",
+      "authority": "AnimationGroupContainer::IsAnimationOnCooldown excludes an entry until now >= selectedAt + CooldownTime_Sec, and when every candidate is on cooldown the engine takes the one soonest to come off it rather than none. The head-angle gate is UseHeadAngle with HeadAngleMin_Deg and HeadAngleMax_Deg, carried by the shipped CozmoSays groups. Both fields were already parsed out of the group files; neither was applied",
       "evidence": [
-        "the fields are read by the loader and never consulted"
+        "ag_cozmosays_badword.json carries UseHeadAngle with a window from -10 degrees",
+        "the weighted draw itself is AnimationGroup::GetAnimationName 0x0058A970 and is unchanged"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "the gate has to be applied at selection time; the values are already in hand",
-      "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "AnimationGroupGateTests.TheHeadAngleGateDropsEntriesOutsideTheirWindow",
+      "id": "M5-014"
     },
     {
       "id": "M5-015",
@@ -1070,21 +1067,18 @@
       "live_path": true
     },
     {
-      "id": "M5-017",
       "subsystem": "M5-animation",
-      "title": "A clip falls back to another audio alternative when the chosen one cannot be decoded",
+      "title": "An audio keyframe draws one alternative and plays that one or nothing",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "effect": "a clip makes a sound where the engine would make none",
-      "provenance": "a fallback of this stack, papering over media this build cannot decode (M6-003)",
-      "authority": "RobotAudioKeyFrame::GetAudioRefIndex 0x004F9AEC picks one alternative by cumulative probability and the engine plays what Wwise resolves; there is no second draw",
+      "status": "EXACT_SOURCE",
+      "authority": "RobotAudioKeyFrame::GetAudioRef 0x004F9E18 calls GetAudioRefIndex(true) 0x004F9AEC, which draws RandDbl(1.0) and walks the references cumulative probabilities until the draw falls inside one. That single event goes to Wwise. There is no second draw and no walk down the remaining alternatives on failure",
       "evidence": [
-        "GetAudioRefIndex 0x004F9AEC"
+        "this stack tried the rest in order when the drawn one could not be decoded, which turned a decoder gap of its own (M6-003) into a different alternative being heard than the app plays",
+        "the test that covered the fallback asserted the deviation; it now asserts the draw"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "the fallback has to go once the media it covers for decode; it is a workaround for M6-003, not a decision worth keeping",
-      "hardware_required": false,
       "live_path": true,
-      "test": "AnimationTests"
+      "test": "AnimationGapTests.AnUnproducibleChosenAlternativeIsSimplySilent",
+      "id": "M5-017"
     },
     {
       "id": "M5-018",

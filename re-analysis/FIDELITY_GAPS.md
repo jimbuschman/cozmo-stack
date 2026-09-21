@@ -7,10 +7,10 @@ Manifest of **201 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 105 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 107 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 49 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 9 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 7 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -28,7 +28,7 @@ remains after both, and they do not go away by working harder on this repository
 | M2-protocol — CLAD messages and protocol helpers | 6 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 17 | 6 | 1 | 0 | 1 | no | no |
 | M4-control — Motion, sensors, lights and cubes | 9 | 4 | 0 | 0 | 0 | no | yes |
-| M5-animation — Animation clips, scheduler and face | 20 | 4 | 2 | 0 | 0 | no | no |
+| M5-animation — Animation clips, scheduler and face | 20 | 4 | 0 | 0 | 0 | no | yes |
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 1 | 0 | 0 | 0 | no | yes |
 | M7-behaviour — Idle, mood and reactions | 15 | 3 | 3 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 10 | 6 | 0 | 0 | 0 | no | yes |
@@ -501,26 +501,6 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: CompressRLE 0x00581904 was read and its skip and repeat commands and its raw 1024-byte fallback above MAX_FACE_FRAME_SIZE are known; none of the three is implemented
 * evidence: CompressRLE 0x00581904
 * outstanding: the skip and repeat commands and the raw fallback have to be written; nothing more has to be read first
-
-### M5-animation — Animation clips, scheduler and face
-
-**M5-014 — The animation cooldown and head-angle gate are read and not enforced** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs`
-* effect: a clip the engine would refuse still plays
-* rests on: the cooldown clock and the head-angle window are parsed out of the shipped animation groups and then ignored
-* best authority: the shipped animation group files carry both, and AnimationLibrary.cs records the mechanism
-* evidence: the fields are read by the loader and never consulted
-* outstanding: the gate has to be applied at selection time; the values are already in hand
-
-**M5-017 — A clip falls back to another audio alternative when the chosen one cannot be decoded** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
-* effect: a clip makes a sound where the engine would make none
-* rests on: a fallback of this stack, papering over media this build cannot decode (M6-003)
-* best authority: RobotAudioKeyFrame::GetAudioRefIndex 0x004F9AEC picks one alternative by cumulative probability and the engine plays what Wwise resolves; there is no second draw
-* evidence: GetAudioRefIndex 0x004F9AEC
-* outstanding: the fallback has to go once the media it covers for decode; it is a workaround for M6-003, not a decision worth keeping
 
 ### M7-behaviour — Idle, mood and reactions
 

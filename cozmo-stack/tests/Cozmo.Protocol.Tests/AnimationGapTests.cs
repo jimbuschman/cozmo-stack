@@ -473,21 +473,26 @@ public class AnimationGapTests
     }
 
     /// <summary>
-    /// When the alternative the engine would have chosen cannot be produced by our decoder, the others are
-    /// tried in order. That fallback is ours, not the engine's, and this test names it as such.
+    /// The draw is the whole of the choice. When the alternative the engine would have chosen produces
+    /// nothing, the keyframe is silent - <c>RobotAudioKeyFrame::GetAudioRef</c> 0x004F9E18 draws once
+    /// through <c>GetAudioRefIndex</c> 0x004F9AEC and hands that one event to Wwise, and there is no
+    /// second draw and no walk down the rest.
+    ///
+    /// This stack used to try the others in order, which turned a decoder gap of its own into a
+    /// different alternative being heard than the app would have played.
     /// </summary>
     [Fact]
-    public void AnUnproducibleChosenAlternativeFallsBackToTheOthers()
+    public void AnUnproducibleChosenAlternativeIsSimplySilent()
     {
         var r = new Recorder();
         var s = new AnimationScheduler(r, new Random(1));
-        var source = new PickySource(wanted: 33);
+        var source = new PickySource(wanted: 33);        // will not produce 22, which is the drawn one
         s.AudioSource = source;
         s.Play(Clip("t", new AudioKeyframe(0, new long[] { 11, 22, 33 }, 0.5f, new[] { 0f, 1f, 0f }, true),
                          new EventKeyframe(200, "end")), 0);
         Run(s, 0, 300);
 
-        Assert.Equal(new long[] { 22, 11, 33 }, source.Asked);   // the chosen one first, then the rest in order
+        Assert.Equal(new long[] { 22 }, source.Asked);   // asked for the drawn one, and only that one
     }
 
     // ------------------------------------------------------- head and lift keyframes
