@@ -208,6 +208,76 @@ public class NavigationTests
         Assert.False(CubeGeometry.IsActiveObjectType(ObjectType.Charger_Basic));
     }
 
+    /// <summary>
+    /// The one pre-action pose the charger generates (<c>Charger::GeneratePreActionPoses</c> 0x004E9FB0):
+    /// a file-static <c>Pose2d(0, 0, 250)</c> turned into
+    /// <c>Pose3d(angle + pi/2, Z, (x, -y, -15.5))</c> on the marker's pose. Through the marker's own
+    /// -pi/2 at (86, 0, 22) that is the identity rotation at (-164, 0, 6.5) in the charger's frame.
+    /// </summary>
+    [Fact]
+    public void TheChargerGeneratesOnePreDockPoseOnItsAxisTwoHundredAndFiftyMillimetresOut()
+    {
+        Assert.Equal(250.0, ChargerGeometry.PreDockDistanceFromMarkerMm);
+        Assert.Equal(-15.5, ChargerGeometry.PreDockZOffsetMm);
+
+        var pre = ChargerGeometry.PreDockPose(At(200, 0, 0));
+        Assert.Equal(200 - 164.0, pre.Translation.X, 6);
+        Assert.Equal(0.0, pre.Translation.Y, 6);
+        Assert.Equal(6.5, pre.Translation.Z, 6);
+        Assert.Equal(0.0, pre.AngleAroundZ, 6);            // facing along the charger's +X, into it
+
+        // and the docked pose is half a turn from it, 194 mm further on
+        var docked = ChargerGeometry.DockedRobotPose(At(200, 0, 0));
+        Assert.Equal(194.0, docked.Translation.X - pre.Translation.X, 6);
+    }
+
+    /// <summary>
+    /// The mount's numbers, all of them read: the align, the turn, the lift and the reverse
+    /// (<c>ConfigureAlignWithChargerAction</c> 0x0054E1C4 and <c>ConfigureTurnAndMountAction</c>
+    /// 0x0054E458), and the retry drive (0x0054E72C).
+    /// </summary>
+    [Fact]
+    public void TheMountCarriesTheEnginesOwnNumbers()
+    {
+        Assert.Equal(120.0, MountChargerAction.AlignDistanceMm);
+        Assert.Equal(30f, MountChargerAction.AlignSpeedMmps);
+        Assert.Equal(0.0349066, MountChargerAction.HeadToleranceRad, 6);
+        Assert.Equal(45.0, MountChargerAction.LiftHeightForMountMm);
+        Assert.Equal(5f, MountChargerAction.LiftSpeedRadPerSec);
+        Assert.Equal(-120.0, MountChargerAction.MountDriveMm);
+        Assert.Equal(30f, MountChargerAction.MountSpeedMmps);
+        Assert.Equal(1.74533, MountChargerAction.TurnMaxSpeedRadPerSec, 5);
+        Assert.Equal(5.23599, MountChargerAction.TurnAccelRadPerSec2, 5);
+        Assert.Equal(-0.261799, MountChargerAction.MaxBackupPitchRad, 6);
+        Assert.Equal(120.0, MountChargerAction.RetryDriveMm);
+        Assert.Equal(100f, MountChargerAction.RetrySpeedMmps);
+        Assert.Equal(Math.PI / 2, MountChargerAction.RetryHeadingWindowRad, 6);
+    }
+
+    /// <summary>
+    /// An align that fails ends the mount: the align is the first sub-action of a sequence, so the
+    /// turn-and-mount is never configured (0x0054E2FA is reached only when the align returned success).
+    /// The action does not loop - it makes one attempt and hands back a result.
+    /// </summary>
+    [Fact]
+    public void AFailedAlignEndsTheMountWithoutTurningOrReversing()
+    {
+        if (Lib is null) return;
+        using var rig = new Rig();
+        rig.Head = -0.2f;
+        rig.Charger = At(200, 0, 0);
+        Assert.Single(rig.Frame().Objects);
+        rig.DockSucceeds = false;                       // the align reports a failed dock
+        var mount = new MountChargerAction(rig.M, ChargerGeometry.ObjectId);
+        var task = mount.RunAsync(default);
+        SpinUntil(() => task.IsCompleted, () => { rig.Pump(); rig.Frame(); }, 15000);
+
+        Assert.NotEqual(ActionResult.Success, task.Result);
+        Assert.Equal(1, mount.Attempts);
+        Assert.DoesNotContain(rig.Sent, m => m is AppendPathSegmentPointTurn);
+        Assert.False(rig.OnCharger);
+    }
+
     [Fact]
     public void AChargerInViewIsLocalisedWithoutBeingConnected()
     {
@@ -242,10 +312,10 @@ public class NavigationTests
         Assert.True(rig.Robot.Sensors.OnCharger);
         var dock = rig.Sent.OfType<DockWithObject>().First();
         Assert.Equal((byte)DockAction.Align, dock.ToBytes()[17]);
-        // the align distance is the custom 120 mm less the 27 mm finger-to-origin offset, in the error signal's x
-        // CheckIfDone 0x0054E2D0 decides on the heading once the reverse has finished, not on the
-        // contacts part-way through it.
-        Assert.Contains(mount.Trace, l => l.Contains("within a right angle"));
+        // BackupOntoChargerAction::CheckIfDone 0x0054E7A8 succeeds the moment the contacts report and
+        // does not drive the rest of the 120 mm. The pi/2 heading test is on the failure path only.
+        Assert.Contains(mount.Trace, l => l.Contains("the contacts"));
+        Assert.DoesNotContain(mount.Trace, l => l.Contains("retry"));
         Assert.Contains(rig.Sent, m => m is AppendPathSegmentPointTurn);
         var back = rig.Sent.OfType<AppendPathSegmentLine>().Last();
         Assert.Equal(-30f, back.Speed.SpeedMmps);                                  // backwards at 30 mm/s

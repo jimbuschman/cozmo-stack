@@ -2804,35 +2804,39 @@
     },
     {
       "subsystem": "M13-navigation",
-      "title": "The mount is decided by the heading after the reverse, not by the contacts during it",
+      "title": "The reverse onto the charger ends on the contacts, and the pi/2 test is a retry condition",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs",
       "status": "EXACT_SOURCE",
-      "authority": "MountChargerAction::CheckIfDone 0x0054E2D0 runs the turn-and-mount sub-action to completion and only then looks at the world: it takes the charger yaw (0x0054E344) and the robot yaw (0x0054E358), subtracts, takes the absolute value and compares against pi/2 (0x3FC90FDB at 0x0054E374). Inside the window the mount stands; outside it, or with the charger no longer located, it warns \"Turning and mounting the charger failed\" and runs ConfigureDriveForRetryAction, whose completion returns 0x04000006",
+      "authority": "libcozmoEngine.so",
       "evidence": [
-        "nothing in the path watches the charger contacts while the robot reverses; this stack raced the drive against the contacts report and aborted the path on the first IS_ON_CHARGER",
-        "DriveOffChargerContactsAction 0x005582E4 works the same way in the other direction: it drives its 10 mm in full and only warns if the contacts still report afterwards",
-        "the engine compares the charger pose own yaw, which matches a docked robot only under one of the two charger conventions; which one is the open half of M13-009, so this stack measures the window against the docked heading it computes rather than guessing"
+        "the mount's last sub-action is not a plain DriveStraightAction: ConfigureTurnAndMountAction 0x0054E612 overwrites the new action's vtable pointer with BackupOntoChargerAction's",
+        "BackupOntoChargerAction::CheckIfDone 0x0054E7A8 succeeds immediately when the robot is on the charger contacts (robot+0x338), calling Robot::SetPoseOnCharger(); fails when the pitch is below -0.261799 rad (0xBE860A92); otherwise defers to DriveStraightAction::CheckIfDone",
+        "MountChargerAction::CheckIfDone 0x0054E2D0 reaches the pi/2 comparison only when the turn-and-mount sub-action has FAILED: 0x0054E31A skips it for success (0) and for still-running (0x1000000)",
+        "inside the window the failure stands; outside it the engine warns and runs ConfigureDriveForRetryAction 0x0054E72C, DriveStraightAction(120 mm, 100 mm/s), whose completion returns 0x04000006",
+        "an align failure ends the action: the turn-and-mount is only configured after the align sub-action returns success (0x0054E2FA)"
       ],
+      "prior": "this record said nothing in the path watches the contacts while the robot reverses, and that the pi/2 comparison was the mount's acceptance test. Both were wrong: the subclass ends the reverse on the contacts, and the comparison only decides whether a failed mount gets a retry drive. The stack had also been looping up to three attempts of its own, where the engine makes one and hands back a retryable result",
       "live_path": true,
-      "test": "NavigationTests.MountChargerAlignsTurnsAndBacksOntoTheContacts",
+      "test": "NavigationTests.MountChargerAlignsTurnsAndBacksOntoTheContacts, NavigationTests.AFailedAlignEndsTheMountWithoutTurningOrReversing",
       "id": "M13-008"
     },
     {
       "subsystem": "M13-navigation",
-      "title": "The charger dimensions and the docked pose, with the pre-dock pose still unread",
+      "title": "The charger's dimensions, its docked pose and its one pre-dock pose",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/ChargerGeometry.cs",
-      "status": "RECOVERABLE_GAP",
-      "effect": "the robot aims at the wrong point when mounting",
-      "provenance": "the pre-dock pose is this stack own: on the charger axis, facing the marker, at the distance the mount action aligns to",
-      "authority": "Charger::Charger 0x004E9B6C settles the object: 96 x 80 x 31 mm stored at +0xF0 (0x42C00000, 0x42A00000, 0x41F80000) and one marker added with a pose rotated -90 degrees about Z (0xBFC90FDB) at (86, 0, 22) - 0x42AC0000 and 0x41B00000, which is 22 and not the 11 this stack had - sized 20 x 27 (0x41A00000, 0x41D80000). Charger::GetRobotDockedPose 0x004EA1A0 is a single branchless function: Pose3d(Radians(3.14159), Z_AXIS, (30, 0, 0)) on the charger pose, so a docked robot faces out, half a turn from the charger heading, 30 mm along its +X. Charger::GeneratePreActionPoses 0x004E9FB0 has not been read through",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
       "evidence": [
-        "the marker height was wrong by half, which moves where the charger is placed from a sighting",
-        "the docked pose being chargerYaw + pi sits awkwardly against the mount check in M13-008, which compares the charger yaw with the robot yaw against pi/2; both readings are from source and they cannot both mean what they appear to"
+        "Charger::Charger 0x004E9B6C: 96 x 80 x 31 mm at +0xF0, one marker at (86, 0, 22) rotated -90 degrees about Z, sized 20 x 27",
+        "Charger::GetRobotDockedPose 0x004EA1A0: Pose3d(Radians(pi), Z_AXIS, (30, 0, 0)) on the charger's pose",
+        "Charger::GeneratePreActionPoses 0x004E9FB0 produces exactly one pose, and only for action types 0 and 1 (0x004E9FD4): Pose3d(Radians(p.angle + pi/2), Z_AXIS, (p.x, -p.y, -15.5), parent = the charger's marker pose)",
+        "p is a file-static Pose2d(Radians(0), 0.0f, 250.0f) built by the initialiser at 0x004D6BC4 (0x437A0000 = 250)",
+        "composed through the marker that is the identity rotation at (86 - 250, 0, 22 - 15.5) = (-164, 0, 6.5) in the charger frame: on the charger's axis, 250 mm out from the marker, facing into the charger",
+        "the apparent contradiction with the mount's pi/2 test is gone: that test is on the failure path and is a retry condition (M13-008)"
       ],
-      "unresolved": "Charger::GeneratePreActionPoses, which is the pre-dock pose the mount aligns to; and the contradiction between GetRobotDockedPose and the mount heading check",
-      "hardware_required": false,
+      "prior": "the pre-dock pose was this stack's own inference, and the docked pose was recorded as sitting awkwardly against the mount check",
       "live_path": true,
-      "test": "NavigationTests.TheChargerIsAPassiveObjectWithOneRectangularMarker",
+      "test": "NavigationTests.TheChargerGeneratesOnePreDockPoseOnItsAxisTwoHundredAndFiftyMillimetresOut",
       "id": "M13-009"
     },
     {
@@ -2866,6 +2870,21 @@
       "live_path": true,
       "test": "NavigationTests",
       "id": "M13-011"
+    },
+    {
+      "subsystem": "M13-navigation",
+      "title": "The mount raises the lift to 45 mm when it is below it, not when it is above",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "ConfigureTurnAndMountAction 0x0054E58A reads Robot::GetLiftHeight(), compares it with 45.0 (0x42340000) and branches past the lift move when the lift is at or above it (bpl at 0x0054E59E)",
+        "the move it makes otherwise is MoveLiftToHeightAction(45 mm, speed 5, accel 0) at 0x0054E5C6",
+        "found by this pass: the stack had the comparison the other way round and lowered the lift to 45 when it was above"
+      ],
+      "live_path": true,
+      "test": "NavigationTests.TheMountCarriesTheEnginesOwnNumbers",
+      "id": "M13-012"
     },
     {
       "id": "M14-001",

@@ -15,12 +15,17 @@ namespace Cozmo.Robot.Vision;
 ///
 /// <c>GetRobotDockedPose</c> (0x004EA1A0) is read exactly: <c>Pose3d(Radians(3.14159), Z_AXIS,
 /// (30, 0, 0), parent = the charger's pose)</c> - rotated π about Z, facing out of the charger, 30 mm
-/// along +X. So a docked robot's heading is the charger's plus π, which is worth holding onto: the
-/// mount's own check compares the charger's yaw with the robot's against π/2 (M13-008), and those two
-/// readings cannot both be right. The docked pose is the one that is read from a single function with
-/// no branches, so it is the one trusted here. <c>GeneratePreActionPoses</c> (0x004EA000) makes one Docking
-/// pose; its exact offsets were not fully read (a static pose plus −15.5 mm), so the pre-dock pose here is
-/// INFERRED: on the charger's axis, facing the marker, at the distance the mount action aligns to.
+/// along +X. There is no conflict with the mount action's π/2 test after all: that test is on the
+/// <em>failure</em> path of <c>MountChargerAction::CheckIfDone</c> and decides whether a failed mount is
+/// worth a retry drive, not whether the robot is docked (see <c>MountChargerAction</c>).
+///
+/// <c>GeneratePreActionPoses</c> (0x004E9FB0) is read too, and it produces exactly one pose, for action
+/// types 0 and 1 only. It is <c>Pose3d(Radians(p.angle + π/2), Z_AXIS, (p.x, −p.y, −15.5),
+/// parent = the charger's marker pose)</c>, where <c>p</c> is a file-static <c>Pose2d(0, 0, 250)</c>
+/// built by the initialiser at 0x004D6BC4. Composed through the marker - which is itself −π/2 about Z at
+/// (86, 0, 22) - that is the identity rotation at (86 − 250, 0, 22 − 15.5) = (−164, 0, 6.5) in the
+/// charger's frame: on the charger's axis, 250 mm out from the marker, facing along the charger's +X,
+/// which is into the charger.
 /// </summary>
 public static class ChargerGeometry
 {
@@ -33,6 +38,10 @@ public static class ChargerGeometry
     public const double MarkerWidthMm = 20.0;
     public const double MarkerHeightMm = 27.0;
     public const double DockedXMm = 30.0;
+    /// <summary>250 mm out from the marker: the y of the file-static Pose2d at 0x004D6BC4.</summary>
+    public const double PreDockDistanceFromMarkerMm = 250.0;
+    /// <summary>−15.5 mm: the z GeneratePreActionPoses gives the pose (0xC1780000 at 0x004EA01A).</summary>
+    public const double PreDockZOffsetMm = -15.5;
     /// <summary>The world-model id of the (single, passive) charger (LOCAL: the engine assigns ids in observation order).</summary>
     public const uint ObjectId = 100;
 
@@ -48,9 +57,18 @@ public static class ChargerGeometry
         chargerPose.Compose(new Pose3d(Mat3.AboutZ(Math.PI), new Vec3(DockedXMm, 0, 0)));
 
     /// <summary>
-    /// The pre-dock pose: on the charger's axis in front of the lip, facing the marker, <paramref name="distanceFromMarkerMm"/>
-    /// from the marker plane (INFERRED; the mount action then aligns to exactly this distance).
+    /// The one pre-action pose <c>Charger::GeneratePreActionPoses</c> makes, in the world: on the
+    /// charger's axis, <see cref="PreDockDistanceFromMarkerMm"/> out from the marker, facing into the
+    /// charger, <see cref="PreDockZOffsetMm"/> below the marker.
     /// </summary>
+    public static Pose3d PreDockPose(Pose3d chargerPose) =>
+        chargerPose.Compose(new Pose3d(Mat3.Identity,
+                                       new Vec3(MarkerXMm - PreDockDistanceFromMarkerMm, 0,
+                                                MarkerZMm + PreDockZOffsetMm)));
+
+    /// <summary>The same pose at a distance of the caller's choosing, for an align that stops short.</summary>
     public static Pose3d PreDockPose(Pose3d chargerPose, double distanceFromMarkerMm) =>
-        chargerPose.Compose(new Pose3d(Mat3.Identity, new Vec3(MarkerXMm - distanceFromMarkerMm, 0, 0)));
+        chargerPose.Compose(new Pose3d(Mat3.Identity,
+                                       new Vec3(MarkerXMm - distanceFromMarkerMm, 0,
+                                                MarkerZMm + PreDockZOffsetMm)));
 }

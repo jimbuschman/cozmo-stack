@@ -42,40 +42,66 @@ public sealed class AlignWithObjectAction : DockActionBase
 }
 
 /// <summary>
-/// The engine's <c>MountChargerAction</c> (0x0054E018..0x0054E9xx, RobotActionType 0x11): <c>Init</c> needs a
-/// located object of type Charger (0xD); <c>ConfigureAlignWithChargerAction</c> runs an
-/// <c>AlignWithObjectAction(charger, 120 mm (0x42F00000), CUSTOM)</c> at 30 mm/s (<c>SetSpeed</c>, 0x41F00000)
-/// with the head at 0 (tolerance 2°); then <c>ConfigureTurnAndMountAction</c>: a <c>TurnInPlaceAction</c> to the
-/// heading of the vector towards the docked pose (absolute; max speed 1.74533 rad/s, accel 5.23599), the lift
-/// lowered to 45 mm (0x42340000, speed 5) if it is above 45, and a <c>DriveStraightAction(−120 mm, 30 mm/s)</c>
-/// backwards onto the charger. When the turn-and-mount fails ("Turning and mounting the charger failed ...
-/// Driving forward to position for a retry") <c>ConfigureDriveForRetryAction</c> drives forward 120 mm at
-/// 100 mm/s and the align repeats.
+/// The engine's <c>MountChargerAction</c> (0x0054E018, RobotActionType 0x11), read through.
 ///
-/// <b>What decides success is the heading, not the contacts.</b> <c>MountChargerAction::CheckIfDone</c>
-/// 0x0054E2D0 lets the turn-and-mount sub-action run to completion and then compares the charger's yaw
-/// with the robot's: <c>|chargerYaw - robotYaw|</c> against <c>pi/2</c> (0x3FC90FDB at 0x0054E374).
-/// Within a right angle and the mount stands; outside it - or with the charger no longer located - it
-/// warns and runs the forward retry drive, whose completion returns 0x04000006.
+/// <c>Init</c> needs a located object of type Charger (0xD). Then two compound sub-actions run in turn.
 ///
-/// The backwards drive is never cut short. This stack raced the drive against the contacts report and
-/// aborted the path on the first IS_ON_CHARGER, which stops the robot somewhere the engine would have
-/// kept reversing from. Retries: <see cref="MaxRetries"/> (INFERRED 2).
+/// <c>ConfigureAlignWithChargerAction</c> 0x0054E1C4 builds a sequence of:
+/// <list type="number">
+/// <item><c>AlignWithObjectAction(charger, 120 mm (0x42F00000), alignmentType 3)</c>, <c>SetSpeed(30)</c>;</item>
+/// <item><c>MoveHeadToAngleAction(0 rad, tolerance 0.0349066 rad = 2 degrees)</c>.</item>
+/// </list>
+///
+/// <c>ConfigureTurnAndMountAction</c> 0x0054E458 builds:
+/// <list type="number">
+/// <item><c>TurnInPlaceAction(atan2(v.y, v.x), absolute)</c> with <c>SetMaxSpeed(1.74533)</c> and
+/// <c>SetAccel(5.23599)</c>, where v is <c>ComputeVectorBetween(robotPose, dockPoint)</c> - and that
+/// function returns <b>a - b</b> (0x008476E6), so v points away from the charger and the robot ends up
+/// facing out. The dock point is <c>Pose3d(0, Z, (30, 0, 0))</c> pre-composed with the charger's pose,
+/// which is <see cref="ChargerGeometry.DockedRobotPose"/>'s translation;</item>
+/// <item><c>MoveLiftToHeightAction(45 mm, speed 5, accel 0)</c>, but <b>only when the lift is below
+/// 45</b> (<c>vcmpe</c> against 0x42340000 then <c>bpl</c> at 0x0054E59E) - the lift is raised to clear
+/// the charger, not lowered;</item>
+/// <item><c>BackupOntoChargerAction(-120 mm, 30 mm/s)</c>.</item>
+/// </list>
+///
+/// <b>The reverse does watch the contacts.</b> <c>BackupOntoChargerAction::CheckIfDone</c> 0x0054E7A8 is
+/// three lines: on the charger contacts it calls <c>Robot::SetPoseOnCharger()</c> and succeeds at once;
+/// a pitch below -0.261799 rad (-15 degrees) fails it; otherwise it defers to
+/// <c>DriveStraightAction::CheckIfDone</c>. An earlier reading of this stack had the engine always
+/// driving the full 120 mm, which is not what the subclass does.
+///
+/// <b>The pi/2 heading test is a retry condition, not a success test.</b> <c>CheckIfDone</c> 0x0054E2D0
+/// reaches it only when the turn-and-mount sub-action has <em>failed</em> (0x0054E31A skips it for
+/// success and for still-running). Inside a right angle of the charger's yaw the failure simply stands;
+/// outside it - the robot has turned round, so driving forward moves it clear - it warns "Turning and
+/// mounting the charger failed ... Driving forward to position for a retry" and runs
+/// <c>ConfigureDriveForRetryAction</c> 0x0054E72C, a <c>DriveStraightAction(120 mm, 100 mm/s)</c> whose
+/// completion returns 0x04000006. The engine does not loop: it hands a retryable result back to
+/// whoever ran it.
 /// </summary>
 public sealed class MountChargerAction
 {
+    /// <summary>120 mm: the custom align distance, 0x42F00000 at 0x0054E21C.</summary>
     public const double AlignDistanceMm = 120.0;
+    /// <summary>30 mm/s: IDockAction::SetSpeed, 0x41F00000 at 0x0054E22A.</summary>
     public const float AlignSpeedMmps = 30f;
+    /// <summary>2 degrees, the head tolerance the align sequence ends with (0x3D0EFA35).</summary>
+    public const double HeadToleranceRad = 0.0349066;
+    /// <summary>45 mm, the height the lift is raised to when it is below that (0x42340000).</summary>
     public const double LiftHeightForMountMm = 45.0;
+    /// <summary>5 rad/s, the lift speed for that move (0x40A00000).</summary>
+    public const float LiftSpeedRadPerSec = 5f;
     public const double MountDriveMm = -120.0;
     public const float MountSpeedMmps = 30f;
     public const double RetryDriveMm = 120.0;
     public const float RetrySpeedMmps = 100f;
     public const double TurnMaxSpeedRadPerSec = 1.74533;
     public const double TurnAccelRadPerSec2 = 5.23599;
-    public const int MaxRetries = 2;
-    /// <summary>pi/2: the heading window CheckIfDone accepts (0x3FC90FDB at 0x0054E374).</summary>
-    public const double MountHeadingToleranceRad = Math.PI / 2;
+    /// <summary>-15 degrees: BackupOntoChargerAction fails below this pitch (0xBE860A92).</summary>
+    public const double MaxBackupPitchRad = -0.261799;
+    /// <summary>pi/2: the window CheckIfDone uses to decide whether a failed mount is worth retrying.</summary>
+    public const double RetryHeadingWindowRad = Math.PI / 2;
 
     private readonly ManipulationSystem _m;
     public MountChargerAction(ManipulationSystem m, uint chargerId) { _m = m; ChargerId = chargerId; }
@@ -83,62 +109,122 @@ public sealed class MountChargerAction
     public uint ChargerId { get; }
     public IReadOnlyList<string> Trace => _trace;
     private readonly List<string> _trace = new();
+
+    /// <summary>
+    /// Always one. The engine's action makes a single attempt and returns a retryable result; the loop,
+    /// if there is to be one, belongs to whoever ran it.
+    /// </summary>
     public int Attempts { get; private set; }
 
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
+        Attempts = 1;
         var charger = _m.World.GetLocatedObjectById(ChargerId);
-        if (charger is null || charger.Type != ObjectType.Charger_Basic) { _trace.Add("MountChargerAction.Init.InvalidObject: not a located charger"); return ActionResult.BadObject; }
-        for (Attempts = 1; Attempts <= 1 + MaxRetries; Attempts++)
+        if (charger is null || charger.Type != ObjectType.Charger_Basic)
         {
-            if (cancel.IsCancellationRequested) return ActionResult.CancelledWhileRunning;
-            _ = _m.Robot.Motion.SetHeadAngleAsync(0f, requireCalibration: false);
-            var align = new AlignWithObjectAction(_m, ChargerId, AlignDistanceMm, AlignmentType.Custom)
-                { Profile = PathMotionProfile.Default with { DockSpeedMmps = AlignSpeedMmps }, CheckPreActionPose = false };
-            var a = await align.RunAsync(cancel);
-            _trace.AddRange(align.Trace);
-            if (a != ActionResult.Success) { _trace.Add($"align with the charger: {a}"); if (a is ActionResult.BadObject or ActionResult.CancelledWhileRunning) return a; continue; }
-
-            // turn to face away from the charger: towards the docked pose's heading vector
-            charger = _m.World.GetLocatedObjectById(ChargerId);
-            var robot = _m.RobotPose();
-            if (charger is null || robot is null) return ActionResult.BadObject;
-            var docked = ChargerGeometry.DockedRobotPose(charger.Pose);
-            var v = docked.Translation - robot.Value.Translation;
-            double heading = StraightLinePlanner.Wrap(Math.Atan2(v.Y, v.X) + Math.PI);      // the robot backs towards the docked pose
-            var turn = new PathSegment.PointTurn(robot.Value.Translation.X, robot.Value.Translation.Y, heading, StraightLinePlanner.PointTurnToleranceRad,
-                                                 (float)TurnMaxSpeedRadPerSec, (float)TurnAccelRadPerSec2, (float)TurnAccelRadPerSec2, true);
-            using var run = _m.StartPath(new PathSegment[] { turn });
-            var ev = await run.WaitAsync(TimeSpan.FromSeconds(6), cancel);
-            if (ev != PathEventType.Completed) { _trace.Add("MountChargerAction: the turn did not complete"); continue; }
-            if (_m.Robot.Sensors.LiftHeightMm is { } lift && lift > LiftHeightForMountMm)
-                await _m.Robot.Motion.SetLiftHeightAsync((float)LiftHeightForMountMm, maxSpeedRadPerSec: 5f, requireCalibration: false);
-
-            // The drive runs to completion: CheckIfDone 0x0054E2D0 only looks at the world once the
-            // sub-action has finished, and nothing in it watches the contacts while it reverses.
-            var r = await new DriveStraightAction(_m, MountDriveMm, MountSpeedMmps).RunAsync(cancel);
-
-            // Then the heading decides, within a right angle.
-            //
-            // The engine compares the charger's own yaw with the robot's (0x0054E344 against 0x0054E358).
-            // That only accepts a good mount if the charger's yaw *is* the heading a docked robot ends
-            // up with, and this stack's ChargerGeometry.DockedRobotPose puts the two half a turn apart.
-            // Which of the two conventions the engine's charger pose uses is the open half of M13-009,
-            // so the window is measured against the docked heading this stack computes rather than
-            // against a convention that has not been read.
-            var chargerNow = _m.World.GetLocatedObjectById(ChargerId);
-            var robotNow = _m.RobotPose();
-            if (chargerNow is not null && robotNow is not null &&
-                Math.Abs(StraightLinePlanner.Wrap(ChargerGeometry.DockedRobotPose(chargerNow.Pose).AngleAroundZ
-                                                  - robotNow.Value.AngleAroundZ)) <= MountHeadingToleranceRad)
-            {
-                _trace.Add("MountChargerAction: mounted, within a right angle of the charger heading");
-                return ActionResult.Success;
-            }
-            _trace.Add($"Turning and mounting the charger failed ({r}). Driving forward to position for a retry");
-            await new DriveStraightAction(_m, RetryDriveMm, RetrySpeedMmps).RunAsync(cancel);
+            _trace.Add("MountChargerAction.Init.InvalidObject: not a located charger");
+            return ActionResult.BadObject;
         }
-        _trace.Add("MountChargerAction: out of retries");
+
+        // ---- ConfigureAlignWithChargerAction
+        var align = new AlignWithObjectAction(_m, ChargerId, AlignDistanceMm, AlignmentType.Custom)
+            { Profile = PathMotionProfile.Default with { DockSpeedMmps = AlignSpeedMmps }, CheckPreActionPose = false };
+        var a = await align.RunAsync(cancel);
+        _trace.AddRange(align.Trace);
+        if (a != ActionResult.Success)
+        {
+            // the align is the first sub-action of a sequence: its failure is the action's failure, and
+            // the turn-and-mount is never configured (0x0054E304 is only reached on success)
+            _trace.Add($"align with the charger: {a}");
+            return a;
+        }
+        await _m.Robot.Motion.SetHeadAngleAsync(0f, requireCalibration: false);
+
+        // ---- ConfigureTurnAndMountAction
+        charger = _m.World.GetLocatedObjectById(ChargerId);
+        var robot = _m.RobotPose();
+        if (charger is null || robot is null) return ActionResult.BadObject;
+
+        // The engine turns to atan2 of (robotPose - dockPoint), which faces out of the charger.
+        var dock = ChargerGeometry.DockedRobotPose(charger.Pose).Translation;
+        var away = robot.Value.Translation - dock;
+        double heading = StraightLinePlanner.Wrap(Math.Atan2(away.Y, away.X));
+        var turn = new PathSegment.PointTurn(robot.Value.Translation.X, robot.Value.Translation.Y, heading,
+                                             StraightLinePlanner.PointTurnToleranceRad,
+                                             (float)TurnMaxSpeedRadPerSec, (float)TurnAccelRadPerSec2,
+                                             (float)TurnAccelRadPerSec2, true);
+        using (var run = _m.StartPath(new PathSegment[] { turn }))
+        {
+            var ev = await run.WaitAsync(TimeSpan.FromSeconds(6), cancel);
+            if (ev != PathEventType.Completed) { _trace.Add("MountChargerAction: the turn did not complete"); return ActionResult.Retry; }
+        }
+
+        // the lift goes UP to 45 when it is below it, to clear the charger
+        if (_m.Robot.Sensors.LiftHeightMm is { } lift && lift < LiftHeightForMountMm)
+            await _m.Robot.Motion.SetLiftHeightAsync((float)LiftHeightForMountMm,
+                                                     maxSpeedRadPerSec: LiftSpeedRadPerSec, requireCalibration: false);
+
+        // ---- BackupOntoChargerAction: the reverse ends the moment the contacts report
+        var r = await BackupOntoChargerAsync(cancel);
+        if (r == ActionResult.Success)
+        {
+            _trace.Add("MountChargerAction: on the contacts");
+            return ActionResult.Success;
+        }
+
+        // ---- the failure path, and the only place the pi/2 window is consulted
+        var chargerNow = _m.World.GetLocatedObjectById(ChargerId);
+        var robotNow = _m.RobotPose();
+        if (chargerNow is not null && robotNow is not null &&
+            Math.Abs(StraightLinePlanner.Wrap(chargerNow.Pose.AngleAroundZ - robotNow.Value.AngleAroundZ))
+                <= RetryHeadingWindowRad)
+        {
+            _trace.Add($"MountChargerAction: the mount failed ({r}) within a right angle of the charger, so no retry drive");
+            return r;
+        }
+        _trace.Add($"Turning and mounting the charger failed ({r}). Driving forward to position for a retry");
+        await new DriveStraightAction(_m, RetryDriveMm, RetrySpeedMmps).RunAsync(cancel);
+        return ActionResult.Retry;
+    }
+
+    /// <summary>
+    /// <c>BackupOntoChargerAction</c>: the straight drive, ended early by the charger contacts and failed
+    /// by too steep a pitch.
+    /// </summary>
+    private async Task<ActionResult> BackupOntoChargerAsync(CancellationToken cancel)
+    {
+        if (_m.Robot.Sensors.OnCharger) return ActionResult.Success;
+        var robot = _m.RobotPose();
+        if (robot is null) return ActionResult.Abort;
+
+        double h = robot.Value.AngleAroundZ;
+        var to = robot.Value.Translation + new Vec3(Math.Cos(h) * MountDriveMm, Math.Sin(h) * MountDriveMm, 0);
+        var profile = PathMotionProfile.Default;
+        using var run = _m.StartPath(new PathSegment[]
+        {
+            new PathSegment.Line(robot.Value.Translation.X, robot.Value.Translation.Y, to.X, to.Y,
+                                 -MountSpeedMmps, profile.AccelMmps2, profile.DecelMmps2),
+        });
+
+        var arrived = run.WaitAsync(TimeSpan.FromSeconds(3 + Math.Abs(MountDriveMm) / MountSpeedMmps * 2), cancel);
+        var contacts = WaitForChargerAsync(TimeSpan.FromSeconds(20), cancel);
+        var first = await Task.WhenAny(arrived, contacts);
+        if (first == contacts && contacts.Result)
+        {
+            run.Abort();
+            _trace.Add("BackupOntoChargerAction: the contacts reported, so the reverse ends here");
+            return ActionResult.Success;
+        }
+
+        var ev = await arrived;
+        if (_m.Robot.Sensors.OnCharger) return ActionResult.Success;
+        if (_m.Robot.Sensors.PitchRad is { } pitch && pitch < MaxBackupPitchRad)
+        {
+            _trace.Add($"BackupOntoChargerAction: pitched to {pitch} rad, below {MaxBackupPitchRad}");
+            return ActionResult.Retry;
+        }
+        // the drive ran its length without ever reaching the contacts
+        _trace.Add($"BackupOntoChargerAction: the reverse finished ({ev}) off the contacts");
         return ActionResult.Retry;
     }
 
