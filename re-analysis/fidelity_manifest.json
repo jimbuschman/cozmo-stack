@@ -2290,19 +2290,22 @@
       "test": "VisionTests"
     },
     {
-      "id": "M11-006",
       "subsystem": "M11-vision",
-      "title": "Clustering tolerances, the flat-snap angle, history windows, verification timeout",
+      "title": "The clustering tolerances and the flat-snap angle",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
-      "effect": "observations merge into the wrong object, or fail to merge",
-      "provenance": "chosen locally (20 mm / 10 degrees, 8 degrees)",
-      "authority": "the engine BlockWorld clustering",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the engine own tolerances",
-      "hardware_required": false,
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "ObservableObjectLibrary::CreateObjectsFromMarkers 0x0062539C calls ClusterObjectPoses(poses, object, distThreshold, angleThreshold, clusters) with 5.0 mm (0x40A00000 built at 0x006254F4) and 0.0872665 rad, 5 degrees (0x3DB2B8C3 at 0x00625498, through the Radians constructor at 0x006254E0)",
+        "ObjectPoseConfirmer::UpdatePoseInInstance calls ObservableObject::ClampPoseToFlat(pose, Radians(0.349066)) - 20 degrees, 0x3EB2B8C2 at 0x00505F16 - which is the path every observation of an object already in the world takes",
+        "on the creation path CreateObjectsFromMarkers asks the object itself for the angle in degrees and multiplies by 0.0174533 (0x00625566) before the same call",
+        "ClampPoseToFlat 0x00877330 itself is the shape this stack already had: the rotated parent Z axis, acos of the magnitude of its largest component, compared with the angle",
+        "CreateObjectsFromMarkers also passes 0.1 to ObservableObject::SetMarkerAsObserved (0x0062559C)"
+      ],
+      "prior": "20 mm and 10 degrees for the clustering and 8 degrees for the flat snap, all chosen here",
       "live_path": true,
-      "test": "VisionTests"
+      "test": "VisionTests.TheClusteringAndFlatSnapTolerancesAreTheEngines",
+      "id": "M11-006"
     },
     {
       "subsystem": "M11-vision",
@@ -2349,36 +2352,42 @@
     },
     {
       "subsystem": "M11-vision",
-      "title": "Occlusion is not modelled; a marker that passes the geometric tests counts as visible",
+      "title": "Occlusion, the nine visibility reasons, and the two ways an object is forgotten",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
-      "status": "RECOVERABLE_GAP",
-      "effect": "an object hidden behind another is treated as one the robot should have seen, so its pose is forgotten when it should not be",
-      "provenance": "no occlusion test at all here",
-      "authority": "the shape of the engine test is read. ObservableObject::IsVisibleFrom 0x00876774 walks the object markers calling KnownMarker::IsVisibleFrom with requireSomethingBehind set true (movs r4, #1 at 0x0087679C), returns true on the first visible marker, and whenever a marker comes back with NotVisibleReason 8 sets the caller out-parameter - the hasNothingBehind that BlockWorld::CheckForUnobservedObjects 0x00621C6C then requires, alongside a Dirty pose, before marking an object unobserved. So the engine does distinguish \"not seen\" from \"not seen and nothing was in the way\"",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
       "evidence": [
-        "KnownMarker::IsVisibleFrom 0x0087E4A8 writes reasons 0 to 4 for the geometric failures - facing away, too small, outside the frame - and this stack reproduces those",
-        "reason 8 is not written anywhere in that function, so whatever produces it is elsewhere"
+        "Anki::Vision::NotVisibleReasonToString 0x0087E96C is one indexed load from a table of nine string pointers: IS_VISIBLE, CAMERA_NOT_CALIBRATED, POSE_PROBLEM, BEHIND_CAMERA, NORMAL_NOT_ALIGNED, TOO_SMALL, OUTSIDE_FOV, OCCLUDED, NOTHING_BEHIND. This stack had seven values in a different order",
+        "KnownMarker::IsVisibleFrom 0x0087E4A8 writes all nine: 5 TOO_SMALL at 0x0087E7B6, 6 OUTSIDE_FOV at 0x0087E83A after four Camera::IsWithinFieldOfView calls, 7 OCCLUDED at 0x0087E836 after four OccluderList::IsOccluded calls, and 8 NOTHING_BEHIND at 0x0087E87A when requireSomethingBehind is set and OccluderList::IsAnythingBehind(quad, mean corner depth) comes back false. The earlier note that it writes 0..4 only was wrong",
+        "the occluder set is the camera's own OccluderList: BlockWorld::UpdateObservedMarkers 0x00624F98 clears it at the top of the frame and BlockWorld::AddAndUpdateObjects 0x006211CC adds one entry per marker the frame actually observed, through Camera::AddOccluder(KnownMarker) 0x0085E76C, which projects the marker's 3D corners with respect to the camera",
+        "OccluderList::IsOccluded 0x00878278 and IsAnythingBehind 0x008783C8 walk the list in depth order and stop at the first entry deeper than the query (the bhi at 0x008783EC)",
+        "BlockWorld::CheckForUnobservedObjects forgets an object in two cases, and its own log names all three flags - \"Marking object %d unobserved, which should have been seen, but wasn't. (shouldBeVisible:%d hasNothingBehind:%d isDirty:%d\": either it should have been visible (0x00622132), or it should not have been, nothing was behind it, and its pose is already Dirty (0x0062211E). This stack had only the first, and with no occluder list it could never have had the second",
+        "the visibility call it makes is the out-parameter overload ObservableObject::IsVisibleFrom 0x00876774, which hard-codes requireSomethingBehind (movs r4, #1 at 0x0087679C); the overload at 0x00876678 lets a caller choose, which is what a behaviour asking whether it can see a cube uses"
       ],
-      "unresolved": "what produces NotVisibleReason 8 and what it tests against - the occluder set. The consumer is understood; the producer is not",
-      "hardware_required": false,
+      "prior": "occlusion was not modelled and a marker that passed the geometric tests counted as visible; the reason enum's names and values were this stack's own",
       "live_path": true,
-      "test": null,
+      "test": "VisionTests.ADirtyCubeThatIsNotWhereItShouldBeIsForgottenAfterTwoMisses, VisionTests.AKnownCubeThatVanishesFromAnEmptyViewIsKept",
       "id": "M11-010"
     },
     {
-      "id": "M11-011",
       "subsystem": "M11-vision",
-      "title": "NV storage request framing and MORE chunking for the camera calibration",
-      "location": "cozmo-stack/src/Cozmo.Robot/Vision/CameraCalibration.cs:112",
-      "effect": "the calibration read fails, so live vision falls back or refuses",
-      "provenance": "inferred framing",
-      "authority": "the engine NV storage client and the CLAD definition",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the request Length field and second byte, and the chunking rule",
-      "hardware_required": false,
+      "title": "The NV read request: the tag, a non-zero length, a zero second byte, and no chunking",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/CameraCalibration.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "NVStorage::EnumToString(NVEntryTag) 0x007CEE38 dispatches 0x80000000..0x80000012 through a jump table whose index 1 is NVEntry_CameraCalib, so the tag 0x80000001 is the engine's own value",
+        "NVStorageComponent::ProcessRequest 0x00644FD4 dispatches on the operation with a tbh at 0x00645032; the READ case at 0x0064503E writes the tag and op 0 into the command at this+0xDC and then sets the length",
+        "the length is the entry's maximum size: the factory size table when IsFactoryEntryTag 0x006440D4 says so, and otherwise the literal 0x400 at 0x0064536A",
+        "the factory size table's keys are factory-block tags: InitSizeTable 0x00643C76 emplaces 0xDE000 and 0xDE030, and IsTagInFactoryBlock 0x006441D8 bounds the block at 0xDE000..0xFC000. The lookup is an unsigned walk, so 0x80000001 falls off the end and IsFactoryEntryTag returns false - the camera calibration asks for 0x400",
+        "the command's second byte is zeroed by the component's constructor (strb r7 = 0 at 0x006428AA) and nothing writes it again",
+        "MORE and the base-tag reassembly of HandleNVOpResult 0x00642F8C are for multi-blob entries, and IsMultiBlobEntryTag 0x00643FA6 tests the tag against 0x7FFF0000, which 0x80000001 does not touch; the calibration is a single blob",
+        "the message is commandNV 0x81, which is what the generated NVCommand carries"
+      ],
+      "prior": "the request was sent with a length of zero and the framing recorded as inferred and hardware-pending",
       "live_path": true,
-      "test": null
+      "test": "VisionTests.TheNvReadRequestAsksForTheEntrysMaximumSize",
+      "id": "M11-011"
     },
     {
       "id": "M11-012",

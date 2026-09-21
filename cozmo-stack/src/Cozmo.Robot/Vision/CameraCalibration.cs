@@ -104,18 +104,44 @@ public sealed record CameraCalibration
 
 /// <summary>
 /// Reads the camera calibration out of the robot's NV storage the way the engine does on connection:
-/// <c>NVStorageComponent::Read(NVEntry_CameraCalib)</c> sends <c>CommandNV</c> (0x8B) with <c>Op = READ</c>
-/// and the robot answers with <c>NvOpResult</c> (0xCD) frames for the same tag. <c>NVOperation</c> and
-/// <c>NVResult</c> are the decompiled Unity enums (READ=0, WRITE=1, ERASE=2, WIPEALL=3; OKAY=0, SCHEDULED=1,
-/// NO_DO=2, MORE=3, NOT_FOUND=-1).
+/// <c>NVStorageComponent::Read(NVEntry_CameraCalib)</c> queues a request that
+/// <c>NVStorageComponent::ProcessRequest</c> 0x00644FD4 turns into a <c>commandNV</c> (0x81), and the robot
+/// answers with <c>NvOpResult</c> frames for the same tag.
 ///
-/// INFERRED (hardware-pending, HARDWARE_TEST_PLAN item K): the request's <c>Length</c> and second byte are sent
-/// as zero, and a <c>MORE</c> result is treated as "another data frame follows for this tag". Neither
-/// capture in the repository contains an NV exchange, so the exact framing is unverified.
+/// The request is read now rather than guessed:
+///
+/// <list type="bullet">
+/// <item><b>The tag.</b> <c>NVStorage::EnumToString(NVEntryTag)</c> 0x007CEE38 dispatches the range
+/// 0x80000000..0x80000012 through a jump table, and index 1 is <c>NVEntry_CameraCalib</c>. So
+/// <see cref="CameraCalibration.NvEntryTag"/> = 0x80000001 is the engine's own value, not the Unity
+/// decompile's alone.</item>
+/// <item><b>The length is not zero.</b> The READ branch of ProcessRequest sets it to the entry's maximum
+/// size: the factory size table's value when <c>IsFactoryEntryTag</c> says so, and otherwise the literal
+/// 0x400 at 0x0064536A. That table's keys are the factory-block tags 0xDE000..0xFC000
+/// (<c>InitSizeTable</c> 0x00643C76 emplaces 0xDE000 and 0xDE030; <c>IsTagInFactoryBlock</c> 0x006441D8
+/// bounds the block), and its lookup is an unsigned walk, so a 0x8000000x enum tag never matches and the
+/// camera calibration asks for <see cref="NvReadLength"/> bytes.</item>
+/// <item><b>The second byte is zero.</b> The component's constructor writes 0 to the command's second
+/// byte at 0x006428AA and nothing in the component ever writes it again.</item>
+/// <item><b>It is never chunked.</b> <c>MORE</c> and the base-tag reassembly in
+/// <c>HandleNVOpResult</c> 0x00642F8C are for multi-blob entries, and
+/// <c>IsMultiBlobEntryTag</c> 0x00643FA6 tests the tag against 0x7FFF0000 - bits 0x80000001 does not
+/// have. A MORE result is still handled here, because the robot is the one that decides.</item>
+/// </list>
+///
+/// <c>NVOperation</c> and <c>NVResult</c> are the decompiled Unity enums (READ=0, WRITE=1, ERASE=2,
+/// WIPEALL=3; OKAY=0, SCHEDULED=1, NO_DO=2, MORE=3, NOT_FOUND=-1).
 /// </summary>
 public sealed class NvCalibrationReader : IDisposable
 {
     public const byte OpRead = 0;
+
+    /// <summary>
+    /// 1024: the length a READ asks for when the tag is not in the factory size table, which the camera
+    /// calibration's is not (the literal at 0x0064536A).
+    /// </summary>
+    public const int NvReadLength = 0x400;
+
     public const sbyte ResultOkay = 0, ResultScheduled = 1, ResultNoDo = 2, ResultMore = 3, ResultNotFound = -1;
 
     private readonly CozmoRobot _robot;
@@ -139,7 +165,13 @@ public sealed class NvCalibrationReader : IDisposable
     {
         _buffer.Clear();
         _pending = new TaskCompletionSource<CameraCalibration?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _robot.Transport.Send(new NVCommand { Tag = CameraCalibration.NvEntryTag, Length = 0, Op = OpRead, Unknown = 0 }, flush: true);
+        _robot.Transport.Send(new NVCommand
+        {
+            Tag = CameraCalibration.NvEntryTag,
+            Length = NvReadLength,
+            Op = OpRead,
+            Unknown = 0,
+        }, flush: true);
         var t = timeout ?? TimeSpan.FromSeconds(3);
         return Task.WhenAny(_pending.Task, Task.Delay(t)).ContinueWith(w =>
         {

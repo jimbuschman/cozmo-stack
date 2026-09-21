@@ -9,8 +9,37 @@ namespace Cozmo.Robot.Vision;
 /// </summary>
 public enum PoseState { Unknown = 0, Known = 1, Dirty = 2 }
 
-/// <summary>Why a marker or object is not visible, the engine's <c>KnownMarker::NotVisibleReason</c> (names from <c>NotVisibleReasonToString</c> usage).</summary>
-public enum NotVisibleReason { IsVisible, NormalNotAligned, TooSmall, OutsideFieldOfView, Occluded, BehindCamera, NoMarkers }
+/// <summary>
+/// Why a marker or object is not visible: the engine's <c>KnownMarker::NotVisibleReason</c>, with its own
+/// names and its own values.
+///
+/// <c>Anki::Vision::NotVisibleReasonToString</c> 0x0087E96C is one indexed load from a table of nine
+/// string pointers, so the enum is read rather than guessed: IS_VISIBLE, CAMERA_NOT_CALIBRATED,
+/// POSE_PROBLEM, BEHIND_CAMERA, NORMAL_NOT_ALIGNED, TOO_SMALL, OUTSIDE_FOV, OCCLUDED, NOTHING_BEHIND.
+/// This stack had seven values in a different order, which mattered as soon as anything compared them -
+/// <c>SearchForBlockHelper::ShouldBeAbleToFindTarget</c> tests the reason against 7, Occluded.
+/// </summary>
+public enum NotVisibleReason
+{
+    IsVisible = 0,
+    CameraNotCalibrated = 1,
+    PoseProblem = 2,
+    BehindCamera = 3,
+    NormalNotAligned = 4,
+    TooSmall = 5,
+    OutsideFieldOfView = 6,
+    Occluded = 7,
+    NothingBehind = 8,
+}
+
+/// <summary>
+/// One entry of the engine's <c>Anki::Vision::OccluderList</c>: a quad in image space and the depth it
+/// sits at. <c>BlockWorld::AddAndUpdateObjects</c> 0x006211CC adds one per marker actually observed in
+/// the frame through <c>Camera::AddOccluder(KnownMarker)</c> 0x0085E76C, which takes the marker's 3D
+/// corners with respect to the camera and projects them; <c>BlockWorld::UpdateObservedMarkers</c>
+/// 0x00624F98 clears the list first. So the occluders are what the camera actually saw this frame.
+/// </summary>
+public readonly record struct Occluder(Vec2[] Quad, double DepthMm);
 
 /// <summary>
 /// The engine's <c>Cozmo::ObservableObject</c> for a light cube: identity, markers, pose and pose state, and the
@@ -83,19 +112,46 @@ public sealed class ObservableObject
     }
 
     /// <summary>
-    /// <c>ObservableObject::IsVisibleFromWithReason(camera, maxFaceNormalAngle, minMarkerImageSize, requireSomethingBehind,
-    /// xBorderPad, yBorderPad)</c>: any of the object's markers passes <c>KnownMarker::IsVisibleFrom</c>: its normal
-    /// faces the camera within the angle, its projected size is at least the minimum, all four corners are within
-    /// the padded field of view. The engine's occluder list (lift, other objects) and <c>IsAnythingBehind</c> are
-    /// not modelled (DEFERRED); a marker that passes the geometric tests counts as visible.
+    /// <c>ObservableObject::IsVisibleFrom(camera, maxFaceNormalAngle, minMarkerImageSize, xBorderPad,
+    /// yBorderPad, bool&amp; hasNothingBehind)</c> 0x00876774: any of the object's markers passes
+    /// <c>KnownMarker::IsVisibleFrom</c>, and the out-flag is set whenever a marker comes back
+    /// <see cref="NotVisibleReason.NothingBehind"/> - the overload's <c>requireSomethingBehind</c> is
+    /// true (<c>movs r4, #1</c> at 0x0087679C).
     /// </summary>
-    public bool IsVisibleFrom(CameraModel camera, double maxFaceNormalAngleRad, double minMarkerImageSizePx, double xPad, double yPad, out NotVisibleReason reason)
+    public bool IsVisibleFrom(CameraModel camera, double maxFaceNormalAngleRad, double minMarkerImageSizePx,
+                              double xPad, double yPad, out NotVisibleReason reason, out bool hasNothingBehind)
     {
-        reason = NotVisibleReason.NoMarkers;
-        var worst = NotVisibleReason.NoMarkers;
+        reason = NotVisibleReason.PoseProblem;
+        hasNothingBehind = false;
+        var worst = NotVisibleReason.PoseProblem;
         foreach (var m in Markers)
         {
-            var r = MarkerVisibility(m, camera, maxFaceNormalAngleRad, minMarkerImageSizePx, xPad, yPad);
+            var r = MarkerVisibility(m, camera, maxFaceNormalAngleRad, minMarkerImageSizePx, xPad, yPad,
+                                     requireSomethingBehind: true);
+            if (r == NotVisibleReason.NothingBehind) hasNothingBehind = true;
+            if (r == NotVisibleReason.IsVisible) { reason = r; return true; }
+            if (r > worst) worst = r;
+        }
+        reason = worst;
+        return false;
+    }
+
+    /// <summary>
+    /// <c>ObservableObject::IsVisibleFrom(camera, maxFaceNormalAngle, minMarkerImageSize,
+    /// requireSomethingBehind, xBorderPad, yBorderPad)</c> 0x00876678, where the caller chooses. Only the
+    /// out-parameter overload above hard-codes the flag, and only CheckForUnobservedObjects uses that
+    /// one; a behaviour asking whether it can see a cube asks this.
+    /// </summary>
+    public bool IsVisibleFrom(CameraModel camera, double maxFaceNormalAngleRad, double minMarkerImageSizePx,
+                              double xPad, double yPad, out NotVisibleReason reason,
+                              bool requireSomethingBehind = false)
+    {
+        reason = NotVisibleReason.PoseProblem;
+        var worst = NotVisibleReason.PoseProblem;
+        foreach (var m in Markers)
+        {
+            var r = MarkerVisibility(m, camera, maxFaceNormalAngleRad, minMarkerImageSizePx, xPad, yPad,
+                                     requireSomethingBehind);
             if (r == NotVisibleReason.IsVisible) { reason = r; return true; }
             if (r > worst) worst = r;
         }
@@ -106,8 +162,16 @@ public sealed class ObservableObject
     public bool IsVisibleFrom(CameraModel camera, double maxFaceNormalAngleRad = 0.785398, double minMarkerImageSizePx = 10, double pad = 0)
         => IsVisibleFrom(camera, maxFaceNormalAngleRad, minMarkerImageSizePx, pad, pad, out _);
 
-    /// <summary><c>KnownMarker::IsVisibleFrom</c> for one marker.</summary>
-    public NotVisibleReason MarkerVisibility(KnownMarker m, CameraModel camera, double maxFaceNormalAngleRad, double minMarkerImageSizePx, double xPad, double yPad)
+    /// <summary>
+    /// <c>KnownMarker::IsVisibleFrom</c> 0x0087E4A8 for one marker, in the engine's own order: pose, then
+    /// the normal (4), then the projected size (5), then the field of view (6), then the occluders (7),
+    /// and finally, when <paramref name="requireSomethingBehind"/> is set and nothing in the camera's
+    /// occluder list lies behind the marker's quad, NOTHING_BEHIND (8, at 0x0087E87A). The depth it asks
+    /// <c>IsAnythingBehind</c> about is the mean of the four corner depths (0x0087E850..0x0087E864).
+    /// </summary>
+    public NotVisibleReason MarkerVisibility(KnownMarker m, CameraModel camera, double maxFaceNormalAngleRad,
+                                             double minMarkerImageSizePx, double xPad, double yPad,
+                                             bool requireSomethingBehind = false)
     {
         var corners = m.CornersInWorld(Pose);
         var centre = (corners[0] + corners[1] + corners[2] + corners[3]) / 4;
@@ -131,6 +195,17 @@ public sealed class ObservableObject
         foreach (var p in px)
             if (p.X < -xPad || p.Y < -yPad || p.X > camera.Calibration.Columns + xPad || p.Y > camera.Calibration.Rows + yPad)
                 return NotVisibleReason.OutsideFieldOfView;
+
+        var depths = new double[4];
+        for (int i = 0; i < 4; i++) depths[i] = camera.ToCamera(corners[i]).Z;
+        for (int i = 0; i < 4; i++)
+            if (camera.Occluders.IsOccluded(px[i], depths[i])) return NotVisibleReason.Occluded;
+
+        if (requireSomethingBehind)
+        {
+            double mean = (depths[0] + depths[1] + depths[2] + depths[3]) * 0.25;
+            if (!camera.Occluders.IsAnythingBehind(px, mean)) return NotVisibleReason.NothingBehind;
+        }
         return NotVisibleReason.IsVisible;
     }
 
@@ -152,12 +227,34 @@ public sealed record ObjectObservation(ObservableObject Object, uint Timestamp, 
 /// misses <c>MarkObjectUnknown</c>. INFERRED: the miss threshold (read as <c>cmp r3, #1</c>, taken as 2 misses);
 /// a first observation makes the pose Known at once (the <c>ObjectPoseConfirmer</c>'s confirmation counting is
 /// not transcribed); an <c>ObjectMoved</c> report marks a located cube Dirty (the engine's use of Dirty).
-/// LOCAL: pose clustering across an object's markers uses 20 mm / 10 degrees.
+/// Pose clustering across an object's markers uses the engine's own tolerances, 5 mm and 5 degrees.
 /// </summary>
 public sealed class BlockWorld
 {
     /// <summary><c>CheckForUnobservedObjects</c>'s rotation gate: 0.174533 rad/s (10 deg/s).</summary>
     public const double MaxRotationRateRadPerSec = 0.174533;
+
+    /// <summary>
+    /// 5 mm. <c>ObservableObjectLibrary::CreateObjectsFromMarkers</c> passes it to
+    /// <c>ClusterObjectPoses(poses, object, distThreshold, angleThreshold, clusters)</c> as the third
+    /// argument: <c>0x40A00000</c> built at 0x006254F4.
+    /// </summary>
+    public const double ClusterDistanceMm = 5.0;
+
+    /// <summary>
+    /// 0.0872665 rad, 5 degrees: the angle threshold of the same call, built from <c>0x3DB2B8C3</c> at
+    /// 0x00625498 through the <c>Radians</c> constructor at 0x006254E0.
+    /// </summary>
+    public const double ClusterAngleRad = 0.0872665;
+
+    /// <summary>
+    /// 0.349066 rad, 20 degrees: the angle <c>ObjectPoseConfirmer::UpdatePoseInInstance</c> passes to
+    /// <c>ObservableObject::ClampPoseToFlat</c> (<c>0x3EB2B8C2</c> at 0x00505F16), which is the path an
+    /// observation of an object already in the world takes. On the creation path
+    /// <c>CreateObjectsFromMarkers</c> asks the object itself for the angle in degrees and multiplies by
+    /// 0.0174533 (0x00625566); no shipped object overrides it to anything this stack can see.
+    /// </summary>
+    public const double FlatClampAngleRad = 0.349066;
     /// <summary>The visibility angle the world model and the cube-moved strategy use: 0.785398 rad (45 deg).</summary>
     public const double VisibilityNormalAngleRad = 0.785398;
     /// <summary>
@@ -218,6 +315,9 @@ public sealed class BlockWorld
     public IReadOnlyList<ObjectObservation> UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp)
     {
         var observations = new List<ObjectObservation>();
+        // BlockWorld::UpdateObservedMarkers 0x00624F98 clears the camera's occluder list at the top of
+        // the frame; AddAndUpdateObjects fills it again from the markers this frame actually saw.
+        camera.Occluders.Clear();
         // CreateObjectsFromMarkers: one candidate pose per marker, grouped by object type
         var candidates = new List<(ObjectType Type, KnownMarker Known, ObservedMarker Seen, Pose3d World, double Rms)>();
         foreach (var seen in markers)
@@ -238,7 +338,7 @@ public sealed class BlockWorld
             while (remaining.Count > 0)
             {
                 var seed = remaining[0];
-                var cluster = remaining.Where(c => c.World.IsSameAs(seed.World, 20, 10 * Math.PI / 180)).ToList();
+                var cluster = remaining.Where(c => c.World.IsSameAs(seed.World, ClusterDistanceMm, ClusterAngleRad)).ToList();
                 foreach (var c in cluster) remaining.Remove(c);
                 var pose = seed.World; double rms = seed.Rms;
                 if (cluster.Count > 1)
@@ -253,6 +353,26 @@ public sealed class BlockWorld
                 if (obs is not null) observations.Add(obs);
             }
         }
+        // AddAndUpdateObjects 0x006211CC: one occluder per observed marker, its projected quad at its
+        // depth, so the next object's visibility test knows what the camera could actually see through.
+        foreach (var o in observations)
+            foreach (var m in o.Object.Markers)
+            {
+                if (!o.Markers.Contains(m.Code)) continue;
+                var world = m.CornersInWorld(o.Object.Pose);
+                var px = new Vec2[4];
+                double depth = 0;
+                bool ok = true;
+                for (int i = 0; i < 4 && ok; i++)
+                {
+                    var p = camera.Project(world[i]);
+                    if (p is null) { ok = false; break; }
+                    px[i] = p.Value;
+                    depth += camera.ToCamera(world[i]).Z;
+                }
+                if (ok) camera.Occluders.Add(new[] { px[0], px[2], px[3], px[1] }, depth / 4);
+            }
+
         return observations;
     }
 
@@ -305,10 +425,12 @@ public sealed class BlockWorld
     }
 
     /// <summary>
-    /// <c>ClampPoseToFlat</c>: a cube resting on a surface has one axis vertical; when the solved pose is within
-    /// a small angle of that, snap it (tolerance LOCAL: 8 degrees; the engine's value was not read).
+    /// <c>ObservableObject::ClampPoseToFlat</c> 0x00877330: a cube resting on a surface has one axis
+    /// vertical; when the solved pose is within <see cref="FlatClampAngleRad"/> of that, snap it. The
+    /// engine takes the rotated parent Z axis, <c>acos</c> of the magnitude of its largest component, and
+    /// compares that with the angle it was given (0x0087736A..0x0087737E).
     /// </summary>
-    public static Pose3d ClampPoseToFlat(Pose3d pose, double toleranceRad = 8 * Math.PI / 180)
+    public static Pose3d ClampPoseToFlat(Pose3d pose, double toleranceRad = FlatClampAngleRad)
     {
         var r = pose.Rotation;
         // find the object axis closest to world Z
@@ -340,7 +462,15 @@ public sealed class BlockWorld
         lock (_gate) located = _objects.Values.Where(o => o.IsLocated && !observedIds.Contains(o.ObjectId)).ToList();
         foreach (var o in located)
         {
-            if (!o.IsVisibleFrom(camera, VisibilityNormalAngleRad, MinVisibleMarkerSizePx, 0, 0, out var reason)) continue;
+            bool visible = o.IsVisibleFrom(camera, VisibilityNormalAngleRad, MinVisibleMarkerSizePx, 0, 0,
+                                           out var reason, out bool hasNothingBehind);
+            // The engine marks an object unobserved in two cases, and its own log names all three flags:
+            // "Marking object %d unobserved, which should have been seen, but wasn't. (shouldBeVisible:%d
+            // hasNothingBehind:%d isDirty:%d". Either the object should have been visible (0x00622132), or
+            // it should not have been but nothing was behind it and its pose is already Dirty
+            // (0x0062211E). This stack only had the first.
+            bool dirtyWithNothingBehind = !visible && hasNothingBehind && o.PoseState == PoseState.Dirty;
+            if (!visible && !dirtyWithNothingBehind) continue;
             PoseState prev;
             bool unknown;
             lock (_gate)
@@ -350,7 +480,8 @@ public sealed class BlockWorld
                 unknown = o.UnobservedCount >= UnobservedMissesToUnknown;
                 if (unknown) o.PoseState = PoseState.Unknown;
             }
-            Log?.Invoke($"object {o.ObjectId} should be visible ({reason}) but was not: miss {o.UnobservedCount}{(unknown ? " -> Unknown" : "")}");
+            Log?.Invoke($"object {o.ObjectId} unobserved (shouldBeVisible:{visible} hasNothingBehind:{hasNothingBehind} " +
+                        $"reason:{reason}): miss {o.UnobservedCount}{(unknown ? " -> Unknown" : "")}");
             if (unknown) { PoseStateChanged?.Invoke(o, prev, PoseState.Unknown); forgotten.Add(o); }
         }
         return forgotten;

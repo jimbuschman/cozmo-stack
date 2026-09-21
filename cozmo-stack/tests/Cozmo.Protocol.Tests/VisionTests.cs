@@ -293,6 +293,41 @@ public class VisionTests
         Assert.Throws<FormatException>(() => CameraCalibration.Parse(new byte[CameraCalibration.WireSize]));
     }
 
+    /// <summary>
+    /// The NV read request, as ProcessRequest 0x00644FD4 builds it: the engine's own tag, a non-zero
+    /// length - the entry's maximum size, which for any tag the factory size table does not name is the
+    /// 0x400 at 0x0064536A - the READ op, and a second byte the component's constructor zeroes and never
+    /// writes again (0x006428AA). This stack sent a length of zero.
+    /// </summary>
+    [Fact]
+    public void TheNvReadRequestAsksForTheEntrysMaximumSize()
+    {
+        Assert.Equal(0x80000001u, CameraCalibration.NvEntryTag);
+        Assert.Equal(0x400, NvCalibrationReader.NvReadLength);
+
+        using var robot = CozmoRobot.CreateOffline();
+        using var reader = new NvCalibrationReader(robot);
+        robot.Transport.OfflineOutbound.Clear();
+        _ = reader.ReadAsync(TimeSpan.FromMilliseconds(1));
+        robot.Transport.OfflineTick();
+
+        List<NVCommand> Commands() => robot.Transport.OfflineOutbound
+            .SelectMany(f => f.Messages)
+            .Where(sm => sm.Type is ReliableMessageType.SingleReliableMessage
+                                 or ReliableMessageType.SingleUnreliableMessage)
+            .Select(sm => { try { return RobotMessage.Parse(sm.Payload); } catch { return null; } })
+            .OfType<NVCommand>()
+            .ToList();
+        var end = DateTime.UtcNow.AddSeconds(2);
+        while (Commands().Count == 0 && DateTime.UtcNow < end) { robot.Transport.OfflineTick(); Thread.Sleep(2); }
+        var cmd = Commands()[0];
+        Assert.Equal(CameraCalibration.NvEntryTag, cmd.Tag);
+        Assert.Equal(NvCalibrationReader.NvReadLength, cmd.Length);
+        Assert.Equal(NvCalibrationReader.OpRead, cmd.Op);
+        Assert.Equal(0, cmd.Unknown);
+        Assert.Empty(cmd.Data);
+    }
+
     [Fact]
     public void TheSetBodyAngleMessagePacksTheEnginesFieldOrder()
     {
@@ -404,14 +439,21 @@ public class VisionTests
         Assert.Equal(1u, r2.Objects[0].Object.ObjectId);
     }
 
+    /// <summary>
+    /// A cube whose pose is already Dirty and which is not where it should be is forgotten after two
+    /// misses. This is the first of the two cases in <c>CheckForUnobservedObjects</c>: not visible, with
+    /// nothing behind it, and Dirty (the branch at 0x0062211E). An empty view is exactly "nothing
+    /// behind" - the occluder list holds only what the camera saw this frame.
+    /// </summary>
     [Fact]
-    public void ACubeThatShouldBeVisibleAndIsNotIsForgottenAfterTwoMisses()
+    public void ADirtyCubeThatIsNotWhereItShouldBeIsForgottenAfterTwoMisses()
     {
         if (NoLibrary) return;
         using var rig = new WorldRig();
         rig.Frame(CubeAhead(), head: -0.15f);
         var o = rig.Vision.World.GetObjectById(7)!;
         Assert.True(o.IsLocated);
+        rig.Vision.World.MarkDirty(7);                 // as an ObjectMoved from the cube does
         // same view, cube gone
         var r1 = rig.Frame(null, head: -0.15f);
         Assert.Empty(r1.Forgotten);
@@ -422,6 +464,28 @@ public class VisionTests
         Assert.Equal(PoseState.Unknown, o.PoseState);
         Assert.False(rig.Vision.Locator.IsLocated(7));
         Assert.Null(rig.Vision.World.GetLocatedObjectById(7));
+    }
+
+    /// <summary>
+    /// A cube whose pose is still Known and which vanishes from an otherwise empty view is <b>not</b>
+    /// forgotten. Neither case applies: it is not visible, because with nothing in the occluder list
+    /// <c>KnownMarker::IsVisibleFrom</c> comes back NOTHING_BEHIND (0x0087E87A), and the other case
+    /// wants a Dirty pose. The robot has to see through to something behind where the cube was, or have
+    /// been told the cube moved, before it gives the cube up.
+    /// </summary>
+    [Fact]
+    public void AKnownCubeThatVanishesFromAnEmptyViewIsKept()
+    {
+        if (NoLibrary) return;
+        using var rig = new WorldRig();
+        rig.Frame(CubeAhead(), head: -0.15f);
+        var o = rig.Vision.World.GetObjectById(7)!;
+        Assert.Equal(PoseState.Known, o.PoseState);
+
+        for (int i = 0; i < 4; i++) Assert.Empty(rig.Frame(null, head: -0.15f).Forgotten);
+        Assert.Equal(PoseState.Known, o.PoseState);
+        Assert.Equal(0, o.UnobservedCount);
+        Assert.True(rig.Vision.Locator.IsLocated(7));
     }
 
     [Fact]
@@ -660,5 +724,29 @@ public class VisionTests
         }
         Assert.Equal(frames.Count, decoded);
         Assert.Equal(0, cubeMarkers);
+    }
+
+    /// <summary>
+    /// The clustering and flat-snap tolerances are the engine's, not this stack's.
+    /// <c>ObservableObjectLibrary::CreateObjectsFromMarkers</c> passes 5 mm (0x40A00000 at 0x006254F4)
+    /// and 0.0872665 rad (0x3DB2B8C3 at 0x00625498) to <c>ClusterObjectPoses</c>, and
+    /// <c>ObjectPoseConfirmer::UpdatePoseInInstance</c> passes 0.349066 rad (0x3EB2B8C2 at 0x00505F16)
+    /// to <c>ClampPoseToFlat</c>. This stack had 20 mm, 10 degrees and 8 degrees.
+    /// </summary>
+    [Fact]
+    public void TheClusteringAndFlatSnapTolerancesAreTheEngines()
+    {
+        Assert.Equal(5.0, BlockWorld.ClusterDistanceMm);
+        Assert.Equal(0.0872665, BlockWorld.ClusterAngleRad, 6);
+        Assert.Equal(0.349066, BlockWorld.FlatClampAngleRad, 6);
+
+        // a pose tilted by 15 degrees snaps, one tilted by 25 does not
+        var flat = new Pose3d(Mat3.AboutZ(0.3), new Vec3(100, 0, 22));
+        var tilted15 = new Pose3d(Mat3.AxisAngle(new Vec3(1, 0, 0), 15 * Math.PI / 180) * flat.Rotation, flat.Translation);
+        var tilted25 = new Pose3d(Mat3.AxisAngle(new Vec3(1, 0, 0), 25 * Math.PI / 180) * flat.Rotation, flat.Translation);
+        var snapped = BlockWorld.ClampPoseToFlat(tilted15);
+        Assert.Equal(1.0, Math.Abs(snapped.Rotation[2, 2]), 4);
+        var kept = BlockWorld.ClampPoseToFlat(tilted25);
+        Assert.True(Math.Abs(kept.Rotation[2, 2]) < 0.95, "a 25 degree tilt is beyond the engine's 20 and must not snap");
     }
 }

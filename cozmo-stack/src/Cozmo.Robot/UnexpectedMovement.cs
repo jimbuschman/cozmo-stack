@@ -41,10 +41,21 @@ public sealed record UnexpectedMovementReport(
 /// <b>Gates (NATIVE):</b> the check runs only on a physical robot (<c>Robot+0x14</c>), never while the
 /// robot is picking or placing (<c>IS_PICKING_OR_PLACING</c>, stored to the carrying component at
 /// 0x00512AA0 and tested at 0x0063E3E2), and a state with <c>IS_PICKED_UP</c>, <c>IS_ON_CHARGER</c> or
-/// <c>CLIFF_DETECTED</c> set (mask 0x5008 at 0x0063E40A) clears the detector. The engine also skips the
-/// check while its own <c>DirectDrive*</c> track locks are held (0x0063E3BA..0x0063E3DE); that lock set
-/// does not exist in this stack, so <see cref="Suspended"/> stands in for it and the caller that drives the
-/// wheels directly sets it (INFERRED as to which locks; the skip itself is native).
+/// <c>CLIFF_DETECTED</c> set (mask 0x5008 at 0x0063E40A) clears the detector.
+///
+/// The track gate is read now, and it is the other way round from the way this stack had it. The loop at
+/// 0x0063E3C0 is <c>AreAnyTracksLocked(4)</c> inlined - the same array at <c>MovementComponent+0x30</c>,
+/// eight entries of twelve bytes, a track locked when its first word is non-zero, walked with a mask that
+/// starts at 4 and shifts right (compare <c>AreAnyTracksLocked</c> 0x0063EF88) - and when that track's
+/// word is zero it RETURNS, at 0x0063E3D0. Mask 4 is the body. So the engine only looks for unexpected
+/// movement while something owns the wheels, which is exactly when the motion is supposed to match the
+/// command; <c>MovementComponent::DirectDriveCheckSpeedAndLockTracks</c>, the symbol next to
+/// <c>AreAnyTracksLocked</c>, is one of the things that takes that lock. This stack had a
+/// <c>Suspended</c> flag that switched the check off while a caller drove, which is the opposite.
+///
+/// The gate applies only while the robot's flag at <c>Robot+0x248</c> is set (0x0063E3BA); with it clear
+/// the engine skips the track loop and checks whatever owns the body. That flag was not traced to its
+/// writer, so <see cref="TrackGateApplies"/> defaults to false and the check runs.
 ///
 /// <b>The test (NATIVE), per state:</b>
 /// <list type="bullet">
@@ -87,7 +98,19 @@ public sealed class UnexpectedMovementDetector
 
     /// <summary>The engine's physical-robot gate. Defaults on: this stack drives physical robots.</summary>
     public bool IsPhysical { get; set; } = true;
-    /// <summary>Stands in for the engine's direct-drive track locks: set while a caller drives the wheels itself.</summary>
+    /// <summary>
+    /// Whether the body track is locked - something owns the wheels. The engine's gate: with
+    /// <see cref="TrackGateApplies"/> set and this clear, <c>CheckForUnexpectedMovement</c> returns at
+    /// 0x0063E3D0 without looking.
+    /// </summary>
+    public bool BodyTrackLocked { get; set; }
+
+    /// <summary>
+    /// Whether the body-track gate applies at all: the engine's <c>Robot+0x248</c> (0x0063E3BA).
+    /// </summary>
+    public bool TrackGateApplies { get; set; }
+
+    /// <summary>A local switch for a caller that wants the check off; the engine has no equivalent.</summary>
     public bool Suspended { get; set; }
 
     /// <summary>The running disagreement count (<c>+0xA0</c>).</summary>
@@ -112,6 +135,7 @@ public sealed class UnexpectedMovementDetector
     public UnexpectedMovementReport? Update(RobotState s)
     {
         if (!IsPhysical || Suspended) return null;
+        if (TrackGateApplies && !BodyTrackLocked) return null;
         if (s.Has(RobotStatusFlag.IsPickingOrPlacing)) return null;
         if ((s.Status & (uint)ResetFlags) != 0) { Reset(); return null; }
 

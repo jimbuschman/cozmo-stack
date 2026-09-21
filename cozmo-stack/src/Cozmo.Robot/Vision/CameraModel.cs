@@ -61,6 +61,14 @@ public sealed class CameraModel
 
     public CameraModel WithPose(Pose3d pose) => new(Calibration, pose);
 
+    /// <summary>
+    /// The engine's <c>Anki::Vision::OccluderList</c>, which every camera carries (camera+0x18) and
+    /// <c>KnownMarker::IsVisibleFrom</c> consults. It is per frame:
+    /// <c>BlockWorld::UpdateObservedMarkers</c> clears it and <c>BlockWorld::AddAndUpdateObjects</c>
+    /// adds one entry per marker actually observed.
+    /// </summary>
+    public OccluderList Occluders { get; } = new();
+
     /// <summary>A world point in the camera frame.</summary>
     public Vec3 ToCamera(Vec3 world) => Pose.Inverse().Apply(world);
 

@@ -7,9 +7,9 @@ Manifest of **203 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 120 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 123 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 43 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 40 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 2 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -34,7 +34,7 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 10 | 6 | 0 | 0 | 0 | no | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | 0 | 0 | 0 | no | yes |
-| M11-vision — Markers, camera geometry and BlockWorld | 16 | 4 | 0 | 1 | 0 | no | yes |
+| M11-vision — Markers, camera geometry and BlockWorld | 16 | 1 | 0 | 1 | 0 | no | yes |
 | M12-manipulation — Docking, carrying and pre-action poses | 16 | 0 | 0 | 0 | 0 | yes | yes |
 | M13-navigation — Planning, charger and block configurations | 12 | 0 | 0 | 0 | 0 | yes | yes |
 | M14-faces — Face and pet pipeline | 7 | 5 | 0 | 1 | 0 | no | yes |
@@ -280,31 +280,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: MarkerDetector::Parameters::Initialize gives the parameters, which are read; the pixel loops themselves were not transcribed
 * evidence: MarkerDetector::Parameters::Initialize
 * outstanding: the engine own quad extraction and refinement, which is in the binary
-
-**M11-006 — Clustering tolerances, the flat-snap angle, history windows, verification timeout** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
-* effect: observations merge into the wrong object, or fail to merge
-* rests on: chosen locally (20 mm / 10 degrees, 8 degrees)
-* best authority: the engine BlockWorld clustering
-* outstanding: the engine own tolerances
-
-**M11-010 — Occlusion is not modelled; a marker that passes the geometric tests counts as visible** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
-* effect: an object hidden behind another is treated as one the robot should have seen, so its pose is forgotten when it should not be
-* rests on: no occlusion test at all here
-* best authority: the shape of the engine test is read. ObservableObject::IsVisibleFrom 0x00876774 walks the object markers calling KnownMarker::IsVisibleFrom with requireSomethingBehind set true (movs r4, #1 at 0x0087679C), returns true on the first visible marker, and whenever a marker comes back with NotVisibleReason 8 sets the caller out-parameter - the hasNothingBehind that BlockWorld::CheckForUnobservedObjects 0x00621C6C then requires, alongside a Dirty pose, before marking an object unobserved. So the engine does distinguish "not seen" from "not seen and nothing was in the way"
-* evidence: KnownMarker::IsVisibleFrom 0x0087E4A8 writes reasons 0 to 4 for the geometric failures - facing away, too small, outside the frame - and this stack reproduces those; reason 8 is not written anywhere in that function, so whatever produces it is elsewhere
-* outstanding: what produces NotVisibleReason 8 and what it tests against - the occluder set. The consumer is understood; the producer is not
-
-**M11-011 — NV storage request framing and MORE chunking for the camera calibration** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/CameraCalibration.cs:112`
-* effect: the calibration read fails, so live vision falls back or refuses
-* rests on: inferred framing
-* best authority: the engine NV storage client and the CLAD definition
-* outstanding: the request Length field and second byte, and the chunking rule
 
 ### M14-faces — Face and pet pipeline
 
