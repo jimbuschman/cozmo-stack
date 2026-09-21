@@ -242,7 +242,9 @@ public class NavigationTests
         var dock = rig.Sent.OfType<DockWithObject>().First();
         Assert.Equal((byte)DockAction.Align, dock.ToBytes()[17]);
         // the align distance is the custom 120 mm less the 27 mm finger-to-origin offset, in the error signal's x
-        Assert.Contains(mount.Trace, l => l.Contains("on the charger"));
+        // CheckIfDone 0x0054E2D0 decides on the heading once the reverse has finished, not on the
+        // contacts part-way through it.
+        Assert.Contains(mount.Trace, l => l.Contains("within a right angle"));
         Assert.Contains(rig.Sent, m => m is AppendPathSegmentPointTurn);
         var back = rig.Sent.OfType<AppendPathSegmentLine>().Last();
         Assert.Equal(-30f, back.Speed.SpeedMmps);                                  // backwards at 30 mm/s

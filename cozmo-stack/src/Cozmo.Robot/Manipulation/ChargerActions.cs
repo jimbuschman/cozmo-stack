@@ -50,9 +50,17 @@ public sealed class AlignWithObjectAction : DockActionBase
 /// lowered to 45 mm (0x42340000, speed 5) if it is above 45, and a <c>DriveStraightAction(−120 mm, 30 mm/s)</c>
 /// backwards onto the charger. When the turn-and-mount fails ("Turning and mounting the charger failed ...
 /// Driving forward to position for a retry") <c>ConfigureDriveForRetryAction</c> drives forward 120 mm at
-/// 100 mm/s and the align repeats. Success is the robot's IS_ON_CHARGER flag (the engine's
-/// <c>CheckIfDone</c> reads <c>Robot::IsOnChargerContacts</c>; INFERRED: the backwards drive is allowed to end
-/// short when the contacts report). Retries: <see cref="MaxRetries"/> (INFERRED 2).
+/// 100 mm/s and the align repeats.
+///
+/// <b>What decides success is the heading, not the contacts.</b> <c>MountChargerAction::CheckIfDone</c>
+/// 0x0054E2D0 lets the turn-and-mount sub-action run to completion and then compares the charger's yaw
+/// with the robot's: <c>|chargerYaw - robotYaw|</c> against <c>pi/2</c> (0x3FC90FDB at 0x0054E374).
+/// Within a right angle and the mount stands; outside it - or with the charger no longer located - it
+/// warns and runs the forward retry drive, whose completion returns 0x04000006.
+///
+/// The backwards drive is never cut short. This stack raced the drive against the contacts report and
+/// aborted the path on the first IS_ON_CHARGER, which stops the robot somewhere the engine would have
+/// kept reversing from. Retries: <see cref="MaxRetries"/> (INFERRED 2).
 /// </summary>
 public sealed class MountChargerAction
 {
@@ -66,6 +74,8 @@ public sealed class MountChargerAction
     public const double TurnMaxSpeedRadPerSec = 1.74533;
     public const double TurnAccelRadPerSec2 = 5.23599;
     public const int MaxRetries = 2;
+    /// <summary>pi/2: the heading window CheckIfDone accepts (0x3FC90FDB at 0x0054E374).</summary>
+    public const double MountHeadingToleranceRad = Math.PI / 2;
 
     private readonly ManipulationSystem _m;
     public MountChargerAction(ManipulationSystem m, uint chargerId) { _m = m; ChargerId = chargerId; }
@@ -104,13 +114,27 @@ public sealed class MountChargerAction
             if (_m.Robot.Sensors.LiftHeightMm is { } lift && lift > LiftHeightForMountMm)
                 await _m.Robot.Motion.SetLiftHeightAsync((float)LiftHeightForMountMm, maxSpeedRadPerSec: 5f, requireCalibration: false);
 
-            var back = new DriveStraightAction(_m, MountDriveMm, MountSpeedMmps);
-            var drive = back.RunAsync(cancel);
-            var onCharger = WaitForChargerAsync(TimeSpan.FromSeconds(3 + Math.Abs(MountDriveMm) / MountSpeedMmps * 2), cancel);
-            var done = await Task.WhenAny(drive, onCharger);
-            if (done == onCharger && onCharger.Result) { _m.Paths.Abort(); _trace.Add("MountChargerAction: on the charger contacts"); return ActionResult.Success; }
-            var r = await drive;
-            if (_m.Robot.Sensors.OnCharger) { _trace.Add("MountChargerAction: on the charger"); return ActionResult.Success; }
+            // The drive runs to completion: CheckIfDone 0x0054E2D0 only looks at the world once the
+            // sub-action has finished, and nothing in it watches the contacts while it reverses.
+            var r = await new DriveStraightAction(_m, MountDriveMm, MountSpeedMmps).RunAsync(cancel);
+
+            // Then the heading decides, within a right angle.
+            //
+            // The engine compares the charger's own yaw with the robot's (0x0054E344 against 0x0054E358).
+            // That only accepts a good mount if the charger's yaw *is* the heading a docked robot ends
+            // up with, and this stack's ChargerGeometry.DockedRobotPose puts the two half a turn apart.
+            // Which of the two conventions the engine's charger pose uses is the open half of M13-009,
+            // so the window is measured against the docked heading this stack computes rather than
+            // against a convention that has not been read.
+            var chargerNow = _m.World.GetLocatedObjectById(ChargerId);
+            var robotNow = _m.RobotPose();
+            if (chargerNow is not null && robotNow is not null &&
+                Math.Abs(StraightLinePlanner.Wrap(ChargerGeometry.DockedRobotPose(chargerNow.Pose).AngleAroundZ
+                                                  - robotNow.Value.AngleAroundZ)) <= MountHeadingToleranceRad)
+            {
+                _trace.Add("MountChargerAction: mounted, within a right angle of the charger heading");
+                return ActionResult.Success;
+            }
             _trace.Add($"Turning and mounting the charger failed ({r}). Driving forward to position for a retry");
             await new DriveStraightAction(_m, RetryDriveMm, RetrySpeedMmps).RunAsync(cancel);
         }

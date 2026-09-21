@@ -2775,38 +2775,33 @@
       "test": "NavigationTests"
     },
     {
-      "id": "M13-007",
       "subsystem": "M13-navigation",
-      "title": "Stack detection tolerance of 15 mm above a cube height of 44",
-      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/BlockConfigurations.cs:41",
-      "effect": "a stack is or is not recognised",
-      "provenance": "inferred tolerance",
-      "authority": "FindObjectOnTopOrUnderneathHelper in libcozmoEngine.so",
+      "title": "The stack tolerance is 30 mm when building a stack and 15 mm everywhere else",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/BlockConfigurations.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "BlockWorld::FindObjectOnTopOrUnderneathHelper 0x0062601C takes the tolerance as its second argument, and the callers do not agree on one number. BlockConfigurations::StackOfCubes::BuildTallestStackForObject passes 30 (0x41F00000 at both 0x0061928C and 0x00619344); BlockWorld::UpdatePoseOfStackedObjects 0x00621908, DockingComponent::CanInteractWithObjectHelper 0x0063C728 and CarryingComponent::SetObjectAsAttachedToLift 0x00632F0C all pass 15 (0x41700000)",
       "evidence": [
-        "FindObjectOnTopOrUnderneathHelper"
+        "the helper takes the object height along the parent Z through GetDimInParentFrame and looks for a neighbour whose centre sits that far above or below, within the tolerance",
+        "this stack used 15 for building the stack list, which is the tighter of the two"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the engine tolerance",
-      "hardware_required": false,
       "live_path": true,
-      "test": "NavigationTests"
+      "test": "ManipulationTests",
+      "id": "M13-007"
     },
     {
-      "id": "M13-008",
       "subsystem": "M13-navigation",
-      "title": "The charger drive-off is allowed to end short when the contacts report",
-      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs:54",
-      "effect": "the robot stops at a different distance from the charger",
-      "provenance": "inferred",
-      "authority": "DriveOffChargerContactsAction CheckIfDone in libcozmoEngine.so",
+      "title": "The mount is decided by the heading after the reverse, not by the contacts during it",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "MountChargerAction::CheckIfDone 0x0054E2D0 runs the turn-and-mount sub-action to completion and only then looks at the world: it takes the charger yaw (0x0054E344) and the robot yaw (0x0054E358), subtracts, takes the absolute value and compares against pi/2 (0x3FC90FDB at 0x0054E374). Inside the window the mount stands; outside it, or with the charger no longer located, it warns \"Turning and mounting the charger failed\" and runs ConfigureDriveForRetryAction, whose completion returns 0x04000006",
       "evidence": [
-        "Robot::IsOnChargerContacts"
+        "nothing in the path watches the charger contacts while the robot reverses; this stack raced the drive against the contacts report and aborted the path on the first IS_ON_CHARGER",
+        "DriveOffChargerContactsAction 0x005582E4 works the same way in the other direction: it drives its 10 mm in full and only warns if the contacts still report afterwards",
+        "the engine compares the charger pose own yaw, which matches a docked robot only under one of the two charger conventions; which one is the open half of M13-009, so this stack measures the window against the docked heading it computes rather than guessing"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "whether the engine ends the drive early or always drives the full distance",
-      "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "NavigationTests.MountChargerAlignsTurnsAndBacksOntoTheContacts",
+      "id": "M13-008"
     },
     {
       "id": "M13-009",

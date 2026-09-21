@@ -38,14 +38,31 @@ public sealed record Pyramid(PyramidBase Base, uint TopBlockId) : BlockConfigura
 /// type (<c>GetCacheByType</c>), and reports when a configuration is first seen (<c>ConfigurationSeen</c>,
 /// stamped with the clock for the behaviours' "seen within 5 s" checks). Rules, NATIVE where the constant was
 /// read: a block is on top of another when their planar centres are within half a cube and the upper sits one
-/// cube height (44) above (<c>FindObjectOnTopOrUnderneathHelper</c> tolerance INFERRED 15 mm); two blocks form
+/// cube height (44) above. The vertical tolerance is <c>FindObjectOnTopOrUnderneathHelper</c>'s second
+/// argument, and it is not one number: <c>BuildTallestStackForObject</c> passes <b>30</b> (0x41F00000 at
+/// 0x0061928C and 0x00619344) while <c>UpdatePoseOfStackedObjects</c>, <c>CanInteractWithObjectHelper</c>
+/// and <c>SetObjectAsAttachedToLift</c> all pass 15 (0x41700000). Building a stack is the loose one.
+/// Two blocks form
 /// a base when both are on the ground at the same height (within 10, 0x41200000) and their centres are at
 /// most 60 mm apart (3600 mm², 0x45610000) with both upright; a block is on top of a base when it is one
 /// cube up and within 15 mm (0x41700000) of the base's interior midpoint.
 /// </summary>
 public sealed class BlockConfigurationManager
 {
-    public const double OnTopPlanarToleranceMm = 15.0;
+    /// <summary>
+    /// 30 mm: what <c>StackOfCubes::BuildTallestStackForObject</c> hands
+    /// <c>FindObjectOnTopOrUnderneathHelper</c> (0x41F00000 at 0x0061928C and 0x00619344). This had been
+    /// 15, which is the tolerance the engine's <em>other</em> three callers of that helper use.
+    /// </summary>
+    public const double OnTopPlanarToleranceMm = 30.0;
+
+    /// <summary>
+    /// 15 mm: the tolerance <c>UpdatePoseOfStackedObjects</c> 0x00621908,
+    /// <c>CanInteractWithObjectHelper</c> 0x0063C728 and <c>SetObjectAsAttachedToLift</c> 0x00632F0C
+    /// pass to the same helper, for deciding whether a cube is resting on another rather than for
+    /// building the stack list.
+    /// </summary>
+    public const double RestingOnToleranceMm = 15.0;
     public const double SameHeightToleranceMm = 10.0;
     public const double PyramidBaseMaxDistanceMm2 = 3600.0;
     public const double OnTopOfBaseToleranceMm = 15.0;

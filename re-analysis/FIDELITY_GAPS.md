@@ -7,9 +7,9 @@ Manifest of **201 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 98 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 100 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 56 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 54 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 9 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -36,7 +36,7 @@ remains after both, and they do not go away by working harder on this repository
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | 0 | 0 | 0 | no | yes |
 | M11-vision — Markers, camera geometry and BlockWorld | 16 | 6 | 0 | 1 | 0 | no | yes |
 | M12-manipulation — Docking, carrying and pre-action poses | 16 | 1 | 1 | 0 | 0 | no | no |
-| M13-navigation — Planning, charger and block configurations | 11 | 7 | 1 | 0 | 0 | no | no |
+| M13-navigation — Planning, charger and block configurations | 11 | 5 | 1 | 0 | 0 | no | no |
 | M14-faces — Face and pet pipeline | 7 | 5 | 0 | 1 | 0 | no | yes |
 | M15-freeplay — Needs, activities and freeplay | 12 | 9 | 0 | 0 | 0 | no | yes |
 | tools — Conformance CLI and offline tools | 4 | 0 | 0 | 0 | 0 | yes | yes |
@@ -388,24 +388,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: the engine AIWhiteboard, whose interface is exported
 * evidence: AIWhiteboard exports
 * outstanding: whether the engine keeps more than one beacon, and how failures are recorded
-
-**M13-007 — Stack detection tolerance of 15 mm above a cube height of 44** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/BlockConfigurations.cs:41`
-* effect: a stack is or is not recognised
-* rests on: inferred tolerance
-* best authority: FindObjectOnTopOrUnderneathHelper in libcozmoEngine.so
-* evidence: FindObjectOnTopOrUnderneathHelper
-* outstanding: the engine tolerance
-
-**M13-008 — The charger drive-off is allowed to end short when the contacts report** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs:54`
-* effect: the robot stops at a different distance from the charger
-* rests on: inferred
-* best authority: DriveOffChargerContactsAction CheckIfDone in libcozmoEngine.so
-* evidence: Robot::IsOnChargerContacts
-* outstanding: whether the engine ends the drive early or always drives the full distance
 
 **M13-009 — Charger length and the pre-dock pose derived from the drive-off distance** (live path)
 
