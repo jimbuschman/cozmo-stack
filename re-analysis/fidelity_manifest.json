@@ -93,7 +93,7 @@
       "name": "Idle, mood and reactions",
       "milestone": "M7",
       "source_investigation_exhausted": false,
-      "implementation_fidelity_complete": false
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M8-framework",
@@ -1335,56 +1335,60 @@
       "test": "IdleFaceTests"
     },
     {
-      "id": "M7-008",
       "subsystem": "M7-behaviour",
-      "title": "Idle timers are counted in wall-clock milliseconds",
+      "title": "Idle timers are whole milliseconds counted down by the engine's 60 ms tick",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "effect": "blinks and darts come at a different rate than the app",
-      "provenance": "wall-clock ms",
-      "authority": "the engine decrements each keep-alive countdown by 60 per Update call (UpdateLiveAnimation 0x0057D5F8, KeepFaceAlive 0x0058D374), so the unit is engine ticks",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
       "evidence": [
-        "UpdateLiveAnimation 0x0057D5F8",
-        "KeepFaceAlive 0x0058D374"
+        "CozmoInstanceRunner::Run 0x0065B3A8 deadlines each loop iteration at steady_clock::now() + 0x03938700 ns (60 000 000 ns = 60 ms) and calls CozmoEngine::Update once per iteration",
+        "every keep-alive countdown is decremented by exactly 0x3c per call: UpdateLiveAnimation 0x0057D650 (body), 0x0057D68A (lift), 0x0057D6BA (head), KeepFaceAlive 0x0058D388 (blink and dart together), and the idle clock at this+0x44 is incremented by 0x3c at 0x0057D444",
+        "so the unit is the millisecond and the quantum is one 60 ms tick; BlinkSpacingMin_ms 3000 is 3000 ms, not 3000 ticks",
+        "every spacing and duration is drawn with RandomGenerator::RandIntInRange after a vcvt.s32.f32 of the float tunable (0x0058D45A), so they are whole milliseconds, inclusive at both ends",
+        "all six motion counters start at zero (__aeabi_memclr4 of 0x18 bytes at this+0x198, 0x0057A03C) and so do the two face counters (FaceLayerManager::FaceLayerManager 0x0058CD70), so each is due on the first tick it may run",
+        "a motion countdown is set to the movement's own duration when it starts and the gap is drawn separately into the second half of the pair (0x0057D6F2 with 0x0057D978), and the next movement is due when countdown + gap runs out",
+        "a timer that cannot fire is decremented and left alone - the engine never reschedules it - so the action happens on the first tick its track comes free"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the engine tick period, readable from CozmoEngine::Update 0x004ED4D4",
-      "hardware_required": false,
+      "prior": "the timers ran on the continuous wall clock with continuous draws, were rescheduled as though they had fired whenever a track was owned, and spaced movements by the gap alone",
       "live_path": true,
-      "test": "IdleTests"
+      "test": "KeepAliveTests",
+      "id": "M7-008"
     },
     {
-      "id": "M7-009",
       "subsystem": "M7-behaviour",
-      "title": "Idle head and lift move through the motion API instead of the live animation",
+      "title": "Idle head and lift are keyframes of the live animation",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "effect": "different messages on the wire for the same visible motion, and none of the keyframe variability the engine applies at stream time",
-      "provenance": "SetHeadAngle and SetLiftHeight commands, because the idle here is not built on the animation scheduler",
-      "authority": "UpdateLiveAnimation 0x0057D5F8 adds HeadAngleKeyFrame(currentDeg, variability 6, duration) and LiftHeightKeyFrame(35, 8, duration) to the engine live animation and streams them as 0x93 and 0x94",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
       "evidence": [
-        "UpdateLiveAnimation 0x0057D5F8"
+        "AnimationStreamer constructs an Animation of its own at this+0xA8 and marks it live (SetIsLive(true), 0x0057A060); AnimationStreamer::Update reaches it only when nothing else is streaming (0x0057D070)",
+        "UpdateLiveAnimation appends HeadAngleKeyFrame((signed char)(headAngle_rad * 57.2958), GetParam<u8>(HeadAngleVariability_deg) = 6, duration) at 0x0057D85C and LiftHeightKeyFrame(GetParam<u8>(LiftHeightMean_mm) = 35, GetParam<u8>(LiftHeightVariability_mm) = 8, duration) at 0x0057D9C0",
+        "the angle is the robot's current head angle, so the movement comes entirely from the variability, which HeadAngleKeyFrame::GetStreamMessage 0x004F8C08 draws at stream time",
+        "they reach the robot as animHeadAngle 0x93 and animLiftHeight 0x94, not as SetHeadAngle or SetLiftHeight",
+        "AnimationScheduler.StreamLive is the path here, and it applies the same stream-time variability draw"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "the idle has to be built as a live clip on the scheduler; the keyframes and their variability are already recovered",
-      "hardware_required": false,
+      "prior": "idle drove the head and lift through the M4 motion API, so different messages went on the wire and none of the stream-time variability was applied",
       "live_path": true,
-      "test": "IdleTests"
+      "test": "KeepAliveTests",
+      "id": "M7-009"
     },
     {
-      "id": "M7-010",
       "subsystem": "M7-behaviour",
-      "title": "The idle body shuffle is recovered and not driven",
+      "title": "The idle body shuffle is driven, with the eye shift that goes with a turn",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "effect": "the robot sits still where the app shuffles",
-      "provenance": "a deliberate omission; the engine numbers are written down in the file and nothing uses them",
-      "authority": "UpdateLiveAnimation 0x0057D6CC onward: speed uniform in plus or minus 10 mm per s, duration 250 to 1500 ms, straight with probability BodyMovementStraightFraction else a turn in place, with a 33 ms eye shift",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
       "evidence": [
-        "UpdateLiveAnimation 0x0057D6CC"
+        "UpdateLiveAnimation 0x0057D6CC: duration RandIntInRange(BodyMovementDurationMin_ms, Max) = 250..1500, speed RandIntInRange(-BodyMovementSpeed_mmps, +same) = -10..10, and RandDblInRange(0, 1) against BodyMovementStraightFraction 0.5",
+        "straight is BodyMotionKeyFrame(speed, 0x7FFF, duration) (radius set at 0x0057D8DA), a turn is BodyMotionKeyFrame(speed, 0, duration) (0x0057D80E), both appended at 0x0057D8EA",
+        "a turn also adds the LiveIdleTurn eye-shift layer at 0x0057D7FC: x = sign(speed) * RandIntInRange(0, 21), y = RandIntInRange(-10, 10), duration 33 ms, and the five trailing floats of AddOrUpdateEyeShift are 64, 32, 1.1, 0.85, 0.1 rather than the eye-dart tunables",
+        "a straight shuffle removes that layer again with RemoveEyeShift at 0x0057D8D2",
+        "the gap to the next shuffle is RandIntInRange(BodyMovementSpacingMin_ms, Max) = 100..1000, drawn at 0x0057D978"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "nothing is left to read; it has to be built",
-      "hardware_required": false,
+      "prior": "the numbers were written down in the file and nothing used them: the robot sat still where the app shuffles",
       "live_path": true,
-      "test": null
+      "test": "KeepAliveTests",
+      "id": "M7-010"
     },
     {
       "subsystem": "M7-behaviour",
@@ -1459,6 +1463,22 @@
       "hardware_required": false,
       "live_path": true,
       "test": "DerivedStateTests"
+    },
+    {
+      "subsystem": "M7-behaviour",
+      "title": "The face carries a stack of named layers, not one transient at a time",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "ITrackLayerManager holds a list of named layers - Blink, KeepAliveEyeDart and LiveIdleTurn are the three the keep-alive adds - and ProceduralFace::Combine 0x005846A8 folds each onto the result of the last",
+        "KeepFaceAlive adds the dart to a persistent layer (AddToPersistentLayer 0x0058D3E2) and the blink as an ordinary one (AddLayer 0x0058D4BE) on the same tick when both timers are due, which they are on the first tick since both start at zero",
+        "the dart is held off while another layer is up: KeepFaceAlive proceeds only when the manager holds no layer, or exactly one and that one is the dart's own (0x0058D3B2..0x0058D3C4)",
+        "found by this pass: a single transient slot dropped whichever of a simultaneous blink and dart came second"
+      ],
+      "live_path": true,
+      "test": "KeepAliveTests, IdleFaceTests",
+      "id": "M7-016"
     },
     {
       "id": "M8-001",

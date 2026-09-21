@@ -163,8 +163,15 @@ public class IdleFaceTests
     }
 
     /// <summary>
-    /// A blink must restore the stable face, not whatever a dart left behind. Before the fix a blink
-    /// captured the mutated pose and put that back, cementing the drift.
+    /// A blink must be measured from the stable face, not from whatever a dart left behind. Before the
+    /// fix a blink captured the mutated pose and put that back, cementing the drift.
+    ///
+    /// A dart layer may well be up when a blink starts - the engine composes them, and every keep-alive
+    /// timer starts at zero so the first tick raises both - so what is asserted is that the face at the
+    /// start of a blink is the base plus at most one dart, not the base plus a hundred of them:
+    /// EyeScaleX, which only a blink ever touches and which is still 1x at a blink's first instant, is
+    /// exactly where it started, and EyeCenterX is inside the +/-2 pixels a single dart's convergence can
+    /// reach.
     /// </summary>
     [Fact]
     public void ABlinkRestoresTheStableFaceRatherThanAMutatedDartPose()
@@ -186,8 +193,12 @@ public class IdleFaceTests
             // the multipliers are still 1, so the face is exactly where it started.
             foreach (var blink in afterBlinks)
             {
-                Assert.Equal(start.Left[(int)EyeParam.EyeCenterX], blink.Left[(int)EyeParam.EyeCenterX], 3);
-                Assert.Equal(start.Right[(int)EyeParam.EyeCenterX], blink.Right[(int)EyeParam.EyeCenterX], 3);
+                Assert.InRange(blink.Left[(int)EyeParam.EyeCenterX],
+                               start.Left[(int)EyeParam.EyeCenterX] - 2.001f,
+                               start.Left[(int)EyeParam.EyeCenterX] + 2.001f);
+                Assert.InRange(blink.Right[(int)EyeParam.EyeCenterX],
+                               start.Right[(int)EyeParam.EyeCenterX] - 2.001f,
+                               start.Right[(int)EyeParam.EyeCenterX] + 2.001f);
                 Assert.Equal(start.Left[(int)EyeParam.EyeScaleX], blink.Left[(int)EyeParam.EyeScaleX], 3);
             }
         }
@@ -205,13 +216,25 @@ public class IdleFaceTests
         {
             var start = robot.Face.Current.Clone();
             var arbiter = new BehaviorArbiter { AutonomyEnabled = true };
-            var idle = new IdleBehavior(robot, arbiter, random: new Random(1)) { ExecuteMotors = false };
+            // Blinking parked out of the way, so what is measured is the dart's own lifetime rather than
+            // a blink composed on top of it.
+            var quiet = IdleParameters.Default with
+            {
+                BlinkSpacingMinMs = 600_000,
+                BlinkSpacingMaxMs = 600_000,
+                EyeDartSpacingMinMs = 1_000,
+                EyeDartSpacingMaxMs = 1_000,
+            };
+            var idle = new IdleBehavior(robot, arbiter, quiet, new Random(1)) { ExecuteMotors = false };
 
             double? dartAt = null;
             double dartFor = 0;
             idle.Acted += e =>
             {
-                if (dartAt is null && e.Action == IdleAction.EyeDart && e.Suppressed is null)
+                // The second dart, not the first: every keep-alive timer starts at zero, so the first
+                // tick raises a blink as well, and a blink lasts 331 ms.
+                if (dartAt is null && e.AtMs > IdleBehavior.BlinkTotalMs
+                    && e.Action == IdleAction.EyeDart && e.Suppressed is null)
                 { dartAt = e.AtMs; dartFor = e.DurationMs; }
             };
 

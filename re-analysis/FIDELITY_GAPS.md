@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **201 records** over 16 subsystems.
+Manifest of **202 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 108 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 112 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 49 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 6 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 48 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 4 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -30,7 +30,7 @@ remains after both, and they do not go away by working harder on this repository
 | M4-control — Motion, sensors, lights and cubes | 9 | 4 | 0 | 0 | 0 | no | yes |
 | M5-animation — Animation clips, scheduler and face | 20 | 4 | 0 | 0 | 0 | no | yes |
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 1 | 0 | 0 | 0 | no | yes |
-| M7-behaviour — Idle, mood and reactions | 15 | 3 | 2 | 0 | 0 | no | no |
+| M7-behaviour — Idle, mood and reactions | 16 | 2 | 0 | 0 | 0 | no | yes |
 | M8-framework — Behaviour framework and scoring | 10 | 6 | 0 | 0 | 0 | no | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | 0 | 0 | 0 | no | yes |
@@ -191,15 +191,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: GenerateEyeShift 0x0058D100 with AddToPersistentLayer 0x0058EAA0 and ITrackLayerManager::ApplyLayersToFrame 0x0058E644, which were read and contradict each other when read statically
 * evidence: AddToPersistentLayer 0x0058EAA0; ApplyLayersToFrame 0x0058E644
 * outstanding: the two readings were not separated; a deeper trace of ApplyLayersToFrame trimming a finished persistent layer would settle it
-
-**M7-008 — Idle timers are counted in wall-clock milliseconds** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
-* effect: blinks and darts come at a different rate than the app
-* rests on: wall-clock ms
-* best authority: the engine decrements each keep-alive countdown by 60 per Update call (UpdateLiveAnimation 0x0057D5F8, KeepFaceAlive 0x0058D374), so the unit is engine ticks
-* evidence: UpdateLiveAnimation 0x0057D5F8; KeepFaceAlive 0x0058D374
-* outstanding: the engine tick period, readable from CozmoEngine::Update 0x004ED4D4
 
 **M7-013 — Mood clamp to plus or minus 1 and flat extrapolation outside decay-graph nodes** (live path)
 
@@ -501,26 +492,6 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: CompressRLE 0x00581904 was read and its skip and repeat commands and its raw 1024-byte fallback above MAX_FACE_FRAME_SIZE are known; none of the three is implemented
 * evidence: CompressRLE 0x00581904
 * outstanding: the skip and repeat commands and the raw fallback have to be written; nothing more has to be read first
-
-### M7-behaviour — Idle, mood and reactions
-
-**M7-009 — Idle head and lift move through the motion API instead of the live animation** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
-* effect: different messages on the wire for the same visible motion, and none of the keyframe variability the engine applies at stream time
-* rests on: SetHeadAngle and SetLiftHeight commands, because the idle here is not built on the animation scheduler
-* best authority: UpdateLiveAnimation 0x0057D5F8 adds HeadAngleKeyFrame(currentDeg, variability 6, duration) and LiftHeightKeyFrame(35, 8, duration) to the engine live animation and streams them as 0x93 and 0x94
-* evidence: UpdateLiveAnimation 0x0057D5F8
-* outstanding: the idle has to be built as a live clip on the scheduler; the keyframes and their variability are already recovered
-
-**M7-010 — The idle body shuffle is recovered and not driven** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
-* effect: the robot sits still where the app shuffles
-* rests on: a deliberate omission; the engine numbers are written down in the file and nothing uses them
-* best authority: UpdateLiveAnimation 0x0057D6CC onward: speed uniform in plus or minus 10 mm per s, duration 250 to 1500 ms, straight with probability BodyMovementStraightFraction else a turn in place, with a 33 ms eye shift
-* evidence: UpdateLiveAnimation 0x0057D6CC
-* outstanding: nothing is left to read; it has to be built
 
 ### M9-wwise-music — Wwise music, the MIDI sampler and singing
 

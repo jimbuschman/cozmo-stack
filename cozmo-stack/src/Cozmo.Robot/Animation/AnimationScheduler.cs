@@ -109,6 +109,7 @@ public sealed class AnimationScheduler
     private int _faceIndex = -1;               // index into _facePoses of the pose currently held
     private FaceBitmap? _lastFace;
     private double? _bodyEndsAtMs;             // when the running body keyframe should stop, if one is running
+    private double? _liveBodyStopsAtMs;        // the same, for a keep-alive body keyframe, on the wall clock
     private short[]? _audioPcm;                // the sound currently streaming, if any
     private long? _audioEventId;               // the event that started it, for a Stop event to match
     private int _audioPos;                     // how far into it the last frame reached
@@ -236,6 +237,47 @@ public sealed class AnimationScheduler
         // moment the animation is set up. Advance does the same.
     }
 
+    /// <summary>
+    /// Streams one keyframe of the engine's <b>live animation</b> — the keep-alive clip the streamer
+    /// always has open.
+    ///
+    /// <c>AnimationStreamer</c> constructs an <c>Animation</c> of its own at this+0xA8, marks it live
+    /// (<c>SetIsLive(true)</c> at 0x0057A060) and streams it whenever no real animation is playing;
+    /// <c>UpdateLiveAnimation</c> at 0x0057D5F8 appends head, lift and body keyframes to it as their
+    /// timers expire. The keyframes that come out are the ordinary 0x93 / 0x94 / 0x99 stream messages,
+    /// with the same stream-time variability draw — which is why this goes through the same
+    /// <see cref="Dispatch"/> arithmetic rather than through the motion API.
+    ///
+    /// Returns false when a running clip owns the keyframe's track, which is the engine's own condition:
+    /// the streamer only reaches the live animation when nothing else is streaming.
+    /// </summary>
+    public bool StreamLive(Keyframe k, double nowMs)
+    {
+        lock (_gate)
+            if (_clip is not null && (_clip.Tracks & k.Track) != AnimationTrack.None) return false;
+
+        switch (k)
+        {
+            case HeadKeyframe h:
+                _sink.Head((sbyte)Math.Clamp(WithVariability(h.AngleDeg, h.VariabilityDeg),
+                                             sbyte.MinValue, sbyte.MaxValue), h.DurationTimeMs);
+                return true;
+            case LiftKeyframe l:
+                _sink.Lift((byte)Math.Clamp(WithVariability(l.HeightMm, l.VariabilityMm),
+                                            byte.MinValue, byte.MaxValue), l.DurationTimeMs);
+                return true;
+            case BodyKeyframe b:
+                _sink.Body(b);
+                lock (_gate)
+                    _liveBodyStopsAtMs = b.RadiusIsKnown && b.DurationTimeMs > 0 && b.Speed != 0
+                        ? nowMs + b.DurationTimeMs
+                        : null;
+                return true;
+            default:
+                return false;
+        }
+    }
+
     /// <summary>Stops whatever is running. Returns false when nothing was.</summary>
     public bool Stop()
     {
@@ -304,6 +346,17 @@ public sealed class AnimationScheduler
     /// </summary>
     public void Advance(double nowMs)
     {
+        // A keep-alive body keyframe has to be stopped whether or not a clip is running, because
+        // DriveWheels runs until countermanded and the live animation is not on the clip timeline.
+        bool stopLiveBody = false;
+        lock (_gate)
+            if (_liveBodyStopsAtMs is { } end && nowMs >= end)
+            {
+                _liveBodyStopsAtMs = null;
+                stopLiveBody = true;
+            }
+        if (stopLiveBody) _sink.BodyStop();
+
         double interval = FrameInterval.TotalMilliseconds;
         double maxDebt = CozmoAudio.RobotBufferFrames * interval;
         int frames;

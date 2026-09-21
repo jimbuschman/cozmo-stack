@@ -13,6 +13,8 @@ public sealed record IdleEvent(IdleAction Action, double AtMs)
     /// <summary>A dart's vertical shift in pixels; zero for every other action.</summary>
     public double AmountY { get; init; }
     public double DurationMs { get; init; }
+    /// <summary>A body shuffle's radius token, <c>STRAIGHT</c> or <c>TURN_IN_PLACE</c>; null for the rest.</summary>
+    public string? BodyRadius { get; init; }
     /// <summary>Why nothing happened, when nothing did.</summary>
     public string? Suppressed { get; init; }
 }
@@ -42,9 +44,41 @@ public sealed class IdleBehavior
     private readonly Random _random;
     private readonly object _gate = new();
 
-    private double _nextBlinkMs, _nextDartMs, _nextHeadMs, _nextLiftMs, _nextBodyMs;
-    private double _idleSinceMs = double.NaN;
+    // The engine's own counters, in the engine's own units: whole milliseconds, run down by one tick's
+    // worth on every tick. FaceLayerManager holds the two face timers at this+0x14 and this+0x18;
+    // AnimationStreamer holds the three motion pairs at this+0x198..0x1AC and the idle clock at this+0x44.
+    // All of them start at zero - FaceLayerManager's constructor at 0x0058CD70 writes a pair of zeroes and
+    // AnimationStreamer memclr4s 0x18 bytes at 0x0057A03C - so every one of them is due on the first tick
+    // it is allowed to run.
+    private double _blinkMs, _dartMs;
+    private double _bodyMs, _liftMs, _headMs;
+    private double _bodyGapMs, _liftGapMs, _headGapMs;
+    private double _idleMs;
+    private double _lastTickMs;
     private bool _primed;
+
+    /// <summary>
+    /// The engine's main loop period, and therefore the quantum of every idle timer.
+    ///
+    /// <c>CozmoInstanceRunner::Run</c> at 0x0065B3A8 sets each iteration's deadline to
+    /// <c>steady_clock::now() + 0x03938700 ns</c> - 60 000 000 ns, 60 ms - and calls
+    /// <c>CozmoEngine::Update</c> once per iteration. Every idle countdown is decremented by exactly 60
+    /// per call (<c>UpdateLiveAnimation</c> 0x0057D650, 0x0057D68A, 0x0057D6BA and <c>KeepFaceAlive</c>
+    /// 0x0058D388), so the countdowns are in milliseconds and they move in 60 ms steps.
+    ///
+    /// That settles what the tunables mean: <c>BlinkSpacingMin_ms</c> really is 3000 milliseconds, not
+    /// 3000 ticks. It also means an idle event can only happen on a 60 ms boundary, which is why this
+    /// class turns the wall clock it is given into whole ticks rather than comparing against it.
+    /// </summary>
+    public const double EngineTickMs = 60;
+
+    /// <summary>
+    /// The most ticks one <see cref="Advance"/> makes up after a stall. The engine never catches up - it
+    /// runs one tick per loop iteration however long the iteration took - but this class is driven by
+    /// whatever clock its caller has, so a caller that stops calling for a minute should not get a
+    /// minute of idle behaviour in one go.
+    /// </summary>
+    public const int MaxCatchUpTicks = 16;
 
     public IdleBehavior(CozmoRobot robot, BehaviorArbiter arbiter,
                         IdleParameters? parameters = null, Random? random = null)
@@ -67,13 +101,13 @@ public sealed class IdleBehavior
     /// <summary>Forgets all timers, so the next <see cref="Advance"/> re-primes them.</summary>
     public void Reset()
     {
-        lock (_gate) { _primed = false; _idleSinceMs = double.NaN; ActionCount = 0; }
+        lock (_gate) { _primed = false; ActionCount = 0; }
     }
 
     /// <summary>
-    /// Advances idle behaviour to this moment, doing at most one thing per category.
+    /// Advances idle behaviour to this moment, doing at most one thing per category per engine tick.
     ///
-    /// Returns what it did, so a caller can log it. An empty list means it deliberately did nothing —
+    /// Returns what it did, so a caller can log it. An empty list means it deliberately did nothing -
     /// which is the normal case on most ticks, since the shortest spacing is 250 ms.
     /// </summary>
     public IReadOnlyList<IdleEvent> Advance(double nowMs)
@@ -82,89 +116,203 @@ public sealed class IdleBehavior
 
         if (!Arbiter.AutonomyEnabled)
         {
-            lock (_gate) { _primed = false; _idleSinceMs = double.NaN; }
+            lock (_gate) _primed = false;
             return done;
         }
 
         // Anything of higher priority running means the robot is not idle at all. The engine's equivalent
-        // is the streamer simply not reaching its live-animation update while a real animation streams.
+        // is the streamer simply not reaching its live-animation update while a real animation streams,
+        // which also leaves the idle clock at this+0x44 zeroed (0x0057D000).
         if (Arbiter.Running is { } running && running > BehaviorPriority.Idle)
         {
-            lock (_gate) { _idleSinceMs = double.NaN; }
+            lock (_gate) _idleMs = 0;
             Raise(done, new IdleEvent(IdleAction.None, nowMs) { Suppressed = $"{running} is running" });
             return done;
-        }
-
-        lock (_gate)
-        {
-            if (!_primed)
-            {
-                _primed = true;
-                _nextBlinkMs = nowMs + Between(_p.BlinkSpacingMinMs, _p.BlinkSpacingMaxMs);
-                _nextDartMs = nowMs + Between(_p.EyeDartSpacingMinMs, _p.EyeDartSpacingMaxMs);
-                _nextHeadMs = nowMs + Between(_p.HeadMovementSpacingMinMs, _p.HeadMovementSpacingMaxMs);
-                _nextLiftMs = nowMs + Between(_p.LiftMovementSpacingMinMs, _p.LiftMovementSpacingMaxMs);
-                _nextBodyMs = nowMs + Between(_p.BodyMovementSpacingMinMs, _p.BodyMovementSpacingMaxMs);
-            }
-            if (double.IsNaN(_idleSinceMs)) _idleSinceMs = nowMs;
         }
 
         var owned = _robot.Animations.OwnedTracks;
         bool faceFree = (owned & AnimationTrack.Face) == 0;
 
         // A dart or blink lasts for its own duration and no longer. Without this the last one simply
-        // stayed on screen until the next moved it further, which is how the eyes drifted and grew.
+        // stayed on screen until the next moved it further, which is how the eyes drifted and grew. This
+        // is the face being rendered, not a timer, so it runs on every call rather than once per tick.
         if (faceFree) ExpireTransient(nowMs);
         else ForgetBaseFace();   // something else owns the face; whatever base we had is stale
+
+        int ticks;
+        lock (_gate)
+        {
+            if (!_primed)
+            {
+                _primed = true;
+                _blinkMs = _dartMs = 0;
+                _bodyMs = _liftMs = _headMs = 0;
+                _bodyGapMs = _liftGapMs = _headGapMs = 0;
+                _idleMs = 0;
+                _lastTickMs = nowMs - EngineTickMs;     // this call is the first tick
+            }
+            ticks = (int)Math.Floor((nowMs - _lastTickMs) / EngineTickMs);
+            if (ticks > MaxCatchUpTicks) { ticks = MaxCatchUpTicks; _lastTickMs = nowMs; }
+            else _lastTickMs += ticks * EngineTickMs;
+        }
+
+        for (int i = 0; i < ticks; i++) Tick(done, nowMs, owned);
+        return done;
+    }
+
+    /// <summary>
+    /// One engine tick of the keep-alive, in the engine's order: the two face timers first
+    /// (<c>FaceLayerManager::KeepFaceAlive</c> 0x0058D374), then body, lift and head
+    /// (<c>AnimationStreamer::UpdateLiveAnimation</c> 0x0057D5F8).
+    ///
+    /// Two things about the counters are worth stating because they are easy to get wrong and this class
+    /// used to get both wrong:
+    ///
+    /// * <b>A timer that cannot fire is not rescheduled.</b> The engine decrements it and leaves it, so
+    ///   the action happens on the first tick the track is free. It used to be rescheduled as though it
+    ///   had fired, which quietly dropped every idle action taken during a caller animation.
+    /// * <b>A motion timer counts the movement and the gap after it.</b> The countdown is set to the
+    ///   movement's own duration when it starts and the gap is drawn separately; the next movement is due
+    ///   when countdown + gap has run out, so it comes duration + gap later, not gap later.
+    /// </summary>
+    private void Tick(List<IdleEvent> done, double nowMs, AnimationTrack owned)
+    {
+        bool faceFree = (owned & AnimationTrack.Face) == 0;
         bool headFree = (owned & AnimationTrack.Head) == 0;
         bool liftFree = (owned & AnimationTrack.Lift) == 0;
         bool bodyFree = (owned & AnimationTrack.Body) == 0;
 
-        // The face keeps going from the first moment. Movement waits out TimeBeforeWiggleMotions_ms,
-        // which is what stops the robot twitching the instant it is put down.
-        bool mayMove;
-        lock (_gate) mayMove = nowMs - _idleSinceMs >= _p.TimeBeforeWiggleMotionsMs;
-
-        if (Due(ref _nextBlinkMs, nowMs, _p.BlinkSpacingMinMs, _p.BlinkSpacingMaxMs))
-            Raise(done, faceFree
-                ? Do(IdleAction.Blink, nowMs)
-                : new IdleEvent(IdleAction.Blink, nowMs) { Suppressed = "the face track is owned" });
-
-        if (Due(ref _nextDartMs, nowMs, _p.EyeDartSpacingMinMs, _p.EyeDartSpacingMaxMs))
+        // ---- the face. Both timers run down at the top of KeepFaceAlive, whatever happens next.
+        lock (_gate)
         {
-            // GenerateEyeShift draws whole pixels in both axes and a whole-millisecond duration with
-            // RandIntInRange, each end inclusive.
-            int reach = (int)_p.EyeDartMaxDistancePix;
-            int dx = _random.Next(-reach, reach + 1), dy = _random.Next(-reach, reach + 1);
-            int dur = _random.Next((int)_p.EyeDartMinDurationMs, (int)_p.EyeDartMaxDurationMs + 1);
-            Raise(done, faceFree
-                ? Do(IdleAction.EyeDart, nowMs, dx, dur, dy)
-                : new IdleEvent(IdleAction.EyeDart, nowMs) { Suppressed = "the face track is owned" });
+            _blinkMs -= EngineTickMs;
+            _dartMs -= EngineTickMs;
         }
 
-        if (mayMove && Due(ref _nextHeadMs, nowMs, _p.HeadMovementSpacingMinMs, _p.HeadMovementSpacingMaxMs))
-            Raise(done, headFree
-                ? Do(IdleAction.HeadMove, nowMs,
-                     Between(-_p.HeadAngleVariabilityDeg, _p.HeadAngleVariabilityDeg),
-                     Between(_p.HeadMovementDurationMinMs, _p.HeadMovementDurationMaxMs))
-                : new IdleEvent(IdleAction.HeadMove, nowMs) { Suppressed = "the head track is owned" });
+        // The dart is skipped entirely when the dart distance is zero, and it will not go on top of
+        // another layer: KeepFaceAlive proceeds only when the layer manager holds no layer at all, or
+        // holds exactly one and that one is the dart's own (0x0058D3B2..0x0058D3C4). A blink in progress
+        // therefore holds the dart off, and the dart timer keeps counting while it waits.
+        bool dartDue;
+        lock (_gate) dartDue = _p.EyeDartMaxDistancePix > 0 && _dartMs <= 0;
+        if (dartDue)
+        {
+            bool blinkUp = BlinkInProgress();
+            if (faceFree && !blinkUp)
+            {
+                // GenerateEyeShift draws whole pixels in both axes and a whole-millisecond duration with
+                // RandIntInRange, each end inclusive.
+                int reach = (int)_p.EyeDartMaxDistancePix;
+                int dx = _random.Next(-reach, reach + 1), dy = _random.Next(-reach, reach + 1);
+                int dur = RandInt(_p.EyeDartMinDurationMs, _p.EyeDartMaxDurationMs);
+                lock (_gate) _dartMs = RandInt(_p.EyeDartSpacingMinMs, _p.EyeDartSpacingMaxMs);
+                Raise(done, Do(IdleAction.EyeDart, nowMs, dx, dur, dy));
+            }
+            else
+            {
+                Raise(done, new IdleEvent(IdleAction.EyeDart, nowMs)
+                {
+                    Suppressed = blinkUp ? "a blink layer is up" : "the face track is owned",
+                });
+            }
+        }
 
-        if (mayMove && Due(ref _nextLiftMs, nowMs, _p.LiftMovementSpacingMinMs, _p.LiftMovementSpacingMaxMs))
-            Raise(done, liftFree
-                ? Do(IdleAction.LiftMove, nowMs,
-                     _p.LiftHeightMeanMm + Between(-_p.LiftHeightVariabilityMm, _p.LiftHeightVariabilityMm),
-                     Between(_p.LiftMovementDurationMinMs, _p.LiftMovementDurationMaxMs))
-                : new IdleEvent(IdleAction.LiftMove, nowMs) { Suppressed = "the lift track is owned" });
+        bool blinkDue;
+        lock (_gate) blinkDue = _blinkMs <= 0;
+        if (blinkDue)
+        {
+            if (faceFree)
+            {
+                lock (_gate) _blinkMs = RandInt(_p.BlinkSpacingMinMs, _p.BlinkSpacingMaxMs);
+                Raise(done, Do(IdleAction.Blink, nowMs, durationMs: BlinkTotalMs));
+            }
+            else
+            {
+                Raise(done, new IdleEvent(IdleAction.Blink, nowMs) { Suppressed = "the face track is owned" });
+            }
+        }
 
-        if (mayMove && Due(ref _nextBodyMs, nowMs, _p.BodyMovementSpacingMinMs, _p.BodyMovementSpacingMaxMs))
-            Raise(done, bodyFree
-                ? Do(IdleAction.BodyMove, nowMs,
-                     Between(-_p.BodyMovementSpeedMmps, _p.BodyMovementSpeedMmps),
-                     Between(_p.BodyMovementDurationMinMs, _p.BodyMovementDurationMaxMs))
-                : new IdleEvent(IdleAction.BodyMove, nowMs) { Suppressed = "the body track is owned" });
+        // ---- motion. UpdateLiveAnimation returns before any of it until the robot has been idle for
+        // TimeBeforeWiggleMotions_ms (0x0057D612), which is what stops it twitching the instant it is
+        // put down. The idle clock itself only advances on the ticks that reach the live animation.
+        bool mayMove;
+        lock (_gate)
+        {
+            mayMove = _idleMs >= _p.TimeBeforeWiggleMotionsMs;
+            _idleMs += EngineTickMs;
+        }
+        if (!mayMove) return;
 
-        return done;
+        // ---- body
+        if (Due(ref _bodyMs, ref _bodyGapMs, bodyFree))
+        {
+            int duration = RandInt(_p.BodyMovementDurationMinMs, _p.BodyMovementDurationMaxMs);
+            int speed = _random.Next(-(int)_p.BodyMovementSpeedMmps, (int)_p.BodyMovementSpeedMmps + 1);
+            bool straight = _random.NextDouble() <= _p.BodyMovementStraightFraction;
+            lock (_gate) _bodyMs = duration;
+            Raise(done, Do(IdleAction.BodyMove, nowMs, speed, duration,
+                           radius: straight ? StraightToken : TurnInPlaceToken));
+            lock (_gate) _bodyGapMs = RandInt(_p.BodyMovementSpacingMinMs, _p.BodyMovementSpacingMaxMs);
+        }
+        else if (!bodyFree)
+        {
+            Raise(done, new IdleEvent(IdleAction.BodyMove, nowMs) { Suppressed = "the body track is owned" });
+        }
+
+        // ---- lift
+        if (Due(ref _liftMs, ref _liftGapMs, liftFree))
+        {
+            int duration = RandInt(_p.LiftMovementDurationMinMs, _p.LiftMovementDurationMaxMs);
+            lock (_gate) _liftMs = duration;
+            Raise(done, Do(IdleAction.LiftMove, nowMs, _p.LiftHeightMeanMm, duration));
+            lock (_gate) _liftGapMs = RandInt(_p.LiftMovementSpacingMinMs, _p.LiftMovementSpacingMaxMs);
+        }
+        else if (!liftFree)
+        {
+            Raise(done, new IdleEvent(IdleAction.LiftMove, nowMs) { Suppressed = "the lift track is owned" });
+        }
+
+        // ---- head
+        if (Due(ref _headMs, ref _headGapMs, headFree))
+        {
+            int duration = RandInt(_p.HeadMovementDurationMinMs, _p.HeadMovementDurationMaxMs);
+            lock (_gate) _headMs = duration;
+            Raise(done, Do(IdleAction.HeadMove, nowMs, (_robot.State.HeadAngleRad ?? 0f) * 180.0 / Math.PI, duration));
+            lock (_gate) _headGapMs = RandInt(_p.HeadMovementSpacingMinMs, _p.HeadMovementSpacingMaxMs);
+        }
+        else if (!headFree)
+        {
+            Raise(done, new IdleEvent(IdleAction.HeadMove, nowMs) { Suppressed = "the head track is owned" });
+        }
     }
+
+    /// <summary>The radius token a straight keep-alive shuffle carries; the engine sends 0x7FFF for it.</summary>
+    public const string StraightToken = "STRAIGHT";
+
+    /// <summary>The radius token a keep-alive turn carries; the engine sends 0 for it.</summary>
+    public const string TurnInPlaceToken = "TURN_IN_PLACE";
+
+    /// <summary>
+    /// A motion timer: due when the movement's remaining duration plus the gap after it has run out and
+    /// the track is free. Not due, but still counting, otherwise - including while the track is owned,
+    /// which is what makes the action happen the moment the track comes free.
+    /// </summary>
+    private bool Due(ref double countdownMs, ref double gapMs, bool free)
+    {
+        lock (_gate)
+        {
+            if (free && countdownMs + gapMs <= 0) return true;
+            countdownMs -= EngineTickMs;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// A whole-millisecond draw, inclusive at both ends, as <c>RandomGenerator::RandIntInRange</c> makes
+    /// it. Every spacing and duration the keep-alive draws goes through it; the engine casts the float
+    /// tunable to int first (<c>vcvt.s32.f32</c> at 0x0058D45A) and so does this.
+    /// </summary>
+    private int RandInt(double min, double max) => _random.Next((int)min, (int)max + 1);
 
     /// <summary>
     /// Whether idle actually drives the robot, or only decides and reports. Off in tests and offline
@@ -184,26 +332,49 @@ public sealed class IdleBehavior
     /// </summary>
     public bool ExecuteMotors { get; set; } = true;
 
-    private IdleEvent Do(IdleAction action, double nowMs, double amount = 0, double durationMs = 0, double amountY = 0)
+    private IdleEvent Do(IdleAction action, double nowMs, double amount = 0, double durationMs = 0,
+                         double amountY = 0, string? radius = null)
     {
         ActionCount++;
         bool motor = action is IdleAction.HeadMove or IdleAction.LiftMove or IdleAction.BodyMove;
-        if (!motor || ExecuteMotors) Perform(action, nowMs, amount, durationMs, amountY);
-        return new IdleEvent(action, nowMs) { Amount = amount, AmountY = amountY, DurationMs = durationMs };
+        if (!motor || ExecuteMotors) Perform(action, nowMs, amount, durationMs, amountY, radius);
+        return new IdleEvent(action, nowMs)
+        {
+            Amount = amount,
+            AmountY = amountY,
+            DurationMs = durationMs,
+            BodyRadius = radius,
+        };
     }
 
     /// <summary>
     /// Carries out one idle action on the robot.
     ///
     /// Blinks and eye darts go through the M5 procedural face as transient layers over a base pose, which
-    /// is how the engine's FaceLayerManager composes them. Head and lift use the M4 motion API at the
-    /// engine's own durations; the engine itself streams them as HeadAngle/LiftHeight keyframes of its live
-    /// animation (UpdateLiveAnimation at 0x0057D5F8), a difference that is recorded, not hidden.
-    /// Body movement is deliberately **not** driven: a 10 mm/s shuffle is within the engine's parameters,
-    /// but sending wheel commands to an unattended robot is not something to switch on without watching
-    /// it happen, so it is decided and reported and left for hardware acceptance to enable.
+    /// is how the engine's FaceLayerManager composes them.
+    ///
+    /// Head, lift and body are keyframes of the engine's live animation, not motor commands.
+    /// <c>UpdateLiveAnimation</c> at 0x0057D5F8 appends them to the streamer's own always-open
+    /// <c>Animation</c> (this+0xA8, <c>SetIsLive(true)</c>) and they reach the robot as the ordinary
+    /// animHeadAngle 0x93, animLiftHeight 0x94 and animBodyMotion 0x99 stream messages:
+    ///
+    /// <list type="bullet">
+    /// <item><c>HeadAngleKeyFrame(currentAngleDeg, HeadAngleVariability_deg, duration)</c> at 0x0057D85C.
+    /// The angle is the robot's head angle right now, truncated to whole degrees; the movement comes
+    /// entirely from the variability, which is drawn at stream time, not here.</item>
+    /// <item><c>LiftHeightKeyFrame(LiftHeightMean_mm, LiftHeightVariability_mm, duration)</c> at
+    /// 0x0057D9C0 - 35 and 8, again drawn at stream time.</item>
+    /// <item><c>BodyMotionKeyFrame(speed, radius, duration)</c> at 0x0057D8EA, with radius 0x7FFF for a
+    /// straight shuffle and 0 for a turn on the spot.</item>
+    /// </list>
+    ///
+    /// The turn carries an eye shift with it (0x0057D7FC) and the straight one takes any such shift away
+    /// again (<c>RemoveEyeShift</c> at 0x0057D8D2), so the eyes lead the turn and settle when he drives
+    /// straight. Its constants are the call's own, not the eye-dart tunables: a 33 ms shift over a
+    /// 64 x 32 range with 1.1 / 0.85 / 0.1 for the three scales.
     /// </summary>
-    private void Perform(IdleAction action, double nowMs, double amount, double durationMs, double amountY)
+    private void Perform(IdleAction action, double nowMs, double amount, double durationMs, double amountY,
+                         string? radius)
     {
         try
         {
@@ -216,16 +387,23 @@ public sealed class IdleBehavior
                     Dart((int)amount, (int)amountY, nowMs, durationMs);
                     break;
                 case IdleAction.HeadMove when Execute:
-                    _ = _robot.Motion.SetHeadAngleAsync(
-                        (float)(_robot.State.HeadAngleRad + amount * Math.PI / 180.0),
-                        durationSec: (float)(durationMs / 1000.0));
+                    _robot.Animations.Scheduler.StreamLive(
+                        new HeadKeyframe(0, (uint)durationMs,
+                                         (sbyte)Math.Clamp((int)amount, sbyte.MinValue, sbyte.MaxValue),
+                                         (byte)_p.HeadAngleVariabilityDeg), nowMs);
                     break;
                 case IdleAction.LiftMove when Execute:
-                    _ = _robot.Motion.SetLiftHeightAsync((float)amount,
-                        durationSec: (float)(durationMs / 1000.0));
+                    _robot.Animations.Scheduler.StreamLive(
+                        new LiftKeyframe(0, (uint)durationMs,
+                                         (byte)Math.Clamp((int)amount, byte.MinValue, byte.MaxValue),
+                                         (byte)_p.LiftHeightVariabilityMm), nowMs);
                     break;
-                case IdleAction.BodyMove:
-                    // see the note above: decided, reported, not driven
+                case IdleAction.BodyMove when Execute:
+                    _robot.Animations.Scheduler.StreamLive(
+                        new BodyKeyframe(0, (uint)durationMs, radius ?? StraightToken,
+                                         (short)amount), nowMs);
+                    if (radius == TurnInPlaceToken) TurnEyeShift((short)amount, nowMs);
+                    else ClearTurnEyeShift();
                     break;
             }
         }
@@ -234,6 +412,54 @@ public sealed class IdleBehavior
             // A robot that went away mid-idle is not an idle bug.
         }
     }
+
+    /// <summary>
+    /// The eye shift a keep-alive turn carries, from 0x0057D754..0x0057D7FC: the horizontal shift is a
+    /// whole number of pixels in 0..21 taking the sign of the drawn wheel speed, the vertical one is in
+    /// -10..10, and the layer - the engine names it <c>LiveIdleTurn</c> - lasts 33 ms.
+    ///
+    /// The five trailing constants of the <c>AddOrUpdateEyeShift</c> call are its own, not the eye-dart
+    /// tunables: xMax 64, yMax 32, and 1.1 / 0.85 / 0.1 where a dart uses 5, 5 and the three
+    /// <c>EyeDart*Scale</c> parameters.
+    /// </summary>
+    private void TurnEyeShift(short speed, double nowMs)
+    {
+        int x = Math.Sign(speed) * _random.Next(0, TurnShiftMaxXPix + 1);
+        int y = _random.Next(-TurnShiftMaxYPix, TurnShiftMaxYPix + 1);
+        ShowTransient(IdleAction.BodyMove,
+                      (face, _) => LookAt(face, x, y, TurnShiftXRange, TurnShiftYRange, TurnShiftUpMaxScale,
+                                          TurnShiftDownMinScale, TurnShiftOuterEyeScaleIncrease),
+                      nowMs, TurnShiftDurationMs, varies: false);
+    }
+
+    /// <summary>
+    /// A straight shuffle takes the turn's eye shift away again (<c>RemoveEyeShift</c>, 0x0057D8D2), and
+    /// only that one: the engine removes the layer by its own tag, so a blink in progress is untouched.
+    /// </summary>
+    private void ClearTurnEyeShift()
+    {
+        bool removed;
+        lock (_gate) removed = _layers.RemoveAll(l => l.Kind == IdleAction.BodyMove) > 0;
+        if (removed) Render(double.NaN);
+    }
+
+    /// <summary>Whether a blink layer is up, which holds an eye dart off.</summary>
+    private bool BlinkInProgress()
+    {
+        lock (_gate) return _layers.Any(l => l.Kind == IdleAction.Blink);
+    }
+
+    /// <summary>The horizontal draw for a turn's eye shift: RandIntInRange(0, 21) at 0x0057D75C.</summary>
+    public const int TurnShiftMaxXPix = 21;
+    /// <summary>The vertical draw: RandIntInRange(-10, 10) at 0x0057D76C.</summary>
+    public const int TurnShiftMaxYPix = 10;
+    /// <summary>The shift lasts one 33 ms frame.</summary>
+    public const uint TurnShiftDurationMs = 33;
+    internal const float TurnShiftXRange = 64f;
+    internal const float TurnShiftYRange = 32f;
+    internal const float TurnShiftUpMaxScale = 1.1f;
+    internal const float TurnShiftDownMinScale = 0.85f;
+    internal const float TurnShiftOuterEyeScaleIncrease = 0.1f;
 
     // ---------------------------------------------------------------- the face
     //
@@ -293,68 +519,86 @@ public sealed class IdleBehavior
     /// <summary>The whole blink, first frame to base restored: 6 x 33 + 100 + 33 = 331 ms.</summary>
     public static readonly double BlinkTotalMs = BlinkFrames.Sum(f => f.DurationMs) + 33;
 
-    /// <summary>The pose every transient is measured from. Never modified by idle.</summary>
+    /// <summary>The pose every layer is measured from. Never modified by idle.</summary>
     private ProceduralFacePose? _base;
 
-    /// <summary>The transient in progress: a pose as a function of the time since it started, and when it ends.</summary>
-    private Func<double, ProceduralFacePose>? _transient;
-    private bool _transientVaries;
-    private double _transientStartMs, _transientEndsAtMs = double.NegativeInfinity;
+    /// <summary>
+    /// One named face layer, as <c>ITrackLayerManager</c> holds them: something applied to the face that
+    /// is there so far, for as long as it lasts.
+    ///
+    /// The engine keeps a list of these, not one at a time, and <c>ProceduralFace::Combine</c> at
+    /// 0x005846A8 folds each onto the result of the last: eye centres, eye angles, lid angles, face angle
+    /// and face position add, eye scales and face scales multiply. So a blink and an eye dart at the same
+    /// moment are a squash <em>and</em> a shifted gaze - which is exactly what the keep-alive produces on
+    /// its very first tick, since every timer starts at zero. One slot for one transient dropped whichever
+    /// of the two came second.
+    /// </summary>
+    private sealed record FaceLayer(IdleAction Kind, Func<ProceduralFacePose, double, ProceduralFacePose> Apply,
+                                    double StartMs, double EndsAtMs, bool Varies);
+
+    private readonly List<FaceLayer> _layers = new();
 
     /// <summary>
     /// Captures the base pose the first time idle touches the face, so darts and blinks are measured from
     /// a stable starting point rather than from whatever the last one left behind.
     /// </summary>
-    private ProceduralFacePose Base()
-    {
-        return _base ??= _robot.Face.Current.Clone();
-    }
+    private ProceduralFacePose Base() => _base ??= _robot.Face.Current.Clone();
 
     /// <summary>
-    /// Forgets the captured base, so the next idle action re-reads the face. Used when something else has
-    /// taken the face over, because the base captured before is no longer what is on screen.
+    /// Forgets the captured base and every layer on it, so the next idle action re-reads the face. Used
+    /// when something else has taken the face over, because the base captured before is no longer what is
+    /// on screen.
     /// </summary>
     public void ForgetBaseFace()
     {
-        lock (_gate) { _base = null; _transient = null; _transientEndsAtMs = double.NegativeInfinity; }
+        lock (_gate)
+        {
+            _base = null;
+            _layers.Clear();
+        }
     }
 
     /// <summary>
-    /// Starts a transient that lasts <paramref name="durationMs"/> and then gives way to the base.
-    /// <paramref name="varies"/> says whether the pose changes over the transient's life (a blink) or is
-    /// held (a dart), so a held pose is rendered once rather than every tick.
+    /// Adds a layer, or replaces the one of the same kind already there - which is what
+    /// <c>AddOrUpdateEyeShift</c> does by tag and <c>AddLayer</c> does by name.
     /// </summary>
-    private void ShowTransient(Func<double, ProceduralFacePose> pose, double nowMs, double durationMs, bool varies)
+    private void ShowTransient(IdleAction kind, Func<ProceduralFacePose, double, ProceduralFacePose> apply,
+                               double nowMs, double durationMs, bool varies)
     {
         lock (_gate)
         {
-            _transient = pose;
-            _transientVaries = varies;
-            _transientStartMs = nowMs;
-            _transientEndsAtMs = nowMs + Math.Max(1, durationMs);
+            _layers.RemoveAll(l => l.Kind == kind);
+            _layers.Add(new FaceLayer(kind, apply, nowMs, nowMs + Math.Max(1, durationMs), varies));
         }
-        if (Execute) _robot.Face.SetParameters(pose(0));
+        Render(nowMs);
     }
 
     /// <summary>
-    /// Advances the transient in progress: re-evaluates a time-varying one, such as a blink stepping
-    /// through its frames, and puts the base pose back once it has run its duration.
+    /// Drops the layers that have run out and redraws if anything changed or anything left is still
+    /// moving. With nothing left the base comes back, untouched by any of it.
     /// </summary>
     private void ExpireTransient(double nowMs)
     {
-        ProceduralFacePose? show = null;
+        bool redraw;
         lock (_gate)
         {
-            if (_transient is null) return;
-            if (nowMs < _transientEndsAtMs) show = _transientVaries ? _transient(nowMs - _transientStartMs) : null;
-            else
-            {
-                _transient = null;
-                _transientEndsAtMs = double.NegativeInfinity;
-                show = _base?.Clone();
-            }
+            int before = _layers.Count;
+            _layers.RemoveAll(l => nowMs >= l.EndsAtMs);
+            redraw = _layers.Count != before || _layers.Any(l => l.Varies);
         }
-        if (show is not null && Execute) _robot.Face.SetParameters(show);
+        if (redraw) Render(nowMs);
+    }
+
+    /// <summary>Composes the layers onto the base, oldest first, and puts the result on the screen.</summary>
+    private void Render(double nowMs)
+    {
+        ProceduralFacePose pose;
+        lock (_gate)
+        {
+            pose = Base().Clone();
+            foreach (var l in _layers) pose = l.Apply(pose, nowMs - l.StartMs);
+        }
+        if (Execute) _robot.Face.SetParameters(pose);
     }
 
     /// <summary>
@@ -364,8 +608,7 @@ public sealed class IdleBehavior
     /// </summary>
     private void Blink(double nowMs)
     {
-        var b = Base();
-        ShowTransient(t => BlinkPose(b, t), nowMs, BlinkTotalMs, varies: true);
+        ShowTransient(IdleAction.Blink, (face, t) => BlinkPose(face, t), nowMs, BlinkTotalMs, varies: true);
     }
 
     /// <summary>
@@ -418,9 +661,8 @@ public sealed class IdleBehavior
     /// </summary>
     private void Dart(int xPix, int yPix, double nowMs, double durationMs)
     {
-        var b = Base();
-        var pose = DartPose(b, xPix, yPix, _p);
-        ShowTransient(_ => pose, nowMs, durationMs, varies: false);
+        ShowTransient(IdleAction.EyeDart, (face, _) => DartPose(face, xPix, yPix, _p),
+                      nowMs, durationMs, varies: false);
     }
 
     /// <summary>
@@ -446,13 +688,18 @@ public sealed class IdleBehavior
     /// zero here. <c>EyeDartMinScale</c> and <c>EyeDartMaxScale</c> are not consulted by this path in the
     /// engine and are not applied.
     /// </summary>
-    internal static ProceduralFacePose DartPose(ProceduralFacePose b, int xPix, int yPix, IdleParameters p)
-    {
-        const float xMax = 5f, yMax = 5f;
-        float x = xPix, y = yPix;
-        float up = (float)p.EyeDartUpMaxScale, down = (float)p.EyeDartDownMinScale;
-        float inc = (float)p.EyeDartOuterEyeScaleIncrease;
+    internal static ProceduralFacePose DartPose(ProceduralFacePose b, int xPix, int yPix, IdleParameters p) =>
+        LookAt(b, xPix, yPix, 5f, 5f, (float)p.EyeDartUpMaxScale, (float)p.EyeDartDownMinScale,
+               (float)p.EyeDartOuterEyeScaleIncrease);
 
+    /// <summary>
+    /// <c>ProceduralFace::LookAt</c> itself, with its seven arguments given rather than assumed, because
+    /// the keep-alive calls it with two different sets: a dart passes 5, 5 and the three
+    /// <c>EyeDart*Scale</c> tunables, a turn's eye shift passes 64, 32, 1.1, 0.85 and 0.1.
+    /// </summary>
+    internal static ProceduralFacePose LookAt(ProceduralFacePose b, float x, float y, float xMax, float yMax,
+                                              float up, float down, float inc)
+    {
         float fy = MathF.Min(1f, (yMax - y) / (2f * yMax));
         float vertical = down + (up - down) * fy;
         float fx = MathF.Min(1f, MathF.Abs(x) / xMax);
