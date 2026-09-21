@@ -50,14 +50,16 @@ public class WwiseMusicTests
         return null;
     }
 
-    private static readonly Lazy<WwiseSoundLibrary?> Library = new(() => SoundDir() is { } d ? WwiseSoundLibrary.Load(d) : null);
+    /// <summary>The one shipped library every Wwise test class shares; see <see cref="WwiseAssets"/>.</summary>
+    private static readonly Lazy<WwiseSoundLibrary?> Library = new(() => WwiseAssets.Library);
 
     // ------------------------------------------------------------------ the shipped banks
 
     /// <summary>
-    /// The layout check: every object of the nine hierarchy types, in all six banks, consumes its payload
+    /// The layout check: every object of the eleven hierarchy types, in all six banks, consumes its payload
     /// to the last byte. A field of the wrong width anywhere in the shared node block would fail hundreds
-    /// of these at once. The counts are the banks' own.
+    /// of these at once. The counts are the banks' own. The two modulator types were added to the reader in
+    /// the M9 fidelity pass; the eleven LFO and envelope objects they cover consume exactly as well.
     /// </summary>
     [Fact]
     public void EveryHierarchyObjectInTheShippedBanksConsumesExactly()
@@ -71,6 +73,7 @@ public class WwiseMusicTests
             [WwiseObjectType.BlendContainer] = 6, [WwiseObjectType.MusicSegment] = 209,
             [WwiseObjectType.MusicTrack] = 258, [WwiseObjectType.MusicSwitchContainer] = 14,
             [WwiseObjectType.MusicPlaylistContainer] = 123,
+            [WwiseObjectType.LfoModulator] = 4, [WwiseObjectType.EnvelopeModulator] = 7,
         };
         foreach (var (type, count, exact, problems) in report)
         {

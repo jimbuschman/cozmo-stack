@@ -29,8 +29,8 @@ public class WwiseSongTests
 
     private static string? Obb() => ObbRoots().FirstOrDefault(r => File.Exists(Path.Combine(r, "assets", "cozmo_resources", "sound", "AudioAssets.zip")));
 
-    private static readonly Lazy<WwiseSoundLibrary?> Library = new(() =>
-        Obb() is { } o ? WwiseSoundLibrary.Load(Path.Combine(o, "assets", "cozmo_resources", "sound")) : null);
+    /// <summary>The one shipped library every Wwise test class shares; see <see cref="WwiseAssets"/>.</summary>
+    private static readonly Lazy<WwiseSoundLibrary?> Library = new(() => WwiseAssets.Library);
 
     private const uint Group80 = SingingBehavior.Group80, AbaDaba = 0x852F201Au;
 

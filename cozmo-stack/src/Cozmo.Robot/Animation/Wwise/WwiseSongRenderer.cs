@@ -23,6 +23,12 @@ public sealed record WwiseRenderedMusic(short[] Pcm, double DurationMs)
     public double PreLimitPeak { get; init; }
     /// <summary>The gain the output stage applied, in dB (0 or negative). See <see cref="WwiseSongRenderer"/>.</summary>
     public double OutputGainDb { get; init; }
+    /// <summary>Modulator bindings acted on while rendering: one per voice per binding on its path.</summary>
+    public int ModulationsApplied { get; init; }
+    /// <summary>The largest level change any modulator made, in dB. Negative; 0 when none had any effect.</summary>
+    public double ModulationPeakDb { get; init; }
+    /// <summary>The largest pitch change any modulator made, in cents. 0 when none had any effect.</summary>
+    public double ModulationPeakCents { get; init; }
 }
 
 /// <summary>
@@ -43,10 +49,16 @@ public sealed record WwiseRenderedMusic(short[] Pcm, double DurationMs)
 /// * A sound with a Loop property of 0 loops while the note is held and then plays out its current
 ///   iteration ("break on note-off"); one with no Loop property plays once; a finite count plays that
 ///   many times. Volume (dB) and Pitch (cents) properties are summed down the path and applied as gain
-///   and a resampling ratio. Bus volumes, RTPCs and modulators are not applied; the vibrato LFO and the
-///   note-off envelope the banks carry are therefore not heard (see WWISE_MUSIC.md, deferred).
-/// * MIDI note tracking is off: no node in the shipped target sets a root note, and the per-key
-///   containers cover one key each, so the recordings play at their recorded pitch.
+///   and a resampling ratio.
+/// * Every modulator bound to a node on the path (an RTPC whose source type is 2) is evaluated over the
+///   life of the voice and mapped through that binding's curve onto the property it drives: the note-off
+///   envelope onto Volume, the vibrato LFO onto Pitch. Neither target node sets the property its modulator
+///   drives, so how a bound value would combine with an existing one does not arise on this path. A
+///   modulator's own depth may itself be driven by a game parameter, which is how the cube shake reaches
+///   the vibrato; with no shake the depth is 0 and the LFO contributes nothing.
+/// * MIDI note tracking is off. Not because no root note is set — although none is, anywhere in any bank —
+///   but because of the node bit vectors: see <see cref="WwiseNodeParams"/>, which sets out why no bit in
+///   any shipped bank can be the one that enables it.
 /// * Velocity is not applied: nothing in the shipped target binds an RTPC to it.
 /// * A clip plays its source from BeginTrim for its length, starting at PlayAt + BeginTrim on the
 ///   segment's timeline; a MIDI note that is still held when the clip ends is released there.
@@ -83,6 +95,17 @@ public sealed class WwiseSongRenderer
         _random = random ?? new Random();
     }
 
+    /// <summary>
+    /// The game parameters in force for a render, by parameter id. A modulator's depth can be driven by
+    /// one — <c>cozmo_singing_vibrato</c> drives the vibrato LFO's — and a parameter that is not set here
+    /// reads 0, which is also what the engine posts when nothing is driving it
+    /// (<c>BehaviorSinging::StopInternal</c> 0x005EF2B0).
+    ///
+    /// A song is rendered whole before it plays, so the value taken here is the value for the whole song;
+    /// the engine's Wwise follows the parameter continuously. See the fidelity manifest, M9-016.
+    /// </summary>
+    public IReadOnlyDictionary<uint, float> Parameters { get; set; } = new Dictionary<uint, float>();
+
     private const int Rate = CozmoAudio.SampleRate;
     private static int Samples(double ms) => (int)Math.Round(ms * Rate / 1000.0);
 
@@ -93,6 +116,7 @@ public sealed class WwiseSongRenderer
 
     private WwiseRenderedMusic RenderLocked(WwiseMusicPlan plan)
     {
+        _modulations = 0; _modPeakDb = 0; _modPeakCents = 0;
         var problems = new List<string>();
         if (plan.Problem is not null) return new WwiseRenderedMusic(Array.Empty<short>(), 0) { Problems = new[] { plan.Problem } };
 
@@ -127,10 +151,10 @@ public sealed class WwiseSongRenderer
                         double heldMs = Math.Min(n.StartMs + n.LengthMs, windowEnd) - n.StartMs;
                         double onset = clipStartOnTimeline + n.StartMs;
                         int voices = 0;
-                        Trigger(target, n.Key, n.Velocity, onset, heldMs, noteOff: false, 0, 0, 1, mix, ref voices, problems, 0);
+                        Trigger(target, n.Key, n.Velocity, onset, heldMs, noteOff: false, 0, 0, 1, NoModulators, mix, ref voices, problems, 0);
                         if (voices > 0) played++; else silent++;
                         int offVoices = 0;
-                        Trigger(target, n.Key, n.Velocity, onset + heldMs, 0, noteOff: true, 0, 0, 1, mix, ref offVoices, problems, 0);
+                        Trigger(target, n.Key, n.Velocity, onset + heldMs, 0, noteOff: true, 0, 0, 1, NoModulators, mix, ref offVoices, problems, 0);
                         offs += offVoices;
                     }
                 }
@@ -166,12 +190,50 @@ public sealed class WwiseSongRenderer
             NotesInWindow = inWindow, NotesPlayed = played, NotesSilent = silent, NoteOffsPlayed = offs,
             AudioClips = audioClips, ClippedSamples = clipped, Problems = problems, Peak = peak,
             PreLimitPeak = rawPeak, OutputGainDb = gain < 1.0 ? 20 * Math.Log10(gain) : 0,
+            ModulationsApplied = _modulations, ModulationPeakDb = _modPeakDb, ModulationPeakCents = _modPeakCents,
         };
+    }
+
+    /// <summary>One modulator and the binding that says what it drives on the node that named it.</summary>
+    private readonly record struct Bound(WwiseModulatorNode Modulator, WwiseRtpc Binding, double Depth);
+
+    private static readonly IReadOnlyList<Bound> NoModulators = Array.Empty<Bound>();
+    private int _modulations;
+    private double _modPeakDb, _modPeakCents;
+
+    /// <summary>
+    /// The modulators bound on one node, with each one's depth already resolved: an LFO's depth can itself
+    /// be driven by a game parameter, and a modulator that names one reads it from <see cref="Parameters"/>
+    /// through its own curve. A modulator this reader cannot find is named rather than skipped silently.
+    /// </summary>
+    private IReadOnlyList<Bound> BindingsOn(WwiseNodeParams p, IReadOnlyList<Bound> inherited, List<string> problems)
+    {
+        List<Bound>? added = null;
+        foreach (var r in p.Rtpcs)
+        {
+            if (r.SourceType != WwiseRtpc.ModulatorSource) continue;
+            if (_lib.Node(r.SourceId) is not WwiseModulatorNode mod)
+            {
+                problems.Add($"modulator {r.SourceId} is bound but could not be read");
+                continue;
+            }
+            double depth = mod.Value(WwiseModulatorProp.LfoDepth, 0);
+            foreach (var own in mod.Params.Rtpcs)
+            {
+                if (own.SourceType != WwiseRtpc.GameParameterSource || own.ParamId != 0) continue;
+                float value = Parameters.TryGetValue(own.SourceId, out var v) ? v : 0f;
+                depth = own.Evaluate(value, out bool reduced);
+                if (reduced) problems.Add($"modulator {mod.Id}: depth curve uses an interpolation this reader reads as linear");
+            }
+            (added ??= new List<Bound>(inherited)).Add(new Bound(mod, r, depth));
+        }
+        return added ?? inherited;
     }
 
     /// <summary>Walks the MIDI target for one note event, in either its note-on or its note-off phase.</summary>
     private void Trigger(uint nodeId, byte key, byte velocity, double startMs, double heldMs, bool noteOff,
-                         double gainDb, double cents, uint playOn, double[] mix, ref int voices, List<string> problems, int depth)
+                         double gainDb, double cents, uint playOn, IReadOnlyList<Bound> modulators,
+                         double[] mix, ref int voices, List<string> problems, int depth)
     {
         if (depth > 16) return;
         var node = _lib.Node(nodeId);
@@ -185,18 +247,19 @@ public sealed class WwiseSongRenderer
         if (p.Raw(WwiseProp.MidiPlayOnNoteType) is { } po) playOn = po;
         gainDb += p.Float(WwiseProp.Volume) ?? 0;
         cents += p.Float(WwiseProp.Pitch) ?? 0;
+        modulators = BindingsOn(p, modulators, problems);
 
         switch (node)
         {
             case WwiseBlendNode or WwiseActorMixerNode:
                 foreach (var c in node.Children)
-                    Trigger(c, key, velocity, startMs, heldMs, noteOff, gainDb, cents, playOn, mix, ref voices, problems, depth + 1);
+                    Trigger(c, key, velocity, startMs, heldMs, noteOff, gainDb, cents, playOn, modulators, mix, ref voices, problems, depth + 1);
                 break;
 
             case WwiseRandomSequenceNode rs:
                 if (rs.Playlist.Count == 0) return;
                 uint pick = rs.IsSequence ? NextInSequence(rs) : WeightedPick(rs);
-                Trigger(pick, key, velocity, startMs, heldMs, noteOff, gainDb, cents, playOn, mix, ref voices, problems, depth + 1);
+                Trigger(pick, key, velocity, startMs, heldMs, noteOff, gainDb, cents, playOn, modulators, mix, ref voices, problems, depth + 1);
                 break;
 
             case WwiseSoundNode s:
@@ -208,7 +271,8 @@ public sealed class WwiseSongRenderer
                 double ratio = Math.Pow(2, cents / 1200.0);
                 double sampleMs = pcm.Length * 1000.0 / Rate / ratio;
                 double lengthMs = noteOff ? sampleMs : LoopedLength(p.Raw(WwiseProp.Loop), sampleMs, heldMs);
-                Place(mix, pcm, startMs, 0, lengthMs, gain, ratio);
+                var modulation = Modulation(modulators, heldMs, problems);
+                Place(mix, pcm, startMs, 0, lengthMs, gain, ratio, modulation);
                 voices++;
                 break;
 
@@ -216,6 +280,44 @@ public sealed class WwiseSongRenderer
                 problems.Add($"node {nodeId} is a {node.Type}, which the sampler does not dispatch into");
                 break;
         }
+    }
+
+    /// <summary>
+    /// Turns the modulators bound on a voice's path into the two things a voice needs while it sounds: a
+    /// level offset in dB and a pitch offset in cents, both as functions of the seconds since the voice
+    /// started. Returns null when nothing bound to this voice can have any effect, which is the ordinary
+    /// case for the vibrato LFO with no cube being shaken, so that the rendering loop keeps its fast path.
+    /// </summary>
+    private Func<double, (double Db, double Cents)>? Modulation(IReadOnlyList<Bound> modulators, double heldMs, List<string> problems)
+    {
+        if (modulators.Count == 0) return null;
+        var live = new List<Bound>();
+        foreach (var b in modulators)
+        {
+            if (b.Modulator.IsLfo && b.Depth <= 0) continue;          // depth 0: no output, at any instant
+            if (b.Binding.ParamId is not ((byte)WwiseProp.Volume or (byte)WwiseProp.Pitch))
+            {
+                problems.Add($"modulator {b.Modulator.Id} drives property {b.Binding.ParamId}, which the sampler does not apply");
+                continue;
+            }
+            live.Add(b);
+        }
+        if (live.Count == 0) return null;
+        _modulations += live.Count;
+        double held = heldMs / 1000.0;
+        return t =>
+        {
+            double db = 0, cents = 0;
+            foreach (var b in live)
+            {
+                double value = b.Modulator.ValueAt(t, held, b.Depth);
+                double mapped = b.Binding.Evaluate(value, out _);
+                if (b.Binding.ParamId == (byte)WwiseProp.Volume) db += mapped; else cents += mapped;
+            }
+            if (db < _modPeakDb) _modPeakDb = db;
+            if (Math.Abs(cents) > Math.Abs(_modPeakCents)) _modPeakCents = cents;
+            return (db, cents);
+        };
     }
 
     /// <summary>
@@ -264,7 +366,8 @@ public sealed class WwiseSongRenderer
     /// <paramref name="sourceOffsetMs"/> for <paramref name="lengthMs"/>, looping the source when the
     /// length exceeds it, at a gain and a resampling ratio (2 for an octave up).
     /// </summary>
-    private static void Place(double[] mix, short[] pcm, double startMs, double sourceOffsetMs, double lengthMs, double gain, double ratio)
+    private static void Place(double[] mix, short[] pcm, double startMs, double sourceOffsetMs, double lengthMs,
+                              double gain, double ratio, Func<double, (double Db, double Cents)>? modulation = null)
     {
         if (pcm.Length == 0 || lengthMs <= 0) return;
         int start = Samples(startMs);
@@ -274,12 +377,19 @@ public sealed class WwiseSongRenderer
         {
             int dst = start + i;
             if (dst >= mix.Length) break;
+            double step = ratio, g = gain;
+            if (modulation is not null)
+            {
+                var (db, cents) = modulation(i / (double)Rate);
+                if (db != 0) g *= Math.Pow(10, db / 20.0);
+                if (cents != 0) step *= Math.Pow(2, cents / 1200.0);
+            }
             if (dst >= 0)
             {
                 int s = (int)srcPos % pcm.Length;
-                mix[dst] += pcm[s] * gain;
+                mix[dst] += pcm[s] * g;
             }
-            srcPos += ratio;
+            srcPos += step;
         }
     }
 }

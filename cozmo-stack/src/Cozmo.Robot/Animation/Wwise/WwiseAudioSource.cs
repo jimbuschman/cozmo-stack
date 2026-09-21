@@ -27,6 +27,7 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     private readonly Dictionary<uint, short[]?> _mediaCache = new();
     private readonly Dictionary<(uint Event, uint Node), short[]?> _musicCache = new();
     private readonly Dictionary<uint, uint> _switches = new();
+    private readonly Dictionary<uint, float> _parameters = new();
     private readonly List<WwiseMiss> _misses = new();
     private readonly object _gate = new();
     private readonly WwiseSongRenderer _renderer;
@@ -53,6 +54,23 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     }
 
     public IReadOnlyDictionary<uint, uint> Switches { get { lock (_gate) return new Dictionary<uint, uint>(_switches); } }
+
+    /// <summary>
+    /// Sets a game parameter, as <c>RobotAudioClient::PostRobotParameter</c> does. The renderer reads
+    /// these when a modulator's depth is bound to one: <c>cozmo_singing_vibrato</c> drives the singing
+    /// vibrato's depth from nothing to full. A song already rendered is not re-rendered for a new value —
+    /// see <see cref="WwiseSongRenderer.Parameters"/>.
+    /// </summary>
+    public void SetParameter(uint parameterId, float value)
+    {
+        lock (_gate)
+        {
+            _parameters[parameterId] = value;
+            _renderer.Parameters = new Dictionary<uint, float>(_parameters);
+        }
+    }
+
+    public IReadOnlyDictionary<uint, float> Parameters { get { lock (_gate) return new Dictionary<uint, float>(_parameters); } }
 
     /// <summary>The last music render's report, for tools and acceptance records. Null until a music event was produced.</summary>
     public WwiseRenderedMusic? LastMusicRender { get; private set; }

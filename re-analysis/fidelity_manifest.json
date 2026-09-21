@@ -1683,73 +1683,61 @@
     {
       "id": "M9-006",
       "subsystem": "M9-wwise-music",
-      "title": "HIRC modulator objects (type 21 LFO, type 22 Envelope) are not read",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHierarchy.cs",
-      "effect": "every modulator the banks carry is invisible to the renderer, so nothing they drive is heard",
-      "provenance": "the types are skipped; TryRead returns null for them",
-      "authority": "the shipped Cozmo.bnk carries 4 type-21 and 7 type-22 objects, and Cozmo.txt names them under Modulator LFO and Modulator Envelope",
+      "title": "HIRC modulator objects (type 21 LFO, type 22 Envelope) are read",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseModulator.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "the shipped banks: id, property bundle, ranged-property bundle, RTPC list, and all eleven objects consume their payload to the last byte",
       "evidence": [
-        "re-analysis/obb/sound_meta/English(US)/Cozmo.bnk",
-        "re-analysis/obb/sound_meta/English(US)/Cozmo.txt lines 578-591"
+        "Cozmo.bnk 4 type-21 and 7 type-22 objects",
+        "Cozmo.txt sections \"Modulator LFO\" and \"Modulator Envelope\" name all eleven",
+        "ids 2..8 occur only on LFOs and 9..15 only on envelopes, leaving 6 and 13 unused, which are the two parameters every shipped modulator leaves at its default"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the object layout and the property numbering for modulators",
-      "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "WwiseModulatorTests.TheTwoSingingModulatorsReadOutOfTheBankAtTheirShippedValues"
     },
     {
       "id": "M9-007",
       "subsystem": "M9-wwise-music",
-      "title": "cozmo_singing_note_off envelope modulator (381606890) is not applied",
+      "title": "cozmo_singing_note_off (381606890) is applied, and can move the level by at most one decibel",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
-      "effect": "sung notes have no release shaping; they stop dead at the end of a loop iteration",
-      "provenance": "the RTPC binding on blend 462443456 is parsed and then ignored",
-      "authority": "the shipped bank: object 381606890 is an envelope modulator, and blend container 462443456 binds it to Volume",
+      "status": "EXACT_SOURCE",
+      "authority": "the shipped bank: the envelope reads attack 0, decay 0, release 0 and sustain level 9.5, and blend container 462443456 binds it to Volume over a curve from 0 to -1 dB",
       "evidence": [
         "Cozmo.bnk object 381606890",
-        "Cozmo.bnk object 462443456 RTPC src=381606890 type=2 param=0"
+        "Cozmo.bnk object 462443456 RTPC src=381606890 type=2 param=0 points (0,0) (1,-1)",
+        "a rendered Aba Daba applies it to every one of its 42 sung notes and moves the level by 0.095 dB"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the envelope property numbering, the modulator output range and the accumulation mode",
-      "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "WwiseModulatorTests.TheNoteOffEnvelopeMovesTheLevelByATenthOfADecibelAndTheVibratoByNothing"
     },
     {
       "id": "M9-008",
       "subsystem": "M9-wwise-music",
-      "title": "cozmo_singing_vibrato_lfo (528935089) is not applied",
+      "title": "cozmo_singing_vibrato_lfo (528935089) is applied, with its depth driven by the posted cube-shake parameter",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
-      "effect": "shaking a cube while Cozmo sings changes nothing",
-      "provenance": "the RTPC binding on blend 110896138 is parsed and then ignored",
-      "authority": "the shipped bank: object 528935089 is an LFO modulator whose own RTPC is driven by game parameter Cozmo_Singing_Vibrato, and blend 110896138 binds it to Pitch",
+      "status": "EXACT_SOURCE",
+      "authority": "the shipped bank: the LFO reads depth 100, attack 0.2 s, frequency 5.5 Hz, pulse width 50; its own RTPC binds Cozmo_Singing_Vibrato to its depth over 0 to 100 per cent; blend container 110896138 binds it to Pitch over 0 to 580 cents",
       "evidence": [
         "Cozmo.bnk object 528935089",
-        "Cozmo.bnk object 110896138 RTPC src=528935089 type=2 param=2"
+        "Cozmo.bnk object 110896138 RTPC src=528935089 type=2 param=2 points (0,0) (1,580)",
+        "SingingBehavior posts the parameter, as RobotAudioClient::PostRobotParameter does (0x005EF0C8)"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the LFO property numbering, waveform default, output range and how depth is driven by the game parameter",
-      "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "WwiseModulatorTests.TheCubeShakeParameterDrivesTheVibratoDepthFromNothingToFull"
     },
     {
       "id": "M9-009",
       "subsystem": "M9-wwise-music",
-      "title": "RTPC and modulator bindings are parsed but no accumulation is performed",
+      "title": "Modulator bindings are applied through their own curve onto the property they name",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
-      "effect": "every game parameter and modulator in the singing path is inert",
-      "provenance": "WwiseRtpc records are read and never consulted by the renderer",
-      "authority": "the shipped banks carry the source id, source type, accumulation byte, target property, curve and points for each binding",
+      "status": "EXACT_SOURCE",
+      "authority": "the shipped bank carries the source, source type, target property, curve and points of each binding; neither target node on the singing path sets the property its modulator drives, so the accumulation byte has nothing to accumulate onto and its meaning is not needed here",
       "evidence": [
-        "WwiseHierarchy.ReadRtpc"
+        "blend 110896138 sets no Pitch property",
+        "blend 462443456 sets no Volume property"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the meaning of the accumulation byte and of the curve scaling byte, and how a bound value combines with the property value already summed down the path",
-      "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "WwiseModulatorTests.TheBindingsBoundTheVibratoTo580CentsAndTheNoteOffEnvelopeToOneDecibel"
     },
     {
       "id": "M9-010",
@@ -1789,19 +1777,16 @@
     {
       "id": "M9-012",
       "subsystem": "M9-wwise-music",
-      "title": "MIDI note tracking is off",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
-      "effect": "if tracking were on, every recording would be transposed away from its recorded pitch",
-      "provenance": "inferred from no node setting a root note and from the per-key containers covering one key each",
-      "authority": "the node bit vector of every node in the MIDI target, which carries the override and enable bits for note tracking",
+      "title": "MIDI note tracking is off on every node in every shipped bank",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHierarchy.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "the node bit vectors across all six banks: only 0x00, 0x01 and 0x24 occur; 0x01 occurs on exactly the three nodes that set the Priority property, which identifies bit 0; 0x24 occurs on exactly the two singing note layers, and both of its bits are needed there for the note-off layer to sound at all and for an indefinitely looping note to end. No bit is left that could enable note tracking, and no node anywhere sets a tracking root note",
       "evidence": [
-        "Cozmo.bnk blend 110896138 bits 0x00"
+        "2881 nodes at 0x00, 3 at 0x01, 2 at 0x24",
+        "property 45 occurs on no node in any bank"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the bit positions of bOverrideMidiNoteTracking and bEnableMidiNoteTracking, so the conclusion rests on the data rather than on the absence of a root note",
-      "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "WwiseModulatorTests.NoNodeInAnyShippedBankCouldHaveMidiNoteTrackingEnabled"
     },
     {
       "id": "M9-013",
@@ -1985,6 +1970,43 @@
       "hardware_required": true,
       "live_path": true,
       "test": null
+    },
+    {
+      "id": "M9-024",
+      "subsystem": "M9-wwise-music",
+      "title": "Whether cozmo_singing_note_off also stops the voice it is attached to",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseModulator.cs",
+      "effect": "a held note is cut the instant it is released, or plays out the looping iteration it is in",
+      "provenance": "the renderer ends a looping note by finishing its current iteration, which is the break-on-note-off rule the note layer's bit vector asks for",
+      "authority": "the shipped bank: this modulator alone of the eleven sets property 15, to the integer 2. The two readings that fit the numbering argued from the data agree on what a listener hears - under either one the voice ends when the note is released, which is also what the note layer's break-on-note-off bit asks for",
+      "evidence": [
+        "Cozmo.bnk object 381606890 property 15 = 2",
+        "no other modulator in any bank sets property 15",
+        "blend 462443456 node bits 0x24"
+      ],
+      "status": "BLOCKED_EXTERNAL",
+      "unresolved": "the name of modulator property 15 and the enumeration of its values, which live in the Wwise SDK; no Wwise runtime or header ships in the APK",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseModulatorTests.TheTwoSingingModulatorsReadOutOfTheBankAtTheirShippedValues"
+    },
+    {
+      "id": "M9-025",
+      "subsystem": "M9-wwise-music",
+      "title": "The shape a Wwise LFO produces between its extremes",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseModulator.cs",
+      "effect": "with a cube being shaken, the vibrato sharpens and flattens, or only sharpens, and by a different amount at each instant",
+      "provenance": "a sine over 0 to 1, chosen because both bindings in the banks define their curves over exactly 0 to 1 and neither defines anything below 0",
+      "authority": "the Wwise runtime, which does not ship in the APK (no AkSoundEngine, CAk* or Wwise strings occur in any .so). The bank settles the frequency, the attack, the pulse width and the range the curve maps the output onto; it cannot settle the waveform Wwise draws",
+      "evidence": [
+        "Cozmo.bnk object 528935089 sets no waveform property",
+        "its binding curve spans 0 to 1 exactly"
+      ],
+      "status": "BLOCKED_EXTERNAL",
+      "unresolved": "whether the output is unipolar or bipolar, and the exact waveform. Unreachable on any live path while the depth is 0, which it is until the cube-shake stream exists (M9-017)",
+      "hardware_required": false,
+      "live_path": false,
+      "test": "WwiseModulatorTests.WithTheShakeParameterAtFullTheVibratoReachesTheBindingsFullRange"
     },
     {
       "id": "M10-001",

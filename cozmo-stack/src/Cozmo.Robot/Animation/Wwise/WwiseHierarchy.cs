@@ -24,14 +24,77 @@ public enum WwiseProp : byte
     AttachedPluginFxId = 57, Loop = 58, InitialDelay = 59,
 }
 
-/// <summary>One RTPC or modulator binding on a node: what drives it, what it drives, and the curve.</summary>
+/// <summary>
+/// One RTPC or modulator binding on a node: what drives it, what it drives, and the curve.
+///
+/// <see cref="SourceType"/> is 0 for a game parameter and 2 for a modulator; both readings come from the
+/// shipped banks, where every type-0 source id is an id listed under "Game Parameter" in a bank definition
+/// file and every type-2 source id is an LFO or envelope object in the same bank.
+///
+/// <see cref="ParamId"/> on a node names one of that node's properties with the same numbering
+/// <see cref="WwiseProp"/> uses (0 Volume, 2 Pitch). On a modulator object it names one of the modulator's
+/// own parameters, in a numbering of its own that starts at the first one an RTPC can drive: the singing
+/// vibrato LFO binds <c>cozmo_singing_vibrato</c> to parameter 0 over a curve from 0 to 100, which is the
+/// depth in per cent.
+/// </summary>
 public sealed record WwiseRtpc(uint SourceId, byte SourceType, byte Accumulate, byte ParamId, uint CurveId,
-                               byte Scaling, IReadOnlyList<(float From, float To, uint Interp)> Points);
+                               byte Scaling, IReadOnlyList<(float From, float To, uint Interp)> Points)
+{
+    /// <summary>A binding whose source is a modulator object rather than a game parameter.</summary>
+    public const byte ModulatorSource = 2;
+    /// <summary>A binding driven by a game parameter the game posts.</summary>
+    public const byte GameParameterSource = 0;
+
+    /// <summary>
+    /// The curve at <paramref name="x"/>, clamped to the end points outside the range the curve defines.
+    ///
+    /// Each point carries the interpolation to use from it to the next. Every curve on the singing path
+    /// uses type 4, which is linear, and type 9, which holds the left value; both are implemented. Any
+    /// other type is interpolated linearly, which is a reduction rather than a reading, so the renderer
+    /// names it in its problems list rather than passing it off.
+    ///
+    /// The curve's scaling byte is not applied. For the two bindings on the singing path that costs
+    /// nothing worth measuring: the pitch curve is stored unscaled, and the volume curve spans one
+    /// decibel, over which interpolating in decibels rather than in amplitude moves a sample by at most
+    /// about 0.03 dB.
+    /// </summary>
+    public double Evaluate(double x, out bool reduced)
+    {
+        reduced = false;
+        if (Points.Count == 0) return 0;
+        if (Points.Count == 1 || x <= Points[0].From) return Points[0].To;
+        if (x >= Points[^1].From) return Points[^1].To;
+        for (int i = 0; i + 1 < Points.Count; i++)
+        {
+            var (x0, y0, interp) = Points[i];
+            var (x1, y1, _) = Points[i + 1];
+            if (x < x0 || x > x1) continue;
+            if (interp == 9) return y0;                                  // constant: hold the left value
+            if (interp != 4) reduced = true;                             // anything else is read as linear
+            double span = x1 - x0;
+            return span <= 0 ? y1 : y0 + (y1 - y0) * (x - x0) / span;
+        }
+        return Points[^1].To;
+    }
+}
 
 /// <summary>
 /// The block every hierarchy node carries (Wwise's NodeBaseParams): routing, parent, the property bundle,
 /// state groups and RTPCs. The layout was read from the shipped banks object by object and is checked by
 /// exact consumption across every one of them; see <see cref="WwiseHierarchy"/>.
+///
+/// <para><b><see cref="Bits"/>, and why MIDI note tracking is off everywhere.</b> Across all six banks only
+/// three values of this byte occur: 0x00 on 2881 nodes, 0x01 on exactly three, and 0x24 on exactly two.
+/// The three that carry 0x01 are precisely the three nodes that set the Priority property and no other
+/// node does, which identifies bit 0 as the priority override. The two that carry 0x24 are precisely the
+/// singing sampler's note-on and note-off layers (462443456 and 774902407), and bits 2 and 5 occur nowhere
+/// else in any bank. Those two bits have to be the pair that makes those layers work — one of them lets the
+/// note-off layer's play-on-note-off property take effect, the other stops the note-on layer's
+/// indefinitely looping sounds when the note is released — because without both the note-off layer would
+/// never sound and a held note would never end. So no bit anywhere in any shipped bank can be the one that
+/// enables MIDI note tracking, and no node in any bank sets a tracking root note either (property 45 does
+/// not occur). Note tracking is therefore off throughout, and the per-key recordings play at the pitch they
+/// were recorded at.</para>
 /// </summary>
 public sealed record WwiseNodeParams(
     uint BusId, uint ParentId, byte Bits,
@@ -194,6 +257,7 @@ public static class WwiseHierarchy
                 WwiseObjectType.MusicTrack => ReadTrack(ref r, o),
                 WwiseObjectType.MusicSwitchContainer => ReadMusicSwitch(ref r, o),
                 WwiseObjectType.MusicPlaylistContainer => ReadPlaylist(ref r, o),
+                WwiseObjectType.LfoModulator or WwiseObjectType.EnvelopeModulator => ReadModulator(ref r, o),
                 _ => null,
             };
             if (node is null) { problem = $"type {(byte)o.Type} is not read"; return null; }
@@ -452,6 +516,32 @@ public static class WwiseHierarchy
             tree.Add(new WwiseDecisionNode(key, value, (ushort)(value & 0xFFFF), (ushort)(value >> 16), w, pr));
         }
         return new WwiseMusicSwitchNode(id, o.Bank, p, kids, flags, meter, cont, args, mode, tree);
+    }
+
+    /// <summary>
+    /// An LFO (21) or envelope (22) modulator: an id, then the same three blocks a node carries without
+    /// the routing around them — the property bundle, the ranged-property bundle and the RTPC list. All
+    /// eleven shipped modulators consume exactly under this layout. See <see cref="WwiseModulatorNode"/>.
+    /// </summary>
+    private static WwiseModulatorNode ReadModulator(ref Reader r, WwiseObject o)
+    {
+        uint id = r.U32();
+        int n = r.U8();
+        var ids = new byte[n];
+        for (int i = 0; i < n; i++) ids[i] = r.U8();
+        var props = new Dictionary<byte, uint>(n);
+        for (int i = 0; i < n; i++) props[ids[i]] = r.U32();
+        n = r.U8();
+        ids = new byte[n];
+        for (int i = 0; i < n; i++) ids[i] = r.U8();
+        var ranged = new Dictionary<byte, (float, float)>(n);
+        for (int i = 0; i < n; i++) ranged[ids[i]] = (r.F32(), r.F32());
+        int curves = r.U16();
+        var rtpcs = new List<WwiseRtpc>(curves);
+        for (int c = 0; c < curves; c++) rtpcs.Add(ReadRtpc(ref r));
+        var p = new WwiseNodeParams(0, 0, 0, props, ranged, rtpcs,
+            Array.Empty<(uint, byte, IReadOnlyList<(uint, uint)>)>());
+        return new WwiseModulatorNode(id, o.Type, o.Bank, p);
     }
 
     private static WwiseMusicPlaylistNode ReadPlaylist(ref Reader r, WwiseObject o)

@@ -100,6 +100,7 @@ public static class WwiseTool
         Console.WriteLine($"\nrendered {id} {lib.NameOf(id.Value) ?? ""}: {r.DurationMs:F0} ms, {r.Pcm.Length} samples at {CozmoAudio.SampleRate} Hz");
         Console.WriteLine($"  notes in window {r.NotesInWindow}, sung {r.NotesPlayed}, outside the voice's range {r.NotesSilent}, note-offs {r.NoteOffsPlayed}, audio clips {r.AudioClips}");
         Console.WriteLine($"  raw peak {r.PreLimitPeak:F0} of {short.MaxValue}; output stage gain {r.OutputGainDb:F1} dB (a stand-in for the robot bus limiter); clipped samples after it {r.ClippedSamples}");
+        Console.WriteLine($"  modulator bindings acted on {r.ModulationsApplied}; deepest level change {r.ModulationPeakDb:F2} dB, largest pitch change {r.ModulationPeakCents:F0} cents");
         foreach (var pr in r.Problems) Console.WriteLine($"  problem: {pr}");
         if (wav is not null && r.Pcm.Length > 0)
         {

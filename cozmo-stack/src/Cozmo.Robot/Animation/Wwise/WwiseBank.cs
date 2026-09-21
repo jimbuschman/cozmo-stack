@@ -27,6 +27,10 @@ public enum WwiseObjectType : byte
     MusicTrack = 11,
     MusicSwitchContainer = 12,
     MusicPlaylistContainer = 13,
+    FxShareSet = 18,
+    FxCustom = 19,
+    LfoModulator = 21,
+    EnvelopeModulator = 22,
 }
 
 /// <summary>One object in a bank's hierarchy, kept as its raw payload so nothing is lost in translation.</summary>

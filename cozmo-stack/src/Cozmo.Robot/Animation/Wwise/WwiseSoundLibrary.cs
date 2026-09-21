@@ -64,6 +64,13 @@ public sealed class WwiseSoundLibrary : IDisposable
     public int MediaFileCount => _mediaEntries.Count + _mediaFiles.Count;
 
     /// <summary>
+    /// Every object id in every loaded bank, so a check can be made over the whole library rather than
+    /// over the part some event happens to reach. <see cref="Node"/> returns null for the types the node
+    /// reader does not cover.
+    /// </summary>
+    public IReadOnlyCollection<uint> AllNodeIds => _objects.Keys.ToList();
+
+    /// <summary>
     /// Every media id present, whether or not an event references it. Validation uses this rather than
     /// the referenced set, so a codebook family that no event happens to name is still exercised.
     /// </summary>

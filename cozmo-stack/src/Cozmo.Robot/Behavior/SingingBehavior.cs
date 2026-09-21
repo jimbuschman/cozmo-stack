@@ -25,9 +25,10 @@ namespace Cozmo.Robot.Behavior;
 ///   game parameter: <c>new = 0.5 * old + 0.5 * clamp(shake / 3000, 0, 1)</c>, posted every tick;
 ///   <c>StopInternal</c> posts 0. That formula is <see cref="NextVibrato"/>. The engine's shake comes from a
 ///   streamed cube accelerometer this stack does not receive (M4 has movement reports, not the stream), so
-///   <see cref="ShakeInput"/> is left for a caller and stays 0 otherwise; and the vibrato LFO the parameter
-///   drives in the banks is not rendered yet, so the value has no audible effect. Both are stated in
-///   WWISE_MUSIC.md rather than hidden.
+///   <see cref="ShakeInput"/> is left for a caller and stays 0 otherwise. The parameter is posted to the
+///   audio source either way, and the banks act on it: it drives the depth of the vibrato LFO bound to the
+///   singing sampler's pitch, so at 0 there is no vibrato and at 1 the pitch swings by the binding's full
+///   580 cents. What is missing is the shake, not the vibrato (fidelity manifest M9-017).
 ///
 /// Where the engine's compound action fails a step (a trigger with no clip), this moves to the next step
 /// and says so, rather than inventing a substitute animation.
@@ -212,14 +213,32 @@ public sealed class SingingBehavior : IBehavior
     public bool Update(BehaviorContext context, double nowMs)
     {
         Vibrato = NextVibrato(Vibrato, ShakeInput);
+        PostVibrato(context);
         return !_finished;
     }
+
+    /// <summary>
+    /// Posts the vibrato where the banks can act on it, which is what
+    /// <c>RobotAudioClient::PostRobotParameter(Cozmo_Singing_Vibrato, value)</c> does every tick
+    /// (<c>BehaviorSinging::UpdateInternal</c> 0x005EF0C8). In the banks the parameter drives the depth of
+    /// <c>cozmo_singing_vibrato_lfo</c>, which is bound to Pitch on the singing sampler; at 0 the depth is
+    /// 0 and the LFO does nothing, which is the state a Cozmo nobody is shaking sings in.
+    /// </summary>
+    private void PostVibrato(BehaviorContext context)
+    {
+        if (context.Robot.Animations.AudioSource is IAudioSwitchStates sink)
+            sink.SetParameter(VibratoParameter, Vibrato);
+    }
+
+    /// <summary>FNV-1 of <c>Cozmo_Singing_Vibrato</c>; the id the engine posts (0x005EF0C8).</summary>
+    public const uint VibratoParameter = 0xC20F49DF;
 
     public void Stop(BehaviorStopReason reason)
     {
         _stopped = true;
         _finished = true;
         Vibrato = 0;                                    // StopInternal posts the parameter back to 0
+        if (_context is { } c) PostVibrato(c);
         PlayAnimBehavior.StopOwnAnimation(ref _animations, ref _generation, ref _owns, _gate);
     }
 

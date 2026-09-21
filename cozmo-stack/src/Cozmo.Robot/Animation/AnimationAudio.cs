@@ -52,6 +52,17 @@ public interface IAudioSwitchStates
     void SetSwitch(uint groupId, uint switchId);
     /// <summary>The current switch values, group id to switch id.</summary>
     IReadOnlyDictionary<uint, uint> Switches { get; }
+
+    /// <summary>
+    /// Sets a game parameter, which is what <c>RobotAudioClient::PostRobotParameter</c> (0x00599F62) does:
+    /// <c>BehaviorSinging::UpdateInternal</c> posts <c>Cozmo_Singing_Vibrato</c> every tick from the cube
+    /// shake, and <c>StopInternal</c> posts 0. A parameter drives whatever the banks bind it to — for the
+    /// vibrato, the depth of the LFO on the singing sampler's pitch.
+    /// </summary>
+    void SetParameter(uint parameterId, float value);
+
+    /// <summary>The current game parameter values, parameter id to value.</summary>
+    IReadOnlyDictionary<uint, float> Parameters { get; }
 }
 
 /// <summary>
