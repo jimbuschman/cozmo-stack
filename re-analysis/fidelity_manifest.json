@@ -92,7 +92,7 @@
       "id": "M7-behaviour",
       "name": "Idle, mood and reactions",
       "milestone": "M7",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true
     },
     {
@@ -1317,22 +1317,22 @@
       "test": "IdleFaceTests"
     },
     {
-      "id": "M7-007",
       "subsystem": "M7-behaviour",
-      "title": "Eye-dart lifecycle: ramp-then-hold or snap-then-hold",
+      "title": "An eye dart ramps to its gaze and holds it; it does not fade back to centre",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "effect": "the eyes jump to the dart or slide to it, and may or may not hold there",
-      "provenance": "snap to the shifted pose and hold for the drawn duration",
-      "authority": "GenerateEyeShift 0x0058D100 with AddToPersistentLayer 0x0058EAA0 and ITrackLayerManager::ApplyLayersToFrame 0x0058E644, which were read and contradict each other when read statically",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
       "evidence": [
-        "AddToPersistentLayer 0x0058EAA0",
-        "ApplyLayersToFrame 0x0058E644"
+        "ITrackLayerManager::ApplyLayersToFrame 0x0058E644 queues a layer for removal when it runs out only if it is not persistent - the branch at 0x0058E6A0, taken when the byte at layer+0x30 is zero. A persistent layer is instead rewound to its first keyframe and trimmed of the consumed ones (0x0058E682..0x0058E698), so it keeps applying its last face indefinitely",
+        "the dart is added with AddToPersistentLayer (KeepFaceAlive 0x0058D3E2) and the blink with AddLayer (0x0058D4BE), so the dart holds and the blink is removed",
+        "the drawn EyeDartDuration is the time the move takes, not how long the gaze lasts: AddToPersistentLayer 0x0058EAA0 sets the new keyframe's trigger time to lastKeyFrameTime + drawn + 0x21 (one 33 ms frame)",
+        "FaceLayerManager::GetFaceHelper 0x0058CD80 interpolates between the current keyframe and the next with ProceduralFaceKeyFrame::GetInterpolatedFace 0x004F99E6, a linear blend of the two layer faces clamped at 1, and applies the current face unchanged when there is no next one",
+        "GenerateEyeShift 0x0058CFC4 also clamps the shift against the eyes' bounding box so they stay on the 128 x 64 screen (0x0058D004, 0x0058D026); a six pixel dart never reaches that from the resting face, and that clamp is not reproduced"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the two readings were not separated; a deeper trace of ApplyLayersToFrame trimming a finished persistent layer would settle it",
-      "hardware_required": false,
+      "prior": "the dart snapped to its gaze and returned to the base face when its drawn duration expired, and the drawn duration was read as the hold time",
       "live_path": true,
-      "test": "IdleFaceTests"
+      "test": "IdleFaceTests, KeepAliveTests",
+      "id": "M7-007"
     },
     {
       "subsystem": "M7-behaviour",
@@ -1421,19 +1421,22 @@
       "test": "MoodTests"
     },
     {
-      "id": "M7-013",
       "subsystem": "M7-behaviour",
-      "title": "Mood clamp to plus or minus 1 and flat extrapolation outside decay-graph nodes",
+      "title": "Mood: the clamp, the decay curve outside its nodes, and what restarts the decay clock",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Mood.cs",
-      "effect": "emotion values saturate differently and decay differently at the edges",
-      "provenance": "a plausible reading",
-      "authority": "MoodManager::UpdateEmotions in libcozmoEngine.so",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the clamp and the edge behaviour were never disassembled",
-      "hardware_required": false,
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "Emotion::Add 0x00679618 clamps the sum to [-1, +1] against the two literals it loads at 0x00679622 and 0x00679630 before storing it",
+        "GraphEvaluator2d::EvaluateY 0x00804BD0: below the first node it returns that node's y (0x00804BE2), above the last it returns the last node's y (the loop at 0x00804C00 falling through), a graph of fewer than two nodes is its first node's y at every x, and between two nodes it interpolates unless they are within 1e-5 in x",
+        "Emotion::Update 0x006795A4 multiplies the current value by the RATIO of the curve at the new decay time to the curve at the old one, leaving it alone when the old reading is below 1e-5 - it does not re-multiply the value the emotion had when it last changed",
+        "Emotion::Add zeroes the decay clock at this+0x1C only when three tests pass: the value kept its sign (teq at 0x006796A8), the change was larger than 0.05 (0x0067968A), and the change pushed the value away from zero rather than back towards it (eor at 0x006796AE). Emotion::SetValue 0x006796C8 always zeroes it",
+        "every shipped decay graph starts at (0, 1) and never exceeds 1 (mood_config.json: default, WantToPlay, Social, Confident), so the telescoped and ratio forms agree while nothing changes the value"
+      ],
+      "prior": "the clamp and the edge behaviour were a plausible reading, and every affector restarted the decay clock",
       "live_path": true,
-      "test": "MoodTests"
+      "test": "MoodTests",
+      "id": "M7-013"
     },
     {
       "id": "M7-014",

@@ -7,9 +7,9 @@ Manifest of **202 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 112 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 114 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 48 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 46 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 4 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -30,7 +30,7 @@ remains after both, and they do not go away by working harder on this repository
 | M4-control — Motion, sensors, lights and cubes | 9 | 4 | 0 | 0 | 0 | no | yes |
 | M5-animation — Animation clips, scheduler and face | 20 | 4 | 0 | 0 | 0 | no | yes |
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 1 | 0 | 0 | 0 | no | yes |
-| M7-behaviour — Idle, mood and reactions | 16 | 2 | 0 | 0 | 0 | no | yes |
+| M7-behaviour — Idle, mood and reactions | 16 | 0 | 0 | 0 | 0 | yes | yes |
 | M8-framework — Behaviour framework and scoring | 10 | 6 | 0 | 0 | 0 | no | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | 0 | 0 | 0 | no | yes |
@@ -180,25 +180,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: the seven shipped stereo ADPCM files themselves, which are the thing that would settle the layout: IMA ADPCM block packing is arithmetic that a file either fits or does not
 * evidence: wwise --coverage: Play__Robot_SFX__Effort_Long, Effort_Medium, Effort_Fail, Spark_Launch, Scan_Loop_Play, Scan_Start, Scan_Stop, Scan_Single; wwise --validate: 7 files, "ADPCM with 2 channels is not decoded"
 * outstanding: the stereo block layout. An earlier version of this record said no robot event reaches such a file; the coverage tool now lists the eight that do, which is what corrected it
-
-### M7-behaviour — Idle, mood and reactions
-
-**M7-007 — Eye-dart lifecycle: ramp-then-hold or snap-then-hold** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
-* effect: the eyes jump to the dart or slide to it, and may or may not hold there
-* rests on: snap to the shifted pose and hold for the drawn duration
-* best authority: GenerateEyeShift 0x0058D100 with AddToPersistentLayer 0x0058EAA0 and ITrackLayerManager::ApplyLayersToFrame 0x0058E644, which were read and contradict each other when read statically
-* evidence: AddToPersistentLayer 0x0058EAA0; ApplyLayersToFrame 0x0058E644
-* outstanding: the two readings were not separated; a deeper trace of ApplyLayersToFrame trimming a finished persistent layer would settle it
-
-**M7-013 — Mood clamp to plus or minus 1 and flat extrapolation outside decay-graph nodes** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Mood.cs`
-* effect: emotion values saturate differently and decay differently at the edges
-* rests on: a plausible reading
-* best authority: MoodManager::UpdateEmotions in libcozmoEngine.so
-* outstanding: the clamp and the edge behaviour were never disassembled
 
 ### M8-framework — Behaviour framework and scoring
 

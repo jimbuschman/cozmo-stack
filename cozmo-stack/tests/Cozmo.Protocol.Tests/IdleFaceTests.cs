@@ -108,29 +108,32 @@ public class IdleFaceTests
             Assert.True(Min(sent, EyeParam.EyeScaleX) >= smallestBaseX - 0.001f, "nothing in idle shrinks EyeScaleX");
             Assert.True(Min(sent, EyeParam.EyeScaleY) >= 0f);
 
-            // No accumulation: the face keeps coming back to exactly the base pose in the second half of
-            // the run as often as in the first, rather than settling somewhere it has drifted to.
-            int half = sent.Count / 2;
-            bool AtBase(ProceduralFacePose x) =>
-                Math.Abs(x.Left[(int)EyeParam.EyeScaleX] - start.Left[(int)EyeParam.EyeScaleX]) < 1e-4f &&
-                Math.Abs(x.Left[(int)EyeParam.EyeScaleY] - start.Left[(int)EyeParam.EyeScaleY]) < 1e-4f &&
-                Math.Abs(x.FaceCenterX - start.FaceCenterX) < 1e-4f && Math.Abs(x.FaceCenterY - start.FaceCenterY) < 1e-4f;
-            int firstHalf = sent.Take(half).Count(AtBase), secondHalf = sent.Skip(half).Count(AtBase);
-            Assert.True(firstHalf > half / 4, $"the face was at base in only {firstHalf} of {half} first-half samples");
-            Assert.True(secondHalf > half / 4, $"the face was at base in only {secondHalf} of {half} second-half samples");
+            // No accumulation. The gaze does not return to centre between darts - the dart layer is
+            // persistent, so each dart ramps from the last one and holds - but it is always the base
+            // face plus exactly one shift, so the face never wanders further than one dart's reach
+            // (EyeDartMaxDistance, 6 pixels) from where idle started, in the last minute of a four
+            // minute run as much as in the first.
+            float reach = (float)IdleParameters.Default.EyeDartMaxDistancePix + 0.001f;
+            foreach (var x in sent)
+            {
+                Assert.InRange(x.FaceCenterX, start.FaceCenterX - reach, start.FaceCenterX + reach);
+                Assert.InRange(x.FaceCenterY, start.FaceCenterY - reach, start.FaceCenterY + reach);
+            }
         }
     }
 
     /// <summary>
-    /// After the transient motion has expired, the face on screen must be the pose idle started from, not
-    /// a mutated one. This is the "base pose is not corrupted" property.
+    /// The base pose is never corrupted: whatever idle has been doing, what is on the screen is that
+    /// base with the layers of the moment composed onto it, and nothing more.
     ///
-    /// Idle keeps acting while it is observed, so the check is made at every instant that is more than one
-    /// full transient (a 331 ms blink, or a dart of up to 200 ms) after the last action: at each of those
-    /// the face must be exactly the base. Dart spacing runs 250-1000 ms, so such instants are plentiful.
+    /// The engine's eye-dart layer is persistent - it is added with <c>AddToPersistentLayer</c>, and
+    /// <c>ApplyLayersToFrame</c> at 0x0058E644 queues only non-persistent layers for removal when they
+    /// run out (0x0058E6A0), rewinding and trimming a persistent one instead - so the gaze does not come
+    /// back to centre between darts. What must still hold, and is the drift regression, is that once the
+    /// blink is over the face is the base shifted by exactly one gaze, never by a sum of them.
     /// </summary>
     [Fact]
-    public void TheFaceReturnsToItsBasePoseAfterTheDartExpires()
+    public void TheFaceIsAlwaysTheBasePlusOneGazeAndNeverASumOfThem()
     {
         var robot = CozmoRobot.CreateOffline();
         using (robot)
@@ -139,24 +142,41 @@ public class IdleFaceTests
             var arbiter = new BehaviorArbiter { AutonomyEnabled = true };
             var idle = new IdleBehavior(robot, arbiter, random: new Random(2)) { ExecuteMotors = false };
 
-            double lastActionAt = double.NegativeInfinity;
-            idle.Acted += e => { if (e.Suppressed is null) lastActionAt = e.AtMs; };
-            double quiet = IdleBehavior.BlinkTotalMs + 40;
+            // quiet means: no blink up, and no dart still ramping
+            double busyUntil = double.NegativeInfinity;
+            idle.Acted += e =>
+            {
+                if (e.Suppressed is not null) return;
+                if (e.Action == IdleAction.Blink) busyUntil = Math.Max(busyUntil, e.AtMs + IdleBehavior.BlinkTotalMs);
+                if (e.Action == IdleAction.EyeDart)
+                    busyUntil = Math.Max(busyUntil, e.AtMs + e.DurationMs + IdleBehavior.AnimationFrameMs);
+            };
+            float reach = (float)idle.Parameters.EyeDartMaxDistancePix + 0.001f;
 
             int checkedInstants = 0;
             for (double t = 0; t < 60_000; t += 20)
             {
                 idle.Advance(t);
-                if (t < 5_000 || t - lastActionAt <= quiet) continue;
+                if (t < 5_000 || t <= busyUntil + 40) continue;
                 checkedInstants++;
                 var now = robot.Face.Current;
-                for (int i = 0; i < Eye.ParamCount; i++)
-                {
-                    Assert.Equal(start.Left[i], now.Left[i], 3);
-                    Assert.Equal(start.Right[i], now.Right[i], 3);
-                }
-                Assert.Equal(start.FaceCenterX, now.FaceCenterX, 3);
-                Assert.Equal(start.FaceCenterY, now.FaceCenterY, 3);
+
+                // the gaze the face is holding, and nothing beyond it
+                float dx = now.FaceCenterX - start.FaceCenterX;
+                float dy = now.FaceCenterY - start.FaceCenterY;
+                Assert.InRange(dx, -reach, reach);
+                Assert.InRange(dy, -reach, reach);
+
+                // no blink is up, so the eye widths are untouched and the heights carry exactly the one
+                // vertical factor LookAt produces for that gaze
+                Assert.Equal(start.Left[(int)EyeParam.EyeScaleX], now.Left[(int)EyeParam.EyeScaleX], 3);
+                var expected = IdleBehavior.LookAt(start.Clone(), dx, dy, 5f, 5f,
+                                                   (float)idle.Parameters.EyeDartUpMaxScale,
+                                                   (float)idle.Parameters.EyeDartDownMinScale,
+                                                   (float)idle.Parameters.EyeDartOuterEyeScaleIncrease);
+                Assert.Equal(expected.Left[(int)EyeParam.EyeScaleY], now.Left[(int)EyeParam.EyeScaleY], 3);
+                Assert.Equal(expected.Right[(int)EyeParam.EyeScaleY], now.Right[(int)EyeParam.EyeScaleY], 3);
+                Assert.Equal(expected.Left[(int)EyeParam.EyeCenterX], now.Left[(int)EyeParam.EyeCenterX], 3);
             }
             Assert.True(checkedInstants > 100, $"only {checkedInstants} quiet instants were checked");
         }
@@ -205,52 +225,66 @@ public class IdleFaceTests
     }
 
     /// <summary>
-    /// A dart lasts for the duration it was given. The duration used to be computed and then ignored, so
-    /// each dart simply stayed until the next one displaced it.
+    /// A dart ramps to its gaze over the duration it was given plus one frame, and then holds it.
+    ///
+    /// The drawn value is not how long the shifted gaze lasts: <c>AddToPersistentLayer</c> at 0x0058EAA0
+    /// gives the new keyframe a trigger time of <c>lastKeyFrameTime + drawn + 0x21</c>, and
+    /// <c>GetFaceHelper</c> at 0x0058CD80 interpolates from the keyframe before it
+    /// (<c>GetInterpolatedFace</c>, 0x004F99E6) until that time is reached. After it, with no keyframe
+    /// beyond, the layer applies its last face unchanged - for as long as the layer lives, which for a
+    /// persistent layer is until something removes it.
     /// </summary>
     [Fact]
-    public void ADartLastsForItsDurationAndThenTheFaceReturns()
+    public void ADartRampsToItsGazeOverItsDurationAndThenHoldsIt()
     {
         var robot = CozmoRobot.CreateOffline();
         using (robot)
         {
             var start = robot.Face.Current.Clone();
             var arbiter = new BehaviorArbiter { AutonomyEnabled = true };
-            // Blinking parked out of the way, so what is measured is the dart's own lifetime rather than
-            // a blink composed on top of it.
+            // blinking parked and the darts well apart, so each ramp finishes long before the next
             var quiet = IdleParameters.Default with
             {
                 BlinkSpacingMinMs = 600_000,
                 BlinkSpacingMaxMs = 600_000,
-                EyeDartSpacingMinMs = 1_000,
-                EyeDartSpacingMaxMs = 1_000,
+                EyeDartSpacingMinMs = 1_500,
+                EyeDartSpacingMaxMs = 1_500,
             };
             var idle = new IdleBehavior(robot, arbiter, quiet, new Random(1)) { ExecuteMotors = false };
 
-            double? dartAt = null;
-            double dartFor = 0;
-            idle.Acted += e =>
+            var darts = new List<IdleEvent>();
+            idle.Acted += e => { if (e.Action == IdleAction.EyeDart && e.Suppressed is null) darts.Add(e); };
+
+            var samples = new List<(double T, float X)>();
+            for (double t = 0; t < 20_000; t += 10)
             {
-                // The second dart, not the first: every keep-alive timer starts at zero, so the first
-                // tick raises a blink as well, and a blink lasts 331 ms.
-                if (dartAt is null && e.AtMs > IdleBehavior.BlinkTotalMs
-                    && e.Action == IdleAction.EyeDart && e.Suppressed is null)
-                { dartAt = e.AtMs; dartFor = e.DurationMs; }
-            };
+                idle.Advance(t);
+                samples.Add((t, robot.Face.Current.FaceCenterX));
+            }
+            float At(double t) => samples.Last(s => s.T <= t).X;
 
-            for (double t = 0; t < 5_000 && dartAt is null; t += 10) idle.Advance(t);
-            Assert.NotNull(dartAt);
-            Assert.True(dartFor > 0, "the dart carried no duration");
+            // a pair of consecutive darts that look somewhere clearly different
+            int i = Enumerable.Range(1, darts.Count - 1)
+                              .First(k => Math.Abs(darts[k].Amount - darts[k - 1].Amount) >= 4
+                                          && darts[k].AtMs > IdleBehavior.BlinkTotalMs);
+            var prev = darts[i - 1];
+            var dart = darts[i];
+            double ramp = dart.DurationMs + IdleBehavior.AnimationFrameMs;
 
-            // Immediately after, the face is shifted: LookAt always rescales EyeScaleY (0.975 x looking
-            // level), so that is the parameter that reliably changes whatever the dart's direction.
-            Assert.NotEqual(start.Left[(int)EyeParam.EyeScaleY], robot.Face.Current.Left[(int)EyeParam.EyeScaleY]);
+            // before it, the face is holding the gaze the last dart reached - not back at centre
+            Assert.Equal(start.FaceCenterX + (float)prev.Amount, At(dart.AtMs - 10), 3);
 
-            // Past the duration, it is back.
-            for (double t = dartAt!.Value; t <= dartAt.Value + dartFor + 60; t += 10) idle.Advance(t);
-            Assert.Equal(start.Left[(int)EyeParam.EyeScaleY], robot.Face.Current.Left[(int)EyeParam.EyeScaleY], 3);
-            Assert.Equal(start.FaceCenterX, robot.Face.Current.FaceCenterX, 3);
-            Assert.Equal(start.FaceCenterY, robot.Face.Current.FaceCenterY, 3);
+            // during the ramp it is on its way, strictly between the two
+            float lo = Math.Min((float)prev.Amount, (float)dart.Amount);
+            float hi = Math.Max((float)prev.Amount, (float)dart.Amount);
+            float mid = At(dart.AtMs + ramp / 2) - start.FaceCenterX;
+            Assert.InRange(mid, lo, hi);
+            Assert.NotEqual(lo, mid, 3);
+            Assert.NotEqual(hi, mid, 3);
+
+            // and once the ramp is done it holds there, for as long as nothing else darts
+            Assert.Equal(start.FaceCenterX + (float)dart.Amount, At(dart.AtMs + ramp + 20), 3);
+            Assert.Equal(start.FaceCenterX + (float)dart.Amount, At(dart.AtMs + 1_000), 3);
         }
     }
 

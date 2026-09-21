@@ -24,7 +24,15 @@ public sealed record EmotionEvent(string Name, IReadOnlyList<EmotionAffector> Af
 /// </summary>
 public sealed record DecayGraph(string EmotionType, IReadOnlyList<(double Seconds, double Multiplier)> Nodes)
 {
-    /// <summary>The multiplier at a given age, interpolated between nodes and flat outside them.</summary>
+    /// <summary>
+    /// The multiplier at a given age: linear between nodes, flat outside them.
+    ///
+    /// <c>Anki::Util::GraphEvaluator2d::EvaluateY</c> at 0x00804BD0 is the whole rule. Below the first
+    /// node it returns that node's y (0x00804BE2), above the last it returns the last node's y (the loop
+    /// at 0x00804C00 falling through to 0x00804C3C), a graph of fewer than two nodes is its first node's
+    /// y whatever the x, and between two nodes it interpolates unless they are closer than 1e-5 apart in
+    /// x, in which case it returns the left node's y.
+    /// </summary>
     public double At(double seconds)
     {
         if (Nodes.Count == 0) return 1;
@@ -71,6 +79,12 @@ public sealed class MoodModel
 
     /// <summary>Names in the shipped files that are not emotions this build knows.</summary>
     public IReadOnlyList<string> UnknownEmotions { get; private set; } = Array.Empty<string>();
+
+    /// <summary>Adds or replaces a decay curve, for a model built without the shipped files.</summary>
+    public void AddDecayGraph(DecayGraph graph) => _decay[graph.EmotionType] = graph;
+
+    /// <summary>Adds or replaces an emotion event, for a model built without the shipped files.</summary>
+    public void AddEvent(EmotionEvent e) => _events[e.Name] = e;
 
     /// <summary>
     /// Loads the model from an OBB directory, or any directory containing <c>mood_config.json</c> and an
@@ -168,40 +182,87 @@ public sealed class MoodModel
 /// </summary>
 public sealed class MoodState
 {
+    /// <summary>
+    /// A change smaller than this does not restart the decay clock. <c>Emotion::Add</c> at 0x00679618
+    /// compares the magnitude of the change against 0.05 (the literal at 0x0067967E).
+    /// </summary>
+    public const double DecayResetThreshold = 0.05;
+
     private readonly MoodModel _model;
     private readonly double[] _values = new double[Enum.GetValues<EmotionType>().Length];
-    private readonly double[] _lastChangeSec = new double[Enum.GetValues<EmotionType>().Length];
-    private readonly double[] _atLastChange = new double[Enum.GetValues<EmotionType>().Length];
+
+    /// <summary>
+    /// The engine's own per-emotion decay clock, <c>Emotion</c> this+0x1C. It is not simply the time
+    /// since the last change: see <see cref="Trigger"/>.
+    /// </summary>
+    private readonly double[] _decaySec = new double[Enum.GetValues<EmotionType>().Length];
+    private double _lastAdvanceSec;
 
     public MoodState(MoodModel model) => _model = model;
 
     /// <summary>The current value of one axis, after decay up to the last <see cref="Advance"/>.</summary>
     public double this[EmotionType e] => _values[(int)e];
 
-    /// <summary>Applies a named event. Unknown names change nothing and report false.</summary>
+    /// <summary>
+    /// Applies a named event. Unknown names change nothing and report false.
+    ///
+    /// <c>Emotion::Add</c> at 0x00679618 clamps the sum to [-1, 1] and then decides, from three tests,
+    /// whether to zero the decay clock at this+0x1C (<c>streq</c> at 0x006796B6). It is zeroed only when
+    /// all three hold:
+    ///
+    /// <list type="bullet">
+    /// <item>the value did not change sign - <c>teq</c> of (old >= 0) against (new >= 0) at 0x006796A8;</item>
+    /// <item>the change is larger than <see cref="DecayResetThreshold"/> in magnitude;</item>
+    /// <item>the change pushes the value further from zero rather than back towards it - the <c>eor</c>
+    /// of (old >= 0) against (delta >= 0) at 0x006796AE.</item>
+    /// </list>
+    ///
+    /// So a small nudge, or one that pulls an emotion back towards neutral, moves the value but leaves it
+    /// decaying on the schedule it was already on. This stack used to restart the clock on every affector.
+    /// </summary>
     public bool Trigger(string eventName, double nowSec)
     {
         var e = _model.Event(eventName);
         if (e is null) return false;
+        Advance(nowSec);
         foreach (var a in e.Affectors)
         {
             int i = (int)a.Emotion;
-            _values[i] = Math.Clamp(_values[i] + a.Value, -1, 1);
-            _atLastChange[i] = _values[i];
-            _lastChangeSec[i] = nowSec;
+            double old = _values[i];
+            double updated = Math.Clamp(old + a.Value, -1, 1);
+            _values[i] = updated;
+
+            bool keptItsSign = old >= 0 == updated >= 0;
+            bool awayFromZero = old >= 0 == a.Value >= 0;
+            if (keptItsSign && Math.Abs(a.Value) > DecayResetThreshold && awayFromZero) _decaySec[i] = 0;
         }
         return true;
     }
 
-    /// <summary>Fades every axis according to its decay curve.</summary>
+    /// <summary>
+    /// Fades every axis.
+    ///
+    /// <c>Emotion::Update</c> at 0x006795A4 does not read the curve at the age and multiply the value it
+    /// had when it last changed; it multiplies the current value by the <b>ratio</b> of the curve at the
+    /// new decay time to the curve at the old one, leaving the value alone when the old reading is below
+    /// 1e-5. Over a run of updates that telescopes to the same thing while the value is untouched, and
+    /// differs the moment a change leaves the clock running - which is exactly what
+    /// <see cref="Trigger"/> arranges.
+    /// </summary>
     public void Advance(double nowSec)
     {
+        double dt = nowSec - _lastAdvanceSec;
+        _lastAdvanceSec = nowSec;
+        if (dt <= 0) return;
+
         for (int i = 0; i < _values.Length; i++)
         {
-            if (_atLastChange[i] == 0) { _values[i] = 0; continue; }
             var graph = _model.DecayFor((EmotionType)i);
-            double mult = graph?.At(nowSec - _lastChangeSec[i]) ?? 1;
-            _values[i] = Math.Clamp(_atLastChange[i] * mult, -1, 1);
+            if (graph is null) continue;
+            double before = graph.At(_decaySec[i]);
+            _decaySec[i] += dt;
+            double after = graph.At(_decaySec[i]);
+            _values[i] *= before > 1e-5 ? after / before : after;
         }
     }
 

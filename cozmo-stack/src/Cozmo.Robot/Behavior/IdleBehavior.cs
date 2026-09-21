@@ -197,8 +197,8 @@ public sealed class IdleBehavior
         lock (_gate) dartDue = _p.EyeDartMaxDistancePix > 0 && _dartMs <= 0;
         if (dartDue)
         {
-            bool blinkUp = BlinkInProgress();
-            if (faceFree && !blinkUp)
+            bool otherLayerUp = AnotherLayerIsUp();
+            if (faceFree && !otherLayerUp)
             {
                 // GenerateEyeShift draws whole pixels in both axes and a whole-millisecond duration with
                 // RandIntInRange, each end inclusive.
@@ -212,7 +212,7 @@ public sealed class IdleBehavior
             {
                 Raise(done, new IdleEvent(IdleAction.EyeDart, nowMs)
                 {
-                    Suppressed = blinkUp ? "a blink layer is up" : "the face track is owned",
+                    Suppressed = otherLayerUp ? "another face layer is up" : "the face track is owned",
                 });
             }
         }
@@ -426,10 +426,10 @@ public sealed class IdleBehavior
     {
         int x = Math.Sign(speed) * _random.Next(0, TurnShiftMaxXPix + 1);
         int y = _random.Next(-TurnShiftMaxYPix, TurnShiftMaxYPix + 1);
-        ShowTransient(IdleAction.BodyMove,
-                      (face, _) => LookAt(face, x, y, TurnShiftXRange, TurnShiftYRange, TurnShiftUpMaxScale,
-                                          TurnShiftDownMinScale, TurnShiftOuterEyeScaleIncrease),
-                      nowMs, TurnShiftDurationMs, varies: false);
+        ShowLayer(IdleAction.BodyMove,
+                  (face, _) => LookAt(face, x, y, TurnShiftXRange, TurnShiftYRange, TurnShiftUpMaxScale,
+                                      TurnShiftDownMinScale, TurnShiftOuterEyeScaleIncrease),
+                  nowMs, nowMs + TurnShiftDurationMs, nowMs);
     }
 
     /// <summary>
@@ -443,10 +443,14 @@ public sealed class IdleBehavior
         if (removed) Render(double.NaN);
     }
 
-    /// <summary>Whether a blink layer is up, which holds an eye dart off.</summary>
-    private bool BlinkInProgress()
+    /// <summary>
+    /// Whether any layer other than the dart's own is up, which holds the next dart off:
+    /// <c>KeepFaceAlive</c> proceeds only when the manager holds no layer at all, or exactly one and
+    /// that one is the dart's (0x0058D3B2..0x0058D3C4).
+    /// </summary>
+    private bool AnotherLayerIsUp()
     {
-        lock (_gate) return _layers.Any(l => l.Kind == IdleAction.Blink);
+        lock (_gate) return _layers.Any(l => l.Kind != IdleAction.EyeDart);
     }
 
     /// <summary>The horizontal draw for a turn's eye shift: RandIntInRange(0, 21) at 0x0057D75C.</summary>
@@ -491,12 +495,24 @@ public sealed class IdleBehavior
     //     eye on the side being looked towards a little bigger than the other), and turns the eyes
     //     inwards when looking down. See Dart below for the arithmetic.
     //
-    // What is not established is the dart's lifecycle. GenerateEyeShift's keyframe is appended to a
-    // persistent layer whose replay logic (ITrackLayerManager::ApplyLayersToFrame at 0x0058E644) trims
-    // the layer to its last keyframe and resets its stream time once it runs out; read statically, that
-    // does not settle whether the shifted gaze is held until the next dart or dropped. This keeps the
-    // earlier reading, a transient that returns to base when its duration expires, and labels it as a
-    // local reading rather than a recovered fact.
+    // The dart's lifecycle, which used to be the open question here, is settled by the layer machinery:
+    // a dart ramps to its gaze and then holds it, and the eyes do not come back to centre in between.
+    //
+    //   * ITrackLayerManager::ApplyLayersToFrame at 0x0058E644 queues a layer for removal when it runs
+    //     out only if it is NOT persistent (the branch at 0x0058E6A0, taken when the byte at layer+0x30
+    //     is zero). A persistent layer that runs out is rewound to its first keyframe and trimmed of the
+    //     ones already consumed (0x0058E682..0x0058E698), so it keeps applying its last face for ever.
+    //     The dart goes in through AddToPersistentLayer; the blink through AddLayer, which is not.
+    //   * The drawn EyeDartDuration is not how long the gaze lasts, it is how long the move to it takes.
+    //     AddToPersistentLayer at 0x0058EAA0 sets the new keyframe's trigger time to
+    //     lastKeyFrameTime + drawn + 0x21, and GetFaceHelper at 0x0058CD80 interpolates between the
+    //     keyframe before it and it (ProceduralFaceKeyFrame::GetInterpolatedFace, 0x004F99E6, a linear
+    //     blend clamped at 1) until that time arrives. With no keyframe beyond, it applies the last face
+    //     unchanged.
+    //
+    // GenerateEyeShift at 0x0058CFC4 also clamps the shift against the eyes' bounding box so they stay
+    // on the 128 x 64 screen (GetEyeBoundingBox and the two mins at 0x0058D004 and 0x0058D026). A six
+    // pixel dart never reaches that from the resting face, so it is not reproduced here.
 
     /// <summary>
     /// The engine's blink, from the table <c>ProceduralFaceDrawer::GetNextBlinkFrame</c> copies out of
@@ -534,9 +550,21 @@ public sealed class IdleBehavior
     /// of the two came second.
     /// </summary>
     private sealed record FaceLayer(IdleAction Kind, Func<ProceduralFacePose, double, ProceduralFacePose> Apply,
-                                    double StartMs, double EndsAtMs, bool Varies);
+                                    double StartMs, double EndsAtMs, double VariesUntilMs);
 
     private readonly List<FaceLayer> _layers = new();
+
+    /// <summary>
+    /// Where the eyes are looking now. The dart layer is persistent, so a dart does not fade: the gaze it
+    /// reached is the gaze the next dart starts from.
+    /// </summary>
+    private GazeShift _gaze;
+
+    /// <summary>When the face was last composed, so a layer is drawn once more after it stops moving.</summary>
+    private double _lastRenderMs = double.NegativeInfinity;
+
+    /// <summary>One streamed animation frame, which a dart's ramp is one longer than its drawn duration.</summary>
+    public const double AnimationFrameMs = 33;
 
     /// <summary>
     /// Captures the base pose the first time idle touches the face, so darts and blinks are measured from
@@ -555,6 +583,7 @@ public sealed class IdleBehavior
         {
             _base = null;
             _layers.Clear();
+            _gaze = default;
         }
     }
 
@@ -562,13 +591,13 @@ public sealed class IdleBehavior
     /// Adds a layer, or replaces the one of the same kind already there - which is what
     /// <c>AddOrUpdateEyeShift</c> does by tag and <c>AddLayer</c> does by name.
     /// </summary>
-    private void ShowTransient(IdleAction kind, Func<ProceduralFacePose, double, ProceduralFacePose> apply,
-                               double nowMs, double durationMs, bool varies)
+    private void ShowLayer(IdleAction kind, Func<ProceduralFacePose, double, ProceduralFacePose> apply,
+                           double nowMs, double endsAtMs, double variesUntilMs)
     {
         lock (_gate)
         {
             _layers.RemoveAll(l => l.Kind == kind);
-            _layers.Add(new FaceLayer(kind, apply, nowMs, nowMs + Math.Max(1, durationMs), varies));
+            _layers.Add(new FaceLayer(kind, apply, nowMs, endsAtMs, variesUntilMs));
         }
         Render(nowMs);
     }
@@ -584,7 +613,9 @@ public sealed class IdleBehavior
         {
             int before = _layers.Count;
             _layers.RemoveAll(l => nowMs >= l.EndsAtMs);
-            redraw = _layers.Count != before || _layers.Any(l => l.Varies);
+            // A layer that has stopped moving still needs one last draw, so a ramp lands exactly on its
+            // end value rather than on wherever the last tick before it happened to fall.
+            redraw = _layers.Count != before || _layers.Any(l => l.VariesUntilMs > _lastRenderMs);
         }
         if (redraw) Render(nowMs);
     }
@@ -597,6 +628,7 @@ public sealed class IdleBehavior
         {
             pose = Base().Clone();
             foreach (var l in _layers) pose = l.Apply(pose, nowMs - l.StartMs);
+            if (!double.IsNaN(nowMs)) _lastRenderMs = nowMs;
         }
         if (Execute) _robot.Face.SetParameters(pose);
     }
@@ -608,7 +640,8 @@ public sealed class IdleBehavior
     /// </summary>
     private void Blink(double nowMs)
     {
-        ShowTransient(IdleAction.Blink, (face, t) => BlinkPose(face, t), nowMs, BlinkTotalMs, varies: true);
+        ShowLayer(IdleAction.Blink, (face, t) => BlinkPose(face, t),
+                  nowMs, nowMs + BlinkTotalMs, nowMs + BlinkTotalMs);
     }
 
     /// <summary>
@@ -661,8 +694,15 @@ public sealed class IdleBehavior
     /// </summary>
     private void Dart(int xPix, int yPix, double nowMs, double durationMs)
     {
-        ShowTransient(IdleAction.EyeDart, (face, _) => DartPose(face, xPix, yPix, _p),
-                      nowMs, durationMs, varies: false);
+        // The layer is persistent and the shift is a ramp, not a snap: see the summary above.
+        var from = _gaze;
+        var to = Gaze(xPix, yPix, 5f, 5f, (float)_p.EyeDartUpMaxScale, (float)_p.EyeDartDownMinScale,
+                      (float)_p.EyeDartOuterEyeScaleIncrease);
+        double ramp = durationMs + AnimationFrameMs;
+        lock (_gate) _gaze = to;
+        ShowLayer(IdleAction.EyeDart,
+                  (face, t) => ApplyGaze(face, GazeShift.Lerp(from, to, ramp <= 0 ? 1f : (float)Math.Clamp(t / ramp, 0, 1))),
+                  nowMs, double.PositiveInfinity, nowMs + ramp);
     }
 
     /// <summary>
@@ -698,29 +738,56 @@ public sealed class IdleBehavior
     /// <c>EyeDart*Scale</c> tunables, a turn's eye shift passes 64, 32, 1.1, 0.85 and 0.1.
     /// </summary>
     internal static ProceduralFacePose LookAt(ProceduralFacePose b, float x, float y, float xMax, float yMax,
-                                              float up, float down, float inc)
+                                              float up, float down, float inc) =>
+        ApplyGaze(b.Clone(), Gaze(x, y, xMax, yMax, up, down, inc));
+
+    /// <summary>
+    /// What <c>LookAt</c> writes into the layer, as numbers rather than as a pose. A layer is built on a
+    /// default-constructed face, so these <em>are</em> the layer's parameters, and interpolating a layer
+    /// - which is what <c>ProceduralFaceKeyFrame::GetInterpolatedFace</c> at 0x004F99E6 does between two
+    /// keyframes - is interpolating these.
+    /// </summary>
+    internal readonly record struct GazeShift(float X, float Y, float LeftScaleY, float RightScaleY, float Converge)
+    {
+        public static GazeShift Identity => new(0, 0, 1, 1, 0);
+
+        public static GazeShift Lerp(GazeShift a, GazeShift b, float f)
+        {
+            if (a == default) a = Identity;
+            if (b == default) b = Identity;
+            return new(a.X + (b.X - a.X) * f,
+                       a.Y + (b.Y - a.Y) * f,
+                       a.LeftScaleY + (b.LeftScaleY - a.LeftScaleY) * f,
+                       a.RightScaleY + (b.RightScaleY - a.RightScaleY) * f,
+                       a.Converge + (b.Converge - a.Converge) * f);
+        }
+    }
+
+    /// <summary><c>ProceduralFace::LookAt</c> at 0x00584158, as the shift it produces.</summary>
+    internal static GazeShift Gaze(float x, float y, float xMax, float yMax, float up, float down, float inc)
     {
         float fy = MathF.Min(1f, (yMax - y) / (2f * yMax));
         float vertical = down + (up - down) * fy;
         float fx = MathF.Min(1f, MathF.Abs(x) / xMax);
         float towards = vertical * (1f + fx * inc);   // the eye on the side being looked towards
         float away = vertical * (1f - fx * inc);
+        return new GazeShift(x, y,
+                             x < 0 ? towards : away,
+                             x < 0 ? away : towards,
+                             y > 0 ? 2f * MathF.Min(1f, y / yMax) : 0f);
+    }
 
-        var pose = b.Clone();
-        pose.FaceCenterX = b.FaceCenterX + x;
-        pose.FaceCenterY = b.FaceCenterY + y;
-
-        float leftFactor = x < 0 ? towards : away;
-        float rightFactor = x < 0 ? away : towards;
-        pose.Left[EyeParam.EyeScaleY] = Eye.Clip(EyeParam.EyeScaleY, b.Left[EyeParam.EyeScaleY] * leftFactor);
-        pose.Right[EyeParam.EyeScaleY] = Eye.Clip(EyeParam.EyeScaleY, b.Right[EyeParam.EyeScaleY] * rightFactor);
-
-        if (y > 0)
-        {
-            float converge = 2f * MathF.Min(1f, y / yMax);
-            pose.Left[EyeParam.EyeCenterX] = b.Left[EyeParam.EyeCenterX] + converge;
-            pose.Right[EyeParam.EyeCenterX] = b.Right[EyeParam.EyeCenterX] - converge;
-        }
+    /// <summary>Combines a gaze shift onto a face, as ProceduralFace::Combine does: positions and the
+    /// convergence add, the eye scales multiply.</summary>
+    internal static ProceduralFacePose ApplyGaze(ProceduralFacePose pose, GazeShift g)
+    {
+        if (g == default) g = GazeShift.Identity;
+        pose.FaceCenterX += g.X;
+        pose.FaceCenterY += g.Y;
+        pose.Left[EyeParam.EyeScaleY] = Eye.Clip(EyeParam.EyeScaleY, pose.Left[EyeParam.EyeScaleY] * g.LeftScaleY);
+        pose.Right[EyeParam.EyeScaleY] = Eye.Clip(EyeParam.EyeScaleY, pose.Right[EyeParam.EyeScaleY] * g.RightScaleY);
+        pose.Left[EyeParam.EyeCenterX] += g.Converge;
+        pose.Right[EyeParam.EyeCenterX] -= g.Converge;
         return pose;
     }
 
