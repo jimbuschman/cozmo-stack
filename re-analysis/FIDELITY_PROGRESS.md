@@ -6,25 +6,53 @@ Counts come from `re-analysis/fidelity_manifest.json`; the manifest and the comm
 
 | status | records |
 | --- | ---: |
-| EXACT_SOURCE | 80 |
-| EQUIVALENT_IMPLEMENTATION | 11 |
-| RECOVERABLE_GAP | 69 |
+| EXACT_SOURCE | 93 |
+| EQUIVALENT_IMPLEMENTATION | 12 |
+| RECOVERABLE_GAP | 60 |
 | IMPLEMENTATION_GAP | 9 |
 | COMPATIBILITY_POLICY | 15 |
 | HARDWARE_ONLY | 3 |
 | BLOCKED_EXTERNAL | 8 |
-| **total** | **195** |
+| **total** | **200** |
 
-Remaining RECOVERABLE_GAP: **69**, all on a live execution path, **none of them in M9**.
-Remaining IMPLEMENTATION_GAP: **9**, of which **8 are on a live path** and one (M9-021) is not.
+Live-path work outstanding: **60 RECOVERABLE_GAP + 8 IMPLEMENTATION_GAP = 68**, down from 77 when the
+repository-wide pass began.
 
-`IMPLEMENTATION_GAP` was added in this pass. It is for a behaviour the original is known to perform,
-from primary evidence, that the production code knowingly does not: unfinished fidelity work, with
-nothing left to read. Nine records moved into it, each reviewed on what it actually says rather than
-renamed in bulk — six out of COMPATIBILITY_POLICY, which had been absorbing work that was merely hard,
-and three out of EQUIVALENT_IMPLEMENTATION, which had been absorbing substitutions nobody had shown to
-be equivalent. Two records went the other way, into RECOVERABLE_GAP, because the original had not in
-fact been read (M5-019, M8-008).
+| subsystem | open | | subsystem | open |
+| --- | ---: | --- | --- | ---: |
+| M3 device | 7 | | M10 derived state | 4 |
+| M4 control | 4 | | M11 vision | 6 |
+| M5 animation | 6 | | M12 manipulation | 6 |
+| M6 Wwise bank | 1 | | M13 navigation | 8 |
+| M7 behaviour | 6 | | M14 faces | 5 |
+| M8 framework | 6 | | M15 freeplay | 9 |
+
+M1, M2 and M9 hold none. M1 and M2 were cleared in this pass; M9 in the one before it.
+
+## The transmitted-unknowns sweep
+
+The first thing the repository-wide pass did was the special priority: every `engine_to_robot` message
+this stack actually constructs, checked field by field against the engine function that fills it. Seven
+messages carried `FieldN` placeholder names; the sweep found that three of them were being **packed
+wrongly**, which no amount of robot acceptance had caught.
+
+* **DockWithObject** wrote speed, acceleration and deceleration into words 0, 1 and 2. The engine writes
+  a literal zero into word 0 and the speeds into 1, 2 and 3, so every dock this stack sent put its speed
+  where word 0 goes and asked for no deceleration at all. Its five trailing bytes are sourced now too.
+* **PlaceObjectOnGround** had the same shape of error three words over: the engine sends three zero
+  placement offsets and then a constant speed triple from rodata, 100 / 200 / 500.
+* **DockingErrorSignal** starts with the timestamp. The field names had come from a prefix match against
+  the 16-byte `VizInterface::DockingErrorSignal`, which shifted every field of this 22-byte message by a
+  word — for the whole of every dock.
+
+The rest were right and are now read rather than matched: the three path segment messages are a
+`Planning::PathSegment` copied field for field, and `SetBodyAngle` carries an absolute heading whichever
+way the turn was asked for. Two engine facts fell out of that last one: the sign of a relative turn rides
+in **bit 31 of the speed word**, and the turn speed is 300 deg/s where this stack had been using 100.
+
+`regenerate_protocol.py --check` was already failing when the pass started — two keyframe messages had
+engine-sourced names written straight into the generated C#, which a regeneration would have dropped.
+They are inputs now.
 
 ## Two gates, not one
 
