@@ -199,6 +199,14 @@ public sealed class InteractWithFacesBehavior : FaceBehavior
     public enum Phase { Idle, VerifyFace, GlancingDown, DrivingForward, TrackingFace, TriggerEmotionEvent }
     public const double TrackToleranceRad = 0.0698132;
     public const double DriveForwardMm = 40.0;
+    /// <summary>
+    /// What it drives instead when the memory map says the way is not clear: -15 mm
+    /// (<c>vmov.f32 s0, #-15.0</c> at 0x005C2566, replaced by 40 only when
+    /// <see cref="CanDriveIdealDistanceForward"/> is true, 0x005C2572).
+    /// </summary>
+    public const double DriveBackwardMm = -15.0;
+    /// <summary>Both drives run at 40 mm/s (0x42200000 at 0x005C2586).</summary>
+    public const float DriveSpeedMmps = 40f;
     public const double DriveBackMm = -15.0;
     public const uint RecentFaceWindowMs = 10000;
 
@@ -248,19 +256,41 @@ public sealed class InteractWithFacesBehavior : FaceBehavior
         });
     }
 
+    /// <summary>
+    /// <c>BehaviorInteractWithFaces::CanDriveIdealDistanceForward</c> 0x005C2420: it takes the point
+    /// <see cref="DriveForwardMm"/> ahead of the robot - the local (40, 0, 0) at 0x005C2442 turned by the
+    /// robot's rotation and added to its translation - and asks the memory map
+    /// <c>HasCollisionRayWithTypes(robot, thatPoint, types)</c> (the virtual at map+0x30, 0x005C24A2),
+    /// returning the negation. The type mask is the array at 0x00C67962, which is
+    /// <see cref="Vision.MemoryMapTypes.BlocksTheRobot"/>.
+    ///
+    /// With no map attached there is nothing to ask, and the engine's own answer in that case is the one
+    /// its map gives for ground it knows nothing about: no collision, so the drive goes ahead.
+    /// </summary>
+    public bool CanDriveIdealDistanceForward()
+    {
+        if (Context.Map is not { } map || _m?.RobotPose() is not { } pose) return true;
+        var from = pose.Translation;
+        var to = pose.Apply(new Vision.Vec3(DriveForwardMm, 0, 0));
+        return !map.HasCollisionRayWithTypes(new Vision.Vec2(from.X, from.Y), new Vision.Vec2(to.X, to.Y));
+    }
+
     private void TransitionToGlancingDown()
     {
         CurrentPhase = Phase.GlancingDown;
         if (_m is null) { Log("no manipulation system: skipping the glance and the drive forward"); TransitionToTrackingFace(); return; }
         CurrentPhase = Phase.DrivingForward;
-        // CanDriveIdealDistanceForward reads the memory map (not modelled: DEFERRED); the ideal 40 mm is driven
+        // TransitionToDrivingForward 0x005C254E: the ideal 40 mm when the map says the way is clear, -15 mm
+        // when it does not, both at 40 mm/s
+        double distance = CanDriveIdealDistanceForward() ? DriveForwardMm : DriveBackwardMm;
+        if (distance < 0) Log("the memory map has something in the way: backing off instead of driving in");
         Tracker?.Dispose();
         Tracker = new TrackFaceAction(V, TargetFaceId!.Value) { PanToleranceRad = TrackToleranceRad, TiltToleranceRad = TrackToleranceRad };
-        RunAction($"DriveStraight({DriveForwardMm} mm) with TrackFace", async ct =>
+        RunAction($"DriveStraight({distance} mm) with TrackFace", async ct =>
         {
             using var trackCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             var track = Tracker.RunAsync(TimeSpan.FromSeconds(30), trackCts.Token);
-            var r = await new DriveStraightAction(_m, DriveForwardMm, 50f).RunAsync(ct);
+            var r = await new DriveStraightAction(_m, distance, DriveSpeedMmps).RunAsync(ct);
             trackCts.Cancel();
             await track;
             return r;

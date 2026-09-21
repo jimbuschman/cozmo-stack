@@ -15,6 +15,58 @@ public class FaceTests
 {
     private static BehaviorContext Ctx(Rig rig) => new() { Robot = rig.Robot, Triggers = new AnimationTriggerMap() };
 
+    /// <summary>
+    /// The memory map, and the question the face behaviour asks it.
+    /// <c>BehaviorInteractWithFaces::CanDriveIdealDistanceForward</c> 0x005C2420 takes the point 40 mm
+    /// ahead and asks <c>HasCollisionRayWithTypes</c> with the eleven-entry mask at 0x00C67962;
+    /// <c>TransitionToDrivingForward</c> drives 40 mm when the answer is clear and -15 mm when it is not
+    /// (0x005C2566 and the conditional at 0x005C2572). The content types and the family mapping are
+    /// <c>ObjectFamilyToMemoryMapContentType</c> 0x0067F4C0, and a markerless object is refused there, so
+    /// the collision obstacle an unexpected movement leaves in the world never reaches the map.
+    /// </summary>
+    [Fact]
+    public void TheMemoryMapAnswersWhetherTheRobotCanDriveInToAFace()
+    {
+        Assert.Equal(MemoryMapContentType.ObstacleObservable, MemoryMapTypes.ContentTypeForFamily(ObjectFamily.LightCube, adding: true));
+        Assert.Equal(MemoryMapContentType.ClearOfObstacle, MemoryMapTypes.ContentTypeForFamily(ObjectFamily.LightCube, adding: false));
+        Assert.Equal(MemoryMapContentType.ObstacleCharger, MemoryMapTypes.ContentTypeForFamily(ObjectFamily.Charger, adding: true));
+        Assert.Equal(MemoryMapContentType.ObstacleChargerRemoved, MemoryMapTypes.ContentTypeForFamily(ObjectFamily.Charger, adding: false));
+        Assert.Equal(MemoryMapContentType.Unknown, MemoryMapTypes.ContentTypeForFamily(ObjectFamily.MarkerlessObject, adding: true));
+        foreach (var t in new[] { MemoryMapContentType.Unknown, MemoryMapContentType.ClearOfObstacle, MemoryMapContentType.ClearOfCliff, MemoryMapContentType.ObstacleChargerRemoved })
+            Assert.False(MemoryMapTypes.BlocksTheRobot(t));
+        foreach (var t in new[] { MemoryMapContentType.ObstacleObservable, MemoryMapContentType.ObstacleCharger, MemoryMapContentType.ObstacleProx,
+                                  MemoryMapContentType.ObstacleUnrecognized, MemoryMapContentType.Cliff, MemoryMapContentType.InterestingEdge,
+                                  MemoryMapContentType.NotInterestingEdge })
+            Assert.True(MemoryMapTypes.BlocksTheRobot(t));
+
+        // the robot at the origin facing +x, the 40 mm probe
+        var from = new Vec2(0, 0);
+        var to = new Vec2(InteractWithFacesBehavior.DriveForwardMm, 0);
+        var map = new MemoryMap();
+        var near = MemoryMap.Rectangle(new Pose3d(Mat3.Identity, new Vec3(60, 0, 0)), 44, 44);   // spans x 38..82
+        map.Insert(near, MemoryMapContentType.ObstacleObservable, objectId: 1);
+        Assert.True(map.HasCollisionRayWithTypes(from, to));
+        map.Clear();
+        map.Insert(MemoryMap.Rectangle(new Pose3d(Mat3.Identity, new Vec3(90, 0, 0)), 44, 44), MemoryMapContentType.ObstacleObservable, objectId: 1);
+        Assert.False(map.HasCollisionRayWithTypes(from, to));       // 68 mm away: the probe stops short
+        // a cleared region is not in the way
+        map.Clear();
+        map.Insert(near, MemoryMapContentType.ClearOfObstacle, objectId: 1);
+        Assert.False(map.HasCollisionRayWithTypes(from, to));
+
+        // a collision obstacle is a markerless object: in the world, never in the map
+        var world = new BlockWorld(Array.Empty<(uint, ObjectType)>);
+        world.AddCollisionObstacle(new Pose3d(Mat3.Identity, new Vec3(30, 0, 0)));
+        Assert.Single(world.LocatedObjects);
+        map.Clear();
+        map.SyncFromWorld(world);
+        Assert.Empty(map.Regions);
+        Assert.False(map.HasCollisionRayWithTypes(from, to));
+
+        Assert.Equal(-15.0, InteractWithFacesBehavior.DriveBackwardMm);
+        Assert.Equal(40f, InteractWithFacesBehavior.DriveSpeedMmps);
+    }
+
     private static bool Runnable(SteppedBehavior b, BehaviorContext ctx) =>
         (bool)typeof(SteppedBehavior).GetMethod("IsRunnableInternal", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(b, new object[] { ctx })!;
 

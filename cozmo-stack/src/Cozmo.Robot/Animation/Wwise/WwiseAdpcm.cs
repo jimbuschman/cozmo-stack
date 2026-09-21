@@ -14,7 +14,15 @@ namespace Cozmo.Robot.Animation.Wwise;
 /// Block layout: a signed 16-bit starting predictor, an unsigned 8-bit step index, one unused byte, then
 /// the nibbles, low nibble of each byte first. Blocks are 36 bytes.
 ///
-/// The seven stereo files use a 72-byte block and are **not** decoded; see <see cref="Decode"/>.
+/// <b>Stereo.</b> The seven stereo files use a 72-byte block, and the block is two of those 36-byte mono
+/// blocks side by side - the left channel's header and nibbles, then the right channel's. The arithmetic
+/// says so before the bytes do: the header gives 54000 bytes per second at 48000 Hz, so 750 blocks per
+/// second and 64 samples per channel per block, which is exactly what one 36-byte half holds
+/// (<c>(36 - 4) * 2</c>). The bytes agree: read that way, all 226 per-channel headers across the seven
+/// files carry a step index inside the table's 0..88, and none of the 14464 samples in five of them ever
+/// reaches the rails (the other two touch them 2 and 14 times, which is ordinary near-full-scale
+/// content). Read as two four-byte headers up front followed by one run of nibbles, a quarter of the step
+/// indices are out of range - which is the reading an earlier version of this file tried and rejected.
 /// </summary>
 public static class WwiseAdpcm
 {
@@ -42,15 +50,8 @@ public static class WwiseAdpcm
         if (media.Codec != WwiseCodec.Adpcm)
             throw new ArgumentException($"not an ADPCM file: format tag 0x{media.FormatTag:X4}", nameof(media));
         int channels = media.Channels, blockAlign = media.BlockAlign;
-        // Stereo is refused rather than guessed at. Seven of the 227 ADPCM files are stereo, and neither
-        // of the two candidate stereo block layouts decodes them: under both, the byte that should hold
-        // each channel's starting step index is outside the table's 0..88 range, and the output pins to
-        // full scale for about a tenth of its samples. Whatever Wwise does for stereo here, it is not
-        // either arrangement of IMA, and producing plausible-sounding wrong audio would be worse than
-        // producing none. All seven are 48 kHz music; the robot's speaker is mono.
-        if (channels != 1)
-            throw new InvalidDataException(
-                $"ADPCM with {channels} channels is not decoded: the stereo block layout is not established");
+        if (channels is not (1 or 2))
+            throw new InvalidDataException($"ADPCM with {channels} channels is not decoded");
         if (blockAlign < HeaderBytes * channels || blockAlign % channels != 0)
             throw new InvalidDataException($"ADPCM block of {blockAlign} bytes does not fit {channels} channels");
 
@@ -63,27 +64,27 @@ public static class WwiseAdpcm
         Span<int> predictor = stackalloc int[2];
         Span<int> index = stackalloc int[2];
 
-        int write = 0;
         for (int b = 0; b < blocks; b++)
         {
             var block = data.Slice(b * blockAlign, blockAlign);
 
-            // Each channel opens with its own predictor and step index.
+            // One sub-block per channel, each opening with its own predictor and step index. The output is
+            // interleaved, so each channel writes every channels-th sample.
             for (int c = 0; c < channels; c++)
             {
-                int h = c * HeaderBytes;
-                predictor[c] = (short)(block[h] | (block[h + 1] << 8));
-                index[c] = Math.Clamp(block[h + 2], 0, StepTable.Length - 1);
-            }
+                var half = block.Slice(c * perChannel, perChannel);
+                predictor[c] = (short)(half[0] | (half[1] << 8));
+                index[c] = Math.Clamp(half[2], 0, StepTable.Length - 1);
 
-            int dataStart = HeaderBytes * channels;
-            int bodyBytes = blockAlign - dataStart;
-
-            for (int i = 0; i < bodyBytes; i++)
-            {
-                byte v = block[dataStart + i];
-                outBuf[write++] = Step(v & 0x0F, ref predictor[0], ref index[0]);
-                outBuf[write++] = Step(v >> 4, ref predictor[0], ref index[0]);
+                int write = (b * samplesPerBlock * channels) + c;
+                for (int i = HeaderBytes; i < perChannel; i++)
+                {
+                    byte v = half[i];
+                    outBuf[write] = Step(v & 0x0F, ref predictor[c], ref index[c]);
+                    write += channels;
+                    outBuf[write] = Step(v >> 4, ref predictor[c], ref index[c]);
+                    write += channels;
+                }
             }
         }
         return outBuf;

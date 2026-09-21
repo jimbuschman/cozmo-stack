@@ -72,6 +72,13 @@ public sealed class BehaviorContext
     /// </summary>
     public IReadOnlyDictionary<string, string>? NeedsActionIds { get; set; }
 
+    /// <summary>
+    /// The memory map, the engine's <c>MapComponent::GetCurrentMemoryMapHelper</c>. Null means no map is
+    /// attached and the behaviours that ask it a question get no answer - which is not the same as an
+    /// answer of "clear".
+    /// </summary>
+    public Vision.MemoryMap? Map { get; set; }
+
     /// <summary>The behaviour clock (seconds), for the recent-event windows below. Null: the windows cannot be met.</summary>
     public Func<double>? ClockSec { get; set; }
     /// <summary>

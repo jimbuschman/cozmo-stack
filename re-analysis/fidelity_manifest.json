@@ -85,7 +85,7 @@
       "id": "M6-wwise-bank",
       "name": "Wwise bank reading and codecs",
       "milestone": "M6",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true
     },
     {
@@ -141,7 +141,7 @@
       "id": "M14-faces",
       "name": "Face and pet pipeline",
       "milestone": "M14",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true
     },
     {
@@ -443,6 +443,25 @@
         "re-analysis/captures"
       ],
       "live_path": true
+    },
+    {
+      "subsystem": "M2-protocol",
+      "title": "absLocalizationUpdate: the timestamp first and the heading last",
+      "location": "cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs",
+      "effect": null,
+      "provenance": "Robot::SendAbsLocalizationUpdate, read; the field names had been pycozmo guesses",
+      "authority": "Robot::SendAbsLocalizationUpdate(Pose3d const&, unsigned int const&, unsigned int const&) 0x00512734 and Robot::SendAbsLocalizationUpdate() 0x00514710, read",
+      "evidence": [
+        "The packer 0x00512734 fills the 24 bytes in order from 0x00512774: its two unsigned arguments (strd r8, sb at 0x0051279E), the pose parent id from PoseBase::GetID (0x00512762), the transform translation x and y at +0x20 and +0x24 (0x00512782, 0x0051278A), and Rotation3d::GetAngleAroundZaxis (0x00512796). So the last word is a float heading in radians, which pycozmo had as an unknown u32 - and pycozmo sending 0x80000000 there is sending -0.0.",
+        "The argument order comes from the no-argument twin 0x00514710: it asks RobotStateHistory::GetLatestVisionOnlyState for the latest vision-only state with the timestamp in an out-parameter at sp+0x7c, and passes that as the second argument and the state word at +0x10 as the third (0x00514770..0x0051477C). So the first field is the timestamp and the second the pose frame id.",
+        "That is also the path a corrected pose takes to the robot: Robot::SetNewPose 0x005126EC calls SetPose and AddVisionOnlyStateToHistory, and Robot::Update calls SendAbsLocalizationUpdate (0x00513CC6), which sends the state just added."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
+      "hardware_required": false,
+      "live_path": true,
+      "test": "TransportSourceTests.AbsoluteLocalizationUpdateEndsWithTheHeadingInRadians",
+      "id": "M2-007"
     },
     {
       "id": "M3-001",
@@ -1231,22 +1250,24 @@
       "test": "WwiseTests"
     },
     {
-      "id": "M6-003",
       "subsystem": "M6-wwise-bank",
-      "title": "Stereo IMA ADPCM is refused, and eight robot sound effects are silent because of it",
+      "title": "Stereo IMA ADPCM: the block is two mono blocks side by side",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAdpcm.cs",
-      "effect": "eight shipped Robot_SFX events make no sound at all: the effort grunts, the spark launch and the four scan sounds",
-      "provenance": "mono ADPCM decodes; stereo is refused because the block layout was not established",
-      "authority": "the seven shipped stereo ADPCM files themselves, which are the thing that would settle the layout: IMA ADPCM block packing is arithmetic that a file either fits or does not",
+      "effect": null,
+      "provenance": "the seven shipped stereo files, decoded; the layout is arithmetic the files either fit or do not",
+      "authority": "the shipped stereo ADPCM media in Cozmo.bnk - their fmt headers and their data",
       "evidence": [
-        "wwise --coverage: Play__Robot_SFX__Effort_Long, Effort_Medium, Effort_Fail, Spark_Launch, Scan_Loop_Play, Scan_Start, Scan_Stop, Scan_Single",
-        "wwise --validate: 7 files, \"ADPCM with 2 channels is not decoded\""
+        "The header settles the block. All seven stereo files are 48000 Hz with nAvgBytesPerSec 54000 and nBlockAlign 72, so 750 blocks a second and 64 samples per channel in each. A 36-byte mono block holds exactly 64 samples ((36 - 4) * 2), so a 72-byte stereo block is two of them: the left channel's four-byte header and thirty-two bytes of nibbles, then the right channel's.",
+        "The bytes agree. Read that way, all 226 per-channel headers across the seven files (113 blocks each) carry a step index inside the table's 0..88; read as two four-byte headers followed by one run of nibbles, between 50 and 67 of every 226 are out of range. Decoding the seven gives 7232 samples per channel each, peaks of 4430, 18259, 18916, 23387, 25453 and twice full scale, and the two that touch the rails do so 2 and 14 times in 14464 samples - ordinary near-full-scale content, not a decoder running away.",
+        "The eight events that reach those files - Play__Robot_SFX__Effort_Long, Effort_Medium, Effort_Fail, Spark_Launch, Scan_Loop_Play, Scan_Start, Scan_Stop and Scan_Single - now render audio instead of nothing.",
+        "Which half is the left channel is the one thing the bytes cannot say; the natural order is taken (channel 0 first), and swapping it would swap the stereo image of eight sound effects played through a mono speaker."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the stereo block layout. An earlier version of this record said no robot event reaches such a file; the coverage tool now lists the eight that do, which is what corrected it",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "WwiseTests.TheStereoAdpcmBlockIsTwoMonoBlocksSideBySide",
+      "id": "M6-003"
     },
     {
       "id": "M6-004",
@@ -2576,6 +2597,24 @@
       "test": "FaceTests"
     },
     {
+      "subsystem": "M11-vision",
+      "title": "The memory map's vision-derived content: overhead edges and the explored region",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs",
+      "effect": "the map holds obstacles but no edges and no explored region, so a query that would be blocked by an unexplored edge is answered clear, and the behaviours that look for edges have nothing to look at",
+      "provenance": "the obstacle content is implemented (M14-007); the vision-derived content is not",
+      "authority": "MapComponent::AddVisionOverheadEdges 0x0067F814, ProcessVisionOverheadEdges 0x0067F7AC, MapComponent::UpdateRobotPose 0x0067E224, MapComponent::FlagGroundPlaneROIInterestingEdgesAsUncertain 0x0067E50C and QuadTreeProcessor::FillBorder 0x00689FAC, none of them read yet",
+      "evidence": [
+        "The types are known and in place: InterestingEdge (9) and NotInterestingEdge (10) both block a drive in the mask at 0x00C67962, and BehaviorVisitInterestingEdge and BehaviorLookInPlaceMemoryMap are built on them.",
+        "What produces them is not: MapComponent::AddVisionOverheadEdges 0x0067F814 takes an OverheadEdgeFrame from the vision system, which this stack's vision front end does not produce (see M11-005), and MapComponent::UpdateRobotPose 0x0067E224 is what lays down the cleared ground the robot has driven over."
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "the overhead-edge frames and the explored-region update, instruction by instruction",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null,
+      "id": "M11-017"
+    },
+    {
       "id": "M12-001",
       "subsystem": "M12-manipulation",
       "title": "Pre-action pose types and distances (75 / 40 / 49 mm)",
@@ -3116,19 +3155,25 @@
       "test": null
     },
     {
-      "id": "M14-007",
       "subsystem": "M14-faces",
-      "title": "The memory map is not modelled, so CanDriveIdealDistanceForward always allows the drive",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs:256",
-      "effect": "the robot drives towards a face into an obstacle it should have known about",
-      "provenance": "deferred",
-      "authority": "the engine memory map",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the memory map structure and the query",
+      "title": "The memory map, and the question the face behaviour asks it before driving in",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs",
+      "effect": null,
+      "provenance": "CanDriveIdealDistanceForward, TransitionToDrivingForward, the content-type table, the family mapping and the two insertion paths, read",
+      "authority": "BehaviorInteractWithFaces::CanDriveIdealDistanceForward 0x005C2420, BehaviorInteractWithFaces::TransitionToDrivingForward 0x005C254E, MemoryMap::HasCollisionRayWithTypes 0x0068176E, ObjectFamilyToMemoryMapContentType 0x0067F4C0, MapComponent::AddObservableObject 0x0067ECFC, BlockWorld::AddMarkerlessObject 0x00622380, the EContentType names at 0x00BFFAC8 and the mask at 0x00C67962, read",
+      "evidence": [
+        "The question is a ray. CanDriveIdealDistanceForward 0x005C2420 takes the local point (40, 0, 0) (0x42200000 at 0x005C2442), turns it by the robot's rotation, adds the robot's translation, and calls the memory map's virtual at +0x30 with the two x,y pairs and the type array at 0x00C67962, returning the negation (0x005C24A4). HasCollisionRayWithTypes 0x0068176E folds the array into a flag mask - EContentTypeToFlag for every entry whose bool is set - and hands it to the quad tree's ray walk.",
+        "The mask is eleven (type, bool) pairs: 00 00, 01 00, 02 00, 03 01, 04 01, 05 00, 06 01, 07 01, 08 01, 09 01, 0a 01. With the names from the table at 0x00BFFAC8 - Unknown, ClearOfObstacle, ClearOfCliff, ObstacleObservable, ObstacleCharger, ObstacleChargerRemoved, ObstacleProx, ObstacleUnrecognized, Cliff, InterestingEdge, NotInterestingEdge - everything blocks the drive except the first three and ObstacleChargerRemoved.",
+        "The answer changes the distance, not whether it drives. TransitionToDrivingForward loads -15.0 (vmov.f32 s0, #-15.0 at 0x005C2566) and replaces it with 40.0 only when the call returned true (0x005C2572), then builds DriveStraightAction(robot, distance, 40.0) - so a blocked robot backs off 15 mm. This stack drove 40 mm at 50 mm/s either way.",
+        "What goes in the map: MapComponent::AddObservableObject 0x0067ECFC inserts the object's bounding quad (its virtual GetBoundingQuadXY(pose, 0), vtable +0x50) with a MemoryMapData_ObservableObject, whose constructor 0x00684A38 stamps content type 3; ObjectFamilyToMemoryMapContentType 0x0067F4C0 is the tbb that decides it - Block, LightCube and CustomObject give ObstacleObservable on add and ClearOfObstacle on remove, the charger gives ObstacleCharger and ObstacleChargerRemoved, Ramp and Mat give Unknown, and a markerless object is refused with \"ContentType MarkerlessObject addition is not supported\". BlockWorld::AddMarkerlessObject 0x00622380 inserts a Cliff (type 8) for a CliffDetection object and a ProxObstacle (type 6) for a ProxObstacle one, and nothing for a CollisionObstacle (the type test at 0x0062259A falls through) - so the obstacle an unexpected movement leaves behind is in the world model and never in the map.",
+        "Implemented as Vision/MemoryMap.cs: the eleven content types, the family mapping, the mask, Insert, HasCollisionRayWithTypes and a sync that follows the world model's located objects, with the behaviour asking it before it drives. The engine keeps its regions in a quad tree (QuadTree 0x00684C08) subdivided to GetContentPrecisionMM; this keeps the polygons, which answers the same ray exactly rather than to the tree's precision. The map's vision-derived content - the overhead edges that become InterestingEdge and NotInterestingEdge, and the explored region the robot's own passage leaves - is M11-017."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "FaceTests.TheMemoryMapAnswersWhetherTheRobotCanDriveInToAFace",
+      "id": "M14-007"
     },
     {
       "id": "M15-001",
@@ -3405,25 +3450,6 @@
       "live_path": true,
       "test": "regenerate_protocol.py --check",
       "id": "TOOL-004"
-    },
-    {
-      "subsystem": "M2-protocol",
-      "title": "absLocalizationUpdate: the timestamp first and the heading last",
-      "location": "cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs",
-      "effect": null,
-      "provenance": "Robot::SendAbsLocalizationUpdate, read; the field names had been pycozmo guesses",
-      "authority": "Robot::SendAbsLocalizationUpdate(Pose3d const&, unsigned int const&, unsigned int const&) 0x00512734 and Robot::SendAbsLocalizationUpdate() 0x00514710, read",
-      "evidence": [
-        "The packer 0x00512734 fills the 24 bytes in order from 0x00512774: its two unsigned arguments (strd r8, sb at 0x0051279E), the pose parent id from PoseBase::GetID (0x00512762), the transform translation x and y at +0x20 and +0x24 (0x00512782, 0x0051278A), and Rotation3d::GetAngleAroundZaxis (0x00512796). So the last word is a float heading in radians, which pycozmo had as an unknown u32 - and pycozmo sending 0x80000000 there is sending -0.0.",
-        "The argument order comes from the no-argument twin 0x00514710: it asks RobotStateHistory::GetLatestVisionOnlyState for the latest vision-only state with the timestamp in an out-parameter at sp+0x7c, and passes that as the second argument and the state word at +0x10 as the third (0x00514770..0x0051477C). So the first field is the timestamp and the second the pose frame id.",
-        "That is also the path a corrected pose takes to the robot: Robot::SetNewPose 0x005126EC calls SetPose and AddVisionOnlyStateToHistory, and Robot::Update calls SendAbsLocalizationUpdate (0x00513CC6), which sends the state just added."
-      ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
-      "hardware_required": false,
-      "live_path": true,
-      "test": "TransportSourceTests.AbsoluteLocalizationUpdateEndsWithTheHeadingInRadians",
-      "id": "M2-007"
     }
   ]
 }

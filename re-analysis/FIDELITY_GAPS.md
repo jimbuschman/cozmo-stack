@@ -3,13 +3,13 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **205 records** over 16 subsystems.
+Manifest of **206 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 157 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 159 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 14 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 3 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 2 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 1 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 19 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -29,32 +29,21 @@ remains after both, and they do not go away by working harder on this repository
 | M3-device — Camera, display and audio device layer | 17 | 0 | 0 | 0 | 1 | yes | yes |
 | M4-control — Motion, sensors, lights and cubes | 9 | 0 | 0 | 0 | 0 | yes | yes |
 | M5-animation — Animation clips, scheduler and face | 21 | 0 | 0 | 0 | 0 | yes | yes |
-| M6-wwise-bank — Wwise bank reading and codecs | 7 | 1 | 0 | 0 | 0 | no | yes |
+| M6-wwise-bank — Wwise bank reading and codecs | 7 | 0 | 0 | 0 | 0 | yes | yes |
 | M7-behaviour — Idle, mood and reactions | 16 | 0 | 0 | 0 | 0 | yes | yes |
 | M8-framework — Behaviour framework and scoring | 10 | 0 | 0 | 0 | 0 | yes | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 9 | 0 | 0 | 0 | 0 | yes | yes |
-| M11-vision — Markers, camera geometry and BlockWorld | 16 | 1 | 0 | 1 | 0 | no | yes |
+| M11-vision — Markers, camera geometry and BlockWorld | 17 | 2 | 0 | 1 | 0 | no | yes |
 | M12-manipulation — Docking, carrying and pre-action poses | 16 | 0 | 0 | 0 | 0 | yes | yes |
 | M13-navigation — Planning, charger and block configurations | 12 | 0 | 0 | 0 | 0 | yes | yes |
-| M14-faces — Face and pet pipeline | 7 | 1 | 0 | 1 | 0 | no | yes |
+| M14-faces — Face and pet pipeline | 7 | 0 | 0 | 1 | 0 | yes | yes |
 | M15-freeplay — Needs, activities and freeplay | 12 | 0 | 0 | 0 | 0 | yes | yes |
 | tools — Conformance CLI and offline tools | 4 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Still to read: every RECOVERABLE_GAP
 
 Each of these is a question the original can answer and nobody has asked it yet.
-
-### M6-wwise-bank — Wwise bank reading and codecs
-
-**M6-003 — Stereo IMA ADPCM is refused, and eight robot sound effects are silent because of it** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAdpcm.cs`
-* effect: eight shipped Robot_SFX events make no sound at all: the effort grunts, the spark launch and the four scan sounds
-* rests on: mono ADPCM decodes; stereo is refused because the block layout was not established
-* best authority: the seven shipped stereo ADPCM files themselves, which are the thing that would settle the layout: IMA ADPCM block packing is arithmetic that a file either fits or does not
-* evidence: wwise --coverage: Play__Robot_SFX__Effort_Long, Effort_Medium, Effort_Fail, Spark_Launch, Scan_Loop_Play, Scan_Start, Scan_Stop, Scan_Single; wwise --validate: 7 files, "ADPCM with 2 channels is not decoded"
-* outstanding: the stereo block layout. An earlier version of this record said no robot event reaches such a file; the coverage tool now lists the eight that do, which is what corrected it
 
 ### M11-vision — Markers, camera geometry and BlockWorld
 
@@ -67,15 +56,14 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * evidence: MarkerDetector::Parameters::Initialize
 * outstanding: the engine own quad extraction and refinement, which is in the binary
 
-### M14-faces — Face and pet pipeline
+**M11-017 — The memory map's vision-derived content: overhead edges and the explored region** (live path)
 
-**M14-007 — The memory map is not modelled, so CanDriveIdealDistanceForward always allows the drive** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs:256`
-* effect: the robot drives towards a face into an obstacle it should have known about
-* rests on: deferred
-* best authority: the engine memory map
-* outstanding: the memory map structure and the query
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs`
+* effect: the map holds obstacles but no edges and no explored region, so a query that would be blocked by an unexplored edge is answered clear, and the behaviours that look for edges have nothing to look at
+* rests on: the obstacle content is implemented (M14-007); the vision-derived content is not
+* best authority: MapComponent::AddVisionOverheadEdges 0x0067F814, ProcessVisionOverheadEdges 0x0067F7AC, MapComponent::UpdateRobotPose 0x0067E224, MapComponent::FlagGroundPlaneROIInterestingEdgesAsUncertain 0x0067E50C and QuadTreeProcessor::FillBorder 0x00689FAC, none of them read yet
+* evidence: The types are known and in place: InterestingEdge (9) and NotInterestingEdge (10) both block a drive in the mask at 0x00C67962, and BehaviorVisitInterestingEdge and BehaviorLookInPlaceMemoryMap are built on them.; What produces them is not: MapComponent::AddVisionOverheadEdges 0x0067F814 takes an OverheadEdgeFrame from the vision system, which this stack's vision front end does not produce (see M11-005), and MapComponent::UpdateRobotPose 0x0067E224 is what lays down the cleared ground the robot has driven over.
+* outstanding: the overhead-edge frames and the explored-region update, instruction by instruction
 
 ## Still to build: every IMPLEMENTATION_GAP
 

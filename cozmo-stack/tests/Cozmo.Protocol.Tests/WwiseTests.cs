@@ -425,8 +425,7 @@ public class WwiseTests
         {
             foreach (var m in lib.Resolve(id).Media)
             {
-                // stereo ADPCM is refused by design; see WwiseAdpcm
-                if (m.Media is not { Codec: WwiseCodec.Adpcm, Channels: 1 } media) continue;
+                if (m.Media is not { Codec: WwiseCodec.Adpcm } media) continue;
                 var bytes = lib.ReadMedia(m.MediaId, out _);
                 if (bytes is null) continue;
                 var pcm = WwiseAdpcm.Decode(WwiseMedia.Parse(bytes));
@@ -438,6 +437,50 @@ public class WwiseTests
         }
         Assert.True(decoded > 100, $"only {decoded} ADPCM files were decoded");
         Assert.Equal(0, clippedFiles);
+    }
+
+    /// <summary>
+    /// The stereo ADPCM block is two mono blocks side by side. The header says 54000 bytes per second at
+    /// 48000 Hz with a 72-byte block: 750 blocks a second, 64 samples per channel in each, which is what
+    /// one 36-byte half holds. Read that way every per-channel header carries a step index inside the
+    /// table, and the decode stays off the rails; read as two headers followed by one run of nibbles, a
+    /// quarter of the indices are out of range.
+    /// </summary>
+    [Fact]
+    public void TheStereoAdpcmBlockIsTwoMonoBlocksSideBySide()
+    {
+        var dirs = SoundDirs();
+        if (dirs is null) return;
+        using var lib = WwiseSoundLibrary.Load(dirs);
+        if (lib.MediaFileCount == 0) return;
+
+        var seen = new HashSet<uint>();
+        int files = 0;
+        foreach (var id in lib.EventIds)
+            foreach (var m in lib.Resolve(id).Media)
+            {
+                if (m.Media is not { Codec: WwiseCodec.Adpcm, Channels: 2 } media || !seen.Add(m.MediaId)) continue;
+                var bytes = lib.ReadMedia(m.MediaId, out _);
+                if (bytes is null) continue;
+                var parsed = WwiseMedia.Parse(bytes);
+                Assert.Equal(72, parsed.BlockAlign);                       // two 36-byte halves
+                Assert.Equal(48000, parsed.SampleRate);
+                var pcm = WwiseAdpcm.Decode(parsed);
+                files++;
+                Assert.Equal(parsed.SampleCount, pcm.Length / 2);           // interleaved, both channels
+                // every per-channel step index is inside the table
+                var data = parsed.Data.Span;
+                for (int b = 0; b + 72 <= data.Length; b += 72)
+                {
+                    Assert.InRange(data[b + 2], 0, 88);
+                    Assert.InRange(data[b + 36 + 2], 0, 88);
+                }
+                // the decode stays off the rails: at most a handful of samples reach full scale
+                int pinned = 0;
+                foreach (var v in pcm) if (v is short.MaxValue or short.MinValue) pinned++;
+                Assert.True(pinned <= pcm.Length / 500, $"{m.MediaId}: {pinned} of {pcm.Length} samples pinned");
+            }
+        Assert.Equal(7, files);
     }
 
     /// <summary>

@@ -69,6 +69,8 @@ public sealed class FreeplayStack : IDisposable
         // the behaviours report needs actions themselves (IBehavior::NeedActionCompleted 0x005BE40C), so the
         // context carries both the manager and every shipped behaviour's own needsActionID
         ctx.Needs ??= needs;
+        // the memory map the face behaviour asks before driving in (MapComponent::GetCurrentMemoryMapHelper)
+        if (vision is not null) ctx.Map ??= new MemoryMap();
         ctx.NeedsActionIds ??= BehaviorNeedsActions.Load(obbRoot);
         var manager = new BehaviorManager(ctx);
         if (withReactions)
@@ -99,6 +101,9 @@ public sealed class FreeplayStack : IDisposable
     /// <summary>One tick with the inputs refreshed from the robot and the world.</summary>
     public FreeplayDecision Tick(double nowSec, double nowMs, CozmoRobot robot, VisionSystem? vision, ManipulationSystem? m)
     {
+        // the object content of the memory map follows the world model, as MapComponent's
+        // AddObservableObject / RemoveObservableObject keep it following BlockWorld
+        if (Context.Map is { } map && vision?.World is { } world) map.SyncFromWorld(world, robot.State.Latest?.Timestamp ?? 0);
         Freeplay.RefreshInputs(robot, vision, m, nowSec);
         return Freeplay.Tick(nowSec, nowMs);
     }
