@@ -65,7 +65,7 @@
       "name": "Camera, display and audio device layer",
       "milestone": "M3",
       "source_investigation_exhausted": false,
-      "implementation_fidelity_complete": false
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M4-control",
@@ -537,21 +537,24 @@
       "test": "DeviceTests"
     },
     {
-      "id": "M3-007",
       "subsystem": "M3-device",
-      "title": "The face encoder emits runs only; the engine also uses skip and repeat and has a raw fallback",
+      "title": "The face encoder is the engine's: skip, repeat, runs and the raw fallback",
       "location": "cozmo-stack/src/Cozmo.Robot/Display.cs",
-      "effect": "a face the engine would send in one frame is refused here, or sent larger than it needs to be",
-      "provenance": "a deliberate reduction, recorded in Display.cs, that has never been built out",
-      "authority": "CompressRLE 0x00581904 was read and its skip and repeat commands and its raw 1024-byte fallback above MAX_FACE_FRAME_SIZE are known; none of the three is implemented",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
       "evidence": [
-        "CompressRLE 0x00581904"
+        "FaceAnimationManager::CompressRLE 0x00581904 builds one 64-bit mask per column, bit r for canvas row r: the ^ 0x3F at 0x005819A0 is part of computing the two shift amounts, not a flip - row 0 lands on bit 0 (lsr of 0x80000000 by 31) and row 63 on bit 63",
+        "an empty column (0x00581B0A) counts the consecutive empty columns that follow under r5 + r3 <= 0x7E and r3 <= 0x3E and emits the count alone, command 00, advancing by count + 1",
+        "a column equal to the one before (0x00581A0A) counts the same way and emits 0x40 | (count - 1) at 0x00581B54, where the adds r0, #0xff is the minus one",
+        "otherwise it walks the mask two bits at a time and emits 0x7C + 4 * length or'd with the pair and with 0x80 (0x00581A6C), which is exactly 0x80 | (length-1) << 2 for 1..16 and 0xC0 | (length-17) << 2 for 17..32",
+        "a trailing blank run is dropped unless the next column is both non-empty and different (0x00581ABC..0x00581AE2), which is what lets the following skip or repeat do the column advance",
+        "above 1024 bytes the RLE is thrown away and the raw 1024-byte mask buffer is sent instead (size >> 10 non-zero at 0x00581B7E, then a resize to 0x400 and a byte copy)",
+        "the decoder here had two flags where one will do, and had the skip command consult the wrong one; the 28 sequences Cozmo itself produced decode identically either way, and a column ending on a drawn run followed by an empty column is the case that tells them apart"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "the skip and repeat commands and the raw fallback have to be written; nothing more has to be read first",
-      "hardware_required": false,
+      "prior": "runs only, every column padded to 32 rows, no skip, no repeat, and an image whose RLE was too big refused instead of sent raw",
       "live_path": true,
-      "test": "DeviceTests"
+      "test": "DeviceTests.AFaceTooComplexForTheRunLengthEncodingIsSentRaw, DeviceTests.UniformFacesUseTheSkipAndRepeatCommands",
+      "id": "M3-007"
     },
     {
       "id": "M3-008",
@@ -571,21 +574,19 @@
       "test": null
     },
     {
-      "id": "M3-009",
       "subsystem": "M3-device",
-      "title": "Blank face encoded as two skip-64 commands",
+      "title": "A blank face is two skip-64 commands",
       "location": "cozmo-stack/src/Cozmo.Robot/Display.cs",
-      "effect": "a blank face is sent as something the robot may not accept",
-      "provenance": "plausible and decodes to blank; not executed against the engine encoder",
-      "authority": "CompressRLE 0x00581904 on an empty image",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
       "evidence": [
-        "CompressRLE 0x00581904"
+        "running the engine's own rule on an empty image gives it: the skip loop's bounds are r5 + r3 <= 0x7E and r3 <= 0x3E, so the first command covers columns 0..63 and the second 64..127, each emitted as the byte 63",
+        "the encoder here now produces exactly { 63, 63 } and the decoder brings back a blank image"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the encoder was read but not run on an empty image to confirm the two bytes",
-      "hardware_required": false,
+      "prior": "plausible and decoding to blank, but never produced by an encoder that had the skip command",
       "live_path": true,
-      "test": null
+      "test": "DeviceTests.UniformFacesUseTheSkipAndRepeatCommands",
+      "id": "M3-009"
     },
     {
       "id": "M3-010",
@@ -645,19 +646,25 @@
       "test": "DeviceTests"
     },
     {
-      "id": "M3-014",
       "subsystem": "M3-device",
       "title": "Audio frames are sent reliably",
-      "location": "cozmo-stack/src/Cozmo.Robot/Audio.cs",
-      "effect": "audio frames are retransmitted under loss, adding latency, or are dropped",
-      "provenance": "an assumption that the engine sends everything reliable",
-      "authority": "AnimationStreamer::SendBufferedMessages, which was not read",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "whether the audio path is reliable or unreliable in the engine",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+      "effect": null,
+      "provenance": "AnimationStreamer::SendBufferedMessages 0x0057BF60 and UpdateAmountToSend 0x0057C6F0",
+      "authority": "AnimationStreamer::SendBufferedMessages, read",
+      "evidence": [
+        "SendBufferedMessages 0x0057BF60 walks the streamer's buffered EngineToRobot messages and for each one reads the tag and masks it: and r0, r0, #0xfe; cmp r0, #0x8e (0x0057BF8C) sets r5 = 1 for an audio frame, which is animAudioSample 0x8E or animAudioSilence 0x8F.",
+        "It then calls Robot::SendMessage(EngineToRobot const&, bool reliable, bool hot) with movs r2, #1 and movs r3, #0 at 0x0057BFA6, for the audio frames and for everything else alike - so audio is reliable and not hot, and nothing in the streamer sends anything unreliably.",
+        "What varies is the amount, not the reliability: the streamer holds a byte budget at +0x98 and an audio-frame budget at +0x9C, stops when the next message is over the byte budget (cmp r4, r1; bhi) or the audio budget has no room (cmp r0, r5; blt), and decrements both by what it sent (0x0057BFB0..0x0057BFB8).",
+        "UpdateAmountToSend 0x0057C6F0 refills them from four counters the robot reports at Robot+0x238: bytes played, bytes streamed, audio frames played, audio frames streamed. The byte budget is min(8192 - (streamed - played), 30000) - add.w r5, r0, #0x2000 then movw r0, #0x7530 and the lt select at 0x0057C79C - and the audio budget is 14 - (streamed - played), add.w r1, r1, #0xe, each clamped at zero; a negative byte budget logs the warning AnimationStreamer.UpdateAmountToSend.NegativeMinBytesFreeInRobot with \"minBytesFree:%d numBytesStreamed:%d numBytesPlayed:%d\".",
+        "CozmoRobot.AudioReliable therefore defaults to true because that is what the engine does. The switch itself is this stack's own addition for a lossy link, documented as such."
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "DeviceTests.AudioFramesGoOutReliablyAsTheStreamerSendsThem",
+      "id": "M3-014"
     },
     {
       "id": "M3-015",
@@ -2151,68 +2158,79 @@
       "test": "DerivedStateTests"
     },
     {
-      "id": "M10-006",
       "subsystem": "M10-derived",
-      "title": "The unexpected-movement detector is gated on direct drive",
-      "location": "cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs:47",
-      "effect": "the detector fires, or fails to fire, during commanded motion",
-      "provenance": "inferred as to which locks the engine tests; the skip itself is native",
-      "authority": "MovementComponent::CheckForUnexpectedMovement 0x0063E398 and the lock it reads",
+      "title": "The unexpected-movement check runs only while the body track is locked",
+      "location": "cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
       "evidence": [
-        "MovementComponent::CheckForUnexpectedMovement 0x0063E398"
+        "the loop at 0x0063E3C0 is MovementComponent::AreAnyTracksLocked(4) inlined: the same array at MovementComponent+0x30, eight entries of twelve bytes, a track locked when its first word is non-zero, walked with a mask that starts at 4 and shifts right - compare AreAnyTracksLocked 0x0063EF88, which is the same loop",
+        "when that track's word is zero the function RETURNS (cbz at 0x0063E3D0), so an unlocked body means no check; mask 4 is the body track, as the M7 keep-alive established",
+        "the gate applies only while the robot's flag at Robot+0x248 is set (0x0063E3BA); with it clear the loop is skipped and the check runs whatever owns the body. That flag was not traced to its writer",
+        "MovementComponent::DirectDriveCheckSpeedAndLockTracks, the symbol next to AreAnyTracksLocked, is one of the things that takes the lock, so direct drive turns the check ON rather than off"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "which track locks the engine tests before skipping the check",
-      "hardware_required": false,
+      "prior": "a Suspended flag stood in for the locks and switched the check off while a caller drove the wheels, which is the opposite of what the engine does",
       "live_path": true,
-      "test": null
+      "test": "DerivedStateTests.TheCheckOnlyRunsWhileTheBodyTrackIsLocked",
+      "id": "M10-006"
     },
     {
-      "id": "M10-007",
       "subsystem": "M10-derived",
-      "title": "The pose rewind after unexpected movement is not reproduced",
-      "location": "cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs:66",
-      "effect": "the robot pose is not corrected back to the start timestamp, so later odometry is off",
-      "provenance": "deferred",
-      "authority": "MovementComponent::CheckForUnexpectedMovement 0x0063E398 continues into the rewind",
-      "evidence": [
-        "MovementComponent::CheckForUnexpectedMovement 0x0063E398"
-      ],
+      "title": "What the engine does after unexpected movement: a history lookup, an obstacle and a new pose",
+      "location": "cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs",
       "status": "RECOVERABLE_GAP",
-      "unresolved": "the rewind itself, which is in the same function that was read for the detector",
+      "effect": "the robot keeps the pose it drifted to, and nothing is left in the world where it was blocked",
+      "provenance": "nothing: this stack raises the event and stops there",
+      "authority": "MovementComponent::CheckForUnexpectedMovement 0x0063E398 continues past the event, and the shape of what it does is read now",
+      "evidence": [
+        "on the event it checks BehaviorManager::IsReactionTriggerEnabled(0x14) (0x0063E60A) and does nothing further when that trigger is off",
+        "it asks RobotStateHistory::ComputeStateAt(startTimestamp, ...) 0x0063E63E for the robot's state at the tick the disagreement began - the timestamp it stored at +0x94 - and warns \"Could not get robot pose at t=%u\" when it cannot",
+        "it divides the accumulated wheel speeds at +0x98 and +0x9C by the count at +0xA0 to get mean left and right speeds (0x0063E6C0, 0x0063E6CE)",
+        "it takes MarkerlessObject::GetSizeByType(0x10) and adds 5 mm to its first component (0x0063E6BC..0x0063E6D4), then picks one of four offsets from the robot's own footprint - +22.1 ahead, -55.9 behind, +/-27.1 to the sides, with a +/-pi/2 rotation about Z for the two turned-in-place cases - and a name for each",
+        "it ends with Robot::SetNewPose (0x0063E87E), having copied the robot's current rotation over the constructed pose's (the 32-byte loop at 0x0063E868, the transform's translation living at +0x20)",
+        "the three UnexpectedMovementType values are read: TURNED_BUT_STOPPED, TURNED_IN_SAME_DIRECTION, TURNED_IN_OPPOSITE_DIRECTION"
+      ],
+      "unresolved": "the exact composition of the four offset poses and which of them SetNewPose finally receives; the reading above is of the branches, not yet of the arithmetic that assembles them",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "DerivedStateTests",
+      "id": "M10-007"
     },
     {
-      "id": "M10-008",
       "subsystem": "M10-derived",
-      "title": "Resume-last mechanics after a reaction",
+      "title": "Resume-last: what the engine parks, and what it does before it resumes",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs",
-      "effect": "the behaviour that was interrupted does or does not come back",
-      "provenance": "inferred structure",
-      "authority": "the engine behaviour manager resume path",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "whether the engine resumes the interrupted behaviour, and under what conditions",
-      "hardware_required": false,
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "BehaviorManager::CheckReactionTriggerStrategies 0x005A3550 walks the strategies, and on a trigger calls MovementComponent::StopAllMotors, unlocks every track when one is held under the three flags at MovementComponent+0xB8..+0xBA with +0xD4 set, and then BehaviorManager::SwitchToReactionTrigger",
+        "SwitchToReactionTrigger 0x005A25E4 asks the strategy's own virtual at vtable+8 - which the map's genericStrategyParams.shouldResumeLast sets - and only when it answers true carries the running behaviour into the resume slot at manager+0x1C, with the trigger at +0x10 of that slot",
+        "BehaviorManager::TryToResumeBehavior 0x005A2B40 first restores the head and lift: it skips that when the saved head angle at manager+8 is FLT_MAX or the action list is not empty, logs \"Resuming behavior and don't have an action, so setting head angle %f, lift height %f\", and builds a MoveHeadToAngleAction with a 0.0349066 rad tolerance",
+        "it then calls StopAndNullifyCurrentBehavior and IBehavior::Resume(behavior, savedTrigger) 0x005BCEAC, which dispatches the virtual ResumeInternal; a non-zero result logs \"Tried to resume behavior '%s', but failed. Clearing current behavior\" and leaves nothing running",
+        "where the engine writes the saved head angle and lift was not traced; capturing them as the reaction interrupts is the only moment that makes the restore mean anything and is what this stack does"
+      ],
+      "prior": "the stack resumed on shouldResumeLast but put nothing back and treated a behaviour that would not run as a no-op rather than as an empty manager",
       "live_path": true,
-      "test": "BehaviorHardeningTests"
+      "test": "DerivedStateTests.AParkedBehaviourThatWillNotRunLeavesTheManagerEmpty",
+      "id": "M10-008"
     },
     {
-      "id": "M10-009",
       "subsystem": "M10-derived",
-      "title": "The obstacle-detected flag has a local source",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs:45",
-      "effect": "ReactToObstacle runs at the wrong times",
-      "provenance": "a local hook: true while an obstacle stop is pending",
-      "authority": "StrategyObstacleDetected in libcozmoEngine.so and whatever writes the flag it reads",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "what sets the engine obstacle-detected flag",
-      "hardware_required": false,
+      "title": "Nothing in this build ever raises the obstacle-detected flag",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "StrategyObstacleDetected 0x006141F8 is a StrategyGeneric whose predicate is the three-instruction function object at 0x006143CA: return *(bool*)(*(void**)(robot + 0x264) + 4)",
+        "Robot+0x264 is the AIComponent: Robot::Delocalize calls AIComponent::OnRobotDelocalized on it at 0x00510D72",
+        "AIComponent+4 is a plain bool the constructor zeroes at 0x00569A80, and that store is the only byte written at +4 anywhere in AIComponent code",
+        "no wide strb to +4 exists in the binary outside MemoryMapData_ProxObstacle's constructor, and no function that fetches the component from Robot+0x264 writes a byte at its +4 within forty-five instructions of doing so",
+        "so the strategy never becomes true, and ReactToObstacle - listed by hiking, nothingToDo, playAlone and socialize, with reactToObstacle.json giving it this strategy - never runs"
+      ],
+      "prior": "a local hook stood in for the flag, true while an obstacle stop was pending, which made ReactToObstacle run at times the app never would",
       "live_path": true,
-      "test": "FreeplayTests"
+      "test": "DerivedStateTests.NothingRaisesTheObstacleStrategyByItself",
+      "id": "M10-009"
     },
     {
       "id": "M11-001",

@@ -7,10 +7,10 @@ Manifest of **203 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 123 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 128 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 40 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 2 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 36 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 1 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -26,14 +26,14 @@ remains after both, and they do not go away by working harder on this repository
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | M1-transport — UDP transport and reliability | 15 | 0 | 0 | 0 | 0 | yes | yes |
 | M2-protocol — CLAD messages and protocol helpers | 6 | 0 | 0 | 0 | 0 | yes | yes |
-| M3-device — Camera, display and audio device layer | 17 | 6 | 1 | 0 | 1 | no | no |
+| M3-device — Camera, display and audio device layer | 17 | 5 | 0 | 0 | 1 | no | yes |
 | M4-control — Motion, sensors, lights and cubes | 9 | 4 | 0 | 0 | 0 | no | yes |
 | M5-animation — Animation clips, scheduler and face | 20 | 4 | 0 | 0 | 0 | no | yes |
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 1 | 0 | 0 | 0 | no | yes |
 | M7-behaviour — Idle, mood and reactions | 16 | 0 | 0 | 0 | 0 | yes | yes |
 | M8-framework — Behaviour framework and scoring | 10 | 6 | 0 | 0 | 0 | no | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
-| M10-derived — Derived robot state and reaction strategies | 9 | 4 | 0 | 0 | 0 | no | yes |
+| M10-derived — Derived robot state and reaction strategies | 9 | 1 | 0 | 0 | 0 | no | yes |
 | M11-vision — Markers, camera geometry and BlockWorld | 16 | 1 | 0 | 1 | 0 | no | yes |
 | M12-manipulation — Docking, carrying and pre-action poses | 16 | 0 | 0 | 0 | 0 | yes | yes |
 | M13-navigation — Planning, charger and block configurations | 12 | 0 | 0 | 0 | 0 | yes | yes |
@@ -80,15 +80,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * rests on: a choice of this stack
 * best authority: the engine image queue
 * outstanding: the engine queue depth and drop rule
-
-**M3-009 — Blank face encoded as two skip-64 commands** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Display.cs`
-* effect: a blank face is sent as something the robot may not accept
-* rests on: plausible and decodes to blank; not executed against the engine encoder
-* best authority: CompressRLE 0x00581904 on an empty image
-* evidence: CompressRLE 0x00581904
-* outstanding: the encoder was read but not run on an empty image to confirm the two bytes
 
 **M3-014 — Audio frames are sent reliably** (live path)
 
@@ -236,39 +227,14 @@ Each of these is a question the original can answer and nobody has asked it yet.
 
 ### M10-derived — Derived robot state and reaction strategies
 
-**M10-006 — The unexpected-movement detector is gated on direct drive** (live path)
+**M10-007 — What the engine does after unexpected movement: a history lookup, an obstacle and a new pose** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs:47`
-* effect: the detector fires, or fails to fire, during commanded motion
-* rests on: inferred as to which locks the engine tests; the skip itself is native
-* best authority: MovementComponent::CheckForUnexpectedMovement 0x0063E398 and the lock it reads
-* evidence: MovementComponent::CheckForUnexpectedMovement 0x0063E398
-* outstanding: which track locks the engine tests before skipping the check
-
-**M10-007 — The pose rewind after unexpected movement is not reproduced** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs:66`
-* effect: the robot pose is not corrected back to the start timestamp, so later odometry is off
-* rests on: deferred
-* best authority: MovementComponent::CheckForUnexpectedMovement 0x0063E398 continues into the rewind
-* evidence: MovementComponent::CheckForUnexpectedMovement 0x0063E398
-* outstanding: the rewind itself, which is in the same function that was read for the detector
-
-**M10-008 — Resume-last mechanics after a reaction** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs`
-* effect: the behaviour that was interrupted does or does not come back
-* rests on: inferred structure
-* best authority: the engine behaviour manager resume path
-* outstanding: whether the engine resumes the interrupted behaviour, and under what conditions
-
-**M10-009 — The obstacle-detected flag has a local source** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs:45`
-* effect: ReactToObstacle runs at the wrong times
-* rests on: a local hook: true while an obstacle stop is pending
-* best authority: StrategyObstacleDetected in libcozmoEngine.so and whatever writes the flag it reads
-* outstanding: what sets the engine obstacle-detected flag
+* where: `cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs`
+* effect: the robot keeps the pose it drifted to, and nothing is left in the world where it was blocked
+* rests on: nothing: this stack raises the event and stops there
+* best authority: MovementComponent::CheckForUnexpectedMovement 0x0063E398 continues past the event, and the shape of what it does is read now
+* evidence: on the event it checks BehaviorManager::IsReactionTriggerEnabled(0x14) (0x0063E60A) and does nothing further when that trigger is off; it asks RobotStateHistory::ComputeStateAt(startTimestamp, ...) 0x0063E63E for the robot's state at the tick the disagreement began - the timestamp it stored at +0x94 - and warns "Could not get robot pose at t=%u" when it cannot; it divides the accumulated wheel speeds at +0x98 and +0x9C by the count at +0xA0 to get mean left and right speeds (0x0063E6C0, 0x0063E6CE); it takes MarkerlessObject::GetSizeByType(0x10) and adds 5 mm to its first component (0x0063E6BC..0x0063E6D4), then picks one of four offsets from the robot's own footprint - +22.1 ahead, -55.9 behind, +/-27.1 to the sides, with a +/-pi/2 rotation about Z for the two turned-in-place cases - and a name for each; it ends with Robot::SetNewPose (0x0063E87E), having copied the robot's current rotation over the constructed pose's (the 32-byte loop at 0x0063E868, the transform's translation living at +0x20); the three UnexpectedMovementType values are read: TURNED_BUT_STOPPED, TURNED_IN_SAME_DIRECTION, TURNED_IN_OPPOSITE_DIRECTION
+* outstanding: the exact composition of the four offset poses and which of them SetNewPose finally receives; the reading above is of the branches, not yet of the arithmetic that assembles them
 
 ### M11-vision — Markers, camera geometry and BlockWorld
 
@@ -406,17 +372,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 ## Still to build: every IMPLEMENTATION_GAP
 
 Each of these is a question already answered. The original's behaviour is established and this stack knowingly does something else, so the work outstanding is writing it, not reading.
-
-### M3-device — Camera, display and audio device layer
-
-**M3-007 — The face encoder emits runs only; the engine also uses skip and repeat and has a raw fallback** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Display.cs`
-* effect: a face the engine would send in one frame is refused here, or sent larger than it needs to be
-* rests on: a deliberate reduction, recorded in Display.cs, that has never been built out
-* best authority: CompressRLE 0x00581904 was read and its skip and repeat commands and its raw 1024-byte fallback above MAX_FACE_FRAME_SIZE are known; none of the three is implemented
-* evidence: CompressRLE 0x00581904
-* outstanding: the skip and repeat commands and the raw fallback have to be written; nothing more has to be read first
 
 ### M9-wwise-music — Wwise music, the MIDI sampler and singing
 

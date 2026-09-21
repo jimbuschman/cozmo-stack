@@ -164,10 +164,27 @@ public sealed class CozmoRobot : IDisposable
     public event Action<RobotMessage>? Message;
 
     /// <summary>
-    /// Whether audio frames are sent reliably. Reliable delivery is the engine's default, but the robot
-    /// accepts only strictly in-order reliable messages, so a single lost datagram stalls everything behind
-    /// it until the retransmit lands. For a real-time stream a dropped frame is a click, while a stall is a
-    /// gap, so this can be turned off to trade one for the other.
+    /// Whether audio frames are sent reliably. True is what the engine does, and it is not a default that
+    /// happens to cover audio: <c>AnimationStreamer::SendBufferedMessages</c> 0x0057BF60 singles audio out
+    /// for its own budget and still sends it reliably. Per message it reads the tag, and
+    /// <c>(tag &amp; 0xFE) == 0x8E</c> - <c>animAudioSample</c> 0x8E or <c>animAudioSilence</c> 0x8F - makes it
+    /// an audio frame (0x0057BF8C); it then calls <c>Robot::SendMessage(msg, reliable, hot)</c> with
+    /// <c>r2 = 1</c> and <c>r3 = 0</c> (0x0057BFA6), so reliable and not hot, for audio and non-audio alike.
+    ///
+    /// What the engine varies instead is how much it sends, against what the robot has reported playing.
+    /// <c>AnimationStreamer::UpdateAmountToSend</c> 0x0057C6F0 reads four counters from <c>Robot+0x238</c>:
+    /// bytes played, bytes streamed, audio frames played, audio frames streamed. The byte budget is
+    /// <c>min(8192 - (streamed - played), 30000)</c>, warned about and clamped to zero if it goes negative
+    /// ("NegativeMinBytesFreeInRobot", "minBytesFree:%d numBytesStreamed:%d numBytesPlayed:%d"), and the
+    /// audio budget is <c>14 - (streamed - played)</c>, clamped the same way (0x0057C794..0x0057C7AC).
+    /// <c>SendBufferedMessages</c> stops as soon as the next message is over the byte budget or the audio
+    /// budget has no room, and decrements both by what it sent.
+    ///
+    /// This stack paces on the animation clock rather than on those counters, so the switch stays: the
+    /// robot accepts only strictly in-order reliable messages, and a single lost datagram stalls everything
+    /// behind it until the retransmit lands. For a real-time stream a dropped frame is a click while a
+    /// stall is a gap, so this can be turned off to trade one for the other. The engine would never turn
+    /// it off.
     /// </summary>
     public bool AudioReliable { get; set; } = true;
 

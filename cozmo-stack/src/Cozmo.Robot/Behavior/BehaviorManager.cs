@@ -172,6 +172,12 @@ public sealed class BehaviorManager : IDisposable
                 var interruptedBehavior = _current;
                 if (_current is not null) StopCurrentLocked(BehaviorStopReason.Interrupted, nowSec);   // clears any parked resume
                 _resumeAfterReaction = willResume ? interruptedBehavior : null;
+                // TryToResumeBehavior 0x005A2B40 puts the head and lift back before it resumes, from a
+                // pair it holds at manager+8 and +0xC and skips when the head is FLT_MAX. Where the
+                // engine writes that pair was not traced; capturing it as the reaction interrupts is the
+                // only moment that makes the restore mean anything, so that is when it is taken here.
+                _resumeHeadRad = willResume ? _context.Robot.State.HeadAngleRad : null;
+                _resumeLiftMm = willResume ? _context.Robot.Sensors.LiftHeightMm : null;
                 scope = new BehaviorScope(_context.Arbiter);
                 _current = reg.Behavior;
                 _scope = scope;
@@ -327,28 +333,48 @@ public sealed class BehaviorManager : IDisposable
         if (current.Update(_context, nowMs)) return;
 
         IBehavior? resume;
+        float? headRad, liftMm;
         lock (_gate)
         {
             resume = _resumeAfterReaction;
+            headRad = _resumeHeadRad;
+            liftMm = _resumeLiftMm;
             _resumeAfterReaction = null;
+            _resumeHeadRad = null;
+            _resumeLiftMm = null;
             StopCurrentLocked(BehaviorStopReason.Completed, nowSec);
         }
-        // The engine's "resume last": a reaction whose map entry says shouldResumeLast restarts the
-        // behaviour it interrupted, if that behaviour still wants to run.
-        if (resume is not null && resume.IsRunnable(_context))
+        // The engine's "resume last". BehaviorManager::SwitchToReactionTrigger 0x005A25E4 asks the
+        // strategy's own virtual (vtable+8, which the map's shouldResumeLast sets) and, when it says so,
+        // carries the running behaviour into the resume slot. BehaviorManager::TryToResumeBehavior
+        // 0x005A2B40 then puts the head and lift back - a MoveHeadToAngleAction with a 2 degree
+        // tolerance, but only while the action list is empty - and calls IBehavior::Resume(trigger),
+        // clearing the behaviour when that fails ("Tried to resume behavior '%s', but failed. Clearing
+        // current behavior").
+        if (resume is null) return;
+        if (headRad is { } h) _ = _context.Robot.Motion.SetHeadAngleAsync(h, requireCalibration: false);
+        if (liftMm is { } l) _ = _context.Robot.Motion.SetLiftHeightAsync(l, requireCalibration: false);
+
+        if (!resume.IsRunnable(_context))
         {
-            BehaviorScope scope;
-            lock (_gate)
-            {
-                scope = new BehaviorScope(_context.Arbiter);
-                _current = resume;
-                _scope = scope;
-                _startedSec = nowSec;
-            }
-            _ = resume.StartAsync(_context, scope, CancellationToken.None);
-            Selected?.Invoke(new BehaviorSelection(resume.Id, "resumed after the reaction"));
+            Selected?.Invoke(new BehaviorSelection(resume.Id, "tried to resume, but it would not run"));
+            return;
         }
+        BehaviorScope resumeScope;
+        lock (_gate)
+        {
+            resumeScope = new BehaviorScope(_context.Arbiter);
+            _current = resume;
+            _scope = resumeScope;
+            _startedSec = nowSec;
+        }
+        _ = resume.StartAsync(_context, resumeScope, CancellationToken.None);
+        Selected?.Invoke(new BehaviorSelection(resume.Id, "resumed after the reaction"));
     }
+
+    /// <summary>The head angle and lift height to put back when the parked behaviour resumes.</summary>
+    private float? _resumeHeadRad;
+    private float? _resumeLiftMm;
 
     /// <summary>The engine's FinishCurrentBehavior.</summary>
     public void Stop(BehaviorStopReason reason, double nowSec)

@@ -40,9 +40,20 @@ public sealed class BehaviorContext
     public MoodState? Mood { get; init; }
     public Random Random { get; init; } = new();
     /// <summary>
-    /// The engine's <c>StrategyObstacleDetected</c> (0x006141F8) is a wants-to-run strategy built from a robot
-    /// component flag (its lambda 0x006143CA reads one byte off a <c>Robot</c> member); which component sets it
-    /// was not traced. This hook stands in: true while an obstacle stop is pending (LOCAL hook, INFERRED trigger).
+    /// The engine's <c>StrategyObstacleDetected</c> (0x006141F8) is a <c>StrategyGeneric</c> whose
+    /// predicate is three instructions long (0x006143CA):
+    /// <c>return *(bool*)(*(void**)(robot + 0x264) + 4)</c>. Robot+0x264 is the <c>AIComponent</c>
+    /// (<c>Robot::Delocalize</c> calls <c>AIComponent::OnRobotDelocalized</c> on it at 0x00510D72), and
+    /// its +4 is a plain bool that the component's constructor zeroes at 0x00569A80.
+    ///
+    /// <b>Nothing in this build ever sets it.</b> The constructor's store is the only byte written at +4
+    /// anywhere inside AIComponent code, no wide <c>strb</c> to +4 exists outside
+    /// <c>MemoryMapData_ProxObstacle</c>, and no function that fetches the component from Robot+0x264
+    /// writes a byte at its +4 within forty-five instructions of doing so. So
+    /// <c>ReactToObstacle</c> - which four freeplay activities list, and whose shipped
+    /// <c>reactToObstacle.json</c> gives it this strategy - never runs.
+    ///
+    /// The hook stays for a caller that wants to raise it deliberately; nothing in this stack does.
     /// </summary>
     public Func<bool>? ObstacleDetected { get; set; }
 

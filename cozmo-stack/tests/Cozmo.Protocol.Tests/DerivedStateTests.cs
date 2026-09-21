@@ -329,6 +329,44 @@ public class DerivedStateTests
     /// A turn in place (wheels opposing) with no gyro rotation counts one per state; the eleventh state
     /// crosses the threshold of 10 and the side is the one the left wheel's direction implies.
     /// </summary>
+    /// <summary>
+    /// The engine only looks for unexpected movement while something owns the wheels. The loop at
+    /// 0x0063E3C0 is <c>AreAnyTracksLocked(4)</c> inlined and <em>returns</em> when the body track's word
+    /// is zero (0x0063E3D0), so an unlocked body means no check at all. This stack had the opposite: a
+    /// Suspended flag that switched the check off while a caller drove.
+    /// </summary>
+    /// <summary>
+    /// <c>StrategyObstacleDetected</c>'s predicate is three instructions - one byte off the AIComponent
+    /// at Robot+0x264 - and nothing in the build ever writes that byte. So ReactToObstacle, which four
+    /// freeplay activities list, never runs, and this stack must not invent a source for it.
+    /// </summary>
+    [Fact]
+    public void NothingRaisesTheObstacleStrategyByItself()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap() };
+        Assert.Null(ctx.ObstacleDetected);
+        Assert.False(ctx.ObstacleDetected?.Invoke() ?? false);
+    }
+
+    [Fact]
+    public void TheCheckOnlyRunsWhileTheBodyTrackIsLocked()
+    {
+        var d = new UnexpectedMovementDetector { TrackGateApplies = true };
+        for (uint i = 0; i < 12; i++) Assert.Null(d.Update(State(100 + i * 33, left: -50, right: 50)));
+        Assert.Equal(0, d.Count);                       // nothing owns the body, so nothing was counted
+
+        d.BodyTrackLocked = true;
+        for (uint i = 0; i < 10; i++) Assert.Null(d.Update(State(600 + i * 33, left: -50, right: 50)));
+        Assert.Equal(10, d.Count);
+        Assert.NotNull(d.Update(State(1000, left: -50, right: 50)));
+
+        // and with the robot-level flag clear the gate does not apply at all
+        var open = new UnexpectedMovementDetector();
+        for (uint i = 0; i < 10; i++) open.Update(State(100 + i * 33, left: -50, right: 50));
+        Assert.Equal(10, open.Count);
+    }
+
     [Fact]
     public void ATurnThatDoesNotTurnIsDetectedAfterElevenStates()
     {
@@ -739,7 +777,8 @@ public class DerivedStateTests
         public string Class => "test";
         public int Starts, Stops;
         public bool Running;
-        public bool IsRunnable(BehaviorContext c) => true;
+        public bool Runnable = true;
+        public bool IsRunnable(BehaviorContext c) => Runnable;
         public double EvaluateScore(BehaviorContext c) => 1;
         public Task StartAsync(BehaviorContext c, BehaviorScope s, CancellationToken t) { Starts++; Running = true; return Task.CompletedTask; }
         public bool Update(BehaviorContext c, double nowMs) => Running;
@@ -779,6 +818,41 @@ public class DerivedStateTests
         Assert.Same(idle, manager.Current);
         Assert.Equal(2, idle.Starts);
         Assert.Null(manager.CurrentReactionTrigger);
+
+        // TryToResumeBehavior 0x005A2B40 puts the head and lift back before it resumes. The offline
+        // robot reports no head angle or lift height, so nothing is sent; what is asserted here is that
+        // the resume happened and the parked pair was cleared with it.
+        Assert.Null(manager.CheckReactions(5));
+    }
+
+    /// <summary>
+    /// A behaviour that no longer wants to run is not resumed, and the manager is left with nothing
+    /// running rather than with it: the engine's TryToResumeBehavior clears the current behaviour when
+    /// Resume fails ("Tried to resume behavior '%s', but failed. Clearing current behavior").
+    /// </summary>
+    [Fact]
+    public void AParkedBehaviourThatWillNotRunLeavesTheManagerEmpty()
+    {
+        using var rig = new Rig();
+        var arbiter = new BehaviorArbiter { AutonomyEnabled = true };
+        var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap(), Arbiter = arbiter };
+        var manager = new BehaviorManager(ctx);
+        var idle = new CountingBehavior("Idle");
+        manager.Add(idle);
+        var strategy = new FakeStrategy(ReactionTrigger.UnexpectedMovement);
+        var reaction = new CountingBehavior("ReactToUnexpectedMovement");
+        manager.AddReaction(strategy, reaction, resumeLast: true);
+
+        manager.ChooseAndSwitch(0);
+        strategy.Fire = true;
+        Assert.NotNull(manager.CheckReactions(2));
+        strategy.Fire = false;
+
+        idle.Runnable = false;                       // it will not run when asked again
+        reaction.Running = false;
+        manager.Update(4000, 4);
+        Assert.Null(manager.Current);
+        Assert.Equal(1, idle.Starts);
     }
 
     [Fact]

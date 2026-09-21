@@ -101,12 +101,33 @@ public sealed class FaceBitmap
 /// </summary>
 public static class FaceBitmapCodec
 {
-    /// <summary>Decodes a payload back into an image. Used to round-trip-test the encoder.</summary>
+    /// <summary>
+    /// Decodes a payload back into an image. Used to round-trip-test the encoder.
+    ///
+    /// A payload of exactly <see cref="RawFrameSize"/> bytes is the raw column-mask buffer, not an RLE
+    /// stream: <c>CompressRLE</c> emits its RLE only while it is under that size (<c>size >> 10</c> zero
+    /// at 0x00581B7E), so nothing else can be exactly 1024 bytes long and the length is the only
+    /// discriminator either side has.
+    /// </summary>
     public static FaceBitmap Decode(ReadOnlySpan<byte> buffer)
     {
         var img = new FaceBitmap();
+        if (buffer.Length == RawFrameSize)
+        {
+            for (int col = 0; col < FaceBitmap.Width; col++)
+                for (int row = 0; row < FaceBitmap.Height; row++)
+                    if ((buffer[col * 8 + row / 8] & (1 << (row % 8))) != 0) img[col, row] = 1;
+            return img;
+        }
         int x = 0, y = 0;
-        bool lastDraw = false, repeatShift = false;
+        // Whether the column the runs were filling is finished: a run that reached the bottom advanced x
+        // itself, and nothing else has. Both the skip and the repeat command have to move past an
+        // unfinished column, which is what makes the encoder's dropped trailing blank run work - and
+        // dropping it is exactly what CompressRLE does (0x00581ABC). PyCozmo's transcription kept two
+        // flags here and had the skip command consult the wrong one; the 28 sequences Cozmo itself
+        // produced decode identically either way, and a column that ends on a drawn run followed by an
+        // empty column is the case that tells them apart.
+        bool columnFinished = true;
         foreach (var b in buffer)
         {
             int cmd = (b & 0xC0) >> 6, cnt = b & 0x3F;
@@ -114,19 +135,19 @@ public static class FaceBitmapCodec
             {
                 case 0:
                     cnt += 1;
-                    if (lastDraw) x++;
-                    x += cnt; y = 0; lastDraw = false; repeatShift = false;
+                    if (!columnFinished) x++;
+                    x += cnt; y = 0; columnFinished = true;
                     break;
                 case 1:
                     cnt += 1;
-                    if (!repeatShift) x++;
+                    if (!columnFinished) x++;
                     for (int i = 0; i < cnt; i++)
                     {
                         for (int row = 0; row < FaceBitmap.Height; row++)
                             if (x < FaceBitmap.Width && x > 0) img[x, row] = img[x - 1, row];
                         x++;
                     }
-                    y = 0; lastDraw = false; repeatShift = true;
+                    y = 0; columnFinished = true;
                     break;
                 default:
                     bool draw = (cnt & 1) != 0;
@@ -138,9 +159,8 @@ public static class FaceBitmapCodec
                     if (draw)
                         for (int i = 0; i < cnt; i++) { if (y < FaceBitmap.Height) img[x, y] = 1; y++; }
                     else y += cnt;
-                    if (y > FaceBitmap.Height - 1) { repeatShift = true; x++; y -= FaceBitmap.Height; }
-                    else repeatShift = false;
-                    lastDraw = cmd == 2;
+                    if (y > FaceBitmap.Height - 1) { columnFinished = true; x++; y -= FaceBitmap.Height; }
+                    else columnFinished = false;
                     break;
             }
             if (x >= FaceBitmap.Width) break;
@@ -149,52 +169,111 @@ public static class FaceBitmapCodec
     }
 
     /// <summary>
-    /// Encodes an image into the robot's format.
+    /// Encodes an image into the robot's format, as <c>FaceAnimationManager::CompressRLE</c> 0x00581904
+    /// does.
     ///
-    /// Only the two run commands are used, and every column emits runs summing to exactly 32 rows, so the
-    /// decoder advances to the next column on its own. The skip-column and repeat-column commands are
-    /// deliberately avoided: their interaction with the decoder's "last draw" and "repeat shift" state is
-    /// position-dependent, and the saving (a blank image is 128 bytes instead of 2) is irrelevant next to
-    /// the 1420-byte message limit. The result is exact for every possible image.
+    /// The engine builds one 64-bit mask per column of its 128 x 64 canvas, bit <c>r</c> for canvas row
+    /// <c>r</c> (the <c>^ 0x3F</c> at 0x005819A0 is part of computing the two shift amounts, not a flip:
+    /// row 0 lands on bit 0 and row 63 on bit 63). Then, column by column:
     ///
-    /// This is a local choice, and it differs from the engine's encoder in three ways that are recorded
-    /// here rather than reproduced. <c>FaceAnimationManager::CompressRLE</c> at 0x00581904 in
-    /// libcozmoEngine.so works from its 128 x 64 canvas: it builds one 64-bit mask per column (bit r = row
-    /// r), emits a skip command for a run of empty columns and a repeat command for a run of columns equal
-    /// to the previous one, and otherwise walks the mask two rows at a time so that each robot pixel is a
-    /// pair of canvas rows and the two draw bits <c>dd</c> of a run command are those two rows' pixels.
-    /// Because the engine blanks alternate canvas rows before compressing, only one of the two bits is
-    /// ever set in a pair, and which one alternates with <c>_firstScanLine</c>. The robot's decoder as
-    /// PyCozmo recovered it lights the pixel for either bit, which is the reading this encoder relies on;
-    /// whether the firmware also uses the bit position to choose a physical OLED row is not established.
-    /// Finally, when the RLE output exceeds <c>MAX_FACE_FRAME_SIZE</c> (1024, from the engine's
-    /// AnimConstants) the engine sends the raw 1024-byte column-mask buffer instead; this encoder refuses
-    /// such images rather than sending a raw frame it has never seen the robot accept.
+    /// <list type="bullet">
+    /// <item><b>An empty column</b> (0x00581B0A) counts the consecutive empty columns that follow, capped
+    /// so the run ends by column 127 and its count fits six bits, and emits the count alone - command
+    /// 00, whose decoder adds one.</item>
+    /// <item><b>A column equal to the one before it</b> (0x00581A0A) counts the following identical
+    /// columns the same way and emits <c>0x40 | (count - 1)</c> - command 01 (0x00581B54, where the
+    /// <c>adds r0, #0xff</c> is the minus one).</item>
+    /// <item><b>Otherwise</b> it walks the mask two bits at a time - one robot pixel per pair of canvas
+    /// rows - and runs of equal pairs become <c>0x7C + 4 * length</c> or'd with the pair and with 0x80
+    /// (0x00581A6C). That arithmetic is the two run commands: length 1..16 gives 0x80 | (length-1) &lt;&lt; 2,
+    /// and length 17..32 gives 0xC0 | (length-17) &lt;&lt; 2, both with the pair in the low two bits.</item>
+    /// <item><b>A trailing blank run is dropped</b> unless the next column is both non-empty and
+    /// different from this one (0x00581ABC..0x00581AE2). That is what lets the following skip or repeat
+    /// command do the column advance, which is exactly what the decoder's "last draw" bookkeeping
+    /// expects.</item>
+    /// <item><b>Above 1024 bytes the whole thing is thrown away</b> and the raw 1024-byte mask buffer is
+    /// sent instead (0x00581B76): <c>size >> 10</c> non-zero, then a resize to 0x400 and a byte copy.</item>
+    /// </list>
+    ///
+    /// Two things about the pair bits are worth stating. The engine blanks alternate canvas rows before
+    /// compressing, so only one of a pair is ever set and which one alternates with
+    /// <c>_firstScanLine</c>; this encoder always uses the low bit. The robot's decoder as PyCozmo
+    /// recovered it lights the pixel for either bit, which is the reading this relies on; whether the
+    /// firmware also uses the bit position to choose a physical OLED row is not established.
     /// </summary>
     public static byte[] Encode(FaceBitmap image)
     {
-        var outBuf = new List<byte>(256);
+        // one mask per column, bit r for row r
+        var mask = new uint[FaceBitmap.Width];
         for (int x = 0; x < FaceBitmap.Width; x++)
         {
-            int y = 0;
-            while (y < FaceBitmap.Height)
+            uint m = 0;
+            for (int y = 0; y < FaceBitmap.Height; y++) if (image[x, y] != 0) m |= 1u << y;
+            mask[x] = m;
+        }
+
+        var outBuf = new List<byte>(256);
+        for (int x = 0; x < FaceBitmap.Width; )
+        {
+            if (mask[x] == 0)
             {
-                byte color = image[x, y];
-                int run = 1;
-                while (y + run < FaceBitmap.Height && image[x, y + run] == color) run++;
-                y += run;
-                bool draw = color != 0;
-                bool endsColumn = y == FaceBitmap.Height;
-                // Cozmo's own encoder sets both draw bits on the run that finishes a column; the decoder
-                // treats either bit as "draw", so this only keeps our output shaped like the robot's.
-                int bits = draw ? (endsColumn ? 0x03 : 0x01) : 0x00;
-                outBuf.Add(run <= 16
-                    ? (byte)(0x80 | ((run - 1) << 2) | bits)
-                    : (byte)(0xC0 | ((run - 17) << 2) | bits));
+                int more = 0;
+                while (x + more <= MaxColumnRun && more <= MaxRunCount && x + more + 1 < FaceBitmap.Width
+                       && mask[x + more + 1] == 0) more++;
+                outBuf.Add((byte)more);                       // command 00: skip more + 1 columns
+                x += more + 1;
+                continue;
             }
+            if (x > 0 && mask[x] == mask[x - 1])
+            {
+                int more = 0;
+                while (x + more <= MaxColumnRun && more <= MaxRunCount && x + more + 1 < FaceBitmap.Width
+                       && mask[x + more + 1] == mask[x]) more++;
+                outBuf.Add((byte)(0x40 | (more & 0x3F)));     // command 01: repeat more + 1 columns
+                x += more + 1;
+                continue;
+            }
+
+            uint bits = mask[x];
+            int value = -1, run = 0;
+            for (int pair = 0; pair < FaceBitmap.Height; pair++)
+            {
+                int v = (int)(bits & 1);                      // one robot row is one canvas pair
+                bits >>= 1;
+                if (v == value) { run++; continue; }
+                if (run >= 1) outBuf.Add(RunByte(run, value));
+                run = 1;
+                value = v;
+            }
+            // the last run: a blank one is dropped unless the next column is non-empty and different
+            bool nextDiffers = x + 1 < FaceBitmap.Width && mask[x + 1] != 0 && mask[x + 1] != mask[x];
+            if (value != 0 || x + 1 >= FaceBitmap.Width || nextDiffers) outBuf.Add(RunByte(run, value));
+            x++;
+        }
+
+        if (outBuf.Count >= RawFrameSize)
+        {
+            // the engine gives up on the RLE and sends the mask buffer itself
+            var raw = new byte[RawFrameSize];
+            for (int x = 0; x < FaceBitmap.Width; x++)
+                for (int b = 0; b < 8; b++)
+                    raw[x * 8 + b] = b < 4 ? (byte)(mask[x] >> (8 * b)) : (byte)0;
+            return raw;
         }
         return outBuf.ToArray();
     }
+
+    /// <summary>0x7C + 4 * length, or'd with the pair and with 0x80 (0x00581A6C).</summary>
+    private static byte RunByte(int length, int value) => (byte)((0x7C + (length << 2)) | value | 0x80);
+
+    /// <summary>The highest column a skip or repeat run may reach: the <c>cmp r2, #0x7e</c> bound.</summary>
+    public const int MaxColumnRun = 0x7E;
+
+    /// <summary>The highest count a skip or repeat may carry: the <c>cmp r3, #0x3e</c> bound.</summary>
+    public const int MaxRunCount = 0x3E;
+
+    /// <summary>1024 bytes: the size at which the engine sends the raw mask buffer instead (0x00581B76).</summary>
+    public const int RawFrameSize = 0x400;
 }
 
 /// <summary>

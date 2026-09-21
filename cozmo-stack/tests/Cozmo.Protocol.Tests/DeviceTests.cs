@@ -442,16 +442,24 @@ public class DeviceTests
         Assert.Equal(TransportOptions.EngineDefaults.MaxFramePayloadBytes, msg.ToBytes().Length);
     }
 
+    /// <summary>
+    /// Per-pixel noise needs 32 run commands per column, far more than the RLE can carry - and that is
+    /// exactly when <c>CompressRLE</c> throws its own output away and sends the raw 1024-byte column-mask
+    /// buffer instead (0x00581B76). This stack used to refuse such an image.
+    /// </summary>
     [Fact]
-    public void AFaceTooComplexToEncodeIsRejectedRatherThanTruncated()
+    public void AFaceTooComplexForTheRunLengthEncodingIsSentRaw()
     {
-        // Per-pixel noise needs 32 run commands per column, which no single message can carry. Real faces
-        // are nothing like this, but the display must say so instead of sending a partial image.
         var noise = (FaceBitmap)FaceBitmaps().First(r => (string)r[0] == "noise")[1];
-        Assert.True(FaceBitmapCodec.Encode(noise).Length > CozmoDisplay.DefaultMaxPayload);
-        var display = new CozmoDisplay(_ => { });
-        var ex = Assert.Throws<ArgumentException>(() => display.Show(noise));
-        Assert.Contains("too complex", ex.Message);
+        var payload = FaceBitmapCodec.Encode(noise);
+        Assert.Equal(FaceBitmapCodec.RawFrameSize, payload.Length);
+        Assert.True(payload.Length <= CozmoDisplay.DefaultMaxPayload);
+        Assert.Equal(noise.ToText(), FaceBitmapCodec.Decode(payload).ToText());
+
+        var sent = new List<RobotMessage>();
+        var display = new CozmoDisplay(sent.Add);
+        display.Show(noise);
+        Assert.Single(sent);
     }
 
     /// <summary>
@@ -501,18 +509,23 @@ public class DeviceTests
         Assert.Equal(art + "\n", FaceBitmapCodec.Decode(FaceBitmapCodec.Encode(img)).ToText());
     }
 
+    /// <summary>
+    /// A uniform image is skip and repeat commands, not 128 run bytes. The blank one is the two skip-64
+    /// commands the record predicted (M3-009), now produced by running the engine's own rule: the count
+    /// is bounded by <c>r5 + r3 &lt;= 0x7E</c> and <c>r3 &lt;= 0x3E</c>, which is 64 columns each time.
+    /// </summary>
     [Fact]
-    public void UniformFacesEncodeAsOneFullColumnRunEach()
+    public void UniformFacesUseTheSkipAndRepeatCommands()
     {
-        // Every column is one 32-pixel run, so a uniform image is 128 identical bytes.
         var blank = FaceBitmapCodec.Encode(new FaceBitmap());
-        Assert.Equal(FaceBitmap.Width, blank.Length);
-        Assert.All(blank, b => Assert.Equal(0xFC, b));      // extended run, length 32, both draw bits clear
+        Assert.Equal(new byte[] { 63, 63 }, blank);                 // skip 64, skip 64
+        Assert.Equal(new FaceBitmap().ToText(), FaceBitmapCodec.Decode(blank).ToText());
 
         var full = new FaceBitmap(); full.Fill();
         var solid = FaceBitmapCodec.Encode(full);
-        Assert.Equal(FaceBitmap.Width, solid.Length);
-        Assert.All(solid, b => Assert.Equal(0xFF, b));      // the same run with both draw bits set
+        Assert.Equal(0xFD, solid[0]);                               // one 32-pixel drawn run
+        Assert.All(solid.Skip(1), b => Assert.Equal(0x40, b & 0xC0));   // then repeats
+        Assert.Equal(full.ToText(), FaceBitmapCodec.Decode(solid).ToText());
     }
 
     [Fact]
@@ -873,5 +886,57 @@ public class DeviceTests
         foreach (var m in Replay("hw_fw2457_first120.log")) state.Handle(m);
         Assert.Equal(state.StateCount, events);
         Assert.True(events > 10);
+    }
+
+    /// <summary>
+    /// The engine sends audio reliably, and not by accident of a default.
+    /// <c>AnimationStreamer::SendBufferedMessages</c> 0x0057BF60 looks at each buffered message's tag and
+    /// treats <c>(tag &amp; 0xFE) == 0x8E</c> - animAudioSample 0x8E and animAudioSilence 0x8F - as an audio
+    /// frame for its own budget, then calls <c>Robot::SendMessage(msg, reliable, hot)</c> with r2 = 1 and
+    /// r3 = 0 (0x0057BFA6) for that message and every other one. So both audio tags go out reliable and
+    /// not hot, and the mask is the engine's own test for what counts as audio.
+    /// </summary>
+    [Fact]
+    public void AudioFramesGoOutReliablyAsTheStreamerSendsThem()
+    {
+        Assert.Equal(0x8E, (byte)RobotMessageId.AnimAudioSample);
+        Assert.Equal(0x8F, (byte)RobotMessageId.AnimAudioSilence);
+        Assert.Equal(0x8E, (byte)RobotMessageId.AnimAudioSample & 0xFE);
+        Assert.Equal(0x8E, (byte)RobotMessageId.AnimAudioSilence & 0xFE);
+
+        using var robot = CozmoRobot.CreateOffline();
+        Assert.True(robot.AudioReliable);                  // the engine has no switch; true is what it does
+        robot.Audio.SendFrame(CozmoAudio.ToFrames(new short[CozmoAudio.SamplesPerFrame])[0]);
+        robot.Audio.SendSilence();
+        for (int i = 0; i < 10; i++) { Thread.Sleep(3); robot.Transport.OfflineTick(); }
+
+        var audio = robot.Transport.OfflineOutbound
+            .SelectMany(f => f.Messages)
+            .Where(m => m.Payload.Length > 0 && (m.Payload[0] & 0xFE) == 0x8E)
+            .ToList();
+        Assert.NotEmpty(audio);
+        Assert.All(audio, m => Assert.Equal(ReliableMessageType.SingleReliableMessage, m.Type));
+        Assert.Contains(audio, m => m.Payload[0] == (byte)RobotMessageId.AnimAudioSample);
+        Assert.Contains(audio, m => m.Payload[0] == (byte)RobotMessageId.AnimAudioSilence);
+    }
+
+    /// <summary>
+    /// The unreliable audio switch is this stack's own, for a lossy link where a click beats a stall; it is
+    /// not something the engine does. It is tested only so that turning it on really does change the wire.
+    /// </summary>
+    [Fact]
+    public void TurningTheAudioSwitchOffSendsTheFramesUnreliably()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        robot.AudioReliable = false;
+        robot.Audio.SendSilence();
+        for (int i = 0; i < 10; i++) { Thread.Sleep(3); robot.Transport.OfflineTick(); }
+
+        var audio = robot.Transport.OfflineOutbound
+            .SelectMany(f => f.Messages)
+            .Where(m => m.Payload.Length > 0 && (m.Payload[0] & 0xFE) == 0x8E)
+            .ToList();
+        Assert.NotEmpty(audio);
+        Assert.All(audio, m => Assert.Equal(ReliableMessageType.SingleUnreliableMessage, m.Type));
     }
 }
