@@ -138,7 +138,12 @@ public sealed record WwiseSwitchNode(uint Id, string Bank, WwiseNodeParams Param
 public sealed record WwiseActorMixerNode(uint Id, string Bank, WwiseNodeParams Params, IReadOnlyList<uint> Children)
     : WwiseNode(Id, WwiseObjectType.ActorMixer, Bank, Params, Children);
 
-public sealed record WwiseBlendNode(uint Id, string Bank, WwiseNodeParams Params, IReadOnlyList<uint> Children)
+/// <summary>
+/// A blend container. <see cref="BlendTracks"/> is how many blend tracks it groups its children into: a
+/// track carries a crossfade RTPC and a curve per child, so a container with tracks does not simply play
+/// all of its children at their own level. Not one of the six in the shipped banks has any.
+/// </summary>
+public sealed record WwiseBlendNode(uint Id, string Bank, WwiseNodeParams Params, IReadOnlyList<uint> Children, int BlendTracks)
     : WwiseNode(Id, WwiseObjectType.BlendContainer, Bank, Params, Children);
 
 /// <summary>
@@ -428,6 +433,10 @@ public static class WwiseHierarchy
         uint id = r.U32();
         var p = ReadNodeParams(ref r);
         var kids = ReadChildren(ref r);
+        // Blend tracks. Every one of the six blend containers in every shipped bank has none, so nothing a
+        // crossfade curve would do is lost by reading past them: a blend container here always plays all of
+        // its children at the level their own properties give (checked by
+        // WwiseMusicTests.NoBlendContainerInAnyShippedBankHasABlendTrack).
         uint layers = r.U32();
         for (uint i = 0; i < layers; i++)
         {
@@ -441,7 +450,7 @@ public static class WwiseHierarchy
             }
         }
         r.U8();                                                 // bIsContinuousValidation
-        return new WwiseBlendNode(id, o.Bank, p, kids);
+        return new WwiseBlendNode(id, o.Bank, p, kids, (int)layers);
     }
 
     private static WwiseMusicSegmentNode ReadSegment(ref Reader r, WwiseObject o)

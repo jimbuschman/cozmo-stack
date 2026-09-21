@@ -7,9 +7,9 @@ Manifest of **195 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 77 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 79 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 18 | The native behaviour is known from primary source; this stack reaches the same observable effect by a different mechanism, and the record names the difference. |
-| RECOVERABLE_GAP | 70 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. Blocks source-completeness on a live path. |
+| RECOVERABLE_GAP | 68 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. Blocks source-completeness on a live path. |
 | COMPATIBILITY_POLICY | 19 | A deliberate choice of this stack on a path that does not claim to be the engine's: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -28,7 +28,7 @@ A subsystem is source-complete when nothing on its normal live execution path is
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 0 | yes |
 | M7-behaviour — Idle, mood and reactions | 15 | 4 | no |
 | M8-framework — Behaviour framework and scoring | 10 | 5 | no |
-| M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 2 | no |
+| M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | yes |
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 16 | 9 | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 12 | 7 | no |
@@ -283,26 +283,6 @@ A subsystem is source-complete when nothing on its normal live execution path is
 * rests on: deferred; the scheduler has no per-play track mask
 * best authority: MovementComponent::LockTracks in libcozmoEngine.so
 * unresolved: the mask the engine applies per play and where it is released
-
-### M9-wwise-music — Wwise music, the MIDI sampler and singing
-
-**M9-017 — The cube-shake input to the vibrato is never measured** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/SingingBehavior.cs`
-* effect: the vibrato parameter is always 0
-* rests on: M4 receives cube movement reports, not the accelerometer stream the engine averages
-* best authority: BehaviorSinging::UpdateInternal 0x005EF0C8 reads a per-cube rolling average fed by a ShakeListener
-* evidence: BehaviorSinging::InitInternal 0x005EEB30 ShakeListener registration
-* unresolved: which cube message carries the value the ShakeListener averages, and its scale; the listener was not disassembled
-
-**M9-019 — Blend container layers and their crossfade curves are skipped** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHierarchy.cs`
-* effect: a blend container whose children are crossfaded by an RTPC plays all of them at full level
-* rests on: the layer block is walked to keep the object consuming exactly, and discarded
-* best authority: the shipped bank carries each layer crossfade RTPC and per-child curve
-* evidence: WwiseHierarchy.ReadBlend
-* unresolved: whether any blend container on a robot path has layers at all; the three singing blends were read and have none, the other three were not checked
 
 ### M10-derived — Derived robot state and reaction strategies
 

@@ -153,6 +153,8 @@ public sealed class CozmoRobot : IDisposable
     public CozmoSensors Sensors { get; }
     /// <summary>Light cube discovery, connection state and basic telemetry.</summary>
     public CozmoCubes Cubes { get; }
+    /// <summary>Cube accelerometer streams and the shake listeners on them.</summary>
+    public CubeAccelStreams CubeAccel { get; }
     /// <summary>Cozmo's own animation clips and groups, on one deterministic timeline.</summary>
     public CozmoAnimations Animations { get; }
     /// <summary>The procedural face: nineteen parameters per eye, and named expressions.</summary>
@@ -185,6 +187,7 @@ public sealed class CozmoRobot : IDisposable
         Lights = new CozmoLights(this);
         Sensors = new CozmoSensors(this, State);
         Cubes = new CozmoCubes(this);
+        CubeAccel = new CubeAccelStreams(this);
         Animations = new CozmoAnimations(this);
         Face = new CozmoFace(this);
         Transport.DataReceived += OnData;
@@ -409,6 +412,7 @@ public sealed class CozmoRobot : IDisposable
         Camera.Handle(m);
         Sensors.Handle(m);
         Cubes.Handle(m);
+        CubeAccel.Handle(m);
         Message?.Invoke(m);
     }
 }

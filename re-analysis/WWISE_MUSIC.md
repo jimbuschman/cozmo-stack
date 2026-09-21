@@ -1,9 +1,31 @@
 # M9 — Wwise switch-state audio: Cozmo sings
 
-Status: **COMPLETE OFFLINE (2026-09-19); hardware acceptance PENDING.** Every one of the 39 shipped Singing
-behaviours resolves through the banks to a song, renders to sound, and runs through the M8 framework the
-way the engine's `BehaviorSinging` runs it. What is offline-verified and what still needs a robot are kept
-apart in §"What is verified, and how" below; the robot run is item A of `HARDWARE_TEST_PLAN.md`.
+Status: **source-complete offline as of the 2026-09-20 fidelity pass**, in the sense the fidelity gate
+defines: nothing on M9's live execution path is a RECOVERABLE_GAP. What is left is named, and named as
+what it is — three things that live in the Wwise runtime, which does not ship in this package, and one
+that only a recording of the stock app singing can settle. The authoritative list is
+[`fidelity_manifest.json`](fidelity_manifest.json), rendered as [`FIDELITY_GAPS.md`](FIDELITY_GAPS.md).
+Hardware acceptance is still pending; the robot run is item A of `HARDWARE_TEST_PLAN.md`.
+
+> **What the 2026-09-20 pass changed, and why the document below is not what it was.** The pass found one
+> fault that made every rendered song unlistenable and several claims that were wrong:
+>
+> * **A sung note played its whole recording.** Every recording under the note-on layer is a sustained
+>   vowel of 4.2 to 7.4 seconds that loops until stopped, and the notes in the songs are 125 ms to about a
+>   second. The renderer let a note play out a whole iteration after release, so a 187 ms note sounded for
+>   5.79 seconds, thirty of them overlapped, and the sum ran 13 dB over full scale. A note now sounds for
+>   as long as it is held; Aba Daba's raw peak went from 149572 to 36984.
+> * **The output stage was a local peak normalisation.** It is now the effect chain the robot's own bus
+>   carries, read from `Init.bnk` on the bus the engine's own registration table names - see section 6.
+> * **The modulators were not read at all.** They are now, and what they do is measured rather than
+>   guessed: the note-off envelope's whole authority over the level is one decibel, and the vibrato is
+>   silent until a cube is shaken because the shake drives its *depth*.
+> * **The cube shake was not measured.** It is now, from the cube accelerometer stream.
+> * **An event's Play target was flattened** to every Sound beneath it and the first that decoded was
+>   played. The get-in, which is a random of three two-note phrases each drawn from three takes, came out
+>   as one fixed syllable.
+> * **A claim that was simply wrong:** the master compressor is not on the robot's path. It is on
+>   `Cozmo_Robot_External`, the bus for the app's spoken text.
 
 This document has two parts: the chain as it was **recovered** (engine, decompiled enums, banks), and the
 rules this stack **applies** to that data, each with its provenance class. Authority order throughout:
@@ -118,39 +140,44 @@ The banks and their definition text files are read from inside `AudioAssets.zip`
 
 | rule | class | basis |
 | --- | --- | --- |
-| a note plays the MIDI target; a blend or actor-mixer plays all children; a random container plays one child by weight, not repeating the last (its avoid-repeat count); a sequence container plays its next item; a sound plays | CORROBORATED | Audiokinetic's public documentation of MIDI playback; the containers' own fields |
+| a note plays the MIDI target; a blend or actor-mixer plays all children; a random container plays one child by weight, not repeating the last; a sequence container plays its next item, or its whole playlist when its play mode is continuous; a sound plays | CORROBORATED | Audiokinetic's public documentation of MIDI playback; the containers' own fields, including the play-mode bit, which `WwisePlayback` reads the same way for an ordinary event play |
 | at each node the note is filtered by that node's key range (49/50) and velocity range (51/52) where set; a node without them passes everything | CORROBORATED | documentation; the shipped key containers carry min = max |
 | a node whose play-on property (46) is 2 plays at note-off; inherited down the tree, default note-on | CORROBORATED | documentation; the note-off layer's property |
-| `Loop = 0` loops while the note is held, then plays out its current iteration (break on note-off); no Loop property plays once; a finite count plays that many times | CORROBORATED | documentation; the blends' bit 5 (`bIsMidiBreakLoopOnNoteOff`) |
+| **a sound with `Loop = 0` sounds for exactly as long as the note is held**, looping if the note outlasts the recording; no Loop property plays once; a finite count plays that many times | **ASSET** | all 42 note-on recordings are 4.2–7.4 s sustained vowels carrying `Loop = 0`; all 42 note-off recordings are 0.34–0.65 s at −14 dB and play at note-off; the note layer carries the break-on-note-off bit; and every note in every shipped song is shorter than the shortest sustain recording. A release tail is only a release tail if the sustain it follows has stopped. `wwise --sampler` prints all three |
 | Volume (dB) and Pitch (cents) properties summed down the path, applied as gain and a resampling ratio | CORROBORATED | the property semantics are Wwise's; the values are the bank's |
-| MIDI note tracking off | INFERRED | no node in the target sets a root note; per-key containers cover one key each, so tracking would transpose recorded notes away from their pitch; the bit that would enable it sits on nodes whose parent does not override it |
-| velocity ignored | ASSET | nothing in the target binds an RTPC to velocity |
+| **every modulator bound to a node on the path is evaluated and mapped through that binding's curve onto the property it drives** | ASSET | `cozmo_singing_note_off` (381606890) → Volume on the note-on layer over 0 to **−1 dB**; `cozmo_singing_vibrato_lfo` (528935089, 5.5 Hz, 0.2 s attack) → Pitch on the MIDI target over 0 to **580 cents**, with its depth driven by the `cozmo_singing_vibrato` game parameter over 0 to 100 %. Neither target node sets the property its modulator drives, so no accumulation question arises. One decibel is the whole of the note-off envelope's authority over the level; at its shipped sustain level of 9.5 % it moves a note by 0.095 dB |
+| **MIDI note tracking is off** | ASSET | not from the absence of a root note, although none is set anywhere, but from the node bit vectors: across all six banks only 0x00, 0x01 and 0x24 occur, 0x01 sits on exactly the three nodes that set Priority, and 0x24 on exactly the two singing note layers, where both bits are needed for the note-off layer to sound and for a looping note to end. No bit is left |
+| velocity ignored | ASSET | nothing in the target binds an RTPC to velocity, and only one velocity layer of recordings ships (`*_Vel2_*`) |
 | a clip plays its source from BeginTrim for its length, starting at PlayAt + BeginTrim; a note still held at the clip's end is released there | CORROBORATED | documentation; every shipped clip has PlayAt 0, BeginTrim 0 |
-| the get-in branch (403781184) receives notes like any other child | INFERRED | uniform application of the rules above; under them it adds a recording only for keys its sequences reach, and nothing was special-cased to remove it. A runtime would settle whether Wwise excludes it |
-| **output stage**: when the raw sum exceeds full scale the whole render is scaled so its peak sits at full scale; raw peak and gain are reported | **LOCAL_POLICY** | the raw sum exceeds full scale on every song (raw peaks 100k–150k, about +10 to +13 dB); the robot's bus carries a peak limiter and a master compressor (`Init.txt` effects 3743559935, 2313011259) whose parameters this build does not read; this stands in for them and says so |
-| vibrato LFO (528935089) and note-off envelope (381606890) not applied | DEFERRED | modulator objects (types 21, 22) are read as raw property bundles only; their semantics were not settled, so nothing is guessed. Effect: notes sustain by looping with no release shaping, and cube shaking has no audible effect |
+| **output stage**: the effect chain the robot's own bus carries - see section 6 | ASSET settings, LOCAL arithmetic | the settings are `Init.bnk`'s and the routing is the engine's; the biquad and limiter formulas between them are standard, because the Wwise runtime does not ship |
+| **the get-in branch (403781184) receives notes like any other child of the MIDI target** | **BLOCKED_EXTERNAL** | it is a child of the target and carries no filter of its own, and four of the eighteen containers under it carry no key range either, so under the container rules a note reaches it: measured on Aba Daba, 41 extra voices on a 42-note song. Whether Wwise's MIDI dispatch really routes notes there is runtime behaviour and no Wwise runtime ships. Every render reports the voices each branch contributed, and `--without-branch get-in` renders the other reading so the two can be heard side by side. Only a recording of the stock app singing can settle it (manifest M9-013) |
 | switch state posted before the animations; get-in, tempo, get-out in order; vibrato formula | NATIVE | `BehaviorSinging` (§1) |
-| the vibrato *input* (cube shake) not measured | LOCAL_POLICY | the engine uses a streamed cube accelerometer this stack does not receive; `SingingBehavior.ShakeInput` is left for a caller and the value is reported in the acceptance record as not driven |
-| **the song is rendered whole, ahead of playback, on a worker** (`WwiseAudioSource.Prewarm`, started by `SingingBehavior` when it posts the switch) | LOCAL | Wwise streams a song; this stack renders it to PCM first. A 462 s sequence takes seconds to render, which on the scheduler thread stalled the animation timeline at the tempo clip's first audio frame; the prewarm runs during the get-in animation and `GetPcm` waits for an in-flight render rather than starting another (`PrewarmRendersOffTheStreamingPathAndGetPcmFindsIt`, `TheSingingStopEventEndsTheSongOnTheScheduler`) |
-| **the final-PCM cache freezes the renderer's random choices** (which of a note's three recordings plays) for the life of a source | LOCAL_POLICY | Wwise draws afresh on every play; this stack caches the rendered PCM per selected node, so a song sounds the same every time in one session (`TheMusicCacheFreezesTheRenderersRandomChoices`). Kept: re-rendering per play would put seconds of work back on the streaming path |
-| a Stop action (`Stop__Robot_VO__Cozmo_Singing_Stop`) ends the voices under its target; the scheduler ends the streaming song when the Stop's target is the song's Play target or an ancestor of it | CORROBORATED | Wwise action semantics; the hierarchy walk is the bank's parent chain (`WwiseAudioSource.IsStopEvent` / `StopAffects`) |
+| **the cube shake is measured** and posted as the game parameter | NATIVE | section 7 |
+| **the song is rendered whole, ahead of playback, on a worker** (`WwiseAudioSource.Prewarm`) | LOCAL | Wwise streams a song; this stack renders it to PCM first. A 462 s sequence takes seconds, which on the scheduler thread stalled the animation timeline; the prewarm runs during the get-in animation and `GetPcm` waits for an in-flight render rather than starting another. One consequence is that a song is rendered at the vibrato value in force when it starts, where Wwise would follow the parameter continuously |
+| **the final-PCM cache freezes the renderer's random choices** for the life of a music source | LOCAL_POLICY | Wwise draws afresh on every play; this stack caches the rendered PCM per selected node. Kept: re-rendering per play would put seconds of work back on the streaming path. **Ordinary (non-music) events are no longer cached this way** — only their decoded media are — so a voice line draws afresh each time, as Wwise does |
+| a Stop action ends the voices under its target; the scheduler ends the streaming song when the Stop's target is the song's Play target or an ancestor | CORROBORATED | Wwise action semantics; the hierarchy walk is the bank's parent chain |
 
-`WwiseAudioSource` implements `IAudioSwitchStates`: `SetSwitch(group, switch)` is what the behaviour calls,
-and `GetPcm` for an event whose Play target is music renders the plan under the current switches (cached
-by the node the tree selected). `SingingBehavior` is the M8 behaviour; `ShippedBehaviors.Singing(obb)`
-builds the 39 from their configs.
+`WwiseAudioSource` implements `IAudioSwitchStates`: `SetSwitch(group, switch)` and `SetParameter(id, value)`
+are what the behaviour calls, and `GetPcm` renders the plan under the current switches (music) or walks the
+containers under the Play target (everything else). `SingingBehavior` is the M8 behaviour;
+`ShippedBehaviors.Singing(obb)` builds the 39 from their configs.
 
 ## 4. What is verified, and how
 
 ### Offline-verified (tests and tools, run here)
 
-* All 3490 hierarchy objects consume exactly (`EveryHierarchyObjectInTheShippedBanksConsumesExactly`).
+* All 3604 hierarchy objects of fourteen types consume exactly, buses, effects and modulators included
+  (`EveryHierarchyObjectInTheShippedBanksConsumesExactly`). The fifteen buses are what settled the two
+  variable parts of a bus's layout, and the 89 effects carry the plug-in ids `PluginInfo.xml` lists.
 * All 39 behaviours resolve to their own song, one MIDI clip exactly one segment long
   (`EverySingingBehaviourResolvesToOneMidiSegment`); all 46 MIDI sources decode at 9600 ticks per beat and
   their clip durations follow the effective tempo (`SongMidiSources…`).
 * **Every one of the 39 songs renders**: full segment length, every note in the window sung (no note in
   any shipped song falls outside the voice's 48..61 range), a note-off per note, no clipping after the
-  output stage, deterministic for a seed (`EveryShippedSongRendersCompletely`, `AbaDabaRendersTo…`).
+  bus chain, deterministic for a seed (`EveryShippedSongRendersCompletely`, `AbaDabaRendersTo…`), and
+  every one leaves the chain between 30000 and 32000 of full scale with 2.5 to 7.3 dB of limiting
+  (`EverySongLeavesTheChainAtAboutTheSameLevel`) — which is the point of a bus limiter, and the thing the
+  local peak normalisation could not have got right.
   `wwise --validate-music --obb <dir>` renders the 39 plus every other music event: 82 render (the 39, the
   three tempo defaults, the 19 standalone songs, 26 Code Lab music pieces from Vorbis clips); the one that
   does not is `Play__Music__Play`, whose default path is a 1 s silent segment (the app's soundtrack, out of
@@ -176,22 +203,92 @@ builds the 39 from their configs.
   tails, level, the get-in branch). Only a stock-app recording would settle the CORROBORATED and INFERRED
   rows above; none is available.
 
-## 5. Not done, and deliberately so
+## 5. What is left, and what it is
 
-* The vibrato LFO, the note-off envelope, the bus limiter and compressor: their objects are read, their
-  parameters are not interpreted. Recorded above as DEFERRED / LOCAL_POLICY.
-* Cube-shake vibrato input: needs the cube accelerometer stream (M4 has movement reports only).
-* Music.bnk's real music (`Play__Music__Play`, a four-argument tree of 269 nodes keyed by the `music`
-  state group and `freeplay_mood` switch) resolves structurally and its Vorbis clips render; it is the
-  app's soundtrack, not the robot's, and is out of M9's scope.
-* `Play__Codelab__Music_Tiny_Orchestra_Init` fires nine Play actions; the plan takes the first.
+Nothing on M9's live path is a RECOVERABLE_GAP. What remains is of two kinds.
 
-## 6. Commands
+**In the Wwise runtime, which does not ship in this package.** Verified, not assumed: no `AkSoundEngine`,
+`CAk*`, `AkModulator` or `Wwise` string occurs in `libcozmoEngine.so`, `libunity.so` or `libmain.so`, and
+there is no separate Wwise library in the APK.
+
+* **M9-013, the get-in branch.** Whether Wwise's MIDI dispatch routes notes into a child of the MIDI target
+  that carries no filter of its own. Measured both ways; see section 3. This is the largest remaining doubt about
+  how a rendered song sounds.
+* **M9-024, modulator property 15.** Set on `cozmo_singing_note_off` and on no other of the eleven
+  modulators, reading 2. Both readings that fit the numbering agree on what a listener hears — the voice
+  ends when the note is released — which is what the renderer does.
+* **M9-025, the waveform an LFO draws.** Unreachable while the vibrato depth is 0, which it is unless a
+  cube is being shaken.
+* **M9-026, the coefficient formulas** inside the parametric EQ and the peak limiter. Their settings are
+  exact; the arithmetic between them is standard rather than Audiokinetic's.
+
+**Needs a robot, or a recording of one.**
+
+* **M9-023.** How the stock app actually sounded when it sang. No recording exists, and nothing offline can
+  stand in for one.
+
+**Out of scope, unchanged.** `Music.bnk`'s real music (`Play__Music__Play`, a four-argument tree of 269
+nodes keyed by the `music` state group and `freeplay_mood` switch) resolves structurally and its Vorbis
+clips render; it is the app's soundtrack, not the robot's.
+`Play__Codelab__Music_Tiny_Orchestra_Init` fires nine Play actions and the plan takes the first.
+
+## 6. The robot's bus chain
+
+What the robot hears is not what the sampler sums. `RobotAudioClient`'s constructor (0x005994A0) registers
+five robot audio buffers, each with a game object, an Anki Hijack plug-in index and a bus
+(0x0059962A..0x0059966A):
+
+| game object | plug-in | bus |
+| --- | --- | --- |
+| 7 | 1 | 2678428988 `Robot_Bus_1` |
+| 8 | 2 | 2678428991 `Robot_Bus_2` |
+| 9 | 3 | 2678428990 `Robot_Bus_3` |
+| 10 | 4 | 2678428985 `Robot_Bus_4` |
+| 6 | 0 | 0 — `Cozmo_OnDevice`, which plays on the phone |
+
+Each of those four buses carries the same three effects followed by its own Anki Hijack, and that hijack's
+one parameter is the same index the engine passed — so the bank and the binary agree on the routing from
+two directions. A singing behaviour posts on game object 7, so a song leaves through `Robot_Bus_1`:
+
+| effect | settings, from `Init.bnk` |
+| --- | --- |
+| `Robot_Bus_Eq_MasterCurve` | low shelf +2 dB at 835 Hz Q 2.1; peaking −2.5 dB at 1359 Hz Q 4.2; peaking −4 dB at 5091 Hz Q 1.5; output +1.5 dB |
+| `Robot_Bus_Eq_HiLowPass` | high pass 333 Hz Q 1; a peaking band at 1000 Hz switched off; low pass 14298 Hz Q 1 |
+| `Robot_Bus_Peak_Limiter` | threshold −1 dB, ratio 10.8, look-ahead 9 ms, release 41 ms |
+| `Anki Hijack (Custom)` | parameter 1: the tap that sends this bus to robot 1 |
+
+The low pass at 14298 Hz is above Nyquist for the robot's 22320 Hz, so it cannot act — reported as a note
+rather than applied at a frequency it cannot have, and it could not have acted in the engine either, which
+runs the same rate. `Cozmo_Voice_Master_Compressor` is **not** on this path: it is on
+`Cozmo_Robot_External`, the bus for the app's spoken text, and `Cozmo_Robot`, the bus the sampler's
+actor-mixer routes to, carries no effects at all.
+
+## 7. The cube shake
+
+`BehaviorSinging::InitInternal` puts a `ShakeListener` on every connected cube (0x005EECF4..0x005EED08)
+with **0.5, 2.5 and 3.9**, and `CubeAccelComponent::AddListener` (0x0063547E) turns that cube's
+accelerometer stream on by sending `StreamObjectAccel` (0x00635562). What arrives is `ObjectAccel` (0xF5,
+twenty bytes: timestamp, object id, three floats).
+
+* `HighPassFilterListener::UpdateInternal` (0x00636598), per axis: `y = a · (y + x − xPrevious)`, then
+  `xPrevious = x`. A constant decays away, so gravity is invisible to it.
+* `ShakeListener` (constructor 0x00636620, update 0x0063679E) squares both thresholds and compares them
+  against **x² + y² + z²** of the filtered value: the higher one to start shaking, the lower one to keep
+  it. The callback is handed that same squared magnitude, on every sample while the cube counts as
+  shaking.
+* `UpdateInternal` (0x005EF0C8) takes the largest of them, divides by 3000, clamps to 0..1 and smooths
+  half and half. So the vibrato saturates at a filtered magnitude of about 55, against a start threshold
+  of 3.9 — the effect is for shaking, not for handling.
+
+## 8. Commands
 
 ```
 dotnet run --project src/Cozmo.Conformance -- wwise <sound-dir> --hierarchy
+dotnet run --project src/Cozmo.Conformance -- wwise <sound-dir> --sampler
+dotnet run --project src/Cozmo.Conformance -- wwise <sound-dir> --event Play__Robot_VO__Singing_Getin_1
 dotnet run --project src/Cozmo.Conformance -- wwise <sound-dir> --music Play__Robot_VO__Cozmo_Singing_80bpm --switch Cozmo_Sings_80Bpm=Cozmo_Sings_Aba_Daba --midi
 dotnet run --project src/Cozmo.Conformance -- wwise <sound-dir> --render Play__Robot_VO__Cozmo_Singing_80bpm --switch Cozmo_Sings_80Bpm=Cozmo_Sings_Aba_Daba --wav aba.wav
+dotnet run --project src/Cozmo.Conformance -- wwise <sound-dir> --render Play__Robot_VO__Cozmo_Singing_80bpm --switch Cozmo_Sings_80Bpm=Cozmo_Sings_Aba_Daba --without-branch get-in --wav aba-no-getin.wav
 dotnet run --project src/Cozmo.Conformance -- wwise <sound-dir> --validate-music --obb <obb dir>
 dotnet run --project src/Cozmo.Conformance -- wwise <sound-dir> --coverage
 dotnet run --project src/Cozmo.Conformance -- sing 172.31.1.1 --obb <obb dir> --behavior Singing_AbaDaba --acceptance

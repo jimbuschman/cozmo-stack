@@ -69,8 +69,56 @@ public sealed class SingingBehavior : IBehavior
 
     /// <summary>The smoothed vibrato value, as the engine would post it. See <see cref="NextVibrato"/>.</summary>
     public float Vibrato { get; private set; }
-    /// <summary>The largest cube shake this tick, in the engine's units; a caller feeds it, nothing here measures it.</summary>
+    /// <summary>
+    /// The largest cube shake this tick, in the engine's units: the squared magnitude of the high-pass
+    /// filtered acceleration, which is what <c>ShakeListener</c> hands its callback. Fed by the listeners
+    /// this behaviour registers on every connected cube; a caller can still set it, which is how the
+    /// offline tests drive it.
+    /// </summary>
     public float ShakeInput { get; set; }
+
+    private readonly Dictionary<uint, (CubeShakeListener Listener, float Value)> _shake = new();
+
+    /// <summary>
+    /// One <c>ShakeListener</c> per connected cube, with the constants
+    /// <c>BehaviorSinging::InitInternal</c> passes (0x005EECF4..0x005EED08): filter coefficient 0.5, stop
+    /// threshold 2.5, start threshold 3.9. Each cube keeps its own last value and
+    /// <see cref="ShakeInput"/> is the largest of them, which is the "largest cube shake" UpdateInternal
+    /// takes the maximum of.
+    /// </summary>
+    private void StartListeningForShake(BehaviorContext context)
+    {
+        var robot = context.Robot;
+        foreach (var cube in robot.Cubes.ConnectedCubes)
+        {
+            if (cube.ObjectId is not { } id) continue;
+            var listener = new CubeShakeListener(
+                CubeShakeListener.SingingFilterCoefficient,
+                CubeShakeListener.SingingLowThreshold,
+                CubeShakeListener.SingingHighThreshold,
+                magnitudeSquared =>
+                {
+                    lock (_gate)
+                    {
+                        if (_shake.TryGetValue(id, out var entry)) _shake[id] = (entry.Listener, magnitudeSquared);
+                        ShakeInput = _shake.Values.Max(v => v.Value);
+                    }
+                });
+            lock (_gate) _shake[id] = (listener, 0f);
+            robot.CubeAccel.AddListener(id, listener);
+            Trace?.Invoke($"listening for shake on cube {id}");
+        }
+    }
+
+    /// <summary>Takes the listeners off again, which turns each cube's stream back off. StopInternal does the same.</summary>
+    private void StopListeningForShake()
+    {
+        if (_context is not { } context) return;
+        KeyValuePair<uint, (CubeShakeListener Listener, float Value)>[] entries;
+        lock (_gate) { entries = _shake.ToArray(); _shake.Clear(); }
+        foreach (var (id, entry) in entries) context.Robot.CubeAccel.RemoveListener(id, entry.Listener);
+        ShakeInput = 0;
+    }
 
     /// <summary>The clips played so far, in order, for tracing and tests.</summary>
     public IReadOnlyList<string> Steps { get { lock (_gate) return _steps.ToList(); } }
@@ -138,10 +186,15 @@ public sealed class SingingBehavior : IBehavior
         }
         else Trace?.Invoke("no switch-capable audio source is attached; the song cannot be selected and the tempo animation's audio event will not resolve");
 
-        // 2. reactions held off for the duration
+        // 2. a shake listener per connected cube, as InitInternal does between the switch and the
+        //    reaction lock: ShakeListener(0.5, 2.5, 3.9) on each, and adding the first turns that cube's
+        //    accelerometer stream on.
+        StartListeningForShake(context);
+
+        // 3. reactions held off for the duration
         scope.DisableReactions();
 
-        // 3. get-in, tempo, get-out
+        // 4. get-in, tempo, get-out
         StartStep(0);
         return Task.CompletedTask;
     }
@@ -237,6 +290,7 @@ public sealed class SingingBehavior : IBehavior
     {
         _stopped = true;
         _finished = true;
+        StopListeningForShake();                        // StopInternal removes the cube listeners
         Vibrato = 0;                                    // StopInternal posts the parameter back to 0
         if (_context is { } c) PostVibrato(c);
         PlayAnimBehavior.StopOwnAnimation(ref _animations, ref _generation, ref _owns, _gate);

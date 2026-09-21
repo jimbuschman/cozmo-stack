@@ -97,7 +97,7 @@
       "id": "M9-wwise-music",
       "name": "Wwise music, the MIDI sampler and singing",
       "milestone": "M9",
-      "source_complete": false
+      "source_complete": true
     },
     {
       "id": "M10-derived",
@@ -1852,19 +1852,19 @@
     {
       "id": "M9-017",
       "subsystem": "M9-wwise-music",
-      "title": "The cube-shake input to the vibrato is never measured",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SingingBehavior.cs",
-      "effect": "the vibrato parameter is always 0",
-      "provenance": "M4 receives cube movement reports, not the accelerometer stream the engine averages",
-      "authority": "BehaviorSinging::UpdateInternal 0x005EF0C8 reads a per-cube rolling average fed by a ShakeListener",
+      "title": "The cube shake that drives the vibrato is measured, from the cube accelerometer stream",
+      "location": "cozmo-stack/src/Cozmo.Robot/CubeAccel.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so, three functions and the message that feeds them",
       "evidence": [
-        "BehaviorSinging::InitInternal 0x005EEB30 ShakeListener registration"
+        "CubeAccelComponent::AddListener 0x0063547E sends StreamObjectAccel (0x08) to turn the cube stream on (0x00635562)",
+        "ObjectAccel (0xF5, 20 bytes: timestamp, object id, three floats) is the stream, already statically verified in the protocol",
+        "HighPassFilterListener::UpdateInternal 0x00636598: y = a (y + x - xPrevious) per axis, then xPrevious = x",
+        "ShakeListener 0x00636620 squares both thresholds, 0x0063679E compares x2+y2+z2 of the filtered value against the high threshold when idle and the low one while shaking, and hands the callback that same squared magnitude",
+        "BehaviorSinging::InitInternal 0x005EECF4..0x005EED08 builds one per connected cube with 0.5, 2.5 and 3.9"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "which cube message carries the value the ShakeListener averages, and its scale; the listener was not disassembled",
-      "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "CubeShakeTests.TheShakeListenerUsesSquaredMagnitudesAndHysteresis"
     },
     {
       "id": "M9-018",
@@ -1886,19 +1886,15 @@
     {
       "id": "M9-019",
       "subsystem": "M9-wwise-music",
-      "title": "Blend container layers and their crossfade curves are skipped",
+      "title": "No blend container in any shipped bank groups its children into blend tracks",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHierarchy.cs",
-      "effect": "a blend container whose children are crossfaded by an RTPC plays all of them at full level",
-      "provenance": "the layer block is walked to keep the object consuming exactly, and discarded",
-      "authority": "the shipped bank carries each layer crossfade RTPC and per-child curve",
+      "status": "EXACT_SOURCE",
+      "authority": "the shipped banks: all six blend containers, across all six banks, carry zero blend tracks, so nothing a crossfade curve would do is lost by walking past the block",
       "evidence": [
-        "WwiseHierarchy.ReadBlend"
+        "SFX.bnk 307257541 and Cozmo.bnk 110896138, 462443456, 774902407, 678614659, 186798366, all with a blend-track count of 0"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "whether any blend container on a robot path has layers at all; the three singing blends were read and have none, the other three were not checked",
-      "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "WwiseMusicTests.NoBlendContainerInAnyShippedBankHasABlendTrack"
     },
     {
       "id": "M9-020",

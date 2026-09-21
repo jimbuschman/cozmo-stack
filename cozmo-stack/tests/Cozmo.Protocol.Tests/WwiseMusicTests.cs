@@ -86,6 +86,27 @@ public class WwiseMusicTests
         Assert.Equal(expected.Count, report.Count);
     }
 
+    /// <summary>
+    /// A blend container can group its children into blend tracks, each crossfaded by an RTPC, and the
+    /// reader walks past that block without keeping it. Nothing is lost by that here: not one of the six
+    /// blend containers in any of the six shipped banks has a single blend track, so every blend container
+    /// plays all of its children at the level their own properties give. (Fidelity manifest M9-019.)
+    /// </summary>
+    [Fact]
+    public void NoBlendContainerInAnyShippedBankHasABlendTrack()
+    {
+        if (Library.Value is not { } lib) return;
+        int blends = 0;
+        foreach (uint id in lib.AllNodeIds)
+        {
+            if (lib.Node(id) is not WwiseBlendNode blend) continue;
+            blends++;
+            Assert.Equal(0, blend.BlendTracks);
+            Assert.NotEmpty(blend.Children);
+        }
+        Assert.Equal(6, blends);
+    }
+
     /// <summary>The archive alone is a complete library: banks, names and media all come out of AudioAssets.zip.</summary>
     [Fact]
     public void TheBanksAndNameTablesLoadFromTheShippedArchive()
