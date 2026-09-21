@@ -2729,19 +2729,19 @@
       "id": "M13-003"
     },
     {
-      "id": "M13-004",
       "subsystem": "M13-navigation",
-      "title": "In-place turn cost and the arc reconstruction from the primitive file",
-      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs:71",
-      "effect": "the planner prefers different primitives, so the robot takes a different route",
-      "provenance": "inferred reconstruction",
-      "authority": "the engine planner cost function and its precomputed heuristic table",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the cost of an in-place turn and the exact arc the engine builds from each primitive",
-      "hardware_required": false,
+      "title": "The primitive file states the arcs and the turn costs outright",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "config/engine/cozmo_mprim.json, which xythetaEnvironment::ReadMotionPrimitives 0x008529C0 loads and MotionPrimitive::Create 0x00853DD0 parses. Its nine actions carry an extra_cost_factor each: 1.0001 short straight, 1.0 long straight and all four arcs, 2.0 both in-place turns, 1.2 the backwards short straight (which also sets reverse_action). Each of the 9 primitives per starting angle carries straight_length_mm and, for the four turning ones, an arc block with centerPt_x_mm, centerPt_y_mm, radius_mm, startRad and sweepRad",
+      "evidence": [
+        "the arcs are exact: a slight turn is 7.639 mm of straight into a 94.72135955 mm radius through 0.4636476090 rad, a hard one 5.858 mm into 34.14213562 mm through 0.7853981634, and each arc closes on its end cell to within a thousandth of a millimetre",
+        "the arc is stored already rotated for its starting heading - the same slight left at heading 90 has its centre at (-94.721, 7.639) with startRad 0 - so it is translated, never rotated",
+        "this stack derived the radius and the straight length from the end cell and called the reconstruction INFERRED; both were in the file all along"
+      ],
       "live_path": true,
-      "test": "NavigationTests"
+      "test": "MotionPrimitiveTests.ATurningPrimitiveArcEndsOnItsEndCell",
+      "id": "M13-004"
     },
     {
       "id": "M13-005",

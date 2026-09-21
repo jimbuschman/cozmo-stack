@@ -15,7 +15,24 @@ public sealed record PrimitiveAction(int Index, string Name, double ExtraCostFac
 /// relative to the start cell). <see cref="Cost"/> is the primitive's traversal cost in mm-equivalents.
 /// </summary>
 public sealed record MotionPrimitive(int ActionIndex, int StartTheta, int EndX, int EndY, int EndTheta,
-                                     IReadOnlyList<(double X, double Y, double Theta)> Intermediate, double LengthMm, double Cost);
+                                     IReadOnlyList<(double X, double Y, double Theta)> Intermediate, double LengthMm, double Cost)
+{
+    /// <summary>
+    /// The straight run before the arc, in millimetres, from the primitive's own <c>straight_length_mm</c>.
+    /// Negative for the backwards primitive; zero for an in-place turn.
+    /// </summary>
+    public double StraightLengthMm { get; init; }
+
+    /// <summary>
+    /// The arc the primitive drives after that straight, exactly as <c>cozmo_mprim.json</c> gives it, in
+    /// the start heading's frame: centre, radius, start angle and sweep. Null for the straights and the
+    /// in-place turns, which carry no <c>arc</c>.
+    /// </summary>
+    public (double CenterX, double CenterY, double Radius, double StartRad, double SweepRad)? Arc { get; init; }
+
+    /// <summary>+1 or -1 for the two in-place turns, from <c>turn_in_place_direction</c>; null otherwise.</summary>
+    public double? TurnInPlaceDirection { get; init; }
+}
 
 /// <summary>
 /// The engine's motion-primitive set, ASSET <c>config/engine/cozmo_mprim.json</c>: a 10 mm lattice with 16
@@ -71,8 +88,18 @@ public sealed class MotionPrimitiveSet
                 // an in-place turn has no length: its cost is one cell times the action's factor (INFERRED; the
                 // engine's exact turn cost was not read)
                 double cost = Math.Max(len, res) * actions[ai].ExtraCostFactor;
+                (double, double, double, double, double)? arc = null;
+                if (p.TryGetProperty("arc", out var ja))
+                    arc = (ja.GetProperty("centerPt_x_mm").GetDouble(), ja.GetProperty("centerPt_y_mm").GetDouble(),
+                           ja.GetProperty("radius_mm").GetDouble(), ja.GetProperty("startRad").GetDouble(),
+                           ja.GetProperty("sweepRad").GetDouble());
                 prims.Add(new MotionPrimitive(ai, start, (int)Math.Round(end.GetProperty("x").GetDouble()), (int)Math.Round(end.GetProperty("y").GetDouble()),
-                                              end.GetProperty("theta").GetInt32(), inter, len, cost));
+                                              end.GetProperty("theta").GetInt32(), inter, len, cost)
+                {
+                    StraightLengthMm = p.TryGetProperty("straight_length_mm", out var sl) ? sl.GetDouble() : 0,
+                    Arc = arc,
+                    TurnInPlaceDirection = p.TryGetProperty("turn_in_place_direction", out var td) ? td.GetDouble() : null,
+                });
             }
             while (byAngle.Count <= start) byAngle.Add(Array.Empty<MotionPrimitive>());
             byAngle[start] = prims;
@@ -321,10 +348,11 @@ public sealed class LatticePlanner
     /// <summary>
     /// <c>MotionPrimitive::AddSegmentsToPath</c> / <c>LatticePlannerImpl::GetCompletePath</c>: the plan as robot
     /// path segments. Straight primitives in a row merge into one line; an in-place turn is a point turn to the
-    /// new lattice heading; a turning primitive is a line then an arc whose sweep is the heading change and
-    /// whose radius puts the arc's end exactly on the primitive's end cell (INFERRED reconstruction: the JSON
-    /// carries intermediate poses, not segments, and this decomposition reproduces the end poses exactly). A
-    /// final point turn to the goal's exact heading is appended when the lattice heading differs from it.
+    /// new lattice heading; a turning primitive is its own <c>straight_length_mm</c> followed by its own
+    /// <c>arc</c>, both of which <c>cozmo_mprim.json</c> states outright - the slight turns are a 7.639 mm
+    /// run into a 94.721 mm radius through 0.4636 rad, the hard ones 5.858 mm into 34.142 mm through
+    /// 0.7854 - so the arc is rotated into the world rather than reconstructed from the end cell. A final
+    /// point turn to the goal's exact heading is appended when the lattice heading differs from it.
     /// </summary>
     public IReadOnlyList<PathSegment> ToPath(LatticePlan plan, Pose3d? exactGoal, PathMotionProfile profile)
     {
@@ -364,20 +392,23 @@ public sealed class LatticePlanner
                 i = j + 1;
                 continue;
             }
-            // a turning primitive: line then arc, in the start heading's frame
-            double th0 = Env.Primitives.Angles[a.StartTheta], th1 = Env.Primitives.Angles[a.EndTheta];
-            double sweep = StraightLinePlanner.Wrap(th1 - th0);
-            double ex = a.EndX * res, ey = a.EndY * res;
-            double along = ex * Math.Cos(th0) + ey * Math.Sin(th0), perp = -ex * Math.Sin(th0) + ey * Math.Cos(th0);
-            double r = Math.Abs(perp) / (1 - Math.Cos(sweep));
-            double line = along - r * Math.Abs(Math.Sin(sweep));
+            // A turning primitive: a straight run and then an arc, both of which the primitive file
+            // states outright. There is nothing to derive - cozmo_mprim.json gives straight_length_mm
+            // and an arc block with centre, radius, start angle and sweep, in the start heading's frame -
+            // so they are rotated into the world and used as they stand.
+            double th0 = Env.Primitives.Angles[a.StartTheta];
             double x0 = s0.X * res, y0 = s0.Y * res;
-            double xl = x0 + Math.Cos(th0) * Math.Max(0, line), yl = y0 + Math.Sin(th0) * Math.Max(0, line);
-            if (line > 0.5) path.Add(new PathSegment.Line(x0, y0, xl, yl, p.SpeedMmps, p.AccelMmps2, p.DecelMmps2));
-            double side = Math.Sign(sweep);                       // +1 left turn: centre on the robot's left
-            double cx = xl - Math.Sin(th0) * r * side, cy = yl + Math.Cos(th0) * r * side;
-            double startAngle = Math.Atan2(yl - cy, xl - cx);
-            path.Add(new PathSegment.Arc(cx, cy, r, startAngle, sweep, p.SpeedMmps, p.AccelMmps2, p.DecelMmps2));
+
+            // straight_length_mm is a distance along the heading; the arc block is already expressed for
+            // this starting angle - at heading 90 the same slight-left primitive has its centre at
+            // (-94.721, 7.639) with startRad 0 - so the centre only needs translating, never rotating.
+            double line = a.StraightLengthMm;
+            double xl = x0 + Math.Cos(th0) * line, yl = y0 + Math.Sin(th0) * line;
+            if (Math.Abs(line) > 0.5) path.Add(new PathSegment.Line(x0, y0, xl, yl, p.SpeedMmps, p.AccelMmps2, p.DecelMmps2));
+
+            if (a.Arc is { } arc)
+                path.Add(new PathSegment.Arc(x0 + arc.CenterX, y0 + arc.CenterY, arc.Radius,
+                                             arc.StartRad, arc.SweepRad, p.SpeedMmps, p.AccelMmps2, p.DecelMmps2));
             i++;
         }
         if (exactGoal is { } goal)

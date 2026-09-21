@@ -7,9 +7,9 @@ Manifest of **201 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 101 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 102 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 53 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 52 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 9 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -36,7 +36,7 @@ remains after both, and they do not go away by working harder on this repository
 | M10-derived — Derived robot state and reaction strategies | 9 | 4 | 0 | 0 | 0 | no | yes |
 | M11-vision — Markers, camera geometry and BlockWorld | 16 | 6 | 0 | 1 | 0 | no | yes |
 | M12-manipulation — Docking, carrying and pre-action poses | 16 | 1 | 1 | 0 | 0 | no | no |
-| M13-navigation — Planning, charger and block configurations | 11 | 4 | 1 | 0 | 0 | no | no |
+| M13-navigation — Planning, charger and block configurations | 11 | 3 | 1 | 0 | 0 | no | no |
 | M14-faces — Face and pet pipeline | 7 | 5 | 0 | 1 | 0 | no | yes |
 | M15-freeplay — Needs, activities and freeplay | 12 | 9 | 0 | 0 | 0 | no | yes |
 | tools — Conformance CLI and offline tools | 4 | 0 | 0 | 0 | 0 | yes | yes |
@@ -371,14 +371,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: the structure is now read, which narrows what is left. The penalty is not a global: xythetaEnvironment::GetCollisionPenalty 0x008517B0 walks the obstacle list for the state theta bucket, each entry a 72-byte FastPolygon, and returns the float at entry+0x44 of the first one containing the point - so every obstacle carries its own penalty, supplied when it is added through AddObstacleAllThetas(shape, float) 0x008549E0 / 0x00854D4E. LatticePlannerImpl::ImportBlockworldObstaclesIfNeeded 0x004FD4B8 carries a pair of floats it logs together - 7.0 and 6.0, or 2.0 and 1.0 when its bool argument is set (0x004FD4EE)
 * evidence: IsInCollision 0x008515BC and IsInSoftCollision 0x00851708 are separate entry points over the same per-theta polygon lists, so the hard and soft rings are separate obstacle sets; the obstacles are expanded per theta bucket, which is what AddObstacleAllThetas means
 * outstanding: which of the two floats is the padding and which the penalty, and how the import turns an object bounding box into the hard and soft polygons. The pair is in hand; the use is not
-
-**M13-004 — In-place turn cost and the arc reconstruction from the primitive file** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs:71`
-* effect: the planner prefers different primitives, so the robot takes a different route
-* rests on: inferred reconstruction
-* best authority: the engine planner cost function and its precomputed heuristic table
-* outstanding: the cost of an in-place turn and the exact arc the engine builds from each primitive
 
 **M13-009 — Charger length and the pre-dock pose derived from the drive-off distance** (live path)
 
