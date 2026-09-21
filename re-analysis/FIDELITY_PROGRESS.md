@@ -6,30 +6,30 @@ Counts come from `re-analysis/fidelity_manifest.json`; the manifest and the comm
 
 | status | records |
 | --- | ---: |
-| EXACT_SOURCE | 101 |
+| EXACT_SOURCE | 105 |
 | EQUIVALENT_IMPLEMENTATION | 12 |
-| RECOVERABLE_GAP | 53 |
+| RECOVERABLE_GAP | 49 |
 | IMPLEMENTATION_GAP | 9 |
 | COMPATIBILITY_POLICY | 15 |
 | HARDWARE_ONLY | 3 |
 | BLOCKED_EXTERNAL | 8 |
 | **total** | **201** |
 
-Live-path work outstanding: **53 RECOVERABLE_GAP + 8 IMPLEMENTATION_GAP = 61**, down from 77 when the
+Live-path work outstanding: **49 RECOVERABLE_GAP + 8 IMPLEMENTATION_GAP = 57**, down from 77 when the
 repository-wide pass began.
 
 | subsystem | open |
 | --- | ---: |
 | M15 freeplay | 9 |
 | M3 device | 7 |
-| M11 vision | 6 |
 | M5 animation | 6 |
 | M7 behaviour | 6 |
 | M8 framework | 6 |
-| M13 navigation | 5 |
 | M14 faces | 5 |
 | M10 derived state | 4 |
+| M11 vision | 4 |
 | M4 control | 4 |
+| M13 navigation | 3 |
 | M12 manipulation | 2 |
 | M6 Wwise bank | 1 |
 

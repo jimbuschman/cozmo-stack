@@ -319,11 +319,12 @@ Each of these is a question the original can answer and nobody has asked it yet.
 
 **M11-010 — Occlusion is not modelled; a marker that passes the geometric tests counts as visible** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs:65`
-* effect: a hidden cube is reported visible
-* rests on: deferred
-* best authority: the engine occluder list and IsAnythingBehind
-* outstanding: the occluder list and the IsAnythingBehind test
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
+* effect: an object hidden behind another is treated as one the robot should have seen, so its pose is forgotten when it should not be
+* rests on: no occlusion test at all here
+* best authority: the shape of the engine test is read. ObservableObject::IsVisibleFrom 0x00876774 walks the object markers calling KnownMarker::IsVisibleFrom with requireSomethingBehind set true (movs r4, #1 at 0x0087679C), returns true on the first visible marker, and whenever a marker comes back with NotVisibleReason 8 sets the caller out-parameter - the hasNothingBehind that BlockWorld::CheckForUnobservedObjects 0x00621C6C then requires, alongside a Dirty pose, before marking an object unobserved. So the engine does distinguish "not seen" from "not seen and nothing was in the way"
+* evidence: KnownMarker::IsVisibleFrom 0x0087E4A8 writes reasons 0 to 4 for the geometric failures - facing away, too small, outside the frame - and this stack reproduces those; reason 8 is not written anywhere in that function, so whatever produces it is elsewhere
+* outstanding: what produces NotVisibleReason 8 and what it tests against - the occluder set. The consumer is understood; the producer is not
 
 **M11-011 — NV storage request framing and MORE chunking for the camera calibration** (live path)
 
