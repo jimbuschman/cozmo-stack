@@ -92,6 +92,9 @@ public static class WwiseTool
         if (lib.Node(target) is not { } root) { Console.WriteLine($"node {target} is not readable"); return 1; }
         Console.WriteLine($"\nsinging sampler, MIDI target {target}");
         var totals = new Dictionary<string, (int Count, double TotalMs, double Min, double Max)>();
+        // What the note's velocity is allowed to change, counted rather than asserted: see M9-014.
+        int nodes = 0, withVelocityRange = 0, midiDriven = 0;
+        var sources = new SortedDictionary<byte, int>();
 
         void Walk(uint id, int depth, string layer)
         {
@@ -100,6 +103,14 @@ public static class WwiseTool
             var p = n.Params;
             string keys = p.Raw(WwiseProp.MidiKeyRangeMin) is { } lo
                 ? $" key {lo}..{p.Raw(WwiseProp.MidiKeyRangeMax)}" : "";
+            nodes++;
+            if (p.Raw(WwiseProp.MidiVelocityRangeMin) is not null || p.Raw(WwiseProp.MidiVelocityRangeMax) is not null)
+                withVelocityRange++;
+            foreach (var r in p.Rtpcs)
+            {
+                sources[r.SourceType] = sources.GetValueOrDefault(r.SourceType) + 1;
+                if (r.SourceType is not (WwiseRtpc.GameParameterSource or WwiseRtpc.ModulatorSource)) midiDriven++;
+            }
             string vol = p.Float(WwiseProp.Volume) is { } v ? $" {v:+0.#;-0.#;0} dB" : "";
             string pitch = p.Float(WwiseProp.Pitch) is { } c ? $" {c:+0;-0;0} cents" : "";
             string loop = p.Raw(WwiseProp.Loop) is { } l ? $" loop {(l == 0 ? "until stopped" : l.ToString())}" : "";
@@ -122,9 +133,18 @@ public static class WwiseTool
 
             string kind = n.Type.ToString();
             if (n is WwiseRandomSequenceNode rs) kind = rs.IsSequence ? "sequence" : "random";
-            Console.WriteLine($"{pad}{kind} {id}{keys}{vol}{pitch}{playOn}{loop}");
+            string vels = p.Raw(WwiseProp.MidiVelocityRangeMin) is { } vlo
+                ? $" velocity {vlo}..{p.Raw(WwiseProp.MidiVelocityRangeMax)}" : "";
+            Console.WriteLine($"{pad}{kind} {id}{keys}{vels}{vol}{pitch}{playOn}{loop}");
             foreach (var kid in n.Children) Walk(kid, depth + 1, layer);
         }
+
+        static string Source(byte type) => type switch
+        {
+            WwiseRtpc.GameParameterSource => "game parameter",
+            WwiseRtpc.ModulatorSource => "modulator",
+            _ => $"source type {type}",
+        };
 
         static string LayerName(uint child) => child switch
         {
@@ -135,6 +155,16 @@ public static class WwiseTool
         Console.WriteLine("\nrecordings per layer");
         foreach (var (layer, t) in totals.OrderBy(k => k.Key))
             Console.WriteLine($"  {layer,-10} {t.Count,4} recordings, {t.Min / 1000:F2}..{t.Max / 1000:F2} s, mean {t.TotalMs / t.Count / 1000:F2} s");
+
+        // The evidence behind M9-014, printed rather than asserted. A note's velocity can change what plays
+        // in only two ways: by falling outside a node's velocity range, or by driving a property through a
+        // binding. Every binding in the banks is a game parameter or a modulator, neither of which a note
+        // carries, so a source type that is neither is the only place velocity could enter unseen.
+        Console.WriteLine($"\nwhat a note's velocity can reach, over {nodes} nodes under the target");
+        Console.WriteLine($"  nodes carrying a velocity range      {withVelocityRange}");
+        Console.WriteLine($"  bindings of any other source type    {midiDriven}");
+        Console.WriteLine("  bindings by source type              " +
+            (sources.Count == 0 ? "none" : string.Join(", ", sources.Select(s => $"{Source(s.Key)} x{s.Value}"))));
         return 0;
     }
 
@@ -166,6 +196,7 @@ public static class WwiseTool
         var r = source.RenderMusic(id.Value, switches);
         Console.WriteLine($"\nrendered {id} {lib.NameOf(id.Value) ?? ""}: {r.DurationMs:F0} ms, {r.Pcm.Length} samples at {CozmoAudio.SampleRate} Hz");
         Console.WriteLine($"  notes in window {r.NotesInWindow}, sung {r.NotesPlayed}, outside the voice's range {r.NotesSilent}, note-offs {r.NoteOffsPlayed}, audio clips {r.AudioClips}");
+        Console.WriteLine($"  clip window: {r.NotesOutsideWindow} notes dropped for starting outside it, {r.NotesCutByClipEnd} released early by the clip end (M9-020)");
         Console.WriteLine($"  raw peak {r.PreLimitPeak:F0} of {short.MaxValue}; output stage gain {r.OutputGainDb:F1} dB (a stand-in for the robot bus limiter); clipped samples after it {r.ClippedSamples}");
         Console.WriteLine($"  modulator bindings acted on {r.ModulationsApplied}; deepest level change {r.ModulationPeakDb:F2} dB, largest pitch change {r.ModulationPeakCents:F0} cents");
         if (r.BusChain is { } bc)
@@ -196,17 +227,23 @@ public static class WwiseTool
     private static int ValidateMusic(WwiseSoundLibrary lib, string? obb, int seed)
     {
         using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(seed));
-        int ok = 0, bad = 0, silentNotes = 0, sungNotes = 0;
+        int ok = 0, bad = 0, empty = 0, silentNotes = 0, sungNotes = 0, outsideWindow = 0, cutByClipEnd = 0;
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        Console.WriteLine($"\n{"song / event",-48} {"ms",7} {"notes",6} {"sung",5} {"out",4} {"offs",5} {"rawpk",7} {"outpk",7} {"limit",6}  problems");
+        Console.WriteLine($"\n{"song / event",-48} {"ms",7} {"notes",6} {"sung",5} {"out",4} {"drop",5} {"cut",4} {"offs",5} {"rawpk",7} {"outpk",7} {"limit",6}  problems");
 
         void Row(string label, uint eventId, IReadOnlyDictionary<uint, uint> switches)
         {
             var r = source.RenderMusic(eventId, switches);
+            // An event whose switches are not set selects the switch tree's key-0 path, which for the
+            // freeplay music container is a one-second segment holding nothing. That is the container
+            // answering correctly, not a failure to render, so it is counted on its own.
+            bool nothingToPlay = r.Problems.Count == 0 && r.NotesInWindow == 0 && r.AudioClips == 0;
             bool good = r.Problems.Count == 0 && r.Pcm.Length > 0 && (r.NotesPlayed > 0 || r.AudioClips > 0);
-            if (good) ok++; else bad++;
+            if (good) ok++; else if (nothingToPlay) empty++; else bad++;
+            if (nothingToPlay) label += "  (default path: the selected segment holds nothing)";
             silentNotes += r.NotesSilent; sungNotes += r.NotesPlayed;
-            Console.WriteLine($"{label,-48} {r.DurationMs,7:F0} {r.NotesInWindow,6} {r.NotesPlayed,5} {r.NotesSilent,4} {r.NoteOffsPlayed,5} {r.PreLimitPeak,7:F0} {r.Peak,7} {(r.BusChain?.LimiterReductionDb ?? r.OutputGainDb),6:F1}  {string.Join("; ", r.Problems)}");
+            outsideWindow += r.NotesOutsideWindow; cutByClipEnd += r.NotesCutByClipEnd;
+            Console.WriteLine($"{label,-48} {r.DurationMs,7:F0} {r.NotesInWindow,6} {r.NotesPlayed,5} {r.NotesSilent,4} {r.NotesOutsideWindow,5} {r.NotesCutByClipEnd,4} {r.NoteOffsPlayed,5} {r.PreLimitPeak,7:F0} {r.Peak,7} {(r.BusChain?.LimiterReductionDb ?? r.OutputGainDb),6:F1}  {string.Join("; ", r.Problems)}");
         }
 
         if (obb is not null)
@@ -225,6 +262,11 @@ public static class WwiseTool
             Row(lib.NameOf(id) ?? id.ToString(), id, none);
         }
         Console.WriteLine($"\n{ok} rendered, {bad} did not; {sungNotes} notes sung, {silentNotes} outside the voice's range; {sw.Elapsed.TotalSeconds:F1} s");
+        if (empty > 0)
+            Console.WriteLine($"{empty} selected a segment with nothing in it, which is what their switch tree says with no switch set");
+        // Whether the clip-window rules act on anything the product ships, over every song at once: M9-020.
+        Console.WriteLine($"clip window over all of them: {outsideWindow} notes dropped for starting outside a clip, " +
+                          $"{cutByClipEnd} released early by a clip end");
         return bad == 0 ? 0 : 1;
     }
 

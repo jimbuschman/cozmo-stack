@@ -5,6 +5,10 @@ public sealed record WwiseRenderedMusic(short[] Pcm, double DurationMs)
 {
     /// <summary>Notes whose start fell inside a clip's window.</summary>
     public int NotesInWindow { get; init; }
+    /// <summary>Notes whose start fell outside a clip's window and so were not played at all.</summary>
+    public int NotesOutsideWindow { get; init; }
+    /// <summary>Notes still held when their clip ended, and so released there rather than at their own end (M9-020).</summary>
+    public int NotesCutByClipEnd { get; init; }
     /// <summary>Notes that reached at least one sound in the MIDI target.</summary>
     public int NotesPlayed { get; init; }
     /// <summary>Notes that matched no sound (outside every key range) and so made no sound.</summary>
@@ -167,6 +171,8 @@ public sealed class WwiseSongRenderer
         double totalMs = plan.Segments.Sum(s => s.DurationMs);
         var sink = new List<WwiseVoice>();
         int inWindow = 0, played = 0, silent = 0, offs = 0, audioClips = 0;
+        // Whether the clip-window rules do anything to the shipped songs, counted rather than assumed: M9-020.
+        int outside = 0, cutByClipEnd = 0;
 
         double segOffsetMs = 0;
         foreach (var seg in plan.Segments)
@@ -190,9 +196,10 @@ public sealed class WwiseSongRenderer
                     }
                     foreach (var n in midi.NotesAt(seg.TempoBpm))
                     {
-                        if (n.StartMs < windowBegin || n.StartMs >= windowEnd) continue;
+                        if (n.StartMs < windowBegin || n.StartMs >= windowEnd) { outside++; continue; }
                         inWindow++;
                         double heldMs = Math.Min(n.StartMs + n.LengthMs, windowEnd) - n.StartMs;
+                        if (n.StartMs + n.LengthMs > windowEnd) cutByClipEnd++;
                         double onset = clipStartOnTimeline + n.StartMs;
                         int voices = 0;
                         Trigger(target, n.Key, n.Velocity, onset, heldMs, noteOff: false, 0, 0, 1, NoModulators, sink, ref voices, problems, 0, 0);
@@ -217,7 +224,8 @@ public sealed class WwiseSongRenderer
         sink.Sort((a, b) => a.StartMs.CompareTo(b.StartMs));
         return new WwiseVoicePlan(sink, totalMs)
         {
-            NotesInWindow = inWindow, NotesPlayed = played, NotesSilent = silent,
+            NotesInWindow = inWindow, NotesOutsideWindow = outside, NotesCutByClipEnd = cutByClipEnd,
+            NotesPlayed = played, NotesSilent = silent,
             NoteOffsPlayed = offs, AudioClips = audioClips, Problems = problems,
         };
     }
@@ -276,7 +284,9 @@ public sealed class WwiseSongRenderer
         }
         return new WwiseRenderedMusic(outPcm, totalMs)
         {
-            NotesInWindow = inWindow, NotesPlayed = played, NotesSilent = silent, NoteOffsPlayed = offs,
+            NotesInWindow = inWindow, NotesOutsideWindow = built.NotesOutsideWindow,
+            NotesCutByClipEnd = built.NotesCutByClipEnd,
+            NotesPlayed = played, NotesSilent = silent, NoteOffsPlayed = offs,
             AudioClips = audioClips, ClippedSamples = clipped, Problems = problems, Peak = peak,
             PreLimitPeak = rawPeak, OutputGainDb = gain < 1.0 ? 20 * Math.Log10(gain) : 0,
             BusChain = chainReport,

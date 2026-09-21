@@ -126,6 +126,10 @@ public sealed class WwiseVoice
 public sealed record WwiseVoicePlan(IReadOnlyList<WwiseVoice> Voices, double TotalMs)
 {
     public int NotesInWindow { get; init; }
+    /// <summary>Notes whose start fell outside a clip's window, and so were not played at all (M9-020).</summary>
+    public int NotesOutsideWindow { get; init; }
+    /// <summary>Notes still held when their clip ended, and so released there rather than at their own end (M9-020).</summary>
+    public int NotesCutByClipEnd { get; init; }
     public int NotesPlayed { get; init; }
     public int NotesSilent { get; init; }
     public int NoteOffsPlayed { get; init; }
@@ -288,7 +292,9 @@ public sealed class WwiseMusicStream : IDisposable
     /// <summary>What has been rendered so far, in the same shape a whole-song render reports.</summary>
     public WwiseRenderedMusic Snapshot() => new(_out, _plan.TotalMs)
     {
-        NotesInWindow = _plan.NotesInWindow, NotesPlayed = _plan.NotesPlayed, NotesSilent = _plan.NotesSilent,
+        NotesInWindow = _plan.NotesInWindow, NotesOutsideWindow = _plan.NotesOutsideWindow,
+        NotesCutByClipEnd = _plan.NotesCutByClipEnd,
+        NotesPlayed = _plan.NotesPlayed, NotesSilent = _plan.NotesSilent,
         NoteOffsPlayed = _plan.NoteOffsPlayed, AudioClips = _plan.AudioClips,
         ClippedSamples = Clipped, Peak = Peak, BusChain = LastChain,
         ModulationsApplied = _stats.Applied, ModulationPeakDb = _stats.PeakDb, ModulationPeakCents = _stats.PeakCents,
