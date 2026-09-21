@@ -2,9 +2,16 @@ using Cozmo.Protocol;
 
 namespace Cozmo.Robot;
 
-/// <summary>A colour for one of the robot's lights, held as 8-bit channels and packed to the wire on demand.</summary>
-public readonly record struct LedColor(byte R, byte G, byte B)
+/// <summary>
+/// A colour for one of the robot's lights, held as 8-bit channels and packed to the wire on demand.
+///
+/// The alpha channel is here because the engine's <c>ColorRGBA</c> has one and the packing reads it: it
+/// does not fade anything, it decides bit 15 of the light word. Every colour in every shipped light
+/// config carries a non-zero alpha, so the engine sets that bit on everything it sends, black included.
+/// </summary>
+public readonly record struct LedColor(byte R, byte G, byte B, byte A = 255)
 {
+    /// <summary>Unlit. Still alpha 255, as the shipped configs write their off-colours ([0,0,0,255]).</summary>
     public static readonly LedColor Off = new(0, 0, 0);
     public static readonly LedColor Red = new(255, 0, 0);
     public static readonly LedColor Green = new(0, 255, 0);
@@ -15,13 +22,11 @@ public readonly record struct LedColor(byte R, byte G, byte B)
     public static readonly LedColor Magenta = new(255, 0, 255);
 
     /// <summary>
-    /// Packs to the 16-bit value the robot's LightState carries.
-    ///
-    /// The packing is 5 bits red, 5 green, 5 blue, one bit left over, which is what
-    /// <see cref="LightState.Rgb"/> has done since M1 and what the LED probe step drove on hardware. The
-    /// meaning of the low bit is not established, so it is left clear.
+    /// Packs to the 16-bit value the robot's LightState carries: five bits of red at bit 10, green at
+    /// bit 5, blue at bit 0, and bit 15 set when alpha is non-zero. Read from the engine at
+    /// <c>CubeLightComponent::SendTransitionMessage</c> 0x00638056; see <see cref="LightState.Rgb"/>.
     /// </summary>
-    public ushort Packed => LightState.Rgb(R, G, B);
+    public ushort Packed => LightState.Rgb(R, G, B, A);
 
     public static LedColor FromHex(string hex)
     {
@@ -30,7 +35,7 @@ public readonly record struct LedColor(byte R, byte G, byte B)
         return new LedColor(Convert.ToByte(h[..2], 16), Convert.ToByte(h.Substring(2, 2), 16), Convert.ToByte(h[4..], 16));
     }
 
-    public override string ToString() => $"#{R:X2}{G:X2}{B:X2}";
+    public override string ToString() => A == 255 ? $"#{R:X2}{G:X2}{B:X2}" : $"#{R:X2}{G:X2}{B:X2}{A:X2}";
 }
 
 /// <summary>

@@ -139,8 +139,24 @@ public partial struct LightState
     public const int Size = 10;
     public static LightState Off => new();
     public static LightState Solid(ushort color) => new() { OnColor = color, OffColor = color };
-    /// <summary>Pack 8-bit RGB into the robot's 5-5-5 colour word (PyCozmo: 32768 colours; exact bit order unconfirmed on hardware).</summary>
-    public static ushort Rgb(byte r, byte g, byte b) => (ushort)(((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3));
+
+    /// <summary>
+    /// Packs a colour into the 16-bit word the robot's LightState carries, as the engine packs it.
+    ///
+    /// Read from <c>CubeLightComponent::SendTransitionMessage</c> 0x00638056, which takes the engine's
+    /// 32-bit <c>ColorRGBA</c> (red in the top byte, alpha in the bottom) and does exactly:
+    ///
+    /// <code>
+    ///     (c &gt;&gt; 17) &amp; 0x7C00  |  (c &gt;&gt; 14) &amp; 0x03E0  |  (c &gt;&gt; 11) &amp; 0x001F
+    /// </code>
+    ///
+    /// — the top five bits of each channel, red at bit 10, green at bit 5, blue at bit 0 — and then sets
+    /// bit 15 when the colour's alpha byte is non-zero (<c>tst.w r5, #0xff</c> / <c>orrne r7, r7, #0x8000</c>).
+    /// Every colour in every shipped light config has a non-zero alpha, so the engine sets bit 15 on
+    /// every light word it sends, including the black it sends to turn a light off.
+    /// </summary>
+    public static ushort Rgb(byte r, byte g, byte b, byte a = 255) =>
+        (ushort)(((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3) | (a != 0 ? 0x8000 : 0));
 }
 
 public sealed partial class SetHeadAngle

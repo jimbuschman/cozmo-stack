@@ -425,19 +425,19 @@
       "test": "ConnectionTests"
     },
     {
-      "id": "M2-005",
       "subsystem": "M2-protocol",
-      "title": "LightState RGB packed 5-5-5",
-      "location": "cozmo-stack/src/Cozmo.Robot/Lights.cs",
-      "effect": "cube and backpack lights show the wrong colour",
-      "provenance": "PyCozmo packing; lights did light on hardware",
-      "authority": "the CLAD definition of LightState and the engine light code",
-      "evidence": [],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "the bit order within the 16-bit field was never confirmed against the engine or a capture of a known colour",
-      "hardware_required": false,
+      "title": "The light colour word: 5-5-5 with red at bit 10, and bit 15 set from the alpha byte",
+      "location": "cozmo-stack/src/Cozmo.Protocol/Clad/MessageExtras.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "CubeLightComponent::SendTransitionMessage 0x00638056 packs the engine ColorRGBA word whole: mov.w ip,#0x7c00 / mov.w r3,#0x3e0 / and.w r4,ip,r5,lsr #17 (red bits 27..31 to bit 10) / and.w r7,r3,r5,lsr #14 (green bits 19..23 to bit 5) / ubfx r4,r5,#0xb,#5 (blue bits 11..15 to bit 0) / tst.w r5,#0xff with orrne r7,r7,#0x8000 (bit 15 from the alpha byte). ColorRGBA holds red in the top byte and alpha in the bottom, which CubeLightComponent::WhiteBalanceColor 0x0063a894 confirms by reading the low byte as the alpha it gates on",
+      "evidence": [
+        "CubeLightComponent::SendTransitionMessage 0x00638056",
+        "CubeLightComponent::WhiteBalanceColor 0x0063a894 treats the low byte as alpha",
+        "every colour in every shipped light config has a non-zero alpha - cube configs write [r,g,b,255] and backpack configs [r,g,b,1] - so the engine sets bit 15 on every word it sends, the black that turns a light off included"
+      ],
       "live_path": true,
-      "test": null
+      "test": "LightPackingTests.ThePackingAgreesWithTheEnginesExpressionOnItsOwnWord",
+      "id": "M2-005"
     },
     {
       "id": "M2-006",

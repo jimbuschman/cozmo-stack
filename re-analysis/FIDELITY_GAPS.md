@@ -7,9 +7,9 @@ Manifest of **195 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 80 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 81 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 11 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 69 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 68 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 9 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 15 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -25,7 +25,7 @@ remains after both, and they do not go away by working harder on this repository
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | M1-transport — UDP transport and reliability | 15 | 2 | 0 | 0 | 0 | no | yes |
-| M2-protocol — CLAD messages and protocol helpers | 6 | 2 | 0 | 0 | 0 | no | yes |
+| M2-protocol — CLAD messages and protocol helpers | 6 | 1 | 0 | 0 | 0 | no | yes |
 | M3-device — Camera, display and audio device layer | 17 | 6 | 1 | 0 | 1 | no | no |
 | M4-control — Motion, sensors, lights and cubes | 9 | 4 | 0 | 0 | 0 | no | yes |
 | M5-animation — Animation clips, scheduler and face | 20 | 4 | 2 | 0 | 0 | no | no |
@@ -75,14 +75,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libcozmoEngine.so connect sequence
 * evidence: re-analysis/captures 2026-09-18_fw2457_probe.log
 * outstanding: the engine own connect sequence was not disassembled end to end; the order works but is not read from the binary
-
-**M2-005 — LightState RGB packed 5-5-5** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
-* effect: cube and backpack lights show the wrong colour
-* rests on: PyCozmo packing; lights did light on hardware
-* best authority: the CLAD definition of LightState and the engine light code
-* outstanding: the bit order within the 16-bit field was never confirmed against the engine or a capture of a known colour
 
 ### M3-device — Camera, display and audio device layer
 
