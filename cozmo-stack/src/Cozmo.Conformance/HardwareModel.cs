@@ -131,9 +131,29 @@ public sealed record HardwareCheck
     public string CommandLine(HardwareRunOptions o) => string.Join(' ', Command(o));
 }
 
+/// <summary>
+/// How a check's run ended. This, and not anything the tool printed, is what decides whether the check was
+/// interrupted: every tool closes its own connection on the way out and says so, so the transcript cannot
+/// tell a cleanup disconnect from a robot that went away.
+/// </summary>
+public enum RunEnding
+{
+    /// <summary>The tool ran to its own end and returned. Whatever it printed on the way out is its cleanup.</summary>
+    Completed,
+    /// <summary>The person stopped it - Ctrl+C, which is also the emergency stop.</summary>
+    Cancelled,
+    /// <summary>It never returned within the check's allowance.</summary>
+    TimedOut,
+    /// <summary>It threw. Whether that means the link went is decided by what it threw.</summary>
+    Faulted,
+}
+
 /// <summary>What the runner captured from one invocation of a conformance tool.</summary>
 public sealed record HardwareToolRun(int ExitCode, string Output, string? AcceptanceRecord, string LogPath, Exception? Error)
 {
+    /// <summary>How the run ended, which is what the interruption verdict is taken from.</summary>
+    public RunEnding Ending { get; init; } = RunEnding.Completed;
+
     /// <summary>Set when the run did not finish: the link dropped, it timed out, or it was stopped.</summary>
     public string? InterruptedReason { get; init; }
     public bool Contains(string s) => Output.Contains(s, StringComparison.OrdinalIgnoreCase);

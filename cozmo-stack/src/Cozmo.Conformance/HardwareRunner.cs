@@ -348,7 +348,8 @@ public static class HardwareRunner
     /// check's own log. The tools are the implementations the plan already names, so nothing here
     /// re-implements a check.
     /// </summary>
-    private static async Task<HardwareToolRun> Execute(HardwareCheck check, HardwareRunOptions o, CancellationToken cancel)
+    public static async Task<HardwareToolRun> Execute(HardwareCheck check, HardwareRunOptions o, CancellationToken cancel,
+                                                      Func<string[], CancellationToken, Task<int>>? invoke = null)
     {
         var dir = o.TestDirectory(check.Id);
         var args = check.Command(o);
@@ -364,37 +365,69 @@ public static class HardwareRunner
         Console.SetOut(new TeeWriter(original, file, captured));
         int exit = -1;
         Exception? error = null;
-        string? interrupted = null;
+        RunEnding ending;
         try
         {
-            var work = Invoke(args, cancel);
+            var work = (invoke ?? Invoke)(args, cancel);
             var done = await Task.WhenAny(work, Task.Delay(check.Timeout, cancel));
-            if (ReferenceEquals(done, work)) exit = await work;
-            else interrupted = cancel.IsCancellationRequested
-                ? "stopped part way (emergency stop or Ctrl+C)"
-                : $"no result within the check's {check.Timeout.TotalMinutes:F0} minute allowance";
+            if (ReferenceEquals(done, work)) { exit = await work; ending = RunEnding.Completed; }
+            else ending = cancel.IsCancellationRequested ? RunEnding.Cancelled : RunEnding.TimedOut;
         }
-        catch (OperationCanceledException) { interrupted = "stopped part way (emergency stop or Ctrl+C)"; }
-        catch (Exception e) { error = e; }
+        catch (OperationCanceledException) { ending = RunEnding.Cancelled; }
+        catch (Exception e) { error = e; ending = RunEnding.Faulted; }
         finally { Console.SetOut(original); }
 
         Rule();
         var text = captured.ToString();
-        if (interrupted is null && LooksLikeALostLink(text) && !check.ExpectsDisconnect)
-            interrupted = "the link to the robot was lost while the check was running";
-
         string? record = text.Split('\n')
             .FirstOrDefault(l => l.Contains("acceptance record:", StringComparison.OrdinalIgnoreCase))
             ?.Split("acceptance record:", StringSplitOptions.TrimEntries).ElementAtOrDefault(1)?.Trim();
-        return new HardwareToolRun(exit, text, record, log, error) { InterruptedReason = interrupted };
+
+        var run = new HardwareToolRun(exit, text, record, log, error) { Ending = ending };
+        return run with { InterruptedReason = Interruption(run, check) };
     }
 
-    /// <summary>The words the tools use when the robot goes away underneath them.</summary>
-    private static bool LooksLikeALostLink(string output) =>
-        output.Contains("disconnected:", StringComparison.OrdinalIgnoreCase)
-        || output.Contains("not connected", StringComparison.OrdinalIgnoreCase)
-        || output.Contains("connection lost", StringComparison.OrdinalIgnoreCase)
-        || output.Contains("FAIL connect", StringComparison.OrdinalIgnoreCase);
+    /// <summary>
+    /// Whether the check was cut short, decided by how its run ended rather than by anything it printed.
+    ///
+    /// The distinction the runner got wrong is ownership. Every one of these tools opens its own connection
+    /// and closes it again on the way out, and the closing is announced - "disconnected: requested" - so a
+    /// runner that reads the transcript for the word sees a lost link at the end of every successful check.
+    /// It is the tool's own cleanup, performed after the check has already done its work, and it says nothing
+    /// about whether the robot was there while the work happened.
+    ///
+    /// So the question is not what was printed but whether the tool was still running when the trouble
+    /// arrived. A tool that returned owned its connection for the whole check and then let it go: nothing was
+    /// interrupted, whatever the last line says, and its result stands for the person to judge. A tool that
+    /// never returned - stopped by the person, or still going when its allowance ran out - was interrupted,
+    /// because the work did not finish. A tool that threw is judged by what it threw: the exception types the
+    /// transport raises when the robot has gone (<c>SendData</c> on a closed link throws
+    /// <see cref="InvalidOperationException"/>; a disposed one throws <see cref="ObjectDisposedException"/>;
+    /// the socket layer and the connect handshake have their own) mean the link went while the check was
+    /// live, and anything else is an error for the judge and the person to weigh.
+    /// </summary>
+    public static string? Interruption(HardwareToolRun run, HardwareCheck check) => run.Ending switch
+    {
+        RunEnding.Completed => null,
+        RunEnding.Cancelled => "stopped part way (emergency stop or Ctrl+C)",
+        RunEnding.TimedOut => "no result within the check's allowance of "
+                            + (check.Timeout.TotalMinutes >= 1
+                                ? $"{check.Timeout.TotalMinutes:F0} minute(s)"
+                                : $"{check.Timeout.TotalSeconds:F0} second(s)"),
+        RunEnding.Faulted when !check.ExpectsDisconnect && IsLostLink(run.Error) =>
+            "the link to the robot was lost while the check was running",
+        _ => null,
+    };
+
+    /// <summary>
+    /// What the stack throws when the robot is no longer there. The animation tick loop treats the same two
+    /// types as the robot having gone away (the CORE-002 correction), and the socket and handshake failures
+    /// are the two ways it can go before a check ever gets started.
+    /// </summary>
+    private static bool IsLostLink(Exception? e) => e is InvalidOperationException
+                                                      or ObjectDisposedException
+                                                      or System.Net.Sockets.SocketException
+                                                      or TimeoutException;
 
     /// <summary>
     /// The conformance commands the checks use. A deliberate subset of the program's own dispatch: the

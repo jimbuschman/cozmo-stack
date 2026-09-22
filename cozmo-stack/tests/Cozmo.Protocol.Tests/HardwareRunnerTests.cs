@@ -746,6 +746,173 @@ public class HardwareRunnerTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 
+    // ================================================================ when a check counts as cut short
+
+    /// <summary>
+    /// The regression for the bug the first real campaign found on its first check. LINK connected, the
+    /// handshake and the identity arrived, telemetry ran at 30 Hz, the smoke test printed PASS - and then the
+    /// tool closed its own connection, as every one of these tools does, and announced it: "disconnected:
+    /// requested". The runner read that line, decided the link had been lost, and recorded a successful check
+    /// as INTERRUPTED. Twice.
+    ///
+    /// The tool's own cleanup, after its work is done, is not a lost link. This is that exact sequence.
+    /// </summary>
+    [Fact]
+    public async Task ACommandsOwnCleanupDisconnectDoesNotTurnAPassIntoAnInterruption()
+    {
+        var root = TempDir();
+        try
+        {
+            var link = HardwareCatalog.Find("LINK")!;
+            var o = new HardwareRunOptions { Ip = "172.31.1.1", EvidenceDirectory = root };
+
+            var run = await HardwareRunner.Execute(link, o, CancellationToken.None, (_, _) =>
+            {
+                Console.WriteLine("connecting to 172.31.1.1:5551 (ConnectionRequest, reliable seq 1) ...");
+                Console.WriteLine("connected in 82 ms (ConnectionResponse received)");
+                Console.WriteLine("firmware: v2457 e2r=0x1a r2e=0x2b build=ok");
+                Console.WriteLine("mfg: ESN 0045f00d   syncTimeAck=True   states so far=14");
+                Console.WriteLine("telemetry: 615 RobotState at 30.1 Hz; 640 messages total");
+                Console.WriteLine("transport: frames sent=210 resent=0 dupsDropped=0 pending=0 lastRTT=4.2ms");
+                Console.WriteLine("SMOKE TEST: PASS");
+                Console.WriteLine("  disconnected: requested");          // the tool's own cleanup, after the verdict
+                Console.WriteLine("frame log written to: frames.log  (send this file plus the console output)");
+                return Task.FromResult(0);
+            });
+
+            Assert.Equal(RunEnding.Completed, run.Ending);
+            Assert.Null(run.InterruptedReason);
+            Assert.Equal(AutoOutcome.Pass, link.Judge(run));            // the automated result is preserved
+
+            // and recorded, it is waiting for the person's verdict rather than being written off as cut short
+            var recorded = new HardwareResult
+            {
+                Id = link.Id, Auto = link.Judge(run), Human = HumanOutcome.NotAsked,
+                InterruptedReason = run.InterruptedReason,
+            };
+            Assert.Equal(CheckStatus.Pending, recorded.Status);
+            Assert.Equal(CheckStatus.Passed, (recorded with { Human = HumanOutcome.Pass }).Status);
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    /// <summary>
+    /// The other half, which must keep working: the robot goes away while the check is still doing its work.
+    /// The tool never returns a result - it throws what the transport throws on a closed link - and that is
+    /// an interruption, not a failure, because nothing was observed either way.
+    /// </summary>
+    [Fact]
+    public async Task ALinkLostWhileTheCheckIsStillRunningIsStillAnInterruption()
+    {
+        var root = TempDir();
+        try
+        {
+            var link = HardwareCatalog.Find("LINK")!;
+            var o = new HardwareRunOptions { Ip = "172.31.1.1", EvidenceDirectory = root };
+
+            var run = await HardwareRunner.Execute(link, o, CancellationToken.None, (_, _) =>
+            {
+                Console.WriteLine("connected in 80 ms (ConnectionResponse received)");
+                Console.WriteLine("  t+ 2.0s states=60 rate=30.0Hz");
+                return Task.FromException<int>(new InvalidOperationException("not connected"));
+            });
+
+            Assert.Equal(RunEnding.Faulted, run.Ending);
+            Assert.Equal("the link to the robot was lost while the check was running", run.InterruptedReason);
+            Assert.Equal(CheckStatus.Interrupted,
+                         new HardwareResult { Id = link.Id, InterruptedReason = run.InterruptedReason }.Status);
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public async Task StoppingACheckPartWayIsAnInterruptionAndSaysSo()
+    {
+        var root = TempDir();
+        try
+        {
+            var o = new HardwareRunOptions { Ip = "172.31.1.1", EvidenceDirectory = root };
+            using var stop = new CancellationTokenSource();
+
+            var run = await HardwareRunner.Execute(Check("X"), o, stop.Token, async (_, ct) =>
+            {
+                Console.WriteLine("half way through something");
+                stop.Cancel();                                   // the person hits Ctrl+C
+                await Task.Delay(Timeout.Infinite, ct);
+                return 0;
+            });
+
+            Assert.Equal(RunEnding.Cancelled, run.Ending);
+            Assert.Contains("stopped part way", run.InterruptedReason!);
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public async Task ACheckThatNeverReturnsIsCutShortByItsOwnAllowance()
+    {
+        var root = TempDir();
+        try
+        {
+            var o = new HardwareRunOptions { Ip = "172.31.1.1", EvidenceDirectory = root };
+            var check = Check("X") with { Timeout = TimeSpan.FromMilliseconds(200) };
+
+            var run = await HardwareRunner.Execute(check, o, CancellationToken.None, async (_, ct) =>
+            {
+                Console.WriteLine("still going");
+                await Task.Delay(TimeSpan.FromSeconds(30), ct);
+                return 0;
+            });
+
+            Assert.Equal(RunEnding.TimedOut, run.Ending);
+            Assert.Contains("allowance", run.InterruptedReason!);
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    /// <summary>
+    /// The rule itself, stated without a tool: what was printed does not decide this. The same transcript -
+    /// one that ends with the tool announcing its own disconnect - is an interruption or not according to
+    /// whether the tool was still running when it happened.
+    /// </summary>
+    [Fact]
+    public void WhatWasPrintedDoesNotDecideWhetherACheckWasCutShort()
+    {
+        var check = Check("X");
+        const string transcript = "SMOKE TEST: PASS\n  disconnected: requested\nnot connected\nconnection lost";
+
+        HardwareToolRun Ending(RunEnding e, Exception? error = null) =>
+            new(0, transcript, null, "console.log", error) { Ending = e };
+
+        Assert.Null(HardwareRunner.Interruption(Ending(RunEnding.Completed), check));
+        Assert.NotNull(HardwareRunner.Interruption(Ending(RunEnding.Cancelled), check));
+        Assert.NotNull(HardwareRunner.Interruption(Ending(RunEnding.TimedOut), check));
+        Assert.NotNull(HardwareRunner.Interruption(Ending(RunEnding.Faulted, new InvalidOperationException("not connected")), check));
+
+        // a tool that threw something that is not the link going is an error for the judge, not an interruption
+        Assert.Null(HardwareRunner.Interruption(Ending(RunEnding.Faulted, new FormatException("bad json")), check));
+
+        // and the check whose subject is the link going judges it like any other result
+        var expectsIt = Check("X") with { ExpectsDisconnect = true };
+        Assert.Null(HardwareRunner.Interruption(Ending(RunEnding.Faulted, new InvalidOperationException("not connected")), expectsIt));
+    }
+
+    /// <summary>
+    /// Every check in the campaign runs a tool that opens its own connection and closes it again, so every
+    /// one of them could have suffered the same misreading. None of them can now.
+    /// </summary>
+    [Fact]
+    public void NoCheckInTheCampaignIsCutShortByItsOwnToolsCleanup()
+    {
+        foreach (var c in HardwareCatalog.All)
+        {
+            var cleanup = new HardwareToolRun(0,
+                "the check did its work\n  disconnected: requested\nframe log written to: frames.log",
+                null, "console.log", null) { Ending = RunEnding.Completed };
+            Assert.Null(HardwareRunner.Interruption(cleanup, c));
+        }
+    }
+
     // ================================================================ the automated judges
 
     [Fact]
