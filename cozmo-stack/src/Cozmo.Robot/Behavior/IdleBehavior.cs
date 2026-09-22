@@ -387,21 +387,23 @@ public sealed class IdleBehavior
                     Dart((int)amount, (int)amountY, nowMs, durationMs);
                     break;
                 case IdleAction.HeadMove when Execute:
-                    _robot.Animations.Scheduler.StreamLive(
+                    _robot.Animations.StreamLive(
                         new HeadKeyframe(0, (uint)durationMs,
                                          (sbyte)Math.Clamp((int)amount, sbyte.MinValue, sbyte.MaxValue),
-                                         (byte)_p.HeadAngleVariabilityDeg), nowMs);
+                                         (byte)_p.HeadAngleVariabilityDeg));
                     break;
                 case IdleAction.LiftMove when Execute:
-                    _robot.Animations.Scheduler.StreamLive(
+                    _robot.Animations.StreamLive(
                         new LiftKeyframe(0, (uint)durationMs,
                                          (byte)Math.Clamp((int)amount, byte.MinValue, byte.MaxValue),
-                                         (byte)_p.LiftHeightVariabilityMm), nowMs);
+                                         (byte)_p.LiftHeightVariabilityMm));
                     break;
                 case IdleAction.BodyMove when Execute:
-                    _robot.Animations.Scheduler.StreamLive(
+                    // on the animation system's clock, not the idle tick's: the keyframe's stop time is
+                    // served by the animation tick loop
+                    _robot.Animations.StreamLive(
                         new BodyKeyframe(0, (uint)durationMs, radius ?? StraightToken,
-                                         (short)amount), nowMs);
+                                         (short)amount));
                     if (radius == TurnInPlaceToken) TurnEyeShift((short)amount, nowMs);
                     else ClearTurnEyeShift();
                     break;

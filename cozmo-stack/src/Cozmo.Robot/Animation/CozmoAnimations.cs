@@ -232,6 +232,27 @@ public sealed class CozmoAnimations : IDisposable
         return handle.Completion;
     }
 
+    /// <summary>
+    /// Streams one keyframe of the engine's live animation - the keep-alive clip the streamer always has
+    /// open - on the animation system's own clock, and keeps the tick loop running while that keyframe
+    /// still has work outstanding.
+    ///
+    /// Both halves of that matter. <see cref="AnimationScheduler.StreamLive"/> records a body keyframe's
+    /// stop time against the clock it is given, and <see cref="AnimationScheduler.Advance"/> is driven on
+    /// the tick loop's clock, so the two have to be the same clock; and a keep-alive body keyframe runs
+    /// while no clip is playing, so without this the loop would not be running to serve the deadline at
+    /// all and <c>DriveWheels</c> would carry on past its duration. The engine has no such gap: its
+    /// streamer updates every tick whether or not a real animation is streaming.
+    ///
+    /// Returns false when a running clip owns the keyframe's track, which is the engine's own condition.
+    /// </summary>
+    public bool StreamLive(Keyframe k)
+    {
+        bool streamed = _scheduler.StreamLive(k, NowMs());
+        if (streamed && _scheduler.LiveBodyRunning) StartTicker();
+        return streamed;
+    }
+
     /// <summary>Picks one animation from a group by weight and plays it.</summary>
     public Task<AnimationEndReason>? PlayGroup(string group, string? mood = null, bool replaceRunning = true)
     {
@@ -300,11 +321,12 @@ public sealed class CozmoAnimations : IDisposable
             lock (_gate)
             {
                 if (!_running) { _ticker = null; return; }       // Dispose asked us to stop
-                if (!_scheduler.IsPlaying)
+                if (!_scheduler.HasPendingWork)
                 {
                     // Play sets the clip before calling StartTicker, so anything started before this
                     // check is seen here and keeps the loop alive; anything after it finds _running
-                    // false and starts a fresh ticker.
+                    // false and starts a fresh ticker. The same holds for a live keyframe: StreamLive
+                    // arms its deadline before raising LiveWorkPending.
                     _running = false;
                     _ticker = null;
                     return;

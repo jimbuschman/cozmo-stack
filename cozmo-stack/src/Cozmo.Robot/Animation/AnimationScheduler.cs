@@ -143,6 +143,19 @@ public sealed class AnimationScheduler
     /// <summary>The animation currently running, or null.</summary>
     public string? Playing { get { lock (_gate) return _clip?.Name; } }
     public bool IsPlaying { get { lock (_gate) return _clip is not null; } }
+    /// <summary>
+    /// Whether <see cref="Advance"/> still has something to do: a clip is running, or a live keyframe has
+    /// armed a deadline that only <see cref="Advance"/> can serve. The live animation is not on a clip
+    /// timeline, so <see cref="IsPlaying"/> is false while a keep-alive body shuffle is still driving the
+    /// wheels - and a caller that stops ticking then leaves the robot moving.
+    /// </summary>
+    public bool HasPendingWork { get { lock (_gate) return _clip is not null || _liveBodyStopsAtMs is not null; } }
+
+    /// <summary>
+    /// Whether the last live keyframe armed a deadline <see cref="Advance"/> still has to serve. The
+    /// caller that streams live keyframes uses this to decide whether a tick loop is needed.
+    /// </summary>
+    public bool LiveBodyRunning { get { lock (_gate) return _liveBodyStopsAtMs is not null; } }
     /// <summary>Tracks currently claimed by the running animation.</summary>
     public AnimationTrack OwnedTracks { get { lock (_gate) return _clip?.Tracks ?? AnimationTrack.None; } }
     /// <summary>
@@ -271,6 +284,8 @@ public sealed class AnimationScheduler
             case BodyKeyframe b:
                 _sink.Body(b);
                 lock (_gate)
+                    // The deadline is in the clock the caller passes, which has to be the same clock
+                    // Advance is driven on - see CozmoAnimations.StreamLive, which supplies both.
                     _liveBodyStopsAtMs = b.RadiusIsKnown && b.DurationTimeMs > 0 && b.Speed != 0
                         ? nowMs + b.DurationTimeMs
                         : null;
