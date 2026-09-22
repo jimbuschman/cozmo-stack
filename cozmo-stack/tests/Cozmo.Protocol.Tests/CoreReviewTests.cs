@@ -1021,4 +1021,77 @@ public class CoreReviewTests
         replacement.Dispose();
         Assert.Null(rig.Vision.IsCarryingObject);             // and the owner can take it back
     }
+
+    // ================================================================ CORE-011
+
+    /// <summary>
+    /// CORE-011. A public subscriber that throws must not leave the robot's own state half updated.
+    ///
+    /// <c>CozmoRobot.OnData</c> is one transport callback carrying the whole internal chain - state,
+    /// camera, sensors, cubes, cube accelerometers, then the public <c>Message</c> event - and the state
+    /// tracker raised its own public <c>StateUpdated</c> from inside the first of those. A subscriber
+    /// throwing there escaped into the routing and the camera, the sensors, the cubes and every
+    /// <c>Message</c> subscriber never saw the message at all. <c>Message</c> had the same shape: one
+    /// multicast invoke, so the first subscriber to throw ended the list.
+    ///
+    /// The transport already isolates its own subscribers; the device layer does now too, and what threw
+    /// is reported rather than hidden.
+    /// </summary>
+    [Fact]
+    public void CORE011_AThrowingSubscriberDoesNotStarveTheInternalConsumers()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        var faults = new List<Exception>();
+        robot.HandlerFaulted += faults.Add;
+        robot.State.HandlerFaulted += faults.Add;
+
+        robot.State.StateUpdated += _ => throw new InvalidOperationException("a bad state subscriber");
+        int laterStateSubscriber = 0;
+        robot.State.StateUpdated += _ => laterStateSubscriber++;
+
+        robot.Message += _ => throw new InvalidOperationException("a bad message subscriber");
+        int laterMessageSubscriber = 0;
+        robot.Message += _ => laterMessageSubscriber++;
+
+        // telemetry, which every internal consumer reads
+        var state = new RobotState
+        {
+            Timestamp = 5000,
+            PoseOriginId = 1,
+            Pose = new RobotPose { X = 10, Y = 0, Angle = 0 },
+            HeadAngle = -0.2f,
+            LiftAngle = 0.3f,
+            Accel = new AccelData { Z = 9800 },
+            Gyro = new GyroData(),
+            BatteryVoltage = 3.9f,
+            Status = (uint)RobotStatusFlag.HeadInPos,
+        };
+        Deliver(robot, state);
+
+        // the state tracker took it, and the subscriber after the bad one still ran
+        Assert.NotNull(robot.State.Latest);
+        Assert.Equal(5000u, robot.State.Latest!.Timestamp);
+        Assert.Equal(1, laterStateSubscriber);
+        Assert.Equal(1, laterMessageSubscriber);
+        // and the sensors, which live after the state tracker in the chain, have the reading
+        Assert.Equal(3.9f, robot.Sensors.BatteryVolts ?? 0f, 3);
+
+        // another internally consumed message, to show the chain past the state tracker still routes
+        Deliver(robot, new ObjectAvailable { FactoryId = 42, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = -50 });
+        Assert.Equal(2, laterMessageSubscriber);
+        Assert.NotEmpty(faults);
+        Assert.All(faults, f => Assert.IsType<InvalidOperationException>(f));
+    }
+
+    /// <summary>Hands the robot a message as though it had arrived over the wire.</summary>
+    private static void Deliver(CozmoRobot robot, RobotMessage m)
+    {
+        var sm = new SubMessage(ReliableMessageType.SingleReliableMessage, m.ToBytes(), 0);
+        robot.Transport.ProcessIncoming(FrameCodec.Encode(new Frame
+        {
+            Type = ReliableMessageType.MultipleMixedMessages,
+            SeqMin = 0, SeqMax = 0, Ack = 0,
+            Messages = new List<SubMessage> { sm },
+        }));
+    }
 }

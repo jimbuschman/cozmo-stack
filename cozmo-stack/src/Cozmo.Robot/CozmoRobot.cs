@@ -120,7 +120,38 @@ public sealed class RobotStateTracker
                 break;
         }
         }
-        if (newState is not null) StateUpdated?.Invoke(newState);
+        // The public event goes out one subscriber at a time. A plain multicast invoke runs the whole
+        // list as a single call, so a subscriber that throws takes the rest of the list with it - and,
+        // because this handler runs first in the robot's routing, the exception would escape into
+        // CozmoRobot.OnData and leave the camera, the sensors, the cubes and every Message subscriber
+        // without the message at all. A public subscriber must not be able to do that.
+        if (newState is not null) EventFan.Raise(StateUpdated, newState, HandlerFaulted);
+    }
+
+    /// <summary>
+    /// Raised when a subscriber to one of this tracker's events threw, with what it threw. The fault is
+    /// contained rather than hidden: the internal routing carries on, and this says that it did.
+    /// </summary>
+    public event Action<Exception>? HandlerFaulted;
+}
+
+/// <summary>
+/// Raising an event without letting one subscriber decide for the others.
+///
+/// The transport already does this for its own events (<c>ReliableTransport.Fan</c>); the device layer
+/// needs it for the same reason. Every target is invoked separately, a fault is reported against that
+/// target alone, and the rest of the list still runs.
+/// </summary>
+internal static class EventFan
+{
+    public static void Raise<T>(Action<T>? handler, T arg, Action<Exception>? faulted)
+    {
+        if (handler is null) return;
+        foreach (var t in handler.GetInvocationList())
+        {
+            try { ((Action<T>)t)(arg); }
+            catch (Exception e) { try { faulted?.Invoke(e); } catch { } }
+        }
     }
 }
 
@@ -421,15 +452,41 @@ public sealed class CozmoRobot : IDisposable
     /// <summary>The engine's idle face: two "skip 64 columns" commands, i.e. nothing lit.</summary>
     private static readonly byte[] BlankFace = { 0x3F, 0x3F };
 
+    /// <summary>
+    /// Routes one message to everything that consumes it.
+    ///
+    /// The internal devices come first and each is isolated: this is one transport callback carrying the
+    /// whole chain, so anything throwing part way through used to leave the rest of the devices without
+    /// the message - a partial update of the robot's own state, which nothing downstream can detect. The
+    /// public event is fanned out per subscriber for the same reason, and a subscriber that throws is
+    /// reported through <see cref="HandlerFaulted"/> rather than taking the others with it.
+    /// </summary>
     private void OnData(byte[] payload)
     {
         RobotMessage m;
         try { m = RobotMessage.Parse(payload); } catch (FormatException) { return; }
-        State.Handle(m);
-        Camera.Handle(m);
-        Sensors.Handle(m);
-        Cubes.Handle(m);
-        CubeAccel.Handle(m);
-        Message?.Invoke(m);
+        Route(() => State.Handle(m));
+        Route(() => Camera.Handle(m));
+        Route(() => Sensors.Handle(m));
+        Route(() => Cubes.Handle(m));
+        Route(() => CubeAccel.Handle(m));
+        EventFan.Raise(Message, m, e => Fault(e));
     }
+
+    private void Route(Action a)
+    {
+        try { a(); }
+        catch (Exception e) { Fault(e); }
+    }
+
+    private void Fault(Exception e)
+    {
+        try { HandlerFaulted?.Invoke(e); } catch { }
+    }
+
+    /// <summary>
+    /// Raised when a message consumer or a subscriber to <see cref="Message"/> threw. The rest of the
+    /// routing carried on; this is how that is made visible rather than silent.
+    /// </summary>
+    public event Action<Exception>? HandlerFaulted;
 }
