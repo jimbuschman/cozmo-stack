@@ -95,6 +95,22 @@ public sealed class FreeplayStack : IDisposable
         }
         robot.Sensors.OffTreadsStateChanged += onTreads;
         stack._unsubscribe.Add(() => robot.Sensors.OffTreadsStateChanged -= onTreads);
+
+        // The ground in front of the robot reaches the map here, which is the join the engine makes in
+        // VisionComponent::UpdateOverheadEdges 0x006553FC -> MapComponent::ProcessVisionOverheadEdges
+        // 0x0067F7AC. The detector runs inside the vision system on each frame's own pose data, and the
+        // frame is put in the map against the robot pose of that same frame - the engine looks that pose
+        // up by the frame's timestamp, and here it arrives with the frame.
+        if (vision is not null && ctx.Map is { } theMap)
+        {
+            vision.OverheadEdges ??= new OverheadEdgesDetector();
+            void onFrame(VisionFrameResult r)
+            {
+                if (r.OverheadEdges is { } edges) theMap.AddVisionOverheadEdges(edges, r.PoseData.RobotPose);
+            }
+            vision.FrameProcessed += onFrame;
+            stack._unsubscribe.Add(() => vision.FrameProcessed -= onFrame);
+        }
         return stack;
     }
 

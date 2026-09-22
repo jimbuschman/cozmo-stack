@@ -690,4 +690,85 @@ public class CoreReviewTests
         Assert.True(different > (pcm.Length - rendered) / 10,
                     $"only {different} of {pcm.Length - rendered} unrendered samples changed");
     }
+
+    // ================================================================ CORE-007
+
+    /// <summary>
+    /// CORE-007. The overhead-edge detector and the map's side of it both existed and nothing joined
+    /// them: <c>VisionSystem.ProcessImage</c> never ran the detector and no stack ever handed a frame to
+    /// <c>AddVisionOverheadEdges</c>, so the map never held an edge however much ground the robot covered.
+    ///
+    /// The join is the one the engine makes - <c>VisionComponent::UpdateOverheadEdges</c> 0x006553FC into
+    /// <c>MapComponent::ProcessVisionOverheadEdges</c> 0x0067F7AC - and the frame relationship matters:
+    /// the detector runs on the frame's own pose data, and the frame goes into the map against the robot
+    /// pose of that same frame, which is what the engine looks up by the frame's timestamp
+    /// (<c>RobotStateHistory::ComputeAndInsertStateAt</c> at 0x0067F8A2).
+    ///
+    /// This drives a calibrated synthetic frame - flat ground with a dark band across it, which is what a
+    /// step or an obstacle edge looks like - through <c>ProcessImage</c> and reads the map afterwards.
+    /// </summary>
+    [Fact]
+    public void CORE007_AFrameWithAGroundEdgeReachesTheMapThroughTheProductionPath()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        var cal = CameraCalibration.Nominal();
+        var vision = new VisionSystem(robot) { Calibration = cal };
+        var map = new MemoryMap();
+
+        // the wiring FreeplayStack makes
+        vision.OverheadEdges = new OverheadEdgesDetector();
+        vision.FrameProcessed += r =>
+        {
+            if (r.OverheadEdges is { } edges) map.AddVisionOverheadEdges(edges, r.PoseData.RobotPose);
+        };
+
+        var pd = new VisionPoseData(1000, new Pose3d(Mat3.Identity, new Vec3(0, 0, 0)),
+                                    HeadGeometry.MinHeadAngleRad, 0, false, false);
+        var frame = new GrayImage(cal.Columns, cal.Rows);
+        frame.Fill(150);
+        for (int y = 0; y < cal.Rows; y++)
+            for (int x = 0; x < cal.Columns; x++)
+                if (y > cal.Rows * 3 / 5) frame.Pixels[y * cal.Columns + x] = 30;   // a dark band across the floor
+
+        var result = vision.ProcessImage(frame, 1, 1000, pd);
+
+        Assert.NotNull(result.OverheadEdges);
+        Assert.True(result.OverheadEdges!.GroundPlaneValid);
+        Assert.Contains(result.OverheadEdges.Chains, c => c.IsBorder);
+
+        var regions = map.Regions;
+        Assert.Contains(regions, r => r.Type == MemoryMapContentType.InterestingEdge);
+        Assert.Contains(regions, r => r.Type == MemoryMapContentType.ClearOfObstacle);
+        // the edge is in front of the robot, inside the ROI the detector looks at
+        foreach (var e in regions.Where(r => r.Type == MemoryMapContentType.InterestingEdge))
+            foreach (var p in e.Polygon)
+                Assert.InRange(p.X, GroundPlaneROI.DistMm - 1, GroundPlaneROI.DistMm + GroundPlaneROI.LengthMm + 1);
+        // and it carries the frame's timestamp, not the wall clock
+        Assert.All(regions.Where(r => r.Type == MemoryMapContentType.InterestingEdge), r => Assert.Equal(1000u, r.Timestamp));
+    }
+
+    /// <summary>
+    /// CORE-007, the other half: a frame with nothing in it must not put an edge in the map, so that what
+    /// the first test sees is the band and not the wiring inventing content.
+    /// </summary>
+    [Fact]
+    public void CORE007_FlatGroundLeavesNoEdgeInTheMap()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        var cal = CameraCalibration.Nominal();
+        var vision = new VisionSystem(robot) { Calibration = cal, OverheadEdges = new OverheadEdgesDetector() };
+        var map = new MemoryMap();
+        vision.FrameProcessed += r =>
+        {
+            if (r.OverheadEdges is { } edges) map.AddVisionOverheadEdges(edges, r.PoseData.RobotPose);
+        };
+
+        var pd = new VisionPoseData(1000, new Pose3d(Mat3.Identity, new Vec3(0, 0, 0)),
+                                    HeadGeometry.MinHeadAngleRad, 0, false, false);
+        var frame = new GrayImage(cal.Columns, cal.Rows);
+        frame.Fill(150);
+        vision.ProcessImage(frame, 1, 1000, pd);
+
+        Assert.DoesNotContain(map.Regions, r => r.Type == MemoryMapContentType.InterestingEdge);
+    }
 }

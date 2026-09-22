@@ -8,6 +8,13 @@ namespace Cozmo.Robot.Vision;
 public sealed record VisionFrameResult(uint ImageId, uint Timestamp, VisionPoseData PoseData, IReadOnlyList<ObservedMarker> Markers,
                                        IReadOnlyList<ObjectObservation> Objects, IReadOnlyList<ObservableObject> Forgotten, TimeSpan Elapsed)
 {
+    /// <summary>
+    /// The ground in front of the robot as this frame saw it, when the overhead-edge detector is on.
+    /// The engine carries the same thing on its <c>VisionProcessingResult</c>, one frame per image, and
+    /// <c>VisionComponent::UpdateOverheadEdges</c> 0x006553FC hands it to the map component.
+    /// </summary>
+    public OverheadEdgeFrame? OverheadEdges { get; init; }
+
     public override string ToString() =>
         $"image {ImageId} t={Timestamp}: {Markers.Count} marker(s) [{string.Join(" ", Markers.Select(m => m.Code))}], " +
         $"{Objects.Count} object(s), {Forgotten.Count} forgotten, {Elapsed.TotalMilliseconds:F0} ms";
@@ -190,6 +197,7 @@ public sealed class VisionSystem : IDisposable
         IReadOnlyList<ObservedMarker> markers;
         IReadOnlyList<ObjectObservation> objects;
         IReadOnlyList<ObservableObject> forgotten;
+        OverheadEdgeFrame? overheadEdges = null;
         lock (_busy)
         {
             markers = Detector.Detect(gray, timestamp);
@@ -210,13 +218,30 @@ public sealed class VisionSystem : IDisposable
                 Faces.Update(timestamp);
             }
             if (PetDetector.IsAvailable) Pets.Update(PetDetector.Detect(gray, timestamp), timestamp, pd.RotatingTooFast);
+            // The ground in front of the robot, on this frame's own pose data: the detector needs the
+            // camera where it was when the image was taken and the lift angle it had then, which is what
+            // VisionPoseData carries. The points come back in robot coordinates, so whoever puts them in
+            // the map uses the same frame's robot pose - which is what the engine's map component looks
+            // up by the frame's timestamp (RobotStateHistory::ComputeAndInsertStateAt at 0x0067F8A2).
+            if (OverheadEdges is { } edges)
+                overheadEdges = edges.Detect(gray, camera, pd.RobotPose, timestamp, pd.LiftAngleRad);
         }
-        var result = new VisionFrameResult(imageId, timestamp, pd, markers, objects, forgotten, sw.Elapsed);
+        var result = new VisionFrameResult(imageId, timestamp, pd, markers, objects, forgotten, sw.Elapsed)
+        {
+            OverheadEdges = overheadEdges,
+        };
         FramesProcessed++;
         LastResult = result;
         FrameProcessed?.Invoke(result);
         return result;
     }
+
+    /// <summary>
+    /// The overhead-edge detector, or null to leave the ground alone. <c>VisionSystem::Update</c> runs it
+    /// as one of its modes; here it is off until something asks for it, because the only consumer is the
+    /// memory map and a stack without one has no use for the work.
+    /// </summary>
+    public OverheadEdgesDetector? OverheadEdges { get; set; }
 
     public void Dispose()
     {
