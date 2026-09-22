@@ -15,9 +15,10 @@
 > not. Neither means the behaviour is reproduced: BLOCKED_EXTERNAL and HARDWARE_ONLY records outlive both,
 > and `FIDELITY_GAPS.md` counts them per subsystem for that reason.
 >
-> **M9**, **M6** and the offline tools answer yes to both. Two live-path RECOVERABLE_GAP records are left
-> in the whole manifest, both in the vision front end: the corner extraction by line fits (M11-005) and
-> the memory map's overhead edges (M11-017). No IMPLEMENTATION_GAP record remains anywhere.
+> **M9**, **M6** and the offline tools answer yes to both. One live-path RECOVERABLE_GAP record is left
+> in the whole manifest: the sub-pixel corner refinement (M11-005, `RefineQuadrilateral` 0x008C55E0). The
+> corner extraction and the memory map's overhead edges were closed on 2026-09-21. No IMPLEMENTATION_GAP
+> record remains anywhere.
 
 | | |
 | --- | --- |

@@ -54,6 +54,28 @@ What is left is the vision front end: **M11-005**, the corner extraction by line
 the boundary's tangent, clusters it into four with `cv::kmeans` and fits a line to each), and **M11-017**,
 the overhead edges the map gets from the vision system's ground-plane processing.
 
+## 2026-09-21, later: both of those, less the refinement
+
+**M11-005** is down to one routine. The corner extraction is the engine's now, in `QuadCorners`: the
+staircase contour `TraceNextExteriorBoundary` 0x008C6B18 builds out of four extent arrays; the derivative
+of a Gaussian of sigma = length / 64 convolved circularly with it; `cv::kmeans` over the unit tangents,
+seeded with four equal arcs and run with `KMEANS_USE_INITIAL_LABELS` so that it reproduces; a least-squares
+line per cluster, fitted across whichever extent is wider; all six intersections with only those inside the
+image kept and exactly four required; `ComputeClockwiseCorners` 0x008A1324 ordering them by angle about
+their centroid; and the rounding, the 0, 3, 1, 2 permutation into the decoder's order and the winding swap
+`IsQuadrilateralReasonable` reports. What is still local is the sub-pixel refinement -
+`RefineQuadrilateral` 0x008C55E0, a Gauss-Newton refinement of the marker's homography, 3980 bytes - and
+that is the last live-path RECOVERABLE_GAP in the manifest.
+
+**M11-017** is closed. `OverheadEdges.cs` is the detector - the ground ROI, the seven-by-five kernel at
+0x00C8E020, the threshold of 50, the column walk, the homography, the lift gate and the five-millimetre
+chain rule - and `MemoryMap` grew the map side: the forty-degree runs, the clear triangles and lines, the
+interesting edges, the border pass that writes an edge off against an obstacle, and the two entry points
+`BehaviorVisitInterestingEdge` uses.
+
+Counts after both: EXACT_SOURCE 161, EQUIVALENT_IMPLEMENTATION 15, RECOVERABLE_GAP 1,
+IMPLEMENTATION_GAP 0, COMPATIBILITY_POLICY 19, HARDWARE_ONLY 3, BLOCKED_EXTERNAL 8.
+
 ## The transmitted-unknowns sweep
 
 The first thing the repository-wide pass did was the special priority: every `engine_to_robot` message

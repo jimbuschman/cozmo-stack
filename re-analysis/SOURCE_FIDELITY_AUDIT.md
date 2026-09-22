@@ -832,6 +832,25 @@ The manifest's live path came down to two records, both in the vision front end.
   symmetry threshold, 2.0 in 8.8 (M11-018).
 * **The last IMPLEMENTATION_GAP anywhere.** An event with several Play actions renders all of them (M9-021).
 
-What remains, both read far enough to say exactly what is missing: `ExtractLineFitsPeaks` and the boundary
-trace behind the corner extraction (M11-005), and the overhead edges the map gets from the vision system's
-ground-plane processing (M11-017).
+## 21. The corners the engine fits, and the ground it looks at (2026-09-21, later)
+
+Both of the records above are answered, and one narrower one is left in their place.
+
+* **The corner extraction is the engine's.** `TraceNextExteriorBoundary` 0x008C6B18 builds a staircase
+  contour out of four extent arrays over the component's bounding box - not a pixel walk - and
+  `ExtractLineFitsPeaks` 0x008A5DB8 differentiates a Gaussian of sigma = length / 64, convolves that one
+  kernel circularly with the contour and normalises, splits the unit tangents into four with `cv::kmeans`
+  seeded by four equal arcs and run with `KMEANS_USE_INITIAL_LABELS` (so nothing is random), fits each
+  cluster across whichever extent is wider, intersects all six pairs and keeps the four inside the image,
+  and orders them by angle about their centroid. The quad is then permuted 0, 3, 1, 2 into the decoder's
+  order, and `IsQuadrilateralReasonable`'s `bool&` turns out to report whether that order needs its middle
+  pair exchanged rather than whether the quad is reasonable (M11-005, now down to `RefineQuadrilateral`
+  0x008C55E0 alone).
+* **The memory map's edges are in.** The ground ROI, the seven-by-five kernel at 0x00C8E020, the threshold
+  of 50, the column walk from the bottom up, the homography, the lift gate, the five-millimetre chains, the
+  forty-degree runs, the clear triangles and lines, the interesting edges and the border pass that writes
+  one off against an obstacle (M11-017, closed).
+
+What remains is the sub-pixel refinement: `VisionMarker::RefineCorners` 0x0089FD98 and
+`RefineQuadrilateral` 0x008C55E0, a Gauss-Newton refinement of the marker's homography whose parameters
+this stack already has and whose arithmetic it does not (M11-005).
