@@ -116,15 +116,25 @@ public sealed class DockingSystem : IDisposable
         _robot = robot; _vision = vision;
         robot.Message += OnMessage;
         vision.FrameProcessed += OnFrame;
-        vision.IsCarryingObject = Carrying.IsCarrying;   // the guard at 0x00534116 needs this
+        // Everything this instance installs on the vision system is remembered, so Dispose can take back
+        // what it put there - and only what it put there. A replacement installs its own and owns them
+        // from that moment; a late disposal of the old one must not clear the new one's.
+        _isCarrying = Carrying.IsCarrying;               // the guard at 0x00534116 needs this
+        vision.IsCarryingObject = _isCarrying;
         // A delocalization forgets what was located in the origin that has gone, except what the robot is
         // holding: Robot::Delocalize moves the carried objects into the new origin instead (0x00510CF0).
-        vision.CarriedObjects = () => Carrying.CarriedObjectId is { } id
+        _carriedObjects = () => Carrying.CarriedObjectId is { } id
             ? new HashSet<uint> { id } : new HashSet<uint>();
+        vision.CarriedObjects = _carriedObjects;
         // The engine parents the carried object to the lift, so it follows for free; here the chain is
         // recomposed whenever a new state arrives.
-        vision.FrameProcessed += _ => UpdateCarriedObjectPose();
+        _carriedPose = _ => UpdateCarriedObjectPose();
+        vision.FrameProcessed += _carriedPose;
     }
+
+    private readonly Func<uint, bool> _isCarrying;
+    private readonly Func<IReadOnlySet<uint>> _carriedObjects;
+    private readonly Action<VisionFrameResult> _carriedPose;
 
     public CarryingComponent Carrying { get; } = new();
     public List<RobotMessage> Sent { get; } = new();
@@ -340,9 +350,21 @@ public sealed class DockingSystem : IDisposable
         }
     }
 
+    /// <summary>
+    /// Gives the vision system back everything this instance installed on it, and nothing else.
+    ///
+    /// A disposed component that leaves a callback behind is still deciding: the carried-object updater
+    /// would go on writing a pose into the world, and the carrying question the world asks before it
+    /// dirties a moved cube would still be answered by a component nobody is using. But a replacement may
+    /// already have installed its own, so each delegate is only cleared while it is still the one this
+    /// instance put there.
+    /// </summary>
     public void Dispose()
     {
         _robot.Message -= OnMessage;
         _vision.FrameProcessed -= OnFrame;
+        _vision.FrameProcessed -= _carriedPose;
+        if (ReferenceEquals(_vision.IsCarryingObject, _isCarrying)) _vision.IsCarryingObject = null;
+        if (ReferenceEquals(_vision.CarriedObjects, _carriedObjects)) _vision.CarriedObjects = null;
     }
 }

@@ -954,4 +954,71 @@ public class CoreReviewTests
         foreach (var b in stepped)
             Assert.Equal(clock, b.Clock() / 1000.0, 6);
     }
+
+    // ================================================================ CORE-010
+
+    /// <summary>
+    /// CORE-010. A disposed manipulation system must stop deciding things.
+    ///
+    /// <c>DockingSystem</c> installs three things on the vision system - a frame handler, an anonymous
+    /// carried-object updater, and the delegate the world asks before it dirties a cube that reported
+    /// movement - and disposal took back only the first. The rest went on running: a component nobody was
+    /// using kept writing a carried object's pose into the world and kept answering the carrying
+    /// question, which decides whether a moved cube's pose is dirtied at all.
+    ///
+    /// Ownership has to be taken back without taking someone else's: a replacement installs its own, and
+    /// a late disposal of the old one must leave those alone. Each delegate is cleared only while it is
+    /// still the one that instance put there.
+    /// </summary>
+    [Fact]
+    public void CORE010_ADisposedManipulationSystemStopsTouchingTheVisionSystem()
+    {
+        using var rig = new Rig();
+        if (rig.NoLibrary) return;
+        rig.Cube = new Pose3d(Mat3.Identity, new Vec3(150, 0, 22));
+        var cube = Assert.Single(rig.Frame().Objects).Object;
+
+        // the original thinks it is carrying the cube; the replacement does not
+        var original = rig.M;
+        original.Docking.Carrying.SetCarrying(cube.ObjectId);
+        Assert.True(rig.Vision.IsCarryingObject!(cube.ObjectId));
+
+        original.Dispose();
+        var replacement = new ManipulationSystem(rig.Robot, rig.Vision);
+
+        // the vision system now answers from the replacement, which is carrying nothing
+        Assert.False(rig.Vision.IsCarryingObject?.Invoke(cube.ObjectId) ?? false);
+        Assert.Empty(rig.Vision.CarriedObjects?.Invoke() ?? new HashSet<uint>());
+
+        // and the disposed one does not write a pose for its "carried" cube any more
+        var poseBefore = rig.M.World.GetObjectById(cube.ObjectId)!.Pose.Translation;
+        rig.Frame();
+        var poseAfter = rig.M.World.GetObjectById(cube.ObjectId)!.Pose.Translation;
+        Assert.Equal(poseBefore.X, poseAfter.X, 3);
+        Assert.Equal(poseBefore.Y, poseAfter.Y, 3);
+        Assert.Equal(poseBefore.Z, poseAfter.Z, 3);
+
+        replacement.Dispose();
+    }
+
+    /// <summary>
+    /// CORE-010, the other half: disposing an old instance after a replacement has installed its own must
+    /// not clear the replacement's.
+    /// </summary>
+    [Fact]
+    public void CORE010_ALateDisposalDoesNotClearTheReplacementsCallbacks()
+    {
+        using var rig = new Rig();
+        var original = rig.M;
+        var replacement = new ManipulationSystem(rig.Robot, rig.Vision);
+        var theirs = rig.Vision.IsCarryingObject;
+        Assert.NotNull(theirs);
+
+        original.Dispose();                                  // the late cleanup
+
+        Assert.Same(theirs, rig.Vision.IsCarryingObject);     // still the replacement's
+        Assert.NotNull(rig.Vision.CarriedObjects);
+        replacement.Dispose();
+        Assert.Null(rig.Vision.IsCarryingObject);             // and the owner can take it back
+    }
 }
