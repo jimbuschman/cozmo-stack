@@ -18,7 +18,7 @@ ASSET (OBB file), INFERRED (a reading not confirmed in code), LOCAL / LOCAL_POLI
 | marker codes `MarkerType` (0..39) | `Vision/MarkerLibrary.cs` | NATIVE: name table indexed by `Marker::GetNameForCode` 0x0087E0D4 (GOT 0x1038220) |
 | the nearest-neighbour library: 598 probe images × 1024, labels, label→code, corner reorder, orientation, probe geometry | `re-analysis/tools/extract_marker_library.py` → `Vision/Data/marker_nn_library.bin` (git-ignored; **not in the repository**, see §2) | NATIVE: `VisionMarker::GetNearestNeighborLibrary` 0x0089ED1C and the tables it passes (addresses in the script) |
 | decoder: probe sampling, min-max normalisation, L1 nearest neighbour, ambiguity test, label tables | `MarkerDecoder` | NATIVE algorithm (§2) |
-| quad front end | `QuadDetector` | pipeline, parameters, dark mask and quad acceptance NATIVE (`Parameters::Initialize` 0x008752F8, `ExtractComponentsViaCharacteristicScale_binomial` 0x00890448, `BinomialFilter` 0x008A2344, `IsQuadrilateralReasonable` 0x00892B18); corner extraction and refinement LOCAL (§3, M11-005) |
+| quad front end | `QuadDetector`, `QuadCorners` | pipeline, parameters, dark mask, corner extraction and quad acceptance NATIVE (`Parameters::Initialize` 0x008752F8, `ExtractComponentsViaCharacteristicScale_binomial` 0x00890448, `BinomialFilter` 0x008A2344, `TraceNextExteriorBoundary` 0x008C6B18, `ExtractLineFitsPeaks` 0x008A5DB8, `IsQuadrilateralReasonable` 0x00892B18); the sub-pixel refinement LOCAL (§3, M11-005) |
 | camera calibration struct, NV read | `CameraCalibration`, `NvCalibrationReader` | UNITY struct, NATIVE tag 0x80000001; request framing INFERRED |
 | camera pose on the robot | `HeadGeometry` | NATIVE: `Robot::Robot` neck (−13, 0, 49), head cam (17.52, 0, 17.52), `_kDefaultHeadCamRotation` at 0xC4A854, `GetCameraPose` |
 | projection and distortion | `CameraModel` | OpenCV model the engine's `Vision::Camera` uses; numerics LOCAL |
@@ -91,14 +91,40 @@ the edge pixel standing in at the borders - followed by `(filtered * 0xCCCC) >> 
 acceptance test is `IsQuadrilateralReasonable`'s four rules (minimum area, convexity, one diagonal's
 triangles within a factor of two, every corner two pixels clear of the image edge).
 
-What is still local is the corner extraction and the refinement (M11-005). The engine traces the component's
-exterior boundary and hands it to `ExtractLineFitsPeaks`, which smooths the boundary's tangent with a Gaussian
-of sigma = length / 64, clusters the smoothed directions into four with `cv::kmeans`, fits a line to each with
-`cv::solve` and intersects them; this stack takes the boundary's extreme points and refines each side to the
-sub-pixel dark-to-light edge by its own line fit. On rendered markers the corners land within 1 px (test) and
-PnP reprojection is 0.1-0.4 px (§7). The engine's own `component_minimumNumPixels` of 100 puts a floor
-under how small a marker can be: rendered squares are found down to twenty pixels a side and lost at
-sixteen, which is roughly a cube at 350 mm in this camera.
+**The corners are now the engine's too** (`QuadCorners`, the whole of `ExtractLineFitsPeaks` 0x008A5DB8 and
+the boundary trace it works on):
+
+1. `TraceNextExteriorBoundary` 0x008C6B18 never walks the component pixel by pixel. It reduces it to four
+   extent arrays over its bounding box - the least and greatest x in each row, the least and greatest y in
+   each column - and stitches a staircase contour out of them in four passes: down the right side, left along
+   the bottom, up the left, back along the top, starting and ending at the rightmost pixel of the top row.
+   An empty row or column in the box makes the trace fail. The list it fills holds 10000 points (0x00892DA8).
+2. The contour is smoothed with the *derivative of a Gaussian*: `cv::getGaussianKernel` with
+   sigma = length / 64 and OpenCV's size-to-sigma relation solved backwards,
+   `ceil(((sigma - 0.8) / 0.3 + 1) * 2 + 1)` forced odd, then `cv::filter2D` of that kernel with
+   [-0.5, 0, +0.5]. That single kernel is convolved circularly with the boundary, in double, and normalised:
+   a unit tangent per point.
+3. `cv::kmeans` splits the tangents into four - the four sides - seeded with four equal arcs of the boundary
+   and run with `KMEANS_USE_INITIAL_LABELS`, one attempt, fifteen iterations, epsilon 0.1. Nothing about it
+   is random, which is why it reproduces.
+4. Each cluster is fitted by least squares across whichever of its extents is wider: `y = a x + b` for a
+   flattish side and `x = a y + b` for a steep one (the flag at 0x008A6714), so no side is ever fitted
+   against a vertical.
+5. Every pair of the four lines is intersected, each intersection is kept only if it lands inside the image,
+   and *exactly four* must survive. `Quadrilateral<float>::ComputeClockwiseCorners` 0x008A1324 sorts them by
+   the angle they make with their centroid, ascending, which with y down is clockwise on screen; they are
+   then rounded half away from zero into the s16 quad.
+6. The quad the engine stores is that clockwise order permuted 0, 3, 1, 2 - upper left, lower left, upper
+   right, lower right, which is the decoder's order - and `IsQuadrilateralReasonable` both accepts it and
+   says whether its middle pair needs exchanging, which is the winding flag it returns through its `bool&`.
+
+What is still local is the sub-pixel refinement (M11-005): the engine refines later, in
+`DetectFiducialMarkers` through `VisionMarker::RefineCorners` 0x0089FD98 and
+`RefineQuadrilateral` 0x008C55E0, and this stack refines each side to the dark-to-light edge with its own
+line fit instead. On rendered markers the corners land within 1 px (test) and PnP reprojection is 0.1-0.4 px
+(§7). The engine's own `component_minimumNumPixels` of 100 puts a floor under how small a marker can be:
+rendered squares are found down to twenty pixels a side and lost at sixteen, which is roughly a cube at
+350 mm in this camera.
 
 ## 4. Camera and cube geometry — NATIVE
 

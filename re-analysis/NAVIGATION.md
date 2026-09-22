@@ -67,10 +67,38 @@ side `ManipRig.cs`. Read `MANIPULATION.md` first: everything here sits on the M1
 * `HasCollisionRayWithTypes` 0x0068176E and the eleven-entry mask at 0x00C67962: everything blocks except
   Unknown, ClearOfObstacle, ClearOfCliff and ObstacleChargerRemoved.
 
-The engine keeps its regions in a quad tree (`QuadTree` 0x00684C08) subdivided to `GetContentPrecisionMM`;
-this keeps the polygons, which answers the same ray exactly rather than to the tree's precision. The one
-thing missing is the content vision contributes - the overhead edges that become `InterestingEdge` and
-`NotInterestingEdge` (M11-017).
+The engine keeps its regions in a quad tree (`QuadTree` 0x00684C08) subdivided to `GetContentPrecisionMM`,
+which is ten millimetres (0x00685000); this keeps the polygons, which answers the same ray exactly rather
+than to the tree's precision.
+
+**The overhead edges.** What vision contributes is the ground in front of the robot, and it arrives as an
+`OverheadEdgeFrame` (`OverheadEdges.cs`, M11-017):
+
+* `GroundPlaneROI` is a trapezoid in robot coordinates, from 40 mm ahead and forty wide out to 190 mm ahead
+  and a hundred and fifty wide (the four statics at 0x00C48F60 and `GetGroundQuad` 0x004F7774).
+* `OverheadEdgesDetector::Detect` 0x006ABE34 projects it into the image, filters that rectangle with a
+  seven-by-five kernel (the thirty-five floats at 0x00C8E020: a five-tap smoothing across, a difference with
+  three blank rows between its halves down), masks everything outside the quad away, and walks each column
+  from the bottom up for the first response past 50 - the threshold `VisionSystem` constructs it with. The
+  first one found is an edge point; a column with none reports the far end as clear, but only where the far
+  edge of the ROI is itself in frame. Each image point becomes a ground point through the ground-plane
+  homography. Points join a chain while they are of the same kind and within 5 mm of each other.
+* `MapComponent::AddVisionOverheadEdges` 0x0067F814 puts each point in world coordinates through the robot's
+  pose at the frame's timestamp, drops any the map already has something in front of, and accumulates runs:
+  a run continues while consecutive segments stay within forty degrees of each other (0.766 at 0x0067F980)
+  and is closed off by a sharper turn, a blocked point or the end of the chain. A closed run longer than the
+  noise length becomes the triangle between the robot and its two ends - `ClearOfObstacle` - or, when the run
+  itself is under fifteen millimetres, a line from the robot to its midpoint; the four constants are
+  `kOverheadEdgeCloseMaxLenForTriangle_mm` 15, `kOverheadEdgeFarMaxLenForLine_mm` 15,
+  `kOverheadEdgeFarMinLenForClearReport_mm` 3 and `kOverheadEdgeSegmentNoiseLen_mm` 6 (0x00C8764C).
+  A run from a border chain also goes in as a two-point `InterestingEdge`.
+* Then `FillBorder` (`QuadTreeProcessor::FillBorder` 0x00689FAC): an interesting edge that touches one of
+  the masked types - the five obstacles and `NotInterestingEdge`, the table at 0x00C87675 - is written off as
+  `NotInterestingEdge`, because a frontier against something already known is not somewhere left to look.
+* `BehaviorVisitInterestingEdge`'s two entry points are here as well:
+  `FlagQuadAsNotInterestingEdges` 0x0067E6B0 writes a quad off once the robot has been there, and
+  `FlagGroundPlaneROIInterestingEdgesAsUncertain` 0x0067E50C takes the edges inside the ROI back to
+  `Unknown` before it waits for the next frame (the lambda at 0x00680B54).
 
 `BehaviorInteractWithFaces` is the first caller: `CanDriveIdealDistanceForward` 0x005C2420 asks whether the
 40 mm ahead are clear, and `TransitionToDrivingForward` drives 40 mm when they are and -15 mm when they are

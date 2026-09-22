@@ -180,24 +180,31 @@ public class VisionTests
         Assert.Equal(512, p.QuadSymmetryThresholdQ8);
         Assert.Equal(2, p.MinDistanceFromEdge);
 
+        // corners arrive in the engine's order: upper left, lower left, upper right, lower right
         // a square well inside the image passes
-        var square = new[] { new Vec2(50, 50), new Vec2(90, 50), new Vec2(90, 90), new Vec2(50, 90) };
-        Assert.True(QuadDetector.IsQuadrilateralReasonable(square, 320, 240));
+        var square = new[] { new Vec2(50, 50), new Vec2(50, 90), new Vec2(90, 50), new Vec2(90, 90) };
+        Assert.True(QuadDetector.IsQuadrilateralReasonable(square, 320, 240, null, out bool swapped));
+        Assert.False(swapped);
+
+        // the same square with its winding reversed is accepted, and reported as needing the swap
+        var reversed = new[] { new Vec2(50, 50), new Vec2(90, 50), new Vec2(50, 90), new Vec2(90, 90) };
+        Assert.True(QuadDetector.IsQuadrilateralReasonable(reversed, 320, 240, null, out swapped));
+        Assert.True(swapped);
 
         // too small: the first cross product is under 25
-        var tiny = new[] { new Vec2(50, 50), new Vec2(54, 50), new Vec2(54, 53), new Vec2(50, 53) };
+        var tiny = new[] { new Vec2(50, 50), new Vec2(50, 53), new Vec2(54, 50), new Vec2(54, 53) };
         Assert.False(QuadDetector.IsQuadrilateralReasonable(tiny, 320, 240));
 
         // not convex
-        var dart = new[] { new Vec2(50, 50), new Vec2(90, 50), new Vec2(60, 60), new Vec2(50, 90) };
+        var dart = new[] { new Vec2(50, 50), new Vec2(50, 90), new Vec2(90, 50), new Vec2(60, 60) };
         Assert.False(QuadDetector.IsQuadrilateralReasonable(dart, 320, 240));
 
         // convex but lopsided: neither diagonal splits it within a factor of two
-        var wedge = new[] { new Vec2(50, 50), new Vec2(250, 50), new Vec2(250, 56), new Vec2(50, 200) };
+        var wedge = new[] { new Vec2(50, 50), new Vec2(50, 200), new Vec2(250, 50), new Vec2(250, 56) };
         Assert.False(QuadDetector.IsQuadrilateralReasonable(wedge, 320, 240));
 
         // against the edge
-        var atEdge = new[] { new Vec2(1, 50), new Vec2(41, 50), new Vec2(41, 90), new Vec2(1, 90) };
+        var atEdge = new[] { new Vec2(1, 50), new Vec2(1, 90), new Vec2(41, 50), new Vec2(41, 90) };
         Assert.False(QuadDetector.IsQuadrilateralReasonable(atEdge, 320, 240));
     }
 
@@ -226,6 +233,153 @@ public class VisionTests
         Assert.Equal(1, found[0].Markers);
         Assert.Equal(0, found[1].Markers);
         Assert.Equal(100, new QuadDetectorParameters().MinComponentPixels);
+    }
+
+    /// <summary>
+    /// <c>TraceNextExteriorBoundary</c> 0x008C6B18 on a solid rectangle. The engine never walks the
+    /// component pixel by pixel: it keeps the least and greatest x of every row and the least and
+    /// greatest y of every column and stitches those four extent arrays into a staircase, starting at the
+    /// rightmost pixel of the top row and going down the right side, left along the bottom, up the left
+    /// side and back along the top. For a rectangle that is exactly its perimeter, once round and closed:
+    /// the last point of the top pass is the first point of the right-hand one.
+    /// </summary>
+    [Fact]
+    public void TheExteriorBoundaryIsTheEnginesStaircase()
+    {
+        const int w = 20, h = 12;
+        var labels = new int[w * h];
+        for (int y = 3; y <= 8; y++)
+            for (int x = 4; x <= 11; x++)
+                labels[y * w + x] = 7;
+
+        var boundary = QuadCorners.ExteriorBoundary(labels, 7, w, 4, 3, 11, 8);
+        Assert.NotNull(boundary);
+        // the perimeter of a 8 x 6 rectangle, every point once and the start repeated to close it
+        Assert.Equal(2 * (8 + 6) - 4 + 1, boundary!.Count);
+        Assert.Equal(boundary[0], boundary[^1]);
+        Assert.Equal(boundary.Count - 1, boundary.Distinct().Count());
+        Assert.All(boundary, b => Assert.True(b.X == 4 || b.X == 11 || b.Y == 3 || b.Y == 8));
+        // it starts at the top right and the second point is directly below it
+        Assert.Equal(new QuadCorners.BoundaryPoint(11, 3), boundary[0]);
+        Assert.Equal(new QuadCorners.BoundaryPoint(11, 4), boundary[1]);
+        // and it turns the bottom right corner before it reaches the bottom left
+        int bottomRight = boundary.FindIndex(b => b.X == 11 && b.Y == 8);
+        int bottomLeft = boundary.FindIndex(b => b.X == 4 && b.Y == 8);
+        Assert.True(bottomRight < bottomLeft);
+
+        // a bounding box with an empty row cannot be traced (0x008C6F70)
+        var gapped = new int[w * h];
+        for (int x = 4; x <= 11; x++) { gapped[3 * w + x] = 7; gapped[8 * w + x] = 7; }
+        Assert.Null(QuadCorners.ExteriorBoundary(gapped, 7, w, 4, 3, 11, 8));
+    }
+
+    /// <summary>
+    /// The smoothing kernel of <c>ExtractLineFitsPeaks</c> 0x008A5DB8: sigma is the boundary length over
+    /// 64 (0x008A5E90), the size is OpenCV's size-to-sigma relation solved backwards and forced odd
+    /// (0x008A5ED6..0x008A5F1A), and what the boundary is actually convolved with is that Gaussian put
+    /// through <c>cv::filter2D</c> with [-0.5, 0, +0.5] - a derivative of a Gaussian, whose end taps come
+    /// out zero because filter2D reflects its border.
+    /// </summary>
+    [Fact]
+    public void TheBoundaryIsSmoothedWithADerivativeOfAGaussian()
+    {
+        Assert.Equal(1.0f / 64, QuadCorners.SigmaPerBoundaryPoint);
+        // 256 boundary points: sigma 4, and ((4 - 0.8) / 0.3 + 1) * 2 + 1 = 24.3, rounded up to 25
+        Assert.Equal(25, QuadCorners.KernelSize(4f));
+        Assert.Equal(5, QuadCorners.KernelSize(1f));
+        Assert.Equal(1, QuadCorners.KernelSize(0.1f));
+
+        var g = QuadCorners.GaussianKernel(25, 4.0);
+        Assert.Equal(1.0, g.Sum(), 5);
+        Assert.Equal(g[12], g.Max(), 6);
+        Assert.Equal(g[11], g[13], 6);
+
+        var d = QuadCorners.DifferentiateKernel(g);
+        Assert.Equal(0f, d[0]);
+        Assert.Equal(0f, d[^1]);
+        Assert.Equal(0.0, d.Sum(), 5);
+        Assert.Equal(-d[11], d[13], 6);
+        Assert.True(d[11] > 0 && d[13] < 0);
+    }
+
+    /// <summary>
+    /// The four k-means seeds at 0x008A62D8..0x008A63EE are four equal arcs of the boundary, the quarter
+    /// points taken with C's truncating division, and the clustering that follows runs with
+    /// <c>KMEANS_USE_INITIAL_LABELS</c> and one attempt - so it never draws a random centre and the same
+    /// boundary always gives the same four sides.
+    /// </summary>
+    [Fact]
+    public void TheClusteringStartsFromFourEqualArcs()
+    {
+        var labels = QuadCorners.InitialLabels(10);
+        Assert.Equal(new[] { 0, 0, 1, 1, 1, 2, 2, 3, 3, 3 }, labels);
+        Assert.Equal(4, QuadCorners.Clusters);
+        Assert.Equal(15, QuadCorners.KMeansMaxIterations);
+        Assert.Equal(0.1, QuadCorners.KMeansEpsilon);
+
+        // two well separated groups of unit vectors, seeded with the arcs, stay put and repeat exactly
+        var samples = new (float Y, float X)[8];
+        for (int i = 0; i < 8; i++) samples[i] = i < 4 ? (1f, 0f) : (0f, 1f);
+        var a = QuadCorners.InitialLabels(8); QuadCorners.KMeans(samples, a);
+        var b = QuadCorners.InitialLabels(8); QuadCorners.KMeans(samples, b);
+        Assert.Equal(a, b);
+        // the two directions never share a label; the empty clusters OpenCV is left with take a point
+        // each from the largest one rather than being filled at random
+        Assert.Empty(a.Take(4).Intersect(a.Skip(4)));
+        Assert.Equal(4, a.Distinct().Count());
+    }
+
+    /// <summary>
+    /// The whole of <c>ExtractLineFitsPeaks</c> on a square: four clusters of boundary tangents, a line
+    /// fitted to each - across the wider extent, so the two vertical sides are fitted as x of y
+    /// (0x008A6714) - and every pair intersected, of which exactly four must land inside the image
+    /// (0x008A6BE2). The corners come back clockwise on screen, starting at the top left, rounded to
+    /// whole pixels the way the engine rounds into its s16 quad.
+    /// </summary>
+    [Fact]
+    public void TheCornersAreFourLineIntersections()
+    {
+        const int w = 120, h = 100;
+        var labels = new int[w * h];
+        for (int y = 20; y <= 70; y++)
+            for (int x = 30; x <= 80; x++)
+                labels[y * w + x] = 3;
+        var boundary = QuadCorners.ExteriorBoundary(labels, 3, w, 30, 20, 80, 70);
+        Assert.NotNull(boundary);
+
+        var corners = QuadCorners.ExtractLineFitsPeaks(boundary!, h, w);
+        Assert.NotNull(corners);
+        Assert.Equal(4, corners!.Length);
+        foreach (var c in corners) { Assert.Equal(c.X, Math.Round(c.X)); Assert.Equal(c.Y, Math.Round(c.Y)); }
+        var expected = new[] { new Vec2(30, 20), new Vec2(80, 20), new Vec2(80, 70), new Vec2(30, 70) };
+        for (int i = 0; i < 4; i++)
+        {
+            Assert.True(Math.Abs(corners[i].X - expected[i].X) <= 1, $"corner {i} x {corners[i].X}");
+            Assert.True(Math.Abs(corners[i].Y - expected[i].Y) <= 1, $"corner {i} y {corners[i].Y}");
+        }
+    }
+
+    /// <summary>
+    /// <c>Quadrilateral&lt;float&gt;::ComputeClockwiseCorners</c> 0x008A1324 sorts the corners by the
+    /// angle they make with their own centroid, ascending, which with y down is clockwise on screen
+    /// starting from the negative x axis; and the engine rounds each coordinate half away from zero after
+    /// clamping it to an s16 (0x008A6C30).
+    /// </summary>
+    [Fact]
+    public void TheCornersAreSortedClockwiseAboutTheirCentroid()
+    {
+        var shuffled = new[] { new Vec2(10, 90), new Vec2(90, 10), new Vec2(10, 10), new Vec2(90, 90) };
+        var cw = QuadCorners.ComputeClockwiseCorners(shuffled);
+        Assert.Equal(new Vec2(10, 10), cw[0]);
+        Assert.Equal(new Vec2(90, 10), cw[1]);
+        Assert.Equal(new Vec2(90, 90), cw[2]);
+        Assert.Equal(new Vec2(10, 90), cw[3]);
+
+        Assert.Equal(3.0, QuadCorners.RoundToS16(2.5));
+        Assert.Equal(-3.0, QuadCorners.RoundToS16(-2.5));
+        Assert.Equal(0.0, QuadCorners.RoundToS16(0.4));
+        Assert.Equal(32767.0, QuadCorners.RoundToS16(40000.0));
+        Assert.Equal(-32768.0, QuadCorners.RoundToS16(-40000.0));
     }
 
     [Fact]

@@ -101,15 +101,14 @@ public sealed record DetectedQuad(Vec2[] Corners, int ComponentPixels)
 ///    filtered value of the level with the largest response ("ecvcsB_scale_select", 0x00890B14), then
 ///    binarizes ("ecvcsB_binarize", 0x00890BB6);
 /// 2. 8-connected components of dark pixels, filtered by size, fill ratio and hollowness;
-/// 3. the four corners are the extreme points of the component's boundary (farthest pair, then farthest from
-///    that diagonal on each side), ordered clockwise on screen. The engine does this differently and the
-///    difference is recorded as M11-005: <c>ComputeQuadrilateralsFromConnectedComponents</c> traces the
-///    component's exterior boundary (<c>TraceNextExteriorBoundary</c> 0x008C6B18) and, with the corner
-///    method its parameters select (+0x28 = 1, the switch at 0x00892E24), hands it to
-///    <c>ExtractLineFitsPeaks</c> 0x008A5DB8 - which smooths the boundary's tangent with a Gaussian whose
-///    sigma is the boundary length over 64, clusters the smoothed directions into four with cv::kmeans,
-///    fits a line to each cluster with cv::solve and intersects them;
+/// 3. the four corners come from <see cref="QuadCorners"/>, which is the engine's own chain:
+///    <c>TraceNextExteriorBoundary</c> 0x008C6B18 then, with the corner method the parameters select
+///    (+0x28 = 1, the switch at 0x00892E24), <c>ExtractLineFitsPeaks</c> 0x008A5DB8. The quad the engine
+///    keeps is the clockwise corners re-ordered into its <c>Quadrilateral</c>, which is the decoder's
+///    order, and <c>IsQuadrilateralReasonable</c> decides both whether it survives and whether that order
+///    needs its middle pair swapped;
 /// 4. each side is refined to the sub-pixel edge by fitting a line to gradient maxima, up to 25 times.
+///    This last step is LOCAL: the engine refines later, inside <c>DetectFiducialMarkers</c>.
 /// </summary>
 public sealed class QuadDetector
 {
@@ -150,14 +149,19 @@ public sealed class QuadDetector
             st.AfterFill++;
             if (!IsHollow(c, labels, img.Width)) continue;
             st.AfterHollow++;
-            var corners = CornersFromBoundary(c, labels, img.Width, img.Height);
+            var boundary = QuadCorners.ExteriorBoundary(labels, c.Label, img.Width, c.MinX, c.MinY, c.MaxX, c.MaxY);
+            if (boundary is null || boundary.Count < 4) continue;
+            var corners = QuadCorners.ExtractLineFitsPeaks(boundary, img.Height, img.Width);
             if (corners is null) continue;
             st.Quads++;
+            // the engine tests the unrefined quad, in the order its Quadrilateral stores
+            if (!IsQuadrilateralReasonable(ToDecoderOrder(corners), img.Width, img.Height, Parameters, out bool swapped)) continue;
+            st.AfterGeometry++;
             var refined = Refine(img, corners);
             if (refined is null) continue;
-            if (!GeometryOk(refined, img)) continue;
-            st.AfterGeometry++;
-            quads.Add(new DetectedQuad(ToDecoderOrder(refined), c.Pixels));
+            var quad = ToDecoderOrder(refined);
+            if (swapped) (quad[1], quad[2]) = (quad[2], quad[1]);
+            quads.Add(new DetectedQuad(quad, c.Pixels));
             if (quads.Count >= Parameters.MaxQuads) break;
         }
         LastStats = st;
@@ -318,63 +322,6 @@ public sealed class QuadDetector
         return filled < width * Parameters.MaxHollowRowFill;
     }
 
-    // ------------------------------------------------------------------ corners
-
-    /// <summary>Extreme points of the boundary: the farthest pair, then the farthest point on each side of that diagonal. Cyclic (clockwise on screen) order.</summary>
-    private static Vec2[]? CornersFromBoundary(Component c, int[] labels, int w, int h)
-    {
-        var boundary = new List<Vec2>();
-        for (int y = c.MinY; y <= c.MaxY; y++)
-            for (int x = c.MinX; x <= c.MaxX; x++)
-            {
-                if (labels[y * w + x] != c.Label) continue;
-                bool edge = x == 0 || y == 0 || x == w - 1 || y == h - 1
-                            || labels[y * w + x - 1] != c.Label || labels[y * w + x + 1] != c.Label
-                            || labels[(y - 1) * w + x] != c.Label || labels[(y + 1) * w + x] != c.Label;
-                if (edge) boundary.Add(new Vec2(x, y));
-            }
-        if (boundary.Count < 8) return null;
-        // only the outer boundary matters: keep points on the convex hull
-        var hull = ConvexHull(boundary);
-        if (hull.Count < 4) return null;
-
-        int i0 = 0, i1 = 0; double best = -1;
-        for (int i = 0; i < hull.Count; i++)
-            for (int j = i + 1; j < hull.Count; j++)
-            {
-                double d = (hull[i] - hull[j]).Length;
-                if (d > best) { best = d; i0 = i; i1 = j; }
-            }
-        var a = hull[i0]; var b = hull[i1];
-        double side(Vec2 p) => (b.X - a.X) * (p.Y - a.Y) - (b.Y - a.Y) * (p.X - a.X);
-        Vec2? left = null, right = null; double bl = 0, br = 0;
-        foreach (var p in hull)
-        {
-            double s = side(p);
-            if (s > bl) { bl = s; left = p; }
-            if (s < br) { br = s; right = p; }
-        }
-        if (left is null || right is null) return null;
-        var corners = new[] { a, left.Value, b, right.Value };
-        // clockwise on screen (y down): sort by angle around the centroid
-        var cen = new Vec2(corners.Average(p => p.X), corners.Average(p => p.Y));
-        return corners.OrderBy(p => Math.Atan2(p.Y - cen.Y, p.X - cen.X)).ToArray();
-    }
-
-    private static List<Vec2> ConvexHull(List<Vec2> pts)
-    {
-        var p = pts.OrderBy(q => q.X).ThenBy(q => q.Y).ToList();
-        if (p.Count < 3) return p;
-        double cross(Vec2 o, Vec2 a, Vec2 b) => (a.X - o.X) * (b.Y - o.Y) - (a.Y - o.Y) * (b.X - o.X);
-        var lower = new List<Vec2>();
-        foreach (var q in p) { while (lower.Count >= 2 && cross(lower[^2], lower[^1], q) <= 0) lower.RemoveAt(lower.Count - 1); lower.Add(q); }
-        var upper = new List<Vec2>();
-        for (int i = p.Count - 1; i >= 0; i--) { var q = p[i]; while (upper.Count >= 2 && cross(upper[^2], upper[^1], q) <= 0) upper.RemoveAt(upper.Count - 1); upper.Add(q); }
-        lower.RemoveAt(lower.Count - 1); upper.RemoveAt(upper.Count - 1);
-        lower.AddRange(upper);
-        return lower;
-    }
-
     // ------------------------------------------------------------------ refinement
 
     /// <summary>
@@ -483,7 +430,7 @@ public sealed class QuadDetector
 
     /// <summary>
     /// <c>IsQuadrilateralReasonable(quad, minQuadArea, symmetryThreshold, minDistanceFromEdge, width,
-    /// height, out isClockwise)</c> 0x00892B18, in its order:
+    /// height, out swapCorners)</c> 0x00892B18, in its order:
     /// <list type="number">
     /// <item>the cross product of the first three corners must reach <c>minQuadArea</c> in absolute value
     /// (0x00892B42..0x00892B5E); its sign is also what the engine reports as the winding and uses to put
@@ -501,53 +448,59 @@ public sealed class QuadDetector
     /// side - are not in the engine's test and are gone; <c>minQuadArea</c> is what rejects a degenerate
     /// quad.
     /// </summary>
-    private bool GeometryOk(Vec2[] c, GrayImage img) => IsQuadrilateralReasonable(c, img.Width, img.Height, Parameters);
+    public static bool IsQuadrilateralReasonable(Vec2[] c, int width, int height, QuadDetectorParameters? parameters = null) =>
+        IsQuadrilateralReasonable(c, width, height, parameters, out _);
 
-    /// <summary>The same test, on corners and an image size, so it can be exercised on its own.</summary>
-    public static bool IsQuadrilateralReasonable(Vec2[] c, int width, int height, QuadDetectorParameters? parameters = null)
+    /// <summary>
+    /// The test, with the winding flag the engine reports through its <c>bool&amp;</c>: it is set when the
+    /// first three corners turn the other way, and both the test itself and the caller then work on the
+    /// quad with its middle pair exchanged (0x00892B7E and 0x00892F04). Corners arrive in the engine's
+    /// <c>Quadrilateral</c> order - upper left, lower left, upper right, lower right - so the two
+    /// diagonals are corners 1-2 and 0-3.
+    /// </summary>
+    public static bool IsQuadrilateralReasonable(Vec2[] c, int width, int height, QuadDetectorParameters? parameters, out bool swapped)
     {
-        var Parameters = parameters ?? new QuadDetectorParameters();
-        static double Cross(Vec2 a, Vec2 b, Vec2 o) => (a.X - o.X) * (b.Y - o.Y) - (b.X - o.X) * (a.Y - o.Y);
+        var p = parameters ?? new QuadDetectorParameters();
+        swapped = false;
 
-        if (Math.Abs(Cross(c[1], c[2], c[0])) < Parameters.MinQuadArea) return false;
+        double cross = (c[1].X - c[0].X) * (c[2].Y - c[0].Y) - (c[2].X - c[0].X) * (c[1].Y - c[0].Y);
+        if (Math.Abs(cross) < p.MinQuadArea) return false;
+        swapped = cross > 0;
+        var w = swapped ? new[] { c[0], c[2], c[1], c[3] } : c;
 
-        // the four triangles, one per corner; convexity is their signs agreeing
-        var areas = new double[4];
-        int sign = 0;
-        for (int i = 0; i < 4; i++)
-        {
-            double z = Cross(c[(i + 1) % 4], c[(i + 3) % 4], c[i]);
-            areas[i] = Math.Abs(z);
-            int sz = Math.Sign(z);
-            if (sz == 0) return false;
-            if (sign == 0) sign = sz; else if (sz != sign) return false;
-        }
+        // convexity: each diagonal's two triangles must turn the same way. The engine compares
+        // signbit(), so an exactly collinear triple counts as positive rather than failing.
+        static bool Negative(double v) => v < 0;
+        double area0 = swapped ? -cross : cross;
+        double area3 = (w[1].Y - w[3].Y) * (w[2].X - w[3].X) - (w[1].X - w[3].X) * (w[2].Y - w[3].Y);
+        if (Negative(area0) != Negative(area3)) return false;
+        double area1 = (w[0].X - w[1].X) * (w[3].Y - w[1].Y) - (w[0].Y - w[1].Y) * (w[3].X - w[1].X);
+        double area2 = (w[0].Y - w[2].Y) * (w[3].X - w[2].X) - (w[0].X - w[2].X) * (w[3].Y - w[2].Y);
+        if (Negative(area1) != Negative(area2)) return false;
 
         // one diagonal's two triangles within the threshold, in the engine's fixed point
         bool Symmetric(double a, double b)
         {
-            double lo = Math.Min(a, b), hi = Math.Max(a, b);
-            return hi * 256 < Parameters.QuadSymmetryThresholdQ8 * lo;
+            double lo = Math.Min(Math.Abs(a), Math.Abs(b)), hi = Math.Max(Math.Abs(a), Math.Abs(b));
+            return hi * 256 < p.QuadSymmetryThresholdQ8 * lo;
         }
-        if (!Symmetric(areas[0], areas[2]) && !Symmetric(areas[1], areas[3])) return false;
+        if (!Symmetric(area0, area3) && !Symmetric(area1, area2)) return false;
 
-        int margin = Parameters.MinDistanceFromEdge;
-        foreach (var p in c)
-            if (p.X < margin || p.Y < margin || p.X > width - 1 - margin || p.Y > height - 1 - margin)
+        int margin = p.MinDistanceFromEdge;
+        foreach (var q in w)
+            if (q.X < margin || q.Y < margin || q.X >= width - margin - 1 || q.Y >= height - margin - 1)
                 return false;
         return true;
     }
 
-    /// <summary>Cyclic clockwise-on-screen order (TL, TR, BR, BL) to the decoder's TL, BL, TR, BR, with the top-left chosen as the corner nearest the image's top-left.</summary>
-    private static Vec2[] ToDecoderOrder(Vec2[] cyclic)
-    {
-        // make sure the order is clockwise on screen (positive shoelace with y down)
-        double a = 0;
-        for (int i = 0; i < 4; i++) a += cyclic[i].X * cyclic[(i + 1) % 4].Y - cyclic[(i + 1) % 4].X * cyclic[i].Y;
-        var cw = a > 0 ? cyclic : new[] { cyclic[0], cyclic[3], cyclic[2], cyclic[1] };
-        int tl = 0; double best = double.MaxValue;
-        for (int i = 0; i < 4; i++) { double d = cw[i].X + cw[i].Y; if (d < best) { best = d; tl = i; } }
-        Vec2 TL = cw[tl], TR = cw[(tl + 1) % 4], BR = cw[(tl + 2) % 4], BL = cw[(tl + 3) % 4];
-        return new[] { TL, BL, TR, BR };
-    }
+    /// <summary>
+    /// The clockwise corners in the order the engine's <c>Quadrilateral&lt;s16&gt;</c> holds them, upper
+    /// left, lower left, upper right, lower right, which is also what the decoder wants: the permutation
+    /// 0, 3, 1, 2 that <c>ComputeQuadrilateralsFromConnectedComponents</c> writes at
+    /// 0x00892E88..0x00892EC4. The first corner is whichever one
+    /// <c>Quadrilateral::ComputeClockwiseCorners</c> put first, the one nearest the negative x axis from
+    /// the centroid - no separate search for a top-left corner.
+    /// </summary>
+    private static Vec2[] ToDecoderOrder(Vec2[] clockwise) =>
+        new[] { clockwise[0], clockwise[3], clockwise[1], clockwise[2] };
 }

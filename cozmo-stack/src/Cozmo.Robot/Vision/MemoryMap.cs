@@ -94,10 +94,14 @@ public sealed class MemoryMap
 
     public IReadOnlyList<MemoryMapRegion> Regions { get { lock (_gate) return _regions.ToList(); } }
 
-    /// <summary><c>MemoryMap::Insert(polygon, data)</c> 0x006817C6.</summary>
+    /// <summary>
+    /// <c>MemoryMap::Insert(polygon, data)</c> 0x006817C6. Two points are enough: the overhead-edge
+    /// processing inserts lines that way, both the clear run that came out too short to be a triangle
+    /// (0x006800BA) and every interesting edge (0x006802D2).
+    /// </summary>
     public void Insert(Vec2[] polygon, MemoryMapContentType type, uint? objectId = null, uint timestamp = 0)
     {
-        if (polygon.Length < 3) return;
+        if (polygon.Length < 2) return;
         lock (_gate) _regions.Add(new MemoryMapRegion(type, polygon, objectId, timestamp));
     }
 
@@ -169,6 +173,326 @@ public sealed class MemoryMap
             foreach (var r in _regions)
                 if (blocks(r.Type) && SegmentTouchesPolygon(from, to, r.Polygon)) return true;
         return false;
+    }
+
+    // ------------------------------------------------------------------ the overhead edges
+
+    /// <summary>
+    /// The four tuning constants of the overhead-edge processing, at 0x00C8764C..0x00C87658:
+    /// <c>kOverheadEdgeCloseMaxLenForTriangle_mm</c> 15, <c>kOverheadEdgeFarMaxLenForLine_mm</c> 15,
+    /// <c>kOverheadEdgeFarMinLenForClearReport_mm</c> 3 and <c>kOverheadEdgeSegmentNoiseLen_mm</c> 6.
+    /// </summary>
+    public const double OverheadEdgeCloseMaxLenForTriangleMm = 15.0;
+    public const double OverheadEdgeFarMaxLenForLineMm = 15.0;
+    public const double OverheadEdgeFarMinLenForClearReportMm = 3.0;
+    public const double OverheadEdgeSegmentNoiseLenMm = 6.0;
+
+    /// <summary>
+    /// How far a run of edge points may bend before it is closed off: the dot product of one segment's
+    /// unit direction with the last must reach 0.766 (0x3F441893 at 0x0067F980), the cosine of forty
+    /// degrees.
+    /// </summary>
+    public const double OverheadEdgeRunDirectionCos = 0.766;
+
+    /// <summary>
+    /// The squared length a run must exceed before anything is written for it: the literal 6.00001 the
+    /// comparison at 0x0067FA14 uses - the noise length, taken against a squared length as the engine
+    /// takes it.
+    /// </summary>
+    public const double OverheadEdgeMinRunLengthSq = 6.00001;
+
+    /// <summary>
+    /// The type mask of the first ray query (the table at 0x00C8768B): everything but Unknown,
+    /// ClearOfObstacle and ClearOfCliff, so both edge types and a cliff stop a clear report.
+    /// </summary>
+    public static bool OverheadEdgeBlocksAll(MemoryMapContentType t) =>
+        t >= MemoryMapContentType.ObstacleObservable;
+
+    /// <summary>
+    /// The type mask of the second ray query (the table at 0x00C876A1): the five obstacle types only, so
+    /// neither a cliff nor an edge stops the clear report a point beyond the ROI would make.
+    /// </summary>
+    public static bool OverheadEdgeBlocksObstacles(MemoryMapContentType t) =>
+        t >= MemoryMapContentType.ObstacleObservable && t <= MemoryMapContentType.ObstacleUnrecognized;
+
+    /// <summary>
+    /// The mask of the border pass (the table at 0x00C87675): the five obstacle types and
+    /// NotInterestingEdge. An interesting edge that touches one of those is not a frontier worth going
+    /// to look at, and the pass at the end of <see cref="AddVisionOverheadEdges"/> writes it off.
+    /// </summary>
+    public static bool OverheadEdgeBorderMask(MemoryMapContentType t) =>
+        (t >= MemoryMapContentType.ObstacleObservable && t <= MemoryMapContentType.ObstacleUnrecognized)
+        || t == MemoryMapContentType.NotInterestingEdge;
+
+    /// <summary>
+    /// <c>QuadTree::GetContentPrecisionMM</c> 0x00685000: ten millimetres, the size of the smallest node
+    /// the map subdivides to, and so how close two pieces of content have to be to count as neighbours.
+    /// </summary>
+    public const double ContentPrecisionMm = 10.0;
+
+    /// <summary>
+    /// <c>MapComponent::AddVisionOverheadEdges</c> 0x0067F814. Every point of the frame is put in world
+    /// coordinates through the robot's pose at the frame's timestamp, and then:
+    ///
+    /// <list type="bullet">
+    /// <item>the segment from the robot to the point is intersected with the segment through the ground
+    /// quad's second and fourth corners - its near edge, the two corners
+    /// <c>GetGroundQuad</c> 0x004F7774 puts second and fourth (<c>kmSegment2WithSegmentIntersection</c>
+    /// at 0x0067FC54). Where they meet, the ray is asked about in two halves rather than one;</item>
+    /// <item>the point is dropped when the map already has something in the way: everything but clear
+    /// ground stops the half between the robot and the near edge (the mask at 0x00C8768B), and the five
+    /// obstacle types stop the rest of it (0x00C876A1), so neither a cliff nor an edge already recorded
+    /// out in the ROI stops a point being used;</item>
+    /// <item>consecutive points accumulate into a run while the run keeps its direction to within forty
+    /// degrees (0x0067FD40). A turn sharper than that, a point the map blocked, or the end of the chain
+    /// closes the run off (0x0067FE6C..0x0067FE92).</item>
+    /// </list>
+    ///
+    /// A closed run whose squared length passes <see cref="OverheadEdgeMinRunLengthSq"/> becomes the
+    /// triangle between the robot and the run's two ends - the engine stores it as a quad with the robot
+    /// twice over (0x0067FA54) - and, if the run came from a border chain, also a segment. Then:
+    ///
+    /// <list type="bullet">
+    /// <item>each triangle goes in as <see cref="MemoryMapContentType.ClearOfObstacle"/>, and its shape
+    /// is decided by the two fifteen-millimetre constants, compared as squared lengths against 225
+    /// (0x0067FF5C and 0x0067FFA8): the full quad when both sides are longer, the triangle when the
+    /// close side is shorter - which it always is, being the robot twice - and a two-point line when the
+    /// far side is shorter too;</item>
+    /// <item>each border segment goes in as a two-point
+    /// <see cref="MemoryMapContentType.InterestingEdge"/> polygon (the type byte 9 at 0x006802AC);</item>
+    /// <item>and finally, if any border segment was inserted, <see cref="FillBorder"/> runs over the
+    /// map: an interesting edge that touches an obstacle - or an edge already written off - becomes
+    /// NotInterestingEdge (<c>FillBorderInternal(9, mask, 10, lastImageTimestamp)</c> at 0x006803AA,
+    /// whose mask is the table at 0x00C87675).</item>
+    /// </list>
+    ///
+    /// Returns the distance from the robot to the closest border point, which is what the engine hands
+    /// the whiteboard (0x006803E8), or null when the frame carried no border points.
+    /// </summary>
+    public double? AddVisionOverheadEdges(OverheadEdgeFrame frame, Pose3d robotPose)
+    {
+        if (!frame.GroundPlaneValid || frame.Chains.Count == 0) return null;
+
+        Vec2 ToWorld(Vec2 p)
+        {
+            var w = robotPose.Apply(new Vec3(p.X, p.Y, 0));
+            return new Vec2(w.X, w.Y);
+        }
+
+        var robot = new Vec2(robotPose.Translation.X, robotPose.Translation.Y);
+        var edgeA = ToWorld(frame.GroundQuad[1]);
+        var edgeB = ToWorld(frame.GroundQuad[3]);
+
+        var runs = new List<(Vec2 Start, Vec2 End, bool Border)>();
+        double? closestSq = null;
+
+        foreach (var chain in frame.Chains)
+        {
+            Vec2 runStart = default, prev = default, dir = default;
+            bool hasRun = false, hasDir = false;
+
+            for (int i = 0; i < chain.Points.Count; i++)
+            {
+                var p = ToWorld(chain.Points[i].Ground);
+                var from = robot;
+                bool blocked = false;
+                if (SegmentIntersection(robot, p, edgeA, edgeB) is { } hit)
+                {
+                    // the ray reaches the point through the near edge of what the camera can see:
+                    // ask about the robot's side of it with the wider mask, and about the rest from there
+                    blocked = HasCollisionRayWithTypes(robot, hit, OverheadEdgeBlocksAll);
+                    from = hit;
+                }
+                blocked = blocked || HasCollisionRayWithTypes(from, p, OverheadEdgeBlocksObstacles);
+
+                if (chain.IsBorder && !blocked)
+                {
+                    double dsq = (p - robot).LengthSq;
+                    if (closestSq is null || dsq < closestSq.Value) closestSq = dsq;
+                }
+
+                if (blocked)
+                {
+                    if (hasRun) Close(runs, runStart, prev, chain.IsBorder);
+                    hasRun = false; hasDir = false;
+                    continue;
+                }
+
+                if (!hasRun) { runStart = p; prev = p; hasRun = true; hasDir = false; continue; }
+
+                var d = p - prev;
+                double len = d.Length;
+                if (len > 0) d = d * (1 / len);
+                if (hasDir && d.X * dir.X + d.Y * dir.Y < OverheadEdgeRunDirectionCos)
+                {
+                    Close(runs, runStart, prev, chain.IsBorder);
+                    runStart = prev;
+                }
+                dir = d; hasDir = true; prev = p;
+                if (i == chain.Points.Count - 1) { Close(runs, runStart, p, chain.IsBorder); hasRun = false; }
+            }
+        }
+
+        bool anyBorder = false;
+        foreach (var run in runs)
+        {
+            InsertClearRun(robot, run.Start, run.End, frame.Timestamp);
+            if (!run.Border) continue;
+            anyBorder = true;
+            Insert(new[] { run.Start, run.End }, MemoryMapContentType.InterestingEdge, null, frame.Timestamp);
+        }
+
+        if (anyBorder)
+            FillBorder(MemoryMapContentType.InterestingEdge, OverheadEdgeBorderMask,
+                       MemoryMapContentType.NotInterestingEdge, frame.Timestamp);
+
+        return closestSq is null ? null : Math.Sqrt(closestSq.Value);
+
+        static void Close(List<(Vec2, Vec2, bool)> into, Vec2 start, Vec2 end, bool border)
+        {
+            if ((end - start).LengthSq <= OverheadEdgeMinRunLengthSq) return;
+            into.Add((start, end, border));
+        }
+    }
+
+    /// <summary>
+    /// One run's clear area, in the three shapes the engine chooses between at
+    /// 0x0067FF48..0x0068016E. The quad it works on is (runStart, robot, runEnd, robot), so its close
+    /// side - the robot against itself - is always zero and never reaches the fifteen millimetres that
+    /// would keep the quad whole; what is left is the triangle when the run is longer than fifteen and
+    /// the line from the robot to the run's midpoint when it is not.
+    /// </summary>
+    private void InsertClearRun(Vec2 robot, Vec2 start, Vec2 end, uint timestamp)
+    {
+        double farSq = (start - end).LengthSq;
+        if (farSq <= OverheadEdgeFarMaxLenForLineMm * OverheadEdgeFarMaxLenForLineMm)
+        {
+            var mid = new Vec2((start.X + end.X) / 2, (start.Y + end.Y) / 2);
+            Insert(new[] { robot, mid }, MemoryMapContentType.ClearOfObstacle, null, timestamp);
+            return;
+        }
+        Insert(new[] { robot, start, end }, MemoryMapContentType.ClearOfObstacle, null, timestamp);
+    }
+
+    /// <summary>
+    /// <c>MemoryMap::FillBorderInternal(type, mask, borderType, timestamp)</c> (the vtable's +0x4C slot),
+    /// which is <c>QuadTreeProcessor::FillBorder</c> 0x00689FAC over the tree:
+    /// <c>RefreshBorderCombination(type, mask)</c> finds the nodes of <paramref name="type"/> that
+    /// neighbour a node of one of the masked types, and the data of <paramref name="write"/> is written
+    /// at each of them. Here the same question is asked of the polygons - a region of that type touching
+    /// one of the masked ones, to within the map's own content precision - and the region takes the new
+    /// type. Returns how many changed.
+    /// </summary>
+    public int FillBorder(MemoryMapContentType type, Func<MemoryMapContentType, bool> mask,
+                          MemoryMapContentType write, uint timestamp)
+    {
+        int changed = 0;
+        lock (_gate)
+            for (int i = 0; i < _regions.Count; i++)
+            {
+                var r = _regions[i];
+                if (r.Type != type) continue;
+                bool borders = false;
+                foreach (var q in _regions)
+                {
+                    if (ReferenceEquals(q, r) || !mask(q.Type)) continue;
+                    if (PolygonsTouch(r.Polygon, q.Polygon, ContentPrecisionMm)) { borders = true; break; }
+                }
+                if (!borders) continue;
+                _regions[i] = r with { Type = write, Timestamp = timestamp };
+                changed++;
+            }
+        return changed;
+    }
+
+    /// <summary>
+    /// <c>MapComponent::FlagQuadAsNotInterestingEdges</c> 0x0067E6B0, which
+    /// <c>BehaviorVisitInterestingEdge</c> calls once it has been to an edge and once it has a goal:
+    /// the quad goes in as <see cref="MemoryMapContentType.NotInterestingEdge"/>, stamped with the last
+    /// image's timestamp (0x0067E6EA), so nothing sends the robot back to it.
+    /// </summary>
+    public void FlagQuadAsNotInterestingEdges(Vec2[] quad, uint timestamp = 0) =>
+        Insert(quad, MemoryMapContentType.NotInterestingEdge, null, timestamp);
+
+    /// <summary>
+    /// <c>MapComponent::FlagGroundPlaneROIInterestingEdgesAsUncertain</c> 0x0067E50C, which
+    /// <c>BehaviorVisitInterestingEdge::StartWaitingForEdges</c> calls before it waits: the ground ROI at
+    /// the robot's pose is handed to <c>TransformContent</c> with a lambda (0x00680B54) that turns
+    /// content of type InterestingEdge into content of type Unknown and leaves everything else alone -
+    /// so what is about to be looked at again stops counting as an edge until the vision system says so.
+    /// Returns how many regions changed.
+    /// </summary>
+    public int FlagGroundPlaneRoiInterestingEdgesAsUncertain(Pose3d robotPose, uint timestamp = 0)
+    {
+        var roi = GroundPlaneROI.GroundQuad();
+        var world = new Vec2[4];
+        for (int i = 0; i < 4; i++)
+        {
+            var w = robotPose.Apply(new Vec3(roi[i].X, roi[i].Y, 0));
+            world[i] = new Vec2(w.X, w.Y);
+        }
+        var polygon = new[] { world[0], world[1], world[3], world[2] };
+
+        int changed = 0;
+        lock (_gate)
+            for (int i = 0; i < _regions.Count; i++)
+            {
+                var r = _regions[i];
+                if (r.Type != MemoryMapContentType.InterestingEdge) continue;
+                if (!r.Polygon.All(pt => OverheadEdgesDetector.InsidePolygon(polygon, pt))) continue;
+                _regions[i] = r with { Type = MemoryMapContentType.Unknown, Timestamp = timestamp };
+                changed++;
+            }
+        return changed;
+    }
+
+    /// <summary>Whether two regions are neighbours: any pair of their edges within <paramref name="tolerance"/>, or one inside the other.</summary>
+    internal static bool PolygonsTouch(Vec2[] a, Vec2[] b, double tolerance)
+    {
+        for (int i = 0; i < a.Length; i++)
+        {
+            var a0 = a[i];
+            var a1 = a[(i + 1) % a.Length];
+            for (int j = 0; j < b.Length; j++)
+            {
+                var b0 = b[j];
+                var b1 = b[(j + 1) % b.Length];
+                if (SegmentDistance(a0, a1, b0, b1) <= tolerance) return true;
+            }
+        }
+        if (b.Length >= 3 && a.Any(p => OverheadEdgesDetector.InsidePolygon(b, p))) return true;
+        if (a.Length >= 3 && b.Any(p => OverheadEdgesDetector.InsidePolygon(a, p))) return true;
+        return false;
+    }
+
+    private static double SegmentDistance(Vec2 a0, Vec2 a1, Vec2 b0, Vec2 b1)
+    {
+        if (SegmentIntersection(a0, a1, b0, b1) is not null) return 0;
+        return Math.Min(Math.Min(PointToSegment(a0, b0, b1), PointToSegment(a1, b0, b1)),
+                        Math.Min(PointToSegment(b0, a0, a1), PointToSegment(b1, a0, a1)));
+    }
+
+    private static double PointToSegment(Vec2 p, Vec2 a, Vec2 b)
+    {
+        var ab = b - a;
+        double len = ab.LengthSq;
+        if (len < 1e-12) return (p - a).Length;
+        double t = Math.Clamp(((p - a).X * ab.X + (p - a).Y * ab.Y) / len, 0, 1);
+        return (p - (a + ab * t)).Length;
+    }
+
+    /// <summary>Where two segments cross, or null when they do not - <c>kmSegment2WithSegmentIntersection</c>.</summary>
+    internal static Vec2? SegmentIntersection(Vec2 a0, Vec2 a1, Vec2 b0, Vec2 b1)
+    {
+        var r = a1 - a0;
+        var s = b1 - b0;
+        double denom = r.X * s.Y - r.Y * s.X;
+        if (Math.Abs(denom) < 1e-12) return null;
+        var d = b0 - a0;
+        double t = (d.X * s.Y - d.Y * s.X) / denom;
+        double u = (d.X * r.Y - d.Y * r.X) / denom;
+        if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+        return a0 + r * t;
     }
 
     /// <summary>

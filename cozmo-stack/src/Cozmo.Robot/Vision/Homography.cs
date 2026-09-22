@@ -18,6 +18,14 @@ public sealed class Homography
         return new Vec2((H[0] * p.X + H[1] * p.Y + H[2]) / w, (H[3] * p.X + H[4] * p.Y + H[5]) / w);
     }
 
+    /// <summary>
+    /// The same product without the divide, so a caller can see the third component: the engine's
+    /// image-to-ground mapping refuses a point whose z comes out at zero or below (0x006AE0DC), which is
+    /// what a ray that never meets the ground in front of the robot gives.
+    /// </summary>
+    public (double X, double Y, double W) ApplyHomogeneous(double x, double y) =>
+        (H[0] * x + H[1] * y + H[2], H[3] * x + H[4] * y + H[5], H[6] * x + H[7] * y + H[8]);
+
     public Homography Inverse()
     {
         var m = H;
