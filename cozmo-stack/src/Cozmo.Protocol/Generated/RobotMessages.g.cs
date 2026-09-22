@@ -369,24 +369,24 @@ public sealed partial class CubeLights : RobotMessage
     }
 }
 
-/// <summary>setPropSlot 0x05 (engine_to_robot), 5 bytes. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
+/// <summary>setPropSlot 0x05 (engine_to_robot), 5 bytes. Confidence: hardware_refined. Verification: statically_verified. field names from PyCozmo (widths agree with native) engine 2026-09-22: SetPropSlot::GetJSON 0x007A1244 names the u32 at +0 "factory_id" and the byte at +4 "slot", written through Json::Value(int) - an integer, not a bool; Pack 0x007A11A4 writes 4 bytes then 1. Its only sender is Robot::ConnectToRequestedObjects 0x00514A70, which fills the byte with the loop index over the five active-object slots (strb sl at 0x00514BBA and 0x00514C46). PyCozmo's name for it, 'connect', was wrong</summary>
 public sealed partial class SetPropSlot : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.SetPropSlot;
     public SetPropSlot() { }
-    /// <summary>name from pycozmo</summary>
+    /// <summary>name from engine; the cube to put in the slot; 0 empties it</summary>
     public uint FactoryId;
-    /// <summary>name from pycozmo</summary>
-    public bool Connect;
+    /// <summary>name from engine; the active-object slot, 0..4; the robot reports it back as ObjectConnectionState.objectID</summary>
+    public byte Slot;
     public static SetPropSlot Read(CladReader r) => new()
     {
         FactoryId = r.U32(),
-        Connect = r.Bool(),
+        Slot = r.U8(),
     };
     public override void WriteBody(CladWriter w)
     {
         w.U32(FactoryId);
-        w.Bool(Connect);
+        w.U8(Slot);
     }
 }
 

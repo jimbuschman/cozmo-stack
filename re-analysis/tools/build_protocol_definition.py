@@ -183,6 +183,15 @@ S("factory_debug_storage", 0x0E, 0x0F, 0x81, 0xA1, 0xA2, 0xA4, 0xCD, 0xD6)
 # engine reads as one block) and records where the better evidence came from. Most are from the
 # 2026-09-18 firmware-2457 captures; the engine-sourced ones name the function that fills the message.
 REFINEMENTS = {
+    0x05: {"note": "engine 2026-09-22: SetPropSlot::GetJSON 0x007A1244 names the u32 at +0 \"factory_id\" and "
+                   "the byte at +4 \"slot\", written through Json::Value(int) - an integer, not a bool; Pack "
+                   "0x007A11A4 writes 4 bytes then 1. Its only sender is Robot::ConnectToRequestedObjects "
+                   "0x00514A70, which fills the byte with the loop index over the five active-object slots "
+                   "(strb sl at 0x00514BBA and 0x00514C46). PyCozmo's name for it, 'connect', was wrong",
+           "fields": [{"name": "factory_id", "kind": "scalar", "type": "u32", "name_source": "engine",
+                       "note": "the cube to put in the slot; 0 empties it"},
+                      {"name": "slot", "kind": "scalar", "type": "u8", "name_source": "engine",
+                       "note": "the active-object slot, 0..4; the robot reports it back as ObjectConnectionState.objectID"}]},
     0x93: {"note": "engine 2026-09-19: HeadAngleKeyFrame::GetStreamMessage at 0x004F8C08 stores "
                    "durationTime_ms (this+0xC) as a u16 at +0x12 and angle_deg (i8 at this+0x10) at +0x14 "
                    "after applying variability (this+0x11) through IKeyFrame::sRNG "

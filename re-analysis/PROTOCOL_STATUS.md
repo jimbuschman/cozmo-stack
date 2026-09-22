@@ -25,8 +25,8 @@ Evidence order: (1) official decompiled C# CLAD structs, (2) `libcozmoEngine.so`
 |---|---|---|
 | hardware verified | 24 | exercised on the firmware-2457 robot: the robot sent it and our codec re-encoded it byte-identically, or the robot demonstrably acted on it |
 | capture verified | 4 | seen on the wire in a real session with a consistent length, but no response ties it to robot behaviour |
-| statically verified | 63 | layout matches an official C# CLAD struct field for field, or is empty |
-| layout known, semantics uncertain | 68 | widths/order from the engine binary; some field names are guesses |
+| statically verified | 64 | layout matches an official C# CLAD struct field for field, or is empty |
+| layout known, semantics uncertain | 67 | widths/order from the engine binary; some field names are guesses |
 | unresolved | 2 | one or more fields not attributed; the bytes are preserved in a raw tail |
 | capture conflict | 0 | observed bytes disagree with the static layout |
 
@@ -36,8 +36,8 @@ Evidence order: (1) official decompiled C# CLAD structs, (2) `libcozmoEngine.so`
 |---|---|
 | official decompiled C# | 150 |
 | generated placeholder | 129 |
-| PyCozmo (widths agreed with native) | 59 |
-| engine | 57 |
+| engine | 59 |
+| PyCozmo (widths agreed with native) | 57 |
 | hardware capture | 9 |
 
 129 of 404 fields still carry a generated placeholder name; 138 fields are flagged uncertain.
@@ -193,12 +193,12 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 
 ### Cubes and BLE (24 messages)
 
-19 statically verified, 3 layout known, semantics uncertain, 2 hardware verified
+20 statically verified, 2 hardware verified, 2 layout known, semantics uncertain
 
 | tag | dir | CLAD type | size | layout | verification | probe safety |
 |---|---|---|---|---|---|---|
 | `0x04` | E->R | CubeLights | 40 | exact | statically verified | safe_visible |
-| `0x05` | E->R | SetPropSlot | 5 | native_named | layout known, semantics uncertain | state_change |
+| `0x05` | E->R | SetPropSlot | 5 | hardware_refined | statically verified | state_change |
 | `0x07` | E->R | SetBodyRadioMode | 2 | exact | statically verified | destructive |
 | `0x08` | E->R | StreamObjectAccel | 5 | exact | statically verified | state_change |
 | `0x0A` | E->R | SetAccessoryDiscovery | 1 | exact | hardware verified | state_change |

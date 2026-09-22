@@ -73,6 +73,11 @@ public sealed class Cube
 /// This covers discovery, connection state and basic telemetry only. Cube lights, object pose and anything
 /// that needs the vision pipeline are out of scope.
 ///
+/// A cube only connects when the engine asks the robot for it, with <see cref="SetPropSlot"/>. Deciding which
+/// cube and sending that is <see cref="Connections"/> - the engine's automatic block pool and its five
+/// active-object slots - which does nothing until <see cref="EnableAutoBlockPool"/> is called, as the official
+/// app does once it is connected.
+///
 /// The engine's side of this is four handlers in <c>RobotToEngineImplMessaging</c>, and the field offsets
 /// they read match this stack's message layouts exactly:
 ///
@@ -127,7 +132,31 @@ public sealed class CozmoCubes
     /// </summary>
     public const uint MaxActiveObjectSlot = 4;
 
-    internal CozmoCubes(CozmoRobot robot) => _robot = robot;
+    internal CozmoCubes(CozmoRobot robot)
+    {
+        _robot = robot;
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        Seconds = () => (float)clock.Elapsed.TotalSeconds;
+        Connections = new CubeConnections(m => _robot.Transport.Send(m, reliable: true, flush: true),
+                                          () => Seconds());
+    }
+
+    /// <summary>The clock the connection path reads, in seconds; replaceable so tests can drive it.</summary>
+    internal Func<float> Seconds { get; set; }
+
+    /// <summary>
+    /// The engine's connection path: which cube goes in which of the five slots, and the SetPropSlot that asks
+    /// the robot to connect it. Fed from <see cref="Handle"/>; see <see cref="CubeConnections"/>.
+    /// </summary>
+    public CubeConnections Connections { get; }
+
+    /// <summary>
+    /// Turns the engine's automatic block pool on or off - what the game's <c>BlockPoolEnabledMessage</c> does.
+    /// With it on, the closest cube of each of the three types is put in a slot and connected. The official
+    /// app turns it on with a discovery time of 0 (<c>BlockPoolTracker.EnableAutoBlockPool</c>).
+    /// </summary>
+    public void EnableAutoBlockPool(bool enabled = true, float discoveryTimeSeconds = 0f)
+        => Connections.EnableAutoBlockPool(enabled, discoveryTimeSeconds);
 
     /// <summary>Raised the first time a cube is heard from.</summary>
     public event Action<Cube>? CubeDiscovered;
@@ -175,8 +204,9 @@ public sealed class CozmoCubes
     public Cube? ByObjectId(uint objectId) { lock (_gate) return _byObjectId.GetValueOrDefault(objectId); }
 
     /// <summary>
-    /// Turns the robot's accessory discovery on or off. With it on the robot reports every cube it hears;
-    /// leaving it on indefinitely keeps its radio busy, so turn it off once the cubes are found.
+    /// Sends SetAccessoryDiscovery. The official engine never sends this message - its only references in
+    /// libcozmoEngine.so are its own serializers - and the robot reports advertisements without it, so nothing
+    /// on the connection path uses it. What the firmware does with it is not established from source.
     /// </summary>
     public void SetDiscovery(bool enable)
     {
@@ -256,6 +286,7 @@ public sealed class CozmoCubes
                     c.LastSeenUtc = DateTime.UtcNow;
                     c.Advertisements++;
                     if (isNew) discovered = c;
+                    Connections.OnObjectAvailable(a.FactoryId, a.ObjectType, a.Rssi);
                     break;
                 }
                 case ObjectConnectionState s:
@@ -272,6 +303,7 @@ public sealed class CozmoCubes
                         connectionChanged = c;
                     }
                     if (isNew) discovered = c;
+                    Connections.OnConnectionState(s.ObjectID, s.FactoryID, s.Connected);
                     break;
                 }
                 case ObjectPowerLevel p when _byObjectId.TryGetValue(p.ObjectID, out var c):
@@ -301,6 +333,8 @@ public sealed class CozmoCubes
                     break;
             }
         }
+        // Robot::Update, after the state that set the robot's clock. Outside the lock: it sends.
+        if (m is RobotState rs) Connections.OnRobotState(rs.Timestamp);
         if (discovered is not null) CubeDiscovered?.Invoke(discovered);
         if (connectionChanged is not null) ConnectionChanged?.Invoke(connectionChanged);
         if (tapped is not null) CubeTapped?.Invoke(tapped);

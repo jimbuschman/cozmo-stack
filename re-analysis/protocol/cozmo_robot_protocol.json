@@ -1370,19 +1370,19 @@
      "name": "factory_id",
      "kind": "scalar",
      "type": "u32",
-     "name_source": "pycozmo",
-     "uncertain": false
+     "name_source": "engine",
+     "note": "the cube to put in the slot; 0 empties it"
     },
     {
-     "name": "connect",
+     "name": "slot",
      "kind": "scalar",
-     "type": "bool",
-     "name_source": "pycozmo",
-     "uncertain": false
+     "type": "u8",
+     "name_source": "engine",
+     "note": "the active-object slot, 0..4; the robot reports it back as ObjectConnectionState.objectID"
     }
    ],
-   "confidence": "native_named",
-   "verification": "layout_known_semantics_uncertain",
+   "confidence": "hardware_refined",
+   "verification": "statically_verified",
    "evidence": {
     "native_unpack": "0x7a111a",
     "native_namespace": "",
@@ -1391,7 +1391,8 @@
     "capture": null
    },
    "notes": [
-    "field names from PyCozmo (widths agree with native)"
+    "field names from PyCozmo (widths agree with native)",
+    "engine 2026-09-22: SetPropSlot::GetJSON 0x007A1244 names the u32 at +0 \"factory_id\" and the byte at +4 \"slot\", written through Json::Value(int) - an integer, not a bool; Pack 0x007A11A4 writes 4 bytes then 1. Its only sender is Robot::ConnectToRequestedObjects 0x00514A70, which fills the byte with the loop index over the five active-object slots (strb sl at 0x00514BBA and 0x00514C46). PyCozmo's name for it, 'connect', was wrong"
    ]
   },
   "0x06": {

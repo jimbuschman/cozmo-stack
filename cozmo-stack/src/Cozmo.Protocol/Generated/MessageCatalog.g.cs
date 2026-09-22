@@ -28,7 +28,7 @@ public enum RobotMessageId : byte
     SetBackpackLightsMiddle = 0x03,
     /// <summary>CubeLights (engine_to_robot); size 40; statically_verified</summary>
     SetCubeLights = 0x04,
-    /// <summary>SetPropSlot (engine_to_robot); size 5; layout_known_semantics_uncertain</summary>
+    /// <summary>SetPropSlot (engine_to_robot); size 5; statically_verified</summary>
     SetPropSlot = 0x05,
     /// <summary>KillBodyCode (engine_to_robot); size 0; statically_verified</summary>
     KillBodyCode = 0x06,
@@ -356,7 +356,7 @@ public static class MessageCatalog
         [RobotMessageId.SetBackpackLayer] = new(RobotMessageId.SetBackpackLayer, "setBackpackLayer", "BackpackSetLayer", MessageDirection.EngineToRobot, 1, false, Subsystem.LedsDisplay, ProbeSafety.SafeVisible, LayoutConfidence.NativeOnly, VerificationStatus.LayoutKnownSemanticsUncertain, null),
         [RobotMessageId.SetBackpackLightsMiddle] = new(RobotMessageId.SetBackpackLightsMiddle, "setBackpackLightsMiddle", "BackpackLightsMiddle", MessageDirection.EngineToRobot, 31, false, Subsystem.LedsDisplay, ProbeSafety.SafeVisible, LayoutConfidence.NativeOnly, VerificationStatus.CaptureVerified, "LightStateCenter"),
         [RobotMessageId.SetCubeLights] = new(RobotMessageId.SetCubeLights, "setCubeLights", "CubeLights", MessageDirection.EngineToRobot, 40, false, Subsystem.CubesBle, ProbeSafety.SafeVisible, LayoutConfidence.Exact, VerificationStatus.StaticallyVerified, "CubeLights"),
-        [RobotMessageId.SetPropSlot] = new(RobotMessageId.SetPropSlot, "setPropSlot", "SetPropSlot", MessageDirection.EngineToRobot, 5, false, Subsystem.CubesBle, ProbeSafety.StateChange, LayoutConfidence.NativeNamed, VerificationStatus.LayoutKnownSemanticsUncertain, "ObjectConnect"),
+        [RobotMessageId.SetPropSlot] = new(RobotMessageId.SetPropSlot, "setPropSlot", "SetPropSlot", MessageDirection.EngineToRobot, 5, false, Subsystem.CubesBle, ProbeSafety.StateChange, LayoutConfidence.HardwareRefined, VerificationStatus.StaticallyVerified, "ObjectConnect"),
         [RobotMessageId.KillBodyCode] = new(RobotMessageId.KillBodyCode, "killBodyCode", "KillBodyCode", MessageDirection.EngineToRobot, 0, false, Subsystem.FirmwareUpdateRecovery, ProbeSafety.Destructive, LayoutConfidence.Exact, VerificationStatus.StaticallyVerified, null),
         [RobotMessageId.SetBodyRadioMode] = new(RobotMessageId.SetBodyRadioMode, "setBodyRadioMode", "SetBodyRadioMode", MessageDirection.EngineToRobot, 2, false, Subsystem.CubesBle, ProbeSafety.Destructive, LayoutConfidence.Exact, VerificationStatus.StaticallyVerified, null),
         [RobotMessageId.StreamObjectAccel] = new(RobotMessageId.StreamObjectAccel, "streamObjectAccel", "StreamObjectAccel", MessageDirection.EngineToRobot, 5, false, Subsystem.CubesBle, ProbeSafety.StateChange, LayoutConfidence.Exact, VerificationStatus.StaticallyVerified, "StreamObjectAccel"),
