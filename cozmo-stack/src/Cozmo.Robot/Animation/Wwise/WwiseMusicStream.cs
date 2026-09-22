@@ -211,8 +211,23 @@ public sealed class WwiseMusicStream : IDisposable
     public IReadOnlySet<uint> Excluded { get; }
     /// <summary>How many samples are ready to be read.</summary>
     public int Ready { get { lock (_gate) return _committedTo; } }
+    /// <summary>How many samples the scheduler has taken, as it last reported.</summary>
+    public int Consumed { get { lock (_gate) return _consumed; } }
     /// <summary>Times the worker was asked for samples it had not rendered yet.</summary>
     public int Underruns { get; private set; }
+
+    /// <summary>
+    /// Playback has reached this sample. The worker renders to this plus <see cref="LeadMs"/> and no
+    /// further, which is what keeps a later parameter from being frozen into audio nobody has heard yet:
+    /// while the robot has no room for another frame the scheduler stops taking samples, and the render
+    /// stops with it instead of running on to the end of the song.
+    /// </summary>
+    public void NoteConsumedTo(int sample)
+    {
+        lock (_gate) if (sample > _consumed) _consumed = sample;
+    }
+
+    private int _consumed;
 
     /// <summary>
     /// Whether this song has been handed to the scheduler. A stream is good for one play: Wwise draws
@@ -315,10 +330,11 @@ public sealed class WwiseMusicStream : IDisposable
     /// until the song is done. Calling it again does nothing, so the scheduler asking for the buffer on
     /// every frame is harmless.
     ///
-    /// The clock is the wall clock rather than the scheduler's position. If the animation timeline
-    /// freezes — which it does whenever the robot has no room for another audio frame — the render runs
-    /// further ahead than the lead, and the parameter is baked in that much earlier. It can never run
-    /// behind, which is the property that matters for not stalling the scheduler.
+    /// The clock is playback's own: the worker renders to whatever the scheduler has taken plus
+    /// <see cref="LeadMs"/>, and the wall clock only carries it through the moments before the scheduler
+    /// has reported anything. If the animation timeline freezes — which it does whenever the robot has no
+    /// room for another audio frame — the render stops a lead ahead of what has been heard rather than
+    /// running on to the end of the song and baking every later parameter change out of existence.
     /// </summary>
     public void BeginPlayback()
     {
@@ -333,7 +349,12 @@ public sealed class WwiseMusicStream : IDisposable
             {
                 while (!cts.IsCancellationRequested && Ready < _mix.Length)
                 {
-                    AdvanceTo((DateTime.UtcNow - started).TotalMilliseconds + LeadMs);
+                    // playback's own clock once it reports, the wall clock until then, and never more
+                    // than a lead ahead of what has actually been taken
+                    double consumedMs = Consumed * 1000.0 / CozmoAudio.SampleRate;
+                    double wallMs = (DateTime.UtcNow - started).TotalMilliseconds;
+                    double target = (Consumed > 0 ? consumedMs : Math.Min(wallMs, LeadMs)) + LeadMs;
+                    AdvanceTo(target);
                     try { await Task.Delay(10, cts.Token); } catch (OperationCanceledException) { return; }
                 }
             }, cts.Token);
@@ -348,7 +369,7 @@ public sealed class WwiseMusicStream : IDisposable
     }
 
     /// <summary>Counts a read of samples that were not ready, so a shortfall is visible rather than silent.</summary>
-    internal void NoteUnderrun() => Underruns++;
+    public void NoteUnderrun() => Underruns++;
 
     public void Dispose()
     {

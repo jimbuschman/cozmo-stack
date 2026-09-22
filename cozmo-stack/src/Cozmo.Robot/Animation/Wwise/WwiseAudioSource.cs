@@ -418,6 +418,25 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
         return null;
     }
 
+    /// <summary>
+    /// How much of a streaming song is rendered. The buffer handed to the scheduler is the whole song's
+    /// worth of samples and only the front of it is real, so this answers with what has been committed;
+    /// the rest is still waiting on the parameters it will be rendered under. The call doubles as
+    /// playback's report of how far it has got, which is what bounds how far ahead the render runs.
+    /// </summary>
+    public int ReadySamples(short[] pcm, int consumed)
+    {
+        WwiseMusicStream? stream = null;
+        lock (_gate)
+            foreach (var s in _streams.Values)
+                if (ReferenceEquals(s.Pcm, pcm)) { stream = s; break; }
+        if (stream is null) return pcm.Length;          // a decoded sound, ready in full
+        stream.NoteConsumedTo(consumed);
+        int ready = stream.Ready;
+        if (consumed >= ready && consumed < pcm.Length) stream.NoteUnderrun();
+        return ready;
+    }
+
     /// <summary>The stream for an event under the current switches, if one has been prepared. Tests and tools.</summary>
     public WwiseMusicStream? StreamFor(uint eventId)
     {

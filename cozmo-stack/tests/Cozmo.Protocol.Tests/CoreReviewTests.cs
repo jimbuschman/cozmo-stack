@@ -4,6 +4,7 @@ using Cozmo.Robot.Animation;
 using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
+using Cozmo.Robot.Animation.Wwise;
 using Cozmo.Transport;
 using Xunit;
 
@@ -507,5 +508,186 @@ public class CoreReviewTests
             Assert.Equal(expected.Y, onObject[i].Y, 6);
             Assert.Equal(expected.Z, onObject[i].Z, 6);
         }
+    }
+
+    // ================================================================ CORE-006
+
+    /// <summary>
+    /// A source whose buffer is only partly rendered, standing in for a song being rendered as it plays.
+    /// Nothing about Wwise is involved: what is under test is the contract between a producer that fills
+    /// a buffer from the front and the scheduler that reads it.
+    /// </summary>
+    private sealed class PartialSource : IAnimationAudioSource
+    {
+        public readonly short[] Buffer;
+        public int ReadyCount;
+        public int LastConsumedSeen = -1;
+        public int Underruns;
+
+        public PartialSource(int samples)
+        {
+            Buffer = new short[samples];
+            for (int i = 0; i < samples; i++) Buffer[i] = (short)(1000 + (i % 100));   // never zero
+        }
+
+        public short[]? GetPcm(long eventId, float volume) => Buffer;
+        public string? NameOf(long eventId) => "partial";
+        public int ReadySamples(short[] pcm, int consumed)
+        {
+            LastConsumedSeen = consumed;
+            if (consumed >= ReadyCount && consumed < pcm.Length) Underruns++;
+            return ReadyCount;
+        }
+    }
+
+    /// <summary>
+    /// CORE-006, the readiness half. The scheduler was handed the whole buffer of a song that renders as
+    /// it plays and read it regardless of how much had been committed, so anything the renderer had not
+    /// reached yet went to the robot as the zeros it was initialised with - silence in place of music,
+    /// and unrecoverable, because a frame the robot has been given cannot be taken back.
+    ///
+    /// The frame now goes out as the animation's own silence while nothing new is ready, and the sound
+    /// keeps its place, so what was not rendered in time is heard late instead of being lost.
+    /// </summary>
+    [Fact]
+    public void CORE006_TheSchedulerNeverSendsSamplesThatWereNotRenderedYet()
+    {
+        var sink = new BlockingSink();
+        var scheduler = new AnimationScheduler(sink, new Random(4));
+        var source = new PartialSource(CozmoAudio.SamplesPerFrame * 8);
+        scheduler.AudioSource = source;
+
+        var clip = new AnimationClip
+        {
+            Name = "song",
+            Keyframes = new List<Keyframe> { new AudioKeyframe(0, new long[] { 7 }, 1.0f, new[] { 1.0f }, false) },
+            Tracks = AnimationTrack.Audio,
+            DurationMs = 5_000,
+        };
+
+        var emitted = new List<byte[]?>();
+        var recording = new RecordingSink(emitted);
+        scheduler = new AnimationScheduler(recording, new Random(4)) { AudioSource = source };
+        scheduler.Play(clip, 0);
+
+        // nothing rendered yet: every frame is silence and the sound does not move
+        source.ReadyCount = 0;
+        for (int i = 0; i < 3; i++) scheduler.Advance(i * 33);
+        Assert.All(emitted, f => Assert.Null(f));
+        Assert.True(source.Underruns > 0);
+
+        // two frames' worth committed: two frames of real audio, then silence again
+        source.ReadyCount = CozmoAudio.SamplesPerFrame * 2;
+        for (int i = 3; i < 8; i++) scheduler.Advance(i * 33);
+        var real = emitted.Where(f => f is not null).ToList();
+        Assert.Equal(2, real.Count);
+        Assert.All(real, f => Assert.Contains(f!, b => b != AnkiMuLaw.Encode(0)));
+
+        // and the rest arrives once it is rendered, rather than having been skipped
+        source.ReadyCount = source.Buffer.Length;
+        for (int i = 8; i < 20; i++) scheduler.Advance(i * 33);
+        Assert.Equal(8, emitted.Count(f => f is not null));
+    }
+
+    /// <summary>Records every audio frame the scheduler emits, and does nothing else.</summary>
+    private sealed class RecordingSink : IAnimationSink
+    {
+        private readonly List<byte[]?> _frames;
+        public RecordingSink(List<byte[]?> frames) => _frames = frames;
+        public void Face(FaceBitmap bitmap) { }
+        public void Audio(byte[]? mulawFrame) => _frames.Add(mulawFrame);
+        public void Head(sbyte angleDeg, uint durationMs) { }
+        public void Lift(byte heightMm, uint durationMs) { }
+        public void AnimationStarted(byte tag) { }
+        public void AnimationEnded() { }
+        public void Body(BodyKeyframe keyframe) { }
+        public void BodyStop() { }
+        public void Lights(LightsKeyframe keyframe) { }
+        public void Event(string eventId) { }
+        public void Finished(string clipName, bool completed) { }
+    }
+
+    /// <summary>
+    /// CORE-006, the pacing half. The renderer ran on the wall clock from the moment playback began, so a
+    /// robot with no room for another audio frame - which is the normal back-pressure, not a fault - let
+    /// the render run on to the end of the song while almost none of it had been heard. Every parameter
+    /// posted after that point was arriving at audio that was already decided, which is the very thing
+    /// the streaming render exists to prevent.
+    ///
+    /// The render now follows what has been taken: a lead ahead of consumption and no further.
+    /// </summary>
+    [Fact]
+    public void CORE006_TheRenderStaysWithinALeadOfWhatHasBeenHeard()
+    {
+        if (WwiseAssets.Library is not { } lib) return;
+        uint song = lib.IdOf("Play__Robot_VO__Cozmo_Singing_80bpm")!.Value;
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(5));
+        source.SetSwitch(SingingBehavior.Group80, 0x852F201Au);
+        source.Prewarm(song).Wait();
+
+        var pcm = source.GetPcm(song, 1f);                    // hands the buffer over and begins playback
+        Assert.NotNull(pcm);
+        var stream = source.StreamFor(song)!;
+        int lead = (int)Math.Round(WwiseMusicStream.LeadMs * CozmoAudio.SampleRate / 1000.0);
+        Assert.True(pcm!.Length > 8 * lead, "the song is too short to tell running ahead from finishing");
+
+        // nobody takes any samples: the render must stop a lead in rather than running the song out
+        Thread.Sleep(400);
+        Assert.True(stream.Ready <= 3 * lead,
+                    $"rendered {stream.Ready} samples with nothing consumed (a lead is {lead})");
+        Assert.True(stream.Ready < pcm.Length);
+
+        // the scheduler reports what it has taken, the way it does once a frame
+        int consumed = 4 * lead;
+        source.ReadySamples(pcm, consumed);
+        Assert.True(Within(2_000, () => stream.Ready >= consumed),
+                    "the render did not follow consumption");
+        Assert.True(stream.Ready <= consumed + 3 * lead,
+                    $"rendered {stream.Ready} against {consumed} consumed");
+    }
+
+    /// <summary>
+    /// CORE-006, and what the pacing is for: with the robot stalled, a vibrato posted afterwards still
+    /// reaches the audio, because the audio it would reach has not been rendered yet. The same test on
+    /// the old arrangement would find the song already finished and the parameter with nothing left to
+    /// change.
+    /// </summary>
+    [Fact]
+    public void CORE006_AParameterPostedWhileTheRobotIsStalledStillReachesTheAudio()
+    {
+        if (WwiseAssets.Library is not { } lib) return;
+        uint song = lib.IdOf("Play__Robot_VO__Cozmo_Singing_80bpm")!.Value;
+
+        WwiseAudioSource Prepared(int seed)
+        {
+            var s = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(seed));
+            s.SetSwitch(SingingBehavior.Group80, 0x852F201Au);
+            s.Prewarm(song).Wait();
+            return s;
+        }
+
+        using var quiet = Prepared(21);
+        var quietPcm = quiet.StreamFor(song)!.RenderAll().Pcm.ToArray();
+
+        using var stalled = Prepared(21);
+        var pcm = stalled.GetPcm(song, 1f)!;
+        var stream = stalled.StreamFor(song)!;
+
+        // the robot has no room: nothing is consumed for a while
+        Thread.Sleep(300);
+        int rendered = stream.Ready;
+        Assert.True(rendered < pcm.Length, "the render ran the whole song out while nothing was heard");
+        var before = pcm.Take(rendered).ToArray();
+
+        // the behaviour shakes the cube; the song is still mostly unrendered, so this can still reach it
+        stalled.SetParameter(SingingBehavior.VibratoParameter, 1f);
+        stream.RenderAll();
+
+        Assert.Equal(quietPcm.Length, pcm.Length);
+        Assert.Equal(before, pcm.Take(rendered));                       // what was already committed stands
+        int different = 0;
+        for (int i = rendered; i < pcm.Length; i++) if (pcm[i] != quietPcm[i]) different++;
+        Assert.True(different > (pcm.Length - rendered) / 10,
+                    $"only {different} of {pcm.Length - rendered} unrendered samples changed");
     }
 }

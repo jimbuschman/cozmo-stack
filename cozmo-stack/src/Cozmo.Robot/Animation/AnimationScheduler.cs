@@ -470,19 +470,37 @@ public sealed class AnimationScheduler
         // robot's audio budget with (tag & 0xFE) == 0x8E. The silence frames are what carry an animation
         // forward: a clip streamed without them opens on the robot and then never advances, which is why
         // body motion did nothing and the face stopped appearing once we started bracketing.
+        // How much of the sound is really rendered. A source that renders while it plays fills its
+        // buffer from the front, and the tail is zeros standing in for samples whose parameters have not
+        // been read yet; sending those puts silence on the robot in place of the music, and the robot
+        // cannot be given them again. Asked outside the lock because the source may do real work, and it
+        // is also how a streaming source learns how far playback has got.
+        int ready = int.MaxValue;
+        {
+            short[]? pcmNow; int posNow;
+            lock (_gate) { pcmNow = _audioPcm; posNow = _audioPos; }
+            if (pcmNow is not null && AudioSource is { } src) ready = src.ReadySamples(pcmNow, posNow);
+        }
+
         byte[]? frame = null;
         lock (_gate)
         {
             if (_generation != generation) return false;
             if (_audioPcm is { } pcm && _audioPos < pcm.Length)
             {
-                int n = Math.Min(CozmoAudio.SamplesPerFrame, pcm.Length - _audioPos);
-                var samples = new byte[CozmoAudio.SamplesPerFrame];
-                for (int i = 0; i < n; i++) samples[i] = AnkiMuLaw.Encode(pcm[_audioPos + i]);
-                for (int i = n; i < CozmoAudio.SamplesPerFrame; i++) samples[i] = AnkiMuLaw.Encode(0);
-                _audioPos += n;
-                if (_audioPos >= pcm.Length) { _audioPcm = null; _audioPos = 0; _audioEventId = null; }
-                frame = samples;
+                int want = Math.Min(CozmoAudio.SamplesPerFrame, pcm.Length - _audioPos);
+                int have = Math.Max(0, ready - _audioPos);
+                if (have >= want)
+                {
+                    var samples = new byte[CozmoAudio.SamplesPerFrame];
+                    for (int i = 0; i < want; i++) samples[i] = AnkiMuLaw.Encode(pcm[_audioPos + i]);
+                    for (int i = want; i < CozmoAudio.SamplesPerFrame; i++) samples[i] = AnkiMuLaw.Encode(0);
+                    _audioPos += want;
+                    if (_audioPos >= pcm.Length) { _audioPcm = null; _audioPos = 0; _audioEventId = null; }
+                    frame = samples;
+                }
+                // otherwise the frame carries silence and the sound keeps its place, so what has not been
+                // rendered yet is heard late rather than lost
             }
         }
         _sink.Audio(frame);

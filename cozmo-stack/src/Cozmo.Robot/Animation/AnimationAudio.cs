@@ -28,6 +28,21 @@ public interface IAnimationAudioSource
     string? NameOf(long eventId);
 
     /// <summary>
+    /// How many samples of <paramref name="pcm"/> are real, given that the scheduler has consumed
+    /// <paramref name="consumed"/> of them so far.
+    ///
+    /// A source that renders while it plays hands the scheduler a buffer that is only filled in as the
+    /// song goes, and the rest of it is zeros that have not been decided yet - a later game parameter is
+    /// still to be folded into them. Reading those as though they were audio sends silence the robot can
+    /// never get back. The default says the whole buffer is ready, which is true of any source that
+    /// decodes up front.
+    ///
+    /// The scheduler calls this once per audio frame, which is also how a streaming source learns how far
+    /// playback has actually reached: everything before <paramref name="consumed"/> has gone to the robot.
+    /// </summary>
+    int ReadySamples(short[] pcm, int consumed) => pcm.Length;
+
+    /// <summary>
     /// Whether this event is a Wwise <b>Stop</b> action (type 0x01xx) rather than a Play: it produces no PCM
     /// and instead terminates what its target is playing. The scheduler asks before <see cref="GetPcm"/> so a
     /// Stop event ends the sound currently streaming instead of being taken for a silent alternative.
