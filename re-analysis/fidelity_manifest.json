@@ -78,7 +78,7 @@
       "id": "M5-animation",
       "name": "Animation clips, scheduler and face",
       "milestone": "M5",
-      "source_investigation_exhausted": true,
+      "source_investigation_exhausted": false,
       "implementation_fidelity_complete": true
     },
     {
@@ -3641,6 +3641,40 @@
       ],
       "status": "RECOVERABLE_GAP",
       "unresolved": "read BehaviorPopAWheelie's SetupRetryAction for the retry limit, and pin the function addresses",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M5-022",
+      "subsystem": "M5-animation",
+      "title": "What the engine does when the robot disconnects during a streaming animation",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "effect": "on a dropped link the animation ends, keeps streaming, or leaves state behind differently from the engine",
+      "provenance": "this stack's failure boundary (CORE-002): the tick loop ends the playback and reports the fault through Faulted; M1-014 is this stack's socket/dispatch policy and is not evidence for the native behaviour",
+      "authority": "the engine's AnimationStreamer and robot-disconnect handling in libcozmoEngine.so, not read",
+      "evidence": [
+        "hardware check CR2"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "read how the engine's animation streamer and robot-connection teardown end a streaming animation when the robot disconnects",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M5-023",
+      "subsystem": "M5-animation",
+      "title": "Native cancellation and emission sequencing of a cancelled streaming animation",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "effect": "a command belonging to a cancelled animation reaches the robot, or the cancel is sequenced differently from the engine",
+      "provenance": "this stack's emission gate (CORE-003): a generation check held across the send; M5-008 (interruption) and M5-006 (body stop at duration end) do not establish how the engine orders cancellation against sending",
+      "authority": "the engine's AnimationStreamer abort and per-tick send path in libcozmoEngine.so, not read",
+      "evidence": [
+        "hardware check CR3"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "read the engine's animation abort path and how it sequences cancellation against the frames it streams each tick",
       "hardware_required": false,
       "live_path": true,
       "test": null

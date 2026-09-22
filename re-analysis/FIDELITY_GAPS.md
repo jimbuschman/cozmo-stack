@@ -3,13 +3,13 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **217 records** over 16 subsystems.
+Manifest of **219 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 164 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 15 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 5 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 7 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 1 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 20 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 4 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -28,7 +28,7 @@ remains after both, and they do not go away by working harder on this repository
 | M2-protocol — CLAD messages and protocol helpers | 7 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 17 | 0 | 0 | 0 | 1 | yes | yes |
 | M4-control — Motion, sensors, lights and cubes | 13 | 1 | 1 | 0 | 1 | no | no |
-| M5-animation — Animation clips, scheduler and face | 21 | 0 | 0 | 0 | 0 | yes | yes |
+| M5-animation — Animation clips, scheduler and face | 23 | 2 | 0 | 0 | 0 | no | yes |
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 0 | 0 | 0 | 0 | yes | yes |
 | M7-behaviour — Idle, mood and reactions | 17 | 1 | 0 | 0 | 0 | no | yes |
 | M8-framework — Behaviour framework and scoring | 10 | 0 | 0 | 0 | 0 | yes | yes |
@@ -55,6 +55,26 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: CalibrateMotorAction in libcozmoEngine.so, not read at an address; HandleMotorCalibration 0x00536A68 (the report side, read, see M4-004)
 * evidence: re-analysis/protocol/cozmo_robot_protocol.json startMotorCalibration 0x58: layout_known_semantics_uncertain; Motion.RequestMotorCalibration doc comment
 * outstanding: read CalibrateMotorAction and the StartMotorCalibration Pack call sites to establish which flag maps to which motor and when the engine sends it
+
+### M5-animation — Animation clips, scheduler and face
+
+**M5-022 — What the engine does when the robot disconnects during a streaming animation** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
+* effect: on a dropped link the animation ends, keeps streaming, or leaves state behind differently from the engine
+* rests on: this stack's failure boundary (CORE-002): the tick loop ends the playback and reports the fault through Faulted; M1-014 is this stack's socket/dispatch policy and is not evidence for the native behaviour
+* best authority: the engine's AnimationStreamer and robot-disconnect handling in libcozmoEngine.so, not read
+* evidence: hardware check CR2
+* outstanding: read how the engine's animation streamer and robot-connection teardown end a streaming animation when the robot disconnects
+
+**M5-023 — Native cancellation and emission sequencing of a cancelled streaming animation** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
+* effect: a command belonging to a cancelled animation reaches the robot, or the cancel is sequenced differently from the engine
+* rests on: this stack's emission gate (CORE-003): a generation check held across the send; M5-008 (interruption) and M5-006 (body stop at duration end) do not establish how the engine orders cancellation against sending
+* best authority: the engine's AnimationStreamer abort and per-tick send path in libcozmoEngine.so, not read
+* evidence: hardware check CR3
+* outstanding: read the engine's animation abort path and how it sequences cancellation against the frames it streams each tick
 
 ### M7-behaviour — Idle, mood and reactions
 
