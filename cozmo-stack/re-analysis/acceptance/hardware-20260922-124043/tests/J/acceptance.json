@@ -1,0 +1,400 @@
+{
+  "tool": "reactions",
+  "milestone": "M10",
+  "timestampUtc": "2026-09-22T17:57:34.2208646Z",
+  "firmware": 2457,
+  "serial": 206587486,
+  "automated": {
+    "pass": true,
+    "detail": {
+      "fired": [
+        "ReturnedToTreads",
+        "RobotPickedUp",
+        "UnexpectedMovement"
+      ],
+      "log": [
+        {
+          "t": 9.5581291,
+          "text": "unexpected movement TurnedButStopped from Right at 10375 (avg wheels 52/-53 mm/s over 11)"
+        },
+        {
+          "t": 9.5802041,
+          "text": "    ReactToUnexpectedMovement: emotion event ReactToUnexpectedMovement: applied"
+        },
+        {
+          "t": 9.5827526,
+          "text": "    ReactToUnexpectedMovement: play ReactToUnexpectedMovement -\u003E anim_reacttocliff_huh_01"
+        },
+        {
+          "t": 9.5828505,
+          "text": "REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement"
+        },
+        {
+          "t": 10.082042,
+          "text": "    ReactToUnexpectedMovement: objective ReactedToUnexpectedMovement"
+        },
+        {
+          "t": 10.0820836,
+          "text": "    ReactToUnexpectedMovement: done"
+        },
+        {
+          "t": 14.3078497,
+          "text": "unexpected movement TurnedButStopped from Right at 15265 (avg wheels 16/-120 mm/s over 11)"
+        },
+        {
+          "t": 14.3289759,
+          "text": "    ReactToUnexpectedMovement: emotion event ReactToUnexpectedMovement: applied"
+        },
+        {
+          "t": 14.3297562,
+          "text": "    ReactToUnexpectedMovement: play ReactToUnexpectedMovement -\u003E anim_reacttocliff_huh_01"
+        },
+        {
+          "t": 14.3298475,
+          "text": "REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement"
+        },
+        {
+          "t": 14.5960955,
+          "text": "unexpected movement TurnedButStopped from Right at 15535 (avg wheels 34/-45 mm/s over 11)"
+        },
+        {
+          "t": 15.0613468,
+          "text": "    ReactToUnexpectedMovement: objective ReactedToUnexpectedMovement"
+        },
+        {
+          "t": 15.0616319,
+          "text": "    ReactToUnexpectedMovement: done"
+        },
+        {
+          "t": 16.9756793,
+          "text": "unexpected movement TurnedButStopped from Right at 17875 (avg wheels 30/-77 mm/s over 11)"
+        },
+        {
+          "t": 16.9816905,
+          "text": "    ReactToUnexpectedMovement: emotion event ReactToUnexpectedMovement: applied"
+        },
+        {
+          "t": 16.9822713,
+          "text": "    ReactToUnexpectedMovement: play ReactToUnexpectedMovement -\u003E anim_reacttocliff_huh_01"
+        },
+        {
+          "t": 16.9824249,
+          "text": "REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement"
+        },
+        {
+          "t": 17.2813842,
+          "text": "unexpected movement TurnedInOppositeDirection from Right at 18205 (avg wheels 17/-58 mm/s over 11)"
+        },
+        {
+          "t": 17.4516295,
+          "text": "    ReactToUnexpectedMovement: objective ReactedToUnexpectedMovement"
+        },
+        {
+          "t": 17.4517021,
+          "text": "    ReactToUnexpectedMovement: done"
+        },
+        {
+          "t": 17.4825123,
+          "text": "unexpected movement TurnedButStopped from Back at 18505 (avg wheels -19/-80 mm/s over 11)"
+        },
+        {
+          "t": 17.4854082,
+          "text": "    ReactToUnexpectedMovement: emotion event ReactToUnexpectedMovement: applied"
+        },
+        {
+          "t": 17.4859315,
+          "text": "    ReactToUnexpectedMovement: play ReactToUnexpectedMovement -\u003E anim_reacttocliff_huh_01"
+        },
+        {
+          "t": 17.4861694,
+          "text": "REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement"
+        },
+        {
+          "t": 17.9563304,
+          "text": "    ReactToUnexpectedMovement: objective ReactedToUnexpectedMovement"
+        },
+        {
+          "t": 17.9564785,
+          "text": "    ReactToUnexpectedMovement: done"
+        },
+        {
+          "t": 20.9323214,
+          "text": "unexpected movement TurnedButStopped from Right at 21925 (avg wheels 7/-67 mm/s over 11)"
+        },
+        {
+          "t": 20.9380546,
+          "text": "    ReactToUnexpectedMovement: emotion event ReactToUnexpectedMovement: applied"
+        },
+        {
+          "t": 20.9386323,
+          "text": "    ReactToUnexpectedMovement: play ReactToUnexpectedMovement -\u003E anim_reacttocliff_huh_01"
+        },
+        {
+          "t": 20.938708,
+          "text": "REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement"
+        },
+        {
+          "t": 21.2052595,
+          "text": "unexpected movement TurnedButStopped from Right at 22165 (avg wheels 26/-45 mm/s over 11)"
+        },
+        {
+          "t": 21.4068513,
+          "text": "    ReactToUnexpectedMovement: objective ReactedToUnexpectedMovement"
+        },
+        {
+          "t": 21.406922,
+          "text": "    ReactToUnexpectedMovement: done"
+        },
+        {
+          "t": 21.4421328,
+          "text": "unexpected movement TurnedButStopped from Back at 22465 (avg wheels -31/-81 mm/s over 11)"
+        },
+        {
+          "t": 21.4732852,
+          "text": "    ReactToUnexpectedMovement: emotion event ReactToUnexpectedMovement: applied"
+        },
+        {
+          "t": 21.4741256,
+          "text": "    ReactToUnexpectedMovement: play ReactToUnexpectedMovement -\u003E anim_reacttocliff_huh_01"
+        },
+        {
+          "t": 21.4742894,
+          "text": "REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement"
+        },
+        {
+          "t": 21.9444098,
+          "text": "    ReactToUnexpectedMovement: objective ReactedToUnexpectedMovement"
+        },
+        {
+          "t": 21.9444751,
+          "text": "    ReactToUnexpectedMovement: done"
+        },
+        {
+          "t": 24.7128501,
+          "text": "unexpected movement TurnedButStopped from Right at 25675 (avg wheels 29/-31 mm/s over 11)"
+        },
+        {
+          "t": 24.7297191,
+          "text": "    ReactToUnexpectedMovement: emotion event ReactToUnexpectedMovement: applied"
+        },
+        {
+          "t": 24.7302889,
+          "text": "    ReactToUnexpectedMovement: play ReactToUnexpectedMovement -\u003E anim_reacttocliff_huh_01"
+        },
+        {
+          "t": 24.7303849,
+          "text": "REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement"
+        },
+        {
+          "t": 25.0297623,
+          "text": "unexpected movement TurnedInOppositeDirection from Right at 25975 (avg wheels 8/-59 mm/s over 12)"
+        },
+        {
+          "t": 25.2000976,
+          "text": "    ReactToUnexpectedMovement: objective ReactedToUnexpectedMovement"
+        },
+        {
+          "t": 25.2002287,
+          "text": "    ReactToUnexpectedMovement: done"
+        },
+        {
+          "t": 25.7255203,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 25.7359415,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 25.9343292,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 28.7899578,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 28.7900383,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 29.2937803,
+          "text": "    ReactToReturnedToTreads: pitch 1.7 deg: nothing to do"
+        },
+        {
+          "t": 29.2938106,
+          "text": "    ReactToReturnedToTreads: done"
+        },
+        {
+          "t": 36.855536,
+          "text": "unexpected movement TurnedButStopped from Right at 37765 (avg wheels 95/-93 mm/s over 11)"
+        },
+        {
+          "t": 36.8783506,
+          "text": "    ReactToUnexpectedMovement: emotion event ReactToUnexpectedMovement: applied"
+        },
+        {
+          "t": 36.8789917,
+          "text": "    ReactToUnexpectedMovement: play ReactToUnexpectedMovement -\u003E anim_reacttocliff_huh_01"
+        },
+        {
+          "t": 36.8790581,
+          "text": "REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement"
+        },
+        {
+          "t": 37.3480605,
+          "text": "    ReactToUnexpectedMovement: objective ReactedToUnexpectedMovement"
+        },
+        {
+          "t": 37.348244,
+          "text": "    ReactToUnexpectedMovement: done"
+        },
+        {
+          "t": 42.2311774,
+          "text": "unexpected movement TurnedButStopped from Right at 43225 (avg wheels 110/-114 mm/s over 11)"
+        },
+        {
+          "t": 42.2499252,
+          "text": "    ReactToUnexpectedMovement: emotion event ReactToUnexpectedMovement: applied"
+        },
+        {
+          "t": 42.2505501,
+          "text": "    ReactToUnexpectedMovement: play ReactToUnexpectedMovement -\u003E anim_reacttocliff_huh_01"
+        },
+        {
+          "t": 42.2507212,
+          "text": "REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement"
+        },
+        {
+          "t": 42.5499132,
+          "text": "unexpected movement TurnedButStopped from Right at 43645 (avg wheels 13/-61 mm/s over 11)"
+        },
+        {
+          "t": 42.7198477,
+          "text": "    ReactToUnexpectedMovement: objective ReactedToUnexpectedMovement"
+        },
+        {
+          "t": 42.7199628,
+          "text": "    ReactToUnexpectedMovement: done"
+        },
+        {
+          "t": 44.7982889,
+          "text": "unexpected movement TurnedButStopped from Right at 45835 (avg wheels 13/-80 mm/s over 11)"
+        },
+        {
+          "t": 44.8238017,
+          "text": "    ReactToUnexpectedMovement: emotion event ReactToUnexpectedMovement: applied"
+        },
+        {
+          "t": 44.8241862,
+          "text": "    ReactToUnexpectedMovement: play ReactToUnexpectedMovement -\u003E anim_reacttocliff_huh_01"
+        },
+        {
+          "t": 44.8242733,
+          "text": "REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement"
+        },
+        {
+          "t": 45.1232306,
+          "text": "unexpected movement TurnedInOppositeDirection from Right at 46165 (avg wheels 10/-49 mm/s over 11)"
+        },
+        {
+          "t": 45.2927101,
+          "text": "    ReactToUnexpectedMovement: objective ReactedToUnexpectedMovement"
+        },
+        {
+          "t": 45.2928112,
+          "text": "    ReactToUnexpectedMovement: done"
+        },
+        {
+          "t": 49.3169072,
+          "text": "unexpected movement TurnedButStopped from Right at 50395 (avg wheels 14/-95 mm/s over 11)"
+        },
+        {
+          "t": 49.3433003,
+          "text": "    ReactToUnexpectedMovement: emotion event ReactToUnexpectedMovement: applied"
+        },
+        {
+          "t": 49.3441034,
+          "text": "    ReactToUnexpectedMovement: play ReactToUnexpectedMovement -\u003E anim_reacttocliff_huh_01"
+        },
+        {
+          "t": 49.3441694,
+          "text": "REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement"
+        },
+        {
+          "t": 49.6444479,
+          "text": "unexpected movement TurnedInOppositeDirection from Right at 50725 (avg wheels 13/-61 mm/s over 11)"
+        },
+        {
+          "t": 49.812341,
+          "text": "    ReactToUnexpectedMovement: objective ReactedToUnexpectedMovement"
+        },
+        {
+          "t": 49.8124414,
+          "text": "    ReactToUnexpectedMovement: done"
+        },
+        {
+          "t": 52.8797756,
+          "text": "unexpected movement TurnedButStopped from Back at 53905 (avg wheels -0/-106 mm/s over 11)"
+        },
+        {
+          "t": 52.8937843,
+          "text": "    ReactToUnexpectedMovement: emotion event ReactToUnexpectedMovement: applied"
+        },
+        {
+          "t": 52.8942055,
+          "text": "    ReactToUnexpectedMovement: play ReactToUnexpectedMovement -\u003E anim_reacttocliff_huh_01"
+        },
+        {
+          "t": 52.894252,
+          "text": "REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement"
+        },
+        {
+          "t": 53.1956159,
+          "text": "unexpected movement TurnedInOppositeDirection from Right at 54295 (avg wheels 10/-55 mm/s over 11)"
+        },
+        {
+          "t": 53.3635311,
+          "text": "    ReactToUnexpectedMovement: objective ReactedToUnexpectedMovement"
+        },
+        {
+          "t": 53.3637159,
+          "text": "    ReactToUnexpectedMovement: done"
+        },
+        {
+          "t": 55.803649,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 55.8093212,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 56.0756956,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 58.4880359,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 58.4881198,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 58.9898309,
+          "text": "    ReactToReturnedToTreads: pitch 1.4 deg: nothing to do"
+        },
+        {
+          "t": 58.9899003,
+          "text": "    ReactToReturnedToTreads: done"
+        }
+      ],
+      "classifierEnabled": true
+    }
+  },
+  "human": {
+    "check": "each reaction did what the engine\u0027s does: flip down from the back, roll off the face, ask to be righted on a side, react then check the pitch on a slope, act dizzy after a shake, react to a push; no reaction fired for a state he was not in",
+    "verdict": "PENDING - fill in after watching the robot"
+  }
+}

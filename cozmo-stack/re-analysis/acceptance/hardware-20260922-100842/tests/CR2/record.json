@@ -1,0 +1,48 @@
+{
+  "Id": "CR2",
+  "Name": "A dropped link ends the animation, not the process",
+  "Phase": "6. idle and live animation",
+  "Subsystem": "The animation tick loop\u0027s failure boundary when the robot goes away mid-clip",
+  "Purpose": "The tick loop runs on a background thread and every frame reaches the transport. Once the link is gone the send throws, and before the correction that exception escaped a background thread and took the process with it. This is the one check where the disconnect is the subject, so the runner does not treat it as an interruption.",
+  "ExpectedTelemetry": "the animation task completes, the ticker stops, and the failure is reported through Faulted",
+  "ExpectedPhysical": "He stops where he is when the link goes, and the runner carries on to the next check rather than dying.",
+  "Prerequisites": [
+    "F passed",
+    "--obb given"
+  ],
+  "FidelityRecords": [
+    "M5-001"
+  ],
+  "CoreRegressions": [
+    "CORE-002"
+  ],
+  "CommandLine": "core 172.31.1.1 --obb C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\obb --case CORE-002 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-100842\\tests\\CR2\\acceptance.json",
+  "StartedUtc": "2026-09-22T15:13:40.6017958Z",
+  "FinishedUtc": "2026-09-22T15:14:45.8478026Z",
+  "ElapsedSeconds": 65.2460068,
+  "Auto": "Fail",
+  "Human": "Unsure",
+  "Status": "Unsure",
+  "AutoDetail": "exit 2",
+  "HumanNote": "not sure exactly what was supposed to happen. seemed like it starteed an animation and ended it early?",
+  "Attempts": 1,
+  "Captured": {
+    "before the drop": [
+      "ticker running: False. Dropping the link now."
+    ],
+    "after the drop": [
+      "the animation task completed"
+    ],
+    "fault": [
+      "the failure was reported through Faulted: no"
+    ],
+    "verdict": [
+      "automated: FAIL - the animation never started ticking, so the drop proved nothing"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "acceptance.json",
+    "console.log"
+  ]
+}

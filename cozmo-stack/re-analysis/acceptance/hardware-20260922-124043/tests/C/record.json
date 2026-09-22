@@ -1,0 +1,70 @@
+{
+  "Id": "C",
+  "Name": "Falling then impact",
+  "Phase": "10. robot state and reactions",
+  "Subsystem": "The falling and impact reports, and the rule that the reaction waits for the landing",
+  "Purpose": "The engine reacts to the landing, not the fall, and only above an impact of 1000. Neither the threshold nor the wait has been seen on hardware. The first run of this check watched for a minute and saw only the pick-up reaction, which says nothing about falling: the drop now has a window of its own and only the falling reaction counts inside it.",
+  "ExpectedTelemetry": "the RobotFalling reaction fires inside the drop\u0027s own window and nothing else satisfies it",
+  "ExpectedPhysical": "He reacts when he lands, not while he is in the air.",
+  "Prerequisites": [
+    "G passed",
+    "something soft to drop him onto",
+    "--obb given"
+  ],
+  "FidelityRecords": [
+    "M7-009"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "reactions 172.31.1.1 --obb re-analysis\\obb --expect RobotFalling --seconds 45 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\C\\acceptance.json",
+  "StartedUtc": "2026-09-22T17:50:59.2061247Z",
+  "FinishedUtc": "2026-09-22T17:52:04.6289369Z",
+  "ElapsedSeconds": 65.4228122,
+  "Auto": "Fail",
+  "Human": "Unsure",
+  "Status": "Unsure",
+  "AutoDetail": "exit 2",
+  "HumanNote": "hard to tell, it might have worked",
+  "Attempts": 1,
+  "Captured": {
+    "window": [
+      "  window RobotFalling: NOT SEEN   (in this window: CliffDetected, MotorCalibration, RobotPickedUp, ReturnedToTreads)"
+    ],
+    "expected": [
+      "expected reactions: RobotFalling=no",
+      "expected reactions missing: RobotFalling"
+    ],
+    "falling": [
+      "  RobotFalling         -\u003E ReactToImpact",
+      "  (watching for RobotFalling for the next 45 s)",
+      "[  16.43s] off-treads InAir -\u003E Falling",
+      "[  16.69s] off-treads Falling -\u003E OnTreads",
+      "[  38.22s] off-treads InAir -\u003E Falling",
+      "[  39.65s] off-treads Falling -\u003E OnTreads",
+      "  window RobotFalling: NOT SEEN   (in this window: CliffDetected, MotorCalibration, RobotPickedUp, ReturnedToTreads)",
+      "expected reactions: RobotFalling=no",
+      "expected reactions missing: RobotFalling"
+    ],
+    "reaction": [
+      "13 reactions registered:",
+      "[   3.84s] REACTION RobotPickedUp -\u003E ReactToPickup",
+      "[   6.53s] REACTION RobotPickedUp -\u003E ReactToPickup",
+      "[   9.22s] REACTION RobotPickedUp -\u003E ReactToPickup",
+      "[  11.94s] REACTION RobotPickedUp -\u003E ReactToPickup",
+      "[  15.29s] REACTION RobotPickedUp -\u003E ReactToPickup",
+      "[  18.65s] REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads",
+      "[  18.69s] REACTION MotorCalibration -\u003E ReactToMotorCalibration (interrupted ReactToReturnedToTreads)",
+      "[  20.13s] REACTION CliffDetected -\u003E ReactToCliff",
+      "[  27.26s] REACTION CliffDetected -\u003E ReactToCliff",
+      "[  34.38s] REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads",
+      "[  35.82s] REACTION CliffDetected -\u003E ReactToCliff",
+      "[  42.93s] REACTION CliffDetected -\u003E ReactToCliff",
+      "reactions fired: CliffDetected, MotorCalibration, RobotPickedUp, ReturnedToTreads",
+      "expected reactions: RobotFalling=no",
+      "expected reactions missing: RobotFalling"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "console.log"
+  ]
+}

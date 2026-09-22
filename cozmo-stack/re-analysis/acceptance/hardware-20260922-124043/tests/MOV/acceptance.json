@@ -1,0 +1,65 @@
+{
+  "utc": "2026-09-22T17:44:58.2647597Z",
+  "device": "motion",
+  "automatedChecksPassed": true,
+  "humanCheckRequired": "the robot should have nodded, raised and lowered its lift, driven forward and back by roughly the same distance, and stopped",
+  "humanVerdict": "not recorded: set to pass or fail after watching the robot",
+  "robot": {
+    "serial": "0x0c50465e",
+    "firmware": 2457,
+    "batteryVolts": 3.9959717,
+    "onCharger": false
+  },
+  "detail": {
+    "wheelsDriven": true,
+    "speedMmps": 40,
+    "steps": [
+      {
+        "step": "head",
+        "target": 0.3,
+        "result": "Acknowledged",
+        "detail": "head to 0.300 rad: robot acknowledged action 1"
+      },
+      {
+        "step": "head",
+        "target": -0.2,
+        "result": "Acknowledged",
+        "detail": "head to -0.200 rad: robot acknowledged action 2"
+      },
+      {
+        "step": "head",
+        "target": -0.4272991,
+        "result": "Acknowledged",
+        "detail": "head to -0.427 rad: robot acknowledged action 3"
+      },
+      {
+        "step": "lift",
+        "target": 60,
+        "result": "Acknowledged",
+        "detail": "lift to 60.0 mm: robot acknowledged action 4"
+      },
+      {
+        "step": "lift",
+        "target": 32,
+        "result": "Acknowledged",
+        "detail": "lift to 32.0 mm: robot acknowledged action 5"
+      },
+      {
+        "step": "drive_forward",
+        "result": "Acknowledged",
+        "detail": "robot reports wheels at 27/29 mm/s, asked for 40/40"
+      },
+      {
+        "step": "drive_back",
+        "result": "Acknowledged",
+        "detail": "robot reports wheels at -32/-34 mm/s, asked for -40/-40"
+      },
+      {
+        "step": "stop_all",
+        "result": "Acknowledged",
+        "detail": "robot reports all wheels stopped"
+      }
+    ]
+  },
+  "handlerFaults": 0
+}

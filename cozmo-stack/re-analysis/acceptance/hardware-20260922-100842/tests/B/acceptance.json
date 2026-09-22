@@ -1,0 +1,32 @@
+{
+  "utc": "2026-09-22T15:18:38.7789347Z",
+  "device": "cubes",
+  "automatedChecksPassed": false,
+  "humanCheckRequired": "the cubes you placed nearby should appear above, one of them connected, and the tap, movement and up-axis lines should match what you did to it",
+  "humanVerdict": "not recorded: set to pass or fail after watching the robot",
+  "robot": {
+    "serial": "0x0c50465e",
+    "firmware": 2457,
+    "batteryVolts": 3.9519653,
+    "onCharger": false
+  },
+  "detail": {
+    "connectedCount": 0,
+    "tapEvents": 0,
+    "movementEvents": 0,
+    "discovered": [
+      {
+        "factoryId": "0x241a8eec",
+        "objectId": null,
+        "type": "Block_LIGHTCUBE2",
+        "rssi": 75,
+        "connected": false,
+        "advertisements": 13,
+        "batteryLevelRaw": null,
+        "taps": 0,
+        "upAxis": null
+      }
+    ]
+  },
+  "handlerFaults": 0
+}

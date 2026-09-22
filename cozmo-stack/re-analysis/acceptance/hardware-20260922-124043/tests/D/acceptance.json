@@ -1,0 +1,23 @@
+{
+  "utc": "2026-09-22T17:42:04.2305578Z",
+  "device": "sensors-lift",
+  "automatedChecksPassed": true,
+  "humanCheckRequired": "the printed millimetres matched where the lift actually was, at both ends of its travel",
+  "humanVerdict": "not recorded: set to pass or fail after watching the robot",
+  "robot": {
+    "serial": "0x0c50465e",
+    "firmware": 2457,
+    "batteryVolts": 4.023987,
+    "onCharger": false
+  },
+  "detail": {
+    "downRad": -0.18917187,
+    "downMm": 32.58899,
+    "upRad": 0.8202886,
+    "upMm": 93.268616,
+    "travelMm": 60.679626,
+    "sawDown": true,
+    "sawUp": true
+  },
+  "handlerFaults": 0
+}

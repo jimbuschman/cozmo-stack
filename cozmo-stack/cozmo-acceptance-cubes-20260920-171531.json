@@ -1,0 +1,17 @@
+{
+  "utc": "2026-09-20T22:15:31.7407795Z",
+  "device": "cubes",
+  "automatedChecksPassed": false,
+  "humanCheckRequired": "the cubes you placed nearby should appear above; if you tapped one, its tap count should be non-zero",
+  "humanVerdict": "not recorded: set to pass or fail after watching the robot",
+  "robot": {
+    "serial": "0x0c50465e",
+    "firmware": 2457,
+    "batteryVolts": 3.9799805,
+    "onCharger": false
+  },
+  "detail": {
+    "discovered": []
+  },
+  "handlerFaults": 0
+}

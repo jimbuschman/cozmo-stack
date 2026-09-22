@@ -1,0 +1,49 @@
+{
+  "utc": "2026-09-22T17:47:20.5199787Z",
+  "device": "camera",
+  "automatedChecksPassed": true,
+  "humanCheckRequired": "open the saved .jpg files; each should be a photograph from Cozmo\u0027s point of view, not torn",
+  "humanVerdict": "not recorded: set to pass or fail after looking at or listening to the robot",
+  "robot": {
+    "serial": "0x0c50465e",
+    "firmware": 2457,
+    "animationControllerRunning": true,
+    "enabledAnimTracks": "0xff"
+  },
+  "detail": {
+    "chunksReceived": 228,
+    "framesCompleted": 25,
+    "framesDropped": 0,
+    "warmUpFramesDiscarded": 15,
+    "savedFiles": [
+      "cozmo-07780.jpg",
+      "cozmo-07781.jpg",
+      "cozmo-07782.jpg",
+      "cozmo-07783.jpg",
+      "cozmo-07784.jpg",
+      "cozmo-07785.jpg",
+      "cozmo-07786.jpg",
+      "cozmo-07787.jpg",
+      "cozmo-07788.jpg",
+      "cozmo-07789.jpg"
+    ],
+    "savedBytes": [
+      9815,
+      9803,
+      9774,
+      9776,
+      9634,
+      9712,
+      9671,
+      9589,
+      9567,
+      9495
+    ]
+  },
+  "transport": {
+    "framesSent": 85,
+    "resends": 2,
+    "stillUnacked": 1
+  },
+  "handlerFaults": 0
+}

@@ -1,0 +1,79 @@
+{
+  "Id": "J",
+  "Name": "Unexpected movement while driving",
+  "Phase": "10. robot state and reactions",
+  "Subsystem": "The unexpected-movement detector and its reaction",
+  "Purpose": "The detector suspends during direct drive, so it can only be provoked while a behaviour is driving the body. Its thresholds came from the engine and have never been pushed against.",
+  "ExpectedTelemetry": "an unexpected movement report naming the side, then the reaction, inside the window the tool drives",
+  "ExpectedPhysical": "He plays the startled reaction once he is held, and nothing fires while he turns freely.",
+  "Prerequisites": [
+    "H passed",
+    "--obb given",
+    "a hand free to hold him"
+  ],
+  "FidelityRecords": [
+    "M10-006"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "reactions 172.31.1.1 --obb re-analysis\\obb --expect UnexpectedMovement --provoke-movement --seconds 60 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\J\\acceptance.json",
+  "StartedUtc": "2026-09-22T17:56:32.9114578Z",
+  "FinishedUtc": "2026-09-22T17:57:42.189977Z",
+  "ElapsedSeconds": 69.2785192,
+  "Auto": "Pass",
+  "Human": "Pass",
+  "Status": "Passed",
+  "Attempts": 1,
+  "Captured": {
+    "window": [
+      "  window UnexpectedMovement: fired   (in this window: RobotPickedUp, ReturnedToTreads, UnexpectedMovement)"
+    ],
+    "expected": [
+      "expected reactions: UnexpectedMovement=yes",
+      "expected reactions: all seen"
+    ],
+    "bursts": [
+      "  [   0.00s] turning on the spot - HOLD HIM NOW",
+      "  [   4.03s] turning on the spot - HOLD HIM NOW",
+      "  [   8.06s] turning on the spot - HOLD HIM NOW",
+      "  [  12.09s] turning on the spot - HOLD HIM NOW",
+      "  [  16.10s] turning on the spot - HOLD HIM NOW",
+      "  [  20.13s] turning on the spot - HOLD HIM NOW",
+      "  [  24.16s] turning on the spot - HOLD HIM NOW",
+      "  [  28.19s] turning on the spot - HOLD HIM NOW",
+      "  [  32.21s] turning on the spot - HOLD HIM NOW",
+      "  [  36.24s] turning on the spot - HOLD HIM NOW",
+      "  [  40.27s] turning on the spot - HOLD HIM NOW",
+      "  [  44.29s] turning on the spot - HOLD HIM NOW",
+      "  [  48.31s] turning on the spot - HOLD HIM NOW",
+      "  [  52.33s] turning on the spot - HOLD HIM NOW",
+      "  [  56.35s] turning on the spot - HOLD HIM NOW"
+    ],
+    "detections": [
+      "[   9.56s] unexpected movement TurnedButStopped from Right at 10375 (avg wheels 52/-53 mm/s over 11)",
+      "[  14.31s] unexpected movement TurnedButStopped from Right at 15265 (avg wheels 16/-120 mm/s over 11)",
+      "[  14.60s] unexpected movement TurnedButStopped from Right at 15535 (avg wheels 34/-45 mm/s over 11)",
+      "[  16.98s] unexpected movement TurnedButStopped from Right at 17875 (avg wheels 30/-77 mm/s over 11)",
+      "[  17.28s] unexpected movement TurnedInOppositeDirection from Right at 18205 (avg wheels 17/-58 mm/s over 11)",
+      "[  17.48s] unexpected movement TurnedButStopped from Back at 18505 (avg wheels -19/-80 mm/s over 11)",
+      "[  20.93s] unexpected movement TurnedButStopped from Right at 21925 (avg wheels 7/-67 mm/s over 11)",
+      "[  21.20s] unexpected movement TurnedButStopped from Right at 22165 (avg wheels 26/-45 mm/s over 11)",
+      "[  21.44s] unexpected movement TurnedButStopped from Back at 22465 (avg wheels -31/-81 mm/s over 11)",
+      "[  24.71s] unexpected movement TurnedButStopped from Right at 25675 (avg wheels 29/-31 mm/s over 11)",
+      "[  25.03s] unexpected movement TurnedInOppositeDirection from Right at 25975 (avg wheels 8/-59 mm/s over 12)",
+      "[  36.86s] unexpected movement TurnedButStopped from Right at 37765 (avg wheels 95/-93 mm/s over 11)",
+      "[  42.23s] unexpected movement TurnedButStopped from Right at 43225 (avg wheels 110/-114 mm/s over 11)",
+      "[  42.55s] unexpected movement TurnedButStopped from Right at 43645 (avg wheels 13/-61 mm/s over 11)",
+      "[  44.80s] unexpected movement TurnedButStopped from Right at 45835 (avg wheels 13/-80 mm/s over 11)",
+      "[  45.12s] unexpected movement TurnedInOppositeDirection from Right at 46165 (avg wheels 10/-49 mm/s over 11)",
+      "[  49.32s] unexpected movement TurnedButStopped from Right at 50395 (avg wheels 14/-95 mm/s over 11)",
+      "[  49.64s] unexpected movement TurnedInOppositeDirection from Right at 50725 (avg wheels 13/-61 mm/s over 11)",
+      "[  52.88s] unexpected movement TurnedButStopped from Back at 53905 (avg wheels -0/-106 mm/s over 11)",
+      "[  53.20s] unexpected movement TurnedInOppositeDirection from Right at 54295 (avg wheels 10/-55 mm/s over 11)"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "acceptance.json",
+    "console.log"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "tool": "core",
+  "which": "CORE-004",
+  "timestampUtc": "2026-09-22T17:58:24.1564928Z",
+  "firmware": 2457,
+  "serial": 206587486,
+  "automated": {
+    "pass": false,
+    "detail": "B ended as Interrupted rather than completing",
+    "log": [
+      "connecting to 172.31.1.1...",
+      "connected: firmware 2457, telemetry 0.0 Hz, calibration complete",
+      "installing path A (60 mm), then replacing it with path B (120 mm), then aborting A late.",
+      "  path A is id 1",
+      "  path B is id 2",
+      "  A\u0027s abort sent a clear to the robot: False (it must be False)",
+      "  path B finished as: Interrupted",
+      "  robot pose now: x=9.3 y=-135.6 angle=0.838",
+      "",
+      "automated: FAIL - B ended as Interrupted rather than completing"
+    ]
+  },
+  "human": {
+    "verdict": "PENDING - the person watching the robot decides this"
+  }
+}

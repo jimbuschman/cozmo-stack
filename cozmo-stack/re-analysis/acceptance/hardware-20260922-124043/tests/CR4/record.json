@@ -1,0 +1,51 @@
+{
+  "Id": "CR4",
+  "Name": "A late abort clears its own path and nobody else\u0027s",
+  "Phase": "11. navigation",
+  "Subsystem": "Path ownership: PathRun, the path id, and the qualified abort",
+  "Purpose": "A run that was cancelled or timed out used to clear whatever path the sender had last sent, which by then could be another action\u0027s. On the robot that is a drive that stops dead half way for no visible reason. This installs a path, replaces it, and then lets the first one clean up late.",
+  "ExpectedTelemetry": "the first run\u0027s abort sends nothing, and the second path reports Completed",
+  "ExpectedPhysical": "He drives the longer path all the way and stops at the end of it, not part way through.",
+  "Prerequisites": [
+    "MOV passed",
+    "a clear, flat surface with no drop at the edge"
+  ],
+  "FidelityRecords": [
+    "M12-002"
+  ],
+  "CoreRegressions": [
+    "CORE-004"
+  ],
+  "CommandLine": "core 172.31.1.1 --case CORE-004 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\CR4\\acceptance.json",
+  "StartedUtc": "2026-09-22T17:58:22.5923987Z",
+  "FinishedUtc": "2026-09-22T17:58:31.3093668Z",
+  "ElapsedSeconds": 8.7169681,
+  "Auto": "Fail",
+  "Human": "Fail",
+  "Status": "Failed",
+  "AutoDetail": "exit 2",
+  "HumanNote": "didn\u0027t move",
+  "Attempts": 1,
+  "Captured": {
+    "path ids": [
+      "installing path A (60 mm), then replacing it with path B (120 mm), then aborting A late.",
+      "  path A is id 1",
+      "  path B is id 2",
+      "  path B finished as: Interrupted"
+    ],
+    "late abort": [
+      "  A\u0027s abort sent a clear to the robot: False (it must be False)"
+    ],
+    "terminal event": [
+      "  path B finished as: Interrupted"
+    ],
+    "verdict": [
+      "automated: FAIL - B ended as Interrupted rather than completing"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "acceptance.json",
+    "console.log"
+  ]
+}

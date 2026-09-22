@@ -1,0 +1,27 @@
+{
+  "utc": "2026-09-18T23:18:57.7575895Z",
+  "device": "display",
+  "automatedChecksPassed": true,
+  "humanCheckRequired": "compare the pattern on the robot\u0027s face with the ASCII art printed above; they must match",
+  "humanVerdict": "not recorded: set to pass or fail after looking at or listening to the robot",
+  "robot": {
+    "serial": "0x0c50465e",
+    "firmware": 2457,
+    "animationControllerRunning": true,
+    "enabledAnimTracks": "0xff"
+  },
+  "detail": {
+    "pattern": "test",
+    "payloadBytes": 804,
+    "maxPayloadBytes": 1034,
+    "framesSent": 239,
+    "animationBytesPlayed": 192304,
+    "payloadSha256": "7E42A58CACB09FE2FC8F6CF5304987BE8287F99DA9ACBF1A6FBACF6862628319"
+  },
+  "transport": {
+    "framesSent": 548,
+    "resends": 233,
+    "stillUnacked": 1
+  },
+  "handlerFaults": 0
+}

@@ -1,0 +1,1251 @@
+{
+  "Robot": "172.31.1.1",
+  "Obb": "re-analysis\\obb",
+  "StartedUtc": "2026-09-22T17:40:43.948315Z",
+  "EvidenceDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043",
+  "Tally": {
+    "Passed": 10,
+    "Failed": 2,
+    "Partial": 1,
+    "Unsure": 6,
+    "Interrupted": 0,
+    "Blocked": 1,
+    "Skipped": 0,
+    "Pending": 20,
+    "Total": 40,
+    "Outstanding": 20
+  },
+  "Tests": [
+    {
+      "Id": "LINK",
+      "Name": "Connection, handshake and telemetry",
+      "Phase": "1. connection and telemetry",
+      "Subsystem": "The UDP transport, the connection handshake, identity and the 30 Hz state stream",
+      "Purpose": "Everything below this reads the robot\u0027s own telemetry. A handshake that half works, a state rate that is not 30 Hz, or a link that quietly resends produces results that look like subsystem faults and are not. This is also the reading the safety check before every movement test compares against.",
+      "ExpectedTelemetry": "connected, identity received, more than 20 RobotState at about 30 Hz, nothing pending",
+      "ExpectedPhysical": "He sits still, his backpack light is on, and nothing about him changes for 20 seconds.",
+      "Prerequisites": [
+        "the robot is on and its light is on",
+        "no other application is connected to it"
+      ],
+      "FidelityRecords": [
+        "M2-001",
+        "M3-002"
+      ],
+      "CoreRegressions": [],
+      "CommandLine": "connect 172.31.1.1 --seconds 20 --log C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\LINK\\frames.log",
+      "StartedUtc": "2026-09-22T17:40:54.3967249Z",
+      "FinishedUtc": "2026-09-22T17:41:25.6219328Z",
+      "ElapsedSeconds": 31.2252079,
+      "Auto": "Pass",
+      "Human": "Pass",
+      "Status": "Passed",
+      "Attempts": 1,
+      "Captured": {
+        "handshake": [
+          "connected in 19 ms (ConnectionResponse received)"
+        ],
+        "identity": [
+          "firmware: v2457 e2r=fedb4b12f1b5b45456aec1629cd0b8cc r2e=5a7211095fc4961407e96b9126658317 build=DEVELOPMENT"
+        ],
+        "telemetry": [
+          "telemetry: 673 RobotState at 33.5 Hz; 707 messages total; histogram: State=673, ActiveObjectAvailable=16, Trace=9, MotorCalibration=4, RobotAvailable=1, FirmwareVersion=1, WifiFlashID=1, MfgId=1, SyncTimeAck=1"
+        ],
+        "transport": [
+          "transport: frames sent=630 resent=1 dupsDropped=1 pending=0 lastRTT=NaNms"
+        ],
+        "verdict": [
+          "SMOKE TEST: PASS"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "console.log",
+        "frames.log"
+      ]
+    },
+    {
+      "Id": "D",
+      "Name": "Lift position readout",
+      "Phase": "1. connection and telemetry",
+      "Subsystem": "RobotState lift angle and the angle-to-height conversion, with battery, cliff and IMU",
+      "Purpose": "The lift angle is reported in radians and converted with the engine\u0027s own formula. If the conversion is wrong, every docking height and the carry check are wrong with it.",
+      "ExpectedTelemetry": "a reading at each end of the travel, and both ends of the travel actually visited",
+      "ExpectedPhysical": "The two readings it prints back match where the lift actually was: about -0.198 rad / 32 mm down, about 0.712 rad / 92 mm raised.",
+      "Prerequisites": [
+        "CON passed",
+        "the lift is all the way down to begin with"
+      ],
+      "FidelityRecords": [
+        "M4-003"
+      ],
+      "CoreRegressions": [],
+      "CommandLine": "sensors 172.31.1.1 --guide-lift --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\D\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:41:46.3005948Z",
+      "FinishedUtc": "2026-09-22T17:42:29.9565673Z",
+      "ElapsedSeconds": 43.6559725,
+      "Auto": "Pass",
+      "Human": "Pass",
+      "Status": "Passed",
+      "Attempts": 1,
+      "Captured": {
+        "readings": [
+          "    lift= -0.189 rad /   32.6 mm   (batt 4.02V)",
+          "    lift= -0.189 rad /   32.6 mm   (batt 4.02V)",
+          "    lift= -0.189 rad /   32.6 mm   (batt 4.02V)",
+          "    lift= -0.189 rad /   32.6 mm   (batt 4.02V)",
+          "    lift= -0.189 rad /   32.6 mm   (batt 4.02V)",
+          "    lift= -0.189 rad /   32.6 mm   (batt 4.02V)",
+          "    lift= -0.189 rad /   32.6 mm   (batt 4.02V)",
+          "    lift= -0.189 rad /   32.6 mm   (batt 4.01V)",
+          "    lift= -0.207 rad /   31.4 mm   (batt 4.01V)",
+          "    lift= -0.153 rad /   35.0 mm   (batt 3.97V)",
+          "    lift= -0.153 rad /   35.0 mm   (batt 3.97V)",
+          "    lift= -0.153 rad /   35.0 mm   (batt 3.97V)",
+          "    lift=  0.047 rad /   48.1 mm   (batt 4.01V)",
+          "    lift=  0.820 rad /   93.3 mm   (batt 4.01V)",
+          "    lift=  0.820 rad /   93.3 mm   (batt 4.02V)",
+          "    lift=  0.820 rad /   93.3 mm   (batt 4.01V)",
+          "    lift=  0.820 rad /   93.3 mm   (batt 4.02V)"
+        ],
+        "sequence": [
+          "lift sequence: down seen=yes, raised seen=yes, both ends seen=yes"
+        ],
+        "down": [
+          "lift down:    -0.189 rad /   32.6 mm   (engine: -0.198 rad / 32 mm)"
+        ],
+        "raised": [
+          "lift raised:   0.820 rad /   93.3 mm   (engine:  0.712 rad / 92 mm)"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "acceptance.json",
+        "console.log"
+      ]
+    },
+    {
+      "Id": "F",
+      "Name": "Animation timeline",
+      "Phase": "2. animation controller",
+      "Subsystem": "The animation scheduler\u0027s keyframe timing against the robot\u0027s audio pacing",
+      "Purpose": "The scheduler paces itself off the robot\u0027s played-frame count, and everything that animates goes through it. This is the readiness check for the animation controller: one known clip, end to end, before anything harder depends on it.",
+      "ExpectedTelemetry": "keyframes fired equals keyframes in the clip and no stalls are reported",
+      "ExpectedPhysical": "The clip plays as it always has: no stutter, no truncation, no stuck lift or head.",
+      "Prerequisites": [
+        "CON passed",
+        "--obb given"
+      ],
+      "FidelityRecords": [
+        "M5-001",
+        "M5-004"
+      ],
+      "CoreRegressions": [],
+      "CommandLine": "anim 172.31.1.1 --assets re-analysis\\obb\\assets\\cozmo_resources\\assets --name anim_bored_01 --wwise re-analysis\\obb\\assets\\cozmo_resources\\sound",
+      "StartedUtc": "2026-09-22T17:42:48.885957Z",
+      "FinishedUtc": "2026-09-22T17:43:05.9009011Z",
+      "ElapsedSeconds": 17.0149441,
+      "Auto": "Pass",
+      "Human": "Pass",
+      "Status": "Passed",
+      "Attempts": 1,
+      "Captured": {
+        "keyframes": [
+          "playing anim_bored_01: 54 keyframes over 1089 ms, tracks Face, Audio, Head, Lift, Body, Lights",
+          "keyframes fired: 54 of 54",
+          "HUMAN CHECK REQUIRED: the robot should have moved its head and lift and changed expression in time with each other. Audio and backpack lights are not implemented yet, so their keyframes pass silently."
+        ],
+        "audio frames": [
+          "playing anim_bored_01: 54 keyframes over 1089 ms, tracks Face, Audio, Head, Lift, Body, Lights",
+          "  tracks: Face, Audio, Head, Lift, Body, Lights",
+          "    AudioKeyframe                2",
+          "audio frames streamed: 34 (all silence: no --audio mapping was given)",
+          "wwise: every audio event this clip raised was produced",
+          "HUMAN CHECK REQUIRED: the robot should have moved its head and lift and changed expression in time with each other. Audio and backpack lights are not implemented yet, so their keyframes pass silently."
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "console.log"
+      ]
+    },
+    {
+      "Id": "FD",
+      "Name": "Face display",
+      "Phase": "3. face display",
+      "Subsystem": "The OLED display path: the 128x64 packing and the display message",
+      "Purpose": "The robot reports nothing about its own screen, so the packing is only ever confirmed by looking at it. A face that is mirrored, offset or half drawn is invisible to every automated check there is.",
+      "ExpectedTelemetry": "the display messages are sent and acknowledged by the transport",
+      "ExpectedPhysical": "A pair of eyes is drawn squarely on the screen, right way up, held steady for the whole time, and it clears afterwards.",
+      "Prerequisites": [
+        "CON passed"
+      ],
+      "FidelityRecords": [
+        "M3-004"
+      ],
+      "CoreRegressions": [],
+      "CommandLine": "face 172.31.1.1 --pattern eyes --seconds 6 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\FD\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:43:15.2056176Z",
+      "FinishedUtc": "2026-09-22T17:43:26.3405838Z",
+      "ElapsedSeconds": 11.1349662,
+      "Auto": "Pass",
+      "Human": "Pass",
+      "Status": "Passed",
+      "Attempts": 1,
+      "Captured": {
+        "display": [
+          "face image \u0027eyes\u0027 encodes to 9 bytes; it should look like:",
+          "frame log: C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\cozmo-face-20260922-124315.log",
+          "holding the image on the face for 6.0s ...",
+          "sent 179 face frames; robot reports 2249 animation bytes played",
+          "HUMAN CHECK REQUIRED: compare the pattern on the robot\u0027s face with the ASCII art printed above; they must match"
+        ],
+        "frames sent": [
+          "sent 179 face frames; robot reports 2249 animation bytes played"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "acceptance.json",
+        "console.log"
+      ]
+    },
+    {
+      "Id": "AUD",
+      "Name": "Speaker and the audio frame pacing",
+      "Phase": "4. audio",
+      "Subsystem": "The mu-law companding transcribed from the engine and the robot\u0027s audio buffer pacing",
+      "Purpose": "Before any song is judged, the plain path has to be known good: a countable number of separate beeps tests continuity and pacing without anyone having to judge tone quality. If this is chopped, the singing checks above it are testing the wrong thing.",
+      "ExpectedTelemetry": "every audio frame is sent and the robot\u0027s played-frame count keeps up",
+      "ExpectedPhysical": "Separate, clean beeps at a steady rate, all the same length, with no crackle between them.",
+      "Prerequisites": [
+        "CON passed"
+      ],
+      "FidelityRecords": [
+        "M3-006"
+      ],
+      "CoreRegressions": [],
+      "CommandLine": "tone 172.31.1.1 --sound beeps --seconds 4 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\AUD\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:43:29.8635282Z",
+      "FinishedUtc": "2026-09-22T17:43:37.6687292Z",
+      "ElapsedSeconds": 7.805201,
+      "Auto": "Pass",
+      "Human": "Pass",
+      "Status": "Passed",
+      "Attempts": 1,
+      "Captured": {
+        "frames": [
+          "sound \u0027beeps\u0027 for 4.0s as anki: 89280 samples at 22320 Hz = 120 frames of 744 bytes",
+          "frame log: C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\cozmo-tone-20260922-124329.log",
+          "transport: 286 frames sent, 48 resends, 1 still unacked",
+          "sent 121 frames in 3686 ms (the audio itself is 4000 ms)",
+          "robot reports 120 audio frames played, drop count 0"
+        ],
+        "played counter": [
+          "Compare with the file from --save, played on this machine: that is exactly what the robot is being sent, so it is the reference for how it should sound.",
+          "  time ms   sent   played   in flight",
+          "robot reports 120 audio frames played, drop count 0"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "acceptance.json",
+        "console.log"
+      ]
+    },
+    {
+      "Id": "A",
+      "Name": "Cozmo sings",
+      "Phase": "4. audio",
+      "Subsystem": "The Wwise switch, the per-note vocal sampler and the singing behaviour\u0027s animations",
+      "Purpose": "The song is rendered here from Anki\u0027s banks by a reconstructed sampler. Whether it sounds like Cozmo singing is something only a listener can settle. The streaming architecture changed in the core review, so this is a re-run, not a repeat.",
+      "ExpectedTelemetry": "the switch is posted, the get-in, song and get-out steps all complete, and the song renders with notes",
+      "ExpectedPhysical": "About 12 seconds of tune between a get-in and a get-out, in his own voice, one note per note, at a sensible level, with no bursts of get-in phrases during the song.",
+      "Prerequisites": [
+        "AUD passed",
+        "--obb given"
+      ],
+      "FidelityRecords": [
+        "M9-016"
+      ],
+      "CoreRegressions": [
+        "CORE-006"
+      ],
+      "CommandLine": "sing 172.31.1.1 --obb re-analysis\\obb --behavior Singing_AbaDaba --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\A\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:43:50.8873335Z",
+      "FinishedUtc": "2026-09-22T17:44:33.7659727Z",
+      "ElapsedSeconds": 42.8786392,
+      "Auto": "Pass",
+      "Human": "Unsure",
+      "Status": "Unsure",
+      "HumanNote": "not sure if hte tune was correct. speemed like it might have been overlapping hte notes maybe?",
+      "Attempts": 1,
+      "Captured": {
+        "song": [
+          "song: Play__Robot_VO__Cozmo_Singing_80bpm under Cozmo_Sings_80Bpm=Cozmo_Sings_Aba_Daba: 12000 ms, 42 notes sung, 0 outside the voice\u0027s range, 42 note-offs"
+        ],
+        "steps": [
+          "steps played: anim_cozmosings_getin_03 -\u003E anim_cozmosings_80_song_01 -\u003E anim_cozmosings_getout_01"
+        ],
+        "streaming counters": [
+          "  stream: t=  1.1s rendered=    1488 of   267840 consumed=       0 sent=   32 played=   25 underruns=0",
+          "  stream: t=  2.1s rendered=    1488 of   267840 consumed=       0 sent=   62 played=   56 underruns=0",
+          "  stream: t=  3.1s rendered=    1488 of   267840 consumed=       0 sent=   92 played=   86 underruns=0",
+          "  stream: t=  4.1s rendered=    1488 of   267840 consumed=       0 sent=  123 played=  116 underruns=0",
+          "  stream: t=  5.1s rendered=    1488 of   267840 consumed=       0 sent=  153 played=  146 underruns=0",
+          "  stream: t=  6.1s rendered=   17112 of   267840 consumed=   15624 sent=   23 played=  178 underruns=0",
+          "  stream: t=  7.1s rendered=   39432 of   267840 consumed=   37944 sent=   53 played=  207 underruns=0",
+          "  stream: t=  8.1s rendered=   61752 of   267840 consumed=   60264 sent=   83 played=  238 underruns=0",
+          "  stream: t=  9.1s rendered=   84072 of   267840 consumed=   82584 sent=  113 played=  268 underruns=0",
+          "  stream: t= 10.1s rendered=  107136 of   267840 consumed=  105648 sent=  144 played=  298 underruns=0",
+          "  stream: t= 11.1s rendered=  129456 of   267840 consumed=  127968 sent=  174 played=  329 underruns=0",
+          "  stream: t= 12.2s rendered=  151776 of   267840 consumed=  151032 sent=  205 played=  360 underruns=0",
+          "  stream: t= 13.2s rendered=  174840 of   267840 consumed=  173352 sent=  235 played=  389 underruns=0",
+          "  stream: t= 14.2s rendered=  197160 of   267840 consumed=  195672 sent=  265 played=  420 underruns=0",
+          "  stream: t= 15.2s rendered=  219480 of   267840 consumed=  218736 sent=  296 played=  451 underruns=0",
+          "  stream: t= 16.2s rendered=  242544 of   267840 consumed=  241056 sent=  326 played=  480 underruns=0",
+          "  stream: t= 17.2s rendered=  264864 of   267840 consumed=  263376 sent=  356 played=  511 underruns=0",
+          "  stream: t= 18.2s rendered=  267840 of   267840 consumed=  266352 sent=   11 played=  542 underruns=0",
+          "  stream: t= 19.2s rendered=  267840 of   267840 consumed=  266352 sent=   42 played=  576 underruns=0"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "acceptance.json",
+        "console.log"
+      ]
+    },
+    {
+      "Id": "MOV",
+      "Name": "Head, lift and a short drive",
+      "Phase": "5. basic motion",
+      "Subsystem": "SetHeadAngle, SetLiftHeight, DriveWheels and the robot\u0027s own action acknowledgements",
+      "Purpose": "The first check where he moves under his own power, and the floor under every movement test after it. It is deliberately small: if the head and lift do not go where they are told, nothing about docking or navigation can be interpreted.",
+      "ExpectedTelemetry": "a MotorActionAck for each commanded move and a checked stop at the end",
+      "ExpectedPhysical": "The head tilts down and back, the lift rises and lowers, then he drives forward a few centimetres and back, and stops. Nothing keeps moving afterwards.",
+      "Prerequisites": [
+        "CON and D passed",
+        "a clear, flat surface with no drop at the edge"
+      ],
+      "FidelityRecords": [
+        "M4-001",
+        "M4-002"
+      ],
+      "CoreRegressions": [],
+      "CommandLine": "drive 172.31.1.1 --allow-drive --speed 40 --drive-seconds 1 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\MOV\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:44:51.4125636Z",
+      "FinishedUtc": "2026-09-22T17:45:05.4052081Z",
+      "ElapsedSeconds": 13.9926445,
+      "Auto": "Pass",
+      "Human": "Pass",
+      "Status": "Passed",
+      "Attempts": 1,
+      "Captured": {
+        "head": [
+          "  head -\u003E 0.30 rad: Acknowledged: head to 0.300 rad: robot acknowledged action 1",
+          "  head -\u003E -0.20 rad: Acknowledged: head to -0.200 rad: robot acknowledged action 2",
+          "  head -\u003E -0.43 rad: Acknowledged: head to -0.427 rad: robot acknowledged action 3"
+        ],
+        "lift": [
+          "  lift -\u003E 60 mm: Acknowledged: lift to 60.0 mm: robot acknowledged action 4",
+          "  lift -\u003E 32 mm: Acknowledged: lift to 32.0 mm: robot acknowledged action 5",
+          "HUMAN CHECK REQUIRED: the robot should have nodded, raised and lowered its lift, driven forward and back by roughly the same distance, and stopped"
+        ],
+        "stop": [
+          "stop-on-cliff enabled",
+          "  stop all: Acknowledged: robot reports all wheels stopped",
+          "HUMAN CHECK REQUIRED: the robot should have nodded, raised and lowered its lift, driven forward and back by roughly the same distance, and stopped"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "acceptance.json",
+        "console.log"
+      ]
+    },
+    {
+      "Id": "CR1",
+      "Name": "A live body shuffle stops at its duration",
+      "Phase": "6. idle and live animation",
+      "Subsystem": "The animation scheduler\u0027s live keyframe path and the tick loop that serves its deadline",
+      "Purpose": "Idle streams a body keyframe with a duration and nothing else drives the scheduler. Before the correction nothing called Advance in that state, so the stop never went out and the wheels ran until something else countermanded them. Offline the stop is asserted against the message log; on the robot the wheels either stop or they do not.",
+      "ExpectedTelemetry": "the reported wheel speeds go non-zero and return to zero within a frame or two of the duration",
+      "ExpectedPhysical": "He shuffles forward for about a second and stops by himself. He does not keep creeping.",
+      "Prerequisites": [
+        "MOV passed",
+        "a clear, flat surface"
+      ],
+      "FidelityRecords": [
+        "M5-004"
+      ],
+      "CoreRegressions": [
+        "CORE-001"
+      ],
+      "CommandLine": "core 172.31.1.1 --case CORE-001 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\CR1\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:45:36.5567704Z",
+      "FinishedUtc": "2026-09-22T17:45:49.997046Z",
+      "ElapsedSeconds": 13.4402756,
+      "Auto": "Fail",
+      "Human": "Fail",
+      "Status": "Failed",
+      "AutoDetail": "exit 2",
+      "HumanNote": "didn\u0027t move",
+      "Attempts": 1,
+      "Captured": {
+        "wheel samples": [
+          "  t=     1 ms  L=    0.0  R=    0.0",
+          "  t=   101 ms  L=    0.0  R=    0.0",
+          "  t=   202 ms  L=    0.0  R=    0.0",
+          "  t=   302 ms  L=    0.0  R=    0.0",
+          "  t=   402 ms  L=    0.0  R=    0.0",
+          "  t=   503 ms  L=    0.0  R=    0.0",
+          "  t=   604 ms  L=    0.0  R=    0.0",
+          "  t=   705 ms  L=    0.0  R=    0.0",
+          "  t=   804 ms  L=    0.0  R=    0.0",
+          "  t=   904 ms  L=    0.0  R=    0.0",
+          "  t=  1005 ms  L=    0.0  R=    0.0",
+          "  t=  1105 ms  L=    0.0  R=    0.0",
+          "  t=  1205 ms  L=    0.0  R=    0.0",
+          "  t=  1305 ms  L=    0.0  R=    0.0",
+          "  t=  1405 ms  L=    0.0  R=    0.0",
+          "  t=  1506 ms  L=    0.0  R=    0.0",
+          "  t=  1607 ms  L=    0.0  R=    0.0",
+          "  t=  1708 ms  L=    0.0  R=    0.0",
+          "  t=  1808 ms  L=    0.0  R=    0.0",
+          "  t=  1909 ms  L=    0.0  R=    0.0",
+          "  t=  2010 ms  L=    0.0  R=    0.0",
+          "  t=  2111 ms  L=    0.0  R=    0.0",
+          "  t=  2212 ms  L=    0.0  R=    0.0",
+          "  t=  2313 ms  L=    0.0  R=    0.0",
+          "  t=  2414 ms  L=    0.0  R=    0.0",
+          "  t=  2515 ms  L=    0.0  R=    0.0",
+          "  t=  2617 ms  L=    0.0  R=    0.0",
+          "  t=  2718 ms  L=    0.0  R=    0.0",
+          "  t=  2818 ms  L=    0.0  R=    0.0",
+          "  t=  2919 ms  L=    0.0  R=    0.0",
+          "  t=  3020 ms  L=    0.0  R=    0.0",
+          "  t=  3120 ms  L=    0.0  R=    0.0",
+          "  t=  3220 ms  L=    0.0  R=    0.0",
+          "  t=  3321 ms  L=    0.0  R=    0.0",
+          "  t=  3421 ms  L=    0.0  R=    0.0",
+          "  t=  3521 ms  L=    0.0  R=    0.0",
+          "  t=  3622 ms  L=    0.0  R=    0.0"
+        ],
+        "verdict": [
+          "automated: FAIL - the wheels never moved: the live keyframe did not reach the robot"
+        ],
+        "duration": [
+          "wheels reported moving from - ms to - ms (the keyframe asked for 1200 ms)"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "acceptance.json",
+        "console.log"
+      ]
+    },
+    {
+      "Id": "CR3",
+      "Name": "A cancelled animation stops sending",
+      "Phase": "6. idle and live animation",
+      "Subsystem": "The scheduler\u0027s emission gate: a command of a cancelled playback must not get out",
+      "Purpose": "The generation check was made under the lock and the command sent after it was released. A cancel landing in that window let one animation\u0027s motion go out in the middle of another. On the robot that is exactly what it looks like: a twitch after everything should have stopped.",
+      "ExpectedTelemetry": "after the stop settles, wheel speed stays at zero and head and lift stop changing",
+      "ExpectedPhysical": "He stops when the animation is cut and stays stopped. No late twitch of the head, the lift or the wheels.",
+      "Prerequisites": [
+        "F and MOV passed",
+        "--obb given"
+      ],
+      "FidelityRecords": [
+        "M5-001"
+      ],
+      "CoreRegressions": [
+        "CORE-003"
+      ],
+      "CommandLine": "core 172.31.1.1 --obb re-analysis\\obb --case CORE-003 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\CR3\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:45:59.9490232Z",
+      "FinishedUtc": "2026-09-22T17:46:31.940883Z",
+      "ElapsedSeconds": 31.9918598,
+      "Auto": "Pass",
+      "Human": "Unsure",
+      "Status": "Unsure",
+      "HumanNote": "not sure exactly what was supposed to happen, seemed like he tried doing an animation and stopped part way though?",
+      "Attempts": 1,
+      "Captured": {
+        "telemetry after the stop": [
+          "  t=   403 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+          "  t=   537 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+          "  t=   671 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+          "  t=   806 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+          "  t=   940 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+          "  t=  1074 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+          "  t=  1208 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+          "  t=  1342 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+          "  t=  1476 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+          "  t=  1610 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+          "  t=  1745 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+          "  t=  1880 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+          "  t=  2015 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+          "  t=  2148 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+          "  t=  2282 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+          "  t=  2416 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189"
+        ],
+        "verdict": [
+          "automated: PASS - nothing reached the motors after the stop"
+        ],
+        "settled": [
+          "after the stop settled: wheels at most 0.0 mm/s, head moved 0.000 rad, lift moved 0.000 rad"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "acceptance.json",
+        "console.log"
+      ]
+    },
+    {
+      "Id": "CR2",
+      "Name": "A dropped link ends the animation, not the process",
+      "Phase": "6. idle and live animation",
+      "Subsystem": "The animation tick loop\u0027s failure boundary when the robot goes away mid-clip",
+      "Purpose": "The tick loop runs on a background thread and every frame reaches the transport. Once the link is gone the send throws, and before the correction that exception escaped a background thread and took the process with it. This is the one check where the disconnect is the subject, so the runner does not treat it as an interruption.",
+      "ExpectedTelemetry": "the animation task completes, the ticker stops, and the failure is reported through Faulted",
+      "ExpectedPhysical": "He is moving, and at the moment the tool says it is dropping the link he stops where he is and stays stopped - no twitching, no carrying on, no running away. The tool then prints its own verdict and the campaign moves to the next check instead of dying.",
+      "Prerequisites": [
+        "F passed",
+        "--obb given"
+      ],
+      "FidelityRecords": [
+        "M5-001"
+      ],
+      "CoreRegressions": [
+        "CORE-002"
+      ],
+      "CommandLine": "core 172.31.1.1 --obb re-analysis\\obb --case CORE-002 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\CR2\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:46:52.8463996Z",
+      "FinishedUtc": "2026-09-22T17:47:11.2925379Z",
+      "ElapsedSeconds": 18.4461383,
+      "Auto": "Fail",
+      "Human": "Unsure",
+      "Status": "Unsure",
+      "AutoDetail": "exit 2",
+      "HumanNote": "same as previous answer, not sure",
+      "Attempts": 1,
+      "Captured": {
+        "before the drop": [
+          "ticker running: False. DROPPING THE LINK NOW - watch him stop."
+        ],
+        "after the drop": [
+          "the animation task completed"
+        ],
+        "fault": [
+          "the failure was reported through Faulted: no"
+        ],
+        "verdict": [
+          "automated: FAIL - the animation never started ticking, so the drop proved nothing"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "acceptance.json",
+        "console.log"
+      ]
+    },
+    {
+      "Id": "E",
+      "Name": "Colour camera frames",
+      "Phase": "7. camera",
+      "Subsystem": "The colour path of the camera decoder",
+      "Purpose": "Colour frames have never been exercised on hardware; the decoder\u0027s colour branch is reconstructed and could be producing plausible nonsense.",
+      "ExpectedTelemetry": "every frame decodes without error and is written out",
+      "ExpectedPhysical": "The saved files are colour photographs of the room, not tinted or scrambled.",
+      "Prerequisites": [
+        "CON passed"
+      ],
+      "FidelityRecords": [
+        "M3-003"
+      ],
+      "CoreRegressions": [],
+      "CommandLine": "camera 172.31.1.1 --color --out C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\E\\frames --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\E\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:47:17.741388Z",
+      "FinishedUtc": "2026-09-22T17:47:50.5094862Z",
+      "ElapsedSeconds": 32.7680982,
+      "Auto": "Pass",
+      "Human": "Fail",
+      "Status": "Partial",
+      "HumanNote": "garbage pictures. ",
+      "Attempts": 1,
+      "Captured": {
+        "frames": [
+          "frame log: C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\cozmo-camera-20260922-124717.log",
+          "images to: C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\E\\frames",
+          "  CameraFrame #7765 320x240 colour chunks=9 jpeg=10300B (warm-up, torn)",
+          "  CameraFrame #7766 320x240 colour chunks=9 jpeg=10270B (warm-up, torn)",
+          "  CameraFrame #7767 320x240 colour chunks=9 jpeg=10237B (warm-up, torn)",
+          "  CameraFrame #7768 320x240 colour chunks=9 jpeg=10227B (warm-up, torn)",
+          "  CameraFrame #7769 320x240 colour chunks=9 jpeg=10242B (warm-up, torn)",
+          "  CameraFrame #7770 320x240 colour chunks=9 jpeg=10156B (warm-up, torn)",
+          "  CameraFrame #7771 320x240 colour chunks=9 jpeg=10155B (warm-up, torn)",
+          "  CameraFrame #7772 320x240 colour chunks=9 jpeg=10055B (warm-up, torn)",
+          "  CameraFrame #7773 320x240 colour chunks=9 jpeg=10045B (warm-up, torn)",
+          "  CameraFrame #7774 320x240 colour chunks=9 jpeg=10006B (warm-up, torn)",
+          "  CameraFrame #7775 320x240 colour chunks=9 jpeg=9970B (warm-up, torn)",
+          "  CameraFrame #7776 320x240 colour chunks=9 jpeg=9908B (warm-up, torn)",
+          "  CameraFrame #7777 320x240 colour chunks=9 jpeg=9876B (warm-up, torn)",
+          "  CameraFrame #7778 320x240 colour chunks=9 jpeg=9904B (warm-up, torn)",
+          "  CameraFrame #7779 320x240 colour chunks=9 jpeg=9823B (warm-up, torn)",
+          "  CameraFrame #7780 320x240 colour chunks=9 jpeg=9815B  -\u003E cozmo-07780.jpg",
+          "  CameraFrame #7781 320x240 colour chunks=9 jpeg=9803B  -\u003E cozmo-07781.jpg",
+          "  CameraFrame #7782 320x240 colour chunks=9 jpeg=9774B  -\u003E cozmo-07782.jpg",
+          "  CameraFrame #7783 320x240 colour chunks=9 jpeg=9776B  -\u003E cozmo-07783.jpg",
+          "  CameraFrame #7784 320x240 colour chunks=9 jpeg=9634B  -\u003E cozmo-07784.jpg",
+          "  CameraFrame #7785 320x240 colour chunks=9 jpeg=9712B  -\u003E cozmo-07785.jpg",
+          "  CameraFrame #7786 320x240 colour chunks=9 jpeg=9671B  -\u003E cozmo-07786.jpg",
+          "  CameraFrame #7787 320x240 colour chunks=9 jpeg=9589B  -\u003E cozmo-07787.jpg",
+          "  CameraFrame #7788 320x240 colour chunks=9 jpeg=9567B  -\u003E cozmo-07788.jpg",
+          "  CameraFrame #7789 320x240 colour chunks=9 jpeg=9495B  -\u003E cozmo-07789.jpg",
+          "(15 warm-up frames were discarded: the sensor is still locking and those pictures are torn.)",
+          "  C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\E\\frames\\cozmo-07780.jpg",
+          "  C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\E\\frames\\cozmo-07781.jpg",
+          "  C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\E\\frames\\cozmo-07782.jpg"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "acceptance.json",
+        "console.log",
+        "frames\\cozmo-07780.jpg",
+        "frames\\cozmo-07781.jpg",
+        "frames\\cozmo-07782.jpg",
+        "frames\\cozmo-07783.jpg",
+        "frames\\cozmo-07784.jpg",
+        "frames\\cozmo-07785.jpg",
+        "frames\\cozmo-07786.jpg",
+        "frames\\cozmo-07787.jpg",
+        "frames\\cozmo-07788.jpg",
+        "frames\\cozmo-07789.jpg"
+      ]
+    },
+    {
+      "Id": "B",
+      "Name": "Cube telemetry",
+      "Phase": "8. markers, cubes and the world model",
+      "Subsystem": "Cube discovery, connection and the tap, movement, up-axis and battery reports",
+      "Purpose": "Discovery alone was already observed. What is unverified is whether a cube actually connects and whether its telemetry arrives, which everything with a cube depends on.",
+      "ExpectedTelemetry": "at least one cube CONNECTED and at least one telemetry signal",
+      "ExpectedPhysical": "The events printed match what you did, and at least one cube shows as connected.",
+      "Prerequisites": [
+        "CON passed",
+        "at least one cube with a charged battery"
+      ],
+      "FidelityRecords": [
+        "M4-010"
+      ],
+      "CoreRegressions": [],
+      "CommandLine": "cubes 172.31.1.1 --seconds 15 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\B\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:48:08.2057086Z",
+      "FinishedUtc": "2026-09-22T17:48:43.7730885Z",
+      "ElapsedSeconds": 35.5673799,
+      "Auto": "Fail",
+      "Human": "Unsure",
+      "Status": "Unsure",
+      "AutoDetail": "exit 23",
+      "HumanNote": "cubed showed up, didn\u0027t connect or anything else",
+      "Attempts": 1,
+      "Captured": {
+        "connection": [
+          "connected: firmware v2457 serial 0x0c50465e",
+          "1 cube(s) heard, 0 connected",
+          "Cubes were heard but none connected: discovery alone does not accept this check. Bring a cube closer, check its battery, and run again.",
+          "HUMAN CHECK REQUIRED: the cubes you placed nearby should appear above, one of them connected, and the tap, movement and up-axis lines should match what you did to it",
+          "  disconnected: requested"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "acceptance.json",
+        "console.log"
+      ]
+    },
+    {
+      "Id": "G",
+      "Name": "Off-treads transitions",
+      "Phase": "10. robot state and reactions",
+      "Subsystem": "The off-treads classifier: on treads, in air, on back, on face, on each side",
+      "Purpose": "The classifier drives the pick-up reaction and gates freeplay. Its debounce timings were read from the engine and have never been watched against real handling.",
+      "ExpectedTelemetry": "the classifier enables after the calibration report and prints one transition per handling",
+      "ExpectedPhysical": "A transition prints for each handling and nothing prints while he sits still. On-back arrives about a second after laying him down, sides and face after a quarter second.",
+      "Prerequisites": [
+        "CON passed",
+        "somewhere soft to lay him down"
+      ],
+      "FidelityRecords": [
+        "M10-001",
+        "M10-002"
+      ],
+      "CoreRegressions": [],
+      "CommandLine": "offtreads 172.31.1.1 --seconds 90 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\G\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:48:59.9022124Z",
+      "FinishedUtc": "2026-09-22T17:50:39.8373028Z",
+      "ElapsedSeconds": 99.9350904,
+      "Auto": "Pass",
+      "Human": "Pass",
+      "Status": "Passed",
+      "Attempts": 1,
+      "Captured": {
+        "transitions": [
+          "[   4.83s] off-treads OnTreads -\u003E InAir  pitch=  13.0deg  accel=(-3288.07, -860.59, 9395.87)  |accel|=9932  flags=pickedUp",
+          "[   6.18s] off-treads InAir -\u003E OnBack  pitch=  70.1deg  accel=(7819.95, -749.49, 6334.82)  |accel|=10142  flags=pickedUp",
+          "[   6.61s] off-treads OnBack -\u003E InAir  pitch=   0.3deg  accel=(398.34, -580.34, 8613.06)  |accel|=10079  flags=pickedUp",
+          "[   6.64s] off-treads InAir -\u003E OnTreads  pitch=   0.5deg  accel=(-12.37, -594.70, 8657.61)  |accel|=10066  flags=",
+          "[   7.60s] off-treads OnTreads -\u003E InAir  pitch=   2.5deg  accel=(-3359.20, 1239.51, 8422.14)  |accel|=9737  flags=pickedUp",
+          "[   8.29s] off-treads InAir -\u003E OnRightSide  pitch=  67.5deg  accel=(-33.53, 8302.39, 1228.80)  |accel|=9313  flags=pickedUp",
+          "[   9.38s] off-treads OnRightSide -\u003E OnTreads  pitch=  11.4deg  accel=(-2723.43, 3001.23, 6571.05)  |accel|=9326  flags=",
+          "[  10.24s] off-treads OnTreads -\u003E InAir  pitch=   2.4deg  accel=(-3117.01, -3681.28, 7912.92)  |accel|=9776  flags=pickedUp",
+          "[  10.77s] off-treads InAir -\u003E OnLeftSide  pitch=  43.0deg  accel=(-580.28, -8837.67, 1979.57)  |accel|=9980  flags=pickedUp",
+          "[  12.65s] off-treads OnLeftSide -\u003E OnTreads  pitch=  16.0deg  accel=(-2441.29, -5077.94, 6471.26)  |accel|=10270  flags=",
+          "[  13.34s] off-treads OnTreads -\u003E InAir  pitch= -58.9deg  accel=(-6693.63, -1377.26, 4685.58)  |accel|=9721  flags=pickedUp",
+          "[  13.74s] off-treads InAir -\u003E OnFace  pitch= -86.6deg  accel=(-8258.44, -957.56, -1504.21)  |accel|=9600  flags=pickedUp",
+          "[  17.57s] off-treads OnFace -\u003E OnLeftSide  pitch=  85.6deg  accel=(910.32, -9191.05, -778.12)  |accel|=10039  flags=pickedUp",
+          "[  18.56s] off-treads OnLeftSide -\u003E OnTreads  pitch=  36.5deg  accel=(618.80, -2981.36, 7809.74)  |accel|=10042  flags=",
+          "[  18.95s] off-treads OnTreads -\u003E InAir  pitch=  18.4deg  accel=(-567.39, -1355.68, 9179.47)  |accel|=9974  flags=pickedUp",
+          "[  19.38s] off-treads InAir -\u003E OnTreads  pitch=   2.8deg  accel=(-2543.65, -825.12, 8892.21)  |accel|=9659  flags=",
+          "[  19.88s] off-treads OnTreads -\u003E InAir  pitch=  25.4deg  accel=(-3094.89, 294.09, 11581.50)  |accel|=11163  flags=pickedUp",
+          "[  24.89s] off-treads InAir -\u003E OnTreads  pitch=  11.1deg  accel=(-4853.18, 206.75, 8139.43)  |accel|=13594  flags=",
+          "[  25.29s] off-treads OnTreads -\u003E InAir  pitch=   4.4deg  accel=(-3909.40, -418.30, 8831.38)  |accel|=11750  flags=pickedUp",
+          "[  25.49s] off-treads InAir -\u003E OnTreads  pitch=   3.3deg  accel=(-3814.83, -603.47, 8933.37)  |accel|=11161  flags=",
+          "[  35.59s] off-treads OnTreads -\u003E InAir  pitch=   0.8deg  accel=(-3908.54, -553.84, 8918.46)  |accel|=9798  flags=pickedUp",
+          "[  35.79s] off-treads InAir -\u003E OnTreads  pitch=  -0.5deg  accel=(-3958.05, -759.05, 8827.20)  |accel|=9925  flags=",
+          "[  37.07s] off-treads OnTreads -\u003E InAir  pitch=  -0.3deg  accel=(-4027.57, -683.95, 8785.55)  |accel|=9804  flags=pickedUp",
+          "[  37.30s] off-treads InAir -\u003E OnTreads  pitch=  -0.1deg  accel=(-3986.11, -288.34, 8867.14)  |accel|=9814  flags=",
+          "[  39.52s] off-treads OnTreads -\u003E InAir  pitch=  26.2deg  accel=(-2676.06, -97.89, 10084.02)  |accel|=10290  flags=pickedUp",
+          "[  40.04s] off-treads InAir -\u003E OnFace  pitch= 181.4deg  accel=(3807.33, -2198.30, -3012.07)  |accel|=10074  flags=pickedUp",
+          "[  40.54s] off-treads OnFace -\u003E InAir  pitch=  34.0deg  accel=(-2736.45, -5392.83, -1924.43)  |accel|=10605  flags=pickedUp",
+          "[  41.20s] off-treads InAir -\u003E OnTreads  pitch=   4.7deg  accel=(-4501.76, -2590.84, 7740.88)  |accel|=10642  flags=",
+          "[  42.75s] off-treads OnTreads -\u003E InAir  pitch=   2.7deg  accel=(-3459.04, -3336.24, 8224.03)  |accel|=9988  flags=pickedUp",
+          "[  43.38s] off-treads InAir -\u003E OnTreads  pitch=   2.1deg  accel=(-2810.16, -3807.11, 7789.02)  |accel|=9767  flags=",
+          "[  43.71s] off-treads OnTreads -\u003E InAir  pitch=   2.5deg  accel=(-3308.47, -303.16, 8295.84)  |accel|=9697  flags=pickedUp",
+          "[  44.17s] off-treads InAir -\u003E OnTreads  pitch=   2.6deg  accel=(-3337.62, 1787.75, 8352.72)  |accel|=9616  flags=",
+          "[  44.30s] off-treads OnTreads -\u003E InAir  pitch=   5.8deg  accel=(-3364.62, 821.98, 8754.04)  |accel|=9705  flags=pickedUp",
+          "[  44.50s] off-treads InAir -\u003E OnTreads  pitch=  15.3deg  accel=(-2714.93, 24.73, 9029.47)  |accel|=9714  flags=",
+          "[  45.16s] off-treads OnTreads -\u003E InAir  pitch=   6.4deg  accel=(-1821.10, -717.40, 9571.47)  |accel|=9818  flags=pickedUp",
+          "[  45.39s] off-treads InAir -\u003E OnTreads  pitch=   1.5deg  accel=(-2593.88, -743.61, 9296.08)  |accel|=9784  flags=",
+          "[  45.66s] off-treads OnTreads -\u003E InAir  pitch= -17.3deg  accel=(-4154.23, -834.21, 8631.54)  |accel|=9821  flags=pickedUp",
+          "[  45.85s] off-treads InAir -\u003E OnTreads  pitch= -28.2deg  accel=(-5844.21, -788.78, 7338.36)  |accel|=9774  flags=",
+          "[  46.65s] off-treads OnTreads -\u003E InAir  pitch= -20.1deg  accel=(-7974.12, -1061.37, 5419.70)  |accel|=9775  flags=pickedUp",
+          "[  46.84s] off-treads InAir -\u003E OnTreads  pitch=   2.2deg  accel=(-5772.86, -797.55, 7400.29)  |accel|=9868  flags=",
+          "[  58.23s] off-treads OnTreads -\u003E InAir  pitch=   1.4deg  accel=(-4042.91, -827.55, 8807.67)  |accel|=9978  flags=pickedUp",
+          "[  62.03s] off-treads InAir -\u003E OnFace  pitch= 107.5deg  accel=(7312.36, 4453.82, 3036.06)  |accel|=10135  flags=pickedUp",
+          "[  62.85s] off-treads OnFace -\u003E InAir  pitch=   8.9deg  accel=(-3210.28, -1659.15, -3472.78)  |accel|=9847  flags=pickedUp",
+          "[  63.35s] off-treads InAir -\u003E OnLeftSide  pitch= -24.1deg  accel=(741.13, -8949.35, -480.72)  |accel|=10578  flags=pickedUp",
+          "[  63.84s] off-treads OnLeftSide -\u003E InAir  pitch=  -2.2deg  accel=(5406.41, -938.78, 3340.86)  |accel|=10227  flags=pickedUp",
+          "[  64.90s] off-treads InAir -\u003E OnLeftSide  pitch=  95.3deg  accel=(2701.77, -6996.55, -850.86)  |accel|=10730  flags=pickedUp",
+          "[  65.69s] off-treads OnLeftSide -\u003E InAir  pitch= -13.0deg  accel=(-2066.94, 4322.15, 4208.77)  |accel|=9748  flags=pickedUp",
+          "[  66.52s] off-treads InAir -\u003E OnFace  pitch= 175.1deg  accel=(3563.87, -6347.32, -1600.63)  |accel|=10397  flags=pickedUp",
+          "[  66.91s] off-treads OnFace -\u003E OnLeftSide  pitch= 180.9deg  accel=(-2520.22, -7504.97, -2184.97)  |accel|=10580  flags=pickedUp",
+          "[  68.99s] off-treads OnLeftSide -\u003E InAir  pitch=  13.1deg  accel=(466.00, -2553.81, 7894.82)  |accel|=10400  flags=pickedUp",
+          "[  69.45s] off-treads InAir -\u003E OnTreads  pitch=  -2.5deg  accel=(-3065.13, -658.43, 8521.71)  |accel|=10333  flags=",
+          "[  85.86s] off-treads OnTreads -\u003E InAir  pitch=  15.8deg  accel=(-3158.87, -1509.80, 9181.70)  |accel|=9918  flags=pickedUp",
+          "[  87.34s] off-treads InAir -\u003E OnTreads  pitch=   9.0deg  accel=(-1250.16, -3435.95, 9192.12)  |accel|=10102  flags=",
+          "[  88.33s] off-treads OnTreads -\u003E InAir  pitch=   1.0deg  accel=(-3313.44, -665.62, 9213.92)  |accel|=9904  flags=pickedUp",
+          "[  88.53s] off-treads InAir -\u003E OnTreads  pitch= -20.6deg  accel=(-4660.18, 856.13, 8036.49)  |accel|=9795  flags=",
+          "[  88.67s] off-treads OnTreads -\u003E InAir  pitch= -26.1deg  accel=(-5353.46, 1661.96, 7167.79)  |accel|=9696  flags=pickedUp",
+          "[  89.65s] off-treads InAir -\u003E OnTreads  pitch=  -7.9deg  accel=(-6061.48, 2136.11, 6613.20)  |accel|=9512  flags="
+        ],
+        "classifier": [
+          "classifier enabled (head calibration seen); on-back centre 74.5 deg (physical robot)",
+          "[   1.01s] state OnTreads candidate OnTreads  pitch=   2.4deg  |accel|=8158  classifier on",
+          "[   6.03s] state InAir candidate OnBack  pitch=  76.4deg  |accel|=10056  classifier on",
+          "[  11.04s] state OnLeftSide candidate OnLeftSide  pitch=  66.7deg  |accel|=10204  classifier on",
+          "[  16.04s] state OnFace candidate OnFace  pitch= 150.3deg  |accel|=9958  classifier on",
+          "[  21.04s] state InAir candidate InAir  pitch=  40.1deg  |accel|=17636  classifier on",
+          "[  26.05s] state OnTreads candidate OnTreads  pitch=   3.0deg  |accel|=10366  classifier on",
+          "[  31.05s] state OnTreads candidate OnTreads  pitch=   2.2deg  |accel|=9790  classifier on",
+          "[  36.00s] state OnTreads candidate OnTreads  pitch=   0.4deg  |accel|=9886  classifier on",
+          "[  41.00s] state InAir candidate InAir  pitch=  18.2deg  |accel|=10402  classifier on",
+          "[  46.05s] state OnTreads candidate OnTreads  pitch= -33.7deg  |accel|=9728  classifier on",
+          "[  51.01s] state OnTreads candidate OnTreads  pitch=   2.1deg  |accel|=9793  classifier on",
+          "[  56.02s] state OnTreads candidate OnTreads  pitch=   2.1deg  |accel|=9795  classifier on",
+          "[  61.02s] state InAir candidate InAir  pitch=  17.6deg  |accel|=9793  classifier on",
+          "[  66.02s] state InAir candidate InAir  pitch=  37.1deg  |accel|=10550  classifier on",
+          "[  71.03s] state OnTreads candidate OnTreads  pitch=   2.3deg  |accel|=9791  classifier on",
+          "[  76.04s] state OnTreads candidate OnTreads  pitch=   2.3deg  |accel|=9795  classifier on",
+          "[  81.04s] state OnTreads candidate OnTreads  pitch=   2.3deg  |accel|=9790  classifier on",
+          "[  86.05s] state InAir candidate InAir  pitch=  28.8deg  |accel|=9927  classifier on"
+        ],
+        "calibration": [
+          "classifier enabled (head calibration seen); on-back centre 74.5 deg (physical robot)"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "acceptance.json",
+        "console.log"
+      ]
+    },
+    {
+      "Id": "C",
+      "Name": "Falling then impact",
+      "Phase": "10. robot state and reactions",
+      "Subsystem": "The falling and impact reports, and the rule that the reaction waits for the landing",
+      "Purpose": "The engine reacts to the landing, not the fall, and only above an impact of 1000. Neither the threshold nor the wait has been seen on hardware. The first run of this check watched for a minute and saw only the pick-up reaction, which says nothing about falling: the drop now has a window of its own and only the falling reaction counts inside it.",
+      "ExpectedTelemetry": "the RobotFalling reaction fires inside the drop\u0027s own window and nothing else satisfies it",
+      "ExpectedPhysical": "He reacts when he lands, not while he is in the air.",
+      "Prerequisites": [
+        "G passed",
+        "something soft to drop him onto",
+        "--obb given"
+      ],
+      "FidelityRecords": [
+        "M7-009"
+      ],
+      "CoreRegressions": [],
+      "CommandLine": "reactions 172.31.1.1 --obb re-analysis\\obb --expect RobotFalling --seconds 45 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\C\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:50:59.2061247Z",
+      "FinishedUtc": "2026-09-22T17:52:04.6289369Z",
+      "ElapsedSeconds": 65.4228122,
+      "Auto": "Fail",
+      "Human": "Unsure",
+      "Status": "Unsure",
+      "AutoDetail": "exit 2",
+      "HumanNote": "hard to tell, it might have worked",
+      "Attempts": 1,
+      "Captured": {
+        "window": [
+          "  window RobotFalling: NOT SEEN   (in this window: CliffDetected, MotorCalibration, RobotPickedUp, ReturnedToTreads)"
+        ],
+        "expected": [
+          "expected reactions: RobotFalling=no",
+          "expected reactions missing: RobotFalling"
+        ],
+        "falling": [
+          "  RobotFalling         -\u003E ReactToImpact",
+          "  (watching for RobotFalling for the next 45 s)",
+          "[  16.43s] off-treads InAir -\u003E Falling",
+          "[  16.69s] off-treads Falling -\u003E OnTreads",
+          "[  38.22s] off-treads InAir -\u003E Falling",
+          "[  39.65s] off-treads Falling -\u003E OnTreads",
+          "  window RobotFalling: NOT SEEN   (in this window: CliffDetected, MotorCalibration, RobotPickedUp, ReturnedToTreads)",
+          "expected reactions: RobotFalling=no",
+          "expected reactions missing: RobotFalling"
+        ],
+        "reaction": [
+          "13 reactions registered:",
+          "[   3.84s] REACTION RobotPickedUp -\u003E ReactToPickup",
+          "[   6.53s] REACTION RobotPickedUp -\u003E ReactToPickup",
+          "[   9.22s] REACTION RobotPickedUp -\u003E ReactToPickup",
+          "[  11.94s] REACTION RobotPickedUp -\u003E ReactToPickup",
+          "[  15.29s] REACTION RobotPickedUp -\u003E ReactToPickup",
+          "[  18.65s] REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads",
+          "[  18.69s] REACTION MotorCalibration -\u003E ReactToMotorCalibration (interrupted ReactToReturnedToTreads)",
+          "[  20.13s] REACTION CliffDetected -\u003E ReactToCliff",
+          "[  27.26s] REACTION CliffDetected -\u003E ReactToCliff",
+          "[  34.38s] REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads",
+          "[  35.82s] REACTION CliffDetected -\u003E ReactToCliff",
+          "[  42.93s] REACTION CliffDetected -\u003E ReactToCliff",
+          "reactions fired: CliffDetected, MotorCalibration, RobotPickedUp, ReturnedToTreads",
+          "expected reactions: RobotFalling=no",
+          "expected reactions missing: RobotFalling"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "console.log"
+      ]
+    },
+    {
+      "Id": "H",
+      "Name": "The derived-state reactions",
+      "Phase": "10. robot state and reactions",
+      "Subsystem": "The reactions built on derived state: on back, on face, on side, slope, shaken, returned to treads",
+      "Purpose": "Each reaction\u0027s trigger and animation came from the engine. Whether the right one fires for the state he is actually in can only be seen by handling him. Requires the OBB.",
+      "ExpectedTelemetry": "each named reaction fires inside its own window: on back, on face, on a side, and shaken",
+      "ExpectedPhysical": "On his back he flips down; on his face he rolls; on a side he asks to be righted; on a slope he reacts then checks his pitch; shaken then set down he acts dizzy. Nothing fires for a state he is not in.",
+      "Prerequisites": [
+        "G passed",
+        "--obb given"
+      ],
+      "FidelityRecords": [
+        "M10-004",
+        "M10-005"
+      ],
+      "CoreRegressions": [],
+      "CommandLine": "reactions 172.31.1.1 --obb re-analysis\\obb --expect RobotOnBack,RobotOnFace,RobotOnSide,RobotShaken --seconds 160 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\H\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:52:16.48416Z",
+      "FinishedUtc": "2026-09-22T17:55:02.877534Z",
+      "ElapsedSeconds": 166.393374,
+      "Auto": "Pass",
+      "Human": "Pass",
+      "Status": "Passed",
+      "Attempts": 1,
+      "Captured": {
+        "windows": [
+          "  window RobotOnBack: fired   (in this window: RobotPickedUp, ReturnedToTreads, RobotOnBack, RobotOnFace, RobotOnSide)",
+          "  window RobotOnFace: fired   (in this window: CliffDetected, RobotPickedUp, ReturnedToTreads, RobotOnBack, RobotOnFace)",
+          "  window RobotOnSide: fired   (in this window: RobotPickedUp, ReturnedToTreads, RobotOnSide)",
+          "  window RobotShaken: fired   (in this window: CliffDetected, RobotPickedUp, ReturnedToTreads, RobotShaken, UnexpectedMovement)"
+        ],
+        "expected": [
+          "expected reactions: RobotOnBack=yes RobotOnFace=yes RobotOnSide=yes RobotShaken=yes",
+          "expected reactions: all seen"
+        ],
+        "reactions": [
+          "13 reactions registered:",
+          "[   2.69s] REACTION RobotPickedUp -\u003E ReactToPickup",
+          "[   4.44s] REACTION RobotOnBack -\u003E ReactToRobotOnBack",
+          "[  15.97s] REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnBack)",
+          "[  18.66s] REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads",
+          "[  19.77s] REACTION RobotPickedUp -\u003E ReactToPickup",
+          "[  22.45s] REACTION RobotOnSide -\u003E ReactToRobotOnSide",
+          "[  26.79s] REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnSide)",
+          "[  28.49s] REACTION RobotPickedUp -\u003E ReactToPickup",
+          "[  31.18s] REACTION RobotOnFace -\u003E ReactToRobotOnFace",
+          "[  32.48s] REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnFace)",
+          "[  34.23s] REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads",
+          "[  34.33s] REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToReturnedToTreads)",
+          "[  37.38s] REACTION RobotOnSide -\u003E ReactToRobotOnSide",
+          "[  44.32s] REACTION CliffDetected -\u003E ReactToCliff (interrupted ReactToRobotOnSide)",
+          "[  51.46s] REACTION RobotOnFace -\u003E ReactToRobotOnFace",
+          "[  51.90s] REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnFace)",
+          "[  54.62s] REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads",
+          "[  57.40s] REACTION RobotPickedUp -\u003E ReactToPickup",
+          "[  59.11s] REACTION RobotOnBack -\u003E ReactToRobotOnBack",
+          "[  70.65s] REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnBack)",
+          "[  73.33s] REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads",
+          "[  73.37s] REACTION RobotOnFace -\u003E ReactToRobotOnFace (interrupted ReactToReturnedToTreads)",
+          "[  75.01s] REACTION CliffDetected -\u003E ReactToCliff (interrupted ReactToRobotOnFace)",
+          "[  82.15s] REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads",
+          "[  82.79s] REACTION RobotPickedUp -\u003E ReactToPickup",
+          "[  86.14s] REACTION RobotOnSide -\u003E ReactToRobotOnSide",
+          "[  90.03s] REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnSide)",
+          "[  92.71s] REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads",
+          "[  95.36s] REACTION RobotPickedUp -\u003E ReactToPickup",
+          "[  98.05s] REACTION RobotOnSide -\u003E ReactToRobotOnSide",
+          "[ 103.01s] REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnSide)",
+          "[ 105.73s] REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads",
+          "[ 123.88s] REACTION RobotPickedUp -\u003E ReactToPickup",
+          "[ 125.60s] REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads",
+          "[ 127.37s] REACTION RobotPickedUp -\u003E ReactToPickup",
+          "[ 130.72s] REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads",
+          "[ 130.76s] REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement (interrupted ReactToReturnedToTreads)",
+          "[ 133.62s] REACTION RobotPickedUp -\u003E ReactToPickup",
+          "[ 136.98s] REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads",
+          "[ 140.50s] REACTION RobotShaken -\u003E ReactToRobotShaken",
+          "[ 142.62s]     ReactToRobotShaken: back on treads: dizzy reaction Soft",
+          "[ 142.62s]     ReactToRobotShaken: play DizzyReactionSoft -\u003E anim_dizzy_reaction_soft_01",
+          "[ 148.02s]     ReactToRobotShaken: DAS robot.dizzy_reaction: shakenDuration = 1.945s, maxShakingAccelMag = 21218.4, reactionPlayed = \u0027Soft\u0027",
+          "[ 148.05s] REACTION CliffDetected -\u003E ReactToCliff",
+          "[ 155.16s] REACTION CliffDetected -\u003E ReactToCliff",
+          "reactions fired: CliffDetected, RobotPickedUp, ReturnedToTreads, RobotOnBack, RobotOnFace, RobotOnSide, RobotShaken, UnexpectedMovement",
+          "expected reactions: RobotOnBack=yes RobotOnFace=yes RobotOnSide=yes RobotShaken=yes",
+          "expected reactions: all seen"
+        ],
+        "off-treads": [
+          "[   2.66s] off-treads OnTreads -\u003E InAir",
+          "[   3.81s] off-treads InAir -\u003E OnBack",
+          "[  15.94s] off-treads OnBack -\u003E InAir",
+          "[  16.07s] off-treads InAir -\u003E OnTreads",
+          "[  19.74s] off-treads OnTreads -\u003E InAir",
+          "[  20.30s] off-treads InAir -\u003E OnLeftSide",
+          "[  26.78s] off-treads OnLeftSide -\u003E InAir",
+          "[  27.25s] off-treads InAir -\u003E OnFace",
+          "[  28.32s] off-treads OnFace -\u003E InAir",
+          "[  28.51s] off-treads InAir -\u003E OnTreads",
+          "[  29.62s] off-treads OnTreads -\u003E InAir",
+          "[  29.96s] off-treads InAir -\u003E OnFace",
+          "[  32.47s] off-treads OnFace -\u003E InAir",
+          "[  33.27s] off-treads InAir -\u003E OnTreads",
+          "[  34.30s] off-treads OnTreads -\u003E InAir",
+          "[  34.53s] off-treads InAir -\u003E OnTreads",
+          "[  35.03s] off-treads OnTreads -\u003E InAir",
+          "[  35.43s] off-treads InAir -\u003E OnLeftSide",
+          "[  44.63s] off-treads OnLeftSide -\u003E InAir",
+          "[  44.83s] off-treads InAir -\u003E OnTreads",
+          "[  46.03s] off-treads OnTreads -\u003E InAir",
+          "[  46.50s] off-treads InAir -\u003E OnFace",
+          "[  51.87s] off-treads OnFace -\u003E InAir",
+          "[  52.03s] off-treads InAir -\u003E OnTreads",
+          "[  57.40s] off-treads OnTreads -\u003E InAir",
+          "[  58.47s] off-treads InAir -\u003E OnBack",
+          "[  70.65s] off-treads OnBack -\u003E InAir",
+          "[  70.78s] off-treads InAir -\u003E OnTreads",
+          "[  73.34s] off-treads OnTreads -\u003E OnFace",
+          "[  75.43s] off-treads OnFace -\u003E InAir",
+          "[  75.90s] off-treads InAir -\u003E OnTreads",
+          "[  81.73s] off-treads OnTreads -\u003E InAir",
+          "[  81.97s] off-treads InAir -\u003E OnTreads",
+          "[  82.76s] off-treads OnTreads -\u003E InAir",
+          "[  83.45s] off-treads InAir -\u003E OnRightSide",
+          "[  90.01s] off-treads OnRightSide -\u003E InAir",
+          "[  90.04s] off-treads InAir -\u003E OnTreads",
+          "[  95.35s] off-treads OnTreads -\u003E InAir",
+          "[  95.93s] off-treads InAir -\u003E OnLeftSide",
+          "[ 103.01s] off-treads OnLeftSide -\u003E InAir",
+          "... 11 more line(s) matching \u0027off-treads\u0027 in the log"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "acceptance.json",
+        "console.log"
+      ]
+    },
+    {
+      "Id": "I",
+      "Name": "StartMotorCalibration honoured",
+      "Phase": "10. robot state and reactions",
+      "Subsystem": "StartMotorCalibration (0x58) and the MotorCalibration reports the robot answers with",
+      "Purpose": "The engine asks the robot to recalibrate its head in several states, and whether the robot honours the request has never been observed. It could not be: the robot recalibrates on every connection anyway, so a tool that watches for a calibration report sees one whatever it does. This waits for the connection-time calibration to finish, asks, and then judges only what arrives afterwards.",
+      "ExpectedTelemetry": "a MotorCalibration for the head with CalibStarted true, then one with false, both after the request",
+      "ExpectedPhysical": "After ASKING NOW, his head nods down to its stop and comes back, within a few seconds. Nothing else moves.",
+      "Prerequisites": [
+        "LINK passed",
+        "nothing in front of his head"
+      ],
+      "FidelityRecords": [
+        "M4-004"
+      ],
+      "CoreRegressions": [],
+      "CommandLine": "calibrate 172.31.1.1 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\I\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:55:41.9145102Z",
+      "FinishedUtc": "2026-09-22T17:56:13.1015979Z",
+      "ElapsedSeconds": 31.1870877,
+      "Auto": "Pass",
+      "Human": "Unsure",
+      "Status": "Unsure",
+      "HumanNote": "if i manually move the head up, and run this test, it goes down but stays down. never goes back up",
+      "Attempts": 1,
+      "Captured": {
+        "reports": [
+          "  ASKING NOW: StartMotorCalibration head=1 lift=0",
+          "  [  1.52s] MotorCalibration motor=MOTOR_HEAD started=True auto=False   \u003C- after the request",
+          "  [  2.05s] MotorCalibration motor=MOTOR_HEAD started=False auto=False   \u003C- after the request"
+        ],
+        "the request": [
+          "  ASKING NOW: StartMotorCalibration head=1 lift=0"
+        ],
+        "verdict": [
+          "calibration honoured: yes (started at 1.52s, finished at 2.05s, 0.53s of movement)"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "acceptance.json",
+        "console.log"
+      ]
+    },
+    {
+      "Id": "J",
+      "Name": "Unexpected movement while driving",
+      "Phase": "10. robot state and reactions",
+      "Subsystem": "The unexpected-movement detector and its reaction",
+      "Purpose": "The detector suspends during direct drive, so it can only be provoked while a behaviour is driving the body. Its thresholds came from the engine and have never been pushed against.",
+      "ExpectedTelemetry": "an unexpected movement report naming the side, then the reaction, inside the window the tool drives",
+      "ExpectedPhysical": "He plays the startled reaction once he is held, and nothing fires while he turns freely.",
+      "Prerequisites": [
+        "H passed",
+        "--obb given",
+        "a hand free to hold him"
+      ],
+      "FidelityRecords": [
+        "M10-006"
+      ],
+      "CoreRegressions": [],
+      "CommandLine": "reactions 172.31.1.1 --obb re-analysis\\obb --expect UnexpectedMovement --provoke-movement --seconds 60 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\J\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:56:32.9114578Z",
+      "FinishedUtc": "2026-09-22T17:57:42.189977Z",
+      "ElapsedSeconds": 69.2785192,
+      "Auto": "Pass",
+      "Human": "Pass",
+      "Status": "Passed",
+      "Attempts": 1,
+      "Captured": {
+        "window": [
+          "  window UnexpectedMovement: fired   (in this window: RobotPickedUp, ReturnedToTreads, UnexpectedMovement)"
+        ],
+        "expected": [
+          "expected reactions: UnexpectedMovement=yes",
+          "expected reactions: all seen"
+        ],
+        "bursts": [
+          "  [   0.00s] turning on the spot - HOLD HIM NOW",
+          "  [   4.03s] turning on the spot - HOLD HIM NOW",
+          "  [   8.06s] turning on the spot - HOLD HIM NOW",
+          "  [  12.09s] turning on the spot - HOLD HIM NOW",
+          "  [  16.10s] turning on the spot - HOLD HIM NOW",
+          "  [  20.13s] turning on the spot - HOLD HIM NOW",
+          "  [  24.16s] turning on the spot - HOLD HIM NOW",
+          "  [  28.19s] turning on the spot - HOLD HIM NOW",
+          "  [  32.21s] turning on the spot - HOLD HIM NOW",
+          "  [  36.24s] turning on the spot - HOLD HIM NOW",
+          "  [  40.27s] turning on the spot - HOLD HIM NOW",
+          "  [  44.29s] turning on the spot - HOLD HIM NOW",
+          "  [  48.31s] turning on the spot - HOLD HIM NOW",
+          "  [  52.33s] turning on the spot - HOLD HIM NOW",
+          "  [  56.35s] turning on the spot - HOLD HIM NOW"
+        ],
+        "detections": [
+          "[   9.56s] unexpected movement TurnedButStopped from Right at 10375 (avg wheels 52/-53 mm/s over 11)",
+          "[  14.31s] unexpected movement TurnedButStopped from Right at 15265 (avg wheels 16/-120 mm/s over 11)",
+          "[  14.60s] unexpected movement TurnedButStopped from Right at 15535 (avg wheels 34/-45 mm/s over 11)",
+          "[  16.98s] unexpected movement TurnedButStopped from Right at 17875 (avg wheels 30/-77 mm/s over 11)",
+          "[  17.28s] unexpected movement TurnedInOppositeDirection from Right at 18205 (avg wheels 17/-58 mm/s over 11)",
+          "[  17.48s] unexpected movement TurnedButStopped from Back at 18505 (avg wheels -19/-80 mm/s over 11)",
+          "[  20.93s] unexpected movement TurnedButStopped from Right at 21925 (avg wheels 7/-67 mm/s over 11)",
+          "[  21.20s] unexpected movement TurnedButStopped from Right at 22165 (avg wheels 26/-45 mm/s over 11)",
+          "[  21.44s] unexpected movement TurnedButStopped from Back at 22465 (avg wheels -31/-81 mm/s over 11)",
+          "[  24.71s] unexpected movement TurnedButStopped from Right at 25675 (avg wheels 29/-31 mm/s over 11)",
+          "[  25.03s] unexpected movement TurnedInOppositeDirection from Right at 25975 (avg wheels 8/-59 mm/s over 12)",
+          "[  36.86s] unexpected movement TurnedButStopped from Right at 37765 (avg wheels 95/-93 mm/s over 11)",
+          "[  42.23s] unexpected movement TurnedButStopped from Right at 43225 (avg wheels 110/-114 mm/s over 11)",
+          "[  42.55s] unexpected movement TurnedButStopped from Right at 43645 (avg wheels 13/-61 mm/s over 11)",
+          "[  44.80s] unexpected movement TurnedButStopped from Right at 45835 (avg wheels 13/-80 mm/s over 11)",
+          "[  45.12s] unexpected movement TurnedInOppositeDirection from Right at 46165 (avg wheels 10/-49 mm/s over 11)",
+          "[  49.32s] unexpected movement TurnedButStopped from Right at 50395 (avg wheels 14/-95 mm/s over 11)",
+          "[  49.64s] unexpected movement TurnedInOppositeDirection from Right at 50725 (avg wheels 13/-61 mm/s over 11)",
+          "[  52.88s] unexpected movement TurnedButStopped from Back at 53905 (avg wheels -0/-106 mm/s over 11)",
+          "[  53.20s] unexpected movement TurnedInOppositeDirection from Right at 54295 (avg wheels 10/-55 mm/s over 11)"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "acceptance.json",
+        "console.log"
+      ]
+    },
+    {
+      "Id": "L",
+      "Name": "SetBodyAngle semantics",
+      "Phase": "11. navigation",
+      "Subsystem": "The body-angle message: whether the angle is absolute or relative, and its packing",
+      "Purpose": "TurnTowardsPose depends on which one it is. Getting it wrong turns him the wrong way by however far he happens to be facing, which looks like a planner fault and is not.",
+      "ExpectedTelemetry": "the tool prints ABSOLUTE body angle confirmed for a 45 degree request",
+      "ExpectedPhysical": "He turns 45 degrees left in place, smoothly, and stops.",
+      "Prerequisites": [
+        "MOV passed"
+      ],
+      "FidelityRecords": [
+        "M11-013"
+      ],
+      "CoreRegressions": [],
+      "CommandLine": "bodyangle 172.31.1.1 --deg 45 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\L\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:57:53.9635738Z",
+      "FinishedUtc": "2026-09-22T17:58:04.0849492Z",
+      "ElapsedSeconds": 10.1213754,
+      "Auto": "Pass",
+      "Human": "Pass",
+      "Status": "Passed",
+      "Attempts": 1,
+      "Captured": {
+        "verdict": [
+          "turned 45.0 deg for a 45.0 deg request: ABSOLUTE body angle confirmed"
+        ],
+        "turn": [
+          "turned 45.0 deg for a 45.0 deg request: ABSOLUTE body angle confirmed"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "acceptance.json",
+        "console.log"
+      ]
+    },
+    {
+      "Id": "CR4",
+      "Name": "A late abort clears its own path and nobody else\u0027s",
+      "Phase": "11. navigation",
+      "Subsystem": "Path ownership: PathRun, the path id, and the qualified abort",
+      "Purpose": "A run that was cancelled or timed out used to clear whatever path the sender had last sent, which by then could be another action\u0027s. On the robot that is a drive that stops dead half way for no visible reason. This installs a path, replaces it, and then lets the first one clean up late.",
+      "ExpectedTelemetry": "the first run\u0027s abort sends nothing, and the second path reports Completed",
+      "ExpectedPhysical": "He drives the longer path all the way and stops at the end of it, not part way through.",
+      "Prerequisites": [
+        "MOV passed",
+        "a clear, flat surface with no drop at the edge"
+      ],
+      "FidelityRecords": [
+        "M12-002"
+      ],
+      "CoreRegressions": [
+        "CORE-004"
+      ],
+      "CommandLine": "core 172.31.1.1 --case CORE-004 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\CR4\\acceptance.json",
+      "StartedUtc": "2026-09-22T17:58:22.5923987Z",
+      "FinishedUtc": "2026-09-22T17:58:31.3093668Z",
+      "ElapsedSeconds": 8.7169681,
+      "Auto": "Fail",
+      "Human": "Fail",
+      "Status": "Failed",
+      "AutoDetail": "exit 2",
+      "HumanNote": "didn\u0027t move",
+      "Attempts": 1,
+      "Captured": {
+        "path ids": [
+          "installing path A (60 mm), then replacing it with path B (120 mm), then aborting A late.",
+          "  path A is id 1",
+          "  path B is id 2",
+          "  path B finished as: Interrupted"
+        ],
+        "late abort": [
+          "  A\u0027s abort sent a clear to the robot: False (it must be False)"
+        ],
+        "terminal event": [
+          "  path B finished as: Interrupted"
+        ],
+        "verdict": [
+          "automated: FAIL - B ended as Interrupted rather than completing"
+        ]
+      },
+      "Warnings": [],
+      "Files": [
+        "acceptance.json",
+        "console.log"
+      ]
+    },
+    {
+      "Id": "Y",
+      "Name": "The face pipeline with a detector",
+      "Phase": "15. blocked on this build",
+      "Subsystem": "FaceWorld, the face actions and the face reactions",
+      "Purpose": "Everything around the detector is built and tested offline. The detector itself is Omron OKAO and is not reproducible, so this check waits for an IFaceDetector implementation.",
+      "ExpectedTelemetry": "not run",
+      "ExpectedPhysical": "Not applicable.",
+      "Prerequisites": [],
+      "FidelityRecords": [
+        "M14-001"
+      ],
+      "CoreRegressions": [],
+      "CommandLine": "reactions 172.31.1.1 --obb re-analysis\\obb --seconds 120",
+      "FinishedUtc": "2026-09-22T17:58:31.3273573Z",
+      "Auto": "NotRun",
+      "Human": "NotAsked",
+      "Status": "Blocked",
+      "BlockedReason": "BLOCKED_EXTERNAL: VisionSystem.FaceDetector is the OKAO boundary and reports itself unavailable. Attach an IFaceDetector implementation and this check becomes runnable. You will not be asked to perform it.",
+      "Attempts": 1,
+      "Captured": {},
+      "Warnings": [],
+      "Files": []
+    }
+  ],
+  "NotRun": [
+    "A2",
+    "A3",
+    "IDL",
+    "K",
+    "V",
+    "W",
+    "M",
+    "CR8",
+    "CR7",
+    "Q",
+    "X",
+    "N",
+    "O",
+    "P",
+    "R",
+    "S",
+    "T",
+    "U",
+    "Z",
+    "Z2"
+  ]
+}

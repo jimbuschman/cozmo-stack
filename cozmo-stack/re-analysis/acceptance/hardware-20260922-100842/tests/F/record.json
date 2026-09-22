@@ -1,0 +1,45 @@
+{
+  "Id": "F",
+  "Name": "Animation timeline",
+  "Phase": "2. animation controller",
+  "Subsystem": "The animation scheduler\u0027s keyframe timing against the robot\u0027s audio pacing",
+  "Purpose": "The scheduler paces itself off the robot\u0027s played-frame count, and everything that animates goes through it. This is the readiness check for the animation controller: one known clip, end to end, before anything harder depends on it.",
+  "ExpectedTelemetry": "keyframes fired equals keyframes in the clip and no stalls are reported",
+  "ExpectedPhysical": "The clip plays as it always has: no stutter, no truncation, no stuck lift or head.",
+  "Prerequisites": [
+    "CON passed",
+    "--obb given"
+  ],
+  "FidelityRecords": [
+    "M5-001",
+    "M5-004"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "anim 172.31.1.1 --assets C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\obb\\assets\\cozmo_resources\\assets --name anim_bored_01 --wwise C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\obb\\assets\\cozmo_resources\\sound",
+  "StartedUtc": "2026-09-22T15:11:00.7168634Z",
+  "FinishedUtc": "2026-09-22T15:11:14.9607638Z",
+  "ElapsedSeconds": 14.2439004,
+  "Auto": "Pass",
+  "Human": "Pass",
+  "Status": "Passed",
+  "Attempts": 1,
+  "Captured": {
+    "keyframes": [
+      "playing anim_bored_01: 54 keyframes over 1089 ms, tracks Face, Audio, Head, Lift, Body, Lights",
+      "keyframes fired: 54 of 54",
+      "HUMAN CHECK REQUIRED: the robot should have moved its head and lift and changed expression in time with each other. Audio and backpack lights are not implemented yet, so their keyframes pass silently."
+    ],
+    "audio frames": [
+      "playing anim_bored_01: 54 keyframes over 1089 ms, tracks Face, Audio, Head, Lift, Body, Lights",
+      "  tracks: Face, Audio, Head, Lift, Body, Lights",
+      "    AudioKeyframe                2",
+      "audio frames streamed: 34 (all silence: no --audio mapping was given)",
+      "wwise: every audio event this clip raised was produced",
+      "HUMAN CHECK REQUIRED: the robot should have moved its head and lift and changed expression in time with each other. Audio and backpack lights are not implemented yet, so their keyframes pass silently."
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "console.log"
+  ]
+}

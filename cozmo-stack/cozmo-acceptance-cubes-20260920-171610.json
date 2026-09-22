@@ -1,0 +1,29 @@
+{
+  "utc": "2026-09-20T22:16:10.8771691Z",
+  "device": "cubes",
+  "automatedChecksPassed": true,
+  "humanCheckRequired": "the cubes you placed nearby should appear above; if you tapped one, its tap count should be non-zero",
+  "humanVerdict": "not recorded: set to pass or fail after watching the robot",
+  "robot": {
+    "serial": "0x0c50465e",
+    "firmware": 2457,
+    "batteryVolts": 3.9799805,
+    "onCharger": false
+  },
+  "detail": {
+    "discovered": [
+      {
+        "factoryId": "0x241a8eec",
+        "objectId": null,
+        "type": "Block_LIGHTCUBE2",
+        "rssi": 94,
+        "connected": false,
+        "advertisements": 6,
+        "batteryLevelRaw": null,
+        "taps": 0,
+        "upAxis": null
+      }
+    ]
+  },
+  "handlerFaults": 0
+}

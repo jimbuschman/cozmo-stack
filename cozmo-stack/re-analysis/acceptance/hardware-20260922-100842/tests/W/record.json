@@ -1,0 +1,26 @@
+{
+  "Id": "W",
+  "Name": "Drive off the charger",
+  "Phase": "9. the charger",
+  "Subsystem": "DriveOffChargerContactsAction and the on-charger flag",
+  "Purpose": "The distance and the 20 mm/s crawl were read from the engine; whether they clear the contacts on a real charger is unverified.",
+  "ExpectedTelemetry": "one 156 mm line at 20 mm/s and the on-charger flag clears",
+  "ExpectedPhysical": "He drives forward off the charger at a crawl and stops on his treads.",
+  "Prerequisites": [
+    "he is on the charger (V, or put him on by hand)"
+  ],
+  "FidelityRecords": [
+    "M13-007"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "manip 172.31.1.1 --obb C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\obb --driveoff --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-100842\\tests\\W\\acceptance.json",
+  "FinishedUtc": "2026-09-22T15:19:00.5874647Z",
+  "Auto": "NotRun",
+  "Human": "NotAsked",
+  "Status": "Blocked",
+  "BlockedReason": "V (Mount the charger) is blocked, and W depends on it",
+  "Attempts": 1,
+  "Captured": {},
+  "Warnings": [],
+  "Files": []
+}

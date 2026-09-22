@@ -1,0 +1,285 @@
+{
+  "utc": "2026-09-18T16:31:34.820533Z",
+  "robot": {
+    "serial": "0x41d04d9d",
+    "hardware": 5,
+    "firmware": 2457,
+    "engineToRobotHash": "fedb4b12f1b5b45456aec1629cd0b8cc",
+    "robotToEngineHash": "5a7211095fc4961407e96b9126658317",
+    "build": "DEVELOPMENT",
+    "bodyHw": 5,
+    "bodyColor": 2
+  },
+  "steps": [
+    {
+      "step": "identity",
+      "subsystem": "IdentityVersionLogging",
+      "safety": "ReadOnly",
+      "expected": [
+        "0xC9",
+        "0xEE",
+        "0xED",
+        "0xEC",
+        "0xB0"
+      ],
+      "observed": [
+        "0xC9",
+        "0xEE",
+        "0xB0",
+        "0xEC",
+        "0xED"
+      ]
+    },
+    {
+      "step": "logging",
+      "subsystem": "IdentityVersionLogging",
+      "safety": "ReadOnly",
+      "expected": [
+        "0xCF"
+      ],
+      "observed": [
+        "0xCF"
+      ]
+    },
+    {
+      "step": "state",
+      "subsystem": "RobotStateSensors",
+      "safety": "ReadOnly",
+      "expected": [
+        "0xC2",
+        "0xF0"
+      ],
+      "observed": [
+        "0xB0",
+        "0xC2",
+        "0xD1",
+        "0xF3"
+      ]
+    },
+    {
+      "step": "imu",
+      "subsystem": "RobotStateSensors",
+      "safety": "ReadOnly",
+      "expected": [
+        "0xBF",
+        "0xC7",
+        "0xDC"
+      ],
+      "observed": [
+        "0xB0",
+        "0xD1",
+        "0xF3",
+        "0xF0",
+        "0xC7"
+      ]
+    },
+    {
+      "step": "leds",
+      "subsystem": "LedsDisplay",
+      "safety": "SafeVisible",
+      "expected": [],
+      "observed": [
+        "0xF3",
+        "0xF0"
+      ]
+    },
+    {
+      "step": "camera",
+      "subsystem": "Camera",
+      "safety": "ReadOnly",
+      "expected": [
+        "0xF2",
+        "0xF4",
+        "0xC8"
+      ],
+      "observed": [
+        "0xB0",
+        "0xF3",
+        "0xF0",
+        "0xF4",
+        "0xF2"
+      ]
+    },
+    {
+      "step": "cubes",
+      "subsystem": "CubesBle",
+      "safety": "SafeVisible",
+      "expected": [
+        "0xF3"
+      ],
+      "observed": [
+        "0xF3",
+        "0xF0"
+      ]
+    },
+    {
+      "step": "animation",
+      "subsystem": "Animation",
+      "safety": "StateChange",
+      "expected": [
+        "0xF1"
+      ],
+      "observed": [
+        "0xF3",
+        "0xF0",
+        "0xF1"
+      ]
+    },
+    {
+      "step": "localization",
+      "subsystem": "LocalizationNavigation",
+      "safety": "StateChange",
+      "expected": [
+        "0xF0"
+      ],
+      "observed": [
+        "0xB0",
+        "0xF3",
+        "0xF0",
+        "0xF1"
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "tag": "0xB0",
+      "cladType": "PrintTrace",
+      "subsystem": "IdentityVersionLogging",
+      "count": 14,
+      "byteIdenticalRoundTrips": 14,
+      "status": "hardware_verified",
+      "problem": null,
+      "sample": "01 00 00 00 01 00 02 01 02 00 00 00"
+    },
+    {
+      "tag": "0xC2",
+      "cladType": "SyncTimeAck",
+      "subsystem": "IdentityVersionLogging",
+      "count": 1,
+      "byteIdenticalRoundTrips": 1,
+      "status": "hardware_verified",
+      "problem": null,
+      "sample": ""
+    },
+    {
+      "tag": "0xC7",
+      "cladType": "IMURawDataChunk",
+      "subsystem": "RobotStateSensors",
+      "count": 200,
+      "byteIdenticalRoundTrips": 200,
+      "status": "hardware_verified",
+      "problem": null,
+      "sample": "f9 ff 06 00 07 00 1d f3 6f 04 0a 26 00 2f"
+    },
+    {
+      "tag": "0xC9",
+      "cladType": "RobotAvailable",
+      "subsystem": "IdentityVersionLogging",
+      "count": 1,
+      "byteIdenticalRoundTrips": 1,
+      "status": "hardware_verified",
+      "problem": null,
+      "sample": "9d 4d d0 41 05 00"
+    },
+    {
+      "tag": "0xCF",
+      "cladType": "CrashReport",
+      "subsystem": "IdentityVersionLogging",
+      "count": 1,
+      "byteIdenticalRoundTrips": 1,
+      "status": "hardware_verified",
+      "problem": null,
+      "sample": "00 00 00 00 00 00 00 00"
+    },
+    {
+      "tag": "0xD1",
+      "cladType": "MotorCalibration",
+      "subsystem": "Motors",
+      "count": 4,
+      "byteIdenticalRoundTrips": 4,
+      "status": "hardware_verified",
+      "problem": null,
+      "sample": "02 01 00"
+    },
+    {
+      "tag": "0xEC",
+      "cladType": "WiFiFlashID",
+      "subsystem": "IdentityVersionLogging",
+      "count": 1,
+      "byteIdenticalRoundTrips": 1,
+      "status": "hardware_verified",
+      "problem": null,
+      "sample": "ef 60 15 00"
+    },
+    {
+      "tag": "0xED",
+      "cladType": "ManufacturingID",
+      "subsystem": "IdentityVersionLogging",
+      "count": 1,
+      "byteIdenticalRoundTrips": 1,
+      "status": "hardware_verified",
+      "problem": null,
+      "sample": "ad 32 a1 45 05 00 00 00 02 00 00 00"
+    },
+    {
+      "tag": "0xEE",
+      "cladType": "FirmwareVersion",
+      "subsystem": "IdentityVersionLogging",
+      "count": 1,
+      "byteIdenticalRoundTrips": 1,
+      "status": "hardware_verified",
+      "problem": null,
+      "sample": "9d 4d bd 01 7b 22 76 65 72 73 69 6f 6e 22 3a 20 32 34 35 37 2c 20 22 67 69 74 2d 72 65 76 22 3a 20 22 31 66 37 31 36 39 32 34 37 30 33 66 35 61 38 31 36 37 65 34 38 31 32 65 62 65 30 66 62 31 \u2026(\u002B385)"
+    },
+    {
+      "tag": "0xF0",
+      "cladType": "RobotState",
+      "subsystem": "RobotStateSensors",
+      "count": 383,
+      "byteIdenticalRoundTrips": 383,
+      "status": "hardware_verified",
+      "problem": null,
+      "sample": "27 06 00 00 00 00 00 00 00 00 00 00 00 00 7a 3d 00 00 00 00 00 00 00 00 f2 19 b5 b6 c2 6a d5 3b 00 00 00 00 00 00 00 00 f3 66 df be 45 06 4b be ca 85 4d c5 24 00 90 44 0b 13 18 46 a0 e5 a3 b9 \u2026(\u002B27)"
+    },
+    {
+      "tag": "0xF1",
+      "cladType": "AnimationState",
+      "subsystem": "Animation",
+      "count": 81,
+      "byteIdenticalRoundTrips": 81,
+      "status": "hardware_verified",
+      "problem": null,
+      "sample": "9e 9d fc 02 00 00 00 00 00 00 00 00 ff 00 00"
+    },
+    {
+      "tag": "0xF2",
+      "cladType": "ImageChunk",
+      "subsystem": "Camera",
+      "count": 143,
+      "byteIdenticalRoundTrips": 143,
+      "status": "hardware_verified",
+      "problem": null,
+      "sample": "00 00 00 00 94 02 00 00 00 00 00 00 08 04 00 00 02 00 54 04 00 e2 03 34 8f 96 66 25 8f 24 f3 52 79 3d fc df fc 75 a9 3c 97 ec ff a3 52 79 6f fd ff d1 a9 1d 5c 71 92 ff 4c ff 5a 6a b7 20 67 15 \u2026(\u002B1064)"
+    },
+    {
+      "tag": "0xF3",
+      "cladType": "ObjectAvailable",
+      "subsystem": "CubesBle",
+      "count": 31,
+      "byteIdenticalRoundTrips": 31,
+      "status": "hardware_verified",
+      "problem": null,
+      "sample": "bc bc 58 de 02 00 00 00 45"
+    },
+    {
+      "tag": "0xF4",
+      "cladType": "ImageImuData",
+      "subsystem": "Camera",
+      "count": 79,
+      "byteIdenticalRoundTrips": 79,
+      "status": "hardware_verified",
+      "problem": null,
+      "sample": "92 02 00 00 76 01 a7 ba a0 b3 6a 39 47 1c 9a 3a 67"
+    }
+  ]
+}

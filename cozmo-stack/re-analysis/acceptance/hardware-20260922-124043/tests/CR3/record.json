@@ -1,0 +1,59 @@
+{
+  "Id": "CR3",
+  "Name": "A cancelled animation stops sending",
+  "Phase": "6. idle and live animation",
+  "Subsystem": "The scheduler\u0027s emission gate: a command of a cancelled playback must not get out",
+  "Purpose": "The generation check was made under the lock and the command sent after it was released. A cancel landing in that window let one animation\u0027s motion go out in the middle of another. On the robot that is exactly what it looks like: a twitch after everything should have stopped.",
+  "ExpectedTelemetry": "after the stop settles, wheel speed stays at zero and head and lift stop changing",
+  "ExpectedPhysical": "He stops when the animation is cut and stays stopped. No late twitch of the head, the lift or the wheels.",
+  "Prerequisites": [
+    "F and MOV passed",
+    "--obb given"
+  ],
+  "FidelityRecords": [
+    "M5-001"
+  ],
+  "CoreRegressions": [
+    "CORE-003"
+  ],
+  "CommandLine": "core 172.31.1.1 --obb re-analysis\\obb --case CORE-003 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\CR3\\acceptance.json",
+  "StartedUtc": "2026-09-22T17:45:59.9490232Z",
+  "FinishedUtc": "2026-09-22T17:46:31.940883Z",
+  "ElapsedSeconds": 31.9918598,
+  "Auto": "Pass",
+  "Human": "Unsure",
+  "Status": "Unsure",
+  "HumanNote": "not sure exactly what was supposed to happen, seemed like he tried doing an animation and stopped part way though?",
+  "Attempts": 1,
+  "Captured": {
+    "telemetry after the stop": [
+      "  t=   403 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=   537 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=   671 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=   806 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=   940 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  1074 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  1208 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  1342 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  1476 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  1610 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  1745 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  1880 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  2015 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  2148 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  2282 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  2416 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189"
+    ],
+    "verdict": [
+      "automated: PASS - nothing reached the motors after the stop"
+    ],
+    "settled": [
+      "after the stop settled: wheels at most 0.0 mm/s, head moved 0.000 rad, lift moved 0.000 rad"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "acceptance.json",
+    "console.log"
+  ]
+}

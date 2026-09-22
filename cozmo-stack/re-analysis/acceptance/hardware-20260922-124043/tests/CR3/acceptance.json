@@ -1,0 +1,41 @@
+{
+  "tool": "core",
+  "which": "CORE-003",
+  "timestampUtc": "2026-09-22T17:46:05.0304376Z",
+  "firmware": 2457,
+  "serial": 206587486,
+  "automated": {
+    "pass": true,
+    "detail": "nothing reached the motors after the stop",
+    "log": [
+      "connecting to 172.31.1.1...",
+      "connected: firmware 2457, telemetry 30.3 Hz, calibration complete",
+      "using the clip \u0027anim_bored_01\u0027",
+      "playing \u0027anim_bored_01\u0027 and stopping it 1.2 s in; after the stop nothing more may reach the motors.",
+      "stopped. Watching the robot\u0027s own telemetry for 2.5 s.",
+      "after the stop settled: wheels at most 0.0 mm/s, head moved 0.000 rad, lift moved 0.000 rad",
+      "the scheduler reports playing: nothing",
+      "  t=   403 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=   537 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=   671 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=   806 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=   940 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  1074 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  1208 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  1342 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  1476 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  1610 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  1745 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  1880 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  2015 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  2148 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  2282 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "  t=  2416 ms  L=    0.0  R=    0.0  head=-0.233  lift=-0.189",
+      "",
+      "automated: PASS - nothing reached the motors after the stop"
+    ]
+  },
+  "human": {
+    "verdict": "PENDING - the person watching the robot decides this"
+  }
+}

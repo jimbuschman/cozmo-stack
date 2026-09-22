@@ -1,0 +1,29 @@
+{
+  "Id": "A3",
+  "Name": "Sustained singing and a parameter posted mid-note",
+  "Phase": "4. audio",
+  "Subsystem": "The streaming render: how far ahead it runs, what the scheduler sends, and what the robot plays",
+  "Purpose": "The core review changed who waits for whom in the audio path twice: the scheduler now refuses to send samples that have not been rendered, and the render follows consumption rather than the wall clock. The failure modes that leaves are audible and only audible - chopping, a hanging note, an underrun - and they need a song long enough to expose them under the robot\u0027s real back-pressure. The vibrato parameter is posted while a note is already sounding, which is the whole reason the song is rendered as it plays.",
+  "ExpectedTelemetry": "frames rendered, ready, sent and robot-reported played all advance together, with no underruns",
+  "ExpectedPhysical": "Continuous sound with no alternating silence, no note that hangs or repeats, no reverb-like smear, and an audible change when the vibrato is posted.",
+  "Prerequisites": [
+    "A passed or heard",
+    "--obb given"
+  ],
+  "FidelityRecords": [
+    "M9-016"
+  ],
+  "CoreRegressions": [
+    "CORE-006"
+  ],
+  "CommandLine": "sing 172.31.1.1 --obb C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\obb --behavior Singing_Bingo --vibrato --seconds 60 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-100842\\tests\\A3\\acceptance.json",
+  "FinishedUtc": "2026-09-22T15:13:08.8126248Z",
+  "Auto": "NotRun",
+  "Human": "NotAsked",
+  "Status": "Blocked",
+  "BlockedReason": "A (Cozmo sings) was inconclusive, and A3 depends on it",
+  "Attempts": 1,
+  "Captured": {},
+  "Warnings": [],
+  "Files": []
+}

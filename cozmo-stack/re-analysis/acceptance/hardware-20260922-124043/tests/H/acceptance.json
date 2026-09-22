@@ -1,0 +1,601 @@
+{
+  "tool": "reactions",
+  "milestone": "M10",
+  "timestampUtc": "2026-09-22T17:54:58.172658Z",
+  "firmware": 2457,
+  "serial": 206587486,
+  "automated": {
+    "pass": true,
+    "detail": {
+      "fired": [
+        "CliffDetected",
+        "ReturnedToTreads",
+        "RobotOnBack",
+        "RobotOnFace",
+        "RobotOnSide",
+        "RobotPickedUp",
+        "RobotShaken",
+        "UnexpectedMovement"
+      ],
+      "log": [
+        {
+          "t": 2.6632451,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 2.693895,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 3.807187,
+          "text": "off-treads InAir -\u003E OnBack"
+        },
+        {
+          "t": 4.4412058,
+          "text": "    ReactToRobotOnBack: play FlipDownFromBack -\u003E anim_reacttocliff_turtleroll_04"
+        },
+        {
+          "t": 4.4413417,
+          "text": "REACTION RobotOnBack -\u003E ReactToRobotOnBack"
+        },
+        {
+          "t": 15.9411762,
+          "text": "off-treads OnBack -\u003E InAir"
+        },
+        {
+          "t": 15.9717324,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnBack)"
+        },
+        {
+          "t": 16.0744811,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 18.6565881,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 18.6569039,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 19.1598232,
+          "text": "    ReactToReturnedToTreads: pitch 1.3 deg: nothing to do"
+        },
+        {
+          "t": 19.1600593,
+          "text": "    ReactToReturnedToTreads: done"
+        },
+        {
+          "t": 19.7361323,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 19.7662647,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 20.3004163,
+          "text": "off-treads InAir -\u003E OnLeftSide"
+        },
+        {
+          "t": 22.4531419,
+          "text": "    ReactToRobotOnSide: play ReactToOnLeftSide -\u003E anim_reacttocliff_stuckleftside_02"
+        },
+        {
+          "t": 22.4533057,
+          "text": "REACTION RobotOnSide -\u003E ReactToRobotOnSide"
+        },
+        {
+          "t": 26.4828646,
+          "text": "    ReactToRobotOnSide: play AskToBeRightedLeft -\u003E anim_reacttocliff_stuckleftside_03"
+        },
+        {
+          "t": 26.7824963,
+          "text": "off-treads OnLeftSide -\u003E InAir"
+        },
+        {
+          "t": 26.7857872,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnSide)"
+        },
+        {
+          "t": 27.2493588,
+          "text": "off-treads InAir -\u003E OnFace"
+        },
+        {
+          "t": 28.3153054,
+          "text": "off-treads OnFace -\u003E InAir"
+        },
+        {
+          "t": 28.4925156,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 28.514726,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 29.6248387,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 29.9590301,
+          "text": "off-treads InAir -\u003E OnFace"
+        },
+        {
+          "t": 31.1763748,
+          "text": "    ReactToRobotOnFace: play FacePlantRoll -\u003E anim_reacttocliff_faceplantroll_02"
+        },
+        {
+          "t": 31.1764213,
+          "text": "REACTION RobotOnFace -\u003E ReactToRobotOnFace"
+        },
+        {
+          "t": 32.4712443,
+          "text": "off-treads OnFace -\u003E InAir"
+        },
+        {
+          "t": 32.4822275,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnFace)"
+        },
+        {
+          "t": 33.2734614,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 34.2260356,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 34.2261311,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 34.3046109,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 34.3270827,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToReturnedToTreads)"
+        },
+        {
+          "t": 34.531377,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 35.0314383,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 35.427751,
+          "text": "off-treads InAir -\u003E OnLeftSide"
+        },
+        {
+          "t": 37.3759696,
+          "text": "    ReactToRobotOnSide: play ReactToOnLeftSide -\u003E anim_reacttocliff_stuckleftside_03"
+        },
+        {
+          "t": 37.3760391,
+          "text": "REACTION RobotOnSide -\u003E ReactToRobotOnSide"
+        },
+        {
+          "t": 41.1959525,
+          "text": "    ReactToRobotOnSide: play AskToBeRightedLeft -\u003E anim_reacttocliff_stuckleftside_02"
+        },
+        {
+          "t": 44.3153544,
+          "text": "REACTION CliffDetected -\u003E ReactToCliff (interrupted ReactToRobotOnSide)"
+        },
+        {
+          "t": 44.6291554,
+          "text": "off-treads OnLeftSide -\u003E InAir"
+        },
+        {
+          "t": 44.8281401,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 46.029418,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 46.4955758,
+          "text": "off-treads InAir -\u003E OnFace"
+        },
+        {
+          "t": 51.459955,
+          "text": "    ReactToRobotOnFace: play FacePlantRoll -\u003E anim_reacttocliff_faceplantroll_01"
+        },
+        {
+          "t": 51.4600808,
+          "text": "REACTION RobotOnFace -\u003E ReactToRobotOnFace"
+        },
+        {
+          "t": 51.8722377,
+          "text": "off-treads OnFace -\u003E InAir"
+        },
+        {
+          "t": 51.8970098,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnFace)"
+        },
+        {
+          "t": 52.0299403,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 54.6151303,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 54.6153139,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 55.1210019,
+          "text": "    ReactToReturnedToTreads: pitch 0.7 deg: nothing to do"
+        },
+        {
+          "t": 55.1210406,
+          "text": "    ReactToReturnedToTreads: done"
+        },
+        {
+          "t": 57.395561,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 57.4003273,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 58.4666432,
+          "text": "off-treads InAir -\u003E OnBack"
+        },
+        {
+          "t": 59.1121327,
+          "text": "    ReactToRobotOnBack: play FlipDownFromBack -\u003E anim_reacttocliff_turtleroll_04"
+        },
+        {
+          "t": 59.1122744,
+          "text": "REACTION RobotOnBack -\u003E ReactToRobotOnBack"
+        },
+        {
+          "t": 70.6454685,
+          "text": "off-treads OnBack -\u003E InAir"
+        },
+        {
+          "t": 70.6479248,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnBack)"
+        },
+        {
+          "t": 70.777691,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 73.3326549,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 73.3329914,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 73.3482049,
+          "text": "off-treads OnTreads -\u003E OnFace"
+        },
+        {
+          "t": 73.3670589,
+          "text": "    ReactToRobotOnFace: play FacePlantRoll -\u003E anim_reacttocliff_faceplantroll_02"
+        },
+        {
+          "t": 73.3670956,
+          "text": "REACTION RobotOnFace -\u003E ReactToRobotOnFace (interrupted ReactToReturnedToTreads)"
+        },
+        {
+          "t": 75.0108212,
+          "text": "REACTION CliffDetected -\u003E ReactToCliff (interrupted ReactToRobotOnFace)"
+        },
+        {
+          "t": 75.4331449,
+          "text": "off-treads OnFace -\u003E InAir"
+        },
+        {
+          "t": 75.9001001,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 81.7337189,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 81.9664396,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 82.1479624,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 82.1481197,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 82.6508561,
+          "text": "    ReactToReturnedToTreads: pitch -1.9 deg: nothing to do"
+        },
+        {
+          "t": 82.6510658,
+          "text": "    ReactToReturnedToTreads: done"
+        },
+        {
+          "t": 82.7604597,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 82.7851327,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 83.4517126,
+          "text": "off-treads InAir -\u003E OnRightSide"
+        },
+        {
+          "t": 86.1428835,
+          "text": "    ReactToRobotOnSide: play ReactToOnRightSide -\u003E anim_reacttocliff_stuckrightside_02"
+        },
+        {
+          "t": 86.1429441,
+          "text": "REACTION RobotOnSide -\u003E ReactToRobotOnSide"
+        },
+        {
+          "t": 90.0086056,
+          "text": "off-treads OnRightSide -\u003E InAir"
+        },
+        {
+          "t": 90.0346443,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnSide)"
+        },
+        {
+          "t": 90.0415281,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 92.7119855,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 92.7120905,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 93.2144965,
+          "text": "    ReactToReturnedToTreads: pitch 1.0 deg: nothing to do"
+        },
+        {
+          "t": 93.2146822,
+          "text": "    ReactToReturnedToTreads: done"
+        },
+        {
+          "t": 95.3508309,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 95.3630679,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 95.9301074,
+          "text": "off-treads InAir -\u003E OnLeftSide"
+        },
+        {
+          "t": 98.0495027,
+          "text": "    ReactToRobotOnSide: play ReactToOnLeftSide -\u003E anim_reacttocliff_stuckleftside_02"
+        },
+        {
+          "t": 98.0496509,
+          "text": "REACTION RobotOnSide -\u003E ReactToRobotOnSide"
+        },
+        {
+          "t": 102.0710346,
+          "text": "    ReactToRobotOnSide: play AskToBeRightedLeft -\u003E anim_reacttocliff_stuckleftside_03"
+        },
+        {
+          "t": 103.0095816,
+          "text": "off-treads OnLeftSide -\u003E InAir"
+        },
+        {
+          "t": 103.0110292,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnSide)"
+        },
+        {
+          "t": 103.2707656,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 105.7302898,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 105.7304265,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 106.2353201,
+          "text": "    ReactToReturnedToTreads: pitch 1.1 deg: nothing to do"
+        },
+        {
+          "t": 106.2353648,
+          "text": "    ReactToReturnedToTreads: done"
+        },
+        {
+          "t": 123.8535913,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 123.8826298,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 125.5822835,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 125.5963128,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 125.5963454,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 126.0994801,
+          "text": "    ReactToReturnedToTreads: pitch 2.0 deg: nothing to do"
+        },
+        {
+          "t": 126.0996003,
+          "text": "    ReactToReturnedToTreads: done"
+        },
+        {
+          "t": 127.3653895,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 127.3726227,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 127.5958308,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 129.7730834,
+          "text": "unexpected movement TurnedInOppositeDirection from Left at 131830 (avg wheels -16/16 mm/s over 11)"
+        },
+        {
+          "t": 130.7248291,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 130.7251039,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 130.7601609,
+          "text": "    ReactToUnexpectedMovement: emotion event ReactToUnexpectedMovement: applied"
+        },
+        {
+          "t": 130.7606707,
+          "text": "    ReactToUnexpectedMovement: play ReactToUnexpectedMovement -\u003E anim_reacttocliff_huh_01"
+        },
+        {
+          "t": 130.7607131,
+          "text": "REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement (interrupted ReactToReturnedToTreads)"
+        },
+        {
+          "t": 131.2318856,
+          "text": "    ReactToUnexpectedMovement: objective ReactedToUnexpectedMovement"
+        },
+        {
+          "t": 131.2320984,
+          "text": "    ReactToUnexpectedMovement: done"
+        },
+        {
+          "t": 133.6042649,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 133.6200651,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 136.492538,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 136.9759723,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 136.9760637,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 137.4809655,
+          "text": "    ReactToReturnedToTreads: pitch 1.2 deg: nothing to do"
+        },
+        {
+          "t": 137.4810145,
+          "text": "    ReactToReturnedToTreads: done"
+        },
+        {
+          "t": 140.4972087,
+          "text": "    ReactToRobotShaken: play DizzyShakeLoop -\u003E anim_dizzy_shake_loop_01"
+        },
+        {
+          "t": 140.4972492,
+          "text": "REACTION RobotShaken -\u003E ReactToRobotShaken"
+        },
+        {
+          "t": 140.9350009,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 142.1335608,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 142.4400853,
+          "text": "    ReactToRobotShaken: shaking stopped after 1.94 s, peak |accel| 21218"
+        },
+        {
+          "t": 142.4741287,
+          "text": "    ReactToRobotShaken: play DizzyShakeStop -\u003E anim_dizzy_shake_stop_01"
+        },
+        {
+          "t": 142.6190878,
+          "text": "    ReactToRobotShaken: back on treads: dizzy reaction Soft"
+        },
+        {
+          "t": 142.6209866,
+          "text": "    ReactToRobotShaken: play DizzyReactionSoft -\u003E anim_dizzy_reaction_soft_01"
+        },
+        {
+          "t": 146.8749715,
+          "text": "unexpected movement TurnedInOppositeDirection from Right at 148960 (avg wheels 39/-16 mm/s over 12)"
+        },
+        {
+          "t": 148.0201811,
+          "text": "    ReactToRobotShaken: objective ReactedToRobotShaken"
+        },
+        {
+          "t": 148.020238,
+          "text": "    ReactToRobotShaken: done"
+        },
+        {
+          "t": 148.0206165,
+          "text": "    ReactToRobotShaken: DAS robot.dizzy_reaction: shakenDuration = 1.945s, maxShakingAccelMag = 21218.4, reactionPlayed = \u0027Soft\u0027"
+        },
+        {
+          "t": 148.0544631,
+          "text": "REACTION CliffDetected -\u003E ReactToCliff"
+        },
+        {
+          "t": 150.3868649,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 155.1628959,
+          "text": "REACTION CliffDetected -\u003E ReactToCliff"
+        },
+        {
+          "t": 157.3288825,
+          "text": "off-treads InAir -\u003E OnTreads"
+        }
+      ],
+      "classifierEnabled": true
+    }
+  },
+  "human": {
+    "check": "each reaction did what the engine\u0027s does: flip down from the back, roll off the face, ask to be righted on a side, react then check the pitch on a slope, act dizzy after a shake, react to a push; no reaction fired for a state he was not in",
+    "verdict": "PENDING - fill in after watching the robot"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "Id": "MOV",
+  "Name": "Head, lift and a short drive",
+  "Phase": "5. basic motion",
+  "Subsystem": "SetHeadAngle, SetLiftHeight, DriveWheels and the robot\u0027s own action acknowledgements",
+  "Purpose": "The first check where he moves under his own power, and the floor under every movement test after it. It is deliberately small: if the head and lift do not go where they are told, nothing about docking or navigation can be interpreted.",
+  "ExpectedTelemetry": "a MotorActionAck for each commanded move and a checked stop at the end",
+  "ExpectedPhysical": "The head tilts down and back, the lift rises and lowers, then he drives forward a few centimetres and back, and stops. Nothing keeps moving afterwards.",
+  "Prerequisites": [
+    "CON and D passed",
+    "a clear, flat surface with no drop at the edge"
+  ],
+  "FidelityRecords": [
+    "M4-001",
+    "M4-002"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "drive 172.31.1.1 --allow-drive --speed 40 --drive-seconds 1 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\MOV\\acceptance.json",
+  "StartedUtc": "2026-09-22T17:44:51.4125636Z",
+  "FinishedUtc": "2026-09-22T17:45:05.4052081Z",
+  "ElapsedSeconds": 13.9926445,
+  "Auto": "Pass",
+  "Human": "Pass",
+  "Status": "Passed",
+  "Attempts": 1,
+  "Captured": {
+    "head": [
+      "  head -\u003E 0.30 rad: Acknowledged: head to 0.300 rad: robot acknowledged action 1",
+      "  head -\u003E -0.20 rad: Acknowledged: head to -0.200 rad: robot acknowledged action 2",
+      "  head -\u003E -0.43 rad: Acknowledged: head to -0.427 rad: robot acknowledged action 3"
+    ],
+    "lift": [
+      "  lift -\u003E 60 mm: Acknowledged: lift to 60.0 mm: robot acknowledged action 4",
+      "  lift -\u003E 32 mm: Acknowledged: lift to 32.0 mm: robot acknowledged action 5",
+      "HUMAN CHECK REQUIRED: the robot should have nodded, raised and lowered its lift, driven forward and back by roughly the same distance, and stopped"
+    ],
+    "stop": [
+      "stop-on-cliff enabled",
+      "  stop all: Acknowledged: robot reports all wheels stopped",
+      "HUMAN CHECK REQUIRED: the robot should have nodded, raised and lowered its lift, driven forward and back by roughly the same distance, and stopped"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "acceptance.json",
+    "console.log"
+  ]
+}

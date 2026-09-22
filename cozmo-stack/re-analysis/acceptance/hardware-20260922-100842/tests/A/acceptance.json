@@ -1,0 +1,41 @@
+{
+  "utc": "2026-09-22T15:12:31.2958534Z",
+  "device": "sing",
+  "automatedChecksPassed": true,
+  "humanCheckRequired": "Cozmo sang a tune for the length of the song (8 to 12 s) between a get-in and a get-out animation, in his own voice, one note per note; no note-length bursts of get-in phrases",
+  "humanVerdict": "not recorded: set to pass or fail after listening to the robot",
+  "robot": {
+    "serial": "0x0c50465e",
+    "firmware": 2457,
+    "batteryVolts": 3.9239502
+  },
+  "detail": {
+    "behavior": "Singing_AbaDaba",
+    "SwitchGroupName": "Cozmo_Sings_80Bpm",
+    "SwitchName": "Cozmo_Sings_Aba_Daba",
+    "SwitchGroupId": 3366294904,
+    "SwitchId": 2234458138,
+    "tempoTrigger": "Singing_80bpm",
+    "steps": [
+      "anim_cozmosings_getin_01",
+      "anim_cozmosings_80_song_01",
+      "anim_cozmosings_getout_01"
+    ],
+    "completed": true,
+    "elapsedSeconds": 23.0977804,
+    "song": {
+      "eventName": "Play__Robot_VO__Cozmo_Singing_80bpm",
+      "DurationMs": 12000,
+      "NotesInWindow": 42,
+      "NotesPlayed": 42,
+      "NotesSilent": 0,
+      "NoteOffsPlayed": 42,
+      "ClippedSamples": 0,
+      "Peak": 31114,
+      "Problems": []
+    },
+    "notProduced": [],
+    "vibrato": "not driven: this stack has no cube accelerometer stream, and the vibrato LFO is not rendered"
+  },
+  "handlerFaults": 0
+}

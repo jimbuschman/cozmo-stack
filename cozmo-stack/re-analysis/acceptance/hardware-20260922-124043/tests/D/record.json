@@ -1,0 +1,60 @@
+{
+  "Id": "D",
+  "Name": "Lift position readout",
+  "Phase": "1. connection and telemetry",
+  "Subsystem": "RobotState lift angle and the angle-to-height conversion, with battery, cliff and IMU",
+  "Purpose": "The lift angle is reported in radians and converted with the engine\u0027s own formula. If the conversion is wrong, every docking height and the carry check are wrong with it.",
+  "ExpectedTelemetry": "a reading at each end of the travel, and both ends of the travel actually visited",
+  "ExpectedPhysical": "The two readings it prints back match where the lift actually was: about -0.198 rad / 32 mm down, about 0.712 rad / 92 mm raised.",
+  "Prerequisites": [
+    "CON passed",
+    "the lift is all the way down to begin with"
+  ],
+  "FidelityRecords": [
+    "M4-003"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "sensors 172.31.1.1 --guide-lift --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\D\\acceptance.json",
+  "StartedUtc": "2026-09-22T17:41:46.3005948Z",
+  "FinishedUtc": "2026-09-22T17:42:29.9565673Z",
+  "ElapsedSeconds": 43.6559725,
+  "Auto": "Pass",
+  "Human": "Pass",
+  "Status": "Passed",
+  "Attempts": 1,
+  "Captured": {
+    "readings": [
+      "    lift= -0.189 rad /   32.6 mm   (batt 4.02V)",
+      "    lift= -0.189 rad /   32.6 mm   (batt 4.02V)",
+      "    lift= -0.189 rad /   32.6 mm   (batt 4.02V)",
+      "    lift= -0.189 rad /   32.6 mm   (batt 4.02V)",
+      "    lift= -0.189 rad /   32.6 mm   (batt 4.02V)",
+      "    lift= -0.189 rad /   32.6 mm   (batt 4.02V)",
+      "    lift= -0.189 rad /   32.6 mm   (batt 4.02V)",
+      "    lift= -0.189 rad /   32.6 mm   (batt 4.01V)",
+      "    lift= -0.207 rad /   31.4 mm   (batt 4.01V)",
+      "    lift= -0.153 rad /   35.0 mm   (batt 3.97V)",
+      "    lift= -0.153 rad /   35.0 mm   (batt 3.97V)",
+      "    lift= -0.153 rad /   35.0 mm   (batt 3.97V)",
+      "    lift=  0.047 rad /   48.1 mm   (batt 4.01V)",
+      "    lift=  0.820 rad /   93.3 mm   (batt 4.01V)",
+      "    lift=  0.820 rad /   93.3 mm   (batt 4.02V)",
+      "    lift=  0.820 rad /   93.3 mm   (batt 4.01V)",
+      "    lift=  0.820 rad /   93.3 mm   (batt 4.02V)"
+    ],
+    "sequence": [
+      "lift sequence: down seen=yes, raised seen=yes, both ends seen=yes"
+    ],
+    "down": [
+      "lift down:    -0.189 rad /   32.6 mm   (engine: -0.198 rad / 32 mm)"
+    ],
+    "raised": [
+      "lift raised:   0.820 rad /   93.3 mm   (engine:  0.712 rad / 92 mm)"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "acceptance.json",
+    "console.log"
+  ]
+}

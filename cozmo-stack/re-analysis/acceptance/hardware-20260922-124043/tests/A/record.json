@@ -1,0 +1,62 @@
+{
+  "Id": "A",
+  "Name": "Cozmo sings",
+  "Phase": "4. audio",
+  "Subsystem": "The Wwise switch, the per-note vocal sampler and the singing behaviour\u0027s animations",
+  "Purpose": "The song is rendered here from Anki\u0027s banks by a reconstructed sampler. Whether it sounds like Cozmo singing is something only a listener can settle. The streaming architecture changed in the core review, so this is a re-run, not a repeat.",
+  "ExpectedTelemetry": "the switch is posted, the get-in, song and get-out steps all complete, and the song renders with notes",
+  "ExpectedPhysical": "About 12 seconds of tune between a get-in and a get-out, in his own voice, one note per note, at a sensible level, with no bursts of get-in phrases during the song.",
+  "Prerequisites": [
+    "AUD passed",
+    "--obb given"
+  ],
+  "FidelityRecords": [
+    "M9-016"
+  ],
+  "CoreRegressions": [
+    "CORE-006"
+  ],
+  "CommandLine": "sing 172.31.1.1 --obb re-analysis\\obb --behavior Singing_AbaDaba --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\A\\acceptance.json",
+  "StartedUtc": "2026-09-22T17:43:50.8873335Z",
+  "FinishedUtc": "2026-09-22T17:44:33.7659727Z",
+  "ElapsedSeconds": 42.8786392,
+  "Auto": "Pass",
+  "Human": "Unsure",
+  "Status": "Unsure",
+  "HumanNote": "not sure if hte tune was correct. speemed like it might have been overlapping hte notes maybe?",
+  "Attempts": 1,
+  "Captured": {
+    "song": [
+      "song: Play__Robot_VO__Cozmo_Singing_80bpm under Cozmo_Sings_80Bpm=Cozmo_Sings_Aba_Daba: 12000 ms, 42 notes sung, 0 outside the voice\u0027s range, 42 note-offs"
+    ],
+    "steps": [
+      "steps played: anim_cozmosings_getin_03 -\u003E anim_cozmosings_80_song_01 -\u003E anim_cozmosings_getout_01"
+    ],
+    "streaming counters": [
+      "  stream: t=  1.1s rendered=    1488 of   267840 consumed=       0 sent=   32 played=   25 underruns=0",
+      "  stream: t=  2.1s rendered=    1488 of   267840 consumed=       0 sent=   62 played=   56 underruns=0",
+      "  stream: t=  3.1s rendered=    1488 of   267840 consumed=       0 sent=   92 played=   86 underruns=0",
+      "  stream: t=  4.1s rendered=    1488 of   267840 consumed=       0 sent=  123 played=  116 underruns=0",
+      "  stream: t=  5.1s rendered=    1488 of   267840 consumed=       0 sent=  153 played=  146 underruns=0",
+      "  stream: t=  6.1s rendered=   17112 of   267840 consumed=   15624 sent=   23 played=  178 underruns=0",
+      "  stream: t=  7.1s rendered=   39432 of   267840 consumed=   37944 sent=   53 played=  207 underruns=0",
+      "  stream: t=  8.1s rendered=   61752 of   267840 consumed=   60264 sent=   83 played=  238 underruns=0",
+      "  stream: t=  9.1s rendered=   84072 of   267840 consumed=   82584 sent=  113 played=  268 underruns=0",
+      "  stream: t= 10.1s rendered=  107136 of   267840 consumed=  105648 sent=  144 played=  298 underruns=0",
+      "  stream: t= 11.1s rendered=  129456 of   267840 consumed=  127968 sent=  174 played=  329 underruns=0",
+      "  stream: t= 12.2s rendered=  151776 of   267840 consumed=  151032 sent=  205 played=  360 underruns=0",
+      "  stream: t= 13.2s rendered=  174840 of   267840 consumed=  173352 sent=  235 played=  389 underruns=0",
+      "  stream: t= 14.2s rendered=  197160 of   267840 consumed=  195672 sent=  265 played=  420 underruns=0",
+      "  stream: t= 15.2s rendered=  219480 of   267840 consumed=  218736 sent=  296 played=  451 underruns=0",
+      "  stream: t= 16.2s rendered=  242544 of   267840 consumed=  241056 sent=  326 played=  480 underruns=0",
+      "  stream: t= 17.2s rendered=  264864 of   267840 consumed=  263376 sent=  356 played=  511 underruns=0",
+      "  stream: t= 18.2s rendered=  267840 of   267840 consumed=  266352 sent=   11 played=  542 underruns=0",
+      "  stream: t= 19.2s rendered=  267840 of   267840 consumed=  266352 sent=   42 played=  576 underruns=0"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "acceptance.json",
+    "console.log"
+  ]
+}

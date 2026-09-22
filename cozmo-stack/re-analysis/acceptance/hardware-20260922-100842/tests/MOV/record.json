@@ -1,0 +1,28 @@
+{
+  "Id": "MOV",
+  "Name": "Head, lift and a short drive",
+  "Phase": "5. basic motion",
+  "Subsystem": "SetHeadAngle, SetLiftHeight, DriveWheels and the robot\u0027s own action acknowledgements",
+  "Purpose": "The first check where he moves under his own power, and the floor under every movement test after it. It is deliberately small: if the head and lift do not go where they are told, nothing about docking or navigation can be interpreted.",
+  "ExpectedTelemetry": "a MotorActionAck for each commanded move and a checked stop at the end",
+  "ExpectedPhysical": "The head tilts down and back, the lift rises and lowers, then he drives forward a few centimetres and back, and stops. Nothing keeps moving afterwards.",
+  "Prerequisites": [
+    "CON and D passed",
+    "a clear, flat surface with no drop at the edge"
+  ],
+  "FidelityRecords": [
+    "M4-001",
+    "M4-002"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "drive 172.31.1.1 --allow-drive --speed 40 --drive-seconds 1 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-100842\\tests\\MOV\\acceptance.json",
+  "FinishedUtc": "2026-09-22T15:13:08.8201266Z",
+  "Auto": "NotRun",
+  "Human": "NotAsked",
+  "Status": "Blocked",
+  "BlockedReason": "D (Lift position readout) has not run yet, and MOV depends on it",
+  "Attempts": 1,
+  "Captured": {},
+  "Warnings": [],
+  "Files": []
+}

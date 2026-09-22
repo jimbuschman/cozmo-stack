@@ -1,0 +1,43 @@
+{
+  "Id": "AUD",
+  "Name": "Speaker and the audio frame pacing",
+  "Phase": "4. audio",
+  "Subsystem": "The mu-law companding transcribed from the engine and the robot\u0027s audio buffer pacing",
+  "Purpose": "Before any song is judged, the plain path has to be known good: a countable number of separate beeps tests continuity and pacing without anyone having to judge tone quality. If this is chopped, the singing checks above it are testing the wrong thing.",
+  "ExpectedTelemetry": "every audio frame is sent and the robot\u0027s played-frame count keeps up",
+  "ExpectedPhysical": "Separate, clean beeps at a steady rate, all the same length, with no crackle between them.",
+  "Prerequisites": [
+    "CON passed"
+  ],
+  "FidelityRecords": [
+    "M3-006"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "tone 172.31.1.1 --sound beeps --seconds 4 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\AUD\\acceptance.json",
+  "StartedUtc": "2026-09-22T17:43:29.8635282Z",
+  "FinishedUtc": "2026-09-22T17:43:37.6687292Z",
+  "ElapsedSeconds": 7.805201,
+  "Auto": "Pass",
+  "Human": "Pass",
+  "Status": "Passed",
+  "Attempts": 1,
+  "Captured": {
+    "frames": [
+      "sound \u0027beeps\u0027 for 4.0s as anki: 89280 samples at 22320 Hz = 120 frames of 744 bytes",
+      "frame log: C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\cozmo-tone-20260922-124329.log",
+      "transport: 286 frames sent, 48 resends, 1 still unacked",
+      "sent 121 frames in 3686 ms (the audio itself is 4000 ms)",
+      "robot reports 120 audio frames played, drop count 0"
+    ],
+    "played counter": [
+      "Compare with the file from --save, played on this machine: that is exactly what the robot is being sent, so it is the reference for how it should sound.",
+      "  time ms   sent   played   in flight",
+      "robot reports 120 audio frames played, drop count 0"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "acceptance.json",
+    "console.log"
+  ]
+}

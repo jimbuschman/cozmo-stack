@@ -1,0 +1,44 @@
+{
+  "Id": "I",
+  "Name": "StartMotorCalibration honoured",
+  "Phase": "10. robot state and reactions",
+  "Subsystem": "StartMotorCalibration (0x58) and the MotorCalibration reports the robot answers with",
+  "Purpose": "The engine asks the robot to recalibrate its head in several states, and whether the robot honours the request has never been observed. It could not be: the robot recalibrates on every connection anyway, so a tool that watches for a calibration report sees one whatever it does. This waits for the connection-time calibration to finish, asks, and then judges only what arrives afterwards.",
+  "ExpectedTelemetry": "a MotorCalibration for the head with CalibStarted true, then one with false, both after the request",
+  "ExpectedPhysical": "After ASKING NOW, his head nods down to its stop and comes back, within a few seconds. Nothing else moves.",
+  "Prerequisites": [
+    "LINK passed",
+    "nothing in front of his head"
+  ],
+  "FidelityRecords": [
+    "M4-004"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "calibrate 172.31.1.1 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\I\\acceptance.json",
+  "StartedUtc": "2026-09-22T17:55:41.9145102Z",
+  "FinishedUtc": "2026-09-22T17:56:13.1015979Z",
+  "ElapsedSeconds": 31.1870877,
+  "Auto": "Pass",
+  "Human": "Unsure",
+  "Status": "Unsure",
+  "HumanNote": "if i manually move the head up, and run this test, it goes down but stays down. never goes back up",
+  "Attempts": 1,
+  "Captured": {
+    "reports": [
+      "  ASKING NOW: StartMotorCalibration head=1 lift=0",
+      "  [  1.52s] MotorCalibration motor=MOTOR_HEAD started=True auto=False   \u003C- after the request",
+      "  [  2.05s] MotorCalibration motor=MOTOR_HEAD started=False auto=False   \u003C- after the request"
+    ],
+    "the request": [
+      "  ASKING NOW: StartMotorCalibration head=1 lift=0"
+    ],
+    "verdict": [
+      "calibration honoured: yes (started at 1.52s, finished at 2.05s, 0.53s of movement)"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "acceptance.json",
+    "console.log"
+  ]
+}

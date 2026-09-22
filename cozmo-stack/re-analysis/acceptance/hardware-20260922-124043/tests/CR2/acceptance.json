@@ -1,0 +1,32 @@
+{
+  "tool": "core",
+  "which": "CORE-002",
+  "timestampUtc": "2026-09-22T17:46:55.4308496Z",
+  "firmware": 2457,
+  "serial": 206587486,
+  "automated": {
+    "pass": false,
+    "detail": "the animation never started ticking, so the drop proved nothing",
+    "log": [
+      "connecting to 172.31.1.1...",
+      "connected: firmware 2457, telemetry 0.0 Hz, calibration complete",
+      "using the clip \u0027anim_bored_01\u0027",
+      "",
+      "  WATCH HIM: he will start moving, and part way through the animation this tool cuts the link on",
+      "  purpose. What you are judging is the second or two after that: he should stop where he is and",
+      "  stay stopped - no twitch, no carrying on - and this tool should print a verdict instead of dying.",
+      "",
+      "playing \u0027anim_bored_01\u0027; the link goes 1.5 s in.",
+      "ticker running: False. DROPPING THE LINK NOW - watch him stop.",
+      "the animation task completed",
+      "the ticker stopped",
+      "the failure was reported through Faulted: no",
+      "the process is still running, which is the other half of the claim",
+      "",
+      "automated: FAIL - the animation never started ticking, so the drop proved nothing"
+    ]
+  },
+  "human": {
+    "verdict": "PENDING - the person watching the robot decides this"
+  }
+}

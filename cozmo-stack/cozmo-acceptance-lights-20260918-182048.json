@@ -1,0 +1,26 @@
+{
+  "utc": "2026-09-18T23:20:48.9766068Z",
+  "device": "lights",
+  "automatedChecksPassed": true,
+  "humanCheckRequired": "the backpack should have shown red, green, blue, white, then red/green/blue, then blinked magenta, then gone dark",
+  "humanVerdict": "not recorded: set to pass or fail after watching the robot",
+  "robot": {
+    "serial": "0x0c50465e",
+    "firmware": 2457,
+    "batteryVolts": 4.699951,
+    "onCharger": true
+  },
+  "detail": {
+    "coloursShown": [
+      "red",
+      "green",
+      "blue",
+      "white",
+      "red/green/blue",
+      "blink"
+    ],
+    "headlightToggled": true,
+    "note": "the robot reports nothing about its LEDs"
+  },
+  "handlerFaults": 0
+}

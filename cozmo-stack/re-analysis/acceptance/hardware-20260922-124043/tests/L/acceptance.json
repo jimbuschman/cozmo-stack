@@ -1,0 +1,172 @@
+{
+  "tool": "bodyangle",
+  "milestone": "M11",
+  "timestampUtc": "2026-09-22T17:58:01.1543186Z",
+  "firmware": 2457,
+  "serial": 206587486,
+  "automated": {
+    "pass": true,
+    "detail": {
+      "requestDeg": 45,
+      "turnedDeg": 45.032240385451786,
+      "verdict": "ABSOLUTE body angle confirmed",
+      "message": "39852F503F3B8DA7400000204139FA0E3D00000109",
+      "samples": [
+        {
+          "t": 0.1998756,
+          "angleDeg": 3.0368624009897527,
+          "moving": true
+        },
+        {
+          "t": 0.4007104,
+          "angleDeg": 31.20347333639313,
+          "moving": true
+        },
+        {
+          "t": 0.6012652,
+          "angleDeg": 46.55974325110319,
+          "moving": true
+        },
+        {
+          "t": 0.8012337,
+          "angleDeg": 46.629807331609186,
+          "moving": true
+        },
+        {
+          "t": 1.0014533,
+          "angleDeg": 46.62628978418663,
+          "moving": false
+        },
+        {
+          "t": 1.2013861,
+          "angleDeg": 46.62497838786599,
+          "moving": false
+        },
+        {
+          "t": 1.4015068,
+          "angleDeg": 46.6254086897837,
+          "moving": false
+        },
+        {
+          "t": 1.6023564,
+          "angleDeg": 46.62238291598138,
+          "moving": false
+        },
+        {
+          "t": 1.8025412,
+          "angleDeg": 46.622447802778495,
+          "moving": false
+        },
+        {
+          "t": 2.0035716,
+          "angleDeg": 46.62210287822541,
+          "moving": false
+        },
+        {
+          "t": 2.2036386,
+          "angleDeg": 46.61852044400574,
+          "moving": false
+        },
+        {
+          "t": 2.404242,
+          "angleDeg": 46.61122921706675,
+          "moving": false
+        },
+        {
+          "t": 2.605553,
+          "angleDeg": 46.61205225486174,
+          "moving": false
+        },
+        {
+          "t": 2.8067452,
+          "angleDeg": 46.61421059463946,
+          "moving": false
+        },
+        {
+          "t": 3.0067226,
+          "angleDeg": 46.61263282094119,
+          "moving": false
+        },
+        {
+          "t": 3.2068658,
+          "angleDeg": 46.61842482135736,
+          "moving": false
+        },
+        {
+          "t": 3.4068196,
+          "angleDeg": 46.621679406496874,
+          "moving": false
+        },
+        {
+          "t": 3.6120413,
+          "angleDeg": 46.622167765022525,
+          "moving": false
+        },
+        {
+          "t": 3.8123598,
+          "angleDeg": 46.62040216112208,
+          "moving": false
+        },
+        {
+          "t": 4.0124142,
+          "angleDeg": 46.622318029184264,
+          "moving": false
+        },
+        {
+          "t": 4.2136016,
+          "angleDeg": 46.63206812422446,
+          "moving": false
+        },
+        {
+          "t": 4.4142474,
+          "angleDeg": 46.63478312441954,
+          "moving": false
+        },
+        {
+          "t": 4.6156415,
+          "angleDeg": 46.63094797320058,
+          "moving": false
+        },
+        {
+          "t": 4.8157937,
+          "angleDeg": 46.625220859581525,
+          "moving": false
+        },
+        {
+          "t": 5.0158849,
+          "angleDeg": 46.62327084057348,
+          "moving": false
+        },
+        {
+          "t": 5.2162389,
+          "angleDeg": 46.620511444148796,
+          "moving": false
+        },
+        {
+          "t": 5.416821,
+          "angleDeg": 46.62078123662101,
+          "moving": false
+        },
+        {
+          "t": 5.6176719,
+          "angleDeg": 46.61790914207502,
+          "moving": false
+        },
+        {
+          "t": 5.8182221,
+          "angleDeg": 46.62010504789318,
+          "moving": false
+        },
+        {
+          "t": 6.0184548,
+          "angleDeg": 46.626607387983036,
+          "moving": false
+        }
+      ]
+    }
+  },
+  "human": {
+    "check": "the robot turned 45 degrees in place, smoothly, and stopped",
+    "verdict": "PENDING - fill in after watching the robot"
+  }
+}

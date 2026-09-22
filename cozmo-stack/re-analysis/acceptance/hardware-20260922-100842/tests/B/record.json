@@ -1,0 +1,41 @@
+{
+  "Id": "B",
+  "Name": "Cube telemetry",
+  "Phase": "8. markers, cubes and the world model",
+  "Subsystem": "Cube discovery, connection and the tap, movement, up-axis and battery reports",
+  "Purpose": "Discovery alone was already observed. What is unverified is whether a cube actually connects and whether its telemetry arrives, which everything with a cube depends on.",
+  "ExpectedTelemetry": "at least one cube CONNECTED and at least one telemetry signal",
+  "ExpectedPhysical": "The events printed match what you did, and at least one cube shows as connected.",
+  "Prerequisites": [
+    "CON passed",
+    "at least one cube with a charged battery"
+  ],
+  "FidelityRecords": [
+    "M4-010"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "cubes 172.31.1.1 --seconds 15 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-100842\\tests\\B\\acceptance.json",
+  "StartedUtc": "2026-09-22T15:18:22.3594474Z",
+  "FinishedUtc": "2026-09-22T15:19:00.5600395Z",
+  "ElapsedSeconds": 38.2005921,
+  "Auto": "Fail",
+  "Human": "Unsure",
+  "Status": "Unsure",
+  "AutoDetail": "exit 23",
+  "HumanNote": "seemed to have seen the cube but didn\u0027t connect, idk if this is a pass or not",
+  "Attempts": 1,
+  "Captured": {
+    "connection": [
+      "connected: firmware v2457 serial 0x0c50465e",
+      "1 cube(s) heard, 0 connected",
+      "Cubes were heard but none connected: discovery alone does not accept this check. Bring a cube closer, check its battery, and run again.",
+      "HUMAN CHECK REQUIRED: the cubes you placed nearby should appear above, one of them connected, and the tap, movement and up-axis lines should match what you did to it",
+      "  disconnected: requested"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "acceptance.json",
+    "console.log"
+  ]
+}

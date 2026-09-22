@@ -1,0 +1,49 @@
+{
+  "Id": "LINK",
+  "Name": "Connection, handshake and telemetry",
+  "Phase": "1. connection and telemetry",
+  "Subsystem": "The UDP transport, the connection handshake, identity and the 30 Hz state stream",
+  "Purpose": "Everything below this reads the robot\u0027s own telemetry. A handshake that half works, a state rate that is not 30 Hz, or a link that quietly resends produces results that look like subsystem faults and are not. This is also the reading the safety check before every movement test compares against.",
+  "ExpectedTelemetry": "connected, identity received, more than 20 RobotState at about 30 Hz, nothing pending",
+  "ExpectedPhysical": "He sits still, his backpack light is on, and nothing about him changes for 20 seconds.",
+  "Prerequisites": [
+    "the robot is on and its light is on",
+    "no other application is connected to it"
+  ],
+  "FidelityRecords": [
+    "M2-001",
+    "M3-002"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "connect 172.31.1.1 --seconds 20 --log C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-094510\\tests\\LINK\\frames.log",
+  "StartedUtc": "2026-09-22T14:46:27.0712021Z",
+  "FinishedUtc": "2026-09-22T14:46:48.6693651Z",
+  "ElapsedSeconds": 21.598163,
+  "Auto": "NotRun",
+  "Human": "NotAsked",
+  "Status": "Interrupted",
+  "InterruptedReason": "the link to the robot was lost while the check was running",
+  "Attempts": 2,
+  "Captured": {
+    "handshake": [
+      "connected in 3 ms (ConnectionResponse received)"
+    ],
+    "identity": [
+      "firmware: v2457 e2r=fedb4b12f1b5b45456aec1629cd0b8cc r2e=5a7211095fc4961407e96b9126658317 build=DEVELOPMENT"
+    ],
+    "telemetry": [
+      "telemetry: 650 RobotState at 32.7 Hz; 681 messages total; histogram: State=650, ActiveObjectAvailable=12, Trace=10, MotorCalibration=4, RobotAvailable=1, FirmwareVersion=1, WifiFlashID=1, MfgId=1, SyncTimeAck=1"
+    ],
+    "transport": [
+      "transport: frames sent=630 resent=1 dupsDropped=8 pending=0 lastRTT=NaNms"
+    ],
+    "verdict": [
+      "SMOKE TEST: PASS"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "console.log",
+    "frames.log"
+  ]
+}

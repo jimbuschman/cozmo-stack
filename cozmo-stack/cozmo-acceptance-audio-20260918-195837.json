@@ -1,0 +1,178 @@
+{
+  "utc": "2026-09-19T00:58:37.4244294Z",
+  "device": "audio",
+  "automatedChecksPassed": true,
+  "humanCheckRequired": "you should have heard one unbroken 440 Hz note lasting 1.0s",
+  "humanVerdict": "not recorded: set to pass or fail after looking at or listening to the robot",
+  "robot": {
+    "serial": "0x0c50465e",
+    "firmware": 2457,
+    "animationControllerRunning": true,
+    "enabledAnimTracks": "0xff"
+  },
+  "detail": {
+    "sound": "steady",
+    "codec": "anki",
+    "frequencyHz": 440,
+    "seconds": 1,
+    "sampleRateAssumed": 22050,
+    "framesSent": 31,
+    "framesRobotReportsPlayed": 25,
+    "targetInFlight": 10,
+    "clientDropCount": 0,
+    "wallClockMs": 659,
+    "timeline": [
+      {
+        "ms": 3,
+        "sent": 10,
+        "played": 0
+      },
+      {
+        "ms": 27,
+        "sent": 10,
+        "played": 1
+      },
+      {
+        "ms": 65,
+        "sent": 11,
+        "played": 2
+      },
+      {
+        "ms": 100,
+        "sent": 12,
+        "played": 3
+      },
+      {
+        "ms": 135,
+        "sent": 13,
+        "played": 4
+      },
+      {
+        "ms": 171,
+        "sent": 14,
+        "played": 5
+      },
+      {
+        "ms": 207,
+        "sent": 15,
+        "played": 6
+      },
+      {
+        "ms": 207,
+        "sent": 15,
+        "played": 6
+      },
+      {
+        "ms": 243,
+        "sent": 16,
+        "played": 7
+      },
+      {
+        "ms": 279,
+        "sent": 17,
+        "played": 8
+      },
+      {
+        "ms": 316,
+        "sent": 18,
+        "played": 9
+      },
+      {
+        "ms": 353,
+        "sent": 19,
+        "played": 10
+      },
+      {
+        "ms": 359,
+        "sent": 20,
+        "played": 11
+      },
+      {
+        "ms": 398,
+        "sent": 21,
+        "played": 12
+      },
+      {
+        "ms": 434,
+        "sent": 22,
+        "played": 13
+      },
+      {
+        "ms": 470,
+        "sent": 23,
+        "played": 14
+      },
+      {
+        "ms": 509,
+        "sent": 24,
+        "played": 15
+      },
+      {
+        "ms": 509,
+        "sent": 24,
+        "played": 15
+      },
+      {
+        "ms": 544,
+        "sent": 25,
+        "played": 16
+      },
+      {
+        "ms": 580,
+        "sent": 26,
+        "played": 17
+      },
+      {
+        "ms": 618,
+        "sent": 27,
+        "played": 18
+      },
+      {
+        "ms": 654,
+        "sent": 28,
+        "played": 19
+      },
+      {
+        "ms": 657,
+        "sent": 29,
+        "played": 20
+      },
+      {
+        "ms": 696,
+        "sent": 30,
+        "played": 21
+      },
+      {
+        "ms": 729,
+        "sent": 30,
+        "played": 22
+      },
+      {
+        "ms": 762,
+        "sent": 30,
+        "played": 23
+      },
+      {
+        "ms": 795,
+        "sent": 30,
+        "played": 24
+      },
+      {
+        "ms": 828,
+        "sent": 30,
+        "played": 24
+      },
+      {
+        "ms": 861,
+        "sent": 30,
+        "played": 25
+      }
+    ]
+  },
+  "transport": {
+    "framesSent": 105,
+    "resends": 21,
+    "stillUnacked": 1
+  },
+  "handlerFaults": 0
+}

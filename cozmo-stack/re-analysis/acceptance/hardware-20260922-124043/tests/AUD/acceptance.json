@@ -1,0 +1,718 @@
+{
+  "utc": "2026-09-22T17:43:35.1317846Z",
+  "device": "audio",
+  "automatedChecksPassed": true,
+  "humanCheckRequired": "you should have heard exactly 8 separate, evenly spaced beeps",
+  "humanVerdict": "not recorded: set to pass or fail after looking at or listening to the robot",
+  "robot": {
+    "serial": "0x0c50465e",
+    "firmware": 2457,
+    "animationControllerRunning": true,
+    "enabledAnimTracks": "0xff"
+  },
+  "detail": {
+    "sound": "beeps",
+    "codec": "anki",
+    "frequencyHz": 440,
+    "seconds": 4,
+    "sampleRateAssumed": 22320,
+    "framesSent": 121,
+    "framesRobotReportsPlayed": 120,
+    "targetInFlight": 10,
+    "clientDropCount": 0,
+    "wallClockMs": 3686,
+    "timeline": [
+      {
+        "ms": 19,
+        "sent": 10,
+        "played": 0
+      },
+      {
+        "ms": 31,
+        "sent": 10,
+        "played": 1
+      },
+      {
+        "ms": 70,
+        "sent": 11,
+        "played": 2
+      },
+      {
+        "ms": 105,
+        "sent": 12,
+        "played": 3
+      },
+      {
+        "ms": 141,
+        "sent": 13,
+        "played": 4
+      },
+      {
+        "ms": 177,
+        "sent": 14,
+        "played": 5
+      },
+      {
+        "ms": 182,
+        "sent": 15,
+        "played": 6
+      },
+      {
+        "ms": 219,
+        "sent": 16,
+        "played": 6
+      },
+      {
+        "ms": 252,
+        "sent": 16,
+        "played": 7
+      },
+      {
+        "ms": 288,
+        "sent": 17,
+        "played": 8
+      },
+      {
+        "ms": 329,
+        "sent": 18,
+        "played": 9
+      },
+      {
+        "ms": 329,
+        "sent": 18,
+        "played": 10
+      },
+      {
+        "ms": 373,
+        "sent": 20,
+        "played": 11
+      },
+      {
+        "ms": 414,
+        "sent": 21,
+        "played": 12
+      },
+      {
+        "ms": 449,
+        "sent": 22,
+        "played": 13
+      },
+      {
+        "ms": 449,
+        "sent": 22,
+        "played": 14
+      },
+      {
+        "ms": 489,
+        "sent": 24,
+        "played": 15
+      },
+      {
+        "ms": 526,
+        "sent": 25,
+        "played": 15
+      },
+      {
+        "ms": 559,
+        "sent": 25,
+        "played": 16
+      },
+      {
+        "ms": 595,
+        "sent": 26,
+        "played": 17
+      },
+      {
+        "ms": 630,
+        "sent": 27,
+        "played": 18
+      },
+      {
+        "ms": 630,
+        "sent": 27,
+        "played": 19
+      },
+      {
+        "ms": 669,
+        "sent": 29,
+        "played": 20
+      },
+      {
+        "ms": 703,
+        "sent": 30,
+        "played": 21
+      },
+      {
+        "ms": 740,
+        "sent": 31,
+        "played": 22
+      },
+      {
+        "ms": 775,
+        "sent": 32,
+        "played": 23
+      },
+      {
+        "ms": 781,
+        "sent": 33,
+        "played": 24
+      },
+      {
+        "ms": 816,
+        "sent": 34,
+        "played": 24
+      },
+      {
+        "ms": 849,
+        "sent": 34,
+        "played": 25
+      },
+      {
+        "ms": 885,
+        "sent": 35,
+        "played": 26
+      },
+      {
+        "ms": 926,
+        "sent": 36,
+        "played": 27
+      },
+      {
+        "ms": 929,
+        "sent": 37,
+        "played": 28
+      },
+      {
+        "ms": 968,
+        "sent": 38,
+        "played": 29
+      },
+      {
+        "ms": 1005,
+        "sent": 39,
+        "played": 30
+      },
+      {
+        "ms": 1041,
+        "sent": 40,
+        "played": 31
+      },
+      {
+        "ms": 1077,
+        "sent": 41,
+        "played": 32
+      },
+      {
+        "ms": 1080,
+        "sent": 42,
+        "played": 33
+      },
+      {
+        "ms": 1120,
+        "sent": 43,
+        "played": 33
+      },
+      {
+        "ms": 1153,
+        "sent": 43,
+        "played": 34
+      },
+      {
+        "ms": 1188,
+        "sent": 44,
+        "played": 35
+      },
+      {
+        "ms": 1224,
+        "sent": 45,
+        "played": 36
+      },
+      {
+        "ms": 1259,
+        "sent": 46,
+        "played": 37
+      },
+      {
+        "ms": 1259,
+        "sent": 46,
+        "played": 38
+      },
+      {
+        "ms": 1298,
+        "sent": 48,
+        "played": 39
+      },
+      {
+        "ms": 1333,
+        "sent": 49,
+        "played": 40
+      },
+      {
+        "ms": 1369,
+        "sent": 50,
+        "played": 41
+      },
+      {
+        "ms": 1405,
+        "sent": 51,
+        "played": 42
+      },
+      {
+        "ms": 1442,
+        "sent": 52,
+        "played": 42
+      },
+      {
+        "ms": 1442,
+        "sent": 52,
+        "played": 43
+      },
+      {
+        "ms": 1478,
+        "sent": 53,
+        "played": 44
+      },
+      {
+        "ms": 1515,
+        "sent": 54,
+        "played": 45
+      },
+      {
+        "ms": 1554,
+        "sent": 55,
+        "played": 46
+      },
+      {
+        "ms": 1591,
+        "sent": 56,
+        "played": 47
+      },
+      {
+        "ms": 1591,
+        "sent": 56,
+        "played": 48
+      },
+      {
+        "ms": 1630,
+        "sent": 58,
+        "played": 49
+      },
+      {
+        "ms": 1668,
+        "sent": 59,
+        "played": 50
+      },
+      {
+        "ms": 1704,
+        "sent": 60,
+        "played": 51
+      },
+      {
+        "ms": 1741,
+        "sent": 61,
+        "played": 51
+      },
+      {
+        "ms": 1741,
+        "sent": 61,
+        "played": 52
+      },
+      {
+        "ms": 1781,
+        "sent": 62,
+        "played": 53
+      },
+      {
+        "ms": 1817,
+        "sent": 63,
+        "played": 54
+      },
+      {
+        "ms": 1856,
+        "sent": 64,
+        "played": 55
+      },
+      {
+        "ms": 1891,
+        "sent": 65,
+        "played": 56
+      },
+      {
+        "ms": 1891,
+        "sent": 65,
+        "played": 57
+      },
+      {
+        "ms": 1930,
+        "sent": 67,
+        "played": 58
+      },
+      {
+        "ms": 1965,
+        "sent": 68,
+        "played": 59
+      },
+      {
+        "ms": 2004,
+        "sent": 69,
+        "played": 60
+      },
+      {
+        "ms": 2041,
+        "sent": 70,
+        "played": 60
+      },
+      {
+        "ms": 2041,
+        "sent": 70,
+        "played": 61
+      },
+      {
+        "ms": 2076,
+        "sent": 71,
+        "played": 62
+      },
+      {
+        "ms": 2112,
+        "sent": 72,
+        "played": 63
+      },
+      {
+        "ms": 2152,
+        "sent": 73,
+        "played": 64
+      },
+      {
+        "ms": 2192,
+        "sent": 74,
+        "played": 65
+      },
+      {
+        "ms": 2192,
+        "sent": 74,
+        "played": 66
+      },
+      {
+        "ms": 2232,
+        "sent": 76,
+        "played": 67
+      },
+      {
+        "ms": 2268,
+        "sent": 77,
+        "played": 68
+      },
+      {
+        "ms": 2303,
+        "sent": 78,
+        "played": 69
+      },
+      {
+        "ms": 2339,
+        "sent": 79,
+        "played": 69
+      },
+      {
+        "ms": 2372,
+        "sent": 79,
+        "played": 70
+      },
+      {
+        "ms": 2372,
+        "sent": 79,
+        "played": 71
+      },
+      {
+        "ms": 2410,
+        "sent": 81,
+        "played": 72
+      },
+      {
+        "ms": 2448,
+        "sent": 82,
+        "played": 73
+      },
+      {
+        "ms": 2484,
+        "sent": 83,
+        "played": 74
+      },
+      {
+        "ms": 2522,
+        "sent": 84,
+        "played": 75
+      },
+      {
+        "ms": 2522,
+        "sent": 84,
+        "played": 76
+      },
+      {
+        "ms": 2562,
+        "sent": 86,
+        "played": 77
+      },
+      {
+        "ms": 2598,
+        "sent": 87,
+        "played": 78
+      },
+      {
+        "ms": 2635,
+        "sent": 88,
+        "played": 78
+      },
+      {
+        "ms": 2668,
+        "sent": 88,
+        "played": 79
+      },
+      {
+        "ms": 2672,
+        "sent": 89,
+        "played": 80
+      },
+      {
+        "ms": 2711,
+        "sent": 90,
+        "played": 81
+      },
+      {
+        "ms": 2746,
+        "sent": 91,
+        "played": 82
+      },
+      {
+        "ms": 2781,
+        "sent": 92,
+        "played": 83
+      },
+      {
+        "ms": 2818,
+        "sent": 93,
+        "played": 84
+      },
+      {
+        "ms": 2822,
+        "sent": 94,
+        "played": 85
+      },
+      {
+        "ms": 2858,
+        "sent": 95,
+        "played": 86
+      },
+      {
+        "ms": 2896,
+        "sent": 96,
+        "played": 87
+      },
+      {
+        "ms": 2934,
+        "sent": 97,
+        "played": 87
+      },
+      {
+        "ms": 2966,
+        "sent": 97,
+        "played": 88
+      },
+      {
+        "ms": 3004,
+        "sent": 98,
+        "played": 89
+      },
+      {
+        "ms": 3004,
+        "sent": 98,
+        "played": 90
+      },
+      {
+        "ms": 3049,
+        "sent": 100,
+        "played": 91
+      },
+      {
+        "ms": 3087,
+        "sent": 101,
+        "played": 92
+      },
+      {
+        "ms": 3095,
+        "sent": 102,
+        "played": 93
+      },
+      {
+        "ms": 3134,
+        "sent": 103,
+        "played": 94
+      },
+      {
+        "ms": 3170,
+        "sent": 104,
+        "played": 95
+      },
+      {
+        "ms": 3207,
+        "sent": 105,
+        "played": 96
+      },
+      {
+        "ms": 3215,
+        "sent": 106,
+        "played": 97
+      },
+      {
+        "ms": 3251,
+        "sent": 107,
+        "played": 97
+      },
+      {
+        "ms": 3283,
+        "sent": 107,
+        "played": 98
+      },
+      {
+        "ms": 3319,
+        "sent": 108,
+        "played": 99
+      },
+      {
+        "ms": 3356,
+        "sent": 109,
+        "played": 100
+      },
+      {
+        "ms": 3392,
+        "sent": 110,
+        "played": 101
+      },
+      {
+        "ms": 3392,
+        "sent": 110,
+        "played": 102
+      },
+      {
+        "ms": 3434,
+        "sent": 112,
+        "played": 103
+      },
+      {
+        "ms": 3469,
+        "sent": 113,
+        "played": 104
+      },
+      {
+        "ms": 3504,
+        "sent": 114,
+        "played": 105
+      },
+      {
+        "ms": 3541,
+        "sent": 115,
+        "played": 106
+      },
+      {
+        "ms": 3542,
+        "sent": 116,
+        "played": 106
+      },
+      {
+        "ms": 3575,
+        "sent": 116,
+        "played": 107
+      },
+      {
+        "ms": 3612,
+        "sent": 117,
+        "played": 108
+      },
+      {
+        "ms": 3648,
+        "sent": 118,
+        "played": 109
+      },
+      {
+        "ms": 3683,
+        "sent": 119,
+        "played": 110
+      },
+      {
+        "ms": 3720,
+        "sent": 120,
+        "played": 111
+      },
+      {
+        "ms": 3753,
+        "sent": 120,
+        "played": 112
+      },
+      {
+        "ms": 3753,
+        "sent": 120,
+        "played": 113
+      },
+      {
+        "ms": 3786,
+        "sent": 120,
+        "played": 114
+      },
+      {
+        "ms": 3820,
+        "sent": 120,
+        "played": 115
+      },
+      {
+        "ms": 3852,
+        "sent": 120,
+        "played": 115
+      },
+      {
+        "ms": 3885,
+        "sent": 120,
+        "played": 116
+      },
+      {
+        "ms": 3918,
+        "sent": 120,
+        "played": 117
+      },
+      {
+        "ms": 3952,
+        "sent": 120,
+        "played": 118
+      },
+      {
+        "ms": 3985,
+        "sent": 120,
+        "played": 119
+      },
+      {
+        "ms": 4018,
+        "sent": 120,
+        "played": 120
+      },
+      {
+        "ms": 4050,
+        "sent": 120,
+        "played": 120
+      },
+      {
+        "ms": 4084,
+        "sent": 120,
+        "played": 120
+      },
+      {
+        "ms": 4084,
+        "sent": 120,
+        "played": 120
+      }
+    ]
+  },
+  "transport": {
+    "framesSent": 286,
+    "resends": 48,
+    "stillUnacked": 1
+  },
+  "handlerFaults": 0
+}

@@ -1,0 +1,29 @@
+{
+  "Id": "K",
+  "Name": "Camera calibration and cube localisation",
+  "Phase": "8. markers, cubes and the world model",
+  "Subsystem": "The NV calibration read, marker detection and BlockWorld\u0027s pose estimate",
+  "Purpose": "This is the only positive evidence that the reconstructed vision front end sees a real cube: the offline tests render markers from the recovered library, and no capture holds a cube. Everything that docks or navigates depends on it, so it runs before those.",
+  "ExpectedTelemetry": "the calibration is read from the robot\u0027s NV storage and a cube becomes Known with a pose in millimetres",
+  "ExpectedPhysical": "Marker codes match the faces shown, the printed distance matches a ruler within about 5 percent, and the yaw matches how the cube is turned.",
+  "Prerequisites": [
+    "B passed",
+    "a ruler or tape measure to check the printed distance"
+  ],
+  "FidelityRecords": [
+    "M11-001",
+    "M11-005",
+    "M11-012"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "vision 172.31.1.1 --seconds 90 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-100842\\tests\\K\\acceptance.json --out C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-100842\\tests\\K\\frames",
+  "FinishedUtc": "2026-09-22T15:19:00.5785878Z",
+  "Auto": "NotRun",
+  "Human": "NotAsked",
+  "Status": "Blocked",
+  "BlockedReason": "B (Cube telemetry) has not run yet, and K depends on it",
+  "Attempts": 1,
+  "Captured": {},
+  "Warnings": [],
+  "Files": []
+}

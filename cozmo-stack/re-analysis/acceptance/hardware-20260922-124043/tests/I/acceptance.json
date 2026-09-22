@@ -1,0 +1,31 @@
+{
+  "utc": "2026-09-22T17:55:52.3232233Z",
+  "device": "calibrate",
+  "automatedChecksPassed": true,
+  "humanCheckRequired": "his head visibly nodded to its stop and came back when the tool said ASKING NOW",
+  "humanVerdict": "not recorded: set to pass or fail after watching the robot",
+  "robot": {
+    "serial": "0x0c50465e",
+    "firmware": 2457,
+    "batteryVolts": 3.9239502,
+    "onCharger": false
+  },
+  "detail": {
+    "reportsBefore": 0,
+    "reportsAfter": 2,
+    "honoured": true,
+    "afterTheRequest": [
+      {
+        "AtSec": 1.5186333,
+        "Started": true,
+        "motor": "MOTOR_HEAD"
+      },
+      {
+        "AtSec": 2.0472919,
+        "Started": false,
+        "motor": "MOTOR_HEAD"
+      }
+    ]
+  },
+  "handlerFaults": 0
+}

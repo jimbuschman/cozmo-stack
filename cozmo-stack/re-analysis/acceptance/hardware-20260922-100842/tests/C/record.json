@@ -1,0 +1,33 @@
+{
+  "Id": "C",
+  "Name": "Falling then impact",
+  "Phase": "10. robot state and reactions",
+  "Subsystem": "The falling and impact reports, and the rule that the reaction waits for the landing",
+  "Purpose": "The engine reacts to the landing, not the fall, and only above an impact of 1000. Neither the threshold nor the wait has been seen on hardware.",
+  "ExpectedTelemetry": "an unresolved fall line, then a ReactToImpact decision on landing when the impact exceeds 1000",
+  "ExpectedPhysical": "He reacts on landing, not while falling.",
+  "Prerequisites": [
+    "G passed",
+    "something soft to drop him onto",
+    "--obb given"
+  ],
+  "FidelityRecords": [
+    "M7-009"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "behavior 172.31.1.1 --obb C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\obb --seconds 60",
+  "StartedUtc": "2026-09-22T15:22:30.2414484Z",
+  "FinishedUtc": "2026-09-22T15:23:48.6082797Z",
+  "ElapsedSeconds": 78.3668313,
+  "Auto": "Fail",
+  "Human": "Fail",
+  "Status": "Failed",
+  "AutoDetail": "exit 0",
+  "HumanNote": "only reacted when picked up, never reacted on being set down or falling",
+  "Attempts": 1,
+  "Captured": {},
+  "Warnings": [],
+  "Files": [
+    "console.log"
+  ]
+}

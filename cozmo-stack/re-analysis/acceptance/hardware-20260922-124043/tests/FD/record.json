@@ -1,0 +1,41 @@
+{
+  "Id": "FD",
+  "Name": "Face display",
+  "Phase": "3. face display",
+  "Subsystem": "The OLED display path: the 128x64 packing and the display message",
+  "Purpose": "The robot reports nothing about its own screen, so the packing is only ever confirmed by looking at it. A face that is mirrored, offset or half drawn is invisible to every automated check there is.",
+  "ExpectedTelemetry": "the display messages are sent and acknowledged by the transport",
+  "ExpectedPhysical": "A pair of eyes is drawn squarely on the screen, right way up, held steady for the whole time, and it clears afterwards.",
+  "Prerequisites": [
+    "CON passed"
+  ],
+  "FidelityRecords": [
+    "M3-004"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "face 172.31.1.1 --pattern eyes --seconds 6 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\FD\\acceptance.json",
+  "StartedUtc": "2026-09-22T17:43:15.2056176Z",
+  "FinishedUtc": "2026-09-22T17:43:26.3405838Z",
+  "ElapsedSeconds": 11.1349662,
+  "Auto": "Pass",
+  "Human": "Pass",
+  "Status": "Passed",
+  "Attempts": 1,
+  "Captured": {
+    "display": [
+      "face image \u0027eyes\u0027 encodes to 9 bytes; it should look like:",
+      "frame log: C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\cozmo-face-20260922-124315.log",
+      "holding the image on the face for 6.0s ...",
+      "sent 179 face frames; robot reports 2249 animation bytes played",
+      "HUMAN CHECK REQUIRED: compare the pattern on the robot\u0027s face with the ASCII art printed above; they must match"
+    ],
+    "frames sent": [
+      "sent 179 face frames; robot reports 2249 animation bytes played"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "acceptance.json",
+    "console.log"
+  ]
+}

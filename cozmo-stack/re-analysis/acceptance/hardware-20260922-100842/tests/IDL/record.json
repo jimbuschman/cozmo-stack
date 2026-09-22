@@ -1,0 +1,29 @@
+{
+  "Id": "IDL",
+  "Name": "Idle keeps him alive without wandering",
+  "Phase": "6. idle and live animation",
+  "Subsystem": "The idle behaviour: keep-alive blinks, small body shuffles and head moves",
+  "Purpose": "Idle is what runs whenever nothing else does, so a fault here shows up as the robot looking dead or as it drifting across the table over minutes. Neither is visible in one clip.",
+  "ExpectedTelemetry": "idle decisions print and no behaviour is left running at the end",
+  "ExpectedPhysical": "He blinks and makes small movements, and he is still roughly where he started after a minute. Nothing repeats mechanically and nothing runs on.",
+  "Prerequisites": [
+    "CR1 passed",
+    "--obb given"
+  ],
+  "FidelityRecords": [
+    "M8-004"
+  ],
+  "CoreRegressions": [
+    "CORE-001"
+  ],
+  "CommandLine": "behavior 172.31.1.1 --obb C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\obb --seconds 60 --no-react",
+  "FinishedUtc": "2026-09-22T15:13:08.8293379Z",
+  "Auto": "NotRun",
+  "Human": "NotAsked",
+  "Status": "Blocked",
+  "BlockedReason": "CR1 (A live body shuffle stops at its duration) is blocked, and IDL depends on it",
+  "Attempts": 1,
+  "Captured": {},
+  "Warnings": [],
+  "Files": []
+}

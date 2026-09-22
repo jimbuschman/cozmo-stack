@@ -1,0 +1,96 @@
+frame log: C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack\cozmo-stack\cozmo-frames-20260918-093115.log
+connecting to 172.31.1.1:5551 (ConnectionRequest, reliable seq 1) ...
+connected in 16 ms (ConnectionResponse received)
+  <- RobotAvailable serial=0x41d04d9d hw=0x0005
+  <- FirmwareVersion v2457 (u16+rest) �{"version": 2457, "git-rev": "1f716924703f5a8167e4812ebe0fb16991f23484", "date": "Tue Feb 11 22:06:25 2025", "time": 1739333185, "messageEngineToRobotHash": "fedb4b12f1b5b45456aec1629cd0b8cc", "messageRobotToEngineHash": "5a7211095fc4961407e96b9126658317", "build": "DEVELOPMENT", "wifiSig": "ee53ce9bb618a29420dcc1c0be14f3707aa562d2", "rtipSig": "fbd455486f438f959b229ffe95bf5f326646dab3", "bodySig": "fbb9ffb8e3d2cab28ff1df21529c11a80a7c5269"}
+  <- Trace(0xb0) raw[32] 70 02 00 00 99 01 02 06 2e 00 00 00 3a 00 00 00 e8 00 00 00 14 00 00 00 e9 00 00 00 5f 00 00 00
+  <- Trace(0xb0) raw[12] 72 02 00 00 9b 01 02 01 f4 00 00 00
+  <- Trace(0xb0) raw[12] 5b 01 00 00 9d 01 02 01 03 00 00 00
+  <- Trace(0xb0) raw[12] 78 02 00 00 b3 04 03 01 05 00 00 00
+  <- WifiFlashID(0xec) raw[4] ef 60 15 00
+  <- Trace(0xb0) raw[8] 31 01 00 00 e4 00 02 00
+identity: RobotAvailable serial=0x41d04d9d hw=0x0005
+firmware: v2457 e2r=fedb4b12f1b5b45456aec1629cd0b8cc r2e=5a7211095fc4961407e96b9126658317 (u16+rest)
+handshake: GetManufacturingInfo + SyncTime
+  <- Trace(0xb0) raw[8] 31 01 00 00 64 00 01 00
+  <- Trace(0xb0) raw[12] 5b 01 00 00 9e 01 02 01 00 00 00 00
+  <- ManufacturingId serial=0x45a132ad bodyHw=5 color=2
+  <- SyncTimeAck(0xc2)
+  <- Trace(0xb0) raw[20] 43 02 00 00 8a 01 02 03 96 e6 f3 be a5 f4 d5 3e fe f4 09 3f
+  <- MotorCalibration motor=2 started=True auto=False
+  <- MotorCalibration motor=3 started=True auto=False
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=69
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=75
+  <- MotorCalibration motor=2 started=False auto=False
+mfg: ManufacturingId serial=0x45a132ad bodyHw=5 color=2   syncTimeAck=True   states so far=0
+command: SetHeadAngle 0.400 rad (action 1)
+  <- MotorActionAck action=1
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=70
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=74
+  <- ObjectAvailable factory=0x116c638b type=1 rssi=44
+  <- Trace(0xb0) raw[8] 31 01 00 00 1a 01 01 00
+  <- MotorCalibration motor=3 started=False auto=False
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=69
+  t+  3.4s states=59 (+59) rate=33.1Hz pending=0 nextOut=5 nextIn=21 dups=1 resends=0 rtt=28.2ms pings=72  head=0.399 batt=4.67V status=0x3310
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=69
+  <- ObjectAvailable factory=0x116c638b type=1 rssi=44
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=74
+  t+  5.5s states=128 (+69) rate=33.5Hz pending=0 nextOut=5 nextIn=21 dups=1 resends=0 rtt=13.6ms pings=116  head=0.399 batt=4.67V status=0x3310
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=69
+  <- ObjectAvailable factory=0x116c638b type=1 rssi=44
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=74
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=73
+  t+  7.6s states=198 (+70) rate=33.5Hz pending=0 nextOut=5 nextIn=21 dups=1 resends=0 rtt=14.1ms pings=160  head=0.399 batt=4.67V status=0x3310
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=69
+  <- ObjectAvailable factory=0x116c638b type=1 rssi=44
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=73
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=69
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=69
+  <- ObjectAvailable factory=0x116c638b type=1 rssi=44
+  t+  9.7s states=268 (+70) rate=33.4Hz pending=1 nextOut=5 nextIn=21 dups=1 resends=0 rtt=19.8ms pings=206  head=0.399 batt=4.67V status=0x3310
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=73
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=69
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=73
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=69
+  <- ObjectAvailable factory=0x116c638b type=1 rssi=44
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=73
+  t+ 11.8s states=339 (+71) rate=33.5Hz pending=1 nextOut=5 nextIn=21 dups=1 resends=0 rtt=7.0ms pings=251  head=0.399 batt=4.67V status=0x3310
+  <- Trace(0xb0) raw[20] 43 02 00 00 87 01 ff 03 1c 36 fa be cf 57 db 3e c3 9c 0c 3f
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=69
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=73
+  <- ObjectAvailable factory=0x116c638b type=1 rssi=44
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=73
+  t+ 13.9s states=409 (+70) rate=33.5Hz pending=1 nextOut=5 nextIn=22 dups=2 resends=0 rtt=25.3ms pings=296  head=0.399 batt=4.67V status=0x3310
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=69
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=73
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=69
+  <- ObjectAvailable factory=0x116c638b type=1 rssi=44
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=74
+  t+ 16.0s states=480 (+71) rate=33.5Hz pending=0 nextOut=5 nextIn=22 dups=2 resends=0 rtt=8.2ms pings=341  head=0.399 batt=4.67V status=0x3310
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=69
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=74
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=67
+  <- ObjectAvailable factory=0x116c638b type=1 rssi=44
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=75
+  t+ 18.1s states=550 (+70) rate=33.5Hz pending=0 nextOut=5 nextIn=22 dups=2 resends=0 rtt=14.5ms pings=387  head=0.399 batt=4.67V status=0x3310
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=74
+  <- ObjectAvailable factory=0x116c638b type=1 rssi=44
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=75
+  t+ 20.2s states=619 (+69) rate=33.5Hz pending=0 nextOut=5 nextIn=22 dups=2 resends=0 rtt=13.9ms pings=431  head=0.399 batt=4.68V status=0x3310
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=68
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=75
+command: SetHeadAngle back to 0
+  <- MotorActionAck action=2
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=68
+  <- ObjectAvailable factory=0x116c638b type=1 rssi=44
+  <- ObjectAvailable factory=0x241a8eec type=2 rssi=74
+  <- ObjectAvailable factory=0xde58bcbc type=2 rssi=67
+---- result ----
+connected: True
+identity received: available=True firmware=True mfg=True
+telemetry: 722 RobotState at 33.5 Hz; 791 messages total; histogram: State=722, ActiveObjectAvailable=48, Trace=10, MotorCalibration=4, MotorActionAck=2, RobotAvailable=1, FirmwareVersion=1, WifiFlashID=1, MfgId=1, SyncTimeAck=1
+transport: frames sent=500 resent=0 dupsDropped=2 pending=0 lastRTT=27.7ms
+head angle before=n/a peak during run=-0.436 (target 0.400) final=0.020; MotorActionAck count=2
+SMOKE TEST: PASS
+  disconnected: requested
+frame log written to: C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack\cozmo-stack\cozmo-frames-20260918-093115.log  (send this file plus the console output)

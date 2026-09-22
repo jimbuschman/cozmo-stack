@@ -1,0 +1,46 @@
+{
+  "Id": "I",
+  "Name": "StartMotorCalibration honoured",
+  "Phase": "10. robot state and reactions",
+  "Subsystem": "The motor calibration request and the robot\u0027s calibration reports",
+  "Purpose": "The reactions ask for a head recalibration in some states. Whether the robot honours the request within the allowance was never observed.",
+  "ExpectedTelemetry": "a MotorCalibration report with CalibStarted true for the head, then one with false",
+  "ExpectedPhysical": "The head visibly recalibrates, nodding to its stop, within a few seconds of the request.",
+  "Prerequisites": [
+    "H passed"
+  ],
+  "FidelityRecords": [
+    "M4-004"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "reactions 172.31.1.1 --obb C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\obb --seconds 120 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-100842\\tests\\I\\acceptance.json",
+  "StartedUtc": "2026-09-22T15:26:59.2583923Z",
+  "FinishedUtc": "2026-09-22T15:29:30.9223866Z",
+  "ElapsedSeconds": 151.6639943,
+  "Auto": "Pass",
+  "Human": "Fail",
+  "Status": "Partial",
+  "HumanNote": "this seemed to run the wrong test",
+  "Attempts": 1,
+  "Captured": {
+    "requests": [
+      "[  31.22s]     ReactToReturnedToTreads: calibrate head (StartMotorCalibration head=1 lift=0)",
+      "[  92.07s]     ReactToReturnedToTreads: calibrate head (StartMotorCalibration head=1 lift=0)"
+    ],
+    "reports": [
+      "  MotorCalibration     -\u003E ReactToMotorCalibration (resumes last)",
+      "[  31.22s]     ReactToReturnedToTreads: calibrate head (StartMotorCalibration head=1 lift=0)",
+      "[  70.50s]     ReactToMotorCalibration: wait for both motors calibrated (up to 5.0 s)",
+      "[  70.50s] REACTION MotorCalibration -\u003E ReactToMotorCalibration (interrupted ReactToReturnedToTreads)",
+      "[  71.78s]     ReactToMotorCalibration: head and lift report calibrated",
+      "[  71.78s]     ReactToMotorCalibration: done",
+      "[  92.07s]     ReactToReturnedToTreads: calibrate head (StartMotorCalibration head=1 lift=0)",
+      "reactions fired: MotorCalibration, RobotPickedUp, ReturnedToTreads, RobotOnBack, RobotOnFace, RobotOnSide, UnexpectedMovement"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "acceptance.json",
+    "console.log"
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "Id": "CR1",
+  "Name": "A live body shuffle stops at its duration",
+  "Phase": "6. idle and live animation",
+  "Subsystem": "The animation scheduler\u0027s live keyframe path and the tick loop that serves its deadline",
+  "Purpose": "Idle streams a body keyframe with a duration and nothing else drives the scheduler. Before the correction nothing called Advance in that state, so the stop never went out and the wheels ran until something else countermanded them. Offline the stop is asserted against the message log; on the robot the wheels either stop or they do not.",
+  "ExpectedTelemetry": "the reported wheel speeds go non-zero and return to zero within a frame or two of the duration",
+  "ExpectedPhysical": "He shuffles forward for about a second and stops by himself. He does not keep creeping.",
+  "Prerequisites": [
+    "MOV passed",
+    "a clear, flat surface"
+  ],
+  "FidelityRecords": [
+    "M5-004"
+  ],
+  "CoreRegressions": [
+    "CORE-001"
+  ],
+  "CommandLine": "core 172.31.1.1 --case CORE-001 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\CR1\\acceptance.json",
+  "StartedUtc": "2026-09-22T17:45:36.5567704Z",
+  "FinishedUtc": "2026-09-22T17:45:49.997046Z",
+  "ElapsedSeconds": 13.4402756,
+  "Auto": "Fail",
+  "Human": "Fail",
+  "Status": "Failed",
+  "AutoDetail": "exit 2",
+  "HumanNote": "didn\u0027t move",
+  "Attempts": 1,
+  "Captured": {
+    "wheel samples": [
+      "  t=     1 ms  L=    0.0  R=    0.0",
+      "  t=   101 ms  L=    0.0  R=    0.0",
+      "  t=   202 ms  L=    0.0  R=    0.0",
+      "  t=   302 ms  L=    0.0  R=    0.0",
+      "  t=   402 ms  L=    0.0  R=    0.0",
+      "  t=   503 ms  L=    0.0  R=    0.0",
+      "  t=   604 ms  L=    0.0  R=    0.0",
+      "  t=   705 ms  L=    0.0  R=    0.0",
+      "  t=   804 ms  L=    0.0  R=    0.0",
+      "  t=   904 ms  L=    0.0  R=    0.0",
+      "  t=  1005 ms  L=    0.0  R=    0.0",
+      "  t=  1105 ms  L=    0.0  R=    0.0",
+      "  t=  1205 ms  L=    0.0  R=    0.0",
+      "  t=  1305 ms  L=    0.0  R=    0.0",
+      "  t=  1405 ms  L=    0.0  R=    0.0",
+      "  t=  1506 ms  L=    0.0  R=    0.0",
+      "  t=  1607 ms  L=    0.0  R=    0.0",
+      "  t=  1708 ms  L=    0.0  R=    0.0",
+      "  t=  1808 ms  L=    0.0  R=    0.0",
+      "  t=  1909 ms  L=    0.0  R=    0.0",
+      "  t=  2010 ms  L=    0.0  R=    0.0",
+      "  t=  2111 ms  L=    0.0  R=    0.0",
+      "  t=  2212 ms  L=    0.0  R=    0.0",
+      "  t=  2313 ms  L=    0.0  R=    0.0",
+      "  t=  2414 ms  L=    0.0  R=    0.0",
+      "  t=  2515 ms  L=    0.0  R=    0.0",
+      "  t=  2617 ms  L=    0.0  R=    0.0",
+      "  t=  2718 ms  L=    0.0  R=    0.0",
+      "  t=  2818 ms  L=    0.0  R=    0.0",
+      "  t=  2919 ms  L=    0.0  R=    0.0",
+      "  t=  3020 ms  L=    0.0  R=    0.0",
+      "  t=  3120 ms  L=    0.0  R=    0.0",
+      "  t=  3220 ms  L=    0.0  R=    0.0",
+      "  t=  3321 ms  L=    0.0  R=    0.0",
+      "  t=  3421 ms  L=    0.0  R=    0.0",
+      "  t=  3521 ms  L=    0.0  R=    0.0",
+      "  t=  3622 ms  L=    0.0  R=    0.0"
+    ],
+    "verdict": [
+      "automated: FAIL - the wheels never moved: the live keyframe did not reach the robot"
+    ],
+    "duration": [
+      "wheels reported moving from - ms to - ms (the keyframe asked for 1200 ms)"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "acceptance.json",
+    "console.log"
+  ]
+}

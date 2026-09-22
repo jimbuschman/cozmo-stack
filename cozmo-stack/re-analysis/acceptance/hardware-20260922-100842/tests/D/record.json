@@ -1,0 +1,63 @@
+{
+  "Id": "D",
+  "Name": "Lift position readout",
+  "Phase": "1. connection and telemetry",
+  "Subsystem": "RobotState lift angle and the angle-to-height conversion, with battery, cliff and IMU",
+  "Purpose": "The lift angle is reported in radians and converted with the engine\u0027s own formula. If the conversion is wrong, every docking height and the carry check are wrong with it.",
+  "ExpectedTelemetry": "a lift reading in radians and millimetres, once a second, and a battery voltage",
+  "ExpectedPhysical": "About -0.198 rad / 32 mm with the lift down, and about 0.712 rad / 92 mm raised.",
+  "Prerequisites": [
+    "CON passed",
+    "the lift is all the way down to begin with"
+  ],
+  "FidelityRecords": [
+    "M4-003"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "sensors 172.31.1.1 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-100842\\tests\\D\\acceptance.json",
+  "StartedUtc": "2026-09-22T15:10:15.7605118Z",
+  "FinishedUtc": "2026-09-22T15:10:46.6808715Z",
+  "ElapsedSeconds": 30.9203597,
+  "Auto": "Pass",
+  "Human": "Unsure",
+  "Status": "Unsure",
+  "HumanNote": "not sure what i was supposed to do",
+  "Attempts": 1,
+  "Captured": {
+    "lift": [
+      "  batt 4.00V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.198rad/32.0mm accel=(-3653.00, -616.72, 9010.66) gyro=(0.00, 0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 4.00V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.189rad/32.6mm accel=(-3685.34, -665.22, 9035.81) gyro=(0.00, 0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 3.98V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3635.04, -605.34, 9033.42) gyro=(0.00, 0.00, 0.00) cliffRaw=[889,0,0,0]",
+      "  batt 4.00V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3671.56, -631.69, 9056.17) gyro=(-0.00, 0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 3.98V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3593.73, -620.91, 9030.42) gyro=(0.00, -0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 4.00V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3633.24, -619.71, 9022.04) gyro=(0.00, -0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 4.00V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3639.23, -625.10, 9051.98) gyro=(0.00, 0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 3.98V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3658.39, -654.44, 9058.56) gyro=(-0.00, 0.01, -0.00) cliffRaw=[889,0,0,0]"
+    ],
+    "battery and charger": [
+      "  batt 4.00V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.198rad/32.0mm accel=(-3653.00, -616.72, 9010.66) gyro=(0.00, 0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 4.00V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.189rad/32.6mm accel=(-3685.34, -665.22, 9035.81) gyro=(0.00, 0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 3.98V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3635.04, -605.34, 9033.42) gyro=(0.00, 0.00, 0.00) cliffRaw=[889,0,0,0]",
+      "  batt 4.00V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3671.56, -631.69, 9056.17) gyro=(-0.00, 0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 3.98V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3593.73, -620.91, 9030.42) gyro=(0.00, -0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 4.00V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3633.24, -619.71, 9022.04) gyro=(0.00, -0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 4.00V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3639.23, -625.10, 9051.98) gyro=(0.00, 0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 3.98V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3658.39, -654.44, 9058.56) gyro=(-0.00, 0.01, -0.00) cliffRaw=[889,0,0,0]"
+    ],
+    "cliff": [
+      "  batt 4.00V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.198rad/32.0mm accel=(-3653.00, -616.72, 9010.66) gyro=(0.00, 0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 4.00V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.189rad/32.6mm accel=(-3685.34, -665.22, 9035.81) gyro=(0.00, 0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 3.98V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3635.04, -605.34, 9033.42) gyro=(0.00, 0.00, 0.00) cliffRaw=[889,0,0,0]",
+      "  batt 4.00V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3671.56, -631.69, 9056.17) gyro=(-0.00, 0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 3.98V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3593.73, -620.91, 9030.42) gyro=(0.00, -0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 4.00V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3633.24, -619.71, 9022.04) gyro=(0.00, -0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 4.00V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3639.23, -625.10, 9051.98) gyro=(0.00, 0.00, -0.00) cliffRaw=[889,0,0,0]",
+      "  batt 3.98V charger=False charging=False pickedUp=False cliff=False head=-0.43 lift=-0.207rad/31.4mm accel=(-3658.39, -654.44, 9058.56) gyro=(-0.00, 0.01, -0.00) cliffRaw=[889,0,0,0]"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "acceptance.json",
+    "console.log"
+  ]
+}

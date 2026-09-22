@@ -1,0 +1,48 @@
+{
+  "Id": "CR2",
+  "Name": "A dropped link ends the animation, not the process",
+  "Phase": "6. idle and live animation",
+  "Subsystem": "The animation tick loop\u0027s failure boundary when the robot goes away mid-clip",
+  "Purpose": "The tick loop runs on a background thread and every frame reaches the transport. Once the link is gone the send throws, and before the correction that exception escaped a background thread and took the process with it. This is the one check where the disconnect is the subject, so the runner does not treat it as an interruption.",
+  "ExpectedTelemetry": "the animation task completes, the ticker stops, and the failure is reported through Faulted",
+  "ExpectedPhysical": "He is moving, and at the moment the tool says it is dropping the link he stops where he is and stays stopped - no twitching, no carrying on, no running away. The tool then prints its own verdict and the campaign moves to the next check instead of dying.",
+  "Prerequisites": [
+    "F passed",
+    "--obb given"
+  ],
+  "FidelityRecords": [
+    "M5-001"
+  ],
+  "CoreRegressions": [
+    "CORE-002"
+  ],
+  "CommandLine": "core 172.31.1.1 --obb re-analysis\\obb --case CORE-002 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\CR2\\acceptance.json",
+  "StartedUtc": "2026-09-22T17:46:52.8463996Z",
+  "FinishedUtc": "2026-09-22T17:47:11.2925379Z",
+  "ElapsedSeconds": 18.4461383,
+  "Auto": "Fail",
+  "Human": "Unsure",
+  "Status": "Unsure",
+  "AutoDetail": "exit 2",
+  "HumanNote": "same as previous answer, not sure",
+  "Attempts": 1,
+  "Captured": {
+    "before the drop": [
+      "ticker running: False. DROPPING THE LINK NOW - watch him stop."
+    ],
+    "after the drop": [
+      "the animation task completed"
+    ],
+    "fault": [
+      "the failure was reported through Faulted: no"
+    ],
+    "verdict": [
+      "automated: FAIL - the animation never started ticking, so the drop proved nothing"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "acceptance.json",
+    "console.log"
+  ]
+}

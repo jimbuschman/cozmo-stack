@@ -1,0 +1,31 @@
+{
+  "Id": "V",
+  "Name": "Mount the charger",
+  "Phase": "9. the charger",
+  "Subsystem": "The charger object, the align dock with the real 20 x 27 mm marker, and the backwards mount",
+  "Purpose": "The core review found the docking solve was building its object points from the marker\u0027s width in both directions, so the charger\u0027s 20 x 27 marker was solved as a square and came out 220 mm away when it was 286. That number is the DockingErrorSignal he steers by, so this check is where the correction is either right or visibly wrong. It runs early, before the long manipulation sequence, so a failure is found in the first half hour.",
+  "ExpectedTelemetry": "the charger is located with a pose, the align dock runs, docking error signals are sent, and the contacts report on charger",
+  "ExpectedPhysical": "He stops in front of the charger, turns around, backs on and the contacts engage: his backpack lights change. A miss drives forward 120 mm and retries.",
+  "Prerequisites": [
+    "K passed (the marker pipeline works)",
+    "the charger is plugged in and its marker is clean and unobstructed",
+    "20-40 cm of clear floor between him and the charger"
+  ],
+  "FidelityRecords": [
+    "M13-006",
+    "M12-005"
+  ],
+  "CoreRegressions": [
+    "CORE-005"
+  ],
+  "CommandLine": "manip 172.31.1.1 --obb C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\obb --mount --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-100842\\tests\\V\\acceptance.json",
+  "FinishedUtc": "2026-09-22T15:19:00.5832915Z",
+  "Auto": "NotRun",
+  "Human": "NotAsked",
+  "Status": "Blocked",
+  "BlockedReason": "K (Camera calibration and cube localisation) is blocked, and V depends on it",
+  "Attempts": 1,
+  "Captured": {},
+  "Warnings": [],
+  "Files": []
+}

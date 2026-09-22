@@ -1,0 +1,524 @@
+{
+  "tool": "reactions",
+  "milestone": "M10",
+  "timestampUtc": "2026-09-22T15:26:27.80604Z",
+  "firmware": 2457,
+  "serial": 206587486,
+  "automated": {
+    "pass": true,
+    "detail": {
+      "fired": [
+        "CliffDetected",
+        "ReturnedToTreads",
+        "RobotOnBack",
+        "RobotOnFace",
+        "RobotOnSide",
+        "RobotPickedUp",
+        "UnexpectedMovement"
+      ],
+      "log": [
+        {
+          "t": 2.4668041,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 2.4913997,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 3.2242593,
+          "text": "off-treads InAir -\u003E OnFace"
+        },
+        {
+          "t": 5.557198,
+          "text": "off-treads OnFace -\u003E InAir"
+        },
+        {
+          "t": 5.8465862,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 7.1127422,
+          "text": "off-treads InAir -\u003E OnBack"
+        },
+        {
+          "t": 7.5591254,
+          "text": "    ReactToRobotOnBack: play FlipDownFromBack -\u003E anim_reacttocliff_turtleroll_03"
+        },
+        {
+          "t": 7.5599008,
+          "text": "REACTION RobotOnBack -\u003E ReactToRobotOnBack"
+        },
+        {
+          "t": 9.808651,
+          "text": "off-treads OnBack -\u003E InAir"
+        },
+        {
+          "t": 9.8418306,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnBack)"
+        },
+        {
+          "t": 10.0406341,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 12.5233395,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 12.5234017,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 12.9589323,
+          "text": "    ReactToUnexpectedMovement: emotion event ReactToUnexpectedMovement: applied"
+        },
+        {
+          "t": 12.9593365,
+          "text": "unexpected movement TurnedInOppositeDirection from Right at 14305 (avg wheels 133/-124 mm/s over 12)"
+        },
+        {
+          "t": 12.9594965,
+          "text": "    ReactToUnexpectedMovement: play ReactToUnexpectedMovement -\u003E anim_reacttocliff_huh_01"
+        },
+        {
+          "t": 12.9595675,
+          "text": "REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement (interrupted ReactToReturnedToTreads)"
+        },
+        {
+          "t": 13.4296189,
+          "text": "    ReactToUnexpectedMovement: objective ReactedToUnexpectedMovement"
+        },
+        {
+          "t": 13.4298795,
+          "text": "    ReactToUnexpectedMovement: done"
+        },
+        {
+          "t": 14.3163606,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 14.3366676,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 14.9372931,
+          "text": "off-treads InAir -\u003E OnRightSide"
+        },
+        {
+          "t": 17.6852289,
+          "text": "    ReactToRobotOnSide: play ReactToOnRightSide -\u003E anim_reacttocliff_stuckrightside_03"
+        },
+        {
+          "t": 17.6854576,
+          "text": "REACTION RobotOnSide -\u003E ReactToRobotOnSide"
+        },
+        {
+          "t": 23.0877488,
+          "text": "    ReactToRobotOnSide: play AskToBeRightedRight -\u003E anim_reacttocliff_stuckrightside_01"
+        },
+        {
+          "t": 26.7270506,
+          "text": "off-treads OnRightSide -\u003E OnTreads"
+        },
+        {
+          "t": 26.7382337,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 26.7384907,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads (interrupted ReactToRobotOnSide)"
+        },
+        {
+          "t": 27.0241314,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 27.0398412,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToReturnedToTreads)"
+        },
+        {
+          "t": 27.5716899,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 29.0073523,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 29.3058407,
+          "text": "off-treads InAir -\u003E OnFace"
+        },
+        {
+          "t": 30.0943137,
+          "text": "    ReactToRobotOnFace: play FacePlantRoll -\u003E anim_reacttocliff_faceplantroll_01"
+        },
+        {
+          "t": 30.0944789,
+          "text": "REACTION RobotOnFace -\u003E ReactToRobotOnFace"
+        },
+        {
+          "t": 33.9725375,
+          "text": "off-treads OnFace -\u003E InAir"
+        },
+        {
+          "t": 33.9846877,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnFace)"
+        },
+        {
+          "t": 34.1398335,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 36.6731636,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 36.6732244,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 37.1768299,
+          "text": "    ReactToReturnedToTreads: pitch 6.9 deg: nothing to do"
+        },
+        {
+          "t": 37.1768749,
+          "text": "    ReactToReturnedToTreads: done"
+        },
+        {
+          "t": 37.2008935,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 37.2111779,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 39.7440115,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 39.9109792,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 40.2633613,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 41.9775399,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 43.688581,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 45.8555222,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 46.3760811,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 46.3762109,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 46.8835292,
+          "text": "    ReactToReturnedToTreads: pitch 18.7 deg after returning to treads: calibrating the head"
+        },
+        {
+          "t": 46.8844499,
+          "text": "    ReactToReturnedToTreads: calibrate head (StartMotorCalibration head=1 lift=0)"
+        },
+        {
+          "t": 46.8847964,
+          "text": "    ReactToReturnedToTreads: wait for head calibration (up to 5.0 s)"
+        },
+        {
+          "t": 48.0914343,
+          "text": "    ReactToReturnedToTreads: head calibration reported complete"
+        },
+        {
+          "t": 48.0914999,
+          "text": "    ReactToReturnedToTreads: done"
+        },
+        {
+          "t": 48.7648924,
+          "text": "unexpected movement TurnedInOppositeDirection from Left at 50305 (avg wheels -26/48 mm/s over 12)"
+        },
+        {
+          "t": 48.7950805,
+          "text": "    ReactToUnexpectedMovement: emotion event ReactToUnexpectedMovement: applied"
+        },
+        {
+          "t": 48.7955098,
+          "text": "    ReactToUnexpectedMovement: play ReactToUnexpectedMovement -\u003E anim_reacttocliff_huh_01"
+        },
+        {
+          "t": 48.7955676,
+          "text": "REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement"
+        },
+        {
+          "t": 48.8304831,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 48.8627018,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToUnexpectedMovement)"
+        },
+        {
+          "t": 49.4614871,
+          "text": "off-treads InAir -\u003E OnLeftSide"
+        },
+        {
+          "t": 50.5718757,
+          "text": "    ReactToRobotOnSide: play ReactToOnLeftSide -\u003E anim_reacttocliff_stuckleftside_03"
+        },
+        {
+          "t": 50.5719769,
+          "text": "REACTION RobotOnSide -\u003E ReactToRobotOnSide"
+        },
+        {
+          "t": 54.364137,
+          "text": "    ReactToRobotOnSide: play AskToBeRightedLeft -\u003E anim_reacttocliff_stuckleftside_03"
+        },
+        {
+          "t": 58.1497626,
+          "text": "    ReactToRobotOnSide: play WaitOnSideLoop -\u003E anim_speedtap_wait_medium_03"
+        },
+        {
+          "t": 59.1538051,
+          "text": "    ReactToRobotOnSide: play WaitOnSideLoop -\u003E anim_speedtap_wait_short"
+        },
+        {
+          "t": 59.4900121,
+          "text": "    ReactToRobotOnSide: play WaitOnSideLoop -\u003E anim_speedtap_wait_medium_03"
+        },
+        {
+          "t": 60.4972045,
+          "text": "    ReactToRobotOnSide: play WaitOnSideLoop -\u003E anim_speedtap_wait_medium_02"
+        },
+        {
+          "t": 61.506228,
+          "text": "    ReactToRobotOnSide: play WaitOnSideLoop -\u003E anim_speedtap_wait_short"
+        },
+        {
+          "t": 61.8416257,
+          "text": "    ReactToRobotOnSide: play WaitOnSideLoop -\u003E anim_speedtap_wait_long"
+        },
+        {
+          "t": 63.8561371,
+          "text": "    ReactToRobotOnSide: play WaitOnSideLoop -\u003E anim_speedtap_wait_medium_03"
+        },
+        {
+          "t": 64.8646803,
+          "text": "    ReactToRobotOnSide: play WaitOnSideLoop -\u003E anim_speedtap_wait_long"
+        },
+        {
+          "t": 64.8885667,
+          "text": "off-treads OnLeftSide -\u003E OnTreads"
+        },
+        {
+          "t": 64.8988076,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 64.8988847,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads (interrupted ReactToRobotOnSide)"
+        },
+        {
+          "t": 65.400457,
+          "text": "    ReactToReturnedToTreads: pitch 36.4 deg after returning to treads: calibrating the head"
+        },
+        {
+          "t": 65.4006521,
+          "text": "    ReactToReturnedToTreads: calibrate head (StartMotorCalibration head=1 lift=0)"
+        },
+        {
+          "t": 65.4007626,
+          "text": "    ReactToReturnedToTreads: wait for head calibration (up to 5.0 s)"
+        },
+        {
+          "t": 66.039455,
+          "text": "REACTION CliffDetected -\u003E ReactToCliff (interrupted ReactToReturnedToTreads)"
+        },
+        {
+          "t": 73.1802073,
+          "text": "REACTION CliffDetected -\u003E ReactToCliff"
+        },
+        {
+          "t": 73.3789162,
+          "text": "off-treads OnTreads -\u003E OnFace"
+        },
+        {
+          "t": 74.9130498,
+          "text": "off-treads OnFace -\u003E InAir"
+        },
+        {
+          "t": 75.9798954,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 76.1782585,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 80.2956626,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 80.5999444,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 82.0073498,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 82.0075122,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 82.5115293,
+          "text": "    ReactToReturnedToTreads: pitch -18.1 deg after returning to treads: calibrating the head"
+        },
+        {
+          "t": 82.5117169,
+          "text": "    ReactToReturnedToTreads: calibrate head (StartMotorCalibration head=1 lift=0)"
+        },
+        {
+          "t": 82.5118639,
+          "text": "    ReactToReturnedToTreads: wait for head calibration (up to 5.0 s)"
+        },
+        {
+          "t": 83.6224895,
+          "text": "    ReactToReturnedToTreads: head calibration reported complete"
+        },
+        {
+          "t": 83.6226636,
+          "text": "    ReactToReturnedToTreads: done"
+        },
+        {
+          "t": 87.7386421,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 87.7467097,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup"
+        },
+        {
+          "t": 88.454228,
+          "text": "off-treads InAir -\u003E OnRightSide"
+        },
+        {
+          "t": 90.4402276,
+          "text": "    ReactToRobotOnSide: play ReactToOnRightSide -\u003E anim_reacttocliff_stuckrightside_01"
+        },
+        {
+          "t": 90.4403182,
+          "text": "REACTION RobotOnSide -\u003E ReactToRobotOnSide"
+        },
+        {
+          "t": 95.8053613,
+          "text": "    ReactToRobotOnSide: play AskToBeRightedRight -\u003E anim_reacttocliff_stuckrightside_01"
+        },
+        {
+          "t": 100.5055936,
+          "text": "off-treads OnRightSide -\u003E InAir"
+        },
+        {
+          "t": 100.5387164,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnSide)"
+        },
+        {
+          "t": 100.6035171,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 103.2557049,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 103.2560754,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 103.2731573,
+          "text": "off-treads OnTreads -\u003E OnBack"
+        },
+        {
+          "t": 103.289893,
+          "text": "    ReactToRobotOnBack: play FlipDownFromBack -\u003E anim_reacttocliff_turtleroll_02"
+        },
+        {
+          "t": 103.2899768,
+          "text": "REACTION RobotOnBack -\u003E ReactToRobotOnBack (interrupted ReactToReturnedToTreads)"
+        },
+        {
+          "t": 109.1564951,
+          "text": "off-treads OnBack -\u003E InAir"
+        },
+        {
+          "t": 109.1666412,
+          "text": "REACTION RobotPickedUp -\u003E ReactToPickup (interrupted ReactToRobotOnBack)"
+        },
+        {
+          "t": 109.4210357,
+          "text": "off-treads InAir -\u003E OnTreads"
+        },
+        {
+          "t": 111.5885152,
+          "text": "unexpected movement TurnedInOppositeDirection from Right at 113455 (avg wheels 2/-9 mm/s over 12)"
+        },
+        {
+          "t": 112.5504501,
+          "text": "    ReactToReturnedToTreads: wait 0.5 s"
+        },
+        {
+          "t": 112.5505647,
+          "text": "REACTION ReturnedToTreads -\u003E ReactToReturnedToTreads"
+        },
+        {
+          "t": 112.5841028,
+          "text": "    ReactToUnexpectedMovement: emotion event ReactToUnexpectedMovement: applied"
+        },
+        {
+          "t": 112.5846633,
+          "text": "    ReactToUnexpectedMovement: play ReactToUnexpectedMovement -\u003E anim_reacttocliff_huh_01"
+        },
+        {
+          "t": 112.5847624,
+          "text": "REACTION UnexpectedMovement -\u003E ReactToUnexpectedMovement (interrupted ReactToReturnedToTreads)"
+        },
+        {
+          "t": 113.0544154,
+          "text": "    ReactToUnexpectedMovement: objective ReactedToUnexpectedMovement"
+        },
+        {
+          "t": 113.0545168,
+          "text": "    ReactToUnexpectedMovement: done"
+        },
+        {
+          "t": 119.1916696,
+          "text": "off-treads OnTreads -\u003E InAir"
+        },
+        {
+          "t": 119.1926916,
+          "text": "REACTION CliffDetected -\u003E ReactToCliff"
+        },
+        {
+          "t": 119.692977,
+          "text": "off-treads InAir -\u003E OnFace"
+        }
+      ],
+      "classifierEnabled": true
+    }
+  },
+  "human": {
+    "check": "each reaction did what the engine\u0027s does: flip down from the back, roll off the face, ask to be righted on a side, react then check the pitch on a slope, act dizzy after a shake, react to a push; no reaction fired for a state he was not in",
+    "verdict": "PENDING - fill in after watching the robot"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "tool": "core",
+  "which": "CORE-002",
+  "timestampUtc": "2026-09-22T15:13:43.4306051Z",
+  "firmware": 2457,
+  "serial": 206587486,
+  "automated": {
+    "pass": false,
+    "detail": "the animation never started ticking, so the drop proved nothing",
+    "log": [
+      "connecting to 172.31.1.1...",
+      "connected: firmware 2457, telemetry 0.0 Hz, calibration complete",
+      "using the clip \u0027anim_bored_01\u0027",
+      "playing \u0027anim_bored_01\u0027 and cutting the link 1.5 s in.",
+      "ticker running: False. Dropping the link now.",
+      "the animation task completed",
+      "the ticker stopped",
+      "the failure was reported through Faulted: no",
+      "the process is still running, which is the other half of the claim",
+      "",
+      "automated: FAIL - the animation never started ticking, so the drop proved nothing"
+    ]
+  },
+  "human": {
+    "verdict": "PENDING - the person watching the robot decides this"
+  }
+}

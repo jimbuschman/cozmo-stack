@@ -1,0 +1,28 @@
+{
+  "Id": "A2",
+  "Name": "One song from each tempo group",
+  "Phase": "4. audio",
+  "Subsystem": "The 100 and 120 bpm switch containers and their meter overrides",
+  "Purpose": "Three tempo groups were recovered from the banks. If the meter override is misread, the tempos will not differ audibly.",
+  "ExpectedTelemetry": "the behaviour runs to completion and the song is cut by its Stop event",
+  "ExpectedPhysical": "Bingo is cut at about 9.8 s by its Stop event, and the tempo audibly differs from A.",
+  "Prerequisites": [
+    "A passed or heard"
+  ],
+  "FidelityRecords": [
+    "M9-016"
+  ],
+  "CoreRegressions": [
+    "CORE-006"
+  ],
+  "CommandLine": "sing 172.31.1.1 --obb C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\obb --behavior Singing_Bingo --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-100842\\tests\\A2\\acceptance.json",
+  "FinishedUtc": "2026-09-22T15:13:08.8080559Z",
+  "Auto": "NotRun",
+  "Human": "NotAsked",
+  "Status": "Blocked",
+  "BlockedReason": "A (Cozmo sings) was inconclusive, and A2 depends on it",
+  "Attempts": 1,
+  "Captured": {},
+  "Warnings": [],
+  "Files": []
+}

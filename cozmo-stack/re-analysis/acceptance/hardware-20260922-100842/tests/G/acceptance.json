@@ -1,0 +1,632 @@
+{
+  "tool": "offtreads",
+  "milestone": "M10",
+  "timestampUtc": "2026-09-22T15:21:00.0561137Z",
+  "firmware": 2457,
+  "serial": 206587486,
+  "automated": {
+    "pass": true,
+    "detail": {
+      "transitions": [
+        {
+          "t": 4.1649146,
+          "from": "OnTreads",
+          "to": "InAir",
+          "pitchDeg": 1.7380780246497332,
+          "accelY": -467.52637,
+          "accelMag": 10728.966,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 4.4620838,
+          "from": "InAir",
+          "to": "Falling",
+          "pitchDeg": 11.669336362058118,
+          "accelY": 492.95358,
+          "accelMag": 8938.012,
+          "pickedUp": true,
+          "falling": true
+        },
+        {
+          "t": 5.5226886,
+          "from": "Falling",
+          "to": "OnTreads",
+          "pitchDeg": 26.558142153556986,
+          "accelY": -511.92462,
+          "accelMag": 9101.809,
+          "pickedUp": false,
+          "falling": false
+        },
+        {
+          "t": 6.7718324,
+          "from": "OnTreads",
+          "to": "OnBack",
+          "pitchDeg": 74.13251683605475,
+          "accelY": -825.79156,
+          "accelMag": 10240.801,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 7.5974728,
+          "from": "OnBack",
+          "to": "OnLeftSide",
+          "pitchDeg": 67.4032505412181,
+          "accelY": -9064.9,
+          "accelMag": 10254.545,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 9.5114305,
+          "from": "OnLeftSide",
+          "to": "OnFace",
+          "pitchDeg": -86.18240487168293,
+          "accelY": -1455.1475,
+          "accelMag": 9958.834,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 10.9308142,
+          "from": "OnFace",
+          "to": "OnRightSide",
+          "pitchDeg": 54.99868444236949,
+          "accelY": 8293.091,
+          "accelMag": 9492.782,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 12.5479515,
+          "from": "OnRightSide",
+          "to": "OnFace",
+          "pitchDeg": 105.82311243386401,
+          "accelY": 2658.976,
+          "accelMag": 9871.322,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 13.8687596,
+          "from": "OnFace",
+          "to": "OnBack",
+          "pitchDeg": 76.11645456351167,
+          "accelY": -898.0088,
+          "accelMag": 10217.063,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 14.9907803,
+          "from": "OnBack",
+          "to": "OnFace",
+          "pitchDeg": 165.6625226957508,
+          "accelY": -2109.0576,
+          "accelMag": 10525.977,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 17.3016737,
+          "from": "OnFace",
+          "to": "InAir",
+          "pitchDeg": 3.89970461746842,
+          "accelY": -1139.1963,
+          "accelMag": 10001.755,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 17.4013318,
+          "from": "InAir",
+          "to": "OnTreads",
+          "pitchDeg": 2.8916611169717443,
+          "accelY": -1021.1121,
+          "accelMag": 9974.138,
+          "pickedUp": false,
+          "falling": false
+        },
+        {
+          "t": 19.9418309,
+          "from": "OnTreads",
+          "to": "InAir",
+          "pitchDeg": -0.08147639279415651,
+          "accelY": 1862.6986,
+          "accelMag": 11587.808,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 23.0445642,
+          "from": "InAir",
+          "to": "OnTreads",
+          "pitchDeg": 7.159909295119124,
+          "accelY": 695.61835,
+          "accelMag": 12142.872,
+          "pickedUp": false,
+          "falling": false
+        },
+        {
+          "t": 26.9422099,
+          "from": "OnTreads",
+          "to": "InAir",
+          "pitchDeg": 6.267798223943071,
+          "accelY": -1107.427,
+          "accelMag": 10022.027,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 27.1708857,
+          "from": "InAir",
+          "to": "OnTreads",
+          "pitchDeg": -5.208131513369205,
+          "accelY": -1457.6392,
+          "accelMag": 9759.334,
+          "pickedUp": false,
+          "falling": false
+        },
+        {
+          "t": 30.8677015,
+          "from": "OnTreads",
+          "to": "InAir",
+          "pitchDeg": 0.9014869999157757,
+          "accelY": -1473.6375,
+          "accelMag": 9755.356,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 31.0656356,
+          "from": "InAir",
+          "to": "OnTreads",
+          "pitchDeg": 3.2575268166092357,
+          "accelY": -1287.5339,
+          "accelMag": 9832.33,
+          "pickedUp": false,
+          "falling": false
+        },
+        {
+          "t": 31.2969009,
+          "from": "OnTreads",
+          "to": "InAir",
+          "pitchDeg": 5.884374028940181,
+          "accelY": 27.9888,
+          "accelMag": 10591.977,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 31.8573547,
+          "from": "InAir",
+          "to": "Falling",
+          "pitchDeg": 48.77645724056874,
+          "accelY": 2765.0557,
+          "accelMag": 9431.169,
+          "pickedUp": true,
+          "falling": true
+        },
+        {
+          "t": 32.9602266,
+          "from": "Falling",
+          "to": "OnTreads",
+          "pitchDeg": -8.303783700422784,
+          "accelY": -4162.142,
+          "accelMag": 10627.645,
+          "pickedUp": false,
+          "falling": false
+        },
+        {
+          "t": 33.1448926,
+          "from": "OnTreads",
+          "to": "InAir",
+          "pitchDeg": -11.361588528624853,
+          "accelY": -1444.581,
+          "accelMag": 11123.328,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 33.9378646,
+          "from": "InAir",
+          "to": "OnTreads",
+          "pitchDeg": -3.0253870428538967,
+          "accelY": 477.89136,
+          "accelMag": 9995.382,
+          "pickedUp": false,
+          "falling": false
+        },
+        {
+          "t": 34.5973006,
+          "from": "OnTreads",
+          "to": "InAir",
+          "pitchDeg": 5.253905733639337,
+          "accelY": -167.23503,
+          "accelMag": 10894.471,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 35.0921809,
+          "from": "InAir",
+          "to": "Falling",
+          "pitchDeg": 1.408409979735782,
+          "accelY": 506.71304,
+          "accelMag": 9236.121,
+          "pickedUp": true,
+          "falling": true
+        },
+        {
+          "t": 35.4227841,
+          "from": "Falling",
+          "to": "OnTreads",
+          "pitchDeg": 0,
+          "accelY": -1946.021,
+          "accelMag": 7872.2285,
+          "pickedUp": false,
+          "falling": false
+        },
+        {
+          "t": 36.5119647,
+          "from": "OnTreads",
+          "to": "InAir",
+          "pitchDeg": 3.99725722117595,
+          "accelY": -734.64636,
+          "accelMag": 9952.006,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 36.711019,
+          "from": "InAir",
+          "to": "OnTreads",
+          "pitchDeg": 3.6887136707043786,
+          "accelY": -516.1984,
+          "accelMag": 9986.826,
+          "pickedUp": false,
+          "falling": false
+        },
+        {
+          "t": 40.7408644,
+          "from": "OnTreads",
+          "to": "InAir",
+          "pitchDeg": 1.8809141422242133,
+          "accelY": -837.27527,
+          "accelMag": 9833.986,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 42.5523934,
+          "from": "InAir",
+          "to": "OnFace",
+          "pitchDeg": 127.49446938723574,
+          "accelY": -5427.87,
+          "accelMag": 10828.972,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 43.2456903,
+          "from": "OnFace",
+          "to": "OnLeftSide",
+          "pitchDeg": 95.53633527963706,
+          "accelY": -8836.46,
+          "accelMag": 10872.983,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 45.3924521,
+          "from": "OnLeftSide",
+          "to": "OnFace",
+          "pitchDeg": 159.73441026979995,
+          "accelY": -4107.05,
+          "accelMag": 10696.479,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 46.5457175,
+          "from": "OnFace",
+          "to": "OnRightSide",
+          "pitchDeg": -11.690533000373607,
+          "accelY": 7833.047,
+          "accelMag": 9619.401,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 47.040972,
+          "from": "OnRightSide",
+          "to": "InAir",
+          "pitchDeg": 1.4740470304425468,
+          "accelY": 3414.7651,
+          "accelMag": 9501.988,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 47.3053168,
+          "from": "InAir",
+          "to": "OnTreads",
+          "pitchDeg": 0.323105380379906,
+          "accelY": -1015.22705,
+          "accelMag": 9882.997,
+          "pickedUp": false,
+          "falling": false
+        },
+        {
+          "t": 47.4710376,
+          "from": "OnTreads",
+          "to": "InAir",
+          "pitchDeg": 3.445001208617511,
+          "accelY": -3284.7463,
+          "accelMag": 9802.471,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 47.9319774,
+          "from": "InAir",
+          "to": "OnLeftSide",
+          "pitchDeg": 104.76607235791285,
+          "accelY": -8711.989,
+          "accelMag": 10346.034,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 49.3181767,
+          "from": "OnLeftSide",
+          "to": "OnRightSide",
+          "pitchDeg": 2.5916952168806513,
+          "accelY": 7062.3364,
+          "accelMag": 9567.422,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 49.6487332,
+          "from": "OnRightSide",
+          "to": "InAir",
+          "pitchDeg": -26.162097049628382,
+          "accelY": 1952.2688,
+          "accelMag": 9647.108,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 50.6395604,
+          "from": "InAir",
+          "to": "OnFace",
+          "pitchDeg": 156.29643455107404,
+          "accelY": 3393.0083,
+          "accelMag": 10051.384,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 51.2001243,
+          "from": "OnFace",
+          "to": "OnRightSide",
+          "pitchDeg": -5.924051451602431,
+          "accelY": 7015.6934,
+          "accelMag": 9627.623,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 51.5629259,
+          "from": "OnRightSide",
+          "to": "InAir",
+          "pitchDeg": 3.203752523830314,
+          "accelY": 4803.5205,
+          "accelMag": 9556.402,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 51.8932558,
+          "from": "InAir",
+          "to": "OnTreads",
+          "pitchDeg": 13.628813474549935,
+          "accelY": 746.18115,
+          "accelMag": 9755.449,
+          "pickedUp": false,
+          "falling": false
+        },
+        {
+          "t": 53.0815481,
+          "from": "OnTreads",
+          "to": "InAir",
+          "pitchDeg": -1.495015284307663,
+          "accelY": -3116.1655,
+          "accelMag": 9841.737,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 53.5767492,
+          "from": "InAir",
+          "to": "OnLeftSide",
+          "pitchDeg": 61.28043674278689,
+          "accelY": -9353.197,
+          "accelMag": 10383.747,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 56.1180185,
+          "from": "OnLeftSide",
+          "to": "OnFace",
+          "pitchDeg": 167.24132092239924,
+          "accelY": -2246.107,
+          "accelMag": 10535.78,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 57.1081952,
+          "from": "OnFace",
+          "to": "OnRightSide",
+          "pitchDeg": 109.24206607575145,
+          "accelY": 8252.16,
+          "accelMag": 9430.945,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 58.9234356,
+          "from": "OnRightSide",
+          "to": "InAir",
+          "pitchDeg": -69.88426211571188,
+          "accelY": 1364.4918,
+          "accelMag": 9168.215,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 59.3865466,
+          "from": "InAir",
+          "to": "OnFace",
+          "pitchDeg": -86.1421204159582,
+          "accelY": -145.29266,
+          "accelMag": 9329.023,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 60.6401602,
+          "from": "OnFace",
+          "to": "InAir",
+          "pitchDeg": 31.820963418497307,
+          "accelY": -348.6489,
+          "accelMag": 9342.235,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 61.7624519,
+          "from": "InAir",
+          "to": "OnBack",
+          "pitchDeg": 75.10324381146447,
+          "accelY": -470.9649,
+          "accelMag": 10038.304,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 64.4696493,
+          "from": "OnBack",
+          "to": "OnFace",
+          "pitchDeg": 149.90434737480425,
+          "accelY": 11.358124,
+          "accelMag": 10077.609,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 66.7469184,
+          "from": "OnFace",
+          "to": "OnRightSide",
+          "pitchDeg": 93.40698282475057,
+          "accelY": 8292.526,
+          "accelMag": 9307.113,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 67.7042469,
+          "from": "OnRightSide",
+          "to": "InAir",
+          "pitchDeg": -3.2002343360775227,
+          "accelY": 2739.044,
+          "accelMag": 9483.858,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 67.7753548,
+          "from": "InAir",
+          "to": "OnTreads",
+          "pitchDeg": 7.346223622185555,
+          "accelY": 2112.4302,
+          "accelMag": 9132.784,
+          "pickedUp": false,
+          "falling": false
+        },
+        {
+          "t": 79.0582807,
+          "from": "OnTreads",
+          "to": "InAir",
+          "pitchDeg": 21.240995271505675,
+          "accelY": -841.4254,
+          "accelMag": 9837.777,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 79.2895905,
+          "from": "InAir",
+          "to": "OnTreads",
+          "pitchDeg": 20.872175301608742,
+          "accelY": -848.91956,
+          "accelMag": 9853.133,
+          "pickedUp": false,
+          "falling": false
+        },
+        {
+          "t": 82.4265181,
+          "from": "OnTreads",
+          "to": "InAir",
+          "pitchDeg": 8.689148949810427,
+          "accelY": -819.46704,
+          "accelMag": 9842.096,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 82.6239519,
+          "from": "InAir",
+          "to": "OnTreads",
+          "pitchDeg": 2.034185294746592,
+          "accelY": -822.2233,
+          "accelMag": 9930.016,
+          "pickedUp": false,
+          "falling": false
+        },
+        {
+          "t": 87.3435263,
+          "from": "OnTreads",
+          "to": "InAir",
+          "pitchDeg": -3.8543342321329637,
+          "accelY": -833.699,
+          "accelMag": 9734.606,
+          "pickedUp": true,
+          "falling": false
+        },
+        {
+          "t": 87.541263,
+          "from": "InAir",
+          "to": "OnTreads",
+          "pitchDeg": 2.81497025886696,
+          "accelY": -777.9913,
+          "accelMag": 9743.931,
+          "pickedUp": false,
+          "falling": false
+        }
+      ],
+      "unexpectedMovements": [],
+      "statesClassified": 3017,
+      "classifierEnabled": true,
+      "onBackCentreDeg": 74.49998322747555
+    }
+  },
+  "human": {
+    "check": "the printed transitions match what was done to him: picked up -\u003E InAir at once, put down -\u003E OnTreads at once, on back about a second after being laid down, sides and face after a quarter second, and a push while driving reports the side it came from",
+    "verdict": "PENDING - fill in after watching the robot"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "Id": "J",
+  "Name": "Unexpected movement while driving",
+  "Phase": "10. robot state and reactions",
+  "Subsystem": "The unexpected-movement detector and its reaction",
+  "Purpose": "The detector suspends during direct drive, so it can only be provoked while a behaviour is driving the body. Its thresholds came from the engine and have never been pushed against.",
+  "ExpectedTelemetry": "an unexpected movement report naming the side, then the reaction",
+  "ExpectedPhysical": "He plays the startled reaction once, on the side the push came from, and nothing fires while he drives freely.",
+  "Prerequisites": [
+    "H passed"
+  ],
+  "FidelityRecords": [
+    "M10-006"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "reactions 172.31.1.1 --obb C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\obb --seconds 120 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-100842\\tests\\J\\acceptance.json",
+  "StartedUtc": "2026-09-22T15:30:11.3020101Z",
+  "FinishedUtc": "2026-09-22T15:30:43.3394418Z",
+  "ElapsedSeconds": 32.0374317,
+  "Auto": "NotRun",
+  "Human": "NotAsked",
+  "Status": "Interrupted",
+  "InterruptedReason": "stopped part way (emergency stop or Ctrl\u002BC)",
+  "Attempts": 1,
+  "Captured": {
+    "reaction": [
+      "  UnexpectedMovement   -\u003E ReactToUnexpectedMovement (resumes last)"
+    ]
+  },
+  "Warnings": [
+    "note: could not open a connection to confirm the motors are stopped (TimeoutException). If he is still moving, pick him up or put him on his back."
+  ],
+  "Files": [
+    "console.log"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "Id": "Y",
+  "Name": "The face pipeline with a detector",
+  "Phase": "15. blocked on this build",
+  "Subsystem": "FaceWorld, the face actions and the face reactions",
+  "Purpose": "Everything around the detector is built and tested offline. The detector itself is Omron OKAO and is not reproducible, so this check waits for an IFaceDetector implementation.",
+  "ExpectedTelemetry": "not run",
+  "ExpectedPhysical": "Not applicable.",
+  "Prerequisites": [],
+  "FidelityRecords": [
+    "M14-001"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "reactions 172.31.1.1 --obb re-analysis\\obb --seconds 120",
+  "FinishedUtc": "2026-09-22T17:58:31.3273573Z",
+  "Auto": "NotRun",
+  "Human": "NotAsked",
+  "Status": "Blocked",
+  "BlockedReason": "BLOCKED_EXTERNAL: VisionSystem.FaceDetector is the OKAO boundary and reports itself unavailable. Attach an IFaceDetector implementation and this check becomes runnable. You will not be asked to perform it.",
+  "Attempts": 1,
+  "Captured": {},
+  "Warnings": [],
+  "Files": []
+}

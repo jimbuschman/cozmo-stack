@@ -1,0 +1,34 @@
+{
+  "utc": "2026-09-18T23:20:23.4105349Z",
+  "device": "sensors",
+  "automatedChecksPassed": true,
+  "humanCheckRequired": "nothing, unless you lifted the robot or moved it near an edge, in which case those events should appear above",
+  "humanVerdict": "not recorded: set to pass or fail after watching the robot",
+  "robot": {
+    "serial": "0x0c50465e",
+    "firmware": 2457,
+    "batteryVolts": 4.0359497,
+    "onCharger": false
+  },
+  "detail": {
+    "stateMessages": 270,
+    "batteryVolts": 4.0359497,
+    "onCharger": false,
+    "charging": false,
+    "pickedUp": true,
+    "cliffDetected": true,
+    "cliffSensorsRaw": [
+      8,
+      0,
+      0,
+      0
+    ],
+    "accelerometer": "(-3721.26, 874.18, 9411.23)",
+    "gyroscope": "(-0.20, 0.33, 0.40)",
+    "headAngleRad": -0.4272991,
+    "liftPositionRaw": -0.21645458,
+    "imuRawChunks": 200,
+    "cliffEvents": []
+  },
+  "handlerFaults": 0
+}

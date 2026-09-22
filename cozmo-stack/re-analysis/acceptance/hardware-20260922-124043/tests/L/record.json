@@ -1,0 +1,37 @@
+{
+  "Id": "L",
+  "Name": "SetBodyAngle semantics",
+  "Phase": "11. navigation",
+  "Subsystem": "The body-angle message: whether the angle is absolute or relative, and its packing",
+  "Purpose": "TurnTowardsPose depends on which one it is. Getting it wrong turns him the wrong way by however far he happens to be facing, which looks like a planner fault and is not.",
+  "ExpectedTelemetry": "the tool prints ABSOLUTE body angle confirmed for a 45 degree request",
+  "ExpectedPhysical": "He turns 45 degrees left in place, smoothly, and stops.",
+  "Prerequisites": [
+    "MOV passed"
+  ],
+  "FidelityRecords": [
+    "M11-013"
+  ],
+  "CoreRegressions": [],
+  "CommandLine": "bodyangle 172.31.1.1 --deg 45 --acceptance C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\acceptance\\hardware-20260922-124043\\tests\\L\\acceptance.json",
+  "StartedUtc": "2026-09-22T17:57:53.9635738Z",
+  "FinishedUtc": "2026-09-22T17:58:04.0849492Z",
+  "ElapsedSeconds": 10.1213754,
+  "Auto": "Pass",
+  "Human": "Pass",
+  "Status": "Passed",
+  "Attempts": 1,
+  "Captured": {
+    "verdict": [
+      "turned 45.0 deg for a 45.0 deg request: ABSOLUTE body angle confirmed"
+    ],
+    "turn": [
+      "turned 45.0 deg for a 45.0 deg request: ABSOLUTE body angle confirmed"
+    ]
+  },
+  "Warnings": [],
+  "Files": [
+    "acceptance.json",
+    "console.log"
+  ]
+}
