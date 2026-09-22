@@ -257,7 +257,7 @@ public sealed class CozmoAnimations : IDisposable
     public bool StreamLive(Keyframe k)
     {
         bool streamed = _scheduler.StreamLive(k, NowMs());
-        if (streamed && _scheduler.LiveBodyRunning) StartTicker();
+        if (streamed && _scheduler.HasPendingWork) StartTicker();
         return streamed;
     }
 

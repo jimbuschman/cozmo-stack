@@ -79,7 +79,7 @@
       "name": "Animation clips, scheduler and face",
       "milestone": "M5",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": false
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M6-wwise-bank",
@@ -93,7 +93,7 @@
       "name": "Idle, mood and reactions",
       "milestone": "M7",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": false
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M8-framework",
@@ -3572,7 +3572,7 @@
       "title": "The complete live-animation wire lifecycle",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
       "effect": "live keyframes (idle body, head, lift, face) start, interleave with a streamed animation, or stop on the wire differently from the engine",
-      "provenance": "StreamLive now opens the live stream as the engine does - one audio silence, StartOfAnimation with tag 0xFF, then the keyframe - and sends one audio silence per frame while a live body keyframe runs; a clip taking over ends the live stream without an EndOfAnimation and the next live keyframe reopens it. It used to send the body keyframe bare, with no StartOfAnimation and no audio framing",
+      "provenance": "once the live stream is active it is streamed on every tick in which no clip runs: opened with one audio silence and StartOfAnimation tag 0xFF, then one audio silence per frame within the robot's audio budget, the live keyframes appended into it; a clip taking over ends it without an EndOfAnimation and the next tick after the clip reopens it. The stream becomes active at the first live keyframe, which is when this stack's idle behaviour starts, rather than at engine start; and a tick streams one frame where the engine streams to its budget - the same frames on the wire at the same cadence",
       "authority": "AnimationStreamer::UpdateLiveAnimation 0x0057D5F8, AnimationStreamer::Update 0x0057CE5C, InitStream 0x0057B674, UpdateStream 0x0057C84C, SendStartOfAnimation 0x0057C400, SendBufferedMessages 0x0057BF60, read",
       "evidence": [
         "UpdateLiveAnimation 0x0057D5F8 sends nothing itself: it appends HeadAngle, BodyMotion and LiftHeight keyframes to the live Animation (AddKeyFrameToBack at 0x0057D866, 0x0057D8F4, 0x0057D9CA)",
@@ -3583,11 +3583,11 @@
         "SendBufferedMessages 0x0057BF60 sends each buffered message reliably (Robot::SendMessage(msg, true, false) at 0x0057BFAA) within the byte budget at this+0x98 and counts tags 0x8E/0x8F ((tag & 0xFE) == 0x8E at 0x0057BF8C) against the budget at this+0x9C computed by UpdateAmountToSend 0x0057C6F0",
         "Whether the robot requires StartOfAnimation or the audio framing to execute a body keyframe is firmware behaviour and is not answered by the engine; what the engine establishes is that it never sends a live keyframe outside a StartOfAnimation-opened, audio-framed stream. CR1's zero wheel movement is not explained by this reading"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "the engine streams the live animation on every update, one audio frame per frame, from the moment idle begins; this stack opens the live stream only at the first live keyframe and sends its per-frame audio only while a live body keyframe is running",
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "AnimationStreamLifecycleTests.ALiveBodyKeyframeGoesOutInsideAnOpenedLiveStream"
+      "test": "AnimationStreamLifecycleTests.TheLiveStreamKeepsStreamingAfterItsKeyframesHaveEnded"
     },
     {
       "id": "M11-019",
@@ -3676,7 +3676,7 @@
       "title": "Native cancellation and emission sequencing of a cancelled streaming animation",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
       "effect": "a command belonging to a cancelled animation reaches the robot, or the cancel is sequenced differently from the engine",
-      "provenance": "a cancelled or replaced animation now sends no EndOfAnimation and no trailing silence, as Abort does; the emission gate still guarantees no keyframe of it goes out after its end. It used to send EndOfAnimation and an AudioSilence on every cancel and replacement",
+      "provenance": "a cancelled or replaced animation sends the robot nothing - no EndOfAnimation, no silence, no body stop - as Abort does, and the emission gate keeps any keyframe of it from going out after its end. This stack has no send buffer, so the engine's flush of messages an animation buffered before an abort-to-nothing has nothing to flush here: every message went out when it was produced",
       "authority": "AnimationStreamer::Abort 0x0057B3E0, SetStreamingAnimation 0x0057B174, InitStream 0x0057B674, Update 0x0057CE5C, read",
       "evidence": [
         "The engine is single-threaded here: SetStreamingAnimation, Abort and UpdateStream all run on the engine update, so a cancel cannot land inside a frame's emission",
@@ -3684,11 +3684,11 @@
         "SetStreamingAnimation 0x0057B174 calls Abort (0x0057B244) and then replaces the streaming animation (str at 0x0057B24A), so no further keyframe is pulled from the aborted one; the successor's InitStream clears the send buffer (0x0057B7CE), discarding anything of the old animation still buffered",
         "With no successor the buffer is not cleared on abort: Update's no-animation path flushes whatever is still buffered (AnimationStreamer.Update.SendBufferNotEmpty warning at 0x0057D136, then UpdateAmountToSend and SendBufferedMessages at 0x0057D16C..0x0057D174). So an aborted animation can still emit messages it buffered before the abort, when the robot had no room for them, but never a new one"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "two differences remain: this stack sends a BodyStop when a cancelled animation had a body keyframe running, which the streamer's Abort does not; and it has no send buffer, so the engine's flush of messages buffered before an abort-to-nothing has no counterpart here",
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "AnimationStreamLifecycleTests.ACancelledAnimationSendsNoEndOfAnimation"
+      "test": "AnimationStreamLifecycleTests.CancellingAnAnimationWithABodyKeyframeRunningSendsNoBodyStop"
     }
   ]
 }

@@ -145,6 +145,9 @@ public sealed class AnimationScheduler
     private byte _nextTag = 1;                 // the tag the next animation opens with
     private bool _startSent;                   // has StartOfAnimation gone out for the running clip
     private bool _liveOpen;                    // has the live animation's StartOfAnimation (tag 0xFF) gone out
+    private bool _liveActive;                  // the live stream is the idle stream: streamed whenever no clip is
+    private int _liveFramesSent;               // audio frames of the live stream since it was opened
+    private int _livePlayedBaseline;           // robot's audio-frame count when the live stream opened
 
     /// <summary>
     /// The tag the live animation streams under: <c>AnimationStreamer::Update</c> opens it with
@@ -183,7 +186,14 @@ public sealed class AnimationScheduler
     /// timeline, so <see cref="IsPlaying"/> is false while a keep-alive body shuffle is still driving the
     /// wheels - and a caller that stops ticking then leaves the robot moving.
     /// </summary>
-    public bool HasPendingWork { get { lock (_gate) return _clip is not null || _liveBodyStopsAtMs is not null; } }
+    public bool HasPendingWork { get { lock (_gate) return _clip is not null || _liveBodyStopsAtMs is not null || _liveActive; } }
+
+    /// <summary>
+    /// Whether the live stream is active. Once it is, it is streamed on every <see cref="Advance"/> in which
+    /// no clip is running, as <c>AnimationStreamer::Update</c> 0x0057CE5C calls <c>UpdateStream(live)</c> on
+    /// every update (0x0057D430) and only a clip's <c>InitStream</c> takes its place.
+    /// </summary>
+    public bool LiveStreamActive { get { lock (_gate) return _liveActive; } }
 
     /// <summary>
     /// Whether the last live keyframe armed a deadline <see cref="Advance"/> still has to serve. The
@@ -319,12 +329,11 @@ public sealed class AnimationScheduler
         {
             bool open = false;
             lock (_gate)
-                if (_clip is null && !_liveOpen) { _liveOpen = true; open = true; }
-            if (open)
             {
-                _sink.Audio(null);
-                _sink.AnimationStarted(LiveAnimationTag);
+                _liveActive = true;
+                if (_clip is null && !_liveOpen) open = true;
             }
+            if (open) OpenLiveStream();
         }
 
         switch (k)
@@ -349,6 +358,20 @@ public sealed class AnimationScheduler
             default:
                 return false;
         }
+    }
+
+    // The first frame of the live stream: its audio message, then StartOfAnimation with tag 0xFF
+    // (UpdateStream 0x0057C9A8..0x0057C9D0 after InitStream(live, 0xFF)). Called under _emit.
+    private void OpenLiveStream()
+    {
+        lock (_gate)
+        {
+            _liveOpen = true;
+            _liveFramesSent = 1;
+            _livePlayedBaseline = _sink.AudioFramesPlayed ?? 0;
+        }
+        _sink.Audio(null);
+        _sink.AnimationStarted(LiveAnimationTag);
     }
 
     /// <summary>Stops whatever is running. Returns false when nothing was.</summary>
@@ -382,14 +405,15 @@ public sealed class AnimationScheduler
         // completing: a caller awaiting Play must not be left waiting forever because the link dropped.
         try
         {
-            // An animation that is cut short must not leave the wheels turning.
-            if (bodyWasRunning) _sink.BodyStop();
+            // A body keyframe still running when the animation completes is stopped. A cancelled or replaced
+            // one is not: AnimationStreamer::Abort 0x0057B3E0 sends the robot no body stop.
+            if (bodyWasRunning && reason == AnimationEndReason.Completed) _sink.BodyStop();
             // Only close an animation that was actually opened; a clip stopped before its first streamed
             // frame never sent a StartOfAnimation, and an unmatched EndOfAnimation would close someone
             // else's. And only one that completed: AnimationStreamer::Abort 0x0057B3E0 sends the robot
             // nothing - it posts AnimationAborted to the game, aborts the audio and clears the
             // started/ended flags (strh at 0x0057B578) - so a cancelled or replaced animation gets no
-            // EndOfAnimation. (The BodyStop above is this stack's; nothing on the Abort path sends one.)
+            // EndOfAnimation.
             if (wasOpen && reason == AnimationEndReason.Completed)
             {
                 _sink.AnimationEnded();
@@ -446,12 +470,25 @@ public sealed class AnimationScheduler
             }
         if (stopLiveBody) _sink.BodyStop();
 
-        // While the live animation is open and nothing else streams, each frame of it carries its audio
-        // message, as every UpdateStream frame does. This stack only ticks while a live keyframe still has
-        // work outstanding; the engine streams the live animation on every update (M7-017).
-        bool liveFrame;
-        lock (_gate) liveFrame = _clip is null && _liveOpen && (_liveBodyStopsAtMs is not null || stopLiveBody);
-        if (liveFrame) lock (_emit) _sink.Audio(null);
+        // While nothing else streams, the live stream does: every update streams it (UpdateStream(live) at
+        // 0x0057D430), reopening it with InitStream(live, 0xFF) after a clip (0x0057D3FE), and each of its
+        // frames carries its audio message, as every UpdateStream frame does - within the robot's audio
+        // budget, as ShouldProcessAnimationFrame 0x0057CC6C allows (M7-017).
+        lock (_emit)
+        {
+            bool open = false, frame = false;
+            lock (_gate)
+            {
+                if (_clip is null && _liveActive)
+                {
+                    if (!_liveOpen) open = true;
+                    else frame = !(_sink.AudioFramesPlayed is { } played &&
+                                   _liveFramesSent - (played - _livePlayedBaseline) >= CozmoAudio.RobotBufferFrames);
+                }
+            }
+            if (open) OpenLiveStream();
+            else if (frame) { _sink.Audio(null); lock (_gate) _liveFramesSent++; }
+        }
 
         double interval = FrameInterval.TotalMilliseconds;
         double maxDebt = CozmoAudio.RobotBufferFrames * interval;

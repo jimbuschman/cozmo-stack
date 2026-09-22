@@ -58,7 +58,7 @@ public class AnimationStreamLifecycleTests
     }
 
     [Fact]
-    public void AClipTakingOverEndsTheLiveStreamWithoutAnEndOfAnimationAndTheNextLiveKeyframeReopensIt()
+    public void AClipTakingOverEndsTheLiveStreamWithoutAnEndOfAnimationAndTheLiveStreamReopensAfterIt()
     {
         var sink = new LogSink();
         var s = new AnimationScheduler(sink, new Random(1));
@@ -66,13 +66,52 @@ public class AnimationStreamLifecycleTests
         s.Play(HeadClip(33), 0);
         s.Advance(0);
         s.Advance(34);
-        s.Advance(68);
+        Assert.False(s.IsPlaying);
         Assert.DoesNotContain(sink.Log.TakeWhile(e => e != "start:1"), e => e == "end");
         Assert.Contains("start:1", sink.Log);
 
+        // with no live keyframe pending, the next update reopens the live stream (InitStream(live, 0xFF))
         sink.Log.Clear();
-        s.StreamLive(new HeadKeyframe(0, 100, 5, 0), 100);
-        Assert.Equal(new[] { "silence", "start:255", "head" }, sink.Log);
+        s.Advance(68);
+        Assert.Equal(new[] { "silence", "start:255" }, sink.Log);
+    }
+
+    /// <summary>
+    /// Update streams the live animation on every update (UpdateStream(live) at 0x0057D430), not only while a
+    /// live keyframe is pending.
+    /// </summary>
+    [Fact]
+    public void TheLiveStreamKeepsStreamingAfterItsKeyframesHaveEnded()
+    {
+        var sink = new LogSink();
+        var s = new AnimationScheduler(sink, new Random(1));
+        s.StreamLive(new BodyKeyframe(0, 100, "STRAIGHT", 40), 0);
+        s.Advance(200);                       // the body keyframe's deadline passes
+        Assert.False(s.LiveBodyRunning);
+        Assert.True(s.HasPendingWork);
+        sink.Log.Clear();
+        for (int i = 1; i <= 5; i++) s.Advance(200 + 33 * i);
+        Assert.Equal(Enumerable.Repeat("silence", 5), sink.Log);
+    }
+
+    /// <summary>Abort 0x0057B3E0 sends no body stop; completion still stops a body keyframe still running.</summary>
+    [Fact]
+    public void CancellingAnAnimationWithABodyKeyframeRunningSendsNoBodyStop()
+    {
+        var sink = new LogSink();
+        var s = new AnimationScheduler(sink, new Random(1));
+        s.Play(new AnimationClip
+        {
+            Name = "drive",
+            Keyframes = new List<Keyframe> { new BodyKeyframe(0, 2000, "STRAIGHT", 40) },
+            Tracks = AnimationTrack.Body,
+            DurationMs = 5_000,
+        }, 0);
+        s.Advance(0);
+        Assert.Contains("body", sink.Log);
+        int before = sink.Log.Count;
+        Assert.True(s.Stop());
+        Assert.DoesNotContain("bodystop", sink.Log.Skip(before));
     }
 
     /// <summary>

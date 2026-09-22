@@ -180,7 +180,7 @@ public class AnimationTests
     }
 
     [Fact]
-    public void CancellingMidBodyMotionStopsTheWheels()
+    public void CancellingMidBodyMotionSendsNoBodyStop()
     {
         var r = new Recorder();
         var s = new AnimationScheduler(r);
@@ -189,18 +189,18 @@ public class AnimationTests
         Run(s, r, 0, 200);
         Assert.Empty(r.BodyStops);                // still within its duration
         s.Stop();
-        Assert.Single(r.BodyStops);               // cancelling must not leave the wheels turning
+        Assert.Empty(r.BodyStops);                // AnimationStreamer::Abort 0x0057B3E0 sends no body stop
     }
 
     [Fact]
-    public void ReplacingAnAnimationMidBodyMotionStopsTheWheels()
+    public void ReplacingAnAnimationMidBodyMotionSendsNoBodyStop()
     {
         var r = new Recorder();
         var s = new AnimationScheduler(r);
         s.Play(Clip("first", new BodyKeyframe(0, 5000, "STRAIGHT", 60)), 0);
         Run(s, r, 0, 100);
         s.Play(Clip("second", new EventKeyframe(0, "x")), 100);
-        Assert.Single(r.BodyStops);
+        Assert.Empty(r.BodyStops);                // a replacement is an Abort too
     }
 
     /// <summary>
