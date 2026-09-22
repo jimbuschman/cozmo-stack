@@ -2,6 +2,7 @@ using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
 using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Manipulation;
 using Cozmo.Transport;
 using Xunit;
 
@@ -344,5 +345,94 @@ public class CoreReviewTests
         Assert.Equal(n, got.Count);                       // every play was accepted (each replaces the last)
         Assert.Equal(got.Count, got.Distinct().Count());  // and no two callers were handed the same playback
         robot.Animations.Stop();
+    }
+
+    // ================================================================ CORE-004
+
+    /// <summary>
+    /// CORE-004. A path run that gives up must clear its own path and nobody else's.
+    ///
+    /// <c>PathRun</c> knows the id it installed, but its abort called the sender's unqualified
+    /// <c>Abort</c>, which clears whatever path the sender last sent. Cleanup from a cancelled or
+    /// timed-out wait is exactly the case that arrives late - after another action has installed its own
+    /// path - and it would then stop that one instead. Ownership is the path id: an abort that no longer
+    /// owns the robot's path sends nothing.
+    ///
+    /// The engine has one path component and one path, so its own <c>PathComponent::Abort</c> 0x00649100
+    /// is unqualified; per-action ownership is this stack's own layer, and this is where it has to hold.
+    /// </summary>
+    [Fact]
+    public void CORE004_AnOldRunsAbortDoesNotClearTheReplacementPath()
+    {
+        using var rig = new Rig();
+        var straight = new List<PathSegment>
+        {
+            new PathSegment.Line(0, 0, 100, 0, 60, 200, 200),
+        };
+
+        var a = rig.M.StartPath(straight);          // path A
+        var b = rig.M.StartPath(straight);          // B replaces it before A is cleaned up
+        Assert.NotEqual(a.PathId, b.PathId);
+        Assert.Equal(b.PathId, rig.M.Paths.LastPathId);
+
+        int clearsBefore = rig.M.Paths.Sent.OfType<ClearPath>().Count();
+
+        a.Abort();                                   // A's late cleanup
+        Assert.True(a.Aborted);
+        Assert.False(a.ClearedRobotPath);            // it no longer owned the robot's path
+        Assert.Equal(clearsBefore, rig.M.Paths.Sent.OfType<ClearPath>().Count());
+        Assert.Equal(b.PathId, rig.M.Paths.LastPathId);
+
+        // and B, which does own it, still can
+        b.Abort();
+        Assert.True(b.ClearedRobotPath);
+        Assert.Equal(clearsBefore + 1, rig.M.Paths.Sent.OfType<ClearPath>().Count());
+    }
+
+    /// <summary>
+    /// CORE-004, the other half the report asked about: two callers installing paths at once must not
+    /// interleave their clear, their segments and their execute. Each path is installed whole, under one
+    /// id, in one order.
+    /// </summary>
+    [Fact]
+    public void CORE004_ConcurrentInstallationsDoNotInterleave()
+    {
+        using var rig = new Rig();
+        List<PathSegment> Path(int n) => new()
+        {
+            new PathSegment.Line(0, 0, n, 0, 60, 200, 200),
+            new PathSegment.Line(n, 0, n, n, 60, 200, 200),
+            new PathSegment.Line(n, n, 0, n, 60, 200, 200),
+        };
+
+        const int callers = 8;
+        var start = new ManualResetEventSlim(false);
+        var threads = new List<Thread>();
+        for (int i = 0; i < callers; i++)
+        {
+            int me = i + 1;
+            var t = new Thread(() => { start.Wait(); rig.M.Paths.Execute(Path(me)); });
+            threads.Add(t);
+            t.Start();
+        }
+        start.Set();
+        foreach (var t in threads) Assert.True(t.Join(5_000));
+
+        // every installation is a clear, its three segments and an execute, in that order and unbroken
+        var sent = rig.M.Paths.Sent.ToList();
+        int i2 = 0, installs = 0;
+        while (i2 < sent.Count)
+        {
+            Assert.IsType<ClearPath>(sent[i2]);
+            ushort id = ((ClearPath)sent[i2]).Unknown;
+            i2++;
+            int segs = 0;
+            while (i2 < sent.Count && sent[i2] is AppendPathSegmentLine) { i2++; segs++; }
+            Assert.Equal(3, segs);
+            var exec = Assert.IsType<ExecutePath>(sent[i2++]);
+            Assert.Equal(id, exec.EventId);          // installed and executed under one id
+            installs++;
+        }
+        Assert.Equal(callers, installs);
     }
 }

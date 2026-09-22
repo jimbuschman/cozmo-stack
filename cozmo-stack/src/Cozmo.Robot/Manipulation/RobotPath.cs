@@ -48,12 +48,13 @@ public enum PathEventType : byte { Started = 0, Interrupted = 1, Completed = 2 }
 public sealed class PathSender
 {
     private readonly CozmoRobot _robot;
+    private readonly object _gate = new();
     private ushort _pathId;
 
     public PathSender(CozmoRobot robot) => _robot = robot;
 
     /// <summary>The id of the last path sent (the engine's <c>_lastSentPathID</c>).</summary>
-    public ushort LastPathId => _pathId;
+    public ushort LastPathId { get { lock (_gate) return _pathId; } }
     /// <summary>Every message sent, for tests and the conformance log.</summary>
     public List<RobotMessage> Sent { get; } = new();
 
@@ -69,38 +70,67 @@ public sealed class PathSender
     /// </summary>
     public ushort Execute(IReadOnlyList<PathSegment> path, Action<ushort>? reserve = null)
     {
-        _pathId++;
-        if (_pathId == 0) _pathId = 1;
-        reserve?.Invoke(_pathId);
-        Send(new ClearPath { Unknown = _pathId });
-        foreach (var s in path)
+        // The clear, the segments and the execute are one installation. Two callers interleaving them
+        // would leave the robot holding half of each path under one id, so the whole sequence - and the
+        // id it is installed under - is taken together.
+        lock (_gate)
         {
-            switch (s)
+            _pathId++;
+            if (_pathId == 0) _pathId = 1;
+            reserve?.Invoke(_pathId);
+            Send(new ClearPath { Unknown = _pathId });
+            foreach (var s in path)
             {
-                case PathSegment.Line l:
-                    Send(new AppendPathSegmentLine { XStartMm = (float)l.FromX, YStartMm = (float)l.FromY,
-                                                     XEndMm = (float)l.ToX, YEndMm = (float)l.ToY,
-                                                     Speed = new PathSegmentSpeed { SpeedMmps = l.SpeedMmps, AccelMmps2 = l.AccelMmps2, DecelMmps2 = l.DecelMmps2 } });
-                    break;
-                case PathSegment.Arc a:
-                    Send(new AppendPathSegmentArc { XCenterMm = (float)a.CenterX, YCenterMm = (float)a.CenterY,
-                                                    RadiusMm = (float)a.RadiusMm, StartRad = (float)a.StartAngleRad, SweepRad = (float)a.SweepRad,
-                                                    Speed = new PathSegmentSpeed { SpeedMmps = a.SpeedMmps, AccelMmps2 = a.AccelMmps2, DecelMmps2 = a.DecelMmps2 } });
-                    break;
-                case PathSegment.PointTurn t:
-                    Send(new AppendPathSegmentPointTurn { XMm = (float)t.X, YMm = (float)t.Y,
-                                                          TargetAngleRad = (float)t.TargetAngleRad, AngleToleranceRad = (float)t.AngleToleranceRad,
-                                                          Speed = new PathSegmentSpeed { SpeedMmps = t.SpeedRadPerSec, AccelMmps2 = t.AccelRadPerSec2, DecelMmps2 = t.DecelRadPerSec2 },
-                                                          UseShortestDirection = (byte)(t.UseShortestDirection ? 1 : 0) });
-                    break;
+                switch (s)
+                {
+                    case PathSegment.Line l:
+                        Send(new AppendPathSegmentLine { XStartMm = (float)l.FromX, YStartMm = (float)l.FromY,
+                                                         XEndMm = (float)l.ToX, YEndMm = (float)l.ToY,
+                                                         Speed = new PathSegmentSpeed { SpeedMmps = l.SpeedMmps, AccelMmps2 = l.AccelMmps2, DecelMmps2 = l.DecelMmps2 } });
+                        break;
+                    case PathSegment.Arc a:
+                        Send(new AppendPathSegmentArc { XCenterMm = (float)a.CenterX, YCenterMm = (float)a.CenterY,
+                                                        RadiusMm = (float)a.RadiusMm, StartRad = (float)a.StartAngleRad, SweepRad = (float)a.SweepRad,
+                                                        Speed = new PathSegmentSpeed { SpeedMmps = a.SpeedMmps, AccelMmps2 = a.AccelMmps2, DecelMmps2 = a.DecelMmps2 } });
+                        break;
+                    case PathSegment.PointTurn t:
+                        Send(new AppendPathSegmentPointTurn { XMm = (float)t.X, YMm = (float)t.Y,
+                                                              TargetAngleRad = (float)t.TargetAngleRad, AngleToleranceRad = (float)t.AngleToleranceRad,
+                                                              Speed = new PathSegmentSpeed { SpeedMmps = t.SpeedRadPerSec, AccelMmps2 = t.AccelRadPerSec2, DecelMmps2 = t.DecelRadPerSec2 },
+                                                              UseShortestDirection = (byte)(t.UseShortestDirection ? 1 : 0) });
+                        break;
+                }
             }
+            Send(new ExecutePath { EventId = _pathId, Unknown = false });
+            return _pathId;
         }
-        Send(new ExecutePath { EventId = _pathId, Unknown = false });
-        return _pathId;
     }
 
-    /// <summary><c>PathComponent::Abort</c>: clear the robot's current path.</summary>
-    public void Abort() => Send(new ClearPath { Unknown = _pathId });
+    /// <summary>
+    /// <c>PathComponent::Abort</c>: clear the robot's current path, whatever it is. The engine has one
+    /// path component and one path, so its own abort is unqualified like this.
+    /// </summary>
+    public void Abort() { lock (_gate) Send(new ClearPath { Unknown = _pathId }); }
+
+    /// <summary>
+    /// Clears the robot's path only while <paramref name="pathId"/> is still the one installed, and says
+    /// whether it did.
+    ///
+    /// This stack owns paths per action rather than globally: a <see cref="PathRun"/> that is cancelled or
+    /// times out clears the path so firmware motion does not outlive the action. That cleanup can be late -
+    /// a cancelled wait finishes after another action has already installed its own path - and an
+    /// unqualified clear would then stop the path that replaced it. Ownership is the path id: an abort that
+    /// no longer owns the robot's path sends nothing.
+    /// </summary>
+    public bool AbortIfCurrent(ushort pathId)
+    {
+        lock (_gate)
+        {
+            if (_pathId != pathId) return false;
+            Send(new ClearPath { Unknown = _pathId });
+            return true;
+        }
+    }
 }
 
 /// <summary>

@@ -161,13 +161,23 @@ public sealed class PathRun : IDisposable
         return ev;
     }
 
-    /// <summary>Clears the path on the robot. Safe to call more than once.</summary>
+    /// <summary>
+    /// Clears the path on the robot, but only while this run still owns it. Safe to call more than once.
+    ///
+    /// A run whose wait was cancelled or timed out can be cleaning up long after another action has
+    /// installed its own path; clearing unconditionally would stop that one instead. Returns nothing
+    /// because the caller has nothing to do either way - <see cref="Aborted"/> records that this run gave
+    /// up, and <see cref="ClearedRobotPath"/> whether the robot was actually told.
+    /// </summary>
     public void Abort()
     {
         if (Interlocked.Exchange(ref _ended, 1) != 0) return;
         Aborted = true;
-        _m.Paths.Abort();
+        ClearedRobotPath = _m.Paths.AbortIfCurrent(PathId);
     }
+
+    /// <summary>Whether this run's abort actually cleared the robot's path, or found it no longer owned.</summary>
+    public bool ClearedRobotPath { get; private set; }
 
     public void Dispose() => _reservation.Dispose();
 }
