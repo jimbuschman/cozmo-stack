@@ -111,7 +111,24 @@ public sealed class VisionSystem : IDisposable
     {
         switch (m)
         {
-            case RobotState s: History.Add(s); break;
+            case RobotState s:
+            {
+                // The robot reports which origin its pose is in. A different one means it has been
+                // delocalized - Robot::Delocalize 0x00510A24 allocates the new origin and tells the robot
+                // - and everything located in the old one is in a frame that no longer exists. What the
+                // robot is carrying moves across with it (0x00510CF0); the rest stops being located, and
+                // whoever holds spatial state of their own is told so they can do the same.
+                uint before = History.OriginId;
+                History.Add(s);
+                uint now = History.OriginId;
+                if (now != before && before != 0)
+                {
+                    var carried = CarriedObjectIds();
+                    World.OnRobotDelocalized(carried);
+                    RobotDelocalized?.Invoke(now);
+                }
+                break;
+            }
             // HandleActiveObjectMoved 0x00533E30 dirties the pose only when the robot is not carrying
             // the object (the guard at 0x00534116); a cube on the lift reporting motion is ignored.
             case ObjectMoved mv:
@@ -234,6 +251,31 @@ public sealed class VisionSystem : IDisposable
         LastResult = result;
         FrameProcessed?.Invoke(result);
         return result;
+    }
+
+    /// <summary>
+    /// Raised when the robot's state stream reports a different pose origin from the one before: the
+    /// robot has been delocalized and everything positioned in the old origin is in a frame that has
+    /// gone. The world has already forgotten its located objects by the time this is raised; a caller
+    /// with spatial state of its own - the memory map above all, which the engine rebuilds for the new
+    /// origin - clears it here.
+    /// </summary>
+    public event Action<uint>? RobotDelocalized;
+
+    /// <summary>The origin the robot's poses are reported in, as of its last state.</summary>
+    public uint OriginId => History.OriginId;
+
+    /// <summary>
+    /// Which objects the robot is carrying, so a delocalization can move them into the new origin rather
+    /// than forgetting them: they are held, so where they are relative to the robot is still known.
+    /// Set by whoever tracks carrying (the manipulation system does).
+    /// </summary>
+    public Func<IReadOnlySet<uint>>? CarriedObjects { get; set; }
+
+    private IReadOnlySet<uint> CarriedObjectIds()
+    {
+        try { return CarriedObjects?.Invoke() ?? new HashSet<uint>(); }
+        catch { return new HashSet<uint>(); }
     }
 
     /// <summary>

@@ -110,6 +110,13 @@ public sealed class FreeplayStack : IDisposable
             }
             vision.FrameProcessed += onFrame;
             stack._unsubscribe.Add(() => vision.FrameProcessed -= onFrame);
+
+            // A delocalization puts the robot in a new origin, and the engine gives that origin a map of
+            // its own (MapComponent::CreateLocalizedMemoryMap, called from BlockWorld::OnRobotDelocalized
+            // 0x006249D6). Everything in the old map is in a frame that has gone, so it starts empty.
+            void onDelocalized(uint origin) => theMap.Clear();
+            vision.RobotDelocalized += onDelocalized;
+            stack._unsubscribe.Add(() => vision.RobotDelocalized -= onDelocalized);
         }
         return stack;
     }

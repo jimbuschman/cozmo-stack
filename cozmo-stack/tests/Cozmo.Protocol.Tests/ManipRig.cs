@@ -19,6 +19,8 @@ internal sealed class Rig : IDisposable
     public uint T = 1000;
     private ushort _seq = 1;
     public float X, Y, Angle, Head = -0.15f;
+    /// <summary>The origin the fake robot reports its pose in; changing it is a delocalization.</summary>
+    public uint OriginId = 1;
     public readonly List<string> Log = new();
     /// <summary>Messages the stack sent, decoded from the offline transport's frames.</summary>
     public readonly List<RobotMessage> Sent = new();
@@ -105,7 +107,7 @@ internal sealed class Rig : IDisposable
     public void State(uint? flags = null)
     {
         T += 33;
-        Send(new RobotState { Timestamp = T, Pose = new RobotPose { X = X, Y = Y, Angle = Angle }, HeadAngle = Head, Status = flags ?? (OnCharger ? (uint)RobotStatusFlag.IsOnCharger : 0u),
+        Send(new RobotState { Timestamp = T, PoseOriginId = OriginId, Pose = new RobotPose { X = X, Y = Y, Angle = Angle }, HeadAngle = Head, Status = flags ?? (OnCharger ? (uint)RobotStatusFlag.IsOnCharger : 0u),
                               Accel = new AccelData { Z = 9800 }, Gyro = new GyroData() });
     }
 

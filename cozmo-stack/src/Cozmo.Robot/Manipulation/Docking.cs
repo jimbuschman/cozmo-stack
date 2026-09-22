@@ -117,6 +117,10 @@ public sealed class DockingSystem : IDisposable
         robot.Message += OnMessage;
         vision.FrameProcessed += OnFrame;
         vision.IsCarryingObject = Carrying.IsCarrying;   // the guard at 0x00534116 needs this
+        // A delocalization forgets what was located in the origin that has gone, except what the robot is
+        // holding: Robot::Delocalize moves the carried objects into the new origin instead (0x00510CF0).
+        vision.CarriedObjects = () => Carrying.CarriedObjectId is { } id
+            ? new HashSet<uint> { id } : new HashSet<uint>();
         // The engine parents the carried object to the lift, so it follows for free; here the chain is
         // recomposed whenever a new state arrives.
         vision.FrameProcessed += _ => UpdateCarriedObjectPose();

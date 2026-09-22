@@ -581,6 +581,36 @@ public sealed class BlockWorld
         lock (_gate) { if (_objects.TryGetValue(objectId, out var o)) o.IsMoving = moving; }
     }
 
+    /// <summary>
+    /// The robot has been delocalized: it is in a new origin, and everything that was located in the old
+    /// one is in a coordinate frame that no longer exists.
+    ///
+    /// <c>Robot::Delocalize</c> 0x00510A24 allocates a new origin, puts the robot at it, clears the pose
+    /// confirmer, and moves only what the robot is carrying into the new origin
+    /// (<c>BlockWorld::UpdateObjectOrigin</c> for each carried object, 0x00510CF0);
+    /// <c>BlockWorld::OnRobotDelocalized</c> 0x006249C4 then deletes what is left in origins nobody
+    /// references and asks the map component for a fresh map for the new origin
+    /// (<c>CreateLocalizedMemoryMap</c>). So an object that is not being carried stops being located - its
+    /// pose is not stale by a little, it is expressed in a frame that has gone.
+    ///
+    /// Returns the objects that stopped being located.
+    /// </summary>
+    public IReadOnlyList<ObservableObject> OnRobotDelocalized(IReadOnlySet<uint>? carriedObjectIds = null)
+    {
+        var forgotten = new List<ObservableObject>();
+        List<ObservableObject> located;
+        lock (_gate) located = _objects.Values.Where(o => o.IsLocated).ToList();
+        foreach (var o in located)
+        {
+            if (carriedObjectIds is not null && carriedObjectIds.Contains(o.ObjectId)) continue;
+            PoseState prev;
+            lock (_gate) { prev = o.PoseState; o.PoseState = PoseState.Unknown; o.UnobservedCount = 0; }
+            PoseStateChanged?.Invoke(o, prev, PoseState.Unknown);
+            forgotten.Add(o);
+        }
+        return forgotten;
+    }
+
     public void MarkDirty(uint objectId)
     {
         ObservableObject? o; PoseState prev;

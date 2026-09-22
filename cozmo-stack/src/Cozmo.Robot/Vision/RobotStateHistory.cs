@@ -15,7 +15,8 @@ public readonly record struct VisionPoseData(uint Timestamp, Pose3d RobotPose, d
 /// </summary>
 public sealed class RobotStateHistory
 {
-    private readonly record struct Entry(uint Timestamp, RobotPose Pose, float HeadAngle, float LiftAngle, uint Status, float GyroZ);
+    private readonly record struct Entry(uint Timestamp, RobotPose Pose, float HeadAngle, float LiftAngle, uint Status, float GyroZ,
+                                        uint OriginId);
 
     private readonly List<Entry> _entries = new();
     private readonly object _gate = new();
@@ -32,10 +33,24 @@ public sealed class RobotStateHistory
     {
         lock (_gate)
         {
-            _entries.Add(new Entry(s.Timestamp, s.Pose, s.HeadAngle, s.LiftAngle, s.Status, s.Gyro.Z));
+            // A pose means nothing without the frame it was measured in. The robot reports the origin its
+            // pose is relative to in every state, and the engine resolves it - PoseOriginList::GetOriginByID
+            // at 0x00512C54, right after the state goes into history - so a pose from a previous origin is
+            // in a different coordinate frame, not merely old.
+            if (s.PoseOriginId != _originId)
+            {
+                _originId = s.PoseOriginId;
+                _entries.RemoveAll(e => e.OriginId != _originId);
+            }
+            _entries.Add(new Entry(s.Timestamp, s.Pose, s.HeadAngle, s.LiftAngle, s.Status, s.Gyro.Z, s.PoseOriginId));
             while (_entries.Count > 0 && unchecked(s.Timestamp - _entries[0].Timestamp) > WindowMs) _entries.RemoveAt(0);
         }
     }
+
+    private uint _originId;
+
+    /// <summary>The origin the robot's poses are currently reported in, from its state stream.</summary>
+    public uint OriginId { get { lock (_gate) return _originId; } }
 
     /// <summary>The state nearest to a timestamp (null when nothing has been recorded).</summary>
     public VisionPoseData? At(uint timestamp)

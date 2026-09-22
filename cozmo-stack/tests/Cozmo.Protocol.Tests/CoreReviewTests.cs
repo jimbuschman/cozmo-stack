@@ -771,4 +771,99 @@ public class CoreReviewTests
 
         Assert.DoesNotContain(map.Regions, r => r.Type == MemoryMapContentType.InterestingEdge);
     }
+
+    // ================================================================ CORE-008
+
+    /// <summary>
+    /// CORE-008. The robot reports which origin its pose is in and the stack threw it away.
+    ///
+    /// What the source says happens on an origin change is not a matter of judgement.
+    /// <c>Robot::Delocalize</c> 0x00510A24 allocates a new origin, puts the robot at it, clears the pose
+    /// confirmer and moves <em>only what the robot is carrying</em> into the new origin
+    /// (<c>BlockWorld::UpdateObjectOrigin</c> per carried object at 0x00510CF0);
+    /// <c>BlockWorld::OnRobotDelocalized</c> 0x006249C4 deletes what is left in origins nobody references
+    /// and asks for a fresh memory map for the new origin (<c>CreateLocalizedMemoryMap</c>); and
+    /// <c>Robot::UpdateFullRobotState</c> resolves the reported origin id against its own list
+    /// (0x00512C44) when it files the state in history. So a pose from a previous origin is not stale by
+    /// a little: it is written in a frame that no longer exists.
+    ///
+    /// This populates the world, injects the origin change the way the robot reports it, and shows that
+    /// the stale coordinates cannot drive anything afterwards.
+    /// </summary>
+    [Fact]
+    public void CORE008_AnOriginChangeTakesTheOldFramesCoordinatesOutOfPlay()
+    {
+        using var rig = new Rig();
+        if (rig.NoLibrary) return;
+        rig.Cube = new Pose3d(Mat3.Identity, new Vec3(150, 0, 22));
+        var seen = rig.Frame();
+        var cube = Assert.Single(seen.Objects).Object;
+        Assert.True(cube.IsLocated);
+        Assert.NotNull(rig.M.World.GetLocatedObjectById(cube.ObjectId));
+
+        // something in the map too, so both kinds of spatial state are covered
+        var map = new MemoryMap();
+        map.UpdateRobotPose(new Pose3d(Mat3.Identity, new Vec3(0, 0, 0)), false, 1);
+        Assert.NotEmpty(map.Regions);
+        uint delocalizedTo = 0;
+        rig.Vision.RobotDelocalized += o => { delocalizedTo = o; map.Clear(); };
+
+        // the robot comes back in a different origin, which is what it reports after a delocalization
+        Assert.Equal(1u, rig.Vision.OriginId);
+        rig.OriginId = 2;
+        rig.State();
+
+        Assert.Equal(2u, delocalizedTo);
+        Assert.Equal(2u, rig.Vision.OriginId);
+        Assert.Null(rig.M.World.GetLocatedObjectById(cube.ObjectId));      // cannot be driven to any more
+        Assert.Empty(map.Regions);                                        // the map is the new origin's
+
+        // and a drive to it now refuses rather than steering by a pose in a frame that has gone
+        var drive = new DriveToObjectAction(rig.M, cube.ObjectId, PreActionType.Docking);
+        var result = drive.RunAsync(default).GetAwaiter().GetResult();
+        Assert.Equal(ActionResult.BadObject, result);
+        Assert.DoesNotContain(rig.Sent, m => m is ExecutePath);
+    }
+
+    /// <summary>
+    /// CORE-008, the exception the source names: what the robot is holding moves into the new origin
+    /// rather than being forgotten, because where it is relative to the robot is still known.
+    /// </summary>
+    [Fact]
+    public void CORE008_ACarriedObjectSurvivesTheOriginChange()
+    {
+        using var rig = new Rig();
+        if (rig.NoLibrary) return;
+        rig.Cube = new Pose3d(Mat3.Identity, new Vec3(150, 0, 22));
+        var cube = Assert.Single(rig.Frame().Objects).Object;
+        rig.M.Docking.Carrying.SetCarrying(cube.ObjectId);
+
+        rig.OriginId = 7;
+        rig.State();
+
+        Assert.Equal(7u, rig.Vision.OriginId);
+        Assert.NotNull(rig.M.World.GetLocatedObjectById(cube.ObjectId));
+    }
+
+    /// <summary>
+    /// CORE-008, the history: a frame is never paired with a pose measured in another origin. The
+    /// engine files each state against the origin it was reported in and resolves that origin when it
+    /// uses it; here the entries of a previous origin are dropped as soon as a new one arrives, so a
+    /// frame that arrives late cannot be given a pose from the frame that has gone.
+    /// </summary>
+    [Fact]
+    public void CORE008_TheHistoryDoesNotMixOrigins()
+    {
+        var history = new RobotStateHistory();
+        history.Add(new RobotState { Timestamp = 1000, PoseOriginId = 1, Pose = new RobotPose { X = 100 } });
+        history.Add(new RobotState { Timestamp = 1033, PoseOriginId = 1, Pose = new RobotPose { X = 110 } });
+        Assert.Equal(1u, history.OriginId);
+        Assert.Equal(110, history.At(1033)!.Value.RobotPose.Translation.X, 3);
+
+        history.Add(new RobotState { Timestamp = 1066, PoseOriginId = 2, Pose = new RobotPose { X = 0 } });
+        Assert.Equal(2u, history.OriginId);
+        // the old origin's poses are gone: the nearest state to their timestamps is the new origin's
+        Assert.Equal(0, history.At(1000)!.Value.RobotPose.Translation.X, 3);
+        Assert.Equal(0, history.At(1033)!.Value.RobotPose.Translation.X, 3);
+    }
 }
