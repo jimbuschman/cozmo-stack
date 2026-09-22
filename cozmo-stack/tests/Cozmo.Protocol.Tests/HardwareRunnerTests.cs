@@ -575,7 +575,7 @@ public class HardwareRunnerTests
             Assert.Equal(check.Why, record.Purpose);
             Assert.Equal(check.Success, record.ExpectedPhysical);
             Assert.Contains("CORE-005", record.CoreRegressions);
-            Assert.Contains("M13-006", record.FidelityRecords);
+            Assert.Contains("M13-008", record.FidelityRecords);
             Assert.Equal("Failed", record.Status);
             Assert.Equal("he stopped short of the contacts", record.HumanNote);
             Assert.Contains("docking error signal", record.Captured.Keys);
