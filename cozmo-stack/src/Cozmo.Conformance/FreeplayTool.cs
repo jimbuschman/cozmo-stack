@@ -135,6 +135,7 @@ public static class FreeplayTool
         Say($"freeplay for {seconds} s: {stack.Bound.Count} behaviours bound, {stack.UnboundIds.Count} named but not built");
         FreeplayDecision? last = null;
         var activities = new HashSet<string>(); var behaviours = new HashSet<string>();
+        double lastMood = -1;
         while (sw.Elapsed.TotalSeconds < seconds)
         {
             var d = stack.Tick(sw.Elapsed.TotalSeconds, sw.Elapsed.TotalMilliseconds, robot, vision, m);
@@ -142,6 +143,16 @@ public static class FreeplayTool
             if (d.Activity is not null) activities.Add(d.Activity);
             if (d.Behavior is not null) behaviours.Add(d.Behavior);
             last = d;
+
+            // The mood, every half minute. It decays on every tick and the behaviour scoring reads it, so a
+            // long run is where holding still instead of decaying shows: the emotions should drift back
+            // towards neutral between the events that move them.
+            if (ctx.Mood is { } mood && sw.Elapsed.TotalSeconds - lastMood >= 30)
+            {
+                lastMood = sw.Elapsed.TotalSeconds;
+                Say($"[{sw.Elapsed.TotalSeconds,6:F1}s] mood: " + string.Join(", ",
+                    Enum.GetValues<EmotionType>().Select(e => $"{e}={mood[e]:F3}")));
+            }
             await Task.Delay(50);
         }
         stack.Manager.Stop(BehaviorStopReason.Cancelled, sw.Elapsed.TotalSeconds);

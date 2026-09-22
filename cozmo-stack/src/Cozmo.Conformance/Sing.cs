@@ -16,7 +16,10 @@ namespace Cozmo.Conformance;
 public static class SingTool
 {
     /// <summary>
-    /// <c>sing &lt;robot-ip&gt; --obb &lt;dir&gt; (--behavior &lt;Singing_X&gt; | --group &lt;G&gt; --switch &lt;S&gt;) [--seconds 45] [--acceptance [file]]</c>
+    /// <c>sing &lt;robot-ip&gt; --obb &lt;dir&gt; (--behavior &lt;Singing_X&gt; | --group &lt;G&gt; --switch &lt;S&gt;) [--seconds 45] [--vibrato] [--acceptance [file]]</c>
+    ///
+    /// <c>--vibrato</c> posts <c>Cozmo_Singing_Vibrato</c> part way through, while a note is already
+    /// sounding, which is the whole reason the song is rendered as it plays rather than up front.
     /// </summary>
     public static async Task<int> Run(string[] a)
     {
@@ -70,14 +73,46 @@ public static class SingTool
         manager.Add(chosen);
         chosen.Trace += t => Console.WriteLine($"  [sing] {t}");
 
+        // The streaming counters. A song is mixed while it plays and sent a frame at a time, so the four
+        // numbers that matter are how much has been rendered, how much the scheduler has taken, how many
+        // frames went out, and how many the robot says it has played. They should advance together; a gap
+        // that opens between them is what chopped or hanging audio sounds like from the inside.
+        bool vibrato = a.Contains("--vibrato");
+        double? postAt = vibrato ? (preview?.DurationMs ?? 10_000) * 0.4 : null;
+        bool posted = false;
+
         var sw2 = System.Diagnostics.Stopwatch.StartNew();
         bool started = await manager.StartAsync(chosen.Id, 0);
         if (!started) { Console.WriteLine("the behaviour was not runnable"); robot.Disconnect(); return 2; }
+        double lastCounters = -1;
+        int underruns = 0;
         while (manager.Current is not null && sw2.Elapsed.TotalSeconds < seconds)
         {
             manager.Update(sw2.Elapsed.TotalMilliseconds, sw2.Elapsed.TotalSeconds);
+
+            if (postAt is { } at && !posted && sw2.Elapsed.TotalMilliseconds >= at)
+            {
+                posted = true;
+                source.SetParameter(SingingBehavior.VibratoParameter, 1f);
+                Console.WriteLine($"  vibrato posted at {sw2.Elapsed.TotalSeconds:F1} s: Cozmo_Singing_Vibrato = 1.0 "
+                                + "(a note is already sounding; listen for the voice changing under it)");
+            }
+
+            if (eventId is { } evId && sw2.Elapsed.TotalSeconds - lastCounters >= 1.0)
+            {
+                lastCounters = sw2.Elapsed.TotalSeconds;
+                var stream = source.StreamFor(evId);
+                if (stream is not null)
+                {
+                    underruns = stream.Underruns;
+                    Console.WriteLine($"  stream: t={sw2.Elapsed.TotalSeconds,5:F1}s rendered={stream.Ready,8} of {stream.Pcm.Length,8} "
+                                    + $"consumed={stream.Consumed,8} sent={robot.Animations.Scheduler.AudioFramesSent,5} "
+                                    + $"played={robot.State.Animation?.NumAudioFramesPlayed.ToString() ?? "-",5} underruns={underruns}");
+                }
+            }
             await Task.Delay(50);
         }
+        Console.WriteLine($"underruns: {underruns}");
         bool completed = manager.Current is null;
         if (!completed) manager.Stop(BehaviorStopReason.Cancelled, sw2.Elapsed.TotalSeconds);
         var steps = chosen.Steps;
@@ -85,7 +120,7 @@ public static class SingTool
         Console.WriteLine($"\nsteps played: {string.Join(" -> ", steps)}");
         foreach (var m in misses) Console.WriteLine($"  not produced: {m.EventId} {m.Name}: {m.Reason}");
 
-        bool pass = completed && steps.Count == 3 && steps.Any(x => x.Contains("_song_")) &&
+        bool pass = completed && underruns == 0 && steps.Count == 3 && steps.Any(x => x.Contains("_song_")) &&
                     preview is { NotesPlayed: > 0 } && source.LastMusicRender is { NotesPlayed: > 0 };
         const string human = "Cozmo sang a tune for the length of the song (8 to 12 s) between a get-in and a get-out animation, " +
                              "in his own voice, one note per note; no note-length bursts of get-in phrases";

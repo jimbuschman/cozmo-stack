@@ -28,6 +28,12 @@ public sealed class HardwareSession
     public DateTime? FinishedUtc { get; private set; }
     public IReadOnlyDictionary<string, HardwareResult> Results => _results;
 
+    /// <summary>
+    /// Where this campaign's evidence goes. Kept in the session so resuming after a stop, a reboot or a flat
+    /// battery carries on writing into the same run directory instead of scattering one campaign over several.
+    /// </summary>
+    public string? EvidenceDirectory { get; set; }
+
     /// <summary>Only these ids will run, when set by --only.</summary>
     public IReadOnlyCollection<string>? Only { get; set; }
     /// <summary>Skip everything before this id, when set by --from.</summary>
@@ -50,7 +56,12 @@ public sealed class HardwareSession
     public static CheckStatus StatusOf(HardwareResult r)
     {
         if (r.BlockedReason is not null) return CheckStatus.Blocked;
+        // A check that did not finish is not a check that failed. The link dropping mid-run says nothing
+        // about the behaviour under test, so it is recorded as interrupted and stays to be run again -
+        // unless the disconnect was the thing being tested, where the check judges it like any other.
+        if (r.InterruptedReason is not null) return CheckStatus.Interrupted;
         if (r.Human == HumanOutcome.Skipped) return CheckStatus.Skipped;
+        if (r.Human == HumanOutcome.Unsure) return CheckStatus.Unsure;
         if (r.Auto == AutoOutcome.Skipped && r.Human == HumanOutcome.NotAsked) return CheckStatus.Skipped;
         if (r.Human == HumanOutcome.NotAsked) return CheckStatus.Pending;
         return (r.Auto, r.Human) switch
@@ -119,8 +130,12 @@ public sealed class HardwareSession
     /// </summary>
     public Dictionary<string, List<string>> UnprovenPrerequisites { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>The next check with no recorded result, or null when the run is complete.</summary>
-    public HardwareCheck? Next() => Selected().FirstOrDefault(c => !_results.ContainsKey(c.Id));
+    /// <summary>
+    /// The next check to run: the first with no result at all, or the first that was interrupted. An
+    /// interrupted check has a record but no observation, so resuming picks it up rather than walking past.
+    /// </summary>
+    public HardwareCheck? Next() =>
+        Selected().FirstOrDefault(c => !_results.ContainsKey(c.Id) || StatusOf(c.Id) == CheckStatus.Interrupted);
 
     /// <summary>True once every selected check has a result.</summary>
     public bool Complete => Next() is null;
@@ -147,31 +162,39 @@ public sealed class HardwareSession
 
     // ------------------------------------------------------------------ the summary
 
-    public sealed record Summary(int Passed, int Failed, int Partial, int Blocked, int Skipped, int Pending)
+    public sealed record Summary(int Passed, int Failed, int Partial, int Unsure, int Interrupted, int Blocked, int Skipped, int Pending)
     {
-        public int Total => Passed + Failed + Partial + Blocked + Skipped + Pending;
+        public int Total => Passed + Failed + Partial + Unsure + Interrupted + Blocked + Skipped + Pending;
+        /// <summary>Everything still to do: never run, or stopped part way.</summary>
+        public int Outstanding => Pending + Interrupted;
     }
 
     public Summary Tally()
     {
-        int pass = 0, fail = 0, part = 0, block = 0, skip = 0, pend = 0;
+        int pass = 0, fail = 0, part = 0, unsure = 0, intr = 0, block = 0, skip = 0, pend = 0;
         foreach (var c in Selected())
             switch (StatusOf(c.Id))
             {
                 case CheckStatus.Passed: pass++; break;
                 case CheckStatus.Failed: fail++; break;
                 case CheckStatus.Partial: part++; break;
+                case CheckStatus.Unsure: unsure++; break;
+                case CheckStatus.Interrupted: intr++; break;
                 case CheckStatus.Blocked: block++; break;
                 case CheckStatus.Skipped: skip++; break;
                 default: pend++; break;
             }
-        return new Summary(pass, fail, part, block, skip, pend);
+        return new Summary(pass, fail, part, unsure, intr, block, skip, pend);
     }
+
+    /// <summary>The checks to run again: the ones that failed, were inconclusive, or never finished.</summary>
+    public IEnumerable<HardwareCheck> Unresolved() =>
+        Selected().Where(c => StatusOf(c.Id) is CheckStatus.Failed or CheckStatus.Partial or CheckStatus.Unsure or CheckStatus.Interrupted);
 
     // ------------------------------------------------------------------ persistence
 
     private sealed record Persisted(string Ip, string? Obb, DateTime StartedUtc, DateTime? FinishedUtc,
-                                    string? From, string[]? Only, HardwareResult[] Results);
+                                    string? From, string[]? Only, HardwareResult[] Results, string? EvidenceDirectory = null);
 
     private static readonly JsonSerializerOptions Json = new()
     {
@@ -189,7 +212,8 @@ public sealed class HardwareSession
         var dir = Path.GetDirectoryName(Path.GetFullPath(path));
         if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
         var p = new Persisted(Ip, Obb, StartedUtc, FinishedUtc, From, Only?.ToArray(),
-                              Catalog.Select(c => _results.TryGetValue(c.Id, out var r) ? r : null).Where(r => r is not null).ToArray()!);
+                              Catalog.Select(c => _results.TryGetValue(c.Id, out var r) ? r : null).Where(r => r is not null).ToArray()!,
+                              EvidenceDirectory);
         var tmp = path + ".tmp";
         File.WriteAllText(tmp, JsonSerializer.Serialize(p, Json));
         File.Move(tmp, path, overwrite: true);
@@ -207,6 +231,7 @@ public sealed class HardwareSession
             FinishedUtc = p.FinishedUtc,
             From = p.From,
             Only = p.Only is { Length: > 0 } ? p.Only : null,
+            EvidenceDirectory = p.EvidenceDirectory,
         };
         foreach (var r in p.Results) s._results[r.Id] = r;
         return s;

@@ -3483,6 +3483,21 @@
       "live_path": true,
       "test": "regenerate_protocol.py --check",
       "id": "TOOL-004"
+    },
+    {
+      "subsystem": "tools",
+      "title": "The hardware acceptance campaign: how a check is judged, and what a result may change",
+      "location": "cozmo-stack/src/Cozmo.Conformance/HardwareCatalog.cs",
+      "effect": "what the runner asks, what it records, and what a hardware result is allowed to mean",
+      "provenance": "decisions of this harness. The automated half and the human half of a verdict are recorded separately and neither overrides the other; UNSURE and INTERRUPTED are first-class outcomes, so a check nobody could judge and a check that was cut short are not counted as passes or failures; each check names the lines worth keeping from its own output rather than the whole transcript being duplicated into the record",
+      "authority": "not applicable: the harness is not part of the app. The rule that matters runs the other way - a hardware result never changes a fidelity record's status. A check that passes says the behaviour was observed; a check that fails is an investigation item, not a licence to tune a source-backed constant. M11-005 stays open whatever the vision check reports, and the charger's 20 x 27 mm marker geometry is not adjusted to make the mount succeed",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": false,
+      "test": "HardwareRunnerTests",
+      "id": "TOOL-005"
     }
   ]
 }
