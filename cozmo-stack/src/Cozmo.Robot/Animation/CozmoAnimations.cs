@@ -175,6 +175,14 @@ public sealed class CozmoAnimations : IDisposable
     public event Action<string>? Event;
     /// <summary>Keyframes that were reached but whose effect is not implemented.</summary>
     public event Action<string>? NotImplemented;
+    /// <summary>
+    /// Raised when the tick loop stopped because the robot went away underneath it. The animation is
+    /// ended and the loop exits; this is how a caller learns why.
+    /// </summary>
+    public event Action<Exception>? Faulted;
+
+    /// <summary>Whether the animation tick loop is running. False once nothing is left for it to do.</summary>
+    public bool IsTicking { get { lock (_gate) return _ticker is not null; } }
 
     /// <summary>Loads Cozmo's own animation assets from an unpacked resources tree.</summary>
     public AnimationLibrary LoadFrom(string assetsRoot)
@@ -312,7 +320,20 @@ public sealed class CozmoAnimations : IDisposable
         double origin = NowMs();
         while (true)
         {
-            _scheduler.Advance(origin + sw.Elapsed.TotalMilliseconds);
+            try
+            {
+                _scheduler.Advance(origin + sw.Elapsed.TotalMilliseconds);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
+            {
+                // The robot went away underneath the animation: every send throws from here on. This is a
+                // background thread, so letting that escape would take the process with it. End the
+                // animation - which completes whatever is awaiting it - and stop ticking.
+                try { Faulted?.Invoke(ex); } catch { }     // a subscriber must not take the thread either
+                try { _scheduler.Stop(); } catch { }
+                lock (_gate) { _running = false; _ticker = null; }
+                return;
+            }
 
             // Deciding to stop and clearing _running must happen under the same lock StartTicker takes.
             // Previously the loop broke out first and cleared _running afterwards, which left a window

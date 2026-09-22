@@ -320,18 +320,30 @@ public sealed class AnimationScheduler
         CurrentTag = 0;
         bool wasOpen = _startSent;
         _startSent = false;
-        // An animation that is cut short must not leave the wheels turning.
-        if (bodyWasRunning) _sink.BodyStop();
-        // Only close an animation that was actually opened; a clip stopped before its first streamed frame
-        // never sent a StartOfAnimation, and an unmatched EndOfAnimation would close someone else's.
-        if (wasOpen)
+        // The sink talks to the robot, and by the time an animation is being ended the robot may be gone -
+        // a disconnect is exactly when something is cut short. None of these may stop the handle
+        // completing: a caller awaiting Play must not be left waiting forever because the link dropped.
+        try
         {
-            _sink.AnimationEnded();
-            // UpdateStream buffers one more AudioSilence straight after SendEndOfAnimation (0x0057CB92),
-            // so the robot's audio buffer is left with a frame rather than running dry on the last sample.
-            _sink.Audio(null);
+            // An animation that is cut short must not leave the wheels turning.
+            if (bodyWasRunning) _sink.BodyStop();
+            // Only close an animation that was actually opened; a clip stopped before its first streamed
+            // frame never sent a StartOfAnimation, and an unmatched EndOfAnimation would close someone
+            // else's.
+            if (wasOpen)
+            {
+                _sink.AnimationEnded();
+                // UpdateStream buffers one more AudioSilence straight after SendEndOfAnimation
+                // (0x0057CB92), so the robot's audio buffer is left with a frame rather than running dry
+                // on the last sample.
+                _sink.Audio(null);
+            }
+            _sink.Finished(name, reason == AnimationEndReason.Completed);
         }
-        _sink.Finished(name, reason == AnimationEndReason.Completed);
+        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
+        {
+            // the robot went away mid-animation; there is nothing left to tell it
+        }
         h?.Complete(reason);
     }
 

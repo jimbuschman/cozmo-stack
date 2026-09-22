@@ -27,9 +27,13 @@ public class CoreReviewTests
         return cond();
     }
 
-    /// <summary>Every CLAD message the robot has queued or sent, decoded.</summary>
+    /// <summary>
+    /// Every CLAD message the robot has sent, decoded. The connection batches rather than sending as it
+    /// goes, so it is ticked first - a live transport does that on its own thread.
+    /// </summary>
     private static List<RobotMessage> Outbound(CozmoRobot robot)
     {
+        try { robot.Transport.OfflineTick(); } catch { }     // nothing to tick once disconnected
         var seen = new HashSet<ushort>();
         var outp = new List<RobotMessage>();
         foreach (var sm in robot.Transport.OfflineOutbound.SelectMany(f => f.Messages))
@@ -162,5 +166,53 @@ public class CoreReviewTests
                      "the body was stopped immediately, so the deadline was read on the wrong clock");
         Assert.True(Within(1_500, () => Outbound(robot).OfType<BodyMotion>().Any(b => b.Speed == 0)),
                     "the keep-alive body keyframe was never stopped");
+    }
+
+    // ================================================================ CORE-002
+
+    /// <summary>
+    /// CORE-002. Disconnecting while an animation is playing must end the animation, not the process.
+    ///
+    /// The tick loop runs on a background thread and every frame it streams reaches the transport. Once
+    /// the link is gone <c>SendData</c> throws "not connected", and an exception escaping a background
+    /// thread takes the whole process with it - so the failure mode was not a stuck animation but a hard
+    /// exit. The loop now treats a robot that went away as the end of the animation: whatever is awaiting
+    /// <c>Play</c> completes, the loop stops, and the exception is offered to a <c>Faulted</c> subscriber
+    /// rather than thrown at nobody.
+    /// </summary>
+    [Fact]
+    public async Task CORE002_DisconnectingMidAnimationEndsItCleanlyAndLeavesNoTicker()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        var clip = new AnimationClip
+        {
+            Name = "long-one",
+            Keyframes = new List<Keyframe>
+            {
+                new BodyKeyframe(0, 10_000, IdleBehavior.StraightToken, 40),
+                new AudioKeyframe(0, new long[] { 1 }, 1.0f, new[] { 1.0f }, false),
+            },
+            Tracks = AnimationTrack.Body | AnimationTrack.Audio,
+            DurationMs = 10_000,
+        };
+
+        Exception? faulted = null;
+        robot.Animations.Faulted += e => faulted = e;
+
+        var playing = robot.Animations.Play(clip);
+        Assert.NotNull(playing);
+        Assert.True(Within(1_000, () => robot.Animations.IsTicking), "the animation never started ticking");
+
+        // the robot goes away underneath it, exactly as a dropped link does
+        robot.Transport.Disconnect("test");
+
+        var finished = await Task.WhenAny(playing!, Task.Delay(3_000));
+        Assert.Same(playing, finished);                       // it ended rather than hanging
+        Assert.True(Within(2_000, () => !robot.Animations.IsTicking), "the ticker was still running");
+        Assert.False(robot.Animations.IsPlaying);
+        Assert.NotNull(faulted);                              // and the reason was reported, not swallowed silently
+
+        // the process is still here to make these assertions, which is the other half of the claim
+        Assert.True(true);
     }
 }
