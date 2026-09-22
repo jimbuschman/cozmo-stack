@@ -90,6 +90,13 @@ public sealed class FreeplaySystem
     /// <summary>One tick: reactions, activity selection, behaviour selection, behaviour update.</summary>
     public FreeplayDecision Tick(double nowSec, double nowMs)
     {
+        // Mood first, and on this tick's clock. The engine updates it from Robot::Update (0x00513E8A)
+        // every tick, whatever the behaviour system then decides, and MoodManager reads its time from
+        // BaseStationTimer - the same clock the emotion events are stamped with
+        // (GetCurrentTimeInSeconds 0x0067ADA8). Without this the decay only ran when something else
+        // happened to advance it, so an emotion stayed wherever an event left it and everything that
+        // reads mood - the scoring, the gating - read a value that should long since have decayed.
+        _ctx.Mood?.Advance(nowSec);
         Inputs.Needs?.Update();
         var reaction = _manager.CheckReactions(nowSec);
         if (reaction is not null) { Record(nowSec, Current?.Id, reaction.Behavior, $"reaction {reaction.Trigger}"); _manager.Update(nowMs, nowSec); return _decisions[^1]; }

@@ -866,4 +866,92 @@ public class CoreReviewTests
         Assert.Equal(0, history.At(1000)!.Value.RobotPose.Translation.X, 3);
         Assert.Equal(0, history.At(1033)!.Value.RobotPose.Translation.X, 3);
     }
+
+    // ================================================================ CORE-009
+
+    private static string? ObbRoot()
+    {
+        var d = new DirectoryInfo(AppContext.BaseDirectory);
+        while (d is not null)
+        {
+            var r = Path.Combine(d.FullName, "re-analysis", "obb");
+            if (Directory.Exists(Path.Combine(r, "assets", "cozmo_resources", "assets", "animationGroups"))) return r;
+            d = d.Parent;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// CORE-009. Nothing in production advanced the mood, so an emotion stayed wherever an event left it
+    /// until something else happened to advance it - and everything that reads mood, the behaviour
+    /// scoring above all, read a value that should long since have decayed.
+    ///
+    /// The engine updates the mood from <c>Robot::Update</c> (<c>MoodManager::Update</c> at 0x00513E8A),
+    /// every tick, whatever the behaviour system then decides, and <c>MoodManager</c> takes its time from
+    /// <c>BaseStationTimer</c> - the same clock the emotion events are stamped with
+    /// (<c>GetCurrentTimeInSeconds</c> 0x0067ADA8). So the decay happens on every tick and on the clock
+    /// the events use. This runs the real stack, raises a real emotion event through the mood the stack
+    /// holds, and then does nothing but tick.
+    /// </summary>
+    [Fact]
+    public void CORE009_MoodDecaysOnOrdinaryStackTicks()
+    {
+        var obb = ObbRoot();
+        if (obb is null) return;
+        using var rig = new Rig();
+        double clock = 0;
+        var ctx = new BehaviorContext
+        {
+            Robot = rig.Robot,
+            Triggers = new AnimationTriggerMap(),
+            Random = new Random(5),
+            Mood = new MoodState(MoodModel.Load(obb)),
+        };
+        using var stack = FreeplayStack.Create(obb, rig.Robot, ctx, () => clock, rig.Vision, rig.M,
+                                               withReactions: false, random: new Random(1));
+        var mood = ctx.Mood!;
+
+        // a real emotion event from the shipped config, on the stack's own clock
+        var model = MoodModel.Load(obb);
+        var ev = model.Events.First(e => e.Affectors.Any(a => Math.Abs(a.Value) > 0.05));
+        Assert.True(mood.Trigger(ev.Name, clock));
+        var moved = ev.Affectors.OrderByDescending(a => Math.Abs(a.Value)).First().Emotion;
+        double excited = mood[moved];
+        Assert.True(Math.Abs(excited) > 0.01, $"the event {ev.Name} moved nothing ({excited})");
+
+        // and now nothing but ordinary ticks
+        for (int i = 1; i <= 120; i++)
+        {
+            clock = i;
+            stack.Tick(clock, clock * 1000, rig.Robot, rig.Vision, rig.M);
+        }
+
+        double later = mood[moved];
+        Assert.True(Math.Abs(later) < Math.Abs(excited),
+                    $"the emotion did not decay across two minutes of ticks ({excited} -> {later})");
+    }
+
+    /// <summary>
+    /// CORE-009, the clock domain the report asked about. A stepped behaviour times itself from
+    /// <c>Environment.TickCount64</c> by default and several of them stamp emotion events with
+    /// <c>Clock() / 1000</c>; if that is not the same seconds the stack ticks on, the mood's decay and
+    /// its events are in different eras and neither the decay nor the repetition penalty means anything.
+    /// The stack now gives every behaviour its own clock.
+    /// </summary>
+    [Fact]
+    public void CORE009_EveryBehaviourIsOnTheStacksClock()
+    {
+        var obb = ObbRoot();
+        if (obb is null) return;
+        using var rig = new Rig();
+        double clock = 1234.5;
+        var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap(), Random = new Random(5) };
+        using var stack = FreeplayStack.Create(obb, rig.Robot, ctx, () => clock, rig.Vision, rig.M,
+                                               withReactions: false, random: new Random(1));
+
+        var stepped = stack.Bound.Values.OfType<SteppedBehavior>().ToList();
+        Assert.NotEmpty(stepped);
+        foreach (var b in stepped)
+            Assert.Equal(clock, b.Clock() / 1000.0, 6);
+    }
 }

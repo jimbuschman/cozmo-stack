@@ -64,6 +64,12 @@ public sealed class FreeplayStack : IDisposable
         // the config-free set and the shipped PlayAnim configs overlap (the feeding reactions): the first instance stands
         var bound = new Dictionary<string, IBehavior>(StringComparer.Ordinal);
         foreach (var b in all) bound.TryAdd(b.Id, b);
+        // One clock for the whole stack. A stepped behaviour defaults to Environment.TickCount64 for its
+        // own timing, and several of them stamp emotion events with Clock() / 1000 - which has to be the
+        // same seconds the stack ticks on, or the mood's decay and its events are in different eras and
+        // neither the decay nor the repetition penalty means anything. The engine has no such seam: both
+        // sides read BaseStationTimer (MoodManager::GetCurrentTimeInSeconds 0x0067ADA8).
+        foreach (var b in all.OfType<SteppedBehavior>()) b.Clock = () => clockSec() * 1000.0;
 
         ctx.ClockSec ??= clockSec;
         // the behaviours report needs actions themselves (IBehavior::NeedActionCompleted 0x005BE40C), so the
