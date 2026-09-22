@@ -82,23 +82,26 @@ public static class HardwareCatalog
                 + "conversion is wrong, every docking height and the carry check are wrong with it.",
             Setup = "Robot on its treads on a table. Start with the lift fully down.",
             Prerequisites = new[] { "CON passed", "the lift is all the way down to begin with" },
-            DoThis = "When the reading appears, raise the lift fully by hand and hold it there.",
-            Success = "About -0.198 rad / 32 mm with the lift down, and about 0.712 rad / 92 mm raised.",
-            Question = "Did the reported height match where the lift actually was?",
-            ExpectedTelemetry = "a lift reading in radians and millimetres, once a second, and a battery voltage",
-            AutoRule = "the sensors tool prints a lift reading in radians and millimetres",
+            DoThis = "Follow the two prompts. First leave the lift alone, all the way down. Then, when it says "
+                   + "RAISE THE LIFT, lift the arm by hand as far as it goes and hold it there until it stops reading.",
+            Success = "The two readings it prints back match where the lift actually was: about -0.198 rad / 32 mm "
+                    + "down, about 0.712 rad / 92 mm raised.",
+            Question = "Did the two printed readings match where the lift actually was, down and raised?",
+            ExpectedTelemetry = "a reading at each end of the travel, and both ends of the travel actually visited",
+            AutoRule = "both ends of the lift's travel are seen: down below -0.10 rad and raised above 0.40 rad",
             Evidence = new[]
             {
-                new EvidenceItem("lift", "lift="),
-                new EvidenceItem("battery and charger", "batt"),
-                new EvidenceItem("cliff", "cliff"),
+                new EvidenceItem("readings", "lift="),
+                new EvidenceItem("sequence", "lift sequence:"),
+                new EvidenceItem("down", "lift down:"),
+                new EvidenceItem("raised", "lift raised:"),
             },
             FidelityRecords = new[] { "M4-003" },
             NeedsHandling = true,
             Requires = new[] { "LINK" },
             Timeout = TimeSpan.FromMinutes(2),
-            Command = o => new[] { "sensors", o.Ip, "--acceptance", o.Acceptance("D") },
-            Judge = r => r.Contains("lift=") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Command = o => new[] { "sensors", o.Ip, "--guide-lift", "--acceptance", o.Acceptance("D") },
+            Judge = r => r.Contains("both ends seen=yes") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
 
         // ================================================================ 2. animation controller
@@ -111,7 +114,8 @@ public static class HardwareCatalog
                 + "end to end, before anything harder depends on it.",
             Setup = "Robot on its treads with room to move. Requires the OBB assets.",
             Prerequisites = new[] { "CON passed", "--obb given" },
-            DoThis = "Watch the clip play.",
+            DoThis = "Stand in front of him and watch the whole clip: his head and lift move and his face "
+                   + "changes. Watch for a stutter, a truncated ending, or a head or lift left somewhere odd.",
             Success = "The clip plays as it always has: no stutter, no truncation, no stuck lift or head.",
             Question = "Did the clip play smoothly and completely?",
             ExpectedTelemetry = "keyframes fired equals keyframes in the clip and no stalls are reported",
@@ -139,7 +143,8 @@ public static class HardwareCatalog
                 + "automated check there is.",
             Setup = "Somewhere you can see his face. No particular lighting needed.",
             Prerequisites = new[] { "CON passed" },
-            DoThis = "Look at his face while the pattern is held.",
+            DoThis = "Look at his screen while the pattern is held, from straight on. Check it is square, "
+                   + "the right way up, and steady rather than flickering.",
             Success = "A pair of eyes is drawn squarely on the screen, right way up, held steady for the whole "
                     + "time, and it clears afterwards.",
             Question = "Was the image drawn squarely on his screen, the right way up and steady?",
@@ -189,7 +194,8 @@ public static class HardwareCatalog
                 + "changed in the core review, so this is a re-run, not a repeat.",
             Setup = "Quiet room. Robot on its treads with space to animate. Requires the OBB.",
             Prerequisites = new[] { "AUD passed", "--obb given" },
-            DoThis = "Listen. Do not touch him.",
+            DoThis = "Listen to the whole thing without touching him. It runs about 12 seconds: a get-in "
+                   + "animation, the song, then a get-out.",
             Success = "About 12 seconds of tune between a get-in and a get-out, in his own voice, one note per "
                     + "note, at a sensible level, with no bursts of get-in phrases during the song.",
             Question = "Did he sing a recognisable tune, one note per note, at a sensible level?",
@@ -217,7 +223,8 @@ public static class HardwareCatalog
                 + "tempos will not differ audibly.",
             Setup = "As A.",
             Prerequisites = new[] { "A passed or heard" },
-            DoThis = "Listen and compare the speed with A.",
+            DoThis = "Listen to the whole song and compare its speed with the one you just heard in A. Note "
+                   + "whether it stops cleanly at the end rather than running on.",
             Success = "Bingo is cut at about 9.8 s by its Stop event, and the tempo audibly differs from A.",
             Question = "Did the tempo audibly differ from the first song, and did it stop cleanly at the end?",
             ExpectedTelemetry = "the behaviour runs to completion and the song is cut by its Stop event",
@@ -332,19 +339,20 @@ public static class HardwareCatalog
             Success = "He blinks and makes small movements, and he is still roughly where he started after a "
                     + "minute. Nothing repeats mechanically and nothing runs on.",
             Question = "Did he look alive without wandering away from where he started?",
-            ExpectedTelemetry = "idle decisions print and no behaviour is left running at the end",
-            AutoRule = "the idle layer makes decisions and the tool completes",
+            ExpectedTelemetry = "idle takes actions of its own during the minute, and none is left running at the end",
+            AutoRule = "the idle layer took at least one action of its own (\"idle actions taken\" is not zero)",
             Evidence = new[]
             {
+                new EvidenceItem("actions", "idle actions taken"),
                 new EvidenceItem("decisions", "idle"),
-                new EvidenceItem("keep-alive", "keepalive"),
-                new EvidenceItem("suppressed", "suppress"),
+                new EvidenceItem("arbiter", "[arbiter]"),
             },
             FidelityRecords = new[] { "M8-004" }, CoreRegressions = new[] { "CORE-001" },
             NeedsObb = true, Requires = new[] { "CR1" },
             Timeout = TimeSpan.FromMinutes(3),
             Command = o => o.WithObb("behavior", o.Ip).Concat(new[] { "--seconds", "60", "--no-react" }).ToArray(),
-            Judge = r => r.ExitCode == 0 ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.ExitCode == 0 && !r.Contains("idle actions taken: 0") && r.Contains("idle actions taken")
+                ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {
@@ -382,12 +390,14 @@ public static class HardwareCatalog
                 + "link is gone the send throws, and before the correction that exception escaped a background "
                 + "thread and took the process with it. This is the one check where the disconnect is the "
                 + "subject, so the runner does not treat it as an interruption.",
-            Setup = "Clear floor. He will start an animation and then be cut off mid-way; he should simply stop.",
+            Setup = "Clear floor, robot on his treads, room for a short animation. Requires the OBB.",
             Prerequisites = new[] { "F passed", "--obb given" },
-            DoThis = "Watch him stop when the link is cut. Nothing should carry on moving.",
-            Success = "He stops where he is when the link goes, and the runner carries on to the next check "
-                    + "rather than dying.",
-            Question = "Did he stop cleanly when the link was cut, with nothing left running?",
+            DoThis = "Watch him for about five seconds. He starts an animation; part way through, the tool cuts "
+                   + "the link on purpose and says so. Watch what he does in the second or two after that.",
+            Success = "He is moving, and at the moment the tool says it is dropping the link he stops where he "
+                    + "is and stays stopped - no twitching, no carrying on, no running away. The tool then "
+                    + "prints its own verdict and the campaign moves to the next check instead of dying.",
+            Question = "Did he stop where he was when the link was cut, and stay stopped?",
             ExpectedTelemetry = "the animation task completes, the ticker stops, and the failure is reported through Faulted",
             AutoRule = "the animation ends, the ticker stops and the exception is reported rather than thrown at nobody",
             Evidence = new[]
@@ -543,7 +553,8 @@ public static class HardwareCatalog
                 + "contacts on a real charger is unverified.",
             Setup = "Him sitting on the charger, clear floor ahead.",
             Prerequisites = new[] { "he is on the charger (V, or put him on by hand)" },
-            DoThis = "Watch him leave the charger.",
+            DoThis = "Watch him leave the charger: one slow forward crawl, then a stop on his treads. Note "
+                   + "whether he actually clears the contacts.",
             Success = "He drives forward off the charger at a crawl and stops on his treads.",
             Question = "Did he drive clear of the charger and stop?",
             ExpectedTelemetry = "one 156 mm line at 20 mm/s and the on-charger flag clears",
@@ -576,7 +587,7 @@ public static class HardwareCatalog
                     + "arrives about a second after laying him down, sides and face after a quarter second.",
             Question = "Did every printed transition match what you did, in that order, with nothing while still?",
             ExpectedTelemetry = "the classifier enables after the calibration report and prints one transition per handling",
-            AutoRule = "the classifier enables after the calibration report and prints at least one transition",
+            AutoRule = "the classifier enables and reports being in the air and at least one resting state (on his back, face or side)",
             Evidence = new[]
             {
                 new EvidenceItem("transitions", "->") { Limit = 60 },
@@ -587,32 +598,41 @@ public static class HardwareCatalog
             NeedsHandling = true, Requires = new[] { "LINK" },
             Timeout = TimeSpan.FromMinutes(4),
             Command = o => new[] { "offtreads", o.Ip, "--seconds", "90", "--acceptance", o.Acceptance("G") },
-            Judge = r => r.ContainsAny("InAir", "OnBack", "OnFace", "OnLeftSide", "OnRightSide") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            // being lifted and one resting state: a single transition could be anything
+            Judge = r => r.Contains("InAir") && r.ContainsAny("OnBack", "OnFace", "OnLeftSide", "OnRightSide")
+                ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {
             Id = "C", Name = "Falling then impact", Milestone = "M7", Phase = PhaseReactions,
             Subsystem = "The falling and impact reports, and the rule that the reaction waits for the landing",
-            Why = "The engine reacts to the landing, not the fall, and only above an impact of 1000. Neither "
-                + "the threshold nor the wait has been seen on hardware.",
-            Setup = "A soft surface a few centimetres below him: a cushion or a folded towel. Requires the OBB.",
+            Why = "The engine reacts to the landing, not the fall, and only above an impact of 1000. Neither the "
+                + "threshold nor the wait has been seen on hardware. The first run of this check watched for a "
+                + "minute and saw only the pick-up reaction, which says nothing about falling: the drop now has "
+                + "a window of its own and only the falling reaction counts inside it.",
+            Setup = "A cushion or folded towel on the table, and room to hold him a few centimetres above it. "
+                  + "Requires the OBB.",
             Prerequisites = new[] { "G passed", "something soft to drop him onto", "--obb given" },
-            DoThis = "Drop him a few centimetres onto the soft surface. Once is enough.",
-            Success = "He reacts on landing, not while falling.",
-            Question = "Did he react when he landed rather than while he was falling?",
-            ExpectedTelemetry = "an unresolved fall line, then a ReactToImpact decision on landing when the impact exceeds 1000",
-            AutoRule = "a fall is reported and the reaction follows the landing",
+            DoThis = "Wait for the prompt. Then hold him a few centimetres above the cushion and DROP him onto "
+                   + "it - let go completely. Lifting him first will make him react to being picked up; that "
+                   + "does not count and the tool will say so.",
+            Success = "He reacts when he lands, not while he is in the air.",
+            Question = "Did he react on landing rather than while falling?",
+            ExpectedTelemetry = "the RobotFalling reaction fires inside the drop's own window and nothing else satisfies it",
+            AutoRule = "the falling reaction fires during the window the tool opens for the drop",
             Evidence = new[]
             {
-                new EvidenceItem("fall", "fall"),
-                new EvidenceItem("impact", "impact"),
-                new EvidenceItem("reaction", "ReactToImpact"),
+                new EvidenceItem("window", "window RobotFalling"),
+                new EvidenceItem("expected", "expected reactions"),
+                new EvidenceItem("falling", "falling"),
+                new EvidenceItem("reaction", "REACTION"),
             },
             FidelityRecords = new[] { "M7-009" },
             NeedsHandling = true, NeedsObb = true, Requires = new[] { "G" },
             Timeout = TimeSpan.FromMinutes(3),
-            Command = o => o.WithObb("behavior", o.Ip).Concat(new[] { "--seconds", "60" }).ToArray(),
-            Judge = r => r.ContainsAny("ReactToImpact", "waits for the landing") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Command = o => o.WithObb("reactions", o.Ip).Concat(new[] { "--expect", "RobotFalling", "--seconds", "45",
+                                                                      "--acceptance", o.Acceptance("C") }).ToArray(),
+            Judge = r => r.Contains("expected reactions: all seen") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {
@@ -622,45 +642,56 @@ public static class HardwareCatalog
                 + "the state he is actually in can only be seen by handling him. Requires the OBB.",
             Setup = "Room to handle him and somewhere soft to lay him down.",
             Prerequisites = new[] { "G passed", "--obb given" },
-            DoThis = "Over two minutes: lay him on his back, on his face, on a side, put him down on a slope, "
-                   + "and shake him then set him down.",
+            DoThis = "Do one thing at a time, when the prompt asks for it, and then leave him alone until the "
+                   + "next prompt. The tool watches for one named reaction per prompt.",
             Success = "On his back he flips down; on his face he rolls; on a side he asks to be righted; on a "
                     + "slope he reacts then checks his pitch; shaken then set down he acts dizzy. Nothing "
                     + "fires for a state he is not in.",
             Question = "Did the right reaction fire for each state, and nothing for states he was not in?",
-            ExpectedTelemetry = "a REACTION line naming the trigger and the behaviour for each handling, with its animation steps",
-            AutoRule = "at least one REACTION line with its animation steps",
+            ExpectedTelemetry = "each named reaction fires inside its own window: on back, on face, on a side, and shaken",
+            AutoRule = "every reaction the check names fires during its own prompt, and no other reaction can stand in for it",
             Evidence = new[]
             {
+                new EvidenceItem("windows", "window "),
+                new EvidenceItem("expected", "expected reactions"),
                 new EvidenceItem("reactions", "REACTION") { Limit = 60 },
-                new EvidenceItem("animations", "anim"),
-                new EvidenceItem("suppressed", "suppress"),
+                new EvidenceItem("off-treads", "off-treads"),
             },
             FidelityRecords = new[] { "M10-004", "M10-005" },
             NeedsHandling = true, NeedsObb = true, Requires = new[] { "G" },
             Timeout = TimeSpan.FromMinutes(5),
-            Command = o => o.WithObb("reactions", o.Ip).Concat(new[] { "--seconds", "120", "--acceptance", o.Acceptance("H") }).ToArray(),
-            Judge = r => r.Contains("REACTION") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Command = o => o.WithObb("reactions", o.Ip).Concat(new[] { "--expect", "RobotOnBack,RobotOnFace,RobotOnSide,RobotShaken",
+                                                                      "--seconds", "160", "--acceptance", o.Acceptance("H") }).ToArray(),
+            Judge = r => r.Contains("expected reactions: all seen") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {
             Id = "I", Name = "StartMotorCalibration honoured", Milestone = "M4/M10", Phase = PhaseReactions, MovesRobot = true,
-            Subsystem = "The motor calibration request and the robot's calibration reports",
-            Why = "The reactions ask for a head recalibration in some states. Whether the robot honours the "
-                + "request within the allowance was never observed.",
-            Setup = "As H.",
-            Prerequisites = new[] { "H passed" },
-            DoThis = "Watch the head during the reaction that asks for a recalibration: it should nod to its stop.",
-            Success = "The head visibly recalibrates, nodding to its stop, within a few seconds of the request.",
-            Question = "Did the head visibly recalibrate when the trace asked for it?",
-            ExpectedTelemetry = "a MotorCalibration report with CalibStarted true for the head, then one with false",
-            AutoRule = "a calibration request is followed by the robot's own calibration reports",
-            Evidence = new[] { new EvidenceItem("requests", "StartMotorCalibration"), new EvidenceItem("reports", "MotorCalibration") },
+            Subsystem = "StartMotorCalibration (0x58) and the MotorCalibration reports the robot answers with",
+            Why = "The engine asks the robot to recalibrate its head in several states, and whether the robot "
+                + "honours the request has never been observed. It could not be: the robot recalibrates on "
+                + "every connection anyway, so a tool that watches for a calibration report sees one whatever "
+                + "it does. This waits for the connection-time calibration to finish, asks, and then judges "
+                + "only what arrives afterwards.",
+            Setup = "Robot on its treads with room for the head to nod. Nothing to do beforehand.",
+            Prerequisites = new[] { "LINK passed", "nothing in front of his head" },
+            DoThis = "Wait for the line that says ASKING NOW, then watch his head. That is the whole check.",
+            Success = "After ASKING NOW, his head nods down to its stop and comes back, within a few seconds. "
+                    + "Nothing else moves.",
+            Question = "Did his head nod to its stop and come back after the tool said ASKING NOW?",
+            ExpectedTelemetry = "a MotorCalibration for the head with CalibStarted true, then one with false, both after the request",
+            AutoRule = "the head reports calibration started and then finished, after the request and not before it",
+            Evidence = new[]
+            {
+                new EvidenceItem("reports", "MotorCalibration") { Limit = 20 },
+                new EvidenceItem("the request", "ASKING NOW"),
+                new EvidenceItem("verdict", "calibration honoured:"),
+            },
             FidelityRecords = new[] { "M4-004" },
-            Requires = new[] { "H" }, NeedsObb = true,
-            Timeout = TimeSpan.FromMinutes(4),
-            Command = o => o.WithObb("reactions", o.Ip).Concat(new[] { "--seconds", "120", "--acceptance", o.Acceptance("I") }).ToArray(),
-            Judge = r => r.ContainsAny("MotorCalibration", "calibrate head") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Requires = new[] { "LINK" },
+            Timeout = TimeSpan.FromMinutes(3),
+            Command = o => new[] { "calibrate", o.Ip, "--acceptance", o.Acceptance("I") },
+            Judge = r => r.Contains("calibration honoured: yes") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {
@@ -668,21 +699,28 @@ public static class HardwareCatalog
             Subsystem = "The unexpected-movement detector and its reaction",
             Why = "The detector suspends during direct drive, so it can only be provoked while a behaviour is "
                 + "driving the body. Its thresholds came from the engine and have never been pushed against.",
-            Setup = "As H, with room for him to turn.",
-            Prerequisites = new[] { "H passed" },
-            DoThis = "While one of his animations drives the body, hold him so he cannot turn, or twist him "
-                   + "gently against the turn.",
-            Success = "He plays the startled reaction once, on the side the push came from, and nothing fires "
-                    + "while he drives freely.",
-            Question = "Did he react once to being held, on the right side, and not while driving freely?",
-            ExpectedTelemetry = "an unexpected movement report naming the side, then the reaction",
-            AutoRule = "an unexpected movement is reported and the reaction follows",
-            Evidence = new[] { new EvidenceItem("detections", "unexpected movement"), new EvidenceItem("reaction", "ReactToUnexpectedMovement") },
+            Setup = "Clear flat surface with room for him to turn on the spot. Requires the OBB.",
+            Prerequisites = new[] { "H passed", "--obb given", "a hand free to hold him" },
+            DoThis = "The tool turns him on the spot in bursts and says HOLD HIM NOW each time. Hold him by the "
+                   + "body so he cannot turn - do not lift him off the surface, or he will react to being "
+                   + "picked up instead. Let go between bursts.",
+            Success = "He plays the startled reaction once he is held, and nothing fires while he turns freely.",
+            Question = "Did he react to being held while his wheels were turning, and not while turning freely?",
+            ExpectedTelemetry = "an unexpected movement report naming the side, then the reaction, inside the window the tool drives",
+            AutoRule = "the unexpected-movement reaction fires during the window in which the tool drives the wheels",
+            Evidence = new[]
+            {
+                new EvidenceItem("window", "window UnexpectedMovement"),
+                new EvidenceItem("expected", "expected reactions"),
+                new EvidenceItem("bursts", "HOLD HIM NOW"),
+                new EvidenceItem("detections", "unexpected movement"),
+            },
             FidelityRecords = new[] { "M10-006" },
             NeedsHandling = true, NeedsObb = true, Requires = new[] { "H" },
             Timeout = TimeSpan.FromMinutes(5),
-            Command = o => o.WithObb("reactions", o.Ip).Concat(new[] { "--seconds", "120", "--acceptance", o.Acceptance("J") }).ToArray(),
-            Judge = r => r.ContainsAny("unexpected movement", "ReactToUnexpectedMovement") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Command = o => o.WithObb("reactions", o.Ip).Concat(new[] { "--expect", "UnexpectedMovement", "--provoke-movement",
+                                                                      "--seconds", "60", "--acceptance", o.Acceptance("J") }).ToArray(),
+            Judge = r => r.Contains("expected reactions: all seen") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {
@@ -692,23 +730,26 @@ public static class HardwareCatalog
                 + "vision front end. Offline they run against synthetic observations.",
             Setup = "A connected cube in view, clear floor. Requires the OBB.",
             Prerequisites = new[] { "K passed", "--obb given" },
-            DoThis = "Slide the cube 10 cm while he looks at it. Then turn him away and roll the cube.",
+            DoThis = "Two prompts, one at a time. First slide the cube about 10 cm while he is looking at it. "
+                   + "Then, when the second prompt comes, turn him away from the cube and roll it.",
             Success = "He looks at the cube's new place and nods to it. Turned away and hearing it move, he "
                     + "turns back to where it was and reacts to finding or not finding it.",
-            Question = "Did he acknowledge the moved cube, and react when it moved out of his sight?",
-            ExpectedTelemetry = "ObjectPositionUpdated then AcknowledgeObject; CubeMoved then ReactToCubeMoved",
-            AutoRule = "at least one cube reaction fires with its turn and animation",
+            Question = "Did he acknowledge the moved cube, and then react when it moved out of his sight?",
+            ExpectedTelemetry = "ObjectPositionUpdated fires in the first window and CubeMoved in the second",
+            AutoRule = "both named cube reactions fire, each in its own window",
             Evidence = new[]
             {
+                new EvidenceItem("windows", "window "),
+                new EvidenceItem("expected", "expected reactions"),
                 new EvidenceItem("reactions", "REACTION") { Limit = 40 },
                 new EvidenceItem("objects", "Known at"),
-                new EvidenceItem("turns", "turning towards"),
             },
             FidelityRecords = new[] { "M11-014" },
             NeedsCube = true, NeedsHandling = true, NeedsObb = true, Requires = new[] { "K" },
             Timeout = TimeSpan.FromMinutes(5),
-            Command = o => o.WithObb("reactions", o.Ip).Concat(new[] { "--seconds", "180", "--acceptance", o.Acceptance("M") }).ToArray(),
-            Judge = r => r.ContainsAny("AcknowledgeObject", "ReactToCubeMoved") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Command = o => o.WithObb("reactions", o.Ip).Concat(new[] { "--expect", "ObjectPositionUpdated,CubeMoved",
+                                                                      "--seconds", "160", "--acceptance", o.Acceptance("M") }).ToArray(),
+            Judge = r => r.Contains("expected reactions: all seen") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {
@@ -870,7 +911,9 @@ public static class HardwareCatalog
             NeedsCube = true, NeedsObb = true, Requires = new[] { "K", "Q" },
             Timeout = TimeSpan.FromMinutes(5),
             Command = o => o.WithObb("manip", o.Ip).Concat(new[] { "--driveto", "--acceptance", o.Acceptance("X") }).ToArray(),
-            Judge = r => r.Contains("lattice plan") && r.Contains("DriveToObject -> Success") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            // Q drives to the same pose with nothing in the way; what makes this X is an obstacle in the plan
+            Judge = r => r.Contains("lattice plan") && !r.Contains("0 obstacle(s)") && r.Contains("obstacle")
+                      && r.Contains("DriveToObject -> Success") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
 
         // ================================================================ 12. manipulation
@@ -910,7 +953,8 @@ public static class HardwareCatalog
                 + "cube cleanly is physical.",
             Setup = "Right after N, or with the cube set on the lift by hand.",
             Prerequisites = new[] { "N passed, or the cube placed on his lift by hand" },
-            DoThis = "Watch him set the cube down and back away.",
+            DoThis = "Watch him lower the lift, release the cube and back away from it. Note whether the "
+                   + "cube is left upright and square on the floor.",
             Success = "He lowers the lift and backs off the cube, leaving it upright on the floor.",
             Question = "Did he put the cube down cleanly and back away from it?",
             ExpectedTelemetry = "BlockPlaced and the carrying flag clears",
@@ -930,7 +974,8 @@ public static class HardwareCatalog
                 + "the hardware itself can confirm - but only with a real cube on a real surface.",
             Setup = "A connected cube ahead of him, upright or on its side.",
             Prerequisites = new[] { "K passed", "a connected cube 15-30 cm ahead" },
-            DoThis = "Watch the cube tip onto another face.",
+            DoThis = "Watch him dock against the cube and tip it onto another face. Note which face was up "
+                   + "before and after.",
             Success = "He docks and the cube rolls onto another face; the reported up axis changes.",
             Question = "Did the cube roll onto a different face?",
             ExpectedTelemetry = "the roll succeeds and the up axis changes",

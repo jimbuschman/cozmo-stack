@@ -64,6 +64,7 @@ public static class HardwareRunner
         {
             session = loaded!;
             Console.WriteLine($"session {sessionFile}: {session.Results.Count} check(s) already recorded");
+            AnnounceMigration(session);
         }
         else
         {
@@ -76,6 +77,7 @@ public static class HardwareRunner
                 if (choice is "r" or "s")
                 {
                     session = loaded;
+                    AnnounceMigration(session);
                     evidence = Arg(a, "--out") ?? loaded.EvidenceDirectory ?? evidence;
                     session.EvidenceDirectory = evidence;
                     if (choice == "s") { Status(session, new HardwareRunOptions { Ip = ip, Obb = obb, EvidenceDirectory = evidence }, sessionFile); return 0; }
@@ -140,7 +142,7 @@ public static class HardwareRunner
                 if (quit.IsCancellationRequested) break;
                 if (check.Phase != phase) { PhaseHeading(check.Phase, session); phase = check.Phase; }
 
-                if (session.BlockedBy(check) is { } block)
+                if (session.StaticBlock(check) is { } block)
                 {
                     Console.WriteLine();
                     Rule();
@@ -438,6 +440,7 @@ public static class HardwareRunner
         "connect" => await SmokeTest.Run(args),
         "sensors" => await Control.Sensors(args),
         "cubes" => await Control.Cubes(args),
+        "calibrate" => await Control.Calibrate(args),
         "drive" => await Control.Drive(args),
         "camera" => await Devices.Camera(args),
         "face" => await Devices.Face(args),
@@ -602,6 +605,25 @@ public static class HardwareRunner
         }
     }
 
+    /// <summary>
+    /// Says what an older session lost on the way in. Only entries written when a dependency gate was
+    /// mistaken for a permanent block are cleared, and the person is told which, because a check quietly
+    /// changing from blocked to pending between sittings is exactly the sort of thing that should not happen
+    /// silently.
+    /// </summary>
+    private static void AnnounceMigration(HardwareSession s)
+    {
+        if (s.Migrated.Count == 0) return;
+        Console.WriteLine($"  {s.Migrated.Count} check(s) had been recorded as blocked by a prerequisite that had not");
+        Console.WriteLine($"  been established: {string.Join(", ", s.Migrated)}.");
+        Console.WriteLine("  Those are not observations, so they have been cleared. Each one is pending again and");
+        Console.WriteLine("  becomes eligible as soon as what it waits for passes. Nothing anybody observed was touched.");
+    }
+
+    /// <summary>What a check with no result is waiting for, for the status and summary lines.</summary>
+    private static string Waiting(HardwareSession s, HardwareCheck c) =>
+        s.GatedBy(c) is { } gate ? "waiting: " + gate.Reason : "";
+
     private static void Status(HardwareSession s, HardwareRunOptions o, string sessionFile)
     {
         var t = s.Tally();
@@ -614,7 +636,7 @@ public static class HardwareRunner
             if (c.Phase != phase) { Console.WriteLine($"  -- {c.Phase}"); phase = c.Phase; }
             var status = s.StatusOf(c.Id);
             s.Results.TryGetValue(c.Id, out var r);
-            string detail = r?.BlockedReason ?? r?.InterruptedReason ?? r?.HumanNote ?? "";
+            string detail = r?.BlockedReason ?? r?.InterruptedReason ?? r?.HumanNote ?? Waiting(s, c);
             if (detail.Length > 60) detail = detail[..60] + "...";
             Console.WriteLine($"     {c.Id,-4} {status.ToString().ToUpperInvariant(),-11} {c.Name}{(detail.Length > 0 ? "  — " + detail : "")}");
         }
@@ -704,6 +726,7 @@ public static class HardwareRunner
                 CheckStatus.Partial => $"the tool said {Describe(r!.Auto)}, you said {r.Human}",
                 CheckStatus.Unsure => r?.HumanNote ?? "could not tell",
                 CheckStatus.Failed => r?.HumanNote ?? "failed",
+                CheckStatus.Pending => Waiting(s, c),
                 _ => "",
             };
             if (detail.Length > 70) detail = detail[..70] + "...";
@@ -716,6 +739,16 @@ public static class HardwareRunner
         Console.WriteLine($"  summary: {summaryFile}");
         Console.WriteLine($"  session: {sessionFile}");
         if (t.Outstanding > 0) Console.WriteLine("  --resume carries on where this stopped; --rerun-failed runs the unresolved ones again.");
+        var waiting = s.Gated().ToList();
+        if (waiting.Count > 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"  {waiting.Count} check(s) are waiting on something else and were not offered. They are not");
+            Console.WriteLine("  blocked and nothing has been recorded against them: settle what they wait for and they");
+            Console.WriteLine("  become eligible by themselves.");
+            foreach (var (c, reason) in waiting.Take(12)) Console.WriteLine($"     {c.Id,-4} {reason}");
+            if (waiting.Count > 12) Console.WriteLine($"     ... and {waiting.Count - 12} more");
+        }
         if (t.Failed + t.Partial > 0)
             Console.WriteLine("  Failures are investigation items. Nothing source-backed is tuned to make them pass.");
         Rule();

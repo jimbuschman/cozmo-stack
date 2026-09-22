@@ -120,9 +120,9 @@ public class HardwareRunnerTests
     [Fact]
     public void EveryCommandNamesAToolTheRunnerCanCall()
     {
-        var known = new[] { "connect", "sensors", "cubes", "drive", "camera", "face", "tone", "anim",
-                            "behavior", "sing", "offtreads", "reactions", "vision", "bodyangle", "manip",
-                            "freeplay", "core" };
+        var known = new[] { "connect", "sensors", "cubes", "calibrate", "drive", "camera", "face", "tone",
+                            "anim", "behavior", "sing", "offtreads", "reactions", "vision", "bodyangle",
+                            "manip", "freeplay", "core" };
         var o = new HardwareRunOptions { Ip = "172.31.1.1", Obb = "obb", EvidenceDirectory = TempDir() };
         foreach (var c in HardwareCatalog.All)
         {
@@ -237,7 +237,7 @@ public class HardwareRunnerTests
         Assert.Equal(0, s.Tally().Failed);
         Assert.Equal(0, s.Tally().Passed);
         Assert.False(s.Satisfied("K"));
-        Assert.NotNull(s.BlockedBy(s.Catalog.Single(c => c.Id == "N")));
+        Assert.NotNull(s.GatedBy(s.Catalog.Single(c => c.Id == "N")));
         Assert.Contains("K", s.Unresolved().Select(c => c.Id));
     }
 
@@ -274,15 +274,15 @@ public class HardwareRunnerTests
         var s = Session(Check("K"), Check("N", "K"));
         var n = s.Catalog.Single(c => c.Id == "N");
 
-        Assert.NotNull(s.BlockedBy(n));                                   // K has not run
-        Assert.Contains("has not run yet", s.BlockedBy(n)!.Reason);
+        Assert.NotNull(s.GatedBy(n));                                   // K has not run
+        Assert.Contains("has not run yet", s.GatedBy(n)!.Reason);
 
         s.Record(Result("K", AutoOutcome.Fail, HumanOutcome.Fail));
-        Assert.Contains("failed", s.BlockedBy(n)!.Reason);
+        Assert.Contains("failed", s.GatedBy(n)!.Reason);
 
         s.Clear("K");
         s.Record(Result("K", AutoOutcome.Pass, HumanOutcome.Pass));
-        Assert.Null(s.BlockedBy(n));                                      // only an outright pass unblocks it
+        Assert.Null(s.GatedBy(n));                                      // only an outright pass unblocks it
     }
 
     [Fact]
@@ -290,7 +290,7 @@ public class HardwareRunnerTests
     {
         var s = Session(Check("K"), Check("N", "K"));
         s.Record(Result("K", AutoOutcome.Pass, HumanOutcome.Fail));
-        Assert.Contains("inconclusive", s.BlockedBy(s.Catalog.Single(c => c.Id == "N"))!.Reason);
+        Assert.Contains("inconclusive", s.GatedBy(s.Catalog.Single(c => c.Id == "N"))!.Reason);
     }
 
     [Fact]
@@ -298,8 +298,8 @@ public class HardwareRunnerTests
     {
         var s = Session();
         foreach (var id in new[] { "N", "O", "P", "Q", "R", "S", "T", "U", "V", "X", "Z", "M" })
-            Assert.NotNull(s.BlockedBy(HardwareCatalog.Find(id)!));
-        Assert.Null(s.BlockedBy(HardwareCatalog.Find("LINK")!));            // the first check needs nothing
+            Assert.NotNull(s.GatedBy(HardwareCatalog.Find(id)!));
+        Assert.Null(s.GatedBy(HardwareCatalog.Find("LINK")!));            // the first check needs nothing
     }
 
     [Fact]
@@ -311,7 +311,7 @@ public class HardwareRunnerTests
         Assert.False(y.Runnable);
         Assert.Contains("OKAO", y.BlockedReason!);
         Assert.Contains("BLOCKED_EXTERNAL", y.BlockedReason!);
-        Assert.Contains("OKAO", s.BlockedBy(y)!.Reason);
+        Assert.Contains("OKAO", s.StaticBlock(y)!.Reason);
     }
 
     [Fact]
@@ -331,12 +331,12 @@ public class HardwareRunnerTests
         s.Only = new[] { "N" };
         var n = s.Catalog.Single(c => c.Id == "N");
 
-        Assert.Null(s.BlockedBy(n));                               // not blocked: it was asked for by name
+        Assert.Null(s.GatedBy(n));                               // not blocked: it was asked for by name
         Assert.Equal(new[] { "K" }, s.UnprovenPrerequisites["N"]);  // but the runner is told to say so
 
         s.Record(Result("K", AutoOutcome.Fail, HumanOutcome.Fail));
-        Assert.NotNull(s.BlockedBy(n));                            // a real failure still stops it
-        Assert.Contains("failed", s.BlockedBy(n)!.Reason);
+        Assert.NotNull(s.GatedBy(n));                            // a real failure still stops it
+        Assert.Contains("failed", s.GatedBy(n)!.Reason);
     }
 
     [Fact]
@@ -344,7 +344,7 @@ public class HardwareRunnerTests
     {
         var s = Session(Check("K"), Check("N", "K"));
         Assert.False(s.DebugSelection);
-        Assert.NotNull(s.BlockedBy(s.Catalog.Single(c => c.Id == "N")));
+        Assert.NotNull(s.GatedBy(s.Catalog.Single(c => c.Id == "N")));
         Assert.Empty(s.UnprovenPrerequisites);
     }
 
@@ -744,6 +744,354 @@ public class HardwareRunnerTests
             Assert.Contains("stopped short", File.ReadAllText(Path.Combine(root, "run", HardwareEvidence.SummaryFile)));
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    // ================================================================ each check isolates what it names
+
+    /// <summary>
+    /// The complaint that started this: three checks - the derived-state reactions, the calibration request
+    /// and the unexpected-movement detector - all ran the same generic listener for two minutes and passed on
+    /// any reaction at all. The campaign felt like it kept running the same test because it was, and one of
+    /// them (the calibration) passed on reports the robot sends on every connection whatever anybody does.
+    ///
+    /// A check now names the reaction it is about, the tool opens a window for it and says what to do, and
+    /// nothing that happens outside that window - or that was not asked for - can satisfy it.
+    /// </summary>
+    [Fact]
+    public void AReactionCheckIsNotSatisfiedByAReactionItDidNotAskFor()
+    {
+        // a transcript full of other reactions, and the summary line saying what was actually asked for
+        string Unrelated(string missing) => string.Join('\n', new[]
+        {
+            "REACTION RobotPickedUp -> ReactToRobotPickedUp",
+            "REACTION ReturnedToTreads -> ReactToReturnedToTreads",
+            "reactions fired: RobotPickedUp, ReturnedToTreads",
+            $"expected reactions: {missing}=no",
+            $"expected reactions missing: {missing}",
+        });
+
+        foreach (var (id, trigger) in new[] { ("H", "RobotOnBack"), ("C", "RobotFalling"),
+                                              ("J", "UnexpectedMovement"), ("M", "CubeMoved") })
+        {
+            var c = HardwareCatalog.Find(id)!;
+            Assert.Equal(AutoOutcome.Fail, c.Judge(Output(Unrelated(trigger))));
+            Assert.Equal(AutoOutcome.Pass, c.Judge(Output($"window {trigger}: fired\nexpected reactions: all seen")));
+        }
+    }
+
+    [Fact]
+    public void EveryReactionCheckNamesTheReactionsItIsAboutAndTheyDiffer()
+    {
+        var o = new HardwareRunOptions { Ip = "172.31.1.1", Obb = "obb", EvidenceDirectory = TempDir() };
+        var expectations = new Dictionary<string, string>();
+        foreach (var id in new[] { "H", "C", "J", "M" })
+        {
+            var args = HardwareCatalog.Find(id)!.Command(o).ToList();
+            int at = args.IndexOf("--expect");
+            Assert.True(at >= 0, $"{id} should name the reactions it is about");
+            expectations[id] = args[at + 1];
+        }
+        Assert.Equal("RobotFalling", expectations["C"]);                       // the drop, not being picked up
+        Assert.Equal("UnexpectedMovement", expectations["J"]);
+        Assert.Contains("RobotOnBack", expectations["H"]);
+        Assert.Contains("CubeMoved", expectations["M"]);
+        Assert.Equal(expectations.Count, expectations.Values.Distinct().Count());   // no two are the same test
+
+        // and the one that needs the wheels turning makes them turn
+        Assert.Contains("--provoke-movement", HardwareCatalog.Find("J")!.Command(o));
+        if (Directory.Exists(o.EvidenceDirectory)) Directory.Delete(o.EvidenceDirectory, true);
+    }
+
+    /// <summary>
+    /// The calibration check used to watch a two-minute reaction run and pass on the word "MotorCalibration",
+    /// which the robot sends on every connection. It now asks for one and judges only the answer.
+    /// </summary>
+    [Fact]
+    public void TheCalibrationCheckAsksForOneAndJudgesOnlyWhatCameBack()
+    {
+        var o = new HardwareRunOptions { Ip = "172.31.1.1", Obb = "obb", EvidenceDirectory = TempDir() };
+        var i = HardwareCatalog.Find("I")!;
+        Assert.Equal("calibrate", i.Command(o)[0]);
+
+        // the connection-time reports, which arrive whatever anybody does
+        Assert.Equal(AutoOutcome.Fail, i.Judge(Output(
+            "  [  0.30s] MotorCalibration motor=MOTOR_HEAD started=True auto=True   (connection-time)\n" +
+            "  [  1.90s] MotorCalibration motor=MOTOR_HEAD started=False auto=True   (connection-time)\n" +
+            "calibration honoured: NO")));
+        Assert.Equal(AutoOutcome.Pass, i.Judge(Output(
+            "  ASKING NOW: StartMotorCalibration head=1 lift=0\n" +
+            "  [  6.10s] MotorCalibration motor=MOTOR_HEAD started=True auto=False   <- after the request\n" +
+            "calibration honoured: yes (started at 6.10s, finished at 7.40s, 1.30s of movement)")));
+        if (Directory.Exists(o.EvidenceDirectory)) Directory.Delete(o.EvidenceDirectory, true);
+    }
+
+    /// <summary>
+    /// The lift reading is now an experiment with two ends, not a column of numbers and a question nobody
+    /// could answer. Printing readings is not enough: both ends of the travel have to have been visited.
+    /// </summary>
+    [Fact]
+    public void TheLiftCheckIsGuidedAndNeedsBothEndsOfTheTravel()
+    {
+        var o = new HardwareRunOptions { Ip = "172.31.1.1", EvidenceDirectory = TempDir() };
+        var d = HardwareCatalog.Find("D")!;
+        Assert.Contains("--guide-lift", d.Command(o));
+        Assert.Equal(AutoOutcome.Fail, d.Judge(Output("    lift= -0.198 rad /   32.0 mm\n    lift= -0.198 rad /   32.0 mm\n"
+                                                    + "lift sequence: down seen=yes, raised seen=NO, both ends seen=NO")));
+        Assert.Equal(AutoOutcome.Pass, d.Judge(Output("lift sequence: down seen=yes, raised seen=yes, both ends seen=yes")));
+        Assert.Contains("RAISE THE LIFT", d.DoThis);            // and the person is told when
+        if (Directory.Exists(o.EvidenceDirectory)) Directory.Delete(o.EvidenceDirectory, true);
+    }
+
+    [Fact]
+    public void TheOffTreadsCheckNeedsMoreThanASingleTransition()
+    {
+        var g = HardwareCatalog.Find("G")!;
+        Assert.Equal(AutoOutcome.Fail, g.Judge(Output("off-treads OnTreads -> InAir")));
+        Assert.Equal(AutoOutcome.Pass, g.Judge(Output("off-treads OnTreads -> InAir\noff-treads InAir -> OnBack")));
+    }
+
+    /// <summary>
+    /// Q and X drive to the same pose with the same command. What makes X the lattice-planner check is the
+    /// cube in the way, so its judge requires a plan that actually had an obstacle in it; Q's output, with
+    /// nothing in the way, must not satisfy it.
+    /// </summary>
+    [Fact]
+    public void ThePlannerCheckNeedsAPlanThatWentRoundSomething()
+    {
+        var x = HardwareCatalog.Find("X")!;
+        Assert.Equal(AutoOutcome.Fail, x.Judge(Output("DriveToObject -> Success")));
+        Assert.Equal(AutoOutcome.Fail, x.Judge(Output("lattice plan: 4 primitive(s), 0 obstacle(s)\nDriveToObject -> Success")));
+        Assert.Equal(AutoOutcome.Pass, x.Judge(Output("lattice plan: 7 primitive(s), 1 obstacle(s)\nDriveToObject -> Success")));
+    }
+
+    [Fact]
+    public void TheIdleCheckNeedsIdleToHaveDoneSomething()
+    {
+        var idl = HardwareCatalog.Find("IDL")!;
+        Assert.Equal(AutoOutcome.Fail, idl.Judge(Output("idle actions taken: 0")));
+        Assert.Equal(AutoOutcome.Pass, idl.Judge(Output("idle actions taken: 7")));
+    }
+
+    /// <summary>
+    /// Every check that waits for the person to do something says what to do. The two the campaign found
+    /// unanswerable - the lift reading and the disconnect - say it in the words someone holding the robot
+    /// needs, and what they should see afterwards.
+    /// </summary>
+    [Fact]
+    public void AChecksInstructionsSayWhatToDoAndWhatItLooksLike()
+    {
+        foreach (var c in HardwareCatalog.All.Where(c => c.Runnable))
+        {
+            Assert.True(c.DoThis.Length > 25, $"{c.Id} does not say enough about what to do");
+            Assert.True(c.Success.Length > 25, $"{c.Id} does not say enough about what a pass looks like");
+        }
+        Assert.Contains("RAISE THE LIFT", HardwareCatalog.Find("D")!.DoThis);
+        Assert.Contains("stop", HardwareCatalog.Find("CR2")!.Success, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("cuts the link", HardwareCatalog.Find("CR2")!.DoThis, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("prompt", HardwareCatalog.Find("H")!.DoThis, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("DROP", HardwareCatalog.Find("C")!.DoThis);
+        Assert.Contains("HOLD", HardwareCatalog.Find("J")!.DoThis, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("ASKING NOW", HardwareCatalog.Find("I")!.DoThis);
+    }
+
+    // ================================================================ gated is not blocked
+
+    /// <summary>
+    /// The regression for what the first campaign did to itself. D was run and answered unsure - a real
+    /// observation - and MOV, which depends on it, was written down as "BLOCKED: D has not run yet". D had
+    /// run. The entry was not about MOV at all, and it would have outlived the state that produced it: rerun
+    /// D, pass it, and MOV would still have been blocked by a sentence that was no longer true.
+    ///
+    /// A prerequisite that is unresolved gates its dependants. It does not decide anything about them, so
+    /// nothing is written down: they stay pending and become eligible by themselves.
+    /// </summary>
+    [Fact]
+    public void AnUnsurePrerequisiteLeavesItsDependantPendingRatherThanBlocked()
+    {
+        var s = Session();
+        s.Record(Result("LINK", AutoOutcome.Pass, HumanOutcome.Pass));
+        s.Record(Result("D", AutoOutcome.Pass, HumanOutcome.Unsure));
+
+        var mov = HardwareCatalog.Find("MOV")!;
+        Assert.Null(s.StaticBlock(mov));                              // nothing about the build stops MOV
+        Assert.NotNull(s.GatedBy(mov));                               // it is simply not its turn
+        Assert.Contains("was unsure", s.GatedBy(mov)!.Reason);        // and the wording says so
+        Assert.DoesNotContain("has not run yet", s.GatedBy(mov)!.Reason);
+
+        Assert.Equal(CheckStatus.Pending, s.StatusOf("MOV"));
+        Assert.False(s.Results.ContainsKey("MOV"));                   // nothing written down
+        Assert.Contains("MOV", s.Gated().Select(g => g.Check.Id));
+        Assert.DoesNotContain(HardwareCatalog.Find("MOV"), s.Selected().Where(c => s.Next() == c));
+    }
+
+    [Fact]
+    public void RerunningThePrerequisiteAndPassingItMakesTheDependantTheNextThingToDo()
+    {
+        var s = Session();
+        s.Only = null;
+        s.Record(Result("LINK", AutoOutcome.Pass, HumanOutcome.Pass));
+        s.Record(Result("D", AutoOutcome.Pass, HumanOutcome.Unsure));
+        foreach (var id in new[] { "F", "FD", "AUD", "A", "A2", "A3" })
+            s.Record(Result(id, AutoOutcome.Pass, HumanOutcome.Pass));
+        Assert.NotEqual("MOV", s.Next()?.Id);                         // gated: not offered
+
+        s.Clear("D");                                                 // --rerun D
+        s.Record(Result("D", AutoOutcome.Pass, HumanOutcome.Pass));
+        Assert.Null(s.GatedBy(HardwareCatalog.Find("MOV")!));
+        Assert.Equal("MOV", s.Next()!.Id);                            // eligible by itself, nothing to clean up
+    }
+
+    [Fact]
+    public void AnInconclusivePrerequisiteLeavesTheSongsPending()
+    {
+        var s = Session();
+        foreach (var id in new[] { "LINK", "D", "F", "FD", "AUD" }) s.Record(Result(id, AutoOutcome.Pass, HumanOutcome.Pass));
+        s.Record(Result("A", AutoOutcome.Pass, HumanOutcome.Fail));   // the tool is happy, the listener is not
+
+        foreach (var id in new[] { "A2", "A3" })
+        {
+            var c = HardwareCatalog.Find(id)!;
+            Assert.Null(s.StaticBlock(c));
+            Assert.Contains("was inconclusive", s.GatedBy(c)!.Reason);
+            Assert.Equal(CheckStatus.Pending, s.StatusOf(id));
+            Assert.False(s.Results.ContainsKey(id));
+        }
+
+        s.Clear("A");
+        s.Record(Result("A", AutoOutcome.Pass, HumanOutcome.Pass));
+        Assert.Null(s.GatedBy(HardwareCatalog.Find("A2")!));
+        Assert.Null(s.GatedBy(HardwareCatalog.Find("A3")!));
+        Assert.Equal("A2", s.Next()!.Id);
+    }
+
+    [Fact]
+    public void AnUnsureCubeCheckLeavesTheVisionCheckPendingUntilItPasses()
+    {
+        var s = Session();
+        s.Record(Result("LINK", AutoOutcome.Pass, HumanOutcome.Pass));
+        s.Record(Result("B", AutoOutcome.Fail, HumanOutcome.Unsure));  // cube seen, never connected
+
+        var k = HardwareCatalog.Find("K")!;
+        Assert.Equal(CheckStatus.Pending, s.StatusOf("K"));
+        Assert.False(s.Results.ContainsKey("K"));
+        Assert.Contains("was unsure", s.GatedBy(k)!.Reason);
+
+        // and everything behind K is waiting on K, not written off
+        foreach (var id in new[] { "V", "M", "Q", "N", "Z" })
+        {
+            Assert.Equal(CheckStatus.Pending, s.StatusOf(id));
+            Assert.False(s.Results.ContainsKey(id));
+        }
+
+        s.Clear("B");
+        s.Record(Result("B", AutoOutcome.Pass, HumanOutcome.Pass));
+        Assert.Null(s.GatedBy(k));
+        Assert.Contains("K", s.Selected().Where(c => s.GatedBy(c) is null && !s.Results.ContainsKey(c.Id)).Select(c => c.Id));
+    }
+
+    /// <summary>
+    /// The one kind of block that is real and is written down: this build cannot run the check at all, and
+    /// nothing anyone does today changes that.
+    /// </summary>
+    [Fact]
+    public void TheDetectorBoundaryIsARealBlockAndIsRecordedAsOne()
+    {
+        var s = Session();
+        var y = HardwareCatalog.Find("Y")!;
+        Assert.NotNull(s.StaticBlock(y));
+        Assert.Contains("BLOCKED_EXTERNAL", s.StaticBlock(y)!.Reason);
+
+        s.RecordBlocked("Y", s.StaticBlock(y)!.Reason);
+        Assert.Equal(CheckStatus.Blocked, s.StatusOf("Y"));
+        Assert.Equal(1, s.Tally().Blocked);
+    }
+
+    [Fact]
+    public void TheDifferenceSurvivesBeingSavedAndReloaded()
+    {
+        var dir = TempDir();
+        var file = Path.Combine(dir, "session.json");
+        try
+        {
+            var s = Session();
+            s.Record(Result("LINK", AutoOutcome.Pass, HumanOutcome.Pass));
+            s.Record(Result("D", AutoOutcome.Pass, HumanOutcome.Unsure));
+            s.RecordBlocked("Y", HardwareCatalog.Find("Y")!.BlockedReason!);
+            s.Save(file);
+
+            var back = HardwareSession.Load(file)!;
+            Assert.Equal(CheckStatus.Unsure, back.StatusOf("D"));      // the observation is kept
+            Assert.Equal(CheckStatus.Blocked, back.StatusOf("Y"));     // the real block is kept
+            Assert.Equal(CheckStatus.Pending, back.StatusOf("MOV"));   // the gated one is still just waiting
+            Assert.False(back.Results.ContainsKey("MOV"));
+            Assert.Contains("was unsure", back.GatedBy(HardwareCatalog.Find("MOV")!)!.Reason);
+        }
+        finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
+    }
+
+    /// <summary>
+    /// An older session, written when a dependency gate was mistaken for a permanent block, is repaired on
+    /// the way in - and only in that one respect. Everything anybody actually observed is left alone.
+    /// </summary>
+    [Fact]
+    public void LoadingAnOlderSessionClearsTheFalseBlocksAndNothingElse()
+    {
+        var dir = TempDir();
+        var file = Path.Combine(dir, "session.json");
+        try
+        {
+            var s = Session();
+            // what the campaign really saw
+            s.Record(new HardwareResult { Id = "LINK", Auto = AutoOutcome.Pass, Human = HumanOutcome.Pass });
+            s.Record(new HardwareResult { Id = "A", Auto = AutoOutcome.Pass, Human = HumanOutcome.Fail, HumanNote = "the tune sounded wrong" });
+            s.Record(new HardwareResult { Id = "E", Auto = AutoOutcome.Pass, Human = HumanOutcome.Fail, HumanNote = "colour image looked glitched" });
+            s.Record(new HardwareResult { Id = "B", Auto = AutoOutcome.Fail, Human = HumanOutcome.Unsure, HumanNote = "cube seen but did not connect" });
+            s.Record(new HardwareResult { Id = "D", Auto = AutoOutcome.Pass, Human = HumanOutcome.Unsure, HumanNote = "did not know what to do" });
+            s.Record(new HardwareResult { Id = "J", InterruptedReason = "stopped part way (emergency stop or Ctrl+C)" });
+            s.RecordBlocked("Y", HardwareCatalog.Find("Y")!.BlockedReason!);
+            // and what it wrote down that was never observed
+            s.RecordBlocked("MOV", "D (Lift position readout) has not run yet, and MOV depends on it");
+            s.RecordBlocked("A2", "A (Cozmo sings) was inconclusive, and A2 depends on it");
+            s.RecordBlocked("K", "B (Cube telemetry) has not run yet, and K depends on it");
+            s.RecordBlocked("V", "K (Camera calibration and cube localisation) has not run yet, and V depends on it");
+            s.Save(file);
+
+            var back = HardwareSession.Load(file)!;
+
+            Assert.Equal(new[] { "MOV", "A2", "K", "V" }.OrderBy(x => x), back.Migrated.OrderBy(x => x));
+            foreach (var id in new[] { "MOV", "A2", "K", "V" })
+            {
+                Assert.False(back.Results.ContainsKey(id));
+                Assert.Equal(CheckStatus.Pending, back.StatusOf(id));
+            }
+
+            // every real observation is exactly as it was
+            Assert.Equal(CheckStatus.Passed, back.StatusOf("LINK"));
+            Assert.Equal(CheckStatus.Partial, back.StatusOf("A"));
+            Assert.Equal("the tune sounded wrong", back.Results["A"].HumanNote);
+            Assert.Equal(CheckStatus.Partial, back.StatusOf("E"));
+            Assert.Equal(CheckStatus.Unsure, back.StatusOf("B"));
+            Assert.Equal("cube seen but did not connect", back.Results["B"].HumanNote);
+            Assert.Equal(CheckStatus.Unsure, back.StatusOf("D"));
+            Assert.Equal(CheckStatus.Interrupted, back.StatusOf("J"));
+            Assert.Equal(CheckStatus.Blocked, back.StatusOf("Y"));     // the one real block survives
+
+            // and the campaign can carry on: rerun what was unsure and the rest follows
+            back.Clear("B");
+            back.Record(Result("B", AutoOutcome.Pass, HumanOutcome.Pass));
+            Assert.Null(back.GatedBy(HardwareCatalog.Find("K")!));
+        }
+        finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public void ACampaignWithSomethingStillWaitingIsNotFinished()
+    {
+        var s = Session(Check("A"), Check("B", "A"));
+        s.Record(Result("A", AutoOutcome.Pass, HumanOutcome.Unsure));
+        Assert.Null(s.Next());                       // B is gated, so there is nothing to offer
+        Assert.False(s.Complete);                    // but the campaign is not done either
+        Assert.Single(s.Gated());
     }
 
     // ================================================================ when a check counts as cut short

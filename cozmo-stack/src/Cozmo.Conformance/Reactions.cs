@@ -182,22 +182,79 @@ public static class ReactionsTool
         Console.WriteLine($"classifier {(robot.Sensors.OffTreadsClassifierEnabled ? "enabled" : "waiting for the head calibration report")}");
         Console.WriteLine($"\n{manager.Reactions.Count} reactions registered:");
         foreach (var r in manager.Reactions) Console.WriteLine($"  {r.Strategy.Trigger,-20} -> {r.Behavior.Id}{(r.ResumeLast ? " (resumes last)" : "")}");
-        Console.WriteLine($"\nrunning for {seconds}s. Lay him on his back, on a side, on his face; hold him on a slope; shake him; " +
-                          "push him sideways while he drives (he only drives if a behaviour drives him). Reactions print as they fire.\n");
+        var expect = ParseExpected(Arg(a, "--expect"));
+        bool provoke = a.Contains("--provoke-movement");
 
         var fired = new HashSet<ReactionTrigger>();
-        manager.ReactionTriggered += r => fired.Add(r.Trigger);
-        while (sw.Elapsed.TotalSeconds < seconds)
+        var firedInWindow = new HashSet<ReactionTrigger>();
+        manager.ReactionTriggered += r => { fired.Add(r.Trigger); firedInWindow.Add(r.Trigger); };
+
+        async Task Tick(double untilSec)
         {
-            double nowMs = sw.Elapsed.TotalMilliseconds, nowSec = sw.Elapsed.TotalSeconds;
-            mood.Advance(nowSec);
-            manager.CheckReactions(nowSec);
-            manager.Update(nowMs, nowSec);
-            await Task.Delay(33);
+            while (sw.Elapsed.TotalSeconds < untilSec)
+            {
+                double nowMs = sw.Elapsed.TotalMilliseconds, nowSec = sw.Elapsed.TotalSeconds;
+                mood.Advance(nowSec);
+                manager.CheckReactions(nowSec);
+                manager.Update(nowMs, nowSec);
+                await Task.Delay(33);
+            }
+        }
+
+        var seen = new Dictionary<ReactionTrigger, bool>();
+        if (expect.Count == 0)
+        {
+            Console.WriteLine($"\nrunning for {seconds}s. Lay him on his back, on a side, on his face; hold him on a slope; shake him; " +
+                              "push him sideways while he drives (he only drives if a behaviour drives him). Reactions print as they fire.\n");
+            await Tick(seconds);
+        }
+        else
+        {
+            // One handling at a time, each in its own window, so what fired can be attributed to what was
+            // done. A long open-ended watch cannot tell the reaction it is named after from any other, which
+            // is how a check could pass on a reaction nobody asked for.
+            double each = Math.Max(15, (double)seconds / expect.Count);
+            Console.WriteLine($"\n{expect.Count} thing(s) to try, about {each:F0} s each. Do what each prompt says, when it says it.\n");
+            foreach (var want in expect)
+            {
+                firedInWindow.Clear();
+                double until = Math.Min(seconds, sw.Elapsed.TotalSeconds + each);
+                Console.WriteLine();
+                Console.WriteLine(new string('=', 72));
+                Console.WriteLine($"  NOW: {Instruction(want)}");
+                Console.WriteLine($"  (watching for {want} for the next {until - sw.Elapsed.TotalSeconds:F0} s)");
+                Console.WriteLine(new string('=', 72));
+
+                if (provoke && want == ReactionTrigger.UnexpectedMovement)
+                    await ProvokeMovement(robot, manager, mood, sw, until);
+                else
+                    await Tick(until);
+
+                bool got = firedInWindow.Contains(want);
+                seen[want] = got;
+                Console.WriteLine($"  window {want}: {(got ? "fired" : "NOT SEEN")}"
+                                + (firedInWindow.Count > 0 ? $"   (in this window: {string.Join(", ", firedInWindow.OrderBy(x => x))})" : ""));
+            }
         }
         manager.Stop(BehaviorStopReason.Cancelled, sw.Elapsed.TotalSeconds);
+        await robot.Motion.StopAllAsync();
 
         Console.WriteLine($"\nreactions fired: {(fired.Count == 0 ? "none" : string.Join(", ", fired.OrderBy(x => x)))}");
+        if (expect.Count > 0)
+        {
+            // The line the acceptance runner judges on. Only the expected reactions count, and only when they
+            // fired in their own window: nothing unrelated can satisfy this check.
+            Console.WriteLine("expected reactions: " + string.Join(" ", expect.Select(e => $"{e}={(seen.GetValueOrDefault(e) ? "yes" : "no")}")));
+            var missing = expect.Where(e => !seen.GetValueOrDefault(e)).ToList();
+            Console.WriteLine(missing.Count == 0
+                ? "expected reactions: all seen"
+                : "expected reactions missing: " + string.Join(", ", missing));
+            if (missing.Count > 0)
+            {
+                robot.Disconnect();
+                return 2;
+            }
+        }
         if (acceptance is not null)
         {
             var record = WriteAcceptance("reactions", acceptance, fired.Count > 0, robot,
@@ -209,6 +266,74 @@ public static class ReactionsTool
         }
         robot.Disconnect();
         return 0;
+    }
+
+    /// <summary>The reactions a check says it is about, from <c>--expect Trigger[,Trigger]</c>.</summary>
+    private static List<ReactionTrigger> ParseExpected(string? arg)
+    {
+        var list = new List<ReactionTrigger>();
+        if (string.IsNullOrWhiteSpace(arg)) return list;
+        foreach (var name in arg.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            if (Enum.TryParse<ReactionTrigger>(name, ignoreCase: true, out var t)) list.Add(t);
+            else Console.WriteLine($"  (no reaction trigger called '{name}'; ignoring it)");
+        return list;
+    }
+
+    /// <summary>
+    /// What the person has to do to cause one reaction, in the words they need while holding the robot.
+    /// A check that cannot say this is a check nobody can carry out.
+    /// </summary>
+    private static string Instruction(ReactionTrigger t) => t switch
+    {
+        ReactionTrigger.RobotOnBack => "lay him on his BACK, flat, and let go",
+        ReactionTrigger.RobotOnFace => "lay him FACE DOWN and let go",
+        ReactionTrigger.RobotOnSide => "lay him on one SIDE and let go",
+        ReactionTrigger.RobotShaken => "pick him up and SHAKE him for a second or two, then set him down on his treads",
+        ReactionTrigger.RobotPlacedOnSlope => "put him down on a SLOPE - a book under one end - and let go",
+        ReactionTrigger.ReturnedToTreads => "set him back on his treads, the right way up, and let go",
+        ReactionTrigger.RobotPickedUp => "pick him straight up and hold him in the air",
+        ReactionTrigger.RobotFalling => "hold him a few centimetres above a cushion and DROP him onto it",
+        ReactionTrigger.UnexpectedMovement => "when his wheels start turning, HOLD him so he cannot turn - do not lift him",
+        ReactionTrigger.CliffDetected => "slide him forward so one front sensor overhangs the edge",
+        ReactionTrigger.PlacedOnCharger => "put him down on the charger contacts",
+        ReactionTrigger.CubeMoved => "move the cube while he is not looking at it",
+        ReactionTrigger.ObjectPositionUpdated => "slide the cube about 10 cm while he is looking at it",
+        _ => $"cause {t}",
+    };
+
+    /// <summary>
+    /// Drives the wheels in short bursts so the person has something to hold against. The detector compares
+    /// what the wheels are doing with what the gyro says the body did, so it needs the wheels turning: an
+    /// open-ended watch for a push that never happens is not a test of anything.
+    /// </summary>
+    private static async Task ProvokeMovement(CozmoRobot robot, BehaviorManager manager, MoodState mood,
+                                              System.Diagnostics.Stopwatch sw, double untilSec)
+    {
+        bool driving = false;
+        double nextSwitch = sw.Elapsed.TotalSeconds;
+        while (sw.Elapsed.TotalSeconds < untilSec)
+        {
+            if (sw.Elapsed.TotalSeconds >= nextSwitch)
+            {
+                driving = !driving;
+                nextSwitch = sw.Elapsed.TotalSeconds + (driving ? 2.5 : 1.5);
+                if (driving)
+                {
+                    Console.WriteLine($"  [{sw.Elapsed.TotalSeconds,7:F2}s] turning on the spot - HOLD HIM NOW");
+                    await robot.Motion.DriveWheelsAsync(40f, -40f, confirmWithin: TimeSpan.FromMilliseconds(400));
+                }
+                else
+                {
+                    await robot.Motion.StopAllAsync();
+                }
+            }
+            double nowMs = sw.Elapsed.TotalMilliseconds, nowSec = sw.Elapsed.TotalSeconds;
+            mood.Advance(nowSec);
+            manager.CheckReactions(nowSec);
+            manager.Update(nowMs, nowSec);
+            await Task.Delay(33);
+        }
+        await robot.Motion.StopAllAsync();
     }
 
     private static double Deg(float? rad) => (rad ?? 0f) * 180.0 / Math.PI;

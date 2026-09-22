@@ -93,11 +93,26 @@ public sealed class HardwareSession
     }
 
     /// <summary>
-    /// Why a check cannot start now, or null. A check the build cannot run at all is blocked by its own
-    /// reason; one whose prerequisite has not passed is blocked by that, and the runner never proceeds past
-    /// it silently.
+    /// A check this build cannot run at all, whatever anyone does today. Only <see cref="HardwareCheck.
+    /// BlockedReason"/> produces one, and only this is ever written down as a terminal result: Y is blocked
+    /// because the face detector is the OKAO boundary, and that will be true again tomorrow.
     /// </summary>
-    public HardwareBlock? BlockedBy(HardwareCheck c)
+    public HardwareBlock? StaticBlock(HardwareCheck c) =>
+        c.BlockedReason is null ? null : new HardwareBlock(c.Id, c.BlockedReason);
+
+    /// <summary>
+    /// A check that is not eligible <em>yet</em>, because something it depends on has not been established,
+    /// or null when it is ready to run.
+    ///
+    /// This is the distinction the runner used to miss. A prerequisite that has not run, failed, was
+    /// inconclusive, was unsure, was interrupted or was skipped says nothing about this check - it says the
+    /// campaign has not got there yet. Writing that down as a result would freeze a passing afternoon's work
+    /// into a wall of BLOCKED entries that outlive the reason for them: rerun the prerequisite, get a pass,
+    /// and the dependant is still recorded as blocked by a state that no longer exists. So a gated check
+    /// keeps no result at all. It stays pending, it is not offered, and the moment its prerequisites pass it
+    /// becomes the next thing to do with nothing to clean up.
+    /// </summary>
+    public HardwareBlock? GatedBy(HardwareCheck c)
     {
         if (c.BlockedReason is null && DebugSelection)
         {
@@ -105,17 +120,18 @@ public sealed class HardwareSession
             var unproven = c.Requires.Where(n => StatusOf(n) == CheckStatus.Pending).ToList();
             if (unproven.Count > 0) UnprovenPrerequisites[c.Id] = unproven;
         }
-        if (c.BlockedReason is not null) return new HardwareBlock(c.Id, c.BlockedReason);
         foreach (var need in c.Requires)
         {
             var status = StatusOf(need);
             if (status == CheckStatus.Passed) continue;
-            if (status == CheckStatus.Pending && DebugSelection) continue;   // hand-picked: warn, do not block
+            if (status == CheckStatus.Pending && DebugSelection) continue;   // hand-picked: warn, do not gate
             var name = HardwareCatalog.Find(need)?.Name ?? need;
             return new HardwareBlock(c.Id, status switch
             {
                 CheckStatus.Failed => $"{need} ({name}) failed, and {c.Id} depends on it",
                 CheckStatus.Partial => $"{need} ({name}) was inconclusive, and {c.Id} depends on it",
+                CheckStatus.Unsure => $"{need} ({name}) was unsure, and {c.Id} depends on it",
+                CheckStatus.Interrupted => $"{need} ({name}) was interrupted, and {c.Id} depends on it",
                 CheckStatus.Skipped => $"{need} ({name}) was skipped, and {c.Id} depends on it",
                 CheckStatus.Blocked => $"{need} ({name}) is blocked, and {c.Id} depends on it",
                 _ => $"{need} ({name}) has not run yet, and {c.Id} depends on it",
@@ -124,21 +140,34 @@ public sealed class HardwareSession
         return null;
     }
 
+    /// <summary>Every check waiting on something else, with what it is waiting for.</summary>
+    public IEnumerable<(HardwareCheck Check, string Reason)> Gated() =>
+        Selected().Where(c => !_results.ContainsKey(c.Id) && StaticBlock(c) is null)
+                  .Select(c => (c, GatedBy(c)?.Reason))
+                  .Where(x => x.Item2 is not null)
+                  .Select(x => (x.c, x.Item2!));
+
     /// <summary>
-    /// Prerequisites that have not run for a hand-picked check, filled in by <see cref="BlockedBy"/> so the
+    /// Prerequisites that have not run for a hand-picked check, filled in by <see cref="GatedBy"/> so the
     /// runner can warn about them without refusing to start.
     /// </summary>
     public Dictionary<string, List<string>> UnprovenPrerequisites { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The next check to run: the first with no result at all, or the first that was interrupted. An
-    /// interrupted check has a record but no observation, so resuming picks it up rather than walking past.
+    /// The next check to run: the first eligible one with no result at all, or the first that was
+    /// interrupted. An interrupted check has a record but no observation, so resuming picks it up rather
+    /// than walking past. A gated check is skipped over rather than offered or recorded - it is simply not
+    /// its turn - and becomes the next thing to do as soon as what it waits for passes.
     /// </summary>
     public HardwareCheck? Next() =>
-        Selected().FirstOrDefault(c => !_results.ContainsKey(c.Id) || StatusOf(c.Id) == CheckStatus.Interrupted);
+        Selected().FirstOrDefault(c => (!_results.ContainsKey(c.Id) || StatusOf(c.Id) == CheckStatus.Interrupted)
+                                       && (StaticBlock(c) is not null || GatedBy(c) is null));
 
-    /// <summary>True once every selected check has a result.</summary>
-    public bool Complete => Next() is null;
+    /// <summary>
+    /// True once every selected check has been dealt with. A gated check has not: it is waiting, not done,
+    /// so a campaign that ends with dependants still waiting is not finished and says so.
+    /// </summary>
+    public bool Complete => Selected().All(c => _results.ContainsKey(c.Id) && StatusOf(c.Id) != CheckStatus.Interrupted);
 
     // ------------------------------------------------------------------ recording
 
@@ -234,6 +263,33 @@ public sealed class HardwareSession
             EvidenceDirectory = p.EvidenceDirectory,
         };
         foreach (var r in p.Results) s._results[r.Id] = r;
+        s.MigrateDependencyBlocks();
         return s;
     }
+
+    /// <summary>
+    /// Clears results that were written when a dependency gate was mistaken for a permanent block, and
+    /// nothing else.
+    ///
+    /// Sessions recorded before that was corrected hold entries like "MOV: BLOCKED - D has not run yet". D
+    /// has since run; the entry has not. It is not an observation of MOV - nobody looked at MOV - so it is
+    /// dropped and MOV goes back to being pending, eligible the moment D passes. What is kept is everything
+    /// that was actually seen: every pass, failure, unsure, interruption and skip, and the genuinely static
+    /// blocks, which are the ones the catalog itself declares.
+    /// </summary>
+    public void MigrateDependencyBlocks()
+    {
+        foreach (var id in _results.Keys.ToList())
+        {
+            var r = _results[id];
+            if (r.BlockedReason is null) continue;                       // a real observation; keep it
+            var check = Catalog.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.OrdinalIgnoreCase));
+            if (check?.BlockedReason is not null) continue;              // Y and its kind: genuinely blocked
+            _results.Remove(id);
+            Migrated.Add(id);
+        }
+    }
+
+    /// <summary>The checks whose dependency-derived block was cleared when this session was loaded.</summary>
+    public List<string> Migrated { get; } = new();
 }

@@ -26,6 +26,7 @@ return args.Length == 0 ? Usage() : args[0] switch
     "lights" => Control.Lights(args).GetAwaiter().GetResult(),
     "sensors" => Control.Sensors(args).GetAwaiter().GetResult(),
     "cubes" => Control.Cubes(args).GetAwaiter().GetResult(),
+    "calibrate" => Control.Calibrate(args).GetAwaiter().GetResult(),
     "animlist" => Anim.List(args),
     "animdump" => AnimDump.Run(args),
     "anim" => Anim.Play(args).GetAwaiter().GetResult(),

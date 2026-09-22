@@ -155,12 +155,17 @@ public static class CoreChecks
         Exception? faulted = null;
         robot.Animations.Faulted += e => faulted = e;
 
-        say($"playing '{clip}' and cutting the link 1.5 s in.");
+        say("");
+        say("  WATCH HIM: he will start moving, and part way through the animation this tool cuts the link on");
+        say("  purpose. What you are judging is the second or two after that: he should stop where he is and");
+        say("  stay stopped - no twitch, no carrying on - and this tool should print a verdict instead of dying.");
+        say("");
+        say($"playing '{clip}'; the link goes 1.5 s in.");
         var playing = robot.Animations.Play(clip);
         if (playing is null) return (false, "the animation did not start");
         await Task.Delay(1500);
         bool tickingBefore = robot.Animations.IsTicking;
-        say($"ticker running: {tickingBefore}. Dropping the link now.");
+        say($"ticker running: {tickingBefore}. DROPPING THE LINK NOW - watch him stop.");
         robot.Transport.Disconnect("core-002: the robot goes away mid-animation");
 
         var finished = await Task.WhenAny(playing, Task.Delay(TimeSpan.FromSeconds(5)));

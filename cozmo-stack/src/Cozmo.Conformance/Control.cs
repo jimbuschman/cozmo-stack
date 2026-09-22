@@ -61,6 +61,139 @@ public static class Control
         return (robot, log, logPath);
     }
 
+    /// <summary>
+    /// The lift reading, taken at both ends of its travel, with the person told exactly when to move it.
+    ///
+    /// Watching a column of numbers for eight seconds and being asked afterwards whether they matched the
+    /// lift is a question nobody can answer: there is nothing to compare, and no way to know when to move it.
+    /// So the tool runs the experiment instead. It holds a window with the lift down, says plainly when to
+    /// raise it, holds a second window, and then prints the two readings side by side with the engine's own
+    /// expected values. That is a question a person can answer, and the automated half can check that both
+    /// ends of the travel were actually visited rather than that a number was printed.
+    /// </summary>
+    private static async Task<int> GuidedLift(CozmoRobot robot, StreamWriter log, string[] a)
+    {
+        var s = robot.Sensors;
+        float downRad = float.MaxValue, downMm = float.MaxValue, upRad = float.MinValue, upMm = float.MinValue;
+
+        async Task Window(string what, int seconds, bool down)
+        {
+            Console.WriteLine();
+            Console.WriteLine(new string('=', 70));
+            Console.WriteLine($"  NOW: {what}");
+            Console.WriteLine($"  (reading for {seconds} s)");
+            Console.WriteLine(new string('=', 70));
+            var end = DateTime.UtcNow.AddSeconds(seconds);
+            while (DateTime.UtcNow < end)
+            {
+                float rad = s.LiftAngleRad ?? 0f, mm = s.LiftHeightMm ?? 0f;
+                if (down) { downRad = Math.Min(downRad, rad); downMm = Math.Min(downMm, mm); }
+                else { upRad = Math.Max(upRad, rad); upMm = Math.Max(upMm, mm); }
+                Console.WriteLine($"    lift={rad,7:F3} rad / {mm,6:F1} mm   (batt {s.BatteryVolts:F2}V)");
+                await Task.Delay(700);
+            }
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("  Two readings: the lift all the way down, then the lift all the way up.");
+        Console.WriteLine("  The engine's own figures are about -0.198 rad / 32 mm down and 0.712 rad / 92 mm raised.");
+        await Window("leave the lift ALL THE WAY DOWN and do not touch it", 5, down: true);
+        Console.WriteLine();
+        Console.WriteLine("  In 3 seconds, raise the lift by hand as far as it goes and HOLD it there.");
+        await Task.Delay(3000);
+        await Window("RAISE THE LIFT fully by hand and hold it there", 6, down: false);
+
+        Console.WriteLine();
+        Console.WriteLine($"lift down:   {downRad,7:F3} rad / {downMm,6:F1} mm   (engine: -0.198 rad / 32 mm)");
+        Console.WriteLine($"lift raised: {upRad,7:F3} rad / {upMm,6:F1} mm   (engine:  0.712 rad / 92 mm)");
+        Console.WriteLine($"travel seen: {upMm - downMm:F1} mm");
+
+        // Both ends have to have been visited, or the reading proves nothing about the conversion.
+        bool sawDown = downRad < -0.10f, sawUp = upRad > 0.40f;
+        bool pass = sawDown && sawUp && upMm - downMm > 30f;
+        Console.WriteLine($"lift sequence: down seen={(sawDown ? "yes" : "NO")}, raised seen={(sawUp ? "yes" : "NO")}, "
+                        + $"both ends seen={(pass ? "yes" : "NO")}");
+        if (!sawUp) Console.WriteLine("  the lift never reached the top of its travel: it was not raised, or the reading is wrong");
+        log.Dispose();
+
+        var path = AcceptancePath(a);
+        if (path is not null)
+            Console.WriteLine("acceptance record: " + Acceptance("sensors-lift", pass,
+                "the printed millimetres matched where the lift actually was, at both ends of its travel",
+                new { downRad, downMm, upRad, upMm, travelMm = upMm - downMm, sawDown, sawUp }, robot, path));
+        robot.Disconnect();
+        return pass ? 0 : 2;
+    }
+
+    /// <summary>
+    /// <c>calibrate &lt;robot-ip&gt; [--acceptance [file]]</c>: does the robot honour StartMotorCalibration?
+    ///
+    /// The robot recalibrates its head and lift on every connection, so a tool that merely watches for a
+    /// MotorCalibration report sees one whatever it does - which is what made the old check pass without
+    /// testing anything. This waits for the connection-time calibration to finish, says out loud that it is
+    /// asking now, sends the request, and then judges only the reports that arrive after that instant.
+    /// </summary>
+    public static async Task<int> Calibrate(string[] a)
+    {
+        if (Target(a) is not var (ip, port)) return 1;
+        var got = await ReadyRobot(ip, port, "calibrate");
+        if (got is not var (robot, log, _)) return 10;
+        using var _r = robot;
+
+        var reports = new List<(double AtSec, bool Started, MotorID Motor)>();
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        double askedAt = double.MaxValue;
+        robot.Message += m =>
+        {
+            if (m is not MotorCalibration c) return;
+            reports.Add((sw.Elapsed.TotalSeconds, c.CalibStarted, c.MotorID));
+            Console.WriteLine($"  [{sw.Elapsed.TotalSeconds,6:F2}s] MotorCalibration motor={c.MotorID} started={c.CalibStarted} auto={c.AutoStarted}"
+                            + (sw.Elapsed.TotalSeconds > askedAt ? "   <- after the request" : "   (connection-time)"));
+        };
+
+        Console.WriteLine();
+        Console.WriteLine("  The robot calibrates its head and lift whenever it connects. Waiting for that to finish");
+        Console.WriteLine("  first, so that what follows can only be the answer to the request.");
+        await robot.WaitForMotorCalibrationAsync(TimeSpan.FromSeconds(12));
+        await Task.Delay(1500);
+        int before = reports.Count;
+
+        Console.WriteLine();
+        Console.WriteLine(new string('=', 70));
+        Console.WriteLine("  ASKING NOW: StartMotorCalibration head=1 lift=0");
+        Console.WriteLine("  WATCH HIS HEAD: it should nod down to its stop and come back, within a few seconds.");
+        Console.WriteLine(new string('=', 70));
+        askedAt = sw.Elapsed.TotalSeconds;
+        robot.Motion.RequestMotorCalibration(head: true, lift: false);
+
+        var deadline = sw.Elapsed.TotalSeconds + 8;
+        while (sw.Elapsed.TotalSeconds < deadline) await Task.Delay(100);
+
+        var after = reports.Skip(before).ToList();
+        bool IsHead((double AtSec, bool Started, MotorID Motor) r) => r.Motor == MotorID.MOTOR_HEAD;
+        var started = after.FirstOrDefault(r => r.Started && IsHead(r));
+        var finished = after.FirstOrDefault(r => !r.Started && IsHead(r));
+        bool honoured = after.Any(r => r.Started && IsHead(r)) && after.Any(r => !r.Started && IsHead(r));
+
+        Console.WriteLine();
+        Console.WriteLine($"reports before the request: {before}; after it: {after.Count}");
+        Console.WriteLine($"calibration honoured: {(honoured ? "yes" : "NO")}"
+                        + (honoured ? $" (started at {started.AtSec:F2}s, finished at {finished.AtSec:F2}s, "
+                                    + $"{finished.AtSec - started.AtSec:F2}s of movement)" : ""));
+        if (!honoured && after.Count == 0)
+            Console.WriteLine("  the robot said nothing at all after the request: it did not honour StartMotorCalibration");
+        log.Dispose();
+
+        var path = AcceptancePath(a);
+        if (path is not null)
+            Console.WriteLine("acceptance record: " + Acceptance("calibrate", honoured,
+                "his head visibly nodded to its stop and came back when the tool said ASKING NOW",
+                new { reportsBefore = before, reportsAfter = after.Count, honoured,
+                      afterTheRequest = after.Select(r => new { r.AtSec, r.Started, motor = r.Motor.ToString() }) }, robot, path));
+        robot.Disconnect();
+        return honoured ? 0 : 2;
+    }
+
     private static string Acceptance(string device, bool pass, string humanCheck, object detail, CozmoRobot robot,
                                      string? path = null)
     {
@@ -266,8 +399,13 @@ public static class Control
         robot.Sensors.PickedUpChanged += p => Console.WriteLine($"  picked up: {p}");
         robot.Sensors.OnChargerChanged += p => Console.WriteLine($"  on charger: {p}");
 
-        Console.WriteLine($"watching for {watch:F0}s. Lift the robot, or move it near an edge, to exercise the sensors.");
+        bool guideLift = a.Contains("--guide-lift");
+        Console.WriteLine(guideLift
+            ? "guided lift reading: follow the prompts below. Nothing moves under its own power."
+            : $"watching for {watch:F0}s. Lift the robot, or move it near an edge, to exercise the sensors.");
         robot.Sensors.RequestImuBurst(TimeSpan.FromSeconds(1));
+
+        if (guideLift) return await GuidedLift(robot, log, a);
 
         int imuChunks = 0;
         void countImu(RobotMessage m) { if (m is IMURawDataChunk) imuChunks++; }
