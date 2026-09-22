@@ -78,8 +78,8 @@
       "id": "M5-animation",
       "name": "Animation clips, scheduler and face",
       "milestone": "M5",
-      "source_investigation_exhausted": false,
-      "implementation_fidelity_complete": true
+      "source_investigation_exhausted": true,
+      "implementation_fidelity_complete": false
     },
     {
       "id": "M6-wwise-bank",
@@ -92,8 +92,8 @@
       "id": "M7-behaviour",
       "name": "Idle, mood and reactions",
       "milestone": "M7",
-      "source_investigation_exhausted": false,
-      "implementation_fidelity_complete": true
+      "source_investigation_exhausted": true,
+      "implementation_fidelity_complete": false
     },
     {
       "id": "M8-framework",
@@ -3570,19 +3570,24 @@
       "id": "M7-017",
       "subsystem": "M7-behaviour",
       "title": "The complete live-animation wire lifecycle",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
       "effect": "live keyframes (idle body, head, lift, face) start, interleave with a streamed animation, or stop on the wire differently from the engine",
-      "provenance": "the individual keyframes are source-backed (M5-004, M5-006, M7-009, M7-010) and the body stop at duration end is M5-006; the lifecycle joining them - when the live stream starts and ends, how it yields to and resumes after a streamed clip, and what is sent at each transition - is this stack's scheduler, not a transcription",
-      "authority": "the engine's live-animation streaming path in libcozmoEngine.so, not traced end to end",
+      "provenance": "StreamLive now opens the live stream as the engine does - one audio silence, StartOfAnimation with tag 0xFF, then the keyframe - and sends one audio silence per frame while a live body keyframe runs; a clip taking over ends the live stream without an EndOfAnimation and the next live keyframe reopens it. It used to send the body keyframe bare, with no StartOfAnimation and no audio framing",
+      "authority": "AnimationStreamer::UpdateLiveAnimation 0x0057D5F8, AnimationStreamer::Update 0x0057CE5C, InitStream 0x0057B674, UpdateStream 0x0057C84C, SendStartOfAnimation 0x0057C400, SendBufferedMessages 0x0057BF60, read",
       "evidence": [
-        "AGENTS.md current warning: live-animation keyframes are source-backed, the complete wire lifecycle may not be",
-        "hardware check CR1"
+        "UpdateLiveAnimation 0x0057D5F8 sends nothing itself: it appends HeadAngle, BodyMotion and LiftHeight keyframes to the live Animation (AddKeyFrameToBack at 0x0057D866, 0x0057D8F4, 0x0057D9CA)",
+        "Update 0x0057CE5C, with no streaming animation: sets the idle animation to the live one at this+0xA8 (0x0057D070..0x0057D07C), calls UpdateLiveAnimation (0x0057D080), and when the live animation is not already the one streaming calls InitStream(live, 0xFF) (movs r2, #0xff; 0x0057D3FC..0x0057D3FE), otherwise UpdateStream(live) (0x0057D430) - every update",
+        "InitStream 0x0057B674 stores the tag at this+0xA0 (0x0057B68E), clears the send buffer (0x0057B7CE), sets endSent-suppression this+0x72 from Animation::IsEmpty (0x0057B7D8) and clears startSent this+0x71 (0x0057B7E2); it sends nothing, and it does not end the previous animation",
+        "UpdateStream 0x0057C84C, per frame: an AudioSample or AudioSilence is buffered first (0x0057C9A8 / 0x0057C9C4), then SendStartOfAnimation once when this+0x71 is clear (0x0057C9C8..0x0057C9D0; SendStartOfAnimation 0x0057C400 buffers StartOfAnimation with the tag at this+0xA0), then head, lift, event, face, procedural face, backpack lights, body (0x0057CA4E..0x0057CA56), record heading, turn to recorded heading, then SendBufferedMessages (0x0057CA82)",
+        "the live animation is empty when InitStream runs, so this+0x72 is set and the UpdateStream end path (0x0057CB64..0x0057CB6C) and the Update end path (0x0057D1D0..0x0057D1D6) never send its EndOfAnimation: the live stream stays open until another animation's InitStream replaces it",
+        "SendBufferedMessages 0x0057BF60 sends each buffered message reliably (Robot::SendMessage(msg, true, false) at 0x0057BFAA) within the byte budget at this+0x98 and counts tags 0x8E/0x8F ((tag & 0xFE) == 0x8E at 0x0057BF8C) against the budget at this+0x9C computed by UpdateAmountToSend 0x0057C6F0",
+        "Whether the robot requires StartOfAnimation or the audio framing to execute a body keyframe is firmware behaviour and is not answered by the engine; what the engine establishes is that it never sends a live keyframe outside a StartOfAnimation-opened, audio-framed stream. CR1's zero wheel movement is not explained by this reading"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "trace the engine's live-animation start, yield, resume and stop sequence and the messages sent at each transition",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "the engine streams the live animation on every update, one audio frame per frame, from the moment idle begins; this stack opens the live stream only at the first live keyframe and sends its per-frame audio only while a live body keyframe is running",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "AnimationStreamLifecycleTests.ALiveBodyKeyframeGoesOutInsideAnOpenedLiveStream"
     },
     {
       "id": "M11-019",
@@ -3651,16 +3656,19 @@
       "title": "What the engine does when the robot disconnects during a streaming animation",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
       "effect": "on a dropped link the animation ends, keeps streaming, or leaves state behind differently from the engine",
-      "provenance": "this stack's failure boundary (CORE-002): the tick loop ends the playback and reports the fault through Faulted; M1-014 is this stack's socket/dispatch policy and is not evidence for the native behaviour",
-      "authority": "the engine's AnimationStreamer and robot-disconnect handling in libcozmoEngine.so, not read",
+      "provenance": "the tick loop catches the transport's exception, reports Faulted and ends the playback; EndLocked's attempts to send to the gone robot are swallowed. The engine sends nothing either: the difference is only in mechanism",
+      "authority": "Robot::SendMessage 0x0051349C, AnimationStreamer::SendBufferedMessages 0x0057BF60, UpdateStream 0x0057C84C, Update 0x0057CE5C, RobotManager::RemoveRobot 0x0052F1A4, Robot::~Robot 0x005110D4, AnimationStreamer::~AnimationStreamer 0x0057AF48, read",
       "evidence": [
-        "hardware check CR2"
+        "A failed send is a returned Result, not an exception: Robot::SendMessage 0x0051349C calls the message handler through its vtable (0x005134B8) and on failure logs a warning and returns the result",
+        "SendBufferedMessages 0x0057BF60 stops at the first failed send and returns its result (cbnz at 0x0057BFAE to 0x0057C00E), leaving that message and the rest in the send buffer; UpdateStream returns at once (0x0057C8FA) without advancing the stream time; Update logs AnimationStreamer.Update.SendBufferedMessagesFailed (0x0057D178..0x0057D196). The animation is not ended and nothing else is sent",
+        "On disconnect RobotManager::RemoveRobot 0x0052F1A4 posts RobotDisconnected to the game (0x0052F2C4), calls NeedsManager::OnRobotDisconnected and PerfMetric::OnRobotDisconnected (0x0052F2E0, 0x0052F2E8) and deletes the Robot (0x0052F2F6); Robot::~Robot calls AbortAll (0x00511120) and then ~AnimationStreamer (0x0051154A), which only discards the unsent messages (ClearSendBuffer at 0x0057AF58) and frees its state - no EndOfAnimation, no stop, nothing to the robot",
+        "So the streamer's failure boundary is the Robot's lifetime: the animation ends because its owner is destroyed. This stack ends the playback when the transport throws, which is when the link is gone; neither side delivers anything further to the robot"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "read how the engine's animation streamer and robot-connection teardown end a streaming animation when the robot disconnects",
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "CoreReviewTests (CORE-002)"
     },
     {
       "id": "M5-023",
@@ -3668,16 +3676,19 @@
       "title": "Native cancellation and emission sequencing of a cancelled streaming animation",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
       "effect": "a command belonging to a cancelled animation reaches the robot, or the cancel is sequenced differently from the engine",
-      "provenance": "this stack's emission gate (CORE-003): a generation check held across the send; M5-008 (interruption) and M5-006 (body stop at duration end) do not establish how the engine orders cancellation against sending",
-      "authority": "the engine's AnimationStreamer abort and per-tick send path in libcozmoEngine.so, not read",
+      "provenance": "a cancelled or replaced animation now sends no EndOfAnimation and no trailing silence, as Abort does; the emission gate still guarantees no keyframe of it goes out after its end. It used to send EndOfAnimation and an AudioSilence on every cancel and replacement",
+      "authority": "AnimationStreamer::Abort 0x0057B3E0, SetStreamingAnimation 0x0057B174, InitStream 0x0057B674, Update 0x0057CE5C, read",
       "evidence": [
-        "hardware check CR3"
+        "The engine is single-threaded here: SetStreamingAnimation, Abort and UpdateStream all run on the engine update, so a cancel cannot land inside a frame's emission",
+        "Abort 0x0057B3E0 sends the robot nothing: it posts AnimationAborted to the game when a tag is set (0x0057B3F2..0x0057B410), logs the send buffer, clears startSent/endSent (strh at 0x0057B578), aborts the audio animation (0x0057B582) and clears the audio client (0x0057B58A). No EndOfAnimation, no AudioSilence, no body stop",
+        "SetStreamingAnimation 0x0057B174 calls Abort (0x0057B244) and then replaces the streaming animation (str at 0x0057B24A), so no further keyframe is pulled from the aborted one; the successor's InitStream clears the send buffer (0x0057B7CE), discarding anything of the old animation still buffered",
+        "With no successor the buffer is not cleared on abort: Update's no-animation path flushes whatever is still buffered (AnimationStreamer.Update.SendBufferNotEmpty warning at 0x0057D136, then UpdateAmountToSend and SendBufferedMessages at 0x0057D16C..0x0057D174). So an aborted animation can still emit messages it buffered before the abort, when the robot had no room for them, but never a new one"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "read the engine's animation abort path and how it sequences cancellation against the frames it streams each tick",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "two differences remain: this stack sends a BodyStop when a cancelled animation had a body keyframe running, which the streamer's Abort does not; and it has no send buffer, so the engine's flush of messages buffered before an abort-to-nothing has no counterpart here",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "AnimationStreamLifecycleTests.ACancelledAnimationSendsNoEndOfAnimation"
     }
   ]
 }

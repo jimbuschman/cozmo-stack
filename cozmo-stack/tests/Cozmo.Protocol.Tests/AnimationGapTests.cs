@@ -274,7 +274,7 @@ public class AnimationGapTests
     }
 
     [Fact]
-    public void CancellingAlsoClosesTheAnimationOnTheRobot()
+    public void CancellingSendsTheRobotNoEndOfAnimation()
     {
         var r = new Recorder();
         var s = new AnimationScheduler(r);
@@ -282,7 +282,7 @@ public class AnimationGapTests
         s.Advance(0);                        // opens it
         Assert.Equal(0, r.Ends);
         s.Stop();
-        Assert.Equal(1, r.Ends);             // a cut-short animation must not be left open
+        Assert.Equal(0, r.Ends);             // AnimationStreamer::Abort 0x0057B3E0 sends the robot nothing
     }
 
     /// <summary>
@@ -301,7 +301,7 @@ public class AnimationGapTests
     }
 
     [Fact]
-    public void ReplacingClosesTheFirstAndOpensTheSecond()
+    public void ReplacingOpensTheSecondWithoutClosingTheFirst()
     {
         var r = new Recorder();
         var s = new AnimationScheduler(r);
@@ -312,7 +312,7 @@ public class AnimationGapTests
         s.Advance(10);
 
         Assert.Equal(2, r.Tags.Count);
-        Assert.Equal(1, r.Ends);             // the first was closed before the second opened
+        Assert.Equal(0, r.Ends);             // Abort sends no EndOfAnimation; the second's StartOfAnimation follows
         Assert.NotEqual(r.Tags[0], r.Tags[1]);
     }
 

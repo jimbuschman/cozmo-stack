@@ -8,9 +8,9 @@ Manifest of **219 records** over 16 subsystems.
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 164 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 15 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 7 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 1 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| EQUIVALENT_IMPLEMENTATION | 16 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| RECOVERABLE_GAP | 4 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 3 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 20 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 4 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -28,9 +28,9 @@ remains after both, and they do not go away by working harder on this repository
 | M2-protocol — CLAD messages and protocol helpers | 7 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 17 | 0 | 0 | 0 | 1 | yes | yes |
 | M4-control — Motion, sensors, lights and cubes | 13 | 1 | 1 | 0 | 1 | no | no |
-| M5-animation — Animation clips, scheduler and face | 23 | 2 | 0 | 0 | 0 | no | yes |
+| M5-animation — Animation clips, scheduler and face | 23 | 0 | 1 | 0 | 0 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 0 | 0 | 0 | 0 | yes | yes |
-| M7-behaviour — Idle, mood and reactions | 17 | 1 | 0 | 0 | 0 | no | yes |
+| M7-behaviour — Idle, mood and reactions | 17 | 0 | 1 | 0 | 0 | yes | no |
 | M8-framework — Behaviour framework and scoring | 10 | 0 | 0 | 0 | 0 | yes | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 9 | 0 | 0 | 0 | 0 | yes | yes |
@@ -55,37 +55,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: CalibrateMotorAction in libcozmoEngine.so, not read at an address; HandleMotorCalibration 0x00536A68 (the report side, read, see M4-004)
 * evidence: re-analysis/protocol/cozmo_robot_protocol.json startMotorCalibration 0x58: layout_known_semantics_uncertain; Motion.RequestMotorCalibration doc comment
 * outstanding: read CalibrateMotorAction and the StartMotorCalibration Pack call sites to establish which flag maps to which motor and when the engine sends it
-
-### M5-animation — Animation clips, scheduler and face
-
-**M5-022 — What the engine does when the robot disconnects during a streaming animation** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
-* effect: on a dropped link the animation ends, keeps streaming, or leaves state behind differently from the engine
-* rests on: this stack's failure boundary (CORE-002): the tick loop ends the playback and reports the fault through Faulted; M1-014 is this stack's socket/dispatch policy and is not evidence for the native behaviour
-* best authority: the engine's AnimationStreamer and robot-disconnect handling in libcozmoEngine.so, not read
-* evidence: hardware check CR2
-* outstanding: read how the engine's animation streamer and robot-connection teardown end a streaming animation when the robot disconnects
-
-**M5-023 — Native cancellation and emission sequencing of a cancelled streaming animation** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
-* effect: a command belonging to a cancelled animation reaches the robot, or the cancel is sequenced differently from the engine
-* rests on: this stack's emission gate (CORE-003): a generation check held across the send; M5-008 (interruption) and M5-006 (body stop at duration end) do not establish how the engine orders cancellation against sending
-* best authority: the engine's AnimationStreamer abort and per-tick send path in libcozmoEngine.so, not read
-* evidence: hardware check CR3
-* outstanding: read the engine's animation abort path and how it sequences cancellation against the frames it streams each tick
-
-### M7-behaviour — Idle, mood and reactions
-
-**M7-017 — The complete live-animation wire lifecycle** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation`
-* effect: live keyframes (idle body, head, lift, face) start, interleave with a streamed animation, or stop on the wire differently from the engine
-* rests on: the individual keyframes are source-backed (M5-004, M5-006, M7-009, M7-010) and the body stop at duration end is M5-006; the lifecycle joining them - when the live stream starts and ends, how it yields to and resumes after a streamed clip, and what is sent at each transition - is this stack's scheduler, not a transcription
-* best authority: the engine's live-animation streaming path in libcozmoEngine.so, not traced end to end
-* evidence: AGENTS.md current warning: live-animation keyframes are source-backed, the complete wire lifecycle may not be; hardware check CR1
-* outstanding: trace the engine's live-animation start, yield, resume and stop sequence and the messages sent at each transition
 
 ### M11-vision — Markers, camera geometry and BlockWorld
 
@@ -132,6 +101,28 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: BlockFilter::Load / BlockFilter::Save (named, not transcribed); the libc++ unordered_map visit order behind GetClosestDiscoveredObjectsOfType 0x00518314
 * evidence: documented as not reproduced in the CubeConnections class summary
 * outstanding: build pool persistence from BlockFilter::Load/Save and reproduce the unordered_map tie order
+
+### M5-animation — Animation clips, scheduler and face
+
+**M5-023 — Native cancellation and emission sequencing of a cancelled streaming animation** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
+* effect: a command belonging to a cancelled animation reaches the robot, or the cancel is sequenced differently from the engine
+* rests on: a cancelled or replaced animation now sends no EndOfAnimation and no trailing silence, as Abort does; the emission gate still guarantees no keyframe of it goes out after its end. It used to send EndOfAnimation and an AudioSilence on every cancel and replacement
+* best authority: AnimationStreamer::Abort 0x0057B3E0, SetStreamingAnimation 0x0057B174, InitStream 0x0057B674, Update 0x0057CE5C, read
+* evidence: The engine is single-threaded here: SetStreamingAnimation, Abort and UpdateStream all run on the engine update, so a cancel cannot land inside a frame's emission; Abort 0x0057B3E0 sends the robot nothing: it posts AnimationAborted to the game when a tag is set (0x0057B3F2..0x0057B410), logs the send buffer, clears startSent/endSent (strh at 0x0057B578), aborts the audio animation (0x0057B582) and clears the audio client (0x0057B58A). No EndOfAnimation, no AudioSilence, no body stop; SetStreamingAnimation 0x0057B174 calls Abort (0x0057B244) and then replaces the streaming animation (str at 0x0057B24A), so no further keyframe is pulled from the aborted one; the successor's InitStream clears the send buffer (0x0057B7CE), discarding anything of the old animation still buffered; With no successor the buffer is not cleared on abort: Update's no-animation path flushes whatever is still buffered (AnimationStreamer.Update.SendBufferNotEmpty warning at 0x0057D136, then UpdateAmountToSend and SendBufferedMessages at 0x0057D16C..0x0057D174). So an aborted animation can still emit messages it buffered before the abort, when the robot had no room for them, but never a new one
+* outstanding: two differences remain: this stack sends a BodyStop when a cancelled animation had a body keyframe running, which the streamer's Abort does not; and it has no send buffer, so the engine's flush of messages buffered before an abort-to-nothing has no counterpart here
+
+### M7-behaviour — Idle, mood and reactions
+
+**M7-017 — The complete live-animation wire lifecycle** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
+* effect: live keyframes (idle body, head, lift, face) start, interleave with a streamed animation, or stop on the wire differently from the engine
+* rests on: StreamLive now opens the live stream as the engine does - one audio silence, StartOfAnimation with tag 0xFF, then the keyframe - and sends one audio silence per frame while a live body keyframe runs; a clip taking over ends the live stream without an EndOfAnimation and the next live keyframe reopens it. It used to send the body keyframe bare, with no StartOfAnimation and no audio framing
+* best authority: AnimationStreamer::UpdateLiveAnimation 0x0057D5F8, AnimationStreamer::Update 0x0057CE5C, InitStream 0x0057B674, UpdateStream 0x0057C84C, SendStartOfAnimation 0x0057C400, SendBufferedMessages 0x0057BF60, read
+* evidence: UpdateLiveAnimation 0x0057D5F8 sends nothing itself: it appends HeadAngle, BodyMotion and LiftHeight keyframes to the live Animation (AddKeyFrameToBack at 0x0057D866, 0x0057D8F4, 0x0057D9CA); Update 0x0057CE5C, with no streaming animation: sets the idle animation to the live one at this+0xA8 (0x0057D070..0x0057D07C), calls UpdateLiveAnimation (0x0057D080), and when the live animation is not already the one streaming calls InitStream(live, 0xFF) (movs r2, #0xff; 0x0057D3FC..0x0057D3FE), otherwise UpdateStream(live) (0x0057D430) - every update; InitStream 0x0057B674 stores the tag at this+0xA0 (0x0057B68E), clears the send buffer (0x0057B7CE), sets endSent-suppression this+0x72 from Animation::IsEmpty (0x0057B7D8) and clears startSent this+0x71 (0x0057B7E2); it sends nothing, and it does not end the previous animation; UpdateStream 0x0057C84C, per frame: an AudioSample or AudioSilence is buffered first (0x0057C9A8 / 0x0057C9C4), then SendStartOfAnimation once when this+0x71 is clear (0x0057C9C8..0x0057C9D0; SendStartOfAnimation 0x0057C400 buffers StartOfAnimation with the tag at this+0xA0), then head, lift, event, face, procedural face, backpack lights, body (0x0057CA4E..0x0057CA56), record heading, turn to recorded heading, then SendBufferedMessages (0x0057CA82); the live animation is empty when InitStream runs, so this+0x72 is set and the UpdateStream end path (0x0057CB64..0x0057CB6C) and the Update end path (0x0057D1D0..0x0057D1D6) never send its EndOfAnimation: the live stream stays open until another animation's InitStream replaces it; SendBufferedMessages 0x0057BF60 sends each buffered message reliably (Robot::SendMessage(msg, true, false) at 0x0057BFAA) within the byte budget at this+0x98 and counts tags 0x8E/0x8F ((tag & 0xFE) == 0x8E at 0x0057BF8C) against the budget at this+0x9C computed by UpdateAmountToSend 0x0057C6F0; Whether the robot requires StartOfAnimation or the audio framing to execute a body keyframe is firmware behaviour and is not answered by the engine; what the engine establishes is that it never sends a live keyframe outside a StartOfAnimation-opened, audio-framed stream. CR1's zero wheel movement is not explained by this reading
+* outstanding: the engine streams the live animation on every update, one audio frame per frame, from the moment idle begins; this stack opens the live stream only at the first live keyframe and sends its per-frame audio only while a live body keyframe is running
 
 ## What remains after both: blocked externally, or needing hardware
 
@@ -189,4 +180,5 @@ Each of these is a question already answered. The original's behaviour is establ
 | TOOL-002 | tools | COMPATIBILITY_POLICY | The fake robot side answers place docks without a marker signal | not applicable: this is the test double, not the robot |
 | TOOL-003 | tools | COMPATIBILITY_POLICY | The --nominal calibration override in the vision, manipulation and freeplay tools | the live path fails closed without a real calibration |
 | TOOL-005 | tools | COMPATIBILITY_POLICY | The hardware acceptance campaign: how a check is judged, and what a result may change | not applicable: the harness is not part of the app. The rule that matters runs the other way - a hardware result never changes a fidelity record's status. A check that passes says the behaviour was observed; a check that fails is an investigation item, not a licence to tune a source-backed constant. M11-005 stays open whatever the vision check reports, and the charger's 20 x 27 mm marker geometry is not adjusted to make the mount succeed |
+| M5-022 | M5-animation | EQUIVALENT_IMPLEMENTATION | What the engine does when the robot disconnects during a streaming animation | Robot::SendMessage 0x0051349C, AnimationStreamer::SendBufferedMessages 0x0057BF60, UpdateStream 0x0057C84C, Update 0x0057CE5C, RobotManager::RemoveRobot 0x0052F1A4, Robot::~Robot 0x005110D4, AnimationStreamer::~AnimationStreamer 0x0057AF48, read |
 
