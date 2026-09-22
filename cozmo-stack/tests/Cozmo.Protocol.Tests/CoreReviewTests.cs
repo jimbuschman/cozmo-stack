@@ -437,17 +437,17 @@ public class CoreReviewTests
 
         // every installation is a clear, its three segments and an execute, in that order and unbroken
         var sent = rig.M.Paths.Sent.ToList();
+        var ids = new HashSet<ushort>();
         int i2 = 0, installs = 0;
         while (i2 < sent.Count)
         {
-            Assert.IsType<ClearPath>(sent[i2]);
-            ushort id = ((ClearPath)sent[i2]).Unknown;
+            Assert.Equal(0, Assert.IsType<ClearPath>(sent[i2]).Unknown);   // the clear carries no id
             i2++;
             int segs = 0;
             while (i2 < sent.Count && sent[i2] is AppendPathSegmentLine) { i2++; segs++; }
             Assert.Equal(3, segs);
             var exec = Assert.IsType<ExecutePath>(sent[i2++]);
-            Assert.Equal(id, exec.EventId);          // installed and executed under one id
+            Assert.True(ids.Add(exec.EventId));      // each installation executed under an id of its own
             installs++;
         }
         Assert.Equal(callers, installs);

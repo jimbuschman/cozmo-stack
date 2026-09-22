@@ -2658,12 +2658,17 @@
     {
       "id": "M12-002",
       "subsystem": "M12-manipulation",
-      "title": "Path segment and ExecutePath packings; DriveToPose and DriveToObject constants",
+      "title": "Path segment, ExecutePath and ClearPath packings; DriveToPose and DriveToObject constants",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/RobotPath.cs",
       "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so",
       "evidence": [
-        "packing at 0x00632BAE..0x00632BEE"
+        "packing at 0x00632BAE..0x00632BEE",
+        "ClearPath: PathComponent::ClearPath 0x00649220 is the engine's only builder of the message (sole caller of EngineToRobot::EngineToRobot(ClearPath&&) 0x007A891C) and writes a literal zero into its one u16 (movs r0,#0 at 0x00649268, strh.w r0,[sp] at 0x0064926A)",
+        "ClearPath: nothing rewrites the field - the ctor copies the halfword into the union at offset 4 under tag 0x3C, and EngineToRobot::Pack's case for that tag (0x007AB84A) writes tag and halfword verbatim",
+        "ClearPath: zero is not a live path id - _currentPathID (+0x42) is zero-initialised at 0x00648B2C and pre-incremented in ExecutePath at 0x0064A3C2 before being sent, so the first executed path is id 1",
+        "ClearPath: path ids are correlated engine-side against _lastSentPathID (+0x4A, written at 0x00649234) when PathFollowingEvent arrives - VERIFY strings 0x00BFCBAC..0x00BFCCC1",
+        "ClearPath: what the firmware makes of the two bytes is unread (no firmware image); PyCozmo, watching the wire, names the field 'unknown'"
       ],
       "live_path": true,
       "test": "ManipulationTests"

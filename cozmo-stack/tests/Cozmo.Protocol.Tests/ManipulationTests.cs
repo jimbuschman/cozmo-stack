@@ -76,13 +76,51 @@ public class ManipulationTests
         Assert.True(sent.Count >= 5, $"only {sent.Count} messages decoded from {rig.Robot.Transport.OfflineOutbound.Count} frames: " +
             string.Join(" | ", rig.Robot.Transport.OfflineOutbound.Select(f => f.Type + ":" + string.Join(",", f.Messages.Select(m => m.Type + "/" + m.Seq + "/" + m.Payload.Length)))));
         Assert.Collection(sent.Where(m => m is ClearPath or AppendPathSegmentPointTurn or AppendPathSegmentLine or ExecutePath),
-            m => Assert.Equal(1, Assert.IsType<ClearPath>(m).Unknown),
+            // zero, not the path id: PathComponent::ClearPath 0x00649220 writes a literal zero into the
+            // field and the id the robot is told about rides on ExecutePath below
+            m => Assert.Equal(0, Assert.IsType<ClearPath>(m).Unknown),
             m => { var pt = Assert.IsType<AppendPathSegmentPointTurn>(m); Assert.Equal((float)(Math.PI / 4), pt.TargetAngleRad); Assert.Equal(2f, pt.Speed.SpeedMmps); Assert.Equal(1, pt.UseShortestDirection); },
             m => { var l = Assert.IsType<AppendPathSegmentLine>(m); Assert.Equal(100f, l.XEndMm); Assert.Equal(200f, l.Speed.AccelMmps2); Assert.Equal(500f, l.Speed.DecelMmps2); Assert.Equal(28, l.ToBytes().Length - 1); },
             m => Assert.IsType<AppendPathSegmentPointTurn>(m),
             m => { var e = Assert.IsType<ExecutePath>(m); Assert.Equal(1, e.EventId); Assert.False(e.Unknown); });
         // the fake robot followed it
         Assert.Equal(100f, rig.X); Assert.Equal(100f, rig.Y); Assert.Equal((float)(Math.PI / 2), rig.Angle);
+    }
+
+    /// <summary>
+    /// Every <c>ClearPath</c> this stack sends carries zero, on every path it clears, because that is what
+    /// the engine sends on every path it clears.
+    ///
+    /// <c>PathComponent::ClearPath</c> 0x00649220 is the only builder of the message in the engine and it
+    /// writes a literal zero (<c>movs r0, #0</c> 0x00649268, <c>strh.w r0, [sp]</c> 0x0064926A); the
+    /// EngineToRobot constructor 0x007A891C copies the halfword verbatim and <c>Pack</c>'s tag-0x3C case
+    /// 0x007AB84A writes it verbatim, so zero is what reaches the wire. It is not an id the robot could
+    /// match either: the engine's path counter is pre-incremented before it is sent (0x0064A3C2), so a
+    /// live path is never 0. The id the robot is told about travels on <c>ExecutePath</c>.
+    ///
+    /// This drives the three production senders - an installation, an unqualified abort, and the
+    /// id-qualified abort - and reads what went out.
+    /// </summary>
+    [Fact]
+    public void EveryClearPathCarriesZeroTheWayTheEngineSendsIt()
+    {
+        using var rig = new Rig();
+        var path = new List<PathSegment> { new PathSegment.Line(0, 0, 60, 0, 60, 200, 200) };
+
+        ushort id = rig.M.Paths.Execute(path);            // Execute clears before it appends
+        rig.M.Paths.Abort();                              // PathComponent::Abort, unqualified
+        Assert.True(rig.M.Paths.AbortIfCurrent(id));      // this stack's per-action ownership
+        Assert.False(rig.M.Paths.AbortIfCurrent((ushort)(id + 1)));
+
+        var clears = rig.M.Paths.Sent.OfType<ClearPath>().ToList();
+        Assert.Equal(3, clears.Count);
+        Assert.All(clears, c => Assert.Equal(0, c.Unknown));
+
+        // and the id still reaches the robot, on the message that carries one
+        Assert.Equal(id, Assert.Single(rig.M.Paths.Sent.OfType<ExecutePath>()).EventId);
+
+        // the same holds once it is on the wire, not just in the sender's log
+        Assert.All(rig.Pump().OfType<ClearPath>(), c => Assert.Equal(0, c.Unknown));
     }
 
     [Fact]

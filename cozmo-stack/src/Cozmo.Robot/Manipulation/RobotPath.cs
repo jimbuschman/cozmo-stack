@@ -43,10 +43,38 @@ public enum PathEventType : byte { Started = 0, Interrupted = 1, Completed = 2 }
 /// has them): line {from_x, from_y, to_x, to_y, speed, accel, decel}; arc {center_x, center_y, radius,
 /// start_angle, sweep, speed, accel, decel}; point turn {x, y, target_angle, angle_tolerance, speed, accel,
 /// decel, use_shortest_direction}; <c>ExecutePath {pathID u16, manualSpeed bool}</c> (0x0064A426);
-/// <c>ClearPath {pathID u16}</c>.
+/// <c>ClearPath {u16}</c>, always zero - see <see cref="ClearPathField"/>.
 /// </summary>
 public sealed class PathSender
 {
+    /// <summary>
+    /// What goes in the one u16 of <c>ClearPath</c>: zero, always, because that is what the engine sends.
+    ///
+    /// <c>PathComponent::ClearPath</c> 0x00649220 is the only place in libcozmoEngine.so that ever builds
+    /// the message - <c>EngineToRobot::EngineToRobot(ClearPath&amp;&amp;)</c> 0x007A891C has exactly one
+    /// caller - and it writes a literal zero into the field (<c>movs r0, #0</c> at 0x00649268,
+    /// <c>strh.w r0, [sp]</c> at 0x0064926A) before handing it over. Nothing downstream rewrites it: the
+    /// constructor copies the halfword into the union at offset 4 under tag 0x3C, and
+    /// <c>EngineToRobot::Pack</c>'s case for that tag (0x007AB84A) writes the tag byte and those two bytes
+    /// verbatim.
+    ///
+    /// Zero is not a path the robot could be holding. <c>PathComponent::_currentPathID</c> (+0x42) is
+    /// zero-initialised in the constructor (0x00648B2C) and <em>pre</em>-incremented in
+    /// <c>ExecutePath</c> (0x0064A3C2..0x0064A3CA) before it is sent, so the first path the engine ever
+    /// executes is id 1 and no live path is ever id 0. The engine does correlate path ids, but against its
+    /// own record rather than anything it puts in this message: it copies the current id into
+    /// <c>_lastSentPathID</c> (+0x4A) on the way into the clear (0x00649234) and checks the robot's
+    /// <c>PathFollowingEvent.pathID</c> against it - the VERIFY strings at 0x00BFCBAC..0x00BFCCC1,
+    /// "payload.pathID == _lastSentPathID", "PathComponent.PathEvent.StartingUnexpectedPathID",
+    /// "CompletingUnexpectedPathID", "InterruptingUnexpectedPathID", and "We are in status '%s' waiting
+    /// for path %d to cancel, but got message that path %d is %s".
+    ///
+    /// What the firmware does with the two bytes cannot be read here - there is no firmware image - and
+    /// PyCozmo, which watched the wire rather than the engine, calls the field "unknown". That is the
+    /// reason to send zero rather than an id: zero is the only value the robot was ever sent.
+    /// </summary>
+    public const ushort ClearPathField = 0;
+
     private readonly CozmoRobot _robot;
     private readonly object _gate = new();
     private ushort _pathId;
@@ -78,7 +106,7 @@ public sealed class PathSender
             _pathId++;
             if (_pathId == 0) _pathId = 1;
             reserve?.Invoke(_pathId);
-            Send(new ClearPath { Unknown = _pathId });
+            Send(new ClearPath { Unknown = ClearPathField });
             foreach (var s in path)
             {
                 switch (s)
@@ -110,7 +138,7 @@ public sealed class PathSender
     /// <c>PathComponent::Abort</c>: clear the robot's current path, whatever it is. The engine has one
     /// path component and one path, so its own abort is unqualified like this.
     /// </summary>
-    public void Abort() { lock (_gate) Send(new ClearPath { Unknown = _pathId }); }
+    public void Abort() { lock (_gate) Send(new ClearPath { Unknown = ClearPathField }); }
 
     /// <summary>
     /// Clears the robot's path only while <paramref name="pathId"/> is still the one installed, and says
@@ -127,7 +155,7 @@ public sealed class PathSender
         lock (_gate)
         {
             if (_pathId != pathId) return false;
-            Send(new ClearPath { Unknown = _pathId });
+            Send(new ClearPath { Unknown = ClearPathField });
             return true;
         }
     }
