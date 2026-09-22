@@ -40,6 +40,17 @@ public static class HardwareCatalog
     public static HardwareCheck? Find(string id) =>
         All.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>Validate catalog links against the actual manifest, including non-runnable checks.</summary>
+    public static IReadOnlyList<string> ValidateFidelityRecords(
+        IEnumerable<HardwareCheck> catalog, IEnumerable<string> manifestIds)
+    {
+        var known = manifestIds.ToHashSet(StringComparer.Ordinal);
+        return catalog.SelectMany(c => c.FidelityRecords
+            .Where(id => !known.Contains(id))
+            .Select(id => $"Hardware check {c.Id}: FidelityRecords ID '{id}' does not exist in fidelity_manifest.json"))
+            .ToArray();
+    }
+
     /// <summary>The phases in campaign order, as the catalog uses them.</summary>
     public static IReadOnlyList<string> Phases { get; } = All.Select(c => c.Phase).Distinct().ToList();
 
@@ -443,8 +454,9 @@ public static class HardwareCatalog
         {
             Id = "B", Name = "Cube telemetry", Milestone = "M4", Phase = PhaseWorld,
             Subsystem = "Cube discovery, connection and the tap, movement, up-axis and battery reports",
-            Why = "Discovery alone was already observed. What is unverified is whether a cube actually connects "
-                + "and whether its telemetry arrives, which everything with a cube depends on.",
+            Why = "Discovery alone was already observed, but connection initiation is missing from the current "
+                + "stack. Incoming-handler evidence does not establish the outbound lifecycle; this check "
+                + "requires a reported connection and telemetry after that path is recovered and implemented.",
             Setup = "One or more cubes with charged batteries, within about half a metre of the robot.",
             Prerequisites = new[] { "CON passed", "at least one cube with a charged battery" },
             DoThis = "During the 15 seconds: tap a cube, roll it onto another face, and pick it up and put it down.",
@@ -459,7 +471,11 @@ public static class HardwareCatalog
                 new EvidenceItem("movement", "moving"),
                 new EvidenceItem("up axis", "upAxis"),
             },
-            FidelityRecords = new[] { "M4-010" },
+            FidelityRecords = new[] { "M4-009", "M4-CUBE-001", "M4-CUBE-002" },
+            KnownIssue = "M4-CUBE-001 IMPLEMENTATION_GAP: this tool enables discovery but sends no slot request. "
+                + "M4-CUBE-002 RECOVERABLE_GAP: the complete discovery/connection lifecycle is not established. "
+                + "Native SetPropSlot uses a slot byte, not the generated Connect Boolean. "
+                + "Discovery success or a hardware pass does not close these gaps.",
             NeedsCube = true, NeedsHandling = true, Requires = new[] { "LINK" },
             Timeout = TimeSpan.FromMinutes(2),
             Command = o => new[] { "cubes", o.Ip, "--seconds", "15", "--acceptance", o.Acceptance("B") },

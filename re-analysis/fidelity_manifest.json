@@ -71,8 +71,8 @@
       "id": "M4-control",
       "name": "Motion, sensors, lights and cubes",
       "milestone": "M4",
-      "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": false
     },
     {
       "id": "M5-animation",
@@ -881,17 +881,17 @@
     },
     {
       "subsystem": "M4-control",
-      "title": "Cube tracking from ObjectAvailable and ObjectConnectionState",
+      "title": "Incoming cube advertisement, connection-report and telemetry tracking only",
       "location": "cozmo-stack/src/Cozmo.Robot/Cubes.cs",
       "effect": "which cubes the world model holds, and what a cube's id means",
-      "provenance": "the four RobotToEngineImplMessaging handlers for active objects, read",
+      "provenance": "The four incoming RobotToEngineImplMessaging handlers only; not the complete cube-connection production path.",
       "authority": "HandleActiveObjectAvailable 0x0053391C, HandleActiveObjectConnectionState 0x00533B3C, HandleActiveObjectMoved 0x00533E30 and HandleObjectPowerLevel 0x00537130, read",
       "evidence": [
         "HandleActiveObjectAvailable 0x0053391C reads the factory id at +0, the object type at +4 and the RSSI at +8, and records the advertisement only when IsValidLightCube 0x007D1D08 or IsCharger 0x007D1D50 says yes (0x00533944 and 0x00533954). IsValidLightCube is a jump table over the type whose only true entries are 1, 2 and 3 - the three light cubes, not the ghost at 4 - and IsCharger is true for Charger_Basic. What it records is the type, the RSSI and the timestamp from Robot+0x2C in an unordered_map<u32, ActiveObjectInfo> at Robot+0x47C keyed by factory id (0x00533978..0x0053398A); the broadcast to the game is behind the flag at Robot+0x490, and the channel log behind an RSSI of 49 or less.",
         "HandleActiveObjectMoved 0x00533E30 reads the timestamp at +0, the id at +4, three accelerometer floats at +8, +0xC and +0x10 and the axis byte at +0x14, and looks the object up by that id through BlockWorld::GetConnectedActiveObjectByActiveIdHelper (0x00533E96) - so telemetry is keyed on the object id, which is what this stack does.",
         "HandleObjectPowerLevel 0x00537130 reads the id at +0, the missed packets at +4 and the battery byte at +8; see M4-008 for the voltage.",
         "HandleActiveObjectConnectionState 0x00533B3C reads the object id at +0, the factory id at +4, the type at +8 and the connected flag at +0xC, and returns immediately when the id is above 4 (cmp r7, #4; bhi at 0x00533B58) - that id is a radio slot, one of the engine's MAX_NUM_ACTIVE_OBJECTS = 5 (ActiveObjectConstants). On a connection it calls BlockWorld::AddConnectedActiveObject(slot, factoryId, type) at 0x00533BD6, which hands back a world object id of its own; on a disconnection BlockWorld::RemoveConnectedActiveObject(slot) and Robot::HandleDisconnectedFromObject at 0x00533CA0 and 0x00533CB2.",
-        "That second id space is the one difference here: this stack keeps one id, the one on the wire, and uses it as the world object id, where the engine keeps the radio slot and the BlockWorld id apart. So the slot bound is recorded as CozmoCubes.MaxActiveObjectSlot and not enforced - enforcing it would refuse a world object rather than an impossible slot, and a robot never sends a slot above 4. Everything else on this path - which advertisements are taken, what is recorded from them, and telemetry keyed on the id the report carries - now follows the engine."
+        "This record covers incoming-handler field interpretation only, with the existing single object-ID namespace. It does not establish outbound connection initiation, slot allocation, advertisement expiry, persistent-pool selection, radio discovery lifetime or reconnection. See M4-CUBE-001 and M4-CUBE-002; receipt of a report is not evidence of a complete connection lifecycle."
       ],
       "status": "EQUIVALENT_IMPLEMENTATION",
       "unresolved": "",
@@ -899,6 +899,45 @@
       "live_path": true,
       "test": "ControlTests.OnlyLightCubesAndTheChargerAreTrackedFromAnAdvertisement",
       "id": "M4-009"
+    },
+    {
+      "subsystem": "M4-control",
+      "location": "cozmo-stack/src/Cozmo.Robot/Cubes.cs",
+      "hardware_required": false,
+      "live_path": true,
+      "id": "M4-CUBE-001",
+      "title": "Missing outbound cube slot request and incorrect SetPropSlot Boolean",
+      "effect": "Check B hears advertisements but never asks the robot to connect; the generated Boolean cannot encode all five native slots.",
+      "provenance": "Control.Cubes enables discovery and waits; CozmoCubes has no request sender. Protocol field connect was borrowed from PyCozmo.",
+      "authority": "Native Robot::ConnectToRequestedObjects 0x00514A70 and SetPropSlot::Pack 0x007A11A4; caller Robot::Update 0x00514236.",
+      "evidence": [
+        "re-analysis/CUBE_CONNECTION.md and re-analysis/disassembly/dis_cube_connection.txt",
+        "0x00514BB4..0x00514BCE: requested factory ID followed by slot index 0..4; reliable=true, hot=false. 0x00514C34..0x00514C58: factory ID zero disconnects the indexed slot.",
+        "0x005173EA..0x00517482 queues changed slot requests; 0x005179C0 confirms connection from robot reports."
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "After the complete lifecycle gate in M4-CUBE-002 is settled, correct the canonical protocol field to a slot byte and implement the recovered pool/request/state path. Do not insert an advertisement-to-Connect=true shortcut.",
+      "test": "FidelityManifestTests.CubeAcceptanceExposesTheUnfinishedOutboundPathSeparatelyFromIncomingHandlers; existing ControlTests cover incoming reports only."
+    },
+    {
+      "subsystem": "M4-control",
+      "location": "cozmo-stack/src/Cozmo.Robot/Cubes.cs",
+      "hardware_required": false,
+      "live_path": true,
+      "id": "M4-CUBE-002",
+      "title": "Complete discovery-to-connection lifecycle is only partially recovered",
+      "effect": "A plausible auto-connect or retry rule could select the wrong cube/slot or turn discovery off at the wrong time.",
+      "provenance": "Native sender and substantial BlockFilter control flow recovered, but no complete source-backed lifecycle has been ported or claimed.",
+      "authority": "Native BlockFilter 0x00619A2C..0x0061B628, Robot::Update 0x00514174..0x00514236; Unity BlockPoolTracker and ConnectionFlowController.CubeConnectFlow.",
+      "evidence": [
+        "re-analysis/CUBE_CONNECTION.md enumerates recovered steps and remaining boundaries; dis_cube_connection.txt records bounded primary disassembly and direct/PLT call sites.",
+        "BlockFilter::Update 0x0061A79A is gated and uses a two-second cadence; UpdateConnecting 0x0061AA8C checks alternatives after five seconds, not unconditional resends.",
+        "GetClosestDiscoveredObjectsOfType 0x00518314 compares unsigned RSSI bytes <=150; slot allocation is first empty of five, not cube type.",
+        "Named direct/PLT SetAccessoryDiscovery search found generated serialization calls but no production sender; this does not exclude inline/indirect construction."
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "Establish official radio-discovery enable/disable lifetime through inline/indirect startup/configuration paths; resolve native automatic type-list data, equal-RSSI container order and persistent-pool cold-start initialization/linker-thunk paths into a reproducible complete policy. The sender alone does not settle these choices.",
+      "test": "FidelityManifestTests.CubeAcceptanceExposesTheUnfinishedOutboundPathSeparatelyFromIncomingHandlers"
     },
     {
       "id": "M5-001",

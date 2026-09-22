@@ -1,0 +1,2001 @@
+Cozmo 3.4.0-1204 ARM native cube-connection evidence
+SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+Ranges omit exception cleanup/literal pools; jump-table data inside bodies may decode as instructions.
+Direct/PLT call sites (inline/indirect calls are not excluded by this search):
+00514236 Anki::Cozmo::Robot::Update() -> Anki::Cozmo::Robot::ConnectToRequestedObjects()
+00514bc2 Anki::Cozmo::Robot::ConnectToRequestedObjects() -> Anki::Cozmo::RobotInterface::EngineToRobot::EngineToRobot(Anki::Cozmo::SetPropSlot&&)
+00514c4c Anki::Cozmo::Robot::ConnectToRequestedObjects() -> Anki::Cozmo::RobotInterface::EngineToRobot::EngineToRobot(Anki::Cozmo::SetPropSlot&&)
+00619fb4 Anki::Cozmo::BlockFilter::HandleGameEvents(Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&) -> Anki::Cozmo::Robot::ConnectToObjects(std::__ndk1::array<unsigned int, (unsigned int)5> const&)
+0061a028 Anki::Cozmo::BlockFilter::HandleGameEvents(Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&) -> Anki::Cozmo::BlockFilter::Enable(bool, float)
+0061a0a0 Anki::Cozmo::BlockFilter::HandleGameEvents(Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&) -> Anki::Cozmo::Robot::ConnectToObjects(std::__ndk1::array<unsigned int, (unsigned int)5> const&)
+0061a102 Anki::Cozmo::BlockFilter::HandleGameEvents(Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&) -> Anki::Cozmo::Robot::ConnectToObjects(std::__ndk1::array<unsigned int, (unsigned int)5> const&)
+0061a150 Anki::Cozmo::BlockFilter::HandleGameEvents(Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&) -> Anki::Cozmo::Robot::ConnectToObjects(std::__ndk1::array<unsigned int, (unsigned int)5> const&)
+0061a278 Anki::Cozmo::BlockFilter::Init(std::__ndk1::basic_string<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char> > const&) -> Anki::Cozmo::Robot::ConnectToObjects(std::__ndk1::array<unsigned int, (unsigned int)5> const&)
+0061a792 Anki::Cozmo::BlockFilter::ConnectToObjects() -> Anki::Cozmo::Robot::ConnectToObjects(std::__ndk1::array<unsigned int, (unsigned int)5> const&)
+0061a9ba Anki::Cozmo::BlockFilter::UpdateDiscovering() -> Anki::Cozmo::Robot::ConnectToObjects(std::__ndk1::array<unsigned int, (unsigned int)5> const&)
+0061ab88 Anki::Cozmo::BlockFilter::UpdateConnecting() -> Anki::Cozmo::Robot::ConnectToObjects(std::__ndk1::array<unsigned int, (unsigned int)5> const&)
+007a6354 Anki::Cozmo::RobotInterface::EngineToRobot::Unpack(CLAD::SafeMessageBuffer const&) -> Anki::Cozmo::SetAccessoryDiscovery::Unpack(CLAD::SafeMessageBuffer const&)
+007a676e Anki::Cozmo::RobotInterface::EngineToRobot::Unpack(CLAD::SafeMessageBuffer const&) -> Anki::Cozmo::SetAccessoryDiscovery::SetAccessoryDiscovery(CLAD::SafeMessageBuffer const&)
+007ab8b8 Anki::Cozmo::RobotInterface::EngineToRobot::Pack(CLAD::SafeMessageBuffer&) const -> Anki::Cozmo::SetAccessoryDiscovery::Pack(CLAD::SafeMessageBuffer&) const
+007abd60 Anki::Cozmo::RobotInterface::EngineToRobot::Size() const -> Anki::Cozmo::SetAccessoryDiscovery::Size() const
+
+Anki::Cozmo::Robot::ConnectToRequestedObjects() [00514a70, 00514c8e)
+00514a70 push.w   {r4, r5, r6, r7, r8, sb, sl, fp, lr} ; 
+00514a74 sub.w    sp, sp, #0x428 ; 
+00514a78 sub      sp, #4 ; 
+00514a7a mov      r8, r0 ; 
+00514a7c ldr      r0, [pc, #0x260] ; 
+00514a7e add      r0, pc ; 
+00514a80 ldr      r0, [r0] ; 
+00514a82 ldr      r0, [r0] ; 
+00514a84 str.w    r0, [sp, #0x428] ; 
+00514a88 mov.w    r0, #0x458 ; 
+00514a8c ldrb.w   r1, [r8, r0] ; 
+00514a90 cbnz     r1, #0x514a9c ; 
+00514a92 adds     r0, #8 ; 
+00514a94 cmp.w    r0, #0x480 ; 
+00514a98 bne      #0x514a8c ; 
+00514a9a b        #0x514c70 ; 
+00514a9c cmp.w    r0, #0x480 ; 
+00514aa0 beq.w    #0x514c70 ; 
+00514aa4 ldr      r4, [pc, #0x2ac] ; 
+00514aa6 movs     r5, #0 ; 
+00514aa8 mov.w    sl, #0 ; 
+00514aac addw     r0, r8, #0x47c ; 
+00514ab0 add      r4, pc ; 
+00514ab2 str      r0, [sp, #0x14] ; 
+00514ab4 add.w    r0, r8, sl, lsl #3 ; 
+00514ab8 ldrb.w   r1, [r0, #0x458] ; 
+00514abc cmp      r1, #0 ; 
+00514abe beq.w    #0x514c64 ; 
+00514ac2 add.w    r1, sl, sl, lsl #1 ; 
+00514ac6 add.w    fp, r0, #0x458 ; 
+00514aca addw     sb, r0, #0x454 ; 
+00514ace add.w    r7, r8, r1, lsl #3 ; 
+00514ad2 ldr.w    r1, [r0, #0x454] ; 
+00514ad6 addw     r3, r7, #0x494 ; 
+00514ada ldr      r2, [r3] ; 
+00514adc cmp      r1, r2 ; 
+00514ade bne      #0x514aea ; 
+00514ae0 str.w    r5, [sb] ; 
+00514ae4 strb.w   r5, [fp] ; 
+00514ae8 b        #0x514c64 ; 
+00514aea cmp      r1, #0 ; 
+00514aec beq.w    #0x514bf4 ; 
+00514af0 strd     r3, r7, [sp, #0xc] ; 
+00514af4 mov      r1, sb ; 
+00514af6 ldr      r0, [sp, #0x14] ; 
+00514af8 blx      #0x4a7f84 ; std::__ndk1::__hash_iterator<std::__ndk1::__hash_node<std::__ndk1::__hash_value_type<unsigned int, Anki::Cozmo::Robot::ActiveObjectInfo>, void*>*> std::__ndk1::__hash_table<std::__ndk1::__hash_value_type<unsigned int, Anki::Cozmo::Robot::ActiveObjectInfo>, std::__ndk1::__unordered_map_hasher<unsigned int, std::__ndk1::__hash_value_type<unsigned int, Anki::Cozmo::Robot::ActiveObjectInfo>, std::__ndk1::hash<unsigned int>, true>, std::__ndk1::__unordered_map_equal<unsigned int, std::__ndk1::__hash_value_type<unsigned int, Anki::Cozmo::Robot::ActiveObjectInfo>, std::__ndk1::equal_to<unsigned int>, true>, std::__ndk1::allocator<std::__ndk1::__hash_value_type<unsigned int, Anki::Cozmo::Robot::ActiveObjectInfo> > >::find<unsigned int>(unsigned int const&)
+00514afc mov      r6, r0 ; 
+00514afe cmp      r6, #0 ; 
+00514b00 beq.w    #0x514c64 ; 
+00514b04 movs     r7, #0 ; 
+00514b06 add.w    r0, r8, r7 ; 
+00514b0a ldr.w    r1, [r0, #0x49c] ; 
+00514b0e cmp      r1, #2 ; 
+00514b10 bne      #0x514b6c ; 
+00514b12 ldr      r1, [r6, #0x10] ; 
+00514b14 ldr.w    r2, [r0, #0x498] ; 
+00514b18 cmp      r2, r1 ; 
+00514b1a bne      #0x514b6c ; 
+00514b1c strd     r5, r5, [sp, #0x20] ; 
+00514b20 mov      r4, fp ; 
+00514b22 str      r5, [sp, #0x28] ; 
+00514b24 ldr.w    fp, [sb] ; 
+00514b28 ldr.w    r0, [r0, #0x498] ; 
+00514b2c blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+00514b30 ldr      r2, [pc, #0x23c] ; 
+00514b32 add      r1, sp, #0x20 ; 
+00514b34 str      r0, [sp] ; 
+00514b36 adr      r0, #0x1ac ; 
+00514b38 add      r2, pc ; 
+00514b3a mov      r3, fp ; 
+00514b3c blx      #0x4a4540 ; Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00514b40 ldr      r0, [sp, #0x20] ; 
+00514b42 mov      fp, r4 ; 
+00514b44 cbz      r0, #0x514b64 ; 
+00514b46 ldr      r1, [sp, #0x24] ; 
+00514b48 cmp      r1, r0 ; 
+00514b4a itttt    ne ; 
+00514b4c subne.w  r2, r1, #8 ; 
+00514b50 subne    r2, r2, r0 ; 
+00514b52 mvnne    r3, #7 ; 
+00514b56 bicne.w  r2, r3, r2 ; 
+00514b5a itt      ne ; 
+00514b5c addne    r1, r1, r2 ; 
+00514b5e strne    r1, [sp, #0x24] ; 
+00514b60 blx      #0x4a40cc ; operator delete(void*)
+00514b64 str.w    r5, [sb] ; 
+00514b68 strb.w   r5, [fp] ; 
+00514b6c adds     r7, #0x18 ; 
+00514b6e cmp      r7, #0x78 ; 
+00514b70 bne      #0x514b06 ; 
+00514b72 strd     r5, r5, [sp, #0x20] ; 
+00514b76 str      r5, [sp, #0x28] ; 
+00514b78 ldr.w    r0, [sb] ; 
+00514b7c ldr      r1, [pc, #0x1ec] ; 
+00514b7e add      r2, sp, #0x20 ; 
+00514b80 strd     sl, r0, [sp] ; 
+00514b84 adr      r3, #0x198 ; 
+00514b86 ldr      r0, [pc, #0x1e0] ; 
+00514b88 add      r1, pc ; 
+00514b8a add      r0, pc ; 
+00514b8c blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00514b90 ldr      r0, [sp, #0x20] ; 
+00514b92 cbz      r0, #0x514bb2 ; 
+00514b94 ldr      r1, [sp, #0x24] ; 
+00514b96 cmp      r1, r0 ; 
+00514b98 itttt    ne ; 
+00514b9a subne.w  r2, r1, #8 ; 
+00514b9e subne    r2, r2, r0 ; 
+00514ba0 mvnne    r3, #7 ; 
+00514ba4 bicne.w  r2, r3, r2 ; 
+00514ba8 itt      ne ; 
+00514baa addne    r1, r1, r2 ; 
+00514bac strne    r1, [sp, #0x24] ; 
+00514bae blx      #0x4a40cc ; operator delete(void*)
+00514bb2 add      r4, sp, #0x20 ; 
+00514bb4 ldr.w    r0, [sb] ; 
+00514bb8 add      r1, sp, #0x18 ; 
+00514bba strb.w   sl, [sp, #0x1c] ; 
+00514bbe str      r0, [sp, #0x18] ; 
+00514bc0 mov      r0, r4 ; 
+00514bc2 blx      #0x4a7f90 ; Anki::Cozmo::RobotInterface::EngineToRobot::EngineToRobot(Anki::Cozmo::SetPropSlot&&)
+00514bc6 mov      r0, r8 ; 
+00514bc8 mov      r1, r4 ; 
+00514bca movs     r2, #1 ; 
+00514bcc movs     r3, #0 ; 
+00514bce blx      #0x4a5368 ; Anki::Cozmo::Robot::SendMessage(Anki::Cozmo::RobotInterface::EngineToRobot const&, bool, bool) const
+00514bd2 mov      r0, r4 ; 
+00514bd4 blx      #0x4a5200 ; Anki::Cozmo::RobotInterface::EngineToRobot::ClearCurrent()
+00514bd8 add.w    r0, r6, #0xc ; 
+00514bdc ldr      r6, [sp, #0xc] ; 
+00514bde ldm.w    r0, {r1, r2, r3, r4, r5, r7} ; 
+00514be2 movs     r0, #1 ; 
+00514be4 stm      r6!, {r1, r2, r3, r4, r5, r7} ; 
+00514be6 movs     r5, #0 ; 
+00514be8 ldr      r4, [pc, #0x170] ; 
+00514bea ldr      r1, [sp, #0x10] ; 
+00514bec add      r4, pc ; 
+00514bee str.w    r0, [r1, #0x49c] ; 
+00514bf2 b        #0x514ae0 ; 
+00514bf4 strd     r5, r5, [sp, #0x20] ; 
+00514bf8 str      r5, [sp, #0x28] ; 
+00514bfa ldr      r1, [pc, #0x164] ; 
+00514bfc mov      r6, r4 ; 
+00514bfe ldr      r3, [pc, #0x164] ; 
+00514c00 mov      r0, r4 ; 
+00514c02 add      r4, sp, #0x20 ; 
+00514c04 add      r1, pc ; 
+00514c06 add      r3, pc ; 
+00514c08 strd     sl, r5, [sp] ; 
+00514c0c mov      r2, r4 ; 
+00514c0e blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00514c12 ldr      r0, [sp, #0x20] ; 
+00514c14 cbz      r0, #0x514c34 ; 
+00514c16 ldr      r1, [sp, #0x24] ; 
+00514c18 cmp      r1, r0 ; 
+00514c1a itttt    ne ; 
+00514c1c subne.w  r2, r1, #8 ; 
+00514c20 subne    r2, r2, r0 ; 
+00514c22 mvnne    r3, #7 ; 
+00514c26 bicne.w  r2, r3, r2 ; 
+00514c2a itt      ne ; 
+00514c2c addne    r1, r1, r2 ; 
+00514c2e strne    r1, [sp, #0x24] ; 
+00514c30 blx      #0x4a40cc ; operator delete(void*)
+00514c34 movs     r0, #3 ; 
+00514c36 add      r1, sp, #0x18 ; 
+00514c38 str.w    r0, [r7, #0x49c] ; 
+00514c3c mov      r0, r4 ; 
+00514c3e str.w    r5, [sb] ; 
+00514c42 strb.w   r5, [fp] ; 
+00514c46 strb.w   sl, [sp, #0x1c] ; 
+00514c4a str      r5, [sp, #0x18] ; 
+00514c4c blx      #0x4a7f90 ; Anki::Cozmo::RobotInterface::EngineToRobot::EngineToRobot(Anki::Cozmo::SetPropSlot&&)
+00514c50 mov      r0, r8 ; 
+00514c52 mov      r1, r4 ; 
+00514c54 movs     r2, #1 ; 
+00514c56 movs     r3, #0 ; 
+00514c58 blx      #0x4a5368 ; Anki::Cozmo::Robot::SendMessage(Anki::Cozmo::RobotInterface::EngineToRobot const&, bool, bool) const
+00514c5c mov      r0, r4 ; 
+00514c5e blx      #0x4a5200 ; Anki::Cozmo::RobotInterface::EngineToRobot::ClearCurrent()
+00514c62 mov      r4, r6 ; 
+00514c64 add.w    sl, sl, #1 ; 
+00514c68 cmp.w    sl, #5 ; 
+00514c6c blo.w    #0x514ab4 ; 
+00514c70 ldr      r0, [pc, #0xe4] ; 
+00514c72 ldr.w    r1, [sp, #0x428] ; 
+00514c76 add      r0, pc ; 
+00514c78 ldr      r0, [r0] ; 
+00514c7a ldr      r0, [r0] ; 
+00514c7c subs     r0, r0, r1 ; 
+00514c7e ittt     eq ; 
+00514c80 addeq.w  sp, sp, #0x428 ; 
+00514c84 addeq    sp, #4 ; 
+00514c86 popeq.w  {r4, r5, r6, r7, r8, sb, sl, fp, pc} ; 
+00514c8a blx      #0x4a4fe4 ; __stack_chk_fail
+
+Anki::Cozmo::Robot::ConnectToObjects(std::__ndk1::array<unsigned int, (unsigned int)5> const&) [005173ea, 00517488)
+005173ea ldr      r0, [sp, #0x18] ; 
+005173ec mov.w    fp, #0 ; 
+005173f0 movs     r4, #0 ; 
+005173f2 movs     r5, #0 ; 
+005173f4 addw     r8, r0, #0x494 ; 
+005173f8 add.w    r1, r4, r4, lsl #1 ; 
+005173fc ldr.w    r0, [sb, r5, lsl #2] ; 
+00517400 ldr.w    r1, [r8, r1] ; 
+00517404 cmp      r0, r1 ; 
+00517406 beq      #0x51747a ; 
+00517408 strd     fp, fp, [sp, #0x158] ; 
+0051740c str.w    fp, [sp, #0x160] ; 
+00517410 ldr      r1, [sp, #0x1c] ; 
+00517412 mov      r0, sl ; 
+00517414 blx      #0x4a448c ; std::__ndk1::basic_stringbuf<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char> >::str() const
+00517418 ldrb.w   r1, [sp, #0x2c] ; 
+0051741c ldr      r0, [sp, #0x34] ; 
+0051741e tst.w    r1, #1 ; 
+00517422 it       eq ; 
+00517424 moveq    r0, r7 ; 
+00517426 ldr      r3, [pc, #0x360] ; 
+00517428 adr      r1, #0x2d0 ; 
+0051742a str      r0, [sp] ; 
+0051742c add      r2, sp, #0x158 ; 
+0051742e ldr      r0, [pc, #0x354] ; 
+00517430 add      r3, pc ; 
+00517432 add      r0, pc ; 
+00517434 blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00517438 ldrb.w   r0, [sp, #0x2c] ; 
+0051743c lsls     r0, r0, #0x1f ; 
+0051743e itt      ne ; 
+00517440 ldrne    r0, [sp, #0x34] ; 
+00517442 blxne    #0x4a40cc ; 
+00517446 ldr      r0, [sp, #0x158] ; 
+00517448 cbz      r0, #0x517468 ; 
+0051744a ldr      r1, [sp, #0x15c] ; 
+0051744c cmp      r1, r0 ; 
+0051744e itttt    ne ; 
+00517450 subne.w  r2, r1, #8 ; 
+00517454 subne    r2, r2, r0 ; 
+00517456 mvnne    r3, #7 ; 
+0051745a bicne.w  r2, r3, r2 ; 
+0051745e itt      ne ; 
+00517460 addne    r1, r1, r2 ; 
+00517462 strne    r1, [sp, #0x15c] ; 
+00517464 blx      #0x4a40cc ; operator delete(void*)
+00517468 add.w    r1, r8, r4 ; 
+0051746c ldr.w    r0, [sb, r5, lsl #2] ; 
+00517470 movs     r2, #1 ; 
+00517472 strb     r2, [r1, #-0x3c] ; 
+00517476 str      r0, [r1, #-0x40] ; 
+0051747a adds     r5, #1 ; 
+0051747c adds     r4, #8 ; 
+0051747e cmp      r5, #5 ; 
+00517480 blo      #0x5173f8 ; 
+00517482 ldr      r0, [pc, #0x2e8] ; 
+00517484 ldr      r1, [pc, #0x2e8] ; 
+00517486 add      r0, pc ; 
+
+Anki::Cozmo::Robot::CheckDisconnectedObjects() [00514924, 00514a1e)
+00514924 push.w   {r4, r5, r6, r7, r8, sb, sl, fp, lr} ; 
+00514928 sub      sp, #4 ; 
+0051492a vpush    {d8, d9} ; 
+0051492e sub      sp, #0x38 ; 
+00514930 mov      r4, r0 ; 
+00514932 blx      #0x4a4f6c ; Anki::BaseStationTimer::getInstance()
+00514936 blx      #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds() const
+0051493a add.w    r5, r4, #0x510 ; 
+0051493e vmov     s2, r0 ; 
+00514942 vmov.f64 d8, #2.000000e+00 ; 
+00514946 vldr     d0, [r5] ; 
+0051494a vcvt.f64.f32 d9, s2 ; 
+0051494e vcmpe.f64 d0, #0 ; 
+00514952 vmrs     apsr_nzcv, fpscr ; 
+00514956 bls      #0x514966 ; 
+00514958 vadd.f64 d0, d0, d8 ; 
+0051495c vcmpe.f64 d0, d9 ; 
+00514960 vmrs     apsr_nzcv, fpscr ; 
+00514964 bhi      #0x514a12 ; 
+00514966 add.w    r4, r4, #0x4a8 ; 
+0051496a addw     sl, pc, #0xdc ; 
+0051496e add      r7, sp, #0x2c ; 
+00514970 movs     r6, #0 ; 
+00514972 mov.w    r8, #4 ; 
+00514976 mov.w    fp, #-1 ; 
+0051497a mov.w    sb, #0 ; 
+0051497e ldr      r0, [r4, #-0xc] ; 
+00514982 cmp      r0, #4 ; 
+00514984 bne      #0x514a02 ; 
+00514986 vldr     s0, [r4] ; 
+0051498a vcvt.f64.f32 d0, s0 ; 
+0051498e vadd.f64 d1, d0, d8 ; 
+00514992 vcmpe.f64 d1, d9 ; 
+00514996 vmrs     apsr_nzcv, fpscr ; 
+0051499a bpl      #0x514a02 ; 
+0051499c strd     r6, r6, [sp, #0x2c] ; 
+005149a0 str      r6, [sp, #0x34] ; 
+005149a2 ldr      r0, [r4, #-0x14] ; 
+005149a6 mov.w    r1, #0x40000000 ; 
+005149aa ldr      r3, [pc, #0xc0] ; 
+005149ac strd     r6, r1, [sp, #0x20] ; 
+005149b0 mov      r1, sl ; 
+005149b2 vstr     d0, [sp, #0x10] ; 
+005149b6 add      r3, pc ; 
+005149b8 vstr     d9, [sp, #0x18] ; 
+005149bc mov      r2, r7 ; 
+005149be strd     sb, r0, [sp] ; 
+005149c2 ldr      r0, [pc, #0xa4] ; 
+005149c4 str.w    r8, [sp, #8] ; 
+005149c8 add      r0, pc ; 
+005149ca blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+005149ce ldr      r0, [sp, #0x2c] ; 
+005149d0 cbz      r0, #0x5149f0 ; 
+005149d2 ldr      r1, [sp, #0x30] ; 
+005149d4 cmp      r1, r0 ; 
+005149d6 itttt    ne ; 
+005149d8 subne.w  r2, r1, #8 ; 
+005149dc subne    r2, r2, r0 ; 
+005149de mvnne    r3, #7 ; 
+005149e2 bicne.w  r2, r3, r2 ; 
+005149e6 itt      ne ; 
+005149e8 addne    r1, r1, r2 ; 
+005149ea strne    r1, [sp, #0x30] ; 
+005149ec blx      #0x4a40cc ; operator delete(void*)
+005149f0 strd     r6, fp, [r4, #-0x14] ; 
+005149f4 str      r6, [r4, #-0xc] ; 
+005149f8 strb     r6, [r4, #-0x8] ; 
+005149fc str      r6, [r4, #-0x4] ; 
+00514a00 str      r6, [r4] ; 
+00514a02 add.w    sb, sb, #1 ; 
+00514a06 adds     r4, #0x18 ; 
+00514a08 cmp.w    sb, #5 ; 
+00514a0c blo      #0x51497e ; 
+00514a0e vstr     d9, [r5] ; 
+00514a12 add      sp, #0x38 ; 
+00514a14 vpop     {d8, d9} ; 
+00514a18 add      sp, #4 ; 
+00514a1a pop.w    {r4, r5, r6, r7, r8, sb, sl, fp, pc} ; 
+
+Anki::Cozmo::Robot::HandleConnectedToObject(unsigned int, unsigned int, Anki::Cozmo::ObjectType) [005179c0, 00517b0a)
+005179c0 push.w   {r4, r5, r6, r7, r8, sb, lr} ; 
+005179c4 sub      sp, #0x24 ; 
+005179c6 mov      r6, r1 ; 
+005179c8 mov      r8, r0 ; 
+005179ca add.w    r0, r6, r6, lsl #1 ; 
+005179ce mov      r5, r3 ; 
+005179d0 mov      sb, r2 ; 
+005179d2 add.w    r7, r8, r0, lsl #3 ; 
+005179d6 ldr.w    r0, [r7, #0x494] ; 
+005179da cmp      r0, sb ; 
+005179dc bne      #0x517aa8 ; 
+005179de ldr.w    r3, [r7, #0x49c] ; 
+005179e2 cmp      r3, #1 ; 
+005179e4 it       ne ; 
+005179e6 cmpne    r3, #4 ; 
+005179e8 beq      #0x517a3c ; 
+005179ea ldr      r2, [pc, #0x174] ; 
+005179ec movs     r0, #0 ; 
+005179ee strd     r0, r0, [sp, #0x18] ; 
+005179f2 add      r2, pc ; 
+005179f4 str      r0, [sp, #0x20] ; 
+005179f6 adr      r0, #0x16c ; 
+005179f8 add      r1, sp, #0x18 ; 
+005179fa strd     sb, r6, [sp] ; 
+005179fe blx      #0x4a4108 ; Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00517a02 ldr      r0, [sp, #0x18] ; 
+00517a04 cbz      r0, #0x517a24 ; 
+00517a06 ldr      r1, [sp, #0x1c] ; 
+00517a08 cmp      r1, r0 ; 
+00517a0a itttt    ne ; 
+00517a0c subne.w  r2, r1, #8 ; 
+00517a10 subne    r2, r2, r0 ; 
+00517a12 mvnne    r3, #7 ; 
+00517a16 bicne.w  r2, r3, r2 ; 
+00517a1a itt      ne ; 
+00517a1c addne    r1, r1, r2 ; 
+00517a1e strne    r1, [sp, #0x1c] ; 
+00517a20 blx      #0x4a40cc ; operator delete(void*)
+00517a24 ldr      r0, [pc, #0x168] ; 
+00517a26 movs     r2, #1 ; 
+00517a28 ldr      r1, [pc, #0x168] ; 
+00517a2a add      r0, pc ; 
+00517a2c add      r1, pc ; 
+00517a2e ldr      r0, [r0] ; 
+00517a30 ldr      r1, [r1] ; 
+00517a32 ldrb     r0, [r0] ; 
+00517a34 strb     r2, [r1] ; 
+00517a36 cbz      r0, #0x517a3c ; 
+00517a38 blx      #0x4a4114 ; Anki::Util::sDebugBreakOnError()
+00517a3c movs     r0, #0 ; 
+00517a3e strd     r0, r0, [sp, #0x18] ; 
+00517a42 str      r0, [sp, #0x20] ; 
+00517a44 mov      r0, r5 ; 
+00517a46 blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+00517a4a addw     r5, r7, #0x49c ; 
+00517a4e ldr.w    ip, [pc, #0x148] ; 
+00517a52 ldr      r3, [pc, #0x148] ; 
+00517a54 ldr      r1, [r5] ; 
+00517a56 add      ip, pc ; 
+00517a58 add      r3, pc ; 
+00517a5a strd     r6, sb, [sp] ; 
+00517a5e add      r2, sp, #0x18 ; 
+00517a60 strd     r0, r1, [sp, #8] ; 
+00517a64 adr      r1, #0x138 ; 
+00517a66 mov      r0, ip ; 
+00517a68 blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00517a6c ldr      r0, [sp, #0x18] ; 
+00517a6e cbz      r0, #0x517a8e ; 
+00517a70 ldr      r1, [sp, #0x1c] ; 
+00517a72 cmp      r1, r0 ; 
+00517a74 itttt    ne ; 
+00517a76 subne.w  r2, r1, #8 ; 
+00517a7a subne    r2, r2, r0 ; 
+00517a7c mvnne    r3, #7 ; 
+00517a80 bicne.w  r2, r3, r2 ; 
+00517a84 itt      ne ; 
+00517a86 addne    r1, r1, r2 ; 
+00517a88 strne    r1, [sp, #0x1c] ; 
+00517a8a blx      #0x4a40cc ; operator delete(void*)
+00517a8e addw     r0, r8, #0x47c ; 
+00517a92 add      r1, sp, #0x18 ; 
+00517a94 str.w    sb, [sp, #0x18] ; 
+00517a98 blx      #0x4a814c ; unsigned int std::__ndk1::__hash_table<std::__ndk1::__hash_value_type<unsigned int, Anki::Cozmo::Robot::ActiveObjectInfo>, std::__ndk1::__unordered_map_hasher<unsigned int, std::__ndk1::__hash_value_type<unsigned int, Anki::Cozmo::Robot::ActiveObjectInfo>, std::__ndk1::hash<unsigned int>, true>, std::__ndk1::__unordered_map_equal<unsigned int, std::__ndk1::__hash_value_type<unsigned int, Anki::Cozmo::Robot::ActiveObjectInfo>, std::__ndk1::equal_to<unsigned int>, true>, std::__ndk1::allocator<std::__ndk1::__hash_value_type<unsigned int, Anki::Cozmo::Robot::ActiveObjectInfo> > >::__erase_unique<unsigned int>(unsigned int const&)
+00517a9c movs     r0, #2 ; 
+00517a9e str      r0, [r5] ; 
+00517aa0 movs     r0, #0 ; 
+00517aa2 str.w    r0, [r7, #0x4a8] ; 
+00517aa6 b        #0x517b04 ; 
+00517aa8 movs     r0, #0 ; 
+00517aaa strd     r0, r0, [sp, #0x18] ; 
+00517aae str      r0, [sp, #0x20] ; 
+00517ab0 mov      r0, r5 ; 
+00517ab2 blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+00517ab6 mov      r5, r0 ; 
+00517ab8 addw     r0, r7, #0x494 ; 
+00517abc ldr      r4, [r0] ; 
+00517abe ldr.w    r0, [r7, #0x498] ; 
+00517ac2 blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+00517ac6 ldr      r7, [pc, #0x70] ; 
+00517ac8 ldr      r3, [pc, #0x70] ; 
+00517aca add      r7, pc ; 
+00517acc add      r3, pc ; 
+00517ace adr      r1, #0x70 ; 
+00517ad0 add      r2, sp, #0x18 ; 
+00517ad2 strd     sb, r5, [sp] ; 
+00517ad6 strd     r6, r4, [sp, #8] ; 
+00517ada str      r0, [sp, #0x10] ; 
+00517adc mov      r0, r7 ; 
+00517ade blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00517ae2 ldr      r0, [sp, #0x18] ; 
+00517ae4 cbz      r0, #0x517b04 ; 
+00517ae6 ldr      r1, [sp, #0x1c] ; 
+00517ae8 cmp      r1, r0 ; 
+00517aea itttt    ne ; 
+00517aec subne.w  r2, r1, #8 ; 
+00517af0 subne    r2, r2, r0 ; 
+00517af2 mvnne    r3, #7 ; 
+00517af6 bicne.w  r2, r3, r2 ; 
+00517afa itt      ne ; 
+00517afc addne    r1, r1, r2 ; 
+00517afe strne    r1, [sp, #0x1c] ; 
+00517b00 blx      #0x4a40cc ; operator delete(void*)
+00517b04 add      sp, #0x24 ; 
+00517b06 pop.w    {r4, r5, r6, r7, r8, sb, pc} ; 
+
+Anki::Cozmo::Robot::HandleDisconnectedFromObject(unsigned int, unsigned int, Anki::Cozmo::ObjectType) [00517bbc, 00517d20)
+00517bbc push.w   {r4, r5, r6, r7, r8, sb, lr} ; 
+00517bc0 sub      sp, #0x24 ; 
+00517bc2 mov      sb, r1 ; 
+00517bc4 mov      r6, r3 ; 
+00517bc6 add.w    r1, sb, sb, lsl #1 ; 
+00517bca mov      r5, r2 ; 
+00517bcc add.w    r7, r0, r1, lsl #3 ; 
+00517bd0 addw     r8, r7, #0x494 ; 
+00517bd4 ldr.w    r0, [r7, #0x494] ; 
+00517bd8 cmp      r0, r5 ; 
+00517bda bne      #0x517cac ; 
+00517bdc ldr.w    r3, [r7, #0x49c] ; 
+00517be0 bic      r0, r3, #1 ; 
+00517be4 cmp      r0, #2 ; 
+00517be6 beq      #0x517c3a ; 
+00517be8 ldr      r2, [pc, #0x18c] ; 
+00517bea movs     r0, #0 ; 
+00517bec strd     r0, r0, [sp, #0x18] ; 
+00517bf0 add      r2, pc ; 
+00517bf2 str      r0, [sp, #0x20] ; 
+00517bf4 adr      r0, #0x184 ; 
+00517bf6 add      r1, sp, #0x18 ; 
+00517bf8 strd     r5, sb, [sp] ; 
+00517bfc blx      #0x4a4108 ; Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00517c00 ldr      r0, [sp, #0x18] ; 
+00517c02 cbz      r0, #0x517c22 ; 
+00517c04 ldr      r1, [sp, #0x1c] ; 
+00517c06 cmp      r1, r0 ; 
+00517c08 itttt    ne ; 
+00517c0a subne.w  r2, r1, #8 ; 
+00517c0e subne    r2, r2, r0 ; 
+00517c10 mvnne    r3, #7 ; 
+00517c14 bicne.w  r2, r3, r2 ; 
+00517c18 itt      ne ; 
+00517c1a addne    r1, r1, r2 ; 
+00517c1c strne    r1, [sp, #0x1c] ; 
+00517c1e blx      #0x4a40cc ; operator delete(void*)
+00517c22 ldr      r0, [pc, #0x188] ; 
+00517c24 movs     r2, #1 ; 
+00517c26 ldr      r1, [pc, #0x188] ; 
+00517c28 add      r0, pc ; 
+00517c2a add      r1, pc ; 
+00517c2c ldr      r0, [r0] ; 
+00517c2e ldr      r1, [r1] ; 
+00517c30 ldrb     r0, [r0] ; 
+00517c32 strb     r2, [r1] ; 
+00517c34 cbz      r0, #0x517c3a ; 
+00517c36 blx      #0x4a4114 ; Anki::Util::sDebugBreakOnError()
+00517c3a movs     r0, #0 ; 
+00517c3c strd     r0, r0, [sp, #0x18] ; 
+00517c40 str      r0, [sp, #0x20] ; 
+00517c42 mov      r0, r6 ; 
+00517c44 blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+00517c48 addw     r6, r7, #0x49c ; 
+00517c4c ldr.w    ip, [pc, #0x164] ; 
+00517c50 ldr      r3, [pc, #0x164] ; 
+00517c52 ldr      r1, [r6] ; 
+00517c54 add      ip, pc ; 
+00517c56 add      r3, pc ; 
+00517c58 strd     sb, r5, [sp] ; 
+00517c5c add      r2, sp, #0x18 ; 
+00517c5e strd     r0, r1, [sp, #8] ; 
+00517c62 adr      r1, #0xf0 ; 
+00517c64 mov      r0, ip ; 
+00517c66 blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00517c6a ldr      r0, [sp, #0x18] ; 
+00517c6c cbz      r0, #0x517c8c ; 
+00517c6e ldr      r1, [sp, #0x1c] ; 
+00517c70 cmp      r1, r0 ; 
+00517c72 itttt    ne ; 
+00517c74 subne.w  r2, r1, #8 ; 
+00517c78 subne    r2, r2, r0 ; 
+00517c7a mvnne    r3, #7 ; 
+00517c7e bicne.w  r2, r3, r2 ; 
+00517c82 itt      ne ; 
+00517c84 addne    r1, r1, r2 ; 
+00517c86 strne    r1, [sp, #0x1c] ; 
+00517c88 blx      #0x4a40cc ; operator delete(void*)
+00517c8c ldr      r0, [r6] ; 
+00517c8e cmp      r0, #3 ; 
+00517c90 bne      #0x517d08 ; 
+00517c92 movs     r0, #0 ; 
+00517c94 mov.w    r1, #-1 ; 
+00517c98 str.w    r0, [r8] ; 
+00517c9c str.w    r1, [r7, #0x498] ; 
+00517ca0 str      r0, [r6] ; 
+00517ca2 strb.w   r0, [r7, #0x4a0] ; 
+00517ca6 str.w    r0, [r7, #0x4a4] ; 
+00517caa b        #0x517d14 ; 
+00517cac movs     r0, #0 ; 
+00517cae strd     r0, r0, [sp, #0x18] ; 
+00517cb2 str      r0, [sp, #0x20] ; 
+00517cb4 mov      r0, r6 ; 
+00517cb6 blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+00517cba mov      r6, r0 ; 
+00517cbc ldr.w    r4, [r8] ; 
+00517cc0 ldr.w    r0, [r7, #0x498] ; 
+00517cc4 blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+00517cc8 ldr.w    ip, [pc, #0x80] ; 
+00517ccc ldr      r3, [pc, #0x80] ; 
+00517cce add      ip, pc ; 
+00517cd0 add      r3, pc ; 
+00517cd2 adr      r1, #0x80 ; 
+00517cd4 add      r2, sp, #0x18 ; 
+00517cd6 stm.w    sp, {r5, r6, sb} ; 
+00517cda strd     r4, r0, [sp, #0xc] ; 
+00517cde mov      r0, ip ; 
+00517ce0 blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00517ce4 ldr      r0, [sp, #0x18] ; 
+00517ce6 cbz      r0, #0x517d18 ; 
+00517ce8 ldr      r1, [sp, #0x1c] ; 
+00517cea cmp      r1, r0 ; 
+00517cec itttt    ne ; 
+00517cee subne.w  r2, r1, #8 ; 
+00517cf2 subne    r2, r2, r0 ; 
+00517cf4 mvnne    r3, #7 ; 
+00517cf8 bicne.w  r2, r3, r2 ; 
+00517cfc itt      ne ; 
+00517cfe addne    r1, r1, r2 ; 
+00517d00 strne    r1, [sp, #0x1c] ; 
+00517d02 blx      #0x4a40cc ; operator delete(void*)
+00517d06 b        #0x517d18 ; 
+00517d08 movs     r0, #4 ; 
+00517d0a str      r0, [r6] ; 
+00517d0c blx      #0x4a4f6c ; Anki::BaseStationTimer::getInstance()
+00517d10 blx      #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds() const
+00517d14 str.w    r0, [r7, #0x4a8] ; 
+00517d18 add      sp, #0x24 ; 
+00517d1a pop.w    {r4, r5, r6, r7, r8, sb, pc} ; 
+00517d1e b        #0x517d22 ; 
+
+Anki::Cozmo::Robot::GetClosestDiscoveredObjectsOfType(Anki::Cozmo::ObjectType, unsigned char) const [00518314, 00518342)
+00518314 push     {r7, lr} ; 
+00518316 ldr.w    lr, [r0, #0x484] ; 
+0051831a movs     r0, #0 ; 
+0051831c cmp.w    lr, #0 ; 
+00518320 it       eq ; 
+00518322 popeq    {r7, pc} ; 
+00518324 ldr.w    r3, [lr, #0x10] ; 
+00518328 cmp      r3, r1 ; 
+0051832a bne      #0x51833c ; 
+0051832c ldrb.w   ip, [lr, #0x18] ; 
+00518330 uxtb     r3, r2 ; 
+00518332 cmp      ip, r3 ; 
+00518334 itt      ls ; 
+00518336 ldrls.w  r0, [lr, #0xc] ; 
+0051833a movls    r2, ip ; 
+0051833c ldr.w    lr, [lr] ; 
+00518340 b        #0x51831c ; 
+
+Anki::Cozmo::Robot::Update() [00514174, 0051423a)
+00514174 ldr.w    r6, [r4, #0x484] ; 
+00514178 cmp      r6, #0 ; 
+0051417a beq      #0x514226 ; 
+0051417c ldr.w    fp, [pc, #0x554] ; 
+00514180 addw     r7, r4, #0x47c ; 
+00514184 add      r5, sp, #0xb8 ; 
+00514186 movw     sb, #0x2711 ; 
+0051418a add      fp, pc ; 
+0051418c mov.w    r8, #0 ; 
+00514190 ldr      r0, [r6, #0x1c] ; 
+00514192 ldr      r1, [r4, #0x2c] ; 
+00514194 subs     r0, r1, r0 ; 
+00514196 cmp      r0, sb ; 
+00514198 blt      #0x514220 ; 
+0051419a ldrb.w   r0, [r4, #0x490] ; 
+0051419e cbz      r0, #0x514214 ; 
+005141a0 strd     r8, r8, [sp, #0xb8] ; 
+005141a4 str.w    r8, [sp, #0xc0] ; 
+005141a8 ldr.w    sl, [r6, #8] ; 
+005141ac ldr      r0, [r6, #0x10] ; 
+005141ae blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+005141b2 ldr      r1, [r6, #0x1c] ; 
+005141b4 ldr      r2, [r4, #0x2c] ; 
+005141b6 strd     sl, r0, [sp] ; 
+005141ba mov      r3, fp ; 
+005141bc strd     r1, r2, [sp, #8] ; 
+005141c0 mov      r2, r5 ; 
+005141c2 ldr.w    r0, [pc, #0x544] ; 
+005141c6 ldr.w    r1, [pc, #0x544] ; 
+005141ca add      r0, pc ; 
+005141cc add      r1, pc ; 
+005141ce blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+005141d2 ldr      r0, [sp, #0xb8] ; 
+005141d4 cbz      r0, #0x5141f4 ; 
+005141d6 ldr      r1, [sp, #0xbc] ; 
+005141d8 cmp      r1, r0 ; 
+005141da itttt    ne ; 
+005141dc subne.w  r2, r1, #8 ; 
+005141e0 subne    r2, r2, r0 ; 
+005141e2 mvnne    r3, #7 ; 
+005141e6 bicne.w  r2, r3, r2 ; 
+005141ea itt      ne ; 
+005141ec addne    r1, r1, r2 ; 
+005141ee strne    r1, [sp, #0xbc] ; 
+005141f0 blx      #0x4a40cc ; operator delete(void*)
+005141f4 ldr      r0, [r6, #8] ; 
+005141f6 add      r1, sp, #0x88 ; 
+005141f8 str      r0, [sp, #0x88] ; 
+005141fa mov      r0, r5 ; 
+005141fc blx      #0x4a7ea0 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::MessageEngineToGame(Anki::Cozmo::ExternalInterface::ObjectUnavailable&&)
+00514200 ldr      r0, [r4] ; 
+00514202 ldr      r0, [r0, #4] ; 
+00514204 cbz      r0, #0x51420e ; 
+00514206 ldr      r1, [r0] ; 
+00514208 ldr      r2, [r1, #0x18] ; 
+0051420a mov      r1, r5 ; 
+0051420c blx      r2 ; 
+0051420e mov      r0, r5 ; 
+00514210 blx      #0x4a5158 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::ClearCurrent()
+00514214 mov      r0, r7 ; 
+00514216 mov      r1, r6 ; 
+00514218 blx      #0x4a7eac ; std::__ndk1::__hash_table<std::__ndk1::__hash_value_type<unsigned int, Anki::Cozmo::Robot::ActiveObjectInfo>, std::__ndk1::__unordered_map_hasher<unsigned int, std::__ndk1::__hash_value_type<unsigned int, Anki::Cozmo::Robot::ActiveObjectInfo>, std::__ndk1::hash<unsigned int>, true>, std::__ndk1::__unordered_map_equal<unsigned int, std::__ndk1::__hash_value_type<unsigned int, Anki::Cozmo::Robot::ActiveObjectInfo>, std::__ndk1::equal_to<unsigned int>, true>, std::__ndk1::allocator<std::__ndk1::__hash_value_type<unsigned int, Anki::Cozmo::Robot::ActiveObjectInfo> > >::erase(std::__ndk1::__hash_const_iterator<std::__ndk1::__hash_node<std::__ndk1::__hash_value_type<unsigned int, Anki::Cozmo::Robot::ActiveObjectInfo>, void*>*>)
+0051421c mov      r6, r0 ; 
+0051421e b        #0x514222 ; 
+00514220 ldr      r6, [r6] ; 
+00514222 cmp      r6, #0 ; 
+00514224 bne      #0x514190 ; 
+00514226 ldr.w    r0, [r4, #0x44c] ; 
+0051422a blx      #0x4a7eb8 ; Anki::Cozmo::BlockFilter::Update()
+0051422e mov      r0, r4 ; 
+00514230 blx      #0x4a7ec4 ; Anki::Cozmo::Robot::CheckDisconnectedObjects()
+00514234 mov      r0, r4 ; 
+00514236 blx      #0x4a7ed0 ; Anki::Cozmo::Robot::ConnectToRequestedObjects()
+
+Anki::Cozmo::RobotToEngineImplMessaging::HandleActiveObjectAvailable(Anki::Cozmo::AnkiEvent<Anki::Cozmo::RobotInterface::RobotToEngine> const&, Anki::Cozmo::Robot*) [0053391c, 00533a68)
+0053391c push.w   {r4, r5, r6, r7, r8, sb, lr} ; 
+00533920 sub      sp, #0x12c ; 
+00533922 ldr      r0, [pc, #0x180] ; 
+00533924 mov      r8, r2 ; 
+00533926 add      r0, pc ; 
+00533928 ldr      r0, [r0] ; 
+0053392a ldr      r0, [r0] ; 
+0053392c str      r0, [sp, #0x128] ; 
+0053392e add.w    r0, r1, #0xc ; 
+00533932 blx      #0x4aa078 ; Anki::Cozmo::RobotInterface::RobotToEngine::Get_activeObjectAvailable() const
+00533936 mov      r5, r0 ; 
+00533938 adds     r6, r5, #4 ; 
+0053393a add      r1, sp, #0x20 ; 
+0053393c movs     r7, #0 ; 
+0053393e mov      r0, r6 ; 
+00533940 strb.w   r7, [sp, #0x20] ; 
+00533944 blx      #0x4a46f0 ; Anki::Cozmo::IsValidLightCube(Anki::Cozmo::ObjectType const&, bool const&)
+00533948 cmp      r0, #1 ; 
+0053394a beq      #0x53395c ; 
+0053394c add      r1, sp, #0x10 ; 
+0053394e mov      r0, r6 ; 
+00533950 strb.w   r7, [sp, #0x10] ; 
+00533954 blx      #0x4a4708 ; Anki::Cozmo::IsCharger(Anki::Cozmo::ObjectType const&, bool const&)
+00533958 cmp      r0, #0 ; 
+0053395a beq      #0x533a10 ; 
+0053395c movs     r0, #0 ; 
+0053395e add      r1, sp, #0x20 ; 
+00533960 strb.w   r0, [sp, #0x20] ; 
+00533964 mov      r0, r6 ; 
+00533966 blx      #0x4a4708 ; Anki::Cozmo::IsCharger(Anki::Cozmo::ObjectType const&, bool const&)
+0053396a ldrd     r0, r7, [r5] ; 
+0053396e add      r1, sp, #0x20 ; 
+00533970 ldrb.w   sb, [r5, #8] ; 
+00533974 ldr.w    r4, [r8, #0x2c] ; 
+00533978 str      r0, [sp, #0x20] ; 
+0053397a addw     r0, r8, #0x47c ; 
+0053397e blx      #0x4aa084 ; std::__ndk1::unordered_map<unsigned int, Anki::Cozmo::Robot::ActiveObjectInfo, std::__ndk1::hash<unsigned int>, std::__ndk1::equal_to<unsigned int>, std::__ndk1::allocator<std::__ndk1::pair<unsigned int const, Anki::Cozmo::Robot::ActiveObjectInfo> > >::operator[](unsigned int const&)
+00533982 ldr      r1, [sp, #0x20] ; 
+00533984 strd     r1, r7, [r0] ; 
+00533988 str      r4, [r0, #0x10] ; 
+0053398a strb.w   sb, [r0, #0xc] ; 
+0053398e ldrb.w   r0, [r8, #0x490] ; 
+00533992 cmp      r0, #0 ; 
+00533994 beq      #0x533a50 ; 
+00533996 ldrsb.w  r0, [r5, #8] ; 
+0053399a cmp      r0, #0x31 ; 
+0053399c bgt      #0x5339ee ; 
+0053399e movs     r0, #0 ; 
+005339a0 strd     r0, r0, [sp, #0x20] ; 
+005339a4 str      r0, [sp, #0x28] ; 
+005339a6 ldr      r0, [r6] ; 
+005339a8 blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+005339ac ldr      r1, [pc, #0x150] ; 
+005339ae ldr      r6, [pc, #0x14c] ; 
+005339b0 add      r1, pc ; 
+005339b2 ldr      r2, [r5] ; 
+005339b4 ldrsb.w  r3, [r5, #8] ; 
+005339b8 add      r6, pc ; 
+005339ba ldr.w    r7, [r8, #0x2c] ; 
+005339be stm.w    sp, {r0, r2, r3, r7} ; 
+005339c2 add      r2, sp, #0x20 ; 
+005339c4 adr      r3, #0x13c ; 
+005339c6 mov      r0, r6 ; 
+005339c8 blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+005339cc ldr      r0, [sp, #0x20] ; 
+005339ce cbz      r0, #0x5339ee ; 
+005339d0 ldr      r1, [sp, #0x24] ; 
+005339d2 cmp      r1, r0 ; 
+005339d4 itttt    ne ; 
+005339d6 subne.w  r2, r1, #8 ; 
+005339da subne    r2, r2, r0 ; 
+005339dc mvnne    r3, #7 ; 
+005339e0 bicne.w  r2, r3, r2 ; 
+005339e4 itt      ne ; 
+005339e6 addne    r1, r1, r2 ; 
+005339e8 strne    r1, [sp, #0x24] ; 
+005339ea blx      #0x4a40cc ; operator delete(void*)
+005339ee add      r1, sp, #0x10 ; 
+005339f0 ldm.w    r5, {r2, r3, r7} ; 
+005339f4 add      r5, sp, #0x20 ; 
+005339f6 mov      r0, r1 ; 
+005339f8 stm      r0!, {r2, r3, r7} ; 
+005339fa mov      r0, r5 ; 
+005339fc blx      #0x4aa090 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::MessageEngineToGame(Anki::Cozmo::ObjectAvailable&&)
+00533a00 mov      r0, r8 ; 
+00533a02 mov      r1, r5 ; 
+00533a04 blx      #0x4a5b0c ; Anki::Cozmo::Robot::Broadcast(Anki::Cozmo::ExternalInterface::MessageEngineToGame&&)
+00533a08 add      r0, sp, #0x20 ; 
+00533a0a blx      #0x4a5158 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::ClearCurrent()
+00533a0e b        #0x533a50 ; 
+00533a10 movs     r0, #0 ; 
+00533a12 strd     r0, r0, [sp, #0x20] ; 
+00533a16 str      r0, [sp, #0x28] ; 
+00533a18 ldrd     r4, r0, [r5] ; 
+00533a1c blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+00533a20 str      r0, [sp] ; 
+00533a22 adr      r0, #0x84 ; 
+00533a24 add      r1, sp, #0x20 ; 
+00533a26 adr      r2, #0xb0 ; 
+00533a28 mov      r3, r4 ; 
+00533a2a blx      #0x4a4540 ; Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00533a2e ldr      r0, [sp, #0x20] ; 
+00533a30 cbz      r0, #0x533a50 ; 
+00533a32 ldr      r1, [sp, #0x24] ; 
+00533a34 cmp      r1, r0 ; 
+00533a36 itttt    ne ; 
+00533a38 subne.w  r2, r1, #8 ; 
+00533a3c subne    r2, r2, r0 ; 
+00533a3e mvnne    r3, #7 ; 
+00533a42 bicne.w  r2, r3, r2 ; 
+00533a46 itt      ne ; 
+00533a48 addne    r1, r1, r2 ; 
+00533a4a strne    r1, [sp, #0x24] ; 
+00533a4c blx      #0x4a40cc ; operator delete(void*)
+00533a50 ldr      r0, [pc, #0xe4] ; 
+00533a52 ldr      r1, [sp, #0x128] ; 
+00533a54 add      r0, pc ; 
+00533a56 ldr      r0, [r0] ; 
+00533a58 ldr      r0, [r0] ; 
+00533a5a subs     r0, r0, r1 ; 
+00533a5c itt      eq ; 
+00533a5e addeq    sp, #0x12c ; 
+00533a60 popeq.w  {r4, r5, r6, r7, r8, sb, pc} ; 
+00533a64 blx      #0x4a4fe4 ; __stack_chk_fail
+
+Anki::Cozmo::RobotToEngineImplMessaging::HandleActiveObjectConnectionState(Anki::Cozmo::AnkiEvent<Anki::Cozmo::RobotInterface::RobotToEngine> const&, Anki::Cozmo::Robot*) [00533b3c, 00533d32)
+00533b3c push.w   {r4, r5, r6, r7, r8, sb, lr} ; 
+00533b40 sub      sp, #0x12c ; 
+00533b42 ldr      r0, [pc, #0x24c] ; 
+00533b44 mov      r8, r2 ; 
+00533b46 add      r0, pc ; 
+00533b48 ldr      r0, [r0] ; 
+00533b4a ldr      r0, [r0] ; 
+00533b4c str      r0, [sp, #0x128] ; 
+00533b4e add.w    r0, r1, #0xc ; 
+00533b52 blx      #0x4aa09c ; Anki::Cozmo::RobotInterface::RobotToEngine::Get_activeObjectConnectionState() const
+00533b56 ldr      r7, [r0] ; 
+00533b58 cmp      r7, #4 ; 
+00533b5a bhi.w    #0x533d36 ; 
+00533b5e ldrd     r6, sb, [r0, #4] ; 
+00533b62 ldrb     r4, [r0, #0xc] ; 
+00533b64 movs     r0, #0 ; 
+00533b66 cmp      r4, #0 ; 
+00533b68 beq      #0x533c3a ; 
+00533b6a strd     r0, r0, [sp, #0x20] ; 
+00533b6e str      r0, [sp, #0x28] ; 
+00533b70 movs     r0, #8 ; 
+00533b72 blx      #0x4a42a0 ; operator new(unsigned int)
+00533b76 ldr      r1, [pc, #0x21c] ; 
+00533b78 add.w    r3, r0, #8 ; 
+00533b7c strd     r0, r0, [sp, #0x20] ; 
+00533b80 add      r1, pc ; 
+00533b82 str      r3, [sp, #0x28] ; 
+00533b84 ldrd     r1, r2, [r1] ; 
+00533b88 strd     r1, r2, [r0] ; 
+00533b8c ldr      r0, [sp, #0x24] ; 
+00533b8e adds     r0, #8 ; 
+00533b90 str      r0, [sp, #0x24] ; 
+00533b92 mov      r0, sb ; 
+00533b94 blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+00533b98 str      r0, [sp] ; 
+00533b9a adr      r0, #0x1fc ; 
+00533b9c add      r1, sp, #0x20 ; 
+00533b9e adr      r2, #0x214 ; 
+00533ba0 mov      r3, r6 ; 
+00533ba2 blx      #0x4a4f90 ; Anki::Util::sEventF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00533ba6 ldr      r0, [sp, #0x20] ; 
+00533ba8 cbz      r0, #0x533bc8 ; 
+00533baa ldr      r1, [sp, #0x24] ; 
+00533bac cmp      r1, r0 ; 
+00533bae itttt    ne ; 
+00533bb0 subne.w  r2, r1, #8 ; 
+00533bb4 subne    r2, r2, r0 ; 
+00533bb6 mvnne    r3, #7 ; 
+00533bba bicne.w  r2, r3, r2 ; 
+00533bbe itt      ne ; 
+00533bc0 addne    r1, r1, r2 ; 
+00533bc2 strne    r1, [sp, #0x24] ; 
+00533bc4 blx      #0x4a40cc ; operator delete(void*)
+00533bc8 ldr.w    r1, [r8, #0x34] ; 
+00533bcc add      r0, sp, #0x20 ; 
+00533bce mov      r2, r7 ; 
+00533bd0 mov      r3, r6 ; 
+00533bd2 str.w    sb, [sp] ; 
+00533bd6 blx      #0x4aa0a8 ; Anki::Cozmo::BlockWorld::AddConnectedActiveObject(int, unsigned int, Anki::Cozmo::ObjectType)
+00533bda ldr      r5, [sp, #0x24] ; 
+00533bdc adds     r0, r5, #1 ; 
+00533bde beq      #0x533cb8 ; 
+00533be0 movs     r0, #0 ; 
+00533be2 strd     r0, r0, [sp, #0x20] ; 
+00533be6 str      r0, [sp, #0x28] ; 
+00533be8 mov      r0, sb ; 
+00533bea blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+00533bee ldr      r1, [pc, #0x1d0] ; 
+00533bf0 ldr.w    ip, [pc, #0x1c8] ; 
+00533bf4 add      r1, pc ; 
+00533bf6 add      ip, pc ; 
+00533bf8 add      r2, sp, #0x20 ; 
+00533bfa adr      r3, #0x1c8 ; 
+00533bfc strd     r5, r7, [sp] ; 
+00533c00 strd     r6, r0, [sp, #8] ; 
+00533c04 mov      r0, ip ; 
+00533c06 blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00533c0a ldr      r0, [sp, #0x20] ; 
+00533c0c cbz      r0, #0x533c2c ; 
+00533c0e ldr      r1, [sp, #0x24] ; 
+00533c10 cmp      r1, r0 ; 
+00533c12 itttt    ne ; 
+00533c14 subne.w  r2, r1, #8 ; 
+00533c18 subne    r2, r2, r0 ; 
+00533c1a mvnne    r3, #7 ; 
+00533c1e bicne.w  r2, r3, r2 ; 
+00533c22 itt      ne ; 
+00533c24 addne    r1, r1, r2 ; 
+00533c26 strne    r1, [sp, #0x24] ; 
+00533c28 blx      #0x4a40cc ; operator delete(void*)
+00533c2c mov      r0, r8 ; 
+00533c2e mov      r1, r7 ; 
+00533c30 mov      r2, r6 ; 
+00533c32 mov      r3, sb ; 
+00533c34 blx      #0x4aa0b4 ; Anki::Cozmo::Robot::HandleConnectedToObject(unsigned int, unsigned int, Anki::Cozmo::ObjectType)
+00533c38 b        #0x533cbc ; 
+00533c3a strd     r0, r0, [sp, #0x20] ; 
+00533c3e str      r0, [sp, #0x28] ; 
+00533c40 movs     r0, #8 ; 
+00533c42 blx      #0x4a42a0 ; operator new(unsigned int)
+00533c46 ldr      r1, [pc, #0x1b8] ; 
+00533c48 add.w    r3, r0, #8 ; 
+00533c4c strd     r0, r0, [sp, #0x20] ; 
+00533c50 add      r1, pc ; 
+00533c52 str      r3, [sp, #0x28] ; 
+00533c54 ldrd     r1, r2, [r1] ; 
+00533c58 strd     r1, r2, [r0] ; 
+00533c5c ldr      r0, [sp, #0x24] ; 
+00533c5e adds     r0, #8 ; 
+00533c60 str      r0, [sp, #0x24] ; 
+00533c62 mov      r0, sb ; 
+00533c64 blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+00533c68 str      r0, [sp] ; 
+00533c6a adr      r0, #0x12c ; 
+00533c6c add      r1, sp, #0x20 ; 
+00533c6e adr      r2, #0x144 ; 
+00533c70 mov      r3, r6 ; 
+00533c72 blx      #0x4a4f90 ; Anki::Util::sEventF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00533c76 ldr      r0, [sp, #0x20] ; 
+00533c78 cbz      r0, #0x533c98 ; 
+00533c7a ldr      r1, [sp, #0x24] ; 
+00533c7c cmp      r1, r0 ; 
+00533c7e itttt    ne ; 
+00533c80 subne.w  r2, r1, #8 ; 
+00533c84 subne    r2, r2, r0 ; 
+00533c86 mvnne    r3, #7 ; 
+00533c8a bicne.w  r2, r3, r2 ; 
+00533c8e itt      ne ; 
+00533c90 addne    r1, r1, r2 ; 
+00533c92 strne    r1, [sp, #0x24] ; 
+00533c94 blx      #0x4a40cc ; operator delete(void*)
+00533c98 ldr.w    r1, [r8, #0x34] ; 
+00533c9c add      r0, sp, #0x20 ; 
+00533c9e mov      r2, r7 ; 
+00533ca0 blx      #0x4aa0c0 ; Anki::Cozmo::BlockWorld::RemoveConnectedActiveObject(int)
+00533ca4 ldr      r5, [sp, #0x24] ; 
+00533ca6 adds     r0, r5, #1 ; 
+00533ca8 beq      #0x533cb8 ; 
+00533caa mov      r0, r8 ; 
+00533cac mov      r1, r7 ; 
+00533cae mov      r2, r6 ; 
+00533cb0 mov      r3, sb ; 
+00533cb2 blx      #0x4aa0cc ; Anki::Cozmo::Robot::HandleDisconnectedFromObject(unsigned int, unsigned int, Anki::Cozmo::ObjectType)
+00533cb6 b        #0x533cbc ; 
+00533cb8 mov.w    r5, #-1 ; 
+00533cbc ldr      r0, [pc, #0x144] ; 
+00533cbe movs     r2, #0 ; 
+00533cc0 ldr      r1, [pc, #0x144] ; 
+00533cc2 add      r0, pc ; 
+00533cc4 strd     r2, r2, [sp, #0x20] ; 
+00533cc8 add      r1, pc ; 
+00533cca str      r2, [sp, #0x28] ; 
+00533ccc add      r2, sp, #0x20 ; 
+00533cce adr      r3, #0x13c ; 
+00533cd0 strd     r6, r4, [sp] ; 
+00533cd4 blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00533cd8 ldr      r0, [sp, #0x20] ; 
+00533cda cbz      r0, #0x533cfa ; 
+00533cdc ldr      r1, [sp, #0x24] ; 
+00533cde cmp      r1, r0 ; 
+00533ce0 itttt    ne ; 
+00533ce2 subne.w  r2, r1, #8 ; 
+00533ce6 subne    r2, r2, r0 ; 
+00533ce8 mvnne    r3, #7 ; 
+00533cec bicne.w  r2, r3, r2 ; 
+00533cf0 itt      ne ; 
+00533cf2 addne    r1, r1, r2 ; 
+00533cf4 strne    r1, [sp, #0x24] ; 
+00533cf6 blx      #0x4a40cc ; operator delete(void*)
+00533cfa ldr.w    r0, [r8] ; 
+00533cfe mov      r3, r4 ; 
+00533d00 cmp      r4, #0 ; 
+00533d02 mov      r1, r7 ; 
+00533d04 mov      r2, sb ; 
+00533d06 ldr      r0, [r0, #0x24] ; 
+00533d08 it       ne ; 
+00533d0a movne    r3, #1 ; 
+00533d0c blx      #0x4aa0d8 ; Anki::Cozmo::VizManager::SendObjectConnectionState(unsigned int, Anki::Cozmo::ObjectType, bool)
+00533d10 adds     r0, r5, #1 ; 
+00533d12 beq      #0x533d36 ; 
+00533d14 add      r0, sp, #0x10 ; 
+00533d16 add      r1, sp, #0x10 ; 
+00533d18 stm.w    r0, {r5, r6, sb} ; 
+00533d1c add      r5, sp, #0x20 ; 
+00533d1e mov      r0, r5 ; 
+00533d20 strb.w   r4, [sp, #0x1c] ; 
+00533d24 blx      #0x4aa0e4 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::MessageEngineToGame(Anki::Cozmo::ObjectConnectionState&&)
+00533d28 mov      r0, r8 ; 
+00533d2a mov      r1, r5 ; 
+00533d2c blx      #0x4a5b0c ; Anki::Cozmo::Robot::Broadcast(Anki::Cozmo::ExternalInterface::MessageEngineToGame&&)
+00533d30 add      r0, sp, #0x20 ; 
+
+Anki::Cozmo::BlockFilter::HandleGameEvents(Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&) [00619e7c, 0061a160)
+00619e7c push.w   {r4, r5, r6, r7, r8, sb, sl, fp, lr} ; 
+00619e80 sub      sp, #0x1c ; 
+00619e82 mov      r6, r1 ; 
+00619e84 mov      fp, r0 ; 
+00619e86 ldrh     r3, [r6, #0x10]! ; 
+00619e8a sub.w    r0, r3, #0xe5 ; 
+00619e8e cmp      r0, #6 ; 
+00619e90 bhi      #0x619f0c ; 
+00619e92 tbh      [pc, r0, lsl #1] ; 
+00619e96 movs     r7, r0 ; 
+00619e98 movs     r2, r2 ; 
+00619e9a movs     r5, r6 ; 
+00619e9c movs     r3, r7 ; 
+00619e9e lsls     r1, r4, #2 ; 
+00619ea0 lsls     r1, r2, #4 ; 
+00619ea2 lsls     r4, r4, #1 ; 
+00619ea4 mov      r0, r6 ; 
+00619ea6 blx      #0x4b7ab8 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_BlockPoolEnabledMessage() const
+00619eaa ldr      r2, [r0] ; 
+00619eac ldrb     r1, [r0, #4] ; 
+00619eae mov      r0, fp ; 
+00619eb0 add      sp, #0x1c ; 
+00619eb2 pop.w    {r4, r5, r6, r7, r8, sb, sl, fp, lr} ; 
+00619eb6 b.w      #0x8cca3c ; 
+00619eba mov      r0, r6 ; 
+00619ebc blx      #0x4b7ac4 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_BlockSelectedMessage() const
+00619ec0 ldrb     r2, [r0, #8] ; 
+00619ec2 ldr      r1, [r0] ; 
+00619ec4 cmp      r2, #0 ; 
+00619ec6 beq.w    #0x61a11a ; 
+00619eca ldr      r2, [r0, #4] ; 
+00619ecc mov      r0, fp ; 
+00619ece blx      #0x4b7ad0 ; Anki::Cozmo::BlockFilter::AddObjectToPersistentPool(unsigned int, Anki::Cozmo::ObjectType)
+00619ed2 cmp      r0, #1 ; 
+00619ed4 bne.w    #0x61a15a ; 
+00619ed8 add.w    r0, fp, #4 ; 
+00619edc add.w    r1, fp, #0x2c ; 
+00619ee0 ldm      r0!, {r2, r3, r5, r6, r7} ; 
+00619ee2 stm      r1!, {r2, r3, r5, r6, r7} ; 
+00619ee4 ldm.w    r0, {r2, r3, r5, r6, r7} ; 
+00619ee8 movs     r0, #0 ; 
+00619eea stm      r1!, {r2, r3, r5, r6, r7} ; 
+00619eec add      r1, sp, #8 ; 
+00619eee add.w    r2, fp, r0, lsl #3 ; 
+00619ef2 ldr      r2, [r2, #0x2c] ; 
+00619ef4 str.w    r2, [r1, r0, lsl #2] ; 
+00619ef8 adds     r0, #1 ; 
+00619efa cmp      r0, #5 ; 
+00619efc bne      #0x619eee ; 
+00619efe b        #0x61a14a ; 
+00619f00 mov      r0, fp ; 
+00619f02 add      sp, #0x1c ; 
+00619f04 pop.w    {r4, r5, r6, r7, r8, sb, sl, fp, lr} ; 
+00619f08 b.w      #0x8cca4c ; 
+00619f0c movs     r0, #0 ; 
+00619f0e strd     r0, r0, [sp, #8] ; 
+00619f12 str      r0, [sp, #0x10] ; 
+00619f14 adr      r0, #0x294 ; 
+00619f16 add      r1, sp, #8 ; 
+00619f18 adr      r2, #0x2c4 ; 
+00619f1a blx      #0x4a4108 ; Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00619f1e ldr      r0, [sp, #8] ; 
+00619f20 cbz      r0, #0x619f40 ; 
+00619f22 ldr      r1, [sp, #0xc] ; 
+00619f24 cmp      r1, r0 ; 
+00619f26 itttt    ne ; 
+00619f28 subne.w  r2, r1, #8 ; 
+00619f2c subne    r2, r2, r0 ; 
+00619f2e mvnne    r3, #7 ; 
+00619f32 bicne.w  r2, r3, r2 ; 
+00619f36 itt      ne ; 
+00619f38 addne    r1, r1, r2 ; 
+00619f3a strne    r1, [sp, #0xc] ; 
+00619f3c blx      #0x4a40cc ; operator delete(void*)
+00619f40 ldr      r0, [pc, #0x2a0] ; 
+00619f42 movs     r2, #1 ; 
+00619f44 ldr      r1, [pc, #0x2a0] ; 
+00619f46 add      r0, pc ; 
+00619f48 add      r1, pc ; 
+00619f4a ldr      r0, [r0] ; 
+00619f4c ldr      r1, [r1] ; 
+00619f4e ldrb     r0, [r0] ; 
+00619f50 strb     r2, [r1] ; 
+00619f52 cmp      r0, #0 ; 
+00619f54 beq.w    #0x61a15a ; 
+00619f58 blx      #0x4a4114 ; Anki::Util::sDebugBreakOnError()
+00619f5c b        #0x61a15a ; 
+00619f5e mov      r0, r6 ; 
+00619f60 blx      #0x4b7adc ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_ConnectToSpecificCube() const
+00619f64 add.w    sb, fp, #4 ; 
+00619f68 mov      sl, r0 ; 
+00619f6a add.w    r8, fp, #0x2c ; 
+00619f6e add      r6, sp, #8 ; 
+00619f70 ldr.w    r0, [sl] ; 
+00619f74 mov      r5, sb ; 
+00619f76 str      r0, [sp, #4] ; 
+00619f78 ldr      r0, [r5] ; 
+00619f7a cbnz     r0, #0x619fd0 ; 
+00619f7c ldr.w    r0, [sl, #4] ; 
+00619f80 ldr      r1, [r5, #4] ; 
+00619f82 cmp      r1, r0 ; 
+00619f84 bne      #0x619fd0 ; 
+00619f86 ldr      r0, [sp, #4] ; 
+00619f88 mov      r1, sb ; 
+00619f8a str      r0, [r5] ; 
+00619f8c mov      ip, r8 ; 
+00619f8e ldm      r1!, {r0, r2, r3, r4, r7} ; 
+00619f90 stm.w    ip!, {r0, r2, r3, r4, r7} ; 
+00619f94 ldm.w    r1, {r0, r2, r3, r4, r7} ; 
+00619f98 stm.w    ip, {r0, r2, r3, r4, r7} ; 
+00619f9c movs     r0, #0 ; 
+00619f9e add.w    r1, fp, r0, lsl #3 ; 
+00619fa2 ldr      r1, [r1, #0x2c] ; 
+00619fa4 str.w    r1, [r6, r0, lsl #2] ; 
+00619fa8 adds     r0, #1 ; 
+00619faa cmp      r0, #5 ; 
+00619fac bne      #0x619f9e ; 
+00619fae ldr.w    r0, [fp] ; 
+00619fb2 mov      r1, r6 ; 
+00619fb4 blx      #0x4b7ae8 ; Anki::Cozmo::Robot::ConnectToObjects(std::__ndk1::array<unsigned int, (unsigned int)5> const&)
+00619fb8 mov      r0, fp ; 
+00619fba blx      #0x4b7af4 ; Anki::Cozmo::BlockFilter::SendBlockPoolData() const
+00619fbe mov      r0, fp ; 
+00619fc0 blx      #0x4b7b00 ; Anki::Cozmo::BlockFilter::Save() const
+00619fc4 blx      #0x4a4f6c ; Anki::BaseStationTimer::getInstance()
+00619fc8 blx      #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds() const
+00619fcc str.w    r0, [fp, #0x78] ; 
+00619fd0 adds     r5, #8 ; 
+00619fd2 cmp      r5, r8 ; 
+00619fd4 bne      #0x619f78 ; 
+00619fd6 b        #0x61a15a ; 
+00619fd8 ldr      r0, [pc, #0x1b0] ; 
+00619fda movs     r2, #0 ; 
+00619fdc ldr      r1, [pc, #0x1b0] ; 
+00619fde add      r0, pc ; 
+00619fe0 strd     r2, r2, [sp, #8] ; 
+00619fe4 add      r1, pc ; 
+00619fe6 str      r2, [sp, #0x10] ; 
+00619fe8 add.w    sb, sp, #8 ; 
+00619fec adr      r3, #0x1a4 ; 
+00619fee mov      r2, sb ; 
+00619ff0 blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00619ff4 ldr      r0, [sp, #8] ; 
+00619ff6 cbz      r0, #0x61a016 ; 
+00619ff8 ldr      r1, [sp, #0xc] ; 
+00619ffa cmp      r1, r0 ; 
+00619ffc itttt    ne ; 
+00619ffe subne.w  r2, r1, #8 ; 
+0061a002 subne    r2, r2, r0 ; 
+0061a004 mvnne    r3, #7 ; 
+0061a008 bicne.w  r2, r3, r2 ; 
+0061a00c itt      ne ; 
+0061a00e addne    r1, r1, r2 ; 
+0061a010 strne    r1, [sp, #0xc] ; 
+0061a012 blx      #0x4a40cc ; operator delete(void*)
+0061a016 mov      r0, r6 ; 
+0061a018 blx      #0x4b7b0c ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_BlockPoolResetMessage() const
+0061a01c mov      r8, r0 ; 
+0061a01e ldr.w    r2, [fp, #0x6c] ; 
+0061a022 ldrb.w   r1, [r8] ; 
+0061a026 mov      r0, fp ; 
+0061a028 blx      #0x4b7b18 ; Anki::Cozmo::BlockFilter::Enable(bool, float)
+0061a02c add.w    r1, fp, #0x54 ; 
+0061a030 add.w    r0, fp, #0x2c ; 
+0061a034 movs     r2, #0x2c ; 
+0061a036 movs     r3, #0 ; 
+0061a038 mov.w    r7, #-1 ; 
+0061a03c add.w    r6, fp, r2 ; 
+0061a040 str.w    r3, [fp, r2] ; 
+0061a044 adds     r2, #8 ; 
+0061a046 str      r7, [r6, #4] ; 
+0061a048 adds     r6, #8 ; 
+0061a04a cmp      r6, r1 ; 
+0061a04c bne      #0x61a03c ; 
+0061a04e ldrb.w   r2, [r8, #1] ; 
+0061a052 movs     r1, #0 ; 
+0061a054 cbnz     r2, #0x61a072 ; 
+0061a056 add.w    r2, fp, #4 ; 
+0061a05a mov.w    r3, #-1 ; 
+0061a05e strd     r1, r3, [r2], #8 ; 
+0061a062 cmp      r2, r0 ; 
+0061a064 bne      #0x61a05e ; 
+0061a066 ldrb.w   r2, [r8, #1] ; 
+0061a06a movs     r1, #0 ; 
+0061a06c cmp      r2, #0 ; 
+0061a06e it       eq ; 
+0061a070 moveq    r1, #1 ; 
+0061a072 ldrb.w   r2, [r8] ; 
+0061a076 cbz      r2, #0x61a088 ; 
+0061a078 cbnz     r1, #0x61a088 ; 
+0061a07a add.w    r1, fp, #4 ; 
+0061a07e ldm      r1!, {r2, r3, r5, r6, r7} ; 
+0061a080 stm      r0!, {r2, r3, r5, r6, r7} ; 
+0061a082 ldm.w    r1, {r2, r3, r5, r6, r7} ; 
+0061a086 stm      r0!, {r2, r3, r5, r6, r7} ; 
+0061a088 movs     r0, #0 ; 
+0061a08a add.w    r1, fp, r0, lsl #3 ; 
+0061a08e ldr      r1, [r1, #0x2c] ; 
+0061a090 str.w    r1, [sb, r0, lsl #2] ; 
+0061a094 adds     r0, #1 ; 
+0061a096 cmp      r0, #5 ; 
+0061a098 bne      #0x61a08a ; 
+0061a09a ldr.w    r0, [fp] ; 
+0061a09e add      r1, sp, #8 ; 
+0061a0a0 blx      #0x4b7ae8 ; Anki::Cozmo::Robot::ConnectToObjects(std::__ndk1::array<unsigned int, (unsigned int)5> const&)
+0061a0a4 mov      r0, fp ; 
+0061a0a6 blx      #0x4b7b00 ; Anki::Cozmo::BlockFilter::Save() const
+0061a0aa blx      #0x4a4f6c ; Anki::BaseStationTimer::getInstance()
+0061a0ae blx      #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds() const
+0061a0b2 str.w    r0, [fp, #0x78] ; 
+0061a0b6 b        #0x61a15a ; 
+0061a0b8 mov      r0, r6 ; 
+0061a0ba blx      #0x4b7b24 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_DisconnectFromSpecificCube() const
+0061a0be ldr.w    sb, [r0] ; 
+0061a0c2 add.w    r7, fp, #4 ; 
+0061a0c6 add.w    sl, fp, #0x2c ; 
+0061a0ca add.w    r8, sp, #8 ; 
+0061a0ce str      r7, [sp, #4] ; 
+0061a0d0 ldr      r0, [r7] ; 
+0061a0d2 cmp      r0, sb ; 
+0061a0d4 bne      #0x61a112 ; 
+0061a0d6 movs     r0, #0 ; 
+0061a0d8 mov      r2, sl ; 
+0061a0da str      r0, [r7] ; 
+0061a0dc ldr.w    ip, [sp, #4] ; 
+0061a0e0 ldm.w    ip!, {r1, r3, r4, r5, r6} ; 
+0061a0e4 stm      r2!, {r1, r3, r4, r5, r6} ; 
+0061a0e6 ldm.w    ip, {r1, r3, r4, r5, r6} ; 
+0061a0ea stm      r2!, {r1, r3, r4, r5, r6} ; 
+0061a0ec add.w    r1, fp, r0, lsl #3 ; 
+0061a0f0 ldr      r1, [r1, #0x2c] ; 
+0061a0f2 str.w    r1, [r8, r0, lsl #2] ; 
+0061a0f6 adds     r0, #1 ; 
+0061a0f8 cmp      r0, #5 ; 
+0061a0fa bne      #0x61a0ec ; 
+0061a0fc ldr.w    r0, [fp] ; 
+0061a100 mov      r1, r8 ; 
+0061a102 blx      #0x4b7ae8 ; Anki::Cozmo::Robot::ConnectToObjects(std::__ndk1::array<unsigned int, (unsigned int)5> const&)
+0061a106 mov      r0, fp ; 
+0061a108 blx      #0x4b7af4 ; Anki::Cozmo::BlockFilter::SendBlockPoolData() const
+0061a10c mov      r0, fp ; 
+0061a10e blx      #0x4b7b00 ; Anki::Cozmo::BlockFilter::Save() const
+0061a112 adds     r7, #8 ; 
+0061a114 cmp      r7, sl ; 
+0061a116 bne      #0x61a0d0 ; 
+0061a118 b        #0x61a15a ; 
+0061a11a mov      r0, fp ; 
+0061a11c blx      #0x4b7b30 ; Anki::Cozmo::BlockFilter::RemoveObjectFromPersistentPool(unsigned int)
+0061a120 cmp      r0, #1 ; 
+0061a122 bne      #0x61a15a ; 
+0061a124 add.w    r0, fp, #4 ; 
+0061a128 add.w    r1, fp, #0x2c ; 
+0061a12c ldm      r0!, {r2, r3, r5, r6, r7} ; 
+0061a12e stm      r1!, {r2, r3, r5, r6, r7} ; 
+0061a130 ldm.w    r0, {r2, r3, r5, r6, r7} ; 
+0061a134 movs     r0, #0 ; 
+0061a136 stm      r1!, {r2, r3, r5, r6, r7} ; 
+0061a138 add      r1, sp, #8 ; 
+0061a13a add.w    r2, fp, r0, lsl #3 ; 
+0061a13e ldr      r2, [r2, #0x2c] ; 
+0061a140 str.w    r2, [r1, r0, lsl #2] ; 
+0061a144 adds     r0, #1 ; 
+0061a146 cmp      r0, #5 ; 
+0061a148 bne      #0x61a13a ; 
+0061a14a ldr.w    r0, [fp] ; 
+0061a14e add      r1, sp, #8 ; 
+0061a150 blx      #0x4b7ae8 ; Anki::Cozmo::Robot::ConnectToObjects(std::__ndk1::array<unsigned int, (unsigned int)5> const&)
+0061a154 mov      r0, fp ; 
+0061a156 blx      #0x4b7af4 ; Anki::Cozmo::BlockFilter::SendBlockPoolData() const
+0061a15a add      sp, #0x1c ; 
+0061a15c pop.w    {r4, r5, r6, r7, r8, sb, sl, fp, pc} ; 
+
+Anki::Cozmo::BlockFilter::Init(std::__ndk1::basic_string<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char> > const&) [0061a1ec, 0061a282)
+0061a1ec push.w   {r4, r5, r6, r7, r8, lr} ; 
+0061a1f0 sub      sp, #0x18 ; 
+0061a1f2 mov      r8, r0 ; 
+0061a1f4 add.w    r0, r8, #0x60 ; 
+0061a1f8 mov      r5, r1 ; 
+0061a1fa bl       #0x4e462a ; 
+0061a1fe movs     r0, #0 ; 
+0061a200 strd     r0, r0, [sp, #4] ; 
+0061a204 str      r0, [sp, #0xc] ; 
+0061a206 ldr      r0, [pc, #0xa4] ; 
+0061a208 ldrb     r2, [r5] ; 
+0061a20a ldr      r1, [r5, #8] ; 
+0061a20c add      r0, pc ; 
+0061a20e tst.w    r2, #1 ; 
+0061a212 it       eq ; 
+0061a214 addeq    r1, r5, #1 ; 
+0061a216 add      r5, sp, #4 ; 
+0061a218 str      r1, [sp] ; 
+0061a21a adr      r1, #0x94 ; 
+0061a21c adr      r3, #0xa4 ; 
+0061a21e mov      r2, r5 ; 
+0061a220 blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0061a224 ldr      r0, [sp, #4] ; 
+0061a226 cbz      r0, #0x61a246 ; 
+0061a228 ldr      r1, [sp, #8] ; 
+0061a22a cmp      r1, r0 ; 
+0061a22c itttt    ne ; 
+0061a22e subne.w  r2, r1, #8 ; 
+0061a232 subne    r2, r2, r0 ; 
+0061a234 mvnne    r3, #7 ; 
+0061a238 bicne.w  r2, r3, r2 ; 
+0061a23c itt      ne ; 
+0061a23e addne    r1, r1, r2 ; 
+0061a240 strne    r1, [sp, #8] ; 
+0061a242 blx      #0x4a40cc ; operator delete(void*)
+0061a246 mov      r0, r8 ; 
+0061a248 blx      #0x4b7b3c ; Anki::Cozmo::BlockFilter::Load()
+0061a24c add.w    ip, r8, #4 ; 
+0061a250 add.w    r0, r8, #0x2c ; 
+0061a254 mov      r2, r0 ; 
+0061a256 ldm.w    ip!, {r1, r3, r4, r6, r7} ; 
+0061a25a stm      r2!, {r1, r3, r4, r6, r7} ; 
+0061a25c ldm.w    ip, {r1, r3, r4, r6, r7} ; 
+0061a260 stm      r2!, {r1, r3, r4, r6, r7} ; 
+0061a262 movs     r1, #0 ; 
+0061a264 ldr.w    r2, [r0, r1, lsl #3] ; 
+0061a268 str.w    r2, [r5, r1, lsl #2] ; 
+0061a26c adds     r1, #1 ; 
+0061a26e cmp      r1, #5 ; 
+0061a270 bne      #0x61a264 ; 
+0061a272 ldr.w    r0, [r8] ; 
+0061a276 add      r1, sp, #4 ; 
+0061a278 blx      #0x4b7ae8 ; Anki::Cozmo::Robot::ConnectToObjects(std::__ndk1::array<unsigned int, (unsigned int)5> const&)
+0061a27c add      sp, #0x18 ; 
+0061a27e pop.w    {r4, r5, r6, r7, r8, pc} ; 
+
+Anki::Cozmo::BlockFilter::Update() [0061a79a, 0061a7ec)
+0061a79a push     {r4, lr} ; 
+0061a79c vpush    {d8} ; 
+0061a7a0 mov      r4, r0 ; 
+0061a7a2 ldrb.w   r0, [r4, #0x7c] ; 
+0061a7a6 cbz      r0, #0x61a7e4 ; 
+0061a7a8 blx      #0x4a4f6c ; Anki::BaseStationTimer::getInstance()
+0061a7ac blx      #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds() const
+0061a7b0 vldr     s0, [r4, #0x78] ; 
+0061a7b4 vmov     s16, r0 ; 
+0061a7b8 vcmpe.f32 s0, #0 ; 
+0061a7bc vmrs     apsr_nzcv, fpscr ; 
+0061a7c0 ble      #0x61a7d4 ; 
+0061a7c2 vmov.f32 s2, #2.000000e+00 ; 
+0061a7c6 vadd.f32 s0, s0, s2 ; 
+0061a7ca vcmpe.f32 s16, s0 ; 
+0061a7ce vmrs     apsr_nzcv, fpscr ; 
+0061a7d2 bmi      #0x61a7e4 ; 
+0061a7d4 mov      r0, r4 ; 
+0061a7d6 blx      #0x4b7b78 ; Anki::Cozmo::BlockFilter::UpdateDiscovering()
+0061a7da mov      r0, r4 ; 
+0061a7dc blx      #0x4b7b84 ; Anki::Cozmo::BlockFilter::UpdateConnecting()
+0061a7e0 vstr     s16, [r4, #0x78] ; 
+0061a7e4 vpop     {d8} ; 
+0061a7e8 pop      {r4, pc} ; 
+0061a7ea movs     r0, r0 ; 
+
+Anki::Cozmo::BlockFilter::UpdateDiscovering() [0061a7ec, 0061a9d4)
+0061a7ec push.w   {r4, r5, r6, r7, r8, sb, sl, fp, lr} ; 
+0061a7f0 sub      sp, #4 ; 
+0061a7f2 vpush    {d8} ; 
+0061a7f6 sub      sp, #0x30 ; 
+0061a7f8 mov      r4, r0 ; 
+0061a7fa ldr      r0, [pc, #0x204] ; 
+0061a7fc adr      r7, #0x204 ; 
+0061a7fe add      r5, sp, #0x14 ; 
+0061a800 add      r0, pc ; 
+0061a802 add.w    sl, sp, #0x10 ; 
+0061a806 movs     r6, #0 ; 
+0061a808 ldr.w    r8, [r0] ; 
+0061a80c add.w    r0, r4, #0x54 ; 
+0061a810 str      r0, [sp, #0xc] ; 
+0061a812 ldr      r0, [pc, #0x260] ; 
+0061a814 add      r0, pc ; 
+0061a816 ldr      r0, [r0] ; 
+0061a818 add.w    sb, r0, #0xc ; 
+0061a81c ldr.w    r0, [r8] ; 
+0061a820 movs     r1, #8 ; 
+0061a822 str      r0, [sp, #0x10] ; 
+0061a824 ldr      r2, [r4, r1] ; 
+0061a826 cmp      r2, r0 ; 
+0061a828 beq      #0x61a8de ; 
+0061a82a adds     r1, #8 ; 
+0061a82c cmp      r1, #0x30 ; 
+0061a82e bne      #0x61a824 ; 
+0061a830 strd     r6, r6, [sp, #0x14] ; 
+0061a834 str      r6, [sp, #0x1c] ; 
+0061a836 blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+0061a83a str      r0, [sp] ; 
+0061a83c movs     r0, #0x96 ; 
+0061a83e str      r0, [sp, #4] ; 
+0061a840 adr      r3, #0x1e0 ; 
+0061a842 ldr      r0, [pc, #0x23c] ; 
+0061a844 mov      r1, r7 ; 
+0061a846 mov      r2, r5 ; 
+0061a848 add      r0, pc ; 
+0061a84a blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0061a84e ldr      r0, [sp, #0x14] ; 
+0061a850 cbz      r0, #0x61a870 ; 
+0061a852 ldr      r1, [sp, #0x18] ; 
+0061a854 cmp      r1, r0 ; 
+0061a856 itttt    ne ; 
+0061a858 subne.w  r2, r1, #8 ; 
+0061a85c subne    r2, r2, r0 ; 
+0061a85e mvnne    r3, #7 ; 
+0061a862 bicne.w  r2, r3, r2 ; 
+0061a866 itt      ne ; 
+0061a868 addne    r1, r1, r2 ; 
+0061a86a strne    r1, [sp, #0x18] ; 
+0061a86c blx      #0x4a40cc ; operator delete(void*)
+0061a870 ldr      r0, [r4] ; 
+0061a872 movs     r2, #0x96 ; 
+0061a874 ldr      r1, [sp, #0x10] ; 
+0061a876 blx      #0x4b7b90 ; Anki::Cozmo::Robot::GetClosestDiscoveredObjectsOfType(Anki::Cozmo::ObjectType, unsigned char) const
+0061a87a mov      fp, r0 ; 
+0061a87c cmp.w    fp, #0 ; 
+0061a880 beq      #0x61a8de ; 
+0061a882 strd     r6, r6, [sp, #0x14] ; 
+0061a886 str      r6, [sp, #0x1c] ; 
+0061a888 ldr      r0, [pc, #0x1f8] ; 
+0061a88a adr      r3, #0x1c8 ; 
+0061a88c mov      r1, r7 ; 
+0061a88e mov      r2, r5 ; 
+0061a890 add      r0, pc ; 
+0061a892 str.w    fp, [sp] ; 
+0061a896 blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0061a89a ldr      r0, [sp, #0x14] ; 
+0061a89c cbz      r0, #0x61a8bc ; 
+0061a89e ldr      r1, [sp, #0x18] ; 
+0061a8a0 cmp      r1, r0 ; 
+0061a8a2 itttt    ne ; 
+0061a8a4 subne.w  r2, r1, #8 ; 
+0061a8a8 subne    r2, r2, r0 ; 
+0061a8aa mvnne    r3, #7 ; 
+0061a8ae bicne.w  r2, r3, r2 ; 
+0061a8b2 itt      ne ; 
+0061a8b4 addne    r1, r1, r2 ; 
+0061a8b6 strne    r1, [sp, #0x18] ; 
+0061a8b8 blx      #0x4a40cc ; operator delete(void*)
+0061a8bc ldr      r3, [pc, #0x1c8] ; 
+0061a8be add      r0, sp, #0x2c ; 
+0061a8c0 ldr      r1, [sp, #0xc] ; 
+0061a8c2 mov      r2, sl ; 
+0061a8c4 str      r0, [sp] ; 
+0061a8c6 add      r0, sp, #0x28 ; 
+0061a8c8 add      r3, pc ; 
+0061a8ca str      r0, [sp, #4] ; 
+0061a8cc mov      r0, r5 ; 
+0061a8ce str.w    sl, [sp, #0x2c] ; 
+0061a8d2 blx      #0x4b7b9c ; std::__ndk1::pair<std::__ndk1::__tree_iterator<std::__ndk1::__value_type<Anki::Cozmo::ObjectType, Anki::Cozmo::BlockFilter::ObjectInfo>, std::__ndk1::__tree_node<std::__ndk1::__value_type<Anki::Cozmo::ObjectType, Anki::Cozmo::BlockFilter::ObjectInfo>, void*>*, int>, bool> std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Cozmo::ObjectType, Anki::Cozmo::BlockFilter::ObjectInfo>, std::__ndk1::__map_value_compare<Anki::Cozmo::ObjectType, std::__ndk1::__value_type<Anki::Cozmo::ObjectType, Anki::Cozmo::BlockFilter::ObjectInfo>, std::__ndk1::less<Anki::Cozmo::ObjectType>, true>, std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Cozmo::ObjectType, Anki::Cozmo::BlockFilter::ObjectInfo> > >::__emplace_unique_key_args<Anki::Cozmo::ObjectType, std::__ndk1::piecewise_construct_t const&, std::__ndk1::tuple<Anki::Cozmo::ObjectType const&>, std::__ndk1::tuple<> >(Anki::Cozmo::ObjectType const&, std::__ndk1::piecewise_construct_t const&, std::__ndk1::tuple<Anki::Cozmo::ObjectType const&>, std::__ndk1::tuple<>)
+0061a8d6 ldrd     r1, r0, [sp, #0x10] ; 
+0061a8da strd     fp, r1, [r0, #0x14] ; 
+0061a8de add.w    r8, r8, #4 ; 
+0061a8e2 cmp      r8, sb ; 
+0061a8e4 bne      #0x61a81c ; 
+0061a8e6 blx      #0x4a4f6c ; Anki::BaseStationTimer::getInstance()
+0061a8ea blx      #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds() const
+0061a8ee vldr     s0, [r4, #0x6c] ; 
+0061a8f2 vmov     s16, r0 ; 
+0061a8f6 vldr     s2, [r4, #0x70] ; 
+0061a8fa vadd.f32 s0, s2, s0 ; 
+0061a8fe vcmpe.f32 s16, s0 ; 
+0061a902 vmrs     apsr_nzcv, fpscr ; 
+0061a906 blt      #0x61a9c8 ; 
+0061a908 ldr      r0, [r4, #0x5c] ; 
+0061a90a cmp      r0, #0 ; 
+0061a90c beq      #0x61a9c8 ; 
+0061a90e ldr      r0, [pc, #0x168] ; 
+0061a910 movs     r1, #0 ; 
+0061a912 ldr      r3, [pc, #0x168] ; 
+0061a914 add      r0, pc ; 
+0061a916 strd     r1, r1, [sp, #0x14] ; 
+0061a91a add      r3, pc ; 
+0061a91c str      r1, [sp, #0x1c] ; 
+0061a91e add.w    r8, sp, #0x14 ; 
+0061a922 adr      r1, #0xe0 ; 
+0061a924 mov      r2, r8 ; 
+0061a926 blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0061a92a ldr      r0, [sp, #0x14] ; 
+0061a92c cbz      r0, #0x61a94c ; 
+0061a92e ldr      r1, [sp, #0x18] ; 
+0061a930 cmp      r1, r0 ; 
+0061a932 itttt    ne ; 
+0061a934 subne.w  r2, r1, #8 ; 
+0061a938 subne    r2, r2, r0 ; 
+0061a93a mvnne    r3, #7 ; 
+0061a93e bicne.w  r2, r3, r2 ; 
+0061a942 itt      ne ; 
+0061a944 addne    r1, r1, r2 ; 
+0061a946 strne    r1, [sp, #0x18] ; 
+0061a948 blx      #0x4a40cc ; operator delete(void*)
+0061a94c ldr      r0, [r4, #0x54] ; 
+0061a94e add.w    r6, r4, #0x58 ; 
+0061a952 cmp      r0, r6 ; 
+0061a954 beq      #0x61a982 ; 
+0061a956 mov      r7, r0 ; 
+0061a958 ldrd     r1, r2, [r0, #0x14] ; 
+0061a95c mov      r0, r4 ; 
+0061a95e blx      #0x4b7ad0 ; Anki::Cozmo::BlockFilter::AddObjectToPersistentPool(unsigned int, Anki::Cozmo::ObjectType)
+0061a962 ldr      r1, [r7, #4] ; 
+0061a964 cmp      r1, #0 ; 
+0061a966 beq      #0x61a972 ; 
+0061a968 mov      r0, r1 ; 
+0061a96a ldr      r1, [r0] ; 
+0061a96c cmp      r1, #0 ; 
+0061a96e bne      #0x61a968 ; 
+0061a970 b        #0x61a97c ; 
+0061a972 ldr      r0, [r7, #8] ; 
+0061a974 ldr      r1, [r0] ; 
+0061a976 cmp      r1, r7 ; 
+0061a978 mov      r7, r0 ; 
+0061a97a bne      #0x61a972 ; 
+0061a97c cmp      r0, r6 ; 
+0061a97e mov      r7, r0 ; 
+0061a980 bne      #0x61a958 ; 
+0061a982 ldr      r1, [r4, #0x58] ; 
+0061a984 ldr      r0, [sp, #0xc] ; 
+0061a986 blx      #0x4a7ab0 ; std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Cozmo::ObjectType, Anki::Cozmo::BlockFilter::ObjectInfo>, std::__ndk1::__map_value_compare<Anki::Cozmo::ObjectType, std::__ndk1::__value_type<Anki::Cozmo::ObjectType, Anki::Cozmo::BlockFilter::ObjectInfo>, std::__ndk1::less<Anki::Cozmo::ObjectType>, true>, std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Cozmo::ObjectType, Anki::Cozmo::BlockFilter::ObjectInfo> > >::destroy(std::__ndk1::__tree_node<std::__ndk1::__value_type<Anki::Cozmo::ObjectType, Anki::Cozmo::BlockFilter::ObjectInfo>, void*>*)
+0061a98a movs     r0, #0 ; 
+0061a98c add.w    ip, r4, #4 ; 
+0061a990 strd     r6, r0, [r4, #0x54] ; 
+0061a994 add.w    r2, r4, #0x2c ; 
+0061a998 str      r0, [r4, #0x5c] ; 
+0061a99a ldm.w    ip!, {r1, r3, r5, r6, r7} ; 
+0061a99e stm      r2!, {r1, r3, r5, r6, r7} ; 
+0061a9a0 ldm.w    ip, {r1, r3, r5, r6, r7} ; 
+0061a9a4 stm      r2!, {r1, r3, r5, r6, r7} ; 
+0061a9a6 add.w    r1, r4, r0, lsl #3 ; 
+0061a9aa ldr      r1, [r1, #0x2c] ; 
+0061a9ac str.w    r1, [r8, r0, lsl #2] ; 
+0061a9b0 adds     r0, #1 ; 
+0061a9b2 cmp      r0, #5 ; 
+0061a9b4 bne      #0x61a9a6 ; 
+0061a9b6 ldr      r0, [r4] ; 
+0061a9b8 add      r1, sp, #0x14 ; 
+0061a9ba blx      #0x4b7ae8 ; Anki::Cozmo::Robot::ConnectToObjects(std::__ndk1::array<unsigned int, (unsigned int)5> const&)
+0061a9be mov      r0, r4 ; 
+0061a9c0 blx      #0x4b7af4 ; Anki::Cozmo::BlockFilter::SendBlockPoolData() const
+0061a9c4 vstr     s16, [r4, #0x74] ; 
+0061a9c8 add      sp, #0x30 ; 
+0061a9ca vpop     {d8} ; 
+0061a9ce add      sp, #4 ; 
+0061a9d0 pop.w    {r4, r5, r6, r7, r8, sb, sl, fp, pc} ; 
+
+Anki::Cozmo::BlockFilter::UpdateConnecting() [0061aa8c, 0061ab9a)
+0061aa8c push.w   {r4, r5, r6, r7, r8, sb, sl, fp, lr} ; 
+0061aa90 sub      sp, #0x1c ; 
+0061aa92 mov      r4, r0 ; 
+0061aa94 blx      #0x4a4f6c ; Anki::BaseStationTimer::getInstance()
+0061aa98 blx      #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds() const
+0061aa9c vmov.f32 s0, #5.000000e+00 ; 
+0061aaa0 vldr     s2, [r4, #0x74] ; 
+0061aaa4 vadd.f32 s0, s2, s0 ; 
+0061aaa8 vmov     s2, r0 ; 
+0061aaac vcmpe.f32 s2, s0 ; 
+0061aab0 vmrs     apsr_nzcv, fpscr ; 
+0061aab4 bmi      #0x61ab94 ; 
+0061aab6 add.w    fp, r4, #0x2c ; 
+0061aaba add.w    sl, r4, #0x54 ; 
+0061aabe adr      r6, #0x104 ; 
+0061aac0 add      r7, sp, #8 ; 
+0061aac2 mov.w    r8, #0 ; 
+0061aac6 mov      sb, fp ; 
+0061aac8 ldr.w    r1, [sb] ; 
+0061aacc cmp      r1, #0 ; 
+0061aace beq      #0x61ab8c ; 
+0061aad0 ldr      r0, [r4] ; 
+0061aad2 blx      #0x4b7ba8 ; Anki::Cozmo::Robot::IsConnectedToObject(unsigned int) const
+0061aad6 cmp      r0, #0 ; 
+0061aad8 bne      #0x61ab8c ; 
+0061aada strd     r8, r8, [sp, #8] ; 
+0061aade str.w    r8, [sp, #0x10] ; 
+0061aae2 ldrd     r5, r0, [sb] ; 
+0061aae6 blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+0061aaea strd     r5, r0, [sp] ; 
+0061aaee adr      r3, #0xf4 ; 
+0061aaf0 ldr      r0, [pc, #0x148] ; 
+0061aaf2 mov      r1, r6 ; 
+0061aaf4 mov      r2, r7 ; 
+0061aaf6 add      r0, pc ; 
+0061aaf8 blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0061aafc ldr      r0, [sp, #8] ; 
+0061aafe cbz      r0, #0x61ab1e ; 
+0061ab00 ldr      r1, [sp, #0xc] ; 
+0061ab02 cmp      r1, r0 ; 
+0061ab04 itttt    ne ; 
+0061ab06 subne.w  r2, r1, #8 ; 
+0061ab0a subne    r2, r2, r0 ; 
+0061ab0c mvnne    r3, #7 ; 
+0061ab10 bicne.w  r2, r3, r2 ; 
+0061ab14 itt      ne ; 
+0061ab16 addne    r1, r1, r2 ; 
+0061ab18 strne    r1, [sp, #0xc] ; 
+0061ab1a blx      #0x4a40cc ; operator delete(void*)
+0061ab1e ldr.w    r1, [sb, #4] ; 
+0061ab22 movs     r2, #0x96 ; 
+0061ab24 ldr      r0, [r4] ; 
+0061ab26 blx      #0x4b7b90 ; Anki::Cozmo::Robot::GetClosestDiscoveredObjectsOfType(Anki::Cozmo::ObjectType, unsigned char) const
+0061ab2a mov      r5, r0 ; 
+0061ab2c cbz      r5, #0x61ab8c ; 
+0061ab2e ldr.w    r0, [sb] ; 
+0061ab32 cmp      r5, r0 ; 
+0061ab34 beq      #0x61ab8c ; 
+0061ab36 strd     r8, r8, [sp, #8] ; 
+0061ab3a str.w    r8, [sp, #0x10] ; 
+0061ab3e ldr      r0, [pc, #0x100] ; 
+0061ab40 adr      r3, #0xd8 ; 
+0061ab42 mov      r1, r6 ; 
+0061ab44 mov      r2, r7 ; 
+0061ab46 add      r0, pc ; 
+0061ab48 str      r5, [sp] ; 
+0061ab4a blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0061ab4e ldr      r0, [sp, #8] ; 
+0061ab50 cbz      r0, #0x61ab70 ; 
+0061ab52 ldr      r1, [sp, #0xc] ; 
+0061ab54 cmp      r1, r0 ; 
+0061ab56 itttt    ne ; 
+0061ab58 subne.w  r2, r1, #8 ; 
+0061ab5c subne    r2, r2, r0 ; 
+0061ab5e mvnne    r3, #7 ; 
+0061ab62 bicne.w  r2, r3, r2 ; 
+0061ab66 itt      ne ; 
+0061ab68 addne    r1, r1, r2 ; 
+0061ab6a strne    r1, [sp, #0xc] ; 
+0061ab6c blx      #0x4a40cc ; operator delete(void*)
+0061ab70 movs     r0, #0 ; 
+0061ab72 str.w    r5, [sb] ; 
+0061ab76 ldr.w    r1, [fp, r0, lsl #3] ; 
+0061ab7a str.w    r1, [r7, r0, lsl #2] ; 
+0061ab7e adds     r0, #1 ; 
+0061ab80 cmp      r0, #5 ; 
+0061ab82 bne      #0x61ab76 ; 
+0061ab84 ldr      r0, [r4] ; 
+0061ab86 mov      r1, r7 ; 
+0061ab88 blx      #0x4b7ae8 ; Anki::Cozmo::Robot::ConnectToObjects(std::__ndk1::array<unsigned int, (unsigned int)5> const&)
+0061ab8c add.w    sb, sb, #8 ; 
+0061ab90 cmp      sb, sl ; 
+0061ab92 bne      #0x61aac8 ; 
+0061ab94 add      sp, #0x1c ; 
+0061ab96 pop.w    {r4, r5, r6, r7, r8, sb, sl, fp, pc} ; 
+
+Anki::Cozmo::BlockFilter::AddObjectToPersistentPool(unsigned int, Anki::Cozmo::ObjectType) [0061ac5c, 0061adac)
+0061ac5c push.w   {r4, r5, r6, r7, r8, lr} ; 
+0061ac60 sub      sp, #0x18 ; 
+0061ac62 mov      r6, r0 ; 
+0061ac64 add.w    r0, r6, #0x2c ; 
+0061ac68 mov      r8, r1 ; 
+0061ac6a mov      r5, r2 ; 
+0061ac6c movs     r1, #4 ; 
+0061ac6e mov      r7, r0 ; 
+0061ac70 ldr      r2, [r6, r1] ; 
+0061ac72 cmp      r2, r8 ; 
+0061ac74 ittt     ne ; 
+0061ac76 addne    r3, r6, r1 ; 
+0061ac78 ldrne    r4, [r3, #4] ; 
+0061ac7a cmpne    r4, r5 ; 
+0061ac7c beq      #0x61acea ; 
+0061ac7e eor.w    r4, r7, r0 ; 
+0061ac82 adds     r1, #8 ; 
+0061ac84 orrs     r2, r4 ; 
+0061ac86 it       eq ; 
+0061ac88 moveq    r7, r3 ; 
+0061ac8a add.w    r2, r3, #8 ; 
+0061ac8e cmp      r2, r0 ; 
+0061ac90 bne      #0x61ac70 ; 
+0061ac92 cmp      r7, r0 ; 
+0061ac94 beq      #0x61ad4c ; 
+0061ac96 movs     r0, #0 ; 
+0061ac98 strd     r0, r0, [sp, #0xc] ; 
+0061ac9c str      r0, [sp, #0x14] ; 
+0061ac9e mov      r0, r5 ; 
+0061aca0 blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+0061aca4 ldr.w    ip, [pc, #0x114] ; 
+0061aca8 add      ip, pc ; 
+0061acaa adr      r1, #0x114 ; 
+0061acac add      r2, sp, #0xc ; 
+0061acae adr      r3, #0x138 ; 
+0061acb0 strd     r8, r0, [sp] ; 
+0061acb4 mov      r0, ip ; 
+0061acb6 blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0061acba ldr      r0, [sp, #0xc] ; 
+0061acbc cbz      r0, #0x61acdc ; 
+0061acbe ldr      r1, [sp, #0x10] ; 
+0061acc0 cmp      r1, r0 ; 
+0061acc2 itttt    ne ; 
+0061acc4 subne.w  r2, r1, #8 ; 
+0061acc8 subne    r2, r2, r0 ; 
+0061acca mvnne    r3, #7 ; 
+0061acce bicne.w  r2, r3, r2 ; 
+0061acd2 itt      ne ; 
+0061acd4 addne    r1, r1, r2 ; 
+0061acd6 strne    r1, [sp, #0x10] ; 
+0061acd8 blx      #0x4a40cc ; operator delete(void*)
+0061acdc mov      r0, r6 ; 
+0061acde strd     r8, r5, [r7] ; 
+0061ace2 blx      #0x4b7b00 ; Anki::Cozmo::BlockFilter::Save() const
+0061ace6 movs     r2, #1 ; 
+0061ace8 b        #0x61ad44 ; 
+0061acea movs     r0, #0 ; 
+0061acec strd     r0, r0, [sp, #0xc] ; 
+0061acf0 str      r0, [sp, #0x14] ; 
+0061acf2 mov      r0, r5 ; 
+0061acf4 blx      #0x4a4720 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ObjectType)
+0061acf8 ldr      r2, [pc, #0x14c] ; 
+0061acfa add      r2, pc ; 
+0061acfc str      r0, [sp] ; 
+0061acfe adr      r0, #0xc0 ; 
+0061ad00 add      r1, sp, #0xc ; 
+0061ad02 mov      r3, r8 ; 
+0061ad04 blx      #0x4a4108 ; Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0061ad08 ldr      r0, [sp, #0xc] ; 
+0061ad0a cbz      r0, #0x61ad2a ; 
+0061ad0c ldr      r1, [sp, #0x10] ; 
+0061ad0e cmp      r1, r0 ; 
+0061ad10 itttt    ne ; 
+0061ad12 subne.w  r2, r1, #8 ; 
+0061ad16 subne    r2, r2, r0 ; 
+0061ad18 mvnne    r3, #7 ; 
+0061ad1c bicne.w  r2, r3, r2 ; 
+0061ad20 itt      ne ; 
+0061ad22 addne    r1, r1, r2 ; 
+0061ad24 strne    r1, [sp, #0x10] ; 
+0061ad26 blx      #0x4a40cc ; operator delete(void*)
+0061ad2a ldr      r0, [pc, #0x120] ; 
+0061ad2c ldr      r1, [pc, #0x120] ; 
+0061ad2e add      r0, pc ; 
+0061ad30 add      r1, pc ; 
+0061ad32 ldr      r0, [r0] ; 
+0061ad34 movs     r2, #1 ; 
+0061ad36 ldr      r1, [r1] ; 
+0061ad38 strb     r2, [r0] ; 
+0061ad3a ldrb     r0, [r1] ; 
+0061ad3c cbz      r0, #0x61ad42 ; 
+0061ad3e blx      #0x4a4114 ; Anki::Util::sDebugBreakOnError()
+0061ad42 movs     r2, #0 ; 
+0061ad44 mov      r0, r2 ; 
+0061ad46 add      sp, #0x18 ; 
+0061ad48 pop.w    {r4, r5, r6, r7, r8, pc} ; 
+0061ad4c ldr      r2, [pc, #0xd0] ; 
+0061ad4e movs     r0, #0 ; 
+0061ad50 strd     r0, r0, [sp, #0xc] ; 
+0061ad54 add      r2, pc ; 
+0061ad56 str      r0, [sp, #0x14] ; 
+0061ad58 adr      r0, #0xc8 ; 
+0061ad5a add      r1, sp, #0xc ; 
+0061ad5c mov      r3, r8 ; 
+0061ad5e blx      #0x4a4108 ; Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0061ad62 ldr      r0, [sp, #0xc] ; 
+0061ad64 cbz      r0, #0x61ad84 ; 
+0061ad66 ldr      r1, [sp, #0x10] ; 
+0061ad68 cmp      r1, r0 ; 
+0061ad6a itttt    ne ; 
+0061ad6c subne.w  r2, r1, #8 ; 
+0061ad70 subne    r2, r2, r0 ; 
+0061ad72 mvnne    r3, #7 ; 
+0061ad76 bicne.w  r2, r3, r2 ; 
+0061ad7a itt      ne ; 
+0061ad7c addne    r1, r1, r2 ; 
+0061ad7e strne    r1, [sp, #0x10] ; 
+0061ad80 blx      #0x4a40cc ; operator delete(void*)
+0061ad84 ldr      r0, [pc, #0xb8] ; 
+0061ad86 ldr      r1, [pc, #0xbc] ; 
+0061ad88 add      r0, pc ; 
+0061ad8a add      r1, pc ; 
+0061ad8c b        #0x61ad32 ; 
+0061ad8e b        #0x61ad92 ; 
+0061ad90 b        #0x61ad92 ; 
+0061ad92 mov      r4, r0 ; 
+0061ad94 ldr      r0, [sp, #0xc] ; 
+0061ad96 cbz      r0, #0x61adb4 ; 
+0061ad98 ldr      r1, [sp, #0x10] ; 
+0061ad9a cmp      r1, r0 ; 
+0061ad9c beq      #0x61adb0 ; 
+0061ad9e sub.w    r2, r1, #8 ; 
+0061ada2 mvn      r3, #7 ; 
+0061ada6 subs     r2, r2, r0 ; 
+0061ada8 bic.w    r2, r3, r2 ; 
+
+Anki::Cozmo::BlockFilter::Enable(bool, float) [0061b59c, 0061b62a)
+0061b59c push     {r4, r5, r7, lr} ; 
+0061b59e vpush    {d8} ; 
+0061b5a2 sub      sp, #0x18 ; 
+0061b5a4 vmov     s16, r2 ; 
+0061b5a8 mov      r5, r1 ; 
+0061b5aa mov      r4, r0 ; 
+0061b5ac cmp      r5, #1 ; 
+0061b5ae bne      #0x61b5d4 ; 
+0061b5b0 ldr      r0, [pc, #0xc8] ; 
+0061b5b2 movs     r2, #0 ; 
+0061b5b4 ldr      r1, [pc, #0xc8] ; 
+0061b5b6 vcvt.f64.f32 d0, s16 ; 
+0061b5ba ldr      r3, [pc, #0xc8] ; 
+0061b5bc add      r0, pc ; 
+0061b5be add      r1, pc ; 
+0061b5c0 strd     r2, r2, [sp, #0xc] ; 
+0061b5c4 add      r3, pc ; 
+0061b5c6 str      r2, [sp, #0x14] ; 
+0061b5c8 add      r2, sp, #0xc ; 
+0061b5ca vstr     d0, [sp] ; 
+0061b5ce blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0061b5d2 b        #0x61b5ec ; 
+0061b5d4 ldr      r0, [pc, #0x7c] ; 
+0061b5d6 movs     r2, #0 ; 
+0061b5d8 ldr      r1, [pc, #0x7c] ; 
+0061b5da add      r0, pc ; 
+0061b5dc strd     r2, r2, [sp, #0xc] ; 
+0061b5e0 add      r1, pc ; 
+0061b5e2 str      r2, [sp, #0x14] ; 
+0061b5e4 add      r2, sp, #0xc ; 
+0061b5e6 adr      r3, #0x74 ; 
+0061b5e8 blx      #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0061b5ec ldr      r0, [sp, #0xc] ; 
+0061b5ee cbz      r0, #0x61b60e ; 
+0061b5f0 ldr      r1, [sp, #0x10] ; 
+0061b5f2 cmp      r1, r0 ; 
+0061b5f4 itttt    ne ; 
+0061b5f6 subne.w  r2, r1, #8 ; 
+0061b5fa subne    r2, r2, r0 ; 
+0061b5fc mvnne    r3, #7 ; 
+0061b600 bicne.w  r2, r3, r2 ; 
+0061b604 itt      ne ; 
+0061b606 addne    r1, r1, r2 ; 
+0061b608 strne    r1, [sp, #0x10] ; 
+0061b60a blx      #0x4a40cc ; operator delete(void*)
+0061b60e strb.w   r5, [r4, #0x7c] ; 
+0061b612 vstr     s16, [r4, #0x6c] ; 
+0061b616 blx      #0x4a4f6c ; Anki::BaseStationTimer::getInstance()
+0061b61a blx      #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds() const
+0061b61e strd     r0, r0, [r4, #0x70] ; 
+0061b622 add      sp, #0x18 ; 
+0061b624 vpop     {d8} ; 
+0061b628 pop      {r4, r5, r7, pc} ; 
+
+Anki::Cozmo::Robot::SendMessage(Anki::Cozmo::RobotInterface::EngineToRobot const&, bool, bool) const [0051349c, 00513528)
+0051349c push     {r4, r5, r6, r7, lr} ; 
+0051349e sub      sp, #0x1c ; 
+005134a0 mov      r7, r0 ; 
+005134a2 mov      r4, r2 ; 
+005134a4 ldr      r0, [r7] ; 
+005134a6 mov      r6, r1 ; 
+005134a8 ldr      r1, [r7, #0x10] ; 
+005134aa ldr      r0, [r0, #0x20] ; 
+005134ac ldr      r0, [r0, #0x60] ; 
+005134ae ldr      r2, [r0] ; 
+005134b0 ldr      r5, [r2, #0x10] ; 
+005134b2 mov      r2, r6 ; 
+005134b4 str      r3, [sp] ; 
+005134b6 mov      r3, r4 ; 
+005134b8 blx      r5 ; 
+005134ba mov      r4, r0 ; 
+005134bc cbz      r4, #0x513522 ; 
+005134be ldrb     r0, [r6] ; 
+005134c0 blx      #0x4a7cc0 ; Anki::Cozmo::RobotInterface::EngineToRobotTagToString(Anki::Cozmo::RobotInterface::EngineToRobotTag)
+005134c4 mov      r6, r0 ; 
+005134c6 adr      r0, #0x88 ; 
+005134c8 str      r6, [sp, #0xc] ; 
+005134ca str      r0, [sp, #8] ; 
+005134cc movs     r0, #0 ; 
+005134ce str      r0, [sp, #0x18] ; 
+005134d0 strd     r0, r0, [sp, #0x10] ; 
+005134d4 movs     r0, #8 ; 
+005134d6 blx      #0x4a42a0 ; operator new(unsigned int)
+005134da ldr      r2, [sp, #0xc] ; 
+005134dc add.w    r3, r0, #8 ; 
+005134e0 ldr      r1, [sp, #8] ; 
+005134e2 str      r0, [sp, #0x10] ; 
+005134e4 str      r0, [sp, #0x14] ; 
+005134e6 str      r3, [sp, #0x18] ; 
+005134e8 strd     r1, r2, [r0] ; 
+005134ec ldr      r0, [sp, #0x14] ; 
+005134ee adds     r0, #8 ; 
+005134f0 str      r0, [sp, #0x14] ; 
+005134f2 ldr      r3, [r7, #0x10] ; 
+005134f4 adr      r0, #0x60 ; 
+005134f6 add      r1, sp, #0x10 ; 
+005134f8 adr      r2, #0x70 ; 
+005134fa str      r6, [sp] ; 
+005134fc blx      #0x4a4540 ; Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+00513500 ldr      r0, [sp, #0x10] ; 
+00513502 cbz      r0, #0x513522 ; 
+00513504 ldr      r1, [sp, #0x14] ; 
+00513506 cmp      r1, r0 ; 
+00513508 itttt    ne ; 
+0051350a subne.w  r2, r1, #8 ; 
+0051350e subne    r2, r2, r0 ; 
+00513510 mvnne    r3, #7 ; 
+00513514 bicne.w  r2, r3, r2 ; 
+00513518 itt      ne ; 
+0051351a addne    r1, r1, r2 ; 
+0051351c strne    r1, [sp, #0x14] ; 
+0051351e blx      #0x4a40cc ; operator delete(void*)
+00513522 mov      r0, r4 ; 
+00513524 add      sp, #0x1c ; 
+00513526 pop      {r4, r5, r6, r7, pc} ; 
+
+Anki::Cozmo::RobotInterface::MessageHandler::SendMessage(unsigned int, Anki::Cozmo::RobotInterface::EngineToRobot const&, bool, bool) [0069dcf6, 0069dd78)
+0069dcf6 push     {r4, r5, r6, lr} ; 
+0069dcf8 sub      sp, #0x10 ; 
+0069dcfa mov      r4, r0 ; 
+0069dcfc mov      r6, r1 ; 
+0069dcfe ldrb.w   r1, [r4, #0x28] ; 
+0069dd02 mov      r5, r2 ; 
+0069dd04 ldr      r0, [r4, #0x3c] ; 
+0069dd06 cmp      r1, #0 ; 
+0069dd08 add.w    r0, r0, #1 ; 
+0069dd0c str      r0, [r4, #0x3c] ; 
+0069dd0e beq      #0x69dd26 ; 
+0069dd10 ldr      r0, [r4, #0x24] ; 
+0069dd12 blx      #0x4be1a8 ; Anki::Cozmo::RobotConnectionManager::IsValidConnection() const
+0069dd16 cmp      r0, #1 ; 
+0069dd18 bne      #0x69dd26 ; 
+0069dd1a ldrb     r2, [r5] ; 
+0069dd1c mov      r1, r6 ; 
+0069dd1e ldr      r0, [r4, #0x20] ; 
+0069dd20 blx      #0x4be1b4 ; Anki::Cozmo::RobotManager::ShouldFilterMessage(unsigned int, Anki::Cozmo::RobotInterface::EngineToRobotTag) const
+0069dd24 cbz      r0, #0x69dd2e ; 
+0069dd26 movs     r4, #1 ; 
+0069dd28 mov      r0, r4 ; 
+0069dd2a add      sp, #0x10 ; 
+0069dd2c pop      {r4, r5, r6, pc} ; 
+0069dd2e mov      r0, r5 ; 
+0069dd30 blx      #0x4adc00 ; Anki::Cozmo::RobotInterface::EngineToRobot::Size() const
+0069dd34 mov      r6, r0 ; 
+0069dd36 mov      r0, r5 ; 
+0069dd38 blx      #0x4adc00 ; Anki::Cozmo::RobotInterface::EngineToRobot::Size() const
+0069dd3c mov      r1, r0 ; 
+0069dd3e add      r0, sp, #4 ; 
+0069dd40 blx      #0x4a91e4 ; std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> >::vector(unsigned int)
+0069dd44 ldr      r1, [sp, #4] ; 
+0069dd46 mov      r0, r5 ; 
+0069dd48 mov      r2, r6 ; 
+0069dd4a blx      #0x4b7788 ; Anki::Cozmo::RobotInterface::EngineToRobot::Pack(unsigned char*, unsigned int) const
+0069dd4e cmp      r0, r6 ; 
+0069dd50 bne      #0x69dd62 ; 
+0069dd52 ldr      r1, [sp, #4] ; 
+0069dd54 ldr      r0, [r4, #0x24] ; 
+0069dd56 mov      r2, r6 ; 
+0069dd58 blx      #0x4be1c0 ; Anki::Cozmo::RobotConnectionManager::SendData(unsigned char const*, unsigned int)
+0069dd5c eor      r4, r0, #1 ; 
+0069dd60 b        #0x69dd64 ; 
+0069dd62 movs     r4, #1 ; 
+0069dd64 ldr      r0, [sp, #4] ; 
+0069dd66 cmp      r0, #0 ; 
+0069dd68 beq      #0x69dd28 ; 
+0069dd6a ldr      r1, [sp, #8] ; 
+0069dd6c cmp      r1, r0 ; 
+0069dd6e it       ne ; 
+0069dd70 strne    r0, [sp, #8] ; 
+0069dd72 blx      #0x4a40cc ; operator delete(void*)
+0069dd76 b        #0x69dd28 ; 
+
+Anki::Cozmo::SetPropSlot::Pack(CLAD::SafeMessageBuffer&) const [007a11a4, 007a11d6)
+007a11a4 push     {r4, r5, r7, lr} ; 
+007a11a6 sub      sp, #8 ; 
+007a11a8 mov      r5, r0 ; 
+007a11aa mov      r4, r1 ; 
+007a11ac ldr      r0, [r5] ; 
+007a11ae mov      r1, sp ; 
+007a11b0 str      r0, [sp] ; 
+007a11b2 mov      r0, r4 ; 
+007a11b4 movs     r2, #4 ; 
+007a11b6 blx      #0x4bfc0c ; CLAD::SafeMessageBuffer::WriteBytes(void const*, unsigned int)
+007a11ba ldrb     r0, [r5, #4] ; 
+007a11bc add.w    r1, sp, #7 ; 
+007a11c0 strb.w   r0, [sp, #7] ; 
+007a11c4 mov      r0, r4 ; 
+007a11c6 movs     r2, #1 ; 
+007a11c8 blx      #0x4bfc0c ; CLAD::SafeMessageBuffer::WriteBytes(void const*, unsigned int)
+007a11cc mov      r0, r4 ; 
+007a11ce blx      #0x4bfc24 ; CLAD::SafeMessageBuffer::GetBytesWritten() const
+007a11d2 add      sp, #8 ; 
+007a11d4 pop      {r4, r5, r7, pc} ; 

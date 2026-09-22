@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Cozmo.Conformance;
 using Xunit;
 
 namespace Cozmo.Protocol.Tests;
@@ -60,6 +61,32 @@ public class FidelityManifestTests
 
     private static bool Flag(JsonElement e, string name) =>
         e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.True;
+
+    [Fact]
+    public void EveryHardwareAcceptanceFidelityReferenceExistsInTheManifest()
+    {
+        var ids = Manifest().GetProperty("records").EnumerateArray().Select(r => Str(r, "id"));
+        var errors = HardwareCatalog.ValidateFidelityRecords(HardwareCatalog.All, ids);
+        Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
+    }
+
+    [Fact]
+    public void CubeAcceptanceExposesTheUnfinishedOutboundPathSeparatelyFromIncomingHandlers()
+    {
+        var check = HardwareCatalog.Find("B")!;
+        var records = Manifest().GetProperty("records").EnumerateArray().ToDictionary(r => Str(r, "id"));
+        Assert.Contains("M4-009", check.FidelityRecords);
+        foreach (var id in new[] { "M4-CUBE-001", "M4-CUBE-002" })
+        {
+            Assert.Contains(id, check.FidelityRecords);
+            Assert.Contains(id, check.KnownIssue!);
+            Assert.Contains(Str(records[id], "status"), check.KnownIssue!);
+            Assert.True(Flag(records[id], "live_path"));
+            Assert.NotEmpty(Str(records[id], "unresolved"));
+        }
+        Assert.Equal(Implementation, Str(records["M4-CUBE-001"], "status"));
+        Assert.Equal(Recoverable, Str(records["M4-CUBE-002"], "status"));
+    }
 
     /// <summary>
     /// Each gate, checked in both directions. A subsystem that still holds a live-path record of the

@@ -23,12 +23,14 @@ if the manifest and the code claims disagree.
 
 import json
 import os
+import re
 import sys
 from collections import Counter, defaultdict
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MANIFEST = os.path.join(ROOT, "re-analysis", "fidelity_manifest.json")
 REPORT = os.path.join(ROOT, "re-analysis", "FIDELITY_GAPS.md")
+CATALOG = os.path.join(ROOT, "cozmo-stack", "src", "Cozmo.Conformance", "HardwareCatalog.cs")
 
 # A gap record has to say enough to be worked on; an EXACT_SOURCE record only has to say what it was read from.
 FULL_FIELDS = ("id", "subsystem", "title", "location", "effect", "provenance", "authority",
@@ -96,6 +98,14 @@ def validate(m):
             if not sub[flag] and not blocking:
                 problems.append(f"{sid}: has no live-path {status} left, so {flag} should be true "
                                 f"(outstanding {what} is what that flag tracks, and nothing else)")
+    # Also run in the C# tests against the compiled catalog (not parsed source).
+    # This lets the standalone fidelity gate catch broken links without a .NET build.
+    with open(CATALOG, encoding="utf-8") as f:
+        catalog = f.read()
+    for group in re.findall(r'FidelityRecords\s*=\s*new\[\]\s*\{([^}]+)\}', catalog):
+        for rid in re.findall(r'"([^"]+)"', group):
+            if rid not in seen:
+                problems.append(f"HardwareCatalog FidelityRecords ID {rid!r} does not exist in fidelity_manifest.json")
     return problems
 
 

@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **208 records** over 16 subsystems.
+Manifest of **210 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 161 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 15 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 1 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 0 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 2 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 1 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 20 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 3 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -27,7 +27,7 @@ remains after both, and they do not go away by working harder on this repository
 | M1-transport — UDP transport and reliability | 15 | 0 | 0 | 0 | 0 | yes | yes |
 | M2-protocol — CLAD messages and protocol helpers | 7 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 17 | 0 | 0 | 0 | 1 | yes | yes |
-| M4-control — Motion, sensors, lights and cubes | 9 | 0 | 0 | 0 | 0 | yes | yes |
+| M4-control — Motion, sensors, lights and cubes | 11 | 1 | 1 | 0 | 0 | no | no |
 | M5-animation — Animation clips, scheduler and face | 21 | 0 | 0 | 0 | 0 | yes | yes |
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 0 | 0 | 0 | 0 | yes | yes |
 | M7-behaviour — Idle, mood and reactions | 16 | 0 | 0 | 0 | 0 | yes | yes |
@@ -45,6 +45,17 @@ remains after both, and they do not go away by working harder on this repository
 
 Each of these is a question the original can answer and nobody has asked it yet.
 
+### M4-control — Motion, sensors, lights and cubes
+
+**M4-CUBE-002 — Complete discovery-to-connection lifecycle is only partially recovered** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Cubes.cs`
+* effect: A plausible auto-connect or retry rule could select the wrong cube/slot or turn discovery off at the wrong time.
+* rests on: Native sender and substantial BlockFilter control flow recovered, but no complete source-backed lifecycle has been ported or claimed.
+* best authority: Native BlockFilter 0x00619A2C..0x0061B628, Robot::Update 0x00514174..0x00514236; Unity BlockPoolTracker and ConnectionFlowController.CubeConnectFlow.
+* evidence: re-analysis/CUBE_CONNECTION.md enumerates recovered steps and remaining boundaries; dis_cube_connection.txt records bounded primary disassembly and direct/PLT call sites.; BlockFilter::Update 0x0061A79A is gated and uses a two-second cadence; UpdateConnecting 0x0061AA8C checks alternatives after five seconds, not unconditional resends.; GetClosestDiscoveredObjectsOfType 0x00518314 compares unsigned RSSI bytes <=150; slot allocation is first empty of five, not cube type.; Named direct/PLT SetAccessoryDiscovery search found generated serialization calls but no production sender; this does not exclude inline/indirect construction.
+* outstanding: Establish official radio-discovery enable/disable lifetime through inline/indirect startup/configuration paths; resolve native automatic type-list data, equal-RSSI container order and persistent-pool cold-start initialization/linker-thunk paths into a reproducible complete policy. The sender alone does not settle these choices.
+
 ### M11-vision — Markers, camera geometry and BlockWorld
 
 **M11-005 — The sub-pixel corner refinement** (live path)
@@ -59,6 +70,17 @@ Each of these is a question the original can answer and nobody has asked it yet.
 ## Still to build: every IMPLEMENTATION_GAP
 
 Each of these is a question already answered. The original's behaviour is established and this stack knowingly does something else, so the work outstanding is writing it, not reading.
+
+### M4-control — Motion, sensors, lights and cubes
+
+**M4-CUBE-001 — Missing outbound cube slot request and incorrect SetPropSlot Boolean** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Cubes.cs`
+* effect: Check B hears advertisements but never asks the robot to connect; the generated Boolean cannot encode all five native slots.
+* rests on: Control.Cubes enables discovery and waits; CozmoCubes has no request sender. Protocol field connect was borrowed from PyCozmo.
+* best authority: Native Robot::ConnectToRequestedObjects 0x00514A70 and SetPropSlot::Pack 0x007A11A4; caller Robot::Update 0x00514236.
+* evidence: re-analysis/CUBE_CONNECTION.md and re-analysis/disassembly/dis_cube_connection.txt; 0x00514BB4..0x00514BCE: requested factory ID followed by slot index 0..4; reliable=true, hot=false. 0x00514C34..0x00514C58: factory ID zero disconnects the indexed slot.; 0x005173EA..0x00517482 queues changed slot requests; 0x005179C0 confirms connection from robot reports.
+* outstanding: After the complete lifecycle gate in M4-CUBE-002 is settled, correct the canonical protocol field to a slot byte and implement the recovered pool/request/state path. Do not insert an advertisement-to-Connect=true shortcut.
 
 ## What remains after both: blocked externally, or needing hardware
 
@@ -90,7 +112,7 @@ Each of these is a question already answered. The original's behaviour is establ
 | M4-005 | M4-control | COMPATIBILITY_POLICY | Action ids cycle 1..255 | the engine action id allocation |
 | M4-006 | M4-control | COMPATIBILITY_POLICY | Wheel confirmation tolerance 35 percent / 5 mm per s | not applicable: the engine does not confirm wheel speeds this way |
 | M4-007 | M4-control | COMPATIBILITY_POLICY | StopAll sends StopAllMotors and a zero DriveWheels | the engine stop path |
-| M4-009 | M4-control | EQUIVALENT_IMPLEMENTATION | Cube tracking from ObjectAvailable and ObjectConnectionState | HandleActiveObjectAvailable 0x0053391C, HandleActiveObjectConnectionState 0x00533B3C, HandleActiveObjectMoved 0x00533E30 and HandleObjectPowerLevel 0x00537130, read |
+| M4-009 | M4-control | EQUIVALENT_IMPLEMENTATION | Incoming cube advertisement, connection-report and telemetry tracking only | HandleActiveObjectAvailable 0x0053391C, HandleActiveObjectConnectionState 0x00533B3C, HandleActiveObjectMoved 0x00533E30 and HandleObjectPowerLevel 0x00537130, read |
 | M5-018 | M5-animation | EQUIVALENT_IMPLEMENTATION | How many frames one wall-clock tick streams | the engine streams to the audio budget on every update regardless of the clock (UpdateStream 0x0057C84C) |
 | M5-020 | M5-animation | COMPATIBILITY_POLICY | Expressions helper faces | not applicable |
 | M5-021 | M5-animation | EQUIVALENT_IMPLEMENTATION | The eye and its lids are filled by scanline, not by cv::fillConvexPoly | ProceduralFaceDrawer::DrawEye 0x005850E0, read |

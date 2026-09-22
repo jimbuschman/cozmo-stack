@@ -493,7 +493,8 @@ public static class Control
             Console.WriteLine("No cube was heard. A cube out of range or with a flat battery looks the same from here.");
         else if (connected.Count == 0)
             Console.WriteLine("Cubes were heard but none connected: discovery alone does not accept this check. " +
-                              "Bring a cube closer, check its battery, and run again.");
+                              "This stack sends no cube slot request (M4-CUBE-001); the complete connection " +
+                              "lifecycle remains a source-recovery gap (M4-CUBE-002).");
         else if (!telemetry)
             Console.WriteLine("A cube connected but sent no telemetry: no tap, movement, up axis or battery level. " +
                               "Tap and roll the cube while the check runs.");

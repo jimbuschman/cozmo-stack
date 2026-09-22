@@ -42,6 +42,19 @@ public class HardwareRunnerTests
     // ================================================================ the catalog
 
     [Fact]
+    public void CatalogValidationRejectsMissingFidelityIdsEvenOnBlockedChecks()
+    {
+        var check = Check("B") with
+        {
+            FidelityRecords = new[] { "M4-009", "M4-010" }, BlockedReason = "test",
+        };
+        var error = Assert.Single(HardwareCatalog.ValidateFidelityRecords(new[] { check }, new[] { "M4-009" }));
+        Assert.Contains("Hardware check B", error);
+        Assert.Contains("M4-010", error);
+        Assert.Empty(HardwareCatalog.ValidateFidelityRecords(new[] { check }, new[] { "M4-009", "M4-010" }));
+    }
+
+    [Fact]
     public void TheCatalogKeepsThePlansIdentifiersAndAddsTheNewOnes()
     {
         var ids = HardwareCatalog.All.Select(c => c.Id).ToList();

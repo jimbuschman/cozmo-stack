@@ -7,6 +7,13 @@ This document and `src/Cozmo.Conformance/HardwareCatalog.cs` are the same campai
 generated from the catalog (`hardware-test --plan`), and a test in `HardwareRunnerTests` fails if the two
 drift apart, so the code is the thing to edit and this is the thing to regenerate.
 
+Check B source-recovery correction (2026-09-22): discovery currently sends no cube
+slot request. `M4-010` did not exist; B now references incoming-handler record
+`M4-009`, outbound omission `M4-CUBE-001` (IMPLEMENTATION_GAP), and incomplete
+lifecycle recovery `M4-CUBE-002` (RECOVERABLE_GAP). See
+[the native investigation](CUBE_CONNECTION.md). This is not awaiting hardware alone;
+do not rerun B expecting a connection fix from the metadata correction.
+
 ## Run it with the runner, not by hand
 
 ```
