@@ -29,8 +29,16 @@ public sealed record KnownMarker(MarkerType Code, BlockFace Face, Pose3d PoseOnO
         new(-0.5, 0, 0.5), new(-0.5, 0, -0.5), new(0.5, 0, 0.5), new(0.5, 0, -0.5),
     };
 
+    /// <summary>
+    /// The marker's own four corners, in the marker's frame, TL, BL, TR, BR: the canonical corners with X
+    /// scaled by the marker's width and Z by its height, as <c>Get3dCorners</c> scales them. The two are
+    /// scaled separately because not every marker is square - the charger's is 20 x 27 - and a solve given
+    /// square corners for it returns a pose with the error that mismatch implies.
+    /// </summary>
+    public Vec3[] Corners3d() => CanonicalCorners.Select(c => new Vec3(c.X * SizeMm, 0, c.Z * H)).ToArray();
+
     /// <summary>The marker's four corners in the object's frame, TL, BL, TR, BR.</summary>
-    public Vec3[] CornersOnObject() => CanonicalCorners.Select(c => PoseOnObject.Apply(new Vec3(c.X * SizeMm, 0, c.Z * H))).ToArray();
+    public Vec3[] CornersOnObject() => Corners3d().Select(PoseOnObject.Apply).ToArray();
 
     /// <summary>The marker's four corners in the world for an object pose.</summary>
     public Vec3[] CornersInWorld(Pose3d objectPose) => CornersOnObject().Select(objectPose.Apply).ToArray();

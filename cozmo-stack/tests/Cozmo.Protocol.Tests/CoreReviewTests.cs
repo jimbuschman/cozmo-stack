@@ -3,6 +3,7 @@ using Cozmo.Robot;
 using Cozmo.Robot.Animation;
 using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Manipulation;
+using Cozmo.Robot.Vision;
 using Cozmo.Transport;
 using Xunit;
 
@@ -434,5 +435,77 @@ public class CoreReviewTests
             installs++;
         }
         Assert.Equal(callers, installs);
+    }
+
+    // ================================================================ CORE-005
+
+    /// <summary>
+    /// CORE-005. The docking feedback has to solve the charger's marker with the shape the charger's
+    /// marker actually has.
+    ///
+    /// <c>DockingSystem.OnFrame</c> built its object points from the canonical corners times the marker's
+    /// <em>width</em> in both directions, so a marker that is not square was solved as though it were.
+    /// The charger's is 20 x 27 (<c>ChargerGeometry.MarkerWidthMm</c> and <c>MarkerHeightMm</c>, from the
+    /// charger's own constructor), a 35 per cent error in one axis, and what comes out of it is the
+    /// <c>DockingErrorSignal</c> the robot steers by. The world model never had the bug - it goes through
+    /// the marker's own geometry - so the two paths disagreed about where the same marker was.
+    ///
+    /// This drives a real dock against a charger at a known pose and checks the signal against ground
+    /// truth rather than against itself.
+    /// </summary>
+    [Fact]
+    public void CORE005_TheChargerDockingSignalUsesTheMarkersRealShape()
+    {
+        using var rig = new Rig();
+        if (rig.NoLibrary) return;
+        rig.Head = -0.2f;
+        rig.Charger = new Pose3d(Mat3.AboutZ(0), new Vec3(200, 0, 0));   // lip at 200, marker 86 mm further on
+        var r = rig.Frame();
+        var obs = Assert.Single(r.Objects);
+        var charger = obs.Object;
+        var marker = Assert.Single(charger.Markers);
+        Assert.Equal(20.0, marker.SizeMm);
+        Assert.Equal(27.0, marker.HeightMm);
+
+        rig.DockOutcome = BlockStatus.NoBlock;
+        var dock = rig.M.Docking.DockAsync(charger, marker, DockAction.Align, PathMotionProfile.Default,
+                                           timeout: TimeSpan.FromSeconds(5));
+        rig.Pump();
+        var signal = Assert.Single(rig.Sent.OfType<DockingErrorSignal>());
+
+        // ground truth: the marker sits 286 mm ahead of the robot (200 + 86), 22 mm up, square on
+        Assert.InRange(signal.XDist, 286 - 12, 286 + 12);
+        Assert.InRange(Math.Abs(signal.YDist), 0, 6);
+        Assert.InRange(signal.ZDist, 22 - 8, 22 + 8);
+        Assert.InRange(Math.Abs(StraightLinePlanner.Wrap(signal.Angle)), 0, 0.12);
+
+        rig.M.Docking.Abort();
+        rig.Pump();
+    }
+
+    /// <summary>
+    /// CORE-005, the geometry itself: a marker that is not square keeps its shape, and the corners the
+    /// docking solve uses are the same ones the world model uses, less the marker's placement on the
+    /// object. There is no second charger constant anywhere.
+    /// </summary>
+    [Fact]
+    public void CORE005_TheMarkersOwnCornersAreWidthByHeight()
+    {
+        var marker = Assert.Single(ChargerGeometry.Markers);
+        var c = marker.Corners3d();
+        Assert.Equal(4, c.Length);
+        Assert.Equal(ChargerGeometry.MarkerWidthMm, c[2].X - c[0].X, 6);    // TR - TL across
+        Assert.Equal(ChargerGeometry.MarkerHeightMm, c[0].Z - c[1].Z, 6);   // TL - BL up
+        Assert.NotEqual(c[2].X - c[0].X, c[0].Z - c[1].Z);
+
+        // and the object-frame corners are these put through the marker's pose on the object
+        var onObject = marker.CornersOnObject();
+        for (int i = 0; i < 4; i++)
+        {
+            var expected = marker.PoseOnObject.Apply(c[i]);
+            Assert.Equal(expected.X, onObject[i].X, 6);
+            Assert.Equal(expected.Y, onObject[i].Y, 6);
+            Assert.Equal(expected.Z, onObject[i].Z, 6);
+        }
     }
 }

@@ -294,7 +294,9 @@ public sealed class DockingSystem : IDisposable
         // the marker's pose from this frame: solve it directly from the observed corners
         var cal = _vision.Calibration;
         var camera = new CameraModel(cal, r.PoseData.CameraPose);
-        var solved = PoseEstimation.Solve(camera, KnownMarker.CanonicalCorners.Select(c => c * known.SizeMm).ToList(), seen.Corners);
+        // the marker's own geometry, not a square of its width: the charger's marker is 20 x 27, and
+        // solving it as square puts the pose the docking error signal is built from in the wrong place
+        var solved = PoseEstimation.Solve(camera, known.Corners3d(), seen.Corners);
         if (solved is null) return;
         var markerInWorld = camera.Pose.Compose(solved.ObjectInCamera);
         var wrtRobot = markerInWorld.WithRespectTo(r.PoseData.RobotPose);

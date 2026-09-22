@@ -9,6 +9,8 @@ namespace Cozmo.Protocol.Tests;
 internal sealed class Rig : IDisposable
 {
     private static readonly MarkerLibrary? Lib = MarkerLibrary.EmbeddedOrNull;
+    /// <summary>True when the extracted marker library is not present, so a marker test has nothing to render.</summary>
+    public bool NoLibrary => Lib is null;
     public readonly ManualClock Clock = new();
     public readonly CozmoRobot Robot;
     public readonly VisionSystem Vision;
@@ -162,6 +164,7 @@ internal sealed class Rig : IDisposable
             switch (m)
             {
                 case ExecutePath ep:
+                    float wasX = X, wasY = Y;
                     // the fake robot follows the path perfectly: its pose becomes the last segment's end
                     foreach (var s in Sent.OfType<AppendPathSegmentLine>().TakeLast(CountSince<AppendPathSegmentLine>(ep))) { X = s.XEndMm; Y = s.YEndMm; }
                     // arcs end at their sweep's end point, heading tangent
@@ -177,7 +180,7 @@ internal sealed class Rig : IDisposable
                         else if (seg is AppendPathSegmentLine ln) { X = ln.XEndMm; Y = ln.YEndMm; }
                         else if (seg is AppendPathSegmentPointTurn pt) Angle = pt.TargetAngleRad;
                     }
-                    UpdateChargerContact();
+                    UpdateChargerContact(wasX, wasY);
                     State();
                     Send(new PathFollowingEvent { EventId = ep.EventId, EventType = (byte)PathEventType.Started });
                     Send(new PathFollowingEvent { EventId = ep.EventId, EventType = (byte)PathEventType.Completed });
@@ -199,9 +202,10 @@ internal sealed class Rig : IDisposable
                         if (_dockAction is DockAction.Align or DockAction.AlignSpecial)
                         {
                             // an align drives the robot until the signalled error is zero: the fake robot jumps there
+                            float alignFromX = X, alignFromY = Y;
                             X += (float)(Math.Cos(Angle) * es.XDist - Math.Sin(Angle) * es.YDist);
                             Y += (float)(Math.Sin(Angle) * es.XDist + Math.Cos(Angle) * es.YDist);
-                            UpdateChargerContact(); State();
+                            UpdateChargerContact(alignFromX, alignFromY); State();
                         }
                         OnDockResult?.Invoke();
                         Send(new PickAndPlaceResult { Field0 = T, Field1 = (byte)(DockSucceeds ? 1 : 0), Field2 = 0, Field3 = (byte)(DockSucceeds ? DockOutcome : BlockStatus.NoBlock) });
@@ -223,14 +227,41 @@ internal sealed class Rig : IDisposable
 
     public readonly List<float> LiftHeights = new();
 
-    /// <summary>The fake robot is on the charger when its origin lies within the charger's footprint (its frame: lip at x=0, +x inwards).</summary>
-    private void UpdateChargerContact()
+    /// <summary>
+    /// The fake robot is on the charger when its origin lies within the charger's footprint (its frame:
+    /// lip at x=0, +x inwards).
+    ///
+    /// A move that <em>passes through</em> the footprint counts too, and stops where it entered: the real
+    /// robot backing on stops the moment the contacts report rather than driving the rest of its path
+    /// (<c>BackupOntoChargerAction::CheckIfDone</c> 0x0054E7A8), so a path that would have carried it out
+    /// the far side never happens. Without this the fake robot teleports through a 96 mm charger and
+    /// reports nothing.
+    /// </summary>
+    private void UpdateChargerContact(float fromX, float fromY)
     {
         if (Charger is not { } ch) return;
         var inv = ch.Inverse();
         var local = inv.Apply(new Vec3(X, Y, 0));
-        bool inside = local.X >= 0 && local.X <= ChargerGeometry.LengthMm && Math.Abs(local.Y) <= ChargerGeometry.WidthMm / 2;
-        if (inside) OnCharger = true; else if (local.X < -5) OnCharger = false;
+        bool Inside(Vec3 p) => p.X >= 0 && p.X <= ChargerGeometry.LengthMm && Math.Abs(p.Y) <= ChargerGeometry.WidthMm / 2;
+        if (Inside(local)) { OnCharger = true; return; }
+
+        // did the straight move from (fromX, fromY) to here cross the footprint? step along it and stop
+        // at the first point inside. Only a move that arrives from outside counts: one that started on
+        // the charger is driving off it, and it is meant to end where it ended.
+        var from = inv.Apply(new Vec3(fromX, fromY, 0));
+        if (Inside(from)) { if (local.X < -5) OnCharger = false; return; }
+        const int steps = 64;
+        for (int i = 1; i <= steps; i++)
+        {
+            double t = i / (double)steps;
+            var p = new Vec3(from.X + (local.X - from.X) * t, from.Y + (local.Y - from.Y) * t, 0);
+            if (!Inside(p)) continue;
+            var world = ch.Apply(p);
+            X = (float)world.X; Y = (float)world.Y;
+            OnCharger = true;
+            return;
+        }
+        if (local.X < -5) OnCharger = false;
     }
 
     private bool _dockPending; private int _signals; private DockAction _dockAction;
