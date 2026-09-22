@@ -293,8 +293,22 @@ public sealed class CozmoAnimations : IDisposable
     /// </summary>
     public AnimationTicket? PlayTracked(string name, bool replaceRunning = true)
     {
-        var task = Play(name, replaceRunning);
-        return task is null ? null : new AnimationTicket(task, _scheduler.Generation);
+        var lib = Library ?? throw new InvalidOperationException("no animation assets are loaded; call LoadFrom first");
+        return PlayTracked(lib.GetClip(name), replaceRunning);
+    }
+
+    /// <summary>
+    /// The same for a clip already in hand. The token comes from the playback itself rather than from a
+    /// second look at <see cref="Generation"/>: between starting an animation and reading which one is
+    /// running, another caller can have replaced it, and the ticket would then carry their token - so
+    /// stopping by it would stop their animation and not this one.
+    /// </summary>
+    public AnimationTicket? PlayTracked(AnimationClip clip, bool replaceRunning = true)
+    {
+        var handle = _scheduler.Play(clip, NowMs(), replaceRunning);
+        if (handle is null) return null;
+        StartTicker();
+        return new AnimationTicket(handle.Completion, handle.Generation);
     }
 
     private static double NowMs() => Environment.TickCount64;

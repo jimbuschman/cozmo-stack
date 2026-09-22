@@ -215,4 +215,134 @@ public class CoreReviewTests
         // the process is still here to make these assertions, which is the other half of the claim
         Assert.True(true);
     }
+
+    // ================================================================ CORE-003
+
+    /// <summary>
+    /// A sink that blocks inside one keyframe emission, so a test can be in the middle of a send while it
+    /// does something else to the animation. Everything it is told is recorded in order.
+    /// </summary>
+    private sealed class BlockingSink : IAnimationSink
+    {
+        public readonly List<string> Log = new();
+        public readonly ManualResetEventSlim Entered = new(false);
+        public readonly ManualResetEventSlim Release = new(false);
+        public string BlockOn = "";
+
+        private void Note(string what)
+        {
+            // the block comes first and the record second, so the log says when the command actually
+            // went out rather than when it was decided on
+            if (what == BlockOn)
+            {
+                Entered.Set();
+                Release.Wait(5_000);
+            }
+            lock (Log) Log.Add(what);
+        }
+
+        public void Face(FaceBitmap bitmap) { }
+        public void Audio(byte[]? mulawFrame) { }
+        public void Head(sbyte angleDeg, uint durationMs) => Note("head");
+        public void Lift(byte heightMm, uint durationMs) => Note("lift");
+        public void AnimationStarted(byte tag) => Note("started");
+        public void AnimationEnded() => Note("ended");
+        public void Body(BodyKeyframe keyframe) => Note("body");
+        public void BodyStop() => Note("bodystop");
+        public void Lights(LightsKeyframe keyframe) { }
+        public void Event(string eventId) => Note("event:" + eventId);
+        public void Finished(string clipName, bool completed) => Note("finished");
+
+        public List<string> Snapshot() { lock (Log) return Log.ToList(); }
+    }
+
+    /// <summary>
+    /// CORE-003. A keyframe and the ownership that entitles it to go out are one step.
+    ///
+    /// The old arrangement checked the generation under the lock, released it, and then emitted - so a
+    /// cancellation landing in between let a command of the cancelled animation go out afterwards. The
+    /// emission gate closes that: a replacement waits for the keyframe in flight, and everything after it
+    /// belongs to the new owner. What this asserts is the ordering that follows - no command of the old
+    /// animation appears after that animation's own ending.
+    /// </summary>
+    [Fact]
+    public void CORE003_NoKeyframeOfACancelledAnimationIsEmittedAfterItsEnd()
+    {
+        var sink = new BlockingSink { BlockOn = "head" };
+        var scheduler = new AnimationScheduler(sink, new Random(1));
+        var clip = new AnimationClip
+        {
+            Name = "two-keyframes",
+            Keyframes = new List<Keyframe>
+            {
+                new HeadKeyframe(0, 100, 10, 0),
+                new LiftKeyframe(0, 100, 40, 0),
+            },
+            Tracks = AnimationTrack.Head | AnimationTrack.Lift,
+            DurationMs = 5_000,
+        };
+        scheduler.Play(clip, 0);
+
+        // one frame, on another thread, which will block inside the head keyframe's emission
+        var streaming = Task.Run(() => scheduler.Advance(0));
+        Assert.True(sink.Entered.Wait(2_000), "the sink was never reached");
+
+        // cancel while that emission is in flight
+        var stopping = Task.Run(() => scheduler.Stop());
+        Thread.Sleep(50);                       // give the cancel every chance to get in front
+        sink.Release.Set();
+        Assert.True(streaming.Wait(2_000));
+        Assert.True(stopping.Wait(2_000));
+
+        var log = sink.Snapshot();
+        Assert.Contains("head", log);            // the keyframe that was legitimately in flight went out
+        int ended = log.IndexOf("finished");
+        Assert.True(ended >= 0, "the animation never ended");
+        // nothing of that animation after its ending. Which keyframes got out before the cancel landed is
+        // a race and not a contract - a cancel is not instantaneous - but this is: once the animation has
+        // ended, nothing of it may still be on its way out.
+        Assert.DoesNotContain(log.Skip(ended + 1), e => e is "head" or "lift" or "body" or "started");
+    }
+
+    /// <summary>
+    /// CORE-003, the tracked play. <c>PlayTracked</c> used to start the animation and then read
+    /// <c>Generation</c> back as a separate step, so two callers racing could both come away with the
+    /// same token - the later playback's - and stopping by it would stop somebody else's animation. The
+    /// token now comes from the playback itself.
+    /// </summary>
+    [Fact]
+    public void CORE003_ConcurrentTrackedPlaysEachGetTheirOwnToken()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        var clip = new AnimationClip
+        {
+            Name = "short",
+            Keyframes = new List<Keyframe> { new HeadKeyframe(0, 50, 5, 0) },
+            Tracks = AnimationTrack.Head,
+            DurationMs = 2_000,
+        };
+
+        const int n = 24;
+        var tickets = new AnimationTicket?[n];
+        var start = new ManualResetEventSlim(false);
+        var threads = new List<Thread>();
+        for (int i = 0; i < n; i++)
+        {
+            int me = i;
+            var t = new Thread(() =>
+            {
+                start.Wait();
+                tickets[me] = robot.Animations.PlayTracked(clip);
+            });
+            threads.Add(t);
+            t.Start();
+        }
+        start.Set();
+        foreach (var t in threads) Assert.True(t.Join(5_000));
+
+        var got = tickets.Where(t => t is not null).Select(t => t!.Generation).ToList();
+        Assert.Equal(n, got.Count);                       // every play was accepted (each replaces the last)
+        Assert.Equal(got.Count, got.Distinct().Count());  // and no two callers were handed the same playback
+        robot.Animations.Stop();
+    }
 }

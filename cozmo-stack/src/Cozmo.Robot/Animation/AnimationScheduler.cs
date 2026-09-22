@@ -58,6 +58,14 @@ public enum AnimationEndReason { Completed, Cancelled, Replaced, Error }
 /// <summary>What happened to a request to play something.</summary>
 public sealed record AnimationHandle(string ClipName, AnimationTrack Tracks)
 {
+    /// <summary>
+    /// The ownership token of this playback, fixed when it started. Reading
+    /// <see cref="AnimationScheduler.Generation"/> afterwards is not the same thing: between starting an
+    /// animation and asking which one is running, another caller can have replaced it, and the token
+    /// that comes back then belongs to their playback rather than this one.
+    /// </summary>
+    public long Generation { get; init; }
+
     private readonly TaskCompletionSource<AnimationEndReason> _done =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -99,6 +107,25 @@ public sealed class AnimationScheduler
 
     private readonly IAnimationSink _sink;
     private readonly object _gate = new();
+
+    /// <summary>
+    /// The emission gate, and the contract that goes with it.
+    ///
+    /// A keyframe belongs to one playback. Checking that the playback still owns the timeline and then
+    /// emitting its command are two operations, and between them another thread can cancel or replace the
+    /// animation - so a re-check before the send narrows the window without closing it, and the command
+    /// goes out into somebody else's animation. On hardware that looks like one animation's motion
+    /// appearing in the middle of another.
+    ///
+    /// The contract is: <b>a command belonging to a playback may only be emitted while this gate is held
+    /// and the generation still matches, and anything that changes ownership takes this gate before it
+    /// bumps the generation.</b> An emission and a replacement therefore cannot interleave. The gate is
+    /// held across a send, which is safe because a send only queues a message under the transport's own
+    /// lock - it does no network work - so the wait a canceller can see is bounded by one keyframe.
+    ///
+    /// The lock order is always this gate and then <see cref="_gate"/>, never the other way about.
+    /// </summary>
+    private readonly object _emit = new();
 
     private AnimationClip? _clip;
     private AnimationHandle? _handle;
@@ -185,6 +212,7 @@ public sealed class AnimationScheduler
     /// </summary>
     public bool StopIfCurrent(long generation)
     {
+        lock (_emit)
         lock (_gate)
         {
             if (_clip is null || _generation != generation) return false;
@@ -218,6 +246,7 @@ public sealed class AnimationScheduler
     /// </summary>
     public AnimationHandle? Play(AnimationClip clip, double nowMs, bool replaceRunning = true)
     {
+        lock (_emit)
         lock (_gate)
         {
             if (_clip is not null)
@@ -227,7 +256,7 @@ public sealed class AnimationScheduler
             }
             _clip = clip;
             _generation++;
-            _handle = new AnimationHandle(clip.Name, clip.Tracks);
+            _handle = new AnimationHandle(clip.Name, clip.Tracks) { Generation = _generation };
             CurrentTag = _nextTag;
             // IncrementTagCtr at 0x0057B660 keeps incrementing while the value it came from was above
             // 0xFD, so the engine stores neither 0x00 nor 0xFF. The usable range is 1..0xFE.
@@ -298,6 +327,7 @@ public sealed class AnimationScheduler
     /// <summary>Stops whatever is running. Returns false when nothing was.</summary>
     public bool Stop()
     {
+        lock (_emit)
         lock (_gate)
         {
             if (_clip is null) return false;
@@ -462,12 +492,15 @@ public sealed class AnimationScheduler
 
         // The animation is opened here rather than in Play, on the first frame that streams and after that
         // frame's audio, matching the guarded SendStartOfAnimation at 0x0057C9C8.
-        byte openWith = 0;
-        lock (_gate)
+        lock (_emit)
         {
-            if (_generation == generation && !_startSent) { _startSent = true; openWith = CurrentTag; }
+            byte openWith = 0;
+            lock (_gate)
+            {
+                if (_generation == generation && !_startSent) { _startSent = true; openWith = CurrentTag; }
+            }
+            if (openWith != 0) _sink.AnimationStarted(openWith);
         }
-        if (openWith != 0) _sink.AnimationStarted(openWith);
 
         var due = new List<Keyframe>();
         lock (_gate)
@@ -491,24 +524,31 @@ public sealed class AnimationScheduler
         // on hardware looks like one animation's motion appearing in the middle of another.
         foreach (var k in due.OrderBy(TrackOrder))
         {
-            lock (_gate) { if (_generation != generation) return false; }
-            Dispatch(k);
+            // the emission contract: owned and sent as one step, so a replacement cannot land between
+            lock (_emit)
+            {
+                lock (_gate) { if (_generation != generation) return false; }
+                Dispatch(k);
+            }
             KeyframeFired?.Invoke(k);
         }
 
         // A body keyframe drives the wheels for its own duration and no longer. DriveWheels runs until
         // countermanded, so without this the wheels keep turning until the whole animation ends, which on
         // anim_bored_01 meant 800 ms of backward travel where the asset asked for 264 ms.
-        bool stopBody = false;
-        lock (_gate)
+        lock (_emit)
         {
-            if (_generation == generation && _bodyEndsAtMs is { } end && t >= end)
+            bool stopBody = false;
+            lock (_gate)
             {
-                _bodyEndsAtMs = null;
-                stopBody = true;
+                if (_generation == generation && _bodyEndsAtMs is { } end && t >= end)
+                {
+                    _bodyEndsAtMs = null;
+                    stopBody = true;
+                }
             }
+            if (stopBody) _sink.BodyStop();
         }
-        if (stopBody) _sink.BodyStop();
 
         // The face is continuous rather than stepped. A face keyframe is a pose to be AT when its trigger
         // time arrives, so the pose held now is interpolated forward towards the next one, not backwards
