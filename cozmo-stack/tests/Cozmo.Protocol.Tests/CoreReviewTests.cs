@@ -39,7 +39,7 @@ public class CoreReviewTests
         try { robot.Transport.OfflineTick(); } catch { }     // nothing to tick once disconnected
         var seen = new HashSet<ushort>();
         var outp = new List<RobotMessage>();
-        foreach (var sm in robot.Transport.OfflineOutbound.SelectMany(f => f.Messages))
+        foreach (var sm in Frames(robot).SelectMany(f => f.Messages))
         {
             if (sm.Type is not (ReliableMessageType.SingleReliableMessage or ReliableMessageType.SingleUnreliableMessage)
                 || sm.Payload.Length == 0) continue;
@@ -47,6 +47,21 @@ public class CoreReviewTests
             outp.Add(RobotMessage.Parse(sm.Payload));
         }
         return outp;
+    }
+
+    /// <summary>
+    /// A stable snapshot of the offline transport's capture list. Several of these tests have a real
+    /// background thread sending while the test reads - the animation ticker, above all - and the capture
+    /// list is a plain list, so a copy taken while it grows can throw. Retrying the copy is the whole fix:
+    /// what is being observed is the test harness's record of the wire, not anything production locks.
+    /// </summary>
+    private static List<Frame> Frames(CozmoRobot robot)
+    {
+        for (int attempt = 0; ; attempt++)
+        {
+            try { return new List<Frame>(robot.Transport.OfflineOutbound); }
+            catch (InvalidOperationException) when (attempt < 50) { Thread.Sleep(2); }
+        }
     }
 
     // ================================================================ CORE-001
@@ -689,6 +704,50 @@ public class CoreReviewTests
         for (int i = rendered; i < pcm.Length; i++) if (pcm[i] != quietPcm[i]) different++;
         Assert.True(different > (pcm.Length - rendered) / 10,
                     $"only {different} of {pcm.Length - rendered} unrendered samples changed");
+    }
+
+    /// <summary>
+    /// CORE-006, the part the first two tests did not see. Bounding the render by what has been consumed
+    /// made the lead's units matter: the scheduler takes whole 744-sample frames, and the lead was a round
+    /// 66 ms - fifteen samples short of two frames. The render therefore landed just inside the frame
+    /// after next, every other frame found itself not quite ready, and the song went out as sound,
+    /// silence, sound, silence at half its frames.
+    ///
+    /// The lead is two frames because that is what it was always described as; it is now counted in
+    /// frames. This drives the scheduler the way the wall clock drives it in production - one frame at a
+    /// time, no faster than the render - and asks that every frame of a playing song carry sound.
+    /// </summary>
+    [Fact]
+    public void CORE006_EveryFrameOfAPlayingSongCarriesSound()
+    {
+        if (WwiseAssets.Library is not { } lib) return;
+        uint song = lib.IdOf("Play__Robot_VO__Cozmo_Singing_80bpm")!.Value;
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(9));
+        source.SetSwitch(SingingBehavior.Group80, 0x852F201Au);
+        source.Prewarm(song).Wait();
+
+        var frames = new List<byte[]?>();
+        var scheduler = new AnimationScheduler(new RecordingSink(frames)) { AudioSource = source };
+        var clip = new AnimationClip
+        {
+            Name = "sing", Tracks = AnimationTrack.Audio, DurationMs = 4000,
+            Keyframes = new Keyframe[] { new AudioKeyframe(0, new long[] { (long)song }, 1f, Array.Empty<float>(), false) },
+        };
+        scheduler.Play(clip, 0);
+        scheduler.Advance(0);
+        var stream = source.StreamFor(song)!;
+
+        // one frame per step, waiting for the render the way 33 ms of wall clock waits for it
+        const int N = 60;
+        for (int i = 1; i <= N; i++)
+        {
+            int want = (frames.Count(f => f is not null) + 1) * CozmoAudio.SamplesPerFrame;
+            Within(2_000, () => stream.Ready >= want || stream.Ready >= stream.Pcm.Length);
+            scheduler.Advance(i * 33.0);
+        }
+
+        int sound = frames.Take(N).Count(f => f is not null);
+        Assert.True(sound >= N - 1, $"only {sound} of the first {N} frames carried sound: the song is going out every other frame");
     }
 
     // ================================================================ CORE-007

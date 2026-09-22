@@ -161,11 +161,22 @@ public sealed record WwiseVoicePlan(IReadOnlyList<WwiseVoice> Voices, double Tot
 public sealed class WwiseMusicStream : IDisposable
 {
     /// <summary>
-    /// How far ahead of the wall clock the worker renders. Two animation frames: long enough that the
-    /// scheduler never waits, short enough that a shake reaches the audio in well under a tenth of a
-    /// second.
+    /// How far ahead of playback the worker renders, in the units playback is actually measured in: whole
+    /// audio frames. Two of them - long enough that the scheduler never waits, short enough that a shake
+    /// reaches the audio in well under a tenth of a second.
+    ///
+    /// Whole frames rather than a round number of milliseconds, because the render is now bounded by what
+    /// the scheduler has taken and the scheduler takes exactly one 744-sample frame at a time. A lead of
+    /// 66 ms is fifteen samples short of two frames, and those fifteen samples are enough that every other
+    /// frame finds itself not quite ready: the sound comes out every second frame and the rest is silence.
     /// </summary>
-    public const double LeadMs = 66;
+    public const int LeadFrames = 2;
+
+    /// <summary>The lead as a sample count, which is how the worker bounds itself.</summary>
+    public const int LeadSamples = LeadFrames * CozmoAudio.SamplesPerFrame;
+
+    /// <summary>The lead as a duration - two frames at 22320 Hz, 66.67 ms.</summary>
+    public const double LeadMs = LeadSamples * 1000.0 / CozmoAudio.SampleRate;
 
     private readonly WwiseVoicePlan _plan;
     private readonly WwiseBusChain? _chain;
@@ -351,10 +362,13 @@ public sealed class WwiseMusicStream : IDisposable
                 {
                     // playback's own clock once it reports, the wall clock until then, and never more
                     // than a lead ahead of what has actually been taken
-                    double consumedMs = Consumed * 1000.0 / CozmoAudio.SampleRate;
+                    // Bounded in samples, not milliseconds: the scheduler reports having taken whole
+                    // frames, and a target that lands fifteen samples inside the frame after next leaves
+                    // every other frame unready.
                     double wallMs = (DateTime.UtcNow - started).TotalMilliseconds;
-                    double target = (Consumed > 0 ? consumedMs : Math.Min(wallMs, LeadMs)) + LeadMs;
-                    AdvanceTo(target);
+                    int from = Consumed > 0 ? Consumed
+                                            : (int)Math.Round(Math.Min(wallMs, LeadMs) * CozmoAudio.SampleRate / 1000.0);
+                    AdvanceTo((from + LeadSamples) * 1000.0 / CozmoAudio.SampleRate);
                     try { await Task.Delay(10, cts.Token); } catch (OperationCanceledException) { return; }
                 }
             }, cts.Token);

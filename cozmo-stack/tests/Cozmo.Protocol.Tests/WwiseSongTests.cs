@@ -323,9 +323,28 @@ public class WwiseSongTests
         s.Advance(0);
         Assert.True(sw.ElapsedMilliseconds < 500, $"the first frame took {sw.ElapsedMilliseconds} ms: the song was rendered on the scheduler thread");
         Assert.True(s.AudioStreaming);
-        for (double t = 33; t <= 9700; t += 33) s.Advance(t);
+
+        // The song is mixed while it plays, and the scheduler will not send samples that have not been
+        // rendered yet, so the timeline has to be driven no faster than the mix - which is what the wall
+        // clock does for it in production (CozmoAnimations advances one 33 ms frame per 33 ms). Stepping
+        // the timeline instantaneously here would outrun the worker and drop the sound on the floor, so
+        // each step waits for the frame it is about to stream, and nothing about what is asserted changes.
+        var stream = source.StreamFor(ev);
+        void Paced(double t)
+        {
+            if (stream is not null)
+            {
+                var w = System.Diagnostics.Stopwatch.StartNew();
+                while (stream.Ready < (sink.Frames + 1) * CozmoAudio.SamplesPerFrame &&
+                       stream.Ready < stream.Pcm.Length && w.ElapsedMilliseconds < 2000)
+                    Thread.Sleep(1);
+            }
+            s.Advance(t);
+        }
+
+        for (double t = 33; t <= 9700; t += 33) Paced(t);
         Assert.True(s.AudioStreaming);                                 // still singing just before the Stop
-        for (double t = 9733; t <= 10100; t += 33) s.Advance(t);
+        for (double t = 9733; t <= 10100; t += 33) Paced(t);
         Assert.False(s.AudioStreaming);                                // the 462 s render is cut at the clip's Stop
         Assert.Equal(1, s.AudioStops);
         Assert.InRange(sink.Frames, 290, 300);                         // about 9.8 s of frames carried sound
