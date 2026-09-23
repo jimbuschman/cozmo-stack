@@ -41,7 +41,7 @@ that controls the tool exit code and the catalog's terminal success marker.
 | L | `bodyangle --deg 45` | `VisionTool.BodyAngle` → production body-angle motion API | outbound absolute body-angle command and inbound pose-angle change | VALID |
 | Q | `manip --driveto` | `DriveToObjectAction` → `DriveToPoseAction` → planner → `PathSender` | real path segments/events and terminal drive success | VALID |
 | CR4 | `core --case CORE-004` | two `ManipulationSystem.StartPath` calls from current reported poses → owned path abort | path B replaces A; late `Abort(A)` sends no clear; inbound B `Completed` event | VALID |
-| X | `manip --driveto` with second physical cube | same Q production path plus `ImportBlockWorldObstacles`/`LatticePlanner` | live world obstacle imported, non-zero-obstacle lattice plan/arc path, terminal drive success | VALID |
+| X | `manip --driveto` with second physical cube | same Q production path plus `ImportBlockWorldObstacles`/`LatticePlanner` | live world obstacle imported, non-zero-obstacle lattice plan, positive count of actual outbound `AppendPathSegmentArc` messages, terminal drive success | VALID |
 | N | `manip --pickup` | `DockHelper` → `PickupObjectAction` | dock/error-signal exchange, `PickAndPlaceResult.BlockPickedUp`, carrying state | VALID |
 | O | `manip --putdown` | `PlaceObjectOnGroundAction` | place-on-ground messages/result and carrying state cleared | VALID |
 | P | `manip --roll` | `DockHelper` → `RollObjectAction` | explicit terminal action success and an explicitly changed before/after cube up-axis | VALID |

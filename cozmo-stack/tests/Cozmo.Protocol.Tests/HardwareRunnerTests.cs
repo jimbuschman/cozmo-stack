@@ -884,7 +884,8 @@ public class HardwareRunnerTests
         var x = HardwareCatalog.Find("X")!;
         Assert.Equal(AutoOutcome.Fail, x.Judge(Output("DriveToObject success=yes")));
         Assert.Equal(AutoOutcome.Fail, x.Judge(Output("lattice plan: 4 primitive(s), 0 obstacle(s)\nDriveToObject success=yes")));
-        Assert.Equal(AutoOutcome.Pass, x.Judge(Output("lattice plan: 7 primitive(s), 1 obstacle(s)\nDriveToObject success=yes")));
+        Assert.Equal(AutoOutcome.Fail, x.Judge(Output("lattice plan: 7 primitive(s), 1 obstacle(s)\npath segments sent: lines=2 arcs=0 pointTurns=1\nDriveToObject success=yes")));
+        Assert.Equal(AutoOutcome.Pass, x.Judge(Output("lattice plan: 7 primitive(s), 1 obstacle(s)\npath segments sent: lines=2 arcs=1 pointTurns=1\nDriveToObject success=yes")));
     }
 
     [Fact]

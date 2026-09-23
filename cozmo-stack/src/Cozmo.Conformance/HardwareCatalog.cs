@@ -912,7 +912,7 @@ public static class HardwareCatalog
             Evidence = new[]
             {
                 new EvidenceItem("plan", "lattice plan"),
-                new EvidenceItem("arcs", "AppendPathSegmentArc"),
+                new EvidenceItem("segments sent", "path segments sent"),
                 new EvidenceItem("result", "DriveToObject"),
             },
             FidelityRecords = new[] { "M13-001", "M13-003", "M13-004", "M13-005", "M13-011", "M12-002" },
@@ -921,6 +921,9 @@ public static class HardwareCatalog
             Command = o => o.WithObb("manip", o.Ip).Concat(new[] { "--driveto", "--acceptance", o.Acceptance("X") }).ToArray(),
             // Q drives to the same pose with nothing in the way; what makes this X is an obstacle in the plan
             Judge = r => r.Contains("lattice plan") && !r.Contains("0 obstacle(s)") && r.Contains("obstacle")
+                      && System.Text.RegularExpressions.Regex.IsMatch(r.Output,
+                          @"path segments sent: lines=\d+ arcs=[1-9]\d* pointTurns=\d+",
+                          System.Text.RegularExpressions.RegexOptions.IgnoreCase)
                       && r.Contains("DriveToObject success=yes") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
 

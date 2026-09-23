@@ -155,9 +155,15 @@ public static class ManipTool
             }
             case "--driveto":
             {
+                int sentBeforeDrive = m.Paths.Sent.Count;
                 var d = new DriveToObjectAction(m, cube.ObjectId, PreActionType.Docking);
                 var r = await d.RunAsync(cts.Token);
                 foreach (var l in d.Trace) Say("  " + l);
+                var sentByDrive = m.Paths.Sent.Skip(sentBeforeDrive).ToList();
+                int lines = sentByDrive.OfType<AppendPathSegmentLine>().Count();
+                int arcs = sentByDrive.OfType<AppendPathSegmentArc>().Count();
+                int pointTurns = sentByDrive.OfType<AppendPathSegmentPointTurn>().Count();
+                Say($"path segments sent: lines={lines} arcs={arcs} pointTurns={pointTurns}");
                 succeeded = r == ActionResult.Success;
                 outcome = $"DriveToObject success={(succeeded ? "yes" : "no")}; action={r}; chosen pre-dock pose {d.Chosen}";
                 break;
