@@ -140,7 +140,6 @@ public static class VisionTool
         if (unconnected) { vision.World.AllowUnconnectedObjects = true; Say("objects will be created for unconnected cubes (LOCAL_POLICY switch)"); }
 
         // 2. cubes and camera
-        robot.Cubes.SetDiscovery(true);
         robot.StartCamera();
         int markers = 0, objects = 0, frames = 0;
         var seenCodes = new HashSet<MarkerType>();

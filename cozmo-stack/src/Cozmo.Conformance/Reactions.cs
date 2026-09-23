@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Vision;
 
 namespace Cozmo.Conformance;
 
@@ -158,6 +159,16 @@ public static class ReactionsTool
         var arbiter = new BehaviorArbiter { AutonomyEnabled = true };
         var ctx = new BehaviorContext { Robot = robot, Triggers = map, Arbiter = arbiter, Mood = mood };
         var manager = new BehaviorManager(ctx);
+        using var vision = new VisionSystem(robot);
+        var calibration = await vision.ReadCalibrationAsync(TimeSpan.FromSeconds(3));
+        var expect = ParseExpected(Arg(a, "--expect"));
+        bool needsCubeVision = expect.Any(x => x is ReactionTrigger.CubeMoved or ReactionTrigger.ObjectPositionUpdated);
+        if (needsCubeVision && calibration is null)
+        {
+            Console.WriteLine("camera calibration was not read from the robot; cube/world reactions cannot be exercised");
+            robot.Disconnect();
+            return 2;
+        }
 
         var sw = System.Diagnostics.Stopwatch.StartNew();
         var log = new List<object>();
@@ -167,7 +178,7 @@ public static class ReactionsTool
             log.Add(new { t = sw.Elapsed.TotalSeconds, text });
         }
 
-        foreach (var reg in ShippedBehaviors.Reactions(robot))
+        foreach (var reg in ShippedBehaviors.Reactions(robot, vision.Locator, () => sw.Elapsed.TotalSeconds, vision))
         {
             manager.AddReaction(reg.Strategy, reg.Behavior, reg.ResumeLast);
             if (reg.Behavior is SteppedBehavior stepped) stepped.Step += line => Line($"    {reg.Behavior.Id}: {line}");
@@ -182,8 +193,12 @@ public static class ReactionsTool
         Console.WriteLine($"classifier {(robot.Sensors.OffTreadsClassifierEnabled ? "enabled" : "waiting for the head calibration report")}");
         Console.WriteLine($"\n{manager.Reactions.Count} reactions registered:");
         foreach (var r in manager.Reactions) Console.WriteLine($"  {r.Strategy.Trigger,-20} -> {r.Behavior.Id}{(r.ResumeLast ? " (resumes last)" : "")}");
-        var expect = ParseExpected(Arg(a, "--expect"));
         bool provoke = a.Contains("--provoke-movement");
+        if (calibration is not null)
+        {
+            robot.StartCamera();
+            Line($"vision pipeline active with robot camera calibration; face detector available={vision.FaceDetector.IsAvailable}");
+        }
 
         var fired = new HashSet<ReactionTrigger>();
         var firedInWindow = new HashSet<ReactionTrigger>();
@@ -237,6 +252,7 @@ public static class ReactionsTool
             }
         }
         manager.Stop(BehaviorStopReason.Cancelled, sw.Elapsed.TotalSeconds);
+        if (calibration is not null) robot.StopCamera();
         await robot.Motion.StopAllAsync();
 
         Console.WriteLine($"\nreactions fired: {(fired.Count == 0 ? "none" : string.Join(", ", fired.OrderBy(x => x)))}");

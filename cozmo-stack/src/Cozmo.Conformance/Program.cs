@@ -175,7 +175,7 @@ static int Usage()
                                              hardware acceptance for battery, charger, cliff and IMU: reads
                                              what the robot reports about itself and prints it once a second
           cubes <robot-ip> [--seconds 15] [--acceptance [file.json]]
-                                             hardware acceptance for cubes: turns discovery on and reports
+                                             hardware acceptance for cubes: uses the production auto block pool and reports
                                              every cube heard, with connection state and telemetry
 
           behavior <robot-ip> --obb <dir> [--seconds 60] [--no-idle] [--no-react] [--allow-motion]
@@ -401,4 +401,3 @@ static int Replay(string[] a)
     Console.WriteLine($"{frames.Count} frames replayed, {delivered.Count} messages delivered, {sent.Count} frames our side would have sent");
     return 0;
 }
-

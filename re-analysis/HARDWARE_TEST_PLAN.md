@@ -101,13 +101,13 @@ since carry their own: LINK, FD, AUD, MOV, IDL, A3, Z2, and CR1-CR8 for the core
 | # | check | what it tests | you need | after | automated verdict | human verdict |
 | --- | --- | --- | --- | --- | --- | --- |
 | LINK | **Connection, handshake and telemetry** | The UDP transport, the connection handshake, identity and the 30 Hz state stream | - | - | the smoke test reports PASS: connected, identity received, telemetry flowing, no backlog | He sits still, his backpack light is on, and nothing about him changes for 20 seconds. |
-| D | **Lift position readout** | RobotState lift angle and the angle-to-height conversion, with battery, cliff and IMU | you handle him | LINK | both ends of the lift's travel are seen: down below -0.10 rad and raised above 0.40 rad | The two readings it prints back match where the lift actually was: about -0.198 rad / 32 mm down, about 0.712 rad / 92 mm raised. |
+| D | **Lift position readout** | RobotState lift angle and the angle-to-height conversion, with battery, cliff and IMU | - | LINK | both acknowledged motion actions complete and telemetry reaches the source-backed low/high endpoints | The two readings it prints back match where the lift actually was: about -0.198 rad / 32 mm down, about 0.712 rad / 92 mm raised. |
 
 ### 2. animation controller
 
 | # | check | what it tests | you need | after | automated verdict | human verdict |
 | --- | --- | --- | --- | --- | --- | --- |
-| F | **Animation timeline** | The animation scheduler's keyframe timing against the robot's audio pacing | `--obb`, **he moves** | LINK | keyframes fired equals keyframes in the clip, and no stalls are reported | The clip plays as it always has: no stutter, no truncation, no stuck lift or head. |
+| F | **Animation timeline** | The animation scheduler's keyframe timing against the robot's audio pacing | `--obb`, **he moves** | LINK | exact animation success verdict: all keyframes fired and the timeline ran to length | The clip plays as it always has: no stutter, no truncation, no stuck lift or head. |
 
 ### 3. face display
 
@@ -136,20 +136,20 @@ since carry their own: LINK, FD, AUD, MOV, IDL, A3, Z2, and CR1-CR8 for the core
 | --- | --- | --- | --- | --- | --- | --- |
 | CR1 | **A live body shuffle stops at its duration** | The animation scheduler's live keyframe path and the tick loop that serves its deadline | **he moves** | MOV | the wheels move and are back at zero half a second after the keyframe's duration | He shuffles forward for about a second and stops by himself. He does not keep creeping. |
 | IDL | **Idle keeps him alive without wandering** | The idle behaviour: keep-alive blinks, small body shuffles and head moves | `--obb`, **he moves** | CR1 | the idle layer took at least one action of its own ("idle actions taken" is not zero) | He blinks and makes small movements, and he is still roughly where he started after a minute. Nothing repeats mechanically and nothing runs on. |
-| CR3 | **A cancelled animation stops sending** | The scheduler's emission gate: a command of a cancelled playback must not get out | `--obb`, **he moves** | F, MOV | no wheel, head or lift movement is reported after the stop has settled | He stops when the animation is cut and stays stopped. No late twitch of the head, the lift or the wheels. |
-| CR2 | **A dropped link ends the animation, not the process** | The animation tick loop's failure boundary when the robot goes away mid-clip | `--obb`, **he moves** | F | the animation ends, the ticker stops and the exception is reported rather than thrown at nobody | He is moving, and at the moment the tool says it is dropping the link he stops where he is and stays stopped - no twitching, no carrying on, no running away. The tool then prints its own verdict and the campaign moves to the next check instead of dying. |
+| CR3 | **A cancelled animation stops sending** | The scheduler's emission gate: a command of a cancelled playback must not get out | `--obb`, **he moves** | F, MOV | playback is active before Stop; no later keyframe fires, the ticker ends and telemetry settles | He stops when the animation is cut and stays stopped. No late twitch of the head, the lift or the wheels. |
+| CR2 | **A dropped link ends the animation, not the process** | The animation tick loop's failure boundary when the robot goes away mid-clip | `--obb`, **he moves** | F | playback is active before disconnect; the animation/ticker end and Faulted reports the link loss | He is moving, and at the moment the tool says it is dropping the link he stops where he is and stays stopped - no twitching, no carrying on, no running away. The tool then prints its own verdict and the campaign moves to the next check instead of dying. |
 
 ### 7. camera
 
 | # | check | what it tests | you need | after | automated verdict | human verdict |
 | --- | --- | --- | --- | --- | --- | --- |
-| E | **Colour camera frames** | The colour path of the camera decoder | - | LINK | frames decode without error | The saved files are colour photographs of the room, not tinted or scrambled. |
+| E | **Colour camera frames** | The colour path of the camera decoder | - | LINK | colour frames decode and the saved presentation JPEG has nominal 320x240 geometry | The saved files are colour photographs of the room, not tinted or scrambled. |
 
 ### 8. markers, cubes and the world model
 
 | # | check | what it tests | you need | after | automated verdict | human verdict |
 | --- | --- | --- | --- | --- | --- | --- |
-| B | **Cube telemetry** | Cube discovery, connection and the tap, movement, up-axis and battery reports | cube, you handle him | LINK | at least one cube CONNECTED and at least one telemetry signal (tap, movement, up axis or battery) | The events printed match what you did, and at least one cube shows as connected. |
+| B | **Cube telemetry** | Cube discovery, connection and the tap, movement, up-axis and battery reports | cube, you handle him | LINK | the production auto pool sends SetPropSlot, a cube connects and cube telemetry is observed | The events printed match what you did, and at least one cube shows as connected. |
 | K | **Camera calibration and cube localisation** | The NV calibration read, marker detection and BlockWorld's pose estimate | cube, you handle him | B | the calibration is read from the robot and at least one cube becomes Known with a pose | Marker codes match the faces shown, the printed distance matches a ruler within about 5 percent, and the yaw matches how the cube is turned. |
 
 ### 9. the charger
@@ -169,7 +169,7 @@ since carry their own: LINK, FD, AUD, MOV, IDL, A3, Z2, and CR1-CR8 for the core
 | I | **StartMotorCalibration honoured** | StartMotorCalibration (0x58) and the MotorCalibration reports the robot answers with | **he moves** | LINK | the head reports calibration started and then finished, after the request and not before it | After ASKING NOW, his head nods down to its stop and comes back, within a few seconds. Nothing else moves. |
 | J | **Unexpected movement while driving** | The unexpected-movement detector and its reaction | you handle him, `--obb`, **he moves** | H | the unexpected-movement reaction fires during the window in which the tool drives the wheels | He plays the startled reaction once he is held, and nothing fires while he turns freely. |
 | M | **The cube reactions with a real cube** | AcknowledgeObject and ReactToCubeMoved against a real, observed cube | cube, you handle him, `--obb`, **he moves** | K | both named cube reactions fire, each in its own window | He looks at the cube's new place and nods to it. Turned away and hearing it move, he turns back to where it was and reacts to finding or not finding it. |
-| CR8 | **Picking him up changes the frame everything is in** | The pose origin in the robot's state, the history's frame, and what the world forgets | cube, you handle him | K | at least one origin change is seen and handled | Nothing physical to judge beyond the handling itself: the check is whether the software noticed. What you confirm is that you really did lift him and set him down elsewhere. |
+| CR8 | **Picking him up changes the frame everything is in** | The pose origin in the robot's state, the history's frame, and what the world forgets | cube, you handle him | K | a cube is located before the origin change and that same non-carried object becomes unlocated | Nothing physical to judge beyond the handling itself: the check is whether the software noticed. What you confirm is that you really did lift him and set him down elsewhere. |
 | CR7 | **The ground he looks at reaches the map** | The overhead-edge detector, the ground ROI, and the memory map's edge insertion | you handle him | K | frames are processed, edge points are found and the map holds at least one region | Nothing to judge by eye except that he was looking at the edge the whole time; the evidence is in the map's own region counts. |
 
 ### 11. navigation
@@ -188,7 +188,7 @@ since carry their own: LINK, FD, AUD, MOV, IDL, A3, Z2, and CR1-CR8 for the core
 | N | **Pick up a cube** | DockWithObject, the docking error signal and the pick-and-place result | cube, **he moves** | K, Q | the pick-and-place result reports the block picked up | He drives to about 75 mm in front of the face, docks smoothly, lifts the cube and holds it. |
 | O | **Place a carried cube on the ground** | PlaceObjectOnGround and the carry state | cube, **he moves** | N | the result reports the block placed and carrying clears | He lowers the lift and backs off the cube, leaving it upright on the floor. |
 | P | **Roll a cube** | The roll dock action and the cube's own up-axis report | cube, **he moves** | K | the roll reports success with a change of up axis | He docks and the cube rolls onto another face; the reported up axis changes. |
-| R | **Stack two cubes** | The stacking behaviour: pick up, carry, place on top, and the final animation | cube, `--obb`, **he moves** | N, K | the three stacking phases run in order | He picks one up, carries it to the other and places it on top. |
+| R | **Stack two cubes** | The stacking behaviour: pick up, carry, place on top, and the final animation | cube, `--obb`, **he moves** | N, K | the terminal stack result is success and carrying is clear; entering the phases is insufficient | He picks one up, carries it to the other and places it on top. |
 | S | **Flip a cube** | The flip pre-action pose at the cube's corner and the lift-driven flip | cube, **he moves** | K | the flip action reports success | He drives at the cube's corner with the lift low, the lift comes up as he reaches it, and the cube tips over his shoulder. He does not stall against it. |
 | T | **Knock over a stack** | The knock-over behaviour: the grab attempt, the flip and the success animation | cube, `--obb`, **he moves** | K, S | the stack is recognised and the knock-over reports success | He turns to the stack, drives to about 85 mm, reaches, flips the bottom cube and the stack falls. The success animation plays. |
 | U | **Pop a wheelie** | The wheelie dock action, the retry on a miss, and the cliff-stop re-enable | cube, `--obb`, **he moves** | K | PoppedWheelie appears and the cliff stop is re-enabled on stop | He docks, rides up onto the cube's edge and drops back. A miss plays the realign animation and tries again, up to three times. |
@@ -197,13 +197,13 @@ since carry their own: LINK, FD, AUD, MOV, IDL, A3, Z2, and CR1-CR8 for the core
 
 | # | check | what it tests | you need | after | automated verdict | human verdict |
 | --- | --- | --- | --- | --- | --- | --- |
-| Z | **Freeplay on the robot** | The whole autonomy stack: needs, activities, choosers, behaviours and reactions | cube, charger, you handle him, `--obb`, **he moves** | K | an activity starts, DriveOffCharger runs, scored picks follow and no NoActivityAvailableError appears | He leaves the charger, looks around, goes to the cube and plays with it, pauses and looks around between games, and after the put-down heads for the cube. Nothing repeats back to back. |
+| Z | **Freeplay on the robot** | The whole autonomy stack: needs, activities, choosers, behaviours and reactions | cube, charger, you handle him, `--obb`, **he moves** | K | an activity is selected, at least two behaviours actually start and no fatal activity error occurs | He leaves the charger, looks around, goes to the cube and plays with it, pauses and looks around between games, and after the put-down heads for the cube. Nothing repeats back to back. |
 
 ### 14. long run and stability
 
 | # | check | what it tests | you need | after | automated verdict | human verdict |
 | --- | --- | --- | --- | --- | --- | --- |
-| Z2 | **Fifteen minutes of freeplay, and the mood decaying through it** | Stability over time, and the mood decay that the behaviour scoring reads | cube, you handle him, `--obb`, **he moves** | Z | the run completes with activities chosen throughout and no NoActivityAvailableError | He is still deciding and moving at the end, with no long stalls, no repeated behaviour back to back, and no degradation in his voice or his movement. |
+| Z2 | **Fifteen minutes of freeplay, and the mood decaying through it** | Stability over time, and the mood decay that the behaviour scoring reads | cube, you handle him, `--obb`, **he moves** | Z | behaviours execute into the second half and sampled mood values demonstrably decay | He is still deciding and moving at the end, with no long stalls, no repeated behaviour back to back, and no degradation in his voice or his movement. |
 
 ### 15. blocked on this build
 

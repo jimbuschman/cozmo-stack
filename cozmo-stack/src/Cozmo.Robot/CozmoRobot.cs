@@ -292,6 +292,11 @@ public sealed class CozmoRobot : IDisposable
         // the saved cubes straight away. The engine resolves the file with DataPlatform::pathToResource(scope 4);
         // this stack keeps it under the local application data folder. An empty path turns persistence off.
         robot.Cubes.Connections.Init(blockPoolPath ?? DefaultBlockPoolPath);
+        // ConnectionFlowController.CubeConnectFlow enables the app's BlockPoolTracker immediately after
+        // the robot connection is established, with a discovery time of zero. This is the application-side
+        // lifecycle step that lets a fresh install select newly advertising cubes; Init above only restores
+        // the persistent pool and cannot discover a cube that has never been saved.
+        robot.Cubes.EnableAutoBlockPool(enabled: true, discoveryTimeSeconds: 0f);
         for (int i = 0; i < 40 && robot.State.StateCount == 0; i++) await Task.Delay(50);
         return robot;
     }

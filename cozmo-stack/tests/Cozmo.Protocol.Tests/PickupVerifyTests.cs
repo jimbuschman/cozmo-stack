@@ -9,8 +9,6 @@ namespace Cozmo.Protocol.Tests;
 // cube dirty (fidelity manifest M12-007 and M11-009).
 public class PickupVerifyTests
 {
-    private static readonly Lazy<Cozmo.Robot.Animation.Wwise.WwiseSoundLibrary?> Library = new(() => WwiseAssets.Library);
-
     /// <summary>The constants are the ones the constructor writes at 0x005536CC onwards.</summary>
     [Fact]
     public void TheVerifyTimeoutsAreTheEngines()
@@ -28,8 +26,8 @@ public class PickupVerifyTests
     [Fact]
     public void AMovedCubeGoesDirtyAndReportsItselfMoving()
     {
-        if (Library.Value is null) return;
         using var rig = new Rig();
+        if (rig.NoLibrary) return;
         rig.Cube = ManipulationTests.CubeAt(150, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
         Assert.Equal(PoseState.Known, obj.PoseState);
@@ -52,8 +50,8 @@ public class PickupVerifyTests
     [Fact]
     public void ACarriedCubeReportingMotionDoesNotGoDirty()
     {
-        if (Library.Value is null) return;
         using var rig = new Rig();
+        if (rig.NoLibrary) return;
         rig.Cube = ManipulationTests.CubeAt(150, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
         rig.M.Docking.Carrying.SetCarrying(obj.ObjectId);
@@ -72,8 +70,8 @@ public class PickupVerifyTests
     [Fact]
     public void LettingGoLeavesTheCubeDirtyWhereTheLiftLeftIt()
     {
-        if (Library.Value is null) return;
         using var rig = new Rig();
+        if (rig.NoLibrary) return;
         rig.Cube = ManipulationTests.CubeAt(150, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
         rig.M.Docking.Carrying.SetCarrying(obj.ObjectId, obj.Markers[0]);

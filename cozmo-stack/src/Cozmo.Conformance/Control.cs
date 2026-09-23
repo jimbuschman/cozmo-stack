@@ -62,57 +62,34 @@ public static class Control
     }
 
     /// <summary>
-    /// The lift reading, taken at both ends of its travel, with the person told exactly when to move it.
-    ///
-    /// Watching a column of numbers for eight seconds and being asked afterwards whether they matched the
-    /// lift is a question nobody can answer: there is nothing to compare, and no way to know when to move it.
-    /// So the tool runs the experiment instead. It holds a window with the lift down, says plainly when to
-    /// raise it, holds a second window, and then prints the two readings side by side with the engine's own
-    /// expected values. That is a question a person can answer, and the automated half can check that both
-    /// ends of the travel were actually visited rather than that a number was printed.
+    /// Commands both source-backed endpoints through the normal motion API, waits for the robot's action
+    /// acknowledgement, and then compares the RobotState angle/height at each endpoint.
     /// </summary>
     private static async Task<int> GuidedLift(CozmoRobot robot, StreamWriter log, string[] a)
     {
-        var s = robot.Sensors;
-        float downRad = float.MaxValue, downMm = float.MaxValue, upRad = float.MinValue, upMm = float.MinValue;
+        Console.WriteLine("commanding the source-backed lift endpoints through CozmoMotion.SetLiftHeightAsync");
+        var downResult = await robot.Motion.SetLiftHeightAsync(CozmoMotion.MinLiftHeightMm);
+        await Task.Delay(250); // let the acknowledged terminal RobotState reach the device tracker
+        float downRad = robot.Sensors.LiftAngleRad ?? float.NaN;
+        float downMm = robot.Sensors.LiftHeightMm ?? float.NaN;
+        Console.WriteLine($"lift down: action={downResult.Result}, telemetry={downRad:F3} rad / {downMm:F1} mm");
 
-        async Task Window(string what, int seconds, bool down)
-        {
-            Console.WriteLine();
-            Console.WriteLine(new string('=', 70));
-            Console.WriteLine($"  NOW: {what}");
-            Console.WriteLine($"  (reading for {seconds} s)");
-            Console.WriteLine(new string('=', 70));
-            var end = DateTime.UtcNow.AddSeconds(seconds);
-            while (DateTime.UtcNow < end)
-            {
-                float rad = s.LiftAngleRad ?? 0f, mm = s.LiftHeightMm ?? 0f;
-                if (down) { downRad = Math.Min(downRad, rad); downMm = Math.Min(downMm, mm); }
-                else { upRad = Math.Max(upRad, rad); upMm = Math.Max(upMm, mm); }
-                Console.WriteLine($"    lift={rad,7:F3} rad / {mm,6:F1} mm   (batt {s.BatteryVolts:F2}V)");
-                await Task.Delay(700);
-            }
-        }
+        var upResult = await robot.Motion.SetLiftHeightAsync(CozmoMotion.MaxLiftHeightMm);
+        await Task.Delay(250);
+        float upRad = robot.Sensors.LiftAngleRad ?? float.NaN;
+        float upMm = robot.Sensors.LiftHeightMm ?? float.NaN;
+        Console.WriteLine($"lift raised: action={upResult.Result}, telemetry={upRad:F3} rad / {upMm:F1} mm");
 
         Console.WriteLine();
-        Console.WriteLine("  Two readings: the lift all the way down, then the lift all the way up.");
-        Console.WriteLine("  The engine's own figures are about -0.198 rad / 32 mm down and 0.712 rad / 92 mm raised.");
-        await Window("leave the lift ALL THE WAY DOWN and do not touch it", 5, down: true);
-        Console.WriteLine();
-        Console.WriteLine("  In 3 seconds, raise the lift by hand as far as it goes and HOLD it there.");
-        await Task.Delay(3000);
-        await Window("RAISE THE LIFT fully by hand and hold it there", 6, down: false);
-
-        Console.WriteLine();
-        Console.WriteLine($"lift down:   {downRad,7:F3} rad / {downMm,6:F1} mm   (engine: -0.198 rad / 32 mm)");
-        Console.WriteLine($"lift raised: {upRad,7:F3} rad / {upMm,6:F1} mm   (engine:  0.712 rad / 92 mm)");
+        Console.WriteLine($"expected endpoints: about -0.198 rad / {CozmoMotion.MinLiftHeightMm:F0} mm and 0.712 rad / {CozmoMotion.MaxLiftHeightMm:F0} mm");
         Console.WriteLine($"travel seen: {upMm - downMm:F1} mm");
 
         // Both ends have to have been visited, or the reading proves nothing about the conversion.
         bool sawDown = downRad < -0.10f, sawUp = upRad > 0.40f;
-        bool pass = sawDown && sawUp && upMm - downMm > 30f;
+        bool actionsCompleted = downResult.Ok && upResult.Ok;
+        bool pass = actionsCompleted && sawDown && sawUp && upMm - downMm > 30f;
         Console.WriteLine($"lift sequence: down seen={(sawDown ? "yes" : "NO")}, raised seen={(sawUp ? "yes" : "NO")}, "
-                        + $"both ends seen={(pass ? "yes" : "NO")}");
+                        + $"actions completed={(actionsCompleted ? "yes" : "NO")}, both endpoints validated={(pass ? "yes" : "NO")}");
         if (!sawUp) Console.WriteLine("  the lift never reached the top of its travel: it was not raised, or the reading is wrong");
         log.Dispose();
 
@@ -120,7 +97,7 @@ public static class Control
         if (path is not null)
             Console.WriteLine("acceptance record: " + Acceptance("sensors-lift", pass,
                 "the printed millimetres matched where the lift actually was, at both ends of its travel",
-                new { downRad, downMm, upRad, upMm, travelMm = upMm - downMm, sawDown, sawUp }, robot, path));
+                new { downAction = downResult.Result.ToString(), downRad, downMm, upAction = upResult.Result.ToString(), upRad, upMm, travelMm = upMm - downMm, sawDown, sawUp }, robot, path));
         robot.Disconnect();
         return pass ? 0 : 2;
     }
@@ -471,10 +448,8 @@ public static class Control
         robot.Cubes.CubeTapped += c => { taps++; Console.WriteLine($"  tapped {c}"); };
         robot.Cubes.CubeMoved += c => { movements++; Console.WriteLine($"  {(c.Moving ? "moving" : "still")} {c}"); };
 
-        Console.WriteLine($"discovery on for {watch:F0}s. Put a cube nearby, and tap it to exercise telemetry.");
-        robot.Cubes.SetDiscovery(true);
+        Console.WriteLine($"production auto block pool on for {watch:F0}s. Put a cube nearby, and tap it to exercise telemetry.");
         await Task.Delay(TimeSpan.FromSeconds(watch));
-        robot.Cubes.SetDiscovery(false);
         log.Dispose();
 
         var cubes = robot.Cubes.DiscoveredCubes;
@@ -486,9 +461,13 @@ public static class Control
         // report, an up axis or a battery level. Discovery alone was already observed on 2026-09-19 and is
         // not what is pending here.
         var connected = robot.Cubes.ConnectedCubes;
+        var slotRequests = robot.Cubes.Connections.SlotRequestsSent;
         bool telemetry = taps > 0 || movements > 0
                          || cubes.Any(c => c.Taps > 0 || c.UpAxis is not null || c.BatteryLevelRaw > 0);
-        bool pass = cubes.Count > 0 && connected.Count > 0 && telemetry;
+        bool pass = robot.Cubes.Connections.AutoBlockPoolEnabled && cubes.Count > 0
+                    && slotRequests.Any(x => x.FactoryId != 0) && connected.Count > 0 && telemetry;
+        Console.WriteLine($"auto block pool enabled: {robot.Cubes.Connections.AutoBlockPoolEnabled}; "
+                        + $"SetPropSlot sent: {slotRequests.Count} ({string.Join(", ", slotRequests.Select(x => $"0x{x.FactoryId:x8}->slot{x.Slot}"))})");
         if (cubes.Count == 0)
             Console.WriteLine("No cube was heard. A cube out of range or with a flat battery looks the same from here.");
         else if (connected.Count == 0)
@@ -502,6 +481,8 @@ public static class Control
         var rec = Acceptance("cubes", pass, human, new
         {
             connectedCount = connected.Count,
+            autoBlockPoolEnabled = robot.Cubes.Connections.AutoBlockPoolEnabled,
+            setPropSlot = slotRequests.Select(x => new { x.FactoryId, x.Slot }).ToArray(),
             tapEvents = taps,
             movementEvents = movements,
             discovered = cubes.Select(c => new

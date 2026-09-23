@@ -67,9 +67,9 @@ public readonly record struct ActiveObjectSlot(int Slot, uint FactoryId, ObjectT
 /// capture has two before anything but the handshake was sent). The path has no timeout on a slot that never
 /// connects, either; a PendingConnection slot stays so until the robot says otherwise.
 ///
-/// Not reproduced: the pool is not saved between sessions (<c>BlockFilter::Load</c>/<c>Save</c>), so every
-/// session starts as the engine does on a fresh install; and when two cubes of one type advertise the same
-/// RSSI byte, the engine takes the one its <c>unordered_map</c> visits last, whose order is not reproduced here.
+/// The pool is persisted with the engine's text format and the advertisement table reproduces the libc++
+/// container order used for equal-RSSI selection. The application lifecycle that enables this filter lives
+/// in <see cref="CozmoRobot.ConnectAsync"/>.
 /// </summary>
 public sealed class CubeConnections
 {
@@ -120,6 +120,7 @@ public sealed class CubeConnections
     private readonly SortedDictionary<ObjectType, uint> _discovering = new();                                  // +0x54
     private float _discoveryTime, _enableTime, _lastConnectTime, _lastPoolUpdate;                               // +0x6C..+0x78
     private bool _poolEnabled;                                                                                  // +0x7C
+    private readonly List<SetPropSlot> _slotRequestsSent = new();
 
     /// <param name="send">Sends a SetPropSlot to the robot, reliably.</param>
     /// <param name="seconds">The engine's <c>BaseStationTimer::GetCurrentTimeInSeconds</c>.</param>
@@ -137,6 +138,15 @@ public sealed class CubeConnections
 
     /// <summary>Raised with each SetPropSlot as it is sent.</summary>
     public event Action<SetPropSlot>? SlotRequested;
+
+    /// <summary>
+    /// Every outbound <see cref="SetPropSlot"/> produced by the connection path in this session. This is
+    /// diagnostic evidence of the real production path, not another way to request a connection.
+    /// </summary>
+    public IReadOnlyList<SetPropSlot> SlotRequestsSent
+    {
+        get { lock (_gate) return _slotRequestsSent.ToArray(); }
+    }
 
     /// <summary>Whether the automatic block pool is on.</summary>
     public bool AutoBlockPoolEnabled { get { lock (_gate) return _poolEnabled; } }
@@ -277,6 +287,7 @@ public sealed class CubeConnections
     {
         var m = new SetPropSlot { FactoryId = factoryId, Slot = (byte)slot };
         _send(m);
+        _slotRequestsSent.Add(m);
         return m;
     }
 

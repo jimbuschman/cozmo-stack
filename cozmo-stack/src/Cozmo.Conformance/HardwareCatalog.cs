@@ -80,15 +80,14 @@ public static class HardwareCatalog
             Subsystem = "RobotState lift angle and the angle-to-height conversion, with battery, cliff and IMU",
             Why = "The lift angle is reported in radians and converted with the engine's own formula. If the "
                 + "conversion is wrong, every docking height and the carry check are wrong with it.",
-            Setup = "Robot on its treads on a table. Start with the lift fully down.",
-            Prerequisites = new[] { "CON passed", "the lift is all the way down to begin with" },
-            DoThis = "Follow the two prompts. First leave the lift alone, all the way down. Then, when it says "
-                   + "RAISE THE LIFT, lift the arm by hand as far as it goes and hold it there until it stops reading.",
+            Setup = "Robot on its treads on a table, with the lift unobstructed.",
+            Prerequisites = new[] { "CON passed", "nothing is touching the lift" },
+            DoThis = "Keep hands clear. The production motion API lowers and raises the lift itself, then compares RobotState telemetry at both endpoints.",
             Success = "The two readings it prints back match where the lift actually was: about -0.198 rad / 32 mm "
                     + "down, about 0.712 rad / 92 mm raised.",
             Question = "Did the two printed readings match where the lift actually was, down and raised?",
             ExpectedTelemetry = "a reading at each end of the travel, and both ends of the travel actually visited",
-            AutoRule = "both ends of the lift's travel are seen: down below -0.10 rad and raised above 0.40 rad",
+            AutoRule = "both acknowledged motion actions complete and telemetry reaches the source-backed low/high endpoints",
             Evidence = new[]
             {
                 new EvidenceItem("readings", "lift="),
@@ -97,11 +96,10 @@ public static class HardwareCatalog
                 new EvidenceItem("raised", "lift raised:"),
             },
             FidelityRecords = new[] { "M2-003", "M2-002", "M4-008" },
-            NeedsHandling = true,
             Requires = new[] { "LINK" },
             Timeout = TimeSpan.FromMinutes(2),
             Command = o => new[] { "sensors", o.Ip, "--guide-lift", "--acceptance", o.Acceptance("D") },
-            Judge = r => r.Contains("both ends seen=yes") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.ExitCode == 0 && r.Contains("both endpoints validated=yes") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
 
         // ================================================================ 2. animation controller
@@ -119,7 +117,7 @@ public static class HardwareCatalog
             Success = "The clip plays as it always has: no stutter, no truncation, no stuck lift or head.",
             Question = "Did the clip play smoothly and completely?",
             ExpectedTelemetry = "keyframes fired equals keyframes in the clip and no stalls are reported",
-            AutoRule = "keyframes fired equals keyframes in the clip, and no stalls are reported",
+            AutoRule = "the animation tool reports that every keyframe fired and the timeline ran to length",
             Evidence = new[]
             {
                 new EvidenceItem("keyframes", "keyframes"),
@@ -130,7 +128,8 @@ public static class HardwareCatalog
             NeedsObb = true, Requires = new[] { "LINK" },
             Command = o => new[] { "anim", o.Ip, "--assets", Path.Combine(o.Obb ?? ".", "assets", "cozmo_resources", "assets"),
                                    "--name", "anim_bored_01", "--wwise", Path.Combine(o.Obb ?? ".", "assets", "cozmo_resources", "sound") },
-            Judge = r => r.Contains("stall") ? AutoOutcome.Fail : r.ExitCode == 0 ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.ExitCode == 0 && r.Contains("AUTOMATED CHECKS PASSED (animation)")
+                ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
 
         // ================================================================ 3. face display
@@ -266,7 +265,10 @@ public static class HardwareCatalog
             NeedsObb = true, Requires = new[] { "A" },
             Timeout = TimeSpan.FromMinutes(4),
             Command = o => o.WithObb("sing", o.Ip).Concat(new[] { "--behavior", "Singing_Bingo", "--vibrato", "--seconds", "60", "--acceptance", o.Acceptance("A3") }).ToArray(),
-            Judge = r => r.Contains("underruns: 0") || !r.Contains("underrun") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.ExitCode == 0
+                      && r.Contains("AUTOMATED CHECKS PASSED (sing)")
+                      && r.Contains("underruns: 0")
+                      && r.Contains("vibrato posted") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
 
         // ================================================================ 5. basic motion
@@ -369,7 +371,7 @@ public static class HardwareCatalog
                     + "lift or the wheels.",
             Question = "Did he stop cleanly with no late twitch after the animation was cut?",
             ExpectedTelemetry = "after the stop settles, wheel speed stays at zero and head and lift stop changing",
-            AutoRule = "no wheel, head or lift movement is reported after the stop has settled",
+            AutoRule = "playback is active before Stop; no later keyframe fires, the ticker ends and telemetry settles",
             Evidence = new[]
             {
                 new EvidenceItem("telemetry after the stop", "t=") { Limit = 60 },
@@ -399,7 +401,7 @@ public static class HardwareCatalog
                     + "prints its own verdict and the campaign moves to the next check instead of dying.",
             Question = "Did he stop where he was when the link was cut, and stay stopped?",
             ExpectedTelemetry = "the animation task completes, the ticker stops, and the failure is reported through Faulted",
-            AutoRule = "the animation ends, the ticker stops and the exception is reported rather than thrown at nobody",
+            AutoRule = "playback is active before disconnect; the animation/ticker end and Faulted reports the link loss",
             Evidence = new[]
             {
                 new EvidenceItem("before the drop", "ticker running"),
@@ -429,13 +431,13 @@ public static class HardwareCatalog
             Success = "The saved files are colour photographs of the room, not tinted or scrambled.",
             Question = "Are the saved images real colour photographs of what he was pointed at?",
             ExpectedTelemetry = "every frame decodes without error and is written out",
-            AutoRule = "frames decode without error",
+            AutoRule = "colour frames decode and the saved presentation JPEG has nominal 320x240 geometry",
             Evidence = new[] { new EvidenceItem("frames", "frame"), new EvidenceItem("written", "wrote") },
             FidelityRecords = new[] { "M3-001", "M3-002", "M3-003", "M3-004", "M3-005", "M3-016" },
             Requires = new[] { "LINK" },
             Timeout = TimeSpan.FromMinutes(3),
             Command = o => new[] { "camera", o.Ip, "--color", "--out", o.Frames("E"), "--acceptance", o.Acceptance("E") },
-            Judge = r => r.ExitCode == 0 ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.ExitCode == 0 && r.Contains("saved presentation geometry: 320x240") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
 
         // ================================================================ 8. markers, cubes and the world model
@@ -451,10 +453,11 @@ public static class HardwareCatalog
             Success = "The events printed match what you did, and at least one cube shows as connected.",
             Question = "Did the printed events match what you did to the cube?",
             ExpectedTelemetry = "at least one cube CONNECTED and at least one telemetry signal",
-            AutoRule = "at least one cube CONNECTED and at least one telemetry signal (tap, movement, up axis or battery)",
+            AutoRule = "the production auto pool sends SetPropSlot, a cube connects and cube telemetry is observed",
             Evidence = new[]
             {
                 new EvidenceItem("connection", "connected"),
+                new EvidenceItem("connection request", "SetPropSlot sent"),
                 new EvidenceItem("taps", "tapped"),
                 new EvidenceItem("movement", "moving"),
                 new EvidenceItem("up axis", "upAxis"),
@@ -463,7 +466,9 @@ public static class HardwareCatalog
             NeedsCube = true, NeedsHandling = true, Requires = new[] { "LINK" },
             Timeout = TimeSpan.FromMinutes(2),
             Command = o => new[] { "cubes", o.Ip, "--seconds", "15", "--acceptance", o.Acceptance("B") },
-            Judge = r => r.Contains("0 connected") || !r.Contains("connected")
+            Judge = r => r.ExitCode != 0 || !r.Contains("auto block pool enabled: True")
+                       || !r.Contains("SetPropSlot sent:") || r.Contains("SetPropSlot sent: 0")
+                       || r.Contains("0 connected") || !r.Contains("connected")
                 ? AutoOutcome.Fail
                 : r.ContainsAny("tapped ", "moving ", "still ", "upAxis") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
@@ -570,7 +575,8 @@ public static class HardwareCatalog
             NeedsCharger = true, Requires = new[] { "V" },
             Timeout = TimeSpan.FromMinutes(3),
             Command = o => o.WithObb("manip", o.Ip).Concat(new[] { "--driveoff", "--acceptance", o.Acceptance("W") }).ToArray(),
-            Judge = r => r.ContainsAny("DriveOffCharger", "IS_ON_CHARGER") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.ExitCode == 0 && r.Contains("DriveOffCharger success=yes")
+                      && r.Contains("on charger: False") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
 
         // ================================================================ 10. robot state and reactions
@@ -768,7 +774,7 @@ public static class HardwareCatalog
                     + "noticed. What you confirm is that you really did lift him and set him down elsewhere.",
             Question = "Did you lift him clear of the table and set him down somewhere else facing differently?",
             ExpectedTelemetry = "the reported pose origin changes, the map is cleared, and objects that are not carried stop being located",
-            AutoRule = "at least one origin change is seen and handled",
+            AutoRule = "a cube is located before the origin change and that same non-carried object becomes unlocated",
             Evidence = new[]
             {
                 new EvidenceItem("origins", "origin") { Limit = 40 },
@@ -1000,13 +1006,14 @@ public static class HardwareCatalog
             Success = "He picks one up, carries it to the other and places it on top.",
             Question = "Did he end with one cube stacked on the other?",
             ExpectedTelemetry = "the phases PickingUpBlock, StackingBlock and PlayingFinalAnim in order",
-            AutoRule = "the three stacking phases run in order",
+            AutoRule = "the terminal stack result is success and carrying is clear; entering the phases is insufficient",
             Evidence = new[] { new EvidenceItem("phases", "Block"), new EvidenceItem("result", "Success") },
             FidelityRecords = new[] { "M12-012", "M13-007", "M12-001", "M12-003", "M12-005", "M12-009", "M12-015", "M15-012" },
             NeedsCube = true, NeedsObb = true, Requires = new[] { "N", "K" },
             Timeout = TimeSpan.FromMinutes(6),
             Command = o => o.WithObb("manip", o.Ip).Concat(new[] { "--stack", "--acceptance", o.Acceptance("R") }).ToArray(),
-            Judge = r => r.ContainsAll("PickingUpBlock", "StackingBlock") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.ExitCode == 0 && r.Contains("StackBlocks success=yes")
+                      && r.Contains("carrying=False") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {
@@ -1086,7 +1093,7 @@ public static class HardwareCatalog
                     + "back to back.",
             Question = "Did he behave like a robot deciding for himself, without repeating or stalling?",
             ExpectedTelemetry = "an activity starts, DriveOffCharger runs, scored picks follow, no NoActivityAvailableError",
-            AutoRule = "an activity starts, DriveOffCharger runs, scored picks follow and no NoActivityAvailableError appears",
+            AutoRule = "an activity is selected, at least two behaviours actually start and no fatal activity error occurs",
             Evidence = new[]
             {
                 new EvidenceItem("goals", "freeplay_goal_started"),
@@ -1101,8 +1108,8 @@ public static class HardwareCatalog
             Command = o => (o.AllowNominalCalibration
                 ? o.WithObb("freeplay", o.Ip).Concat(new[] { "--seconds", "300", "--nominal", "--acceptance", o.Acceptance("Z") })
                 : o.WithObb("freeplay", o.Ip).Concat(new[] { "--seconds", "300", "--acceptance", o.Acceptance("Z") })).ToArray(),
-            Judge = r => r.Contains("NoActivityAvailableError") ? AutoOutcome.Fail
-                       : r.Contains("freeplay_goal_started") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.ExitCode == 0 && r.Contains("FREEPLAY AUTOMATED CHECKS PASSED")
+                      && !r.Contains("NoActivityAvailableError") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
 
         // ================================================================ 14. long run and stability
@@ -1126,7 +1133,7 @@ public static class HardwareCatalog
             Question = "Was he still choosing sensibly at the end, with no stall, no repetition and no "
                      + "degradation in sound or movement?",
             ExpectedTelemetry = "mood values decay between events rather than holding, and activities keep being chosen for the whole run",
-            AutoRule = "the run completes with activities chosen throughout and no NoActivityAvailableError",
+            AutoRule = "behaviours execute into the second half and sampled mood values demonstrably decay",
             Evidence = new[]
             {
                 new EvidenceItem("mood", "mood") { Limit = 80 },
@@ -1139,10 +1146,11 @@ public static class HardwareCatalog
             NeedsCube = true, NeedsHandling = true, NeedsObb = true, Requires = new[] { "Z" },
             Timeout = TimeSpan.FromMinutes(20),
             Command = o => (o.AllowNominalCalibration
-                ? o.WithObb("freeplay", o.Ip).Concat(new[] { "--seconds", "900", "--nominal", "--acceptance", o.Acceptance("Z2") })
-                : o.WithObb("freeplay", o.Ip).Concat(new[] { "--seconds", "900", "--acceptance", o.Acceptance("Z2") })).ToArray(),
-            Judge = r => r.Contains("NoActivityAvailableError") ? AutoOutcome.Fail
-                       : r.Contains("freeplay_goal_started") ? AutoOutcome.Pass : AutoOutcome.Fail,
+                ? o.WithObb("freeplay", o.Ip).Concat(new[] { "--seconds", "900", "--require-mood-decay", "--nominal", "--acceptance", o.Acceptance("Z2") })
+                : o.WithObb("freeplay", o.Ip).Concat(new[] { "--seconds", "900", "--require-mood-decay", "--acceptance", o.Acceptance("Z2") })).ToArray(),
+            Judge = r => r.ExitCode == 0 && r.Contains("FREEPLAY AUTOMATED CHECKS PASSED")
+                      && r.Contains("mood observations:") && r.Contains("decay observed=yes")
+                      && !r.Contains("NoActivityAvailableError") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
 
         // ================================================================ 15. blocked on this build

@@ -53,7 +53,6 @@ public static class ManipTool
         Say(cal is null ? "camera calibration: NOT READ from NV storage" : $"camera calibration from robot: {cal}");
         if (cal is null && a.Contains("--nominal")) { vision.Calibration = CameraCalibration.Nominal(); Say("using the nominal stand-in calibration (LOCAL_POLICY)"); }
         if (vision.Calibration is null) { Say("no calibration: cannot localise a cube, stopping"); robot.Disconnect(); return 2; }
-        robot.Cubes.SetDiscovery(true);
         await robot.WaitForMotorCalibrationAsync(TimeSpan.FromSeconds(10));
         robot.StartCamera();
 
@@ -66,7 +65,10 @@ public static class ManipTool
             var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap() };
             var b = new DriveOffChargerBehavior(m, "DriveOffCharger", 60);
             b.Step += l => Say("  driveoff: " + l);
-            outcome = await RunBehavior(b, ctx, cts.Token, "on the charger");
+            bool startedOnCharger = robot.Sensors.OnCharger;
+            await RunBehavior(b, ctx, cts.Token, "on the charger");
+            outcome = $"DriveOffCharger success={(startedOnCharger && b.DriveResult == ActionResult.Success && b.LeftChargerOnTreads ? "yes" : "no")}; "
+                    + $"startedOnCharger={startedOnCharger}; action={b.DriveResult}; onTreadsAndOffCharger={b.LeftChargerOnTreads}; on charger: {robot.Sensors.OnCharger}";
             return Finish(outcome, "he drives forward off the charger about 156 mm at 20 mm/s and stops on his treads; IS_ON_CHARGER clears", mode);
         }
         if (mode == "--mount")
@@ -183,7 +185,8 @@ public static class ManipTool
                 await b.StartAsync(ctx, new BehaviorScope(), cts.Token);
                 double t = 0;
                 while (b.Update(ctx, t) && !cts.IsCancellationRequested) { await Task.Delay(33); t += 33; }
-                outcome = $"StackBlocks ended in phase {b.CurrentPhase}";
+                outcome = $"StackBlocks success={(b.StackedSuccessfully ? "yes" : "no")}; ended in phase {b.CurrentPhase}; "
+                        + $"carrying={m.Docking.Carrying.IsCarryingObject}; top={b.TopObjectId}; bottom={b.BottomObjectId}";
                 break;
             }
         }

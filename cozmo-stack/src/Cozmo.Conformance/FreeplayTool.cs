@@ -125,11 +125,21 @@ public static class FreeplayTool
         var ctx = new BehaviorContext { Robot = robot, Triggers = AnimationTriggerMap.Load(obb), Arbiter = arbiter, Mood = new MoodState(MoodModel.Load(obb)) };
         var sw = System.Diagnostics.Stopwatch.StartNew();
         using var stack = FreeplayStack.Create(obb, robot, ctx, () => sw.Elapsed.TotalSeconds, vision, m);
-        stack.Freeplay.Log += l => Say("  " + l);
-        stack.Manager.Selected += sel => Say($"  [manager] {sel.Chosen ?? "-"}: {sel.Reason}");
+        bool noActivityError = false;
+        var behaviorStarts = new List<(double AtSec, string Behavior)>();
+        var moodSamples = new List<(double AtSec, Dictionary<EmotionType, double> Values)>();
+        stack.Freeplay.Log += l => { if (l.Contains("NoActivityAvailableError", StringComparison.Ordinal)) noActivityError = true; Say("  " + l); };
+        stack.Manager.Selected += sel =>
+        {
+            Say($"  [manager] {sel.Chosen ?? "-"}: {sel.Reason}");
+            if (sel.Chosen is not null
+                && !sel.Reason.Contains("already running", StringComparison.Ordinal)
+                && !sel.Reason.Contains("is running", StringComparison.Ordinal)
+                && !sel.Reason.Contains("tried to resume", StringComparison.Ordinal))
+                behaviorStarts.Add((sw.Elapsed.TotalSeconds, sel.Chosen));
+        };
         stack.Manager.ReactionTriggered += r => Say($"  REACTION {r.Trigger} -> {r.Behavior}");
         // the put-down re-pick is wired by FreeplayStack itself; nothing to install here
-        robot.Cubes.SetDiscovery(true);
         await robot.WaitForMotorCalibrationAsync(TimeSpan.FromSeconds(10));
         robot.StartCamera();
         Say($"freeplay for {seconds} s: {stack.Bound.Count} behaviours bound, {stack.UnboundIds.Count} named but not built");
@@ -150,6 +160,7 @@ public static class FreeplayTool
             if (ctx.Mood is { } mood && sw.Elapsed.TotalSeconds - lastMood >= 30)
             {
                 lastMood = sw.Elapsed.TotalSeconds;
+                moodSamples.Add((sw.Elapsed.TotalSeconds, Enum.GetValues<EmotionType>().ToDictionary(e => e, e => mood[e])));
                 Say($"[{sw.Elapsed.TotalSeconds,6:F1}s] mood: " + string.Join(", ",
                     Enum.GetValues<EmotionType>().Select(e => $"{e}={mood[e]:F3}")));
             }
@@ -158,6 +169,20 @@ public static class FreeplayTool
         stack.Manager.Stop(BehaviorStopReason.Cancelled, sw.Elapsed.TotalSeconds);
         robot.StopCamera();
         Say($"\nactivities run: {string.Join(", ", activities)}; behaviours run: {string.Join(", ", behaviours)}");
+        bool moodDecayObserved = moodSamples.Zip(moodSamples.Skip(1), (before, after) =>
+                before.Values.Keys.Any(e => Math.Abs(before.Values[e]) > 0.001
+                                         && Math.Abs(after.Values[e]) + 0.001 < Math.Abs(before.Values[e])))
+            .Any(x => x);
+        bool requireMoodDecay = a.Contains("--require-mood-decay");
+        bool behaviorExecution = behaviorStarts.Count >= 2;
+        bool behaviorExecutionContinued = !requireMoodDecay || behaviorStarts.Any(x => x.AtSec >= seconds / 2.0);
+        bool pass = activities.Count >= 1 && behaviours.Count >= 2 && behaviorExecution && behaviorExecutionContinued
+                    && !noActivityError && (!requireMoodDecay || moodSamples.Count >= 3 && moodDecayObserved);
+        Say($"behavior starts observed: {behaviorStarts.Count}; latest at {(behaviorStarts.Count == 0 ? 0 : behaviorStarts.Max(x => x.AtSec)):F1}s");
+        Say($"mood observations: {moodSamples.Count}; decay observed={(moodDecayObserved ? "yes" : "no")}");
+        Say(pass
+            ? "FREEPLAY AUTOMATED CHECKS PASSED: activities selected, behaviours actually started, and no fatal activity error occurred."
+            : "FREEPLAY AUTOMATED CHECKS FAILED.");
         if (acceptance is not null)
         {
             var file = Path.GetFullPath(string.IsNullOrEmpty(acceptance) ? $"cozmo-acceptance-freeplay-{DateTime.Now:yyyyMMdd-HHmmss}.json" : acceptance);
@@ -165,14 +190,14 @@ public static class FreeplayTool
             {
                 tool = "freeplay", milestone = "M15", timestampUtc = DateTime.UtcNow, firmware = robot.State.FirmwareVersionNumber, serial = robot.State.SerialNumber,
                 cameraCalibration = nominal ? "NOMINAL STAND-IN (--nominal; not the robot's)" : "read from the robot's NV storage",
-                automated = new { pass = behaviours.Count >= 2 && activities.Count >= 1, detail = new { activities, behaviours, log } },
+                automated = new { pass, detail = new { activities, behaviours, behaviorStarts, moodSamples, moodDecayObserved, noActivityError, log } },
                 human = new { check = "left alone with a cube he chose an activity from what he saw, ran several behaviours in turn (drove off the charger first if he was on it), reacted to being handled, and expressed a need when one ran low; nothing looked stuck or repeated back to back", verdict = "PENDING - fill in after watching the robot" },
             };
             File.WriteAllText(file, JsonSerializer.Serialize(record, new JsonSerializerOptions { WriteIndented = true }));
             Console.WriteLine($"acceptance record: {file}");
         }
         robot.Disconnect();
-        return 0;
+        return pass ? 0 : 3;
     }
 
     private static string? Arg(string[] a, string name) { for (int i = 1; i < a.Length - 1; i++) if (a[i] == name) return a[i + 1]; return null; }

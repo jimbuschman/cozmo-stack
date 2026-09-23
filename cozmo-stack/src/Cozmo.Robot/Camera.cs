@@ -1,4 +1,6 @@
 using Cozmo.Protocol;
+using StbImageSharp;
+using StbImageWriteSharp;
 
 namespace Cozmo.Robot;
 
@@ -63,7 +65,34 @@ public sealed class CameraFrame
     public (float X, float Y, float Z)? GyroRates { get; internal set; }
     public DateTime ReceivedUtc { get; init; } = DateTime.UtcNow;
 
-    public void Save(string path) => File.WriteAllBytes(path, Jpeg);
+    /// <summary>
+    /// Returns presentation geometry. The encoded colour source remains available in <see cref="Jpeg"/>
+    /// at <see cref="JpegWidth"/>; display/save expands it to the nominal resolution width, as the app-side
+    /// image pipeline does after decoding a half-width colour frame.
+    /// </summary>
+    public byte[] PresentationJpeg()
+    {
+        if (!IsColor || JpegWidth == Width) return Jpeg;
+        var decoded = ImageResult.FromMemory(Jpeg, StbImageSharp.ColorComponents.RedGreenBlue);
+        if (decoded.Width != JpegWidth || decoded.Height != Height)
+            throw new InvalidDataException($"decoded JPEG is {decoded.Width}x{decoded.Height}, expected encoded geometry {JpegWidth}x{Height}");
+        var expanded = new byte[Width * Height * 3];
+        for (int y = 0; y < Height; y++)
+            for (int x = 0; x < Width; x++)
+            {
+                int source = (y * decoded.Width + x * decoded.Width / Width) * 3;
+                int target = (y * Width + x) * 3;
+                expanded[target] = decoded.Data[source];
+                expanded[target + 1] = decoded.Data[source + 1];
+                expanded[target + 2] = decoded.Data[source + 2];
+            }
+        using var output = new MemoryStream();
+        new ImageWriter().WriteJpg(expanded, Width, Height, StbImageWriteSharp.ColorComponents.RedGreenBlue, output, 90);
+        return output.ToArray();
+    }
+
+    /// <summary>Saves presentation geometry; use <see cref="Jpeg"/> when the encoded source representation is required.</summary>
+    public void Save(string path) => File.WriteAllBytes(path, PresentationJpeg());
     public override string ToString() =>
         $"CameraFrame #{ImageId} {Width}x{Height} {(IsColor ? "colour" : "gray")} chunks={ChunkCount} " +
         $"jpeg={Jpeg.Length}B{(IsWarmUp ? " (warm-up, torn)" : "")}";

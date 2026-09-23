@@ -46,6 +46,7 @@ public class RemainingGapTests
         c.OnRobotState(1200);
         Assert.Contains(sent, m => m.FactoryId == 0xA0);
         Assert.DoesNotContain(sent, m => m.FactoryId == 0xB1);
+        Assert.Contains(c.SlotRequestsSent, m => m.FactoryId == 0xA0);
     }
 
     // ------------------------------------------------------------------ M4-011: the persistent pool

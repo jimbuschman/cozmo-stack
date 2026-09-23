@@ -671,6 +671,30 @@ public class HardwareRunnerTests
         Assert.Contains("CORE-011", text);
     }
 
+    [Fact]
+    public void TheStaticPathAuditClassifiesEveryCheckAndLeavesNoBrokenPath()
+    {
+        var plan = PlanDocument();
+        if (plan is null) return;
+        var audit = Path.Combine(Path.GetDirectoryName(plan)!, "HARDWARE_PATH_AUDIT.md");
+        Assert.True(File.Exists(audit));
+        var text = File.ReadAllText(audit);
+        Assert.DoesNotContain("BROKEN_TEST |", text);
+        Assert.DoesNotContain("BROKEN_PRODUCTION_INTEGRATION |", text);
+        foreach (var c in HardwareCatalog.All)
+        {
+            string verdict = c.Runnable ? "VALID" : "BLOCKED_EXTERNAL";
+            var row = text.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries)
+                          .SingleOrDefault(l => l.StartsWith($"| {c.Id} |", StringComparison.Ordinal));
+            Assert.NotNull(row);
+            Assert.EndsWith($"| {verdict} |", row);
+        }
+        var rows = text.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries)
+                       .Where(l => HardwareCatalog.All.Any(c => l.StartsWith($"| {c.Id} |", StringComparison.Ordinal)))
+                       .ToList();
+        Assert.Equal(HardwareCatalog.All.Count, rows.Count);
+    }
+
     private static string? PlanDocument()
     {
         var d = new DirectoryInfo(AppContext.BaseDirectory);
@@ -826,8 +850,8 @@ public class HardwareRunnerTests
     }
 
     /// <summary>
-    /// The lift reading is now an experiment with two ends, not a column of numbers and a question nobody
-    /// could answer. Printing readings is not enough: both ends of the travel have to have been visited.
+    /// The lift check drives both source-backed endpoints through the production API. Merely printing the
+    /// two values is not enough: both actions and both telemetry comparisons must succeed.
     /// </summary>
     [Fact]
     public void TheLiftCheckIsGuidedAndNeedsBothEndsOfTheTravel()
@@ -835,10 +859,9 @@ public class HardwareRunnerTests
         var o = new HardwareRunOptions { Ip = "172.31.1.1", EvidenceDirectory = TempDir() };
         var d = HardwareCatalog.Find("D")!;
         Assert.Contains("--guide-lift", d.Command(o));
-        Assert.Equal(AutoOutcome.Fail, d.Judge(Output("    lift= -0.198 rad /   32.0 mm\n    lift= -0.198 rad /   32.0 mm\n"
-                                                    + "lift sequence: down seen=yes, raised seen=NO, both ends seen=NO")));
-        Assert.Equal(AutoOutcome.Pass, d.Judge(Output("lift sequence: down seen=yes, raised seen=yes, both ends seen=yes")));
-        Assert.Contains("RAISE THE LIFT", d.DoThis);            // and the person is told when
+        Assert.Equal(AutoOutcome.Fail, d.Judge(Output("lift sequence: down seen=yes, raised seen=NO, actions completed=yes, both endpoints validated=NO")));
+        Assert.Equal(AutoOutcome.Pass, d.Judge(Output("lift sequence: down seen=yes, raised seen=yes, actions completed=yes, both endpoints validated=yes")));
+        Assert.Contains("production motion API", d.DoThis);
         if (Directory.Exists(o.EvidenceDirectory)) Directory.Delete(o.EvidenceDirectory, true);
     }
 
@@ -885,7 +908,7 @@ public class HardwareRunnerTests
             Assert.True(c.DoThis.Length > 25, $"{c.Id} does not say enough about what to do");
             Assert.True(c.Success.Length > 25, $"{c.Id} does not say enough about what a pass looks like");
         }
-        Assert.Contains("RAISE THE LIFT", HardwareCatalog.Find("D")!.DoThis);
+        Assert.Contains("production motion API", HardwareCatalog.Find("D")!.DoThis);
         Assert.Contains("stop", HardwareCatalog.Find("CR2")!.Success, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("cuts the link", HardwareCatalog.Find("CR2")!.DoThis, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("prompt", HardwareCatalog.Find("H")!.DoThis, StringComparison.OrdinalIgnoreCase);
@@ -1269,7 +1292,8 @@ public class HardwareRunnerTests
         var b = HardwareCatalog.Find("B")!;
         Assert.Equal(AutoOutcome.Fail, b.Judge(Output("2 cube(s) heard, 0 connected")));
         Assert.Equal(AutoOutcome.Fail, b.Judge(Output("1 cube(s) heard, 1 connected\n  cube 7")));   // connected, silent
-        Assert.Equal(AutoOutcome.Pass, b.Judge(Output("1 cube(s) heard, 1 connected\n  tapped cube 7")));
+        Assert.Equal(AutoOutcome.Fail, b.Judge(Output("1 cube(s) heard, 1 connected\n  tapped cube 7"))); // bypassed the production connect path
+        Assert.Equal(AutoOutcome.Pass, b.Judge(Output("auto block pool enabled: True; SetPropSlot sent: 1 (0x12345678->slot0)\n1 cube(s) heard, 1 connected\n  tapped cube 7")));
     }
 
     [Fact]
@@ -1304,15 +1328,26 @@ public class HardwareRunnerTests
     public void TheSustainedSingingCheckFailsOnAnUnderrun()
     {
         var a3 = HardwareCatalog.Find("A3")!;
-        Assert.Equal(AutoOutcome.Pass, a3.Judge(Output("stream: rendered=100 consumed=90\nunderruns: 0")));
+        Assert.Equal(AutoOutcome.Fail, a3.Judge(new HardwareToolRun(3, "stream: rendered=100 consumed=90\nunderruns: 0\nAUTOMATED CHECKS FAILED (sing).", null, "x.log", null)));
+        Assert.Equal(AutoOutcome.Pass, a3.Judge(Output("vibrato posted\nunderruns: 0\nAUTOMATED CHECKS PASSED (sing)")));
         Assert.Equal(AutoOutcome.Fail, a3.Judge(Output("stream: rendered=100 consumed=90\nunderruns: 7")));
+    }
+
+    [Fact]
+    public void TheAnimationCheckRequiresTheAnimationToolsOwnSuccessfulVerdict()
+    {
+        var f = HardwareCatalog.Find("F")!;
+        Assert.Equal(AutoOutcome.Fail, f.Judge(Output("keyframes fired: 27 of 27")));
+        Assert.Equal(AutoOutcome.Fail, f.Judge(new HardwareToolRun(30, "AUTOMATED CHECKS PASSED (animation)", null, "x.log", null)));
+        Assert.Equal(AutoOutcome.Pass, f.Judge(Output("AUTOMATED CHECKS PASSED (animation): every keyframe fired and the timeline ran to length.")));
     }
 
     [Fact]
     public void TheFreeplayCheckFailsOnTheErrorTheEngineLogsWhenItCannotChoose()
     {
         var z = HardwareCatalog.Find("Z")!;
-        Assert.Equal(AutoOutcome.Pass, z.Judge(Output("robot.freeplay_goal_started Hiking: priority 16")));
+        Assert.Equal(AutoOutcome.Fail, z.Judge(Output("robot.freeplay_goal_started Hiking: priority 16")));
+        Assert.Equal(AutoOutcome.Pass, z.Judge(Output("FREEPLAY AUTOMATED CHECKS PASSED: activities selected, behaviours actually started, and no fatal activity error occurred.")));
         Assert.Equal(AutoOutcome.Fail, z.Judge(Output("robot.freeplay_goal_started Hiking\nActivityFreeplay.NoActivityAvailableError")));
     }
 

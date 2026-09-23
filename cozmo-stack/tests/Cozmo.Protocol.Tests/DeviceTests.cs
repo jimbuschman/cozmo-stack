@@ -937,6 +937,26 @@ public class DeviceTests
         Assert.Equal(3, got.Jpeg[sof + 9]);
     }
 
+    [Fact]
+    public void ColourSaveExpandsEncodedGeometryToNominalPresentationWidth()
+    {
+        byte[] pixels = { 255, 0, 0, 0, 0, 255 };
+        using var encoded = new MemoryStream();
+        new StbImageWriteSharp.ImageWriter().WriteJpg(pixels, 2, 1,
+            StbImageWriteSharp.ColorComponents.RedGreenBlue, encoded, 100);
+        var frame = new CameraFrame
+        {
+            Width = 4, Height = 1, JpegWidth = 2, IsColor = true, Jpeg = encoded.ToArray(),
+        };
+
+        var presented = StbImageSharp.ImageResult.FromMemory(frame.PresentationJpeg(), StbImageSharp.ColorComponents.RedGreenBlue);
+
+        Assert.Equal(4, presented.Width);
+        Assert.Equal(1, presented.Height);
+        Assert.True(presented.Data[0] > presented.Data[2]);
+        Assert.True(presented.Data[9 + 2] > presented.Data[9]);
+    }
+
     /// <summary>
     /// The second payload byte is captured, not interpreted. It is not entropy data: it changes by small
     /// amounts from frame to frame while the picture rotates, and pinning down what it means is what will

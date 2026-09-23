@@ -141,6 +141,7 @@ public static class Devices
         using var robot = await ConnectAsync(c.Value.ip, c.Value.port, log);
 
         var saved = new List<string>();
+        bool savedNominalColor = false;
         robot.Camera.FrameDropped += (id, why) => Console.WriteLine($"  dropped image {id}: {why}");
         robot.Camera.FrameReceived += f =>
         {
@@ -154,6 +155,11 @@ public static class Devices
             f.Save(path);
             saved.Add(path);
             Console.WriteLine($"  {f}  -> {Path.GetFileName(path)}");
+            if (f.IsColor)
+            {
+                savedNominalColor |= f.Width == 320 && f.Height == 240 && f.JpegWidth == 160;
+                Console.WriteLine($"  encoded geometry: {f.JpegWidth}x{f.Height}; saved presentation geometry: {f.Width}x{f.Height}");
+            }
         };
 
         Console.WriteLine($"starting camera ({(color ? "colour" : "grayscale")} stream) ...");
@@ -168,7 +174,8 @@ public static class Devices
         Console.WriteLine();
         Console.WriteLine($"chunks={robot.Camera.ChunksReceived} complete={robot.Camera.FramesCompleted} dropped={robot.Camera.FramesDropped} saved={saved.Count}");
         Console.WriteLine($"({robot.Camera.WarmUpFrames} warm-up frames were discarded: the sensor is still locking and those pictures are torn.)");
-        bool ok = saved.Count >= Math.Min(count, 1) && robot.Camera.FramesCompleted > 0;
+        bool ok = saved.Count >= Math.Min(count, 1) && robot.Camera.FramesCompleted > 0
+                  && (!color || savedNominalColor);
         foreach (var p in saved.Take(3)) Console.WriteLine($"  {p}");
         const string cameraCheck = "open the saved .jpg files; each should be a photograph from Cozmo's point of view, not torn";
         var rec = WriteAcceptance("camera", acceptanceOut, ok, cameraCheck, new
@@ -177,6 +184,7 @@ public static class Devices
             framesCompleted = robot.Camera.FramesCompleted,
             framesDropped = robot.Camera.FramesDropped,
             warmUpFramesDiscarded = robot.Camera.WarmUpFrames,
+            colorPresentationGeometryValidated = savedNominalColor,
             savedFiles = saved.Select(Path.GetFileName).ToArray(),
             savedBytes = saved.Select(x => new FileInfo(x).Length).ToArray(),
         }, robot);

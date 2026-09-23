@@ -160,12 +160,13 @@ public static class CoreChecks
         say("  purpose. What you are judging is the second or two after that: he should stop where he is and");
         say("  stay stopped - no twitch, no carrying on - and this tool should print a verdict instead of dying.");
         say("");
-        say($"playing '{clip}'; the link goes 1.5 s in.");
+        int interruptAtMs = InterruptAt(clip);
+        say($"playing '{clip.Name}' ({clip.DurationMs} ms); the link goes {interruptAtMs / 1000.0:F2} s in.");
         var playing = robot.Animations.Play(clip);
         if (playing is null) return (false, "the animation did not start");
-        await Task.Delay(1500);
-        bool tickingBefore = robot.Animations.IsTicking;
-        say($"ticker running: {tickingBefore}. DROPPING THE LINK NOW - watch him stop.");
+        await Task.Delay(interruptAtMs);
+        bool activeBefore = robot.Animations.IsTicking && robot.Animations.IsPlaying && !playing.IsCompleted;
+        say($"playback active immediately before disconnect: {activeBefore}. DROPPING THE LINK NOW - watch him stop.");
         robot.Transport.Disconnect("core-002: the robot goes away mid-animation");
 
         var finished = await Task.WhenAny(playing, Task.Delay(TimeSpan.FromSeconds(5)));
@@ -178,9 +179,10 @@ public static class CoreChecks
         say($"the failure was reported through Faulted: {(faulted is null ? "no" : faulted.GetType().Name + ": " + faulted.Message)}");
         say("the process is still running, which is the other half of the claim");
 
-        if (!tickingBefore) return (false, "the animation never started ticking, so the drop proved nothing");
+        if (!activeBefore) return (false, "playback was not active immediately before disconnect, so the drop proved nothing");
         if (!ended) return (false, "the animation task never completed after the link dropped");
         if (robot.Animations.IsTicking) return (false, "the ticker was still running after the link dropped");
+        if (faulted is null) return (false, "the link failure did not reach the animation Faulted event");
         return (true, "the animation ended, the ticker stopped, the fault was reported and the process lived");
     }
 
@@ -198,13 +200,18 @@ public static class CoreChecks
     {
         if (LoadAssets(robot, obb, say) is not { } clip) return (false, "no animation assets: pass --obb");
 
-        say($"playing '{clip}' and stopping it 1.2 s in; after the stop nothing more may reach the motors.");
+        int interruptAtMs = InterruptAt(clip);
+        say($"playing '{clip.Name}' ({clip.DurationMs} ms) and stopping it {interruptAtMs} ms in; after the stop nothing more may reach the motors.");
         var playing = robot.Animations.Play(clip);
         if (playing is null) return (false, "the animation did not start");
-        await Task.Delay(1200);
+        await Task.Delay(interruptAtMs);
+
+        bool activeBefore = robot.Animations.IsPlaying && robot.Animations.IsTicking && !playing.IsCompleted;
+        int firedAtStop = robot.Animations.Scheduler.KeyframesFired;
+        say($"playback active immediately before cancellation: {activeBefore}; keyframes fired: {firedAtStop}");
+        if (!activeBefore) return (false, "playback was not active immediately before cancellation, so this was not a cancellation test");
 
         robot.Animations.Stop();
-        var stoppedAt = DateTime.UtcNow;
         say("stopped. Watching the robot's own telemetry for 2.5 s.");
 
         var samples = new List<(double AtMs, float L, float R, float Head, float Lift)>();
@@ -222,14 +229,18 @@ public static class CoreChecks
         float wheels = settled.Max(x => Math.Max(Math.Abs(x.L), Math.Abs(x.R)));
         float headSpread = settled.Max(x => x.Head) - settled.Min(x => x.Head);
         float liftSpread = settled.Max(x => x.Lift) - settled.Min(x => x.Lift);
+        int firedAfterSettle = robot.Animations.Scheduler.KeyframesFired;
 
         say($"after the stop settled: wheels at most {wheels:F1} mm/s, head moved {headSpread:F3} rad, lift moved {liftSpread:F3} rad");
         say($"the scheduler reports playing: {robot.Animations.Playing ?? "nothing"}");
+        say($"keyframes fired after cancellation: {firedAfterSettle} (at cancellation: {firedAtStop})");
         foreach (var x in settled.Where((_, i) => i % 4 == 0))
             say($"  t={x.AtMs,6:F0} ms  L={x.L,7:F1}  R={x.R,7:F1}  head={x.Head,6:F3}  lift={x.Lift,6:F3}");
 
         bool quiet = wheels <= 5 && headSpread <= 0.05 && liftSpread <= 0.05;
         if (robot.Animations.IsPlaying) return (false, "the scheduler still says it is playing after Stop");
+        if (robot.Animations.IsTicking) return (false, "the scheduler ticker was still running after Stop settled");
+        if (firedAfterSettle != firedAtStop) return (false, "keyframes from the cancelled clip fired after Stop");
         return (quiet, quiet
             ? "nothing reached the motors after the stop"
             : "the robot was still moving after the stop: a command of the stopped animation got out");
@@ -249,13 +260,16 @@ public static class CoreChecks
         using var vision = new VisionSystem(robot, CameraCalibration.Nominal());
         using var m = new ManipulationSystem(robot, vision);
 
-        var first = new List<PathSegment> { new PathSegment.Line(0, 0, 60, 0, 40, 200, 200) };
-        var second = new List<PathSegment> { new PathSegment.Line(0, 0, 120, 0, 60, 200, 200) };
+        if (robot.State.Latest is not { } initial) return (false, "no RobotState pose for path A");
+        var first = ForwardLine(initial.Pose.X, initial.Pose.Y, initial.Pose.Angle, 60, 40);
 
-        say("installing path A (60 mm), then replacing it with path B (120 mm), then aborting A late.");
+        say($"installing path A 60 mm forward from the reported pose ({initial.Pose.X:F1}, {initial.Pose.Y:F1}, {initial.Pose.Angle:F3}), then replacing it with B and aborting A late.");
         var runA = m.StartPath(first);
         say($"  path A is id {runA.PathId}");
         await Task.Delay(400);
+        if (robot.State.Latest is not { } atReplacement) return (false, "no RobotState pose for path B");
+        var second = ForwardLine(atReplacement.Pose.X, atReplacement.Pose.Y, atReplacement.Pose.Angle, 120, 60);
+        say($"  path B starts at the current reported pose ({atReplacement.Pose.X:F1}, {atReplacement.Pose.Y:F1}, {atReplacement.Pose.Angle:F3})");
         var runB = m.StartPath(second);
         say($"  path B is id {runB.PathId}");
 
@@ -345,6 +359,8 @@ public static class CoreChecks
         var origins = new List<uint>();
         int delocalizations = 0;
         var forgotten = new List<string>();
+        var forgottenIds = new HashSet<uint>();
+        var locatedBeforeDelocalization = new HashSet<uint>();
 
         vision.RobotDelocalized += origin =>
         {
@@ -358,11 +374,11 @@ public static class CoreChecks
             if (now == PoseState.Unknown && was != PoseState.Unknown)
             {
                 forgotten.Add($"{o.ObjectId} {o.Type} ({was} -> Unknown)");
+                forgottenIds.Add(o.ObjectId);
                 say($"  object {o.ObjectId} {o.Type} stopped being located ({was} -> Unknown)");
             }
         };
 
-        robot.Cubes.SetDiscovery(true);
         robot.StartCamera();
         say($"show him a cube until it is located, then pick him up and put him down somewhere else. {seconds} s.");
         var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -371,6 +387,8 @@ public static class CoreChecks
         {
             await Task.Delay(500);
             var located = vision.World.Objects.Where(o => o.IsLocated).ToList();
+            if (delocalizations == 0)
+                foreach (var o in located.Where(o => CubeGeometry.IsCube(o.Type))) locatedBeforeDelocalization.Add(o.ObjectId);
             if (vision.OriginId != lastOrigin)
             {
                 lastOrigin = vision.OriginId;
@@ -382,25 +400,46 @@ public static class CoreChecks
         robot.StopCamera();
 
         say($"origin changes seen: {delocalizations} ({string.Join(" -> ", origins)})");
+        say($"cubes located before the origin change: {(locatedBeforeDelocalization.Count == 0 ? "none" : string.Join(", ", locatedBeforeDelocalization))}");
         say($"objects that stopped being located: {(forgotten.Count == 0 ? "none" : string.Join("; ", forgotten))}");
         if (delocalizations == 0) return (false, "the robot never reported a new origin: he may not have been lifted far enough");
-        return (true, $"{delocalizations} origin change(s), {forgotten.Count} object(s) unlocated, map cleared each time");
+        if (locatedBeforeDelocalization.Count == 0) return (false, "no cube was located before the origin changed, so object invalidation was not exercised");
+        int invalidated = locatedBeforeDelocalization.Count(forgottenIds.Contains);
+        if (invalidated == 0) return (false, "the origin changed but the previously located cube did not become unlocated");
+        return (true, $"{delocalizations} origin change(s); {invalidated} previously located cube(s) became unlocated");
     }
 
     // ------------------------------------------------------------------ plumbing
 
     /// <summary>Loads the animation library and picks a clip with plenty of motion in it.</summary>
-    private static string? LoadAssets(CozmoRobot robot, string? obb, Action<string> say)
+    private static AnimationClip? LoadAssets(CozmoRobot robot, string? obb, Action<string> say)
     {
         if (obb is null) return null;
         var assets = TriggersTool.FindAssetsRoot(obb);
         if (assets is null) { say($"no animation assets under '{obb}'"); return null; }
         var lib = robot.Animations.LoadFrom(assets);
         foreach (var name in new[] { "anim_bored_01", "anim_reacttoblock_success_01", "anim_poked_giggle" })
-            if (lib.ClipNames.Contains(name)) { say($"using the clip '{name}'"); return name; }
+            if (lib.ClipNames.Contains(name))
+            {
+                var clip = lib.GetClip(name);
+                say($"using the clip '{name}' ({clip.DurationMs} ms)");
+                return clip;
+            }
         var any = lib.ClipNames.FirstOrDefault();
-        if (any is not null) say($"using the clip '{any}'");
-        return any;
+        if (any is null) return null;
+        var fallback = lib.GetClip(any);
+        say($"using the clip '{any}' ({fallback.DurationMs} ms)");
+        return fallback;
+    }
+
+    private static int InterruptAt(AnimationClip clip) =>
+        Math.Max(100, (int)Math.Min(clip.DurationMs * 0.4, clip.DurationMs > 300 ? clip.DurationMs - 250 : clip.DurationMs / 2));
+
+    private static IReadOnlyList<PathSegment> ForwardLine(float x, float y, float angle, double distanceMm, float speedMmps)
+    {
+        double endX = x + Math.Cos(angle) * distanceMm;
+        double endY = y + Math.Sin(angle) * distanceMm;
+        return new[] { new PathSegment.Line(x, y, endX, endY, speedMmps, 200, 200) };
     }
 
     private static string? Arg(string[] a, string name)

@@ -20,20 +20,28 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
     public double ExtraDistanceMm { get; }
     public double DistanceMm => ChargerGeometry.LengthMm + ExtraDistanceMm;
     public Phase CurrentPhase { get; private set; }
+    /// <summary>Terminal action result retained for conformance and callers that need more than phase entry.</summary>
+    public ActionResult? DriveResult { get; private set; }
+    /// <summary>Whether the terminal wait observed both on-treads and off-charger.</summary>
+    public bool LeftChargerOnTreads { get; private set; }
 
     protected override bool IsRunnableInternal(BehaviorContext context) => context.Robot.Sensors.OnCharger;
 
     protected override void OnStart()
     {
         Scope.DisableReactions();
+        DriveResult = null;
+        LeftChargerOnTreads = false;
         CurrentPhase = Phase.Driving;
         var act = new DriveOffChargerContactsAction(M, DistanceMm);
         RunAction($"DriveOffChargerContactsAction({DistanceMm:F0} mm)", act.RunAsync, r =>
         {
+            DriveResult = r;
             foreach (var l in act.Trace) Log("  " + l);
             CurrentPhase = Phase.WaitForOnTreads;
             WaitUntil(() => M.Robot.Sensors.OffTreadsState == OffTreadsState.OnTreads && !M.Robot.Sensors.OnCharger, 5.0, ok =>
             {
+                LeftChargerOnTreads = ok;
                 double nowSec = Clock() / 1000.0;
                 bool known = Context.Mood?.Trigger("DriveOffCharger", nowSec) ?? false;
                 Log($"emotion event DriveOffCharger: {(Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model")}");

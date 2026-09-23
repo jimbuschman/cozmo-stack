@@ -250,6 +250,8 @@ public sealed class StackBlocksBehavior : ManipulationBehavior
     public Phase CurrentPhase { get; private set; }
     public uint? TopObjectId { get; private set; }
     public uint? BottomObjectId { get; private set; }
+    /// <summary>True only after PlaceRelObjectAction succeeded and the success phase was entered.</summary>
+    public bool StackedSuccessfully { get; private set; }
 
     /// <summary>Ten degrees: <c>CanInteractWithObjectHelper</c> 0x0063C670 passes Radians(0.174533).</summary>
     public const double RestingFlatToleranceRad = 0.174533;
@@ -268,6 +270,7 @@ public sealed class StackBlocksBehavior : ManipulationBehavior
     protected override void OnStart()
     {
         Scope.DisableReactions();
+        StackedSuccessfully = false;
         if (M.Docking.Carrying.IsCarryingObject) { TopObjectId = M.Docking.Carrying.CarriedObjectId; TransitionToStackingBlock(); }
         else TransitionToPickingUpBlock();
     }
@@ -304,6 +307,7 @@ public sealed class StackBlocksBehavior : ManipulationBehavior
 
     private void TransitionToPlayingFinalAnim()
     {
+        StackedSuccessfully = true;
         CurrentPhase = Phase.PlayingFinalAnim;
         Log("objective achieved: stacked");
         // 0x005C9F14, beside the objective: StackCube, or StackCube_Sparked for the spark
