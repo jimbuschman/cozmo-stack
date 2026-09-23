@@ -194,9 +194,7 @@ public static class HardwareRunner
 
                     var started = DateTime.UtcNow;
                     var run = await Execute(check, options, stopping.Token);
-                    var auto = run.InterruptedReason is not null ? AutoOutcome.NotRun
-                             : run.Error is not null ? AutoOutcome.Error
-                             : check.Judge(run);
+                    var auto = Evaluate(check, run);
 
                     Console.WriteLine();
                     Console.WriteLine("  WHAT THE SOFTWARE SAW");
@@ -753,6 +751,16 @@ public static class HardwareRunner
             Console.WriteLine("  Failures are investigation items. Nothing source-backed is tuned to make them pass.");
         Rule();
     }
+
+    /// <summary>
+    /// Applies runner-wide completion invariants before a check may interpret its own output. A completed
+    /// conformance command that returned nonzero failed, regardless of any success-looking text it printed.
+    /// </summary>
+    public static AutoOutcome Evaluate(HardwareCheck check, HardwareToolRun run) =>
+        run.InterruptedReason is not null ? AutoOutcome.NotRun
+      : run.Error is not null ? AutoOutcome.Error
+      : run.ExitCode != 0 ? AutoOutcome.Fail
+      : check.Judge(run);
 
     private static string Describe(AutoOutcome o) => o switch
     {

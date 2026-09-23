@@ -128,7 +128,7 @@ since carry their own: LINK, FD, AUD, MOV, IDL, A3, Z2, and CR1-CR8 for the core
 
 | # | check | what it tests | you need | after | automated verdict | human verdict |
 | --- | --- | --- | --- | --- | --- | --- |
-| MOV | **Head, lift and a short drive** | SetHeadAngle, SetLiftHeight, DriveWheels and the robot's own action acknowledgements | **he moves** | LINK, D | the robot acknowledges the head and lift actions and the stop is confirmed | The head tilts down and back, the lift rises and lowers, then he drives forward a few centimetres and back, and stops. Nothing keeps moving afterwards. |
+| MOV | **Head, lift and a short drive** | SetHeadAngle, SetLiftHeight, DriveWheels and the robot's own action acknowledgements | **he moves** | LINK, D | every head, lift, wheel and stop action succeeds and the motion tool reports its terminal success marker | The head tilts down and back, the lift rises and lowers, then he drives forward a few centimetres and back, and stops. Nothing keeps moving afterwards. |
 
 ### 6. idle and live animation
 
@@ -143,7 +143,7 @@ since carry their own: LINK, FD, AUD, MOV, IDL, A3, Z2, and CR1-CR8 for the core
 
 | # | check | what it tests | you need | after | automated verdict | human verdict |
 | --- | --- | --- | --- | --- | --- | --- |
-| E | **Colour camera frames** | The colour path of the camera decoder | - | LINK | colour frames decode and the saved presentation JPEG has nominal 320x240 geometry | The saved files are colour photographs of the room, not tinted or scrambled. |
+| E | **Colour camera frames** | The colour path of the camera decoder | - | LINK | colour frames decode and the local-policy diagnostic JPEG has nominal 320x240 geometry while raw encoded bytes stay half-width | The saved files are colour photographs of the room, not tinted or scrambled. |
 
 ### 8. markers, cubes and the world model
 
@@ -191,7 +191,7 @@ since carry their own: LINK, FD, AUD, MOV, IDL, A3, Z2, and CR1-CR8 for the core
 | R | **Stack two cubes** | The stacking behaviour: pick up, carry, place on top, and the final animation | cube, `--obb`, **he moves** | N, K | the terminal stack result is success and carrying is clear; entering the phases is insufficient | He picks one up, carries it to the other and places it on top. |
 | S | **Flip a cube** | The flip pre-action pose at the cube's corner and the lift-driven flip | cube, **he moves** | K | the flip action reports success | He drives at the cube's corner with the lift low, the lift comes up as he reaches it, and the cube tips over his shoulder. He does not stall against it. |
 | T | **Knock over a stack** | The knock-over behaviour: the grab attempt, the flip and the success animation | cube, `--obb`, **he moves** | K, S | the stack is recognised and the knock-over reports success | He turns to the stack, drives to about 85 mm, reaches, flips the bottom cube and the stack falls. The success animation plays. |
-| U | **Pop a wheelie** | The wheelie dock action, the retry on a miss, and the cliff-stop re-enable | cube, `--obb`, **he moves** | K | PoppedWheelie appears and the cliff stop is re-enabled on stop | He docks, rides up onto the cube's edge and drops back. A miss plays the realign animation and tries again, up to three times. |
+| U | **Pop a wheelie** | The wheelie dock action, the single retry on a miss, and the cliff-stop re-enable | cube, `--obb`, **he moves** | K | PoppedWheelie appears and the cliff stop is re-enabled on stop | He docks, rides up onto the cube's edge and drops back. A miss plays the realign animation and retries once at most. |
 
 ### 13. freeplay
 

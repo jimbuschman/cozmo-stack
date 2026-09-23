@@ -746,6 +746,21 @@
       "test": null
     },
     {
+      "id": "M3-018",
+      "subsystem": "M3-device",
+      "title": "Nominal-width diagnostic colour JPEG presentation",
+      "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
+      "effect": "saved diagnostic colour images are viewable at nominal 320x240 geometry while raw source JPEG bytes remain unchanged",
+      "provenance": "local presentation policy: duplicate each decoded 160-wide colour column to 320-wide output",
+      "authority": "COMPATIBILITY_POLICY; the official app interpolation algorithm has not been recovered",
+      "evidence": [],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": false,
+      "test": "DeviceTests.ColourSaveExpandsEncodedGeometryToNominalPresentationWidth"
+    },
+    {
       "id": "M4-001",
       "subsystem": "M4-control",
       "title": "Head angle limits -25 deg to 44.5 deg",

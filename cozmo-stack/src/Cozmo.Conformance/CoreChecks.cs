@@ -335,10 +335,18 @@ public static class CoreChecks
         bool obstacles = map.HasContentType(MemoryMapContentType.ObstacleUnrecognized);
         bool clear = map.HasContentType(MemoryMapContentType.ClearOfObstacle);
         say($"the map holds an unrecognised obstacle: {obstacles}; ground marked clear: {clear}");
-        if (framesSeen == 0) return (false, "no frames were processed at all");
-        if (map.Regions.Count == 0) return (false, "the detector ran but nothing reached the map");
+        if (!Core007HasEvidence(framesSeen, framesWithEdges, map.Regions.Count))
+        {
+            if (framesSeen == 0) return (false, "no frames were processed at all");
+            if (framesWithEdges == 0) return (false, "frames were processed but none contained an overhead-edge point");
+            return (false, "edge points were found but nothing reached the map");
+        }
         return (true, $"{framesWithEdges} of {framesSeen} frames carried edge points and the map holds {map.Regions.Count} region(s)");
     }
+
+    /// <summary>The three independently required observables for CORE-007's automated verdict.</summary>
+    public static bool Core007HasEvidence(int framesSeen, int framesWithEdges, int mapRegions) =>
+        framesSeen > 0 && framesWithEdges > 0 && mapRegions > 0;
 
     // ================================================================ CORE-008
 

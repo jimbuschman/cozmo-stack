@@ -296,6 +296,9 @@ public static class Control
             : "the robot should have nodded and raised and lowered its lift, without the wheels turning";
         var rec = Acceptance("motion", pass, human,
             new { wheelsDriven = allowDrive, speedMmps = speed, steps = results }, robot, AcceptancePath(a));
+        Console.WriteLine(pass
+            ? "MOTION AUTOMATED CHECKS PASSED: every head, lift, wheel and stop action completed successfully."
+            : "MOTION AUTOMATED CHECKS FAILED: at least one commanded action did not complete successfully.");
         Verdict("motion", pass, human, rec);
         robot.Disconnect();
         return pass ? 0 : 20;

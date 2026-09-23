@@ -286,7 +286,7 @@ public static class HardwareCatalog
                     + "centimetres and back, and stops. Nothing keeps moving afterwards.",
             Question = "Did the head, lift and wheels each move as described and then stop?",
             ExpectedTelemetry = "a MotorActionAck for each commanded move and a checked stop at the end",
-            AutoRule = "the robot acknowledges the head and lift actions and the stop is confirmed",
+            AutoRule = "every head, lift, wheel and stop action succeeds and the motion tool reports its terminal success marker",
             Evidence = new[]
             {
                 new EvidenceItem("acknowledgements", "MotorActionAck"),
@@ -298,7 +298,7 @@ public static class HardwareCatalog
             Requires = new[] { "LINK", "D" },
             Timeout = TimeSpan.FromMinutes(3),
             Command = o => new[] { "drive", o.Ip, "--allow-drive", "--speed", "40", "--drive-seconds", "1", "--acceptance", o.Acceptance("MOV") },
-            Judge = r => r.ContainsAny("MotorActionAck", "acknowledged") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.Contains("MOTION AUTOMATED CHECKS PASSED") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
 
         // ================================================================ 6. idle and live animation
@@ -431,9 +431,9 @@ public static class HardwareCatalog
             Success = "The saved files are colour photographs of the room, not tinted or scrambled.",
             Question = "Are the saved images real colour photographs of what he was pointed at?",
             ExpectedTelemetry = "every frame decodes without error and is written out",
-            AutoRule = "colour frames decode and the saved presentation JPEG has nominal 320x240 geometry",
+            AutoRule = "colour frames decode and the local-policy diagnostic JPEG has nominal 320x240 geometry while raw encoded bytes stay half-width",
             Evidence = new[] { new EvidenceItem("frames", "frame"), new EvidenceItem("written", "wrote") },
-            FidelityRecords = new[] { "M3-001", "M3-002", "M3-003", "M3-004", "M3-005", "M3-016" },
+            FidelityRecords = new[] { "M3-001", "M3-002", "M3-003", "M3-004", "M3-005", "M3-016", "M3-018" },
             Requires = new[] { "LINK" },
             Timeout = TimeSpan.FromMinutes(3),
             Command = o => new[] { "camera", o.Ip, "--color", "--out", o.Frames("E"), "--acceptance", o.Acceptance("E") },
@@ -549,7 +549,8 @@ public static class HardwareCatalog
             NeedsCharger = true, NeedsHandling = true, Requires = new[] { "K" },
             Timeout = TimeSpan.FromMinutes(5),
             Command = o => o.WithObb("manip", o.Ip).Concat(new[] { "--mount", "--acceptance", o.Acceptance("V") }).ToArray(),
-            Judge = r => r.Contains("on charger: True") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.Contains("MountCharger success=yes") && r.Contains("on charger: True")
+                ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {
@@ -864,7 +865,7 @@ public static class HardwareCatalog
             NeedsCube = true, Requires = new[] { "K" },
             Timeout = TimeSpan.FromMinutes(4),
             Command = o => o.WithObb("manip", o.Ip).Concat(new[] { "--driveto", "--acceptance", o.Acceptance("Q") }).ToArray(),
-            Judge = r => r.ContainsAny("DriveToPoseAction.CheckIfDone.Success", "DriveToObject -> Success") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.Contains("DriveToObject success=yes") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {
@@ -920,7 +921,7 @@ public static class HardwareCatalog
             Command = o => o.WithObb("manip", o.Ip).Concat(new[] { "--driveto", "--acceptance", o.Acceptance("X") }).ToArray(),
             // Q drives to the same pose with nothing in the way; what makes this X is an obstacle in the plan
             Judge = r => r.Contains("lattice plan") && !r.Contains("0 obstacle(s)") && r.Contains("obstacle")
-                      && r.Contains("DriveToObject -> Success") ? AutoOutcome.Pass : AutoOutcome.Fail,
+                      && r.Contains("DriveToObject success=yes") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
 
         // ================================================================ 12. manipulation
@@ -936,7 +937,7 @@ public static class HardwareCatalog
             Success = "He drives to about 75 mm in front of the face, docks smoothly, lifts the cube and holds it.",
             Question = "Did he dock smoothly and end up holding the cube?",
             ExpectedTelemetry = "path completed, docking with the marker, error signals sent, BlockPickedUp, carrying set",
-            AutoRule = "the pick-and-place result reports the block picked up",
+            AutoRule = "the pick-up action succeeds and the carrying state names the target cube",
             KnownIssue = "If the robot ignores DockWithObject or fails at once, the unread fields of that "
                        + "message are the first suspect (MANIPULATION.md section 4).",
             Evidence = new[]
@@ -950,7 +951,7 @@ public static class HardwareCatalog
             NeedsCube = true, Requires = new[] { "K", "Q" },
             Timeout = TimeSpan.FromMinutes(5),
             Command = o => o.WithObb("manip", o.Ip).Concat(new[] { "--pickup", "--acceptance", o.Acceptance("N") }).ToArray(),
-            Judge = r => r.ContainsAny("BlockPickedUp", "Pickup -> Success") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.Contains("Pickup success=yes") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {
@@ -971,7 +972,7 @@ public static class HardwareCatalog
             NeedsCube = true, Requires = new[] { "N" },
             Timeout = TimeSpan.FromMinutes(4),
             Command = o => o.WithObb("manip", o.Ip).Concat(new[] { "--putdown", "--acceptance", o.Acceptance("O") }).ToArray(),
-            Judge = r => r.ContainsAny("BlockPlaced", "PlaceObjectOnGround -> Success") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.Contains("PlaceObjectOnGround success=yes") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {
@@ -992,7 +993,8 @@ public static class HardwareCatalog
             NeedsCube = true, Requires = new[] { "K" },
             Timeout = TimeSpan.FromMinutes(4),
             Command = o => o.WithObb("manip", o.Ip).Concat(new[] { "--roll", "--acceptance", o.Acceptance("P") }).ToArray(),
-            Judge = r => r.Contains("Roll -> Success") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.Contains("Roll success=yes") && r.Contains("up axis changed=yes")
+                ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {
@@ -1034,7 +1036,7 @@ public static class HardwareCatalog
             NeedsCube = true, Requires = new[] { "K" },
             Timeout = TimeSpan.FromMinutes(5),
             Command = o => o.WithObb("manip", o.Ip).Concat(new[] { "--flip", "--acceptance", o.Acceptance("S") }).ToArray(),
-            Judge = r => r.Contains("DriveAndFlipBlock -> Success") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.Contains("DriveAndFlipBlock success=yes") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {
@@ -1055,7 +1057,7 @@ public static class HardwareCatalog
             NeedsCube = true, NeedsObb = true, Requires = new[] { "K", "S" },
             Timeout = TimeSpan.FromMinutes(5),
             Command = o => o.WithObb("manip", o.Ip).Concat(new[] { "--knockover", "--acceptance", o.Acceptance("T") }).ToArray(),
-            Judge = r => r.ContainsAny("KnockOverSuccess", "the stack came apart") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.Contains("KnockOver success=yes") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {
@@ -1067,7 +1069,7 @@ public static class HardwareCatalog
             Prerequisites = new[] { "K passed", "an upright connected cube ahead", "--obb given" },
             DoThis = "Stand by to catch him. Watch the cliff-stop line in the trace.",
             Success = "He docks, rides up onto the cube's edge and drops back. A miss plays the realign "
-                    + "animation and tries again, up to three times.",
+                    + "animation and retries once at most.",
             Question = "Did he rear up on the cube and come back down safely?",
             ExpectedTelemetry = "PoppedWheelie and the cliff stop re-enabled on stop",
             AutoRule = "PoppedWheelie appears and the cliff stop is re-enabled on stop",
@@ -1076,7 +1078,9 @@ public static class HardwareCatalog
             NeedsCube = true, NeedsObb = true, Requires = new[] { "K" },
             Timeout = TimeSpan.FromMinutes(5),
             Command = o => o.WithObb("manip", o.Ip).Concat(new[] { "--wheelie", "--acceptance", o.Acceptance("U") }).ToArray(),
-            Judge = r => r.ContainsAny("PoppedWheelie", "PopAWheelie -> Success") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            Judge = r => r.Contains("PopAWheelie success=yes") && r.Contains("PoppedWheelie=True")
+                      && r.Contains("cliff stop restored=yes") && r.Contains("EnableStopOnCliff(true)")
+                ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
 
         // ================================================================ 13. freeplay

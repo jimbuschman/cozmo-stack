@@ -882,9 +882,9 @@ public class HardwareRunnerTests
     public void ThePlannerCheckNeedsAPlanThatWentRoundSomething()
     {
         var x = HardwareCatalog.Find("X")!;
-        Assert.Equal(AutoOutcome.Fail, x.Judge(Output("DriveToObject -> Success")));
-        Assert.Equal(AutoOutcome.Fail, x.Judge(Output("lattice plan: 4 primitive(s), 0 obstacle(s)\nDriveToObject -> Success")));
-        Assert.Equal(AutoOutcome.Pass, x.Judge(Output("lattice plan: 7 primitive(s), 1 obstacle(s)\nDriveToObject -> Success")));
+        Assert.Equal(AutoOutcome.Fail, x.Judge(Output("DriveToObject success=yes")));
+        Assert.Equal(AutoOutcome.Fail, x.Judge(Output("lattice plan: 4 primitive(s), 0 obstacle(s)\nDriveToObject success=yes")));
+        Assert.Equal(AutoOutcome.Pass, x.Judge(Output("lattice plan: 7 primitive(s), 1 obstacle(s)\nDriveToObject success=yes")));
     }
 
     [Fact]
@@ -1340,6 +1340,79 @@ public class HardwareRunnerTests
         Assert.Equal(AutoOutcome.Fail, f.Judge(Output("keyframes fired: 27 of 27")));
         Assert.Equal(AutoOutcome.Fail, f.Judge(new HardwareToolRun(30, "AUTOMATED CHECKS PASSED (animation)", null, "x.log", null)));
         Assert.Equal(AutoOutcome.Pass, f.Judge(Output("AUTOMATED CHECKS PASSED (animation): every keyframe fired and the timeline ran to length.")));
+    }
+
+    [Fact]
+    public void TheMotionCheckRequiresItsCompleteTerminalVerdict()
+    {
+        var mov = HardwareCatalog.Find("MOV")!;
+        Assert.Equal(AutoOutcome.Fail, mov.Judge(Output("MotorActionAck acknowledged\nstop all: Success\nAUTOMATED CHECKS FAILED (motion)")));
+        Assert.Equal(AutoOutcome.Pass, mov.Judge(Output("MOTION AUTOMATED CHECKS PASSED: every head, lift, wheel and stop action completed successfully.")));
+    }
+
+    [Fact]
+    public void TheRollCheckRequiresBothActionSuccessAndAChangedUpAxis()
+    {
+        var p = HardwareCatalog.Find("P")!;
+        Assert.Equal(AutoOutcome.Fail, p.Judge(Output("Roll success=no; action=Retry; up axis changed=yes")));
+        Assert.Equal(AutoOutcome.Fail, p.Judge(Output("Roll success=no; action=Success; up axis changed=no")));
+        Assert.Equal(AutoOutcome.Pass, p.Judge(Output("Roll success=yes; action=Success; up axis changed=yes")));
+    }
+
+    [Fact]
+    public void TheWheelieCheckRequiresSuccessAndCliffStopRestoration()
+    {
+        var u = HardwareCatalog.Find("U")!;
+        Assert.Equal(AutoOutcome.Fail, u.Judge(Output("objective achieved: PoppedWheelie")));
+        Assert.Equal(AutoOutcome.Fail, u.Judge(Output("PopAWheelie success=yes; PoppedWheelie=True; cliff stop restored=no")));
+        Assert.Equal(AutoOutcome.Pass, u.Judge(Output("EnableStopOnCliff(true)\nPopAWheelie success=yes; PoppedWheelie=True; cliff stop restored=yes")));
+        Assert.Contains("retries once", u.Success);
+    }
+
+    [Fact]
+    public void ManipulationJudgesRequireTheSameExplicitTerminalSuccessAsTheirAcceptanceRecords()
+    {
+        var cases = new[]
+        {
+            ("V", "MountCharger success=yes; action=Success; on charger: True", "MountCharger success=no; action=Retry; on charger: True"),
+            ("W", "DriveOffCharger success=yes; on charger: False", "DriveOffCharger success=no; on charger: False"),
+            ("Q", "DriveToObject success=yes; action=Success", "DriveToObject success=no; action=Retry"),
+            ("N", "Pickup success=yes; action=Success; carrying=7", "Pickup success=no; action=Retry; carrying="),
+            ("O", "PlaceObjectOnGround success=yes; action=Success; carrying=False", "PlaceObjectOnGround success=no; action=Retry; carrying=False"),
+            ("P", "Roll success=yes; action=Success; up axis changed=yes", "Roll success=no; action=Success; up axis changed=no"),
+            ("R", "StackBlocks success=yes; carrying=False", "StackBlocks success=no; carrying=False"),
+            ("S", "DriveAndFlipBlock success=yes; action=Success", "DriveAndFlipBlock success=no; action=Retry"),
+            ("T", "KnockOver success=yes; knockedOver=True", "KnockOver success=no; knockedOver=False"),
+            ("U", "EnableStopOnCliff(true)\nPopAWheelie success=yes; PoppedWheelie=True; cliff stop restored=yes",
+                  "objective achieved: PoppedWheelie\nPopAWheelie success=no; PoppedWheelie=True; cliff stop restored=no"),
+        };
+        foreach (var (id, pass, fail) in cases)
+        {
+            var check = HardwareCatalog.Find(id)!;
+            Assert.Equal(AutoOutcome.Pass, check.Judge(Output(pass)));
+            Assert.Equal(AutoOutcome.Fail, check.Judge(Output(fail)));
+        }
+    }
+
+    [Fact]
+    public void Core007RequiresProcessedFramesActualEdgePointsAndMapContent()
+    {
+        Assert.False(CoreChecks.Core007HasEvidence(1, 0, 4));
+        Assert.False(CoreChecks.Core007HasEvidence(1, 2, 0));
+        Assert.False(CoreChecks.Core007HasEvidence(0, 2, 4));
+        Assert.True(CoreChecks.Core007HasEvidence(1, 1, 1));
+    }
+
+    [Fact]
+    public void EveryRunnableCheckRejectsANonzeroToolExitBeforeItsJudge()
+    {
+        foreach (var check in HardwareCatalog.All.Where(c => c.Runnable))
+        {
+            var successLooking = new HardwareToolRun(7,
+                "SMOKE TEST: PASS\nautomated: PASS\nAUTOMATED CHECKS PASSED\nSuccess\nyes\nTrue",
+                null, "x.log", null);
+            Assert.Equal(AutoOutcome.Fail, HardwareRunner.Evaluate(check, successLooking));
+        }
     }
 
     [Fact]

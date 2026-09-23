@@ -67,8 +67,9 @@ public sealed class CameraFrame
 
     /// <summary>
     /// Returns presentation geometry. The encoded colour source remains available in <see cref="Jpeg"/>
-    /// at <see cref="JpegWidth"/>; display/save expands it to the nominal resolution width, as the app-side
-    /// image pipeline does after decoding a half-width colour frame.
+    /// at <see cref="JpegWidth"/>. Expanding it to nominal width by duplicating columns is this stack's
+    /// <c>COMPATIBILITY_POLICY</c> for viewable diagnostic files; the official app's interpolation algorithm
+    /// has not been recovered.
     /// </summary>
     public byte[] PresentationJpeg()
     {
@@ -91,7 +92,7 @@ public sealed class CameraFrame
         return output.ToArray();
     }
 
-    /// <summary>Saves presentation geometry; use <see cref="Jpeg"/> when the encoded source representation is required.</summary>
+    /// <summary>Saves the local-policy presentation geometry; use <see cref="Jpeg"/> for the source representation.</summary>
     public void Save(string path) => File.WriteAllBytes(path, PresentationJpeg());
     public override string ToString() =>
         $"CameraFrame #{ImageId} {Width}x{Height} {(IsColor ? "colour" : "gray")} chunks={ChunkCount} " +

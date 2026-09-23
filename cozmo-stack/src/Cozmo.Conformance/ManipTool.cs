@@ -59,6 +59,7 @@ public static class ManipTool
         var sw = System.Diagnostics.Stopwatch.StartNew();
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(seconds));
         string outcome;
+        bool succeeded;
         if (mode == "--driveoff")
         {
             Say($"on charger: {robot.Sensors.OnCharger}");
@@ -67,9 +68,10 @@ public static class ManipTool
             b.Step += l => Say("  driveoff: " + l);
             bool startedOnCharger = robot.Sensors.OnCharger;
             await RunBehavior(b, ctx, cts.Token, "on the charger");
-            outcome = $"DriveOffCharger success={(startedOnCharger && b.DriveResult == ActionResult.Success && b.LeftChargerOnTreads ? "yes" : "no")}; "
+            succeeded = startedOnCharger && b.DriveResult == ActionResult.Success && b.LeftChargerOnTreads;
+            outcome = $"DriveOffCharger success={(succeeded ? "yes" : "no")}; "
                     + $"startedOnCharger={startedOnCharger}; action={b.DriveResult}; onTreadsAndOffCharger={b.LeftChargerOnTreads}; on charger: {robot.Sensors.OnCharger}";
-            return Finish(outcome, "he drives forward off the charger about 156 mm at 20 mm/s and stops on his treads; IS_ON_CHARGER clears", mode);
+            return Finish(outcome, "he drives forward off the charger about 156 mm at 20 mm/s and stops on his treads; IS_ON_CHARGER clears", mode, succeeded);
         }
         if (mode == "--mount")
         {
@@ -82,8 +84,9 @@ public static class ManipTool
             var act = new MountChargerAction(m, ChargerGeometry.ObjectId);
             var r = await act.RunAsync(cts.Token);
             foreach (var l in act.Trace) Say("  " + l);
-            outcome = $"MountCharger -> {r} after {act.Attempts} attempt(s); on charger: {robot.Sensors.OnCharger}";
-            return Finish(outcome, "he aligns 120 mm in front of the charger's marker, turns around, backs onto the charger and the contacts report; a miss drives forward 120 mm and retries", mode);
+            succeeded = r == ActionResult.Success && robot.Sensors.OnCharger;
+            outcome = $"MountCharger success={(succeeded ? "yes" : "no")}; action={r}; attempts={act.Attempts}; on charger: {robot.Sensors.OnCharger}";
+            return Finish(outcome, "he aligns 120 mm in front of the charger's marker, turns around, backs onto the charger and the contacts report; a miss drives forward 120 mm and retries", mode, succeeded);
         }
 
         // What each command actually needs before it can do anything, rather than "one cube and hope".
@@ -123,7 +126,8 @@ public static class ManipTool
                 var f = new DriveAndFlipBlockAction(m, cube.ObjectId);
                 var r = await f.RunAsync(cts.Token);
                 foreach (var l in f.Trace) Say("  " + l);
-                outcome = $"DriveAndFlipBlock -> {r}; lift raised: {f.Flip?.LiftRaised}; cube now {vision.World.GetObjectById(cube.ObjectId)?.PoseState}";
+                succeeded = r == ActionResult.Success;
+                outcome = $"DriveAndFlipBlock success={(succeeded ? "yes" : "no")}; action={r}; lift raised: {f.Flip?.LiftRaised}; cube now {vision.World.GetObjectById(cube.ObjectId)?.PoseState}";
                 break;
             }
             case "--wheelie":
@@ -131,7 +135,11 @@ public static class ManipTool
                 var ctx = new BehaviorContext { Robot = robot, Triggers = obb is null ? new AnimationTriggerMap() : AnimationTriggerMap.Load(obb) };
                 var b = new PopAWheelieBehavior(m);
                 b.Step += l => Say("  wheelie: " + l);
-                outcome = await RunBehavior(b, ctx, cts.Token, "an upright located cube and the animation library");
+                string detail = await RunBehavior(b, ctx, cts.Token, "an upright located cube and the animation library");
+                bool cliffStopRestored = b.Trace.Any(x => x.Contains("EnableStopOnCliff(true)", StringComparison.Ordinal));
+                succeeded = b.Succeeded && cliffStopRestored;
+                outcome = $"PopAWheelie success={(succeeded ? "yes" : "no")}; PoppedWheelie={b.Succeeded}; retries={b.Retries}; "
+                        + $"cliff stop restored={(cliffStopRestored ? "yes" : "no")}; {detail}";
                 break;
             }
             case "--knockover":
@@ -140,7 +148,9 @@ public static class ManipTool
                 var b = new KnockOverCubesBehavior(m, "SparksKnockOverCubes", 2);
                 b.Step += l => Say("  knockover: " + l);
                 Say($"stacks: {string.Join("; ", m.Configurations.Stacks.Select(s => string.Join("/", s.BlockIds)))}");
-                outcome = await RunBehavior(b, ctx, cts.Token, "a located stack of two and the animation library");
+                string detail = await RunBehavior(b, ctx, cts.Token, "a located stack of two and the animation library");
+                succeeded = b.KnockedOver == true;
+                outcome = $"KnockOver success={(succeeded ? "yes" : "no")}; knockedOver={b.KnockedOver}; {detail}";
                 break;
             }
             case "--driveto":
@@ -148,7 +158,8 @@ public static class ManipTool
                 var d = new DriveToObjectAction(m, cube.ObjectId, PreActionType.Docking);
                 var r = await d.RunAsync(cts.Token);
                 foreach (var l in d.Trace) Say("  " + l);
-                outcome = $"DriveToObject -> {r}; chosen pre-dock pose {d.Chosen}";
+                succeeded = r == ActionResult.Success;
+                outcome = $"DriveToObject success={(succeeded ? "yes" : "no")}; action={r}; chosen pre-dock pose {d.Chosen}";
                 break;
             }
             case "--pickup":
@@ -156,7 +167,8 @@ public static class ManipTool
                 var h = new DockHelper(m);
                 var r = await h.RunAsync(cube.ObjectId, PreActionType.Docking, () => new PickupObjectAction(m, cube.ObjectId), cts.Token);
                 foreach (var l in h.Trace) Say("  " + l);
-                outcome = $"Pickup -> {r} after {h.Attempts} attempt(s); carrying={m.Docking.Carrying.CarriedObjectId}; error signals sent={m.Docking.ErrorSignalsSent}";
+                succeeded = r == ActionResult.Success && m.Docking.Carrying.IsCarrying(cube.ObjectId);
+                outcome = $"Pickup success={(succeeded ? "yes" : "no")}; action={r}; attempts={h.Attempts}; carrying={m.Docking.Carrying.CarriedObjectId}; error signals sent={m.Docking.ErrorSignalsSent}";
                 break;
             }
             case "--roll":
@@ -166,14 +178,18 @@ public static class ManipTool
                 var r = await h.RunAsync(cube.ObjectId, PreActionType.Rolling, () => new RollObjectAction(m, cube.ObjectId), cts.Token);
                 foreach (var l in h.Trace) Say("  " + l);
                 await Task.Delay(1500);
-                outcome = $"Roll -> {r}; up axis {before} -> {vision.World.GetObjectById(cube.ObjectId)?.UpAxisFromPose()}";
+                var after = vision.World.GetObjectById(cube.ObjectId)?.UpAxisFromPose();
+                bool axisChanged = after is not null && after.Value != before;
+                succeeded = r == ActionResult.Success && axisChanged;
+                outcome = $"Roll success={(succeeded ? "yes" : "no")}; action={r}; up axis {before} -> {after}; up axis changed={(axisChanged ? "yes" : "no")}";
                 break;
             }
             case "--putdown":
             {
                 if (!m.Docking.Carrying.IsCarryingObject) { m.Docking.Carrying.SetCarrying(cube.ObjectId); Say("assuming the cube is on the lift (place it there by hand first)"); }
                 var r = await new PlaceObjectOnGroundAction(m).RunAsync(cts.Token);
-                outcome = $"PlaceObjectOnGround -> {r}; carrying={m.Docking.Carrying.IsCarryingObject}";
+                succeeded = r == ActionResult.Success && !m.Docking.Carrying.IsCarryingObject;
+                outcome = $"PlaceObjectOnGround success={(succeeded ? "yes" : "no")}; action={r}; carrying={m.Docking.Carrying.IsCarryingObject}";
                 break;
             }
             default:
@@ -181,30 +197,32 @@ public static class ManipTool
                 var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap() };
                 var b = new StackBlocksBehavior(m);
                 b.Step += l => Say("  stack: " + l);
-                if (!b.IsRunnable(ctx)) { outcome = "StackBlocks not runnable (needs two located upright cubes and the animation library)"; break; }
+                if (!b.IsRunnable(ctx)) { succeeded = false; outcome = "StackBlocks success=no; not runnable (needs two located upright cubes and the animation library)"; break; }
                 await b.StartAsync(ctx, new BehaviorScope(), cts.Token);
                 double t = 0;
                 while (b.Update(ctx, t) && !cts.IsCancellationRequested) { await Task.Delay(33); t += 33; }
-                outcome = $"StackBlocks success={(b.StackedSuccessfully ? "yes" : "no")}; ended in phase {b.CurrentPhase}; "
+                b.Stop(cts.IsCancellationRequested ? BehaviorStopReason.Cancelled : BehaviorStopReason.Completed);
+                succeeded = b.StackedSuccessfully && !m.Docking.Carrying.IsCarryingObject;
+                outcome = $"StackBlocks success={(succeeded ? "yes" : "no")}; ended in phase {b.CurrentPhase}; "
                         + $"carrying={m.Docking.Carrying.IsCarryingObject}; top={b.TopObjectId}; bottom={b.BottomObjectId}";
                 break;
             }
         }
         return Finish(outcome, "the robot drove to the pre-dock pose in front of the cube's face, docked smoothly using the marker, and the lift/cube did what the action says; " +
-                              "no path or dock message was rejected; the printed carrying state matches reality", mode);
+                              "no path or dock message was rejected; the printed carrying state matches reality", mode, succeeded);
 
-        int Finish(string result, string humanCheck, string what)
+        int Finish(string result, string humanCheck, string what, bool success)
         {
             Say($"\n[{sw.Elapsed.TotalSeconds:F1}s] {result}");
             robot.StopCamera();
             if (acceptance is not null)
             {
-                var record = WriteAcceptance("manip", acceptance, !result.Contains("Abort") && !result.Contains("Timeout") && !result.Contains("not runnable"), robot, humanCheck,
+                var record = WriteAcceptance("manip", acceptance, success, robot, humanCheck,
                     new { mode = what, outcome = result, messagesSent = m.Paths.Sent.Count + m.Docking.Sent.Count, log }, what is "--flip" or "--knockover" or "--wheelie" or "--mount" or "--driveoff" ? "M13" : "M12");
                 Console.WriteLine($"acceptance record: {record}");
             }
             robot.Disconnect();
-            return 0;
+            return success ? 0 : 3;
         }
 
         async Task<string> RunBehavior(SteppedBehavior b, BehaviorContext ctx, CancellationToken ct, string needs)
@@ -213,6 +231,7 @@ public static class ManipTool
             await b.StartAsync(ctx, new BehaviorScope(), ct);
             double t = 0;
             while (b.Update(ctx, t) && !ct.IsCancellationRequested) { await Task.Delay(33); t += 33; }
+            b.Stop(ct.IsCancellationRequested ? BehaviorStopReason.Cancelled : BehaviorStopReason.Completed);
             return $"{b.Id} ended; last steps: {string.Join(" | ", b.Trace.TakeLast(3))}";
         }
     }
