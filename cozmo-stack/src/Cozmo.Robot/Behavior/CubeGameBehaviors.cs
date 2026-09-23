@@ -104,7 +104,9 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
     {
         CurrentPhase = Phase.KnockingOverStack;
         uint bottom = TargetStack!.BottomBlockId;
-        var flip = new DriveAndFlipBlockAction(M, bottom);
+        // the maximum turn towards a face: pi/2 on the first attempt, 0 once the attempt count at +0x140 is
+        // above zero (adr/addgt over the table at 0x005C36BC); the trailing 20.0 has no effect
+        var flip = new DriveAndFlipBlockAction(M, bottom) { MaxTurnTowardsFaceRad = KnockOverAttempts > 0 ? 0.0 : Math.PI / 2 };
         // 0x005C355C..0x005C35FA: a sequence of TurnTowardsObjectAction (max pi) at the bottom block, the
         // DriveAndFlipBlockAction, and a WaitAction of 0.5 s.
         RunAction($"DriveAndFlipBlockAction({bottom})", async ct =>
@@ -120,8 +122,9 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
             // the callback at 0x005C3DCE splits on the result
             if (r == ActionResult.NoPreActionPoses)
             {
-                // 0x005C3DDE..0x005C3DEA: the target is written to AIWhiteboard+0x70 and the behaviour ends
-                M.Whiteboard.KnockOverNoPreActionPosesObjectId = bottom;
+                // 0x005C3DDE..0x005C3DEA: the target is written to AIWhiteboard+0x70 and the behaviour ends;
+                // the NoPreDockPoses reaction picks it up and rams the block (NoPreDockPosesStrategy)
+                M.Whiteboard.NoPreDockPosesObjectId = bottom;
                 Log($"no pre-action poses for {bottom}");
                 Finish();
                 return;
@@ -294,12 +297,19 @@ public sealed class RamIntoBlockBehavior : ManipulationBehavior
     public Phase CurrentPhase { get; private set; }
     public uint? TargetObjectId { get; private set; }
 
+    /// <summary>
+    /// The target the NoPreDockPoses reaction hands over, BehaviorRamIntoBlock+0x11C
+    /// (ReactionTriggerStrategyNoPreDockPoses::ShouldTriggerBehaviorInternal 0x00610E64).
+    /// </summary>
+    public uint? PendingTarget { get; set; }
+
     protected override bool IsRunnableInternal(BehaviorContext context) => ClosestCube() is not null;
 
     protected override void OnStart()
     {
         Scope.DisableReactions();
-        var t = ClosestCube();
+        var pending = PendingTarget; PendingTarget = null;
+        var t = (pending is { } p ? M.World.GetLocatedObjectById(p) : null) ?? ClosestCube();
         if (t is null) { Finish(); return; }
         TargetObjectId = t.ObjectId;
         if (M.Docking.Carrying.IsCarryingObject)

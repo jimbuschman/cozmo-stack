@@ -34,7 +34,12 @@ public sealed class MarkerDetector
             if (Decoder.HasLibrary)
             {
                 h = Homography.FromUnitSquare(corners);
+                // the refinement runs on the illumination-normalised region, which is put back before decoding
+                // (DetectFiducialMarkers 0x008990C8..0x0089954E)
+                var region = CornerRefinement.NormalizeIllumination(img, corners, Quads.Parameters);
+                if (region is null) { results.Add((q, null, "empty region for its corners")); continue; }
                 var outcome = CornerRefinement.RefineCorners(img, Decoder.Library, ref corners, ref h, Quads.Parameters);
+                CornerRefinement.RestoreRegion(img, region.Value);
                 if (outcome != CornerRefinement.Outcome.Refined)
                 {
                     results.Add((q, null, outcome == CornerRefinement.Outcome.LowContrast ? "too little contrast to refine" : "corner refinement moved the corners too far"));

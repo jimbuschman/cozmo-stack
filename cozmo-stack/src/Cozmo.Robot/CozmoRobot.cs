@@ -259,7 +259,8 @@ public sealed class CozmoRobot : IDisposable
     public static async Task<CozmoRobot> ConnectAsync(IPAddress address, int? port = null,
                                                       TransportOptions? options = null,
                                                       TimeSpan? timeout = null,
-                                                      bool enableAnimations = true)
+                                                      bool enableAnimations = true,
+                                                      string? blockPoolPath = null)
     {
         var robot = new CozmoRobot(options);
         var connected = new TaskCompletionSource();
@@ -287,9 +288,17 @@ public sealed class CozmoRobot : IDisposable
         // Without this the robot accepts face and audio frames but never renders or plays them: the
         // animation controller is not running. The robot answers by streaming AnimationState (0xF1).
         if (enableAnimations) robot.EnableAnimations();
+        // Robot::SetPhysicalRobot(true) 0x00513914 initialises the block pool from blockPool.txt, which asks for
+        // the saved cubes straight away. The engine resolves the file with DataPlatform::pathToResource(scope 4);
+        // this stack keeps it under the local application data folder. An empty path turns persistence off.
+        robot.Cubes.Connections.Init(blockPoolPath ?? DefaultBlockPoolPath);
         for (int i = 0; i < 40 && robot.State.StateCount == 0; i++) await Task.Delay(50);
         return robot;
     }
+
+    /// <summary>Where the block pool is kept between sessions unless ConnectAsync is told otherwise.</summary>
+    public static string DefaultBlockPoolPath =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "cozmo-stack", "blockPool.txt");
 
     /// <summary>
     /// Starts the robot's animation controller. Face images and audio frames are animation keyframes: until

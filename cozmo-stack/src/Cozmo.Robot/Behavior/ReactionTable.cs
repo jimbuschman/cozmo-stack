@@ -123,7 +123,8 @@ public sealed class ReactionTable
         // Still absent because the input does not exist here:
         //
         //   ObjectPositionUpdated -> AcknowledgeObject,
-        //   NoPreDockPoses -> RamIntoBlock, FistBump -> FistBump      - need located cubes and objectives
+        //   NoPreDockPoses -> RamIntoBlock                              - M13, NoPreDockPosesStrategy, with a manipulation system
+        //   FistBump -> FistBump                                        - needs located cubes and objectives
         //   FacePositionUpdated -> AcknowledgeFace,
         //   PetInitialDetection -> ReactToPet                          - need vision
         //   Sparked -> ReactToSparked, Hiccup -> Hiccup                 - need the app's spark request and the hiccup system

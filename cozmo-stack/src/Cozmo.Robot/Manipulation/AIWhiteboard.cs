@@ -67,10 +67,12 @@ public sealed class AIWhiteboard
         _world.LocatedObjects.Where(o => CubeGeometry.IsCube(o.Type)).All(o => _beacons.Any(b => b.IsLocWithinBeacon(o.Pose.Translation)));
 
     /// <summary>
-    /// AIWhiteboard+0x70: the object <c>BehaviorKnockOverCubes</c> last failed to knock over for want of pre-action
-    /// poses (written at 0x005C3DEA). What reads it was not traced.
+    /// AIWhiteboard+0x70: an object an action could not reach for want of pre-dock poses, -1 (null here) when
+    /// there is none. <c>BehaviorKnockOverCubes</c> writes it (0x005C3DEA); its one reader,
+    /// <c>ReactionTriggerStrategyNoPreDockPoses::ShouldTriggerBehaviorInternal</c> 0x00610E32, resets it to -1
+    /// and gives the object to RamIntoBlock (<see cref="Cozmo.Robot.Behavior.NoPreDockPosesStrategy"/>).
     /// </summary>
-    public uint? KnockOverNoPreActionPosesObjectId { get; set; }
+    public uint? NoPreDockPosesObjectId { get; set; }
 
     public void SetFailedToUse(uint objectId, ObjectActionFailure failure) => _failures.Add((objectId, failure, _clockSec()));
 

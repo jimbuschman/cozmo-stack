@@ -59,6 +59,91 @@ public static class CornerRefinement
         return Outcome.Refined;
     }
 
+    /// <summary>
+    /// <c>IlluminationNormalization</c> in <c>DetectFiducialMarkers</c> (0x008990C8..0x008994CA), run on each marker
+    /// before <c>RefineCorners</c> when the parameters' +1 flag is set (Initialize writes 0x101 at +0, so it is).
+    ///
+    /// The region is the quad's bounding rectangle (<c>Quadrilateral&lt;float&gt;::ComputeBoundingRectangle&lt;int&gt;</c>
+    /// 0x0088A16C: each coordinate truncated, min and max) grown by 5 on every side, the left and top floored at 0
+    /// and the right and bottom capped at cols - 1 and rows - 1, as <c>cv::Rect(left, top, right - left, bottom - top)</c>
+    /// (0x008990D2..0x00899126). Its pixels are copied aside (0x00899298); the region is box-filtered into a CV_16S
+    /// image with a square kernel of <c>round((inner.x + inner.y) / 2 * 1.4142 * (|c0 - c3| + |c2 - c1|))</c>
+    /// (1.4142 is 0x3FB50481; cv::boxFilter at 0x008993D2, anchor at the centre, normalised, BORDER_REFLECT_101, and -
+    /// the region being a view - reading the image's own pixels beyond the region); the blur is subtracted from the
+    /// region (cv::subtract 0x0089942C, into CV_16S); and the difference is min-max normalised to 0..255 and written
+    /// back over the region of the image itself (cv::normalize 0x00899474, alpha 255.0, beta 0, NORM_MINMAX, into the
+    /// region's CV_8U view). Returns the saved pixels, which <see cref="RestoreRegion"/> puts back after the
+    /// refinement and before decoding (0x00899534..0x0089954E), or null for an empty region, which the engine logs
+    /// ("Got empty ROI for given corners") and drops the marker for.
+    /// </summary>
+    public static (int X, int Y, int W, int H, byte[] Saved)? NormalizeIllumination(GrayImage img, Vec2[] corners, QuadDetectorParameters p)
+    {
+        int left = (int)(float)corners[0].X, right = left, top = (int)(float)corners[0].Y, bottom = top;
+        for (int i = 1; i < 4; i++)
+        {
+            int x = (int)(float)corners[i].X, y = (int)(float)corners[i].Y;
+            if (x > right) right = x; if (x < left) left = x;
+            if (y > bottom) bottom = y; if (y < top) top = y;
+        }
+        top -= 5; if (top <= 0) top = 0;
+        left -= 5; if (left <= 0) left = 0;
+        bottom += 5; if (img.Height <= bottom) bottom = img.Height - 1;
+        right += 5; if (img.Width <= right) right = img.Width - 1;
+        int w = right - left, h = bottom - top;
+        if (w <= 0 || h <= 0) return null;
+
+        var saved = new byte[w * h];
+        for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) saved[y * w + x] = img[left + x, top + y];
+
+        float d1x = (float)(corners[0].X - corners[3].X), d1y = (float)(corners[0].Y - corners[3].Y);
+        float d2x = (float)(corners[2].X - corners[1].X), d2y = (float)(corners[2].Y - corners[1].Y);
+        float scale = ((float)p.RefineInnerFraction + (float)p.RefineInnerFraction) * 0.5f * 1.4142f;
+        int k = (int)MathF.Round(scale * (MathF.Sqrt(d1x * d1x + d1y * d1y) + MathF.Sqrt(d2x * d2x + d2y * d2y)));
+        if (k < 1) k = 1;
+        int anchor = k / 2;
+
+        var diff = new short[w * h];
+        int min = int.MaxValue, max = int.MinValue;
+        double inv = 1.0 / (k * k);
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                int sum = 0;
+                for (int dy = 0; dy < k; dy++)
+                {
+                    int yy = Reflect101(top + y - anchor + dy, img.Height);
+                    for (int dx = 0; dx < k; dx++) sum += img[Reflect101(left + x - anchor + dx, img.Width), yy];
+                }
+                short blur = (short)Math.Clamp(Math.Round(sum * inv, MidpointRounding.ToEven), short.MinValue, short.MaxValue);
+                int d = Math.Clamp(saved[y * w + x] - blur, short.MinValue, short.MaxValue);
+                diff[y * w + x] = (short)d;
+                if (d < min) min = d; if (d > max) max = d;
+            }
+
+        double range = max - min;
+        double sc = range > double.Epsilon ? 255.0 / range : 0.0;
+        double shift = 0.0 - min * sc;
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                img[left + x, top + y] = (byte)Math.Clamp(Math.Round(diff[y * w + x] * sc + shift, MidpointRounding.ToEven), 0, 255);
+        return (left, top, w, h, saved);
+    }
+
+    /// <summary>Puts back the pixels <see cref="NormalizeIllumination"/> overwrote.</summary>
+    public static void RestoreRegion(GrayImage img, (int X, int Y, int W, int H, byte[] Saved) region)
+    {
+        for (int y = 0; y < region.H; y++)
+            for (int x = 0; x < region.W; x++)
+                img[region.X + x, region.Y + y] = region.Saved[y * region.W + x];
+    }
+
+    private static int Reflect101(int i, int n)
+    {
+        if (n == 1) return 0;
+        while (i < 0 || i >= n) i = i < 0 ? -i : 2 * n - 2 - i;
+        return i;
+    }
+
     private static short RoundS16(float v)
     {
         if (v < -32768f) return short.MinValue;

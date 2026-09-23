@@ -108,7 +108,7 @@ public sealed class CubeConnections
     private readonly Func<float> _seconds;
 
     // Robot
-    private readonly List<Info> _available = new();                  // Robot+0x47C
+    private readonly ActiveObjectTable<Info> _available = new();     // Robot+0x47C, libc++ unordered_map order
     private readonly Info[] _slots = new Info[SlotCount];              // Robot+0x494
     private readonly (uint FactoryId, bool Pending)[] _requested = new (uint, bool)[SlotCount];  // Robot+0x454
     private double _lastDisconnectCheck;                             // Robot+0x510
@@ -174,13 +174,12 @@ public sealed class CubeConnections
     {
         lock (_gate)
         {
-            int i = _available.FindIndex(e => e.FactoryId == factoryId);
-            var e = i >= 0 ? _available[i] : Info.Reset();
+            var e = _available.TryGet(factoryId, out var found) ? found : Info.Reset();
             e.FactoryId = factoryId;
             e.Type = type;
             e.Rssi = unchecked((byte)rssi);   // ldrb: the engine keeps the byte and compares it unsigned
             e.LastObservedTime = _robotTime;
-            if (i >= 0) _available[i] = e; else _available.Add(e);
+            _available.Set(factoryId, e);
         }
     }
 
@@ -225,7 +224,7 @@ public sealed class CubeConnections
     private List<SetPropSlot> UpdateLocked()
     {
         // Robot::Update 0x00514190: drop what has not been heard for 10001 ms of robot time
-        _available.RemoveAll(e => unchecked((int)(_robotTime - e.LastObservedTime)) >= UndiscoveredAfterMs);
+        _available.RemoveWhere(e => unchecked((int)(_robotTime - e.LastObservedTime)) >= UndiscoveredAfterMs);
         UpdatePool();                        // 0x0051422A
         CheckDisconnectedObjects();          // 0x00514230
         return ConnectToRequestedObjects();  // 0x00514236
@@ -257,9 +256,7 @@ public sealed class CubeConnections
                 sent.Add(Send(0, i));
                 continue;
             }
-            int found = _available.FindIndex(e => e.FactoryId == want);
-            if (found < 0) continue;                             // 0x00514B00: stays pending until it is heard
-            var info = _available[found];
+            if (!_available.TryGet(want, out var info)) continue;   // 0x00514B00: stays pending until it is heard
             for (int j = 0; j < SlotCount; j++)
             {
                 // 0x00514B0A..0x00514B6C: another connected object of the same type. The engine warns, clears
@@ -288,7 +285,7 @@ public sealed class CubeConnections
         ref var s = ref _slots[slot];
         if (s.FactoryId != factoryId) return;   // "Ignoring connection to object ... because expecting ..."
         // any state other than PendingConnection or Disconnected is logged as an error, and handled the same
-        _available.RemoveAll(e => e.FactoryId == factoryId);   // __erase_unique at 0x00517A98
+        _available.Remove(factoryId);                           // __erase_unique at 0x00517A98
         s.State = ActiveObjectSlotState.Connected;
         s.DisconnectedTime = 0;
     }
@@ -321,7 +318,7 @@ public sealed class CubeConnections
     private uint GetClosestDiscoveredObjectOfType(ObjectType type, byte maxRssi)
     {
         uint best = 0;
-        foreach (var e in _available)
+        foreach (var e in _available.Values)
         {
             if (e.Type != type || e.Rssi > maxRssi) continue;
             best = e.FactoryId;
@@ -386,8 +383,128 @@ public sealed class CubeConnections
         }
         if (free < 0) return false;
         _persistentPool[free] = (factoryId, type);
+        Save();                                                  // 0x0061ACE2
         return true;
     }
+
+    // ------------------------------------------------------------------ persistence
+
+    private string _poolPath = "";                                           // BlockFilter+0x60
+
+    /// <summary>The file the pool is kept in, empty when there is none.</summary>
+    public string PoolPath { get { lock (_gate) return _poolPath; } }
+
+    /// <summary>The persistent pool, by entry.</summary>
+    public IReadOnlyList<(uint FactoryId, ObjectType Type)> PersistentPool { get { lock (_gate) return _persistentPool.ToArray(); } }
+
+    /// <summary>
+    /// <c>BlockFilter::Init</c> 0x0061A1EC, which <c>Robot::SetPhysicalRobot(true)</c> 0x00513914 calls with
+    /// <c>DataPlatform::pathToResource(scope 4, "blockPool.txt")</c>: stores the path, loads the pool, copies it to
+    /// the runtime pool and asks for its five factory ids at once (<c>Robot::ConnectToObjects</c> at 0x0061A278) -
+    /// before any <c>BlockPoolEnabledMessage</c>.
+    /// </summary>
+    public void Init(string path)
+    {
+        lock (_gate)
+        {
+            _poolPath = path;
+            Load();
+            Array.Copy(_persistentPool, _runtimePool, SlotCount);
+            ConnectToObjectsLocked(_runtimePool.Select(p => p.FactoryId).ToArray());
+        }
+    }
+
+    /// <summary>
+    /// <c>BlockFilter::Load</c> 0x0061A2DC. The file is read a line at a time (getline on a line feed); a file
+    /// that cannot be opened leaves the pool as it is. Empty lines are skipped; a sixth non-empty line is an error
+    /// that ends the reading (0x0061A41E, 0x0061A5A0); a line not starting "0x" is skipped (compare(0, 2, "0x") at
+    /// 0x0061A430); the factory id is stoul(line, &amp;pos, 16), the line is skipped when pos is at its end, the id
+    /// is stored in the next entry, and the type is stoul(line.substr(pos + 1), 0, 10) into the same entry, which
+    /// then counts. A parse that throws is logged and the line skipped (0x0061A52C..0x0061A58E) - after the id has
+    /// been stored, when it is the type that fails.
+    /// </summary>
+    private void Load()
+    {
+        string text;
+        try { text = File.ReadAllText(_poolPath); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException) { return; }
+
+        int count = 0;
+        int start = 0;
+        while (start < text.Length)
+        {
+            int nl = text.IndexOf('\n', start);
+            string line = nl < 0 ? text[start..] : text[start..nl];
+            start = nl < 0 ? text.Length : nl + 1;
+            if (line.Length == 0) continue;
+            if (count >= SlotCount) break;
+            if (!line.StartsWith("0x", StringComparison.Ordinal)) continue;
+            if (!Stoul(line, 16, out uint factoryId, out int pos)) continue;
+            if (pos >= line.Length) continue;
+            _persistentPool[count].FactoryId = factoryId;
+            if (!Stoul(line[(pos + 1)..], 10, out uint type, out _)) continue;
+            _persistentPool[count].Type = (ObjectType)(int)type;
+            count++;
+        }
+    }
+
+    /// <summary>
+    /// std::stoul with a 32-bit unsigned long (strtoul): leading white space, an optional sign, an optional 0x in
+    /// base 16, then as many digits as parse. No digit is invalid_argument and more than 32 bits is out_of_range;
+    /// both come back false, as the caller catches them.
+    /// </summary>
+    internal static bool Stoul(string s, int radix, out uint value, out int pos)
+    {
+        value = 0; pos = 0;
+        int i = 0;
+        while (i < s.Length && (s[i] == ' ' || (s[i] >= '\t' && s[i] <= '\r'))) i++;
+        bool negative = false;
+        if (i < s.Length && (s[i] == '+' || s[i] == '-')) { negative = s[i] == '-'; i++; }
+
+        if (radix == 16 && i + 2 < s.Length && s[i] == '0' && (s[i + 1] == 'x' || s[i + 1] == 'X') && Uri.IsHexDigit(s[i + 2]))
+            i += 2;
+        ulong acc = 0;
+        int first = i;
+        bool overflow = false;
+        for (; i < s.Length; i++)
+        {
+            char c = s[i];
+            int d = c >= '0' && c <= '9' ? c - '0'
+                  : radix == 16 && c >= 'a' && c <= 'f' ? c - 'a' + 10
+                  : radix == 16 && c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1;
+            if (d < 0) break;
+            if (!overflow) acc = acc * (ulong)radix + (ulong)d;
+            if (acc > uint.MaxValue) overflow = true;
+        }
+        if (i == first) return false;
+        if (overflow) return false;
+        value = negative ? unchecked((uint)-(long)acc) : (uint)acc;
+        pos = i;
+        return true;
+    }
+
+    /// <summary>
+    /// <c>BlockFilter::Save</c> 0x0061B014: nothing without a path; when every entry is empty an existing file is
+    /// removed first (stat and remove at 0x0061B058..0x0061B068); then the file is opened for output, truncating
+    /// it, and each entry with a non-zero factory id is written as "0x", the id in lower-case hex, ",", the type in
+    /// decimal and a line feed (0x0061B0EA..0x0061B154).
+    /// </summary>
+    private void Save()
+    {
+        if (_poolPath.Length == 0) return;
+        try
+        {
+            if (_persistentPool.All(p => p.FactoryId == 0) && File.Exists(_poolPath)) File.Delete(_poolPath);
+            var sb = new System.Text.StringBuilder();
+            foreach (var (factoryId, type) in _persistentPool)
+                if (factoryId != 0) sb.Append("0x").Append(factoryId.ToString("x")).Append(',').Append(((int)type).ToString()).Append('\n');
+            var dir = Path.GetDirectoryName(_poolPath);
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+            File.WriteAllText(_poolPath, sb.ToString());
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+    }
+
 
     private void Raise(List<SetPropSlot> sent)
     {

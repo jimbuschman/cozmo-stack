@@ -7,10 +7,10 @@ Manifest of **220 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 166 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 19 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 2 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 1 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| EXACT_SOURCE | 167 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EQUIVALENT_IMPLEMENTATION | 21 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| RECOVERABLE_GAP | 0 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 0 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 20 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 4 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -27,16 +27,16 @@ remains after both, and they do not go away by working harder on this repository
 | M1-transport — UDP transport and reliability | 15 | 0 | 0 | 0 | 0 | yes | yes |
 | M2-protocol — CLAD messages and protocol helpers | 7 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 17 | 0 | 0 | 0 | 1 | yes | yes |
-| M4-control — Motion, sensors, lights and cubes | 13 | 0 | 1 | 0 | 1 | yes | no |
+| M4-control — Motion, sensors, lights and cubes | 13 | 0 | 0 | 0 | 1 | yes | yes |
 | M5-animation — Animation clips, scheduler and face | 23 | 0 | 0 | 0 | 0 | yes | yes |
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 0 | 0 | 0 | 0 | yes | yes |
 | M7-behaviour — Idle, mood and reactions | 17 | 0 | 0 | 0 | 0 | yes | yes |
 | M8-framework — Behaviour framework and scoring | 10 | 0 | 0 | 0 | 0 | yes | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 9 | 0 | 0 | 0 | 0 | yes | yes |
-| M11-vision — Markers, camera geometry and BlockWorld | 20 | 1 | 0 | 1 | 0 | no | yes |
+| M11-vision — Markers, camera geometry and BlockWorld | 20 | 0 | 0 | 1 | 0 | yes | yes |
 | M12-manipulation — Docking, carrying and pre-action poses | 16 | 0 | 0 | 0 | 0 | yes | yes |
-| M13-navigation — Planning, charger and block configurations | 15 | 1 | 0 | 0 | 0 | no | yes |
+| M13-navigation — Planning, charger and block configurations | 15 | 0 | 0 | 0 | 0 | yes | yes |
 | M14-faces — Face and pet pipeline | 7 | 0 | 0 | 1 | 0 | yes | yes |
 | M15-freeplay — Needs, activities and freeplay | 12 | 0 | 0 | 0 | 0 | yes | yes |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
@@ -45,42 +45,9 @@ remains after both, and they do not go away by working harder on this repository
 
 Each of these is a question the original can answer and nobody has asked it yet.
 
-### M11-vision — Markers, camera geometry and BlockWorld
-
-**M11-020 — Illumination normalisation of each marker's region before its corners are refined and it is decoded** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
-* effect: the refinement and the decode read the raw image where the engine reads a locally normalised one, so contrast, the bright and dark levels and the refined corners can differ
-* rests on: not reproduced: MarkerDetector refines and decodes on the camera image as it is
-* best authority: DetectFiducialMarkers 0x00898760: when params+1 is set (Parameters::Initialize writes 0x101 at +0, so it is) each marker's bounding rectangle is cut out (Quadrilateral::ComputeBoundingRectangle 0x008990CE), box-filtered and subtracted and min-max normalised (cv::boxFilter 0x008993D2, cv::subtract 0x0089942C, cv::normalize 0x00899474; IlluminationNormalization in detectFiducialMarkers.cpp) before RefineCorners (0x00899528) and Extract (0x00899056) - not read in detail
-* evidence: the per-marker loop 0x008990AA..0x008995A2; the IlluminationNormalization error string at 0x0089956A
-* outstanding: read the normalisation: the filter size (computed with sqrtf and roundf at 0x00899304..0x0089937A), the subtraction and the normalise range, and which image RefineCorners and Extract are handed afterwards
-
-### M13-navigation — Planning, charger and block configurations
-
-**M13-014 — Knock over a stack: BehaviorKnockOverCubes has no verified fidelity record** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`
-* effect: the approach, the flip of the bottom block, the blind-flip fallback or the success and failure reactions differ from the engine
-* rests on: the behaviour's flow is now the engine's and verified: the reach, the knock-over sequence, the retry and blind-flip rule, the NoPreActionPoses exit and the reaction. What is not reproduced is what DriveAndFlipBlockAction is told beyond the object: the local action takes only the object
-* best authority: BehaviorKnockOverCubes 0x005C2EA0..0x005C3C00, its knock-over callback 0x005C3DCE, IBehavior::StartActing(action, function<void(Robot&)>) 0x005BE0E4 and its lambda 0x005BF8F4, IBehavior::Init 0x005BCB54 and ReadFromJson 0x005BBFB4, read; DriveAndFlipBlockAction 0x0055E208 not read past its arguments
-* evidence: InitInternal 0x005C31A2 goes straight to the knock-over when IBehavior+0xD9 (alwaysStreamline, ReadFromJson 0x005BC216) or +0xD8 (set in IBehavior::Init 0x005BCCC2 from the spark state) is set; neither shipped config sets alwaysStreamline and freeplay is not sparked, so the reach runs; Reach 0x005C3254: TurnTowardsObjectAction(max pi) at the bottom block; then, only when the block's x in the robot frame plus 10 exceeds 85 (0x005C3354..0x005C336C), DriveStraightAction(x - 85) at 60 mm/s; then the reachForBlockTrigger lift-safe animation. The continuation TransitionToKnockingOverStack runs whatever the result (StartActing's lambda 0x005BF8F4 ignores it); Knock-over 0x005C34A8: a sequence of TurnTowardsObjectAction(max pi), DriveAndFlipBlockAction and WaitAction(0.5). The callback 0x005C3DCE: NoPreActionPoses (0x03000010) writes the block to AIWhiteboard+0x70 and ends; success goes to TransitionToPlayingReaction; a Retry-category result re-runs the knock-over while the attempt count at +0x140 is at most 1 and otherwise goes to the blind flip, counting up either way; anything else ends. The count is zeroed in InitializeMemberVars (0x005C3218); Blind flip 0x005C3840: FlipBlockAction with the pre-action check off and WaitAction(0.5), then the reaction; DriveAndFlipBlockAction is constructed with useApproachAngle false, approach angle 0, sayName false, a maximum turn towards a face of pi/2 on the first attempt and 0 on later ones or when streamlined (the table at 0x005C36BC), false, and a trailing float of 20.0 (0x005C352E..0x005C3548), with the say-name triggers 0xFD and 0xFE
-* outstanding: what DriveAndFlipBlockAction 0x0055E208 does with the maximum face-turn angle and the trailing 20.0 it is given, and so what passing them would change; the local DriveAndFlipBlockAction takes neither. The readers of AIWhiteboard+0x70 were not traced
-
 ## Still to build: every IMPLEMENTATION_GAP
 
 Each of these is a question already answered. The original's behaviour is established and this stack knowingly does something else, so the work outstanding is writing it, not reading.
-
-### M4-control — Motion, sensors, lights and cubes
-
-**M4-011 — The block pool is not persisted, and an RSSI tie is not broken in the engine's order** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CubeConnections.cs`
-* effect: after a restart the engine reconnects the cubes it pooled last session; this stack rediscovers from scratch. With two same-type cubes at equal RSSI a different cube may be chosen
-* rests on: a fresh pool every session; a tie is broken by this stack's iteration order
-* best authority: BlockFilter::Load / BlockFilter::Save (named, not transcribed); the libc++ unordered_map visit order behind GetClosestDiscoveredObjectsOfType 0x00518314
-* evidence: documented as not reproduced in the CubeConnections class summary
-* outstanding: not buildable from the evidence recorded: BlockFilter::Load 0x0061A2DC and BlockFilter::Save 0x0061B014 have never been transcribed, so the file the pool is kept in, its format and when it is read and written are not known; and the tie between two same-type cubes at one RSSI byte is decided by the libc++ unordered_map's bucket traversal order at Robot+0x47C, which depends on its bucket count and insertion and rehash history, none of which is recorded
 
 ## What remains after both: blocked externally, or needing hardware
 
@@ -140,6 +107,8 @@ Each of these is a question already answered. The original's behaviour is establ
 | TOOL-003 | tools | COMPATIBILITY_POLICY | The --nominal calibration override in the vision, manipulation and freeplay tools | the live path fails closed without a real calibration |
 | TOOL-005 | tools | COMPATIBILITY_POLICY | The hardware acceptance campaign: how a check is judged, and what a result may change | not applicable: the harness is not part of the app. The rule that matters runs the other way - a hardware result never changes a fidelity record's status. A check that passes says the behaviour was observed; a check that fails is an investigation item, not a licence to tune a source-backed constant. M11-005 stays open whatever the vision check reports, and the charger's 20 x 27 mm marker geometry is not adjusted to make the mount succeed |
 | M7-017 | M7-behaviour | EQUIVALENT_IMPLEMENTATION | The complete live-animation wire lifecycle | AnimationStreamer::UpdateLiveAnimation 0x0057D5F8, AnimationStreamer::Update 0x0057CE5C, InitStream 0x0057B674, UpdateStream 0x0057C84C, SendStartOfAnimation 0x0057C400, SendBufferedMessages 0x0057BF60, read |
+| M13-014 | M13-navigation | EQUIVALENT_IMPLEMENTATION | Knock over a stack: BehaviorKnockOverCubes has no verified fidelity record | BehaviorKnockOverCubes 0x005C2EA0..0x005C3C00, its knock-over callback 0x005C3DCE, IBehavior::StartActing(action, function<void(Robot&)>) 0x005BE0E4 and its lambda 0x005BF8F4, IBehavior::Init 0x005BCB54 and ReadFromJson 0x005BBFB4, read; DriveAndFlipBlockAction 0x0055E208 not read past its arguments; DriveAndFlipBlockAction 0x0055E208, IDriveToInteractWithObject 0x0055B1F4, ReactionTriggerStrategyNoPreDockPoses::ShouldTriggerBehaviorInternal 0x00610E32, AIWhiteboard::AIWhiteboard 0x0056A270 and BehaviorRamIntoBlock's transitions, read |
 | M5-022 | M5-animation | EQUIVALENT_IMPLEMENTATION | What the engine does when the robot disconnects during a streaming animation | Robot::SendMessage 0x0051349C, AnimationStreamer::SendBufferedMessages 0x0057BF60, UpdateStream 0x0057C84C, Update 0x0057CE5C, RobotManager::RemoveRobot 0x0052F1A4, Robot::~Robot 0x005110D4, AnimationStreamer::~AnimationStreamer 0x0057AF48, read |
 | M5-023 | M5-animation | EQUIVALENT_IMPLEMENTATION | Native cancellation and emission sequencing of a cancelled streaming animation | AnimationStreamer::Abort 0x0057B3E0, SetStreamingAnimation 0x0057B174, InitStream 0x0057B674, Update 0x0057CE5C, read |
+| M11-020 | M11-vision | EQUIVALENT_IMPLEMENTATION | Illumination normalisation of each marker's region before its corners are refined and it is decoded | DetectFiducialMarkers 0x00898760 per-marker loop 0x008990AA..0x008995A2, Quadrilateral<float>::ComputeBoundingRectangle<int> 0x0088A16C, ArrayToCvMat<u8> 0x00899B50, read |
 

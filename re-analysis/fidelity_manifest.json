@@ -72,7 +72,7 @@
       "name": "Motion, sensors, lights and cubes",
       "milestone": "M4",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": false
+      "implementation_fidelity_complete": true
     },
     {
       "id": "M5-animation",
@@ -120,7 +120,7 @@
       "id": "M11-vision",
       "name": "Markers, camera geometry and BlockWorld",
       "milestone": "M11",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true
     },
     {
@@ -134,7 +134,7 @@
       "id": "M13-navigation",
       "name": "Planning, charger and block configurations",
       "milestone": "M13",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true
     },
     {
@@ -3518,19 +3518,18 @@
     {
       "id": "M4-011",
       "subsystem": "M4-control",
-      "title": "The block pool is not persisted, and an RSSI tie is not broken in the engine's order",
+      "title": "The block pool is kept in blockPool.txt between sessions, and an RSSI tie is broken in the engine container order",
       "location": "cozmo-stack/src/Cozmo.Robot/CubeConnections.cs",
-      "effect": "after a restart the engine reconnects the cubes it pooled last session; this stack rediscovers from scratch. With two same-type cubes at equal RSSI a different cube may be chosen",
-      "provenance": "a fresh pool every session; a tie is broken by this stack's iteration order",
-      "authority": "BlockFilter::Load / BlockFilter::Save (named, not transcribed); the libc++ unordered_map visit order behind GetClosestDiscoveredObjectsOfType 0x00518314",
+      "authority": "libcozmoEngine.so",
       "evidence": [
-        "documented as not reproduced in the CubeConnections class summary"
+        "Robot::SetPhysicalRobot(true) 0x00513914 calls BlockFilter::Init 0x0061A1EC with DataPlatform::pathToResource(scope 4, \"blockPool.txt\") (0x0051394C, the string at 0x005139B0); Robot::Robot only constructs the filter (0x00510184). Init stores the path at +0x60, calls Load, copies the persistent pool (+0x04) to the runtime pool (+0x2C) and calls Robot::ConnectToObjects with its five factory ids (0x0061A278) - before any BlockPoolEnabledMessage. This stack calls Init from CozmoRobot.ConnectAsync with a file under the local application data folder, the platform's equivalent of that data scope; an empty path turns persistence off",
+        "Load 0x0061A2DC: ifstream(path, in); a file that will not open leaves the pool as it is. getline on '\\n'; an empty line is skipped; a sixth non-empty line is an error that ends the reading (0x0061A41E, sErrorF at 0x0061A5A0); a line whose first two characters are not \"0x\" is skipped (compare at 0x0061A430); id = stoul(line, &pos, 16) (0x0061A442), skipped when pos reaches the end of the line, stored in the next entry, then type = stoul(line.substr(pos + 1), 0, 10) (0x0061A480) stored beside it and the entry counted. A throwing stoul is caught, logged and the line skipped (0x0061A52C..0x0061A58E) - after the id has been stored when it is the type that fails",
+        "Save 0x0061B014: nothing without a path; when all five ids are zero an existing file is removed (stat, remove at 0x0061B058..0x0061B068); then ofstream(path, out) and, for each entry with a non-zero id, \"0x\" (0x0061B344), the id in hex (basefield cleared to hex at 0x0061B0FE..0x0061B102, lower case), \",\" (0x0061B348), to_string(type) and \"\\n\" (0x0061B34C). Save is called by AddObjectToPersistentPool on success (0x0061ACE2), RemoveObjectFromPersistentPool (0x0061B410) and the game's block-pool messages in HandleGameEvents (0x00619FC0, 0x0061A0A6, 0x0061A10E); only the first path exists in this stack",
+        "The table at Robot+0x47C is std::__ndk1::unordered_map<unsigned, Robot::ActiveObjectInfo> with std::hash<unsigned>, the key its own hash. operator[] 0x00537ABC: bucket = h & (n-1) for a power-of-two count, h % n otherwise; a new key first grows the table when it is empty or n * max_load_factor < size + 1 to max((2n) | (n < 3 || n not a power of two), ceil((size + 1) / mlf)) (0x00537B2C..0x00537B90); rehash 0x00537C80 turns 1 into 2 and a non-power-of-two into __next_prime, so the counts run 2, 5, 11, 23; the node goes after its bucket's head when the bucket is in use, else at the front of the list with the bucket pointing at the list head and the displaced node's bucket at the new node (0x00537BAE..0x00537BF8); __rehash 0x00537D10 rebuilds by walking the list and splicing each node into an in-use bucket after its head; erase (remove 0x00518FDA) unlinks and repairs the bucket pointers",
+        "GetClosestDiscoveredObjectsOfType 0x00518314 walks that table in its iteration order and takes a later entry at an equal RSSI byte, so a tie goes to the entry the container visits last. The order is incidental to the container, but it is fully determined by the insertion and erase history, which this stack sees identically (advertisements, the 10001 ms timeout, connections), so it is reproduced exactly by ActiveObjectTable rather than approximated"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "not buildable from the evidence recorded: BlockFilter::Load 0x0061A2DC and BlockFilter::Save 0x0061B014 have never been transcribed, so the file the pool is kept in, its format and when it is read and written are not known; and the tie between two same-type cubes at one RSSI byte is decided by the libc++ unordered_map's bucket traversal order at Robot+0x47C, which depends on its bucket count and insertion and rehash history, none of which is recorded",
-      "hardware_required": false,
-      "live_path": true,
-      "test": null
+      "status": "EXACT_SOURCE",
+      "live_path": true
     },
     {
       "id": "M4-012",
@@ -3621,20 +3620,24 @@
       "title": "Knock over a stack: BehaviorKnockOverCubes has no verified fidelity record",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
       "effect": "the approach, the flip of the bottom block, the blind-flip fallback or the success and failure reactions differ from the engine",
-      "provenance": "the behaviour's flow is now the engine's and verified: the reach, the knock-over sequence, the retry and blind-flip rule, the NoPreActionPoses exit and the reaction. What is not reproduced is what DriveAndFlipBlockAction is told beyond the object: the local action takes only the object",
-      "authority": "BehaviorKnockOverCubes 0x005C2EA0..0x005C3C00, its knock-over callback 0x005C3DCE, IBehavior::StartActing(action, function<void(Robot&)>) 0x005BE0E4 and its lambda 0x005BF8F4, IBehavior::Init 0x005BCB54 and ReadFromJson 0x005BBFB4, read; DriveAndFlipBlockAction 0x0055E208 not read past its arguments",
+      "provenance": "the behaviour's flow is the engine's (see the evidence). DriveAndFlipBlockAction now takes the maximum face-turn angle and, when it is above zero, turns towards the last observed face after the drive with the result ignored, through this stack's TurnTowardsFaceAction for the last face where the engine constructs a TurnTowardsLastFacePoseAction; with no face detector (M11-016) there is no face and the turn does nothing. The AI whiteboard's +0x70 now feeds the NoPreDockPoses reaction, which targets RamIntoBlock",
+      "authority": "BehaviorKnockOverCubes 0x005C2EA0..0x005C3C00, its knock-over callback 0x005C3DCE, IBehavior::StartActing(action, function<void(Robot&)>) 0x005BE0E4 and its lambda 0x005BF8F4, IBehavior::Init 0x005BCB54 and ReadFromJson 0x005BBFB4, read; DriveAndFlipBlockAction 0x0055E208 not read past its arguments; DriveAndFlipBlockAction 0x0055E208, IDriveToInteractWithObject 0x0055B1F4, ReactionTriggerStrategyNoPreDockPoses::ShouldTriggerBehaviorInternal 0x00610E32, AIWhiteboard::AIWhiteboard 0x0056A270 and BehaviorRamIntoBlock's transitions, read",
       "evidence": [
         "InitInternal 0x005C31A2 goes straight to the knock-over when IBehavior+0xD9 (alwaysStreamline, ReadFromJson 0x005BC216) or +0xD8 (set in IBehavior::Init 0x005BCCC2 from the spark state) is set; neither shipped config sets alwaysStreamline and freeplay is not sparked, so the reach runs",
         "Reach 0x005C3254: TurnTowardsObjectAction(max pi) at the bottom block; then, only when the block's x in the robot frame plus 10 exceeds 85 (0x005C3354..0x005C336C), DriveStraightAction(x - 85) at 60 mm/s; then the reachForBlockTrigger lift-safe animation. The continuation TransitionToKnockingOverStack runs whatever the result (StartActing's lambda 0x005BF8F4 ignores it)",
         "Knock-over 0x005C34A8: a sequence of TurnTowardsObjectAction(max pi), DriveAndFlipBlockAction and WaitAction(0.5). The callback 0x005C3DCE: NoPreActionPoses (0x03000010) writes the block to AIWhiteboard+0x70 and ends; success goes to TransitionToPlayingReaction; a Retry-category result re-runs the knock-over while the attempt count at +0x140 is at most 1 and otherwise goes to the blind flip, counting up either way; anything else ends. The count is zeroed in InitializeMemberVars (0x005C3218)",
         "Blind flip 0x005C3840: FlipBlockAction with the pre-action check off and WaitAction(0.5), then the reaction",
-        "DriveAndFlipBlockAction is constructed with useApproachAngle false, approach angle 0, sayName false, a maximum turn towards a face of pi/2 on the first attempt and 0 on later ones or when streamlined (the table at 0x005C36BC), false, and a trailing float of 20.0 (0x005C352E..0x005C3548), with the say-name triggers 0xFD and 0xFE"
+        "DriveAndFlipBlockAction is constructed with useApproachAngle false, approach angle 0, sayName false, a maximum turn towards a face of pi/2 on the first attempt and 0 on later ones or when streamlined (the table at 0x005C36BC), false, and a trailing float of 20.0 (0x005C352E..0x005C3548), with the say-name triggers 0xFD and 0xFE",
+        "DriveAndFlipBlockAction(Robot&, ObjectID, bool useApproachAngle, float approachAngle, bool sayName, Radians maxTurnTowardsFaceAngle, bool, float) 0x0055E208 hands its stack arguments +0x70..+0x7C to IDriveToInteractWithObject (0x0055E22C..0x0055E24C) and never reads the trailing float at +0x80: the 20.0 KnockOverCubes passes has no effect",
+        "IDriveToInteractWithObject 0x0055B1F4: after the DriveToObjectAction sequence, when maxTurnTowardsFaceAngle > Radians(0) (0x0055B37C..0x0055B392) it adds a TurnTowardsLastFacePoseAction(face 0, that angle, sayName) with its failure ignored (AddAction(action, true) at 0x0055B3D4); at 0 it adds nothing. KnockOverCubes passes pi/2 on the first attempt and 0 once its attempt count is above zero, with sayName false",
+        "AIWhiteboard+0x70 is initialised to -1 in the constructor (0x0056A2E2) and not reset on delocalisation (OnRobotDelocalized 0x0056A686 does not touch it). Its only reader is ReactionTriggerStrategyNoPreDockPoses::ShouldTriggerBehaviorInternal 0x00610E32: finds RamIntoBlock (behaviour id 0x3C, 0x00610E4C); when +0x70 is not -1 it writes -1 back (0x00610E60), puts the object in RamIntoBlock+0x11C (0x00610E64) and triggers if the behaviour is runnable (0x00610E6C) - the reset preceding the test, so an object is consumed either way",
+        "RamIntoBlock+0x11C is the target every transition reads (TransitionToPuttingDownBlock 0x0060479C, TransitionToTurningToBlock 0x006048E8, TransitionToRammingIntoBlock 0x00604A4C) and StopInternal resets it (0x00604994). The NoPreDockPoses reaction is registered with the freeplay RamIntoBlock instance (ShippedBehaviors.Reactions, FreeplayStack), and a handed-over target is used before RamIntoBlock's own choice"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "what DriveAndFlipBlockAction 0x0055E208 does with the maximum face-turn angle and the trailing 20.0 it is given, and so what passing them would change; the local DriveAndFlipBlockAction takes neither. The readers of AIWhiteboard+0x70 were not traced",
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "NavigationTests.KnockOverCubesReachesFlipsTheBottomBlockAndCelebrates"
+      "test": "RemainingGapTests.TheNoPreDockPosesReactionConsumesTheWhiteboardEntryAndTargetsRamIntoBlock"
     },
     {
       "id": "M13-015",
@@ -3696,19 +3699,21 @@
       "id": "M11-020",
       "subsystem": "M11-vision",
       "title": "Illumination normalisation of each marker's region before its corners are refined and it is decoded",
-      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/CornerRefinement.cs",
       "effect": "the refinement and the decode read the raw image where the engine reads a locally normalised one, so contrast, the bright and dark levels and the refined corners can differ",
-      "provenance": "not reproduced: MarkerDetector refines and decodes on the camera image as it is",
-      "authority": "DetectFiducialMarkers 0x00898760: when params+1 is set (Parameters::Initialize writes 0x101 at +0, so it is) each marker's bounding rectangle is cut out (Quadrilateral::ComputeBoundingRectangle 0x008990CE), box-filtered and subtracted and min-max normalised (cv::boxFilter 0x008993D2, cv::subtract 0x0089942C, cv::normalize 0x00899474; IlluminationNormalization in detectFiducialMarkers.cpp) before RefineCorners (0x00899528) and Extract (0x00899056) - not read in detail",
+      "provenance": "CornerRefinement.NormalizeIllumination applies the engine's region, kernel size, blur, subtraction and min-max stretch in the same place - after the homography, before RefineCorners, with the region's pixels put back before decoding. The three OpenCV routines (boxFilter, subtract, normalize) are written out here with OpenCV's arithmetic - a normalised box sum rounded half to even into CV_16S, a saturating subtraction, and NORM_MINMAX's scale and shift rounded into CV_8U - rather than transcribed from the OpenCV build in the APK",
+      "authority": "DetectFiducialMarkers 0x00898760 per-marker loop 0x008990AA..0x008995A2, Quadrilateral<float>::ComputeBoundingRectangle<int> 0x0088A16C, ArrayToCvMat<u8> 0x00899B50, read",
       "evidence": [
-        "the per-marker loop 0x008990AA..0x008995A2",
-        "the IlluminationNormalization error string at 0x0089956A"
+        "Gated on params+1 (0x008990BE..0x008990C4; Parameters::Initialize writes 0x101 at +0, so it is on)",
+        "Region (0x008990CE..0x00899126): the quad's bounding rectangle - each coordinate truncated, min and max (0x0088A16C) - grown by 5 on every side; left and top floored at 0 (it le; movle 0), right and bottom capped at cols - 1 and rows - 1; cv::Rect(left, top, right - left, bottom - top) taken as a view of the image (cv::Mat(Mat, Rect) 0x00899132). An empty region is logged ('Got empty ROI for given corners') and the marker dropped (0x0089955A)",
+        "The region is copied aside (copyTo 0x00899298). Kernel (0x008992BA..0x0089938E): round((params+0x60 + params+0x64) * 0.5 * 1.4142 (0x3FB50481) * (|c0 - c3| + |c2 - c1|)), square. cv::boxFilter(region -> CV_16S, ddepth 3, that size, anchor (-1, -1), normalize true, BORDER_REFLECT_101 = 4) at 0x008993D2; cv::subtract(region, blur -> the CV_16S image, dtype -1) at 0x0089942C; cv::normalize(difference -> the region's own CV_8U view, alpha 255.0, beta 0, NORM_MINMAX = 0x20, dtype -1) at 0x00899474 - so the normalised pixels are written into the image itself, ArrayToCvMat 0x00899B50 wrapping the image's buffer without a copy",
+        "RefineCorners (0x00899528) then runs on that image; after it the saved region is copied back (copyTo at 0x0089954E, or 0x00899598 when the marker is not refined), and Extract (0x00899056) reads the restored image"
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "read the normalisation: the filter size (computed with sqrtf and roundf at 0x00899304..0x0089937A), the subtraction and the normalise range, and which image RefineCorners and Extract are handed afterwards",
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "RemainingGapTests.IlluminationNormalisationStretchesTheRegionAndIsPutBack"
     }
   ]
 }

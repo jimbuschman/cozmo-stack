@@ -80,7 +80,9 @@ public sealed class FreeplayStack : IDisposable
         ctx.NeedsActionIds ??= BehaviorNeedsActions.Load(obbRoot);
         var manager = new BehaviorManager(ctx);
         if (withReactions)
-            foreach (var reg in ShippedBehaviors.Reactions(robot, vision?.Locator, clockSec, vision)) manager.AddReaction(reg.Strategy, reg.Behavior, reg.ResumeLast);
+            foreach (var reg in ShippedBehaviors.Reactions(robot, vision?.Locator, clockSec, vision,
+                         bound.TryGetValue("RamIntoBlock", out var ram) ? ram as RamIntoBlockBehavior : null, m?.Whiteboard))
+                manager.AddReaction(reg.Strategy, reg.Behavior, reg.ResumeLast);
 
         // one repetition history for the whole stack: the manager records it, every chooser reads it
         var tree = ActivityTreeLoader.Load(obbRoot, bound, manager.Penalty, random);

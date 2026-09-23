@@ -483,10 +483,10 @@ public static class HardwareCatalog
             Question = "Did the printed codes, distance and yaw match the real cube?",
             ExpectedTelemetry = "the calibration is read from the robot's NV storage and a cube becomes Known with a pose in millimetres",
             AutoRule = "the calibration is read from the robot and at least one cube becomes Known with a pose",
-            KnownIssue = "M11-020 (the illumination normalisation before corner refinement and decoding) is an open "
-                       + "source gap, and M11-005's refinement solves its normal equations by its own Cholesky. This check "
-                       + "can say whether marker behaviour is operationally good enough; it does not close that "
-                       + "gap and no result here changes its status.",
+            KnownIssue = "M11-005 and M11-020 are equivalent implementations, not transcriptions: the refinement solves "
+                       + "its normal equations by its own Cholesky and the illumination normalisation writes out OpenCV's "
+                       + "box filter and min-max stretch. This check can say whether marker behaviour is operationally good "
+                       + "enough; it does not close that gap and no result here changes either status.",
             Evidence = new[]
             {
                 new EvidenceItem("calibration", "camera calibration"),

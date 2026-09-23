@@ -104,12 +104,27 @@ public sealed class DriveAndFlipBlockAction
     private readonly List<string> _trace = new();
     public FlipBlockAction? Flip { get; private set; }
 
+    /// <summary>
+    /// The maximum turn towards the last observed face after the drive, the constructor's Radians argument.
+    /// <c>IDriveToInteractWithObject</c> 0x0055B1F4 adds a <c>TurnTowardsLastFacePoseAction</c> with it (and the
+    /// say-name flag) after the drive when it is greater than zero (0x0055B380..0x0055B3C0), with its failure
+    /// ignored (AddAction(action, true) at 0x0055B3D4); zero adds nothing. The constructor's trailing float is
+    /// never read (0x0055E208 loads its stack arguments only up to +0x7C).
+    /// </summary>
+    public double MaxTurnTowardsFaceRad { get; init; }
+
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
         var drive = new DriveToObjectAction(_m, ObjectId, PreActionType.Flipping);
         var d = await drive.RunAsync(cancel);
         _trace.AddRange(drive.Trace);
         if (d != ActionResult.Success) return d;
+        if (MaxTurnTowardsFaceRad > 0)
+        {
+            using var face = new TurnTowardsFaceAction(_m.Vision, SmartFaceID.Invalid, MaxTurnTowardsFaceRad, sayName: false);
+            var f = await face.RunAsync(cancel);
+            _trace.Add($"TurnTowardsLastFacePose (max {MaxTurnTowardsFaceRad:F3} rad): {f}, ignored");
+        }
         Flip = new FlipBlockAction(_m, ObjectId) { CheckPreActionPose = false };
         var r = await Flip.RunAsync(cancel);
         _trace.AddRange(Flip.Trace);

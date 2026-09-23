@@ -600,7 +600,8 @@ public static class ShippedBehaviors
     /// entry appears when a <paramref name="cubes"/> world model is attached.
     /// </summary>
     public static IReadOnlyList<BehaviorManager.ReactionRegistration> Reactions(CozmoRobot robot, ICubeLocator? cubes = null,
-                                                                                Func<double>? clockSec = null, Cozmo.Robot.Vision.VisionSystem? vision = null)
+                                                                                Func<double>? clockSec = null, Cozmo.Robot.Vision.VisionSystem? vision = null,
+                                                                                RamIntoBlockBehavior? ramIntoBlock = null, Cozmo.Robot.Manipulation.AIWhiteboard? whiteboard = null)
     {
         var strategies = ShippedReactionStrategies.ForRobot(robot, clockSec).ToDictionary(s => s.Trigger);
         var frustration = (FrustrationStrategy)strategies[ReactionTrigger.Frustration];
@@ -670,6 +671,9 @@ public static class ShippedBehaviors
             var reactToPet = new ReactToPetBehavior(vision);
             list.Add(new(new PetInitialDetectionStrategy(vision.Pets, reactToPet, clockSec ?? (() => 0)), reactToPet, ResumeLast: false));
         }
+        // NoPreDockPoses -> RamIntoBlock, the freeplay behaviour instance itself (FindBehaviorByIDAndDowncast)
+        if (ramIntoBlock is not null && whiteboard is not null)
+            list.Add(new(new NoPreDockPosesStrategy(whiteboard, ramIntoBlock), ramIntoBlock, ResumeLast: false));
         return list;
     }
 }
