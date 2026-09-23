@@ -3,13 +3,13 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **219 records** over 16 subsystems.
+Manifest of **220 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 164 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 18 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 4 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| EXACT_SOURCE | 166 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EQUIVALENT_IMPLEMENTATION | 19 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| RECOVERABLE_GAP | 2 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 1 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 20 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 4 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -27,16 +27,16 @@ remains after both, and they do not go away by working harder on this repository
 | M1-transport — UDP transport and reliability | 15 | 0 | 0 | 0 | 0 | yes | yes |
 | M2-protocol — CLAD messages and protocol helpers | 7 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 17 | 0 | 0 | 0 | 1 | yes | yes |
-| M4-control — Motion, sensors, lights and cubes | 13 | 1 | 1 | 0 | 1 | no | no |
+| M4-control — Motion, sensors, lights and cubes | 13 | 0 | 1 | 0 | 1 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 23 | 0 | 0 | 0 | 0 | yes | yes |
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 0 | 0 | 0 | 0 | yes | yes |
 | M7-behaviour — Idle, mood and reactions | 17 | 0 | 0 | 0 | 0 | yes | yes |
 | M8-framework — Behaviour framework and scoring | 10 | 0 | 0 | 0 | 0 | yes | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 9 | 0 | 0 | 0 | 0 | yes | yes |
-| M11-vision — Markers, camera geometry and BlockWorld | 19 | 1 | 0 | 1 | 0 | no | yes |
+| M11-vision — Markers, camera geometry and BlockWorld | 20 | 1 | 0 | 1 | 0 | no | yes |
 | M12-manipulation — Docking, carrying and pre-action poses | 16 | 0 | 0 | 0 | 0 | yes | yes |
-| M13-navigation — Planning, charger and block configurations | 15 | 2 | 0 | 0 | 0 | no | yes |
+| M13-navigation — Planning, charger and block configurations | 15 | 1 | 0 | 0 | 0 | no | yes |
 | M14-faces — Face and pet pipeline | 7 | 0 | 0 | 1 | 0 | yes | yes |
 | M15-freeplay — Needs, activities and freeplay | 12 | 0 | 0 | 0 | 0 | yes | yes |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
@@ -45,27 +45,16 @@ remains after both, and they do not go away by working harder on this repository
 
 Each of these is a question the original can answer and nobody has asked it yet.
 
-### M4-control — Motion, sensors, lights and cubes
-
-**M4-012 — StartMotorCalibration: the engine's send path and flag semantics** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
-* effect: the request asks for the wrong motors, or is sent where the engine would not send it
-* rests on: the CLAD layout (two flag bytes) and the name CalibrateMotorAction; the protocol entry is layout_known_semantics_uncertain and its field names come from PyCozmo
-* best authority: CalibrateMotorAction in libcozmoEngine.so, not read at an address; HandleMotorCalibration 0x00536A68 (the report side, read, see M4-004)
-* evidence: re-analysis/protocol/cozmo_robot_protocol.json startMotorCalibration 0x58: layout_known_semantics_uncertain; Motion.RequestMotorCalibration doc comment
-* outstanding: read CalibrateMotorAction and the StartMotorCalibration Pack call sites to establish which flag maps to which motor and when the engine sends it
-
 ### M11-vision — Markers, camera geometry and BlockWorld
 
-**M11-005 — The sub-pixel corner refinement** (live path)
+**M11-020 — Illumination normalisation of each marker's region before its corners are refined and it is decoded** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/QuadDetector.cs`
-* effect: a refined corner lands in a slightly different place than the engine would put it, so the marker pose does too
-* rests on: the corner extraction is now the engine's (QuadCorners); what is still local is the refinement this stack applies afterwards
-* best authority: ComputeQuadrilateralsFromConnectedComponents 0x00892D70, TraceNextExteriorBoundary 0x008C6B18, ExtractLineFitsPeaks 0x008A5DB8, Quadrilateral<float>::ComputeClockwiseCorners 0x008A1324 and IsQuadrilateralReasonable 0x00892B18, all read and implemented; VisionMarker::RefineCorners 0x0089FD98 and RefineQuadrilateral 0x008C55E0 (3980 bytes), not read
-* evidence: The corner extraction is transcribed. TraceNextExteriorBoundary 0x008C6B18 builds its staircase contour from four extent arrays over the component's bounding box in four passes, dropping points past the 10000 the caller allocates (0x00892DA8) and failing on an empty row or column; ExtractLineFitsPeaks 0x008A5DB8 differentiates a Gaussian of sigma = length / 64 (0x3C800000, with OpenCV's size relation solved backwards at 0x008A5ED6), convolves it circularly with the boundary in double and normalises, seeds four equal arcs and runs cv::kmeans with KMEANS_USE_INITIAL_LABELS, one attempt, 15 iterations and epsilon 0.1 (0x008A6490) - so nothing is random - fits each cluster across its wider extent (the swapped flag at 0x008A6714), intersects all six pairs keeping only the four inside the image (0x008A6BE2), orders them by atan2 about their centroid ascending (0x008A1324) and rounds half away from zero into an s16 quad.; So is the acceptance test and the order the quad is kept in: the clockwise corners permuted 0, 3, 1, 2 (0x00892E88), IsQuadrilateralReasonable's four rules on that order, and the middle pair exchanged when it reports the other winding (0x00892B7E and 0x00892F04).; What is left is the refinement. DetectFiducialMarkers calls VisionMarker::RefineCorners 0x0089FD98, which calls RefineQuadrilateral 0x008C55E0 - 3980 bytes, not read - and this stack instead walks each side of the quad looking for the strongest dark-to-light step along its normal and re-fits the four lines, up to 25 times. On rendered markers the corners land within 1 px of truth and PnP reprojection is 0.1 to 0.4 px, so the difference is small, but it is a difference and the source for it exists.; What it is, is read even though it is not transcribed: VisionMarker::RefineCorners 0x0089FD98 takes the marker's own bright and dark values (ComputeBrightDarkValues) and its homography, and RefineQuadrilateral 0x008C55E0 runs a Gauss-Newton refinement of that homography - samples laid along the four edges of the canonical square either side of each one, an offset scaled by (bright - dark) and the longer diagonal, Matrix::Multiply and MakeSymmetric into a normal-equation system, SolveLeastSquaresWithCholesky, and Invert3x3 to apply the update - under the parameters this stack already reads off Parameters::Initialize: 25 iterations, a 0.005 minimum change, a 5.0 maximum, and the 1.01 step growth.; The pose the refined corners feed is a separate matter and not a gap: the engine hands cv::solvePnP four corners inside Camera::ComputeObjectPoseHelper, and PoseEstimation.cs solves the same problem with its own numerics - a different mechanism for the same answer, and it recovers a cube pose to under a millimetre and half a degree in test.; How far it was traced, so the next pass does not start over: RefineQuadrilateral's arguments land at [sp+0x380] onwards - the second scale point, an int, bright, dark, the sample count, two more floats, the out quad, the out homography and the memory stack. It takes the longer of the two diagonals (0x008C5620), allocates five 1-by-N float arrays with N = 8 * ceil(count / 8), and fills them in four near-identical blocks, one per edge of the canonical square, with an offset of (dark - bright) / 255 * 0.5 * (diagonal / sqrt(2)) either side of the edge (0x008C583C..0x008C585E). Then the iteration: Matrix::Multiply and MakeSymmetric into a normal-equation system, SolveLeastSquaresWithCholesky, Invert3x3 and the homography update. What is not settled is the sampling and the Jacobian in detail, and transcribing those from the register plumbing alone would be guesswork rather than recovery.
-* outstanding: RefineQuadrilateral 0x008C55E0: the sampling pattern along each edge and the Jacobian of the homography update. Its arguments, its offset formula and its solver are read
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: the refinement and the decode read the raw image where the engine reads a locally normalised one, so contrast, the bright and dark levels and the refined corners can differ
+* rests on: not reproduced: MarkerDetector refines and decodes on the camera image as it is
+* best authority: DetectFiducialMarkers 0x00898760: when params+1 is set (Parameters::Initialize writes 0x101 at +0, so it is) each marker's bounding rectangle is cut out (Quadrilateral::ComputeBoundingRectangle 0x008990CE), box-filtered and subtracted and min-max normalised (cv::boxFilter 0x008993D2, cv::subtract 0x0089942C, cv::normalize 0x00899474; IlluminationNormalization in detectFiducialMarkers.cpp) before RefineCorners (0x00899528) and Extract (0x00899056) - not read in detail
+* evidence: the per-marker loop 0x008990AA..0x008995A2; the IlluminationNormalization error string at 0x0089956A
+* outstanding: read the normalisation: the filter size (computed with sqrtf and roundf at 0x00899304..0x0089937A), the subtraction and the normalise range, and which image RefineCorners and Extract are handed afterwards
 
 ### M13-navigation — Planning, charger and block configurations
 
@@ -73,19 +62,10 @@ Each of these is a question the original can answer and nobody has asked it yet.
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`
 * effect: the approach, the flip of the bottom block, the blind-flip fallback or the success and failure reactions differ from the engine
-* rests on: a transcription documented in the class summary against BehaviorKnockOverCubes 0x005C2EA0..0x005C3C00 (85 mm at 60 mm/s, DriveAndFlipBlockAction, blind FlipBlockAction and WaitAction 0.5), never entered in the manifest or checked record by record
-* best authority: BehaviorKnockOverCubes 0x005C2EA0..0x005C3C00
-* evidence: CubeGameBehaviors.cs KnockOverCubesBehavior summary
-* outstanding: verify the documented transcription against 0x005C2EA0..0x005C3C00 and record its constants and transitions
-
-**M13-015 — Pop a wheelie: the retry limit is inferred and the addresses are unresolved** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`
-* effect: the number of retries, or the realign and retry animation choice, differs from the engine
-* rests on: the class summary cites BehaviorPopAWheelie only as 0x005C7xxx and marks the retry limit INFERRED (3)
-* best authority: BehaviorPopAWheelie (around 0x005C7E14), DriveToPopAWheelieAction, SetupRetryAction
-* evidence: CubeGameBehaviors.cs PopAWheelieBehavior summary: Retry limit INFERRED (3)
-* outstanding: read BehaviorPopAWheelie's SetupRetryAction for the retry limit, and pin the function addresses
+* rests on: the behaviour's flow is now the engine's and verified: the reach, the knock-over sequence, the retry and blind-flip rule, the NoPreActionPoses exit and the reaction. What is not reproduced is what DriveAndFlipBlockAction is told beyond the object: the local action takes only the object
+* best authority: BehaviorKnockOverCubes 0x005C2EA0..0x005C3C00, its knock-over callback 0x005C3DCE, IBehavior::StartActing(action, function<void(Robot&)>) 0x005BE0E4 and its lambda 0x005BF8F4, IBehavior::Init 0x005BCB54 and ReadFromJson 0x005BBFB4, read; DriveAndFlipBlockAction 0x0055E208 not read past its arguments
+* evidence: InitInternal 0x005C31A2 goes straight to the knock-over when IBehavior+0xD9 (alwaysStreamline, ReadFromJson 0x005BC216) or +0xD8 (set in IBehavior::Init 0x005BCCC2 from the spark state) is set; neither shipped config sets alwaysStreamline and freeplay is not sparked, so the reach runs; Reach 0x005C3254: TurnTowardsObjectAction(max pi) at the bottom block; then, only when the block's x in the robot frame plus 10 exceeds 85 (0x005C3354..0x005C336C), DriveStraightAction(x - 85) at 60 mm/s; then the reachForBlockTrigger lift-safe animation. The continuation TransitionToKnockingOverStack runs whatever the result (StartActing's lambda 0x005BF8F4 ignores it); Knock-over 0x005C34A8: a sequence of TurnTowardsObjectAction(max pi), DriveAndFlipBlockAction and WaitAction(0.5). The callback 0x005C3DCE: NoPreActionPoses (0x03000010) writes the block to AIWhiteboard+0x70 and ends; success goes to TransitionToPlayingReaction; a Retry-category result re-runs the knock-over while the attempt count at +0x140 is at most 1 and otherwise goes to the blind flip, counting up either way; anything else ends. The count is zeroed in InitializeMemberVars (0x005C3218); Blind flip 0x005C3840: FlipBlockAction with the pre-action check off and WaitAction(0.5), then the reaction; DriveAndFlipBlockAction is constructed with useApproachAngle false, approach angle 0, sayName false, a maximum turn towards a face of pi/2 on the first attempt and 0 on later ones or when streamlined (the table at 0x005C36BC), false, and a trailing float of 20.0 (0x005C352E..0x005C3548), with the say-name triggers 0xFD and 0xFE
+* outstanding: what DriveAndFlipBlockAction 0x0055E208 does with the maximum face-turn angle and the trailing 20.0 it is given, and so what passing them would change; the local DriveAndFlipBlockAction takes neither. The readers of AIWhiteboard+0x70 were not traced
 
 ## Still to build: every IMPLEMENTATION_GAP
 
@@ -100,7 +80,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: a fresh pool every session; a tie is broken by this stack's iteration order
 * best authority: BlockFilter::Load / BlockFilter::Save (named, not transcribed); the libc++ unordered_map visit order behind GetClosestDiscoveredObjectsOfType 0x00518314
 * evidence: documented as not reproduced in the CubeConnections class summary
-* outstanding: build pool persistence from BlockFilter::Load/Save and reproduce the unordered_map tie order
+* outstanding: not buildable from the evidence recorded: BlockFilter::Load 0x0061A2DC and BlockFilter::Save 0x0061B014 have never been transcribed, so the file the pool is kept in, its format and when it is read and written are not known; and the tie between two same-type cubes at one RSSI byte is decided by the libc++ unordered_map's bucket traversal order at Robot+0x47C, which depends on its bucket count and insertion and rehash history, none of which is recorded
 
 ## What remains after both: blocked externally, or needing hardware
 
@@ -150,6 +130,7 @@ Each of these is a question already answered. The original's behaviour is establ
 | M9-020 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A clip plays its source from BeginTrim for its length; a note still held at the clip end is released there | the shipped clip fields, which are read exactly. Every clip in every bank has PlayAt 0 and BeginTrim 0, so the start of the window is never moved; the end of it is what makes a twelve-second song out of a MIDI source minutes long, and is far from decorative. The one part of the rule that is a runtime judgement - what becomes of a note still held at the end - reaches two notes in the whole product, and the segment ends at the same instant, so what they would have sounded past it is outside the rendered song under either reading |
 | M9-027 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | Robot_Bus_Eq_HiLowPass low-pass at 14298 Hz is above Nyquist for the robot's rate | Init.bnk gives 14298 Hz; AnimConstants::AUDIO_SAMPLE_RATE gives 22320 Hz, so Nyquist is 11160 Hz in the engine too |
 | M10-005 | M10-derived | EQUIVALENT_IMPLEMENTATION | The off-treads debounce runs on the local clock | the engine debounces against its own base-station clock in milliseconds; the same quantity, a different source |
+| M11-005 | M11-vision | EQUIVALENT_IMPLEMENTATION | The sub-pixel corner refinement | VisionMarker::RefineCorners 0x0089FD98, VisionMarker::ComputeBrightDarkValues 0x0089F8E8, RefineQuadrilateral 0x008C55E0 and its corner helper 0x008C66C4, MarkerDetector::Parameters::Initialize 0x008752F8, DetectFiducialMarkers 0x00898760, read |
 | M11-012 | M11-vision | COMPATIBILITY_POLICY | The nominal camera calibration stand-in | not applicable: the live path reads the robot own calibration and fails closed without it |
 | M11-013 | M11-vision | COMPATIBILITY_POLICY | AllowUnconnectedObjects switch | the engine connected-object rule, which is implemented |
 | M11-017 | M11-vision | EQUIVALENT_IMPLEMENTATION | The memory map's vision-derived content: the overhead edges | OverheadEdgesDetector::Detect 0x006ABE34, its construction in VisionSystem::VisionSystem 0x006B0120, GroundPlaneROI 0x004F7774 and its statics at 0x00C48F60, MapComponent::ProcessVisionOverheadEdges 0x0067F7AC, AddVisionOverheadEdges 0x0067F814, FlagQuadAsNotInterestingEdges 0x0067E6B0, FlagGroundPlaneROIInterestingEdgesAsUncertain 0x0067E50C with its lambda at 0x00680B54, MemoryMap::FillBorderInternal and QuadTreeProcessor::FillBorder 0x00689FAC, all read |

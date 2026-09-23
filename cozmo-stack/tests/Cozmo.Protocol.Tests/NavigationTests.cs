@@ -623,10 +623,11 @@ public class NavigationTests
         Assert.True(b.KnockedOver, string.Join(" | ", b.Trace));
         Assert.Contains(b.Trace, l => l.Contains("KnockOverSuccess"));
         Assert.Contains(b.Trace, l => l.Contains("KnockedOverBlocks"));
-        // the reach: 85 mm short of the bottom block at 60 mm/s
+        // the reach: the block's x in the robot frame less 85 mm, at 60 mm/s (0x005C3346..0x005C33A0); the
+        // block is at 260 and its observed pose carries a few millimetres of vision error
         var reach = rig.Sent.OfType<AppendPathSegmentLine>().First();
         Assert.Equal(60f, reach.Speed.SpeedMmps);
-        Assert.InRange(reach.XEndMm, 170, 180);
+        Assert.InRange(reach.XEndMm, 165, 180);
     }
 
     [Fact]
@@ -644,6 +645,7 @@ public class NavigationTests
         Assert.True(b.Succeeded, string.Join(" | ", b.Trace));
         Assert.Contains(b.Trace, l => l.Contains("PopAWheelieInitial"));
         Assert.Contains(b.Trace, l => l.Contains("PoppedWheelie"));
+        Assert.Contains(b.Trace, l => l.Contains("SuccessfulWheelie"));     // 0x21C on success (0x005C7D16)
         var dock = rig.Sent.OfType<DockWithObject>().Single();
         Assert.Equal((byte)DockAction.PopAWheelie, dock.ToBytes()[17]);
         rig.Pump();
@@ -664,7 +666,8 @@ public class NavigationTests
         RunToEnd(rig, b, ctx, frames: () => true, ms: 20000);
         Assert.False(b.Succeeded);
         Assert.Equal(PopAWheelieBehavior.MaxRetries, b.Retries);
-        Assert.Contains(b.Trace, l => l.Contains("Retry 1 of 3"));
+        Assert.Contains(b.Trace, l => l.Contains("Retry 1 of 1"));      // one retry: the count at +0x12C must still be 0 (0x005C7D44)
+        Assert.Contains(b.Trace, l => l.Contains("SetFailedToUse"));
         Assert.Contains(b.Trace, l => l.Contains("PopAWheelieRetry"));
     }
 

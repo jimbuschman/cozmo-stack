@@ -60,6 +60,14 @@ public sealed record QuadDetectorParameters
     public int RefinementIterations { get; init; } = 25;
     public double MinCornerChange { get; init; } = 0.005;
     public double MaxCornerChange { get; init; } = 5.0;
+    /// <summary><c>Parameters::Initialize</c> +0x3C: 1.01 (0x3F8147AE), the contrast ratio <c>ComputeBrightDarkValues</c> requires.</summary>
+    public double MinContrastRatio { get; init; } = 1.01;
+    /// <summary>+0x4C: 100 samples, which <c>RefineQuadrilateral</c> spreads as 8 x ceil(100 / 8) over the eight edges.</summary>
+    public int RefinementSamples { get; init; } = 100;
+    /// <summary>+0x58/+0x5C: 0.15 (0x3E19999A), the corner padding the edge samples keep clear of, in the canonical square.</summary>
+    public double RefinePaddingFraction { get; init; } = 0.15;
+    /// <summary>+0x60/+0x64: 0.1 (0x3DCCCCCD), where the inner edge of the fiducial's border lies in the canonical square.</summary>
+    public double RefineInnerFraction { get; init; } = 0.1;
     /// <summary>Quads closer than this to the image edge are dropped (2 px; NATIVE flag block <c>0x101, 1, 4, 2</c> — the 2).</summary>
     public int MinDistanceFromEdge { get; init; } = 2;
     /// <summary>
@@ -107,7 +115,9 @@ public sealed record DetectedQuad(Vec2[] Corners, int ComponentPixels)
 ///    keeps is the clockwise corners re-ordered into its <c>Quadrilateral</c>, which is the decoder's
 ///    order, and <c>IsQuadrilateralReasonable</c> decides both whether it survives and whether that order
 ///    needs its middle pair swapped;
-/// 4. each side is refined to the sub-pixel edge by fitting a line to gradient maxima, up to 25 times.
+/// 4. the corners are not refined here: the engine refines them per marker once it has the marker's
+///    homography (<c>VisionMarker::RefineCorners</c>), which <see cref="MarkerDetector"/> does through
+///    <see cref="CornerRefinement"/>.
 ///    This last step is LOCAL: the engine refines later, inside <c>DetectFiducialMarkers</c>.
 /// </summary>
 public sealed class QuadDetector
@@ -157,9 +167,8 @@ public sealed class QuadDetector
             // the engine tests the unrefined quad, in the order its Quadrilateral stores
             if (!IsQuadrilateralReasonable(ToDecoderOrder(corners), img.Width, img.Height, Parameters, out bool swapped)) continue;
             st.AfterGeometry++;
-            var refined = Refine(img, corners);
-            if (refined is null) continue;
-            var quad = ToDecoderOrder(refined);
+            // the corners are refined per marker, after the homography, by CornerRefinement (MarkerDetector)
+            var quad = ToDecoderOrder(corners);
             if (swapped) (quad[1], quad[2]) = (quad[2], quad[1]);
             quads.Add(new DetectedQuad(quad, c.Pixels));
             if (quads.Count >= Parameters.MaxQuads) break;

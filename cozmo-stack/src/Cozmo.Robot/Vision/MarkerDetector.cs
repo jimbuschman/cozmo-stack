@@ -26,7 +26,22 @@ public sealed class MarkerDetector
         foreach (var q in quads)
         {
             if (markers.Count >= Quads.Parameters.MaxMarkers) break;
-            var m = Decoder.Extract(img, q.Corners, timestamp, out var reason);
+            // DetectFiducialMarkers 0x008994CE..0x00899528: each marker's corners are refined against its
+            // homography before it is decoded, and a marker whose refinement fails is not decoded at all
+            // (validity 7, or 2 for too little contrast).
+            var corners = q.Corners;
+            Homography? h = null;
+            if (Decoder.HasLibrary)
+            {
+                h = Homography.FromUnitSquare(corners);
+                var outcome = CornerRefinement.RefineCorners(img, Decoder.Library, ref corners, ref h, Quads.Parameters);
+                if (outcome != CornerRefinement.Outcome.Refined)
+                {
+                    results.Add((q, null, outcome == CornerRefinement.Outcome.LowContrast ? "too little contrast to refine" : "corner refinement moved the corners too far"));
+                    continue;
+                }
+            }
+            var m = Decoder.Extract(img, corners, h, timestamp, out var reason);
             results.Add((q, m, reason));
             if (m is null) continue;
             // a black ring can yield the same marker twice (inner and outer edge components); keep the larger

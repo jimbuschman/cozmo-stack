@@ -483,7 +483,8 @@ public static class HardwareCatalog
             Question = "Did the printed codes, distance and yaw match the real cube?",
             ExpectedTelemetry = "the calibration is read from the robot's NV storage and a cube becomes Known with a pose in millimetres",
             AutoRule = "the calibration is read from the robot and at least one cube becomes Known with a pose",
-            KnownIssue = "M11-005 (RefineQuadrilateral sub-pixel refinement) is an open source gap. This check "
+            KnownIssue = "M11-020 (the illumination normalisation before corner refinement and decoding) is an open "
+                       + "source gap, and M11-005's refinement solves its normal equations by its own Cholesky. This check "
                        + "can say whether marker behaviour is operationally good enough; it does not close that "
                        + "gap and no result here changes its status.",
             Evidence = new[]
@@ -493,7 +494,7 @@ public static class HardwareCatalog
                 new EvidenceItem("objects", "Known at"),
                 new EvidenceItem("forgetting", "miss "),
             },
-            FidelityRecords = new[] { "M11-011", "M11-012", "M11-001", "M11-002", "M11-018", "M11-005", "M11-003", "M11-004", "M11-006", "M11-007", "M11-008", "M11-010", "M2-007" },
+            FidelityRecords = new[] { "M11-011", "M11-012", "M11-001", "M11-002", "M11-018", "M11-005", "M11-020", "M11-003", "M11-004", "M11-006", "M11-007", "M11-008", "M11-010", "M2-007" },
             NeedsCube = true, NeedsHandling = true, Requires = new[] { "B" },
             Timeout = TimeSpan.FromMinutes(4),
             Command = o => o.AllowNominalCalibration

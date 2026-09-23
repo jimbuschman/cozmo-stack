@@ -66,6 +66,12 @@ public sealed class AIWhiteboard
     public bool AreAllCubesInBeacons() =>
         _world.LocatedObjects.Where(o => CubeGeometry.IsCube(o.Type)).All(o => _beacons.Any(b => b.IsLocWithinBeacon(o.Pose.Translation)));
 
+    /// <summary>
+    /// AIWhiteboard+0x70: the object <c>BehaviorKnockOverCubes</c> last failed to knock over for want of pre-action
+    /// poses (written at 0x005C3DEA). What reads it was not traced.
+    /// </summary>
+    public uint? KnockOverNoPreActionPosesObjectId { get; set; }
+
     public void SetFailedToUse(uint objectId, ObjectActionFailure failure) => _failures.Add((objectId, failure, _clockSec()));
 
     public bool DidFailToUse(uint objectId, ObjectActionFailure failure, double withinSec)

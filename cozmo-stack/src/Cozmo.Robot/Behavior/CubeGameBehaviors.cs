@@ -23,6 +23,18 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
     public const double ReachDistanceMm = 85.0;
     public const float ReachSpeedMmps = 60f;
     public const double BlindFlipWaitSec = 0.5;
+    /// <summary>The slack added to the block's x before it is compared with 85 mm (vmov.f32 s0, #10.0 at 0x005C3354).</summary>
+    public const double ReachSlackMm = 10.0;
+    /// <summary>
+    /// How many retry-category failures re-run the knock-over before the blind flip: the callback at 0x005C3DCE
+    /// re-enters <c>TransitionToKnockingOverStack</c> while the attempt count at this+0x140 is at most 1
+    /// (cmp r0, #1; bgt at 0x005C3E0E) and counts up after either branch (0x005C3E20..0x005C3E26), so counts
+    /// 0 and 1 re-run it and the third retry result goes to the blind flip.
+    /// </summary>
+    public const int MaxKnockOverRetries = 2;
+    /// <summary>The wait after the flip in both the knock-over and the blind flip (mov.w r2, #0x3f000000 at 0x005C35E6, 0x005C38B0).</summary>
+    public const double AfterFlipWaitSec = 0.5;
+    public int KnockOverAttempts { get; private set; }
 
     public KnockOverCubesBehavior(ManipulationSystem m, string id = "KnockOverCubes", int minimumStackHeight = 3) : base(id, "KnockOverCubes", m)
         => MinimumStackHeight = minimumStackHeight;
@@ -47,7 +59,7 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
         Scope.DisableReactions();
         TargetStack = Tallest();
         if (TargetStack is null) { Log("no stack"); Finish(); return; }
-        _upAxisChanged = false; KnockedOver = null;
+        _upAxisChanged = false; KnockedOver = null; KnockOverAttempts = 0;
         M.World.ObjectObserved += OnObserved;
         TransitionToReachingForBlock();
     }
@@ -74,12 +86,16 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
             await M.TurnTowardsObjectAsync(bottom, Math.PI, ct);
             var obj = M.World.GetLocatedObjectById(bottom); var robot = M.RobotPose();
             if (obj is null || robot is null) return ActionResult.BadObject;
-            var d = obj.Pose.Translation - robot.Value.Translation;
-            double ahead = Math.Sqrt(d.X * d.X + d.Y * d.Y) - ReachDistanceMm;
-            return Math.Abs(ahead) < 1 ? ActionResult.Success : await new DriveStraightAction(M, ahead, ReachSpeedMmps).RunAsync(ct);
+            // 0x005C3346..0x005C33A0: the block's pose with respect to the robot; only when its x plus 10 is
+            // beyond 85 mm does a DriveStraightAction(x - 85) at 60 mm/s go into the sequence. Closer than that,
+            // nothing drives - the robot never backs up to reach.
+            double x = obj.Pose.WithRespectTo(robot.Value).Translation.X;
+            return x + ReachSlackMm > ReachDistanceMm ? await new DriveStraightAction(M, x - ReachDistanceMm, ReachSpeedMmps).RunAsync(ct) : ActionResult.Success;
         }, r =>
         {
-            if (r != ActionResult.Success) { Log($"reaching failed: {r}"); TransitionToPlayingReaction(); return; }
+            // StartActing with a member callback runs it whatever the result (the lambda at 0x005BF8F4 ignores
+            // it): a reach that fails skips the rest of its sequence, the grab animation, and still goes on
+            if (r != ActionResult.Success) { Log($"reaching failed: {r}"); TransitionToKnockingOverStack(); return; }
             PlayTrigger(ReachForBlockTrigger, TransitionToKnockingOverStack);
         });
     }
@@ -89,11 +105,38 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
         CurrentPhase = Phase.KnockingOverStack;
         uint bottom = TargetStack!.BottomBlockId;
         var flip = new DriveAndFlipBlockAction(M, bottom);
-        RunAction($"DriveAndFlipBlockAction({bottom})", flip.RunAsync, r =>
+        // 0x005C355C..0x005C35FA: a sequence of TurnTowardsObjectAction (max pi) at the bottom block, the
+        // DriveAndFlipBlockAction, and a WaitAction of 0.5 s.
+        RunAction($"DriveAndFlipBlockAction({bottom})", async ct =>
+        {
+            await M.TurnTowardsObjectAsync(bottom, Math.PI, ct);
+            var r = await flip.RunAsync(ct);
+            if (r != ActionResult.Success) return r;
+            await Task.Delay(TimeSpan.FromSeconds(AfterFlipWaitSec), ct);
+            return r;
+        }, r =>
         {
             foreach (var l in flip.Trace) Log("  " + l);
-            if (r == ActionResult.Success) TransitionToPlayingReaction();
-            else TransitionToBlindlyFlipping();
+            // the callback at 0x005C3DCE splits on the result
+            if (r == ActionResult.NoPreActionPoses)
+            {
+                // 0x005C3DDE..0x005C3DEA: the target is written to AIWhiteboard+0x70 and the behaviour ends
+                M.Whiteboard.KnockOverNoPreActionPosesObjectId = bottom;
+                Log($"no pre-action poses for {bottom}");
+                Finish();
+                return;
+            }
+            uint category = (uint)r >> 24;
+            if (category == 0) { TransitionToPlayingReaction(); return; }
+            if (category == 4)
+            {
+                bool again = KnockOverAttempts < MaxKnockOverRetries;
+                KnockOverAttempts++;
+                if (again) TransitionToKnockingOverStack(); else TransitionToBlindlyFlipping();
+                return;
+            }
+            Log($"knock-over failed: {r}");
+            Finish();
         });
     }
 
@@ -132,19 +175,30 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
 }
 
 /// <summary>
-/// <c>BehaviorPopAWheelie</c> (0x005C7xxx): runnable with an upright located cube and nothing carried.
+/// <c>BehaviorPopAWheelie</c> (0x005C7430..0x005C7F66): runnable with an upright located cube and nothing carried.
 /// <c>TransitionToReactingToBlock</c> plays 0x18A <see cref="AnimationTrigger.PopAWheelieInitial"/>;
 /// <c>TransitionToPerformingAction</c> runs a <c>DriveToPopAWheelieAction</c> (drive to the docking pose, then the
 /// firmware <c>POP_A_WHEELIE</c> dock); a failure goes through <c>SetupRetryAction</c> ("Retry %d of %d"): the
 /// realign animation 0x18D <see cref="AnimationTrigger.PopAWheelieRealign"/> when the dock did not reach the
 /// pre-action pose, 0x18E <see cref="AnimationTrigger.PopAWheelieRetry"/> otherwise, then the action again.
 /// <c>StopInternal</c> re-enables stop-on-cliff (<c>EnableStopOnCliff</c>): the wheelie lifts the front cliff
-/// sensors. Objective <c>PoppedWheelie</c>. Retry limit INFERRED (3).
+/// sensors. Objective <c>PoppedWheelie</c>.
+///
+/// The completion callback (the <c>StartActing</c> lambda at 0x005C7CBC) splits on the result's category byte
+/// (<c>result &gt;&gt; 24</c>): success plays 0x21C <see cref="AnimationTrigger.SuccessfulWheelie"/> (0x005C7D16..0x005C7D30)
+/// and reports the objective and the needs action (0x005C7E0C, 0x005C7E14); a Retry-category result retries
+/// only while the retry count at this+0x12C is still 0 (0x005C7D44..0x005C7D4A, then <c>SetupRetryAction</c> at
+/// 0x005C7DFA) - the count is bumped by <c>TransitionToPerformingAction(robot, true)</c> (0x005C777E) and zeroed
+/// otherwise (0x005C780C), so one retry at most; a Retry result with the retry used, or an Abort-category result,
+/// marks the cube failed to use for <see cref="ObjectActionFailure.RollOrPopAWheelie"/> (SetFailedToUse(obj, 3) at
+/// 0x005C7DAA); anything else logs BehaviorPopAWheelie.FailedPopAction and ends. <c>SetupRetryAction</c> 0x005C79D0
+/// plays 0x18D when the result is exactly DidNotReachPreActionPose (0x04000001, 0x005C79F8..0x005C7A00) and 0x18E
+/// otherwise, then runs the action again as a retry (0x005C7F66).
 /// </summary>
 public sealed class PopAWheelieBehavior : ManipulationBehavior
 {
     public enum Phase { Idle, ReactingToBlock, PerformingAction, Retrying }
-    public const int MaxRetries = 3;
+    public const int MaxRetries = 1;
 
     public PopAWheelieBehavior(ManipulationSystem m, string id = "PopAWheelie") : base(id, "PopAWheelie", m) { }
 
@@ -183,16 +237,28 @@ public sealed class PopAWheelieBehavior : ManipulationBehavior
             return r;
         }, r =>
         {
-            if (r == ActionResult.Success)
+            uint category = (uint)r >> 24;
+            if (category == 0)
             {
                 Succeeded = true;
                 Log("objective achieved: PoppedWheelie");
                 // 0x005C7E14, right after the objective
                 if (NeedActionCompleted() is { } action) Log($"needs action {action}");
+                PlayTrigger(AnimationTrigger.SuccessfulWheelie, Finish);
+                return;
+            }
+            if (category == 4 && Retries < MaxRetries) { /* retry below */ }
+            else
+            {
+                if (category is 3 or 4)
+                {
+                    M.Whiteboard.SetFailedToUse(id, ObjectActionFailure.RollOrPopAWheelie);
+                    Log($"giving up: {r}; SetFailedToUse");
+                }
+                else Log($"BehaviorPopAWheelie.FailedPopAction: {r}");
                 Finish();
                 return;
             }
-            if (r is ActionResult.BadObject or ActionResult.CancelledWhileRunning || Retries >= MaxRetries) { Log($"giving up: {r}"); Finish(); return; }
             Retries++;
             Log($"Retry {Retries} of {MaxRetries}");
             CurrentPhase = Phase.Retrying;

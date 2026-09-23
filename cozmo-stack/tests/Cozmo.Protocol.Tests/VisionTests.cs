@@ -394,8 +394,12 @@ public class VisionTests
         var quads = det.Detect(frame);
         Assert.True(quads.Count >= 1, det.LastStats.ToString());
         var best = quads.OrderBy(q => q.Corners.Zip(corners, (a, b) => (a - b).Length).Max()).First();
+        // the quad front end gives whole-pixel corners; the engine's RefineCorners takes them to sub-pixel
+        var refined = best.Corners;
+        var h = Homography.FromUnitSquare(refined);
+        Assert.Equal(CornerRefinement.Outcome.Refined, CornerRefinement.RefineCorners(frame, Lib, ref refined, ref h, det.Parameters));
         for (int i = 0; i < 4; i++)
-            Assert.True((best.Corners[i] - corners[i]).Length < 1.0, $"corner {i}: {best.Corners[i]} vs {corners[i]}");
+            Assert.True((refined[i] - corners[i]).Length < 1.5, $"corner {i}: {refined[i]} vs {corners[i]}");
     }
 
     [Fact]

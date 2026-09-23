@@ -295,10 +295,17 @@ public sealed class MarkerDecoder
     /// <c>VisionMarker::Extract</c>: decode the quad with corners TL, BL, TR, BR (pixels). Returns null with a
     /// reason when the quad is not a known marker.
     /// </summary>
-    public ObservedMarker? Extract(GrayImage img, Vec2[] quadCorners, uint timestamp, out string reason)
+    public ObservedMarker? Extract(GrayImage img, Vec2[] quadCorners, uint timestamp, out string reason) =>
+        Extract(img, quadCorners, null, timestamp, out reason);
+
+    /// <summary>
+    /// The same with the marker's own homography, which after <c>RefineCorners</c> is the refined one the engine
+    /// decodes with (this+0x2C), not one recomputed from the corners.
+    /// </summary>
+    public ObservedMarker? Extract(GrayImage img, Vec2[] quadCorners, Homography? homography, uint timestamp, out string reason)
     {
         if (_lib is null) { reason = "no marker library on this machine (extract it from libcozmoEngine.so; see VISION.md)"; return null; }
-        var h = Homography.FromUnitSquare(quadCorners);
+        var h = homography ?? Homography.FromUnitSquare(quadCorners);
         var (dark, bright) = ThresholdProbes(img, h);
         if (dark >= bright) { reason = $"border not darker than interior ({dark:F0} vs {bright:F0})"; return null; }
         var probes = GetProbeValues(img, h);
