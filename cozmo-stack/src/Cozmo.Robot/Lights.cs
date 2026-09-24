@@ -50,6 +50,14 @@ public sealed class CozmoLights
     private readonly CozmoRobot _robot;
     internal CozmoLights(CozmoRobot robot) => _robot = robot;
 
+    // fidelity: M1-025, M1-015
+    /// <summary>Back to the state right after construction, for a removed robot (CB33, CC26, CC27): nothing recorded as sent.</summary>
+    internal void ResetToConstructed()
+    {
+        Backpack = default;
+        HeadlightOn = false;
+    }
+
     /// <summary>The last backpack colours that were sent, so a caller can read back what it asked for.</summary>
     public (LedColor Top, LedColor Middle, LedColor Bottom) Backpack { get; private set; }
     /// <summary>Whether the headlight was last told to be on. The robot does not report its state.</summary>

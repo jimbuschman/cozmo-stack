@@ -39,6 +39,13 @@ public sealed class CozmoMotion
 
     internal CozmoMotion(CozmoRobot robot) => _robot = robot;
 
+    // fidelity: M1-025, M1-015
+    /// <summary>Back to the state right after construction, for a removed robot (CB33, CC26, CC27): action ids restart at 1.</summary>
+    internal void ResetToConstructed()
+    {
+        lock (_gate) _nextActionId = 1;
+    }
+
     /// <summary>Action ids cycle 1..255; 0 is left alone because the robot uses it for unsolicited acks.</summary>
     private byte NextActionId()
     {

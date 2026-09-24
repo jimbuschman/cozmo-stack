@@ -24,7 +24,8 @@ public class EngineAppLayerTests
         public void Start() => Calls.Add("start");
         public void Connect(IPAddress ip, bool isSimulated) => Calls.Add($"connect {ip} {isSimulated}");
         public void Disconnect(IPEndPoint address) => Calls.Add($"disconnect {address}");
-        public void SendData(byte[] clad) { Calls.Add($"send 0x{clad[0]:X2}"); Sent.Add(clad); }
+        // locked: the animation tick loop sends from its own thread (M1-025 tests below)
+        public void SendData(byte[] clad) { lock (Sent) { Calls.Add($"send 0x{clad[0]:X2}"); Sent.Add(clad); } }
         public void Raise(ReceiverMarker m, IPEndPoint? a, byte[]? d = null) => Received?.Invoke(new ReceiverEvent(m, a, d));
         public List<RobotMessageId> SentIds => Sent.Select(b => (RobotMessageId)b[0]).ToList();
         public RobotMessage SentMessage(int i) => RobotMessage.Parse(Sent[i]);
@@ -1164,6 +1165,302 @@ public class EngineAppLayerTests
         rig.Tick();
         Assert.Equal(-1.0f, rig.Engine.Robot!.Idle.FaceOffDeadline);
         Assert.Equal(-1.0f, rig.Engine.Robot.Idle.DisconnectDeadline);
+    }
+
+    // ================================================================== M1-025, M1-015: RemoveRobot and the devices
+
+    /// <summary>
+    /// Every instance field of <paramref name="actual"/>, recursively, equals the same field of <paramref name="fresh"/>, a
+    /// newly constructed object of the same type. Not compared: delegates (event subscribers and the hooks the owner
+    /// installs), plain lock objects, the wiring back to the robot, the engine and the transport, random sources, and the
+    /// field paths in <paramref name="kept"/>. Collections are compared element by element.
+    /// </summary>
+    private static void AssertAsConstructed(object? fresh, object? actual, string path, ISet<string> kept,
+                                            HashSet<object>? seen = null)
+    {
+        seen ??= new HashSet<object>(ReferenceEqualityComparer.Instance);
+        if (fresh is null || actual is null)
+        {
+            Assert.True(fresh is null && actual is null, $"{path}: as constructed {fresh ?? "null"}, after removal {actual ?? "null"}");
+            return;
+        }
+        var type = actual.GetType();
+        Assert.True(type == fresh.GetType(), $"{path}: type {fresh.GetType().Name} as constructed, {type.Name} after removal");
+        if (type.IsPrimitive || type.IsEnum || actual is string or decimal or DateTime or TimeSpan)
+        {
+            Assert.True(Equals(fresh, actual), $"{path}: as constructed {fresh}, after removal {actual}");
+            return;
+        }
+        if (actual is Delegate || type == typeof(object) || actual is CozmoRobot or CozmoEngine or ReliableTransport or Random
+            or Thread or Task)
+            return;
+        if (!type.IsValueType && !seen.Add(actual)) return;
+        if (actual is System.Collections.IEnumerable items)
+        {
+            var a = items.Cast<object?>().ToList();
+            var f = ((System.Collections.IEnumerable)fresh).Cast<object?>().ToList();
+            Assert.True(f.Count == a.Count, $"{path}: {f.Count} item(s) as constructed, {a.Count} after removal");
+            for (int i = 0; i < a.Count; i++) AssertAsConstructed(f[i], a[i], $"{path}[{i}]", kept, seen);
+            return;
+        }
+        for (var t = type; t is not null && t != typeof(object); t = t.BaseType)
+            foreach (var field in t.GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public |
+                                              System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.DeclaredOnly))
+            {
+                string name = $"{t.Name}.{field.Name}";
+                if (kept.Contains(name)) continue;
+                AssertAsConstructed(field.GetValue(fresh), field.GetValue(actual), $"{path}.{field.Name}", kept, seen);
+            }
+    }
+
+    /// <summary>
+    /// What the stack keeps across a removal on purpose: the animation generation is a token callers hold, and restarting
+    /// it could let a token from before the removal stop an animation started after it; the audio and vision removal
+    /// counts, which are what end a Play or discard a frame begun before a removal; the audio pacing clock and its frame
+    /// count, which every Play restarts; and VisionSystem.Enabled, a caller's switch.
+    /// </summary>
+    private static readonly HashSet<string> KeptAcrossRemoval = new()
+    {
+        "AnimationScheduler._generation", "CozmoAudio._removals", "CozmoAudio._clock", "CozmoAudio._scheduled",
+        "VisionSystem._removals", "VisionSystem.<Enabled>k__BackingField",
+    };
+
+    /// <summary>Puts state into every device, as a connected robot would.</summary>
+    private static void UseEveryDevice(Rig rig, Cozmo.Robot.Vision.VisionSystem vision)
+    {
+        var robot = rig.Robot;
+        rig.Data(new SyncTimeAck());
+        rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true, AutoStarted = true });
+        rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false });
+        rig.Data(new AnimationState { Timestamp = 5, NumAudioFramesPlayed = 3, Tag = 2 });
+        rig.Data(new ObjectAvailable { FactoryId = 0xAABBCCDD, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+        rig.Data(new ObjectAvailable { FactoryId = 0x11223344, ObjectType = ObjectType.Charger_Basic, Rssi = 60 });
+        rig.Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });          // the pool asks for the cube: SetPropSlot
+        rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAABBCCDD, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
+        rig.Data(new RobotState { Timestamp = 43, PoseOriginId = 1, Status = (uint)RobotStatusFlag.IsPickedUp });
+        rig.Data(new CliffEvent { Timestamp = 44, DetectedFlags = 1, DidStopForCliff = true });
+        rig.Data(new ImageChunk { ImageId = 7, ImageResolution = 4, ImageEncoding = 8, ImageChunkCount = 3, ChunkId = 0, Data = new byte[] { 0, 1, 2 } });
+        rig.Tick();                                        // the app defaults (policy M1-042) run first, then these
+        rig.Tick();
+
+        robot.Lights.SetBackpack(LedColor.Red);
+        robot.Lights.SetHeadlight(true);
+        robot.Face.ShowExpression(Cozmo.Robot.Animation.Expression.Happy);
+        robot.Audio.SendSilence();
+        _ = robot.Motion.SetHeadAngleAsync(0.1f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+        lock (rig.Port.Sent) Assert.Contains(rig.Port.Sent, b => b[0] == (byte)new SetHeadAngle(0.1f).Id);
+        robot.CubeAccel.AddListener(0, new CubeShakeListener(0.5f, 2.5f, 3.9f, _ => { }));
+        Assert.True(robot.Animations.StreamLive(new Cozmo.Robot.Animation.HeadKeyframe(0, 100, 5, 0)));
+        vision.World.AddMarkerlessObject(Cozmo.Robot.Vision.Pose3d.Identity, ObjectType.CollisionObstacle);
+        vision.Faces.AddOrUpdateFace(new Cozmo.Robot.Vision.TrackedFace(new Cozmo.Robot.Vision.DetectedFace(0, new(0, 0, 10, 10)), 50),
+                                     Cozmo.Robot.Vision.Pose3d.Identity, rotatingTooFast: false);
+        vision.Pets.Update(new[] { new Cozmo.Robot.Vision.DetectedPet(1, Cozmo.Robot.Vision.PetType.Dog, new(0, 0, 5, 5)) }, 50, false);
+
+        // the rig really did put state everywhere the comparison will look
+        Assert.True(robot.State.StateCount > 0 && robot.State.HeadCalibrated && robot.State.TimeSynced);
+        Assert.True(robot.Sensors.OffTreads.HeadCalibrated && robot.Sensors.CliffHistory.Count == 1);
+        Assert.NotNull(robot.Cubes.Charger);
+        Assert.Single(robot.Cubes.ConnectedCubes);
+        Assert.True(robot.Cubes.Connections.AutoBlockPoolEnabled);
+        Assert.NotEmpty(robot.Cubes.Connections.SlotRequestsSent);
+        Assert.Contains(robot.Cubes.Connections.Slots, x => x.State == ActiveObjectSlotState.Connected);
+        Assert.True(robot.Camera.ChunksReceived > 0);
+        Assert.True(robot.Display.FramesSent > 0 && robot.Audio.FramesSent > 0);
+        Assert.True(robot.Lights.HeadlightOn);
+        Assert.NotEmpty(robot.CubeAccel.Streaming);
+        Assert.True(robot.Animations.Scheduler.LiveStreamActive);
+        Assert.True(vision.History.Count > 0 && vision.World.Objects.Count == 1 && vision.Faces.Count == 1 && vision.Pets.Pets.Count == 1);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-025, M1-015: CB33/CC26 — RemoveRobot deletes the Robot, and with it every Robot component
+    /// (0x0052F248..0x0052F364); CC27 — a later ConnectToRobot builds everything afresh (0x004ED026..0x004ED07C). The
+    /// devices here stand for those components and stay on the CozmoRobot, so after a handled disconnect each of them —
+    /// State, Camera, Display, Audio, Motion, Lights, Sensors (with the off-treads classifier and the movement detector),
+    /// Cubes (with the connection path and its advertisement table), CubeAccel, Animations (scheduler and sink), Face and
+    /// the vision system built on the robot (state history, BlockWorld, faces, pets, and the calibration, which belongs
+    /// to the VisionComponent the Robot deletes: Robot::Robot 0x0050FBF1, SetCameraCalibration 0x006516FC, ~VisionComponent
+    /// 0x0065258E) — equals, field for field, the same device of a newly constructed robot. The objects are the same ones
+    /// callers held before. VisionSystem.Enabled is a caller's switch and is kept.
+    /// </summary>
+    [Fact]
+    public void M1_025_M1_015_CB33_CC26_CC27_RemoveRobotLeavesEveryDeviceAsConstructed()
+    {
+        using var rig = new Rig();
+        var constructedCal = Cozmo.Robot.Vision.CameraCalibration.Nominal();
+        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot, constructedCal) { Enabled = false };
+        var robot = rig.Robot;
+        var held = new object[] { robot.State, robot.Camera, robot.Display, robot.Audio, robot.Motion, robot.Lights, robot.Sensors,
+                                  robot.Cubes, robot.CubeAccel, robot.Animations, robot.Face, vision.History, vision.World };
+        rig.ToSuccess();
+        UseEveryDevice(rig, vision);
+        vision.Calibration = Cozmo.Robot.Vision.CameraCalibration.Nominal(160, 120);   // as a read from the robot would
+        vision.Enabled = true;
+
+        rig.Disconnected();
+        rig.Tick();
+        Assert.Null(rig.Engine.Robot);
+        Assert.True(SpinWait.SpinUntil(() => !robot.Animations.IsTicking, 3000), "the animation tick loop kept running");
+
+        Assert.Same(constructedCal, vision.Calibration);
+        Assert.True(vision.Enabled);
+
+        using var fresh = new Rig();
+        using var freshVision = new Cozmo.Robot.Vision.VisionSystem(fresh.Robot, constructedCal) { Enabled = false };
+        Assert.Equal(held, new object[] { robot.State, robot.Camera, robot.Display, robot.Audio, robot.Motion, robot.Lights, robot.Sensors,
+                                          robot.Cubes, robot.CubeAccel, robot.Animations, robot.Face, vision.History, vision.World });
+        AssertAsConstructed(fresh.Robot.State, robot.State, "State", KeptAcrossRemoval);
+        AssertAsConstructed(fresh.Robot.Camera, robot.Camera, "Camera", KeptAcrossRemoval);
+        AssertAsConstructed(fresh.Robot.Display, robot.Display, "Display", KeptAcrossRemoval);
+        AssertAsConstructed(fresh.Robot.Audio, robot.Audio, "Audio", KeptAcrossRemoval);
+        AssertAsConstructed(fresh.Robot.Motion, robot.Motion, "Motion", KeptAcrossRemoval);
+        AssertAsConstructed(fresh.Robot.Lights, robot.Lights, "Lights", KeptAcrossRemoval);
+        AssertAsConstructed(fresh.Robot.Sensors, robot.Sensors, "Sensors", KeptAcrossRemoval);
+        AssertAsConstructed(fresh.Robot.Cubes, robot.Cubes, "Cubes", KeptAcrossRemoval);
+        AssertAsConstructed(fresh.Robot.CubeAccel, robot.CubeAccel, "CubeAccel", KeptAcrossRemoval);
+        AssertAsConstructed(fresh.Robot.Animations, robot.Animations, "Animations", KeptAcrossRemoval);
+        AssertAsConstructed(fresh.Robot.Face, robot.Face, "Face", KeptAcrossRemoval);
+        AssertAsConstructed(freshVision, vision, "Vision", KeptAcrossRemoval);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-025 CC27 (0x004ED026..0x004ED07C; 0x0062F554..0x0062F58A) with CB33/CC26: after the
+    /// removal a new ConnectToRobot connects a fresh robot. The handshake reaches Success again, the devices start counting
+    /// from nothing (the first synced state is state 1), the block pool is loaded and enabled again by the app defaults,
+    /// and the live animation is opened again with its StartOfAnimation (tag 0xFF), as a newly built AnimationStreamer
+    /// opens it.
+    /// </summary>
+    [Fact]
+    public void M1_025_M1_015_CC27_AfterRemovalASecondConnectStartsFromAFreshRobot()
+    {
+        using var rig = new Rig();
+        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
+        rig.ToSuccess();
+        UseEveryDevice(rig, vision);
+        rig.Disconnected();
+        rig.Tick();
+        Assert.Null(rig.Engine.Robot);
+        Assert.True(SpinWait.SpinUntil(() => !rig.Robot.Animations.IsTicking, 3000), "the animation tick loop kept running");
+        Assert.Equal(0, rig.Robot.State.StateCount);
+        Assert.False(rig.Robot.Cubes.Connections.AutoBlockPoolEnabled);
+
+        rig.ToSuccess();
+        Assert.Equal(2, rig.Responses.Count);
+        Assert.Equal(RobotConnectionResult.Success, rig.Responses[1].Result);
+        rig.Tick();                                        // the app defaults again (policy M1-042)
+        Assert.True(rig.Robot.Cubes.Connections.AutoBlockPoolEnabled);
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 7, PoseOriginId = 1 });
+        rig.Tick();
+        Assert.True(rig.Robot.AnimationStreamingOpen);
+        Assert.Equal(1, rig.Robot.State.StateCount);
+        Assert.Equal(1, vision.History.Count);
+        Assert.Empty(rig.Robot.Sensors.CliffHistory);
+
+        int sent;
+        lock (rig.Port.Sent) sent = rig.Port.Sent.Count;
+        Assert.True(rig.Robot.Animations.StreamLive(new Cozmo.Robot.Animation.HeadKeyframe(0, 100, 5, 0)));
+        List<RobotMessage> after;
+        lock (rig.Port.Sent) after = rig.Port.Sent.Skip(sent).Select(b => RobotMessage.Parse(b)).ToList();
+        var start = Assert.Single(after.OfType<StartOfAnimation>());
+        Assert.Equal(Cozmo.Robot.Animation.AnimationScheduler.LiveAnimationTag, start.AnimId);
+    }
+
+    /// <summary>A face detector that blocks inside Detect until released, then reports one face.</summary>
+    private sealed class BlockingFaceDetector : Cozmo.Robot.Vision.IFaceDetector
+    {
+        public readonly ManualResetEventSlim Entered = new(false);
+        public readonly ManualResetEventSlim Release = new(false);
+        public bool IsAvailable => true;
+        public string Description => "test: blocks until released";
+        public IReadOnlyList<Cozmo.Robot.Vision.DetectedFace> Detect(Cozmo.Robot.Vision.GrayImage image, uint timestamp)
+        {
+            Entered.Set();
+            Release.Wait(TimeSpan.FromSeconds(10));
+            return new[] { new Cozmo.Robot.Vision.DetectedFace(0, new(10, 10, 40, 40)) };
+        }
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-025, M1-015 CB33/CC26: the Robot's VisionComponent is deleted with it, and ~VisionComponent
+    /// stops and joins its processing thread before the teardown (0x00652570..0x0065257C), so nothing of a frame in flight
+    /// reaches the next robot. Here a frame is blocked inside face detection when the robot is removed: the removal waits
+    /// for it, the frame is discarded, and afterwards no face, object, FrameProcessed or frame count is left or raised.
+    /// </summary>
+    [Fact]
+    public void M1_025_M1_015_CB33_AFrameInFlightAtTheRemovalLeavesNothingBehind()
+    {
+        using var rig = new Rig();
+        var detector = new BlockingFaceDetector();
+        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot, Cozmo.Robot.Vision.CameraCalibration.Nominal())
+        {
+            Enabled = false, FaceDetector = detector,
+        };
+        rig.ToSuccess();
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });
+        rig.Tick();
+        Assert.Equal(1, vision.History.Count);
+        int processedEvents = 0, faceEvents = 0, objectEvents = 0;
+        vision.FrameProcessed += _ => Interlocked.Increment(ref processedEvents);
+        vision.Faces.FaceObserved += _ => Interlocked.Increment(ref faceEvents);
+        vision.World.ObjectObserved += _ => Interlocked.Increment(ref objectEvents);
+
+        var frame = Task.Run(() => vision.ProcessCapture(new Cozmo.Robot.Vision.GrayImage(320, 240), 1, 0));
+        Assert.True(detector.Entered.Wait(TimeSpan.FromSeconds(10)), "the frame never reached face detection");
+        var releaser = Task.Run(async () => { await Task.Delay(300); detector.Release.Set(); });
+        rig.Disconnected();
+        Assert.False(frame.IsCompleted);                   // the frame is in flight when the removal runs
+        rig.Tick();                                        // RemoveRobot: the vision reset waits for the frame
+        Assert.Null(rig.Engine.Robot);
+        Assert.True(frame.Wait(TimeSpan.FromSeconds(5)));
+        Assert.Null(frame.Result);                         // discarded
+        Assert.True(releaser.Wait(TimeSpan.FromSeconds(5)));
+
+        Assert.Equal(0, vision.Faces.Count);
+        Assert.Empty(vision.LastFaces);
+        Assert.Empty(vision.World.Objects);
+        Assert.Equal(0, vision.History.Count);
+        Assert.Equal(0, vision.FramesProcessed);
+        Assert.Null(vision.LastResult);
+        Assert.Equal(0, processedEvents);
+        Assert.Equal(0, faceEvents);
+        Assert.Equal(0, objectEvents);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-025, M1-015 CB33/CC26: the AudioComponent is destroyed with the Robot (~Robot 0x0052F2F6),
+    /// so no further frame of what it was playing goes out. A Play running on another thread, with the robot's
+    /// played-frames feedback (the production path) and with clock pacing, ends promptly when the robot is removed,
+    /// well inside the 1 s stall escape, and sends no audio frame after the removal.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void M1_025_M1_015_CB33_APlayRunningAtTheRemovalEndsAndSendsNoMoreFrames(bool feedback)
+    {
+        using var rig = new Rig();
+        var audio = rig.Robot.Audio;
+        rig.ToSuccess();
+        if (!feedback) audio.PlayedFrames = null;
+        int framesAfterRemoval = 0;
+        int removed = 0;
+        audio.OnFrameSent += () => { if (Volatile.Read(ref removed) != 0) Interlocked.Increment(ref framesAfterRemoval); };
+
+        var pcm = CozmoAudio.Tone(440, TimeSpan.FromSeconds(10));
+        var play = new Thread(() => audio.Play(pcm)) { IsBackground = true };
+        play.Start();
+        Assert.True(SpinWait.SpinUntil(() => audio.FramesSent >= audio.TargetInFlight, 5000), "the Play never filled the buffer");
+
+        rig.Disconnected();
+        rig.Tick();                                        // RemoveRobot
+        Volatile.Write(ref removed, 1);
+        Assert.Null(rig.Engine.Robot);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        Assert.True(play.Join(TimeSpan.FromSeconds(3)), "Play did not end after the removal");
+        Assert.True(sw.Elapsed < TimeSpan.FromMilliseconds(500), $"Play took {sw.ElapsedMilliseconds} ms to end");
+        Assert.Equal(0, audio.FramesSent);                 // reset to 0 at the removal, and nothing sent since
+        Assert.Equal(0, framesAfterRemoval);
     }
 
     // ================================================================== the offline seam

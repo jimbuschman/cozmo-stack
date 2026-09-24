@@ -49,6 +49,17 @@ public sealed class RobotStateHistory
 
     private uint _originId;
 
+    // fidelity: M1-025, M1-015
+    /// <summary>Back to the state right after construction, for a removed robot (CB33, CC26, CC27): no states, origin 0.</summary>
+    internal void ResetToConstructed()
+    {
+        lock (_gate)
+        {
+            _entries.Clear();
+            _originId = 0;
+        }
+    }
+
     /// <summary>The origin the robot's poses are currently reported in, from its state stream.</summary>
     public uint OriginId { get { lock (_gate) return _originId; } }
 

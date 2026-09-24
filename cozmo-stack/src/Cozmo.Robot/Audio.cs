@@ -216,6 +216,45 @@ public sealed class CozmoAudio
 
     public void SendSilence() { _send(new AudioSilence()); FramesSent++; LastSentUtc = DateTime.UtcNow; }
 
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// Back to the state right after construction, for a removed robot (CB33, CC26, CC27; the engine's AudioComponent
+    /// is destroyed with the Robot, so nothing more of what it was playing goes out). A <see cref="Play"/> running on
+    /// another thread ends at its next check without sending another frame: the removal count it captured no longer
+    /// matches, and the check and the send are one step under <see cref="_playGate"/>. Nothing is sent. The pacing clock
+    /// and its frame count are not touched: every Play restarts both, and stopping the clock under a running Play
+    /// would disable its stall escape. <see cref="TargetInFlight"/>, <see cref="Codec"/> and
+    /// <see cref="PlayedFrames"/> are settings and are kept, as are subscribers.
+    /// </summary>
+    internal void ResetToConstructed()
+    {
+        lock (_playGate)
+        {
+            _removals++;
+            FramesSent = 0;
+            LastSentUtc = DateTime.MinValue;
+        }
+    }
+
+    /// <summary>Makes a removal and a Play's send one step apart from each other (see <see cref="ResetToConstructed"/>).</summary>
+    private readonly object _playGate = new();
+    /// <summary>Bumped by every removal; a Play started before one sends nothing more.</summary>
+    private int _removals;
+
+    private bool RemovedSince(int removal) => Volatile.Read(ref _removals) != removal;
+
+    /// <summary>Sends one frame of a Play unless the robot was removed since it started. False: the Play must end.</summary>
+    private bool SendPlayFrame(byte[] frame, int removal)
+    {
+        lock (_playGate)
+        {
+            if (_removals != removal) return false;
+            SendFrame(frame);
+        }
+        OnFrameSent?.Invoke();
+        return true;
+    }
+
     /// <summary>Packs one sample with the chosen law.</summary>
     public static byte Pack(short sample, AudioCodec codec) => codec switch
     {
@@ -304,18 +343,19 @@ public sealed class CozmoAudio
     public void Play(ReadOnlySpan<short> pcm)
     {
         var frames = ToFrames(pcm, Codec);
+        int removal = Volatile.Read(ref _removals);   // fidelity: M1-025, M1-015 (a removal ends this Play)
         using var _ = new HighResolutionTimer();
         _clock.Restart();
         _scheduled = 0;
-        if (PlayedFrames is null) { foreach (var f in frames) PlayFramePaced(f); return; }
-        PlayWithFeedback(frames);
+        if (PlayedFrames is null) { foreach (var f in frames) if (!PlayFramePaced(f, removal)) return; return; }
+        PlayWithFeedback(frames, removal);
     }
 
     /// <summary>
     /// Feeds the robot from its own report of what it has played, keeping <see cref="TargetInFlight"/>
     /// frames queued. This tracks whatever rate the robot really drains at instead of assuming one.
     /// </summary>
-    private void PlayWithFeedback(List<byte[]> frames)
+    private void PlayWithFeedback(List<byte[]> frames, int removal)
     {
         int baseline = PlayedFrames!();
         int sent = 0;
@@ -326,6 +366,7 @@ public sealed class CozmoAudio
         {
             while (true)
             {
+                if (RemovedSince(removal)) return;
                 int played = PlayedFrames() - baseline;
                 if (played != lastPlayed) { lastPlayed = played; lastProgress = _clock.Elapsed; }
                 if (sent - played < TargetInFlight) break;
@@ -333,8 +374,7 @@ public sealed class CozmoAudio
                 if (_clock.Elapsed - lastProgress > TimeSpan.FromSeconds(1)) break;
                 Thread.Sleep(2);
             }
-            SendFrame(f);
-            OnFrameSent?.Invoke();
+            if (!SendPlayFrame(f, removal)) return;
             sent++;
         }
     }
@@ -342,17 +382,18 @@ public sealed class CozmoAudio
     private readonly System.Diagnostics.Stopwatch _clock = new();
     private long _scheduled;
 
-    private void PlayFramePaced(byte[] frame)
+    /// <summary>One paced frame of a Play. False when the robot was removed since the Play started: it must end.</summary>
+    private bool PlayFramePaced(byte[] frame, int removal)
     {
         if (!_clock.IsRunning) { _clock.Restart(); _scheduled = 0; }
         // The opening TargetInFlight frames go out at once to fill the robot's buffer; the rest are paced.
         var due = TimeSpan.FromTicks(FrameInterval.Ticks * Math.Max(0, _scheduled - TargetInFlight));
         WaitUntil(due);
-        SendFrame(frame);
-        OnFrameSent?.Invoke();
+        if (!SendPlayFrame(frame, removal)) return false;
         _scheduled++;
         // If something stalled us badly, start a fresh schedule rather than firing a burst to catch up.
         if (_clock.Elapsed - due > FrameInterval * 4) { _clock.Restart(); _scheduled = 0; }
+        return true;
     }
 
     /// <summary>

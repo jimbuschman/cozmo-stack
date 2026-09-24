@@ -242,6 +242,22 @@ public sealed class CozmoSensors
     private bool _lastFalling;
     private bool _lastPickedUp, _lastOnCharger, _haveBaseline;
 
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// Back to the state right after construction, for a removed robot (CB33, CC26, CC27): no cliff history, no
+    /// transition baseline, and the classifier and the movement detector as built. Subscribers are kept.
+    /// </summary>
+    internal void ResetToConstructed()
+    {
+        lock (_gate) _cliffs.Clear();
+        _lastFalling = false;
+        _lastPickedUp = false;
+        _lastOnCharger = false;
+        _haveBaseline = false;
+        OffTreads.ResetToConstructed();
+        UnexpectedMovement.ResetToConstructed();
+    }
+
     /// <summary>Fed every robot message by <see cref="CozmoRobot"/>.</summary>
     internal void Handle(RobotMessage m)
     {

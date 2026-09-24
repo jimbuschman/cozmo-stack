@@ -134,6 +134,18 @@ public sealed class OffTreadsClassifier
         Current = Candidate = OffTreadsState.OnTreads; CandidateTimeMs = 0; FallingStartedTimestamp = 0; Updates = 0;
     }
 
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// <see cref="Reset"/> plus the two Robot inputs, back to their as-constructed values, for a removed robot (CB33,
+    /// CC26, CC27): the head gate closed and the physical flag at its default. Subscribers are kept.
+    /// </summary>
+    internal void ResetToConstructed()
+    {
+        Reset();
+        IsPhysical = true;
+        HeadCalibrated = false;
+    }
+
     /// <summary>
     /// Feeds one robot state. Runs the IMU filters unconditionally, as the engine does, then the classifier
     /// when the head is calibrated. Returns true when the classified state changed.

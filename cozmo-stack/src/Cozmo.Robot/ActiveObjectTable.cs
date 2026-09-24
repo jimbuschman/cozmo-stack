@@ -157,6 +157,19 @@ internal sealed class ActiveObjectTable<T>
         }
     }
 
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// Back to a newly constructed table, bucket array included, for a removed robot (CB33, CC26: the Robot and this
+    /// map are deleted; CC27: the next one is built afresh). Erasing every entry would keep the grown bucket count,
+    /// and with it a different iteration order from a fresh map's.
+    /// </summary>
+    public void Clear()
+    {
+        _head.Next = null;
+        _buckets = Array.Empty<Node?>();
+        _size = 0;
+    }
+
     /// <summary><c>remove</c> 0x00518FDA.</summary>
     private void Unlink(Node cn)
     {

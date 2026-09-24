@@ -136,6 +136,35 @@ public sealed class CubeConnections
         }
     }
 
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// Back to the state right after construction, for a removed robot (CB33, CC26, CC27): no advertisements, the five
+    /// slots, requests and both pools empty, the pool off with no path, every clock at 0 and no SetPropSlot recorded.
+    /// The pool file is not touched: the next Success loads it again through <see cref="Init"/> (policy M1-042).
+    /// Subscribers are kept.
+    /// </summary>
+    internal void ResetToConstructed()
+    {
+        lock (_gate)
+        {
+            _available.Clear();
+            for (int i = 0; i < SlotCount; i++)
+            {
+                _slots[i] = Info.Reset();
+                _requested[i] = (0, false);
+                _persistentPool[i] = (0, ObjectType.InvalidObject);
+                _runtimePool[i] = (0, ObjectType.InvalidObject);
+            }
+            _lastDisconnectCheck = 0;
+            _robotTime = 0;
+            _discovering.Clear();
+            _discoveryTime = _enableTime = _lastConnectTime = _lastPoolUpdate = 0;
+            _poolEnabled = false;
+            _slotRequestsSent.Clear();
+            _poolPath = "";
+        }
+    }
+
     /// <summary>Raised with each SetPropSlot as it is sent.</summary>
     public event Action<SetPropSlot>? SlotRequested;
 

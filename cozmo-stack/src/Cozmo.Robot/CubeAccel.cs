@@ -132,6 +132,16 @@ public sealed class CubeAccelStreams
         if (last) _robot.SendMessage(new StreamObjectAccel { ObjectID = objectId, Enable = false }, flush: true);
     }
 
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// Back to the state right after construction, for a removed robot (CB33, CC26, CC27): no listener, so no stream
+    /// counts as on. Nothing is sent: the robot is gone.
+    /// </summary>
+    internal void ResetToConstructed()
+    {
+        lock (_gate) _listeners.Clear();
+    }
+
     /// <summary>Fed every robot message by <see cref="CozmoRobot"/>.</summary>
     internal void Handle(RobotMessage m)
     {

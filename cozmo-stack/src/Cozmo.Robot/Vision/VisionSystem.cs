@@ -36,11 +36,18 @@ public sealed class VisionSystem : IDisposable
     private readonly object _busy = new();
     private int _processing;
     private bool _warnedNoCalibration;
+    /// <summary>The calibration the constructor was given, which a removal restores.</summary>
+    private readonly CameraCalibration? _constructedCalibration;
+    /// <summary>Bumped by every removal. A frame started before one is discarded: nothing it found is kept or raised.</summary>
+    private int _removals;
+    /// <summary>How long a removal waits for a frame being processed to reach a point where it can be discarded.</summary>
+    internal static readonly TimeSpan RemovalWait = TimeSpan.FromSeconds(2);
 
     public VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null)
     {
         _robot = robot;
         Calibration = calibration;
+        _constructedCalibration = calibration;
         Detector = detector ?? new MarkerDetector();
         Faces.Log += l => Log?.Invoke(l);
         World = new BlockWorld(() => robot.Cubes.ConnectedCubes.Where(c => c.ObjectId is not null).Select(c => (c.ObjectId!.Value, c.Type)));
@@ -48,6 +55,57 @@ public sealed class VisionSystem : IDisposable
         Locator = new CubeLocator(this);
         robot.Message += OnMessage;
         robot.Camera.FrameReceived += OnFrame;
+        robot.RobotRemoved += ResetToConstructed;
+    }
+
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// Run when the robot is removed (CB33, CC26: the Robot is deleted with its components; CC27: the next connect builds
+    /// them afresh). The calibration belongs to the engine's VisionComponent, which is destroyed with the Robot, so it
+    /// goes back to the one the constructor was given. The state history, the world, the face and pet worlds and the
+    /// frame counts go back to their as-constructed state. <see cref="Enabled"/>, the detectors, the overrides and the
+    /// hooks other systems installed are kept, as are subscribers.
+    ///
+    /// A frame being processed when this runs is discarded: the removal count is bumped first, so the frame drops out
+    /// at its next check without keeping or raising anything more, and then this waits for it under the processing
+    /// lock, at most <see cref="RemovalWait"/>. What a world update already under way when the removal began has
+    /// raised cannot be taken back; the world is cleared after it. Processing never takes the engine's tick lock, so
+    /// the wait (on the engine thread, inside the tick) ends; only a subscriber to a vision event that posts a game
+    /// message on the offline auto-ticking seam could hold it to the bound.
+    /// </summary>
+    internal void ResetToConstructed()
+    {
+        Interlocked.Increment(ref _removals);
+        bool locked = Monitor.TryEnter(_busy, RemovalWait);
+        try
+        {
+            if (!locked) Log?.Invoke($"vision reset: a frame was still being processed after {RemovalWait.TotalSeconds:F0} s; it is discarded at its next check");
+            Calibration = _constructedCalibration;
+            History.ResetToConstructed();
+            World.ResetToConstructed();
+            Faces.ResetToConstructed();
+            Pets.ResetToConstructed();
+            LastFaces = Array.Empty<TrackedFace>();
+            FramesProcessed = 0;
+            FramesDropped = 0;
+            LastResult = null;
+            LastRawFrameTimestamp = null;
+            _warnedNoCalibration = false;
+        }
+        finally { if (locked) Monitor.Exit(_busy); }
+    }
+
+    /// <summary>Whether a removal happened since the frame that captured <paramref name="removal"/> started.</summary>
+    private bool RemovedSince(int removal) => Volatile.Read(ref _removals) != removal;
+
+    private void WarnNoCalibration(int removal)
+    {
+        lock (_busy)
+        {
+            if (RemovedSince(removal) || _warnedNoCalibration) return;
+            _warnedNoCalibration = true;
+            Log?.Invoke("Must be initialized and have calibrated camera to Update (no calibration set)");
+        }
     }
 
     /// <summary>The robot this system watches.</summary>
@@ -155,9 +213,10 @@ public sealed class VisionSystem : IDisposable
     {
         if (!Enabled) return;
         if (Interlocked.CompareExchange(ref _processing, 1, 0) != 0) { FramesDropped++; return; }
+        int removal = Volatile.Read(ref _removals);
         Task.Run(() =>
         {
-            try { ProcessFrame(f); }
+            try { ProcessFrame(f, removal); }
             catch (Exception e) { Log?.Invoke($"frame {f.ImageId}: {e.GetType().Name}: {e.Message}"); }
             finally { Interlocked.Exchange(ref _processing, 0); }
         });
@@ -170,14 +229,12 @@ public sealed class VisionSystem : IDisposable
     public uint? LastRawFrameTimestamp { get; private set; }
 
     /// <summary>Processes one camera frame against the recorded robot state; null without calibration or state.</summary>
-    public VisionFrameResult? ProcessFrame(CameraFrame f)
+    public VisionFrameResult? ProcessFrame(CameraFrame f) => ProcessFrame(f, Volatile.Read(ref _removals));
+
+    private VisionFrameResult? ProcessFrame(CameraFrame f, int removal)
     {
-        if (Calibration is null)
-        {
-            if (!_warnedNoCalibration) { _warnedNoCalibration = true; Log?.Invoke("Must be initialized and have calibrated camera to Update (no calibration set)"); }
-            return null;
-        }
-        return ProcessCapture(GrayImage.FromFrame(f), f.ImageId, f.Timestamp);
+        if (Calibration is null) { WarnNoCalibration(removal); return null; }
+        return ProcessCapture(GrayImage.FromFrame(f), f.ImageId, f.Timestamp, removal);
     }
 
     /// <summary>
@@ -186,12 +243,12 @@ public sealed class VisionSystem : IDisposable
     /// timestamp-zero path can be driven without a JPEG.
     /// </summary>
     public VisionFrameResult? ProcessCapture(GrayImage gray, uint imageId, uint cameraTimestamp)
+        => ProcessCapture(gray, imageId, cameraTimestamp, Volatile.Read(ref _removals));
+
+    private VisionFrameResult? ProcessCapture(GrayImage gray, uint imageId, uint cameraTimestamp, int removal)
     {
-        if (Calibration is null)
-        {
-            if (!_warnedNoCalibration) { _warnedNoCalibration = true; Log?.Invoke("Must be initialized and have calibrated camera to Update (no calibration set)"); }
-            return null;
-        }
+        var calibration = Calibration;
+        if (calibration is null) { WarnNoCalibration(removal); return null; }
         // the fw2457 captures carry FrameTimestamp 0 on every chunk; a frame with no timestamp is paired with the
         // latest state (LOCAL fallback; the engine's EncodedImage rejects a bad timestamp instead)
         var pd = cameraTimestamp == 0 ? History.Latest : History.At(cameraTimestamp);
@@ -200,31 +257,49 @@ public sealed class VisionSystem : IDisposable
         // frame. Passing the camera's zero through would date every marker, object and face at 0, which makes
         // observation age, face expiry and object-position age meaningless on real fw2457 hardware.
         uint effective = cameraTimestamp == 0 ? pd.Value.Timestamp : cameraTimestamp;
-        if (effective != cameraTimestamp) LastRawFrameTimestamp = cameraTimestamp;
-        return ProcessImage(gray, imageId, effective, pd.Value);
+        return ProcessImage(gray, imageId, effective, pd.Value, calibration, removal,
+                            effective != cameraTimestamp ? cameraTimestamp : null);
     }
 
-    /// <summary>The core update over a decoded image and the robot's pose data for it (usable offline).</summary>
+    /// <summary>
+    /// The core update over a decoded image and the robot's pose data for it (usable offline). Throws
+    /// <see cref="OperationCanceledException"/> when the robot is removed while the image is being processed.
+    /// </summary>
     public VisionFrameResult ProcessImage(GrayImage gray, uint imageId, uint timestamp, VisionPoseData pd)
     {
-        if (Calibration is null) throw new InvalidOperationException("no camera calibration");
+        var calibration = Calibration ?? throw new InvalidOperationException("no camera calibration");
+        return ProcessImage(gray, imageId, timestamp, pd, calibration, Volatile.Read(ref _removals), null)
+            ?? throw new OperationCanceledException("the robot was removed while this image was being processed");
+    }
+
+    // fidelity: M1-025, M1-015
+    // The removal checks: a frame started before a removal keeps and raises nothing after it (ResetToConstructed).
+    private VisionFrameResult? ProcessImage(GrayImage gray, uint imageId, uint timestamp, VisionPoseData pd,
+                                            CameraCalibration calibration, int removal, uint? rawTimestamp)
+    {
         var sw = Stopwatch.StartNew();
-        var cal = gray.Width == Calibration.Columns && gray.Height == Calibration.Rows ? Calibration : Calibration.Scaled(gray.Width, gray.Height);
+        var cal = gray.Width == calibration.Columns && gray.Height == calibration.Rows ? calibration : calibration.Scaled(gray.Width, gray.Height);
         var camera = new CameraModel(cal, pd.CameraPose);
         IReadOnlyList<ObservedMarker> markers;
         IReadOnlyList<ObjectObservation> objects;
         IReadOnlyList<ObservableObject> forgotten;
         OverheadEdgeFrame? overheadEdges = null;
+        VisionFrameResult result;
         lock (_busy)
         {
+            if (RemovedSince(removal)) return null;
             markers = Detector.Detect(gray, timestamp);
+            if (RemovedSince(removal)) return null;
             objects = World.UpdateObservedMarkers(markers, camera, timestamp);
+            if (RemovedSince(removal)) return null;
             forgotten = World.CheckForUnobservedObjects(camera, timestamp, objects.Select(o => o.Object.ObjectId).ToHashSet(), pd.Moving, pd.RotatingTooFast);
             // VisionSystem::Update in DetectingFaces mode: FaceTracker::Update, TrackedFace::UpdateTranslation(camera), FaceWorld::AddOrUpdateFace
             if (FaceDetector.IsAvailable)
             {
                 var faces = new List<TrackedFace>();
-                foreach (var d in FaceDetector.Detect(gray, timestamp))
+                var detected = FaceDetector.Detect(gray, timestamp);
+                if (RemovedSince(removal)) return null;
+                foreach (var d in detected)
                 {
                     var tf = new TrackedFace(d, timestamp);
                     tf.UpdateTranslation(camera);
@@ -234,7 +309,12 @@ public sealed class VisionSystem : IDisposable
                 LastFaces = faces;
                 Faces.Update(timestamp);
             }
-            if (PetDetector.IsAvailable) Pets.Update(PetDetector.Detect(gray, timestamp), timestamp, pd.RotatingTooFast);
+            if (PetDetector.IsAvailable)
+            {
+                var pets = PetDetector.Detect(gray, timestamp);
+                if (RemovedSince(removal)) return null;
+                Pets.Update(pets, timestamp, pd.RotatingTooFast);
+            }
             // The ground in front of the robot, on this frame's own pose data: the detector needs the
             // camera where it was when the image was taken and the lift angle it had then, which is what
             // VisionPoseData carries. The points come back in robot coordinates, so whoever puts them in
@@ -242,14 +322,17 @@ public sealed class VisionSystem : IDisposable
             // up by the frame's timestamp (RobotStateHistory::ComputeAndInsertStateAt at 0x0067F8A2).
             if (OverheadEdges is { } edges)
                 overheadEdges = edges.Detect(gray, camera, pd.RobotPose, timestamp, pd.LiftAngleRad);
+            if (RemovedSince(removal)) return null;
+            result = new VisionFrameResult(imageId, timestamp, pd, markers, objects, forgotten, sw.Elapsed)
+            {
+                OverheadEdges = overheadEdges,
+            };
+            if (rawTimestamp is { } raw) LastRawFrameTimestamp = raw;
+            FramesProcessed++;
+            LastResult = result;
+            // Raised under the lock a removal waits on, so a frame the removal discarded never raises it afterwards.
+            FrameProcessed?.Invoke(result);
         }
-        var result = new VisionFrameResult(imageId, timestamp, pd, markers, objects, forgotten, sw.Elapsed)
-        {
-            OverheadEdges = overheadEdges,
-        };
-        FramesProcessed++;
-        LastResult = result;
-        FrameProcessed?.Invoke(result);
         return result;
     }
 
@@ -289,6 +372,7 @@ public sealed class VisionSystem : IDisposable
     {
         _robot.Message -= OnMessage;
         _robot.Camera.FrameReceived -= OnFrame;
+        _robot.RobotRemoved -= ResetToConstructed;
     }
 }
 

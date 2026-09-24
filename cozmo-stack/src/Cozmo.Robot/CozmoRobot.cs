@@ -128,6 +128,25 @@ public sealed class RobotStateTracker
         if (newState is not null) EventFan.Raise(StateUpdated, newState, HandlerFaulted);
     }
 
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// Back to the state right after construction, for a removed robot (CB33, CC26: the Robot is deleted; CC27: a
+    /// later ConnectToRobot builds it afresh). Subscribers are kept.
+    /// </summary>
+    internal void ResetToConstructed()
+    {
+        lock (_gate)
+        {
+            _histogram.Clear();
+            Available = null; Firmware = null; Manufacturing = null; Latest = null; Animation = null;
+            TimeSynced = false;
+            StateCount = 0; FirstStateUtc = null; LastStateUtc = null;
+            CalibrationSeen = false;
+            HeadCalibrating = false; LiftCalibrating = false;
+            HeadCalibrated = false; LiftCalibrated = false;
+        }
+    }
+
     /// <summary>
     /// Raised when a subscriber to one of this tracker's events threw, with what it threw. The fault is
     /// contained rather than hidden: the internal routing carries on, and this says that it did.
@@ -230,14 +249,15 @@ public sealed class CozmoRobot : IDisposable
         Engine.DeviceRoute = RouteToDevices;
         Engine.PublicRoute = m => EventFan.Raise(Message, m, e => Fault(e));
         Engine.Faulted = Fault;
-        // fidelity: M1-015
-        // CB33: RemoveRobot deletes the Robot, and with it its AnimationStreamer; this stack's animation system
-        // stands for that streamer, so whatever it is playing ends there.
-        // MISSING (CB33, CC27): the original deletes the whole Robot and a later ConnectToRobot builds everything
-        // afresh; this stack's device objects (State, Camera, Sensors, Cubes, CubeAccel, and the vision system's
-        // RobotStateHistory) live on the CozmoRobot and keep their state across a removal. Which of that state the
-        // original's fresh Robot would reset is not mapped here.
-        Engine.RobotRemoved = () => { try { Animations.Stop(); } catch (Exception e) { Fault(e); } };
+        // fidelity: M1-025, M1-015
+        // CB33, CC26: RemoveRobot deletes the Robot, and with it every Robot component; CC27: a later ConnectToRobot
+        // builds everything afresh. The M1 device objects on this robot (and the VisionSystem built on it) stay here,
+        // because callers hold them, so each is put back in its as-constructed state instead (ResetDevices).
+        // NOT YET RESET (named residual for M12-M15): the upper-layer Robot components the engine also builds in
+        // Robot::Robot 0x0050FBF1 and deletes with it - DockingSystem's Carrying (CarryingComponent), DockingComponent,
+        // PathFollower, BehaviorManager, MoodManager, IdleBehavior, ReactiveBehavior, CubeMovedReactionStrategy - are
+        // built by callers here and keep their state across a removal.
+        Engine.RobotRemoved = ResetDevices;
         // fidelity: M1-042
         Engine.AfterSuccessDefaults = SendAppDefaults;
     }
@@ -543,6 +563,39 @@ public sealed class CozmoRobot : IDisposable
         Route(() => Cubes.Handle(m));
         Route(() => CubeAccel.Handle(m));
     }
+
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// RemoveRobot's deletion of the Robot as this stack has it (CB33, CC26; CC27: the next ConnectToRobot starts from
+    /// a fresh robot). Called on the engine thread from RemoveRobot. Whatever is playing ends first, as the deleted
+    /// AnimationStreamer's animation does; then every device goes back to its as-constructed state, keeping its
+    /// subscribers and the hooks this object installed; then the systems built on this robot are told
+    /// (<see cref="RobotRemoved"/>). Each step is isolated like the message routing (policy M1-034).
+    /// </summary>
+    private void ResetDevices()
+    {
+        Route(() => Animations.Stop());
+        Route(Animations.ResetToConstructed);
+        Route(Face.ResetToConstructed);
+        Route(State.ResetToConstructed);
+        Route(Camera.ResetToConstructed);
+        Route(Display.ResetToConstructed);
+        Route(Audio.ResetToConstructed);
+        Route(Motion.ResetToConstructed);
+        Route(Lights.ResetToConstructed);
+        Route(Sensors.ResetToConstructed);
+        Route(Cubes.ResetToConstructed);
+        Route(CubeAccel.ResetToConstructed);
+        if (RobotRemoved is { } removed)
+            foreach (var d in removed.GetInvocationList()) Route((Action)d);
+    }
+
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// Raised on the engine thread after <see cref="ResetDevices"/> has reset the devices, so a system built on this
+    /// robot (<see cref="Vision.VisionSystem"/>) can reset what it keeps for it too.
+    /// </summary>
+    internal event Action? RobotRemoved;
 
     private void Route(Action a)
     {

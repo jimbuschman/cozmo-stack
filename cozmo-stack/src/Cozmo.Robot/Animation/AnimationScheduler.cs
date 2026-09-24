@@ -386,6 +386,50 @@ public sealed class AnimationScheduler
         }
     }
 
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// Back to the state right after construction, for a removed robot (CB33, CC26: the Robot and its AnimationStreamer
+    /// are deleted; CC27: the next connect builds them afresh). A running clip ends as <see cref="Stop"/> ends it; then
+    /// the live stream is closed and inactive, the tag counter is back at 1 and every timeline field and count is as
+    /// built. <see cref="Generation"/> is not reset: it is a token callers hold, and restarting it could make a token
+    /// from before the removal name an animation started after it. <see cref="AudioSource"/>,
+    /// <see cref="FaceAnimations"/>, the random source and subscribers are kept.
+    /// </summary>
+    internal void ResetToConstructed()
+    {
+        lock (_emit)
+        lock (_gate)
+        {
+            if (_clip is not null) EndLocked(AnimationEndReason.Cancelled);
+            _framesStreamed = 0;
+            _nextDueWallMs = 0;
+            _nextFrame = 0;
+            _facePoses = Array.Empty<FaceKeyframe>();
+            _faceIndex = -1;
+            _lastFace = null;
+            _faceAnim = null;
+            _faceAnimFrame = 0;
+            _faceAnimName = "";
+            _bodyEndsAtMs = null;
+            _liveBodyStopsAtMs = null;
+            _audioPcm = null;
+            _audioEventId = null;
+            _audioPos = 0;
+            _nextTag = 1;
+            _startSent = false;
+            _liveOpen = false;
+            _liveActive = false;
+            _liveFramesSent = 0;
+            _livePlayedBaseline = 0;
+            _playedBaseline = 0;
+            AudioFramesSent = 0;
+            PositionMs = 0;
+            KeyframesFired = 0;
+            CurrentTag = 0;
+            AudioStops = 0;
+        }
+    }
+
     private void EndLocked(AnimationEndReason reason)
     {
         var name = _clip?.Name ?? "";

@@ -368,4 +368,16 @@ public sealed class CozmoDisplay
     }
 
     public void Clear() => Show(new FaceBitmap());
+
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// Back to the state right after construction, for a removed robot (CB33, CC26, CC27): nothing sent, no last face.
+    /// The payload limit and <see cref="BeforeFrame"/> are set by the owner and kept.
+    /// </summary>
+    internal void ResetToConstructed()
+    {
+        _last = DateTime.MinValue;
+        FramesSent = 0;
+        LastPayload = null;
+    }
 }

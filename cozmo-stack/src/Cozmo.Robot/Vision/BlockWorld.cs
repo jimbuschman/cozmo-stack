@@ -350,6 +350,20 @@ public sealed class BlockWorld
     /// <summary>LOCAL: where this stack starts numbering markerless objects, clear of the cube ids.</summary>
     public const uint FirstMarkerlessObjectId = 1000;
     private uint _nextMarkerlessId = FirstMarkerlessObjectId;
+
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// Back to the state right after construction, for a removed robot (CB33, CC26, CC27): no objects, markerless ids
+    /// from <see cref="FirstMarkerlessObjectId"/> again. No event is raised. The tuning properties and subscribers are kept.
+    /// </summary>
+    internal void ResetToConstructed()
+    {
+        lock (_gate)
+        {
+            _objects.Clear();
+            _nextMarkerlessId = FirstMarkerlessObjectId;
+        }
+    }
     public IReadOnlyList<ObservableObject> LocatedObjects { get { lock (_gate) return _objects.Values.Where(o => o.IsLocated).ToList(); } }
 
     /// <summary><c>BlockWorld::GetLocatedObjectByIdHelper</c>: the object when it has a located pose, else null.</summary>

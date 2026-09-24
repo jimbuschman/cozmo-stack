@@ -257,6 +257,23 @@ public sealed class CozmoCubes
         finally { ConnectionChanged -= watch; }
     }
 
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// Back to the state right after construction, for a removed robot (CB33, CC26, CC27): no cube or charger known,
+    /// discovery off, and the connection path as built (<see cref="CubeConnections.ResetToConstructed"/>). The clock
+    /// and subscribers are kept.
+    /// </summary>
+    internal void ResetToConstructed()
+    {
+        lock (_gate)
+        {
+            _byFactoryId.Clear();
+            _byObjectId.Clear();
+            DiscoveryEnabled = false;
+        }
+        Connections.ResetToConstructed();
+    }
+
     // ----------------------------------------------------------------- plumbing
 
     private Cube Track(uint factoryId)

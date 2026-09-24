@@ -120,6 +120,14 @@ public sealed class RobotAnimationSink : IAnimationSink
         if (_bodyMoving) BodyStop();
         _ = _lastFacePayload;
     }
+
+    // fidelity: M1-025, M1-015
+    /// <summary>Back to the state right after construction, for a removed robot (CB33, CC26, CC27). Subscribers are kept.</summary>
+    internal void ResetToConstructed()
+    {
+        _lastFacePayload = null;
+        _bodyMoving = false;
+    }
 }
 
 /// <summary>
@@ -273,6 +281,20 @@ public sealed class CozmoAnimations : IDisposable
     /// <summary>Stops whatever is playing. Returns false when nothing was.</summary>
     public bool Stop() => _scheduler.Stop();
 
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// Back to the state right after construction, for a removed robot (CB33, CC26: the Robot and its AnimationStreamer
+    /// are deleted; CC27: the next connect builds them afresh): the scheduler and the sink as built, so the live stream
+    /// is closed and tags start again. The tick loop stops by itself once nothing is pending. The loaded assets
+    /// (<see cref="Library"/>, <see cref="FaceAnimations"/>, <see cref="SoundNames"/>), <see cref="AudioSource"/> and
+    /// the random source are kept, as are subscribers.
+    /// </summary>
+    internal void ResetToConstructed()
+    {
+        _scheduler.ResetToConstructed();
+        _sink.ResetToConstructed();
+    }
+
     /// <summary>
     /// Which animation is running, as an opaque token. A caller that starts an animation can keep this
     /// and later ask whether that same one is still playing.
@@ -404,6 +426,10 @@ public sealed class CozmoFace
 
     /// <summary>The pose last sent, so a caller can read it back and adjust one parameter.</summary>
     public ProceduralFacePose Current { get; private set; } = ProceduralFacePose.ShippedNeutral();
+
+    // fidelity: M1-025, M1-015
+    /// <summary>Back to the state right after construction, for a removed robot (CB33, CC26, CC27): the shipped neutral pose.</summary>
+    internal void ResetToConstructed() => Current = ProceduralFacePose.ShippedNeutral();
 
     /// <summary>Renders a pose and shows it. Returns the bitmap that was sent, for inspection and tests.</summary>
     public FaceBitmap SetParameters(ProceduralFacePose pose)

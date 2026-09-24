@@ -301,6 +301,20 @@ public sealed class FaceWorld
 
     /// <summary><c>OnRobotDelocalized</c>: the faces' poses belong to the old origin.</summary>
     public void OnRobotDelocalized() => ClearAllFaces();
+
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// Back to the state right after construction, for a removed robot (CB33, CC26, CC27): no faces, session ids from 1.
+    /// Unlike <see cref="ClearAllFaces"/> no FaceDeleted is raised. Subscribers are kept.
+    /// </summary>
+    internal void ResetToConstructed()
+    {
+        lock (_gate)
+        {
+            _faces.Clear();
+            _nextSessionId = 1;
+        }
+    }
 }
 
 /// <summary>A pet as the detector reports it (the engine's OKAO pet detector fills <c>Vision::TrackedPet</c>).</summary>
@@ -363,5 +377,9 @@ public sealed class PetWorld
     }
 
     public PetEntry? GetPetByID(int id) => _pets.TryGetValue(id, out var p) ? p.Pet : null;
+
+    // fidelity: M1-025, M1-015
+    /// <summary>Back to the state right after construction, for a removed robot (CB33, CC26, CC27): no pets. Subscribers are kept.</summary>
+    internal void ResetToConstructed() => _pets.Clear();
     public IReadOnlyList<PetEntry> GetKnownPetsWithType(PetType type) => _pets.Values.Select(p => p.Pet).Where(p => type == PetType.Unknown || p.Type == type).ToList();
 }

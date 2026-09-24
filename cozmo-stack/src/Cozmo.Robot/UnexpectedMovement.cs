@@ -223,6 +223,21 @@ public sealed class UnexpectedMovementDetector
         Count = 0; StartTimestamp = 0; SumLeft = 0; SumRight = 0;
     }
 
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// <see cref="Reset"/> plus the last report and the Robot gates, back to their as-constructed values, for a
+    /// removed robot (CB33, CC26, CC27). <see cref="Suspended"/> is a caller's switch with no engine counterpart and
+    /// is kept, as are subscribers.
+    /// </summary>
+    internal void ResetToConstructed()
+    {
+        Reset();
+        Last = null;
+        IsPhysical = true;
+        BodyTrackLocked = false;
+        TrackGateApplies = false;
+    }
+
     /// <summary>Feeds one robot state. Returns the report when one is raised on this state.</summary>
     public UnexpectedMovementReport? Update(RobotState s)
     {

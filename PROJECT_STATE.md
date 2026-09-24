@@ -4,10 +4,23 @@ Read first in every session. The manager keeps this file current; the process it
 
 ## Now
 
-- **Phase:** M1 batch 3 (app layer) merged as 518b730, and the settle pass is applied (M1: 26 EXACT, 1 EQUIVALENT, 5 IMPL_GAP, 9 POLICY, 2 HW). The full suite is running before the commit. control-check (the self-judging direct-control hardware run) is being built in a worktree.
+- **Phase:** M1 is closed apart from named residuals.
+  - Batch 3 (the app layer) is 518b730, and the settle pass is 67d4bc2.
+  - The device reset on RemoveRobot (M1-025, M1-015) is committed after the commits below. Its first verification failed on two races and on the calibration being kept. Those were fixed, and the re-verify passed.
+  - M1 records: 28 EXACT, 1 EQUIVALENT, 3 IMPL_GAP, 9 POLICY, 2 HARDWARE_ONLY.
+  - control-check is on main as 4b89c79 plus abea3ce. Its review returned NOT READY: the STATE rate window, ANIM driving without `--allow-drive`, and the OBB preflight. All of these are fixed.
+  - The full suite passed 1163/1163 before the commit.
+- **Waiting on the operator:** one control-check robot run (see "Next").
 - **Operator decisions:** D1-D4 approved 2026-09-23. On 2026-09-24: the inventory, D5, D6 (fatal behaviour recorded, isolation kept as policy), D7, the corrections C1..C5 and D8 (stop processing a frame after a DisconnectRequest, M1-038) approved; the three repair batches are authorised to run without further checkpoints.
 - **Batch 1 done (7aba301). Batch 2a done** (e6f2ed7; receive path: B17 truncation, receive-error counters, partial-header overrun after the header, M1-038); records it repaired are settled in one verified pass at the end of batch 2. **Batch 2b-i done** (8c9f405; clock, construction-time 2 ms scheduler + FIFO executor, posted sends, RobotLink isolation; three verification passes). **Batch 2b-ii done** (0691429; per-address connections, type-3 and timeout delete only that connection, timed-out flag, inbound creation, FinishConnection, posted Start/Stop, per-connection multipart, unconditional Dispose disconnect; two verification passes). **Batch 2c done** (socket B10/B11/B12/B16/B38 with C1's 47817 reopen, the M1-023 reset mechanism, the M1-037 host trigger, M1-001 addressing; verifier PASS on the second pass). Batch 2 complete.
-- **Next:** commit the settle pass; merge control-check; the operator runs `! git push origin main`, then `control-check` on the robot, and copies the bundle back.
+- **Next: the operator's control-check run.**
+  1. In the Claude session: `! git push origin main`.
+  2. On the Cozmo machine, from `cozmo-stack`: `git pull`, then `dotnet run --project src/Cozmo.Conformance -- control-check 172.31.1.1 --obb "<the unpacked OBB dir used for earlier hardware-test/behavior runs>" --allow-drive`.
+     - `<obb>` is the directory that contains `assets/cozmo_resources/assets/animations/`.
+     - If the path is wrong, the tool exits 2 before connecting and prints the path it expected.
+  3. Setup: Cozmo off the charger, on the floor or a cliff-safe table, with about 10 cm clear in front and behind. One cube powered and within about 30 cm. The tool prints this and waits for Enter.
+  4. Copy the `re-analysis/acceptance/hardware/<stamp>-CONTROL/` folder it prints to Downloads.
+  5. The manager then judges the bundle and fixes the failures from the source (AGENTS.md hardware-failure workflow).
 
 - **Standing authorisations and current plan (operator, 2026-09-24, supersedes the governing plan below where they differ):**
   - **Pushing:** the manager may push to GitHub `origin main` whenever a robot run is ready, so the operator's Cozmo machine can pull it.
@@ -53,6 +66,16 @@ The operator's rule: if recoverable or missing source work is still growing afte
 
 So M1 is closed except these five small, named residuals, the HARDWARE_ONLY and the COMPATIBILITY_POLICY records.
 
+**Update: M1-025 and M1-015 are settled (2026-09-24).**
+- **The change:** `CozmoRobot.ResetDevices` runs on `Engine.RobotRemoved`. It returns every M1 device object and the VisionSystem to their as-constructed state, and it ends an in-flight audio Play and an in-flight vision frame, with nothing sent or written after the removal.
+- **Tests:** four `M1_025_M1_015_*` tests in EngineAppLayerTests.
+- **Residuals outside M1**, named in both records' provenance:
+  - The upper-layer Robot components are not reset: Carrying, DockingComponent, PathFollower, BehaviorManager, MoodManager, the Idle and Reactive behaviours, CubeMovedReactionStrategy, MapComponent → MemoryMap, and AIComponent → FreeplaySystem. These belong to M12-M15.
+  - The connection-time CameraCalib NV read is not implemented (CD21, 0x006583BA; an M3 interface). The reset now drops a calibration the caller read.
+  - Keeping `VisionSystem.Enabled` across a removal is UNKNOWN.
+  - The 2 s bound on the vision wait is local; the source joins without a bound (0x0065257C).
+- **M1 now has three IMPLEMENTATION_GAP records:** 027, 029 and 041.
+
 **Genuinely new, recoverable from the .so, all small:**
 - CD3/CD5: when the tick is 240 ms or more behind, does the whole-period skip add to or replace the +60 ms step?
 - B25: does ProcessArrivedMessages work on a snapshot of the arrivals, or pop until empty?
@@ -78,6 +101,15 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
 
 - The earlier queue was cleared by batch 4(i): the `using` isolation, TransportConstants LF, T_k2, stale MISSING and verifier-reading comments, and the M1-005 doc.
 - LinkCheck (Cozmo.Conformance): its warning histogram matches "sendto failed" by prefix; the message is now "UDPTransport.SendFailed: sendto failed ...". Update the key after batch 3 merges; pass/fail is unaffected.
+- From the device-reset re-verify (2026-09-24):
+  - Label the 2 s vision removal wait as local, citing 0x0065257C.
+  - Label the test's `Enabled`-kept assertion as policy, not a primary-source oracle.
+  - Make the release in the frame-in-flight test deterministic; the 300 ms timer is a flake risk.
+  - PetWorld has no lock (unreachable: OKAO pets are unavailable).
+  - The implementer's note that "ReadCalibrationAsync has no caller" is wrong: six Conformance tools call it. What is missing is the connection-time read.
+  - `_generation` in AnimationScheduler has no COMPATIBILITY record.
+  - FakePort `Calls` is written without a lock.
+- From the control-check review, after the run: pin the ANIM wheel figure (-75 mm/s for 264 ms) against the clip itself, and exercise the abort path.
 - Tests recommended by batch 4(i): one pinning the 14 Init tunables against the CA/B13 table (M1-005), and a dedicated R43 test for an unsent seq-0 entry at the front (M1-016).
 
 ## Parked: MISSING items (resolved)
@@ -95,7 +127,7 @@ Review state per subsystem is in `re-analysis/fidelity_manifest.json`, and FIDEL
 
 | order | subsystem | tier | review | notes |
 | ---: | --- | --- | --- | --- |
-| 1 | M1-transport | full | INVENTORY_APPROVED (closure complete) | batches 1-2c committed; M1-LINK passed on the robot; next: settle + batch 3 |
+| 1 | M1-transport | full | INVENTORY_APPROVED (closure complete) | batches 1-4(i) and 3 committed, settled; M1-LINK passed on the robot; residuals 027/029/041; next: control-check run |
 | 2 | M2-protocol | full | UNREVIEWED | |
 | 3 | M3-device (camera, display, audio device) | full | UNREVIEWED | colour camera format is HARDWARE_ONLY |
 | 4 | M4-control (motion, sensors, lights, cubes) | full | UNREVIEWED | the outbound cube-connection path is suspected unrecovered |
@@ -133,6 +165,12 @@ The user-level agents in `~/.claude/agents/` (`cozmo-m1-transport-auditor`, `coz
 | commit | subsystem | what it accepted |
 | --- | --- | --- |
 | 7aba301 | M1-transport | M1-004, M1-011, M1-012, M1-017 settled EXACT_SOURCE with evidence-derived tests; LINK check names M1-033. M1-003 and M1-008 tagged but held (DeleteConnection semantics; clock) |
+| e6f2ed7, 8c9f405, 0691429, ed2729e | M1-transport | repair batches 2a, 2b-i, 2b-ii, 2c (receive path; clock/scheduler; connection lifetime; socket/addressing) |
+| fef527c, 224accb | M1-transport | m1-link-check; closure pass re-approved; M1-LINK passed on hardware (20260924-112412-M1-LINK) |
+| 3af197f | M1-transport | batch 4(i): transport completion, M1-039, 16 records settled |
+| 518b730, 67d4bc2 | M1-transport | batch 3 app layer; settle to 26 EXACT_SOURCE |
+| 4b89c79, abea3ce | tools | control-check self-judging hardware run, and its review fixes |
+| (this commit) | M1-transport | device reset on RemoveRobot; M1-025, M1-015 settled EXACT_SOURCE |
 
 ## Open decisions for the operator
 

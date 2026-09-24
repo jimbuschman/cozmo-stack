@@ -206,6 +206,35 @@ public sealed class CozmoCamera
         }
     }
 
+    // fidelity: M1-025, M1-015
+    /// <summary>
+    /// Back to the state right after construction, for a removed robot (CB33, CC26, CC27): no image in hand, no
+    /// counts, no last frame. <see cref="WarmUpFrames"/> is the caller's setting and is kept, as are subscribers.
+    /// </summary>
+    internal void ResetToConstructed()
+    {
+        lock (_gate)
+        {
+            _imu.Clear();
+            _buffer.Clear();
+            _started = false;
+            _imageId = 0;
+            _valid = false;
+            _delivered = false;
+            _expectedChunk = 0;
+            _chunksTaken = 0;
+            _encoding = 0;
+            _timestamp = _previousTimestamp = 0;
+            _width = _height = 0;
+            LastFrame = null;
+            FrameIndex = 0;
+            FramesCompleted = 0;
+            FramesDropped = 0;
+            ChunksReceived = 0;
+            ChunksRejected = 0;
+        }
+    }
+
     /// <summary>Feed every robot message here; the camera ignores the ones it does not care about.</summary>
     public void Handle(RobotMessage m)
     {
