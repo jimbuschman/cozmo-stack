@@ -108,4 +108,58 @@ public class ControlCheckFidelityTests
         Assert.Equal(40.0, ControlCheck.MaxGap(new double[] { 0, 33, 73, 100 }), 6);
         Assert.True(double.IsNaN(ControlCheck.MaxGap(new double[] { 5 })));
     }
+
+    [Fact]
+    public void TheStateRateIsTakenFromTheRobotTimestamps()
+    {
+        // 31 states 30 ms apart span 900 ms: 30 intervals / 0.9 s
+        var ts = Enumerable.Range(0, 31).Select(i => (uint)(1000 + 30 * i)).ToList();
+        Assert.Equal(30 * 1000.0 / 900, ControlCheck.RateFromRobotTimestamps(ts), 6);
+        // the span is taken modulo 2^32, so a wrap between first and last still gives the rate
+        Assert.Equal(1000.0 / 30, ControlCheck.RateFromRobotTimestamps(new uint[] { uint.MaxValue - 9, 20 }), 6);
+        Assert.True(double.IsNaN(ControlCheck.RateFromRobotTimestamps(new uint[] { 7 })));
+        Assert.True(double.IsNaN(ControlCheck.RateFromRobotTimestamps(new uint[] { 7, 7 })));
+    }
+
+    [Fact]
+    public void TheObbPreflightNamesTheClipFilesTheLoaderReads()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "control-check-obb-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var expected = ControlCheck.ObbExpectedFiles(root);
+            Assert.Equal(new[]
+            {
+                Path.Combine(root, "assets", "cozmo_resources", "assets", "animations", "anim_bored_01.bin"),
+                Path.Combine(root, "assets", "cozmo_resources", "assets", "animations", "anim_codelab_staring_loop.bin"),
+            }, expected);
+
+            var missing = ControlCheck.ObbPreflight(root, given: true, repoRoot: null);
+            Assert.NotNull(missing);
+            Assert.Contains(expected[0], missing);
+            Assert.Contains(expected[1], missing);
+            Assert.Contains("--obb", missing);
+            Assert.Contains("--no-obb", missing);
+
+            Directory.CreateDirectory(Path.GetDirectoryName(expected[0])!);
+            File.WriteAllBytes(expected[0], Array.Empty<byte>());
+            var one = ControlCheck.ObbPreflight(root, given: true, repoRoot: null);
+            Assert.NotNull(one);
+            Assert.DoesNotContain(expected[0], one);
+            Assert.Contains(expected[1], one);
+
+            File.WriteAllBytes(expected[1], Array.Empty<byte>());
+            Assert.Null(ControlCheck.ObbPreflight(root, given: true, repoRoot: null));
+
+            var none = ControlCheck.ObbPreflight(null, given: false, repoRoot: root);
+            Assert.NotNull(none);
+            Assert.Contains("anim_bored_01.bin", none);
+            Assert.Contains("anim_codelab_staring_loop.bin", none);
+            Assert.Contains(Path.Combine(root, "re-analysis", "obb"), none);
+        }
+        finally
+        {
+            try { Directory.Delete(root, recursive: true); } catch { }
+        }
+    }
 }

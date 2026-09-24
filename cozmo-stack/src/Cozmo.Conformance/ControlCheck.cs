@@ -37,7 +37,13 @@ public static class ControlCheck
     internal const uint ShippedFirmware = 2381;
     internal const int CalibrationWaitMs = 10000;
     internal const int StateWindowMs = 5000;
-    internal const int StateCountMin = 130, StateCountMax = 170;
+    /// <summary>
+    /// The RobotState rate band, judged from the robot's own timestamps. It is this test's tolerance, not source: no
+    /// engine source gives the rate; the 2026-09-18 smoke capture measured 33.5 Hz
+    /// (re-analysis/captures/2026-09-18_fw2457_hw1.5_smoke_head0.4.console.txt).
+    /// </summary>
+    internal const double StateRateMinHz = 25.0, StateRateMaxHz = 40.0;
+    internal const string StateRateCapture = "re-analysis/captures/2026-09-18_fw2457_hw1.5_smoke_head0.4.console.txt";
     internal const float BatteryMinV = 3.0f, BatteryMaxV = 4.5f;
     internal const float HeadUpRad = 0.3f, HeadDownRad = -0.3f, HeadTolRad = 0.05f;
     internal const int HeadWithinMs = 2000;
@@ -59,6 +65,9 @@ public static class ControlCheck
     internal const int CameraWidth = 320, CameraHeight = 240;
     internal const int DisposeBoundMs = 5000, AfterDisposeWatchMs = 1000;
     internal const int WatchdogMs = 240000;
+    /// <summary>How long an abnormal exit (watchdog, unhandled exception, Ctrl+C) waits for the motor stop and Dispose.</summary>
+    internal const int AbortStopBoundMs = 2000;
+    internal const int ExitInterrupted = 4;
 
     /// <summary>One check: its id, title and the fidelity records it names. Each id must be in re-analysis/fidelity_manifest.json.</summary>
     public sealed record CheckDef(string Id, string Title, string[] Records);
@@ -67,7 +76,7 @@ public static class ControlCheck
     {
         new("CONNECT", "Connect through the app layer: Success response, firmware logged, time synced, first full state, ready to stream, within 10 s",
             new[] { "M1-024", "M1-025", "M1-026", "M1-028", "M1-029", "M1-030", "M1-033", "M1-040", "M1-041", "M1-042" }),
-        new("STATE", "RobotState streams at about 30 Hz for 5 s with a plausible battery voltage and no timeout",
+        new("STATE", "RobotState streams for 5 s at 25..40 Hz by the robot's own timestamps, with a plausible battery voltage and no timeout",
             new[] { "M1-024", "M1-033", "M1-041" }),
         new("HEAD", "Head to +0.3 rad then -0.3 rad, each within 0.05 rad in RobotState within 2 s",
             new[] { "M4-001", "M4-003", "M4-004", "M4-005" }),
@@ -79,13 +88,13 @@ public static class ControlCheck
             new[] { "M3-006", "M3-007", "M3-008", "M3-015" }),
         new("AUDIO", "A 1 s two-beep sequence through CozmoAudio.Play: at least 25 audio frames played and the drop count stays",
             new[] { "M1-042", "M3-010", "M3-011", "M3-012", "M3-013", "M3-014", "M3-017" }),
-        new("ANIM", "anim_bored_01 plays to completion: every keyframe fires, no stall, streaming stops at the end",
+        new("ANIM", "anim_bored_01 plays to completion (only with --allow-drive: it rolls back about 2 cm): every keyframe fires, no stall, streaming stops at the end",
             new[] { "M1-041", "M5-001", "M5-004", "M5-006", "M5-007", "M5-008", "M5-016", "M5-018", "M5-019" }),
         new("ANIM_CANCEL", "A long animation cancelled after 1 s: no animation message sent more than 100 ms after the cancel",
             new[] { "M5-008", "M5-023" }),
         new("CUBES", "Block pool enabled at connect; a cube is heard, one connects, and its accelerometer stream arrives",
             new[] { "M1-042", "M4-008", "M4-009", "M4-010", "M4-011" }),
-        new("CAMERA", "The camera stream opened at connect gives at least 30 complete frames in 3 s, each a 320x240 JPEG",
+        new("CAMERA", "The camera stream opened at connect gives at least 30 complete frames in 3 s, each grey frame a 320x240 JPEG",
             new[] { "M1-041", "M3-001", "M3-002", "M3-003", "M3-004", "M3-005", "M3-016" }),
         new("DISCONNECT", "Dispose sends the DisconnectRequest, nothing is sent after it, and Dispose returns",
             new[] { "M1-015", "M1-019", "M1-025" }),
@@ -104,13 +113,14 @@ public static class ControlCheck
 
     public static int Run(string[] args)
     {
-        IPAddress? ip = null; string? obb = null; string? outParent = null; bool allowDrive = false, yes = false;
+        IPAddress? ip = null; string? obb = null; string? outParent = null; bool allowDrive = false, yes = false, noObb = false;
         for (int i = 1; i < args.Length; i++)
         {
             switch (args[i])
             {
                 case "--allow-drive": allowDrive = true; break;
                 case "--yes": yes = true; break;
+                case "--no-obb": noObb = true; break;
                 case "--obb":
                     if (i + 1 >= args.Length) return UsageError("--obb needs a directory");
                     obb = args[++i]; break;
@@ -127,14 +137,25 @@ public static class ControlCheck
         ip ??= RobotAddress.DefaultFor(false);                      // 172.31.1.1
 
         string? repoRoot = LinkCheck.FindRepoRoot();
-        obb ??= DefaultObb(repoRoot);
-        if (obb is not null) obb = Path.GetFullPath(obb);
+        if (noObb && obb is not null) return UsageError("--obb and --no-obb together: give one");
+        if (noObb) obb = null;
+        else
+        {
+            bool given = obb is not null;
+            obb ??= DefaultObb(repoRoot);
+            if (obb is not null) obb = Path.GetFullPath(obb);
+            if (ObbPreflight(obb, given, repoRoot) is { } why)
+            {
+                Console.Error.WriteLine("control-check: " + why);
+                return 2;
+            }
+        }
         string? parent = outParent ?? (repoRoot is null ? null : Path.Combine(repoRoot, "re-analysis", "acceptance", "hardware"));
         if (parent is null) return UsageError("the repository root (a directory holding AGENTS.md and re-analysis/fidelity_manifest.json) was not found above the current directory or the tool; pass --out <dir>");
 
         var stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
         var bundle = Path.GetFullPath(Path.Combine(parent, $"{stamp}-{TestId}"));
-        var run = new ControlRun(ip, obb, allowDrive, yes, bundle, repoRoot, args);
+        var run = new ControlRun(ip, obb, noObb, allowDrive, yes, bundle, repoRoot, args);
         return run.ExecuteAsync().GetAwaiter().GetResult();
     }
 
@@ -150,10 +171,36 @@ public static class ControlCheck
     internal static string AnimationAssets(string obb) => Path.Combine(obb, "assets", "cozmo_resources", "assets");
     internal static string Resources(string obb) => Path.Combine(obb, "assets", "cozmo_resources");
 
+    /// <summary>
+    /// The clip files ANIM and ANIM_CANCEL need, where the run's loader looks: <see cref="AnimationAssets"/> is
+    /// passed to <c>CozmoAnimations.LoadFrom</c>, whose <c>AnimationLibrary.Open</c> reads the <c>*.bin</c> files under
+    /// its <c>animations</c> directory.
+    /// </summary>
+    public static string[] ObbExpectedFiles(string obb) => new[] { AnimClip, CancelClip }
+        .Select(n => Path.Combine(AnimationAssets(obb), "animations", n + ".bin")).ToArray();
+
+    /// <summary>Why the OBB cannot serve ANIM and ANIM_CANCEL, or null when every expected clip file is present.</summary>
+    public static string? ObbPreflight(string? obb, bool given, string? repoRoot)
+    {
+        const string hint = "--obb should point at the unpacked OBB root: the directory that holds assets/cozmo_resources/assets/animations. "
+                            + "Pass --no-obb to run without it (ANIM and ANIM_CANCEL are then skipped).";
+        if (obb is null)
+        {
+            string where = repoRoot is null ? "the repository root was not found"
+                : $"neither {Path.Combine(repoRoot, "re-analysis", "obb")} nor {Path.Combine(repoRoot, "cozmo-stack", "re-analysis", "obb")} exists";
+            return $"no OBB directory: --obb was not given and {where}. Expected <obb>/assets/cozmo_resources/assets/animations/{AnimClip}.bin "
+                   + $"and {CancelClip}.bin. {hint}";
+        }
+        var missing = ObbExpectedFiles(obb).Where(f => !File.Exists(f)).ToList();
+        if (missing.Count == 0) return null;
+        return $"the OBB directory {obb} ({(given ? "from --obb" : "the default")}) lacks the clip file(s) ANIM and ANIM_CANCEL need: "
+               + string.Join("; ", missing.Select(m => "expected " + m)) + ". " + hint;
+    }
+
     private static int UsageError(string why)
     {
         Console.Error.WriteLine($"control-check: {why}");
-        Console.Error.WriteLine("usage: control-check [robot-ip] [--obb <dir>] [--allow-drive] [--out <dir>] [--yes]");
+        Console.Error.WriteLine("usage: control-check [robot-ip] [--obb <dir> | --no-obb] [--allow-drive] [--out <dir>] [--yes]");
         return 2;
     }
 
@@ -162,6 +209,17 @@ public static class ControlCheck
     /// <summary>The signed distance travelled along the starting heading, in mm.</summary>
     public static double AlongHeading(float x0, float y0, float heading0, float x1, float y1) =>
         (x1 - x0) * Math.Cos(heading0) + (y1 - y0) * Math.Sin(heading0);
+
+    /// <summary>
+    /// The rate, in Hz, of states carrying these robot timestamps (ms, in arrival order): (n-1)*1000/(last-first),
+    /// the span taken modulo 2^32. NaN with fewer than two states or a zero span.
+    /// </summary>
+    public static double RateFromRobotTimestamps(IReadOnlyList<uint> timestampsMs)
+    {
+        if (timestampsMs.Count < 2) return double.NaN;
+        uint span = unchecked(timestampsMs[^1] - timestampsMs[0]);
+        return span == 0 ? double.NaN : (timestampsMs.Count - 1) * 1000.0 / span;
+    }
 
     /// <summary>The increase of a byte counter that may wrap at 256.</summary>
     public static int ByteCounterDelta(byte before, byte after) => (after - before + 256) % 256;
@@ -190,22 +248,105 @@ internal sealed class ControlRun
     /// <summary>An outbound CLAD message the first time its reliable sequence id went out (resends are not new sends).</summary>
     private sealed record Sent(double T, byte Tag, byte[] Payload);
 
+    /// <summary>A JSON object whose writes and snapshot are taken under the run's gate, so an abnormal-exit bundle never serialises it mid-write.</summary>
+    private sealed class LockedJson
+    {
+        private readonly object _gate;
+        private readonly JsonObject _o = new();
+        public LockedJson(object gate) => _gate = gate;
+        public JsonNode? this[string key] { set { lock (_gate) _o[key] = value; } }
+        public JsonObject Snapshot() { lock (_gate) return (JsonObject)_o.DeepClone(); }
+    }
+
+    /// <summary>
+    /// One check's record. Every mutable collection is changed and read under the run's gate: the watchdog, the
+    /// unhandled-exception handler and Ctrl+C write the bundle from another thread while the main thread may still be
+    /// filling a check in.
+    /// </summary>
     private sealed class CheckRec
     {
-        public required ControlCheck.CheckDef Def;
-        public readonly JsonArray Criteria = new();
-        public readonly JsonObject Measured = new();
-        public readonly JsonObject Prerequisites = new();
-        public readonly List<string> Warnings = new();
-        public string? HumanNote, Note, SkipReason;
-        public JsonObject? Observation;
-        public double StartMs = double.NaN, EndMs = double.NaN;
-        public bool Skipped => SkipReason is not null;
-        public bool Pass => !Skipped && Criteria.Count > 0 && Criteria.All(c => c!["pass"]!.GetValue<bool>());
-        public string Status => Skipped ? "SKIPPED" : Pass ? "PASS" : "FAIL";
+        public readonly ControlCheck.CheckDef Def;
+        private readonly object _gate;
+        private readonly JsonArray _criteria = new();
+        private readonly List<string> _warnings = new();
+        public readonly LockedJson Measured, Prerequisites;
+        private string? _humanNote, _note, _skipReason;
+        private JsonObject? _observation;
+        private double _startMs = double.NaN, _endMs = double.NaN;
 
-        public void Crit(string name, string expected, JsonNode? measured, bool pass) =>
-            Criteria.Add(new JsonObject { ["name"] = name, ["expected"] = expected, ["measured"] = measured, ["pass"] = pass });
+        public CheckRec(ControlCheck.CheckDef def, object gate)
+        {
+            Def = def; _gate = gate; Measured = new LockedJson(gate); Prerequisites = new LockedJson(gate);
+        }
+
+        public string? HumanNote { get { lock (_gate) return _humanNote; } set { lock (_gate) _humanNote = value; } }
+        public string? Note { get { lock (_gate) return _note; } set { lock (_gate) _note = value; } }
+        public string? SkipReason { get { lock (_gate) return _skipReason; } set { lock (_gate) _skipReason = value; } }
+        public JsonObject? Observation { get { lock (_gate) return _observation; } set { lock (_gate) _observation = value; } }
+        public double StartMs { get { lock (_gate) return _startMs; } set { lock (_gate) _startMs = value; } }
+        public double EndMs { get { lock (_gate) return _endMs; } set { lock (_gate) _endMs = value; } }
+
+        public bool Skipped { get { lock (_gate) return _skipReason is not null; } }
+        /// <summary>
+        /// PASS when not skipped, at least one criterion was judged, and every judged criterion passed. A criterion with
+        /// <c>pass: null</c> was not judged (its <c>notJudged</c> says why) and does not enter the status; it is listed
+        /// in <c>unjudgedCriteria</c>, so a PASS never hides it.
+        /// </summary>
+        public bool Pass
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    if (_skipReason is not null) return false;
+                    var judged = _criteria.Where(c => c!["pass"] is not null).ToList();
+                    return judged.Count > 0 && judged.All(c => c!["pass"]!.GetValue<bool>());
+                }
+            }
+        }
+        public string Status { get { lock (_gate) return Skipped ? "SKIPPED" : Pass ? "PASS" : "FAIL"; } }
+        public string[] Unjudged { get { lock (_gate) return _criteria.Where(c => c!["pass"] is null).Select(c => c!["name"]!.GetValue<string>()).ToArray(); } }
+        public string? FirstWarning { get { lock (_gate) return _warnings.FirstOrDefault(); } }
+
+        public void Crit(string name, string expected, JsonNode? measured, bool pass) => Crit(name, expected, measured, (bool?)pass, null);
+
+        /// <summary>A criterion; <paramref name="pass"/> null records it as not judged, for the reason given.</summary>
+        public void Crit(string name, string expected, JsonNode? measured, bool? pass, string? notJudged)
+        {
+            var o = new JsonObject { ["name"] = name, ["expected"] = expected, ["measured"] = measured, ["pass"] = pass };
+            if (pass is null) o["notJudged"] = notJudged ?? "not judged";
+            lock (_gate) _criteria.Add(o);
+        }
+
+        public void ClearCriteria() { lock (_gate) _criteria.Clear(); }
+        public void Warn(string w) { lock (_gate) _warnings.Add(w); }
+        public string[] CriteriaExpected() { lock (_gate) return _criteria.Select(x => x!["expected"]!.GetValue<string>()).ToArray(); }
+
+        public JsonObject ToJson(Dictionary<string, string> status)
+        {
+            lock (_gate)
+            {
+                return new JsonObject
+                {
+                    ["id"] = Def.Id,
+                    ["title"] = Def.Title,
+                    ["status"] = Status,
+                    ["pass"] = Pass,
+                    ["skipReason"] = _skipReason,
+                    ["records"] = new JsonArray(Def.Records.Select(r => (JsonNode)new JsonObject { ["id"] = r, ["status"] = status.GetValueOrDefault(r, "?") }).ToArray()),
+                    ["prerequisites"] = Prerequisites.Snapshot(),
+                    ["criteria"] = _criteria.DeepClone(),
+                    ["unjudgedCriteria"] = new JsonArray(Unjudged.Select(u => (JsonNode)u).ToArray()),
+                    ["measured"] = Measured.Snapshot(),
+                    ["warnings"] = new JsonArray(_warnings.Select(w => (JsonNode)w).ToArray()),
+                    ["humanNote"] = _humanNote,
+                    ["humanVerdict"] = null,
+                    ["observation"] = _observation?.DeepClone(),
+                    ["note"] = _note,
+                    ["startMs"] = LinkCheck.Num(_startMs), ["endMs"] = LinkCheck.Num(_endMs),
+                };
+            }
+        }
     }
 
     private static readonly HashSet<byte> AnimStreamTags = new()
@@ -218,7 +359,10 @@ internal sealed class ControlRun
     private static readonly byte StartTag = (byte)RobotMessageId.AnimStartOfAnimation, EndTag = (byte)RobotMessageId.AnimEndOfAnimation;
     private static readonly byte ImageChunkTag = (byte)RobotMessageId.Image;
 
-    private readonly IPAddress _ip; private readonly string? _obb; private readonly bool _allowDrive, _yes;
+    private readonly IPAddress _ip; private readonly string? _obb; private readonly bool _noObb, _allowDrive, _yes;
+    /// <summary>Guards the check records, the robot and animation info, the saved-image list and the camera window against a bundle written from another thread.</summary>
+    private readonly object _gate = new();
+    private int _aborting;
     private readonly string _bundle; private readonly string? _repoRoot; private readonly string[] _argv;
     private readonly DateTime _t0Utc = DateTime.UtcNow;
     private readonly DateTimeOffset _t0Local = DateTimeOffset.Now;
@@ -243,9 +387,9 @@ internal sealed class ControlRun
     private (double From, double To)? _cameraWindow;
     private readonly List<string> _savedImages = new();
 
-    internal ControlRun(IPAddress ip, string? obb, bool allowDrive, bool yes, string bundle, string? repoRoot, string[] argv)
+    internal ControlRun(IPAddress ip, string? obb, bool noObb, bool allowDrive, bool yes, string bundle, string? repoRoot, string[] argv)
     {
-        _ip = ip; _obb = obb; _allowDrive = allowDrive; _yes = yes; _bundle = bundle; _repoRoot = repoRoot; _argv = argv;
+        _ip = ip; _obb = obb; _noObb = noObb; _allowDrive = allowDrive; _yes = yes; _bundle = bundle; _repoRoot = repoRoot; _argv = argv;
     }
 
     private double Now() => (DateTime.UtcNow - _t0Utc).TotalMilliseconds;
@@ -288,23 +432,32 @@ internal sealed class ControlRun
         }
         Directory.CreateDirectory(_bundle);
 
+        // Every abnormal exit stops the robot first (bounded), then writes the bundle.
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
         {
             lock (_exceptions) _exceptions.Add("unhandled: " + e.ExceptionObject);
-            try { WriteBundle(crashed: "unhandled exception"); } catch { }
+            Abort("unhandled exception", exitCode: null);
+        };
+        Console.CancelKeyPress += (_, e) =>
+        {
+            // A second Ctrl+C while the first is stopping the robot is let through, so the operator can still force it.
+            if (Volatile.Read(ref _aborting) == 1) return;
+            e.Cancel = true;
+            lock (_exceptions) _exceptions.Add("interrupted: Ctrl+C");
+            // Off the handler's thread: Environment.Exit is not called from inside the console control handler.
+            new Thread(() => Abort("interrupted (Ctrl+C)", ControlCheck.ExitInterrupted)) { IsBackground = false, Name = "control-check-interrupt" }.Start();
         };
         var watchdog = new Thread(() =>
         {
             Thread.Sleep(ControlCheck.WatchdogMs);
             if (Volatile.Read(ref _written) == 1) return;
             lock (_exceptions) _exceptions.Add($"watchdog: the run exceeded {ControlCheck.WatchdogMs} ms");
-            try { WriteBundle(crashed: "watchdog"); } catch { }
-            Console.WriteLine($"control-check: WATCHDOG after {ControlCheck.WatchdogMs / 1000} s; bundle {_bundle}");
-            Environment.Exit(3);
+            Console.WriteLine($"control-check: WATCHDOG after {ControlCheck.WatchdogMs / 1000} s");
+            Abort("watchdog", exitCode: 3);
         }) { IsBackground = true, Name = "control-check-watchdog" };
         watchdog.Start();
 
-        CheckRec Rec(string id) { var c = new CheckRec { Def = ControlCheck.Checks.Single(d => d.Id == id) }; _checks.Add(c); return c; }
+        CheckRec Rec(string id) { var c = new CheckRec(ControlCheck.Checks.Single(d => d.Id == id), _gate); lock (_checks) _checks.Add(c); return c; }
         var connect = Rec("CONNECT");
         var rest = ControlCheck.Checks.Skip(1).Select(d => Rec(d.Id)).ToDictionary(c => c.Def.Id);
 
@@ -315,8 +468,11 @@ internal sealed class ControlRun
             if (resources is not null && !Directory.Exists(resources)) resources = null;
             var engineOptions = new CozmoEngineOptions { ResourcesPath = resources };
             _robot = CozmoRobot.Create(engineOptions: engineOptions);
-            _robotInfo["resourcesPath"] = resources;
-            _robotInfo["blockPoolPath"] = CozmoRobot.DefaultBlockPoolPath;
+            lock (_gate)
+            {
+                _robotInfo["resourcesPath"] = resources;
+                _robotInfo["blockPoolPath"] = CozmoRobot.DefaultBlockPoolPath;
+            }
             Subscribe(_robot);
             LoadAnimations(_robot);
 
@@ -364,7 +520,12 @@ internal sealed class ControlRun
                         break;
                     case "FACE": await RunCheck(c, () => { FaceCheck(c); return Task.CompletedTask; }); break;
                     case "AUDIO": await RunCheck(c, () => { AudioCheck(c); return Task.CompletedTask; }); break;
-                    case "ANIM": await RunCheck(c, () => AnimCheck(c)); break;
+                    case "ANIM":
+                        // anim_bored_01's body keyframe drives the wheels (-75 mm/s for 264 ms, about 2 cm back): as DRIVE, only on request.
+                        c.Prerequisites["allowDrive"] = _allowDrive;
+                        if (!_allowDrive) c.SkipReason = "anim_bored_01 drives the wheels; rerun with --allow-drive";
+                        else await RunCheck(c, () => AnimCheck(c));
+                        break;
                     case "ANIM_CANCEL": await RunCheck(c, () => CancelCheck(c)); break;
                     case "CUBES": await RunCheck(c, () => CubesCheck(c)); break;
                     case "CAMERA": await RunCheck(c, () => { CameraCheck(c); return Task.CompletedTask; }); break;
@@ -385,14 +546,62 @@ internal sealed class ControlRun
             try { _robot?.Dispose(); } catch (Exception e2) { lock (_exceptions) _exceptions.Add("during dispose: " + e2); }
         }
 
-        var overall = WriteBundle(crashed: null);
+        string overall = WriteBundleOrReport(crashed: null) ?? "FAIL (the bundle could not be written; see the error above)";
         Console.WriteLine();
-        foreach (var c in _checks)
-            Console.WriteLine($"  {c.Status,-7}  {c.Def.Id,-11}  {(c.Skipped ? c.SkipReason : c.Def.Title)}{(c.HumanNote is null ? "" : "   [human: " + c.HumanNote + "]")}");
+        CheckRec[] all; lock (_checks) all = _checks.ToArray();
+        foreach (var c in all)
+        {
+            var unjudged = c.Unjudged;
+            Console.WriteLine($"  {c.Status,-7}  {c.Def.Id,-11}  {(c.Skipped ? c.SkipReason : c.Def.Title)}"
+                              + (unjudged.Length == 0 ? "" : $"   [not judged: {string.Join(", ", unjudged)}]")
+                              + (c.HumanNote is null ? "" : "   [human: " + c.HumanNote + "]"));
+        }
         Console.WriteLine($"CONTROL: {overall}");
         Console.WriteLine($"bundle: {_bundle}");
         Console.WriteLine("copy that whole folder back; nothing has been committed.");
         return overall == "PASS" ? 0 : 1;
+    }
+
+    /// <summary>
+    /// An abnormal exit (watchdog, unhandled exception, Ctrl+C): a best-effort motor stop and Dispose bounded by
+    /// <see cref="ControlCheck.AbortStopBoundMs"/>, then the bundle, then <see cref="Environment.Exit"/> when an exit
+    /// code is given (an unhandled exception terminates the process by itself). Runs once.
+    /// </summary>
+    private void Abort(string why, int? exitCode)
+    {
+        if (Interlocked.Exchange(ref _aborting, 1) == 1) return;
+        StopRobotBounded(why);
+        if (Volatile.Read(ref _written) == 0) WriteBundleOrReport(crashed: why);
+        Console.WriteLine($"control-check: stopped ({why}); bundle {_bundle}");
+        if (exitCode is { } code) Environment.Exit(code);
+    }
+
+    /// <summary>EmergencyStop (StopAllMotors, DriveWheels 0) and Dispose on a separate thread, waited for at most the bound.</summary>
+    private void StopRobotBounded(string why)
+    {
+        var robot = _robot;
+        if (robot is null) return;
+        double t = Now();
+        var stopper = new Thread(() =>
+        {
+            try { robot.EmergencyStop(); } catch (Exception e) { lock (_exceptions) _exceptions.Add($"{why}: EmergencyStop: {e}"); }
+            try { robot.Dispose(); } catch (Exception e) { lock (_exceptions) _exceptions.Add($"{why}: Dispose: {e}"); }
+        }) { IsBackground = true, Name = "control-check-abort-stop" };
+        stopper.Start();
+        bool done = stopper.Join(ControlCheck.AbortStopBoundMs);
+        Event("abort-stop", new JsonObject { ["why"] = why, ["completedWithinBound"] = done, ["ms"] = LinkCheck.Num(Now() - t) });
+        if (!done) lock (_exceptions) _exceptions.Add($"{why}: the motor stop and Dispose did not finish within {ControlCheck.AbortStopBoundMs} ms");
+    }
+
+    /// <summary>Writes the bundle; on failure prints the exception (the bundle is never lost silently) and returns null.</summary>
+    private string? WriteBundleOrReport(string? crashed)
+    {
+        try { return WriteBundle(crashed); }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine($"control-check: writing the bundle {_bundle} failed: {e}");
+            return null;
+        }
     }
 
     private void PrintSetup()
@@ -402,12 +611,17 @@ internal sealed class ControlRun
         Console.WriteLine("  - this PC on Cozmo's Wi-Fi;");
         Console.WriteLine("  - Cozmo on the floor or on a cliff-safe table, off the charger, with nothing touching him;");
         Console.WriteLine("  - a light cube within about 30 cm of him, powered (tab pulled / battery in).");
+        bool anim = _obb is not null;
         Console.WriteLine("What he will do (about 2 minutes): nod his head, raise and lower his lift, "
                           + (_allowDrive ? "drive about 3 cm forward and back, " : "")
-                          + "show a test pattern for 3 s, play two beeps, play anim_bored_01 (which rolls him back about 2 cm)"
-                          + " and part of a second animation, then disconnect. Stop-on-cliff is turned on before anything moves.");
-        if (!_allowDrive) Console.WriteLine("  DRIVE will be skipped: pass --allow-drive once he has clear space around him.");
-        if (_obb is null) Console.WriteLine("  ANIM and ANIM_CANCEL will be skipped: no --obb directory was given or found.");
+                          + "show a test pattern for 3 s, play two beeps, "
+                          + (anim && _allowDrive ? "play anim_bored_01 (which rolls him back about 2 cm) and part of a second animation (face and sound only), "
+                             : anim ? "play part of an animation (face and sound only), " : "")
+                          + "then disconnect. Stop-on-cliff is turned on before anything moves.");
+        if (!_allowDrive)
+            Console.WriteLine("  DRIVE and ANIM will be skipped (anim_bored_01 drives the wheels, about 2 cm back): pass --allow-drive once he has clear space around him.");
+        if (_noObb) Console.WriteLine("  ANIM and ANIM_CANCEL will be skipped: --no-obb was given.");
+        else if (_obb is not null) Console.WriteLine($"  Animations from {ControlCheck.AnimationAssets(_obb)}.");
         Console.WriteLine("  Watch his face during the test pattern and listen for the beeps: the bundle asks what you saw and heard.");
         Console.WriteLine();
     }
@@ -477,22 +691,28 @@ internal sealed class ControlRun
 
     private void LoadAnimations(CozmoRobot robot)
     {
-        if (_obb is null) { _animInfo["loaded"] = false; _animInfo["why"] = "no --obb directory was given or found"; return; }
+        if (_obb is null)
+        {
+            lock (_gate) { _animInfo["loaded"] = false; _animInfo["why"] = _noObb ? "--no-obb was given" : "no --obb directory was given or found"; }
+            return;
+        }
         var assets = ControlCheck.AnimationAssets(_obb);
-        _animInfo["assets"] = assets;
+        lock (_gate) _animInfo["assets"] = assets;
         try
         {
             var sw = Stopwatch.StartNew();
             var lib = robot.Animations.LoadFrom(assets);
-            _animInfo["loaded"] = true;
-            _animInfo["clips"] = lib.ClipNames.Count;
-            _animInfo["loadMs"] = sw.ElapsedMilliseconds;
-            _animInfo["audioSource"] = "none: audio keyframes stream silence (the Wwise decoder is not loaded by this run)";
+            lock (_gate)
+            {
+                _animInfo["loaded"] = true;
+                _animInfo["clips"] = lib.ClipNames.Count;
+                _animInfo["loadMs"] = sw.ElapsedMilliseconds;
+                _animInfo["audioSource"] = "none: audio keyframes stream silence (the Wwise decoder is not loaded by this run)";
+            }
         }
         catch (Exception e)
         {
-            _animInfo["loaded"] = false;
-            _animInfo["why"] = e.GetType().Name + ": " + e.Message;
+            lock (_gate) { _animInfo["loaded"] = false; _animInfo["why"] = e.GetType().Name + ": " + e.Message; }
         }
     }
 
@@ -569,19 +789,24 @@ internal sealed class ControlRun
         c.Crit("within10s", $"all of the above within {ControlCheck.ConnectBudgetMs} ms of the ConnectToRobot call", LinkCheck.Num(double.IsNaN(last) ? double.NaN : Rel(last)),
             !double.IsNaN(last) && Rel(last) <= ControlCheck.ConnectBudgetMs);
         if (resp is not null && resp.FwVersion != ControlCheck.ShippedFirmware)
-            c.Warnings.Add($"robot firmware {resp.FwVersion} is not {ControlCheck.ShippedFirmware}, the build the protocol was recovered from (policy M1-040: accepted)");
+            c.Warn($"robot firmware {resp.FwVersion} is not {ControlCheck.ShippedFirmware}, the build the protocol was recovered from (policy M1-040: accepted)");
         c.Note = "Connected with CozmoRobot.Create, the ConnectToRobot game message and the engine's ConnectionResponse event: the body of CozmoRobot.ConnectAsync, done step by step so the handshake frames are in frames.jsonl.";
 
-        _robotInfo["fwVersion"] = resp?.FwVersion;
-        _robotInfo["fwIsShipped2381"] = resp is null ? null : resp.FwVersion == ControlCheck.ShippedFirmware;
-        _robotInfo["serial"] = resp is null ? null : $"0x{resp.SerialNumber:x8}";
-        _robotInfo["bodyHwVersion"] = resp?.BodyHWVersion;
-        _robotInfo["bodyColor"] = resp?.BodyColor;
-        _robotInfo["firmwareVersionJson"] = robot.State.Firmware?.SignatureJson;
-        _robotInfo["firmwareMessageVersion"] = robot.State.Firmware?.Version;
-        _robotInfo["expectedFirmwareVersionFromHeader"] = robot.Engine.ExpectedFirmwareVersion;
-        _robotInfo["expectedFirmwareTimeFromHeader"] = robot.Engine.ExpectedFirmwareTime;
-        _robotInfo["firmwareWarning"] = c.Warnings.FirstOrDefault();
+        var fwJson = robot.State.Firmware?.SignatureJson;
+        var fwMsg = robot.State.Firmware?.Version;
+        lock (_gate)
+        {
+            _robotInfo["fwVersion"] = resp?.FwVersion;
+            _robotInfo["fwIsShipped2381"] = resp is null ? null : resp.FwVersion == ControlCheck.ShippedFirmware;
+            _robotInfo["serial"] = resp is null ? null : $"0x{resp.SerialNumber:x8}";
+            _robotInfo["bodyHwVersion"] = resp?.BodyHWVersion;
+            _robotInfo["bodyColor"] = resp?.BodyColor;
+            _robotInfo["firmwareVersionJson"] = fwJson;
+            _robotInfo["firmwareMessageVersion"] = fwMsg;
+            _robotInfo["expectedFirmwareVersionFromHeader"] = robot.Engine.ExpectedFirmwareVersion;
+            _robotInfo["expectedFirmwareTimeFromHeader"] = robot.Engine.ExpectedFirmwareTime;
+            _robotInfo["firmwareWarning"] = c.FirstWarning;
+        }
     }
 
     /// <summary>The first sends of the messages the handshake and post-connect path put out, in order, with their times after the connect call.</summary>
@@ -621,25 +846,35 @@ internal sealed class ControlRun
         bool stillConnected = robot.Engine.ConnectionState == 2;
         int animStates = AnimStates().Count(a => a.T >= from && a.T < to);
 
+        double robotRate = ControlCheck.RateFromRobotTimestamps(win.Select(s => s.S.Timestamp).ToList());
+        bool onCharger = robot.Sensors.OnCharger || win.Any(s => s.S.Has(RobotStatusFlag.IsOnCharger));
+
         c.Measured["windowMs"] = LinkCheck.Num(to - from);
         c.Measured["robotStates"] = win.Count;
-        c.Measured["ratePerSecond"] = LinkCheck.Num(win.Count * 1000.0 / (to - from));
+        c.Measured["hostRatePerSecond"] = LinkCheck.Num(win.Count * 1000.0 / (to - from));
+        c.Measured["robotTimestampRateHz"] = LinkCheck.Num(robotRate);
+        c.Measured["robotTimestampFirst"] = win.Count == 0 ? null : win[0].S.Timestamp;
+        c.Measured["robotTimestampLast"] = win.Count == 0 ? null : win[^1].S.Timestamp;
         c.Measured["batteryVolts"] = LinkCheck.Stats(batt);
         c.Measured["maxHostGapMs"] = LinkCheck.Num(ControlCheck.MaxGap(times));
         c.Measured["maxRobotTimestampGapMs"] = LinkCheck.Num(ControlCheck.MaxGap(robotTs));
-        c.Measured["onCharger"] = robot.Sensors.OnCharger;
+        c.Measured["onCharger"] = onCharger;
         c.Measured["animationStatesInWindow"] = animStates;
-        c.Measured["note"] = "host times are when the engine's 60 ms tick handed each state to the devices, so states arrive in pairs; the robot's own timestamps are the rate evidence";
+        c.Measured["note"] = "host times are when the engine's 60 ms tick handed each state to the devices, so states arrive in batches and the host count in 5 s is not the rate; the rate is judged from the robot's own timestamps, and the host count and host rate are recorded, not judged";
 
-        c.Crit("stateCount", $"{ControlCheck.StateCountMin}..{ControlCheck.StateCountMax} handled RobotStates in {ControlCheck.StateWindowMs} ms (about 30 Hz)", win.Count,
-            win.Count >= ControlCheck.StateCountMin && win.Count <= ControlCheck.StateCountMax);
-        bool battOk = batt.Count > 0 && batt.Min() >= ControlCheck.BatteryMinV && batt.Max() <= ControlCheck.BatteryMaxV;
-        c.Crit("battery", $"every battery voltage in the window within {ControlCheck.BatteryMinV:F1}..{ControlCheck.BatteryMaxV:F1} V",
-            batt.Count == 0 ? null : new JsonObject { ["min"] = LinkCheck.Num(batt.Min()), ["max"] = LinkCheck.Num(batt.Max()) }, battOk);
+        c.Crit("stateRate", $"RobotState rate from the robot's own timestamps, (n-1)*1000/(ts_last-ts_first) over the {ControlCheck.StateWindowMs} ms window, within {ControlCheck.StateRateMinHz:F0}..{ControlCheck.StateRateMaxHz:F0} Hz. "
+                            + $"The band is this test's tolerance, not source: no engine source gives the rate; the capture {ControlCheck.StateRateCapture} measured 33.5 Hz",
+            LinkCheck.Num(robotRate), !double.IsNaN(robotRate) && robotRate >= ControlCheck.StateRateMinHz && robotRate <= ControlCheck.StateRateMaxHz);
+        string battExpected = $"every battery voltage in the window within {ControlCheck.BatteryMinV:F1}..{ControlCheck.BatteryMaxV:F1} V";
+        var battMeasured = batt.Count == 0 ? null : new JsonObject { ["min"] = LinkCheck.Num(batt.Min()), ["max"] = LinkCheck.Num(batt.Max()) };
+        if (onCharger)
+            c.Crit("battery", battExpected, battMeasured, null, "on charger; setup says off the charger");
+        else
+            c.Crit("battery", battExpected, battMeasured, batt.Count > 0 && batt.Min() >= ControlCheck.BatteryMinV && batt.Max() <= ControlCheck.BatteryMaxV);
         c.Crit("noTimeout", "no transport timeout (timed-out flag clear), no disconnect event in the window, and the engine still connected (state 2)",
             new JsonObject { ["timedOutFlag"] = timedOut, ["disconnectEvents"] = disconnects, ["connectionState"] = robot.Engine.ConnectionState },
             !timedOut && disconnects == 0 && stillConnected);
-        if (robot.Sensors.OnCharger) c.Warnings.Add("the robot reports being on the charger; the battery reading is then the charger's");
+        if (onCharger) c.Warn("the robot reports being on the charger; the battery reading is then the charger's, so the battery criterion is not judged");
     }
 
     // ------------------------------------------------------------------ HEAD / LIFT
@@ -746,7 +981,11 @@ internal sealed class ControlRun
             var after = States().LastOrDefault();
             double along = before is null || after is null ? double.NaN
                 : ControlCheck.AlongHeading(before.S.PoseX, before.S.PoseY, before.S.PoseAngleRad, after.S.PoseX, after.S.PoseY);
-            bool originSame = before is not null && after is not null && before.S.PoseOriginId == after.S.PoseOriginId && before.S.PoseFrameId == after.S.PoseFrameId;
+            bool originSame = before is not null && after is not null && before.S.PoseOriginId == after.S.PoseOriginId;
+            // No record covers the robot keeping PoseFrameId while it drives; if it changes, the distance is not judged.
+            var frameIds = before is null ? new List<uint>()
+                : States().Where(s => s.T >= before.T && (after is null || s.T <= after.T)).Select(s => s.S.PoseFrameId).Distinct().ToList();
+            bool frameChanged = before is not null && frameIds.Any(f => f != before.S.PoseFrameId);
             var peak = States().Where(s => s.T >= cmd && s.T <= stopCmd).Select(s => (double)Math.Max(Math.Abs(s.S.LwheelSpeedMmps), Math.Abs(s.S.RwheelSpeedMmps))).DefaultIfEmpty(double.NaN).Max();
             var cliffs = _events.Count(e => e.Kind == "cliff" && e.T >= cmd);
             legs.Add(new JsonObject
@@ -754,7 +993,9 @@ internal sealed class ControlRun
                 ["leg"] = name, ["speedMmps"] = v, ["commandMs"] = ControlCheck.DriveLegMs,
                 ["start"] = before is null ? null : Pose(before.S), ["end"] = after is null ? null : Pose(after.S),
                 ["alongStartHeadingMm"] = LinkCheck.Num(along), ["dxMm"] = before is null || after is null ? null : LinkCheck.Num(after.S.PoseX - before.S.PoseX),
-                ["poseOriginAndFrameUnchanged"] = originSame,
+                ["poseOriginUnchanged"] = originSame,
+                ["poseFrameIdChanged"] = frameChanged,
+                ["poseFrameIdsSeen"] = new JsonArray(frameIds.Select(f => (JsonNode)f).ToArray()),
                 ["peakWheelSpeedMmps"] = LinkCheck.Num(peak),
                 ["driveConfirm"] = driveOutcome.ToString(), ["stopConfirm"] = stop.ToString(),
                 ["wheelsStoppedAfterMs"] = stopped is null ? null : LinkCheck.Num(stopped.T - stopCmd),
@@ -762,18 +1003,25 @@ internal sealed class ControlRun
             });
             bool distOk = sign > 0 ? along >= ControlCheck.DriveMinMm && along <= ControlCheck.DriveMaxMm
                                    : along <= -ControlCheck.DriveMinMm && along >= -ControlCheck.DriveMaxMm;
-            c.Crit($"{name}Distance", sign > 0
-                    ? $"the pose moved +{ControlCheck.DriveMinMm:F0}..+{ControlCheck.DriveMaxMm:F0} mm along the starting heading"
-                    : $"the pose moved -{ControlCheck.DriveMaxMm:F0}..-{ControlCheck.DriveMinMm:F0} mm along the starting heading",
-                LinkCheck.Num(along), distOk && originSame);
+            string distExpected = sign > 0
+                ? $"the pose moved +{ControlCheck.DriveMinMm:F0}..+{ControlCheck.DriveMaxMm:F0} mm along the starting heading, pose origin unchanged"
+                : $"the pose moved -{ControlCheck.DriveMaxMm:F0}..-{ControlCheck.DriveMinMm:F0} mm along the starting heading, pose origin unchanged";
+            if (frameChanged)
+            {
+                c.Crit($"{name}Distance", distExpected, LinkCheck.Num(along), null,
+                    $"PoseFrameId changed during the {name} leg ({string.Join(", ", frameIds)}); no record says what the robot's pose frame does while driving, so the displacement is not judged");
+                c.Warn($"PoseFrameId changed during the {name} leg");
+            }
+            else c.Crit($"{name}Distance", distExpected, LinkCheck.Num(along), distOk && originSame);
             c.Crit($"{name}WheelsStop", $"after the stop command, a RobotState with both wheel speeds at most {ControlCheck.WheelStoppedMmps} mm/s and AreWheelsMoving clear within {ControlCheck.WheelStopWithinMs} ms",
                 stopped is null ? null : LinkCheck.Num(stopped.T - stopCmd), stopped is not null);
-            if (cliffs > 0) c.Warnings.Add($"{cliffs} cliff event(s) during the {name} leg");
+            if (cliffs > 0) c.Warn($"{cliffs} cliff event(s) during the {name} leg");
         }
         var all = await robot.Motion.StopAllAsync();
         c.Measured["legs"] = legs;
         c.Measured["finalStopAll"] = all.ToString();
-        c.Note = "the spec's \"pose x changes\" is measured as the signed displacement along the heading at the start of each leg (the robot's own pose frame; the stack does not reset it at connect), which equals the x change when the heading is 0. Driven with CozmoMotion.DriveWheelsAsync for 1000 ms, then StopWheelsAsync.";
+        c.Note = "the spec's \"pose x changes\" is measured as the signed displacement along the heading at the start of each leg (the robot's own pose frame; the stack does not reset it at connect), which equals the x change when the heading is 0. Driven with CozmoMotion.DriveWheelsAsync for 1000 ms, then StopWheelsAsync. "
+                 + "Robot-side behaviour no manifest record covers, assumed here and not judged: that DriveWheels with accelerations 0 (the stack's default) makes the robot drive at the commanded speed, and that PoseFrameId stays the same while driving (a change is recorded in poseFrameIdChanged and the leg's distance is then not judged).";
     }
 
     private StateRec? StoppedAfter(double t) =>
@@ -817,7 +1065,9 @@ internal sealed class ControlRun
         c.Crit("animBytesPlayedRises", "AnimationState NumAnimBytesPlayed after the hold (+500 ms) is greater than before it", bytesDelta, bytesDelta is > 0);
         c.Crit("noClientDrops", "AnimationState ClientDropCount unchanged across the hold", dropDelta, dropDelta == 0);
         c.HumanNote = "a test pattern (the art in face-test-pattern.txt: a border, a cross and blocks) appeared on Cozmo's face for about 3 s";
-        if (before is null) c.Note = "no AnimationState had been received before the hold, so neither counter could be compared";
+        c.Note = "animBytesPlayedRises assumes robot-side behaviour no manifest record covers: that the robot's NumAnimBytesPlayed counts face-image bytes "
+                 + "streamed by CozmoDisplay.Hold, which re-sends the image with no StartOfAnimation before it. A criterion failure may be that assumption, not the face path."
+                 + (before is null ? " No AnimationState had been received before the hold, so neither counter could be compared." : "");
     }
 
     private void AudioCheck(CheckRec c)
@@ -867,12 +1117,13 @@ internal sealed class ControlRun
     {
         var lib = _robot!.Animations.Library;
         c.Prerequisites["animationsLoaded"] = lib is not null;
-        if (lib is null) { c.SkipReason = "no animation assets: " + (_animInfo["why"]?.GetValue<string>() ?? "not loaded"); return null; }
+        string? why, assets; lock (_gate) { why = _animInfo["why"]?.GetValue<string>(); assets = _animInfo["assets"]?.GetValue<string>(); }
+        if (lib is null) { c.SkipReason = "no animation assets: " + (why ?? "not loaded"); return null; }
         AnimationClip? clip = null;
         try { if (lib.ClipNames.Contains(name)) clip = lib.GetClip(name); } catch { clip = null; }
         c.Prerequisites["clip"] = name;
         c.Prerequisites["clipFound"] = clip is not null;
-        if (clip is null) { c.SkipReason = $"the clip {name} is not in {_animInfo["assets"]}"; return null; }
+        if (clip is null) { c.SkipReason = $"the clip {name} is not in {assets}"; return null; }
         c.Prerequisites["animationStreamingOpen"] = _robot.AnimationStreamingOpen;
         if (!_robot.AnimationStreamingOpen) { c.SkipReason = "the engine's animation streaming gate is not open (time synced, ready to stream and the first full state, CD12)"; return null; }
         return clip;
@@ -898,7 +1149,7 @@ internal sealed class ControlRun
             _ = ticket.Completion.ContinueWith(_ => done = Now(), TaskContinuationOptions.ExecuteSynchronously);
             int limit = (int)clip.DurationMs + ControlCheck.AnimTimeoutSlackMs;
             if (await Task.WhenAny(ticket.Completion, Task.Delay(limit)) == ticket.Completion) reason = ticket.Completion.Result;
-            else { robot.Animations.StopIfCurrent(ticket.Generation); c.Warnings.Add($"not completed within {limit} ms; stopped"); }
+            else { robot.Animations.StopIfCurrent(ticket.Generation); c.Warn($"not completed within {limit} ms; stopped"); }
         }
         Poll(() => !double.IsNaN(done), 200);
         int firedProp = robot.Animations.Scheduler.KeyframesFired;
@@ -937,7 +1188,7 @@ internal sealed class ControlRun
         c.Measured["tickingAfterWatch"] = ticking;
         c.Measured["robotReportedTags"] = new JsonArray(robotTags.Select(t => (JsonNode)t).ToArray());
         lock (notImplemented) c.Measured["notImplemented"] = Histogram(notImplemented);
-        c.Measured["audioSource"] = _animInfo["audioSource"]?.DeepClone();
+        lock (_gate) c.Measured["audioSource"] = _animInfo["audioSource"]?.DeepClone();
 
         c.Crit("completed", "the animation ended with AnimationEndReason.Completed", reason?.ToString(), reason == AnimationEndReason.Completed);
         c.Crit("keyframesFired", $"keyframes fired == the clip's keyframes ({clip.Keyframes.Count})", firedProp, firedProp == clip.Keyframes.Count && fired == clip.Keyframes.Count);
@@ -947,7 +1198,9 @@ internal sealed class ControlRun
         c.Crit("streamingStops", $"no animation message (audio, face, head, lift, body, start/end) first sent more than {ControlCheck.AnimEndGraceMs} ms after the EndOfAnimation, over a {ControlCheck.AnimEndWatchMs} ms watch; the animation loop no longer ticking",
             new JsonObject { ["lateMessages"] = late.Count, ["ticking"] = ticking, ["endOfAnimationSends"] = ends.Count },
             !double.IsNaN(endT) && late.Count == 0 && !ticking && ends.Count == 1);
-        c.Note = "the spec's \"no stall reported\" has no stall report in the public API; it is measured as the largest gap between the animation's audio frames on the wire and the stream's wall duration. The clip has a body keyframe (a short backward roll).";
+        c.Note = "the spec's \"no stall reported\" has no stall report in the public API; it is measured as the largest gap between the animation's audio frames on the wire and the stream's wall duration. The clip has a body keyframe (a short backward roll). "
+                 + "keyframesFired, noStall and streamingStops are judged from the stack's own side: the scheduler's keyframe count and the messages the stack sent. "
+                 + "The robot-side evidence (robotReportedTags, the AnimationState stream in events.jsonl) is recorded, not judged.";
     }
 
     private async Task CancelCheck(CheckRec c)
@@ -1010,7 +1263,7 @@ internal sealed class ControlRun
         c.Measured["charger"] = robot.Cubes.Charger is { } ch ? CubeJson(ch) : null;
         if (heard.Count == 0 && connected is null)
         {
-            c.Criteria.Clear();
+            c.ClearCriteria();
             c.Measured["blockPoolEnabled"] = poolEnabled;
             c.SkipReason = $"no cube heard within {ControlCheck.CubeWaitMs} ms";
             if (!poolEnabled) { c.SkipReason = null; c.Crit("blockPoolEnabled", "the auto block pool was enabled after the Success response (policy M1-042)", false, false); }
@@ -1051,27 +1304,38 @@ internal sealed class ControlRun
     {
         var robot = _robot!;
         double from = Mark("cameraStart");
-        _cameraWindow = (from, from + ControlCheck.CameraWindowMs);
+        lock (_gate) _cameraWindow = (from, from + ControlCheck.CameraWindowMs);
         int droppedBefore = robot.Camera.FramesDropped;
         Hold(ControlCheck.CameraWindowMs);
         double to = Mark("cameraEnd");
-        _cameraWindow = (from, to);
+        lock (_gate) _cameraWindow = (from, to);
         var win = _camFrames.ToArray().Where(f => f.T >= from && f.T < to).ToList();
-        int decodeFail = 0, wrongGeometry = 0, colourFlagged = 0, threeComponent = 0;
+        // Colour-flagged frames are left out of the geometry verdict: the colour format is HARDWARE_ONLY (M3-016), so
+        // their decoded geometry goes only into the observation, with no verdict.
+        int decodeFail = 0, wrongGeometry = 0, colourFlagged = 0, threeComponent = 0, colourDecodeFail = 0;
         var geometries = new List<string>();
+        var colourGeometries = new List<string>();
         foreach (var f in win)
         {
+            bool colour = f.F.IsColor;
+            if (colour) colourFlagged++;
             try
             {
                 var img = ImageResult.FromMemory(f.F.Jpeg, ColorComponents.Default);
-                geometries.Add($"{img.Width}x{img.Height}x{(int)img.SourceComp}");
+                string geo = $"{img.Width}x{img.Height}x{(int)img.SourceComp}";
                 if ((int)img.SourceComp == 3) threeComponent++;
-                int wantW = f.F.IsColor ? f.F.JpegWidth : ControlCheck.CameraWidth;
-                if (img.Width != wantW || img.Height != ControlCheck.CameraHeight || f.F.Width != ControlCheck.CameraWidth || f.F.Height != ControlCheck.CameraHeight) wrongGeometry++;
+                if (colour) { colourGeometries.Add($"{geo} (reported {f.F.Width}x{f.F.Height}, jpeg width {f.F.JpegWidth})"); continue; }
+                geometries.Add(geo);
+                if (img.Width != ControlCheck.CameraWidth || img.Height != ControlCheck.CameraHeight || f.F.Width != ControlCheck.CameraWidth || f.F.Height != ControlCheck.CameraHeight) wrongGeometry++;
             }
-            catch { decodeFail++; }
-            if (f.F.IsColor) colourFlagged++;
+            catch
+            {
+                if (colour) { colourDecodeFail++; colourGeometries.Add("did not decode"); }
+                else decodeFail++;
+            }
         }
+        int judgedFrames = win.Count - colourFlagged;
+        double fps = win.Count * 1000.0 / (to - from);
         // Save three: the first frames in the window past the warm-up, else the first three.
         var toSave = win.Where(f => !f.F.IsWarmUp).Take(ControlCheck.CameraSaved).ToList();
         if (toSave.Count < ControlCheck.CameraSaved) toSave = win.Take(ControlCheck.CameraSaved).ToList();
@@ -1080,32 +1344,44 @@ internal sealed class ControlRun
         {
             var name = $"camera-{f.F.ImageId:D5}.jpg";
             File.WriteAllBytes(Path.Combine(_bundle, name), f.F.Jpeg);
-            _savedImages.Add(name);
+            lock (_gate) _savedImages.Add(name);
             saved.Add(new JsonObject { ["file"] = name, ["imageId"] = f.F.ImageId, ["bytes"] = f.F.Jpeg.Length, ["colourFlag"] = f.F.IsColor, ["channelSpread"] = LinkCheck.Num(ChannelSpread(f.F.Jpeg)) });
         }
         var imageReq = FirstSends().Where(s => s.Tag == (byte)RobotMessageId.ImageRequest).Select(s => TryParse(s.Payload) as ImageRequest).Where(r => r is not null).ToList();
 
         c.Measured["windowMs"] = LinkCheck.Num(to - from);
         c.Measured["completeFrames"] = win.Count;
+        c.Measured["framesPerSecond"] = LinkCheck.Num(fps);
+        c.Measured["framesJudgedForGeometry"] = judgedFrames;
+        c.Measured["colourFlaggedFramesLeftOut"] = colourFlagged;
         c.Measured["framesDroppedInWindow"] = robot.Camera.FramesDropped - droppedBefore;
         c.Measured["warmUpFramesInWindow"] = win.Count(f => f.F.IsWarmUp);
         c.Measured["decodeFailures"] = decodeFail;
         c.Measured["wrongGeometry"] = wrongGeometry;
-        c.Measured["decodedGeometries"] = Histogram(geometries);
+        c.Measured["decodedGeometriesUnflaggedFrames"] = Histogram(geometries);
         c.Measured["framesSinceConnect"] = robot.Camera.FramesCompleted;
         c.Measured["imageRequestsSent"] = new JsonArray(imageReq.Select(r => (JsonNode)$"{r!.Mode} res {r.ImageResolution}").ToArray());
         c.Measured["saved"] = saved;
         c.Measured["decoder"] = "StbImageSharp ImageResult.FromMemory on the reconstructed JPEG (CameraFrame.Jpeg)";
 
-        c.Crit("frames", $"at least {ControlCheck.CameraMinFrames} complete frames reassembled in {ControlCheck.CameraWindowMs} ms", win.Count, win.Count >= ControlCheck.CameraMinFrames);
-        c.Crit("decodes", $"every frame in the window decodes as a JPEG of {ControlCheck.CameraWidth}x{ControlCheck.CameraHeight} (a colour-flagged frame: its half-width encoded geometry)",
-            new JsonObject { ["decodeFailures"] = decodeFail, ["wrongGeometry"] = wrongGeometry }, win.Count > 0 && decodeFail == 0 && wrongGeometry == 0);
+        c.Crit("frames", $"at least {ControlCheck.CameraMinFrames} complete frames reassembled in {ControlCheck.CameraWindowMs} ms. "
+                         + "The threshold is the test spec's, not source: no record gives the stream's frame rate; the measured rate is framesPerSecond",
+            new JsonObject { ["frames"] = win.Count, ["framesPerSecond"] = LinkCheck.Num(fps) }, win.Count >= ControlCheck.CameraMinFrames);
+        string decodesExpected = $"every frame in the window that is not colour-flagged decodes as a JPEG of {ControlCheck.CameraWidth}x{ControlCheck.CameraHeight} with reported resolution {ControlCheck.CameraWidth}x{ControlCheck.CameraHeight}; "
+                                 + "colour-flagged frames are left out (M3-016 is HARDWARE_ONLY; their geometry is in the observation)";
+        var decodesMeasured = new JsonObject { ["framesJudged"] = judgedFrames, ["decodeFailures"] = decodeFail, ["wrongGeometry"] = wrongGeometry };
+        if (judgedFrames == 0 && win.Count > 0)
+            c.Crit("decodes", decodesExpected, decodesMeasured, null, "every frame in the window was colour-flagged; none is left to judge");
+        else
+            c.Crit("decodes", decodesExpected, decodesMeasured, judgedFrames > 0 && decodeFail == 0 && wrongGeometry == 0);
         c.Crit("saved", $"{ControlCheck.CameraSaved} frames saved to the bundle", saved.Count, saved.Count == ControlCheck.CameraSaved);
         c.Observation = new JsonObject
         {
             ["record"] = "M3-016", ["status"] = "HARDWARE_ONLY", ["verdict"] = null,
             ["question"] = "does any frame look colour?",
             ["framesWithColourFlag"] = colourFlagged, ["framesDecodedWithThreeComponents"] = threeComponent,
+            ["colourFramesNotDecoded"] = colourDecodeFail,
+            ["colourFrameGeometries"] = Histogram(colourGeometries),
             ["savedChannelSpread"] = "mean |R-G| + |G-B| of each saved frame decoded as RGB: 0 for a grey image",
         };
         c.Note = "no camera command is sent by this check: the stream is the ImageRequest {Stream, QVGA} the engine sends after SyncTime (M1-041); this check measures a 3 s window of it";
@@ -1245,30 +1521,42 @@ internal sealed class ControlRun
         string PhaseAt(double t) { string n = "pre"; foreach (var p in phases) { if (p.Start <= t) n = p.Name; else break; } return n; }
         CheckRec[] checks; lock (_checks) checks = _checks.ToArray();
         string[] ex; lock (_exceptions) ex = _exceptions.ToArray();
-
-        string overall = crashed is not null ? $"FAIL ({crashed})"
-            : checks.Length > 0 && checks.All(c => c.Status == "PASS") ? "PASS"
-            : checks.Any(c => c.Status == "FAIL") ? "FAIL"
-            : "INCOMPLETE";
-        var opts = new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+        // Everything the main thread may still be changing is copied under the gate.
+        JsonObject robotInfo, animInfo; string[] savedImages; (double From, double To)? camera; JsonNode[] checkJson;
         var records = ManifestStatuses();
         var status = records.ToDictionary(r => r!["id"]!.GetValue<string>(), r => r!["status"]!.GetValue<string>());
+        string[] statuses;
+        lock (_gate)
+        {
+            robotInfo = (JsonObject)_robotInfo.DeepClone();
+            animInfo = (JsonObject)_animInfo.DeepClone();
+            savedImages = _savedImages.ToArray();
+            camera = _cameraWindow;
+            checkJson = checks.Select(c => (JsonNode)c.ToJson(status)).ToArray();
+            statuses = checks.Select(c => c.Status).ToArray();
+        }
+
+        string overall = crashed is not null ? $"FAIL ({crashed})"
+            : statuses.Length > 0 && statuses.All(s => s == "PASS") ? "PASS"
+            : statuses.Any(s => s == "FAIL") ? "FAIL"
+            : "INCOMPLETE";
+        var opts = new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
         var result = new JsonObject
         {
             ["test"] = ControlCheck.TestId,
             ["overall"] = overall,
-            ["overallRule"] = "PASS only if every check is PASS; FAIL if any check is FAIL; INCOMPLETE if none failed but some were SKIPPED (a skipped check is not passed). humanNote verdicts do not enter it.",
+            ["overallRule"] = "PASS only if every check is PASS; FAIL if any check is FAIL; INCOMPLETE if none failed but some were SKIPPED (a skipped check is not passed). A check is PASS when every judged criterion passed; a criterion with pass null was not judged (its notJudged says why), does not enter the status and is listed in the check's unjudgedCriteria. humanNote verdicts do not enter it.",
             ["tool"] = "cozmo-conformance control-check",
             ["robot"] = new JsonObject
             {
                 ["ip"] = _ip.ToString(), ["port"] = RobotAddress.RemotePort(false),
-                ["fwVersion"] = _robotInfo["fwVersion"]?.DeepClone(), ["fwIsShipped2381"] = _robotInfo["fwIsShipped2381"]?.DeepClone(),
-                ["firmwareWarning"] = _robotInfo["firmwareWarning"]?.DeepClone(), ["serial"] = _robotInfo["serial"]?.DeepClone(),
+                ["fwVersion"] = robotInfo["fwVersion"]?.DeepClone(), ["fwIsShipped2381"] = robotInfo["fwIsShipped2381"]?.DeepClone(),
+                ["firmwareWarning"] = robotInfo["firmwareWarning"]?.DeepClone(), ["serial"] = robotInfo["serial"]?.DeepClone(),
             },
-            ["options"] = new JsonObject { ["allowDrive"] = _allowDrive, ["obb"] = _obb, ["yes"] = _yes },
+            ["options"] = new JsonObject { ["allowDrive"] = _allowDrive, ["obb"] = _obb, ["noObb"] = _noObb, ["yes"] = _yes },
             ["provenance"] = "hardware verification only: a PASS does not raise the provenance or status of any cited record (AGENTS.md: hardware success does not upgrade provenance). The manager judges the bundle.",
-            ["checks"] = new JsonArray(checks.Select(c => (JsonNode)CheckJson(c, status)).ToArray()),
+            ["checks"] = new JsonArray(checkJson),
             ["hardwareOnlyUncertainty"] = new JsonArray(ControlCheck.HardwareOnly.Select(h => (JsonNode)new JsonObject { ["id"] = h.Id, ["status"] = status.GetValueOrDefault(h.Id, "?"), ["note"] = h.Note }).ToArray()),
             ["reports"] = new JsonObject
             {
@@ -1281,25 +1569,41 @@ internal sealed class ControlRun
                 ["framesOut"] = frames.Count(f => f.Out), ["framesIn"] = frames.Count(f => !f.Out),
             },
             ["records"] = records,
-            ["animation"] = _animInfo.DeepClone(),
-            ["savedImages"] = new JsonArray(_savedImages.Select(s => (JsonNode)s).ToArray()),
+            ["animation"] = animInfo.DeepClone(),
+            ["savedImages"] = new JsonArray(savedImages.Select(s => (JsonNode)s).ToArray()),
             ["phases"] = new JsonArray(phases.Select(p => (JsonNode)new JsonObject { ["name"] = p.Name, ["startMs"] = LinkCheck.Num(p.Start) }).ToArray()),
             ["marksMs"] = MarksJson(),
         };
-        File.WriteAllText(Path.Combine(_bundle, "result.json"), result.ToJsonString(opts));
-
-        var camera = _cameraWindow;
-        using (var w = new StreamWriter(Path.Combine(_bundle, "frames.jsonl")))
+        // Each file on its own: one that fails is reported and the rest are still written.
+        var failures = new List<string>();
+        void Write(string file, Action<string> write)
+        {
+            try { write(Path.Combine(_bundle, file)); }
+            catch (Exception e)
+            {
+                failures.Add(file);
+                Console.Error.WriteLine($"control-check: could not write {Path.Combine(_bundle, file)}: {e}");
+            }
+        }
+        Write("result.json", p => File.WriteAllText(p, result.ToJsonString(opts)));
+        Write("frames.jsonl", p =>
+        {
+            using var w = new StreamWriter(p);
             foreach (var f in frames) { var o = FrameJson(f, camera); o["phase"] = PhaseAt(f.T); w.WriteLine(o.ToJsonString()); }
-        using (var w = new StreamWriter(Path.Combine(_bundle, "events.jsonl")))
+        });
+        Write("events.jsonl", p =>
+        {
+            using var w = new StreamWriter(p);
             foreach (var e in events)
             {
                 var o = new JsonObject { ["t"] = LinkCheck.Num(e.T), ["phase"] = PhaseAt(e.T), ["kind"] = e.Kind };
                 foreach (var kv in e.Data) o[kv.Key] = kv.Value?.DeepClone();
                 w.WriteLine(o.ToJsonString());
             }
-        File.WriteAllText(Path.Combine(_bundle, "env.json"), Env().ToJsonString(opts));
-        File.WriteAllText(Path.Combine(_bundle, "README.md"), Readme(overall, checks));
+        });
+        Write("env.json", p => File.WriteAllText(p, Env(robotInfo, animInfo).ToJsonString(opts)));
+        Write("README.md", p => File.WriteAllText(p, Readme(overall, checks, robotInfo, savedImages)));
+        if (failures.Count > 0) Console.Error.WriteLine($"control-check: the bundle is incomplete: {string.Join(", ", failures)} not written");
         return overall;
     }
 
@@ -1307,25 +1611,6 @@ internal sealed class ControlRun
     {
         lock (_marks) return new JsonObject(_marks.Select(kv => KeyValuePair.Create(kv.Key, LinkCheck.Num(kv.Value))));
     }
-
-    private static JsonObject CheckJson(CheckRec c, Dictionary<string, string> status) => new()
-    {
-        ["id"] = c.Def.Id,
-        ["title"] = c.Def.Title,
-        ["status"] = c.Status,
-        ["pass"] = c.Pass,
-        ["skipReason"] = c.SkipReason,
-        ["records"] = new JsonArray(c.Def.Records.Select(r => (JsonNode)new JsonObject { ["id"] = r, ["status"] = status.GetValueOrDefault(r, "?") }).ToArray()),
-        ["prerequisites"] = c.Prerequisites.DeepClone(),
-        ["criteria"] = c.Criteria.DeepClone(),
-        ["measured"] = c.Measured.DeepClone(),
-        ["warnings"] = new JsonArray(c.Warnings.Select(w => (JsonNode)w).ToArray()),
-        ["humanNote"] = c.HumanNote,
-        ["humanVerdict"] = null,
-        ["observation"] = c.Observation?.DeepClone(),
-        ["note"] = c.Note,
-        ["startMs"] = LinkCheck.Num(c.StartMs), ["endMs"] = LinkCheck.Num(c.EndMs),
-    };
 
     private static string WarningKind(string w)
     {
@@ -1353,7 +1638,7 @@ internal sealed class ControlRun
         return arr;
     }
 
-    private JsonObject Env()
+    private JsonObject Env(JsonObject robotInfo, JsonObject animInfo)
     {
         string? head = null, gitStatus = null;
         if (_repoRoot is not null)
@@ -1389,10 +1674,10 @@ internal sealed class ControlRun
                 ["Cozmo.Transport.dll"] = Sha256File(typeof(ReliableTransport).Assembly.Location),
                 ["Cozmo.Protocol.dll"] = Sha256File(typeof(Frame).Assembly.Location),
             },
-            ["robot"] = _robotInfo.DeepClone(),
+            ["robot"] = robotInfo.DeepClone(),
             ["robotFirmwareNote"] = "fwVersion is the RobotConnectionResponse's; firmwareVersionJson is the robot's firmwareVersion message (policy M1-040: logged on every connection, warned when not 2381)",
-            ["obb"] = _obb,
-            ["animation"] = _animInfo.DeepClone(),
+            ["obb"] = _obb, ["noObb"] = _noObb,
+            ["animation"] = animInfo.DeepClone(),
             ["allowDrive"] = _allowDrive,
             ["os"] = RuntimeInformation.OSDescription,
             ["osArchitecture"] = RuntimeInformation.OSArchitecture.ToString(),
@@ -1405,7 +1690,7 @@ internal sealed class ControlRun
             ["criteria"] = new JsonObject
             {
                 ["connectBudgetMs"] = ControlCheck.ConnectBudgetMs, ["calibrationWaitMs"] = ControlCheck.CalibrationWaitMs,
-                ["stateWindowMs"] = ControlCheck.StateWindowMs, ["stateCount"] = $"{ControlCheck.StateCountMin}..{ControlCheck.StateCountMax}",
+                ["stateWindowMs"] = ControlCheck.StateWindowMs, ["stateRateHz"] = $"{ControlCheck.StateRateMinHz}..{ControlCheck.StateRateMaxHz} (robot timestamps; the test's tolerance, not source)",
                 ["batteryV"] = $"{ControlCheck.BatteryMinV}..{ControlCheck.BatteryMaxV}",
                 ["headTargetsRad"] = $"{ControlCheck.HeadUpRad}, {ControlCheck.HeadDownRad} +/- {ControlCheck.HeadTolRad} within {ControlCheck.HeadWithinMs} ms",
                 ["liftTargetsMm"] = $"{ControlCheck.LiftUpMm}, {ControlCheck.LiftDownMm} +/- {ControlCheck.LiftTolMm} within {ControlCheck.LiftWithinMs} ms",
@@ -1420,12 +1705,12 @@ internal sealed class ControlRun
         };
     }
 
-    private string Readme(string overall, CheckRec[] checks)
+    private string Readme(string overall, CheckRec[] checks, JsonObject robotInfo, string[] savedImages)
     {
         var sb = new StringBuilder();
         sb.AppendLine($"# CONTROL hardware run: {overall}");
         sb.AppendLine();
-        sb.AppendLine($"Robot {_ip}:{RobotAddress.RemotePort(false)}, firmware {_robotInfo["fwVersion"]?.ToString() ?? "unknown"}{(_robotInfo["firmwareWarning"] is { } fw ? $" ({fw})" : "")}, started {_t0Local:yyyy-MM-dd HH:mm:ss zzz}. Command: `cozmo-conformance {string.Join(' ', _argv)}`.");
+        sb.AppendLine($"Robot {_ip}:{RobotAddress.RemotePort(false)}, firmware {robotInfo["fwVersion"]?.ToString() ?? "unknown"}{(robotInfo["firmwareWarning"] is { } fw ? $" ({fw})" : "")}, started {_t0Local:yyyy-MM-dd HH:mm:ss zzz}. Command: `cozmo-conformance {string.Join(' ', _argv)}`.");
         sb.AppendLine();
         sb.AppendLine("## What was run");
         sb.AppendLine();
@@ -1435,8 +1720,9 @@ internal sealed class ControlRun
         sb.AppendLine("|---|---|---|---|");
         foreach (var c in checks)
         {
-            var crit = string.Join("; ", c.Criteria.Select(x => x!["expected"]!.GetValue<string>()));
-            sb.AppendLine($"| {c.Def.Id} | {c.Status}{(c.Skipped ? ": " + c.SkipReason : "")} | {crit.Replace("|", "/")} | {c.HumanNote ?? ""} |");
+            var crit = string.Join("; ", c.CriteriaExpected());
+            var unjudged = c.Unjudged;
+            sb.AppendLine($"| {c.Def.Id} | {c.Status}{(c.Skipped ? ": " + c.SkipReason : "")}{(unjudged.Length == 0 ? "" : " (not judged: " + string.Join(", ", unjudged) + ")")} | {crit.Replace("|", "/")} | {c.HumanNote ?? ""} |");
         }
         sb.AppendLine();
         sb.AppendLine("## Files");
@@ -1445,7 +1731,7 @@ internal sealed class ControlRun
         sb.AppendLine("- `frames.jsonl`: every datagram the transport's frame trace reported, both directions: time `t` (ms since start), `phase`, header, sub-messages with CLAD tag and name, and the raw datagram as `hex`. Inbound frames holding only camera image chunks outside the CAMERA window carry `hexOmitted` instead of `hex`, to keep the bundle small.");
         sb.AppendLine("- `events.jsonl`: phases, check verdicts, the engine's log, transport warnings, the connection response, every handled RobotState (pose, head, lift, wheels, battery), every AnimationState, other robot messages, cube, cliff and calibration events.");
         sb.AppendLine("- `env.json`: git HEAD and dirty state, SHA-256 of the tool and the stack sources and of the assemblies that ran, the robot's firmware (connection response and firmwareVersion JSON, policy M1-040), OS, .NET, the fixed criteria.");
-        sb.AppendLine($"- `face-test-pattern.txt`: the image FACE showed. {string.Join(", ", _savedImages.Select(s => $"`{s}`"))}{(_savedImages.Count > 0 ? ": camera frames saved by CAMERA." : "")}");
+        sb.AppendLine($"- `face-test-pattern.txt`: the image FACE showed. {string.Join(", ", savedImages.Select(s => $"`{s}`"))}{(savedImages.Length > 0 ? ": camera frames saved by CAMERA." : "")}");
         sb.AppendLine();
         sb.AppendLine("## Limits of what the bundle shows");
         sb.AppendLine();
