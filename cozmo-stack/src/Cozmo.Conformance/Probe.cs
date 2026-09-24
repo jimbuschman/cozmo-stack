@@ -109,17 +109,18 @@ public static class Probe
     {
         if (a.Length < 2 || !IPAddress.TryParse(a[1], out var ip))
         {
-            Console.WriteLine("usage: probe <robot-ip> [--port 5551] [--include-motion] [--include-state] " +
+            Console.WriteLine("usage: probe <robot-ip> [--simulated] [--include-motion] [--include-state] " +
                               "[--only <subsystem>] [--out results.json] [--log frames.log]");
             return 1;
         }
-        int port = 5551;
+        // fidelity: M1-001
+        if (a.Contains("--port")) { Console.WriteLine("--port is gone (M1-001, B3): the remote port is 5551, or 5552 with --simulated"); return 1; }
+        bool simulated = a.Contains("--simulated");   // B3: 5552 when simulated, else 5551
         bool motion = a.Contains("--include-motion"), state = a.Contains("--include-state");
         string? only = null, outPath = "probe-results.json", log = null;
         for (int i = 2; i < a.Length; i++)
         {
-            if (a[i] == "--port") port = int.Parse(a[++i]);
-            else if (a[i] == "--only") only = a[++i];
+            if (a[i] == "--only") only = a[++i];
             else if (a[i] == "--out") outPath = a[++i];
             else if (a[i] == "--log") log = a[++i];
         }
@@ -154,8 +155,8 @@ public static class Probe
             }
         };
 
-        Console.WriteLine($"probe: connecting to {ip}:{port}   frame log: {log}");
-        try { await link.ConnectAsync(ip, port, TimeSpan.FromSeconds(5)); }
+        Console.WriteLine($"probe: connecting to {ip}:{RobotAddress.RemotePort(simulated)}   frame log: {log}");
+        try { await link.ConnectAsync(ip, simulated, TimeSpan.FromSeconds(5)); }
         catch (Exception e) { Console.WriteLine($"FAIL connect: {e.Message}"); return 10; }
         Console.WriteLine("connected; running probes (safe messages only unless --include-motion/--include-state)\n");
 

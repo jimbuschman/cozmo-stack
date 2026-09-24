@@ -130,7 +130,15 @@ Layers go bottom-up, one at a time: M1 transport, M2 protocol, then device, cont
 1. **Inventory.** The extractor traces the layer. The manager writes `re-analysis/inventory/<subsystem>.md`, which names every record of the subsystem (new ones included) with its citation or UNKNOWN, and updates the manifest records to match.
 2. **Checkpoint: the operator approves the inventory.** Then the manager runs `python re-analysis/tools/fidelity.py --approve <subsystem>`, which freezes the evidence. From then on the checker rejects any change to the inventory, to a record's title, authority, evidence, live_path or hardware_required, or to a status, except an IMPLEMENTATION_GAP being built. Anything new found during implementation goes back to the extractor and a new approval.
 3. **Implement** the discrepancies between the code and the inventory. Existing code is a candidate: whatever the inventory supports stays, and whatever it doesn't is repaired or rebuilt.
-4. **Verify.** The verifier returns PASS, `fidelity.py --check` passes, and the tests pass. Then the manager commits without further operator review. `PROJECT_STATE.md` records what each commit accepted.
+4. **Verify.** Then the manager commits without further operator review. `PROJECT_STATE.md` records what each commit accepted, and the queue of cleanup items.
+   - **Findings that block a commit:**
+     - behavioural or source-fidelity defects: the code does something on the wire, or to what a handler or receiver sees, that the source does not support or contradicts;
+     - circular tests;
+     - races and deadlocks.
+   - **Findings that are queued instead** (fixed in a later batch, with no extra verify round): non-behavioural cleanup such as comments, citations, labels and formatting. This is allowed only while `fidelity.py --check` passes and no fidelity status becomes misleading.
+   - **After a behavioural correction,** re-verify only the affected diff and tests, not the whole batch.
+   - **The full test suite runs once,** immediately before the commit.
+   - **Batches are large.** Split one only when its diff would be unreviewable.
 5. **Hardware**, where the layer needs it: the manager writes the script and the operator runs it (see below).
 6. **Accept.** The manager sets the subsystem's review state to ACCEPTED with the accepted commit.
 

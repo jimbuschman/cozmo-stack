@@ -21,12 +21,14 @@ public static class SmokeTest
     public static async Task<int> Run(string[] a)
     {
         if (a.Length < 2 || !IPAddress.TryParse(a[1], out var ip)) return 1;
-        int port = 5551, seconds = 20; float? head = null; bool led = a.Contains("--led"), headlight = a.Contains("--headlight"), origin = a.Contains("--origin");
+        // fidelity: M1-001
+        if (a.Contains("--port")) { Console.WriteLine("--port is gone (M1-001, B3): the remote port is 5551, or 5552 with --simulated"); return 1; }
+        bool simulated = a.Contains("--simulated");   // B3: 5552 when simulated, else 5551
+        int seconds = 20; float? head = null; bool led = a.Contains("--led"), headlight = a.Contains("--headlight"), origin = a.Contains("--origin");
         string? log = null;
         for (int i = 2; i < a.Length; i++)
         {
-            if (a[i] == "--port") port = int.Parse(a[++i]);
-            else if (a[i] == "--seconds") seconds = int.Parse(a[++i]);
+            if (a[i] == "--seconds") seconds = int.Parse(a[++i]);
             else if (a[i] == "--head") head = float.Parse(a[++i], CultureInfo.InvariantCulture);
             else if (a[i] == "--log") log = a[++i];
         }
@@ -44,9 +46,9 @@ public static class SmokeTest
         link.Transport.Disconnected += r => Console.WriteLine($"  disconnected: {r}");
         link.Message += m => { if (m is not RobotState && m is not AnimationState) Console.WriteLine($"  <- {m}"); };
 
-        Console.WriteLine($"connecting to {ip}:{port} (ConnectionRequest, reliable seq 1) ...");
+        Console.WriteLine($"connecting to {ip}:{RobotAddress.RemotePort(simulated)} (ConnectionRequest, reliable seq 1) ...");
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        try { await link.ConnectAsync(ip, port, TimeSpan.FromSeconds(5)); }
+        try { await link.ConnectAsync(ip, simulated, TimeSpan.FromSeconds(5)); }
         catch (Exception e) { Console.WriteLine($"FAIL connect: {e.Message}"); lw?.Dispose(); Console.WriteLine($"frame log written to: {log}"); return 10; }
         Console.WriteLine($"connected in {sw.ElapsedMilliseconds} ms (ConnectionResponse received)");
 

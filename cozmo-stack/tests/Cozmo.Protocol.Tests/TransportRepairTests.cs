@@ -1043,43 +1043,60 @@ public class TransportRepairTests
     // ================================================================ M1-k
 
     /// <summary>
-    /// T-k1 — PRIMARY-SOURCE ORACLE. On ENOTCONN, UDPTransport::TryToReadMessage first gives the warning
-    /// every non-EAGAIN error gets (0x0083AAF6), then closes the socket and opens a new one
-    /// (0x0083AB22-34); the connection and its reliable state are kept.
+    /// T-k1 — PRIMARY-SOURCE ORACLE, repaired for correction C1. M1-022 B16: on ENOTCONN (0x0083AB22 cmp r0,#0x6b)
+    /// UDPTransport::TryToReadMessage first gives the "ReadFailed" warning every non-EAGAIN error gets
+    /// (0x0083AAC4, 0x0083AAF6), then CloseSocket (0x0083AB28) and, since the close succeeded (0x0083AB2C cbz r0),
+    /// OpenSocket on +0x98 (0x0083AB2E, 0x0083AB34), which CloseSocket has just set to 0xBAC9 = 47817 on both of
+    /// its paths (B38, 0x00839694..0x0083969C): the new socket is bound to INADDR_ANY:47817, not an ephemeral
+    /// port. The read returned −1, so the loop stops for this update (0x0083AA98): a datagram waiting behind the
+    /// error is read by the next update, on the new socket. The connection and its reliable state are kept.
+    /// Host mapping: ENOTCONN is SocketError.NotConnected.
     /// </summary>
     [Fact]
-    public void T_k1_NotConnectedReopensTheSocketAndKeepsTheConnection()
+    public void T_k1_NotConnectedReopensTheSocketOnPort47817AndKeepsTheConnection()
     {
         var (t, clk, net) = Connected(59984);
+        using var _t = t;                                   // disposed even if an assertion fails: frees 47817
         var warnings = new List<string>(); t.Warning += warnings.Add;
+        var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
         clk.NowMs = 1040; t.Send(new SyncTime(0));
         var c = t.Connection!;
         ushort next = c.NextOutSeq, lastIn = c.LastInAcked; int pending = c.PendingCount;
         Assert.True(pending > 0);
+        var old = t.CurrentSocket!;
 
         net.Error(SocketError.NotConnected);
+        net.Datagram(Raw(ReliableMessageType.SingleUnreliableMessage, 0, 0, 1, Data), t.Peer!);
         clk.NowMs = 1041; t.Pump();
-        var old = net.SocketsSeen[^1];
-        clk.NowMs = 1043; t.Pump();                         // the next read is on the new socket
-        var fresh = net.SocketsSeen[^1];
-
+        Assert.Empty(delivered);                            // B16: the loop stopped at the error
+        var fresh = t.CurrentSocket!;
         Assert.NotSame(old, fresh);
         Assert.True(old.SafeHandle.IsClosed);
         var local = Assert.IsType<IPEndPoint>(fresh.LocalEndPoint);
         Assert.Equal(IPAddress.Any, local.Address);
-        Assert.NotEqual(0, local.Port);
+        Assert.Equal(47817, local.Port);                    // C1 / B38: 0xBAC9
+        Assert.Equal(47817, t.StoredLocalPort);
+
+        clk.NowMs = 1043; t.Pump();                         // the next read is on the new socket
+        Assert.Same(fresh, net.SocketsSeen[^1]);
+        Assert.Equal(Data, Assert.Single(delivered));
+
         Assert.Equal(LinkState.Connected, t.State);
         Assert.Same(c, t.Connection);
         Assert.Equal(next, c.NextOutSeq);
         Assert.Equal(lastIn, c.LastInAcked);
         Assert.Equal(pending, c.PendingCount);
-        Assert.Contains("NotConnected", Assert.Single(warnings));
+        var w = Assert.Single(warnings);
+        Assert.Contains("ReadFailed", w);
+        Assert.Contains("NotConnected", w);
         t.Dispose();
     }
 
     /// <summary>
-    /// T-k2 — PRIMARY-SOURCE ORACLE. Any other receive error is a warning (0x0083AAF6) and nothing more:
-    /// the link stays Connected with its reliable state.
+    /// T-k2 — PRIMARY-SOURCE ORACLE. M1-022 B16: any other receive error is the "ReadFailed" warning
+    /// (0x0083AAC4, 0x0083AAF6) and nothing more: the socket is kept and the link stays Connected with its
+    /// reliable state. (ConnectionReset is how Windows reports an ICMP port-unreachable while
+    /// SIO_UDP_CONNRESET is left on; no row or policy covers that host behaviour.)
     /// </summary>
     [Fact]
     public void T_k2_AnyOtherReceiveErrorIsOnlyAWarning()
@@ -1090,9 +1107,11 @@ public class TransportRepairTests
         var c = t.Connection!;
         ushort next = c.NextOutSeq, lastIn = c.LastInAcked; int pending = c.PendingCount;
 
+        var sock = t.CurrentSocket;
         net.Error(SocketError.ConnectionReset);
         clk.NowMs = 1041; t.Pump();
-        Assert.Single(warnings);
+        Assert.Contains("ReadFailed", Assert.Single(warnings));
+        Assert.Same(sock, t.CurrentSocket);
         Assert.Equal(LinkState.Connected, t.State);
         Assert.Same(c, t.Connection);
         Assert.Equal(next, c.NextOutSeq);
@@ -1743,6 +1762,372 @@ public class TransportRepairTests
         Assert.Equal(LinkState.Connecting, t.State);                         // not clobbered by the old end
         t.ProcessIncoming(ConnectionResponse());                              // seq 1 on the new connection
         Assert.Equal(LinkState.Connected, t.State);                           // not lost
+    }
+
+    // ================================================================ batch 2c: the UDP socket and addressing
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-022 B12: the UDP ctor stores 0xBAC9 at +0x98 (0x00839546) but
+    /// RobotConnectionManager::Init stores 0 over it (0x0062EFEA str.w r5,[r6,#0x98]) before StartClient opens
+    /// the socket (0x0062F07E, 0x0083808E, 0x0083AD58), so the first open binds INADDR_ANY on an ephemeral port.
+    /// B38 (0x00839694..0x0083969C): CloseSocket sets fd -1 and +0x98 = 0xBAC9 = 47817.
+    /// The Start-after-Stop part rests on a MISSING item, not a row: R39 says only "Stop calls UDP Stop*", and
+    /// that Stop closes through CloseSocket (so a later Start binds 47817) is the batch 2c instruction.
+    /// </summary>
+    [Fact]
+    public void M1_022_B12_TheFirstOpenIsEphemeralAndAnOpenAfterACloseBinds47817()
+    {
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
+        Assert.Equal(0, t.StoredLocalPort);                 // B12: Init's 0
+        Assert.Null(t.CurrentSocket);                       // fd -1 until StartClient
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        var first = Assert.IsType<IPEndPoint>(t.LocalEndPoint);
+        Assert.Equal(IPAddress.Any, first.Address);
+        Assert.NotEqual(0, first.Port);
+        Assert.NotEqual(47817, first.Port);                 // ephemeral
+
+        t.Stop(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        Assert.Null(t.CurrentSocket);                       // B38: fd -1
+        Assert.Equal(47817, t.StoredLocalPort);             // B38: 0xBAC9
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        var second = Assert.IsType<IPEndPoint>(t.LocalEndPoint);
+        Assert.Equal(new IPEndPoint(IPAddress.Any, 47817), second);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-022 B11: OpenSocket asks getaddrinfo for (NULL, port, AI_PASSIVE, SOCK_DGRAM,
+    /// AF_INET) (0x00839ACA, 0x00839AD0, 0x00839AF2), sets SO_BROADCAST = 1 for AF_INET (0x00839D18/0x00839D1A)
+    /// and binds (0x00839D3A); there is no O_NONBLOCK. So the socket is an IPv4 UDP socket on INADDR_ANY, with
+    /// SO_BROADCAST set, and blocking.
+    /// </summary>
+    [Fact]
+    public void M1_022_B11_TheSocketIsIpv4UdpOnInaddrAnyWithSoBroadcastAndBlocking()
+    {
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, new ManualClock(), manualPump: true);
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        var s = t.CurrentSocket!;
+        Assert.Equal(AddressFamily.InterNetwork, s.AddressFamily);
+        Assert.Equal(SocketType.Dgram, s.SocketType);
+        Assert.Equal(ProtocolType.Udp, s.ProtocolType);
+        Assert.Equal(IPAddress.Any, ((IPEndPoint)s.LocalEndPoint!).Address);
+        Assert.Equal(1, (int)s.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast)!);
+        Assert.True(s.Blocking);
+    }
+
+    /// <summary>
+    /// HOST MAPPING of a PRIMARY-SOURCE row. M1-022 B11: a bind that fails with EADDRINUSE is only a warning
+    /// (0x00839E70), so the socket is kept. On this host EADDRINUSE is SocketError.AddressAlreadyInUse: with
+    /// 47817 held by another socket, the open after a close (B38) warns and keeps its (unbound) socket.
+    /// </summary>
+    [Fact]
+    public void M1_022_B11_AnAddressInUseBindIsOnlyAWarningAndTheSocketIsKept()
+    {
+        using var holder = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        holder.Bind(new IPEndPoint(IPAddress.Any, 47817));
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, new ManualClock(), manualPump: true);
+        var warnings = new List<string>(); t.Warning += warnings.Add;
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));   // ephemeral: no conflict
+        Assert.Empty(warnings);
+        t.Stop(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));   // 47817: held
+        Assert.Contains(warnings, w => w.Contains("AddressAlreadyInUse"));
+        Assert.NotNull(t.CurrentSocket);                    // kept
+        Assert.Null(t.LocalEndPoint);                       // not bound
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE, with a HOST MAPPING for the failed close. M1-022 B16: after ENOTCONN, CloseSocket is
+    /// called (0x0083AB28) and OpenSocket only if it returned success (0x0083AB2C cbz r0); B38: close failures are
+    /// logged and fd becomes -1 and +0x98 0xBAC9 on both paths (0x00839694..0x0083969C). With the close failing,
+    /// no socket is opened, and the next update reads nothing, since the read loop runs only if fd &gt;= 0
+    /// (G4.5, 0x0083AD08). Host mapping: .NET reports no closesocket failure, so the failure is simulated through
+    /// the close seam.
+    /// </summary>
+    [Fact]
+    public void M1_022_B16_ANotConnectedReopenIsSkippedWhenTheCloseFailed()
+    {
+        var (t, clk, net) = Connected(59961);
+        var warnings = new List<string>(); t.Warning += warnings.Add;
+        t.CloseHook = s => { s.Close(); throw new SocketException((int)SocketError.NotSocket); };
+        net.Error(SocketError.NotConnected);
+        clk.NowMs = 1041; t.Pump();
+        Assert.Null(t.CurrentSocket);                       // fd -1, not reopened
+        Assert.Equal(47817, t.StoredLocalPort);             // set on the failure path too
+        Assert.Contains(warnings, w => w.Contains("ReadFailed"));
+        Assert.Contains(warnings, w => w.Contains("CloseSocket: close failed"));
+        Assert.NotNull(t.Connection);                       // nothing torn down
+
+        int reads = net.SocketsSeen.Count;
+        net.Datagram(Raw(ReliableMessageType.SingleUnreliableMessage, 0, 0, 1, Data), t.Peer!);
+        clk.NowMs = 1043; t.Pump();
+        Assert.Equal(reads, net.SocketsSeen.Count);         // no socket: no read
+        t.Dispose();
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-022 B16: the loop runs while TryToReadMessage returns 1 (0x0083AD10..0x0083AD18);
+    /// a recvmsg result &lt;= 0 stops it (0x0083AA98), a 0-byte datagram too. The datagram behind it is read by
+    /// the next update. Whether the 0-byte read warns is MISSING (verifier reading, batch 2c: it goes down the
+    /// errno path with a stale errno), so no warning is asserted either way.
+    /// </summary>
+    [Fact]
+    public void M1_022_B16_AZeroByteDatagramStopsTheDrainForThisUpdate()
+    {
+        var (t, clk, net) = Connected(59960);
+        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
+        net.Datagram(Array.Empty<byte>(), t.Peer!);
+        net.Datagram(Raw(ReliableMessageType.SingleUnreliableMessage, 0, 0, 1, Data), t.Peer!);
+        clk.NowMs = 1041; t.Pump();
+        Assert.Empty(delivered);                            // the loop stopped; whether it warns is MISSING
+        clk.NowMs = 1043; t.Pump();
+        Assert.Equal(Data, Assert.Single(delivered));
+        t.Dispose();
+    }
+
+    /// <summary>
+    /// HOST MAPPING of M1-022 B16 on the production read (no hook): recvmsg(MSG_DONTWAIT) on the blocking socket
+    /// is realised as a zero-timeout poll then a read, over a real loopback socket. A 0-byte datagram stops the
+    /// drain for the update (0x0083AA98); the datagram behind it is read by the next update; with nothing waiting
+    /// the read reports EAGAIN and does not block. (No warning is asserted: whether the 0-byte read warns is
+    /// MISSING.)
+    /// </summary>
+    [Fact]
+    public void M1_022_B16_OnTheHostAZeroByteDatagramStopsTheDrainAndAnEmptyReadDoesNotBlock()
+    {
+        using var robot = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        robot.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
+        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        t.Connect(IPAddress.Loopback, ((IPEndPoint)robot.LocalEndPoint!).Port);
+        var local = new IPEndPoint(IPAddress.Loopback, ((IPEndPoint)t.LocalEndPoint!).Port);
+        robot.SendTo(ConnectionResponse(), local);
+        Thread.Sleep(100);
+        clk.NowMs = 1001; t.Pump();
+        Assert.Equal(LinkState.Connected, t.State);
+
+        robot.SendTo(Array.Empty<byte>(), local);
+        robot.SendTo(Raw(ReliableMessageType.SingleReliableMessage, 2, 2, 1, Data), local);
+        Thread.Sleep(100);
+        clk.NowMs = 1041; t.Pump();
+        Assert.Empty(delivered);
+        clk.NowMs = 1043;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        t.Pump();
+        Assert.Equal(Data, Assert.Single(delivered));
+        t.Pump();                                           // nothing waiting: EAGAIN, silent, no block
+        Assert.True(sw.ElapsedMilliseconds < 1000, $"a read blocked for {sw.ElapsedMilliseconds} ms");
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-022 B10: sendto with flags 0 (0x0083A37C); a send that returns fewer bytes than
+    /// asked logs "SentWrongNumBytes" (0x0083A39A). It is not a failure: no AddSendError.
+    /// </summary>
+    [Fact]
+    public void M1_022_B10_AShortSendLogsSentWrongNumBytes()
+    {
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
+        var warnings = new List<string>(); t.Warning += warnings.Add;
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        t.SendHook = (_, datagram, _) => datagram.Length - 1;
+        t.Connect(IPAddress.Loopback, 59959);
+        Assert.Contains(warnings, w => w.Contains("SentWrongNumBytes"));
+        Assert.Equal(0, t.UdpSendErrors[6]);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-022 B10: a failed sendto counts AddSendError(6) (0x0083A552); there is no retry
+    /// and no disconnect. The one attempt is made, the link and its connection stay, and the message stays
+    /// pending for the ordinary resend rules. The warning and the +0x88 time are not asserted: when the source
+    /// gives them is MISSING (B10 rate limit; verifier reading 0x0083A648..0x0083A666, pending inventory
+    /// correction). Host mapping: a failed sendto is a SocketException.
+    /// </summary>
+    [Fact]
+    public void M1_022_B10_AFailedSendCountsAddSendError6AndDoesNotRetryOrDisconnect()
+    {
+        var clk = new ManualClock { NowMs = 1234 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
+        var reasons = new List<string>(); t.Disconnected += reasons.Add;
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        int calls = 0;
+        t.SendHook = (_, _, _) => { calls++; throw new SocketException((int)SocketError.NetworkUnreachable); };
+        t.Connect(IPAddress.Loopback, 59958);
+        Assert.Equal(1, calls);                             // one attempt, no retry
+        Assert.Equal(1, t.UdpSendErrors[6]);
+        Assert.Equal(LinkState.Connecting, t.State);        // no disconnect
+        Assert.Empty(reasons);
+        Assert.Contains(t.Connection!.Pending, p => p.Type == ReliableMessageType.ConnectionRequest);
+        Assert.NotNull(t.CurrentSocket);
+    }
+
+    /// <summary>
+    /// VERIFIER READING, batch 2c; pending inventory correction (not a frozen row). M1-022 B10 with fd −1: UDP
+    /// SendData has no fd guard, so sendto(−1) fails and takes the AddSendError(6) path (0x0083A374, 0x0083A386).
+    /// A Connect before Start counts AddSendError(6) once for its one ConnectionRequest send, and nothing
+    /// else changes: no disconnect, the request stays pending.
+    /// </summary>
+    [Fact]
+    public void M1_022_B10_ASendWithNoSocketCountsAddSendError6()
+    {
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, new ManualClock { NowMs = 1000 }, manualPump: true);
+        Assert.Null(t.CurrentSocket);
+        t.Connect(IPAddress.Loopback, 59955);
+        Assert.Equal(1, t.UdpSendErrors[6]);
+        Assert.Equal(LinkState.Connecting, t.State);
+        Assert.Contains(t.Connection!.Pending, p => p.Type == ReliableMessageType.ConnectionRequest);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-023 G4.4: the WifiUtil handler does nothing if fd (+0x94) &lt; 0 (0x0083BAD6,
+    /// 0x0083BADC blt); otherwise it calls ResetSocket (0x0083BAE0) and logs "WifiUtil.BindTransport" / "reset
+    /// socket %d" (0x0083BB54, 0x0083BB6C). G4.5: ResetSocket only sets +0x9D (0x0083A258): the socket is
+    /// untouched until the next update.
+    /// </summary>
+    [Fact]
+    public void M1_023_G4_4_TheBindSignalSetsTheResetFlagOnlyWhenASocketIsOpen()
+    {
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, new ManualClock(), manualPump: true);
+        var warnings = new List<string>(); t.Warning += warnings.Add;
+        t.NetworkBindSignal();                              // fd -1: nothing
+        Assert.False(t.ResetRequested);
+        Assert.Empty(warnings);
+
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        var s = t.CurrentSocket;
+        t.NetworkBindSignal();
+        Assert.True(t.ResetRequested);
+        Assert.Same(s, t.CurrentSocket);                    // only the flag
+        Assert.Contains(warnings, w => w.Contains("WifiUtil.BindTransport") && w.Contains("reset socket"));
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-023 G4.5 / B18: the next UDPTransport::Update calls CloseSocket (0x0083ACF0) and,
+    /// since it returned 1 (0x0083ACF4), OpenSocket on +0x98 (0x0083ACF8..0x0083ACFE), which the close has just
+    /// set to 47817 (B38); the flag is cleared (0x0083AD04); then the read loop runs on the new socket
+    /// (0x0083AD08..0x0083AD18). The connections are untouched.
+    /// </summary>
+    [Fact]
+    public void M1_023_G4_5_TheNextUpdateClosesReopensOn47817ClearsTheFlagAndReads()
+    {
+        var (t, clk, net) = Connected(59957);
+        using var _t = t;                                   // disposed even if an assertion fails: frees 47817
+        var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
+        var c = t.Connection;
+        var old = t.CurrentSocket!;
+        t.NetworkBindSignal();
+        net.Datagram(Raw(ReliableMessageType.SingleUnreliableMessage, 0, 0, 1, Data), t.Peer!);
+        int reads = net.SocketsSeen.Count;
+        clk.NowMs = 1041; t.Pump();
+        Assert.False(t.ResetRequested);
+        Assert.True(old.SafeHandle.IsClosed);
+        var fresh = t.CurrentSocket!;
+        Assert.NotSame(old, fresh);
+        Assert.Equal(new IPEndPoint(IPAddress.Any, 47817), fresh.LocalEndPoint);
+        Assert.True(net.SocketsSeen.Count > reads);
+        Assert.All(net.SocketsSeen.Skip(reads), s => Assert.Same(fresh, s));   // read on the new socket
+        Assert.Equal(Data, Assert.Single(delivered));
+        Assert.Same(c, t.Connection);
+        Assert.Equal(LinkState.Connected, t.State);
+        t.Dispose();
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE, with a HOST MAPPING for the failed close. M1-023 G4.5: with the reset flag set, a close
+    /// that does not return 1 (0x0083ACF4 cmp r0,#1; bne) is not reopened, the flag is cleared either way
+    /// (0x0083AD04), and with fd -1 the read loop does not run (0x0083AD08).
+    /// </summary>
+    [Fact]
+    public void M1_023_G4_5_AFailedCloseIsNotReopenedAndTheFlagIsStillCleared()
+    {
+        var (t, clk, net) = Connected(59956);
+        t.CloseHook = s => { s.Close(); throw new SocketException((int)SocketError.NotSocket); };
+        t.NetworkBindSignal();
+        int reads = net.SocketsSeen.Count;
+        clk.NowMs = 1041; t.Pump();
+        Assert.False(t.ResetRequested);
+        Assert.Null(t.CurrentSocket);
+        Assert.Equal(reads, net.SocketsSeen.Count);         // no socket: the read loop did not run
+        t.Dispose();
+    }
+
+    /// <summary>A stand-in for NetworkChange.NetworkAddressChanged that a test can raise.</summary>
+    private sealed class FakeNetworkChange
+    {
+        private System.Net.NetworkInformation.NetworkAddressChangedEventHandler? _handlers;
+        public HostNetworkChange Source => new(h => _handlers += h, h => _handlers -= h);
+        public int Subscribers => _handlers?.GetInvocationList().Length ?? 0;
+        public void Raise() => _handlers?.Invoke(null, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// POLICY TEST (M1-037, decision D5), not a source oracle. The host's address-change notification raises the
+    /// WifiUtil handler (M1-023 G4.4), which sets the reset flag; the transport is subscribed for its lifetime
+    /// (G4.1: the registration lives as long as the RCM) and unsubscribed by Dispose, after which the
+    /// notification reaches nothing.
+    /// </summary>
+    [Fact]
+    public void M1_037_TheHostAddressChangeRaisesTheSocketResetForTheTransportsLifetime()
+    {
+        var net = new FakeNetworkChange();
+        var t = new ReliableTransport(TransportOptions.EngineDefaults, new ManualClock(), manualPump: true, net.Source);
+        Assert.Equal(1, net.Subscribers);
+        net.Raise();                                        // no socket yet: G4.4 does nothing
+        Assert.False(t.ResetRequested);
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        net.Raise();
+        Assert.True(t.ResetRequested);
+        t.Dispose();
+        Assert.Equal(0, net.Subscribers);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-001 B3: the remote port is 5552 if isSimulated (0x0069DE84 movw r2,#0x15b0;
+    /// 0x0069DE92 ldrb r0,[r1,#0x10]), else 5551 (0x0069DE98 movweq r2,#0x15af), with the IP taken from the
+    /// caller (0x0069DE9E TransportAddress(char const*, int)). No socket is opened, so nothing is sent.
+    /// </summary>
+    [Fact]
+    public void M1_001_B3_TheRemotePortIs5551Or5552ByIsSimulated()
+    {
+        Assert.Equal(5551, RobotAddress.RemotePort(isSimulated: false));
+        Assert.Equal(5552, RobotAddress.RemotePort(isSimulated: true));
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, new ManualClock(), manualPump: true);
+        var ip = IPAddress.Parse("10.9.8.7");
+        t.Connect(ip);
+        Assert.Equal(new IPEndPoint(ip, 5551), t.Peer);
+        t.Connect(ip, isSimulated: true);
+        Assert.Equal(new IPEndPoint(ip, 5552), t.Peer);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-001 B1 (unity/scripts/csharp/ConnectionFlowController.cs:199, :204, :673;
+    /// RobotEngineManager.cs:524-526): the IP is 172.31.1.1 for a physical robot and 127.0.0.1 for the simulator;
+    /// with B3 the port follows isSimulated. RobotLink.ConnectAsync with no IP uses them; an explicit IP is kept.
+    /// The send is swallowed by the send seam so nothing leaves the host.
+    /// </summary>
+    [Fact]
+    public async Task M1_001_B1_TheDefaultIpIs172_31_1_1Or127_0_0_1()
+    {
+        Assert.Equal(IPAddress.Parse("172.31.1.1"), RobotAddress.DefaultFor(isSimulated: false));
+        Assert.Equal(IPAddress.Parse("127.0.0.1"), RobotAddress.DefaultFor(isSimulated: true));
+
+        foreach (var (sim, ip, expected) in new[]
+        {
+            (false, (IPAddress?)null, new IPEndPoint(IPAddress.Parse("172.31.1.1"), 5551)),
+            (true, (IPAddress?)null, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 5552)),
+            (false, IPAddress.Parse("10.9.8.7"), new IPEndPoint(IPAddress.Parse("10.9.8.7"), 5551)),
+        })
+        {
+            using var t = new ReliableTransport(TransportOptions.EngineDefaults, new ManualClock(), manualPump: true);
+            t.SendHook = (_, datagram, _) => datagram.Length;
+            using var link = new RobotLink(t);
+            await Assert.ThrowsAsync<TimeoutException>(() => link.ConnectAsync(ip, sim, TimeSpan.FromMilliseconds(50)));
+            Assert.Equal(expected, t.Peer);
+        }
     }
 
     // ------------------------------------------------------------------ rig

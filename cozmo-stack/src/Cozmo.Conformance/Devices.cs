@@ -85,9 +85,9 @@ public static class Devices
         return (path, new StreamWriter(path, false, Encoding.UTF8));
     }
 
-    private static async Task<CozmoRobot> ConnectAsync(IPAddress ip, int port, StreamWriter log)
+    private static async Task<CozmoRobot> ConnectAsync(IPAddress ip, bool simulated, StreamWriter log)
     {
-        var robot = await CozmoRobot.ConnectAsync(ip, port);
+        var robot = await CozmoRobot.ConnectAsync(ip, simulated);
         robot.Transport.FrameTrace += e =>
         {
             lock (log) log.WriteLine($"{e.Utc:O} {(e.Outbound ? "TX" : "RX")} {Hex.Dump(e.Raw)}{(e.Error is null ? "" : "  !! " + e.Error)}");
@@ -102,17 +102,19 @@ public static class Devices
         return robot;
     }
 
-    private static (IPAddress ip, int port, string? log)? Common(string[] a, out string[] rest)
+    // fidelity: M1-001
+    /// <summary>The robot's IP, whether it is the simulator (B3: that alone picks the remote port, 5551 or 5552), and the log.</summary>
+    private static (IPAddress ip, bool simulated, string? log)? Common(string[] a, out string[] rest)
     {
         rest = a;
         if (a.Length < 2 || !IPAddress.TryParse(a[1], out var ip)) return null;
-        int port = 5551; string? log = null;
+        if (a.Contains("--port")) { Console.WriteLine("--port is gone (M1-001, B3): the remote port is 5551, or 5552 with --simulated"); return null; }
+        string? log = null;
         for (int i = 2; i < a.Length - 1; i++)
         {
-            if (a[i] == "--port") port = int.Parse(a[i + 1]);
-            else if (a[i] == "--log") log = a[i + 1];
+            if (a[i] == "--log") log = a[i + 1];
         }
-        return (ip, port, log);
+        return (ip, a.Contains("--simulated"), log);
     }
 
     /// <summary>
@@ -138,7 +140,7 @@ public static class Devices
         var (logPath, log) = OpenLog(c.Value.log, "camera");
         Console.WriteLine($"frame log: {logPath}");
         Console.WriteLine($"images to: {outDir}");
-        using var robot = await ConnectAsync(c.Value.ip, c.Value.port, log);
+        using var robot = await ConnectAsync(c.Value.ip, c.Value.simulated, log);
 
         var saved = new List<string>();
         bool savedNominalColor = false;
@@ -233,7 +235,7 @@ public static class Devices
 
         var (logPath, log) = OpenLog(c.Value.log, "face");
         Console.WriteLine($"frame log: {logPath}");
-        using var robot = await ConnectAsync(c.Value.ip, c.Value.port, log);
+        using var robot = await ConnectAsync(c.Value.ip, c.Value.simulated, log);
 
         Console.WriteLine($"holding the image on the face for {seconds:F1}s ...");
         robot.Display.Hold(image, TimeSpan.FromSeconds(seconds));
@@ -340,7 +342,7 @@ public static class Devices
 
         var (logPath, log) = OpenLog(c.Value.log, "tone");
         Console.WriteLine($"frame log: {logPath}");
-        using var robot = await ConnectAsync(c.Value.ip, c.Value.port, log);
+        using var robot = await ConnectAsync(c.Value.ip, c.Value.simulated, log);
         if (volume is { } v) { Console.WriteLine($"SetAudioVolume {v}"); robot.Audio.SetVolume((ushort)v); }
         robot.Audio.Codec = codec;
         if (inFlight >= 0)

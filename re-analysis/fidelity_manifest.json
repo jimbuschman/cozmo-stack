@@ -240,7 +240,7 @@
       "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "TransportRepairTests.M1_001_B3_TheRemotePortIs5551Or5552ByIsSimulated, TransportRepairTests.M1_001_B1_TheDefaultIpIs172_31_1_1Or127_0_0_1"
     },
     {
       "id": "M1-002",
@@ -645,7 +645,7 @@
       "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "TransportRepairTests.M1_022_B12_TheFirstOpenIsEphemeralAndAnOpenAfterACloseBinds47817, TransportRepairTests.M1_022_B11_TheSocketIsIpv4UdpOnInaddrAnyWithSoBroadcastAndBlocking, TransportRepairTests.M1_022_B11_AnAddressInUseBindIsOnlyAWarningAndTheSocketIsKept, TransportRepairTests.M1_022_B16_ANotConnectedReopenIsSkippedWhenTheCloseFailed, TransportRepairTests.M1_022_B16_AZeroByteDatagramStopsTheDrainForThisUpdate, TransportRepairTests.M1_022_B16_OnTheHostAZeroByteDatagramStopsTheDrainAndAnEmptyReadDoesNotBlock, TransportRepairTests.M1_022_B10_AShortSendLogsSentWrongNumBytes, TransportRepairTests.M1_022_B10_AFailedSendCountsAddSendError6AndDoesNotRetryOrDisconnect, TransportRepairTests.M1_022_B10_ASendWithNoSocketCountsAddSendError6, TransportRepairTests.T_k1_NotConnectedReopensTheSocketOnPort47817AndKeepsTheConnection, TransportRepairTests.T_k2_AnyOtherReceiveErrorIsOnlyAWarning, TransportRepairTests.T_k3_WouldBlockIsSilent"
     },
     {
       "id": "M1-023",
@@ -668,7 +668,7 @@
       "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE. The trigger on this host is the policy M1-037 (decision D5)",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "TransportRepairTests.M1_023_G4_4_TheBindSignalSetsTheResetFlagOnlyWhenASocketIsOpen, TransportRepairTests.M1_023_G4_5_TheNextUpdateClosesReopensOn47817ClearsTheFlagAndReads, TransportRepairTests.M1_023_G4_5_AFailedCloseIsNotReopenedAndTheFlagIsStillCleared"
     },
     {
       "id": "M1-024",
@@ -926,7 +926,7 @@
       "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "TransportRepairTests.M1_037_TheHostAddressChangeRaisesTheSocketResetForTheTransportsLifetime"
     },
     {
       "id": "M1-038",

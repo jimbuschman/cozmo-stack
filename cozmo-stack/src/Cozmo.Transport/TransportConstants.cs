@@ -1,6 +1,36 @@
 using System.Diagnostics;
+using System.Net;
 
 namespace Cozmo.Transport;
+
+// fidelity: M1-001
+/// <summary>
+/// Where the robot is. B1: Unity picks the IP, 172.31.1.1 for a physical robot and 127.0.0.1 for the simulator
+/// (unity/scripts/csharp/ConnectionFlowController.cs:199, :204, :673; RobotEngineManager.cs:524-526), and sends
+/// one ConnectToRobot(ipAddress, isSimulated). B3: the engine takes the IP from that message and picks the
+/// remote port from isSimulated alone, 5552 when simulated, else 5551 (0x0069DE84 movw r2,#0x15b0; 0x0069DE92
+/// ldrb r0,[r1,#0x10]; 0x0069DE98 movweq r2,#0x15af; 0x0069DE9E TransportAddress(char const*, int)). There is
+/// no port override.
+/// B4 (kP_ROBOT_ADVERTISING_PORT is only logged; Init refuses a value &gt;= 0x10000) has no counterpart here:
+/// this stack has no advertising-port configuration input.
+/// </summary>
+public static class RobotAddress
+{
+    /// <summary>B1: the physical robot's IP.</summary>
+    public static IPAddress Physical => IPAddress.Parse("172.31.1.1");
+    /// <summary>B1: the simulator's IP.</summary>
+    public static IPAddress Simulator => IPAddress.Loopback;
+    /// <summary>B3: 0x0069DE98 movweq r2,#0x15af.</summary>
+    public const int PhysicalPort = 5551;
+    /// <summary>B3: 0x0069DE84 movw r2,#0x15b0.</summary>
+    public const int SimulatedPort = 5552;
+
+    /// <summary>B1: the IP Unity uses when the caller gives none.</summary>
+    public static IPAddress DefaultFor(bool isSimulated) => isSimulated ? Simulator : Physical;
+
+    /// <summary>B3: the remote port, from isSimulated alone.</summary>
+    public static int RemotePort(bool isSimulated) => isSimulated ? SimulatedPort : PhysicalPort;
+}
 
 /// <summary>
 /// Tunables of the Anki reliable transport as configured by the Cozmo engine.
@@ -11,10 +41,6 @@ namespace Cozmo.Transport;
 /// </summary>
 public sealed class TransportOptions
 {
-    /// <summary>Physical robot: 5551. Simulated (Webots) robot: 5552. MessageHandler::AddRobotConnection selects on ConnectToRobot.isSimulated.</summary>
-    public int RobotPort { get; init; } = 5551;
-    public const int SimulatedRobotPort = 5552;
-
     /// <summary>engine: 33.3 ms (library default 250). Note the engine has SendSeparatePingMessages=false, so pings are only sent while the pending list is empty.</summary>
     public double TimeBetweenPingsMs { get; init; } = 33.3;
     /// <summary>engine: 33.3 ms (library default 50).</summary>

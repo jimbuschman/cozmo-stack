@@ -228,15 +228,19 @@ public sealed class CozmoRobot : IDisposable
         return robot;
     }
 
+    // fidelity: M1-001
     /// <summary>
-    /// Connects, completes the engine's handshake and waits for telemetry to start.
+    /// Connects, completes the engine's handshake and waits for telemetry to start. With no
+    /// <paramref name="address"/> the IP is the one Unity uses (B1): 172.31.1.1, or 127.0.0.1 when
+    /// <paramref name="isSimulated"/>. The remote port is 5552 when simulated, else 5551 (B3).
     /// </summary>
-    public static async Task<CozmoRobot> ConnectAsync(IPAddress address, int? port = null,
+    public static async Task<CozmoRobot> ConnectAsync(IPAddress? address = null, bool isSimulated = false,
                                                       TransportOptions? options = null,
                                                       TimeSpan? timeout = null,
                                                       bool enableAnimations = true,
                                                       string? blockPoolPath = null)
     {
+        address ??= RobotAddress.DefaultFor(isSimulated);
         var robot = new CozmoRobot(options);
         var connected = new TaskCompletionSource();
         void ok() => connected.TrySetResult();
@@ -248,7 +252,7 @@ public sealed class CozmoRobot : IDisposable
             // fidelity: M1-019
             // R39 / R38: Start opens the socket (once), Connect only queues the ConnectionRequest; both are posted, in order.
             robot.Transport.Start();
-            robot.Transport.Connect(address, port);
+            robot.Transport.Connect(address, isSimulated);
             var t = timeout ?? TimeSpan.FromSeconds(5);
             if (await Task.WhenAny(connected.Task, Task.Delay(t)) != connected.Task)
                 throw new TimeoutException($"no ConnectionResponse from {address} within {t.TotalSeconds:F1}s");

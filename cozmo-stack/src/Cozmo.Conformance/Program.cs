@@ -134,7 +134,7 @@ static int Usage()
           catalog [tag|name]                 print the official 161-message catalog (or one entry)
           pcap <file.pcap> [--raw]           decode every UDP datagram to/from ports 5551/5552 in a capture
           replay <file.pcap|hexfile>         feed robot->engine frames from a capture through our receive path and report what the connection state machine did
-          connect <robot-ip> [--port 5551] [--seconds 20] [--head <rad>] [--led] [--headlight] [--log <file>] [--origin]
+          connect <robot-ip> [--simulated] [--seconds 20] [--head <rad>] [--led] [--headlight] [--log <file>] [--origin]
                                              (a frame log is always written; default cozmo-frames-<timestamp>.log in the current directory, full path printed)
                                              hardware smoke test: connect, handshake, telemetry, one harmless command, disconnect
           fakerobot [--port 5551] [--seconds 60]  loopback stand-in for the robot transport (127.0.0.1) for testing the socket path without hardware

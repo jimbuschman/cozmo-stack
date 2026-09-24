@@ -6,8 +6,31 @@ Read first in every session. The manager keeps this file current; the process it
 
 - **Phase:** M1 repair. The inventory was corrected (C1..C5) and re-frozen on 2026-09-24; M1 has 31 IMPLEMENTATION_GAP, 6 COMPATIBILITY_POLICY (M1-013, M1-014, M1-034, M1-036, M1-037, M1-038) and 1 HARDWARE_ONLY. The candidate-vs-inventory comparison is `re-analysis/inventory/M1-transport.comparison.md`.
 - **Operator decisions:** D1-D4 approved 2026-09-23. On 2026-09-24: the inventory, D5, D6 (fatal behaviour recorded, isolation kept as policy), D7, the corrections C1..C5 and D8 (stop processing a frame after a DisconnectRequest, M1-038) approved; the three repair batches are authorised to run without further checkpoints.
-- **Batch 1 done (7aba301). Batch 2a done** (e6f2ed7; receive path: B17 truncation, receive-error counters, partial-header overrun after the header, M1-038); records it repaired are settled in one verified pass at the end of batch 2. **Batch 2b-i done** (8c9f405; clock, construction-time 2 ms scheduler + FIFO executor, posted sends, RobotLink isolation; three verification passes). **Batch 2b-ii done** (per-address connections, type-3 and timeout delete only that connection, timed-out flag, inbound creation, FinishConnection, posted Start/Stop, per-connection multipart, unconditional Dispose disconnect; two verification passes).
+- **Batch 1 done (7aba301). Batch 2a done** (e6f2ed7; receive path: B17 truncation, receive-error counters, partial-header overrun after the header, M1-038); records it repaired are settled in one verified pass at the end of batch 2. **Batch 2b-i done** (8c9f405; clock, construction-time 2 ms scheduler + FIFO executor, posted sends, RobotLink isolation; three verification passes). **Batch 2b-ii done** (0691429; per-address connections, type-3 and timeout delete only that connection, timed-out flag, inbound creation, FinishConnection, posted Start/Stop, per-connection multipart, unconditional Dispose disconnect; two verification passes). **Batch 2c done** (socket B10/B11/B12/B16/B38 with C1's 47817 reopen, the M1-023 reset mechanism, the M1-037 host trigger, M1-001 addressing; verifier PASS on the second pass). Batch 2 complete.
 - **Next:** repair batches, each implementer -> verifier -> commit. Batch 1: the 8 conforming records become EXACT_SOURCE (tags, test oracles) and the LINK check names M1-033. Batch 2: transport differences. Batch 3: the app layer. A MISSING item, a needed new policy or an inventory error stops the loop and goes to the operator.
+
+- **Governing plan (operator, 2026-09-24), in this order:**
+  1. Finish batch 2c: commit only if the verifier and the full suite pass; if either fails, fix only the 2c issue and re-verify. No scope growth.
+  2. One bounded transport hardware test. Its only purpose is to verify the rewritten socket and connection lifetime on a real robot before batch 3. It is one scripted run that saves a self-contained bundle; the operator runs it. It is not an exploratory campaign.
+  3. One comprehensive extraction pass before batch 3, treated as a closure pass for batch 3's dependencies. It covers every parked MISSING item and every source fact batch 3 needs: the handshake, firmware check, pre-validation gating, idle timeout, robotError handling, disconnect reasons and results, the 60 ms engine tick, and the exact ordering and conditions of setup messages such as SyncTime and InitController.
+  4. One operator re-approval checkpoint for the resulting inventory changes. It includes the approved M1-039 Windows UDP policy. No batch 3 code before approval. Anything unrecoverable is marked UNKNOWN or POLICY, never guessed.
+  5. Settle the batch 2 records (and implement M1-039) in the same verified pass.
+  6. Batch 3: implementer, read-only verifier, focused tests, full suite, commit. No stops between ordinary verifier/fix passes. Return to the operator only for:
+     - source evidence that contradicts the approved inventory;
+     - a genuinely new policy decision;
+     - a fact that is still MISSING or UNKNOWN;
+     - a material hardware issue.
+  - **Hard boundary:** after batch 3, M1 is closed except for documented HARDWARE_ONLY and COMPATIBILITY_POLICY items. If recoverable or missing source work is still growing after the closure pass, stop and report it; do not open another extraction cycle.
+- **Approved policy, not yet recorded (goes into step 4): M1-039.** On Windows, a UDP receive that fails with ConnectionReset (an ICMP port-unreachable response) is treated as no data for that receive attempt. It emits no warning and does not end the rest of the tick's drain; the drain continues, as the original, which never sees the error, would. Other socket errors keep their source-backed handling.
+
+- **Process change (operator, 2026-09-24):** only behavioural or source-fidelity defects, circular tests, and races or deadlocks block a commit. Non-behavioural cleanup is queued under "Cleanup queue" while the checker passes and no status becomes misleading. After a behavioural fix, only the affected diff is re-verified. The full suite runs once, just before the commit. Batches are large, and batch 3 is one batch after the closure pass. See AGENTS.md, Process, step 4.
+
+## Cleanup queue (non-behavioural; fold into the next batch)
+
+- `M1_019_R39_StopSendsNothingClearsTheConnectionsAndClosesTheSocket`: rebinds 47817 after Stop/Start but disposes only at its end (test isolation; give it `using`).
+- T_k2 (TransportRepairTests): uses Windows ConnectionReset as its input error and asserts "ReadFailed"; it conflicts with M1-039, so give it a different error when M1-039 is implemented. Its "no row or policy covers" comment is stale.
+- With no socket open, every resend counts error 6 and warns each time (the B10 rate-limit gap; resolved by the B10 inventory correction).
+- MISSING comments at RT FinishConnection (~:684) and the empty-container case (~:1054) are answered per PROJECT_STATE; update them when the inventory is corrected.
 
 ## Parked: MISSING items awaiting extraction and operator re-approval
 
@@ -24,6 +47,15 @@ Found during M1 repair. Each record stays IMPLEMENTATION_GAP; nothing is guessed
 - **M1-019, R38:** FinishConnection goes through QueueMessage (0x0083713A → QueueMessage, verifier reading); the code matches. Needs an inventory correction only.
 - **M1-018, R13:** an empty container body means no creation (0x008377DC cmp.w fp,#0, verifier reading); the code matches. Needs an inventory correction only.
 - **M1-025/M1-026 (batch 3), B23/B31:** whether the app layer filters connection events by address.
+- **M1-019/M1-022, R39:** does UDP Stop* close through CloseSocket (which stores 47817)? No row says so. Batch 2c implemented it that way because the manager's brief said so, which pre-empted the source. A Start after Stop therefore binds 47817 here, resting on this item.
+- **M1-022, B11:** what OpenSocket does after a bind failure other than EADDRINUSE, after a socket() failure, and after a setsockopt failure; and whether its close of a previous socket goes through CloseSocket.
+- **M1-022, B38:** what CloseSocket does and returns with no socket open. It is reachable when Stop runs between a reset signal and the next update. The batch 2c verifier read it: 0x008395CA..0x008395D0 → return 0, nothing stored; the code matches.
+- **M1-022, B10 (verifier reading, batch 2c):** the send-failure warning and +0x88 store are rate-limited: kEnableVerboseNetworkLogging is const false (0x00C934A4), and they happen only on the first failure or if now > +0x88 + 30000.0 (0x0083A648..0x0083A666, literal 0x0083A6C8). +0x88 starts at 0.0 (0x0083953C) and uses GetCurrentNetTimeStamp (0x0083A560). SendData has no fd guard: sendto(-1) takes the AddSendError(6) path (0x0083A374, 0x0083A386).
+- **M1-022, B11 (verifier reading, batch 2c):** a setsockopt failure closes via CloseSocket and returns 0 (0x00839D20 → 0x00839CF0); a bind failure other than EADDRINUSE also goes through CloseSocket (0x00839E72 → 0x0083A026); a socket() failure stores fd -1 and returns 0 (0x00839B92, 0x00839C80); OpenSocket's close of a previous socket is CloseSocket (0x00839A3A).
+- **M1-022, B16 (verifier reading, batch 2c):** a 0-byte read goes through the errno path with a stale errno (0x0083AA98 → 0x0083AAC4 / 0x0083AAF6 / 0x0083AB22), so whether it warns is not established.
+- **M1-019/M1-022, R39 (verifier reading, batch 2c):** UDP StopClient calls CloseSocket when fd >= 0 (0x0083AD66..0x0083AD70, via vtable 0x01037884+8+0x18), which supports Stop storing 47817.
+- **M1-022, B10:** what "a warning if verbose" means (no row defines verbose), which clock the +0x88 time uses, and what SendData does with fd -1.
+- **M1-001, B4:** not applicable: this stack has no advertising-port config input.
 - **M1-009, R21/R22:** the +0x2B flush flag of each type-6 part built in SendMessage's split path (0x00836DC0..0x00836EB4). The code gives every part the caller's flag (ReliableConnection.cs:85).
 
 ## Layer order and review state

@@ -15,12 +15,13 @@ namespace Cozmo.Conformance;
 /// </summary>
 public static class Anim
 {
-    private static (IPAddress ip, int port)? Target(string[] a)
+    // fidelity: M1-001
+    /// <summary>The robot's IP and whether it is the simulator (B3: that alone picks the remote port, 5551 or 5552).</summary>
+    private static (IPAddress ip, bool simulated)? Target(string[] a)
     {
         if (a.Length < 2 || !IPAddress.TryParse(a[1], out var ip)) return null;
-        int port = 5551;
-        for (int i = 2; i < a.Length - 1; i++) if (a[i] == "--port") port = int.Parse(a[i + 1]);
-        return (ip, port);
+        if (a.Contains("--port")) { Console.WriteLine("--port is gone (M1-001, B3): the remote port is 5551, or 5552 with --simulated"); return null; }
+        return (ip, a.Contains("--simulated"));
     }
 
     private static string? Arg(string[] a, string flag)
@@ -62,7 +63,7 @@ public static class Anim
     /// <summary>Plays one of Cozmo's own animations on the robot.</summary>
     public static async Task<int> Play(string[] a)
     {
-        if (Target(a) is not var (ip, port)) { Console.WriteLine("usage: anim <robot-ip> --assets <dir> --name <clip>|--group <group>"); return 1; }
+        if (Target(a) is not var (ip, simulated)) { Console.WriteLine("usage: anim <robot-ip> [--simulated] --assets <dir> --name <clip>|--group <group>"); return 1; }
         var assets = Arg(a, "--assets");
         var name = Arg(a, "--name");
         var group = Arg(a, "--group");
@@ -88,7 +89,7 @@ public static class Anim
         Console.WriteLine($"frame log: {logPath}");
 
         CozmoRobot robot;
-        try { robot = await CozmoRobot.ConnectAsync(ip, port); }
+        try { robot = await CozmoRobot.ConnectAsync(ip, simulated); }
         catch (Exception e) { Console.WriteLine($"FAIL connect: {e.Message}"); return 10; }
         using var _r = robot;
         robot.Transport.FrameTrace += e => { lock (log) log.WriteLine($"{e.Utc:O} {(e.Outbound ? "TX" : "RX")} {Hex.Dump(e.Raw)}"); };
@@ -305,11 +306,11 @@ public static class Anim
             return 0;
         }
 
-        var (ip, port) = Target(a)!.Value;
+        if (Target(a) is not var (ip, simulated)) return 1;
         double hold = Num(a, "--seconds", 2);
 
         CozmoRobot robot;
-        try { robot = await CozmoRobot.ConnectAsync(ip, port); }
+        try { robot = await CozmoRobot.ConnectAsync(ip, simulated); }
         catch (Exception e) { Console.WriteLine($"FAIL connect: {e.Message}"); return 10; }
         using var _r = robot;
 

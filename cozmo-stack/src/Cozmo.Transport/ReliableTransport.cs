@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using Cozmo.Protocol;
 
@@ -92,7 +93,27 @@ public sealed class ReliableTransport : IDisposable
     private readonly object _life = new();
     /// <summary>Written under <see cref="_life"/> before the dispose closure is posted; read under <see cref="_lock"/> by a sync-mode Connect.</summary>
     private volatile bool _disposed;
-    private Socket? _sock;
+    // fidelity: M1-022
+    /// <summary>
+    /// UDPTransport's socket, the fd at +0x94; null is fd −1. Written under <see cref="_lock"/> on the executor;
+    /// read without it only by the network-bind handler's fd test (G4.4).
+    /// </summary>
+    private volatile Socket? _sock;
+    // fidelity: M1-022
+    /// <summary>
+    /// UDPTransport's stored local port, +0x98. The ctor stores 0xBAC9 (0x00839546) and RobotConnectionManager::Init
+    /// then stores 0 (0x0062EFEA str.w r5,[r6,#0x98]), so the first open is ephemeral (B12). CloseSocket stores
+    /// 0xBAC9 = 47817 on both of its paths (B38, 0x00839694..0x0083969C), so every open after a close binds 47817
+    /// (B16, B18; correction C1).
+    /// </summary>
+    private int _localPort;
+    internal const int PortAfterClose = 0xBAC9;
+    // fidelity: M1-023
+    /// <summary>The reset flag, +0x9D (G4.5): set by <see cref="ResetSocket"/>, acted on and cleared by the next update.</summary>
+    private volatile bool _resetRequested;
+    // fidelity: M1-037
+    /// <summary>The host notification that raises the socket reset (policy M1-037, decision D5).</summary>
+    private readonly HostNetworkChange _networkChange;
     /// <summary>The current peer: the address the last Connect named (the facade's RobotConnectionData+0x30, B21).</summary>
     private volatile IPEndPoint? _peer;
     /// <summary>
@@ -164,6 +185,23 @@ public sealed class ReliableTransport : IDisposable
     /// </summary>
     public ReceiveErrorCounts ReliableReceiveErrors { get; } = new();
 
+    // fidelity: M1-022
+    /// <summary>
+    /// Send errors counted by <c>UDPTransport</c>, by the code it passes to AddSendError: 6 = a failed sendto
+    /// (B10, 0x0083A552). Diagnostics only; nothing reads them.
+    /// </summary>
+    public ReceiveErrorCounts UdpSendErrors { get; } = new();
+
+    // fidelity: M1-022
+    /// <summary>
+    /// B10: the time of the last failed sendto, which UDPTransport stores at +0x88 (0x0083A5F4). This stack's
+    /// initial value is −1; the source's initial value is 0.0 (0x0083953C; verifier reading, batch 2c; pending
+    /// inventory correction), which is not reproduced here. When the time is stored is MISSING (B10 rate limit;
+    /// verifier reading 0x0083A648..0x0083A666, pending inventory correction): see the send path.
+    /// MISSING: B10 says "time at +0x88" without naming the clock; this stack's net clock is used.
+    /// </summary>
+    public double LastSendErrorMs { get; private set; } = -1;
+
     /// <summary>How long a worker thread is given to finish during shutdown before it is abandoned.</summary>
     private static readonly TimeSpan JoinTimeout = TimeSpan.FromSeconds(2);
 
@@ -207,10 +245,23 @@ public sealed class ReliableTransport : IDisposable
     /// QueueMessage calls SendMessage on the caller's thread. The RelTransport executor still exists and still
     /// runs what QueueAction posts (Disconnect, Dispose); <see cref="Flush"/> waits for it.
     /// </summary>
-    internal ReliableTransport(TransportOptions? options, INetClock? clock, bool manualPump)
+    internal ReliableTransport(TransportOptions? options, INetClock? clock, bool manualPump, HostNetworkChange? networkChange = null)
     {
         _o = options ?? TransportOptions.EngineDefaults; _clock = clock ?? new StopwatchClock();
         ManualPump = manualPump;
+
+        // fidelity: M1-022
+        // B12: the UDP ctor stores 0xBAC9 at +0x98 (0x00839546) and RobotConnectionManager::Init stores 0 over
+        // it (0x0062EFEA) before its StartClient, so the first open binds an ephemeral port.
+        _localPort = PortAfterClose;
+        _localPort = 0;
+
+        // fidelity: M1-037, M1-023
+        // G4.1: the RCM ctor registers its UDP transport with WifiUtil for the RCM's lifetime; this stack raises
+        // the same handler (G4.4) from the host's address-change notification (policy M1-037, D5), subscribed
+        // here and unsubscribed by Dispose.
+        _networkChange = networkChange ?? HostNetworkChange.Host;
+        _networkChange.Subscribe(OnNetworkAddressChanged);
 
         // fidelity: M1-010, M1-021, M1-014, M1-020
         // R35/B14: the ctor creates the RelTransport queue and ChangeSyncMode(false) schedules the update
@@ -287,6 +338,27 @@ public sealed class ReliableTransport : IDisposable
 
     /// <summary>The socket's local endpoint, for tests that need to see it opened, reopened or closed.</summary>
     internal EndPoint? LocalEndPoint { get { lock (_lock) return _sock?.LocalEndPoint; } }
+
+    /// <summary>Test seam: the socket itself (fd +0x94), or null when there is none (fd −1).</summary>
+    internal Socket? CurrentSocket => _sock;
+
+    /// <summary>Test seam: the stored local port (+0x98) the next open binds.</summary>
+    internal int StoredLocalPort { get { lock (_lock) return _localPort; } }
+
+    /// <summary>Test seam: the reset flag (+0x9D).</summary>
+    internal bool ResetRequested => _resetRequested;
+
+    /// <summary>Stands in for <see cref="Socket.SendTo(byte[], SocketFlags, EndPoint)"/> on the send path; returns the bytes sent.</summary>
+    internal delegate int SendToHook(Socket socket, byte[] datagram, IPEndPoint to);
+
+    /// <summary>Test seam: when set, sendto goes through this instead of the socket. Null in production.</summary>
+    internal SendToHook? SendHook { get; set; }
+
+    /// <summary>
+    /// Test seam: when set, CloseSocket's close(fd) is this instead of <see cref="Socket.Close()"/>; throwing is a
+    /// failed close. Null in production.
+    /// </summary>
+    internal Action<Socket>? CloseHook { get; set; }
 
     // ------------------------------------------------------------- event dispatch
 
@@ -440,7 +512,7 @@ public sealed class ReliableTransport : IDisposable
     public static ReliableTransport CreateOffline(TransportOptions? options = null, INetClock? clock = null)
     {
         var t = new ReliableTransport(options, clock, manualPump: true) { _offline = true };
-        var peer = new IPEndPoint(IPAddress.Loopback, t._o.RobotPort);
+        var peer = new IPEndPoint(IPAddress.Loopback, RobotAddress.RemotePort(isSimulated: false));
         t._peer = peer;
         lock (t._lock) t._linkConn = t.CreateConnectionLocked(peer);
         t.State = LinkState.Connecting;
@@ -470,23 +542,16 @@ public sealed class ReliableTransport : IDisposable
     /// a socket. RT::StartClient posts that as an action (0x008371F4..0x00837214 → QueueAction; closure
     /// 0x0083808E → UDP StartClient; verifier reading, batch 2b-ii; pending inventory correction), so it runs
     /// on the RelTransport executor in order with the sends and updates, in both modes, and this returns
-    /// before the socket is open. A failure to open it is reported as a warning (the socket options and their
-    /// errors are batch 2c). After Dispose has begun this throws <see cref="ObjectDisposedException"/>.
+    /// before the socket is open. It opens on the stored local port (B12): 0, ephemeral, for the first open;
+    /// 47817 after any close (B38). After Dispose has begun this throws <see cref="ObjectDisposedException"/>.
     /// </summary>
     public void Start() => QueueAction("start", () =>
     {
         var effects = new List<Action>();
         lock (_lock)
         {
-            if (_sock is null)
-            {
-                try { _sock = OpenSocket(); }
-                catch (SocketException e)
-                {
-                    var code = e.SocketErrorCode; var msg = e.Message;
-                    effects.Add(() => Fan(Warning, $"opening the socket failed: {code} ({msg})"));
-                }
-            }
+            // fidelity: M1-022
+            if (_sock is null) OpenSocketLocked(_localPort, effects);   // B12: OpenSocket if fd == −1 (0x0083AD58)
         }
         RaiseAll(effects);
     });
@@ -510,8 +575,11 @@ public sealed class ReliableTransport : IDisposable
 
     private void StopLocked(string reason, List<Action> effects)
     {
-        try { _sock?.Close(); } catch { }
-        _sock = null;
+        // fidelity: M1-022
+        // MISSING: R39 says only "Stop calls UDP Stop*"; no row says that UDP Stop* closes through CloseSocket
+        // (and so stores 47817 at +0x98, B38). The close goes through CloseSocket here, per the batch 2c brief,
+        // so a Start after Stop binds 47817.
+        CloseSocketLocked(effects);
         var link = _linkConn;
         ClearConnectionsLocked();
         ConnectionGoneLocked(link, reason, effects);
@@ -610,11 +678,24 @@ public sealed class ReliableTransport : IDisposable
     /// under <see cref="_life"/>, as Dispose's is, so it lands before the dispose closure or not at all. In
     /// sync mode the ConnectionRequest is queued under <see cref="_lock"/> only, after checking that Dispose
     /// has not begun; the dispose closure needs that same lock, so it runs after this.
+    ///
+    /// M1-001: the remote port is 5552 when <paramref name="isSimulated"/>, else 5551 (B3); the IP is the
+    /// caller's (B3 builds the TransportAddress from ConnectToRobot's ipAddress).
     /// </summary>
-    public void Connect(IPAddress robot, int? port = null)
+    // fidelity: M1-001
+    public void Connect(IPAddress robot, bool isSimulated = false) =>
+        Connect(new IPEndPoint(robot, RobotAddress.RemotePort(isSimulated)));
+
+    /// <summary>
+    /// Test seam, not a production path: a Connect to an explicit port, so tests can reach a stand-in robot on
+    /// a loopback port of their own. The engine has no port override (M1-001, B3); production callers use
+    /// <see cref="Connect(IPAddress, bool)"/>.
+    /// </summary>
+    internal void Connect(IPAddress robot, int port) => Connect(new IPEndPoint(robot, port));
+
+    private void Connect(IPEndPoint peer)
     {
         if (_disposed) throw new ObjectDisposedException(nameof(ReliableTransport));
-        var peer = new IPEndPoint(robot, port ?? _o.RobotPort);
         _timedOut = false;                                  // R38 / B36: Connect clears +0xA1 (0x0083710E)
         // The facade, under the transport lock with every other facade transition (see _linkConn).
         IPEndPoint? previousPeer; LinkState previousState; ReliableConnection? previousConn; long gen;
@@ -687,18 +768,136 @@ public sealed class ReliableTransport : IDisposable
     public void FinishConnection(IPEndPoint address) =>
         QueueMessage(address, ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), reliable: true, flush: true);
 
-    /// <summary>A UDP client socket on an ephemeral local port, read without blocking.</summary>
-    private static Socket OpenSocket()
+    // ------------------------------------------------------------------ the UDP socket
+
+    // fidelity: M1-022
+    /// <summary>
+    /// UDPTransport::OpenSocket (B11): close any previous socket (0x00839A3A blx CloseSocket; verifier reading,
+    /// batch 2c; pending inventory correction); getaddrinfo(NULL, port, AI_PASSIVE, SOCK_DGRAM, AF_INET)
+    /// (0x00839ACA, 0x00839AD0, 0x00839AF2), i.e. INADDR_ANY:port; socket (0x00839B8A); for AF_INET, SO_BROADCAST
+    /// = 1 (0x00839D18/0x00839D1A); bind (0x00839D3A). A bind that fails with EADDRINUSE is a warning only
+    /// (0x00839E70): the socket is kept. No O_NONBLOCK and no buffer options, so the socket stays blocking; the
+    /// reads are made non-blocking one call at a time (B16, see <see cref="ReadDontWait"/>).
+    /// A failed setsockopt or any other failed bind closes the new socket through CloseSocket and OpenSocket
+    /// returns failure, leaving no socket and the stored port 47817 (verifier reading, batch 2c; pending
+    /// inventory correction: setsockopt 0x00839D20 ble → 0x00839CF0 CloseSocket → return 0; bind 0x00839E72
+    /// bne → 0x0083A026 → 0x00839CF0).
+    /// Host mapping: EADDRINUSE is <see cref="SocketError.AddressAlreadyInUse"/>.
+    /// </summary>
+    private void OpenSocketLocked(int port, List<Action> effects)
     {
-        var s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        try
+        // B11: close the previous socket, through CloseSocket (0x00839A3A; verifier reading, batch 2c; pending
+        // inventory correction). In this stack OpenSocket is reached only with no socket (Start opens only if
+        // fd == −1; the reopens follow a CloseSocket, which leaves fd −1 on both paths, B38), so this never runs.
+        if (_sock is not null) CloseSocketLocked(effects);
+
+        Socket s;
+        try { s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp); }
+        catch (SocketException e)
         {
-            s.Bind(new IPEndPoint(IPAddress.Any, 0));
-            s.Blocking = false;
-            return s;
+            // MISSING: B11 does not say what OpenSocket does when socket() fails; nothing is opened here.
+            var code = e.SocketErrorCode; var msg = e.Message;
+            effects.Add(() => Fan(Warning, $"OpenSocket: socket() failed: {code} ({msg}); no socket (MISSING: the engine's handling is not in the inventory)"));
+            return;
         }
-        catch { s.Dispose(); throw; }
+        _sock = s;                                          // the new fd, which CloseSocket closes on the failures below
+        try { s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1); }   // B11: SO_BROADCAST = 1
+        catch (SocketException e)
+        {
+            // Verifier reading, batch 2c; pending inventory correction: 0x00839D20 ble → 0x00839CF0 CloseSocket
+            // → return 0.
+            var code = e.SocketErrorCode; var msg = e.Message;
+            effects.Add(() => Fan(Warning, $"OpenSocket: SO_BROADCAST failed: {code} ({msg}); socket closed"));
+            CloseSocketLocked(effects);
+            return;
+        }
+        try { s.Bind(new IPEndPoint(IPAddress.Any, port)); }
+        catch (SocketException e) when (e.SocketErrorCode == SocketError.AddressAlreadyInUse)
+        {
+            var msg = e.Message;
+            effects.Add(() => Fan(Warning, $"OpenSocket: bind to port {port} failed: AddressAlreadyInUse ({msg}); socket kept"));
+        }
+        catch (SocketException e)
+        {
+            // Verifier reading, batch 2c; pending inventory correction: 0x00839E72 bne → 0x0083A026 → 0x00839CF0
+            // CloseSocket, so the stored port becomes 47817.
+            var code = e.SocketErrorCode; var msg = e.Message;
+            effects.Add(() => Fan(Warning, $"OpenSocket: bind to port {port} failed: {code} ({msg}); socket closed"));
+            CloseSocketLocked(effects);
+        }
     }
+
+    // fidelity: M1-022
+    /// <summary>
+    /// UDPTransport::CloseSocket (B38, 0x00839694..0x0083969C): close(fd); a failure is logged; on both paths fd
+    /// becomes −1 and the stored port 0xBAC9 = 47817. Returns true when the close succeeded (the callers reopen
+    /// only then: 0x0083AB2C cbz r0, 0x0083ACF4 cmp r0,#1).
+    /// Host mapping: .NET does not report a failed closesocket; a close is taken as failed only when
+    /// <see cref="Socket.Close()"/> (or the <see cref="CloseHook"/> test seam) throws.
+    /// MISSING: no row says what CloseSocket does or returns when there is no socket (fd −1). Here it does
+    /// nothing and returns false, so nothing is reopened; fd and the stored port are left as they are.
+    /// </summary>
+    private bool CloseSocketLocked(List<Action> effects)
+    {
+        var s = _sock;
+        if (s is null) return false;
+        bool ok = true;
+        try { if (CloseHook is { } hook) hook(s); else s.Close(); }
+        catch (Exception e)
+        {
+            ok = false;
+            var msg = $"{e.GetType().Name}: {e.Message}";
+            effects.Add(() => Fan(Warning, $"CloseSocket: close failed: {msg}"));
+        }
+        _sock = null;
+        _localPort = PortAfterClose;
+        return ok;
+    }
+
+    // fidelity: M1-022
+    /// <summary>
+    /// B16: recvmsg(fd, msg, MSG_DONTWAIT) (0x0083AA76 movs r3,#0x40) on the blocking socket B11 opens.
+    /// Host mapping: Windows has no MSG_DONTWAIT; the socket is left blocking, and a read is made only when a
+    /// zero-timeout poll says one will not block. With nothing to read this reports
+    /// <see cref="SocketError.WouldBlock"/>, the host's EAGAIN. Only the executor reads, so nothing else can take
+    /// the datagram between the poll and the read.
+    /// </summary>
+    private static int ReadDontWait(Socket s, byte[] buffer, ref EndPoint from)
+    {
+        if (!s.Poll(0, SelectMode.SelectRead)) throw new SocketException((int)SocketError.WouldBlock);
+        return s.ReceiveFrom(buffer, SocketFlags.None, ref from);
+    }
+
+    // fidelity: M1-023
+    /// <summary>
+    /// UDPTransport::ResetSocket (G4.5, 0x0083A256 movs r1,#1; 0x0083A258 strb.w r1,[r0,#0x9d]): it sets the
+    /// reset flag and does nothing else. The next update acts on it (see <see cref="DrainLocked"/>).
+    /// </summary>
+    internal void ResetSocket() => _resetRequested = true;
+
+    // fidelity: M1-023
+    /// <summary>
+    /// The WifiUtil handler RegisterTransport binds to the transport (G4.2, 0x0083BAD1; G4.4): if fd (+0x94) &lt; 0
+    /// nothing (0x0083BAD6 ldr.w r0,[r4,#0x94]; 0x0083BADC blt); otherwise ResetSocket (0x0083BAE0) and the log
+    /// "WifiUtil.BindTransport" / "reset socket %d" (0x0083BB54, 0x0083BB6C). No other condition. The log goes
+    /// out as a <see cref="Warning"/>, this stack's one log channel; the host's socket handle stands for the fd.
+    /// </summary>
+    internal void NetworkBindSignal()
+    {
+        var s = _sock;
+        if (s is null) return;
+        ResetSocket();
+        long fd;
+        try { fd = (long)s.Handle; } catch (ObjectDisposedException) { fd = -1; }
+        Raise(() => Fan(Warning, $"WifiUtil.BindTransport: reset socket {fd}"));
+    }
+
+    // fidelity: M1-037
+    /// <summary>
+    /// Policy M1-037 (D5): the host's <c>NetworkChange.NetworkAddressChanged</c> stands in for Android's process
+    /// network bind and unbind (G4.6..G4.12), and raises the same handler.
+    /// </summary>
+    private void OnNetworkAddressChanged(object? sender, EventArgs e) => NetworkBindSignal();
 
     /// <summary>
     /// Send a CLAD robot message the way the engine sends every robot message: this is the
@@ -800,6 +999,9 @@ public sealed class ReliableTransport : IDisposable
         {
             if (_disposed) return;
             _disposed = true;
+            // fidelity: M1-037
+            // The host trigger lives as long as the transport (G4.1: the registration lives as long as the RCM).
+            _networkChange.Unsubscribe(OnNetworkAddressChanged);
             TryPostLifeLocked("dispose", () =>
             {
                 var effects = new List<Action>();
@@ -854,15 +1056,63 @@ public sealed class ReliableTransport : IDisposable
             Raise(() => Fan(FrameTrace, new FrameEvent(true, DateTime.UtcNow, raw, f, null)));
             return;
         }
-        try { _sock?.SendTo(raw, address); }
-        catch (ObjectDisposedException) { return; }                       // closed under us during shutdown
-        catch (SocketException e) { Raise(() => Fan(Warning, $"sendto failed: {e.SocketErrorCode} ({e.Message})")); }
+        // fidelity: M1-022
+        // B10: only an IP address is sent to (0x0083A606: "UDP can only send to IP addresses!"); sendto with flags
+        // 0 (0x0083A37C); a short count logs "SentWrongNumBytes" (0x0083A39A); a failure counts AddSendError(6)
+        // (0x0083A552), stores the time at +0x88 (0x0083A5F4) and warns; there is no retry and no disconnect.
+        // AddSendError(6) is unconditional.
+        // MISSING (B10 rate limit; verifier reading 0x0083A648..0x0083A666, pending inventory correction): the
+        // row says only "a warning if verbose, time at +0x88". The verifier read that verbose logging is off
+        // (kEnableVerboseNetworkLogging 0x00C934A4) and that the warning and the +0x88 store happen only when
+        // +0x88 == 0.0 or now > +0x88 + 30000.0 (0x0083A6C8). That is not in the frozen row and is not
+        // implemented: here the warning is given and the time stored on every failure.
+        if (address.AddressFamily is not (AddressFamily.InterNetwork or AddressFamily.InterNetworkV6))
+        {
+            Raise(() => Fan(Warning, "UDP can only send to IP addresses!"));
+            return;
+        }
+        var sock = _sock;
+        if (sock is null)
+        {
+            // fd −1 (a send before Start or after Stop): UDP SendData has no fd guard, and sendto(−1) fails and
+            // takes the AddSendError(6) path (0x0083A374, 0x0083A386; verifier reading, batch 2c; pending
+            // inventory correction). Nothing is sent.
+            SendFailedLocked("no socket (fd -1)");
+        }
+        else
+        {
+            try
+            {
+                int sent = SendHook is { } hook ? hook(sock, raw, address) : sock.SendTo(raw, SocketFlags.None, address);
+                if (sent != raw.Length)
+                {
+                    int want = raw.Length;
+                    Raise(() => Fan(Warning, $"SentWrongNumBytes: sent {sent} of {want} bytes to {address}"));
+                }
+            }
+            catch (ObjectDisposedException) { return; }                   // closed under us during shutdown
+            catch (SocketException e) { SendFailedLocked($"{e.SocketErrorCode} ({e.Message})"); }
+        }
         if (FrameTrace is not null)
         {
             FrameCodec.TryDecode(raw, out var f, out var err);
             var utc = DateTime.UtcNow;
             Raise(() => Fan(FrameTrace, new FrameEvent(true, utc, raw, f, err)));
         }
+    }
+
+    // fidelity: M1-022
+    /// <summary>
+    /// B10's failure path: AddSendError(6) (0x0083A552), always; then the time at +0x88 (0x0083A5F4) and the
+    /// warning, both given every time here. MISSING (B10 rate limit; verifier reading 0x0083A648..0x0083A666,
+    /// pending inventory correction): the source's condition on the warning and the +0x88 store is not
+    /// reproduced.
+    /// </summary>
+    private void SendFailedLocked(string why)
+    {
+        UdpSendErrors.Add(6);
+        LastSendErrorMs = _clock.NowMs;
+        Raise(() => Fan(Warning, $"sendto failed: {why}"));
     }
 
     // fidelity: M1-010, M1-021
@@ -917,24 +1167,40 @@ public sealed class ReliableTransport : IDisposable
         return ok;
     }
 
+    // fidelity: M1-022, M1-023
     /// <summary>
-    /// UDPTransport::Update 0x0083AD10-18 / TryToReadMessage 0x0083AA44: read datagrams until none is waiting;
-    /// with no socket there is nothing to read. A receive error ends the read for this update and never tears
-    /// a connection down. EAGAIN is silent (0x0083AAC4); every other error is a warning (0x0083AAF6), and
-    /// ENOTCONN, after that same warning, also closes and reopens the socket (0x0083AB22-34).
-    ///
-    /// A datagram larger than the 1472-byte buffer (MSG_TRUNC) is dropped after the prefix checks and the
-    /// read goes on (B17). The host reports it as <see cref="SocketError.MessageSize"/> with the buffer
-    /// holding the datagram's first 1472 bytes and the datagram consumed.
+    /// UDPTransport::Update. First the reset (G4.5, B18): with the flag set, CloseSocket (0x0083ACF0) and, only if
+    /// that returned 1 (0x0083ACF4), OpenSocket on the stored port (0x0083ACF8..0x0083ACFE), which the close has
+    /// just set to 47817 (B38); the flag is cleared either way (0x0083AD04). Then the read loop, only if fd &gt;= 0
+    /// (0x0083AD08), for as long as TryToReadMessage returns 1 (0x0083AD10..0x0083AD18; B16):
+    ///  - a read that returns ≤ 0 stops the loop for this update (0x0083AA98), a 0-byte datagram included;
+    ///    whether a 0-byte read also warns is MISSING (see the loop);
+    ///  - EAGAIN is silent (0x0083AAC4); any other error warns "ReadFailed" (0x0083AAF6);
+    ///  - ENOTCONN (0x0083AB22 cmp r0,#0x6b), after that warning, closes the socket (0x0083AB28) and, only if the
+    ///    close succeeded (0x0083AB2C cbz r0), reopens it on the stored port (0x0083AB2E, 0x0083AB34), 47817;
+    ///  - a datagram larger than the 1472-byte buffer (MSG_TRUNC) is dropped after the prefix checks and the read
+    ///    goes on (B17).
+    /// A receive error never tears a connection down.
+    /// Host mapping: EAGAIN is <see cref="SocketError.WouldBlock"/>, ENOTCONN is <see cref="SocketError.NotConnected"/>,
+    /// and MSG_TRUNC is <see cref="SocketError.MessageSize"/> with the buffer holding the datagram's first 1472
+    /// bytes and the datagram consumed. Windows also reports an ICMP port-unreachable as a receive error,
+    /// <see cref="SocketError.ConnectionReset"/> (SIO_UDP_CONNRESET is left on); here it is a generic
+    /// "ReadFailed" error, pending policy M1-039, which a later step implements.
     /// </summary>
     private void DrainLocked(List<Action> effects)
     {
+        if (_resetRequested)
+        {
+            if (CloseSocketLocked(effects)) OpenSocketLocked(_localPort, effects);
+            _resetRequested = false;
+        }
+
         var buf = _rxBuffer;
         while (_sock is { } sock)
         {
             EndPoint from = new IPEndPoint(IPAddress.Any, 0);
             int n;
-            try { n = ReceiveHook is { } hook ? hook(sock, buf, ref from) : sock.ReceiveFrom(buf, ref from); }
+            try { n = ReceiveHook is { } hook ? hook(sock, buf, ref from) : ReadDontWait(sock, buf, ref from); }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock) { return; }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.MessageSize)
             {
@@ -944,26 +1210,19 @@ public sealed class ReliableTransport : IDisposable
             catch (SocketException e)
             {
                 var code = e.SocketErrorCode; var msg = e.Message;
-                effects.Add(() => Fan(Warning, $"receive failed: {code} ({msg})"));
-                if (code == SocketError.NotConnected) ReopenSocketLocked(effects);
+                effects.Add(() => Fan(Warning, $"ReadFailed: {code} ({msg})"));
+                if (code == SocketError.NotConnected && CloseSocketLocked(effects)) OpenSocketLocked(_localPort, effects);
                 return;
             }
             catch (ObjectDisposedException) { return; }
 
+            // B16: ≤ 0 stops, a 0-byte datagram too (0x0083AA98).
+            // MISSING: the source sends a 0-byte read down the errno path (0x0083AA98 blt → 0x0083AAC4 /
+            // 0x0083AAF6 / 0x0083AB22) with whatever errno is left over (verifier reading, batch 2c; pending
+            // inventory correction), so whether it warns "ReadFailed" or even reopens is not established. Here it
+            // only stops the loop, with no warning.
+            if (n <= 0) return;
             ProcessDatagramLocked(buf.AsSpan(0, n).ToArray(), from as IPEndPoint, effects);
-        }
-    }
-
-    /// <summary>ENOTCONN: close the socket and open a new one on an ephemeral port; the connections are kept.</summary>
-    private void ReopenSocketLocked(List<Action> effects)
-    {
-        try { _sock?.Close(); } catch { }
-        _sock = null;
-        try { _sock = OpenSocket(); }
-        catch (SocketException e)
-        {
-            var code = e.SocketErrorCode; var msg = e.Message;
-            effects.Add(() => Fan(Warning, $"reopening the closed socket failed: {code} ({msg})"));
         }
     }
 
@@ -1233,7 +1492,8 @@ public sealed class ReliableTransport : IDisposable
 
 
 /// <summary>
-/// Counts of AddRecvError calls by error code, for diagnostics only: nothing in the transport reads them.
+/// Counts of AddRecvError (or, for <see cref="ReliableTransport.UdpSendErrors"/>, AddSendError) calls by error
+/// code, for diagnostics only: nothing in the transport reads them.
 /// </summary>
 public sealed class ReceiveErrorCounts
 {
@@ -1243,6 +1503,31 @@ public sealed class ReceiveErrorCounts
     public int this[int code] { get { lock (_byCode) return _byCode.GetValueOrDefault(code); } }
 
     internal void Add(int code) { lock (_byCode) _byCode[code] = _byCode.GetValueOrDefault(code) + 1; }
+}
+
+// fidelity: M1-037
+/// <summary>
+/// Policy M1-037 (D5): the host notification that stands in for Android's process network bind and unbind.
+/// <see cref="Host"/> is <c>System.Net.NetworkInformation.NetworkChange.NetworkAddressChanged</c>, the
+/// production source; tests give a transport a source of their own so they can raise it.
+/// </summary>
+internal sealed class HostNetworkChange
+{
+    private readonly Action<NetworkAddressChangedEventHandler> _add, _remove;
+
+    internal HostNetworkChange(Action<NetworkAddressChangedEventHandler> add,
+                               Action<NetworkAddressChangedEventHandler> remove)
+    {
+        _add = add; _remove = remove;
+    }
+
+    /// <summary>The production source: <c>NetworkChange.NetworkAddressChanged</c>.</summary>
+    internal static readonly HostNetworkChange Host = new(
+        h => NetworkChange.NetworkAddressChanged += h,
+        h => NetworkChange.NetworkAddressChanged -= h);
+
+    internal void Subscribe(NetworkAddressChangedEventHandler h) => _add(h);
+    internal void Unsubscribe(NetworkAddressChangedEventHandler h) => _remove(h);
 }
 
 // fidelity: M1-021, M1-010, M1-013, M1-014

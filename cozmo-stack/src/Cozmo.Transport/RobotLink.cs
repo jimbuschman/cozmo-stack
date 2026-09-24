@@ -64,8 +64,14 @@ public sealed class RobotLink : IDisposable
     /// <summary>Raised with what a <see cref="State"/> or <see cref="Message"/> subscriber threw.</summary>
     public event Action<Exception>? HandlerFaulted;
 
-    public Task ConnectAsync(IPAddress robot, int? port = null, TimeSpan? timeout = null)
+    // fidelity: M1-001
+    /// <summary>
+    /// Connects to <paramref name="robot"/>, or when none is given to the IP Unity uses (B1): 172.31.1.1, or
+    /// 127.0.0.1 when <paramref name="isSimulated"/>. The remote port is 5552 when simulated, else 5551 (B3).
+    /// </summary>
+    public Task ConnectAsync(IPAddress? robot = null, bool isSimulated = false, TimeSpan? timeout = null)
     {
+        robot ??= RobotAddress.DefaultFor(isSimulated);
         var tcs = new TaskCompletionSource();
         void ok() { Transport.Connected -= ok; tcs.TrySetResult(); }
         void bad(string r) { Transport.Disconnected -= bad; tcs.TrySetException(new IOException($"disconnected while connecting: {r}")); }
@@ -73,12 +79,12 @@ public sealed class RobotLink : IDisposable
         // fidelity: M1-019
         // R39 / R38: Start opens the socket (once), Connect only queues the ConnectionRequest; both are posted, in order.
         Transport.Start();
-        Transport.Connect(robot, port);
+        Transport.Connect(robot, isSimulated);
         var t = timeout ?? TimeSpan.FromSeconds(5);
         return Task.WhenAny(tcs.Task, Task.Delay(t)).ContinueWith(w =>
         {
             Transport.Connected -= ok; Transport.Disconnected -= bad;
-            if (!tcs.Task.IsCompleted) throw new TimeoutException($"no ConnectionResponse from {robot}:{port ?? Transport.Peer?.Port} within {t.TotalSeconds:F1}s");
+            if (!tcs.Task.IsCompleted) throw new TimeoutException($"no ConnectionResponse from {robot}:{RobotAddress.RemotePort(isSimulated)} within {t.TotalSeconds:F1}s");
             tcs.Task.GetAwaiter().GetResult();
         });
     }
