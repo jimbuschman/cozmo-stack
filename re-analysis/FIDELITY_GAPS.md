@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **249 records** over 16 subsystems.
+Manifest of **258 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 183 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 176 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 22 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 0 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 3 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 19 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 27 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 6 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -25,7 +25,7 @@ remains after both, and they do not go away by working harder on this repository
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | M1-transport — UDP transport and reliability | 43 | 0 | 3 | 0 | 2 | yes | no |
-| M2-protocol — CLAD messages and protocol helpers | 7 | 0 | 0 | 0 | 0 | yes | yes |
+| M2-protocol — CLAD messages and protocol helpers | 16 | 0 | 16 | 0 | 0 | yes | no |
 | M3-device — Camera, display and audio device layer | 18 | 0 | 0 | 0 | 1 | yes | yes |
 | M4-control — Motion, sensors, lights and cubes | 13 | 0 | 0 | 0 | 1 | yes | yes |
 | M5-animation — Animation clips, scheduler and face | 23 | 0 | 0 | 0 | 0 | yes | yes |
@@ -53,7 +53,7 @@ status.
 | subsystem | review | settled | uncited | capture verified | hardware verified |
 | --- | --- | ---: | ---: | ---: | ---: |
 | M1-transport | INVENTORY_APPROVED | 29 | 0 | 0 | 3 |
-| M2-protocol | UNREVIEWED | 7 | 1 | 0 | 0 |
+| M2-protocol | UNREVIEWED | 0 | 0 | 0 | 0 |
 | M3-device | UNREVIEWED | 13 | 1 | 0 | 0 |
 | M4-control | UNREVIEWED | 8 | 0 | 0 | 0 |
 | M5-animation | UNREVIEWED | 22 | 3 | 0 | 0 |
@@ -105,6 +105,152 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: CD17/CB21: the Success RobotConnectionResponse reaches, synchronously and in this order: RobotEventHandler, VisionComponent, TracePrinter (0x006625C6..0x006625FA; 0x00663C74..0x00663CA8; 0x005259AC, 0x006501E4, 0x0053BCBA); CD18/CB22/CB23: RobotEventHandler (result 0) calls Robot::SyncTime: +0x29 = 0, history clear, then SyncTime {u32 BaseStationTimer ms, 0xC1A00000} reliable; only if that was sent, InitController; only if that was sent, ImageRequest {Stream, QVGA} and AbsoluteLocalizationUpdate {0, frameId, originId, 0, 0, 0}; a failed send warns and stops (0x005289BA..0x005289D2; 0x0051521E..0x005153AE); CD19: SyncTime is never retried; after 5.0 s without SyncTimeAck it warns "SyncTimeAckNotReceived" (0x00513BF6..0x00513C5A); SyncTimeAck sets +0x29 = 1 (0x005366A4..0x005366AC); CD20: RobotEventHandler then sets ready-to-stream (+0x2A) through an NVStorage on-idle callback, which runs once the NV request queue is empty (0x00528A5A..0x00528A6E; 0x00645C20..0x00645C32); CD22: TracePrinter sends SetAppRunID (16-byte UUID, 0xFF unless a platform id exists), then RequestCrashReports{0}, each crash report received asking for the next index up to 3 (0x0053D398..0x0053D430; 0x0053CA88..0x0053CA9E); CD23/CD12: robot state is dropped until time sync (0x0051293C..0x0051294E); Robot::Update does nothing past the idle component until the first full state is handled (+0x34E); the AnimationStreamer runs only when synced and ready to stream (0x00513BF2..0x00514470); CD30: nothing sends SendHeadAngleUpdate, setAccessoryDiscovery or SetRobotImageSendMode on this path (BL scan)
 * outstanding: built (batch 3) except AbsoluteLocalizationUpdate, which is not sent: its frameId (robot+0x2B0) and originId (+0x294 then +0x14) are not state this stack holds; and RobotStateHistory::Clear has no owner here; then EXACT_SOURCE
+
+### M2-protocol — CLAD messages and protocol helpers
+
+**M2-001 — CLAD wire primitives: little-endian, bool write 0/1 and read (byte != 0), all-or-nothing ReadBytes, u8/u16-count arrays and strings, fixed arrays without a prefix** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Protocol/Clad/Clad.cs`
+* effect: a field is encoded or decoded differently from the engine
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md
+* best authority: CLAD schema and generated serialisation
+* evidence: S4 WriteBytes memcpy native LE (0x0083C084); Write<bool> stores the bool byte (0x0083C0DE); S5 byte-vector writer 0x0071A890: u16 count = end-begin stored with strh, truncated (0x0071A898..0x0071A8A4); one WriteBytes(1) per element (0x00732108..0x00732130); D8 ReadBytes all-or-nothing, no advance and no sticky error on overrun (0x0083C09A..0x0083C0CA); D9 Read<bool> stores (byte != 0) (0x0083C0F0..0x0083C118); D10 variable readers read the count then elements, stop at the first failed element; u8-count i32[] 0x0073923A, u8-count string (ldrsb chars) 0x006C235C, u8-count u8[] 0x007A17D8, u16-count u8[] 0x0071A8F6, u8-count u32[] 0x0071283C; D12 fixed arrays have no prefix and stop at the first failure (0x007D6EB6..0x007D6EDA); D13 little-endian: fields memcpy natively (0x0083C0B6); ELF EI_DATA = 1
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M2-002 — RobotStatusFlag names and values, and where the engine stores each consumed bit** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Sensors.cs`
+* effect: a status bit is read with the wrong meaning
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md
+* best authority: decompiled Unity
+* evidence: EnumToString(RobotStatusFlag) 0x007D57C8: 17 names and values, agreeing with Unity RobotStatusFlag.cs:8-25; RS11 the whole status word -> robot+0x350 (0x00512AD8..0x00512ADC); bit storage: 0x1 MovementComponent+9 (0x0063E30A); 0x2 Delocalize argument (0x00512B98); 0x4 [robot+0x280]+4 (0x00512A96); 0x8 robot+0x349 (0x00512AA2); 0x10 robot+0x34C (0x00512ACE); 0x20 treads classifier (0x00511EC4); 0x100 MovementComponent+0xB = !bit (0x0063E32C); 0x200 +0xA = !bit (0x0063E320); 0x1000 SetOnCharger (0x00512AAC); 0x2000 robot+0x339 (0x00512AB8); 0x4000 CliffSensorComponent+6 (0x00634026); 0x8000 MovementComponent+0xC (0x0063E338); 0x10000 robot+0x33A (0x00512AC2)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M2-003 — liftAngle is radians; height = 66 sin(angle) + 45 with no clamp on the angle-to-height path; 32..92 clamps only height-to-angle** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Sensors.cs`
+* effect: the lift height is reported differently from the engine
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md
+* best authority: libcozmoEngine.so
+* evidence: RS7 liftAngle -> robot+0x300 raw and ComputeLiftPose (0x0051295E..0x0051296E); GetLiftHeight 0x00516F64..0x00516F8E: 66*sinf(+0x300) + 45 + 0 (literals 0x00516F90/94/98), no clamp; ConvertLiftHeightToLiftAngleRad 0x005170B0: height raised to 32 (literal 0x005170F4); height >= 92 (0x00517100) uses 0.712121 (0x00517104); asinf; RS0 UpdateFullRobotState is skipped while robot+0x29 == 0 (0x0051293C..0x00512942)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M2-004 — The SyncTime payload: u32 timestamp and f32 -20.0** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: the robot gets a different time-sync payload
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: SyncTime Pack 0x007A3A94, size 8; operator== 0x007A3AFA: word 0 integer cmp, word 1 vcmp.f32 (0x007A3B0A), so word 1 is f32; SendSyncTime 0x0051524C builds {GetCurrentTimeStamp() (0x00515266), 0xC1A00000 = -20.0f (0x0051526C/0x00515270)}; the rest of SendSyncTime (InitController, ImageRequest {1,4}, AbsoluteLocalizationUpdate, the +0x520 stamp) is M1-041
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M2-005 — The light colour word: 5-5-5 with red at bit 10, and bit 15 set from the alpha byte** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Protocol/Clad/MessageExtras.cs`
+* effect: a light shows a different colour
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md
+* best authority: CubeLightComponent::SendTransitionMessage 0x00638056 packs the engine ColorRGBA word whole: mov.w ip,#0x7c00 / mov.w r3,#0x3e0 / and.w r4,ip,r5,lsr #17 (red bits 27..31 to bit 10) / and.w r7,r3,r5,lsr #14 (green bits 19..23 to bit 5) / ubfx r4,r5,#0xb,#5 (blue bits 11..15 to bit 0) / tst.w r5,#0xff with orrne r7,r7,#0x8000 (bit 15 from the alpha byte). ColorRGBA holds red in the top byte and alpha in the bottom, which CubeLightComponent::WhiteBalanceColor 0x0063a894 confirms by reading the low byte as the alpha it gates on
+* evidence: CubeLightComponent::SendTransitionMessage 0x00638056; CubeLightComponent::WhiteBalanceColor 0x0063a894 treats the low byte as alpha; every colour in every shipped light config has a non-zero alpha - cube configs write [r,g,b,255] and backpack configs [r,g,b,1] - so the engine sets bit 15 on every word it sends, the black that turns a light off included; CubeLightComponent::SendTransitionMessage 0x00638052..0x00638070 re-read in the M2 OUT pass; the same expression in BodyLightComponent::SetBackpackLightsInternal 0x00631F50..0x00631F72 (on) and 0x00631F96..0x00631FBE (off)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M2-006 — FirmwareVersion 0xEE layout {u16, u16-count u8[]}; the engine parses build/version/time/sim from msg+4 and has no hash fields** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
+* effect: the firmware version is read differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: FirmwareVersion Unpack 0x007B907E: 2B@0, u16-count u8[]@4; M1 G5.2..G5.6: the handshake parses msg+4 (0x0052D48C..0x0052D5B6); messageEngineToRobotHash and messageRobotToEngineHash: 0 byte hits in libcozmoEngine.so
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M2-007 — absLocalizationUpdate: the timestamp first and the heading last** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs`
+* effect: the robot is told a different pose
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md
+* best authority: Robot::SendAbsLocalizationUpdate(Pose3d const&, unsigned int const&, unsigned int const&) 0x00512734 and Robot::SendAbsLocalizationUpdate() 0x00514710, read
+* evidence: The packer 0x00512734 fills the 24 bytes in order from 0x00512774: its two unsigned arguments (strd r8, sb at 0x0051279E), the pose parent id from PoseBase::GetID (0x00512762), the transform translation x and y at +0x20 and +0x24 (0x00512782, 0x0051278A), and Rotation3d::GetAngleAroundZaxis (0x00512796). So the last word is a float heading in radians, which pycozmo had as an unknown u32 - and pycozmo sending 0x80000000 there is sending -0.0.; The argument order comes from the no-argument twin 0x00514710: it asks RobotStateHistory::GetLatestVisionOnlyState for the latest vision-only state with the timestamp in an out-parameter at sp+0x7c, and passes that as the second argument and the state word at +0x10 as the third (0x00514770..0x0051477C). So the first field is the timestamp and the second the pose frame id.; That is also the path a corrected pose takes to the robot: Robot::SetNewPose 0x005126EC calls SetPose and AddVisionOnlyStateToHistory, and Robot::Update calls SendAbsLocalizationUpdate (0x00513CC6), which sends the state just added.; M2 OUT pass: Pack 0x007A384E, Size 0x007A38E8, operator== 0x007A38EC (cmp at 0,4,8; vcmp at 0xC..0x14) confirm the types; the ContainsOriginID send gate (0x00512766..0x00512772) is M1-041
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M2-008 — Outbound union: tag byte first, then the member; size = 1 + member; typed constructors write the tag** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Protocol/Clad/Clad.cs`
+* effect: a message goes out with the wrong tag or size
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: S1 EngineToRobot::Pack writes the 1-byte tag at this+0 (0x007AB6B8..0x007AB6C4), then tbh on tag-1 (0x007AB6CC..0x007AB6D2, table 0x007AB6D6); S2 single-scalar members packed inline (0x007AB834, 0x007AB840, 0x007AB84A, 0x007AB858, 0x007AB868); S3 EngineToRobot::Size = 1 + member Size (0x007ABB98 movs r0,#1); S7 each typed constructor writes its tag, confirmed for all 42 (e.g. SetHeadlight 0x007A7B34 movs #0xb / 0x007A7B38 strb)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M2-009 — Outbound layouts and sizes of the 42 engine-to-robot messages this stack sends** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs`
+* effect: the robot receives a message with different bytes
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: the per-message Pack/Size/operator== addresses in re-analysis/inventory/M2-protocol.md Appendix A section 1 (tags 03 05 08 0A 0B 25 32 34 35 36 37 39 3B 3C 3D 3E 3F 41 42 43 44 45 48 4A 4B 4C 58 60 64 66 80 81 8E 8F 93 94 97 99 9A 9B 9F A0); type-only differences from the protocol definition: SyncTime word 1 f32; DockWithObject field0 f32; bool (not u8) in SetBodyAngle isAbsolute (0x007A29BE), PointTurn useShortestDirection (0x007A343C), DockWithObject fields 5 and 8 (0x007C06B4, 0x007C06DC), PlaceObjectOnGround field 6 (0x007C0986), DockingErrorSignal fields 5 and 6 (0x007C0B78, 0x007C0B80)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M2-010 — Inbound dispatch: TBH at 0x007B1B10; out-of-range tags and the 14 in-range tags without a codec (0xCC, 0xDF..0xEB) consume only the tag byte; 56 codecs** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: a robot message is dropped or delivered differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: D1 ProcessMessages: fresh RobotToEngine tag 0xFF, Unpack(ptr,len), drop when the return differs from the length (0x0069D8F8..0x0069D910); D2 Unpack(ptr,len) wraps SafeMessageBuffer (0x007B510A..0x007B511E); D3 tag read with ReadBytes(1), initialised 0xFF (0x007B1ADC..0x007B1AFC); D4 subs r0,#0xb0; cmp r0,#0x45; bhi default; tbh, table 0x007B1B10..0x007B1B9B (0x007B1B04..0x007B1B0C); D5 the default 0x007B1BBE..0x007B1BCC stores the tag and returns GetBytesRead = 1; taken by out-of-range tags and 0xCC, 0xDF..0xEB; D6 inline codecs 0x007B1B9C..0x007B1BB4; D7 the return is always GetBytesRead (0x0083C032..0x0083C038)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M2-011 — Inbound size rule: kept only when bytes consumed == length; field read failures otherwise ignored** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Protocol/Clad/Clad.cs`
+* effect: a malformed or over-counted message is kept or dropped differently from the engine
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: D1 the length compare (0x0069D906..0x0069D910); D7 GetBytesRead is returned whatever the field reads did (0x0083C032..0x0083C038); D8 ReadBytes all-or-nothing without a sticky error (0x0083C09A..0x0083C0CA); D10 variable readers stop at the first failed element and the member discards the result (0x0071A8F6, 0x007A17D8, 0x0073923A); D12 fixed arrays stop at the first failure (0x007C8852..0x007C886A)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M2-012 — Inbound layouts and sizes of the 56 robot-to-engine codecs** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs`
+* effect: a robot message is decoded into different values
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: the per-codec Unpack addresses in re-analysis/inventory/M2-protocol.md Appendix B section 2 (0xB0..0xF5 except 0xCC and 0xDF..0xEB); type-only differences: bool (not u8) in GoalPose 0x007C2206, PickAndPlaceResult field1 0x007C1ADA, Ramp/BridgeTraverseComplete, TimeProfileStat field2, RobotErrorReport 0x007D3E70, LiftLoad (inline 0x007B1BA4); PrintTrace first field is one 4-byte field (0x007D4BF6)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M2-013 — FallingStopped 0xDE is {u32 timestamp, u32 duration_ms, f32 impactIntensity}** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs`
+* effect: the fall duration and intensity are wrong
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Unpack 0x007B0EB6: three ReadBytes(4) at +0, +4, +8; HandleFallingStopped 0x00535040: logs "timestamp: %u, duration (ms): %u, intensity %.1f" (0x00535274) from ldrd r1,r2,[r5] (0x0053506C) and vldr s0,[r5,#8] (0x00535068); [r5+8] > 1000.0f triggers NeedsManager action 0x11 (0x005350AA..0x005350C2); +4 to to_string(unsigned) (0x005350CC); the game message {duration_ms, impactIntensity} from ldrd [r5,#4] (0x00535186)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M2-014 — PickAndPlaceResult 0xB8: u32, bool success, i8 DockingResult, BlockStatus 0 NO_BLOCK / 1 BLOCK_PLACED / 2 BLOCK_PICKED_UP** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs`
+* effect: a pick-up is taken as a place and the reverse
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Unpack 0x007C1AC6 (Read<bool> 0x007C1ADA); HandlePickAndPlaceResult: +4 stored (0x00533794..0x0053379A); +6 == 2 -> 0x005337F8, == 1 -> 0x00533856 (0x005337A4..0x005337AA); +5 read ldrsb (0x005337F8); EnumToString(BlockStatus) 0x007C168C, name table 0x01034984 -> "NO_BLOCK", "BLOCK_PLACED", "BLOCK_PICKED_UP"
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M2-015 — Outbound builders copy caller speed, acceleration, duration and angle values verbatim: no defaults, no unit conversion** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Protocol/Clad/MessageExtras.cs`
+* effect: a motion command goes out with values the caller did not give
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: DriveWheels/MoveLift/MoveHead verbatim word copies (0x0063F174, 0x00640E1C, 0x0063F900, 0x00640C00, 0x0063F6BC, 0x00640ACC); MoveLiftToHeight 0x00640700 and MoveHeadToAngle 0x006407CC copy the four floats in order (0x0064076C, 0x00640838 stm); TurnInPlace 0x00640898 verbatim (0x006408B0..0x00640940)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M2-016 — ImageChunk 0xF2 field types: u32 ts, u32 id, i32 chunkDebug, u8 imageEncoding, i8 resolution, u8 count, u8 chunkId, i16 status, u16-count data** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs`
+* effect: an image chunk field is decoded with the wrong sign
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Unpack 0x007C60B4: ReadBytes 4,4,4,1,1,1,1,2 then the u16-count vector 0x0071A8F6; imageEncoding: ldrb (0x004F1D7A), unsigned range check (0x004F218E), zero-extended to EnumToString(ImageEncoding) (0x004F225E); the json i8 is contradicted; resolution: sxtb before EnumToString(ImageResolution) (0x004F1E56); equality with 4 (0x004F1D4C); imageChunkCount ldrb + 32-bit subs (0x004F1E0C); chunkId ldrb (0x004F1DB2, 0x004F1D5E); frameTimeStamp unsigned compare (0x004F1E2C bls); chunkDebug and status are only copied or equality-compared (Pack 0x007C61B4, 0x007C6202; operator== 0x007C6276, 0x007C629E; Viz 0x006C067C); declared i32/i16 by the Unity generated CLAD ImageChunk.cs:212,217 (MD6)
+* outstanding: compare the code against the inventory rows (the step after approval)
 
 ## What remains after both: blocked externally, or needing hardware
 

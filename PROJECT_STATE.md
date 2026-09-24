@@ -10,7 +10,17 @@ Read first in every session. The manager keeps this file current; the process it
   - M1 records: 28 EXACT, 1 EQUIVALENT, 3 IMPL_GAP, 9 POLICY, 2 HARDWARE_ONLY.
   - control-check is on main as 4b89c79 plus abea3ce. Its review returned NOT READY: the STATE rate window, ANIM driving without `--allow-drive`, and the OBB preflight. All of these are fixed.
   - The full suite passed 1163/1163 before the commit.
-- **Waiting on the operator:** one control-check robot run (see "Next").
+- **Waiting on the operator:**
+  - one control-check robot run (see "Next");
+  - approval of the M2 inventory (see "Open decisions").
+- **M2 protocol inventory: drafted 2026-09-24 and awaiting approval.** It is `re-analysis/inventory/M2-protocol.md`.
+  - **Extraction:** three read-only passes (OUT, 42 messages; IN, 56 codecs plus dispatch; the ImageChunk gap).
+  - **Records:** M2-001..M2-016. All are IMPLEMENTATION_GAP until the comparison against the code. The seven earlier EXACT_SOURCE claims rested on weak evidence. No RECOVERABLE_GAP remains.
+  - **Two contradictions of the current code, confirmed by the manager in the disassembly:**
+    - M2-013: the FallingStopped codec reads the timestamp as the duration.
+    - M2-014: BlockStatus 1 and 2 are swapped in Docking.cs.
+  - The inbound dispatch also settles M1-027's residual interface (M2-010).
+  - Nothing is implemented from it before approval.
 - **Operator decisions:** D1-D4 approved 2026-09-23. On 2026-09-24: the inventory, D5, D6 (fatal behaviour recorded, isolation kept as policy), D7, the corrections C1..C5 and D8 (stop processing a frame after a DisconnectRequest, M1-038) approved; the three repair batches are authorised to run without further checkpoints.
 - **Batch 1 done (7aba301). Batch 2a done** (e6f2ed7; receive path: B17 truncation, receive-error counters, partial-header overrun after the header, M1-038); records it repaired are settled in one verified pass at the end of batch 2. **Batch 2b-i done** (8c9f405; clock, construction-time 2 ms scheduler + FIFO executor, posted sends, RobotLink isolation; three verification passes). **Batch 2b-ii done** (0691429; per-address connections, type-3 and timeout delete only that connection, timed-out flag, inbound creation, FinishConnection, posted Start/Stop, per-connection multipart, unconditional Dispose disconnect; two verification passes). **Batch 2c done** (socket B10/B11/B12/B16/B38 with C1's 47817 reopen, the M1-023 reset mechanism, the M1-037 host trigger, M1-001 addressing; verifier PASS on the second pass). Batch 2 complete.
 - **Next: the operator's control-check run.**
@@ -109,6 +119,7 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
   - The implementer's note that "ReadCalibrationAsync has no caller" is wrong: six Conformance tools call it. What is missing is the connection-time read.
   - `_generation` in AnimationScheduler has no COMPATIBILITY record.
   - FakePort `Calls` is written without a lock.
+- fidelity.py `--check` does not enforce FidelityManifestTests' rule that every non-EXACT record has an `effect`. Align the two.
 - From the control-check review, after the run: pin the ANIM wheel figure (-75 mm/s for 264 ms) against the clip itself, and exercise the abort path.
 - Tests recommended by batch 4(i): one pinning the 14 Init tunables against the CA/B13 table (M1-005), and a dedicated R43 test for an unsent seq-0 entry at the front (M1-016).
 
@@ -128,7 +139,7 @@ Review state per subsystem is in `re-analysis/fidelity_manifest.json`, and FIDEL
 | order | subsystem | tier | review | notes |
 | ---: | --- | --- | --- | --- |
 | 1 | M1-transport | full | INVENTORY_APPROVED (closure complete) | batches 1-4(i) and 3 committed, settled; M1-LINK passed on the robot; residuals 027/029/041; next: control-check run |
-| 2 | M2-protocol | full | UNREVIEWED | |
+| 2 | M2-protocol | full | UNREVIEWED (inventory drafted 2026-09-24, awaiting approval) | 16 records; FallingStopped and BlockStatus contradictions found |
 | 3 | M3-device (camera, display, audio device) | full | UNREVIEWED | colour camera format is HARDWARE_ONLY |
 | 4 | M4-control (motion, sensors, lights, cubes) | full | UNREVIEWED | the outbound cube-connection path is suspected unrecovered |
 | 5 | M5-animation | full | UNREVIEWED | the live-animation wire lifecycle is suspected incomplete |
@@ -174,4 +185,7 @@ The user-level agents in `~/.claude/agents/` (`cozmo-m1-transport-auditor`, `coz
 
 ## Open decisions for the operator
 
-- none pending
+- **Approve the M2 inventory** (`re-analysis/inventory/M2-protocol.md`), including the manager's decisions MD1..MD6. The manager then:
+  1. freezes it with `--approve M2-protocol`;
+  2. runs the read-only comparison of the code against it;
+  3. repairs the discrepancies in one batch, including M2-013 FallingStopped and M2-014 BlockStatus.
