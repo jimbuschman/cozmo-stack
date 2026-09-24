@@ -188,10 +188,13 @@ def validate_review(m, sub, records):
     for path, rid in code_tags():
         tagged[path].add(rid)
     for r in mine:
-        if r["status"] in SETTLED and not cited(r):
+        # Settled or still to build, the native behaviour is claimed as established, so it has to be citable.
+        if r["status"] in SETTLED + (IMPLEMENTATION,) and not cited(r):
             problems.append(f"{sid}: {r['id']} is {r['status']} with no evidence entry that names an address or a file")
+        # A record claims its code once it is settled; every record's code is tagged by acceptance.
         path = r["location"].split(":", 1)[0]
-        if path.endswith(".cs") and r["id"] not in tagged.get(path, set()):
+        needs_tag = r["status"] in SETTLED or rev["state"] == ACCEPTED
+        if needs_tag and path.endswith(".cs") and r["id"] not in tagged.get(path, set()):
             problems.append(f"{sid}: {r['id']} has no `// fidelity: {r['id']}` tag in {path}")
 
     if rev["state"] == ACCEPTED:

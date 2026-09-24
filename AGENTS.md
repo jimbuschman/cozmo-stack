@@ -138,7 +138,7 @@ Layers go bottom-up, one at a time: M1 transport, M2 protocol, then device, cont
 
 `re-analysis/tools/fidelity.py --check` and `FidelityManifestTests` enforce these rules:
 - every subsystem has a review state (UNREVIEWED, INVENTORY_APPROVED, ACCEPTED). UNREVIEWED means nothing vouches for its records;
-- in an approved subsystem, every settled record cites an address or a file, not just a symbol name, and every record has a `// fidelity: <id>` tag in the file it points at;
+- in an approved subsystem, every settled or to-be-built record cites an address or a file, not just a symbol name. Every settled record has a `// fidelity: <id>` tag in the file it points at, and by acceptance every record does. Until the comparison with the code confirms a source-backed behaviour, the inventory records it as IMPLEMENTATION_GAP (to confirm or build);
 - every `// fidelity:` tag anywhere names a real record;
 - a record's `verification` (NONE, CAPTURE_VERIFIED, HARDWARE_VERIFIED) names the bundles it rests on. It is independent of status: a hardware pass never raises provenance.
 

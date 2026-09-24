@@ -4,8 +4,9 @@ Read first in every session. The manager keeps this file current; the process it
 
 ## Now
 
-- **Phase:** setup of the evidence process. **Checkpoint 1 (operator approves the setup) is pending.**
-- **Next:** M1 transport inventory, once checkpoint 1 is approved.
+- **Phase:** M1 inventory approved at Checkpoint 2 (2026-09-24) and frozen (`re-analysis/inventory/M1-transport.approved.json`). M1 has 31 IMPLEMENTATION_GAP to confirm or build, 5 COMPATIBILITY_POLICY (M1-013, M1-014, M1-034 handler isolation per D6, M1-036, M1-037 per D5) and 1 HARDWARE_ONLY (M1-033).
+- **Operator decisions:** D1-D4 approved 2026-09-23. On 2026-09-24: the completed inventory, D5 (host reset trigger, M1-037) and D7 (M1-029 proof limits accepted) approved; D6 decided as the original's fatal handler-exception behaviour recorded in M1-034, with handler isolation kept as this stack's COMPATIBILITY_POLICY.
+- **Next:** compare the M1 candidate against the frozen inventory (verifier, read-only). Records the code already reproduces become EXACT_SOURCE with `// fidelity:` tags; the rest are repaired by the implementer. Then the M1 hardware script for M1-033.
 
 ## Layer order and review state
 
@@ -13,7 +14,7 @@ The review state of each subsystem is recorded in `re-analysis/fidelity_manifest
 
 | order | subsystem | review | notes |
 | ---: | --- | --- | --- |
-| 1 | M1-transport | UNREVIEWED | candidate changes in the working tree (below); 5 of 12 settled records cite no address or file |
+| 1 | M1-transport | INVENTORY_APPROVED (frozen 2026-09-24) | 31 to confirm/build, 5 policies, 1 hardware-only; candidate changes in the working tree (below) |
 | 2 | M2-protocol | UNREVIEWED | |
 | 3 | M3-device (camera, display, audio device) | UNREVIEWED | colour camera format is HARDWARE_ONLY |
 | 4 | M4-control (motion, sensors, lights, cubes) | UNREVIEWED | the outbound cube-connection path is suspected unrecovered |
@@ -56,4 +57,4 @@ The user-level agents in `~/.claude/agents/` (`cozmo-m1-transport-auditor`, `coz
 
 ## Open decisions for the operator
 
-- Checkpoint 1: approve the setup (AGENTS.md Process section, `.claude/agents/`, the checker changes, this file).
+- none pending

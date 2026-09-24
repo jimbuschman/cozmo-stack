@@ -351,11 +351,14 @@ public class FidelityManifestTests
                 Assert.True(status == wasStatus || (wasStatus == Implementation && Settled.Contains(status)),
                     $"{sid}: {id} went from {wasStatus} to {status} after approval; only an IMPLEMENTATION_GAP being built may");
 
-                if (Settled.Contains(status))
+                // Settled or still to build, the native behaviour is claimed as established, so it has to be citable.
+                if (Settled.Contains(status) || status == Implementation)
                     Assert.True(r.GetProperty("evidence").EnumerateArray().Any(e => Concrete(root, e.GetString()!)),
                         $"{sid}: {id} is {status} with no evidence entry that names an address or a file");
+                // A record claims its code once it is settled; every record's code is tagged by acceptance.
                 string path = Str(r, "location").Split(':')[0];
-                if (path.EndsWith(".cs", StringComparison.Ordinal))
+                bool needsTag = Settled.Contains(status) || state == "ACCEPTED";
+                if (needsTag && path.EndsWith(".cs", StringComparison.Ordinal))
                     Assert.True(tagged[path].Contains(id), $"{sid}: {id} has no `// fidelity: {id}` tag in {path}");
             }
 
