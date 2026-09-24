@@ -41,6 +41,34 @@ remains after both, and they do not go away by working harder on this repository
 | M15-freeplay — Needs, activities and freeplay | 12 | 0 | 0 | 0 | 0 | yes | yes |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
+## Evidence process
+
+Separate from both columns above (AGENTS.md, "Process"). An **UNREVIEWED** subsystem's records and
+flags were written before the evidence process; nothing in this report vouches for them, and its
+"source read" and "built" say only what those records claim. **Uncited** counts the settled records
+(EXACT_SOURCE or EQUIVALENT_IMPLEMENTATION) whose evidence names no address and no file: a bare symbol
+name or prose. **Verified** counts records a capture or a robot has agreed with; that never changes a
+status.
+
+| subsystem | review | settled | uncited | capture verified | hardware verified |
+| --- | --- | ---: | ---: | ---: | ---: |
+| M1-transport | UNREVIEWED | 12 | 5 | 0 | 0 |
+| M2-protocol | UNREVIEWED | 7 | 1 | 0 | 0 |
+| M3-device | UNREVIEWED | 13 | 1 | 0 | 0 |
+| M4-control | UNREVIEWED | 8 | 0 | 0 | 0 |
+| M5-animation | UNREVIEWED | 22 | 3 | 0 | 0 |
+| M6-wwise-bank | UNREVIEWED | 7 | 5 | 0 | 0 |
+| M7-behaviour | UNREVIEWED | 17 | 3 | 0 | 0 |
+| M8-framework | UNREVIEWED | 6 | 1 | 0 | 0 |
+| M9-wwise-music | UNREVIEWED | 20 | 14 | 0 | 0 |
+| M10-derived | UNREVIEWED | 9 | 0 | 0 | 0 |
+| M11-vision | UNREVIEWED | 17 | 5 | 0 | 0 |
+| M12-manipulation | UNREVIEWED | 16 | 5 | 0 | 0 |
+| M13-navigation | UNREVIEWED | 15 | 5 | 0 | 0 |
+| M14-faces | UNREVIEWED | 6 | 0 | 0 | 0 |
+| M15-freeplay | UNREVIEWED | 12 | 1 | 0 | 0 |
+| tools | UNREVIEWED | 1 | 0 | 0 | 0 |
+
 ## Still to read: every RECOVERABLE_GAP
 
 Each of these is a question the original can answer and nobody has asked it yet.

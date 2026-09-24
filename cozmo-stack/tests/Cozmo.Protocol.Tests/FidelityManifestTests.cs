@@ -1,4 +1,7 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Xunit;
 
 namespace Cozmo.Protocol.Tests;
@@ -201,4 +204,172 @@ public class FidelityManifestTests
         Assert.Contains(Implementation, report, StringComparison.Ordinal);
         Assert.DoesNotContain("source_complete", report, StringComparison.Ordinal);
     }
+
+    // ---- The evidence process (AGENTS.md, "Process"). Mirrors re-analysis/tools/fidelity.py. ----
+
+    private static readonly string[] ReviewStates = { "UNREVIEWED", "INVENTORY_APPROVED", "ACCEPTED" };
+    private static readonly string[] Settled = { "EXACT_SOURCE", "EQUIVALENT_IMPLEMENTATION" };
+    private static readonly string[] Frozen = { "title", "authority", "evidence", "live_path", "hardware_required" };
+    private static readonly string[] LocalOnly = { "resources/", "sources/", "smali/", "unity/", "re-analysis/obb/" };
+    private static readonly Regex Tag = new(@"//\s*fidelity:\s*([A-Za-z0-9-]+(?:\s*,\s*[A-Za-z0-9-]+)*)");
+    private static readonly Regex RecordId = new(@"\b(?:M\d{1,2}|TOOL)-\d{3}\b");
+    private static readonly Regex Address = new(@"0x[0-9A-Fa-f]{4,}");
+
+    private static string ReadText(string path) => File.ReadAllText(path).Replace("\r\n", "\n");
+
+    private static string Sha256Text(string path) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(ReadText(path)))).ToLowerInvariant();
+
+    /// <summary>An evidence entry someone can open: a native address, or a file. A bare symbol name or the whole .so is not.</summary>
+    private static bool Concrete(string root, string entry)
+    {
+        if (Address.IsMatch(entry)) return true;
+        string path = entry.Split(':')[0].Split(' ')[0].Replace('\\', '/');
+        if (!path.Contains('/') || path.EndsWith(".so", StringComparison.Ordinal)) return false;
+        return LocalOnly.Any(p => path.StartsWith(p, StringComparison.Ordinal))
+            || File.Exists(Path.Combine(root, path)) || Directory.Exists(Path.Combine(root, path));
+    }
+
+    /// <summary>Every <c>// fidelity:</c> tag under cozmo-stack, as (repository-relative file, record id).</summary>
+    private static List<(string File, string Id)> CodeTags(string root)
+    {
+        var tags = new List<(string, string)>();
+        var skip = new[] { "bin", "obj", "third-party", ".vs" };
+        foreach (var file in Directory.EnumerateFiles(Path.Combine(root, "cozmo-stack"), "*.cs", SearchOption.AllDirectories))
+        {
+            var rel = Path.GetRelativePath(root, file).Replace('\\', '/');
+            if (rel.Split('/').Any(part => skip.Contains(part))) continue;
+            foreach (Match match in Tag.Matches(ReadText(file)))
+                foreach (var id in match.Groups[1].Value.Split(','))
+                    tags.Add((rel, id.Trim()));
+        }
+        return tags;
+    }
+
+    /// <summary>
+    /// Every subsystem says where it stands in the evidence process. UNREVIEWED is allowed and is the honest
+    /// state of anything written before the process existed; the report says so for each one.
+    /// </summary>
+    [Fact]
+    public void EverySubsystemCarriesAReviewState()
+    {
+        foreach (var sub in Manifest().GetProperty("subsystems").EnumerateArray())
+        {
+            Assert.True(sub.TryGetProperty("review", out var review), $"{Str(sub, "id")} has no review");
+            Assert.Contains(Str(review, "state"), ReviewStates);
+        }
+    }
+
+    /// <summary>A tag in the code is a claim about a record, so it has to name one that exists.</summary>
+    [Fact]
+    public void EveryFidelityTagInTheCodeNamesARecord()
+    {
+        string root = RepoRoot();
+        var ids = Manifest().GetProperty("records").EnumerateArray().Select(r => Str(r, "id")).ToHashSet();
+        foreach (var (file, id) in CodeTags(root))
+            Assert.True(ids.Contains(id), $"{file}: `// fidelity: {id}` names no record");
+    }
+
+    /// <summary>
+    /// Verification says a capture or a robot agreed with a record. It is its own field, it has to name what
+    /// it rests on, and it never stands in for provenance.
+    /// </summary>
+    [Fact]
+    public void VerificationNamesTheBundlesItRestsOn()
+    {
+        string root = RepoRoot();
+        var m = Manifest();
+        var levels = m.GetProperty("verification_levels").EnumerateObject().Select(p => p.Name).ToHashSet();
+        foreach (var r in m.GetProperty("records").EnumerateArray())
+        {
+            if (!r.TryGetProperty("verification", out var ver)) continue;
+            string id = Str(r, "id"), level = Str(ver, "level");
+            Assert.True(levels.Contains(level), $"{id}: unknown verification level {level}");
+            if (level == "NONE") continue;
+            var bundles = ver.TryGetProperty("bundles", out var b) ? b.EnumerateArray().Select(x => x.GetString()!).ToList() : new();
+            Assert.True(bundles.Count > 0, $"{id}: {level} has to name the bundle(s) it rests on");
+            foreach (var bundle in bundles)
+                Assert.True(File.Exists(Path.Combine(root, bundle)) || Directory.Exists(Path.Combine(root, bundle)),
+                    $"{id}: verification bundle {bundle} does not exist");
+        }
+    }
+
+    /// <summary>
+    /// A subsystem the operator has approved: its inventory names every record, its evidence is what was
+    /// approved (the snapshot), every settled record cites an address or a file, and every record is tagged
+    /// in the file it points at. After approval the only status change allowed is an IMPLEMENTATION_GAP
+    /// being built; anything else is Extractor work and needs a new approval.
+    /// </summary>
+    [Fact]
+    public void AnApprovedSubsystemMatchesItsFrozenInventory()
+    {
+        string root = RepoRoot();
+        var m = Manifest();
+        var records = m.GetProperty("records").EnumerateArray().ToList();
+        var ids = records.Select(r => Str(r, "id")).ToHashSet();
+        var tagged = CodeTags(root).ToLookup(t => t.File, t => t.Id);
+
+        foreach (var sub in m.GetProperty("subsystems").EnumerateArray())
+        {
+            var review = sub.GetProperty("review");
+            string sid = Str(sub, "id"), state = Str(review, "state");
+            if (state == "UNREVIEWED") continue;
+
+            foreach (var field in new[] { "inventory", "approved", "snapshot" })
+                Assert.False(string.IsNullOrWhiteSpace(Str(review, field)), $"{sid}: review state {state} needs {field}");
+            string inventoryPath = Path.Combine(root, Str(review, "inventory"));
+            string snapshotPath = Path.Combine(root, Str(review, "snapshot"));
+            Assert.True(File.Exists(inventoryPath), $"{sid}: inventory {Str(review, "inventory")} does not exist");
+            Assert.True(File.Exists(snapshotPath), $"{sid}: snapshot {Str(review, "snapshot")} does not exist");
+
+            string inventory = ReadText(inventoryPath);
+            var mine = records.Where(r => Str(r, "subsystem") == sid).ToList();
+            foreach (var r in mine)
+                Assert.True(Regex.IsMatch(inventory, $@"\b{Regex.Escape(Str(r, "id"))}\b"),
+                    $"{sid}: {Str(r, "id")} is not in the inventory");
+            foreach (Match match in RecordId.Matches(inventory))
+                Assert.True(ids.Contains(match.Value), $"{sid}: the inventory names {match.Value}, which is not a record");
+
+            var snap = JsonDocument.Parse(File.ReadAllText(snapshotPath)).RootElement;
+            Assert.True(Str(snap, "inventory_sha256") == Sha256Text(inventoryPath),
+                $"{sid}: the inventory changed after it was approved; it needs a new approval");
+            var frozen = snap.GetProperty("records");
+            foreach (var p in frozen.EnumerateObject())
+                Assert.True(mine.Any(r => Str(r, "id") == p.Name), $"{sid}: {p.Name} was approved and has been removed");
+
+            foreach (var r in mine)
+            {
+                string id = Str(r, "id"), status = Str(r, "status");
+                Assert.True(frozen.TryGetProperty(id, out var was), $"{sid}: {id} was added after the inventory was approved");
+                foreach (var field in Frozen)
+                {
+                    string now = r.TryGetProperty(field, out var a) ? a.GetRawText() : "null";
+                    string then = was.TryGetProperty(field, out var b) ? b.GetRawText() : "null";
+                    Assert.True(JsonEquals(now, then), $"{sid}: {id} {field} changed after approval; that needs a new approval");
+                }
+                string wasStatus = Str(was, "status");
+                Assert.True(status == wasStatus || (wasStatus == Implementation && Settled.Contains(status)),
+                    $"{sid}: {id} went from {wasStatus} to {status} after approval; only an IMPLEMENTATION_GAP being built may");
+
+                if (Settled.Contains(status))
+                    Assert.True(r.GetProperty("evidence").EnumerateArray().Any(e => Concrete(root, e.GetString()!)),
+                        $"{sid}: {id} is {status} with no evidence entry that names an address or a file");
+                string path = Str(r, "location").Split(':')[0];
+                if (path.EndsWith(".cs", StringComparison.Ordinal))
+                    Assert.True(tagged[path].Contains(id), $"{sid}: {id} has no `// fidelity: {id}` tag in {path}");
+            }
+
+            if (state == "ACCEPTED")
+            {
+                Assert.False(string.IsNullOrWhiteSpace(Str(review, "accepted_commit")), $"{sid}: ACCEPTED needs the accepted_commit");
+                foreach (var r in mine.Where(r => Flag(r, "live_path")))
+                    Assert.False(Str(r, "status") is Recoverable or Implementation,
+                        $"{sid}: cannot be ACCEPTED while holding live-path {Str(r, "status")} {Str(r, "id")}");
+            }
+        }
+    }
+
+    /// <summary>Structural JSON equality, so the snapshot's formatting cannot matter.</summary>
+    private static bool JsonEquals(string a, string b) =>
+        JsonSerializer.Serialize(JsonDocument.Parse(a).RootElement) == JsonSerializer.Serialize(JsonDocument.Parse(b).RootElement);
 }

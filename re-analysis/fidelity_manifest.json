@@ -7,7 +7,8 @@
     "production code of cozmo-stack. Platform plumbing that cannot change what the robot does (logging,",
     "collection choices, string formatting, file layout) is not recorded.",
     "The manifest, not the prose documents, is the authoritative statement of what rests on primary source.",
-    "re-analysis/tools/fidelity.py validates it and regenerates FIDELITY_GAPS.md from it."
+    "re-analysis/tools/fidelity.py validates it and regenerates FIDELITY_GAPS.md from it.",
+    "Two further fields are independent of status: a record's verification (capture or hardware agreement, never provenance) and a subsystem's review (whether it has been through the evidence process in AGENTS.md)."
   ],
   "authority_order": [
     "libcozmoEngine.so 3.4.0-1204 (resources/lib/armeabi-v7a) and its symbol table",
@@ -27,6 +28,16 @@
     "HARDWARE_ONLY": "No shipped artifact can settle it; only a robot, or a recording of the stock app, can.",
     "BLOCKED_EXTERNAL": "The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine)."
   },
+  "verification_levels": {
+    "NONE": "No capture or robot run has been checked against this record. The default when a record carries no verification field.",
+    "CAPTURE_VERIFIED": "A capture of the original app, or of the robot, agrees with this record. The bundles field names the capture(s).",
+    "HARDWARE_VERIFIED": "A hardware run of this stack agrees with this record. The bundles field names the run bundle(s). It says the behaviour works, never where it came from."
+  },
+  "review_states": {
+    "UNREVIEWED": "The subsystem's records and flags were written before the evidence process in AGENTS.md. Nothing vouches for them.",
+    "INVENTORY_APPROVED": "The operator approved an inventory of every behaviour-changing step. Its evidence is frozen in the snapshot until the next approval.",
+    "ACCEPTED": "Implemented against the approved inventory, independently verified, and committed as accepted_commit."
+  },
   "gate": {
     "rule": "Two separate questions, and neither may be answered by the other. A subsystem's source investigation is exhausted only when it holds no RECOVERABLE_GAP on a live execution path; its implementation fidelity is complete only when it holds no IMPLEMENTATION_GAP there. A subsystem can have exhausted the source and still not reproduce what the source says, and neither state means the behaviour is faithfully reproduced: BLOCKED_EXTERNAL and HARDWARE_ONLY items can remain in both cases, and are counted separately so that they cannot be lost behind a single word.",
     "enforced_by": [
@@ -43,7 +54,8 @@
     "unresolved": "for a RECOVERABLE_GAP, what has still to be read; for an IMPLEMENTATION_GAP, what has still to be built; empty string when nothing is",
     "hardware_required": "whether a robot is genuinely needed to settle it",
     "live_path": "whether the decision is reached on a normal run against a robot",
-    "test": "the regression that would fail if the recovered behaviour were undone"
+    "test": "the regression that would fail if the recovered behaviour were undone",
+    "verification": "optional; {level, bundles}: whether a capture or a robot run has agreed with the record. Absent means NONE. Never changes status"
   },
   "subsystems": [
     {
@@ -51,112 +63,160 @@
       "name": "UDP transport and reliability",
       "milestone": "M1",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": true,
+      "review": {
+        "state": "UNREVIEWED"
+      }
     },
     {
       "id": "M2-protocol",
       "name": "CLAD messages and protocol helpers",
       "milestone": "M2",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": true,
+      "review": {
+        "state": "UNREVIEWED"
+      }
     },
     {
       "id": "M3-device",
       "name": "Camera, display and audio device layer",
       "milestone": "M3",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": true,
+      "review": {
+        "state": "UNREVIEWED"
+      }
     },
     {
       "id": "M4-control",
       "name": "Motion, sensors, lights and cubes",
       "milestone": "M4",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": true,
+      "review": {
+        "state": "UNREVIEWED"
+      }
     },
     {
       "id": "M5-animation",
       "name": "Animation clips, scheduler and face",
       "milestone": "M5",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": true,
+      "review": {
+        "state": "UNREVIEWED"
+      }
     },
     {
       "id": "M6-wwise-bank",
       "name": "Wwise bank reading and codecs",
       "milestone": "M6",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": true,
+      "review": {
+        "state": "UNREVIEWED"
+      }
     },
     {
       "id": "M7-behaviour",
       "name": "Idle, mood and reactions",
       "milestone": "M7",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": true,
+      "review": {
+        "state": "UNREVIEWED"
+      }
     },
     {
       "id": "M8-framework",
       "name": "Behaviour framework and scoring",
       "milestone": "M8",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": true,
+      "review": {
+        "state": "UNREVIEWED"
+      }
     },
     {
       "id": "M9-wwise-music",
       "name": "Wwise music, the MIDI sampler and singing",
       "milestone": "M9",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": true,
+      "review": {
+        "state": "UNREVIEWED"
+      }
     },
     {
       "id": "M10-derived",
       "name": "Derived robot state and reaction strategies",
       "milestone": "M10",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": true,
+      "review": {
+        "state": "UNREVIEWED"
+      }
     },
     {
       "id": "M11-vision",
       "name": "Markers, camera geometry and BlockWorld",
       "milestone": "M11",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": true,
+      "review": {
+        "state": "UNREVIEWED"
+      }
     },
     {
       "id": "M12-manipulation",
       "name": "Docking, carrying and pre-action poses",
       "milestone": "M12",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": true,
+      "review": {
+        "state": "UNREVIEWED"
+      }
     },
     {
       "id": "M13-navigation",
       "name": "Planning, charger and block configurations",
       "milestone": "M13",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": true,
+      "review": {
+        "state": "UNREVIEWED"
+      }
     },
     {
       "id": "M14-faces",
       "name": "Face and pet pipeline",
       "milestone": "M14",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": true,
+      "review": {
+        "state": "UNREVIEWED"
+      }
     },
     {
       "id": "M15-freeplay",
       "name": "Needs, activities and freeplay",
       "milestone": "M15",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": true,
+      "review": {
+        "state": "UNREVIEWED"
+      }
     },
     {
       "id": "tools",
       "name": "Conformance CLI and offline tools",
       "milestone": "-",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true
+      "implementation_fidelity_complete": true,
+      "review": {
+        "state": "UNREVIEWED"
+      }
     }
   ],
   "records": [
