@@ -18,6 +18,7 @@ return args.Length == 0 ? Usage() : args[0] switch
     "replay" => Replay(args),
     "connect" => SmokeTest.Run(args).GetAwaiter().GetResult(),
     "m1-link-check" => LinkCheck.Run(args),
+    "control-check" => ControlCheck.Run(args),
     "fakerobot" => FakeRobot(args),
     "probe" => Probe.Run(args).GetAwaiter().GetResult(),
     "camera" => Devices.Camera(args).GetAwaiter().GetResult(),
@@ -147,6 +148,17 @@ static int Usage()
                                              disconnect, stop. Default robot 172.31.1.1:5551 (127.0.0.1:5552 with --simulated).
                                              Writes a bundle to re-analysis/acceptance/hardware/<yyyyMMdd-HHmmss>-M1-LINK/
                                              (under --out <dir> instead, if given). Exit 0 PASS, 1 FAIL, 2 usage
+          control-check [robot-ip] [--obb <dir>] [--allow-drive] [--out <dir>] [--yes]
+                                             self-judging direct-control hardware run (CONTROL), about 2 minutes: connects
+                                             through the app layer, then CONNECT, STATE, HEAD, LIFT, DRIVE (only with
+                                             --allow-drive; stop-on-cliff on first), FACE, AUDIO, ANIM and ANIM_CANCEL
+                                             (need the OBB), CUBES (skipped if no cube is heard), CAMERA, DISCONNECT.
+                                             Every check is judged from telemetry against numeric criteria; what only a
+                                             person can judge is a humanNote with a null verdict. Default robot 172.31.1.1;
+                                             --obb defaults to re-analysis/obb (or cozmo-stack/re-analysis/obb) if present.
+                                             Prints a setup prompt and waits for Enter (--yes skips the wait). Writes
+                                             re-analysis/acceptance/hardware/<yyyyMMdd-HHmmss>-CONTROL/ (under --out <dir>
+                                             instead, if given). Exit 0 PASS, 1 FAIL or INCOMPLETE, 2 usage, 3 watchdog
           fakerobot [--port 5551] [--seconds 60]  loopback stand-in for the robot transport (127.0.0.1) for testing the socket path without hardware
           probe <robot-ip> [--include-motion] [--include-state] [--only <step>] [--out results.json]
                                              subsystem-by-subsystem protocol verification on a real robot: sends only
