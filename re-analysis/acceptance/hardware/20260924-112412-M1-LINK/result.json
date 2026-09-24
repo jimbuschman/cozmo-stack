@@ -1,0 +1,758 @@
+{
+  "test": "M1-LINK",
+  "overall": "PASS",
+  "tool": "cozmo-conformance m1-link-check",
+  "robot": {
+    "ip": "172.31.1.1",
+    "port": 5551,
+    "simulated": false
+  },
+  "localPort": 56590,
+  "provenance": "hardware verification only: a PASS does not raise the provenance or status of any cited record (AGENTS.md: hardware success does not upgrade provenance). The manager judges the bundle.",
+  "checks": [
+    {
+      "id": "SOCKET_EPHEMERAL",
+      "title": "Start opens the UDP socket on an ephemeral (OS-assigned) local port",
+      "pass": true,
+      "measured": {
+        "newLocalUdpEndpoints": [
+          "0.0.0.0:56590"
+        ],
+        "baselineEndpointsOfThisProcess": [],
+        "localPort": 56590,
+        "method": "netstat -ano -p UDP, filtered by this process id",
+        "osDynamicRange": "49152..65535",
+        "inOsDynamicRange": true,
+        "openedAfterStartMs": 44.602
+      },
+      "expected": "exactly one new UDP socket for this process, bound to INADDR_ANY on a port the OS chose: not 0 and not 47817 (the port every open after a close uses). The OS dynamic range is informational.",
+      "rows": [
+        "B12",
+        "B11",
+        "R39"
+      ],
+      "records": [
+        "M1-022",
+        "M1-019"
+      ]
+    },
+    {
+      "id": "CONNECT_1",
+      "title": "Connect gets the robot\u0027s ConnectionResponse within 5 s",
+      "pass": true,
+      "measured": {
+        "connectedEventAfterMs": 10.299,
+        "connectionRequestSends": 1,
+        "firstConnectionRequestAtMs": 6.447,
+        "connectionRequestSeq": 1,
+        "connectionResponseFrameAtMs": 7.752,
+        "connectionResponseFrame": {
+          "type": 9,
+          "typeName": "MultipleMixedMessages",
+          "seqMin": 1,
+          "seqMax": 1,
+          "ack": 1,
+          "reliable": true,
+          "len": 17
+        },
+        "linkState": "Connected"
+      },
+      "expected": "the facade Connected event (the receiver\u0027s OnConnected for a type-2 ConnectionResponse on this link\u0027s connection) within 5000 ms of Connect. A new connection\u0027s ConnectionRequest is reliable, seq 1. An unanswered connection would time out 5000 ms after it was created.",
+      "rows": [
+        "R38",
+        "R13",
+        "R12",
+        "R40",
+        "G2.1",
+        "G2.2",
+        "G2.7"
+      ],
+      "records": [
+        "M1-019",
+        "M1-018",
+        "M1-032",
+        "M1-033"
+      ],
+      "note": "whether and how fast the robot answers is robot-side behaviour (M1-033, HARDWARE_ONLY)"
+    },
+    {
+      "id": "HOLD_NO_TIMEOUT",
+      "title": "No connection timeout during the 30 s idle hold",
+      "pass": true,
+      "measured": {
+        "holdMs": 30001.007,
+        "timedOutFlag": false,
+        "timeoutWarnings": 0,
+        "disconnectedEvents": [],
+        "linkStateAtEnd": "Connected",
+        "connectionAtEnd": true,
+        "inboundFrames": 873,
+        "maxInboundGapMs": 130.727
+      },
+      "expected": "no \u0022Disconnecting TimedOut Connection\u0022, the \u002B0xA1 timed-out flag clear, no Disconnected event, still Connected with a connection at the end. The timeout is now \u003E lastRecv \u002B 5000 ms, so this also needs the robot to send something at least every 5 s.",
+      "rows": [
+        "R19",
+        "B22",
+        "R41",
+        "B36"
+      ],
+      "records": [
+        "M1-015",
+        "M1-033"
+      ],
+      "note": "a robot that stays silent for 5 s, or sends a DisconnectRequest, fails this check for robot-side reasons (M1-033); see maxInboundGapMs and the events"
+    },
+    {
+      "id": "IDLE_PING_CADENCE",
+      "title": "Idle pings at the R32 cadence during the hold",
+      "pass": true,
+      "measured": {
+        "windowMs": 30001.007,
+        "pingFrames": 875,
+        "minimumPingFramesRequired": 643,
+        "nonPingOutboundFrames": 0,
+        "nonPingOutboundTypes": {},
+        "pingToPingIntervalMs": {
+          "count": 874,
+          "min": 33.479,
+          "median": 34.201,
+          "p95": 34.871,
+          "max": 35.989,
+          "mean": 34.283
+        },
+        "previousSendToPingIntervalMs": {
+          "count": 875,
+          "min": 33.479,
+          "median": 34.201,
+          "p95": 34.874,
+          "max": 35.989,
+          "mean": 34.284
+        },
+        "pingToPingBucketsMs": {
+          "\u003C32.3": 0,
+          "32.3-35.3": 868,
+          "35.3-37.3": 6,
+          "37.3-50": 0,
+          "50-66.6": 0,
+          "\u003E=66.6 (a missed slot)": 0
+        },
+        "pingsSentWithIsReply": 0
+      },
+      "expected": "every ping at least 33.3 ms after the previous outbound frame and the previous ping (R32; 1 ms allowed for host timestamps taken after sendto, so \u003E= 32.3); median ping-to-ping interval \u003C= 37.3 ms (the first 2 ms update after 33.3 ms, R35, with one update of slack); at least 80 % of the pings that cadence gives over the window; every ping a request, isReply 0, since the engine never answers pings (R31, sSendSeparatePingMessages 0). Intervals above the median come from host scheduling; they are reported, not judged.",
+      "rows": [
+        "R32",
+        "R33",
+        "R30",
+        "R31",
+        "R35",
+        "B14",
+        "B13",
+        "B15",
+        "G1.2",
+        "G1.8"
+      ],
+      "records": [
+        "M1-017",
+        "M1-008",
+        "M1-011",
+        "M1-005",
+        "M1-010",
+        "M1-020",
+        "M1-021"
+      ],
+      "note": "pings are sent only while nothing is pending, so a robot that never acks the ConnectionRequest shows up here as resends and no pings"
+    },
+    {
+      "id": "DISCONNECT_1",
+      "title": "Disconnect sends type 3 and deletes the connection",
+      "pass": true,
+      "measured": {
+        "disconnectRequestFrames": 1,
+        "sentAfterCallMs": 0.83,
+        "frame": {
+          "type": 3,
+          "typeName": "DisconnectRequest",
+          "seqMin": 2,
+          "seqMax": 2,
+          "ack": 10,
+          "reliable": true,
+          "len": 14
+        },
+        "previousOutboundBeforeCallMs": 8.001,
+        "connectionDeleted": true,
+        "linkState": "Disconnected",
+        "disconnectedEventReason": "m1-link-check disconnect 1"
+      },
+      "expected": "exactly one frame carrying a DisconnectRequest: a single reliable type-3 frame (seq != 0, flush) to the robot, then that connection deleted at once (the peer has no connection; the link is Disconnected).",
+      "rows": [
+        "R38",
+        "B21",
+        "R25(a)"
+      ],
+      "records": [
+        "M1-019"
+      ]
+    },
+    {
+      "id": "DISCONNECT_1_NO_RESEND",
+      "title": "Nothing sent after the disconnect (type 3 never resent)",
+      "pass": true,
+      "measured": {
+        "outboundFramesAfterType3": 0,
+        "outboundTypes": {},
+        "windowMs": 2005.938,
+        "robotFramesDroppedAsUnconnectedSource": 0
+      },
+      "expected": "no outbound frame from the type-3 send to the end of the 2 s wait: the type 3 has at most one send and is never resent, and a deleted connection is no longer updated, so there is nothing to ping or resend. Robot frames arriving then are dropped as \u0022unconnected source\u0022 (reported).",
+      "rows": [
+        "R38",
+        "R13",
+        "R34"
+      ],
+      "records": [
+        "M1-019",
+        "M1-018"
+      ]
+    },
+    {
+      "id": "RECONNECT",
+      "title": "Second Connect on the same transport gets a ConnectionResponse within 5 s",
+      "pass": true,
+      "measured": {
+        "connectedEventAfterMs": 3.178,
+        "connectionRequestSends": 1,
+        "firstConnectionRequestAtMs": 0.149,
+        "connectionRequestSeq": 1,
+        "connectionResponseFrameAtMs": 3.041,
+        "connectionResponseFrame": {
+          "type": 9,
+          "typeName": "MultipleMixedMessages",
+          "seqMin": 1,
+          "seqMax": 1,
+          "ack": 1,
+          "reliable": true,
+          "len": 17
+        },
+        "linkState": "Connected"
+      },
+      "expected": "the facade Connected event (the receiver\u0027s OnConnected for a type-2 ConnectionResponse on this link\u0027s connection) within 5000 ms of Connect. A new connection\u0027s ConnectionRequest is reliable, seq 1. An unanswered connection would time out 5000 ms after it was created.",
+      "rows": [
+        "R38",
+        "R13",
+        "R12",
+        "R40",
+        "G2.1",
+        "G2.2",
+        "G2.7"
+      ],
+      "records": [
+        "M1-019",
+        "M1-018",
+        "M1-032",
+        "M1-033"
+      ],
+      "note": "whether and how fast the robot answers is robot-side behaviour (M1-033, HARDWARE_ONLY)"
+    },
+    {
+      "id": "RECONNECT_SAME_PORT",
+      "title": "Second Connect uses the same local port (socket not reopened)",
+      "pass": true,
+      "measured": {
+        "localPortAtStart": 56590,
+        "localEndpointsAfterReconnect": [
+          "0.0.0.0:56590"
+        ],
+        "method": "netstat -ano -p UDP, filtered by this process id"
+      },
+      "expected": "the one socket of this process still bound to the port Start opened: Connect opens no socket (R38), and StartClient opens only when there is none (B12).",
+      "rows": [
+        "R38",
+        "B12",
+        "R39"
+      ],
+      "records": [
+        "M1-019",
+        "M1-022"
+      ]
+    },
+    {
+      "id": "DISCONNECT_2",
+      "title": "Disconnect after the second connect sends type 3 and deletes the connection",
+      "pass": true,
+      "measured": {
+        "disconnectRequestFrames": 1,
+        "sentAfterCallMs": 0.181,
+        "frame": {
+          "type": 3,
+          "typeName": "DisconnectRequest",
+          "seqMin": 2,
+          "seqMax": 2,
+          "ack": 9,
+          "reliable": true,
+          "len": 14
+        },
+        "previousOutboundBeforeCallMs": 8.001,
+        "connectionDeleted": true,
+        "linkState": "Disconnected",
+        "disconnectedEventReason": "m1-link-check disconnect 2"
+      },
+      "expected": "exactly one frame carrying a DisconnectRequest: a single reliable type-3 frame (seq != 0, flush) to the robot, then that connection deleted at once (the peer has no connection; the link is Disconnected).",
+      "rows": [
+        "R38",
+        "B21",
+        "R25(a)"
+      ],
+      "records": [
+        "M1-019"
+      ]
+    },
+    {
+      "id": "NOTHING_AFTER_STOP",
+      "title": "Nothing sent after Stop (through Dispose)",
+      "pass": true,
+      "measured": {
+        "outboundFramesAfterStop": 0,
+        "outboundTypes": {},
+        "windowMs": 1564.595,
+        "disposeAfterStopMs": 1048.053
+      },
+      "expected": "no outbound frame after the Stop call: Stop sends nothing and clears every connection (R39), and Dispose\u0027s disconnect then finds no connection (\u0022unconnected destination\u0022, nothing sent).",
+      "rows": [
+        "R39",
+        "R13",
+        "B33"
+      ],
+      "records": [
+        "M1-019"
+      ]
+    },
+    {
+      "id": "NO_UNHANDLED_EXCEPTION",
+      "title": "No unhandled exception, and no handler fault",
+      "pass": true,
+      "measured": {
+        "exceptions": [],
+        "handlerFaults": 0
+      },
+      "expected": "no exception from any transport call or thread, and none from this tool\u0027s event handlers (the transport counts those as HandlerFaults, handler isolation being policy M1-034).",
+      "rows": [
+        "G3 (policy D6)"
+      ],
+      "records": [
+        "M1-034"
+      ]
+    }
+  ],
+  "reports": [
+    {
+      "id": "ERROR_COUNTERS",
+      "judged": false,
+      "title": "Receive and send error counters (reported, not judged)",
+      "measured": {
+        "udpReceiveErrorsByCode": {},
+        "reliableReceiveErrorsByCode": {},
+        "udpSendErrorsByCode": {},
+        "lastSendErrorMs": -1
+      },
+      "codes": "UDP receive: 1 truncated (B17). Reliable receive: 0 under 10 bytes, 2 no RE\\x01, each then 4 (R3); 4 invalid sub-type, 1 size overrun (R10); 5 out-of-range reliable frame that is not type 9 (R16). UDP send: 6 failed sendto (B10). Codes with count 0 are omitted.",
+      "rows": [
+        "B17",
+        "R3",
+        "R10",
+        "R16",
+        "B10"
+      ],
+      "records": [
+        "M1-022"
+      ]
+    }
+  ],
+  "observations": {
+    "record": "M1-033",
+    "status": "HARDWARE_ONLY",
+    "verdict": null,
+    "note": "recorded without a verdict: the robot firmware is not in the package, so none of this has an expected value",
+    "frameTypesFromRobot": {
+      "9 MultipleMixedMessages": 1026
+    },
+    "containerFramesFromRobot": {
+      "7 MultipleReliableMessages": 0,
+      "8 MultipleUnreliableMessages": 0,
+      "9 MultipleMixedMessages": 1026
+    },
+    "framesThisStackSentByType": {
+      "11 Ping": 1025,
+      "1 ConnectionRequest": 2,
+      "3 DisconnectRequest": 2
+    },
+    "pingsFromRobot": {
+      "count": 1025,
+      "isReplySet": 0,
+      "isReplyClear": 1025,
+      "under17Bytes": 0,
+      "echoesOfOurTimestamps": 1025,
+      "echoesWithIsReplySet": 0,
+      "robotOwnTimestamps": 0,
+      "sample": [
+        {
+          "t": 457.271,
+          "timeSentMs": 40.372,
+          "numPingsSent": 1,
+          "numPingsReceived": 0,
+          "isReply": false,
+          "echoOfOurs": true,
+          "size": 17
+        },
+        {
+          "t": 491.352,
+          "timeSentMs": 75.825,
+          "numPingsSent": 2,
+          "numPingsReceived": 1,
+          "isReply": false,
+          "echoOfOurs": true,
+          "size": 17
+        },
+        {
+          "t": 523.624,
+          "timeSentMs": 109.9,
+          "numPingsSent": 3,
+          "numPingsReceived": 2,
+          "isReply": false,
+          "echoOfOurs": true,
+          "size": 17
+        },
+        {
+          "t": 555.7,
+          "timeSentMs": 144.19,
+          "numPingsSent": 4,
+          "numPingsReceived": 3,
+          "isReply": false,
+          "echoOfOurs": true,
+          "size": 17
+        },
+        {
+          "t": 592.084,
+          "timeSentMs": 178.326,
+          "numPingsSent": 5,
+          "numPingsReceived": 4,
+          "isReply": false,
+          "echoOfOurs": true,
+          "size": 17
+        }
+      ]
+    },
+    "robotReliableResends": {
+      "connection-1": {
+        "reliableSeqsSeen": 10,
+        "seqsSeenMoreThanOnce": 2,
+        "maxTimesOneSeqSeen": 2,
+        "repeatIntervalMs": {
+          "count": 2,
+          "min": 24.06,
+          "median": 28.38,
+          "p95": 32.269,
+          "max": 32.701,
+          "mean": 28.38
+        },
+        "sample": [
+          {
+            "seq": 1,
+            "subType": "ConnectionResponse",
+            "timesMs": [
+              392.506,
+              425.207
+            ]
+          },
+          {
+            "seq": 10,
+            "subType": "SingleReliableMessage",
+            "timesMs": [
+              28761.022,
+              28785.081
+            ]
+          }
+        ]
+      },
+      "connection-2": {
+        "reliableSeqsSeen": 9,
+        "seqsSeenMoreThanOnce": 9,
+        "maxTimesOneSeqSeen": 2,
+        "repeatIntervalMs": {
+          "count": 9,
+          "min": 32.418,
+          "median": 33.627,
+          "p95": 33.627,
+          "max": 33.627,
+          "mean": 33.492
+        },
+        "sample": [
+          {
+            "seq": 1,
+            "subType": "ConnectionResponse",
+            "timesMs": [
+              32476.283,
+              32508.701
+            ]
+          },
+          {
+            "seq": 2,
+            "subType": "SingleReliableMessage",
+            "timesMs": [
+              32508.701,
+              32542.328
+            ]
+          },
+          {
+            "seq": 3,
+            "subType": "SingleReliableMessage",
+            "timesMs": [
+              32508.701,
+              32542.328
+            ]
+          },
+          {
+            "seq": 4,
+            "subType": "SingleReliableMessage",
+            "timesMs": [
+              32508.701,
+              32542.328
+            ]
+          },
+          {
+            "seq": 5,
+            "subType": "SingleReliableMessage",
+            "timesMs": [
+              32508.701,
+              32542.328
+            ]
+          },
+          {
+            "seq": 6,
+            "subType": "SingleReliableMessage",
+            "timesMs": [
+              32508.701,
+              32542.328
+            ]
+          },
+          {
+            "seq": 7,
+            "subType": "SingleReliableMessage",
+            "timesMs": [
+              32508.701,
+              32542.328
+            ]
+          },
+          {
+            "seq": 8,
+            "subType": "SingleReliableMessage",
+            "timesMs": [
+              32508.701,
+              32542.328
+            ]
+          },
+          {
+            "seq": 9,
+            "subType": "SingleReliableMessage",
+            "timesMs": [
+              32508.701,
+              32542.328
+            ]
+          }
+        ]
+      }
+    },
+    "firstRobotAckAfterConnect": {
+      "connection-1": {
+        "ack": 1,
+        "afterConnectCallMs": 7.752,
+        "frameType": "9 MultipleMixedMessages"
+      },
+      "connection-2": {
+        "ack": 1,
+        "afterConnectCallMs": 3.041,
+        "frameType": "9 MultipleMixedMessages"
+      }
+    },
+    "robotWhileIdle": {
+      "windowMs": 30001.007,
+      "frames": 873,
+      "framesPerSecond": 29.099,
+      "frameTypes": {
+        "9 MultipleMixedMessages": 873
+      },
+      "subMessageTypes": {
+        "Ping": 875,
+        "SingleReliableMessage": 10,
+        "ConnectionResponse": 1
+      },
+      "robotMessages": {
+        "0xB0 trace": 7,
+        "0xC9 robotAvailable": 1,
+        "0xEC wifiFlashID": 1,
+        "0xEE firmwareVersion": 1
+      }
+    },
+    "robotDuringSecondHold": {
+      "windowMs": 5001.816,
+      "frames": 146,
+      "framesPerSecond": 29.189,
+      "frameTypes": {
+        "9 MultipleMixedMessages": 146
+      },
+      "subMessageTypes": {
+        "Ping": 146,
+        "SingleReliableMessage": 8
+      },
+      "robotMessages": {
+        "0xB0 trace": 5,
+        "0xC9 robotAvailable": 1,
+        "0xEC wifiFlashID": 1,
+        "0xEE firmwareVersion": 1
+      }
+    },
+    "robotDisconnectRequests": [],
+    "robotFramesDroppedAsUnconnectedSource": {
+      "count": 0,
+      "byPhase": {},
+      "byFrameType": {},
+      "note": "the transport drops these before its frame trace, so only the warning (source and frame type) is in the bundle, not the bytes"
+    }
+  },
+  "hardwareOnlyUncertainty": [
+    "M1-033 (HARDWARE_ONLY): robot-side transport behaviour. The robot\u0027s answers, idle traffic, acks and resends are inputs to CONNECT_1, HOLD_NO_TIMEOUT, RECONNECT and IDLE_PING_CADENCE; they are recorded under observations without a verdict."
+  ],
+  "records": [
+    {
+      "id": "M1-001",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M1-005",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M1-008",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M1-010",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M1-011",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M1-015",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M1-017",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M1-018",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M1-019",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M1-020",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M1-021",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M1-022",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M1-032",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M1-033",
+      "status": "HARDWARE_ONLY"
+    },
+    {
+      "id": "M1-034",
+      "status": "COMPATIBILITY_POLICY"
+    }
+  ],
+  "phases": [
+    {
+      "name": "construct",
+      "startMs": 1.974
+    },
+    {
+      "name": "start",
+      "startMs": 198.319
+    },
+    {
+      "name": "connect-1",
+      "startMs": 383.957
+    },
+    {
+      "name": "hold-1",
+      "startMs": 396.582
+    },
+    {
+      "name": "disconnect-1",
+      "startMs": 30429.307
+    },
+    {
+      "name": "after-disconnect-1",
+      "startMs": 30471.2
+    },
+    {
+      "name": "connect-2",
+      "startMs": 32473.24
+    },
+    {
+      "name": "hold-2",
+      "startMs": 32521.334
+    },
+    {
+      "name": "disconnect-2",
+      "startMs": 37523.186
+    },
+    {
+      "name": "stop",
+      "startMs": 37560.546
+    },
+    {
+      "name": "after-stop",
+      "startMs": 37560.638
+    },
+    {
+      "name": "dispose",
+      "startMs": 38608.599
+    },
+    {
+      "name": "after-dispose",
+      "startMs": 38610.232
+    }
+  ],
+  "marksMs": {
+    "startCall": 198.395,
+    "startSeen": 242.996,
+    "connect1Call": 384.754,
+    "connect1CallDone": 395.054,
+    "hold1Start": 396.583,
+    "hold1End": 30397.59,
+    "disconnect1Call": 30465.688,
+    "afterDisconnect1End": 32472.456,
+    "connect2Call": 32473.242,
+    "connect2CallDone": 32476.422,
+    "hold2Start": 32521.335,
+    "hold2End": 37523.151,
+    "disconnect2Call": 37558.432,
+    "stopCall": 37560.547,
+    "disposeCall": 38608.6,
+    "end": 39125.142
+  }
+}

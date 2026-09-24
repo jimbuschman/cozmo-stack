@@ -1,0 +1,57 @@
+{
+  "framesOut": 1029,
+  "framesIn": 1026,
+  "bytesOut": 31831,
+  "bytesIn": 36605,
+  "inboundTraceErrors": 0,
+  "warnings": 1,
+  "warningsByKind": {
+    "unconnected destination": 1
+  },
+  "receiverEventsByMarker": {
+    "Data": 17,
+    "OnConnected": 2
+  },
+  "handlerFaults": 0,
+  "timedOutFlagAtEnd": false,
+  "errorCounters": {
+    "udpReceiveErrorsByCode": {},
+    "reliableReceiveErrorsByCode": {},
+    "udpSendErrorsByCode": {},
+    "lastSendErrorMs": -1
+  },
+  "connectionSnapshots": {
+    "hold-1-end": {
+      "note": "sampled without the transport lock; diagnostics only",
+      "framesSent": 876,
+      "resendFrames": 0,
+      "duplicateReliableDropped": 2,
+      "numPingsSent": 875,
+      "numPingsReceived": 875,
+      "pingRepliesSeen": 0,
+      "lastPingRoundTripMs": null,
+      "nextOutSeq": 2,
+      "nextInSeq": 11,
+      "lastInAcked": 10,
+      "pendingCount": 0
+    },
+    "portsAfterReconnect": [
+      "0.0.0.0:56590"
+    ],
+    "hold-2-end": {
+      "note": "sampled without the transport lock; diagnostics only",
+      "framesSent": 148,
+      "resendFrames": 0,
+      "duplicateReliableDropped": 9,
+      "numPingsSent": 147,
+      "numPingsReceived": 146,
+      "pingRepliesSeen": 0,
+      "lastPingRoundTripMs": null,
+      "nextOutSeq": 2,
+      "nextInSeq": 10,
+      "lastInAcked": 9,
+      "pendingCount": 0
+    },
+    "portsAfterStop": []
+  }
+}
