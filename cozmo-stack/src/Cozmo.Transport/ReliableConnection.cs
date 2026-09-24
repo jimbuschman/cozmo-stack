@@ -9,6 +9,12 @@ public sealed class PendingMessage
     public ushort Seq { get; }
     public byte[] Payload { get; }
     public bool FlushPacket { get; }
+    // fidelity: M1-035
+    /// <summary>
+    /// R20 +0x00 extQueued: the time SendMessage was called with (CA10, 0x00835802): the posted time in async
+    /// mode (CA11), 0.0 in sync mode (CA15) and for the Disconnect closure (CA14). Its only reader feeds a stats
+    /// accumulator, which this stack does not keep, so nothing reads it here.
+    /// </summary>
     public double QueuedTimeMs { get; }
     public double FirstSentTimeMs { get; private set; }
     public double LastSentTimeMs { get; private set; }
@@ -27,8 +33,9 @@ public sealed class PendingMessage
 /// PendingMultiPartMessage: the assembly of one incoming multipart message (R23). It belongs to its
 /// connection: HandleSubMessage passes the connection (0x008374C6 mov r0,r5) to
 /// ReliableConnection::GetPendingMultiPartMessage (0x008374C8; body 0x00835A94 adds r0,#0x20) and calls
-/// AddMessagePart on what it returns, so it goes with its connection when DeleteConnection destroys it
-/// (verifier reading, batch 2b-ii; pending inventory correction).
+/// AddMessagePart on what it returns, so it goes with its connection when DeleteConnection destroys it.
+/// MISSING: that the assembly is per connection is the batch 2b-ii verifier reading of those addresses; no
+/// frozen row states it (R12 and R23 give only the dispatch and the assembly rules), so it stays as built.
 /// </summary>
 public sealed class PendingMultiPartMessage
 {
@@ -92,9 +99,15 @@ public sealed class ReliableConnection
 
     // ------------------------------------------------------------------ outgoing
 
-    /// <summary>Official ReliableTransport::SendMessage for a single (non multipart) message: queue, then try to send one packet.</summary>
-    public void Queue(ReliableMessageType type, byte[] payload, bool reliable, bool flush)
+    /// <summary>
+    /// Official ReliableTransport::SendMessage for a single (non multipart) message: queue, then try to send one
+    /// packet. <paramref name="postedMs"/> is the time SendMessage is called with, stored on every entry it
+    /// queues (CA10, CA13). Null is a caller whose time no row gives (the SendAckOnReceipt path, off in the
+    /// engine): MISSING, and the clock reading is stored, which nothing reads.
+    /// </summary>
+    public void Queue(ReliableMessageType type, byte[] payload, bool reliable, bool flush, double? postedMs = null)
     {
+        double queuedMs = postedMs ?? _clock.NowMs;
         int maxPayload = _o.MaxFramePayloadBytes;
         if (payload.Length > maxPayload)
         {
@@ -105,13 +118,14 @@ public sealed class ReliableConnection
             {
                 int off = i * perPart, len = Math.Min(perPart, payload.Length - off);
                 var part = new byte[2 + len]; part[0] = (byte)(i + 1); part[1] = (byte)count; Array.Copy(payload, off, part, 2, len);
-                _pending.Add(new PendingMessage(ReliableMessageType.MultiPartMessage, TakeNextOutSeq(), part, flush, _clock.NowMs));
+                _pending.Add(new PendingMessage(ReliableMessageType.MultiPartMessage, TakeNextOutSeq(), part, flush, queuedMs));
             }
         }
         else
         {
+            // fidelity: M1-035 (CA11: PendingMessage::Set copies the bytes, CreateCombinedBuffer 0x0083581E)
             ushort seq = reliable ? TakeNextOutSeq() : SequenceId.Invalid;
-            _pending.Add(new PendingMessage(type, seq, payload, flush, _clock.NowMs));
+            _pending.Add(new PendingMessage(type, seq, (byte[])payload.Clone(), flush, queuedMs));
         }
         if (_o.MaxPacketsToSendOnSendMessage > 0) SendOptimalUnAckedPackets(_o.MaxPacketsToSendOnSendMessage);
     }
@@ -192,6 +206,7 @@ public sealed class ReliableConnection
         return false;
     }
 
+    // fidelity: M1-006
     /// <summary>Official SendOptimalUnAckedPackets: pick the oldest (least recently sent) message and, if due, send up to maxPackets frames from it.</summary>
     public int SendOptimalUnAckedPackets(int maxPackets)
     {
@@ -215,6 +230,7 @@ public sealed class ReliableConnection
 
     // ------------------------------------------------------------------ incoming
 
+    // fidelity: M1-016
     /// <summary>Header ack from the peer: drop every pending reliable message up to and including seq. Returns true if anything was acked.</summary>
     public bool UpdateLastAckedMessage(ushort ack)
     {
@@ -251,6 +267,8 @@ public sealed class ReliableConnection
         double now = _clock.NowMs;
         var p = new PingPayload(isReply ? incomingPingTime : now, NumPingsSent, NumPingsReceived, isReply);
         // official: SendMessage(unreliable, Ping, flush=true) -> queued (SendUnreliableMessagesImmediately=false) then one packet attempt
+        // MISSING: R30 does not give the time SendPing passes to SendMessage (PendingMessage +0x00, CA10); the
+        // clock reading is stored. It is stats-only (CA10) and nothing here reads it.
         _pending.Add(new PendingMessage(ReliableMessageType.Ping, SequenceId.Invalid, p.ToBytes(), true, now));
         if (_o.MaxPacketsToSendOnSendMessage > 0) SendOptimalUnAckedPackets(_o.MaxPacketsToSendOnSendMessage);
         if (!isReply) LatestPingSentMs = now;
@@ -289,6 +307,7 @@ public sealed class ReliableConnection
         return !HasTimedOut;
     }
 
+    // fidelity: M1-032 (G2.7: strictly greater than lastRecv + 5000; G2.3: lastRecv stamped in the ctor)
     public bool HasTimedOut => _clock.NowMs > LatestRecvMs + _o.ConnectionTimeoutMs;
 
     public IReadOnlyList<PendingMessage> Pending => _pending;

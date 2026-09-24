@@ -4,7 +4,7 @@ Read first in every session. The manager keeps this file current; the process it
 
 ## Now
 
-- **Phase:** M1 closure pass done. The inventory was re-approved by the manager under standing authorisation on 2026-09-24: 43 records, 28 IMPLEMENTATION_GAP, 9 COMPATIBILITY_POLICY (M1-039, M1-040 and M1-042 added), 4 EXACT_SOURCE, 2 HARDWARE_ONLY, 0 RECOVERABLE_GAP. M1-LINK hardware run PASSED (bundle committed).
+- **Phase:** batch 4(i) (transport completion) and the settle pass are committed. M1: 19 EXACT_SOURCE, 1 EQUIVALENT_IMPLEMENTATION, 12 IMPLEMENTATION_GAP (the app layer, batch 3, running in a worktree), 9 COMPATIBILITY_POLICY, 2 HARDWARE_ONLY, 0 RECOVERABLE_GAP. The M1-LINK hardware run PASSED.
 - **Operator decisions:** D1-D4 approved 2026-09-23. On 2026-09-24: the inventory, D5, D6 (fatal behaviour recorded, isolation kept as policy), D7, the corrections C1..C5 and D8 (stop processing a frame after a DisconnectRequest, M1-038) approved; the three repair batches are authorised to run without further checkpoints.
 - **Batch 1 done (7aba301). Batch 2a done** (e6f2ed7; receive path: B17 truncation, receive-error counters, partial-header overrun after the header, M1-038); records it repaired are settled in one verified pass at the end of batch 2. **Batch 2b-i done** (8c9f405; clock, construction-time 2 ms scheduler + FIFO executor, posted sends, RobotLink isolation; three verification passes). **Batch 2b-ii done** (0691429; per-address connections, type-3 and timeout delete only that connection, timed-out flag, inbound creation, FinishConnection, posted Start/Stop, per-connection multipart, unconditional Dispose disconnect; two verification passes). **Batch 2c done** (socket B10/B11/B12/B16/B38 with C1's 47817 reopen, the M1-023 reset mechanism, the M1-037 host trigger, M1-001 addressing; verifier PASS on the second pass). Batch 2 complete.
 - **Next:** one large batch. (i) Settle the batch-2 records the code now reproduces, implement M1-039 and clear the cleanup queue (transport files). (ii) Batch 3: the app layer, M1-024..M1-032, M1-040, M1-041 and M1-042 (CozmoRobot / new files). Then a self-judging direct-control hardware run for the operator.
@@ -39,13 +39,17 @@ Read first in every session. The manager keeps this file current; the process it
 
 - **Process change (operator, 2026-09-24):** only behavioural or source-fidelity defects, circular tests, and races or deadlocks block a commit. Non-behavioural cleanup is queued under "Cleanup queue" while the checker passes and no status becomes misleading. After a behavioural fix, only the affected diff is re-verified. The full suite runs once, just before the commit. Batches are large, and batch 3 is one batch after the closure pass. See AGENTS.md, Process, step 4.
 
+## Decision notes (operator, 2026-09-24: "just make notes of stuff like this; test later and pick the best choice")
+
+Small behaviour choices are noted here rather than put to the operator. Each keeps its current behaviour until a test settles it.
+
+- **Motor stop on shutdown.** CozmoRobot.Dispose sends StopAllMotors and DriveWheels(0) before disconnecting. The original only sends the DisconnectRequest (B33, CC29). Kept for now as a probable safety behaviour. Test later: does the robot stop on its own when the link drops?
+
 ## Cleanup queue (non-behavioural; fold into the next batch)
 
-- `M1_019_R39_StopSendsNothingClearsTheConnectionsAndClosesTheSocket`: rebinds 47817 after Stop/Start but disposes only at its end (test isolation; give it `using`).
-- `TransportConstants.cs` has CRLF line endings (git warns); normalise to LF.
-- T_k2 (TransportRepairTests): uses Windows ConnectionReset as its input error and asserts "ReadFailed"; it conflicts with M1-039, so give it a different error when M1-039 is implemented. Its "no row or policy covers" comment is stale.
-- With no socket open, every resend counts error 6 and warns each time (the B10 rate-limit gap; resolved by the B10 inventory correction).
-- MISSING comments at RT FinishConnection (~:684) and the empty-container case (~:1054) are answered per PROJECT_STATE; update them when the inventory is corrected.
+- The earlier queue was cleared by batch 4(i): the `using` isolation, TransportConstants LF, T_k2, stale MISSING and verifier-reading comments, and the M1-005 doc.
+- LinkCheck (Cozmo.Conformance): its warning histogram matches "sendto failed" by prefix; the message is now "UDPTransport.SendFailed: sendto failed ...". Update the key after batch 3 merges; pass/fail is unaffected.
+- Tests recommended by batch 4(i): one pinning the 14 Init tunables against the CA/B13 table (M1-005), and a dedicated R43 test for an unsent seq-0 entry at the front (M1-016).
 
 ## Parked: MISSING items (resolved)
 

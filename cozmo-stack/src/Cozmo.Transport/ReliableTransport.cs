@@ -66,9 +66,8 @@ public sealed record ReceiverEvent(ReceiverMarker Marker, IPEndPoint? Address, b
 /// <c>cozmo-transport-timer</c> thread is the deferred scheduler (G1.6..G1.8) and only posts a copy of the
 /// update when it is due; the <c>cozmo-transport</c> thread is the RelTransport executor (G1.9, G1.10) and
 /// runs everything posted to it one item at a time, in order. Connect, FinishConnection, SendData, Send,
-/// Disconnect, Start and Stop post closures to that same executor (R37, R38; Start/Stop per the batch 2b-ii
-/// verifier reading), so sends and updates are FIFO on one thread and a caller never waits for a running
-/// update to send. (Connect takes the transport lock briefly for the facade's own state, see _linkConn.) The update keeps being requested for the life of the
+/// Disconnect, Start and Stop post closures to that same executor (R37, R38, CA11, CA12, CA20, CA22), so
+/// sends and updates are FIFO on one thread and a caller never waits for a running update to send. (Connect takes the transport lock briefly for the facade's own state, see _linkConn.) The update keeps being requested for the life of the
 /// transport. In async mode <c>cozmo-dispatch</c> raises every public event, for the life of the transport,
 /// so handlers never run on the executor. Connection state is protected by <see cref="_lock"/> (the
 /// transport mutex R34/R37 name). In async mode no handler runs under it; in sync mode Raise runs handlers
@@ -126,14 +125,12 @@ public sealed class ReliableTransport : IDisposable
     private ReliableConnection? _linkConn;
     private long _linkGen;
 
-    // fidelity: M1-018, M1-019
+    // fidelity: M1-018, M1-019, M1-010
     /// <summary>
     /// The connections, keyed by address (R13, B19: FindConnection 0x00837098; G2.2: map insert). Replaced,
     /// never changed in place, under <see cref="_lock"/>, so a caller can read a snapshot without the lock.
-    /// Kept in the order the connections were made.
-    /// MISSING: R34 updates "each connection"; the rows do not give the order of the engine's map (it is
-    /// ordered by TransportAddress::operator&lt;, whose comparison no frozen row states), so updates run in the
-    /// order the connections were made.
+    /// Kept in ascending TransportAddress::operator&lt; order (CA18, CA19; see <see cref="TransportAddressOrder"/>),
+    /// the order the engine's map is ordered by and so the order R34's Update visits the connections in.
     /// </summary>
     private volatile KeyValuePair<IPEndPoint, ReliableConnection>[] _connections = Array.Empty<KeyValuePair<IPEndPoint, ReliableConnection>>();
 
@@ -172,10 +169,31 @@ public sealed class ReliableTransport : IDisposable
 
     // fidelity: M1-002, M1-007
     /// <summary>
-    /// Receive errors counted by <c>UDPTransport</c>, by the code it passes to AddRecvError: 1 = a truncated
-    /// datagram (B17, 0x0083A8C4..0x0083A8C8). Diagnostics only; nothing reads them.
+    /// Receive errors counted by <c>UDPTransport</c> on its stats (this+8), by the code it passes to AddRecvError
+    /// (enum table 0x01037868, CA7): 0 = shorter than the prefix, "TooSmall" (CA3, 0x0083A7F0..0x0083A7F4);
+    /// 2 = the prefix does not match (CA4, 0x0083A87E..0x0083A882); 1 = a truncated datagram (CA5, B17,
+    /// 0x0083A8C4..0x0083A8C8). Code 3 (BadCRC, CA6) needs sDoesHeaderHaveCRC, which RobotConnectionManager::Init
+    /// turns off (B5, 0x0062EFBE), so this stack has no CRC check. Diagnostics only; nothing reads them.
     /// </summary>
     public ReceiveErrorCounts UdpReceiveErrors { get; } = new();
+
+    // fidelity: M1-002
+    /// <summary>
+    /// CA7 AddRecvMessage(size) (0x0083A776): every datagram UDPTransport handles is counted, with its size, before
+    /// any check. Diagnostics only; nothing reads them.
+    /// </summary>
+    public long UdpMessagesReceived { get; private set; }
+    /// <summary>The sizes CA7 AddRecvMessage has counted, summed.</summary>
+    public long UdpBytesReceived { get; private set; }
+
+    // fidelity: M1-022
+    /// <summary>
+    /// CA31 AddSentMessage (0x0083A36A): every datagram UDPTransport builds is counted, with its size, before the
+    /// sendto, whether or not the sendto then succeeds. Diagnostics only; nothing reads them.
+    /// </summary>
+    public long UdpMessagesSent { get; private set; }
+    /// <summary>The sizes CA31 AddSentMessage has counted, summed.</summary>
+    public long UdpBytesSent { get; private set; }
 
     /// <summary>
     /// Receive errors counted by <c>ReliableTransport::ReceiveData</c>, by the code it passes to AddRecvError:
@@ -194,13 +212,19 @@ public sealed class ReliableTransport : IDisposable
 
     // fidelity: M1-022
     /// <summary>
-    /// B10: the time of the last failed sendto, which UDPTransport stores at +0x88 (0x0083A5F4). This stack's
-    /// initial value is −1; the source's initial value is 0.0 (0x0083953C; verifier reading, batch 2c; pending
-    /// inventory correction), which is not reproduced here. When the time is stored is MISSING (B10 rate limit;
-    /// verifier reading 0x0083A648..0x0083A666, pending inventory correction): see the send path.
-    /// MISSING: B10 says "time at +0x88" without naming the clock; this stack's net clock is used.
+    /// UDPTransport +0x88, the time of the last send failure that warned (B10, CA32): 0.0 from the ctor
+    /// (CA34, CA36, 0x0083953C), and stored only on the rate-limited warning path (0x0083A5F4..0x0083A642; see
+    /// <see cref="SendFailedLocked"/>). The clock is GetCurrentNetTimeStamp (CA34), this transport's
+    /// <see cref="INetClock"/>.
     /// </summary>
-    public double LastSendErrorMs { get; private set; } = -1;
+    public double LastSendErrorMs { get; private set; } = 0.0;
+
+    /// <summary>
+    /// The prefix this stack's one log channel, <see cref="Warning"/>, puts on a message the original logs at
+    /// error level (for example CA26 "OpenSocketFailed", CA31 "SentWrongNumBytes"); warning-level messages
+    /// carry none.
+    /// </summary>
+    internal const string ErrorLevel = "[error] ";
 
     /// <summary>How long a worker thread is given to finish during shutdown before it is abandoned.</summary>
     private static readonly TimeSpan JoinTimeout = TimeSpan.FromSeconds(2);
@@ -267,8 +291,10 @@ public sealed class ReliableTransport : IDisposable
         // R35/B14: the ctor creates the RelTransport queue and ChangeSyncMode(false) schedules the update
         // every 2 ms (ScheduleCallback 0x0083689E); it is requested once, here, not per connection. Sync mode
         // (R36) has no timer; the queue itself exists in both modes.
-        // MISSING: R35/B14 create the queue at "priority 3"; the rows do not say what host thread priority
-        // that is, so both threads keep the default priority.
+        // CA8/CA9: "priority 3" is SetThreadPriority on both executor threads, SCHED_RR at 75% of the OS range
+        // with EPERM ignored. The thread priority is host mechanism under policy M1-014 (manager call under the
+        // operator's standing authorisation, 2026-09-24; inventory "Decisions"), so both host threads keep the
+        // default priority.
         _exec = new SerialExecutor("cozmo-transport");
         _exec.Start();
         if (manualPump) return;
@@ -322,7 +348,7 @@ public sealed class ReliableTransport : IDisposable
     /// <summary>Test seam: the connection for <paramref name="address"/>, or null.</summary>
     internal ReliableConnection? ConnectionFor(IPEndPoint address) => FindConnection(address);
 
-    /// <summary>Test seam: the addresses that have a connection, in the order the connections were made.</summary>
+    /// <summary>Test seam: the addresses that have a connection, in the map's TransportAddress::operator&lt; order (CA18, CA19).</summary>
     internal IReadOnlyList<IPEndPoint> ConnectionAddresses => _connections.Select(kv => kv.Key).ToList();
 
     /// <summary>
@@ -359,6 +385,12 @@ public sealed class ReliableTransport : IDisposable
     /// failed close. Null in production.
     /// </summary>
     internal Action<Socket>? CloseHook { get; set; }
+
+    /// <summary>
+    /// Test seam: called at the start of each OpenSocket step, with "socket", "broadcast" or "bind"; a
+    /// <see cref="SocketException"/> it throws is that step failing (CA26..CA29). Null in production.
+    /// </summary>
+    internal Action<string>? OpenSocketFault { get; set; }
 
     // ------------------------------------------------------------- event dispatch
 
@@ -454,10 +486,15 @@ public sealed class ReliableTransport : IDisposable
     {
         ReliableConnection c = null!;
         c = new ReliableConnection(_o, _clock, (ty, mn, mx, body) => SendFrame(address, c, ty, mn, mx, body));
+        // fidelity: M1-010, M1-018
+        // CA18/CA19: the map is ordered by TransportAddress::operator<, so the new entry goes in at its place.
         var old = _connections;
+        int at = 0;
+        while (at < old.Length && TransportAddressOrder.Instance.Compare(old[at].Key, address) < 0) at++;
         var next = new KeyValuePair<IPEndPoint, ReliableConnection>[old.Length + 1];
-        old.CopyTo(next, 0);
-        next[^1] = new(address, c);
+        Array.Copy(old, 0, next, 0, at);
+        next[at] = new(address, c);
+        Array.Copy(old, at, next, at + 1, old.Length - at);
         _connections = next;
         return c;
     }
@@ -520,7 +557,7 @@ public sealed class ReliableTransport : IDisposable
     }
 
     /// <summary>Offline only: queue the initial ConnectionRequest like <see cref="Connect"/> does.</summary>
-    public void OfflineConnect() { lock (_lock) Connection!.Queue(ReliableMessageType.ConnectionRequest, Array.Empty<byte>(), true, true); }
+    public void OfflineConnect() { lock (_lock) Connection!.Queue(ReliableMessageType.ConnectionRequest, Array.Empty<byte>(), true, true, 0.0); }   // CA15: sync-mode time 0.0
 
     /// <summary>
     /// Offline only: the robot's answer to <see cref="OfflineConnect"/> — a reliable ConnectionResponse, its
@@ -539,11 +576,11 @@ public sealed class ReliableTransport : IDisposable
     /// <summary>
     /// R39 / B12: Start calls UDPTransport::StartClient, which opens the socket only if there is none
     /// (OpenSocket if fd == −1, 0x0083AD58), so a second Start keeps the socket it has. Connect does not open
-    /// a socket. RT::StartClient posts that as an action (0x008371F4..0x00837214 → QueueAction; closure
-    /// 0x0083808E → UDP StartClient; verifier reading, batch 2b-ii; pending inventory correction), so it runs
-    /// on the RelTransport executor in order with the sends and updates, in both modes, and this returns
-    /// before the socket is open. It opens on the stored local port (B12): 0, ephemeral, for the first open;
-    /// 47817 after any close (B38). After Dispose has begun this throws <see cref="ObjectDisposedException"/>.
+    /// a socket. RT::StartClient posts that as an action (CA20: 0x00837214 → QueueAction; closure 0x0083808E →
+    /// UDP StartClient; CA16: in both modes), so it runs on the RelTransport executor in order with the sends
+    /// and updates, and this returns before the socket is open. CA21: UDP StartClient opens only if fd == −1,
+    /// OpenSocket(+0x98) (0x0083AD4C..0x0083AD5C): 0, ephemeral, for the first open (CA37); 47817 after any
+    /// close (B38, CA30). After Dispose has begun this throws <see cref="ObjectDisposedException"/>.
     /// </summary>
     public void Start() => QueueAction("start", () =>
     {
@@ -551,7 +588,7 @@ public sealed class ReliableTransport : IDisposable
         lock (_lock)
         {
             // fidelity: M1-022
-            if (_sock is null) OpenSocketLocked(_localPort, effects);   // B12: OpenSocket if fd == −1 (0x0083AD58)
+            if (_sock is null) OpenSocketLocked(_localPort, effects);   // CA21 / B12: OpenSocket(+0x98) if fd == −1 (0x0083AD58)
         }
         RaiseAll(effects);
     });
@@ -560,9 +597,9 @@ public sealed class ReliableTransport : IDisposable
     /// <summary>
     /// R39: Stop calls UDP Stop* (the socket is closed) and then ClearConnections (0x008380F6, veneer
     /// 0x008D122C; 0x00837374): every connection goes and no frame is sent; the receiver is told nothing
-    /// (R39 names no event). RT::StopClient posts that as an action (0x00837284..0x008372A4 → QueueAction;
-    /// closure 0x008380F6; verifier reading, batch 2b-ii; pending inventory correction), so it runs on the
-    /// executor after everything posted before it, in both modes: a Connect made before it still sends its
+    /// (R39 names no event). RT::StopClient posts that as an action (CA20: 0x008372A4 → QueueAction; closure
+    /// 0x008380F6..0x00838108: UDP vtbl+0x18, then ClearConnections; CA16: in both modes), so it runs on the
+    /// executor after everything posted before it: a Connect made before it still sends its
     /// ConnectionRequest before the socket closes. The facade link ends with the reason "stopped" if its
     /// connection was cleared. The update goes on being run (R35); <see cref="Start"/> opens a socket again.
     /// </summary>
@@ -575,10 +612,10 @@ public sealed class ReliableTransport : IDisposable
 
     private void StopLocked(string reason, List<Action> effects)
     {
-        // fidelity: M1-022
-        // MISSING: R39 says only "Stop calls UDP Stop*"; no row says that UDP Stop* closes through CloseSocket
-        // (and so stores 47817 at +0x98, B38). The close goes through CloseSocket here, per the batch 2c brief,
-        // so a Start after Stop binds 47817.
+        // fidelity: M1-022, M1-019
+        // CA21: UDP StopClient, if fd >= 0, CloseSocket (0x0083AD66..0x0083AD70), which sets fd −1 and port 47817
+        // (CA30), so a Start after Stop binds 47817. CloseSocketLocked with fd −1 does nothing (CA30), which is
+        // the fd >= 0 test.
         CloseSocketLocked(effects);
         var link = _linkConn;
         ClearConnectionsLocked();
@@ -612,10 +649,10 @@ public sealed class ReliableTransport : IDisposable
 
     // fidelity: M1-035, M1-020
     /// <summary>
-    /// R37 QueueMessage 0x00836B66..0x00836BE4: in async mode the time is read when the message is posted, and
-    /// the closure (0x00837DEA) takes the transport mutex and calls SendMessage with that posted time. In sync
-    /// mode (R36, 0x00836B42..0x00836B5C) SendMessage is called directly, on the caller's thread, with time 0.0
-    /// (0x00836B48/0x00836B4C, from the batch 2b-i verification; not in the frozen rows).
+    /// R37 / CA11 QueueMessage 0x00836B66..0x00836BE4: in async mode the time is read when the message is posted
+    /// (closure+0x40), and the closure (0x00837DEA..0x00837E20) takes the transport mutex and calls SendMessage
+    /// with that posted time. CA15: in sync mode (R36, 0x00836B42..0x00836B5C) SendMessage is called directly,
+    /// on the caller's thread, with time 0.0.
     /// </summary>
     private void QueueMessage(IPEndPoint address, ReliableMessageType type, byte[] payload, bool reliable, bool flush)
     {
@@ -627,10 +664,12 @@ public sealed class ReliableTransport : IDisposable
             return;
         }
         double posted = _clock.NowMs;
+        // CA11: QueueMessage copies the caller's buffer when it posts (operator new[] + memcpy, 0x00836B66..0x00836B72)
+        var copy = (byte[])payload.Clone();
         QueueAction("send", () =>
         {
             var effects = new List<Action>();
-            lock (_lock) SendMessageLocked(address, type, payload, reliable, flush, posted, effects);
+            lock (_lock) SendMessageLocked(address, type, copy, reliable, flush, posted, effects);
             RaiseAll(effects);
         });
     }
@@ -647,6 +686,7 @@ public sealed class ReliableTransport : IDisposable
         var c = FindConnection(address);
         if (c is null)
         {
+            // CA14: the Disconnect closure's type 3 to an address with no connection ends here too.
             if (type != ReliableMessageType.ConnectionRequest)
             {
                 effects.Add(() => Fan(Warning, $"unconnected destination {address}; {type} dropped"));
@@ -654,10 +694,11 @@ public sealed class ReliableTransport : IDisposable
             }
             c = CreateConnectionLocked(address);
         }
-        // MISSING: R37 says SendMessage is called with the posted time, but no row says what SendMessage does
-        // with it (which PendingMessage field, if any, it sets), so postedMs changes nothing here.
-        _ = postedMs;
-        c.Queue(type, payload, reliable, flush);
+        // fidelity: M1-035, M1-009
+        // CA10: the posted time is stored at PendingMessage +0x00 (0x00835802); CA13: every multipart part gets
+        // the same one. Its only reader feeds a stats accumulator used in the timeout warning text, so nothing
+        // on the wire depends on it.
+        c.Queue(type, payload, reliable, flush, postedMs);
         return c;
     }
 
@@ -759,11 +800,10 @@ public sealed class ReliableTransport : IDisposable
 
     // fidelity: M1-019
     /// <summary>
-    /// R38 FinishConnection 0x0083712E: a reliable type-2 ConnectionResponse, flush 1, to
-    /// <paramref name="address"/>. With no connection to that address nothing is queued and the warning is
-    /// "unconnected destination" (R13 send side).
-    /// MISSING: R38 does not say whether FinishConnection queues through QueueMessage (as Connect does, B21)
-    /// or calls SendMessage directly; it is queued like Connect and SendData here.
+    /// R38 / CA22 FinishConnection = QueueMessage(1, addr, NULL, 0, type 2, flag 1) (0x0083712A..0x0083713A): a
+    /// reliable type-2 ConnectionResponse, flush 1, to <paramref name="address"/>, posted like Connect and
+    /// SendData. With no connection to that address nothing is queued and the warning is "unconnected
+    /// destination" (R13 send side).
     /// </summary>
     public void FinishConnection(IPEndPoint address) =>
         QueueMessage(address, ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), reliable: true, flush: true);
@@ -772,82 +812,102 @@ public sealed class ReliableTransport : IDisposable
 
     // fidelity: M1-022
     /// <summary>
-    /// UDPTransport::OpenSocket (B11): close any previous socket (0x00839A3A blx CloseSocket; verifier reading,
-    /// batch 2c; pending inventory correction); getaddrinfo(NULL, port, AI_PASSIVE, SOCK_DGRAM, AF_INET)
-    /// (0x00839ACA, 0x00839AD0, 0x00839AF2), i.e. INADDR_ANY:port; socket (0x00839B8A); for AF_INET, SO_BROADCAST
-    /// = 1 (0x00839D18/0x00839D1A); bind (0x00839D3A). A bind that fails with EADDRINUSE is a warning only
-    /// (0x00839E70): the socket is kept. No O_NONBLOCK and no buffer options, so the socket stays blocking; the
-    /// reads are made non-blocking one call at a time (B16, see <see cref="ReadDontWait"/>).
-    /// A failed setsockopt or any other failed bind closes the new socket through CloseSocket and OpenSocket
-    /// returns failure, leaving no socket and the stored port 47817 (verifier reading, batch 2c; pending
-    /// inventory correction: setsockopt 0x00839D20 ble → 0x00839CF0 CloseSocket → return 0; bind 0x00839E72
-    /// bne → 0x0083A026 → 0x00839CF0).
-    /// Host mapping: EADDRINUSE is <see cref="SocketError.AddressAlreadyInUse"/>.
+    /// UDPTransport::OpenSocket (B11, CA24..CA29), returning whether it succeeded:
+    ///  - CA24: CloseSocket first (0x00839A3A), then the port argument is stored at +0x98 (0x00839A46);
+    ///  - getaddrinfo(NULL, port, AI_PASSIVE, SOCK_DGRAM, AF_INET) (0x00839ACA, 0x00839AD0, 0x00839AF2), i.e.
+    ///    INADDR_ANY:port. CA25 (its failure: error, return 0, no close) has no host counterpart: the address is
+    ///    built directly and there is no lookup to fail;
+    ///  - socket (0x00839B8A). CA26: on failure fd −1, error "OpenSocketFailed", CloseSocket (a no-op), return 0;
+    ///  - for AF_INET, SO_BROADCAST = 1 (0x00839D18/0x00839D1A). CA27: on failure error "SetBroadcastFailed",
+    ///    CloseSocket (port 47817), return 0;
+    ///  - bind (0x00839D3A). CA29: EADDRINUSE is the warning "BindInUse", and the socket stays open, unbound, and
+    ///    1 is returned. CA28: any other failure is error "BindFailed", CloseSocket (port 47817), return 0.
+    /// No O_NONBLOCK and no buffer options, so the socket stays blocking; the reads are made non-blocking one call
+    /// at a time (B16, see <see cref="ReadDontWait"/>). Callers ignore the result.
+    /// Host mapping: EADDRINUSE is <see cref="SocketError.AddressAlreadyInUse"/>; a failed step is a
+    /// <see cref="SocketException"/>.
     /// </summary>
-    private void OpenSocketLocked(int port, List<Action> effects)
+    private bool OpenSocketLocked(int port, List<Action> effects)
     {
-        // B11: close the previous socket, through CloseSocket (0x00839A3A; verifier reading, batch 2c; pending
-        // inventory correction). In this stack OpenSocket is reached only with no socket (Start opens only if
-        // fd == −1; the reopens follow a CloseSocket, which leaves fd −1 on both paths, B38), so this never runs.
-        if (_sock is not null) CloseSocketLocked(effects);
+        // CA24: CloseSocket, which does nothing with fd −1 (CA30), then +0x98 = the port argument.
+        CloseSocketLocked(effects);
+        _localPort = port;
 
         Socket s;
-        try { s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp); }
+        try
+        {
+            OpenSocketFault?.Invoke("socket");
+            s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        }
         catch (SocketException e)
         {
-            // MISSING: B11 does not say what OpenSocket does when socket() fails; nothing is opened here.
+            // CA26 (0x00839B8A..0x00839B96; 0x00839C80..0x00839CF2): fd −1, error, CloseSocket (a no-op), return 0.
+            _sock = null;
             var code = e.SocketErrorCode; var msg = e.Message;
-            effects.Add(() => Fan(Warning, $"OpenSocket: socket() failed: {code} ({msg}); no socket (MISSING: the engine's handling is not in the inventory)"));
-            return;
+            effects.Add(() => Fan(Warning, $"{ErrorLevel}UDPTransport.OpenSocketFailed: socket() failed: {code} ({msg})"));
+            CloseSocketLocked(effects);
+            return false;
         }
         _sock = s;                                          // the new fd, which CloseSocket closes on the failures below
-        try { s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1); }   // B11: SO_BROADCAST = 1
+        try
+        {
+            OpenSocketFault?.Invoke("broadcast");
+            s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);   // B11: SO_BROADCAST = 1
+        }
         catch (SocketException e)
         {
-            // Verifier reading, batch 2c; pending inventory correction: 0x00839D20 ble → 0x00839CF0 CloseSocket
-            // → return 0.
+            // CA27 (0x00839D00..0x00839D24; 0x00839F48..0x00839FA0 → 0x00839CE0): error, CloseSocket, return 0.
             var code = e.SocketErrorCode; var msg = e.Message;
-            effects.Add(() => Fan(Warning, $"OpenSocket: SO_BROADCAST failed: {code} ({msg}); socket closed"));
+            effects.Add(() => Fan(Warning, $"{ErrorLevel}UDPTransport.SetBroadcastFailed: SO_BROADCAST failed: {code} ({msg})"));
             CloseSocketLocked(effects);
-            return;
+            return false;
         }
-        try { s.Bind(new IPEndPoint(IPAddress.Any, port)); }
+        try
+        {
+            OpenSocketFault?.Invoke("bind");
+            s.Bind(new IPEndPoint(IPAddress.Any, port));
+        }
         catch (SocketException e) when (e.SocketErrorCode == SocketError.AddressAlreadyInUse)
         {
+            // CA29 (0x00839E76..0x00839EB6; 0x00839E14..0x00839E66): a warning; the socket stays open but unbound.
             var msg = e.Message;
-            effects.Add(() => Fan(Warning, $"OpenSocket: bind to port {port} failed: AddressAlreadyInUse ({msg}); socket kept"));
+            effects.Add(() => Fan(Warning, $"UDPTransport.BindInUse: bind to port {port} failed: AddressAlreadyInUse ({msg}); socket kept, unbound"));
+            return true;
         }
         catch (SocketException e)
         {
-            // Verifier reading, batch 2c; pending inventory correction: 0x00839E72 bne → 0x0083A026 → 0x00839CF0
-            // CloseSocket, so the stored port becomes 47817.
+            // CA28 (0x00839D3A..0x00839D42; 0x00839E6A..0x00839E72; 0x00839FA2..0x0083A026): error, CloseSocket
+            // (port 47817), return 0.
             var code = e.SocketErrorCode; var msg = e.Message;
-            effects.Add(() => Fan(Warning, $"OpenSocket: bind to port {port} failed: {code} ({msg}); socket closed"));
+            effects.Add(() => Fan(Warning, $"{ErrorLevel}UDPTransport.BindFailed: bind to port {port} failed: {code} ({msg})"));
             CloseSocketLocked(effects);
+            return false;
         }
+        return true;
     }
 
     // fidelity: M1-022
     /// <summary>
-    /// UDPTransport::CloseSocket (B38, 0x00839694..0x0083969C): close(fd); a failure is logged; on both paths fd
-    /// becomes −1 and the stored port 0xBAC9 = 47817. Returns true when the close succeeded (the callers reopen
-    /// only then: 0x0083AB2C cbz r0, 0x0083ACF4 cmp r0,#1).
+    /// UDPTransport::CloseSocket (CA30, B38): with fd &lt; 0 it returns 0 and stores nothing (0x008395CA..0x00839626).
+    /// Otherwise close(fd), a failure logged as an error, and on both paths fd −1 and the stored port 0xBAC9 =
+    /// 47817 (0x00839694..0x008396A8). It returns whether the close succeeded (the callers reopen only then:
+    /// 0x0083AB2C cbz r0, 0x0083ACF4 cmp r0,#1).
+    /// The success log CA30 names is not given: this stack's one log channel, <see cref="Warning"/>, carries
+    /// warnings and errors only.
     /// Host mapping: .NET does not report a failed closesocket; a close is taken as failed only when
     /// <see cref="Socket.Close()"/> (or the <see cref="CloseHook"/> test seam) throws.
-    /// MISSING: no row says what CloseSocket does or returns when there is no socket (fd −1). Here it does
-    /// nothing and returns false, so nothing is reopened; fd and the stored port are left as they are.
     /// </summary>
     private bool CloseSocketLocked(List<Action> effects)
     {
         var s = _sock;
-        if (s is null) return false;
+        if (s is null) return false;                        // CA30: fd < 0
         bool ok = true;
         try { if (CloseHook is { } hook) hook(s); else s.Close(); }
         catch (Exception e)
         {
             ok = false;
             var msg = $"{e.GetType().Name}: {e.Message}";
-            effects.Add(() => Fan(Warning, $"CloseSocket: close failed: {msg}"));
+            effects.Add(() => Fan(Warning, $"{ErrorLevel}CloseSocket: close failed: {msg}"));
         }
         _sock = null;
         _localPort = PortAfterClose;
@@ -958,8 +1018,17 @@ public sealed class ReliableTransport : IDisposable
             if (_disposed) return;
             bool posted = TryPostLifeLocked("disconnect", () =>
             {
-                if (address is null) return;               // no address was ever named: nothing to disconnect
                 var effects = new List<Action>();
+                if (address is null)
+                {
+                    // fidelity: M1-019
+                    // CA14: with no connection the closure's SendMessage finds none, warns "unconnected destination"
+                    // and sends nothing, and DeleteConnection is a no-op. With no address ever named there is no
+                    // connection either; the warning is given the same way.
+                    effects.Add(() => Fan(Warning, "unconnected destination (no address named); DisconnectRequest dropped"));
+                    RaiseAll(effects);
+                    return;
+                }
                 lock (_lock) ConnectionGoneLocked(DisconnectLocked(address, effects), reason, effects);
                 RaiseAll(effects);
             });
@@ -969,13 +1038,14 @@ public sealed class ReliableTransport : IDisposable
 
     // fidelity: M1-019
     /// <summary>
-    /// The Disconnect closure 0x00837FFA: SendMessage(type 3, reliable, flush 1), then DeleteConnection
-    /// (b.w 0x8D123C). Returns the connection deleted, or null.
+    /// The Disconnect closure 0x00837FFA (CA14): SendMessage(1, addr, NULL, 0, type 3, flag 1, time 0.0), then
+    /// DeleteConnection(addr) (b.w 0x8D123C). With no connection, SendMessage warns "unconnected destination"
+    /// and sends nothing, and DeleteConnection is a no-op. Returns the connection deleted, or null.
     /// </summary>
     private ReliableConnection? DisconnectLocked(IPEndPoint address, List<Action> effects)
     {
-        // The time the closure passes is 0.0: 0x0083800A strd r1,r1,[sp,#0x10] with r1 = 0 (verifier reading,
-        // batch 2b-ii; pending inventory correction). SendMessageLocked discards the time (see there).
+        // fidelity: M1-019
+        // CA14: the time the closure passes is 0.0 (0x0083800A strd r1,r1,[sp,#0x10]).
         SendMessageLocked(address, ReliableMessageType.DisconnectRequest, Array.Empty<byte>(), true, true, 0.0, effects);
         return DeleteConnectionLocked(address);
     }
@@ -1057,26 +1127,25 @@ public sealed class ReliableTransport : IDisposable
             return;
         }
         // fidelity: M1-022
-        // B10: only an IP address is sent to (0x0083A606: "UDP can only send to IP addresses!"); sendto with flags
-        // 0 (0x0083A37C); a short count logs "SentWrongNumBytes" (0x0083A39A); a failure counts AddSendError(6)
-        // (0x0083A552), stores the time at +0x88 (0x0083A5F4) and warns; there is no retry and no disconnect.
-        // AddSendError(6) is unconditional.
-        // MISSING (B10 rate limit; verifier reading 0x0083A648..0x0083A666, pending inventory correction): the
-        // row says only "a warning if verbose, time at +0x88". The verifier read that verbose logging is off
-        // (kEnableVerboseNetworkLogging 0x00C934A4) and that the warning and the +0x88 store happen only when
-        // +0x88 == 0.0 or now > +0x88 + 30000.0 (0x0083A6C8). That is not in the frozen row and is not
-        // implemented: here the warning is given and the time stored on every failure.
+        // B10 / CA31..CA34, the UDP send:
+        //  - CA32: a non-IP address is an error with no count (0x0083A5FA..0x0083A642). Unreachable here, since an
+        //    IPEndPoint is always IPv4 or IPv6; where this check falls against AddSentMessage is not stated.
+        //  - CA31: BuildPacket (0x0083A35E) and AddSentMessage (0x0083A36A) before sendto(fd, flags 0)
+        //    (0x0083A374..0x0083A386), with no fd guard; a partial result is the error "SentWrongNumBytes"
+        //    (0x0083A38A..0x0083A3DA).
+        //  - CA32: a failure is AddSendError(6) and the rate-limited warning (see SendFailedLocked); there is no
+        //    retry and no disconnect (B10).
         if (address.AddressFamily is not (AddressFamily.InterNetwork or AddressFamily.InterNetworkV6))
         {
-            Raise(() => Fan(Warning, "UDP can only send to IP addresses!"));
+            Raise(() => Fan(Warning, $"{ErrorLevel}UDP can only send to IP addresses!"));
             return;
         }
+        UdpMessagesSent++; UdpBytesSent += raw.Length;       // CA31: AddSentMessage, before the sendto
         var sock = _sock;
         if (sock is null)
         {
-            // fd −1 (a send before Start or after Stop): UDP SendData has no fd guard, and sendto(−1) fails and
-            // takes the AddSendError(6) path (0x0083A374, 0x0083A386; verifier reading, batch 2c; pending
-            // inventory correction). Nothing is sent.
+            // CA31: fd −1 (a send before Start or after Stop): there is no fd guard, and sendto(−1) fails and
+            // takes the AddSendError(6) path. Nothing is sent.
             SendFailedLocked("no socket (fd -1)");
         }
         else
@@ -1087,7 +1156,7 @@ public sealed class ReliableTransport : IDisposable
                 if (sent != raw.Length)
                 {
                     int want = raw.Length;
-                    Raise(() => Fan(Warning, $"SentWrongNumBytes: sent {sent} of {want} bytes to {address}"));
+                    Raise(() => Fan(Warning, $"{ErrorLevel}UDPTransport.SentWrongNumBytes: sent {sent} of {want} bytes to {address}"));
                 }
             }
             catch (ObjectDisposedException) { return; }                   // closed under us during shutdown
@@ -1103,16 +1172,21 @@ public sealed class ReliableTransport : IDisposable
 
     // fidelity: M1-022
     /// <summary>
-    /// B10's failure path: AddSendError(6) (0x0083A552), always; then the time at +0x88 (0x0083A5F4) and the
-    /// warning, both given every time here. MISSING (B10 rate limit; verifier reading 0x0083A648..0x0083A666,
-    /// pending inventory correction): the source's condition on the warning and the +0x88 store is not
-    /// reproduced.
+    /// CA32 (0x0083A546..0x0083A56C; 0x0083A648..0x0083A666, literal 0x0083A6C8): a send failure always counts
+    /// AddSendError(6) and reads now. It warns "UDPTransport.SendFailed" only if verbose logging is on, or +0x88
+    /// == 0.0, or now &gt; +0x88 + 30000.0, and only that path stores +0x88 = now (0x0083A5F4). CA33:
+    /// kEnableVerboseNetworkLogging is a const 0 (0x00C934A4), so verbose is false. CA34: the clock is
+    /// GetCurrentNetTimeStamp and +0x88 starts at 0.0.
     /// </summary>
     private void SendFailedLocked(string why)
     {
+        const bool verbose = false;                         // CA33
+        const double warnIntervalMs = 30000.0;              // CA32: literal 0x0083A6C8
         UdpSendErrors.Add(6);
-        LastSendErrorMs = _clock.NowMs;
-        Raise(() => Fan(Warning, $"sendto failed: {why}"));
+        double now = _clock.NowMs;
+        if (!(verbose || LastSendErrorMs == 0.0 || now > LastSendErrorMs + warnIntervalMs)) return;
+        LastSendErrorMs = now;
+        Raise(() => Fan(Warning, $"UDPTransport.SendFailed: sendto failed: {why}"));
     }
 
     // fidelity: M1-010, M1-021
@@ -1139,7 +1213,7 @@ public sealed class ReliableTransport : IDisposable
     /// <summary>
     /// One <c>ReliableTransport::Update</c> 0x00837B8C (R34): under the lock, the UDP transport's own update
     /// runs first (0x00837BA2) and drains every datagram waiting on the socket, then each connection is
-    /// updated. An incoming ack is therefore applied before the same update decides whether anything needs
+    /// updated, in ascending TransportAddress::operator&lt; order (CA18, CA19). An incoming ack is therefore applied before the same update decides whether anything needs
     /// resending. R19 / B22 / G2.8: a connection whose Update reports a timeout is logged
     /// "Disconnecting TimedOut Connection" (0x00837BCC), the receiver gets OnDisconnected with its address
     /// (0x00837C50..0x00837C56), it is deleted (0x00837C60), and the update returns false; no frame is sent
@@ -1167,25 +1241,25 @@ public sealed class ReliableTransport : IDisposable
         return ok;
     }
 
-    // fidelity: M1-022, M1-023
+    // fidelity: M1-022, M1-023, M1-039, M1-043
     /// <summary>
     /// UDPTransport::Update. First the reset (G4.5, B18): with the flag set, CloseSocket (0x0083ACF0) and, only if
     /// that returned 1 (0x0083ACF4), OpenSocket on the stored port (0x0083ACF8..0x0083ACFE), which the close has
     /// just set to 47817 (B38); the flag is cleared either way (0x0083AD04). Then the read loop, only if fd &gt;= 0
     /// (0x0083AD08), for as long as TryToReadMessage returns 1 (0x0083AD10..0x0083AD18; B16):
-    ///  - a read that returns ≤ 0 stops the loop for this update (0x0083AA98), a 0-byte datagram included;
-    ///    whether a 0-byte read also warns is MISSING (see the loop);
+    ///  - a read that returns ≤ 0 stops the loop for this update (0x0083AA98), a 0-byte datagram included (CA35);
+    ///    whether a 0-byte read also warns is HARDWARE_ONLY (M1-043, see the loop);
     ///  - EAGAIN is silent (0x0083AAC4); any other error warns "ReadFailed" (0x0083AAF6);
     ///  - ENOTCONN (0x0083AB22 cmp r0,#0x6b), after that warning, closes the socket (0x0083AB28) and, only if the
     ///    close succeeded (0x0083AB2C cbz r0), reopens it on the stored port (0x0083AB2E, 0x0083AB34), 47817;
     ///  - a datagram larger than the 1472-byte buffer (MSG_TRUNC) is dropped after the prefix checks and the read
-    ///    goes on (B17).
+    ///    goes on (B17, CA5).
     /// A receive error never tears a connection down.
     /// Host mapping: EAGAIN is <see cref="SocketError.WouldBlock"/>, ENOTCONN is <see cref="SocketError.NotConnected"/>,
     /// and MSG_TRUNC is <see cref="SocketError.MessageSize"/> with the buffer holding the datagram's first 1472
-    /// bytes and the datagram consumed. Windows also reports an ICMP port-unreachable as a receive error,
-    /// <see cref="SocketError.ConnectionReset"/> (SIO_UDP_CONNRESET is left on); here it is a generic
-    /// "ReadFailed" error, pending policy M1-039, which a later step implements.
+    /// bytes and the datagram consumed. Policy M1-039: on Windows, a receive that fails with
+    /// <see cref="SocketError.ConnectionReset"/> (Winsock's report of an ICMP port-unreachable) is no data for that
+    /// receive attempt: no warning, and the loop goes on. Every other error keeps the B16 handling.
     /// </summary>
     private void DrainLocked(List<Action> effects)
     {
@@ -1207,6 +1281,13 @@ public sealed class ReliableTransport : IDisposable
                 TruncatedDatagramLocked(buf.ToArray(), effects);
                 continue;
             }
+            // fidelity: M1-039
+            // Policy M1-039 (operator, 2026-09-24): Windows only, ConnectionReset only: no data for this receive
+            // attempt, no warning, and the drain continues.
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset && OperatingSystem.IsWindows())
+            {
+                continue;
+            }
             catch (SocketException e)
             {
                 var code = e.SocketErrorCode; var msg = e.Message;
@@ -1216,11 +1297,11 @@ public sealed class ReliableTransport : IDisposable
             }
             catch (ObjectDisposedException) { return; }
 
-            // B16: ≤ 0 stops, a 0-byte datagram too (0x0083AA98).
-            // MISSING: the source sends a 0-byte read down the errno path (0x0083AA98 blt → 0x0083AAC4 /
-            // 0x0083AAF6 / 0x0083AB22) with whatever errno is left over (verifier reading, batch 2c; pending
-            // inventory correction), so whether it warns "ReadFailed" or even reopens is not established. Here it
-            // only stops the loop, with no warning.
+            // fidelity: M1-022, M1-043
+            // B16 / CA35: a read of ≤ 0 ends the drain for this update, a 0-byte datagram too (0x0083AA98). The
+            // source then takes the errno path with a stale errno (0x0083AABE..0x0083AB24): whether that warns, or
+            // reopens on errno 107, is HARDWARE_ONLY (M1-043) and not reproduced; this stack only stops the loop,
+            // and makes no claim about the warning.
             if (n <= 0) return;
             ProcessDatagramLocked(buf.AsSpan(0, n).ToArray(), from as IPEndPoint, effects);
         }
@@ -1241,33 +1322,48 @@ public sealed class ReliableTransport : IDisposable
 
     // fidelity: M1-002
     /// <summary>
-    /// B17: a datagram with MSG_TRUNC set still gets the size and prefix checks first (0x0083A780,
-    /// 0x0083A80E); if it passes them it logs Recv.Truncated, counts AddRecvError(1) (0x0083A8C4..0x0083A8C8)
-    /// and is dropped, and the read loop goes on (0x0083AABA returns 1). <paramref name="raw"/> is the
-    /// 1472 bytes the buffer holds.
+    /// B17 / CA5: a datagram with MSG_TRUNC set is counted by AddRecvMessage (CA7) and still gets the size and
+    /// prefix checks first (CA3, CA4); only if it passes them does it log "UDPTransport.Recv.Truncated", count
+    /// AddRecvError(1) (0x0083A8C4..0x0083A8C8) and get dropped, and the read loop goes on (0x0083AABA returns 1).
+    /// <paramref name="raw"/> is the 1472 bytes the buffer holds, the size recvmsg reports for it.
     /// </summary>
     private void TruncatedDatagramLocked(byte[] raw, List<Action> effects)
     {
         var utc = DateTime.UtcNow;
+        CountReceivedLocked(raw.Length);
         if (!UdpPrefixOkLocked(raw, utc, effects)) return;
         UdpReceiveErrors.Add(1);
-        const string err = "Recv.Truncated: datagram larger than the 1472-byte receive buffer; dropped";
+        const string err = "UDPTransport.Recv.Truncated: datagram larger than the 1472-byte receive buffer; dropped";
         effects.Add(() => Fan(Warning, err));
     }
 
+    // fidelity: M1-002
+    /// <summary>CA7 AddRecvMessage(size) (0x0083A776): every datagram, before any check.</summary>
+    private void CountReceivedLocked(int size)
+    {
+        UdpMessagesReceived++;
+        UdpBytesReceived += size;
+    }
+
+    // fidelity: M1-002
     /// <summary>
-    /// UDPTransport::HandleReceivedMessage: at least the prefix length, then the COZ\x03 prefix (B17,
-    /// 0x0083A780, 0x0083A80E). False, with a trace and a warning, when the datagram fails either.
+    /// UDPTransport::HandleReceivedMessage, the prefix checks (B17): CA3, a datagram shorter than the prefix
+    /// length (4, no CRC) gives the warning "UDPTransport.BadPrefix.TooSmall" and AddRecvError(0) (0x0083A780;
+    /// 0x0083A7AA; 0x0083A7F0..0x0083A7F4); CA4, a failed memcmp of the 4 prefix bytes gives the warning
+    /// "UDPTransport.BadPrefix" and AddRecvError(2) (0x0083A80E; 0x0083A844; 0x0083A87E..0x0083A882). False, with
+    /// a trace and the warning, when the datagram fails either.
     /// </summary>
     private bool UdpPrefixOkLocked(byte[] raw, DateTime utc, List<Action> effects)
     {
         if (raw.Length >= ReliableHeader.UdpPrefixLength && raw.AsSpan(0, ReliableHeader.UdpPrefixLength).SequenceEqual(ReliableHeader.UdpPrefix))
             return true;
-        string err = raw.Length < ReliableHeader.UdpPrefixLength
-            ? $"frame too small ({raw.Length} < {ReliableHeader.UdpPrefixLength})"
-            : "bad UDP prefix (expected COZ\\x03)";
+        bool tooSmall = raw.Length < ReliableHeader.UdpPrefixLength;
+        UdpReceiveErrors.Add(tooSmall ? 0 : 2);
+        string err = tooSmall
+            ? $"UDPTransport.BadPrefix.TooSmall: {raw.Length} bytes < prefix length {ReliableHeader.UdpPrefixLength}"
+            : "UDPTransport.BadPrefix: the prefix is not COZ\x03";
         effects.Add(() => Fan(FrameTrace, new FrameEvent(false, utc, raw, null, err)));
-        effects.Add(() => Fan(Warning, $"bad frame: {err}"));
+        effects.Add(() => Fan(Warning, err));
         return false;
     }
 
@@ -1276,7 +1372,9 @@ public sealed class ReliableTransport : IDisposable
     {
         var utc = DateTime.UtcNow;
 
-        // UDPTransport::HandleReceivedMessage: the COZ\x03 prefix.
+        // UDPTransport::HandleReceivedMessage: CA7 AddRecvMessage, then the COZ\x03 prefix (CA3, CA4). CA6 (CRC) is
+        // off in the engine (B5). A pass goes to the receiver, ReliableTransport::ReceiveData (CA7, 0x0083A8F4..).
+        CountReceivedLocked(raw.Length);
         if (!UdpPrefixOkLocked(raw, utc, effects)) return;
         var post = raw.AsSpan(ReliableHeader.UdpPrefixLength);
 
@@ -1310,8 +1408,8 @@ public sealed class ReliableTransport : IDisposable
         // R13 / B19 / G2.10: FindConnection(addr, create) (0x008377CE..0x008377FC), where create means a type-1
         // frame or a container whose first sub-message is type 1. A new connection is processed from here as a
         // known one. With none the frame is dropped as "unconnected source" (0x0083789A), its ack unprocessed.
-        // MISSING: R13 does not say what the first-sub test reads for a container with an empty body; with no
-        // sub-message there is no type 1, so no connection is created.
+        // CA23: a container with an empty body creates nothing (0x008377BC; 0x008377DC cmp.w fp,#0), so it is
+        // "unconnected source".
         bool create = type == ReliableMessageType.ConnectionRequest
                       || (multiple && body.Length > 0 && body[0] == (byte)ReliableMessageType.ConnectionRequest);
         var c = FindConnection(from);
@@ -1426,10 +1524,10 @@ public sealed class ReliableTransport : IDisposable
                 break;
             case ReliableMessageType.ConnectionResponse:
                 Receiver(effects, ReceiverMarker.OnConnected, from);
-                // The facade: only the current link's connection, and only while it is Connecting.
-                // MISSING: the rows do not say whether the app layer checks the address of a connection event
-                // (B23 and B31 name none); the facade follows the current link's connection only, as it did
-                // when no other connection could exist.
+                // The facade: only the current link's connection, and only while it is Connecting. It is not a
+                // transport row: CB38 settles that the engine's app layer does not filter connection events by
+                // address (tbb 0x0062F434); reproducing that is the app layer's (M1-025, batch 3), and the
+                // receiver event above carries every connection's event with its address.
                 if (ReferenceEquals(c, _linkConn) && State == LinkState.Connecting) { State = LinkState.Connected; effects.Add(() => Fan(Connected)); }
                 break;
             case ReliableMessageType.DisconnectRequest:
@@ -1490,6 +1588,39 @@ public sealed class ReliableTransport : IDisposable
     }
 }
 
+
+// fidelity: M1-010, M1-018
+/// <summary>
+/// TransportAddress::operator&lt; (CA19, 0x00838EDA..0x00838F62; 0x008384E8..0x00838518), the order of the
+/// engine's connection map and so of R34's Update (CA18). The type byte comes first: '6' IPv6 &lt; 'i' IPv4 (an
+/// IPEndPoint is never BLE, unset or virtual). For IPv4 the u32 at +8, the raw sin_addr, is compared, then the
+/// u16 port in host order; for IPv6, memcmp of the 16 address bytes, then the port.
+/// Host mapping: sin_addr holds the address bytes in network order, and the engine's armeabi-v7a target is
+/// little-endian, so the u32 is those four bytes read little-endian and compared unsigned.
+/// </summary>
+internal sealed class TransportAddressOrder : IComparer<IPEndPoint>
+{
+    internal static readonly TransportAddressOrder Instance = new();
+
+    public int Compare(IPEndPoint? a, IPEndPoint? b)
+    {
+        if (ReferenceEquals(a, b)) return 0;
+        if (a is null) return -1;
+        if (b is null) return 1;
+        int ta = TypeRank(a), tb = TypeRank(b);
+        if (ta != tb) return ta.CompareTo(tb);
+        var ab = a.Address.GetAddressBytes();
+        var bb = b.Address.GetAddressBytes();
+        int c = a.AddressFamily == AddressFamily.InterNetwork
+            ? BinaryPrimitives.ReadUInt32LittleEndian(ab).CompareTo(BinaryPrimitives.ReadUInt32LittleEndian(bb))
+            : ab.AsSpan().SequenceCompareTo(bb);
+        if (c != 0) return c;
+        return ((ushort)a.Port).CompareTo((ushort)b.Port);
+    }
+
+    /// <summary>CA19's type byte order: '6' (IPv6) before 'i' (IPv4).</summary>
+    private static int TypeRank(IPEndPoint e) => e.AddressFamily == AddressFamily.InterNetworkV6 ? 0 : 1;
+}
 
 /// <summary>
 /// Counts of AddRecvError (or, for <see cref="ReliableTransport.UdpSendErrors"/>, AddSendError) calls by error

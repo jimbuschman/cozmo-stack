@@ -809,7 +809,8 @@ public class TransportRepairTests
     /// FIFO on one thread: with the executor held busy, the update copies posted before the send (G1.9: kept,
     /// never merged) run first, back to back (G1.10), then the send, then the copies posted after it. The
     /// caller does not wait for the busy executor. M1-020 B15: this is the production (async) mode.
-    /// The posted time R37 passes to SendMessage is not checked: what SendMessage does with it is MISSING.
+    /// The posted time R37 passes to SendMessage is checked in
+    /// <see cref="M1_035_CA10_TheTimeSendMessageIsCalledWithIsStoredOnEveryEntryItQueues"/>.
     /// </summary>
     [Fact]
     public void M1_035_R37_ASendIsPostedAndRunsFifoBetweenUpdatesOnTheTransportThread()
@@ -870,9 +871,9 @@ public class TransportRepairTests
 
     /// <summary>
     /// PRIMARY-SOURCE ORACLE. M1-035 R37 (QueueAction 0x00836FF6 posts to the same queue) and B21
-    /// (RT::Disconnect queues an action, closure 0x00837FFA); verifier reading, batch 2b-i: QueueAction
-    /// 0x00836FAC..0x00836FF6 never reads the sync-mode flag +0xA0, and ChangeSyncMode(true) only drops the
-    /// callback handle (0x00836862..0x00836878), so the queue survives. In sync mode too, a Disconnect is
+    /// (RT::Disconnect queues an action, closure 0x00837FFA) and CA16: QueueAction 0x00836FAC..0x00836FF6 never
+    /// reads the sync-mode flag +0xA0, and ChangeSyncMode(true) only drops the callback handle
+    /// (0x00836862..0x0083687C), so the queue survives. In sync mode too, a Disconnect is
     /// posted: with the executor held busy nothing has happened when Disconnect returns, and the connection
     /// is deleted once the executor runs it.
     /// </summary>
@@ -1095,8 +1096,9 @@ public class TransportRepairTests
     /// <summary>
     /// T-k2 — PRIMARY-SOURCE ORACLE. M1-022 B16: any other receive error is the "ReadFailed" warning
     /// (0x0083AAC4, 0x0083AAF6) and nothing more: the socket is kept and the link stays Connected with its
-    /// reliable state. (ConnectionReset is how Windows reports an ICMP port-unreachable while
-    /// SIO_UDP_CONNRESET is left on; no row or policy covers that host behaviour.)
+    /// reliable state. The read returned −1, so the loop stops for this update (0x0083AA98). The input error is
+    /// NetworkDown, a host error that is neither EAGAIN nor ENOTCONN (ConnectionReset is policy M1-039, see
+    /// <see cref="M1_039_OnWindowsAConnectionResetReceiveIsNoDataAndTheDrainGoesOn"/>).
     /// </summary>
     [Fact]
     public void T_k2_AnyOtherReceiveErrorIsOnlyAWarning()
@@ -1108,9 +1110,14 @@ public class TransportRepairTests
         ushort next = c.NextOutSeq, lastIn = c.LastInAcked; int pending = c.PendingCount;
 
         var sock = t.CurrentSocket;
-        net.Error(SocketError.ConnectionReset);
+        var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
+        net.Error(SocketError.NetworkDown);
+        net.Datagram(Raw(ReliableMessageType.SingleUnreliableMessage, 0, 0, 1, Data), t.Peer!);
         clk.NowMs = 1041; t.Pump();
         Assert.Contains("ReadFailed", Assert.Single(warnings));
+        Assert.Empty(delivered);                            // B16: the loop stopped at the error
+        clk.NowMs = 1043; t.Pump();
+        Assert.Equal(Data, Assert.Single(delivered));       // read by the next update
         Assert.Same(sock, t.CurrentSocket);
         Assert.Equal(LinkState.Connected, t.State);
         Assert.Same(c, t.Connection);
@@ -1134,6 +1141,42 @@ public class TransportRepairTests
         Assert.Equal(LinkState.Connected, t.State);
         Assert.NotNull(t.Connection);
         t.Dispose();
+    }
+
+    /// <summary>
+    /// POLICY TEST (M1-039, operator 2026-09-24), not a source oracle. On Windows a UDP receive that fails with
+    /// ConnectionReset (Winsock's report of an ICMP port-unreachable) is no data for that receive attempt: no
+    /// warning, and the drain goes on, so the datagram behind it is read in the same update. The socket, the
+    /// link and its reliable state are untouched. Off Windows the policy does not apply and the error keeps its
+    /// B16 handling: "ReadFailed", and the loop stops for this update (0x0083AAC4, 0x0083AAF6, 0x0083AA98).
+    /// </summary>
+    [Fact]
+    public void M1_039_OnWindowsAConnectionResetReceiveIsNoDataAndTheDrainGoesOn()
+    {
+        var (t, clk, net) = Connected(59979);
+        using var _t = t;
+        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
+        var sock = t.CurrentSocket;
+        var c = t.Connection!;
+        net.Error(SocketError.ConnectionReset);
+        net.Datagram(Raw(ReliableMessageType.SingleUnreliableMessage, 0, 0, 1, Data), t.Peer!);
+        net.Error(SocketError.ConnectionReset);
+        clk.NowMs = 1041; t.Pump();
+        if (OperatingSystem.IsWindows())
+        {
+            Assert.Empty(warnings);
+            Assert.Equal(Data, Assert.Single(delivered));   // read after the first error, in the same update
+            Assert.Equal(0, net.Pending);                   // and the drain went on past the second
+        }
+        else
+        {
+            Assert.Contains("ReadFailed", Assert.Single(warnings));
+            Assert.Empty(delivered);
+        }
+        Assert.Same(sock, t.CurrentSocket);
+        Assert.Same(c, t.Connection);
+        Assert.Equal(LinkState.Connected, t.State);
     }
 
     /// <summary>A single unreliable frame whose whole datagram is <paramref name="datagramBytes"/> long.</summary>
@@ -1175,9 +1218,10 @@ public class TransportRepairTests
     }
 
     /// <summary>
-    /// PRIMARY-SOURCE ORACLE. M1-002 B17 order: the prefix check (0x0083A80E) comes before the truncation
-    /// test (0x0083A888), so an oversize datagram with a bad prefix takes the BadPrefix path, not
-    /// Recv.Truncated, and is not counted as AddRecvError(1). The read still goes on.
+    /// PRIMARY-SOURCE ORACLE. M1-002 B17 / CA5 order: the prefix check (0x0083A80E) comes before the truncation
+    /// test (0x0083A888), so an oversize datagram with a bad prefix takes the BadPrefix path (CA4: the warning
+    /// "UDPTransport.BadPrefix", AddRecvError(2)), not Recv.Truncated, and is not counted as AddRecvError(1). The
+    /// read still goes on.
     /// </summary>
     [Fact]
     public void B17_AnOversizeDatagramWithABadPrefixFailsThePrefixCheckFirst()
@@ -1191,7 +1235,8 @@ public class TransportRepairTests
         clk.NowMs = 1041; t.Pump();
 
         Assert.Equal(0, t.UdpReceiveErrors[1]);
-        Assert.Contains(warnings, w => w.Contains("bad UDP prefix"));
+        Assert.Equal(1, t.UdpReceiveErrors[2]);             // CA4: AddRecvError(2)
+        Assert.Contains(warnings, w => w.StartsWith("UDPTransport.BadPrefix:"));
         Assert.DoesNotContain(warnings, w => w.Contains("Recv.Truncated"));
         Assert.Equal(Data, Assert.Single(delivered));
         t.Dispose();
@@ -1232,7 +1277,7 @@ public class TransportRepairTests
         t.Dispose();
     }
 
-    // ================================================================ batch 2b-ii: connection lifetime
+    // ================================================================ connection lifetime
 
     private static List<ReceiverEvent> Receiver(ReliableTransport t)
     {
@@ -1574,14 +1619,15 @@ public class TransportRepairTests
     /// 0x00837374; no frames are sent): with a message pending and a resend due, Stop sends nothing, clears every
     /// connection and closes the socket; R39 names no receiver event and none is raised. The update still runs
     /// (R35) and has nothing to send. B12: Start then opens a socket again, since there is none
-    /// (OpenSocket if fd == −1, 0x0083AD58). Start and Stop are posted actions (RT::StartClient 0x008371F4..
-    /// 0x00837214, RT::StopClient 0x00837284..0x008372A4 → QueueAction; verifier reading, batch 2b-ii), so the
-    /// test waits for the executor before it looks.
+    /// (OpenSocket if fd == −1, 0x0083AD58), and after the close that is 47817 (CA21, CA30). Start and Stop are
+    /// posted actions (CA20: 0x00837214, 0x008372A4 → QueueAction), so the test waits for the executor before it
+    /// looks.
     /// </summary>
     [Fact]
     public void M1_019_R39_StopSendsNothingClearsTheConnectionsAndClosesTheSocket()
     {
         var (t, clk, _) = Connected(59966);
+        using var _t = t;                                   // disposed even if an assertion fails: frees 47817
         clk.NowMs = 1040; t.Send(new SyncTime(0));                            // pending, sent once
         var other = new IPEndPoint(IPAddress.Loopback, 59963);
         t.ProcessIncoming(Raw(ReliableMessageType.ConnectionRequest, 1, 1, 0, Array.Empty<byte>()), other);
@@ -1614,8 +1660,7 @@ public class TransportRepairTests
     /// Disconnect sends type 3 then DeleteConnection, closure 0x00837FFA), R39 (Start → StartClient 0x0083808E) and
     /// B12 (StartClient → OpenSocket if fd == −1, 0x0083AD58): Connect opens no socket; Start opens one and a second
     /// Start keeps it; Disconnect deletes the connection and leaves the socket open. Start is a posted action
-    /// (RT::StartClient 0x008371F4..0x00837214 → QueueAction; verifier reading, batch 2b-ii), so the test waits
-    /// for the executor before it looks.
+    /// (CA20: 0x00837214 → QueueAction), so the test waits for the executor before it looks.
     /// </summary>
     [Fact]
     public void M1_019_R38_R39_StartOpensTheSocketOnceAndConnectAndDisconnectLeaveItAlone()
@@ -1642,9 +1687,8 @@ public class TransportRepairTests
 
     /// <summary>
     /// PRIMARY-SOURCE ORACLE. M1-019 R38 (Connect queues QueueMessage(type 1, reliable, flush 1), 0x0083711C) and
-    /// R39 with the batch 2b-ii verifier reading (RT::StopClient 0x00837284..0x008372A4 posts through QueueAction;
-    /// closure 0x008380F6 → UDP stop, then ClearConnections; pending inventory correction), M1-035 R37 (one FIFO
-    /// queue): on the production (async) path a Connect followed at once by Stop still sends its ConnectionRequest
+    /// R39 with CA20 (RT::StopClient posts through QueueAction, 0x008372A4; closure 0x008380F6..0x00838108 → UDP
+    /// vtbl+0x18, then ClearConnections) and M1-035 R37 / CA12 (one FIFO queue): on the production (async) path a Connect followed at once by Stop still sends its ConnectionRequest
     /// before the socket closes, over a real loopback socket; then the socket is closed and no connection is left.
     /// </summary>
     [Fact]
@@ -1670,11 +1714,11 @@ public class TransportRepairTests
     }
 
     /// <summary>
-    /// PRIMARY-SOURCE ORACLE. M1-009 R23 (AddMessagePart 0x008358A0..0x008358E8; 0x008374C6..0x00837504) with the
-    /// batch 2b-ii verifier reading of that range: HandleSubMessage passes the connection (0x008374C6 mov r0,r5)
-    /// to ReliableConnection::GetPendingMultiPartMessage (0x008374C8; body 0x00835A94 adds r0,#0x20) and calls
-    /// AddMessagePart on it, so each connection assembles its own multipart message (pending inventory
-    /// correction). Two connections interleaving their parts each complete their own message, delivered to the
+    /// PRIMARY-SOURCE ORACLE for the assembly rules, M1-009 R23 (AddMessagePart 0x008358A0..0x008358E8;
+    /// 0x008374C6..0x00837504). MISSING for the per-connection part: that HandleSubMessage passes the connection
+    /// (0x008374C6 mov r0,r5) to GetPendingMultiPartMessage (0x008374C8; 0x00835A94 adds r0,#0x20), so each
+    /// connection assembles its own message, is the batch 2b-ii verifier reading; no frozen row states it, so this
+    /// guards the current build only. Two connections interleaving their parts each complete their own message, delivered to the
     /// receiver with their own address (R40).
     /// </summary>
     [Fact]
@@ -1701,8 +1745,8 @@ public class TransportRepairTests
     }
 
     /// <summary>
-    /// PRIMARY-SOURCE ORACLE. M1-009 R23 (the assembly is the connection's, GetPendingMultiPartMessage 0x008374C8 /
-    /// 0x00835A94; verifier reading, batch 2b-ii) with M1-003 R12 (type 3 → DeleteConnection 0x008D123C, which
+    /// REGRESSION ONLY for the per-connection assembly (GetPendingMultiPartMessage 0x008374C8 / 0x00835A94 is the
+    /// batch 2b-ii verifier reading; no frozen row states it: MISSING), with M1-003 R12 (type 3 → DeleteConnection 0x008D123C, which
     /// destroys only that connection): deleting B mid-message leaves A's partial message intact, and A's next
     /// part completes it.
     /// </summary>
@@ -1764,15 +1808,15 @@ public class TransportRepairTests
         Assert.Equal(LinkState.Connected, t.State);                           // not lost
     }
 
-    // ================================================================ batch 2c: the UDP socket and addressing
+    // ================================================================ the UDP socket and addressing
 
     /// <summary>
     /// PRIMARY-SOURCE ORACLE. M1-022 B12: the UDP ctor stores 0xBAC9 at +0x98 (0x00839546) but
     /// RobotConnectionManager::Init stores 0 over it (0x0062EFEA str.w r5,[r6,#0x98]) before StartClient opens
     /// the socket (0x0062F07E, 0x0083808E, 0x0083AD58), so the first open binds INADDR_ANY on an ephemeral port.
-    /// B38 (0x00839694..0x0083969C): CloseSocket sets fd -1 and +0x98 = 0xBAC9 = 47817.
-    /// The Start-after-Stop part rests on a MISSING item, not a row: R39 says only "Stop calls UDP Stop*", and
-    /// that Stop closes through CloseSocket (so a later Start binds 47817) is the batch 2c instruction.
+    /// B38 / CA30 (0x00839694..0x0083969C): CloseSocket sets fd -1 and +0x98 = 0xBAC9 = 47817. CA21: UDP StopClient
+    /// closes through CloseSocket if fd &gt;= 0 (0x0083AD66..0x0083AD70), and StartClient opens OpenSocket(+0x98) if
+    /// fd == -1 (0x0083AD4C..0x0083AD5C), so a Start after Stop binds 47817.
     /// </summary>
     [Fact]
     public void M1_022_B12_TheFirstOpenIsEphemeralAndAnOpenAfterACloseBinds47817()
@@ -1816,9 +1860,10 @@ public class TransportRepairTests
     }
 
     /// <summary>
-    /// HOST MAPPING of a PRIMARY-SOURCE row. M1-022 B11: a bind that fails with EADDRINUSE is only a warning
-    /// (0x00839E70), so the socket is kept. On this host EADDRINUSE is SocketError.AddressAlreadyInUse: with
-    /// 47817 held by another socket, the open after a close (B38) warns and keeps its (unbound) socket.
+    /// HOST MAPPING of a PRIMARY-SOURCE row. M1-022 B11 / CA29: a bind that fails with EADDRINUSE is only the
+    /// warning "BindInUse" (0x00839E76..0x00839EB6), the socket stays open but unbound, and OpenSocket succeeds. On
+    /// this host EADDRINUSE is SocketError.AddressAlreadyInUse: with 47817 held by another socket, the open after
+    /// a close (B38) warns and keeps its (unbound) socket.
     /// </summary>
     [Fact]
     public void M1_022_B11_AnAddressInUseBindIsOnlyAWarningAndTheSocketIsKept()
@@ -1831,7 +1876,9 @@ public class TransportRepairTests
         Assert.Empty(warnings);
         t.Stop(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
         t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));   // 47817: held
-        Assert.Contains(warnings, w => w.Contains("AddressAlreadyInUse"));
+        var inUse = Assert.Single(warnings);
+        Assert.StartsWith("UDPTransport.BindInUse", inUse);   // CA29: a warning, not an error
+        Assert.Contains("AddressAlreadyInUse", inUse);
         Assert.NotNull(t.CurrentSocket);                    // kept
         Assert.Null(t.LocalEndPoint);                       // not bound
     }
@@ -1868,8 +1915,8 @@ public class TransportRepairTests
     /// <summary>
     /// PRIMARY-SOURCE ORACLE. M1-022 B16: the loop runs while TryToReadMessage returns 1 (0x0083AD10..0x0083AD18);
     /// a recvmsg result &lt;= 0 stops it (0x0083AA98), a 0-byte datagram too. The datagram behind it is read by
-    /// the next update. Whether the 0-byte read warns is MISSING (verifier reading, batch 2c: it goes down the
-    /// errno path with a stale errno), so no warning is asserted either way.
+    /// the next update (CA35). Whether the 0-byte read warns is HARDWARE_ONLY (M1-043: it goes down the errno
+    /// path with a stale errno), so no warning is asserted either way.
     /// </summary>
     [Fact]
     public void M1_022_B16_AZeroByteDatagramStopsTheDrainForThisUpdate()
@@ -1880,7 +1927,7 @@ public class TransportRepairTests
         net.Datagram(Array.Empty<byte>(), t.Peer!);
         net.Datagram(Raw(ReliableMessageType.SingleUnreliableMessage, 0, 0, 1, Data), t.Peer!);
         clk.NowMs = 1041; t.Pump();
-        Assert.Empty(delivered);                            // the loop stopped; whether it warns is MISSING
+        Assert.Empty(delivered);                            // the loop stopped; whether it warns is M1-043
         clk.NowMs = 1043; t.Pump();
         Assert.Equal(Data, Assert.Single(delivered));
         t.Dispose();
@@ -1891,7 +1938,7 @@ public class TransportRepairTests
     /// is realised as a zero-timeout poll then a read, over a real loopback socket. A 0-byte datagram stops the
     /// drain for the update (0x0083AA98); the datagram behind it is read by the next update; with nothing waiting
     /// the read reports EAGAIN and does not block. (No warning is asserted: whether the 0-byte read warns is
-    /// MISSING.)
+    /// HARDWARE_ONLY, M1-043.)
     /// </summary>
     [Fact]
     public void M1_022_B16_OnTheHostAZeroByteDatagramStopsTheDrainAndAnEmptyReadDoesNotBlock()
@@ -1924,8 +1971,9 @@ public class TransportRepairTests
     }
 
     /// <summary>
-    /// PRIMARY-SOURCE ORACLE. M1-022 B10: sendto with flags 0 (0x0083A37C); a send that returns fewer bytes than
-    /// asked logs "SentWrongNumBytes" (0x0083A39A). It is not a failure: no AddSendError.
+    /// PRIMARY-SOURCE ORACLE. M1-022 B10 / CA31: sendto with flags 0 (0x0083A37C); a send that returns fewer bytes
+    /// than asked is the error log "SentWrongNumBytes" (0x0083A38A..0x0083A3DA). It is not a failure: no
+    /// AddSendError.
     /// </summary>
     [Fact]
     public void M1_022_B10_AShortSendLogsSentWrongNumBytes()
@@ -1936,16 +1984,16 @@ public class TransportRepairTests
         t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
         t.SendHook = (_, datagram, _) => datagram.Length - 1;
         t.Connect(IPAddress.Loopback, 59959);
-        Assert.Contains(warnings, w => w.Contains("SentWrongNumBytes"));
+        Assert.Contains(warnings, w => w.StartsWith(ReliableTransport.ErrorLevel + "UDPTransport.SentWrongNumBytes"));
         Assert.Equal(0, t.UdpSendErrors[6]);
     }
 
     /// <summary>
     /// PRIMARY-SOURCE ORACLE. M1-022 B10: a failed sendto counts AddSendError(6) (0x0083A552); there is no retry
     /// and no disconnect. The one attempt is made, the link and its connection stay, and the message stays
-    /// pending for the ordinary resend rules. The warning and the +0x88 time are not asserted: when the source
-    /// gives them is MISSING (B10 rate limit; verifier reading 0x0083A648..0x0083A666, pending inventory
-    /// correction). Host mapping: a failed sendto is a SocketException.
+    /// pending for the ordinary resend rules. The rate-limited warning and +0x88 are
+    /// <see cref="M1_022_CA32_TheSendFailureWarningAndItsTimeAreRateLimitedTo30Seconds"/>. Host mapping: a failed
+    /// sendto is a SocketException.
     /// </summary>
     [Fact]
     public void M1_022_B10_AFailedSendCountsAddSendError6AndDoesNotRetryOrDisconnect()
@@ -1966,8 +2014,8 @@ public class TransportRepairTests
     }
 
     /// <summary>
-    /// VERIFIER READING, batch 2c; pending inventory correction (not a frozen row). M1-022 B10 with fd −1: UDP
-    /// SendData has no fd guard, so sendto(−1) fails and takes the AddSendError(6) path (0x0083A374, 0x0083A386).
+    /// PRIMARY-SOURCE ORACLE. M1-022 CA31 with fd −1: UDP SendData has no fd guard, so sendto(−1) fails and takes
+    /// the AddSendError(6) path (0x0083A374..0x0083A386; CA32).
     /// A Connect before Start counts AddSendError(6) once for its one ConnectionRequest send, and nothing
     /// else changes: no disconnect, the request stays pending.
     /// </summary>
@@ -2130,6 +2178,234 @@ public class TransportRepairTests
         }
     }
 
+    // ================================================================ closure rows (CA)
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-002 CA7: AddRecvMessage(size) counts every datagram before any check (0x0083A776).
+    /// CA3: a datagram shorter than the 4-byte prefix is the warning "UDPTransport.BadPrefix.TooSmall" and
+    /// AddRecvError(0) (0x0083A780; 0x0083A7F0..0x0083A7F4). CA4: a failed memcmp of the prefix is the warning
+    /// "UDPTransport.BadPrefix" and AddRecvError(2) (0x0083A80E; 0x0083A87E..0x0083A882). Neither reaches
+    /// ReliableTransport::ReceiveData (CA7: only a pass is handed on), and the read goes on (B16).
+    /// </summary>
+    [Fact]
+    public void M1_002_CA3_CA4_CA7_TheUdpLayerCountsEveryDatagramAndItsPrefixFailuresByCode()
+    {
+        var (t, clk, net) = Connected(59972);
+        using var _t = t;
+        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
+        long msgs0 = t.UdpMessagesReceived, bytes0 = t.UdpBytesReceived;
+        var tooSmall = new byte[] { (byte)'C', (byte)'O', (byte)'Z' };              // 3 < 4
+        var badPrefix = new byte[] { (byte)'C', (byte)'O', (byte)'Z', 4, 0, 0 };     // 4th prefix byte 04, not 03
+        var good = Raw(ReliableMessageType.SingleUnreliableMessage, 0, 0, 1, Data);
+        net.Datagram(tooSmall, t.Peer!);
+        net.Datagram(badPrefix, t.Peer!);
+        net.Datagram(good, t.Peer!);
+        clk.NowMs = 1041; t.Pump();
+
+        Assert.Equal(1, t.UdpReceiveErrors[0]);             // CA3
+        Assert.Equal(1, t.UdpReceiveErrors[2]);             // CA4
+        Assert.Equal(0, t.UdpReceiveErrors[1]);
+        Assert.Equal(2, warnings.Count);
+        Assert.StartsWith("UDPTransport.BadPrefix.TooSmall", warnings[0]);
+        Assert.StartsWith("UDPTransport.BadPrefix:", warnings[1]);
+        Assert.Equal(msgs0 + 3, t.UdpMessagesReceived);     // CA7: all three, the failures included
+        Assert.Equal(bytes0 + tooSmall.Length + badPrefix.Length + good.Length, t.UdpBytesReceived);
+        Assert.Equal(0, t.ReliableReceiveErrors[4]);        // not handed on to ReliableTransport::ReceiveData
+        Assert.Equal(Data, Assert.Single(delivered));       // the read went on
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-010 / M1-018 CA18: ReliableTransport::Update visits the connections in ascending
+    /// TransportAddress::operator&lt; order, and a timed-out one gives OnDisconnected and is deleted
+    /// (0x00837B9A..0x00837C92). CA19 (0x00838EDA..0x00838F62; 0x008384E8..0x00838518): the type byte first,
+    /// '6' IPv6 &lt; 'i' IPv4; for IPv4 the u32 at +8 (raw sin_addr), then the u16 port in host order. Expected
+    /// order worked by hand: sin_addr is network-order bytes, read as a little-endian u32 on the engine's ARM, so
+    /// 10.0.0.1 = 0x0100000A &lt; 10.0.0.2 = 0x0200000A &lt; 9.0.0.3 = 0x03000009, and 10.0.0.1:5551 &lt; 10.0.0.1:5552.
+    /// The connections are made in another order (a, b, c, d), and a dotted-quad sort would put 9.0.0.3 first.
+    /// </summary>
+    [Fact]
+    public void M1_010_CA18_CA19_TheUpdateVisitsTheConnectionsInTransportAddressOrder()
+    {
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
+        var a = new IPEndPoint(IPAddress.Parse("10.0.0.2"), 5551);
+        var b = new IPEndPoint(IPAddress.Parse("10.0.0.1"), 5552);
+        var c = new IPEndPoint(IPAddress.Parse("9.0.0.3"), 5551);
+        var d = new IPEndPoint(IPAddress.Parse("10.0.0.1"), 5551);
+        var v6 = new IPEndPoint(IPAddress.IPv6Loopback, 5551);
+        foreach (var from in new[] { a, b, c, v6, d })
+            t.ProcessIncoming(Raw(ReliableMessageType.ConnectionRequest, 1, 1, 0, Array.Empty<byte>()), from);   // R13
+        var expected = new[] { v6, d, b, a, c };
+        Assert.Equal(expected, t.ConnectionAddresses);
+
+        var events = Receiver(t);
+        clk.NowMs = 1000 + 5000.1;                          // R19 / G2.7: all of them time out in this update
+        Assert.False(t.Pump());
+        Assert.Equal(expected, events.Where(e => e.Marker == ReceiverMarker.OnDisconnected).Select(e => e.Address));
+        Assert.Empty(t.ConnectionAddresses);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE, with a HOST MAPPING for the failure (a SocketException from the step, through the
+    /// OpenSocket seam). M1-022 CA24: OpenSocket calls CloseSocket and stores the port argument (0x00839A3A,
+    /// 0x00839A46); the first open's argument is Init's 0 (CA37). CA26: socket() failing leaves fd −1, gives the
+    /// error "OpenSocketFailed", and its CloseSocket is a no-op (CA30), so +0x98 keeps 0 (0x00839B8A..0x00839CF2).
+    /// CA27: SO_BROADCAST failing gives the error "SetBroadcastFailed" and CloseSocket, so port 47817
+    /// (0x00839D00..0x00839D24). CA28: a bind failure other than EADDRINUSE gives the error "BindFailed" and
+    /// CloseSocket, so port 47817 (0x00839D3A..0x00839D42; 0x00839FA2..0x0083A026). No socket is left.
+    /// </summary>
+    [Theory]
+    [InlineData("socket", "UDPTransport.OpenSocketFailed", 0)]
+    [InlineData("broadcast", "UDPTransport.SetBroadcastFailed", 47817)]
+    [InlineData("bind", "UDPTransport.BindFailed", 47817)]
+    public void M1_022_CA24_CA26_CA27_CA28_AFailedOpenSocketStepLeavesNoSocket(string step, string error, int storedPort)
+    {
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, new ManualClock(), manualPump: true);
+        var warnings = new List<string>(); t.Warning += warnings.Add;
+        t.OpenSocketFault = at => { if (at == step) throw new SocketException((int)SocketError.AccessDenied); };
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        Assert.Null(t.CurrentSocket);
+        Assert.Equal(storedPort, t.StoredLocalPort);
+        Assert.StartsWith(ReliableTransport.ErrorLevel + error, Assert.Single(warnings));
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-022 CA32 (0x0083A546..0x0083A56C; 0x0083A648..0x0083A666, literal 0x0083A6C8): a send
+    /// failure always counts AddSendError(6); it warns "UDPTransport.SendFailed" and stores +0x88 = now only when
+    /// verbose (CA33: const 0), or +0x88 == 0.0, or now &gt; +0x88 + 30000.0. CA34 / CA36: +0x88 starts at 0.0 and
+    /// the clock is GetCurrentNetTimeStamp. CA31: with no socket every sendto fails (no fd guard). The resends
+    /// come from R25 (33.3 ms), called directly so the 5 s timeout of the update does not apply.
+    /// </summary>
+    [Fact]
+    public void M1_022_CA32_TheSendFailureWarningAndItsTimeAreRateLimitedTo30Seconds()
+    {
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
+        var warnings = new List<string>(); t.Warning += warnings.Add;
+        Assert.Equal(0.0, t.LastSendErrorMs);               // CA34 / CA36
+        t.Connect(IPAddress.Loopback, 59973);               // the ConnectionRequest's one send fails
+        Assert.Equal(1, t.UdpSendErrors[6]);
+        Assert.Equal(1000, t.LastSendErrorMs);              // +0x88 was 0.0: warn and store
+        Assert.StartsWith("UDPTransport.SendFailed", Assert.Single(warnings));
+        var c = t.Connection!;
+
+        clk.NowMs = 2000; Assert.Equal(1, c.SendOptimalUnAckedPackets(1));
+        Assert.Equal(2, t.UdpSendErrors[6]);                // always counted
+        Assert.Equal(1000, t.LastSendErrorMs);              // not stored
+        Assert.Single(warnings);                            // no warning
+
+        clk.NowMs = 31000; Assert.Equal(1, c.SendOptimalUnAckedPackets(1));   // == +0x88 + 30000: not greater
+        Assert.Equal(3, t.UdpSendErrors[6]);
+        Assert.Equal(1000, t.LastSendErrorMs);
+        Assert.Single(warnings);
+
+        clk.NowMs = 31040; Assert.Equal(1, c.SendOptimalUnAckedPackets(1));   // > +0x88 + 30000
+        Assert.Equal(4, t.UdpSendErrors[6]);
+        Assert.Equal(31040, t.LastSendErrorMs);
+        Assert.Equal(2, warnings.Count);
+        Assert.StartsWith("UDPTransport.SendFailed", warnings[1]);
+        Assert.Equal(4, t.UdpMessagesSent);                 // CA31: AddSentMessage before each sendto
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-019 CA14 (0x00838004..0x0083802A; 0x00836C5A..0x00836C6E, 0x00836CDC..0x00836D06): the
+    /// Disconnect closure's SendMessage(type 3) to an address with no connection finds none, gives the warning
+    /// "unconnected destination" and sends nothing; DeleteConnection is a no-op. No connection is created (R13:
+    /// only a type 1 creates one on the send side).
+    /// </summary>
+    [Fact]
+    public void M1_019_CA14_ADisconnectWithNoConnectionSendsNothingAndOnlyWarns()
+    {
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, new ManualClock { NowMs = 1000 }, manualPump: true);
+        var warnings = new List<string>(); t.Warning += w => { lock (warnings) warnings.Add(w); };
+        var frames = new List<FrameEvent>(); t.FrameTrace += f => { lock (frames) frames.Add(f); };
+        var to = new IPEndPoint(IPAddress.Loopback, 59974);
+        t.Disconnect(to);
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        lock (frames) Assert.Empty(frames);
+        Assert.Equal(0, t.UdpMessagesSent);
+        Assert.Null(t.ConnectionFor(to));
+        lock (warnings) Assert.Contains(warnings, w => w.Contains("unconnected destination"));
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-035 CA10: SendMessage stores the time it is called with at PendingMessage +0x00
+    /// (0x00835802). CA11: in async mode that is the time QueueMessage read when it posted the closure
+    /// (closure+0x40), not the time the closure runs. CA13: every type-6 part of a split message carries the same
+    /// time. CA15: in sync mode QueueMessage calls SendMessage directly with time 0.0 (0x00836B42..0x00836B5C).
+    /// The entries are read on the executor, where no update can run beside the read.
+    /// </summary>
+    [Fact]
+    public void M1_035_CA10_TheTimeSendMessageIsCalledWithIsStoredOnEveryEntryItQueues()
+    {
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk);
+        t.Connect(IPAddress.Loopback, 59975);
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        var c = t.Connection!;
+
+        var gate = new ManualResetEventSlim(); var busy = new ManualResetEventSlim();
+        t.Executor.Post(() => { busy.Set(); gate.Wait(TimeSpan.FromSeconds(10)); });
+        Assert.True(busy.Wait(TimeSpan.FromSeconds(5)));
+        clk.NowMs = 1010;
+        t.SendData(new byte[3000], reliable: true, flush: false);   // posted at 1010; R22: three type-6 parts
+        clk.NowMs = 1020;                                            // runs later
+        gate.Set();
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+
+        List<(ReliableMessageType type, double time)>? seen = null;
+        t.Executor.Post(() => seen = c.Pending.Select(p => (p.Type, p.QueuedTimeMs)).ToList());
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        Assert.Equal((ReliableMessageType.ConnectionRequest, 1000.0), seen![0]);   // posted at 1000
+        var parts = seen.Where(p => p.type == ReliableMessageType.MultiPartMessage).ToList();
+        Assert.Equal(3, parts.Count);
+        Assert.All(parts, p => Assert.Equal(1010.0, p.time));
+
+        var (sync, sclk, _) = Offline();
+        using var _s = sync;
+        Connect(sync);
+        sclk.NowMs = 1500;
+        sync.SendData(Data, reliable: true, flush: false);
+        Assert.Equal(0.0, sync.Connection!.Pending[^1].QueuedTimeMs);   // CA15
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE, CA11: QueueMessage copies the caller's buffer when it posts (operator new[] +
+    /// memcpy, 0x00836B66..0x00836B72), and PendingMessage::Set copies it again (CreateCombinedBuffer
+    /// 0x0083581E). So a caller that reuses its array after SendData changes neither what is queued nor what
+    /// is resent, in either mode.
+    /// </summary>
+    [Fact]
+    public void M1_035_CA11_SendDataCopiesTheCallersBuffer()
+    {
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk);
+        t.Connect(IPAddress.Loopback, 59973);
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        var c = t.Connection!;
+        var gate = new ManualResetEventSlim(); var busy = new ManualResetEventSlim();
+        t.Executor.Post(() => { busy.Set(); gate.Wait(TimeSpan.FromSeconds(10)); });
+        Assert.True(busy.Wait(TimeSpan.FromSeconds(5)));
+        var buf = new byte[] { 0x10, 0x20, 0x30 };
+        t.SendData(buf, reliable: true, flush: false);        // posted while the executor is busy
+        buf[0] = 0xEE;                                         // the caller reuses its array before the closure runs
+        gate.Set();
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        byte[]? queued = null;
+        t.Executor.Post(() => queued = c.Pending[^1].Payload.ToArray());
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        Assert.Equal(new byte[] { 0x10, 0x20, 0x30 }, queued);
+
+        var (sync, _, _) = Offline();
+        using var _s = sync;
+        Connect(sync);
+        var sbuf = new byte[] { 0x01, 0x02 };
+        sync.SendData(sbuf, reliable: true, flush: false);    // sync mode: SendMessage directly, Set still copies
+        sbuf[0] = 0xEE;
+        Assert.Equal(new byte[] { 0x01, 0x02 }, sync.Connection!.Pending[^1].Payload);
+    }
+
     // ------------------------------------------------------------------ rig
 
     private static byte[] ConnectionResponse() =>
@@ -2161,6 +2437,8 @@ public class TransportRepairTests
 
         public void Datagram(byte[] data, IPEndPoint from) => _items.Enqueue((data, from));
         public void Error(SocketError e) => _items.Enqueue(e);
+        /// <summary>Items not yet returned by a receive.</summary>
+        public int Pending => _items.Count;
 
         public int Receive(Socket socket, byte[] buffer, ref EndPoint from)
         {

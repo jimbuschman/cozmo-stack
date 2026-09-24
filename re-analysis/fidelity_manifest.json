@@ -247,7 +247,7 @@
       "subsystem": "M1-transport",
       "title": "Frame header: 4-byte prefix 43 4F 5A 03, no CRC, then the 10-byte RE header; receive-side checks",
       "location": "cozmo-stack/src/Cozmo.Protocol/Wire/Frame.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B5 0x0062EFB6 adr -> bytes at 0x0062F088 = 43 4f 5a 03; 0x0062EFB8 movs r1,#4; 0x0062EFBE movs r0,#0 (SetDoesHeaderHaveCRC false)",
@@ -258,18 +258,18 @@
         "CA3..CA7: the UDP layer counts AddRecvError(0) TooSmall (0x0083A7F0..0x0083A7F4), (2) BadPrefix (0x0083A87E..0x0083A882), (1) Truncated after the prefix matches (0x0083A8C4..0x0083A8C8), (3) BadCRC only with CRC on (0x0083A90E..0x0083A912), and AddRecvMessage(size) for every datagram (0x0083A776); a null receiver drops silently"
       ],
       "effect": "the robot rejects frames, or this stack accepts frames the app would drop",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled in M1 repair batch 4(i) after the read-only verifier's settle table (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "FrameTests, TransportRepairTests.B17_ADatagramLargerThan1472BytesIsDroppedAsTruncatedAndTheDrainGoesOn, TransportRepairTests.B17_AnOversizeDatagramWithABadPrefixFailsThePrefixCheckFirst, TransportRepairTests.B17_TheHostReportsAnOversizeDatagramAsTruncatedAndTheDrainGoesOn, TransportRepairTests.R3_HeaderValidationFailuresAreCountedAndPassedOn"
+      "test": "FrameTests, TransportRepairTests.B17_ADatagramLargerThan1472BytesIsDroppedAsTruncatedAndTheDrainGoesOn, TransportRepairTests.B17_AnOversizeDatagramWithABadPrefixFailsThePrefixCheckFirst, TransportRepairTests.B17_TheHostReportsAnOversizeDatagramAsTruncatedAndTheDrainGoesOn, TransportRepairTests.R3_HeaderValidationFailuresAreCountedAndPassedOn, TransportRepairTests.M1_002_CA3_CA4_CA7_TheUdpLayerCountsEveryDatagramAndItsPrefixFailuresByCode"
     },
     {
       "id": "M1-003",
       "subsystem": "M1-transport",
       "title": "Message types 1..11, always-unreliable set, container types, dispatch by type",
       "location": "cozmo-stack/src/Cozmo.Protocol/Wire/ReliableMessageType.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R5 IsValidMessageType 0x0083673C subs r1,r0,#1; cmp r1,#0xb",
@@ -280,8 +280,8 @@
         "type names are not in the binary: ReliableMessageTypeToString 0x00836730 returns one empty string for every type"
       ],
       "effect": "a message is sent with the wrong reliability or handled as the wrong type",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "dispatch by type is reproduced; R12 \"3 = OnDisconnected then DeleteConnection\" is not: the code shuts the whole transport down (repaired with M1-015, M1-038 in batch 2); then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled in M1 repair batch 4(i) after the read-only verifier's settle table (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "FrameTests.MessageTypeSetsAreTheEngines, ConnectionTests.PackedFrameTypeFollowsWhatItHolds, ConnectionTests.ASingleMessageKeepsItsOwnTypeWithNoSubHeader, ConnectionTests.SubMessagesAreDispatchedByType, TransportRepairTests.M1_003_R12_AHandledDisconnectRequestDeletesOnlyThatConnectionAndTheTransportGoesOn, TransportRepairTests.M1_003_R12_AfterTheRobotsDisconnectRequestTheAsyncUpdateAndSocketGoOn"
@@ -309,7 +309,7 @@
       "subsystem": "M1-transport",
       "title": "Reliable-transport tunables as RobotConnectionManager::Init sets them",
       "location": "cozmo-stack/src/Cozmo.Transport/TransportConstants.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B13 RobotConnectionManager::Init 0x0062EFCE..0x0062F076 sets: MaxPacketsToReSendOnAck 0, MaxPacketsToSendOnSendMessage 1, SendUnreliableMessagesImmediately 0, SendPacketsImmediately 0, SendAckOnReceipt 0, MaxPacketsToReSendOnUpdate 1, TrackAckLatency 1, SendSeparatePingMessages 0, MaxPingRoundTripsToTrack 10 (0x0062F074 movs r3,#0xa), TimeBetweenPingsInMS 33.3 (0x0062F028, 0x4040A666_66666666), MaxTimeSinceLastSend 32.3 (0x0062F03E, 0x40402666_66666666), TimeBetweenResendsInMS 33.3 (0x0062F04E), PacketSeparationIntervalInMS 2.0 (0x0062F056), ConnectionTimeoutInMS 5000.0 (0x0062F068 movt #0x40b3)",
@@ -318,8 +318,8 @@
         "GetCurrentNetTimeStamp 0x008355F8: double milliseconds from steady_clock (ns / 0x3E8 at 0x00835644, * 0.001 at 0x0083564C)"
       ],
       "effect": "resend, ping, spacing and timeout timing differ from the app",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled in M1 repair batch 4(i) after the read-only verifier's settle table (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.M1_005_G2_4_TheClockIsWholeMicrosecondsTimes0_001, TransportRepairTests.M1_005_G2_4_EveryClockReadsOneProcessWideEpoch"
@@ -329,7 +329,7 @@
       "subsystem": "M1-transport",
       "title": "Send queue, packing, resend choice and pacing",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R2 ackSeq (conn+0x42) is read fresh into every built frame: 0x00836A62 ldrh.w r5,[r4,#0x42]; 0x00836E02",
@@ -337,14 +337,14 @@
         "R21 SendMessage: maxPayload = UDP MaxTotalBytesPerMessage - 10 (0x00836C78..0x00836C8C); an oversize unreliable message is forced reliable (0x00836C92); anything above maxPayload is type 6 (0x00836CD6, 0x00836D60); queued via AddMessage, then SendOptimalUnAckedPackets(1) (0x00836EB8..0x00836EDC)",
         "R25 SendOptimalUnAckedPackets: 2.0 ms spacing gate 0x008363C8..0x008363FC; start entry by smallest effective time 0x0083640E..0x008364A6, where a sent entry counts 33.3 earlier only if (lastRecv - 1.0) > 0 and it was sent before that (0x00836466, 0x00836478) [corrected C3]; IsPacketWorthSending 0x008364B2; now > effective + 33.3 at 0x008364B8..0x008364CE",
         "R26 IsPacketWorthSending 0x008362FE..0x0083639A; its idle clause requires lastSend > 0 (0x00836316 vcmpe.f64 d0,#0; 0x0083631E ble) [corrected C3]",
-        "R27 SendUnAckedMessages: forward packing 0x00835DF2..0x00835E40 then backward 0x00835E56..0x00835EA2; seq-0 entries deleted after one send, seq entries kept with updated sent time 0x00835F72..0x0083604A; lastSend = now",
+        "R27 SendUnAckedMessages: forward packing 0x00835DF2..0x00835E40 then backward 0x00835E56..0x00835EA2; seq-0 entries deleted after one send, seq entries kept with updated sent time 0x00835F72..0x0083604A; lastSend = now; the header seqs are the first and last reliable seq in queue order, not a numeric min/max (0x00835DDA..0x00835E96, 0x00835F40..0x00835F5E) [corrected C12]",
         "R28 no per-message retry limit; the only give-up is the connection timeout (M1-015)",
         "R29 at most one packet per ReliableConnection::Update (0x00836592..0x0083659E), one per SendMessage (0x00836ECA..0x00836EDC), none on ack (0x00837820..0x00837828)",
         "CA1/CA2: the 2.0 ms gate is skipped while lastSend (+0x48) is 0.0, i.e. before the first send only (0x008363D4..0x008363FC; ctor 0x0083591C..0x00835922), and now == last + 2.0 is allowed (strict <)"
       ],
       "effect": "frames go out in a different order, size, number or timing from the app; unreliable data is resent or lost differently",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled in M1 repair batch 4(i) after the read-only verifier's settle table (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "ConnectionTests"
@@ -354,7 +354,7 @@
       "subsystem": "M1-transport",
       "title": "Receive path: in-order delivery only, no buffering, mixed frames still walked",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R4 reliable iff firstSeq or lastSeq non-zero: 0x0083764C; 0x008377B0",
@@ -366,8 +366,8 @@
         "R17 no receive buffer in the connection layout (ctor 0x00835900..0x00835984)"
       ],
       "effect": "messages are delivered twice, out of order, or dropped where the app would deliver them",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled in M1 repair batch 4(i) after the read-only verifier's settle table (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "ConnectionTests, TransportRepairTests.AContainerEndingInAPartialSubMessageHeaderIsASizeOverrunAfterTheHeader, TransportRepairTests.ARemainderStartingWithAnInvalidTypeStopsTheWalkThere, TransportRepairTests.R10_ContainerParseErrorsAreCountedByCode, TransportRepairTests.R16_AnOutOfRangeReliableFrameCountsError5UnlessItIsMixed, TransportRepairTests.AnOutOfSequenceDisconnectRequestDoesNotStopTheFrame"
@@ -377,15 +377,16 @@
       "subsystem": "M1-transport",
       "title": "17-byte ping payload, sent unreliable as type 0x0B",
       "location": "cozmo-stack/src/Cozmo.Protocol/Wire/PingPayload.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R30 SendPing 0x00835C00..0x00835C62: f64 time, u32 numPingsSent (+0x60, incremented first), u32 numPingsReceived (+0x64), u8 isReply; movs r1,#0xb; movs r2,#0x11; unreliable, flag 1; a request sets +0x58 = now",
-        "SendPing calls ReliableTransport::SendMessage (0x00835C58): AddMessage then SendOptimalUnAckedPackets(1), so the ping can go out on the same call, subject to the 2.0 ms gate [corrected C4]"
+        "SendPing calls ReliableTransport::SendMessage (0x00835C58): AddMessage then SendOptimalUnAckedPackets(1), so the ping can go out on the same call, subject to the 2.0 ms gate [corrected C4]",
+        "SendPing passes SendMessage a second GetCurrentNetTimeStamp reading (0x00835C38 → [sp,#0x10] 0x00835C48 → 0x00835C58); it is stats-only (CA10) [C13]"
       ],
       "effect": "the robot misreads keep-alive pings",
-      "provenance": "the M1 candidate implementation; payload layout confirmed by the comparison and batch 1",
-      "unresolved": "the 17-byte layout, counters, type and send path are reproduced; the f64 time field is filled from the per-transport Stopwatch, not GetCurrentNetTimeStamp (called at 0x00835C0E), so its value differs until M1-005's clock is repaired in batch 2; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled in M1 repair batch 4(i) after the read-only verifier's settle table (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "FrameTests.PingPayloadHasTheEnginesSeventeenByteLayout, ConnectionTests.AnIdlePingIsOneUnreliableType11FrameWithTheEnginesPayload"
@@ -395,26 +396,27 @@
       "subsystem": "M1-transport",
       "title": "Multipart split and reassembly",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R22 split: chunk = maxNet - 12 (0x00836D7A sub.w r0,r8,#0xc); count = ceil(size/chunk) (0x00836D90..0x00836D98); prefix [idx u8 from 1][count u8] (0x00836E42, 0x00836E46); count is strb with no 255 check; size 0 still gives one part",
         "R23 AddMessagePart 0x008358A0..0x008358E8: part < 3 bytes rejected; idx must equal expected with no reset on mismatch; part 1 sets total; payload from byte 2 appended; complete at idx == total, then Clear (HandleSubMessage 0x008374C6..0x00837504); no size bound",
-        "CA13: every type-6 part carries the caller's +0x2B flag and the same posted time (0x00836E98..0x00836EA8; Set 0x00835832), and the flag makes IsPacketWorthSending true (0x00836368)"
+        "CA13: every type-6 part carries the caller's +0x2B flag and the same posted time (0x00836E98..0x00836EA8; Set 0x00835832), and the flag makes IsPacketWorthSending true (0x00836368)",
+        "R23's cited range shows the assembly is per connection: 0x008374C6 mov r0,r5 (the ReliableConnection*) → GetPendingMultiPartMessage, body 0x00835A94 adds r0,#0x20, a member of that connection; it is destroyed with the connection [C14]"
       ],
       "effect": "large messages (animations, images) are split or rebuilt differently",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled in M1 repair batch 4(i) after the read-only verifier's settle table (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "ConnectionTests.LargeOutgoingPayloadIsSplitIntoMultipartParts, TransportRepairTests.M1_009_R23_EachConnectionAssemblesItsOwnMultipartMessage, TransportRepairTests.M1_009_R23_DeletingOneConnectionLeavesAnothersPartialMessageIntact"
+      "test": "ConnectionTests.LargeOutgoingPayloadIsSplitIntoMultipartParts, TransportRepairTests.M1_009_R23_EachConnectionAssemblesItsOwnMultipartMessage, TransportRepairTests.M1_009_R23_DeletingOneConnectionLeavesAnothersPartialMessageIntact, TransportRepairTests.M1_035_CA10_TheTimeSendMessageIsCalledWithIsStoredOnEveryEntryItQueues"
     },
     {
       "id": "M1-010",
       "subsystem": "M1-transport",
       "title": "Asynchronous 2 ms transport tick and ReliableTransport::Update order",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R35/B14 ctor: Dispatch::Create \"RelTransport\" priority 3 (0x008367C2); +0xA0=1, +0xA1=0 (0x008367DA); ChangeSyncMode(false) (0x008367E2) -> ScheduleCallback(2 ms) (0x00836896 movs r2,#2; 0x0083689E); lambda 0x008383CE",
@@ -424,11 +426,11 @@
         "CA18/CA19: Update visits connections in ascending TransportAddress::operator< order (0x00837B9A..0x00837C92; operator< 0x00838EDA..0x00838F62: type byte, then IPv4 u32 at +8 then port)"
       ],
       "effect": "resend and ping timing drift from the app",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled in M1 repair batch 4(i) after the read-only verifier's settle table (2026-09-24); CA9's real-time priority is not reproduced: the host thread priority is policy M1-014",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "TransportRepairTests.M1_010_R35_TheUpdateIsRequestedAtConstructionAndRunsOnTheExecutor, TransportRepairTests.M1_010_R35_TheUpdateKeepsRunningAfterAConnectionTimesOut, TransportRepairTests.T_j2_IncomingAcksAreAppliedBeforeTheSameUpdateResends"
+      "test": "TransportRepairTests.M1_010_R35_TheUpdateIsRequestedAtConstructionAndRunsOnTheExecutor, TransportRepairTests.M1_010_R35_TheUpdateKeepsRunningAfterAConnectionTimesOut, TransportRepairTests.T_j2_IncomingAcksAreAppliedBeforeTheSameUpdateResends, TransportRepairTests.M1_010_CA18_CA19_TheUpdateVisitsTheConnectionsInTransportAddressOrder"
     },
     {
       "id": "M1-011",
@@ -488,7 +490,7 @@
       "location": "cozmo-stack/src/Cozmo.Transport/RobotLink.cs",
       "effect": "ordering and latency of delivered messages, if the host threads do not keep the orders recorded in M1-010, M1-024 and M1-035",
       "provenance": "a choice of this stack",
-      "authority": "the original: a RelTransport dispatch thread (M1-010, M1-035) and one engine thread draining arrivals every 60 ms (M1-024). Its socket reopen on ENOTCONN and its send-failure handling are M1-022, and handler isolation is M1-034. Only the host thread structure that reproduces those orders is policy",
+      "authority": "the original: a RelTransport dispatch thread (M1-010, M1-035) and one engine thread draining arrivals every 60 ms (M1-024). Its socket reopen on ENOTCONN and its send-failure handling are M1-022, and handler isolation is M1-034. Only the host thread structure that reproduces those orders is policy. That includes thread priority: the original asks for SCHED_RR at 75% of the OS range for the RelTransport threads (CA9), which the host does not reproduce; host threads keep the default priority",
       "evidence": [],
       "status": "COMPATIBILITY_POLICY",
       "unresolved": "",
@@ -524,15 +526,15 @@
       "subsystem": "M1-transport",
       "title": "Incoming ack processing",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R18 every valid frame from a known connection runs UpdateLastAckedMessage(ackSeq) (0x00837814, 0x00835AEA): +0x50 = now always (0x00835B9C); for ackSeq != 0 remove the front entry while ackSeq is within the pending seq range (0x00835B08..0x00835B96); resend on ack only if MaxPacketsToReSendOnAck (0)",
         "R43 the loop removes pending[0] each pass (0x00835B08..0x00835B0A; memmove 0x00835B3C), so an unsent seq-0 entry at the front is discarded with the acked entries"
       ],
       "effect": "acked messages stay queued and are resent, or unacked ones are discarded",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled in M1 repair batch 4(i) after the read-only verifier's settle table (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.AContainerEndingInAPartialSubMessageHeaderIsASizeOverrunAfterTheHeader"
@@ -566,7 +568,7 @@
       "subsystem": "M1-transport",
       "title": "Connections are created only by a connect request",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R13 receive: created only for type 1 or a container whose first sub-type is 1 (0x008377CE..0x008377FC, FindConnection 0x00837098 cmp r5,#1); otherwise \"unconnected source\", dropped, ack not processed (0x0083789A); send: created only for type 1, otherwise \"unconnected destination\" and nothing queued (SendMessage 0x00836C5A..0x00836C6E); new connection 0x250 bytes, nextOut 1, nextIn 1 (0x0083592A, 0x0083592C)",
@@ -574,11 +576,11 @@
         "CA19: connections are keyed by TransportAddress::operator< (0x00838EDA..0x00838F62)"
       ],
       "effect": "frames from or to an unconnected peer are handled where the app drops them",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled in M1 repair batch 4(i) after the read-only verifier's settle table (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "TransportRepairTests.M1_018_R13_ATypeOneFrameFromAnUnknownAddressCreatesAConnection, TransportRepairTests.M1_018_R13_AContainerWhoseFirstSubIsTypeOneCreatesAConnection, TransportRepairTests.M1_018_R13_OtherFramesFromAnUnknownAddressAreDroppedAsUnconnectedSource, TransportRepairTests.T_d1_AReliableFrameFromTheRightIpButAnotherPortIsDroppedBeforeAcks, TransportRepairTests.M1_019_R38_FinishConnectionWithNoConnectionIsAnUnconnectedDestination"
+      "test": "TransportRepairTests.M1_018_R13_ATypeOneFrameFromAnUnknownAddressCreatesAConnection, TransportRepairTests.M1_018_R13_AContainerWhoseFirstSubIsTypeOneCreatesAConnection, TransportRepairTests.M1_018_R13_OtherFramesFromAnUnknownAddressAreDroppedAsUnconnectedSource, TransportRepairTests.T_d1_AReliableFrameFromTheRightIpButAnotherPortIsDroppedBeforeAcks, TransportRepairTests.M1_019_R38_FinishConnectionWithNoConnectionIsAnUnconnectedDestination, TransportRepairTests.M1_010_CA18_CA19_TheUpdateVisitsTheConnectionsInTransportAddressOrder"
     },
     {
       "id": "M1-019",
@@ -602,7 +604,7 @@
       "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": "TransportRepairTests.M1_019_R38_FinishConnectionSendsAReliableFlushedTypeTwoToThatAddress, TransportRepairTests.M1_019_R38_FinishConnectionWithNoConnectionIsAnUnconnectedDestination, TransportRepairTests.M1_019_R39_StopSendsNothingClearsTheConnectionsAndClosesTheSocket, TransportRepairTests.M1_019_R38_R39_StartOpensTheSocketOnceAndConnectAndDisconnectLeaveItAlone, TransportRepairTests.M1_019_R40_TheConnectionResponseReachesTheReceiverAsOnConnected, TransportRepairTests.M1_035_B21_AQueuedDisconnectActsOnTheConnectionItsAddressHasWhenItRuns, TransportRepairTests.T_h1_DisconnectMakesOneAttemptAndDeletesTheConnectionAtOnce, TransportHardeningTests.ASecondConnectQueuesAnotherConnectionRequestOnTheSameConnection, TransportRepairTests.M1_019_R39_AConnectFollowedByStopStillSendsTheConnectionRequestFirst",
+      "test": "TransportRepairTests.M1_019_R38_FinishConnectionSendsAReliableFlushedTypeTwoToThatAddress, TransportRepairTests.M1_019_R38_FinishConnectionWithNoConnectionIsAnUnconnectedDestination, TransportRepairTests.M1_019_R39_StopSendsNothingClearsTheConnectionsAndClosesTheSocket, TransportRepairTests.M1_019_R38_R39_StartOpensTheSocketOnceAndConnectAndDisconnectLeaveItAlone, TransportRepairTests.M1_019_R40_TheConnectionResponseReachesTheReceiverAsOnConnected, TransportRepairTests.M1_035_B21_AQueuedDisconnectActsOnTheConnectionItsAddressHasWhenItRuns, TransportRepairTests.T_h1_DisconnectMakesOneAttemptAndDeletesTheConnectionAtOnce, TransportHardeningTests.ASecondConnectQueuesAnotherConnectionRequestOnTheSameConnection, TransportRepairTests.M1_019_R39_AConnectFollowedByStopStillSendsTheConnectionRequestFirst, TransportRepairTests.M1_019_CA14_ADisconnectWithNoConnectionSendsNothingAndOnlyWarns",
       "verification": {
         "level": "HARDWARE_VERIFIED",
         "bundles": [
@@ -615,7 +617,7 @@
       "subsystem": "M1-transport",
       "title": "Production runs the transport asynchronously; sync mode is unused",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R36 with +0xA0 set, QueueMessage calls SendMessage directly and the owner must call Update (0x00836B42..0x00836B5C)",
@@ -623,8 +625,8 @@
         "CA17: ChangeSyncMode's only caller is the ctor, with false (0x008367E2), so production never enters sync mode; this stack keeps sync mode only as its offline/test seam (policy M1-014)"
       ],
       "effect": "the tick owner and threading differ from the app",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled in M1 repair batch 4(i) after the read-only verifier's settle table (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.M1_020_R36_InSyncModeASendIsQueuedOnTheCallersThreadAtOnce, TransportRepairTests.M1_035_R37_ASendIsPostedAndRunsFifoBetweenUpdatesOnTheTransportThread"
@@ -634,7 +636,7 @@
       "subsystem": "M1-transport",
       "title": "The 2 ms Dispatch callback: fixed delay, first run after one period, never overlapping",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "G1.1 ScheduleCallback -> Queue vtable +0x14 -> WakeAfterRepeat (0x007FB93A, 0x007FBB1E..0x007FBB2A)",
@@ -645,8 +647,8 @@
         "G1.9/G1.10 posted copies are never merged (0x007FCD50..0x007FCD66); one Execute thread runs them in order (Run 0x007FD0C6..0x007FD128), skipping a task whose handle has expired, so runs never overlap and a backlog runs back to back"
       ],
       "effect": "the transport tick drifts, bunches or overlaps differently from the app",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled in M1 repair batch 4(i) after the read-only verifier's settle table (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.M1_021_G1_2_TheFirstRunIsDueOnePeriodAfterScheduling, TransportRepairTests.M1_021_G1_7_G1_8_ADuePassPostsOneCopyAndReArmsAtThatNowPlusThePeriod, TransportRepairTests.M1_021_G1_9_G1_10_PostedItemsRunInOrderOnOneThreadWithoutOverlapAndABacklogRunsBackToBack, TransportRepairTests.M1_035_R37_ASendIsPostedAndRunsFifoBetweenUpdatesOnTheTransportThread"
@@ -656,7 +658,7 @@
       "subsystem": "M1-transport",
       "title": "UDP socket: setup, ephemeral local port, send errors, receive loop, reopen",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B11 OpenSocket: getaddrinfo(NULL, port, AI_PASSIVE, SOCK_DGRAM, AF_INET) (0x00839ACA, 0x00839AD0, 0x00839AF2); socket (0x00839B8A); SO_BROADCAST=1 for AF_INET (0x00839D18); bind (0x00839D3A); EADDRINUSE only a warning (0x00839E70); no O_NONBLOCK, no buffer options",
@@ -670,18 +672,18 @@
         "CA36/CA37: UDP ctor values (0x00839514..0x00839556); Init stores port 0 so the first open is ephemeral (0x0062EFEA)"
       ],
       "effect": "the robot sees a different source port, or the link behaves differently after an error",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced with host socket mappings: MSG_DONTWAIT as Poll(0)+ReceiveFrom, ENOTCONN as SocketError.NotConnected, EADDRINUSE as AddressAlreadyInUse, MSG_TRUNC as MessageSize, a throwing Close as a failed close; getaddrinfo (CA25) has no host step; CloseSocket's success info log is not emitted; settled in batch 4(i)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "TransportRepairTests.M1_022_B12_TheFirstOpenIsEphemeralAndAnOpenAfterACloseBinds47817, TransportRepairTests.M1_022_B11_TheSocketIsIpv4UdpOnInaddrAnyWithSoBroadcastAndBlocking, TransportRepairTests.M1_022_B11_AnAddressInUseBindIsOnlyAWarningAndTheSocketIsKept, TransportRepairTests.M1_022_B16_ANotConnectedReopenIsSkippedWhenTheCloseFailed, TransportRepairTests.M1_022_B16_AZeroByteDatagramStopsTheDrainForThisUpdate, TransportRepairTests.M1_022_B16_OnTheHostAZeroByteDatagramStopsTheDrainAndAnEmptyReadDoesNotBlock, TransportRepairTests.M1_022_B10_AShortSendLogsSentWrongNumBytes, TransportRepairTests.M1_022_B10_AFailedSendCountsAddSendError6AndDoesNotRetryOrDisconnect, TransportRepairTests.M1_022_B10_ASendWithNoSocketCountsAddSendError6, TransportRepairTests.T_k1_NotConnectedReopensTheSocketOnPort47817AndKeepsTheConnection, TransportRepairTests.T_k2_AnyOtherReceiveErrorIsOnlyAWarning, TransportRepairTests.T_k3_WouldBlockIsSilent"
+      "test": "TransportRepairTests.M1_022_B12_TheFirstOpenIsEphemeralAndAnOpenAfterACloseBinds47817, TransportRepairTests.M1_022_B11_TheSocketIsIpv4UdpOnInaddrAnyWithSoBroadcastAndBlocking, TransportRepairTests.M1_022_B11_AnAddressInUseBindIsOnlyAWarningAndTheSocketIsKept, TransportRepairTests.M1_022_B16_ANotConnectedReopenIsSkippedWhenTheCloseFailed, TransportRepairTests.M1_022_B16_AZeroByteDatagramStopsTheDrainForThisUpdate, TransportRepairTests.M1_022_B16_OnTheHostAZeroByteDatagramStopsTheDrainAndAnEmptyReadDoesNotBlock, TransportRepairTests.M1_022_B10_AShortSendLogsSentWrongNumBytes, TransportRepairTests.M1_022_B10_AFailedSendCountsAddSendError6AndDoesNotRetryOrDisconnect, TransportRepairTests.M1_022_B10_ASendWithNoSocketCountsAddSendError6, TransportRepairTests.T_k1_NotConnectedReopensTheSocketOnPort47817AndKeepsTheConnection, TransportRepairTests.T_k2_AnyOtherReceiveErrorIsOnlyAWarning, TransportRepairTests.T_k3_WouldBlockIsSilent, TransportRepairTests.M1_022_CA24_CA26_CA27_CA28_AFailedOpenSocketStepLeavesNoSocket, TransportRepairTests.M1_022_CA32_TheSendFailureWarningAndItsTimeAreRateLimitedTo30Seconds"
     },
     {
       "id": "M1-023",
       "subsystem": "M1-transport",
       "title": "Socket reset on every Android process network bind or unbind",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "G4.1/G4.2 the RCM ctor registers its UDP transport with WifiUtil (0x0062EDB4..0x0062EDC0); RegisterTransport binds handler 0x0083BAD1 to the static signal at 0x0105DF8C (0x0083B9AA..0x0083B9D4)",
@@ -693,8 +695,8 @@
         "G4.11/G4.12 the callers are the CozmoWifi receiver on Wi-Fi state changes (sources/com/anki/cozmo/CozmoWifi.java:28-85) and the Unity ping test on API >= 26 (unity/scripts/csharp/AndroidConnectionFlow.cs:95-153, :302, :310)"
       ],
       "effect": "the socket is reopened (on port 47817) at different times from the app",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE. The trigger on this host is the policy M1-037 (decision D5)",
+      "provenance": "reproduced by the code; settled in M1 repair batch 4(i) after the read-only verifier's settle table (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.M1_023_G4_4_TheBindSignalSetsTheResetFlagOnlyWhenASocketIsOpen, TransportRepairTests.M1_023_G4_5_TheNextUpdateClosesReopensOn47817ClearsTheFlagAndReads, TransportRepairTests.M1_023_G4_5_AFailedCloseIsNotReopenedAndTheFlagIsStillCleared"
@@ -876,7 +878,7 @@
       "subsystem": "M1-transport",
       "title": "A never-answered connection times out 5000 ms after it is created",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "G2.1/G2.2 the connection is created by the first type-1 SendMessage (0x00836C5A..0x00836C6E; FindConnection 0x00837098..0x008370C0)",
@@ -886,8 +888,8 @@
         "G2.9 detection runs on the 2 ms tick in async mode (M1-020, M1-021); in async mode the 5 s start when the queued connect closure runs SendMessage, not at the Connect() call"
       ],
       "effect": "a connect to an absent robot fails at a different time",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled in M1 repair batch 4(i) after the read-only verifier's settle table (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.AContainerEndingInAPartialSubMessageHeaderIsASizeOverrunAfterTheHeader, TransportRepairTests.M1_015_R19_B22_ATimeoutDeletesTheConnectionSetsTheFlagAndTheTransportGoesOn, TransportRepairTests.M1_018_R13_ATypeOneFrameFromAnUnknownAddressCreatesAConnection"
@@ -942,18 +944,19 @@
       "subsystem": "M1-transport",
       "title": "Async hand-off: sends and ticks FIFO on one thread",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R37 QueueMessage 0x00836B66..0x00836BE4 posts a closure to RelTransport; the closure takes the transport mutex and calls SendMessage with the posted time (0x00837DEA); QueueAction 0x00836FF6 posts to the same queue; wrapper 0x00837F48",
-        "CA10..CA12, CA15: the posted time reaches PendingMessage +0x00 and only a stats accumulator used in the timeout warning text (0x00835FA6..0x00835FD8); QueueMessage copies the buffer and posts (0x00836B66..0x00836BE4); the queue is FIFO (0x007FCCF8..0x007FCD66, 0x007FD0C6..0x007FD128); in sync mode QueueMessage sends directly with time 0.0 (0x00836B42..0x00836B5C)"
+        "CA10..CA12, CA15: the posted time reaches PendingMessage +0x00 and only a stats accumulator used in the timeout warning text (0x00835FA6..0x00835FD8); QueueMessage copies the buffer and posts (0x00836B66..0x00836BE4); the queue is FIFO (0x007FCCF8..0x007FCD66, 0x007FD0C6..0x007FD128); in sync mode QueueMessage sends directly with time 0.0 (0x00836B42..0x00836B5C)",
+        "CA11: QueueMessage copies the caller's buffer at post (operator new[] + memcpy 0x00836B66..0x00836B72) and PendingMessage::Set copies again (CreateCombinedBuffer 0x0083581E)"
       ],
       "effect": "a send can overtake a tick or another send",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled in M1 repair batch 4(i) after the read-only verifier's settle table (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "TransportRepairTests.M1_035_R37_ASendIsPostedAndRunsFifoBetweenUpdatesOnTheTransportThread, TransportRepairTests.M1_035_R37_InSyncModeTooQueueActionPostsToTheExecutor, TransportRepairTests.M1_035_B21_AQueuedDisconnectActsOnTheConnectionItsAddressHasWhenItRuns"
+      "test": "TransportRepairTests.M1_035_R37_ASendIsPostedAndRunsFifoBetweenUpdatesOnTheTransportThread, TransportRepairTests.M1_035_R37_InSyncModeTooQueueActionPostsToTheExecutor, TransportRepairTests.M1_035_B21_AQueuedDisconnectActsOnTheConnectionItsAddressHasWhenItRuns, TransportRepairTests.M1_035_CA10_TheTimeSendMessageIsCalledWithIsStoredOnEveryEntryItQueues, TransportRepairTests.M1_035_CA11_SendDataCopiesTheCallersBuffer"
     },
     {
       "id": "M1-036",
@@ -1013,7 +1016,7 @@
       "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "TransportRepairTests.M1_039_OnWindowsAConnectionResetReceiveIsNoDataAndTheDrainGoesOn"
     },
     {
       "id": "M1-040",

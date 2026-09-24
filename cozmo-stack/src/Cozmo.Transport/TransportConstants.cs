@@ -32,12 +32,13 @@ public static class RobotAddress
     public static int RemotePort(bool isSimulated) => isSimulated ? SimulatedPort : PhysicalPort;
 }
 
+// fidelity: M1-005
 /// <summary>
-/// Tunables of the Anki reliable transport as configured by the Cozmo engine.
-/// Source of truth: libcozmoEngine.so RobotConnectionManager::Init / ConfigureReliableTransport (disassembly in
-/// re-analysis/disassembly/dis_robotconn.txt). Values marked "engine" are set there; values marked "library default"
-/// come from Anki's open-sourced reliableConnection.cpp/reliableTransport.cpp/udpTransport.cpp and are not
-/// overridden by the engine.
+/// Tunables of the Anki reliable transport as the Cozmo engine sets them: B13, RobotConnectionManager::Init
+/// 0x0062EFCE..0x0062F076 stores the 14 statics of the inventory's tunables table (M1-005). ConfigureReliableTransport
+/// 0x0062F0C8 writes the same set but has no caller. Values marked "engine" are Init's; values marked "library
+/// default" are statics Init does not write, whose .data defaults stand (the table's "Statics with no writer":
+/// MinExpectedPacketAckTimeMS 1.0, MaxBytesFreeInAFullPacket 0).
 /// </summary>
 public sealed class TransportOptions
 {

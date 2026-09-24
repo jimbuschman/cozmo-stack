@@ -1,6 +1,6 @@
 # M1 transport inventory
 
-**State: approved by the operator at Checkpoint 2 on 2026-09-24, then corrected (C1..C5 below, and the D8 wording) and re-approved the same day; completed by the closure pass (C6..C11, policies M1-039, M1-040, M1-042) and approved by the manager under the operator's standing authorisation of 2026-09-24; frozen with `python re-analysis/tools/fidelity.py --approve M1-transport`.** D1 to D4 were approved on 2026-09-23, and D5 to D8 on 2026-09-24. Any change to this file, or to an M1 record's title, authority, evidence, live_path, hardware_required or status (other than an IMPLEMENTATION_GAP being built), fails the checker until a new approval.
+**State: approved by the operator at Checkpoint 2 on 2026-09-24, then corrected (C1..C5 below, and the D8 wording) and re-approved the same day; completed by the closure pass (C6..C14, policies M1-039, M1-040, M1-042) and approved by the manager under the operator's standing authorisation of 2026-09-24; frozen with `python re-analysis/tools/fidelity.py --approve M1-transport`.** D1 to D4 were approved on 2026-09-23, and D5 to D8 on 2026-09-24. Any change to this file, or to an M1 record's title, authority, evidence, live_path, hardware_required or status (other than an IMPLEMENTATION_GAP being built), fails the checker until a new approval.
 
 ## Where this comes from
 
@@ -40,28 +40,28 @@
 | record | status | what | rows |
 | --- | --- | --- | --- |
 | M1-001 | IMPLEMENTATION_GAP | Robot address: 172.31.1.1 / 127.0.0.1, remote port 5551 physical / 5552 simulated | B1, B3, B4 |
-| M1-002 | IMPLEMENTATION_GAP | Frame header: 4-byte prefix 43 4F 5A 03, no CRC, then the 10-byte RE header; receive-side checks | R1, R3, B5, B6, B17, B19 |
-| M1-003 | IMPLEMENTATION_GAP | Message types 1..11, always-unreliable set, container types, dispatch by type | R5, R6, R7, R8, R12 |
+| M1-002 | EXACT_SOURCE | Frame header: 4-byte prefix 43 4F 5A 03, no CRC, then the 10-byte RE header; receive-side checks | R1, R3, B5, B6, B17, B19 |
+| M1-003 | EXACT_SOURCE | Message types 1..11, always-unreliable set, container types, dispatch by type | R5, R6, R7, R8, R12 |
 | M1-004 | EXACT_SOURCE | Sequence ids 1..65534, wrap and in-range test | R14, R15 |
-| M1-005 | IMPLEMENTATION_GAP | Reliable-transport tunables as RobotConnectionManager::Init sets them | tunables table, B13 |
-| M1-006 | IMPLEMENTATION_GAP | Send queue, packing, resend choice and pacing | R2, R20, R21, R25, R26, R27, R28, R29 |
-| M1-007 | IMPLEMENTATION_GAP | Receive path: in-order delivery only, no buffering, mixed frames still walked | R4, R9, R10, R11, R12, R16, R17 |
-| M1-008 | IMPLEMENTATION_GAP | 17-byte ping payload, sent unreliable as type 0x0B | R30 |
-| M1-009 | IMPLEMENTATION_GAP | Multipart split and reassembly | R22, R23 |
-| M1-010 | IMPLEMENTATION_GAP | Asynchronous 2 ms transport tick and ReliableTransport::Update order | R34, R35, B14 |
+| M1-005 | EXACT_SOURCE | Reliable-transport tunables as RobotConnectionManager::Init sets them | tunables table, B13 |
+| M1-006 | EXACT_SOURCE | Send queue, packing, resend choice and pacing | R2, R20, R21, R25, R26, R27, R28, R29 |
+| M1-007 | EXACT_SOURCE | Receive path: in-order delivery only, no buffering, mixed frames still walked | R4, R9, R10, R11, R12, R16, R17 |
+| M1-008 | EXACT_SOURCE | 17-byte ping payload, sent unreliable as type 0x0B | R30 |
+| M1-009 | EXACT_SOURCE | Multipart split and reassembly | R22, R23 |
+| M1-010 | EXACT_SOURCE | Asynchronous 2 ms transport tick and ReliableTransport::Update order | R34, R35, B14 |
 | M1-011 | EXACT_SOURCE | Ping receive: counters, and only a ping marked as a reply measures the round trip | R31 |
 | M1-012 | EXACT_SOURCE | Frame payload bound 1406 and the UDP send buffer | R24, B5, B7, B8, B9 |
 | M1-013 | COMPATIBILITY_POLICY | Windows high-resolution timer realising the 2 ms and 60 ms periods | policy |
 | M1-014 | COMPATIBILITY_POLICY | Host thread structure that realises the engine threading | policy |
 | M1-015 | IMPLEMENTATION_GAP | Connection timeout 5 s, and how a lost or failed connection is reported | R19, R41, B22, B31, B32, B36 |
-| M1-016 | IMPLEMENTATION_GAP | Incoming ack processing | R18, R43 |
+| M1-016 | EXACT_SOURCE | Incoming ack processing | R18, R43 |
 | M1-017 | EXACT_SOURCE | Ping schedule and ReliableConnection::Update order | R32, R33 |
-| M1-018 | IMPLEMENTATION_GAP | Connections are created only by a connect request | R13, B19 |
+| M1-018 | EXACT_SOURCE | Connections are created only by a connect request | R13, B19 |
 | M1-019 | IMPLEMENTATION_GAP | Transport entry points: SendData, Connect, FinishConnection, Disconnect, Start, Stop | R38, R39, R40, B21 |
-| M1-020 | IMPLEMENTATION_GAP | Production runs the transport asynchronously; sync mode is unused | R36, B15 |
-| M1-021 | IMPLEMENTATION_GAP | The 2 ms Dispatch callback: fixed delay, first run after one period, never overlapping | G1.1..G1.10, R35 |
-| M1-022 | IMPLEMENTATION_GAP | UDP socket: setup, ephemeral local port, send errors, receive loop, reopen | B10, B11, B12, B16, B38 |
-| M1-023 | IMPLEMENTATION_GAP | Socket reset on every Android process network bind or unbind | G4.1..G4.13, B18 |
+| M1-020 | EXACT_SOURCE | Production runs the transport asynchronously; sync mode is unused | R36, B15 |
+| M1-021 | EXACT_SOURCE | The 2 ms Dispatch callback: fixed delay, first run after one period, never overlapping | G1.1..G1.10, R35 |
+| M1-022 | EQUIVALENT_IMPLEMENTATION | UDP socket: setup, ephemeral local port, send errors, receive loop, reopen | B10, B11, B12, B16, B38 |
+| M1-023 | EXACT_SOURCE | Socket reset on every Android process network bind or unbind | G4.1..G4.13, B18 |
 | M1-024 | IMPLEMENTATION_GAP | Engine tick 60 ms: arrivals drained FIFO and handed up once per tick | B20, B24, B25, B26 |
 | M1-025 | IMPLEMENTATION_GAP | Connect request from the game, the connected response, and DisconnectCurrent | B2, B23, B33, B35 |
 | M1-026 | IMPLEMENTATION_GAP | App send path: every robot message is sent reliable, no flush hint, only when connected | R42, B28 |
@@ -70,10 +70,10 @@
 | M1-029 | IMPLEMENTATION_GAP | Firmware version check against the shipped firmware header | G5.1..G5.40, B29 |
 | M1-030 | IMPLEMENTATION_GAP | Message gating until the handshake validates the robot | B30 |
 | M1-031 | IMPLEMENTATION_GAP | Idle-timeout disconnect | B34 |
-| M1-032 | IMPLEMENTATION_GAP | A never-answered connection times out 5000 ms after it is created | G2.1..G2.10 |
+| M1-032 | EXACT_SOURCE | A never-answered connection times out 5000 ms after it is created | G2.1..G2.10 |
 | M1-033 | HARDWARE_ONLY | Robot-side transport behaviour | part A question 4 |
 | M1-034 | COMPATIBILITY_POLICY | Handler isolation, a deliberate departure: in the original a handler exception aborts the engine process | G3.1..G3.17 (policy, D6), B38 |
-| M1-035 | IMPLEMENTATION_GAP | Async hand-off: sends and ticks FIFO on one thread | R37 |
+| M1-035 | EXACT_SOURCE | Async hand-off: sends and ticks FIFO on one thread | R37 |
 | M1-036 | COMPATIBILITY_POLICY | Crash reporting after an engine-thread abort | G3.18..G3.22 (policy) |
 | M1-037 | COMPATIBILITY_POLICY | Host trigger for the socket reset | policy (D5) |
 | M1-038 | COMPATIBILITY_POLICY | Stop processing a frame after a handled DisconnectRequest sub-message | policy (D8), C5 |
@@ -171,6 +171,10 @@ The read-only comparison of the candidate against the first frozen inventory fou
 - **C10. B10:** the send-failure warning is rate-limited (first failure, then after 30 s) and SentWrongNumBytes is an error log (CA31..CA34).
 - **C11. B11:** OpenSocket's failure paths are in CA24..CA29; EADDRINUSE returns success with an unbound socket.
 
+- **C12. R27 / M1-006:** the frame header's firstSeq/lastSeq are the first and last reliable seq in queue order, not a numeric min/max (0x00835DDA..0x00835E96, 0x00835F40..0x00835F5E). The code already did this; only the row's wording changes (batch 4(i) verifier).
+- **C13. R30 / M1-008:** SendPing passes SendMessage a second clock reading as the posted time (0x00835C38..0x00835C58). It is stats-only.
+- **C14. R23 / M1-009:** R23's own cited range shows the multipart assembly is per connection (0x008374C6 → 0x00835A94).
+
 ## Open before M1 can be accepted
 
 - No RECOVERABLE_GAP remains.
@@ -235,7 +239,7 @@ Statics with no writer:
 | R24 frame size bound | Reliable maxPayload = UDP MaxTotalBytesPerMessage - 10, where UDP's value = sMaxNetMessageSize - prefix len - (CRC ? 2 : 0). With Init: 1420 - 4 - 0 - 10 = 1406. | 0x00836A36..0x00836A3E; UDP vtable 0x0103788C slot 9; 0x0083AF4A..0x0083AF56; Init 0x0062EFB8, 0x0062EFBE, 0x0062EFC6 movw #0x58c | M1-012 | EXACT_SOURCE, except the prefix length at sHeaderPrefix+4 (HeaderPrefix::Set 0x008393C9, part B) |
 | R25 send gate / start choice | (a) Nothing within 2.0 ms of the last send (+0x48). (b) Start = entry with the smallest effective time, first index on ties; never-sent counts as now - (resend+1); sent counts as latestSent, or latestSent - 33.3 if (lastRecv - 1.0) > 0 and it was sent before (lastRecv - 1.0) [corrected C3: guard 0x00836466 vcmpe.f64 d1,#0; 0x00836478 it gt]. (c) IsPacketWorthSending must be true. (d) now > effective + 33.3. Then SendUnAckedMessages up to max times. | (a) 0x008363C8..0x008363FC; (b) 0x0083640E..0x008364A6; (c) 0x008364B2; (d) 0x008364B8..0x008364CE; loop 0x008364D2..0x008364E8 | M1-006 | EXACT_SOURCE |
 | R26 worth sending | Any of: sSendPacketsImmediately; lastSend > 0 and lastSend + 32.3 < now [corrected C3: guard 0x00836316 vcmpe.f64 d0,#0; 0x0083631E ble]; the +0x2B flag on any entry from start; a sent entry with latestSent + 32.3 < now; the running sum of (size+3) reaching maxPayload - 0. | 0x008362FE..0x0083639A | M1-006 | EXACT_SOURCE |
-| R27 packing / resend content | Pack forward from start (start is taken unconditionally), then extend BACKWARDS while it fits. Header seqs = min/max non-zero seq included. lastSend = now. seq != 0 entries get their sent-time updated and stay; seq 0 entries are deleted (an unreliable message is sent once). Returns the forward count. A resend is a re-pack, not a byte replay. | 0x00835DF2..0x00835E40; 0x00835E56..0x00835EA2; 0x00835EDE, 0x00835F64; 0x00835F72..0x0083604A; 0x0083604C | M1-006 | EXACT_SOURCE |
+| R27 packing / resend content | Pack forward from start (start is taken unconditionally), then extend BACKWARDS while it fits. Header seqs = the first and the last reliable (non-zero) seq in queue (packing) order, not a numeric min/max: across the 65534 to 1 wrap a queue [65534, 1] gives first 65534, last 1 [corrected C12: 0x00835DDA..0x00835E96, header 0x00835F40..0x00835F5E / 0x00835EC8..0x00835EDA → ReSendReliableMessage +4/+6 0x00836A5C..0x00836A7C]. lastSend = now. seq != 0 entries get their sent-time updated and stay; seq 0 entries are deleted (an unreliable message is sent once). Returns the forward count. A resend is a re-pack, not a byte replay. | 0x00835DF2..0x00835E40; 0x00835E56..0x00835EA2; 0x00835EDE, 0x00835F64; 0x00835F72..0x0083604A; 0x0083604C | M1-006 | EXACT_SOURCE |
 | R28 resend interval / retries / give-up | 33.3 ms, shortcut by R25b. No per-message retry limit. The only give-up is the 5 s timeout, which deletes the queue. | R20, R25, R19 | M1-006 | EXACT_SOURCE |
 | R29 packets per call | At most 1 per ReliableConnection::Update, 1 per SendMessage, 0 on ack; all under the 2.0 ms spacing. | 0x00836592..0x0083659E; 0x00836ECA..0x00836EDC; 0x00837820..0x00837828 | M1-006 | EXACT_SOURCE |
 | R30 ping payload | 17 bytes: f64 time (now, or echoed for a reply), u32 numPingsSent (+0x60, incremented first), u32 numPingsReceived (+0x64), u8 isReply. Unreliable type 0x0B, flag 1. A request sets +0x58 = now. SendPing calls ReliableTransport::SendMessage (0x00835C58), i.e. AddMessage then SendOptimalUnAckedPackets(1), so the ping can go out on the same call, subject to the 2.0 ms gate [corrected C4]. | SendPing 0x00835C00..0x00835C62 | M1-008 | EXACT_SOURCE |

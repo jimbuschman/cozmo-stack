@@ -19,6 +19,7 @@ namespace Cozmo.Protocol;
 /// PyCozmo describes the same 14 bytes as id "COZ\x03RE\x01" + type + first_seq + seq + ack, and stores seq
 /// values minus one internally; this implementation always uses the raw wire values.
 /// </summary>
+// fidelity: M1-002
 public readonly record struct ReliableHeader(ReliableMessageType Type, ushort SeqMin, ushort SeqMax, ushort Ack)
 {
     public static ReadOnlySpan<byte> UdpPrefix => "COZ"u8;

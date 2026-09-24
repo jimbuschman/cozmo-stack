@@ -2,7 +2,7 @@
   "subsystem": "M1-transport",
   "approved": "2026-09-24",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "3da4ebdb435ecb13ec26d755c7a7722d89d0a94716966cdabbeff703116358e5",
+  "inventory_sha256": "11c9cecea4035a21d4f3b67534397a260c016b43e51e247f84bad7147378486a",
   "records": {
     "M1-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -17,7 +17,7 @@
       "hardware_required": false
     },
     "M1-002": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Frame header: 4-byte prefix 43 4F 5A 03, no CRC, then the 10-byte RE header; receive-side checks",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -32,7 +32,7 @@
       "hardware_required": false
     },
     "M1-003": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Message types 1..11, always-unreliable set, container types, dispatch by type",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -58,7 +58,7 @@
       "hardware_required": false
     },
     "M1-005": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Reliable-transport tunables as RobotConnectionManager::Init sets them",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -71,7 +71,7 @@
       "hardware_required": false
     },
     "M1-006": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Send queue, packing, resend choice and pacing",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -80,7 +80,7 @@
         "R21 SendMessage: maxPayload = UDP MaxTotalBytesPerMessage - 10 (0x00836C78..0x00836C8C); an oversize unreliable message is forced reliable (0x00836C92); anything above maxPayload is type 6 (0x00836CD6, 0x00836D60); queued via AddMessage, then SendOptimalUnAckedPackets(1) (0x00836EB8..0x00836EDC)",
         "R25 SendOptimalUnAckedPackets: 2.0 ms spacing gate 0x008363C8..0x008363FC; start entry by smallest effective time 0x0083640E..0x008364A6, where a sent entry counts 33.3 earlier only if (lastRecv - 1.0) > 0 and it was sent before that (0x00836466, 0x00836478) [corrected C3]; IsPacketWorthSending 0x008364B2; now > effective + 33.3 at 0x008364B8..0x008364CE",
         "R26 IsPacketWorthSending 0x008362FE..0x0083639A; its idle clause requires lastSend > 0 (0x00836316 vcmpe.f64 d0,#0; 0x0083631E ble) [corrected C3]",
-        "R27 SendUnAckedMessages: forward packing 0x00835DF2..0x00835E40 then backward 0x00835E56..0x00835EA2; seq-0 entries deleted after one send, seq entries kept with updated sent time 0x00835F72..0x0083604A; lastSend = now",
+        "R27 SendUnAckedMessages: forward packing 0x00835DF2..0x00835E40 then backward 0x00835E56..0x00835EA2; seq-0 entries deleted after one send, seq entries kept with updated sent time 0x00835F72..0x0083604A; lastSend = now; the header seqs are the first and last reliable seq in queue order, not a numeric min/max (0x00835DDA..0x00835E96, 0x00835F40..0x00835F5E) [corrected C12]",
         "R28 no per-message retry limit; the only give-up is the connection timeout (M1-015)",
         "R29 at most one packet per ReliableConnection::Update (0x00836592..0x0083659E), one per SendMessage (0x00836ECA..0x00836EDC), none on ack (0x00837820..0x00837828)",
         "CA1/CA2: the 2.0 ms gate is skipped while lastSend (+0x48) is 0.0, i.e. before the first send only (0x008363D4..0x008363FC; ctor 0x0083591C..0x00835922), and now == last + 2.0 is allowed (strict <)"
@@ -89,7 +89,7 @@
       "hardware_required": false
     },
     "M1-007": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Receive path: in-order delivery only, no buffering, mixed frames still walked",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -105,30 +105,32 @@
       "hardware_required": false
     },
     "M1-008": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "17-byte ping payload, sent unreliable as type 0x0B",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R30 SendPing 0x00835C00..0x00835C62: f64 time, u32 numPingsSent (+0x60, incremented first), u32 numPingsReceived (+0x64), u8 isReply; movs r1,#0xb; movs r2,#0x11; unreliable, flag 1; a request sets +0x58 = now",
-        "SendPing calls ReliableTransport::SendMessage (0x00835C58): AddMessage then SendOptimalUnAckedPackets(1), so the ping can go out on the same call, subject to the 2.0 ms gate [corrected C4]"
+        "SendPing calls ReliableTransport::SendMessage (0x00835C58): AddMessage then SendOptimalUnAckedPackets(1), so the ping can go out on the same call, subject to the 2.0 ms gate [corrected C4]",
+        "SendPing passes SendMessage a second GetCurrentNetTimeStamp reading (0x00835C38 → [sp,#0x10] 0x00835C48 → 0x00835C58); it is stats-only (CA10) [C13]"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M1-009": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Multipart split and reassembly",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R22 split: chunk = maxNet - 12 (0x00836D7A sub.w r0,r8,#0xc); count = ceil(size/chunk) (0x00836D90..0x00836D98); prefix [idx u8 from 1][count u8] (0x00836E42, 0x00836E46); count is strb with no 255 check; size 0 still gives one part",
         "R23 AddMessagePart 0x008358A0..0x008358E8: part < 3 bytes rejected; idx must equal expected with no reset on mismatch; part 1 sets total; payload from byte 2 appended; complete at idx == total, then Clear (HandleSubMessage 0x008374C6..0x00837504); no size bound",
-        "CA13: every type-6 part carries the caller's +0x2B flag and the same posted time (0x00836E98..0x00836EA8; Set 0x00835832), and the flag makes IsPacketWorthSending true (0x00836368)"
+        "CA13: every type-6 part carries the caller's +0x2B flag and the same posted time (0x00836E98..0x00836EA8; Set 0x00835832), and the flag makes IsPacketWorthSending true (0x00836368)",
+        "R23's cited range shows the assembly is per connection: 0x008374C6 mov r0,r5 (the ReliableConnection*) → GetPendingMultiPartMessage, body 0x00835A94 adds r0,#0x20, a member of that connection; it is destroyed with the connection [C14]"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M1-010": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Asynchronous 2 ms transport tick and ReliableTransport::Update order",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -174,7 +176,7 @@
     "M1-014": {
       "status": "COMPATIBILITY_POLICY",
       "title": "Host thread structure that realises the engine threading",
-      "authority": "the original: a RelTransport dispatch thread (M1-010, M1-035) and one engine thread draining arrivals every 60 ms (M1-024). Its socket reopen on ENOTCONN and its send-failure handling are M1-022, and handler isolation is M1-034. Only the host thread structure that reproduces those orders is policy",
+      "authority": "the original: a RelTransport dispatch thread (M1-010, M1-035) and one engine thread draining arrivals every 60 ms (M1-024). Its socket reopen on ENOTCONN and its send-failure handling are M1-022, and handler isolation is M1-034. Only the host thread structure that reproduces those orders is policy. That includes thread priority: the original asks for SCHED_RR at 75% of the OS range for the RelTransport threads (CA9), which the host does not reproduce; host threads keep the default priority",
       "evidence": [],
       "live_path": true,
       "hardware_required": false
@@ -196,7 +198,7 @@
       "hardware_required": false
     },
     "M1-016": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Incoming ack processing",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -218,7 +220,7 @@
       "hardware_required": false
     },
     "M1-018": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Connections are created only by a connect request",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -247,7 +249,7 @@
       "hardware_required": false
     },
     "M1-020": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Production runs the transport asynchronously; sync mode is unused",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -259,7 +261,7 @@
       "hardware_required": false
     },
     "M1-021": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The 2 ms Dispatch callback: fixed delay, first run after one period, never overlapping",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -274,7 +276,7 @@
       "hardware_required": false
     },
     "M1-022": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "title": "UDP socket: setup, ephemeral local port, send errors, receive loop, reopen",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -292,7 +294,7 @@
       "hardware_required": false
     },
     "M1-023": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Socket reset on every Android process network bind or unbind",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -424,7 +426,7 @@
       "hardware_required": false
     },
     "M1-032": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "A never-answered connection times out 5000 ms after it is created",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -463,12 +465,13 @@
       "hardware_required": false
     },
     "M1-035": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Async hand-off: sends and ticks FIFO on one thread",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R37 QueueMessage 0x00836B66..0x00836BE4 posts a closure to RelTransport; the closure takes the transport mutex and calls SendMessage with the posted time (0x00837DEA); QueueAction 0x00836FF6 posts to the same queue; wrapper 0x00837F48",
-        "CA10..CA12, CA15: the posted time reaches PendingMessage +0x00 and only a stats accumulator used in the timeout warning text (0x00835FA6..0x00835FD8); QueueMessage copies the buffer and posts (0x00836B66..0x00836BE4); the queue is FIFO (0x007FCCF8..0x007FCD66, 0x007FD0C6..0x007FD128); in sync mode QueueMessage sends directly with time 0.0 (0x00836B42..0x00836B5C)"
+        "CA10..CA12, CA15: the posted time reaches PendingMessage +0x00 and only a stats accumulator used in the timeout warning text (0x00835FA6..0x00835FD8); QueueMessage copies the buffer and posts (0x00836B66..0x00836BE4); the queue is FIFO (0x007FCCF8..0x007FCD66, 0x007FD0C6..0x007FD128); in sync mode QueueMessage sends directly with time 0.0 (0x00836B42..0x00836B5C)",
+        "CA11: QueueMessage copies the caller's buffer at post (operator new[] + memcpy 0x00836B66..0x00836B72) and PendingMessage::Set copies again (CreateCombinedBuffer 0x0083581E)"
       ],
       "live_path": true,
       "hardware_required": false

@@ -7,10 +7,10 @@ Manifest of **249 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 159 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 21 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| EXACT_SOURCE | 174 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EQUIVALENT_IMPLEMENTATION | 22 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 0 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 28 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 12 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 27 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 6 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -24,7 +24,7 @@ remains after both, and they do not go away by working harder on this repository
 
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| M1-transport — UDP transport and reliability | 43 | 0 | 28 | 0 | 2 | yes | no |
+| M1-transport — UDP transport and reliability | 43 | 0 | 12 | 0 | 2 | yes | no |
 | M2-protocol — CLAD messages and protocol helpers | 7 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 18 | 0 | 0 | 0 | 1 | yes | yes |
 | M4-control — Motion, sensors, lights and cubes | 13 | 0 | 0 | 0 | 1 | yes | yes |
@@ -52,7 +52,7 @@ status.
 
 | subsystem | review | settled | uncited | capture verified | hardware verified |
 | --- | --- | ---: | ---: | ---: | ---: |
-| M1-transport | INVENTORY_APPROVED | 4 | 0 | 0 | 3 |
+| M1-transport | INVENTORY_APPROVED | 20 | 0 | 0 | 3 |
 | M2-protocol | UNREVIEWED | 7 | 1 | 0 | 0 |
 | M3-device | UNREVIEWED | 13 | 1 | 0 | 0 |
 | M4-control | UNREVIEWED | 8 | 0 | 0 | 0 |
@@ -88,78 +88,6 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: B1 unity/scripts/csharp/ConnectionFlowController.cs:199, :204, :673 and RobotEngineManager.cs:524-526: 172.31.1.1 physical, 127.0.0.1 simulator, one ConnectToRobot(ipAddress, isSimulated); B3 0x0069DE84 movw r2,#0x15b0 (5552); 0x0069DE92 ldrb r0,[r1,#0x10] (isSimulated); 0x0069DE98 movweq r2,#0x15af (5551); 0x0069DE9E TransportAddress(char const*,int); B4 0x0069D0CE cmp.w r6,#0x10000: kP_ROBOT_ADVERTISING_PORT is only logged; >= 0x10000 aborts MessageHandler::Init
 * outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
 
-**M1-002 — Frame header: 4-byte prefix 43 4F 5A 03, no CRC, then the 10-byte RE header; receive-side checks** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Protocol/Wire/Frame.cs`
-* effect: the robot rejects frames, or this stack accepts frames the app would drop
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: B5 0x0062EFB6 adr -> bytes at 0x0062F088 = 43 4f 5a 03; 0x0062EFB8 movs r1,#4; 0x0062EFBE movs r0,#0 (SetDoesHeaderHaveCRC false); B6 HeaderPrefix::Set 0x008393D2 cmp r6,#5 (truncate to 4 with a warning); 0x0083941C str r6,[r4,#4] (length); R1 BuildHeader 0x00836AF8: cmp r2,#0xa; movw r2,#0x4552; strh; strb #1 at +2; type at +3; firstSeq/lastSeq/ackSeq u16 LE at +4/+6/+8; B17 UDP receive order: 0x0083A780 size >= prefix; 0x0083A80E memcmp of 4 bytes; 0x0083AAA8 ubfx r0,r7,#5,#1 and 0x0083A888 cmp.w fp,#1: a datagram with MSG_TRUNC set is dropped with AddRecvError(1) (0x0083A8C4..0x0083A8C8) and the loop keeps reading (0x0083AABA) [corrected C2]; 0x0083A888 CRC only if enabled; 0x0083A900 hand-off to ReliableTransport::ReceiveData; no source-address filter; R3 0x00837632 cmp r7,#0xa; prefix table 0x00837B0C = 52 45 01; failures are logged, counted with AddRecvError, and the raw datagram is forwarded as data (0x00837792..0x008377A0; B19, B20); CA3..CA7: the UDP layer counts AddRecvError(0) TooSmall (0x0083A7F0..0x0083A7F4), (2) BadPrefix (0x0083A87E..0x0083A882), (1) Truncated after the prefix matches (0x0083A8C4..0x0083A8C8), (3) BadCRC only with CRC on (0x0083A90E..0x0083A912), and AddRecvMessage(size) for every datagram (0x0083A776); a null receiver drops silently
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-003 — Message types 1..11, always-unreliable set, container types, dispatch by type** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Protocol/Wire/ReliableMessageType.cs`
-* effect: a message is sent with the wrong reliability or handled as the wrong type
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: R5 IsValidMessageType 0x0083673C subs r1,r0,#1; cmp r1,#0xb; R6 0x00836708 subs r0,#5; cmp r0,#6; movs r1,#0x7d; lsr.w r0,r1,r0: always-unreliable {5,7,8,9,10,11}; R7 IsMutlipleMessagesType 0x00836722 subs r1,r0,#7; cmp r1,#3: containers {7,8,9}; R8 0x00835F36..0x00835F52: packed frame 7 reliable-only, 8 unreliable-only, 9 mixed; a single message keeps its own type (0x00835EB6, 0x00835EC4); R12 HandleSubMessage tbb 0x00837446, table 0x0083744A = 13 1a 2b 09 09 3e 06 06 06 06 5f: 1 OnConnectRequest, 2 OnConnected, 3 OnDisconnected then DeleteConnection, 4/5 deliver, 6 multipart, 7..10 nothing, 11 ReceivePing; type names are not in the binary: ReliableMessageTypeToString 0x00836730 returns one empty string for every type
-* outstanding: dispatch by type is reproduced; R12 "3 = OnDisconnected then DeleteConnection" is not: the code shuts the whole transport down (repaired with M1-015, M1-038 in batch 2); then EXACT_SOURCE
-
-**M1-005 — Reliable-transport tunables as RobotConnectionManager::Init sets them** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/TransportConstants.cs`
-* effect: resend, ping, spacing and timeout timing differ from the app
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: B13 RobotConnectionManager::Init 0x0062EFCE..0x0062F076 sets: MaxPacketsToReSendOnAck 0, MaxPacketsToSendOnSendMessage 1, SendUnreliableMessagesImmediately 0, SendPacketsImmediately 0, SendAckOnReceipt 0, MaxPacketsToReSendOnUpdate 1, TrackAckLatency 1, SendSeparatePingMessages 0, MaxPingRoundTripsToTrack 10 (0x0062F074 movs r3,#0xa), TimeBetweenPingsInMS 33.3 (0x0062F028, 0x4040A666_66666666), MaxTimeSinceLastSend 32.3 (0x0062F03E, 0x40402666_66666666), TimeBetweenResendsInMS 33.3 (0x0062F04E), PacketSeparationIntervalInMS 2.0 (0x0062F056), ConnectionTimeoutInMS 5000.0 (0x0062F068 movt #0x40b3); ConfigureReliableTransport 0x0062F0C8 writes the identical set but has no BL/BLX/B.W caller in .text (manager scan): the previous evidence cited dead code; unset by Init, so the .data defaults stand: MinExpectedPacketAckTimeMS 1.0 (read 0x0083641C), MaxAckRoundTripsToTrack 100, MaxBytesFreeInAFullPacket 0 (read 0x0083634E); GetCurrentNetTimeStamp 0x008355F8: double milliseconds from steady_clock (ns / 0x3E8 at 0x00835644, * 0.001 at 0x0083564C)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-006 — Send queue, packing, resend choice and pacing** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs`
-* effect: frames go out in a different order, size, number or timing from the app; unreliable data is resent or lost differently
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: R2 ackSeq (conn+0x42) is read fresh into every built frame: 0x00836A62 ldrh.w r5,[r4,#0x42]; 0x00836E02; R20 PendingMessage 0x30 bytes, no retry counter: 0x008357DE..0x00835832; AddMessage 0x00835A38 movs r0,#0x30; R21 SendMessage: maxPayload = UDP MaxTotalBytesPerMessage - 10 (0x00836C78..0x00836C8C); an oversize unreliable message is forced reliable (0x00836C92); anything above maxPayload is type 6 (0x00836CD6, 0x00836D60); queued via AddMessage, then SendOptimalUnAckedPackets(1) (0x00836EB8..0x00836EDC); R25 SendOptimalUnAckedPackets: 2.0 ms spacing gate 0x008363C8..0x008363FC; start entry by smallest effective time 0x0083640E..0x008364A6, where a sent entry counts 33.3 earlier only if (lastRecv - 1.0) > 0 and it was sent before that (0x00836466, 0x00836478) [corrected C3]; IsPacketWorthSending 0x008364B2; now > effective + 33.3 at 0x008364B8..0x008364CE; R26 IsPacketWorthSending 0x008362FE..0x0083639A; its idle clause requires lastSend > 0 (0x00836316 vcmpe.f64 d0,#0; 0x0083631E ble) [corrected C3]; R27 SendUnAckedMessages: forward packing 0x00835DF2..0x00835E40 then backward 0x00835E56..0x00835EA2; seq-0 entries deleted after one send, seq entries kept with updated sent time 0x00835F72..0x0083604A; lastSend = now; R28 no per-message retry limit; the only give-up is the connection timeout (M1-015); R29 at most one packet per ReliableConnection::Update (0x00836592..0x0083659E), one per SendMessage (0x00836ECA..0x00836EDC), none on ack (0x00837820..0x00837828); CA1/CA2: the 2.0 ms gate is skipped while lastSend (+0x48) is 0.0, i.e. before the first send only (0x008363D4..0x008363FC; ctor 0x0083591C..0x00835922), and now == last + 2.0 is allowed (strict <)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-007 — Receive path: in-order delivery only, no buffering, mixed frames still walked** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs`
-* effect: messages are delivered twice, out of order, or dropped where the app would deliver them
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: R4 reliable iff firstSeq or lastSeq non-zero: 0x0083764C; 0x008377B0; R9 sub-message [type u8][size u16 LE][payload]: build 0x00835F10..0x00835F24; parse 0x00837904, 0x0083791C; R10 container errors: bad sub-type AddRecvError(4) 0x0083790A..0x00837910; size overrun AddRecvError(1) 0x00837926; the rest of the frame is abandoned, earlier subs already delivered; R11 seq assignment on receive 0x0083792A..0x00837982; single message 0x0083798A..0x0083799C; R12 seq != 0 and != nextIn (+0x44) is dropped silently; equal advances nextIn: 0x0083742E..0x0083743C; R16 0x00837838 IsWaitingForAnyInRange: ackOut (+0x42) = lastSeq before the walk (0x00837848); out of range: type 9 still walked (0x008378EA cmp.w r8,#9), else AddRecvError(5) and dropped (0x00837A6A); R17 no receive buffer in the connection layout (ctor 0x00835900..0x00835984)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-008 — 17-byte ping payload, sent unreliable as type 0x0B** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Protocol/Wire/PingPayload.cs`
-* effect: the robot misreads keep-alive pings
-* rests on: the M1 candidate implementation; payload layout confirmed by the comparison and batch 1
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: R30 SendPing 0x00835C00..0x00835C62: f64 time, u32 numPingsSent (+0x60, incremented first), u32 numPingsReceived (+0x64), u8 isReply; movs r1,#0xb; movs r2,#0x11; unreliable, flag 1; a request sets +0x58 = now; SendPing calls ReliableTransport::SendMessage (0x00835C58): AddMessage then SendOptimalUnAckedPackets(1), so the ping can go out on the same call, subject to the 2.0 ms gate [corrected C4]
-* outstanding: the 17-byte layout, counters, type and send path are reproduced; the f64 time field is filled from the per-transport Stopwatch, not GetCurrentNetTimeStamp (called at 0x00835C0E), so its value differs until M1-005's clock is repaired in batch 2; then EXACT_SOURCE
-
-**M1-009 — Multipart split and reassembly** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs`
-* effect: large messages (animations, images) are split or rebuilt differently
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: R22 split: chunk = maxNet - 12 (0x00836D7A sub.w r0,r8,#0xc); count = ceil(size/chunk) (0x00836D90..0x00836D98); prefix [idx u8 from 1][count u8] (0x00836E42, 0x00836E46); count is strb with no 255 check; size 0 still gives one part; R23 AddMessagePart 0x008358A0..0x008358E8: part < 3 bytes rejected; idx must equal expected with no reset on mismatch; part 1 sets total; payload from byte 2 appended; complete at idx == total, then Clear (HandleSubMessage 0x008374C6..0x00837504); no size bound; CA13: every type-6 part carries the caller's +0x2B flag and the same posted time (0x00836E98..0x00836EA8; Set 0x00835832), and the flag makes IsPacketWorthSending true (0x00836368)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-010 — Asynchronous 2 ms transport tick and ReliableTransport::Update order** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs`
-* effect: resend and ping timing drift from the app
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: R35/B14 ctor: Dispatch::Create "RelTransport" priority 3 (0x008367C2); +0xA0=1, +0xA1=0 (0x008367DA); ChangeSyncMode(false) (0x008367E2) -> ScheduleCallback(2 ms) (0x00836896 movs r2,#2; 0x0083689E); lambda 0x008383CE; R34 ReliableTransport::Update 0x00837B9A..0x00837C92: mutex +0x24; UDP Update (vtable +0x28, receive drain); ReliableConnection::Update per connection; false if any timed out; the exact repeat semantics are M1-021; CA8/CA9: priority 3 asks for SCHED_RR at 75% of the OS range on both executor threads, with EPERM ignored silently (0x007FBE02..0x007FBE14; SetThreadPriority 0x008334CC..0x00833532); whether the phone granted it is HARDWARE_ONLY, and the host realisation is policy M1-014; CA18/CA19: Update visits connections in ascending TransportAddress::operator< order (0x00837B9A..0x00837C92; operator< 0x00838EDA..0x00838F62: type byte, then IPv4 u32 at +8 then port)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
 **M1-015 — Connection timeout 5 s, and how a lost or failed connection is reported** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs`
@@ -167,24 +95,6 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: R19 ReliableConnection::HasConnectionTimedOut: now > lastRecv (+0x50) + ConnectionTimeoutInMS (0x00836080..0x0083608C); on timeout ReceiveData(OnDisconnected, 0, addr), delete, Update false (0x00837BCC..0x00837C74); no frame sent; B22 0x00837C50..0x00837C56 OnDisconnected to the receiver; tick lambda sets +0xA1 (0x008383D4..0x008383DC); B31 HandleDisconnectMessage: +0xA1 -> reason 1 WifiTimeout (0x0062FA34 ldrb.w r0,[r1,#0xa1]); RemoveRobot(id, wasConnecting) -> 2 ConnectionRejected when RCD state was 1 (the transport connect was never answered), else 1 ConnectionFailure, including a drop during the handshake [corrected C6] (0x0062FAEE..0x0062FAF8, 0x0052F23E..0x0052F244); B32 pending handshake: RobotConnectionResponse(result) and no RobotDisconnected; else RobotDisconnected and $session_id cleared; Robot deleted; the engine does not reconnect (0x0052DCC0..0x0052DD16, 0x0052F248..0x0052F302); this record was a COMPATIBILITY_POLICY saying the engine connect timeout had not been read; it has now been read; CC23/CB32: HandleDisconnectMessage ignores the message fields, captures the RCD state, writes reason 1 if the timed-out flag is set, emits DAS, resets the reason to 0, clears RCD, then RemoveRobot(id, state == 1) (0x0062FA2E..0x0062FAF8); RIC::HandleDisconnect answers with RobotConnectionResponse {result, 0, 0, -1, -1} unless the response was already sent (0x0052DCC0..0x0052DD1A); CB33/CC26: RemoveRobot skips the RobotDisconnected broadcast and the $session_id clear when HandleDisconnect answered; either way it deletes the Robot and its RIC (0x0052F248..0x0052F364)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-016 — Incoming ack processing** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs`
-* effect: acked messages stay queued and are resent, or unacked ones are discarded
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: R18 every valid frame from a known connection runs UpdateLastAckedMessage(ackSeq) (0x00837814, 0x00835AEA): +0x50 = now always (0x00835B9C); for ackSeq != 0 remove the front entry while ackSeq is within the pending seq range (0x00835B08..0x00835B96); resend on ack only if MaxPacketsToReSendOnAck (0); R43 the loop removes pending[0] each pass (0x00835B08..0x00835B0A; memmove 0x00835B3C), so an unsent seq-0 entry at the front is discarded with the acked entries
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-018 — Connections are created only by a connect request** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs`
-* effect: frames from or to an unconnected peer are handled where the app drops them
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: R13 receive: created only for type 1 or a container whose first sub-type is 1 (0x008377CE..0x008377FC, FindConnection 0x00837098 cmp r5,#1); otherwise "unconnected source", dropped, ack not processed (0x0083789A); send: created only for type 1, otherwise "unconnected destination" and nothing queued (SendMessage 0x00836C5A..0x00836C6E); new connection 0x250 bytes, nextOut 1, nextIn 1 (0x0083592A, 0x0083592C); CA23: an empty container body creates nothing (0x008377DC cmp.w fp,#0); CA19: connections are keyed by TransportAddress::operator< (0x00838EDA..0x00838F62)
 * outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
 
 **M1-019 — Transport entry points: SendData, Connect, FinishConnection, Disconnect, Start, Stop** (live path)
@@ -195,42 +105,6 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: R38 SendData type 4 reliable / 5 unreliable (0x008370EC); Connect clears +0xA1 and queues reliable type 1 flag 1 (0x0083710E); FinishConnection reliable type 2 flag 1 (0x0083712E); Disconnect closure 0x00837FFA: SendMessage type 3, then DeleteConnection (b.w 0x8d123c), so type 3 gets at most one send; R39 Start -> UDP StartClient/StartHost (0x0083808E); Stop -> UDP Stop*, ClearConnections, no frames (0x008380F6, 0x00837374); R40 receiver events ReceiveData(marker, 0, addr) with markers OnConnectRequest 0x01037598, OnConnected 0x01037594, OnDisconnected 0x0103759C (0x00837478..0x00837496); B21 RobotConnectionManager::Connect: Clear, address at RCD+0x30, RT->Disconnect(addr) (0x0062F576) then RT->Connect(addr) (0x0062F580), state 1 (0x0062F58A); the engine sends first; combining R13 and R37 with B21: the type 3 is sent only if a connection to that address already exists, and it precedes the type 1 because QueueAction (0x00836FF6) and QueueMessage (0x00836B66) post to the same FIFO queue; CA14: with no connection, the Disconnect closure sends nothing ("unconnected destination", 0x00836CDC..0x00836D06) and DeleteConnection is a no-op (0x00837604..0x00837608); the closure time is 0.0 (0x0083800A); CA20/CA21: StartClient/StopClient (and Host) are posted through QueueAction (0x00837214, 0x008372A4, 0x0083731C, 0x008373AC); UDP StopClient closes via CloseSocket when fd >= 0 (0x0083AD66..0x0083AD70) and StartClient opens only when fd == -1 (0x0083AD4C..0x0083AD5C); CA22: FinishConnection is QueueMessage(type 2, flag 1) (0x0083712A..0x0083713A)
 * outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-020 — Production runs the transport asynchronously; sync mode is unused** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs`
-* effect: the tick owner and threading differ from the app
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: R36 with +0xA0 set, QueueMessage calls SendMessage directly and the owner must call Update (0x00836B42..0x00836B5C); B15 RobotConnectionManager::Update calls RT::Update only when +0xA0 is set (0x0062F1BE); SetReliableTransportRunMode 0x0062FE36 is reached only from game message ReliableTransportRunMode (callers 0x0069E000, 0x0069E150), and nothing in unity/scripts/csharp sends it beyond the generated definition (unity/scripts/csharp/MessageGameToEngine.cs:93); CA17: ChangeSyncMode's only caller is the ctor, with false (0x008367E2), so production never enters sync mode; this stack keeps sync mode only as its offline/test seam (policy M1-014)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-021 — The 2 ms Dispatch callback: fixed delay, first run after one period, never overlapping** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs`
-* effect: the transport tick drifts, bunches or overlaps differently from the app
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: G1.1 ScheduleCallback -> Queue vtable +0x14 -> WakeAfterRepeat (0x007FB93A, 0x007FBB1E..0x007FBB2A); G1.2 first time = steady_clock::now() + period x 1e6 ns (0x007FCEBA..0x007FCED6): the first run is one period after scheduling; G1.3/G1.4 task holder with repeat flag, pushed to a deferred queue sorted so back() is the earliest (0x007FCE40..0x007FCF60; AddTaskHolderToDeferredQueue 0x007FCD92..0x007FCE14; comparator 0x007FE2FA..0x007FE316); G1.6/G1.7 the deferred thread waits with wait_until<steady_clock> (0x007FC194), reads now (0x007FC1BC) and posts a copy of each due entry to the immediate queue (AddTaskHolder 0x007FC270); it never runs the function itself; G1.8 a repeating entry is re-added at that now + period (0x007FC344 repeat byte; 0x007FC352..0x007FC376; 0x007FC3C4): fixed delay from when it was seen due; missed periods are not added back; G1.9/G1.10 posted copies are never merged (0x007FCD50..0x007FCD66); one Execute thread runs them in order (Run 0x007FD0C6..0x007FD128), skipping a task whose handle has expired, so runs never overlap and a backlog runs back to back
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-022 — UDP socket: setup, ephemeral local port, send errors, receive loop, reopen** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs`
-* effect: the robot sees a different source port, or the link behaves differently after an error
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: B11 OpenSocket: getaddrinfo(NULL, port, AI_PASSIVE, SOCK_DGRAM, AF_INET) (0x00839ACA, 0x00839AD0, 0x00839AF2); socket (0x00839B8A); SO_BROADCAST=1 for AF_INET (0x00839D18); bind (0x00839D3A); EADDRINUSE only a warning (0x00839E70); no O_NONBLOCK, no buffer options; B12 local port: ctor 0xBAC9 (0x00839546) but Init stores 0 (0x0062EFEA str.w r5,[r6,#0x98]), so bind is ephemeral; RT->StartClient opens it (0x0062F07E, 0x0083808E, 0x0083AD58); B10 sendto flags 0 (0x0083A37C); partial send logs SentWrongNumBytes (0x0083A39A); failure: AddSendError(6) (0x0083A552), time at +0x88 (0x0083A5F4), no retry, no disconnect; non-IP addresses refused (0x0083A606); B16 receive loop while TryToReadMessage returns 1 (0x0083AD10..0x0083AD18); recvmsg MSG_DONTWAIT into 0x5C0 (0x0083AA66, 0x0083AA76 movs r3,#0x40); <= 0 stops (0x0083AA98); errno != EAGAIN warns (0x0083AAC4); ENOTCONN closes and, only if the close succeeded (0x0083AB2C cbz r0), reopens on +0x98, which CloseSocket has just set to 0xBAC9 = 47817 (0x0083AB22 cmp r0,#0x6b, 0x0083AB2E, 0x0083AB34; CloseSocket 0x00839694..0x0083969C on both paths); only the first open is ephemeral [corrected C1]; B38 close failures logged; CloseSocket resets fd to -1 and port to 0xBAC9 (0x00839694..0x0083969C); CA24..CA30: OpenSocket calls CloseSocket then stores the port argument (0x00839A3A, 0x00839A46); getaddrinfo failure returns 0 with no close (0x00839B06..0x00839B7A); socket() failure stores fd -1 (0x00839B8A..0x00839CF2); SO_BROADCAST and non-EADDRINUSE bind failures close via CloseSocket, so the port becomes 47817 (0x00839D00..0x00839D24, 0x00839E6A..0x0083A026); EADDRINUSE keeps the socket unbound and returns 1 (0x00839E76..0x00839EB6); CloseSocket with fd < 0 returns 0 and stores nothing (0x008395CA..0x00839626); CA31..CA34: sendto has no fd guard (0x0083A374..0x0083A386); SentWrongNumBytes is an error log (0x0083A38A..0x0083A3DA); a send failure always counts AddSendError(6), but warns and stores +0x88 only on the first failure or when now > +0x88 + 30000.0 (0x0083A648..0x0083A666, literal 0x0083A6C8), kEnableVerboseNetworkLogging being const false (0x00C934A4); +0x88 starts at 0.0 (0x0083953C) on GetCurrentNetTimeStamp; CA35: a 0-byte read ends the drain for the tick through the error path, which reads the stale errno (0x0083AA98 blt → 0x0083AAC4..0x0083AB24); whether it warns is M1-043; CA36/CA37: UDP ctor values (0x00839514..0x00839556); Init stores port 0 so the first open is ephemeral (0x0062EFEA)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-023 — Socket reset on every Android process network bind or unbind** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs`
-* effect: the socket is reopened (on port 47817) at different times from the app
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: G4.1/G4.2 the RCM ctor registers its UDP transport with WifiUtil (0x0062EDB4..0x0062EDC0); RegisterTransport binds handler 0x0083BAD1 to the static signal at 0x0105DF8C (0x0083B9AA..0x0083B9D4); G4.3 that signal has exactly one subscriber (xref scan; static ctor 0x004DD62E, emitters 0x0083BC3E and 0x0083BC86); G4.4 the handler acts only if fd (+0x94) >= 0 (0x0083BAD6..0x0083BADC), then ResetSocket (0x0083BAE0); G4.5 ResetSocket sets +0x9D (0x0083A258); the next UDP Update closes, reopens only if the close returned 1, and clears +0x9D either way (0x0083ACE8..0x0083AD18); G4.6/G4.7 emitted only by NativeBindNetworkCallback and NativeBindLollipopCallback (0x0083BC3C..0x0083BC88), never by NativeStatusCallback or NativeScanCallback (0x0083BB7C..0x0083BC08); G4.8..G4.10 Java: attemptNetworkBind emits only on a successful bindProcessToNetwork / setProcessDefaultNetwork; unbindFromNetwork always emits; bindToNetwork retries every 100 ms up to 10 times (sources/com/anki/util/WifiUtil.java:270-332, :381-404); G4.11/G4.12 the callers are the CozmoWifi receiver on Wi-Fi state changes (sources/com/anki/cozmo/CozmoWifi.java:28-85) and the Unity ping test on API >= 26 (unity/scripts/csharp/AndroidConnectionFlow.cs:95-153, :302, :310)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE. The trigger on this host is the policy M1-037 (decision D5)
 
 **M1-024 — Engine tick 60 ms: arrivals drained FIFO and handed up once per tick** (live path)
 
@@ -304,24 +178,6 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: B34 StartIdleTimeout: deadline = now + disconnectTime_s if >= 0, keeping an earlier deadline (0x0052D030..0x0052D066); Cancel sets -1 (0x0052D06C); on expiry Update clears it and calls MessageHandler::Disconnect (0x0052CE6E..0x0052CE98); the reason is not set; driven from unity/scripts/csharp/PauseManager.cs:219, :289, :360; CC1..CC7: the idle component has two deadlines: faceOff (armed only after the first full robot state, robot+0x34E) and disconnect; earliest wins; Cancel sets both to -1; expiry sets 0.0, which blocks re-arming until a Cancel; sleep fires before disconnect in one Update (0x0052CC64..0x0052D0C4; 0x0052CE3C..0x0052CE98); CC8: the sleep half queues a go-to-sleep animation sequence (0x0052CEA2..0x0052CFBE), an interface to the animation layer (M5); CC10: deadlines are checked once per 60 ms tick in engine state 3
 * outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
 
-**M1-032 — A never-answered connection times out 5000 ms after it is created** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs`
-* effect: a connect to an absent robot fails at a different time
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: G2.1/G2.2 the connection is created by the first type-1 SendMessage (0x00836C5A..0x00836C6E; FindConnection 0x00837098..0x008370C0); G2.3 the ReliableConnection ctor sets +0x50 = GetCurrentNetTimeStamp() (0x0083592E blx; 0x0083593C vstr d0,[r4,#0x50]); G2.5/G2.6 the only other store to +0x50 is UpdateLastAckedMessage (0x00835B9C), whose only caller is ReceiveData for a valid frame from a known connection (0x00837818); G2.7/G2.8 timed out when now > +0x50 + 5000.0, strictly (0x00836080..0x0083623E); every ReliableConnection::Update checks it (0x008365A4); G2.9 detection runs on the 2 ms tick in async mode (M1-020, M1-021); in async mode the 5 s start when the queued connect closure runs SendMessage, not at the Connect() call
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-035 — Async hand-off: sends and ticks FIFO on one thread** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs`
-* effect: a send can overtake a tick or another send
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: R37 QueueMessage 0x00836B66..0x00836BE4 posts a closure to RelTransport; the closure takes the transport mutex and calls SendMessage with the posted time (0x00837DEA); QueueAction 0x00836FF6 posts to the same queue; wrapper 0x00837F48; CA10..CA12, CA15: the posted time reaches PendingMessage +0x00 and only a stats accumulator used in the timeout warning text (0x00835FA6..0x00835FD8); QueueMessage copies the buffer and posts (0x00836B66..0x00836BE4); the queue is FIFO (0x007FCCF8..0x007FCD66, 0x007FD0C6..0x007FD128); in sync mode QueueMessage sends directly with time 0.0 (0x00836B42..0x00836B5C)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
 **M1-041 — Robot initialisation after a Success connection response, and the gates it opens** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
@@ -355,7 +211,8 @@ Each of these is a question already answered. The original's behaviour is establ
 | id | subsystem | status | what | why it is settled |
 | --- | --- | --- | --- | --- |
 | M1-013 | M1-transport | COMPATIBILITY_POLICY | Windows high-resolution timer realising the 2 ms and 60 ms periods | the original uses a Dispatch repeating callback (M1-010) and a sleeping 60 ms engine thread (M1-024) on Android. The periods themselves are recorded there as behaviour to reproduce; only the host timer mechanism is policy |
-| M1-014 | M1-transport | COMPATIBILITY_POLICY | Host thread structure that realises the engine threading | the original: a RelTransport dispatch thread (M1-010, M1-035) and one engine thread draining arrivals every 60 ms (M1-024). Its socket reopen on ENOTCONN and its send-failure handling are M1-022, and handler isolation is M1-034. Only the host thread structure that reproduces those orders is policy |
+| M1-014 | M1-transport | COMPATIBILITY_POLICY | Host thread structure that realises the engine threading | the original: a RelTransport dispatch thread (M1-010, M1-035) and one engine thread draining arrivals every 60 ms (M1-024). Its socket reopen on ENOTCONN and its send-failure handling are M1-022, and handler isolation is M1-034. Only the host thread structure that reproduces those orders is policy. That includes thread priority: the original asks for SCHED_RR at 75% of the OS range for the RelTransport threads (CA9), which the host does not reproduce; host threads keep the default priority |
+| M1-022 | M1-transport | EQUIVALENT_IMPLEMENTATION | UDP socket: setup, ephemeral local port, send errors, receive loop, reopen | libcozmoEngine.so 3.4.0-1204 |
 | M1-034 | M1-transport | COMPATIBILITY_POLICY | Handler isolation, a deliberate departure: in the original a handler exception aborts the engine process | the original has no handler isolation: nothing on the dispatch path catches, and an exception in any message handler reaches std::terminate and aborts the engine process (rows G3.1..G3.17, cited in evidence). The replacement deliberately isolates handlers instead, by operator decision D6; this record exists so the departure stays visible and is never mistaken for reproduced behaviour |
 | M1-036 | M1-transport | COMPATIBILITY_POLICY | Crash reporting after an engine-thread abort | the original installs Google Breakpad from CozmoActivity.onCreate when HOCKEYAPP_APP_ID is set (sources/com/anki/cozmo/CozmoActivity.java:50-53, 105-114; resources/AndroidManifest.xml:120-122); on SIGABRT it writes <dumps>/<APP_RUN_ID>.dmp and re-raises (0x00667A34..0x00667A8C, 0x0095107C..0x00951BD0). A Windows host has its own crash handling, so this stack uses it. Not pursued because they touch only crash output: bionic __assert2/abort (not in the package) and whether libunity/libmono install a SIGABRT handler above Breakpad at run time |
 | M1-037 | M1-transport | COMPATIBILITY_POLICY | Host trigger for the socket reset | the original resets on every Android process network bind or unbind (M1-023, rows G4.1..G4.13), which a Windows host does not have. This stack raises the same reset from the host notification that its network addresses changed (System.Net.NetworkInformation.NetworkChange.NetworkAddressChanged), the host event nearest to the route to the robot changing. The reset mechanism itself is M1-023 and is reproduced from source |
