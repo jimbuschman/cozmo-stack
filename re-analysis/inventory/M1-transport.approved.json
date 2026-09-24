@@ -2,7 +2,7 @@
   "subsystem": "M1-transport",
   "approved": "2026-09-24",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "c8efebf3a5d2293120febddd3d8d6d30ea3e9a1d10cbd047b338c1af49c11ff2",
+  "inventory_sha256": "7ca40484ca4d44ca3fb2774a0e394258be9d4520b63ff8e179dc4ecabef5e404",
   "records": {
     "M1-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -24,7 +24,7 @@
         "B5 0x0062EFB6 adr -> bytes at 0x0062F088 = 43 4f 5a 03; 0x0062EFB8 movs r1,#4; 0x0062EFBE movs r0,#0 (SetDoesHeaderHaveCRC false)",
         "B6 HeaderPrefix::Set 0x008393D2 cmp r6,#5 (truncate to 4 with a warning); 0x0083941C str r6,[r4,#4] (length)",
         "R1 BuildHeader 0x00836AF8: cmp r2,#0xa; movw r2,#0x4552; strh; strb #1 at +2; type at +3; firstSeq/lastSeq/ackSeq u16 LE at +4/+6/+8",
-        "B17 UDP receive order: 0x0083A780 size >= prefix; 0x0083A80E memcmp of 4 bytes; 0x0083AAA8 ubfx r0,r7,#5,#1 (MSG_TRUNC flag test); 0x0083A888 CRC only if enabled; 0x0083A900 hand-off to ReliableTransport::ReceiveData; no source-address filter",
+        "B17 UDP receive order: 0x0083A780 size >= prefix; 0x0083A80E memcmp of 4 bytes; 0x0083AAA8 ubfx r0,r7,#5,#1 and 0x0083A888 cmp.w fp,#1: a datagram with MSG_TRUNC set is dropped with AddRecvError(1) (0x0083A8C4..0x0083A8C8) and the loop keeps reading (0x0083AABA) [corrected C2]; 0x0083A888 CRC only if enabled; 0x0083A900 hand-off to ReliableTransport::ReceiveData; no source-address filter",
         "R3 0x00837632 cmp r7,#0xa; prefix table 0x00837B0C = 52 45 01; failures are logged, counted with AddRecvError, and the raw datagram is forwarded as data (0x00837792..0x008377A0; B19, B20)"
       ],
       "live_path": true,
@@ -77,8 +77,8 @@
         "R2 ackSeq (conn+0x42) is read fresh into every built frame: 0x00836A62 ldrh.w r5,[r4,#0x42]; 0x00836E02",
         "R20 PendingMessage 0x30 bytes, no retry counter: 0x008357DE..0x00835832; AddMessage 0x00835A38 movs r0,#0x30",
         "R21 SendMessage: maxPayload = UDP MaxTotalBytesPerMessage - 10 (0x00836C78..0x00836C8C); an oversize unreliable message is forced reliable (0x00836C92); anything above maxPayload is type 6 (0x00836CD6, 0x00836D60); queued via AddMessage, then SendOptimalUnAckedPackets(1) (0x00836EB8..0x00836EDC)",
-        "R25 SendOptimalUnAckedPackets: 2.0 ms spacing gate 0x008363C8..0x008363FC; start entry by smallest effective time 0x0083640E..0x008364A6; IsPacketWorthSending 0x008364B2; now > effective + 33.3 at 0x008364B8..0x008364CE",
-        "R26 IsPacketWorthSending 0x008362FE..0x0083639A",
+        "R25 SendOptimalUnAckedPackets: 2.0 ms spacing gate 0x008363C8..0x008363FC; start entry by smallest effective time 0x0083640E..0x008364A6, where a sent entry counts 33.3 earlier only if (lastRecv - 1.0) > 0 and it was sent before that (0x00836466, 0x00836478) [corrected C3]; IsPacketWorthSending 0x008364B2; now > effective + 33.3 at 0x008364B8..0x008364CE",
+        "R26 IsPacketWorthSending 0x008362FE..0x0083639A; its idle clause requires lastSend > 0 (0x00836316 vcmpe.f64 d0,#0; 0x0083631E ble) [corrected C3]",
         "R27 SendUnAckedMessages: forward packing 0x00835DF2..0x00835E40 then backward 0x00835E56..0x00835EA2; seq-0 entries deleted after one send, seq entries kept with updated sent time 0x00835F72..0x0083604A; lastSend = now",
         "R28 no per-message retry limit; the only give-up is the connection timeout (M1-015)",
         "R29 at most one packet per ReliableConnection::Update (0x00836592..0x0083659E), one per SendMessage (0x00836ECA..0x00836EDC), none on ack (0x00837820..0x00837828)"
@@ -107,7 +107,8 @@
       "title": "17-byte ping payload, sent unreliable as type 0x0B",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "R30 SendPing 0x00835C00..0x00835C62: f64 time, u32 numPingsSent (+0x60, incremented first), u32 numPingsReceived (+0x64), u8 isReply; movs r1,#0xb; movs r2,#0x11; unreliable, flag 1; a request sets +0x58 = now"
+        "R30 SendPing 0x00835C00..0x00835C62: f64 time, u32 numPingsSent (+0x60, incremented first), u32 numPingsReceived (+0x64), u8 isReply; movs r1,#0xb; movs r2,#0x11; unreliable, flag 1; a request sets +0x58 = now",
+        "SendPing calls ReliableTransport::SendMessage (0x00835C58): AddMessage then SendOptimalUnAckedPackets(1), so the ping can go out on the same call, subject to the 2.0 ms gate [corrected C4]"
       ],
       "live_path": true,
       "hardware_required": false
@@ -267,7 +268,7 @@
         "B11 OpenSocket: getaddrinfo(NULL, port, AI_PASSIVE, SOCK_DGRAM, AF_INET) (0x00839ACA, 0x00839AD0, 0x00839AF2); socket (0x00839B8A); SO_BROADCAST=1 for AF_INET (0x00839D18); bind (0x00839D3A); EADDRINUSE only a warning (0x00839E70); no O_NONBLOCK, no buffer options",
         "B12 local port: ctor 0xBAC9 (0x00839546) but Init stores 0 (0x0062EFEA str.w r5,[r6,#0x98]), so bind is ephemeral; RT->StartClient opens it (0x0062F07E, 0x0083808E, 0x0083AD58)",
         "B10 sendto flags 0 (0x0083A37C); partial send logs SentWrongNumBytes (0x0083A39A); failure: AddSendError(6) (0x0083A552), time at +0x88 (0x0083A5F4), no retry, no disconnect; non-IP addresses refused (0x0083A606)",
-        "B16 receive loop while TryToReadMessage returns 1 (0x0083AD10..0x0083AD18); recvmsg MSG_DONTWAIT into 0x5C0 (0x0083AA66, 0x0083AA76 movs r3,#0x40); <= 0 stops (0x0083AA98); errno != EAGAIN warns (0x0083AAC4); ENOTCONN closes and reopens on port 0, a new ephemeral port (0x0083AB22 cmp r0,#0x6b, 0x0083AB34)",
+        "B16 receive loop while TryToReadMessage returns 1 (0x0083AD10..0x0083AD18); recvmsg MSG_DONTWAIT into 0x5C0 (0x0083AA66, 0x0083AA76 movs r3,#0x40); <= 0 stops (0x0083AA98); errno != EAGAIN warns (0x0083AAC4); ENOTCONN closes and, only if the close succeeded (0x0083AB2C cbz r0), reopens on +0x98, which CloseSocket has just set to 0xBAC9 = 47817 (0x0083AB22 cmp r0,#0x6b, 0x0083AB2E, 0x0083AB34; CloseSocket 0x00839694..0x0083969C on both paths); only the first open is ephemeral [corrected C1]",
         "B38 close failures logged; CloseSocket resets fd to -1 and port to 0xBAC9 (0x00839694..0x0083969C)"
       ],
       "live_path": true,
@@ -445,6 +446,14 @@
       "status": "COMPATIBILITY_POLICY",
       "title": "Host trigger for the socket reset",
       "authority": "the original resets on every Android process network bind or unbind (M1-023, rows G4.1..G4.13), which a Windows host does not have. This stack raises the same reset from the host notification that its network addresses changed (System.Net.NetworkInformation.NetworkChange.NetworkAddressChanged), the host event nearest to the route to the robot changing. The reset mechanism itself is M1-023 and is reproduced from source",
+      "evidence": [],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M1-038": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Stop processing a frame after a DisconnectRequest sub-message",
+      "authority": "in the original, HandleSubMessage deletes the connection on a type-3 sub-message (0x008374A0, DeleteConnection veneer 0x008D123C; 0x008374C2) and ReceiveData then keeps walking the frame through the saved, now freed, connection pointer ([sp+0x18] at 0x008378FC, 0x00837958): undefined behaviour that cannot be reproduced. This stack stops processing the frame after the DisconnectRequest instead",
       "evidence": [],
       "live_path": true,
       "hardware_required": false

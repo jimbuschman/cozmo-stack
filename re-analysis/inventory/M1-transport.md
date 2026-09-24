@@ -1,6 +1,6 @@
 # M1 transport inventory
 
-**State: approved by the operator at Checkpoint 2 on 2026-09-24 and frozen with `python re-analysis/tools/fidelity.py --approve M1-transport`.** D1 to D4 were approved on 2026-09-23, and D5 to D7 on 2026-09-24. Any change to this file, or to an M1 record's title, authority, evidence, live_path, hardware_required or status (other than an IMPLEMENTATION_GAP being built), fails the checker until a new approval.
+**State: approved by the operator at Checkpoint 2 on 2026-09-24, then corrected (C1..C5 below) and re-approved the same day; frozen with `python re-analysis/tools/fidelity.py --approve M1-transport`.** D1 to D4 were approved on 2026-09-23, and D5 to D8 on 2026-09-24. Any change to this file, or to an M1 record's title, authority, evidence, live_path, hardware_required or status (other than an IMPLEMENTATION_GAP being built), fails the checker until a new approval.
 
 ## Where this comes from
 
@@ -76,6 +76,7 @@
 | M1-035 | IMPLEMENTATION_GAP | Async hand-off: sends and ticks FIFO on one thread | R37 |
 | M1-036 | COMPATIBILITY_POLICY | Crash reporting after an engine-thread abort | G3.18..G3.22 (policy) |
 | M1-037 | COMPATIBILITY_POLICY | Host trigger for the socket reset | policy (D5) |
+| M1-038 | COMPATIBILITY_POLICY | Stop processing a frame after a DisconnectRequest sub-message | policy (D8), C5 |
 
 ## What changed from the previous M1 records
 
@@ -93,7 +94,7 @@
   - message filters (M1-027) and the initial-connection handshake (M1-028, M1-029, M1-030);
   - the idle timeout (M1-031) and the connect timeout (M1-032);
   - the FIFO hand-off (M1-035), plus one HARDWARE_ONLY (M1-033);
-  - three policies from D5 and D6: handler isolation (M1-034), crash reporting (M1-036) and the host reset trigger (M1-037).
+  - four policies from D5, D6 and D8: handler isolation (M1-034), crash reporting (M1-036), the host reset trigger (M1-037) and stopping a frame after a DisconnectRequest (M1-038).
 - **The five first-pass gaps are resolved by the G rows:**
   - M1-021: fixed-delay 2 ms, the first run after one period, no overlap, backlogs run back to back.
   - M1-023: the reset fires on every Android process network bind or unbind.
@@ -117,6 +118,23 @@ Approved 2026-09-24:
   - the header load is not ordered before AddRobot in code;
   - absence of other writers is established only within the scan in G5.38..G5.40.
   Implement the mechanism exactly: load asynchronously at startup, copy the values when the robot is added, and use 0/0 when not loaded.
+
+- **D8.** A frame that carries a DisconnectRequest sub-message is not processed past it (M1-038, COMPATIBILITY_POLICY). The original deletes the connection and keeps walking the frame through the freed pointer, which is undefined behaviour and is not reproduced (correction C5).
+
+## Corrections after the first freeze
+
+The read-only comparison of the candidate against the first frozen inventory found five errors or omissions in it. The manager checked each against libcozmoEngine.so, and the operator approved correcting them on 2026-09-24. The corrected rows are marked `[corrected Cn]`.
+
+- **C1. Reopen port (B16, B18, M1-022).** After ENOTCONN or a socket reset, the socket is reopened only if the close succeeded, and on port 0xBAC9 = 47817, not an ephemeral port.
+  - CloseSocket sets +0x98 = 0xBAC9 on both of its paths (0x00839694..0x0083969C).
+  - The reopen reads +0x98 after the close (0x0083AB2E, 0x0083ACF8), and OpenSocket binds it (0x00839A46).
+  - Only the first open, with Init's port 0, is ephemeral.
+- **C2. MSG_TRUNC (B17, M1-002).** The row was inverted. A datagram with MSG_TRUNC set is the one dropped: 0x0083A888 cmp.w fp,#1; bne 0x0083A8CE is the not-truncated path; the truncated path reaches AddRecvError(1) at 0x0083A8C4..0x0083A8C8, and the loop keeps reading.
+- **C3. Missing guards (R25, R26, M1-006).**
+  - R25's fast-resend shortcut applies only when (lastRecv − 1.0) > 0 (0x00836466, 0x00836478).
+  - R26's idle clause requires lastSend > 0 (0x00836316, 0x0083631E).
+- **C4. Ping send path (R30, M1-008).** "Queued, not sent immediately" was misleading. SendPing calls ReliableTransport::SendMessage (0x00835C58), which does AddMessage then SendOptimalUnAckedPackets(1), so a ping can go out on the same call.
+- **C5. A frame after a DisconnectRequest (R12, new M1-038).** No row covered it. The original's behaviour is undefined (use-after-free), so it is a policy (D8).
 
 ## Open before M1 can be accepted
 
@@ -180,12 +198,12 @@ Statics with no writer:
 | R22 multipart split | Chunk = maxNet - 12 = 1404; count = ceil(size/chunk). Each part is prefixed [idx u8, 1-based][count u8], has its own seq and type 6. The count is written with strb and not checked against 255. Size 0 still gives one part. | 0x00836D7A; 0x00836D90..0x00836D98; 0x00836E42; 0x00836E46; 0x00836DA6 | M1-009 | EXACT_SOURCE |
 | R23 multipart reassembly | A part under 3 bytes is rejected. idx must equal expected (+4, from 1); a mismatch is rejected with no reset. Part 1 sets total from byte 1; payload from byte 2 is appended. Complete at idx == total: deliver, then Clear(). No size bound. | AddMessagePart 0x008358A0..0x008358E8; 0x008374C6..0x00837504 (Clear veneer 0x8D124C) | M1-009 | EXACT_SOURCE |
 | R24 frame size bound | Reliable maxPayload = UDP MaxTotalBytesPerMessage - 10, where UDP's value = sMaxNetMessageSize - prefix len - (CRC ? 2 : 0). With Init: 1420 - 4 - 0 - 10 = 1406. | 0x00836A36..0x00836A3E; UDP vtable 0x0103788C slot 9; 0x0083AF4A..0x0083AF56; Init 0x0062EFB8, 0x0062EFBE, 0x0062EFC6 movw #0x58c | M1-012 | EXACT_SOURCE, except the prefix length at sHeaderPrefix+4 (HeaderPrefix::Set 0x008393C9, part B) |
-| R25 send gate / start choice | (a) Nothing within 2.0 ms of the last send (+0x48). (b) Start = entry with the smallest effective time, first index on ties; never-sent counts as now - (resend+1); sent counts as latestSent, or latestSent - 33.3 if sent before (lastRecv - 1.0). (c) IsPacketWorthSending must be true. (d) now > effective + 33.3. Then SendUnAckedMessages up to max times. | (a) 0x008363C8..0x008363FC; (b) 0x0083640E..0x008364A6; (c) 0x008364B2; (d) 0x008364B8..0x008364CE; loop 0x008364D2..0x008364E8 | M1-006 | EXACT_SOURCE |
-| R26 worth sending | Any of: sSendPacketsImmediately; lastSend + 32.3 < now; the +0x2B flag on any entry from start; a sent entry with latestSent + 32.3 < now; the running sum of (size+3) reaching maxPayload - 0. | 0x008362FE..0x0083639A | M1-006 | EXACT_SOURCE |
+| R25 send gate / start choice | (a) Nothing within 2.0 ms of the last send (+0x48). (b) Start = entry with the smallest effective time, first index on ties; never-sent counts as now - (resend+1); sent counts as latestSent, or latestSent - 33.3 if (lastRecv - 1.0) > 0 and it was sent before (lastRecv - 1.0) [corrected C3: guard 0x00836466 vcmpe.f64 d1,#0; 0x00836478 it gt]. (c) IsPacketWorthSending must be true. (d) now > effective + 33.3. Then SendUnAckedMessages up to max times. | (a) 0x008363C8..0x008363FC; (b) 0x0083640E..0x008364A6; (c) 0x008364B2; (d) 0x008364B8..0x008364CE; loop 0x008364D2..0x008364E8 | M1-006 | EXACT_SOURCE |
+| R26 worth sending | Any of: sSendPacketsImmediately; lastSend > 0 and lastSend + 32.3 < now [corrected C3: guard 0x00836316 vcmpe.f64 d0,#0; 0x0083631E ble]; the +0x2B flag on any entry from start; a sent entry with latestSent + 32.3 < now; the running sum of (size+3) reaching maxPayload - 0. | 0x008362FE..0x0083639A | M1-006 | EXACT_SOURCE |
 | R27 packing / resend content | Pack forward from start (start is taken unconditionally), then extend BACKWARDS while it fits. Header seqs = min/max non-zero seq included. lastSend = now. seq != 0 entries get their sent-time updated and stay; seq 0 entries are deleted (an unreliable message is sent once). Returns the forward count. A resend is a re-pack, not a byte replay. | 0x00835DF2..0x00835E40; 0x00835E56..0x00835EA2; 0x00835EDE, 0x00835F64; 0x00835F72..0x0083604A; 0x0083604C | M1-006 | EXACT_SOURCE |
 | R28 resend interval / retries / give-up | 33.3 ms, shortcut by R25b. No per-message retry limit. The only give-up is the 5 s timeout, which deletes the queue. | R20, R25, R19 | M1-006 | EXACT_SOURCE |
 | R29 packets per call | At most 1 per ReliableConnection::Update, 1 per SendMessage, 0 on ack; all under the 2.0 ms spacing. | 0x00836592..0x0083659E; 0x00836ECA..0x00836EDC; 0x00837820..0x00837828 | M1-006 | EXACT_SOURCE |
-| R30 ping payload | 17 bytes: f64 time (now, or echoed for a reply), u32 numPingsSent (+0x60, incremented first), u32 numPingsReceived (+0x64), u8 isReply. Unreliable type 0x0B, flag 1. A request sets +0x58 = now. Queued, not sent immediately. | SendPing 0x00835C00..0x00835C62 | M1-008 | EXACT_SOURCE |
+| R30 ping payload | 17 bytes: f64 time (now, or echoed for a reply), u32 numPingsSent (+0x60, incremented first), u32 numPingsReceived (+0x64), u8 isReply. Unreliable type 0x0B, flag 1. A request sets +0x58 = now. SendPing calls ReliableTransport::SendMessage (0x00835C58), i.e. AddMessage then SendOptimalUnAckedPackets(1), so the ping can go out on the same call, subject to the 2.0 ms gate [corrected C4]. | SendPing 0x00835C00..0x00835C62 | M1-008 | EXACT_SOURCE |
 | R31 ping receive | Under 17 bytes is ignored. numPingsReceived++; peer counters kept only if the incoming numPingsSent is greater. A reply records now - timeSent, negative included. A request is answered only if sSendSeparatePingMessages (never). | ReceivePing 0x00835C7C..0x00835D30 | M1-011 | EXACT_SOURCE |
 | R32 ping schedule | With sSendSeparatePingMessages=0: only when the queue is empty, lastSend > 0, now > lastSend + 33.3, and now >= lastPing + 33.3. An idle keep-alive; nothing before the first frame. | 0x0083652E..0x00836590 | M1-017 | EXACT_SOURCE |
 | R33 ReliableConnection::Update | Ping check, then SendOptimalUnAckedPackets(1), then return !HasConnectionTimedOut. | 0x00836518..0x008365A8 | M1-017 | EXACT_SOURCE |
@@ -224,9 +242,9 @@ Object layout used by the citations:
 | B13 | Init sets the 14 reliable tunables (see the part A table). ConfigureReliableTransport writes the same set but is dead code. | 0x62efce–0x62f076; 0x62f0c8, no callers | M1-005 | EXACT_SOURCE (values); the record cites the wrong function |
 | B14 | RT ctor: Dispatch "RelTransport" at priority 3; +0xA0=1, +0xA1=0; ChangeSyncMode(false) → repeating 2 ms callback. Each tick: RT::Update → UDP Update (drain) → ReliableConnection::Update per connection. | 0x8367c2; 0x8367da; 0x8367e2; 0x836896; 0x83689e; 0x8383ce; 0x837ba2 | M1-010 | EXACT_SOURCE |
 | B15 | RCM::Update calls RT::Update only when +0xA0 is set; false → reason 1. Sync mode is reachable only through game message ReliableTransportRunMode (tag 80), which nothing in Unity sends, so production is async. | 0x62f1be; 0x62f1c4; 0x62f1ca/0x62f1cc; callers of 0x62fe36: 0x69e000, 0x69e150; MessageGameToEngine.cs:93 | M1-020 | EXACT_SOURCE (the Unity absence is a text search) |
-| B16 | The receive loop runs while TryToReadMessage returns 1: recvmsg(MSG_DONTWAIT) into 0x5C0; ≤ 0 stops (a 0-byte datagram too). errno ≠ EAGAIN warns "ReadFailed"; ENOTCONN closes and reopens the socket on port +0x98 (0, so ephemeral). | 0x83ad10–0x83ad18; 0x83aa66; 0x83aa76; 0x83aa98; 0x83aac4; 0x83ab22; 0x83ab34 | M1-022 | EXACT_SOURCE |
-| B17 | Receive checks in order: size ≥ prefix length (+2 with CRC), else TooSmall; memcmp of 4 bytes, else BadPrefix; MSG_TRUNC must be set, else Recv.Truncated; CRC if enabled. Then payload + source go to RT::ReceiveData. No source filter at this layer. | 0x83a780; 0x83a80e; 0x83aaa8 ubfx r0,r7,#5,#1; 0x83a888; 0x83a8ea; 0x83a900 | M1-002 | EXACT_SOURCE |
-| B18 | The RCM ctor registers the UDP transport with WifiUtil; a signal handler calls ResetSocket (+0x9D=1); the next Update closes and reopens on an ephemeral port. The trigger event was not read. | 0x62edb8; 0x83bae0; 0x83a258; 0x83ace8–0x83acfe | M1-023 | EXACT_SOURCE for the reset; RECOVERABLE_GAP for the trigger (0x83ba34, WifiUtil::Native*Callback 0x83bb7d...) |
+| B16 | The receive loop runs while TryToReadMessage returns 1: recvmsg(MSG_DONTWAIT) into 0x5C0; ≤ 0 stops (a 0-byte datagram too). errno ≠ EAGAIN warns "ReadFailed"; ENOTCONN closes the socket and reopens it only if the close succeeded, on port +0x98, which CloseSocket has just set to 0xBAC9 = 47817 (B38); only the first open, with Init's port 0, is ephemeral. [corrected C1] | 0x83ad10–0x83ad18; 0x83aa66; 0x83aa76; 0x83aa98; 0x83aac4; 0x83ab22; 0x83ab28 CloseSocket; 0x83ab2c cbz r0; 0x83ab2e ldr.w r1,[r4,#0x98]; 0x83ab34 OpenSocket; CloseSocket 0x839694..0x83969c movw r0,#0xbac9 / strd r1,r0,[r4,#0x94] on both paths | M1-022 | EXACT_SOURCE |
+| B17 | Receive checks in order: size ≥ prefix length (+2 with CRC), else TooSmall; memcmp of 4 bytes, else BadPrefix; a datagram with MSG_TRUNC set (larger than the 1472-byte buffer) logs Recv.Truncated, counts AddRecvError(1) and is dropped, and the read loop continues [corrected C2]; CRC if enabled. Then payload + source go to RT::ReceiveData. No source filter at this layer. | 0x83a780; 0x83a80e; 0x83aaa8 ubfx r0,r7,#5,#1; 0x83a888 cmp.w fp,#1; bne 0x83a8ce (not truncated: continue); 0x83a8c4..0x83a8c8 AddRecvError(1); 0x83aaba returns 1 (keep reading); 0x83a8ea; 0x83a900 | M1-002 | EXACT_SOURCE |
+| B18 | The RCM ctor registers the UDP transport with WifiUtil; a signal handler calls ResetSocket (+0x9D=1); the next Update closes and, if the close succeeded, reopens on port 47817 (B38). [corrected C1] The trigger is G4. | 0x62edb8; 0x83bae0; 0x83a258; 0x83ace8–0x83acfe | M1-023 | EXACT_SOURCE for the reset; RECOVERABLE_GAP for the trigger (0x83ba34, WifiUtil::Native*Callback 0x83bb7d...) |
 | B19 | RT::ReceiveData where it meets part B: under 10 bytes or a non-"RE\x01" start → forwarded raw to RCD::ReceiveData as Data. Otherwise FindConnection(addr, create), where create means type 1 or a multi-message with first sub type 1. No connection → "unconnected source", dropped. | 0x837632; 0x83763c–0x837648; 0x837792–0x8377a0; 0x8377ce–0x8377f4; 0x8377fc; 0x83789a | M1-002, M1-018 | EXACT_SOURCE |
 | B20 | RCD::ReceiveData drops the OnConnectRequest sentinel. PushArrivedMessage maps OnConnected→2, OnDisconnected→3, else Data (0, bytes copied), timestamped, under the mutex. HandleConnectionRequestMessage is unreachable. | 0x62e4be; 0x62e274/0x62e280/0x62e28c; 0x62e2ba–0x62e2c2; 0x62e296; 0x62fbbe | M1-024 | EXACT_SOURCE |
 | B21 | RCM::Connect(addr): clear RCD, address at +0x30, RT->Disconnect(addr), RT->Connect(addr), state 1. RT::Disconnect queues an action: SendMessage(1, addr, null, 0, type 3, 1) then DeleteConnection. RT::Connect clears +0xA1 and queues QueueMessage(1, addr, null, 0, type 1, 1). The engine sends first. | 0x62f55e; 0x62f568; 0x62f576; 0x62f580; 0x62f58a; 0x83719a; 0x838006–0x83802a; 0x83710e; 0x83711c | M1-019 | EXACT_SOURCE here; UNKNOWN whether the type-3 is sent with no connection, and the queue order (part A) |

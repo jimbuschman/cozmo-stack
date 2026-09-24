@@ -4,9 +4,9 @@ Read first in every session. The manager keeps this file current; the process it
 
 ## Now
 
-- **Phase:** M1 inventory approved at Checkpoint 2 (2026-09-24) and frozen (`re-analysis/inventory/M1-transport.approved.json`). M1 has 31 IMPLEMENTATION_GAP to confirm or build, 5 COMPATIBILITY_POLICY (M1-013, M1-014, M1-034 handler isolation per D6, M1-036, M1-037 per D5) and 1 HARDWARE_ONLY (M1-033).
-- **Operator decisions:** D1-D4 approved 2026-09-23. On 2026-09-24: the completed inventory, D5 (host reset trigger, M1-037) and D7 (M1-029 proof limits accepted) approved; D6 decided as the original's fatal handler-exception behaviour recorded in M1-034, with handler isolation kept as this stack's COMPATIBILITY_POLICY.
-- **Next:** compare the M1 candidate against the frozen inventory (verifier, read-only). Records the code already reproduces become EXACT_SOURCE with `// fidelity:` tags; the rest are repaired by the implementer. Then the M1 hardware script for M1-033.
+- **Phase:** M1 repair. The inventory was corrected (C1..C5) and re-frozen on 2026-09-24; M1 has 31 IMPLEMENTATION_GAP, 6 COMPATIBILITY_POLICY (M1-013, M1-014, M1-034, M1-036, M1-037, M1-038) and 1 HARDWARE_ONLY. The candidate-vs-inventory comparison is `re-analysis/inventory/M1-transport.comparison.md`.
+- **Operator decisions:** D1-D4 approved 2026-09-23. On 2026-09-24: the inventory, D5, D6 (fatal behaviour recorded, isolation kept as policy), D7, the corrections C1..C5 and D8 (stop processing a frame after a DisconnectRequest, M1-038) approved; the three repair batches are authorised to run without further checkpoints.
+- **Next:** repair batches, each implementer -> verifier -> commit. Batch 1: the 8 conforming records become EXACT_SOURCE (tags, test oracles) and the LINK check names M1-033. Batch 2: transport differences. Batch 3: the app layer. A MISSING item, a needed new policy or an inventory error stops the loop and goes to the operator.
 
 ## Layer order and review state
 
