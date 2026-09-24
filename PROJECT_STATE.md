@@ -9,9 +9,21 @@ Read first in every session. The manager keeps this file current; the process it
 - **Batch 1 done (7aba301). Batch 2a done** (e6f2ed7; receive path: B17 truncation, receive-error counters, partial-header overrun after the header, M1-038); records it repaired are settled in one verified pass at the end of batch 2. **Batch 2b-i done** (8c9f405; clock, construction-time 2 ms scheduler + FIFO executor, posted sends, RobotLink isolation; three verification passes). **Batch 2b-ii done** (0691429; per-address connections, type-3 and timeout delete only that connection, timed-out flag, inbound creation, FinishConnection, posted Start/Stop, per-connection multipart, unconditional Dispose disconnect; two verification passes). **Batch 2c done** (socket B10/B11/B12/B16/B38 with C1's 47817 reopen, the M1-023 reset mechanism, the M1-037 host trigger, M1-001 addressing; verifier PASS on the second pass). Batch 2 complete.
 - **Next:** repair batches, each implementer -> verifier -> commit. Batch 1: the 8 conforming records become EXACT_SOURCE (tags, test oracles) and the LINK check names M1-033. Batch 2: transport differences. Batch 3: the app layer. A MISSING item, a needed new policy or an inventory error stops the loop and goes to the operator.
 
+- **Standing authorisations and current plan (operator, 2026-09-24, supersedes the governing plan below where they differ):**
+  - **Pushing:** the manager may push to GitHub `origin main` whenever a robot run is ready, so the operator's Cozmo machine can pull it.
+  - **Inventory corrections:** the manager may approve them without an operator checkpoint, including running `--approve`. Each stays cited and is recorded here. Genuine policy choices still go to the operator.
+  - **Hardware-first plan:**
+    1. finish the M1 link check;
+    2. convert the direct-control hardware checks to self-judging PASS/FAIL (connect, head/lift/drive, face, audio, animation, cube connection, camera, the animation-stream edge cases);
+    3. the operator runs them once;
+    4. the manager fixes the failures from the source, including batch 3, the handshake;
+    5. one confirming run.
+  - **Operator involvement:** two or three robot runs, no design questions. Time box about 2-3 working days to M1 closed and the direct-control basics passing on hardware; otherwise stop and report plainly.
+  - **Scope decision:** the M6-M15 scope is still undecided (see the layer map in the conversation of 2026-09-24). Nothing is deferred yet.
 - **Governing plan (operator, 2026-09-24), in this order:**
   1. Finish batch 2c: commit only if the verifier and the full suite pass; if either fails, fix only the 2c issue and re-verify. No scope growth.
   2. One bounded transport hardware test. Its only purpose is to verify the rewritten socket and connection lifetime on a real robot before batch 3. It is one scripted run that saves a self-contained bundle; the operator runs it. It is not an exploratory campaign.
+     - **Operator:** with the PC on the robot's Wi-Fi, run from `cozmo-stack`: `dotnet run --project src/Cozmo.Conformance -- m1-link-check` (default robot 172.31.1.1:5551; about 50 s). Copy back the bundle folder it prints, `re-analysis/acceptance/hardware/<yyyyMMdd-HHmmss>-M1-LINK/`.
   3. One comprehensive extraction pass before batch 3, treated as a closure pass for batch 3's dependencies. It covers every parked MISSING item and every source fact batch 3 needs: the handshake, firmware check, pre-validation gating, idle timeout, robotError handling, disconnect reasons and results, the 60 ms engine tick, and the exact ordering and conditions of setup messages such as SyncTime and InitController.
   4. One operator re-approval checkpoint for the resulting inventory changes. It includes the approved M1-039 Windows UDP policy. No batch 3 code before approval. Anything unrecoverable is marked UNKNOWN or POLICY, never guessed.
   5. Settle the batch 2 records (and implement M1-039) in the same verified pass.
@@ -21,6 +33,7 @@ Read first in every session. The manager keeps this file current; the process it
      - a fact that is still MISSING or UNKNOWN;
      - a material hardware issue.
   - **Hard boundary:** after batch 3, M1 is closed except for documented HARDWARE_ONLY and COMPATIBILITY_POLICY items. If recoverable or missing source work is still growing after the closure pass, stop and report it; do not open another extraction cycle.
+- **Approved policy, not yet recorded: M1-040 (operator, 2026-09-24).** Accept every robot firmware (older, newer, factory). The handshake's version check never refuses the robot. The robot's firmware version is logged on every connection and in every hardware bundle, with a warning whenever it is not 2381, the build the protocol was recovered from. Rationale: the operator runs firmware 2457, which the original would refuse as OutdatedApp; firmware issues get fixed later, as long as the issue and the firmware are known.
 - **Approved policy, not yet recorded (goes into step 4): M1-039.** On Windows, a UDP receive that fails with ConnectionReset (an ICMP port-unreachable response) is treated as no data for that receive attempt. It emits no warning and does not end the rest of the tick's drain; the drain continues, as the original, which never sees the error, would. Other socket errors keep their source-backed handling.
 
 - **Process change (operator, 2026-09-24):** only behavioural or source-fidelity defects, circular tests, and races or deadlocks block a commit. Non-behavioural cleanup is queued under "Cleanup queue" while the checker passes and no status becomes misleading. After a behavioural fix, only the affected diff is re-verified. The full suite runs once, just before the commit. Batches are large, and batch 3 is one batch after the closure pass. See AGENTS.md, Process, step 4.
@@ -28,6 +41,7 @@ Read first in every session. The manager keeps this file current; the process it
 ## Cleanup queue (non-behavioural; fold into the next batch)
 
 - `M1_019_R39_StopSendsNothingClearsTheConnectionsAndClosesTheSocket`: rebinds 47817 after Stop/Start but disposes only at its end (test isolation; give it `using`).
+- `TransportConstants.cs` has CRLF line endings (git warns); normalise to LF.
 - T_k2 (TransportRepairTests): uses Windows ConnectionReset as its input error and asserts "ReadFailed"; it conflicts with M1-039, so give it a different error when M1-039 is implemented. Its "no row or policy covers" comment is stale.
 - With no socket open, every resend counts error 6 and warns each time (the B10 rate-limit gap; resolved by the B10 inventory correction).
 - MISSING comments at RT FinishConnection (~:684) and the empty-container case (~:1054) are answered per PROJECT_STATE; update them when the inventory is corrected.
@@ -60,21 +74,24 @@ Found during M1 repair. Each record stays IMPLEMENTATION_GAP; nothing is guessed
 
 ## Layer order and review state
 
-The review state of each subsystem is recorded in `re-analysis/fidelity_manifest.json`, and `re-analysis/FIDELITY_GAPS.md` renders it. Every subsystem is **UNREVIEWED**. Their records and their "source read / built" flags were written before this process, and nothing vouches for them yet.
+**Scope: PROPOSED, NOT FINAL.** The operator asked for a layer map before deciding (2026-09-24). Until then nothing is deferred; the list below is only the proposal.
+- **Full rigor (inventory, freeze, repair, verify):** M1 through M5.
+- **In target, cheap audit first:** M11 (vision, markers) and M12 (cube manipulation). Each gets one read-only comparison; it escalates to full rigor only where a mismatch affects autonomous control.
+- **Deferred:** M6 through M10 and M13 through M15. The exception is any low-level audio or playback primitive that M3 or M5 requires.
 
-| order | subsystem | review | notes |
-| ---: | --- | --- | --- |
-| 1 | M1-transport | INVENTORY_APPROVED (frozen 2026-09-24) | 31 to confirm/build, 5 policies, 1 hardware-only; candidate changes in the working tree (below) |
-| 2 | M2-protocol | UNREVIEWED | |
-| 3 | M3-device (camera, display, audio device) | UNREVIEWED | colour camera format is HARDWARE_ONLY |
-| 4 | M4-control (motion, sensors, lights, cubes) | UNREVIEWED | the outbound cube-connection path is suspected unrecovered |
-| 5 | M5-animation | UNREVIEWED | the live-animation wire lifecycle is suspected incomplete |
-| 6 | M6-wwise-bank, M9-wwise-music | UNREVIEWED | singing holds BLOCKED_EXTERNAL Wwise runtime semantics |
-| 7 | M7, M8, M10 (behaviour, framework, derived state) | UNREVIEWED | |
-| 8 | M11–M15 (vision, manipulation, navigation, faces, freeplay) | UNREVIEWED | |
-| – | tools | UNREVIEWED | offline tooling |
+Review state per subsystem is in `re-analysis/fidelity_manifest.json`, and FIDELITY_GAPS.md renders it.
 
-The operator can reorder layers 3 and up.
+| order | subsystem | tier | review | notes |
+| ---: | --- | --- | --- | --- |
+| 1 | M1-transport | full | INVENTORY_APPROVED (frozen, corrected) | batch 1 and batch 2 committed; closure pass running; then re-approval, settle, batch 3 |
+| 2 | M2-protocol | full | UNREVIEWED | |
+| 3 | M3-device (camera, display, audio device) | full | UNREVIEWED | colour camera format is HARDWARE_ONLY |
+| 4 | M4-control (motion, sensors, lights, cubes) | full | UNREVIEWED | the outbound cube-connection path is suspected unrecovered |
+| 5 | M5-animation | full | UNREVIEWED | the live-animation wire lifecycle is suspected incomplete |
+| 6 | M11-vision, M12-manipulation | audit | UNREVIEWED | escalate only where a mismatch affects autonomous control |
+| – | M6-wwise-bank, M9-wwise-music | proposed: deferred (pending decision) | UNREVIEWED | except audio/playback primitives M3/M5 need |
+| – | M7, M8, M10, M13, M14, M15 | proposed: deferred (pending decision) | UNREVIEWED | |
+| – | tools | – | UNREVIEWED | offline tooling |
 
 ## M1 candidate (uncommitted working tree)
 

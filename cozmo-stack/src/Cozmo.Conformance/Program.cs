@@ -17,6 +17,7 @@ return args.Length == 0 ? Usage() : args[0] switch
     "pcap" => PcapCmd(args),
     "replay" => Replay(args),
     "connect" => SmokeTest.Run(args).GetAwaiter().GetResult(),
+    "m1-link-check" => LinkCheck.Run(args),
     "fakerobot" => FakeRobot(args),
     "probe" => Probe.Run(args).GetAwaiter().GetResult(),
     "camera" => Devices.Camera(args).GetAwaiter().GetResult(),
@@ -80,6 +81,9 @@ static int FakeRobot(string[] a)
             }
             foreach (var m in f.Messages)
             {
+                // A ConnectionRequest starts a new session here, so a reconnect on a new connection (seq 1 again) is
+                // accepted. The stand-in's own simplification, not robot behaviour (which is M1-033).
+                if (m.Type == ReliableMessageType.ConnectionRequest && m.IsReliable) nextIn = m.Seq;
                 if (m.IsReliable) { if (m.Seq != nextIn) continue; nextIn = SequenceId.Next(nextIn); lastInAcked = m.Seq; }
                 switch (m.Type)
                 {
@@ -137,6 +141,12 @@ static int Usage()
           connect <robot-ip> [--simulated] [--seconds 20] [--head <rad>] [--led] [--headlight] [--log <file>] [--origin]
                                              (a frame log is always written; default cozmo-frames-<timestamp>.log in the current directory, full path printed)
                                              hardware smoke test: connect, handshake, telemetry, one harmless command, disconnect
+          m1-link-check [robot-ip] [--simulated] [--out <dir>]
+                                             M1 hardware run (M1-LINK): drives ReliableTransport directly with transport frames
+                                             only: start, connect, 30 s idle hold, disconnect, reconnect on the same socket,
+                                             disconnect, stop. Default robot 172.31.1.1:5551 (127.0.0.1:5552 with --simulated).
+                                             Writes a bundle to re-analysis/acceptance/hardware/<yyyyMMdd-HHmmss>-M1-LINK/
+                                             (under --out <dir> instead, if given). Exit 0 PASS, 1 FAIL, 2 usage
           fakerobot [--port 5551] [--seconds 60]  loopback stand-in for the robot transport (127.0.0.1) for testing the socket path without hardware
           probe <robot-ip> [--include-motion] [--include-state] [--only <step>] [--out results.json]
                                              subsystem-by-subsystem protocol verification on a real robot: sends only
