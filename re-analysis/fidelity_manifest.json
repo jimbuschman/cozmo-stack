@@ -261,7 +261,7 @@
       "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": "FrameTests"
+      "test": "FrameTests, TransportRepairTests.B17_ADatagramLargerThan1472BytesIsDroppedAsTruncatedAndTheDrainGoesOn, TransportRepairTests.B17_AnOversizeDatagramWithABadPrefixFailsThePrefixCheckFirst, TransportRepairTests.B17_TheHostReportsAnOversizeDatagramAsTruncatedAndTheDrainGoesOn, TransportRepairTests.R3_HeaderValidationFailuresAreCountedAndPassedOn"
     },
     {
       "id": "M1-003",
@@ -368,7 +368,7 @@
       "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": "ConnectionTests"
+      "test": "ConnectionTests, TransportRepairTests.AContainerEndingInAPartialSubMessageHeaderIsASizeOverrunAfterTheHeader, TransportRepairTests.ARemainderStartingWithAnInvalidTypeStopsTheWalkThere, TransportRepairTests.R10_ContainerParseErrorsAreCountedByCode, TransportRepairTests.R16_AnOutOfRangeReliableFrameCountsError5UnlessItIsMixed, TransportRepairTests.AnOutOfSequenceDisconnectRequestDoesNotStopTheFrame"
     },
     {
       "id": "M1-008",
@@ -528,7 +528,7 @@
       "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "TransportRepairTests.AContainerEndingInAPartialSubMessageHeaderIsASizeOverrunAfterTheHeader"
     },
     {
       "id": "M1-017",
@@ -841,7 +841,7 @@
       "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "TransportRepairTests.AContainerEndingInAPartialSubMessageHeaderIsASizeOverrunAfterTheHeader"
     },
     {
       "id": "M1-033",
@@ -931,17 +931,17 @@
     {
       "id": "M1-038",
       "subsystem": "M1-transport",
-      "title": "Stop processing a frame after a DisconnectRequest sub-message",
+      "title": "Stop processing a frame after a handled DisconnectRequest sub-message",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
-      "effect": "sub-messages that follow a DisconnectRequest in the same frame are not delivered",
+      "effect": "sub-messages that follow a handled (in-sequence) DisconnectRequest in the same frame are not delivered",
       "provenance": "operator decision D8 (2026-09-24): a choice of this stack",
-      "authority": "in the original, HandleSubMessage deletes the connection on a type-3 sub-message (0x008374A0, DeleteConnection veneer 0x008D123C; 0x008374C2) and ReceiveData then keeps walking the frame through the saved, now freed, connection pointer ([sp+0x18] at 0x008378FC, 0x00837958): undefined behaviour that cannot be reproduced. This stack stops processing the frame after the DisconnectRequest instead",
+      "authority": "in the original, HandleSubMessage deletes the connection on a type-3 sub-message (0x008374A0, DeleteConnection veneer 0x008D123C; 0x008374C2) and ReceiveData then keeps walking the frame through the saved, now freed, connection pointer ([sp+0x18] at 0x008378FC, 0x00837958): undefined behaviour that cannot be reproduced. This stack stops processing the frame after such a handled DisconnectRequest instead. An out-of-sequence DisconnectRequest is dropped by R12 before dispatch (0x00837438 bne 0x00837456), frees nothing, and the original walks on with a valid pointer, so that case follows the source and the frame continues (operator decision, 2026-09-24)",
       "evidence": [],
       "status": "COMPATIBILITY_POLICY",
       "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "TransportRepairTests.M1_038_NothingAfterAHandledDisconnectRequestInTheSameFrameIsProcessed, TransportRepairTests.AnOutOfSequenceDisconnectRequestDoesNotStopTheFrame"
     },
     {
       "id": "M2-001",

@@ -1,6 +1,6 @@
 # M1 transport inventory
 
-**State: approved by the operator at Checkpoint 2 on 2026-09-24, then corrected (C1..C5 below) and re-approved the same day; frozen with `python re-analysis/tools/fidelity.py --approve M1-transport`.** D1 to D4 were approved on 2026-09-23, and D5 to D8 on 2026-09-24. Any change to this file, or to an M1 record's title, authority, evidence, live_path, hardware_required or status (other than an IMPLEMENTATION_GAP being built), fails the checker until a new approval.
+**State: approved by the operator at Checkpoint 2 on 2026-09-24, then corrected (C1..C5 below, and the D8 wording) and re-approved the same day; frozen with `python re-analysis/tools/fidelity.py --approve M1-transport`.** D1 to D4 were approved on 2026-09-23, and D5 to D8 on 2026-09-24. Any change to this file, or to an M1 record's title, authority, evidence, live_path, hardware_required or status (other than an IMPLEMENTATION_GAP being built), fails the checker until a new approval.
 
 ## Where this comes from
 
@@ -42,20 +42,20 @@
 | M1-001 | IMPLEMENTATION_GAP | Robot address: 172.31.1.1 / 127.0.0.1, remote port 5551 physical / 5552 simulated | B1, B3, B4 |
 | M1-002 | IMPLEMENTATION_GAP | Frame header: 4-byte prefix 43 4F 5A 03, no CRC, then the 10-byte RE header; receive-side checks | R1, R3, B5, B6, B17, B19 |
 | M1-003 | IMPLEMENTATION_GAP | Message types 1..11, always-unreliable set, container types, dispatch by type | R5, R6, R7, R8, R12 |
-| M1-004 | IMPLEMENTATION_GAP | Sequence ids 1..65534, wrap and in-range test | R14, R15 |
+| M1-004 | EXACT_SOURCE | Sequence ids 1..65534, wrap and in-range test | R14, R15 |
 | M1-005 | IMPLEMENTATION_GAP | Reliable-transport tunables as RobotConnectionManager::Init sets them | tunables table, B13 |
 | M1-006 | IMPLEMENTATION_GAP | Send queue, packing, resend choice and pacing | R2, R20, R21, R25, R26, R27, R28, R29 |
 | M1-007 | IMPLEMENTATION_GAP | Receive path: in-order delivery only, no buffering, mixed frames still walked | R4, R9, R10, R11, R12, R16, R17 |
 | M1-008 | IMPLEMENTATION_GAP | 17-byte ping payload, sent unreliable as type 0x0B | R30 |
 | M1-009 | IMPLEMENTATION_GAP | Multipart split and reassembly | R22, R23 |
 | M1-010 | IMPLEMENTATION_GAP | Asynchronous 2 ms transport tick and ReliableTransport::Update order | R34, R35, B14 |
-| M1-011 | IMPLEMENTATION_GAP | Ping receive: counters, and only a ping marked as a reply measures the round trip | R31 |
-| M1-012 | IMPLEMENTATION_GAP | Frame payload bound 1406 and the UDP send buffer | R24, B5, B7, B8, B9 |
+| M1-011 | EXACT_SOURCE | Ping receive: counters, and only a ping marked as a reply measures the round trip | R31 |
+| M1-012 | EXACT_SOURCE | Frame payload bound 1406 and the UDP send buffer | R24, B5, B7, B8, B9 |
 | M1-013 | COMPATIBILITY_POLICY | Windows high-resolution timer realising the 2 ms and 60 ms periods | policy |
 | M1-014 | COMPATIBILITY_POLICY | Host thread structure that realises the engine threading | policy |
 | M1-015 | IMPLEMENTATION_GAP | Connection timeout 5 s, and how a lost or failed connection is reported | R19, R41, B22, B31, B32, B36 |
 | M1-016 | IMPLEMENTATION_GAP | Incoming ack processing | R18, R43 |
-| M1-017 | IMPLEMENTATION_GAP | Ping schedule and ReliableConnection::Update order | R32, R33 |
+| M1-017 | EXACT_SOURCE | Ping schedule and ReliableConnection::Update order | R32, R33 |
 | M1-018 | IMPLEMENTATION_GAP | Connections are created only by a connect request | R13, B19 |
 | M1-019 | IMPLEMENTATION_GAP | Transport entry points: SendData, Connect, FinishConnection, Disconnect, Start, Stop | R38, R39, R40, B21 |
 | M1-020 | IMPLEMENTATION_GAP | Production runs the transport asynchronously; sync mode is unused | R36, B15 |
@@ -76,7 +76,7 @@
 | M1-035 | IMPLEMENTATION_GAP | Async hand-off: sends and ticks FIFO on one thread | R37 |
 | M1-036 | COMPATIBILITY_POLICY | Crash reporting after an engine-thread abort | G3.18..G3.22 (policy) |
 | M1-037 | COMPATIBILITY_POLICY | Host trigger for the socket reset | policy (D5) |
-| M1-038 | COMPATIBILITY_POLICY | Stop processing a frame after a DisconnectRequest sub-message | policy (D8), C5 |
+| M1-038 | COMPATIBILITY_POLICY | Stop processing a frame after a handled DisconnectRequest sub-message | policy (D8), C5 |
 
 ## What changed from the previous M1 records
 
@@ -119,7 +119,7 @@ Approved 2026-09-24:
   - absence of other writers is established only within the scan in G5.38..G5.40.
   Implement the mechanism exactly: load asynchronously at startup, copy the values when the robot is added, and use 0/0 when not loaded.
 
-- **D8.** A frame that carries a DisconnectRequest sub-message is not processed past it (M1-038, COMPATIBILITY_POLICY). The original deletes the connection and keeps walking the frame through the freed pointer, which is undefined behaviour and is not reproduced (correction C5).
+- **D8.** A frame is not processed past a DisconnectRequest sub-message that was handled, i.e. in sequence, so that it deleted the connection (M1-038, COMPATIBILITY_POLICY). An out-of-sequence DisconnectRequest is dropped by R12, deletes nothing, and the frame continues as in the original (wording confirmed by the operator after batch 2a verification). The original deletes the connection and keeps walking the frame through the freed pointer, which is undefined behaviour and is not reproduced (correction C5).
 
 ## Corrections after the first freeze
 

@@ -352,29 +352,42 @@ public class TransportRepairTests
     }
 
     /// <summary>
-    /// BLOCKED, kept visible. When a container's walk reaches a one- or two-byte remainder that starts with a
-    /// valid type, the engine reads the sub-message size past the end of the datagram, and what follows is
-    /// not established. This stack keeps rejecting the whole frame, before its header is applied.
-    /// REGRESSION ONLY: not engine behaviour.
+    /// PRIMARY-SOURCE ORACLE. M1-007 R10 (0x0083791C..0x00837926, 0x00837A04), M1-016 R18 (0x00837814,
+    /// UpdateLastAckedMessage 0x00835AEA, +0x50 = now 0x00835B9C), M1-032 G2.6 (0x00837818). A container
+    /// whose walk reaches a one- or two-byte remainder starting with a valid type is a size overrun: the
+    /// header has already been applied (the ack removes seq 2, lastRecv is refreshed, ackOut = seqMax per
+    /// R16 0x00837848), the sub-message before it is delivered, AddRecvError(1) is counted and the rest of the
+    /// frame is abandoned. The engine's 1..2-byte over-read itself is not reproduced.
+    /// Replaces the earlier test that asserted the whole frame was rejected, which R10 contradicts.
     /// </summary>
-    [Fact]
-    public void AContainerEndingInAPartialSubMessageHeaderIsStillRejectedWhole()
+    [Theory]
+    [InlineData(new byte[] { 0x04 })]
+    [InlineData(new byte[] { 0x04, 0x01 })]
+    public void AContainerEndingInAPartialSubMessageHeaderIsASizeOverrunAfterTheHeader(byte[] remainder)
     {
         var (t, clk, delivered) = Offline();
         Connect(t);
-        clk.NowMs = 1040; t.Send(new SyncTime(0));
+        clk.NowMs = 1040; t.Send(new SyncTime(0));          // our seq 2, sent, waiting for an ack
         var c = t.Connection!;
-        var body = Body(Sub(ReliableMessageType.SingleReliableMessage, Data)).Concat(new byte[] { 4, 1 }).ToArray();
-        t.ProcessIncoming(Raw(ReliableMessageType.MultipleReliableMessages, 2, 3, 2, body));
         Assert.Equal(1, c.PendingCount);
-        Assert.Equal(1, c.LastInAcked);
-        Assert.Empty(delivered);
+        clk.NowMs = 1050;
+        var body = Body(Sub(ReliableMessageType.SingleReliableMessage, Data)).Concat(remainder).ToArray();
+        t.ProcessIncoming(Raw(ReliableMessageType.MultipleReliableMessages, 2, 3, 2, body));
+        Assert.Equal(0, c.PendingCount);                    // R18: ack 2 applied
+        Assert.Equal(1050, c.LatestRecvMs);                 // R18 / G2.6: lastRecv refreshed
+        Assert.Equal(3, c.LastInAcked);                     // R16: ackOut = seqMax before the walk
+        Assert.Equal(Data, Assert.Single(delivered));       // R10: the earlier sub-message delivered
+        Assert.Equal(3, c.NextInSeq);
+        Assert.Equal(1, t.ReliableReceiveErrors[1]);        // R10: size overrun, AddRecvError(1)
+        Assert.Equal(0, t.ReliableReceiveErrors[4]);
+        Assert.Equal(LinkState.Connected, t.State);
     }
 
     /// <summary>
-    /// PRIMARY-SOURCE ORACLE. A one- or two-byte remainder whose first byte is not a valid type is not the
-    /// BLOCKED case: the walk tests the type (IsValidMessageType 0x0083790A-0E) before it reads a size, and
-    /// stops there (→ 0x008379AE). The header has been applied and the earlier sub-messages handled.
+    /// PRIMARY-SOURCE ORACLE. M1-007 R10: a one- or two-byte remainder whose first byte is not a valid type
+    /// is an invalid type, not a size overrun: the walk tests the type (IsValidMessageType 0x0083790A-0E)
+    /// before it reads a size, counts AddRecvError(4) and stops there (→ 0x008379AE). The header has been
+    /// applied and the earlier sub-messages handled.
     /// </summary>
     [Theory]
     [InlineData(new byte[] { 0x00 })]
@@ -390,6 +403,110 @@ public class TransportRepairTests
         Assert.Equal(0, c.PendingCount);
         Assert.Equal(3, c.LastInAcked);
         Assert.Equal(Data, Assert.Single(delivered));
+        Assert.Equal(1, t.ReliableReceiveErrors[4]);
+        Assert.Equal(0, t.ReliableReceiveErrors[1]);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-007 R10: an invalid sub-type counts AddRecvError(4) (0x0083790A..0x00837910)
+    /// and a size overrun AddRecvError(1) (0x00837926), once per frame, since either abandons the rest.
+    /// </summary>
+    [Fact]
+    public void R10_ContainerParseErrorsAreCountedByCode()
+    {
+        var (t, clk, _) = Offline();
+        Connect(t);
+        clk.NowMs = 1040;
+        t.ProcessIncoming(Raw(ReliableMessageType.MultipleUnreliableMessages, 0, 0, 1, Body(
+            ((byte)0x20, new byte[] { 1 }, null),
+            ((byte)0x21, new byte[] { 2 }, null))));
+        Assert.Equal(1, t.ReliableReceiveErrors[4]);
+        t.ProcessIncoming(Raw(ReliableMessageType.MultipleUnreliableMessages, 0, 0, 1, Body(
+            Sub(ReliableMessageType.SingleUnreliableMessage, new byte[] { 0x25 }, size: 50))));
+        Assert.Equal(1, t.ReliableReceiveErrors[1]);
+        Assert.Equal(1, t.ReliableReceiveErrors[4]);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-007 R16 (0x008378EA cmp.w r8,#9; 0x00837A6A): a reliable frame whose range
+    /// does not hold nextIn is dropped with AddRecvError(5) unless it is type 9, which is still walked
+    /// (its unreliable sub-messages delivered) and counts nothing.
+    /// </summary>
+    [Fact]
+    public void R16_AnOutOfRangeReliableFrameCountsError5UnlessItIsMixed()
+    {
+        var (t, _, delivered) = Offline();
+        Connect(t);                                         // nextIn is now 2
+        var c = t.Connection!;
+        t.ProcessIncoming(Raw(ReliableMessageType.SingleReliableMessage, 5, 5, 1, Data));
+        Assert.Equal(1, t.ReliableReceiveErrors[5]);
+        Assert.Empty(delivered);
+
+        t.ProcessIncoming(Raw(ReliableMessageType.MultipleMixedMessages, 5, 5, 1, Body(
+            Sub(ReliableMessageType.SingleUnreliableMessage, Data))));
+        Assert.Equal(1, t.ReliableReceiveErrors[5]);
+        Assert.Equal(Data, Assert.Single(delivered));
+        Assert.Equal(2, c.NextInSeq);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-002 R3 (0x00837632 cmp r7,#0xa; prefix table 0x00837B0C; pass-through
+    /// 0x00837792..0x008377A0): a datagram under 10 bytes after the COZ prefix counts AddRecvError(0) then
+    /// AddRecvError(4); one without the RE\x01 prefix counts AddRecvError(2) then AddRecvError(4). Both are
+    /// still passed on as data.
+    /// </summary>
+    [Fact]
+    public void R3_HeaderValidationFailuresAreCountedAndPassedOn()
+    {
+        var (t, _, delivered) = Offline();
+        Connect(t);
+        t.ProcessIncoming(Coz(0x25, 1, 2, 3, 4));
+        Assert.Equal(1, t.ReliableReceiveErrors[0]);
+        Assert.Equal(0, t.ReliableReceiveErrors[2]);
+        Assert.Equal(1, t.ReliableReceiveErrors[4]);
+        t.ProcessIncoming(Coz(0x25, 0x45, 0x01, 9, 8, 7, 6, 5, 4, 3, 2, 1));
+        Assert.Equal(1, t.ReliableReceiveErrors[0]);
+        Assert.Equal(1, t.ReliableReceiveErrors[2]);
+        Assert.Equal(2, t.ReliableReceiveErrors[4]);
+        Assert.Equal(2, delivered.Count);
+    }
+
+    /// <summary>
+    /// COMPATIBILITY_POLICY M1-038 (operator decision D8). The original deletes the connection on a handled
+    /// DisconnectRequest (HandleSubMessage 0x008374A0, DeleteConnection veneer 0x008D123C) and keeps walking
+    /// the frame through the freed pointer; this stack stops processing the frame there, so the data
+    /// sub-message after it is not delivered.
+    /// </summary>
+    [Fact]
+    public void M1_038_NothingAfterAHandledDisconnectRequestInTheSameFrameIsProcessed()
+    {
+        var (t, _, delivered) = Offline();
+        var reasons = new List<string>(); t.Disconnected += reasons.Add;
+        Connect(t);                                         // nextIn is now 2
+        t.ProcessIncoming(Raw(ReliableMessageType.MultipleReliableMessages, 2, 3, 1, Body(
+            Sub(ReliableMessageType.DisconnectRequest, Array.Empty<byte>()),
+            Sub(ReliableMessageType.SingleReliableMessage, Data))));
+        Assert.Empty(delivered);
+        Assert.Single(reasons);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE, the edge of M1-038. M1-007 R12 (0x0083742E..0x0083743C): a DisconnectRequest
+    /// whose seq is not nextIn is dropped silently before dispatch, so the connection is not deleted and the
+    /// walk goes on as in the original; the policy does not apply and the next sub-message is delivered.
+    /// </summary>
+    [Fact]
+    public void AnOutOfSequenceDisconnectRequestDoesNotStopTheFrame()
+    {
+        var (t, _, delivered) = Offline();
+        var reasons = new List<string>(); t.Disconnected += reasons.Add;
+        Connect(t);                                         // nextIn is now 2
+        t.ProcessIncoming(Raw(ReliableMessageType.MultipleReliableMessages, 1, 2, 1, Body(
+            Sub(ReliableMessageType.DisconnectRequest, Array.Empty<byte>()),     // seq 1: a duplicate
+            Sub(ReliableMessageType.SingleReliableMessage, Data))));            // seq 2
+        Assert.Equal(Data, Assert.Single(delivered));
+        Assert.Empty(reasons);
+        Assert.Equal(LinkState.Connected, t.State);
     }
 
     // ================================================================ M1-f
@@ -669,6 +786,101 @@ public class TransportRepairTests
         t.Dispose();
     }
 
+    /// <summary>A single unreliable frame whose whole datagram is <paramref name="datagramBytes"/> long.</summary>
+    private static byte[] UnreliableOfLength(int datagramBytes)
+    {
+        var payload = new byte[datagramBytes - ReliableHeader.Length];
+        payload[0] = 0x25;
+        return Raw(ReliableMessageType.SingleUnreliableMessage, 0, 0, 1, payload);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-002 B16/B17: the receive buffer is 0x5C0 = 1472 bytes (0x0083AA66..0x0083AA98).
+    /// A 1472-byte datagram is processed; a 1473-byte one arrives with MSG_TRUNC set (0x0083AAA8 ubfx r0,r7,#5,#1),
+    /// passes the size and prefix checks (0x0083A780, 0x0083A80E), logs Recv.Truncated, counts
+    /// AddRecvError(1) (0x0083A8C4..0x0083A8C8) and is dropped, and the read loop goes on (0x0083AABA returns 1):
+    /// the datagram after it is read in the same update.
+    /// </summary>
+    [Fact]
+    public void B17_ADatagramLargerThan1472BytesIsDroppedAsTruncatedAndTheDrainGoesOn()
+    {
+        var (t, clk, net) = Connected(59987);
+        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
+        Assert.Equal(1472, ReliableTransport.ReceiveBufferBytes);
+
+        var fits = UnreliableOfLength(1472);
+        net.Datagram(fits, t.Peer!);
+        net.Datagram(UnreliableOfLength(1473), t.Peer!);
+        net.Datagram(Raw(ReliableMessageType.SingleReliableMessage, 2, 2, 1, Data), t.Peer!);
+        clk.NowMs = 1041; t.Pump();
+
+        Assert.Equal(2, delivered.Count);
+        Assert.Equal(fits.AsSpan(ReliableHeader.Length).ToArray(), delivered[0]);
+        Assert.Equal(Data, delivered[1]);                   // read after the truncated one, same update
+        Assert.Equal(1, t.UdpReceiveErrors[1]);
+        Assert.Contains(warnings, w => w.Contains("Recv.Truncated"));
+        Assert.Equal(LinkState.Connected, t.State);
+        t.Dispose();
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-002 B17 order: the prefix check (0x0083A80E) comes before the truncation
+    /// test (0x0083A888), so an oversize datagram with a bad prefix takes the BadPrefix path, not
+    /// Recv.Truncated, and is not counted as AddRecvError(1). The read still goes on.
+    /// </summary>
+    [Fact]
+    public void B17_AnOversizeDatagramWithABadPrefixFailsThePrefixCheckFirst()
+    {
+        var (t, clk, net) = Connected(59988);
+        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
+        var bad = new byte[1500]; bad[0] = (byte)'X';
+        net.Datagram(bad, t.Peer!);
+        net.Datagram(Raw(ReliableMessageType.SingleReliableMessage, 2, 2, 1, Data), t.Peer!);
+        clk.NowMs = 1041; t.Pump();
+
+        Assert.Equal(0, t.UdpReceiveErrors[1]);
+        Assert.Contains(warnings, w => w.Contains("bad UDP prefix"));
+        Assert.DoesNotContain(warnings, w => w.Contains("Recv.Truncated"));
+        Assert.Equal(Data, Assert.Single(delivered));
+        t.Dispose();
+    }
+
+    /// <summary>
+    /// HOST MAPPING, not engine behaviour. M1-002 B17 is implemented on the host's report of a truncated
+    /// datagram: on this platform a real UDP socket read into a 1472-byte buffer fails with MessageSize,
+    /// leaves the datagram's first bytes in the buffer and consumes it. This checks that mapping end to end
+    /// on the production receive path (no hook): the oversize datagram is counted as AddRecvError(1) and
+    /// the one after it is still read in the same update.
+    /// </summary>
+    [Fact]
+    public void B17_TheHostReportsAnOversizeDatagramAsTruncatedAndTheDrainGoesOn()
+    {
+        using var robot = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        robot.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        var clk = new ManualClock { NowMs = 1000 };
+        var t = new ReliableTransport(TransportOptions.EngineDefaults, clk) { ManualPump = true };
+        var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
+        t.Connect(IPAddress.Loopback, ((IPEndPoint)robot.LocalEndPoint!).Port);
+        var local = new IPEndPoint(IPAddress.Loopback, ((IPEndPoint)t.LocalEndPoint!).Port);
+
+        robot.SendTo(ConnectionResponse(), local);
+        Thread.Sleep(100);
+        clk.NowMs = 1001; t.Pump();
+        Assert.Equal(LinkState.Connected, t.State);
+
+        robot.SendTo(UnreliableOfLength(1500), local);
+        robot.SendTo(Raw(ReliableMessageType.SingleReliableMessage, 2, 2, 1, Data), local);
+        Thread.Sleep(100);
+        clk.NowMs = 1041; t.Pump();
+
+        Assert.Equal(1, t.UdpReceiveErrors[1]);
+        Assert.Equal(Data, Assert.Single(delivered));
+        Assert.Equal(LinkState.Connected, t.State);
+        t.Dispose();
+    }
+
     // ------------------------------------------------------------------ rig
 
     private static byte[] ConnectionResponse() =>
@@ -686,7 +898,12 @@ public class TransportRepairTests
         return (t, clk, net);
     }
 
-    /// <summary>What the transport's receive call returns, in order; once empty it reports WouldBlock.</summary>
+    /// <summary>
+    /// What the transport's receive call returns, in order; once empty it reports WouldBlock. A datagram
+    /// larger than the buffer is reported as Winsock reports it (see
+    /// <see cref="B17_TheHostReportsAnOversizeDatagramAsTruncatedAndTheDrainGoesOn"/>): the buffer holds its
+    /// first bytes, the datagram is consumed, and the call fails with MessageSize.
+    /// </summary>
     private sealed class ScriptedReceive
     {
         private readonly Queue<object> _items = new();
@@ -702,6 +919,11 @@ public class TransportRepairTests
             var item = _items.Dequeue();
             if (item is SocketError e) throw new SocketException((int)e);
             var (data, ep) = ((byte[], IPEndPoint))item;
+            if (data.Length > buffer.Length)
+            {
+                data.AsSpan(0, buffer.Length).CopyTo(buffer);
+                throw new SocketException((int)SocketError.MessageSize);
+            }
             data.CopyTo(buffer, 0);
             from = ep;
             return data.Length;

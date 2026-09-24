@@ -6,7 +6,7 @@ Read first in every session. The manager keeps this file current; the process it
 
 - **Phase:** M1 repair. The inventory was corrected (C1..C5) and re-frozen on 2026-09-24; M1 has 31 IMPLEMENTATION_GAP, 6 COMPATIBILITY_POLICY (M1-013, M1-014, M1-034, M1-036, M1-037, M1-038) and 1 HARDWARE_ONLY. The candidate-vs-inventory comparison is `re-analysis/inventory/M1-transport.comparison.md`.
 - **Operator decisions:** D1-D4 approved 2026-09-23. On 2026-09-24: the inventory, D5, D6 (fatal behaviour recorded, isolation kept as policy), D7, the corrections C1..C5 and D8 (stop processing a frame after a DisconnectRequest, M1-038) approved; the three repair batches are authorised to run without further checkpoints.
-- **Batch 1 done.**
+- **Batch 1 done (7aba301). Batch 2a done** (receive path: B17 truncation, receive-error counters, partial-header overrun after the header, M1-038); records it repaired are settled in one verified pass at the end of batch 2.
 - **Next:** repair batches, each implementer -> verifier -> commit. Batch 1: the 8 conforming records become EXACT_SOURCE (tags, test oracles) and the LINK check names M1-033. Batch 2: transport differences. Batch 3: the app layer. A MISSING item, a needed new policy or an inventory error stops the loop and goes to the operator.
 
 ## Parked: MISSING items awaiting extraction and operator re-approval
@@ -14,6 +14,7 @@ Read first in every session. The manager keeps this file current; the process it
 Found during M1 repair. Each record stays IMPLEMENTATION_GAP; nothing is guessed. They go to one extractor pass, then an inventory correction the operator approves.
 
 - **M1-006, R25(a):** does the 2.0 ms send-spacing gate (0x008363C8..0x008363FC) exempt lastSend == 0? The code exempts it (ReliableConnection.cs:176).
+- **M1-002, B17:** do the UDP-layer TooSmall / BadPrefix drops count AddRecvError, and with which codes? B17 gives a code only for the truncated path (batch 2a added none). The batch 2a verifier read them in passing: UDPTransport::HandleReceivedMessage counts AddRecvError(0) for TooSmall (0x0083A7F0..0x0083A7F4), (2) for BadPrefix (0x0083A87E..0x0083A882) and (3) for a CRC mismatch (0x0083A90E..0x0083A912) on its own stats (this+8). This still needs an inventory correction before the code may use it.
 - **M1-009, R21/R22:** the +0x2B flush flag of each type-6 part built in SendMessage's split path (0x00836DC0..0x00836EB4). The code gives every part the caller's flag (ReliableConnection.cs:85).
 
 ## Layer order and review state
@@ -61,7 +62,7 @@ The user-level agents in `~/.claude/agents/` (`cozmo-m1-transport-auditor`, `coz
 
 | commit | subsystem | what it accepted |
 | --- | --- | --- |
-| (batch 1) | M1-transport | M1-004, M1-011, M1-012, M1-017 settled EXACT_SOURCE with evidence-derived tests; LINK check names M1-033. M1-003 and M1-008 tagged but held (DeleteConnection semantics; clock) |
+| 7aba301 | M1-transport | M1-004, M1-011, M1-012, M1-017 settled EXACT_SOURCE with evidence-derived tests; LINK check names M1-033. M1-003 and M1-008 tagged but held (DeleteConnection semantics; clock) |
 
 ## Open decisions for the operator
 

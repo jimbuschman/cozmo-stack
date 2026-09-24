@@ -2,7 +2,7 @@
   "subsystem": "M1-transport",
   "approved": "2026-09-24",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "7ca40484ca4d44ca3fb2774a0e394258be9d4520b63ff8e179dc4ecabef5e404",
+  "inventory_sha256": "3d2b9fe240de0498183a8e8a9797e8c18b465d5ae54a47eeecab45b0ba5c8212",
   "records": {
     "M1-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -46,7 +46,7 @@
       "hardware_required": false
     },
     "M1-004": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Sequence ids 1..65534, wrap and in-range test",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -137,7 +137,7 @@
       "hardware_required": false
     },
     "M1-011": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Ping receive: counters, and only a ping marked as a reply measures the round trip",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -147,7 +147,7 @@
       "hardware_required": false
     },
     "M1-012": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Frame payload bound 1406 and the UDP send buffer",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -200,7 +200,7 @@
       "hardware_required": false
     },
     "M1-017": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Ping schedule and ReliableConnection::Update order",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -452,8 +452,8 @@
     },
     "M1-038": {
       "status": "COMPATIBILITY_POLICY",
-      "title": "Stop processing a frame after a DisconnectRequest sub-message",
-      "authority": "in the original, HandleSubMessage deletes the connection on a type-3 sub-message (0x008374A0, DeleteConnection veneer 0x008D123C; 0x008374C2) and ReceiveData then keeps walking the frame through the saved, now freed, connection pointer ([sp+0x18] at 0x008378FC, 0x00837958): undefined behaviour that cannot be reproduced. This stack stops processing the frame after the DisconnectRequest instead",
+      "title": "Stop processing a frame after a handled DisconnectRequest sub-message",
+      "authority": "in the original, HandleSubMessage deletes the connection on a type-3 sub-message (0x008374A0, DeleteConnection veneer 0x008D123C; 0x008374C2) and ReceiveData then keeps walking the frame through the saved, now freed, connection pointer ([sp+0x18] at 0x008378FC, 0x00837958): undefined behaviour that cannot be reproduced. This stack stops processing the frame after such a handled DisconnectRequest instead. An out-of-sequence DisconnectRequest is dropped by R12 before dispatch (0x00837438 bne 0x00837456), frees nothing, and the original walks on with a valid pointer, so that case follows the source and the frame continues (operator decision, 2026-09-24)",
       "evidence": [],
       "live_path": true,
       "hardware_required": false

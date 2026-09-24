@@ -25,7 +25,9 @@ public sealed record FrameEvent(bool Outbound, DateTime Utc, byte[] Raw, Frame? 
 ///     IsWaitingForAnyInRange 0x0083783E (out of range drops everything but a MultipleMixed frame) and
 ///     AckMessage(seqMax) 0x0083784A;
 ///  5. the sub-messages in order, each through HandleSubMessage, stopping at the first invalid type
-///     (0x0083790E → 0x008379AE) or size overrun (0x00837926 → 0x00837A0C) with the earlier ones handled.
+///     (0x0083790E → 0x008379AE) or size overrun (0x00837926 → 0x00837A0C) with the earlier ones handled;
+///     a remainder too short for a sub-message header is a size overrun too. This stack also stops after a
+///     DisconnectRequest sub-message has been handled (policy M1-038).
 /// A data payload (types 4/5, a completed multipart, or a datagram handed on at step 2) is delivered only
 /// while the link is Connected and it comes from the peer's IP, judged at its own position in arrival
 /// order (RobotConnectionManager 0x0062F724-2A, TransportAddress::operator== 0x0062F744); otherwise it is
@@ -51,7 +53,28 @@ public sealed class ReliableTransport : IDisposable
     private volatile bool _running;
     private readonly List<byte> _multipart = new();
     private int _multipartNext = 1, _multipartLast;
-    private readonly byte[] _rxBuffer = new byte[2048];
+    // fidelity: M1-002
+    /// <summary>
+    /// B16/B17: UDPTransport reads each datagram with recvmsg into a 0x5C0 = 1472-byte buffer
+    /// (0x0083AA66..0x0083AA98); a larger datagram arrives truncated and is dropped (see <see cref="DrainLocked"/>).
+    /// </summary>
+    internal const int ReceiveBufferBytes = 0x5C0;
+    private readonly byte[] _rxBuffer = new byte[ReceiveBufferBytes];
+
+    // fidelity: M1-002, M1-007
+    /// <summary>
+    /// Receive errors counted by <c>UDPTransport</c>, by the code it passes to AddRecvError: 1 = a truncated
+    /// datagram (B17, 0x0083A8C4..0x0083A8C8). Diagnostics only; nothing reads them.
+    /// </summary>
+    public ReceiveErrorCounts UdpReceiveErrors { get; } = new();
+
+    /// <summary>
+    /// Receive errors counted by <c>ReliableTransport::ReceiveData</c>, by the code it passes to AddRecvError:
+    /// 0 = under 10 bytes and 2 = no RE\x01 prefix, each followed by 4 (R3, 0x00837632..0x008377A0);
+    /// 4 = an invalid sub-message type and 1 = a sub-message size overrun (R10, 0x0083790A..0x00837926);
+    /// 5 = a reliable frame out of range that is not type 9 (R16, 0x00837A6A). Diagnostics only.
+    /// </summary>
+    public ReceiveErrorCounts ReliableReceiveErrors { get; } = new();
 
     /// <summary>How long a worker thread is given to finish during shutdown before it is abandoned.</summary>
     private static readonly TimeSpan JoinTimeout = TimeSpan.FromSeconds(2);
@@ -427,6 +450,10 @@ public sealed class ReliableTransport : IDisposable
     /// A receive error ends the read for this update and never tears the connection down. EAGAIN is silent
     /// (0x0083AAC4); every other error is a warning (0x0083AAF6), and ENOTCONN, after that same warning, also
     /// closes and reopens the socket (0x0083AB22-34).
+    ///
+    /// A datagram larger than the 1472-byte buffer (MSG_TRUNC) is dropped after the prefix checks and the
+    /// read goes on (B17). The host reports it as <see cref="SocketError.MessageSize"/> with the buffer
+    /// holding the datagram's first 1472 bytes and the datagram consumed.
     /// </summary>
     private string? DrainLocked(List<Action> effects)
     {
@@ -437,6 +464,11 @@ public sealed class ReliableTransport : IDisposable
             int n;
             try { n = ReceiveHook is { } hook ? hook(sock, buf, ref from) : sock.ReceiveFrom(buf, ref from); }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock) { return null; }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.MessageSize)
+            {
+                TruncatedDatagramLocked(buf.ToArray(), effects);
+                continue;
+            }
             catch (SocketException e)
             {
                 var code = e.SocketErrorCode; var msg = e.Message;
@@ -479,6 +511,38 @@ public sealed class ReliableTransport : IDisposable
         Complete(effects, disc);
     }
 
+    // fidelity: M1-002
+    /// <summary>
+    /// B17: a datagram with MSG_TRUNC set still gets the size and prefix checks first (0x0083A780,
+    /// 0x0083A80E); if it passes them it logs Recv.Truncated, counts AddRecvError(1) (0x0083A8C4..0x0083A8C8)
+    /// and is dropped, and the read loop goes on (0x0083AABA returns 1). <paramref name="raw"/> is the
+    /// 1472 bytes the buffer holds.
+    /// </summary>
+    private void TruncatedDatagramLocked(byte[] raw, List<Action> effects)
+    {
+        var utc = DateTime.UtcNow;
+        if (!UdpPrefixOkLocked(raw, utc, effects)) return;
+        UdpReceiveErrors.Add(1);
+        const string err = "Recv.Truncated: datagram larger than the 1472-byte receive buffer; dropped";
+        effects.Add(() => Fan(Warning, err));
+    }
+
+    /// <summary>
+    /// UDPTransport::HandleReceivedMessage: at least the prefix length, then the COZ\x03 prefix (B17,
+    /// 0x0083A780, 0x0083A80E). False, with a trace and a warning, when the datagram fails either.
+    /// </summary>
+    private bool UdpPrefixOkLocked(byte[] raw, DateTime utc, List<Action> effects)
+    {
+        if (raw.Length >= ReliableHeader.UdpPrefixLength && raw.AsSpan(0, ReliableHeader.UdpPrefixLength).SequenceEqual(ReliableHeader.UdpPrefix))
+            return true;
+        string err = raw.Length < ReliableHeader.UdpPrefixLength
+            ? $"frame too small ({raw.Length} < {ReliableHeader.UdpPrefixLength})"
+            : "bad UDP prefix (expected COZ\\x03)";
+        effects.Add(() => Fan(FrameTrace, new FrameEvent(false, utc, raw, null, err)));
+        effects.Add(() => Fan(Warning, $"bad frame: {err}"));
+        return false;
+    }
+
     /// <summary>One datagram, in the order set out on the class. Returns a reason when the link must end.</summary>
     private string? ProcessDatagramLocked(byte[] raw, IPEndPoint? from, List<Action> effects)
     {
@@ -486,24 +550,21 @@ public sealed class ReliableTransport : IDisposable
         var utc = DateTime.UtcNow;
 
         // UDPTransport::HandleReceivedMessage: the COZ\x03 prefix.
-        if (raw.Length < ReliableHeader.UdpPrefixLength || !raw.AsSpan(0, ReliableHeader.UdpPrefixLength).SequenceEqual(ReliableHeader.UdpPrefix))
-        {
-            string err = raw.Length < ReliableHeader.UdpPrefixLength
-                ? $"frame too small ({raw.Length} < {ReliableHeader.UdpPrefixLength})"
-                : "bad UDP prefix (expected COZ\\x03)";
-            effects.Add(() => Fan(FrameTrace, new FrameEvent(false, utc, raw, null, err)));
-            effects.Add(() => Fan(Warning, $"bad frame: {err}"));
-            return null;
-        }
+        if (!UdpPrefixOkLocked(raw, utc, effects)) return null;
         var post = raw.AsSpan(ReliableHeader.UdpPrefixLength);
 
+        // fidelity: M1-002
         // ReliableTransport::ReceiveData 0x00837632-42: no reliable header, so the bytes go to the receiver
-        // as they are, with no connection lookup.
+        // as they are, with no connection lookup. R3: counted with AddRecvError(0) when under 10 bytes or
+        // AddRecvError(2) for a bad prefix, then AddRecvError(4).
         if (post.Length < ReliableHeader.ReliableLength || !post[..ReliableHeader.ReliablePrefix.Length].SequenceEqual(ReliableHeader.ReliablePrefix))
         {
-            string err = post.Length < ReliableHeader.ReliableLength
+            bool tooSmall = post.Length < ReliableHeader.ReliableLength;
+            string err = tooSmall
                 ? $"reliable header too small ({post.Length} < {ReliableHeader.ReliableLength}); passed on as data"
                 : "no RE\\x01 reliable prefix; passed on as data";
+            ReliableReceiveErrors.Add(tooSmall ? 0 : 2);
+            ReliableReceiveErrors.Add(4);
             effects.Add(() => Fan(FrameTrace, new FrameEvent(false, utc, raw, null, err)));
             effects.Add(() => Fan(Warning, err));
             DeliverDataLocked(post.ToArray(), from, effects);
@@ -533,28 +594,23 @@ public sealed class ReliableTransport : IDisposable
         var body = post[ReliableHeader.ReliableLength..];
         bool multiple = ReliableMessageTypes.IsMultiple(type);
 
-        // BLOCKED: a container whose walk reaches a one- or two-byte remainder starting with a valid type
-        // makes the engine read the sub-message size past the end of the datagram. What that does is not
-        // established, so the whole frame is still rejected here, before any of it is processed. A remainder
-        // whose first byte is not a valid type is not this case: the engine tests the type before it reads
-        // the size (0x0083790A-0E) and stops there, which the walk below does too.
-        if (multiple && WalkEndsInPartialHeader(body))
-        {
-            const string err = "container ends in a partial sub-message header";
-            effects.Add(() => Fan(FrameTrace, new FrameEvent(false, utc, raw, null, err)));
-            effects.Add(() => Fan(Warning, $"bad frame: {err}"));
-            return null;
-        }
         FrameCodec.TryDecode(raw, out var traced, out var traceErr);
         effects.Add(() => Fan(FrameTrace, new FrameEvent(false, utc, raw, traced, traceErr)));
 
+        // fidelity: M1-016, M1-032
+        // R18 / G2.6: every valid frame from a known connection runs UpdateLastAckedMessage (0x00837818),
+        // before anything in its body is looked at, so a frame whose body turns out malformed still refreshes
+        // lastRecv and applies its ack.
         bool anyAck = c.UpdateLastAckedMessage(ack);
         if (anyAck && _o.MaxPacketsToReSendOnAck > 0) c.SendOptimalUnAckedPackets(_o.MaxPacketsToReSendOnAck);
+        // fidelity: M1-007
         if (isReliable)
         {
             if (!c.IsWaitingForAnyInRange(seqMin, seqMax))
             {
-                if (type != ReliableMessageType.MultipleMixedMessages) return null; // out of order / duplicate frame: ignore entirely
+                // R16: out of range, only a type-9 frame is still walked; any other type is AddRecvError(5)
+                // and dropped (0x008378EA, 0x00837A6A).
+                if (type != ReliableMessageType.MultipleMixedMessages) { ReliableReceiveErrors.Add(5); return null; }
             }
             else
             {
@@ -566,20 +622,36 @@ public sealed class ReliableTransport : IDisposable
         string? disc = null;
         if (multiple)
         {
+            // fidelity: M1-007
+            // R10: an invalid sub-type is AddRecvError(4) (0x0083790A..0x00837910) and a size overrun
+            // AddRecvError(1) (0x00837926); either abandons the rest of the frame, the earlier sub-messages
+            // having been handled already.
             ushort seq = seqMin; int o = 0;
             while (o < body.Length)
             {
                 byte t = body[o];
                 if (!ReliableMessageTypes.IsValid(t))
                 {
+                    ReliableReceiveErrors.Add(4);
                     int at = o;
                     effects.Add(() => Fan(Warning, $"invalid sub-message type {t} at body offset {at}; rest of frame dropped"));
+                    break;
+                }
+                // A remainder of one or two bytes cannot hold the size: the engine reads it past the end of the
+                // datagram (0x0083791C) and takes the overrun branch (0x00837926). That over-read is not
+                // reproduced; the remainder is handled as the size overrun it produces.
+                if (body.Length - o < FrameCodec.SubMessageOverhead)
+                {
+                    ReliableReceiveErrors.Add(1);
+                    int at = o;
+                    effects.Add(() => Fan(Warning, $"partial sub-message header at body offset {at}; rest of frame dropped"));
                     break;
                 }
                 int size = BinaryPrimitives.ReadUInt16LittleEndian(body[(o + 1)..]);
                 int start = o + FrameCodec.SubMessageOverhead;
                 if (start + size > body.Length)
                 {
+                    ReliableReceiveErrors.Add(1);
                     int at = start;
                     effects.Add(() => Fan(Warning, $"sub-message size {size} overruns body at offset {at}; rest of frame dropped"));
                     break;
@@ -589,6 +661,13 @@ public sealed class ReliableTransport : IDisposable
                 HandleSubMessageLocked(subType, body.Slice(start, size).ToArray(), subReliable ? seq : SequenceId.Invalid, c, from, effects, ref disc);
                 if (subReliable) seq = SequenceId.Next(seq);
                 o = start + size;
+
+                // fidelity: M1-038
+                // Policy D8: once a DisconnectRequest has been handled, the rest of the frame is not processed.
+                // The original deletes the connection there (0x008374A0) and keeps walking through the freed
+                // pointer, which is not reproduced. A DisconnectRequest dropped by R12 (out of sequence) is not
+                // handled, sets nothing, and the walk goes on as in the original.
+                if (disc is not null) break;
             }
         }
         else
@@ -596,24 +675,6 @@ public sealed class ReliableTransport : IDisposable
             HandleSubMessageLocked(type, body.ToArray(), isReliable ? seqMin : SequenceId.Invalid, c, from, effects, ref disc);
         }
         return disc;
-    }
-
-    /// <summary>
-    /// Whether walking a container's sub-messages reaches a valid type byte with fewer than three bytes
-    /// left, i.e. a size the engine would read past the end.
-    /// </summary>
-    private static bool WalkEndsInPartialHeader(ReadOnlySpan<byte> body)
-    {
-        int o = 0;
-        while (o < body.Length)
-        {
-            if (!ReliableMessageTypes.IsValid(body[o])) return false;
-            if (body.Length - o < FrameCodec.SubMessageOverhead) return true;
-            int end = o + FrameCodec.SubMessageOverhead + BinaryPrimitives.ReadUInt16LittleEndian(body[(o + 1)..]);
-            if (end > body.Length) return false;
-            o = end;
-        }
-        return false;
     }
 
     // fidelity: M1-003
@@ -672,6 +733,19 @@ public sealed class ReliableTransport : IDisposable
         if (State != LinkState.Connected || from is null || _peer is null || !from.Address.Equals(_peer.Address)) return;
         effects.Add(() => Fan(DataReceived, payload));
     }
+}
+
+/// <summary>
+/// Counts of AddRecvError calls by error code, for diagnostics only: nothing in the transport reads them.
+/// </summary>
+public sealed class ReceiveErrorCounts
+{
+    private readonly Dictionary<int, int> _byCode = new();
+
+    /// <summary>How many times AddRecvError(<paramref name="code"/>) has been counted.</summary>
+    public int this[int code] { get { lock (_byCode) return _byCode.GetValueOrDefault(code); } }
+
+    internal void Add(int code) { lock (_byCode) _byCode[code] = _byCode.GetValueOrDefault(code) + 1; }
 }
 
 /// <summary>
