@@ -57,6 +57,7 @@ public sealed class TransportOptions
     /// it and the shipped app plainly sends up to 1406, so the engine's number is the one to match; what
     /// PyCozmo was measuring is not established and is not authority over the app's own transport.
     /// </summary>
+    // fidelity: M1-012
     public int MaxFramePayloadBytes { get; init; } = 1406;
 
     /// <summary>How often the reliable connection is ticked. The engine's ReliableTransport schedules Update every 2 ms.</summary>

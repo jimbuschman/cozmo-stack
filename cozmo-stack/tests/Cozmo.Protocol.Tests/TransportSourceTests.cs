@@ -57,8 +57,10 @@ public class TransportSourceTests
     }
 
     /// <summary>
-    /// A ping with isReply clear is answered, not counted. ReliableConnection::ReceivePing 0x00835C70
-    /// branches on the byte at payload+0x10 and measures a round trip only when it is set.
+    /// M1-011, R31 ReliableConnection::ReceivePing 0x00835C7C..0x00835D30: only a ping with isReply set
+    /// measures a round trip. This case runs with SendSeparatePingMessages on, which is the library default
+    /// and NOT the engine's configuration (RobotConnectionManager::Init stores 0 at 0x0062F06E, tunables
+    /// table); the engine configuration is <see cref="TheEngineConfigurationNeverAnswersAPingRequest"/>.
     /// </summary>
     [Fact]
     public void OnlyAPingMarkedAsAReplyMeasuresTheRoundTrip()
@@ -72,17 +74,85 @@ public class TransportSourceTests
         c.SendPing();                                                // ours goes out with isReply clear
         int sentBefore = pingsOut;
 
-        // the robot echoes it back verbatim: same timestamp, isReply still clear
+        // a ping carrying our timestamp with isReply clear. Whether the robot ever sends one like this is
+        // not established by the package (M1-033, HARDWARE_ONLY); here it is only an input.
         clock.NowMs = 150;
         c.ReceivePing(new PingPayload(100, 1, 0, false).ToBytes());
         Assert.Equal(0, c.PingRepliesSeen);
-        Assert.True(double.IsNaN(c.LastPingRoundTripMs));            // the engine measures nothing here
-        Assert.True(pingsOut > sentBefore, "the engine answers an unmarked ping");
+        Assert.True(double.IsNaN(c.LastPingRoundTripMs));            // R31: isReply clear measures nothing
+        // R31: a request is answered only when SendSeparatePingMessages is set, as it is in this case
+        Assert.True(pingsOut > sentBefore, "with SendSeparatePingMessages set, an unmarked ping is answered");
 
         // a real reply is what counts
         clock.NowMs = 200;
         c.ReceivePing(new PingPayload(150, 2, 1, true).ToBytes());
         Assert.Equal(1, c.PingRepliesSeen);
         Assert.Equal(50, c.LastPingRoundTripMs);
+    }
+
+    /// <summary>
+    /// M1-011 in the engine's configuration, through the production receive path (a type-11 frame into
+    /// ReliableTransport, HandleSubMessage 11 = ReceivePing, R12 table 0x0083744A).
+    /// R31 ReceivePing 0x00835C7C..0x00835D30:
+    /// under 17 bytes is ignored; otherwise numPingsReceived++; the peer's counters are kept only if the
+    /// incoming numPingsSent is greater; a reply records now - timeSent, negative included; a request is
+    /// answered only if sSendSeparatePingMessages, which RobotConnectionManager::Init sets to 0
+    /// (0x0062F06E, tunables table), so in the engine a request is never answered.
+    /// The ping payloads are written out by hand from R30's layout.
+    /// </summary>
+    [Fact]
+    public void TheEngineConfigurationNeverAnswersAPingRequest()
+    {
+        var clk = new ManualClock { NowMs = 1000 };
+        var t = ReliableTransport.CreateOffline(TransportOptions.EngineDefaults, clk);
+        Assert.False(t.Options.SendSeparatePingMessages);
+        t.OfflineConnect();
+        t.ProcessIncoming(FrameCodec.Encode(Frame.Single(
+            new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), 1), 1)));
+        Assert.Equal(LinkState.Connected, t.State);
+        t.OfflineOutbound.Clear();
+        var c = t.Connection!;
+
+        static byte[] Ping(double time, uint sent, uint received, byte isReply)
+        {
+            var b = new byte[17];
+            BitConverter.GetBytes(time).CopyTo(b, 0);
+            BitConverter.GetBytes(sent).CopyTo(b, 8);
+            BitConverter.GetBytes(received).CopyTo(b, 12);
+            b[16] = isReply;
+            return b;
+        }
+        void Feed(byte[] payload) => t.ProcessIncoming(FrameCodec.Encode(Frame.Single(
+            new SubMessage(ReliableMessageType.Ping, payload), 0)));
+
+        clk.NowMs = 1010;
+
+        // under 17 bytes: ignored, nothing counted
+        Feed(Ping(900, 9, 9, 0)[..16]);
+        Assert.Equal(0u, c.NumPingsReceived);
+
+        // a request (isReply 0): counted, the peer's counters taken, NOT answered, nothing measured
+        Feed(Ping(900, 5, 3, 0));
+        Assert.Equal(1u, c.NumPingsReceived);
+        Assert.Equal(5u, c.NumPingsSentTowardsUs);
+        Assert.Equal(3u, c.NumPingsSentThatArrived);
+        Assert.Empty(t.OfflineOutbound);
+        Assert.Equal(0, c.PendingCount);
+        Assert.Equal(0, c.PingRepliesSeen);
+        Assert.True(double.IsNaN(c.LastPingRoundTripMs));
+
+        // numPingsSent not greater (4 after 5): counted, the peer's counters kept as they were
+        Feed(Ping(900, 4, 9, 0));
+        Assert.Equal(2u, c.NumPingsReceived);
+        Assert.Equal(5u, c.NumPingsSentTowardsUs);
+        Assert.Equal(3u, c.NumPingsSentThatArrived);
+        Assert.Empty(t.OfflineOutbound);
+
+        // a reply stamped 7 ms in the future: the round trip is now - timeSent = -7, recorded as it is
+        Feed(Ping(1017, 6, 4, 1));
+        Assert.Equal(3u, c.NumPingsReceived);
+        Assert.Equal(1, c.PingRepliesSeen);
+        Assert.Equal(-7.0, c.LastPingRoundTripMs);
+        Assert.Empty(t.OfflineOutbound);
     }
 }

@@ -14,6 +14,7 @@ namespace Cozmo.Protocol;
 /// PyCozmo declares (time_sent_ms f64, counter u32, unknown u32) and misses the isReply byte; captured robot
 /// replies show 17 bytes.
 /// </summary>
+// fidelity: M1-008
 public readonly record struct PingPayload(double TimeSentMs, uint NumPingsSent, uint NumPingsReceived, bool IsReply)
 {
     public const int Length = 17;

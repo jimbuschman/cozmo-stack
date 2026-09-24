@@ -93,6 +93,7 @@ public sealed class ReliableConnection
         if (_o.MaxPacketsToSendOnSendMessage > 0) SendOptimalUnAckedPackets(_o.MaxPacketsToSendOnSendMessage);
     }
 
+    // fidelity: M1-004
     private ushort TakeNextOutSeq() { var s = NextOutSeq; NextOutSeq = SequenceId.Next(s); return s; }
 
     private ushort FirstUnackedOutId() { foreach (var m in _pending) if (m.IsReliable) return m.Seq; return SequenceId.Invalid; }
@@ -220,6 +221,7 @@ public sealed class ReliableConnection
         DuplicateReliableDropped++; return false;
     }
 
+    // fidelity: M1-008
     public void SendPing(double incomingPingTime = 0, bool isReply = false)
     {
         NumPingsSent++;
@@ -231,6 +233,7 @@ public sealed class ReliableConnection
         if (!isReply) LatestPingSentMs = now;
     }
 
+    // fidelity: M1-011
     public void ReceivePing(ReadOnlySpan<byte> payload)
     {
         if (!PingPayload.TryParse(payload, out var p)) return;
@@ -250,6 +253,7 @@ public sealed class ReliableConnection
     }
 
     /// <summary>Official Update: idle pings, resends, timeout check. Returns false when the connection has timed out.</summary>
+    // fidelity: M1-017
     public bool Update()
     {
         double now = _clock.NowMs;

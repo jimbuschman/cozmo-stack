@@ -96,6 +96,7 @@ public sealed class Frame
     /// reliable+unreliable -> MultipleMixedMessages (9); only reliable -> MultipleReliableMessages (7); else (8).
     /// seqMin/seqMax = first/last reliable sequence id present (0/0 if none).
     /// </summary>
+    // fidelity: M1-003
     public static Frame Multiple(IReadOnlyList<SubMessage> ms, ushort ack)
     {
         if (ms.Count == 0) throw new ArgumentException("empty frame", nameof(ms));

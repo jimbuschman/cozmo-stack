@@ -69,7 +69,7 @@ public static class HardwareCatalog
                 new EvidenceItem("transport", "transport:"),
                 new EvidenceItem("verdict", "SMOKE TEST:"),
             },
-            FidelityRecords = new[] { "M1-001", "M1-002", "M1-003", "M1-004", "M1-005", "M1-006", "M1-007", "M1-008", "M1-009", "M1-010", "M1-011", "M1-012", "M2-001", "M2-002", "M2-004", "M2-006" },
+            FidelityRecords = new[] { "M1-001", "M1-002", "M1-003", "M1-004", "M1-005", "M1-006", "M1-007", "M1-008", "M1-009", "M1-010", "M1-011", "M1-012", "M1-033", "M2-001", "M2-002", "M2-004", "M2-006" },
             Timeout = TimeSpan.FromMinutes(2),
             Command = o => new[] { "connect", o.Ip, "--seconds", "20", "--log", o.FrameLog("LINK") },
             Judge = r => r.Contains("SMOKE TEST: PASS") ? AutoOutcome.Pass : AutoOutcome.Fail,

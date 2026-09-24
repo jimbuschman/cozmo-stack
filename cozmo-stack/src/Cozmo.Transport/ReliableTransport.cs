@@ -616,6 +616,7 @@ public sealed class ReliableTransport : IDisposable
         return false;
     }
 
+    // fidelity: M1-003
     /// <summary>ReliableTransport::HandleSubMessage 0x00837418.</summary>
     private void HandleSubMessageLocked(ReliableMessageType type, byte[] payload, ushort seq, ReliableConnection c,
                                         IPEndPoint from, List<Action> effects, ref string? disc)

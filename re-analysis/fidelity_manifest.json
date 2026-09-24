@@ -280,28 +280,28 @@
       ],
       "effect": "a message is sent with the wrong reliability or handled as the wrong type",
       "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "unresolved": "dispatch by type is reproduced; R12 \"3 = OnDisconnected then DeleteConnection\" is not: the code shuts the whole transport down (repaired with M1-015, M1-038 in batch 2); then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": "FrameTests"
+      "test": "FrameTests.MessageTypeSetsAreTheEngines, ConnectionTests.PackedFrameTypeFollowsWhatItHolds, ConnectionTests.ASingleMessageKeepsItsOwnTypeWithNoSubHeader, ConnectionTests.SubMessagesAreDispatchedByType"
     },
     {
       "id": "M1-004",
       "subsystem": "M1-transport",
       "title": "Sequence ids 1..65534, wrap and in-range test",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R14 NextSequenceId 0x0083675A movw r1,#0xfffe; ite ne; addne r0,#1; moveq r0,#1; uxth; PreviousSequenceId 0x00836748; GetNextOutSequenceNumber 0x00835A9C..0x00835AAA; one id per reliable part 0x00836DE0..0x00836DF0",
         "R15 IsSequenceIdInRange 0x0083676A..0x0083678C: first<=id<=last, or id>=first || id<=last when wrapped"
       ],
       "effect": "frames are dropped as duplicates or accepted out of order at the wrap",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code: confirmed by the read-only comparison (re-analysis/inventory/M1-transport.comparison.md) and settled in M1 repair batch 1",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "FrameTests.SequenceIdsWrapLikeTheEngine, ConnectionTests.TheFramePayloadBoundIs1406OnTheSendPath"
     },
     {
       "id": "M1-005",
@@ -382,11 +382,11 @@
         "SendPing calls ReliableTransport::SendMessage (0x00835C58): AddMessage then SendOptimalUnAckedPackets(1), so the ping can go out on the same call, subject to the 2.0 ms gate [corrected C4]"
       ],
       "effect": "the robot misreads keep-alive pings",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "the M1 candidate implementation; payload layout confirmed by the comparison and batch 1",
+      "unresolved": "the 17-byte layout, counters, type and send path are reproduced; the f64 time field is filled from the per-transport Stopwatch, not GetCurrentNetTimeStamp (called at 0x00835C0E), so its value differs until M1-005's clock is repaired in batch 2; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "FrameTests.PingPayloadHasTheEnginesSeventeenByteLayout, ConnectionTests.AnIdlePingIsOneUnreliableType11FrameWithTheEnginesPayload"
     },
     {
       "id": "M1-009",
@@ -430,24 +430,24 @@
       "subsystem": "M1-transport",
       "title": "Ping receive: counters, and only a ping marked as a reply measures the round trip",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R31 ReceivePing 0x00835C7C..0x00835D30: < 17 bytes ignored; numPingsReceived++; peer counters kept only if the incoming numPingsSent is greater; reply records now - timeSent including negative; a request is answered only if SendSeparatePingMessages (0 in the engine, M1-005)"
       ],
       "effect": "round-trip statistics differ; the app never answers a ping in production",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code: confirmed by the read-only comparison (re-analysis/inventory/M1-transport.comparison.md) and settled in M1 repair batch 1",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "TransportSourceTests.OnlyAPingMarkedAsAReplyMeasuresTheRoundTrip"
+      "test": "TransportSourceTests.TheEngineConfigurationNeverAnswersAPingRequest, TransportSourceTests.OnlyAPingMarkedAsAReplyMeasuresTheRoundTrip"
     },
     {
       "id": "M1-012",
       "subsystem": "M1-transport",
       "title": "Frame payload bound 1406 and the UDP send buffer",
       "location": "cozmo-stack/src/Cozmo.Transport/TransportConstants.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B5 0x0062EFC6 movw r0,#0x58c: sMaxNetMessageSize 1420; B7 default 0x5C0 at .data 0x01051F78, Init the only setter caller",
@@ -455,11 +455,11 @@
         "B9 UDP send buffer is a fixed 1472-byte stack buffer (0x0083A34E mov.w r1,#0x5c0); prefix + payload > 1472 makes BuildPacket return 0 and sendto still sends a 0-length datagram, unlogged (0x0083A2C8, 0x0083A372, 0x0083A386)"
       ],
       "effect": "frames are split at a different size, or an oversize frame behaves differently",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code: confirmed by the read-only comparison (re-analysis/inventory/M1-transport.comparison.md) and settled in M1 repair batch 1",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "ConnectionTests.LargeOutgoingPayloadIsSplitIntoMultipartParts"
+      "test": "ConnectionTests.TheFramePayloadBoundIs1406OnTheSendPath, ConnectionTests.LargeOutgoingPayloadIsSplitIntoMultipartParts"
     },
     {
       "id": "M1-013",
@@ -535,18 +535,18 @@
       "subsystem": "M1-transport",
       "title": "Ping schedule and ReliableConnection::Update order",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R32 with SendSeparatePingMessages 0: ping only when the queue is empty, lastSend > 0, now > lastSend + 33.3 and now >= lastPing + 33.3 (0x0083652E..0x00836590); nothing before the first frame",
         "R33 ReliableConnection::Update 0x00836518..0x008365A8: ping check, SendOptimalUnAckedPackets(1), return !HasConnectionTimedOut"
       ],
       "effect": "keep-alive pings are sent at other times; the robot may time the link out",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code: confirmed by the read-only comparison (re-analysis/inventory/M1-transport.comparison.md) and settled in M1 repair batch 1",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "ConnectionTests.IdlePingsEvery33msOnlyWhenPendingIsEmpty, ConnectionTests.NoIdlePingBeforeTheFirstFrameOrWhileAnythingIsQueued"
     },
     {
       "id": "M1-018",

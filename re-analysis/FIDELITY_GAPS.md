@@ -7,10 +7,10 @@ Manifest of **244 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 155 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 159 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 21 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 0 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 31 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 27 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 24 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 5 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -24,7 +24,7 @@ remains after both, and they do not go away by working harder on this repository
 
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| M1-transport — UDP transport and reliability | 38 | 0 | 31 | 0 | 1 | yes | no |
+| M1-transport — UDP transport and reliability | 38 | 0 | 27 | 0 | 1 | yes | no |
 | M2-protocol — CLAD messages and protocol helpers | 7 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 18 | 0 | 0 | 0 | 1 | yes | yes |
 | M4-control — Motion, sensors, lights and cubes | 13 | 0 | 0 | 0 | 1 | yes | yes |
@@ -52,7 +52,7 @@ status.
 
 | subsystem | review | settled | uncited | capture verified | hardware verified |
 | --- | --- | ---: | ---: | ---: | ---: |
-| M1-transport | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
+| M1-transport | INVENTORY_APPROVED | 4 | 0 | 0 | 0 |
 | M2-protocol | UNREVIEWED | 7 | 1 | 0 | 0 |
 | M3-device | UNREVIEWED | 13 | 1 | 0 | 0 |
 | M4-control | UNREVIEWED | 8 | 0 | 0 | 0 |
@@ -104,16 +104,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: R5 IsValidMessageType 0x0083673C subs r1,r0,#1; cmp r1,#0xb; R6 0x00836708 subs r0,#5; cmp r0,#6; movs r1,#0x7d; lsr.w r0,r1,r0: always-unreliable {5,7,8,9,10,11}; R7 IsMutlipleMessagesType 0x00836722 subs r1,r0,#7; cmp r1,#3: containers {7,8,9}; R8 0x00835F36..0x00835F52: packed frame 7 reliable-only, 8 unreliable-only, 9 mixed; a single message keeps its own type (0x00835EB6, 0x00835EC4); R12 HandleSubMessage tbb 0x00837446, table 0x0083744A = 13 1a 2b 09 09 3e 06 06 06 06 5f: 1 OnConnectRequest, 2 OnConnected, 3 OnDisconnected then DeleteConnection, 4/5 deliver, 6 multipart, 7..10 nothing, 11 ReceivePing; type names are not in the binary: ReliableMessageTypeToString 0x00836730 returns one empty string for every type
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-004 — Sequence ids 1..65534, wrap and in-range test** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs`
-* effect: frames are dropped as duplicates or accepted out of order at the wrap
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: R14 NextSequenceId 0x0083675A movw r1,#0xfffe; ite ne; addne r0,#1; moveq r0,#1; uxth; PreviousSequenceId 0x00836748; GetNextOutSequenceNumber 0x00835A9C..0x00835AAA; one id per reliable part 0x00836DE0..0x00836DF0; R15 IsSequenceIdInRange 0x0083676A..0x0083678C: first<=id<=last, or id>=first || id<=last when wrapped
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
+* outstanding: dispatch by type is reproduced; R12 "3 = OnDisconnected then DeleteConnection" is not: the code shuts the whole transport down (repaired with M1-015, M1-038 in batch 2); then EXACT_SOURCE
 
 **M1-005 — Reliable-transport tunables as RobotConnectionManager::Init sets them** (live path)
 
@@ -146,10 +137,10 @@ Each of these is a question already answered. The original's behaviour is establ
 
 * where: `cozmo-stack/src/Cozmo.Protocol/Wire/PingPayload.cs`
 * effect: the robot misreads keep-alive pings
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
+* rests on: the M1 candidate implementation; payload layout confirmed by the comparison and batch 1
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: R30 SendPing 0x00835C00..0x00835C62: f64 time, u32 numPingsSent (+0x60, incremented first), u32 numPingsReceived (+0x64), u8 isReply; movs r1,#0xb; movs r2,#0x11; unreliable, flag 1; a request sets +0x58 = now; SendPing calls ReliableTransport::SendMessage (0x00835C58): AddMessage then SendOptimalUnAckedPackets(1), so the ping can go out on the same call, subject to the 2.0 ms gate [corrected C4]
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
+* outstanding: the 17-byte layout, counters, type and send path are reproduced; the f64 time field is filled from the per-transport Stopwatch, not GetCurrentNetTimeStamp (called at 0x00835C0E), so its value differs until M1-005's clock is repaired in batch 2; then EXACT_SOURCE
 
 **M1-009 — Multipart split and reassembly** (live path)
 
@@ -169,24 +160,6 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: R35/B14 ctor: Dispatch::Create "RelTransport" priority 3 (0x008367C2); +0xA0=1, +0xA1=0 (0x008367DA); ChangeSyncMode(false) (0x008367E2) -> ScheduleCallback(2 ms) (0x00836896 movs r2,#2; 0x0083689E); lambda 0x008383CE; R34 ReliableTransport::Update 0x00837B9A..0x00837C92: mutex +0x24; UDP Update (vtable +0x28, receive drain); ReliableConnection::Update per connection; false if any timed out; the exact repeat semantics are M1-021
 * outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
 
-**M1-011 — Ping receive: counters, and only a ping marked as a reply measures the round trip** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs`
-* effect: round-trip statistics differ; the app never answers a ping in production
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: R31 ReceivePing 0x00835C7C..0x00835D30: < 17 bytes ignored; numPingsReceived++; peer counters kept only if the incoming numPingsSent is greater; reply records now - timeSent including negative; a request is answered only if SendSeparatePingMessages (0 in the engine, M1-005)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-012 — Frame payload bound 1406 and the UDP send buffer** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/TransportConstants.cs`
-* effect: frames are split at a different size, or an oversize frame behaves differently
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: B5 0x0062EFC6 movw r0,#0x58c: sMaxNetMessageSize 1420; B7 default 0x5C0 at .data 0x01051F78, Init the only setter caller; B8/R24 UDP MaxTotalBytesPerMessage = 1420 - 4 (- 2 only with CRC) at 0x0083AF50..0x0083AF56 = 1416; reliable subtracts 10 at 0x00836A3E = 1406; B9 UDP send buffer is a fixed 1472-byte stack buffer (0x0083A34E mov.w r1,#0x5c0); prefix + payload > 1472 makes BuildPacket return 0 and sendto still sends a 0-length datagram, unlogged (0x0083A2C8, 0x0083A372, 0x0083A386)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
 **M1-015 — Connection timeout 5 s, and how a lost or failed connection is reported** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs`
@@ -203,15 +176,6 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: R18 every valid frame from a known connection runs UpdateLastAckedMessage(ackSeq) (0x00837814, 0x00835AEA): +0x50 = now always (0x00835B9C); for ackSeq != 0 remove the front entry while ackSeq is within the pending seq range (0x00835B08..0x00835B96); resend on ack only if MaxPacketsToReSendOnAck (0); R43 the loop removes pending[0] each pass (0x00835B08..0x00835B0A; memmove 0x00835B3C), so an unsent seq-0 entry at the front is discarded with the acked entries
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-017 — Ping schedule and ReliableConnection::Update order** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs`
-* effect: keep-alive pings are sent at other times; the robot may time the link out
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: R32 with SendSeparatePingMessages 0: ping only when the queue is empty, lastSend > 0, now > lastSend + 33.3 and now >= lastPing + 33.3 (0x0083652E..0x00836590); nothing before the first frame; R33 ReliableConnection::Update 0x00836518..0x008365A8: ping check, SendOptimalUnAckedPackets(1), return !HasConnectionTimedOut
 * outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
 
 **M1-018 — Connections are created only by a connect request** (live path)

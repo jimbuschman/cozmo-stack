@@ -117,6 +117,7 @@ public class HardwareCatalogFidelityTests
     /// source-backed records beside it.
     /// </summary>
     [Theory]
+    [InlineData("LINK", "M1-033", "HARDWARE_ONLY")]
     [InlineData("E", "M3-016", "HARDWARE_ONLY")]
     [InlineData("A", "M9-013", "BLOCKED_EXTERNAL")]
     [InlineData("A", "M9-023", "HARDWARE_ONLY")]

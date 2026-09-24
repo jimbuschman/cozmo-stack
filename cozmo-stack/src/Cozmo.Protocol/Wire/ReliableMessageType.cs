@@ -35,6 +35,7 @@ public enum ReliableMessageType : byte
     Count = 12,
 }
 
+// fidelity: M1-003
 public static class ReliableMessageTypes
 {
     /// <summary>Types that never consume a sequence id (official IsMessageTypeAlwaysSentUnreliably: mask 0x7d over 5..11).</summary>
@@ -64,6 +65,7 @@ public static class ReliableMessageTypes
 /// engine: movw #0xfffe; addne #1; moveq #1): 0 = invalid/"unreliable", valid range 1..65534, wraps 65534 -> 1.
 /// 0xFFFF never appears on the wire from the official stack (PyCozmo uses it internally as "OOB").
 /// </summary>
+// fidelity: M1-004
 public static class SequenceId
 {
     public const ushort Invalid = 0;
