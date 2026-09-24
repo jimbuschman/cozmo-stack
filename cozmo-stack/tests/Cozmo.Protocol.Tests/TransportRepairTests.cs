@@ -250,7 +250,8 @@ public class TransportRepairTests
     /// T-d1 — PRIMARY-SOURCE ORACLE. A reliable frame is processed only for a connection found by
     /// TransportAddress::operator&lt; 0x00838ED2, which orders by IP (0x00838F18-1E) and then port
     /// (0x00838F26-28); from the robot's IP on another port there is no connection and the frame is dropped
-    /// with a warning (0x0083789A) before any ack processing or delivery.
+    /// with a warning (0x0083789A) before any ack processing or delivery. M1-018 R13: the warning is
+    /// "unconnected source", and a type-4 frame creates no connection.
     /// </summary>
     [Fact]
     public void T_d1_AReliableFrameFromTheRightIpButAnotherPortIsDroppedBeforeAcks()
@@ -268,7 +269,7 @@ public class TransportRepairTests
         Assert.Equal(1, c.LastInAcked);
         Assert.Equal(2, c.NextInSeq);
         Assert.Empty(delivered);
-        Assert.Contains(warnings, w => w.Contains("unexpected"));
+        Assert.Contains(warnings, w => w.Contains("unconnected source"));   // M1-018 R13
 
         t.ProcessIncoming(frame);                           // the same frame from the peer is processed
         Assert.Equal(0, c.PendingCount);
@@ -607,6 +608,7 @@ public class TransportRepairTests
         var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true) { ReceiveHook = net.Receive };
         var outbound = new List<Frame>();
         t.FrameTrace += e => { if (e.Outbound && e.Frame is not null) outbound.Add(e.Frame); };
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));   // R39: the socket is opened by Start (posted), not Connect
         t.Connect(IPAddress.Loopback, 59981);
         net.Datagram(ConnectionResponse(), t.Peer!);
         clk.NowMs = 1001; t.Pump();
@@ -638,18 +640,25 @@ public class TransportRepairTests
     }
 
     /// <summary>
-    /// BLOCKED, kept visible. What the engine does when destroyed while its connection is still being set
-    /// up is not established; this stack sends nothing, as before. REGRESSION ONLY.
+    /// PRIMARY-SOURCE ORACLE. Replaces the test that Dispose while Connecting sends nothing. M1-025 / M1-019 B33:
+    /// DisconnectCurrent (0x0062EF20..0x0062EF52) calls RT Disconnect with the robot address unconditionally,
+    /// then ~RobotConnectionManager calls StopClient (0x0062EE98, 0x0062EEA2). A Connecting transport has a
+    /// connection (made by its type-1 SendMessage, G2.1), so the Disconnect closure (0x00837FFA) sends its
+    /// type 3 on it (here outside the 2 ms separation), deletes it, and Stop then clears and closes.
     /// </summary>
     [Fact]
-    public void DisposeWhileConnectingSendsNothing()
+    public void B33_DisposeWhileConnectingSendsTheDisconnectRequestThenStops()
     {
         var (t, clk, _) = Offline();
         t.OfflineConnect();
+        var c = t.Connection!;
         int frames = t.OfflineOutbound.Count;
         clk.NowMs = 1050;
         t.Dispose();
-        Assert.Equal(frames, t.OfflineOutbound.Count);
+        Assert.Equal(frames + 1, t.OfflineOutbound.Count);
+        Assert.Contains(t.OfflineOutbound[^1].Messages, m => m.Type == ReliableMessageType.DisconnectRequest && m.IsReliable);
+        Assert.Contains(c.Pending, p => p.Type == ReliableMessageType.DisconnectRequest);
+        Assert.Null(t.Connection);
         Assert.Equal(LinkState.Disconnected, t.State);
     }
 
@@ -885,13 +894,18 @@ public class TransportRepairTests
     }
 
     /// <summary>
-    /// PRIMARY-SOURCE ORACLE. M1-035 B21 / R37 (RT::Disconnect queues an action through QueueAction 0x0083719A;
-    /// closure 0x00837FFA: SendMessage type 3, then DeleteConnection): the queued action acts on whatever
-    /// connection exists when it runs. A Disconnect posted before a Connect, and run after that Connect has made
-    /// its connection, therefore ends that connection; it is not discarded as belonging to an earlier link.
+    /// PRIMARY-SOURCE ORACLE. M1-035 / M1-019 B21 (RCM::Connect calls RT->Disconnect(addr) 0x0062F576; RT::Disconnect
+    /// queues an action through QueueAction 0x0083719A; closure 0x00837FFA: SendMessage(1, addr, null, 0, type 3,
+    /// 1), then DeleteConnection) with R13 / G2.1 (SendMessage finds the connection by address when it runs): the
+    /// action carries the address it was called with and acts on whatever connection that address has when it
+    /// runs. Here the peer's own DisconnectRequest deletes the first connection (R12) and a new Connect makes a
+    /// second one at the same address before the action runs; the action sends its type 3 on the second and
+    /// deletes it. A Disconnect made before any address was named has no address and does nothing.
+    /// Replaces the earlier test in which a Disconnect posted before any Connect ended the later connection:
+    /// B21 passes the address as the call's argument.
     /// </summary>
     [Fact]
-    public void M1_035_B21_AQueuedDisconnectActsOnTheConnectionThatExistsWhenItRuns()
+    public void M1_035_B21_AQueuedDisconnectActsOnTheConnectionItsAddressHasWhenItRuns()
     {
         var clk = new ManualClock { NowMs = 1000 };
         using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
@@ -899,15 +913,24 @@ public class TransportRepairTests
         var gate = new ManualResetEventSlim(); var busy = new ManualResetEventSlim();
         t.Executor.Post(() => { busy.Set(); gate.Wait(TimeSpan.FromSeconds(10)); });
         Assert.True(busy.Wait(TimeSpan.FromSeconds(5)));
-        t.Disconnect("posted first");                       // queued while no connection exists
-        t.Connect(IPAddress.Loopback, 59980);               // sync mode: the connection is made here (R36, G2.1)
-        Assert.NotNull(t.Connection);
+        t.Disconnect("before any address");                 // no address yet: nothing to disconnect
+        t.Connect(IPAddress.Loopback, 59980);               // sync mode: connection A is made here (R36, G2.1)
+        var a = t.Connection!;
+        t.Disconnect("posted first");                       // carries the peer's address
+        t.ProcessIncoming(Raw(ReliableMessageType.DisconnectRequest, 1, 1, 1, Array.Empty<byte>()));   // R12: A deleted
+        Assert.Null(t.Connection);
+        clk.NowMs = 1010;
+        t.Connect(IPAddress.Loopback, 59980);               // connection B, same address
+        var b = t.Connection!;
+        Assert.NotSame(a, b);
         Assert.Equal(LinkState.Connecting, t.State);
         gate.Set();
         Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
-        Assert.Null(t.Connection);                          // DeleteConnection on the connection it found
+        Assert.Null(t.Connection);                          // DeleteConnection on B
+        Assert.Contains(b.Pending, p => p.Type == ReliableMessageType.DisconnectRequest);   // the type 3 went on B
+        Assert.DoesNotContain(a.Pending, p => p.Type == ReliableMessageType.DisconnectRequest);
         Assert.Equal(LinkState.Disconnected, t.State);
-        lock (reasons) Assert.Equal(new[] { "posted first" }, reasons);
+        lock (reasons) Assert.Equal(new[] { "peer sent DisconnectRequest", "posted first" }, reasons);
     }
 
     /// <summary>
@@ -994,6 +1017,7 @@ public class TransportRepairTests
             var clk = new ManualClock { NowMs = 1000 };
             var net = new ScriptedReceive();
             var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true) { ReceiveHook = net.Receive };
+            t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
             t.Connect(IPAddress.Loopback, port);
             net.Datagram(ConnectionResponse(), t.Peer!);
             clk.NowMs = 1001; t.Pump();
@@ -1169,6 +1193,7 @@ public class TransportRepairTests
         var clk = new ManualClock { NowMs = 1000 };
         var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
         var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
         t.Connect(IPAddress.Loopback, ((IPEndPoint)robot.LocalEndPoint!).Port);
         var local = new IPEndPoint(IPAddress.Loopback, ((IPEndPoint)t.LocalEndPoint!).Port);
 
@@ -1188,6 +1213,538 @@ public class TransportRepairTests
         t.Dispose();
     }
 
+    // ================================================================ batch 2b-ii: connection lifetime
+
+    private static List<ReceiverEvent> Receiver(ReliableTransport t)
+    {
+        var events = new List<ReceiverEvent>();
+        t.Received += e => { lock (events) events.Add(e); };
+        return events;
+    }
+
+    private static List<T> Snap<T>(List<T> list) { lock (list) return list.ToList(); }
+
+    private static int Ticks(List<(ReliableTransport.ExecutorItem item, int thread)> seen)
+    {
+        lock (seen) return seen.Count(s => s.item.Kind == "tick");
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-003 R12 (tbb 0x00837446, table 0x0083744A; type 3 → 0x008374A0 OnDisconnected, then
+    /// DeleteConnection veneer 0x008D123C) with R40 (ReceiveData(OnDisconnected 0x0103759C, 0, addr), 0x00837478..
+    /// 0x00837496): a handled DisconnectRequest from the peer raises OnDisconnected with the peer's address and
+    /// deletes that connection only. A second connection, made by a type 1 from another address (M1-018 R13,
+    /// 0x008377CE..0x008377FC), stays; the socket stays open; and the next ReliableTransport::Update (R34,
+    /// 0x00837B9A..0x00837C92) still drains the socket and updates the remaining connection.
+    /// </summary>
+    [Fact]
+    public void M1_003_R12_AHandledDisconnectRequestDeletesOnlyThatConnectionAndTheTransportGoesOn()
+    {
+        var (t, clk, net) = Connected(59970);
+        var events = Receiver(t);
+        var reasons = new List<string>(); t.Disconnected += reasons.Add;
+        var peer = t.Peer!;
+        var other = new IPEndPoint(IPAddress.Loopback, 59971);
+        t.ProcessIncoming(Raw(ReliableMessageType.ConnectionRequest, 1, 1, 0, Array.Empty<byte>()), other);
+        var oc = t.ConnectionFor(other);
+        Assert.NotNull(oc);
+        var local = t.LocalEndPoint;
+        events.Clear();
+
+        t.ProcessIncoming(Raw(ReliableMessageType.DisconnectRequest, 2, 2, 1, Array.Empty<byte>()));   // from the peer, seq 2 = nextIn
+
+        Assert.Null(t.ConnectionFor(peer));                                   // R12: DeleteConnection
+        Assert.Same(oc, t.ConnectionFor(other));                              // only that one
+        Assert.Equal(new[] { other }, t.ConnectionAddresses);
+        var e = Assert.Single(events);                                        // R40
+        Assert.Equal(ReceiverMarker.OnDisconnected, e.Marker);
+        Assert.Equal(peer, e.Address);
+        Assert.NotNull(t.LocalEndPoint);                                      // the socket is kept
+        Assert.Equal(local, t.LocalEndPoint);
+        Assert.Equal(LinkState.Disconnected, t.State);                        // the facade's link to the peer ended
+        Assert.Equal(new[] { "peer sent DisconnectRequest" }, reasons);
+
+        clk.NowMs = 1100;                                                     // R34: the next update still drains and updates
+        net.Datagram(Raw(ReliableMessageType.Ping, 0, 0, 0, new PingPayload(1, 1, 0, false).ToBytes()), other);
+        Assert.True(t.Pump());
+        Assert.Equal(1100, oc!.LatestRecvMs);                                 // R18: the frame was processed for it
+        Assert.Equal(1u, oc.NumPingsReceived);                                // R12: type 11 → ReceivePing
+        t.Dispose();
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-003 R12 (type 3 → OnDisconnected, DeleteConnection 0x008374A0 / 0x008D123C) on the
+    /// production (async) path, M1-010 R35 / B14 (the 2 ms update is requested once at construction, 0x00836896,
+    /// 0x0083689E) and M1-019 R39 (only Stop closes the socket, 0x008380F6): over a real loopback socket, the
+    /// robot's DisconnectRequest is read by the update, the peer's connection is deleted, and the update goes on
+    /// being run with the socket still open. Nothing sets the +0xA1 flag (R35: only a false Update does, B36).
+    /// </summary>
+    [Fact]
+    public void M1_003_R12_AfterTheRobotsDisconnectRequestTheAsyncUpdateAndSocketGoOn()
+    {
+        using var robot = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        robot.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk);
+        var seen = new List<(ReliableTransport.ExecutorItem item, int thread)>();
+        Traced(t, seen);
+        var events = Receiver(t);
+        t.Start();
+        t.Connect(IPAddress.Loopback, ((IPEndPoint)robot.LocalEndPoint!).Port);
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        var local = new IPEndPoint(IPAddress.Loopback, ((IPEndPoint)t.LocalEndPoint!).Port);
+
+        robot.SendTo(ConnectionResponse(), local);
+        Assert.True(SpinWait.SpinUntil(() => t.State == LinkState.Connected, 5000), "the ConnectionResponse was never read");
+        robot.SendTo(Raw(ReliableMessageType.DisconnectRequest, 2, 2, 1, Array.Empty<byte>()), local);
+        Assert.True(SpinWait.SpinUntil(() => t.Connection is null, 5000), "the DisconnectRequest was never handled");
+
+        Assert.True(SpinWait.SpinUntil(() => Snap(events).Any(e => e.Marker == ReceiverMarker.OnDisconnected), 5000));
+        Assert.Equal(robot.LocalEndPoint, Snap(events).Single(e => e.Marker == ReceiverMarker.OnDisconnected).Address);
+        Assert.Equal(LinkState.Disconnected, t.State);
+        Assert.NotNull(t.LocalEndPoint);                                      // the socket is kept
+        int ticks = Ticks(seen);
+        Assert.True(SpinWait.SpinUntil(() => Ticks(seen) >= ticks + 5, 5000), "the update stopped");
+        Assert.False(t.TimedOut);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-015 R19 (0x00837BCC..0x00837C74: warning; ReceiveData(OnDisconnected, 0, addr);
+    /// the connection deleted; ReliableTransport::Update returns false; no frame is sent), B22 ("Disconnecting
+    /// TimedOut Connection" 0x00837BCC; OnDisconnected 0x00837C50..0x00837C56; delete 0x00837C60; the lambda sets
+    /// +0xA1 0x008383D4..0x008383DC), B36 (+0xA1 cleared by the ctor and Connect 0x008367DA / 0x0083710E);
+    /// M1-032 G2.3 (lastRecv = the ctor's time 0x0083593C), G2.7 (now &gt; +0x50 + 5000.0, strictly) and G2.8 (every
+    /// Update checks it); M1-019 R38 (Connect clears +0xA1). On the production (async) path: at exactly 5000 ms
+    /// nothing happens; past it the warning, OnDisconnected with the address, the deletion and the flag, but no
+    /// DisconnectRequest and no frame afterwards; the update and the socket go on; the next Connect clears the
+    /// flag and makes a new connection.
+    /// </summary>
+    [Fact]
+    public void M1_015_R19_B22_ATimeoutDeletesTheConnectionSetsTheFlagAndTheTransportGoesOn()
+    {
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk);
+        var seen = new List<(ReliableTransport.ExecutorItem item, int thread)>();
+        Traced(t, seen);
+        var events = Receiver(t);
+        var warnings = new List<string>(); t.Warning += w => { lock (warnings) warnings.Add(w); };
+        var reasons = new List<string>(); t.Disconnected += r => { lock (reasons) reasons.Add(r); };
+        var outbound = new List<Frame>(); t.FrameTrace += f => { if (f.Outbound && f.Frame is not null) lock (outbound) outbound.Add(f.Frame); };
+        Assert.False(t.TimedOut);                                             // B36: cleared by the ctor
+        t.Start();
+        t.Connect(IPAddress.Loopback, 59968);
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        var peer = t.Peer!;
+        Assert.Equal(1000, t.Connection!.LatestRecvMs);                       // G2.3
+
+        clk.NowMs = 1000 + 5000.0;                                            // G2.7: not past it yet
+        int t0 = Ticks(seen);
+        Assert.True(SpinWait.SpinUntil(() => Ticks(seen) >= t0 + 5, 5000));
+        Assert.NotNull(t.Connection);
+        Assert.False(t.TimedOut);
+
+        clk.NowMs = 1000 + 5000.1;
+        Assert.True(SpinWait.SpinUntil(() => t.TimedOut, 5000), "the +0xA1 flag was never set");
+        Assert.True(SpinWait.SpinUntil(() => Snap(reasons).Count == 1, 5000));
+        Assert.Null(t.Connection);                                            // deleted
+        Assert.Empty(t.ConnectionAddresses);
+        Assert.Contains(Snap(warnings), w => w.Contains("Disconnecting TimedOut Connection"));
+        var e = Assert.Single(Snap(events), x => x.Marker == ReceiverMarker.OnDisconnected);
+        Assert.Equal(peer, e.Address);
+        Assert.Equal(LinkState.Disconnected, t.State);
+        Assert.DoesNotContain(Snap(outbound), f => f.Messages.Any(m => m.Type == ReliableMessageType.DisconnectRequest));
+        Assert.NotNull(t.LocalEndPoint);                                      // the socket is kept
+
+        int frames = Snap(outbound).Count, t1 = Ticks(seen);
+        clk.NowMs = 7000;
+        Assert.True(SpinWait.SpinUntil(() => Ticks(seen) >= t1 + 5, 5000), "the update stopped after the timeout");
+        Assert.Equal(frames, Snap(outbound).Count);                           // nothing sent for the deleted connection
+        Assert.True(t.TimedOut);                                              // only Connect clears it
+
+        clk.NowMs = 7100;
+        t.Connect(IPAddress.Loopback, 59968);
+        Assert.False(t.TimedOut);                                             // R38: cleared by Connect itself
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        Assert.Equal(7100, t.Connection!.LatestRecvMs);                       // G2.1 / G2.3: a new connection
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-015 R19 / G2.8 on the sync path, where the owner runs ReliableTransport::Update
+    /// itself (R36, B15): the timed-out connection is deleted with the warning and OnDisconnected, and the update
+    /// returns false. B36: the +0xA1 flag is set only by the tick lambda (0x008383DC), so a sync-mode update does
+    /// not set it.
+    /// </summary>
+    [Fact]
+    public void M1_015_R19_InSyncModeTheUpdateReportsTheTimeoutButOnlyTheTickSetsTheFlag()
+    {
+        var (t, clk, _) = Connected(59967);
+        var events = Receiver(t);
+        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var peer = t.Peer!;
+        clk.NowMs = t.Connection!.LatestRecvMs + 5000.1;
+        Assert.False(t.Pump());
+        Assert.Null(t.Connection);
+        Assert.Equal(peer, Assert.Single(events, e => e.Marker == ReceiverMarker.OnDisconnected).Address);
+        Assert.Contains(warnings, w => w.Contains("Disconnecting TimedOut Connection"));
+        Assert.False(t.TimedOut);
+        Assert.True(t.Pump());                                                // nothing left to time out
+        Assert.NotNull(t.LocalEndPoint);
+        t.Dispose();
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-018 R13 receive side (0x008377CE..0x008377FC; FindConnection 0x00837098 cmp r5,#1),
+    /// B19, M1-032 G2.10 (0x008377D6, 0x008377EA..0x008377F2): a type-1 frame from an address with no connection
+    /// creates one (lastRecv stamped by the ctor, G2.3) and is then processed as for a known connection: R16
+    /// acks seqMax (0x00837848) and R12 accepts seq 1 and raises OnConnectRequest with the address (R40,
+    /// 0x01037598). The facade link is untouched (B20: the app layer drops the marker).
+    /// </summary>
+    [Fact]
+    public void M1_018_R13_ATypeOneFrameFromAnUnknownAddressCreatesAConnection()
+    {
+        var clk = new ManualClock { NowMs = 2000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
+        var events = Receiver(t);
+        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var from = new IPEndPoint(IPAddress.Parse("10.1.2.3"), 5551);
+
+        t.ProcessIncoming(Raw(ReliableMessageType.ConnectionRequest, 1, 1, 0, Array.Empty<byte>()), from);
+
+        var c = t.ConnectionFor(from);
+        Assert.NotNull(c);
+        Assert.Equal(2000, c!.LatestRecvMs);
+        Assert.Equal(1, c.LastInAcked);                                       // R16
+        Assert.Equal(2, c.NextInSeq);                                         // R12
+        var e = Assert.Single(events);
+        Assert.Equal(ReceiverMarker.OnConnectRequest, e.Marker);
+        Assert.Equal(from, e.Address);
+        Assert.Equal(LinkState.Idle, t.State);
+        Assert.Empty(warnings);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-018 R13 / B19 ("a multi-message with first sub type 1"): a container whose first
+    /// sub-message is type 1 creates the connection too, and its walk goes on as for a known connection (R9,
+    /// R11: the always-unreliable type 5 after it takes seq 0 and is delivered to the receiver, R40).
+    /// </summary>
+    [Fact]
+    public void M1_018_R13_AContainerWhoseFirstSubIsTypeOneCreatesAConnection()
+    {
+        var clk = new ManualClock { NowMs = 2000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
+        var events = Receiver(t);
+        var from = new IPEndPoint(IPAddress.Parse("10.1.2.4"), 5551);
+
+        t.ProcessIncoming(Raw(ReliableMessageType.MultipleMixedMessages, 1, 1, 0, Body(
+            Sub(ReliableMessageType.ConnectionRequest, Array.Empty<byte>()),
+            Sub(ReliableMessageType.SingleUnreliableMessage, Data))), from);
+
+        Assert.NotNull(t.ConnectionFor(from));
+        Assert.Equal(2, events.Count);
+        Assert.Equal(ReceiverMarker.OnConnectRequest, events[0].Marker);
+        Assert.Equal(from, events[0].Address);
+        Assert.Equal(ReceiverMarker.Data, events[1].Marker);
+        Assert.Equal(from, events[1].Address);
+        Assert.Equal(Data, events[1].Data);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-018 R13 (0x0083789A) / B19: any other frame from an address with no connection
+    /// is logged "unconnected source" and dropped: no connection, no receiver event, ack not processed. Here a
+    /// single reliable message, a ConnectionResponse, and a container whose first sub-message is not type 1
+    /// although a later one is.
+    /// </summary>
+    [Fact]
+    public void M1_018_R13_OtherFramesFromAnUnknownAddressAreDroppedAsUnconnectedSource()
+    {
+        var clk = new ManualClock { NowMs = 2000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
+        var events = Receiver(t);
+        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var from = new IPEndPoint(IPAddress.Parse("10.1.2.5"), 5551);
+
+        t.ProcessIncoming(Raw(ReliableMessageType.SingleReliableMessage, 1, 1, 0, Data), from);
+        t.ProcessIncoming(Raw(ReliableMessageType.ConnectionResponse, 1, 1, 0, Array.Empty<byte>()), from);
+        t.ProcessIncoming(Raw(ReliableMessageType.MultipleReliableMessages, 1, 2, 0, Body(
+            Sub(ReliableMessageType.SingleReliableMessage, Data),
+            Sub(ReliableMessageType.ConnectionRequest, Array.Empty<byte>()))), from);
+
+        Assert.Null(t.ConnectionFor(from));
+        Assert.Empty(t.ConnectionAddresses);
+        Assert.Empty(events);
+        Assert.Equal(3, warnings.Count(w => w.Contains("unconnected source")));
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-019 R40 (ReceiveData(OnConnected 0x01037594, 0, addr), 0x00837478..0x00837496) and
+    /// R12 (type 2 → OnConnected): the peer's ConnectionResponse reaches the receiver as OnConnected with the
+    /// peer's address; the facade then reports the link Connected.
+    /// </summary>
+    [Fact]
+    public void M1_019_R40_TheConnectionResponseReachesTheReceiverAsOnConnected()
+    {
+        var (t, _, _) = Offline();
+        var events = Receiver(t);
+        t.OfflineConnect();
+        t.OfflineAcceptConnection();
+        var e = Assert.Single(events);
+        Assert.Equal(ReceiverMarker.OnConnected, e.Marker);
+        Assert.Equal(t.Peer, e.Address);
+        Assert.Equal(LinkState.Connected, t.State);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-019 R38 FinishConnection 0x0083712E: reliable type 2, flag 1, to the address; with
+    /// R13 / G2.1 (only a type 1 creates a connection) it goes on the connection an inbound type 1 made. Checked on
+    /// the wire over a real loopback socket: the datagram reaching that address is COZ + RE header type 2, seq
+    /// 1..1, ack 1 (R1; R2: that connection's ackOut, set to the type 1's seq by R16), and the pending entry is
+    /// reliable and flushed (R20 +0x2B).
+    /// </summary>
+    [Fact]
+    public void M1_019_R38_FinishConnectionSendsAReliableFlushedTypeTwoToThatAddress()
+    {
+        using var robot = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        robot.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        robot.ReceiveTimeout = 3000;
+        var robotEp = (IPEndPoint)robot.LocalEndPoint!;
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        t.ProcessIncoming(Raw(ReliableMessageType.ConnectionRequest, 1, 1, 0, Array.Empty<byte>()), robotEp);
+
+        clk.NowMs = 1010;
+        t.FinishConnection(robotEp);
+
+        var p = Assert.Single(t.ConnectionFor(robotEp)!.Pending);
+        Assert.Equal(ReliableMessageType.ConnectionResponse, p.Type);
+        Assert.True(p.IsReliable);
+        Assert.Equal(1, p.Seq);
+        Assert.True(p.FlushPacket);
+
+        var buf = new byte[2048]; EndPoint src = new IPEndPoint(IPAddress.Any, 0);
+        int n = robot.ReceiveFrom(buf, ref src);
+        Assert.True(FrameCodec.TryDecode(buf.AsSpan(0, n).ToArray(), out var f, out var err), err);
+        Assert.Equal(ReliableMessageType.ConnectionResponse, f!.Type);
+        Assert.Equal(1, f.SeqMin);
+        Assert.Equal(1, f.SeqMax);
+        Assert.Equal(1, f.Ack);
+        Assert.Equal(((IPEndPoint)t.LocalEndPoint!).Port, ((IPEndPoint)src).Port);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-018 R13 send side (SendMessage 0x00836C5A..0x00836C6E): a FinishConnection to an
+    /// address with no connection creates none, queues nothing and sends nothing; the warning is "unconnected
+    /// destination".
+    /// </summary>
+    [Fact]
+    public void M1_019_R38_FinishConnectionWithNoConnectionIsAnUnconnectedDestination()
+    {
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
+        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var frames = new List<FrameEvent>(); t.FrameTrace += frames.Add;
+        var to = new IPEndPoint(IPAddress.Loopback, 59964);
+        t.FinishConnection(to);
+        Assert.Null(t.ConnectionFor(to));
+        Assert.Empty(frames);
+        Assert.Contains(warnings, w => w.Contains("unconnected destination"));
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-019 R39 (Stop → UDP Stop*, then ClearConnections 0x008380F6, veneer 0x008D122C,
+    /// 0x00837374; no frames are sent): with a message pending and a resend due, Stop sends nothing, clears every
+    /// connection and closes the socket; R39 names no receiver event and none is raised. The update still runs
+    /// (R35) and has nothing to send. B12: Start then opens a socket again, since there is none
+    /// (OpenSocket if fd == −1, 0x0083AD58). Start and Stop are posted actions (RT::StartClient 0x008371F4..
+    /// 0x00837214, RT::StopClient 0x00837284..0x008372A4 → QueueAction; verifier reading, batch 2b-ii), so the
+    /// test waits for the executor before it looks.
+    /// </summary>
+    [Fact]
+    public void M1_019_R39_StopSendsNothingClearsTheConnectionsAndClosesTheSocket()
+    {
+        var (t, clk, _) = Connected(59966);
+        clk.NowMs = 1040; t.Send(new SyncTime(0));                            // pending, sent once
+        var other = new IPEndPoint(IPAddress.Loopback, 59963);
+        t.ProcessIncoming(Raw(ReliableMessageType.ConnectionRequest, 1, 1, 0, Array.Empty<byte>()), other);
+        var events = Receiver(t);
+        var reasons = new List<string>(); t.Disconnected += reasons.Add;
+        var frames = new List<FrameEvent>(); t.FrameTrace += e => { if (e.Outbound) frames.Add(e); };
+
+        clk.NowMs = 1100;                                                     // a resend would be due
+        t.Stop();
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+
+        Assert.Empty(frames);
+        Assert.Null(t.Connection);
+        Assert.Empty(t.ConnectionAddresses);
+        Assert.Null(t.LocalEndPoint);
+        Assert.Empty(events);
+        Assert.Equal(LinkState.Disconnected, t.State);                        // the facade link ended
+        Assert.Equal(new[] { "stopped" }, reasons);
+        Assert.True(t.Pump());
+        Assert.Empty(frames);
+
+        t.Start();
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        Assert.NotNull(t.LocalEndPoint);
+        t.Dispose();
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-019 R38 (Connect only clears +0xA1 and queues the type 1, 0x0083710E / 0x0083711C;
+    /// Disconnect sends type 3 then DeleteConnection, closure 0x00837FFA), R39 (Start → StartClient 0x0083808E) and
+    /// B12 (StartClient → OpenSocket if fd == −1, 0x0083AD58): Connect opens no socket; Start opens one and a second
+    /// Start keeps it; Disconnect deletes the connection and leaves the socket open. Start is a posted action
+    /// (RT::StartClient 0x008371F4..0x00837214 → QueueAction; verifier reading, batch 2b-ii), so the test waits
+    /// for the executor before it looks.
+    /// </summary>
+    [Fact]
+    public void M1_019_R38_R39_StartOpensTheSocketOnceAndConnectAndDisconnectLeaveItAlone()
+    {
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
+        t.Connect(IPAddress.Loopback, 59965);
+        Assert.Null(t.LocalEndPoint);
+        Assert.NotNull(t.Connection);
+
+        t.Start();
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        var ep = t.LocalEndPoint;
+        Assert.NotNull(ep);
+        t.Start();
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        Assert.Equal(ep, t.LocalEndPoint);
+
+        t.Disconnect();
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        Assert.Null(t.Connection);
+        Assert.Equal(ep, t.LocalEndPoint);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-019 R38 (Connect queues QueueMessage(type 1, reliable, flush 1), 0x0083711C) and
+    /// R39 with the batch 2b-ii verifier reading (RT::StopClient 0x00837284..0x008372A4 posts through QueueAction;
+    /// closure 0x008380F6 → UDP stop, then ClearConnections; pending inventory correction), M1-035 R37 (one FIFO
+    /// queue): on the production (async) path a Connect followed at once by Stop still sends its ConnectionRequest
+    /// before the socket closes, over a real loopback socket; then the socket is closed and no connection is left.
+    /// </summary>
+    [Fact]
+    public void M1_019_R39_AConnectFollowedByStopStillSendsTheConnectionRequestFirst()
+    {
+        using var robot = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        robot.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        robot.ReceiveTimeout = 3000;
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk);
+        t.Start();
+        t.Connect(IPAddress.Loopback, ((IPEndPoint)robot.LocalEndPoint!).Port);
+        t.Stop();
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+
+        var buf = new byte[2048]; EndPoint src = new IPEndPoint(IPAddress.Any, 0);
+        int n = robot.ReceiveFrom(buf, ref src);
+        Assert.True(FrameCodec.TryDecode(buf.AsSpan(0, n).ToArray(), out var f, out var err), err);
+        Assert.Equal(ReliableMessageType.ConnectionRequest, f!.Type);
+        Assert.Equal(1, f.SeqMin);
+        Assert.Null(t.LocalEndPoint);
+        Assert.Empty(t.ConnectionAddresses);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-009 R23 (AddMessagePart 0x008358A0..0x008358E8; 0x008374C6..0x00837504) with the
+    /// batch 2b-ii verifier reading of that range: HandleSubMessage passes the connection (0x008374C6 mov r0,r5)
+    /// to ReliableConnection::GetPendingMultiPartMessage (0x008374C8; body 0x00835A94 adds r0,#0x20) and calls
+    /// AddMessagePart on it, so each connection assembles its own multipart message (pending inventory
+    /// correction). Two connections interleaving their parts each complete their own message, delivered to the
+    /// receiver with their own address (R40).
+    /// </summary>
+    [Fact]
+    public void M1_009_R23_EachConnectionAssemblesItsOwnMultipartMessage()
+    {
+        var (t, _, _) = Offline();
+        Connect(t);                                                           // A: the peer, nextIn 2
+        var a = t.Peer!;
+        var b = new IPEndPoint(IPAddress.Parse("10.0.0.9"), 5551);
+        t.ProcessIncoming(Raw(ReliableMessageType.ConnectionRequest, 1, 1, 0, Array.Empty<byte>()), b);   // B, nextIn 2
+        var events = Receiver(t);
+
+        t.ProcessIncoming(Raw(ReliableMessageType.MultiPartMessage, 2, 2, 1, new byte[] { 1, 2, 0xA1 }), a);
+        t.ProcessIncoming(Raw(ReliableMessageType.MultiPartMessage, 2, 2, 0, new byte[] { 1, 2, 0xB1 }), b);
+        t.ProcessIncoming(Raw(ReliableMessageType.MultiPartMessage, 3, 3, 1, new byte[] { 2, 2, 0xA2 }), a);
+        t.ProcessIncoming(Raw(ReliableMessageType.MultiPartMessage, 3, 3, 0, new byte[] { 2, 2, 0xB2 }), b);
+
+        var data = events.Where(e => e.Marker == ReceiverMarker.Data).ToList();
+        Assert.Equal(2, data.Count);
+        Assert.Equal(a, data[0].Address);
+        Assert.Equal(new byte[] { 0xA1, 0xA2 }, data[0].Data);
+        Assert.Equal(b, data[1].Address);
+        Assert.Equal(new byte[] { 0xB1, 0xB2 }, data[1].Data);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-009 R23 (the assembly is the connection's, GetPendingMultiPartMessage 0x008374C8 /
+    /// 0x00835A94; verifier reading, batch 2b-ii) with M1-003 R12 (type 3 → DeleteConnection 0x008D123C, which
+    /// destroys only that connection): deleting B mid-message leaves A's partial message intact, and A's next
+    /// part completes it.
+    /// </summary>
+    [Fact]
+    public void M1_009_R23_DeletingOneConnectionLeavesAnothersPartialMessageIntact()
+    {
+        var (t, _, _) = Offline();
+        Connect(t);
+        var a = t.Peer!;
+        var b = new IPEndPoint(IPAddress.Parse("10.0.0.9"), 5551);
+        t.ProcessIncoming(Raw(ReliableMessageType.ConnectionRequest, 1, 1, 0, Array.Empty<byte>()), b);
+        var events = Receiver(t);
+
+        t.ProcessIncoming(Raw(ReliableMessageType.MultiPartMessage, 2, 2, 1, new byte[] { 1, 2, 0xA1 }), a);
+        t.ProcessIncoming(Raw(ReliableMessageType.MultiPartMessage, 2, 2, 0, new byte[] { 1, 2, 0xB1 }), b);
+        t.ProcessIncoming(Raw(ReliableMessageType.DisconnectRequest, 3, 3, 0, Array.Empty<byte>()), b);
+        Assert.Null(t.ConnectionFor(b));
+        t.ProcessIncoming(Raw(ReliableMessageType.MultiPartMessage, 3, 3, 1, new byte[] { 2, 2, 0xA2 }), a);
+
+        var d = Assert.Single(events, e => e.Marker == ReceiverMarker.Data);
+        Assert.Equal(a, d.Address);
+        Assert.Equal(new byte[] { 0xA1, 0xA2 }, d.Data);
+    }
+
+    /// <summary>
+    /// REGRESSION ONLY (the facade's own state, not a transport row). On the production (async) path a Disconnect
+    /// of a Connected link and a new Connect to the same address are both made before either runs. Every protocol
+    /// action still happens, in order (R37): the Disconnect closure sends its type 3 on the old connection and
+    /// deletes it (B21, 0x00837FFA), and the Connect closure makes a new connection (G2.1). The old link's end
+    /// must not turn the newer Connecting link to Disconnected, and the new connection's ConnectionResponse must
+    /// then make it Connected.
+    /// </summary>
+    [Fact]
+    public void FacadeAnOldLinksEndDoesNotClobberANewerConnect()
+    {
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk);
+        t.Connect(IPAddress.Loopback, 59962);
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        t.ProcessIncoming(ConnectionResponse());
+        Assert.Equal(LinkState.Connected, t.State);
+        var x = t.Connection!;
+
+        var gate = new ManualResetEventSlim(); var busy = new ManualResetEventSlim();
+        t.Executor.Post(() => { busy.Set(); gate.Wait(TimeSpan.FromSeconds(10)); });
+        Assert.True(busy.Wait(TimeSpan.FromSeconds(5)));
+        clk.NowMs = 1050;
+        t.Disconnect("old link");
+        t.Connect(IPAddress.Loopback, 59962);
+        Assert.Equal(LinkState.Connecting, t.State);
+        gate.Set();
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+
+        Assert.Contains(x.Pending, p => p.Type == ReliableMessageType.DisconnectRequest);   // not dropped
+        var y = t.Connection!;
+        Assert.NotSame(x, y);
+        Assert.Equal(LinkState.Connecting, t.State);                         // not clobbered by the old end
+        t.ProcessIncoming(ConnectionResponse());                              // seq 1 on the new connection
+        Assert.Equal(LinkState.Connected, t.State);                           // not lost
+    }
+
     // ------------------------------------------------------------------ rig
 
     private static byte[] ConnectionResponse() =>
@@ -1198,7 +1755,8 @@ public class TransportRepairTests
         var clk = new ManualClock { NowMs = 1000 };
         var net = new ScriptedReceive();
         var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true) { ReceiveHook = net.Receive };
-        t.Connect(IPAddress.Loopback, port);
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));   // R39 / B12: the socket, once (a posted action)
+        t.Connect(IPAddress.Loopback, port);                // R38: only the ConnectionRequest
         net.Datagram(ConnectionResponse(), t.Peer!);
         clk.NowMs = 1001; t.Pump();
         Assert.Equal(LinkState.Connected, t.State);

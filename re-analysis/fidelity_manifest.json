@@ -283,7 +283,7 @@
       "unresolved": "dispatch by type is reproduced; R12 \"3 = OnDisconnected then DeleteConnection\" is not: the code shuts the whole transport down (repaired with M1-015, M1-038 in batch 2); then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": "FrameTests.MessageTypeSetsAreTheEngines, ConnectionTests.PackedFrameTypeFollowsWhatItHolds, ConnectionTests.ASingleMessageKeepsItsOwnTypeWithNoSubHeader, ConnectionTests.SubMessagesAreDispatchedByType"
+      "test": "FrameTests.MessageTypeSetsAreTheEngines, ConnectionTests.PackedFrameTypeFollowsWhatItHolds, ConnectionTests.ASingleMessageKeepsItsOwnTypeWithNoSubHeader, ConnectionTests.SubMessagesAreDispatchedByType, TransportRepairTests.M1_003_R12_AHandledDisconnectRequestDeletesOnlyThatConnectionAndTheTransportGoesOn, TransportRepairTests.M1_003_R12_AfterTheRobotsDisconnectRequestTheAsyncUpdateAndSocketGoOn"
     },
     {
       "id": "M1-004",
@@ -404,7 +404,7 @@
       "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": "ConnectionTests.LargeOutgoingPayloadIsSplitIntoMultipartParts"
+      "test": "ConnectionTests.LargeOutgoingPayloadIsSplitIntoMultipartParts, TransportRepairTests.M1_009_R23_EachConnectionAssemblesItsOwnMultipartMessage, TransportRepairTests.M1_009_R23_DeletingOneConnectionLeavesAnothersPartialMessageIntact"
     },
     {
       "id": "M1-010",
@@ -510,7 +510,7 @@
       "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "TransportRepairTests.M1_015_R19_B22_ATimeoutDeletesTheConnectionSetsTheFlagAndTheTransportGoesOn, TransportRepairTests.M1_015_R19_InSyncModeTheUpdateReportsTheTimeoutButOnlyTheTickSetsTheFlag"
     },
     {
       "id": "M1-016",
@@ -563,7 +563,7 @@
       "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "TransportRepairTests.M1_018_R13_ATypeOneFrameFromAnUnknownAddressCreatesAConnection, TransportRepairTests.M1_018_R13_AContainerWhoseFirstSubIsTypeOneCreatesAConnection, TransportRepairTests.M1_018_R13_OtherFramesFromAnUnknownAddressAreDroppedAsUnconnectedSource, TransportRepairTests.T_d1_AReliableFrameFromTheRightIpButAnotherPortIsDroppedBeforeAcks, TransportRepairTests.M1_019_R38_FinishConnectionWithNoConnectionIsAnUnconnectedDestination"
     },
     {
       "id": "M1-019",
@@ -584,7 +584,7 @@
       "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "TransportRepairTests.M1_019_R38_FinishConnectionSendsAReliableFlushedTypeTwoToThatAddress, TransportRepairTests.M1_019_R38_FinishConnectionWithNoConnectionIsAnUnconnectedDestination, TransportRepairTests.M1_019_R39_StopSendsNothingClearsTheConnectionsAndClosesTheSocket, TransportRepairTests.M1_019_R38_R39_StartOpensTheSocketOnceAndConnectAndDisconnectLeaveItAlone, TransportRepairTests.M1_019_R40_TheConnectionResponseReachesTheReceiverAsOnConnected, TransportRepairTests.M1_035_B21_AQueuedDisconnectActsOnTheConnectionItsAddressHasWhenItRuns, TransportRepairTests.T_h1_DisconnectMakesOneAttemptAndDeletesTheConnectionAtOnce, TransportHardeningTests.ASecondConnectQueuesAnotherConnectionRequestOnTheSameConnection, TransportRepairTests.M1_019_R39_AConnectFollowedByStopStillSendsTheConnectionRequestFirst"
     },
     {
       "id": "M1-020",
@@ -708,7 +708,7 @@
       "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "TransportRepairTests.B33_DisposeWhileConnectingSendsTheDisconnectRequestThenStops"
     },
     {
       "id": "M1-026",
@@ -841,7 +841,7 @@
       "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": "TransportRepairTests.AContainerEndingInAPartialSubMessageHeaderIsASizeOverrunAfterTheHeader"
+      "test": "TransportRepairTests.AContainerEndingInAPartialSubMessageHeaderIsASizeOverrunAfterTheHeader, TransportRepairTests.M1_015_R19_B22_ATimeoutDeletesTheConnectionSetsTheFlagAndTheTransportGoesOn, TransportRepairTests.M1_018_R13_ATypeOneFrameFromAnUnknownAddressCreatesAConnection"
     },
     {
       "id": "M1-033",
@@ -896,7 +896,7 @@
       "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": "TransportRepairTests.M1_035_R37_ASendIsPostedAndRunsFifoBetweenUpdatesOnTheTransportThread, TransportRepairTests.M1_035_R37_InSyncModeTooQueueActionPostsToTheExecutor, TransportRepairTests.M1_035_B21_AQueuedDisconnectActsOnTheConnectionThatExistsWhenItRuns"
+      "test": "TransportRepairTests.M1_035_R37_ASendIsPostedAndRunsFifoBetweenUpdatesOnTheTransportThread, TransportRepairTests.M1_035_R37_InSyncModeTooQueueActionPostsToTheExecutor, TransportRepairTests.M1_035_B21_AQueuedDisconnectActsOnTheConnectionItsAddressHasWhenItRuns"
     },
     {
       "id": "M1-036",

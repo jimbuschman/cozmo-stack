@@ -245,6 +245,9 @@ public sealed class CozmoRobot : IDisposable
         robot.Transport.Disconnected += bad;
         try
         {
+            // fidelity: M1-019
+            // R39 / R38: Start opens the socket (once), Connect only queues the ConnectionRequest; both are posted, in order.
+            robot.Transport.Start();
             robot.Transport.Connect(address, port);
             var t = timeout ?? TimeSpan.FromSeconds(5);
             if (await Task.WhenAny(connected.Task, Task.Delay(t)) != connected.Task)

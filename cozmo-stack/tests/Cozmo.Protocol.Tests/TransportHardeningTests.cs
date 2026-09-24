@@ -115,6 +115,7 @@ public class TransportHardeningTests
     public void ConnectAndDisconnectLeavesNoWorkersAndCanConnectAgain()
     {
         using var t = new ReliableTransport();
+        t.Start();                                          // M1-019 R39: the socket once, then Connect per attempt
         for (int attempt = 0; attempt < 3; attempt++)
         {
             t.Connect(Nowhere, 59999);
@@ -123,19 +124,32 @@ public class TransportHardeningTests
             Assert.True(t.Flush(TimeSpan.FromSeconds(5)), "the posted disconnect never ran");
             Assert.Equal(LinkState.Disconnected, t.State);
         }
-        // three full cycles on one instance means shutdown really did release the workers each time
+        // three full cycles on one instance; since M1-019 R38/R39 the socket and the host threads stay up
+        // across them (a Disconnect deletes only the connection), and Dispose releases them
     }
 
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. Replaces the test that a second Connect throws "already running": M1-019 R38 / B21
+    /// (RT::Connect only clears +0xA1 and queues QueueMessage(type 1, reliable, flush 1), 0x0083710E / 0x0083711C)
+    /// and M1-018 G2.1 (SendMessage FindConnection(addr, create = type == 1), 0x00836C52..0x00836C6E): a second
+    /// Connect to the same address is not refused; its type 1 is queued on the connection that address already
+    /// has, with the next sequence id (R14). Refusing a second connect is the app layer's (B2, batch 3).
+    /// </summary>
     [Fact]
-    public void ConnectingTwiceWithoutDisconnectingIsRefused()
+    public void ASecondConnectQueuesAnotherConnectionRequestOnTheSameConnection()
     {
-        using var t = new ReliableTransport();
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
         t.Connect(Nowhere, 59998);
-        try
-        {
-            Assert.Throws<InvalidOperationException>(() => t.Connect(Nowhere, 59998));
-        }
-        finally { t.Disconnect(); }
+        var c = t.Connection!;
+        clk.NowMs = 1001;                                   // inside the 2 ms separation: the second stays queued
+        t.Connect(Nowhere, 59998);
+        Assert.Same(c, t.Connection);
+        Assert.Equal(new[] { ReliableMessageType.ConnectionRequest, ReliableMessageType.ConnectionRequest },
+                     c.Pending.Select(p => p.Type));
+        Assert.Equal(new ushort[] { 1, 2 }, c.Pending.Select(p => p.Seq));
+        Assert.All(c.Pending, p => Assert.True(p.FlushPacket));
+        Assert.Equal(LinkState.Connecting, t.State);
     }
 
     [Fact]
@@ -177,30 +191,28 @@ public class TransportHardeningTests
 
     /// <summary>
     /// REGRESSION ONLY (host structure, M1-014). A handler raised inline while a sync-mode Connect holds the
-    /// transport lock (the ConnectionRequest's FrameTrace) waits for another thread that calls Disconnect and
-    /// Connect. That thread must get through at once: the lifecycle lock is not held while the transport lock
-    /// is taken or while a handler runs. (Before, the sync Connect held it across both, and the other thread
-    /// blocked until the handler gave up.)
+    /// transport lock (the ConnectionRequest's FrameTrace) waits for another thread that calls Disconnect. That
+    /// thread must get through at once: the lifecycle lock is not held while the transport lock is taken or
+    /// while a handler runs. (Before, the sync Connect held it across both, and the other thread blocked until
+    /// the handler gave up.)
+    /// Changed for M1-019 R38: the other thread no longer also calls Connect. A sync-mode Connect now queues its
+    /// type 1 under the transport lock (R36) instead of being refused as "already running" before taking it, so
+    /// from another thread it waits for this handler, as any sync-mode send does.
     /// </summary>
     [Fact]
     public void AHandlerInsideASyncConnectCanReachTheTransportFromAnotherThread()
     {
         using var t = new ReliableTransport(TransportOptions.EngineDefaults, null, manualPump: true);
-        bool otherFinished = false; Exception? otherConnect = null; int once = 0;
+        bool otherFinished = false; int once = 0;
         t.FrameTrace += _ =>
         {
             if (Interlocked.Exchange(ref once, 1) == 1) return;
-            var other = new Thread(() =>
-            {
-                t.Disconnect("from another thread");
-                try { t.Connect(Nowhere, 59990); } catch (Exception e) { otherConnect = e; }
-            });
+            var other = new Thread(() => t.Disconnect("from another thread"));
             other.Start();
             otherFinished = other.Join(TimeSpan.FromSeconds(3));
         };
         t.Connect(Nowhere, 59990);
         Assert.True(otherFinished, "another thread could not reach the transport while a handler ran inside Connect");
-        Assert.IsType<InvalidOperationException>(otherConnect);   // "already running": the first link is open
         Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
         Assert.Equal(LinkState.Disconnected, t.State);          // the posted Disconnect then ran (B21)
     }
@@ -243,8 +255,8 @@ public class TransportHardeningTests
 
     /// <summary>
     /// REGRESSION ONLY (host structure, M1-014). A post the executor refuses (it has been completed) fails
-    /// visibly: Connect throws, closes the socket it opened and releases the link, so the next Connect is
-    /// refused the same way rather than as "already running"; a send throws instead of being dropped.
+    /// visibly: Connect throws and puts the link state back, so the next Connect is refused the same way; a
+    /// send throws instead of being dropped. (Connect opens no socket since M1-019 R38 / R39.)
     /// </summary>
     [Fact]
     public void APostTheExecutorRefusesFailsVisiblyAndReleasesTheLink()

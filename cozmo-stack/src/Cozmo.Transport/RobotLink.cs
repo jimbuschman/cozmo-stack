@@ -70,6 +70,9 @@ public sealed class RobotLink : IDisposable
         void ok() { Transport.Connected -= ok; tcs.TrySetResult(); }
         void bad(string r) { Transport.Disconnected -= bad; tcs.TrySetException(new IOException($"disconnected while connecting: {r}")); }
         Transport.Connected += ok; Transport.Disconnected += bad;
+        // fidelity: M1-019
+        // R39 / R38: Start opens the socket (once), Connect only queues the ConnectionRequest; both are posted, in order.
+        Transport.Start();
         Transport.Connect(robot, port);
         var t = timeout ?? TimeSpan.FromSeconds(5);
         return Task.WhenAny(tcs.Task, Task.Delay(t)).ContinueWith(w =>

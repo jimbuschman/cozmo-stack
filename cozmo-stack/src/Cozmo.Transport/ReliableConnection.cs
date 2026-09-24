@@ -22,6 +22,25 @@ public sealed class PendingMessage
     public void MarkSent(double nowMs) { if (FirstSentTimeMs == 0) FirstSentTimeMs = nowMs; LastSentTimeMs = nowMs; SendCount++; }
 }
 
+// fidelity: M1-009
+/// <summary>
+/// PendingMultiPartMessage: the assembly of one incoming multipart message (R23). It belongs to its
+/// connection: HandleSubMessage passes the connection (0x008374C6 mov r0,r5) to
+/// ReliableConnection::GetPendingMultiPartMessage (0x008374C8; body 0x00835A94 adds r0,#0x20) and calls
+/// AddMessagePart on what it returns, so it goes with its connection when DeleteConnection destroys it
+/// (verifier reading, batch 2b-ii; pending inventory correction).
+/// </summary>
+public sealed class PendingMultiPartMessage
+{
+    internal readonly List<byte> Data = new();
+    /// <summary>The index expected next (+4, from 1).</summary>
+    internal int Next = 1;
+    /// <summary>The part count, set by part 1.</summary>
+    internal int Last;
+
+    internal void Clear() { Data.Clear(); Next = 1; Last = 0; }
+}
+
 /// <summary>Callback the connection uses to put a finished frame on the wire.</summary>
 public delegate void FrameSender(ReliableMessageType type, ushort seqMin, ushort seqMax, byte[] body);
 
@@ -57,6 +76,10 @@ public sealed class ReliableConnection
     public double LastPingRoundTripMs { get; private set; } = double.NaN;
     public int PingRepliesSeen { get; private set; }
     public int PendingCount => _pending.Count;
+
+    // fidelity: M1-009
+    /// <summary>GetPendingMultiPartMessage 0x00835A94: this connection's multipart assembly (R23).</summary>
+    public PendingMultiPartMessage MultiPart { get; } = new();
 
     public int FramesSent { get; private set; }
     public int ResendFrames { get; private set; }
