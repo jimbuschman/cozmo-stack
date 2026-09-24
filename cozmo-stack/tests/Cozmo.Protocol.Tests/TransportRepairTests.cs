@@ -146,6 +146,7 @@ public class TransportRepairTests
         Connect(d);
         dclk.NowMs = 1005;
         d.Disconnect();
+        Assert.True(d.Flush(TimeSpan.FromSeconds(5)));      // R37 / B21: Disconnect is a queued action, in sync mode too
         var dr = d.OfflineOutbound[^1];
         Assert.Contains(dr.Messages, m => m.Type == ReliableMessageType.DisconnectRequest && m.IsReliable);
     }
@@ -559,6 +560,7 @@ public class TransportRepairTests
         clk.NowMs = 1040; t.Send(new SyncTime(0));          // an unacked message that would be resent
         clk.NowMs = 1045;
         t.Disconnect("test");
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));      // R37 / B21: Disconnect is a queued action, in sync mode too
         Assert.Null(t.Connection);
         Assert.Equal(LinkState.Disconnected, t.State);
         Assert.Equal(1, t.OfflineOutbound.Count(f => f.Messages.Any(m => m.Type == ReliableMessageType.DisconnectRequest)));
@@ -584,6 +586,7 @@ public class TransportRepairTests
         int frames = t.OfflineOutbound.Count;               // the ConnectionRequest, sent at 1000
         clk.NowMs = 1001;                                   // 1 ms later: inside the 2 ms separation
         t.Disconnect();
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));      // R37 / B21: Disconnect is a queued action, in sync mode too
         Assert.Null(t.Connection);
         Assert.Equal(frames, t.OfflineOutbound.Count);
         Assert.Equal(LinkState.Disconnected, t.State);
@@ -601,7 +604,7 @@ public class TransportRepairTests
     {
         var clk = new ManualClock { NowMs = 1000 };
         var net = new ScriptedReceive();
-        var t = new ReliableTransport(TransportOptions.EngineDefaults, clk) { ManualPump = true, ReceiveHook = net.Receive };
+        var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true) { ReceiveHook = net.Receive };
         var outbound = new List<Frame>();
         t.FrameTrace += e => { if (e.Outbound && e.Frame is not null) outbound.Add(e.Frame); };
         t.Connect(IPAddress.Loopback, 59981);
@@ -652,26 +655,330 @@ public class TransportRepairTests
 
     // ================================================================ M1-j
 
+    // Replaces T-j1, which tested a cadence helper that was not the production scheduler, and whose comment
+    // ("a late run is followed by one run a full period later, not a burst") contradicted G1.10: a backlog of
+    // posted copies does run back to back.
+
     /// <summary>
-    /// T-j1 — PRIMARY-SOURCE ORACLE. The update is scheduled every 2 ms (0x0083689E) and re-armed at the
-    /// now() taken when the run began (0x007FC1BC) plus the period (0x007FC36A-76): never sooner than 2 ms
-    /// after the re-arm point, and a late run is followed by one run a full period later, not a burst.
+    /// PRIMARY-SOURCE ORACLE. M1-021 G1.2 (0x007FCEBA steady_clock::now; 0x007FCEBE/C2 #0xF4240; 0x007FCEC6
+    /// umull; 0x007FCED2 adds; 0x007FCED6 strd): the first time is now + period × 1e6 ns, so on the production
+    /// scheduler with the 2 ms period (R35 ScheduleCallback 0x00836896 movs r2,#2) nothing is posted before
+    /// 2 000 000 ns have passed since scheduling, and one copy is posted at exactly that time.
     /// </summary>
     [Fact]
-    public void T_j1_TheUpdateIsReArmedFromWhenItRanWithNoCatchUp()
+    public void M1_021_G1_2_TheFirstRunIsDueOnePeriodAfterScheduling()
     {
-        var clk = new ManualClock { NowMs = 0 };
-        var cadence = new TransportCadence(clk, 2.0);
-        clk.NowMs = 1.9; Assert.False(cadence.TryBegin());
-        clk.NowMs = 2.0; Assert.True(cadence.TryBegin());
-        Assert.Equal(4.0, cadence.DueMs);
-        clk.NowMs = 3.9; Assert.False(cadence.TryBegin());
+        long now = 5_000_000; int posts = 0;
+        var s = new TransportScheduler(() => now, TransportOptions.EngineDefaults.UpdateIntervalMs, () => posts++);
+        Assert.Equal(5_000_000 + 2 * 1_000_000, s.DueNs);
+        now = 6_999_999; Assert.False(s.Pass());
+        Assert.Equal(0, posts);
+        now = 7_000_000; Assert.True(s.Pass());
+        Assert.Equal(1, posts);
+    }
 
-        clk.NowMs = 9.0; Assert.True(cadence.TryBegin());  // late by 5 ms
-        Assert.Equal(11.0, cadence.DueMs);                  // from the new re-arm point
-        Assert.False(cadence.TryBegin());                   // no catch-up run for the missed periods
-        clk.NowMs = 10.9; Assert.False(cadence.TryBegin());
-        clk.NowMs = 11.0; Assert.True(cadence.TryBegin());
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-021 G1.7 (0x007FC1BC now; 0x007FC1C8..0x007FC1D6 due test; 0x007FC270
+    /// AddTaskHolder) and G1.8 (0x007FC344 repeat byte; 0x007FC352..0x007FC376; 0x007FC3C4): a due pass posts
+    /// ONE copy and re-arms the entry at the now it read + period. A pass made late by several periods still
+    /// posts one copy, not one per missed period, and the next is due a full period after that late now
+    /// (fixed delay; missed periods are not added back). The scheduler only posts; it never runs the callback.
+    /// </summary>
+    [Fact]
+    public void M1_021_G1_7_G1_8_ADuePassPostsOneCopyAndReArmsAtThatNowPlusThePeriod()
+    {
+        long now = 0; int posts = 0;
+        var s = new TransportScheduler(() => now, 2.0, () => posts++);
+        now = 2_000_000; Assert.True(s.Pass());
+        Assert.Equal(4_000_000, s.DueNs);                   // G1.8: that now + period
+        Assert.False(s.Pass());                             // same now: not due again
+
+        now = 10_500_000;                                   // late by 6.5 ms, three periods missed
+        Assert.True(s.Pass());
+        Assert.Equal(2, posts);                             // one copy, no catch-up copies
+        Assert.Equal(12_500_000, s.DueNs);                  // fixed delay from the late now
+        Assert.False(s.Pass());
+        now = 12_499_999; Assert.False(s.Pass());
+        now = 12_500_000; Assert.True(s.Pass());
+        Assert.Equal(3, posts);
+        Assert.Equal(3, s.Posted);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-021 G1.9 (AddTaskHolder 0x007FCCF4, push 0x007FCD50..0x007FCD54, never merged)
+    /// and G1.10 (Execute 0x007FBF78..0x007FBF8E; Run 0x007FD0C6..0x007FD128): on the production executor,
+    /// items posted while it is busy are all kept, then run one at a time, in the order posted, on its one
+    /// thread, back to back and never overlapping.
+    /// </summary>
+    [Fact]
+    public void M1_021_G1_9_G1_10_PostedItemsRunInOrderOnOneThreadWithoutOverlapAndABacklogRunsBackToBack()
+    {
+        var exec = new SerialExecutor("test-executor");
+        exec.Start();
+        var gate = new ManualResetEventSlim(); var busy = new ManualResetEventSlim();
+        exec.Post(() => { busy.Set(); gate.Wait(TimeSpan.FromSeconds(10)); });
+        Assert.True(busy.Wait(TimeSpan.FromSeconds(5)));
+
+        var order = new List<int>(); var threads = new HashSet<int>();
+        int running = 0, maxRunning = 0;
+        for (int i = 0; i < 20; i++)
+        {
+            int n = i;
+            Assert.True(exec.Post(() =>
+            {
+                int r = Interlocked.Increment(ref running);
+                maxRunning = Math.Max(maxRunning, r);
+                order.Add(n); threads.Add(Environment.CurrentManagedThreadId);
+                Thread.SpinWait(2000);
+                Interlocked.Decrement(ref running);
+            }));
+        }
+        Assert.Empty(order);                                 // all twenty are waiting behind the busy item
+        var done = new ManualResetEventSlim();
+        exec.Post(() => done.Set());
+        gate.Set();
+        Assert.True(done.Wait(TimeSpan.FromSeconds(5)));
+
+        Assert.Equal(Enumerable.Range(0, 20), order);        // every copy kept, in order (G1.9, G1.10)
+        Assert.Equal(1, maxRunning);                         // never overlapping
+        Assert.Equal(exec.ThreadId, Assert.Single(threads)); // on the executor's one thread
+        exec.Complete(); exec.Join(TimeSpan.FromSeconds(2));
+    }
+
+    /// <summary>Records each item the transport's executor runs, with the thread it ran on.</summary>
+    private static void Traced(ReliableTransport t, List<(ReliableTransport.ExecutorItem item, int thread)> into) =>
+        t.ExecutorTrace = i => { lock (into) into.Add((i, Environment.CurrentManagedThreadId)); };
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-010 R35 / B14: the ctor sets up the RelTransport queue and ChangeSyncMode(false)
+    /// (0x008367E2) requests the 2 ms update (0x00836896, 0x0083689E), so a production transport runs its
+    /// update without any Connect. M1-021 G1.7: the scheduler posts copies and never runs them, so every update
+    /// runs on the executor thread, not on the scheduler's.
+    /// </summary>
+    [Fact]
+    public void M1_010_R35_TheUpdateIsRequestedAtConstructionAndRunsOnTheExecutor()
+    {
+        using var t = new ReliableTransport();
+        var seen = new List<(ReliableTransport.ExecutorItem item, int thread)>();
+        Traced(t, seen);
+        Assert.True(SpinWait.SpinUntil(() => { lock (seen) return seen.Count(s => s.item.Kind == "tick") >= 3; }, 5000),
+            "no update ran without a Connect");
+        Assert.Equal(LinkState.Idle, t.State);
+        List<(ReliableTransport.ExecutorItem item, int thread)> snap; lock (seen) snap = seen.ToList();
+        Assert.All(snap, s => Assert.Equal(t.Executor.ThreadId, s.thread));
+        Assert.NotEqual(t.Scheduler!.ThreadId, t.Executor.ThreadId);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-010 R35 / B14: the update is scheduled once, at construction, and the lambda
+    /// (0x008383CE) runs Update on every copy; nothing in the rows stops the schedule when a connection times
+    /// out (R19 / G2.7: now &gt; lastRecv + 5000, lastRecv stamped when the connection is made, G2.3). So after
+    /// the timeout the update goes on running.
+    /// </summary>
+    [Fact]
+    public void M1_010_R35_TheUpdateKeepsRunningAfterAConnectionTimesOut()
+    {
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk);
+        var seen = new List<(ReliableTransport.ExecutorItem item, int thread)>();
+        Traced(t, seen);
+        t.Connect(IPAddress.Loopback, 59990);
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        Assert.Equal(1000, t.Connection!.LatestRecvMs);      // G2.3: stamped when the posted Connect made it
+
+        clk.NowMs = 1000 + 5000.1;                            // G2.7: strictly past lastRecv + 5000
+        Assert.True(SpinWait.SpinUntil(() => t.State == LinkState.Disconnected, 5000), "the connection never timed out");
+        int ticksAtTimeout; lock (seen) ticksAtTimeout = seen.Count(s => s.item.Kind == "tick");
+        Assert.True(SpinWait.SpinUntil(() => { lock (seen) return seen.Count(s => s.item.Kind == "tick") >= ticksAtTimeout + 5; }, 5000),
+            "the update stopped when the connection timed out");
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-035 R37 (QueueMessage 0x00836B66..0x00836BE4; closure 0x00837DEA; QueueAction
+    /// 0x00836FF6): in async mode a send is not run on the caller's thread; it is posted to the same queue as
+    /// the update, and the closure calls SendMessage under the transport mutex. Sends and updates are therefore
+    /// FIFO on one thread: with the executor held busy, the update copies posted before the send (G1.9: kept,
+    /// never merged) run first, back to back (G1.10), then the send, then the copies posted after it. The
+    /// caller does not wait for the busy executor. M1-020 B15: this is the production (async) mode.
+    /// The posted time R37 passes to SendMessage is not checked: what SendMessage does with it is MISSING.
+    /// </summary>
+    [Fact]
+    public void M1_035_R37_ASendIsPostedAndRunsFifoBetweenUpdatesOnTheTransportThread()
+    {
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk);
+        var seen = new List<(ReliableTransport.ExecutorItem item, int thread)>();
+        Traced(t, seen);
+        t.Connect(IPAddress.Loopback, 59989);
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        var c = t.Connection!;
+        int pendingBefore = c.PendingCount;                   // the ConnectionRequest, unacked
+
+        var gate = new ManualResetEventSlim(); var busy = new ManualResetEventSlim();
+        t.Executor.Post(() => { busy.Set(); gate.Wait(TimeSpan.FromSeconds(10)); });   // a long-running item
+        Assert.True(busy.Wait(TimeSpan.FromSeconds(5)));
+        int start; lock (seen) start = seen.Count;
+        long p0 = t.Scheduler!.Posted;
+        Assert.True(SpinWait.SpinUntil(() => t.Scheduler.Posted >= p0 + 3, 5000));
+
+        clk.NowMs = 1010;
+        t.SendData(Data, reliable: true, flush: false);       // returns although the executor is busy
+        Assert.Equal(pendingBefore, c.PendingCount);          // and did not run SendMessage on this thread
+        long p1 = t.Scheduler.Posted;
+        Assert.True(SpinWait.SpinUntil(() => t.Scheduler.Posted >= p1 + 2, 5000));
+        gate.Set();
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+
+        List<(ReliableTransport.ExecutorItem item, int thread)> after; lock (seen) after = seen.Skip(start).ToList();
+        var seqs = after.Select(s => s.item.Seq).ToList();
+        Assert.Equal(seqs.OrderBy(x => x), seqs);             // run in the order posted (numbered at enqueue)
+        int sendAt = after.FindIndex(s => s.item.Kind == "send");
+        Assert.True(sendAt >= 3, $"expected the backlog of updates before the send, got {sendAt}");
+        Assert.All(after.Take(sendAt), s => Assert.Equal("tick", s.item.Kind));   // back to back
+        Assert.Contains(after.Skip(sendAt + 1), s => s.item.Kind == "tick");
+        Assert.All(after, s => Assert.Equal(t.Executor.ThreadId, s.thread));
+        Assert.NotEqual(Environment.CurrentManagedThreadId, t.Executor.ThreadId);
+        Assert.Equal(pendingBefore + 1, c.PendingCount);
+        Assert.Equal(Data, c.Pending[^1].Payload);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-020 R36 (0x00836B42..0x00836B5C): in sync mode QueueMessage calls SendMessage
+    /// directly and no timer exists, so the send has been queued when the call returns, on the caller's
+    /// thread. This stack's sync mode is the offline / manual-pump seam; production is async (B15).
+    /// </summary>
+    [Fact]
+    public void M1_020_R36_InSyncModeASendIsQueuedOnTheCallersThreadAtOnce()
+    {
+        var (t, clk, _) = Offline();
+        Connect(t);
+        Assert.Null(t.Scheduler);                            // R36: no timer in sync mode
+        int before = t.Connection!.PendingCount;
+        clk.NowMs = 1001;                                    // inside the 2 ms separation: stays queued
+        t.SendData(Data, reliable: true, flush: false);
+        Assert.Equal(before + 1, t.Connection.PendingCount);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-035 R37 (QueueAction 0x00836FF6 posts to the same queue) and B21
+    /// (RT::Disconnect queues an action, closure 0x00837FFA); verifier reading, batch 2b-i: QueueAction
+    /// 0x00836FAC..0x00836FF6 never reads the sync-mode flag +0xA0, and ChangeSyncMode(true) only drops the
+    /// callback handle (0x00836862..0x00836878), so the queue survives. In sync mode too, a Disconnect is
+    /// posted: with the executor held busy nothing has happened when Disconnect returns, and the connection
+    /// is deleted once the executor runs it.
+    /// </summary>
+    [Fact]
+    public void M1_035_R37_InSyncModeTooQueueActionPostsToTheExecutor()
+    {
+        var (t, _, _) = Offline();
+        Connect(t);
+        var gate = new ManualResetEventSlim(); var busy = new ManualResetEventSlim();
+        t.Executor.Post(() => { busy.Set(); gate.Wait(TimeSpan.FromSeconds(10)); });
+        Assert.True(busy.Wait(TimeSpan.FromSeconds(5)));
+        t.Disconnect("queued");
+        Assert.NotNull(t.Connection);                        // not run on the caller's thread
+        Assert.Equal(LinkState.Connected, t.State);
+        gate.Set();
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        Assert.Null(t.Connection);
+        Assert.Equal(LinkState.Disconnected, t.State);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-035 B21 / R37 (RT::Disconnect queues an action through QueueAction 0x0083719A;
+    /// closure 0x00837FFA: SendMessage type 3, then DeleteConnection): the queued action acts on whatever
+    /// connection exists when it runs. A Disconnect posted before a Connect, and run after that Connect has made
+    /// its connection, therefore ends that connection; it is not discarded as belonging to an earlier link.
+    /// </summary>
+    [Fact]
+    public void M1_035_B21_AQueuedDisconnectActsOnTheConnectionThatExistsWhenItRuns()
+    {
+        var clk = new ManualClock { NowMs = 1000 };
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
+        var reasons = new List<string>(); t.Disconnected += r => { lock (reasons) reasons.Add(r); };
+        var gate = new ManualResetEventSlim(); var busy = new ManualResetEventSlim();
+        t.Executor.Post(() => { busy.Set(); gate.Wait(TimeSpan.FromSeconds(10)); });
+        Assert.True(busy.Wait(TimeSpan.FromSeconds(5)));
+        t.Disconnect("posted first");                       // queued while no connection exists
+        t.Connect(IPAddress.Loopback, 59980);               // sync mode: the connection is made here (R36, G2.1)
+        Assert.NotNull(t.Connection);
+        Assert.Equal(LinkState.Connecting, t.State);
+        gate.Set();
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        Assert.Null(t.Connection);                          // DeleteConnection on the connection it found
+        Assert.Equal(LinkState.Disconnected, t.State);
+        lock (reasons) Assert.Equal(new[] { "posted first" }, reasons);
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-005 evidence / G2.4 GetCurrentNetTimeStamp 0x008355F8: the elapsed nanoseconds
+    /// are divided by 0x3E8 as an integer (0x00835644), and the whole microseconds are multiplied by the double
+    /// at 0x00835660, 0x3F50624DD2F1A9FC = 0.001 (0x0083564C). Anything under a microsecond is dropped.
+    /// </summary>
+    [Fact]
+    public void M1_005_G2_4_TheClockIsWholeMicrosecondsTimes0_001()
+    {
+        double k = BitConverter.Int64BitsToDouble(0x3F50624DD2F1A9FC);
+        Assert.Equal(0.001, k);
+        const long ns = 1_000_000_000;                       // a nanosecond tick
+        Assert.Equal(0.0, NetTimeStamp.FromElapsedTicks(999, ns));
+        Assert.Equal(1 * k, NetTimeStamp.FromElapsedTicks(1_999, ns));
+        Assert.Equal(1_234_567 * k, NetTimeStamp.FromElapsedTicks(1_234_567_999, ns));
+        const long hundredNs = 10_000_000;                   // the usual Windows Stopwatch tick
+        Assert.Equal(1_234_567 * k, NetTimeStamp.FromElapsedTicks(12_345_679, hundredNs));
+        Assert.Equal(0.0, NetTimeStamp.FromElapsedTicks(9, hundredNs));
+        Assert.Equal(86_400_000_000L * k, NetTimeStamp.FromElapsedTicks(864_000_000_000, hundredNs));   // a day, no overflow
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-005 evidence / G2.4 (0x0083561A/0x00835628): the epoch is one static, taken at
+    /// the first call, so every clock in the process reads the same time; a clock made later does not start
+    /// again from zero. The live reading is whole microseconds. The transport's default clock is this one.
+    /// </summary>
+    [Fact]
+    public void M1_005_G2_4_EveryClockReadsOneProcessWideEpoch()
+    {
+        var first = new StopwatchClock();
+        double a1 = first.NowMs;
+        Thread.Sleep(30);
+        var later = new StopwatchClock();
+        double b = later.NowMs, a2 = first.NowMs;
+        Assert.True(b >= a1 + 25, $"a clock made later restarted its epoch: {b} vs {a1}");
+        Assert.True(a1 <= b && b <= a2, $"{a1} <= {b} <= {a2}");
+        double us = b * 1000;
+        Assert.True(Math.Abs(us - Math.Round(us)) < 1e-3, $"{b} is not whole microseconds");
+
+        double before = NetTimeStamp.NowMs;
+        var t = ReliableTransport.CreateOffline();            // default clock; the connection stamps lastRecv (G2.3)
+        double after = NetTimeStamp.NowMs;
+        Assert.InRange(t.Connection!.LatestRecvMs, before, after);
+    }
+
+    /// <summary>
+    /// COMPATIBILITY_POLICY M1-034 (operator decision D6). The original has no handler isolation; this stack
+    /// isolates each subscriber (comparison, policies table: RobotLink.OnData raised State and Message as plain
+    /// multicasts). A State subscriber that throws neither stops the State subscriber after it nor keeps
+    /// Message from being raised, and the fault is counted and reported.
+    /// </summary>
+    [Fact]
+    public void M1_034_RobotLinkIsolatesEachStateAndMessageSubscriber()
+    {
+        var (t, _, _) = Offline();
+        var link = new RobotLink(t);
+        var states = new List<RobotState>(); var messages = new List<RobotMessage>(); var faults = new List<Exception>();
+        link.State += _ => throw new InvalidOperationException("broken state handler");
+        link.State += states.Add;
+        link.Message += _ => throw new InvalidOperationException("broken message handler");
+        link.Message += messages.Add;
+        link.HandlerFaulted += faults.Add;
+        Connect(t);
+
+        t.ProcessIncoming(Raw(ReliableMessageType.SingleReliableMessage, 2, 2, 1, new RobotState().ToBytes()));
+        Assert.Single(states);
+        Assert.IsType<RobotState>(Assert.Single(messages));
+        Assert.Equal(2, link.HandlerFaults);
+        Assert.Equal(2, faults.Count);
+        Assert.Equal(0, t.HandlerFaults);                     // nothing escaped into the transport
     }
 
     /// <summary>
@@ -686,7 +993,7 @@ public class TransportRepairTests
         {
             var clk = new ManualClock { NowMs = 1000 };
             var net = new ScriptedReceive();
-            var t = new ReliableTransport(TransportOptions.EngineDefaults, clk) { ManualPump = true, ReceiveHook = net.Receive };
+            var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true) { ReceiveHook = net.Receive };
             t.Connect(IPAddress.Loopback, port);
             net.Datagram(ConnectionResponse(), t.Peer!);
             clk.NowMs = 1001; t.Pump();
@@ -860,7 +1167,7 @@ public class TransportRepairTests
         using var robot = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         robot.Bind(new IPEndPoint(IPAddress.Loopback, 0));
         var clk = new ManualClock { NowMs = 1000 };
-        var t = new ReliableTransport(TransportOptions.EngineDefaults, clk) { ManualPump = true };
+        var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
         var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
         t.Connect(IPAddress.Loopback, ((IPEndPoint)robot.LocalEndPoint!).Port);
         var local = new IPEndPoint(IPAddress.Loopback, ((IPEndPoint)t.LocalEndPoint!).Port);
@@ -890,7 +1197,7 @@ public class TransportRepairTests
     {
         var clk = new ManualClock { NowMs = 1000 };
         var net = new ScriptedReceive();
-        var t = new ReliableTransport(TransportOptions.EngineDefaults, clk) { ManualPump = true, ReceiveHook = net.Receive };
+        var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true) { ReceiveHook = net.Receive };
         t.Connect(IPAddress.Loopback, port);
         net.Datagram(ConnectionResponse(), t.Peer!);
         clk.NowMs = 1001; t.Pump();

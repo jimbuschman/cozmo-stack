@@ -69,10 +69,48 @@ public sealed class TransportOptions
 /// <summary>NetTimeStamp: milliseconds since first use, from a steady clock (official uses std::chrono::steady_clock).</summary>
 public interface INetClock { double NowMs { get; } }
 
+// fidelity: M1-005
+/// <summary>
+/// <c>GetCurrentNetTimeStamp</c> 0x008355F8 (M1-005 evidence; G2.4): milliseconds as a double on a monotonic
+/// clock, measured from one static, process-wide epoch taken the first time the clock is read
+/// (0x0083561A/0x00835628). The elapsed nanoseconds are divided by 0x3E8 as an integer (0x00835644), so
+/// the reading is truncated to whole microseconds, and only then converted and multiplied by 0.001
+/// (0x0083564C, literal 0x3F50624DD2F1A9FC). The host's monotonic clock is <see cref="Stopwatch"/>.
+/// </summary>
+public static class NetTimeStamp
+{
+    /// <summary>The process-wide epoch, taken at the first read of <see cref="NowMs"/> and never again.</summary>
+    private static readonly Lazy<long> Epoch = new(Stopwatch.GetTimestamp, LazyThreadSafetyMode.ExecutionAndPublication);
+
+    /// <summary>Milliseconds since the process-wide epoch, in whole microseconds.</summary>
+    public static double NowMs
+    {
+        get
+        {
+            long epoch = Epoch.Value;
+            return FromElapsedTicks(Stopwatch.GetTimestamp() - epoch, Stopwatch.Frequency);
+        }
+    }
+
+    /// <summary>
+    /// The conversion on its own: elapsed host ticks to nanoseconds, then ns / 1000 as an integer
+    /// (0x00835644), then that many microseconds * 0.001 (0x0083564C).
+    /// </summary>
+    internal static double FromElapsedTicks(long ticks, long frequency)
+    {
+        long ns = (long)((Int128)ticks * 1_000_000_000 / frequency);
+        long us = ns / 1000;
+        return us * 0.001;
+    }
+}
+
+/// <summary>
+/// The production clock: reads <see cref="NetTimeStamp"/>, so every instance shares its process-wide epoch
+/// (M1-005, G2.4). The type is kept for existing callers; it no longer has an epoch of its own.
+/// </summary>
 public sealed class StopwatchClock : INetClock
 {
-    private readonly Stopwatch _sw = Stopwatch.StartNew();
-    public double NowMs => _sw.Elapsed.TotalMilliseconds;
+    public double NowMs => NetTimeStamp.NowMs;
 }
 
 /// <summary>Deterministic clock for tests.</summary>

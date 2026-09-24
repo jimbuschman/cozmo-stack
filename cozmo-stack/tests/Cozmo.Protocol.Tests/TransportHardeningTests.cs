@@ -105,6 +105,12 @@ public class TransportHardeningTests
     /// <summary>A port nothing is listening on: enough to exercise the real socket and thread lifecycle.</summary>
     private static readonly IPAddress Nowhere = IPAddress.Loopback;
 
+    /// <summary>
+    /// Updated for M1-035 / M1-019: ReliableTransport::Disconnect queues an action (R38, B21, closure
+    /// 0x00837FFA) that runs on the RelTransport executor after everything posted before it (R37), so in
+    /// async mode the link is down once that action has run, not when Disconnect returns. The test waits
+    /// for the executor before it looks.
+    /// </summary>
     [Fact]
     public void ConnectAndDisconnectLeavesNoWorkersAndCanConnectAgain()
     {
@@ -114,6 +120,7 @@ public class TransportHardeningTests
             t.Connect(Nowhere, 59999);
             Assert.Equal(LinkState.Connecting, t.State);
             t.Disconnect($"attempt {attempt}");
+            Assert.True(t.Flush(TimeSpan.FromSeconds(5)), "the posted disconnect never ran");
             Assert.Equal(LinkState.Disconnected, t.State);
         }
         // three full cycles on one instance means shutdown really did release the workers each time
@@ -144,6 +151,118 @@ public class TransportHardeningTests
         lock (reasons) Assert.Equal(new[] { "because the test said so" }, reasons);
     }
 
+    /// <summary>
+    /// REGRESSION ONLY (host structure, M1-014). Dispose from one of the transport's own event handlers runs on
+    /// its dispatch thread, which the executor's shutdown joins; Dispose must not wait for the executor there,
+    /// or the two wait on each other until the 2 s join bound runs out.
+    /// </summary>
+    [Fact]
+    public void DisposeFromAnEventHandlerDoesNotWaitOutTheJoinBound()
+    {
+        using var t = new ReliableTransport();
+        var done = new ManualResetEventSlim();
+        long elapsedMs = -1; int once = 0;
+        t.FrameTrace += _ =>
+        {
+            if (Interlocked.Exchange(ref once, 1) == 1) return;
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            t.Dispose();
+            elapsedMs = sw.ElapsedMilliseconds;
+            done.Set();
+        };
+        t.Connect(Nowhere, 59994);                          // the ConnectionRequest is traced on the dispatch thread
+        Assert.True(done.Wait(TimeSpan.FromSeconds(10)), "the handler never ran");
+        Assert.True(elapsedMs < 1000, $"Dispose on the dispatch thread took {elapsedMs} ms");
+    }
+
+    /// <summary>
+    /// REGRESSION ONLY (host structure, M1-014). A handler raised inline while a sync-mode Connect holds the
+    /// transport lock (the ConnectionRequest's FrameTrace) waits for another thread that calls Disconnect and
+    /// Connect. That thread must get through at once: the lifecycle lock is not held while the transport lock
+    /// is taken or while a handler runs. (Before, the sync Connect held it across both, and the other thread
+    /// blocked until the handler gave up.)
+    /// </summary>
+    [Fact]
+    public void AHandlerInsideASyncConnectCanReachTheTransportFromAnotherThread()
+    {
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, null, manualPump: true);
+        bool otherFinished = false; Exception? otherConnect = null; int once = 0;
+        t.FrameTrace += _ =>
+        {
+            if (Interlocked.Exchange(ref once, 1) == 1) return;
+            var other = new Thread(() =>
+            {
+                t.Disconnect("from another thread");
+                try { t.Connect(Nowhere, 59990); } catch (Exception e) { otherConnect = e; }
+            });
+            other.Start();
+            otherFinished = other.Join(TimeSpan.FromSeconds(3));
+        };
+        t.Connect(Nowhere, 59990);
+        Assert.True(otherFinished, "another thread could not reach the transport while a handler ran inside Connect");
+        Assert.IsType<InvalidOperationException>(otherConnect);   // "already running": the first link is open
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        Assert.Equal(LinkState.Disconnected, t.State);          // the posted Disconnect then ran (B21)
+    }
+
+    /// <summary>
+    /// REGRESSION ONLY (host structure, M1-014). Dispose from a handler raised inline under the transport lock
+    /// (sync mode) must not wait for the executor, whose dispose closure needs that lock; it returns at once and
+    /// the link ends once the handler has returned.
+    /// </summary>
+    [Fact]
+    public void DisposeFromAHandlerRaisedUnderTheTransportLockDoesNotWaitOutTheJoinBound()
+    {
+        var t = new ReliableTransport(TransportOptions.EngineDefaults, null, manualPump: true);
+        long elapsedMs = -1; int once = 0;
+        t.FrameTrace += _ =>
+        {
+            if (Interlocked.Exchange(ref once, 1) == 1) return;
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            t.Dispose();
+            elapsedMs = sw.ElapsedMilliseconds;
+        };
+        t.Connect(Nowhere, 59989);
+        Assert.True(elapsedMs >= 0 && elapsedMs < 1000, $"Dispose inside the handler took {elapsedMs} ms");
+        Assert.True(SpinWait.SpinUntil(() => t.State == LinkState.Disconnected, 5000), "the link never ended");
+    }
+
+    /// <summary>
+    /// REGRESSION ONLY (host structure, M1-014). Once Dispose has begun, Connect refuses before it opens
+    /// anything: it throws and the link state is untouched.
+    /// </summary>
+    [Fact]
+    public void ConnectAfterDisposeHasBegunIsRefusedBeforeAnythingIsOpened()
+    {
+        var t = new ReliableTransport();
+        t.Dispose();
+        Assert.Throws<ObjectDisposedException>(() => t.Connect(Nowhere, 59993));
+        Assert.Equal(LinkState.Idle, t.State);
+        t.Disconnect();                                     // after Dispose: nothing to do
+    }
+
+    /// <summary>
+    /// REGRESSION ONLY (host structure, M1-014). A post the executor refuses (it has been completed) fails
+    /// visibly: Connect throws, closes the socket it opened and releases the link, so the next Connect is
+    /// refused the same way rather than as "already running"; a send throws instead of being dropped.
+    /// </summary>
+    [Fact]
+    public void APostTheExecutorRefusesFailsVisiblyAndReleasesTheLink()
+    {
+        using var t = new ReliableTransport();
+        t.Executor.Complete();                              // test seam: the executor accepts nothing more
+        Assert.Throws<ObjectDisposedException>(() => t.Connect(Nowhere, 59992));
+        Assert.Equal(LinkState.Idle, t.State);
+        Assert.Throws<ObjectDisposedException>(() => t.Connect(Nowhere, 59992));
+        Assert.Throws<ObjectDisposedException>(() => t.Disconnect());
+
+        using var s = new ReliableTransport();
+        s.Connect(Nowhere, 59991);
+        Assert.True(s.Flush(TimeSpan.FromSeconds(5)));
+        s.Executor.Complete();
+        Assert.Throws<ObjectDisposedException>(() => s.SendData(new GetManufacturingInfo().ToBytes()));
+    }
+
     [Fact]
     public void DisposeWithoutConnectingIsHarmless()
     {
@@ -155,13 +274,20 @@ public class TransportHardeningTests
         Assert.Empty(reasons);          // nothing was ever up, so there is nothing to report
     }
 
+    /// <summary>
+    /// Updated for M1-035: Disconnect is a queued action (R38, B21; R37), so the test waits for it to have run
+    /// before it sends; otherwise the refusal would only be the Connecting-state refusal.
+    /// </summary>
     [Fact]
     public void SendingAfterDisconnectIsRefusedRatherThanIgnored()
     {
         using var t = new ReliableTransport();
         t.Connect(Nowhere, 59996);
         t.Disconnect();
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)), "the posted disconnect never ran");
+        Assert.Equal(LinkState.Disconnected, t.State);
         Assert.Throws<InvalidOperationException>(() => t.Send(new GetManufacturingInfo()));
+        Assert.Throws<InvalidOperationException>(() => t.SendData(new GetManufacturingInfo().ToBytes()));
     }
 
     [Fact]
@@ -174,11 +300,13 @@ public class TransportHardeningTests
         t.Connect(Nowhere, 59995);
         var sw = System.Diagnostics.Stopwatch.StartNew();
         t.Disconnect();
+        // Updated for M1-035: Disconnect is a queued action (R38, B21; R37). Waiting for it to have run makes
+        // the test cover the shutdown itself again: it queues the notification rather than running it, and
+        // the dispatcher join bound (2 s) is the only cost although the handler stays blocked for 5 s.
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)), "the posted disconnect never ran");
         sw.Stop();
-
-        // Disconnect queues the notification rather than running it, so it returns promptly even though the
-        // handler is still blocked. The dispatcher join bound is the only cost.
-        Assert.True(sw.Elapsed < TimeSpan.FromSeconds(4), $"Disconnect took {sw.ElapsedMilliseconds} ms behind a blocked handler");
+        Assert.Equal(LinkState.Disconnected, t.State);
+        Assert.True(sw.Elapsed < TimeSpan.FromSeconds(4), $"the disconnect took {sw.ElapsedMilliseconds} ms behind a blocked handler");
         released.Set();
     }
 }

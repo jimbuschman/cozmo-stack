@@ -47,11 +47,22 @@ public sealed class RobotLink : IDisposable
     public event Action<RobotMessage>? Message;
     public event Action<RobotState>? State;
 
-    public RobotLink(TransportOptions? options = null)
+    public RobotLink(TransportOptions? options = null) : this(new ReliableTransport(options)) { }
+
+    /// <summary>Test seam: a link over a given transport, such as an offline one.</summary>
+    internal RobotLink(ReliableTransport transport)
     {
-        Transport = new ReliableTransport(options);
+        Transport = transport;
         Transport.DataReceived += OnData;
     }
+
+    private int _handlerFaults;
+
+    /// <summary>Subscribers to <see cref="State"/> or <see cref="Message"/> that threw, counted.</summary>
+    public int HandlerFaults => Volatile.Read(ref _handlerFaults);
+
+    /// <summary>Raised with what a <see cref="State"/> or <see cref="Message"/> subscriber threw.</summary>
+    public event Action<Exception>? HandlerFaulted;
 
     public Task ConnectAsync(IPAddress robot, int? port = null, TimeSpan? timeout = null)
     {
@@ -106,8 +117,25 @@ public sealed class RobotLink : IDisposable
                     newState = s; break;
             }
         }
-        if (newState is not null) State?.Invoke(newState);
-        Message?.Invoke(m);
+        // fidelity: M1-034
+        // Handler isolation (policy D6): each subscriber is called on its own, so one that throws neither
+        // stops the subscribers after it nor keeps Message from being raised.
+        if (newState is not null) Fan(State, newState);
+        Fan(Message, m);
+    }
+
+    private void Fan<T>(Action<T>? handler, T arg)
+    {
+        if (handler is null) return;
+        foreach (var target in handler.GetInvocationList())
+        {
+            try { ((Action<T>)target)(arg); }
+            catch (Exception e)
+            {
+                Interlocked.Increment(ref _handlerFaults);
+                try { HandlerFaulted?.Invoke(e); } catch { }
+            }
+        }
     }
 
     public double StateRateHz => StateCount > 1 && FirstStateUtc is { } f && LastStateUtc is { } l && l > f

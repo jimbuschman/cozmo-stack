@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using Cozmo.Protocol;
@@ -33,24 +34,60 @@ public sealed record FrameEvent(bool Outbound, DateTime Utc, byte[] Raw, Frame? 
 /// order (RobotConnectionManager 0x0062F724-2A, TransportAddress::operator== 0x0062F744); otherwise it is
 /// dropped.
 ///
-/// Threading. Two worker threads: <c>cozmo-transport</c> runs the engine's ReliableTransport::Update every
-/// <see cref="TransportOptions.UpdateIntervalMs"/> — drain the socket without blocking, then update the
-/// connection — and <c>cozmo-dispatch</c> raises every public event. Handlers therefore never run on the
-/// transport thread, so a slow or throwing handler cannot stall or kill the transport; events still arrive
-/// in the order they were produced. All connection state is protected by <see cref="_lock"/>, which is
-/// never held while a handler runs.
+/// Threading (M1-010, M1-020, M1-021, M1-035; host structure M1-014). Production runs the transport
+/// asynchronously (B15). At construction the transport requests its repeating 2 ms update (R35, B14): the
+/// <c>cozmo-transport-timer</c> thread is the deferred scheduler (G1.6..G1.8) and only posts a copy of the
+/// update when it is due; the <c>cozmo-transport</c> thread is the RelTransport executor (G1.9, G1.10) and
+/// runs everything posted to it one item at a time, in order. Connect, SendData, Send and Disconnect post
+/// closures to that same executor (R37, R38), so sends and updates are FIFO on one thread and a caller never
+/// waits for a running update to send. The update keeps being requested for the life of the transport, after
+/// a connection ends as well. <c>cozmo-dispatch</c> raises every public event, so handlers never run on the
+/// executor while a link is up. Connection state is protected by <see cref="_lock"/> (the transport mutex
+/// R34/R37 name). In async mode no handler runs under it; in sync mode Raise runs handlers inline, so a
+/// handler raised from SendFrame runs with it held.
+///
+/// Sync mode (R36) is the test and offline seam: no timer exists and the owner calls <see cref="Pump"/> or
+/// <see cref="OfflineTick"/>. Only QueueMessage changes with the mode: in sync mode it calls SendMessage
+/// directly, on the caller's thread (R36, 0x00836B42..0x00836B5C). QueueAction posts to the RelTransport
+/// executor in both modes (R37; B21), so Disconnect and Dispose are posted in sync mode too, and the
+/// executor exists in both.
 /// </summary>
 public sealed class ReliableTransport : IDisposable
 {
     private readonly TransportOptions _o;
     private readonly INetClock _clock;
     private readonly object _lock = new();
+    /// <summary>
+    /// Guards the caller-side lifecycle fields (<see cref="_linkOpen"/>, <see cref="_disposed"/>) and the
+    /// posts callers make to the executor. It is held only for those fields and for a post, never while
+    /// <see cref="_lock"/> is taken and never while a user handler runs, so taking it never waits for the
+    /// transport thread and a handler can always reach the transport.
+    /// </summary>
+    private readonly object _life = new();
+    /// <summary>A Connect has been accepted and its link has not finished shutting down.</summary>
+    private bool _linkOpen;
+    /// <summary>Written under <see cref="_life"/> before the dispose closure is posted; read under <see cref="_lock"/> by a sync-mode Connect.</summary>
+    private volatile bool _disposed;
     private Socket? _sock;
     private IPEndPoint? _peer;
-    private ReliableConnection? _conn;
-    private Thread? _io, _dispatch;
+    private volatile ReliableConnection? _conn;
+    private volatile Thread? _dispatch;
     private BlockingCollection<Action>? _events;
+    /// <summary>Set on a dispatch thread to the transport it belongs to, so Dispose can tell it is running there.</summary>
+    [ThreadStatic] private static ReliableTransport? t_dispatchOwner;
     private volatile bool _running;
+    private volatile LinkState _state = LinkState.Idle;
+
+    // fidelity: M1-010, M1-020, M1-021, M1-035, M1-014
+    /// <summary>
+    /// The RelTransport executor (G1.9, G1.10). It exists in both modes: QueueAction posts to it whatever the
+    /// mode (R37; B21), and sync mode only lacks the repeating update (R36).
+    /// </summary>
+    private readonly SerialExecutor _exec;
+    /// <summary>The deferred scheduler holding the one repeating 2 ms entry (G1.1..G1.8); null in sync mode.</summary>
+    private readonly TransportScheduler? _sched;
+    /// <summary>G1.10: once the scheduled callback's handle has gone, posted copies of it are skipped.</summary>
+    private volatile bool _tickHandleExpired;
     private readonly List<byte> _multipart = new();
     private int _multipartNext = 1, _multipartLast;
     // fidelity: M1-002
@@ -79,7 +116,7 @@ public sealed class ReliableTransport : IDisposable
     /// <summary>How long a worker thread is given to finish during shutdown before it is abandoned.</summary>
     private static readonly TimeSpan JoinTimeout = TimeSpan.FromSeconds(2);
 
-    public LinkState State { get; private set; } = LinkState.Idle;
+    public LinkState State { get => _state; private set => _state = value; }
     public event Action? Connected;
     public event Action<string>? Disconnected;
     /// <summary>A complete application payload (a CLAD robot message: tag + body) received in order.</summary>
@@ -91,9 +128,31 @@ public sealed class ReliableTransport : IDisposable
     /// <summary>Handlers that threw, counted so a test or a caller can notice swallowed failures.</summary>
     public int HandlerFaults { get; private set; }
 
-    public ReliableTransport(TransportOptions? options = null, INetClock? clock = null)
+    /// <summary>A production transport: async mode, with its 2 ms update requested here (R35, B14, B15).</summary>
+    public ReliableTransport(TransportOptions? options = null, INetClock? clock = null) : this(options, clock, manualPump: false) { }
+
+    /// <summary>
+    /// <paramref name="manualPump"/> true gives sync mode (R36), the test seam: no repeating update, the caller
+    /// runs each update with <see cref="Pump"/>, no dispatch thread (events are raised inline), and
+    /// QueueMessage calls SendMessage on the caller's thread. The RelTransport executor still exists and still
+    /// runs what QueueAction posts (Disconnect, Dispose); <see cref="Flush"/> waits for it.
+    /// </summary>
+    internal ReliableTransport(TransportOptions? options, INetClock? clock, bool manualPump)
     {
         _o = options ?? TransportOptions.EngineDefaults; _clock = clock ?? new StopwatchClock();
+        ManualPump = manualPump;
+
+        // fidelity: M1-010, M1-021, M1-014, M1-020
+        // R35/B14: the ctor creates the RelTransport queue and ChangeSyncMode(false) schedules the update
+        // every 2 ms (ScheduleCallback 0x0083689E); it is requested once, here, not per connection. Sync mode
+        // (R36) has no timer; the queue itself exists in both modes.
+        // MISSING: R35/B14 create the queue at "priority 3"; the rows do not say what host thread priority
+        // that is, so both threads keep the default priority.
+        _exec = new SerialExecutor("cozmo-transport");
+        _exec.Start();
+        if (manualPump) return;
+        _sched = new TransportScheduler(TransportScheduler.HostNowNs, _o.UpdateIntervalMs, PostTick);
+        _sched.Start();
     }
 
     public ReliableConnection? Connection => _conn;
@@ -115,10 +174,32 @@ public sealed class ReliableTransport : IDisposable
     internal ReceiveFromHook? ReceiveHook { get; set; }
 
     /// <summary>
-    /// Test seam: <see cref="Connect"/> starts no worker threads, events are raised inline, and the caller
-    /// runs each transport update itself with <see cref="Pump"/>. False in production.
+    /// Test seam, sync mode (R36): no timer or worker threads, events are raised inline, and the caller
+    /// runs each transport update itself with <see cref="Pump"/>. False in production. Chosen at
+    /// construction, because the async-mode update is requested there.
     /// </summary>
-    internal bool ManualPump { get; init; }
+    internal bool ManualPump { get; }
+
+    /// <summary>One item run by the executor: what it was, and its number in the order it was posted.</summary>
+    internal readonly record struct ExecutorItem(string Kind, long Seq);
+
+    /// <summary>Test seam: called on the executor thread just before each posted item runs. Null in production.</summary>
+    internal Action<ExecutorItem>? ExecutorTrace { get; set; }
+
+    /// <summary>Test seam: the executor (both modes) and the scheduler (async mode only; null in sync mode).</summary>
+    internal SerialExecutor Executor => _exec;
+    internal TransportScheduler? Scheduler => _sched;
+
+    /// <summary>
+    /// Test seam: waits until everything posted to the executor before this call has run. True if it did
+    /// within <paramref name="timeout"/>, or if the executor has been completed and accepts nothing more.
+    /// </summary>
+    internal bool Flush(TimeSpan timeout)
+    {
+        var done = new ManualResetEventSlim();
+        if (!_exec.Post(() => done.Set())) return true;   // completed: nothing more will run
+        return done.Wait(timeout);
+    }
 
     /// <summary>The socket's local endpoint, for tests that need to see it reopened.</summary>
     internal EndPoint? LocalEndPoint { get { lock (_lock) return _sock?.LocalEndPoint; } }
@@ -181,6 +262,7 @@ public sealed class ReliableTransport : IDisposable
 
     private void DispatchLoop(BlockingCollection<Action> q)
     {
+        t_dispatchOwner = this;
         try { foreach (var a in q.GetConsumingEnumerable()) Safe(a); }
         catch (ObjectDisposedException) { }
         catch (InvalidOperationException) { }   // completed while enumerating
@@ -203,7 +285,8 @@ public sealed class ReliableTransport : IDisposable
     /// </summary>
     public static ReliableTransport CreateOffline(TransportOptions? options = null, INetClock? clock = null)
     {
-        var t = new ReliableTransport(options, clock);
+        var t = new ReliableTransport(options, clock, manualPump: true);
+        t._linkOpen = true;
         t._peer = new IPEndPoint(IPAddress.Loopback, t._o.RobotPort);
         t._conn = new ReliableConnection(t._o, t._clock, (ty, mn, mx, body) =>
         {
@@ -233,36 +316,175 @@ public sealed class ReliableTransport : IDisposable
 
     // ------------------------------------------------------------------ connect
 
-    /// <summary>Open the socket (ephemeral local port, like the engine's UDPTransport client) and send ConnectionRequest (reliable seq 1).</summary>
+    // fidelity: M1-035, M1-020
+    /// <summary>
+    /// Posts to the RelTransport executor, behind every update and closure already posted. The caller holds
+    /// <see cref="_life"/>, so nothing a caller posts can land after the dispose closure. False when the
+    /// executor accepts nothing more (it has been completed).
+    /// </summary>
+    private bool TryPostLifeLocked(string kind, Action action) =>
+        _exec.Post(seq => { ExecutorTrace?.Invoke(new ExecutorItem(kind, seq)); action(); });
+
+    // fidelity: M1-035, M1-020
+    /// <summary>
+    /// R37 / QueueAction 0x00836FF6 (B21: RT::Disconnect queues an action): the action is posted to the
+    /// RelTransport executor in both modes; there is no sync-mode branch. After Dispose has begun, or once the
+    /// executor accepts nothing more, the post is refused with <see cref="ObjectDisposedException"/>.
+    /// </summary>
+    private void QueueAction(string kind, Action action)
+    {
+        lock (_life)
+        {
+            if (_disposed || !TryPostLifeLocked(kind, action)) throw new ObjectDisposedException(nameof(ReliableTransport));
+        }
+    }
+
+    // fidelity: M1-035, M1-020
+    /// <summary>
+    /// R37 QueueMessage 0x00836B66..0x00836BE4: in async mode the time is read when the message is posted, and
+    /// the closure (0x00837DEA) takes the transport mutex and calls SendMessage with that posted time. In sync
+    /// mode (R36, 0x00836B42..0x00836B5C) SendMessage is called directly, on the caller's thread, with time 0.0
+    /// (0x00836B48/0x00836B4C, from the batch 2b-i verification; not in the frozen rows).
+    /// </summary>
+    private void QueueMessage(ReliableMessageType type, byte[] payload, bool reliable, bool flush)
+    {
+        if (ManualPump)
+        {
+            var now = new List<Action>();
+            lock (_lock) SendMessageLocked(type, payload, reliable, flush, 0.0, now);
+            foreach (var a in now) Raise(a);
+            return;
+        }
+        double posted = _clock.NowMs;
+        QueueAction("send", () =>
+        {
+            var effects = new List<Action>();
+            lock (_lock) SendMessageLocked(type, payload, reliable, flush, posted, effects);
+            foreach (var a in effects) Raise(a);
+        });
+    }
+
+    // fidelity: M1-035
+    /// <summary>
+    /// ReliableTransport::SendMessage, as the posted closures reach it. G2.1: FindConnection(addr, create =
+    /// type == 1); G2.2: a miss with create makes the connection, whose ctor stamps lastRecv with the
+    /// current time (G2.3). R13: any other type with no connection is dropped with the warning
+    /// "unconnected destination".
+    /// </summary>
+    private void SendMessageLocked(ReliableMessageType type, byte[] payload, bool reliable, bool flush, double postedMs, List<Action> effects)
+    {
+        var c = _conn;
+        if (c is null)
+        {
+            if (type != ReliableMessageType.ConnectionRequest)
+            {
+                var dest = _peer;
+                effects.Add(() => Fan(Warning, $"unconnected destination {dest}; {type} dropped"));
+                return;
+            }
+            c = _conn = new ReliableConnection(_o, _clock, SendFrame);
+        }
+        // MISSING: R37 says SendMessage is called with the posted time, but no row says what SendMessage does
+        // with it (which PendingMessage field, if any, it sets), so postedMs changes nothing here.
+        _ = postedMs;
+        c.Queue(type, payload, reliable, flush);
+    }
+
+    /// <summary>
+    /// Open the socket (ephemeral local port, like the engine's UDPTransport client) and send ConnectionRequest
+    /// (reliable seq 1). The socket is opened here, so a failure to open it is thrown to the caller. R38 / B21:
+    /// RT::Connect queues QueueMessage(type 1, reliable, flush 1) (0x0083710E, 0x0083711C): in async mode the
+    /// link is set up by that posted closure (R37), in order with everything posted before it, and its
+    /// SendMessage creates the connection (G2.1, G2.2); in sync mode (R36) both happen here.
+    /// <see cref="State"/> is Connecting when this returns.
+    ///
+    /// Once Dispose has begun this refuses before opening anything. If Dispose begins while the socket is
+    /// being opened, or the executor accepts nothing more, the link is refused: the socket is closed, the link
+    /// released, and <see cref="ObjectDisposedException"/> thrown. In async mode the post is made under
+    /// <see cref="_life"/>, as Dispose's is, so it lands before the dispose closure or not at all. In sync mode
+    /// the link is set up under <see cref="_lock"/> only, after checking that Dispose has not begun; the
+    /// dispose closure needs that same lock, so it runs after the setup and ends the link.
+    /// </summary>
     public void Connect(IPAddress robot, int? port = null)
     {
-        lock (_lock)
+        lock (_life)
         {
-            if (_running) throw new InvalidOperationException("already running");
-            if (_io is not null || _dispatch is not null)
-                throw new InvalidOperationException("the previous connection has not finished shutting down");
-
-            // Every connection starts from clean session state; a half-assembled multipart message from the
-            // last connection must not be completed with fragments from this one.
-            _multipart.Clear(); _multipartNext = 1; _multipartLast = 0;
-            OfflineOutbound.Clear();
-            HandlerFaults = 0;
-
-            _peer = new IPEndPoint(robot, port ?? _o.RobotPort);
-            _sock = OpenSocket();
-            _conn = new ReliableConnection(_o, _clock, SendFrame);
-            _running = true; State = LinkState.Connecting;
-
-            if (!ManualPump)
-            {
-                var q = new BlockingCollection<Action>();
-                _events = q;
-                _dispatch = new Thread(() => DispatchLoop(q)) { IsBackground = true, Name = "cozmo-dispatch" };
-                _io = new Thread(TransportLoop) { IsBackground = true, Name = "cozmo-transport" };
-                _dispatch.Start(); _io.Start();
-            }
-            _conn.Queue(ReliableMessageType.ConnectionRequest, Array.Empty<byte>(), reliable: true, flush: true);
+            if (_disposed) throw new ObjectDisposedException(nameof(ReliableTransport));
+            if (_linkOpen) throw new InvalidOperationException("already running");
+            _linkOpen = true;
         }
+        var peer = new IPEndPoint(robot, port ?? _o.RobotPort);
+        Socket sock;
+        try { sock = OpenSocket(); }
+        catch { lock (_life) _linkOpen = false; throw; }
+        // No link is up (the previous one has finished shutting down), so nothing else writes State now.
+        var previous = State;
+        State = LinkState.Connecting;
+
+        // fidelity: M1-035, M1-020
+        var effects = new List<Action>();
+        bool refused;
+        if (ManualPump)
+        {
+            // R36: sync mode calls SendMessage directly, with time 0.0 (see QueueMessage). Not under _life.
+            lock (_lock)
+            {
+                refused = _disposed;
+                if (!refused)
+                {
+                    BeginLinkLocked(peer, sock);
+                    SendMessageLocked(ReliableMessageType.ConnectionRequest, Array.Empty<byte>(), true, true, 0.0, effects);
+                }
+            }
+        }
+        else lock (_life)
+        {
+            refused = _disposed;
+            if (!refused)
+            {
+                double posted = _clock.NowMs;
+                refused = !TryPostLifeLocked("connect", () =>
+                {
+                    var fx = new List<Action>();
+                    lock (_lock)
+                    {
+                        BeginLinkLocked(peer, sock);
+                        SendMessageLocked(ReliableMessageType.ConnectionRequest, Array.Empty<byte>(), true, true, posted, fx);
+                    }
+                    foreach (var a in fx) Raise(a);
+                });
+            }
+        }
+        if (refused)
+        {
+            try { sock.Dispose(); } catch { }
+            State = previous;
+            lock (_life) _linkOpen = false;
+            throw new ObjectDisposedException(nameof(ReliableTransport));
+        }
+        foreach (var a in effects) Raise(a);
+    }
+
+    /// <summary>The per-link host state a Connect sets up, on the executor in async mode.</summary>
+    private void BeginLinkLocked(IPEndPoint peer, Socket sock)
+    {
+        // Every connection starts from clean session state; a half-assembled multipart message from the
+        // last connection must not be completed with fragments from this one.
+        _multipart.Clear(); _multipartNext = 1; _multipartLast = 0;
+        OfflineOutbound.Clear();
+        HandlerFaults = 0;
+
+        _peer = peer;
+        _sock = sock;
+        _conn = null;
+        if (!ManualPump)
+        {
+            var q = new BlockingCollection<Action>();
+            _events = q;
+            _dispatch = new Thread(() => DispatchLoop(q)) { IsBackground = true, Name = "cozmo-dispatch" };
+            _dispatch.Start();
+        }
+        _running = true;
     }
 
     /// <summary>A UDP client socket on an ephemeral local port, read without blocking.</summary>
@@ -292,88 +514,93 @@ public sealed class ReliableTransport : IDisposable
     public void Send(RobotMessage m, bool reliable = true, bool flush = false)
     {
         var bytes = m.ToBytes();
-        lock (_lock)
-        {
-            if (_conn is null || State is not LinkState.Connected) throw new InvalidOperationException("not connected");
-            SendData(bytes, reliable: true, flush: false);
-        }
+        if (_conn is null || State is not LinkState.Connected) throw new InvalidOperationException("not connected");
+        SendData(bytes, reliable: true, flush: false);
     }
 
     /// <summary>
     /// ReliableTransport::SendData 0x008370E4: queue one message with the given delivery options (type 4 when
     /// reliable, 5 when not, and the caller's flush). The manager's state gate is not part of this layer
-    /// (see <see cref="Send"/>); this refuses only when there is no live connection to queue on.
+    /// (see <see cref="Send"/>); this refuses only when no link is up to queue on. In async mode the message
+    /// is posted (R37) and this returns without waiting for it to be queued.
     /// </summary>
     public void SendData(byte[] cladMessage, bool reliable = true, bool flush = false)
     {
-        lock (_lock)
-        {
-            if (_conn is null || State is LinkState.Idle or LinkState.Disconnected) throw new InvalidOperationException("not connected");
-            _conn.Queue(reliable ? ReliableMessageType.SingleReliableMessage : ReliableMessageType.SingleUnreliableMessage, cladMessage, reliable, flush);
-        }
+        // In async mode the connection is created by the posted Connect closure, so only the link state is
+        // looked at here; in sync mode the connection is already there whenever a link is up.
+        if ((ManualPump && _conn is null) || State is LinkState.Idle or LinkState.Disconnected)
+            throw new InvalidOperationException("not connected");
+        QueueMessage(reliable ? ReliableMessageType.SingleReliableMessage : ReliableMessageType.SingleUnreliableMessage, cladMessage, reliable, flush);
     }
 
+    // fidelity: M1-035
     /// <summary>
-    /// Official ReliableTransport::Disconnect: one reliable, flushed DisconnectRequest through the normal send
-    /// path (0x0083801C), then the connection is deleted at once (0x0083802A → DeleteConnection 0x008375F0).
-    /// Whether the request reaches the wire is up to that one send attempt; nothing waits for it.
+    /// Official ReliableTransport::Disconnect: it queues an action (B21, closure 0x00837FFA) that sends one
+    /// reliable, flushed DisconnectRequest through the normal send path (0x0083801C), then deletes the
+    /// connection at once (0x0083802A → DeleteConnection 0x008375F0). Whether the request reaches the wire is
+    /// up to that one send attempt; nothing waits for it. In async mode this returns before the action has
+    /// run, so <see cref="State"/> changes when it does.
     /// </summary>
     public void Disconnect(string reason = "requested")
     {
-        lock (_lock) DisconnectLocked();
-        Shutdown(reason);
+        lock (_life)
+        {
+            if (_disposed) return;
+            // B21 / R37: the queued action acts on whatever connection exists when it runs.
+            bool posted = TryPostLifeLocked("disconnect", () =>
+            {
+                lock (_lock) DisconnectLocked();
+                Shutdown(reason);
+            });
+            if (!posted) throw new ObjectDisposedException(nameof(ReliableTransport));
+        }
     }
 
     private void DisconnectLocked()
     {
         if (_conn is not null && State is LinkState.Connected or LinkState.Connecting)
         {
-            try { _conn.Queue(ReliableMessageType.DisconnectRequest, Array.Empty<byte>(), true, true); } catch { }
+            // MISSING: B21 gives the closure's call as SendMessage(1, addr, null, 0, type 3, 1) and no row says
+            // what time it passes; SendMessageLocked discards the time (see there), so NaN is passed.
+            try { SendMessageLocked(ReliableMessageType.DisconnectRequest, Array.Empty<byte>(), true, true, double.NaN, new List<Action>()); } catch { }
         }
         _conn = null;
     }
 
     /// <summary>
-    /// Stops the workers, closes the socket and reports the reason once. Safe to call from any thread,
-    /// including a worker: a thread never joins itself. After it returns, <see cref="Connect"/> may be used
-    /// again, and no worker from the previous connection survives.
+    /// Ends the link: closes the socket and reports the reason once. Safe to call from any thread, including
+    /// the executor; a thread never joins itself. The 2 ms update is not stopped: it keeps being requested
+    /// for the life of the transport (R35). After it returns, <see cref="Connect"/> may be used again.
     /// </summary>
     private void Shutdown(string reason)
     {
-        Thread? io, dispatch;
+        Thread? dispatch;
         BlockingCollection<Action>? q;
         bool notify;
         lock (_lock)
         {
             notify = _running;
-            if (!notify && _io is null && _dispatch is null) return;   // already down
+            if (!notify && _dispatch is null) return;   // already down
             _running = false;
             State = LinkState.Disconnected;
             try { _sock?.Close(); } catch { }
             _sock = null;
             _multipart.Clear(); _multipartNext = 1; _multipartLast = 0;
-            io = _io; dispatch = _dispatch; q = _events;
-            _io = null;
+            dispatch = _dispatch; q = _events;
         }
 
-        Join(io);
         if (notify) Raise(() => Fan(Disconnected, reason));
 
         if (q is not null)
         {
             try { q.CompleteAdding(); } catch (ObjectDisposedException) { }
-            Join(dispatch);
+            if (dispatch is not null && dispatch != Thread.CurrentThread && dispatch.IsAlive) dispatch.Join(JoinTimeout);
         }
         lock (_lock)
         {
             if (ReferenceEquals(_events, q)) { _events = null; _dispatch = null; }
         }
-
-        static void Join(Thread? t)
-        {
-            if (t is null || t == Thread.CurrentThread || !t.IsAlive) return;
-            t.Join(JoinTimeout);
-        }
+        lock (_life) _linkOpen = false;
     }
 
     /// <summary>
@@ -381,18 +608,41 @@ public sealed class ReliableTransport : IDisposable
     /// peer (0x0062EF52), and only then <c>StopClient</c> (0x0062EEA2). A Connected transport therefore
     /// disconnects exactly as <see cref="Disconnect"/> does before its socket is closed. A transport that is
     /// still Connecting sends nothing.
+    ///
+    /// The disconnect is posted like every other action (QueueAction, both modes), behind whatever was posted
+    /// before it, and the host threads are then released: the timer stops, and the executor finishes what it
+    /// holds and ends. Dispose waits for that, up to the join bound, except on this transport's own dispatch
+    /// thread (which the executor's shutdown joins) or on the executor itself.
     /// </summary>
     public void Dispose()
     {
-        lock (_lock) { if (State == LinkState.Connected) DisconnectLocked(); }
-        Shutdown("disposed");
+        lock (_life)
+        {
+            if (_disposed) return;
+            _disposed = true;
+            TryPostLifeLocked("dispose", () =>
+            {
+                lock (_lock) { if (State == LinkState.Connected) DisconnectLocked(); }
+                Shutdown("disposed");
+                _tickHandleExpired = true;   // G1.10: copies posted after this are skipped
+            });
+        }
+
+        // fidelity: M1-014
+        _sched?.Stop();
+        _exec.Complete();
+        // The self-join skip: on this transport's dispatch thread the executor's Shutdown is joining this very
+        // thread, and in a handler raised inline under _lock (sync mode) the dispose closure needs the lock this
+        // thread holds; waiting for the executor in either case would only run out the join bound.
+        if (t_dispatchOwner != this && !Monitor.IsEntered(_lock)) _exec.Join(JoinTimeout);
     }
 
     // ------------------------------------------------------------------ wire
 
     private void SendFrame(ReliableMessageType type, ushort seqMin, ushort seqMax, byte[] body)
     {
-        // called under _lock by the connection, so nothing here may run a user handler inline
+        // called under _lock by the connection; events go through Raise, which in async mode hands them to the
+        // dispatch thread and in sync mode runs them inline under _lock
         var hdr = new ReliableHeader(type, seqMin, seqMax, _conn!.LastInAcked);
         var raw = new byte[ReliableHeader.Length + body.Length];
         hdr.Write(raw); body.CopyTo(raw, ReliableHeader.Length);
@@ -407,23 +657,23 @@ public sealed class ReliableTransport : IDisposable
         }
     }
 
+    // fidelity: M1-010, M1-021
     /// <summary>
-    /// The transport thread: <c>ReliableTransport::Update</c> on the engine's 2 ms schedule
-    /// (<see cref="TransportCadence"/>). The timer resolution is raised because without it a 1 ms sleep on
-    /// Windows lasts about 15.6 ms, which turns the 2 ms cadence into roughly 15 ms and quietly breaks the
-    /// resend and packet-separation timing this transport is meant to reproduce.
+    /// Called by the scheduler when the 2 ms entry is due: G1.7, a copy of the callback is posted to the
+    /// executor (AddTaskHolder 0x007FC270); the scheduler thread never runs it.
     /// </summary>
-    private void TransportLoop()
+    private void PostTick() => _exec.Post(seq => { ExecutorTrace?.Invoke(new ExecutorItem("tick", seq)); RunTick(); });
+
+    /// <summary>
+    /// The R35 lambda (0x008383CE) as each posted copy runs it on the executor: ReliableTransport::Update,
+    /// here <see cref="Pump"/>. G1.10: a copy whose handle has expired (the transport has been disposed) is
+    /// skipped. With no link up the update finds nothing to do, and it goes on being run all the same.
+    /// Not reproduced in this batch: the lambda's +0xA1 write on a false return (R35, B36; M1-015).
+    /// </summary>
+    private void RunTick()
     {
-        using var _ = new HighResolutionTimer();
-        var cadence = new TransportCadence(new StopwatchClock(), _o.UpdateIntervalMs);
-        while (_running)
-        {
-            if (cadence.TryBegin()) { Pump(); continue; }
-            double wait = cadence.MsUntilDue;
-            if (wait > 1.5) Thread.Sleep(1);
-            else Thread.SpinWait(200);
-        }
+        if (_tickHandleExpired) return;
+        Pump();
     }
 
     /// <summary>
@@ -748,35 +998,140 @@ public sealed class ReceiveErrorCounts
     internal void Add(int code) { lock (_byCode) _byCode[code] = _byCode.GetValueOrDefault(code) + 1; }
 }
 
+// fidelity: M1-021, M1-010, M1-013, M1-014
 /// <summary>
-/// The transport's update schedule. <c>ReliableTransport::ChangeSyncMode</c> schedules its update every
-/// 2 ms (<c>Dispatch::ScheduleCallback</c> 0x0083689E), and <c>TaskExecutor::ProcessDeferredQueue</c> re-arms
-/// a repeating task at the <c>steady_clock::now()</c> it took when it picked the task up (0x007FC1BC) plus
-/// the period (0x007FC36A-76). A late run is followed by the next one a full period after it began, never
-/// by catch-up runs.
+/// The deferred side of the engine's TaskExecutor, holding the transport's one repeating entry
+/// (WakeAfterRepeat, G1.1). The first time is steady_clock::now() + period × 1e6 ns (G1.2), so the first run
+/// is one period after scheduling. Each pass reads now (G1.7, 0x007FC1BC); if now is before the entry's time
+/// it waits; otherwise it posts one copy to the executor (AddTaskHolder, G1.7) and re-arms the entry at that
+/// now + period (G1.8): a fixed delay from when the entry was seen due, with missed periods not added back.
+/// This thread never runs the callback itself.
+///
+/// Host realisation: a dedicated thread (M1-014) waits with the raised timer resolution (M1-013), sleeping
+/// 1 ms while more than 1.5 ms remain and spinning otherwise, in place of wait_until (G1.6). Times are
+/// nanoseconds on the host's monotonic clock.
 /// </summary>
-internal sealed class TransportCadence
+internal sealed class TransportScheduler
 {
-    private readonly INetClock _clock;
-    private readonly double _periodMs;
-    private double _dueMs;
+    private readonly Func<long> _nowNs;
+    private readonly long _periodNs;
+    private readonly Action _post;
+    private long _dueNs;
+    private long _posted;
+    private volatile bool _stop;
+    private Thread? _thread;
 
-    public TransportCadence(INetClock clock, double periodMs)
+    internal TransportScheduler(Func<long> nowNs, double periodMs, Action post)
     {
-        _clock = clock; _periodMs = periodMs; _dueMs = clock.NowMs + periodMs;
+        _nowNs = nowNs; _post = post;
+        _periodNs = (long)(periodMs * 1_000_000);   // G1.2: period × 1e6 ns (0x007FCEBE..0x007FCECA)
+        _dueNs = nowNs() + _periodNs;               // G1.2: first time = now + period (0x007FCED2..0x007FCED6)
     }
 
-    /// <summary>When the next update may run.</summary>
-    public double DueMs => _dueMs;
+    /// <summary>When the entry is next due, in host nanoseconds.</summary>
+    internal long DueNs => Volatile.Read(ref _dueNs);
 
-    public double MsUntilDue => _dueMs - _clock.NowMs;
+    /// <summary>How many copies have been posted so far.</summary>
+    internal long Posted => Interlocked.Read(ref _posted);
 
-    /// <summary>If an update is due, re-arm for now + period and return true.</summary>
-    public bool TryBegin()
+    internal int? ThreadId => _thread?.ManagedThreadId;
+
+    /// <summary>One pass of ProcessDeferredQueue over the entry. True if a copy was posted.</summary>
+    internal bool Pass()
     {
-        double now = _clock.NowMs;
-        if (now < _dueMs) return false;
-        _dueMs = now + _periodMs;
+        long now = _nowNs();                         // G1.7: now (0x007FC1BC)
+        if (now < Volatile.Read(ref _dueNs)) return false;   // G1.7: not due (0x007FC1C8..0x007FC1D6)
+        _post();                                     // G1.7: a copy to the immediate queue (0x007FC270)
+        Interlocked.Increment(ref _posted);
+        Volatile.Write(ref _dueNs, now + _periodNs); // G1.8: re-added at that now + period (0x007FC352..0x007FC376)
         return true;
+    }
+
+    internal void Start()
+    {
+        _thread = new Thread(Loop) { IsBackground = true, Name = "cozmo-transport-timer" };
+        _thread.Start();
+    }
+
+    /// <summary>Host teardown: the thread ends and posts nothing more.</summary>
+    internal void Stop()
+    {
+        _stop = true;
+        var t = _thread;
+        if (t is not null && t != Thread.CurrentThread && t.IsAlive) t.Join(TimeSpan.FromSeconds(2));
+    }
+
+    private void Loop()
+    {
+        using var _ = new HighResolutionTimer();
+        while (!_stop)
+        {
+            if (Pass()) continue;
+            long wait = Volatile.Read(ref _dueNs) - _nowNs();
+            if (wait > 1_500_000) Thread.Sleep(1);
+            else Thread.SpinWait(200);
+        }
+    }
+
+    /// <summary>The host's monotonic clock in nanoseconds, standing in for steady_clock::now().</summary>
+    internal static long HostNowNs() => (long)((Int128)Stopwatch.GetTimestamp() * 1_000_000_000 / Stopwatch.Frequency);
+}
+
+// fidelity: M1-021, M1-035, M1-014
+/// <summary>
+/// The immediate side of the TaskExecutor, the RelTransport queue. AddTaskHolder pushes each posted item
+/// and never merges them (G1.9); one Execute thread runs them one at a time, in the order they were posted
+/// (G1.10), so items never overlap and a backlog runs back to back. The engine's Run swaps the whole vector
+/// out and runs it in order; taking the items one by one in the same order gives the same sequence.
+///
+/// An exception escaping an item is not caught here; on the host it ends the process, as an exception on
+/// the transport thread did before this executor existed.
+/// </summary>
+internal sealed class SerialExecutor
+{
+    private readonly BlockingCollection<(long seq, Action<long> item)> _q = new();
+    private readonly object _postLock = new();
+    private long _seq;
+    private readonly Thread _thread;
+
+    internal SerialExecutor(string name) => _thread = new Thread(Run) { IsBackground = true, Name = name };
+
+    internal int ThreadId => _thread.ManagedThreadId;
+
+    internal void Start() => _thread.Start();
+
+    /// <summary>
+    /// Appends an item (G1.9) and numbers it in post order, under the same lock as the append, so the numbers
+    /// are exactly the queue order. The item is called with its number. False once the executor has been
+    /// completed.
+    /// </summary>
+    internal bool Post(Action<long> item)
+    {
+        lock (_postLock)
+        {
+            if (_q.IsAddingCompleted) return false;
+            long seq = _seq + 1;
+            _q.Add((seq, item));
+            _seq = seq;
+            return true;
+        }
+    }
+
+    internal bool Post(Action item) => Post(_ => item());
+
+    /// <summary>Host teardown: no more items are accepted; the thread ends once it has run what it holds.</summary>
+    internal void Complete()
+    {
+        lock (_postLock) _q.CompleteAdding();
+    }
+
+    internal void Join(TimeSpan timeout)
+    {
+        if (Thread.CurrentThread != _thread && _thread.IsAlive) _thread.Join(timeout);
+    }
+
+    private void Run()
+    {
+        foreach (var (seq, item) in _q.GetConsumingEnumerable()) item(seq);
     }
 }
