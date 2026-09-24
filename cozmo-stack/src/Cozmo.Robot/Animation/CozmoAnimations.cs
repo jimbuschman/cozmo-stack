@@ -27,7 +27,7 @@ public sealed class RobotAnimationSink : IAnimationSink
         var payload = FaceBitmapCodec.Encode(bitmap);
         if (payload.Length > _robot.Display.MaxPayload) return;    // never send a partial face
         _lastFacePayload = payload;
-        _robot.Transport.Send(new Protocol.FaceImage { Image = payload }, flush: true);
+        _robot.SendMessage(new Protocol.FaceImage { Image = payload }, flush: true);
     }
 
     /// <summary>
@@ -38,8 +38,8 @@ public sealed class RobotAnimationSink : IAnimationSink
 
     public void Audio(byte[]? mulawFrame)
     {
-        if (mulawFrame is null) _robot.Transport.Send(new AudioSilence(), flush: true);
-        else _robot.Transport.Send(new AudioSample { Samples = mulawFrame }, flush: true);
+        if (mulawFrame is null) _robot.SendMessage(new AudioSilence(), flush: true);
+        else _robot.SendMessage(new AudioSample { Samples = mulawFrame }, flush: true);
     }
 
     /// <summary>
@@ -52,11 +52,11 @@ public sealed class RobotAnimationSink : IAnimationSink
     /// it discarded the keyframe's variability.
     /// </summary>
     public void Head(sbyte angleDeg, uint durationMs) =>
-        _robot.Transport.Send(new Protocol.HeadAngle { DurationTimeMs = (ushort)durationMs, AngleDeg = angleDeg }, flush: true);
+        _robot.SendMessage(new Protocol.HeadAngle { DurationTimeMs = (ushort)durationMs, AngleDeg = angleDeg }, flush: true);
 
     /// <summary>As <see cref="Head"/>, for <c>animLiftHeight</c> (0x94) from <c>LiftHeightKeyFrame::GetStreamMessage</c> at 0x004F8F80.</summary>
     public void Lift(byte heightMm, uint durationMs) =>
-        _robot.Transport.Send(new Protocol.LiftHeight { DurationTimeMs = (ushort)durationMs, HeightMm = heightMm }, flush: true);
+        _robot.SendMessage(new Protocol.LiftHeight { DurationTimeMs = (ushort)durationMs, HeightMm = heightMm }, flush: true);
 
     /// <summary>
     /// Opens the animation on the robot. AnimationStreamer::SendStartOfAnimation at 0x0057C400 in
@@ -65,10 +65,10 @@ public sealed class RobotAnimationSink : IAnimationSink
     /// is why body motion did nothing before this was sent.
     /// </summary>
     public void AnimationStarted(byte tag) =>
-        _robot.Transport.Send(new StartOfAnimation { AnimId = tag }, flush: true);
+        _robot.SendMessage(new StartOfAnimation { AnimId = tag }, flush: true);
 
     /// <summary>Closes it, as AnimationStreamer::SendEndOfAnimation does.</summary>
-    public void AnimationEnded() => _robot.Transport.Send(new EndOfAnimation(), flush: true);
+    public void AnimationEnded() => _robot.SendMessage(new EndOfAnimation(), flush: true);
 
     public void Body(BodyKeyframe k)
     {
@@ -80,7 +80,7 @@ public sealed class RobotAnimationSink : IAnimationSink
             NotImplemented?.Invoke($"body motion radius '{k.RadiusRaw}' is not a token the engine understands");
             return;
         }
-        _robot.Transport.Send(new BodyMotion { Speed = k.Speed, RadiusMm = radius }, flush: true);
+        _robot.SendMessage(new BodyMotion { Speed = k.Speed, RadiusMm = radius }, flush: true);
         _bodyMoving = k.Speed != 0;
     }
 
@@ -88,7 +88,7 @@ public sealed class RobotAnimationSink : IAnimationSink
     public void BodyStop()
     {
         _bodyMoving = false;
-        _robot.Transport.Send(new BodyMotion { Speed = 0, RadiusMm = BodyKeyframe.StraightRadius }, flush: true);
+        _robot.SendMessage(new BodyMotion { Speed = 0, RadiusMm = BodyKeyframe.StraightRadius }, flush: true);
     }
 
     /// <summary>Whether a body keyframe this sink sent is still driving (nothing has stopped it yet).</summary>
@@ -336,7 +336,12 @@ public sealed class CozmoAnimations : IDisposable
         {
             try
             {
-                _scheduler.Advance(origin + sw.Elapsed.TotalMilliseconds);
+                // fidelity: M1-041
+                // CD12: Robot::Update runs AnimationStreamer::Update only after the first full state and only while
+                // time synced and ready to stream. While that gate is shut nothing is streamed.
+                // MISSING (M5): what the animation timeline does while the streamer is not updated is not in the M1
+                // inventory; here the scheduler is simply not advanced, and it catches up to the clock once open.
+                if (_robot.AnimationStreamingOpen) _scheduler.Advance(origin + sw.Elapsed.TotalMilliseconds);
             }
             catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
             {

@@ -388,9 +388,11 @@ public static class HardwareCatalog
         {
             Id = "CR2", Name = "A dropped link ends the animation, not the process", Milestone = "CORE-002", Phase = PhaseIdle, MovesRobot = true,
             Subsystem = "The animation tick loop's failure boundary when the robot goes away mid-clip",
-            Why = "The tick loop runs on a background thread and every frame reaches the transport. Once the "
-                + "link is gone the send throws, and before the correction that exception escaped a background "
-                + "thread and took the process with it. This is the one check where the disconnect is the "
+            Why = "The tick loop runs on a background thread and every frame reaches the transport. Before the "
+                + "correction a send after the link was gone threw, and the exception escaped a background thread "
+                + "and took the process with it. Since M1 batch 3 the tool disconnects through the app layer "
+                + "(DisconnectCurrent, then RemoveRobot at the next engine tick, which ends the robot's animation) "
+                + "and a refused send returns failure silently. This is the one check where the disconnect is the "
                 + "subject, so the runner does not treat it as an interruption.",
             Setup = "Clear floor, robot on his treads, room for a short animation. Requires the OBB.",
             Prerequisites = new[] { "F passed", "--obb given" },
@@ -400,8 +402,8 @@ public static class HardwareCatalog
                     + "is and stays stopped - no twitching, no carrying on, no running away. The tool then "
                     + "prints its own verdict and the campaign moves to the next check instead of dying.",
             Question = "Did he stop where he was when the link was cut, and stay stopped?",
-            ExpectedTelemetry = "the animation task completes, the ticker stops, and the failure is reported through Faulted",
-            AutoRule = "playback is active before disconnect; the animation/ticker end and Faulted reports the link loss",
+            ExpectedTelemetry = "the animation task completes and the ticker stops after the app-level disconnect; Faulted is printed for information only",
+            AutoRule = "playback is active before disconnect; the animation task and the ticker end",
             Evidence = new[]
             {
                 new EvidenceItem("before the drop", "ticker running"),
@@ -409,7 +411,7 @@ public static class HardwareCatalog
                 new EvidenceItem("fault", "Faulted"),
                 new EvidenceItem("verdict", "automated:"),
             },
-            FidelityRecords = new[] { "M5-022", "M1-014" }, CoreRegressions = new[] { "CORE-002" },
+            FidelityRecords = new[] { "M5-022", "M1-014", "M1-025", "M1-015", "M1-026" }, CoreRegressions = new[] { "CORE-002" },
             NeedsObb = true, Requires = new[] { "F" },
             ExpectsDisconnect = true,
             Cleanup = "The link is deliberately dropped; the runner reconnects for the next check.",

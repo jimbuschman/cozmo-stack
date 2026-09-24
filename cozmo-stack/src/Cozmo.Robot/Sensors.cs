@@ -199,7 +199,7 @@ public sealed class CozmoSensors
     /// messages. Read them from <see cref="CozmoRobot.Message"/>; this only starts the burst.
     /// </summary>
     public void RequestImuBurst(TimeSpan duration) =>
-        _robot.Transport.Send(new IMURequest { LengthMs = (uint)duration.TotalMilliseconds }, flush: true);
+        _robot.SendMessage(new IMURequest { LengthMs = (uint)duration.TotalMilliseconds }, flush: true);
 
     // ------------------------------------------------------------------ cliffs
 
@@ -220,7 +220,7 @@ public sealed class CozmoSensors
     /// sensor trips, which is what makes driving on a table safe.
     /// </summary>
     public void SetStopOnCliff(bool enable) =>
-        _robot.Transport.Send(new EnableStopOnCliff(enable), flush: true);
+        _robot.SendMessage(new EnableStopOnCliff(enable), flush: true);
 
     /// <summary>Waits for the robot to report a cliff, or gives up.</summary>
     public async Task<CliffReport?> WaitForCliffAsync(TimeSpan timeout)

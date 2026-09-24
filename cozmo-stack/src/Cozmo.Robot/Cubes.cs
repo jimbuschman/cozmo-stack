@@ -137,7 +137,7 @@ public sealed class CozmoCubes
         _robot = robot;
         var clock = System.Diagnostics.Stopwatch.StartNew();
         Seconds = () => (float)clock.Elapsed.TotalSeconds;
-        Connections = new CubeConnections(m => _robot.Transport.Send(m, reliable: true, flush: true),
+        Connections = new CubeConnections(m => _robot.SendMessage(m, reliable: true, flush: true),
                                           () => Seconds());
     }
 
@@ -210,7 +210,7 @@ public sealed class CozmoCubes
     /// </summary>
     public void SetDiscovery(bool enable)
     {
-        _robot.Transport.Send(new SetAccessoryDiscovery { Enable = enable }, flush: true);
+        _robot.SendMessage(new SetAccessoryDiscovery { Enable = enable }, flush: true);
         DiscoveryEnabled = enable;
     }
 

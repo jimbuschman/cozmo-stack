@@ -86,7 +86,7 @@ public sealed class PathSender
     /// <summary>Every message sent, for tests and the conformance log.</summary>
     public List<RobotMessage> Sent { get; } = new();
 
-    private void Send(RobotMessage m) { Sent.Add(m); _robot.Transport.Send(m, flush: true); }
+    private void Send(RobotMessage m) { Sent.Add(m); _robot.SendMessage(m, flush: true); }
 
     private static uint F(double v) => BitConverter.SingleToUInt32Bits((float)v);
 

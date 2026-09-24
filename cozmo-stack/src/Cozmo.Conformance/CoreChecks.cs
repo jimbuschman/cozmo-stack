@@ -167,7 +167,9 @@ public static class CoreChecks
         await Task.Delay(interruptAtMs);
         bool activeBefore = robot.Animations.IsTicking && robot.Animations.IsPlaying && !playing.IsCompleted;
         say($"playback active immediately before disconnect: {activeBefore}. DROPPING THE LINK NOW - watch him stop.");
-        robot.Transport.Disconnect("core-002: the robot goes away mid-animation");
+        // M1-025/M1-015: the app-level disconnect (DisconnectCurrent, then RemoveRobot at the next tick, CB33). A
+        // refused send no longer throws (M1-026, CB29), so the animation ends because the robot is removed.
+        robot.Disconnect();
 
         var finished = await Task.WhenAny(playing, Task.Delay(TimeSpan.FromSeconds(5)));
         bool ended = ReferenceEquals(finished, playing);
@@ -182,8 +184,7 @@ public static class CoreChecks
         if (!activeBefore) return (false, "playback was not active immediately before disconnect, so the drop proved nothing");
         if (!ended) return (false, "the animation task never completed after the link dropped");
         if (robot.Animations.IsTicking) return (false, "the ticker was still running after the link dropped");
-        if (faulted is null) return (false, "the link failure did not reach the animation Faulted event");
-        return (true, "the animation ended, the ticker stopped, the fault was reported and the process lived");
+        return (true, "the animation ended, the ticker stopped and the process lived");
     }
 
     // ================================================================ CORE-003

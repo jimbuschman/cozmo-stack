@@ -58,7 +58,7 @@ public sealed class CozmoLights
     /// <summary>Sets the three backpack LEDs to steady colours.</summary>
     public void SetBackpack(LedColor top, LedColor middle, LedColor bottom)
     {
-        _robot.Transport.Send(new BackpackLightsMiddle(
+        _robot.SendMessage(new BackpackLightsMiddle(
             LightState.Solid(top.Packed), LightState.Solid(middle.Packed), LightState.Solid(bottom.Packed)), flush: true);
         Backpack = (top, middle, bottom);
     }
@@ -81,7 +81,7 @@ public sealed class CozmoLights
             OnFrames = onFrames, OffFrames = offFrames,
             TransitionOnFrames = 0, TransitionOffFrames = 0, Offset = 0,
         };
-        _robot.Transport.Send(new BackpackLightsMiddle(state, state, state), flush: true);
+        _robot.SendMessage(new BackpackLightsMiddle(state, state, state), flush: true);
         Backpack = (on, on, on);
     }
 
@@ -91,7 +91,7 @@ public sealed class CozmoLights
     /// </summary>
     public void SetHeadlight(bool on)
     {
-        _robot.Transport.Send(new SetHeadlight(on), flush: true);
+        _robot.SendMessage(new SetHeadlight(on), flush: true);
         HeadlightOn = on;
     }
 }

@@ -114,7 +114,7 @@ public sealed class CubeAccelStreams
             first = list.Count == 0;
             list.Add(listener);
         }
-        if (first) _robot.Transport.Send(new StreamObjectAccel { ObjectID = objectId, Enable = true }, flush: true);
+        if (first) _robot.SendMessage(new StreamObjectAccel { ObjectID = objectId, Enable = true }, flush: true);
     }
 
     /// <summary>Removes a listener, turning the cube's stream off when it was the last.</summary>
@@ -129,7 +129,7 @@ public sealed class CubeAccelStreams
                 last = true;
             }
         }
-        if (last) _robot.Transport.Send(new StreamObjectAccel { ObjectID = objectId, Enable = false }, flush: true);
+        if (last) _robot.SendMessage(new StreamObjectAccel { ObjectID = objectId, Enable = false }, flush: true);
     }
 
     /// <summary>Fed every robot message by <see cref="CozmoRobot"/>.</summary>

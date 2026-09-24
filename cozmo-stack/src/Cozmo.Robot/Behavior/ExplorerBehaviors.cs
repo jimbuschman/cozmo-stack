@@ -251,9 +251,9 @@ public static class PanAndTilt
                                             double headAccelRadPerSec2 = 10, bool waitForSettle = true)
     {
         if (v.PanTiltOverride is not null) return await v.PanTiltOverride(absoluteBodyRad, headRad, cancel);
-        var t = v.Robot.Transport;
-        t.Send(TurnTowardsPose.Message(absoluteBodyRad, bodySpeedRadPerSec, TurnTowardsPose.AccelRadPerSec2, TurnTowardsPose.ToleranceRad, 0, true, 2), flush: true);
-        t.Send(new SetHeadAngle
+        var t = v.Robot;   // M1-026: through the app send path (B28, CB26, CB29)
+        t.SendMessage(TurnTowardsPose.Message(absoluteBodyRad, bodySpeedRadPerSec, TurnTowardsPose.AccelRadPerSec2, TurnTowardsPose.ToleranceRad, 0, true, 2), flush: true);
+        t.SendMessage(new SetHeadAngle
         {
             AngleRad = (float)headRad, MaxSpeedRadPerSec = (float)headSpeedRadPerSec,
             AccelRadPerSec2 = (float)headAccelRadPerSec2, DurationSec = 0f, ActionId = 3,

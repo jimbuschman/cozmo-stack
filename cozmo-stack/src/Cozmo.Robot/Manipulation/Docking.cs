@@ -143,7 +143,7 @@ public sealed class DockingSystem : IDisposable
     /// <summary>Raised when the robot reports it is moving the lift after a dock (<c>MovingLiftPostDock</c>).</summary>
     public event Action<bool>? MovingLiftPostDock;
 
-    private void Send(RobotMessage m) { Sent.Add(m); _robot.Transport.Send(m, flush: true); }
+    private void Send(RobotMessage m) { Sent.Add(m); _robot.SendMessage(m, flush: true); }
 
     /// <summary>
     /// Puts the carried object where the lift is holding it, composing the chain the engine keeps as a

@@ -127,7 +127,7 @@ public sealed class CozmoMotion
                                                       bool requireCalibration = true)
     {
         if (NotReady(requireCalibration) is { } refused) return refused;
-        _robot.Transport.Send(new DriveWheels(leftMmps, rightMmps, leftAccelMmps2, rightAccelMmps2), flush: true);
+        _robot.SendMessage(new DriveWheels(leftMmps, rightMmps, leftAccelMmps2, rightAccelMmps2), flush: true);
 
         // Confirmed against what was actually asked for, per wheel.
         //
@@ -236,7 +236,7 @@ public sealed class CozmoMotion
     public MotionOutcome MoveHead(float radPerSec, bool requireCalibration = true)
     {
         if (NotReady(requireCalibration) is { } refused) return refused;
-        _robot.Transport.Send(new MoveHead { SpeedRadPerSec = radPerSec }, flush: true);
+        _robot.SendMessage(new MoveHead { SpeedRadPerSec = radPerSec }, flush: true);
         return new MotionOutcome(MotionResult.Acknowledged, $"head moving at {radPerSec:F2} rad/s (no ack is defined)");
     }
 
@@ -244,7 +244,7 @@ public sealed class CozmoMotion
     public MotionOutcome MoveLift(float radPerSec, bool requireCalibration = true)
     {
         if (NotReady(requireCalibration) is { } refused) return refused;
-        _robot.Transport.Send(new MoveLift { SpeedRadPerSec = radPerSec }, flush: true);
+        _robot.SendMessage(new MoveLift { SpeedRadPerSec = radPerSec }, flush: true);
         return new MotionOutcome(MotionResult.Acknowledged, $"lift moving at {radPerSec:F2} rad/s (no ack is defined)");
     }
 
@@ -258,7 +258,7 @@ public sealed class CozmoMotion
     /// hardware-pending (the plan's calibration item).
     /// </summary>
     public void RequestMotorCalibration(bool head, bool lift) =>
-        _robot.Transport.Send(new StartMotorCalibration { Head = head, Lift = lift }, flush: true);
+        _robot.SendMessage(new StartMotorCalibration { Head = head, Lift = lift }, flush: true);
 
     // ------------------------------------------------------------------ stopping
 
@@ -270,9 +270,9 @@ public sealed class CozmoMotion
     /// </summary>
     public async Task<MotionOutcome> StopAllAsync(TimeSpan? confirmWithin = null)
     {
-        _robot.Transport.Send(new StopAllMotors(), flush: true);
+        _robot.SendMessage(new StopAllMotors(), flush: true);
         // belt and braces: an explicit zero wheel command as well, in case StopAllMotors only halts actions
-        _robot.Transport.Send(new DriveWheels(0f, 0f, 0f, 0f), flush: true);
+        _robot.SendMessage(new DriveWheels(0f, 0f, 0f, 0f), flush: true);
 
         bool stopped = await AwaitState(
             s => !s.Has(RobotStatusFlag.AreWheelsMoving) && Math.Abs(s.LwheelSpeedMmps) < 1f && Math.Abs(s.RwheelSpeedMmps) < 1f,
@@ -301,7 +301,7 @@ public sealed class CozmoMotion
         _robot.Message += watch;
         try
         {
-            _robot.Transport.Send(build(id), flush: true);
+            _robot.SendMessage(build(id), flush: true);
             var t = timeout ?? TimeSpan.FromSeconds(5);
             if (await Task.WhenAny(acked.Task, Task.Delay(t)) == acked.Task)
                 return new MotionOutcome(MotionResult.Acknowledged, $"{what}: robot acknowledged action {id}");

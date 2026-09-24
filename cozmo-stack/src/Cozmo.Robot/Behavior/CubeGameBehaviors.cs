@@ -271,7 +271,7 @@ public sealed class PopAWheelieBehavior : ManipulationBehavior
 
     protected override void OnStop(BehaviorStopReason reason)
     {
-        M.Robot.Transport.Send(new EnableStopOnCliff { Enable = true }, flush: true);
+        M.Robot.SendMessage(new EnableStopOnCliff { Enable = true }, flush: true);
         Log("EnableStopOnCliff(true)");
         CurrentPhase = Phase.Idle;
         base.OnStop(reason);

@@ -295,7 +295,9 @@ public static class HardwareRunner
         Console.WriteLine("  SAFETY CHECK before he moves");
         try
         {
-            using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(o.Ip), timeout: TimeSpan.FromSeconds(6));
+            // The harness's own bound on waiting; the stack has no connect timer (M1-025, CB31).
+            using var bound = new CancellationTokenSource(TimeSpan.FromSeconds(6));
+            using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(o.Ip), cancellationToken: bound.Token);
             Console.WriteLine($"    connection:  ok ({robot.State.FirmwareVersionNumber})");
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -330,7 +332,9 @@ public static class HardwareRunner
     {
         try
         {
-            using var robot = CozmoRobot.ConnectAsync(IPAddress.Parse(ip), timeout: TimeSpan.FromSeconds(3)).GetAwaiter().GetResult();
+            // The harness's own bound on waiting; the stack has no connect timer (M1-025, CB31).
+            using var bound = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            using var robot = CozmoRobot.ConnectAsync(IPAddress.Parse(ip), cancellationToken: bound.Token).GetAwaiter().GetResult();
             robot.EmergencyStop();
             robot.Disconnect();
         }

@@ -466,12 +466,12 @@ public static class TurnTowardsPose
         double turn = RelativeTurnRad(robot.Value, target);
         if (Math.Abs(turn) > maxTurnAngleRad) return false;
         double absolute = robot.Value.AngleAroundZ + turn;
-        var transport = vision.Robot.Transport;
-        transport.Send(Message(absolute, MaxSpeedRadPerSec, AccelRadPerSec2, ToleranceRad, 0, true, 2), flush: true);
+        var transport = vision.Robot;   // M1-026: through the app send path (B28, CB26, CB29)
+        transport.SendMessage(Message(absolute, MaxSpeedRadPerSec, AccelRadPerSec2, ToleranceRad, 0, true, 2), flush: true);
         if (vision.Calibration is { } cal)
         {
             double head = HeadAngleToSee(cal, robot.Value, target.Translation);
-            transport.Send(new SetHeadAngle { AngleRad = (float)head, MaxSpeedRadPerSec = 10f, AccelRadPerSec2 = 10f, DurationSec = 0f, ActionId = 3 }, flush: true);
+            transport.SendMessage(new SetHeadAngle { AngleRad = (float)head, MaxSpeedRadPerSec = 10f, AccelRadPerSec2 = 10f, DurationSec = 0f, ActionId = 3 }, flush: true);
         }
         var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(6));
         while (DateTime.UtcNow < deadline)

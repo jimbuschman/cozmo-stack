@@ -165,7 +165,7 @@ public sealed class NvCalibrationReader : IDisposable
     {
         _buffer.Clear();
         _pending = new TaskCompletionSource<CameraCalibration?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _robot.Transport.Send(new NVCommand
+        _robot.SendMessage(new NVCommand
         {
             Tag = CameraCalibration.NvEntryTag,
             Length = NvReadLength,

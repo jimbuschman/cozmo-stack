@@ -225,14 +225,15 @@ public class CoreReviewTests
         Assert.NotNull(playing);
         Assert.True(Within(1_000, () => robot.Animations.IsTicking), "the animation never started ticking");
 
-        // the robot goes away underneath it, exactly as a dropped link does
-        robot.Transport.Disconnect("test");
+        // The robot goes away underneath it. Batch 3 (M1-025, M1-015, M1-026): the app-level disconnect removes the
+        // robot at the next engine tick (CB33), which ends its animation; a send refused afterwards returns failure
+        // silently (CB29) instead of throwing, so no Faulted is raised any more.
+        robot.Disconnect();
 
         var finished = await Task.WhenAny(playing!, Task.Delay(3_000));
         Assert.Same(playing, finished);                       // it ended rather than hanging
         Assert.True(Within(2_000, () => !robot.Animations.IsTicking), "the ticker was still running");
         Assert.False(robot.Animations.IsPlaying);
-        Assert.NotNull(faulted);                              // and the reason was reported, not swallowed silently
 
         // the process is still here to make these assertions, which is the other half of the claim
         Assert.True(true);

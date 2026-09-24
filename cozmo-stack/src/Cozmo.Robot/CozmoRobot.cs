@@ -194,18 +194,30 @@ public sealed class CozmoRobot : IDisposable
     /// <summary>Every decoded robot message, after the devices have seen it.</summary>
     public event Action<RobotMessage>? Message;
 
-    private CozmoRobot(TransportOptions? options, ReliableTransport? transport = null)
+    // fidelity: M1-024, M1-025, M1-026, M1-027, M1-028, M1-029, M1-030, M1-031, M1-041, M1-040, M1-042
+    /// <summary>
+    /// The engine's app layer for this robot (<see cref="CozmoEngine"/>): the 60 ms tick, the connection manager,
+    /// MessageHandler and the initial-connection handshake. Robot messages reach the devices only from its per-tick
+    /// drain (M1-024), and every message the devices send goes through its send path (M1-026).
+    /// </summary>
+    public CozmoEngine Engine { get; }
+
+    private CozmoRobot(TransportOptions? options, ReliableTransport? transport, CozmoEngineOptions? engineOptions,
+                       IEngineTransport? port = null, Func<long>? engineClock = null)
     {
         Transport = transport ?? new ReliableTransport(options);
-        Display = new CozmoDisplay(m => Transport.Send(m, flush: true),
+        var realPort = port is null ? new ReliableTransportPort(Transport) : null;
+        Engine = new CozmoEngine(port ?? realPort!, engineOptions, engineClock);
+        if (realPort is not null) realPort.Log = Engine.Log;
+        Display = new CozmoDisplay(m => SendMessage(m, flush: true),
                                    Transport.Options.MaxFramePayloadBytes - CozmoDisplay.MessageOverhead);
-        Audio = new CozmoAudio(m => Transport.Send(m, flush: true));
+        Audio = new CozmoAudio(m => SendMessage(m, flush: true));
         // The engine fills every animation tick with both an audio frame and a face keyframe. Mirror that
         // in both directions, so neither pipeline leaves the robot's animation tick half empty.
-        Display.BeforeFrame = () => { if (!Audio.Busy) Transport.Send(new AudioSilence(), flush: true); };
+        Display.BeforeFrame = () => { if (!Audio.Busy) SendMessage(new AudioSilence(), flush: true); };
         Audio.PlayedFrames = () => State.Animation?.NumAudioFramesPlayed ?? 0;
         Audio.OnFrameSent += () =>
-            Transport.Send(new Protocol.FaceImage { Image = Display.LastPayload ?? BlankFace }, flush: true);
+            SendMessage(new Protocol.FaceImage { Image = Display.LastPayload ?? BlankFace }, flush: true);
         Motion = new CozmoMotion(this);
         Lights = new CozmoLights(this);
         Sensors = new CozmoSensors(this, State);
@@ -213,77 +225,149 @@ public sealed class CozmoRobot : IDisposable
         CubeAccel = new CubeAccelStreams(this);
         Animations = new CozmoAnimations(this);
         Face = new CozmoFace(this);
-        Transport.DataReceived += OnData;
+        // fidelity: M1-024
+        // Messages reach the devices only from the engine's per-tick drain (B25, CD10), not from the transport.
+        Engine.DeviceRoute = RouteToDevices;
+        Engine.PublicRoute = m => EventFan.Raise(Message, m, e => Fault(e));
+        Engine.Faulted = Fault;
+        // fidelity: M1-015
+        // CB33: RemoveRobot deletes the Robot, and with it its AnimationStreamer; this stack's animation system
+        // stands for that streamer, so whatever it is playing ends there.
+        // MISSING (CB33, CC27): the original deletes the whole Robot and a later ConnectToRobot builds everything
+        // afresh; this stack's device objects (State, Camera, Sensors, Cubes, CubeAccel, and the vision system's
+        // RobotStateHistory) live on the CozmoRobot and keep their state across a removal. Which of that state the
+        // original's fresh Robot would reset is not mapped here.
+        Engine.RobotRemoved = () => { try { Animations.Stop(); } catch (Exception e) { Fault(e); } };
+        // fidelity: M1-042
+        Engine.AfterSuccessDefaults = SendAppDefaults;
+    }
+
+    // fidelity: M1-042
+    /// <summary>
+    /// Policy M1-042: after a Success RobotConnectionResponse this stack does what the phone app would: it sends
+    /// the stored volume (SetRobotVolume → SetAudioVolume {u16 vol × 65535}, CD27) and enables the block pool the
+    /// way BlockPoolEnabledMessage {true, 0} does (CD28; <see cref="CubeConnections.EnableAutoBlockPool"/>). It runs
+    /// as a game message, at the start of the tick after the response.
+    /// MISSING: when the original calls Robot::SetPhysicalRobot(true), which loads the persistent block pool
+    /// (<see cref="CubeConnections.Init"/>), is not in the M1 inventory; this stack keeps doing it here, just
+    /// before the pool is enabled, as it did before (M4 interface).
+    /// </summary>
+    private void SendAppDefaults()
+    {
+        Engine.SendRobotVolume(Engine.Options.RobotVolume);
+        Cubes.Connections.Init(Engine.Options.BlockPoolPath ?? DefaultBlockPoolPath);
+        Cubes.EnableAutoBlockPool(enabled: true, discoveryTimeSeconds: 0f);
     }
 
     /// <summary>
     /// A robot with no socket, driven by feeding datagrams to <see cref="ReliableTransport.ProcessIncoming"/>.
     /// Used by the replay tool and by tests, so the whole device layer can be exercised against captured
     /// traffic without a robot present. Outgoing messages land in the transport's offline frame list.
+    ///
+    /// Test seam, not a production path: the engine has no 60 ms thread here. Every arrival (and every game
+    /// message) runs the engine tick on the calling thread until nothing is pending, so a fed datagram still goes
+    /// through the per-tick drain (M1-024) but reaches the devices before the call that fed it returns. The link
+    /// starts in the state after a completed handshake: the connection is Connecting on the transport's own
+    /// loopback peer (it becomes Connected when a ConnectionResponse is fed, B23), Robot 1 exists with no
+    /// RobotInitialConnection (so nothing is filtered, CB27), and it is time synced, ready to stream and has had
+    /// its first full state (CD12, CD19, CD20, CD23). No handshake, post-connect or app-default message is sent.
     /// </summary>
     public static CozmoRobot CreateOffline(TransportOptions? options = null, INetClock? clock = null)
     {
-        var robot = new CozmoRobot(options, ReliableTransport.CreateOffline(options, clock));
+        var transport = ReliableTransport.CreateOffline(options, clock);
+        Func<long>? nowNs = clock is null ? null : () => (long)(clock.NowMs * 1_000_000.0);
+        var robot = new CozmoRobot(options, transport, new CozmoEngineOptions(), null, nowNs);
         robot.Transport.OfflineConnect();
+        robot.Engine.InitOfflineLink(transport.Peer!);
+        robot.Engine.StartOffline(autoTick: true);
         return robot;
     }
 
-    // fidelity: M1-001
     /// <summary>
-    /// Connects, completes the engine's handshake and waits for telemetry to start. With no
-    /// <paramref name="address"/> the IP is the one Unity uses (B1): 172.31.1.1, or 127.0.0.1 when
-    /// <paramref name="isSimulated"/>. The remote port is 5552 when simulated, else 5551 (B3).
+    /// Test seam: a robot whose engine talks to <paramref name="port"/> and is ticked only by
+    /// <see cref="CozmoEngine.Tick"/>. <see cref="Transport"/> is an unused offline transport.
+    /// </summary>
+    internal static CozmoRobot CreateForTest(IEngineTransport port, Func<long> engineClock, CozmoEngineOptions? engineOptions = null)
+    {
+        var robot = new CozmoRobot(null, ReliableTransport.CreateOffline(), engineOptions ?? new CozmoEngineOptions(), port, engineClock);
+        robot.Engine.StartOffline(autoTick: false);
+        return robot;
+    }
+
+    // fidelity: M1-024, M1-019
+    /// <summary>
+    /// The engine without a connection: the transport is started (RCM::Init's StartClient, B12) and the 60 ms engine
+    /// thread runs (B24). Connect with <see cref="ConnectToRobot"/> and watch <see cref="CozmoEngine.ConnectionResponse"/>.
+    /// </summary>
+    public static CozmoRobot Create(TransportOptions? options = null, CozmoEngineOptions? engineOptions = null)
+    {
+        var robot = new CozmoRobot(options, null, engineOptions);
+        robot.Engine.StartProduction();
+        return robot;
+    }
+
+    // fidelity: M1-001, M1-025
+    /// <summary>
+    /// The ConnectToRobot game message (B1, B2, CB1). With no <paramref name="address"/> the IP is the one Unity
+    /// uses: 172.31.1.1, or 127.0.0.1 when <paramref name="isSimulated"/>. The remote port is 5552 when simulated,
+    /// else 5551 (B3). Ignored while Robot 1 exists ("Robot already connected", CB36).
+    /// </summary>
+    public void ConnectToRobot(IPAddress? address = null, bool isSimulated = false)
+        => Engine.ConnectToRobot(address ?? RobotAddress.DefaultFor(isSimulated), isSimulated);
+
+    // fidelity: M1-001, M1-025, M1-015, M1-028
+    /// <summary>
+    /// Creates the engine (<see cref="Create"/>), sends ConnectToRobot and returns once the engine's
+    /// RobotConnectionResponse arrives. There is no connect timer (CB1, CB31): the answer comes from the handshake,
+    /// or, for a robot that never answers the transport connect, from its 5 s timeout as ConnectionRejected (B31,
+    /// CB32). A response other than Success disposes the robot and throws <see cref="RobotConnectionException"/>;
+    /// <paramref name="cancellationToken"/> lets a caller stop waiting (the robot is then disposed too).
     /// </summary>
     public static async Task<CozmoRobot> ConnectAsync(IPAddress? address = null, bool isSimulated = false,
                                                       TransportOptions? options = null,
-                                                      TimeSpan? timeout = null,
-                                                      bool enableAnimations = true,
-                                                      string? blockPoolPath = null)
+                                                      CozmoEngineOptions? engineOptions = null,
+                                                      CancellationToken cancellationToken = default)
     {
         address ??= RobotAddress.DefaultFor(isSimulated);
-        var robot = new CozmoRobot(options);
-        var connected = new TaskCompletionSource();
-        void ok() => connected.TrySetResult();
-        void bad(string r) => connected.TrySetException(new IOException($"disconnected while connecting: {r}"));
-        robot.Transport.Connected += ok;
-        robot.Transport.Disconnected += bad;
+        var robot = Create(options, engineOptions);
+        var response = new TaskCompletionSource<RobotConnectionResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
+        void on(RobotConnectionResponse r) => response.TrySetResult(r);
+        robot.Engine.ConnectionResponse += on;
+        RobotConnectionResponse resp;
         try
         {
-            // fidelity: M1-019
-            // R39 / R38: Start opens the socket (once), Connect only queues the ConnectionRequest; both are posted, in order.
-            robot.Transport.Start();
-            robot.Transport.Connect(address, isSimulated);
-            var t = timeout ?? TimeSpan.FromSeconds(5);
-            if (await Task.WhenAny(connected.Task, Task.Delay(t)) != connected.Task)
-                throw new TimeoutException($"no ConnectionResponse from {address} within {t.TotalSeconds:F1}s");
-            await connected.Task;
+            using var reg = cancellationToken.Register(() => response.TrySetCanceled(cancellationToken));
+            robot.ConnectToRobot(address, isSimulated);
+            resp = await response.Task.ConfigureAwait(false);
         }
-        finally
+        catch
         {
-            robot.Transport.Connected -= ok;
-            robot.Transport.Disconnected -= bad;
+            robot.Engine.ConnectionResponse -= on;
+            robot.Dispose();
+            throw;
         }
-
-        // identity arrives unprompted; ask for the rest and start telemetry
-        robot.Transport.Send(new GetManufacturingInfo(), flush: true);
-        robot.Transport.Send(new SyncTime(0), flush: true);
-        // Without this the robot accepts face and audio frames but never renders or plays them: the
-        // animation controller is not running. The robot answers by streaming AnimationState (0xF1).
-        if (enableAnimations) robot.EnableAnimations();
-        // Robot::SetPhysicalRobot(true) 0x00513914 initialises the block pool from blockPool.txt, which asks for
-        // the saved cubes straight away. The engine resolves the file with DataPlatform::pathToResource(scope 4);
-        // this stack keeps it under the local application data folder. An empty path turns persistence off.
-        robot.Cubes.Connections.Init(blockPoolPath ?? DefaultBlockPoolPath);
-        // ConnectionFlowController.CubeConnectFlow enables the app's BlockPoolTracker immediately after
-        // the robot connection is established, with a discovery time of zero. This is the application-side
-        // lifecycle step that lets a fresh install select newly advertising cubes; Init above only restores
-        // the persistent pool and cannot discover a cube that has never been saved.
-        robot.Cubes.EnableAutoBlockPool(enabled: true, discoveryTimeSeconds: 0f);
-        for (int i = 0; i < 40 && robot.State.StateCount == 0; i++) await Task.Delay(50);
+        robot.Engine.ConnectionResponse -= on;
+        if (resp.Result != RobotConnectionResult.Success)
+        {
+            robot.Dispose();
+            throw new RobotConnectionException(resp);
+        }
         return robot;
     }
 
-    /// <summary>Where the block pool is kept between sessions unless ConnectAsync is told otherwise.</summary>
+    // fidelity: M1-026
+    /// <summary>
+    /// Sends a robot message the way the engine sends every one: MessageHandler::SendMessage (B28, CB29). The
+    /// <paramref name="reliable"/> and <paramref name="flush"/> arguments are ignored as the engine ignores them:
+    /// every message goes reliable with no flush hint (R42), at once (CD13). It returns false, silently, when there
+    /// is no connection in state 2 or the handshake has not validated the robot (M1-030).
+    /// </summary>
+    public bool SendMessage(RobotMessage m, bool reliable = true, bool flush = false) => Engine.SendMessage(m);
+
+    /// <summary>Whether the engine's animation streamer is running (CD12): the animation loop streams only then.</summary>
+    public bool AnimationStreamingOpen => Engine.AnimationStreamingOpen;
+
+    /// <summary>Where the block pool is kept between sessions unless the engine options say otherwise.</summary>
     public static string DefaultBlockPoolPath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "cozmo-stack", "blockPool.txt");
 
@@ -291,10 +375,10 @@ public sealed class CozmoRobot : IDisposable
     /// Starts the robot's animation controller. Face images and audio frames are animation keyframes: until
     /// this is sent the robot receives them and does nothing visible. It answers by streaming AnimationState.
     /// </summary>
-    public void EnableAnimations() => Transport.Send(new InitController(), flush: true);
+    public void EnableAnimations() => SendMessage(new InitController(), flush: true);
 
     /// <summary>Stops whatever animation is playing and clears the robot's keyframe buffer.</summary>
-    public void EndAnimation() => Transport.Send(new EndOfAnimation(), flush: true);
+    public void EndAnimation() => SendMessage(new EndOfAnimation(), flush: true);
 
     /// <summary>Waits until the robot confirms the animation controller is running.</summary>
     public async Task<bool> WaitForAnimationsAsync(TimeSpan? timeout = null)
@@ -364,11 +448,11 @@ public sealed class CozmoRobot : IDisposable
     public void StartCamera(bool color = false, bool singleShot = false)
     {
         Camera.Restart();
-        Transport.Send(new EnableColorImages { Enable = color }, flush: true);
-        Transport.Send(new ImageRequest { Mode = singleShot ? ImageSendMode.SingleShot : ImageSendMode.Stream }, flush: true);
+        SendMessage(new EnableColorImages { Enable = color }, flush: true);
+        SendMessage(new ImageRequest { Mode = singleShot ? ImageSendMode.SingleShot : ImageSendMode.Stream }, flush: true);
     }
 
-    public void StopCamera() => Transport.Send(new ImageRequest { Mode = ImageSendMode.Off }, flush: true);
+    public void StopCamera() => SendMessage(new ImageRequest { Mode = ImageSendMode.Off }, flush: true);
 
     /// <summary>
     /// Waits for the next usable camera frame. Frames from the sensor's warm-up are torn and are skipped
@@ -392,11 +476,11 @@ public sealed class CozmoRobot : IDisposable
 
     /// <summary>Sends a head angle without waiting for the acknowledgement. Prefer <see cref="Motion"/>.</summary>
     public void SetHeadAngle(float radians, byte actionId = 1)
-        => Transport.Send(new SetHeadAngle(radians, actionId: actionId), flush: true);
+        => SendMessage(new SetHeadAngle(radians, actionId: actionId), flush: true);
 
     /// <summary>Sets the backpack from raw light states. Prefer <see cref="Lights"/>.</summary>
     public void SetBackpackLights(LightState top, LightState middle, LightState bottom)
-        => Transport.Send(new BackpackLightsMiddle(top, middle, bottom), flush: true);
+        => SendMessage(new BackpackLightsMiddle(top, middle, bottom), flush: true);
 
     /// <summary>Prefer <see cref="Lights"/>.</summary>
     public void SetHeadlight(bool on) => Lights.SetHeadlight(on);
@@ -407,50 +491,57 @@ public sealed class CozmoRobot : IDisposable
     /// </summary>
     public void EmergencyStop()
     {
-        Transport.Send(new StopAllMotors(), flush: true);
-        Transport.Send(new DriveWheels(0f, 0f, 0f, 0f), flush: true);
+        SendMessage(new StopAllMotors(), flush: true);
+        SendMessage(new DriveWheels(0f, 0f, 0f, 0f), flush: true);
     }
 
-    public void Disconnect() => Transport.Disconnect();
+    // fidelity: M1-025
+    /// <summary>
+    /// Asks the engine to disconnect: DisconnectCurrent at the next tick (B33, CC29), then the usual disconnect
+    /// handling (RobotDisconnected, the robot removed, CB33). There is no automatic reconnect (CC27).
+    /// </summary>
+    public void Disconnect() => Engine.DisconnectCurrent();
 
     /// <summary>
-    /// Stops the motors, then disposes the transport. The stop commands are queued like every robot message;
-    /// the transport's dispose then makes its one DisconnectRequest send attempt and closes the socket
-    /// without waiting for anything queued to drain (see <see cref="ReliableTransport.Dispose"/>).
+    /// Stops the motors, stops the engine, then disposes the transport. The stop commands are sent like every
+    /// robot message (only while connected); the transport's dispose then makes its one DisconnectRequest send
+    /// attempt and closes the socket without waiting for anything queued to drain (see
+    /// <see cref="ReliableTransport.Dispose"/>).
+    /// NOTE: the StopAllMotors / DriveWheels(0) before disconnecting is this stack's, not the engine's (comparison
+    /// item 4); it is kept pending a safety-policy decision.
     /// </summary>
     public void Dispose()
     {
         try { Animations.Dispose(); } catch { }
         try
         {
-            if (Transport.State == LinkState.Connected) EmergencyStop();
+            if (Engine.ConnectionState == 2) EmergencyStop();
         }
         catch { }
+        Engine.Dispose();
         Transport.Dispose();
     }
 
     /// <summary>The engine's idle face: two "skip 64 columns" commands, i.e. nothing lit.</summary>
     private static readonly byte[] BlankFace = { 0x3F, 0x3F };
 
+    // fidelity: M1-024, M1-041
     /// <summary>
-    /// Routes one message to everything that consumes it.
+    /// The stack's devices as engine subscribers of one broadcast message (CC36), called from the engine's per-tick
+    /// dispatch. A RobotState the Robot drops before time sync (CD23) does not reach them.
     ///
-    /// The internal devices come first and each is isolated: this is one transport callback carrying the
-    /// whole chain, so anything throwing part way through used to leave the rest of the devices without
-    /// the message - a partial update of the robot's own state, which nothing downstream can detect. The
-    /// public event is fanned out per subscriber for the same reason, and a subscriber that throws is
-    /// reported through <see cref="HandlerFaulted"/> rather than taking the others with it.
+    /// Each device is isolated (policy M1-034): anything throwing part way through would otherwise leave the rest of
+    /// the devices without the message - a partial update of the robot's own state, which nothing downstream can
+    /// detect. A fault is reported through <see cref="HandlerFaulted"/>.
     /// </summary>
-    private void OnData(byte[] payload)
+    private void RouteToDevices(RobotMessage m, bool stateHandled)
     {
-        RobotMessage m;
-        try { m = RobotMessage.Parse(payload); } catch (FormatException) { return; }
+        if (m is RobotState && !stateHandled) return;
         Route(() => State.Handle(m));
         Route(() => Camera.Handle(m));
         Route(() => Sensors.Handle(m));
         Route(() => Cubes.Handle(m));
         Route(() => CubeAccel.Handle(m));
-        EventFan.Raise(Message, m, e => Fault(e));
     }
 
     private void Route(Action a)
