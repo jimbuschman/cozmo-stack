@@ -228,7 +228,7 @@
       "subsystem": "M1-transport",
       "title": "Robot address: 172.31.1.1 / 127.0.0.1, remote port 5551 physical / 5552 simulated",
       "location": "cozmo-stack/src/Cozmo.Transport/TransportConstants.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B1 unity/scripts/csharp/ConnectionFlowController.cs:199, :204, :673 and RobotEngineManager.cs:524-526: 172.31.1.1 physical, 127.0.0.1 simulator, one ConnectToRobot(ipAddress, isSimulated)",
@@ -236,8 +236,8 @@
         "B4 0x0069D0CE cmp.w r6,#0x10000: kP_ROBOT_ADVERTISING_PORT is only logged; >= 0x10000 aborts MessageHandler::Init"
       ],
       "effect": "the stack talks to the wrong address or port",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled after batch 3's read-only verification (2026-09-24); B4 (the advertising-port config) has no counterpart: this stack has no such config input",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.M1_001_B3_TheRemotePortIs5551Or5552ByIsSimulated, TransportRepairTests.M1_001_B1_TheDefaultIpIs172_31_1_1Or127_0_0_1"
@@ -516,10 +516,10 @@
       ],
       "effect": "a dead link is noticed at a different time, or the game is told the wrong result",
       "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "unresolved": "transport part reproduced (batch 4(i)); app part reproduced (batch 3) except the device-object reset on RemoveRobot (see M1-025); then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": "TransportRepairTests.M1_015_R19_B22_ATimeoutDeletesTheConnectionSetsTheFlagAndTheTransportGoesOn, TransportRepairTests.M1_015_R19_InSyncModeTheUpdateReportsTheTimeoutButOnlyTheTickSetsTheFlag"
+      "test": "TransportRepairTests.M1_015_R19_B22_ATimeoutDeletesTheConnectionSetsTheFlagAndTheTransportGoesOn, TransportRepairTests.M1_015_R19_InSyncModeTheUpdateReportsTheTimeoutButOnlyTheTickSetsTheFlag, EngineAppLayerTests.M1_015_CB33_AfterTheResponseTheGameGetsRobotDisconnected, EngineAppLayerTests.M1_015_CC23_CC24_ADropDuringTheHandshakeIsAFailureAndATimeoutIsReason1, EngineAppLayerTests.M1_015_CC24_ANeverAnsweredConnectIsRejected"
     },
     {
       "id": "M1-016",
@@ -587,7 +587,7 @@
       "subsystem": "M1-transport",
       "title": "Transport entry points: SendData, Connect, FinishConnection, Disconnect, Start, Stop",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "R38 SendData type 4 reliable / 5 unreliable (0x008370EC); Connect clears +0xA1 and queues reliable type 1 flag 1 (0x0083710E); FinishConnection reliable type 2 flag 1 (0x0083712E); Disconnect closure 0x00837FFA: SendMessage type 3, then DeleteConnection (b.w 0x8d123c), so type 3 gets at most one send",
@@ -600,8 +600,8 @@
         "CA22: FinishConnection is QueueMessage(type 2, flag 1) (0x0083712A..0x0083713A)"
       ],
       "effect": "the connect / disconnect frames on the wire differ from the app",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled after batch 3's read-only verification (2026-09-24); the RCM Disconnect-then-Connect reconnect (CB4) is in CozmoEngine.cs",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.M1_019_R38_FinishConnectionSendsAReliableFlushedTypeTwoToThatAddress, TransportRepairTests.M1_019_R38_FinishConnectionWithNoConnectionIsAnUnconnectedDestination, TransportRepairTests.M1_019_R39_StopSendsNothingClearsTheConnectionsAndClosesTheSocket, TransportRepairTests.M1_019_R38_R39_StartOpensTheSocketOnceAndConnectAndDisconnectLeaveItAlone, TransportRepairTests.M1_019_R40_TheConnectionResponseReachesTheReceiverAsOnConnected, TransportRepairTests.M1_035_B21_AQueuedDisconnectActsOnTheConnectionItsAddressHasWhenItRuns, TransportRepairTests.T_h1_DisconnectMakesOneAttemptAndDeletesTheConnectionAtOnce, TransportHardeningTests.ASecondConnectQueuesAnotherConnectionRequestOnTheSameConnection, TransportRepairTests.M1_019_R39_AConnectFollowedByStopStillSendsTheConnectionRequestFirst, TransportRepairTests.M1_019_CA14_ADisconnectWithNoConnectionSendsNothingAndOnlyWarns",
@@ -705,8 +705,8 @@
       "id": "M1-024",
       "subsystem": "M1-transport",
       "title": "Engine tick 60 ms: arrivals drained FIFO and handed up once per tick",
-      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B24 CozmoInstanceRunner::Run: 60 ms period 0x3938700 ns (0x0065B3D2/0x0065B3D8), sleep to target, overtime/catchup logs; CozmoEngine::Update state 3 (tbb 0x004ED5D0): UpdateRobotConnection -> MessageHandler::ProcessMessages, then UpdateAllRobots (0x004ED62E, 0x004ED648)",
@@ -717,17 +717,17 @@
         "CD6..CD11: the per-tick order: counters zeroed, UiMessageHandler::Update (game messages dispatched synchronously), then in state 3 BaseStationTimer::UpdateTime, UpdateRobotConnection (all robot-message handlers), NeedsManager::Update, UpdateAllRobots (Robot::Update, then the RobotState broadcast), then the audio controller; every engine timestamp in a tick is the tick start (0x004ED4DE..0x004ED6C4; 0x0084BC38..0x0084BCD4)"
       ],
       "effect": "handlers see messages at other times or in other batches from the app",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled after batch 3's read-only verification (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "EngineAppLayerTests.M1_024_B20_B25_B26_ArrivalsAreHandledInArrivalOrder, EngineAppLayerTests.M1_024_B25_CD10_ArrivalsReachHandlersOnlyInTheTickDrain, EngineAppLayerTests.M1_024_B26_DataFromAnotherAddressIsDropped, EngineAppLayerTests.M1_024_CD1_CD2_CD3_FirstTickAtOnceThenEveryPeriodAndANonzeroResultStops, EngineAppLayerTests.M1_024_CD3_ItSleepsWholeMicrosecondsAndOnlyFrom1us, EngineAppLayerTests.M1_024_CD3_OverrunTicksRunBackToBack, EngineAppLayerTests.M1_024_CD4_OvertimeIsOnlyLogged, EngineAppLayerTests.M1_024_CD5_AFarBehindLoopSkipsWholePeriodsInsteadOfRunningExtraTicks, EngineAppLayerTests.M1_024_CD7_CD8_GameMessagesRunBeforeTheClockUpdateAndRobotUpdateAfterIt, EngineAppLayerTests.M1_024_CD9_TheEngineClockIsTheTickStart"
     },
     {
       "id": "M1-025",
       "subsystem": "M1-transport",
       "title": "Connect request from the game, the connected response, and DisconnectCurrent",
-      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
       "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -743,17 +743,17 @@
       ],
       "effect": "a second connect, a response at the wrong time, or a local disconnect is handled differently",
       "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "unresolved": "the app layer reproduces the rows (batch 3), except that RemoveRobot leaves this stack's device objects (State, Camera, Sensors, Cubes, CubeAccel, vision history) alive where CB33/CC27 build a fresh Robot; that reset is an interface to M3/M4; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": "TransportRepairTests.B33_DisposeWhileConnectingSendsTheDisconnectRequestThenStops"
+      "test": "TransportRepairTests.B33_DisposeWhileConnectingSendsTheDisconnectRequestThenStops, EngineAppLayerTests.M1_025_B23_TheConnectionResponseMovesState1To2AndResetsTheReason, EngineAppLayerTests.M1_025_B2_CB36_ASecondConnectToRobotIsIgnoredWhileTheRobotExists, EngineAppLayerTests.M1_025_B2_CB4_ConnectToRobotBuildsTheRobotBeforeAnyExchange, EngineAppLayerTests.M1_025_CB38_AConnectionEventFromAnotherAddressIsHandledAsTheRobots, EngineAppLayerTests.M1_025_CB3_ASimulatedRobotUsesPort5552, EngineAppLayerTests.M1_025_CC18_DisconnectReasonValues, EngineAppLayerTests.M1_025_CC23_ClearResetsTheAddressSoALaterDisconnectCurrentSendsNothing, EngineAppLayerTests.M1_025_CC27_NoAutomaticReconnectAndALaterConnectToRobotBuildsAfresh, EngineAppLayerTests.M1_025_CC29_CC30_DisconnectCurrentDisconnectsOnceAndRemovesTheRobot, EngineAppLayerTests.M1_025_CC30_ArrivalsQueuedAfterTheMarkerAreDropped"
     },
     {
       "id": "M1-026",
       "subsystem": "M1-transport",
       "title": "App send path: every robot message is sent reliable, no flush hint, only when connected",
-      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B28 MessageHandler::SendMessage ignores its reliable and hot arguments; sends only if initialised, state 2 and not filtered (0x0069DCFE..0x0069DD58); RobotConnectionManager::SendData refuses unless state 2 (0x0062F5A6) and calls RT->SendData(reliable 1 at 0x0062F5CE, flush 0 via 0x0062F5C2 movs r1,#0 / 0x0062F5CA strd r2,r1,[sp])",
@@ -762,17 +762,17 @@
         "CD13: there is no per-tick batching of outgoing messages; each send posts to the transport at once (0x005134A4..0x005134B8; 0x00836B42..0x00836B66)"
       ],
       "effect": "messages go out unreliable, early, or flushed differently from the app",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled after batch 3's read-only verification (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "EngineAppLayerTests.M1_026_B28_CB29_ARefusedSendReturnsFailureSilently, EngineAppLayerTests.M1_026_B28_R38_EveryRobotMessageGoesOutReliable, EngineAppLayerTests.M1_026_CD13_ASendGoesToTheTransportAtOnce"
     },
     {
       "id": "M1-027",
       "subsystem": "M1-transport",
       "title": "Arrived-message filters and the fatal robotError disconnect",
-      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
       "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -782,17 +782,17 @@
       ],
       "effect": "messages the app drops are handled, or a fatal robot error does not disconnect",
       "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "unresolved": "robot-to-engine tags inside 0xB0..0xF5 that have no codec in this stack cannot be size-checked (CC35); needs the M2 protocol layer; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "EngineAppLayerTests.M1_027_B27_CC35_SizeChecks, EngineAppLayerTests.M1_027_CC14_ARobotErrorBeforeValidationIsFiltered, EngineAppLayerTests.M1_027_CC15_AFatalRobotErrorDisconnects, EngineAppLayerTests.M1_027_CC16_ANonFatalRobotErrorIsPassedThroughAndTheLoopGoesOn, EngineAppLayerTests.M1_027_CC31_DataLeftAfterTheRobotIsRemovedIsDropped"
     },
     {
       "id": "M1-028",
       "subsystem": "M1-transport",
       "title": "Initial-connection handshake outcomes",
-      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B29 RobotInitialConnection subscribes to factoryFirmwareVersion 0xD2 (0x0052D1B4), firmwareVersion 0xEE (0x0052D208), robotAvailable 0xC9 (0x0052D260); factoryFirmwareVersion -> 3; firmwareVersion: parse fail or FACTORY build -> 3, no robotAvailable yet -> 1, simulator -> 0 (0x0052D3BE, 0x0052D59E, 0x0052D4F2, 0x0052D7E4); OnNotified 3 -> reason 7, 4 -> reason 8, then SendConnectionResponse (0x0052DDAA..0x0052DDC4, 0x0052DE06); success: filter off (+0x2D), GetManufacturingInfo, then on mfgId 0xED store serial, HW version, colour, $session_id and send RobotConnectionResponse(Success) (0x0052DE6C, 0x0052DE7C, 0x0052E304..0x0052E3A2)",
@@ -803,17 +803,17 @@
         "E1..E6: a second firmwareVersion before mfgId subscribes a second mfgId lambda and sends a second GetManufacturingInfo, but the first mfgId yields exactly one RobotConnectionResponse, because SendConnectionResponse unlinks both lambdas during the emit; a second mfgId reaches only the Robot's HandleRobotSetBodyID (0x0052DF2E..0x0052DFC8; emit 0x0069E27C..0x0069E2B2; unlink 0x0051D338..0x0051D3A4; 0x00532CD0..0x00532CDA)"
       ],
       "effect": "the robot is accepted, rejected or reported with a different result from the app",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE. The version/time comparison itself is M1-029",
+      "provenance": "reproduced by the code; settled after batch 3's read-only verification (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "EngineAppLayerTests.M1_028_CB14_CB34_NoRobotAvailableIsAFailureThatKeepsTheLink, EngineAppLayerTests.M1_028_CB16_CB18_TheHandshakeToSuccess, EngineAppLayerTests.M1_028_CB18_AnUnknownBodyColourIsReportedAs0xFF, EngineAppLayerTests.M1_028_E1_E4_E5_DuplicatesGiveExactlyOneResponse"
     },
     {
       "id": "M1-029",
       "subsystem": "M1-transport",
       "title": "Firmware version check against the shipped firmware header",
-      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
       "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -830,17 +830,17 @@
       ],
       "effect": "a robot is accepted or refused as outdated where the app decides otherwise",
       "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "build the mechanism (asynchronous header load, expected values copied at AddRobot, 0/0 when not loaded, the comparison) and log its outcome; under policy M1-040 the outcome never refuses the robot; then EXACT_SOURCE",
+      "unresolved": "the mechanism is built (batch 3); jsoncpp's grammar (comments, trailing commas) and asUInt of a non-number are not in the rows, so the reader's leniency is MISSING; under M1-040 the outcome never refuses; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "EngineAppLayerTests.M1_029_G5_10_ASimulatorIsAcceptedWithoutRobotAvailable, EngineAppLayerTests.M1_029_G5_11_G5_12_M1_040_TheVersionOutcomeIsComputedAndThenNotApplied, EngineAppLayerTests.M1_029_G5_14_TheExpectedValuesAreCopiedWhenTheRobotIsAdded, EngineAppLayerTests.M1_029_G5_19_G5_31_AShortOrMissingFileGivesNoHeader, EngineAppLayerTests.M1_029_G5_21_TheShippedHeaderParsesTo2381, EngineAppLayerTests.M1_029_G5_2_G5_4_CB13_FactoryAndUnparsableFirmwareProceedUnderM1_040, EngineAppLayerTests.M1_029_G5_31_WithNoHeaderTheExpectedValuesAre0AndTheRobotIsStillAccepted"
     },
     {
       "id": "M1-030",
       "subsystem": "M1-transport",
       "title": "Message gating until the handshake validates the robot",
-      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B30 while +0x2D is 0: robot -> engine only robotAvailable, factoryFirmwareVersion, firmwareVersion and otaAck pass (0x0052DC76..0x0052DC96); engine -> robot only shutdownRobot 0xA9 and otaWrite 0xAF (0x0052DCA8, 0x0052DCAE); tag names from 0x010343A0 / 0x01034740",
@@ -848,18 +848,18 @@
         "CB30: validation happens at OnNotified(0), before mfgId; OnNotified(3/4) and RM::InitUpdateFirmware (0x0052F5C4..0x0052F6AC) clear it again"
       ],
       "effect": "the robot receives commands, or the engine acts on messages, before the app would allow it",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled after batch 3's read-only verification (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "EngineAppLayerTests.M1_030_B30_BeforeValidationOnlyTheHandshakeMessagesPass, EngineAppLayerTests.M1_030_CB27_WithNoRicNothingIsFiltered"
     },
     {
       "id": "M1-031",
       "subsystem": "M1-transport",
       "title": "Idle-timeout disconnect",
-      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B34 StartIdleTimeout: deadline = now + disconnectTime_s if >= 0, keeping an earlier deadline (0x0052D030..0x0052D066); Cancel sets -1 (0x0052D06C); on expiry Update clears it and calls MessageHandler::Disconnect (0x0052CE6E..0x0052CE98); the reason is not set; driven from unity/scripts/csharp/PauseManager.cs:219, :289, :360",
@@ -867,11 +867,11 @@
         "CC8: the sleep half queues a go-to-sleep animation sequence (0x0052CEA2..0x0052CFBE), an interface to the animation layer (M5); CC10: deadlines are checked once per 60 ms tick in engine state 3"
       ],
       "effect": "the link is dropped after a pause at a different time, or never",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; settled after batch 3's read-only verification (2026-09-24)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "EngineAppLayerTests.M1_031_CC3_CC6_TheDisconnectDeadline, EngineAppLayerTests.M1_031_CC6_SleepFiresBeforeDisconnectInOneUpdate, EngineAppLayerTests.M1_031_CC7_AnExpiredDeadlineBlocksReArmingUntilCancel"
     },
     {
       "id": "M1-032",
@@ -1022,7 +1022,7 @@
       "id": "M1-040",
       "subsystem": "M1-transport",
       "title": "Accept every robot firmware, and log it",
-      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
       "effect": "a robot the original would refuse as OutdatedApp or OutdatedFirmware is accepted",
       "provenance": "operator decision (2026-09-24): a choice of this stack",
       "authority": "the original compares the robot's firmware version with the shipped header (2381) and refuses a mismatch (M1-029). The operator's robot runs 2457. This stack never refuses on version or build: the handshake proceeds as for Success. It logs the robot's firmware version on every connection and in every hardware bundle, and warns whenever it is not 2381, so a firmware-specific problem is known together with its firmware",
@@ -1031,13 +1031,13 @@
       "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "EngineAppLayerTests.M1_029_G5_11_G5_12_M1_040_TheVersionOutcomeIsComputedAndThenNotApplied, EngineAppLayerTests.M1_029_G5_2_G5_4_CB13_FactoryAndUnparsableFirmwareProceedUnderM1_040"
     },
     {
       "id": "M1-041",
       "subsystem": "M1-transport",
       "title": "Robot initialisation after a Success connection response, and the gates it opens",
-      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
       "effect": "the robot is not synced or initialised, or is initialised in the wrong order or at the wrong time; state or animations are processed before the engine would",
       "evidence": [
         "CD17/CB21: the Success RobotConnectionResponse reaches, synchronously and in this order: RobotEventHandler, VisionComponent, TracePrinter (0x006625C6..0x006625FA; 0x00663C74..0x00663CA8; 0x005259AC, 0x006501E4, 0x0053BCBA)",
@@ -1051,10 +1051,10 @@
       "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "provenance": "not implemented: the candidate sends GetManufacturingInfo, SyncTime, InitController and block-pool setup unconditionally on the transport ConnectionResponse (CozmoRobot.cs ~261-275)",
-      "unresolved": "build it; VisionComponent's SetCameraParams (CD21) belongs to M3 and the NV reads (CD26) to the NV subsystem; with no NV requests in this stack the ready-to-stream gate opens when its queue is empty; then EXACT_SOURCE",
+      "unresolved": "built (batch 3) except AbsoluteLocalizationUpdate, which is not sent: its frameId (robot+0x2B0) and originId (+0x294 then +0x14) are not state this stack holds; and RobotStateHistory::Clear has no owner here; then EXACT_SOURCE",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "EngineAppLayerTests.M1_041_CD12_CD20_ReadyIsSetInTheSuccessBroadcastAndStreamingOpensWithTheFirstSyncedState, EngineAppLayerTests.M1_041_CD17_CD18_CD22_M1_042_PostSuccessSendsInOrder, EngineAppLayerTests.M1_041_CD19_AMissingSyncTimeAckIsWarnedOnceAndNeverRetried, EngineAppLayerTests.M1_041_CD22_EachCrashReportAsksForTheNextUpToIndex3, EngineAppLayerTests.M1_041_CD23_RobotStateIsDroppedUntilSyncTimeAck"
     },
     {
       "id": "M1-042",
@@ -1069,7 +1069,7 @@
       "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": null
+      "test": "EngineAppLayerTests.M1_042_CD27_TheVolumeConversionIsTheEngines, EngineAppLayerTests.M1_042_NoIdleTimeoutIsArmedAutomatically, EngineAppLayerTests.M1_041_CD17_CD18_CD22_M1_042_PostSuccessSendsInOrder"
     },
     {
       "id": "M1-043",

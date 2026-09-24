@@ -7,10 +7,10 @@ Manifest of **249 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 174 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 181 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 22 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 0 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 12 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 5 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 27 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 6 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -24,7 +24,7 @@ remains after both, and they do not go away by working harder on this repository
 
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| M1-transport — UDP transport and reliability | 43 | 0 | 12 | 0 | 2 | yes | no |
+| M1-transport — UDP transport and reliability | 43 | 0 | 5 | 0 | 2 | yes | no |
 | M2-protocol — CLAD messages and protocol helpers | 7 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 18 | 0 | 0 | 0 | 1 | yes | yes |
 | M4-control — Motion, sensors, lights and cubes | 13 | 0 | 0 | 0 | 1 | yes | yes |
@@ -52,7 +52,7 @@ status.
 
 | subsystem | review | settled | uncited | capture verified | hardware verified |
 | --- | --- | ---: | ---: | ---: | ---: |
-| M1-transport | INVENTORY_APPROVED | 20 | 0 | 0 | 3 |
+| M1-transport | INVENTORY_APPROVED | 27 | 0 | 0 | 3 |
 | M2-protocol | UNREVIEWED | 7 | 1 | 0 | 0 |
 | M3-device | UNREVIEWED | 13 | 1 | 0 | 0 |
 | M4-control | UNREVIEWED | 8 | 0 | 0 | 0 |
@@ -79,15 +79,6 @@ Each of these is a question already answered. The original's behaviour is establ
 
 ### M1-transport — UDP transport and reliability
 
-**M1-001 — Robot address: 172.31.1.1 / 127.0.0.1, remote port 5551 physical / 5552 simulated** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/TransportConstants.cs`
-* effect: the stack talks to the wrong address or port
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: B1 unity/scripts/csharp/ConnectionFlowController.cs:199, :204, :673 and RobotEngineManager.cs:524-526: 172.31.1.1 physical, 127.0.0.1 simulator, one ConnectToRobot(ipAddress, isSimulated); B3 0x0069DE84 movw r2,#0x15b0 (5552); 0x0069DE92 ldrb r0,[r1,#0x10] (isSimulated); 0x0069DE98 movweq r2,#0x15af (5551); 0x0069DE9E TransportAddress(char const*,int); B4 0x0069D0CE cmp.w r6,#0x10000: kP_ROBOT_ADVERTISING_PORT is only logged; >= 0x10000 aborts MessageHandler::Init
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
 **M1-015 — Connection timeout 5 s, and how a lost or failed connection is reported** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs`
@@ -95,97 +86,43 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: R19 ReliableConnection::HasConnectionTimedOut: now > lastRecv (+0x50) + ConnectionTimeoutInMS (0x00836080..0x0083608C); on timeout ReceiveData(OnDisconnected, 0, addr), delete, Update false (0x00837BCC..0x00837C74); no frame sent; B22 0x00837C50..0x00837C56 OnDisconnected to the receiver; tick lambda sets +0xA1 (0x008383D4..0x008383DC); B31 HandleDisconnectMessage: +0xA1 -> reason 1 WifiTimeout (0x0062FA34 ldrb.w r0,[r1,#0xa1]); RemoveRobot(id, wasConnecting) -> 2 ConnectionRejected when RCD state was 1 (the transport connect was never answered), else 1 ConnectionFailure, including a drop during the handshake [corrected C6] (0x0062FAEE..0x0062FAF8, 0x0052F23E..0x0052F244); B32 pending handshake: RobotConnectionResponse(result) and no RobotDisconnected; else RobotDisconnected and $session_id cleared; Robot deleted; the engine does not reconnect (0x0052DCC0..0x0052DD16, 0x0052F248..0x0052F302); this record was a COMPATIBILITY_POLICY saying the engine connect timeout had not been read; it has now been read; CC23/CB32: HandleDisconnectMessage ignores the message fields, captures the RCD state, writes reason 1 if the timed-out flag is set, emits DAS, resets the reason to 0, clears RCD, then RemoveRobot(id, state == 1) (0x0062FA2E..0x0062FAF8); RIC::HandleDisconnect answers with RobotConnectionResponse {result, 0, 0, -1, -1} unless the response was already sent (0x0052DCC0..0x0052DD1A); CB33/CC26: RemoveRobot skips the RobotDisconnected broadcast and the $session_id clear when HandleDisconnect answered; either way it deletes the Robot and its RIC (0x0052F248..0x0052F364)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-019 — Transport entry points: SendData, Connect, FinishConnection, Disconnect, Start, Stop** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs`
-* effect: the connect / disconnect frames on the wire differ from the app
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: R38 SendData type 4 reliable / 5 unreliable (0x008370EC); Connect clears +0xA1 and queues reliable type 1 flag 1 (0x0083710E); FinishConnection reliable type 2 flag 1 (0x0083712E); Disconnect closure 0x00837FFA: SendMessage type 3, then DeleteConnection (b.w 0x8d123c), so type 3 gets at most one send; R39 Start -> UDP StartClient/StartHost (0x0083808E); Stop -> UDP Stop*, ClearConnections, no frames (0x008380F6, 0x00837374); R40 receiver events ReceiveData(marker, 0, addr) with markers OnConnectRequest 0x01037598, OnConnected 0x01037594, OnDisconnected 0x0103759C (0x00837478..0x00837496); B21 RobotConnectionManager::Connect: Clear, address at RCD+0x30, RT->Disconnect(addr) (0x0062F576) then RT->Connect(addr) (0x0062F580), state 1 (0x0062F58A); the engine sends first; combining R13 and R37 with B21: the type 3 is sent only if a connection to that address already exists, and it precedes the type 1 because QueueAction (0x00836FF6) and QueueMessage (0x00836B66) post to the same FIFO queue; CA14: with no connection, the Disconnect closure sends nothing ("unconnected destination", 0x00836CDC..0x00836D06) and DeleteConnection is a no-op (0x00837604..0x00837608); the closure time is 0.0 (0x0083800A); CA20/CA21: StartClient/StopClient (and Host) are posted through QueueAction (0x00837214, 0x008372A4, 0x0083731C, 0x008373AC); UDP StopClient closes via CloseSocket when fd >= 0 (0x0083AD66..0x0083AD70) and StartClient opens only when fd == -1 (0x0083AD4C..0x0083AD5C); CA22: FinishConnection is QueueMessage(type 2, flag 1) (0x0083712A..0x0083713A)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-024 — Engine tick 60 ms: arrivals drained FIFO and handed up once per tick** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
-* effect: handlers see messages at other times or in other batches from the app
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: B24 CozmoInstanceRunner::Run: 60 ms period 0x3938700 ns (0x0065B3D2/0x0065B3D8), sleep to target, overtime/catchup logs; CozmoEngine::Update state 3 (tbb 0x004ED5D0): UpdateRobotConnection -> MessageHandler::ProcessMessages, then UpdateAllRobots (0x004ED62E, 0x004ED648); B25 ProcessMessages (0x0069D870) -> RobotConnectionManager::Update (0x0062F1FA) -> ProcessArrivedMessages drains the RCD queue FIFO (0x0062F3EA..0x0062F4BC, tbb 0x0062F434); then PopData until empty, no cap (0x0069D8C0); B20 RCD::ReceiveData drops the OnConnectRequest marker (0x0062E4BE); PushArrivedMessage maps OnConnected 2, OnDisconnected 3, else data, under the mutex (0x0062E274..0x0062E2C2); B26 HandleDataMessage: state != 2 drops "Connection not yet valid" (0x0062F728); source != robot address drops (0x0062F744); CD1..CD5: the tick is fixed rate on steady_clock: the first tick runs at once, the next target is the old target + 60 ms, it sleeps only if at least 1 us remains, overrun ticks run back to back, and when 240 ms or more behind it skips whole periods instead of running extra ticks (0x0065B3B8..0x0065B63E); CD6..CD11: the per-tick order: counters zeroed, UiMessageHandler::Update (game messages dispatched synchronously), then in state 3 BaseStationTimer::UpdateTime, UpdateRobotConnection (all robot-message handlers), NeedsManager::Update, UpdateAllRobots (Robot::Update, then the RobotState broadcast), then the audio controller; every engine timestamp in a tick is the tick start (0x004ED4DE..0x004ED6C4; 0x0084BC38..0x0084BCD4)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
+* outstanding: transport part reproduced (batch 4(i)); app part reproduced (batch 3) except the device-object reset on RemoveRobot (see M1-025); then EXACT_SOURCE
 
 **M1-025 — Connect request from the game, the connected response, and DisconnectCurrent** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
 * effect: a second connect, a response at the wrong time, or a local disconnect is handled differently
 * rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: B2 ConnectToRobot handler: robot 1 exists -> "Robot already connected", nothing (0x004ED022, 0x004ED026); else AddRobotConnection (0x004ED074), then AddRobot(1) at once (0x004ED07C); B23 HandleConnectionResponseMessage: state 1 -> 2 and reason 0 (0x0062F954, 0x0062F958, 0x0062F95E); otherwise "Got connection response at unexpected time"; B33 DisconnectCurrent: RT->Disconnect then QueueConnectionDisconnect (0x0062EF38..0x0062EF58); callers RCM dtor 0x0062EE98, fatal robotError 0x0069DACA, MessageHandler::Disconnect 0x0069DCF2, ExitSdkMode lambda 0x0069E1EC..0x0069E1FA [corrected C7]; B35 disconnect reasons: SleepPlacedOnCharger 4 (0x00606D1A), SetRobotDisconnectReason writes the byte (0x0069E01C); CB2/CB6: ConnectToRobot logs "Connected to robot!" before any transport exchange, then NeedsManager::InitAfterConnection and DASPauseUploadingToServer(1); nothing goes to the game (0x004ED074..0x004ED114); CC18/CC19: RobotDisconnectReason values 0..11 (0x00775BEC, table 0x01033970) and every writer of RCM+0x38; its only reader is the DAS disconnect event (0x0062FAAA), so it changes no behaviour; CC27..CC30: a later ConnectToRobot builds everything afresh once robot 1 is gone; DisconnectCurrent queues type 3 + DeleteConnection and pushes one OnDisconnected marker, handled at the next RCM::Update in FIFO order (0x0062EF32..0x0062EF7A; 0x0062F3BC..0x0062F4BC); CB38: the app layer does not filter connection events by address; only data is compared against the robot address (0x0062F434; 0x0062F72C..0x0062F748); E7..E9: ExitSdkMode subscribers run UiMessageHandler, then MessageHandler (reason 6, DisconnectCurrent), then MovementComponent; an EnableAnimTracks it sends is posted behind the Disconnect action, finds no connection and is not sent (0x00660918..0x0063DE96; 0x0069E1DC..0x0069E1FE; CA12, CA14)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-026 — App send path: every robot message is sent reliable, no flush hint, only when connected** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
-* effect: messages go out unreliable, early, or flushed differently from the app
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: B28 MessageHandler::SendMessage ignores its reliable and hot arguments; sends only if initialised, state 2 and not filtered (0x0069DCFE..0x0069DD58); RobotConnectionManager::SendData refuses unless state 2 (0x0062F5A6) and calls RT->SendData(reliable 1 at 0x0062F5CE, flush 0 via 0x0062F5C2 movs r1,#0 / 0x0062F5CA strd r2,r1,[sp]); R42 the flush flag is stored at +0x2B and makes IsPacketWorthSending true (0x008362FE..0x0083639A), so app messages never force an early send; CB29: MessageHandler::SendMessage returns 1 silently (no throw, no log) when uninitialised, not connected or filtered (0x0069DCFE..0x0069DD2C); callers decide; CD13: there is no per-tick batching of outgoing messages; each send posts to the transport at once (0x005134A4..0x005134B8; 0x00836B42..0x00836B66)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
+* outstanding: the app layer reproduces the rows (batch 3), except that RemoveRobot leaves this stack's device objects (State, Camera, Sensors, Cubes, CubeAccel, vision history) alive where CB33/CC27 build a fresh Robot; that reset is an interface to M3/M4; then EXACT_SOURCE
 
 **M1-027 — Arrived-message filters and the fatal robotError disconnect** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
 * effect: messages the app drops are handled, or a fatal robot error does not disconnect
 * rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: B27 no robot -> silent drop (0x0069D8D2..0x0069D8D8); size 0 -> error (0x0069D8E0); ShouldFilterMessage -> drop (0x0069D8EE); unpack size mismatch -> drop (0x0069D910); tag 0xD9 robotError (0x0069D916): fatal -> event, broadcast, ClearData, DisconnectCurrent and stop the loop (0x0069DAC4..0x0069DACA); non-fatal -> RobotErrorPassThrough then broadcast (0x0069D936); CC12..CC17: RobotErrorReport {u32 code 0..5, bool fatal} (0x007D3E66..0x007D3F40); fatal is decided by the byte only (0x0069D930); before validation it is filtered (0x0069D8EE); fatal: event, broadcast, ClearData, DisconnectCurrent, no game PassThrough, no reason (0x0069D938..0x0069DAEA); non-fatal: event, RobotErrorPassThrough to the game, broadcast (0x0069DA36..0x0069DAAE); CC32..CC36: ProcessMessages exactly (0x0069D870..0x0069D9FC); a 1-byte message with a tag outside 0xB0..0xF5 unpacks as 1 byte and is broadcast (0x007B1ADC..0x007B1BCA)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-028 — Initial-connection handshake outcomes** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
-* effect: the robot is accepted, rejected or reported with a different result from the app
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: B29 RobotInitialConnection subscribes to factoryFirmwareVersion 0xD2 (0x0052D1B4), firmwareVersion 0xEE (0x0052D208), robotAvailable 0xC9 (0x0052D260); factoryFirmwareVersion -> 3; firmwareVersion: parse fail or FACTORY build -> 3, no robotAvailable yet -> 1, simulator -> 0 (0x0052D3BE, 0x0052D59E, 0x0052D4F2, 0x0052D7E4); OnNotified 3 -> reason 7, 4 -> reason 8, then SendConnectionResponse (0x0052DDAA..0x0052DDC4, 0x0052DE06); success: filter off (+0x2D), GetManufacturingInfo, then on mfgId 0xED store serial, HW version, colour, $session_id and send RobotConnectionResponse(Success) (0x0052DE6C, 0x0052DE7C, 0x0052E304..0x0052E3A2); CB7..CB21: RIC state and subscriptions (0x0052D184..0x0052D28E); robotAvailable sets +0x2E (0x0052DC64); OnNotified outcomes (0x0052DDAA..0x0052DDFC); on Success +0x2D is set first, mfgId is subscribed, then GetManufacturingInfo is sent reliable with no timer or retry (0x0052DDD0..0x0052DE7C); the mfgId lambda stores serial, hw and colour (colour only if in {0,2,3,4}), sets $session_id and sends RobotConnectionResponse(Success) (0x0052E304..0x0052E3B2); SendConnectionResponse sets +0x10, releases the handles and broadcasts the 14-byte response, engine subscribers running synchronously (0x0052DF2E..0x0052DF64; 0x006625C6..0x006625FA); CB14: with no robotAvailable, SendConnectionResponse(1, 0) is called directly, setting no disconnect reason (0x0052D7B8..0x0052D850); CB31/CB34: there are no handshake timers or retries, and results 1, 3 and 4 keep the link and the Robot (0x0052DD98..0x0052DF80); CD15/CD16: GetManufacturingInfo follows an accepted firmwareVersion; after the response, the mfgId handler also queues ReadLabAssignmentsFromRobot and ConnectRobotToNeedsManager (0x0052E3AA, 0x0052E3B2); E1..E6: a second firmwareVersion before mfgId subscribes a second mfgId lambda and sends a second GetManufacturingInfo, but the first mfgId yields exactly one RobotConnectionResponse, because SendConnectionResponse unlinks both lambdas during the emit; a second mfgId reaches only the Robot's HandleRobotSetBodyID (0x0052DF2E..0x0052DFC8; emit 0x0069E27C..0x0069E2B2; unlink 0x0051D338..0x0051D3A4; 0x00532CD0..0x00532CDA)
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE. The version/time comparison itself is M1-029
+* outstanding: robot-to-engine tags inside 0xB0..0xF5 that have no codec in this stack cannot be size-checked (CC35); needs the M2 protocol layer; then EXACT_SOURCE
 
 **M1-029 — Firmware version check against the shipped firmware header** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
 * effect: a robot is accepted or refused as outdated where the app decides otherwise
 * rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: G5.1..G5.6 HandleFirmwareVersion 0x0052D470: guard (0x0052D478..0x0052D484); JSON parse (0x0052D4BA); FACTORY build path (0x0052D4C2..0x0052D506); v = version, t = time (0x0052D51A..0x0052D536); expected E_v/E_t at +0x1C/+0x20 (0x0052D538); sim flag (0x0052D53E..0x0052D5B6); G5.9/G5.10 no robotAvailable and not sim -> result 1 (0x0052D7B8..0x0052D850); sim -> 0 (0x0052D7C6); G5.11 robotDev = v == t, appDev = E_v == E_t; if they differ -> 3 OutdatedFirmware (0x0052D7DE teq.w r0,r1; 0x0052D7E4 movs r0,#3); G5.12 unsigned: E_v == v -> 0; E_v > v -> 3; E_v < v -> 4 OutdatedApp (0x0052D8DA..0x0052D8E0; 0x0052D9A6..0x0052D9AC); time is not compared again; G5.14/G5.15 E_v/E_t are copied from RobotManager+0x84/+0x88 in AddRobot (0x0052EEF2/0x0052EEF8; ctor 0x0052D196); the RobotManager ctor zeroes them (0x0052E512, 0x0052E516); G5.16..G5.20 RobotManager::Init -> FirmwareUpdater::LoadHeader starts a loader thread (0x0052E7F8; pthread_create 0x0067692A) that reads config/engine/firmware/cozmo.safe and parses the JSON header in the first 0x800 bytes (0x00677C44..0x00677D34); ParseFirmwareHeader stores version -> +0x84, time -> +0x88 (0x0052EA36..0x0052EA9A); G5.21/G5.32..G5.37 Scope 1 is DataPlatformResourcesPath = persistentDataPath/cozmo/cozmo_resources (pathToResource 0x0084BE34 table 03 14 22 2f 41; unity/scripts/csharp/PlatformUtil.cs:5-13), extracted from the shipped assets (re-analysis/obb/assets/resources.txt:2075); the shipped header has version 2381, time 1546972025 (re-analysis/obb/assets/cozmo_resources/config/engine/firmware/cozmo.safe offsets 0-445); G5.22..G5.30 nothing orders the header load before AddRobot: the loader starts in cozmo_startup before the engine thread (0x006661EA, 0x0065B14E), and neither the ConnectToRobot handler nor AddRobot checks the load (0x004ED026..0x004ED1EC; loaded flag +0x18 unread on that path); G5.31 a missing, short or unparsable file leaves E_v = E_t = 0 for the session (0x006764E4, 0x00677C50..0x00677D28); G5.38..G5.40 no writer of RobotManager+0x84/+0x88 besides the ctor and ParseFirmwareHeader was found; the scan cannot prove absence (adjusted-base, register-offset, whole-object and untyped accesses are outside it); see decision D7
-* outstanding: build the mechanism (asynchronous header load, expected values copied at AddRobot, 0/0 when not loaded, the comparison) and log its outcome; under policy M1-040 the outcome never refuses the robot; then EXACT_SOURCE
-
-**M1-030 — Message gating until the handshake validates the robot** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
-* effect: the robot receives commands, or the engine acts on messages, before the app would allow it
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: B30 while +0x2D is 0: robot -> engine only robotAvailable, factoryFirmwareVersion, firmwareVersion and otaAck pass (0x0052DC76..0x0052DC96); engine -> robot only shutdownRobot 0xA9 and otaWrite 0xAF (0x0052DCA8, 0x0052DCAE); tag names from 0x010343A0 / 0x01034740; CB27/CC33: no RIC for the robot id means nothing is filtered (0x0052FA90..0x0052FAD2); a filtered receive is dropped silently before unpack (0x0069D8D2..0x0069D8F4); a filtered send returns 1 silently (0x0069DCFE..0x0069DD2C); CB30: validation happens at OnNotified(0), before mfgId; OnNotified(3/4) and RM::InitUpdateFirmware (0x0052F5C4..0x0052F6AC) clear it again
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
-
-**M1-031 — Idle-timeout disconnect** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
-* effect: the link is dropped after a pause at a different time, or never
-* rests on: the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: B34 StartIdleTimeout: deadline = now + disconnectTime_s if >= 0, keeping an earlier deadline (0x0052D030..0x0052D066); Cancel sets -1 (0x0052D06C); on expiry Update clears it and calls MessageHandler::Disconnect (0x0052CE6E..0x0052CE98); the reason is not set; driven from unity/scripts/csharp/PauseManager.cs:219, :289, :360; CC1..CC7: the idle component has two deadlines: faceOff (armed only after the first full robot state, robot+0x34E) and disconnect; earliest wins; Cancel sets both to -1; expiry sets 0.0, which blocks re-arming until a Cancel; sleep fires before disconnect in one Update (0x0052CC64..0x0052D0C4; 0x0052CE3C..0x0052CE98); CC8: the sleep half queues a go-to-sleep animation sequence (0x0052CEA2..0x0052CFBE), an interface to the animation layer (M5); CC10: deadlines are checked once per 60 ms tick in engine state 3
-* outstanding: confirm the code reproduces every row this record cites, or build what it does not; then EXACT_SOURCE
+* outstanding: the mechanism is built (batch 3); jsoncpp's grammar (comments, trailing commas) and asUInt of a non-number are not in the rows, so the reader's leniency is MISSING; under M1-040 the outcome never refuses; then EXACT_SOURCE
 
 **M1-041 — Robot initialisation after a Success connection response, and the gates it opens** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
 * effect: the robot is not synced or initialised, or is initialised in the wrong order or at the wrong time; state or animations are processed before the engine would
 * rests on: not implemented: the candidate sends GetManufacturingInfo, SyncTime, InitController and block-pool setup unconditionally on the transport ConnectionResponse (CozmoRobot.cs ~261-275)
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: CD17/CB21: the Success RobotConnectionResponse reaches, synchronously and in this order: RobotEventHandler, VisionComponent, TracePrinter (0x006625C6..0x006625FA; 0x00663C74..0x00663CA8; 0x005259AC, 0x006501E4, 0x0053BCBA); CD18/CB22/CB23: RobotEventHandler (result 0) calls Robot::SyncTime: +0x29 = 0, history clear, then SyncTime {u32 BaseStationTimer ms, 0xC1A00000} reliable; only if that was sent, InitController; only if that was sent, ImageRequest {Stream, QVGA} and AbsoluteLocalizationUpdate {0, frameId, originId, 0, 0, 0}; a failed send warns and stops (0x005289BA..0x005289D2; 0x0051521E..0x005153AE); CD19: SyncTime is never retried; after 5.0 s without SyncTimeAck it warns "SyncTimeAckNotReceived" (0x00513BF6..0x00513C5A); SyncTimeAck sets +0x29 = 1 (0x005366A4..0x005366AC); CD20: RobotEventHandler then sets ready-to-stream (+0x2A) through an NVStorage on-idle callback, which runs once the NV request queue is empty (0x00528A5A..0x00528A6E; 0x00645C20..0x00645C32); CD22: TracePrinter sends SetAppRunID (16-byte UUID, 0xFF unless a platform id exists), then RequestCrashReports{0}, each crash report received asking for the next index up to 3 (0x0053D398..0x0053D430; 0x0053CA88..0x0053CA9E); CD23/CD12: robot state is dropped until time sync (0x0051293C..0x0051294E); Robot::Update does nothing past the idle component until the first full state is handled (+0x34E); the AnimationStreamer runs only when synced and ready to stream (0x00513BF2..0x00514470); CD30: nothing sends SendHeadAngleUpdate, setAccessoryDiscovery or SetRobotImageSendMode on this path (BL scan)
-* outstanding: build it; VisionComponent's SetCameraParams (CD21) belongs to M3 and the NV reads (CD26) to the NV subsystem; with no NV requests in this stack the ready-to-stream gate opens when its queue is empty; then EXACT_SOURCE
+* outstanding: built (batch 3) except AbsoluteLocalizationUpdate, which is not sent: its frameId (robot+0x2B0) and originId (+0x294 then +0x14) are not state this stack holds; and RobotStateHistory::Clear has no owner here; then EXACT_SOURCE
 
 ## What remains after both: blocked externally, or needing hardware
 

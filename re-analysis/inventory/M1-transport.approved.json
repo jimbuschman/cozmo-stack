@@ -5,7 +5,7 @@
   "inventory_sha256": "11c9cecea4035a21d4f3b67534397a260c016b43e51e247f84bad7147378486a",
   "records": {
     "M1-001": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Robot address: 172.31.1.1 / 127.0.0.1, remote port 5551 physical / 5552 simulated",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -232,7 +232,7 @@
       "hardware_required": false
     },
     "M1-019": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Transport entry points: SendData, Connect, FinishConnection, Disconnect, Start, Stop",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -310,7 +310,7 @@
       "hardware_required": false
     },
     "M1-024": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Engine tick 60 ms: arrivals drained FIFO and handed up once per tick",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -343,7 +343,7 @@
       "hardware_required": false
     },
     "M1-026": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "App send path: every robot message is sent reliable, no flush hint, only when connected",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -368,7 +368,7 @@
       "hardware_required": false
     },
     "M1-028": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Initial-connection handshake outcomes",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -402,7 +402,7 @@
       "hardware_required": false
     },
     "M1-030": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Message gating until the handshake validates the robot",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -414,7 +414,7 @@
       "hardware_required": false
     },
     "M1-031": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Idle-timeout disconnect",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [

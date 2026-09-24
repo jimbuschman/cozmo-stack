@@ -4,10 +4,10 @@ Read first in every session. The manager keeps this file current; the process it
 
 ## Now
 
-- **Phase:** batch 4(i) (transport completion) and the settle pass are committed. M1: 19 EXACT_SOURCE, 1 EQUIVALENT_IMPLEMENTATION, 12 IMPLEMENTATION_GAP (the app layer, batch 3, running in a worktree), 9 COMPATIBILITY_POLICY, 2 HARDWARE_ONLY, 0 RECOVERABLE_GAP. The M1-LINK hardware run PASSED.
+- **Phase:** M1 batch 3 (app layer) merged as 518b730, and the settle pass is applied (M1: 26 EXACT, 1 EQUIVALENT, 5 IMPL_GAP, 9 POLICY, 2 HW). The full suite is running before the commit. control-check (the self-judging direct-control hardware run) is being built in a worktree.
 - **Operator decisions:** D1-D4 approved 2026-09-23. On 2026-09-24: the inventory, D5, D6 (fatal behaviour recorded, isolation kept as policy), D7, the corrections C1..C5 and D8 (stop processing a frame after a DisconnectRequest, M1-038) approved; the three repair batches are authorised to run without further checkpoints.
 - **Batch 1 done (7aba301). Batch 2a done** (e6f2ed7; receive path: B17 truncation, receive-error counters, partial-header overrun after the header, M1-038); records it repaired are settled in one verified pass at the end of batch 2. **Batch 2b-i done** (8c9f405; clock, construction-time 2 ms scheduler + FIFO executor, posted sends, RobotLink isolation; three verification passes). **Batch 2b-ii done** (0691429; per-address connections, type-3 and timeout delete only that connection, timed-out flag, inbound creation, FinishConnection, posted Start/Stop, per-connection multipart, unconditional Dispose disconnect; two verification passes). **Batch 2c done** (socket B10/B11/B12/B16/B38 with C1's 47817 reopen, the M1-023 reset mechanism, the M1-037 host trigger, M1-001 addressing; verifier PASS on the second pass). Batch 2 complete.
-- **Next:** one large batch. (i) Settle the batch-2 records the code now reproduces, implement M1-039 and clear the cleanup queue (transport files). (ii) Batch 3: the app layer, M1-024..M1-032, M1-040, M1-041 and M1-042 (CozmoRobot / new files). Then a self-judging direct-control hardware run for the operator.
+- **Next:** commit the settle pass; merge control-check; the operator runs `! git push origin main`, then `control-check` on the robot, and copies the bundle back.
 
 - **Standing authorisations and current plan (operator, 2026-09-24, supersedes the governing plan below where they differ):**
   - **Pushing:** the manager may push to GitHub `origin main` whenever a robot run is ready, so the operator's Cozmo machine can pull it.
@@ -39,11 +39,40 @@ Read first in every session. The manager keeps this file current; the process it
 
 - **Process change (operator, 2026-09-24):** only behavioural or source-fidelity defects, circular tests, and races or deadlocks block a commit. Non-behavioural cleanup is queued under "Cleanup queue" while the checker passes and no status becomes misleading. After a behavioural fix, only the affected diff is re-verified. The full suite runs once, just before the commit. Batches are large, and batch 3 is one batch after the closure pass. See AGENTS.md, Process, step 4.
 
+## Hard-boundary report (for the operator; 2026-09-24)
+
+The operator's rule: if recoverable or missing source work is still growing after the closure pass, stop and report instead of opening another extraction cycle. Implementing batch 3 surfaced a few new, small source questions. No new extraction cycle has been opened for them. Their records stay IMPLEMENTATION_GAP, and none of them blocks a robot run.
+
+**Update after the batch 3 verifier:** it answered CD3/CD5 (the catch-up skip adds n x period), B25 (pops until empty) and CD27 (vmul by 65535, vcvt.u32 saturating, low 16 bits) from the rows' own cited ranges. It also answered CD18's "success" (it is the AbsoluteLocalizationUpdate send result). Still open: the AbsoluteLocalizationUpdate frameId/originId values (robot+0x2B0; +0x294 then +0x14) as stack state, and G5.5.
+
+**Where M1 stands after batch 3 (2026-09-24):** 26 EXACT_SOURCE, 1 EQUIVALENT_IMPLEMENTATION, 9 COMPATIBILITY_POLICY, 2 HARDWARE_ONLY, 0 RECOVERABLE_GAP, and 5 IMPLEMENTATION_GAP. Each of the five has one specific residual:
+- **M1-025 and M1-015:** RemoveRobot leaves this stack's device objects alive, where the original builds a fresh Robot (CB33/CC27). This is buildable: a device-state reset, an interface to M3/M4.
+- **M1-027:** robot-to-engine tags inside 0xB0..0xF5 with no codec here cannot be size-checked (CC35). Needs the M2 protocol layer.
+- **M1-029:** jsoncpp's grammar leniency and asUInt of a non-number are not in the rows. They are recoverable from the .so's jsoncpp, but that would be a new extraction cycle.
+- **M1-041:** AbsoluteLocalizationUpdate is not sent. Its frameId and originId are pose-frame state, which this stack gets with M11 (BlockWorld). RobotStateHistory::Clear has no owner here yet.
+
+So M1 is closed except these five small, named residuals, the HARDWARE_ONLY and the COMPATIBILITY_POLICY records.
+
+**Genuinely new, recoverable from the .so, all small:**
+- CD3/CD5: when the tick is 240 ms or more behind, does the whole-period skip add to or replace the +60 ms step?
+- B25: does ProcessArrivedMessages work on a snapshot of the arrivals, or pop until empty?
+- CD18: the AbsoluteLocalizationUpdate frameId (robot+0x2B0) and originId values. It is currently not sent.
+- CD18: what counts as SendSyncTime "success" for the +0x520 stamp.
+- CD27: how vol x 65535 converts to u16 (truncation assumed; 1.0 is exact).
+
+**Not recoverable, or external:** G5.5, jsoncpp asUInt of a non-number (a library-semantics detail).
+
+**Outside M1, recorded as inputs for later layers:** the GoToSleep sequence (M5), SetCameraParams (M3), the NV reads (NV subsystem), the block-pool Init timing (M4), and where BehaviorReactToOnCharger writes reason 4 (behaviour layer).
+
+Some items the batch 3 implementer listed as MISSING are answered by frozen rows (for example CC23 and CD20). Those are fixed in the verify pass, not re-extracted.
+
 ## Decision notes (operator, 2026-09-24: "just make notes of stuff like this; test later and pick the best choice")
 
 Small behaviour choices are noted here rather than put to the operator. Each keeps its current behaviour until a test settles it.
 
 - **Motor stop on shutdown.** CozmoRobot.Dispose sends StopAllMotors and DriveWheels(0) before disconnecting. The original only sends the DisconnectRequest (B33, CC29). Kept for now as a probable safety behaviour. Test later: does the robot stop on its own when the link drops?
+
+- **SyncTime stamp without AbsoluteLocalizationUpdate.** The stack cannot send AbsoluteLocalizationUpdate yet (frameId and originId are not stack state). It still stamps +0x520 where that send would have happened, so the CD19 "SyncTimeAck not received" warning stays meaningful. The alternative is to leave it unset, which silences CD19. Revisit when the ids exist.
 
 ## Cleanup queue (non-behavioural; fold into the next batch)
 
