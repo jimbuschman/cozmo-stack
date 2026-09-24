@@ -508,6 +508,7 @@ public class AnimationGapTests
     public void HeadAndLiftKeyframesGoOutAsAnimationKeyframesNotMotorCommands()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var clip = Clip("t", new HeadKeyframe(0, 120, -7, 0), new LiftKeyframe(0, 250, 60, 0), new EventKeyframe(300, "end"));
         robot.Animations.Scheduler.Play(clip, 0);
         Run(robot.Animations.Scheduler, 0, 400);

@@ -345,6 +345,7 @@ public class DerivedStateTests
     public void NothingRaisesTheObstacleStrategyByItself()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap() };
         Assert.Null(ctx.ObstacleDetected);
         Assert.False(ctx.ObstacleDetected?.Invoke() ?? false);

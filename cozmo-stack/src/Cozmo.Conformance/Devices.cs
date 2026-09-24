@@ -288,7 +288,6 @@ public static class Devices
             else if (a[i] == "--volume") volume = int.Parse(a[i + 1]);
             else if (a[i] == "--save") wav = a[i + 1];
         }
-        bool unreliable = a.Contains("--unreliable");
         int inFlight = -1;
         for (int i = 2; i < a.Length - 1; i++) if (a[i] == "--in-flight") inFlight = int.Parse(a[i + 1]);
 
@@ -344,7 +343,6 @@ public static class Devices
         using var robot = await ConnectAsync(c.Value.ip, c.Value.port, log);
         if (volume is { } v) { Console.WriteLine($"SetAudioVolume {v}"); robot.Audio.SetVolume((ushort)v); }
         robot.Audio.Codec = codec;
-        if (unreliable) { robot.AudioReliable = false; Console.WriteLine("sending audio frames unreliably"); }
         if (inFlight >= 0)
         {
             robot.Audio.TargetInFlight = inFlight;

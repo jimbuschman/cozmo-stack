@@ -74,23 +74,30 @@ public class TransportHardeningTests
 
     // --------------------------------------------------------------- session state
 
+    /// <summary>
+    /// T-g1 — PRIMARY-SOURCE ORACLE. PendingMultiPartMessage::AddMessagePart takes a part only when its
+    /// index is the one expected; any other part is ignored and the assembly is left as it is
+    /// (0x008358A8-AA). Part 1 sets the count (0x008358AC-B2) and the part whose index equals the count
+    /// completes the message (0x008358E4). So in 1/3, 3/3, 1/3, 2/3, 3/3 the early 3/3 and the repeated 1/3
+    /// are ignored and the original assembly completes.
+    /// </summary>
     [Fact]
-    public void AnOutOfOrderMultipartFragmentClearsTheWholeAssemblyState()
+    public void T_g1_AnOutOfOrderMultipartPartIsIgnoredAndTheAssemblyKept()
     {
         var (t, _) = Offline();
         var delivered = new List<byte[]>();
         t.DataReceived += delivered.Add;
         Connect(t);
 
-        // fragment 1 of 3 arrives, then fragment 3 out of order: the assembly must be abandoned entirely
-        t.ProcessIncoming(RobotFrame(2, 2, 1, new SubMessage(ReliableMessageType.MultiPartMessage, new byte[] { 1, 3, 0xAA }, 2)));
-        t.ProcessIncoming(RobotFrame(3, 3, 1, new SubMessage(ReliableMessageType.MultiPartMessage, new byte[] { 3, 3, 0xCC }, 3)));
+        void Part(ushort seq, params byte[] p) =>
+            t.ProcessIncoming(RobotFrame(seq, seq, 1, new SubMessage(ReliableMessageType.MultiPartMessage, p, seq)));
+        Part(2, 1, 3, 0xA1, 0xA2);          // begins the assembly
+        Part(3, 3, 3, 0xEE);                // early: ignored, nothing reset
+        Part(4, 1, 3, 0xDD, 0xDD);          // part 1 again while part 2 is expected: ignored
         Assert.Empty(delivered);
-
-        // a fresh sequence must now assemble cleanly; if the expected total had survived, it would not
-        t.ProcessIncoming(RobotFrame(4, 4, 1, new SubMessage(ReliableMessageType.MultiPartMessage, new byte[] { 1, 2, 0x11 }, 4)));
-        t.ProcessIncoming(RobotFrame(5, 5, 1, new SubMessage(ReliableMessageType.MultiPartMessage, new byte[] { 2, 2, 0x22 }, 5)));
-        Assert.Equal(new byte[] { 0x11, 0x22 }, Assert.Single(delivered));
+        Part(5, 2, 3, 0xB1);
+        Part(6, 3, 3, 0xC1, 0xC2);
+        Assert.Equal(new byte[] { 0xA1, 0xA2, 0xB1, 0xC1, 0xC2 }, Assert.Single(delivered));
     }
 
     // ----------------------------------------------------------- lifecycle on a socket
@@ -170,7 +177,7 @@ public class TransportHardeningTests
         sw.Stop();
 
         // Disconnect queues the notification rather than running it, so it returns promptly even though the
-        // handler is still blocked. The 40 ms flush pause plus the dispatcher join bound is the only cost.
+        // handler is still blocked. The dispatcher join bound is the only cost.
         Assert.True(sw.Elapsed < TimeSpan.FromSeconds(4), $"Disconnect took {sw.ElapsedMilliseconds} ms behind a blocked handler");
         released.Set();
     }

@@ -83,6 +83,7 @@ public class CoreReviewTests
     public void CORE001_AnIdleBodyShuffleIsStoppedAtItsDurationWithNobodyDrivingTheScheduler()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         // one shuffle, short, straight (a known radius, so a stop is owed), and nothing else moving
         var quiet = IdleParameters.Default with
         {
@@ -120,8 +121,9 @@ public class CoreReviewTests
         Assert.NotNull(shuffle);
         Assert.NotEqual(0, shuffle!.Amount);
 
-        var driving = Outbound(robot).OfType<BodyMotion>().Where(b => b.Speed != 0).ToList();
-        Assert.NotEmpty(driving);
+        // robot messages go out unflushed, so the drive command reaches the wire on a later transport update
+        Assert.True(Within(500, () => Outbound(robot).OfType<BodyMotion>().Any(b => b.Speed != 0)),
+                    "the shuffle's drive command never went out");
 
         // nothing else is ticking anything: if the stop arrives, the animation system brought it
         Assert.True(Within(2_000, () => Outbound(robot).OfType<BodyMotion>().Any(b => b.Speed == 0)),
@@ -143,6 +145,7 @@ public class CoreReviewTests
     public void CORE001_TheLiveKeyframeClockIsTheAnimationSystemsOwn()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var quiet = IdleParameters.Default with
         {
             TimeBeforeWiggleMotionsMs = 0,
@@ -202,6 +205,7 @@ public class CoreReviewTests
     public async Task CORE002_DisconnectingMidAnimationEndsItCleanlyAndLeavesNoTicker()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var clip = new AnimationClip
         {
             Name = "long-one",
@@ -332,6 +336,7 @@ public class CoreReviewTests
     public void CORE003_ConcurrentTrackedPlaysEachGetTheirOwnToken()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var clip = new AnimationClip
         {
             Name = "short",
@@ -770,6 +775,7 @@ public class CoreReviewTests
     public void CORE007_AFrameWithAGroundEdgeReachesTheMapThroughTheProductionPath()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var cal = CameraCalibration.Nominal();
         var vision = new VisionSystem(robot) { Calibration = cal };
         var map = new MemoryMap();
@@ -814,6 +820,7 @@ public class CoreReviewTests
     public void CORE007_FlatGroundLeavesNoEdgeInTheMap()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var cal = CameraCalibration.Nominal();
         var vision = new VisionSystem(robot) { Calibration = cal, OverheadEdges = new OverheadEdgesDetector() };
         var map = new MemoryMap();
@@ -1100,6 +1107,7 @@ public class CoreReviewTests
     public void CORE011_AThrowingSubscriberDoesNotStarveTheInternalConsumers()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var faults = new List<Exception>();
         robot.HandlerFaulted += faults.Add;
         robot.State.HandlerFaulted += faults.Add;

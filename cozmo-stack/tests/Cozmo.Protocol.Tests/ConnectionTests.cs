@@ -46,22 +46,36 @@ public class ConnectionTests
         Assert.Equal(2, t.Connection.NextOutSeq);
     }
 
+    /// <summary>
+    /// A robot message goes out unflushed (RobotConnectionManager::SendData 0x0062F5C2-D2), so it waits for
+    /// IsPacketWorthSending 0x008362F4: strictly more than MaxTimeSinceLastSend = 32.3 ms since the last send
+    /// (ConfigureReliableTransport 0x0062F0C8). Unacked, SendOptimalUnAckedPackets 0x008363B0 resends it once
+    /// strictly more than TimeBetweenResends = 33.3 ms have passed since it was sent. Its header carries the
+    /// last robot id we accepted.
+    /// </summary>
     [Fact]
     public void OutgoingHeaderCarriesLastInAckedAndResendsAfter33ms()
     {
         var (t, clk, _) = Offline();
         t.OfflineConnect();
+        double requestSent = t.Connection!.LatestMessageSentMs;
         t.ProcessIncoming(RobotFrame(1, 1, 1, new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), 1)));
         t.OfflineOutbound.Clear();
         clk.Advance(10);
-        t.SendData(new GetManufacturingInfo().ToBytes(), reliable: true, flush: true);
+        t.Send(new GetManufacturingInfo());
+        Assert.Empty(t.OfflineOutbound);                       // flush = 0: not worth sending yet
+        clk.NowMs = requestSent + 32.3; t.OfflineTick();
+        Assert.Empty(t.OfflineOutbound);                       // the rule is strictly greater
+        clk.NowMs = requestSent + 32.4; t.OfflineTick();
         var f = Assert.Single(t.OfflineOutbound);
         Assert.Equal(ReliableMessageType.SingleReliableMessage, f.Type);
         Assert.Equal(2, f.SeqMin); Assert.Equal(1, f.Ack);
-        // not acked: no resend before TimeBetweenResends (33.3 ms)
-        clk.Advance(20); t.OfflineTick();
+        double sent = t.Connection.LatestMessageSentMs;
+
+        // not acked: no resend until strictly more than TimeBetweenResends (33.3 ms)
+        clk.NowMs = sent + 33.3; t.OfflineTick();
         Assert.Single(t.OfflineOutbound);
-        clk.Advance(20); t.OfflineTick();
+        clk.NowMs = sent + 33.4; t.OfflineTick();
         Assert.Equal(2, t.OfflineOutbound.Count);
         Assert.Equal(1, t.Connection!.ResendFrames);
         // robot acks seq 2 in a header -> pending drained, no further resends
@@ -141,12 +155,10 @@ public class ConnectionTests
         t.OfflineConnect();
         t.ProcessIncoming(RobotFrame(1, 1, 1, new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), 1)));
         t.OfflineOutbound.Clear();
-        // The split follows the engine's frame bound rather than a number written down here: each part
-        // carries a two-byte {index, total} header, so the count falls out of MaxFramePayloadBytes.
+        // Each part carries 1404 bytes of the message after its two-byte {index, total} header (0x00836D7A):
+        // 2500 bytes are one full part and a 1096-byte remainder.
         const int total = 2500;
-        int perPart = new TransportOptions().MaxFramePayloadBytes - 2;
-        int expected = (total + perPart - 1) / perPart;
-        Assert.Equal(2, expected);                                  // 1406 a frame, where 1037 gave three
+        const int expected = 2;
         var payload = new byte[total];
         t.SendData(payload, reliable: true, flush: true);
         for (int i = 0; i < 40; i++) { clk.Advance(5); t.OfflineTick(); }
@@ -154,6 +166,8 @@ public class ConnectionTests
         Assert.Equal(expected, parts.Count);
         Assert.Equal(new byte[] { 1, (byte)expected }, parts[0].Payload.Take(2));
         Assert.Equal(new byte[] { (byte)expected, (byte)expected }, parts[^1].Payload.Take(2));
+        Assert.Equal(1404, parts[0].Payload.Length - 2);
+        Assert.Equal(1096, parts[1].Payload.Length - 2);
         Assert.Equal(total, parts.Sum(p => p.Payload.Length - 2));
     }
 }

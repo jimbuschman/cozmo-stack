@@ -46,6 +46,7 @@ public class KeepAliveTests
         Assert.Equal(60, IdleBehavior.EngineTickMs);
 
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var idle = new IdleBehavior(robot, new BehaviorArbiter { AutonomyEnabled = true },
                                     random: new Random(7)) { Execute = false };
         var seen = new List<IdleEvent>();
@@ -67,6 +68,7 @@ public class KeepAliveTests
     public void EverySpacingAndDurationIsAWholeNumberOfMilliseconds()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var idle = new IdleBehavior(robot, new BehaviorArbiter { AutonomyEnabled = true },
                                     random: new Random(11)) { Execute = false };
         var seen = new List<IdleEvent>();
@@ -97,6 +99,7 @@ public class KeepAliveTests
     public void AMovementHeldOffByAnOwnedTrackHappensAsSoonAsTheTrackIsFree()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var clip = new AnimationClip
         {
             Name = "holds-the-head",
@@ -130,6 +133,7 @@ public class KeepAliveTests
     public void TheNextMovementComesADurationAndAGapLater()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         // one duration and one gap, so the cadence is arithmetic rather than a distribution
         var fixedTimes = IdleParameters.Default with
         {
@@ -190,6 +194,7 @@ public class KeepAliveTests
     public void TheKeepAliveSendsTheHeadAngleTheRobotIsAlreadyAt()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var idle = new IdleBehavior(robot, new BehaviorArbiter { AutonomyEnabled = true },
                                     random: new Random(9));
         var heads = new List<double>();
@@ -234,6 +239,7 @@ public class KeepAliveTests
     public void TheBodyShuffleIsDrivenAsAStraightOrATurnInPlace()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var idle = new IdleBehavior(robot, new BehaviorArbiter { AutonomyEnabled = true },
                                     random: new Random(6));
         var body = new List<IdleEvent>();
@@ -298,6 +304,7 @@ public class KeepAliveTests
         Assert.Equal(33u, IdleBehavior.TurnShiftDurationMs);
 
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         // nothing else touching the face, so what moves it is the turn, and the turns well apart so
         // each one's shift has expired before the next begins
         var quiet = IdleParameters.Default with

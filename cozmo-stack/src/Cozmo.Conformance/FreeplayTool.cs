@@ -29,6 +29,7 @@ public static class FreeplayTool
     private static int Tree(string obb)
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         using var vision = new VisionSystem(robot, CameraCalibration.Nominal());
         using var m = new ManipulationSystem(robot, vision);
         var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap() };
@@ -63,6 +64,7 @@ public static class FreeplayTool
     private static int Simulate(string obb, int ticks)
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var assets = TriggersTool.FindAssetsRoot(obb);
         if (assets is not null) robot.Animations.LoadFrom(assets);
         using var vision = new VisionSystem(robot, CameraCalibration.Nominal());

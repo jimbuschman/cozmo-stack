@@ -203,6 +203,7 @@ public class BehaviorTests
         var obb = ObbRoot();
         if (obb is null) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var reactive = new ReactiveBehavior(robot, AnimationTriggerMap.Load(obb));
         reactive.Arbiter.AutonomyEnabled = true;
 
@@ -217,6 +218,7 @@ public class BehaviorTests
         var obb = ObbRoot();
         if (obb is null) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var reactive = new ReactiveBehavior(robot, AnimationTriggerMap.Load(obb));
         reactive.Arbiter.AutonomyEnabled = true;
 
@@ -231,6 +233,7 @@ public class BehaviorTests
         var obb = ObbRoot();
         if (obb is null) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
         var reactive = new ReactiveBehavior(robot, AnimationTriggerMap.Load(obb));
 

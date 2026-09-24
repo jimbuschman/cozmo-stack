@@ -5,4 +5,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Cozmo.Protocol\Cozmo.Protocol.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- The receive-error and manual-pump seams on ReliableTransport are driven directly by the transport tests. -->
+    <InternalsVisibleTo Include="Cozmo.Protocol.Tests" />
+  </ItemGroup>
 </Project>

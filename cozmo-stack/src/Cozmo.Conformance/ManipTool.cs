@@ -268,6 +268,7 @@ public static class ManipTool
         Console.WriteLine($"{path.Count} segment(s) from the origin to {goal}:");
         foreach (var s in path) Console.WriteLine("  " + s);
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var sender = new PathSender(robot);
         sender.Execute(path);
         foreach (var msg in sender.Sent) Console.WriteLine($"  -> {msg.Id} {Convert.ToHexString(msg.ToBytes())}");

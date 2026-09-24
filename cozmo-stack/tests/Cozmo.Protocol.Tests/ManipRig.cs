@@ -11,7 +11,8 @@ internal sealed class Rig : IDisposable
     private static readonly MarkerLibrary? Lib = MarkerLibrary.EmbeddedOrNull;
     /// <summary>True when the extracted marker library is not present, so a marker test has nothing to render.</summary>
     public bool NoLibrary => Lib is null;
-    public readonly ManualClock Clock = new();
+    /// <summary>Starts away from zero: a send stamped at time zero reads as never sent to the reliable layer.</summary>
+    public readonly ManualClock Clock = new() { NowMs = 1000 };
     public readonly CozmoRobot Robot;
     public readonly VisionSystem Vision;
     public readonly ManipulationSystem M;

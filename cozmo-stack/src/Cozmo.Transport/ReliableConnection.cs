@@ -58,14 +58,6 @@ public sealed class ReliableConnection
     public int PingRepliesSeen { get; private set; }
     public int PendingCount => _pending.Count;
 
-    /// <summary>
-    /// Whether every queued message has been written to the socket at least once. A reliable message stays
-    /// pending until the robot acks it, so "sent" rather than "gone" is what a shutdown can wait for.
-    /// </summary>
-    public bool AllPendingSent
-    {
-        get { foreach (var m in _pending) if (m.LastSentTimeMs == 0) return false; return true; }
-    }
     public int FramesSent { get; private set; }
     public int ResendFrames { get; private set; }
     public int DuplicateReliableDropped { get; private set; }

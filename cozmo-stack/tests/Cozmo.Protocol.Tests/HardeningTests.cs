@@ -120,6 +120,7 @@ public class HardeningTests
         var obb = ObbRoot();
         if (obb is null) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var lib = robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
         var name = lib.ClipNames.First();
 

@@ -150,13 +150,13 @@ static int Usage()
                                              hardware acceptance for the OLED: draw a known image and hold it
           tone <robot-ip> [--sound steady|beeps|sweep] [--codec anki|mulaw|pcm8u|pcm8s] [--hz 440]
                           [--seconds 2] [--amplitude 0.5] [--acceptance [file.json]]
-                          [--volume <n>] [--save <file.wav>] [--unreliable] [--in-flight <n>] [--log <file>]
+                          [--volume <n>] [--save <file.wav>] [--in-flight <n>] [--log <file>]
                                              hardware acceptance for the speaker: play a generated sine tone.
                                              All three write an acceptance record: what was measured here is
                                              separated from what a person still has to see or hear, because
                                              this tool can do neither
                                              --save writes exactly what is sent as a .wav, to check the
-                                             encoding locally; --unreliable and --in-flight vary how it is
+                                             encoding locally; --in-flight varies how it is
                                              delivered, to separate encoding faults from delivery faults;
                                              --sound beeps plays a countable number of separate beeps, which
                                              tests continuity without having to judge tone quality;

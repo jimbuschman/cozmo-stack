@@ -533,6 +533,7 @@ public class VisionTests
         Assert.Equal(-0.05, back.DistortionCoefficients[0], 6);
 
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         using var reader = new NvCalibrationReader(robot);
         Assert.Null(reader.Handle(new NVOpResult { Tag = CameraCalibration.NvEntryTag, Op = 0, Result = NvCalibrationReader.ResultMore, Data = bytes[..20] }));
         var got = reader.Handle(new NVOpResult { Tag = CameraCalibration.NvEntryTag, Op = 0, Result = NvCalibrationReader.ResultOkay, Data = bytes[20..] });
@@ -556,6 +557,7 @@ public class VisionTests
         Assert.Equal(0x400, NvCalibrationReader.NvReadLength);
 
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         using var reader = new NvCalibrationReader(robot);
         robot.Transport.OfflineOutbound.Clear();
         _ = reader.ReadAsync(TimeSpan.FromMilliseconds(1));

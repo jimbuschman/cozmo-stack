@@ -464,6 +464,7 @@ public class WwiseSongTests
     {
         if (Library.Value is not { } lib || Obb() is not { } obb) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
         using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(1));
         robot.Animations.AudioSource = source;
@@ -499,6 +500,7 @@ public class WwiseSongTests
     {
         if (Obb() is not { } obb) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
         var ctx = new BehaviorContext { Robot = robot, Triggers = AnimationTriggerMap.Load(obb), Random = new Random(4) };
         var b = new SingingBehavior("Singing_Bingo", "Cozmo_Sings_100Bpm", "Cozmo_Sings_Bingo");

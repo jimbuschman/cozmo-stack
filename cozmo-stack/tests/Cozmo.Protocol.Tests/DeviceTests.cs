@@ -1081,11 +1081,12 @@ public class DeviceTests
         Assert.Equal(0x8E, (byte)RobotMessageId.AnimAudioSample & 0xFE);
         Assert.Equal(0x8E, (byte)RobotMessageId.AnimAudioSilence & 0xFE);
 
-        using var robot = CozmoRobot.CreateOffline();
-        Assert.True(robot.AudioReliable);                  // the engine has no switch; true is what it does
+        var clock = new ManualClock { NowMs = 1000 };
+        using var robot = CozmoRobot.CreateOffline(clock: clock);
+        robot.Transport.OfflineAcceptConnection();
         robot.Audio.SendFrame(CozmoAudio.ToFrames(new short[CozmoAudio.SamplesPerFrame])[0]);
         robot.Audio.SendSilence();
-        for (int i = 0; i < 10; i++) { Thread.Sleep(3); robot.Transport.OfflineTick(); }
+        for (int i = 0; i < 10; i++) { clock.Advance(40); robot.Transport.OfflineTick(); }
 
         var audio = robot.Transport.OfflineOutbound
             .SelectMany(f => f.Messages)
@@ -1095,25 +1096,5 @@ public class DeviceTests
         Assert.All(audio, m => Assert.Equal(ReliableMessageType.SingleReliableMessage, m.Type));
         Assert.Contains(audio, m => m.Payload[0] == (byte)RobotMessageId.AnimAudioSample);
         Assert.Contains(audio, m => m.Payload[0] == (byte)RobotMessageId.AnimAudioSilence);
-    }
-
-    /// <summary>
-    /// The unreliable audio switch is this stack's own, for a lossy link where a click beats a stall; it is
-    /// not something the engine does. It is tested only so that turning it on really does change the wire.
-    /// </summary>
-    [Fact]
-    public void TurningTheAudioSwitchOffSendsTheFramesUnreliably()
-    {
-        using var robot = CozmoRobot.CreateOffline();
-        robot.AudioReliable = false;
-        robot.Audio.SendSilence();
-        for (int i = 0; i < 10; i++) { Thread.Sleep(3); robot.Transport.OfflineTick(); }
-
-        var audio = robot.Transport.OfflineOutbound
-            .SelectMany(f => f.Messages)
-            .Where(m => m.Payload.Length > 0 && (m.Payload[0] & 0xFE) == 0x8E)
-            .ToList();
-        Assert.NotEmpty(audio);
-        Assert.All(audio, m => Assert.Equal(ReliableMessageType.SingleUnreliableMessage, m.Type));
     }
 }

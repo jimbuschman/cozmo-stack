@@ -126,6 +126,7 @@ public class SourceFidelityTests
     public void TheDefaultFaceIsTheShippedNeutralNotTheNominalBox()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var current = robot.Face.Current;
         Assert.Equal(9.169666f, current.Left[EyeParam.EyeCenterX], 5);
         Assert.Equal(-10.206374f, current.Right[EyeParam.EyeCenterX], 5);

@@ -130,6 +130,7 @@ public class BehaviorFrameworkTests
         var obb = ObbRoot();
         if (obb is null) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         using var m = Manager(robot, obb);
 
         m.Add(new Fake("low", 1));
@@ -147,6 +148,7 @@ public class BehaviorFrameworkTests
         var obb = ObbRoot();
         if (obb is null) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         using var m = Manager(robot, obb);
         m.Add(new Fake("none", 0));
 
@@ -168,6 +170,7 @@ public class BehaviorFrameworkTests
         var obb = ObbRoot();
         if (obb is null) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         using var m = Manager(robot, obb);
         m.Add(new Fake("a", 5));
         m.Add(new Fake("b", 4));
@@ -189,6 +192,7 @@ public class BehaviorFrameworkTests
         var obb = ObbRoot();
         if (obb is null) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         using var m = Manager(robot, obb);
         m.Add(new Fake("a", 5));
         m.ChooseAndSwitch(0);
@@ -273,6 +277,7 @@ public class BehaviorFrameworkTests
         Assert.Equal(1, bored.NumLoops);
 
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
         var ctx = new BehaviorContext
         {
@@ -308,6 +313,7 @@ public class BehaviorFrameworkTests
     public void TheNeedsWantsToRunStrategiesFollowTheNeedsState()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         double now = 0;
         var needs = new NeedsManager(() => now);
         var ctx = new BehaviorContext
@@ -354,6 +360,7 @@ public class BehaviorFrameworkTests
         var obb = ObbRoot();
         if (obb is null) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
         var ctx = new BehaviorContext
         {

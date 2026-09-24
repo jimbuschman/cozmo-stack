@@ -45,6 +45,7 @@ public class BehaviorHardeningTests
         var obb = ObbRoot();
         if (obb is null) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var lib = robot.Animations.LoadFrom(Assets(obb));
 
         // The application-facing path: no arbiter involved.
@@ -79,6 +80,7 @@ public class BehaviorHardeningTests
         var obb = ObbRoot();
         if (obb is null) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         robot.Animations.LoadFrom(Assets(obb));
 
         var arbiter = new BehaviorArbiter { AutonomyEnabled = true, ReactionCooldown = TimeSpan.Zero };
@@ -114,6 +116,7 @@ public class BehaviorHardeningTests
         var obb = ObbRoot();
         if (obb is null) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         robot.Animations.LoadFrom(Assets(obb));
         var ctx = new BehaviorContext
         {
@@ -141,6 +144,7 @@ public class BehaviorHardeningTests
         var obb = ObbRoot();
         if (obb is null) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var lib = robot.Animations.LoadFrom(Assets(obb));
         var ctx = new BehaviorContext
         {
@@ -176,6 +180,7 @@ public class BehaviorHardeningTests
     public void IdleStillBlinksWhenMotorsAreNotPermitted()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var arbiter = new BehaviorArbiter { AutonomyEnabled = true };
         var idle = new IdleBehavior(robot, arbiter, random: new Random(3))
         {
@@ -266,6 +271,7 @@ public class BehaviorHardeningTests
         var obb = ObbRoot();
         if (obb is null) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         robot.Animations.LoadFrom(Assets(obb));
         using var reactive = new ReactiveBehavior(robot, AnimationTriggerMap.Load(obb))
         { Asynchronous = false };

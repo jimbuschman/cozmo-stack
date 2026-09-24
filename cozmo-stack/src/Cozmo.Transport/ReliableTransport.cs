@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
@@ -10,19 +11,32 @@ public enum LinkState { Idle, Connecting, Connected, Disconnected }
 public sealed record FrameEvent(bool Outbound, DateTime Utc, byte[] Raw, Frame? Frame, string? Error);
 
 /// <summary>
-/// Client-side port of Anki::Util::ReliableTransport + UDPTransport for a single peer (the robot).
+/// Client-side port of Anki::Util::ReliableTransport + UDPTransport for a single peer (the robot), with the
+/// RobotConnectionManager rules that sit on either side of it.
 /// UDP framing: "COZ\x03" prefix, no CRC (RobotConnectionManager::Init), then the 10-byte reliable header.
-/// Receive processing mirrors ReliableTransport::ReceiveData / HandleSubMessage exactly:
-///  1. reject bad prefix; 2. UpdateLastAckedMessage(header.ack); 3. for reliable frames check
-///  IsWaitingForAnyInRange(seqMin,seqMax) (a MultipleMixed frame is still processed for its unreliable content
-///  when out of range) and AckMessage(seqMax); 4. walk sub-messages, assigning seq ids, dropping duplicates,
-///  dispatching ConnectionResponse/Disconnect/data/multipart/ping.
 ///
-/// Threading. Three worker threads: <c>cozmo-rx</c> blocks on the socket, <c>cozmo-tick</c> runs the
-/// connection update every <see cref="TransportOptions.UpdateIntervalMs"/>, and <c>cozmo-dispatch</c> raises
-/// every public event. Handlers therefore never run on the receive or tick threads, so a slow or throwing
-/// handler cannot stall or kill the transport; events still arrive in the order they were produced. All
-/// connection state is protected by <see cref="_lock"/>, which is never held while a handler runs.
+/// Each datagram is processed in the engine's order:
+///  1. UDPTransport::HandleReceivedMessage: reject a datagram without the COZ prefix;
+///  2. ReliableTransport::ReceiveData 0x00837632-42: fewer than 10 bytes after the prefix, or no "RE\x01",
+///     and the bytes are handed on as a data message without any address lookup (0x00837792-A0);
+///  3. FindConnection 0x008377FC: the frame is processed only when it comes from the peer, IP and port
+///     (TransportAddress::operator&lt; 0x00838ED2), and dropped with a warning otherwise (0x0083789A);
+///  4. UpdateLastAckedMessage 0x00837818, the resend-on-ack gate 0x0083781C-2E, and for a reliable header
+///     IsWaitingForAnyInRange 0x0083783E (out of range drops everything but a MultipleMixed frame) and
+///     AckMessage(seqMax) 0x0083784A;
+///  5. the sub-messages in order, each through HandleSubMessage, stopping at the first invalid type
+///     (0x0083790E → 0x008379AE) or size overrun (0x00837926 → 0x00837A0C) with the earlier ones handled.
+/// A data payload (types 4/5, a completed multipart, or a datagram handed on at step 2) is delivered only
+/// while the link is Connected and it comes from the peer's IP, judged at its own position in arrival
+/// order (RobotConnectionManager 0x0062F724-2A, TransportAddress::operator== 0x0062F744); otherwise it is
+/// dropped.
+///
+/// Threading. Two worker threads: <c>cozmo-transport</c> runs the engine's ReliableTransport::Update every
+/// <see cref="TransportOptions.UpdateIntervalMs"/> — drain the socket without blocking, then update the
+/// connection — and <c>cozmo-dispatch</c> raises every public event. Handlers therefore never run on the
+/// transport thread, so a slow or throwing handler cannot stall or kill the transport; events still arrive
+/// in the order they were produced. All connection state is protected by <see cref="_lock"/>, which is
+/// never held while a handler runs.
 /// </summary>
 public sealed class ReliableTransport : IDisposable
 {
@@ -32,11 +46,12 @@ public sealed class ReliableTransport : IDisposable
     private Socket? _sock;
     private IPEndPoint? _peer;
     private ReliableConnection? _conn;
-    private Thread? _rx, _tick, _dispatch;
+    private Thread? _io, _dispatch;
     private BlockingCollection<Action>? _events;
     private volatile bool _running;
     private readonly List<byte> _multipart = new();
     private int _multipartNext = 1, _multipartLast;
+    private readonly byte[] _rxBuffer = new byte[2048];
 
     /// <summary>How long a worker thread is given to finish during shutdown before it is abandoned.</summary>
     private static readonly TimeSpan JoinTimeout = TimeSpan.FromSeconds(2);
@@ -64,6 +79,26 @@ public sealed class ReliableTransport : IDisposable
 
     /// <summary>Frames the connection produced while offline (see <see cref="CreateOffline"/>).</summary>
     public List<Frame> OfflineOutbound { get; } = new();
+
+    // ------------------------------------------------------------- test seams
+
+    /// <summary>Stands in for <see cref="Socket.ReceiveFrom(byte[], ref EndPoint)"/> on the receive path.</summary>
+    internal delegate int ReceiveFromHook(Socket socket, byte[] buffer, ref EndPoint from);
+
+    /// <summary>
+    /// Test seam: when set, the transport update reads datagrams, and receive errors, from this instead of
+    /// the socket. Null in production.
+    /// </summary>
+    internal ReceiveFromHook? ReceiveHook { get; set; }
+
+    /// <summary>
+    /// Test seam: <see cref="Connect"/> starts no worker threads, events are raised inline, and the caller
+    /// runs each transport update itself with <see cref="Pump"/>. False in production.
+    /// </summary>
+    internal bool ManualPump { get; init; }
+
+    /// <summary>The socket's local endpoint, for tests that need to see it reopened.</summary>
+    internal EndPoint? LocalEndPoint { get { lock (_lock) return _sock?.LocalEndPoint; } }
 
     // ------------------------------------------------------------- event dispatch
 
@@ -128,16 +163,25 @@ public sealed class ReliableTransport : IDisposable
         catch (InvalidOperationException) { }   // completed while enumerating
     }
 
+    /// <summary>Raises, in order, what processing under the lock produced, then ends the link if it has to.</summary>
+    private void Complete(List<Action> effects, string? shutdownReason)
+    {
+        foreach (var a in effects) Raise(a);
+        if (shutdownReason is not null) Shutdown(shutdownReason);
+    }
+
     // ------------------------------------------------------------- offline mode
 
     /// <summary>
     /// A transport with no socket, for replay/conformance tests: incoming datagrams are fed with
-    /// <see cref="ProcessIncoming"/>, outgoing frames are captured in <see cref="OfflineOutbound"/>.
-    /// Events are raised inline on the calling thread.
+    /// <see cref="ProcessIncoming(byte[])"/>, outgoing frames are captured in <see cref="OfflineOutbound"/>.
+    /// Events are raised inline on the calling thread. Datagrams fed without an address are taken to come
+    /// from <see cref="Peer"/>, a loopback stand-in for the robot.
     /// </summary>
     public static ReliableTransport CreateOffline(TransportOptions? options = null, INetClock? clock = null)
     {
         var t = new ReliableTransport(options, clock);
+        t._peer = new IPEndPoint(IPAddress.Loopback, t._o.RobotPort);
         t._conn = new ReliableConnection(t._o, t._clock, (ty, mn, mx, body) =>
         {
             var hdr = new ReliableHeader(ty, mn, mx, t._conn!.LastInAcked);
@@ -153,19 +197,26 @@ public sealed class ReliableTransport : IDisposable
     /// <summary>Offline only: queue the initial ConnectionRequest like <see cref="Connect"/> does.</summary>
     public void OfflineConnect() { lock (_lock) _conn!.Queue(ReliableMessageType.ConnectionRequest, Array.Empty<byte>(), true, true); }
 
-    /// <summary>Offline only: run one connection update tick.</summary>
-    public bool OfflineTick() { lock (_lock) return _conn!.Update(); }
+    /// <summary>
+    /// Offline only: the robot's answer to <see cref="OfflineConnect"/> — a reliable ConnectionResponse, its
+    /// seq 1, acking our seq 1 — fed from the peer through the normal receive path.
+    /// </summary>
+    public void OfflineAcceptConnection() =>
+        ProcessIncoming(FrameCodec.Encode(Frame.Single(
+            new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), SequenceId.Min), SequenceId.Min)));
+
+    /// <summary>Offline only: run one connection update tick. False when there is no live connection.</summary>
+    public bool OfflineTick() { lock (_lock) return _conn?.Update() ?? false; }
 
     // ------------------------------------------------------------------ connect
 
     /// <summary>Open the socket (ephemeral local port, like the engine's UDPTransport client) and send ConnectionRequest (reliable seq 1).</summary>
     public void Connect(IPAddress robot, int? port = null)
     {
-        BlockingCollection<Action> q;
         lock (_lock)
         {
             if (_running) throw new InvalidOperationException("already running");
-            if (_rx is not null || _tick is not null || _dispatch is not null)
+            if (_io is not null || _dispatch is not null)
                 throw new InvalidOperationException("the previous connection has not finished shutting down");
 
             // Every connection starts from clean session state; a half-assembled multipart message from the
@@ -175,24 +226,61 @@ public sealed class ReliableTransport : IDisposable
             HandlerFaults = 0;
 
             _peer = new IPEndPoint(robot, port ?? _o.RobotPort);
-            _sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            _sock.Bind(new IPEndPoint(IPAddress.Any, 0));
-            _sock.ReceiveTimeout = 50;
+            _sock = OpenSocket();
             _conn = new ReliableConnection(_o, _clock, SendFrame);
             _running = true; State = LinkState.Connecting;
 
-            _events = q = new BlockingCollection<Action>();
-            _dispatch = new Thread(() => DispatchLoop(q)) { IsBackground = true, Name = "cozmo-dispatch" };
-            _rx = new Thread(RxLoop) { IsBackground = true, Name = "cozmo-rx" };
-            _tick = new Thread(TickLoop) { IsBackground = true, Name = "cozmo-tick" };
-            _dispatch.Start(); _rx.Start(); _tick.Start();
+            if (!ManualPump)
+            {
+                var q = new BlockingCollection<Action>();
+                _events = q;
+                _dispatch = new Thread(() => DispatchLoop(q)) { IsBackground = true, Name = "cozmo-dispatch" };
+                _io = new Thread(TransportLoop) { IsBackground = true, Name = "cozmo-transport" };
+                _dispatch.Start(); _io.Start();
+            }
             _conn.Queue(ReliableMessageType.ConnectionRequest, Array.Empty<byte>(), reliable: true, flush: true);
         }
     }
 
-    /// <summary>Send a CLAD robot message. Reliable by default (official engine sends everything reliable except a few unreliable streams).</summary>
-    public void Send(RobotMessage m, bool reliable = true, bool flush = false) => SendData(m.ToBytes(), reliable, flush);
+    /// <summary>A UDP client socket on an ephemeral local port, read without blocking.</summary>
+    private static Socket OpenSocket()
+    {
+        var s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        try
+        {
+            s.Bind(new IPEndPoint(IPAddress.Any, 0));
+            s.Blocking = false;
+            return s;
+        }
+        catch { s.Dispose(); throw; }
+    }
 
+    /// <summary>
+    /// Send a CLAD robot message the way the engine sends every robot message: this is the
+    /// <c>RobotConnectionManager::SendData(buf, len)</c> layer.
+    ///
+    /// It refuses unless the link is Connected, as the manager refuses unless its state is 2
+    /// (0x0062F5A2-A8 → 0x0062F610): nothing is queued and no sequence id is used. It takes no delivery
+    /// options: it calls <c>ReliableTransport::SendData</c> with reliable = 1 (0x0062F5CE) and flush = 0
+    /// (0x0062F5C2-CA), and <c>MessageHandler::SendMessage</c> 0x0069DCF6 reaches it the same way. So
+    /// <paramref name="reliable"/> and <paramref name="flush"/> do not change what is sent: every message is
+    /// queued reliable and unflushed, and goes out when <c>IsPacketWorthSending</c> says so.
+    /// </summary>
+    public void Send(RobotMessage m, bool reliable = true, bool flush = false)
+    {
+        var bytes = m.ToBytes();
+        lock (_lock)
+        {
+            if (_conn is null || State is not LinkState.Connected) throw new InvalidOperationException("not connected");
+            SendData(bytes, reliable: true, flush: false);
+        }
+    }
+
+    /// <summary>
+    /// ReliableTransport::SendData 0x008370E4: queue one message with the given delivery options (type 4 when
+    /// reliable, 5 when not, and the caller's flush). The manager's state gate is not part of this layer
+    /// (see <see cref="Send"/>); this refuses only when there is no live connection to queue on.
+    /// </summary>
     public void SendData(byte[] cladMessage, bool reliable = true, bool flush = false)
     {
         lock (_lock)
@@ -202,18 +290,24 @@ public sealed class ReliableTransport : IDisposable
         }
     }
 
-    /// <summary>Official ReliableTransport::Disconnect: reliable DisconnectRequest then drop the connection (we flush once before closing).</summary>
+    /// <summary>
+    /// Official ReliableTransport::Disconnect: one reliable, flushed DisconnectRequest through the normal send
+    /// path (0x0083801C), then the connection is deleted at once (0x0083802A → DeleteConnection 0x008375F0).
+    /// Whether the request reaches the wire is up to that one send attempt; nothing waits for it.
+    /// </summary>
     public void Disconnect(string reason = "requested")
     {
-        lock (_lock)
-        {
-            if (_conn is not null && State is LinkState.Connected or LinkState.Connecting)
-            {
-                try { _conn.Queue(ReliableMessageType.DisconnectRequest, Array.Empty<byte>(), true, true); } catch { }
-            }
-        }
-        Thread.Sleep(40);
+        lock (_lock) DisconnectLocked();
         Shutdown(reason);
+    }
+
+    private void DisconnectLocked()
+    {
+        if (_conn is not null && State is LinkState.Connected or LinkState.Connecting)
+        {
+            try { _conn.Queue(ReliableMessageType.DisconnectRequest, Array.Empty<byte>(), true, true); } catch { }
+        }
+        _conn = null;
     }
 
     /// <summary>
@@ -223,23 +317,23 @@ public sealed class ReliableTransport : IDisposable
     /// </summary>
     private void Shutdown(string reason)
     {
-        Thread? rx, tick, dispatch;
+        Thread? io, dispatch;
         BlockingCollection<Action>? q;
         bool notify;
         lock (_lock)
         {
             notify = _running;
-            if (!notify && _rx is null && _tick is null && _dispatch is null) return;   // already down
+            if (!notify && _io is null && _dispatch is null) return;   // already down
             _running = false;
             State = LinkState.Disconnected;
             try { _sock?.Close(); } catch { }
             _sock = null;
             _multipart.Clear(); _multipartNext = 1; _multipartLast = 0;
-            rx = _rx; tick = _tick; dispatch = _dispatch; q = _events;
-            _rx = null; _tick = null;
+            io = _io; dispatch = _dispatch; q = _events;
+            _io = null;
         }
 
-        Join(rx); Join(tick);
+        Join(io);
         if (notify) Raise(() => Fan(Disconnected, reason));
 
         if (q is not null)
@@ -260,32 +354,16 @@ public sealed class ReliableTransport : IDisposable
     }
 
     /// <summary>
-    /// Waits, bounded, until everything queued has been written to the socket at least once.
-    ///
-    /// <c>SendData</c> only queues: the connection writes on its own tick and refuses while the packet
-    /// separation interval (2 ms) since the last write has not passed, so a caller that queues a stop and
-    /// closes the socket immediately can lose it. This drives the same send path the tick thread uses until
-    /// the queue has gone out or the deadline passes, and reports which. Reliable messages are not waited on
-    /// for their acks — an acked stop is not what shutdown needs, an emitted one is.
+    /// <c>~RobotConnectionManager</c> 0x0062EE98: <c>DisconnectCurrent</c> 0x0062EF20, which disconnects the
+    /// peer (0x0062EF52), and only then <c>StopClient</c> (0x0062EEA2). A Connected transport therefore
+    /// disconnects exactly as <see cref="Disconnect"/> does before its socket is closed. A transport that is
+    /// still Connecting sends nothing.
     /// </summary>
-    public bool FlushPending(TimeSpan timeout)
+    public void Dispose()
     {
-        var deadline = DateTime.UtcNow + timeout;
-        while (true)
-        {
-            lock (_lock)
-            {
-                if (_conn is null || State is not (LinkState.Connected or LinkState.Connecting)) return true;
-                if (_conn.AllPendingSent) return true;
-                _conn.SendOptimalUnAckedPackets(_o.MaxPacketsToSendOnSendMessage > 0 ? _o.MaxPacketsToSendOnSendMessage : 1);
-                if (_conn.AllPendingSent) return true;
-            }
-            if (DateTime.UtcNow >= deadline) return false;
-            Thread.Sleep(1);
-        }
+        lock (_lock) { if (State == LinkState.Connected) DisconnectLocked(); }
+        Shutdown("disposed");
     }
-
-    public void Dispose() => Shutdown("disposed");
 
     // ------------------------------------------------------------------ wire
 
@@ -306,150 +384,324 @@ public sealed class ReliableTransport : IDisposable
         }
     }
 
-    private void RxLoop()
+    /// <summary>
+    /// The transport thread: <c>ReliableTransport::Update</c> on the engine's 2 ms schedule
+    /// (<see cref="TransportCadence"/>). The timer resolution is raised because without it a 1 ms sleep on
+    /// Windows lasts about 15.6 ms, which turns the 2 ms cadence into roughly 15 ms and quietly breaks the
+    /// resend and packet-separation timing this transport is meant to reproduce.
+    /// </summary>
+    private void TransportLoop()
     {
-        var buf = new byte[2048];
-        EndPoint from = new IPEndPoint(IPAddress.Any, 0);
+        using var _ = new HighResolutionTimer();
+        var cadence = new TransportCadence(new StopwatchClock(), _o.UpdateIntervalMs);
         while (_running)
         {
-            int n;
-            try { n = _sock!.ReceiveFrom(buf, ref from); }
-            catch (SocketException e) when (e.SocketErrorCode is SocketError.TimedOut or SocketError.WouldBlock)
-            {
-                continue;
-            }
-            catch (SocketException e) when (e.SocketErrorCode is SocketError.ConnectionReset
-                                                or SocketError.NetworkReset or SocketError.MessageSize)
-            {
-                // UDP is connectionless: these report a problem with one earlier datagram (typically an ICMP
-                // port-unreachable because the robot is not listening yet), not a dead socket. Keep going and
-                // let the connection timeout decide, exactly as the engine does.
-                var code = e.SocketErrorCode;
-                Raise(() => Fan(Warning, $"datagram rejected by the network: {code}"));
-                continue;
-            }
-            catch (ObjectDisposedException) { return; }                   // socket closed by Shutdown
-            catch (SocketException e)
-            {
-                if (_running) Shutdown($"socket error: {e.SocketErrorCode} ({e.Message})");
-                return;
-            }
-            catch (Exception e)
-            {
-                if (_running) Shutdown($"receive failed: {e.GetType().Name}: {e.Message}");
-                return;
-            }
-
-            if (from is IPEndPoint ip && !ip.Address.Equals(_peer!.Address))
-            {
-                var seen = ip;
-                Raise(() => Fan(Warning, $"datagram from unexpected {seen}"));
-                continue;
-            }
-            ProcessIncoming(buf.AsSpan(0, n).ToArray());
+            if (cadence.TryBegin()) { Pump(); continue; }
+            double wait = cadence.MsUntilDue;
+            if (wait > 1.5) Thread.Sleep(1);
+            else Thread.SpinWait(200);
         }
     }
 
-    /// <summary>Feed a raw datagram (also used by the conformance replay tool).</summary>
-    public void ProcessIncoming(byte[] raw)
+    /// <summary>
+    /// One <c>ReliableTransport::Update</c> 0x00837B8C: under the lock, the UDP transport's own update runs
+    /// first (0x00837BA2) and drains every datagram waiting on the socket, then each connection is updated.
+    /// An incoming ack is therefore applied before the same update decides whether anything needs resending.
+    /// </summary>
+    internal void Pump()
     {
-        var utc = DateTime.UtcNow;
-        if (!FrameCodec.TryDecode(raw, out var frame, out var err))
-        {
-            Raise(() => Fan(FrameTrace, new FrameEvent(false, utc, raw, null, err)));
-            Raise(() => Fan(Warning, $"bad frame: {err}"));
-            return;
-        }
-        Raise(() => Fan(FrameTrace, new FrameEvent(false, utc, raw, frame, null)));
-
-        var deliver = new List<byte[]>();
-        var warnings = new List<string>();
-        bool connected = false; string? disc = null;
+        var effects = new List<Action>();
+        string? end;
         lock (_lock)
         {
-            var c = _conn; if (c is null || !_running) return;
-            var h = frame!.Header;
-            bool anyAck = c.UpdateLastAckedMessage(h.Ack);
-            if (anyAck && _o.MaxPacketsToReSendOnAck > 0) c.SendOptimalUnAckedPackets(_o.MaxPacketsToReSendOnAck);
-            if (h.IsReliable)
-            {
-                bool waiting = c.IsWaitingForAnyInRange(h.SeqMin, h.SeqMax);
-                if (!waiting)
-                {
-                    if (h.Type != ReliableMessageType.MultipleMixedMessages) return; // out of order / duplicate frame: ignore entirely
-                }
-                else
-                {
-                    c.AckMessage(h.SeqMax);
-                    if (_o.SendAckOnReceipt) c.Queue(ReliableMessageType.Ack, Array.Empty<byte>(), false, true);
-                }
-            }
-            foreach (var sm in frame.Messages)
-            {
-                if (sm.IsReliable && !c.AcceptReliable(sm.Seq)) continue;
-                switch (sm.Type)
-                {
-                    case ReliableMessageType.ConnectionRequest: break; // host-only; robot never sends it
-                    case ReliableMessageType.ConnectionResponse:
-                        if (State == LinkState.Connecting) { State = LinkState.Connected; connected = true; }
-                        break;
-                    case ReliableMessageType.DisconnectRequest: disc = "peer sent DisconnectRequest"; break;
-                    case ReliableMessageType.SingleReliableMessage:
-                    case ReliableMessageType.SingleUnreliableMessage:
-                        deliver.Add(sm.Payload); break;
-                    case ReliableMessageType.MultiPartMessage:
-                        if (sm.Payload.Length > 2)
-                        {
-                            int idx = sm.Payload[0], cnt = sm.Payload[1];
-                            if (idx == _multipartNext)
-                            {
-                                if (idx == 1) { _multipart.Clear(); _multipartLast = cnt; }
-                                _multipart.AddRange(sm.Payload.AsSpan(2).ToArray()); _multipartNext++;
-                                if (idx == _multipartLast) { deliver.Add(_multipart.ToArray()); _multipart.Clear(); _multipartNext = 1; _multipartLast = 0; }
-                            }
-                            else
-                            {
-                                warnings.Add($"multipart out of order {idx}/{cnt}, expected {_multipartNext}");
-                                _multipart.Clear(); _multipartNext = 1; _multipartLast = 0;
-                            }
-                        }
-                        break;
-                    case ReliableMessageType.Ack: break;
-                    case ReliableMessageType.Ping: c.ReceivePing(sm.Payload); break;
-                    default:
-                        warnings.Add($"unhandled sub-message type {sm.Type}");
-                        break;
-                }
-            }
+            if (!_running) return;
+            end = DrainLocked(effects);
+            if (end is null && _conn is not null && !_conn.Update())
+                end = $"connection timed out (> {_o.ConnectionTimeoutMs} ms without any datagram)";
         }
-        foreach (var w in warnings) { var msg = w; Raise(() => Fan(Warning, msg)); }
-        if (connected) Raise(() => Fan(Connected));
-        foreach (var d in deliver) { var payload = d; Raise(() => Fan(DataReceived, payload)); }
-        if (disc is not null) Shutdown(disc);
+        Complete(effects, end);
     }
 
-    private void TickLoop()
+    /// <summary>
+    /// UDPTransport::Update 0x0083AD10-18 / TryToReadMessage 0x0083AA44: read datagrams until none is waiting.
+    /// A receive error ends the read for this update and never tears the connection down. EAGAIN is silent
+    /// (0x0083AAC4); every other error is a warning (0x0083AAF6), and ENOTCONN, after that same warning, also
+    /// closes and reopens the socket (0x0083AB22-34).
+    /// </summary>
+    private string? DrainLocked(List<Action> effects)
     {
-        // The engine schedules Update every 2 ms. Without raising the timer resolution a 1 ms sleep on
-        // Windows lasts about 15.6 ms, which turns the 2 ms cadence into roughly 15 ms and quietly breaks
-        // the resend and packet-separation timing this transport is meant to reproduce.
-        using var _ = new HighResolutionTimer();
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        double next = 0;
-        while (_running)
+        var buf = _rxBuffer;
+        while (_running && _sock is { } sock)
         {
-            bool alive = true;
-            lock (_lock) { if (_conn is not null && _running) alive = _conn.Update(); }
-            if (!alive)
+            EndPoint from = new IPEndPoint(IPAddress.Any, 0);
+            int n;
+            try { n = ReceiveHook is { } hook ? hook(sock, buf, ref from) : sock.ReceiveFrom(buf, ref from); }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock) { return null; }
+            catch (SocketException e)
             {
-                Shutdown($"connection timed out (> {_o.ConnectionTimeoutMs} ms without any datagram)");
-                return;
+                var code = e.SocketErrorCode; var msg = e.Message;
+                effects.Add(() => Fan(Warning, $"receive failed: {code} ({msg})"));
+                if (code == SocketError.NotConnected) ReopenSocketLocked(effects);
+                return null;
             }
-            next += _o.UpdateIntervalMs;
-            double wait = next - sw.Elapsed.TotalMilliseconds;
-            if (wait > 1.5) Thread.Sleep(1);
-            else if (wait > 0) Thread.SpinWait(200);
-            else next = sw.Elapsed.TotalMilliseconds;   // fell behind: resynchronise rather than burst
+            catch (ObjectDisposedException) { return null; }
+
+            var disc = ProcessDatagramLocked(buf.AsSpan(0, n).ToArray(), from as IPEndPoint, effects);
+            if (disc is not null) return disc;
         }
+        return null;
+    }
+
+    /// <summary>ENOTCONN: close the socket and open a new one on an ephemeral port; the connection is kept.</summary>
+    private void ReopenSocketLocked(List<Action> effects)
+    {
+        try { _sock?.Close(); } catch { }
+        _sock = null;
+        try { _sock = OpenSocket(); }
+        catch (SocketException e)
+        {
+            var code = e.SocketErrorCode; var msg = e.Message;
+            effects.Add(() => Fan(Warning, $"reopening the closed socket failed: {code} ({msg})"));
+        }
+    }
+
+    // --------------------------------------------------------------- receive
+
+    /// <summary>Feed a raw datagram from the peer (also used by the conformance replay tool).</summary>
+    public void ProcessIncoming(byte[] raw) => ProcessIncoming(raw, null);
+
+    /// <summary>Feed a raw datagram from <paramref name="from"/>; null means the peer.</summary>
+    public void ProcessIncoming(byte[] raw, IPEndPoint? from)
+    {
+        var effects = new List<Action>();
+        string? disc;
+        lock (_lock) disc = ProcessDatagramLocked(raw, from ?? _peer, effects);
+        Complete(effects, disc);
+    }
+
+    /// <summary>One datagram, in the order set out on the class. Returns a reason when the link must end.</summary>
+    private string? ProcessDatagramLocked(byte[] raw, IPEndPoint? from, List<Action> effects)
+    {
+        if (!_running) return null;
+        var utc = DateTime.UtcNow;
+
+        // UDPTransport::HandleReceivedMessage: the COZ\x03 prefix.
+        if (raw.Length < ReliableHeader.UdpPrefixLength || !raw.AsSpan(0, ReliableHeader.UdpPrefixLength).SequenceEqual(ReliableHeader.UdpPrefix))
+        {
+            string err = raw.Length < ReliableHeader.UdpPrefixLength
+                ? $"frame too small ({raw.Length} < {ReliableHeader.UdpPrefixLength})"
+                : "bad UDP prefix (expected COZ\\x03)";
+            effects.Add(() => Fan(FrameTrace, new FrameEvent(false, utc, raw, null, err)));
+            effects.Add(() => Fan(Warning, $"bad frame: {err}"));
+            return null;
+        }
+        var post = raw.AsSpan(ReliableHeader.UdpPrefixLength);
+
+        // ReliableTransport::ReceiveData 0x00837632-42: no reliable header, so the bytes go to the receiver
+        // as they are, with no connection lookup.
+        if (post.Length < ReliableHeader.ReliableLength || !post[..ReliableHeader.ReliablePrefix.Length].SequenceEqual(ReliableHeader.ReliablePrefix))
+        {
+            string err = post.Length < ReliableHeader.ReliableLength
+                ? $"reliable header too small ({post.Length} < {ReliableHeader.ReliableLength}); passed on as data"
+                : "no RE\\x01 reliable prefix; passed on as data";
+            effects.Add(() => Fan(FrameTrace, new FrameEvent(false, utc, raw, null, err)));
+            effects.Add(() => Fan(Warning, err));
+            DeliverDataLocked(post.ToArray(), from, effects);
+            return null;
+        }
+
+        // FindConnection: the peer, on IP and port.
+        if (from is null || _peer is null || !from.Equals(_peer))
+        {
+            var seen = from;
+            effects.Add(() => Fan(Warning, $"datagram from unexpected {seen}"));
+            return null;
+        }
+        var c = _conn;
+        if (c is null)
+        {
+            var seen = from;
+            effects.Add(() => Fan(Warning, $"no connection for {seen}"));
+            return null;
+        }
+
+        var type = (ReliableMessageType)post[3];
+        ushort seqMin = BinaryPrimitives.ReadUInt16LittleEndian(post[4..]);
+        ushort seqMax = BinaryPrimitives.ReadUInt16LittleEndian(post[6..]);
+        ushort ack = BinaryPrimitives.ReadUInt16LittleEndian(post[8..]);
+        bool isReliable = seqMin != SequenceId.Invalid || seqMax != SequenceId.Invalid;
+        var body = post[ReliableHeader.ReliableLength..];
+        bool multiple = ReliableMessageTypes.IsMultiple(type);
+
+        // BLOCKED: a container whose walk reaches a one- or two-byte remainder starting with a valid type
+        // makes the engine read the sub-message size past the end of the datagram. What that does is not
+        // established, so the whole frame is still rejected here, before any of it is processed. A remainder
+        // whose first byte is not a valid type is not this case: the engine tests the type before it reads
+        // the size (0x0083790A-0E) and stops there, which the walk below does too.
+        if (multiple && WalkEndsInPartialHeader(body))
+        {
+            const string err = "container ends in a partial sub-message header";
+            effects.Add(() => Fan(FrameTrace, new FrameEvent(false, utc, raw, null, err)));
+            effects.Add(() => Fan(Warning, $"bad frame: {err}"));
+            return null;
+        }
+        FrameCodec.TryDecode(raw, out var traced, out var traceErr);
+        effects.Add(() => Fan(FrameTrace, new FrameEvent(false, utc, raw, traced, traceErr)));
+
+        bool anyAck = c.UpdateLastAckedMessage(ack);
+        if (anyAck && _o.MaxPacketsToReSendOnAck > 0) c.SendOptimalUnAckedPackets(_o.MaxPacketsToReSendOnAck);
+        if (isReliable)
+        {
+            if (!c.IsWaitingForAnyInRange(seqMin, seqMax))
+            {
+                if (type != ReliableMessageType.MultipleMixedMessages) return null; // out of order / duplicate frame: ignore entirely
+            }
+            else
+            {
+                c.AckMessage(seqMax);
+                if (_o.SendAckOnReceipt) c.Queue(ReliableMessageType.Ack, Array.Empty<byte>(), false, true);
+            }
+        }
+
+        string? disc = null;
+        if (multiple)
+        {
+            ushort seq = seqMin; int o = 0;
+            while (o < body.Length)
+            {
+                byte t = body[o];
+                if (!ReliableMessageTypes.IsValid(t))
+                {
+                    int at = o;
+                    effects.Add(() => Fan(Warning, $"invalid sub-message type {t} at body offset {at}; rest of frame dropped"));
+                    break;
+                }
+                int size = BinaryPrimitives.ReadUInt16LittleEndian(body[(o + 1)..]);
+                int start = o + FrameCodec.SubMessageOverhead;
+                if (start + size > body.Length)
+                {
+                    int at = start;
+                    effects.Add(() => Fan(Warning, $"sub-message size {size} overruns body at offset {at}; rest of frame dropped"));
+                    break;
+                }
+                var subType = (ReliableMessageType)t;
+                bool subReliable = isReliable && !ReliableMessageTypes.IsAlwaysUnreliable(subType);
+                HandleSubMessageLocked(subType, body.Slice(start, size).ToArray(), subReliable ? seq : SequenceId.Invalid, c, from, effects, ref disc);
+                if (subReliable) seq = SequenceId.Next(seq);
+                o = start + size;
+            }
+        }
+        else
+        {
+            HandleSubMessageLocked(type, body.ToArray(), isReliable ? seqMin : SequenceId.Invalid, c, from, effects, ref disc);
+        }
+        return disc;
+    }
+
+    /// <summary>
+    /// Whether walking a container's sub-messages reaches a valid type byte with fewer than three bytes
+    /// left, i.e. a size the engine would read past the end.
+    /// </summary>
+    private static bool WalkEndsInPartialHeader(ReadOnlySpan<byte> body)
+    {
+        int o = 0;
+        while (o < body.Length)
+        {
+            if (!ReliableMessageTypes.IsValid(body[o])) return false;
+            if (body.Length - o < FrameCodec.SubMessageOverhead) return true;
+            int end = o + FrameCodec.SubMessageOverhead + BinaryPrimitives.ReadUInt16LittleEndian(body[(o + 1)..]);
+            if (end > body.Length) return false;
+            o = end;
+        }
+        return false;
+    }
+
+    /// <summary>ReliableTransport::HandleSubMessage 0x00837418.</summary>
+    private void HandleSubMessageLocked(ReliableMessageType type, byte[] payload, ushort seq, ReliableConnection c,
+                                        IPEndPoint from, List<Action> effects, ref string? disc)
+    {
+        if (seq != SequenceId.Invalid && !c.AcceptReliable(seq)) return;
+        switch (type)
+        {
+            case ReliableMessageType.ConnectionRequest: break; // host-only; robot never sends it
+            case ReliableMessageType.ConnectionResponse:
+                if (State == LinkState.Connecting) { State = LinkState.Connected; effects.Add(() => Fan(Connected)); }
+                break;
+            case ReliableMessageType.DisconnectRequest: disc = "peer sent DisconnectRequest"; break;
+            case ReliableMessageType.SingleReliableMessage:
+            case ReliableMessageType.SingleUnreliableMessage:
+                DeliverDataLocked(payload, from, effects); break;
+            case ReliableMessageType.MultiPartMessage:
+                if (payload.Length > 2)
+                {
+                    int idx = payload[0], cnt = payload[1];
+                    if (idx == _multipartNext)
+                    {
+                        if (idx == 1) { _multipart.Clear(); _multipartLast = cnt; }
+                        _multipart.AddRange(payload.AsSpan(2).ToArray()); _multipartNext++;
+                        if (idx == _multipartLast)
+                        {
+                            DeliverDataLocked(_multipart.ToArray(), from, effects);
+                            _multipart.Clear(); _multipartNext = 1; _multipartLast = 0;
+                        }
+                    }
+                    else
+                    {
+                        var w = $"multipart out of order {idx}/{cnt}, expected {_multipartNext}";
+                        effects.Add(() => Fan(Warning, w));
+                    }
+                }
+                break;
+            case ReliableMessageType.Ack: break;
+            case ReliableMessageType.Ping: c.ReceivePing(payload); break;
+            default:
+                var unhandled = $"unhandled sub-message type {type}";
+                effects.Add(() => Fan(Warning, unhandled));
+                break;
+        }
+    }
+
+    /// <summary>
+    /// RobotConnectionManager's gate on an arrived data message: delivered only while Connected
+    /// (0x0062F724-2A) and from the peer's IP (0x0062F744); dropped otherwise, never held. The address test
+    /// is TransportAddress::operator== 0x00838E92-A6, which compares the IP and not the port.
+    /// </summary>
+    private void DeliverDataLocked(byte[] payload, IPEndPoint? from, List<Action> effects)
+    {
+        if (State != LinkState.Connected || from is null || _peer is null || !from.Address.Equals(_peer.Address)) return;
+        effects.Add(() => Fan(DataReceived, payload));
+    }
+}
+
+/// <summary>
+/// The transport's update schedule. <c>ReliableTransport::ChangeSyncMode</c> schedules its update every
+/// 2 ms (<c>Dispatch::ScheduleCallback</c> 0x0083689E), and <c>TaskExecutor::ProcessDeferredQueue</c> re-arms
+/// a repeating task at the <c>steady_clock::now()</c> it took when it picked the task up (0x007FC1BC) plus
+/// the period (0x007FC36A-76). A late run is followed by the next one a full period after it began, never
+/// by catch-up runs.
+/// </summary>
+internal sealed class TransportCadence
+{
+    private readonly INetClock _clock;
+    private readonly double _periodMs;
+    private double _dueMs;
+
+    public TransportCadence(INetClock clock, double periodMs)
+    {
+        _clock = clock; _periodMs = periodMs; _dueMs = clock.NowMs + periodMs;
+    }
+
+    /// <summary>When the next update may run.</summary>
+    public double DueMs => _dueMs;
+
+    public double MsUntilDue => _dueMs - _clock.NowMs;
+
+    /// <summary>If an update is due, re-arm for now + period and return true.</summary>
+    public bool TryBegin()
+    {
+        double now = _clock.NowMs;
+        if (now < _dueMs) return false;
+        _dueMs = now + _periodMs;
+        return true;
     }
 }

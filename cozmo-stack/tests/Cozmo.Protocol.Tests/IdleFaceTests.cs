@@ -27,6 +27,7 @@ public class IdleFaceTests
         RunIdle(double forMs, int seed = 9)
     {
         var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var start = robot.Face.Current.Clone();
         var arbiter = new BehaviorArbiter { AutonomyEnabled = true };
         var idle = new IdleBehavior(robot, arbiter, random: new Random(seed)) { Execute = true, ExecuteMotors = false };
@@ -136,6 +137,7 @@ public class IdleFaceTests
     public void TheFaceIsAlwaysTheBasePlusOneGazeAndNeverASumOfThem()
     {
         var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         using (robot)
         {
             var start = robot.Face.Current.Clone();
@@ -197,6 +199,7 @@ public class IdleFaceTests
     public void ABlinkRestoresTheStableFaceRatherThanAMutatedDartPose()
     {
         var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         using (robot)
         {
             var start = robot.Face.Current.Clone();
@@ -238,6 +241,7 @@ public class IdleFaceTests
     public void ADartRampsToItsGazeOverItsDurationAndThenHoldsIt()
     {
         var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         using (robot)
         {
             var start = robot.Face.Current.Clone();
@@ -296,6 +300,7 @@ public class IdleFaceTests
     public void IdleForgetsItsBaseWhenSomethingElseTakesTheFace()
     {
         var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         using (robot)
         {
             var arbiter = new BehaviorArbiter { AutonomyEnabled = true };

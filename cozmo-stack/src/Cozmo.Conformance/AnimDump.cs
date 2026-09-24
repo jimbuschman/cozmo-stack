@@ -130,6 +130,7 @@ public static class AnimDump
 
         var clock = new ManualClock { NowMs = 1000 };
         var robot = CozmoRobot.CreateOffline(TransportOptions.EngineDefaults, clock);
+        robot.Transport.OfflineAcceptConnection();
         var sink = new RobotAnimationSink(robot);
         var scheduler = new AnimationScheduler(sink);
         var skipped = new List<string>();

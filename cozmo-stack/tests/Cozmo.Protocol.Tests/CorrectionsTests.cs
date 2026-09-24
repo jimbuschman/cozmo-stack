@@ -150,6 +150,7 @@ public class CorrectionsTests
     public void AnActiveReactionIsNotReplacedByScoring()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var ctx = Context(robot);
         using var manager = new BehaviorManager(ctx);
         var idle = new Behavior("Idle", 1);
@@ -186,6 +187,7 @@ public class CorrectionsTests
     public void ALatchedStrategyIsNotConsumedWhileItsBehaviourIsUnrunnable()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var ctx = Context(robot);
         using var manager = new BehaviorManager(ctx);
         var latch = new LatchStrategy(ReactionTrigger.CliffDetected);
@@ -211,6 +213,7 @@ public class CorrectionsTests
         var obb = Obb();
         if (obb is null) return;
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var model = MoodModel.Load(obb);
         var mood = new MoodState(model);
         var down = model.Events.First(e => e.Affectors.Any(a => a.Emotion == EmotionType.Confident && a.Value < 0));
@@ -246,6 +249,7 @@ public class CorrectionsTests
     public void ReplacedAndOwnedStrategiesAreDisposed()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var ctx = Context(robot);
         var manager = new BehaviorManager(ctx);
         var first = new FakeStrategy(ReactionTrigger.RobotOnBack);
@@ -269,6 +273,7 @@ public class CorrectionsTests
     public void StaleResumeStateIsClearedWhenAReactionIsStoppedFromOutside()
     {
         using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
         var ctx = Context(robot);
         using var manager = new BehaviorManager(ctx);
         var idle = new Behavior("Idle", 1);
