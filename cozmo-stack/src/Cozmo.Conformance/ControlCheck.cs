@@ -58,8 +58,17 @@ public static class ControlCheck
     internal const string AnimClip = "anim_bored_01";
     internal const string CancelClip = "anim_codelab_staring_loop";
     internal const int AnimStallGapMs = 250, AnimCompletionSlackMs = 1000, AnimTimeoutSlackMs = 5000;
-    internal const int AnimEndGraceMs = 100, AnimEndWatchMs = 1000;
+    public const int AnimEndGraceMs = 100, AnimEndWatchMs = 1000;
     internal const int CancelAfterMs = 1000, CancelWatchMs = 1500;
+    /// <summary>
+    /// ANIM and ANIM_CANCEL: how long after a stream's last Update the streamer stays quiet. The keep-alive block (M5
+    /// inventory A31) runs once nothing streams and now - +0x88 &gt; +0x1C0 = 0.5 s, where +0x88 is the time of the
+    /// last streaming Update. It then replays the neutral face after an abort-to-nothing, and KeepFaceAlive's
+    /// persistent dart layer starts a layer stream (a new tag, StartOfAnimation, a frame every 33 ms, no End: MD4,
+    /// M5-028). So nothing new goes out for 0.5 s after the last streaming Update, less one 60 ms engine tick; this
+    /// window takes 400 ms, which leaves 40 ms for the End or the leftovers going out after that Update.
+    /// </summary>
+    public const int KeepAliveQuietMs = 400;
     /// <summary>
     /// ANIM_CANCEL: a cancel leaves the send buffer as it is and the next engine Update flushes it (M5 inventory A24,
     /// A25). The streamer builds a frame only while the buffer is empty, so at most one built frame is buffered, and a
@@ -97,10 +106,10 @@ public static class ControlCheck
             new[] { "M3-006", "M3-007", "M3-008", "M3-015" }),
         new("AUDIO", "A 1 s two-beep sequence through CozmoAudio.Play: at least 25 audio frames played and the drop count stays",
             new[] { "M1-042", "M3-010", "M3-011", "M3-012", "M3-013", "M3-014", "M3-017" }),
-        new("ANIM", "anim_bored_01 plays to completion (only with --allow-drive: it rolls back about 2 cm): every keyframe fires, no stall, streaming stops at the end",
-            new[] { "M1-041", "M5-001", "M5-004", "M5-006", "M5-007", "M5-008", "M5-016", "M5-018", "M5-019", "M5-023", "M5-026" }),
-        new("ANIM_CANCEL", "A long animation cancelled after 1 s: it ends Cancelled, no new frame is built after the cancel (at most one buffered frame goes out) and no EndOfAnimation is sent",
-            new[] { "M5-008", "M5-023", "M5-026" }),
+        new("ANIM", "anim_bored_01 plays to completion (only with --allow-drive: it rolls back about 2 cm): every keyframe fires, no stall, the clip's stream ends with one EndOfAnimation and stays quiet until the keep-alive stream; the keep-alive stream recorded",
+            new[] { "M1-041", "M5-001", "M5-004", "M5-006", "M5-007", "M5-008", "M5-016", "M5-018", "M5-019", "M5-023", "M5-026", "M5-028", "M5-036" }),
+        new("ANIM_CANCEL", "A long animation cancelled after 1 s: it ends Cancelled, AbortAnimation 0x8D is sent, no new frame is built after the cancel (at most one buffered frame goes out) and no EndOfAnimation is sent before the keep-alive block runs; the neutral-face replay and the keep-alive stream recorded",
+            new[] { "M5-008", "M5-010", "M5-023", "M5-026", "M5-028", "M5-036" }),
         new("CUBES", "Block pool enabled at connect; a cube is heard, one connects, and its accelerometer stream arrives; cube-light sends and cube telemetry recorded",
             new[] { "M1-042", "M4-008", "M4-009", "M4-010", "M4-011", "M4-018", "M4-023", "M4-024", "M9-017" }),
         new("CAMERA", "The camera stream opened at connect gives at least 30 complete frames in 3 s, each grey frame a 320x240 JPEG",
@@ -118,6 +127,8 @@ public static class ControlCheck
         ("M4-021", "whether the robot reports the origin id and frame from AbsoluteLocalizationUpdate in RobotState: CONNECT records the origins and frames it reported and the origin-rejected count, with no verdict (originAccepted). "
                    + "If it never reports origin 1, the engine drops every state from the pose and history (M4-020) while the first-full-state and Update steps still run"),
         ("M4-024", "what makes the robot forward cube telemetry after connection, and the robot-side effect of StreamObjectAccel: CUBES records every cube telemetry message received, with no verdict; its accelStream criterion depends on this"),
+        ("M5-036", "robot-side animation behaviour: how the robot handles AbortAnimation 0x8D and the leftovers after it, and a StartOfAnimation with no End (the unbounded keep-alive stream, MD4). "
+                   + "ANIM and ANIM_CANCEL record the keep-alive stream and the neutral replay (keepAliveStream, neutralReplay) with no verdict; their criteria stop before the keep-alive block"),
     };
 
     /// <summary>Every fidelity record the run's result names. Each must exist in re-analysis/fidelity_manifest.json.</summary>
@@ -1428,7 +1439,9 @@ internal sealed class ControlRun
         var audio = sends.Where(s => (s.Tag == AudioSampleTag || s.Tag == AudioSilenceTag) && (start is null || s.T >= start.T) && (double.IsNaN(endT) || s.T <= endT)).Select(s => s.T).ToList();
         double maxGap = ControlCheck.MaxGap(audio);
         double wall = start is null || double.IsNaN(endT) ? double.NaN : endT - start.T;
-        var late = double.IsNaN(endT) ? sends : sends.Where(s => s.T > endT + ControlCheck.AnimEndGraceMs).ToList();
+        // after the End: the grace, then the quiet window up to the keep-alive block (A31), then the keep-alive stream
+        var late = double.IsNaN(endT) ? sends : sends.Where(s => s.T > endT + ControlCheck.AnimEndGraceMs && s.T <= endT + ControlCheck.KeepAliveQuietMs).ToList();
+        var keepAlive = double.IsNaN(endT) ? new List<Sent>() : sends.Where(s => s.T > endT + ControlCheck.KeepAliveQuietMs).ToList();
         var robotTags = AnimStates().Where(a => a.T >= play && a.T <= watchEnd).Select(a => (int)a.A.Tag).Distinct().ToList();
 
         c.Measured["clip"] = clip.Name;
@@ -1457,11 +1470,14 @@ internal sealed class ControlRun
         c.Crit("noStall", $"no stall: no gap over {ControlCheck.AnimStallGapMs} ms between consecutive animation audio frames sent, and StartOfAnimation to EndOfAnimation within the clip's {clip.DurationMs} ms + {ControlCheck.AnimCompletionSlackMs} ms",
             new JsonObject { ["maxAudioFrameGapMs"] = LinkCheck.Num(maxGap), ["streamWallMs"] = LinkCheck.Num(wall) },
             !double.IsNaN(maxGap) && maxGap <= ControlCheck.AnimStallGapMs && !double.IsNaN(wall) && wall <= clip.DurationMs + ControlCheck.AnimCompletionSlackMs);
-        c.Crit("streamingStops", $"no animation message (audio, face, head, lift, body, start/end) first sent more than {ControlCheck.AnimEndGraceMs} ms after the EndOfAnimation, over a {ControlCheck.AnimEndWatchMs} ms watch; the animation loop no longer ticking",
-            new JsonObject { ["lateMessages"] = late.Count, ["ticking"] = ticking, ["endOfAnimationSends"] = ends.Count },
-            !double.IsNaN(endT) && late.Count == 0 && !ticking && ends.Count == 1);
+        c.Crit("clipStreamEnds", $"the clip's stream ends: exactly one EndOfAnimation over a {ControlCheck.AnimEndWatchMs} ms watch, and no animation message (audio, face, head, lift, body, start/end) first sent from {ControlCheck.AnimEndGraceMs} ms to {ControlCheck.KeepAliveQuietMs} ms after it "
+                 + "(A20, A31: after the End nothing streams until the keep-alive block's 0.5 s timeout; the engine keeps ticking, so the loop still ticking is expected)",
+            new JsonObject { ["lateMessages"] = late.Count, ["endOfAnimationSends"] = ends.Count },
+            !double.IsNaN(endT) && late.Count == 0 && ends.Count == 1);
+        KeepAliveObservation(c, keepAlive, endT, start is { Payload.Length: > 1 } ? start.Payload[1] : null, "after the clip's EndOfAnimation");
         c.Note = "the spec's \"no stall reported\" has no stall report in the public API; it is measured as the largest gap between the animation's audio frames on the wire and the stream's wall duration. The clip has a body keyframe (a short backward roll). "
-                 + "keyframesFired, noStall and streamingStops are judged from the stack's own side: the scheduler's keyframe count and the messages the stack sent. "
+                 + "keyframesFired, noStall and clipStreamEnds are judged from the stack's own side: the scheduler's keyframe count and the messages the stack sent. "
+                 + "The keep-alive stream that follows (MD4, M5-028) is recorded in keepAliveStream, not judged: how the robot handles a Start with no End is HARDWARE_ONLY (M5-036). "
                  + "The robot-side evidence (robotReportedTags, the AnimationState stream in events.jsonl) is recorded, not judged.";
     }
 
@@ -1483,17 +1499,24 @@ internal sealed class ControlRun
         double cancelled = Mark("cancelReturned");
         bool playingAfterCancel = robot.Animations.Scheduler.IsPlaying;
         AnimationEndReason? reason = await Task.WhenAny(ticket.Completion, Task.Delay(1000)) == ticket.Completion ? ticket.Completion.Result : null;
-        Hold(ControlCheck.CancelWatchMs);
+        // The leftovers are counted only up to the keep-alive block (A31): after it the neutral-face replay and the
+        // keep-alive stream send frames of their own.
+        Hold(Math.Max(0, (int)(cancel + ControlCheck.KeepAliveQuietMs - Now())));
+        int framesAtQuiet = stream.FramesStreamed;
+        bool liveActive = robot.Animations.Scheduler.LiveStreamActive;
+        double quietEnd = Mark("cancelQuietEnd");
+        Hold(Math.Max(0, (int)(cancel + ControlCheck.CancelWatchMs - Now())));
         int framesAtEnd = stream.FramesStreamed;
         double end = Mark("cancelWatchEnd");
         bool ticking = robot.Animations.IsTicking;
-        bool liveActive = robot.Animations.Scheduler.LiveStreamActive;
-        int leftoverFrames = unchecked(framesAtEnd - framesAtCancel);
+        int leftoverFrames = unchecked(framesAtQuiet - framesAtCancel);
 
         var sends = FirstSends().Where(s => s.T >= play && AnimStreamTags.Contains(s.Tag)).ToList();
         var beforeCancel = sends.Where(s => s.T <= cancel).ToList();
         var afterCancel = sends.Where(s => s.T > cancel).ToList();
-        var endsAfter = afterCancel.Where(s => s.Tag == EndTag).ToList();
+        var quiet = afterCancel.Where(s => s.T <= quietEnd).ToList();
+        var endsAfter = quiet.Where(s => s.Tag == EndTag).ToList();
+        var replay = afterCancel.Where(s => s.T > quietEnd).ToList();
         var abortSends = FirstSends().Where(s => s.T >= cancel && s.T <= end && s.Tag == (byte)RobotMessageId.AbortAnimation).ToList();
 
         c.Measured["clip"] = clip.Name;
@@ -1510,31 +1533,69 @@ internal sealed class ControlRun
         c.Measured["stopIfCurrentMs"] = LinkCheck.Num(cancelled - cancel);
         c.Measured["streamBufferMessagesAtCancel"] = bufferedAtCancel;
         c.Measured["streamFramesSentAfterCancel"] = leftoverFrames;
+        c.Measured["streamFramesSentToWatchEnd"] = unchecked(framesAtEnd - framesAtCancel);
+        c.Measured["quietWindowMs"] = LinkCheck.Num(quietEnd - cancel);
         c.Measured["playingAfterCancel"] = playingAfterCancel;
         c.Measured["liveStreamActive"] = liveActive;
         c.Measured["watchMs"] = LinkCheck.Num(end - cancel);
         c.Measured["tickingAfterWatch"] = ticking;
-        c.Measured["note"] = "streamFramesSentAfterCancel is the send buffer's frame counter (StreamSendBuffer.FramesStreamed: one per AudioSample, AudioSilence or EndOfAnimation sent) from StopIfCurrent's return to the end of the watch. "
+        c.Measured["note"] = "streamFramesSentAfterCancel is the send buffer's frame counter (StreamSendBuffer.FramesStreamed: one per AudioSample, AudioSilence or EndOfAnimation sent) from StopIfCurrent's return to the end of the quiet window (cancelQuietEnd); streamFramesSentToWatchEnd runs to the end of the watch and includes the neutral replay and the keep-alive stream. "
                              + "The wire counts (audioFramesOnWireAfterCancel, lastAnimMessageAfterCancelMs) are measured from the host's cancel call; they are recorded, not judged, because the transport queues sends (flush 0) and can put a frame built before the cancel on the wire after it";
 
         c.Crit("streamedBeforeCancel", "the animation was streaming before the cancel: StartOfAnimation and at least one audio frame sent", beforeCancel.Count,
             beforeCancel.Any(s => s.Tag == StartTag) && beforeCancel.Any(s => s.Tag == AudioSampleTag || s.Tag == AudioSilenceTag));
         c.Crit("cancelled", "the animation ended with AnimationEndReason.Cancelled", reason?.ToString(), reason == AnimationEndReason.Cancelled);
-        string noNewExpected = $"no new animation frame is built after the cancel: the clip is no longer playing when StopIfCurrent returns, and at most {ControlCheck.CancelMaxLeftoverAudioFrames} audio frame of already-buffered messages is sent after it, over a {ControlCheck.CancelWatchMs} ms watch "
-                               + "(M5 inventory A24/A25: the cancel keeps the send buffer, the next engine Update flushes it within the budget; the buffer holds at most one built frame)";
+        string noNewExpected = $"no new animation frame is built after the cancel: the clip is no longer playing when StopIfCurrent returns, and at most {ControlCheck.CancelMaxLeftoverAudioFrames} audio frame of already-buffered messages is sent in the {ControlCheck.KeepAliveQuietMs} ms after it "
+                               + "(M5 inventory A24/A25: the cancel keeps the send buffer, the next engine Update flushes it within the budget; the buffer holds at most one built frame. A31: the neutral replay and the keep-alive start only after 0.5 s)";
         var noNewMeasured = new JsonObject { ["streamFramesSentAfterCancel"] = leftoverFrames, ["playingAfterCancel"] = playingAfterCancel, ["streamBufferMessagesAtCancel"] = bufferedAtCancel };
         if (liveActive)
             c.Crit("noNewFrameAfterCancel", noNewExpected, noNewMeasured, null, "the live (keep-alive) stream was active, so frames after the cancel may be the live stream's, not the cancelled clip's");
         else
             c.Crit("noNewFrameAfterCancel", noNewExpected, noNewMeasured, !playingAfterCancel && leftoverFrames <= ControlCheck.CancelMaxLeftoverAudioFrames);
-        c.Crit("noEndOfAnimationAfterCancel", $"no EndOfAnimation sent after the cancel, over a {ControlCheck.CancelWatchMs} ms watch (A25: Abort clears startSent, so none follows)",
+        c.Crit("noEndOfAnimationAfterCancel", $"no EndOfAnimation sent in the {ControlCheck.KeepAliveQuietMs} ms after the cancel (A25: Abort clears startSent, so none follows; the neutral replay's own End comes after the keep-alive block, A31)",
             endsAfter.Count, endsAfter.Count == 0);
-        c.Obs("abortAnimationSent", new[] { "M5-023" },
-            "was AbortAnimation 0x8D sent on the cancel? The engine sends it reliable, synchronously inside Abort (A22, A23); this stack does not send it yet",
+        c.Crit("abortAnimationSent", $"exactly one AbortAnimation 0x8D sent after the cancel, over the {ControlCheck.CancelWatchMs} ms watch (A22, A23: the AnimationAborted broadcast makes the robot layer send it reliable, directly, not through the stream buffer)",
             new JsonObject { ["abortAnimationSends"] = SendsIn(abortSends, cancel, end, cancel, RobotMessageId.AbortAnimation), ["count"] = abortSends.Count },
-            "M5-023 is IMPLEMENTATION_GAP: the 0x8D send is not built in this stack, and how the robot reacts to 0x8D is HARDWARE_ONLY (M5 inventory A23, A25)");
-        c.Note = "the cancel is StopIfCurrent, this stack's Abort (M5-023): the send buffer is kept and flushed by the next Update, and no EndOfAnimation follows (A24, A25). "
-                 + "AbortAnimation 0x8D is not sent by this stack yet (the M5-023 gap); abortAnimationSent records whether it was. The clip has face and audio tracks only.";
+            abortSends.Count == 1);
+        var replayStarts = replay.Where(s => s.Tag == StartTag).ToList();
+        var replayEnds = replay.Where(s => s.Tag == EndTag).ToList();
+        c.Obs("neutralReplay", new[] { "M5-010", "M5-036" },
+            "after the quiet window, does the neutral face replay (A31: +0x73 set by the abort-to-nothing gives SetStreamingAnimation(neutral), a stream with its own StartOfAnimation and EndOfAnimation), and what follows it?",
+            new JsonObject
+            {
+                ["firstMessageAfterCancelMs"] = replay.Count == 0 ? null : LinkCheck.Num(replay.Min(s => s.T) - cancel),
+                ["startOfAnimationSends"] = new JsonArray(replayStarts.Select(s => (JsonNode)new JsonObject { ["afterCancelMs"] = LinkCheck.Num(s.T - cancel), ["tag"] = s.Payload.Length > 1 ? JsonValue.Create(s.Payload[1]) : null }).ToArray()),
+                ["endOfAnimationSends"] = new JsonArray(replayEnds.Select(s => (JsonNode?)LinkCheck.Num(s.T - cancel)).ToArray()),
+                ["messages"] = Histogram(replay.Select(s => TagName(s.Tag))),
+            },
+            "M5-010 is IMPLEMENTATION_GAP (the neutral face's residual), and the robot's side of the replay and the keep-alive stream that follows is HARDWARE_ONLY (M5-036)");
+        c.Note = "the cancel is StopIfCurrent, this stack's Abort (M5-023): AbortAnimation 0x8D is sent, the send buffer is kept and flushed by the next Update, and no EndOfAnimation follows (A22..A25). "
+                 + $"About 0.5 s later the keep-alive block (A31) replays the neutral face and the keep-alive stream starts; the criteria stop at {ControlCheck.KeepAliveQuietMs} ms, and neutralReplay records the rest. The clip has face and audio tracks only.";
+    }
+
+    /// <summary>
+    /// The keep-alive stream after a clip (MD4, M5-028): StreamLayers with KeepFaceAlive's persistent dart layer gives a
+    /// new tag, StartOfAnimation, then a frame every 33 ms and no EndOfAnimation. Recorded, not judged: how the robot
+    /// handles a Start with no End is HARDWARE_ONLY (M5-036).
+    /// </summary>
+    private void KeepAliveObservation(CheckRec c, List<Sent> keepAlive, double from, byte? clipTag, string when)
+    {
+        var starts = keepAlive.Where(s => s.Tag == StartTag).ToList();
+        var faces = keepAlive.Where(s => s.Tag == (byte)RobotMessageId.AnimFaceImage).Select(s => s.T).ToList();
+        double meanFace = faces.Count < 2 ? double.NaN : (faces[^1] - faces[0]) / (faces.Count - 1);
+        c.Obs("keepAliveStream", new[] { "M5-028", "M5-036" },
+            $"{when}, does the keep-alive stream start about 0.5 s later (A31), with a new StartOfAnimation tag, a FaceImage about every 33 ms and no EndOfAnimation (MD4)?",
+            new JsonObject
+            {
+                ["firstMessageAfterMs"] = keepAlive.Count == 0 || double.IsNaN(from) ? null : LinkCheck.Num(keepAlive.Min(s => s.T) - from),
+                ["clipTag"] = clipTag is { } t ? JsonValue.Create(t) : null,
+                ["startOfAnimationTags"] = new JsonArray(starts.Select(s => s.Payload.Length > 1 ? (JsonNode?)JsonValue.Create(s.Payload[1]) : null).ToArray()),
+                ["faceImages"] = faces.Count,
+                ["meanFaceIntervalMs"] = LinkCheck.Num(meanFace),
+                ["endOfAnimationSends"] = keepAlive.Count(s => s.Tag == EndTag),
+                ["messages"] = Histogram(keepAlive.Select(s => TagName(s.Tag))),
+            },
+            "the stack side is M5-028; the robot's handling of the unbounded stream is HARDWARE_ONLY (M5-036)");
     }
 
     // ------------------------------------------------------------------ CUBES
@@ -2172,7 +2233,7 @@ internal sealed class ControlRun
         sb.AppendLine();
         sb.AppendLine("## Files");
         sb.AppendLine();
-        sb.AppendLine("- `result.json`: `overall` (PASS only if every check passed; INCOMPLETE if none failed but some were skipped; FAIL otherwise). Each check has `status` (PASS, FAIL, SKIPPED with `skipReason`), `records` (fidelity ids with their manifest status), `prerequisites`, `criteria` (each with `expected`, `measured`, `pass`), `measured`, `warnings`, and, where a person has to judge, `humanNote` with `humanVerdict: null` for the operator to fill in. `observation` (CAMERA) is the M3-016 colour observation, without a verdict. `observations` (per check) are measurements with `pass: null` and a `notJudged` reason, each naming its records: CONNECT's pose origins after the AbsoluteLocalizationUpdate, origin-rejected states, DefaultCameraParams, the connection-time SetCameraParams and the NV calibration read; DRIVE's track locks and cliff handling; ANIM_CANCEL's AbortAnimation; CUBES's cube-light sends and cube telemetry; CAMERA's frame luminance. They never enter a status. The top-level `observations` holds the backpack light rate. `hardwareOnlyUncertainty` lists the HARDWARE_ONLY records the run depends on.");
+        sb.AppendLine("- `result.json`: `overall` (PASS only if every check passed; INCOMPLETE if none failed but some were skipped; FAIL otherwise). Each check has `status` (PASS, FAIL, SKIPPED with `skipReason`), `records` (fidelity ids with their manifest status), `prerequisites`, `criteria` (each with `expected`, `measured`, `pass`), `measured`, `warnings`, and, where a person has to judge, `humanNote` with `humanVerdict: null` for the operator to fill in. `observation` (CAMERA) is the M3-016 colour observation, without a verdict. `observations` (per check) are measurements with `pass: null` and a `notJudged` reason, each naming its records: CONNECT's pose origins after the AbsoluteLocalizationUpdate, origin-rejected states, DefaultCameraParams, the connection-time SetCameraParams and the NV calibration read; DRIVE's track locks and cliff handling; ANIM's and ANIM_CANCEL's keep-alive stream (keepAliveStream) and ANIM_CANCEL's neutral-face replay (neutralReplay); CUBES's cube-light sends and cube telemetry; CAMERA's frame luminance. They never enter a status. The top-level `observations` holds the backpack light rate. `hardwareOnlyUncertainty` lists the HARDWARE_ONLY records the run depends on.");
         sb.AppendLine("- `frames.jsonl`: every datagram the transport's frame trace reported, both directions: time `t` (ms since start), `phase`, header, sub-messages with CLAD tag and name, and the raw datagram as `hex`. Inbound frames holding only camera image chunks outside the CAMERA window carry `hexOmitted` instead of `hex`, to keep the bundle small.");
         sb.AppendLine("- `events.jsonl`: phases, check verdicts, the engine's log, transport warnings, the connection response, every handled RobotState (pose, head, lift, wheels, battery), every AnimationState, other robot messages, cube, cliff and calibration events.");
         sb.AppendLine("- `env.json`: git HEAD and dirty state, SHA-256 of the tool and the stack sources and of the assemblies that ran, the robot's firmware (connection response and firmwareVersion JSON, policy M1-040), OS, .NET, the fixed criteria.");

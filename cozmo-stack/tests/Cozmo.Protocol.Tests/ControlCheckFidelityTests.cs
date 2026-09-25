@@ -73,8 +73,8 @@ public class ControlCheckFidelityTests
     [InlineData("DRIVE", new[] { "M4-014", "M4-019" })]
     [InlineData("HEAD", new[] { "M4-003", "M4-016" })]
     [InlineData("LIFT", new[] { "M4-003", "M4-016" })]
-    [InlineData("ANIM", new[] { "M5-023", "M5-026" })]
-    [InlineData("ANIM_CANCEL", new[] { "M5-023", "M5-026" })]
+    [InlineData("ANIM", new[] { "M5-023", "M5-026", "M5-028", "M5-036" })]
+    [InlineData("ANIM_CANCEL", new[] { "M5-010", "M5-023", "M5-026", "M5-028", "M5-036" })]
     public void EachCheckNamesTheRecordsOfItsNewCriteriaAndObservations(string check, string[] ids)
     {
         var records = ControlCheck.Checks.Single(c => c.Id == check).Records;
@@ -104,6 +104,19 @@ public class ControlCheckFidelityTests
         Assert.Contains("noNewFrameAfterCancel", src);
         Assert.Contains("noEndOfAnimationAfterCancel", src);
         Assert.Contains("abortAnimationSent", src);
+    }
+
+    [Fact]
+    public void TheCancelAndEndCriteriaStopBeforeTheKeepAliveBlock()
+    {
+        // M5 inventory A31: the keep-alive block runs once nothing streams and now - +0x88 > +0x1C0 = 0.5 s, where +0x88 is
+        // the last streaming Update; one 60 ms engine tick earlier at most. The criteria's window must end before that.
+        Assert.True(ControlCheck.KeepAliveQuietMs <= 500 - 60, $"{ControlCheck.KeepAliveQuietMs}");
+        Assert.True(ControlCheck.KeepAliveQuietMs > ControlCheck.AnimEndGraceMs);
+        var src = File.ReadAllText(Path.Combine(RepoRoot(), "cozmo-stack", "src", "Cozmo.Conformance", "ControlCheck.cs"));
+        Assert.DoesNotContain("\"streamingStops\"", src);
+        Assert.Contains("\"keepAliveStream\"", src);
+        Assert.Contains("\"neutralReplay\"", src);
     }
 
     [Fact]

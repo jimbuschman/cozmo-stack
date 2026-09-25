@@ -244,7 +244,7 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
   - CAMERA should record image brightness (M3-019).
 - **From the M5 verifier (2026-09-25, non-blocking):**
   - **LiveUpdateFailed:** when UpdateLiveAnimation returns 1 the engine logs and returns (0x0057D086..0x0057D0E6); the code logs and carries on to the tail. Unreachable: an add fails only above 1000 keyframes.
-  - **control-check keep-alive:** ANIM's `streamingStops` and ANIM_CANCEL's `noNewFrameAfterCancel` / `noEndOfAnimationAfterCancel` fail on the MD4 keep-alive stream and the neutral-face replay; the `abortAnimationSent` note is stale. Must be fixed before the next robot run.
+  - **control-check keep-alive: done (2026-09-25).** ANIM's `streamingStops` became `clipStreamEnds`, and ANIM_CANCEL's leftover and End criteria now stop at KeepAliveQuietMs = 400 ms, before the keep-alive block's 0.5 s (A31). `abortAnimationSent` is now a criterion (exactly one 0x8D). The keep-alive stream and the neutral replay are recorded as the observations `keepAliveStream` and `neutralReplay`, and M5-036 is in the run's hardwareOnlyUncertainty.
 - **From the M4 verifier (2026-09-25):**
   - **M10-007** is EXACT_SOURCE, but Apply has no production caller. The engine's CheckForUnexpectedMovement calls SetNewPose (0x0063E87E), and through F1..F3 that sends an AbsoluteLocalizationUpdate. Put this in M10-007's `unresolved` when M10 is inventoried; check the config flag kCreateUnexpectedMovementObstacles (0x00C7F620).
   - **SetBodyRadioMode order:** the stack sends it before SetOnCharger's threshold; the engine sends SetOnCharger's threshold (0x00512AB4) before SetBodyRadioMode (0x00512B46). This only matters if both fire in the same state.
