@@ -322,7 +322,7 @@ public sealed class PlaceObjectOnGroundAction
     {
         RelX = 0f, RelY = 0f, RelAngle = 0f,
         SpeedMmps = SpeedMmps, AccelMmps2 = AccelMmps2, DecelMmps2 = DecelMmps2,
-        Field6 = (byte)(flag ? 1 : 0),
+        Field6 = flag,
     };
 
     public async Task<ActionResult> RunAsync(CancellationToken cancel)

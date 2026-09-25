@@ -21,11 +21,20 @@ public enum DockAction : byte
 /// </summary>
 public enum DockingMethod : byte { Default = 0, Method1 = 1, Method2 = 2 }
 
-/// <summary><c>PickAndPlaceResult.blockStatus</c>: 0 no block, 1 block picked up, 2 block placed (<c>HandlePickAndPlaceResult</c> 0x00533781).</summary>
-public enum BlockStatus : byte { NoBlock = 0, BlockPickedUp = 1, BlockPlaced = 2 }
+// fidelity: M2-014
+/// <summary>
+/// <c>PickAndPlaceResult.blockStatus</c>: 0 NO_BLOCK, 1 BLOCK_PLACED, 2 BLOCK_PICKED_UP. The names and values are
+/// the engine's <c>EnumToString(BlockStatus)</c> 0x007C168C, whose table at 0x01034984 points to "NO_BLOCK",
+/// "BLOCK_PLACED", "BLOCK_PICKED_UP"; <c>HandlePickAndPlaceResult</c> branches on +6 == 2 to its BlockPickedUp
+/// log (0x005337A4) and on +6 == 1 to its BlockPlaced log (0x005337A8).
+/// </summary>
+public enum BlockStatus : byte { NoBlock = 0, BlockPlaced = 1, BlockPickedUp = 2 }
 
-/// <summary>The robot's report at the end of a dock: <c>PickAndPlaceResult {timestamp u32, didSucceed u8, result u8, blockStatus u8}</c>.</summary>
-public sealed record DockResult(uint Timestamp, bool Succeeded, byte DockingResult, BlockStatus Status)
+/// <summary>
+/// The robot's report at the end of a dock: <c>PickAndPlaceResult {u32 timestamp, bool success, i8 DockingResult,
+/// u8 blockStatus}</c> (Unpack 0x007C1AC6, <c>Read&lt;bool&gt;</c> 0x007C1ADA; the handler reads +5 with ldrsb).
+/// </summary>
+public sealed record DockResult(uint Timestamp, bool Succeeded, sbyte DockingResult, BlockStatus Status)
 {
     public override string ToString() => $"{(Succeeded ? "succeeded" : "failed")} result={DockingResult} status={Status} t={Timestamp}";
 }
@@ -228,10 +237,10 @@ public sealed class DockingSystem : IDisposable
         AccelMmps2 = accelMmps2,
         DecelMmps2 = decelMmps2,
         DockAction = (byte)action,
-        Field5 = (byte)(unlockLiftTrack ? 1 : 0),
+        Field5 = unlockLiftTrack,
         Field6 = 0,
         DockingMethod = (byte)method,
-        Field8 = (byte)(flag8 ? 1 : 0),
+        Field8 = flag8,
     };
 
     /// <summary>
@@ -320,7 +329,7 @@ public sealed class DockingSystem : IDisposable
         // The timestamp is the first word, not the last: UpdateDockingErrorSignal writes its only
         // argument straight into it at 0x0063C14A, before any of the geometry.
         Send(new DockingErrorSignal { Timestamp = r.Timestamp, XDist = (float)x, YDist = (float)y, ZDist = (float)z,
-                                      Angle = (float)angle, Field5 = 0, Field6 = 0 });
+                                      Angle = (float)angle, Field5 = false, Field6 = false });
         ErrorSignalsSent++;
     }
 
@@ -330,7 +339,7 @@ public sealed class DockingSystem : IDisposable
         {
             case PickAndPlaceResult r:
             {
-                var result = new DockResult(r.Field0, r.Field1 != 0, r.Field2, (BlockStatus)r.Field3);
+                var result = new DockResult(r.Field0, r.Field1, r.Field2, (BlockStatus)r.Field3);
                 Log?.Invoke($"PickAndPlaceResult: {result}");
                 uint? objectId; KnownMarker? dockMarker;
                 lock (_gate) { objectId = _active?.ObjectId; dockMarker = _active?.Marker; }

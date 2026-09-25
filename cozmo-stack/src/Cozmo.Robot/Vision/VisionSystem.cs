@@ -473,7 +473,7 @@ public static class TurnTowardsPose
         AccelRadPerSec2 = (float)accel,
         ToleranceRad = (float)tolerance,
         NumHalfRevolutions = numHalfRevolutions,
-        IsAbsolute = (byte)(isAbsolute ? 1 : 0),
+        IsAbsolute = isAbsolute,
         ActionId = actionId,
     };
 
@@ -496,7 +496,7 @@ public static class TurnTowardsPose
             AccelRadPerSec2 = (float)accel,
             ToleranceRad = (float)tolerance,
             NumHalfRevolutions = (ushort)Math.Floor(Math.Abs(relativeTurnRad) / Math.PI),
-            IsAbsolute = 0,
+            IsAbsolute = false,
             ActionId = actionId,
         };
     }

@@ -195,7 +195,7 @@ internal sealed class Rig : IDisposable
                     {
                         // the fake firmware places from where it stands, without waiting for a marker signal
                         _dockPending = false; DockResults++; OnDockResult?.Invoke();
-                        Send(new PickAndPlaceResult { Field0 = T, Field1 = (byte)(DockSucceeds ? 1 : 0), Field2 = 0, Field3 = (byte)(DockSucceeds ? BlockStatus.BlockPlaced : BlockStatus.NoBlock) });
+                        Send(new PickAndPlaceResult { Field0 = T, Field1 = DockSucceeds, Field2 = 0, Field3 = (byte)(DockSucceeds ? BlockStatus.BlockPlaced : BlockStatus.NoBlock) });
                     }
                     break;
                 case DockingErrorSignal es when _dockPending:
@@ -211,11 +211,11 @@ internal sealed class Rig : IDisposable
                             UpdateChargerContact(alignFromX, alignFromY); State();
                         }
                         OnDockResult?.Invoke();
-                        Send(new PickAndPlaceResult { Field0 = T, Field1 = (byte)(DockSucceeds ? 1 : 0), Field2 = 0, Field3 = (byte)(DockSucceeds ? DockOutcome : BlockStatus.NoBlock) });
+                        Send(new PickAndPlaceResult { Field0 = T, Field1 = DockSucceeds, Field2 = 0, Field3 = (byte)(DockSucceeds ? DockOutcome : BlockStatus.NoBlock) });
                     }
                     break;
                 case PlaceObjectOnGround:
-                    Send(new PickAndPlaceResult { Field0 = T, Field1 = 1, Field2 = 0, Field3 = (byte)BlockStatus.BlockPlaced });
+                    Send(new PickAndPlaceResult { Field0 = T, Field1 = true, Field2 = 0, Field3 = (byte)BlockStatus.BlockPlaced });
                     break;
                 case SetHeadAngle sh:
                     Head = sh.AngleRad; State();                      // the fake robot's head follows the command at once

@@ -13,7 +13,7 @@ Evidence order: (1) official decompiled C# CLAD structs, (2) `libcozmoEngine.so`
 | | count |
 |---|---|
 | official robot messages | **161** (105 engine->robot, 56 robot->engine) |
-| fields defined | 404 |
+| fields defined | 403 |
 | messages with a complete byte layout | **159** |
 | messages with unresolved fields | 2 |
 | nested structs | 7 |
@@ -34,13 +34,13 @@ Evidence order: (1) official decompiled C# CLAD structs, (2) `libcozmoEngine.so`
 
 | source | fields |
 |---|---|
-| official decompiled C# | 150 |
-| generated placeholder | 129 |
-| engine | 59 |
+| official decompiled C# | 148 |
+| generated placeholder | 128 |
+| engine | 62 |
 | PyCozmo (widths agreed with native) | 57 |
-| hardware capture | 9 |
+| hardware capture | 8 |
 
-129 of 404 fields still carry a generated placeholder name; 138 fields are flagged uncertain.
+128 of 403 fields still carry a generated placeholder name; 137 fields are flagged uncertain.
 Unknown bytes are never invented: a message whose layout does not add up keeps an explicit `unknownTail`
 raw field, and placeholder names are `field0`, `field1`, ... so they cannot be mistaken for official ones.
 
@@ -98,7 +98,7 @@ raw field, and placeholder names are `field0`, `field1`, ... so they cannot be m
 | `0xDB` | R->E | BackpackButton | 1 | native_named | layout known, semantics uncertain | state_change |
 | `0xDC` | R->E | IMUTemperature | 4 | exact | statically verified | state_change |
 | `0xDD` | R->E | FallingStarted | 4 | native_named | layout known, semantics uncertain | state_change |
-| `0xDE` | R->E | FallingStopped | 12 | prefix | statically verified | state_change |
+| `0xDE` | R->E | FallingStopped | 12 | hardware_refined | statically verified | state_change |
 | `0xF0` | R->E | RobotState | 91 | exact | hardware verified | state_change |
 
 ### Head / lift / wheels (19 messages)
@@ -334,14 +334,14 @@ them, so some field names are placeholders. Sending them is safe; interpreting t
 | `0xAD` | AppConnectGetRobotIP | firmware_update_recovery | field0 u8 |
 | `0xB1` | PrintText | identity_version_logging | field0 u8, field1 string[u8 count] |
 | `0xB2` | MainCycleTimeError | identity_version_logging | field0 u32, field1 u32, field2 u32, field3 u32 |
-| `0xB3` | GoalPose | localization_navigation | field0 RobotPose, field1 u8 |
+| `0xB3` | GoalPose | localization_navigation | field0 RobotPose, field1 bool |
 | `0xB7` | DataDump | identity_version_logging | field0 u32, field1 u8[u8 count] |
-| `0xB8` | PickAndPlaceResult | localization_navigation | field0 u32, field1 u8, field2 u8, field3 u8 |
+| `0xB8` | PickAndPlaceResult | localization_navigation | field0 u32, field1 bool, field2 i8, field3 u8 |
 | `0xBA` | RampTraverseStart | localization_navigation | field0 u32 |
-| `0xBB` | RampTraverseComplete | localization_navigation | field0 u32, field1 u8 |
+| `0xBB` | RampTraverseComplete | localization_navigation | field0 u32, field1 bool |
 | `0xBC` | BridgeTraverseStart | localization_navigation | field0 u32 |
-| `0xBD` | BridgeTraverseComplete | localization_navigation | field0 u32, field1 u8 |
-| `0xBE` | TimeProfileStat | identity_version_logging | field0 u32, field1 u32, field2 u8, field3 string[u8 count] |
+| `0xBD` | BridgeTraverseComplete | localization_navigation | field0 u32, field1 bool |
+| `0xBE` | TimeProfileStat | identity_version_logging | field0 u32, field1 u32, field2 bool, field3 string[u8 count] |
 | `0xC5` | MovingLiftPostDock | localization_navigation | field0 u8 |
 | `0xC8` | DefaultCameraParams | camera | field0 u32, field1 u32, field2 u16, field3 u16, field4 u8[17] |
 | `0xCF` | CrashReport | identity_version_logging | field0 u32, field1 u16, field2 u8, field3 u32[u8 count] |
@@ -349,8 +349,8 @@ them, so some field names are placeholders. Sending them is safe; interpreting t
 | `0xD3` | DockingStatus | localization_navigation | field0 u32, field1 u8 |
 | `0xD4` | RobotStopped | robot_state_sensors | field0 u8 |
 | `0xD6` | FactoryTestParameter | factory_debug_storage | field0 u32 |
-| `0xD9` | RobotErrorReport | robot_state_sensors | field0 u32, field1 u8 |
-| `0xDA` | LiftLoad | robot_state_sensors | field0 u8 |
+| `0xD9` | RobotErrorReport | robot_state_sensors | field0 u32, field1 bool |
+| `0xDA` | LiftLoad | robot_state_sensors | field0 bool |
 | `0xEC` | WiFiFlashID | identity_version_logging | field0 u32 |
 
 ### Not yet seen on hardware

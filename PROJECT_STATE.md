@@ -12,7 +12,10 @@ Read first in every session. The manager keeps this file current; the process it
   - The full suite passed 1163/1163 before the commit.
 - **Waiting on the operator:**
   - one control-check robot run (see "Next").
-- **M2 protocol inventory: approved by the manager on 2026-09-24 under the standing authorisation below, and frozen.** The next step is one comparison-and-repair batch, then a verify. It is `re-analysis/inventory/M2-protocol.md`.
+- **M2 protocol: repaired in one batch (2026-09-24).**
+  - The verifier compared all 42 outbound and all 56 inbound layouts by machine against the engine; all match. Its one blocking item was a manifest overclaim, fixed by policy M2-017 and corrections C1 and C2, then re-approved.
+  - M2 records: 15 EXACT_SOURCE, 1 COMPATIBILITY_POLICY (M2-017), 2 IMPLEMENTATION_GAP (M2-002 per-bit storage and M2-015 caller defaults, both M4 interfaces).
+  - M1-027 is settled EXACT_SOURCE, so M1 has two IMPLEMENTATION_GAPs left: 029 and 041. It is `re-analysis/inventory/M2-protocol.md`.
   - **Extraction:** three read-only passes (OUT, 42 messages; IN, 56 codecs plus dispatch; the ImageChunk gap).
   - **Records:** M2-001..M2-016. All are IMPLEMENTATION_GAP until the comparison against the code. The seven earlier EXACT_SOURCE claims rested on weak evidence. No RECOVERABLE_GAP remains.
   - **Two contradictions of the current code, confirmed by the manager in the disassembly:**
@@ -45,7 +48,7 @@ Read first in every session. The manager keeps this file current; the process it
     4. the manager fixes the failures from the source, including batch 3, the handshake;
     5. one confirming run.
   - **Operator involvement:** two or three robot runs, no design questions. Time box about 2-3 working days to M1 closed and the direct-control basics passing on hardware; otherwise stop and report plainly.
-  - **Scope decision:** the M6-M15 scope is still undecided (see the layer map in the conversation of 2026-09-24). Nothing is deferred yet.
+  - **Scope decision (operator, 2026-09-24): every layer, M1 through M15, is in scope.** Nothing is skipped or deferred ("this all seems like its needed. so i don't think we can skip any of it"). Each layer gets the M2-style cycle: inventory, freeze, one comparison-and-repair batch, verify. It escalates to multi-round work only if the comparison shows the layer is substantially wrong.
 - **Governing plan (operator, 2026-09-24), in this order:**
   1. Finish batch 2c: commit only if the verifier and the full suite pass; if either fails, fix only the 2c issue and re-verify. No scope growth.
   2. One bounded transport hardware test. Its only purpose is to verify the rewritten socket and connection lifetime on a real robot before batch 3. It is one scripted run that saves a self-contained bundle; the operator runs it. It is not an exploratory campaign.
@@ -64,6 +67,27 @@ Read first in every session. The manager keeps this file current; the process it
 - **Recorded policy: M1-039.** On Windows, a UDP receive that fails with ConnectionReset (an ICMP port-unreachable response) is treated as no data for that receive attempt. It emits no warning and does not end the rest of the tick's drain; the drain continues, as the original, which never sees the error, would. Other socket errors keep their source-backed handling.
 
 - **Process change (operator, 2026-09-24):** only behavioural or source-fidelity defects, circular tests, and races or deadlocks block a commit. Non-behavioural cleanup is queued under "Cleanup queue" while the checker passes and no status becomes misleading. After a behavioural fix, only the affected diff is re-verified. The full suite runs once, just before the commit. Batches are large, and batch 3 is one batch after the closure pass. See AGENTS.md, Process, step 4.
+
+## Hardware run 20260924-202748-CONTROL (operator, 2026-09-24)
+
+**Result: 11 of 12 PASS.**
+- **Passed:** CONNECT, STATE (33.3 Hz), HEAD, LIFT, DRIVE, FACE, AUDIO, ANIM, ANIM_CANCEL, CAMERA (14.7 fps, 320x240 grey) and DISCONNECT.
+- **Human verdicts:** the operator answered yes to FACE and AUDIO. They are in `operator-verdicts.json`, added to the bundle after the run.
+- **The cube connected** (SetPropSlot, then ObjectConnectionState slot 0). So the outbound cube-connection path works on hardware.
+
+**CUBES FAIL: after StreamObjectAccel no ObjectAccel arrived.** It was classified with the AGENTS.md hardware-failure workflow; the trace is in the session scratch `extract/cubeaccel/report.md`, rows S1..S19.
+- **(a) Wrong bytes: ruled out.** The original sends exactly `08 00000000 01`: the object's activeID, which is its slot, sent reliably (0x00635556, 0x00635562).
+- **(b) A real omission, now an M4 item:**
+  - When a light cube connects, the original plays the "WakeUp" cube-light animation (0x00639D64, trigger 0x26). That sends CubeID 0x10, CubeLights 0x04 and possibly SetCubeGamma 0x0C (SetLights 0x0063A764..0x0063A800). The stack sends none of these.
+  - The engine's own stream logic does not depend on them.
+- **(c) The robot side is HARDWARE_ONLY and still open.**
+  - After connecting, the robot forwarded no cube telemetry at all: no power level, moved, tapped or accel.
+  - The cube link dropped once for about 0.5 s while driving.
+  - Firmware is 2457. Its engine-to-robot hash differs from 2381's, and 2457 is not shipped.
+- **Test-reference gap:** the CUBES check exercises M9-017 (CubeAccelComponent) but does not cite it. M9-017's claim of a robot-side effect is not source-backed. The fix goes into the next control-check update.
+- **Next:**
+  1. Implement the WakeUp-on-connect path in the M4 batch.
+  2. Re-run CUBES. If accel then arrives, (b) is confirmed. If not, the cause is robot-side, and gets its own cube-only probe.
 
 ## Hard-boundary report (for the operator; 2026-09-24)
 
@@ -124,6 +148,16 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
   - FakePort `Calls` is written without a lock.
 - fidelity.py `--check` does not enforce FidelityManifestTests' rule that every non-EXACT record has an `effect`. Align the two.
 - From the control-check review, after the run: pin the ANIM wheel figure (-75 mm/s for 264 ms) against the clip itself, and exercise the abort path.
+- From the M2 batch verifier (2026-09-24, non-blocking):
+  - MessageBase.Parse: the doc comment ("short body → RawRobotMessage") is stale and its catch blocks are dead.
+  - PROTOCOL_STATUS.md and MessageCatalog label FallingStopped `hardware_refined`, but the fix is engine-derived.
+  - gen_protocol.py `ReadStructArray` does not stop at the first failed element (D10). No inbound message has a counted struct array today.
+  - CLAD strings are decoded as UTF-8, where the engine reads i8 chars. Nothing in Cozmo.Robot consumes them.
+  - The PrintTrace format id uses the low 16 bits, which is not established. It is used for logs only.
+- **For the M12 inventory (behavioural, found while reading consumers):**
+  - Docking.cs:353 releases the carried object on BlockPlaced without the engine's success gate (R-P1).
+  - Docking.cs:357 treats MovingLiftPostDock as `!= 0`, where the engine compares that byte for equality with IDockAction+0x80 (R-P4).
+- For M4: the MessageExtras default arguments (SetHeadAngle 10/10, SetLiftHeight 3/20, RobotLink.cs:100) have no engine counterpart (M2-015). The only callers that rely on them are CozmoRobot.cs:499 (a public API) and Probe.cs:92.
 - Tests recommended by batch 4(i): one pinning the 14 Init tunables against the CA/B13 table (M1-005), and a dedicated R43 test for an unsent seq-0 entry at the front (M1-016).
 
 ## Parked: MISSING items (resolved)
@@ -132,10 +166,7 @@ Every item parked during batches 1-2c was settled by the closure pass of 2026-09
 
 ## Layer order and review state
 
-**Scope: PROPOSED, NOT FINAL.** The operator asked for a layer map before deciding (2026-09-24). Until then nothing is deferred; the list below is only the proposal.
-- **Full rigor (inventory, freeze, repair, verify):** M1 through M5.
-- **In target, cheap audit first:** M11 (vision, markers) and M12 (cube manipulation). Each gets one read-only comparison; it escalates to full rigor only where a mismatch affects autonomous control.
-- **Deferred:** M6 through M10 and M13 through M15. The exception is any low-level audio or playback primitive that M3 or M5 requires.
+**Scope: FINAL (operator, 2026-09-24). Every layer is in scope, with the same cycle for each (see "Scope decision" above).** The order is bottom-up by dependency. M5's Wwise-driven audio is an interface to M6. Vision comes before manipulation and navigation, and the behaviour framework before the behaviours that run on it.
 
 Review state per subsystem is in `re-analysis/fidelity_manifest.json`, and FIDELITY_GAPS.md renders it.
 
@@ -143,12 +174,19 @@ Review state per subsystem is in `re-analysis/fidelity_manifest.json`, and FIDEL
 | ---: | --- | --- | --- | --- |
 | 1 | M1-transport | full | INVENTORY_APPROVED (closure complete) | batches 1-4(i) and 3 committed, settled; M1-LINK passed on the robot; residuals 027/029/041; next: control-check run |
 | 2 | M2-protocol | full | INVENTORY_APPROVED (2026-09-24, manager, standing authorisation) | 16 records; FallingStopped and BlockStatus contradictions found |
-| 3 | M3-device (camera, display, audio device) | full | UNREVIEWED | colour camera format is HARDWARE_ONLY |
-| 4 | M4-control (motion, sensors, lights, cubes) | full | UNREVIEWED | the outbound cube-connection path is suspected unrecovered |
-| 5 | M5-animation | full | UNREVIEWED | the live-animation wire lifecycle is suspected incomplete |
-| 6 | M11-vision, M12-manipulation | audit | UNREVIEWED | escalate only where a mismatch affects autonomous control |
-| – | M6-wwise-bank, M9-wwise-music | proposed: deferred (pending decision) | UNREVIEWED | except audio/playback primitives M3/M5 need |
-| – | M7, M8, M10, M13, M14, M15 | proposed: deferred (pending decision) | UNREVIEWED | |
+| 3 | M3-device (camera, display, audio device) | full | UNREVIEWED | colour camera format is HARDWARE_ONLY; FACE, AUDIO and CAMERA passed on hardware 2026-09-24 |
+| 4 | M4-control (motion, sensors, lights, cubes) | full | UNREVIEWED | the cube connection worked on hardware 2026-09-24; the cube accelerometer stream did not arrive (being traced) |
+| 5 | M5-animation | full | UNREVIEWED | the live-animation wire lifecycle is suspected incomplete; ANIM and ANIM_CANCEL passed on hardware |
+| 6 | M6-wwise-bank | full | UNREVIEWED | Cozmo's own sounds; M5 audio depends on it |
+| 7 | M10-derived | full | UNREVIEWED | picked up, falling, stuck and similar |
+| 8 | M11-vision | full | UNREVIEWED | |
+| 9 | M12-manipulation | full | UNREVIEWED | M2-014 (BlockStatus) feeds it |
+| 10 | M13-navigation | full | UNREVIEWED | |
+| 11 | M14-faces | full | UNREVIEWED | the OKAO boundary |
+| 12 | M8-framework | full | UNREVIEWED | |
+| 13 | M7-behaviour | full | UNREVIEWED | |
+| 14 | M9-wwise-music | full | UNREVIEWED | singing; BLOCKED_EXTERNAL Wwise runtime semantics |
+| 15 | M15-freeplay | full | UNREVIEWED | |
 | – | tools | – | UNREVIEWED | offline tooling |
 
 ## M1 candidate (uncommitted working tree)

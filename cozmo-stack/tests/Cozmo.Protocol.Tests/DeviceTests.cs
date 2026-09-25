@@ -556,7 +556,7 @@ public class DeviceTests
         ImageId = imageId,
         ChunkId = chunkId,
         ImageChunkCount = total,
-        ImageEncoding = (sbyte)MiniJpeg.EncodingJpegMinimizedGray,
+        ImageEncoding = (byte)MiniJpeg.EncodingJpegMinimizedGray,
         ImageResolution = 4,          // QVGA, what firmware 2457 sends
         Data = data,
     };

@@ -363,6 +363,64 @@ REFINEMENTS = {
                       {"name": "hwVersion", "kind": "scalar", "type": "u16", "name_source": "hardware"}]},
 }
 
+# M2 protocol inventory (re-analysis/inventory/M2-protocol.md, frozen 2026-09-24), decision MD2: the
+# definition's type-only differences from the engine, applied after REFINEMENTS. The bytes on the wire are
+# the same for every entry; what changes is how a field is typed, and for an inbound bool what a handler
+# sees (Read<bool> stores byte != 0, D9).
+M2_TYPES = {
+    # outbound, Appendix A section 1 / section 6
+    0x39: ({"isAbsolute": "bool"}, "SetBodyAngle Pack Write<bool> 0x007A29BE"),
+    0x3F: ({"useShortestDirection": "bool"}, "AppendPathSegmentPointTurn Pack Write<bool> 0x007A343C"),
+    0x42: ({"unusedZero": "f32", "field5": "bool", "field8": "bool"},
+           "DockWithObject operator== vcmp.f32 on word 0 (0x007C0722); Write<bool> 0x007C06B4, 0x007C06DC"),
+    0x44: ({"field6": "bool"}, "PlaceObjectOnGround Pack Write<bool> 0x007C0986"),
+    0x48: ({"field5": "bool", "field6": "bool"}, "DockingErrorSignal Pack Write<bool> 0x007C0B78, 0x007C0B80"),
+    0x4B: ({"unknown": "f32"}, "SyncTime operator== vcmp.f32 on word 1 (0x007A3B0A); the engine sends -20.0f"),
+    # inbound, Appendix B section 2
+    0xB3: ({"field1": "bool"}, "GoalPose Unpack Read<bool> 0x007C2206"),
+    0xB8: ({"field1": "bool", "field2": "i8"},
+           "PickAndPlaceResult Unpack Read<bool> 0x007C1ADA; DockingResult read ldrsb by HandlePickAndPlaceResult (R-P1)"),
+    0xBB: ({"field1": "bool"}, "RampTraverseComplete Unpack 0x007C1E88 reads a bool"),
+    0xBD: ({"field1": "bool"}, "BridgeTraverseComplete Unpack 0x007C20CC reads a bool"),
+    0xBE: ({"field2": "bool"}, "TimeProfileStat Unpack 0x007D4F28 reads field2 as a bool"),
+    0xD9: ({"field1": "bool"}, "RobotErrorReport Unpack Read<bool> 0x007D3E70"),
+    0xDA: ({"field0": "bool"}, "LiftLoad inline Read<bool> 0x007B1BA4"),
+    # Appendix C: imageEncoding ldrb and unsigned compares (0x004F1D7A, 0x004F218E); chunkDebug and status
+    # from the Unity generated CLAD ImageChunk.cs:212,217 (MD6)
+    0xF2: ({"image_encoding": "u8", "chunk_debug": "i32", "status": "i16"},
+           "ImageChunk: imageEncoding u8 (0x004F1D7A, 0x004F218E, 0x004F225E); chunkDebug i32 and status i16 "
+           "from Unity ImageChunk.cs:212,217 (MD6)"),
+}
+
+# Whole-field corrections from the same inventory. wrong_twin: the C# class the name table matched is a
+# different message, so neither its names nor its "prefix match" confidence apply.
+M2_FIELDS = {
+    0xB0: {"note": "M2 inventory Appendix B section 2: PrintTrace Unpack 0x007D4BEA reads one 4-byte field at "
+                   "0 (0x007D4BF6), 2 bytes at 4, 1 byte at 6, then the u8-count i32 array (0x0073923A). The "
+                   "capture decode takes the format-table id from the low 16 bits of the 4-byte field",
+           "fields": [{"name": "formatId", "kind": "scalar", "type": "u32", "name_source": "hardware",
+                       "note": "one 4-byte field in the engine (0x007D4BF6); the capture decode uses its low 16 bits"},
+                      {"name": "nameId", "kind": "scalar", "type": "u16", "name_source": "hardware"},
+                      {"name": "level", "kind": "scalar", "type": "i8", "name_source": "hardware"},
+                      {"name": "args", "kind": "varray", "type": "i32", "count": "u8", "elem": "i32",
+                       "name_source": "hardware"}]},
+    0xDE: {"wrong_twin": True,
+           "note": "M2 inventory Appendix B section 2 and M2-013: FallingStopped Unpack 0x007B0EB6 reads three "
+                   "4-byte fields. HandleFallingStopped 0x00535040 logs \"timestamp: %u, duration (ms): %u, "
+                   "intensity %.1f\" from ldrd r1,r2,[r5] (0x0053506C) and vldr s0,[r5,#8] (0x00535068), and "
+                   "compares [r5+8] as a float with 1000.0 (0x005350AA..0x005350C2). The 8-byte game message "
+                   "ExternalInterface::FallingStopped the name table had matched is a different message",
+           "fields": [{"name": "timestamp", "kind": "scalar", "type": "u32", "name_source": "engine"},
+                      {"name": "duration_ms", "kind": "scalar", "type": "u32", "name_source": "engine",
+                       "note": "to_string(unsigned) at 0x005350CC"},
+                      {"name": "impactIntensity", "kind": "scalar", "type": "f32", "name_source": "engine",
+                       "note": "vldr s0,[r5,#8] at 0x00535068"}]},
+}
+
+# The native Size() of these fixed messages is not constant-folded, so the extraction recorded "variable";
+# the M2 inventory (Appendix A section 1, Appendix B section 2) gives their fixed sizes.
+M2_NATIVE_SIZE = {0x03: 31, 0xB3: 21, 0xB4: 21, 0xF0: 91, 0xF5: 20}
+
 SAFETY = {}
 
 
@@ -675,8 +733,30 @@ for union, dirname in (("EngineToRobot", "engine_to_robot"), ("RobotToEngine", "
             if confidence in ("native_only", "native_named"):
                 confidence = "hardware_refined"
 
+        if tag in M2_FIELDS:
+            r = M2_FIELDS[tag]
+            fields = [dict(f) for f in r["fields"]]
+            if r.get("wrong_twin"):
+                twin = None
+                notes = [n for n in notes if not n.startswith("C# twin")]
+                confidence = "hardware_refined"
+            notes.append(r["note"])
+            if confidence in ("native_only", "native_named"):
+                confidence = "hardware_refined"
+        if tag in M2_TYPES:
+            types, why = M2_TYPES[tag]
+            for f in fields:
+                if f["name"] in types:
+                    f["type"] = types[f["name"]]
+            missing = [n for n in types if n not in {f["name"] for f in fields}]
+            if missing:
+                raise ValueError("0x%02X: M2 type correction names no field %s" % (tag, missing))
+            notes.append("M2 inventory MD2: " + why)
+
         parts = [fsize(f) for f in fields]
         declared = sum(p for p in parts if p) if all(p is not None for p in parts) else None
+        if tag in M2_NATIVE_SIZE and declared != M2_NATIVE_SIZE[tag]:
+            raise ValueError("0x%02X: declared %s B, the M2 inventory says %d B" % (tag, declared, M2_NATIVE_SIZE[tag]))
         if nsize not in (None, "variable") and declared is not None and declared != nsize:
             confidence = "partial"
             notes.append("declared %d B != official Size() %d B: unresolved fixed array(s); tail kept as raw"
@@ -719,7 +799,7 @@ for union, dirname in (("EngineToRobot", "engine_to_robot"), ("RobotToEngine", "
         messages["0x%02X" % tag] = {
             "tag": tag, "member": member, "clad_type": ctype, "direction": dirname,
             "subsystem": SUBSYSTEM.get(tag, "unclassified"), "safety": SAFETY.get(tag, "state_change"),
-            "official_size": effective, "native_size": nsize, "variable_length": variable,
+            "official_size": effective, "native_size": M2_NATIVE_SIZE.get(tag, nsize), "variable_length": variable,
             "declared_size": declared,
             "fields": [{k: v for k, v in f.items() if v is not None} for f in validate(tag, ctype, fields)],
             "confidence": confidence, "verification": ver,

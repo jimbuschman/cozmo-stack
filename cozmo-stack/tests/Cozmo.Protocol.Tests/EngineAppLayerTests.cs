@@ -573,7 +573,7 @@ public class EngineAppLayerTests
         rig.ToSuccess();
         rig.Messages.Clear();
         int calls = rig.Port.Calls.Count;
-        rig.Data(new RobotErrorReport { Field0 = 2, Field1 = 1 });
+        rig.Data(new RobotErrorReport { Field0 = 2, Field1 = true });
         rig.Data(new RobotAvailable { SerialNumberHead = 9 });
         rig.Tick();
         Assert.IsType<RobotErrorReport>(Assert.Single(rig.Messages));
@@ -595,7 +595,7 @@ public class EngineAppLayerTests
         using var rig = new Rig();
         rig.ToSuccess();
         rig.Messages.Clear();
-        rig.Data(new RobotErrorReport { Field0 = 5, Field1 = 0 });
+        rig.Data(new RobotErrorReport { Field0 = 5, Field1 = false });
         rig.Data(new RobotAvailable { SerialNumberHead = 9 });
         rig.Tick();
         Assert.Equal(5u, Assert.Single(rig.PassThroughs).Code);
@@ -610,7 +610,7 @@ public class EngineAppLayerTests
         using var rig = new Rig();
         rig.Connect();
         int calls = rig.Port.Calls.Count;
-        rig.Data(new RobotErrorReport { Field0 = 2, Field1 = 1 });
+        rig.Data(new RobotErrorReport { Field0 = 2, Field1 = true });
         rig.Tick();
         Assert.Empty(rig.Messages);
         Assert.Equal(calls, rig.Port.Calls.Count);
@@ -730,7 +730,7 @@ public class EngineAppLayerTests
         RobotMessage Sent(RobotMessageId id) => rig.Port.SentMessage(ids.IndexOf(id));
         var sync = Assert.IsType<SyncTime>(Sent(RobotMessageId.SyncTime));
         Assert.Equal(successTickMs, sync.Timestamp);
-        Assert.Equal(0xC1A00000u, sync.Unknown);
+        Assert.Equal(0xC1A00000u, BitConverter.SingleToUInt32Bits(sync.Unknown));
         var img = Assert.IsType<ImageRequest>(Sent(RobotMessageId.ImageRequest));
         Assert.Equal(ImageSendMode.Stream, img.Mode);
         Assert.Equal(4, img.ImageResolution);

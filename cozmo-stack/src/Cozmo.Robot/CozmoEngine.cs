@@ -477,7 +477,7 @@ internal sealed class MessageHandler
             {
                 // fidelity: M1-027
                 // CC12/CC13: {u32 code, bool fatal}; fatal is decided by the byte only.
-                if (err.Field1 != 0)
+                if (err.Field1)
                 {
                     _engine.Log($"error: robot.error.fatal code {err.Field0}");
                     _engine.Broadcast(msg);
@@ -494,36 +494,36 @@ internal sealed class MessageHandler
         }
     }
 
-    // fidelity: M1-027
+    // fidelity: M1-027, M2-010, M2-011
     /// <summary>
-    /// The unpack and its size check (B27, CC35). A tag with a codec must decode to exactly its bytes. A tag
-    /// outside the robot-to-engine range 0xB0..0xF5 unpacks as 1 byte, so a 1-byte message passes and a longer one
-    /// is a size error (CC35).
-    /// MISSING: for a tag inside 0xB0..0xF5 that this stack has no codec for, the engine's size is not known here;
-    /// the message is passed on as raw bytes rather than dropped.
+    /// The unpack and its size check (B27, CC35; M2 inventory D1..D12). <c>RobotToEngine::Unpack</c> reads the tag
+    /// and switches on tag - 0xB0 through the TBH table at 0x007B1B10 (D4). A tag outside 0xB0..0xF5, and each
+    /// of the 14 in-range tags with no codec (0xCC, 0xDF..0xEB), takes the default at 0x007B1BBE, which returns
+    /// GetBytesRead = 1 (D5): the tag alone is consumed, so a 1-byte message is kept and a longer one is a size
+    /// error. The other 56 tags are the generated codecs. The unpack always returns the bytes consumed and every
+    /// field read's failure is otherwise ignored (D7, D8, D10, D12, as <see cref="CladReader"/> reads), and
+    /// ProcessMessages keeps the message only when that count equals the length (D1): trailing bytes drop it,
+    /// an over-counted u8 array is kept shorter, and a truncated fixed message is kept when later smaller reads
+    /// happen to consume exactly what is left (D11).
     /// </summary>
     internal static bool TryUnpack(byte[] data, out RobotMessage msg)
     {
         var id = (RobotMessageId)data[0];
         if (data[0] < 0xB0 || data[0] > 0xF5)
         {
-            // CC35: outside the robot-to-engine union the unpack reads the tag alone.
+            // CC35 / D5: outside the robot-to-engine union the unpack reads the tag alone.
             msg = new RawRobotMessage(id, data[1..], "tag outside the robot-to-engine range");
             return data.Length == 1;
         }
         if (GeneratedMessages.Parsers.TryGetValue(id, out var parse))
         {
-            try
-            {
-                var r = new CladReader(data.AsMemory(1));
-                msg = parse(r);
-                return r.Remaining == 0;
-            }
-            catch (FormatException) { msg = null!; return false; }
-            catch (InvalidOperationException) { msg = null!; return false; }
+            var r = new CladReader(data.AsMemory(1));
+            msg = parse(r);
+            return r.Remaining == 0;
         }
+        // D5: 0xCC and 0xDF..0xEB have no codec; the default case consumes the tag alone.
         msg = new RawRobotMessage(id, data[1..], "no codec for this tag");
-        return true;
+        return data.Length == 1;
     }
 
     // fidelity: M1-026, M1-030
@@ -736,6 +736,8 @@ public sealed class EngineRobot
     internal void SyncTime()
     {
         TimeSynced = false;
+        // fidelity: M2-004
+        // SyncTime {u32 GetCurrentTimeStamp() (0x00515266), f32 -20.0 (0xC1A00000, 0x0051526C/0x00515270)}
         if (!Send(new Protocol.SyncTime(Engine.Timer.TimeStampMs, Protocol.SyncTime.EngineConstant), "SyncTime")) return;
         if (!Send(new InitController(), "InitController")) return;
         if (!Send(new ImageRequest { Mode = ImageSendMode.Stream, ImageResolution = 4 }, "ImageRequest")) return;

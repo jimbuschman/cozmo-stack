@@ -79,7 +79,7 @@ public class ManipulationTests
             // zero, not the path id: PathComponent::ClearPath 0x00649220 writes a literal zero into the
             // field and the id the robot is told about rides on ExecutePath below
             m => Assert.Equal(0, Assert.IsType<ClearPath>(m).Unknown),
-            m => { var pt = Assert.IsType<AppendPathSegmentPointTurn>(m); Assert.Equal((float)(Math.PI / 4), pt.TargetAngleRad); Assert.Equal(2f, pt.Speed.SpeedMmps); Assert.Equal(1, pt.UseShortestDirection); },
+            m => { var pt = Assert.IsType<AppendPathSegmentPointTurn>(m); Assert.Equal((float)(Math.PI / 4), pt.TargetAngleRad); Assert.Equal(2f, pt.Speed.SpeedMmps); Assert.True(pt.UseShortestDirection); },
             m => { var l = Assert.IsType<AppendPathSegmentLine>(m); Assert.Equal(100f, l.XEndMm); Assert.Equal(200f, l.Speed.AccelMmps2); Assert.Equal(500f, l.Speed.DecelMmps2); Assert.Equal(28, l.ToBytes().Length - 1); },
             m => Assert.IsType<AppendPathSegmentPointTurn>(m),
             m => { var e = Assert.IsType<ExecutePath>(m); Assert.Equal(1, e.EventId); Assert.False(e.Unknown); });

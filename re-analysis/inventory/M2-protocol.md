@@ -1,6 +1,6 @@
 # M2 protocol inventory
 
-**State: approved by the manager on 2026-09-24 under the operator's standing authorisation of that day. The authorisation: source-derived inventories and ordinary source-fidelity decisions need no operator checkpoint; only a deliberate divergence from the engine, or an unresolved source question that materially affects robot behaviour, goes to the operator. MD1..MD6 were reviewed on that basis. None diverges from the engine: MD1, MD2 and MD3 follow the source; MD4 confirms that nothing sends SetAccessoryDiscovery automatically; MD5 and MD6 change no wire behaviour. The inventory is frozen with `python re-analysis/tools/fidelity.py --approve M2-protocol`.**
+**State: approved by the manager on 2026-09-24 under the operator's standing authorisation of that day. The authorisation: source-derived inventories and ordinary source-fidelity decisions need no operator checkpoint; only a deliberate divergence from the engine, or an unresolved source question that materially affects robot behaviour, goes to the operator. MD1..MD6 were reviewed on that basis. None diverges from the engine: MD1, MD2 and MD3 follow the source; MD4 confirms that nothing sends SetAccessoryDiscovery automatically; MD5 and MD6 change no wire behaviour. The inventory is frozen with `python re-analysis/tools/fidelity.py --approve M2-protocol`, and re-approved the same day after corrections C1 and C2.**
 
 ## Where this comes from
 
@@ -40,6 +40,7 @@
 | M2-014 | IMPLEMENTATION_GAP | PickAndPlaceResult 0xB8 is {u32, bool success, i8 DockingResult, u8 BlockStatus}, with BlockStatus 0 NO_BLOCK, 1 BLOCK_PLACED, 2 BLOCK_PICKED_UP. **Docking.cs has 1 and 2 swapped.** What the consumer does with each value is M12's. | R-P1, Appendix B §5; manager spot-check |
 | M2-015 | IMPLEMENTATION_GAP | Outbound builders copy their callers' speed, acceleration, duration and angle values verbatim, with no defaults and no unit conversion. So the default arguments in MessageExtras (SetHeadAngle 10/10, SetLiftHeight 3/20) have no counterpart at this layer. Which values the original's callers pass is decided in M4. | Appendix A §2 (0x32/0x34/0x35/0x36/0x37/0x39), §3 findings 4-5 |
 | M2-016 | IMPLEMENTATION_GAP | ImageChunk 0xF2 field types: frameTimeStamp u32, imageId u32, imageEncoding **u8** (the json's i8 is contradicted), resolution i8, imageChunkCount u8, chunkId u8, u16-count data. chunkDebug is i32 and status is i16, taken from Unity's generated CLAD (MD6). | Appendix C §2, §4 |
+| M2-017 | COMPATIBILITY_POLICY | A field whose read failed in a kept malformed message holds 0 / false. In the engine it holds stale stack bytes, so there is no faithful value (correction C1) | C1 |
 
 ## Decisions (the manager's, recorded for audit; the operator may overrule)
 
@@ -90,6 +91,23 @@
 - **M2-004:** "SetReadyToStreamAnims" had no address, and this pass found no such step. The record also omitted ImageRequest and AbsoluteLocalizationUpdate (now M1-041), and the location was stale.
 - **M2-006:** its evidence was a capture folder, and the hash fields are not in the engine.
 - **M2-007:** layout supported. The send gate is M1-041's.
+
+## Corrections after the first freeze (manager, 2026-09-24, from the batch verifier; re-approved under the standing authorisation)
+
+- **C1: new record M2-017 (COMPATIBILITY_POLICY).**
+  - **Engine behaviour.** When a field read fails inside a message that is still kept (M2-011, D11), the engine leaves that field holding stale stack bytes:
+    - ProcessMessages resets only the union's tag byte, to 0xFF (0x0069D8F8/0x0069D8FA).
+    - ClearCurrent (0x007B24A0) destroys only vector and string members and stores 0xFF (0x007B2526/0x007B2528).
+    - The member constructors do not zero scalar fields: RobotErrorReport 0x007D3E50, PickAndPlaceResult 0x007C1ABA, FallingStopped 0x007B0EAA.
+    - Fixed arrays store an element only when its read succeeds (0x007BF21E..0x007BF22C, 0x007C885C..0x007C886A).
+    - The one exception is FWVersionInfo, which zeroes its first three words (0x007C32D4..0x007C32DA).
+    - Vector and string members are zeroed before Unpack, so a failed count read gives an empty array. Examples: ImageChunk 0x007C608A, NVOpResult 0x007CE740, and the count helpers 0x0071A90A, 0x007A17EC, 0x0073924E, 0x00712850, 0x006C2370. The stack matches this.
+  - **Stack behaviour.** The failed field holds 0 / false.
+  - **Why this is a policy.** It is forced: undefined stack contents cannot be reproduced.
+  - **Where a handler can see it:** only in a kept truncated message, for example a 5-byte robotError with no fatal byte. The engine reads a stale fatal byte at 0x0069D930. The stack treats the message as non-fatal.
+  - **Impact:** a healthy robot does not send truncated messages.
+  - **Scope of M2-011 and M2-012:** both are exact apart from this.
+- **C2: D11 wording.** A message truncated exactly at a field boundary is consumed exactly and **kept** by both the engine and the stack. This follows from D1 and D8: for example, FallingStopped with an 8-byte body, where the third ReadBytes(4) at 0x007B0ED8 fails without advancing. D11's "normally a mismatch" holds only for a cut in the middle of a field.
 
 ## Appendix A: OUT pass (engine to robot), extractor report
 

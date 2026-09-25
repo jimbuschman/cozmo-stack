@@ -125,7 +125,7 @@ public sealed class PathSender
                         Send(new AppendPathSegmentPointTurn { XMm = (float)t.X, YMm = (float)t.Y,
                                                               TargetAngleRad = (float)t.TargetAngleRad, AngleToleranceRad = (float)t.AngleToleranceRad,
                                                               Speed = new PathSegmentSpeed { SpeedMmps = t.SpeedRadPerSec, AccelMmps2 = t.AccelRadPerSec2, DecelMmps2 = t.DecelRadPerSec2 },
-                                                              UseShortestDirection = (byte)(t.UseShortestDirection ? 1 : 0) });
+                                                              UseShortestDirection = t.UseShortestDirection });
                         break;
                 }
             }

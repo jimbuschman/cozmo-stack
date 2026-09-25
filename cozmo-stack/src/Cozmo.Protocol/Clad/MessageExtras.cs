@@ -33,8 +33,10 @@ public sealed partial class RobotState
     /// <summary>Lift pivot height: the 45.0 added in the same function (a third term there is 0.0).</summary>
     public const float LiftBaseHeightMm = 45f;
 
+    // fidelity: M2-003
     /// <summary>
-    /// <c>Robot::ConvertLiftAngleToLiftHeightMM</c> (0x00516F9C): <c>sinf(angle) * 66 + 45 + 0</c>.
+    /// <c>Robot::ConvertLiftAngleToLiftHeightMM</c> (0x00516F9C): <c>sinf(angle) * 66 + 45 + 0</c>, with no clamp on
+    /// this path (GetLiftHeight 0x00516F64..0x00516F8E, literals 0x00516F90/94/98).
     /// </summary>
     public static float LiftHeightMmFromAngle(float angleRad) =>
         MathF.Sin(angleRad) * LiftArmLengthMm + LiftBaseHeightMm;
@@ -60,7 +62,11 @@ public sealed partial class RobotState
         $"cliff=[{string.Join(",", CliffDataRaw)}] seg={CurrPathSegment}";
 }
 
-/// <summary>Bit flags of <see cref="RobotState.Status"/> (official C# Anki.Cozmo.RobotStatusFlag).</summary>
+// fidelity: M2-002
+/// <summary>
+/// Bit flags of <see cref="RobotState.Status"/>: the 17 names and values of the engine's EnumToString(RobotStatusFlag)
+/// 0x007D57C8, which agree with Unity RobotStatusFlag.cs:8-25.
+/// </summary>
 [Flags]
 public enum RobotStatusFlag : uint
 {
@@ -71,6 +77,14 @@ public enum RobotStatusFlag : uint
     IsChargerOos = 1u << 16,
 }
 
+// fidelity: M2-006
+/// <summary>
+/// FirmwareVersion 0xEE {u16, u16-count u8[]} (Unpack 0x007B907E). The engine's handshake parses the JSON keys
+/// build, version, time and sim from msg+4 (M1 G5.2..G5.6, in CozmoEngine). The engine has no
+/// messageEngineToRobotHash or messageRobotToEngineHash: <see cref="EngineToRobotHash"/> and
+/// <see cref="RobotToEngineHash"/> are diagnostics for the conformance tools only and no engine behaviour
+/// reads them; <see cref="Version"/> and <see cref="Build"/> here are likewise for reports and logs.
+/// </summary>
 public sealed partial class FirmwareVersion
 {
     /// <summary>The signature blob decoded as UTF-8: the JSON header of the robot's cozmo.safe image.</summary>
@@ -111,11 +125,16 @@ public sealed partial class PrintTrace
     /// <summary>
     /// Resolve against the OBB's config/engine/AnkiLogStringTables.json (nameTable / formatTable).
     /// The 3.4.0 tables still resolve firmware 2457's ids.
+    ///
+    /// The engine reads the first field as one 4-byte word (PrintTrace Unpack 0x007D4BF6, M2 inventory
+    /// Appendix B section 2). How the engine's TracePrinter turns that word into a format-table id was not
+    /// read; this decode keeps the capture decode's reading, the word's low 16 bits.
     /// </summary>
     public string Format(IReadOnlyDictionary<int, string>? names, IReadOnlyDictionary<int, string>? formats)
     {
+        int formatId = (int)(FormatId & 0xFFFF);
         string name = names is not null && names.TryGetValue(NameId, out var nm) ? nm : $"name#{NameId}";
-        string body = formats is not null && formats.TryGetValue(FormatId, out var f) ? f : $"fmt#{FormatId}";
+        string body = formats is not null && formats.TryGetValue(formatId, out var f) ? f : $"fmt#{formatId}";
         string args = Args.Length == 0 ? "" : " [" + string.Join(", ", Args) + "]";
         return $"[{name}] {body}{args}";
     }
@@ -155,10 +174,17 @@ public partial struct LightState
     /// Every colour in every shipped light config has a non-zero alpha, so the engine sets bit 15 on
     /// every light word it sends, including the black it sends to turn a light off.
     /// </summary>
+    // fidelity: M2-005
     public static ushort Rgb(byte r, byte g, byte b, byte a = 255) =>
         (ushort)(((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3) | (a != 0 ? 0x8000 : 0));
 }
 
+// fidelity: M2-015
+// The builders below copy their arguments into the message verbatim, as the engine's builders do
+// (MoveLiftToHeight 0x00640700, MoveHeadToAngle 0x006407CC, the DriveWheels word copies 0x0063F174..).
+// MISSING (M4): the default arguments (SetHeadAngle 10/10, SetLiftHeight 3/20) have no engine counterpart at
+// this layer; which values the original's callers pass is decided in M4. They stay because CozmoRobot.SetHeadAngle
+// and Cozmo.Conformance Probe still rely on them.
 public sealed partial class SetHeadAngle
 {
     public SetHeadAngle(float rad, float maxSpeed = 10f, float accel = 10f, float duration = 0f, byte actionId = 0)
@@ -196,15 +222,16 @@ public sealed partial class EnableStopOnCliff
 
 public sealed partial class SyncTime
 {
+    // fidelity: M2-004
     /// <summary>
     /// The second word is not spare and it is not zero: <c>Robot::SendSyncTime</c> 0x0051524C builds the
-    /// message from <c>BaseStationTimer::GetCurrentTimeStamp()</c> and the literal <c>0xC1A00000</c>,
-    /// which is -20.0f (<c>movs r0, #0</c> / <c>movt r0, #0xc1a0</c> at 0x0051526C). This stack had been
-    /// sending zero there.
+    /// message from <c>BaseStationTimer::GetCurrentTimeStamp()</c> (0x00515266) and the literal
+    /// <c>0xC1A00000</c>, which is -20.0f (0x0051526C/0x00515270). The word is an f32: SyncTime's
+    /// <c>operator==</c> compares it with <c>vcmp.f32</c> (0x007A3B0A). Its name is not established.
     /// </summary>
-    public const uint EngineConstant = 0xC1A00000;
+    public const float EngineConstant = -20.0f;
 
-    public SyncTime(uint timestamp, uint unknown = EngineConstant) { Timestamp = timestamp; Unknown = unknown; }
+    public SyncTime(uint timestamp, float unknown = EngineConstant) { Timestamp = timestamp; Unknown = unknown; }
 }
 
 public sealed partial class BackpackLightsMiddle

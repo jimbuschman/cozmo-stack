@@ -776,7 +776,7 @@
       "subsystem": "M1-transport",
       "title": "Arrived-message filters and the fatal robotError disconnect",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B27 no robot -> silent drop (0x0069D8D2..0x0069D8D8); size 0 -> error (0x0069D8E0); ShouldFilterMessage -> drop (0x0069D8EE); unpack size mismatch -> drop (0x0069D910); tag 0xD9 robotError (0x0069D916): fatal -> event, broadcast, ClearData, DisconnectCurrent and stop the loop (0x0069DAC4..0x0069DACA); non-fatal -> RobotErrorPassThrough then broadcast (0x0069D936)",
@@ -784,11 +784,11 @@
         "CC32..CC36: ProcessMessages exactly (0x0069D870..0x0069D9FC); a 1-byte message with a tag outside 0xB0..0xF5 unpacks as 1 byte and is broadcast (0x007B1ADC..0x007B1BCA)"
       ],
       "effect": "messages the app drops are handled, or a fatal robot error does not disconnect",
-      "provenance": "the M1 candidate implementation (uncommitted working tree on bcab556); not yet compared against re-analysis/inventory/M1-transport.md",
-      "unresolved": "robot-to-engine tags inside 0xB0..0xF5 that have no codec in this stack cannot be size-checked (CC35); needs the M2 protocol layer; then EXACT_SOURCE",
+      "provenance": "reproduced by the code; the CC35 residual was settled by the M2 batch (2026-09-24): MessageHandler.TryUnpack keeps an in-range tag without a codec (0xCC, 0xDF..0xEB) only at length 1, as the engine's default case 0x007B1BBE does (M2-010 D5), and the 56 codecs match the engine (M2-012); verified by the M2 batch verifier. The fatal byte of a truncated robotError is policy M2-017.",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "EngineAppLayerTests.M1_027_B27_CC35_SizeChecks, EngineAppLayerTests.M1_027_CC14_ARobotErrorBeforeValidationIsFiltered, EngineAppLayerTests.M1_027_CC15_AFatalRobotErrorDisconnects, EngineAppLayerTests.M1_027_CC16_ANonFatalRobotErrorIsPassedThroughAndTheLoopGoesOn, EngineAppLayerTests.M1_027_CC31_DataLeftAfterTheRobotIsRemovedIsDropped"
+      "test": "EngineAppLayerTests.M1_027_B27_CC35_SizeChecks, EngineAppLayerTests.M1_027_CC14_ARobotErrorBeforeValidationIsFiltered, EngineAppLayerTests.M1_027_CC15_AFatalRobotErrorDisconnects, EngineAppLayerTests.M1_027_CC16_ANonFatalRobotErrorIsPassedThroughAndTheLoopGoesOn, EngineAppLayerTests.M1_027_CC31_DataLeftAfterTheRobotIsRemovedIsDropped, M2ProtocolTests.M2_010_D5_ATagWithoutACodecConsumesOnlyTheTag, M2ProtocolTests.M2_010_D5_TheInRangeCodecsAreTheFiftySix"
     },
     {
       "id": "M1-028",
@@ -1096,7 +1096,7 @@
       "subsystem": "M2-protocol",
       "title": "CLAD wire primitives: little-endian, bool write 0/1 and read (byte != 0), all-or-nothing ReadBytes, u8/u16-count arrays and strings, fixed arrays without a prefix",
       "location": "cozmo-stack/src/Cozmo.Protocol/Clad/Clad.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "CLAD schema and generated serialisation",
       "evidence": [
         "S4 WriteBytes memcpy native LE (0x0083C084); Write<bool> stores the bool byte (0x0083C0DE)",
@@ -1109,10 +1109,10 @@
       ],
       "live_path": true,
       "effect": "a field is encoded or decoded differently from the engine",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24 and reproduced by the code: CladReader reads every primitive as one all-or-nothing ReadBytes that does not advance and sets no sticky error on overrun (D8), Bool is byte != 0 (D9), counted arrays and strings stop at the first failed element (D10), fixed arrays stop at the first failure and keep their length (D12), little-endian throughout (D13); CladWriter writes a bool as 0/1 (S4) and a count truncated to its width with every element written (S5). Two representation notes that change no wire byte: a CLAD string is decoded from its bytes as UTF-8 into a .NET string, and CladWriter.String8 refuses more than 255 bytes (the engine sends no string in the M2 OUT set). The value a field holds when its read fails is outside this record (see M2-011).",
+      "unresolved": "",
       "hardware_required": false,
-      "test": ""
+      "test": "M2ProtocolTests.M2_001_D9_ABoolReadOfTwoIsTrue, M2ProtocolTests.M2_001_S4_ABoolIsWrittenAsZeroOrOne, M2ProtocolTests.M2_001_D13_FieldsAreLittleEndian, M2ProtocolTests.M2_001_S5_TheU16CountIsTruncatedOnWrite, M2ProtocolTests.M2_001_D8_AFailedReadDoesNotAdvanceAndIsNotSticky, M2ProtocolTests.M2_001_D12_AFixedArrayStopsAtTheFirstFailedElement, M2ProtocolTests.M2_001_D10_AnOverCountedStringIsKeptShorter"
     },
     {
       "id": "M2-002",
@@ -1128,17 +1128,17 @@
       ],
       "live_path": true,
       "effect": "a status bit is read with the wrong meaning",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24: the 17 RobotStatusFlag names and values in MessageExtras.cs match EnumToString 0x007D57C8 / Unity RobotStatusFlag.cs:8-25, and the whole status word is kept with the latest RobotState (RS11). The per-bit storage the title also claims (MovementComponent+9, robot+0x349, SetOnCharger, ...) is not reproduced as such here; the inventory assigns what the engine does with those fields to M4.",
+      "unresolved": "the names and values match; the per-bit storage half of the title is to be compared with the M4 consumers (MovementComponent, CliffSensorComponent, SetOnCharger, the treads classifier) before this can be EXACT_SOURCE",
       "hardware_required": false,
-      "test": ""
+      "test": "M2ProtocolTests.M2_002_TheStatusFlagsHaveTheEnginesValues"
     },
     {
       "id": "M2-003",
       "subsystem": "M2-protocol",
       "title": "liftAngle is radians; height = 66 sin(angle) + 45 with no clamp on the angle-to-height path; 32..92 clamps only height-to-angle",
       "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so",
       "evidence": [
         "RS7 liftAngle -> robot+0x300 raw and ComputeLiftPose (0x0051295E..0x0051296E)",
@@ -1147,9 +1147,9 @@
         "RS0 UpdateFullRobotState is skipped while robot+0x29 == 0 (0x0051293C..0x00512942)"
       ],
       "live_path": true,
-      "test": "SourceFidelityTests.TheLiftAngleIsAnAngleAndConvertsToHeightAsTheEngineDoes",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "test": "SourceFidelityTests.TheLiftAngleIsAnAngleAndConvertsToHeightAsTheEngineDoes, M2ProtocolTests.M2_003_RS7_AngleToHeightIsNotClamped",
+      "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24 and reproduced by the code: RobotState.LiftHeightMmFromAngle is 66 sin(angle) + 45 with no clamp (RS7) and CozmoSensors.LiftHeightMm uses it; the 32..92 clamp is only in LiftAngleRadFromHeight (0x005170B0); RobotState reaches the devices only after time sync (RS0, M1-041 CD23).",
+      "unresolved": "",
       "effect": "the lift height is reported differently from the engine",
       "hardware_required": false
     },
@@ -1157,7 +1157,7 @@
       "subsystem": "M2-protocol",
       "title": "The SyncTime payload: u32 timestamp and f32 -20.0",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "SyncTime Pack 0x007A3A94, size 8; operator== 0x007A3AFA: word 0 integer cmp, word 1 vcmp.f32 (0x007A3B0A), so word 1 is f32",
@@ -1165,18 +1165,18 @@
         "the rest of SendSyncTime (InitController, ImageRequest {1,4}, AbsoluteLocalizationUpdate, the +0x520 stamp) is M1-041"
       ],
       "live_path": true,
-      "test": "TransportSourceTests.SyncTimeCarriesTheEnginesConstantInItsSecondWord",
+      "test": "TransportSourceTests.SyncTimeCarriesTheEnginesConstantInItsSecondWord, M2ProtocolTests.M2_004_SyncTimeIsATimestampAndMinusTwenty, EngineAppLayerTests.M1_041_CD17_CD18_CD22_M1_042_PostSuccessSendsInOrder",
       "id": "M2-004",
       "effect": "the robot gets a different time-sync payload",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24 and reproduced by the code: the generated SyncTime is {u32 timestamp, f32 unknown}; CozmoEngine's Robot.SyncTime sends {Timer.TimeStampMs, -20.0f}. Cozmo.Transport RobotLink.BeginSession (a PyCozmo-style diagnostic link used by Cozmo.Conformance Probe and SmokeTest, not the engine path) still sends SyncTime(0, 0).",
+      "unresolved": "",
       "hardware_required": false
     },
     {
       "subsystem": "M2-protocol",
       "title": "The light colour word: 5-5-5 with red at bit 10, and bit 15 set from the alpha byte",
       "location": "cozmo-stack/src/Cozmo.Protocol/Clad/MessageExtras.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "CubeLightComponent::SendTransitionMessage 0x00638056 packs the engine ColorRGBA word whole: mov.w ip,#0x7c00 / mov.w r3,#0x3e0 / and.w r4,ip,r5,lsr #17 (red bits 27..31 to bit 10) / and.w r7,r3,r5,lsr #14 (green bits 19..23 to bit 5) / ubfx r4,r5,#0xb,#5 (blue bits 11..15 to bit 0) / tst.w r5,#0xff with orrne r7,r7,#0x8000 (bit 15 from the alpha byte). ColorRGBA holds red in the top byte and alpha in the bottom, which CubeLightComponent::WhiteBalanceColor 0x0063a894 confirms by reading the low byte as the alpha it gates on",
       "evidence": [
         "CubeLightComponent::SendTransitionMessage 0x00638056",
@@ -1188,8 +1188,8 @@
       "live_path": true,
       "test": "LightPackingTests.ThePackingAgreesWithTheEnginesExpressionOnItsOwnWord",
       "id": "M2-005",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24 and reproduced by the code: LightState.Rgb computes the engine expression (c>>17)&0x7C00 | (c>>14)&0x3E0 | ubfx(c,11,5) | 0x8000 if the alpha byte is non-zero, and LedColor.Packed (Lights.cs) uses it for both the cube and the backpack words. The ms-to-frames conversion and the TurnSignals companion are M4's, not this record's.",
+      "unresolved": "",
       "effect": "a light shows a different colour",
       "hardware_required": false
     },
@@ -1198,7 +1198,7 @@
       "subsystem": "M2-protocol",
       "title": "FirmwareVersion 0xEE layout {u16, u16-count u8[]}; the engine parses build/version/time/sim from msg+4 and has no hash fields",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "FirmwareVersion Unpack 0x007B907E: 2B@0, u16-count u8[]@4",
@@ -1206,18 +1206,18 @@
         "messageEngineToRobotHash and messageRobotToEngineHash: 0 byte hits in libcozmoEngine.so"
       ],
       "live_path": true,
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24 and reproduced by the code: the generated FirmwareVersion is {u16, u16-count u8[]}; the handshake parses build, version, time and sim from the byte array (CozmoEngine HandleFirmwareVersion, M1 G5.2..G5.6). The stack's extra accessors FirmwareVersion.EngineToRobotHash and RobotToEngineHash (MessageExtras.cs) have no engine counterpart; they are read only by Cozmo.Conformance Probe.cs:237-238 and SmokeTest.cs:57 for reports, and no engine behaviour reads them. Version and Build there feed CozmoRobot.FirmwareVersionNumber, which only the Conformance reports read.",
+      "unresolved": "",
       "effect": "the firmware version is read differently",
       "hardware_required": false,
-      "test": ""
+      "test": "M2ProtocolTests.M2_006_FirmwareVersionIsAU16AndAU16CountedByteArray, HardwareCaptureTests.ReplayThroughReceivePathDeliversIdentityHandshakeAndTelemetry"
     },
     {
       "subsystem": "M2-protocol",
       "title": "absLocalizationUpdate: the timestamp first and the heading last",
       "location": "cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs",
       "effect": "the robot is told a different pose",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md",
+      "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24 and reproduced by the code: the generated AbsoluteLocalizationUpdate is {u32 timestamp, u32 poseFrameId, u32 poseOriginId, f32 x, f32 y, f32 angle}; its send gate is M1-041's.",
       "authority": "Robot::SendAbsLocalizationUpdate(Pose3d const&, unsigned int const&, unsigned int const&) 0x00512734 and Robot::SendAbsLocalizationUpdate() 0x00514710, read",
       "evidence": [
         "The packer 0x00512734 fills the 24 bytes in order from 0x00512774: its two unsigned arguments (strd r8, sb at 0x0051279E), the pose parent id from PoseBase::GetID (0x00512762), the transform translation x and y at +0x20 and +0x24 (0x00512782, 0x0051278A), and Rotation3d::GetAngleAroundZaxis (0x00512796). So the last word is a float heading in radians, which pycozmo had as an unknown u32 - and pycozmo sending 0x80000000 there is sending -0.0.",
@@ -1225,11 +1225,11 @@
         "That is also the path a corrected pose takes to the robot: Robot::SetNewPose 0x005126EC calls SetPose and AddVisionOnlyStateToHistory, and Robot::Update calls SendAbsLocalizationUpdate (0x00513CC6), which sends the state just added.",
         "M2 OUT pass: Pack 0x007A384E, Size 0x007A38E8, operator== 0x007A38EC (cmp at 0,4,8; vcmp at 0xC..0x14) confirm the types; the ContainsOriginID send gate (0x00512766..0x00512772) is M1-041"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "TransportSourceTests.AbsoluteLocalizationUpdateEndsWithTheHeadingInRadians",
+      "test": "TransportSourceTests.AbsoluteLocalizationUpdateEndsWithTheHeadingInRadians, M2ProtocolTests.M2_009_OutboundSizesAreTheEngines",
       "id": "M2-007"
     },
     {
@@ -4504,7 +4504,7 @@
       "subsystem": "M2-protocol",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "title": "Outbound union: tag byte first, then the member; size = 1 + member; typed constructors write the tag",
-      "location": "cozmo-stack/src/Cozmo.Protocol/Clad/Clad.cs",
+      "location": "cozmo-stack/src/Cozmo.Protocol/Clad/MessageBase.cs",
       "evidence": [
         "S1 EngineToRobot::Pack writes the 1-byte tag at this+0 (0x007AB6B8..0x007AB6C4), then tbh on tag-1 (0x007AB6CC..0x007AB6D2, table 0x007AB6D6)",
         "S2 single-scalar members packed inline (0x007AB834, 0x007AB840, 0x007AB84A, 0x007AB858, 0x007AB868)",
@@ -4512,12 +4512,12 @@
         "S7 each typed constructor writes its tag, confirmed for all 42 (e.g. SetHeadlight 0x007A7B34 movs #0xb / 0x007A7B38 strb)"
       ],
       "effect": "a message goes out with the wrong tag or size",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24 and reproduced by the code: RobotMessage.ToBytes writes the 1-byte tag and then the member, so the size is 1 + the member's; each generated class carries its own tag (S7); inline single-scalar members produce the same bytes (S2).",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M2ProtocolTests.M2_008_TheTagComesFirstAndTheSizeIsOnePlusTheMember, M2ProtocolTests.M2_009_OutboundSizesAreTheEngines"
     },
     {
       "id": "M2-009",
@@ -4530,12 +4530,12 @@
         "type-only differences from the protocol definition: SyncTime word 1 f32; DockWithObject field0 f32; bool (not u8) in SetBodyAngle isAbsolute (0x007A29BE), PointTurn useShortestDirection (0x007A343C), DockWithObject fields 5 and 8 (0x007C06B4, 0x007C06DC), PlaceObjectOnGround field 6 (0x007C0986), DockingErrorSignal fields 5 and 6 (0x007C0B78, 0x007C0B80)"
       ],
       "effect": "the robot receives a message with different bytes",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24 and reproduced by the code: all 42 outbound layouts in the regenerated codecs match Appendix A section 1 in field order, width, bool vs u8 and f32 vs u32, after the MD2 corrections in build_protocol_definition.py (M2_TYPES): SetBodyAngle isAbsolute, PointTurn useShortestDirection, DockWithObject field5/field8, PlaceObjectOnGround field6 and DockingErrorSignal field5/field6 are bool; DockWithObject word 0 and SyncTime word 1 are f32; 0x03 native_size is 31. Integer signedness that Appendix A leaves open (MD5) is unchanged and changes no byte.",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M2ProtocolTests.M2_009_OutboundSizesAreTheEngines, M2ProtocolTests.M2_009_TheOutboundFieldTypesAreTheEngines"
     },
     {
       "id": "M2-010",
@@ -4553,12 +4553,12 @@
         "D7 the return is always GetBytesRead (0x0083C032..0x0083C038)"
       ],
       "effect": "a robot message is dropped or delivered differently",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24 and reproduced by the code: MessageHandler.TryUnpack: a tag outside 0xB0..0xF5, or one of the 14 in-range tags with no codec (0xCC, 0xDF..0xEB), consumes the tag alone, so it is kept at 1 byte and is a size error otherwise (D5); the other 56 in-range tags are exactly the generated robot-to-engine codecs.",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M2ProtocolTests.M2_010_D5_ATagWithoutACodecConsumesOnlyTheTag, M2ProtocolTests.M2_010_D5_TheInRangeCodecsAreTheFiftySix, EngineAppLayerTests.M1_027_B27_CC35_SizeChecks"
     },
     {
       "id": "M2-011",
@@ -4574,12 +4574,12 @@
         "D12 fixed arrays stop at the first failure (0x007C8852..0x007C886A)"
       ],
       "effect": "a malformed or over-counted message is kept or dropped differently from the engine",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24 and reproduced by the code: MessageHandler.TryUnpack keeps a message only when the reader consumed every byte (D1, D7); CladReader never throws, a failed read does not advance and is not sticky (D8), and counted and fixed arrays stop at the first failed element (D10, D12), so trailing bytes drop a message, an over-counted u8 array is kept shorter and a truncated fixed message is kept when later reads consume exactly what is left (D11). A consequence of D1 and D8 that the inventory prose calls 'normally a mismatch': a fixed message truncated at a field boundary is consumed exactly and kept. A counted array whose count read fails is read as empty, as the engine's count helpers leave the zeroed vector empty (0x0071A90A, 0x007A17EC, 0x0073924E, 0x00712850, 0x006C2370). The value a scalar or fixed-array element holds after its read fails is not the engine's (stale stack bytes); that is policy M2-017 (inventory correction C1).",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M2ProtocolTests.M2_011_D11_ATrailingByteDropsTheMessage, M2ProtocolTests.M2_011_D11_AnOverCountedU8ArrayIsKeptShorter, M2ProtocolTests.M2_011_D11_APartialI32ElementLeavesBytesAndIsDropped, M2ProtocolTests.M2_011_D11_ATruncatedFixedMessageCanStillBeConsumedExactly, M2ProtocolTests.M2_001_D10_AnOverCountedStringIsKeptShorter"
     },
     {
       "id": "M2-012",
@@ -4592,12 +4592,12 @@
         "type-only differences: bool (not u8) in GoalPose 0x007C2206, PickAndPlaceResult field1 0x007C1ADA, Ramp/BridgeTraverseComplete, TimeProfileStat field2, RobotErrorReport 0x007D3E70, LiftLoad (inline 0x007B1BA4); PrintTrace first field is one 4-byte field (0x007D4BF6)"
       ],
       "effect": "a robot message is decoded into different values",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24 and reproduced by the code: all 56 inbound layouts in the regenerated codecs match Appendix B section 2, after the MD2 corrections in build_protocol_definition.py (M2_TYPES, M2_FIELDS): GoalPose field1, PickAndPlaceResult field1, Ramp/BridgeTraverseComplete field1, TimeProfileStat field2, RobotErrorReport field1 and LiftLoad are bool and read byte != 0; PrintTrace's first field is one 4-byte field; 0xB3, 0xB4, 0xF0 and 0xF5 native_size are their fixed sizes; FallingStopped and ImageChunk as M2-013 and M2-016. The consumers updated for the bool types: CozmoEngine (robotError fatal), Docking.cs (PickAndPlaceResult success). A field whose read failed in a kept truncated message holds 0/false, not the engine's stale bytes: policy M2-017.",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M2ProtocolTests.M2_012_InboundSizesAreTheEngines, M2ProtocolTests.M2_012_TheInboundBoolsReadNonZeroAsTrue"
     },
     {
       "id": "M2-013",
@@ -4610,12 +4610,12 @@
         "HandleFallingStopped 0x00535040: logs \"timestamp: %u, duration (ms): %u, intensity %.1f\" (0x00535274) from ldrd r1,r2,[r5] (0x0053506C) and vldr s0,[r5,#8] (0x00535068); [r5+8] > 1000.0f triggers NeedsManager action 0x11 (0x005350AA..0x005350C2); +4 to to_string(unsigned) (0x005350CC); the game message {duration_ms, impactIntensity} from ldrd [r5,#4] (0x00535186)"
       ],
       "effect": "the fall duration and intensity are wrong",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24 and reproduced by the code: the regenerated FallingStopped is {u32 Timestamp, u32 DurationMs, f32 ImpactIntensity} (M2_FIELDS 0xDE in build_protocol_definition.py, the wrong C# twin dropped), and CozmoSensors builds FallingStoppedReport from DurationMs and ImpactIntensity and now also carries the Timestamp.",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M2ProtocolTests.M2_013_FallingStoppedBytesAreTimestampDurationIntensity"
     },
     {
       "id": "M2-014",
@@ -4629,12 +4629,12 @@
         "EnumToString(BlockStatus) 0x007C168C, name table 0x01034984 -> \"NO_BLOCK\", \"BLOCK_PLACED\", \"BLOCK_PICKED_UP\""
       ],
       "effect": "a pick-up is taken as a place and the reverse",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24 and reproduced by the code: Docking.cs BlockStatus is NoBlock 0, BlockPlaced 1, BlockPickedUp 2; PickAndPlaceResult is {u32, bool, i8, u8} and DockResult carries the DockingResult as sbyte. Every consumer compares by name (Docking.cs, DockActions.cs, the test rigs), so each still means what it says; no numeric literal of the enum was found. What each value makes the consumer do is M12's.",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M2ProtocolTests.M2_014_BlockStatusValuesAndThePickAndPlaceLayout, ManipulationTests.DockingStreamsTheErrorSignalFromEachFrameAndPicksUpOnTheRobotsResult"
     },
     {
       "id": "M2-015",
@@ -4649,11 +4649,11 @@
       ],
       "effect": "a motion command goes out with values the caller did not give",
       "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24: the SetHeadAngle, SetLiftHeight and DriveWheels constructors in MessageExtras.cs copy their arguments into the message verbatim with no unit conversion, and the generated builders copy fields as given. The constructors' default arguments (SetHeadAngle maxSpeed 10 / accel 10, SetLiftHeight maxSpeed 3 / accel 20) have no engine counterpart and are still relied on by CozmoRobot.SetHeadAngle (CozmoRobot.cs:499, public API, no caller in src) and Cozmo.Conformance Probe.cs:92 (new SetLiftHeight(45f)); Cozmo.Transport RobotLink.SetHeadAngle (RobotLink.cs:100) has its own 10/10 defaults.",
+      "unresolved": "the MessageExtras default arguments (SetHeadAngle 10/10, SetLiftHeight 3/20) have no engine counterpart; which values the original's callers pass is decided in M4 (MISSING for M4), after which the defaults can be removed and this record settled",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M2ProtocolTests.M2_015_BuildersCopyTheCallersValuesVerbatim"
     },
     {
       "id": "M2-016",
@@ -4669,12 +4669,31 @@
         "chunkDebug and status are only copied or equality-compared (Pack 0x007C61B4, 0x007C6202; operator== 0x007C6276, 0x007C629E; Viz 0x006C067C); declared i32/i16 by the Unity generated CLAD ImageChunk.cs:212,217 (MD6)"
       ],
       "effect": "an image chunk field is decoded with the wrong sign",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M2-protocol.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24 and reproduced by the code: the regenerated ImageChunk is u32 FrameTimestamp, u32 ImageId, i32 ChunkDebug, u8 ImageEncoding, i8 ImageResolution, u8 ImageChunkCount, u8 ChunkId, i16 Status, u16-count Data (M2_TYPES 0xF2; MD6 for ChunkDebug and Status); Camera.cs reads ImageEncoding as a byte.",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M2ProtocolTests.M2_016_ImageChunkFieldSignedness"
+    },
+    {
+      "id": "M2-017",
+      "subsystem": "M2-protocol",
+      "title": "A field whose read failed in a kept malformed message holds 0 / false (the engine leaves stale stack bytes)",
+      "location": "cozmo-stack/src/Cozmo.Protocol/Clad/Clad.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "ProcessMessages sets only the union tag byte to 0xFF before Unpack (0x0069D8F8/0x0069D8FA); ClearCurrent 0x007B24A0 destroys only vector/string members and stores 0xFF (0x007B2526/0x007B2528)",
+        "member constructors do not zero scalars: RobotErrorReport 0x007D3E50, PickAndPlaceResult 0x007C1ABA, FallingStopped 0x007B0EAA; fixed arrays store only successful reads (0x007BF21E..0x007BF22C, 0x007C885C..0x007C886A); FWVersionInfo zeroes its first three words (0x007C32D4..0x007C32DA)",
+        "visible only in a kept truncated message (M2-011 D11), e.g. a 5-byte robotError: the engine reads a stale fatal byte at 0x0069D930"
+      ],
+      "effect": "a truncated robot message that the engine would read with stale bytes is read with zeros",
+      "provenance": "forced policy (manager, 2026-09-24): undefined stack contents cannot be reproduced; a healthy robot does not send truncated messages",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "M2ProtocolTests.M2_001_D8_AFailedReadDoesNotAdvanceAndIsNotSticky"
     }
   ]
 }

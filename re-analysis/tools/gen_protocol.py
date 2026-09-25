@@ -91,7 +91,8 @@ def read_expr(f):
     cw = f.get("count", "u16")
     if e in STRUCTS:
         return "ReadStructArray(r, (int)r.%s(), %s.Read)" % (RD[cw], sn(e))
-    return "r.Array<%s>((int)r.%s(), () => r.%s())" % (CT[e], RD[cw], RD[e])
+    # M2 inventory D10: a counted array stops at its first failed element, so it can come back shorter
+    return "r.VarArray<%s>((int)r.%s(), () => r.%s())" % (CT[e], RD[cw], RD[e])
 
 
 def write_stmts(f, p):
@@ -259,10 +260,32 @@ for s in usedS:
             G.append("        w.%s(%s);" % (RD[ty], pn))
     G += ["    }", "}", ""]
 
+# Fidelity records (re-analysis/fidelity_manifest.json) whose code is a generated codec. M2-009 covers the 42
+# engine-to-robot messages this stack constructs (M2 inventory Appendix A section 0) and M2-012 every
+# robot-to-engine codec (Appendix B section 2); the others name one message.
+M2_OUTBOUND_SET = {0x03, 0x05, 0x08, 0x0A, 0x0B, 0x25, 0x32, 0x34, 0x35, 0x36, 0x37, 0x39, 0x3B, 0x3C, 0x3D, 0x3E,
+                   0x3F, 0x41, 0x42, 0x43, 0x44, 0x45, 0x48, 0x4A, 0x4B, 0x4C, 0x58, 0x60, 0x64, 0x66, 0x80, 0x81,
+                   0x8E, 0x8F, 0x93, 0x94, 0x97, 0x99, 0x9A, 0x9B, 0x9F, 0xA0}
+FIDELITY_ONE = {0x45: ["M2-007"], 0x4B: ["M2-004"], 0xB8: ["M2-014"], 0xDE: ["M2-013"], 0xEE: ["M2-006"],
+                0xF2: ["M2-016"]}
+
+
+def fidelity_ids(m):
+    out = []
+    if m["tag"] in M2_OUTBOUND_SET:
+        out.append("M2-009")
+    if m["direction"] == "robot_to_engine":
+        out.append("M2-012")
+    return out + FIDELITY_ONE.get(m["tag"], [])
+
+
 parsers = []
 for k, m in MSGS.items():
     cls = m["clad_type"]
     idn = ids[m["tag"]]
+    fids = fidelity_ids(m)
+    if fids:
+        G.append("// fidelity: %s" % ", ".join(fids))
     G.append("/// <summary>%s 0x%02X (%s), %s. Confidence: %s. Verification: %s.%s</summary>" %
              (m["member"], m["tag"], m["direction"],
               "variable length" if m["variable_length"] else "%s bytes" % m["official_size"],

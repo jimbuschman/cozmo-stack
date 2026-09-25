@@ -92,7 +92,7 @@ public sealed class RobotStateTracker
         switch (m)
         {
             case RobotAvailable a: Available = a; break;
-            case FirmwareVersion f: Firmware = f; break;
+            case FirmwareVersion f: Firmware = f; break;   // fidelity: M2-006
             case ManufacturingID i: Manufacturing = i; break;
             case SyncTimeAck: TimeSynced = true; break;
             case AnimationState a: Animation = a; break;

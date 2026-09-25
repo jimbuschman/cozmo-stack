@@ -329,6 +329,7 @@ public sealed partial class BackpackSetLayer : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>setBackpackLightsMiddle 0x03 (engine_to_robot), 31 bytes. Confidence: native_only. Verification: capture_verified. names generated; widths from native Unpack LightState[3]: native loop bound, C# twin size and capture body length agree</summary>
 public sealed partial class BackpackLightsMiddle : RobotMessage
 {
@@ -369,6 +370,7 @@ public sealed partial class CubeLights : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>setPropSlot 0x05 (engine_to_robot), 5 bytes. Confidence: hardware_refined. Verification: statically_verified. field names from PyCozmo (widths agree with native) engine 2026-09-22: SetPropSlot::GetJSON 0x007A1244 names the u32 at +0 "factory_id" and the byte at +4 "slot", written through Json::Value(int) - an integer, not a bool; Pack 0x007A11A4 writes 4 bytes then 1. Its only sender is Robot::ConnectToRequestedObjects 0x00514A70, which fills the byte with the loop index over the five active-object slots (strb sl at 0x00514BBA and 0x00514C46). PyCozmo's name for it, 'connect', was wrong</summary>
 public sealed partial class SetPropSlot : RobotMessage
 {
@@ -424,6 +426,7 @@ public sealed partial class SetBodyRadioMode : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>streamObjectAccel 0x08 (engine_to_robot), 5 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.StreamObjectAccel (exact match)</summary>
 public sealed partial class StreamObjectAccel : RobotMessage
 {
@@ -445,6 +448,7 @@ public sealed partial class StreamObjectAccel : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>setAccessoryDiscovery 0x0A (engine_to_robot), 1 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.SetAccessoryDiscovery (exact match) hardware verified: robot reported cube advertisements as ObjectAvailable (0xF3) afterwards</summary>
 public sealed partial class SetAccessoryDiscovery : RobotMessage
 {
@@ -462,6 +466,7 @@ public sealed partial class SetAccessoryDiscovery : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>setHeadlight 0x0B (engine_to_robot), 1 bytes. Confidence: exact. Verification: capture_verified. C# twin Anki.Cozmo.ExternalInterface.SetHeadlight (exact match)</summary>
 public sealed partial class SetHeadlight : RobotMessage
 {
@@ -542,7 +547,7 @@ public sealed partial class WriteBodyStorage : RobotMessage
     public static WriteBodyStorage Read(CladReader r) => new()
     {
         Field0 = r.U8(),
-        Field1 = r.Array<byte>((int)r.U8(), () => r.U8()),
+        Field1 = r.VarArray<byte>((int)r.U8(), () => r.U8()),
     };
     public override void WriteBody(CladWriter w)
     {
@@ -637,6 +642,7 @@ public sealed partial class GetBodySerialNumber : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>getMfgInfo 0x25 (engine_to_robot), 0 bytes. Confidence: empty. Verification: hardware_verified. hardware verified: robot answered with ManufacturingID (0xED)</summary>
 public sealed partial class GetManufacturingInfo : RobotMessage
 {
@@ -701,6 +707,7 @@ public sealed partial class EnterRecoveryMode : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>drive 0x32 (engine_to_robot), 16 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ExternalInterface.DriveWheels (exact match)</summary>
 public sealed partial class DriveWheels : RobotMessage
 {
@@ -755,6 +762,7 @@ public sealed partial class DriveWheelsCurvature : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>moveLift 0x34 (engine_to_robot), 4 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ExternalInterface.MoveLift (exact match)</summary>
 public sealed partial class MoveLift : RobotMessage
 {
@@ -772,6 +780,7 @@ public sealed partial class MoveLift : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>moveHead 0x35 (engine_to_robot), 4 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ExternalInterface.MoveHead (exact match)</summary>
 public sealed partial class MoveHead : RobotMessage
 {
@@ -789,6 +798,7 @@ public sealed partial class MoveHead : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>liftHeight 0x36 (engine_to_robot), 17 bytes. Confidence: prefix. Verification: statically_verified. C# twin Anki.Cozmo.ExternalInterface.SetLiftHeight (prefix match)</summary>
 public sealed partial class SetLiftHeight : RobotMessage
 {
@@ -822,6 +832,7 @@ public sealed partial class SetLiftHeight : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>headAngle 0x37 (engine_to_robot), 17 bytes. Confidence: prefix. Verification: hardware_verified. C# twin Anki.Cozmo.ExternalInterface.SetHeadAngle (prefix match) hardware verified: robot answered MotorActionAck (0xC4) and RobotState head angle reached the commanded 0.4 rad</summary>
 public sealed partial class SetHeadAngle : RobotMessage
 {
@@ -872,7 +883,8 @@ public sealed partial class HeadAngleUpdate : RobotMessage
     }
 }
 
-/// <summary>setBodyAngle 0x39 (engine_to_robot), 20 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-20: MovementComponent::TurnInPlace 0x00640898 and its builder 0x006408F4. TurnInPlaceAction::Init 0x00545FA0 puts an absolute heading in the first word on both its paths. On the relative path the sign of the turn is stuffed into bit 31 of the speed (bfi at 0x0054610C) and numHalfRevolutions is floor(|relative| / pi)</summary>
+// fidelity: M2-009
+/// <summary>setBodyAngle 0x39 (engine_to_robot), 20 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-20: MovementComponent::TurnInPlace 0x00640898 and its builder 0x006408F4. TurnInPlaceAction::Init 0x00545FA0 puts an absolute heading in the first word on both its paths. On the relative path the sign of the turn is stuffed into bit 31 of the speed (bfi at 0x0054610C) and numHalfRevolutions is floor(|relative| / pi) M2 inventory MD2: SetBodyAngle Pack Write<bool> 0x007A29BE</summary>
 public sealed partial class SetBodyAngle : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.SetBodyAngle;
@@ -888,7 +900,7 @@ public sealed partial class SetBodyAngle : RobotMessage
     /// <summary>name from engine</summary>
     public ushort NumHalfRevolutions;
     /// <summary>name from engine</summary>
-    public byte IsAbsolute;
+    public bool IsAbsolute;
     /// <summary>name from engine; MovementComponent's own counter at +8, incremented per command</summary>
     public byte ActionId;
     public static SetBodyAngle Read(CladReader r) => new()
@@ -898,7 +910,7 @@ public sealed partial class SetBodyAngle : RobotMessage
         AccelRadPerSec2 = r.F32(),
         ToleranceRad = r.F32(),
         NumHalfRevolutions = r.U16(),
-        IsAbsolute = r.U8(),
+        IsAbsolute = r.Bool(),
         ActionId = r.U8(),
     };
     public override void WriteBody(CladWriter w)
@@ -908,7 +920,7 @@ public sealed partial class SetBodyAngle : RobotMessage
         w.F32(AccelRadPerSec2);
         w.F32(ToleranceRad);
         w.U16(NumHalfRevolutions);
-        w.U8(IsAbsolute);
+        w.Bool(IsAbsolute);
         w.U8(ActionId);
     }
 }
@@ -934,6 +946,7 @@ public sealed partial class TurnInPlaceAtSpeed : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>stop 0x3B (engine_to_robot), 0 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ExternalInterface.StopAllMotors (exact match)</summary>
 public sealed partial class StopAllMotors : RobotMessage
 {
@@ -947,6 +960,7 @@ public sealed partial class StopAllMotors : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>clearPath 0x3C (engine_to_robot), 2 bytes. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class ClearPath : RobotMessage
 {
@@ -964,6 +978,7 @@ public sealed partial class ClearPath : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>appendPathSegLine 0x3D (engine_to_robot), 28 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-20: PathDolerOuter::Dole 0x00507E4C switches on Planning::PathSegment+0 (1 line, 2 arc, 3 point turn) and copies the struct into the message. The fields are named by their definers: PathSegment::DefineLine 0x0085BC00, DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, and SetSpeedProfile 0x0085BC90 for the speed triple at +0x1C</summary>
 public sealed partial class AppendPathSegmentLine : RobotMessage
 {
@@ -997,6 +1012,7 @@ public sealed partial class AppendPathSegmentLine : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>appendPathSegArc 0x3E (engine_to_robot), 32 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-20: PathDolerOuter::Dole 0x00507E4C switches on Planning::PathSegment+0 (1 line, 2 arc, 3 point turn) and copies the struct into the message. The fields are named by their definers: PathSegment::DefineLine 0x0085BC00, DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, and SetSpeedProfile 0x0085BC90 for the speed triple at +0x1C</summary>
 public sealed partial class AppendPathSegmentArc : RobotMessage
 {
@@ -1034,7 +1050,8 @@ public sealed partial class AppendPathSegmentArc : RobotMessage
     }
 }
 
-/// <summary>appendPathSegPointTurn 0x3F (engine_to_robot), 29 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-20: PathDolerOuter::Dole 0x00507E4C switches on Planning::PathSegment+0 (1 line, 2 arc, 3 point turn) and copies the struct into the message. The fields are named by their definers: PathSegment::DefineLine 0x0085BC00, DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, and SetSpeedProfile 0x0085BC90 for the speed triple at +0x1C</summary>
+// fidelity: M2-009
+/// <summary>appendPathSegPointTurn 0x3F (engine_to_robot), 29 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-20: PathDolerOuter::Dole 0x00507E4C switches on Planning::PathSegment+0 (1 line, 2 arc, 3 point turn) and copies the struct into the message. The fields are named by their definers: PathSegment::DefineLine 0x0085BC00, DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, and SetSpeedProfile 0x0085BC90 for the speed triple at +0x1C M2 inventory MD2: AppendPathSegmentPointTurn Pack Write<bool> 0x007A343C</summary>
 public sealed partial class AppendPathSegmentPointTurn : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.AppendPathSegPointTurn;
@@ -1050,7 +1067,7 @@ public sealed partial class AppendPathSegmentPointTurn : RobotMessage
     /// <summary>name from engine</summary>
     public PathSegmentSpeed Speed;
     /// <summary>name from engine; PathSegment+0x14, the bool DefinePointTurn takes</summary>
-    public byte UseShortestDirection;
+    public bool UseShortestDirection;
     public static AppendPathSegmentPointTurn Read(CladReader r) => new()
     {
         XMm = r.F32(),
@@ -1058,7 +1075,7 @@ public sealed partial class AppendPathSegmentPointTurn : RobotMessage
         TargetAngleRad = r.F32(),
         AngleToleranceRad = r.F32(),
         Speed = PathSegmentSpeed.Read(r),
-        UseShortestDirection = r.U8(),
+        UseShortestDirection = r.Bool(),
     };
     public override void WriteBody(CladWriter w)
     {
@@ -1067,7 +1084,7 @@ public sealed partial class AppendPathSegmentPointTurn : RobotMessage
         w.F32(TargetAngleRad);
         w.F32(AngleToleranceRad);
         Speed.Write(w);
-        w.U8(UseShortestDirection);
+        w.Bool(UseShortestDirection);
     }
 }
 
@@ -1092,6 +1109,7 @@ public sealed partial class TrimPath : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>executePath 0x41 (engine_to_robot), 3 bytes. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class ExecutePath : RobotMessage
 {
@@ -1113,13 +1131,14 @@ public sealed partial class ExecutePath : RobotMessage
     }
 }
 
-/// <summary>dockWithObject 0x42 (engine_to_robot), 21 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-20: the builder at 0x0063BD50, reached only through DockingComponent::DockWithObject 0x0063BA44 from IDockAction::CheckIfDone 0x005521AC. Word 0 is a literal zero; the speeds are IDockAction +0xAC, +0xB0, +0xB4, named by SetSpeed, SetAccel and SetSpeedAndAccel</summary>
+// fidelity: M2-009
+/// <summary>dockWithObject 0x42 (engine_to_robot), 21 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-20: the builder at 0x0063BD50, reached only through DockingComponent::DockWithObject 0x0063BA44 from IDockAction::CheckIfDone 0x005521AC. Word 0 is a literal zero; the speeds are IDockAction +0xAC, +0xB0, +0xB4, named by SetSpeed, SetAccel and SetSpeedAndAccel M2 inventory MD2: DockWithObject operator== vcmp.f32 on word 0 (0x007C0722); Write<bool> 0x007C06B4, 0x007C06DC</summary>
 public sealed partial class DockWithObject : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.DockWithObject;
     public DockWithObject() { }
     /// <summary>name from engine; the engine writes a literal zero here</summary>
-    public uint UnusedZero;
+    public float UnusedZero;
     /// <summary>name from engine</summary>
     public float SpeedMmps;
     /// <summary>name from engine</summary>
@@ -1129,39 +1148,40 @@ public sealed partial class DockWithObject : RobotMessage
     /// <summary>name from engine</summary>
     public byte DockAction;
     /// <summary>name not established; name from engine; IDockAction +0x95, the constructor's bool</summary>
-    public byte Field5;
+    public bool Field5;
     /// <summary>name not established; name from engine; IDockAction +0xBA, never written after the constructor</summary>
     public byte Field6;
     /// <summary>name from engine; IDockAction +0xBB, named by DriveToPickupObjectAction::SetDockingMethod</summary>
     public byte DockingMethod;
     /// <summary>name not established; name from engine; IDockAction +0xC1; PickupObjectAction sets it</summary>
-    public byte Field8;
+    public bool Field8;
     public static DockWithObject Read(CladReader r) => new()
     {
-        UnusedZero = r.U32(),
+        UnusedZero = r.F32(),
         SpeedMmps = r.F32(),
         AccelMmps2 = r.F32(),
         DecelMmps2 = r.F32(),
         DockAction = r.U8(),
-        Field5 = r.U8(),
+        Field5 = r.Bool(),
         Field6 = r.U8(),
         DockingMethod = r.U8(),
-        Field8 = r.U8(),
+        Field8 = r.Bool(),
     };
     public override void WriteBody(CladWriter w)
     {
-        w.U32(UnusedZero);
+        w.F32(UnusedZero);
         w.F32(SpeedMmps);
         w.F32(AccelMmps2);
         w.F32(DecelMmps2);
         w.U8(DockAction);
-        w.U8(Field5);
+        w.Bool(Field5);
         w.U8(Field6);
         w.U8(DockingMethod);
-        w.U8(Field8);
+        w.Bool(Field8);
     }
 }
 
+// fidelity: M2-009
 /// <summary>abortDocking 0x43 (engine_to_robot), 0 bytes. Confidence: empty. Verification: statically_verified.</summary>
 public sealed partial class AbortDocking : RobotMessage
 {
@@ -1175,7 +1195,8 @@ public sealed partial class AbortDocking : RobotMessage
     }
 }
 
-/// <summary>placeObjectOnGround 0x44 (engine_to_robot), 25 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-20: the builder at 0x00632B88, reached only from CarryingComponent::PlaceObjectOnGround 0x00632A88. The first three words are three zero ints converted to float (vcvt.f32.s32 of locals the caller sets to 0); the next three are a constant triple at 0xC7CD90 - 100, 200, 500 - and the last byte is the function's bool argument</summary>
+// fidelity: M2-009
+/// <summary>placeObjectOnGround 0x44 (engine_to_robot), 25 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-20: the builder at 0x00632B88, reached only from CarryingComponent::PlaceObjectOnGround 0x00632A88. The first three words are three zero ints converted to float (vcvt.f32.s32 of locals the caller sets to 0); the next three are a constant triple at 0xC7CD90 - 100, 200, 500 - and the last byte is the function's bool argument M2 inventory MD2: PlaceObjectOnGround Pack Write<bool> 0x007C0986</summary>
 public sealed partial class PlaceObjectOnGround : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.PlaceObjectOnGround;
@@ -1193,7 +1214,7 @@ public sealed partial class PlaceObjectOnGround : RobotMessage
     /// <summary>name from engine; 500</summary>
     public float DecelMmps2;
     /// <summary>name not established; name from engine; CarryingComponent::PlaceObjectOnGround's bool argument</summary>
-    public byte Field6;
+    public bool Field6;
     public static PlaceObjectOnGround Read(CladReader r) => new()
     {
         RelX = r.F32(),
@@ -1202,7 +1223,7 @@ public sealed partial class PlaceObjectOnGround : RobotMessage
         SpeedMmps = r.F32(),
         AccelMmps2 = r.F32(),
         DecelMmps2 = r.F32(),
-        Field6 = r.U8(),
+        Field6 = r.Bool(),
     };
     public override void WriteBody(CladWriter w)
     {
@@ -1212,10 +1233,11 @@ public sealed partial class PlaceObjectOnGround : RobotMessage
         w.F32(SpeedMmps);
         w.F32(AccelMmps2);
         w.F32(DecelMmps2);
-        w.U8(Field6);
+        w.Bool(Field6);
     }
 }
 
+// fidelity: M2-009, M2-007
 /// <summary>absLocalizationUpdate 0x45 (engine_to_robot), 24 bytes. Confidence: hardware_refined. Verification: hardware_verified. field names from PyCozmo (widths agree with native) engine 2026-09-21: Robot::SendAbsLocalizationUpdate(pose, timestamp, poseFrameId) 0x00512734 packs the message word by word from 0x00512774: the first two words are its two unsigned arguments (strd r8, sb at 0x0051279E), then the pose's parent id from PoseBase::GetID (0x00512762), then the transform's translation x and y at +0x20 and +0x24, then Rotation3d::GetAngleAroundZaxis (0x00512796) - so the last word is a float angle in radians, not an unknown u32. Robot::SendAbsLocalizationUpdate() 0x00514710 fixes the argument order: it takes the latest vision-only state (GetLatestVisionOnlyState, the timestamp out-parameter at sp+0x7c) and passes that timestamp as the second argument and the state's frame id as the third hardware verified: accepted without error; RobotState kept streaming with the requested pose origin</summary>
 public sealed partial class AbsoluteLocalizationUpdate : RobotMessage
 {
@@ -1315,7 +1337,8 @@ public sealed partial class ControllerGains : RobotMessage
     }
 }
 
-/// <summary>dockingErrorSignal 0x48 (engine_to_robot), 22 bytes. Confidence: prefix. Verification: statically_verified. C# twin Anki.Cozmo.VizInterface.DockingErrorSignal (prefix match) engine 2026-09-20: DockingComponent::UpdateDockingErrorSignal 0x0063BE80 builds this message at sp+0xa0 and the timestamp goes in first - 'mov r6, r1' takes the function's only argument and 'str r6, [sp, #0xa0]' at 0x0063C14A writes it to word 0 - then x at +0xa4, y at +0xa8, z at +0xac and the angle at +0xb0. The name table had matched the 16-byte VizInterface::DockingErrorSignal by prefix, which put x_dist at word 0 and shifted every field of this 22-byte message by one word. The last two bytes are not written by the builder at all</summary>
+// fidelity: M2-009
+/// <summary>dockingErrorSignal 0x48 (engine_to_robot), 22 bytes. Confidence: prefix. Verification: statically_verified. C# twin Anki.Cozmo.VizInterface.DockingErrorSignal (prefix match) engine 2026-09-20: DockingComponent::UpdateDockingErrorSignal 0x0063BE80 builds this message at sp+0xa0 and the timestamp goes in first - 'mov r6, r1' takes the function's only argument and 'str r6, [sp, #0xa0]' at 0x0063C14A writes it to word 0 - then x at +0xa4, y at +0xa8, z at +0xac and the angle at +0xb0. The name table had matched the 16-byte VizInterface::DockingErrorSignal by prefix, which put x_dist at word 0 and shifted every field of this 22-byte message by one word. The last two bytes are not written by the builder at all M2 inventory MD2: DockingErrorSignal Pack Write<bool> 0x007C0B78, 0x007C0B80</summary>
 public sealed partial class DockingErrorSignal : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.DockingErrorSignal;
@@ -1331,9 +1354,9 @@ public sealed partial class DockingErrorSignal : RobotMessage
     /// <summary>name from engine; yaw of the flat-clamped pose + pi/2 + the placement offset angle</summary>
     public float Angle;
     /// <summary>name not established; name from generated; never written by the builder</summary>
-    public byte Field5;
+    public bool Field5;
     /// <summary>name not established; name from generated; never written by the builder</summary>
-    public byte Field6;
+    public bool Field6;
     public static DockingErrorSignal Read(CladReader r) => new()
     {
         Timestamp = r.U32(),
@@ -1341,8 +1364,8 @@ public sealed partial class DockingErrorSignal : RobotMessage
         YDist = r.F32(),
         ZDist = r.F32(),
         Angle = r.F32(),
-        Field5 = r.U8(),
-        Field6 = r.U8(),
+        Field5 = r.Bool(),
+        Field6 = r.Bool(),
     };
     public override void WriteBody(CladWriter w)
     {
@@ -1351,8 +1374,8 @@ public sealed partial class DockingErrorSignal : RobotMessage
         w.F32(YDist);
         w.F32(ZDist);
         w.F32(Angle);
-        w.U8(Field5);
-        w.U8(Field6);
+        w.Bool(Field5);
+        w.Bool(Field6);
     }
 }
 
@@ -1373,6 +1396,7 @@ public sealed partial class CarryStateUpdate : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>imuRequest 0x4A (engine_to_robot), 4 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.IMURequest (exact match) hardware verified: robot answered with a 264-sample IMURawDataChunk (0xC7) burst</summary>
 public sealed partial class IMURequest : RobotMessage
 {
@@ -1390,7 +1414,8 @@ public sealed partial class IMURequest : RobotMessage
     }
 }
 
-/// <summary>syncTime 0x4B (engine_to_robot), 8 bytes. Confidence: native_named. Verification: hardware_verified. field names from PyCozmo (widths agree with native) hardware verified: robot answered SyncTimeAck (0xC2) and began streaming RobotState</summary>
+// fidelity: M2-009, M2-004
+/// <summary>syncTime 0x4B (engine_to_robot), 8 bytes. Confidence: native_named. Verification: hardware_verified. field names from PyCozmo (widths agree with native) M2 inventory MD2: SyncTime operator== vcmp.f32 on word 1 (0x007A3B0A); the engine sends -20.0f hardware verified: robot answered SyncTimeAck (0xC2) and began streaming RobotState</summary>
 public sealed partial class SyncTime : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.SyncTime;
@@ -1398,19 +1423,20 @@ public sealed partial class SyncTime : RobotMessage
     /// <summary>name from pycozmo</summary>
     public uint Timestamp;
     /// <summary>name from pycozmo</summary>
-    public uint Unknown;
+    public float Unknown;
     public static SyncTime Read(CladReader r) => new()
     {
         Timestamp = r.U32(),
-        Unknown = r.U32(),
+        Unknown = r.F32(),
     };
     public override void WriteBody(CladWriter w)
     {
         w.U32(Timestamp);
-        w.U32(Unknown);
+        w.F32(Unknown);
     }
 }
 
+// fidelity: M2-009
 /// <summary>imageRequest 0x4C (engine_to_robot), 2 bytes. Confidence: prefix. Verification: hardware_verified. C# twin Anki.Cozmo.ExternalInterface.ImageRequest (prefix match) hardware verified: robot answered with 28 images as ImageChunk (0xF2) + ImageImuData (0xF4)</summary>
 public sealed partial class ImageRequest : RobotMessage
 {
@@ -1646,6 +1672,7 @@ public sealed partial class SetCameraParams : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>startMotorCalibration 0x58 (engine_to_robot), 2 bytes. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class StartMotorCalibration : RobotMessage
 {
@@ -1721,6 +1748,7 @@ public sealed partial class CameraFOVInfo : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>enableStopOnCliff 0x60 (engine_to_robot), 1 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ExternalInterface.EnableStopOnCliff (exact match)</summary>
 public sealed partial class EnableStopOnCliff : RobotMessage
 {
@@ -1797,6 +1825,7 @@ public sealed partial class EnableBraceWhenFalling : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>setAudioVolume 0x64 (engine_to_robot), 2 bytes. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class SetAudioVolume : RobotMessage
 {
@@ -1827,6 +1856,7 @@ public sealed partial class GenerateTestTone : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>enableColorImages 0x66 (engine_to_robot), 1 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.ExternalInterface.EnableColorImages (exact match) hardware verified: sent before the image request; the frames that arrived were grayscale (encoding 8) as asked</summary>
 public sealed partial class EnableColorImages : RobotMessage
 {
@@ -1844,6 +1874,7 @@ public sealed partial class EnableColorImages : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>requestCrashReports 0x80 (engine_to_robot), 4 bytes. Confidence: native_only. Verification: hardware_verified. names generated; widths from native Unpack hardware verified: robot answered with CrashReport (0xCF)</summary>
 public sealed partial class RequestCrashReports : RobotMessage
 {
@@ -1861,6 +1892,7 @@ public sealed partial class RequestCrashReports : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>commandNV 0x81 (engine_to_robot), variable length. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class NVCommand : RobotMessage
 {
@@ -1882,7 +1914,7 @@ public sealed partial class NVCommand : RobotMessage
         Length = r.I32(),
         Op = r.U8(),
         Unknown = r.U8(),
-        Data = r.Array<byte>((int)r.U16(), () => r.U8()),
+        Data = r.VarArray<byte>((int)r.U16(), () => r.U8()),
     };
     public override void WriteBody(CladWriter w)
     {
@@ -1972,6 +2004,7 @@ public sealed partial class AbortAnimation : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>animAudioSample 0x8E (engine_to_robot), 744 bytes. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native) fixed array lengths [744] solved from native loop bounds; total matches official Size() 744 B</summary>
 public sealed partial class AudioSample : RobotMessage
 {
@@ -1990,6 +2023,7 @@ public sealed partial class AudioSample : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>animAudioSilence 0x8F (engine_to_robot), 0 bytes. Confidence: empty. Verification: statically_verified.</summary>
 public sealed partial class AudioSilence : RobotMessage
 {
@@ -2057,6 +2091,7 @@ public sealed partial class TurnToRecordedHeading : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>animHeadAngle 0x93 (engine_to_robot), 3 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-19: HeadAngleKeyFrame::GetStreamMessage at 0x004F8C08 stores durationTime_ms (this+0xC) as a u16 at +0x12 and angle_deg (i8 at this+0x10) at +0x14 after applying variability (this+0x11) through IKeyFrame::sRNG RandIntInRange(angle-var, angle+var); the three bytes at +0x12 are moved into AnimKeyFrame::HeadAngle. SetMembersFromFlatBuf at 0x004F8C90 reads FlatBuffer field 1 durationTime_ms (vtable slot +6, u32 -> this+0xC), field 2 angle_deg (slot +8, byte -> this+0x10) and field 3 variability_deg (slot +10, byte -> this+0x11)</summary>
 public sealed partial class HeadAngle : RobotMessage
 {
@@ -2078,6 +2113,7 @@ public sealed partial class HeadAngle : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>animLiftHeight 0x94 (engine_to_robot), 3 bytes. Confidence: hardware_refined. Verification: statically_verified. names generated; widths from native Unpack engine 2026-09-19: LiftHeightKeyFrame::GetStreamMessage at 0x004F8F80 mirrors HeadAngleKeyFrame::GetStreamMessage: durationTime_ms (this+0xC) as u16 at +0x12, height_mm (u8 at this+0x10) at +0x14 after RandIntInRange(height-var, height+var) with variability at this+0x11; SetMembersFromFlatBuf at 0x004F9004 reads FlatBuffer field 1 durationTime_ms (slot +6 -> this+0xC), field 2 height_mm (slot +8 -> this+0x10) and field 3 variability_mm (slot +10 -> this+0x11)</summary>
 public sealed partial class LiftHeight : RobotMessage
 {
@@ -2137,6 +2173,7 @@ public sealed partial class AnimEventToRTIP : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>animFaceImage 0x97 (engine_to_robot), variable length. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class FaceImage : RobotMessage
 {
@@ -2146,7 +2183,7 @@ public sealed partial class FaceImage : RobotMessage
     public byte[] Image = Array.Empty<byte>();
     public static FaceImage Read(CladReader r) => new()
     {
-        Image = r.Array<byte>((int)r.U16(), () => r.U8()),
+        Image = r.VarArray<byte>((int)r.U16(), () => r.U8()),
     };
     public override void WriteBody(CladWriter w)
     {
@@ -2173,6 +2210,7 @@ public sealed partial class BackpackLights : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>animBodyMotion 0x99 (engine_to_robot), 4 bytes. Confidence: hardware_refined. Verification: statically_verified. field names from PyCozmo (widths agree with native) engine 2026-09-18: BodyMotionKeyFrame::SetMembersFromFlatBuf at 0x004FB494 packs the clip's speed and its radius_mm into this pair of i16s, and GetStreamMessage at 0x004FBA8C sends them. ProcessRadiusString at 0x004FB588 resolves the symbolic radius tokens: TURN_IN_PLACE and POINT_TURN give 0, STRAIGHT gives 0x7FFF, anything with digits is atoi() clamped to i16</summary>
 public sealed partial class BodyMotion : RobotMessage
 {
@@ -2194,6 +2232,7 @@ public sealed partial class BodyMotion : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>animEndOfAnimation 0x9A (engine_to_robot), 0 bytes. Confidence: empty. Verification: statically_verified.</summary>
 public sealed partial class EndOfAnimation : RobotMessage
 {
@@ -2207,6 +2246,7 @@ public sealed partial class EndOfAnimation : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>animStartOfAnimation 0x9B (engine_to_robot), 1 bytes. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class StartOfAnimation : RobotMessage
 {
@@ -2258,6 +2298,7 @@ public sealed partial class EnableAnimTracks : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>initAnimController 0x9F (engine_to_robot), 0 bytes. Confidence: empty. Verification: hardware_verified. hardware verified: robot began streaming AnimationState (0xF1)</summary>
 public sealed partial class InitController : RobotMessage
 {
@@ -2271,6 +2312,7 @@ public sealed partial class InitController : RobotMessage
     }
 }
 
+// fidelity: M2-009
 /// <summary>appRunID 0xA0 (engine_to_robot), 16 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack fixed array lengths [4] solved from native loop bounds; total matches official Size() 16 B</summary>
 public sealed partial class SetAppRunID : RobotMessage
 {
@@ -2403,7 +2445,7 @@ public sealed partial class BodyStorageContents : RobotMessage
     {
         Field0 = r.U8(),
         Field1 = r.U8(),
-        Field2 = r.Array<byte>((int)r.U8(), () => r.U8()),
+        Field2 = r.VarArray<byte>((int)r.U8(), () => r.U8()),
     };
     public override void WriteBody(CladWriter w)
     {
@@ -2612,15 +2654,14 @@ public sealed partial class Write : RobotMessage
     }
 }
 
-/// <summary>trace 0xB0 (robot_to_engine), variable length. Confidence: hardware_refined. Verification: hardware_verified. names generated; widths from native Unpack capture 2026-09-18: decoded against the OBB AnkiLogStringTables; the engine reads formatId+unused as one 4-byte block hardware verified on firmware 2457: 14 received, 14 re-encoded byte-identically</summary>
+// fidelity: M2-012
+/// <summary>trace 0xB0 (robot_to_engine), variable length. Confidence: hardware_refined. Verification: hardware_verified. names generated; widths from native Unpack capture 2026-09-18: decoded against the OBB AnkiLogStringTables; the engine reads formatId+unused as one 4-byte block M2 inventory Appendix B section 2: PrintTrace Unpack 0x007D4BEA reads one 4-byte field at 0 (0x007D4BF6), 2 bytes at 4, 1 byte at 6, then the u8-count i32 array (0x0073923A). The capture decode takes the format-table id from the low 16 bits of the 4-byte field hardware verified on firmware 2457: 14 received, 14 re-encoded byte-identically</summary>
 public sealed partial class PrintTrace : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.Trace;
     public PrintTrace() { }
-    /// <summary>name from hardware</summary>
-    public ushort FormatId;
-    /// <summary>name from hardware</summary>
-    public ushort Unused;
+    /// <summary>name from hardware; one 4-byte field in the engine (0x007D4BF6); the capture decode uses its low 16 bits</summary>
+    public uint FormatId;
     /// <summary>name from hardware</summary>
     public ushort NameId;
     /// <summary>name from hardware</summary>
@@ -2629,16 +2670,14 @@ public sealed partial class PrintTrace : RobotMessage
     public int[] Args = Array.Empty<int>();
     public static PrintTrace Read(CladReader r) => new()
     {
-        FormatId = r.U16(),
-        Unused = r.U16(),
+        FormatId = r.U32(),
         NameId = r.U16(),
         Level = r.I8(),
-        Args = r.Array<int>((int)r.U8(), () => r.I32()),
+        Args = r.VarArray<int>((int)r.U8(), () => r.I32()),
     };
     public override void WriteBody(CladWriter w)
     {
-        w.U16(FormatId);
-        w.U16(Unused);
+        w.U32(FormatId);
         w.U16(NameId);
         w.I8(Level);
         w.U8((byte)(Args?.Length ?? 0));
@@ -2646,6 +2685,7 @@ public sealed partial class PrintTrace : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>printText 0xB1 (robot_to_engine), variable length. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
 public sealed partial class PrintText : RobotMessage
 {
@@ -2667,6 +2707,7 @@ public sealed partial class PrintText : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>mainCycleTimeError 0xB2 (robot_to_engine), 16 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
 public sealed partial class MainCycleTimeError : RobotMessage
 {
@@ -2696,7 +2737,8 @@ public sealed partial class MainCycleTimeError : RobotMessage
     }
 }
 
-/// <summary>goalPose 0xB3 (robot_to_engine), 21 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+// fidelity: M2-012
+/// <summary>goalPose 0xB3 (robot_to_engine), 21 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack M2 inventory MD2: GoalPose Unpack Read<bool> 0x007C2206</summary>
 public sealed partial class GoalPose : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.GoalPose;
@@ -2704,19 +2746,20 @@ public sealed partial class GoalPose : RobotMessage
     /// <summary>name not established; name from generated</summary>
     public RobotPose Field0;
     /// <summary>name not established; name from generated</summary>
-    public byte Field1;
+    public bool Field1;
     public static GoalPose Read(CladReader r) => new()
     {
         Field0 = RobotPose.Read(r),
-        Field1 = r.U8(),
+        Field1 = r.Bool(),
     };
     public override void WriteBody(CladWriter w)
     {
         Field0.Write(w);
-        w.U8(Field1);
+        w.Bool(Field1);
     }
 }
 
+// fidelity: M2-012
 /// <summary>activeObjectMoved 0xB4 (robot_to_engine), 21 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ObjectMoved (exact match)</summary>
 public sealed partial class ObjectMoved : RobotMessage
 {
@@ -2746,6 +2789,7 @@ public sealed partial class ObjectMoved : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>activeObjectStopped 0xB5 (robot_to_engine), 8 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ObjectStoppedMoving (exact match)</summary>
 public sealed partial class ObjectStoppedMoving : RobotMessage
 {
@@ -2767,6 +2811,7 @@ public sealed partial class ObjectStoppedMoving : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>activeObjectTapped 0xB6 (robot_to_engine), 12 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ObjectTapped (exact match)</summary>
 public sealed partial class ObjectTapped : RobotMessage
 {
@@ -2804,6 +2849,7 @@ public sealed partial class ObjectTapped : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>dataDump 0xB7 (robot_to_engine), variable length. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
 public sealed partial class DataDump : RobotMessage
 {
@@ -2816,7 +2862,7 @@ public sealed partial class DataDump : RobotMessage
     public static DataDump Read(CladReader r) => new()
     {
         Field0 = r.U32(),
-        Field1 = r.Array<byte>((int)r.U8(), () => r.U8()),
+        Field1 = r.VarArray<byte>((int)r.U8(), () => r.U8()),
     };
     public override void WriteBody(CladWriter w)
     {
@@ -2826,7 +2872,8 @@ public sealed partial class DataDump : RobotMessage
     }
 }
 
-/// <summary>pickAndPlaceResult 0xB8 (robot_to_engine), 7 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+// fidelity: M2-012, M2-014
+/// <summary>pickAndPlaceResult 0xB8 (robot_to_engine), 7 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack M2 inventory MD2: PickAndPlaceResult Unpack Read<bool> 0x007C1ADA; DockingResult read ldrsb by HandlePickAndPlaceResult (R-P1)</summary>
 public sealed partial class PickAndPlaceResult : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.PickAndPlaceResult;
@@ -2834,27 +2881,28 @@ public sealed partial class PickAndPlaceResult : RobotMessage
     /// <summary>name not established; name from generated</summary>
     public uint Field0;
     /// <summary>name not established; name from generated</summary>
-    public byte Field1;
+    public bool Field1;
     /// <summary>name not established; name from generated</summary>
-    public byte Field2;
+    public sbyte Field2;
     /// <summary>name not established; name from generated</summary>
     public byte Field3;
     public static PickAndPlaceResult Read(CladReader r) => new()
     {
         Field0 = r.U32(),
-        Field1 = r.U8(),
-        Field2 = r.U8(),
+        Field1 = r.Bool(),
+        Field2 = r.I8(),
         Field3 = r.U8(),
     };
     public override void WriteBody(CladWriter w)
     {
         w.U32(Field0);
-        w.U8(Field1);
-        w.U8(Field2);
+        w.Bool(Field1);
+        w.I8(Field2);
         w.U8(Field3);
     }
 }
 
+// fidelity: M2-012
 /// <summary>objectTappedFiltered 0xB9 (robot_to_engine), 10 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ObjectTappedFiltered (exact match)</summary>
 public sealed partial class ObjectTappedFiltered : RobotMessage
 {
@@ -2884,6 +2932,7 @@ public sealed partial class ObjectTappedFiltered : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>rampTraverseStarted 0xBA (robot_to_engine), 4 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
 public sealed partial class RampTraverseStart : RobotMessage
 {
@@ -2901,7 +2950,8 @@ public sealed partial class RampTraverseStart : RobotMessage
     }
 }
 
-/// <summary>rampTraverseCompleted 0xBB (robot_to_engine), 5 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+// fidelity: M2-012
+/// <summary>rampTraverseCompleted 0xBB (robot_to_engine), 5 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack M2 inventory MD2: RampTraverseComplete Unpack 0x007C1E88 reads a bool</summary>
 public sealed partial class RampTraverseComplete : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.RampTraverseCompleted;
@@ -2909,19 +2959,20 @@ public sealed partial class RampTraverseComplete : RobotMessage
     /// <summary>name not established; name from generated</summary>
     public uint Field0;
     /// <summary>name not established; name from generated</summary>
-    public byte Field1;
+    public bool Field1;
     public static RampTraverseComplete Read(CladReader r) => new()
     {
         Field0 = r.U32(),
-        Field1 = r.U8(),
+        Field1 = r.Bool(),
     };
     public override void WriteBody(CladWriter w)
     {
         w.U32(Field0);
-        w.U8(Field1);
+        w.Bool(Field1);
     }
 }
 
+// fidelity: M2-012
 /// <summary>bridgeTraverseStarted 0xBC (robot_to_engine), 4 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
 public sealed partial class BridgeTraverseStart : RobotMessage
 {
@@ -2939,7 +2990,8 @@ public sealed partial class BridgeTraverseStart : RobotMessage
     }
 }
 
-/// <summary>bridgeTraverseCompleted 0xBD (robot_to_engine), 5 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+// fidelity: M2-012
+/// <summary>bridgeTraverseCompleted 0xBD (robot_to_engine), 5 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack M2 inventory MD2: BridgeTraverseComplete Unpack 0x007C20CC reads a bool</summary>
 public sealed partial class BridgeTraverseComplete : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.BridgeTraverseCompleted;
@@ -2947,20 +2999,21 @@ public sealed partial class BridgeTraverseComplete : RobotMessage
     /// <summary>name not established; name from generated</summary>
     public uint Field0;
     /// <summary>name not established; name from generated</summary>
-    public byte Field1;
+    public bool Field1;
     public static BridgeTraverseComplete Read(CladReader r) => new()
     {
         Field0 = r.U32(),
-        Field1 = r.U8(),
+        Field1 = r.Bool(),
     };
     public override void WriteBody(CladWriter w)
     {
         w.U32(Field0);
-        w.U8(Field1);
+        w.Bool(Field1);
     }
 }
 
-/// <summary>timeProfStat 0xBE (robot_to_engine), variable length. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+// fidelity: M2-012
+/// <summary>timeProfStat 0xBE (robot_to_engine), variable length. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack M2 inventory MD2: TimeProfileStat Unpack 0x007D4F28 reads field2 as a bool</summary>
 public sealed partial class TimeProfileStat : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.TimeProfStat;
@@ -2970,25 +3023,26 @@ public sealed partial class TimeProfileStat : RobotMessage
     /// <summary>name not established; name from generated</summary>
     public uint Field1;
     /// <summary>name not established; name from generated</summary>
-    public byte Field2;
+    public bool Field2;
     /// <summary>name not established; name from generated</summary>
     public string Field3 = string.Empty;
     public static TimeProfileStat Read(CladReader r) => new()
     {
         Field0 = r.U32(),
         Field1 = r.U32(),
-        Field2 = r.U8(),
+        Field2 = r.Bool(),
         Field3 = r.String8(),
     };
     public override void WriteBody(CladWriter w)
     {
         w.U32(Field0);
         w.U32(Field1);
-        w.U8(Field2);
+        w.Bool(Field2);
         w.String8(Field3 ?? string.Empty);
     }
 }
 
+// fidelity: M2-012
 /// <summary>imuDataChunk 0xBF (robot_to_engine), 195 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.RobotInterface.IMUDataChunk (exact match)</summary>
 public sealed partial class IMUDataChunk : RobotMessage
 {
@@ -3044,6 +3098,7 @@ public sealed partial class IMUDataChunk : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>cliffEvent 0xC0 (robot_to_engine), 6 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.CliffEvent (exact match)</summary>
 public sealed partial class CliffEvent : RobotMessage
 {
@@ -3069,6 +3124,7 @@ public sealed partial class CliffEvent : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>potentialCliff 0xC1 (robot_to_engine), 0 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.PotentialCliff (exact match)</summary>
 public sealed partial class PotentialCliff : RobotMessage
 {
@@ -3082,6 +3138,7 @@ public sealed partial class PotentialCliff : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>syncTimeAck 0xC2 (robot_to_engine), 0 bytes. Confidence: empty. Verification: hardware_verified. hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically</summary>
 public sealed partial class SyncTimeAck : RobotMessage
 {
@@ -3095,6 +3152,7 @@ public sealed partial class SyncTimeAck : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>robotPoked 0xC3 (robot_to_engine), 0 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ExternalInterface.RobotPoked (exact match)</summary>
 public sealed partial class RobotPoked : RobotMessage
 {
@@ -3108,6 +3166,7 @@ public sealed partial class RobotPoked : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>motorActionAck 0xC4 (robot_to_engine), 1 bytes. Confidence: native_named. Verification: capture_verified. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class MotorActionAck : RobotMessage
 {
@@ -3125,6 +3184,7 @@ public sealed partial class MotorActionAck : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>movingLiftPostDock 0xC5 (robot_to_engine), 1 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
 public sealed partial class MovingLiftPostDock : RobotMessage
 {
@@ -3142,6 +3202,7 @@ public sealed partial class MovingLiftPostDock : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>pathFollowingEvent 0xC6 (robot_to_engine), 3 bytes. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class PathFollowingEvent : RobotMessage
 {
@@ -3163,6 +3224,7 @@ public sealed partial class PathFollowingEvent : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>imuRawDataChunk 0xC7 (robot_to_engine), 14 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.RobotInterface.IMURawDataChunk (exact match) hardware verified on firmware 2457: 200 received, 200 re-encoded byte-identically probe 2026-09-18: 264 samples in one burst; the first i16 triple is the gyro (near zero at rest), the second the accelerometer (Z about 9.7k at rest); order is 0 on the first sample, 1 in the middle, 2 on the last</summary>
 public sealed partial class IMURawDataChunk : RobotMessage
 {
@@ -3194,6 +3256,7 @@ public sealed partial class IMURawDataChunk : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>defaultCameraParams 0xC8 (robot_to_engine), 29 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack fixed array lengths [17] solved from native loop bounds; total matches official Size() 29 B</summary>
 public sealed partial class DefaultCameraParams : RobotMessage
 {
@@ -3228,6 +3291,7 @@ public sealed partial class DefaultCameraParams : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>robotAvailable 0xC9 (robot_to_engine), 6 bytes. Confidence: hardware_refined. Verification: hardware_verified. names generated; widths from native Unpack capture 2026-09-18: u32 head serial (0x41d04d9d) then hardware revision 5, matching the robot's own hardware.revision trace and MfgId.body_hw_version hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically</summary>
 public sealed partial class RobotAvailable : RobotMessage
 {
@@ -3249,6 +3313,7 @@ public sealed partial class RobotAvailable : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>animStarted 0xCA (robot_to_engine), 1 bytes. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class AnimationStarted : RobotMessage
 {
@@ -3266,6 +3331,7 @@ public sealed partial class AnimationStarted : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>animEnded 0xCB (robot_to_engine), 1 bytes. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class AnimationEnded : RobotMessage
 {
@@ -3283,6 +3349,7 @@ public sealed partial class AnimationEnded : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>nvOpResult 0xCD (robot_to_engine), variable length. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class NVOpResult : RobotMessage
 {
@@ -3304,7 +3371,7 @@ public sealed partial class NVOpResult : RobotMessage
         Length = r.I32(),
         Op = r.U8(),
         Result = r.I8(),
-        Data = r.Array<byte>((int)r.U16(), () => r.U8()),
+        Data = r.VarArray<byte>((int)r.U16(), () => r.U8()),
     };
     public override void WriteBody(CladWriter w)
     {
@@ -3317,6 +3384,7 @@ public sealed partial class NVOpResult : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>objectPowerLevel 0xCE (robot_to_engine), 9 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ObjectPowerLevel (exact match)</summary>
 public sealed partial class ObjectPowerLevel : RobotMessage
 {
@@ -3342,6 +3410,7 @@ public sealed partial class ObjectPowerLevel : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>crashReport 0xCF (robot_to_engine), variable length. Confidence: native_only. Verification: hardware_verified. names generated; widths from native Unpack hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically probe 2026-09-18: answered with an all-zero header and an empty array when the robot holds no crash reports</summary>
 public sealed partial class CrashReport : RobotMessage
 {
@@ -3360,7 +3429,7 @@ public sealed partial class CrashReport : RobotMessage
         Field0 = r.U32(),
         Field1 = r.U16(),
         Field2 = r.U8(),
-        Field3 = r.Array<uint>((int)r.U8(), () => r.U32()),
+        Field3 = r.VarArray<uint>((int)r.U8(), () => r.U32()),
     };
     public override void WriteBody(CladWriter w)
     {
@@ -3372,6 +3441,7 @@ public sealed partial class CrashReport : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>activeObjectConnectionState 0xD0 (robot_to_engine), 13 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ObjectConnectionState (exact match)</summary>
 public sealed partial class ObjectConnectionState : RobotMessage
 {
@@ -3401,6 +3471,7 @@ public sealed partial class ObjectConnectionState : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>motorCalibration 0xD1 (robot_to_engine), 3 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.MotorCalibration (exact match) hardware verified on firmware 2457: 4 received, 4 re-encoded byte-identically probe 2026-09-18: observed as motor 2 then 3 with calibStarted true, then both again with false, confirming the MotorID enum (2 = lift, 3 = head) and the start/finish pairing</summary>
 public sealed partial class MotorCalibration : RobotMessage
 {
@@ -3426,6 +3497,7 @@ public sealed partial class MotorCalibration : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>factoryFirmwareVersion 0xD2 (robot_to_engine), 44 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack fixed array lengths [16, 16] solved from native loop bounds; total matches official Size() 44 B</summary>
 public sealed partial class FWVersionInfo : RobotMessage
 {
@@ -3461,6 +3533,7 @@ public sealed partial class FWVersionInfo : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>dockingStatus 0xD3 (robot_to_engine), 5 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
 public sealed partial class DockingStatus : RobotMessage
 {
@@ -3482,6 +3555,7 @@ public sealed partial class DockingStatus : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>robotStopped 0xD4 (robot_to_engine), 1 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
 public sealed partial class RobotStopped : RobotMessage
 {
@@ -3499,6 +3573,7 @@ public sealed partial class RobotStopped : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>animEvent 0xD5 (robot_to_engine), 6 bytes. Confidence: prefix. Verification: statically_verified. C# twin Anki.Cozmo.ExternalInterface.AnimationEvent (prefix match)</summary>
 public sealed partial class AnimationEvent : RobotMessage
 {
@@ -3524,6 +3599,7 @@ public sealed partial class AnimationEvent : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>factoryTestParam 0xD6 (robot_to_engine), 4 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
 public sealed partial class FactoryTestParameter : RobotMessage
 {
@@ -3541,6 +3617,7 @@ public sealed partial class FactoryTestParameter : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>activeObjectUpAxisChanged 0xD7 (robot_to_engine), 9 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ObjectUpAxisChanged (exact match)</summary>
 public sealed partial class ObjectUpAxisChanged : RobotMessage
 {
@@ -3566,6 +3643,7 @@ public sealed partial class ObjectUpAxisChanged : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>motorAutoEnabled 0xD8 (robot_to_engine), 2 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.MotorAutoEnabled (exact match)</summary>
 public sealed partial class MotorAutoEnabled : RobotMessage
 {
@@ -3587,7 +3665,8 @@ public sealed partial class MotorAutoEnabled : RobotMessage
     }
 }
 
-/// <summary>robotError 0xD9 (robot_to_engine), 5 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+// fidelity: M2-012
+/// <summary>robotError 0xD9 (robot_to_engine), 5 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack M2 inventory MD2: RobotErrorReport Unpack Read<bool> 0x007D3E70</summary>
 public sealed partial class RobotErrorReport : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.RobotError;
@@ -3595,36 +3674,38 @@ public sealed partial class RobotErrorReport : RobotMessage
     /// <summary>name not established; name from generated</summary>
     public uint Field0;
     /// <summary>name not established; name from generated</summary>
-    public byte Field1;
+    public bool Field1;
     public static RobotErrorReport Read(CladReader r) => new()
     {
         Field0 = r.U32(),
-        Field1 = r.U8(),
+        Field1 = r.Bool(),
     };
     public override void WriteBody(CladWriter w)
     {
         w.U32(Field0);
-        w.U8(Field1);
+        w.Bool(Field1);
     }
 }
 
-/// <summary>liftLoad 0xDA (robot_to_engine), 1 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack</summary>
+// fidelity: M2-012
+/// <summary>liftLoad 0xDA (robot_to_engine), 1 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack M2 inventory MD2: LiftLoad inline Read<bool> 0x007B1BA4</summary>
 public sealed partial class LiftLoad : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.LiftLoad;
     public LiftLoad() { }
     /// <summary>name not established; name from generated</summary>
-    public byte Field0;
+    public bool Field0;
     public static LiftLoad Read(CladReader r) => new()
     {
-        Field0 = r.U8(),
+        Field0 = r.Bool(),
     };
     public override void WriteBody(CladWriter w)
     {
-        w.U8(Field0);
+        w.Bool(Field0);
     }
 }
 
+// fidelity: M2-012
 /// <summary>backpackButton 0xDB (robot_to_engine), 1 bytes. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class BackpackButton : RobotMessage
 {
@@ -3642,6 +3723,7 @@ public sealed partial class BackpackButton : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>imuTemperature 0xDC (robot_to_engine), 4 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.RobotInterface.IMUTemperature (exact match)</summary>
 public sealed partial class IMUTemperature : RobotMessage
 {
@@ -3659,6 +3741,7 @@ public sealed partial class IMUTemperature : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>fallingStarted 0xDD (robot_to_engine), 4 bytes. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class FallingStarted : RobotMessage
 {
@@ -3676,31 +3759,33 @@ public sealed partial class FallingStarted : RobotMessage
     }
 }
 
-/// <summary>fallingStopped 0xDE (robot_to_engine), 12 bytes. Confidence: prefix. Verification: statically_verified. C# twin Anki.Cozmo.ExternalInterface.FallingStopped (prefix match)</summary>
+// fidelity: M2-012, M2-013
+/// <summary>fallingStopped 0xDE (robot_to_engine), 12 bytes. Confidence: hardware_refined. Verification: statically_verified. M2 inventory Appendix B section 2 and M2-013: FallingStopped Unpack 0x007B0EB6 reads three 4-byte fields. HandleFallingStopped 0x00535040 logs "timestamp: %u, duration (ms): %u, intensity %.1f" from ldrd r1,r2,[r5] (0x0053506C) and vldr s0,[r5,#8] (0x00535068), and compares [r5+8] as a float with 1000.0 (0x005350AA..0x005350C2). The 8-byte game message ExternalInterface::FallingStopped the name table had matched is a different message</summary>
 public sealed partial class FallingStopped : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.FallingStopped;
     public FallingStopped() { }
-    /// <summary>name from csharp</summary>
+    /// <summary>name from engine</summary>
+    public uint Timestamp;
+    /// <summary>name from engine; to_string(unsigned) at 0x005350CC</summary>
     public uint DurationMs;
-    /// <summary>name from csharp</summary>
+    /// <summary>name from engine; vldr s0,[r5,#8] at 0x00535068</summary>
     public float ImpactIntensity;
-    /// <summary>name not established; name from generated</summary>
-    public float Field2;
     public static FallingStopped Read(CladReader r) => new()
     {
+        Timestamp = r.U32(),
         DurationMs = r.U32(),
         ImpactIntensity = r.F32(),
-        Field2 = r.F32(),
     };
     public override void WriteBody(CladWriter w)
     {
+        w.U32(Timestamp);
         w.U32(DurationMs);
         w.F32(ImpactIntensity);
-        w.F32(Field2);
     }
 }
 
+// fidelity: M2-012
 /// <summary>wifiFlashID 0xEC (robot_to_engine), 4 bytes. Confidence: native_only. Verification: hardware_verified. names generated; widths from native Unpack hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically</summary>
 public sealed partial class WiFiFlashID : RobotMessage
 {
@@ -3718,6 +3803,7 @@ public sealed partial class WiFiFlashID : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>mfgId 0xED (robot_to_engine), 12 bytes. Confidence: native_named. Verification: hardware_verified. field names from PyCozmo (widths agree with native) hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically</summary>
 public sealed partial class ManufacturingID : RobotMessage
 {
@@ -3743,6 +3829,7 @@ public sealed partial class ManufacturingID : RobotMessage
     }
 }
 
+// fidelity: M2-012, M2-006
 /// <summary>firmwareVersion 0xEE (robot_to_engine), variable length. Confidence: hardware_refined. Verification: hardware_verified. field names from PyCozmo (widths agree with native) capture 2026-09-18: leading u16 is the low half of the head serial number; the byte array is the cozmo.safe JSON signature header hardware verified on firmware 2457: 1 received, 1 re-encoded byte-identically</summary>
 public sealed partial class FirmwareVersion : RobotMessage
 {
@@ -3755,7 +3842,7 @@ public sealed partial class FirmwareVersion : RobotMessage
     public static FirmwareVersion Read(CladReader r) => new()
     {
         RobotId = r.U16(),
-        Signature = r.Array<byte>((int)r.U16(), () => r.U8()),
+        Signature = r.VarArray<byte>((int)r.U16(), () => r.U8()),
     };
     public override void WriteBody(CladWriter w)
     {
@@ -3765,6 +3852,7 @@ public sealed partial class FirmwareVersion : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>otaAck 0xEF (robot_to_engine), 7 bytes. Confidence: native_named. Verification: layout_known_semantics_uncertain. field names from PyCozmo (widths agree with native)</summary>
 public sealed partial class Ack : RobotMessage
 {
@@ -3790,6 +3878,7 @@ public sealed partial class Ack : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>state 0xF0 (robot_to_engine), 91 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.RobotState (exact match) hardware verified on firmware 2457: 383 received, 383 re-encoded byte-identically</summary>
 public sealed partial class RobotState : RobotMessage
 {
@@ -3864,6 +3953,7 @@ public sealed partial class RobotState : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>animState 0xF1 (robot_to_engine), 15 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.RobotInterface.AnimationState (exact match) hardware verified on firmware 2457: 81 received, 81 re-encoded byte-identically probe 2026-09-18: streamed at ~30 Hz with enabledAnimTracks 0xFF and zero counters while idle</summary>
 public sealed partial class AnimationState : RobotMessage
 {
@@ -3901,7 +3991,8 @@ public sealed partial class AnimationState : RobotMessage
     }
 }
 
-/// <summary>image 0xF2 (robot_to_engine), variable length. Confidence: native_named. Verification: hardware_verified. field names from PyCozmo (widths agree with native) hardware verified on firmware 2457: 143 received, 143 re-encoded byte-identically probe 2026-09-18: 28 images, 7 chunks each, ~6.6 kB per image, encoding 8 (JPEGMinimizedGray), resolution 4 (QVGA); chunkId counts 0..6 and imageChunkCount carries the total only in the final chunk; status was 2 throughout</summary>
+// fidelity: M2-012, M2-016
+/// <summary>image 0xF2 (robot_to_engine), variable length. Confidence: native_named. Verification: hardware_verified. field names from PyCozmo (widths agree with native) M2 inventory MD2: ImageChunk: imageEncoding u8 (0x004F1D7A, 0x004F218E, 0x004F225E); chunkDebug i32 and status i16 from Unity ImageChunk.cs:212,217 (MD6) hardware verified on firmware 2457: 143 received, 143 re-encoded byte-identically probe 2026-09-18: 28 images, 7 chunks each, ~6.6 kB per image, encoding 8 (JPEGMinimizedGray), resolution 4 (QVGA); chunkId counts 0..6 and imageChunkCount carries the total only in the final chunk; status was 2 throughout</summary>
 public sealed partial class ImageChunk : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.Image;
@@ -3911,9 +4002,9 @@ public sealed partial class ImageChunk : RobotMessage
     /// <summary>name from pycozmo</summary>
     public uint ImageId;
     /// <summary>name from pycozmo</summary>
-    public uint ChunkDebug;
+    public int ChunkDebug;
     /// <summary>name from pycozmo</summary>
-    public sbyte ImageEncoding;
+    public byte ImageEncoding;
     /// <summary>name from pycozmo</summary>
     public sbyte ImageResolution;
     /// <summary>name from pycozmo</summary>
@@ -3921,36 +4012,37 @@ public sealed partial class ImageChunk : RobotMessage
     /// <summary>name from pycozmo</summary>
     public byte ChunkId;
     /// <summary>name from pycozmo</summary>
-    public ushort Status;
+    public short Status;
     /// <summary>name from pycozmo</summary>
     public byte[] Data = Array.Empty<byte>();
     public static ImageChunk Read(CladReader r) => new()
     {
         FrameTimestamp = r.U32(),
         ImageId = r.U32(),
-        ChunkDebug = r.U32(),
-        ImageEncoding = r.I8(),
+        ChunkDebug = r.I32(),
+        ImageEncoding = r.U8(),
         ImageResolution = r.I8(),
         ImageChunkCount = r.U8(),
         ChunkId = r.U8(),
-        Status = r.U16(),
-        Data = r.Array<byte>((int)r.U16(), () => r.U8()),
+        Status = r.I16(),
+        Data = r.VarArray<byte>((int)r.U16(), () => r.U8()),
     };
     public override void WriteBody(CladWriter w)
     {
         w.U32(FrameTimestamp);
         w.U32(ImageId);
-        w.U32(ChunkDebug);
-        w.I8(ImageEncoding);
+        w.I32(ChunkDebug);
+        w.U8(ImageEncoding);
         w.I8(ImageResolution);
         w.U8(ImageChunkCount);
         w.U8(ChunkId);
-        w.U16(Status);
+        w.I16(Status);
         w.U16((ushort)(Data?.Length ?? 0));
         for (int i = 0; i < (Data?.Length ?? 0); i++) w.U8(Data[i]);
     }
 }
 
+// fidelity: M2-012
 /// <summary>activeObjectAvailable 0xF3 (robot_to_engine), 9 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.ObjectAvailable (exact match) hardware verified on firmware 2457: 31 received, 31 re-encoded byte-identically</summary>
 public sealed partial class ObjectAvailable : RobotMessage
 {
@@ -3976,6 +4068,7 @@ public sealed partial class ObjectAvailable : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>imageGyro 0xF4 (robot_to_engine), 17 bytes. Confidence: exact. Verification: hardware_verified. C# twin Anki.Cozmo.ImageImuData (exact match) hardware verified on firmware 2457: 79 received, 79 re-encoded byte-identically probe 2026-09-18: one per camera frame, carrying the gyro rates sampled with the image</summary>
 public sealed partial class ImageImuData : RobotMessage
 {
@@ -4009,6 +4102,7 @@ public sealed partial class ImageImuData : RobotMessage
     }
 }
 
+// fidelity: M2-012
 /// <summary>objectAccel 0xF5 (robot_to_engine), 20 bytes. Confidence: exact. Verification: statically_verified. C# twin Anki.Cozmo.ObjectAccel (exact match)</summary>
 public sealed partial class ObjectAccel : RobotMessage
 {

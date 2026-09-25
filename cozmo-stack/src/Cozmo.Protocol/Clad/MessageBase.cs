@@ -13,6 +13,12 @@ public abstract class RobotMessage
 
     public MessageInfo? Info => MessageCatalog.Lookup((byte)Id);
 
+    // fidelity: M2-008
+    /// <summary>
+    /// The EngineToRobot/RobotToEngine union as the engine packs it: the 1-byte tag first (EngineToRobot::Pack
+    /// 0x007AB6B8..0x007AB6C4), then the member, so the size is 1 + the member's size (EngineToRobot::Size
+    /// 0x007ABB98). Each generated class carries its own tag, as each typed union constructor writes it (S7).
+    /// </summary>
     public byte[] ToBytes()
     {
         var w = new CladWriter().U8((byte)Id);

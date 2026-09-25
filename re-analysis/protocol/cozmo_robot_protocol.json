@@ -1277,7 +1277,7 @@
    "subsystem": "leds_display",
    "safety": "safe_visible",
    "official_size": 31,
-   "native_size": "variable",
+   "native_size": 31,
    "variable_length": false,
    "declared_size": 31,
    "fields": [
@@ -2375,7 +2375,7 @@
     {
      "name": "isAbsolute",
      "kind": "scalar",
-     "type": "u8",
+     "type": "bool",
      "name_source": "engine"
     },
     {
@@ -2397,7 +2397,8 @@
    },
    "notes": [
     "names generated; widths from native Unpack",
-    "engine 2026-09-20: MovementComponent::TurnInPlace 0x00640898 and its builder 0x006408F4. TurnInPlaceAction::Init 0x00545FA0 puts an absolute heading in the first word on both its paths. On the relative path the sign of the turn is stuffed into bit 31 of the speed (bfi at 0x0054610C) and numHalfRevolutions is floor(|relative| / pi)"
+    "engine 2026-09-20: MovementComponent::TurnInPlace 0x00640898 and its builder 0x006408F4. TurnInPlaceAction::Init 0x00545FA0 puts an absolute heading in the first word on both its paths. On the relative path the sign of the turn is stuffed into bit 31 of the speed (bfi at 0x0054610C) and numHalfRevolutions is floor(|relative| / pi)",
+    "M2 inventory MD2: SetBodyAngle Pack Write<bool> 0x007A29BE"
    ]
   },
   "0x3A": {
@@ -2661,7 +2662,7 @@
     {
      "name": "useShortestDirection",
      "kind": "scalar",
-     "type": "u8",
+     "type": "bool",
      "name_source": "engine",
      "note": "PathSegment+0x14, the bool DefinePointTurn takes"
     }
@@ -2677,7 +2678,8 @@
    },
    "notes": [
     "names generated; widths from native Unpack",
-    "engine 2026-09-20: PathDolerOuter::Dole 0x00507E4C switches on Planning::PathSegment+0 (1 line, 2 arc, 3 point turn) and copies the struct into the message. The fields are named by their definers: PathSegment::DefineLine 0x0085BC00, DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, and SetSpeedProfile 0x0085BC90 for the speed triple at +0x1C"
+    "engine 2026-09-20: PathDolerOuter::Dole 0x00507E4C switches on Planning::PathSegment+0 (1 line, 2 arc, 3 point turn) and copies the struct into the message. The fields are named by their definers: PathSegment::DefineLine 0x0085BC00, DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, and SetSpeedProfile 0x0085BC90 for the speed triple at +0x1C",
+    "M2 inventory MD2: AppendPathSegmentPointTurn Pack Write<bool> 0x007A343C"
    ]
   },
   "0x40": {
@@ -2775,7 +2777,7 @@
     {
      "name": "unusedZero",
      "kind": "scalar",
-     "type": "u32",
+     "type": "f32",
      "name_source": "engine",
      "note": "the engine writes a literal zero here"
     },
@@ -2806,7 +2808,7 @@
     {
      "name": "field5",
      "kind": "scalar",
-     "type": "u8",
+     "type": "bool",
      "name_source": "engine",
      "uncertain": true,
      "note": "IDockAction +0x95, the constructor's bool"
@@ -2829,7 +2831,7 @@
     {
      "name": "field8",
      "kind": "scalar",
-     "type": "u8",
+     "type": "bool",
      "name_source": "engine",
      "uncertain": true,
      "note": "IDockAction +0xC1; PickupObjectAction sets it"
@@ -2846,7 +2848,8 @@
    },
    "notes": [
     "names generated; widths from native Unpack",
-    "engine 2026-09-20: the builder at 0x0063BD50, reached only through DockingComponent::DockWithObject 0x0063BA44 from IDockAction::CheckIfDone 0x005521AC. Word 0 is a literal zero; the speeds are IDockAction +0xAC, +0xB0, +0xB4, named by SetSpeed, SetAccel and SetSpeedAndAccel"
+    "engine 2026-09-20: the builder at 0x0063BD50, reached only through DockingComponent::DockWithObject 0x0063BA44 from IDockAction::CheckIfDone 0x005521AC. Word 0 is a literal zero; the speeds are IDockAction +0xAC, +0xB0, +0xB4, named by SetSpeed, SetAccel and SetSpeedAndAccel",
+    "M2 inventory MD2: DockWithObject operator== vcmp.f32 on word 0 (0x007C0722); Write<bool> 0x007C06B4, 0x007C06DC"
    ]
   },
   "0x43": {
@@ -2929,7 +2932,7 @@
     {
      "name": "field6",
      "kind": "scalar",
-     "type": "u8",
+     "type": "bool",
      "name_source": "engine",
      "uncertain": true,
      "note": "CarryingComponent::PlaceObjectOnGround's bool argument"
@@ -2946,7 +2949,8 @@
    },
    "notes": [
     "names generated; widths from native Unpack",
-    "engine 2026-09-20: the builder at 0x00632B88, reached only from CarryingComponent::PlaceObjectOnGround 0x00632A88. The first three words are three zero ints converted to float (vcvt.f32.s32 of locals the caller sets to 0); the next three are a constant triple at 0xC7CD90 - 100, 200, 500 - and the last byte is the function's bool argument"
+    "engine 2026-09-20: the builder at 0x00632B88, reached only from CarryingComponent::PlaceObjectOnGround 0x00632A88. The first three words are three zero ints converted to float (vcvt.f32.s32 of locals the caller sets to 0); the next three are a constant triple at 0xC7CD90 - 100, 200, 500 - and the last byte is the function's bool argument",
+    "M2 inventory MD2: PlaceObjectOnGround Pack Write<bool> 0x007C0986"
    ]
   },
   "0x45": {
@@ -3178,7 +3182,7 @@
     {
      "name": "field5",
      "kind": "scalar",
-     "type": "u8",
+     "type": "bool",
      "name_source": "generated",
      "uncertain": true,
      "note": "never written by the builder"
@@ -3186,7 +3190,7 @@
     {
      "name": "field6",
      "kind": "scalar",
-     "type": "u8",
+     "type": "bool",
      "name_source": "generated",
      "uncertain": true,
      "note": "never written by the builder"
@@ -3203,7 +3207,8 @@
    },
    "notes": [
     "C# twin Anki.Cozmo.VizInterface.DockingErrorSignal (prefix match)",
-    "engine 2026-09-20: DockingComponent::UpdateDockingErrorSignal 0x0063BE80 builds this message at sp+0xa0 and the timestamp goes in first - 'mov r6, r1' takes the function's only argument and 'str r6, [sp, #0xa0]' at 0x0063C14A writes it to word 0 - then x at +0xa4, y at +0xa8, z at +0xac and the angle at +0xb0. The name table had matched the 16-byte VizInterface::DockingErrorSignal by prefix, which put x_dist at word 0 and shifted every field of this 22-byte message by one word. The last two bytes are not written by the builder at all"
+    "engine 2026-09-20: DockingComponent::UpdateDockingErrorSignal 0x0063BE80 builds this message at sp+0xa0 and the timestamp goes in first - 'mov r6, r1' takes the function's only argument and 'str r6, [sp, #0xa0]' at 0x0063C14A writes it to word 0 - then x at +0xa4, y at +0xa8, z at +0xac and the angle at +0xb0. The name table had matched the 16-byte VizInterface::DockingErrorSignal by prefix, which put x_dist at word 0 and shifted every field of this 22-byte message by one word. The last two bytes are not written by the builder at all",
+    "M2 inventory MD2: DockingErrorSignal Pack Write<bool> 0x007C0B78, 0x007C0B80"
    ]
   },
   "0x49": {
@@ -3301,7 +3306,7 @@
     {
      "name": "unknown",
      "kind": "scalar",
-     "type": "u32",
+     "type": "f32",
      "name_source": "pycozmo",
      "uncertain": false
     }
@@ -3325,6 +3330,7 @@
    },
    "notes": [
     "field names from PyCozmo (widths agree with native)",
+    "M2 inventory MD2: SyncTime operator== vcmp.f32 on word 1 (0x007A3B0A); the engine sends -20.0f",
     "hardware verified: robot answered SyncTimeAck (0xC2) and began streaming RobotState"
    ]
   },
@@ -5624,14 +5630,9 @@
     {
      "name": "formatId",
      "kind": "scalar",
-     "type": "u16",
-     "name_source": "hardware"
-    },
-    {
-     "name": "unused",
-     "kind": "scalar",
-     "type": "u16",
-     "name_source": "hardware"
+     "type": "u32",
+     "name_source": "hardware",
+     "note": "one 4-byte field in the engine (0x007D4BF6); the capture decode uses its low 16 bits"
     },
     {
      "name": "nameId",
@@ -5678,6 +5679,7 @@
    "notes": [
     "names generated; widths from native Unpack",
     "capture 2026-09-18: decoded against the OBB AnkiLogStringTables; the engine reads formatId+unused as one 4-byte block",
+    "M2 inventory Appendix B section 2: PrintTrace Unpack 0x007D4BEA reads one 4-byte field at 0 (0x007D4BF6), 2 bytes at 4, 1 byte at 6, then the u8-count i32 array (0x0073923A). The capture decode takes the format-table id from the low 16 bits of the 4-byte field",
     "hardware verified on firmware 2457: 14 received, 14 re-encoded byte-identically"
    ]
   },
@@ -5785,7 +5787,7 @@
    "subsystem": "localization_navigation",
    "safety": "state_change",
    "official_size": 21,
-   "native_size": "variable",
+   "native_size": 21,
    "variable_length": false,
    "declared_size": 21,
    "fields": [
@@ -5799,7 +5801,7 @@
     {
      "name": "field1",
      "kind": "scalar",
-     "type": "u8",
+     "type": "bool",
      "name_source": "generated",
      "uncertain": true
     }
@@ -5814,7 +5816,8 @@
     "capture": null
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "names generated; widths from native Unpack",
+    "M2 inventory MD2: GoalPose Unpack Read<bool> 0x007C2206"
    ]
   },
   "0xB4": {
@@ -5825,7 +5828,7 @@
    "subsystem": "cubes_ble",
    "safety": "state_change",
    "official_size": 21,
-   "native_size": "variable",
+   "native_size": 21,
    "variable_length": false,
    "declared_size": 21,
    "fields": [
@@ -6031,14 +6034,14 @@
     {
      "name": "field1",
      "kind": "scalar",
-     "type": "u8",
+     "type": "bool",
      "name_source": "generated",
      "uncertain": true
     },
     {
      "name": "field2",
      "kind": "scalar",
-     "type": "u8",
+     "type": "i8",
      "name_source": "generated",
      "uncertain": true
     },
@@ -6060,7 +6063,8 @@
     "capture": null
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "names generated; widths from native Unpack",
+    "M2 inventory MD2: PickAndPlaceResult Unpack Read<bool> 0x007C1ADA; DockingResult read ldrsb by HandlePickAndPlaceResult (R-P1)"
    ]
   },
   "0xB9": {
@@ -6168,7 +6172,7 @@
     {
      "name": "field1",
      "kind": "scalar",
-     "type": "u8",
+     "type": "bool",
      "name_source": "generated",
      "uncertain": true
     }
@@ -6183,7 +6187,8 @@
     "capture": null
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "names generated; widths from native Unpack",
+    "M2 inventory MD2: RampTraverseComplete Unpack 0x007C1E88 reads a bool"
    ]
   },
   "0xBC": {
@@ -6241,7 +6246,7 @@
     {
      "name": "field1",
      "kind": "scalar",
-     "type": "u8",
+     "type": "bool",
      "name_source": "generated",
      "uncertain": true
     }
@@ -6256,7 +6261,8 @@
     "capture": null
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "names generated; widths from native Unpack",
+    "M2 inventory MD2: BridgeTraverseComplete Unpack 0x007C20CC reads a bool"
    ]
   },
   "0xBE": {
@@ -6288,7 +6294,7 @@
     {
      "name": "field2",
      "kind": "scalar",
-     "type": "u8",
+     "type": "bool",
      "name_source": "generated",
      "uncertain": true
     },
@@ -6312,7 +6318,8 @@
     "capture": null
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "names generated; widths from native Unpack",
+    "M2 inventory MD2: TimeProfileStat Unpack 0x007D4F28 reads field2 as a bool"
    ]
   },
   "0xBF": {
@@ -7488,7 +7495,7 @@
     {
      "name": "field1",
      "kind": "scalar",
-     "type": "u8",
+     "type": "bool",
      "name_source": "generated",
      "uncertain": true
     }
@@ -7503,7 +7510,8 @@
     "capture": null
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "names generated; widths from native Unpack",
+    "M2 inventory MD2: RobotErrorReport Unpack Read<bool> 0x007D3E70"
    ]
   },
   "0xDA": {
@@ -7521,7 +7529,7 @@
     {
      "name": "field0",
      "kind": "scalar",
-     "type": "u8",
+     "type": "bool",
      "name_source": "generated",
      "uncertain": true
     }
@@ -7536,7 +7544,8 @@
     "capture": null
    },
    "notes": [
-    "names generated; widths from native Unpack"
+    "names generated; widths from native Unpack",
+    "M2 inventory MD2: LiftLoad inline Read<bool> 0x007B1BA4"
    ]
   },
   "0xDB": {
@@ -7650,36 +7659,37 @@
    "declared_size": 12,
    "fields": [
     {
+     "name": "timestamp",
+     "kind": "scalar",
+     "type": "u32",
+     "name_source": "engine"
+    },
+    {
      "name": "duration_ms",
      "kind": "scalar",
      "type": "u32",
-     "name_source": "csharp"
+     "name_source": "engine",
+     "note": "to_string(unsigned) at 0x005350CC"
     },
     {
      "name": "impactIntensity",
      "kind": "scalar",
      "type": "f32",
-     "name_source": "csharp"
-    },
-    {
-     "name": "field2",
-     "kind": "scalar",
-     "type": "f32",
-     "name_source": "generated",
-     "uncertain": true
+     "name_source": "engine",
+     "note": "vldr s0,[r5,#8] at 0x00535068"
     }
    ],
-   "confidence": "prefix",
+   "confidence": "hardware_refined",
    "verification": "statically_verified",
    "evidence": {
     "native_unpack": "0x7b0eb6",
     "native_namespace": "RobotInterface",
-    "csharp": true,
+    "csharp": false,
     "pycozmo_name": "FallingStopped",
     "capture": null
    },
    "notes": [
-    "C# twin Anki.Cozmo.ExternalInterface.FallingStopped (prefix match)"
+    "M2 inventory Appendix B section 2 and M2-013: FallingStopped Unpack 0x007B0EB6 reads three 4-byte fields. HandleFallingStopped 0x00535040 logs \"timestamp: %u, duration (ms): %u, intensity %.1f\" from ldrd r1,r2,[r5] (0x0053506C) and vldr s0,[r5,#8] (0x00535068), and compares [r5+8] as a float with 1000.0 (0x005350AA..0x005350C2). The 8-byte game message ExternalInterface::FallingStopped the name table had matched is a different message"
    ]
   },
   "0xEC": {
@@ -7886,7 +7896,7 @@
    "subsystem": "robot_state_sensors",
    "safety": "state_change",
    "official_size": 91,
-   "native_size": "variable",
+   "native_size": 91,
    "variable_length": false,
    "declared_size": 91,
    "fields": [
@@ -8106,14 +8116,14 @@
     {
      "name": "chunk_debug",
      "kind": "scalar",
-     "type": "u32",
+     "type": "i32",
      "name_source": "pycozmo",
      "uncertain": false
     },
     {
      "name": "image_encoding",
      "kind": "scalar",
-     "type": "i8",
+     "type": "u8",
      "name_source": "pycozmo",
      "uncertain": false
     },
@@ -8141,7 +8151,7 @@
     {
      "name": "status",
      "kind": "scalar",
-     "type": "u16",
+     "type": "i16",
      "name_source": "pycozmo",
      "uncertain": false
     },
@@ -8206,6 +8216,7 @@
    },
    "notes": [
     "field names from PyCozmo (widths agree with native)",
+    "M2 inventory MD2: ImageChunk: imageEncoding u8 (0x004F1D7A, 0x004F218E, 0x004F225E); chunkDebug i32 and status i16 from Unity ImageChunk.cs:212,217 (MD6)",
     "hardware verified on firmware 2457: 143 received, 143 re-encoded byte-identically",
     "probe 2026-09-18: 28 images, 7 chunks each, ~6.6 kB per image, encoding 8 (JPEGMinimizedGray), resolution 4 (QVGA); chunkId counts 0..6 and imageChunkCount carries the total only in the final chunk; status was 2 throughout"
    ]
@@ -8337,7 +8348,7 @@
    "subsystem": "cubes_ble",
    "safety": "state_change",
    "official_size": 20,
-   "native_size": "variable",
+   "native_size": 20,
    "variable_length": false,
    "declared_size": 20,
    "fields": [

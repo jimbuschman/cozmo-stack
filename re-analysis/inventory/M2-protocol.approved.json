@@ -2,10 +2,10 @@
   "subsystem": "M2-protocol",
   "approved": "2026-09-24",
   "inventory": "re-analysis/inventory/M2-protocol.md",
-  "inventory_sha256": "f97f02cf86c646b0c87d1cf2ab79cbba692a60c5d38823b73eae8a2807b73150",
+  "inventory_sha256": "2130f0f1054f21ef3946f584f9a903631af791de0780fc27f45a69b70f30689b",
   "records": {
     "M2-001": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "CLAD wire primitives: little-endian, bool write 0/1 and read (byte != 0), all-or-nothing ReadBytes, u8/u16-count arrays and strings, fixed arrays without a prefix",
       "authority": "CLAD schema and generated serialisation",
       "evidence": [
@@ -33,7 +33,7 @@
       "hardware_required": false
     },
     "M2-003": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "liftAngle is radians; height = 66 sin(angle) + 45 with no clamp on the angle-to-height path; 32..92 clamps only height-to-angle",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -46,7 +46,7 @@
       "hardware_required": false
     },
     "M2-004": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The SyncTime payload: u32 timestamp and f32 -20.0",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -58,7 +58,7 @@
       "hardware_required": false
     },
     "M2-005": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The light colour word: 5-5-5 with red at bit 10, and bit 15 set from the alpha byte",
       "authority": "CubeLightComponent::SendTransitionMessage 0x00638056 packs the engine ColorRGBA word whole: mov.w ip,#0x7c00 / mov.w r3,#0x3e0 / and.w r4,ip,r5,lsr #17 (red bits 27..31 to bit 10) / and.w r7,r3,r5,lsr #14 (green bits 19..23 to bit 5) / ubfx r4,r5,#0xb,#5 (blue bits 11..15 to bit 0) / tst.w r5,#0xff with orrne r7,r7,#0x8000 (bit 15 from the alpha byte). ColorRGBA holds red in the top byte and alpha in the bottom, which CubeLightComponent::WhiteBalanceColor 0x0063a894 confirms by reading the low byte as the alpha it gates on",
       "evidence": [
@@ -72,7 +72,7 @@
       "hardware_required": false
     },
     "M2-006": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "FirmwareVersion 0xEE layout {u16, u16-count u8[]}; the engine parses build/version/time/sim from msg+4 and has no hash fields",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -84,7 +84,7 @@
       "hardware_required": false
     },
     "M2-007": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "absLocalizationUpdate: the timestamp first and the heading last",
       "authority": "Robot::SendAbsLocalizationUpdate(Pose3d const&, unsigned int const&, unsigned int const&) 0x00512734 and Robot::SendAbsLocalizationUpdate() 0x00514710, read",
       "evidence": [
@@ -97,7 +97,7 @@
       "hardware_required": false
     },
     "M2-008": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Outbound union: tag byte first, then the member; size = 1 + member; typed constructors write the tag",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -110,7 +110,7 @@
       "hardware_required": false
     },
     "M2-009": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Outbound layouts and sizes of the 42 engine-to-robot messages this stack sends",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -121,7 +121,7 @@
       "hardware_required": false
     },
     "M2-010": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Inbound dispatch: TBH at 0x007B1B10; out-of-range tags and the 14 in-range tags without a codec (0xCC, 0xDF..0xEB) consume only the tag byte; 56 codecs",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -137,7 +137,7 @@
       "hardware_required": false
     },
     "M2-011": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Inbound size rule: kept only when bytes consumed == length; field read failures otherwise ignored",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -151,7 +151,7 @@
       "hardware_required": false
     },
     "M2-012": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Inbound layouts and sizes of the 56 robot-to-engine codecs",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -162,7 +162,7 @@
       "hardware_required": false
     },
     "M2-013": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "FallingStopped 0xDE is {u32 timestamp, u32 duration_ms, f32 impactIntensity}",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -173,7 +173,7 @@
       "hardware_required": false
     },
     "M2-014": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "PickAndPlaceResult 0xB8: u32, bool success, i8 DockingResult, BlockStatus 0 NO_BLOCK / 1 BLOCK_PLACED / 2 BLOCK_PICKED_UP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -197,7 +197,7 @@
       "hardware_required": false
     },
     "M2-016": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "ImageChunk 0xF2 field types: u32 ts, u32 id, i32 chunkDebug, u8 imageEncoding, i8 resolution, u8 count, u8 chunkId, i16 status, u16-count data",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -206,6 +206,18 @@
         "resolution: sxtb before EnumToString(ImageResolution) (0x004F1E56); equality with 4 (0x004F1D4C)",
         "imageChunkCount ldrb + 32-bit subs (0x004F1E0C); chunkId ldrb (0x004F1DB2, 0x004F1D5E); frameTimeStamp unsigned compare (0x004F1E2C bls)",
         "chunkDebug and status are only copied or equality-compared (Pack 0x007C61B4, 0x007C6202; operator== 0x007C6276, 0x007C629E; Viz 0x006C067C); declared i32/i16 by the Unity generated CLAD ImageChunk.cs:212,217 (MD6)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M2-017": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "A field whose read failed in a kept malformed message holds 0 / false (the engine leaves stale stack bytes)",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "ProcessMessages sets only the union tag byte to 0xFF before Unpack (0x0069D8F8/0x0069D8FA); ClearCurrent 0x007B24A0 destroys only vector/string members and stores 0xFF (0x007B2526/0x007B2528)",
+        "member constructors do not zero scalars: RobotErrorReport 0x007D3E50, PickAndPlaceResult 0x007C1ABA, FallingStopped 0x007B0EAA; fixed arrays store only successful reads (0x007BF21E..0x007BF22C, 0x007C885C..0x007C886A); FWVersionInfo zeroes its first three words (0x007C32D4..0x007C32DA)",
+        "visible only in a kept truncated message (M2-011 D11), e.g. a 5-byte robotError: the engine reads a stale fatal byte at 0x0069D930"
       ],
       "live_path": true,
       "hardware_required": false

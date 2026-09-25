@@ -35,14 +35,22 @@ public sealed record CliffReport(uint Timestamp, CliffSensors Sensors, bool Stop
     public override string ToString() => $"cliff {Sensors} at {Timestamp}{(StoppedForCliff ? ", robot stopped" : "")}";
 }
 
+// fidelity: M2-013
 /// <summary>
 /// The end of a fall, as the robot reports it in <see cref="FallingStopped"/> (0xDE): how long it fell and
 /// how hard it landed. The intensity's unit is not established; the engine compares it against 1000
 /// (<c>BehaviorReactToImpact::AlwaysHandle</c> at 0x00606408) to decide whether the landing counts as an
 /// impact worth reacting to.
+///
+/// The message is {u32 timestamp, u32 duration_ms, f32 impactIntensity}: <c>HandleFallingStopped</c> 0x00535040
+/// logs "timestamp: %u, duration (ms): %u, intensity %.1f" from <c>ldrd r1,r2,[r5]</c> (0x0053506C) and
+/// <c>vldr s0,[r5,#8]</c> (0x00535068). <see cref="Timestamp"/> is the robot's timestamp word.
 /// </summary>
 public sealed record FallingStoppedReport(uint DurationMs, float ImpactIntensity)
 {
+    /// <summary>The message's first word, the robot's timestamp (+0).</summary>
+    public uint Timestamp { get; init; }
+
     public override string ToString() => $"fell for {DurationMs} ms, impact {ImpactIntensity:F0}";
 }
 
@@ -155,7 +163,12 @@ public sealed class CozmoSensors
     /// (0x00516F64) converts with <c>45 + 66 sin(angle)</c>; see <see cref="RobotState.LiftAngleRad"/>.
     /// </summary>
     public float? LiftAngleRad => _state.Latest?.LiftAngle;
-    /// <summary>The lift height in millimetres, converted from the angle as the engine converts it.</summary>
+    // fidelity: M2-003
+    /// <summary>
+    /// The lift height in millimetres, converted from the angle as the engine converts it: 66 sin(angle) + 45
+    /// with no clamp (GetLiftHeight 0x00516F64..0x00516F8E, RS7). The 32..92 clamp is only in the inverse,
+    /// <see cref="RobotState.LiftAngleRadFromHeight"/>.
+    /// </summary>
     public float? LiftHeightMm => _state.Latest?.LiftHeightMm;
     /// <summary>Left and right wheel speeds in mm/s.</summary>
     public (float Left, float Right)? WheelSpeedsMmps =>
@@ -237,6 +250,12 @@ public sealed class CozmoSensors
 
     // ----------------------------------------------------------------- plumbing
 
+    // fidelity: M2-002
+    /// <summary>
+    /// A status bit of the latest RobotState. The flag names and values are the engine's (EnumToString 0x007D57C8,
+    /// Unity RobotStatusFlag.cs:8-25); where the engine stores each consumed bit is recorded in M2-002, and what
+    /// it does with it afterwards belongs to the layer that consumes it (M4).
+    /// </summary>
     private bool Flag(RobotStatusFlag f) => _state.Latest?.Has(f) ?? false;
 
     private bool _lastFalling;
@@ -274,7 +293,8 @@ public sealed class CozmoSensors
                 break;
 
             case Protocol.FallingStopped f:
-                FallingStopped?.Invoke(new FallingStoppedReport(f.DurationMs, f.ImpactIntensity));
+                // fidelity: M2-013
+                FallingStopped?.Invoke(new FallingStoppedReport(f.DurationMs, f.ImpactIntensity) { Timestamp = f.Timestamp });
                 break;
 
             case MotorCalibration mc:
