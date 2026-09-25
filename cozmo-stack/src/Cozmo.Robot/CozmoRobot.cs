@@ -570,10 +570,20 @@ public sealed class CozmoRobot : IDisposable
     /// </summary>
     public void Dispose()
     {
+        // fidelity: M5-022
+        // A37: ~Robot → AbortAll: the actions are cancelled (here: the streaming animation, whose SetStreamingAnimation(null)
+        // broadcasts AnimationAborted, A22/A23), then SendAbortAnimation (0x8D) and MovementComponent::StopAllMotors, all
+        // before the streamer is destroyed. PathComponent::Abort and AbortDocking are M12/M13's and not run here.
+        // A37 (M5 fix B9): the engine tick is stopped first and joined, so no Update streams after the AbortAll sends.
+        try { Engine.StopTick(); } catch { }
         try { Animations.Dispose(); } catch { }
         try
         {
-            if (Engine.ConnectionState == 2) EmergencyStop();
+            if (Engine.ConnectionState == 2)
+            {
+                SendMessage(new AbortAnimation());
+                EmergencyStop();       // StopAllMotors, then this stack's DriveWheels(0) (decision note)
+            }
         }
         catch { }
         Engine.Dispose();

@@ -175,6 +175,9 @@ public class KeepAliveTests
 
         scheduler.StreamLive(new HeadKeyframe(0, 250, 12, 6), 0);
         scheduler.StreamLive(new LiftKeyframe(0, 120, 35, 8), 0);
+        // M5 A29: the keyframes go out in the streamer's Updates (the first re-inits the live idle, the next streams it)
+        scheduler.Advance(0);
+        scheduler.Advance(60);
 
         var (deg, headDur) = Assert.Single(sink.Heads);
         Assert.Equal(250u, headDur);
@@ -208,10 +211,10 @@ public class KeepAliveTests
         Assert.All(heads, a => Assert.Equal(0, a));
     }
 
-    /// <summary>A live keyframe is refused while a clip owns that track, as the streamer never reaches
-    /// the live animation while a real animation is streaming.</summary>
+    /// <summary>A live keyframe is refused while a clip streams, whatever its track: the streamer reaches the live
+    /// animation only in the no-animation path (M5 A28, A29).</summary>
     [Fact]
-    public void ALiveKeyframeIsRefusedWhileAClipOwnsTheTrack()
+    public void ALiveKeyframeIsRefusedWhileAClipStreams()
     {
         var sink = new Recorder();
         var scheduler = new AnimationScheduler(sink, new Random(2));
@@ -225,7 +228,7 @@ public class KeepAliveTests
         scheduler.Play(clip, 0);
 
         Assert.False(scheduler.StreamLive(new HeadKeyframe(0, 250, 12, 6), 0));
-        Assert.True(scheduler.StreamLive(new LiftKeyframe(0, 120, 35, 8), 0));   // a different track is free
+        Assert.False(scheduler.StreamLive(new LiftKeyframe(0, 120, 35, 8), 0));   // a different track: refused all the same
     }
 
     // ---------------------------------------------------------------- M7-010: the body shuffle
@@ -270,8 +273,8 @@ public class KeepAliveTests
     }
 
     /// <summary>
-    /// A live body keyframe is stopped when its duration runs out. DriveWheels runs until countermanded
-    /// and the live animation has no clip timeline to end it, so the scheduler has to.
+    /// A live body keyframe is stopped by its own stop message (M5 C5): on the first frame of the live animation with its
+    /// counter at the duration, 500 ms of frames after it started, and only once.
     /// </summary>
     [Fact]
     public void ALiveBodyKeyframeStopsWhenItsDurationRunsOut()
@@ -280,13 +283,16 @@ public class KeepAliveTests
         var scheduler = new AnimationScheduler(sink, new Random(2));
 
         scheduler.StreamLive(new BodyKeyframe(0, 500, IdleBehavior.TurnInPlaceToken, 10), 1_000);
+        scheduler.Advance(1_000);                 // InitStream(live, 0xFF)
+        scheduler.Advance(1_033);                 // the first live frame: the body starts
         Assert.Single(sink.Bodies);
 
-        scheduler.Advance(1_200);
+        for (int i = 2; i <= 15; i++) scheduler.Advance(1_000 + 33 * i);   // frames at 33 .. 462 of stream time
         Assert.Equal(0, sink.BodyStops);
-        scheduler.Advance(1_500);
+        scheduler.Advance(1_000 + 33 * 16);       // the frame at 495: counter 495 < 500, still running
+        scheduler.Advance(1_000 + 33 * 17);       // the frame at 528: counter 528 ≥ 500, the stop
         Assert.Equal(1, sink.BodyStops);
-        scheduler.Advance(2_000);
+        for (int i = 18; i <= 30; i++) scheduler.Advance(1_000 + 33 * i);
         Assert.Equal(1, sink.BodyStops);          // and only once
     }
 

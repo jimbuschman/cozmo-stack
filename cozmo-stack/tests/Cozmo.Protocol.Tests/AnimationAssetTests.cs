@@ -310,7 +310,9 @@ public class AnimationAssetTests
         s.KeyframeFired += fired.Add;
 
         var handle = s.Play(clip, 0)!;
-        for (double t = 0; t <= clip.DurationMs + 100; t += 1000.0 / AnimationScheduler.FrameRateHz)
+        // A19, C18: a backpack keyframe holds its track for its duration, so later ones queue behind it and the clip can
+        // run past its last keyframe's end; it is streamed until it completes
+        for (double t = 0; handle.IsRunning && t <= clip.DurationMs + 10_000; t += 1000.0 / AnimationScheduler.FrameRateHz)
             s.Advance(t);
 
         Assert.Equal(clip.Keyframes.Count, fired.Count);

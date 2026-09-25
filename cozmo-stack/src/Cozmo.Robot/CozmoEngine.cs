@@ -1667,6 +1667,13 @@ public sealed class CozmoEngine : IDisposable
         try { Faulted?.Invoke(e); } catch { }
     }
 
+    // fidelity: M5-022
+    /// <summary>
+    /// Stops the 60 ms engine thread and waits for it (a production engine; the test seams have none), so no Robot::Update
+    /// runs after it: ~Robot's AbortAll runs on the engine thread with no Update after it (M5 A37).
+    /// </summary>
+    internal void StopTick() => _runner?.Stop();
+
     public void Dispose()
     {
         if (_disposed) return;

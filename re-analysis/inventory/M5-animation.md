@@ -1,6 +1,6 @@
 # M5 animation inventory (clips, streamer, face)
 
-**State: approved by the manager on 2026-09-24 under the operator's standing authorisation, and frozen with `python re-analysis/tools/fidelity.py --approve M5-animation`.**
+**State: approved by the manager on 2026-09-24 under the operator's standing authorisation, and frozen with `python re-analysis/tools/fidelity.py --approve M5-animation`, then re-approved on 2026-09-25 after corrections C1..C4.**
 - Under that authorisation, source-derived inventories and ordinary source-fidelity decisions need no operator checkpoint.
 - Only a deliberate divergence from the engine, or an unresolved source question that materially affects robot behaviour, goes to the operator. None is open.
 
@@ -107,6 +107,33 @@
   - **M5-019:** its keep-alive claim was partial.
   - **M5-002, M5-012, M5-015:** their citations were partial.
 - **M5-018, M5-021, M5-022, M5-023:** these were EQUIVALENT_IMPLEMENTATION on arguments the source now contradicts or supersedes.
+
+## Corrections after the first freeze (manager, 2026-09-25; re-approved under the standing authorisation)
+
+- **C1: gap pass 4 settles items the first batch reported as MISSING.** They are in Appendix E:
+  - JSON keyframe members J1.1..J1.10 (M5-001, 002, 004, 006, 009, 016);
+  - ProceduralAnimName = "_PROCEDURAL_" (P1);
+  - UpdateLiveAnimation L1..L8 (M5-030). The head angle is **truncated**, which contradicts A35's "round"; the timers are duration/spacing pairs; live keyframes have trigger 0 and no order check;
+  - the backpack layer lambda B1..B3 (M5-031);
+  - TurnToRecordedHeading 0x92, T1..T2 (M5-033);
+  - GetLastKeyFrameEndTime E1 (M5-024);
+  - the RNGs R1..R4:
+    - sRNG and the context RNG are mt19937 seeded from /dev/urandom, since the official app sends random_seed 0;
+    - the group draw uses the context RNG;
+    - ScanlineDistorter uses a static mt19937 seeded 1 (deterministic).
+- **C2: order corrections, from the batch verifier's disassembly.**
+  - SetFromFlatBuf and Interpolate call SetFacePosition **before** the face scale is set (0x00583A08 before 0x00583A0C..0x00583AAC; 0x005844A8 before 0x00584548). So the centre clamp uses the default scale 1.
+  - DrawFace's rotated row extent transforms the 4 corners of **each** eye rectangle, 8 points in all, with floor/ceil, min starting at 63 and max at 0 (0x00585CB6..0x00585D98).
+  - The lid deg-to-rad constant is 0x3C8EFA35 ([0x005853AC], [0x0058502E]).
+- **C3: two decisions.**
+  - **Seeds.** sRNG and the context RNG are seeded from OS entropy, as the engine seeds them from /dev/urandom. The generator is ported mt19937 with GetNextDbl = (d0 + d1·2^32)·2^−64. No policy is needed. The distorter RNG is mt19937 seeded 1, exactly.
+  - **Uninitialised fields.** The JSON Head/Lift/Backpack keyframe fields that SetMembersFromJson does not write are uninitialised stack in the engine. No shipped JSON clip leaves one unwritten, so the stack uses 0, a forced policy that cannot be observed on shipped data.
+
+- **C4: the live and idle tail's re-init branch, which L8 leaves out** (from the batch verifier; inside L8's cited range).
+  - The tail runs InitStream(idle, 0xFF) when the previous idle ≠ this idle, **or +0x64 == 0** (0x0057D40C..0x0057D412: `ldrb r0,[r4,#0x64]; cmp; beq 0x57d3fa`), or when the idle has ended. Otherwise it runs UpdateStream.
+  - Every streaming Update clears +0x64 (A13). So after a clip streams while an idle is on top, the idle is re-initialised with tag 0xFF.
+  - The HasAnimationForTrigger-miss path reaches the same tail (0x0057D218).
+  - The rad-to-deg constant is 0x42652EE1 (180/π), both in UpdateLiveAnimation ([0x0057DB2C], loaded at 0x0057D838) and in the face angle blend (0x005842E0). The rows' printed "57.2958" is a rounding of it.
 
 ## Appendix A: M5 pass, extractor report
 
@@ -557,3 +584,102 @@ The linear/cubic branches of warpAffine, and LineAA/Line2, were not diffed beyon
 ##### Open questions
 1. FPSCR rounding mode at run time: default RN (ties to even) is assumed. Only the three libraries were scanned for VMSR, so an FPSCR change elsewhere in the process is HARDWARE_ONLY / unverified.
 2. The engine-side type of warpAffine's M matrix (CV_32F or CV_64F) was not re-read. Either way convertTo to double is exact in stock, but core's convertTo was not diffed.
+
+## Appendix E: gap pass 4, extractor report
+
+I wrote nothing under the repo root. Dumps and tools are in `C:\Windows\TEMP\claude\C--Users-jbuschman-Downloads-com-anki-cozmo-3-4-0-1204-minAPI21-armeabi-v7a--nodpi--apkmirror-com-apk-Decompiler-com\b4cb80cd-acea-45cc-a212-7aecff92c2d6\scratchpad\extract\M5-gap4\`:
+- dumps: `ikf_dfj.txt`, `head_json.txt`, `lift_json.txt`, `body_json.txt`, `bp_json.txt`, `audio_json.txt`, `pf_json.txt`, `getcolor.txt`, `addjson.txt`, `asInt.txt`, `asUInt.txt`, `asFloat.txt`, `ula.txt`, `ctor.txt`, `liveadd.txt`, `bplayer.txt`, `ttrh.txt`, `initstream.txt`, `lastend.txt`, `rng.txt`
+- new tool: `pcref.py` (finds PC-relative references)
+
+All addresses are in `resources/lib/armeabi-v7a/libcozmoEngine.so`. All 7 items are settled from source except the RNG seed value, which is runtime entropy (item 7).
+
+##### Findings that change the most
+
+1. **Head angle is truncated, not rounded.** The live head keyframe angle is `(s8)trunc(robot+0x2FC · 57.2958f)` (`vcvt.s32.f32` at 0x0057D84E). A35 says "round".
+2. **The live timers are duration + spacing pairs.** Only the duration field is counted down, and a keyframe is generated when duration + spacing ≤ 0.
+3. **Live keyframes have trigger 0.** They are appended with no trigger-order check.
+4. **Every RNG in the app is entropy-seeded except the distorter's.** `IKeyFrame::sRNG` and the context RNG are seeded from `/dev/urandom`: the official app sends StartEngine with random_seed 0. Only ScanlineDistorter's RNG is fixed (seed 1).
+5. **JSON rules differ from the FlatBuffer path in four places:**
+   - Head and Lift variability are required in JSON (the FlatBuffer default is 0).
+   - RobotAudio hasAlts defaults to false in JSON (true in FlatBuffer).
+   - A negative Body duration is not converted to INT_MAX. It never stops anyway, through unsigned compares.
+   - Numbers are truncated by JsonCpp. The shipped angle_deg ±24.999999999999996 becomes ±24.
+
+##### 1. JSON keyframe parsing (Animation::DefineFromJson)
+
+| step | what the original does | citation | record | classification |
+|---|---|---|---|---|
+| J1.1 | **Frame loop.** For each array element: <br>- a non-object gives an error and return 1; <br>- a non-string "Name" gives FrameNameMissing and return 1; <br>- the name is compared exactly (length + bytes) with the static class names, in this order: HeadAngle, LiftHeight, FaceAnimation, Event, DeviceAudio, RobotAudio, BackpackLights (22 chars), BodyMotion, RecordHeading, TurnToRecordedHeading, ProceduralFace (the `*KeyFrame` strings); <br>- no match gives UnrecognizedFrameName and return 1; <br>- an add failure gives AddKeyFrameFailure and returns that Result. <br>Earlier frames stay, with no rollback. | 0x0057690E..0x00576946; name fns 0x005770BC (literal 0x00577128 "HeadAngleKeyFrame"), 0x005771A4, 0x0057728C, 0x00577400, 0x005774E4, 0x0057760C, 0x0057775C (`movs r2,#0x16`), 0x005777E8, 0x005778C4, 0x005779A4, 0x00577A8C; unrecognised 0x00576DD6..0x00576E40; add fail 0x00576E4E..0x00576EAE → 0x00576F94 | M5-001 | EXACT_SOURCE |
+| J1.2 | **Per-type add.** The keyframe is built on the stack: <br>- Head, Lift and Backpack get IKeyFrame() plus their vtable only. Their fields are **uninitialised** except where SetMembersFromJson writes them. <br>- Body uses BodyMotionKeyFrame(): trigger 0, counter 0, enableStop +0x10 = 1, stop message {0, 0x7FFF} at +0x16. <br>- ProcFace uses the default ctor 0x578FE4. <br>- RobotAudio gets an empty ref vector. <br>Then `IKeyFrame::DefineFromJson` runs, then `AddNewKeyFrameToBack`, which requires trigger > previous trigger (BadTriggerTime). | 0x00577154..0x0057718E (Head), 0x0057723C (Lift), 0x00576628 (Backpack), 0x00577880 + ctor 0x004FB14C..0x004FB16A (Body), 0x00577B28 (Face), 0x005776A4 (Audio); order check 0x00579100..0x00579166 | M5-001 | EXACT_SOURCE |
+| J1.3 | **IKeyFrame::DefineFromJson.** "triggerTime_ms" is required: +4 = `asUInt()`. Missing gives the "IKeyFrame.ReadFromJson" error and return 1. It then tail-calls vptr+0xC (SetMembersFromJson). | 0x004F8AA4..0x004F8AD6; string 0x004F8B60 | M5-001 | EXACT_SOURCE |
+| J1.4 | **JsonCpp conversions** (in libcozmoEngine). <br>- asInt of a real: range check [−2^31, 2^31−1] (otherwise throw), then `vcvt.s32.f64`, which truncates toward zero. <br>- asUInt of a real: range [0, 2^32−1], then `vcvt.u32.f64` (truncates). <br>- asFloat of a real: `vcvt.f32.f64`. <br>- GetValue<s8/s16> = sxtb/sxth(asInt); GetValue<u8/u16> = uxtb/uxth(asUInt). <br>- GetValueOptional<T> returns false only when the key is null or missing. | asInt 0x008E61D0..0x008E61F8; asUInt 0x008E8AA0..0x008E8AC4; asFloat 0x008E9C4E; GetValue 0x0084009C..0x008400D4; GetValueOptional 0x004F8EFC..0x004F8F5A, 0x004FA580, 0x004FA5A0 | NEW | EXACT_SOURCE |
+| J1.5 | **HeadAngleKeyFrame.** <br>- "durationTime_ms" u32 → +0xC; <br>- "angle_deg" s8 (sxtb(asInt), truncated) → +0x10; <br>- "angleVariability_deg" u8 → +0x11. <br>**All three are required.** A missing one gives "IKeyFrame.GetMemberFromJsonMacro" / "Failed to get '%s' from Json file." and return 1. <br>Shipped: anim_qa_firmwaremessaging_01 frames 1 and 2 have angle ±24.999999999999996, which gives **±24**. | 0x004F8CD8..0x004F8E5C; strings 0x00BE4EEC, 0x004F8EB8, 0x004F8ED4 | M5-004 | EXACT_SOURCE |
+| J1.6 | **LiftHeightKeyFrame.** "durationTime_ms" u32 → +0xC; "height_mm" u8 → +0x10; "heightVariability_mm" u8 → +0x11. All are required, as in J1.5. | 0x004F904C..0x004F91xx; strings 0x004F922C, 0x004F9248 | M5-004 | EXACT_SOURCE |
+| J1.7 | **BodyMotionKeyFrame.** <br>- "durationTime_ms" **int** (asInt) → +0xC. There is **no negative → INT_MAX conversion**; GetStreamMessage and IsDone compare unsigned, so a negative value never stops. <br>- "speed" s16 → +0x12 (required). <br>- "radius_mm" is required ("…MissingRadius" / "%s: Missing 'radius_mm' field.", return 1): <br>&nbsp;&nbsp;- if it is a string: `ProcessRadiusString` (the same function as C4); <br>&nbsp;&nbsp;- otherwise s16 (sxth(asInt)) → +0x14, then **CheckTurnSpeed** (±220), with no int16 clamp beyond sxth. <br>Shipped: ANIMATION_TEST frame 8 has a numeric radius of 50. | 0x004FB750..0x004FB93C; strings 0x004FB9DC, 0x004FB9F4, 0x004FBA00, 0x004FBA34; stream 0x004FBA96..0x004FBA9E (`bhs`), IsDone 0x004FBAF8 | M5-006 | EXACT_SOURCE |
+| J1.8 | **ProceduralFaceKeyFrame.** `ProceduralFace::SetFromJson` on the default face, then +0xBC = 0 and return 0. **Nothing in it rejects the keyframe.** <br>- "leftEye" / "rightEye" (vector<float>, optional) → SetEyeArrayHelper (19 floats, otherwise unchanged; clipped, as C6). <br>- "faceAngle" (float, optional) → +0x9C. <br>- "faceCenterX" **and** "faceCenterY": only if both are present → SetFacePosition. <br>- "faceScaleX" **and** "faceScaleY": only if both are present; a negative value becomes 0 via ClipWarn; stored at +0xA0/+0xA4. <br>- "durationTime_ms" is **not read**. | 0x004F99BA..0x004F99CE; 0x00583C08..0x00583E22; strings 0x00BEF71A, 0x00BEF722, 0x00583EB8/EC4/ED0/EDC/EE8 | M5-002 | EXACT_SOURCE |
+| J1.9 | **BackpackLightsKeyFrame.** <br>- Keys are read in the order "Back" → +0x16, "Front" → +0x12, "Middle" → +0x14, "Left" → +0x10, "Right" → +0x18. <br>- Each goes through GetColorOptional and is **required**: <br>&nbsp;&nbsp;- a string is looked up with NamedColors::GetByString; <br>&nbsp;&nbsp;- otherwise it must be an array of 3 or 4 floats, or a warning and fail; <br>&nbsp;&nbsp;- the raw-or-normalised rule is as C17. In the raw branch alpha is also taken raw. Conversions are `vcvt.u32.f32` (truncate, negatives saturate to 0). <br>- Then "durationTime_ms" int → +0xC (required). <br>- **One ColorRGBA (default-constructed once) is reused for all five reads.** A 3-element array keeps the previous read's alpha. The shipped arrays all have 4 elements. | 0x004FAB90..0x004FADEA; strings 0x004FB010, 0x004FB07C, 0x004FB08C, 0x004FB09C, 0x004FB0AC; GetColorOptional 0x0084024C..0x0084050C (alpha skip 0x00840488 `blt`) | M5-016 | EXACT_SOURCE |
+| J1.10 | **RobotAudioKeyFrame.** <br>- "volume" float, default 1.0; "hasAlts" bool, **default false**. <br>- If "audioEventId" is an array: <br>&nbsp;&nbsp;- probabilities = vector "probability", else the scalar "probability" as a single element; <br>&nbsp;&nbsp;- if none and the id array is non-empty: 1.0f/N each; <br>&nbsp;&nbsp;- a count mismatch is an error, return 1; <br>&nbsp;&nbsp;- a running float sum > 1.0 gives TotalProbabilitiesTooHigh, return 1; <br>&nbsp;&nbsp;- each ref is {u32 id = low 32 bits of asUInt64, volume, p, hasAlts}. <br>- Otherwise (a scalar id) one ref is made, with p = the scalar "probability" or 1.0, and **no sum check**. <br>- "audioName" is ignored. <br>Shipped soundTestAnim: one ref {4068444155, 1.0, 1.0, false}. | 0x004FA0E8..0x004FA476; strings 0x004FA4F8, 0x004FA500, 0x004FA508, 0x004FA518; errors 0x00BE5105, 0x00BE50C2 | M5-009 | EXACT_SOURCE |
+
+##### 2. ProceduralAnimName
+
+| step | what the original does | citation | record | classification |
+|---|---|---|---|---|
+| P1 | `FaceAnimationManager::ProceduralAnimName` (std::string at 0x0105AB04) = **"_PROCEDURAL_"** (12 chars). It is set by the .init_array entry 0x004D73A5. | 0x004D73A6..0x004D73CC; string 0x00C49CC0; .init_array slot 0x0103E3E8 | M5-001 (gap1 C3) | EXACT_SOURCE |
+
+##### 3. UpdateLiveAnimation (0x0057D5F8..0x0057DA82)
+
+"Rand" below is `RandIntInRange` (integer, inclusive) on **streamer+0xA4**, the context RNG. GetParam<int>(i) = `vcvt.s32.f32` of the float parameter (0x0057DD18). GetParam<u8> = `vcvt.u32.f32` (0x0057DE58). Parameter numbers are LiveIdleAnimationParameter.cs.
+
+| step | what the original does | citation | record | classification |
+|---|---|---|---|---|
+| L1 | **Timer map.** <br>- +0x198 body duration countdown, +0x19C lift, +0x1A0 head; <br>- +0x1A4 body spacing, +0x1A8 lift, +0x1AC head; <br>- the eye-shift tag is +0x1C4 (u8). <br>The ctor zeroes all six (memclr of 0x18 bytes). Only UpdateLiveAnimation writes them (imm12 scan), so they persist across idle changes. | ctor 0x0057A030..0x0057A03C, 0x0057A044; scan hits all in 0x0057D640..0x0057DA78 | M5-030 | EXACT_SOURCE |
+| L2 | **Gates** (a failed gate returns 0 with **no decrement**): +0x194 set; +0x44 ≥ GetParam<int>(2) (unsigned); DockingComponent+4 == 0. | 0x0057D606..0x0057D624 | M5-030 | EXACT_SOURCE |
+| L3 | **Countdown.** Per track, in the order body → lift → head, every call. <br>- If MC+9/+0xB/+0xA (moving / lift not in position / head not in position) is set, or AreAnyTracksLocked(4/2/1), or (duration + spacing) > 0 (signed): **duration −= 60** and no keyframe. <br>- Lift also counts down while carrying (CarryingComponent+8 ≠ −1). <br>- Otherwise a keyframe is generated. The spacing field is never decremented. | 0x0057D626..0x0057D6BC; carrying 0x0057D67C..0x0057D684 | M5-030 (A35 wording refined) | EXACT_SOURCE |
+| L4 | **Body generation**, draws in this order: <br>- +0x198 = Rand(p5, p6); speed = Rand(−p7, p7); r = `RandDblInRange(0.0, 1.0)` (double). <br>- **r > (double)p8 → point turn:** x = Rand(0, 21), y = Rand(−10, 10). AddOrUpdateEyeShift(&+0x1C4, "LiveIdleTurn", (float)(int)(±1·x), with the sign from the int16 speed, (float)y, 33, 64.0, 32.0, 1.1, 0.85, 0.1). Radius 0. <br>- **Otherwise straight:** if +0x1C4 ≠ 0, RemoveEyeShift(tag, 0) and tag = 0. Radius 0x7FFF. <br>- Keyframe = BodyMotionKeyFrame((s16)speed, radius, +0x198): trigger 0, counter 0, enableStop 1, and **no speed check**. <br>- On success: +0x1A4 = Rand(p3, p4). | 0x0057D6CC..0x0057D80E, 0x0057D8C6..0x0057D8F4, 0x0057D958..0x0057D978; ctor 0x004FB170..0x004FB1A2; string 0x0057DAFC | M5-030 | EXACT_SOURCE |
+| L5 | **Lift generation.** +0x19C = Rand(p9, p10). LiftHeightKeyFrame((u8)p13, (u8)p14, +0x19C), trigger 0. On success: +0x1A8 = Rand(p11, p12). | 0x0057D97E..0x0057D9CA, 0x0057DA58..0x0057DA78; ctor 0x004F8F5C | M5-030 | EXACT_SOURCE |
+| L6 | **Head generation.** +0x1A0 = Rand(p15, p16). HeadAngleKeyFrame((s8)**trunc**(robot+0x2FC·57.2958f), (u8)p19, +0x1A0), trigger 0. On success: +0x1AC = Rand(p17, p18). The ±variability is drawn later, in GetStreamMessage on sRNG (C2). | 0x0057D812..0x0057D866 (`vcvt.s32.f32` 0x0057D84E), 0x0057DA2C..0x0057DA4C; ctor 0x004F8BE4 | M5-030 (A35 "round" contradicted) | EXACT_SOURCE |
+| L7 | **Where keyframes go.** `Animation::AddKeyFrameToBack<T>` on the live anim (+0xA8) → GetTrack<T> → `Track::AddKeyFrameToBackHelper`. That refuses only when size > 1000, does **no trigger-order check**, and puts the iterator on the new node when the list was empty. <br>- Failure: "Animation.AddKeyFrameToBack.Failed", then "…UpdateLiveAnimation.Add{Body,Lift,Head}…Failed", and UpdateLiveAnimation returns 1, so Update logs LiveUpdateFailed. <br>- The live tracks have their live flag set (SetIsLive 0x00577ECC), so consumed keyframes are erased. | 0x0057DF18..0x0057DF2E (Head; Body 0x0057DD6C, Lift 0x0057DE68); 0x005791C8..0x0057926E | M5-030 | EXACT_SOURCE |
+| L8 | **Wire lifecycle of the live idle, in Update.** UpdateLiveAnimation runs first. Then: <br>- if the previous idle ≠ the live anim: InitStream(live, **0xFF**), and no UpdateStream that tick; <br>- otherwise, if endSent && !HasFramesLeft && the buffer is empty: re-InitStream(live, 0xFF); <br>- otherwise: UpdateStream(robot, live, storeFace = 0) and +0x88 = now. <br>+0x44 += 60 each time. So each burst of live keyframes gets its own Start…End with tag 0xFF. | 0x0057D064..0x0057D088, 0x0057D3EE..0x0057D44C | NEW (A29 detail) | EXACT_SOURCE |
+
+##### 4. Backpack layers (ApplyBackpackLayersToAnim 0x0064F090)
+
+| step | what the original does | citation | record | classification |
+|---|---|---|---|---|
+| B1 | **Animation part.** If there is an anim: kf = backpackTrack.GetCurrentKeyFrame(stream − start). If one is returned, the whole keyframe (trigger, counter, duration, 5 LEDs) is copied into LayeredKeyFrames+0x2EC and flag +0x2E9 = 1. | 0x0064F0A8..0x0064F0D0 | M5-016, M5-029 | EXACT_SOURCE |
+| B2 | **Layer part.** If the backpack manager HaveLayersToSend: ApplyLayersToFrame(layered kf, lambda), and flag \|= result. The lambda (vtable 0x0102F7A0, operator() 0x0064F6CE) does kf = layerTrack.GetCurrentKeyFrame(layerStream − layerStart). If one is returned it **overwrites the whole layered keyframe** (all 5 LEDs, no per-LED merge) and returns true. Layers run in ascending tag order, so the highest-tag layer with a current keyframe wins. | 0x0064F0D4..0x0064F112; 0x0064F6CE..0x0064F702 | M5-031 (AddGlitch) | EXACT_SOURCE |
+| B3 | **GetCurrentKeyFrame(t).** If the current keyframe exists and trigger ≤ t: call IsDone (vslot 2: counter < duration → counter += 33, false; otherwise counter = 0, true). If done, MoveToNextKeyFrame. Return the keyframe for this frame, including its final frame. The anim track and each layer's track advance independently every frame. | 0x0064F2B4..0x0064F2E4; IsDone 0x004FB12E..0x004FB148 | M5-016 | EXACT_SOURCE |
+
+##### 5. TurnToRecordedHeading 0x92
+
+| step | what the original does | citation | record | classification |
+|---|---|---|---|---|
+| T1 | **Keyframe layout.** +0xC duration; +0x10 s16 offset_deg (f2, default 0); +0x12 s16 speed_degPerSec (f3); +0x14 s16 accel (f4, 1000); +0x16 s16 decel (f5, 1000); +0x18 u16 tolerance_deg (f6, 2); +0x1A u16 numHalfRevs (f7, 0); +0x1C bool useShortestDir (f8, false). | 0x004FBE2C..0x004FBF20; ctor 0x004FBB9C..0x004FBBD0; cozmo_anim.fbs:68-78 | M5-033 | EXACT_SOURCE |
+| T2 | **GetStreamMessage.** Only at counter +8 == 0: a 13-byte memcpy from +0x10 into the CLAD struct, then EngineToRobot tag **0x92**. <br>**Wire order (little-endian):** s16 offset_deg, s16 speed, s16 accel, s16 decel, u16 tolerance, u16 numHalfRevs, u8 bool useShortestDir. Size() = 13. <br>IsDone holds the track until counter ≥ duration. | 0x004FC4A8..0x004FC4D6; EngineToRobot ctor 0x007AA5BE..0x007AA5CC (`movs r0,#0x92`); Pack 0x007BD8C6..0x007BD938; Size 0x007BD97A; IsDone 0x004FC4EA | M5-033 | EXACT_SOURCE |
+
+##### 6. GetLastKeyFrameEndTime_ms (0x00578D44)
+
+| step | what the original does | citation | record | classification |
+|---|---|---|---|---|
+| E1 | **The value.** The unsigned max, over every **non-empty** track, of the **last list element's** vslot 0, read regardless of the iterator. It is 0 if all tracks are empty. <br>- vslot 0 = trigger + duration (32-bit add) for Head, Lift, Body, TurnTo and Backpack; <br>- vslot 0 = trigger only for DeviceAudio, RobotAudio, FaceAnimation, ProceduralFace, Event and RecordHeading. <br>The A11 test is `(start + E1 − last toggle) > 30000` (unsigned, `bhi`). The 30000 comes from TLC → FaceLayerManager::GetMaxBlinkSpacingTimeForScreenProtection_ms. | 0x00578D44..0x00578E3A; vslot 0 fns 0x004FC506..0x004FC554 (vtables 0x0101EF9C..0x0101F128); A11 0x0057B6A2..0x0057B6AC, 0x0057B81A..0x0057B828; 0x0064F51C → 0x0058D8BC | M5-024 | EXACT_SOURCE |
+
+##### 7. RNGs
+
+| step | what the original does | citation | record | classification |
+|---|---|---|---|---|
+| R1 | **RandomGenerator.** A libc++ mt19937 (default-seeded 5489, then reseeded). `SetSeed(name, 0)` seeds from `std::random_device("/dev/urandom")`; a non-zero seed is used as given. <br>GetNextDbl = (d0 + d1·2^32)·2^−64 from two draws, scaled to [0, 1). Derived: with rounding, 1.0 is possible with probability about 2^−54. | 0x0082F7CC..0x0082F8C8 (string 0x0082F980); GetNextDbl 0x0082F9B0..0x0082FA0A | M5-005 | EXACT_SOURCE |
+| R2 | **IKeyFrame::sRNG** (0x01059220) is constructed with seed **0**, so it is seeded from /dev/urandom, by the .init_array entry 0x004D6C09. It is never reseeded (the only SetSeed callers are the ctor and CozmoContext::SetRandomSeed on context+0x14). <br>Users: the Head and Lift variability draws and RobotAudio GetAudioRefIndex. | 0x004D6C08..0x004D6C10; GOT 0x0103E8D0 referenced at 0x004F8C1E, 0x004F8F96, 0x004F9B1A, 0x004F9C76 | M5-005, M5-017 | EXACT_SOURCE (seed value: runtime entropy) |
+| R3 | **The context RNG** (context+0x14) is RandomGenerator(0), then SetRandomSeed(StartEngine.random_seed). The Unity app never sets random_seed (default 0), so it is also /dev/urandom. <br>Users: <br>- streamer+0xA4 (the live idle); <br>- the Audio, Backpack and Face layer managers (keep-alive darts and blinks, glitch lights); <br>- AnimationGroupContainer+0x28 → each AnimationGroup+0 → **the D5 group draw RandDbl**. <br>So D5 **uses the same RNG as the streamer and the layers**, not sRNG. | 0x004EA764..0x004EA776; 0x004EAD9C..0x004EADBE; 0x004ECBD4..0x004ECBDA; RobotEngineManager.cs:435-442, StartEngine.cs:14; streamer 0x00579FEE..0x00579FF0; TLC 0x0064ECDC/0x0064ECEE/0x0064ED00; container 0x0051EDB6..0x0051EDBA, 0x0058B49E, 0x0058B4B8; group 0x0058A5C2, 0x0058AA76..0x0058AA7E | M5-011, M5-029, M5-030 | EXACT_SOURCE (the Robot and the RobotDataLoader sharing one CozmoContext was not traced: the loader is built with `this` in CozmoContext's ctor at 0x004EA796) |
+| R4 | **ScanlineDistorter** uses its own function-static RandomGenerator(1): deterministic, and also used by GetNextDistortionFrame's hold draw. | 0x0053A050..0x0053A082; 0x0053AAD8..0x0053AAE8 | M5-031 | EXACT_SOURCE |
+
+##### Existing records contradicted by the source
+- **A35 (M5-030):** the head angle is truncated, not `round` (0x0057D84E).
+- **A35 (M5-030), wording:** "timers lose 60 … or the timers are still positive" is inexact. Only the duration field is decremented, and the condition is duration + spacing > 0 (L3).
+- **M5-001/C4 applied to JSON (partial):** the JSON body duration has no INT_MAX conversion (the behaviour is the same through unsigned compares, but E1's value differs). Head and Lift variability are required. RobotAudio hasAlts defaults to false.
+
+##### Records whose evidence is too weak
+- **M5-005 / M5-017 / M5-011:** they name the RNG without its seeding. R2/R3 show /dev/urandom, so no reference sequence exists.
+
+##### Open questions for the manager
+1. **Seeds.** The official seeds are entropy (R2/R3). What seed the stack uses is a COMPATIBILITY_POLICY decision; no artifact settles it.
+2. **Stack-garbage fields.** For JSON Head, Lift and Backpack, fields not written by SetMembersFromJson are uninitialised stack memory (J1.2). No shipped JSON leaves one unwritten.
+3. **Loader context (R3).** The streamer reads its containers from [ctx+0x20]+0x48/+0x50, while RobotDataLoader lives at ctx+0x1C with its group container at +0x58/+0x60. Which object ctx+0x20 is was not traced. It does not change R3's conclusion, because the only AnimationGroupContainer ctor call binds context+0x14.

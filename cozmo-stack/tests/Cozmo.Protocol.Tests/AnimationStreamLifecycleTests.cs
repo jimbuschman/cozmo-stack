@@ -6,7 +6,7 @@ namespace Cozmo.Protocol.Tests;
 
 /// <summary>
 /// The wire lifecycle of the live animation (M7-017) and of a cancelled animation (M5-023), against
-/// <c>AnimationStreamer</c> in libcozmoEngine.so.
+/// <c>AnimationStreamer</c> in libcozmoEngine.so as the frozen M5 inventory reads it (A5, A12, A13, A20, A24, A29).
 /// </summary>
 public class AnimationStreamLifecycleTests
 {
@@ -26,18 +26,19 @@ public class AnimationStreamLifecycleTests
         public void Finished(string clipName, bool completed) => Log.Add("finished");
     }
 
-    private static AnimationClip HeadClip(uint durationMs) => new()
+    /// <summary>A clip that stays streaming for 5 s: one head keyframe now and an event pending at 5000 (A19, D2).</summary>
+    private static AnimationClip HeadClip() => new()
     {
         Name = "head",
-        Keyframes = new List<Keyframe> { new HeadKeyframe(0, 100, 10, 0) },
-        Tracks = AnimationTrack.Head,
-        DurationMs = durationMs,
+        Keyframes = new List<Keyframe> { new HeadKeyframe(0, 100, 10, 0), new EventKeyframe(5_000, "TAPPED_BLOCK") },
+        Tracks = AnimationTrack.Head | AnimationTrack.Event,
+        DurationMs = 5_000,
     };
 
     /// <summary>
-    /// UpdateLiveAnimation 0x0057D5F8 only appends keyframes to the live Animation; Update opens it with
-    /// InitStream(live, 0xFF) (0x0057D3FE) and UpdateStream 0x0057C84C sends each frame as audio, then
-    /// StartOfAnimation once (0x0057C9D0), then the body keyframe (0x0057CA56).
+    /// UpdateLiveAnimation 0x0057D5F8 only appends keyframes to the live Animation (A29); the next Update re-inits the live
+    /// idle (InitStream(live, 0xFF), no frame), and the one after sends the frame as audio, then StartOfAnimation once
+    /// (0x0057C9D0), then the body keyframe (0x0057CA56).
     /// </summary>
     [Fact]
     public void ALiveBodyKeyframeGoesOutInsideAnOpenedLiveStream()
@@ -45,59 +46,61 @@ public class AnimationStreamLifecycleTests
         var sink = new LogSink();
         var s = new AnimationScheduler(sink, new Random(1));
         Assert.True(s.StreamLive(new BodyKeyframe(0, 1000, "STRAIGHT", 40), 0));
+        Assert.Empty(sink.Log);
+        s.Advance(0);
+        Assert.Empty(sink.Log);
+        s.Advance(33);
         Assert.Equal(new[] { "silence", "start:255", "body" }, sink.Log);
 
         // a second live keyframe does not reopen the stream
-        Assert.True(s.StreamLive(new HeadKeyframe(0, 100, 5, 0), 10));
+        Assert.True(s.StreamLive(new HeadKeyframe(0, 100, 5, 0), 70));
+        s.Advance(120);
         Assert.Single(sink.Log, e => e.StartsWith("start:"));
-
-        // each frame of the live stream carries its audio message while the body keyframe runs
-        sink.Log.Clear();
-        s.Advance(40);
-        Assert.Equal(new[] { "silence" }, sink.Log);
     }
 
+    /// <summary>
+    /// A clip taking over ends the live stream without an EndOfAnimation (InitStream only drops the buffer, A12); the clip
+    /// ends with its own End (A20), completes on the next Update (A13), and on that Update the live idle is re-initialised
+    /// (+0x64 = 0 after the clip's UpdateStream, A13; InitStream(live, 0xFF), A29) with no frame; the Update after streams
+    /// the live keyframe with StartOfAnimation 0xFF.
+    /// </summary>
     [Fact]
     public void AClipTakingOverEndsTheLiveStreamWithoutAnEndOfAnimationAndTheLiveStreamReopensAfterIt()
     {
         var sink = new LogSink();
         var s = new AnimationScheduler(sink, new Random(1));
         s.StreamLive(new HeadKeyframe(0, 100, 5, 0), 0);
-        s.Play(HeadClip(33), 0);
+        s.Play(new AnimationClip { Name = "h", Keyframes = new List<Keyframe> { new HeadKeyframe(0, 100, 10, 0) }, Tracks = AnimationTrack.Head }, 0);
         s.Advance(0);
+        Assert.Equal(new[] { "silence", "start:1", "head", "end" }, sink.Log);
+        sink.Log.Clear();
         s.Advance(34);
         Assert.False(s.IsPlaying);
-        Assert.DoesNotContain(sink.Log.TakeWhile(e => e != "start:1"), e => e == "end");
-        Assert.Contains("start:1", sink.Log);
-
-        // the next update re-inits the live stream (InitStream(live, 0xFF), M3 inventory / M5 A29, 0x0057D3FE) and builds
-        // no frame (r7 = 0 at 0x0057D404); its first frame, with StartOfAnimation 0xFF, goes on the update after
+        Assert.Equal(new[] { "finished" }, sink.Log);
         sink.Log.Clear();
         s.Advance(68);
-        Assert.Empty(sink.Log);
-        s.Advance(101);
-        Assert.Equal(new[] { "silence", "start:255" }, sink.Log);
+        Assert.Equal(new[] { "silence", "start:255", "head", "end" }, sink.Log);
     }
 
     /// <summary>
-    /// Update streams the live animation on every update (UpdateStream(live) at 0x0057D430), not only while a
-    /// live keyframe is pending.
+    /// A29: once the live animation's keyframes are consumed it has ended (endSent, no frames, buffer empty), so every
+    /// Update re-inits it (InitStream(live, 0xFF)) and streams nothing until a keyframe is appended.
     /// </summary>
     [Fact]
-    public void TheLiveStreamKeepsStreamingAfterItsKeyframesHaveEnded()
+    public void TheLiveIdleReInitsOnEveryUpdateOnceItsKeyframesAreConsumed()
     {
         var sink = new LogSink();
         var s = new AnimationScheduler(sink, new Random(1));
         s.StreamLive(new BodyKeyframe(0, 100, "STRAIGHT", 40), 0);
-        s.Advance(200);                       // the body keyframe's deadline passes
+        for (int i = 0; i <= 10; i++) s.Advance(60 * i);
         Assert.False(s.LiveBodyRunning);
         Assert.True(s.HasPendingWork);
         sink.Log.Clear();
-        for (int i = 1; i <= 5; i++) s.Advance(200 + 33 * i);
-        Assert.Equal(Enumerable.Repeat("silence", 5), sink.Log);
+        for (int i = 11; i <= 20; i++) s.Advance(60 * i);
+        Assert.Empty(sink.Log);
     }
 
-    /// <summary>Abort 0x0057B3E0 sends no body stop; completion still stops a body keyframe still running.</summary>
+    /// <summary>Abort 0x0057B3E0 sends no body stop (A24); the keyframe's own stop (C5) never came because it was cancelled first.</summary>
     [Fact]
     public void CancellingAnAnimationWithABodyKeyframeRunningSendsNoBodyStop()
     {
@@ -118,15 +121,14 @@ public class AnimationStreamLifecycleTests
     }
 
     /// <summary>
-    /// AnimationStreamer::Abort 0x0057B3E0 sends the robot nothing: no EndOfAnimation and no trailing
-    /// audio. Only an animation that completes is closed (SendEndOfAnimation from UpdateStream 0x0057CB80).
+    /// AnimationStreamer::Abort 0x0057B3E0 sends the robot nothing itself: no EndOfAnimation and no trailing audio (A24).
     /// </summary>
     [Fact]
     public void ACancelledAnimationSendsNoEndOfAnimation()
     {
         var sink = new LogSink();
         var s = new AnimationScheduler(sink, new Random(1));
-        s.Play(HeadClip(5_000), 0);
+        s.Play(HeadClip(), 0);
         s.Advance(0);
         Assert.Contains("start:1", sink.Log);
         int before = sink.Log.Count;
@@ -139,10 +141,10 @@ public class AnimationStreamLifecycleTests
     {
         var sink = new LogSink();
         var s = new AnimationScheduler(sink, new Random(1));
-        s.Play(HeadClip(5_000), 0);
+        s.Play(HeadClip(), 0);
         s.Advance(0);
         int before = sink.Log.Count;
-        s.Play(HeadClip(5_000), 10);
+        s.Play(HeadClip(), 10);
         s.Advance(10);
         var after = sink.Log.Skip(before).ToList();
         Assert.DoesNotContain("end", after);

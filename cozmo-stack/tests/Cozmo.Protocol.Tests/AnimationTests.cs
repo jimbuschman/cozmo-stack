@@ -120,10 +120,9 @@ public class AnimationTests
     }
 
     /// <summary>
-    /// A late tick streams the frames it owes one after another, so nothing is skipped and the order holds.
-    /// The frames are real: the clip here ends on its second frame, and both frames carry an audio message,
-    /// where the old wall-clock timeline collapsed the whole late interval into one frame with one audio
-    /// message.
+    /// A late tick streams the frames it owes one after another, so nothing is skipped and the order holds. Only the
+    /// current keyframe of a track is considered per frame (M5 A19), so the three events, all due by the second frame,
+    /// go on frames 1, 2 and 3: four frames, each with its audio message.
     /// </summary>
     [Fact]
     public void ATickThatArrivesLateFiresEverythingItMissedInOrder()
@@ -137,8 +136,9 @@ public class AnimationTests
         s.Advance(1000);                        // one very late tick
 
         Assert.Equal(new[] { "a", "b", "c" }, r.Events);
-        // frame 0 (nothing due) and frame 1 (all three); nothing follows EndOfAnimation (M3 inventory A20)
-        Assert.Equal(2, r.Calls.Count(c => c.What == "audio"));
+        // frame 0 (nothing due), then one event per frame (A19); nothing follows EndOfAnimation (A20)
+        Assert.Equal(4, r.Calls.Count(c => c.What == "audio"));
+        s.Advance(1033);                        // the Update after the End completes it (A13)
         Assert.False(s.IsPlaying);
     }
 
@@ -226,8 +226,12 @@ public class AnimationTests
         Assert.Empty(r2.BodyStops);               // nothing started, so nothing to stop
     }
 
+    /// <summary>
+    /// M5 C5: a zero-length body keyframe is done after its first message and never stops; any keyframe with a duration
+    /// sends the stop {0, 0x7FFF} on its first frame with counter ≥ duration, whatever its speed.
+    /// </summary>
     [Fact]
-    public void AStationaryOrZeroLengthBodyKeyframeIsNotScheduledForAStop()
+    public void AZeroLengthBodyKeyframeIsNotStoppedButAStationaryOneIs()
     {
         var r = new Recorder();
         var s = new AnimationScheduler(r);
@@ -236,7 +240,7 @@ public class AnimationTests
             new BodyKeyframe(100, 200, "STRAIGHT", 0),   // no speed
             new EventKeyframe(500, "end")), 0);
         Run(s, r, 0, 600);
-        Assert.Empty(r.BodyStops);
+        Assert.Single(r.BodyStops);
     }
 
     // -------------------------------------------------------------- cancellation
@@ -358,15 +362,18 @@ public class AnimationTests
         }
     }
 
+    /// <summary>
+    /// M5 A16 (9): a face goes out only with the layered face flag, so once the only face keyframe is consumed nothing
+    /// resends it; the robot keeps the last image it was given.
+    /// </summary>
     [Fact]
-    public void TheLastFaceIsHeldRatherThanBlanked()
+    public void TheLastFaceIsNotResentWithoutAFaceThisFrame()
     {
         var r = new Recorder();
         var s = new AnimationScheduler(r);
         s.Play(Clip("t", FaceAt(0), new EventKeyframe(500, "later")), 0);
         Run(s, r, 0, 400);
-        Assert.True(r.Faces.Count > 5);
-        Assert.Equal(r.Faces[0].ToText(), r.Faces[^1].ToText());
+        Assert.Single(r.Faces);
     }
 
     // ------------------------------------------------------------ procedural face

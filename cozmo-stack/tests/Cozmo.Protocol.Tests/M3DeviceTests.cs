@@ -353,6 +353,7 @@ public class M3DeviceTests
         public void Body(BodyKeyframe keyframe) => Log.Add("body");
         public void BodyStop() => Log.Add("bodystop");
         public void Lights(LightsKeyframe keyframe) => Log.Add("lights");
+        public void BackpackLights(ushort[] leds) => Log.Add("lights");
         public void Event(string eventId) => Log.Add($"event:{eventId}");
         public void Finished(string clipName, bool completed) => Log.Add("finished");
         public int Count(string what) => Log.Count(e => e == what);
@@ -420,10 +421,11 @@ public class M3DeviceTests
         };
         s.Play(clip, 0);
         s.Advance(0);
-        // frame 0 is silence (the sound starts on the keyframe), then samples
-        Assert.Equal(1, sink.Count("silence"));
+        // M5 A15: the audio animation's Update (which starts the sound) runs before frame 0 is built, so frame 0 already
+        // carries samples: 745 + StartOfAnimation 2, then 745 per frame
+        Assert.Equal(0, sink.Count("silence"));
         int samples = sink.Count("sample");
-        Assert.Equal((8192 - 1 - 2) / 745, samples);             // silence 1 B and StartOfAnimation 2 B went first
+        Assert.Equal(1 + (8192 - 745 - 2) / 745, samples);
         Assert.True(s.Stream.BytesStreamed <= 8192);
 
         sink.BytesPlayed = s.Stream.BytesStreamed;               // the robot plays what it has
@@ -445,10 +447,12 @@ public class M3DeviceTests
         var s = new AnimationScheduler(sink, new Random(1));
         s.Play(SilentClip(66, new EventKeyframe(0, "a"), new EventKeyframe(33, "b"), new EventKeyframe(66, "c")), 0);
         s.Advance(0);
-        Assert.Equal(new[] { "silence", "start:1", "event:a", "silence", "event:b", "silence", "event:c", "end", "finished" },
+        Assert.Equal(new[] { "silence", "start:1", "event:a", "silence", "event:b", "silence", "event:c", "end" },
                      sink.Log);
         s.Advance(1);
-        Assert.Equal("finished", sink.Log[^1]);                    // still nothing after the end
+        Assert.Equal("finished", sink.Log[^1]);                    // the next Update completes it (M5 A13), sending nothing
+        s.Advance(2);
+        Assert.Equal(9, sink.Log.Count);                           // still nothing after the end
     }
 
     /// <summary>
@@ -466,7 +470,7 @@ public class M3DeviceTests
             Keyframes = new List<Keyframe>
             {
                 new BodyKeyframe(0, 0, "STRAIGHT", 0),
-                new LightsKeyframe(0, 0, new float[0], new float[0], new float[0], new float[0], new float[0]),
+                new LightsKeyframe(0, 0, new float[4], new float[4], new float[4], new float[4], new float[4]),
                 new FaceKeyframe(0, ProceduralFacePose.ShippedNeutral()),
                 new EventKeyframe(0, "e"),
                 new LiftKeyframe(0, 100, 50, 0),
@@ -483,8 +487,9 @@ public class M3DeviceTests
     /// <summary>
     /// A16 (7), A17: the procedural face goes only when no face-animation frame was buffered and the face-animation track
     /// is at its end; a faceAnimations keyframe not yet due already holds it back. Here the face pose is at 0 and a
-    /// two-frame face animation at 66: frames 0 and 33 carry no face, 66 and 99 the animation's frames, 132 the
-    /// procedural face again.
+    /// two-frame face animation at 66: frames 0 and 33 carry no face (the pose, the only procedural keyframe, is consumed
+    /// on frame 0 while the sprite is pending, M5 C7), 66 and 99 the animation's frames; then the clip has no frames left
+    /// and ends (M5 A20), so no procedural face ever goes.
     /// </summary>
     [Fact]
     public void M3_015_A17_APendingFaceAnimationHoldsTheProceduralFaceBack()
@@ -516,7 +521,8 @@ public class M3DeviceTests
         Assert.DoesNotContain("face", frames[1]);
         Assert.Contains("face", frames[2]);
         Assert.Contains("face", frames[3]);
-        Assert.Contains("face", frames[4]);
+        Assert.Equal(4, frames.Count);
+        Assert.Equal(2, sink.Count("face"));
     }
 
     /// <summary>
@@ -541,20 +547,18 @@ public class M3DeviceTests
     }
 
     /// <summary>
-    /// A12, A24 (M3-013): with the live stream active (the ProceduralLive idle), a cancelled clip's leftovers are
-    /// dropped, not flushed, and no EndOfAnimation is sent for it. In the engine the drop is an InitStream's
-    /// ClearSendBuffer (0x0057B7CE): after a cancel (SetStreamingAnimation(null) sets +0x73, A6) the keep-alive block
-    /// replays the neutral-face clip (A31, 0x0057CFC0..0x0057CFD2), whose InitStream drops them, and that clip streams
-    /// in the same Update. This stack has no neutral replay yet (an M5 gap: M5-010 / M5-028), so only the drop and the
-    /// absence of any leftover and of an End are asserted here - not what the engine streams next.
+    /// A12, A24, A28, gap4 L8 (M3-013, M5 fix B1): with the ProceduralLive idle on top of the stack, a cancelled clip's
+    /// leftovers are dropped, not flushed: a top other than Count goes straight to the idle (0x0057D03A..0x0057D04C), which
+    /// neither flushes nor sends an End, and the live idle's InitStream(live, 0xFF) (the previous idle was not the live one,
+    /// 0x0057D3F0..0x0057D3FE) drops them (ClearSendBuffer, A12). No EndOfAnimation is sent.
     /// </summary>
     [Fact]
     public void M3_013_A13_A29_A12_WithTheLiveStreamActiveACancelledClipsLeftoversAreDropped()
     {
         var sink = new RobotSink();
         var s = new AnimationScheduler(sink, new Random(1));
-        Assert.True(s.StreamLive(new HeadKeyframe(0, 100, 5, 0), 0));      // the live stream is active
-        sink.FramesPlayed = 1;                                                 // its opening frame was played
+        Assert.True(s.StreamLive(new HeadKeyframe(0, 100, 5, 0), 0));      // ProceduralLive on top
+        sink.FramesPlayed = 1;
         s.Play(SilentClip(10_000, new EventKeyframe(9_000, "late")), 0);
         s.Advance(0);
         Assert.True(s.Stream.Count > 0, "a frame of the clip waits in the buffer");
@@ -565,7 +569,7 @@ public class M3DeviceTests
         sink.FramesPlayed = 100;                                               // room enough to flush, were it flushed
         sink.Log.Clear();
         s.Advance(1);
-        Assert.Empty(sink.Log);                                                // the leftovers were dropped, not sent
+        Assert.Empty(sink.Log);                                                // dropped, not sent
         Assert.Equal(0, s.Stream.Count);
         Assert.Equal(0, sink.Count("end"));
         Assert.True(silences > 0);

@@ -119,7 +119,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M5-animation.md",
-        "approved": "2026-09-24",
+        "approved": "2026-09-25",
         "snapshot": "re-analysis/inventory/M5-animation.approved.json"
       }
     },
@@ -1469,7 +1469,7 @@
       "title": "The feed: FIFO drain stopping at the first over-budget message; per Update, one 33 ms frame at a time while the drain completes and the audio animation is ready",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
       "effect": "audio and face frames are paced differently",
-      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch, verifier fixes B1..B4): StreamSendBuffer.Drain is SendBufferedMessages: FIFO, stopping at the first message over the byte budget or at an audio message with the audio budget 0 (reported, like an emptied buffer, as the engine's 0 result), and at a failed send (the error). AnimationScheduler.Advance is one Update (A13..A20): budgets refreshed, leftovers flushed (a send error ends the Update), then while the buffer is empty and the clip has frames left one frame is built and drained, and the stream time takes its 33 ms step after every drain without a send error, a budget stop included (A18; StreamTimeMs). With no frames left and the buffer empty, EndOfAnimation goes directly when StartOfAnimation was sent; if it never was, AudioSilence and StartOfAnimation are buffered and drained and the end follows on a later Update (A20; that branch is unreachable while this stack's HasFramesLeft rule always builds a frame first). An empty clip completes with nothing sent (A12, A13). A cancel keeps the send buffer, the next Update flushes it within the budget, and no EndOfAnimation follows (A24, A25); a replacement drops it (InitStream's ClearSendBuffer, A12). AbortAnimation 0x8D is not sent (M5, A22/A23). On a production robot the engine tick runs the streamer from Robot::Update while streaming is open (CD12), with no 30 Hz tick loop; the TargetInFlight 10 / 200 ms / priming model is gone. CozmoAudio.Play (policy M3-017) goes through the same buffer and budget.",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch, verifier fixes B1..B4): StreamSendBuffer.Drain is SendBufferedMessages: FIFO, stopping at the first message over the byte budget or at an audio message with the audio budget 0 (reported, like an emptied buffer, as the engine's 0 result), and at a failed send (the error). AnimationScheduler.Advance is one Update (A13..A20): budgets refreshed, leftovers flushed (a send error ends the Update), then while the buffer is empty and the clip has frames left one frame is built and drained, and the stream time takes its 33 ms step after every drain without a send error, a budget stop included (A18; StreamTimeMs). With no frames left and the buffer empty, EndOfAnimation goes directly when StartOfAnimation was sent; if it never was, AudioSilence and StartOfAnimation are buffered and drained and the end follows on a later Update (A20; that branch is unreachable while this stack's HasFramesLeft rule always builds a frame first). An empty clip completes with nothing sent (A12, A13). A cancel keeps the send buffer, the next Update flushes it within the budget, and no EndOfAnimation follows (A24, A25); a replacement drops it (InitStream's ClearSendBuffer, A12). AbortAnimation 0x8D is not sent (M5, A22/A23). On a production robot the engine tick runs the streamer from Robot::Update while streaming is open (CD12), with no 30 Hz tick loop; the TargetInFlight 10 / 200 ms / priming model is gone. CozmoAudio.Play (policy M3-017) goes through the same buffer and budget. M5 batch (2026-09-25): the frame loop is AnimationScheduler.UpdateStreamLocked; HasFramesLeft is D2 (any track iterator not at end) and the pull is A19; the A20 end, the A13 loop step and the leftover flush/drop are M5-026, M5-008 and M5-023.",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "C14 SendBufferedMessages 0x0057BF60..0x0057C010",
@@ -1477,10 +1477,10 @@
         "C16 readiness 0x0059A1CC..0x0059A1F6, states per Q5 GetStringForAnimationState 0x00596434"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "NOT BUILT (MD5, M5): ShouldProcessAnimationFrame's audio-animation readiness (C15, C16, A15, Q5); a streaming sound whose samples are not rendered yet still sends silence for the frame and keeps its place. Also M5's: the one-keyframe-per-track-per-frame pull rule (A19) and HasFramesLeft itself (this stack ends a clip at its duration once every keyframe has fired).",
+      "unresolved": "NOT BUILT (MD5, M5-018): ShouldProcessAnimationFrame's audio-animation readiness (C15, C16, A15, Q5) is the M6 stand-in (always ready); a streaming sound whose samples are not rendered yet still sends silence for the frame and keeps its place. The one-keyframe-per-track pull (A19) and HasFramesLeft (D2) are built in the M5 batch.",
       "hardware_required": false,
       "live_path": true,
-      "test": "M3DeviceTests.M3_013_C14_TheDrainStopsAtTheFirstMessageOverTheByteBudget, M3DeviceTests.M3_013_C14_AnAudioMessageStopsTheDrainWhenTheAudioBudgetIs0, M3DeviceTests.M3_013_C15_OneUpdateStreamsFramesUntilTheBudgetStopsTheDrain, M3DeviceTests.M3_013_CD12_TheEngineTickRunsTheStreamerOnlyWhileStreamingIsOpen, M3DeviceTests.M3_013_CD12_OnAProductionEngineTheEngineTickStreamsAClipToItsEnd, M3DeviceTests.M3_013_A24_A25_ACancelledClipsLeftoversAreFlushedWithNoEnd, M3DeviceTests.M3_013_A12_AReplacementDropsTheLeftovers, M3DeviceTests.M3_013_A12_AnEmptyClipSendsNothing, AnimationGapTests.TheTimelineFreezesWhileTheRobotHasNoRoomAndResumesWhereItStopped"
+      "test": "M3DeviceTests.M3_013_C14_TheDrainStopsAtTheFirstMessageOverTheByteBudget, M3DeviceTests.M3_013_C14_AnAudioMessageStopsTheDrainWhenTheAudioBudgetIs0, M3DeviceTests.M3_013_C15_OneUpdateStreamsFramesUntilTheBudgetStopsTheDrain, M3DeviceTests.M3_013_CD12_TheEngineTickRunsTheStreamerOnlyWhileStreamingIsOpen, M3DeviceTests.M3_013_CD12_OnAProductionEngineTheEngineTickStreamsAClipToItsEnd, M3DeviceTests.M3_013_A24_A25_ACancelledClipsLeftoversAreFlushedWithNoEnd, M3DeviceTests.M3_013_A12_AReplacementDropsTheLeftovers, M3DeviceTests.M3_013_A12_AnEmptyClipSendsNothing, AnimationGapTests.TheTimelineFreezesWhileTheRobotHasNoRoomAndResumesWhereItStopped, M5AnimationTests.M3_013_C9_A18_TheProductionStreamStopsAtTheBudgetAndRefills"
     },
     {
       "subsystem": "M3-device",
@@ -1754,10 +1754,10 @@
         "gap2 J1..J5 DefineFromJson 0x005886F4.. (first top-level key); the four shipped JSON clips"
       ],
       "live_path": true,
-      "test": "AnimationAssetTests",
+      "test": "M5AnimationTests.M5_001_D1_C1_C2_ARejectedKeyframeEndsTheLoadAndKeepsWhatCameBefore, M5AnimationTests.M5_001_J1_TheFourShippedJsonClipsLoad, AnimationAssetTests, M5AnimationTests.M5_001_P1_TheProceduralNameIsSkipped",
       "effect": "a clip loads with different content",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AnimationLibrary.ParseClip reads the AnimClip keyframe tables in the D1/C1 track order (Lift, ProcFace, Head, RobotAudio, Backpack, FaceAnim, Event, Body, RecordHeading, TurnTo); a keyframe whose define fails or that the track refuses (BadTriggerTime: trigger not after the previous, TooManyFrames: more than 1000, L4) logs \"Adding X frame %d failed.\" and ends the load, keeping everything before it and the clip itself (C2, C3; AnimationClip.LoadTruncated). Files come from assets/animations/ and config/engine/animations/ (C5), \".bin\" as FlatBuffer and anything else as JSON (C4); a JSON clip is named by its first top-level key in ordinal (JsonCpp) order (J1, J2); a later file of the same name replaces the earlier (C3, C6). Verify round 1 (2026-09-25, corrections C1..C3, gap4): JsonClipLoader is gap4 J1.1..J1.10: each element's \"Name\" matched exactly to the keyframe class names; triggerTime_ms required (asUInt); Head, Lift, Body, ProceduralFace, BackpackLights and RobotAudio members as J1.5..J1.10 with JsonCpp's conversions (J1.4: range-checked, truncated; ±24.999999999999996 → ±24); AddNewKeyFrameToBack (BadTriggerTime); the first failure ends the load. The four shipped JSON clips load (MD3). \"_PROCEDURAL_\" is skipped (P1). Verify round 2 (2026-09-25, correction C4): AnimationLibrary.GetAnimation also catches the NotSupportedException of an unported JSON keyframe type, logs \"error: <clip>: <message>\" in the loader's form and returns null, so an idle group naming such a clip cannot throw into the engine tick.",
+      "unresolved": "MISSING: SetMembersFromJson of FaceAnimation, Event, DeviceAudio, RecordHeading and TurnToRecordedHeading keyframes is not in the inventory (gap4 covers the six types the shipped JSON uses); such a JSON keyframe throws NotSupportedException. A JsonCpp conversion that throws (a value out of range or not a number) ends the load there. The TooManyFrames boundary is \"refuse above 1000\" (L4); BadTriggerTime is applied to every track. Cross-file load order and the 4-worker load are HARDWARE_ONLY (C5, C6).",
       "hardware_required": false
     },
     {
@@ -1765,17 +1765,17 @@
       "subsystem": "M5-animation",
       "title": "19 procedural-eye parameters and the ProceduralFace default (all 0 except EyeScaleX/Y 1, face scale 1, no distorter); SetFromFlatBuf rules",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFace.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C6 SetFromFlatBuf 0x005838D0..0x00583AAC; SetFacePosition 0x00583B20..0x00583BF8",
         "gap3 K4 ProceduralFace() 0x00583660..0x005836A0 (table 0x00C5A970 = {2,3})"
       ],
       "live_path": true,
-      "test": "ProceduralFaceRendererTests",
+      "test": "M5AnimationTests.M5_002_K4_TheDefaultFace, M5AnimationTests.M5_002_C6_SetFromFlatBufRules, M5AnimationTests.M5_002_C2_TheCentreIsClampedBeforeTheScaleIsSet",
       "effect": "a face is built with different parameters",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): ProceduralFacePose() is the K4 default (both eyes 0 except EyeScaleX/Y = 1, face scale 1, centre 0, angle 0, no distorter). AnimationLibrary.DefineFace is SetFromFlatBuf onto a default face (C6): a leftEye/rightEye of other than 19 floats leaves that eye unchanged; each value goes through Clip, a NaN keeping the default's value (C9); faceAngle f1 (0); scaleX/Y f4/f5 (1), a negative one 0; the centre through SetFacePosition. Verify round 1 (2026-09-25, corrections C1..C3, gap4): SetFromFlatBuf calls SetFacePosition before the scale is set (C2), so the clamp uses the default scale 1. Verify round 2 (2026-09-25, correction C4): GetEyeBoundingBox's xmax, 96 + sx·(cxR + 15·scaleXR), mirrors xmin as verified against 0x00584568..0x00584636. Verify round 3 (2026-09-25): the NaN min/max difference in GetEyeBoundingBox is unreachable: 0 NaN/Inf among the 33,485 shipped ProceduralFace keyframes, JSON cannot encode NaN, Clip keeps the previous value on a NaN (C9), and every run-time face path stays finite (Interpolate's divisor is non-zero, LookAt divides by 5 or the 17/12 box values, Combine and the blink only add or multiply finite values).",
+      "unresolved": "Only a caller-built clip containing a NaN would expose the MathF.Min/Max against compare-and-select difference; no production path produces one.",
       "hardware_required": false
     },
     {
@@ -1783,7 +1783,7 @@
       "subsystem": "M5-animation",
       "title": "Face per frame and blending: GetFaceHelper, Interpolate, the Clip table, Combine for layers",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFace.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C7 GetFaceHelper 0x0058CD80..0x0058CEE4",
@@ -1793,10 +1793,10 @@
         "gap1 G10 distorter through layering"
       ],
       "live_path": true,
-      "test": "ProceduralFaceRendererTests",
+      "test": "M5AnimationTests.M5_003_C7_GetFaceHelper, M5AnimationTests.M5_003_C8_C9_G10_InterpolateAndClip, M5AnimationTests.M5_003_C10_Combine, M5AnimationTests.M5_002_C2_TheCentreIsClampedBeforeTheScaleIsSet",
       "effect": "faces blend differently",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): TrackLayerComponent.GetFaceHelper is C7 (due at start + trigger <= t; no next: used and advanced; next due too: a warning, advanced, no face; otherwise Interpolate with frac capped at 1 and advanced when the next is due by t + 33; replace for an animation, Combine for a layer). ProceduralFacePose.Interpolate is C8/G10 (t = 0 or 1 copies with the distorter; otherwise onto a default face, angles as unit vectors, the rest linear, eye parameters Clipped, negative scale 0, the centre through SetFacePosition). Eye.Clip(p, v, previous) is the C9 table with its NaN rule; ProceduralFacePose.Combine is C10 with the G10 distorter rule. Verify round 1 (2026-09-25, corrections C1..C3, gap4): Interpolate calls SetFacePosition before the face scale is set (C2). Verify round 2 (2026-09-25, correction C4): the blend turns atan2 back into degrees by multiplying by 0x42652EE1 (0x005842E0); SetFacePosition's K2 bounding box is verified (M5-002). Verify round 3 (2026-09-25): the blend's guards (equal angles skipped, equal cosines or sines not blended, 0x0058430A..0x0058437A), its order (1-t)*a + t*b, the degrees-to-radians constant MathF.PI/180f = 0x3C8EFA35 (engine constant at 0x005842DC) and the radians-to-degrees multiply by 0x42652EE1 (0x0058438C) all match the disassembly.",
+      "unresolved": "Equivalent, not exact: MathF.Cos/Sin/Atan2 (.NET) stand in for bionic cosf/sinf/atan2f, which can differ in the last ULP.",
       "hardware_required": false
     },
     {
@@ -1804,17 +1804,17 @@
       "subsystem": "M5-animation",
       "title": "Head 0x93 {u16 duration, s8 angle} and lift 0x94 {u16 duration, u8 height} keyframes, sent once at the trigger",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C2 0x004F8C68, 0x004F8C90..0x004F8CD4, 0x004F8C08..0x004F8C4A",
         "C3 0x004F8FDC..0x004F9048, 0x004F8F80..0x004F8FC4"
       ],
       "live_path": true,
-      "test": "AnimationTests",
+      "test": "M5AnimationTests.M5_004_C2_C3_HeadAndLiftGoOnceAtTheirTrigger, M5AnimationTests.M5_025_A19_OneKeyframePerTrackPerFrame",
       "effect": "head or lift keyframes are sent differently",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AnimationScheduler.BuildFrameLocked pulls the Head and Lift tracks by A19 (the current keyframe only, when start + trigger <= stream time; IsDone is the stub return 1, so each is sent once and the track moves on) and buffers 0x93/0x94 through IAnimationSink.Head/Lift; RobotAnimationSink sends {u16 duration (strh truncation), s8 angle} and {u16 duration, u8 height} (C2, C3).",
+      "unresolved": "",
       "hardware_required": false
     },
     {
@@ -1822,17 +1822,17 @@
       "subsystem": "M5-animation",
       "title": "Variability: RandIntInRange on the static keyframe RNG per GetStreamMessage, unclamped",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C2/C3 RandIntInRange(a-v, a+v) with strb truncation",
         "gap1 RNG semantics 0x0082F9B0..0x0082FAC6"
       ],
       "live_path": true,
-      "test": "AnimationTests",
+      "test": "M5AnimationTests.M5_005_C3_VariabilityIsNotClamped, AnimationGapTests.VariabilityIsAppliedToHeadAndLiftKeyframesAtStreamTime, M5AnimationTests.M5_005_R1_Mt19937AndGetNextDbl",
       "effect": "keyframe values vary differently",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): WithVariability draws RandIntInRange(v - var, v + var) (gap1: a + trunc(u·(b - a + 1)), EngineRandom) on the scheduler's keyframe RNG each time the keyframe's message is built, and the result is cast unchecked (sbyte for the head, byte for the lift): no clamp, so it truncates or wraps (C2, C3). The uniform source behind the draw is System.Random; the engine's mt19937 stream and seed are not in the inventory, so no sequence is claimed. Verify round 1 (2026-09-25, corrections C1..C3, gap4): IKeyFrame::sRNG is a ported std::mt19937 (Mt19937) seeded from OS entropy (RandomNumberGenerator for /dev/urandom, R2, C3); GetNextDbl = (d0 + d1·2^32)·2^-64 (R1). The scheduler's test seam (a given Random) seeds it instead.",
+      "unresolved": "",
       "hardware_required": false
     },
     {
@@ -1848,10 +1848,10 @@
         "gap1 S1 0x004FB1A8..0x004FB3FE"
       ],
       "live_path": true,
-      "test": "AnimationTests",
+      "test": "M5AnimationTests.M5_006_C4_S1_TheRadiusStringAndTheSpeedClamps, M5AnimationTests.M5_006_C5_TheStopGoesOnTheFirstFrameWithTheCounterAtTheDuration, AnimationTests.AZeroLengthBodyKeyframeIsNotStoppedButAStationaryOneIs",
       "effect": "the body moves differently",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): DefineBody (C4, S1): the radius string (any digit: atoi clamped to int16 and CheckTurnSpeed; TURN_IN_PLACE/POINT_TURN: 0 and CheckRotationSpeed |v| > 300 → ±300; STRAIGHT: 0x7FFF and CheckStraightSpeed |v| >= 221 → ±220; anything else rejects the keyframe); a negative duration becomes INT_MAX. The stream (C5): counter 0 sends {speed, radius}, nothing while counter < duration, the stop {0, 0x7FFF} on the first frame with counter >= duration (IsDoneHelper, +33 per frame), whatever the speed; enableStop is the ctor's 1. No other BodyStop is sent (RobotAnimationSink.Finished sends nothing; the stack's own stops before End and on cancel are gone).",
+      "unresolved": "The radius tokens are matched case-insensitively (the earlier code's rule; C4 does not say whether the engine compares with strcmp); the speed is taken as read before the radius string is processed. A keyframe built in code with an unknown token sends neither its start nor its stop (the engine rejects it at load, so it never streams).",
       "hardware_required": false
     },
     {
@@ -1859,17 +1859,17 @@
       "subsystem": "M5-animation",
       "title": "Timeline: start + frames built x 33; advances whenever the drain returns OK (a budget stop included); frozen while the buffer is non-empty",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "A18 0x0057CA7E..0x0057CABE; SendBufferedMessages returns 0 on a budget stop 0x0057BF98/0x0057BFA0",
         "M3 C15"
       ],
       "live_path": true,
-      "test": "AnimationGapTests.TheTimelineFreezesWhileTheRobotHasNoRoomAndResumesWhereItStopped",
+      "test": "M5AnimationTests.M5_007_A18_TheStreamTimeIsFramesBuiltTimes33, M5AnimationTests.M5_007_C14_AFailedOrThrowingSendIsRetriedAndCountedOnce, AnimationGapTests.TheTimelineFreezesWhileTheRobotHasNoRoomAndResumesWhereItStopped, M3DeviceTests.M3_013_C15_OneUpdateStreamsFramesUntilTheBudgetStopsTheDrain",
       "effect": "keyframes fire at different times",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): UpdateStreamLocked adds 33 to the stream time (+0x84) after every built frame whose drain returned without a send error, a budget stop included (A18); the frame loop runs only while the buffer is empty (ShouldProcessAnimationFrame, A15), so no frame is built while leftovers wait on the robot's budget; stream time = start + frames built x 33 (StreamTimeMs). A failed or throwing send stays at the front, is not counted and is retried at the next Update (C14); AudioFramesSent and KeyframeFired count a message once, when it goes.",
+      "unresolved": "",
       "hardware_required": false
     },
     {
@@ -1877,7 +1877,7 @@
       "subsystem": "M5-animation",
       "title": "One streaming animation: refuse or interrupt, tags 1..0xFE returned, loops with the same tag, live forced to 1 loop, ReplayLastAnimation",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "A4 0x0057B17E..0x0057B1B2",
@@ -1889,27 +1889,27 @@
         "A27 0x0057ED0E..0x0057ED2A"
       ],
       "live_path": true,
-      "test": "AnimationTests.AClipOnAFreeTrackIsStillRefusedBecauseOnlyOneAnimationStreamsAtATime",
+      "test": "M5AnimationTests.M5_008_A4_A5_A9_RefuseInterruptAndTheTags, M5AnimationTests.M5_008_A13_EachLoopReInitsWithTheSameTag, M5AnimationTests.M5_008_A27_ReplayLastAnimation, AnimationGapTests.TheTagCounterWrapsPastZeroAndFf",
       "effect": "a second animation is handled differently",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): SetStreamingAnimationLocked is A4..A9: streaming and a non-null newcomer without interrupt → NotInterrupting, 0 (Play returns null); streaming → Aborting and Abort; nothing streaming: a null newcomer → Abort, a non-null one → Abort only with an idle set; +0x38 = the newcomer; a null newcomer after an old one sets +0x73 (A6); a live animation is forced to 1 loop (A8); the name to +0x54, IncrementTagCtr (1..0xFE, 0 and 0xFF never), InitStream, +0x68 = numLoops, +0x6C = 0, the tag returned (AnimationHandle.Tag). Advance's streaming branch is A13 (a finished loop re-inits with the same tag; numLoops 0 forever; the last one ends the animation in the Update after its End). ReplayLastAnimation is A27. The custom song (A7) is M9's and not offered.",
+      "unresolved": "",
       "hardware_required": false
     },
     {
       "id": "M5-009",
       "subsystem": "M5-animation",
       "title": "Audio keyframe load rules: id low 32 bits, volume default 1.0, absent probabilities 1/N, mismatch or sum > 1 rejects",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C13 0x004F9E54..0x004FA05C"
       ],
       "live_path": true,
-      "test": "AnimationTests",
+      "test": "M5AnimationTests.M5_009_C13_TheAudioKeyframeLoadRules",
       "effect": "audio keyframes load differently",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AnimationLibrary.DefineAudio is C13: audioEventId f1, each the low 32 bits; volume f2 (1.0); probability f3; hasAlts f4 (true); no probability vector gives 1/N each; a count mismatch or a running float sum above 1.0 logs an error and rejects the keyframe, which ends the clip's load there (gap1 C2).",
+      "unresolved": "",
       "hardware_required": false
     },
     {
@@ -1925,10 +1925,10 @@
         "A31 0x0057CF6A..0x0057CFF2"
       ],
       "live_path": true,
-      "test": "IdleFaceTests",
+      "test": "M5AnimationTests.M5_010_A2_TheNeutralFaceIsTheLayerBase, M5AnimationTests.M5_010_A6_A31_TheNeutralFaceIsReplayedAfterACancel",
       "effect": "the resting face differs",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AnimationScheduler.LoadNeutralFace is A2 (GetAnimationForTrigger(NeutralFace) → GetFirstAnimationName; an empty group an error, more than one a warning; the clip stored as +0x40 and the face of its first ProceduralFace keyframe given to TrackLayerComponent.Init as the layer base); CozmoAnimations.LoadFrom runs it with the loaded library as the catalog. The keep-alive block replays it after an abort to nothing (+0x73, A6, A31) and RemoveIdleAnimation does when the top becomes Count while an idle plays and nothing streams (A30).",
+      "unresolved": "ProceduralFace's reset data before a neutral face is loaded (no assets, or before LoadFrom) is not in the inventory; the layer base is the default face then. The engine reads the neutral in the streamer constructor with the assets already loaded; here it is read at LoadFrom.",
       "hardware_required": false
     },
     {
@@ -1944,28 +1944,28 @@
         "D6 0x0058AB30..0x0058AE2A"
       ],
       "live_path": true,
-      "test": "AnimationAssetTests",
+      "test": "M5AnimationTests.M5_011_D5_TheWeightedDraw, AnimationTests.AGroupPicksByWeightAndFallsBackWhenAMoodMatchesNothing, AnimationAssetTests.AnimationGroupsLoadAndChooseOnlyRealClips",
       "effect": "a different clip is chosen",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AnimationGroup.GetAnimationName is D5/D6: candidates by mood (SimpleMoodType), the head window in radians when UseHeadAngle, and cooldown; r = RandDbl(Σw) minus each weight, the pick where r < 0, else the last; the pick's cooldown end set to now + CooldownTime_Sec; nothing left and the mood not Default → again with Default. AnimationLibrary implements IAnimationCatalog.GetAnimationNameFromGroup with the mood, cooldown time and head angle providers. Verify round 1 (2026-09-25, corrections C1..C3, gap4): The group draw is on the context RNG (R3), shared with the live idle and the layer managers (AnimationLibrary.ContextRandom = AnimationScheduler.ContextRandom).",
+      "unresolved": "D4 says an entry's Name must exist as a clip; what the loader does with one that does not is not in the rows, so such entries are kept. The defaults of Weight (1), Mood (\"Default\") and HeadAngleMin/Max_Deg (±infinity) when absent are the earlier code's, not the rows'. The mood and the cooldown time come from MoodManager (M7): unset, Default and this machine's monotonic clock.",
       "hardware_required": false
     },
     {
       "subsystem": "M5-animation",
       "title": "An audio keyframe volume (default 1.0) is passed on to the audio layer; its Wwise effect is M6",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
       "effect": "audio plays at a different level",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): The audio keyframe's volume (C13: f2, default 1.0) is passed with the chosen event to the audio layer (AudioAnimation.Start → IAnimationAudioSource.GetPcm(id, volume)); when no alternative is chosen the static default {event 0, volume 1.0} plays nothing (C14). What the volume does in Wwise is M6's.",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C13 volume f2 default 1.0 (0x004F9E54..0x004FA05C)",
         "C14 the static default {eventId 0, volume 1.0} (0x004F9E18)"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "WwiseTests.TheKeyframeVolumeIsTheEventVolumeTrimNotAGain",
+      "test": "AnimationGapTests.AudioIsStreamedOnTheSchedulerTickNotByAPacerOfItsOwn, WwiseTests.TheKeyframeVolumeIsTheEventVolumeTrimNotAGain",
       "id": "M5-012"
     },
     {
@@ -1973,17 +1973,17 @@
       "title": "faceAnimations: one sprite frame per stream frame, empty frames skipped, two RLE variants per image chosen by _firstScanLine, index reset on abort",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/FaceAnimationLibrary.cs",
       "effect": "sprite faces look different",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): FaceAnimationLibrary.Variants stores each image thresholded at 0x80 as two CompressRLE variants, even rows cleared and odd rows cleared (C12); the FaceAnim track sends one stored frame per stream frame with the FaceAnimationManager's _firstScanLine (toggled by InitStream, A11), an empty frame skipped (index +1, no message), and is done when the index reaches the frame count; Abort resets the current keyframe's index (A24).",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C12 0x004F9708..0x004F98C4; FaceAnimationManager 0x00581254..0x005812C4; GetFrame 0x005817B4..0x005817CA",
         "M3 B4"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "Which stored variant GetFrame returns for which _firstScanLine value is not in C12; 0 takes the even-rows-cleared one (the drawer's convention, E2). The index is reset to 0 when the keyframe is done (a looping clip would otherwise find it done at once); the rows do not say. Image::Threshold(0x80) is taken as \"at or above 0x80\".",
       "hardware_required": false,
       "live_path": true,
-      "test": "AnimationAssetTests.AClipWithAFaceAnimationTrackStreamsItsFrames",
+      "test": "M5ScanLineTests.M5_013_C12_TwoVariantsChosenByTheScanLine, M3DeviceTests.M3_015_A17_APendingFaceAnimationHoldsTheProceduralFaceBack, AnimationAssetTests.AClipWithAFaceAnimationTrackStreamsItsFrames",
       "id": "M5-013"
     },
     {
@@ -1998,11 +1998,11 @@
         "D7 0x0058BA28..0x0058BA98"
       ],
       "live_path": true,
-      "test": "AnimationGroupGateTests.TheHeadAngleGateDropsEntriesOutsideTheirWindow",
+      "test": "M5AnimationTests.M5_014_D6_TheDefaultBackup, M5AnimationTests.M5_014_D7_TheCooldownIsSharedByName, AnimationGroupGateTests.TheHeadAngleGateDropsEntriesOutsideTheirWindow",
       "id": "M5-014",
       "effect": "clips repeat or are skipped differently",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): The cooldown map (GroupContainer) is keyed by animation name and shared by every group of the library (D7: on cooldown iff end > now); the Default backup (D6, not strict) is the Default entry with the smallest TimeUntilCooldownOver among those whose [min - 0.05, max + 0.05] rad window holds the head angle, whatever their UseHeadAngle, with no cooldown set; without one, the first entry; strict gives nothing.",
+      "unresolved": "The cooldown time is MoodManager+0x130 (D5; M7): unset, this machine's monotonic clock stands in. HeadAngleMin/Max_Deg defaults when absent (here ±infinity, so every entry qualifies for the backup) are not in the rows.",
       "hardware_required": false
     },
     {
@@ -2010,16 +2010,16 @@
       "title": "Corner radii rx = roundf(p*15), ry = roundf(p*20) into four ellipse2Poly corners; below 1 a point",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFaceRenderer.cs",
       "effect": "the eye corners look different",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): ProceduralFaceRenderer.Corner: rx = (int)roundf(p·0.5·30), ry = (int)roundf(p·0.5·40); below 1 in either the corner point (±15, ±20), otherwise ellipse2Poly about the fixed centre (±(15 - rx), ±(20 - ry)) over the corner's quarter, delta 10 (gap1 D1), in the order UpperInner, LowerInner, LowerOuter, UpperOuter.",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "gap1 D1 0x0058520E..0x005853C4"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "ProceduralFaceRendererTests.TheSecondEyeIsTheFirstMirroredSoInnerMeansTheSameOnBoth",
+      "test": "M5AnimationTests.M5_015_D1_ARadiusBelowOneIsTheCornerPoint, ProceduralFaceRendererTests.TheSecondEyeIsTheFirstMirroredSoInnerMeansTheSameOnBoth, ProceduralFaceRendererTests.AZeroRadiusGivesASharpCornerAndANeutralRadiusDoesNot",
       "id": "M5-015"
     },
     {
@@ -2036,26 +2036,26 @@
       ],
       "live_path": true,
       "effect": "the backpack lights ignore or misplay animations",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): The backpack track is loaded (DefineLights, C16) and each colour goes through BackpackColor.FromArray (GetColorOptional, C17: raw when any of r, g, b > 1, else x255, truncated; alpha from a 4th element >= 0; default 0xFF00CCFF) and BackpackColor.Encode; TrackLayerComponent.ApplyLayersToAnim sends 0x98 BackpackLights every frame while the keyframe is current and due, until counter >= duration, that frame included (C18), in the order Left, Front, Middle, Back, Right, at the A16 (10) slot. Verify round 1 (2026-09-25, corrections C1..C3, gap4): BackpackColor.TryReadAll is gap4 J1.9: \"Back\", \"Front\", \"Middle\", \"Left\", \"Right\" in that order into one reused ColorRGBA (a 3-element array keeps the previous alpha), each an array of 3 or 4 floats or the keyframe is rejected, vcvt.u32.f32 conversions; the FlatBuffer table goes the same way (C16). The animation keyframe is current and due (B1/B3: trigger <= stream - start); a backpack layer's current keyframe overwrites all five LEDs (B2).",
+      "unresolved": "MISSING: a colour given as a string names a NamedColors entry (J1.9); the table is not in the inventory, so such a JSON keyframe throws NotSupportedException (no shipped keyframe uses one).",
       "hardware_required": false,
-      "test": ""
+      "test": "M5AnimationTests.M5_016_C17_C18_TheColourWordsAndTheOrder, M5AnimationTests.M5_016_C18_TheBackpackIsSentEveryFrameWhileCurrent, AnimationGapTests.ALightsKeyframeIsStreamedEveryFrameWhileCurrent"
     },
     {
       "subsystem": "M5-animation",
       "title": "Audio alternative: r = RandDbl(1), first with lower <= r <= upper skipping |p| < 1e-5, else nothing",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C14 0x004F9AEC..0x004F9CBE, 0x004F9DAC..0x004F9DFC"
       ],
       "live_path": true,
-      "test": "AnimationGapTests.AnUnproducibleChosenAlternativeIsSimplySilent",
+      "test": "AnimationGapTests.TheAlternativeIsChosenByProbabilityAsTheEngineDoes, AnimationGapTests.AnUnproducibleChosenAlternativeIsSimplySilent, AnimationGapTests.AClipWithProbabilitiesPlaysTheWeightedAlternativeNotTheFirst",
       "id": "M5-017",
       "effect": "a different sound plays",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AudioAnimation.Start draws r = (float)RandDbl(1) on the keyframe RNG and takes ChooseAlternative: the first alternative with lower <= r <= upper over the cumulative probabilities, skipping |p| < 1e-5; none → nothing plays (C14). Loaded keyframes always carry N probabilities summing to at most 1 (C13); ChooseAlternative's 1/N fallback is only for keyframes built in code with other probabilities. Verify round 1 (2026-09-25, corrections C1..C3, gap4): The alternative draw is on sRNG, the entropy-seeded mt19937 (R2).",
+      "unresolved": "",
       "hardware_required": false
     },
     {
@@ -2064,33 +2064,33 @@
       "title": "Frames per Update while ShouldProcessAnimationFrame: empty buffer and keyframes left, or audio ready while audio exists",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
       "effect": "animations stream faster or slower",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): UpdateStreamLocked builds frames while ShouldProcessAnimationFrame holds (A15): a non-empty buffer refuses; without an audio animation, HasFramesLeft (any track iterator not at end, the RobotAudio track included, D2); with one, its Update(start, streamTime) and its readiness, a completed one being cleared (C16).",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "A15 0x0057CC6C..0x0057CCA6",
         "M3 C15, C16"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "The audio animation is a stand-in for RobotAudioClient's RobotAudioAnimation (M6): it exists for an animation with RobotAudio keyframes, starts each at its trigger in Update, is always ready, and is complete once its track is at the end and nothing plays; the engine's states (C16, Q5), whether an audio-less animation gets one, and the first frame's latency are M6's. A sound whose samples are not rendered yet sends silence for the frame and keeps its place.",
       "hardware_required": false,
       "live_path": true,
-      "test": "AnimationGapTests.ALateTickCatchesUpFrameByFrameNotByJumping"
+      "test": "M5AnimationTests.M5_018_A15_FramesContinueWhileTheSoundPlays, AnimationGapTests.ALateTickCatchesUpFrameByFrameNotByJumping"
     },
     {
       "subsystem": "M5-animation",
       "title": "The layer base face is written back only by a streaming animation, not idle ones",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
       "effect": "the held face differs",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): ApplyLayersToAnim copies the stored face (TLC+0x10); an animation's face replaces it and only a streaming animation (storeFace = 1) writes it back as the new stored face (C11); idle animations and StreamLayers do not.",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C11 0x0064EFA8..0x0064EFEA, 0x0064F154..0x0064F244"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "C11 does not say whether the face written back is the animation's (before the layers are Combined) or the composed one; the animation's is written.",
       "hardware_required": false,
       "live_path": true,
-      "test": "AnimationTests",
+      "test": "M5AnimationTests.M5_019_C11_OnlyAStreamingAnimationWritesTheBaseFace",
       "id": "M5-019"
     },
     {
@@ -2113,7 +2113,7 @@
       "title": "Eye fill = shipped OpenCV 3.1.0 fillConvexPoly LINE_4 and ellipse2Poly; DrawEye outline and lid polygons; _firstScanLine offset; fill order",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFaceRenderer.cs",
       "effect": "the eyes are drawn with different pixels",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): OpenCv310 ports stock 3.1.0 fillConvexPoly (the InputArray wrapper, the Mat& overload and FillConvexPoly, with Line/LineIterator LINE_4 edges and clipLine, gap3 A1..A10) and ellipse2Poly (the normalisation, the SinTable, cvRound ties to even, gap3 B1..B3). ProceduralFaceRenderer.DrawEye builds the outline (D1), the lower and upper lid polygons with their tan/cos bends (D2, D3), transforms every point with the per-eye matrix about (0, 0), mirroring the second eye, (int)roundf(x) and (int)(roundf(y) + _firstScanLine) (D4), takes the eye box (D5) and fills outline 255, AddOffNoise with a distorter, upper lid 0, lower lid 0 (D6). Verify round 1 (2026-09-25, corrections C1..C3, gap4): The lid degrees-to-radians constant is the float 0x3C8EFA35 (C2).",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "gap1 D1..D6 DrawEye 0x0058520E..0x00585896",
@@ -2121,10 +2121,10 @@
         "gap3 B1..B3 ellipse2Poly 0x00043C48 (SinTable 0x000E7910, vcvtr ties-to-even)"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "The trig in DrawEye and GetTransformationMatrix is MathF.Tan/Cos/Sin (bionic libm may differ in the last ulp, which can move a rounded point at a tie); the float operation order of the point transform is m00·x + m01·y + m02. Rounding assumes the default FPSCR mode (MD2).",
       "hardware_required": false,
       "live_path": true,
-      "test": "ProceduralFaceRendererTests",
+      "test": "M5AnimationTests.M5_021_A4_A9_FillConvexPolyLine4, M5AnimationTests.M5_021_B3_Ellipse2PolyRoundsTiesToEven, M5AnimationTests.M5_021_A9_A10_LineIteratorAndClipLine, ProceduralFaceRendererTests",
       "id": "M5-021"
     },
     {
@@ -4500,7 +4500,7 @@
       "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "AnimationStreamLifecycleTests.TheLiveStreamKeepsStreamingAfterItsKeyframesHaveEnded"
+      "test": "AnimationStreamLifecycleTests.TheLiveIdleReInitsOnEveryUpdateOnceItsKeyframesAreConsumed"
     },
     {
       "id": "M11-019",
@@ -4576,16 +4576,16 @@
       "title": "Disconnect and teardown: a failed send only returns; ~Robot AbortAll cancels actions, aborts path and docking, sends AbortAnimation 0x8D and StopAllMotors",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
       "effect": "the robot keeps animating or moving after teardown",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): A failed send only returns its error: the message stays at the front and the Update ends (A37, C14). CozmoRobot.Dispose is ~Robot's AbortAll as far as this stack has it: the streaming animation is cancelled (SetStreamingAnimation(null), whose AnimationAborted broadcast sends 0x8D, A22/A23), then AbortAnimation 0x8D and StopAllMotors are sent, before the streamer goes (A37). Verify round 1 (2026-09-25, corrections C1..C3, gap4): CozmoRobot.Dispose stops and joins the engine tick first (CozmoEngine.StopTick), so no Update streams after AbortAll; then the animation is cancelled (its AnimationAborted broadcast), AbortAnimation 0x8D, StopAllMotors and the decision-note DriveWheels(0) are sent, and the engine and transport are disposed (DisconnectRequest).",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "A37 0x0051194C..0x0051197C; 0x00511120; 0x0051154A; ~AnimationStreamer 0x0057AF58"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "PathComponent::Abort and AbortDocking (A37) are M12/M13's and not run at teardown. The extra DriveWheels(0) after StopAllMotors is this stack's (PROJECT_STATE decision note), not the engine's.",
       "hardware_required": false,
       "live_path": true,
-      "test": "CoreReviewTests (CORE-002)"
+      "test": "M5AnimationTests.M5_022_A37_TeardownSendsAbortAnimationThenStopAllMotors, M5AnimationTests.M5_007_C14_AFailedOrThrowingSendIsRetriedAndCountedOnce"
     },
     {
       "id": "M5-023",
@@ -4593,7 +4593,7 @@
       "title": "Abort: AnimationAborted broadcast -> AbortAnimation 0x8D reliable; state cleared; buffer kept and flushed by the next no-animation Update unless InitStream drops it; no EndOfAnimation",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
       "effect": "a cancelled animation leaves the robot in a different state",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AnimationScheduler.AbortLocked is A22/A24: with +0xA0 != 0 the AnimationAborted{tag} broadcast, synchronous; nothing more when neither +0x38 nor +0x34 is set; the current FaceAnimation keyframe's index reset to 0; startSent = endSent = 0; the audio animation aborted and cleared; +0x38, +0xA0 and the send buffer kept. CozmoAnimations subscribes the broadcast as RobotEventHandler does and sends AbortAnimation 0x8D directly through CozmoRobot.SendMessage (reliable, not budget-gated, A23). The leftovers are flushed by the next no-animation Update or dropped by an InitStream, and no EndOfAnimation follows (A25).",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "A22 0x0057B3F2..0x0057B426",
@@ -4602,10 +4602,10 @@
         "A25 0x0057D122..0x0057D1DE"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "A24 does not say whose FaceAnimation keyframe is reset when both a streaming and an idle animation are set; the streaming one's is.",
       "hardware_required": false,
       "live_path": true,
-      "test": "AnimationStreamLifecycleTests.CancellingAnAnimationWithABodyKeyframeRunningSendsNoBodyStop"
+      "test": "M5AnimationTests.M5_023_A22_A24_A25_AbortBroadcastsKeepsTheBufferAndSendsNoEnd, M5AnimationTests.M5_023_A23_TheRobotLayerSendsAbortAnimation, M3DeviceTests.M3_013_A24_A25_ACancelledClipsLeftoversAreFlushedWithNoEnd"
     },
     {
       "id": "M11-020",
@@ -4949,12 +4949,12 @@
       ],
       "effect": "animations start differently",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): InitStreamLocked is A10..A12: Animation::Init (the iterators to begin); +0xA0 = tag; +0x80 = now; both _firstScanLine values toggled on a new name or when now + GetLastKeyFrameEndTime - +0x1D4 > 30000 (unsigned), +0x1D4 = now; +0x1C8 = the name; +0x84 = +0x80; a non-empty buffer dropped with SendBufferNotEmpty; endSent = IsEmpty, startSent = 0; the audio animation created; RemoveKeepFaceAlive(99) for a non-live animation. Nothing is sent. Verify round 1 (2026-09-25, corrections C1..C3, gap4): GetLastKeyFrameEndTime is gap4 E1 (StreamAnimation.LastKeyFrameEndTime: the unsigned max over non-empty tracks of the last element's trigger + duration for Head, Lift, Body, TurnTo and Backpack, the trigger for the others). The _firstScanLine values are process statics shared by every streamer and not reset with a robot (ScanLineState.Process, M3 B3). The audio animation it creates is the M6 stand-in described in M5-018.",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M5ScanLineTests.M5_024_A11_E1_TheScanLineToggleRule, M5AnimationTests.M5_024_A12_TheStartAndEndFlags, M5AnimationTests.M5_024_A12_L7_ANonLiveInitStreamRemovesTheDart, M3DeviceTests.M3_013_A12_AReplacementDropsTheLeftovers, M5ScanLineTests.M5_024_E1_GetLastKeyFrameEndTime"
     },
     {
       "id": "M5-025",
@@ -4968,12 +4968,12 @@
       ],
       "effect": "messages go out in a different order",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): BuildFrameLocked builds one frame in the A16 order: the audio animation's frame, ApplyLayersToAnim, AudioSample or AudioSilence, StartOfAnimation once, Head, Lift, Event, FaceAnimation, the procedural face only if the FaceAnimation step buffered nothing, its track is at its end and the layered face flag is set (A16 (9), A17), BackpackLights (layered), Body, RecordHeading, TurnToRecordedHeading; each track pulled by A19 (the current keyframe only, when due; at most one per track per frame). TurnToRecordedHeading's message itself is M5-033's.",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M5AnimationTests.M5_025_A16_TheFrameOrder, M5AnimationTests.M5_025_A19_OneKeyframePerTrackPerFrame, M5AnimationTests.M5_025_A16_NoFaceWithoutTheLayeredFaceFlag, M3DeviceTests.M3_015_A16_TheFrameIsBuiltInTheEnginesTrackOrder"
     },
     {
       "id": "M5-026",
@@ -4986,12 +4986,12 @@
       ],
       "effect": "animations end differently",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): After the frame loop (A20): frames left → return; otherwise, the audio complete, the buffer empty and the end not sent: EndOfAnimation directly (SendEndOfAnimationLocked: StreamSendBuffer.SendDirect, counted as a frame, startSent = 0 and endSent = 1 on success) when Start was sent, else AudioSilence and StartOfAnimation (A21) buffered and drained and the End on a later Update. An empty clip has endSent from InitStream and sends nothing; nothing is sent after the End.",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M5AnimationTests.M5_026_A20_TheEndGoesDirectlyAndNothingFollows, M5AnimationTests.M5_026_A20_A24_NoBodyStopBeyondTheKeyframesOwn, M3DeviceTests.M3_015_C4_A20_OneAudioMessagePerFrameFirstAndNothingAfterTheEnd, M3DeviceTests.M3_013_A12_AnEmptyClipSendsNothing"
     },
     {
       "id": "M5-027",
@@ -5007,11 +5007,11 @@
       "effect": "idle behaviour differs",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): The idle stack starts {Count 0x23F, \"default_anim_lock\"} (A1); PushIdleAnimation/RemoveIdleAnimation are A30 (Count clears +0x34/+0x64; the last entry and an unknown lock refused; a removal from the middle warns; a Count top with an idle playing and nothing streaming replays the neutral). The no-animation path is A28/A29: a Count top with layers → StreamLayers; a ProceduralLive top makes the live animation the idle; a non-empty buffer is flushed and then a pending End sent (Q1.9); a non-Count idle is picked through the catalog (HasAnimationForTrigger → GetAnimationForTrigger → GetAnimationNameFromGroup(strict = false) → GetAnimation, an error without popping) and initialised with InitStream(anim, 0xFF) and no frame, otherwise UpdateStream(storeFace = 0); +0x44 += 60. StreamLive (the M7-017 seam) appends to the live animation and puts ProceduralLive on the stack; it is refused while an animation streams. Verify round 1 (2026-09-25, corrections C1..C3, gap4): The no-animation path is now B1: with the stack empty or its top Count, StreamLayers when layers exist, otherwise the flush and a pending End, and nothing more; any other top goes straight to the idle, which neither flushes nor sends an End. The live idle is gap4 L8 (UpdateLiveAnimation first; InitStream(live, 0xFF) when the previous idle was not the live one or it has ended, otherwise UpdateStream); after an idle's or the live idle's UpdateStream +0x88 = now (B3). A failed pick sets the idle to null and returns (Q1); a trigger with no animation goes on to the tail with no error. Verify round 2 (2026-09-25, correction C4): the idle and live-idle tail is C4 (0x0057D3F0..0x0057D412): InitStream(idle, 0xFF) when the previous idle is not this one, +0x64 == 0, or the idle has ended, otherwise UpdateStream; a streaming Update clears +0x64 (A13), so after a clip the idle (the live one included) re-inits with 0xFF; the HasAnimationForTrigger-miss path reaches the same tail (0x0057D218), so a kept idle re-inits there too.",
+      "unresolved": "+0x64 is taken as set by an idle's InitStream (A29 says only that +0x64 = 0 re-inits). The Count-top flush refreshes the budgets before its drain; the rows do not say. HasAnimationForTrigger is HasResponse (0x00670AD0, not re-read), taken as \"the key is present\".",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M5AnimationTests.M5_027_A1_A30_TheIdleStack, M5AnimationTests.M5_027_A29_AnIdleAnimationInitsWithTag0xFfThenStreams, M5AnimationTests.M5_027_A29_StreamLiveKeyframesGoOutInsideTheUpdate, M5AnimationTests.M5_027_A13_APlayThenStopInOneTickContinuesTheLiveStream, AnimationStreamLifecycleTests, M3DeviceTests.M3_013_A13_A29_A12_WithTheLiveStreamActiveACancelledClipsLeftoversAreDropped, M5AnimationTests.M5_027_B3_AnIdleStreamSetsTheLastStreamTime, M5AnimationTests.M5_027_B1_WithAnIdleOnTopTheLeftoversAreNotFlushed, M5AnimationTests.M5_027_C4_AfterAClipTheLiveIdleIsReinitialisedWithTag255"
     },
     {
       "id": "M5-028",
@@ -5025,18 +5025,18 @@
       ],
       "effect": "the idle face behaves differently",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): Advance's keep-alive block is A31: only once +0x88 > 0 (the ctor's -FLT_MAX; set after each streaming UpdateStream and, B3, after each idle or live-idle UpdateStream); TrackLayerComponent.Update (the glitch, G1); with nothing streaming and the idle the live animation, or no idle and now - +0x88 > +0x1C0 (0.5 s, ResetKeepFaceAliveLastStreamTimeout; KeepAliveTimeoutSec for Hiccup, M7, A32): the neutral replay after an abort to nothing, the default parameters once (A34, LiveIdleParams) and FaceLayerManager.KeepFaceAlive (A33, K4..K6: both timers -60; the dart when EyeDartMaxDistance > 0, its timer <= 0 and no layer or only its own: GenerateEyeShift (K1, LookAt K3), AddToPersistentLayer or a new single-keyframe \"KeepAliveEyeDart\" persistent layer, the timer RandIntInRange(p20, p21); the blink when its timer <= 0: GenerateBlink (K7..K9: the 7-frame table plus the restore keyframe, the drawer's _firstScanLine flipped at generation) as the \"Blink\" layer, the timer RandIntInRange(min, max) or (7500, 30000) with BadBlinkSpacingParams). While any layer exists StreamLayers streams under one Start with no End, a FaceImage every frame once a layer face is due (Q1.7..Q1.10). The draws are on the context RNG, an entropy-seeded mt19937 (R3, C3). Verify round 1 (2026-09-25, corrections C1..C3, gap4): The keep-alive runs under the live idle too, since its UpdateStream now sets +0x88 (B3). The dart, blink and glitch draws are on the context RNG, an entropy-seeded mt19937 (R3).",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M5AnimationTests.M5_028_A31_Q1_KeepAliveAfterTheFirstStreamAndHalfASecond, M5AnimationTests.M5_028_K7_K9_TheBlink, M5AnimationTests.M5_028_K1_K3_TheDartKeyframe, M5AnimationTests.M5_028_A34_TheDefaultParameters, M5AnimationTests.M5_027_B3_AnIdleStreamSetsTheLastStreamTime"
     },
     {
       "id": "M5-029",
       "subsystem": "M5-animation",
       "title": "Track layer manager: tags, AddLayer/AddPersistentLayer, persistent hold, AddToPersistentLayer, the Remove cross-fade, HaveLayersToSend, frame flags",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/TrackLayers.cs",
       "evidence": [
         "gap1 L1..L8 0x0058E630..0x0058EC6C",
         "gap2 Q1.1..Q1.6 0x0064F4FE..0x0064F518, 0x0058E66E..0x0058E77C, 0x0064EFA8..0x0064F22C",
@@ -5044,12 +5044,12 @@
       ],
       "effect": "layered faces behave differently",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): TrackLayerManager is gap1 L1..L6 and gap2 Q1.2..Q1.5: tags 1..255 skipping 0 and used ones; AddLayer copies the track live, start as given, stream 0, returns 0; AddPersistentLayer non-live, start and stream 0, returns the tag; AddToPersistentLayer adds trigger + last trigger + 33; ApplyLayersToFrame in ascending tag order, stream += 33, a persistent layer at its end pinned to its last keyframe with its time frozen (an empty one warns and loses its persistent flag), a non-persistent one removed after the loop, the OR of the results. FaceLayerManager.RemovePersistentLayer is L7/Q1.11/gap3 K5 (a live \"Remove\"+name layer: a copy of the current keyframe at 0 when dur >= 1, then a default face at dur). HaveLayersToSend is audio OR backpack OR face (Q1.1); ApplyLayersToAnim sets the frame flags in the order audio, backpack, face (Q1.6).",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M5AnimationTests.M5_029_L1_L7_TheLayerManager, M5AnimationTests.M5_024_A12_L7_ANonLiveInitStreamRemovesTheDart"
     },
     {
       "id": "M5-030",
@@ -5063,11 +5063,11 @@
       "effect": "the live idle moves differently",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): The ProceduralLive idle is streamed as A29 says (the live animation as +0x34, InitStream(live, 0xFF), UpdateStream(storeFace = 0)); its keyframes come from the M7 idle behaviour through StreamLive. FaceLayerManager.AddOrUpdateEyeShift and GenerateEyeShift(x, y, xMax, yMax, ...) are gap1 K2/K10 (the caller's xMax/yMax replaced by the default face's 17/12). Verify round 1 (2026-09-25, corrections C1..C3, gap4): AnimationScheduler.UpdateLiveAnimationLocked is gap4 L1..L7: the six timers as duration/spacing pairs zeroed by the ctor and kept across idle changes; the gates (+0x194, +0x44 >= GetParam<int>(2) unsigned, picking or placing) returning with no decrement; per track body → lift → head the countdown (duration -= 60 while the MovementComponent flag, a lock, carrying for the lift, or duration + spacing > 0); the draws in the L4..L6 order on the context RNG (RandIntInRange, RandDblInRange(0, 1) for the straight fraction); the LiveIdleTurn eye shift through AddOrUpdateEyeShift and its removal with RemoveEyeShift(tag, 0); the head angle (s8)trunc(robot+0x2FC·57.2958f); keyframes with trigger 0 appended by AddKeyFrameToBack with no order check (L7, a failure logging LiveUpdateFailed). The robot inputs are wired from the last RobotState (status bit 2, IS_MOVING, LIFT_IN_POS, HEAD_IN_POS), MovementComponent's track locks and the head angle (CozmoAnimations). The live idle's wire lifecycle is L8 (M5-027). Verify round 2 (2026-09-25, correction C4): the head angle is (s8)trunc(robot+0x2FC · 0x42652EE1) ([0x0057DB2C], loaded at 0x0057D838); the LiveIdleTurn x sign is the int16 speed's sign bit, so a speed of 0 gives + (verified at 0x0057D790..0x0057D7AA).",
+      "unresolved": "CarryingComponent (+0x284, M12) is not on this robot, so the lift's carrying gate reads clear. With ProceduralLive pushed by the StreamLive seam (the M7 idle behaviour, an M7-017 interface) the generator does not run, as that behaviour appends its own keyframes.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M5AnimationTests.M5_030_L1_L8_TheLiveIdleGeneratesItsKeyframes"
     },
     {
       "id": "M5-031",
@@ -5080,12 +5080,12 @@
       ],
       "effect": "glitches look different",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): ScanlineDistorter is gap1 G5..G8 and G11 (the ctor's types and control points, Update, GetEyeDistortionAmount with its jitter, GetNextDistortionFrame's 11-entry table, AddOffNoise), on one static RNG seeded with 1; FaceLayerManager.GenerateFaceDistortion is G4; BackpackLayerManager.GenerateGlitchLights is gap2 Q2 G1..G6; DrawFace shifts the kept rows by the face's distorter (G9); Combine and Interpolate carry the distorter (G10). Verify round 1 (2026-09-25, corrections C1..C3, gap4): TrackLayerComponent.AddGlitch is G3 (the face and backpack \"Glitch\" layers); the backpack layer lambda is gap4 B2/B3 (GetCurrentKeyFrame on the layer's own clock, the whole five LEDs overwritten, the highest tag winning); ScanlineDistorter's RNG is an mt19937 seeded 1 (R4), used by GetNextDistortionFrame's hold draw too. Verify round 2 (2026-09-25, correction C4): a control point's position is drawn before its amount (verified at 0x0053A252..0x0053A3A4). The degree is the M7 interface G2 (DesiredFaceDistortionComponent), unset on this stack.",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M5AnimationTests.M5_031_G5_G7_TheDistorter, M5AnimationTests.M5_031_Q2_GenerateGlitchLights, M5AnimationTests.M5_031_G3_B1_B3_AGlitchStreamsItsFaceAndBackpackLayers"
     },
     {
       "id": "M5-032",
@@ -5100,11 +5100,11 @@
       "effect": "the face is drawn with different pixels",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): ProceduralFaceRenderer.DrawFace is E1/E2/G9: the 64 x 128 canvas, both eyes; with the identity face transform the row extent from the eye boxes, otherwise GetTransformationMatrix(angle, sx, sy, cx, cy, 64, 32) through OpenCv310.WarpAffineNearest (gap3 C1..C6: in place so the source cloned, the inverse, AB_BITS 10, remapNearest with BORDER_CONSTANT 0) and the extent from the transformed box corners (floor/ceil); rows clamped to 0..63; the rows of the drawer's _firstScanLine parity cleared in [min, max); the kept rows shifted by the distorter. The stream draws with the drawer's _firstScanLine and sends CompressRLE of the canvas (BufferFaceToSend, every frame, no de-duplication). Verify round 1 (2026-09-25, corrections C1..C3, gap4): The rotated row extent uses the 4 corners of each eye rectangle, 8 points, with floor/ceil, the min from 63 and the max from 0 (C2; ProceduralFaceRenderer.TransformedRowExtent).",
+      "unresolved": "The face matrix is built in float and converted to double (gap3 open question 2: the engine M type not re-read).",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M5AnimationTests.M5_032_E1_E2_D4_TheScanLineParity, M5AnimationTests.M5_032_C1_C6_AFaceTransformGoesThroughWarpAffine, ProceduralFaceRendererTests.AWholeFaceScaleMovesTheEyeCentresAboutTheFaceCentre, M5AnimationTests.M5_032_C2_TheRotatedRowExtentUsesEachEyesCorners"
     },
     {
       "id": "M5-033",
@@ -5118,12 +5118,12 @@
       ],
       "effect": "event and heading keyframes behave differently",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): Event (C15): event_id through the AnimEvent names, an unrecognised one rejecting the keyframe at load; streamed once as 0x95 {u8 AnimEvent}. RecordHeading (C19): 0x91, empty, once. TurnToRecordedHeading (C19, S2): duration (negative → INT_MAX) and the fields with their defaults at load, CheckRotationSpeed (speed ±300, accel and decel ±13636); the track held for its duration (IsDoneHelper). Verify round 1 (2026-09-25, corrections C1..C3, gap4): TurnToRecordedHeading is sent as 0x92 at counter 0 (gap4 T2): 13 bytes, s16 offset_deg, s16 speed, s16 accel, s16 decel, u16 tolerance, u16 numHalfRevs, u8 useShortestDir (RobotAnimationSink.ToMessage); IsDone holds the track until counter >= duration.",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M5AnimationTests.M5_033_C15_C19_S2_EventAndTurnToAtLoad, M5AnimationTests.M5_025_A16_TheFrameOrder, M5AnimationTests.M5_033_T1_T2_TurnToRecordedHeadingBytes"
     },
     {
       "id": "M5-034",
@@ -5135,12 +5135,12 @@
       ],
       "effect": "a trigger plays a different group",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AnimationTriggerResponses is gap1 C7: every \"*.json\" under assets/animationGroupMaps, recursively; a file used only if it parses and has \"Pairs\"; CladEvent → AnimName inserted only when the key is absent (the first wins), no enum check; GetResponse(trigger) looks up EnumToString(trigger) with an info log, or warns \"Animation requested for unknown response '%s'\" and returns \"\". AnimationLibrary.GetAnimationForTrigger uses it (D8). (Behavior/AnimationTriggerMap, the M7 callers' map, is separate and keeps its own rules.)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M5AnimationTests.M5_034_C7_TheTriggerMap"
     },
     {
       "id": "M5-035",
@@ -5155,12 +5155,12 @@
       ],
       "effect": "tracks are suppressed that the engine would send",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): The streamer has no reference to enabledAnimTracks and no lock check: every track of a frame is buffered (B2, B3); track locks are only DisableAnimTracks/EnableAnimTracks (M4-014). Verify round 1 (2026-09-25, corrections C1..C3, gap4): B4: the only streamer-side lock checks are UpdateLiveAnimation's (AreAnyTracksLocked 4/2/1, gap4 L3), now built (M5-030).",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M5AnimationTests.M5_025_A16_TheFrameOrder, M5AnimationTests.M5_030_L1_L8_TheLiveIdleGeneratesItsKeyframes"
     },
     {
       "id": "M5-036",

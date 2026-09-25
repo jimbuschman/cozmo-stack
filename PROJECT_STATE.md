@@ -36,7 +36,16 @@ Read first in every session. The manager keeps this file current; the process it
     - Head/lift completion as the engine's actions: no send when in position, success means in position and stopped.
     - App head/lift speeds of 10/20.
   - Full suite 1279/1279.
-- **M5 animation:** inventory frozen (2026-09-24), 36 records. Its repair batch is next.
+- **M5 animation: repaired in one batch (2026-09-25).**
+  - **Verification:** four verifier passes; every blocking item was fixed (B1..B9, then O1..O3). The verifier's disassembly added cited corrections C1..C4 and Appendix E, re-approved under the standing authorisation.
+  - **M5 records:** 18 EXACT_SOURCE, 1 EQUIVALENT_IMPLEMENTATION (M5-003, .NET MathF against bionic libm in the last ULP), 1 COMPATIBILITY_POLICY (M5-020), 1 HARDWARE_ONLY (M5-036), and 15 IMPLEMENTATION_GAP, each with a named residual (mostly M6 audio, M7 mood/degree and M8 behaviour interfaces).
+  - **What changed:**
+    - the engine's AnimationStreamer port: streaming/idle/live selection, the single idle/live tail (InitStream with tag 255), the keep-alive face stream (a FaceImage every 33 ms, one Start, no End), the neutral-face replay after a cancel, AbortAnimation 0x8D;
+    - track layers (face, eye, backpack, audio) with GetFaceHelper, Interpolate, Clip and Combine;
+    - the ProceduralFace default and SetFromFlatBuf rules; the renderer on the engine's OpenCV 3.1.0 paths (OpenCv310.cs);
+    - the ScanlineDistorter (mt19937 seeded 1), entropy-seeded mt19937 elsewhere (EngineRandom.cs);
+    - JSON clips (JsonClipLoader.cs).
+  - Full suite 1357/1357.
 - **M6 (Wwise):** the extraction found the Wwise 2016.2 runtime statically linked into the engine. Two gap passes are running.
 - **M2 protocol: repaired in one batch (2026-09-24).**
   - The verifier compared all 42 outbound and all 56 inbound layouts by machine against the engine; all match. Its one blocking item was a manifest overclaim, fixed by policy M2-017 and corrections C1 and C2, then re-approved.
@@ -218,7 +227,7 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
   - Docking.cs:353 releases the carried object on BlockPlaced without the engine's success gate (R-P1).
   - Docking.cs:357 treats MovingLiftPostDock as `!= 0`, where the engine compares that byte for equality with IDockAction+0x80 (R-P4).
 - For M4: the MessageExtras default arguments (SetHeadAngle 10/10, SetLiftHeight 3/20, RobotLink.cs:100) have no engine counterpart (M2-015). The only callers that rely on them are CozmoRobot.cs:499 (a public API) and Probe.cs:92.
-- **For the M5 batch (found by the M3 verifier; the rows are in the frozen M5 inventory):**
+- **For the M5 batch (found by the M3 verifier): done in the M5 batch (2026-09-25).** Kept for the record:
   - After a cancel (SetStreamingAnimation(null)), the engine replays the neutral face (A6, A31). The stack has no neutral replay.
   - StreamLive runs outside an Update, so its timing differs from the engine's (A29, 0x0057D080).
   - A Play then Stop inside one tick: in the engine the live stream continues rather than re-initialising.
@@ -232,6 +241,9 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
   - CUBES should cite M9-017 and M4-024.
   - CONNECT should record the origin and frame the robot reports (M4-021), and whether DefaultCameraParams 0xC8 arrives (M3-019).
   - CAMERA should record image brightness (M3-019).
+- **From the M5 verifier (2026-09-25, non-blocking):**
+  - **LiveUpdateFailed:** when UpdateLiveAnimation returns 1 the engine logs and returns (0x0057D086..0x0057D0E6); the code logs and carries on to the tail. Unreachable: an add fails only above 1000 keyframes.
+  - **control-check keep-alive:** ANIM's `streamingStops` and ANIM_CANCEL's `noNewFrameAfterCancel` / `noEndOfAnimationAfterCancel` fail on the MD4 keep-alive stream and the neutral-face replay; the `abortAnimationSent` note is stale. Must be fixed before the next robot run.
 - **From the M4 verifier (2026-09-25):**
   - **M10-007** is EXACT_SOURCE, but Apply has no production caller. The engine's CheckForUnexpectedMovement calls SetNewPose (0x0063E87E), and through F1..F3 that sends an AbsoluteLocalizationUpdate. Put this in M10-007's `unresolved` when M10 is inventoried; check the config flag kCreateUnexpectedMovementObstacles (0x00C7F620).
   - **SetBodyRadioMode order:** the stack sends it before SetOnCharger's threshold; the engine sends SetOnCharger's threshold (0x00512AB4) before SetBodyRadioMode (0x00512B46). This only matters if both fire in the same state.
@@ -254,9 +266,9 @@ Review state per subsystem is in `re-analysis/fidelity_manifest.json`, and FIDEL
 | ---: | --- | --- | --- | --- |
 | 1 | M1-transport | full | INVENTORY_APPROVED (closure complete) | batches 1-4(i) and 3 committed, settled; M1-LINK passed on the robot; residuals 027/029/041; next: control-check run |
 | 2 | M2-protocol | full | INVENTORY_APPROVED (2026-09-24, manager, standing authorisation) | 16 records; FallingStopped and BlockStatus contradictions found |
-| 3 | M3-device (camera, display, audio device) | full | UNREVIEWED | colour camera format is HARDWARE_ONLY; FACE, AUDIO and CAMERA passed on hardware 2026-09-24 |
-| 4 | M4-control (motion, sensors, lights, cubes) | full | UNREVIEWED | the cube connection worked on hardware 2026-09-24; the cube accelerometer stream did not arrive (being traced) |
-| 5 | M5-animation | full | UNREVIEWED | the live-animation wire lifecycle is suspected incomplete; ANIM and ANIM_CANCEL passed on hardware |
+| 3 | M3-device (camera, display, audio device) | full | INVENTORY_APPROVED (repaired 2026-09-24) | colour camera format is HARDWARE_ONLY; FACE, AUDIO and CAMERA passed on hardware 2026-09-24 |
+| 4 | M4-control (motion, sensors, lights, cubes) | full | INVENTORY_APPROVED (repaired 2026-09-25) | second CONTROL run 12/12 PASS, cube telemetry arrives; NV calibration read defect found (fix pending) |
+| 5 | M5-animation | full | INVENTORY_APPROVED (2026-09-24, manager) | repaired 2026-09-25; 18 EXACT, 15 IMPL_GAP with residuals; keep-alive and neutral replay not yet on hardware |
 | 6 | M6-wwise-bank | full | UNREVIEWED | Cozmo's own sounds; M5 audio depends on it |
 | 7 | M10-derived | full | UNREVIEWED | picked up, falling, stuck and similar |
 | 8 | M11-vision | full | UNREVIEWED | |

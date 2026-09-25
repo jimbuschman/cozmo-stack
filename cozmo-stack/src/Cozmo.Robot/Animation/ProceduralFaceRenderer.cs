@@ -1,123 +1,167 @@
 namespace Cozmo.Robot.Animation;
 
+// fidelity: M5-015, M5-021, M5-032
 /// <summary>
-/// Draws a <see cref="ProceduralFacePose"/> the way <c>ProceduralFaceDrawer</c> does.
-///
-/// This is a port of the engine's renderer, not an interpretation of it. Every constant and every step
-/// below is read out of <c>libcozmoEngine.so</c>; see <c>re-analysis/PROCEDURAL_FACE.md</c> for the
-/// disassembly each one comes from, and for the three things that could not be recovered and are named
-/// there rather than guessed at.
-///
-/// The shape of it:
-///
-/// <list type="number">
-/// <item>Both eyes are drawn as filled polygons on a <b>128 x 64</b> canvas — <c>DrawFace</c> allocates
-/// <c>Image(0x40, 0x80)</c>, rows then columns. That is why the transform centre is (64, 32): it is the
-/// centre of this canvas, not of the robot's panel.</item>
-/// <item>One affine transform is applied over the whole canvas, about (64, 32).</item>
-/// <item>Alternate rows are dropped. The engine blanks them and still encodes 64 rows; our verified wire
-/// codec carries 32, so the kept rows are taken directly.</item>
+/// <c>ProceduralFaceDrawer</c>: <c>DrawFace</c> and <c>DrawEye</c> onto the engine's 64-row by 128-column canvas, with the
+/// shipped OpenCV 3.1.0 functions (<see cref="OpenCv310"/>). Every step is a row of the M5 inventory:
+/// <list type="bullet">
+/// <item><b>DrawEye</b> (gap1 D1..D6, E3): the outline from four corner arcs, rx = (int)roundf(p·0.5·30),
+/// ry = (int)roundf(p·0.5·40), a corner point when either radius is below 1 (M5-015); the two lid polygons with their
+/// tan/cos bends; the per-eye transform about (0, 0) translated to (nominalX + EyeCenterX, 32 + EyeCenterY), the second
+/// eye mirrored, each point (int)roundf(x) and (int)(roundf(y) + _firstScanLine); the eye box; then fillConvexPoly
+/// LINE_4 of the outline with 255, AddOffNoise when the face has a distorter, and the upper and lower lids with 0.</item>
+/// <item><b>DrawFace</b> (E1, E2, gap1 G9, gap3 C1..C6): both eyes; the row extent from the eye boxes when the face
+/// transform is the identity, otherwise <c>cv::warpAffine</c> INTER_NEAREST, BORDER_CONSTANT 0 with the face matrix and
+/// the extent from the transformed box; rows clamped to 0..63; the rows of the <c>_firstScanLine</c> parity cleared in
+/// [min, max); and, with a distorter, every kept row shifted by <c>GetEyeDistortionAmount</c>.</item>
 /// </list>
 /// </summary>
 public static class ProceduralFaceRenderer
 {
     // ---------------------------------------------------------------- canvas
 
-    /// <summary>The drawing canvas, from <c>Image(0x40, 0x80)</c> in <c>DrawFace</c> at 0x00585B30.</summary>
+    /// <summary>The drawing canvas, <c>Image(0x40, 0x80)</c> in <c>DrawFace</c> (E1): 64 rows of 128 columns.</summary>
     public const int CanvasWidth = 128;
     public const int CanvasHeight = 64;
 
-    /// <summary>The centre the whole-face transform turns about — the centre of the canvas above.</summary>
+    /// <summary>The centre the whole-face transform turns about (E1's GetTransformationMatrix(..., 64, 32)).</summary>
     public const float FaceCentreX = 64f;
     public const float FaceCentreY = 32f;
 
     /// <summary>
-    /// Which scanline parity survives. The engine flips this per animation in <c>InitStream</c>
-    /// (<c>rsb r3, r3, #1</c>) and blanks the other parity, which alongside
-    /// <c>GetMaxBlinkSpacingTimeForScreenProtection_ms</c> reads as burn-in protection rather than
-    /// geometry. It is held fixed here so a pose renders to one bitmap.
+    /// <c>ProceduralFaceDrawer::_firstScanLine</c> (.bss 0x0105AB48), 0 at start (M3 B3). InitStream toggles it (A11) and
+    /// the blink's closed frame flips it at generation time (gap1 K9). DrawEye adds it to every point's y (D4) and
+    /// DrawFace clears the rows of its parity (E2: 0 clears even rows). A process static (<see cref="ScanLineState.Process"/>).
     /// </summary>
-    public const int FirstScanLine = 0;
+    public static int FirstScanLine => ScanLineState.Process.Drawer;
 
     // ---------------------------------------------------------------- the eye's own frame
 
-    /// <summary>The nominal eye, from <c>vmov.f32 s20, #3.0e+01</c> and the 40.0 literal at 0x005853A8.</summary>
+    /// <summary>The nominal eye, 30 by 40 (the 0.5·30 and 0.5·40 of the radii, gap1 D1).</summary>
     public const float NominalEyeWidth = 30f;
     public const float NominalEyeHeight = 40f;
 
-    /// <summary>Half extents, from <c>vmov.f32 s18, #1.5e+01</c> and the -15/+15, -20/+20 corner fallbacks.</summary>
+    /// <summary>Half extents: the corner fallbacks (±15, ±20) of gap1 D1.</summary>
     public const float EyeHalfWidth = 15f;
     public const float EyeHalfHeight = 20f;
 
-    /// <summary>
-    /// Where an eye sits when its centre parameters are zero, from the table at 0x005859DC: it holds
-    /// 96.0 then 32.0, and <c>whichEye == 0</c> selects the second. <c>EyeCenterX/Y</c> are pixel offsets
-    /// added straight onto these.
-    /// </summary>
+    /// <summary>nominalX is 32 for eye 0 and 96 for eye 1 (table 0x005859DC = {96, 32}, index flipped; gap1 D4); y is 32.</summary>
     public const float LeftEyeCenterX = 32f;
     public const float RightEyeCenterX = 96f;
     public const float EyeCenterY = 32f;
 
-    /// <summary>The <c>delta</c> argument to every <c>cv::ellipse2Poly</c> call in <c>DrawEye</c>.</summary>
+    /// <summary>The <c>delta</c> of every <c>cv::ellipse2Poly</c> call in DrawEye (gap1 D1..D3).</summary>
     public const int ArcDeltaDegrees = 10;
 
-    private const float Deg = MathF.PI / 180f;
+    /// <summary>The degrees-to-radians constant of the lid tan and cos: the float 0x3C8EFA35 ([0x005853AC], [0x0058502E]; C2).</summary>
+    private static readonly float LidDegToRad = BitConverter.Int32BitsToSingle(0x3C8EFA35);
+
+    /// <summary>C's roundf: half away from zero.</summary>
+    private static float RoundF(float v) => MathF.Round(v, MidpointRounding.AwayFromZero);
+
+    /// <summary>An eye's box on the canvas (gap1 D5): (minX, minY, maxX − minX, maxY − minY).</summary>
+    public readonly record struct EyeBox(int X, int Y, int Width, int Height);
+
+    // ---------------------------------------------------------------- DrawFace
 
     /// <summary>
-    /// C's <c>roundf</c>, which the engine calls on every radius, lid offset and transformed point.
-    /// It rounds a half away from zero; .NET's <c>MathF.Round</c> rounds a half to even, which differs
-    /// on exactly the values a 0.5 scale produces.
+    /// <c>ProceduralFaceDrawer::DrawFace</c> with the drawer's current <see cref="FirstScanLine"/>: the 64 × 128 canvas,
+    /// row-major, 255 where lit.
     /// </summary>
-    private static float Round(float v) => MathF.Round(v, MidpointRounding.AwayFromZero);
+    public static byte[] DrawFace(ProceduralFacePose face) => DrawFace(face, FirstScanLine);
 
-    // ---------------------------------------------------------------- rendering
-
-    /// <summary>Renders a pose to a fresh bitmap. No state is carried between calls.</summary>
-    public static FaceBitmap Render(ProceduralFacePose pose)
+    /// <summary><c>DrawFace</c> for an explicit scan-line parity (0 or 1).</summary>
+    public static byte[] DrawFace(ProceduralFacePose face, int firstScanLine)
     {
-        var canvas = new byte[CanvasWidth * CanvasHeight];
-        DrawEye(canvas, pose.Left, whichEye: 0, LeftEyeCenterX);
-        DrawEye(canvas, pose.Right, whichEye: 1, RightEyeCenterX);
+        var img = new byte[CanvasWidth * CanvasHeight];
+        var l = DrawEye(face, 0, img, firstScanLine);
+        var r = DrawEye(face, 1, img, firstScanLine);
 
-        // DrawFace: GetTransformationMatrix(angle, sx, sy, tx, ty, 64, 32) then cv::warpAffine.
-        var m = Matrix(pose.FaceAngle, pose.FaceScaleX, pose.FaceScaleY,
-                       pose.FaceCenterX, pose.FaceCenterY, FaceCentreX, FaceCentreY);
-
-        var bmp = new FaceBitmap();
-        float det = m[0] * m[4] - m[1] * m[3];     // = scaleX * scaleY, the rotation being orthonormal
-        if (MathF.Abs(det) < 1e-6f) return bmp;    // a face with no area draws nothing
-        float ia = m[4] / det, ib = -m[1] / det, ic = -m[3] / det, id = m[0] / det;
-
-        // warpAffine maps source to destination, so sample by the inverse. Taking row 2y + parity here
-        // is the same as the engine blanking the other parity and then encoding all 64 rows.
-        for (int y = 0; y < FaceBitmap.Height; y++)
+        int rowMin, rowMax;
+        if (face.FaceAngle == 0f && face.FaceCenterX == 0f && face.FaceCenterY == 0f
+            && face.FaceScaleX == 1f && face.FaceScaleY == 1f)
         {
-            float cy = 2 * y + FirstScanLine + 0.5f - m[5];
-            for (int x = 0; x < FaceBitmap.Width; x++)
+            // E1: the row extent is the eye boxes' min/max
+            rowMin = Math.Min(l.Y, r.Y);
+            rowMax = Math.Max(l.Y + l.Height, r.Y + r.Height);
+        }
+        else
+        {
+            // E1: GetTransformationMatrix(angle, sx, sy, cx, cy, 64, 32) then cv::warpAffine(img, img, M, Size(128, 64),
+            // INTER_NEAREST, BORDER_CONSTANT, 0) (gap3 C1..C6).
+            var m = Matrix(face.FaceAngle, face.FaceScaleX, face.FaceScaleY, face.FaceCenterX, face.FaceCenterY,
+                           FaceCentreX, FaceCentreY);
+            img = OpenCv310.WarpAffineNearest(img, CanvasHeight, CanvasWidth,
+                                              new double[] { m[0], m[1], m[2], m[3], m[4], m[5] });
+            (rowMin, rowMax) = TransformedRowExtent(m, l, r);
+        }
+
+        // E2: rows clamped to 0..63; the rows of the _firstScanLine parity cleared in [min, max)
+        rowMin = Math.Clamp(rowMin, 0, CanvasHeight - 1);
+        rowMax = Math.Clamp(rowMax, 0, CanvasHeight - 1);
+        for (int row = rowMin; row < rowMax; row++)
+            if ((row & 1) == firstScanLine) Array.Clear(img, row * CanvasWidth, CanvasWidth);
+
+        // G9: the kept rows shifted by the face's distorter
+        if (face.Distorter is { } d && rowMax > rowMin)
+        {
+            for (int row = rowMin; row < rowMax; row++)
             {
-                float cx = x + 0.5f - m[2];
-                int u = (int)MathF.Floor(ia * cx + ib * cy);
-                int v = (int)MathF.Floor(ic * cx + id * cy);
-                if ((uint)u < CanvasWidth && (uint)v < CanvasHeight && canvas[v * CanvasWidth + u] != 0)
-                    bmp[x, y] = 1;
+                if ((row & 1) == firstScanLine) continue;
+                float f = (float)(row - rowMin) / (rowMax - rowMin);
+                int s = d.GetEyeDistortionAmount(f);
+                ShiftRow(img, row, s);
             }
         }
-        return bmp;
+        return img;
     }
 
     /// <summary>
-    /// <c>ProceduralFaceDrawer::GetTransformationMatrix</c> at 0x00584FF8, verbatim:
-    /// <code>
-    /// row0:   cos*sx    sin*sy    (1 - cos*sx)*cx - sin*sy*cy + tx
-    /// row1:  -sin*sx    cos*sy      sin*sx*cx + (1 - cos*sy)*cy + ty
-    /// </code>
-    /// The sign on row 1's centre term is a positive <c>sin*sx</c>, not the row's own <c>-sin*sx</c>
-    /// coefficient. Getting that wrong stops the centre mapping to itself and cancels the vertical half
-    /// of a rotation.
+    /// E1, C2 (0x00585CB6..0x00585D98): the row extent of a transformed face: the 4 corners of each eye rectangle, 8 points,
+    /// through the face matrix; the min of their floors starting from 63 and the max of their ceilings starting from 0.
     /// </summary>
-    private static float[] Matrix(float angleDeg, float sx, float sy, float tx, float ty, float cx, float cy)
+    internal static (int Min, int Max) TransformedRowExtent(float[] m, EyeBox l, EyeBox r)
     {
-        float a = angleDeg * Deg;
+        int rowMin = CanvasHeight - 1, rowMax = 0;
+        foreach (var b in new[] { l, r })
+            foreach (var (cx, cy) in new[] { (b.X, b.Y), (b.X + b.Width, b.Y), (b.X, b.Y + b.Height), (b.X + b.Width, b.Y + b.Height) })
+            {
+                float ty = m[3] * cx + m[4] * cy + m[5];
+                rowMin = Math.Min(rowMin, (int)MathF.Floor(ty));
+                rowMax = Math.Max(rowMax, (int)MathF.Ceiling(ty));
+            }
+        return (rowMin, rowMax);
+    }
+
+    /// <summary>
+    /// G9: s &gt; 0: memmove(row + s, row, 128 − s) and clear the first s pixels; s &lt; 0: shift left by |s| and clear the
+    /// last |s|. |s| is not clamped in the engine; a shift of the whole row or more clears it.
+    /// </summary>
+    private static void ShiftRow(byte[] img, int row, int s)
+    {
+        int at = row * CanvasWidth;
+        if (s > 0)
+        {
+            if (s >= CanvasWidth) { Array.Clear(img, at, CanvasWidth); return; }
+            Array.Copy(img, at, img, at + s, CanvasWidth - s);
+            Array.Clear(img, at, s);
+        }
+        else if (s < 0)
+        {
+            int k = -s;
+            if (k >= CanvasWidth) { Array.Clear(img, at, CanvasWidth); return; }
+            Array.Copy(img, at + k, img, at, CanvasWidth - k);
+            Array.Clear(img, at + CanvasWidth - k, k);
+        }
+    }
+
+    /// <summary>
+    /// <c>ProceduralFaceDrawer::GetTransformationMatrix(angle, sx, sy, tx, ty, cx, cy)</c> (E1, gap1 D4), in float:
+    /// [[c·sx, s·sy, (1 − c·sx)·cx − s·sy·cy + tx], [−s·sx, c·sy, s·sx·cx + (1 − c·sy)·cy + ty]], the angle in degrees.
+    /// </summary>
+    internal static float[] Matrix(float angleDeg, float sx, float sy, float tx, float ty, float cx, float cy)
+    {
+        float a = angleDeg * (MathF.PI / 180f);
         float cos = MathF.Cos(a), sin = MathF.Sin(a);
         return new[]
         {
@@ -126,223 +170,147 @@ public static class ProceduralFaceRenderer
         };
     }
 
-    /// <summary>
-    /// <c>DrawEye</c> at 0x005850E0. The outline is filled, then each lid is filled back to black over it.
-    /// The lids overshoot the eye box by a pixel in both axes, which is what makes them mask cleanly.
-    /// </summary>
-    private static void DrawEye(byte[] canvas, Eye eye, int whichEye, float baseCentreX)
-    {
-        float cx = baseCentreX + eye[EyeParam.EyeCenterX];
-        float cy = EyeCenterY + eye[EyeParam.EyeCenterY];
-
-        // The per-eye matrix turns about (0, 0) — the eye's own origin — and then translates to its
-        // centre. So EyeScaleX/Y and EyeAngle scale and spin the eye in place; they do not move it.
-        var m = Matrix(eye[EyeParam.EyeAngle], eye[EyeParam.EyeScaleX], eye[EyeParam.EyeScaleY], cx, cy, 0f, 0f);
-
-        Fill(canvas, Place(Outline(eye), whichEye, m), 1);
-        Fill(canvas, Place(UpperLid(eye), whichEye, m), 0);
-        Fill(canvas, Place(LowerLid(eye), whichEye, m), 0);
-    }
+    // ---------------------------------------------------------------- DrawEye
 
     /// <summary>
-    /// Carries a local polygon onto the canvas: mirror, transform, round, then add the scanline parity
-    /// to y — the engine does all four, in that order, per point.
-    ///
-    /// The mirror is <c>if (whichEye != 0) x = -x</c>. Only one eye's geometry is ever authored; the
-    /// other is its reflection. That is also what makes "inner" mean the same thing on both eyes: local
-    /// +x is towards the nose for eye 0 at x=32 and, after reflection, for eye 1 at x=96 as well.
+    /// <c>ProceduralFaceDrawer::DrawEye</c> (gap1 D1..D6) for eye <paramref name="whichEye"/> (0 left, 1 right) onto
+    /// <paramref name="img"/>; returns the eye box (D5).
     /// </summary>
-    private static List<(float X, float Y)> Place(List<(float X, float Y)> local, int whichEye, float[] m)
+    public static EyeBox DrawEye(ProceduralFacePose face, int whichEye, byte[] img, int firstScanLine)
     {
-        var pts = new List<(float X, float Y)>(local.Count);
-        foreach (var (lx, ly) in local)
+        var e = whichEye == 0 ? face.Left : face.Right;
+
+        var outline = Outline(e);
+        var lower = LowerLid(e);
+        var upper = UpperLid(e);
+
+        // D4: M = GetTransformationMatrix(EyeAngle, EyeScaleX, EyeScaleY, nominalX + EyeCenterX, 32 + EyeCenterY, 0, 0)
+        float nominalX = whichEye == 0 ? LeftEyeCenterX : RightEyeCenterX;
+        var m = Matrix(e[EyeParam.EyeAngle], e[EyeParam.EyeScaleX], e[EyeParam.EyeScaleY],
+                       nominalX + e[EyeParam.EyeCenterX], EyeCenterY + e[EyeParam.EyeCenterY], 0f, 0f);
+
+        // D5: min/max of every transformed point of all three polygons, from (128, 64, 0, 0)
+        int minX = CanvasWidth, minY = CanvasHeight, maxX = 0, maxY = 0;
+        List<(int X, int Y)> Place(List<(int X, int Y)> local)
         {
-            float x = whichEye != 0 ? -lx : lx;
-            pts.Add((Round(m[0] * x + m[1] * ly + m[2]),
-                     Round(m[3] * x + m[4] * ly + m[5]) + FirstScanLine));
+            var pts = new List<(int X, int Y)>(local.Count);
+            foreach (var (lx0, ly0) in local)
+            {
+                float lx = whichEye != 0 ? -lx0 : lx0;
+                float ly = ly0;
+                float px = m[0] * lx + m[1] * ly + m[2];
+                float py = m[3] * lx + m[4] * ly + m[5];
+                int x = (int)RoundF(px);
+                int y = (int)(RoundF(py) + firstScanLine);
+                pts.Add((x, y));
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+            }
+            return pts;
         }
-        return pts;
-    }
+        var outlinePts = Place(outline);
+        var lowerPts = Place(lower);
+        var upperPts = Place(upper);
 
-    // ---------------------------------------------------------------- the outline
+        // D6: outline 255, AddOffNoise with a distorter, upper lid 0, lower lid 0
+        OpenCv310.FillConvexPoly(img, CanvasHeight, CanvasWidth, outlinePts, 255, 4, 0);
+        face.Distorter?.AddOffNoise(m, NominalEyeHeight, NominalEyeWidth, img, CanvasHeight, CanvasWidth);
+        if (upperPts.Count > 0) OpenCv310.FillConvexPoly(img, CanvasHeight, CanvasWidth, upperPts, 0, 4, 0);
+        if (lowerPts.Count > 0) OpenCv310.FillConvexPoly(img, CanvasHeight, CanvasWidth, lowerPts, 0, 4, 0);
 
-    /// <summary>
-    /// The eye outline: four elliptical corner arcs, in the engine's own order, traversed clockwise.
-    ///
-    /// The corner-to-parameter mapping is now read from <c>DrawEye</c> rather than inferred. The four
-    /// <c>cv::ellipse2Poly</c> calls are at 0x00585244, 0x0058529A, 0x00585304 and 0x00585372, and each
-    /// carries its arc and its centre: 270..360 about (15 - rx, ry - 20), 0..90 about (15 - rx, 20 - ry),
-    /// 90..180 about (rx - 15, 20 - ry) and 180..270 about (rx - 15, ry - 20), all with delta 10. Their
-    /// radii come from the eye's parameter block at +0x14 .. +0x30, which is
-    /// <c>LowerInnerRadiusX</c> through <c>LowerOuterRadiusY</c> in the order
-    /// <c>ProceduralEyeParameter</c> declares them, so the first arc is the upper-inner corner and the
-    /// rest follow clockwise. A corner whose rounded radius is below one pixel in either axis pushes the
-    /// exact box corner instead - (15, -20) at 0x00585256, (15, 20) at 0x005852AC, and so on.
-    ///
-    /// This was the mapping named in <c>PROCEDURAL_FACE.md</c> as the natural
-    /// reading rather than an instruction-level certainty. It is at least self-consistent with the
-    /// mirror above: local +x is the inner side for both eyes, and local -y is up.
-    /// </summary>
-    private static List<(float X, float Y)> Outline(Eye eye)
-    {
-        var pts = new List<(float X, float Y)>(48);
-        Corner(pts, eye, EyeParam.UpperInnerRadiusX, EyeParam.UpperInnerRadiusY, +1, -1, 270, 360);
-        Corner(pts, eye, EyeParam.LowerInnerRadiusX, EyeParam.LowerInnerRadiusY, +1, +1, 0, 90);
-        Corner(pts, eye, EyeParam.LowerOuterRadiusX, EyeParam.LowerOuterRadiusY, -1, +1, 90, 180);
-        Corner(pts, eye, EyeParam.UpperOuterRadiusX, EyeParam.UpperOuterRadiusY, -1, -1, 180, 270);
-        return pts;
+        return new EyeBox(minX, minY, maxX - minX, maxY - minY);
     }
 
     /// <summary>
-    /// One corner. Radii are whole pixels: <c>round(param * 0.5 * 30)</c> across and
-    /// <c>round(param * 0.5 * 40)</c> down, so a parameter of 1.0 rounds the corner away entirely.
-    /// A corner whose either radius falls below one pixel is drawn sharp — the engine pushes the exact
-    /// box corner instead of calling <c>ellipse2Poly</c>.
+    /// gap1 D1: the outline in eye-local integers, UpperInner (270..360 about (15 − rx, ry − 20), else (15, −20)),
+    /// LowerInner (0..90 about (15 − rx, 20 − ry), else (15, 20)), LowerOuter (90..180 about (rx − 15, 20 − ry), else
+    /// (−15, 20)), UpperOuter (180..270 about (rx − 15, ry − 20), else (−15, −20)); angle 0, delta 10.
     /// </summary>
-    private static void Corner(List<(float X, float Y)> pts, Eye eye,
-                               EyeParam radiusX, EyeParam radiusY, int sx, int sy, int arcFrom, int arcTo)
+    private static List<(int X, int Y)> Outline(Eye e)
     {
-        float rx = Round(eye[radiusX] * 0.5f * NominalEyeWidth);
-        float ry = Round(eye[radiusY] * 0.5f * NominalEyeHeight);
-        if (rx < 1f || ry < 1f)
+        var pts = new List<(int X, int Y)>(48);
+        Corner(pts, e, EyeParam.UpperInnerRadiusX, EyeParam.UpperInnerRadiusY, +1, -1, 270, 360);
+        Corner(pts, e, EyeParam.LowerInnerRadiusX, EyeParam.LowerInnerRadiusY, +1, +1, 0, 90);
+        Corner(pts, e, EyeParam.LowerOuterRadiusX, EyeParam.LowerOuterRadiusY, -1, +1, 90, 180);
+        Corner(pts, e, EyeParam.UpperOuterRadiusX, EyeParam.UpperOuterRadiusY, -1, -1, 180, 270);
+        return pts;
+    }
+
+    /// <summary>One corner (M5-015): rx = (int)roundf(p·0.5·30), ry = (int)roundf(p·0.5·40); below 1 in either, the point.</summary>
+    private static void Corner(List<(int X, int Y)> pts, Eye e, EyeParam radiusX, EyeParam radiusY,
+                               int sx, int sy, int arcFrom, int arcTo)
+    {
+        int rx = (int)RoundF(e[radiusX] * 0.5f * NominalEyeWidth);
+        int ry = (int)RoundF(e[radiusY] * 0.5f * NominalEyeHeight);
+        if (rx < 1 || ry < 1)
         {
-            pts.Add((sx * EyeHalfWidth, sy * EyeHalfHeight));
+            pts.Add((sx * 15, sy * 20));
             return;
         }
-        Arc(pts, sx * (EyeHalfWidth - rx), sy * (EyeHalfHeight - ry), rx, ry, 0f, arcFrom, arcTo);
+        // centre: x = sx·(15 − rx), y = sy·(20 − ry)
+        pts.AddRange(OpenCv310.Ellipse2Poly(sx * (15 - rx), sy * (20 - ry), rx, ry, 0, arcFrom, arcTo, ArcDeltaDegrees));
     }
 
-    // ---------------------------------------------------------------- the lids
-
     /// <summary>
-    /// The upper lid: a quad masking down from above the eye, plus a bend arc bulging into it.
-    ///
-    /// <c>LidY</c> is a fraction of the <b>full</b> eye height, not the half height — the engine
-    /// multiplies by 40, not 20 — so 0 leaves the eye open and 1 closes it completely. The angle tilts
-    /// the lid line by <c>-round(tan(angle) * 15)</c> at each end.
+    /// gap1 D2: ly = (int)roundf(LowerLidY·40); t = round(15·tanf(a·0.0174533)); the polygon (16, 20 − ly + t), (16, 21),
+    /// (−16, 21), (−16, 20 − ly − t); if b = roundf(LowerLidBend·40) ≠ 0, the arc ellipse2Poly((0, 20 − ly),
+    /// ((int)round(15/cosf(a·deg2rad)), (int)b), (int)a, 180..360, 10) is appended.
     /// </summary>
-    private static List<(float X, float Y)> UpperLid(Eye eye)
+    private static List<(int X, int Y)> LowerLid(Eye e)
     {
-        float line = Round(eye[EyeParam.UpperLidY] * NominalEyeHeight) - EyeHalfHeight;
-        float angle = eye[EyeParam.UpperLidAngle];
-        float dx = -Round(MathF.Tan(angle * Deg) * EyeHalfWidth);
-
-        var pts = new List<(float X, float Y)>(24)
-        {
-            (-(EyeHalfWidth + 1f), line + dx),
-            (-(EyeHalfWidth + 1f), -(EyeHalfHeight + 1f)),
-            (EyeHalfWidth + 1f, -(EyeHalfHeight + 1f)),
-            (EyeHalfWidth + 1f, line - dx),
-        };
-
-        float bend = eye[EyeParam.UpperLidBend];
-        if (bend != 0f)
-            Arc(pts, 0f, line,
-                Round(EyeHalfWidth / MathF.Cos(angle * Deg)), Round(bend * NominalEyeHeight),
-                angle, 0, 180);
+        int ly = (int)RoundF(e[EyeParam.LowerLidY] * 40f);
+        float a = e[EyeParam.LowerLidAngle];
+        int t = (int)RoundF(15f * MathF.Tan(a * LidDegToRad));
+        var pts = new List<(int X, int Y)> { (16, 20 - ly + t), (16, 21), (-16, 21), (-16, 20 - ly - t) };
+        float b = RoundF(e[EyeParam.LowerLidBend] * 40f);
+        if (b != 0f)
+            pts.AddRange(OpenCv310.Ellipse2Poly(0, 20 - ly, (int)RoundF(15f / MathF.Cos(a * LidDegToRad)), (int)b,
+                                                (int)a, 180, 360, ArcDeltaDegrees));
         return pts;
     }
 
-    /// <summary>The lower lid: the same construction reflected, with its bend arc sweeping upwards.</summary>
-    private static List<(float X, float Y)> LowerLid(Eye eye)
+    /// <summary>
+    /// gap1 D3: uy = (int)roundf(UpperLidY·40); t as in D2 of UpperLidAngle; the polygon (−16, uy − 20 − t), (−16, −21),
+    /// (16, −21), (16, uy − 20 + t); if b = roundf(UpperLidBend·40) ≠ 0, ellipse2Poly((0, uy − 20), (round(15/cos a), b),
+    /// (int)a, 0..180, 10) is appended.
+    /// </summary>
+    private static List<(int X, int Y)> UpperLid(Eye e)
     {
-        float line = EyeHalfHeight - Round(eye[EyeParam.LowerLidY] * NominalEyeHeight);
-        float angle = eye[EyeParam.LowerLidAngle];
-        float dx = -Round(MathF.Tan(angle * Deg) * EyeHalfWidth);
-
-        var pts = new List<(float X, float Y)>(24)
-        {
-            (EyeHalfWidth + 1f, line - dx),
-            (EyeHalfWidth + 1f, EyeHalfHeight + 1f),
-            (-(EyeHalfWidth + 1f), EyeHalfHeight + 1f),
-            (-(EyeHalfWidth + 1f), line + dx),
-        };
-
-        float bend = eye[EyeParam.LowerLidBend];
-        if (bend != 0f)
-            Arc(pts, 0f, line,
-                Round(EyeHalfWidth / MathF.Cos(angle * Deg)), Round(bend * NominalEyeHeight),
-                angle, 180, 360);
+        int uy = (int)RoundF(e[EyeParam.UpperLidY] * 40f);
+        float a = e[EyeParam.UpperLidAngle];
+        int t = (int)RoundF(15f * MathF.Tan(a * LidDegToRad));
+        var pts = new List<(int X, int Y)> { (-16, uy - 20 - t), (-16, -21), (16, -21), (16, uy - 20 + t) };
+        float b = RoundF(e[EyeParam.UpperLidBend] * 40f);
+        if (b != 0f)
+            pts.AddRange(OpenCv310.Ellipse2Poly(0, uy - 20, (int)RoundF(15f / MathF.Cos(a * LidDegToRad)), (int)b,
+                                                (int)a, 0, 180, ArcDeltaDegrees));
         return pts;
     }
 
-    // ---------------------------------------------------------------- primitives
+    // ---------------------------------------------------------------- the 128 x 32 picture (this stack's API)
 
     /// <summary>
-    /// <c>cv::ellipse2Poly(centre, axes, angle, arcFrom, arcTo, delta, points)</c>: the arc sampled every
-    /// <see cref="ArcDeltaDegrees"/> degrees, with the ellipse itself rotated by <paramref name="angleDeg"/>.
-    /// Angles run clockwise on screen, y being down, so 0..180 sweeps the lower half.
+    /// A pose as this stack's 128 × 32 <see cref="FaceBitmap"/> (MD3, the raw-bitmap API and tests): the engine canvas
+    /// drawn with <paramref name="firstScanLine"/>, and pixel (x, y) lit when either canvas row of pair y is lit
+    /// (<see cref="FaceBitmapCodec.Decode"/>'s projection). The stream sends the canvas itself.
     /// </summary>
-    private static void Arc(List<(float X, float Y)> pts, float cx, float cy,
-                            float ax, float ay, float angleDeg, int arcFrom, int arcTo)
+    public static FaceBitmap Render(ProceduralFacePose pose, int firstScanLine = 0) => Project(DrawFace(pose, firstScanLine));
+
+    /// <summary>The 128 × 32 projection of a 64 × 128 canvas: pair y lit when either of its rows is.</summary>
+    public static FaceBitmap Project(byte[] canvas)
     {
-        float a = angleDeg * Deg;
-        float ca = MathF.Cos(a), sa = MathF.Sin(a);
-        for (int t = arcFrom; ; t += ArcDeltaDegrees)
-        {
-            if (t > arcTo) t = arcTo;                       // OpenCV always emits the end angle
-            float r = t * Deg;
-            float x = ax * MathF.Cos(r), y = ay * MathF.Sin(r);
-            pts.Add((cx + x * ca - y * sa, cy + x * sa + y * ca));
-            if (t >= arcTo) break;
-        }
+        var bmp = new FaceBitmap();
+        for (int y = 0; y < FaceBitmap.Height; y++)
+            for (int x = 0; x < FaceBitmap.Width; x++)
+                if (canvas[2 * y * CanvasWidth + x] != 0 || canvas[(2 * y + 1) * CanvasWidth + x] != 0) bmp[x, y] = 1;
+        return bmp;
     }
 
     /// <summary>
-    /// Fills a closed polygon by scanline, even-odd.
-    ///
-    /// The engine's fill is <c>cv::fillConvexPoly(image, points, colour, lineType, shift)</c>, called three
-    /// times from <c>DrawEye</c> - 0x00585818 for the outline with the colour 255 (the double 0x406FE000
-    /// built at 0x005857F6), then 0x00585860 and 0x00585894 for the two lids with zero - each with
-    /// <c>lineType = 4</c> (LINE_4, no anti-aliasing) and <c>shift = 0</c>. Between the outline and the
-    /// lids it calls <c>ScanlineDistorter::AddOffNoise(matrix, 40, 30, image)</c> when the face asks for
-    /// it (0x0058582C).
-    ///
-    /// The points it fills are whole pixels: <see cref="Place"/> rounds each transformed point the way the
-    /// engine does at 0x00585696 and 0x005856A8 before storing it as a <c>cv::Point_&lt;int&gt;</c>. On a
-    /// convex integer polygon, filling from the left chain to the right chain and filling by even-odd
-    /// parity are the same fill, and both round a boundary to the nearest pixel, so this scanline fill
-    /// stands in for OpenCV's.
-    /// </summary>
-    private static void Fill(byte[] canvas, List<(float X, float Y)> poly, byte value)
-    {
-        if (poly.Count < 3) return;
-
-        float lo = float.MaxValue, hi = float.MinValue;
-        foreach (var p in poly) { if (p.Y < lo) lo = p.Y; if (p.Y > hi) hi = p.Y; }
-        int y0 = Math.Max(0, (int)MathF.Floor(lo));
-        int y1 = Math.Min(CanvasHeight - 1, (int)MathF.Ceiling(hi));
-
-        var xs = new List<float>(poly.Count);
-        for (int y = y0; y <= y1; y++)
-        {
-            float scan = y + 0.5f;
-            xs.Clear();
-            for (int i = 0, n = poly.Count; i < n; i++)
-            {
-                var a = poly[i];
-                var b = poly[(i + 1) % n];
-                if (a.Y == b.Y) continue;
-                // Half-open in y, so a vertex shared by two edges is counted once.
-                if ((scan >= a.Y && scan < b.Y) || (scan >= b.Y && scan < a.Y))
-                    xs.Add(a.X + (scan - a.Y) / (b.Y - a.Y) * (b.X - a.X));
-            }
-            if (xs.Count < 2) continue;
-            xs.Sort();
-            for (int k = 0; k + 1 < xs.Count; k += 2)
-            {
-                int xa = Math.Max(0, (int)MathF.Ceiling(xs[k] - 0.5f));
-                int xb = Math.Min(CanvasWidth - 1, (int)MathF.Floor(xs[k + 1] - 0.5f));
-                for (int x = xa; x <= xb; x++) canvas[y * CanvasWidth + x] = value;
-            }
-        }
-    }
-
-    /// <summary>
-    /// The nominal eye box: both eyes at their base centres, unit scale, every corner half-rounded, lids
-    /// open. This is the pose the renderer's constants are measured against in the tests. It is <b>not</b>
-    /// the face the robot rests on; that is <see cref="ProceduralFacePose.ShippedNeutral"/>, taken from
-    /// the shipped neutral-face animation the engine itself loads.
+    /// The nominal eye box: both eyes at their base centres, unit scale, every corner half-rounded, lids open. A test
+    /// reference, not the face the robot rests on (<see cref="ProceduralFacePose.ShippedNeutral"/>).
     /// </summary>
     public static ProceduralFacePose Nominal()
     {

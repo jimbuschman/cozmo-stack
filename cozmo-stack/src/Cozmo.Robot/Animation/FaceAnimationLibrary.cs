@@ -2,29 +2,35 @@ using System.IO.Compression;
 
 namespace Cozmo.Robot.Animation;
 
+// fidelity: M5-013
 /// <summary>
-/// The pre-rendered face animations, the assets the <c>faceAnimations</c> track names.
+/// The pre-rendered face animations, the assets the <c>faceAnimations</c> track names (<c>FaceAnimationManager</c>).
 ///
 /// <c>FaceAnimationManager::ReadFaceAnimationDir</c> 0x00580048 lists the directories under the
-/// <c>faceAnimations</c> resource directory, one per animation, and
-/// <c>LoadAnimationImageFrames</c> 0x00580834 reads the images inside each. The shipped tree has two of
-/// them, <c>face_bored_event_02</c> and <c>face_bored_event_04</c>, each a run of 128 x 64 eight-bit
-/// grayscale PNGs numbered in order.
+/// <c>faceAnimations</c> resource directory, one per animation, and <c>LoadAnimationImageFrames</c> 0x00580834 reads
+/// the images inside each. The shipped tree has two of them, <c>face_bored_event_02</c> and <c>face_bored_event_04</c>,
+/// each a run of 128 x 64 eight-bit grayscale PNGs numbered in order.
 ///
-/// <c>FaceAnimationManager::AddImage</c> 0x00581440 turns one of those images into what goes on the wire:
-/// <c>Image::Threshold(0x80)</c> at 0x00581462, then the helper at 0x00581254 clears every even canvas row
-/// (the <c>memclr</c> loop stepping by two from zero) and hands the result to <c>CompressRLE</c> - the same
-/// encoder <see cref="FaceBitmapCodec.Encode"/> implements. Clearing the even rows is what makes the
-/// canvas's 64 rows into the display's 32: the odd row of each pair survives, and that is the row taken
-/// here.
+/// Each image is thresholded at 0x80 and stored as <b>two RLE variants</b> (C12, 0x00581254..0x005812C4): one with the
+/// even canvas rows cleared and one with the odd rows cleared, each through <c>CompressRLE</c>
+/// (<see cref="FaceBitmapCodec.EncodeCanvas"/>). <c>GetFrame</c> picks one by <see cref="FirstScanLine"/>
+/// (0x005817B4..0x005817CA, M3 B4). Which stored variant belongs to which value is not in the row; this takes the
+/// even-rows-cleared variant for 0, the drawer's convention (E2: 0 clears even rows).
 /// </summary>
 public sealed class FaceAnimationLibrary
 {
-    /// <summary>The threshold <c>AddImage</c> applies, 0x80.</summary>
+    /// <summary>The threshold <c>AddImage</c> applies, 0x80 (a sample at or above it is lit).</summary>
     public const byte Threshold = 0x80;
+
+    /// <summary>
+    /// <c>FaceAnimationManager::_firstScanLine</c> (.bss 0x0105AB10), 0 at start; InitStream toggles it together with the
+    /// drawer's (A11).
+    /// </summary>
+    public static int FirstScanLine => ScanLineState.Process.FaceAnimation;
 
     private readonly Dictionary<string, string> _dirs = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, IReadOnlyList<FaceBitmap>> _cache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, IReadOnlyList<FaceAnimationFrame>> _variants = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
 
     /// <summary>The animation names found, whether or not their frames have been read yet.</summary>
@@ -58,28 +64,49 @@ public sealed class FaceAnimationLibrary
     /// <summary>True when an animation of this name is present.</summary>
     public bool Has(string name) { lock (_gate) return _dirs.ContainsKey(name); }
 
+    private IReadOnlyList<MiniPng.Gray8>? Images(string name)
+    {
+        if (!_dirs.TryGetValue(name, out var dir)) return null;
+        return Directory.EnumerateFiles(dir, "*.png")
+                        .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+                        .Select(f => MiniPng.DecodeGray8(File.ReadAllBytes(f)))
+                        .ToArray();
+    }
+
     /// <summary>
-    /// The frames of one animation, in order, or null when there is no such animation. Read once and kept:
-    /// the engine holds them in its manager the same way.
+    /// The frames of one animation as this stack's 128 x 32 pictures (the odd canvas row of each pair), or null when
+    /// there is no such animation. For inspection; the stream uses <see cref="Variants"/>.
     /// </summary>
     public IReadOnlyList<FaceBitmap>? Frames(string name)
     {
         lock (_gate)
         {
             if (_cache.TryGetValue(name, out var cached)) return cached;
-            if (!_dirs.TryGetValue(name, out var dir)) return null;
-            var frames = Directory.EnumerateFiles(dir, "*.png")
-                                  .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
-                                  .Select(f => ToFace(MiniPng.DecodeGray8(File.ReadAllBytes(f))))
-                                  .ToArray();
+            var images = Images(name);
+            if (images is null) return null;
+            var frames = images.Select(ToFace).ToArray();
             _cache[name] = frames;
             return frames;
         }
     }
 
+    /// <summary>The stored frames of one animation, each with its two RLE variants (C12), or null when there is none.</summary>
+    public IReadOnlyList<FaceAnimationFrame>? Variants(string name)
+    {
+        lock (_gate)
+        {
+            if (_variants.TryGetValue(name, out var cached)) return cached;
+            var images = Images(name);
+            if (images is null) return null;
+            var frames = images.Select(FaceAnimationFrame.FromImage).ToArray();
+            _variants[name] = frames;
+            return frames;
+        }
+    }
+
     /// <summary>
-    /// One 128 x 64 grayscale image as the display sees it: lit where the sample is at or above the
-    /// threshold, and only the odd canvas row of each pair, which is the row <c>AddImage</c> leaves alone.
+    /// One 128 x 64 grayscale image as this stack's 128 x 32 picture: lit where the sample is at or above the
+    /// threshold, the odd canvas row of each pair.
     /// </summary>
     public static FaceBitmap ToFace(MiniPng.Gray8 image)
     {
@@ -92,6 +119,40 @@ public sealed class FaceAnimationLibrary
                 face[x, y] = (byte)(image.Pixels[row * image.Width + x] >= Threshold ? 1 : 0);
         }
         return face;
+    }
+}
+
+// fidelity: M5-013
+/// <summary>
+/// One stored face-animation frame (C12): the image thresholded at 0x80 on the 64 x 128 canvas, then two RLE payloads,
+/// <see cref="EvenRowsCleared"/> and <see cref="OddRowsCleared"/>. An empty payload is an empty frame, which the track
+/// skips.
+/// </summary>
+public sealed record FaceAnimationFrame(byte[] EvenRowsCleared, byte[] OddRowsCleared)
+{
+    /// <summary>The variant <c>GetFrame</c> returns for a <c>_firstScanLine</c> value (0: the even rows cleared).</summary>
+    public byte[] ForScanLine(int firstScanLine) => firstScanLine == 0 ? EvenRowsCleared : OddRowsCleared;
+
+    public static FaceAnimationFrame FromImage(MiniPng.Gray8 image)
+    {
+        var canvas = new byte[FaceBitmapCodec.CanvasRows * FaceBitmapCodec.CanvasColumns];
+        for (int r = 0; r < FaceBitmapCodec.CanvasRows && r < image.Height; r++)
+            for (int c = 0; c < FaceBitmapCodec.CanvasColumns && c < image.Width; c++)
+                if (image.Pixels[r * image.Width + c] >= FaceAnimationLibrary.Threshold)
+                    canvas[r * FaceBitmapCodec.CanvasColumns + c] = 255;
+        return FromCanvas(canvas);
+    }
+
+    /// <summary>The two variants of a 64 x 128 canvas (row-major, non-zero lit).</summary>
+    public static FaceAnimationFrame FromCanvas(byte[] canvas)
+    {
+        var even = (byte[])canvas.Clone();
+        var odd = (byte[])canvas.Clone();
+        for (int r = 0; r < FaceBitmapCodec.CanvasRows; r++)
+            Array.Clear((r & 1) == 0 ? even : odd, r * FaceBitmapCodec.CanvasColumns, FaceBitmapCodec.CanvasColumns);
+        return new FaceAnimationFrame(
+            FaceBitmapCodec.EncodeCanvas(even, FaceBitmapCodec.CanvasRows, FaceBitmapCodec.CanvasColumns)!,
+            FaceBitmapCodec.EncodeCanvas(odd, FaceBitmapCodec.CanvasRows, FaceBitmapCodec.CanvasColumns)!);
     }
 }
 

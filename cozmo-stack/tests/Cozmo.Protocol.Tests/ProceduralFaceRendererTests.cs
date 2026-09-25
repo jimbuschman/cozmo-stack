@@ -76,19 +76,21 @@ public class ProceduralFaceRendererTests
     // ---------------------------------------------------------------- nominal geometry
 
     /// <summary>
-    /// A neutral eye is exactly the nominal 30 x 40. Across it is 30 bitmap columns; down it is 40
-    /// canvas rows, which is 20 bitmap rows.
+    /// A neutral eye spans x = 32 ± 15 and y = 32 ± 20. The shipped fillConvexPoly LINE_4 draws the edges themselves
+    /// (M5 gap3 A4, A8), so both edge columns are lit: 31 columns, 17..47. The lids at LidY 0 cover the top and bottom
+    /// rows (y −21..−20 and 20..21, gap1 D2, D3) and the even rows are cleared (E2), so rows 13..51 odd remain: 20 bitmap
+    /// rows.
     /// </summary>
     [Fact]
-    public void ANeutralEyeIsThirtyWideAndFortyTall()
+    public void ANeutralEyeIsThirtyOneWideAndFortyTall()
     {
         var bmp = ProceduralFaceRenderer.Render(Neutral());
         var left = Box(bmp, 0, 63);
         Assert.NotNull(left);
         var (minX, maxX, minY, maxY) = left!.Value;
 
-        Assert.Equal(30, maxX - minX + 1);
-        Assert.Equal(20, maxY - minY + 1);      // 40 canvas rows, every other one kept
+        Assert.Equal(31, maxX - minX + 1);
+        Assert.Equal(20, maxY - minY + 1);
     }
 
     /// <summary>
@@ -167,8 +169,8 @@ public class ProceduralFaceRendererTests
     /// eye about its own centre and leaves that centre where it was.
     ///
     /// A half scale takes the edges to 32 +/- 7.5, and the engine rounds every transformed point with
-    /// <c>roundf</c> — half away from zero — giving 25 and 40 rather than a symmetric pair. That is why
-    /// the width is 15 columns and the box sits half a pixel right of centre.
+    /// <c>roundf</c> — half away from zero — giving 25 and 40 rather than a symmetric pair; the LINE_4 edges are lit
+    /// (gap3 A4, A8), so the eye covers columns 25..40: 16 columns, centred at 33.
     /// </summary>
     [Fact]
     public void EyeScaleStretchesAboutTheEyesOwnCentre()
@@ -177,8 +179,8 @@ public class ProceduralFaceRendererTests
         pose.Left[EyeParam.EyeScaleX] = 0.5f;
         var box = Box(ProceduralFaceRenderer.Render(pose), 0, 63)!.Value;
 
-        Assert.Equal(15, box.MaxX - box.MinX + 1);                              // 30 * 0.5
-        Assert.Equal(ProceduralFaceRenderer.LeftEyeCenterX, (box.MinX + box.MaxX + 1) / 2f, 0);
+        Assert.Equal((25, 40), (box.MinX, box.MaxX));
+        Assert.Equal(33f, (box.MinX + box.MaxX + 1) / 2f);
     }
 
     /// <summary>
@@ -338,8 +340,9 @@ public class ProceduralFaceRendererTests
         Assert.Equal(64f + 32f * 1.25f, rightCentre, 0);    // 104
         Assert.Equal(64f * 1.25f, rightCentre - leftCentre, 0);
 
-        // And each eye is 1.25x wider: 30 * 1.25 = 37.5, so 38 columns once sampled.
-        Assert.Equal(38, left.MaxX - left.MinX + 1);
+        // And each eye is 1.25x wider. The source eye covers columns 17..47; warpAffine INTER_NEAREST (gap3 C2..C6) maps
+        // dst x to src (13619 + cvRound(819.2 x)) >> 10, which lands in 17..47 for x = 5..43: 39 columns.
+        Assert.Equal((5, 43), (left.MinX, left.MaxX));
     }
 
     /// <summary>

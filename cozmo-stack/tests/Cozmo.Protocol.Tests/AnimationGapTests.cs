@@ -430,8 +430,8 @@ public class AnimationGapTests
         // what carry the animation forward on the robot.
         Assert.True(ticks > 0);
         Assert.Equal(1, r.Ends);
-        // one per streamed frame, and nothing after SendEndOfAnimation (M3 inventory A20, 0x0057CB6E..0x0057CBAE)
-        Assert.Equal(ticks, r.AudioFrames);
+        // one per streamed frame, and nothing after SendEndOfAnimation (A20); the last tick only ends it (A13)
+        Assert.Equal(ticks - 1, r.AudioFrames);
         Assert.Equal(0, r.AudioWithSound);   // silence, because no keyframe asked for a sound
     }
 
@@ -674,21 +674,28 @@ public class AnimationGapTests
     // ------------------------------------------------------------------ lights
 
     /// <summary>
-    /// The shipping engine never implemented this track from animation assets: its SetMembersFromFlatBuf at
-    /// 0x004FAAD4 is a stub that logs and returns failure. The keyframe is decoded and reported; nothing is
-    /// invented.
+    /// M5 C16..C18: the backpack track is loaded (the FlatBuffer converted to JSON) and streamed as 0x98 BackpackLights
+    /// every frame while its keyframe is current, until counter ≥ duration: duration 100 gives 5 frames. Left
+    /// [1, 0.7, 0, 0] is r 255, g trunc(178.5) = 178, b 0, a 0: 0x7C00 | 0x2C0 = 0x7EC0.
     /// </summary>
     [Fact]
-    public void ALightsKeyframeIsDecodedAndReportedButNotActedOn()
+    public void ALightsKeyframeIsStreamedEveryFrameWhileCurrent()
     {
-        var r = new Recorder();
+        var r = new LightsRecorder();
         var s = new AnimationScheduler(r);
         var lights = new LightsKeyframe(0, 100,
             new[] { 1f, 0.7f, 0f, 0f }, new float[4], new float[4], new float[4], new float[4]);
-        s.Play(Clip("t", lights, new EventKeyframe(200, "end")), 0);
-        Run(s, 0, 300);
+        s.Play(Clip("t", lights, new EventKeyframe(300, "TAPPED_BLOCK")), 0);
+        Run(s, 0, 400);
 
-        var got = Assert.Single(r.Lights_);
-        Assert.Equal(new[] { 1f, 0.7f, 0f, 0f }, got.Left);   // the asset data survives decoding intact
+        Assert.Equal(5, r.Leds.Count);
+        Assert.All(r.Leds, l => Assert.Equal(new ushort[] { 0x7EC0, 0, 0, 0, 0 }, l));
+        Assert.Empty(r.Lights_);                               // the keyframe callback is not the wire path
+    }
+
+    private sealed class LightsRecorder : Recorder, IAnimationSink
+    {
+        public readonly List<ushort[]> Leds = new();
+        public void BackpackLights(ushort[] leds) => Leds.Add(leds);
     }
 }

@@ -1225,6 +1225,10 @@ public class EngineAppLayerTests
     {
         "AnimationScheduler._generation", "CozmoAudio._removals", "CozmoAudio._clock", "CozmoAudio._scheduled",
         "VisionSystem._removals", "VisionSystem.<Enabled>k__BackingField",
+        // M5 gap4 R2, R3: IKeyFrame::sRNG is a process static that is never reseeded, and the context RNG belongs to the
+        // CozmoContext, not to the Robot; neither is rebuilt with a new Robot
+        "AnimationScheduler._keyframeRng", "AnimationScheduler._contextRng",
+        "FaceLayerManager.<Rng>k__BackingField", "BackpackLayerManager.<Rng>k__BackingField",
     };
 
     /// <summary>Puts state into every device, as a connected robot would.</summary>
@@ -1364,8 +1368,13 @@ public class EngineAppLayerTests
         int sent;
         lock (rig.Port.Sent) sent = rig.Port.Sent.Count;
         Assert.True(rig.Robot.Animations.StreamLive(new Cozmo.Robot.Animation.HeadKeyframe(0, 100, 5, 0)));
-        List<RobotMessage> after;
-        lock (rig.Port.Sent) after = rig.Port.Sent.Skip(sent).Select(b => RobotMessage.Parse(b)).ToList();
+        // M5 A29: the live keyframe goes out in the streamer's Updates, which the tick loop runs on this test seam
+        List<RobotMessage> after = new();
+        Assert.True(SpinWait.SpinUntil(() =>
+        {
+            lock (rig.Port.Sent) after = rig.Port.Sent.Skip(sent).Select(b => RobotMessage.Parse(b)).ToList();
+            return after.OfType<StartOfAnimation>().Any();
+        }, 3000), "the live animation was never opened");
         var start = Assert.Single(after.OfType<StartOfAnimation>());
         Assert.Equal(Cozmo.Robot.Animation.AnimationScheduler.LiveAnimationTag, start.AnimId);
     }

@@ -109,6 +109,23 @@ public sealed record BodyKeyframe(uint TriggerTimeMs, uint DurationTimeMs, strin
         return false;
     }
 
+    /// <summary>
+    /// ProcessRadiusString's speed checks (C4, gap1 S1) for a radius string: with any digit, CheckTurnSpeed (|v| ≥ 221 →
+    /// ±220); TURN_IN_PLACE / POINT_TURN, CheckRotationSpeed (|v| &gt; 300 → ±300); STRAIGHT, CheckStraightSpeed (±220).
+    /// False for a token the engine does not recognise.
+    /// </summary>
+    public static bool CheckSpeedForRadiusString(string raw, ref short speed)
+    {
+        var probe = new BodyKeyframe(0, 0, raw, 0);
+        if (probe.EncodedRadius is not { } radius) return false;
+        if (!HasDigits(raw) && radius == TurnInPlaceRadius)
+        {
+            if (Math.Abs((int)speed) > 300) speed = (short)Math.Clamp((int)speed, -300, 300);
+        }
+        else if (Math.Abs((int)speed) >= 221) speed = (short)Math.Clamp((int)speed, -220, 220);
+        return true;
+    }
+
     /// <summary>C's atoi: optional sign, then digits, stopping at the first character that is not one.</summary>
     private static long Atoi(string s)
     {
@@ -135,9 +152,12 @@ public sealed record AudioKeyframe(uint TriggerTimeMs, long[] EventIds, float Vo
     public override AnimationTrack Track => AnimationTrack.Audio;
 }
 
+// fidelity: M5-016
 /// <summary>
-/// Set the backpack LEDs. Each of the five arrays is a colour, but the channel order and scale are not
-/// established, so they are kept as the raw float arrays the asset holds.
+/// Set the backpack LEDs. The FlatBuffer table (trigger f0, duration f1, Left f2, Right f3, Front f4, Middle f5,
+/// Back f6) is converted to the JSON "BackpackLightsKeyFrame" and loaded by <c>SetMembersFromJson</c> (C16,
+/// 0x005758C8..0x00575CBE); the colours are kept here as the float arrays the asset holds and encoded by
+/// <see cref="EncodedLeds"/>.
 /// </summary>
 public sealed record LightsKeyframe(uint TriggerTimeMs, uint DurationTimeMs,
                                     float[] Left, float[] Right, float[] Front, float[] Middle, float[] Back)
@@ -145,6 +165,85 @@ public sealed record LightsKeyframe(uint TriggerTimeMs, uint DurationTimeMs,
 {
     public override AnimationTrack Track => AnimationTrack.Lights;
     public override uint DurationMs => DurationTimeMs;
+
+    /// <summary>
+    /// The five LED words of the 0x98 BackpackLights message in the engine's order <b>Left, Front, Middle, Back, Right</b>
+    /// (C18, +0x10..+0x18; Q2), read as SetMembersFromJson reads them (gap4 J1.9, <see cref="BackpackColor.TryReadAll"/>);
+    /// null when a colour is not an array of 3 or 4 floats, which rejects the keyframe at load.
+    /// </summary>
+    public ushort[]? EncodedLeds => BackpackColor.TryReadAll(Left, Right, Front, Middle, Back, out var leds) ? leds : null;
+}
+
+// fidelity: M5-016
+/// <summary>The backpack keyframe colour rules (C17).</summary>
+public static class BackpackColor
+{
+    /// <summary>The default ColorRGBA, 0xFF00CCFF: R in the top byte, A in the bottom (C17, 0x0083F490).</summary>
+    public const uint Default = 0xFF00CCFF;
+
+    /// <summary>
+    /// <c>GetColorOptional</c> (C17, 0x0084024C..0x0084050C; gap4 J1.9) into <paramref name="c"/>: the array must hold 3 or
+    /// 4 floats (otherwise false); when any of r, g, b is above 1 the values are raw, otherwise ×255; each through
+    /// vcvt.u32.f32 (truncation, a negative saturating to 0), stored as a u8; alpha only from a 4th element ≥ 0, by the same
+    /// rule (so a 3-element array keeps <paramref name="c"/>'s alpha).
+    /// </summary>
+    public static bool GetColorOptional(IReadOnlyList<float> v, ref uint c)
+    {
+        if (v.Count != 3 && v.Count != 4) return false;
+        bool raw = v[0] > 1f || v[1] > 1f || v[2] > 1f;
+        byte U8(float x)
+        {
+            float f = raw ? x : x * 255f;
+            uint u = float.IsNaN(f) || f <= 0f ? 0u : f >= 4294967295f ? uint.MaxValue : (uint)f;
+            return unchecked((byte)u);
+        }
+        byte r = U8(v[0]), g = U8(v[1]), b = U8(v[2]);
+        byte a = (byte)(c & 0xFF);
+        if (v.Count == 4 && v[3] >= 0f) a = U8(v[3]);
+        c = ((uint)r << 24) | ((uint)g << 16) | ((uint)b << 8) | a;
+        return true;
+    }
+
+    /// <summary>One colour onto the default ColorRGBA (a fresh keyframe read); the default when the read fails.</summary>
+    public static uint FromArray(IReadOnlyList<float> v)
+    {
+        uint c = Default;
+        GetColorOptional(v, ref c);
+        return c;
+    }
+
+    /// <summary>
+    /// BackpackLightsKeyFrame::SetMembersFromJson's colours (gap4 J1.9): "Back", "Front", "Middle", "Left", "Right" in that
+    /// order into one ColorRGBA, default-constructed once and reused; each required. The words come out in the wire order
+    /// Left, Front, Middle, Back, Right (C18).
+    /// </summary>
+    public static bool TryReadAll(IReadOnlyList<float> left, IReadOnlyList<float> right, IReadOnlyList<float> front,
+                                  IReadOnlyList<float> middle, IReadOnlyList<float> back, out ushort[] leds)
+    {
+        leds = new ushort[5];
+        uint c = Default;
+        if (!GetColorOptional(back, ref c)) return false;
+        leds[3] = Encode(c);
+        if (!GetColorOptional(front, ref c)) return false;
+        leds[1] = Encode(c);
+        if (!GetColorOptional(middle, ref c)) return false;
+        leds[2] = Encode(c);
+        if (!GetColorOptional(left, ref c)) return false;
+        leds[0] = Encode(c);
+        if (!GetColorOptional(right, ref c)) return false;
+        leds[4] = Encode(c);
+        return true;
+    }
+
+    /// <summary>
+    /// The LED word (C17, 0x004FABDC..0x004FAC12): ((r &lt;&lt; 7) &amp; 0x7C00) | ((g &lt;&lt; 2) &amp; 0x3E0) | (b &gt;&gt; 3)
+    /// | (a ≠ 0 ? 0x8000 : 0).
+    /// </summary>
+    public static ushort Encode(uint rgba)
+    {
+        int r = (int)(rgba >> 24) & 0xFF, g = (int)(rgba >> 16) & 0xFF, b = (int)(rgba >> 8) & 0xFF, a = (int)rgba & 0xFF;
+        return (ushort)(((r << 7) & 0x7C00) | ((g << 2) & 0x3E0) | (b >> 3) | (a != 0 ? 0x8000 : 0));
+    }
 }
 
 /// <summary>Show a pre-rendered face animation by name, from the faceAnimations assets.</summary>
@@ -153,10 +252,28 @@ public sealed record FaceAnimationKeyframe(uint TriggerTimeMs, string AnimName) 
     public override AnimationTrack Track => AnimationTrack.Face;
 }
 
-/// <summary>A named event the animation raises. The engine uses these to trigger game-side reactions.</summary>
+// fidelity: M5-033
+/// <summary>
+/// An animation event: <c>event_id</c> through <c>AnimEventFromString</c> (C15, 0x004FA7A0..0x004FA852); streamed as the
+/// 0x95 Event message {u8 event}, once. A name that is not an <see cref="Animation.AnimEvent"/> rejects the keyframe at
+/// load.
+/// </summary>
 public sealed record EventKeyframe(uint TriggerTimeMs, string EventId) : Keyframe(TriggerTimeMs)
 {
     public override AnimationTrack Track => AnimationTrack.Event;
+
+    /// <summary>The AnimEvent this names, or null for a name the engine does not recognise ("Count").</summary>
+    public AnimEvent? Parsed =>
+        EventId != nameof(AnimEvent.Count) && Enum.GetNames<AnimEvent>().Contains(EventId) ? Enum.Parse<AnimEvent>(EventId) : null;
+}
+
+/// <summary>AnimEvent (Unity AnimEvent.cs:5-8; C15): the values the 0x95 Event message carries.</summary>
+public enum AnimEvent : byte
+{
+    DEVICE_AUDIO_TRIGGER,
+    ENERGY_DRAINCUBE_END,
+    TAPPED_BLOCK,
+    Count,
 }
 
 /// <summary>Remember the current heading, so a later keyframe can turn back to it.</summary>
@@ -197,6 +314,9 @@ public sealed class AnimationClip
 
     /// <summary>When the last keyframe finishes.</summary>
     public uint DurationMs { get; init; }
+
+    /// <summary>Whether a rejected keyframe ended the load early (gap1 C2): the keyframes before it are kept.</summary>
+    public bool LoadTruncated { get; init; }
 
     /// <summary>Keyframes on one track, in time order.</summary>
     public IEnumerable<Keyframe> OnTrack(AnimationTrack track) => Keyframes.Where(k => (k.Track & track) != 0);

@@ -1,8 +1,8 @@
 {
   "subsystem": "M5-animation",
-  "approved": "2026-09-24",
+  "approved": "2026-09-25",
   "inventory": "re-analysis/inventory/M5-animation.md",
-  "inventory_sha256": "2336c80a0b4042e43324ab4bd039fc70b9b0cc94e09a5c6f5f08a87f55b13b2a",
+  "inventory_sha256": "c29b0405825b58b3c0444c235f92968f6ba592d8513d33ea25a3dc71b7e15630",
   "records": {
     "M5-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -43,7 +43,7 @@
       "hardware_required": false
     },
     "M5-004": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Head 0x93 {u16 duration, s8 angle} and lift 0x94 {u16 duration, u8 height} keyframes, sent once at the trigger",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -54,7 +54,7 @@
       "hardware_required": false
     },
     "M5-005": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Variability: RandIntInRange on the static keyframe RNG per GetStreamMessage, unclamped",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -77,7 +77,7 @@
       "hardware_required": false
     },
     "M5-007": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Timeline: start + frames built x 33; advances whenever the drain returns OK (a budget stop included); frozen while the buffer is non-empty",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -88,7 +88,7 @@
       "hardware_required": false
     },
     "M5-008": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "One streaming animation: refuse or interrupt, tags 1..0xFE returned, loops with the same tag, live forced to 1 loop, ReplayLastAnimation",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -104,7 +104,7 @@
       "hardware_required": false
     },
     "M5-009": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Audio keyframe load rules: id low 32 bits, volume default 1.0, absent probabilities 1/N, mismatch or sum > 1 rejects",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -138,7 +138,7 @@
       "hardware_required": false
     },
     "M5-012": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "An audio keyframe volume (default 1.0) is passed on to the audio layer; its Wwise effect is M6",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -172,7 +172,7 @@
       "hardware_required": false
     },
     "M5-015": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Corner radii rx = roundf(p*15), ry = roundf(p*20) into four ellipse2Poly corners; below 1 a point",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -194,7 +194,7 @@
       "hardware_required": false
     },
     "M5-017": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Audio alternative: r = RandDbl(1), first with lower <= r <= upper skipping |p| < 1e-5, else nothing",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -268,7 +268,7 @@
       "hardware_required": false
     },
     "M5-024": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "InitStream: tag and start, the scan-line toggle rule, buffer dropped, start/end flags, audio animation created, RemoveKeepFaceAlive(99) for non-live; nothing sent",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -281,7 +281,7 @@
       "hardware_required": false
     },
     "M5-025": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Frame build order and track pull: audio, Start once, Head, Lift, Event, FaceAnimation, procedural face, BackpackLights, Body, RecordHeading, TurnTo; one keyframe per track per frame",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -293,7 +293,7 @@
       "hardware_required": false
     },
     "M5-026": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "End of animation: EndOfAnimation directly when Start was sent, else silence + Start first; nothing after End; empty clips send nothing",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -317,7 +317,7 @@
       "hardware_required": false
     },
     "M5-028": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Keep-alive: timeout 0.5 s, KeepFaceAlive darts and blinks, default params, continuous StreamLayers while a persistent layer exists",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -329,7 +329,7 @@
       "hardware_required": false
     },
     "M5-029": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Track layer manager: tags, AddLayer/AddPersistentLayer, persistent hold, AddToPersistentLayer, the Remove cross-fade, HaveLayersToSend, frame flags",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -375,7 +375,7 @@
       "hardware_required": false
     },
     "M5-033": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Event 0x95, RecordHeading 0x91, TurnToRecordedHeading 0x92 keyframes and their clamps",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -387,7 +387,7 @@
       "hardware_required": false
     },
     "M5-034": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "AnimationTrigger to group name from assets/animationGroupMaps Pairs; first entry wins; unknown gives a warning and \"\"",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -397,7 +397,7 @@
       "hardware_required": false
     },
     "M5-035": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The streamer never reads enabledAnimTracks or skips a locked track; locks only through DisableAnimTracks/EnableAnimTracks; the live idle checks MovementComponent locks",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [

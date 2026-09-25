@@ -2,31 +2,32 @@ using Cozmo.Protocol;
 
 namespace Cozmo.Robot.Animation;
 
+// fidelity: M5-004, M5-006, M5-013, M5-016, M5-025, M5-026, M5-033
 /// <summary>
-/// Drives a real robot from the animation scheduler.
-///
-/// Every method here is called on the scheduler's tick, so the devices underneath never decide their own
-/// animation timing. The face goes out as an animation keyframe, the audio as a frame on the same tick, and
-/// the motors as ordinary commands whose acknowledgement the animation does not wait for: an animation is a
-/// timeline, not a sequence of round trips.
+/// The stream's messages onto a real robot: each sink call sends one EngineToRobot message through the engine's send
+/// path (every message reliable, not hot; M1-026, M3-014), and reports whether it went out (C14).
 /// </summary>
 public sealed class RobotAnimationSink : IAnimationSink
 {
     private readonly CozmoRobot _robot;
-    private byte[]? _lastFacePayload;
 
     public RobotAnimationSink(CozmoRobot robot) => _robot = robot;
 
-    /// <summary>Events the animation raised, newest last. The engine routes these to game code.</summary>
+    /// <summary>Events the animation raised, newest last, for this stack's callers.</summary>
     public event Action<string>? AnimationEvent;
-    /// <summary>Keyframes whose effect is not implemented yet, so a caller can see what was skipped.</summary>
+    /// <summary>Keyframes whose effect is not implemented, so a caller can see what was skipped.</summary>
     public event Action<string>? NotImplemented;
 
-    public void Face(FaceBitmap bitmap)
+    /// <summary>A picture from a caller (this stack's API): encoded as the display encodes it and sent as 0x97.</summary>
+    public void Face(FaceBitmap bitmap) => FaceImage(FaceBitmapCodec.Encode(bitmap));
+
+    /// <summary>
+    /// 0x97 FaceImage with the stream's payload (BufferFaceToSend, M3 B5; a sprite frame's stored RLE, C12). A payload
+    /// larger than one frame holds is not sent (<see cref="CozmoDisplay.MaxPayload"/>).
+    /// </summary>
+    public void FaceImage(byte[] payload)
     {
-        var payload = FaceBitmapCodec.Encode(bitmap);
-        if (payload.Length > _robot.Display.MaxPayload) { LastSendSucceeded = true; return; }    // never send a partial face
-        _lastFacePayload = payload;
+        if (payload.Length > _robot.Display.MaxPayload) { LastSendSucceeded = true; return; }
         Send(new Protocol.FaceImage { Image = payload });
     }
 
@@ -56,38 +57,26 @@ public sealed class RobotAnimationSink : IAnimationSink
         else Send(new AudioSample { Samples = mulawFrame });
     }
 
-    /// <summary>
-    /// Sends the head keyframe the way the engine does: as <c>animHeadAngle</c> (0x93), the message
-    /// <c>HeadAngleKeyFrame::GetStreamMessage</c> at 0x004F8C08 builds. The duration is stored as a u16
-    /// there (<c>strh</c>), so it is truncated the same way here.
-    ///
-    /// This replaced a <c>SetHeadAngle</c> motor command carrying invented speed and acceleration values.
-    /// The command moved the head on hardware, but it is not what the engine sends inside an animation and
-    /// it discarded the keyframe's variability.
-    /// </summary>
+    /// <summary>0x93 animHeadAngle, the duration a u16 (strh, C2).</summary>
     public void Head(sbyte angleDeg, uint durationMs) =>
         Send(new Protocol.HeadAngle { DurationTimeMs = (ushort)durationMs, AngleDeg = angleDeg });
 
-    /// <summary>As <see cref="Head"/>, for <c>animLiftHeight</c> (0x94) from <c>LiftHeightKeyFrame::GetStreamMessage</c> at 0x004F8F80.</summary>
+    /// <summary>0x94 animLiftHeight (C3).</summary>
     public void Lift(byte heightMm, uint durationMs) =>
         Send(new Protocol.LiftHeight { DurationTimeMs = (ushort)durationMs, HeightMm = heightMm });
 
-    /// <summary>
-    /// Opens the animation on the robot. AnimationStreamer::SendStartOfAnimation at 0x0057C400 in
-    /// libcozmoEngine.so does exactly this, sending the tag as a single byte, and the robot reports that
-    /// tag back in its AnimationState. Keyframes that arrive outside an open animation are ignored, which
-    /// is why body motion did nothing before this was sent.
-    /// </summary>
+    /// <summary>0x9B StartOfAnimation{tag} (A21).</summary>
     public void AnimationStarted(byte tag) => Send(new StartOfAnimation { AnimId = tag });
 
-    /// <summary>Closes it, as AnimationStreamer::SendEndOfAnimation does.</summary>
+    /// <summary>0x9A EndOfAnimation (A20).</summary>
     public void AnimationEnded() => Send(new EndOfAnimation());
 
+    /// <summary>
+    /// 0x99 BodyMotion {speed, radius} (C4, C5). A radius token the engine does not understand is rejected at load; a
+    /// keyframe built in code with one sends nothing.
+    /// </summary>
     public void Body(BodyKeyframe k)
     {
-        // The engine does not synthesise wheel speeds: it sends the speed and a 16-bit radius and lets the
-        // firmware do the geometry, which is what makes an arc work without knowing the wheel base.
-        // BodyMotionKeyFrame::GetStreamMessage at 0x004FBA8C builds exactly this message.
         if (k.EncodedRadius is not { } radius)
         {
             NotImplemented?.Invoke($"body motion radius '{k.RadiusRaw}' is not a token the engine understands");
@@ -95,54 +84,52 @@ public sealed class RobotAnimationSink : IAnimationSink
             return;
         }
         Send(new BodyMotion { Speed = k.Speed, RadiusMm = radius });
-        _bodyMoving = k.Speed != 0;
     }
 
-    /// <summary>Zero speed on the straight radius, which is how the engine's own keyframe ends.</summary>
-    public void BodyStop()
+    /// <summary>0x99 BodyMotion {0, 0x7FFF}: the body keyframe's own stop (C5).</summary>
+    public void BodyStop() => Send(new BodyMotion { Speed = 0, RadiusMm = BodyKeyframe.StraightRadius });
+
+    /// <summary>Not called by the stream (the backpack track is <see cref="BackpackLights"/>).</summary>
+    public void Lights(LightsKeyframe k) { }
+
+    /// <summary>0x98 BackpackLights, five u16 in the order Left, Front, Middle, Back, Right (C18).</summary>
+    public void BackpackLights(ushort[] leds) => Send(new Protocol.BackpackLights { Field0 = (ushort[])leds.Clone() });
+
+    /// <summary>0x95 Event {u8 AnimEvent} (C15).</summary>
+    public void AnimEvent(byte animEvent) => Send(new Protocol.Event { Field0 = animEvent });
+
+    /// <summary>0x91 RecordHeading, empty (C19).</summary>
+    public void RecordHeading() => Send(new Protocol.RecordHeading());
+
+    // fidelity: M5-033
+    /// <summary>
+    /// 0x92 TurnToRecordedHeading (gap4 T1, T2): the 13 bytes from keyframe +0x10 in order, s16 offset_deg, s16 speed,
+    /// s16 accel, s16 decel, u16 tolerance, u16 numHalfRevs, u8 useShortestDir.
+    /// </summary>
+    public void TurnToRecordedHeading(TurnToRecordedHeadingKeyframe k) => Send(ToMessage(k));
+
+    internal static Protocol.TurnToRecordedHeading ToMessage(TurnToRecordedHeadingKeyframe k) => new()
     {
-        _bodyMoving = false;
-        Send(new BodyMotion { Speed = 0, RadiusMm = BodyKeyframe.StraightRadius });
-    }
-
-    /// <summary>Whether a body keyframe this sink sent is still driving (nothing has stopped it yet).</summary>
-    private bool _bodyMoving;
-
-    public void Lights(LightsKeyframe k)
-    {
-        // The official engine does not implement this either. BackpackLightsKeyFrame::SetMembersFromFlatBuf
-        // at 0x004FAAD4 in libcozmoEngine.so is a stub whose whole body logs "The
-        // BackpackLightsKeyFrame::SetMembersFromFlatBuf() method still needs to be implemented" and returns
-        // failure, so the light track of a .bin animation does nothing on a retail robot. Mapping these
-        // five float arrays onto the wire message would be inventing behaviour Anki never shipped, so it is
-        // reported rather than guessed.
-        NotImplemented?.Invoke(
-            "backpack lights keyframe ignored: the shipping engine never implemented this track from " +
-            "animation assets (SetMembersFromFlatBuf is a stub), so there is no behaviour to reproduce");
-    }
+        Field0 = unchecked((ushort)k.OffsetDeg),
+        Field1 = unchecked((ushort)k.SpeedDegPerSec),
+        Field2 = unchecked((ushort)k.AccelDegPerSec2),
+        Field3 = unchecked((ushort)k.DecelDegPerSec2),
+        Field4 = k.ToleranceDeg,
+        Field5 = k.NumHalfRevs,
+        Field6 = (byte)(k.UseShortestDir ? 1 : 0),
+    };
 
     public void Event(string eventId) => AnimationEvent?.Invoke(eventId);
 
-    public void Finished(string clipName, bool completed)
-    {
-        // The scheduler stops the body when its keyframe expires and again if an animation is cut short
-        // (AnimationScheduler: BodyStop on both paths), so normally there is nothing to undo. What this
-        // must not do is stop the wheels for every clip: a face or audio animation ending would then kill
-        // a path or a direct drive that has nothing to do with it, which with M13 navigation and M15
-        // autonomy running underneath is a real collision. Only body motion this animation started and
-        // nothing has stopped is cleaned up, and with the keyframe's own stop rather than DriveWheels.
-        if (_bodyMoving) BodyStop();
-        _ = _lastFacePayload;
-    }
+    /// <summary>
+    /// An animation ended. Nothing is sent: the engine's Abort sends the robot nothing itself and SendEndOfAnimation is
+    /// the only end (A20, A24); a body keyframe's stop is the keyframe's own message (C5).
+    /// </summary>
+    public void Finished(string clipName, bool completed) { }
 
     // fidelity: M1-025, M1-015
     /// <summary>Back to the state right after construction, for a removed robot (CB33, CC26, CC27). Subscribers are kept.</summary>
-    internal void ResetToConstructed()
-    {
-        _lastFacePayload = null;
-        _bodyMoving = false;
-        LastSendSucceeded = true;
-    }
+    internal void ResetToConstructed() => LastSendSucceeded = true;
 }
 
 /// <summary>
@@ -173,8 +160,27 @@ public sealed class CozmoAnimations : IDisposable
         _sink = new RobotAnimationSink(robot);
         _scheduler = new AnimationScheduler(_sink);
         _scheduler.Stream.Log = robot.Engine.Log;
+        _scheduler.Log = robot.Engine.Log;
         _sink.AnimationEvent += e => Event?.Invoke(e);
         _sink.NotImplemented += w => NotImplemented?.Invoke(w);
+        _scheduler.NotImplemented += w => NotImplemented?.Invoke(w);
+        // fidelity: M5-023
+        // A23: RobotEventHandler subscribes to the E2G AnimationAborted (tag 95); the broadcast is synchronous, and its
+        // handler calls Robot::AbortAnimation → SendAbortAnimation: AbortAnimation 0x8D, reliable, sent directly
+        // (0x00517DE4..0x00517E0A), not through the stream buffer.
+        _scheduler.AnimationAborted += _ => robot.SendMessage(new AbortAnimation());
+        // fidelity: M5-030
+        // UpdateLiveAnimation's robot inputs (gap4 L2..L6, gap1 R2..R4), from the last RobotState the robot stored: status bit
+        // 2 (DockingComponent+4), IS_MOVING (+9), !LIFT_IN_POS (+0xB), !HEAD_IN_POS (+0xA); the track locks (M4-014); the head
+        // angle (robot+0x2FC). Before any state they read clear, as the components' constructors leave them. Carrying
+        // (CarryingComponent, M12) is not on this robot and reads clear.
+        var live = _scheduler.LiveIdleInputs;
+        live.PickingOrPlacing = () => robot.State.Latest?.Has(RobotStatusFlag.IsPickingOrPlacing) ?? false;
+        live.Moving = () => robot.State.Latest?.Has(RobotStatusFlag.IsMoving) ?? false;
+        live.LiftNotInPosition = () => robot.State.Latest is { } s && !s.Has(RobotStatusFlag.LiftInPos);
+        live.HeadNotInPosition = () => robot.State.Latest is { } s && !s.Has(RobotStatusFlag.HeadInPos);
+        live.LockedTracks = () => robot.Motion.LockedTracks;
+        live.HeadAngleRad = () => robot.State.HeadAngleRad ?? 0f;
     }
 
     /// <summary>The loaded asset library, or null until <see cref="LoadFrom"/> is called.</summary>
@@ -247,8 +253,17 @@ public sealed class CozmoAnimations : IDisposable
     {
         // The pre-rendered face animations live beside the clips, and the faceAnimations track names them.
         FaceAnimations = FaceAnimationLibrary.Open(assetsRoot);
-        _scheduler.FaceAnimations = FaceAnimations.Frames;
-        return Library = AnimationLibrary.Open(assetsRoot);
+        _scheduler.FaceAnimationVariants = FaceAnimations.Variants;
+        Library = AnimationLibrary.Open(assetsRoot);
+        Library.Log = _robot.Engine.Log;
+        // D5: the head-angle gate reads robot+0x2FC (the reported head angle, radians)
+        Library.HeadAngleRad = () => _robot.State.HeadAngleRad;
+        Library.ContextRandom = _scheduler.ContextRandom;          // R3: the group draw is on the context RNG
+        // fidelity: M5-010, M5-027
+        // The streamer's idle and neutral animations come from the container, the groups and the trigger map (A2, A29).
+        _scheduler.Catalog = Library;
+        _scheduler.LoadNeutralFace();
+        return Library;
     }
 
     /// <summary>The pre-rendered face animations found beside the clips, once <see cref="LoadFrom"/> has run.</summary>
