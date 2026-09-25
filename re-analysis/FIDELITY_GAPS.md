@@ -3,15 +3,15 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **259 records** over 16 subsystems.
+Manifest of **265 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 191 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 22 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| EXACT_SOURCE | 179 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EQUIVALENT_IMPLEMENTATION | 21 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 0 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 4 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 28 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| IMPLEMENTATION_GAP | 24 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| COMPATIBILITY_POLICY | 27 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 6 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -26,7 +26,7 @@ remains after both, and they do not go away by working harder on this repository
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | M1-transport — UDP transport and reliability | 43 | 0 | 2 | 0 | 2 | yes | no |
 | M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 2 | 0 | 0 | yes | no |
-| M3-device — Camera, display and audio device layer | 18 | 0 | 0 | 0 | 1 | yes | yes |
+| M3-device — Camera, display and audio device layer | 24 | 0 | 20 | 0 | 2 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 13 | 0 | 0 | 0 | 1 | yes | yes |
 | M5-animation — Animation clips, scheduler and face | 23 | 0 | 0 | 0 | 0 | yes | yes |
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 0 | 0 | 0 | 0 | yes | yes |
@@ -54,7 +54,7 @@ status.
 | --- | --- | ---: | ---: | ---: | ---: |
 | M1-transport | INVENTORY_APPROVED | 30 | 0 | 0 | 3 |
 | M2-protocol | INVENTORY_APPROVED | 14 | 0 | 0 | 0 |
-| M3-device | UNREVIEWED | 13 | 1 | 0 | 0 |
+| M3-device | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | M4-control | UNREVIEWED | 8 | 0 | 0 | 0 |
 | M5-animation | UNREVIEWED | 22 | 3 | 0 | 0 |
 | M6-wwise-bank | UNREVIEWED | 7 | 5 | 0 | 0 |
@@ -117,14 +117,196 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: DriveWheels/MoveLift/MoveHead verbatim word copies (0x0063F174, 0x00640E1C, 0x0063F900, 0x00640C00, 0x0063F6BC, 0x00640ACC); MoveLiftToHeight 0x00640700 and MoveHeadToAngle 0x006407CC copy the four floats in order (0x0064076C, 0x00640838 stm); TurnInPlace 0x00640898 verbatim (0x006408B0..0x00640940)
 * outstanding: the MessageExtras default arguments (SetHeadAngle 10/10, SetLiftHeight 3/20) have no engine counterpart; which values the original's callers pass is decided in M4 (MISSING for M4), after which the defaults can be removed and this record settled
 
+### M3-device — Camera, display and audio device layer
+
+**M3-001 — JPEG reconstruction headers (gray 324 B, colour 334 B 4:2:2), height/width BE at 0x5E..0x61, 240x320 decode check, frame timestamp = last chunk** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/MiniJpeg.cs`
+* effect: a camera frame is reconstructed or rejected differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: A13 header tables 0x00C48C40 (gray, 0x144 B) and 0x00C48D84 (colour, 0x14E B): SOF0 at 0x59, 1 or 3 components (Y 0x21, Cb/Cr 0x11); A12 MiniToJpegHelper writes height BE at 0x5E/0x5F and width BE at 0x60/0x61 (0x004F31C4..0x004F32CC); A8 gray dispatch tbh 0x004F2898; A11 rows==240, cols==320 else BadDecode (0x004F2CDA..0x004F2D34); ts = EncodedImage+0xC
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-002 — Image chunk reassembly exactly as EncodedImage::AddChunk, ignored before SyncTimeAck** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Camera.cs`
+* effect: a frame is assembled, dropped or split differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: A1 HandleImageChunk exits unless robot+0x29 (0x00535A7A); M2 inventory Appendix C R1..R10 (EncodedImage::AddChunk 0x004F1CE0..0x004F1EE0) and H1..H5 (0x00535A64)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-003 — MiniToJpegHelper: strip trailing 0xFF, drop the flag byte, stuff 0x00 after 0xFF, append FF D9** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/MiniJpeg.cs`
+* effect: a reconstructed JPEG differs from the engine
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: A12 0x004F31C4..0x004F32CC: trailing 0xFF strip (no lower bound), copy data[1..n-1] with 0x00 stuffing after 0xFF, skip the copy if fewer than 2 bytes remain, append FF D9
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-005 — At most 3 completed images per event time go on to vision; one EncodedImage at a time** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Camera.cs`
+* effect: more or fewer frames reach vision
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: A3 counter RobotToEngineImplMessaging+0x128 keyed to the event time vs +0x130; the image passes while count < 3 (0x00535B0E, 0x00535B28..0x00535B52); A4..A6 VisionComponent gates and the latest-wins mailbox are the M11 interface (0x00652B1C..0x006530C8)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-006 — Face canvas 64x128; wire image 128 columns x 64 rows as 32 two-row pairs; 33 ms per stream frame** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Display.cs`
+* effect: the face image is laid out or timed differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: B1 Image(64,128) and warpAffine to Size(128,64) (0x00585B3E..0x00585CB2); B15 from B6, B10, B14: 128 columns x 64 rows, 32 pairs per column; B18 stream time +0x84 += 0x21 = 33 ms per fully sent frame (0x0057CA94..0x0057CA9C)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-007 — CompressRLE exactly: skip, repeat, runs over row pairs, the trailing-run rule, raw fallback at >= 1024 bytes** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Display.cs`
+* effect: the face is encoded into different bytes
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: B6 requires 64x128 (0x00581912..0x0058197A); B7 u64 column masks, non-zero is lit (0x0058197C..0x005819E8); B8 skip 0b00nnnnnn (0x00581B0A..0x00581B42); B9 repeat 0x40|k (0x00581A06..0x00581A46); B10 run 0x80|((len-1)<<2)|pair (0x00581A48..0x00581AB0); B11 trailing run always at c==127 or pair!=0 (0x00581AB2..0x00581AE2); B12 raw fallback when the RLE is >= 1024 bytes (cmp.w r1,r0,lsr #10; 0x00581B76..0x00581BA0)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-009 — A blank canvas encodes as {0x3F, 0x3F}** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Display.cs`
+* effect: a blank face is sent as different bytes
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: B13 follows from B8 (0x00581B0A..0x00581B42): two skip-64 opcodes
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-010 — encodeMuLaw(float) exactly; no volume scaling; short frames zero-padded** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Audio.cs`
+* effect: audio sounds different
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: C6 encodeMuLaw 0x00597AD8..0x00597B8E, segment table 0x00C5C3F0, 32767.0 at 0x00597C18; NaN warns and gives 0; C5 PopRobotAudioMessage 0x00597DD4..0x00597E4E: zero-pad below 744; C7 no volume scaling (0x00597DFC..0x00597E02)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-011 — 22320 Hz, 744 samples per frame** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Audio.cs`
+* effect: audio plays at the wrong rate
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: C3 HijackAudioPlugIn(22320, 744) and SetupHijackAudioPlugInAndRobotAudioBuffers(22320, 744) (0x005942CE..0x005942EA)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-012 — The engine send budgets: 14 unplayed audio frames; min(8192 - unplayed bytes, 30000); counters from AnimationState and every send** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
+* effect: the robot is sent more or less than the engine would
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: C9 UpdateAmountToSend 0x0057C6F6..0x0057C7AC (14 at 0x0057C79E add.w r1,r1,#0xe); C10 the AnimationState handler writes the played counters (0x00537FD0..0x0053800C); C11 bytes += EngineToRobot::Size(), frames += 1 for 0x8E/0x8F (0x0057BFB0..0x0057BFCC); C12 EndOfAnimation counts one frame plus its bytes (0x0057C464..0x0057C496); C13 the ctor zeroes the counters (0x0050FD0A)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-013 — The feed: FIFO drain stopping at the first over-budget message; per Update, one 33 ms frame at a time while the drain completes and the audio animation is ready** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
+* effect: audio and face frames are paced differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: C14 SendBufferedMessages 0x0057BF60..0x0057C010; C15 UpdateStream 0x0057C8E4..0x0057CABE, 0x0057CC6C..0x0057CCA6; C16 readiness 0x0059A1CC..0x0059A1F6, states per Q5 GetStringForAnimationState 0x00596434
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-014 — Every streamed message is sent reliable and not hot; EndOfAnimation directly, not budget-gated** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
+* effect: stream messages are lost or reordered
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: C14 SendMessage(reliable=1, hot=0) in SendBufferedMessages (0x0057BF60..0x0057C010); C12 SendEndOfAnimation 0x0057C464..0x0057C496
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-015 — One audio message per stream frame (AudioSample or AudioSilence); the face keyframe goes first; several frames per Update** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
+* effect: frames carry different content
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: C4 GetAudioToSend 0x0057C016..0x0057C056, 0x0057C94E..0x0057C9C4; B16 0x0057CA0A..0x0057CA30; C15 the UpdateStream loop 0x0057C8E4..0x0057CABE
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-018 — Colour decode: half-width JPEG, BGR to RGB, cv::resize INTER_LINEAR to 320x240; IsColor; Save at quality 90** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Camera.cs`
+* effect: a colour frame looks different
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: A9 RGB dispatch tbh 0x004F21AE, case 9 MiniToJpegHelper(h, w/2, 0x00C48D84), imdecode(1), cvtColor(4) (0x004F237E..0x004F2440); A10 Resize -> cv::resize(..., m) with m = 1 = INTER_LINEAR (0x00870486..0x008704D6); A7 IsColor tbb 0x004F2110 (0x004F2102..0x004F211E); A25 EncodedImage::Save quality 90 (movs r2,#0x5a; 0x004F2EFC..0x004F2FA8)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-019 — The connection-time SetCameraParams: the engine sends stale stack bytes for f32@0 and u16@4 and bool@6 = 1; this stack sends 0.0, 0, true** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: the robot camera starts with different settings
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 1h the connection handler (response byte 0 at 0x006583BA) queues the NV read then sends SetCameraParams reliable, not hot (0x00658414..0x0065842C); 1i sp+8..sp+0xD have no store before EngineToRobot(SetCameraParams&&) copies them (0x007A99A0); strb #1 at sp+0xE (0x00658416); 1p SetCameraParams Pack: f32, u16, Write<bool> (0x007BF456..0x007BF47A), Size 7 (0x007BF4BC)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-020 — A payload that is empty or all 0xFF: the engine reads data[-1] (undefined); this stack treats it as a decode failure** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/MiniJpeg.cs`
+* effect: a degenerate frame crashes or decodes
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: A12 the trailing-0xFF strip has no lower bound (0x004F31C4..0x004F32CC)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-021 — Camera exposure and gain: constructor limits, the initial exposure from vision_config.json, DefaultCameraParams handling, the SetCameraSettings range check and send** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Camera.cs`
+* effect: the camera exposure is set differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 1a VisionSystem ctor: max 66, min 1, minGain 0.1, maxGain 4.0, cur 16, gain 2.0 (0x006B002A..0x006B004A); 1b Init changes none (0x006B0658); 1f VisionComponent::Init reads ImageQuality.InitialExposureTime_ms into .data 0x01051054 (0x00650DAE..0x00650DCA); vision_config.json:46 = 16; 1k HandleDefaultCameraParams: no time-sync gate (0x00537114..0x0053712A); needs IsInitialized (0x006B2CD6); min <= init <= max; SetCameraSettings(init, gain) first (0x00657CCA), then SetCameraExposureParams (0x00657D04); 1l SetCameraSettings: IsExposureValid/IsGainValid (0x006B9DAA..0x006B9DBE, 0x006B9E80..0x006B9EA8), sends {f32 g, u16 e, false} reliable (0x0065614A..0x00656166); 1o the engine never requests DefaultCameraParams
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-022 — At connection the NV CameraCalib read is queued; its callback enables vision on every path and on success installs the calibration and starts processing** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: vision never starts, or starts without the robot calibration
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 1h NVStorageComponent::Read(0x80000001, cb) queued in the connection handler (0x006583E2..0x006583FA); M1 CD21; 1j callback 0x0065AB68: the Failed, SizeMismatch and Recvd paths all end strb.w #1 at +0x48 (0x0065AE7E/0x0065AE80); distortion zeroed when robot+0x24 <= 6; SetCameraCalibration starts processing (0x0065175E..0x00651766); 2a..2f +0x48 is written only by that callback; +0x4B never; +0x49 stays 0
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-023 — EnableColorImages is never sent at connection; it stores and sends the flag; only BehaviorTrackLaser reads it** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Camera.cs`
+* effect: colour is requested when the engine would not
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: A24 EnableColorImages 0x006582CC..0x00658314; 3a writers 0x00650180, 0x006582D6, 0x00658368, 0x00658F74; 3b the only reader is BehaviorTrackLaser (0x005FAC64, 0x005FBDAE)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M3-024 — The audio output source comes from the firmware version JSON: "sim" null means physical, play on the robot** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: audio is routed to the wrong output
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M3-device.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: C1 HandleFirmwareVersion 0x00536934..0x0053698E ("sim" at 0x00536A4C); C2 CreateAudioAnimation 0x0059A070..0x0059A0B6
+* outstanding: compare the code against the inventory rows (the step after approval)
+
 ## What remains after both: blocked externally, or needing hardware
 
 | id | subsystem | status | what | why it cannot be settled here |
 | --- | --- | --- | --- | --- |
 | M1-033 | M1-transport | HARDWARE_ONLY | Robot-side transport behaviour | whether the robot accepts packed frames of types 7, 8 and 9 from the engine (the link check sent none) |
 | M1-043 | M1-transport | HARDWARE_ONLY | Whether a 0-byte UDP read warns | the errno value after a 0-byte recvmsg on the phone |
-| M3-008 | M3-device | HARDWARE_ONLY | Scanline parity: dd written as 01 | whether the firmware selects a physical row from the bit position; only the panel can show this |
-| M3-016 | M3-device | HARDWARE_ONLY | Colour camera frames are half-width three-component JPEG | no colour capture exists; the robot has only ever been asked for grayscale |
+| M3-008 | M3-device | HARDWARE_ONLY | How the firmware maps pair bits to physical display rows, and the robot playback period | only the robot can answer it |
+| M3-016 | M3-device | HARDWARE_ONLY | Whether firmware 2457 emits colour frames in this format, and how the robot reacts to EnableColorImages | only the robot can answer it |
 | M9-013 | M9-wwise-music | BLOCKED_EXTERNAL | Whether Wwise routes MIDI notes into the get-in branch of the singing sampler | the dispatch rule itself. Only a recording of the stock app singing, or a Wwise runtime of this bank version, can settle it. This is the largest remaining doubt about how a rendered song sounds |
 | M9-014 | M9-wwise-music | BLOCKED_EXTERNAL | Whether a note's velocity changes anything, when nothing in the bank binds it | whether Wwise applies a velocity-to-level mapping of its own to a MIDI voice. The shipped songs vary velocity over about 20 units, so if it does, some notes are a few dB quieter than this renders them. Only a Wwise runtime of this bank version, or a recording of the stock app, can settle it. Until the M9 re-audit this was recorded as an equivalent implementation, which the varying velocities do not support |
 | M9-022 | M9-wwise-music | BLOCKED_EXTERNAL | Container semantics: blend and actor-mixer play all children, random picks one by weight avoiding the last, sequence steps its playlist | the runtime dispatch rule, in particular whether a container pre-filters its playlist to children that accept a MIDI note or picks first and then filters |
@@ -150,10 +332,8 @@ Each of these is a question already answered. The original's behaviour is establ
 | M1-039 | M1-transport | COMPATIBILITY_POLICY | Windows ICMP port-unreachable on UDP receive is no data | the original ran on Android/Linux, where an unconnected UDP socket does not surface ICMP port-unreachable (B11 sets no IP_RECVERR, 0x00839D18). On Windows, a UDP receive that fails with ConnectionReset is treated as no data for that receive attempt: no warning, and the drain continues. Other socket errors keep their source-backed handling (B16) |
 | M1-040 | M1-transport | COMPATIBILITY_POLICY | Accept every robot firmware, and log it | the original compares the robot's firmware version with the shipped header (2381) and refuses a mismatch (M1-029). The operator's robot runs 2457. This stack never refuses on version or build: the handshake proceeds as for Success. It logs the robot's firmware version on every connection and in every hardware bundle, and warns whenever it is not 2381, so a firmware-specific problem is known together with its firmware |
 | M1-042 | M1-transport | COMPATIBILITY_POLICY | The original app's post-connect defaults are sent by this stack | in the original, the phone app (Unity) sends these game messages, not the engine: SetRobotVolume with the stored value on any RobotConnectionResponse (ConnectionFlowController.cs:682-686; GameAudioClient.cs:53-121), which makes the engine send SetAudioVolume {u16 vol x 65535} (0x0059A21E..0x0059A256); and GetBlockPoolMessage plus BlockPoolEnabledMessage {true, 0} on Success (RobotEngineManager.cs:373-378; BlockPoolTracker.cs:86-104; ConnectionFlowController.cs:764-780). This stack replaces the app: after a Success response it sends the stored volume (default 1.0) and enables the block pool itself, and the controller can change either. The idle timeouts (StartIdleTimeout / CancelIdleTimeout) are app-backgrounding behaviour and are not sent automatically. Other Unity post-connect flows are replaced by this stack's API |
-| M3-004 | M3-device | COMPATIBILITY_POLICY | Warm-up frames are flagged, and delivered like any other | RobotToEngineImplMessaging::HandleImageChunk and VisionComponent::SetNextImage, read |
-| M3-013 | M3-device | EQUIVALENT_IMPLEMENTATION | TargetInFlight 10, counter-paced feed, Busy window 200 ms, priming | the engine feeds to its own budget every update (UpdateStream 0x0057C84C) |
-| M3-017 | M3-device | COMPATIBILITY_POLICY | Test tones, beeps and sweeps | not applicable |
-| M3-018 | M3-device | COMPATIBILITY_POLICY | Nominal-width diagnostic colour JPEG presentation | COMPATIBILITY_POLICY; the official app interpolation algorithm has not been recovered |
+| M3-004 | M3-device | COMPATIBILITY_POLICY | Warm-up frames are flagged and delivered like any other (the engine has no warm-up discard) | libcozmoEngine.so 3.4.0-1204 |
+| M3-017 | M3-device | COMPATIBILITY_POLICY | Test tones, beeps and sweeps | libcozmoEngine.so 3.4.0-1204 |
 | M4-004 | M4-control | COMPATIBILITY_POLICY | Motion is gated on calibration here; the engine reacts to it instead | HandleMotorCalibration 0x00536A68, BehaviorReactToMotorCalibration 0x006065F0, and the callers of IsHeadCalibrated / IsLiftCalibrated, all read |
 | M4-005 | M4-control | COMPATIBILITY_POLICY | Action ids cycle 1..255 | the engine action id allocation |
 | M4-006 | M4-control | COMPATIBILITY_POLICY | Wheel confirmation tolerance 35 percent / 5 mm per s | not applicable: the engine does not confirm wheel speeds this way |

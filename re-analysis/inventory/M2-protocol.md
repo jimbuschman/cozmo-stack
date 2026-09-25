@@ -1,6 +1,6 @@
 # M2 protocol inventory
 
-**State: approved by the manager on 2026-09-24 under the operator's standing authorisation of that day. The authorisation: source-derived inventories and ordinary source-fidelity decisions need no operator checkpoint; only a deliberate divergence from the engine, or an unresolved source question that materially affects robot behaviour, goes to the operator. MD1..MD6 were reviewed on that basis. None diverges from the engine: MD1, MD2 and MD3 follow the source; MD4 confirms that nothing sends SetAccessoryDiscovery automatically; MD5 and MD6 change no wire behaviour. The inventory is frozen with `python re-analysis/tools/fidelity.py --approve M2-protocol`, and re-approved the same day after corrections C1 and C2.**
+**State: approved by the manager on 2026-09-24 under the operator's standing authorisation of that day. The authorisation: source-derived inventories and ordinary source-fidelity decisions need no operator checkpoint; only a deliberate divergence from the engine, or an unresolved source question that materially affects robot behaviour, goes to the operator. MD1..MD6 were reviewed on that basis. None diverges from the engine: MD1, MD2 and MD3 follow the source; MD4 confirms that nothing sends SetAccessoryDiscovery automatically; MD5 and MD6 change no wire behaviour. The inventory is frozen with `python re-analysis/tools/fidelity.py --approve M2-protocol`, and re-approved the same day after corrections C1, C2 and C3.**
 
 ## Where this comes from
 
@@ -108,6 +108,10 @@
   - **Impact:** a healthy robot does not send truncated messages.
   - **Scope of M2-011 and M2-012:** both are exact apart from this.
 - **C2: D11 wording.** A message truncated exactly at a field boundary is consumed exactly and **kept** by both the engine and the stack. This follows from D1 and D8: for example, FallingStopped with an 8-byte body, where the third ReadBytes(4) at 0x007B0ED8 fails without advancing. D11's "normally a mismatch" holds only for a cut in the middle of a field.
+
+- **C3 (from the M3 gap pass, 2026-09-24): DefaultCameraParams 0xC8 fields @0 and @4 are f32** (maxGain and gain), not u32.
+  - Evidence: operator== `vcmp.f32` at 0x007BF352 and 0x007BF364; the handler's `vldr s0,[r4]` at 0x00657CE0 and `vldr s2,[r4,#4]`.
+  - The widths agree, so M2-012's byte layout holds. The type fix goes into the generator inputs in the M3 batch.
 
 ## Appendix A: OUT pass (engine to robot), extractor report
 

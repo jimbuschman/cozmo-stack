@@ -2,7 +2,7 @@
   "subsystem": "M2-protocol",
   "approved": "2026-09-24",
   "inventory": "re-analysis/inventory/M2-protocol.md",
-  "inventory_sha256": "2130f0f1054f21ef3946f584f9a903631af791de0780fc27f45a69b70f30689b",
+  "inventory_sha256": "f0e29579e1d6be0cf7a5e8f58283fa8c8531c759959507e24b01e54eeeb0843f",
   "records": {
     "M2-001": {
       "status": "EXACT_SOURCE",

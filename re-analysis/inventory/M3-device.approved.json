@@ -1,0 +1,285 @@
+{
+  "subsystem": "M3-device",
+  "approved": "2026-09-24",
+  "inventory": "re-analysis/inventory/M3-device.md",
+  "inventory_sha256": "5ef951890813eb5c68ba192e7e4dc4f1aac220c240f91cef3487bef7c3a91c3e",
+  "records": {
+    "M3-001": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "JPEG reconstruction headers (gray 324 B, colour 334 B 4:2:2), height/width BE at 0x5E..0x61, 240x320 decode check, frame timestamp = last chunk",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "A13 header tables 0x00C48C40 (gray, 0x144 B) and 0x00C48D84 (colour, 0x14E B): SOF0 at 0x59, 1 or 3 components (Y 0x21, Cb/Cr 0x11)",
+        "A12 MiniToJpegHelper writes height BE at 0x5E/0x5F and width BE at 0x60/0x61 (0x004F31C4..0x004F32CC)",
+        "A8 gray dispatch tbh 0x004F2898; A11 rows==240, cols==320 else BadDecode (0x004F2CDA..0x004F2D34); ts = EncodedImage+0xC"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-002": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Image chunk reassembly exactly as EncodedImage::AddChunk, ignored before SyncTimeAck",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "A1 HandleImageChunk exits unless robot+0x29 (0x00535A7A)",
+        "M2 inventory Appendix C R1..R10 (EncodedImage::AddChunk 0x004F1CE0..0x004F1EE0) and H1..H5 (0x00535A64)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-003": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "MiniToJpegHelper: strip trailing 0xFF, drop the flag byte, stuff 0x00 after 0xFF, append FF D9",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "A12 0x004F31C4..0x004F32CC: trailing 0xFF strip (no lower bound), copy data[1..n-1] with 0x00 stuffing after 0xFF, skip the copy if fewer than 2 bytes remain, append FF D9"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-004": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Warm-up frames are flagged and delivered like any other (the engine has no warm-up discard)",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "A15: the engine has no warm-up discard; its only drops are A1 (0x00535A7A) and A3..A6 (0x00535B0E, 0x00652B1C..0x006530C8)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-005": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "At most 3 completed images per event time go on to vision; one EncodedImage at a time",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "A3 counter RobotToEngineImplMessaging+0x128 keyed to the event time vs +0x130; the image passes while count < 3 (0x00535B0E, 0x00535B28..0x00535B52)",
+        "A4..A6 VisionComponent gates and the latest-wins mailbox are the M11 interface (0x00652B1C..0x006530C8)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-006": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Face canvas 64x128; wire image 128 columns x 64 rows as 32 two-row pairs; 33 ms per stream frame",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "B1 Image(64,128) and warpAffine to Size(128,64) (0x00585B3E..0x00585CB2)",
+        "B15 from B6, B10, B14: 128 columns x 64 rows, 32 pairs per column",
+        "B18 stream time +0x84 += 0x21 = 33 ms per fully sent frame (0x0057CA94..0x0057CA9C)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-007": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "CompressRLE exactly: skip, repeat, runs over row pairs, the trailing-run rule, raw fallback at >= 1024 bytes",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "B6 requires 64x128 (0x00581912..0x0058197A)",
+        "B7 u64 column masks, non-zero is lit (0x0058197C..0x005819E8)",
+        "B8 skip 0b00nnnnnn (0x00581B0A..0x00581B42); B9 repeat 0x40|k (0x00581A06..0x00581A46)",
+        "B10 run 0x80|((len-1)<<2)|pair (0x00581A48..0x00581AB0); B11 trailing run always at c==127 or pair!=0 (0x00581AB2..0x00581AE2)",
+        "B12 raw fallback when the RLE is >= 1024 bytes (cmp.w r1,r0,lsr #10; 0x00581B76..0x00581BA0)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-008": {
+      "status": "HARDWARE_ONLY",
+      "title": "How the firmware maps pair bits to physical display rows, and the robot playback period",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "engine side: pair bit0 = row 2k, bit1 = row 2k+1 (B10 0x00581A48..0x00581AB0; decoder B14 0x0057FCF0..0x0057FDD8)",
+        "firmware images are encrypted (entropy 7.8-8.0 bits/byte) and 2457 is not shipped"
+      ],
+      "live_path": true,
+      "hardware_required": true
+    },
+    "M3-009": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "A blank canvas encodes as {0x3F, 0x3F}",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "B13 follows from B8 (0x00581B0A..0x00581B42): two skip-64 opcodes"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-010": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "encodeMuLaw(float) exactly; no volume scaling; short frames zero-padded",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "C6 encodeMuLaw 0x00597AD8..0x00597B8E, segment table 0x00C5C3F0, 32767.0 at 0x00597C18; NaN warns and gives 0",
+        "C5 PopRobotAudioMessage 0x00597DD4..0x00597E4E: zero-pad below 744",
+        "C7 no volume scaling (0x00597DFC..0x00597E02)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-011": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "22320 Hz, 744 samples per frame",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "C3 HijackAudioPlugIn(22320, 744) and SetupHijackAudioPlugInAndRobotAudioBuffers(22320, 744) (0x005942CE..0x005942EA)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-012": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The engine send budgets: 14 unplayed audio frames; min(8192 - unplayed bytes, 30000); counters from AnimationState and every send",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "C9 UpdateAmountToSend 0x0057C6F6..0x0057C7AC (14 at 0x0057C79E add.w r1,r1,#0xe)",
+        "C10 the AnimationState handler writes the played counters (0x00537FD0..0x0053800C)",
+        "C11 bytes += EngineToRobot::Size(), frames += 1 for 0x8E/0x8F (0x0057BFB0..0x0057BFCC)",
+        "C12 EndOfAnimation counts one frame plus its bytes (0x0057C464..0x0057C496); C13 the ctor zeroes the counters (0x0050FD0A)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-013": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The feed: FIFO drain stopping at the first over-budget message; per Update, one 33 ms frame at a time while the drain completes and the audio animation is ready",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "C14 SendBufferedMessages 0x0057BF60..0x0057C010",
+        "C15 UpdateStream 0x0057C8E4..0x0057CABE, 0x0057CC6C..0x0057CCA6",
+        "C16 readiness 0x0059A1CC..0x0059A1F6, states per Q5 GetStringForAnimationState 0x00596434"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-014": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Every streamed message is sent reliable and not hot; EndOfAnimation directly, not budget-gated",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "C14 SendMessage(reliable=1, hot=0) in SendBufferedMessages (0x0057BF60..0x0057C010)",
+        "C12 SendEndOfAnimation 0x0057C464..0x0057C496"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-015": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "One audio message per stream frame (AudioSample or AudioSilence); the face keyframe goes first; several frames per Update",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "C4 GetAudioToSend 0x0057C016..0x0057C056, 0x0057C94E..0x0057C9C4",
+        "B16 0x0057CA0A..0x0057CA30",
+        "C15 the UpdateStream loop 0x0057C8E4..0x0057CABE"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-016": {
+      "status": "HARDWARE_ONLY",
+      "title": "Whether firmware 2457 emits colour frames in this format, and how the robot reacts to EnableColorImages",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "A14 encoding 8 with data[0] != 0 becomes 9 (0x004F1D8C)",
+        "3b the engine flag has no decode consumer (0x005FAC64, 0x005FBDAE)",
+        "firmware 2457 is not shipped"
+      ],
+      "live_path": true,
+      "hardware_required": true
+    },
+    "M3-017": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Test tones, beeps and sweeps",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "C4: the engine plays audio only through the animation stream (0x0057C016..0x0057C056); test tones have no engine counterpart"
+      ],
+      "live_path": false,
+      "hardware_required": false
+    },
+    "M3-018": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Colour decode: half-width JPEG, BGR to RGB, cv::resize INTER_LINEAR to 320x240; IsColor; Save at quality 90",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "A9 RGB dispatch tbh 0x004F21AE, case 9 MiniToJpegHelper(h, w/2, 0x00C48D84), imdecode(1), cvtColor(4) (0x004F237E..0x004F2440)",
+        "A10 Resize -> cv::resize(..., m) with m = 1 = INTER_LINEAR (0x00870486..0x008704D6)",
+        "A7 IsColor tbb 0x004F2110 (0x004F2102..0x004F211E)",
+        "A25 EncodedImage::Save quality 90 (movs r2,#0x5a; 0x004F2EFC..0x004F2FA8)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-019": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The connection-time SetCameraParams: the engine sends stale stack bytes for f32@0 and u16@4 and bool@6 = 1; this stack sends 0.0, 0, true",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "1h the connection handler (response byte 0 at 0x006583BA) queues the NV read then sends SetCameraParams reliable, not hot (0x00658414..0x0065842C)",
+        "1i sp+8..sp+0xD have no store before EngineToRobot(SetCameraParams&&) copies them (0x007A99A0); strb #1 at sp+0xE (0x00658416)",
+        "1p SetCameraParams Pack: f32, u16, Write<bool> (0x007BF456..0x007BF47A), Size 7 (0x007BF4BC)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-020": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "A payload that is empty or all 0xFF: the engine reads data[-1] (undefined); this stack treats it as a decode failure",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "A12 the trailing-0xFF strip has no lower bound (0x004F31C4..0x004F32CC)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-021": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Camera exposure and gain: constructor limits, the initial exposure from vision_config.json, DefaultCameraParams handling, the SetCameraSettings range check and send",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "1a VisionSystem ctor: max 66, min 1, minGain 0.1, maxGain 4.0, cur 16, gain 2.0 (0x006B002A..0x006B004A); 1b Init changes none (0x006B0658)",
+        "1f VisionComponent::Init reads ImageQuality.InitialExposureTime_ms into .data 0x01051054 (0x00650DAE..0x00650DCA); vision_config.json:46 = 16",
+        "1k HandleDefaultCameraParams: no time-sync gate (0x00537114..0x0053712A); needs IsInitialized (0x006B2CD6); min <= init <= max; SetCameraSettings(init, gain) first (0x00657CCA), then SetCameraExposureParams (0x00657D04)",
+        "1l SetCameraSettings: IsExposureValid/IsGainValid (0x006B9DAA..0x006B9DBE, 0x006B9E80..0x006B9EA8), sends {f32 g, u16 e, false} reliable (0x0065614A..0x00656166)",
+        "1o the engine never requests DefaultCameraParams"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-022": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "At connection the NV CameraCalib read is queued; its callback enables vision on every path and on success installs the calibration and starts processing",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "1h NVStorageComponent::Read(0x80000001, cb) queued in the connection handler (0x006583E2..0x006583FA); M1 CD21",
+        "1j callback 0x0065AB68: the Failed, SizeMismatch and Recvd paths all end strb.w #1 at +0x48 (0x0065AE7E/0x0065AE80); distortion zeroed when robot+0x24 <= 6; SetCameraCalibration starts processing (0x0065175E..0x00651766)",
+        "2a..2f +0x48 is written only by that callback; +0x4B never; +0x49 stays 0"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-023": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "EnableColorImages is never sent at connection; it stores and sends the flag; only BehaviorTrackLaser reads it",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "A24 EnableColorImages 0x006582CC..0x00658314",
+        "3a writers 0x00650180, 0x006582D6, 0x00658368, 0x00658F74",
+        "3b the only reader is BehaviorTrackLaser (0x005FAC64, 0x005FBDAE)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-024": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The audio output source comes from the firmware version JSON: \"sim\" null means physical, play on the robot",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "C1 HandleFirmwareVersion 0x00536934..0x0053698E (\"sim\" at 0x00536A4C)",
+        "C2 CreateAudioAnimation 0x0059A070..0x0059A0B6"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    }
+  }
+}

@@ -89,9 +89,12 @@
       "name": "Camera, display and audio device layer",
       "milestone": "M3",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true,
+      "implementation_fidelity_complete": false,
       "review": {
-        "state": "UNREVIEWED"
+        "state": "INVENTORY_APPROVED",
+        "inventory": "re-analysis/inventory/M3-device.md",
+        "approved": "2026-09-24",
+        "snapshot": "re-analysis/inventory/M3-device.approved.json"
       }
     },
     {
@@ -1235,35 +1238,35 @@
     {
       "id": "M3-001",
       "subsystem": "M3-device",
-      "title": "JPEG header tables and the size field at offset 94",
+      "title": "JPEG reconstruction headers (gray 324 B, colour 334 B 4:2:2), height/width BE at 0x5E..0x61, 240x320 decode check, frame timestamp = last chunk",
       "location": "cozmo-stack/src/Cozmo.Robot/MiniJpeg.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "MiniGrayToJpeg table 0x00C48C40",
-        "MiniColorToJpeg table 0x00C48D84"
+        "A13 header tables 0x00C48C40 (gray, 0x144 B) and 0x00C48D84 (colour, 0x14E B): SOF0 at 0x59, 1 or 3 components (Y 0x21, Cb/Cr 0x11)",
+        "A12 MiniToJpegHelper writes height BE at 0x5E/0x5F and width BE at 0x60/0x61 (0x004F31C4..0x004F32CC)",
+        "A8 gray dispatch tbh 0x004F2898; A11 rows==240, cols==320 else BadDecode (0x004F2CDA..0x004F2D34); ts = EncodedImage+0xC"
       ],
       "live_path": true,
-      "test": "DeviceTests"
+      "test": "DeviceTests",
+      "effect": "a camera frame is reconstructed or rejected differently",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "subsystem": "M3-device",
-      "title": "Image chunk reassembly follows EncodedImage::AddChunk",
+      "title": "Image chunk reassembly exactly as EncodedImage::AddChunk, ignored before SyncTimeAck",
       "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
-      "effect": null,
-      "provenance": "EncodedImage::AddChunk 0x004F1CE0, read instruction by instruction",
-      "authority": "EncodedImage::AddChunk, read",
+      "effect": "a frame is assembled, dropped or split differently",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "EncodedImage::AddChunk 0x004F1CE0 is the whole reassembly rule. A chunk whose payload is larger than 0x4B0 = 1200 bytes is refused before any bookkeeping (cmp.w r1, #0x4b0 at 0x004F1CF0, warning EncodedImage.AddChunk.ChunkTooBig).",
-        "One image is collected at a time: the chunk's image id is compared with the id held at +0x1C (0x004F1D38) and, when they differ, a new image starts there and then - buffer cleared, reserve(0x38400), chunk counter at +0x23 zeroed, expected chunk id at +0x21 zeroed. Whatever was being collected is simply gone; there is no queue of partial images.",
-        "The new image is valid (+0x22) only if its first chunk is chunk 0: cmp r0, #0 / moveq r0, #1 at 0x004F1D68. Its resolution must be 4, and the engine then writes 320 x 240 into the image (0x004F1D4E..0x004F1D58); any other resolution warns through EnumToString(ImageResolution) and the chunk goes no further.",
-        "The encoding at +0x20 is the chunk's own except that JPEGMinimizedGray (8) with a non-zero first payload byte becomes JPEGMinimizedColor (9): cmp r2, #0 / movne r2, #9 / cmp r1, #8 / movne r2, r1 at 0x004F1D8C.",
-        "Every chunk must carry the expected id or it warns ChunkOutOfOrder and clears the valid flag (0x004F1DB2..0x004F1DF4); the expected id becomes chunkId + 1 and the chunk counter rises. The last chunk is the one whose id is the announced count minus one (0x004F1E12), not simply one that carries a count - which is why a robot that sends the count only on the final chunk works.",
-        "On the last chunk the engine checks that it took exactly that many chunks (UnexpectedNumberOfChunks, 0x004F1E6A) and that the timestamp did not go backwards (TimestampNotIncreasing, 0x004F1E30), so the frame's timestamp is the one on its last chunk. Data is appended only while the image is valid (0x004F1EAE), and a last chunk on an invalidated image is the channel note \"Received last chunk of invalidated image\" rather than a frame.",
-        "The chunk field offsets the engine reads - +0 timestamp, +4 image id, +0xC encoding, +0xD resolution, +0xE chunk count, +0xF chunk id, +0x14 data - match this stack's ImageChunk layout field for field."
+        "A1 HandleImageChunk exits unless robot+0x29 (0x00535A7A)",
+        "M2 inventory Appendix C R1..R10 (EncodedImage::AddChunk 0x004F1CE0..0x004F1EE0) and H1..H5 (0x00535A64)"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": "DeviceTests.ANewImageIdAbandonsWhateverWasBeingCollected",
@@ -1271,19 +1274,16 @@
     },
     {
       "subsystem": "M3-device",
-      "title": "Trailing 0xFF strip, byte re-stuffing and EOI append",
+      "title": "MiniToJpegHelper: strip trailing 0xFF, drop the flag byte, stuff 0x00 after 0xFF, append FF D9",
       "location": "cozmo-stack/src/Cozmo.Robot/MiniJpeg.cs",
-      "effect": null,
-      "provenance": "EncodedImage::MiniToJpegHelper 0x004F31C4",
-      "authority": "EncodedImage::MiniToJpegHelper, read",
+      "effect": "a reconstructed JPEG differs from the engine",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "MiniGrayToJpeg 0x004F31A4 and MiniColorToJpeg 0x004F32D0 both call MiniToJpegHelper 0x004F31C4 with their header - 0x144 bytes at 0x00C48C40 and 0x14E bytes at 0x00C48D84 - which are the tables this stack already carries.",
-        "The helper reserves headerLen + 2 * size (0x004F31DE), inserts the header at the front, and patches the two 16-bit dimensions at output offsets 0x5E..0x61 (0x004F31F4..0x004F320C): its second argument first, which is the height, then the width. That is the 94 this stack uses.",
-        "It then walks back over the trailing 0xFF bytes (0x004F3214..0x004F321C), copies from index 1 rather than 0 - the loop counter starts at 2 and reads data[i - 1] at 0x004F3226, so the colour flag byte is dropped - appends a 0x00 after every 0xFF it copies (0x004F325A), and finishes with 0xFF 0xD9 at 0x004F3286 and 0x004F32AA. A payload of fewer than two bytes after the strip skips the copy (cmp r5, #2 at 0x004F321E).",
-        "Every step matches MiniJpeg.ToJpeg as it already stood; what was a PyCozmo transcription is now read from the engine."
+        "A12 0x004F31C4..0x004F32CC: trailing 0xFF strip (no lower bound), copy data[1..n-1] with 0x00 stuffing after 0xFF, skip the copy if fewer than 2 bytes remain, append FF D9"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": "DeviceTests.MiniJpegPatchesTheFrameSizeAndRestoresByteStuffing",
@@ -1291,14 +1291,13 @@
     },
     {
       "subsystem": "M3-device",
-      "title": "Warm-up frames are flagged, and delivered like any other",
+      "title": "Warm-up frames are flagged and delivered like any other (the engine has no warm-up discard)",
       "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
       "effect": "which frame a caller that asks for a picture gets first",
       "provenance": "a measurement of this hardware, kept as a flag on top of the engine's behaviour",
-      "authority": "RobotToEngineImplMessaging::HandleImageChunk and VisionComponent::SetNextImage, read",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "The engine discards nothing at camera start-up. HandleImageChunk 0x00535A64 hands every image AddChunk completes to VisionComponent::SetNextImage (0x00535B94), and SetNextImage decodes it on the spot; the only drops on that path are invalid images and the per-tick cap recorded under M3-005. No symbol or string in libcozmoEngine.so speaks of skipping, warming up or settling frames.",
-        "So the fifteen-frame warm-up is this stack's own: the frames are flagged IsWarmUp and delivered like any other, the vision path sees all of them, and only CozmoRobot.CaptureFrameAsync waits past them, at its caller's option. The count comes from the firmware-2457 capture of 2026-09-18, where the picture is torn and rolls by one macroblock row per frame for about eleven frames."
+        "A15: the engine has no warm-up discard; its only drops are A1 (0x00535A7A) and A3..A6 (0x00535B0E, 0x00652B1C..0x006530C8)"
       ],
       "status": "COMPATIBILITY_POLICY",
       "unresolved": null,
@@ -1309,18 +1308,17 @@
     },
     {
       "subsystem": "M3-device",
-      "title": "One image is collected at a time, and three a tick reach vision",
+      "title": "At most 3 completed images per event time go on to vision; one EncodedImage at a time",
       "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
-      "effect": null,
-      "provenance": "EncodedImage::AddChunk 0x004F1CE0 and HandleImageChunk 0x00535A64",
-      "authority": "EncodedImage::AddChunk and RobotToEngineImplMessaging::HandleImageChunk, read",
+      "effect": "more or fewer frames reach vision",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "There is no image queue to have a depth. AddChunk holds one image, keyed by the id at +0x1C, and a chunk with a different id starts a new one immediately (0x004F1D38), so a partial image is abandoned the moment the next one begins. This stack kept the newest two, which was a guess; it now keeps one.",
-        "The only other drop is per basestation tick. HandleImageChunk 0x00535A64 compares the event's time with the last tick it saw (the double at +0x130): a new tick zeroes the counter at +0x128 and the image goes to VisionComponent::SetNextImage; within one tick the counter rises and an image whose count reaches 3 is dropped with \"Ignoring %dth image (with t=%u) received during basestation tick at %fsec\" (0x00535B46..0x00535B6C). The same counter gates forwarding chunks to the game at 0x00535AAC.",
-        "At the 15 frames a second this camera produces against a 30 Hz tick a second complete image inside one tick cannot arise, so the cap is recorded as CozmoCamera.MaxImagesPerTick and not counted."
+        "A3 counter RobotToEngineImplMessaging+0x128 keyed to the event time vs +0x130; the image passes while count < 3 (0x00535B0E, 0x00535B28..0x00535B52)",
+        "A4..A6 VisionComponent gates and the latest-wins mailbox are the M11 interface (0x00652B1C..0x006530C8)"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": "DeviceTests.ANewImageIdAbandonsWhateverWasBeingCollected",
@@ -1329,142 +1327,168 @@
     {
       "id": "M3-006",
       "subsystem": "M3-device",
-      "title": "Face wire image 128x32, canvas 128x64, 33.3 ms interval",
+      "title": "Face canvas 64x128; wire image 128 columns x 64 rows as 32 two-row pairs; 33 ms per stream frame",
       "location": "cozmo-stack/src/Cozmo.Robot/Display.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "CompressRLE 0x00581904",
-        "DrawFace"
+        "B1 Image(64,128) and warpAffine to Size(128,64) (0x00585B3E..0x00585CB2)",
+        "B15 from B6, B10, B14: 128 columns x 64 rows, 32 pairs per column",
+        "B18 stream time +0x84 += 0x21 = 33 ms per fully sent frame (0x0057CA94..0x0057CA9C)"
       ],
       "live_path": true,
-      "test": "DeviceTests"
+      "test": "DeviceTests",
+      "effect": "the face image is laid out or timed differently",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "subsystem": "M3-device",
-      "title": "The face encoder is the engine's: skip, repeat, runs and the raw fallback",
+      "title": "CompressRLE exactly: skip, repeat, runs over row pairs, the trailing-run rule, raw fallback at >= 1024 bytes",
       "location": "cozmo-stack/src/Cozmo.Robot/Display.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "FaceAnimationManager::CompressRLE 0x00581904 builds one 64-bit mask per column, bit r for canvas row r: the ^ 0x3F at 0x005819A0 is part of computing the two shift amounts, not a flip - row 0 lands on bit 0 (lsr of 0x80000000 by 31) and row 63 on bit 63",
-        "an empty column (0x00581B0A) counts the consecutive empty columns that follow under r5 + r3 <= 0x7E and r3 <= 0x3E and emits the count alone, command 00, advancing by count + 1",
-        "a column equal to the one before (0x00581A0A) counts the same way and emits 0x40 | (count - 1) at 0x00581B54, where the adds r0, #0xff is the minus one",
-        "otherwise it walks the mask two bits at a time and emits 0x7C + 4 * length or'd with the pair and with 0x80 (0x00581A6C), which is exactly 0x80 | (length-1) << 2 for 1..16 and 0xC0 | (length-17) << 2 for 17..32",
-        "a trailing blank run is dropped unless the next column is both non-empty and different (0x00581ABC..0x00581AE2), which is what lets the following skip or repeat do the column advance",
-        "above 1024 bytes the RLE is thrown away and the raw 1024-byte mask buffer is sent instead (size >> 10 non-zero at 0x00581B7E, then a resize to 0x400 and a byte copy)",
-        "the decoder here had two flags where one will do, and had the skip command consult the wrong one; the 28 sequences Cozmo itself produced decode identically either way, and a column ending on a drawn run followed by an empty column is the case that tells them apart"
+        "B6 requires 64x128 (0x00581912..0x0058197A)",
+        "B7 u64 column masks, non-zero is lit (0x0058197C..0x005819E8)",
+        "B8 skip 0b00nnnnnn (0x00581B0A..0x00581B42); B9 repeat 0x40|k (0x00581A06..0x00581A46)",
+        "B10 run 0x80|((len-1)<<2)|pair (0x00581A48..0x00581AB0); B11 trailing run always at c==127 or pair!=0 (0x00581AB2..0x00581AE2)",
+        "B12 raw fallback when the RLE is >= 1024 bytes (cmp.w r1,r0,lsr #10; 0x00581B76..0x00581BA0)"
       ],
       "prior": "runs only, every column padded to 32 rows, no skip, no repeat, and an image whose RLE was too big refused instead of sent raw",
       "live_path": true,
       "test": "DeviceTests.AFaceTooComplexForTheRunLengthEncodingIsSentRaw, DeviceTests.UniformFacesUseTheSkipAndRepeatCommands",
-      "id": "M3-007"
+      "id": "M3-007",
+      "effect": "the face is encoded into different bytes",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "id": "M3-008",
       "subsystem": "M3-device",
-      "title": "Scanline parity: dd written as 01",
+      "title": "How the firmware maps pair bits to physical display rows, and the robot playback period",
       "location": "cozmo-stack/src/Cozmo.Robot/Display.cs",
-      "effect": "each face pixel lights one of two physical rows, or both",
-      "provenance": "a fixed choice; PyCozmo reading is that either bit lights the pixel",
-      "authority": "CompressRLE 0x00581904 shows dd carries the bits of a pair of canvas rows; the firmware use of them is not in the engine",
+      "effect": "the face shows interlaced or shifted rows",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "CompressRLE 0x00581904"
+        "engine side: pair bit0 = row 2k, bit1 = row 2k+1 (B10 0x00581A48..0x00581AB0; decoder B14 0x0057FCF0..0x0057FDD8)",
+        "firmware images are encrypted (entropy 7.8-8.0 bits/byte) and 2457 is not shipped"
       ],
       "status": "HARDWARE_ONLY",
-      "unresolved": "whether the firmware selects a physical row from the bit position; only the panel can show this",
+      "unresolved": "only the robot can answer it",
       "hardware_required": true,
       "live_path": true,
       "test": null
     },
     {
       "subsystem": "M3-device",
-      "title": "A blank face is two skip-64 commands",
+      "title": "A blank canvas encodes as {0x3F, 0x3F}",
       "location": "cozmo-stack/src/Cozmo.Robot/Display.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "running the engine's own rule on an empty image gives it: the skip loop's bounds are r5 + r3 <= 0x7E and r3 <= 0x3E, so the first command covers columns 0..63 and the second 64..127, each emitted as the byte 63",
-        "the encoder here now produces exactly { 63, 63 } and the decoder brings back a blank image"
+        "B13 follows from B8 (0x00581B0A..0x00581B42): two skip-64 opcodes"
       ],
       "prior": "plausible and decoding to blank, but never produced by an encoder that had the skip command",
       "live_path": true,
       "test": "DeviceTests.UniformFacesUseTheSkipAndRepeatCommands",
-      "id": "M3-009"
+      "id": "M3-009",
+      "effect": "a blank face is sent as different bytes",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "id": "M3-010",
       "subsystem": "M3-device",
-      "title": "mu-law codec is Anki own companding, not G.711",
+      "title": "encodeMuLaw(float) exactly; no volume scaling; short frames zero-padded",
       "location": "cozmo-stack/src/Cozmo.Robot/Audio.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "encodeMuLaw 0x00597AD8",
-        "re-analysis/disassembly/dis_mulaw.txt"
+        "C6 encodeMuLaw 0x00597AD8..0x00597B8E, segment table 0x00C5C3F0, 32767.0 at 0x00597C18; NaN warns and gives 0",
+        "C5 PopRobotAudioMessage 0x00597DD4..0x00597E4E: zero-pad below 744",
+        "C7 no volume scaling (0x00597DFC..0x00597E02)"
       ],
       "live_path": true,
-      "test": "DeviceTests"
+      "test": "DeviceTests",
+      "effect": "audio sounds different",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "id": "M3-011",
       "subsystem": "M3-device",
-      "title": "22320 Hz sample rate, 744 samples per frame, 30 Hz frames",
+      "title": "22320 Hz, 744 samples per frame",
       "location": "cozmo-stack/src/Cozmo.Robot/Audio.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "AnimConstants::AUDIO_SAMPLE_RATE and AUDIO_SAMPLE_SIZE via EnumToString 0x007BC7D8",
-        "CozmoAudioController::SetupPlugins 0x005942B0"
+        "C3 HijackAudioPlugIn(22320, 744) and SetupHijackAudioPlugInAndRobotAudioBuffers(22320, 744) (0x005942CE..0x005942EA)"
       ],
       "live_path": true,
-      "test": "SourceFidelityTests"
+      "test": "SourceFidelityTests",
+      "effect": "audio plays at the wrong rate",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "id": "M3-012",
       "subsystem": "M3-device",
-      "title": "14-frame robot audio buffer",
-      "location": "cozmo-stack/src/Cozmo.Robot/Audio.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "title": "The engine send budgets: 14 unplayed audio frames; min(8192 - unplayed bytes, 30000); counters from AnimationState and every send",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "UpdateAmountToSend 0x0057C6F0"
+        "C9 UpdateAmountToSend 0x0057C6F6..0x0057C7AC (14 at 0x0057C79E add.w r1,r1,#0xe)",
+        "C10 the AnimationState handler writes the played counters (0x00537FD0..0x0053800C)",
+        "C11 bytes += EngineToRobot::Size(), frames += 1 for 0x8E/0x8F (0x0057BFB0..0x0057BFCC)",
+        "C12 EndOfAnimation counts one frame plus its bytes (0x0057C464..0x0057C496); C13 the ctor zeroes the counters (0x0050FD0A)"
       ],
-      "live_path": true
+      "live_path": true,
+      "effect": "the robot is sent more or less than the engine would",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "test": ""
     },
     {
       "id": "M3-013",
       "subsystem": "M3-device",
-      "title": "TargetInFlight 10, counter-paced feed, Busy window 200 ms, priming",
-      "location": "cozmo-stack/src/Cozmo.Robot/Audio.cs",
-      "effect": "audio underruns or the robot buffer overflows",
-      "provenance": "a choice of this stack, under the engine 14-frame budget",
-      "authority": "the engine feeds to its own budget every update (UpdateStream 0x0057C84C)",
+      "title": "The feed: FIFO drain stopping at the first over-budget message; per Update, one 33 ms frame at a time while the drain completes and the audio animation is ready",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "effect": "audio and face frames are paced differently",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "UpdateAmountToSend 0x0057C6F0"
+        "C14 SendBufferedMessages 0x0057BF60..0x0057C010",
+        "C15 UpdateStream 0x0057C8E4..0x0057CABE, 0x0057CC6C..0x0057CCA6",
+        "C16 readiness 0x0059A1CC..0x0059A1F6, states per Q5 GetStringForAnimationState 0x00596434"
       ],
-      "status": "EQUIVALENT_IMPLEMENTATION",
-      "unresolved": "",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": "DeviceTests"
     },
     {
       "subsystem": "M3-device",
-      "title": "Audio frames are sent reliably",
+      "title": "Every streamed message is sent reliable and not hot; EndOfAnimation directly, not budget-gated",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
-      "effect": null,
-      "provenance": "AnimationStreamer::SendBufferedMessages 0x0057BF60 and UpdateAmountToSend 0x0057C6F0",
-      "authority": "AnimationStreamer::SendBufferedMessages, read",
+      "effect": "stream messages are lost or reordered",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "SendBufferedMessages 0x0057BF60 walks the streamer's buffered EngineToRobot messages and for each one reads the tag and masks it: and r0, r0, #0xfe; cmp r0, #0x8e (0x0057BF8C) sets r5 = 1 for an audio frame, which is animAudioSample 0x8E or animAudioSilence 0x8F.",
-        "It then calls Robot::SendMessage(EngineToRobot const&, bool reliable, bool hot) with movs r2, #1 and movs r3, #0 at 0x0057BFA6, for the audio frames and for everything else alike - so audio is reliable and not hot, and nothing in the streamer sends anything unreliably.",
-        "What varies is the amount, not the reliability: the streamer holds a byte budget at +0x98 and an audio-frame budget at +0x9C, stops when the next message is over the byte budget (cmp r4, r1; bhi) or the audio budget has no room (cmp r0, r5; blt), and decrements both by what it sent (0x0057BFB0..0x0057BFB8).",
-        "UpdateAmountToSend 0x0057C6F0 refills them from four counters the robot reports at Robot+0x238: bytes played, bytes streamed, audio frames played, audio frames streamed. The byte budget is min(8192 - (streamed - played), 30000) - add.w r5, r0, #0x2000 then movw r0, #0x7530 and the lt select at 0x0057C79C - and the audio budget is 14 - (streamed - played), add.w r1, r1, #0xe, each clamped at zero; a negative byte budget logs the warning AnimationStreamer.UpdateAmountToSend.NegativeMinBytesFreeInRobot with \"minBytesFree:%d numBytesStreamed:%d numBytesPlayed:%d\".",
-        "CozmoRobot.AudioReliable therefore defaults to true because that is what the engine does. The switch itself is this stack's own addition for a lossy link, documented as such."
+        "C14 SendMessage(reliable=1, hot=0) in SendBufferedMessages (0x0057BF60..0x0057C010)",
+        "C12 SendEndOfAnimation 0x0057C464..0x0057C496"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": "DeviceTests.AudioFramesGoOutReliablyAsTheStreamerSendsThem",
@@ -1473,30 +1497,39 @@
     {
       "id": "M3-015",
       "subsystem": "M3-device",
-      "title": "One face frame and one audio frame per animation tick",
+      "title": "One audio message per stream frame (AudioSample or AudioSilence); the face keyframe goes first; several frames per Update",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "AnimationStreamer::UpdateStream 0x0057C84C"
+        "C4 GetAudioToSend 0x0057C016..0x0057C056, 0x0057C94E..0x0057C9C4",
+        "B16 0x0057CA0A..0x0057CA30",
+        "C15 the UpdateStream loop 0x0057C8E4..0x0057CABE"
       ],
-      "live_path": true
+      "live_path": true,
+      "effect": "frames carry different content",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "test": ""
     },
     {
       "id": "M3-016",
       "subsystem": "M3-device",
-      "title": "Colour camera frames are half-width three-component JPEG",
+      "title": "Whether firmware 2457 emits colour frames in this format, and how the robot reacts to EnableColorImages",
       "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
-      "effect": "a colour frame decodes to the wrong geometry",
-      "provenance": "the colour header table, never exercised",
-      "authority": "MiniColorToJpeg table 0x00C48D84",
+      "effect": "colour frames never arrive or arrive differently",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "MiniColorToJpeg table 0x00C48D84"
+        "A14 encoding 8 with data[0] != 0 becomes 9 (0x004F1D8C)",
+        "3b the engine flag has no decode consumer (0x005FAC64, 0x005FBDAE)",
+        "firmware 2457 is not shipped"
       ],
       "status": "HARDWARE_ONLY",
-      "unresolved": "no colour capture exists; the robot has only ever been asked for grayscale",
+      "unresolved": "only the robot can answer it",
       "hardware_required": true,
-      "live_path": false,
+      "live_path": true,
       "test": null
     },
     {
@@ -1506,8 +1539,10 @@
       "location": "cozmo-stack/src/Cozmo.Robot/Audio.cs",
       "effect": "none on the robot behaviour under test",
       "provenance": "harness signals of this stack",
-      "authority": "not applicable",
-      "evidence": [],
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "C4: the engine plays audio only through the animation stream (0x0057C016..0x0057C056); test tones have no engine counterpart"
+      ],
       "status": "COMPATIBILITY_POLICY",
       "unresolved": "",
       "hardware_required": false,
@@ -1517,16 +1552,21 @@
     {
       "id": "M3-018",
       "subsystem": "M3-device",
-      "title": "Nominal-width diagnostic colour JPEG presentation",
+      "title": "Colour decode: half-width JPEG, BGR to RGB, cv::resize INTER_LINEAR to 320x240; IsColor; Save at quality 90",
       "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
-      "effect": "saved diagnostic colour images are viewable at nominal 320x240 geometry while raw source JPEG bytes remain unchanged",
-      "provenance": "local presentation policy: duplicate each decoded 160-wide colour column to 320-wide output",
-      "authority": "COMPATIBILITY_POLICY; the official app interpolation algorithm has not been recovered",
-      "evidence": [],
-      "status": "COMPATIBILITY_POLICY",
-      "unresolved": "",
+      "effect": "a colour frame looks different",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "A9 RGB dispatch tbh 0x004F21AE, case 9 MiniToJpegHelper(h, w/2, 0x00C48D84), imdecode(1), cvtColor(4) (0x004F237E..0x004F2440)",
+        "A10 Resize -> cv::resize(..., m) with m = 1 = INTER_LINEAR (0x00870486..0x008704D6)",
+        "A7 IsColor tbb 0x004F2110 (0x004F2102..0x004F211E)",
+        "A25 EncodedImage::Save quality 90 (movs r2,#0x5a; 0x004F2EFC..0x004F2FA8)"
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
-      "live_path": false,
+      "live_path": true,
       "test": "DeviceTests.ColourSaveExpandsEncodedGeometryToNominalPresentationWidth"
     },
     {
@@ -4694,6 +4734,119 @@
       "hardware_required": false,
       "live_path": true,
       "test": "M2ProtocolTests.M2_001_D8_AFailedReadDoesNotAdvanceAndIsNotSticky"
+    },
+    {
+      "id": "M3-019",
+      "subsystem": "M3-device",
+      "title": "The connection-time SetCameraParams: the engine sends stale stack bytes for f32@0 and u16@4 and bool@6 = 1; this stack sends 0.0, 0, true",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "evidence": [
+        "1h the connection handler (response byte 0 at 0x006583BA) queues the NV read then sends SetCameraParams reliable, not hot (0x00658414..0x0065842C)",
+        "1i sp+8..sp+0xD have no store before EngineToRobot(SetCameraParams&&) copies them (0x007A99A0); strb #1 at sp+0xE (0x00658416)",
+        "1p SetCameraParams Pack: f32, u16, Write<bool> (0x007BF456..0x007BF47A), Size 7 (0x007BF4BC)"
+      ],
+      "effect": "the robot camera starts with different settings",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M3-020",
+      "subsystem": "M3-device",
+      "title": "A payload that is empty or all 0xFF: the engine reads data[-1] (undefined); this stack treats it as a decode failure",
+      "location": "cozmo-stack/src/Cozmo.Robot/MiniJpeg.cs",
+      "evidence": [
+        "A12 the trailing-0xFF strip has no lower bound (0x004F31C4..0x004F32CC)"
+      ],
+      "effect": "a degenerate frame crashes or decodes",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M3-021",
+      "subsystem": "M3-device",
+      "title": "Camera exposure and gain: constructor limits, the initial exposure from vision_config.json, DefaultCameraParams handling, the SetCameraSettings range check and send",
+      "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
+      "evidence": [
+        "1a VisionSystem ctor: max 66, min 1, minGain 0.1, maxGain 4.0, cur 16, gain 2.0 (0x006B002A..0x006B004A); 1b Init changes none (0x006B0658)",
+        "1f VisionComponent::Init reads ImageQuality.InitialExposureTime_ms into .data 0x01051054 (0x00650DAE..0x00650DCA); vision_config.json:46 = 16",
+        "1k HandleDefaultCameraParams: no time-sync gate (0x00537114..0x0053712A); needs IsInitialized (0x006B2CD6); min <= init <= max; SetCameraSettings(init, gain) first (0x00657CCA), then SetCameraExposureParams (0x00657D04)",
+        "1l SetCameraSettings: IsExposureValid/IsGainValid (0x006B9DAA..0x006B9DBE, 0x006B9E80..0x006B9EA8), sends {f32 g, u16 e, false} reliable (0x0065614A..0x00656166)",
+        "1o the engine never requests DefaultCameraParams"
+      ],
+      "effect": "the camera exposure is set differently",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M3-022",
+      "subsystem": "M3-device",
+      "title": "At connection the NV CameraCalib read is queued; its callback enables vision on every path and on success installs the calibration and starts processing",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "evidence": [
+        "1h NVStorageComponent::Read(0x80000001, cb) queued in the connection handler (0x006583E2..0x006583FA); M1 CD21",
+        "1j callback 0x0065AB68: the Failed, SizeMismatch and Recvd paths all end strb.w #1 at +0x48 (0x0065AE7E/0x0065AE80); distortion zeroed when robot+0x24 <= 6; SetCameraCalibration starts processing (0x0065175E..0x00651766)",
+        "2a..2f +0x48 is written only by that callback; +0x4B never; +0x49 stays 0"
+      ],
+      "effect": "vision never starts, or starts without the robot calibration",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M3-023",
+      "subsystem": "M3-device",
+      "title": "EnableColorImages is never sent at connection; it stores and sends the flag; only BehaviorTrackLaser reads it",
+      "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
+      "evidence": [
+        "A24 EnableColorImages 0x006582CC..0x00658314",
+        "3a writers 0x00650180, 0x006582D6, 0x00658368, 0x00658F74",
+        "3b the only reader is BehaviorTrackLaser (0x005FAC64, 0x005FBDAE)"
+      ],
+      "effect": "colour is requested when the engine would not",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M3-024",
+      "subsystem": "M3-device",
+      "title": "The audio output source comes from the firmware version JSON: \"sim\" null means physical, play on the robot",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "evidence": [
+        "C1 HandleFirmwareVersion 0x00536934..0x0053698E (\"sim\" at 0x00536A4C)",
+        "C2 CreateAudioAnimation 0x0059A070..0x0059A0B6"
+      ],
+      "effect": "audio is routed to the wrong output",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     }
   ]
 }
