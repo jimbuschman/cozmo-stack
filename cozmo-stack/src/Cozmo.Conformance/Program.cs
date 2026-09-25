@@ -155,7 +155,10 @@ static int Usage()
                                              --allow-drive: anim_bored_01 drives the wheels), ANIM_CANCEL (needs the OBB),
                                              CUBES (skipped if no cube is heard), CAMERA, DISCONNECT.
                                              Every check is judged from telemetry against numeric criteria; what only a
-                                             person can judge is a humanNote with a null verdict. Default robot 172.31.1.1;
+                                             person can judge is a humanNote with a null verdict, and what source does not
+                                             establish (robot-side behaviour, HARDWARE_ONLY records) is an observation with
+                                             pass null. Run it on the floor, not a table: a PotentialCliff turns the robot's
+                                             stop-on-cliff off. Default robot 172.31.1.1;
                                              --obb defaults to re-analysis/obb (or cozmo-stack/re-analysis/obb) if present,
                                              and must hold assets/cozmo_resources/assets/animations/anim_bored_01.bin and
                                              anim_codelab_staring_loop.bin, checked before the prompt (exit 2 if not);

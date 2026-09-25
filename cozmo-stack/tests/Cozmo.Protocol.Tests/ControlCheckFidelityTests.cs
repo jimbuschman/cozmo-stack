@@ -63,6 +63,49 @@ public class ControlCheckFidelityTests
         Assert.Contains(cubes, id => id.StartsWith("M4-", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// The second-run update (after M3/M4, 826d942 and 1dec497): each check names the records its new criteria and
+    /// observations bear on.
+    /// </summary>
+    [Theory]
+    [InlineData("CONNECT", new[] { "M3-019", "M3-021", "M3-022", "M4-020", "M4-021" })]
+    [InlineData("CUBES", new[] { "M4-018", "M4-023", "M4-024", "M9-017" })]
+    [InlineData("DRIVE", new[] { "M4-014", "M4-019" })]
+    [InlineData("HEAD", new[] { "M4-003", "M4-016" })]
+    [InlineData("LIFT", new[] { "M4-003", "M4-016" })]
+    [InlineData("ANIM", new[] { "M5-023", "M5-026" })]
+    [InlineData("ANIM_CANCEL", new[] { "M5-023", "M5-026" })]
+    public void EachCheckNamesTheRecordsOfItsNewCriteriaAndObservations(string check, string[] ids)
+    {
+        var records = ControlCheck.Checks.Single(c => c.Id == check).Records;
+        foreach (var id in ids) Assert.Contains(id, records);
+    }
+
+    [Fact]
+    public void TheNewHardwareOnlyUncertaintyIsListed()
+    {
+        var byId = StatusById();
+        foreach (var id in new[] { "M4-021", "M4-024" })
+        {
+            Assert.Equal("HARDWARE_ONLY", byId[id]);
+            Assert.Contains(ControlCheck.HardwareOnly, h => h.Id == id);
+        }
+        Assert.Contains("M4-021", ControlCheck.Checks.Single(c => c.Id == "CONNECT").Records);
+        Assert.Contains("M4-024", ControlCheck.Checks.Single(c => c.Id == "CUBES").Records);
+    }
+
+    [Fact]
+    public void TheCancelCriterionAllowsOnlyTheBufferedFrame()
+    {
+        // M5 inventory A24/A25: the cancel keeps the send buffer, which holds at most one built frame
+        Assert.Equal(1, ControlCheck.CancelMaxLeftoverAudioFrames);
+        var src = File.ReadAllText(Path.Combine(RepoRoot(), "cozmo-stack", "src", "Cozmo.Conformance", "ControlCheck.cs"));
+        Assert.DoesNotContain("CancelGraceMs", src);
+        Assert.Contains("noNewFrameAfterCancel", src);
+        Assert.Contains("noEndOfAnimationAfterCancel", src);
+        Assert.Contains("abortAnimationSent", src);
+    }
+
     [Fact]
     public void EveryIdInTheToolSourceIsACitedRecord()
     {
@@ -93,6 +136,8 @@ public class ControlCheckFidelityTests
             Assert.Contains(ControlCheck.HardwareOnly, h => h.Id == id);
         Assert.Contains(ControlCheck.HardwareOnly, h => h.Id == "M3-016");
         Assert.Contains(ControlCheck.HardwareOnly, h => h.Id == "M1-033");
+        Assert.Contains(ControlCheck.HardwareOnly, h => h.Id == "M4-021");
+        Assert.Contains(ControlCheck.HardwareOnly, h => h.Id == "M4-024");
     }
 
     [Fact]

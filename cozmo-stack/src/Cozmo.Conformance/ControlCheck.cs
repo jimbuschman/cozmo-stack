@@ -59,7 +59,15 @@ public static class ControlCheck
     internal const string CancelClip = "anim_codelab_staring_loop";
     internal const int AnimStallGapMs = 250, AnimCompletionSlackMs = 1000, AnimTimeoutSlackMs = 5000;
     internal const int AnimEndGraceMs = 100, AnimEndWatchMs = 1000;
-    internal const int CancelAfterMs = 1000, CancelGraceMs = 100, CancelWatchMs = 1500;
+    internal const int CancelAfterMs = 1000, CancelWatchMs = 1500;
+    /// <summary>
+    /// ANIM_CANCEL: a cancel leaves the send buffer as it is and the next engine Update flushes it (M5 inventory A24,
+    /// A25). The streamer builds a frame only while the buffer is empty, so at most one built frame is buffered, and a
+    /// frame carries one audio message (AudioSample or AudioSilence). So at most one audio frame goes out after the cancel.
+    /// </summary>
+    public const int CancelMaxLeftoverAudioFrames = 1;
+    /// <summary>CONNECT: how many RobotStates after the first AbsoluteLocalizationUpdate send are listed one by one.</summary>
+    internal const int OriginStatesListed = 10;
     internal const int CubeWaitMs = 20000, CubeAccelWindowMs = 3000, CubeAccelMin = 1;
     internal const int CameraWindowMs = 3000, CameraMinFrames = 30, CameraSaved = 3;
     internal const int CameraWidth = 320, CameraHeight = 240;
@@ -74,26 +82,27 @@ public static class ControlCheck
 
     public static readonly CheckDef[] Checks =
     {
-        new("CONNECT", "Connect through the app layer: Success response, firmware logged, time synced, first full state, ready to stream, within 10 s",
-            new[] { "M1-024", "M1-025", "M1-026", "M1-028", "M1-029", "M1-030", "M1-033", "M1-040", "M1-041", "M1-042" }),
+        new("CONNECT", "Connect through the app layer: Success response, firmware logged, time synced, first full state, ready to stream, within 10 s; the pose origins the robot reports, DefaultCameraParams and the NV calibration read recorded",
+            new[] { "M1-024", "M1-025", "M1-026", "M1-028", "M1-029", "M1-030", "M1-033", "M1-040", "M1-041", "M1-042",
+                    "M3-019", "M3-021", "M3-022", "M4-020", "M4-021" }),
         new("STATE", "RobotState streams for 5 s at 25..40 Hz by the robot's own timestamps, with a plausible battery voltage and no timeout",
             new[] { "M1-024", "M1-033", "M1-041" }),
         new("HEAD", "Head to +0.3 rad then -0.3 rad, each within 0.05 rad in RobotState within 2 s",
-            new[] { "M4-001", "M4-003", "M4-004", "M4-005" }),
+            new[] { "M4-001", "M4-003", "M4-004", "M4-005", "M4-016" }),
         new("LIFT", "Lift to 50 mm then 32 mm, each within 5 mm in RobotState within 3 s",
-            new[] { "M2-003", "M4-002", "M4-003", "M4-004", "M4-005" }),
-        new("DRIVE", "Drive 30 mm forward and back at 30 mm/s with stop-on-cliff on; the pose moves 20..40 mm each way and the wheels stop",
-            new[] { "M4-006", "M4-007" }),
+            new[] { "M2-003", "M4-002", "M4-003", "M4-004", "M4-005", "M4-016" }),
+        new("DRIVE", "Drive 30 mm forward and back at 30 mm/s with stop-on-cliff on; the pose moves 20..40 mm each way and the wheels stop; track locks and cliff handling recorded",
+            new[] { "M4-006", "M4-007", "M4-014", "M4-019" }),
         new("FACE", "A known test image held on the face for 3 s: the robot's animation byte count rises and its drop count stays",
             new[] { "M3-006", "M3-007", "M3-008", "M3-015" }),
         new("AUDIO", "A 1 s two-beep sequence through CozmoAudio.Play: at least 25 audio frames played and the drop count stays",
             new[] { "M1-042", "M3-010", "M3-011", "M3-012", "M3-013", "M3-014", "M3-017" }),
         new("ANIM", "anim_bored_01 plays to completion (only with --allow-drive: it rolls back about 2 cm): every keyframe fires, no stall, streaming stops at the end",
-            new[] { "M1-041", "M5-001", "M5-004", "M5-006", "M5-007", "M5-008", "M5-016", "M5-018", "M5-019" }),
-        new("ANIM_CANCEL", "A long animation cancelled after 1 s: no animation message sent more than 100 ms after the cancel",
-            new[] { "M5-008", "M5-023" }),
-        new("CUBES", "Block pool enabled at connect; a cube is heard, one connects, and its accelerometer stream arrives",
-            new[] { "M1-042", "M4-008", "M4-009", "M4-010", "M4-011" }),
+            new[] { "M1-041", "M5-001", "M5-004", "M5-006", "M5-007", "M5-008", "M5-016", "M5-018", "M5-019", "M5-023", "M5-026" }),
+        new("ANIM_CANCEL", "A long animation cancelled after 1 s: it ends Cancelled, no new frame is built after the cancel (at most one buffered frame goes out) and no EndOfAnimation is sent",
+            new[] { "M5-008", "M5-023", "M5-026" }),
+        new("CUBES", "Block pool enabled at connect; a cube is heard, one connects, and its accelerometer stream arrives; cube-light sends and cube telemetry recorded",
+            new[] { "M1-042", "M4-008", "M4-009", "M4-010", "M4-011", "M4-018", "M4-023", "M4-024", "M9-017" }),
         new("CAMERA", "The camera stream opened at connect gives at least 30 complete frames in 3 s, each grey frame a 320x240 JPEG",
             new[] { "M1-041", "M3-001", "M3-002", "M3-003", "M3-004", "M3-005", "M3-016" }),
         new("DISCONNECT", "Dispose sends the DisconnectRequest, nothing is sent after it, and Dispose returns",
@@ -106,6 +115,9 @@ public static class ControlCheck
         ("M1-033", "robot-side transport behaviour (how the robot answers, acks and resends) is an input to every check; it has no expected value from source"),
         ("M3-008", "scanline parity of the face image on the robot's display: FACE's humanNote is where a wrong image would be seen"),
         ("M3-016", "the colour camera format: CAMERA records whether any frame looks colour, with no verdict"),
+        ("M4-021", "whether the robot reports the origin id and frame from AbsoluteLocalizationUpdate in RobotState: CONNECT records the origins and frames it reported and the origin-rejected count, with no verdict (originAccepted). "
+                   + "If it never reports origin 1, the engine drops every state from the pose and history (M4-020) while the first-full-state and Update steps still run"),
+        ("M4-024", "what makes the robot forward cube telemetry after connection, and the robot-side effect of StreamObjectAccel: CUBES records every cube telemetry message received, with no verdict; its accelStream criterion depends on this"),
     };
 
     /// <summary>Every fidelity record the run's result names. Each must exist in re-analysis/fidelity_manifest.json.</summary>
@@ -268,6 +280,7 @@ internal sealed class ControlRun
         public readonly ControlCheck.CheckDef Def;
         private readonly object _gate;
         private readonly JsonArray _criteria = new();
+        private readonly JsonArray _observations = new();
         private readonly List<string> _warnings = new();
         public readonly LockedJson Measured, Prerequisites;
         private string? _humanNote, _note, _skipReason;
@@ -318,6 +331,25 @@ internal sealed class ControlRun
             lock (_gate) _criteria.Add(o);
         }
 
+        /// <summary>
+        /// An observation: what was measured, with no verdict (<c>pass: null</c>, <c>notJudged</c> says why). It never
+        /// enters the status. <paramref name="records"/> are the fidelity records it bears on; each must be cited by a check.
+        /// </summary>
+        public void Obs(string name, string[] records, string question, JsonNode? measured, string notJudged)
+        {
+            var o = new JsonObject
+            {
+                ["name"] = name, ["records"] = new JsonArray(records.Select(r => (JsonNode)r).ToArray()),
+                ["question"] = question, ["measured"] = measured, ["pass"] = null, ["notJudged"] = notJudged,
+            };
+            lock (_gate)
+            {
+                for (int i = _observations.Count - 1; i >= 0; i--)
+                    if (_observations[i]!["name"]!.GetValue<string>() == name) _observations.RemoveAt(i);
+                _observations.Add(o);
+            }
+        }
+
         public void ClearCriteria() { lock (_gate) _criteria.Clear(); }
         public void Warn(string w) { lock (_gate) _warnings.Add(w); }
         public string[] CriteriaExpected() { lock (_gate) return _criteria.Select(x => x!["expected"]!.GetValue<string>()).ToArray(); }
@@ -342,6 +374,12 @@ internal sealed class ControlRun
                     ["humanNote"] = _humanNote,
                     ["humanVerdict"] = null,
                     ["observation"] = _observation?.DeepClone(),
+                    ["observations"] = new JsonArray(_observations.Select(o =>
+                    {
+                        var c = (JsonObject)o!.DeepClone();
+                        c["records"] = new JsonArray(c["records"]!.AsArray().Select(r => (JsonNode)new JsonObject { ["id"] = r!.GetValue<string>(), ["status"] = status.GetValueOrDefault(r!.GetValue<string>(), "?") }).ToArray());
+                        return (JsonNode)c;
+                    }).ToArray()),
                     ["note"] = _note,
                     ["startMs"] = LinkCheck.Num(_startMs), ["endMs"] = LinkCheck.Num(_endMs),
                 };
@@ -384,6 +422,10 @@ internal sealed class ControlRun
     private CozmoRobot? _robot;
     private RobotConnectionResponse? _response;
     private double _responseT = double.NaN;
+    private double _visionEnabledT = double.NaN, _calibrationInstalledT = double.NaN;
+    /// <summary>Set once the run-wide observations (CONNECT's origins, camera params and NV read; the backpack light rate) are taken.</summary>
+    private int _lateObserved;
+    private JsonObject? _runObservations;
     private (double From, double To)? _cameraWindow;
     private readonly List<string> _savedImages = new();
 
@@ -532,6 +574,10 @@ internal sealed class ControlRun
                 }
             }
 
+            // CONNECT's origin, camera-parameter and NV observations and the backpack light rate cover the whole
+            // connected run, so they are taken here, before Dispose resets the engine's state.
+            LateObservations();
+
             Phase("DISCONNECT");
             var d = rest["DISCONNECT"];
             bool linkUpAtEnd = LinkUp;
@@ -609,15 +655,17 @@ internal sealed class ControlRun
         Console.WriteLine();
         Console.WriteLine("SETUP (once), before the run connects:");
         Console.WriteLine("  - this PC on Cozmo's Wi-Fi;");
-        Console.WriteLine("  - Cozmo on the floor or on a cliff-safe table, off the charger, with nothing touching him;");
-        Console.WriteLine("  - a light cube within about 30 cm of him, powered (tab pulled / battery in).");
+        Console.WriteLine("  - Cozmo on the FLOOR, not on a table, off the charger, with nothing touching him. The engine turns the robot's");
+        Console.WriteLine("    stop-on-cliff off after a PotentialCliff (StopAllMotors + EnableStopOnCliff {0}, M4-019), so cliff");
+        Console.WriteLine("    protection cannot be relied on during DRIVE;");
+        Console.WriteLine("  - one light cube within about 30 cm of him, powered (tab pulled / battery in).");
         bool anim = _obb is not null;
         Console.WriteLine("What he will do (about 2 minutes): nod his head, raise and lower his lift, "
                           + (_allowDrive ? "drive about 3 cm forward and back, " : "")
                           + "show a test pattern for 3 s, play two beeps, "
                           + (anim && _allowDrive ? "play anim_bored_01 (which rolls him back about 2 cm) and part of a second animation (face and sound only), "
                              : anim ? "play part of an animation (face and sound only), " : "")
-                          + "then disconnect. Stop-on-cliff is turned on before anything moves.");
+                          + "then disconnect. Stop-on-cliff is turned on before anything moves, but a PotentialCliff turns it off again.");
         if (!_allowDrive)
             Console.WriteLine("  DRIVE and ANIM will be skipped (anim_bored_01 drives the wheels, about 2 cm back): pass --allow-drive once he has clear space around him.");
         if (_noObb) Console.WriteLine("  ANIM and ANIM_CANCEL will be skipped: --no-obb was given.");
@@ -681,6 +729,8 @@ internal sealed class ControlRun
             try { text = m.ToString() ?? m.Id.ToString(); } catch { text = m.Id.ToString(); }
             Event("robot-message", new JsonObject { ["tag"] = $"0x{(byte)m.Id:X2}", ["id"] = m.Id.ToString(), ["text"] = text.Length > 300 ? text[..300] : text });
         };
+        robot.CameraSettings.VisionEnabledSet += () => { if (double.IsNaN(_visionEnabledT)) _visionEnabledT = Now(); Event("vision-enabled", new JsonObject()); };
+        robot.CameraSettings.CalibrationInstalled += cal => { if (double.IsNaN(_calibrationInstalledT)) _calibrationInstalledT = Now(); Event("camera-calibration-installed", new JsonObject { ["calibration"] = cal.ToString() }); };
         robot.Camera.FrameReceived += f => _camFrames.Enqueue(new CamRec(Now(), f));
         robot.Camera.FrameDropped += (id, why) => Event("camera-dropped", new JsonObject { ["imageId"] = id, ["why"] = why });
         robot.Cubes.CubeDiscovered += c => Event("cube-discovered", CubeJson(c));
@@ -817,6 +867,7 @@ internal sealed class ControlRun
             (byte)RobotMessageId.GetMfgInfo, (byte)RobotMessageId.SyncTime, (byte)RobotMessageId.InitAnimController,
             (byte)RobotMessageId.ImageRequest, (byte)new SetAppRunID().Id, (byte)new RequestCrashReports().Id,
             (byte)RobotMessageId.SetAudioVolume, (byte)RobotMessageId.SetPropSlot,
+            (byte)RobotMessageId.SetCameraParams, (byte)RobotMessageId.AbsLocalizationUpdate, (byte)RobotMessageId.CommandNV,
         };
         var arr = new JsonArray();
         foreach (var s in FirstSends().Where(s => s.T >= call && watch.Contains(s.Tag)).Take(40))
@@ -826,6 +877,162 @@ internal sealed class ControlRun
             arr.Add(o);
         }
         return arr;
+    }
+
+    // ------------------------------------------------------------------ run-wide observations (no verdicts)
+
+    private double MarkOr(string name, double fallback) { lock (_marks) return _marks.TryGetValue(name, out var t) ? t : fallback; }
+
+    /// <summary>
+    /// CONNECT's observations that need the whole connected run (the origins the robot reported after the
+    /// AbsoluteLocalizationUpdate, the origin-rejected count, DefaultCameraParams, the connection-time SetCameraParams and
+    /// the NV calibration read) and the run's backpack light rate. None has a verdict. Taken once: before DISCONNECT, or
+    /// when an abnormal exit writes the bundle first.
+    /// </summary>
+    private void LateObservations()
+    {
+        if (Interlocked.Exchange(ref _lateObserved, 1) == 1) return;
+        try
+        {
+            double call = MarkOr("connectCall", double.NaN);
+            if (double.IsNaN(call)) return;
+            double end = MarkOr("disposeCall", Now());
+            CheckRec? c; lock (_checks) c = _checks.FirstOrDefault(x => x.Def.Id == "CONNECT");
+            var sends = FirstSends().Where(s => s.T >= call && s.T <= end).ToList();
+            var received = Received().Where(s => s.T >= call && s.T <= end).ToList();
+            var log = _engineLog.ToArray().Where(l => l.T >= call && l.T <= end).ToList();
+            if (c is not null) ConnectObservations(c, call, end, sends, received, log);
+            var runObs = new JsonObject { ["backpackLights"] = BackpackLightRate(call, end, sends) };
+            lock (_gate) _runObservations = runObs;
+        }
+        catch (Exception e)
+        {
+            lock (_exceptions) _exceptions.Add("late observations: " + e);
+        }
+    }
+
+    private void ConnectObservations(CheckRec c, double call, double end, List<Sent> sends, List<Sent> received, List<(double T, string Line)> log)
+    {
+        var robot = _robot;
+        string window = "from the ConnectToRobot call to the Dispose call (or the bundle write); times are host ms after the ConnectToRobot call";
+
+        // --- the origin and frame the robot reports after the AbsoluteLocalizationUpdate (M4-020, M4-021)
+        var absLoc = sends.Where(s => s.Tag == (byte)RobotMessageId.AbsLocalizationUpdate).ToList();
+        double absT = absLoc.Count > 0 ? absLoc[0].T : double.NaN;
+        var states = States().Where(s => s.T >= call && s.T <= end).ToList();
+        var afterAbs = double.IsNaN(absT) ? new List<StateRec>() : states.Where(s => s.T >= absT).ToList();
+        var origin1 = afterAbs.Where(s => s.S.PoseOriginId == 1).ToList();
+        const string rejectText = "Received RobotState with originID";
+        var rejected = log.Where(l => l.Line.Contains(rejectText, StringComparison.Ordinal)).ToList();
+        c.Obs("originsReported", new[] { "M4-020", "M4-021" },
+            "which pose origin id and frame id does the robot report in RobotState after the AbsoluteLocalizationUpdate {frame 0, origin 1} the engine sends at SyncTime, and does any report origin 1?",
+            new JsonObject
+            {
+                ["window"] = window,
+                ["absoluteLocalizationUpdateSends"] = SendsIn(absLoc, call, end, call, RobotMessageId.AbsLocalizationUpdate),
+                ["statesInWindow"] = states.Count,
+                ["statesAfterFirstAbsoluteLocalizationUpdate"] = afterAbs.Count,
+                [$"first{ControlCheck.OriginStatesListed}StatesAfterIt"] = new JsonArray(afterAbs.Take(ControlCheck.OriginStatesListed).Select(s => (JsonNode)new JsonObject
+                {
+                    ["afterUpdateMs"] = LinkCheck.Num(s.T - absT), ["robotTs"] = s.S.Timestamp, ["originId"] = s.S.PoseOriginId, ["frameId"] = s.S.PoseFrameId,
+                }).ToArray()),
+                ["originIdsInWindow"] = Histogram(states.Select(s => s.S.PoseOriginId.ToString(CultureInfo.InvariantCulture))),
+                ["frameIdsInWindow"] = Histogram(states.Select(s => s.S.PoseFrameId.ToString(CultureInfo.InvariantCulture))),
+                ["statesReportingOrigin1AfterIt"] = origin1.Count,
+                ["firstOrigin1AfterUpdateMs"] = origin1.Count == 0 ? null : LinkCheck.Num(origin1[0].T - absT),
+                ["note"] = "a state's host time is when the engine's tick handed it to the devices, so a state the robot built before the update reached it can still carry a later host time",
+            },
+            "M4-021 is HARDWARE_ONLY: whether the robot reports the origin and frame from AbsoluteLocalizationUpdate is not established by source");
+        c.Obs("originRejectedStates", new[] { "M4-020" },
+            $"how many RobotStates did the engine drop from the pose and history for an origin id not in its origin list (the warning \"{rejectText}\")?",
+            new JsonObject
+            {
+                ["window"] = window,
+                ["warnings"] = rejected.Count,
+                ["firstAfterConnectMs"] = rejected.Count == 0 ? null : LinkCheck.Num(rejected[0].T - call),
+                ["lastAfterConnectMs"] = rejected.Count == 0 ? null : LinkCheck.Num(rejected[^1].T - call),
+                ["firstLine"] = rejected.Count == 0 ? null : rejected[0].Line,
+                ["note"] = "the first-full-state flag and the steps before the origin check run for a rejected state too (M4 correction C3), so CONNECT's firstFullState does not depend on this",
+            },
+            "a count of what the engine did with the robot's reports; the reports themselves are M4-021 (HARDWARE_ONLY)");
+        c.Crit("originAccepted (M4-021)",
+            "at least one RobotState after the AbsoluteLocalizationUpdate reports origin 1, so the engine takes it into the pose and history (M4-020)",
+            new JsonObject { ["statesAfterUpdate"] = afterAbs.Count, ["reportingOrigin1"] = origin1.Count, ["originRejectedWarnings"] = rejected.Count },
+            null, "M4-021 is HARDWARE_ONLY: whether the robot echoes the origin id from AbsoluteLocalizationUpdate is not established by source; an observation, not a verdict");
+
+        // --- DefaultCameraParams 0xC8 (M3-021)
+        var dcp = received.Where(s => s.Tag == (byte)RobotMessageId.DefaultCameraParams).ToList();
+        var cs = robot?.CameraSettings;
+        c.Obs("defaultCameraParams", new[] { "M3-021" },
+            "did the robot send DefaultCameraParams 0xC8, when, and with which fields; what exposure and gain limits did the engine take from it?",
+            new JsonObject
+            {
+                ["window"] = window,
+                ["received"] = dcp.Count,
+                ["messages"] = new JsonArray(dcp.Take(5).Select(s => (JsonNode)new JsonObject { ["afterConnectMs"] = LinkCheck.Num(s.T - call), ["fields"] = Fields(s.Payload) }).ToArray()),
+                ["cameraSettingsAfter"] = cs is null ? null : new JsonObject
+                {
+                    ["minExposureMs"] = cs.MinExposureMs, ["maxExposureMs"] = cs.MaxExposureMs,
+                    ["minGain"] = LinkCheck.Num(cs.MinGain), ["maxGain"] = LinkCheck.Num(cs.MaxGain),
+                    ["gammaTableBytes"] = cs.GammaTable.Length,
+                    ["nextCameraParams"] = cs.NextCameraParams is { } n ? $"{n.ExposureMs} ms, gain {n.Gain.ToString("G6", CultureInfo.InvariantCulture)}" : null,
+                },
+                ["setCameraParamsSends"] = SendsIn(sends, call, end, call, RobotMessageId.SetCameraParams),
+                ["fieldNames"] = "the names are HandleDefaultCameraParams's reading (1k); the message's own field names are not established",
+            },
+            "the engine never requests DefaultCameraParams (1o), so whether the robot sends it is robot-side; M3-021 is IMPLEMENTATION_GAP");
+        c.Obs("connectionSetCameraParams", new[] { "M3-019" },
+            "which SetCameraParams went out at connection (policy M3-019: this stack sends {0.0, 0, true} where the engine sends stale stack bytes and true)?",
+            new JsonObject { ["sends"] = SendsIn(sends, call, end, call, RobotMessageId.SetCameraParams), ["window"] = window },
+            "M3-019 is COMPATIBILITY_POLICY; what the robot does with these bytes is not established (CAMERA records the frames' luminance)");
+
+        // --- the NV CameraCalib read and vision enabled (M3-022)
+        var nvOut = sends.Where(s => s.Tag == (byte)RobotMessageId.CommandNV).ToList();
+        var nvIn = received.Where(s => s.Tag == (byte)RobotMessageId.NvOpResult && TryParse(s.Payload) is NVOpResult r && r.Tag == Cozmo.Robot.Vision.CameraCalibration.NvEntryTag).ToList();
+        var calLines = log.Where(l => l.Line.Contains("ReadCameraCalibration", StringComparison.Ordinal)).ToList();
+        c.Obs("nvCalibrationRead", new[] { "M3-022" },
+            "did the connection-time NV CameraCalib read (0x80000001) complete, with which result, and was vision enabled?",
+            new JsonObject
+            {
+                ["window"] = window,
+                ["nvCommandSends"] = SendsIn(nvOut, call, end, call, RobotMessageId.CommandNV),
+                ["nvOpResultsForCameraCalib"] = new JsonArray(nvIn.Take(10).Select(s => (JsonNode)new JsonObject { ["afterConnectMs"] = LinkCheck.Num(s.T - call), ["fields"] = Fields(s.Payload) }).ToArray()),
+                ["nvOpResultCount"] = nvIn.Count,
+                ["readCompletedLogLines"] = new JsonArray(calLines.Take(5).Select(l => (JsonNode)new JsonObject { ["afterConnectMs"] = LinkCheck.Num(l.T - call), ["line"] = l.Line.Length > 300 ? l.Line[..300] : l.Line }).ToArray()),
+                ["readCompleted"] = calLines.Count > 0,
+                ["visionEnabledAfterConnectMs"] = double.IsNaN(_visionEnabledT) ? null : LinkCheck.Num(_visionEnabledT - call),
+                ["visionEnabled"] = cs?.VisionEnabled,
+                ["calibrationInstalledAfterConnectMs"] = double.IsNaN(_calibrationInstalledT) ? null : LinkCheck.Num(_calibrationInstalledT - call),
+                ["calibration"] = cs?.Calibration?.ToString(),
+            },
+            "M3-022 is IMPLEMENTATION_GAP, and the robot's answer to the read is robot-side");
+    }
+
+    /// <summary>The rate of the backpack light messages (0x03 BackpackLightsMiddle, 0x11 BackpackLightsTurnSignals) over the connected run.</summary>
+    private static JsonObject BackpackLightRate(double call, double end, List<Sent> sends)
+    {
+        var o = new JsonObject
+        {
+            ["question"] = "at what rate did this stack send the backpack light messages? It resends the Off lights on every engine tick (60 ms) while no light source exists (M4 inventory LB1..LB6, BodyLightComponent), so one per tick is about 16.7 per second of each",
+            ["pass"] = null,
+            ["notJudged"] = "an observation of the load on the link, with no criterion",
+            ["windowMs"] = LinkCheck.Num(end - call),
+            ["window"] = "first sends (resends dropped) from the ConnectToRobot call to the Dispose call",
+        };
+        foreach (var tag in new[] { RobotMessageId.SetBackpackLightsMiddle, RobotMessageId.SetBackpackLightsTurnSignals })
+        {
+            var t = sends.Where(s => s.Tag == (byte)tag).Select(s => s.T).ToList();
+            double span = t.Count < 2 ? double.NaN : t[^1] - t[0];
+            o[$"0x{(byte)tag:X2} {TagName((byte)tag)}"] = new JsonObject
+            {
+                ["sends"] = t.Count,
+                ["firstAfterConnectMs"] = t.Count == 0 ? null : LinkCheck.Num(t[0] - call),
+                ["perSecondFirstToLast"] = LinkCheck.Num(double.IsNaN(span) || span <= 0 ? double.NaN : (t.Count - 1) * 1000.0 / span),
+                ["perSecondOverWindow"] = LinkCheck.Num(end > call ? t.Count * 1000.0 / (end - call) : double.NaN),
+                ["maxGapMs"] = LinkCheck.Num(ControlCheck.MaxGap(t)),
+            };
+        }
+        return o;
     }
 
     // ------------------------------------------------------------------ STATE
@@ -937,7 +1144,8 @@ internal sealed class ControlRun
                 r["reachedAfterMs"]?.DeepClone(), r["pass"]!.GetValue<bool>());
         }
         c.Measured["steps"] = steps;
-        c.Note = "commanded with CozmoMotion.SetHeadAngleAsync (SetHeadAngle with the engine's default speed and acceleration); the robot's MotorActionAck is reported, not judged";
+        c.Note = $"commanded with CozmoMotion.SetHeadAngleAsync: SetHeadAngle with the original app's speed {CozmoMotion.DefaultHeadSpeedRadPerSec} rad/s and acceleration {CozmoMotion.DefaultHeadAccelRadPerSec2} rad/s² (M4-003, MD1). "
+                 + "The action completes on its ack followed by the head in position and stopped (M4-016); its outcome and the robot's MotorActionAck are reported, not judged";
     }
 
     private async Task LiftCheck(CheckRec c)
@@ -954,7 +1162,8 @@ internal sealed class ControlRun
                 r["reachedAfterMs"]?.DeepClone(), r["pass"]!.GetValue<bool>());
         }
         c.Measured["steps"] = steps;
-        c.Note = "commanded with CozmoMotion.SetLiftHeightAsync; the robot's MotorActionAck is reported, not judged";
+        c.Note = $"commanded with CozmoMotion.SetLiftHeightAsync: SetLiftHeight with the original app's speed {CozmoMotion.DefaultLiftSpeedRadPerSec} rad/s and acceleration {CozmoMotion.DefaultLiftAccelRadPerSec2} rad/s² (M4-003, MD1). "
+                 + "The action completes on its ack followed by the lift in position and stopped (M4-016); its outcome and the robot's MotorActionAck are reported, not judged";
     }
 
     // ------------------------------------------------------------------ DRIVE
@@ -965,6 +1174,8 @@ internal sealed class ControlRun
         c.Prerequisites["stopOnCliffEnabledAtMs"] = _marks.TryGetValue("stopOnCliffCall", out var soc) ? LinkCheck.Num(soc) : null;
         c.Prerequisites["stopOnCliffSent"] = FirstSends().Any(s => s.Tag == (byte)RobotMessageId.EnableStopOnCliff);
         var legs = new JsonArray();
+        var legWindows = new List<(string Name, double From, double To)>();
+        double driveFrom = Now();
         foreach (var (name, sign) in new[] { ("forward", 1f), ("back", -1f) })
         {
             var before = States().LastOrDefault();
@@ -978,6 +1189,7 @@ internal sealed class ControlRun
             Poll(() => StoppedAfter(stopCmd) is not null, ControlCheck.WheelStopWithinMs);
             var stopped = StoppedAfter(stopCmd);
             Hold(ControlCheck.DriveSettleMs);
+            legWindows.Add((name, cmd, Now()));
             var after = States().LastOrDefault();
             double along = before is null || after is null ? double.NaN
                 : ControlCheck.AlongHeading(before.S.PoseX, before.S.PoseY, before.S.PoseAngleRad, after.S.PoseX, after.S.PoseY);
@@ -1017,11 +1229,61 @@ internal sealed class ControlRun
                 stopped is null ? null : LinkCheck.Num(stopped.T - stopCmd), stopped is not null);
             if (cliffs > 0) c.Warn($"{cliffs} cliff event(s) during the {name} leg");
         }
+        double stopAllCall = Now();
         var all = await robot.Motion.StopAllAsync();
+        Hold(ControlCheck.DriveSettleMs);
+        double driveTo = Now();
         c.Measured["legs"] = legs;
         c.Measured["finalStopAll"] = all.ToString();
+        DriveObservations(c, driveFrom, driveTo, stopAllCall, legWindows);
         c.Note = "the spec's \"pose x changes\" is measured as the signed displacement along the heading at the start of each leg (the robot's own pose frame; the stack does not reset it at connect), which equals the x change when the heading is 0. Driven with CozmoMotion.DriveWheelsAsync for 1000 ms, then StopWheelsAsync. "
-                 + "Robot-side behaviour no manifest record covers, assumed here and not judged: that DriveWheels with accelerations 0 (the stack's default) makes the robot drive at the commanded speed, and that PoseFrameId stays the same while driving (a change is recorded in poseFrameIdChanged and the leg's distance is then not judged).";
+                 + "Robot-side behaviour no manifest record covers, assumed here and not judged: that DriveWheels with accelerations 0 (the stack's default) makes the robot drive at the commanded speed, and that PoseFrameId stays the same while driving (a change is recorded in poseFrameIdChanged and the leg's distance is then not judged). "
+                 + "Stop-on-cliff is turned on after CONNECT, but the engine answers a PotentialCliff with StopAllMotors and EnableStopOnCliff {0} (M4-019, SC7), which turns it off for the rest of the run: the setup asks for the floor. "
+                 + "The track-lock sends (M4-014) and the cliff handling are observations, not criteria.";
+    }
+
+    /// <summary>DRIVE's observations: the track-lock sends around each leg (M4-014) and any PotentialCliff handling (M4-019). No verdicts.</summary>
+    private void DriveObservations(CheckRec c, double from, double to, double stopAllCall, List<(string Name, double From, double To)> legs)
+    {
+        var sends = FirstSends();
+        var received = Received();
+        var perLeg = new JsonObject();
+        foreach (var (name, lf, lt) in legs)
+            perLeg[name] = new JsonObject
+            {
+                ["windowMs"] = LinkCheck.Num(lt - lf),
+                ["sends"] = SendsIn(sends, lf, lt, lf, RobotMessageId.DisableAnimTracks, RobotMessageId.EnableAnimTracks, RobotMessageId.Drive),
+            };
+        perLeg["finalStopAll"] = new JsonObject
+        {
+            ["sends"] = SendsIn(sends, stopAllCall, to, stopAllCall, RobotMessageId.DisableAnimTracks, RobotMessageId.EnableAnimTracks, RobotMessageId.Stop, RobotMessageId.Drive),
+        };
+        c.Obs("trackLocks", new[] { "M4-014" },
+            "which DisableAnimTracks 0x9D / EnableAnimTracks 0x9E went out around each leg's DriveWheels and its stop?",
+            new JsonObject
+            {
+                ["legs"] = perLeg,
+                ["times"] = "afterMs is host ms after the leg's drive command (after the StopAllAsync call for finalStopAll); each leg's window runs to the end of its settle",
+                ["sourceExpectation"] = "M4-014 (MA1..MA3): a DriveWheels with a non-zero speed locks the BODY track (DisableAnimTracks {0x04}) when this is the track's first lock, and one with zero speeds unlocks it (EnableAnimTracks {0x04}) when it empties the lock set; the DriveWheels itself follows",
+            },
+            "recorded for comparison with the source expectation, not judged by this run");
+
+        var enableStop = SendsIn(sends, 0, to, MarkOr("connectCall", 0), RobotMessageId.EnableStopOnCliff);
+        var potential = received.Where(s => s.T >= from && s.T <= to && s.Tag == (byte)RobotMessageId.PotentialCliff).ToList();
+        var cliffEvents = received.Where(s => s.T >= from && s.T <= to && s.Tag == (byte)RobotMessageId.CliffEvent).ToList();
+        c.Obs("cliffHandling", new[] { "M4-019" },
+            "did the robot report PotentialCliff 0xC1 during DRIVE, and did the engine answer it with StopAllMotors and EnableStopOnCliff {0} (SC7)?",
+            new JsonObject
+            {
+                ["potentialCliffs"] = new JsonArray(potential.Select(s => (JsonNode)LinkCheck.Num(s.T - from)).ToArray()),
+                ["cliffEvents"] = new JsonArray(cliffEvents.Select(s => (JsonNode)LinkCheck.Num(s.T - from)).ToArray()),
+                ["cliffTimes"] = "host ms after DRIVE's first drive command",
+                ["enableStopOnCliffSendsSinceConnect"] = enableStop,
+                ["enableStopOnCliffTimes"] = "afterMs is host ms after the ConnectToRobot call; the first (enable true) is this run's own, sent after CONNECT",
+                ["stopAllMotorsSendsInDrive"] = SendsIn(sends, from, to, from, RobotMessageId.Stop),
+                ["stopOnCliffOffAfterDrive"] = enableStop.Count > 0 && enableStop[^1]!["fields"]?["enable"]?.GetValue<bool>() == false,
+            },
+            "M4-019 is IMPLEMENTATION_GAP, and whether the robot reports a PotentialCliff on this floor is robot-side");
     }
 
     private StateRec? StoppedAfter(double t) =>
@@ -1212,17 +1474,27 @@ internal sealed class ControlRun
         var ticket = robot.Animations.PlayTracked(clip);
         if (ticket is null) { c.Crit("started", "the scheduler accepted the clip", false, false); return; }
         Hold(ControlCheck.CancelAfterMs);
+        var stream = robot.Animations.Scheduler.Stream;
         double cancel = Mark("cancelCall");
         bool stopped = robot.Animations.StopIfCurrent(ticket.Generation);
+        // Read as soon as StopIfCurrent returns: from here the clip is gone, so any audio frame the stream buffer
+        // still sends was built before the cancel (the buffer holds at most one built frame).
+        int framesAtCancel = stream.FramesStreamed, bufferedAtCancel = stream.Count;
+        double cancelled = Mark("cancelReturned");
+        bool playingAfterCancel = robot.Animations.Scheduler.IsPlaying;
         AnimationEndReason? reason = await Task.WhenAny(ticket.Completion, Task.Delay(1000)) == ticket.Completion ? ticket.Completion.Result : null;
         Hold(ControlCheck.CancelWatchMs);
+        int framesAtEnd = stream.FramesStreamed;
         double end = Mark("cancelWatchEnd");
         bool ticking = robot.Animations.IsTicking;
+        bool liveActive = robot.Animations.Scheduler.LiveStreamActive;
+        int leftoverFrames = unchecked(framesAtEnd - framesAtCancel);
 
         var sends = FirstSends().Where(s => s.T >= play && AnimStreamTags.Contains(s.Tag)).ToList();
         var beforeCancel = sends.Where(s => s.T <= cancel).ToList();
-        var late = sends.Where(s => s.T > cancel + ControlCheck.CancelGraceMs).ToList();
         var afterCancel = sends.Where(s => s.T > cancel).ToList();
+        var endsAfter = afterCancel.Where(s => s.Tag == EndTag).ToList();
+        var abortSends = FirstSends().Where(s => s.T >= cancel && s.T <= end && s.Tag == (byte)RobotMessageId.AbortAnimation).ToList();
 
         c.Measured["clip"] = clip.Name;
         c.Measured["clipDurationMs"] = clip.DurationMs;
@@ -1233,23 +1505,109 @@ internal sealed class ControlRun
         c.Measured["animMessagesBeforeCancel"] = Histogram(beforeCancel.Select(s => TagName(s.Tag)));
         c.Measured["animMessagesAfterCancel"] = Histogram(afterCancel.Select(s => TagName(s.Tag)));
         c.Measured["lastAnimMessageAfterCancelMs"] = afterCancel.Count == 0 ? null : LinkCheck.Num(afterCancel.Max(s => s.T) - cancel);
-        c.Measured["endOfAnimationAfterCancel"] = afterCancel.Count(s => s.Tag == EndTag);
+        c.Measured["audioFramesOnWireAfterCancel"] = afterCancel.Count(s => s.Tag == AudioSampleTag || s.Tag == AudioSilenceTag);
+        c.Measured["endOfAnimationAfterCancel"] = endsAfter.Count;
+        c.Measured["stopIfCurrentMs"] = LinkCheck.Num(cancelled - cancel);
+        c.Measured["streamBufferMessagesAtCancel"] = bufferedAtCancel;
+        c.Measured["streamFramesSentAfterCancel"] = leftoverFrames;
+        c.Measured["playingAfterCancel"] = playingAfterCancel;
+        c.Measured["liveStreamActive"] = liveActive;
         c.Measured["watchMs"] = LinkCheck.Num(end - cancel);
         c.Measured["tickingAfterWatch"] = ticking;
+        c.Measured["note"] = "streamFramesSentAfterCancel is the send buffer's frame counter (StreamSendBuffer.FramesStreamed: one per AudioSample, AudioSilence or EndOfAnimation sent) from StopIfCurrent's return to the end of the watch. "
+                             + "The wire counts (audioFramesOnWireAfterCancel, lastAnimMessageAfterCancelMs) are measured from the host's cancel call; they are recorded, not judged, because the transport queues sends (flush 0) and can put a frame built before the cancel on the wire after it";
 
         c.Crit("streamedBeforeCancel", "the animation was streaming before the cancel: StartOfAnimation and at least one audio frame sent", beforeCancel.Count,
             beforeCancel.Any(s => s.Tag == StartTag) && beforeCancel.Any(s => s.Tag == AudioSampleTag || s.Tag == AudioSilenceTag));
         c.Crit("cancelled", "the animation ended with AnimationEndReason.Cancelled", reason?.ToString(), reason == AnimationEndReason.Cancelled);
-        c.Crit("nothingAfterCancel", $"no animation message first sent more than {ControlCheck.CancelGraceMs} ms after the cancel, over a {ControlCheck.CancelWatchMs} ms watch", late.Count, late.Count == 0);
-        c.Note = "the scheduler's reading of the engine's Abort (M5-023) sends nothing on a cancel, not even EndOfAnimation; endOfAnimationAfterCancel reports it, unjudged. The clip has face and audio tracks only.";
+        string noNewExpected = $"no new animation frame is built after the cancel: the clip is no longer playing when StopIfCurrent returns, and at most {ControlCheck.CancelMaxLeftoverAudioFrames} audio frame of already-buffered messages is sent after it, over a {ControlCheck.CancelWatchMs} ms watch "
+                               + "(M5 inventory A24/A25: the cancel keeps the send buffer, the next engine Update flushes it within the budget; the buffer holds at most one built frame)";
+        var noNewMeasured = new JsonObject { ["streamFramesSentAfterCancel"] = leftoverFrames, ["playingAfterCancel"] = playingAfterCancel, ["streamBufferMessagesAtCancel"] = bufferedAtCancel };
+        if (liveActive)
+            c.Crit("noNewFrameAfterCancel", noNewExpected, noNewMeasured, null, "the live (keep-alive) stream was active, so frames after the cancel may be the live stream's, not the cancelled clip's");
+        else
+            c.Crit("noNewFrameAfterCancel", noNewExpected, noNewMeasured, !playingAfterCancel && leftoverFrames <= ControlCheck.CancelMaxLeftoverAudioFrames);
+        c.Crit("noEndOfAnimationAfterCancel", $"no EndOfAnimation sent after the cancel, over a {ControlCheck.CancelWatchMs} ms watch (A25: Abort clears startSent, so none follows)",
+            endsAfter.Count, endsAfter.Count == 0);
+        c.Obs("abortAnimationSent", new[] { "M5-023" },
+            "was AbortAnimation 0x8D sent on the cancel? The engine sends it reliable, synchronously inside Abort (A22, A23); this stack does not send it yet",
+            new JsonObject { ["abortAnimationSends"] = SendsIn(abortSends, cancel, end, cancel, RobotMessageId.AbortAnimation), ["count"] = abortSends.Count },
+            "M5-023 is IMPLEMENTATION_GAP: the 0x8D send is not built in this stack, and how the robot reacts to 0x8D is HARDWARE_ONLY (M5 inventory A23, A25)");
+        c.Note = "the cancel is StopIfCurrent, this stack's Abort (M5-023): the send buffer is kept and flushed by the next Update, and no EndOfAnimation follows (A24, A25). "
+                 + "AbortAnimation 0x8D is not sent by this stack yet (the M5-023 gap); abortAnimationSent records whether it was. The clip has face and audio tracks only.";
     }
 
     // ------------------------------------------------------------------ CUBES
 
     private async Task CubesCheck(CheckRec c)
     {
-        var robot = _robot!;
         double from = Mark("cubesStart");
+        try { await CubesCheckBody(c, from); }
+        finally { CubeObservations(c, from); }
+    }
+
+    private static readonly RobotMessageId[] CubeTelemetryTags =
+    {
+        RobotMessageId.ObjectAccel, RobotMessageId.ActiveObjectMoved, RobotMessageId.ActiveObjectStopped, RobotMessageId.ActiveObjectTapped,
+        RobotMessageId.DataDump, RobotMessageId.PickAndPlaceResult, RobotMessageId.ObjectTappedFiltered, RobotMessageId.ObjectPowerLevel,
+        RobotMessageId.ActiveObjectUpAxisChanged,
+    };
+
+    /// <summary>
+    /// CUBES's observations, taken on every exit (a skip included): the cube-light sends after the connection (M4-018)
+    /// and the cube telemetry received (M4-024), each counted from the ConnectToRobot call and from the first cube
+    /// Connected event. No verdicts.
+    /// </summary>
+    private void CubeObservations(CheckRec c, double cubesFrom)
+    {
+        double call = MarkOr("connectCall", 0), to = Now();
+        double connectedT = _events.ToArray().Where(e => e.Kind == "cube-connection" && e.Data["connected"]?.GetValue<bool>() == true).Select(e => e.T).DefaultIfEmpty(double.NaN).Min();
+        var sends = FirstSends().Where(s => s.T >= call && s.T <= to).ToList();
+        var received = Received().Where(s => s.T >= call && s.T <= to).ToList();
+        JsonObject PerTag(List<Sent> list, IEnumerable<RobotMessageId> tags, int examples)
+        {
+            var o = new JsonObject();
+            foreach (var tag in tags)
+            {
+                var t = list.Where(s => s.Tag == (byte)tag).ToList();
+                var afterConnected = double.IsNaN(connectedT) ? new List<Sent>() : t.Where(s => s.T >= connectedT).ToList();
+                o[$"0x{(byte)tag:X2} {TagName((byte)tag)}"] = new JsonObject
+                {
+                    ["count"] = t.Count,
+                    ["afterCubeConnected"] = afterConnected.Count,
+                    ["inCubesCheck"] = t.Count(s => s.T >= cubesFrom),
+                    ["firstAfterConnectMs"] = t.Count == 0 ? null : LinkCheck.Num(t[0].T - call),
+                    ["firstAfterCubeConnectedMs"] = afterConnected.Count == 0 ? null : LinkCheck.Num(afterConnected[0].T - connectedT),
+                    ["first"] = new JsonArray(t.Take(examples).Select(s => (JsonNode)new JsonObject { ["afterConnectMs"] = LinkCheck.Num(s.T - call), ["fields"] = Fields(s.Payload) }).ToArray()),
+                };
+            }
+            return o;
+        }
+        string times = "counted from the ConnectToRobot call to the end of CUBES; afterCubeConnected counts from the first cube Connected event (ObjectConnectionState)";
+        c.Obs("cubeLightSends", new[] { "M4-018" },
+            "were CubeID 0x10, CubeLights 0x04 and SetCubeGamma 0x0C sent after the cube connected (the WakeUp lights: SetCubeGamma, then CubeID, then CubeLights, LC1..LC6)?",
+            new JsonObject
+            {
+                ["cubeConnectedAtMs"] = double.IsNaN(connectedT) ? null : LinkCheck.Num(connectedT - call),
+                ["sends"] = PerTag(sends, new[] { RobotMessageId.SetCubeGamma, RobotMessageId.SetCubeID, RobotMessageId.SetCubeLights }, 3),
+                ["times"] = times,
+            },
+            "M4-018 is IMPLEMENTATION_GAP; what the cube shows is robot-side");
+        c.Obs("cubeTelemetry", new[] { "M4-024", "M4-009", "M4-023", "M9-017" },
+            "which cube telemetry did the robot forward after the connection (ObjectAccel 0xF5, 0xB4..0xB9, ObjectPowerLevel 0xCE, UpAxisChanged 0xD7), and when was StreamObjectAccel sent?",
+            new JsonObject
+            {
+                ["cubeConnectedAtMs"] = double.IsNaN(connectedT) ? null : LinkCheck.Num(connectedT - call),
+                ["received"] = PerTag(received, CubeTelemetryTags, 2),
+                ["streamObjectAccelSends"] = SendsIn(sends, call, to, call, RobotMessageId.StreamObjectAccel),
+                ["times"] = times + "; received counts are wire messages (reliable resends dropped), before the engine's drain",
+            },
+            "M4-024 is HARDWARE_ONLY: what makes the robot forward cube telemetry after connection is not established by source");
+    }
+
+    private async Task CubesCheckBody(CheckRec c, double from)
+    {
+        var robot = _robot!;
         bool poolEnabled = robot.Cubes.Connections.AutoBlockPoolEnabled;
         c.Crit("blockPoolEnabled", "the auto block pool was enabled after the Success response (policy M1-042)", poolEnabled, poolEnabled);
         var connected = await robot.Cubes.WaitForConnectionAsync(TimeSpan.FromMilliseconds(ControlCheck.CubeWaitMs));
@@ -1287,9 +1645,11 @@ internal sealed class ControlRun
         c.Measured["objectAccelMessages"] = accel.Count;
         c.Measured["firstObjectAccelAfterMs"] = accel.Count == 0 ? null : LinkCheck.Num(accel[0].T - accelFrom);
         c.Measured["objectAccelPerSecond"] = LinkCheck.Num(accel.Count * 1000.0 / (accelTo - accelFrom));
-        c.Crit("accelStream", $"at least {ControlCheck.CubeAccelMin} ObjectAccel for that cube in the {ControlCheck.CubeAccelWindowMs} ms after StreamObjectAccel on (CubeAccelStreams.AddListener)",
+        c.Crit("accelStream", $"at least {ControlCheck.CubeAccelMin} ObjectAccel for that cube in the {ControlCheck.CubeAccelWindowMs} ms after StreamObjectAccel on (CubeAccelStreams.AddListener, M9-017); "
+                              + "whether the robot forwards it is HARDWARE_ONLY (M4-024)",
             accel.Count, accel.Count >= ControlCheck.CubeAccelMin);
-        c.Note = "the accelerometer criterion is a presence test (at least one message): the stream's rate is not in any record";
+        c.Note = "the accelerometer criterion is a presence test (at least one message): the stream's rate is not in any record. It depends on robot-side forwarding that source does not establish (M4-024, HARDWARE_ONLY): "
+                 + "a failure is evidence about the robot as much as about the stack; cubeTelemetry records everything the robot forwarded";
     }
 
     private static JsonObject CubeJson(Cube c) => new()
@@ -1345,8 +1705,16 @@ internal sealed class ControlRun
             var name = $"camera-{f.F.ImageId:D5}.jpg";
             File.WriteAllBytes(Path.Combine(_bundle, name), f.F.Jpeg);
             lock (_gate) _savedImages.Add(name);
-            saved.Add(new JsonObject { ["file"] = name, ["imageId"] = f.F.ImageId, ["bytes"] = f.F.Jpeg.Length, ["colourFlag"] = f.F.IsColor, ["channelSpread"] = LinkCheck.Num(ChannelSpread(f.F.Jpeg)) });
+            saved.Add(new JsonObject { ["file"] = name, ["imageId"] = f.F.ImageId, ["bytes"] = f.F.Jpeg.Length, ["colourFlag"] = f.F.IsColor, ["channelSpread"] = LinkCheck.Num(ChannelSpread(f.F.Jpeg)), ["meanLuminance"] = LinkCheck.Num(MeanLuminance(f.F.Jpeg)) });
         }
+        c.Obs("savedFrameLuminance", new[] { "M3-019" },
+            "how bright are the saved frames after the connection-time SetCameraParams {0.0, 0, true} (policy M3-019) and whatever exposure the robot then used?",
+            new JsonObject
+            {
+                ["frames"] = new JsonArray(saved.Select(s => (JsonNode)new JsonObject { ["file"] = s!["file"]!.DeepClone(), ["meanLuminance"] = s["meanLuminance"]?.DeepClone() }).ToArray()),
+                ["scale"] = "mean of the JPEG decoded as one grey channel, 0 (black) .. 255 (white)",
+            },
+            "no source gives the brightness the robot's camera produces; M3-019 is COMPATIBILITY_POLICY");
         var imageReq = FirstSends().Where(s => s.Tag == (byte)RobotMessageId.ImageRequest).Select(s => TryParse(s.Payload) as ImageRequest).Where(r => r is not null).ToList();
 
         c.Measured["windowMs"] = LinkCheck.Num(to - from);
@@ -1385,6 +1753,18 @@ internal sealed class ControlRun
             ["savedChannelSpread"] = "mean |R-G| + |G-B| of each saved frame decoded as RGB: 0 for a grey image",
         };
         c.Note = "no camera command is sent by this check: the stream is the ImageRequest {Stream, QVGA} the engine sends after SyncTime (M1-041); this check measures a 3 s window of it";
+    }
+
+    private static double MeanLuminance(byte[] jpeg)
+    {
+        try
+        {
+            var img = ImageResult.FromMemory(jpeg, ColorComponents.Grey);
+            long sum = 0; int n = img.Width * img.Height;
+            for (int i = 0; i < n; i++) sum += img.Data[i];
+            return n == 0 ? double.NaN : sum / (double)n;
+        }
+        catch { return double.NaN; }
     }
 
     private static double ChannelSpread(byte[] jpeg)
@@ -1457,6 +1837,65 @@ internal sealed class ControlRun
         return list;
     }
 
+    /// <summary>
+    /// Inbound CLAD messages as the frame trace saw them on the wire (before the engine's drain): reliable ones once per
+    /// sequence id (resends dropped), counted from each ConnectionResponse.
+    /// </summary>
+    private List<Sent> Received()
+    {
+        var list = new List<Sent>();
+        var seen = new HashSet<ushort>();
+        foreach (var f in Frames().Where(f => !f.Out && f.Frame is not null).OrderBy(f => f.T))
+            foreach (var m in f.Frame!.Messages)
+            {
+                if (m.Type == ReliableMessageType.ConnectionResponse) { seen.Clear(); continue; }
+                if (m.Type is not (ReliableMessageType.SingleReliableMessage or ReliableMessageType.SingleUnreliableMessage) || m.Payload.Length == 0) continue;
+                if (m.IsReliable && !seen.Add(m.Seq)) continue;
+                list.Add(new Sent(f.T, m.Payload[0], m.Payload));
+            }
+        return list;
+    }
+
+    /// <summary>The sends of these tags in [from, to], each with its time after <paramref name="rel"/> and its decoded fields.</summary>
+    private JsonArray SendsIn(IEnumerable<Sent> sends, double from, double to, double rel, params RobotMessageId[] tags)
+    {
+        var set = tags.Select(t => (byte)t).ToHashSet();
+        return new JsonArray(sends.Where(s => s.T >= from && s.T <= to && set.Contains(s.Tag))
+            .Select(s => (JsonNode)new JsonObject { ["afterMs"] = LinkCheck.Num(s.T - rel), ["tag"] = $"0x{s.Tag:X2}", ["msg"] = TagName(s.Tag), ["fields"] = Fields(s.Payload) }).ToArray());
+    }
+
+    /// <summary>A few decoded fields of the messages the new observations name; the payload hex otherwise.</summary>
+    private static JsonNode? Fields(byte[] payload)
+    {
+        switch (TryParse(payload))
+        {
+            case DisableAnimTracks d: return new JsonObject { ["mask"] = $"0x{d.Field0:X2}" };
+            case EnableAnimTracks e: return new JsonObject { ["mask"] = $"0x{e.Field0:X2}" };
+            case EnableStopOnCliff c: return new JsonObject { ["enable"] = c.Enable };
+            case CubeID id: return new JsonObject { ["objectId"] = id.ObjectID, ["rotationPeriodFrames"] = id.RotationPeriodFrames };
+            case SetCubeGamma g: return new JsonObject { ["gamma"] = $"0x{g.Field0:X2}" };
+            case SetCameraParams p: return new JsonObject { ["gain"] = LinkCheck.Num(p.Gain), ["exposureMs"] = p.ExposureMs, ["bool@6"] = p.AutoExposureEnabled };
+            case AbsoluteLocalizationUpdate a:
+                return new JsonObject
+                {
+                    ["timestamp"] = a.Timestamp, ["frameId"] = a.PoseFrameId, ["originId"] = a.PoseOriginId,
+                    ["x"] = LinkCheck.Num(a.PoseX), ["y"] = LinkCheck.Num(a.PoseY), ["angleRad"] = LinkCheck.Num(a.PoseAngleRad),
+                };
+            case NVCommand n: return new JsonObject { ["tag"] = $"0x{n.Tag:X8}", ["length"] = n.Length, ["op"] = n.Op };
+            case NVOpResult r: return new JsonObject { ["tag"] = $"0x{r.Tag:X8}", ["op"] = r.Op, ["result"] = r.Result, ["length"] = r.Length, ["dataBytes"] = r.Data.Length };
+            case DefaultCameraParams d:
+                return new JsonObject
+                {
+                    ["f32@0 (HandleDefaultCameraParams: max gain)"] = LinkCheck.Num(d.Field0),
+                    ["f32@4 (gain)"] = LinkCheck.Num(d.Field1),
+                    ["u16@8 (min exposure ms)"] = d.Field2,
+                    ["u16@0xA (max exposure ms)"] = d.Field3,
+                    ["u8[17]@0xC (gamma)"] = Convert.ToHexString(d.Field4),
+                };
+            default: return payload.Length <= 1 ? null : Convert.ToHexString(payload, 1, Math.Min(payload.Length - 1, 48));
+        }
+    }
+
     private static RobotMessage? TryParse(byte[] payload)
     {
         try { return RobotMessage.Parse(payload); } catch { return null; }
@@ -1515,6 +1954,7 @@ internal sealed class ControlRun
     {
         if (Interlocked.Exchange(ref _written, 1) == 1) return "FAIL (bundle already written)";
         Directory.CreateDirectory(_bundle);
+        LateObservations();                      // an abnormal exit before DISCONNECT still records them
         var frames = Frames().OrderBy(f => f.T).ToArray();
         var events = _events.ToArray().OrderBy(e => e.T).ToArray();
         (string Name, double Start)[] phases; lock (_phases) phases = _phases.ToArray();
@@ -1522,13 +1962,14 @@ internal sealed class ControlRun
         CheckRec[] checks; lock (_checks) checks = _checks.ToArray();
         string[] ex; lock (_exceptions) ex = _exceptions.ToArray();
         // Everything the main thread may still be changing is copied under the gate.
-        JsonObject robotInfo, animInfo; string[] savedImages; (double From, double To)? camera; JsonNode[] checkJson;
+        JsonObject robotInfo, animInfo; JsonObject? runObservations; string[] savedImages; (double From, double To)? camera; JsonNode[] checkJson;
         var records = ManifestStatuses();
         var status = records.ToDictionary(r => r!["id"]!.GetValue<string>(), r => r!["status"]!.GetValue<string>());
         string[] statuses;
         lock (_gate)
         {
             robotInfo = (JsonObject)_robotInfo.DeepClone();
+            runObservations = (JsonObject?)_runObservations?.DeepClone();
             animInfo = (JsonObject)_animInfo.DeepClone();
             savedImages = _savedImages.ToArray();
             camera = _cameraWindow;
@@ -1557,6 +1998,7 @@ internal sealed class ControlRun
             ["options"] = new JsonObject { ["allowDrive"] = _allowDrive, ["obb"] = _obb, ["noObb"] = _noObb, ["yes"] = _yes },
             ["provenance"] = "hardware verification only: a PASS does not raise the provenance or status of any cited record (AGENTS.md: hardware success does not upgrade provenance). The manager judges the bundle.",
             ["checks"] = new JsonArray(checkJson),
+            ["observations"] = runObservations,
             ["hardwareOnlyUncertainty"] = new JsonArray(ControlCheck.HardwareOnly.Select(h => (JsonNode)new JsonObject { ["id"] = h.Id, ["status"] = status.GetValueOrDefault(h.Id, "?"), ["note"] = h.Note }).ToArray()),
             ["reports"] = new JsonObject
             {
@@ -1655,6 +2097,7 @@ internal sealed class ControlRun
             "Cozmo.Robot/CozmoRobot.cs", "Cozmo.Robot/CozmoEngine.cs", "Cozmo.Robot/Motion.cs", "Cozmo.Robot/Sensors.cs",
             "Cozmo.Robot/Display.cs", "Cozmo.Robot/Audio.cs", "Cozmo.Robot/Camera.cs", "Cozmo.Robot/MiniJpeg.cs",
             "Cozmo.Robot/Cubes.cs", "Cozmo.Robot/CubeConnections.cs", "Cozmo.Robot/CubeAccel.cs",
+            "Cozmo.Robot/Lights.cs", "Cozmo.Robot/Vision/CameraCalibration.cs",
             "Cozmo.Robot/Animation/CozmoAnimations.cs", "Cozmo.Robot/Animation/AnimationScheduler.cs",
             "Cozmo.Transport/ReliableTransport.cs", "Cozmo.Transport/ReliableConnection.cs", "Cozmo.Transport/TransportConstants.cs",
         })
@@ -1697,7 +2140,9 @@ internal sealed class ControlRun
                 ["drive"] = $"{ControlCheck.DriveSpeedMmps} mm/s for {ControlCheck.DriveLegMs} ms each way; {ControlCheck.DriveMinMm}..{ControlCheck.DriveMaxMm} mm; stopped <= {ControlCheck.WheelStoppedMmps} mm/s within {ControlCheck.WheelStopWithinMs} ms",
                 ["faceHoldMs"] = ControlCheck.FaceHoldMs, ["audioMinFramesPlayed"] = ControlCheck.AudioMinFramesPlayed,
                 ["animStallGapMs"] = ControlCheck.AnimStallGapMs, ["animEndGraceMs"] = ControlCheck.AnimEndGraceMs,
-                ["cancelAfterMs"] = ControlCheck.CancelAfterMs, ["cancelGraceMs"] = ControlCheck.CancelGraceMs,
+                ["cancelAfterMs"] = ControlCheck.CancelAfterMs, ["cancelWatchMs"] = ControlCheck.CancelWatchMs,
+                ["cancelMaxLeftoverAudioFrames"] = ControlCheck.CancelMaxLeftoverAudioFrames,
+                ["originStatesListed"] = ControlCheck.OriginStatesListed,
                 ["cubeWaitMs"] = ControlCheck.CubeWaitMs, ["cubeAccelWindowMs"] = ControlCheck.CubeAccelWindowMs,
                 ["cameraWindowMs"] = ControlCheck.CameraWindowMs, ["cameraMinFrames"] = ControlCheck.CameraMinFrames,
                 ["afterDisposeWatchMs"] = ControlCheck.AfterDisposeWatchMs, ["watchdogMs"] = ControlCheck.WatchdogMs,
@@ -1727,7 +2172,7 @@ internal sealed class ControlRun
         sb.AppendLine();
         sb.AppendLine("## Files");
         sb.AppendLine();
-        sb.AppendLine("- `result.json`: `overall` (PASS only if every check passed; INCOMPLETE if none failed but some were skipped; FAIL otherwise). Each check has `status` (PASS, FAIL, SKIPPED with `skipReason`), `records` (fidelity ids with their manifest status), `prerequisites`, `criteria` (each with `expected`, `measured`, `pass`), `measured`, `warnings`, and, where a person has to judge, `humanNote` with `humanVerdict: null` for the operator to fill in. `observation` (CAMERA) is the M3-016 colour observation, without a verdict. `hardwareOnlyUncertainty` lists the HARDWARE_ONLY records the run depends on.");
+        sb.AppendLine("- `result.json`: `overall` (PASS only if every check passed; INCOMPLETE if none failed but some were skipped; FAIL otherwise). Each check has `status` (PASS, FAIL, SKIPPED with `skipReason`), `records` (fidelity ids with their manifest status), `prerequisites`, `criteria` (each with `expected`, `measured`, `pass`), `measured`, `warnings`, and, where a person has to judge, `humanNote` with `humanVerdict: null` for the operator to fill in. `observation` (CAMERA) is the M3-016 colour observation, without a verdict. `observations` (per check) are measurements with `pass: null` and a `notJudged` reason, each naming its records: CONNECT's pose origins after the AbsoluteLocalizationUpdate, origin-rejected states, DefaultCameraParams, the connection-time SetCameraParams and the NV calibration read; DRIVE's track locks and cliff handling; ANIM_CANCEL's AbortAnimation; CUBES's cube-light sends and cube telemetry; CAMERA's frame luminance. They never enter a status. The top-level `observations` holds the backpack light rate. `hardwareOnlyUncertainty` lists the HARDWARE_ONLY records the run depends on.");
         sb.AppendLine("- `frames.jsonl`: every datagram the transport's frame trace reported, both directions: time `t` (ms since start), `phase`, header, sub-messages with CLAD tag and name, and the raw datagram as `hex`. Inbound frames holding only camera image chunks outside the CAMERA window carry `hexOmitted` instead of `hex`, to keep the bundle small.");
         sb.AppendLine("- `events.jsonl`: phases, check verdicts, the engine's log, transport warnings, the connection response, every handled RobotState (pose, head, lift, wheels, battery), every AnimationState, other robot messages, cube, cliff and calibration events.");
         sb.AppendLine("- `env.json`: git HEAD and dirty state, SHA-256 of the tool and the stack sources and of the assemblies that ran, the robot's firmware (connection response and firmwareVersion JSON, policy M1-040), OS, .NET, the fixed criteria.");
@@ -1739,6 +2184,7 @@ internal sealed class ControlRun
         sb.AppendLine("- \"First send\" of a reliable message is the first frame carrying its sequence id; resends are not counted as new sends.");
         sb.AppendLine("- ANIM's \"no stall\" and DRIVE's distance are measured as described in each check's `note`; the public API has no stall report, and the pose is the robot's own frame.");
         sb.AppendLine("- The engine's live (keep-alive) animation stream is not exercised by this run.");
+        sb.AppendLine("- Stop-on-cliff is turned on after CONNECT, but the engine turns it off after a PotentialCliff (M4-019); the setup asks for the floor, not a table.");
         sb.AppendLine("- A PASS is hardware verification. It does not raise the provenance of any record.");
         return sb.ToString();
     }
