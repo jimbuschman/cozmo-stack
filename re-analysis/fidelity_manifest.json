@@ -102,9 +102,12 @@
       "name": "Motion, sensors, lights and cubes",
       "milestone": "M4",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true,
+      "implementation_fidelity_complete": false,
       "review": {
-        "state": "UNREVIEWED"
+        "state": "INVENTORY_APPROVED",
+        "inventory": "re-analysis/inventory/M4-control.md",
+        "approved": "2026-09-24",
+        "snapshot": "re-analysis/inventory/M4-control.approved.json"
       }
     },
     {
@@ -112,9 +115,12 @@
       "name": "Animation clips, scheduler and face",
       "milestone": "M5",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true,
+      "implementation_fidelity_complete": false,
       "review": {
-        "state": "UNREVIEWED"
+        "state": "INVENTORY_APPROVED",
+        "inventory": "re-analysis/inventory/M5-animation.md",
+        "approved": "2026-09-24",
+        "snapshot": "re-analysis/inventory/M5-animation.approved.json"
       }
     },
     {
@@ -1248,10 +1254,10 @@
         "A8 gray dispatch tbh 0x004F2898; A11 rows==240, cols==320 else BadDecode (0x004F2CDA..0x004F2D34); ts = EncodedImage+0xC"
       ],
       "live_path": true,
-      "test": "DeviceTests",
+      "test": "M3DeviceTests.M3_001_A13_TheHeaderTablesAreTheEngines, M3DeviceTests.M3_001_A12_TheSizeFieldsAreBigEndian, M3DeviceTests.M3_001_A11_OnlyA240By320DecodeIsAccepted, DeviceTests.CapturedChunksReassembleIntoDecodableQvgaJpegs",
       "effect": "a camera frame is reconstructed or rejected differently",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): the MiniJpeg header tables match the inventory's SHA-256 prefixes; height/width BE at 0x5E..0x61; EncodedImageDecoder.TryDecodeGray dispatches 3/4 (unsupported), 5/6 (JPEG), 7 (JPEG plus 160-column borders), 8, and 9 (the half-width colour JPEG to gray, then INTER_LINEAR to 320 x 240), and rejects anything but 240 x 320 (BadDecode); the frame timestamp is the last chunk's. VisionSystem decodes through it.",
+      "unresolved": "MISSING: A8 case 2 (ToGray of a raw RGB payload; the conversion is not in the rows), case 1 with a payload that is not exactly 320 x 240 bytes, and encodings 0 and above 9 (outside the tbh table): each is reported as a decode failure. The JPEG entropy decode is StbImageSharp in place of OpenCV's libjpeg (last-bit pixel differences possible); whether that library substitution is EQUIVALENT_IMPLEMENTATION is the manager's call.",
       "hardware_required": false
     },
     {
@@ -1259,17 +1265,17 @@
       "title": "Image chunk reassembly exactly as EncodedImage::AddChunk, ignored before SyncTimeAck",
       "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
       "effect": "a frame is assembled, dropped or split differently",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): CozmoCamera.AddLocked follows R1..R10 (oversize refused before any state change; a new id stored before the resolution check, a non-QVGA new id resetting nothing else; the order check with u8 wrap; duplicates invalidating; the last chunk by chunkCount - 1 == chunkId in int arithmetic, so a count of 0 never completes; timestamps moved before the TimestampNotIncreasing check; data appended only while valid; the constructor id 0xFFFFFFFF with valid 0), and CozmoCamera.Handle drops image chunks while the engine Robot is not time synced (A1/H1). The FrameDropped event on a superseded image is this stack's diagnostic; the engine discards it silently.",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "A1 HandleImageChunk exits unless robot+0x29 (0x00535A7A)",
         "M2 inventory Appendix C R1..R10 (EncodedImage::AddChunk 0x004F1CE0..0x004F1EE0) and H1..H5 (0x00535A64)"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "DeviceTests.ANewImageIdAbandonsWhateverWasBeingCollected",
+      "test": "M3DeviceTests.M3_002_A1_ChunksBeforeSyncTimeAckAreIgnored, M3DeviceTests.M3_002_R10_AFirstChunkWithTheConstructorsIdIsInvalid, M3DeviceTests.M3_002_R10_AChunkCountOf0NeverCompletes, M3DeviceTests.M3_002_R7_AnEqualTimestampIsAccepted, DeviceTests.ANewImageIdAbandonsWhateverWasBeingCollected",
       "id": "M3-002"
     },
     {
@@ -1277,16 +1283,16 @@
       "title": "MiniToJpegHelper: strip trailing 0xFF, drop the flag byte, stuff 0x00 after 0xFF, append FF D9",
       "location": "cozmo-stack/src/Cozmo.Robot/MiniJpeg.cs",
       "effect": "a reconstructed JPEG differs from the engine",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): MiniJpeg.ToJpeg for encodings 8 and 9: the header inserted, trailing 0xFF stripped, data[1..n-1] copied with 0x00 after each 0xFF, FF D9 appended; the copy skipped below 2 bytes. The empty/all-0xFF case is policy M3-020.",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "A12 0x004F31C4..0x004F32CC: trailing 0xFF strip (no lower bound), copy data[1..n-1] with 0x00 stuffing after 0xFF, skip the copy if fewer than 2 bytes remain, append FF D9"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "DeviceTests.MiniJpegPatchesTheFrameSizeAndRestoresByteStuffing",
+      "test": "M3DeviceTests.M3_003_A12_StripDropStuffAndEoi, DeviceTests.MiniJpegPatchesTheFrameSizeAndRestoresByteStuffing",
       "id": "M3-003"
     },
     {
@@ -1311,17 +1317,17 @@
       "title": "At most 3 completed images per event time go on to vision; one EncodedImage at a time",
       "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
       "effect": "more or fewer frames reach vision",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): CozmoCamera.PassesTickCapLocked: a new event time zeroes the counter and passes the image; within one time the counter is incremented and the image passes while below 3. FrameForVision (the SetNextImage hand-off, which VisionSystem subscribes to) gets at most 3 per event time, and the 4th and later log 'Ignoring %dth image'. The event time is the engine tick's BaseStationTimer seconds, which every message dispatched in one tick shares (the manager's reading of A3's [event+0]). One EncodedImage at a time (R2). The VisionComponent gates and mailbox (A4..A6) are M11's.",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "A3 counter RobotToEngineImplMessaging+0x128 keyed to the event time vs +0x130; the image passes while count < 3 (0x00535B0E, 0x00535B28..0x00535B52)",
         "A4..A6 VisionComponent gates and the latest-wins mailbox are the M11 interface (0x00652B1C..0x006530C8)"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "DeviceTests.ANewImageIdAbandonsWhateverWasBeingCollected",
+      "test": "M3DeviceTests.M3_005_A3_AtMostThreeImagesPerEventTimeReachVision",
       "id": "M3-005"
     },
     {
@@ -1329,7 +1335,7 @@
       "subsystem": "M3-device",
       "title": "Face canvas 64x128; wire image 128 columns x 64 rows as 32 two-row pairs; 33 ms per stream frame",
       "location": "cozmo-stack/src/Cozmo.Robot/Display.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B1 Image(64,128) and warpAffine to Size(128,64) (0x00585B3E..0x00585CB2)",
@@ -1337,17 +1343,17 @@
         "B18 stream time +0x84 += 0x21 = 33 ms per fully sent frame (0x0057CA94..0x0057CA9C)"
       ],
       "live_path": true,
-      "test": "DeviceTests",
+      "test": "M3DeviceTests.M3_006_B1_B15_TheWireImageIs128ColumnsOf64RowsIn32Pairs, M3DeviceTests.M3_013_C15_OneUpdateStreamsFramesUntilTheBudgetStopsTheDrain",
       "effect": "the face image is laid out or timed differently",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch, verifier fixes B1..B4): FaceBitmapCodec.EncodeCanvas takes the 64 x 128 canvas and walks each of the 128 columns as 32 two-row pairs (B1, B15). The 33 ms is the stream-time step per built frame (B18; AnimationScheduler.FrameStepMs, and AnimationScheduler.StreamTimeMs per A18); it is not a wall-clock send interval, and CozmoDisplay.MinInterval (33.3 ms, the raw-bitmap API's own pacing, MD3) does not rest on it. Which canvas row of a pair this stack's 128 x 32 FaceBitmap occupies (row 2y) is the M5 drawer's scan-line parity (B2..B4, MD5) and the MD3 API's, not this record's.",
+      "unresolved": "",
       "hardware_required": false
     },
     {
       "subsystem": "M3-device",
       "title": "CompressRLE exactly: skip, repeat, runs over row pairs, the trailing-run rule, raw fallback at >= 1024 bytes",
       "location": "cozmo-stack/src/Cozmo.Robot/Display.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B6 requires 64x128 (0x00581912..0x0058197A)",
@@ -1358,11 +1364,11 @@
       ],
       "prior": "runs only, every column padded to 32 rows, no skip, no repeat, and an image whose RLE was too big refused instead of sent raw",
       "live_path": true,
-      "test": "DeviceTests.AFaceTooComplexForTheRunLengthEncodingIsSentRaw, DeviceTests.UniformFacesUseTheSkipAndRepeatCommands",
+      "test": "M3DeviceTests.M3_007_B8_B10_B11_OneLitPixelThenSkips, M3DeviceTests.M3_007_B9_EqualColumnsAreRepeats, M3DeviceTests.M3_007_B11_TheTrailingRunIsAlwaysEmittedAtColumn127, M3DeviceTests.M3_007_B11_ATrailingZeroRunIsKeptWhenTheNextColumnDiffers, M3DeviceTests.M3_007_B10_PairBitsAreRow2kAndRow2kPlus1, M3DeviceTests.M3_007_B12_TheRawFallbackStartsAtExactly1024Bytes, M3DeviceTests.M3_007_B6_OnlyA64By128CanvasIsEncoded, M3DeviceTests.M3_007_B7_AnyNonZeroPixelIsLit",
       "id": "M3-007",
       "effect": "the face is encoded into different bytes",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): FaceBitmapCodec.EncodeCanvas: 64 x 128 required (else null, no face); u64 column masks with any non-zero lit; skip 0b00nnnnnn and repeat 0x40|k with c + n <= 127 and n <= 63; runs 0x80|((len-1)<<2)|pair over the pairs (row 2k bit 0, row 2k+1 bit 1); the trailing run always at c == 127 or pair != 0 and dropped only before an empty or equal column; the 128 LE u64 masks when the RLE is >= 1024 bytes.",
+      "unresolved": "",
       "hardware_required": false
     },
     {
@@ -1387,18 +1393,18 @@
       "subsystem": "M3-device",
       "title": "A blank canvas encodes as {0x3F, 0x3F}",
       "location": "cozmo-stack/src/Cozmo.Robot/Display.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B13 follows from B8 (0x00581B0A..0x00581B42): two skip-64 opcodes"
       ],
       "prior": "plausible and decoding to blank, but never produced by an encoder that had the skip command",
       "live_path": true,
-      "test": "DeviceTests.UniformFacesUseTheSkipAndRepeatCommands",
+      "test": "M3DeviceTests.M3_009_B13_ABlankCanvasEncodesAs3F3F",
       "id": "M3-009",
       "effect": "a blank face is sent as different bytes",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): EncodeCanvas of a blank canvas gives the two skips {0x3F, 0x3F} (B8, B13).",
+      "unresolved": "",
       "hardware_required": false
     },
     {
@@ -1414,10 +1420,10 @@
         "C7 no volume scaling (0x00597DFC..0x00597E02)"
       ],
       "live_path": true,
-      "test": "DeviceTests",
+      "test": "M3DeviceTests.M3_010_C6_TheFloatIsClampedScaledAndTruncated, M3DeviceTests.M3_010_C6_SignMagnitudeAndTheLowSegment, M3DeviceTests.M3_010_C5_AShortFrameIsPaddedWith00",
       "effect": "audio sounds different",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): AnkiMuLaw.Encode(float): NaN gives 0; f <= -1 gives -32767, else trunc(min(f, 1) * 32767); mag = s ^ (s >> 15); the exponent from the segment table; the mantissa mag >> 4 when mag >> 8 is 0, else (mag >> (exp + 3)) & 0xF; sign 0x80. No volume on the path; short frames zero-padded (0x00).",
+      "unresolved": "Not settled by the rows: the segment table 0x00C5C3F0 is cited but its values are not in the inventory (the code's table is the earlier transcription; the tests are table-relative), and whether the product with 32767.0 is taken in single or double precision (the code multiplies in f32). The engine's NaN warning is not logged. Needs the table values and the literal's width from the extractor.",
       "hardware_required": false
     },
     {
@@ -1425,16 +1431,16 @@
       "subsystem": "M3-device",
       "title": "22320 Hz, 744 samples per frame",
       "location": "cozmo-stack/src/Cozmo.Robot/Audio.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "C3 HijackAudioPlugIn(22320, 744) and SetupHijackAudioPlugInAndRobotAudioBuffers(22320, 744) (0x005942CE..0x005942EA)"
       ],
       "live_path": true,
-      "test": "SourceFidelityTests",
+      "test": "M3DeviceTests.M3_011_C3_22320HzAnd744Samples, DeviceTests.TheSampleRateIsTheEnginesAudioSampleRate",
       "effect": "audio plays at the wrong rate",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): CozmoAudio.SampleRate 22320 and SamplesPerFrame 744; the 30 Hz is only derived.",
+      "unresolved": "",
       "hardware_required": false
     },
     {
@@ -1442,7 +1448,7 @@
       "subsystem": "M3-device",
       "title": "The engine send budgets: 14 unplayed audio frames; min(8192 - unplayed bytes, 30000); counters from AnimationState and every send",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "C9 UpdateAmountToSend 0x0057C6F6..0x0057C7AC (14 at 0x0057C79E add.w r1,r1,#0xe)",
@@ -1452,10 +1458,10 @@
       ],
       "live_path": true,
       "effect": "the robot is sent more or less than the engine would",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch, verifier fixes B1..B4): StreamSendBuffer.UpdateAmountToSend computes min(8192 - (bytesStreamed - bytesPlayed), 30000), a negative value warning and becoming 0, and max(14 - (framesStreamed - framesPlayed), 0). The played counters are EngineRobot +0x238/+0x240, written only by the time-synced AnimationState handler. Every successful send adds its serialised length (EngineToRobot::Size: 1 + the packed member) to bytes streamed, and 1 to frames streamed for 0x8E, 0x8F and EndOfAnimation; a failed send is not counted (0x0057BFAE, 0x0057C47C): the robot sink reports MessageHandler::SendMessage's result (IAnimationSink.LastSendSucceeded) and CozmoAudio's counted sends use it too. The counters are zero from construction and after a robot removal. The drain spends each send from the Update's budget (implied by C14's stop at an audio message when the audio budget is 0). The offline seam (CreateOffline, no engine thread) reports no counters until an AnimationState has been handled and runs unbudgeted until then; production always applies the budget. The raw face (MD3) and the single-frame audio sends are counted but not budget-gated.",
+      "unresolved": "",
       "hardware_required": false,
-      "test": ""
+      "test": "M3DeviceTests.M3_012_C9_TheByteBudget, M3DeviceTests.M3_012_C9_TheAudioBudget, M3DeviceTests.M3_012_C11_C12_WhatEachSendCounts, M3DeviceTests.M3_012_C9_C11_TheByteBudgetBindsSampleFramesAt10, M3DeviceTests.M3_012_C10_ThePlayedCountersComeOnlyFromATimeSyncedAnimationState, M3DeviceTests.M3_012_C14_AFailedSendIsNotCounted"
     },
     {
       "id": "M3-013",
@@ -1463,7 +1469,7 @@
       "title": "The feed: FIFO drain stopping at the first over-budget message; per Update, one 33 ms frame at a time while the drain completes and the audio animation is ready",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
       "effect": "audio and face frames are paced differently",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch, verifier fixes B1..B4): StreamSendBuffer.Drain is SendBufferedMessages: FIFO, stopping at the first message over the byte budget or at an audio message with the audio budget 0 (reported, like an emptied buffer, as the engine's 0 result), and at a failed send (the error). AnimationScheduler.Advance is one Update (A13..A20): budgets refreshed, leftovers flushed (a send error ends the Update), then while the buffer is empty and the clip has frames left one frame is built and drained, and the stream time takes its 33 ms step after every drain without a send error, a budget stop included (A18; StreamTimeMs). With no frames left and the buffer empty, EndOfAnimation goes directly when StartOfAnimation was sent; if it never was, AudioSilence and StartOfAnimation are buffered and drained and the end follows on a later Update (A20; that branch is unreachable while this stack's HasFramesLeft rule always builds a frame first). An empty clip completes with nothing sent (A12, A13). A cancel keeps the send buffer, the next Update flushes it within the budget, and no EndOfAnimation follows (A24, A25); a replacement drops it (InitStream's ClearSendBuffer, A12). AbortAnimation 0x8D is not sent (M5, A22/A23). On a production robot the engine tick runs the streamer from Robot::Update while streaming is open (CD12), with no 30 Hz tick loop; the TargetInFlight 10 / 200 ms / priming model is gone. CozmoAudio.Play (policy M3-017) goes through the same buffer and budget.",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "C14 SendBufferedMessages 0x0057BF60..0x0057C010",
@@ -1471,27 +1477,27 @@
         "C16 readiness 0x0059A1CC..0x0059A1F6, states per Q5 GetStringForAnimationState 0x00596434"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "NOT BUILT (MD5, M5): ShouldProcessAnimationFrame's audio-animation readiness (C15, C16, A15, Q5); a streaming sound whose samples are not rendered yet still sends silence for the frame and keeps its place. Also M5's: the one-keyframe-per-track-per-frame pull rule (A19) and HasFramesLeft itself (this stack ends a clip at its duration once every keyframe has fired).",
       "hardware_required": false,
       "live_path": true,
-      "test": "DeviceTests"
+      "test": "M3DeviceTests.M3_013_C14_TheDrainStopsAtTheFirstMessageOverTheByteBudget, M3DeviceTests.M3_013_C14_AnAudioMessageStopsTheDrainWhenTheAudioBudgetIs0, M3DeviceTests.M3_013_C15_OneUpdateStreamsFramesUntilTheBudgetStopsTheDrain, M3DeviceTests.M3_013_CD12_TheEngineTickRunsTheStreamerOnlyWhileStreamingIsOpen, M3DeviceTests.M3_013_CD12_OnAProductionEngineTheEngineTickStreamsAClipToItsEnd, M3DeviceTests.M3_013_A24_A25_ACancelledClipsLeftoversAreFlushedWithNoEnd, M3DeviceTests.M3_013_A12_AReplacementDropsTheLeftovers, M3DeviceTests.M3_013_A12_AnEmptyClipSendsNothing, AnimationGapTests.TheTimelineFreezesWhileTheRobotHasNoRoomAndResumesWhereItStopped"
     },
     {
       "subsystem": "M3-device",
       "title": "Every streamed message is sent reliable and not hot; EndOfAnimation directly, not budget-gated",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
       "effect": "stream messages are lost or reordered",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch, verifier fixes B1..B4): Every stream message goes through CozmoEngine.SendMessage, which sends reliably with no hot hint (M1-026). EndOfAnimation goes through StreamSendBuffer.SendDirect: not budget-gated, counted as one frame plus its bytes on success, and sent only when the buffer is empty (A20), so it cannot overtake the clip's own messages; nothing is sent after it.",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "C14 SendMessage(reliable=1, hot=0) in SendBufferedMessages (0x0057BF60..0x0057C010)",
         "C12 SendEndOfAnimation 0x0057C464..0x0057C496"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "DeviceTests.AudioFramesGoOutReliablyAsTheStreamerSendsThem",
+      "test": "M3DeviceTests.M3_014_C12_EndOfAnimationIsNotBudgetGated, M3DeviceTests.M3_015_C4_A20_OneAudioMessagePerFrameFirstAndNothingAfterTheEnd, DeviceTests.AudioFramesGoOutReliablyAsTheStreamerSendsThem",
       "id": "M3-014"
     },
     {
@@ -1499,7 +1505,7 @@
       "subsystem": "M3-device",
       "title": "One audio message per stream frame (AudioSample or AudioSilence); the face keyframe goes first; several frames per Update",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "C4 GetAudioToSend 0x0057C016..0x0057C056, 0x0057C94E..0x0057C9C4",
@@ -1508,10 +1514,10 @@
       ],
       "live_path": true,
       "effect": "frames carry different content",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch, verifier fixes B1..B4): AnimationScheduler.BuildClipFrame buffers each frame in the engine's order (A16, 0x0057C94E..0x0057CA7A): (1) exactly one audio message, AudioSample with 744 mu-law bytes or AudioSilence; (2) StartOfAnimation, only if not yet sent, after the audio message; (3) head; (4) lift; (5) event; (6) the face animation's frame; (7) the procedural face, only if (6) buffered nothing and the face-animation track is at its end (A17: a pending faceAnimations keyframe holds it back); (8) backpack lights; (9) body, with this stack's body stop at that slot; (10) record heading; (11) turn to recorded heading. Each live-stream frame is one AudioSilence (StartOfAnimation 0xFF after it on the first). Advance builds several frames per Update while the buffer is empty. The layered face flag and ApplyLayersToAnim (A16 (2), (9)) are M5's.",
+      "unresolved": "",
       "hardware_required": false,
-      "test": ""
+      "test": "M3DeviceTests.M3_015_C4_A20_OneAudioMessagePerFrameFirstAndNothingAfterTheEnd, M3DeviceTests.M3_015_A16_TheFrameIsBuiltInTheEnginesTrackOrder, M3DeviceTests.M3_015_A17_APendingFaceAnimationHoldsTheProceduralFaceBack, M3DeviceTests.M3_013_C15_OneUpdateStreamsFramesUntilTheBudgetStopsTheDrain"
     },
     {
       "id": "M3-016",
@@ -1538,7 +1544,7 @@
       "title": "Test tones, beeps and sweeps",
       "location": "cozmo-stack/src/Cozmo.Robot/Audio.cs",
       "effect": "none on the robot behaviour under test",
-      "provenance": "harness signals of this stack",
+      "provenance": "harness signals of this stack. CozmoAudio.Play buffers its frames (each followed by the face) into the engine's send buffer and budget (M3-012, M3-013) and waits for them to go; its 1 s StallTimeout, after which it takes its unsent frames back out of the buffer and returns rather than wait on a robot that reports nothing played, is this stack's policy, carried over from the earlier model; so is pairing each tone frame with the current face. Play's frames are kept when a clip replaces the current one (the scheduler drops only its own entries); InitStream's ClearSendBuffer drops everything (M5 A12). Policy of this stack.",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "C4: the engine plays audio only through the animation stream (0x0057C016..0x0057C056); test tones have no engine counterpart"
@@ -1547,7 +1553,7 @@
       "unresolved": "",
       "hardware_required": false,
       "live_path": false,
-      "test": null
+      "test": "M3DeviceTests.M3_017_C9_APlayNeverSendsPastTheBudget, M3DeviceTests.M3_017_C9_APlayFollowsTheRobotAndKeepsWithinBothBudgets"
     },
     {
       "id": "M3-018",
@@ -1555,7 +1561,7 @@
       "title": "Colour decode: half-width JPEG, BGR to RGB, cv::resize INTER_LINEAR to 320x240; IsColor; Save at quality 90",
       "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
       "effect": "a colour frame looks different",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): EncodedImageDecoder: IsColor per the tbb table (2, 3, 4, 6, 7, 9, > 8); encoding 9 decoded from the half-width colour JPEG as RGB and resized to 320 x 240 by ResizeLinear, OpenCV INTER_LINEAR's fixed-point pixel-centre path (exact for the 160 -> 320 / 240 -> 240 case on every OpenCV path); BadDecode unless 240 x 320; CameraFrame.PresentationJpeg/Save write encoding 9 as a quality-90 JPEG, 8 as the rebuilt JPEG, others raw.",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "A9 RGB dispatch tbh 0x004F21AE, case 9 MiniToJpegHelper(h, w/2, 0x00C48D84), imdecode(1), cvtColor(4) (0x004F237E..0x004F2440)",
@@ -1564,54 +1570,63 @@
         "A25 EncodedImage::Save quality 90 (movs r2,#0x5a; 0x004F2EFC..0x004F2FA8)"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "MISSING: the RGB dispatch for any encoding but 9 (A9 names only 'the JPEG cases'), and IsColor of encoding 0 (a VERIFY failure in the engine; false here). The JPEG codec is StbImageSharp/StbImageWriteSharp in place of OpenCV's libjpeg: decoded pixels may differ in the last bit, and saved files byte for byte; whether that is EQUIVALENT_IMPLEMENTATION is the manager's call.",
       "hardware_required": false,
       "live_path": true,
-      "test": "DeviceTests.ColourSaveExpandsEncodedGeometryToNominalPresentationWidth"
+      "test": "M3DeviceTests.M3_018_A7_IsColor, M3DeviceTests.M3_018_A10_InterLinear160To320, M3DeviceTests.M3_018_A9_A25_AColourFrameDecodesTo320By240"
     },
     {
       "id": "M4-001",
       "subsystem": "M4-control",
-      "title": "Head angle limits -25 deg to 44.5 deg",
+      "title": "Head angle limits -0.436332..0.776672 rad: command clip in MoveHeadToAngleAction, state-side clamp, -25 deg before calibration",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "Robot::SetHeadAngle 0x00513358"
+        "MA9 MoveHeadToAngleAction ctor clip with warnings 0x00547F44..0x0054803A",
+        "MA22 Robot+0x2FC = -0.436332 in the ctor (0x0051007C..0x00510086)",
+        "MA23 RS6 SetHeadAngle 0x0051335E..0x005133E8 (M2 interface)"
       ],
       "live_path": true,
-      "test": "ControlTests"
+      "test": "ControlTests",
+      "effect": "the head is commanded or reported outside the engine limits",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "id": "M4-002",
       "subsystem": "M4-control",
-      "title": "Lift presets 32 / 76 / 92 mm and the 32..92 range",
+      "title": "Lift presets 0 LowDock 32 / 1 HighDock 76 / 2 HeightCarry 92 / 3 OutOfFOV -1; clamp to 32..92; a negative height goes to the nearer of 32 and 92",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "preset table 0x00C54688",
-        "MoveLiftToHeightAction::GetPresetName 0x00548CD4"
+        "MA14 preset table 0x00C54684, names 0x00548EBC..0x00548EDC",
+        "MA13 MoveLiftToHeightAction::Init clamp 0x0054905E..0x005490F6, negative height 0x005490FA..0x00549140"
       ],
       "live_path": true,
-      "test": "CorrectionTests"
+      "test": "CorrectionTests",
+      "effect": "the lift goes to a different height",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "subsystem": "M4-control",
-      "title": "Head and lift motor command default speed and acceleration",
+      "title": "The head and lift API follows the game-message path: caller speed/accel/duration; the original app passes head 10/20 and lift 10/20, duration 0",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
-      "effect": null,
-      "provenance": "MoveHeadToAngleAction and MoveLiftToHeightAction constructors, read",
-      "authority": "MoveHeadToAngleAction 0x00547E40 and MoveLiftToHeightAction 0x0054899C, read",
+      "effect": "the head or lift moves at a different speed",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "MoveHeadToAngleAction's constructor builds 15 and 20 as immediates - movs r1, #0 / movt r1, #0x4170 and movs r0, #0 / movt r0, #0x41a0 - and stores them with strd r1, r0, [fp, #0x90] at 0x00547F14, leaving the duration at +0x98 zero.",
-        "MoveHeadToAngleAction::Init 0x00548534 passes them straight on: ldrd r2, r3, [r6, #0x18] with r6 = action + 0x78, then MovementComponent::MoveHeadToAngle(angle, speed, accel, duration, flag) at 0x00548570, the duration read from +0x98. So the head default is 15 rad/s and 20 rad/s^2.",
-        "MoveLiftToHeightAction's constructor writes 0 to +0x88, 10 (0x41200000) to +0x8C and 20 (0x41A00000) to +0x90 at 0x00548A68..0x00548A78, and Init 0x0054903C reads ldrd r2, r3, [r4, #0x8c] for MoveLiftToHeight(height, speed, accel, duration, flag) at 0x0054931C with the duration from +0x88. So the lift default is 10 rad/s and 20 rad/s^2.",
-        "This stack sent head 10/10 and lift 3/20, which were PyCozmo's numbers; the defaults now come from the actions, as CozmoMotion.DefaultHeadSpeedRadPerSec and its three companions.",
-        "The same two functions also confirm the limits already recorded elsewhere: the head clips below -0.436332 rad (\"Requested head angle (%.1fdeg) less than min head angle (%.1fdeg). Clipping.\" at 0x00547F44) and the lift warns outside 32..92 mm (0x0054905E and 0x0054906C)."
+        "MA10 game SetHeadAngle overwrites +0x90..+0x98 with the message values (0x0052ABE0..0x0052AC24)",
+        "MA11 unity/scripts/csharp/Robot.cs:1443-1450 (head 10, 20, 0) and 1638-1646 (lift 10, 20, 0)",
+        "MA12 game SetLiftHeight: 32.0 while carrying -> PlaceObjectOnGroundAction (0x0052AC40..0x0052AC9E)",
+        "MA9, MA13 action ctor defaults (head 15/20 at 0x00547F14..0x00547F28; lift 10/20 at 0x00548A68..0x00548A78)"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": "ControlTests.TheHeadAndLiftDefaultsAreTheEnginesActionDefaults",
@@ -1623,12 +1638,10 @@
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
       "effect": "whether a direct motor command during calibration is sent or refused",
       "provenance": "a default of this stack over the engine's behaviour-layer response, which is implemented",
-      "authority": "HandleMotorCalibration 0x00536A68, BehaviorReactToMotorCalibration 0x006065F0, and the callers of IsHeadCalibrated / IsLiftCalibrated, all read",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "The engine does not gate motion on calibration. Robot::IsHeadCalibrated 0x00512378 and Robot::IsLiftCalibrated 0x005151A6 are called only by RobotGyroDriftDetector::DetectGyroDrift, CalibrateMotorAction::CheckIfDone, BehaviorReactToImpact::AlwaysHandle and BehaviorReactToMotorCalibration::HandleWhileRunning; MovementComponent::MoveHeadToAngle 0x006407CC and MoveLiftToHeight 0x00640700 send what they are given.",
-        "RobotToEngineImplMessaging::HandleMotorCalibration 0x00536A68 reads the message's three bytes - motorID, calibStarted, autoStarted - sets the calibrated flag to !calibStarted for MOTOR_HEAD (3) at 0x00536BCE and MOTOR_LIFT (2) at 0x00536BE4, calls CarryingComponent::SetCarriedObjectAsUnattached when the lift starts calibrating while carrying something (0x00536BB8), and broadcasts the message to the game.",
-        "BehaviorReactToMotorCalibration::InitInternal 0x006065F0 is the engine's actual response: SmartDisableReactionsWithLock, then a WaitAction of 5 seconds (0x40A00000 at 0x00606650), with HandleWhileRunning ending it early once both motors report calibrated. This stack implements that as ReactToMotorCalibrationBehavior, with the same 5 seconds and the same reaction lock.",
-        "The message-layer refusal in CozmoMotion.NotReady is therefore this stack's own default, kept because a caller here can command a motor directly where the engine's callers are behaviours the reaction has already displaced. Every caller can pass requireCalibration: false."
+        "MA21 no calibration gate in the engine: readers of Robot+0x314/+0x315 are 0x00511E1C, 0x00512378, 0x0051335E, 0x005151A6 only",
+        "MA20 HandleMotorCalibration 0x00536BAE..0x00536C0E"
       ],
       "status": "COMPATIBILITY_POLICY",
       "unresolved": null,
@@ -1640,14 +1653,16 @@
     {
       "id": "M4-005",
       "subsystem": "M4-control",
-      "title": "Action ids cycle 1..255",
+      "title": "Action ids: one u8 counter shared by head, lift and body, pre-incremented from 0; ids run 1..255, 0, 1",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
-      "effect": "an ack is matched to the wrong action after 255 actions",
-      "provenance": "a choice of this stack",
-      "authority": "the engine action id allocation",
-      "evidence": [],
-      "status": "COMPATIBILITY_POLICY",
-      "unresolved": "",
+      "effect": "an ack is matched to the wrong command",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "MA8 MC+8 = 0 at construction (0x0063DA7C); pre-increment in MoveLiftToHeight 0x0064070C..0x0064071A, MoveHeadToAngle 0x006407D8..0x006407E6, GetNextMotorActionID 0x006406EC..0x006406F4"
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": null
@@ -1659,8 +1674,10 @@
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
       "effect": "a drive command is reported confirmed when it is not",
       "provenance": "a choice of this stack",
-      "authority": "not applicable: the engine does not confirm wheel speeds this way",
-      "evidence": [],
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "no engine counterpart: DriveWheels is sent verbatim with no confirmation (MA1 0x0063ED82..0x0063EE9A)"
+      ],
       "status": "COMPATIBILITY_POLICY",
       "unresolved": "",
       "hardware_required": false,
@@ -1670,34 +1687,34 @@
     {
       "id": "M4-007",
       "subsystem": "M4-control",
-      "title": "StopAll sends StopAllMotors and a zero DriveWheels",
+      "title": "StopAll: the track-unlock preamble, then only StopAllMotors 0x3B",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
-      "effect": "one extra message on the wire at stop",
-      "provenance": "a choice of this stack, belt and braces",
-      "authority": "the engine stop path",
-      "evidence": [],
-      "status": "COMPATIBILITY_POLICY",
-      "unresolved": "",
+      "effect": "stopping sends extra messages",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "MA5 0x0063FBD8..0x0063FE10 -> 0x0064099C..0x006409C2",
+        "MA6 callers AbortAll 0x0051197C, StopRobotForSdk 0x005296D6, PotentialCliff 0x00535972, PlaceObjectOnGround 0x00554894, CheckReactionTriggerStrategies 0x005A3616, the game message 0x0063FBD4"
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": null
     },
     {
       "subsystem": "M4-control",
-      "title": "Cliff sensors named from the engine's enum; IMU and cube battery in the engine's units",
+      "title": "Cliff sensor data (raw values, CLIFF_DETECTED, timestamp, enum names); IMU and cube battery in the engine units",
       "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
-      "effect": null,
-      "provenance": "EnumToString(CliffSensor), DetectGyroDrift, the off-treads classifier and HandleObjectPowerLevel, all read",
-      "authority": "EnumToString(CliffSensor) 0x007D292C, RobotGyroDriftDetector::DetectGyroDrift 0x0052C568 and RobotToEngineImplMessaging::HandleObjectPowerLevel 0x00537130, read",
+      "effect": "cliff readings are reported differently",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "The cliff order is the engine's CliffSensor enum: EnumToString(CliffSensor) 0x007D292C bounds the value at 4 and indexes the pointer table at 0x01034C50, which holds \"CLIFF_FL\", \"CLIFF_FR\", \"CLIFF_BL\", \"CLIFF_BR\", \"CLIFF_COUNT\" in that order. The same index space reaches the readings: CliffSensorComponent::UpdateRobotData 0x00634016 copies the four 16-bit values out of RobotState at +0x50 and +0x54 as two words, in order, and GetCliffDataRaw(i) reads them back. So bit 0 is front-left and bit 3 back-right, which is what CliffSensors now says.",
-        "The gyro is in radians per second. DetectGyroDrift 0x0052C568 reads the z rate at RobotState +0x44 and calls the robot still only while its magnitude is at or under 0.174533 - 10 degrees a second - at 0x0052C580, then compares successive samples against 0.0174533 (one degree) and a pose delta against 0.00872665 (half a degree). Nothing scales the values on the way in.",
-        "The accelerometer is in millimetres per second squared: the engine's own off-treads classifier takes gravity to be 9800 in these units (OffTreadsClassifier.GravityAccel, already recorded under M10), and Robot::UpdateFullRobotState 0x0051291C reads the three axes at RobotState +0x30, +0x34 and +0x38 and filters them unscaled (0x00512A36..0x00512A6E).",
-        "The cube battery byte is hundredths of a volt: HandleObjectPowerLevel 0x00537130 converts the byte at the message's +8 and divides by 100 (0x00537162..0x00537172), reporting 100 per cent at or above 1.5 V, zero at or below 1 V, and (V - 1) * 200 between (0x00537176..0x0053719E). CozmoCube.BatteryVolts and BatteryPercent are that arithmetic; the raw byte is still exposed.",
-        "The offsets line up with this stack's RobotState layout exactly - status at +0x4C, cliff data at +0x50, accel at +0x30 and gyro at +0x3C - which is a second confirmation of that layout."
+        "SC2 UpdateRobotData 0x00634016..0x00634036",
+        "M2 RS12 cliffDataRaw 8-byte copy (0x0063401A..0x00634022)"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": "ControlTests.ACliffEventIsRecordedWithWhichSensorsTrippedAndWhetherTheRobotStopped",
@@ -1705,20 +1722,18 @@
     },
     {
       "subsystem": "M4-control",
-      "title": "Cube tracking from ObjectAvailable and ObjectConnectionState",
+      "title": "Cube tracking: ObjectAvailable / ObjectConnectionState, Moved / Stopped / UpAxisChanged handling with the charger and carry filters, per-object IsMoving",
       "location": "cozmo-stack/src/Cozmo.Robot/Cubes.cs",
-      "effect": "which cubes the world model holds, and what a cube's id means",
-      "provenance": "the four RobotToEngineImplMessaging handlers for active objects, read",
-      "authority": "HandleActiveObjectAvailable 0x0053391C, HandleActiveObjectConnectionState 0x00533B3C, HandleActiveObjectMoved 0x00533E30 and HandleObjectPowerLevel 0x00537130, read",
+      "effect": "cube motion or identity is reported differently",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "HandleActiveObjectAvailable 0x0053391C reads the factory id at +0, the object type at +4 and the RSSI at +8, and records the advertisement only when IsValidLightCube 0x007D1D08 or IsCharger 0x007D1D50 says yes (0x00533944 and 0x00533954). IsValidLightCube is a jump table over the type whose only true entries are 1, 2 and 3 - the three light cubes, not the ghost at 4 - and IsCharger is true for Charger_Basic. What it records is the type, the RSSI and the timestamp from Robot+0x2C in an unordered_map<u32, ActiveObjectInfo> at Robot+0x47C keyed by factory id (0x00533978..0x0053398A); the broadcast to the game is behind the flag at Robot+0x490, and the channel log behind an RSSI of 49 or less.",
-        "HandleActiveObjectMoved 0x00533E30 reads the timestamp at +0, the id at +4, three accelerometer floats at +8, +0xC and +0x10 and the axis byte at +0x14, and looks the object up by that id through BlockWorld::GetConnectedActiveObjectByActiveIdHelper (0x00533E96) - so telemetry is keyed on the object id, which is what this stack does.",
-        "HandleObjectPowerLevel 0x00537130 reads the id at +0, the missed packets at +4 and the battery byte at +8; see M4-008 for the voltage.",
-        "HandleActiveObjectConnectionState 0x00533B3C reads the object id at +0, the factory id at +4, the type at +8 and the connected flag at +0xC, and returns immediately when the id is above 4 (cmp r7, #4; bhi at 0x00533B58) - that id is a radio slot, one of the engine's MAX_NUM_ACTIVE_OBJECTS = 5 (ActiveObjectConstants). On a connection it calls BlockWorld::AddConnectedActiveObject(slot, factoryId, type) at 0x00533BD6, which hands back a world object id of its own; on a disconnection BlockWorld::RemoveConnectedActiveObject(slot) and Robot::HandleDisconnectedFromObject at 0x00533CA0 and 0x00533CB2.",
-        "That second id space is the one difference here: this stack keeps one id, the one on the wire, and uses it as the world object id, where the engine keeps the radio slot and the BlockWorld id apart. So the slot bound is recorded as CozmoCubes.MaxActiveObjectSlot and not enforced - enforcing it would refuse a world object rather than an impossible slot, and a robot never sends a slot above 4. Everything else on this path - which advertisements are taken, what is recorded from them, and telemetry keyed on the id the report carries - now follows the engine."
+        "S1 ObjectConnectionState handler 0x00533B56..0x00533D2C; S2 AddConnectedActiveObject 0x00623040..",
+        "CD10a Moved 0x00533E4C..0x005341BA; CD10b Stopped 0x00534636..0x00534AA4; CD10c UpAxisChanged 0x00534D66..0x00534E1E",
+        "LC8a..LC8e reuse rules 0x00623040..0x00623A8C, RemoveConnectedActiveObject 0x006243C6..0x00624436; one ObjectID per ActiveCube type (0x004EF468..0x004EF52A)"
       ],
-      "status": "EQUIVALENT_IMPLEMENTATION",
-      "unresolved": "",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": "ControlTests.OnlyLightCubesAndTheChargerAreTrackedFromAnAdvertisement",
@@ -1727,171 +1742,226 @@
     {
       "id": "M5-001",
       "subsystem": "M5-animation",
-      "title": "FlatBuffers animation reader and field indices",
+      "title": "Clip loading: FlatBuffer fields 0..9 in engine track order, first rejected keyframe truncates, JSON clips named by their first key, the two animation directories",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/FlatBufferReader.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "shipped schema, confirmed against the engine vtable slots",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "SetMembersFromFlatBuf vtable slots for head, lift, body and audio"
+        "D1 AnimClip keyframe voffsets 0x0057571C..0x00575EFC; cozmo_anim.fbs:80-96",
+        "gap1 C2 rejected keyframe returns at once (0x00575EA6..0x005760F2)",
+        "gap1 C3..C6 container, LoadAnimationFile 0x00521308..0x005215B4, CollectAnimFiles 0x0051F4C8..0x0051F6A0",
+        "gap2 J1..J5 DefineFromJson 0x005886F4.. (first top-level key); the four shipped JSON clips"
       ],
       "live_path": true,
-      "test": "AnimationAssetTests"
+      "test": "AnimationAssetTests",
+      "effect": "a clip loads with different content",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "id": "M5-002",
       "subsystem": "M5-animation",
-      "title": "19 procedural-face eye parameters and their order",
+      "title": "19 procedural-eye parameters and the ProceduralFace default (all 0 except EyeScaleX/Y 1, face scale 1, no distorter); SetFromFlatBuf rules",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFace.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        ".rodata 0x00C1D399"
+        "C6 SetFromFlatBuf 0x005838D0..0x00583AAC; SetFacePosition 0x00583B20..0x00583BF8",
+        "gap3 K4 ProceduralFace() 0x00583660..0x005836A0 (table 0x00C5A970 = {2,3})"
       ],
       "live_path": true,
-      "test": "ProceduralFaceRendererTests"
+      "test": "ProceduralFaceRendererTests",
+      "effect": "a face is built with different parameters",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "id": "M5-003",
       "subsystem": "M5-animation",
-      "title": "Face interpolation blends angles as directions and clips every eye parameter",
+      "title": "Face per frame and blending: GetFaceHelper, Interpolate, the Clip table, Combine for layers",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFace.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "ProceduralFace::Interpolate 0x00584290",
-        "ProceduralFace::Clip 0x005847A8",
-        "clip table 0x00C5A97C"
+        "C7 GetFaceHelper 0x0058CD80..0x0058CEE4",
+        "C8 Interpolate 0x00584290..0x0058454C",
+        "C9 Clip table 0x00C5A97C (0x005847A8..0x00584908)",
+        "C10 Combine 0x00584648..0x0058478E",
+        "gap1 G10 distorter through layering"
       ],
       "live_path": true,
-      "test": "ProceduralFaceRendererTests"
+      "test": "ProceduralFaceRendererTests",
+      "effect": "faces blend differently",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "id": "M5-004",
       "subsystem": "M5-animation",
-      "title": "Head and lift keyframes stream as animHeadAngle 0x93 and animLiftHeight 0x94",
+      "title": "Head 0x93 {u16 duration, s8 angle} and lift 0x94 {u16 duration, u8 height} keyframes, sent once at the trigger",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "HeadAngleKeyFrame::GetStreamMessage 0x004F8C08",
-        "LiftHeightKeyFrame::GetStreamMessage 0x004F8F80"
+        "C2 0x004F8C68, 0x004F8C90..0x004F8CD4, 0x004F8C08..0x004F8C4A",
+        "C3 0x004F8FDC..0x004F9048, 0x004F8F80..0x004F8FC4"
       ],
       "live_path": true,
-      "test": "AnimationTests"
+      "test": "AnimationTests",
+      "effect": "head or lift keyframes are sent differently",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "id": "M5-005",
       "subsystem": "M5-animation",
-      "title": "Keyframe variability applied at stream time with RandIntInRange",
+      "title": "Variability: RandIntInRange on the static keyframe RNG per GetStreamMessage, unclamped",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "GetStreamMessage 0x004F8C08"
+        "C2/C3 RandIntInRange(a-v, a+v) with strb truncation",
+        "gap1 RNG semantics 0x0082F9B0..0x0082FAC6"
       ],
       "live_path": true,
-      "test": "AnimationTests"
+      "test": "AnimationTests",
+      "effect": "keyframe values vary differently",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "id": "M5-006",
       "subsystem": "M5-animation",
-      "title": "Body radius string encoding and the stop message at duration end",
+      "title": "Body 0x99: radius strings, speed clamps (point turn +-300, straight/turn +-220), negative duration never stops, the stop at duration end",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationClip.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "ProcessRadiusString 0x004FB588",
-        "BodyMotionKeyFrame constructors 0x004FB14C and 0x004FB170",
-        "IsDone 0x004FBAEC"
+        "C4 0x004FB494..0x004FB68C",
+        "C5 0x004FBA8C..0x004FBB0E",
+        "gap1 S1 0x004FB1A8..0x004FB3FE"
       ],
       "live_path": true,
-      "test": "AnimationTests"
+      "test": "AnimationTests",
+      "effect": "the body moves differently",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "id": "M5-007",
       "subsystem": "M5-animation",
-      "title": "Animation timeline is a count of streamed frames times 33 ms and freezes during a stall",
+      "title": "Timeline: start + frames built x 33; advances whenever the drain returns OK (a budget stop included); frozen while the buffer is non-empty",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "UpdateStream 0x0057C84C adds 33 only after a frame is sent (0x0057CA94)",
-        "ShouldProcessAnimationFrame 0x0057CC6C"
+        "A18 0x0057CA7E..0x0057CABE; SendBufferedMessages returns 0 on a budget stop 0x0057BF98/0x0057BFA0",
+        "M3 C15"
       ],
       "live_path": true,
-      "test": "AnimationGapTests.TheTimelineFreezesWhileTheRobotHasNoRoomAndResumesWhereItStopped"
+      "test": "AnimationGapTests.TheTimelineFreezesWhileTheRobotHasNoRoomAndResumesWhereItStopped",
+      "effect": "keyframes fire at different times",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "id": "M5-008",
       "subsystem": "M5-animation",
-      "title": "One streaming animation at a time; a newcomer interrupts it or is refused",
+      "title": "One streaming animation: refuse or interrupt, tags 1..0xFE returned, loops with the same tag, live forced to 1 loop, ReplayLastAnimation",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "SetStreamingAnimation 0x0057B174"
+        "A4 0x0057B17E..0x0057B1B2",
+        "A5 0x0057B1DE..0x0057B24A",
+        "A6 0x0057B2FC..0x0057B304",
+        "A8 0x0057B29C..0x0057B2C8",
+        "A9 0x0057B2D4..0x0057B2F6, 0x0057B660..0x0057B672",
+        "A13 0x0057CFF6..0x0057D036",
+        "A27 0x0057ED0E..0x0057ED2A"
       ],
       "live_path": true,
-      "test": "AnimationTests.AClipOnAFreeTrackIsStillRefusedBecauseOnlyOneAnimationStreamsAtATime"
+      "test": "AnimationTests.AClipOnAFreeTrackIsStillRefusedBecauseOnlyOneAnimationStreamsAtATime",
+      "effect": "a second animation is handled differently",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "id": "M5-009",
       "subsystem": "M5-animation",
-      "title": "Audio alternative chosen by cumulative probability",
+      "title": "Audio keyframe load rules: id low 32 bits, volume default 1.0, absent probabilities 1/N, mismatch or sum > 1 rejects",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "RobotAudioKeyFrame::GetAudioRefIndex 0x004F9AEC",
-        "SetMembersFromFlatBuf 0x004F9E54"
+        "C13 0x004F9E54..0x004FA05C"
       ],
       "live_path": true,
-      "test": "AnimationTests"
+      "test": "AnimationTests",
+      "effect": "audio keyframes load differently",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "id": "M5-010",
       "subsystem": "M5-animation",
-      "title": "Resting face is the shipped anim_neutral_eyes_01 through AnimationTrigger NeutralFace",
+      "title": "Neutral face: the first ProceduralFace keyframe of the first clip of ag_neutral_face; reset data and layer base; replayed after abort-to-nothing and RemoveIdle",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFaceRenderer.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "shipped OBB animation, installed by the engine",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "AnimationStreamer::AnimationStreamer 0x00579F78",
-        "ProceduralFace::SetResetData 0x00583550",
-        "assets ag_neutral_face"
+        "A2 0x0057A0D4..0x0057A20E, ProceduralFace::Reset 0x0058359C; AnimationTriggerMap.json:1308-1309",
+        "A30 0x0057BA60..0x0057BD6E",
+        "A31 0x0057CF6A..0x0057CFF2"
       ],
       "live_path": true,
-      "test": "IdleFaceTests"
+      "test": "IdleFaceTests",
+      "effect": "the resting face differs",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "id": "M5-011",
       "subsystem": "M5-animation",
-      "title": "Animation group choice by weight with a mood fallback to Default",
+      "title": "Group choice: mood, head window and cooldown filters; RandDbl(sum w) weighted draw; fallback to the Default mood",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "AnimationGroup::GetAnimationName 0x0058A970"
+        "D4 0x0058C4C0..0x0058C7BE",
+        "D5 0x0058A946..0x0058AB2E",
+        "D6 0x0058AB30..0x0058AE2A"
       ],
       "live_path": true,
-      "test": "AnimationAssetTests"
+      "test": "AnimationAssetTests",
+      "effect": "a different clip is chosen",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "subsystem": "M5-animation",
-      "title": "An audio keyframe's volume is the Event_Volume trim, not a gain",
+      "title": "An audio keyframe volume (default 1.0) is passed on to the audio layer; its Wwise effect is M6",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
-      "effect": null,
-      "provenance": "RobotAudioAnimationOnRobot::BeginBufferingAudioOnRobotMode and the shipped banks, read",
-      "authority": "RobotAudioAnimationOnRobot::BeginBufferingAudioOnRobotMode 0x00598298 and the Event_Volume bindings in the shipped banks, read",
+      "effect": "audio plays at a different level",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "The keyframe volume goes to Wwise as a game parameter, not to the samples. RobotAudioAnimationOnRobot::BeginBufferingAudioOnRobotMode posts the event with RobotAudioClient::PostCozmoEvent (0x0059826C), keeps the playing id it returns, and calls RobotAudioClient::SetCozmoEventParameter(playingId, parameter, value) at 0x00598298 with r2 = 0xD2687048 and the volume from the audio ref at +0xC, then ProcessEvents.",
-        "0xD2687048 is the FNV-1 hash of \"Event_Volume\", which is one of the parameter names in the bank definition text.",
-        "In the shipped banks that parameter is bound to the Volume property of three actor mixers - 62050212 and 682998829 in Cozmo.bnk, 121198006 in Dev_Debug.bnk - with accumulate 1 (additive) and a curve from (0, -1) to (1, 0). Volume is in decibels, so the whole range of the keyframe volume is one decibel of trim: 1.0 leaves the event alone, 0.0 takes one decibel off it, and nothing about it is silence.",
-        "This stack multiplied the PCM by the volume, so a keyframe volume of 0 was silence and 0.5 was half amplitude - about six decibels down where the engine is half of one. WwiseAudioSource now reads the binding out of the loaded banks and converts the volume through its curve, so the gain is 10^(dB/20) and a bank set that binds the parameter differently is followed.",
-        "WavAudioSource, this stack's own source for a wav file on disk, still scales linearly; it is not an engine path and has no Wwise parameter behind it."
+        "C13 volume f2 default 1.0 (0x004F9E54..0x004FA05C)",
+        "C14 the static default {eventId 0, volume 1.0} (0x004F9E18)"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": "WwiseTests.TheKeyframeVolumeIsTheEventVolumeTrimNotAGain",
@@ -1899,19 +1969,17 @@
     },
     {
       "subsystem": "M5-animation",
-      "title": "The faceAnimations track plays the pre-rendered face assets",
+      "title": "faceAnimations: one sprite frame per stream frame, empty frames skipped, two RLE variants per image chosen by _firstScanLine, index reset on abort",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/FaceAnimationLibrary.cs",
-      "effect": null,
-      "provenance": "FaceAnimationKeyFrame and FaceAnimationManager, read, and the shipped assets",
-      "authority": "FaceAnimationKeyFrame::GetStreamMessage 0x004F97C8, FaceAnimationKeyFrame::IsDone 0x004F976C, FaceAnimationManager::ReadFaceAnimationDir 0x00580048 and FaceAnimationManager::AddImage 0x00581440, read",
+      "effect": "sprite faces look different",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "A faceAnimations keyframe carries a name, not pixels. FaceAnimationKeyFrame::SetMembersFromFlatBuf 0x004F9708 reads the one string field and Process 0x004F9574 trims it; GetStreamMessage 0x004F97C8 asks the FaceAnimationManager singleton for GetFrame(name, index) (0x004F9812), sends the frame it returns as EngineToRobot(AnimKeyFrame::FaceImage) - the 0x408-byte message built at 0x004F984A - and moves the index on. IsDone 0x004F976C is true once the index has reached GetNumFrames(name). So the track plays one pre-rendered frame per streaming tick until the frames run out.",
-        "FaceAnimationManager::ReadFaceAnimationDir 0x00580048 resolves the faceAnimations resource directory and lists the directories inside it (FileUtils::ListAllDirectories at 0x005800B0), one per animation. The shipped tree has two: assets/faceAnimations/face_bored_event_02, 151 frames, and face_bored_event_04, each frame a 128 x 64 eight-bit grayscale PNG numbered in order. The two clips that name them are anim_bored_event_02 and anim_bored_event_04.",
-        "AddImage 0x00581440 is how an image becomes a frame: Image::Threshold(0x80) at 0x00581462, then the helper at 0x00581254 clears every even canvas row - the memclr loop stepping by two from zero - and calls FaceAnimationManager::CompressRLE, the encoder already implemented as FaceBitmapCodec.Encode. Clearing the even rows is what turns the 64-row canvas into the display's 32 rows, so the odd row of each pair is the one that survives.",
-        "This stack now reads the same files: FaceAnimationLibrary opens the directory, MiniPng decodes the grayscale PNGs, each frame is thresholded at 0x80 and takes the odd row of each pair, and AnimationScheduler streams one frame per tick from a faceAnimations keyframe, the pre-rendered frames owning the screen until they run out. It used to ignore the track."
+        "C12 0x004F9708..0x004F98C4; FaceAnimationManager 0x00581254..0x005812C4; GetFrame 0x005817B4..0x005817CA",
+        "M3 B4"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": "AnimationAssetTests.AClipWithAFaceAnimationTrackStreamsItsFrames",
@@ -1919,33 +1987,35 @@
     },
     {
       "subsystem": "M5-animation",
-      "title": "The animation cooldown and head-angle gate are enforced at selection time",
+      "title": "Cooldown keyed by clip name across groups; the Default-mood backup rule within +-0.05 rad, else the first entry",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "AnimationGroupContainer::IsAnimationOnCooldown excludes an entry until now >= selectedAt + CooldownTime_Sec, and when every candidate is on cooldown the engine takes the one soonest to come off it rather than none. The head-angle gate is UseHeadAngle with HeadAngleMin_Deg and HeadAngleMax_Deg, carried by the shipped CozmoSays groups. Both fields were already parsed out of the group files; neither was applied",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "ag_cozmosays_badword.json carries UseHeadAngle with a window from -10 degrees",
-        "the weighted draw itself is AnimationGroup::GetAnimationName 0x0058A970 and is unchanged"
+        "D5 cooldown set on a pick; MoodManager::Update 0x0067B5E6",
+        "D6 0x0058AB30..0x0058AE2A",
+        "D7 0x0058BA28..0x0058BA98"
       ],
       "live_path": true,
       "test": "AnimationGroupGateTests.TheHeadAngleGateDropsEntriesOutsideTheirWindow",
-      "id": "M5-014"
+      "id": "M5-014",
+      "effect": "clips repeat or are skipped differently",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "subsystem": "M5-animation",
-      "title": "Procedural-face corner-radius parameter assignment",
+      "title": "Corner radii rx = roundf(p*15), ry = roundf(p*20) into four ellipse2Poly corners; below 1 a point",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFaceRenderer.cs",
-      "effect": null,
-      "provenance": "ProceduralFaceDrawer::DrawEye 0x005850E0, read",
-      "authority": "ProceduralFaceDrawer::DrawEye 0x005850E0, read",
+      "effect": "the eye corners look different",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "DrawEye draws the outline as four elliptical corner arcs through cv::ellipse2Poly, at 0x00585244, 0x0058529A, 0x00585304 and 0x00585372. Each call carries its arc and the centre it turns about: 270..360 about (15 - rx, ry - 20), 0..90 about (15 - rx, 20 - ry), 90..180 about (rx - 15, 20 - ry) and 180..270 about (rx - 15, ry - 20), every one with delta 10. That is the upper-inner corner first and the rest clockwise, on an eye box of x in [-15, 15] and y in [-20, 20].",
-        "The radii come from the eye's parameter block at +0x14, +0x18, +0x1C, +0x20, +0x24, +0x28, +0x2C and +0x30 (loaded at 0x0058513A..0x00585146 and 0x00585106..0x0058512C), which is LowerInnerRadiusX through LowerOuterRadiusY in the order ProceduralEyeParameter declares them - the enum starts at EyeCenterX at +0, so index 5 lands on +0x14. The first arc pairs +0x1C with +0x20, the upper-inner pair, which fixes the whole mapping.",
-        "A corner whose rounded radius is under one pixel in either axis is drawn sharp: the engine pushes the exact box corner instead of calling ellipse2Poly - (15, -20) at 0x00585256, (15, 20) at 0x005852AC. The x radii are scaled by the eye's width and the y radii by 40 before rounding.",
-        "This is the mapping and the order the renderer already drew; it was inferred and is now read."
+        "gap1 D1 0x0058520E..0x005853C4"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": "ProceduralFaceRendererTests.TheSecondEyeIsTheFirstMirroredSoInnerMeansTheSameOnBoth",
@@ -1954,59 +2024,69 @@
     {
       "id": "M5-016",
       "subsystem": "M5-animation",
-      "title": "Backpack lights track is read and not acted on",
+      "title": "Backpack-lights track: loaded via JSON, colours raw-or-normalised, 0x98 sent every frame while current, LED order Left Front Middle Back Right",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationClip.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "BackpackLightsKeyFrame::SetMembersFromFlatBuf is a stub in the engine too"
+        "C16 0x005758C8..0x00575CBE",
+        "C17 GetColorOptional 0x0084024C..0x0084050C; encoding 0x004FABDC..0x004FAC12",
+        "C18 0x004FAC7C..0x004FADB6, 0x004FB0F4..0x004FB11A; 7140 keyframes in 111 shipped clips"
       ],
-      "live_path": true
+      "live_path": true,
+      "effect": "the backpack lights ignore or misplay animations",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "test": ""
     },
     {
       "subsystem": "M5-animation",
-      "title": "An audio keyframe draws one alternative and plays that one or nothing",
+      "title": "Audio alternative: r = RandDbl(1), first with lower <= r <= upper skipping |p| < 1e-5, else nothing",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "RobotAudioKeyFrame::GetAudioRef 0x004F9E18 calls GetAudioRefIndex(true) 0x004F9AEC, which draws RandDbl(1.0) and walks the references cumulative probabilities until the draw falls inside one. That single event goes to Wwise. There is no second draw and no walk down the remaining alternatives on failure",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "this stack tried the rest in order when the drawn one could not be decoded, which turned a decoder gap of its own (M6-003) into a different alternative being heard than the app plays",
-        "the test that covered the fallback asserted the deviation; it now asserts the draw"
+        "C14 0x004F9AEC..0x004F9CBE, 0x004F9DAC..0x004F9DFC"
       ],
       "live_path": true,
       "test": "AnimationGapTests.AnUnproducibleChosenAlternativeIsSimplySilent",
-      "id": "M5-017"
+      "id": "M5-017",
+      "effect": "a different sound plays",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false
     },
     {
       "id": "M5-018",
       "subsystem": "M5-animation",
-      "title": "How many frames one wall-clock tick streams",
+      "title": "Frames per Update while ShouldProcessAnimationFrame: empty buffer and keyframes left, or audio ready while audio exists",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "effect": "a late tick catches up at a different rate than the engine",
-      "provenance": "a choice of this stack: one frame per 33 ms tick, a late tick made up frame by frame",
-      "authority": "the engine streams to the audio budget on every update regardless of the clock (UpdateStream 0x0057C84C)",
+      "effect": "animations stream faster or slower",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "UpdateStream 0x0057C84C"
+        "A15 0x0057CC6C..0x0057CCA6",
+        "M3 C15, C16"
       ],
-      "status": "EQUIVALENT_IMPLEMENTATION",
-      "unresolved": "",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": "AnimationGapTests.ALateTickCatchesUpFrameByFrameNotByJumping"
     },
     {
       "subsystem": "M5-animation",
-      "title": "The last face is held after the last face keyframe, and no face the engine sends is oversize",
+      "title": "The layer base face is written back only by a streaming animation, not idle ones",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "effect": null,
-      "provenance": "SendEndOfAnimation and BufferFaceToSend, read",
-      "authority": "AnimationStreamer::SendEndOfAnimation 0x0057C448 and AnimationStreamer::BufferFaceToSend 0x0057C1FC, read",
+      "effect": "the held face differs",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "Nothing clears the face when an animation ends. SendEndOfAnimation 0x0057C448 builds EngineToRobot(AnimKeyFrame::EndOfAnimation) and sends that one message, reliable and not hot (0x0057C476); there is no face message, no blank frame and no reset. The robot keeps showing the last image it was given, so holding the last face is what the engine leaves on the screen. Between animations the next image is the keep-alive's.",
-        "The oversize half cannot arise. BufferFaceToSend 0x0057C1FC draws the procedural face, compresses it with FaceAnimationManager::CompressRLE, and on a non-zero return logs \"Failed to get RLE frame from procedural face\" and buffers nothing (0x0057C272); otherwise it allocates a fixed 0x408-byte EngineToRobot(AnimKeyFrame::FaceImage) at 0x0057C2C2. CompressRLE never returns more than 1024 bytes - above that it throws the RLE away and sends the raw buffer - so the largest face payload is 1024, against the 1403 an engine-default frame carries. This stack's refusal to send a larger payload is therefore unreachable on anything the engine would produce, and a face that cannot be encoded is dropped on both sides."
+        "C11 0x0064EFA8..0x0064EFEA, 0x0064F154..0x0064F244"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": "AnimationTests",
@@ -2029,17 +2109,18 @@
     },
     {
       "subsystem": "M5-animation",
-      "title": "The eye and its lids are filled by scanline, not by cv::fillConvexPoly",
+      "title": "Eye fill = shipped OpenCV 3.1.0 fillConvexPoly LINE_4 and ellipse2Poly; DrawEye outline and lid polygons; _firstScanLine offset; fill order",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFaceRenderer.cs",
-      "effect": "a boundary pixel could differ from what the engine would draw",
-      "provenance": "DrawEye's three fills, read; the fill itself is this stack's own scanline code",
-      "authority": "ProceduralFaceDrawer::DrawEye 0x005850E0, read",
+      "effect": "the eyes are drawn with different pixels",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "DrawEye fills with cv::fillConvexPoly(image, points, colour, lineType, shift) three times: the outline at 0x00585818 with the colour 255 - the double 0x406FE000 assembled at 0x005857F6 - and the two lids at 0x00585860 and 0x00585894 with zero, each with lineType 4 (LINE_4) and shift 0. Between the outline and the lids it calls ScanlineDistorter::AddOffNoise(matrix, 40, 30, image) when the face asks for it (0x0058582C).",
-        "This stack fills the same integer polygons - Place rounds each transformed point as the engine does at 0x00585696 and 0x005856A8 - by an even-odd scanline fill. On a convex integer polygon the left-chain-to-right-chain fill and the even-odd fill are the same, and both round a boundary to the nearest pixel; a polygon that is not convex is where they could part, and the lids at their extremes are the only shapes that could get there."
+        "gap1 D1..D6 DrawEye 0x0058520E..0x00585896",
+        "gap3 A1..A10 libopencv_imgproc fillConvexPoly 0x00042F58, FillConvexPoly 0x00042958, Line 0x000419DC, LineIterator 0x00041810, clipLine 0x000410DC (matches stock 3.1.0)",
+        "gap3 B1..B3 ellipse2Poly 0x00043C48 (SinTable 0x000E7910, vcvtr ties-to-even)"
       ],
-      "status": "EQUIVALENT_IMPLEMENTATION",
-      "unresolved": "",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": "ProceduralFaceRendererTests",
@@ -4327,17 +4408,23 @@
     {
       "id": "M4-010",
       "subsystem": "M4-control",
-      "title": "Outbound cube connection: the block pool, the five slots, and SetPropSlot",
+      "title": "Outbound cube connection: block pool, five slots, SetPropSlot, filter timers, advertisement expiry, slot states, disconnect handling",
       "location": "cozmo-stack/src/Cozmo.Robot/CubeConnections.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "live_path": true,
       "evidence": [
-        "BlockFilter::Enable 0x0061B59C, BlockFilter::Update 0x0061A79A, UpdateDiscovering 0x0061A7EC, UpdateConnecting 0x0061AA8C, AddObjectToPersistentPool 0x0061AC5C",
-        "Robot::ConnectToObjects 0x00517150, Robot::ConnectToRequestedObjects 0x00514A70 (SetPropSlot sent reliable, not hot), GetClosestDiscoveredObjectsOfType 0x00518314 (RSSI limit 150)",
-        "HandleActiveObjectConnectionState 0x00533B3C, Robot::HandleConnectedToObject 0x005179C0, HandleDisconnectedFromObject 0x00517BBC, CheckDisconnectedObjects 0x00514924",
-        "SetPropSlot::GetJSON 0x007A1244 and Pack 0x007A11A4; the transcription is documented in the CubeConnections class summary. No offline regression test exists yet for this path"
-      ]
+        "CD1 0x00514174..0x00514224",
+        "CD2 update order 0x0051422A..0x00514470",
+        "CD3 BlockFilter::Update 0x0061A79A..0x0061A7E0; CD4 UpdateConnecting 0x0061AA8C..0x0061AB88",
+        "CD5 ConnectToRequestedObjects 0x00514A88..0x00514C6C; CD6 0x005179DA..0x00517AA6; CD7 0x00517BD8..0x00517D14; CD8 0x00514924..0x00514A0E",
+        "S3 HandleConnectedToObject 0x005179D6..0x00517AA6"
+      ],
+      "effect": "cubes connect or disconnect differently",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "test": ""
     },
     {
       "id": "M4-011",
@@ -4358,18 +4445,21 @@
     {
       "id": "M4-012",
       "subsystem": "M4-control",
-      "title": "StartMotorCalibration: the engine's send path and flag semantics",
+      "title": "StartMotorCalibration is never automatic; byte0 head, byte1 lift; MotorCalibration handling",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
-      "authority": "libcozmoEngine.so",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "CalibrateMotorAction::CalibrateMotorAction(Robot&, bool, bool) 0x00547A9C stores its first bool at this+0x78 and its second at this+0x79 (0x00547B86, 0x00547B8C); its name is built as CalibrateMotor- plus Head when the first is set and Lift when the second is (the strings at 0x00547C00 and 0x00547C1C), and its track mask is first | second << 1 (bfi at 0x00547B3A)",
-        "CalibrateMotorAction::Init 0x00547C28 calls MovementComponent::CalibrateMotors(this+0x78, this+0x79) (0x00547C42) and fails with 0x03000016 when that fails",
-        "MovementComponent::CalibrateMotors 0x0064059C sends StartMotorCalibration with the first bool as byte 0 and the second as byte 1 (0x006405D2..0x006405DC), through Robot::SendMessage(msg, true, false): reliable, not hot (0x006405EA..0x006405EE)",
-        "StartMotorCalibration::Pack 0x007A1DA6 writes byte 0 then byte 1, each as a bool",
-        "So byte 0 is calibrate-head and byte 1 is calibrate-lift, and the message goes out when a CalibrateMotorAction starts. Motion.RequestMotorCalibration sends Head then Lift, reliably: it matches, and nothing in production changed"
+        "MA18 senders: CalibrateMotors (from CalibrateMotorAction::Init) and 0x005CFAC2 only",
+        "MA19 CheckIfDone 0x00547D38..0x00547DC2",
+        "MA20 HandleMotorCalibration 0x00536BAE..0x00536C0E"
       ],
-      "status": "EXACT_SOURCE",
-      "live_path": true
+      "status": "IMPLEMENTATION_GAP",
+      "live_path": true,
+      "effect": "the robot recalibrates when the engine would not",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "test": ""
     },
     {
       "id": "M4-013",
@@ -4482,19 +4572,16 @@
     {
       "id": "M5-022",
       "subsystem": "M5-animation",
-      "title": "What the engine does when the robot disconnects during a streaming animation",
+      "title": "Disconnect and teardown: a failed send only returns; ~Robot AbortAll cancels actions, aborts path and docking, sends AbortAnimation 0x8D and StopAllMotors",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "effect": "on a dropped link the animation ends, keeps streaming, or leaves state behind differently from the engine",
-      "provenance": "the tick loop catches the transport's exception, reports Faulted and ends the playback; EndLocked's attempts to send to the gone robot are swallowed. The engine sends nothing either: the difference is only in mechanism",
-      "authority": "Robot::SendMessage 0x0051349C, AnimationStreamer::SendBufferedMessages 0x0057BF60, UpdateStream 0x0057C84C, Update 0x0057CE5C, RobotManager::RemoveRobot 0x0052F1A4, Robot::~Robot 0x005110D4, AnimationStreamer::~AnimationStreamer 0x0057AF48, read",
+      "effect": "the robot keeps animating or moving after teardown",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "A failed send is a returned Result, not an exception: Robot::SendMessage 0x0051349C calls the message handler through its vtable (0x005134B8) and on failure logs a warning and returns the result",
-        "SendBufferedMessages 0x0057BF60 stops at the first failed send and returns its result (cbnz at 0x0057BFAE to 0x0057C00E), leaving that message and the rest in the send buffer; UpdateStream returns at once (0x0057C8FA) without advancing the stream time; Update logs AnimationStreamer.Update.SendBufferedMessagesFailed (0x0057D178..0x0057D196). The animation is not ended and nothing else is sent",
-        "On disconnect RobotManager::RemoveRobot 0x0052F1A4 posts RobotDisconnected to the game (0x0052F2C4), calls NeedsManager::OnRobotDisconnected and PerfMetric::OnRobotDisconnected (0x0052F2E0, 0x0052F2E8) and deletes the Robot (0x0052F2F6); Robot::~Robot calls AbortAll (0x00511120) and then ~AnimationStreamer (0x0051154A), which only discards the unsent messages (ClearSendBuffer at 0x0057AF58) and frees its state - no EndOfAnimation, no stop, nothing to the robot",
-        "So the streamer's failure boundary is the Robot's lifetime: the animation ends because its owner is destroyed. This stack ends the playback when the transport throws, which is when the link is gone; neither side delivers anything further to the robot"
+        "A37 0x0051194C..0x0051197C; 0x00511120; 0x0051154A; ~AnimationStreamer 0x0057AF58"
       ],
-      "status": "EQUIVALENT_IMPLEMENTATION",
-      "unresolved": "",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": "CoreReviewTests (CORE-002)"
@@ -4502,19 +4589,19 @@
     {
       "id": "M5-023",
       "subsystem": "M5-animation",
-      "title": "Native cancellation and emission sequencing of a cancelled streaming animation",
+      "title": "Abort: AnimationAborted broadcast -> AbortAnimation 0x8D reliable; state cleared; buffer kept and flushed by the next no-animation Update unless InitStream drops it; no EndOfAnimation",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "effect": "a command belonging to a cancelled animation reaches the robot, or the cancel is sequenced differently from the engine",
-      "provenance": "a cancelled or replaced animation sends the robot nothing - no EndOfAnimation, no silence, no body stop - as Abort does, and the emission gate keeps any keyframe of it from going out after its end. This stack has no send buffer, so the engine's flush of messages an animation buffered before an abort-to-nothing has nothing to flush here: every message went out when it was produced",
-      "authority": "AnimationStreamer::Abort 0x0057B3E0, SetStreamingAnimation 0x0057B174, InitStream 0x0057B674, Update 0x0057CE5C, read",
+      "effect": "a cancelled animation leaves the robot in a different state",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "The engine is single-threaded here: SetStreamingAnimation, Abort and UpdateStream all run on the engine update, so a cancel cannot land inside a frame's emission",
-        "Abort 0x0057B3E0 sends the robot nothing: it posts AnimationAborted to the game when a tag is set (0x0057B3F2..0x0057B410), logs the send buffer, clears startSent/endSent (strh at 0x0057B578), aborts the audio animation (0x0057B582) and clears the audio client (0x0057B58A). No EndOfAnimation, no AudioSilence, no body stop",
-        "SetStreamingAnimation 0x0057B174 calls Abort (0x0057B244) and then replaces the streaming animation (str at 0x0057B24A), so no further keyframe is pulled from the aborted one; the successor's InitStream clears the send buffer (0x0057B7CE), discarding anything of the old animation still buffered",
-        "With no successor the buffer is not cleared on abort: Update's no-animation path flushes whatever is still buffered (AnimationStreamer.Update.SendBufferNotEmpty warning at 0x0057D136, then UpdateAmountToSend and SendBufferedMessages at 0x0057D16C..0x0057D174). So an aborted animation can still emit messages it buffered before the abort, when the robot had no room for them, but never a new one"
+        "A22 0x0057B3F2..0x0057B426",
+        "A23 0x005276E8..0x0052771A, 0x0052C22E -> 0x00517DDE..0x00517E0A",
+        "A24 0x0057B442..0x0057B58A",
+        "A25 0x0057D122..0x0057D1DE"
       ],
-      "status": "EQUIVALENT_IMPLEMENTATION",
-      "unresolved": "",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
       "live_path": true,
       "test": "AnimationStreamLifecycleTests.CancellingAnAnimationWithABodyKeyframeRunningSendsNoBodyStop"
@@ -4747,12 +4834,12 @@
       ],
       "effect": "the robot camera starts with different settings",
       "authority": "libcozmoEngine.so 3.4.0-1204",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "COMPATIBILITY_POLICY",
+      "provenance": "forced policy (manager, 2026-09-24; M3 inventory MD1/MD2, correction C1): the engine behaviour is undefined memory (stale stack bytes / an out-of-bounds read), so it cannot be reproduced; built in the M3 batch and confirmed by the batch verifier",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M3DeviceTests.M3_019_M3_022_M3_023_1h_TheConnectionSendsSetCameraParamsAndQueuesTheCalibrationRead"
     },
     {
       "id": "M3-020",
@@ -4764,12 +4851,12 @@
       ],
       "effect": "a degenerate frame crashes or decodes",
       "authority": "libcozmoEngine.so 3.4.0-1204",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "COMPATIBILITY_POLICY",
+      "provenance": "forced policy (manager, 2026-09-24; M3 inventory MD1/MD2, correction C1): the engine behaviour is undefined memory (stale stack bytes / an out-of-bounds read), so it cannot be reproduced; built in the M3 batch and confirmed by the batch verifier",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M3DeviceTests.M3_020_AnEmptyOrAll0xFFPayloadIsADecodeFailure"
     },
     {
       "id": "M3-021",
@@ -4786,11 +4873,11 @@
       "effect": "the camera exposure is set differently",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): CameraSettings: the constructor limits 1..66 ms and 0.1..4.0, current 16 / 2.0. HandleDefaultCameraParams, with no time-sync gate: 16 must lie in [msg+8, msg+0xA] (else BadInitialExposureTime and nothing more); then SetCameraSettings(16, f32 msg+4) against the limits in force; then max, min (1 if 0), minGain 0.1, maxGain f32 msg+0 and the gamma table installed and SetNextCameraParams queued. SetCameraSettings sends {gain, exposure, false} only when both are in range (NaN invalid), queues SetNextCameraParams (warning when one is pending) and raises CurrentCameraParams {g, e, auto-exposure 1}. Uses M2 correction C3 (fields 0 and 1 are f32).",
+      "unresolved": "Not reproduced exactly: (1f) the initial exposure is the constant 16 (the .data value and the shipped vision_config.json value), because this stack does not load vision_config.json; (1g) VisionSystem::IsInitialized is taken as always true (there is no config load that can fail); (1d) applying the pending params to the current exposure and gain is VisionSystem::Update's (M11) and is not done.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M3DeviceTests.M3_021_1k_DefaultCameraParamsSetsTheInitialExposureThenInstallsTheLimits, M3DeviceTests.M3_021_1k_AnInitialExposureOutsideTheRangeDoesNothing, M3DeviceTests.M3_021_1l_TheFirstSettingsAreCheckedAgainstTheConstructorLimits, M3DeviceTests.M3_021_1l_SetCameraSettingsRangeChecks"
     },
     {
       "id": "M3-022",
@@ -4805,11 +4892,11 @@
       "effect": "vision never starts, or starts without the robot calibration",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): CameraSettings.OnRobotConnected queues the NV CameraCalib read (tag 0x80000001) through this stack's NV path (NvCalibrationReader, no timeout). Its callback logs Failed / SizeMismatch (size != 56) / Recvd, installs the calibration on success (CameraSettings.Calibration, handed to VisionSystem) and sets VisionEnabled on all three paths (handed to VisionSystem.Enabled). VisionEnabled is false from construction and after a removal.",
+      "unresolved": "MISSING: the distortion coefficients are zeroed when robot+0x24 <= 6, and what robot+0x24 holds is not established (gap-pass open question 4), so they are installed as read. Not built here (M11, A4): the engine's +0x48 starts 0 (2a) and only the callback sets it, but VisionSystem.Enabled defaults to true and is a public setter, so vision is not enabled only by the callback; the gate that reads it is the M11 VisionComponent's. The NV wire exchange and its timeout are the NV subsystem's.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M3DeviceTests.M3_022_1j_TheCalibrationCallbackEnablesVisionOnEveryPath, M3DeviceTests.M3_019_M3_022_M3_023_1h_TheConnectionSendsSetCameraParamsAndQueuesTheCalibrationRead"
     },
     {
       "id": "M3-023",
@@ -4823,12 +4910,12 @@
       ],
       "effect": "colour is requested when the engine would not",
       "authority": "libcozmoEngine.so 3.4.0-1204",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): CameraSettings.EnableColorImages stores the flag (+0x32A; false from construction and after a removal) and sends EnableColorImages {b}; nothing is sent at connection; decoding follows each image's encoding. CozmoRobot.StartCamera (this stack's call) goes through it.",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M3DeviceTests.M3_023_A24_EnableColorImagesStoresAndSends, M3DeviceTests.M3_019_M3_022_M3_023_1h_TheConnectionSendsSetCameraParamsAndQueuesTheCalibrationRead"
     },
     {
       "id": "M3-024",
@@ -4841,10 +4928,468 @@
       ],
       "effect": "audio is routed to the wrong output",
       "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): EngineRobot.HandleFirmwareVersion runs for every FirmwareVersion in the robot-level broadcast: 'sim' absent or null gives IsPhysicalRobot and PlayOnRobot (2), otherwise PlayOnDevice (1). What the handler does with a JSON that does not parse, or whose root is not an object, is not in the rows: the source is left unset with a MISSING warning. The source's consumer (C2) is M5/M6; this stack streams animation audio to the robot either way.",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "M3DeviceTests.M3_024_C1_TheAudioOutputSourceComesFromSim"
+    },
+    {
+      "id": "M5-024",
+      "subsystem": "M5-animation",
+      "title": "InitStream: tag and start, the scan-line toggle rule, buffer dropped, start/end flags, audio animation created, RemoveKeepFaceAlive(99) for non-live; nothing sent",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "evidence": [
+        "A10 0x0057B682..0x0057B69C",
+        "A11 0x0057B6A8..0x0057B738, 0x0057B804..0x0057B828",
+        "A12 0x0057B784..0x0057B7F8",
+        "gap1 L7"
+      ],
+      "effect": "animations start differently",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
       "unresolved": "compare the code against the inventory rows (the step after approval)",
       "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-025",
+      "subsystem": "M5-animation",
+      "title": "Frame build order and track pull: audio, Start once, Head, Lift, Event, FaceAnimation, procedural face, BackpackLights, Body, RecordHeading, TurnTo; one keyframe per track per frame",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "evidence": [
+        "A16 0x0057C94E..0x0057CA7A",
+        "A17 0x0057CA1C..0x0057CA2A",
+        "A19 0x0057CCAA..0x0057CE5A"
+      ],
+      "effect": "messages go out in a different order",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-026",
+      "subsystem": "M5-animation",
+      "title": "End of animation: EndOfAnimation directly when Start was sent, else silence + Start first; nothing after End; empty clips send nothing",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "evidence": [
+        "A20 0x0057CB44..0x0057CBB0; SendEndOfAnimation 0x0057C448..0x0057C496",
+        "A21 0x0057C400..0x0057C42E"
+      ],
+      "effect": "animations end differently",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-027",
+      "subsystem": "M5-animation",
+      "title": "Idle animations: the idle stack, PushIdle/RemoveIdle, idle InitStream with tag 0xFF, ProceduralLive, the no-animation path",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "evidence": [
+        "A1 0x0057A064..0x0057A0AC",
+        "A28 0x0057D03A..0x0057D060, 0x0057D122..0x0057D1E2",
+        "A29 0x0057D064..0x0057D448",
+        "A30 0x0057B914..0x0057BD6E"
+      ],
+      "effect": "idle behaviour differs",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-028",
+      "subsystem": "M5-animation",
+      "title": "Keep-alive: timeout 0.5 s, KeepFaceAlive darts and blinks, default params, continuous StreamLayers while a persistent layer exists",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "evidence": [
+        "A31 0x0057CF6A..0x0057CFF2; A32 0x0057A050, 0x0057E010; A33 0x0058D374..0x0058D558; A34 0x0057DB40..0x0057DCD6",
+        "gap1 K1..K9 GenerateEyeShift 0x0058D10E.., LookAt 0x00584158..0x0058428A, GetNextBlinkFrame table 0x00C5AAD8",
+        "gap2 Q1.7..Q1.10 StreamLayers 0x0057C4F6..0x0057C680"
+      ],
+      "effect": "the idle face behaves differently",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-029",
+      "subsystem": "M5-animation",
+      "title": "Track layer manager: tags, AddLayer/AddPersistentLayer, persistent hold, AddToPersistentLayer, the Remove cross-fade, HaveLayersToSend, frame flags",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "evidence": [
+        "gap1 L1..L8 0x0058E630..0x0058EC6C",
+        "gap2 Q1.1..Q1.6 0x0064F4FE..0x0064F518, 0x0058E66E..0x0058E77C, 0x0064EFA8..0x0064F22C",
+        "gap3 K5 Remove end keyframe"
+      ],
+      "effect": "layered faces behave differently",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-030",
+      "subsystem": "M5-animation",
+      "title": "Live idle (UpdateLiveAnimation): gates, body/lift/head wiggles with their parameters, LiveIdleTurn eye shift, lock and carry checks",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "evidence": [
+        "A35 0x0057D5F8..0x0057DA82",
+        "gap1 K2 0x0058CFCE..0x0058D04A; K10 0x0064F3C8..0x0064F498; R2..R4"
+      ],
+      "effect": "the live idle moves differently",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-031",
+      "subsystem": "M5-animation",
+      "title": "Glitch: AddGlitch face and backpack layers, GetNextDistortionFrame table, ScanlineDistorter, per-row shift, AddOffNoise",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "evidence": [
+        "gap1 G1, G3..G11 (0x0064EDE8..0x0064EEFE, 0x0053A9A8..0x0053AB1E, 0x0053A0B0..0x0053A898, 0x00585DFE..0x00585E94)",
+        "gap2 G1..G7 GenerateGlitchLights 0x0058CB64..0x0058CD2A"
+      ],
+      "effect": "glitches look different",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-032",
+      "subsystem": "M5-animation",
+      "title": "DrawFace: 64x128 canvas, the face transform via shipped cv::warpAffine INTER_NEAREST BORDER_CONSTANT 0, row extent, interlace clearing, scan-line shift",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFaceRenderer.cs",
+      "evidence": [
+        "E1 0x00585B30..0x00585D9A; E2 0x00585D9C..0x00585E94",
+        "gap1 D4, D5",
+        "gap3 C1..C6 warpAffine 0x00081850.., invoker 0x0007FC60..0x0008016A, remapNearest 0x00072C38..0x00072D8C (matches stock 3.1.0)"
+      ],
+      "effect": "the face is drawn with different pixels",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-033",
+      "subsystem": "M5-animation",
+      "title": "Event 0x95, RecordHeading 0x91, TurnToRecordedHeading 0x92 keyframes and their clamps",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationClip.cs",
+      "evidence": [
+        "C15 0x004FA7A0..0x004FA852",
+        "C19 0x004FBB58..0x004FBB82, 0x004FBE2C..0x004FBF28",
+        "gap1 S2 0x004FBBDC..0x004FBDAC"
+      ],
+      "effect": "event and heading keyframes behave differently",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-034",
+      "subsystem": "M5-animation",
+      "title": "AnimationTrigger to group name from assets/animationGroupMaps Pairs; first entry wins; unknown gives a warning and \"\"",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs",
+      "evidence": [
+        "gap1 C7 0x00670438..0x0067075C; GetResponse 0x00670810..0x00670920"
+      ],
+      "effect": "a trigger plays a different group",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-035",
+      "subsystem": "M5-animation",
+      "title": "The streamer never reads enabledAnimTracks or skips a locked track; locks only through DisableAnimTracks/EnableAnimTracks; the live idle checks MovementComponent locks",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "evidence": [
+        "B1 0x00537FFC..0x00537FFE",
+        "B2 0x00513000..0x0051304E",
+        "B3 0x0057C94E..0x0057CA7A",
+        "B4 0x0057D636, 0x0057D664, 0x0057D69E"
+      ],
+      "effect": "tracks are suppressed that the engine would send",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-036",
+      "subsystem": "M5-animation",
+      "title": "Robot-side animation behaviour: AbortAnimation handling and leftovers, Start without End and the unbounded keep-alive stream, locked-track suppression, animStarted/animEnded echo",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "evidence": [
+        "A23, A25, B3, gap2 Q1.10",
+        "robot firmware 2457 is not shipped"
+      ],
+      "effect": "the robot animates differently from what the engine expects",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "status": "HARDWARE_ONLY",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
+      "unresolved": "only the robot can answer it",
+      "hardware_required": true,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M4-014",
+      "subsystem": "M4-control",
+      "title": "Direct-drive track locks: DisableAnimTracks / EnableAnimTracks around DriveWheels, MoveHead and MoveLift",
+      "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
+      "evidence": [
+        "MA1 DriveWheels 0x0063ED82..0x0063EE9A, MoveHead 0x0063F4F6..0x0063F5D2; MA1-lift MoveLift 0x0063F73A..0x0063F92A",
+        "MA2 DirectDriveCheckSpeedAndLockTracks 0x0063EFB0..0x0063F0B8 (1e-5 at 0x0063F0F8)",
+        "MA3 LockTracks 0x006400D0..0x00640188 (0x9D); UnlockTracks 0x0063FE92..0x0063FFB4 (0x9E)"
+      ],
+      "effect": "animations and direct commands fight over a motor",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M4-015",
+      "subsystem": "M4-control",
+      "title": "StopHead / StopLift / StopBody: unlock preamble, then MoveHead{0}, MoveLift{0}, DriveWheels{0,0,0,0}",
+      "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
+      "evidence": [
+        "MA4 0x00640A08..0x00640AF6, 0x00640B3C..0x00640C2A, 0x00640C70..0x00640E4E",
+        "MA7 ~IActionRunner stops a moving track (0x0054112E..0x00541192)"
+      ],
+      "effect": "a motor keeps moving or is stopped differently",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M4-016",
+      "subsystem": "M4-control",
+      "title": "Head and lift move semantics: no send when in position, ack matched by id, completion in position and stopped, tolerances and error codes",
+      "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
+      "evidence": [
+        "MA15 IsHeadInPosition 0x005484F4..0x0054852C, Init no-send 0x00548544..0x0054854E; IsLiftInPosition 0x00548FEA..0x00549034, 0x005492F2..0x005492FE",
+        "MA16 ack lambdas 0x0054D624 (head), 0x0054D748 (lift)",
+        "MA17 completion 0x005485D8..0x005488B6, 0x005493F6..0x00549508; errors 0x04000004, 0x03000016",
+        "MA9 head tolerance >= 2 deg (0x0054803E..0x005480AC); MA13 lift angular tolerance >= 1.5 deg (0x005491D6..0x005492EE)"
+      ],
+      "effect": "a head or lift move completes, fails or is sent differently",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M4-017",
+      "subsystem": "M4-control",
+      "title": "Backpack lights: priority, Off resent every tick while no source, charging state machine, shared locator, wire conversion, headlight",
+      "location": "cozmo-stack/src/Cozmo.Robot/Lights.cs",
+      "evidence": [
+        "LB1 BodyLightComponent::Update 0x00631D54..0x00631EB4",
+        "LB2/LB4h Off lights 0x0063221C..0x00632260",
+        "LB4a names 0x0102EA18 indexed by state^2 (0x00631BD0); LB4b DefineFromJson 0x00587558..0x00587638; LB4c lookup 0x00587434..0x005874A4; LB4d parser 0x00586D20..0x005870D0",
+        "LB4f SetBackpackLightsInternal 0x00631F3A..0x006321BE; LB4i shared locator 0x006322A4",
+        "LB5 0x006323C4..0x0063244E; LB6 headlight 0x00632344..0x00632374"
+      ],
+      "effect": "the backpack lights show something different",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M4-018",
+      "subsystem": "M4-control",
+      "title": "Cube lights: WakeUp on connection and reconnect, layers and PlayLightAnim gates, SetObjectLights / SetLEDs, SetCubeGamma, CubeID, CubeLights, white balance, default-layer anims",
+      "location": "cozmo-stack/src/Cozmo.Robot/Lights.cs",
+      "evidence": [
+        "S5/LC1 0x00639CE4..0x00639D8A (trigger 0x26)",
+        "LC2 PlayLightAnim 0x006382EA..0x006387D8",
+        "LC3 cubeLights/wakeUp.json; pattern advance 0x00637998..0x006379DA; default layer 0x00637D4C..0x00637E02",
+        "LC4 SetObjectLights 0x00637E6C..0x00637EFC; SetLEDs 0x004E48B0..0x004E49A2 (gamma 0x80)",
+        "LC5 SetLights 0x0063A654..0x0063A800; WhiteBalanceColor 0x0063A894..0x0063A98E",
+        "LC7 Robot::Broadcast delivery 0x00511DE8..0x00511DF8, 0x00662508..0x006625A8; LC8 reconnect replay"
+      ],
+      "effect": "cubes light up differently or not at all",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M4-019",
+      "subsystem": "M4-control",
+      "title": "Cliff: sensor defaults, CliffEvent and PotentialCliff handling, EnableStopOnCliff senders, the threshold schedule 50 / 400 / 150",
+      "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
+      "evidence": [
+        "SC1 ctor 0x00633FA0..0x00633FCE",
+        "SC3 SendCliffDetectThresholdToRobot 0x00634270..0x00634368",
+        "SC4 schedule 0x00512D7A..0x00512EA6; SC4a 0x00634514..0x006345AE; SC4b 0x006343B8..0x006344B0; SC4c 0x00634630..0x00634724; SC4d 0x006347A4..0x0063480C; SC4j 0x00511D66..0x00511DA0",
+        "SC5 CliffEvent 0x00535548..0x005356E6; SC6 0x00527E8E..0x00527EEA; SC7 PotentialCliff 0x0053582C..0x00535998; SC8 EnableStopOnCliff senders"
+      ],
+      "effect": "cliffs are detected or handled differently",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M4-020",
+      "subsystem": "M4-control",
+      "title": "RobotState acceptance: time-sync gate, unknown origin ids dropped; origin 1 from the ctor Delocalize; AbsoluteLocalizationUpdate {0, frame 0, origin 1, identity} at SyncTime",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "evidence": [
+        "SC4f UFRS gates 0x0051293C..0x00512942, ContainsOriginID 0x00512BE2..0x00512C4A",
+        "SC4g PoseOriginList next id = 1 (0x0084792C..0x0084793C); UnknownOriginID = 0 (0x00C97B20)",
+        "Robot::Delocalize 0x00510A24: AddNewOrigin 0x00510A66, SetNewPose 0x00510B4C, SendAbsLocalizationUpdate 0x00510BF4 when time-synced",
+        "SC4e robot+0x2B0 = 0 (0x0050FF02, 0x0051032C); SC4h SendSyncTime -> SendAbsLocalizationUpdate (0x0051526E..0x005153AE)"
+      ],
+      "effect": "robot states are accepted or dropped differently",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M4-021",
+      "subsystem": "M4-control",
+      "title": "Whether the robot reports the origin id and frame from AbsoluteLocalizationUpdate in RobotState",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "evidence": [
+        "SC4i: this stack never sent AbsoluteLocalizationUpdate; all 855 states in re-analysis/acceptance/hardware/20260924-202748-CONTROL/frames.jsonl reported origin 0, frame 0",
+        "no original-app capture exists"
+      ],
+      "effect": "no robot state is accepted, or all are",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "HARDWARE_ONLY",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "unresolved": "only the robot can answer it",
+      "hardware_required": true,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M4-022",
+      "subsystem": "M4-control",
+      "title": "SetBodyRadioMode {1,0} after 16 consecutive RobotStates without IS_BODY_ACC_MODE",
+      "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
+      "evidence": [
+        "SC10 / M1 CD25 0x00512AD0..0x00512B52"
+      ],
+      "effect": "the body radio mode differs",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M4-023",
+      "subsystem": "M4-control",
+      "title": "Cube taps: intensity > 60, a 75 ms queue broadcasting the strongest, the 500 ms double-tap window, EnableBlockTapFilter",
+      "location": "cozmo-stack/src/Cozmo.Robot/Cubes.cs",
+      "evidence": [
+        "CD10d ctor and subscriptions 0x00630874..0x00630A14",
+        "CD10e 0x00630B2E..0x00630C8C",
+        "CD10f flush 0x006310D0..0x0063119E",
+        "CD10g double tap 0x00630DC4..0x006316E0"
+      ],
+      "effect": "taps are reported differently",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M4-024",
+      "subsystem": "M4-control",
+      "title": "What makes the robot forward cube telemetry after connection, and the robot-side effect of StreamObjectAccel",
+      "location": "cozmo-stack/src/Cozmo.Robot/CubeAccel.cs",
+      "evidence": [
+        "S12 AddListener sends {activeID, 1} reliable (0x00635556, 0x00635562)",
+        "S18/S19 no shipped robot or cube firmware for 2457",
+        "CONTROL run: no cube telemetry after the connection"
+      ],
+      "effect": "the cube accelerometer and events never arrive",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "HARDWARE_ONLY",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+      "unresolved": "only the robot can answer it",
+      "hardware_required": true,
       "live_path": true,
       "test": ""
     }

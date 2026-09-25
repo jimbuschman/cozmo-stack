@@ -54,6 +54,25 @@ public sealed record CameraCalibration
         };
     }
 
+    // fidelity: M3-022
+    /// <summary>
+    /// The NV callback's unpack (1j): the CLAD struct read as it stands, with no plausibility check of its own. The
+    /// size check (56 bytes) is the caller's (<see cref="Cozmo.Robot.CameraSettings"/>).
+    /// </summary>
+    public static CameraCalibration Unpack(ReadOnlySpan<byte> data, string provenance = "robot NV storage")
+    {
+        var r = new CladReader(data.ToArray().AsMemory());
+        float fx = r.F32(), fy = r.F32(), cx = r.F32(), cy = r.F32(), skew = r.F32();
+        int rows = r.U16(), cols = r.U16();
+        var dist = new double[8];
+        for (int i = 0; i < 8; i++) dist[i] = r.F32();
+        return new CameraCalibration
+        {
+            FocalLengthX = fx, FocalLengthY = fy, CenterX = cx, CenterY = cy, Skew = skew,
+            Rows = rows, Columns = cols, DistortionCoefficients = dist, Provenance = provenance,
+        };
+    }
+
     /// <summary>Serialises to the CLAD layout (used by tests and by the fake robot).</summary>
     public byte[] ToBytes()
     {
@@ -163,15 +182,8 @@ public sealed class NvCalibrationReader : IDisposable
     /// </summary>
     public Task<CameraCalibration?> ReadAsync(TimeSpan? timeout = null)
     {
-        _buffer.Clear();
         _pending = new TaskCompletionSource<CameraCalibration?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _robot.SendMessage(new NVCommand
-        {
-            Tag = CameraCalibration.NvEntryTag,
-            Length = NvReadLength,
-            Op = OpRead,
-            Unknown = 0,
-        }, flush: true);
+        Request();
         var t = timeout ?? TimeSpan.FromSeconds(3);
         return Task.WhenAny(_pending.Task, Task.Delay(t)).ContinueWith(w =>
         {
@@ -180,6 +192,25 @@ public sealed class NvCalibrationReader : IDisposable
             return null;
         }, TaskScheduler.Default);
     }
+
+    /// <summary>Sends the READ request, with no wait (the connection-time read, <see cref="Cozmo.Robot.CameraSettings"/>).</summary>
+    internal void Request()
+    {
+        _buffer.Clear();
+        _robot.SendMessage(new NVCommand
+        {
+            Tag = CameraCalibration.NvEntryTag,
+            Length = NvReadLength,
+            Op = OpRead,
+            Unknown = 0,
+        }, flush: true);
+    }
+
+    /// <summary>
+    /// Raised once the read has a final result: the NVResult and every data byte received for the tag. MORE and
+    /// SCHEDULED are not final.
+    /// </summary>
+    public event Action<sbyte, byte[]>? Completed;
 
     /// <summary>Feeds one result; exposed so replays and tests can drive the parser without a transport.</summary>
     public CameraCalibration? Handle(NVOpResult r)
@@ -192,6 +223,10 @@ public sealed class NvCalibrationReader : IDisposable
             case ResultMore:
             case ResultScheduled:
                 return null;
+        }
+        Completed?.Invoke(r.Result, _buffer.ToArray());
+        switch (r.Result)
+        {
             case ResultOkay:
                 try
                 {

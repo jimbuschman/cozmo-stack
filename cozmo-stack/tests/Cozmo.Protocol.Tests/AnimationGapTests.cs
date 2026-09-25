@@ -208,17 +208,18 @@ public class AnimationGapTests
         for (int i = 0; i < 14; i++) s.Advance(i * 33.0);                // fills the robot's 14-frame budget
         Assert.Equal(CozmoAudio.RobotBufferFrames, r.AudioFrames);
         Assert.Empty(r.Events);
-        Assert.Equal(13 * 33, s.PositionMs);
+        // M3 A18: the 15th frame (t = 462) is built and its audio stops the drain; its stream-time step is taken anyway
+        Assert.Equal(14 * 33, s.PositionMs);
 
         for (int i = 14; i <= 40; i++) s.Advance(i * 33.0);              // 27 frames of wall time with no room
         Assert.Empty(r.Events);
-        Assert.Equal(13 * 33, s.PositionMs);                             // the timeline has not moved
+        Assert.Equal(14 * 33, s.PositionMs);                             // the timeline has not moved
 
         r.Played = 3;                                                    // the robot has played three frames
         s.Advance(41 * 33.0);
         Assert.Equal(new[] { "462", "495", "528" }, r.Events);           // three frames, three steps of 33
         Assert.Equal(CozmoAudio.RobotBufferFrames + 3, r.AudioFrames);
-        Assert.Equal(16 * 33, s.PositionMs);
+        Assert.Equal(17 * 33, s.PositionMs);                             // frame 561 built, waiting on the budget (A18)
     }
 
     /// <summary>
@@ -429,8 +430,8 @@ public class AnimationGapTests
         // what carry the animation forward on the robot.
         Assert.True(ticks > 0);
         Assert.Equal(1, r.Ends);
-        // one per streamed frame, plus the one UpdateStream buffers straight after SendEndOfAnimation
-        Assert.Equal(ticks + 1, r.AudioFrames);
+        // one per streamed frame, and nothing after SendEndOfAnimation (M3 inventory A20, 0x0057CB6E..0x0057CBAE)
+        Assert.Equal(ticks, r.AudioFrames);
         Assert.Equal(0, r.AudioWithSound);   // silence, because no keyframe asked for a sound
     }
 

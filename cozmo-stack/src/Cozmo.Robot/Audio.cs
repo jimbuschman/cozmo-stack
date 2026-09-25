@@ -1,4 +1,5 @@
 using Cozmo.Protocol;
+using Cozmo.Robot.Animation;
 using Cozmo.Transport;
 
 namespace Cozmo.Robot;
@@ -101,6 +102,13 @@ public static class AnkiMuLaw
         7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
     };
 
+    // fidelity: M3-010
+    /// <summary>
+    /// The segment step of <c>encodeMuLaw</c> (C6) on an already-scaled sample: <c>mag = s ^ (s &gt;&gt; 15)</c>,
+    /// <c>exp = seg[mag &gt;&gt; 8]</c> (table 0x00C5C3F0), <c>mant = (mag &gt;&gt; 8) == 0 ? mag &gt;&gt; 4 :
+    /// (mag &gt;&gt; (exp + 3)) &amp; 0xF</c>, byte = sign 0x80 | exp &lt;&lt; 4 | mant. -32768 is clamped to -32767 as
+    /// the float path's clamp gives.
+    /// </summary>
     public static byte Encode(short sample)
     {
         int s = sample < -32767 ? -32767 : sample;      // the engine clamps at -32767, not -32768
@@ -111,7 +119,12 @@ public static class AnkiMuLaw
         return (byte)((s < 0 ? 0x80 : 0) | (exp << 4) | mantissa);
     }
 
-    /// <summary>The engine's own entry point takes a float in -1..1; this matches it exactly.</summary>
+    // fidelity: M3-010
+    /// <summary>
+    /// <c>Audio::encodeMuLaw(float)</c> (C6, 0x00597AD8..0x00597B8E; 32767.0 at 0x00597C18): NaN gives 0 (the engine
+    /// also warns); <c>s = f &lt;= -1 ? -32767 : trunc(min(f, 1) * 32767)</c>; then <see cref="Encode(short)"/>'s
+    /// segment step. No volume is applied on this path (C7). The product is taken in single precision.
+    /// </summary>
     public static byte Encode(float sample)
     {
         if (float.IsNaN(sample)) return 0;
@@ -132,99 +145,143 @@ public static class AnkiMuLaw
 /// <summary>
 /// Cozmo's speaker.
 ///
-/// Audio is streamed as fixed 744-sample mu-law frames, one per animation tick. Sending frames faster
-/// than the robot consumes them overruns its buffer, so <see cref="Play"/> paces them at the frame
-/// interval; <see cref="AudioSilence"/> is what the engine sends when a frame carries no sound.
+/// Audio is streamed as fixed 744-sample mu-law frames at 22320 Hz (M3-011). The engine plays audio only through
+/// the animation stream (C4); <see cref="Play"/> and the tone generators are this stack's test API (policy M3-017),
+/// and <see cref="Play"/> feeds its frames through the engine's own send buffer and budget
+/// (<see cref="StreamSendBuffer"/>, M3-012/M3-013): at most 14 unplayed audio frames and 8192 unplayed bytes,
+/// refreshed once per engine Update from what the robot's AnimationState reports.
 /// </summary>
 public sealed class CozmoAudio
 {
     /// <summary>Samples in one audio message (official AudioSample is a fixed 744-byte array).</summary>
     public const int SamplesPerFrame = 744;
+    // fidelity: M3-011
     /// <summary>
-    /// The robot audio sample rate, taken from the engine. The CLAD enum <c>AnimConstants</c> carries
-    /// <c>AUDIO_SAMPLE_RATE = 22320</c> alongside <c>AUDIO_SAMPLE_SIZE = 744</c> (its EnumToString at
-    /// 0x007BC7D8 in libcozmoEngine.so compares against 0x5730 and 0x2E8), and
-    /// <c>CozmoAudioController::SetupPlugins</c> at 0x005942B0 hands the same 22320 to the audio plugin
-    /// twice (movw #0x5730 at 0x005942CE and 0x005942E2). 744 samples at 22320 Hz is exactly one 30 Hz
-    /// animation frame, 33.33 ms.
-    ///
-    /// This replaces an earlier assumption of 22050 Hz, which was taken from PyCozmo's WAV loader and was
-    /// never read from the engine. The 22050 that does appear in the engine belongs to the text-to-speech
-    /// provider (<c>TextToSpeechProviderImpl::CreateAudioData</c> at 0x006A0210), not to the robot stream.
-    /// The observed drain rate of one frame per 28.6 ms on firmware 2457 is a separate measurement of the
-    /// robot and is unaffected by this constant.
+    /// The robot audio sample rate: <c>HijackAudioPlugIn(22320, 744)</c> and
+    /// <c>SetupHijackAudioPlugInAndRobotAudioBuffers(22320, 744)</c> (C3, 0x005942CE..0x005942EA). 744 samples at
+    /// 22320 Hz is one 30 Hz frame; the 30 Hz is derived from these two, not a constant of its own.
     /// </summary>
     public const int SampleRate = 22320;
-    /// <summary>
-    /// The animation tick the engine runs at, 30 per second. Frames are sent on this schedule; at
-    /// <see cref="SampleRate"/> a frame holds exactly one tick of audio.
-    /// </summary>
+    /// <summary>One frame of audio, 744 / 22320 s: the derived 30 Hz (C3).</summary>
     public static readonly TimeSpan FrameInterval = TimeSpan.FromSeconds(1.0 / 30);
     /// <summary>Audio carried by one frame at <see cref="SampleRate"/>: 744 / 22320 s = 33.33 ms.</summary>
     public static readonly TimeSpan FrameDuration = TimeSpan.FromSeconds(SamplesPerFrame / (double)SampleRate);
     /// <summary>
-    /// Frames the robot will hold. Measured at about 14 on firmware 2457: sending a whole tone at once made
-    /// it play the first 14 frames and silently discard the rest, with its own drop counter still at zero.
+    /// The engine's audio budget: 14 unplayed frames (<see cref="StreamSendBuffer.AudioFramesAhead"/>, C9). The robot's
+    /// real buffer size is firmware (C18).
     /// </summary>
-    public const int RobotBufferFrames = 14;
+    public const int RobotBufferFrames = StreamSendBuffer.AudioFramesAhead;
+
     /// <summary>
-    /// How many frames the robot should have queued at any moment while a stream is running. This is also
-    /// the opening burst: a stream that starts from an empty buffer and feeds at exactly the drain rate has
-    /// no slack, so one late frame is an underrun and is heard as a stutter. Kept under
-    /// <see cref="RobotBufferFrames"/> so nothing is dropped going in, and high enough that network jitter
-    /// and a lost frame or two cannot empty it.
+    /// No longer used. The engine's budget (14 unplayed audio frames and 8192 unplayed bytes, M3-012) replaced the
+    /// earlier TargetInFlight model, which was not the engine's; setting this changes nothing.
     /// </summary>
+    [Obsolete("The engine's budget (StreamSendBuffer, M3-012) replaced it; the value is ignored.")]
     public int TargetInFlight { get; set; } = 10;
+
     /// <summary>
-    /// Reports how many audio frames the robot says it has played, from its AnimationState stream. When this
-    /// is set, <see cref="Play"/> feeds the robot at the rate it actually drains rather than at a fixed
-    /// schedule. It does not drain at the rate arithmetic suggests: measured on firmware 2457 it takes a
-    /// frame every 28.6 ms, not the 33.3 ms of an animation tick, so a fixed schedule slowly starves it and
-    /// the sound breaks into a dashed tone. Leave null to fall back to clock pacing.
+    /// For a <see cref="CozmoAudio"/> built on its own (not attached to a robot's stream): the robot's
+    /// numAudioFramesPlayed, which the budget is refreshed from. Null counts as 0, the Robot constructor's value.
+    /// A robot's own <see cref="CozmoRobot.Audio"/> uses the engine's counters instead.
     /// </summary>
     public Func<int>? PlayedFrames { get; set; }
 
-    private readonly Action<RobotMessage> _send;
-    /// <summary>How samples are packed into a frame. See <see cref="AudioCodec"/>: this is not settled.</summary>
-    public AudioCodec Codec { get; set; } = AudioCodec.AnkiMuLaw;
-    public int FramesSent { get; private set; }
-    /// <summary>When the last frame went out, so a caller can tell whether audio is currently streaming.</summary>
-    public DateTime LastSentUtc { get; private set; } = DateTime.MinValue;
-    /// <summary>True while frames are actively being streamed.</summary>
-    public bool Busy => DateTime.UtcNow - LastSentUtc < TimeSpan.FromMilliseconds(200);
+    /// <summary>As <see cref="PlayedFrames"/>, for numAnimBytesPlayed. Null counts as 0.</summary>
+    public Func<int>? PlayedBytes { get; set; }
 
     /// <summary>
-    /// Invoked after each paced frame. The engine fills every animation tick with both an audio frame and a
-    /// face keyframe, so <see cref="CozmoRobot"/> uses this to keep the face alive while sound is playing.
+    /// Policy M3-017: how long <see cref="Play"/> waits with none of its frames going out before it gives up and
+    /// takes the rest out of the buffer, rather than wait forever for a robot that reports nothing played. It
+    /// never sends past the budget.
+    /// </summary>
+    public static readonly TimeSpan StallTimeout = TimeSpan.FromSeconds(1);
+
+    /// <summary>How often a stand-alone <see cref="Play"/> runs the engine Update's refresh and drain: the 60 ms engine tick (B24).</summary>
+    internal static readonly TimeSpan StandaloneUpdatePeriod = TimeSpan.FromMilliseconds(60);
+
+    private readonly Action<RobotMessage> _send;
+    private StreamSendBuffer? _stream;
+    private Action? _kick;
+
+    /// <summary>How samples are packed into a frame.</summary>
+    public AudioCodec Codec { get; set; } = AudioCodec.AnkiMuLaw;
+    public int FramesSent { get; private set; }
+    /// <summary>When the last frame went out.</summary>
+    public DateTime LastSentUtc { get; private set; } = DateTime.MinValue;
+    /// <summary>True while a <see cref="Play"/> is running.</summary>
+    public bool Busy => Volatile.Read(ref _playing) > 0;
+    private int _playing;
+
+    /// <summary>
+    /// Invoked after each frame of a <see cref="Play"/> goes out.
     /// </summary>
     public event Action? OnFrameSent;
 
+    /// <summary>
+    /// A message buffered behind each frame of a <see cref="Play"/>, taken when the frame is buffered.
+    /// <see cref="CozmoRobot"/> puts the face there, so a tone keeps the face on screen (policy M3-017).
+    /// </summary>
+    internal Func<RobotMessage?>? PairedMessage { get; set; }
+
+    /// <summary>
+    /// The robot's send, with its result, when this device is on a robot: the stream counts only a send that went
+    /// out (0x0057BFAE, 0x0057C47C). Null: every send counts as sent.
+    /// </summary>
+    internal Func<RobotMessage, bool>? TrySend { get; set; }
+
+    private bool SendNow(RobotMessage m)
+    {
+        if (TrySend is { } t) return t(m);
+        _send(m);
+        return true;
+    }
+
     public CozmoAudio(Action<RobotMessage> send) => _send = send;
+
+    /// <summary>
+    /// Puts this device on a robot's stream: <see cref="Play"/> buffers into <paramref name="stream"/>, which the
+    /// engine Update drains within its budget, and the single-frame sends are counted in its stream counters.
+    /// <paramref name="kick"/> makes sure a drain runs.
+    /// </summary>
+    internal void AttachStream(StreamSendBuffer stream, Action kick)
+    {
+        _stream = stream;
+        _kick = kick;
+    }
 
     /// <summary>Sets speaker volume. The official range is not documented; 0 is silent and larger is louder.</summary>
     public void SetVolume(ushort level) => _send(new SetAudioVolume { Level = level });
 
-    /// <summary>Sends one already-companded frame. Must be exactly <see cref="SamplesPerFrame"/> bytes.</summary>
+    /// <summary>
+    /// Sends one already-companded frame at once. Must be exactly <see cref="SamplesPerFrame"/> bytes. On a robot it
+    /// counts in the stream counters (C11) but is not held to the budget.
+    /// </summary>
     public void SendFrame(byte[] mulawFrame)
     {
         if (mulawFrame.Length != SamplesPerFrame)
             throw new ArgumentException($"an audio frame must be exactly {SamplesPerFrame} samples", nameof(mulawFrame));
-        _send(new AudioSample { Samples = mulawFrame });
+        SendCounted(new AudioSample { Samples = mulawFrame });
         FramesSent++;
         LastSentUtc = DateTime.UtcNow;
     }
 
-    public void SendSilence() { _send(new AudioSilence()); FramesSent++; LastSentUtc = DateTime.UtcNow; }
+    /// <summary>Sends one AudioSilence at once, counted like <see cref="SendFrame"/>.</summary>
+    public void SendSilence() { SendCounted(new AudioSilence()); FramesSent++; LastSentUtc = DateTime.UtcNow; }
+
+    private void SendCounted(RobotMessage m)
+    {
+        if (_stream is { } s) s.SendDirect(m, SendNow);
+        else SendNow(m);
+    }
 
     // fidelity: M1-025, M1-015
     /// <summary>
     /// Back to the state right after construction, for a removed robot (CB33, CC26, CC27; the engine's AudioComponent
     /// is destroyed with the Robot, so nothing more of what it was playing goes out). A <see cref="Play"/> running on
     /// another thread ends at its next check without sending another frame: the removal count it captured no longer
-    /// matches, and the check and the send are one step under <see cref="_playGate"/>. Nothing is sent. The pacing clock
-    /// and its frame count are not touched: every Play restarts both, and stopping the clock under a running Play
-    /// would disable its stall escape. <see cref="TargetInFlight"/>, <see cref="Codec"/> and
-    /// <see cref="PlayedFrames"/> are settings and are kept, as are subscribers.
+    /// matches, the check and the send are one step under <see cref="_playGate"/>, and the robot's stream buffer is
+    /// emptied by the same removal. Nothing is sent. <see cref="Codec"/>, <see cref="PlayedFrames"/> and
+    /// <see cref="PlayedBytes"/> are settings and are kept, as are subscribers and the stream attachment.
     /// </summary>
     internal void ResetToConstructed()
     {
@@ -243,13 +300,15 @@ public sealed class CozmoAudio
 
     private bool RemovedSince(int removal) => Volatile.Read(ref _removals) != removal;
 
-    /// <summary>Sends one frame of a Play unless the robot was removed since it started. False: the Play must end.</summary>
+    /// <summary>Sends one frame of a Play unless the robot was removed since it started (then the drain stops at it).</summary>
     private bool SendPlayFrame(byte[] frame, int removal)
     {
         lock (_playGate)
         {
             if (_removals != removal) return false;
-            SendFrame(frame);
+            if (!SendNow(new AudioSample { Samples = frame })) return false;
+            FramesSent++;
+            LastSentUtc = DateTime.UtcNow;
         }
         OnFrameSent?.Invoke();
         return true;
@@ -273,7 +332,11 @@ public sealed class CozmoAudio
         _ => AnkiMuLaw.Decode(value),
     };
 
-    /// <summary>Splits 16-bit PCM at <see cref="SampleRate"/> into frames, padding the last one with silence.</summary>
+    // fidelity: M3-010
+    /// <summary>
+    /// Splits 16-bit PCM at <see cref="SampleRate"/> into frames. A last frame shorter than 744 samples is padded with
+    /// the codec's zero, which for the engine's codec is 0x00 (C5).
+    /// </summary>
     public static List<byte[]> ToFrames(ReadOnlySpan<short> pcm, AudioCodec codec = AudioCodec.AnkiMuLaw)
     {
         var frames = new List<byte[]>();
@@ -306,8 +369,7 @@ public sealed class CozmoAudio
 
     /// <summary>
     /// A run of separated beeps. Counting them is an objective test of whether playback is continuous: the
-    /// listener does not have to judge tone quality, only whether the number of beeps is right. Breaks in
-    /// the stream show up as extra beeps or as beeps that arrive at the wrong time.
+    /// listener does not have to judge tone quality, only whether the number of beeps is right.
     /// </summary>
     public static short[] Beeps(int count, double frequencyHz = 880, double onSeconds = 0.25,
                                double offSeconds = 0.25, double amplitude = 0.5)
@@ -339,78 +401,59 @@ public sealed class CozmoAudio
         return pcm;
     }
 
-    /// <summary>Streams PCM to the speaker in real time, pacing frames at the animation rate.</summary>
+    // fidelity: M3-017
+    /// <summary>
+    /// Streams PCM to the speaker and returns when every frame has gone out (policy M3-017: the engine has no such
+    /// call). The frames go into the engine's send buffer and are drained within the engine's budget
+    /// (<see cref="StreamSendBuffer"/>, M3-012/M3-013): on a robot by its engine Update, on a stand-alone device by
+    /// this call itself once per <see cref="StandaloneUpdatePeriod"/>, from <see cref="PlayedFrames"/> and
+    /// <see cref="PlayedBytes"/>. With nothing going out for <see cref="StallTimeout"/> (policy M3-017) the rest is
+    /// taken back out of the buffer and this returns. A removal of the robot ends it too.
+    /// </summary>
     public void Play(ReadOnlySpan<short> pcm)
     {
         var frames = ToFrames(pcm, Codec);
         int removal = Volatile.Read(ref _removals);   // fidelity: M1-025, M1-015 (a removal ends this Play)
-        using var _ = new HighResolutionTimer();
-        _clock.Restart();
-        _scheduled = 0;
-        if (PlayedFrames is null) { foreach (var f in frames) if (!PlayFramePaced(f, removal)) return; return; }
-        PlayWithFeedback(frames, removal);
-    }
-
-    /// <summary>
-    /// Feeds the robot from its own report of what it has played, keeping <see cref="TargetInFlight"/>
-    /// frames queued. This tracks whatever rate the robot really drains at instead of assuming one.
-    /// </summary>
-    private void PlayWithFeedback(List<byte[]> frames, int removal)
-    {
-        int baseline = PlayedFrames!();
-        int sent = 0;
-        var lastProgress = _clock.Elapsed;
-        int lastPlayed = 0;
-
-        foreach (var f in frames)
+        var stream = _stream;
+        bool standalone = stream is null;
+        stream ??= new StreamSendBuffer();
+        var token = new object();
+        Interlocked.Increment(ref _playing);
+        try
         {
+            foreach (var f in frames)
+            {
+                var frame = f;
+                stream.Buffer(token, StreamSendBuffer.SizeOf(new AudioSample { Samples = frame }), true,
+                              () => SendPlayFrame(frame, removal));
+                if (PairedMessage?.Invoke() is { } partner) stream.Buffer(token, partner, SendNow);
+            }
+            _kick?.Invoke();
+
+            using var _ = new HighResolutionTimer();
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            int lastPending = int.MaxValue;
+            var lastProgress = TimeSpan.Zero;
             while (true)
             {
-                if (RemovedSince(removal)) return;
-                int played = PlayedFrames() - baseline;
-                if (played != lastPlayed) { lastPlayed = played; lastProgress = _clock.Elapsed; }
-                if (sent - played < TargetInFlight) break;
-                // If the robot stops reporting progress it is not playing; send anyway rather than hang.
-                if (_clock.Elapsed - lastProgress > TimeSpan.FromSeconds(1)) break;
-                Thread.Sleep(2);
+                if (RemovedSince(removal)) { stream.Remove(o => ReferenceEquals(o, token)); return; }
+                if (standalone)
+                {
+                    // one engine Update: UpdateAmountToSend (C9), then SendBufferedMessages (C14)
+                    stream.UpdateAmountToSend(PlayedBytes?.Invoke() ?? 0, PlayedFrames?.Invoke() ?? 0);
+                    stream.SendBufferedMessages();
+                }
+                int pending = stream.PendingFor(token);
+                if (pending == 0) return;
+                if (pending != lastPending) { lastPending = pending; lastProgress = clock.Elapsed; }
+                else if (clock.Elapsed - lastProgress > StallTimeout)
+                {
+                    stream.Remove(o => ReferenceEquals(o, token));
+                    return;
+                }
+                Thread.Sleep(standalone ? StandaloneUpdatePeriod : TimeSpan.FromMilliseconds(2));
             }
-            if (!SendPlayFrame(f, removal)) return;
-            sent++;
         }
-    }
-
-    private readonly System.Diagnostics.Stopwatch _clock = new();
-    private long _scheduled;
-
-    /// <summary>One paced frame of a Play. False when the robot was removed since the Play started: it must end.</summary>
-    private bool PlayFramePaced(byte[] frame, int removal)
-    {
-        if (!_clock.IsRunning) { _clock.Restart(); _scheduled = 0; }
-        // The opening TargetInFlight frames go out at once to fill the robot's buffer; the rest are paced.
-        var due = TimeSpan.FromTicks(FrameInterval.Ticks * Math.Max(0, _scheduled - TargetInFlight));
-        WaitUntil(due);
-        if (!SendPlayFrame(frame, removal)) return false;
-        _scheduled++;
-        // If something stalled us badly, start a fresh schedule rather than firing a burst to catch up.
-        if (_clock.Elapsed - due > FrameInterval * 4) { _clock.Restart(); _scheduled = 0; }
-        return true;
-    }
-
-    /// <summary>
-    /// Waits until the frame is due, on the high-resolution clock.
-    ///
-    /// Thread.Sleep and DateTime.UtcNow are both quantised to about 15.6 ms on Windows, which is half a
-    /// frame, so scheduling on them makes the stream audibly stutter. The bulk of the wait still goes to
-    /// Sleep to keep the thread off the CPU; only the last couple of milliseconds are spun.
-    /// </summary>
-    private void WaitUntil(TimeSpan due)
-    {
-        while (true)
-        {
-            var remaining = due - _clock.Elapsed;
-            if (remaining <= TimeSpan.Zero) return;
-            if (remaining > TimeSpan.FromMilliseconds(3)) Thread.Sleep(remaining - TimeSpan.FromMilliseconds(2));
-            else Thread.SpinWait(50);
-        }
+        finally { Interlocked.Decrement(ref _playing); }
     }
 }

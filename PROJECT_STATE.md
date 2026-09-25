@@ -12,6 +12,17 @@ Read first in every session. The manager keeps this file current; the process it
   - The full suite passed 1163/1163 before the commit.
 - **Waiting on the operator:**
   - one control-check robot run (see "Next").
+- **M3 device: repaired in one batch (2026-09-24).**
+  - **Verification:** the verifier ran three passes. The first found 4 blocking items (the trailing silence, circular tests, cancel dropping the buffer, the face-hold interval). The second found 2 more (the live-stream cancel drop and the M5-023 text); the third, on the R1 fix, failed only on its test oracle. All were fixed.
+  - **M3 records:** 12 EXACT_SOURCE, 2 forced COMPATIBILITY_POLICY (M3-019, M3-020), 2 HARDWARE_ONLY, and 8 IMPLEMENTATION_GAP, each with a named residual. Most residuals belong to M5.
+  - **What changed:**
+    - the engine's audio/animation feed (14-frame and byte budgets, FIFO drain, engine-tick driven);
+    - the face encoder on the 64×128 canvas;
+    - chunks ignored before SyncTimeAck; 3 frames per tick to vision;
+    - at connection: SetCameraParams, the NV calibration read that enables vision, and DefaultCameraParams handling.
+  - Full suite 1243/1243.
+- **M4 control and M5 animation:** inventories frozen (2026-09-24), with 24 and 36 records.
+- **M6 (Wwise):** the extraction found the Wwise 2016.2 runtime statically linked into the engine. Two gap passes are running.
 - **M2 protocol: repaired in one batch (2026-09-24).**
   - The verifier compared all 42 outbound and all 56 inbound layouts by machine against the engine; all match. Its one blocking item was a manifest overclaim, fixed by policy M2-017 and corrections C1 and C2, then re-approved.
   - M2 records: 15 EXACT_SOURCE, 1 COMPATIBILITY_POLICY (M2-017), 2 IMPLEMENTATION_GAP (M2-002 per-bit storage and M2-015 caller defaults, both M4 interfaces).
@@ -134,6 +145,9 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
 
 - **SyncTime stamp without AbsoluteLocalizationUpdate.** The stack cannot send AbsoluteLocalizationUpdate yet (frameId and originId are not stack state). It still stamps +0x520 where that send would have happened, so the CD19 "SyncTimeAck not received" warning stays meaningful. The alternative is to leave it unset, which silences CD19. Revisit when the ids exist.
 
+- **Wwise mix rate (M6, 2026-09-24).** In the original the Wwise mix rate is the phone's native output rate, capped at 48000: min(AudioTrack.getNativeOutputSampleRate, 48000), cached at 0x0108DF90 (0x00A56E80..0x00A56EA4). The Hijack plug-in then resamples to 22320 Hz by linear interpolation. This stack has no phone, so it uses 48000, which is what the cap gives on typical phones. This will be recorded as a COMPATIBILITY_POLICY in the M6 inventory. Revisit if a capture from an original phone ever shows another rate.
+- **Wwise runtime found (M6 extraction, 2026-09-24).** The Wwise 2016.2 runtime is statically linked into libcozmoEngine.so, as symbol-less ARM code at 0x0095E540..0x00AE2E40. Anything earlier marked BLOCKED_EXTERNAL for "Wwise runtime semantics" is therefore RECOVERABLE_GAP, not blocked, and gets re-classified as each layer (M6, M9) is inventoried.
+
 ## Cleanup queue (non-behavioural; fold into the next batch)
 
 - The earlier queue was cleared by batch 4(i): the `using` isolation, TransportConstants LF, T_k2, stale MISSING and verifier-reading comments, and the M1-005 doc.
@@ -158,6 +172,20 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
   - Docking.cs:353 releases the carried object on BlockPlaced without the engine's success gate (R-P1).
   - Docking.cs:357 treats MovingLiftPostDock as `!= 0`, where the engine compares that byte for equality with IDockAction+0x80 (R-P4).
 - For M4: the MessageExtras default arguments (SetHeadAngle 10/10, SetLiftHeight 3/20, RobotLink.cs:100) have no engine counterpart (M2-015). The only callers that rely on them are CozmoRobot.cs:499 (a public API) and Probe.cs:92.
+- **For the M5 batch (found by the M3 verifier; the rows are in the frozen M5 inventory):**
+  - After a cancel (SetStreamingAnimation(null)), the engine replays the neutral face (A6, A31). The stack has no neutral replay.
+  - StreamLive runs outside an Update, so its timing differs from the engine's (A29, 0x0057D080).
+  - A Play then Stop inside one tick: in the engine the live stream continues rather than re-initialising.
+  - RobotAnimationSink.Finished sends a BodyStop on cancel and can send one after EndOfAnimation. The stack also sends its own BodyStop before EndOfAnimation. None of these has an engine counterpart (A20, A24).
+  - `_lastFace` is resent without the layered face flag (A16(9)).
+  - Stream error paths: a failed send re-runs `AudioFramesSent++` and KeyframeFired on retry. A throwing send stays at the front of the buffer and faults every tick.
+  - The AbortAnimation 0x8D send (M5-023).
+  - The production test does not exercise the budget-stop/refill path.
+- **control-check, before the next robot run:**
+  - ANIM_CANCEL's "nothing after cancel within 100 ms" criterion and its M5-023 note contradict A25: a cancelled clip's pending frame can go out at the next tick that has budget. Rework the criterion or mark it not judged.
+  - CUBES should cite M9-017 and M4-024.
+  - CONNECT should record the origin and frame the robot reports (M4-021), and whether DefaultCameraParams 0xC8 arrives (M3-019).
+  - CAMERA should record image brightness (M3-019).
 - Tests recommended by batch 4(i): one pinning the 14 Init tunables against the CA/B13 table (M1-005), and a dedicated R43 test for an unsent seq-0 entry at the front (M1-016).
 
 ## Parked: MISSING items (resolved)

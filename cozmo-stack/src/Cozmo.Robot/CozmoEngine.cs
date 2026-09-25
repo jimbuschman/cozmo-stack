@@ -717,6 +717,77 @@ public sealed class EngineRobot
     /// </summary>
     public bool AnimationStreamingOpen { get => _streamGate; internal set => _streamGate = value; }
 
+    // fidelity: M3-012
+    private volatile int _animBytesPlayed, _audioFramesPlayed;
+    private volatile bool _animationStateHandled;
+    /// <summary>Robot+0x238: numAnimBytesPlayed, written only by the AnimationState handler (C10); 0 from the constructor (C13).</summary>
+    public int NumAnimBytesPlayed => _animBytesPlayed;
+    /// <summary>Robot+0x240: numAudioFramesPlayed, written only by the AnimationState handler (C10); 0 from the constructor (C13).</summary>
+    public int NumAudioFramesPlayed => _audioFramesPlayed;
+    /// <summary>Robot+0x348: enabledAnimTracks from the last AnimationState (C10).</summary>
+    public byte EnabledAnimTracks { get; private set; }
+    /// <summary>Robot+0x248: the tag from the last AnimationState (C10).</summary>
+    public byte AnimationStateTag { get; private set; }
+    /// <summary>Whether an AnimationState has been handled. Not an engine field: the offline seam's switch (RobotAnimationSink).</summary>
+    internal bool AnimationStateHandled => _animationStateHandled;
+
+    // fidelity: M3-012
+    /// <summary>The AnimationState handler (C10, 0x00537FD0..0x0053800C): gated by +0x29; writes +0x238, +0x240, +0x348, +0x248.</summary>
+    internal void HandleAnimationState(AnimationState a)
+    {
+        if (!TimeSynced) return;
+        _animBytesPlayed = a.NumAnimBytesPlayed;
+        _audioFramesPlayed = a.NumAudioFramesPlayed;
+        EnabledAnimTracks = a.EnabledAnimTracks;
+        AnimationStateTag = a.Tag;
+        _animationStateHandled = true;
+    }
+
+    // fidelity: M3-024
+    /// <summary>
+    /// The audio output source HandleFirmwareVersion sets (C1): <see cref="RobotAudioOutputSource.PlayOnRobot"/> when the
+    /// firmware JSON's "sim" is null, else <see cref="RobotAudioOutputSource.PlayOnDevice"/>. Null until a firmware
+    /// version has been handled. What source 1 plays through (C2's RobotAudioAnimationOnDevice) is not built: this
+    /// stack's animation audio always streams to the robot.
+    /// </summary>
+    public RobotAudioOutputSource? AudioOutputSource { get; private set; }
+    /// <summary>Robot::SetPhysicalRobot(true), called by HandleFirmwareVersion when "sim" is null (C1).</summary>
+    public bool IsPhysicalRobot { get; private set; }
+
+    // fidelity: M3-024
+    /// <summary>
+    /// RobotToEngineImplMessaging::HandleFirmwareVersion (C1, 0x00536934..0x0053698E; "sim" at 0x00536A4C): if
+    /// <c>json["sim"].isNull()</c>, SetPhysicalRobot(true) and SetOutputSource(2 = PlayOnRobot); otherwise source 1.
+    /// MISSING: what the handler does when the JSON does not parse, or its root is not an object, is not in the rows;
+    /// the source is left as it was and a warning is logged.
+    /// MISSING (M4 interface): SetPhysicalRobot(true) also loads the persistent block pool; this stack still does that
+    /// in the M1-042 app defaults (<see cref="CozmoRobot"/>), not here.
+    /// </summary>
+    internal void HandleFirmwareVersion(FirmwareVersion f)
+    {
+        if (!Json.TryParseFirst(f.Signature, out var doc))
+        {
+            Engine.Log("warning: MISSING: HandleFirmwareVersion: the firmware JSON did not parse; the audio output source is not set (M3-024)");
+            return;
+        }
+        using (doc)
+        {
+            var root = doc.RootElement;
+            if (root.ValueKind != System.Text.Json.JsonValueKind.Object)
+            {
+                Engine.Log("warning: MISSING: HandleFirmwareVersion: the firmware JSON root is not an object; the audio output source is not set (M3-024)");
+                return;
+            }
+            bool simIsNull = !root.TryGetProperty("sim", out var sim) || sim.ValueKind == System.Text.Json.JsonValueKind.Null;
+            if (simIsNull)
+            {
+                IsPhysicalRobot = true;
+                AudioOutputSource = RobotAudioOutputSource.PlayOnRobot;
+            }
+            else AudioOutputSource = RobotAudioOutputSource.PlayOnDevice;
+        }
+    }
+
     // fidelity: M1-041
     /// <summary>
     /// Robot::SyncTime (CB23, CD18): +0x29 = 0; RobotStateHistory::Clear; SendSyncTime; on success +0x520 = now.
@@ -834,8 +905,16 @@ public sealed class EngineRobot
         }
         if (!FirstFullStateHandled) { AnimationStreamingOpen = false; return; }
         AnimationStreamingOpen = TimeSynced && ReadyToStream;
+        // fidelity: M3-013
+        // CD12: AnimationStreamer::Update runs here, only while synced and ready to stream; each call is one engine
+        // Update of the streamer (C15).
+        if (AnimationStreamingOpen && Engine.AnimationStreamerUpdate is { } streamer) Engine.RunIsolated(streamer);
     }
 }
+
+// fidelity: M3-024
+/// <summary>The audio output sources of SetOutputSource (C1, C2): 0 none, 1 play on the device, 2 play on the robot.</summary>
+public enum RobotAudioOutputSource : byte { None = 0, PlayOnDevice = 1, PlayOnRobot = 2 }
 
 // fidelity: M1-028, M1-029, M1-030, M1-040, M1-015
 /// <summary>
@@ -1177,6 +1256,10 @@ public sealed class CozmoEngine : IDisposable
     internal Action? AfterSuccessDefaults;
     /// <summary>Raised when a subscriber or handler threw (policy M1-034: isolated, and reported).</summary>
     internal Action<Exception>? Faulted;
+    /// <summary>AnimationStreamer::Update, run by Robot::Update while synced and ready to stream (CD12, C15).</summary>
+    internal Action? AnimationStreamerUpdate;
+    /// <summary>The VisionComponent's RobotConnectionResponse subscriber, run in its place in the Success broadcast (CD21, 1h).</summary>
+    internal Action? VisionConnected;
 
     // ---- the game-facing messages
     /// <summary>RobotConnectionResponse to the game (CB19); raised on the engine thread before the engine's own subscribers (CD17).</summary>
@@ -1230,6 +1313,9 @@ public sealed class CozmoEngine : IDisposable
     /// handlers before the call that fed it returns.
     /// </summary>
     internal void StartOffline(bool autoTick) => _autoTick = autoTick;
+
+    /// <summary>Whether the 60 ms engine thread runs (production), rather than one of the offline seams.</summary>
+    internal bool IsProduction => _runner is not null;
 
     /// <summary>
     /// The offline test seam's starting state (see <see cref="CozmoRobot.CreateOffline"/>): RCD state 1 on
@@ -1394,6 +1480,10 @@ public sealed class CozmoEngine : IDisposable
             case SyncTimeAck: if (robot is not null) Isolated(robot.HandleSyncTimeAck); break;
             case RobotState s: stateHandled = robot?.UpdateFullRobotState(s) ?? false; break;
             case CrashReport: if (robot is not null) Isolated(robot.TracePrinterOnCrashReport); break;
+            // fidelity: M3-012
+            case AnimationState a: if (robot is not null) Isolated(() => robot.HandleAnimationState(a)); break;
+            // fidelity: M3-024
+            case FirmwareVersion f: if (robot is not null) Isolated(() => robot.HandleFirmwareVersion(f)); break;
         }
         if (DeviceRoute is { } d) Isolated(() => d(m, stateHandled));
         if (Robots.Ric is { } ric) Isolated(() => ric.OnMessage(m));
@@ -1404,10 +1494,9 @@ public sealed class CozmoEngine : IDisposable
     /// <summary>
     /// The response's broadcast (CB21, CD17): the game first, then the engine subscribers synchronously in their
     /// subscription order. On Success: RobotEventHandler (Robot::SyncTime, then the NV on-idle callback that sets
-    /// ready to stream, CB22, CD18, CD20), VisionComponent (CD21), TracePrinter (CD22). Policy M1-042 then queues the
-    /// app's own reaction (stored volume, block pool) as a game message.
-    /// MISSING (M3 interface): VisionComponent's NV CameraCalib read and SetCameraParams (CD21, bytes 0..5
-    /// uninitialised) are not reproduced.
+    /// ready to stream, CB22, CD18, CD20), VisionComponent (CD21, 1h: the NV CameraCalib read queued, then
+    /// SetCameraParams; <see cref="CameraSettings.OnRobotConnected"/>), TracePrinter (CD22). Policy M1-042 then queues
+    /// the app's own reaction (stored volume, block pool) as a game message.
     /// </summary>
     internal void BroadcastConnectionResponse(RobotConnectionResponse resp)
     {
@@ -1419,7 +1508,8 @@ public sealed class CozmoEngine : IDisposable
             robot.SyncTime();
             robot.NvOnIdle(() => robot.ReadyToStream = true);
         });
-        Log("warning: MISSING: VisionComponent's SetCameraParams on connection is M3 (CD21) and is not sent");
+        // fidelity: M3-019, M3-022
+        if (VisionConnected is { } vision) Isolated(vision);
         Isolated(robot.TracePrinterOnConnected);
         // fidelity: M1-042
         if (AfterSuccessDefaults is { } defaults) Post(defaults);
@@ -1445,6 +1535,9 @@ public sealed class CozmoEngine : IDisposable
             try { ((Action<string>)t)(line); } catch (Exception e) { ReportFault(e); }
         }
     }
+
+    /// <summary>Runs a host hook isolated (policy M1-034).</summary>
+    internal void RunIsolated(Action a) => Isolated(a);
 
     // fidelity: M1-034
     private void FanOut<T>(Action<T>? handler, T arg)

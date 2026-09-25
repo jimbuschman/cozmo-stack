@@ -54,9 +54,23 @@ public sealed class VisionSystem : IDisposable
         History = new RobotStateHistory();
         Locator = new CubeLocator(this);
         robot.Message += OnMessage;
-        robot.Camera.FrameReceived += OnFrame;
+        // fidelity: M3-005, M3-022
+        // Vision gets what HandleImageChunk hands to SetNextImage (the per-tick cap, A3), and the calibration and the
+        // enable the connection-time NV read gives (1j).
+        robot.Camera.FrameForVision += OnFrame;
+        robot.CameraSettings.CalibrationInstalled += OnCalibrationInstalled;
+        robot.CameraSettings.VisionEnabledSet += OnVisionEnabledSet;
+        if (robot.CameraSettings.Calibration is { } read) Calibration = read;
         robot.RobotRemoved += ResetToConstructed;
     }
+
+    // fidelity: M3-022
+    /// <summary>SetCameraCalibration from the connection-time NV read (1j).</summary>
+    private void OnCalibrationInstalled(CameraCalibration c) => Calibration = c;
+
+    // fidelity: M3-022
+    /// <summary>The NV callback's +0x48 = 1 (1j, 2d). The gate that reads it is M11's (A4).</summary>
+    private void OnVisionEnabledSet() => Enabled = true;
 
     // fidelity: M1-025, M1-015
     /// <summary>
@@ -234,7 +248,10 @@ public sealed class VisionSystem : IDisposable
     private VisionFrameResult? ProcessFrame(CameraFrame f, int removal)
     {
         if (Calibration is null) { WarnNoCalibration(removal); return null; }
-        return ProcessCapture(GrayImage.FromFrame(f), f.ImageId, f.Timestamp, removal);
+        // fidelity: M3-001
+        // A6: a frame that does not decode (A8..A11, policy M3-020) is not processed.
+        if (!f.TryDecodeGray(out var gray, out var error)) { Log?.Invoke($"frame {f.ImageId}: {error}"); return null; }
+        return ProcessCapture(gray!, f.ImageId, f.Timestamp, removal);
     }
 
     /// <summary>
@@ -371,7 +388,9 @@ public sealed class VisionSystem : IDisposable
     public void Dispose()
     {
         _robot.Message -= OnMessage;
-        _robot.Camera.FrameReceived -= OnFrame;
+        _robot.Camera.FrameForVision -= OnFrame;
+        _robot.CameraSettings.CalibrationInstalled -= OnCalibrationInstalled;
+        _robot.CameraSettings.VisionEnabledSet -= OnVisionEnabledSet;
         _robot.RobotRemoved -= ResetToConstructed;
     }
 }

@@ -383,6 +383,10 @@ M2_TYPES = {
     0xBB: ({"field1": "bool"}, "RampTraverseComplete Unpack 0x007C1E88 reads a bool"),
     0xBD: ({"field1": "bool"}, "BridgeTraverseComplete Unpack 0x007C20CC reads a bool"),
     0xBE: ({"field2": "bool"}, "TimeProfileStat Unpack 0x007D4F28 reads field2 as a bool"),
+    # M2 correction C3 (M3 gap pass Q4): DefaultCameraParams @0 and @4 are f32 (maxGain, gain)
+    0xC8: ({"field0": "f32", "field1": "f32"},
+           "DefaultCameraParams operator== vcmp.f32 0x007BF352, 0x007BF364; handler vldr s0,[r4] 0x00657CE0 "
+           "(maxGain) and vldr s2,[r4,#4] (gain) (M2 correction C3)"),
     0xD9: ({"field1": "bool"}, "RobotErrorReport Unpack Read<bool> 0x007D3E70"),
     0xDA: ({"field0": "bool"}, "LiftLoad inline Read<bool> 0x007B1BA4"),
     # Appendix C: imageEncoding ldrb and unsigned compares (0x004F1D7A, 0x004F218E); chunkDebug and status

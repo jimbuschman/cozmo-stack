@@ -443,6 +443,7 @@ public sealed class CubeConnections
     /// the runtime pool and asks for its five factory ids at once (<c>Robot::ConnectToObjects</c> at 0x0061A278) -
     /// before any <c>BlockPoolEnabledMessage</c>.
     /// </summary>
+    // fidelity: M4-011
     public void Init(string path)
     {
         lock (_gate)

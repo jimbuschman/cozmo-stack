@@ -137,8 +137,8 @@ public class AnimationTests
         s.Advance(1000);                        // one very late tick
 
         Assert.Equal(new[] { "a", "b", "c" }, r.Events);
-        // frame 0 (nothing due), frame 1 (all three), then the trailing silence that follows EndOfAnimation
-        Assert.Equal(3, r.Calls.Count(c => c.What == "audio"));
+        // frame 0 (nothing due) and frame 1 (all three); nothing follows EndOfAnimation (M3 inventory A20)
+        Assert.Equal(2, r.Calls.Count(c => c.What == "audio"));
         Assert.False(s.IsPlaying);
     }
 

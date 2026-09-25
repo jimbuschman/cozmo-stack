@@ -15,11 +15,13 @@ namespace Cozmo.Robot;
 /// <c>MiniToJpegHelper</c> a 0x144-byte header at 0x00C48C40 and <c>MiniColorToJpeg</c> at 0x004F32D0 a
 /// 0x14E-byte one at 0x00C48D84; both are byte-identical to <see cref="GrayHeader"/> and
 /// <see cref="ColorHeader"/> apart from the height and width fields, which the engine also patches per
-/// frame (its template happens to hold 296 x 400 where ours holds 240 x 320). They were first transcribed
-/// from PyCozmo's camera.py and are now confirmed against the binary.
+/// frame. They were first transcribed from PyCozmo's camera.py and are confirmed by the M3 inventory's SHA-256
+/// prefixes (A13): the gray table with the engine template's 296 x 400 patched in hashes to c44b69c9f614304a, and
+/// the colour table as it stands (240 x 320) to 106a14ba4dd23964.
 ///
 /// Verified on 28 frames captured from a firmware-2457 robot: output decodes as 320x240 grayscale.
 /// </summary>
+// fidelity: M3-001, M3-003, M3-020
 public static class MiniJpeg
 {
     public const byte EncodingJpegGray = 5;
@@ -104,10 +106,14 @@ public static class MiniJpeg
     ///
     /// A payload of fewer than two bytes after the strip skips the copy entirely (<c>cmp r5, #2</c> at
     /// 0x004F321E), which is what the loop below does anyway.
+    ///
+    /// Only encodings 8 and 9 go through <c>MiniToJpegHelper</c> (A8, A9); any other payload is returned as it is.
+    /// Policy M3-020: a payload that is empty or all 0xFF, where the engine's strip reads <c>data[-1]</c>, gives an
+    /// empty result, which every decode treats as a failure.
     /// </summary>
     public static byte[] ToJpeg(ReadOnlySpan<byte> payload, int width, int height, byte encoding)
     {
-        if (encoding is EncodingJpegGray or EncodingJpegColor) return payload.ToArray();
+        if (encoding is not (EncodingJpegMinimizedGray or EncodingJpegMinimizedColor)) return payload.ToArray();
         bool color = encoding == EncodingJpegMinimizedColor;
         var header = (byte[])(color ? ColorHeader : GrayHeader).Clone();
         int off = color ? ColorSizeOffset : GraySizeOffset;
@@ -117,6 +123,7 @@ public static class MiniJpeg
         // Trailing 0xFF bytes are padding, not data.
         int end = payload.Length;
         while (end > 0 && payload[end - 1] == 0xFF) end--;
+        if (end == 0) return Array.Empty<byte>();          // policy M3-020: the engine would read data[-1]
 
         var outBuf = new List<byte>(header.Length + end * 2 + 2);
         outBuf.AddRange(header);
@@ -134,4 +141,10 @@ public static class MiniJpeg
 
     /// <summary>Header length for tests and diagnostics.</summary>
     public static int HeaderLength(bool color) => (color ? ColorHeader : GrayHeader).Length;
+
+    /// <summary>A copy of the header table as stored, before a frame's height and width are patched in (A13).</summary>
+    public static byte[] HeaderTable(bool color) => (byte[])(color ? ColorHeader : GrayHeader).Clone();
+
+    /// <summary>Where <c>MiniToJpegHelper</c> writes the big-endian height (0x5E) and then width (0x60) (A12).</summary>
+    public const int SizeFieldOffset = 0x5E;
 }

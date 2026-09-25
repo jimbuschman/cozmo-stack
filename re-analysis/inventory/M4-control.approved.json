@@ -1,0 +1,296 @@
+{
+  "subsystem": "M4-control",
+  "approved": "2026-09-24",
+  "inventory": "re-analysis/inventory/M4-control.md",
+  "inventory_sha256": "9a859ae71ef7e17ff69c5be2d5643376127a418e44cdec3c8fee3ea630a8798c",
+  "records": {
+    "M4-001": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Head angle limits -0.436332..0.776672 rad: command clip in MoveHeadToAngleAction, state-side clamp, -25 deg before calibration",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "MA9 MoveHeadToAngleAction ctor clip with warnings 0x00547F44..0x0054803A",
+        "MA22 Robot+0x2FC = -0.436332 in the ctor (0x0051007C..0x00510086)",
+        "MA23 RS6 SetHeadAngle 0x0051335E..0x005133E8 (M2 interface)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-002": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Lift presets 0 LowDock 32 / 1 HighDock 76 / 2 HeightCarry 92 / 3 OutOfFOV -1; clamp to 32..92; a negative height goes to the nearer of 32 and 92",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "MA14 preset table 0x00C54684, names 0x00548EBC..0x00548EDC",
+        "MA13 MoveLiftToHeightAction::Init clamp 0x0054905E..0x005490F6, negative height 0x005490FA..0x00549140"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-003": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The head and lift API follows the game-message path: caller speed/accel/duration; the original app passes head 10/20 and lift 10/20, duration 0",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "MA10 game SetHeadAngle overwrites +0x90..+0x98 with the message values (0x0052ABE0..0x0052AC24)",
+        "MA11 unity/scripts/csharp/Robot.cs:1443-1450 (head 10, 20, 0) and 1638-1646 (lift 10, 20, 0)",
+        "MA12 game SetLiftHeight: 32.0 while carrying -> PlaceObjectOnGroundAction (0x0052AC40..0x0052AC9E)",
+        "MA9, MA13 action ctor defaults (head 15/20 at 0x00547F14..0x00547F28; lift 10/20 at 0x00548A68..0x00548A78)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-004": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Motion is gated on calibration here; the engine reacts to it instead",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "MA21 no calibration gate in the engine: readers of Robot+0x314/+0x315 are 0x00511E1C, 0x00512378, 0x0051335E, 0x005151A6 only",
+        "MA20 HandleMotorCalibration 0x00536BAE..0x00536C0E"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-005": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Action ids: one u8 counter shared by head, lift and body, pre-incremented from 0; ids run 1..255, 0, 1",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "MA8 MC+8 = 0 at construction (0x0063DA7C); pre-increment in MoveLiftToHeight 0x0064070C..0x0064071A, MoveHeadToAngle 0x006407D8..0x006407E6, GetNextMotorActionID 0x006406EC..0x006406F4"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-006": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Wheel confirmation tolerance 35 percent / 5 mm per s",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "no engine counterpart: DriveWheels is sent verbatim with no confirmation (MA1 0x0063ED82..0x0063EE9A)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-007": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "StopAll: the track-unlock preamble, then only StopAllMotors 0x3B",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "MA5 0x0063FBD8..0x0063FE10 -> 0x0064099C..0x006409C2",
+        "MA6 callers AbortAll 0x0051197C, StopRobotForSdk 0x005296D6, PotentialCliff 0x00535972, PlaceObjectOnGround 0x00554894, CheckReactionTriggerStrategies 0x005A3616, the game message 0x0063FBD4"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-008": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Cliff sensor data (raw values, CLIFF_DETECTED, timestamp, enum names); IMU and cube battery in the engine units",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "SC2 UpdateRobotData 0x00634016..0x00634036",
+        "M2 RS12 cliffDataRaw 8-byte copy (0x0063401A..0x00634022)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-009": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Cube tracking: ObjectAvailable / ObjectConnectionState, Moved / Stopped / UpAxisChanged handling with the charger and carry filters, per-object IsMoving",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "S1 ObjectConnectionState handler 0x00533B56..0x00533D2C; S2 AddConnectedActiveObject 0x00623040..",
+        "CD10a Moved 0x00533E4C..0x005341BA; CD10b Stopped 0x00534636..0x00534AA4; CD10c UpAxisChanged 0x00534D66..0x00534E1E",
+        "LC8a..LC8e reuse rules 0x00623040..0x00623A8C, RemoveConnectedActiveObject 0x006243C6..0x00624436; one ObjectID per ActiveCube type (0x004EF468..0x004EF52A)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-010": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Outbound cube connection: block pool, five slots, SetPropSlot, filter timers, advertisement expiry, slot states, disconnect handling",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "CD1 0x00514174..0x00514224",
+        "CD2 update order 0x0051422A..0x00514470",
+        "CD3 BlockFilter::Update 0x0061A79A..0x0061A7E0; CD4 UpdateConnecting 0x0061AA8C..0x0061AB88",
+        "CD5 ConnectToRequestedObjects 0x00514A88..0x00514C6C; CD6 0x005179DA..0x00517AA6; CD7 0x00517BD8..0x00517D14; CD8 0x00514924..0x00514A0E",
+        "S3 HandleConnectedToObject 0x005179D6..0x00517AA6"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-011": {
+      "status": "EXACT_SOURCE",
+      "title": "The block pool is kept in blockPool.txt between sessions, and an RSSI tie is broken in the engine container order",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "Robot::SetPhysicalRobot(true) 0x00513914 calls BlockFilter::Init 0x0061A1EC with DataPlatform::pathToResource(scope 4, \"blockPool.txt\") (0x0051394C, the string at 0x005139B0); Robot::Robot only constructs the filter (0x00510184). Init stores the path at +0x60, calls Load, copies the persistent pool (+0x04) to the runtime pool (+0x2C) and calls Robot::ConnectToObjects with its five factory ids (0x0061A278) - before any BlockPoolEnabledMessage. This stack calls Init from CozmoRobot.ConnectAsync with a file under the local application data folder, the platform's equivalent of that data scope; an empty path turns persistence off",
+        "Load 0x0061A2DC: ifstream(path, in); a file that will not open leaves the pool as it is. getline on '\\n'; an empty line is skipped; a sixth non-empty line is an error that ends the reading (0x0061A41E, sErrorF at 0x0061A5A0); a line whose first two characters are not \"0x\" is skipped (compare at 0x0061A430); id = stoul(line, &pos, 16) (0x0061A442), skipped when pos reaches the end of the line, stored in the next entry, then type = stoul(line.substr(pos + 1), 0, 10) (0x0061A480) stored beside it and the entry counted. A throwing stoul is caught, logged and the line skipped (0x0061A52C..0x0061A58E) - after the id has been stored when it is the type that fails",
+        "Save 0x0061B014: nothing without a path; when all five ids are zero an existing file is removed (stat, remove at 0x0061B058..0x0061B068); then ofstream(path, out) and, for each entry with a non-zero id, \"0x\" (0x0061B344), the id in hex (basefield cleared to hex at 0x0061B0FE..0x0061B102, lower case), \",\" (0x0061B348), to_string(type) and \"\\n\" (0x0061B34C). Save is called by AddObjectToPersistentPool on success (0x0061ACE2), RemoveObjectFromPersistentPool (0x0061B410) and the game's block-pool messages in HandleGameEvents (0x00619FC0, 0x0061A0A6, 0x0061A10E); only the first path exists in this stack",
+        "The table at Robot+0x47C is std::__ndk1::unordered_map<unsigned, Robot::ActiveObjectInfo> with std::hash<unsigned>, the key its own hash. operator[] 0x00537ABC: bucket = h & (n-1) for a power-of-two count, h % n otherwise; a new key first grows the table when it is empty or n * max_load_factor < size + 1 to max((2n) | (n < 3 || n not a power of two), ceil((size + 1) / mlf)) (0x00537B2C..0x00537B90); rehash 0x00537C80 turns 1 into 2 and a non-power-of-two into __next_prime, so the counts run 2, 5, 11, 23; the node goes after its bucket's head when the bucket is in use, else at the front of the list with the bucket pointing at the list head and the displaced node's bucket at the new node (0x00537BAE..0x00537BF8); __rehash 0x00537D10 rebuilds by walking the list and splicing each node into an in-use bucket after its head; erase (remove 0x00518FDA) unlinks and repairs the bucket pointers",
+        "GetClosestDiscoveredObjectsOfType 0x00518314 walks that table in its iteration order and takes a later entry at an equal RSSI byte, so a tie goes to the entry the container visits last. The order is incidental to the container, but it is fully determined by the insertion and erase history, which this stack sees identically (advertisements, the 10001 ms timeout, connections), so it is reproduced exactly by ActiveObjectTable rather than approximated"
+      ],
+      "live_path": true,
+      "hardware_required": null
+    },
+    "M4-012": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "StartMotorCalibration is never automatic; byte0 head, byte1 lift; MotorCalibration handling",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "MA18 senders: CalibrateMotors (from CalibrateMotorAction::Init) and 0x005CFAC2 only",
+        "MA19 CheckIfDone 0x00547D38..0x00547DC2",
+        "MA20 HandleMotorCalibration 0x00536BAE..0x00536C0E"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-013": {
+      "status": "HARDWARE_ONLY",
+      "title": "Whether the robot honours StartMotorCalibration after its connection-time calibration",
+      "authority": "robot firmware behaviour; no shipped artifact settles it",
+      "evidence": [
+        "hardware check I"
+      ],
+      "live_path": true,
+      "hardware_required": true
+    },
+    "M4-014": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Direct-drive track locks: DisableAnimTracks / EnableAnimTracks around DriveWheels, MoveHead and MoveLift",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "MA1 DriveWheels 0x0063ED82..0x0063EE9A, MoveHead 0x0063F4F6..0x0063F5D2; MA1-lift MoveLift 0x0063F73A..0x0063F92A",
+        "MA2 DirectDriveCheckSpeedAndLockTracks 0x0063EFB0..0x0063F0B8 (1e-5 at 0x0063F0F8)",
+        "MA3 LockTracks 0x006400D0..0x00640188 (0x9D); UnlockTracks 0x0063FE92..0x0063FFB4 (0x9E)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-015": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "StopHead / StopLift / StopBody: unlock preamble, then MoveHead{0}, MoveLift{0}, DriveWheels{0,0,0,0}",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "MA4 0x00640A08..0x00640AF6, 0x00640B3C..0x00640C2A, 0x00640C70..0x00640E4E",
+        "MA7 ~IActionRunner stops a moving track (0x0054112E..0x00541192)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-016": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Head and lift move semantics: no send when in position, ack matched by id, completion in position and stopped, tolerances and error codes",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "MA15 IsHeadInPosition 0x005484F4..0x0054852C, Init no-send 0x00548544..0x0054854E; IsLiftInPosition 0x00548FEA..0x00549034, 0x005492F2..0x005492FE",
+        "MA16 ack lambdas 0x0054D624 (head), 0x0054D748 (lift)",
+        "MA17 completion 0x005485D8..0x005488B6, 0x005493F6..0x00549508; errors 0x04000004, 0x03000016",
+        "MA9 head tolerance >= 2 deg (0x0054803E..0x005480AC); MA13 lift angular tolerance >= 1.5 deg (0x005491D6..0x005492EE)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-017": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Backpack lights: priority, Off resent every tick while no source, charging state machine, shared locator, wire conversion, headlight",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "LB1 BodyLightComponent::Update 0x00631D54..0x00631EB4",
+        "LB2/LB4h Off lights 0x0063221C..0x00632260",
+        "LB4a names 0x0102EA18 indexed by state^2 (0x00631BD0); LB4b DefineFromJson 0x00587558..0x00587638; LB4c lookup 0x00587434..0x005874A4; LB4d parser 0x00586D20..0x005870D0",
+        "LB4f SetBackpackLightsInternal 0x00631F3A..0x006321BE; LB4i shared locator 0x006322A4",
+        "LB5 0x006323C4..0x0063244E; LB6 headlight 0x00632344..0x00632374"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-018": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Cube lights: WakeUp on connection and reconnect, layers and PlayLightAnim gates, SetObjectLights / SetLEDs, SetCubeGamma, CubeID, CubeLights, white balance, default-layer anims",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "S5/LC1 0x00639CE4..0x00639D8A (trigger 0x26)",
+        "LC2 PlayLightAnim 0x006382EA..0x006387D8",
+        "LC3 cubeLights/wakeUp.json; pattern advance 0x00637998..0x006379DA; default layer 0x00637D4C..0x00637E02",
+        "LC4 SetObjectLights 0x00637E6C..0x00637EFC; SetLEDs 0x004E48B0..0x004E49A2 (gamma 0x80)",
+        "LC5 SetLights 0x0063A654..0x0063A800; WhiteBalanceColor 0x0063A894..0x0063A98E",
+        "LC7 Robot::Broadcast delivery 0x00511DE8..0x00511DF8, 0x00662508..0x006625A8; LC8 reconnect replay"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-019": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Cliff: sensor defaults, CliffEvent and PotentialCliff handling, EnableStopOnCliff senders, the threshold schedule 50 / 400 / 150",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "SC1 ctor 0x00633FA0..0x00633FCE",
+        "SC3 SendCliffDetectThresholdToRobot 0x00634270..0x00634368",
+        "SC4 schedule 0x00512D7A..0x00512EA6; SC4a 0x00634514..0x006345AE; SC4b 0x006343B8..0x006344B0; SC4c 0x00634630..0x00634724; SC4d 0x006347A4..0x0063480C; SC4j 0x00511D66..0x00511DA0",
+        "SC5 CliffEvent 0x00535548..0x005356E6; SC6 0x00527E8E..0x00527EEA; SC7 PotentialCliff 0x0053582C..0x00535998; SC8 EnableStopOnCliff senders"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-020": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "RobotState acceptance: time-sync gate, unknown origin ids dropped; origin 1 from the ctor Delocalize; AbsoluteLocalizationUpdate {0, frame 0, origin 1, identity} at SyncTime",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "SC4f UFRS gates 0x0051293C..0x00512942, ContainsOriginID 0x00512BE2..0x00512C4A",
+        "SC4g PoseOriginList next id = 1 (0x0084792C..0x0084793C); UnknownOriginID = 0 (0x00C97B20)",
+        "Robot::Delocalize 0x00510A24: AddNewOrigin 0x00510A66, SetNewPose 0x00510B4C, SendAbsLocalizationUpdate 0x00510BF4 when time-synced",
+        "SC4e robot+0x2B0 = 0 (0x0050FF02, 0x0051032C); SC4h SendSyncTime -> SendAbsLocalizationUpdate (0x0051526E..0x005153AE)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-021": {
+      "status": "HARDWARE_ONLY",
+      "title": "Whether the robot reports the origin id and frame from AbsoluteLocalizationUpdate in RobotState",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "SC4i: this stack never sent AbsoluteLocalizationUpdate; all 855 states in re-analysis/acceptance/hardware/20260924-202748-CONTROL/frames.jsonl reported origin 0, frame 0",
+        "no original-app capture exists"
+      ],
+      "live_path": true,
+      "hardware_required": true
+    },
+    "M4-022": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "SetBodyRadioMode {1,0} after 16 consecutive RobotStates without IS_BODY_ACC_MODE",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "SC10 / M1 CD25 0x00512AD0..0x00512B52"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-023": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Cube taps: intensity > 60, a 75 ms queue broadcasting the strongest, the 500 ms double-tap window, EnableBlockTapFilter",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "CD10d ctor and subscriptions 0x00630874..0x00630A14",
+        "CD10e 0x00630B2E..0x00630C8C",
+        "CD10f flush 0x006310D0..0x0063119E",
+        "CD10g double tap 0x00630DC4..0x006316E0"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-024": {
+      "status": "HARDWARE_ONLY",
+      "title": "What makes the robot forward cube telemetry after connection, and the robot-side effect of StreamObjectAccel",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "S12 AddListener sends {activeID, 1} reliable (0x00635556, 0x00635562)",
+        "S18/S19 no shipped robot or cube firmware for 2457",
+        "CONTROL run: no cube telemetry after the connection"
+      ],
+      "live_path": true,
+      "hardware_required": true
+    }
+  }
+}

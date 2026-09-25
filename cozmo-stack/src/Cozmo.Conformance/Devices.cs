@@ -346,10 +346,7 @@ public static class Devices
         if (volume is { } v) { Console.WriteLine($"SetAudioVolume {v}"); robot.Audio.SetVolume((ushort)v); }
         robot.Audio.Codec = codec;
         if (inFlight >= 0)
-        {
-            robot.Audio.TargetInFlight = inFlight;
-            Console.WriteLine($"keeping {inFlight} frames queued at the robot (its buffer holds about {CozmoAudio.RobotBufferFrames})");
-        }
+            Console.WriteLine($"--in-flight {inFlight} is ignored: Play follows the engine's budget ({CozmoAudio.RobotBufferFrames} unplayed frames, 8192 unplayed bytes; M3-012)");
 
         int before = robot.State.Animation?.NumAudioFramesPlayed ?? 0;
 
@@ -419,7 +416,7 @@ public static class Devices
             sampleRateAssumed = CozmoAudio.SampleRate,
             framesSent = robot.Audio.FramesSent,
             framesRobotReportsPlayed = played,
-            targetInFlight = robot.Audio.TargetInFlight,
+            audioFramesAhead = CozmoAudio.RobotBufferFrames,
             clientDropCount = robot.State.Animation?.ClientDropCount,
             wallClockMs = sw.ElapsedMilliseconds,
             timeline = trace.Select(t => new { t.ms, t.sent, played = t.played - before }).ToArray(),

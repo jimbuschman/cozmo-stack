@@ -90,206 +90,217 @@ public sealed class FaceBitmap
     }
 }
 
+/// fidelity: M3-006, M3-007, M3-009
 /// <summary>
-/// The run-length format the robot's face accepts (payload of animFaceImage, tag 0x97).
+/// The face wire format: <c>FaceAnimationManager::CompressRLE</c> 0x00581904 and the engine's reference decoder
+/// <c>DrawFaceRLE</c> / <c>FaceDisplayDecode</c> (M3 inventory B6..B15).
 ///
-/// Encoding is column-major over the 128x32 image. Each byte is a 2-bit command and a 6-bit count:
-///   00 nnnnnn  skip n+1 whole columns
-///   01 nnnnnn  repeat the previous column n+1 times
-///   10 ccccdd  run of (cccc)+1 pixels down the current column; dd non-zero means draw, zero means skip
-///   11 ccccdd  the same but with 16 added to the length, so runs of 17..32
+/// The engine encodes a <b>64-row by 128-column canvas</b> (B1, B6). The wire image is 128 columns of 64 rows,
+/// walked as 32 two-row pairs per column (B10, B15). Pair <c>k</c> of a column carries canvas row <c>2k</c> in
+/// bit 0 and row <c>2k + 1</c> in bit 1 (B10). Opcodes, column by column (B8..B11):
+/// <list type="bullet">
+/// <item><c>0b00nnnnnn</c> skip: an empty column plus the <c>n</c> further empty columns
+/// (<c>c + n &lt;= 127</c>, <c>n &lt;= 63</c>);</item>
+/// <item><c>0x40 | k</c> repeat: a column equal to the previous one (<c>c &gt; 0</c>) plus <c>k</c> further
+/// equal columns, with the same limits;</item>
+/// <item><c>0x80 | ((len - 1) &lt;&lt; 2) | pair</c> run: <c>len</c> (1..32) equal pairs down the column.</item>
+/// </list>
+/// A column's trailing run is always emitted at <c>c == 127</c> or when its pair is non-zero; a trailing pair-0
+/// run is dropped only when the next column is empty or equal to this one (B11). An RLE of <b>1024 bytes or
+/// more</b> is replaced by the 128 little-endian u64 column masks, bit <c>r</c> = canvas row <c>r</c> (B12). A
+/// blank canvas is <c>{0x3F, 0x3F}</c> (B13).
+///
+/// <see cref="FaceBitmap"/> (128 x 32) is this stack's picture type (MD3 for the raw-bitmap API; the
+/// procedural and sprite drawers are M5's). <see cref="Encode(FaceBitmap)"/> puts its row <c>y</c> on canvas
+/// row <c>2y</c>. Which row of a pair the engine lights is the M5 drawer's scan-line parity (B2..B4, MD5); this
+/// stack's bitmap does not carry it, so the even row is kept, which is the wire bytes it has always sent.
 /// </summary>
 public static class FaceBitmapCodec
 {
-    /// <summary>
-    /// Decodes a payload back into an image. Used to round-trip-test the encoder.
-    ///
-    /// A payload of exactly <see cref="RawFrameSize"/> bytes is the raw column-mask buffer, not an RLE
-    /// stream: <c>CompressRLE</c> emits its RLE only while it is under that size (<c>size >> 10</c> zero
-    /// at 0x00581B7E), so nothing else can be exactly 1024 bytes long and the length is the only
-    /// discriminator either side has.
-    /// </summary>
-    public static FaceBitmap Decode(ReadOnlySpan<byte> buffer)
-    {
-        var img = new FaceBitmap();
-        if (buffer.Length == RawFrameSize)
-        {
-            for (int col = 0; col < FaceBitmap.Width; col++)
-                for (int row = 0; row < FaceBitmap.Height; row++)
-                    if ((buffer[col * 8 + row / 8] & (1 << (row % 8))) != 0) img[col, row] = 1;
-            return img;
-        }
-        int x = 0, y = 0;
-        // Whether the column the runs were filling is finished: a run that reached the bottom advanced x
-        // itself, and nothing else has. Both the skip and the repeat command have to move past an
-        // unfinished column, which is what makes the encoder's dropped trailing blank run work - and
-        // dropping it is exactly what CompressRLE does (0x00581ABC). PyCozmo's transcription kept two
-        // flags here and had the skip command consult the wrong one; the 28 sequences Cozmo itself
-        // produced decode identically either way, and a column that ends on a drawn run followed by an
-        // empty column is the case that tells them apart.
-        bool columnFinished = true;
-        foreach (var b in buffer)
-        {
-            int cmd = (b & 0xC0) >> 6, cnt = b & 0x3F;
-            switch (cmd)
-            {
-                case 0:
-                    cnt += 1;
-                    if (!columnFinished) x++;
-                    x += cnt; y = 0; columnFinished = true;
-                    break;
-                case 1:
-                    cnt += 1;
-                    if (!columnFinished) x++;
-                    for (int i = 0; i < cnt; i++)
-                    {
-                        for (int row = 0; row < FaceBitmap.Height; row++)
-                            if (x < FaceBitmap.Width && x > 0) img[x, row] = img[x - 1, row];
-                        x++;
-                    }
-                    y = 0; columnFinished = true;
-                    break;
-                default:
-                    bool draw = (cnt & 1) != 0;
-                    cnt >>= 1;
-                    draw |= (cnt & 1) != 0;
-                    cnt >>= 1;
-                    cnt += 1;
-                    if (cmd == 3) cnt += 16;
-                    if (draw)
-                        for (int i = 0; i < cnt; i++) { if (y < FaceBitmap.Height) img[x, y] = 1; y++; }
-                    else y += cnt;
-                    if (y > FaceBitmap.Height - 1) { columnFinished = true; x++; y -= FaceBitmap.Height; }
-                    else columnFinished = false;
-                    break;
-            }
-            if (x >= FaceBitmap.Width) break;
-        }
-        return img;
-    }
+    /// <summary>The canvas the engine encodes: <c>Image(64 rows, 128 cols)</c> (B1, B6).</summary>
+    public const int CanvasRows = 64, CanvasColumns = 128;
+
+    /// <summary>Two-row pairs per column (B10, B15).</summary>
+    public const int PairsPerColumn = CanvasRows / 2;
+
+    /// <summary>1024: an RLE this long or longer is sent as the raw column masks instead (B12, <c>cmp.w r1,r0,lsr #10</c>).</summary>
+    public const int RawFrameSize = 0x400;
+
+    /// <summary>The highest column a skip or repeat may reach (B8, B9: <c>c + n &lt;= 127</c>).</summary>
+    public const int LastColumn = CanvasColumns - 1;
+
+    /// <summary>The largest further-column count a skip or repeat carries (B8, B9: <c>n &lt;= 63</c>).</summary>
+    public const int MaxRunCount = 0x3F;
 
     /// <summary>
-    /// Encodes an image into the robot's format, as <c>FaceAnimationManager::CompressRLE</c> 0x00581904
-    /// does.
-    ///
-    /// The engine builds one 64-bit mask per column of its 128 x 64 canvas, bit <c>r</c> for canvas row
-    /// <c>r</c> (the <c>^ 0x3F</c> at 0x005819A0 is part of computing the two shift amounts, not a flip:
-    /// row 0 lands on bit 0 and row 63 on bit 63). Then, column by column:
-    ///
-    /// <list type="bullet">
-    /// <item><b>An empty column</b> (0x00581B0A) counts the consecutive empty columns that follow, capped
-    /// so the run ends by column 127 and its count fits six bits, and emits the count alone - command
-    /// 00, whose decoder adds one.</item>
-    /// <item><b>A column equal to the one before it</b> (0x00581A0A) counts the following identical
-    /// columns the same way and emits <c>0x40 | (count - 1)</c> - command 01 (0x00581B54, where the
-    /// <c>adds r0, #0xff</c> is the minus one).</item>
-    /// <item><b>Otherwise</b> it walks the mask two bits at a time - one robot pixel per pair of canvas
-    /// rows - and runs of equal pairs become <c>0x7C + 4 * length</c> or'd with the pair and with 0x80
-    /// (0x00581A6C). That arithmetic is the two run commands: length 1..16 gives 0x80 | (length-1) &lt;&lt; 2,
-    /// and length 17..32 gives 0xC0 | (length-17) &lt;&lt; 2, both with the pair in the low two bits.</item>
-    /// <item><b>A trailing blank run is dropped</b> unless the next column is both non-empty and
-    /// different from this one (0x00581ABC..0x00581AE2). That is what lets the following skip or repeat
-    /// command do the column advance, which is exactly what the decoder's "last draw" bookkeeping
-    /// expects.</item>
-    /// <item><b>Above 1024 bytes the whole thing is thrown away</b> and the raw 1024-byte mask buffer is
-    /// sent instead (0x00581B76): <c>size >> 10</c> non-zero, then a resize to 0x400 and a byte copy.</item>
-    /// </list>
-    ///
-    /// Two things about the pair bits are worth stating. The engine blanks alternate canvas rows before
-    /// compressing, so only one of a pair is ever set and which one alternates with
-    /// <c>_firstScanLine</c>; this encoder always uses the low bit. The robot's decoder as PyCozmo
-    /// recovered it lights the pixel for either bit, which is the reading this relies on; whether the
-    /// firmware also uses the bit position to choose a physical OLED row is not established.
+    /// <c>CompressRLE</c> over a canvas given row-major, one byte per pixel, any non-zero value lit (B7). A canvas
+    /// that is not 64 x 128 is refused with null, so no face is sent for it (B6, B5).
+    /// </summary>
+    public static byte[]? EncodeCanvas(ReadOnlySpan<byte> pixels, int rows, int columns)
+    {
+        if (rows != CanvasRows || columns != CanvasColumns || pixels.Length != rows * columns) return null;   // B6
+
+        // B7: one u64 mask per column, bit r set when pixel (r, c) is non-zero
+        var mask = new ulong[CanvasColumns];
+        for (int c = 0; c < CanvasColumns; c++)
+        {
+            ulong m = 0;
+            for (int r = 0; r < CanvasRows; r++) if (pixels[r * CanvasColumns + c] != 0) m |= 1UL << r;
+            mask[c] = m;
+        }
+
+        var o = new List<byte>(256);
+        for (int c = 0; c < CanvasColumns; )
+        {
+            if (mask[c] == 0)
+            {
+                // B8: this empty column and n further empty ones, c + n <= 127 and n <= 63
+                int n = 0;
+                while (c + n + 1 <= LastColumn && n + 1 <= MaxRunCount && mask[c + n + 1] == 0) n++;
+                o.Add((byte)n);
+                c += n + 1;
+                continue;
+            }
+            if (c > 0 && mask[c] == mask[c - 1])
+            {
+                // B9: this column, equal to the previous one, and k further equal ones, same limits
+                int k = 0;
+                while (c + k + 1 <= LastColumn && k + 1 <= MaxRunCount && mask[c + k + 1] == mask[c]) k++;
+                o.Add((byte)(0x40 | k));
+                c += k + 1;
+                continue;
+            }
+
+            // B10: runs of equal pairs; pair p is bit 2p (row 2p) | bit 2p+1 (row 2p+1) << 1
+            int value = (int)(mask[c] & 3), len = 1;
+            for (int p = 1; p < PairsPerColumn; p++)
+            {
+                int v = (int)((mask[c] >> (2 * p)) & 3);
+                if (v == value) { len++; continue; }
+                o.Add(RunByte(len, value));
+                value = v;
+                len = 1;
+            }
+            // B11: the trailing run always goes at c == 127 or when its pair is non-zero; a pair-0 run is
+            // dropped only when the next column is empty or equal to this one
+            bool nextEmptyOrEqual = c < LastColumn && (mask[c + 1] == 0 || mask[c + 1] == mask[c]);
+            if (c == LastColumn || value != 0 || !nextEmptyOrEqual) o.Add(RunByte(len, value));
+            c++;
+        }
+
+        if (o.Count >= RawFrameSize)
+        {
+            // B12: resize to 1024 and copy the 128 little-endian u64 column masks
+            var raw = new byte[RawFrameSize];
+            for (int c = 0; c < CanvasColumns; c++)
+                for (int b = 0; b < 8; b++) raw[c * 8 + b] = (byte)(mask[c] >> (8 * b));
+            return raw;
+        }
+        return o.ToArray();
+    }
+
+    /// <summary>B10: <c>0x80 | ((len - 1) &lt;&lt; 2) | pair</c>, len 1..32.</summary>
+    internal static byte RunByte(int len, int pair) => (byte)(0x80 | ((len - 1) << 2) | pair);
+
+    /// <summary>
+    /// Encodes this stack's 128 x 32 bitmap: its row <c>y</c> goes on canvas row <c>2y</c> (see the class
+    /// summary), then <see cref="EncodeCanvas"/>.
     /// </summary>
     public static byte[] Encode(FaceBitmap image)
     {
-        // one mask per column, bit r for row r
-        var mask = new uint[FaceBitmap.Width];
-        for (int x = 0; x < FaceBitmap.Width; x++)
-        {
-            uint m = 0;
-            for (int y = 0; y < FaceBitmap.Height; y++) if (image[x, y] != 0) m |= 1u << y;
-            mask[x] = m;
-        }
-
-        var outBuf = new List<byte>(256);
-        for (int x = 0; x < FaceBitmap.Width; )
-        {
-            if (mask[x] == 0)
-            {
-                int more = 0;
-                while (x + more <= MaxColumnRun && more <= MaxRunCount && x + more + 1 < FaceBitmap.Width
-                       && mask[x + more + 1] == 0) more++;
-                outBuf.Add((byte)more);                       // command 00: skip more + 1 columns
-                x += more + 1;
-                continue;
-            }
-            if (x > 0 && mask[x] == mask[x - 1])
-            {
-                int more = 0;
-                while (x + more <= MaxColumnRun && more <= MaxRunCount && x + more + 1 < FaceBitmap.Width
-                       && mask[x + more + 1] == mask[x]) more++;
-                outBuf.Add((byte)(0x40 | (more & 0x3F)));     // command 01: repeat more + 1 columns
-                x += more + 1;
-                continue;
-            }
-
-            uint bits = mask[x];
-            int value = -1, run = 0;
-            for (int pair = 0; pair < FaceBitmap.Height; pair++)
-            {
-                int v = (int)(bits & 1);                      // one robot row is one canvas pair
-                bits >>= 1;
-                if (v == value) { run++; continue; }
-                if (run >= 1) outBuf.Add(RunByte(run, value));
-                run = 1;
-                value = v;
-            }
-            // the last run: a blank one is dropped unless the next column is non-empty and different
-            bool nextDiffers = x + 1 < FaceBitmap.Width && mask[x + 1] != 0 && mask[x + 1] != mask[x];
-            if (value != 0 || x + 1 >= FaceBitmap.Width || nextDiffers) outBuf.Add(RunByte(run, value));
-            x++;
-        }
-
-        if (outBuf.Count >= RawFrameSize)
-        {
-            // the engine gives up on the RLE and sends the mask buffer itself
-            var raw = new byte[RawFrameSize];
+        var canvas = new byte[CanvasRows * CanvasColumns];
+        for (int y = 0; y < FaceBitmap.Height; y++)
             for (int x = 0; x < FaceBitmap.Width; x++)
-                for (int b = 0; b < 8; b++)
-                    raw[x * 8 + b] = b < 4 ? (byte)(mask[x] >> (8 * b)) : (byte)0;
-            return raw;
-        }
-        return outBuf.ToArray();
+                if (image[x, y] != 0) canvas[2 * y * CanvasColumns + x] = 1;
+        return EncodeCanvas(canvas, CanvasRows, CanvasColumns)!;
     }
 
-    /// <summary>0x7C + 4 * length, or'd with the pair and with 0x80 (0x00581A6C).</summary>
-    private static byte RunByte(int length, int value) => (byte)((0x7C + (length << 2)) | value | 0x80);
+    /// <summary>
+    /// The engine's reference decoder, into a 64 x 128 canvas given row-major (B14). A payload of exactly 1024
+    /// bytes is the raw masks. Otherwise, per column, a skip or repeat byte covers its columns as B8/B9 say, and
+    /// runs add <c>table[len - 1] * pair &lt;&lt; row</c> (the table 1, 5, 0x15, ... repeats the pair every two
+    /// rows) and advance <c>row</c> by <c>2 * len</c> until it reaches 64; a non-run byte ends the column without
+    /// being consumed. The firmware's own decoder is HARDWARE_ONLY (M3-008); this is the engine's model of it.
+    /// </summary>
+    public static byte[] DecodeCanvas(ReadOnlySpan<byte> buffer)
+    {
+        var mask = new ulong[CanvasColumns];
+        if (buffer.Length == RawFrameSize)
+        {
+            for (int c = 0; c < CanvasColumns; c++)
+                for (int b = 0; b < 8; b++) mask[c] |= (ulong)buffer[c * 8 + b] << (8 * b);
+        }
+        else
+        {
+            int i = 0, c = 0;
+            while (c < CanvasColumns && i < buffer.Length)
+            {
+                byte b = buffer[i];
+                int op = b >> 6;
+                if (op == 0)
+                {
+                    i++;
+                    c += (b & 0x3F) + 1;                                   // empty columns
+                }
+                else if (op == 1)
+                {
+                    i++;
+                    ulong prev = c > 0 ? mask[c - 1] : 0;
+                    for (int j = 0; j <= (b & 0x3F) && c < CanvasColumns; j++) mask[c++] = prev;
+                }
+                else
+                {
+                    ulong m = 0;
+                    int row = 0;
+                    while (row < CanvasRows && i < buffer.Length && (buffer[i] & 0x80) != 0)
+                    {
+                        int len = ((buffer[i] >> 2) & 0x1F) + 1, pair = buffer[i] & 3;
+                        for (int j = 0; j < len && row < CanvasRows; j++, row += 2) m |= (ulong)pair << row;
+                        i++;
+                    }
+                    mask[c++] = m;
+                }
+            }
+        }
+        var canvas = new byte[CanvasRows * CanvasColumns];
+        for (int c = 0; c < CanvasColumns; c++)
+            for (int r = 0; r < CanvasRows; r++)
+                if (((mask[c] >> r) & 1) != 0) canvas[r * CanvasColumns + c] = 1;
+        return canvas;
+    }
 
-    /// <summary>The highest column a skip or repeat run may reach: the <c>cmp r2, #0x7e</c> bound.</summary>
-    public const int MaxColumnRun = 0x7E;
-
-    /// <summary>The highest count a skip or repeat may carry: the <c>cmp r3, #0x3e</c> bound.</summary>
-    public const int MaxRunCount = 0x3E;
-
-    /// <summary>1024 bytes: the size at which the engine sends the raw mask buffer instead (0x00581B76).</summary>
-    public const int RawFrameSize = 0x400;
+    /// <summary>
+    /// Decodes a payload into this stack's 128 x 32 bitmap: pixel <c>(x, y)</c> is lit when either row of pair
+    /// <c>y</c> is (<see cref="DecodeCanvas"/>). Used to round-trip-test the encoder.
+    /// </summary>
+    public static FaceBitmap Decode(ReadOnlySpan<byte> buffer)
+    {
+        var canvas = DecodeCanvas(buffer);
+        var img = new FaceBitmap();
+        for (int y = 0; y < FaceBitmap.Height; y++)
+            for (int x = 0; x < FaceBitmap.Width; x++)
+                if (canvas[2 * y * CanvasColumns + x] != 0 || canvas[(2 * y + 1) * CanvasColumns + x] != 0) img[x, y] = 1;
+        return img;
+    }
 }
 
 /// <summary>
 /// Cozmo's face display.
 ///
-/// The engine streams face images as animation keyframes at the animation tick (about 30 Hz); the robot
-/// shows the most recent image until a new one arrives, so a still picture only needs to be re-sent to
-/// keep it alive. <see cref="MinInterval"/> is the engine's frame spacing and this class will not send
-/// faster than that.
+/// The engine streams face images as animation keyframes, one per 33 ms stream frame; the robot shows the most
+/// recent image until a new one arrives, so a still picture only needs to be re-sent to keep it alive. This raw-bitmap
+/// API has no engine counterpart (MD3): <see cref="MinInterval"/> is its own pacing, one frame of robot audio, and this
+/// class will not send faster than that.
 /// </summary>
 public sealed class CozmoDisplay
 {
     private readonly Action<RobotMessage> _send;
     private DateTime _last = DateTime.MinValue;
 
-    /// <summary>33.3 ms: one animation frame, matching the engine's streaming rate.</summary>
+    /// <summary>
+    /// 33.3 ms between raw frames: this stack's pacing for the raw-bitmap API (MD3), which has no engine counterpart. It
+    /// is one frame of robot audio, 744 / 22320 s, so a long Hold does not outrun the robot.
+    /// </summary>
     public static readonly TimeSpan MinInterval = TimeSpan.FromMilliseconds(33.3);
 
     /// <summary>Bytes a face message costs on top of its payload: the CLAD tag and the 16-bit array count.</summary>
@@ -303,7 +314,7 @@ public sealed class CozmoDisplay
     /// has never been exercised in either direction, so this refuses to send rather than depend on it.
     ///
     /// The refusal cannot fire on anything the engine would send. A face payload is at most
-    /// <see cref="FaceBitmapCodec.RawFrameSize"/>: <c>CompressRLE</c> gives up on its RLE above that size
+    /// <see cref="FaceBitmapCodec.RawFrameSize"/>: <c>CompressRLE</c> gives up on its RLE at that size or above (B12)
     /// and sends the 1024-byte buffer instead, and the message the engine builds for it is a fixed 0x408
     /// bytes (<c>AnimationStreamer::BufferFaceToSend</c> 0x0057C2C2). 1024 plus the three bytes of
     /// overhead is well under the 1403 an engine-default frame carries. A face the engine could not encode

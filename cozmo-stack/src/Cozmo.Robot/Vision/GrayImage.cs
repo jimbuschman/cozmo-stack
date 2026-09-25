@@ -36,7 +36,12 @@ public sealed class GrayImage
         return new GrayImage(img.Width, img.Height, img.Data);
     }
 
-    public static GrayImage FromFrame(CameraFrame frame) => FromJpeg(frame.Jpeg);
+    /// <summary>
+    /// The engine's gray decode of a frame (<see cref="CameraFrame.TryDecodeGray"/>: A8..A11, 320 x 240 or BadDecode).
+    /// Throws <see cref="InvalidDataException"/> when the frame does not decode.
+    /// </summary>
+    public static GrayImage FromFrame(CameraFrame frame)
+        => frame.TryDecodeGray(out var image, out var error) ? image! : throw new InvalidDataException(error);
 
     /// <summary>Half-resolution copy by 2x2 box averaging (one pyramid level).</summary>
     public GrayImage Downsample2()

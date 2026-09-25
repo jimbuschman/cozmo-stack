@@ -3257,15 +3257,15 @@ public sealed partial class IMURawDataChunk : RobotMessage
 }
 
 // fidelity: M2-012
-/// <summary>defaultCameraParams 0xC8 (robot_to_engine), 29 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack fixed array lengths [17] solved from native loop bounds; total matches official Size() 29 B</summary>
+/// <summary>defaultCameraParams 0xC8 (robot_to_engine), 29 bytes. Confidence: native_only. Verification: layout_known_semantics_uncertain. names generated; widths from native Unpack fixed array lengths [17] solved from native loop bounds; total matches official Size() 29 B M2 inventory MD2: DefaultCameraParams operator== vcmp.f32 0x007BF352, 0x007BF364; handler vldr s0,[r4] 0x00657CE0 (maxGain) and vldr s2,[r4,#4] (gain) (M2 correction C3)</summary>
 public sealed partial class DefaultCameraParams : RobotMessage
 {
     public override RobotMessageId Id => RobotMessageId.DefaultCameraParams;
     public DefaultCameraParams() { }
     /// <summary>name not established; name from generated</summary>
-    public uint Field0;
+    public float Field0;
     /// <summary>name not established; name from generated</summary>
-    public uint Field1;
+    public float Field1;
     /// <summary>name not established; name from generated</summary>
     public ushort Field2;
     /// <summary>name not established; name from generated</summary>
@@ -3274,16 +3274,16 @@ public sealed partial class DefaultCameraParams : RobotMessage
     public byte[] Field4 = new byte[17];
     public static DefaultCameraParams Read(CladReader r) => new()
     {
-        Field0 = r.U32(),
-        Field1 = r.U32(),
+        Field0 = r.F32(),
+        Field1 = r.F32(),
         Field2 = r.U16(),
         Field3 = r.U16(),
         Field4 = r.Array<byte>(17, () => r.U8()),
     };
     public override void WriteBody(CladWriter w)
     {
-        w.U32(Field0);
-        w.U32(Field1);
+        w.F32(Field0);
+        w.F32(Field1);
         w.U16(Field2);
         w.U16(Field3);
         FixedLength(Field4, 17, nameof(Field4));

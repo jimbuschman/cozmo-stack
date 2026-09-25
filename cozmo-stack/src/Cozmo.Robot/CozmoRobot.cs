@@ -192,6 +192,8 @@ public sealed class CozmoRobot : IDisposable
 {
     public ReliableTransport Transport { get; }
     public CozmoCamera Camera { get; } = new();
+    /// <summary>The camera's exposure, gain and colour settings, and the connection-time calibration read (M3-019..M3-023).</summary>
+    public CameraSettings CameraSettings { get; }
     public CozmoDisplay Display { get; }
     public CozmoAudio Audio { get; }
     public RobotStateTracker State { get; } = new();
@@ -228,15 +230,15 @@ public sealed class CozmoRobot : IDisposable
         var realPort = port is null ? new ReliableTransportPort(Transport) : null;
         Engine = new CozmoEngine(port ?? realPort!, engineOptions, engineClock);
         if (realPort is not null) realPort.Log = Engine.Log;
-        Display = new CozmoDisplay(m => SendMessage(m, flush: true),
+        // fidelity: M3-012
+        // The raw-bitmap face (MD3) and the single-frame audio sends go out at once, but in the stream counters
+        // (C11), since the robot counts what it plays of them in the AnimationState the budget is refreshed from.
+        Display = new CozmoDisplay(SendStreamDirect,
                                    Transport.Options.MaxFramePayloadBytes - CozmoDisplay.MessageOverhead);
         Audio = new CozmoAudio(m => SendMessage(m, flush: true));
-        // The engine fills every animation tick with both an audio frame and a face keyframe. Mirror that
-        // in both directions, so neither pipeline leaves the robot's animation tick half empty.
-        Display.BeforeFrame = () => { if (!Audio.Busy) SendMessage(new AudioSilence(), flush: true); };
-        Audio.PlayedFrames = () => State.Animation?.NumAudioFramesPlayed ?? 0;
-        Audio.OnFrameSent += () =>
-            SendMessage(new Protocol.FaceImage { Image = Display.LastPayload ?? BlankFace }, flush: true);
+        CameraSettings = new CameraSettings(this, m => SendMessage(m));
+        // Each raw face frame is paired with an audio frame, unless a Play is feeding audio frames (MD3, M3-017).
+        Display.BeforeFrame = () => { if (!Audio.Busy) SendStreamDirect(new AudioSilence()); };
         Motion = new CozmoMotion(this);
         Lights = new CozmoLights(this);
         Sensors = new CozmoSensors(this, State);
@@ -244,6 +246,20 @@ public sealed class CozmoRobot : IDisposable
         CubeAccel = new CubeAccelStreams(this);
         Animations = new CozmoAnimations(this);
         Face = new CozmoFace(this);
+        // fidelity: M3-017, M3-013
+        // Play (policy M3-017) goes through the engine's send buffer and budget; each of its frames is followed by
+        // the face, so a tone keeps the face on screen.
+        Audio.AttachStream(Animations.Scheduler.Stream, Animations.KickStream);
+        Audio.PairedMessage = () => new Protocol.FaceImage { Image = Display.LastPayload ?? BlankFace };
+        Audio.TrySend = m => SendMessage(m);
+        // fidelity: M3-002, M3-005
+        Camera.TimeSynced = () => Engine.Robot?.TimeSynced ?? false;
+        Camera.EventTime = () => Engine.Timer.Seconds;
+        Camera.Log += l => Engine.Log(l);
+        CameraSettings.Log += l => Engine.Log(l);
+        // fidelity: M3-019, M3-022, M3-013
+        Engine.VisionConnected = CameraSettings.OnRobotConnected;
+        Engine.AnimationStreamerUpdate = Animations.EngineUpdate;
         // fidelity: M1-024
         // Messages reach the devices only from the engine's per-tick drain (B25, CD10), not from the transport.
         Engine.DeviceRoute = RouteToDevices;
@@ -397,8 +413,15 @@ public sealed class CozmoRobot : IDisposable
     /// </summary>
     public void EnableAnimations() => SendMessage(new InitController(), flush: true);
 
-    /// <summary>Stops whatever animation is playing and clears the robot's keyframe buffer.</summary>
-    public void EndAnimation() => SendMessage(new EndOfAnimation(), flush: true);
+    /// <summary>Stops whatever animation is playing and clears the robot's keyframe buffer (counted as C12 counts it).</summary>
+    public void EndAnimation() => SendStreamDirect(new EndOfAnimation());
+
+    // fidelity: M3-012, M3-014
+    /// <summary>
+    /// A stream message sent at once, not budget-gated, but counted in the stream counters (C11, C12). Like every stream
+    /// message it goes reliable and not hot: this stack's one send path sends everything reliably (C14, M1-026).
+    /// </summary>
+    private void SendStreamDirect(RobotMessage m) => Animations.Scheduler.Stream.SendDirect(m, x => SendMessage(x));
 
     /// <summary>Waits until the robot confirms the animation controller is running.</summary>
     public async Task<bool> WaitForAnimationsAsync(TimeSpan? timeout = null)
@@ -464,11 +487,15 @@ public sealed class CozmoRobot : IDisposable
         }
     }
 
-    /// <summary>Starts the camera. Grayscale QVGA by default, which is what the engine uses.</summary>
+    /// <summary>
+    /// Starts the camera: this stack's call, not the engine's (the engine requests the stream at SyncTime, A16, and
+    /// never sends EnableColorImages at connection, A24). The colour flag goes through
+    /// <see cref="CameraSettings.EnableColorImages"/>.
+    /// </summary>
     public void StartCamera(bool color = false, bool singleShot = false)
     {
         Camera.Restart();
-        SendMessage(new EnableColorImages { Enable = color }, flush: true);
+        CameraSettings.EnableColorImages(color);
         SendMessage(new ImageRequest { Mode = singleShot ? ImageSendMode.SingleShot : ImageSendMode.Stream }, flush: true);
     }
 
@@ -559,6 +586,8 @@ public sealed class CozmoRobot : IDisposable
         if (m is RobotState && !stateHandled) return;
         Route(() => State.Handle(m));
         Route(() => Camera.Handle(m));
+        // fidelity: M3-021
+        if (m is DefaultCameraParams dcp) Route(() => CameraSettings.Handle(dcp));
         Route(() => Sensors.Handle(m));
         Route(() => Cubes.Handle(m));
         Route(() => CubeAccel.Handle(m));
@@ -579,6 +608,7 @@ public sealed class CozmoRobot : IDisposable
         Route(Face.ResetToConstructed);
         Route(State.ResetToConstructed);
         Route(Camera.ResetToConstructed);
+        Route(CameraSettings.ResetToConstructed);
         Route(Display.ResetToConstructed);
         Route(Audio.ResetToConstructed);
         Route(Motion.ResetToConstructed);

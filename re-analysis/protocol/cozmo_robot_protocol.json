@@ -6734,14 +6734,14 @@
     {
      "name": "field0",
      "kind": "scalar",
-     "type": "u32",
+     "type": "f32",
      "name_source": "generated",
      "uncertain": true
     },
     {
      "name": "field1",
      "kind": "scalar",
-     "type": "u32",
+     "type": "f32",
      "name_source": "generated",
      "uncertain": true
     },
@@ -6780,7 +6780,8 @@
    },
    "notes": [
     "names generated; widths from native Unpack",
-    "fixed array lengths [17] solved from native loop bounds; total matches official Size() 29 B"
+    "fixed array lengths [17] solved from native loop bounds; total matches official Size() 29 B",
+    "M2 inventory MD2: DefaultCameraParams operator== vcmp.f32 0x007BF352, 0x007BF364; handler vldr s0,[r4] 0x00657CE0 (maxGain) and vldr s2,[r4,#4] (gain) (M2 correction C3)"
    ]
   },
   "0xC9": {

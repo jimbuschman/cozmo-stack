@@ -25,21 +25,35 @@ public sealed class RobotAnimationSink : IAnimationSink
     public void Face(FaceBitmap bitmap)
     {
         var payload = FaceBitmapCodec.Encode(bitmap);
-        if (payload.Length > _robot.Display.MaxPayload) return;    // never send a partial face
+        if (payload.Length > _robot.Display.MaxPayload) { LastSendSucceeded = true; return; }    // never send a partial face
         _lastFacePayload = payload;
-        _robot.SendMessage(new Protocol.FaceImage { Image = payload }, flush: true);
+        Send(new Protocol.FaceImage { Image = payload });
     }
 
+    // fidelity: M3-012
+    /// <summary>Whether the last message this sink sent went out (the stream counts only successful sends, 0x0057BFAE).</summary>
+    public bool LastSendSucceeded { get; private set; } = true;
+
+    private void Send(RobotMessage m) => LastSendSucceeded = _robot.SendMessage(m, flush: true);
+
+    // fidelity: M3-012
     /// <summary>
-    /// What the robot says it has played, straight out of <c>animState</c>. Null until the first one
-    /// arrives, which leaves the scheduler unpaced rather than stalled.
+    /// The Robot's numAudioFramesPlayed (+0x240), which only the time-synced AnimationState handler writes (C10) and
+    /// the Robot constructor zeroes (C13): the engine budget applies from the first frame.
+    /// The offline seam (<see cref="CozmoRobot.CreateOffline"/>, no engine thread and no robot playing anything)
+    /// reports null, which leaves the scheduler unpaced, until an AnimationState has been handled.
     /// </summary>
-    public int? AudioFramesPlayed => _robot.State.Animation?.NumAudioFramesPlayed;
+    public int? AudioFramesPlayed => Paced ? _robot.Engine.Robot?.NumAudioFramesPlayed ?? 0 : null;
+
+    /// <summary>The Robot's numAnimBytesPlayed (+0x238), as <see cref="AudioFramesPlayed"/> (C10, C13).</summary>
+    public int? AnimBytesPlayed => Paced ? _robot.Engine.Robot?.NumAnimBytesPlayed ?? 0 : null;
+
+    private bool Paced => _robot.Engine.IsProduction || (_robot.Engine.Robot?.AnimationStateHandled ?? false);
 
     public void Audio(byte[]? mulawFrame)
     {
-        if (mulawFrame is null) _robot.SendMessage(new AudioSilence(), flush: true);
-        else _robot.SendMessage(new AudioSample { Samples = mulawFrame }, flush: true);
+        if (mulawFrame is null) Send(new AudioSilence());
+        else Send(new AudioSample { Samples = mulawFrame });
     }
 
     /// <summary>
@@ -52,11 +66,11 @@ public sealed class RobotAnimationSink : IAnimationSink
     /// it discarded the keyframe's variability.
     /// </summary>
     public void Head(sbyte angleDeg, uint durationMs) =>
-        _robot.SendMessage(new Protocol.HeadAngle { DurationTimeMs = (ushort)durationMs, AngleDeg = angleDeg }, flush: true);
+        Send(new Protocol.HeadAngle { DurationTimeMs = (ushort)durationMs, AngleDeg = angleDeg });
 
     /// <summary>As <see cref="Head"/>, for <c>animLiftHeight</c> (0x94) from <c>LiftHeightKeyFrame::GetStreamMessage</c> at 0x004F8F80.</summary>
     public void Lift(byte heightMm, uint durationMs) =>
-        _robot.SendMessage(new Protocol.LiftHeight { DurationTimeMs = (ushort)durationMs, HeightMm = heightMm }, flush: true);
+        Send(new Protocol.LiftHeight { DurationTimeMs = (ushort)durationMs, HeightMm = heightMm });
 
     /// <summary>
     /// Opens the animation on the robot. AnimationStreamer::SendStartOfAnimation at 0x0057C400 in
@@ -64,11 +78,10 @@ public sealed class RobotAnimationSink : IAnimationSink
     /// tag back in its AnimationState. Keyframes that arrive outside an open animation are ignored, which
     /// is why body motion did nothing before this was sent.
     /// </summary>
-    public void AnimationStarted(byte tag) =>
-        _robot.SendMessage(new StartOfAnimation { AnimId = tag }, flush: true);
+    public void AnimationStarted(byte tag) => Send(new StartOfAnimation { AnimId = tag });
 
     /// <summary>Closes it, as AnimationStreamer::SendEndOfAnimation does.</summary>
-    public void AnimationEnded() => _robot.SendMessage(new EndOfAnimation(), flush: true);
+    public void AnimationEnded() => Send(new EndOfAnimation());
 
     public void Body(BodyKeyframe k)
     {
@@ -78,9 +91,10 @@ public sealed class RobotAnimationSink : IAnimationSink
         if (k.EncodedRadius is not { } radius)
         {
             NotImplemented?.Invoke($"body motion radius '{k.RadiusRaw}' is not a token the engine understands");
+            LastSendSucceeded = true;
             return;
         }
-        _robot.SendMessage(new BodyMotion { Speed = k.Speed, RadiusMm = radius }, flush: true);
+        Send(new BodyMotion { Speed = k.Speed, RadiusMm = radius });
         _bodyMoving = k.Speed != 0;
     }
 
@@ -88,7 +102,7 @@ public sealed class RobotAnimationSink : IAnimationSink
     public void BodyStop()
     {
         _bodyMoving = false;
-        _robot.SendMessage(new BodyMotion { Speed = 0, RadiusMm = BodyKeyframe.StraightRadius }, flush: true);
+        Send(new BodyMotion { Speed = 0, RadiusMm = BodyKeyframe.StraightRadius });
     }
 
     /// <summary>Whether a body keyframe this sink sent is still driving (nothing has stopped it yet).</summary>
@@ -127,6 +141,7 @@ public sealed class RobotAnimationSink : IAnimationSink
     {
         _lastFacePayload = null;
         _bodyMoving = false;
+        LastSendSucceeded = true;
     }
 }
 
@@ -157,6 +172,7 @@ public sealed class CozmoAnimations : IDisposable
         _robot = robot;
         _sink = new RobotAnimationSink(robot);
         _scheduler = new AnimationScheduler(_sink);
+        _scheduler.Stream.Log = robot.Engine.Log;
         _sink.AnimationEvent += e => Event?.Invoke(e);
         _sink.NotImplemented += w => NotImplemented?.Invoke(w);
     }
@@ -189,8 +205,42 @@ public sealed class CozmoAnimations : IDisposable
     /// </summary>
     public event Action<Exception>? Faulted;
 
-    /// <summary>Whether the animation tick loop is running. False once nothing is left for it to do.</summary>
-    public bool IsTicking { get { lock (_gate) return _ticker is not null; } }
+    /// <summary>
+    /// Whether the animation is being advanced. On a production robot the engine tick advances it while streaming is
+    /// open (CD12) and anything is pending; on the offline seams, whether the tick loop thread is running.
+    /// </summary>
+    public bool IsTicking
+    {
+        get
+        {
+            if (EngineDriven) return _robot.AnimationStreamingOpen && _scheduler.HasPendingWork;
+            lock (_gate) return _ticker is not null;
+        }
+    }
+
+    // fidelity: M3-013
+    /// <summary>
+    /// Whether the engine tick drives the streamer: Robot::Update runs AnimationStreamer::Update each 60 ms tick while
+    /// synced and ready to stream (CD12), one engine Update of the streamer per tick (C15). The offline seams have no
+    /// engine thread, so there the tick loop thread below stands in for it.
+    /// </summary>
+    internal bool EngineDriven => _robot.Engine.IsProduction;
+
+    // fidelity: M3-013
+    /// <summary>AnimationStreamer::Update for one engine tick (called by Robot::Update only while streaming is open).</summary>
+    internal void EngineUpdate()
+    {
+        if (!EngineDriven) return;
+        try { _scheduler.Advance(NowMs()); }
+        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
+        {
+            try { Faulted?.Invoke(ex); } catch { }
+            try { _scheduler.Stop(); } catch { }
+        }
+    }
+
+    /// <summary>Something was buffered for the stream outside an Advance (a policy API): make sure a drain will run.</summary>
+    internal void KickStream() => StartTicker();
 
     /// <summary>Loads Cozmo's own animation assets from an unpacked resources tree.</summary>
     public AnimationLibrary LoadFrom(string assetsRoot)
@@ -337,6 +387,7 @@ public sealed class CozmoAnimations : IDisposable
 
     private void StartTicker()
     {
+        if (EngineDriven) return;       // the engine tick advances the scheduler (CD12)
         lock (_gate)
         {
             if (_running) return;

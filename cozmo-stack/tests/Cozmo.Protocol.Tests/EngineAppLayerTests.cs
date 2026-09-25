@@ -1311,6 +1311,7 @@ public class EngineAppLayerTests
                                           robot.Cubes, robot.CubeAccel, robot.Animations, robot.Face, vision.History, vision.World });
         AssertAsConstructed(fresh.Robot.State, robot.State, "State", KeptAcrossRemoval);
         AssertAsConstructed(fresh.Robot.Camera, robot.Camera, "Camera", KeptAcrossRemoval);
+        AssertAsConstructed(fresh.Robot.CameraSettings, robot.CameraSettings, "CameraSettings", KeptAcrossRemoval);
         AssertAsConstructed(fresh.Robot.Display, robot.Display, "Display", KeptAcrossRemoval);
         AssertAsConstructed(fresh.Robot.Audio, robot.Audio, "Audio", KeptAcrossRemoval);
         AssertAsConstructed(fresh.Robot.Motion, robot.Motion, "Motion", KeptAcrossRemoval);
@@ -1430,19 +1431,21 @@ public class EngineAppLayerTests
 
     /// <summary>
     /// PRIMARY-SOURCE ORACLE. M1-025, M1-015 CB33/CC26: the AudioComponent is destroyed with the Robot (~Robot 0x0052F2F6),
-    /// so no further frame of what it was playing goes out. A Play running on another thread, with the robot's
-    /// played-frames feedback (the production path) and with clock pacing, ends promptly when the robot is removed,
-    /// well inside the 1 s stall escape, and sends no audio frame after the removal.
+    /// so no further frame of what it was playing goes out. A Play running on another thread, fed through the engine's
+    /// stream budget from the robot's AnimationState counters (M3-012; the robot here reports nothing played, so the
+    /// Play is waiting on the budget), ends promptly when the robot is removed, well inside its 1 s stall escape, and
+    /// sends no audio frame after the removal.
     /// </summary>
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void M1_025_M1_015_CB33_APlayRunningAtTheRemovalEndsAndSendsNoMoreFrames(bool feedback)
+    [Fact]
+    public void M1_025_M1_015_CB33_APlayRunningAtTheRemovalEndsAndSendsNoMoreFrames()
     {
         using var rig = new Rig();
         var audio = rig.Robot.Audio;
         rig.ToSuccess();
-        if (!feedback) audio.PlayedFrames = null;
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });
+        rig.Data(new AnimationState { Timestamp = 11 });
+        rig.Tick();                                        // streaming open (CD12), the engine's counters reporting (C10)
         int framesAfterRemoval = 0;
         int removed = 0;
         audio.OnFrameSent += () => { if (Volatile.Read(ref removed) != 0) Interlocked.Increment(ref framesAfterRemoval); };
@@ -1450,7 +1453,7 @@ public class EngineAppLayerTests
         var pcm = CozmoAudio.Tone(440, TimeSpan.FromSeconds(10));
         var play = new Thread(() => audio.Play(pcm)) { IsBackground = true };
         play.Start();
-        Assert.True(SpinWait.SpinUntil(() => audio.FramesSent >= audio.TargetInFlight, 5000), "the Play never filled the buffer");
+        Assert.True(SpinWait.SpinUntil(() => audio.FramesSent >= 5, 5000), "the Play never started sending");
 
         rig.Disconnected();
         rig.Tick();                                        // RemoveRobot

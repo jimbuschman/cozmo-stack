@@ -11,14 +11,26 @@ public interface IAnimationSink
     /// <summary>One audio frame's worth of samples, or silence when the argument is null.</summary>
     void Audio(byte[]? mulawFrame);
     /// <summary>
-    /// How many audio frames the robot reports having played, from <c>animState.numAudioFramesPlayed</c>.
+    /// How many audio frames the robot reports having played: the Robot's +0x240, which only the AnimationState
+    /// handler writes (numAudioFramesPlayed, C10). The engine's audio budget is
+    /// <c>max(14 - (framesStreamed - framesPlayed), 0)</c> (C9, <see cref="StreamSendBuffer"/>).
     ///
-    /// The engine paces an animation against this exact counter: UpdateAmountToSend at 0x0057C6F0 computes
-    /// the frames it may still send as <c>14 - (streamed - played)</c>, and ShouldProcessAnimationFrame at
-    /// 0x0057CC6C refuses to process a frame at all until the robot has room. Null means no robot is
-    /// reporting yet, and the scheduler then runs unpaced.
+    /// Null is the test seam: a sink that models no robot. The scheduler then applies no budget and streams by the
+    /// caller's clock (see <see cref="AnimationScheduler.Advance"/>). A sink that talks to a robot reports a number,
+    /// 0 until the robot says otherwise, as the Robot constructor zeroes it (C13).
     /// </summary>
     int? AudioFramesPlayed => null;
+    /// <summary>
+    /// How many animation bytes the robot reports having played: the Robot's +0x238, written only by the
+    /// AnimationState handler (numAnimBytesPlayed, C10). The byte budget is <c>min(8192 - (bytesStreamed -
+    /// bytesPlayed), 30000)</c> (C9). Null counts as 0, the constructor's value (C13).
+    /// </summary>
+    int? AnimBytesPlayed => null;
+    /// <summary>
+    /// Whether the robot message the last call sent went out (MessageHandler::SendMessage's result). The drain stops at
+    /// a failed send and does not count it (C14, 0x0057BFAE). A sink that sends nothing, or cannot fail, reports true.
+    /// </summary>
+    bool LastSendSucceeded => true;
     /// <summary>
     /// A head keyframe, as the engine streams it: <c>HeadAngleKeyFrame::GetStreamMessage</c> at 0x004F8C08
     /// builds <c>AnimKeyFrame::HeadAngle</c> (animHeadAngle, 0x93) from the keyframe's duration and its
@@ -52,6 +64,200 @@ public interface IAnimationSink
     void Finished(string clipName, bool completed);
 }
 
+// fidelity: M3-012, M3-013, M3-014
+/// <summary>
+/// The engine's stream send path: <c>AnimationStreamer</c>'s send buffer and its drain
+/// (<c>SendBufferedMessages</c> 0x0057BF60..0x0057C010, C14), the per-Update budgets (<c>UpdateAmountToSend</c>
+/// 0x0057C6F6..0x0057C7AC, C9) and the Robot's stream counters (+0x238 bytes played, +0x23C bytes streamed,
+/// +0x240 frames played, +0x244 frames streamed; C10..C13).
+///
+/// <list type="bullet">
+/// <item><b>Budgets (C9).</b> Bytes: <c>min(8192 - (bytesStreamed - bytesPlayed), 30000)</c>, a negative value
+/// warning and becoming 0. Audio: <c>max(14 - (framesStreamed - framesPlayed), 0)</c>. The played counters come
+/// only from AnimationState (C10). 14 is the engine's figure; the robot's real buffer is firmware (C18).</item>
+/// <item><b>Drain (C14).</b> FIFO. It stops at the first message larger than the byte budget left, or at an audio
+/// message (0x8E/0x8F) when the audio budget left is 0, and reports whether the buffer emptied. Each send spends
+/// its size from the byte budget and, for an audio message, one frame from the audio budget. A send that fails
+/// stops the drain and stays at the front.</item>
+/// <item><b>Counters (C11, C12).</b> Every send adds its <c>EngineToRobot::Size()</c> (1 for the tag plus the
+/// member's packed size, which is this stack's serialised length) to bytes streamed, and 1 to frames streamed
+/// for AudioSample, AudioSilence and EndOfAnimation. EndOfAnimation goes directly, not budget-gated
+/// (<see cref="SendDirect(RobotMessage, Func{RobotMessage, bool})"/>).</item>
+/// </list>
+/// Every stream message is sent reliable and not hot (C14): this stack's single send path already sends every
+/// message reliably (M1-026).
+/// </summary>
+public sealed class StreamSendBuffer
+{
+    /// <summary>The engine's audio budget: 14 unplayed frames (C9, <c>add.w r1,r1,#0xe</c> at 0x0057C79E; C18).</summary>
+    public const int AudioFramesAhead = 14;
+    /// <summary>The byte budget's base: 8192 unplayed bytes (C9).</summary>
+    public const int BytesAhead = 8192;
+    /// <summary>The byte budget's cap per Update: 30000 (C9).</summary>
+    public const int MaxBytesPerUpdate = 30000;
+
+    private sealed class Entry
+    {
+        public object? Owner;
+        public int Size;
+        public bool IsAudio;
+        public Func<bool> Send = () => true;
+    }
+
+    private readonly object _gate = new();
+    private readonly LinkedList<Entry> _fifo = new();
+    private int _bytesStreamed, _framesStreamed, _bytesToSend, _framesToSend;
+
+    /// <summary>The engine log for the budget warning (C9).</summary>
+    public Action<string>? Log { get; set; }
+
+    /// <summary>Robot+0x23C: bytes streamed since the Robot was built (C11..C13).</summary>
+    public int BytesStreamed { get { lock (_gate) return _bytesStreamed; } }
+    /// <summary>Robot+0x244: audio frames streamed (AudioSample, AudioSilence, EndOfAnimation) since the Robot was built.</summary>
+    public int FramesStreamed { get { lock (_gate) return _framesStreamed; } }
+    /// <summary>The byte budget left in this Update.</summary>
+    public int NumBytesToSend { get { lock (_gate) return _bytesToSend; } }
+    /// <summary>The audio budget left in this Update.</summary>
+    public int NumAudioFramesToSend { get { lock (_gate) return _framesToSend; } }
+    /// <summary>Messages waiting in the buffer.</summary>
+    public int Count { get { lock (_gate) return _fifo.Count; } }
+    public bool IsEmpty { get { lock (_gate) return _fifo.Count == 0; } }
+
+    /// <summary>EngineToRobot::Size(): 1 for the tag plus the member's packed size (C11).</summary>
+    public static int SizeOf(RobotMessage m) => m.ToBytes().Length;
+
+    /// <summary>The audio messages the budget counts: tags 0x8E (AudioSample) and 0x8F (AudioSilence) (C11, C14).</summary>
+    public static bool IsAudioMessage(RobotMessageId id) => ((byte)id & 0xFE) == 0x8E;
+
+    /// <summary>UpdateAmountToSend (C9), from the played counters AnimationState last reported (C10).</summary>
+    public void UpdateAmountToSend(int bytesPlayed, int framesPlayed)
+    {
+        string? warning = null;
+        lock (_gate)
+        {
+            int bytes = BytesAhead - unchecked(_bytesStreamed - bytesPlayed);
+            if (bytes < 0)
+            {
+                warning = $"warning: AnimationStreamer.UpdateAmountToSend: {-bytes} bytes more unplayed than {BytesAhead}; budget 0";
+                bytes = 0;
+            }
+            _bytesToSend = Math.Min(bytes, MaxBytesPerUpdate);
+            _framesToSend = Math.Max(AudioFramesAhead - unchecked(_framesStreamed - framesPlayed), 0);
+        }
+        if (warning is not null) Log?.Invoke(warning);
+    }
+
+    /// <summary>The test seam's budget (a sink that models no robot): nothing is held back.</summary>
+    internal void Unlimited()
+    {
+        lock (_gate) { _bytesToSend = int.MaxValue; _framesToSend = int.MaxValue; }
+    }
+
+    /// <summary>BufferMessageToSend: appends a message whose size and kind are given, to be sent by <paramref name="send"/>.</summary>
+    public void Buffer(object? owner, int size, bool isAudio, Func<bool> send)
+    {
+        lock (_gate) _fifo.AddLast(new Entry { Owner = owner, Size = size, IsAudio = isAudio, Send = send });
+    }
+
+    /// <summary>BufferMessageToSend for a message: its size and kind are its own (C11).</summary>
+    public void Buffer(object? owner, RobotMessage m, Func<RobotMessage, bool> send)
+        => Buffer(owner, SizeOf(m), IsAudioMessage(m.Id), () => send(m));
+
+    /// <summary>How a drain ended (C14, A18): the buffer emptied, a budget stopped it, or a send failed.</summary>
+    public enum DrainResult { Empty, BudgetStop, SendError }
+
+    /// <summary>
+    /// SendBufferedMessages (C14; 0x0057BF72..0x0057C00A): FIFO; it stops at the first message larger than the byte
+    /// budget left (0x0057BF98) or at an audio message with the audio budget 0 (0x0057BFA0), which the engine reports as
+    /// its 0 result like an emptied buffer, and at a send that fails, which it returns as the error. A failed message
+    /// stays at the front and is not counted (only a successful send counts, 0x0057BFAE).
+    /// </summary>
+    public DrainResult Drain()
+    {
+        lock (_gate)
+        {
+            while (_fifo.First is { } node)
+            {
+                var e = node.Value;
+                if (e.Size > _bytesToSend) return DrainResult.BudgetStop;
+                if (e.IsAudio && _framesToSend <= 0) return DrainResult.BudgetStop;
+                if (!e.Send()) return DrainResult.SendError;
+                if (node.List == _fifo) _fifo.Remove(node);   // a send callback may have cleared the buffer
+                _bytesToSend -= e.Size;
+                if (e.IsAudio) _framesToSend--;
+                CountLocked(e.Size, e.IsAudio);
+            }
+            return DrainResult.Empty;
+        }
+    }
+
+    /// <summary><see cref="Drain"/>, true when the buffer emptied.</summary>
+    public bool SendBufferedMessages() => Drain() == DrainResult.Empty;
+
+    /// <summary>
+    /// A message sent directly, not through the buffer and not budget-gated, but counted: EndOfAnimation's path
+    /// (SendEndOfAnimation 0x0057C464..0x0057C496, C12). <paramref name="countsAsFrame"/> adds one to frames streamed.
+    /// </summary>
+    public bool SendDirect(int size, bool countsAsFrame, Func<bool> send)
+    {
+        lock (_gate)
+        {
+            if (!send()) return false;
+            CountLocked(size, countsAsFrame);
+            return true;
+        }
+    }
+
+    /// <summary>A direct, counted send of a message: frames streamed rises for 0x8E, 0x8F and EndOfAnimation (C11, C12).</summary>
+    public bool SendDirect(RobotMessage m, Func<RobotMessage, bool> send)
+        => SendDirect(SizeOf(m), IsAudioMessage(m.Id) || m.Id == RobotMessageId.AnimEndOfAnimation, () => send(m));
+
+    private void CountLocked(int size, bool frame)
+    {
+        _bytesStreamed = unchecked(_bytesStreamed + size);
+        if (frame) _framesStreamed = unchecked(_framesStreamed + 1);
+    }
+
+    /// <summary>Messages still buffered for <paramref name="owner"/>.</summary>
+    public int PendingFor(object owner)
+    {
+        lock (_gate)
+        {
+            int n = 0;
+            foreach (var e in _fifo) if (ReferenceEquals(e.Owner, owner)) n++;
+            return n;
+        }
+    }
+
+    /// <summary>Drops every buffered message whose owner matches; returns how many.</summary>
+    public int Remove(Func<object?, bool> ownerMatches)
+    {
+        lock (_gate)
+        {
+            int n = 0;
+            for (var node = _fifo.First; node is not null; )
+            {
+                var next = node.Next;
+                if (ownerMatches(node.Value.Owner)) { _fifo.Remove(node); n++; }
+                node = next;
+            }
+            return n;
+        }
+    }
+
+    // fidelity: M1-025, M1-015
+    /// <summary>The Robot constructor's state (C13: the counters zeroed), for a removed robot: nothing buffered, no budget.</summary>
+    internal void ResetToConstructed()
+    {
+        lock (_gate)
+        {
+            _fifo.Clear();
+            _bytesStreamed = _framesStreamed = 0;
+            _bytesToSend = _framesToSend = 0;
+        }
+    }
+}
+
 /// <summary>Why an animation stopped.</summary>
 public enum AnimationEndReason { Completed, Cancelled, Replaced, Error }
 
@@ -79,24 +285,23 @@ public sealed record AnimationHandle(string ClipName, AnimationTrack Tracks)
 /// <summary>
 /// The one clock for animation.
 ///
-/// Every timed thing an animation does is scheduled here, on a single 30 Hz tick, so the face, the audio,
-/// the motors and the lights stay on one timeline. The device classes underneath keep their own APIs but do
-/// not invent their own animation timing: the scheduler calls them, not the other way round.
+/// Every timed thing an animation does is scheduled here, so the face, the audio, the motors and the lights stay
+/// on one timeline. The device classes underneath keep their own APIs but do not invent their own animation
+/// timing: the scheduler calls them, not the other way round.
 ///
 /// One animation streams at a time, as in the engine: <c>AnimationStreamer</c> holds a single streaming
 /// animation (this+0x38), and <c>SetStreamingAnimation</c> at 0x0057B174 either interrupts it or turns the
 /// newcomer away (see <see cref="Play"/>). Two animations never run side by side, whatever tracks they use.
 ///
-/// Time on the timeline is counted in streamed frames of 33 ms, as the engine counts it (see
-/// <see cref="Advance"/>); the wall clock only decides how many frames a tick is owed. A live robot gets a
-/// thread calling <see cref="Advance"/> every <see cref="FrameInterval"/>; a test calls it directly with
-/// whatever times it likes, which is what makes the timeline deterministic and testable.
+/// Time on the timeline is counted in built frames of 33 ms, as the engine counts it (A18). Each
+/// <see cref="Advance"/> is one engine Update of the streamer (C15): the budgets are refreshed, leftovers are
+/// flushed, and frames are built one at a time while the buffer is empty (<see cref="Stream"/>).
 /// </summary>
 public sealed class AnimationScheduler
 {
     /// <summary>The engine's animation tick: 30 frames per second.</summary>
     public const int FrameRateHz = 30;
-    /// <summary>The wall-clock spacing of frames: one robot audio frame, 744 samples at 22320 Hz.</summary>
+    /// <summary>The wall-clock spacing of frames on the test seam's clock: one robot audio frame, 744 samples at 22320 Hz.</summary>
     public static readonly TimeSpan FrameInterval = TimeSpan.FromSeconds(1.0 / FrameRateHz);
     /// <summary>
     /// The engine's stream-time step. <c>AnimationStreamer::UpdateStream</c> at 0x0057C84C adds 33 (0x21)
@@ -111,26 +316,24 @@ public sealed class AnimationScheduler
     /// <summary>
     /// The emission gate, and the contract that goes with it.
     ///
-    /// A keyframe belongs to one playback. Checking that the playback still owns the timeline and then
-    /// emitting its command are two operations, and between them another thread can cancel or replace the
-    /// animation - so a re-check before the send narrows the window without closing it, and the command
-    /// goes out into somebody else's animation. On hardware that looks like one animation's motion
-    /// appearing in the middle of another.
+    /// A keyframe belongs to one playback. Building a frame, draining the stream buffer and changing which
+    /// playback owns the timeline all happen under this gate, so a replacement cannot land between a frame being
+    /// built and its messages going out. A replacement drops what is buffered (InitStream's ClearSendBuffer, A12); a
+    /// cancel leaves it for the next Update to flush (A24, A25).
     ///
-    /// The contract is: <b>a command belonging to a playback may only be emitted while this gate is held
-    /// and the generation still matches, and anything that changes ownership takes this gate before it
-    /// bumps the generation.</b> An emission and a replacement therefore cannot interleave. The gate is
-    /// held across a send, which is safe because a send only queues a message under the transport's own
-    /// lock - it does no network work - so the wait a canceller can see is bounded by one keyframe.
-    ///
-    /// The lock order is always this gate and then <see cref="_gate"/>, never the other way about.
+    /// The lock order is always this gate, then <see cref="_gate"/>, then the stream buffer's own lock.
     /// </summary>
     private readonly object _emit = new();
 
     private AnimationClip? _clip;
     private AnimationHandle? _handle;
-    private int _framesStreamed;               // frames sent for the running clip; the timeline is this x 33 ms
-    private double _nextDueWallMs;             // wall time the next frame is due; falls behind during a stall, so the debt is known
+    private sealed class StreamOwner { }       // marks the scheduler's own buffered messages
+    private StreamOwner _clipOwner = new();    // the buffered messages of the running clip carry this
+    private readonly StreamOwner _liveOwner = new(); // those of the live stream carry this
+    private int _framesStreamed;               // frames built for the running clip (A18); the stream time is this x 33 ms
+    private bool _framesLeft;                  // the running clip has frames left to build (HasFramesLeft)
+    private bool _endSent;                     // +0x72: EndOfAnimation sent (or the clip is empty, A12)
+    private double _nextDueWallMs;             // test seam: wall time the next frame is due
     private int _nextFrame;                    // index of the next keyframe to fire
     private IReadOnlyList<FaceKeyframe> _facePoses = Array.Empty<FaceKeyframe>();
     private int _faceIndex = -1;               // index into _facePoses of the pose currently held
@@ -143,11 +346,11 @@ public sealed class AnimationScheduler
     private long? _audioEventId;               // the event that started it, for a Stop event to match
     private int _audioPos;                     // how far into it the last frame reached
     private byte _nextTag = 1;                 // the tag the next animation opens with
-    private bool _startSent;                   // has StartOfAnimation gone out for the running clip
-    private bool _liveOpen;                    // has the live animation's StartOfAnimation (tag 0xFF) gone out
+    private bool _startSent;                   // has StartOfAnimation been buffered for the running clip
+    private bool _liveOpen;                    // has the live animation's StartOfAnimation (tag 0xFF) been buffered
     private bool _liveActive;                  // the live stream is the idle stream: streamed whenever no clip is
-    private int _liveFramesSent;               // audio frames of the live stream since it was opened
-    private int _livePlayedBaseline;           // robot's audio-frame count when the live stream opened
+    private int _liveFramesSent;               // frames of the live stream built since it was opened
+    private bool _liveReopenPending;           // a clip ended with the live stream active: the next Update re-inits live (A29)
 
     /// <summary>
     /// The tag the live animation streams under: <c>AnimationStreamer::Update</c> opens it with
@@ -155,7 +358,6 @@ public sealed class AnimationScheduler
     /// </summary>
     public const byte LiveAnimationTag = 0xFF;
     private long _generation;                  // bumped whenever the running animation changes
-    private int _playedBaseline;               // robot's audio-frame count when the clip started
     private readonly Random _random;
 
     /// <param name="random">
@@ -167,6 +369,12 @@ public sealed class AnimationScheduler
         _sink = sink;
         _random = random ?? new Random();
     }
+
+    /// <summary>
+    /// The engine's send buffer, budgets and stream counters (M3-012..M3-014). The policy APIs that stream audio
+    /// outside an animation (<see cref="CozmoAudio.Play"/>, M3-017) go through the same buffer and budget.
+    /// </summary>
+    public StreamSendBuffer Stream { get; } = new();
 
     /// <summary>
     /// Where the sound for an audio keyframe comes from. Left null, audio keyframes send silence so the
@@ -181,12 +389,19 @@ public sealed class AnimationScheduler
     public string? Playing { get { lock (_gate) return _clip?.Name; } }
     public bool IsPlaying { get { lock (_gate) return _clip is not null; } }
     /// <summary>
-    /// Whether <see cref="Advance"/> still has something to do: a clip is running, or a live keyframe has
-    /// armed a deadline that only <see cref="Advance"/> can serve. The live animation is not on a clip
-    /// timeline, so <see cref="IsPlaying"/> is false while a keep-alive body shuffle is still driving the
-    /// wheels - and a caller that stops ticking then leaves the robot moving.
+    /// Whether <see cref="Advance"/> still has something to do: a clip is running, a live keyframe has armed a
+    /// deadline that only <see cref="Advance"/> can serve, the live stream is active, or messages are waiting in
+    /// the stream buffer.
     /// </summary>
-    public bool HasPendingWork { get { lock (_gate) return _clip is not null || _liveBodyStopsAtMs is not null || _liveActive; } }
+    public bool HasPendingWork
+    {
+        get
+        {
+            lock (_gate)
+                if (_clip is not null || _liveBodyStopsAtMs is not null || _liveActive) return true;
+            return !Stream.IsEmpty;
+        }
+    }
 
     /// <summary>
     /// Whether the live stream is active. Once it is, it is streamed on every <see cref="Advance"/> in which
@@ -202,11 +417,15 @@ public sealed class AnimationScheduler
     public bool LiveBodyRunning { get { lock (_gate) return _liveBodyStopsAtMs is not null; } }
     /// <summary>Tracks currently claimed by the running animation.</summary>
     public AnimationTrack OwnedTracks { get { lock (_gate) return _clip?.Tracks ?? AnimationTrack.None; } }
-    /// <summary>
-    /// The timeline position of the last streamed frame, in milliseconds: frames streamed times
-    /// <see cref="FrameStepMs"/>, which is the engine's stream time, not elapsed wall time.
-    /// </summary>
+    /// <summary>The timeline position of the last frame built, in milliseconds (its stream time), not elapsed wall time.</summary>
     public double PositionMs { get; private set; }
+
+    // fidelity: M3-013
+    /// <summary>
+    /// The engine's stream time for the running clip, +0x84 less its start +0x80 (A12): 33 ms for every frame built
+    /// whose drain returned without a send error, a budget stop included (A18).
+    /// </summary>
+    public double StreamTimeMs { get { lock (_gate) return _framesStreamed * (double)FrameStepMs; } }
     /// <summary>Keyframes fired since the current animation started.</summary>
     public int KeyframesFired { get; private set; }
 
@@ -238,7 +457,7 @@ public sealed class AnimationScheduler
         }
     }
 
-    /// <summary>Raised for every keyframe as it fires, for logging and tests.</summary>
+    /// <summary>Raised for every keyframe as it fires (when its message goes out), for logging and tests.</summary>
     public event Action<Keyframe>? KeyframeFired;
 
     /// <summary>
@@ -248,18 +467,11 @@ public sealed class AnimationScheduler
     /// at 0x0057B174 keeps a single streaming animation, and when one is already streaming a newcomer
     /// either interrupts it (its <c>interruptRunning</c> flag: "Animation %s is interrupting animation %s",
     /// then <c>Abort()</c> and <c>InitStream</c>) or is turned away whatever tracks it uses ("Already
-    /// streaming %s, will not interrupt with %s", nothing changes). Nothing in the engine runs two
-    /// animations side by side on disjoint tracks: blinks, eye shifts and squints ride on the streaming
-    /// animation as layers (<c>TrackLayerComponent</c>), the idle animation streams only while nothing else
-    /// does, and the track locks in <c>MovementComponent</c> mute tracks of the one animation rather than
-    /// share them out.
+    /// streaming %s, will not interrupt with %s", nothing changes).
     ///
     /// <paramref name="replaceRunning"/> is the engine's <c>interruptRunning</c>. With it the running
     /// animation ends as <see cref="AnimationEndReason.Replaced"/> and this one starts. Without it the clip
-    /// is refused and null is returned whenever anything is running, even on tracks the running clip does
-    /// not touch, so a caller can tell "did not play" from "played and finished". An earlier version
-    /// refused only on a track clash and otherwise replaced the running clip anyway, which neither mode of
-    /// the engine does.
+    /// is refused and null is returned whenever anything is running.
     /// </summary>
     public AnimationHandle? Play(AnimationClip clip, double nowMs, bool replaceRunning = true)
     {
@@ -279,11 +491,18 @@ public sealed class AnimationScheduler
             // 0xFD, so the engine stores neither 0x00 nor 0xFF. The usable range is 1..0xFE.
             _nextTag = _nextTag >= 0xFE ? (byte)1 : (byte)(_nextTag + 1);
             _startSent = false;
-            // A clip taking over ends the live stream without an EndOfAnimation: InitStream 0x0057B674
-            // only clears the send buffer and the started/ended flags before the clip's own StartOfAnimation.
+            // A clip taking over ends the live stream without an EndOfAnimation: InitStream 0x0057B674 only clears
+            // the send buffer and the started/ended flags before the clip's own StartOfAnimation. What the live
+            // stream still had buffered goes with it.
             _liveOpen = false;
-            _playedBaseline = _sink.AudioFramesPlayed ?? 0;
+            _liveReopenPending = false;
+            ClearSendBufferLocked();
+            _clipOwner = new StreamOwner();
             _framesStreamed = 0;
+            // InitStream (A12): endSent = the clip is empty, startSent = 0
+            bool empty = clip.Keyframes.Count == 0 && clip.DurationMs == 0;
+            _endSent = empty;
+            _framesLeft = !empty;
             _nextDueWallMs = nowMs;
             _nextFrame = 0;
             _facePoses = clip.Keyframes.OfType<FaceKeyframe>().ToList();
@@ -296,9 +515,8 @@ public sealed class AnimationScheduler
             PositionMs = 0;
             return _handle;
         }
-        // StartOfAnimation is deliberately not sent here. The engine buffers it inside UpdateStream, on the
-        // first frame that actually streams and after that frame's audio message (0x0057C9C8), never at the
-        // moment the animation is set up. Advance does the same.
+        // StartOfAnimation is not buffered here. The engine buffers it inside UpdateStream, on the first frame that
+        // actually streams and after that frame's audio message (0x0057C9C8). Advance does the same.
     }
 
     /// <summary>
@@ -309,69 +527,66 @@ public sealed class AnimationScheduler
     /// (<c>SetIsLive(true)</c> at 0x0057A060) and streams it whenever no real animation is playing;
     /// <c>UpdateLiveAnimation</c> at 0x0057D5F8 appends head, lift and body keyframes to it as their
     /// timers expire. The keyframes that come out are the ordinary 0x93 / 0x94 / 0x99 stream messages,
-    /// with the same stream-time variability draw — which is why this goes through the same
-    /// <see cref="Dispatch"/> arithmetic rather than through the motion API.
+    /// with the same stream-time variability draw.
     ///
-    /// Returns false when a running clip owns the keyframe's track, which is the engine's own condition:
-    /// the streamer only reaches the live animation when nothing else is streaming.
+    /// The messages go into the stream buffer (M3-014) and the buffer is drained at once within the budget this
+    /// Update has left; what does not fit goes at the next Update. Returns false when a running clip owns the
+    /// keyframe's track, which is the engine's own condition.
     /// </summary>
     public bool StreamLive(Keyframe k, double nowMs)
     {
-        lock (_gate)
-            if (_clip is not null && (_clip.Tracks & k.Track) != AnimationTrack.None) return false;
-
-        // The live keyframes are not sent bare. UpdateLiveAnimation 0x0057D5F8 only appends them to the live
-        // Animation (AddKeyFrameToBack at 0x0057D866, 0x0057D8F4, 0x0057D9CA); they reach the robot through
-        // the ordinary stream, InitStream(live, 0xFF) at 0x0057D3FE and then UpdateStream 0x0057C84C, whose
-        // every frame buffers an audio message (0x0057C9A8 / 0x0057C9C4), then StartOfAnimation once
-        // (0x0057C9D0), then the track messages, body last (0x0057CA56).
         lock (_emit)
         {
-            bool open = false;
             lock (_gate)
             {
+                if (_clip is not null && (_clip.Tracks & k.Track) != AnimationTrack.None) return false;
                 _liveActive = true;
-                if (_clip is null && !_liveOpen) open = true;
             }
-            if (open) OpenLiveStream();
-        }
+            // The live keyframes are not sent bare. UpdateLiveAnimation 0x0057D5F8 only appends them to the live
+            // Animation; they reach the robot through the ordinary stream, InitStream(live, 0xFF) at 0x0057D3FE
+            // and then UpdateStream 0x0057C84C, whose every frame buffers an audio message, then StartOfAnimation
+            // once, then the track messages.
+            // fidelity: M3-013
+            // A clip that just ended left the live stream to be re-initialised (A29, 0x0057D3FE): its InitStream drops
+            // the clip's leftovers (A12, 0x0057B7CE). The live keyframe belongs to the re-initialised live stream, so the
+            // drop happens here, before the keyframe is buffered, rather than at the next Update.
+            bool reopenNow;
+            lock (_gate) { reopenNow = _clip is null && _liveReopenPending; if (reopenNow) _liveReopenPending = false; }
+            if (reopenNow) ClearSendBufferLocked();
+            bool open;
+            lock (_gate) open = _clip is null && !_liveOpen;
+            if (open) BuildLiveFrame();
 
-        switch (k)
-        {
-            case HeadKeyframe h:
-                _sink.Head((sbyte)Math.Clamp(WithVariability(h.AngleDeg, h.VariabilityDeg),
-                                             sbyte.MinValue, sbyte.MaxValue), h.DurationTimeMs);
-                return true;
-            case LiftKeyframe l:
-                _sink.Lift((byte)Math.Clamp(WithVariability(l.HeightMm, l.VariabilityMm),
-                                            byte.MinValue, byte.MaxValue), l.DurationTimeMs);
-                return true;
-            case BodyKeyframe b:
-                _sink.Body(b);
-                lock (_gate)
-                    // The deadline is in the clock the caller passes, which has to be the same clock
-                    // Advance is driven on - see CozmoAnimations.StreamLive, which supplies both.
-                    _liveBodyStopsAtMs = b.RadiusIsKnown && b.DurationTimeMs > 0 && b.Speed != 0
-                        ? nowMs + b.DurationTimeMs
-                        : null;
-                return true;
-            default:
-                return false;
+            switch (k)
+            {
+                case HeadKeyframe h:
+                {
+                    var deg = (sbyte)Math.Clamp(WithVariability(h.AngleDeg, h.VariabilityDeg), sbyte.MinValue, sbyte.MaxValue);
+                    Buffer(_liveOwner, StreamSizes.HeadAngle, false, () => _sink.Head(deg, h.DurationTimeMs));
+                    break;
+                }
+                case LiftKeyframe l:
+                {
+                    var mm = (byte)Math.Clamp(WithVariability(l.HeightMm, l.VariabilityMm), byte.MinValue, byte.MaxValue);
+                    Buffer(_liveOwner, StreamSizes.LiftHeight, false, () => _sink.Lift(mm, l.DurationTimeMs));
+                    break;
+                }
+                case BodyKeyframe b:
+                    Buffer(_liveOwner, StreamSizes.Body(b), false, () => _sink.Body(b));
+                    lock (_gate)
+                        // The deadline is in the clock the caller passes, which has to be the same clock
+                        // Advance is driven on - see CozmoAnimations.StreamLive, which supplies both.
+                        _liveBodyStopsAtMs = b.RadiusIsKnown && b.DurationTimeMs > 0 && b.Speed != 0
+                            ? nowMs + b.DurationTimeMs
+                            : null;
+                    break;
+                default:
+                    return false;
+            }
+            if (_sink.AudioFramesPlayed is null) Stream.Unlimited();
+            Stream.Drain();
+            return true;
         }
-    }
-
-    // The first frame of the live stream: its audio message, then StartOfAnimation with tag 0xFF
-    // (UpdateStream 0x0057C9A8..0x0057C9D0 after InitStream(live, 0xFF)). Called under _emit.
-    private void OpenLiveStream()
-    {
-        lock (_gate)
-        {
-            _liveOpen = true;
-            _liveFramesSent = 1;
-            _livePlayedBaseline = _sink.AudioFramesPlayed ?? 0;
-        }
-        _sink.Audio(null);
-        _sink.AnimationStarted(LiveAnimationTag);
     }
 
     /// <summary>Stops whatever is running. Returns false when nothing was.</summary>
@@ -390,10 +605,10 @@ public sealed class AnimationScheduler
     /// <summary>
     /// Back to the state right after construction, for a removed robot (CB33, CC26: the Robot and its AnimationStreamer
     /// are deleted; CC27: the next connect builds them afresh). A running clip ends as <see cref="Stop"/> ends it; then
-    /// the live stream is closed and inactive, the tag counter is back at 1 and every timeline field and count is as
-    /// built. <see cref="Generation"/> is not reset: it is a token callers hold, and restarting it could make a token
-    /// from before the removal name an animation started after it. <see cref="AudioSource"/>,
-    /// <see cref="FaceAnimations"/>, the random source and subscribers are kept.
+    /// the live stream is closed and inactive, the tag counter is back at 1, the stream buffer is empty and its
+    /// counters zeroed (C13), and every timeline field and count is as built. <see cref="Generation"/> is not reset:
+    /// it is a token callers hold, and restarting it could make a token from before the removal name an animation
+    /// started after it. <see cref="AudioSource"/>, <see cref="FaceAnimations"/>, the random source and subscribers are kept.
     /// </summary>
     internal void ResetToConstructed()
     {
@@ -401,7 +616,10 @@ public sealed class AnimationScheduler
         lock (_gate)
         {
             if (_clip is not null) EndLocked(AnimationEndReason.Cancelled);
+            Stream.ResetToConstructed();
             _framesStreamed = 0;
+            _framesLeft = false;
+            _endSent = false;
             _nextDueWallMs = 0;
             _nextFrame = 0;
             _facePoses = Array.Empty<FaceKeyframe>();
@@ -419,9 +637,8 @@ public sealed class AnimationScheduler
             _startSent = false;
             _liveOpen = false;
             _liveActive = false;
+            _liveReopenPending = false;
             _liveFramesSent = 0;
-            _livePlayedBaseline = 0;
-            _playedBaseline = 0;
             AudioFramesSent = 0;
             PositionMs = 0;
             KeyframesFired = 0;
@@ -429,6 +646,12 @@ public sealed class AnimationScheduler
             AudioStops = 0;
         }
     }
+
+    /// <summary>
+    /// InitStream's ClearSendBuffer (A12, 0x0057B7CE): the queued stream messages are dropped, not sent. Only the
+    /// scheduler's own messages (clips and the live stream) go; what a policy API (M3-017) buffered stays.
+    /// </summary>
+    private void ClearSendBufferLocked() => Stream.Remove(o => o is StreamOwner);
 
     private void EndLocked(AnimationEndReason reason)
     {
@@ -438,36 +661,24 @@ public sealed class AnimationScheduler
         var h = _handle; _handle = null;
         _facePoses = Array.Empty<FaceKeyframe>();
         _faceIndex = -1;
-        bool bodyWasRunning = _bodyEndsAtMs is not null;
         _bodyEndsAtMs = null;
         _audioPcm = null; _audioPos = 0; _audioEventId = null;
         CurrentTag = 0;
-        bool wasOpen = _startSent;
+        // Abort 0x0057B3E0 clears startSent/endSent (A24, 0x0057B578) and does not clear the send buffer: what a
+        // cancelled clip left buffered is flushed by the next Update (A25, 0x0057D122..0x0057D174), and since startSent
+        // is clear no EndOfAnimation follows. A replacement's InitStream drops it instead (Play). A completed clip
+        // arrives here after its EndOfAnimation went (Advance).
         _startSent = false;
+        _endSent = false;
+        _framesLeft = false;
+        // fidelity: M3-013
+        // With the live stream active (this stack's ProceduralLive idle), every clip Update leaves +0x64 = 0 (A13,
+        // 0x0057D022), so the Update after the clip ends takes the idle path and re-inits the live animation
+        // (InitStream(live, 0xFF), A29, 0x0057D3EE..0x0057D412), dropping whatever the clip left buffered (A12).
+        _liveReopenPending = _liveActive;
         // The sink talks to the robot, and by the time an animation is being ended the robot may be gone -
-        // a disconnect is exactly when something is cut short. None of these may stop the handle
-        // completing: a caller awaiting Play must not be left waiting forever because the link dropped.
-        try
-        {
-            // A body keyframe still running when the animation completes is stopped. A cancelled or replaced
-            // one is not: AnimationStreamer::Abort 0x0057B3E0 sends the robot no body stop.
-            if (bodyWasRunning && reason == AnimationEndReason.Completed) _sink.BodyStop();
-            // Only close an animation that was actually opened; a clip stopped before its first streamed
-            // frame never sent a StartOfAnimation, and an unmatched EndOfAnimation would close someone
-            // else's. And only one that completed: AnimationStreamer::Abort 0x0057B3E0 sends the robot
-            // nothing - it posts AnimationAborted to the game, aborts the audio and clears the
-            // started/ended flags (strh at 0x0057B578) - so a cancelled or replaced animation gets no
-            // EndOfAnimation.
-            if (wasOpen && reason == AnimationEndReason.Completed)
-            {
-                _sink.AnimationEnded();
-                // UpdateStream buffers one more AudioSilence straight after SendEndOfAnimation
-                // (0x0057CB92), so the robot's audio buffer is left with a frame rather than running dry
-                // on the last sample.
-                _sink.Audio(null);
-            }
-            _sink.Finished(name, reason == AnimationEndReason.Completed);
-        }
+        // a disconnect is exactly when something is cut short. None of this may stop the handle completing.
+        try { _sink.Finished(name, reason == AnimationEndReason.Completed); }
         catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
         {
             // the robot went away mid-animation; there is nothing left to tell it
@@ -475,124 +686,244 @@ public sealed class AnimationScheduler
         h?.Complete(reason);
     }
 
+    /// <summary>Buffers one sink call that sends a robot message; the drain sees whether that send succeeded.</summary>
+    private void Buffer(object? owner, int size, bool isAudio, Action send)
+        => Stream.Buffer(owner, size, isAudio, () => { send(); return _sink.LastSendSucceeded; });
+
+    /// <summary>Buffers a zero-size step that sends no robot message (an event, a keyframe notification).</summary>
+    private void BufferLocal(object? owner, Action act)
+        => Stream.Buffer(owner, 0, false, () => { act(); return true; });
+
     /// <summary>
-    /// Advances the timeline: streams the frames this tick is owed, firing every keyframe each frame
-    /// reaches and updating the face blend.
+    /// One engine Update of the streamer (C15; A13..A20).
+    /// <list type="bullet">
+    /// <item><b>Preamble (A14).</b> UpdateAmountToSend refreshes the budgets (C9) and SendBufferedMessages flushes what
+    /// the last Update left; a send error ends the Update. With nothing streaming this is the no-animation path's
+    /// flush of leftovers (A25, A28).</item>
+    /// <item><b>Frames (A15..A18).</b> While ShouldProcessAnimationFrame holds - the buffer is empty and the clip has
+    /// frames left - one frame is built and drained. The stream time then takes its 33 ms step whether the drain
+    /// emptied the buffer or a budget stopped it (0x0057CA88..0x0057CA9C; a budget stop also returns 0); only a send
+    /// error stops the loop without the step. A frame left in the buffer makes the next check refuse, so nothing more
+    /// is built until a later Update has flushed it.</item>
+    /// <item><b>End (A20, 0x0057CB44..0x0057CBB0).</b> When no frames are left and the buffer is empty and the end has
+    /// not been sent: if StartOfAnimation was sent, EndOfAnimation goes directly (C12) and nothing follows it; if it
+    /// never was, AudioSilence and StartOfAnimation are buffered and drained, and EndOfAnimation follows on a later
+    /// Update.</item>
+    /// </list>
+    /// The budget is the sink's robot counters (<see cref="IAnimationSink.AudioFramesPlayed"/>,
+    /// <see cref="IAnimationSink.AnimBytesPlayed"/>). A sink that reports no robot (null) is the test seam: no budget
+    /// applies, and the clip frames a call builds are the ones its clock owes, one per <see cref="FrameInterval"/>, at
+    /// most <see cref="StreamSendBuffer.AudioFramesAhead"/>, and one live-stream frame per call.
     ///
-    /// Animation time is a count of streamed frames, as in the engine. <c>AnimationStreamer::UpdateStream</c>
-    /// at 0x0057C84C hands one stream time (this+0x84) to <c>GetAudioToSend</c>, to the layer component and
-    /// to every track's <c>GetCurrentStreamingMessage</c>, and adds 33 to it only after the frame's messages
-    /// have been sent (0x0057CA94..0x0057CA9C). <c>ShouldProcessAnimationFrame</c> at 0x0057CC6C ends the
-    /// frame loop, leaving the stream time where it is, while the send buffer still holds messages
-    /// (this+0x94) or the audio client reports no room. So while the robot has no room the animation does
-    /// not move at all, and when room returns the engine streams the frames it owes one 33 ms step at a
-    /// time, each with its own audio frame and its own keyframes, up to the audio budget. Wall-clock time
-    /// never enters the stream time; <c>AnimationStreamer::Update</c> at 0x0057CE5C reads the clock only
-    /// for the idle keep-alive timers.
-    ///
-    /// Before this the timeline was <c>nowMs - startMs</c>. A stall let wall time run on, and the first
-    /// frame after it jumped forward, firing every keyframe that had come due in one frame with one audio
-    /// frame, while the audio position, which had always advanced per frame, fell behind the keyframes.
-    ///
-    /// How many frames one call streams is this stack's choice, not the engine's: normally one, because the
-    /// live thread calls this every <see cref="FrameInterval"/>. Frames that could not go, because the tick
-    /// came late or the robot had no room, stay owed, and the next call that can stream makes them up one
-    /// frame at a time, never more than a robot buffer's worth in one call. The engine streams to the
-    /// budget on every update regardless of the clock, which after a stall comes to the same burst. Each
-    /// frame is checked against the robot's audio budget before it goes, whichever way it was owed.
+    /// NOT BUILT HERE (MD5, M5): ShouldProcessAnimationFrame's audio-animation readiness (C15, C16, A15, Q5), and the
+    /// track pull rule of one keyframe per track per frame (A19); a sound whose samples are not rendered yet sends
+    /// silence for the frame and keeps its place, as before.
     /// </summary>
     public void Advance(double nowMs)
     {
-        // A keep-alive body keyframe has to be stopped whether or not a clip is running, because
-        // DriveWheels runs until countermanded and the live animation is not on the clip timeline.
-        bool stopLiveBody = false;
-        lock (_gate)
-            if (_liveBodyStopsAtMs is { } end && nowMs >= end)
-            {
-                _liveBodyStopsAtMs = null;
-                stopLiveBody = true;
-            }
-        if (stopLiveBody) _sink.BodyStop();
-
-        // While nothing else streams, the live stream does: every update streams it (UpdateStream(live) at
-        // 0x0057D430), reopening it with InitStream(live, 0xFF) after a clip (0x0057D3FE), and each of its
-        // frames carries its audio message, as every UpdateStream frame does - within the robot's audio
-        // budget, as ShouldProcessAnimationFrame 0x0057CC6C allows (M7-017).
         lock (_emit)
         {
-            bool open = false, frame = false;
+            // fidelity: M3-013
+            // The Update after a clip COMPLETED with the live stream active (A29, 0x0057D064 with the idle top
+            // ProceduralLive): +0x64 is 0 (A13, 0x0057D022), so it calls InitStream(live, 0xFF) (0x0057D3FE), whose
+            // ClearSendBuffer drops the clip's leftovers (A12, 0x0057B7CE), and builds no frame in that Update (r7 = 0 at
+            // 0x0057D404); the live stream's StartOfAnimation 0xFF goes with its first frame, on the next Update.
+            // After a CANCEL the engine instead replays the neutral-face clip first (A6 sets +0x73; A31 at
+            // 0x0057CFC0..0x0057CFD2), whose InitStream is what drops the leftovers; this stack has no neutral replay yet
+            // (M5 gap, M5-010/M5-028), so it takes the same drop-and-reopen path, which matches the engine only in the
+            // drop. With no live stream the leftovers are flushed instead (A25), below.
+            bool reopen;
             lock (_gate)
             {
-                if (_clip is null && _liveActive)
+                reopen = _clip is null && _liveActive && _liveReopenPending;
+                if (reopen) { _liveReopenPending = false; _liveOpen = false; }
+            }
+            if (reopen)
+            {
+                ClearSendBufferLocked();
+                return;
+            }
+
+            // A keep-alive body keyframe has to be stopped whether or not a clip is running, because
+            // DriveWheels runs until countermanded and the live animation is not on the clip timeline.
+            bool stopLiveBody = false;
+            lock (_gate)
+                if (_liveBodyStopsAtMs is { } end && nowMs >= end)
                 {
-                    if (!_liveOpen) open = true;
-                    else frame = !(_sink.AudioFramesPlayed is { } played &&
-                                   _liveFramesSent - (played - _livePlayedBaseline) >= CozmoAudio.RobotBufferFrames);
+                    _liveBodyStopsAtMs = null;
+                    stopLiveBody = true;
+                }
+            if (stopLiveBody) Buffer(_liveOwner, StreamSizes.BodyStop, false, _sink.BodyStop);
+
+            int? framesPlayed = _sink.AudioFramesPlayed;
+            bool paced = framesPlayed is not null;
+            if (paced) Stream.UpdateAmountToSend(_sink.AnimBytesPlayed ?? 0, framesPlayed!.Value);
+            else Stream.Unlimited();
+
+            if (Stream.Drain() == StreamSendBuffer.DrainResult.SendError) return;      // A14
+
+            bool clipRunning;
+            lock (_gate) clipRunning = _clip is not null;
+            if (clipRunning) StreamClip(nowMs, paced);
+            else if (LiveStreamActive) StreamLiveFrames(paced);
+
+            if (!paced)
+            {
+                lock (_gate)
+                {
+                    double maxDebt = StreamSendBuffer.AudioFramesAhead * FrameInterval.TotalMilliseconds;
+                    // A stall that outlasts the robot's whole buffer is not owed more than that buffer.
+                    if (nowMs - _nextDueWallMs > maxDebt) _nextDueWallMs = nowMs - maxDebt;
                 }
             }
-            if (open) OpenLiveStream();
-            else if (frame) { _sink.Audio(null); lock (_gate) _liveFramesSent++; }
-        }
-
-        double interval = FrameInterval.TotalMilliseconds;
-        double maxDebt = CozmoAudio.RobotBufferFrames * interval;
-        int frames;
-        lock (_gate)
-        {
-            if (_clip is null) return;
-            double late = nowMs - _nextDueWallMs;
-            if (late < 0) { _nextDueWallMs = nowMs; late = 0; }                 // ahead of schedule: this tick is the frame
-            frames = Math.Min(1 + (int)Math.Floor(Math.Min(late, maxDebt) / interval), CozmoAudio.RobotBufferFrames);
-        }
-        for (int i = 0; i < frames; i++)
-        {
-            if (!StreamFrame()) break;
-            lock (_gate) { _nextDueWallMs += interval; }
-        }
-        lock (_gate)
-        {
-            // A stall that outlasts the robot's whole buffer is not owed more than that buffer.
-            if (nowMs - _nextDueWallMs > maxDebt) _nextDueWallMs = nowMs - maxDebt;
         }
     }
 
+    // fidelity: M3-013, M3-015
+    /// <summary>UpdateStream for the running clip (A15..A18, A20). Called under <see cref="_emit"/>.</summary>
+    private void StreamClip(double nowMs, bool paced)
+    {
+        lock (_gate)
+            if (_endSent && !_framesLeft)
+            {
+                // A13: an empty clip (endSent from InitStream) with nothing left completes without a message
+                EndLocked(AnimationEndReason.Completed);
+                return;
+            }
+        int owed = paced ? int.MaxValue : SeamFramesOwed(nowMs);
+        int built = 0;
+        // ShouldProcessAnimationFrame (A15): the buffer is empty and the clip has frames left
+        while (Stream.IsEmpty && FramesLeft && built < owed)
+        {
+            BuildClipFrame();
+            built++;
+            var r = Stream.Drain();
+            if (r == StreamSendBuffer.DrainResult.SendError) return;            // A18: no step on a send error
+            lock (_gate)
+            {
+                // A18: +0x84 += 33 after every frame whose drain returned 0, a budget stop included
+                _framesStreamed++;
+                _nextDueWallMs += FrameInterval.TotalMilliseconds;
+            }
+        }
+
+        // A20: not processing, no frames left, the buffer empty and the end not sent
+        bool atEnd;
+        lock (_gate) atEnd = _clip is not null && !_framesLeft && !_endSent;
+        if (!atEnd || !Stream.IsEmpty) return;
+
+        // A body keyframe still running when the clip completes is stopped (this stack's body track, M5); it goes
+        // before the end, so the end waits until it has been sent.
+        bool stopBody;
+        lock (_gate) { stopBody = _bodyEndsAtMs is not null; _bodyEndsAtMs = null; }
+        if (stopBody)
+        {
+            Buffer(_clipOwner, StreamSizes.BodyStop, false, _sink.BodyStop);
+            if (Stream.Drain() != StreamSendBuffer.DrainResult.Empty) return;
+        }
+
+        bool startSent;
+        lock (_gate) startSent = _startSent;
+        if (startSent)
+        {
+            // SendEndOfAnimation (0x0057C448..0x0057C496): direct, reliable, not hot, not budget-gated; on success
+            // startSent = 0 and endSent = 1, and it counts one frame plus its bytes (C12). Nothing is sent after it.
+            bool sent = Stream.SendDirect(StreamSizes.EndOfAnimation, true, () => { _sink.AnimationEnded(); return _sink.LastSendSucceeded; });
+            if (!sent) return;
+            lock (_gate)
+            {
+                _startSent = false;
+                _endSent = true;
+                EndLocked(AnimationEndReason.Completed);
+            }
+        }
+        else
+        {
+            // Start was never sent (0x0057CB8E..0x0057CB9C): AudioSilence and StartOfAnimation are buffered and drained;
+            // EndOfAnimation follows on a later Update.
+            byte tag;
+            lock (_gate) { tag = CurrentTag; _startSent = true; _endSent = false; }
+            Buffer(_clipOwner, StreamSizes.AudioSilence, true, () => _sink.Audio(null));
+            Buffer(_clipOwner, StreamSizes.StartOfAnimation, false, () => _sink.AnimationStarted(tag));
+            Stream.Drain();
+        }
+    }
+
+    /// <summary>Whether the running clip has frames left (the stack's HasFramesLeft: its keyframes and duration, M5).</summary>
+    private bool FramesLeft { get { lock (_gate) return _clip is not null && _framesLeft; } }
+
+    // fidelity: M3-015
+    /// <summary>The live stream's frames (one AudioSilence each), while the buffer is empty. Called under <see cref="_emit"/>.</summary>
+    private void StreamLiveFrames(bool paced)
+    {
+        do
+        {
+            if (!Stream.IsEmpty) return;
+            BuildLiveFrame();
+        }
+        while (paced && Stream.Drain() == StreamSendBuffer.DrainResult.Empty);
+        if (!paced) Stream.Drain();
+    }
+
     /// <summary>
-    /// Streams one frame of the running animation at the timeline position the frame count gives. Returns
-    /// false when this call can stream nothing more: nothing running, no room in the robot's audio buffer,
-    /// the animation replaced under us, or the clip completed on this frame.
+    /// The test seam's clock: how many clip frames a call at <paramref name="nowMs"/> is owed, one per
+    /// <see cref="FrameInterval"/> since the last, at least one and at most <see cref="StreamSendBuffer.AudioFramesAhead"/>.
     /// </summary>
-    private bool StreamFrame()
+    private int SeamFramesOwed(double nowMs)
+    {
+        lock (_gate)
+        {
+            if (_clip is null) return 0;
+            double interval = FrameInterval.TotalMilliseconds;
+            double maxDebt = StreamSendBuffer.AudioFramesAhead * interval;
+            double late = nowMs - _nextDueWallMs;
+            if (late < 0) { _nextDueWallMs = nowMs; late = 0; }                 // ahead of schedule: this tick is the frame
+            return Math.Min(1 + (int)Math.Floor(Math.Min(late, maxDebt) / interval), StreamSendBuffer.AudioFramesAhead);
+        }
+    }
+
+    // fidelity: M3-015
+    /// <summary>
+    /// Builds one frame of the live stream into the buffer: its audio message, AudioSilence, and on the first frame
+    /// StartOfAnimation with tag 0xFF after it (UpdateStream 0x0057C9A8..0x0057C9D0 after InitStream(live, 0xFF)).
+    /// Called under <see cref="_emit"/>.
+    /// </summary>
+    private void BuildLiveFrame()
+    {
+        bool open;
+        lock (_gate) { open = !_liveOpen; _liveOpen = true; if (open) _liveFramesSent = 0; _liveFramesSent++; }
+        Buffer(_liveOwner, StreamSizes.AudioSilence, true, () => _sink.Audio(null));
+        if (open) Buffer(_liveOwner, StreamSizes.StartOfAnimation, false, () => _sink.AnimationStarted(LiveAnimationTag));
+    }
+
+    // fidelity: M3-015
+    /// <summary>
+    /// Builds one frame of the running clip into the buffer at the stream time the frame count gives, in the engine's
+    /// order (A16, 0x0057C94E..0x0057CA7A):
+    /// (1) exactly one audio message, AudioSample with 744 mu-law bytes or AudioSilence (C4); (2) StartOfAnimation, only
+    /// if not yet sent, after the audio message (A21); (3) head; (4) lift; (5) event; (6) the face animation's frame;
+    /// (7) the procedural face, only if (6) buffered nothing and the face-animation track is at its end (A17: a pending
+    /// faceAnimations keyframe, even one not yet due, holds it back); (8) backpack lights; (9) body, and this stack's
+    /// body stop when a body keyframe's duration has run out; (10) record heading; (11) turn to recorded heading.
+    /// Called under <see cref="_emit"/>.
+    /// </summary>
+    private void BuildClipFrame()
     {
         AnimationClip clip;
         double t;
-        long generation;
+        object owner;
         lock (_gate)
         {
-            if (_clip is null) return false;
-            generation = _generation;
-            // ShouldProcessAnimationFrame at 0x0057CC6C refuses to process a frame until the robot has
-            // room, and UpdateAmountToSend at 0x0057C6F0 measures that room as
-            // 14 - (audioFramesStreamed - audioFramesPlayed). Streaming past it would only pile up frames
-            // the robot drops, and the timeline would drift away from what the robot is actually playing.
-            if (_sink.AudioFramesPlayed is { } played &&
-                AudioFramesSent - (played - _playedBaseline) >= CozmoAudio.RobotBufferFrames)
-                return false;
-            clip = _clip;
+            clip = _clip!;
+            owner = _clipOwner;
             t = _framesStreamed * (double)FrameStepMs;
             PositionMs = t;
         }
 
-        // Exactly one audio message goes out on every streamed frame: a sample when the clip has sound at
-        // this moment, animAudioSilence when it does not. UpdateStream buffers one or the other with no way
-        // past (0x0057C992 and 0x0057C9AE), and SendBufferedMessages counts 0x8E and 0x8F alike against the
-        // robot's audio budget with (tag & 0xFE) == 0x8E. The silence frames are what carry an animation
-        // forward: a clip streamed without them opens on the robot and then never advances, which is why
-        // body motion did nothing and the face stopped appearing once we started bracketing.
-        // How much of the sound is really rendered. A source that renders while it plays fills its
-        // buffer from the front, and the tail is zeros standing in for samples whose parameters have not
-        // been read yet; sending those puts silence on the robot in place of the music, and the robot
-        // cannot be given them again. Asked outside the lock because the source may do real work, and it
-        // is also how a streaming source learns how far playback has got.
+        // How much of the sound is really rendered. A source that renders while it plays fills its buffer from the
+        // front; sending the tail's zeros would put silence on the robot in place of the music. Asked outside the
+        // lock because the source may do real work, and it is also how a streaming source learns how far playback
+        // has got. (The engine's own gate, audio-animation readiness, is M5's: see Advance.)
         int ready = int.MaxValue;
         {
             short[]? pcmNow; int posNow;
@@ -603,45 +934,34 @@ public sealed class AnimationScheduler
         byte[]? frame = null;
         lock (_gate)
         {
-            if (_generation != generation) return false;
             if (_audioPcm is { } pcm && _audioPos < pcm.Length)
             {
                 int want = Math.Min(CozmoAudio.SamplesPerFrame, pcm.Length - _audioPos);
                 int have = Math.Max(0, ready - _audioPos);
                 if (have >= want)
                 {
+                    // C5: a frame shorter than 744 samples is zero-padded (0x00 is silence in this codec)
                     var samples = new byte[CozmoAudio.SamplesPerFrame];
                     for (int i = 0; i < want; i++) samples[i] = AnkiMuLaw.Encode(pcm[_audioPos + i]);
-                    for (int i = want; i < CozmoAudio.SamplesPerFrame; i++) samples[i] = AnkiMuLaw.Encode(0);
                     _audioPos += want;
                     if (_audioPos >= pcm.Length) { _audioPcm = null; _audioPos = 0; _audioEventId = null; }
                     frame = samples;
                 }
-                // otherwise the frame carries silence and the sound keeps its place, so what has not been
-                // rendered yet is heard late rather than lost
             }
         }
-        _sink.Audio(frame);
-        AudioFramesSent++;
-        // The frame has gone, so the timeline moves one step, as UpdateStream adds 33 after SendBufferedMessages.
-        lock (_gate) { if (_generation == generation) _framesStreamed++; }
+        var audio = frame;
+        // (1)
+        Buffer(owner, audio is null ? StreamSizes.AudioSilence : StreamSizes.AudioSample, true,
+               () => { _sink.Audio(audio); AudioFramesSent++; });
 
-        // The animation is opened here rather than in Play, on the first frame that streams and after that
-        // frame's audio, matching the guarded SendStartOfAnimation at 0x0057C9C8.
-        lock (_emit)
-        {
-            byte openWith = 0;
-            lock (_gate)
-            {
-                if (_generation == generation && !_startSent) { _startSent = true; openWith = CurrentTag; }
-            }
-            if (openWith != 0) _sink.AnimationStarted(openWith);
-        }
+        // (2) SendStartOfAnimation (A21): startSent = 1, endSent = 0
+        byte openWith = 0;
+        lock (_gate) if (!_startSent) { _startSent = true; _endSent = false; openWith = CurrentTag; }
+        if (openWith != 0) Buffer(owner, StreamSizes.StartOfAnimation, false, () => _sink.AnimationStarted(openWith));
 
         var due = new List<Keyframe>();
         lock (_gate)
         {
-            if (_generation != generation) return false;              // replaced while we were looking
             while (_nextFrame < clip.Keyframes.Count && clip.Keyframes[_nextFrame].TriggerTimeMs <= t)
             {
                 var k = clip.Keyframes[_nextFrame++];
@@ -650,114 +970,85 @@ public sealed class AnimationScheduler
             }
             KeyframesFired += due.Count;
         }
+        var ordered = due.OrderBy(TrackOrder).ToList();
+        // (3) head, (4) lift, (5) event; face poses and audio keyframes change state only
+        foreach (var k in ordered.Where(k => TrackOrder(k) <= 3)) BufferKeyframe(k, owner);
 
-        // Emitted in the engine's per-frame track order rather than the order the clip happens to list
-        // them: head, lift, event, face, lights, body (UpdateStream 0x0057C9D4 onwards).
-        //
-        // Dispatch has to happen outside the lock, because it talks to the transport. That leaves a window
-        // in which the animation can be replaced, so the generation is re-checked before every keyframe:
-        // without it, keyframes collected for the outgoing clip were emitted into the incoming one, which
-        // on hardware looks like one animation's motion appearing in the middle of another.
-        foreach (var k in due.OrderBy(TrackOrder))
-        {
-            // the emission contract: owned and sent as one step, so a replacement cannot land between
-            lock (_emit)
-            {
-                lock (_gate) { if (_generation != generation) return false; }
-                Dispatch(k);
-            }
-            KeyframeFired?.Invoke(k);
-        }
-
-        // A body keyframe drives the wheels for its own duration and no longer. DriveWheels runs until
-        // countermanded, so without this the wheels keep turning until the whole animation ends, which on
-        // anim_bored_01 meant 800 ms of backward travel where the asset asked for 264 ms.
-        lock (_emit)
-        {
-            bool stopBody = false;
-            lock (_gate)
-            {
-                if (_generation == generation && _bodyEndsAtMs is { } end && t >= end)
-                {
-                    _bodyEndsAtMs = null;
-                    stopBody = true;
-                }
-            }
-            if (stopBody) _sink.BodyStop();
-        }
-
-        // The face is continuous rather than stepped. A face keyframe is a pose to be AT when its trigger
-        // time arrives, so the pose held now is interpolated forward towards the next one, not backwards
-        // from the previous one. Interpolating backwards would leave the face frozen on one keyframe until
-        // the next fired and then snap, which is a step, not an animation.
-        // A pre-rendered face animation owns the screen while it lasts: it puts one frame out per
-        // streaming tick and stops when its frames run out, the way FaceAnimationKeyFrame::IsDone ends the
-        // track. Nothing in the shipped assets runs one over a procedural face track.
-        FaceBitmap? animFrame = null;
+        // (6) the face animation: one pre-rendered frame per frame until its frames run out
+        FaceBitmap? face = null;
+        bool faceAnimAtEnd;
         lock (_gate)
         {
             if (_faceAnim is { } anim)
             {
-                if (_faceAnimFrame < anim.Count) animFrame = anim[_faceAnimFrame++];
+                if (_faceAnimFrame < anim.Count) face = anim[_faceAnimFrame++];
                 if (_faceAnimFrame >= anim.Count) _faceAnim = null;
             }
+            faceAnimAtEnd = _faceAnim is null && !PendingFaceAnimationLocked(clip);
         }
-        if (animFrame is not null)
+        if (face is not null)
         {
-            _lastFace = animFrame;
-            _sink.Face(animFrame);
+            _lastFace = face;
+            var shown = face;
+            Buffer(owner, StreamSizes.Face(shown), false, () => _sink.Face(shown));
+        }
+        else if (faceAnimAtEnd)
+        {
+            // (7) the procedural face
+            FaceKeyframe? current = null, next = null;
             lock (_gate)
             {
-                if (_clip == clip && t >= clip.DurationMs && _nextFrame >= clip.Keyframes.Count)
+                if (_faceIndex >= 0 && _faceIndex < _facePoses.Count)
                 {
-                    EndLocked(AnimationEndReason.Completed);
-                    return false;
+                    current = _facePoses[_faceIndex];
+                    if (_faceIndex + 1 < _facePoses.Count) next = _facePoses[_faceIndex + 1];
                 }
-                return _clip == clip && _generation == generation;
             }
-        }
-
-        FaceKeyframe? current = null, next = null;
-        lock (_gate)
-        {
-            if (_faceIndex >= 0 && _faceIndex < _facePoses.Count)
+            FaceBitmap? procedural;
+            if (current is not null)
             {
-                current = _facePoses[_faceIndex];
-                if (_faceIndex + 1 < _facePoses.Count) next = _facePoses[_faceIndex + 1];
+                // A face keyframe is a pose to be AT when its trigger time arrives, so the pose held now is
+                // interpolated forward towards the next one.
+                ProceduralFacePose pose;
+                if (next is null || next.TriggerTimeMs <= current.TriggerTimeMs) pose = current.Pose;
+                else
+                {
+                    float span = next.TriggerTimeMs - current.TriggerTimeMs;
+                    float kk = (float)((t - current.TriggerTimeMs) / span);
+                    pose = current.Pose.BlendTo(next.Pose, Math.Clamp(kk, 0f, 1f));
+                }
+                procedural = ProceduralFaceRenderer.Render(pose);
             }
-        }
-        if (current is not null)
-        {
-            ProceduralFacePose pose;
-            if (next is null || next.TriggerTimeMs <= current.TriggerTimeMs) pose = current.Pose;
             else
+                // Hold the last face rather than blanking: the robot keeps showing the last image it was given.
+                procedural = _lastFace;
+            if (procedural is not null)
             {
-                float span = next.TriggerTimeMs - current.TriggerTimeMs;
-                float k = (float)((t - current.TriggerTimeMs) / span);
-                pose = current.Pose.BlendTo(next.Pose, Math.Clamp(k, 0f, 1f));
+                _lastFace = procedural;
+                var shown = procedural;
+                Buffer(owner, StreamSizes.Face(shown), false, () => _sink.Face(shown));
             }
-            var bmp = ProceduralFaceRenderer.Render(pose);
-            _lastFace = bmp;
-            _sink.Face(bmp);
-        }
-        else if (_lastFace is not null)
-        {
-            // Hold the last face rather than blanking. Nothing in the engine clears the screen when an
-            // animation ends: SendEndOfAnimation 0x0057C448 sends the EndOfAnimation keyframe and nothing
-            // else, and the robot keeps showing the last image it was given until the next one arrives -
-            // which, between animations, is the keep-alive's.
-            _sink.Face(_lastFace);
         }
 
+        // (8) lights, (9) body
+        foreach (var k in ordered.Where(k => TrackOrder(k) is 4 or 5)) BufferKeyframe(k, owner);
+        // A body keyframe drives the wheels for its own duration and no longer (this stack's stop, at the body slot).
+        bool stopBody = false;
         lock (_gate)
-        {
-            if (_clip == clip && t >= clip.DurationMs && _nextFrame >= clip.Keyframes.Count)
-            {
-                EndLocked(AnimationEndReason.Completed);
-                return false;
-            }
-            return _clip == clip && _generation == generation;
-        }
+            if (_bodyEndsAtMs is { } end && t >= end) { _bodyEndsAtMs = null; stopBody = true; }
+        if (stopBody) Buffer(owner, StreamSizes.BodyStop, false, _sink.BodyStop);
+        // (10) record heading, (11) turn to recorded heading, and anything else
+        foreach (var k in ordered.Where(k => TrackOrder(k) >= 6)) BufferKeyframe(k, owner);
+
+        lock (_gate) _framesLeft = !(t >= clip.DurationMs && _nextFrame >= clip.Keyframes.Count);
+    }
+
+    /// <summary>A17: a faceAnimations keyframe not yet reached holds the procedural face back until the track is exhausted.</summary>
+    private bool PendingFaceAnimationLocked(AnimationClip clip)
+    {
+        for (int i = _nextFrame; i < clip.Keyframes.Count; i++)
+            if (clip.Keyframes[i] is FaceAnimationKeyframe) return true;
+        return false;
     }
 
     /// <summary>
@@ -901,49 +1192,80 @@ public sealed class AnimationScheduler
     }
 
     /// <summary>
-    /// Where a keyframe sits in the engine's per-frame order. UpdateStream buffers its tracks in a fixed
-    /// sequence from 0x0057C9D4: head, lift, event, face, backpack lights, body motion, record heading,
-    /// turn to recorded heading. Audio is emitted before all of them and is not a keyframe here.
+    /// Where a keyframe sits in the engine's per-frame order (A16, 0x0057C94E..0x0057CA7A): head, lift, event, then
+    /// the face steps (face animation, procedural face), backpack lights, body, record heading, turn to recorded
+    /// heading. The audio message and StartOfAnimation go before all of them.
     /// </summary>
     private static int TrackOrder(Keyframe k) => k switch
     {
         HeadKeyframe => 0,
         LiftKeyframe => 1,
         EventKeyframe => 2,
-        FaceKeyframe => 3,
+        FaceKeyframe or FaceAnimationKeyframe or AudioKeyframe => 3,   // state changes before the face steps (A16 (6), (7))
         LightsKeyframe => 4,
         BodyKeyframe => 5,
-        _ => 6,
+        RecordHeadingKeyframe => 6,
+        TurnToRecordedHeadingKeyframe => 7,
+        _ => 8,
     };
 
-    private void Dispatch(Keyframe k)
+    /// <summary>
+    /// Buffers what one keyframe sends, its values decided now, at build time, as <c>GetStreamMessage</c> decides
+    /// them (variability included). State a keyframe changes (a sound starting, a face animation, a body deadline)
+    /// changes now; the message and <see cref="KeyframeFired"/> go when the drain reaches it.
+    /// </summary>
+    private void BufferKeyframe(Keyframe k, object owner)
     {
         switch (k)
         {
             case HeadKeyframe h:
-                _sink.Head((sbyte)Math.Clamp(WithVariability(h.AngleDeg, h.VariabilityDeg), sbyte.MinValue, sbyte.MaxValue),
-                           h.DurationTimeMs);
-                break;
+            {
+                var deg = (sbyte)Math.Clamp(WithVariability(h.AngleDeg, h.VariabilityDeg), sbyte.MinValue, sbyte.MaxValue);
+                Buffer(owner, StreamSizes.HeadAngle, false, () => { _sink.Head(deg, h.DurationTimeMs); KeyframeFired?.Invoke(k); });
+                return;
+            }
             case LiftKeyframe l:
-                _sink.Lift((byte)Math.Clamp(WithVariability(l.HeightMm, l.VariabilityMm), byte.MinValue, byte.MaxValue),
-                           l.DurationTimeMs);
-                break;
+            {
+                var mm = (byte)Math.Clamp(WithVariability(l.HeightMm, l.VariabilityMm), byte.MinValue, byte.MaxValue);
+                Buffer(owner, StreamSizes.LiftHeight, false, () => { _sink.Lift(mm, l.DurationTimeMs); KeyframeFired?.Invoke(k); });
+                return;
+            }
             case BodyKeyframe b:
-                _sink.Body(b);
                 // Only a keyframe that actually moves the body needs stopping. Any radius the engine
                 // understands now runs, arcs included, because the robot does the geometry.
                 lock (_gate)
                     _bodyEndsAtMs = b.RadiusIsKnown && b.DurationTimeMs > 0 && b.Speed != 0
                         ? b.TriggerTimeMs + b.DurationTimeMs
                         : null;
-                break;
-            case LightsKeyframe li: _sink.Lights(li); break;
-            case EventKeyframe e: _sink.Event(e.EventId); break;
+                Buffer(owner, StreamSizes.Body(b), false, () => { _sink.Body(b); KeyframeFired?.Invoke(k); });
+                return;
+            case LightsKeyframe li: BufferLocal(owner, () => { _sink.Lights(li); KeyframeFired?.Invoke(k); }); return;
+            case EventKeyframe e: BufferLocal(owner, () => { _sink.Event(e.EventId); KeyframeFired?.Invoke(k); }); return;
             case AudioKeyframe a: StartAudio(a); break;
-            case FaceKeyframe: break;                             // handled by the blend above
             case FaceAnimationKeyframe fa: StartFaceAnimation(fa); break;
-            case RecordHeadingKeyframe: break;
-            case TurnToRecordedHeadingKeyframe: break;
         }
+        // keyframes that send no message of their own (face poses, audio, face animations, headings)
+        BufferLocal(owner, () => KeyframeFired?.Invoke(k));
     }
+}
+
+/// <summary>
+/// <c>EngineToRobot::Size()</c> of each stream message the scheduler buffers for its sink (C11): the serialised
+/// length of the message <see cref="RobotAnimationSink"/> sends for that call. Calls that send no robot message
+/// (lights, events) count 0.
+/// </summary>
+internal static class StreamSizes
+{
+    public static readonly int AudioSample = StreamSendBuffer.SizeOf(new AudioSample());
+    public static readonly int AudioSilence = StreamSendBuffer.SizeOf(new AudioSilence());
+    public static readonly int StartOfAnimation = StreamSendBuffer.SizeOf(new StartOfAnimation());
+    public static readonly int EndOfAnimation = StreamSendBuffer.SizeOf(new EndOfAnimation());
+    public static readonly int HeadAngle = StreamSendBuffer.SizeOf(new Protocol.HeadAngle());
+    public static readonly int LiftHeight = StreamSendBuffer.SizeOf(new Protocol.LiftHeight());
+    public static readonly int BodyStop = StreamSendBuffer.SizeOf(new BodyMotion());
+
+    /// <summary>A body keyframe whose radius the engine does not understand sends nothing.</summary>
+    public static int Body(BodyKeyframe b) => b.EncodedRadius is null ? 0 : BodyStop;
+
+    public static int Face(FaceBitmap f) => StreamSendBuffer.SizeOf(new Protocol.FaceImage { Image = FaceBitmapCodec.Encode(f) });
 }

@@ -1,6 +1,6 @@
 # M3 device inventory (camera, display, audio device)
 
-**State: approved by the manager on 2026-09-24 under the operator's standing authorisation. Source-derived inventories and ordinary source-fidelity decisions need no operator checkpoint; only a deliberate divergence from the engine, or an unresolved source question that materially affects robot behaviour, goes to the operator. Frozen with `python re-analysis/tools/fidelity.py --approve M3-device`.** The forced policies M3-019 and M3-020 are recorded under Decisions. They will be observed in the next hardware run and are not a reason to stop.
+**State: approved by the manager on 2026-09-24 under the operator's standing authorisation. Source-derived inventories and ordinary source-fidelity decisions need no operator checkpoint; only a deliberate divergence from the engine, or an unresolved source question that materially affects robot behaviour, goes to the operator. Frozen with `python re-analysis/tools/fidelity.py --approve M3-device`, and re-approved after correction C1.** The forced policies M3-019 and M3-020 are recorded under Decisions. They will be observed in the next hardware run and are not a reason to stop.
 
 ## Where this comes from
 
@@ -77,6 +77,10 @@
 - **M3-018:** "interpolation not recovered" is contradicted by A10.
 - **M3-005:** "15 fps" and "30 Hz tick" are not from the source.
 - **M3-001, M3-010, M3-011, M3-012, M3-014, M3-015:** their citations were partial.
+
+## Corrections after the first freeze (manager, 2026-09-24)
+
+- **C1:** M3-019 and M3-020 were built in the M3 batch as the forced policies MD1 and MD2, and the batch verifier confirmed the code matches them. The checker only lets an IMPLEMENTATION_GAP move to EXACT_SOURCE or EQUIVALENT_IMPLEMENTATION, so both records were set to COMPATIBILITY_POLICY here and the inventory was re-approved.
 
 ## Appendix A: M3 pass, extractor report
 

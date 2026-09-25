@@ -70,9 +70,12 @@ public class AnimationStreamLifecycleTests
         Assert.DoesNotContain(sink.Log.TakeWhile(e => e != "start:1"), e => e == "end");
         Assert.Contains("start:1", sink.Log);
 
-        // with no live keyframe pending, the next update reopens the live stream (InitStream(live, 0xFF))
+        // the next update re-inits the live stream (InitStream(live, 0xFF), M3 inventory / M5 A29, 0x0057D3FE) and builds
+        // no frame (r7 = 0 at 0x0057D404); its first frame, with StartOfAnimation 0xFF, goes on the update after
         sink.Log.Clear();
         s.Advance(68);
+        Assert.Empty(sink.Log);
+        s.Advance(101);
         Assert.Equal(new[] { "silence", "start:255" }, sink.Log);
     }
 

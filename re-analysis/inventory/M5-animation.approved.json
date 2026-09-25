@@ -1,0 +1,424 @@
+{
+  "subsystem": "M5-animation",
+  "approved": "2026-09-24",
+  "inventory": "re-analysis/inventory/M5-animation.md",
+  "inventory_sha256": "2336c80a0b4042e43324ab4bd039fc70b9b0cc94e09a5c6f5f08a87f55b13b2a",
+  "records": {
+    "M5-001": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Clip loading: FlatBuffer fields 0..9 in engine track order, first rejected keyframe truncates, JSON clips named by their first key, the two animation directories",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "D1 AnimClip keyframe voffsets 0x0057571C..0x00575EFC; cozmo_anim.fbs:80-96",
+        "gap1 C2 rejected keyframe returns at once (0x00575EA6..0x005760F2)",
+        "gap1 C3..C6 container, LoadAnimationFile 0x00521308..0x005215B4, CollectAnimFiles 0x0051F4C8..0x0051F6A0",
+        "gap2 J1..J5 DefineFromJson 0x005886F4.. (first top-level key); the four shipped JSON clips"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-002": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "19 procedural-eye parameters and the ProceduralFace default (all 0 except EyeScaleX/Y 1, face scale 1, no distorter); SetFromFlatBuf rules",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "C6 SetFromFlatBuf 0x005838D0..0x00583AAC; SetFacePosition 0x00583B20..0x00583BF8",
+        "gap3 K4 ProceduralFace() 0x00583660..0x005836A0 (table 0x00C5A970 = {2,3})"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-003": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Face per frame and blending: GetFaceHelper, Interpolate, the Clip table, Combine for layers",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "C7 GetFaceHelper 0x0058CD80..0x0058CEE4",
+        "C8 Interpolate 0x00584290..0x0058454C",
+        "C9 Clip table 0x00C5A97C (0x005847A8..0x00584908)",
+        "C10 Combine 0x00584648..0x0058478E",
+        "gap1 G10 distorter through layering"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-004": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Head 0x93 {u16 duration, s8 angle} and lift 0x94 {u16 duration, u8 height} keyframes, sent once at the trigger",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "C2 0x004F8C68, 0x004F8C90..0x004F8CD4, 0x004F8C08..0x004F8C4A",
+        "C3 0x004F8FDC..0x004F9048, 0x004F8F80..0x004F8FC4"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-005": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Variability: RandIntInRange on the static keyframe RNG per GetStreamMessage, unclamped",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "C2/C3 RandIntInRange(a-v, a+v) with strb truncation",
+        "gap1 RNG semantics 0x0082F9B0..0x0082FAC6"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-006": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Body 0x99: radius strings, speed clamps (point turn +-300, straight/turn +-220), negative duration never stops, the stop at duration end",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "C4 0x004FB494..0x004FB68C",
+        "C5 0x004FBA8C..0x004FBB0E",
+        "gap1 S1 0x004FB1A8..0x004FB3FE"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-007": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Timeline: start + frames built x 33; advances whenever the drain returns OK (a budget stop included); frozen while the buffer is non-empty",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "A18 0x0057CA7E..0x0057CABE; SendBufferedMessages returns 0 on a budget stop 0x0057BF98/0x0057BFA0",
+        "M3 C15"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-008": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "One streaming animation: refuse or interrupt, tags 1..0xFE returned, loops with the same tag, live forced to 1 loop, ReplayLastAnimation",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "A4 0x0057B17E..0x0057B1B2",
+        "A5 0x0057B1DE..0x0057B24A",
+        "A6 0x0057B2FC..0x0057B304",
+        "A8 0x0057B29C..0x0057B2C8",
+        "A9 0x0057B2D4..0x0057B2F6, 0x0057B660..0x0057B672",
+        "A13 0x0057CFF6..0x0057D036",
+        "A27 0x0057ED0E..0x0057ED2A"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-009": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Audio keyframe load rules: id low 32 bits, volume default 1.0, absent probabilities 1/N, mismatch or sum > 1 rejects",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "C13 0x004F9E54..0x004FA05C"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-010": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Neutral face: the first ProceduralFace keyframe of the first clip of ag_neutral_face; reset data and layer base; replayed after abort-to-nothing and RemoveIdle",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "A2 0x0057A0D4..0x0057A20E, ProceduralFace::Reset 0x0058359C; AnimationTriggerMap.json:1308-1309",
+        "A30 0x0057BA60..0x0057BD6E",
+        "A31 0x0057CF6A..0x0057CFF2"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-011": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Group choice: mood, head window and cooldown filters; RandDbl(sum w) weighted draw; fallback to the Default mood",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "D4 0x0058C4C0..0x0058C7BE",
+        "D5 0x0058A946..0x0058AB2E",
+        "D6 0x0058AB30..0x0058AE2A"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-012": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "An audio keyframe volume (default 1.0) is passed on to the audio layer; its Wwise effect is M6",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "C13 volume f2 default 1.0 (0x004F9E54..0x004FA05C)",
+        "C14 the static default {eventId 0, volume 1.0} (0x004F9E18)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-013": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "faceAnimations: one sprite frame per stream frame, empty frames skipped, two RLE variants per image chosen by _firstScanLine, index reset on abort",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "C12 0x004F9708..0x004F98C4; FaceAnimationManager 0x00581254..0x005812C4; GetFrame 0x005817B4..0x005817CA",
+        "M3 B4"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-014": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Cooldown keyed by clip name across groups; the Default-mood backup rule within +-0.05 rad, else the first entry",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "D5 cooldown set on a pick; MoodManager::Update 0x0067B5E6",
+        "D6 0x0058AB30..0x0058AE2A",
+        "D7 0x0058BA28..0x0058BA98"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-015": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Corner radii rx = roundf(p*15), ry = roundf(p*20) into four ellipse2Poly corners; below 1 a point",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "gap1 D1 0x0058520E..0x005853C4"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-016": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Backpack-lights track: loaded via JSON, colours raw-or-normalised, 0x98 sent every frame while current, LED order Left Front Middle Back Right",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "C16 0x005758C8..0x00575CBE",
+        "C17 GetColorOptional 0x0084024C..0x0084050C; encoding 0x004FABDC..0x004FAC12",
+        "C18 0x004FAC7C..0x004FADB6, 0x004FB0F4..0x004FB11A; 7140 keyframes in 111 shipped clips"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-017": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Audio alternative: r = RandDbl(1), first with lower <= r <= upper skipping |p| < 1e-5, else nothing",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "C14 0x004F9AEC..0x004F9CBE, 0x004F9DAC..0x004F9DFC"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-018": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Frames per Update while ShouldProcessAnimationFrame: empty buffer and keyframes left, or audio ready while audio exists",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "A15 0x0057CC6C..0x0057CCA6",
+        "M3 C15, C16"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-019": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The layer base face is written back only by a streaming animation, not idle ones",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "C11 0x0064EFA8..0x0064EFEA, 0x0064F154..0x0064F244"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-020": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Expressions helper faces",
+      "authority": "not applicable",
+      "evidence": [],
+      "live_path": false,
+      "hardware_required": false
+    },
+    "M5-021": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Eye fill = shipped OpenCV 3.1.0 fillConvexPoly LINE_4 and ellipse2Poly; DrawEye outline and lid polygons; _firstScanLine offset; fill order",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "gap1 D1..D6 DrawEye 0x0058520E..0x00585896",
+        "gap3 A1..A10 libopencv_imgproc fillConvexPoly 0x00042F58, FillConvexPoly 0x00042958, Line 0x000419DC, LineIterator 0x00041810, clipLine 0x000410DC (matches stock 3.1.0)",
+        "gap3 B1..B3 ellipse2Poly 0x00043C48 (SinTable 0x000E7910, vcvtr ties-to-even)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-022": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Disconnect and teardown: a failed send only returns; ~Robot AbortAll cancels actions, aborts path and docking, sends AbortAnimation 0x8D and StopAllMotors",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "A37 0x0051194C..0x0051197C; 0x00511120; 0x0051154A; ~AnimationStreamer 0x0057AF58"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-023": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Abort: AnimationAborted broadcast -> AbortAnimation 0x8D reliable; state cleared; buffer kept and flushed by the next no-animation Update unless InitStream drops it; no EndOfAnimation",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "A22 0x0057B3F2..0x0057B426",
+        "A23 0x005276E8..0x0052771A, 0x0052C22E -> 0x00517DDE..0x00517E0A",
+        "A24 0x0057B442..0x0057B58A",
+        "A25 0x0057D122..0x0057D1DE"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-024": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "InitStream: tag and start, the scan-line toggle rule, buffer dropped, start/end flags, audio animation created, RemoveKeepFaceAlive(99) for non-live; nothing sent",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "A10 0x0057B682..0x0057B69C",
+        "A11 0x0057B6A8..0x0057B738, 0x0057B804..0x0057B828",
+        "A12 0x0057B784..0x0057B7F8",
+        "gap1 L7"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-025": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Frame build order and track pull: audio, Start once, Head, Lift, Event, FaceAnimation, procedural face, BackpackLights, Body, RecordHeading, TurnTo; one keyframe per track per frame",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "A16 0x0057C94E..0x0057CA7A",
+        "A17 0x0057CA1C..0x0057CA2A",
+        "A19 0x0057CCAA..0x0057CE5A"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-026": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "End of animation: EndOfAnimation directly when Start was sent, else silence + Start first; nothing after End; empty clips send nothing",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "A20 0x0057CB44..0x0057CBB0; SendEndOfAnimation 0x0057C448..0x0057C496",
+        "A21 0x0057C400..0x0057C42E"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-027": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Idle animations: the idle stack, PushIdle/RemoveIdle, idle InitStream with tag 0xFF, ProceduralLive, the no-animation path",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "A1 0x0057A064..0x0057A0AC",
+        "A28 0x0057D03A..0x0057D060, 0x0057D122..0x0057D1E2",
+        "A29 0x0057D064..0x0057D448",
+        "A30 0x0057B914..0x0057BD6E"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-028": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Keep-alive: timeout 0.5 s, KeepFaceAlive darts and blinks, default params, continuous StreamLayers while a persistent layer exists",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "A31 0x0057CF6A..0x0057CFF2; A32 0x0057A050, 0x0057E010; A33 0x0058D374..0x0058D558; A34 0x0057DB40..0x0057DCD6",
+        "gap1 K1..K9 GenerateEyeShift 0x0058D10E.., LookAt 0x00584158..0x0058428A, GetNextBlinkFrame table 0x00C5AAD8",
+        "gap2 Q1.7..Q1.10 StreamLayers 0x0057C4F6..0x0057C680"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-029": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Track layer manager: tags, AddLayer/AddPersistentLayer, persistent hold, AddToPersistentLayer, the Remove cross-fade, HaveLayersToSend, frame flags",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "gap1 L1..L8 0x0058E630..0x0058EC6C",
+        "gap2 Q1.1..Q1.6 0x0064F4FE..0x0064F518, 0x0058E66E..0x0058E77C, 0x0064EFA8..0x0064F22C",
+        "gap3 K5 Remove end keyframe"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-030": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Live idle (UpdateLiveAnimation): gates, body/lift/head wiggles with their parameters, LiveIdleTurn eye shift, lock and carry checks",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "A35 0x0057D5F8..0x0057DA82",
+        "gap1 K2 0x0058CFCE..0x0058D04A; K10 0x0064F3C8..0x0064F498; R2..R4"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-031": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Glitch: AddGlitch face and backpack layers, GetNextDistortionFrame table, ScanlineDistorter, per-row shift, AddOffNoise",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "gap1 G1, G3..G11 (0x0064EDE8..0x0064EEFE, 0x0053A9A8..0x0053AB1E, 0x0053A0B0..0x0053A898, 0x00585DFE..0x00585E94)",
+        "gap2 G1..G7 GenerateGlitchLights 0x0058CB64..0x0058CD2A"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-032": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "DrawFace: 64x128 canvas, the face transform via shipped cv::warpAffine INTER_NEAREST BORDER_CONSTANT 0, row extent, interlace clearing, scan-line shift",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "E1 0x00585B30..0x00585D9A; E2 0x00585D9C..0x00585E94",
+        "gap1 D4, D5",
+        "gap3 C1..C6 warpAffine 0x00081850.., invoker 0x0007FC60..0x0008016A, remapNearest 0x00072C38..0x00072D8C (matches stock 3.1.0)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-033": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Event 0x95, RecordHeading 0x91, TurnToRecordedHeading 0x92 keyframes and their clamps",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "C15 0x004FA7A0..0x004FA852",
+        "C19 0x004FBB58..0x004FBB82, 0x004FBE2C..0x004FBF28",
+        "gap1 S2 0x004FBBDC..0x004FBDAC"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-034": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "AnimationTrigger to group name from assets/animationGroupMaps Pairs; first entry wins; unknown gives a warning and \"\"",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "gap1 C7 0x00670438..0x0067075C; GetResponse 0x00670810..0x00670920"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-035": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The streamer never reads enabledAnimTracks or skips a locked track; locks only through DisableAnimTracks/EnableAnimTracks; the live idle checks MovementComponent locks",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "B1 0x00537FFC..0x00537FFE",
+        "B2 0x00513000..0x0051304E",
+        "B3 0x0057C94E..0x0057CA7A",
+        "B4 0x0057D636, 0x0057D664, 0x0057D69E"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-036": {
+      "status": "HARDWARE_ONLY",
+      "title": "Robot-side animation behaviour: AbortAnimation handling and leftovers, Start without End and the unbounded keep-alive stream, locked-track suppression, animStarted/animEnded echo",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "A23, A25, B3, gap2 Q1.10",
+        "robot firmware 2457 is not shipped"
+      ],
+      "live_path": true,
+      "hardware_required": true
+    }
+  }
+}

@@ -205,120 +205,9 @@ public class DeviceTests
         Assert.Equal(1 + CozmoAudio.SamplesPerFrame, samples[0].ToBytes().Length);
     }
 
-    /// <summary>
-    /// The robot buffers only about 14 audio frames, so a whole tone has to be fed at the animation tick
-    /// rather than pushed at once. The first hardware run dumped 61 frames in 2 ms and the robot played 14.
-    /// The opening frames are deliberately sent back to back to fill that buffer before pacing starts.
-    /// </summary>
-    [Fact]
-    public void ClockPacedPlayFillsTheRobotBufferThenPacesAtTheAnimationTick()
-    {
-        var sent = new List<RobotMessage>();
-        var audio = new CozmoAudio(sent.Add);
-        var pcm = CozmoAudio.Tone(440, TimeSpan.FromSeconds(1));
-        int expected = CozmoAudio.ToFrames(pcm).Count;
-        int prime = audio.TargetInFlight;
-        Assert.True(prime < CozmoAudio.RobotBufferFrames, "the opening burst must not overrun the robot's buffer");
-        Assert.True(expected > prime + 5, "the tone must be long enough to exercise pacing");
 
-        var ticks = new List<TimeSpan>();
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        audio.OnFrameSent += () => ticks.Add(sw.Elapsed);
-        audio.Play(pcm);
-        sw.Stop();
 
-        Assert.Equal(expected, sent.Count);
-        Assert.Equal(expected, ticks.Count);
-        // the priming burst goes out at once
-        Assert.True(ticks[prime - 1] < CozmoAudio.FrameInterval,
-            $"the {prime} opening frames took {ticks[prime - 1].TotalMilliseconds:F1} ms");
-        var floor = CozmoAudio.FrameInterval * (expected - 1 - prime) * 0.8;
-        Assert.True(sw.Elapsed >= floor,
-            $"{expected} frames went out in {sw.ElapsedMilliseconds} ms, which is faster than the robot can consume them");
 
-        // Every paced frame must land near its slot. Windows quantises Thread.Sleep to about 15.6 ms, half a
-        // frame, so a pacer built on it drifts audibly; this is what catches that.
-        //
-        // The median is checked rather than the worst frame. The fault this guards against made every frame
-        // late, so the median catches it, while a single descheduled frame on a busy machine does not fail
-        // a run for something inaudible.
-        var errors = new List<double>();
-        for (int i = prime; i < ticks.Count; i++)
-            errors.Add((ticks[i] - CozmoAudio.FrameInterval * (i - prime)).Duration().TotalMilliseconds);
-        errors.Sort();
-        double median = errors[errors.Count / 2];
-        Assert.True(median < 8, $"the median frame went out {median:F1} ms from its slot; errors were " +
-                                $"[{string.Join(", ", errors.Select(e => e.ToString("F1")))}]");
-    }
-
-    [Fact]
-    public void PlayRestartsItsScheduleSoASecondCallIsNotABurst()
-    {
-        var audio = new CozmoAudio(_ => { });
-        audio.TargetInFlight = 0;
-        var pcm = CozmoAudio.Tone(440, TimeSpan.FromMilliseconds(150));
-        int n = CozmoAudio.ToFrames(pcm).Count;
-        audio.Play(pcm);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        audio.Play(pcm);
-        sw.Stop();
-        Assert.True(sw.Elapsed >= CozmoAudio.FrameInterval * (n - 1) * 0.8,
-            $"the second call took only {sw.ElapsedMilliseconds} ms");
-    }
-
-    /// <summary>
-    /// With the robot reporting what it has played, the stream follows that rather than a fixed schedule.
-    /// The robot does not drain at the rate the frame arithmetic suggests, so a fixed schedule starves it.
-    /// </summary>
-    [Fact]
-    public void PlayFollowsTheRobotsPlayedCounterAndKeepsTheBufferTopped()
-    {
-        var sent = new List<RobotMessage>();
-        int played = 0, maxInFlight = 0;
-        var audio = new CozmoAudio(sent.Add) { PlayedFrames = () => Volatile.Read(ref played) };
-        audio.OnFrameSent += () => maxInFlight = Math.Max(maxInFlight, sent.Count - Volatile.Read(ref played));
-
-        // A robot that drains a frame every 5 ms, faster than an animation tick.
-        var stop = false;
-        var drain = new Thread(() =>
-        {
-            while (!Volatile.Read(ref stop))
-            {
-                Thread.Sleep(5);
-                if (Volatile.Read(ref played) < sent.Count) Interlocked.Increment(ref played);
-            }
-        }) { IsBackground = true };
-        drain.Start();
-
-        var pcm = CozmoAudio.Tone(440, TimeSpan.FromMilliseconds(600));
-        int expected = CozmoAudio.ToFrames(pcm).Count;
-        audio.Play(pcm);
-        Volatile.Write(ref stop, true);
-        drain.Join();
-
-        Assert.Equal(expected, sent.Count);
-        Assert.True(maxInFlight <= audio.TargetInFlight,
-            $"{maxInFlight} frames were queued at the robot, over the target of {audio.TargetInFlight}");
-        Assert.True(maxInFlight >= audio.TargetInFlight - 2,
-            $"only {maxInFlight} frames were ever queued, so the robot was being starved");
-    }
-
-    /// <summary>A robot that never reports progress must not hang the caller.</summary>
-    [Fact]
-    public void PlayDoesNotHangWhenTheRobotReportsNothing()
-    {
-        var sent = new List<RobotMessage>();
-        var audio = new CozmoAudio(sent.Add) { PlayedFrames = () => 0 };
-        var pcm = CozmoAudio.Tone(440, TimeSpan.FromMilliseconds(600));
-        int expected = CozmoAudio.ToFrames(pcm).Count;
-
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        audio.Play(pcm);
-        sw.Stop();
-
-        Assert.Equal(expected, sent.Count);
-        Assert.True(sw.Elapsed < TimeSpan.FromSeconds(15), $"it took {sw.Elapsed.TotalSeconds:F1}s to give up");
-    }
 
     [Fact]
     public void BeepsProducesTheRequestedNumberOfSeparatedBursts()
@@ -822,13 +711,22 @@ public class DeviceTests
         Assert.IsType<FaceMsg>(sent[1]);
     }
 
+    /// <summary>
+    /// Busy is true while a Play runs. (It was a 200 ms window after any frame, part of the stack's earlier pacing
+    /// model, which the engine's budget replaced: M3-012, M3-013.)
+    /// </summary>
     [Fact]
     public void AudioReportsWhetherItIsStreaming()
     {
-        var audio = new CozmoAudio(_ => { });
+        var audio = new CozmoAudio(_ => { }) { PlayedFrames = () => 0, PlayedBytes = () => 0 };
         Assert.False(audio.Busy);
         audio.SendSilence();
-        Assert.True(audio.Busy);
+        Assert.False(audio.Busy);
+        bool busyDuring = false;
+        audio.OnFrameSent += () => busyDuring |= audio.Busy;
+        audio.Play(CozmoAudio.Tone(440, TimeSpan.FromMilliseconds(100)));
+        Assert.True(busyDuring);
+        Assert.False(audio.Busy);
     }
 
     // ------------------------------------------------- capture replay (real robot data)
@@ -937,25 +835,6 @@ public class DeviceTests
         Assert.Equal(3, got.Jpeg[sof + 9]);
     }
 
-    [Fact]
-    public void ColourSaveExpandsEncodedGeometryToNominalPresentationWidth()
-    {
-        byte[] pixels = { 255, 0, 0, 0, 0, 255 };
-        using var encoded = new MemoryStream();
-        new StbImageWriteSharp.ImageWriter().WriteJpg(pixels, 2, 1,
-            StbImageWriteSharp.ColorComponents.RedGreenBlue, encoded, 100);
-        var frame = new CameraFrame
-        {
-            Width = 4, Height = 1, JpegWidth = 2, IsColor = true, Jpeg = encoded.ToArray(),
-        };
-
-        var presented = StbImageSharp.ImageResult.FromMemory(frame.PresentationJpeg(), StbImageSharp.ColorComponents.RedGreenBlue);
-
-        Assert.Equal(4, presented.Width);
-        Assert.Equal(1, presented.Height);
-        Assert.True(presented.Data[0] > presented.Data[2]);
-        Assert.True(presented.Data[9 + 2] > presented.Data[9]);
-    }
 
     /// <summary>
     /// The second payload byte is captured, not interpreted. It is not entropy data: it changes by small

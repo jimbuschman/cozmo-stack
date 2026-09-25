@@ -343,7 +343,7 @@ them, so some field names are placeholders. Sending them is safe; interpreting t
 | `0xBD` | BridgeTraverseComplete | localization_navigation | field0 u32, field1 bool |
 | `0xBE` | TimeProfileStat | identity_version_logging | field0 u32, field1 u32, field2 bool, field3 string[u8 count] |
 | `0xC5` | MovingLiftPostDock | localization_navigation | field0 u8 |
-| `0xC8` | DefaultCameraParams | camera | field0 u32, field1 u32, field2 u16, field3 u16, field4 u8[17] |
+| `0xC8` | DefaultCameraParams | camera | field0 f32, field1 f32, field2 u16, field3 u16, field4 u8[17] |
 | `0xCF` | CrashReport | identity_version_logging | field0 u32, field1 u16, field2 u8, field3 u32[u8 count] |
 | `0xD2` | FWVersionInfo | identity_version_logging | field0 u32, field1 u32, field2 u32, field3 u8[16], field4 u8[16] |
 | `0xD3` | DockingStatus | localization_navigation | field0 u32, field1 u8 |

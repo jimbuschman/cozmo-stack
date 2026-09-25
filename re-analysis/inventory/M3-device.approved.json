@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-09-24",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "5ef951890813eb5c68ba192e7e4dc4f1aac220c240f91cef3487bef7c3a91c3e",
+  "inventory_sha256": "da35cd8687bd9fb9ac3dca31b9c9f077afd0d3efad646600bc27483e4bb9aa4a",
   "records": {
     "M3-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -17,7 +17,7 @@
       "hardware_required": false
     },
     "M3-002": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Image chunk reassembly exactly as EncodedImage::AddChunk, ignored before SyncTimeAck",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -28,7 +28,7 @@
       "hardware_required": false
     },
     "M3-003": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "MiniToJpegHelper: strip trailing 0xFF, drop the flag byte, stuff 0x00 after 0xFF, append FF D9",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -48,7 +48,7 @@
       "hardware_required": false
     },
     "M3-005": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "At most 3 completed images per event time go on to vision; one EncodedImage at a time",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -59,7 +59,7 @@
       "hardware_required": false
     },
     "M3-006": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Face canvas 64x128; wire image 128 columns x 64 rows as 32 two-row pairs; 33 ms per stream frame",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -71,7 +71,7 @@
       "hardware_required": false
     },
     "M3-007": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "CompressRLE exactly: skip, repeat, runs over row pairs, the trailing-run rule, raw fallback at >= 1024 bytes",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -96,7 +96,7 @@
       "hardware_required": true
     },
     "M3-009": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "A blank canvas encodes as {0x3F, 0x3F}",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -118,7 +118,7 @@
       "hardware_required": false
     },
     "M3-011": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "22320 Hz, 744 samples per frame",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -128,7 +128,7 @@
       "hardware_required": false
     },
     "M3-012": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The engine send budgets: 14 unplayed audio frames; min(8192 - unplayed bytes, 30000); counters from AnimationState and every send",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -153,7 +153,7 @@
       "hardware_required": false
     },
     "M3-014": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Every streamed message is sent reliable and not hot; EndOfAnimation directly, not budget-gated",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -164,7 +164,7 @@
       "hardware_required": false
     },
     "M3-015": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "One audio message per stream frame (AudioSample or AudioSilence); the face keyframe goes first; several frames per Update",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -211,7 +211,7 @@
       "hardware_required": false
     },
     "M3-019": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "title": "The connection-time SetCameraParams: the engine sends stale stack bytes for f32@0 and u16@4 and bool@6 = 1; this stack sends 0.0, 0, true",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -223,7 +223,7 @@
       "hardware_required": false
     },
     "M3-020": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "title": "A payload that is empty or all 0xFF: the engine reads data[-1] (undefined); this stack treats it as a decode failure",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -259,7 +259,7 @@
       "hardware_required": false
     },
     "M3-023": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "EnableColorImages is never sent at connection; it stores and sends the flag; only BehaviorTrackLaser reads it",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -271,7 +271,7 @@
       "hardware_required": false
     },
     "M3-024": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The audio output source comes from the firmware version JSON: \"sim\" null means physical, play on the robot",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
