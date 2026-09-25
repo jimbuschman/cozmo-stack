@@ -51,14 +51,21 @@ Read first in every session. The manager keeps this file current; the process it
   - The comparison and repair run as one batch (operator: "do not expand M2 into another M1-style process unless the comparison shows that it is substantially wrong").
 - **Operator decisions:** D1-D4 approved 2026-09-23. On 2026-09-24: the inventory, D5, D6 (fatal behaviour recorded, isolation kept as policy), D7, the corrections C1..C5 and D8 (stop processing a frame after a DisconnectRequest, M1-038) approved; the three repair batches are authorised to run without further checkpoints.
 - **Batch 1 done (7aba301). Batch 2a done** (e6f2ed7; receive path: B17 truncation, receive-error counters, partial-header overrun after the header, M1-038); records it repaired are settled in one verified pass at the end of batch 2. **Batch 2b-i done** (8c9f405; clock, construction-time 2 ms scheduler + FIFO executor, posted sends, RobotLink isolation; three verification passes). **Batch 2b-ii done** (0691429; per-address connections, type-3 and timeout delete only that connection, timed-out flag, inbound creation, FinishConnection, posted Start/Stop, per-connection multipart, unconditional Dispose disconnect; two verification passes). **Batch 2c done** (socket B10/B11/B12/B16/B38 with C1's 47817 reopen, the M1-023 reset mechanism, the M1-037 host trigger, M1-001 addressing; verifier PASS on the second pass). Batch 2 complete.
-- **Next: the operator's control-check run.**
+- **Next: the operator's second control-check run (ready 2026-09-25, main 7297809: M2 + M3 + M4 + the control-check update).**
   1. In the Claude session: `! git push origin main`.
-  2. On the Cozmo machine, from `cozmo-stack`: `git pull`, then `dotnet run --project src/Cozmo.Conformance -- control-check 172.31.1.1 --obb "<the unpacked OBB dir used for earlier hardware-test/behavior runs>" --allow-drive`.
-     - `<obb>` is the directory that contains `assets/cozmo_resources/assets/animations/`.
-     - If the path is wrong, the tool exits 2 before connecting and prints the path it expected.
-  3. Setup: Cozmo off the charger, on the floor or a cliff-safe table, with about 10 cm clear in front and behind. One cube powered and within about 30 cm. The tool prints this and waits for Enter.
-  4. Copy the `re-analysis/acceptance/hardware/<stamp>-CONTROL/` folder it prints to Downloads.
-  5. The manager then judges the bundle and fixes the failures from the source (AGENTS.md hardware-failure workflow).
+  2. On the Cozmo machine, from `cozmo-stack`: `git pull`, then `dotnet run --project src/Cozmo.Conformance -- control-check 172.31.1.1 --obb "<the unpacked OBB dir>" --allow-drive`.
+  3. Setup:
+     - Cozmo **on the floor**, not a table: after a PotentialCliff the engine turns stop-on-cliff off (M4-019 SC7);
+     - off the charger, with about 10 cm clear in front and behind;
+     - one cube powered and within about 30 cm.
+  4. Copy the `re-analysis/acceptance/hardware/<stamp>-CONTROL/` folder to Downloads.
+  5. **What this run answers:**
+     - whether the robot echoes origin 1 (M4-021);
+     - whether DefaultCameraParams arrives after SetCameraParams{0,0,true} (M3-019/021), and the image brightness;
+     - whether cube telemetry arrives after the WakeUp lights (M4-024);
+     - the new stream budget with FACE/AUDIO/ANIM;
+     - the track locks and the backpack light rate.
+  6. M5 (animation) is not in this run; its batch is in progress.
 
 - **Standing authorisations and current plan (operator, 2026-09-24, supersedes the governing plan below where they differ):**
   - **Pushing:** the manager may push to GitHub `origin main` whenever a robot run is ready, so the operator's Cozmo machine can pull it.
