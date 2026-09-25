@@ -1,6 +1,6 @@
 # M2 protocol inventory
 
-**State: DRAFT (2026-09-24), awaiting the operator's approval.** Nothing is frozen yet. After approval the manager runs `python re-analysis/tools/fidelity.py --approve M2-protocol`. From then on, any change to this file, or to an M2 record's title, authority, evidence, live_path, hardware_required or status, fails the checker until a new approval. The one exception is an IMPLEMENTATION_GAP being built.
+**State: approved by the manager on 2026-09-24 under the operator's standing authorisation of that day. The authorisation: source-derived inventories and ordinary source-fidelity decisions need no operator checkpoint; only a deliberate divergence from the engine, or an unresolved source question that materially affects robot behaviour, goes to the operator. MD1..MD6 were reviewed on that basis. None diverges from the engine: MD1, MD2 and MD3 follow the source; MD4 confirms that nothing sends SetAccessoryDiscovery automatically; MD5 and MD6 change no wire behaviour. The inventory is frozen with `python re-analysis/tools/fidelity.py --approve M2-protocol`.**
 
 ## Where this comes from
 
