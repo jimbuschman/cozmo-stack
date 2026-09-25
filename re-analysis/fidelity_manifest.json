@@ -1072,7 +1072,7 @@
       "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "EngineAppLayerTests.M1_041_CD12_CD20_ReadyIsSetInTheSuccessBroadcastAndStreamingOpensWithTheFirstSyncedState, EngineAppLayerTests.M1_041_CD17_CD18_CD22_M1_042_PostSuccessSendsInOrder, EngineAppLayerTests.M1_041_CD19_AMissingSyncTimeAckIsWarnedOnceAndNeverRetried, EngineAppLayerTests.M1_041_CD22_EachCrashReportAsksForTheNextUpToIndex3, EngineAppLayerTests.M1_041_CD23_RobotStateIsDroppedUntilSyncTimeAck, M4ControlTests.M4_020_CD18_SyncTimeSendsAbsoluteLocalizationUpdateAfterImageRequest, M4ControlTests.M1_041_CD18_SyncTimeClearsTheRobotStateHistory"
+      "test": "EngineAppLayerTests.M1_041_CD12_CD20_ReadyWaitsForNvIdleAndStreamingOpensWithTheFirstSyncedState, EngineAppLayerTests.M1_041_CD17_CD18_CD22_M1_042_PostSuccessSendsInOrder, EngineAppLayerTests.M1_041_CD19_AMissingSyncTimeAckIsWarnedOnceAndNeverRetried, EngineAppLayerTests.M1_041_CD22_EachCrashReportAsksForTheNextUpToIndex3, EngineAppLayerTests.M1_041_CD23_RobotStateIsDroppedUntilSyncTimeAck, M4ControlTests.M4_020_CD18_SyncTimeSendsAbsoluteLocalizationUpdateAfterImageRequest, M4ControlTests.M1_041_CD18_SyncTimeClearsTheRobotStateHistory"
     },
     {
       "id": "M1-042",
@@ -3464,22 +3464,19 @@
     },
     {
       "subsystem": "M11-vision",
-      "title": "The NV read request: the tag, a non-zero length, a zero second byte, and no chunking",
-      "location": "cozmo-stack/src/Cozmo.Robot/Vision/CameraCalibration.cs",
+      "title": "The NV CameraCalib read request: tag 0x80000001, length 1, READ, a zero second byte; replies assemble by index",
+      "location": "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
       "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so",
       "evidence": [
-        "NVStorage::EnumToString(NVEntryTag) 0x007CEE38 dispatches 0x80000000..0x80000012 through a jump table whose index 1 is NVEntry_CameraCalib, so the tag 0x80000001 is the engine's own value",
-        "NVStorageComponent::ProcessRequest 0x00644FD4 dispatches on the operation with a tbh at 0x00645032; the READ case at 0x0064503E writes the tag and op 0 into the command at this+0xDC and then sets the length",
-        "the length is the entry's maximum size: the factory size table when IsFactoryEntryTag 0x006440D4 says so, and otherwise the literal 0x400 at 0x0064536A",
-        "the factory size table's keys are factory-block tags: InitSizeTable 0x00643C76 emplaces 0xDE000 and 0xDE030, and IsTagInFactoryBlock 0x006441D8 bounds the block at 0xDE000..0xFC000. The lookup is an unsigned walk, so 0x80000001 falls off the end and IsFactoryEntryTag returns false - the camera calibration asks for 0x400",
-        "the command's second byte is zeroed by the component's constructor (strb r7 = 0 at 0x006428AA) and nothing writes it again",
-        "MORE and the base-tag reassembly of HandleNVOpResult 0x00642F8C are for multi-blob entries, and IsMultiBlobEntryTag 0x00643FA6 tests the tag against 0x7FFF0000, which 0x80000001 does not touch; the calibration is a single blob",
-        "the message is commandNV 0x81, which is what the generated NVCommand carries"
+        "CONTROL hardware capture re-analysis/acceptance/hardware/20260925-061148-CONTROL/result.json (nvCalibrationRead): the stack's Length=1024 request drew 9 MORE replies whose Length values are indices 5,6,7,0,3,2,1,4,15, with index 0 holding a 56-byte calibration; concatenating them gave 248 bytes and failed the 56-byte check",
+        "PROJECT_STATE.md (NV calibration read): the engine sends Length = 1 for the factory tag 0x80000001 (_maxFactoryEntrySizeTable) and reassembles each reply at index x 1024; robot+0x24 is mfgId word 1",
+        "libcozmoEngine.so: EnumToString(NVEntryTag) 0x007CEE38 (index 1 = NVEntry_CameraCalib); ProcessRequest 0x00644FD4; HandleNVOpResult 0x00642F8C; IsMultiBlobEntryTag 0x00643FA6; the constructor zeroes the command's second byte at 0x006428AA",
+        "the message is commandNV 0x81, which the generated NVCommand carries"
       ],
       "prior": "the request was sent with a length of zero and the framing recorded as inferred and hardware-pending",
       "live_path": true,
-      "test": "VisionTests.TheNvReadRequestAsksForTheEntrysMaximumSize",
+      "test": "VisionTests.TheNvReadRequestUsesLengthOneForTheCameraCalibration, VisionTests.TheCalibrationStructRoundTripsAndIndexedNvResultsAssemble",
       "id": "M11-011"
     },
     {
@@ -4946,12 +4943,12 @@
       ],
       "effect": "vision never starts, or starts without the robot calibration",
       "authority": "libcozmoEngine.so 3.4.0-1204",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): CameraSettings.OnRobotConnected queues the NV CameraCalib read (tag 0x80000001) through this stack's NV path (NvCalibrationReader, no timeout). Its callback logs Failed / SizeMismatch (size != 56) / Recvd, installs the calibration on success (CameraSettings.Calibration, handed to VisionSystem) and sets VisionEnabled on all three paths (handed to VisionSystem.Enabled). VisionEnabled is false from construction and after a removal.",
-      "unresolved": "MISSING: the distortion coefficients are zeroed when robot+0x24 <= 6, and what robot+0x24 holds is not established (gap-pass open question 4), so they are installed as read. Not built here (M11, A4): the engine's +0x48 starts 0 (2a) and only the callback sets it, but VisionSystem.Enabled defaults to true and is a public setter, so vision is not enabled only by the callback; the gate that reads it is the M11 VisionComponent's. The NV wire exchange and its timeout are the NV subsystem's.",
+      "status": "EXACT_SOURCE",
+      "provenance": "the connection handler (1h), the NV callback (1j) and the +0x48 gate (2a..2f) reproduced in Camera.cs/CameraSettings; the NV wire exchange is a separate component (NvStorage.cs, recorded as M11-011)",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "M3DeviceTests.M3_022_1j_TheCalibrationCallbackEnablesVisionOnEveryPath, M3DeviceTests.M3_019_M3_022_M3_023_1h_TheConnectionSendsSetCameraParamsAndQueuesTheCalibrationRead"
+      "test": "M3DeviceTests.M3_022_1j_TheCalibrationCallbackEnablesVisionOnEveryPath, M3DeviceTests.M3_019_M3_022_M3_023_1h_TheConnectionSendsSetCameraParamsAndQueuesTheCalibrationRead, M3DeviceTests.M3_022_1j_BodyHardwareAtMostSixZeroesTheDistortionCoefficients"
     },
     {
       "id": "M3-023",

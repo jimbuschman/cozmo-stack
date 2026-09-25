@@ -693,7 +693,6 @@ public sealed class EngineRobot
 {
     internal CozmoEngine Engine { get; }
     internal IdleTimeoutComponent Idle { get; }
-    private readonly List<Action> _nvOnIdle = new();
     private int? _crashReportIndex;
     private volatile bool _timeSynced, _readyToStream, _firstFullState, _streamGate;
 
@@ -950,26 +949,13 @@ public sealed class EngineRobot
 
     // fidelity: M1-041
     /// <summary>
-    /// NVStorage::AddOneShotOnIdleCallback (CD20; 0x00645C20..0x00645C32, batch 3 verifier reading): the callback is
-    /// appended, then ProcessOnIdleCallbacks is tail-called (0x00645B08..0x00645B26), which runs the callbacks only
-    /// when the NV request deque is empty and the NV state is 0. This stack has no NV request queue (the NV
-    /// subsystem is outside M1), so the deque is always empty and the state 0: the callback runs at once, inside the
-    /// Success broadcast.
+    /// NVStorage::AddOneShotOnIdleCallback (CD20; 0x00645C20..0x00645C32). The callback is appended and runs from
+    /// <see cref="NvStorageComponent.ProcessOnIdle"/> only when the NV request deque is empty and nothing is in
+    /// flight, so the AnimationStreamer (ready to stream) starts only after every queued NV request has drained.
+    /// It is not run at the moment it is added, or the calibration read queued later in the same connection
+    /// broadcast would be missed.
     /// </summary>
-    internal void NvOnIdle(Action callback)
-    {
-        _nvOnIdle.Add(callback);
-        ProcessNvOnIdleCallbacks();
-    }
-
-    /// <summary>ProcessOnIdleCallbacks (CD20): with no NV request pending (always, in this stack) each callback runs once and is removed.</summary>
-    private void ProcessNvOnIdleCallbacks()
-    {
-        if (_nvOnIdle.Count == 0) return;
-        var run = _nvOnIdle.ToArray();
-        _nvOnIdle.Clear();
-        foreach (var a in run) a();
-    }
+    internal void NvOnIdle(Action callback) => Engine.NvStorage?.OnIdle(callback);
 
     // fidelity: M1-041
     /// <summary>
@@ -998,9 +984,9 @@ public sealed class EngineRobot
     /// Robot::Update (CD12): the idle component always runs; then the SyncTimeAck check (CD19: +0x520 &gt; 0 and
     /// now &gt; +0x520 + 5.0 s warns "SyncTimeAckNotReceived" and sets +0x520 = 0; never retried); then, if the first
     /// full state has not been handled, it returns. After that: ActionList (none in this stack), the
-    /// AnimationStreamer only if synced and ready to stream, then NVStorage (no NV requests exist in this stack, so
-    /// its update has nothing to do: the on-idle callbacks already ran when added, CD20). The later components (path,
-    /// block filter, object connection, map, lights) run in their own layers in this stack.
+    /// AnimationStreamer only if synced and ready to stream, then NVStorage (its on-idle callbacks run here when
+    /// the request deque is empty and nothing is in flight, CD20, which is what opens ready to stream). The later
+    /// components (path, block filter, object connection, map, lights) run in their own layers in this stack.
     /// </summary>
     internal void Update()
     {
@@ -1017,6 +1003,10 @@ public sealed class EngineRobot
         // CD12: AnimationStreamer::Update runs here, only while synced and ready to stream; each call is one engine
         // Update of the streamer (C15).
         if (AnimationStreamingOpen && Engine.AnimationStreamerUpdate is { } streamer) Engine.RunIsolated(streamer);
+        // fidelity: M1-041, M3-022
+        // CD12: NVStorage::Update runs here, after the animation streamer: its on-idle callbacks run now if the
+        // request deque is empty and nothing is in flight, which is what gates ready to stream (CD20).
+        Engine.NvStorage?.ProcessOnIdle();
         // fidelity: M4-010, M4-017, M4-018, M4-023
         // CD2/CD12: after that, BlockTapFilter (0x00513EA4), BlockFilter, CheckDisconnected, ConnectToRequested
         // (0x0051422A..0x00514236), CubeLight::Update(true) (0x00514468) and BodyLight (0x00514470).
@@ -1219,7 +1209,8 @@ internal sealed class RobotInitialConnection
     /// The mfgId lambda (CB18): +0x24 = serial (word 0); +0x28 = hw (word 1); +0x2C = colour only if the low byte of
     /// word 2 is in {0, 2, 3, 4}, else an error and 0xFF; $session_id = a new UUID; SendConnectionResponse(0, fw);
     /// then ReadLabAssignmentsFromRobot(serial) and ConnectRobotToNeedsManager(serial) (CD16).
-    /// MISSING: the two NV reads belong to the NV subsystem, which this stack does not have; they are not made.
+    /// MISSING: the two NV reads (ReadLabAssignmentsFromRobot(serial) and ConnectRobotToNeedsManager(serial)) are
+    /// still not made; the robot-level NV component now exists (<see cref="NvStorageComponent"/>).
     /// </summary>
     private void HandleMfgId(ManufacturingID id, uint fw)
     {
@@ -1370,8 +1361,10 @@ public sealed class CozmoEngine : IDisposable
     internal Action<Exception>? Faulted;
     /// <summary>AnimationStreamer::Update, run by Robot::Update while synced and ready to stream (CD12, C15).</summary>
     internal Action? AnimationStreamerUpdate;
-    /// <summary>The VisionComponent's RobotConnectionResponse subscriber, run in its place in the Success broadcast (CD21, 1h).</summary>
-    internal Action? VisionConnected;
+    /// <summary>The VisionComponent's RobotConnectionResponse subscriber, run in its place in the Success broadcast (CD21, 1h). Its argument is the body hardware version (mfgId word 1, the engine Robot's +0x24).</summary>
+    internal Action<int>? VisionConnected;
+    /// <summary>The robot-level NV storage owner (NVStorageComponent), set by CozmoRobot; one queue serves every read.</summary>
+    internal NvStorageComponent? NvStorage { get; set; }
     /// <summary>RobotStateHistory::Clear, run by Robot::SyncTime (CD18).</summary>
     internal Action? RobotStateHistoryClear;
     /// <summary>UpdateFullRobotState's storage before the origin check (RS1: the robot clock), for a synced state.</summary>
@@ -1628,7 +1621,7 @@ public sealed class CozmoEngine : IDisposable
             robot.NvOnIdle(() => robot.ReadyToStream = true);
         });
         // fidelity: M3-019, M3-022
-        if (VisionConnected is { } vision) Isolated(vision);
+        if (VisionConnected is { } vision) Isolated(() => vision(resp.BodyHWVersion));
         Isolated(robot.TracePrinterOnConnected);
         // fidelity: M1-042
         if (AfterSuccessDefaults is { } defaults) Post(defaults);

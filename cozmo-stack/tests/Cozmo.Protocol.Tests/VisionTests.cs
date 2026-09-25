@@ -521,7 +521,7 @@ public class VisionTests
     // ------------------------------------------------------------------ calibration
 
     [Fact]
-    public void TheCalibrationStructRoundTripsAndChunkedNvResultsAssemble()
+    public void TheCalibrationStructRoundTripsAndIndexedNvResultsAssemble()
     {
         var cal = new CameraCalibration { FocalLengthX = 290.5, FocalLengthY = 291.2, CenterX = 158.7, CenterY = 121.3, Skew = 0, Rows = 240, Columns = 320,
                                           DistortionCoefficients = new[] { -0.05, 0.01, 0, 0, 0, 0, 0, 0 } };
@@ -532,35 +532,41 @@ public class VisionTests
         Assert.Equal(240, back.Rows);
         Assert.Equal(-0.05, back.DistortionCoefficients[0], 6);
 
-        using var robot = CozmoRobot.CreateOffline();
-        robot.Transport.OfflineAcceptConnection();
-        using var reader = new NvCalibrationReader(robot);
-        Assert.Null(reader.Handle(new NVOpResult { Tag = CameraCalibration.NvEntryTag, Op = 0, Result = NvCalibrationReader.ResultMore, Data = bytes[..20] }));
-        var got = reader.Handle(new NVOpResult { Tag = CameraCalibration.NvEntryTag, Op = 0, Result = NvCalibrationReader.ResultOkay, Data = bytes[20..] });
+        using var rig = new WorldRig();
+        var nv = rig.Robot.Engine.NvStorage!;
+        NvResult? got = null;
+        nv.Read(CameraCalibration.NvEntryTag, CameraSettings.CalibrationReadLength, r => got = r);
+        // The CONTROL capture's parts arrived 5,6,7,0,3,2,1,4,15: NVOpResult.Length is the index, so arrival
+        // order must not matter. Index 0 held the valid 56-byte calibration; the other blobs are other indices.
+        void Part(int index, byte[] data) =>
+            rig.Send(new NVOpResult { Tag = CameraCalibration.NvEntryTag, Op = 0, Result = NvStorageComponent.ResultMore, Length = index, Data = data });
+        foreach (var i in new[] { 5, 6, 7, 3, 2, 1, 4, 15 }) Part(i, new byte[] { 1, 2, 3, 4 });
+        Part(0, bytes);
+        rig.Send(new NVOpResult { Tag = CameraCalibration.NvEntryTag, Op = 0, Result = NvStorageComponent.ResultOkay, Length = 0, Data = Array.Empty<byte>() });
+
         Assert.NotNull(got);
-        Assert.Equal(291.2, got!.FocalLengthY, 3);
-        // another tag is ignored
-        Assert.Null(reader.Handle(new NVOpResult { Tag = 0x80000002, Result = 0, Data = bytes }));
+        Assert.Equal(0, got!.Value.Result);
+        Assert.Equal(CameraCalibration.WireSize, got.Value.Data.Length);       // exactly 56, not concatenated
+        Assert.Equal(291.2, CameraCalibration.Unpack(got.Value.Data).FocalLengthY, 3);
+
         Assert.Throws<FormatException>(() => CameraCalibration.Parse(new byte[CameraCalibration.WireSize]));
     }
 
     /// <summary>
-    /// The NV read request, as ProcessRequest 0x00644FD4 builds it: the engine's own tag, a non-zero
-    /// length - the entry's maximum size, which for any tag the factory size table does not name is the
-    /// 0x400 at 0x0064536A - the READ op, and a second byte the component's constructor zeroes and never
-    /// writes again (0x006428AA). This stack sent a length of zero.
+    /// The NV read request, as the recovered engine builds it for <c>NVEntry_CameraCalib</c>: the tag
+    /// 0x80000001, length 1 (the factory size table's value for the tag, contradicting the old 0x400), READ, and
+    /// a second byte the component's constructor zeroes and never writes again (0x006428AA).
     /// </summary>
     [Fact]
-    public void TheNvReadRequestAsksForTheEntrysMaximumSize()
+    public void TheNvReadRequestUsesLengthOneForTheCameraCalibration()
     {
         Assert.Equal(0x80000001u, CameraCalibration.NvEntryTag);
-        Assert.Equal(0x400, NvCalibrationReader.NvReadLength);
+        Assert.Equal(1, CameraSettings.CalibrationReadLength);
 
         using var robot = CozmoRobot.CreateOffline();
         robot.Transport.OfflineAcceptConnection();
-        using var reader = new NvCalibrationReader(robot);
         robot.Transport.OfflineOutbound.Clear();
-        _ = reader.ReadAsync(TimeSpan.FromMilliseconds(1));
+        robot.Engine.NvStorage!.Read(CameraCalibration.NvEntryTag, CameraSettings.CalibrationReadLength, _ => { });
         robot.Transport.OfflineTick();
 
         List<NVCommand> Commands() => robot.Transport.OfflineOutbound
@@ -574,8 +580,8 @@ public class VisionTests
         while (Commands().Count == 0 && DateTime.UtcNow < end) { robot.Transport.OfflineTick(); Thread.Sleep(2); }
         var cmd = Commands()[0];
         Assert.Equal(CameraCalibration.NvEntryTag, cmd.Tag);
-        Assert.Equal(NvCalibrationReader.NvReadLength, cmd.Length);
-        Assert.Equal(NvCalibrationReader.OpRead, cmd.Op);
+        Assert.Equal(1, cmd.Length);
+        Assert.Equal(NvStorageComponent.OpRead, cmd.Op);
         Assert.Equal(0, cmd.Unknown);
         Assert.Empty(cmd.Data);
     }

@@ -973,14 +973,15 @@ public class EngineAppLayerTests
 
     /// <summary>
     /// PRIMARY-SOURCE ORACLE. M1-041 CD20/CB22: RobotEventHandler adds the ready-to-stream callback with
-    /// AddOneShotOnIdleCallback, which appends it and then runs ProcessOnIdleCallbacks (0x00645C20..0x00645C32,
-    /// 0x00645B08..0x00645B26): with no NV request pending it runs at once, so +0x2A is set inside the Success
-    /// broadcast. CD12: Robot::Update returns before the AnimationStreamer until the first full state, and the
+    /// AddOneShotOnIdleCallback (0x00645C20..0x00645C32). It runs only when the NV request deque is empty and
+    /// nothing is in flight (0x00645B08..0x00645B26), so it waits for the connection-time calibration read that
+    /// VisionComponent queues in the same broadcast (CD21); that read's terminal result drains the queue and +0x2A
+    /// is then set. CD12: Robot::Update returns before the AnimationStreamer until the first full state, and the
     /// streamer runs only when synced and ready (0x00513BF2..0x00514470), so streaming opens in the Robot::Update of
     /// the tick that handles SyncTimeAck and the first state.
     /// </summary>
     [Fact]
-    public void M1_041_CD12_CD20_ReadyIsSetInTheSuccessBroadcastAndStreamingOpensWithTheFirstSyncedState()
+    public void M1_041_CD12_CD20_ReadyWaitsForNvIdleAndStreamingOpensWithTheFirstSyncedState()
     {
         using var rig = new Rig();
         rig.ToValidated();
@@ -988,12 +989,41 @@ public class EngineAppLayerTests
         bool? readyInBroadcast = null;
         rig.Robot.Message += m => { if (m is ManufacturingID) readyInBroadcast = rig.Engine.Robot?.ReadyToStream; };
         rig.Tick();
-        Assert.True(readyInBroadcast);                              // set during the mfgId emit, before the public event ran
+        Assert.False(readyInBroadcast);                             // the calibration read is in flight (CD20/CD21)
+        Assert.False(rig.Engine.Robot!.ReadyToStream);
         Assert.False(rig.Robot.AnimationStreamingOpen);             // no first full state yet (CD12)
+
+        // the read completes: the queue drains, and the on-idle callback then sets +0x2A
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.True(rig.Engine.Robot!.ReadyToStream);
+
         rig.Data(new SyncTimeAck());
         rig.Data(new RobotState { Timestamp = 2, PoseOriginId = 1 });
         rig.Tick();
         Assert.True(rig.Robot.AnimationStreamingOpen);
+    }
+
+    /// <summary>
+    /// M3-022 / M1 CD20: the terminal ordering. The request's callback — which installs the calibration and
+    /// enables vision — runs to completion before the request is treated as idle, so ready to stream cannot be set
+    /// before the calibration callback. The CONTROL run's first attempt set it about 5 ms early.
+    /// </summary>
+    [Fact]
+    public void M3_022_CD20_ReadyToStreamIsSetAfterTheCalibrationCallback()
+    {
+        using var rig = new Rig();
+        bool? readyWhenInstalled = null, readyWhenVisionEnabled = null;
+        rig.Robot.CameraSettings.CalibrationInstalled += _ => readyWhenInstalled = rig.Engine.Robot?.ReadyToStream;
+        rig.Robot.CameraSettings.VisionEnabledSet += () => readyWhenVisionEnabled = rig.Engine.Robot?.ReadyToStream;
+        rig.ToSuccess();
+        var cal = Cozmo.Robot.Vision.CameraCalibration.Nominal().ToBytes();
+        Assert.Equal(Cozmo.Robot.CameraSettings.CalibrationBytes, cal.Length);
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = cal });
+        rig.Tick();
+        Assert.False(readyWhenInstalled);                    // the calibration callback saw readiness still unset
+        Assert.False(readyWhenVisionEnabled);
+        Assert.True(rig.Engine.Robot!.ReadyToStream);        // and it is set once the request is complete and idle
     }
 
     /// <summary>
@@ -1235,6 +1265,8 @@ public class EngineAppLayerTests
     private static void UseEveryDevice(Rig rig, Cozmo.Robot.Vision.VisionSystem vision)
     {
         var robot = rig.Robot;
+        // CD20: ready to stream waits for the NV queue to drain; answer the calibration read so the streamer runs.
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
         rig.Data(new SyncTimeAck());
         rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true, AutoStarted = true });
         rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false });
@@ -1275,7 +1307,11 @@ public class EngineAppLayerTests
         Assert.True(robot.Display.FramesSent > 0 && robot.Audio.FramesSent > 0);
         Assert.True(robot.Lights.HeadlightOn);
         Assert.NotEmpty(robot.CubeAccel.Streaming);
-        Assert.True(robot.Animations.Scheduler.LiveStreamActive);
+        // LiveStreamActive is the idler's live layer being the streaming one, which the streamer creates on its
+        // Update; tick until it has run (the offline seam has no engine thread).
+        for (int i = 0; i < 5 && !robot.Animations.Scheduler.LiveStreamActive; i++) rig.Tick();
+        Assert.True(robot.Animations.Scheduler.LiveStreamActive,
+            $"the live stream never became active; streamingOpen={robot.Engine.Robot?.AnimationStreamingOpen}");
         Assert.True(vision.History.Count > 0 && vision.World.Objects.Count == 1 && vision.Faces.Count == 1 && vision.Pets.Pets.Count == 1);
     }
 
@@ -1357,6 +1393,8 @@ public class EngineAppLayerTests
         Assert.Equal(RobotConnectionResult.Success, rig.Responses[1].Result);
         rig.Tick();                                        // the app defaults again (policy M1-042)
         Assert.True(rig.Robot.Cubes.Connections.AutoBlockPoolEnabled);
+        // CD20: the second connection queues another calibration read; drain it so ready to stream opens.
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
         rig.Data(new SyncTimeAck());
         rig.Data(new RobotState { Timestamp = 7, PoseOriginId = 1 });
         rig.Tick();
@@ -1454,6 +1492,8 @@ public class EngineAppLayerTests
         using var rig = new Rig();
         var audio = rig.Robot.Audio;
         rig.ToSuccess();
+        // CD20: ready to stream waits for the NV queue to drain; answer the calibration read so streaming opens.
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
         rig.Data(new SyncTimeAck());
         rig.Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });
         rig.Data(new AnimationState { Timestamp = 11 });

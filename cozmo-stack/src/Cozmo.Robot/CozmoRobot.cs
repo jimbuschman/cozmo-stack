@@ -261,6 +261,10 @@ public sealed class CozmoRobot : IDisposable
         Camera.EventTime = () => Engine.Timer.Seconds;
         Camera.Log += l => Engine.Log(l);
         CameraSettings.Log += l => Engine.Log(l);
+        // fidelity: M3-022
+        // One robot-level NV storage owner serves every read (NVStorageComponent): the VisionComponent's
+        // connection-time calibration read is queued on it rather than subscribing on its own.
+        Engine.NvStorage = new NvStorageComponent(this);
         // fidelity: M3-019, M3-022, M3-013
         Engine.VisionConnected = CameraSettings.OnRobotConnected;
         Engine.AnimationStreamerUpdate = Animations.EngineUpdate;
@@ -586,6 +590,7 @@ public sealed class CozmoRobot : IDisposable
             }
         }
         catch { }
+        try { Engine.NvStorage?.Dispose(); } catch { }
         Engine.Dispose();
         Transport.Dispose();
     }
@@ -629,6 +634,9 @@ public sealed class CozmoRobot : IDisposable
     /// </summary>
     private void ResetDevices()
     {
+        // fidelity: M3-022
+        // A disconnect discards the NV queue and the in-flight read without invoking its callback.
+        Route(() => Engine.NvStorage?.OnDisconnected());
         Route(() => Animations.Stop());
         Route(Animations.ResetToConstructed);
         Route(Face.ResetToConstructed);

@@ -1511,6 +1511,8 @@ public class M5AnimationTests
         Assert.True(SpinWait.SpinUntil(() => port.Messages().Any(m => m is GetManufacturingInfo), 3000));
         Data(new ManufacturingID { SerialNumber = 0xABCD, BodyHwVersion = 7, BodyColor = 2 });
         Assert.True(SpinWait.SpinUntil(() => port.Messages().Any(m => m is SyncTime), 3000));
+        // CD20: ready to stream waits for the NV queue to drain; answer the calibration read so streaming opens.
+        Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
         Data(new SyncTimeAck());
         Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });
         Assert.True(SpinWait.SpinUntil(() => robot.AnimationStreamingOpen, 3000));

@@ -433,7 +433,7 @@ internal sealed class ControlRun
     private CozmoRobot? _robot;
     private RobotConnectionResponse? _response;
     private double _responseT = double.NaN;
-    private double _visionEnabledT = double.NaN, _calibrationInstalledT = double.NaN;
+    private double _visionEnabledT = double.NaN, _calibrationInstalledT = double.NaN, _readyToStreamT = double.NaN;
     /// <summary>Set once the run-wide observations (CONNECT's origins, camera params and NV read; the backpack light rate) are taken.</summary>
     private int _lateObserved;
     private JsonObject? _runObservations;
@@ -816,6 +816,7 @@ internal sealed class ControlRun
             Thread.Sleep(2);
         }
         Mark("connectDone");
+        _readyToStreamT = readyT;
         var resp = _response;
         double Rel(double t) => t - call;
         var firmwareLines = _engineLog.ToArray().Where(l => l.Line.Contains("robot firmware", StringComparison.Ordinal)).Select(l => l.Line).ToList();
@@ -1016,7 +1017,37 @@ internal sealed class ControlRun
                 ["calibrationInstalledAfterConnectMs"] = double.IsNaN(_calibrationInstalledT) ? null : LinkCheck.Num(_calibrationInstalledT - call),
                 ["calibration"] = cs?.Calibration?.ToString(),
             },
-            "M3-022 is IMPLEMENTATION_GAP, and the robot's answer to the read is robot-side");
+            "M3-022 is EXACT_SOURCE; the robot's answer to the read is robot-side, but the request and the callback are judged below");
+
+        // --- the NV request, indexed assembly, install and enable (M3-022, M1-041 CD20)
+        var nvCmds = nvOut.Select(s => TryParse(s.Payload)).OfType<NVCommand>().ToList();
+        var readCal = cs?.Calibration;
+        bool nvRequestOk = nvCmds.Count == 1
+                           && nvCmds[0].Tag == Cozmo.Robot.Vision.CameraCalibration.NvEntryTag
+                           && nvCmds[0].Length == Cozmo.Robot.CameraSettings.CalibrationReadLength
+                           && nvCmds[0].Op == NvStorageComponent.OpRead;
+        c.Crit("nvCalibrationRequest",
+            "the connection-time NV read is one commandNV with tag 0x80000001, length 1, op 0 (READ)",
+            new JsonObject { ["commands"] = new JsonArray(nvCmds.Select(m => (JsonNode)new JsonObject { ["tag"] = $"0x{m.Tag:X8}", ["length"] = m.Length, ["op"] = m.Op }).ToArray()) },
+            nvRequestOk);
+        c.Crit("nvCalibrationInstalled",
+            "the indexed replies assemble to exactly 56 bytes and install the calibration",
+            new JsonObject { ["installed"] = readCal is not null, ["calibration"] = readCal?.ToString(), ["nvOpResults"] = nvIn.Count },
+            readCal is not null);
+        bool hwLe6 = (cs?.BodyHwVersion ?? -1) <= 6;
+        bool distZeroed = readCal is not null && readCal.DistortionCoefficients.All(d => d == 0);
+        c.Crit("nvCalibrationDistortion",
+            "a body hardware version <= 6 zeroes all eight distortion coefficients (the operator's robot reports 4)",
+            new JsonObject { ["bodyHwVersion"] = cs?.BodyHwVersion, ["distortion"] = readCal is null ? null : new JsonArray(readCal.DistortionCoefficients.Select(d => (JsonNode)d).ToArray()) },
+            !hwLe6 || distZeroed);
+        c.Crit("nvVisionEnabled",
+            "vision is enabled from the calibration callback (all three paths)",
+            new JsonObject { ["visionEnabled"] = cs?.VisionEnabled, ["afterConnectMs"] = double.IsNaN(_visionEnabledT) ? null : LinkCheck.Num(_visionEnabledT - call) },
+            cs?.VisionEnabled == true);
+        c.Crit("nvReadyAfterCalibration",
+            "ready to stream is set only after the NV queue drains (after the calibration callback)",
+            new JsonObject { ["readyAfterConnectMs"] = double.IsNaN(_readyToStreamT) ? null : LinkCheck.Num(_readyToStreamT - call), ["calibrationInstalledAfterConnectMs"] = double.IsNaN(_calibrationInstalledT) ? null : LinkCheck.Num(_calibrationInstalledT - call) },
+            double.IsNaN(_readyToStreamT) || double.IsNaN(_calibrationInstalledT) || _readyToStreamT >= _calibrationInstalledT);
     }
 
     /// <summary>The rate of the backpack light messages (0x03 BackpackLightsMiddle, 0x11 BackpackLightsTurnSignals) over the connected run.</summary>
@@ -1849,6 +1880,14 @@ internal sealed class ControlRun
     private void DisconnectCheck(CheckRec c, bool judge)
     {
         var robot = _robot!;
+        var transport = robot.Transport;
+        // Diagnostics for the teardown race: was the transport still connected at Dispose, and did it send
+        // anything during the teardown? Distinguishes "no peer" (teardown defect) from "peer present but the
+        // one flushed DisconnectRequest send attempt did not emit a frame" (the M1-019 one-attempt caveat).
+        string? peerAtDispose = transport.Peer?.ToString();
+        string stateAtDispose = transport.State.ToString();
+        long udpSentAtDispose = transport.UdpMessagesSent;
+        long udpBytesAtDispose = transport.UdpBytesSent;
         double call = Mark("disposeCall");
         string? ex = null;
         var sw = Stopwatch.StartNew();
@@ -1865,6 +1904,10 @@ internal sealed class ControlRun
 
         c.Measured["disposeMs"] = LinkCheck.Num(returned - call);
         c.Measured["exception"] = ex;
+        c.Measured["peerAtDispose"] = peerAtDispose;
+        c.Measured["stateAtDispose"] = stateAtDispose;
+        c.Measured["udpMessagesSentDelta"] = transport.UdpMessagesSent - udpSentAtDispose;
+        c.Measured["udpBytesSentDelta"] = transport.UdpBytesSent - udpBytesAtDispose;
         c.Measured["disconnectRequestFrames"] = type3.Count;
         c.Measured["disconnectRequestAfterDisposeMs"] = first3 is null ? null : LinkCheck.Num(first3.T - call);
         c.Measured["messagesSentBetweenDisposeAndType3"] = new JsonArray(beforeType3.Select(t => (JsonNode)t).ToArray());
