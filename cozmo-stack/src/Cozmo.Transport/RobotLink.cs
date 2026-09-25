@@ -97,7 +97,7 @@ public sealed class RobotLink : IDisposable
         Transport.Send(new SyncTime(0, 0), flush: true);
     }
 
-    public void SetHeadAngle(float rad, float speed = 10f, float accel = 10f, float duration = 0f, byte actionId = 1)
+    public void SetHeadAngle(float rad, float speed = 10f, float accel = 20f, float duration = 0f, byte actionId = 1)   // M4 MD1: the app's 10/20
         => Transport.Send(new SetHeadAngle(rad, speed, accel, duration, actionId), flush: true);
     public void SetBackpackLights(LightState top, LightState middle, LightState bottom)
         => Transport.Send(new BackpackLightsMiddle(top, middle, bottom), flush: true);

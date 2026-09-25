@@ -46,7 +46,7 @@ public sealed class DriveToPoseAction
         if (Goal is not { } goal) { _trace.Add("DriveToPoseAction.Init.NoGoalSet"); return ActionResult.BadPose; }
         var start = _m.RobotPose();
         if (start is null) { _trace.Add("no robot state"); return ActionResult.Abort; }
-        _ = _m.Robot.Motion.SetHeadAngleAsync((float)PathFollowingHeadAngleRad, requireCalibration: false);
+        _ = _m.Robot.Motion.SetHeadAngleAsync((float)PathFollowingHeadAngleRad, CozmoMotion.ActionDefaultHeadSpeedRadPerSec, CozmoMotion.ActionDefaultHeadAccelRadPerSec2, requireCalibration: false);
         IReadOnlyList<PathSegment> path;
         if (_m.Planner is { } planner)
         {

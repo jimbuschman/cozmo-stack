@@ -696,6 +696,11 @@ public class NavigationTests
     {
         if (Lib is null) return;
         using var rig = new Rig();
+        // M4-001 MA22 / M4-016 MA15: until the head is calibrated the engine reads it at -25 deg (Robot+0x2FC from the
+        // constructor; RS6 ignores reported angles), so a move to -25 deg is already in position and sends nothing. A
+        // robot reports its connection-time calibration; this rig does not, so the test reports it here.
+        rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true });
+        rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false });
         Stack(rig, 300, 0);
         Assert.Equal(3, rig.Frame().Objects.Count);
         var ctx = Ctx(rig);

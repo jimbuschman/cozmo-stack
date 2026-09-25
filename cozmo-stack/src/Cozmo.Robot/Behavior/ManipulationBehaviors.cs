@@ -131,7 +131,7 @@ public sealed class PutDownBlockBehavior : ManipulationBehavior
     private void LookDownAtBlock()
     {
         CurrentPhase = Phase.LookingDown;
-        _ = M.Robot.Motion.SetHeadAngleAsync(-0.349066f, requireCalibration: false);
+        _ = M.Robot.Motion.SetHeadAngleAsync(-0.349066f, CozmoMotion.ActionDefaultHeadSpeedRadPerSec, CozmoMotion.ActionDefaultHeadAccelRadPerSec2, requireCalibration: false);
         // WaitForImagesAction waits for images that arrive *after* it starts. Taking the count now and
         // comparing against it is the difference between waiting for the placed cube to be re-observed and
         // waiting for nothing at all, because by this point in a run frames have always been processed.

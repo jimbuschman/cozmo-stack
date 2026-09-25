@@ -228,12 +228,23 @@ public sealed class CubeConnections
     /// </summary>
     public void OnRobotState(uint timestamp)
     {
+        SetRobotTime(timestamp);
+        Update();
+    }
+
+    // fidelity: M4-010
+    /// <summary>UpdateFullRobotState's RS1: the state's timestamp becomes the robot clock (Robot+0x2C), before the origin check.</summary>
+    public void SetRobotTime(uint timestamp)
+    {
+        lock (_gate) _robotTime = timestamp;
+    }
+
+    // fidelity: M4-010
+    /// <summary>The connection part of Robot::Update (CD1, CD2: 0x00514174..0x00514236), once per engine tick.</summary>
+    public void Update()
+    {
         List<SetPropSlot> sent;
-        lock (_gate)
-        {
-            _robotTime = timestamp;
-            sent = UpdateLocked();
-        }
+        lock (_gate) sent = UpdateLocked();
         Raise(sent);
     }
 

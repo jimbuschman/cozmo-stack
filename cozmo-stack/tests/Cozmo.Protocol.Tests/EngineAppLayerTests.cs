@@ -709,7 +709,8 @@ public class EngineAppLayerTests
     /// RobotEventHandler's SyncTime {BaseStationTimer ms, 0xC1A00000}, InitController, ImageRequest {Stream 1, QVGA 4}
     /// (0x0051521E..0x005153AE), then TracePrinter's SetAppRunID (all 0xFF) and RequestCrashReports{0}
     /// (0x0053D398..0x0053D430) — and the app's defaults (SetAudioVolume {u16 1.0 × 65535}, CD27) follow at the next
-    /// tick as a game message. The AbsoluteLocalizationUpdate is MISSING (frameId/originId) and not sent.
+    /// tick as a game message. Updated for the M4 inventory (M4-020, MD5): AbsoluteLocalizationUpdate {0, frame 0,
+    /// origin 1, 0, 0, 0} follows ImageRequest (CD18).
     /// </summary>
     [Fact]
     public void M1_041_CD17_CD18_CD22_M1_042_PostSuccessSendsInOrder()
@@ -722,10 +723,11 @@ public class EngineAppLayerTests
         uint successTickMs = rig.Engine.Timer.TimeStampMs;
         Assert.True(successTickMs > tickMs);
         // The row-backed order, as a subsequence: GetManufacturingInfo (CB16), then RobotEventHandler's chain (CD18),
-        // then TracePrinter (CD22). Where the unsent AbsoluteLocalizationUpdate would sit is not asserted.
+        // then TracePrinter (CD22).
         var ids = rig.Port.SentIds;
         var order = new[] { RobotMessageId.GetMfgInfo, RobotMessageId.SyncTime, RobotMessageId.InitAnimController,
-                            RobotMessageId.ImageRequest, RobotMessageId.AppRunID, RobotMessageId.RequestCrashReports };
+                            RobotMessageId.ImageRequest, RobotMessageId.AbsLocalizationUpdate, RobotMessageId.AppRunID,
+                            RobotMessageId.RequestCrashReports };
         AssertSubsequence(order, ids);
         RobotMessage Sent(RobotMessageId id) => rig.Port.SentMessage(ids.IndexOf(id));
         var sync = Assert.IsType<SyncTime>(Sent(RobotMessageId.SyncTime));
@@ -962,7 +964,7 @@ public class EngineAppLayerTests
         Assert.Equal(0, rig.Robot.State.StateCount);
         Assert.False(rig.Engine.Robot!.FirstFullStateHandled);
         rig.Data(new SyncTimeAck());
-        rig.Data(new RobotState { Timestamp = 2 });
+        rig.Data(new RobotState { Timestamp = 2, PoseOriginId = 1 });
         rig.Tick();
         Assert.True(rig.Engine.Robot.TimeSynced);
         Assert.Equal(1, rig.Robot.State.StateCount);
@@ -989,7 +991,7 @@ public class EngineAppLayerTests
         Assert.True(readyInBroadcast);                              // set during the mfgId emit, before the public event ran
         Assert.False(rig.Robot.AnimationStreamingOpen);             // no first full state yet (CD12)
         rig.Data(new SyncTimeAck());
-        rig.Data(new RobotState { Timestamp = 2 });
+        rig.Data(new RobotState { Timestamp = 2, PoseOriginId = 1 });
         rig.Tick();
         Assert.True(rig.Robot.AnimationStreamingOpen);
     }
@@ -1114,7 +1116,7 @@ public class EngineAppLayerTests
         using var rig = new Rig();
         rig.ToSuccess();
         rig.Data(new SyncTimeAck());
-        rig.Data(new RobotState { Timestamp = 2 });
+        rig.Data(new RobotState { Timestamp = 2, PoseOriginId = 1 });
         rig.Tick();
         var order = new List<string>();
         rig.Engine.GoToSleepRequested += () => order.Add(rig.Port.Calls.Any(c => c.StartsWith("disconnect")) ? "sleep after disconnect" : "sleep first");
@@ -1137,7 +1139,7 @@ public class EngineAppLayerTests
         using var rig = new Rig();
         rig.ToSuccess();
         rig.Data(new SyncTimeAck());
-        rig.Data(new RobotState { Timestamp = 2 });
+        rig.Data(new RobotState { Timestamp = 2, PoseOriginId = 1 });
         rig.Tick();
         var idle = rig.Engine.Robot!.Idle;
         rig.Engine.StartIdleTimeout(0.01f, -1f);
@@ -1236,6 +1238,7 @@ public class EngineAppLayerTests
         rig.Data(new ObjectAvailable { FactoryId = 0xAABBCCDD, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
         rig.Data(new ObjectAvailable { FactoryId = 0x11223344, ObjectType = ObjectType.Charger_Basic, Rssi = 60 });
         rig.Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });          // the pool asks for the cube: SetPropSlot
+        rig.Tick();                                        // M4-010 CD2: SetPropSlot goes out in Robot::Update, after the messages
         rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAABBCCDD, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
         rig.Data(new RobotState { Timestamp = 43, PoseOriginId = 1, Status = (uint)RobotStatusFlag.IsPickedUp });
         rig.Data(new CliffEvent { Timestamp = 44, DetectedFlags = 1, DidStopForCliff = true });

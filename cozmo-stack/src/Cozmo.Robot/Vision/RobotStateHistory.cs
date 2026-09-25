@@ -60,6 +60,13 @@ public sealed class RobotStateHistory
         }
     }
 
+    // fidelity: M1-041
+    /// <summary>RobotStateHistory::Clear, which Robot::SyncTime runs (M1 CD18): every state is dropped.</summary>
+    internal void Clear()
+    {
+        lock (_gate) _entries.Clear();
+    }
+
     /// <summary>The origin the robot's poses are currently reported in, from its state stream.</summary>
     public uint OriginId { get { lock (_gate) return _originId; } }
 

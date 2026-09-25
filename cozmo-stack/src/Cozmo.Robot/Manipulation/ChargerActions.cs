@@ -138,7 +138,7 @@ public sealed class MountChargerAction
             _trace.Add($"align with the charger: {a}");
             return a;
         }
-        await _m.Robot.Motion.SetHeadAngleAsync(0f, requireCalibration: false);
+        await _m.Robot.Motion.SetHeadAngleAsync(0f, CozmoMotion.ActionDefaultHeadSpeedRadPerSec, CozmoMotion.ActionDefaultHeadAccelRadPerSec2, requireCalibration: false);
 
         // ---- ConfigureTurnAndMountAction
         charger = _m.World.GetLocatedObjectById(ChargerId);

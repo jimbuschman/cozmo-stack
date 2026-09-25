@@ -1,11 +1,11 @@
 {
   "subsystem": "M4-control",
-  "approved": "2026-09-24",
+  "approved": "2026-09-25",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "9a859ae71ef7e17ff69c5be2d5643376127a418e44cdec3c8fee3ea630a8798c",
+  "inventory_sha256": "274e1f020ae43d3fffd4a83d7d12f43349ba95a0e737692b1e862759ea952b8c",
   "records": {
     "M4-001": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Head angle limits -0.436332..0.776672 rad: command clip in MoveHeadToAngleAction, state-side clamp, -25 deg before calibration",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -17,12 +17,13 @@
       "hardware_required": false
     },
     "M4-002": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Lift presets 0 LowDock 32 / 1 HighDock 76 / 2 HeightCarry 92 / 3 OutOfFOV -1; clamp to 32..92; a negative height goes to the nearer of 32 and 92",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "MA14 preset table 0x00C54684, names 0x00548EBC..0x00548EDC",
-        "MA13 MoveLiftToHeightAction::Init clamp 0x0054905E..0x005490F6, negative height 0x005490FA..0x00549140"
+        "MA13 MoveLiftToHeightAction::Init clamp 0x0054905E..0x005490F6, negative height 0x005490FA..0x00549140",
+        "C5: a negative height picks 32 only when strictly nearer; a tie goes to 92 (0x00549104..0x0054913C)"
       ],
       "live_path": true,
       "hardware_required": false
@@ -72,7 +73,7 @@
       "hardware_required": false
     },
     "M4-007": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "StopAll: the track-unlock preamble, then only StopAllMotors 0x3B",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -156,7 +157,7 @@
       "hardware_required": true
     },
     "M4-014": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Direct-drive track locks: DisableAnimTracks / EnableAnimTracks around DriveWheels, MoveHead and MoveLift",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -168,7 +169,7 @@
       "hardware_required": false
     },
     "M4-015": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "StopHead / StopLift / StopBody: unlock preamble, then MoveHead{0}, MoveLift{0}, DriveWheels{0,0,0,0}",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -186,7 +187,9 @@
         "MA15 IsHeadInPosition 0x005484F4..0x0054852C, Init no-send 0x00548544..0x0054854E; IsLiftInPosition 0x00548FEA..0x00549034, 0x005492F2..0x005492FE",
         "MA16 ack lambdas 0x0054D624 (head), 0x0054D748 (lift)",
         "MA17 completion 0x005485D8..0x005488B6, 0x005493F6..0x00549508; errors 0x04000004, 0x03000016",
-        "MA9 head tolerance >= 2 deg (0x0054803E..0x005480AC); MA13 lift angular tolerance >= 1.5 deg (0x005491D6..0x005492EE)"
+        "MA9 head tolerance >= 2 deg (0x0054803E..0x005480AC); MA13 lift angular tolerance >= 1.5 deg (0x005491D6..0x005492EE)",
+        "C1: head CheckIfDone latches in-position at +0xAC (0x005485E4..0x005485F4); hasMoved +0xAD set while MC+0xA (0x0054872E..0x00548734); failure 0x04000004 only if not in position, not moving and hasMoved (0x00548738..0x005488AC)",
+        "C6: lift CheckIfDone 0x005493F6..0x00549508 (latch after the sent-not-acked test; hasMoved while MC+0xB; 0x04000004 only if not in position, not moving and hasMoved); head latch after the ack test 0x005485D8..0x005485E2"
       ],
       "live_path": true,
       "hardware_required": false
@@ -228,20 +231,24 @@
         "SC1 ctor 0x00633FA0..0x00633FCE",
         "SC3 SendCliffDetectThresholdToRobot 0x00634270..0x00634368",
         "SC4 schedule 0x00512D7A..0x00512EA6; SC4a 0x00634514..0x006345AE; SC4b 0x006343B8..0x006344B0; SC4c 0x00634630..0x00634724; SC4d 0x006347A4..0x0063480C; SC4j 0x00511D66..0x00511DA0",
-        "SC5 CliffEvent 0x00535548..0x005356E6; SC6 0x00527E8E..0x00527EEA; SC7 PotentialCliff 0x0053582C..0x00535998; SC8 EnableStopOnCliff senders"
+        "SC5 CliffEvent 0x00535548..0x005356E6; SC6 0x00527E8E..0x00527EEA; SC7 PotentialCliff 0x0053582C..0x00535998; SC8 EnableStopOnCliff senders",
+        "C2: the 50 mm distance is the 3-D norm between MoveRobotPoseForward(pose, -20 mm or the carry literal) before and after UpdateCurrPoseFromHistory (0x00512D48..0x00512D74), accumulated from the first matching state (0x00512DD2..0x00512EA6)",
+        "C7: drive-centre XY displacement, MoveRobotPoseForward 0x00517ED0..0x00517F3E, d = -20 or 0.0 when carrying (0x00512D14); C8: charger platform SetOnChargerPlatform 0x00511D4C..0x00511DB0, set by SetOnCharger rising edge, cleared by CheckAndUpdateTreadsState 0x00512188..0x00512192 and Robot::Update 0x00513C5C..0x00513E2A"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M4-020": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "RobotState acceptance: time-sync gate, unknown origin ids dropped; origin 1 from the ctor Delocalize; AbsoluteLocalizationUpdate {0, frame 0, origin 1, identity} at SyncTime",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "SC4f UFRS gates 0x0051293C..0x00512942, ContainsOriginID 0x00512BE2..0x00512C4A",
         "SC4g PoseOriginList next id = 1 (0x0084792C..0x0084793C); UnknownOriginID = 0 (0x00C97B20)",
         "Robot::Delocalize 0x00510A24: AddNewOrigin 0x00510A66, SetNewPose 0x00510B4C, SendAbsLocalizationUpdate 0x00510BF4 when time-synced",
-        "SC4e robot+0x2B0 = 0 (0x0050FF02, 0x0051032C); SC4h SendSyncTime -> SendAbsLocalizationUpdate (0x0051526E..0x005153AE)"
+        "SC4e robot+0x2B0 = 0 (0x0050FF02, 0x0051032C); SC4h SendSyncTime -> SendAbsLocalizationUpdate (0x0051526E..0x005153AE)",
+        "C3: +0x34E (first full state) is set right after the +0x29 gate, before ContainsOriginID (0x0051293C..0x00512948); RS6, lift, SC2, IMU, treads, status bits, MovementComponent::Update and SC10 all run before the origin check",
+        "C9: +0x2C6 set by every AddVisionOnlyStateToHistory, sent by Robot::Update 0x00513CBE..0x00513CCC; treads-path Delocalize 0x00512A62..0x00512BAA (M11 pose-origin interface; the record claims only the connection-time origin 1 and the gate)"
       ],
       "live_path": true,
       "hardware_required": false
@@ -258,17 +265,18 @@
       "hardware_required": true
     },
     "M4-022": {
-      "status": "IMPLEMENTATION_GAP",
-      "title": "SetBodyRadioMode {1,0} after 16 consecutive RobotStates without IS_BODY_ACC_MODE",
+      "status": "EXACT_SOURCE",
+      "title": "SetBodyRadioMode {1,0} after 16 RobotStates without IS_BODY_ACC_MODE (the counter is not reset while the bit is set)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "SC10 / M1 CD25 0x00512AD0..0x00512B52"
+        "SC10 / M1 CD25 0x00512AD0..0x00512B52",
+        "C4: 0x00512AE0 bne 0x512b56 skips both the increment and the reset while the bit is set"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M4-023": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Cube taps: intensity > 60, a 75 ms queue broadcasting the strongest, the 500 ms double-tap window, EnableBlockTapFilter",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [

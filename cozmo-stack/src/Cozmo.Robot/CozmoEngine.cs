@@ -701,6 +701,7 @@ public sealed class EngineRobot
     {
         Engine = engine;
         Idle = new IdleTimeoutComponent(this);
+        ConstructorDelocalize();
     }
 
     /// <summary>Robot+0x29: set by SyncTimeAck (CD19), cleared by Robot::SyncTime (CB23).</summary>
@@ -788,34 +789,92 @@ public sealed class EngineRobot
         }
     }
 
-    // fidelity: M1-041
+    // fidelity: M1-041, M4-020
     /// <summary>
     /// Robot::SyncTime (CB23, CD18): +0x29 = 0; RobotStateHistory::Clear; SendSyncTime; on success +0x520 = now.
     /// SendSyncTime, every send reliable through MessageHandler: SyncTime {u32 BaseStationTimer ms, 0xC1A00000};
     /// only if that was sent, InitController; only if that was sent, ImageRequest {Stream, QVGA 4}; then the log
-    /// "Setting pose to (0,0,0)" and AbsoluteLocalizationUpdate. A failed send warns "FailedToSend" and stops.
-    /// The AbsoluteLocalizationUpdate's frameId is robot+0x2B0 (read at 0x005153A0) and its originId comes from
-    /// robot+0x294 then +0x14 (batch 3 verifier reading).
-    /// MISSING: this stack keeps neither value (no robot pose frame id, no world-origin object), so the message is
-    /// not sent; the step is reported instead of sending invented ids.
-    /// MISSING: RobotStateHistory::Clear has no counterpart owned here (the stack's history lives in VisionSystem).
-    /// SendSyncTime returns the AbsoluteLocalizationUpdate send's result (0x005153AE, batch 3 verifier reading), so
-    /// +0x520 is set only when that send succeeds. It is not sent here (above); +0x520 is set where it would have
-    /// been sent, since it goes through the same state and filter gates the three sends before it passed. This is a
-    /// choice pending the two ids.
+    /// "Setting pose to (0,0,0)" and AbsoluteLocalizationUpdate {timestamp 0, frameId robot+0x2B0, originId the current
+    /// pose origin, x 0, y 0, angle 0} (CD18; M4-020: frameId 0 and originId 1 from the constructor's Delocalize, SC4e,
+    /// SC4g, SC4h). A failed send warns "FailedToSend" and stops. SendSyncTime returns the AbsoluteLocalizationUpdate
+    /// send's result (0x005153AE), so +0x520 is set only when that send succeeds.
+    /// The history clear reaches this stack's RobotStateHistory (VisionSystem) through
+    /// <see cref="CozmoEngine.RobotStateHistoryClear"/>.
     /// </summary>
     internal void SyncTime()
     {
         TimeSynced = false;
+        if (Engine.RobotStateHistoryClear is { } clear) Engine.RunIsolated(clear);
         // fidelity: M2-004
         // SyncTime {u32 GetCurrentTimeStamp() (0x00515266), f32 -20.0 (0xC1A00000, 0x0051526C/0x00515270)}
         if (!Send(new Protocol.SyncTime(Engine.Timer.TimeStampMs, Protocol.SyncTime.EngineConstant), "SyncTime")) return;
         if (!Send(new InitController(), "InitController")) return;
         if (!Send(new ImageRequest { Mode = ImageSendMode.Stream, ImageResolution = 4 }, "ImageRequest")) return;
         Engine.Log("info: Setting pose to (0,0,0)");
-        Engine.Log("warning: MISSING: AbsoluteLocalizationUpdate not sent: its frameId and originId are not in the inventory (M1-041, CD18)");
+        if (!SendAbsLocalizationUpdate()) return;
         SyncTimeSentAt = Engine.Timer.Seconds;
     }
+
+    // fidelity: M4-020
+    /// <summary>
+    /// SendAbsLocalizationUpdate as SendSyncTime calls it (CD18, 0x00512734..0x005127B6): timestamp 0, the pose frame id
+    /// (robot+0x2B0), the pose parent's id (the current origin) and the identity pose (0, 0, 0).
+    /// </summary>
+    private bool SendAbsLocalizationUpdate() => Send(new AbsoluteLocalizationUpdate
+    {
+        Timestamp = 0, PoseFrameId = PoseFrameId, PoseOriginId = CurrentOriginId, PoseX = 0f, PoseY = 0f, PoseAngleRad = 0f,
+    }, "AbsoluteLocalizationUpdate");
+
+    // ------------------------------------------------------------ pose origins (M4-020)
+
+    // fidelity: M4-020
+    /// <summary>PoseOriginList (SC4g): the next id starts at 1 (0x0084792C..0x0084793C); UnknownOriginID 0 is never added.</summary>
+    private uint _nextOriginId = 1;
+    private readonly List<uint> _origins = new();
+
+    /// <summary>The current pose origin's id: 1 after the constructor's Delocalize.</summary>
+    public uint CurrentOriginId { get; private set; }
+    /// <summary>
+    /// Robot+0x2B0, the pose frame id: 0 from the constructor (SC4e, 0x0050FF02 and 0x0051032C). Its only other writer,
+    /// AddVisionOnlyStateToHistory, has no counterpart here, so it stays 0.
+    /// </summary>
+    public uint PoseFrameId { get; private set; }
+    /// <summary>The ids in the pose-origin list.</summary>
+    public IReadOnlyList<uint> PoseOriginIds => _origins.ToArray();
+
+    // fidelity: M4-020
+    /// <summary>
+    /// The Robot constructor's Delocalize (manager spot-check, 0x00510A24): ClearCliffRunningStats (the cache is already
+    /// 400, so nothing is sent, SC4d), PoseOriginList::AddNewOrigin (0x00510A66) creates origin 1, SetNewPose
+    /// (0x00510B4C); the constructor then puts the frame id back to 0 (0x0051032C). Not time synced, so no
+    /// AbsoluteLocalizationUpdate (0x00510BF4).
+    /// </summary>
+    private void ConstructorDelocalize()
+    {
+        CurrentOriginId = _nextOriginId++;
+        _origins.Add(CurrentOriginId);
+        PoseFrameId = 0;
+    }
+
+    /// <summary>PoseOriginList::ContainsOriginID.</summary>
+    internal bool ContainsOriginId(uint id) => _origins.Contains(id);
+
+    /// <summary>
+    /// The offline test seam only (<see cref="CozmoEngine.InitOfflineLink"/>): the seam feeds recorded or synthetic
+    /// states that were never answered by an AbsoluteLocalizationUpdate exchange, so it takes whatever origin they report
+    /// as known. Never set in production or by CozmoRobot.CreateForTest.
+    /// </summary>
+    internal bool OfflineSeamAcceptsAnyOrigin { get; set; }
+
+    /// <summary>
+    /// The last RobotState that passed the time-sync gate: what UpdateFullRobotState stores before the origin check
+    /// (RS1 timestamp, RS7 lift angle, RS10 battery, RS11 status word; M2 App. B). Null before any.
+    /// </summary>
+    internal RobotState? StoredState { get; private set; }
+
+    // fidelity: M4-022
+    /// <summary>Robot+0x34D: the RobotStates counted without IS_BODY_ACC_MODE since the last SetBodyRadioMode.</summary>
+    private int _bodyNotInAccModeCount;
 
     private bool Send(RobotMessage m, string what)
     {
@@ -828,17 +887,55 @@ public sealed class EngineRobot
     /// <summary>HandleSyncTimeAck (CD19): +0x520 = 0 and +0x29 = 1; nothing is sent.</summary>
     internal void HandleSyncTimeAck() { SyncTimeSentAt = 0; TimeSynced = true; }
 
-    // fidelity: M1-041
+    // fidelity: M1-041, M4-020, M4-022
     /// <summary>
-    /// UpdateFullRobotState's gate (CD23, CC4): before time sync the state is dropped (returns 0); the first state
-    /// after sync sets +0x34E. Returns whether the state is handled.
+    /// UpdateFullRobotState's gates (CD23, CC4; SC4f; M4 correction C3). Before time sync the state is dropped (returns
+    /// 0). Right after the +0x29 gate the first full state is marked, +0x34E = 1 (0x0051293C..0x00512948), ahead of the
+    /// origin check. Then the part before the origin check: the stored fields (RS1..RS11; the robot clock the cube path
+    /// reads, RS1; the head angle, lift angle, cliff data, IMU, treads, status bits and MovementComponent::Update, which
+    /// the devices apply, see CozmoRobot.RouteToDevices) and the body-radio-mode count (SC10, 0x00512AD0..0x00512B52: a
+    /// state without IS_BODY_ACC_MODE counts; at 16 the warning "BodyNotInAccessoryMode", SetBodyRadioMode {1, 0}
+    /// reliable, and the count restarts; a state with the bit does not reset it, C4). This stack has no ramp (+0x316
+    /// SetOnRamp has no writer here), so every state takes the off-ramp branch: ContainsOriginID(state+8)
+    /// (0x00512C3E..0x00512C4A) must pass, otherwise the warning "Received RobotState with originID" and the rest (the
+    /// pose, the history and the later steps) is skipped (0x00512EC4..0x00512F12). Returns whether the state passed the
+    /// time-sync gate; <see cref="AcceptedState"/> says whether it also passed the origin check.
     /// </summary>
-    internal bool UpdateFullRobotState(RobotState _)
+    internal bool UpdateFullRobotState(RobotState s)
     {
         if (!TimeSynced) return false;
         FirstFullStateHandled = true;
+        StoredState = s;
+        if (Engine.StateStored is { } stored) Engine.RunIsolated(() => stored(s));
+        if ((s.Status & (uint)RobotStatusFlag.IsBodyAccMode) == 0)
+        {
+            _bodyNotInAccModeCount++;
+            if (_bodyNotInAccModeCount >= 16)
+            {
+                Engine.Log("warning: Robot.UpdateFullRobotState.BodyNotInAccessoryMode");
+                Engine.Handler.SendMessage(new SetBodyRadioMode { RadioMode = BodyRadioMode.BODY_ACCESSORY_OPERATING_MODE, WifiChannel = 0 });
+                _bodyNotInAccModeCount = 0;
+            }
+        }
+        if (!OfflineSeamAcceptsAnyOrigin && !ContainsOriginId(s.PoseOriginId))
+        {
+            Engine.Log($"warning: Robot.UpdateFullRobotState: Received RobotState with originID {s.PoseOriginId}, which is not in the pose origin list (current origin {CurrentOriginId}); the pose and the later steps are skipped");
+            AcceptedState = null;
+            return true;
+        }
+        AcceptedState = s;
         return true;
     }
+
+    // fidelity: M4-020
+    /// <summary>
+    /// The last state that also passed the origin check, so that the steps after it (the pose, the history, the cliff
+    /// threshold schedule) run; null when the last synced state was origin-rejected (SC4f, C3).
+    /// </summary>
+    internal RobotState? AcceptedState { get; private set; }
+
+    /// <summary>Whether this state passed the origin check (the steps after 0x00512C4A run for it).</summary>
+    internal bool OriginAccepted(RobotState s) => ReferenceEquals(AcceptedState, s);
 
     // fidelity: M1-041
     /// <summary>
@@ -909,6 +1006,10 @@ public sealed class EngineRobot
         // CD12: AnimationStreamer::Update runs here, only while synced and ready to stream; each call is one engine
         // Update of the streamer (C15).
         if (AnimationStreamingOpen && Engine.AnimationStreamerUpdate is { } streamer) Engine.RunIsolated(streamer);
+        // fidelity: M4-010, M4-017, M4-018, M4-023
+        // CD2/CD12: after that, BlockTapFilter (0x00513EA4), BlockFilter, CheckDisconnected, ConnectToRequested
+        // (0x0051422A..0x00514236), CubeLight::Update(true) (0x00514468) and BodyLight (0x00514470).
+        if (Engine.RobotComponentsUpdate is { } components) Engine.RunIsolated(components);
     }
 }
 
@@ -1260,6 +1361,12 @@ public sealed class CozmoEngine : IDisposable
     internal Action? AnimationStreamerUpdate;
     /// <summary>The VisionComponent's RobotConnectionResponse subscriber, run in its place in the Success broadcast (CD21, 1h).</summary>
     internal Action? VisionConnected;
+    /// <summary>RobotStateHistory::Clear, run by Robot::SyncTime (CD18).</summary>
+    internal Action? RobotStateHistoryClear;
+    /// <summary>UpdateFullRobotState's storage before the origin check (RS1: the robot clock), for a synced state.</summary>
+    internal Action<RobotState>? StateStored;
+    /// <summary>The M4 components Robot::Update runs after the animation streamer (CD2, CD12).</summary>
+    internal Action? RobotComponentsUpdate;
 
     // ---- the game-facing messages
     /// <summary>RobotConnectionResponse to the game (CB19); raised on the engine thread before the engine's own subscribers (CD17).</summary>
@@ -1331,6 +1438,7 @@ public sealed class CozmoEngine : IDisposable
         r.ReadyToStream = true;
         r.FirstFullStateHandled = true;
         r.AnimationStreamingOpen = true;
+        r.OfflineSeamAcceptsAnyOrigin = true;
     }
 
     /// <summary>One engine tick now, on the calling thread (the offline seam; tests).</summary>

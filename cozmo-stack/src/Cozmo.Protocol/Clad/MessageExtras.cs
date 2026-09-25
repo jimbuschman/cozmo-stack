@@ -182,12 +182,11 @@ public partial struct LightState
 // fidelity: M2-015
 // The builders below copy their arguments into the message verbatim, as the engine's builders do
 // (MoveLiftToHeight 0x00640700, MoveHeadToAngle 0x006407CC, the DriveWheels word copies 0x0063F174..).
-// MISSING (M4): the default arguments (SetHeadAngle 10/10, SetLiftHeight 3/20) have no engine counterpart at
-// this layer; which values the original's callers pass is decided in M4. They stay because CozmoRobot.SetHeadAngle
-// and Cozmo.Conformance Probe still rely on them.
+// The default arguments are the values the original app passes on the game-message path (M4 inventory MD1, MA11:
+// Unity Robot.cs:1443-1450 head 10 rad/s, 20 rad/s^2, duration 0; Robot.cs:1638-1646 lift 10, 20, 0).
 public sealed partial class SetHeadAngle
 {
-    public SetHeadAngle(float rad, float maxSpeed = 10f, float accel = 10f, float duration = 0f, byte actionId = 0)
+    public SetHeadAngle(float rad, float maxSpeed = 10f, float accel = 20f, float duration = 0f, byte actionId = 0)
     {
         AngleRad = rad; MaxSpeedRadPerSec = maxSpeed; AccelRadPerSec2 = accel; DurationSec = duration; ActionId = actionId;
     }
@@ -196,7 +195,7 @@ public sealed partial class SetHeadAngle
 
 public sealed partial class SetLiftHeight
 {
-    public SetLiftHeight(float heightMm, float maxSpeed = 3f, float accel = 20f, float duration = 0f, byte actionId = 0)
+    public SetLiftHeight(float heightMm, float maxSpeed = 10f, float accel = 20f, float duration = 0f, byte actionId = 0)
     {
         HeightMm = heightMm; MaxSpeedRadPerSec = maxSpeed; AccelRadPerSec2 = accel; DurationSec = duration; ActionId = actionId;
     }

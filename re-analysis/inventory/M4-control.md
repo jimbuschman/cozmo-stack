@@ -1,6 +1,6 @@
 # M4 control inventory (motion, sensors, lights, cubes)
 
-**State: approved by the manager on 2026-09-24 under the operator's standing authorisation, and frozen with `python re-analysis/tools/fidelity.py --approve M4-control`.** That authorisation covers source-derived inventories and ordinary source-fidelity decisions. Only a deliberate divergence from the engine, or an unresolved source question that materially affects robot behaviour, goes to the operator. The existing divergences M4-004 and M4-006 are kept as they stand and reported to the operator (MD4).
+**State: approved by the manager on 2026-09-24 under the operator's standing authorisation, and frozen with `python re-analysis/tools/fidelity.py --approve M4-control`, then re-approved on 2026-09-25 after corrections C1..C9.** That authorisation covers source-derived inventories and ordinary source-fidelity decisions. Only a deliberate divergence from the engine, or an unresolved source question that materially affects robot behaviour, goes to the operator. The existing divergences M4-004 and M4-006 are kept as they stand and reported to the operator (MD4).
 
 ## Where this comes from
 
@@ -72,6 +72,61 @@
 - **M4-009:** omitted the engine's moved and tap handling.
 - **M4-010:** omitted the connection-time cube lights and had no test.
 - **M4-005, M4-006 and M4-007:** had empty evidence.
+
+## Corrections after the first freeze (manager, 2026-09-25, from the batch verifier's disassembly; re-approved under the standing authorisation)
+
+- **C1 (M4-016): head move completion** (MoveHeadToAngleAction::CheckIfDone).
+  - In-position is latched at +0xAC (0x005485E4..0x005485F4).
+  - hasMoved (+0xAD) is set whenever MC+0xA (head moving) is set, before the in-position test (0x0054872E..0x00548734).
+  - Success is latched-in-position and not moving.
+  - Failure 0x04000004 is raised only when all three hold: not in position, not moving, and hasMoved (0x00548738..0x005488AC).
+  - The lift equivalent (0x005493F6..0x00549508) has not been read, so M4-016 stays IMPLEMENTATION_GAP for the lift part.
+- **C2 (M4-019): the 50 mm distance for the 400 threshold.**
+  - It is the 3-D norm of the translation difference between two poses: MoveRobotPoseForward(pose, −20 mm, or the carry literal) taken before UpdateCurrPoseFromHistory, and the same taken after it (0x00512D48..0x00512D74).
+  - It accumulates from the first matching state, because the −1 branch falls through to 0x00512DA6 (0x00512DD2..0x00512EA6).
+  - The carry literal and the MoveRobotPoseForward body have not been read. M4-019 therefore stays IMPLEMENTATION_GAP for this part, and the stack must not claim it.
+- **C3 (M4-020, M1-041): the first full state is marked before the origin check.** UpdateFullRobotState sets +0x34E right after the +0x29 time-sync gate (0x0051293C..0x00512948: `ldrb [r4,#0x29]; beq; movs r0,#1; strb.w r0,[r4,#0x34e]`). This is ahead of ContainsOriginID (0x00512C3E..0x00512C4A).
+  - **Before the origin check, UFRS also stores:**
+    - the head angle via RS6 (0x0051295A);
+    - the lift angle (0x0051296A);
+    - the cliff data, SC2 (0x0051298C);
+    - the IMU filter (0x005129A4..0x00512A6E);
+    - the treads state (0x00512A72);
+    - the status bits and SetOnCharger (0x00512A96..0x00512ADC);
+    - MovementComponent::Update (0x00512B5C);
+    - SetBodyRadioMode (SC10).
+  - **Only after the check** do the pose, history and later steps run.
+  - **This corrects MD6.** A robot that does not echo the origin (M4-021) still gets Robot::Update running. It shows up as a "Received RobotState with originID" warning on every state, and as the 50 threshold never being sent. CONNECT's first-full-state criterion does not fail on it.
+- **C4 (M4-022): the title's "consecutive" is wrong.** The counter increments while the bit is clear and is not reset while it is set (0x00512AE0 `bne 0x512b56` skips both the increment and the reset). The title is corrected to "after 16 RobotStates without IS_BODY_ACC_MODE (not reset while the bit is set)".
+- **C5 (M4-002): an exact tie goes to 92.** For a negative height, 32 is chosen only when the current height is strictly nearer to 32 (0x00549104..0x0054913C: `vcmpe s0,s4; it mi; vmovmi`).
+
+- **C6 (M4-016): lift completion,** from the M4 gap pass 2 (session scratch `extract/M4-gap2/report.md`, rows L1..L6).
+  - **Init** clears hasMoved (+0x98) and sent/acked (+0x95/+0x96), and sets inPos (+0x97) = IsLiftInPosition(). Only if the lift is not in position does it send, with a send failure giving 0x03000016 (0x0054904C..0x0054932C).
+  - **CheckIfDone:**
+    - sent and not acked → Running (0x005493F6..0x00549402);
+    - latch in-position (0x00549406..0x00549418);
+    - hasMoved = 1 while MC+0xB (0x0054941C..0x00549428);
+    - in position: Success if not moving, else Running;
+    - not in position: moving → Running; not moving and hasMoved → 0x04000004; otherwise Running (0x0054942C..0x00549508).
+  - **C1 correction:** the head latch also comes after the sent-not-acked test (0x005485D8..0x005485E2), and the head body has extra code at 0x005485F8..0x00548728 that has not been read.
+- **C7 (M4-019): the 400-threshold distance** (rows D1..D5).
+  - The distance is the XY displacement of the drive centre: MoveRobotPoseForward(pose, d) gives (x + d·cosθ, y + d·sinθ, 0) (0x00517ED0..0x00517F3E).
+  - d = −20.0 mm when not carrying, and 0.0 when carrying (0x00512D14).
+  - It is measured between the pose before UpdateCurrPoseFromHistory and the pose after it, on each state whose frame id matches (0x00512D48..0x00512E80).
+  - This supersedes C2's open items.
+- **C8 (M4-019, SC4j, SC9): the charger platform** (rows P1..P6).
+  - SetOnChargerPlatform(b): new = b ? 1 : (on-contacts +0x338 ≠ 0). On a change it broadcasts RobotOnChargerPlatformEvent and sends 50 (new = 1) or 400 (new = 0) (0x00511D4C..0x00511DB0).
+  - It is set true only by SetOnCharger on the first state with IS_ON_CHARGER, when +0x338 was 0 (0x00511BA8..0x00511C0E).
+  - SetOnCharger(false) leaves it alone (0x00511A66..0x00511ACC).
+  - It is set false by CheckAndUpdateTreadsState when the committed off-treads state changes to a value other than OnTreads (0x00512188..0x00512192), and by Robot::Update when no charger is located or the robot footprint no longer intersects the charger quad (0x00513C5C..0x00513E2A).
+  - **The Robot::Update part stays open:** the charger quad (0x0087713A), the dock pose (0x004EA304) and the filter's origin scope are M11 geometry that has not been read.
+  - The PotentialCliff platform exception (SC7) reads this flag.
+- **C9 (M4-020, M1-041): localization follow-ups** (rows F1..F5).
+  - Every AddVisionOnlyStateToHistory sets +0x2C6. Robot::Update then sends SendAbsLocalizationUpdate() and clears it (0x00513CBE..0x00513CCC), so a time-synced Delocalize sends twice.
+  - UFRS's treads-path Delocalize fires when the committed off-treads state changes to or from OnTreads (0x00512A62..0x00512BAA). IS_CARRYING_BLOCK is only its argument.
+  - These create new pose origins, which is M11's pose-frame interface. They are recorded here, but **M4-020's claim is limited to the connection-time origin 1 and the acceptance gate**.
+- **Inventory table note:** the record table above predates C3 and C4. M4-020's and M4-022's rows read with these corrections.
+- **Statuses frozen early:** the 2026-09-25 re-approval froze the implementer's EXACT_SOURCE statuses before verification had passed. Any record the verifier finds not ready is fixed before commit (it is not downgraded).
 
 ## Appendix A: M4 pass, extractor report
 

@@ -7,10 +7,10 @@ Manifest of **289 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 167 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 177 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 16 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 0 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 62 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 52 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 27 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 9 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -24,10 +24,10 @@ remains after both, and they do not go away by working harder on this repository
 
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| M1-transport — UDP transport and reliability | 43 | 0 | 2 | 0 | 2 | yes | no |
-| M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 2 | 0 | 0 | yes | no |
+| M1-transport — UDP transport and reliability | 43 | 0 | 1 | 0 | 2 | yes | no |
+| M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 1 | 0 | 0 | yes | no |
 | M3-device — Camera, display and audio device layer | 24 | 0 | 6 | 0 | 2 | yes | no |
-| M4-control — Motion, sensors, lights and cubes | 24 | 0 | 18 | 0 | 3 | yes | no |
+| M4-control — Motion, sensors, lights and cubes | 24 | 0 | 10 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 36 | 0 | 34 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 7 | 0 | 0 | 0 | 0 | yes | yes |
 | M7-behaviour — Idle, mood and reactions | 17 | 0 | 0 | 0 | 0 | yes | yes |
@@ -52,10 +52,10 @@ status.
 
 | subsystem | review | settled | uncited | capture verified | hardware verified |
 | --- | --- | ---: | ---: | ---: | ---: |
-| M1-transport | INVENTORY_APPROVED | 30 | 0 | 0 | 3 |
-| M2-protocol | INVENTORY_APPROVED | 14 | 0 | 0 | 0 |
+| M1-transport | INVENTORY_APPROVED | 31 | 0 | 0 | 3 |
+| M2-protocol | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M3-device | INVENTORY_APPROVED | 12 | 0 | 0 | 0 |
-| M4-control | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
+| M4-control | INVENTORY_APPROVED | 9 | 0 | 0 | 0 |
 | M5-animation | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | M6-wwise-bank | UNREVIEWED | 7 | 5 | 0 | 0 |
 | M7-behaviour | UNREVIEWED | 17 | 3 | 0 | 0 |
@@ -88,15 +88,6 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: G5.1..G5.6 HandleFirmwareVersion 0x0052D470: guard (0x0052D478..0x0052D484); JSON parse (0x0052D4BA); FACTORY build path (0x0052D4C2..0x0052D506); v = version, t = time (0x0052D51A..0x0052D536); expected E_v/E_t at +0x1C/+0x20 (0x0052D538); sim flag (0x0052D53E..0x0052D5B6); G5.9/G5.10 no robotAvailable and not sim -> result 1 (0x0052D7B8..0x0052D850); sim -> 0 (0x0052D7C6); G5.11 robotDev = v == t, appDev = E_v == E_t; if they differ -> 3 OutdatedFirmware (0x0052D7DE teq.w r0,r1; 0x0052D7E4 movs r0,#3); G5.12 unsigned: E_v == v -> 0; E_v > v -> 3; E_v < v -> 4 OutdatedApp (0x0052D8DA..0x0052D8E0; 0x0052D9A6..0x0052D9AC); time is not compared again; G5.14/G5.15 E_v/E_t are copied from RobotManager+0x84/+0x88 in AddRobot (0x0052EEF2/0x0052EEF8; ctor 0x0052D196); the RobotManager ctor zeroes them (0x0052E512, 0x0052E516); G5.16..G5.20 RobotManager::Init -> FirmwareUpdater::LoadHeader starts a loader thread (0x0052E7F8; pthread_create 0x0067692A) that reads config/engine/firmware/cozmo.safe and parses the JSON header in the first 0x800 bytes (0x00677C44..0x00677D34); ParseFirmwareHeader stores version -> +0x84, time -> +0x88 (0x0052EA36..0x0052EA9A); G5.21/G5.32..G5.37 Scope 1 is DataPlatformResourcesPath = persistentDataPath/cozmo/cozmo_resources (pathToResource 0x0084BE34 table 03 14 22 2f 41; unity/scripts/csharp/PlatformUtil.cs:5-13), extracted from the shipped assets (re-analysis/obb/assets/resources.txt:2075); the shipped header has version 2381, time 1546972025 (re-analysis/obb/assets/cozmo_resources/config/engine/firmware/cozmo.safe offsets 0-445); G5.22..G5.30 nothing orders the header load before AddRobot: the loader starts in cozmo_startup before the engine thread (0x006661EA, 0x0065B14E), and neither the ConnectToRobot handler nor AddRobot checks the load (0x004ED026..0x004ED1EC; loaded flag +0x18 unread on that path); G5.31 a missing, short or unparsable file leaves E_v = E_t = 0 for the session (0x006764E4, 0x00677C50..0x00677D28); G5.38..G5.40 no writer of RobotManager+0x84/+0x88 besides the ctor and ParseFirmwareHeader was found; the scan cannot prove absence (adjusted-base, register-offset, whole-object and untyped accesses are outside it); see decision D7
 * outstanding: the mechanism is built (batch 3); jsoncpp's grammar (comments, trailing commas) and asUInt of a non-number are not in the rows, so the reader's leniency is MISSING; under M1-040 the outcome never refuses; then EXACT_SOURCE
 
-**M1-041 — Robot initialisation after a Success connection response, and the gates it opens** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
-* effect: the robot is not synced or initialised, or is initialised in the wrong order or at the wrong time; state or animations are processed before the engine would
-* rests on: not implemented: the candidate sends GetManufacturingInfo, SyncTime, InitController and block-pool setup unconditionally on the transport ConnectionResponse (CozmoRobot.cs ~261-275)
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: CD17/CB21: the Success RobotConnectionResponse reaches, synchronously and in this order: RobotEventHandler, VisionComponent, TracePrinter (0x006625C6..0x006625FA; 0x00663C74..0x00663CA8; 0x005259AC, 0x006501E4, 0x0053BCBA); CD18/CB22/CB23: RobotEventHandler (result 0) calls Robot::SyncTime: +0x29 = 0, history clear, then SyncTime {u32 BaseStationTimer ms, 0xC1A00000} reliable; only if that was sent, InitController; only if that was sent, ImageRequest {Stream, QVGA} and AbsoluteLocalizationUpdate {0, frameId, originId, 0, 0, 0}; a failed send warns and stops (0x005289BA..0x005289D2; 0x0051521E..0x005153AE); CD19: SyncTime is never retried; after 5.0 s without SyncTimeAck it warns "SyncTimeAckNotReceived" (0x00513BF6..0x00513C5A); SyncTimeAck sets +0x29 = 1 (0x005366A4..0x005366AC); CD20: RobotEventHandler then sets ready-to-stream (+0x2A) through an NVStorage on-idle callback, which runs once the NV request queue is empty (0x00528A5A..0x00528A6E; 0x00645C20..0x00645C32); CD22: TracePrinter sends SetAppRunID (16-byte UUID, 0xFF unless a platform id exists), then RequestCrashReports{0}, each crash report received asking for the next index up to 3 (0x0053D398..0x0053D430; 0x0053CA88..0x0053CA9E); CD23/CD12: robot state is dropped until time sync (0x0051293C..0x0051294E); Robot::Update does nothing past the idle component until the first full state is handled (+0x34E); the AnimationStreamer runs only when synced and ready to stream (0x00513BF2..0x00514470); CD30: nothing sends SendHeadAngleUpdate, setAccessoryDiscovery or SetRobotImageSendMode on this path (BL scan)
-* outstanding: built (batch 3) except AbsoluteLocalizationUpdate, which is not sent: its frameId (robot+0x2B0) and originId (+0x294 then +0x14) are not state this stack holds; and RobotStateHistory::Clear has no owner here; then EXACT_SOURCE
-
 ### M2-protocol — CLAD messages and protocol helpers
 
 **M2-002 — RobotStatusFlag names and values, and where the engine stores each consumed bit** (live path)
@@ -106,16 +97,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: compared against re-analysis/inventory/M2-protocol.md on 2026-09-24: the 17 RobotStatusFlag names and values in MessageExtras.cs match EnumToString 0x007D57C8 / Unity RobotStatusFlag.cs:8-25, and the whole status word is kept with the latest RobotState (RS11). The per-bit storage the title also claims (MovementComponent+9, robot+0x349, SetOnCharger, ...) is not reproduced as such here; the inventory assigns what the engine does with those fields to M4.
 * best authority: decompiled Unity
 * evidence: EnumToString(RobotStatusFlag) 0x007D57C8: 17 names and values, agreeing with Unity RobotStatusFlag.cs:8-25; RS11 the whole status word -> robot+0x350 (0x00512AD8..0x00512ADC); bit storage: 0x1 MovementComponent+9 (0x0063E30A); 0x2 Delocalize argument (0x00512B98); 0x4 [robot+0x280]+4 (0x00512A96); 0x8 robot+0x349 (0x00512AA2); 0x10 robot+0x34C (0x00512ACE); 0x20 treads classifier (0x00511EC4); 0x100 MovementComponent+0xB = !bit (0x0063E32C); 0x200 +0xA = !bit (0x0063E320); 0x1000 SetOnCharger (0x00512AAC); 0x2000 robot+0x339 (0x00512AB8); 0x4000 CliffSensorComponent+6 (0x00634026); 0x8000 MovementComponent+0xC (0x0063E338); 0x10000 robot+0x33A (0x00512AC2)
-* outstanding: the names and values match; the per-bit storage half of the title is to be compared with the M4 consumers (MovementComponent, CliffSensorComponent, SetOnCharger, the treads classifier) before this can be EXACT_SOURCE
-
-**M2-015 — Outbound builders copy caller speed, acceleration, duration and angle values verbatim: no defaults, no unit conversion** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Protocol/Clad/MessageExtras.cs`
-* effect: a motion command goes out with values the caller did not give
-* rests on: compared against re-analysis/inventory/M2-protocol.md on 2026-09-24: the SetHeadAngle, SetLiftHeight and DriveWheels constructors in MessageExtras.cs copy their arguments into the message verbatim with no unit conversion, and the generated builders copy fields as given. The constructors' default arguments (SetHeadAngle maxSpeed 10 / accel 10, SetLiftHeight maxSpeed 3 / accel 20) have no engine counterpart and are still relied on by CozmoRobot.SetHeadAngle (CozmoRobot.cs:499, public API, no caller in src) and Cozmo.Conformance Probe.cs:92 (new SetLiftHeight(45f)); Cozmo.Transport RobotLink.SetHeadAngle (RobotLink.cs:100) has its own 10/10 defaults.
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: DriveWheels/MoveLift/MoveHead verbatim word copies (0x0063F174, 0x00640E1C, 0x0063F900, 0x00640C00, 0x0063F6BC, 0x00640ACC); MoveLiftToHeight 0x00640700 and MoveHeadToAngle 0x006407CC copy the four floats in order (0x0064076C, 0x00640838 stm); TurnInPlace 0x00640898 verbatim (0x006408B0..0x00640940)
-* outstanding: the MessageExtras default arguments (SetHeadAngle 10/10, SetLiftHeight 3/20) have no engine counterpart; which values the original's callers pass is decided in M4 (MISSING for M4), after which the defaults can be removed and this record settled
+* outstanding: the names and values match. Per-bit storage after the M4 batch (2026-09-25): the M4 consumers now keep what the engine keeps - MC+0xA/+0xB/+0xC from !HEAD_IN_POS, !LIFT_IN_POS and ARE_WHEELS_MOVING (CozmoMotion), CliffSensorComponent+6 from CLIFF_DETECTED (CozmoSensors), the IS_BODY_ACC_MODE count and the stored status word before the origin check (EngineRobot.StoredState, read by BodyLightComponent for IS_ON_CHARGER, IS_CHARGING and IS_CHARGER_OOS); the other bits are read from the latest handled state by their consumers. Since M4 correction C3 an origin-rejected synced state also reaches the devices, as the engine stores these bits before the origin check. Residuals: SetOnCharger (0x1000) has no charger-platform counterpart (M4-019); 0x2 (the treads-path Delocalize), 0x4 ([robot+0x280]+4) and 0x8/0x20 (the treads classifier) belong to M10/M12
 
 ### M3-device — Camera, display and audio device layer
 
@@ -175,167 +157,95 @@ Each of these is a question already answered. The original's behaviour is establ
 
 ### M4-control — Motion, sensors, lights and cubes
 
-**M4-001 — Head angle limits -0.436332..0.776672 rad: command clip in MoveHeadToAngleAction, state-side clamp, -25 deg before calibration** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
-* effect: the head is commanded or reported outside the engine limits
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: MA9 MoveHeadToAngleAction ctor clip with warnings 0x00547F44..0x0054803A; MA22 Robot+0x2FC = -0.436332 in the ctor (0x0051007C..0x00510086); MA23 RS6 SetHeadAngle 0x0051335E..0x005133E8 (M2 interface)
-* outstanding: compare the code against the inventory rows (the step after approval)
-
-**M4-002 — Lift presets 0 LowDock 32 / 1 HighDock 76 / 2 HeightCarry 92 / 3 OutOfFOV -1; clamp to 32..92; a negative height goes to the nearer of 32 and 92** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
-* effect: the lift goes to a different height
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: MA14 preset table 0x00C54684, names 0x00548EBC..0x00548EDC; MA13 MoveLiftToHeightAction::Init clamp 0x0054905E..0x005490F6, negative height 0x005490FA..0x00549140
-* outstanding: compare the code against the inventory rows (the step after approval)
-
 **M4-003 — The head and lift API follows the game-message path: caller speed/accel/duration; the original app passes head 10/20 and lift 10/20, duration 0** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
 * effect: the head or lift moves at a different speed
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
+* rests on: compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): the head and lift API is the game path (MD1): the caller's speed, acceleration and duration go into the action, with the app's 10/20/0 (head) and 10/20/0 (lift) as the defaults (MA10, MA11, MA12); engine-internal callers in this stack (behaviours, manipulation) pass the action defaults 15/20 explicitly (MA9). CozmoMotion.SetHeadAngleAsync / SetLiftHeightAsync.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: MA10 game SetHeadAngle overwrites +0x90..+0x98 with the message values (0x0052ABE0..0x0052AC24); MA11 unity/scripts/csharp/Robot.cs:1443-1450 (head 10, 20, 0) and 1638-1646 (lift 10, 20, 0); MA12 game SetLiftHeight: 32.0 while carrying -> PlaceObjectOnGroundAction (0x0052AC40..0x0052AC9E); MA9, MA13 action ctor defaults (head 15/20 at 0x00547F14..0x00547F28; lift 10/20 at 0x00548A68..0x00548A78)
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: MA12: on the game path a lift height of exactly 32 mm while carrying becomes PlaceObjectOnGroundAction; the carrying state is the M12 CarryingComponent, which CozmoMotion does not see, so that branch is not taken (MISSING, M12 interface)
 
 **M4-005 — Action ids: one u8 counter shared by head, lift and body, pre-incremented from 0; ids run 1..255, 0, 1** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
 * effect: an ack is matched to the wrong command
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
+* rests on: compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): CozmoMotion keeps one u8 counter, 0 at construction and pre-incremented when a head or lift command is sent, so its ids run 1..255, 0, 1 (MA8).
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: MA8 MC+8 = 0 at construction (0x0063DA7C); pre-increment in MoveLiftToHeight 0x0064070C..0x0064071A, MoveHeadToAngle 0x006407D8..0x006407E6, GetNextMotorActionID 0x006406EC..0x006406F4
-* outstanding: compare the code against the inventory rows (the step after approval)
-
-**M4-007 — StopAll: the track-unlock preamble, then only StopAllMotors 0x3B** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
-* effect: stopping sends extra messages
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: MA5 0x0063FBD8..0x0063FE10 -> 0x0064099C..0x006409C2; MA6 callers AbortAll 0x0051197C, StopRobotForSdk 0x005296D6, PotentialCliff 0x00535972, PlaceObjectOnGround 0x00554894, CheckReactionTriggerStrategies 0x005A3616, the game message 0x0063FBD4
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: MA8 shares the counter with the body (TurnInPlace, GetNextMotorActionID); in this stack the TurnInPlace and direct SetHeadAngle sends outside M4 (VisionSystem, FaceActions, ExplorerBehaviors) use the fixed id 3 rather than CozmoMotion.NextActionId - those callers are M7/M11 and were not changed in the M4 batch
 
 **M4-008 — Cliff sensor data (raw values, CLIFF_DETECTED, timestamp, enum names); IMU and cube battery in the engine units** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Sensors.cs`
 * effect: cliff readings are reported differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
+* rests on: compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): CozmoSensors stores the four raw cliff values, CLIFF_DETECTED and the timestamp of each handled state (SC2, RS12); the IMU and cube battery are passed through in the engine units.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: SC2 UpdateRobotData 0x00634016..0x00634036; M2 RS12 cliffDataRaw 8-byte copy (0x0063401A..0x00634022)
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: where UpdateRobotData runs within UpdateFullRobotState (before or after the origin check) is not in the rows; the stack stores from accepted states only
 
 **M4-009 — Cube tracking: ObjectAvailable / ObjectConnectionState, Moved / Stopped / UpAxisChanged handling with the charger and carry filters, per-object IsMoving** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Cubes.cs`
 * effect: cube motion or identity is reported differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
+* rests on: compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): Moved (CD10a) and Stopped (CD10b) look the connected object up by activeID (an unknown one warns), drop the charger's moves, ignore a Moved inside the double-tap window, SetIsMoving only on a change, and broadcast every message; UpAxisChanged for an unknown id is an error (CD10c); a disconnection erases the connected entry (LC8b). Verifier round (2026-09-25, corrections C1..C5): VisionSystem's ObjectMoved path (BlockWorld SetMoving and MarkDirty) now returns first for an unknown id, the charger and a movement inside the double-tap window (CD10a steps 1..3, CozmoCubes.MovedStopsBeforeTheWorld). Q-c: VisionSystem's ObjectStoppedMoving path applies the same lookup and charger filter before BlockWorld.SetMoving(false) (CD10b; the double-tap result is discarded).
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: S1 ObjectConnectionState handler 0x00533B56..0x00533D2C; S2 AddConnectedActiveObject 0x00623040..; CD10a Moved 0x00533E4C..0x005341BA; CD10b Stopped 0x00534636..0x00534AA4; CD10c UpAxisChanged 0x00534D66..0x00534E1E; LC8a..LC8e reuse rules 0x00623040..0x00623A8C, RemoveConnectedActiveObject 0x006243C6..0x00624436; one ObjectID per ActiveCube type (0x004EF468..0x004EF52A)
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: LC8a: the engine ignores a connection report for a slot above 4; this stack uses the slot as its BlockWorld ObjectID (M11 interface; the engine's ObjectIDs come from SetID, LC8e) and its manipulation/vision fixtures connect cubes on slots 7..9, so the bound is recorded but not enforced. CD10a/CD10b: the carried-object and [robot+0x280]+0xC broadcast exclusions are not wired (M12 interface; +0x280 not read), and robot+0x334 (the charger id) is stood in for by the object type; the located-copy updates (MarkObjectDirty, SetIsMoving on located objects) are M11
 
 **M4-010 — Outbound cube connection: block pool, five slots, SetPropSlot, filter timers, advertisement expiry, slot states, disconnect handling** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/CubeConnections.cs`
 * effect: cubes connect or disconnect differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
+* rests on: compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): the connection path (CubeConnections) now runs in Robot::Update after the first full state, in the CD2 order after the tap filter, on BaseStationTimer seconds, with the robot clock set from each synced state before the origin check (RS1); CD3..CD8 and S3 were already reproduced.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: CD1 0x00514174..0x00514224; CD2 update order 0x0051422A..0x00514470; CD3 BlockFilter::Update 0x0061A79A..0x0061A7E0; CD4 UpdateConnecting 0x0061AA8C..0x0061AB88; CD5 ConnectToRequestedObjects 0x00514A88..0x00514C6C; CD6 0x005179DA..0x00517AA6; CD7 0x00517BD8..0x00517D14; CD8 0x00514924..0x00514A0E; S3 HandleConnectedToObject 0x005179D6..0x00517AA6
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: CD1: ObjectUnavailable is broadcast only behind robot+0x490, whose default and writers are not in the rows (the stack broadcasts nothing); no dedicated M4-010 regression test was added in this batch (the path is exercised by EngineAppLayerTests.M1_025_M1_015_* and RemainingGapTests)
 
 **M4-012 — StartMotorCalibration is never automatic; byte0 head, byte1 lift; MotorCalibration handling** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
 * effect: the robot recalibrates when the engine would not
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
+* rests on: compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): StartMotorCalibration {byte0 head, byte1 lift} is sent only by CozmoMotion.RequestMotorCalibration, called by the explicit calibration behaviour and the conformance tool, never automatically (MA18, MA19).
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: MA18 senders: CalibrateMotors (from CalibrateMotorAction::Init) and 0x005CFAC2 only; MA19 CheckIfDone 0x00547D38..0x00547DC2; MA20 HandleMotorCalibration 0x00536BAE..0x00536C0E
-* outstanding: compare the code against the inventory rows (the step after approval)
-
-**M4-014 — Direct-drive track locks: DisableAnimTracks / EnableAnimTracks around DriveWheels, MoveHead and MoveLift** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
-* effect: animations and direct commands fight over a motor
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: MA1 DriveWheels 0x0063ED82..0x0063EE9A, MoveHead 0x0063F4F6..0x0063F5D2; MA1-lift MoveLift 0x0063F73A..0x0063F92A; MA2 DirectDriveCheckSpeedAndLockTracks 0x0063EFB0..0x0063F0B8 (1e-5 at 0x0063F0F8); MA3 LockTracks 0x006400D0..0x00640188 (0x9D); UnlockTracks 0x0063FE92..0x0063FFB4 (0x9E)
-* outstanding: compare the code against the inventory rows (the step after approval)
-
-**M4-015 — StopHead / StopLift / StopBody: unlock preamble, then MoveHead{0}, MoveLift{0}, DriveWheels{0,0,0,0}** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
-* effect: a motor keeps moving or is stopped differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: MA4 0x00640A08..0x00640AF6, 0x00640B3C..0x00640C2A, 0x00640C70..0x00640E4E; MA7 ~IActionRunner stops a moving track (0x0054112E..0x00541192)
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: MA20: when the lift starts calibrating while carrying, HandleMotorCalibration calls SetCarriedObjectAsUnattached(true); the carrying state is the M12 CarryingComponent and this is not wired from the MotorCalibration handler (M12 interface)
 
 **M4-016 — Head and lift move semantics: no send when in position, ack matched by id, completion in position and stopped, tolerances and error codes** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
 * effect: a head or lift move completes, fails or is sent differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
+* rests on: compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): nothing is sent when the head is within tolerance + 1e-5 of the target, or the lift within 5 mm and not moving (MA15); the id is taken only when the command is sent; the ack counts only for a sent action with that id (MA16); after it the move succeeds once in position and not moving, fails with 0x04000004 when it stops out of position after having moved, and a failed send is 0x03000016 (MA17). Verifier round (2026-09-25, corrections C1..C5): the head completion follows C1: in-position latched at +0xAC (0x005485E4..0x005485F4), +0xAD set whenever MC+0xA is set before the in-position test (0x0054872E..0x00548734), success = latched and not moving, 0x04000004 only when not in position, not moving and having moved (0x00548738..0x005488AC). Re-verify round (2026-09-25, C6..C8): R1: the head latch now comes after the sent-not-acked test (0x005485D8..0x005485E2). C6 (rows L1..L6): the lift follows the same CheckIfDone: sent and not acked Running; the in-position latch (+0x97); has moved (+0x98) := 1 while MC+0xB; in position: Success if not moving, else Running; not in position: moving Running, not moving and has moved 0x04000004, otherwise Running; Init latches in-position and sends only when out of position, a failed send giving 0x03000016. A move already in position succeeds at once when the motor is not moving (always so for the lift). The MA13 lift angular-tolerance clip is omitted (its formula is not in the rows; it cannot bind at the game path's 5 mm), and the IAction timeout is M8.
 * best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: MA15 IsHeadInPosition 0x005484F4..0x0054852C, Init no-send 0x00548544..0x0054854E; IsLiftInPosition 0x00548FEA..0x00549034, 0x005492F2..0x005492FE; MA16 ack lambdas 0x0054D624 (head), 0x0054D748 (lift); MA17 completion 0x005485D8..0x005488B6, 0x005493F6..0x00549508; errors 0x04000004, 0x03000016; MA9 head tolerance >= 2 deg (0x0054803E..0x005480AC); MA13 lift angular tolerance >= 1.5 deg (0x005491D6..0x005492EE)
-* outstanding: compare the code against the inventory rows (the step after approval)
+* evidence: MA15 IsHeadInPosition 0x005484F4..0x0054852C, Init no-send 0x00548544..0x0054854E; IsLiftInPosition 0x00548FEA..0x00549034, 0x005492F2..0x005492FE; MA16 ack lambdas 0x0054D624 (head), 0x0054D748 (lift); MA17 completion 0x005485D8..0x005488B6, 0x005493F6..0x00549508; errors 0x04000004, 0x03000016; MA9 head tolerance >= 2 deg (0x0054803E..0x005480AC); MA13 lift angular tolerance >= 1.5 deg (0x005491D6..0x005492EE); C1: head CheckIfDone latches in-position at +0xAC (0x005485E4..0x005485F4); hasMoved +0xAD set while MC+0xA (0x0054872E..0x00548734); failure 0x04000004 only if not in position, not moving and hasMoved (0x00548738..0x005488AC); C6: lift CheckIfDone 0x005493F6..0x00549508 (latch after the sent-not-acked test; hasMoved while MC+0xB; 0x04000004 only if not in position, not moving and hasMoved); head latch after the ack test 0x005485D8..0x005485E2
+* outstanding: the head's CheckIfDone has further code at 0x005485F8..0x00548728 that has not been read (C6)
 
 **M4-017 — Backpack lights: priority, Off resent every tick while no source, charging state machine, shared locator, wire conversion, headlight** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
 * effect: the backpack lights show something different
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
+* rests on: compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): BodyLightComponent: sources in priority {1,0,2}, Off resent every Robot::Update while no source (LB1, LB2, LB4h); the charging state machine with the engine's own OffCharger and the JSON's Charging/Charged/BadCharger (LB4, LB4a..LB4e, loaded from config/engine/lights/backpackLights under CozmoEngineOptions.ResourcesPath); the shared locator at source 2 (LB4i, LB5: CozmoLights.SetBackpack/SetBackpackPattern/BlinkBackpack); the wire conversion to 0x03 (LEDs 1..3) then 0x11 (LEDs 0 and 4) with no white balance (LB3, LB4f, LB4g).
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: LB1 BodyLightComponent::Update 0x00631D54..0x00631EB4; LB2/LB4h Off lights 0x0063221C..0x00632260; LB4a names 0x0102EA18 indexed by state^2 (0x00631BD0); LB4b DefineFromJson 0x00587558..0x00587638; LB4c lookup 0x00587434..0x005874A4; LB4d parser 0x00586D20..0x005870D0; LB4f SetBackpackLightsInternal 0x00631F3A..0x006321BE; LB4i shared locator 0x006322A4; LB5 0x006323C4..0x0063244E; LB6 headlight 0x00632344..0x00632374
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: LB6: the engine calls EnableMode(14) before the headlight send; what EnableMode is is not in the inventory, so only the SetHeadlight send is reproduced
 
 **M4-018 — Cube lights: WakeUp on connection and reconnect, layers and PlayLightAnim gates, SetObjectLights / SetLEDs, SetCubeGamma, CubeID, CubeLights, white balance, default-layer anims** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
 * effect: cubes light up differently or not at all
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
+* rests on: compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): CubeLightComponent: a connecting light cube (and every reconnect) gets an ObjectInfo {layer 2} unless one exists and PlayLightAnim(WakeUp, layer 2) with the LC2 gates; SetObjectLights with the SetLEDs rules and gamma 0x80; SetLights sends SetCubeGamma on the first call and on a change, then CubeID {activeID, (rot+29)/30}, then CubeLights with white balance; patterns advance on their timers in Robot::Update and an emptied layer plays the default layer-2 animation (LC1..LC8, S5..S8). The patterns load from CubeAnimationTriggerMap.json and config/engine/lights/cubeLights under CozmoEngineOptions.ResourcesPath. Verifier round (2026-09-25, corrections C1..C5): SetLights' SetCubeGamma + CubeID + CubeLights are one group under a lock, so another SetLights cannot interleave; LC2 (b) is the requested layer's stack (0x006382FC..0x0063831C); a timer expires at now >= timer (0x00637998 bhs); a pattern with a timer of 0 (duration_ms 0) holds unless +0x41 is set (0x0063798A..0x00637994).
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: S5/LC1 0x00639CE4..0x00639D8A (trigger 0x26); LC2 PlayLightAnim 0x006382EA..0x006387D8; LC3 cubeLights/wakeUp.json; pattern advance 0x00637998..0x006379DA; default layer 0x00637D4C..0x00637E02; LC4 SetObjectLights 0x00637E6C..0x00637EFC; SetLEDs 0x004E48B0..0x004E49A2 (gamma 0x80); LC5 SetLights 0x0063A654..0x0063A800; WhiteBalanceColor 0x0063A894..0x0063A98E; LC7 Robot::Broadcast delivery 0x00511DE8..0x00511DF8, 0x00662508..0x006625A8; LC8 reconnect replay
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: LC3 PickNextAnimForDefaultLayer: the cube-sleep flags (writers not in the inventory), the carried object (M12) and the located object's +0x24 (M11) are not wired, so the default is always Connected; +0x41 (which releases a timer-0 pattern) has no writer in the rows and is never set here; a pop that leaves an animation below it on the same layer (LC8 double WakeUp) resends nothing - not in the rows; makeRelative patterns need the located object (M11) and go to the connected cube; which directory the engine reads the cube animations from is not in the rows (loaded from config/engine/lights/cubeLights)
 
 **M4-019 — Cliff: sensor defaults, CliffEvent and PotentialCliff handling, EnableStopOnCliff senders, the threshold schedule 50 / 400 / 150** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Sensors.cs`
 * effect: cliffs are detected or handled differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
+* rests on: compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): CliffSensorComponent defaults (enabled, cache 400, raw 0xFFFF, SC1); SendCliffDetectThresholdToRobot always sends (SC3); CliffEvent with the sensor disabled and flags != 0 is dropped (SC5); the game EnableCliffSensor only stores +4 (SC6); PotentialCliff -> StopAllMotors + EnableStopOnCliff{0} (SC7); EnableStopOnCliff only from the caller (SC8); the first accepted state of the current frame sends 50 and 400 follows once after more than 50 mm (SC4, SC4e). Verifier round (2026-09-25, corrections C1..C5): the threshold schedule runs only for a state that passed the origin check (C3). Re-verify round (2026-09-25, C6..C8): C7 (rows D1..D5): the distance behind the 400 threshold is the XY displacement of the drive centre, MoveRobotPoseForward(pose, -20 mm) = (x + d cos(theta), y + d sin(theta), 0), between the robot pose before and after each accepted state's pose update, added on every state whose frame id matches from the first one (CozmoSensors.CliffThresholdSchedule). C8 (rows P1..P6): SetOnChargerPlatform(b) = b or the contacts flag, with RobotOnChargerPlatformEvent and 50/400 on a change; set true by SetOnCharger on the rising IS_ON_CHARGER edge, left alone by SetOnCharger(false), set false by a committed off-treads change to anything but OnTreads; SC7: a PotentialCliff on the platform is ignored.
 * best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: SC1 ctor 0x00633FA0..0x00633FCE; SC3 SendCliffDetectThresholdToRobot 0x00634270..0x00634368; SC4 schedule 0x00512D7A..0x00512EA6; SC4a 0x00634514..0x006345AE; SC4b 0x006343B8..0x006344B0; SC4c 0x00634630..0x00634724; SC4d 0x006347A4..0x0063480C; SC4j 0x00511D66..0x00511DA0; SC5 CliffEvent 0x00535548..0x005356E6; SC6 0x00527E8E..0x00527EEA; SC7 PotentialCliff 0x0053582C..0x00535998; SC8 EnableStopOnCliff senders
-* outstanding: compare the code against the inventory rows (the step after approval)
-
-**M4-020 — RobotState acceptance: time-sync gate, unknown origin ids dropped; origin 1 from the ctor Delocalize; AbsoluteLocalizationUpdate {0, frame 0, origin 1, identity} at SyncTime** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
-* effect: robot states are accepted or dropped differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: SC4f UFRS gates 0x0051293C..0x00512942, ContainsOriginID 0x00512BE2..0x00512C4A; SC4g PoseOriginList next id = 1 (0x0084792C..0x0084793C); UnknownOriginID = 0 (0x00C97B20); Robot::Delocalize 0x00510A24: AddNewOrigin 0x00510A66, SetNewPose 0x00510B4C, SendAbsLocalizationUpdate 0x00510BF4 when time-synced; SC4e robot+0x2B0 = 0 (0x0050FF02, 0x0051032C); SC4h SendSyncTime -> SendAbsLocalizationUpdate (0x0051526E..0x005153AE)
-* outstanding: compare the code against the inventory rows (the step after approval)
-
-**M4-022 — SetBodyRadioMode {1,0} after 16 consecutive RobotStates without IS_BODY_ACC_MODE** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Sensors.cs`
-* effect: the body radio mode differs
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: SC10 / M1 CD25 0x00512AD0..0x00512B52
-* outstanding: compare the code against the inventory rows (the step after approval)
-
-**M4-023 — Cube taps: intensity > 60, a 75 ms queue broadcasting the strongest, the 500 ms double-tap window, EnableBlockTapFilter** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Cubes.cs`
-* effect: taps are reported differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M4-control.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: CD10d ctor and subscriptions 0x00630874..0x00630A14; CD10e 0x00630B2E..0x00630C8C; CD10f flush 0x006310D0..0x0063119E; CD10g double tap 0x00630DC4..0x006316E0
-* outstanding: compare the code against the inventory rows (the step after approval)
+* evidence: SC1 ctor 0x00633FA0..0x00633FCE; SC3 SendCliffDetectThresholdToRobot 0x00634270..0x00634368; SC4 schedule 0x00512D7A..0x00512EA6; SC4a 0x00634514..0x006345AE; SC4b 0x006343B8..0x006344B0; SC4c 0x00634630..0x00634724; SC4d 0x006347A4..0x0063480C; SC4j 0x00511D66..0x00511DA0; SC5 CliffEvent 0x00535548..0x005356E6; SC6 0x00527E8E..0x00527EEA; SC7 PotentialCliff 0x0053582C..0x00535998; SC8 EnableStopOnCliff senders; C2: the 50 mm distance is the 3-D norm between MoveRobotPoseForward(pose, -20 mm or the carry literal) before and after UpdateCurrPoseFromHistory (0x00512D48..0x00512D74), accumulated from the first matching state (0x00512DD2..0x00512EA6); C7: drive-centre XY displacement, MoveRobotPoseForward 0x00517ED0..0x00517F3E, d = -20 or 0.0 when carrying (0x00512D14); C8: charger platform SetOnChargerPlatform 0x00511D4C..0x00511DB0, set by SetOnCharger rising edge, cleared by CheckAndUpdateTreadsState 0x00512188..0x00512192 and Robot::Update 0x00513C5C..0x00513E2A
+* outstanding: C7 D2: MoveRobotPoseForward's distance is 0.0 while carrying (CarryingComponent(+0x284)+8 != -1); the carrying state is M12's and not seen here, so -20 mm is always used. C8 P7..P9: Robot::Update also clears the platform flag when no charger is located or the robot footprint no longer intersects the charger quad (0x00513C5C..0x00513E2A); that is M11 geometry (the charger quad 0x0087713A, the dock pose 0x004EA304, the filter's origin scope) and is not built; the FreeplayDataTracker pause flag 3 after a platform change is M15's. The 150 send (SC4a..SC4c) needs HandleRobotStopped's tag (not read), the removal step of the 100-sample sliding Welford window and RobotStateHistory's lower_bound walk; the 400 on Delocalize (SC4d) needs the UFRS Delocalize, which C9 records as the M11 interface; drone mode (SC7, SC8 EnableDroneMode) is not offered
 
 ### M5-animation — Animation clips, scheduler and face
 

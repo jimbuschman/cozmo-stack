@@ -764,10 +764,10 @@ public sealed class CantHandleTallStackBehavior : ManipulationBehavior
         CurrentPhase = Phase.LookingUpAndDown;
         Wait(InitialWait, () =>
         {
-            _ = M.Robot.Motion.SetHeadAngleAsync((float)HeadDownRad, requireCalibration: false);
+            _ = M.Robot.Motion.SetHeadAngleAsync((float)HeadDownRad, CozmoMotion.ActionDefaultHeadSpeedRadPerSec, CozmoMotion.ActionDefaultHeadAccelRadPerSec2, requireCalibration: false);
             Wait(DownWait, () =>
             {
-                _ = M.Robot.Motion.SetHeadAngleAsync((float)HeadUpRad, requireCalibration: false);
+                _ = M.Robot.Motion.SetHeadAngleAsync((float)HeadUpRad, CozmoMotion.ActionDefaultHeadSpeedRadPerSec, CozmoMotion.ActionDefaultHeadAccelRadPerSec2, requireCalibration: false);
                 Wait(UpWait, () =>
                 {
                     CurrentPhase = Phase.Disappointment;
@@ -827,7 +827,7 @@ public sealed class CheckForStackAtIntervalBehavior : ManipulationBehavior
             var robot = M.RobotPose()!.Value;
             double head = TurnTowardsPose.HeadAngleToSee(M.Vision.Calibration, robot, ghost);
             Log($"looking at the ghost pose above block {block.ObjectId}: head {head * 180 / Math.PI:F0} deg");
-            M.Robot.Motion.SetHeadAngleAsync((float)head, requireCalibration: false);
+            M.Robot.Motion.SetHeadAngleAsync((float)head, CozmoMotion.ActionDefaultHeadSpeedRadPerSec, CozmoMotion.ActionDefaultHeadAccelRadPerSec2, requireCalibration: false);
             // as in PutDownBlock: the wait is for frames that arrive after the head moved, not for any frame ever
             int framesBefore = M.Vision.FramesProcessed;
             WaitUntil(() => M.Vision.FramesProcessed > framesBefore, 1.0, _ => ReturnToSearch(), "a frame looking above the block");

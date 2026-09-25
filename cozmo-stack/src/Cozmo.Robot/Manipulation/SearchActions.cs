@@ -89,7 +89,7 @@ public sealed class SearchForNearbyObjectAction
         await Wait(TimeSpan.FromSeconds(w1), cancel);
 
         // the drive and the head move run together
-        var head = _m.Robot.Motion.SetHeadAngleAsync((float)HeadAngleRad, requireCalibration: false);
+        var head = _m.Robot.Motion.SetHeadAngleAsync((float)HeadAngleRad, CozmoMotion.ActionDefaultHeadSpeedRadPerSec, CozmoMotion.ActionDefaultHeadAccelRadPerSec2, requireCalibration: false);
         var back = new DriveStraightAction(_m, DistanceMm, SpeedMmps).RunAsync(cancel);
         var r = await back;
         try { await head; } catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { }

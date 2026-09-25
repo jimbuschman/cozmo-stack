@@ -228,12 +228,173 @@ public sealed class CozmoSensors
     /// <summary>Cliff events the robot has reported, oldest first.</summary>
     public IReadOnlyList<CliffReport> CliffHistory { get { lock (_gate) return _cliffs.ToArray(); } }
 
+    // fidelity: M4-019
     /// <summary>
-    /// Turns the robot's own stop-on-cliff reflex on or off. With it on the robot halts itself when a cliff
-    /// sensor trips, which is what makes driving on a table safe.
+    /// The game EnableStopOnCliff (SC8): sent verbatim. The robot's own default is HARDWARE_ONLY; the engine sends
+    /// nothing at connection.
     /// </summary>
     public void SetStopOnCliff(bool enable) =>
         _robot.SendMessage(new EnableStopOnCliff(enable), flush: true);
+
+    // ------------------------------------------------------ CliffSensorComponent (M4-008, M4-019)
+
+    // fidelity: M4-008, M4-019
+    /// <summary>SC1: the constructor's +4 enabled = 1, +5 = 0, threshold cache 400, raw values 0xFFFF (0x00633FA0..0x00633FCE).</summary>
+    public const ushort DefaultCliffThreshold = 400;
+    /// <summary>SC4: the threshold sent on the first accepted state of the current frame and on the charger platform.</summary>
+    public const ushort StartCliffThreshold = 50;
+
+    private bool _cliffEnabled = true;                 // +4
+    private bool _cliffDetectedByEvent;                // +5
+    private bool _cliffDetectedFlag;                   // +6
+    private uint _cliffTimestamp;                      // +8
+    private ushort _cliffThresholdCache = DefaultCliffThreshold;   // +0xC
+    private ushort[] _cliffRaw = { 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF };   // +0xE
+    /// <summary>Robot+0x528 (−1.0 from the constructor) and +0x52C (0): the 50-mm schedule (SC4, SC4e).</summary>
+    private float _cliffDistanceMm = -1.0f;
+    private bool _cliffDistanceDone;
+    /// <summary>
+    /// Robot+0x298 as UpdateCurrPoseFromHistory leaves it (C7 D4): the pose of the last accepted state; the constructor's
+    /// Delocalize puts it at the identity (SetNewPose, 0x00510B4C).
+    /// </summary>
+    private float _poseX, _poseY, _poseAngle;
+    /// <summary>C7 D2: MoveRobotPoseForward's distance when not carrying (the drive-centre offset); 0.0 when carrying.</summary>
+    internal const float DriveCenterOffsetMm = -20.0f;
+
+    /// <summary>+0x338: on the charger contacts, 0 from the constructor (C8 P4, P5).</summary>
+    private bool _onChargerContacts;
+    /// <summary>+0x34A: on the charger platform (C8 P1).</summary>
+    private bool _onChargerPlatform;
+    /// <summary>Whether the robot is on the charger platform (+0x34A, C8).</summary>
+    public bool OnChargerPlatform { get { lock (_gate) return _onChargerPlatform; } }
+    /// <summary>RobotOnChargerPlatformEvent (C8 P1): raised with the new value when it changes.</summary>
+    public event Action<bool>? OnChargerPlatformChanged;
+
+    /// <summary>Whether the engine's cliff sensor component is enabled (+4); set by the game EnableCliffSensor (SC6).</summary>
+    public bool CliffSensorEnabled { get { lock (_gate) return _cliffEnabled; } }
+    /// <summary>+5: the last CliffEvent broadcast had flags ≠ 0 (SC5).</summary>
+    public bool CliffDetectedByEvent { get { lock (_gate) return _cliffDetectedByEvent; } }
+    /// <summary>+6: CLIFF_DETECTED from the last handled state (SC2).</summary>
+    public bool CliffDetectedStored { get { lock (_gate) return _cliffDetectedFlag; } }
+    /// <summary>+8: the timestamp of the last handled state (SC2).</summary>
+    public uint CliffDataTimestamp { get { lock (_gate) return _cliffTimestamp; } }
+    /// <summary>+0xE: the four raw values from the last handled state, 0xFFFF before any (SC1, SC2).</summary>
+    public IReadOnlyList<ushort> CliffDataRawStored { get { lock (_gate) return _cliffRaw.ToArray(); } }
+    /// <summary>+0xC: the cliff-detect threshold last stored (SC3).</summary>
+    public ushort CliffDetectThreshold { get { lock (_gate) return _cliffThresholdCache; } }
+
+    // fidelity: M4-019
+    /// <summary>The game EnableCliffSensor (SC6, 0x00527E8E..0x00527EEA): logs "Setting to %s" and stores +4; nothing is sent.</summary>
+    public void SetCliffSensorEnabled(bool enable)
+    {
+        _robot.Engine.Log($"info: EnableCliffSensor: Setting to {(enable ? "true" : "false")}");
+        lock (_gate) _cliffEnabled = enable;
+    }
+
+    // fidelity: M4-019
+    /// <summary>
+    /// SendCliffDetectThresholdToRobot (SC3, 0x00634270..0x006342CE; 0x0063433C..0x00634368): stores the value when it
+    /// differs from the cache and always sends SetCliffDetectThreshold {u16}, reliable.
+    /// </summary>
+    internal void SendCliffDetectThresholdToRobot(ushort t)
+    {
+        lock (_gate) if (t != _cliffThresholdCache) _cliffThresholdCache = t;
+        _robot.SendMessage(new SetCliffDetectThreshold { Field0 = t });
+    }
+
+    // fidelity: M4-019
+    /// <summary>
+    /// MoveRobotPoseForward(pose, d) (C7 D3, 0x00517ED0..0x00517F3E): (x + d·cosθ, y + d·sinθ, 0).
+    /// </summary>
+    internal static (float X, float Y) MoveRobotPoseForward(float x, float y, float angle, float d) =>
+        (x + d * MathF.Cos(angle), y + d * MathF.Sin(angle));
+
+    // fidelity: M4-019
+    /// <summary>
+    /// The threshold schedule in UpdateFullRobotState, for an accepted state (SC4, SC4e, C7 D1..D5, 0x00512D48..0x00512EA6):
+    /// the drive-centre point of the robot pose before the state's pose update and after it, MoveRobotPoseForward(pose,
+    /// −20 mm), both with z = 0; for a state whose frame id equals robot+0x2B0, the first time (+0x528 = −1) it sends 50
+    /// and falls through, then |after − before| is added, and past 50 mm it sends 400 once (+0x52C). Both happen once per
+    /// Robot object. The pose update itself happens on every accepted state.
+    /// MISSING: d is 0.0 while carrying (C7 D2, CarryingComponent(+0x284)+8 ≠ −1); the carrying state is M12's and not
+    /// seen here, so −20 is always used.
+    /// MISSING: the 150 send (SC4a..SC4c: HandleRobotStopped's tag, the sliding Welford removal step, RobotStateHistory's
+    /// lower_bound walk) and the 400 on Delocalize (SC4d: the UFRS Delocalize conditions) are not sent.
+    /// </summary>
+    private void CliffThresholdSchedule(RobotState s)
+    {
+        if (_robot.Engine.Robot is not { } er) return;
+        var sends = new List<ushort>();
+        lock (_gate)
+        {
+            var before = MoveRobotPoseForward(_poseX, _poseY, _poseAngle, DriveCenterOffsetMm);
+            _poseX = s.Pose.X; _poseY = s.Pose.Y; _poseAngle = s.Pose.Angle;
+            var after = MoveRobotPoseForward(_poseX, _poseY, _poseAngle, DriveCenterOffsetMm);
+            if (s.PoseFrameId != er.PoseFrameId) return;
+            if (_cliffDistanceMm < 0f)
+            {
+                _cliffDistanceMm = 0f;
+                sends.Add(StartCliffThreshold);
+            }
+            float dx = after.X - before.X, dy = after.Y - before.Y;
+            _cliffDistanceMm += MathF.Sqrt(dx * dx + dy * dy);
+            if (_cliffDistanceMm > 50f && !_cliffDistanceDone)
+            {
+                _cliffDistanceDone = true;
+                sends.Add(DefaultCliffThreshold);
+            }
+        }
+        foreach (var t in sends) SendCliffDetectThresholdToRobot(t);
+    }
+
+    // fidelity: M4-019
+    /// <summary>
+    /// SetOnChargerPlatform(b) (C8 P1, 0x00511D4C..0x00511DB0): new = b, or the contacts flag when b is false; on a change
+    /// RobotOnChargerPlatformEvent{new}, then SendCliffDetectThresholdToRobot(new ? 50 : 400). (The FreeplayDataTracker
+    /// pause flag 3 that follows is M15's.)
+    /// MISSING: Robot::Update also sets it false when no charger is located or the robot footprint no longer intersects
+    /// the charger quad (C8 P7..P9, 0x00513C5C..0x00513E2A); that is M11 geometry and not built.
+    /// </summary>
+    private void SetOnChargerPlatform(bool b)
+    {
+        bool changed, now;
+        lock (_gate)
+        {
+            now = b || _onChargerContacts;
+            changed = now != _onChargerPlatform;
+            _onChargerPlatform = now;
+        }
+        if (!changed) return;
+        OnChargerPlatformChanged?.Invoke(now);
+        SendCliffDetectThresholdToRobot(now ? StartCliffThreshold : DefaultCliffThreshold);
+    }
+
+    // fidelity: M4-019
+    /// <summary>
+    /// SetOnCharger(onContacts) (C8 P3..P5, 0x005119AA..0x00511C14): with the bit set and +0x338 still 0,
+    /// SetOnChargerPlatform(true) (and the ChargerEvent); with it clear the platform flag is left alone; then +0x338 :=
+    /// the bit. The located-charger creation and its dock-pose observation (P4 steps 1..4) are M11/M13's.
+    /// </summary>
+    private void SetOnCharger(bool onContacts)
+    {
+        bool rising;
+        lock (_gate) rising = onContacts && !_onChargerContacts;
+        if (rising) SetOnChargerPlatform(true);
+        lock (_gate) _onChargerContacts = onContacts;
+    }
+
+    // fidelity: M4-019
+    /// <summary>
+    /// PotentialCliff 0xC1 (SC7, 0x0053582C..0x00535998): ignored on the charger platform (+0x34A, C8); in drone mode a
+    /// TriggerLiftSafeAnimationAction; otherwise, when not in SDK mode, StopAllMotors and EnableStopOnCliff{0}.
+    /// This stack is not in SDK mode and has no drone mode (EnableDroneMode, SC8, is not offered).
+    /// </summary>
+    private void HandlePotentialCliff()
+    {
+        lock (_gate) if (_onChargerPlatform) return;
+        _robot.Motion.StopAllMotors();
+        _robot.SendMessage(new EnableStopOnCliff(false));
+    }
 
     /// <summary>Waits for the robot to report a cliff, or gives up.</summary>
     public async Task<CliffReport?> WaitForCliffAsync(TimeSpan timeout)
@@ -268,7 +429,21 @@ public sealed class CozmoSensors
     /// </summary>
     internal void ResetToConstructed()
     {
-        lock (_gate) _cliffs.Clear();
+        lock (_gate)
+        {
+            _cliffs.Clear();
+            _cliffEnabled = true;
+            _cliffDetectedByEvent = false;
+            _cliffDetectedFlag = false;
+            _cliffTimestamp = 0;
+            _cliffThresholdCache = DefaultCliffThreshold;
+            _cliffRaw = new ushort[] { 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF };
+            _cliffDistanceMm = -1.0f;
+            _cliffDistanceDone = false;
+            _poseX = _poseY = _poseAngle = 0f;
+            _onChargerContacts = false;
+            _onChargerPlatform = false;
+        }
         _lastFalling = false;
         _lastPickedUp = false;
         _lastOnCharger = false;
@@ -283,6 +458,17 @@ public sealed class CozmoSensors
         switch (m)
         {
             case CliffEvent c:
+            {
+                // fidelity: M4-019
+                // SC5 (0x00535548..0x005356E6): enabled with flags ≠ 0 runs ComputeCliffPose and AddCliff (the M11/M13
+                // map interface, not built here); disabled with flags ≠ 0 drops the event with no broadcast; otherwise
+                // +5 = (flags ≠ 0) and the event goes to the game. Nothing is sent to the robot.
+                bool any = c.DetectedFlags != 0;
+                lock (_gate)
+                {
+                    if (!_cliffEnabled && any) break;
+                    _cliffDetectedByEvent = any;
+                }
                 var report = new CliffReport(c.Timestamp, (CliffSensors)c.DetectedFlags, c.DidStopForCliff);
                 lock (_gate)
                 {
@@ -290,6 +476,11 @@ public sealed class CozmoSensors
                     if (_cliffs.Count > 256) _cliffs.RemoveAt(0);
                 }
                 CliffDetected?.Invoke(report);
+                break;
+            }
+
+            case PotentialCliff:
+                HandlePotentialCliff();
                 break;
 
             case Protocol.FallingStopped f:
@@ -303,15 +494,41 @@ public sealed class CozmoSensors
                 break;
 
             case RobotState s:
+                // fidelity: M4-008
+                // SC2 UpdateRobotData (0x00634016..0x00634036): the raw values to +0xE, CLIFF_DETECTED to +6, the
+                // timestamp to +8.
+                lock (_gate)
+                {
+                    if (s.CliffDataRaw is { Length: 4 } raw) _cliffRaw = raw.ToArray();
+                    _cliffDetectedFlag = s.Has(RobotStatusFlag.CliffDetected);
+                    _cliffTimestamp = s.Timestamp;
+                }
                 // The engine runs its IMU filters and the off-treads classifier inside UpdateFullRobotState
                 // before it looks at the status flags; the same order here. The classifier's gate is the
                 // head calibration the tracker has already recorded from the robot's own report.
                 OffTreads.HeadCalibrated = _state.HeadCalibrated;
                 var before = OffTreads.Current;
                 if (OffTreads.Update(s, s.Timestamp))
+                {
                     OffTreadsStateChanged?.Invoke(before, OffTreads.Current);
+                    // fidelity: M4-019
+                    // C8 P6 (0x00512188..0x00512192): a committed change to anything but OnTreads calls
+                    // SetOnChargerPlatform(false), with the contacts flag from the previous state.
+                    if (OffTreads.Current != OffTreadsState.OnTreads) SetOnChargerPlatform(false);
+                }
+                // fidelity: M4-019
+                // C8 P3..P5: UpdateFullRobotState then feeds SetOnCharger with IS_ON_CHARGER (0x00512AAC..0x00512AB4).
+                SetOnCharger(s.Has(RobotStatusFlag.IsOnCharger));
+                // MovementComponent::CheckForUnexpectedMovement (0x0063E398) is tail-called from MovementComponent::Update
+                // (0x0063E392), which UpdateFullRobotState runs before the origin check (C3, 0x00512B5C): every synced state.
                 var movement = UnexpectedMovement.Update(s);
                 if (movement is not null) UnexpectedMovementDetected?.Invoke(movement);
+                // fidelity: M4-019, M4-020
+                // The schedule is after the origin check (0x00512D7A..0x00512EA6, C3), so after the treads check
+                // (0x00512A72), SetOnCharger (0x00512AB4) and MovementComponent::Update (0x00512B5C): when both send a
+                // threshold in one state the engine's order is platform first, schedule last. An origin-rejected state
+                // skips it.
+                if (_robot.Engine.Robot?.OriginAccepted(s) == true) CliffThresholdSchedule(s);
 
                 bool picked = s.Has(RobotStatusFlag.IsPickedUp);
                 bool charger = s.Has(RobotStatusFlag.IsOnCharger);

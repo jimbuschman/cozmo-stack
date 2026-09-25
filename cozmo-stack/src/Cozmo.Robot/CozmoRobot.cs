@@ -240,7 +240,11 @@ public sealed class CozmoRobot : IDisposable
         // Each raw face frame is paired with an audio frame, unless a Play is feeding audio frames (MD3, M3-017).
         Display.BeforeFrame = () => { if (!Audio.Busy) SendStreamDirect(new AudioSilence()); };
         Motion = new CozmoMotion(this);
-        Lights = new CozmoLights(this);
+        // fidelity: M4-017, M4-018
+        // The shipped light patterns, from the resources path the engine options name (LB4e; LC3). Without one the
+        // containers hold only OffCharger, and the charging and cube animations warn and play nothing (LB4c, LC2 (c)).
+        Lights = new CozmoLights(this, BackpackLightAnimations.Load(Engine.Options.ResourcesPath, Engine.Log),
+                                 CubeLightAnimations.Load(Engine.Options.ResourcesPath, Engine.Log));
         Sensors = new CozmoSensors(this, State);
         Cubes = new CozmoCubes(this);
         CubeAccel = new CubeAccelStreams(this);
@@ -260,6 +264,10 @@ public sealed class CozmoRobot : IDisposable
         // fidelity: M3-019, M3-022, M3-013
         Engine.VisionConnected = CameraSettings.OnRobotConnected;
         Engine.AnimationStreamerUpdate = Animations.EngineUpdate;
+        // fidelity: M4-010, M4-017, M4-018, M4-020, M4-023, M1-041
+        Engine.StateStored = s => Cubes.Connections.SetRobotTime(s.Timestamp);
+        Engine.RobotComponentsUpdate = UpdateComponents;
+        Engine.RobotStateHistoryClear = () => StateHistoryCleared?.Invoke();
         // fidelity: M1-024
         // Messages reach the devices only from the engine's per-tick drain (B25, CD10), not from the transport.
         Engine.DeviceRoute = RouteToDevices;
@@ -536,9 +544,12 @@ public sealed class CozmoRobot : IDisposable
     /// Stops every motor immediately. Safe to call at any time, including before the robot is ready, and
     /// does not wait for confirmation; <see cref="CozmoMotion.StopAllAsync"/> is the checked version.
     /// </summary>
+    // fidelity: M4-007, M4-015
     public void EmergencyStop()
     {
-        SendMessage(new StopAllMotors(), flush: true);
+        // MovementComponent::StopAllMotors: the unlock preamble (0x9E for every track direct drive holds), then 0x3B (MA5).
+        Motion.StopAllMotors();
+        // NOTE: this extra zero wheel command is this stack's (the shutdown decision note in PROJECT_STATE), not the engine's.
         SendMessage(new DriveWheels(0f, 0f, 0f, 0f), flush: true);
     }
 
@@ -572,10 +583,14 @@ public sealed class CozmoRobot : IDisposable
     /// <summary>The engine's idle face: two "skip 64 columns" commands, i.e. nothing lit.</summary>
     private static readonly byte[] BlankFace = { 0x3F, 0x3F };
 
-    // fidelity: M1-024, M1-041
+    // fidelity: M1-024, M1-041, M4-020, M2-002
     /// <summary>
     /// The stack's devices as engine subscribers of one broadcast message (CC36), called from the engine's per-tick
-    /// dispatch. A RobotState the Robot drops before time sync (CD23) does not reach them.
+    /// dispatch. A RobotState the Robot drops before time sync (CD23) does not reach them. A synced state whose origin
+    /// the Robot rejects still does: what UpdateFullRobotState stores before the origin check (M4 correction C3: the
+    /// RS6 head angle, the lift angle, SC2 cliff data, the IMU filter, the treads state, the status bits and SetOnCharger,
+    /// MovementComponent::Update, SC10) is applied by the devices, and only the steps after the check (the pose, the
+    /// history, the cliff threshold schedule) test <see cref="EngineRobot.OriginAccepted"/>.
     ///
     /// Each device is isolated (policy M1-034): anything throwing part way through would otherwise leave the rest of
     /// the devices without the message - a partial update of the robot's own state, which nothing downstream can
@@ -585,6 +600,7 @@ public sealed class CozmoRobot : IDisposable
     {
         if (m is RobotState && !stateHandled) return;
         Route(() => State.Handle(m));
+        Route(() => Motion.Handle(m));
         Route(() => Camera.Handle(m));
         // fidelity: M3-021
         if (m is DefaultCameraParams dcp) Route(() => CameraSettings.Handle(dcp));
@@ -619,6 +635,25 @@ public sealed class CozmoRobot : IDisposable
         if (RobotRemoved is { } removed)
             foreach (var d in removed.GetInvocationList()) Route((Action)d);
     }
+
+    // fidelity: M4-010, M4-017, M4-018, M4-023
+    /// <summary>
+    /// The M4 components of Robot::Update, in the engine's order (CD2): BlockTapFilterComponent, then BlockFilter,
+    /// CheckDisconnected and ConnectToRequested, then CubeLight::Update(true), then BodyLight. Robot::Update reaches them
+    /// only after the first full state (CD12), so a state has always been stored by then; the offline test seam forces
+    /// that flag, so they wait here for a stored state as well.
+    /// </summary>
+    private void UpdateComponents()
+    {
+        if (Engine.Robot?.StoredState is not { } stored) return;
+        Route(Cubes.Update);
+        Route(Lights.Cubes.Update);
+        Route(() => Lights.Body.Update(stored, Engine.Log));
+    }
+
+    // fidelity: M1-041
+    /// <summary>Raised on the engine thread by Robot::SyncTime's RobotStateHistory::Clear (CD18), for the VisionSystem's history.</summary>
+    internal event Action? StateHistoryCleared;
 
     // fidelity: M1-025, M1-015
     /// <summary>

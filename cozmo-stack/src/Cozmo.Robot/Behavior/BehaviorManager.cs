@@ -352,7 +352,7 @@ public sealed class BehaviorManager : IDisposable
         // clearing the behaviour when that fails ("Tried to resume behavior '%s', but failed. Clearing
         // current behavior").
         if (resume is null) return;
-        if (headRad is { } h) _ = _context.Robot.Motion.SetHeadAngleAsync(h, requireCalibration: false);
+        if (headRad is { } h) _ = _context.Robot.Motion.SetHeadAngleAsync(h, CozmoMotion.ActionDefaultHeadSpeedRadPerSec, CozmoMotion.ActionDefaultHeadAccelRadPerSec2, requireCalibration: false);
         if (liftMm is { } l) _ = _context.Robot.Motion.SetLiftHeightAsync(l, requireCalibration: false);
 
         if (!resume.IsRunnable(_context))

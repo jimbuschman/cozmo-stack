@@ -189,17 +189,15 @@ public class ControlTests
     }
 
     /// <summary>
-    /// The speed and acceleration a bare head or lift move carries are the engine's action defaults, not
-    /// PyCozmo's. MoveHeadToAngleAction's constructor writes 15 and 20 into the action at 0x00547F14 and
-    /// Init 0x00548534 hands them to MovementComponent::MoveHeadToAngle; MoveLiftToHeightAction's
-    /// constructor writes 0, 10 and 20 at 0x00548A68 and Init 0x0054903C hands the last two to
-    /// MoveLiftToHeight, with the duration of zero. This stack sent head 10/10 and lift 3/20, which were
-    /// PyCozmo's numbers.
+    /// M4-003 (MD1, MA10, MA11): the stack's head and lift API is the game-message path, whose speed, acceleration and
+    /// duration are the caller's; its defaults are what the original app passes (Unity Robot.cs:1443-1450 head 10/20,
+    /// 1638-1646 lift 10/20, duration 0). Updated for the M4 inventory: this test used to expect the action
+    /// constructor's head 15/20 (MA9), which only engine-internal callers get.
     /// </summary>
     [Fact]
-    public async Task TheHeadAndLiftDefaultsAreTheEnginesActionDefaults()
+    public async Task TheHeadAndLiftDefaultsAreTheAppsGamePathValues()
     {
-        Assert.Equal(15f, CozmoMotion.DefaultHeadSpeedRadPerSec);
+        Assert.Equal(10f, CozmoMotion.DefaultHeadSpeedRadPerSec);
         Assert.Equal(20f, CozmoMotion.DefaultHeadAccelRadPerSec2);
         Assert.Equal(10f, CozmoMotion.DefaultLiftSpeedRadPerSec);
         Assert.Equal(20f, CozmoMotion.DefaultLiftAccelRadPerSec2);
@@ -208,7 +206,7 @@ public class ControlTests
         rig.MakeReady();
         _ = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(200));
         var head = await WaitFor(() => rig.LastSent<SetHeadAngle>());
-        Assert.Equal(15f, head.MaxSpeedRadPerSec);
+        Assert.Equal(10f, head.MaxSpeedRadPerSec);
         Assert.Equal(20f, head.AccelRadPerSec2);
         Assert.Equal(0f, head.DurationSec);
 
@@ -233,6 +231,8 @@ public class ControlTests
         Assert.False(pending.IsCompleted);
 
         rig.Send(new MotorActionAck { ActionId = sent.ActionId });               // the right one
+        // M4-016 MA17: after the ack the move completes once the head is in position and stopped (HEAD_IN_POS).
+        rig.Send(Rig.StateWith(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos, head: 0.3f));
         var r = await pending;
         Assert.True(r.Ok, r.Detail);
         Assert.Contains($"action {sent.ActionId}", r.Detail);
@@ -250,7 +250,7 @@ public class ControlTests
     }
 
     [Fact]
-    public async Task ActionIdsAreDistinctPerActionAndNeverZero()
+    public async Task ActionIdsAreDistinctPerAction()
     {
         var rig = new Rig();
         rig.MakeReady();
@@ -263,7 +263,7 @@ public class ControlTests
             await Task.Delay(70);
         }
         Assert.True(ids.Count >= 3, "each action should carry its own id");
-        Assert.DoesNotContain((byte)0, ids);
+        // M4-005 MA8: the counter does reach 0 after 255, so "never zero" is no longer asserted (M4ControlTests).
         Assert.Equal(ids.Count, ids.Distinct().Count());
     }
 
@@ -277,7 +277,8 @@ public class ControlTests
         var head = await WaitFor(() => rig.LastSent<SetHeadAngle>());
         Assert.Equal(CozmoMotion.MaxHeadAngleRad, head.AngleRad, 4);
 
-        _ = rig.Robot.Motion.SetLiftHeightAsync(-50f, timeout: TimeSpan.FromMilliseconds(60));
+        // M4-002 MA13: a height in [0, 32) clamps to 32; a negative one goes to the nearer preset (M4ControlTests).
+        _ = rig.Robot.Motion.SetLiftHeightAsync(10f, timeout: TimeSpan.FromMilliseconds(60));
         var lift = await WaitFor(() => rig.LastSent<SetLiftHeight>());
         Assert.Equal(CozmoMotion.MinLiftHeightMm, lift.HeightMm, 4);
     }
@@ -330,13 +331,19 @@ public class ControlTests
 
     // ------------------------------------------------------------------- lights
 
+    /// <summary>
+    /// M4-017 LB5: SetBackpackLEDs loops the pattern at source 2 and BodyLightComponent::Update sends it at the next
+    /// Robot::Update (LB1), as 0x03 then 0x11 (LB3). Updated for the M4 inventory: the send used to be immediate.
+    /// </summary>
     [Fact]
     public void BackpackColoursArePackedAndRememberedAsSent()
     {
         var rig = new Rig();
+        rig.Send(Rig.StateWith());
         rig.Robot.Lights.SetBackpack(LedColor.Red, LedColor.Green, LedColor.Blue);
+        rig.Send(Rig.StateWith());                // the next Robot::Update
 
-        var msg = Assert.Single(rig.Sent.OfType<BackpackLightsMiddle>());
+        var msg = rig.Sent.OfType<BackpackLightsMiddle>().Last();
         Assert.Equal(LedColor.Red.Packed, msg.Field0[0].OnColor);
         Assert.Equal(LedColor.Green.Packed, msg.Field0[1].OnColor);
         Assert.Equal(LedColor.Blue.Packed, msg.Field0[2].OnColor);
@@ -347,8 +354,10 @@ public class ControlTests
     public void ABlinkCarriesTheRobotsOwnFrameTimingRatherThanALoopHere()
     {
         var rig = new Rig();
+        rig.Send(Rig.StateWith());
         rig.Robot.Lights.BlinkBackpack(LedColor.Red, LedColor.Off, onFrames: 10, offFrames: 20);
-        var msg = Assert.Single(rig.Sent.OfType<BackpackLightsMiddle>());
+        rig.Send(Rig.StateWith());                // M4-017: sent at the next Robot::Update
+        var msg = rig.Sent.OfType<BackpackLightsMiddle>().Last();
         Assert.Equal((byte)10, msg.Field0[0].OnFrames);
         Assert.Equal((byte)20, msg.Field0[0].OffFrames);
         Assert.Equal(LedColor.Red.Packed, msg.Field0[0].OnColor);
@@ -522,8 +531,11 @@ public class ControlTests
         rig.Send(new ObjectConnectionState { ObjectID = 3, FactoryID = 1, ObjectType = ObjectType.Block_LIGHTCUBE2, Connected = true });
 
         rig.Send(new ObjectPowerLevel { ObjectID = 3, BatteryLevel = 140, MissedPackets = 9 });
-        rig.Send(new ObjectTapped { ObjectID = 3, Timestamp = 5, NumTaps = 1 });
+        // M4-009 CD10a: the movement comes first, since M4-023 CD10g ignores movement inside a tap's 500 ms window.
         rig.Send(new ObjectMoved { ObjectID = 3, Timestamp = 6, Accel = new ActiveAccel { X = 1, Y = 2, Z = 3 }, AxisOfAccel = UpAxis.ZPositive });
+        // M4-023 CD10e: a tap needs intensity (tapPos − tapNeg) above 60; the offline robot is not physical, so it is
+        // broadcast at once. Updated for the M4 inventory: an intensity-0 tap used to count.
+        rig.Send(new ObjectTapped { ObjectID = 3, Timestamp = 5, NumTaps = 1, TapNeg = -40, TapPos = 30 });
 
         var cube = rig.Robot.Cubes.ByObjectId(3)!;
         Assert.Equal((byte)140, cube.BatteryLevelRaw!.Value);

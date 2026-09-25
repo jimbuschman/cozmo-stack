@@ -52,10 +52,14 @@ public sealed class Cube
     public Vector3? Accel { get; internal set; }
     /// <summary>True between a moved and a stopped-moving report.</summary>
     public bool Moving { get; internal set; }
-    /// <summary>How many times this cube has been tapped since the connection opened.</summary>
+    /// <summary>How many ObjectTapped broadcasts this cube has had (taps that passed the tap filter, M4-023).</summary>
     public int Taps { get; internal set; }
     /// <summary>When it was last tapped.</summary>
     public DateTime? LastTapUtc { get; internal set; }
+    /// <summary>The last broadcast tap: {timestamp, numTaps, tapTime, tapNeg, tapPos} (CD10e).</summary>
+    public ObjectTapped? LastTap { get; internal set; }
+    /// <summary>The robot timestamp of the last SetIsMoving (CD10a, CD10b).</summary>
+    public uint MovingChangedAt { get; internal set; }
 
     public override string ToString() =>
         $"Cube 0x{FactoryId:x8} {Type}{(ObjectId is { } o ? $" id={o}" : "")} " +
@@ -117,31 +121,27 @@ public sealed class CozmoCubes
     public static bool IsLightCube(ObjectType type) =>
         type is ObjectType.Block_LIGHTCUBE1 or ObjectType.Block_LIGHTCUBE2 or ObjectType.Block_LIGHTCUBE3;
 
+    // fidelity: M4-009
     /// <summary>
-    /// The largest id a connection report from the robot may carry, which is the last of the engine's
-    /// <c>MAX_NUM_ACTIVE_OBJECTS</c> = 5 radio slots. <c>HandleActiveObjectConnectionState</c> 0x00533B3C
-    /// reads the id first and returns when it is above 4 (<c>cmp r7, #4; bhi</c> at 0x00533B58), before it
-    /// touches BlockWorld or its DAS event.
-    ///
-    /// It is documented rather than enforced, because the two sides mean different things by "object id".
-    /// The engine has two id spaces: the radio slot the robot reports, which this bounds, and the id
-    /// BlockWorld hands back from <c>AddConnectedActiveObject(slot, factoryId, type)</c>, which is what the
-    /// rest of the engine passes around. This stack keeps one - the id on the wire is the id the world
-    /// model uses - so refusing an id above 4 here would refuse a world object rather than an impossible
-    /// radio slot. A robot never sends one above 4 either way.
+    /// The largest slot a connection report from the robot may carry, the last of the engine's
+    /// <c>MAX_NUM_ACTIVE_OBJECTS</c> = 5 radio slots. <c>HandleActiveObjectConnectionState</c> reads the slot first
+    /// and ignores a report above 4 (S1, LC8a: <c>cmp r7, #4; bhi</c> at 0x00533B58). The id this stack keys cube
+    /// telemetry on is that slot, the engine's activeID (S2: vbase+0x40). The bound is recorded and not enforced
+    /// here, because this stack also uses the slot as its world ObjectID (M11 interface); see Handle.
     /// </summary>
     public const uint MaxActiveObjectSlot = 4;
 
     internal CozmoCubes(CozmoRobot robot)
     {
         _robot = robot;
-        var clock = System.Diagnostics.Stopwatch.StartNew();
-        Seconds = () => (float)clock.Elapsed.TotalSeconds;
+        // fidelity: M4-010
+        // The connection path's clock is BaseStationTimer::GetCurrentTimeInSeconds (CD3, CD4, CD8).
+        Seconds = () => _robot.Engine.Timer.SecondsF;
         Connections = new CubeConnections(m => _robot.SendMessage(m, reliable: true, flush: true),
                                           () => Seconds());
     }
 
-    /// <summary>The clock the connection path reads, in seconds; replaceable so tests can drive it.</summary>
+    /// <summary>The clock the connection path reads, in seconds (the engine clock); replaceable so tests can drive it.</summary>
     internal Func<float> Seconds { get; set; }
 
     /// <summary>
@@ -270,8 +270,148 @@ public sealed class CozmoCubes
             _byFactoryId.Clear();
             _byObjectId.Clear();
             DiscoveryEnabled = false;
+            _tapFilterEnabled = true;
+            _tapQueue.Clear();
+            _tapDeadlineMs = 0;
+            _doubleTaps.Clear();
         }
         Connections.ResetToConstructed();
+    }
+
+    // ------------------------------------------------------ BlockTapFilterComponent (M4-023)
+
+    /// <summary>CD10e: a tap at or below this intensity (tapPos − tapNeg) is dropped.</summary>
+    public const int TapIntensityMin = 60;
+    /// <summary>CD10e: a physical robot's taps queue this long from the first one.</summary>
+    public const uint TapQueueMs = 75;
+    /// <summary>CD10g: the double-tap window and movement suppression.</summary>
+    public const uint DoubleTapWindowMs = 500;
+
+    /// <summary>+0x18: enabled from the constructor (CD10d).</summary>
+    private bool _tapFilterEnabled = true;
+    private readonly List<(ObjectTapped Tap, Cube Cube, int Intensity)> _tapQueue = new();
+    private uint _tapDeadlineMs;
+
+    /// <summary>DoubleTapInfo: +0x18 window end, +0x1C moving, +0x20 ignore-until, +0x24 pending (CD10g).</summary>
+    private sealed class DoubleTapInfo { public uint WindowEnd; public bool Moving; public uint IgnoreUntil; public bool Pending; }
+    /// <summary>Per object; keyed by type, one ObjectID per light-cube type (LC8e).</summary>
+    private readonly Dictionary<ObjectType, DoubleTapInfo> _doubleTaps = new();
+
+    /// <summary>Whether the tap filter is on (+0x18).</summary>
+    public bool BlockTapFilterEnabled { get { lock (_gate) return _tapFilterEnabled; } }
+
+    // fidelity: M4-023
+    /// <summary>The game EnableBlockTapFilter (tag 0x62, CD10d): sets +0x18.</summary>
+    public void SetBlockTapFilterEnabled(bool enable) { lock (_gate) _tapFilterEnabled = enable; }
+
+    private uint NowMs => _robot.Engine.Timer.TimeStampMs;
+    private void Log(string l) => _robot.Engine.Log(l);
+
+    private DoubleTapInfo TapInfo(Cube c)
+    {
+        if (!_doubleTaps.TryGetValue(c.Type, out var d)) _doubleTaps[c.Type] = d = new DoubleTapInfo();
+        return d;
+    }
+
+    /// <summary>
+    /// Raised with the object id of a cube whose pending double-tap entry has ended (CD10g), for BlockWorld's
+    /// MarkObjectDirty of its located copies.
+    /// </summary>
+    internal event Action<uint>? DoubleTapPendingEnded;
+
+    // fidelity: M4-009, M4-023
+    /// <summary>
+    /// Whether HandleActiveObjectMoved returns before SetIsMoving and MarkObjectDirty for this active id (CD10a steps
+    /// 1..3): no connected object, the charger, or a movement inside the double-tap window.
+    /// </summary>
+    internal bool MovedStopsBeforeTheWorld(uint activeId)
+    {
+        lock (_gate)
+            return Connected(activeId) is not { } c || c.Type == ObjectType.Charger_Basic || ShouldIgnoreMovementDueToDoubleTap(c);
+    }
+
+    // fidelity: M4-009
+    /// <summary>
+    /// Whether HandleActiveObjectStopped returns before SetIsMoving(false) for this active id (CD10b): no connected object
+    /// or the charger. Its double-tap test's result is discarded (0x00534A62), so it is not applied.
+    /// </summary>
+    internal bool StoppedStopsBeforeTheWorld(uint activeId)
+    {
+        lock (_gate)
+            return Connected(activeId) is not { } c || c.Type == ObjectType.Charger_Basic;
+    }
+
+    // fidelity: M4-023
+    /// <summary>ShouldIgnoreMovementDueToDoubleTap: ignore-until &gt; now (CD10g).</summary>
+    private bool ShouldIgnoreMovementDueToDoubleTap(Cube c) =>
+        _doubleTaps.TryGetValue(c.Type, out var d) && unchecked((int)(d.IgnoreUntil - NowMs)) > 0;
+
+    // fidelity: M4-023
+    /// <summary>
+    /// CheckForDoubleTap (CD10g, 0x00630DC4..0x00630E58): moving clears the window; else inside the window it is a
+    /// double tap (logged, no broadcast), window and pending cleared; else window = ignore-until = now + 500, pending.
+    /// </summary>
+    private void CheckForDoubleTap(Cube c)
+    {
+        var d = TapInfo(c);
+        uint now = NowMs;
+        if (d.Moving) d.WindowEnd = 0;
+        else if (d.WindowEnd != 0 && unchecked((int)(now - d.WindowEnd)) < 0)
+        {
+            Log($"info: BlockTapFilterComponent: Detected double tap on {c.Type}");
+            d.WindowEnd = 0;
+            d.Pending = false;
+        }
+        else
+        {
+            d.WindowEnd = d.IgnoreUntil = unchecked(now + DoubleTapWindowMs);
+            d.Pending = true;
+        }
+    }
+
+    private static void RecordTap(Cube c, ObjectTapped t)
+    {
+        c.Taps++;
+        c.LastTap = t;
+        c.LastTapUtc = DateTime.UtcNow;
+        c.LastSeenUtc = c.LastTapUtc.Value;
+    }
+
+    // fidelity: M4-010, M4-023
+    /// <summary>
+    /// The components Robot::Update runs for cubes (CD2): BlockTapFilterComponent::Update (0x00513EA4: once now is past
+    /// the deadline the queued tap with the greatest intensity is broadcast, strictly greater winning so the earliest
+    /// wins a tie, and the queue cleared, CD10f; a pending double-tap entry past its ignore-until is cleared, CD10g - the
+    /// MarkObjectDirty that follows is BlockWorld's, M11), then the connection path (BlockFilter, CheckDisconnected,
+    /// ConnectToRequested).
+    /// </summary>
+    internal void Update()
+    {
+        Cube? tapped = null;
+        var ended = new List<uint>();
+        lock (_gate)
+        {
+            uint now = NowMs;
+            if (_tapQueue.Count > 0 && unchecked((int)(now - _tapDeadlineMs)) > 0)
+            {
+                var best = _tapQueue[0];
+                foreach (var q in _tapQueue) if (q.Intensity > best.Intensity) best = q;
+                _tapQueue.Clear();
+                RecordTap(best.Cube, best.Tap);
+                tapped = best.Cube;
+            }
+            foreach (var (type, d) in _doubleTaps)
+                if (d.Pending && unchecked((int)(now - d.IgnoreUntil)) > 0)
+                {
+                    d.Pending = false;
+                    if (_byFactoryId.Values.FirstOrDefault(c => c.Type == type && c.ObjectId is not null) is { } c) ended.Add(c.ObjectId!.Value);
+                }
+        }
+        if (tapped is not null) CubeTapped?.Invoke(tapped);
+        // CD10g (0x006311A2..0x006313D8): MarkObjectDirty on every located copy whose pose state is Known (+0x24 == 1);
+        // BlockWorld.MarkDirty changes only a Known pose.
+        foreach (var id in ended) EventFan.Raise(DoubleTapPendingEnded, id, null);
+        Connections.Update();
     }
 
     // ----------------------------------------------------------------- plumbing
@@ -284,10 +424,22 @@ public sealed class CozmoCubes
         return c;
     }
 
+    /// <summary>The connected object for an activeID (GetConnectedActiveObjectByActiveIdHelper).</summary>
+    private Cube? Connected(uint activeId) =>
+        _byObjectId.TryGetValue(activeId, out var c) && c.Connected ? c : null;
+
+    /// <summary>
+    /// The carried-object test the Moved and Stopped broadcasts are excluded on (CD10a, CD10b). MISSING interface: the
+    /// carried object (M12 CarryingComponent) and the ID at [robot+0x280]+0xC (not read) are not wired, so nothing is
+    /// excluded until they are.
+    /// </summary>
+    internal Func<Cube, bool>? ExcludeFromMovedBroadcast { get; set; }
+
     /// <summary>Fed every robot message by <see cref="CozmoRobot"/>.</summary>
     internal void Handle(RobotMessage m)
     {
         Cube? discovered = null, connectionChanged = null, tapped = null, moved = null;
+        (ObjectType Type, bool Connected)? lights = null;
         lock (_gate)
         {
             switch (m)
@@ -308,12 +460,28 @@ public sealed class CozmoCubes
                 }
                 case ObjectConnectionState s:
                 {
+                    // fidelity: M4-009
+                    // LC8a (0x00533B56..0x00533CB2): the engine ignores a slot above 4. NOT REPRODUCED: this stack uses
+                    // the slot as its BlockWorld ObjectID (an M11 interface; the engine's ObjectIDs come from
+                    // ObservableObject::SetID, LC8e), and its manipulation and vision fixtures connect cubes on slots
+                    // 7..9; the bound is recorded (MaxActiveObjectSlot), and CubeConnections applies it. A robot never
+                    // reports a slot above 4. Connected: AddConnectedActiveObject
+                    // (a slot holding a different factory or type is emptied first, LC8c), HandleConnectedToObject,
+                    // then the game-side broadcast, which the CubeLightComponent hears (S1, LC1). Disconnected:
+                    // RemoveConnectedActiveObject (the connected entry with that activeID is erased, LC8b), then
+                    // HandleDisconnectedFromObject.
                     bool isNew = !_byFactoryId.ContainsKey(s.FactoryID);
                     var c = Track(s.FactoryID);
-                    c.ObjectId = s.ObjectID;
                     c.Type = s.ObjectType;
                     c.LastSeenUtc = DateTime.UtcNow;
-                    _byObjectId[s.ObjectID] = c;
+                    if (s.Connected)
+                    {
+                        if (_byObjectId.TryGetValue(s.ObjectID, out var held) && !ReferenceEquals(held, c)) held.Connected = false;
+                        c.ObjectId = s.ObjectID;
+                        _byObjectId[s.ObjectID] = c;
+                    }
+                    else if (_byObjectId.TryGetValue(s.ObjectID, out var held) && ReferenceEquals(held, c))
+                        _byObjectId.Remove(s.ObjectID);
                     if (c.Connected != s.Connected)
                     {
                         c.Connected = s.Connected;
@@ -321,6 +489,7 @@ public sealed class CozmoCubes
                     }
                     if (isNew) discovered = c;
                     Connections.OnConnectionState(s.ObjectID, s.FactoryID, s.Connected);
+                    lights = (s.ObjectType, s.Connected);
                     break;
                 }
                 case ObjectPowerLevel p when _byObjectId.TryGetValue(p.ObjectID, out var c):
@@ -328,32 +497,81 @@ public sealed class CozmoCubes
                     c.MissedPackets = p.MissedPackets;
                     c.LastSeenUtc = DateTime.UtcNow;
                     break;
-                case ObjectTapped t when _byObjectId.TryGetValue(t.ObjectID, out var c):
-                    c.Taps++;
-                    c.LastTapUtc = DateTime.UtcNow;
-                    c.LastSeenUtc = c.LastTapUtc.Value;
-                    tapped = c;
+                case ObjectTapped t:
+                {
+                    // fidelity: M4-023
+                    // CD10e (0x00630B2E..0x00630C8C): intensity = tapPos − tapNeg; ≤ 60 is dropped; an unknown id is
+                    // dropped with a warning; with the filter on and a physical robot (robot+0x14, SetPhysicalRobot from
+                    // HandleFirmwareVersion) the tap is queued, the first one setting deadline = now + 75 ms; otherwise
+                    // ObjectTapped is broadcast at once. CheckForDoubleTap follows.
+                    int intensity = t.TapPos - t.TapNeg;
+                    if (intensity <= TapIntensityMin) { Log($"info: BlockTapFilterComponent: Tap ignored {intensity} <= {TapIntensityMin}"); break; }
+                    if (Connected(t.ObjectID) is not { } c) { Log($"warning: BlockTapFilterComponent: tap from unknown object {t.ObjectID}"); break; }
+                    bool physical = _robot.Engine.Robot?.IsPhysicalRobot ?? false;
+                    if (_tapFilterEnabled && physical)
+                    {
+                        if (_tapQueue.Count == 0) _tapDeadlineMs = unchecked(NowMs + TapQueueMs);
+                        _tapQueue.Add((t, c, intensity));
+                    }
+                    else
+                    {
+                        RecordTap(c, t);
+                        tapped = c;
+                    }
+                    CheckForDoubleTap(c);
                     break;
-                case ObjectMoved mv when _byObjectId.TryGetValue(mv.ObjectID, out var c):
+                }
+                case ObjectMoved mv:
+                {
+                    // fidelity: M4-009
+                    // CD10a (0x00533E4C..0x005341BA): the connected object by activeID (unknown: a warning, no
+                    // broadcast); the charger's garbage moves and a movement inside the double-tap window stop here;
+                    // otherwise SetIsMoving(true, ts) when not already moving, and ObjectMoved is broadcast. BTF's own
+                    // Moved handler sets its moving flag only while no double-tap window is open (CD10g).
+                    if (Connected(mv.ObjectID) is not { } c) { Log($"warning: HandleActiveObjectMoved: unknown active id {mv.ObjectID}"); break; }
+                    var d = TapInfo(c);
+                    if (d.WindowEnd == 0) d.Moving = true;
+                    if (c.Type == ObjectType.Charger_Basic) { Log("info: Charger sending garbage move messages"); break; }
+                    if (ShouldIgnoreMovementDueToDoubleTap(c)) { Log($"info: HandleActiveObjectMoved: ignoring movement of {c.Type} after a double tap"); break; }
+                    if (!c.Moving) { c.Moving = true; c.MovingChangedAt = mv.Timestamp; }
                     c.Accel = new Vector3(mv.Accel.X, mv.Accel.Y, mv.Accel.Z);
                     c.UpAxis = mv.AxisOfAccel;
                     c.LastSeenUtc = DateTime.UtcNow;
-                    if (!c.Moving) { c.Moving = true; moved = c; }
+                    if (ExcludeFromMovedBroadcast?.Invoke(c) != true) moved = c;
                     break;
-                case ObjectStoppedMoving sm when _byObjectId.TryGetValue(sm.ObjectID, out var c):
+                }
+                case ObjectStoppedMoving sm:
+                {
+                    // fidelity: M4-009
+                    // CD10b (0x00534636..0x00534AA4): the same lookup and charger filter; the double-tap test's result
+                    // is discarded; SetIsMoving(false, ts) when moving; ObjectStoppedMoving is broadcast. BTF's Stopped
+                    // handler clears its moving flag (CD10g).
+                    if (Connected(sm.ObjectID) is not { } c) { Log($"warning: HandleActiveObjectStopped: unknown active id {sm.ObjectID}"); break; }
+                    TapInfo(c).Moving = false;
+                    if (c.Type == ObjectType.Charger_Basic) { Log("info: Charger sending garbage move messages"); break; }
+                    if (c.Moving) { c.Moving = false; c.MovingChangedAt = sm.Timestamp; }
                     c.LastSeenUtc = DateTime.UtcNow;
-                    if (c.Moving) { c.Moving = false; moved = c; }
+                    if (ExcludeFromMovedBroadcast?.Invoke(c) != true) moved = c;
                     break;
-                case ObjectUpAxisChanged ua when _byObjectId.TryGetValue(ua.ObjectID, out var c):
+                }
+                case ObjectUpAxisChanged ua:
+                {
+                    // fidelity: M4-009
+                    // CD10c (0x00534D66..0x00534E1E): an unknown id is an error; otherwise ObjectUpAxisChanged is
+                    // broadcast with the object's id. Nothing is stored on the engine's object; UpAxis here is the
+                    // receiver's record of the broadcast.
+                    if (Connected(ua.ObjectID) is not { } c) { Log($"error: HandleActiveObjectUpAxisChanged: unknown active id {ua.ObjectID}"); break; }
                     c.UpAxis = ua.UpAxis;
                     c.LastSeenUtc = DateTime.UtcNow;
                     break;
+                }
             }
         }
-        // Robot::Update, after the state that set the robot's clock. Outside the lock: it sends.
-        if (m is RobotState rs) Connections.OnRobotState(rs.Timestamp);
         if (discovered is not null) CubeDiscovered?.Invoke(discovered);
         if (connectionChanged is not null) ConnectionChanged?.Invoke(connectionChanged);
+        // fidelity: M4-018
+        // LC7: the game-side ObjectConnectionState reaches the CubeLightComponent synchronously.
+        if (lights is { } l) _robot.Lights.Cubes.OnObjectConnectionState(l.Type, l.Connected);
         if (tapped is not null) CubeTapped?.Invoke(tapped);
         if (moved is not null) CubeMoved?.Invoke(moved);
     }

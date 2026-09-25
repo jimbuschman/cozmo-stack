@@ -21,7 +21,22 @@ Read first in every session. The manager keeps this file current; the process it
     - chunks ignored before SyncTimeAck; 3 frames per tick to vision;
     - at connection: SetCameraParams, the NV calibration read that enables vision, and DefaultCameraParams handling.
   - Full suite 1243/1243.
-- **M4 control and M5 animation:** inventories frozen (2026-09-24), with 24 and 36 records.
+- **M4 control: repaired in one batch (2026-09-25).**
+  - **Verification:** three verifier passes, and every blocking item was fixed. The verifier's disassembly also added cited corrections C1..C9, re-approved.
+  - **Settled EXACT_SOURCE:** M4-001, 002, 007, 014, 015, 020, 022, 023, plus M2-015 and M1-041. The rest are IMPLEMENTATION_GAP, each with a named residual; most residuals belong to M11 or M12.
+  - **What changed:**
+    - At SyncTime, AbsoluteLocalizationUpdate {0, frame 0, origin 1}.
+    - RobotState acceptance: the pre-origin part is applied for every synced state; the pose and history only for origin 1.
+    - Direct-drive track locks (0x9D/0x9E).
+    - StopAll sends only 0x3B.
+    - Backpack lights: Off every tick, plus the charging configs.
+    - Cube WakeUp lights on connect and reconnect.
+    - The cliff threshold schedule, the charger platform, PotentialCliff.
+    - Tap filtering.
+    - Head/lift completion as the engine's actions: no send when in position, success means in position and stopped.
+    - App head/lift speeds of 10/20.
+  - Full suite 1279/1279.
+- **M5 animation:** inventory frozen (2026-09-24), 36 records. Its repair batch is next.
 - **M6 (Wwise):** the extraction found the Wwise 2016.2 runtime statically linked into the engine. Two gap passes are running.
 - **M2 protocol: repaired in one batch (2026-09-24).**
   - The verifier compared all 42 outbound and all 56 inbound layouts by machine against the engine; all match. Its one blocking item was a manifest overclaim, fixed by policy M2-017 and corrections C1 and C2, then re-approved.
@@ -143,7 +158,7 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
 
 - **Motor stop on shutdown.** CozmoRobot.Dispose sends StopAllMotors and DriveWheels(0) before disconnecting. The original only sends the DisconnectRequest (B33, CC29). Kept for now as a probable safety behaviour. Test later: does the robot stop on its own when the link drops?
 
-- **SyncTime stamp without AbsoluteLocalizationUpdate.** The stack cannot send AbsoluteLocalizationUpdate yet (frameId and originId are not stack state). It still stamps +0x520 where that send would have happened, so the CD19 "SyncTimeAck not received" warning stays meaningful. The alternative is to leave it unset, which silences CD19. Revisit when the ids exist.
+- **SyncTime stamp without AbsoluteLocalizationUpdate (obsolete since the M4 batch, 2026-09-25).** The stack now sends AbsoluteLocalizationUpdate {0, frame 0, origin 1} at SyncTime and stamps +0x520 only when that send succeeds, as the engine does (M1-041, M4-020).
 
 - **Wwise mix rate (M6, 2026-09-24).** In the original the Wwise mix rate is the phone's native output rate, capped at 48000: min(AudioTrack.getNativeOutputSampleRate, 48000), cached at 0x0108DF90 (0x00A56E80..0x00A56EA4). The Hijack plug-in then resamples to 22320 Hz by linear interpolation. This stack has no phone, so it uses 48000, which is what the cap gives on typical phones. This will be recorded as a COMPATIBILITY_POLICY in the M6 inventory. Revisit if a capture from an original phone ever shows another rate.
 - **Wwise runtime found (M6 extraction, 2026-09-24).** The Wwise 2016.2 runtime is statically linked into libcozmoEngine.so, as symbol-less ARM code at 0x0095E540..0x00AE2E40. Anything earlier marked BLOCKED_EXTERNAL for "Wwise runtime semantics" is therefore RECOVERABLE_GAP, not blocked, and gets re-classified as each layer (M6, M9) is inventoried.
@@ -186,6 +201,12 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
   - CUBES should cite M9-017 and M4-024.
   - CONNECT should record the origin and frame the robot reports (M4-021), and whether DefaultCameraParams 0xC8 arrives (M3-019).
   - CAMERA should record image brightness (M3-019).
+- **From the M4 verifier (2026-09-25):**
+  - **M10-007** is EXACT_SOURCE, but Apply has no production caller. The engine's CheckForUnexpectedMovement calls SetNewPose (0x0063E87E), and through F1..F3 that sends an AbsoluteLocalizationUpdate. Put this in M10-007's `unresolved` when M10 is inventoried; check the config flag kCreateUnexpectedMovementObstacles (0x00C7F620).
+  - **SetBodyRadioMode order:** the stack sends it before SetOnCharger's threshold; the engine sends SetOnCharger's threshold (0x00512AB4) before SetBodyRadioMode (0x00512B46). This only matters if both fire in the same state.
+  - **Charger-platform clearing:** without Robot::Update's clearing (M11 geometry), a robot that starts on the charger keeps the platform flag after it drives off. Until the flag clears, a PotentialCliff is ignored. The flag clears only on a committed off-treads change.
+  - **B5:** callers of PlayLightAnim can still finish in a different order from the one they decided in. No caller off the engine thread exists today.
+  - **VisionSystem Stopped path:** done (Q-c).
 - Tests recommended by batch 4(i): one pinning the 14 Init tunables against the CA/B13 table (M1-005), and a dedicated R43 test for an unsent seq-0 entry at the front (M1-016).
 
 ## Parked: MISSING items (resolved)

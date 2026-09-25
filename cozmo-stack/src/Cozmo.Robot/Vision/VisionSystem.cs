@@ -62,6 +62,10 @@ public sealed class VisionSystem : IDisposable
         robot.CameraSettings.VisionEnabledSet += OnVisionEnabledSet;
         if (robot.CameraSettings.Calibration is { } read) Calibration = read;
         robot.RobotRemoved += ResetToConstructed;
+        // fidelity: M1-041
+        robot.StateHistoryCleared += History.Clear;
+        // fidelity: M4-023
+        robot.Cubes.DoubleTapPendingEnded += World.MarkDirty;
     }
 
     // fidelity: M3-022
@@ -185,6 +189,10 @@ public sealed class VisionSystem : IDisposable
         {
             case RobotState s:
             {
+                // fidelity: M4-020
+                // The history and the pose are after UpdateFullRobotState's origin check (SC4f, M4 correction C3): a
+                // state the Robot drops before time sync, or whose origin it rejects, does not reach them.
+                if (_robot.Engine.Robot?.OriginAccepted(s) != true) break;
                 // The robot reports which origin its pose is in. A different one means it has been
                 // delocalized - Robot::Delocalize 0x00510A24 allocates the new origin and tells the robot
                 // - and everything located in the old one is in a frame that no longer exists. What the
@@ -204,10 +212,20 @@ public sealed class VisionSystem : IDisposable
             // HandleActiveObjectMoved 0x00533E30 dirties the pose only when the robot is not carrying
             // the object (the guard at 0x00534116); a cube on the lift reporting motion is ignored.
             case ObjectMoved mv:
+                // fidelity: M4-009, M4-023
+                // HandleActiveObjectMoved (CD10a, 0x00533E4C..0x005341BA): an unknown active id, the charger's garbage
+                // moves and a movement inside the double-tap window (step 3) return before SetIsMoving and MarkObjectDirty.
+                if (_robot.Cubes.MovedStopsBeforeTheWorld(mv.ObjectID)) break;
                 World.SetMoving(mv.ObjectID, true);
                 if (!Carrying(mv.ObjectID)) World.MarkDirty(mv.ObjectID);
                 break;
-            case ObjectStoppedMoving sm: World.SetMoving(sm.ObjectID, false); break;
+            case ObjectStoppedMoving sm:
+                // fidelity: M4-009
+                // HandleActiveObjectStopped (CD10b, 0x00534636..0x00534AA4): the same lookup and charger filter as Moved;
+                // the double-tap test's result is discarded.
+                if (_robot.Cubes.StoppedStopsBeforeTheWorld(sm.ObjectID)) break;
+                World.SetMoving(sm.ObjectID, false);
+                break;
             // A cube that has dropped its radio link cannot be tracked or docked with any more, and its last
             // pose will go stale the moment someone moves it. The engine drops such an object from the world
             // model; here its pose goes Unknown, which is what every located-object query already tests
@@ -392,6 +410,8 @@ public sealed class VisionSystem : IDisposable
         _robot.CameraSettings.CalibrationInstalled -= OnCalibrationInstalled;
         _robot.CameraSettings.VisionEnabledSet -= OnVisionEnabledSet;
         _robot.RobotRemoved -= ResetToConstructed;
+        _robot.StateHistoryCleared -= History.Clear;
+        _robot.Cubes.DoubleTapPendingEnded -= World.MarkDirty;
     }
 }
 
