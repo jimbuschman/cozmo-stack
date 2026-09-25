@@ -15,6 +15,11 @@ namespace Cozmo.Robot;
 /// 56-byte calibration). Multi-blob placement at index * <see cref="BlobStride"/> is unresolved;</item>
 /// <item>MORE (3) and SCHEDULED (1) keep the request in flight; OKAY (0) completes it with the assembled
 /// bytes; any other result completes it with that result and no data;</item>
+/// <item><b>terminal ordering (M3-022 / M1 CD20):</b> on a terminal result the request's own callback runs to
+/// completion first (the calibration is installed and vision enabled there), and only then, with the queue empty
+/// and nothing in flight, does an on-idle callback run (ready to stream). The CONTROL run's first attempt set
+/// ready to stream ~5 ms before the calibration callback because the completion path ran the on-idle callbacks
+/// while still inside its lock;</item>
 /// <item>a disconnect discards the queue and the in-flight request without invoking any read callback.</item>
 /// </list>
 ///
@@ -90,7 +95,7 @@ public sealed class NvStorageComponent : IDisposable
 
     private void StartNextLocked()
     {
-        if (_queue.Count == 0) { _inFlight = null; RunOnIdleLocked(); return; }
+        if (_queue.Count == 0) { _inFlight = null; return; }
         _inFlight = _queue.Dequeue();
         _log.Add($"NV request tag=0x{_inFlight.Tag:X8} op={_inFlight.Op} length={_inFlight.Length} data={_inFlight.Data.Length}B");
         _robot.SendMessage(new NVCommand
@@ -108,8 +113,8 @@ public sealed class NvStorageComponent : IDisposable
 
     /// <summary>
     /// ProcessOnIdleCallbacks (CD20, 0x00645B10..0x00645B26): runs the pending callbacks only when the queue is
-    /// empty and nothing is in flight. Called from Robot::Update's NVStorage step (CD12) and when a request
-    /// completes.
+    /// empty and nothing is in flight. Called from Robot::Update's NVStorage step (CD12), and by the request
+    /// completion path only after the completed request's own callback has run.
     /// </summary>
     public void ProcessOnIdle()
     {
@@ -122,8 +127,6 @@ public sealed class NvStorageComponent : IDisposable
         }
         foreach (var a in run) a();
     }
-
-    private void RunOnIdleLocked() => ProcessOnIdle();
 
     /// <summary>
     /// A disconnect discards the queue and the in-flight request without invoking any read callback, and drops
@@ -139,7 +142,7 @@ public sealed class NvStorageComponent : IDisposable
     private void OnResult(NVOpResult r)
     {
         PendingRequest? req;
-        bool complete = false;
+        bool complete = false, startNext = false;
         sbyte result;
         byte[] data = Array.Empty<byte>();
         lock (_gate)
@@ -162,9 +165,19 @@ public sealed class NvStorageComponent : IDisposable
                     complete = true;                           // terminal error, no data
                     break;
             }
-            if (complete) StartNextLocked();
+            // The request leaves the in-flight slot now, but its callback has not run yet: the queue is drained
+            // first, then the callback, and only then may an on-idle callback run. StartNextLocked no longer runs
+            // the on-idle callbacks, so this ordering cannot invert.
+            _inFlight = null;
+            startNext = _queue.Count > 0;
+            if (startNext) StartNextLocked();
         }
-        if (complete) req.Callback?.Invoke(new NvResult(result, data));
+        if (!complete) return;
+        // 2. the request's callback runs to completion: the calibration is installed and vision is enabled here.
+        req.Callback?.Invoke(new NvResult(result, data));
+        // 3/4. the request is fully completed and NV is idle; only now may an on-idle callback (ready to stream)
+        // run (M1 CD20). When another request is in flight, readiness waits for it too.
+        if (!startNext) ProcessOnIdle();
     }
 
     /// <summary>

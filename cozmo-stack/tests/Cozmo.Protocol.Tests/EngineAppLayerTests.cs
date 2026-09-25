@@ -1005,6 +1005,28 @@ public class EngineAppLayerTests
     }
 
     /// <summary>
+    /// M3-022 / M1 CD20: the terminal ordering. The request's callback — which installs the calibration and
+    /// enables vision — runs to completion before the request is treated as idle, so ready to stream cannot be set
+    /// before the calibration callback. The CONTROL run's first attempt set it about 5 ms early.
+    /// </summary>
+    [Fact]
+    public void M3_022_CD20_ReadyToStreamIsSetAfterTheCalibrationCallback()
+    {
+        using var rig = new Rig();
+        bool? readyWhenInstalled = null, readyWhenVisionEnabled = null;
+        rig.Robot.CameraSettings.CalibrationInstalled += _ => readyWhenInstalled = rig.Engine.Robot?.ReadyToStream;
+        rig.Robot.CameraSettings.VisionEnabledSet += () => readyWhenVisionEnabled = rig.Engine.Robot?.ReadyToStream;
+        rig.ToSuccess();
+        var cal = Cozmo.Robot.Vision.CameraCalibration.Nominal().ToBytes();
+        Assert.Equal(Cozmo.Robot.CameraSettings.CalibrationBytes, cal.Length);
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = cal });
+        rig.Tick();
+        Assert.False(readyWhenInstalled);                    // the calibration callback saw readiness still unset
+        Assert.False(readyWhenVisionEnabled);
+        Assert.True(rig.Engine.Robot!.ReadyToStream);        // and it is set once the request is complete and idle
+    }
+
+    /// <summary>
     /// PRIMARY-SOURCE ORACLE. M1-041 CD19: SyncTime is never retried; once +0x520 &gt; 0 and now &gt; +0x520 + 5.0 s the
     /// warning "SyncTimeAckNotReceived" is given once and +0x520 = 0 (0x00513BF6..0x00513C5A).
     /// </summary>
