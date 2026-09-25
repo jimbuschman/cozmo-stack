@@ -2,27 +2,44 @@ using Cozmo.Protocol;
 
 namespace Cozmo.Robot.Behavior;
 
+// fidelity: M10-003, M10-004
 /// <summary>
-/// What the engine calls an <c>IReactionTriggerStrategy</c>: the thing that decides, every tick, whether
-/// one <see cref="ReactionTrigger"/> should fire its behaviour. <c>BehaviorManager::CheckReactionTriggerStrategies</c>
-/// (0x005A3550) walks the 22 triggers and asks each strategy <c>ShouldTriggerBehavior</c>.
-///
-/// The strategies are built by <c>ReactionTriggerStrategyFactory::CreateReactionTriggerStrategy</c>
-/// (0x0060D5A0), whose switch on the trigger was read case by case; the addresses are in each
-/// implementation's <see cref="Basis"/>. Two shapes recur:
-/// <list type="bullet">
-/// <item><b>a state callback</b> — <c>ReactionTriggerStrategyGeneric::SetShouldTriggerCallback</c> with a
-/// lambda over the robot: RobotPickedUp, RobotOnBack, RobotOnFace, RobotOnSide;</item>
-/// <item><b>a latched event</b> — <c>ConfigureRelevantEvents(tags, filter)</c>: the generic wants-to-run
-/// strategy (<c>StrategyGeneric</c>) sets a flag when a subscribed message passes the filter
-/// (<c>AlwaysHandleInternal</c> 0x00613998), and <c>WantsToRunInternal</c> (0x00613948) returns that flag
-/// and clears it. CliffDetected, MotorCalibration, RobotFalling (with a 3000 ms window),
-/// ReturnedToTreads, UnexpectedMovement.</item>
-/// </list>
-/// plus the purpose-built <c>StrategyRobotShaken</c>, <c>StrategyRobotPlacedOnSlope</c> and
-/// <c>ReactionTriggerStrategyFrustration</c>. The generic strategy's result is
-/// <c>(forced || behaviour.IsRunnable) &amp;&amp; wantsToRun</c> (0x0060F3BC); the force flag is the
-/// app's <c>ExecuteReactionTrigger</c> debug message and is not modelled.
+/// What a strategy sees when <c>BehaviorManager::CheckReactionTriggerStrategies</c> asks it
+/// <c>ShouldTriggerBehavior(robot, behavior)</c>: the behaviour context, BaseStationTimer seconds, the current reaction
+/// trigger (manager+0x1C → +0x10; null is 0x16 NoneTrigger, C5) and whether a behaviour is running (IBehavior+0xA1,
+/// gap1 2a).
+/// </summary>
+public sealed class ReactionContext
+{
+    private readonly Func<IBehavior, bool>? _isRunning;
+
+    public ReactionContext(BehaviorContext context, double nowSec, ReactionTrigger? currentTrigger = null,
+                           Func<IBehavior, bool>? isRunning = null)
+    {
+        Context = context; NowSec = nowSec; CurrentTrigger = currentTrigger; _isRunning = isRunning;
+    }
+
+    public BehaviorContext Context { get; }
+    /// <summary>BaseStationTimer::GetCurrentTimeInSeconds for this tick (the caller passes it).</summary>
+    public double NowSec { get; }
+    /// <summary>GetCurrentReactionTrigger (0x5A19EC); null is NoneTrigger 0x16.</summary>
+    public ReactionTrigger? CurrentTrigger { get; }
+
+    /// <summary>IBehavior+0xA1, "is running" (gap1 2a): the manager's current behaviour.</summary>
+    public bool IsRunning(IBehavior behavior) => _isRunning?.Invoke(behavior) ?? false;
+
+    /// <summary>
+    /// <c>beh+0xA1 || IsRunnable</c> (C14, C15, gap1 2c): IsRunnableBase returns true for the behaviour already running (2b).
+    /// </summary>
+    public bool RunningOrRunnable(IBehavior behavior) => IsRunning(behavior) || behavior.IsRunnable(Context);
+}
+
+// fidelity: M10-003, M10-004
+/// <summary>
+/// The engine's <c>IReactionTriggerStrategy</c> with the vtable slots the M10 rows read (gap1 "Strategy vtable layout"):
+/// +0x08 shouldResumeLast, +0x0C CanInterruptOther, +0x10 CanInterruptSelf, +0x1C EnabledStateChanged, and
+/// ShouldTriggerBehavior (C6) over +0x24 ShouldTriggerBehaviorInternal and +0x20 SetupForceTriggerBehavior. The trigger
+/// byte is strategy+0x18.
 /// </summary>
 public interface IReactionTriggerStrategy
 {
@@ -31,199 +48,242 @@ public interface IReactionTriggerStrategy
     /// <summary>Where in the binary this decision was read, and what it is.</summary>
     string Basis { get; }
 
-    /// <summary>
-    /// Whether the trigger should fire now. <paramref name="current"/> is the reaction the manager is
-    /// running, if any; some strategies refuse to re-fire over themselves.
-    /// </summary>
-    bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec);
+    /// <summary>vslot +0x08 (C9, C10).</summary>
+    bool ShouldResumeLast { get; }
+    /// <summary>vslot +0x0C (C5).</summary>
+    bool CanInterruptOtherTriggeredBehavior { get; }
+    /// <summary>vslot +0x10 (C5).</summary>
+    bool CanInterruptSelf { get; }
+
+    /// <summary><c>IReactionTriggerStrategy::ShouldTriggerBehavior(robot, behavior)</c> (C6).</summary>
+    bool ShouldTriggerBehavior(ReactionContext rc, IBehavior behavior);
+
+    /// <summary>vslot +0x1C, called by the lock add/remove paths (gap1 4b, 4c, 4j).</summary>
+    void EnabledStateChanged(BehaviorContext context, bool enabled);
+
+    /// <summary>The manager whose trigger map holds this strategy (set by <see cref="BehaviorManager.AddReaction"/>).</summary>
+    BehaviorManager? Manager { get; set; }
 }
 
+// fidelity: M10-003, M10-004
 /// <summary>
-/// A strategy whose behaviour cannot be runnable until the strategy has given it a target.
-///
-/// The engine has no ordering problem here because <c>IReactionTriggerStrategy::ShouldTriggerBehavior(robot,
-/// behavior)</c> (0x0060B63A) takes the behaviour as an argument: <c>CheckReactionTriggerStrategies</c>
-/// (0x005A3550) calls it first, and only then <c>BehaviorManager::SwitchToReactionTrigger</c>, which reports
-/// "Trigger strategy %s tried to trigger behavior %s, but init failed" when the behaviour cannot start. So
-/// the behaviour's runnability is tested <b>after</b> the strategy has filled it in, not before. (The check
-/// the engine does run before <c>ShouldTriggerBehavior</c> is a pair of strategy-level predicates, vtable
-/// +0x0C and +0x10, both <c>return true</c> on every strategy read here.)
-///
-/// This stack keeps the runnable-before-consume order for latched strategies, because a latch consumed for a
-/// behaviour that then refuses to start would be lost (the engine's latches live in the message handler and it
-/// can afford to drop one). A strategy that produces a target implements this interface instead and is driven
-/// in three phases: <see cref="PrepareTarget"/> stages a candidate on the behaviour without consuming any
-/// strategy state, the manager tests the behaviour, and then exactly one of <see cref="CommitTarget"/> or
-/// <see cref="AbandonTarget"/> runs.
+/// The base <c>IReactionTriggerStrategy</c>: C6 ShouldTriggerBehavior. If forced (+0x29), call Internal; if that returns
+/// false, call SetupForceTriggerBehavior; clear +0x29 and return true. Otherwise return Internal.
+/// The writer of +0x29 is not in the rows (the manager's NOT DONE list); <see cref="Forced"/> is settable for that reason only.
 /// </summary>
-public interface ITargetPreparingStrategy
+public abstract class ReactionTriggerStrategy : IReactionTriggerStrategy
 {
-    /// <summary>Stages a candidate target on the behaviour. Must not consume or reset any strategy state.</summary>
-    bool PrepareTarget(BehaviorContext context, ReactionTrigger? current, double nowSec);
+    public abstract ReactionTrigger Trigger { get; }
+    public abstract string Basis { get; }
+    public abstract bool ShouldResumeLast { get; }
+    public abstract bool CanInterruptOtherTriggeredBehavior { get; }
+    public abstract bool CanInterruptSelf { get; }
+    public BehaviorManager? Manager { get; set; }
 
-    /// <summary>The behaviour is runnable and is being switched to: consume what <see cref="PrepareTarget"/> staged.</summary>
-    void CommitTarget();
+    /// <summary>+0x29, the forced flag (C6).</summary>
+    public bool Forced { get; set; }
 
-    /// <summary>The behaviour could not run: undo the staging, leaving the strategy as it was.</summary>
-    void AbandonTarget();
-}
-
-/// <summary>
-/// A trigger decided by a predicate over the robot's current state: the engine's
-/// <c>SetShouldTriggerCallback</c> lambdas.
-/// </summary>
-public sealed class StateCallbackStrategy : IReactionTriggerStrategy
-{
-    private readonly Func<CozmoRobot, bool> _predicate;
-
-    public StateCallbackStrategy(ReactionTrigger trigger, Func<CozmoRobot, bool> predicate, string basis)
+    public bool ShouldTriggerBehavior(ReactionContext rc, IBehavior behavior)
     {
-        Trigger = trigger; _predicate = predicate; Basis = basis;
+        if (Forced)
+        {
+            if (!ShouldTriggerBehaviorInternal(rc, behavior)) SetupForceTriggerBehavior(rc, behavior);
+            Forced = false;
+            return true;
+        }
+        return ShouldTriggerBehaviorInternal(rc, behavior);
     }
 
-    public ReactionTrigger Trigger { get; }
-    public string Basis { get; }
+    /// <summary>vslot +0x24.</summary>
+    protected abstract bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior);
 
-    public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec) =>
-        _predicate(context.Robot);
+    /// <summary>
+    /// vslot +0x20. Only CubeMoved's is in the rows (gap2 2c); the others were not read and do nothing here. It is
+    /// reached only through <see cref="Forced"/>, which nothing in this stack sets.
+    /// </summary>
+    protected virtual void SetupForceTriggerBehavior(ReactionContext rc, IBehavior behavior) { }
+
+    public abstract void EnabledStateChanged(BehaviorContext context, bool enabled);
+
+    /// <summary>IsReactionTriggerEnabled through the owning manager; a strategy in no map is "not found" and so false (gap1 4a).</summary>
+    protected bool IsReactionTriggerEnabled(ReactionTrigger t) => Manager?.IsReactionTriggerEnabled(t) ?? false;
 }
 
+// fidelity: M10-003
 /// <summary>
-/// A trigger latched by an event: the engine's <c>StrategyGeneric</c> with relevant events. The latch is
-/// set when a subscribed event passes its filter and is consumed by the next evaluation, exactly as
-/// <c>WantsToRunInternal</c> clears <c>+0x80</c> after reading it. With a window (RobotFalling: 3000 ms)
-/// the reaction strategy additionally requires an event inside the window
-/// (<c>ReactionTriggerStrategyGeneric::ShouldTriggerBehaviorInternal</c> 0x0060F3EC..0x0060F432).
+/// <c>ReactionTriggerStrategyGeneric</c> over <c>StrategyGeneric</c> (C12..C14, C5, C10):
+/// <list type="bullet">
+/// <item>AlwaysHandleInternal (0x613998..0x6139EC): for a subscribed tag, the tag's BaseStationTimer ms stamp is taken
+/// whether or not the filter passes (0x60F34C..0x60F3B2), and the latch (+0x80) is set when there is no filter or the
+/// filter returns true; a false filter leaves the latch unchanged;</item>
+/// <item>WantsToRunInternal (0x613948..0x61397E): latch || (no events configured &amp;&amp; callback(robot)), and the latch is
+/// cleared on every call;</item>
+/// <item>ShouldTriggerBehaviorInternal (0x60F3BC..0x60F454): runnable (running || IsRunnable) &amp;&amp; WantsToRun &amp;&amp;
+/// timeoutOK, WantsToRun only when runnable, so the latch survives while the behaviour is not runnable; timeoutOK means
+/// some subscribed tag's last stamp is &gt; now − timeout;</item>
+/// <item>shouldResumeLast +0x38 from genericStrategyParams, default 1; canInterruptOtherTriggeredBehavior +0x39, default
+/// 1, set by no map entry; CanInterruptSelf returns 0 (0x60B732); EnabledStateChanged clears +0x2A, which nothing reads.</item>
+/// </list>
 /// </summary>
-public sealed class LatchedEventStrategy : IReactionTriggerStrategy, IDisposable
+public sealed class GenericReactionStrategy : ReactionTriggerStrategy, IDisposable
 {
     private readonly object _gate = new();
+    private readonly HashSet<int> _tags;
+    private readonly Dictionary<int, uint> _stamps = new();
+    private readonly Func<object?, bool>? _filter;
+    private readonly Func<CozmoRobot, bool>? _callback;
+    private readonly Func<uint> _clockMs;
     private readonly Action? _unsubscribe;
-    private readonly double? _windowSec;
-    private bool _latched;
-    private double _lastEventSec = double.NegativeInfinity;
-    private readonly Func<double> _clock;
+    private bool _latch;
 
-    /// <param name="subscribe">Hooks the event source; it is handed the latch to call and returns the unhook.</param>
-    public LatchedEventStrategy(ReactionTrigger trigger, Func<Action, Action> subscribe, string basis,
-                                double? windowSec = null, Func<double>? clockSec = null)
+    /// <param name="subscribe">Hooks the events that carry the tags; handed <see cref="AlwaysHandle"/>, returns the unhook.</param>
+    /// <param name="clockMs">BaseStationTimer::GetCurrentTimeStamp.</param>
+    public GenericReactionStrategy(ReactionTrigger trigger, string basis, Func<uint> clockMs,
+                                   IEnumerable<int>? tags = null, Func<object?, bool>? filter = null,
+                                   Func<CozmoRobot, bool>? shouldTriggerCallback = null, uint? timeoutMs = null,
+                                   bool shouldResumeLast = true, Func<Action<int, object?>, Action>? subscribe = null)
     {
-        Trigger = trigger; Basis = basis; _windowSec = windowSec;
-        _clock = clockSec ?? (() => Environment.TickCount64 / 1000.0);
-        _unsubscribe = subscribe(Latch);
+        Trigger = trigger; Basis = basis; _clockMs = clockMs;
+        _tags = tags is null ? new HashSet<int>() : new HashSet<int>(tags);
+        _filter = filter; _callback = shouldTriggerCallback; TimeoutMs = timeoutMs;
+        ShouldResumeLast = shouldResumeLast;
+        _unsubscribe = subscribe?.Invoke(AlwaysHandle);
     }
 
-    public ReactionTrigger Trigger { get; }
-    public string Basis { get; }
+    public override ReactionTrigger Trigger { get; }
+    public override string Basis { get; }
+    public override bool ShouldResumeLast { get; }
+    public override bool CanInterruptOtherTriggeredBehavior => true;
+    public override bool CanInterruptSelf => false;
+    /// <summary>The WithTimeout window (RobotFalling: 3000 ms, 0x60D838); null for ConfigureRelevantEvents without one.</summary>
+    public uint? TimeoutMs { get; }
 
-    /// <summary>Whether an event is waiting to be consumed.</summary>
-    public bool Latched { get { lock (_gate) return _latched; } }
+    /// <summary>Whether the latch (+0x80) is set.</summary>
+    public bool Latched { get { lock (_gate) return _latch; } }
 
-    /// <summary>Records that a relevant event passed the filter.</summary>
-    public void Latch()
+    /// <summary>AlwaysHandleInternal: one event of <paramref name="tag"/>, with the message the filter reads.</summary>
+    public void AlwaysHandle(int tag, object? message)
     {
-        lock (_gate) { _latched = true; _lastEventSec = _clock(); }
+        if (!_tags.Contains(tag)) return;
+        lock (_gate) _stamps[tag] = _clockMs();
+        bool pass = _filter is null || _filter(message);
+        if (pass) lock (_gate) _latch = true;
     }
 
-    public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec)
+    /// <summary>WantsToRunInternal.</summary>
+    public bool WantsToRun(CozmoRobot robot)
     {
-        bool wants;
-        lock (_gate)
-        {
-            wants = _latched;
-            _latched = false;
-            if (wants && _windowSec is { } w && _clock() - _lastEventSec > w) wants = false;
-        }
-        return wants;
+        bool latched;
+        lock (_gate) { latched = _latch; _latch = false; }
+        return latched || (_tags.Count == 0 && _callback is not null && _callback(robot));
     }
+
+    protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior)
+    {
+        if (!rc.RunningOrRunnable(behavior)) return false;
+        if (!WantsToRun(rc.Context.Robot)) return false;
+        if (TimeoutMs is not { } timeout) return true;
+        uint now = _clockMs();
+        uint since = unchecked(now - timeout);
+        lock (_gate) return _stamps.Values.Any(s => s > since);
+    }
+
+    /// <summary>+0x1C: clears +0x2A (0x60F910), which has no reader (gap1 4j).</summary>
+    public override void EnabledStateChanged(BehaviorContext context, bool enabled) { }
 
     public void Dispose() => _unsubscribe?.Invoke();
 }
 
+// fidelity: M10-003
 /// <summary>
-/// <c>StrategyRobotShaken::WantsToRunInternal</c> at 0x006146CC: the filtered accelerometer magnitude
-/// (<c>Robot+0x37c</c>, the engine's 0.95/0.05 filter) is above 16000 (0x467A0000). The behaviour it
-/// starts then keeps looping while that value stays above 13000.
+/// RobotShaken (C15, C5, C10): (running || IsRunnable) &amp;&amp; WantsToRun, where WantsToRun is always called and is
+/// robot+0x37C (the 0.05/0.95 filtered |accel|, RS8) &gt; 16000 (0x6146CC..0x6146E0). Flags (0, 1, 0).
+/// MISSING: its EnabledStateChanged (+0x1C) is not in gap1 4j; nothing is done.
 /// </summary>
-public sealed class RobotShakenStrategy : IReactionTriggerStrategy
+public sealed class RobotShakenStrategy : ReactionTriggerStrategy
 {
     public const float ShakenAccelThreshold = 16000f;
-    public ReactionTrigger Trigger => ReactionTrigger.RobotShaken;
-    public string Basis => "StrategyRobotShaken::WantsToRunInternal 0x006146CC: Robot+0x37c (filtered |accel|) > 16000";
+    public override ReactionTrigger Trigger => ReactionTrigger.RobotShaken;
+    public override string Basis => "StrategyRobotShaken 0x612FD4..0x61300C, WantsToRun 0x6146CC..0x6146E0: robot+0x37C > 16000";
+    public override bool ShouldResumeLast => false;
+    public override bool CanInterruptOtherTriggeredBehavior => true;
+    public override bool CanInterruptSelf => false;
 
-    public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec) =>
-        context.Robot.Sensors.FilteredAccelMagnitude > ShakenAccelThreshold;
+    /// <summary>The wants-to-run test alone.</summary>
+    public static bool WantsToRun(CozmoRobot robot) => robot.Sensors.OffTreads.FilteredAccelMagnitude > ShakenAccelThreshold;
+
+    protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior)
+    {
+        bool wants = WantsToRun(rc.Context.Robot);
+        return rc.RunningOrRunnable(behavior) && wants;
+    }
+
+    public override void EnabledStateChanged(BehaviorContext context, bool enabled) { }
 }
 
+// fidelity: M10-003
 /// <summary>
-/// <c>StrategyRobotPlacedOnSlope::WantsToRunInternal</c> at 0x0061455C, with the constants its
-/// constructor (0x006144FC) stores: the robot wants to react to a slope when
-/// <list type="bullet">
-/// <item>the pitch is strictly inside (10°, 55°) (<c>+0x28</c> = 10.0, <c>+0x2C</c> = 55.0);</item>
-/// <item>the largest |gyro component| has been at or below 0.01 rad/s for more than 0.4 s
-/// (<c>+0x30</c> = 0.01, <c>+0x38</c> = 0.4 s; the last time any axis exceeded it is kept at <c>+0x18</c>);</item>
-/// <item>the robot is picked up now, or was put down less than 1.5 s ago (<c>+0x40</c> = 1.5 s; the
-/// picked-up flag <c>Robot+0x349</c> is the IS_PICKED_UP status bit, the time it was last set is <c>+0x20</c>);</item>
-/// <item>the off-treads state is OnTreads or InAir (<c>Robot+0x355 &lt; 2</c>).</item>
-/// </list>
-/// The reaction strategy that owns it (<c>ReactionTriggerStrategyRobotPlacedOnSlope</c> 0x00612EB0) then
-/// requires the behaviour to be runnable.
+/// RobotPlacedOnSlope (C16, C5, C10): WantsToRun, then IsRunnable. Constants 10/55 deg, 0.01 rad/s over the raw gyro
+/// (+0x36C..+0x374), 0.4 s, 1.5 s; +0x18 and +0x20 start at 0.0; times are BaseStationTimer seconds. Result = pitch in
+/// (10, 55) &amp;&amp; quietFor &gt; 0.4 &amp;&amp; (pickedUp || now − lastPicked &lt; 1.5) &amp;&amp; +0x355 &lt; 2. Flags (0, 1, 0).
+/// MISSING (C16): whether the two stamps are updated before the pitch test returns, and whether "max of raw gyro" is
+/// over the absolute values: the existing order (both stamps first, max of |x|, |y|, |z|) is kept until extracted.
+/// MISSING: its EnabledStateChanged (+0x1C) is not in gap1 4j; nothing is done.
 /// </summary>
-public sealed class PlacedOnSlopeStrategy : IReactionTriggerStrategy
+public sealed class PlacedOnSlopeStrategy : ReactionTriggerStrategy
 {
     public const float MinPitchDeg = 10f, MaxPitchDeg = 55f;
     public const float GyroQuietRadps = 0.01f;
     public const double QuietForSec = 0.4, PutDownWithinSec = 1.5;
 
-    // Both start at 0, as the constructor zeroes +0x18 and +0x20: on a fresh strategy the gyro counts as
-    // quiet since time zero and the robot as never picked up.
-    private double _lastGyroActiveSec = 0;
-    private double _lastPickedUpSec = double.NegativeInfinity;
+    private double _lastGyroActiveSec;      // C16: starts at 0.0
+    private double _lastPickedUpSec;        // C16: starts at 0.0
 
-    public ReactionTrigger Trigger => ReactionTrigger.RobotPlacedOnSlope;
-    public string Basis => "StrategyRobotPlacedOnSlope::WantsToRunInternal 0x0061455C; ctor 0x006144FC: pitch in (10, 55) deg, " +
-                           "max |gyro| <= 0.01 rad/s for > 0.4 s, picked up or put down < 1.5 s ago, OffTreadsState < 2";
+    public override ReactionTrigger Trigger => ReactionTrigger.RobotPlacedOnSlope;
+    public override string Basis => "ReactionTriggerStrategyRobotPlacedOnSlope 0x612EB0..0x612ECC; StrategyRobotPlacedOnSlope ctor 0x6144FC..0x614554, " +
+                                    "WantsToRun 0x61455C..0x614688: pitch in (10, 55) deg, quiet > 0.4 s, picked up or < 1.5 s since, +0x355 < 2";
+    public override bool ShouldResumeLast => false;
+    public override bool CanInterruptOtherTriggeredBehavior => true;
+    public override bool CanInterruptSelf => false;
 
-    public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec)
+    /// <summary>The wants-to-run test (StrategyRobotPlacedOnSlope::WantsToRunInternal).</summary>
+    public bool WantsToRun(CozmoRobot robot, double nowSec)
     {
-        var sensors = context.Robot.Sensors;
-        var gyro = sensors.Gyroscope ?? default;
+        var sensors = robot.Sensors;
+        var gyro = sensors.OffTreads.RawGyro;                              // M10-013: 0 before the first state
         float maxGyro = MathF.Max(MathF.Abs(gyro.X), MathF.Max(MathF.Abs(gyro.Y), MathF.Abs(gyro.Z)));
         if (maxGyro > GyroQuietRadps) _lastGyroActiveSec = nowSec;
-        double quietFor = nowSec - _lastGyroActiveSec;
-
-        float pitchDeg = (sensors.PitchRad ?? 0f) * (180f / MathF.PI);
-        bool pitchOutside = pitchDeg <= MinPitchDeg || pitchDeg >= MaxPitchDeg;
-
         bool pickedUp = sensors.PickedUp;
         if (pickedUp) _lastPickedUpSec = nowSec;
-        bool putDownRecently = !pickedUp && nowSec - _lastPickedUpSec < PutDownWithinSec;
 
-        if (pitchOutside || quietFor <= QuietForSec) return false;
-        bool wants = pickedUp || putDownRecently;
-        return wants && sensors.OffTreadsState < OffTreadsState.OnBack;
+        float pitchDeg = sensors.OffTreads.PitchRad * (180f / MathF.PI);
+        if (!(pitchDeg > MinPitchDeg && pitchDeg < MaxPitchDeg)) return false;
+        if (!(nowSec - _lastGyroActiveSec > QuietForSec)) return false;
+        if (!(pickedUp || nowSec - _lastPickedUpSec < PutDownWithinSec)) return false;
+        return sensors.OffTreadsState < OffTreadsState.OnBack;
     }
+
+    protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior) =>
+        WantsToRun(rc.Context.Robot, rc.NowSec) && behavior.IsRunnable(rc.Context);
+
+    public override void EnabledStateChanged(BehaviorContext context, bool enabled) { }
 }
 
+// fidelity: M10-003
 /// <summary>
-/// <c>ReactionTriggerStrategyFrustration::ShouldTriggerBehaviorInternal</c> at 0x0060EE6E, with
-/// <c>LoadJson</c> (0x0060ED88) reading <c>frustrationParams.maxConfidence</c> and <c>cooldownTime_s</c>:
-/// fire when the current reaction is not already Frustration, the mood's Confident axis is below
-/// <c>maxConfidence</c>, and either no frustration animation has completed yet or more than the cooldown
-/// has passed since one did (<c>AnimationComplete</c> 0x0060EEF4 stamps the time). The shipped map gives
-/// Minor −0.6 with a 60 s cooldown and Major −0.9 with none.
+/// <c>ReactionTriggerStrategyFrustration</c> (C17, gap2 6c, C5, C10): current trigger ≠ 4 &amp;&amp; mood Confident (the
+/// MoodManager's emotion 3, +0x78) &lt; maxConfidence &amp;&amp; (last ≤ 0 || now − last &gt; cooldown) &amp;&amp; IsRunnable.
+/// AnimationComplete stamps BaseStationTimer seconds (0x60EEF4). Flags: shouldResumeLast 0, CanInterruptOther 0;
+/// CanInterruptSelf is not in the rows and cannot be observed (the predicate is false while Frustration is current).
+/// The params are the map's frustrationParams (maxConfidence, cooldownTime_s). The mood is the M7 interface (MD2).
+/// MISSING: its EnabledStateChanged (+0x1C) is not in gap1 4j; nothing is done.
 /// </summary>
-public sealed class FrustrationStrategy : IReactionTriggerStrategy
+public sealed class FrustrationStrategy : ReactionTriggerStrategy
 {
     private readonly Func<double>? _clock;
 
-    /// <param name="clockSec">
-    /// The clock both the cooldown stamp and its evaluation use. When given, <see cref="ShouldTrigger"/>
-    /// ignores the manager's <c>nowSec</c> and <see cref="AnimationComplete()"/> stamps this clock, so the
-    /// behaviour's completion and the strategy's test share one time base (the engine's is BaseStationTimer
-    /// for both). Without one, the manager's <c>nowSec</c> is the time base and the behaviour must stamp
-    /// through <see cref="AnimationComplete(double)"/> with a value from that same source.
-    /// </param>
+    /// <param name="clockSec">BaseStationTimer seconds for both the stamp and the test; without one the test uses the
+    /// manager's time and the stamp must come through <see cref="AnimationComplete(double)"/>.</param>
     public FrustrationStrategy(float maxConfidence, float cooldownSec, Func<double>? clockSec = null)
     {
         MaxConfidence = maxConfidence; CooldownSec = cooldownSec; _clock = clockSec;
@@ -231,107 +291,230 @@ public sealed class FrustrationStrategy : IReactionTriggerStrategy
 
     public float MaxConfidence { get; }
     public float CooldownSec { get; }
-    /// <summary>Whether the strategy was built with its own clock (the shipped construction).</summary>
     public bool HasClock => _clock is not null;
-    /// <summary>When a frustration animation last completed, seconds on the strategy's time base; null until one has.</summary>
-    public double? LastAnimationCompleteSec { get; private set; }
+    /// <summary>+0x38, the last AnimationComplete time; 0 until one (the test is last ≤ 0).</summary>
+    public double LastAnimationCompleteSec { get; private set; }
 
-    /// <summary>The engine's <c>AnimationComplete</c>, stamped on the strategy's own clock (requires one).</summary>
+    public override ReactionTrigger Trigger => ReactionTrigger.Frustration;
+    public override string Basis => "ReactionTriggerStrategyFrustration::ShouldTriggerBehaviorInternal 0x60EE6E..0x60EED8: current != 4, " +
+                                    $"Confident < {MaxConfidence}, last <= 0 or now - last > {CooldownSec}s, IsRunnable";
+    public override bool ShouldResumeLast => false;
+    public override bool CanInterruptOtherTriggeredBehavior => false;
+    public override bool CanInterruptSelf => false;
+
+    /// <summary>AnimationComplete on the strategy's own clock (requires one).</summary>
     public void AnimationComplete()
     {
-        if (_clock is null) throw new InvalidOperationException("FrustrationStrategy has no clock; stamp with AnimationComplete(nowSec) on the manager's time base");
+        if (_clock is null) throw new InvalidOperationException("FrustrationStrategy has no clock; stamp with AnimationComplete(nowSec)");
         LastAnimationCompleteSec = _clock();
     }
 
-    public ReactionTrigger Trigger => ReactionTrigger.Frustration;
-    public string Basis => "ReactionTriggerStrategyFrustration::ShouldTriggerBehaviorInternal 0x0060EE6E: current != Frustration, " +
-                           $"mood.Confident < {MaxConfidence}, cooldown {CooldownSec}s since AnimationComplete";
-
-    /// <summary>The engine's <c>AnimationComplete</c> with an explicit time on the manager's time base (a strategy with a clock ignores the argument).</summary>
+    /// <summary>AnimationComplete with an explicit BaseStationTimer time (a strategy with a clock ignores the argument).</summary>
     public void AnimationComplete(double nowSec) => LastAnimationCompleteSec = _clock?.Invoke() ?? nowSec;
 
-    /// <summary>Whether the cooldown has elapsed, on the strategy's clock when it has one, else at the manager time given.</summary>
+    /// <summary>last ≤ 0 || now − last &gt; cooldown.</summary>
     public bool CooldownElapsed(double nowSec)
     {
-        if (LastAnimationCompleteSec is not { } last) return true;
+        double last = LastAnimationCompleteSec;
         double now = _clock?.Invoke() ?? nowSec;
-        return now - last > CooldownSec;
+        return last <= 0 || now - last > CooldownSec;
     }
 
-    public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec)
+    protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior)
     {
-        if (current == ReactionTrigger.Frustration) return false;
-        if (context.Mood is not { } mood) return false;
+        if (rc.CurrentTrigger == ReactionTrigger.Frustration) return false;
+        if (rc.Context.Mood is not { } mood) return false;                         // MD2: no MoodManager, no Confident value
         if (!(mood[EmotionType.Confident] < MaxConfidence)) return false;
-        return CooldownElapsed(nowSec);
+        if (!CooldownElapsed(rc.NowSec)) return false;
+        return behavior.IsRunnable(rc.Context);
     }
+
+    public override void EnabledStateChanged(BehaviorContext context, bool enabled) { }
 }
 
+// fidelity: M10-003
 /// <summary>
-/// The shipped strategies this stack can drive, built against one robot. Each is the engine's own rule for
-/// that trigger; the ones the factory builds from message subscriptions are wired to the sensor events
-/// that carry the same information.
+/// PlacedOnCharger (gap1 8, gap2 1a..1d): flags (0, 1, 0). ShouldTriggerBehaviorInternal is WantsToRun alone, with no
+/// IsRunnable. StrategyPlacedOnCharger: latch +0x15 = 0, deadline +0x18 = −1.0; on ChargerEvent (tag 57) latch =
+/// msg.onCharger; WantsToRunInternal sets the deadline to now + 20.0 s on its first call, returns now ≥ deadline &amp;&amp;
+/// latch, and clears the latch on every call. EnabledStateChanged is a no-op (0x60B73A).
+/// MISSING: when the engine broadcasts ChargerEvent (SetOnCharger, M4 SC9) and with what onCharger value is not in the
+/// M4 or M10 rows, so nothing in this stack calls <see cref="HandleChargerEvent"/> and the reaction cannot fire.
+/// </summary>
+public sealed class PlacedOnChargerStrategy : ReactionTriggerStrategy
+{
+    public const double FirstCallDelaySec = 20.0;
+    private readonly object _gate = new();
+    private bool _latch;
+    private double _deadline = -1.0;
+
+    public override ReactionTrigger Trigger => ReactionTrigger.PlacedOnCharger;
+    public override string Basis => "ReactionTriggerStrategy 0x6120D0..0x6120E8 over StrategyPlacedOnCharger 0x6143F8..0x6144D0: " +
+                                    "deadline = first call + 20 s; now >= deadline && ChargerEvent latch; latch cleared each call";
+    public override bool ShouldResumeLast => false;
+    public override bool CanInterruptOtherTriggeredBehavior => true;
+    public override bool CanInterruptSelf => false;
+
+    /// <summary>The ChargerEvent handler (vtable 0x102D688 slot +0xC): latch = onCharger.</summary>
+    public void HandleChargerEvent(bool onCharger) { lock (_gate) _latch = onCharger; }
+
+    /// <summary>WantsToRunInternal (0x614474..0x6144B6).</summary>
+    public bool WantsToRun(double nowSec)
+    {
+        lock (_gate)
+        {
+            if (_deadline < 0) _deadline = nowSec + FirstCallDelaySec;
+            bool r = nowSec >= _deadline && _latch;
+            _latch = false;
+            return r;
+        }
+    }
+
+    protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior) => WantsToRun(rc.NowSec);
+
+    public override void EnabledStateChanged(BehaviorContext context, bool enabled) { }
+}
+
+// fidelity: M10-003
+/// <summary>
+/// The Generic strategies the factory (C12, gap1 1) builds for the triggers whose events this stack raises, and the
+/// purpose-built ones, each with the map's genericStrategyParams.shouldResumeLast (reactionTrigger_behavior_map.json).
+/// E2G tags: CliffEvent 34, RobotStopped 52, MotorCalibration 30, FallingStarted 58, RobotOffTreadsStateChanged 53,
+/// UnexpectedMovement 60.
+/// MISSING (C12): CliffDetected also subscribes RobotStopped (52); where the engine broadcasts it (HandleRobotStopped,
+/// M4 SC4a) is not in the rows, so only CliffEvent reaches the strategy.
 /// </summary>
 public static class ShippedReactionStrategies
 {
-    /// <summary>
-    /// The strategies for every trigger whose input this stack has. Cliff, falling and charger are listed
-    /// for completeness; the M7 <see cref="ReactiveBehavior"/> already reacts to those through the raw reports.
-    /// </summary>
-    public static IReadOnlyList<IReactionTriggerStrategy> ForRobot(CozmoRobot robot, Func<double>? clockSec = null)
+    public const int TagMotorCalibration = 30, TagCliffEvent = 34, TagRobotStopped = 52, TagRobotOffTreadsStateChanged = 53,
+                     TagFallingStarted = 58, TagUnexpectedMovement = 60;
+    /// <summary>RobotFalling's WithTimeout (0x60D838 `movw r3,#0xbb8`).</summary>
+    public const uint FallingTimeoutMs = 3000;
+
+    /// <summary>CliffDetected: {34, 52}, filter 0x60DC76 (gap1 1b): enabled(0), then current ≠ 0 → true, else CanInterruptSelf (0).</summary>
+    public static GenericReactionStrategy Cliff(CozmoRobot robot)
     {
-        var sensors = robot.Sensors;
-        return new IReactionTriggerStrategy[]
-        {
-            // factory case RobotPickedUp (0x0060D854): SetShouldTriggerCallback, lambda 0x0060DDCE
-            new StateCallbackStrategy(ReactionTrigger.RobotPickedUp,
-                r => r.Sensors.OffTreadsState == OffTreadsState.InAir,
-                "CreateReactionTriggerStrategy 0x0060D854 -> SetShouldTriggerCallback lambda 0x0060DDCE: Robot+0x355 == 1 (InAir)"),
-            // RobotOnBack (0x0060D8DA), lambda 0x0060DEB2
-            new StateCallbackStrategy(ReactionTrigger.RobotOnBack,
-                r => r.Sensors.OffTreadsState == OffTreadsState.OnBack,
-                "CreateReactionTriggerStrategy 0x0060D8DA -> lambda 0x0060DEB2: Robot+0x355 == 2 (OnBack)"),
-            // RobotOnFace (0x0060D8FC), lambda 0x0060DF16
-            new StateCallbackStrategy(ReactionTrigger.RobotOnFace,
-                r => r.Sensors.OffTreadsState == OffTreadsState.OnFace,
-                "CreateReactionTriggerStrategy 0x0060D8FC -> lambda 0x0060DF16: Robot+0x355 == 5 (OnFace)"),
-            // RobotOnSide (0x0060D91E), lambda 0x0060DF7E: (state - 3) < 2
-            new StateCallbackStrategy(ReactionTrigger.RobotOnSide,
-                r => r.Sensors.OffTreadsState is OffTreadsState.OnLeftSide or OffTreadsState.OnRightSide,
-                "CreateReactionTriggerStrategy 0x0060D91E -> lambda 0x0060DF7E: (Robot+0x355 - 3) < 2 (OnLeftSide, OnRightSide)"),
-            // ReturnedToTreads (0x0060D88C): relevant event RobotOffTreadsStateChanged (tag 53), filter 0x0060DE36: treadsState == OnTreads
-            new LatchedEventStrategy(ReactionTrigger.ReturnedToTreads, latch =>
-                {
-                    void on(OffTreadsState from, OffTreadsState to) { if (to == OffTreadsState.OnTreads) latch(); }
-                    sensors.OffTreadsStateChanged += on;
-                    return () => sensors.OffTreadsStateChanged -= on;
-                },
-                "CreateReactionTriggerStrategy 0x0060D88C -> ConfigureRelevantEvents({RobotOffTreadsStateChanged}), filter lambda 0x0060DE36: state == 0 (OnTreads)",
-                clockSec: clockSec),
-            // MotorCalibration (0x0060D764): relevant event MotorCalibration (tag 30), filter 0x0060DCFA: calibStarted && autoStarted
-            new LatchedEventStrategy(ReactionTrigger.MotorCalibration, latch =>
-                {
-                    void on(MotorCalibration _) => latch();
-                    sensors.AutoCalibrationStarted += on;
-                    return () => sensors.AutoCalibrationStarted -= on;
-                },
-                "CreateReactionTriggerStrategy 0x0060D764 -> ConfigureRelevantEvents({MotorCalibration}), filter lambda 0x0060DCFA: calibStarted && autoStarted",
-                clockSec: clockSec),
-            // UnexpectedMovement (0x0060D96A): relevant event UnexpectedMovement (tag 60), no filter
-            new LatchedEventStrategy(ReactionTrigger.UnexpectedMovement, latch =>
-                {
-                    void on(UnexpectedMovementReport _) => latch();
-                    sensors.UnexpectedMovementDetected += on;
-                    return () => sensors.UnexpectedMovementDetected -= on;
-                },
-                "CreateReactionTriggerStrategy 0x0060D96A -> ConfigureRelevantEvents({UnexpectedMovement}) with no filter; the message comes from MovementComponent::CheckForUnexpectedMovement 0x0063E398",
-                clockSec: clockSec),
-            // RobotShaken (0x0060D956): purpose-built strategy
-            new RobotShakenStrategy(),
-            // RobotPlacedOnSlope (0x0060D878): purpose-built strategy
-            new PlacedOnSlopeStrategy(),
-            // Frustration (0x0060D73C): frustrationParams from the shipped map, Minor entry
-            new FrustrationStrategy(maxConfidence: -0.6f, cooldownSec: 60f, clockSec),
-        };
+        GenericReactionStrategy? self = null;
+        var s = new GenericReactionStrategy(ReactionTrigger.CliffDetected,
+            "CreateReactionTriggerStrategy 0x60D618 CliffDetected -> {CliffEvent 34, RobotStopped 52}, filter 0x60DC7C..0x60DCA2",
+            () => robot.Engine.Timer.TimeStampMs, new[] { TagCliffEvent, TagRobotStopped },
+            filter: _ =>
+            {
+                var m = self!.Manager;
+                if (m is null || !m.IsReactionTriggerEnabled(ReactionTrigger.CliffDetected)) return false;
+                if (m.CurrentReactionTrigger != ReactionTrigger.CliffDetected) return true;
+                return self.CanInterruptSelf;
+            },
+            shouldResumeLast: true,
+            subscribe: handle =>
+            {
+                void on(CliffReport c) => handle(TagCliffEvent, c);
+                robot.Sensors.CliffDetected += on;
+                return () => robot.Sensors.CliffDetected -= on;
+            });
+        self = s;
+        return s;
     }
+
+    /// <summary>MotorCalibration: {30}, filter 0x60DCFA: msg+1 &amp;&amp; msg+2 (calibStarted &amp;&amp; autoStarted).</summary>
+    public static GenericReactionStrategy MotorCalibration(CozmoRobot robot) =>
+        new(ReactionTrigger.MotorCalibration,
+            "CreateReactionTriggerStrategy 0x60D618 MotorCalibration -> {MotorCalibration 30}, filter 0x60DCFA: calibStarted && autoStarted",
+            () => robot.Engine.Timer.TimeStampMs, new[] { TagMotorCalibration },
+            filter: m => m is Protocol.MotorCalibration mc && mc.CalibStarted && mc.AutoStarted,
+            shouldResumeLast: true,
+            subscribe: handle =>
+            {
+                void on(Protocol.MotorCalibration mc) => handle(TagMotorCalibration, mc);
+                robot.Sensors.MotorCalibrationReported += on;
+                return () => robot.Sensors.MotorCalibrationReported -= on;
+            });
+
+    /// <summary>RobotFalling: {FallingStarted 58} WithTimeout 3000, filter IsReactionTriggerEnabled(11) (0x60DD6E).</summary>
+    public static GenericReactionStrategy Falling(CozmoRobot robot)
+    {
+        GenericReactionStrategy? self = null;
+        var s = new GenericReactionStrategy(ReactionTrigger.RobotFalling,
+            "CreateReactionTriggerStrategy 0x60D618 RobotFalling -> {FallingStarted 58} WithTimeout 3000 (0x60D838), filter 0x60DD6E: enabled(11)",
+            () => robot.Engine.Timer.TimeStampMs, new[] { TagFallingStarted },
+            filter: _ => self!.Manager?.IsReactionTriggerEnabled(ReactionTrigger.RobotFalling) ?? false,
+            timeoutMs: FallingTimeoutMs, shouldResumeLast: false,
+            subscribe: handle =>
+            {
+                void on(uint ts) => handle(TagFallingStarted, ts);
+                robot.Sensors.FallingStarted += on;
+                return () => robot.Sensors.FallingStarted -= on;
+            });
+        self = s;
+        return s;
+    }
+
+    /// <summary>ReturnedToTreads: {53}, filter 0x60DE36..0x60DE56: enabled(14) &amp;&amp; state == 0.</summary>
+    public static GenericReactionStrategy ReturnedToTreads(CozmoRobot robot)
+    {
+        GenericReactionStrategy? self = null;
+        var s = new GenericReactionStrategy(ReactionTrigger.ReturnedToTreads,
+            "CreateReactionTriggerStrategy 0x60D618 ReturnedToTreads -> {RobotOffTreadsStateChanged 53}, filter 0x60DE36..0x60DE56: enabled(14) && state == 0",
+            () => robot.Engine.Timer.TimeStampMs, new[] { TagRobotOffTreadsStateChanged },
+            filter: m => (self!.Manager?.IsReactionTriggerEnabled(ReactionTrigger.ReturnedToTreads) ?? false) && m is OffTreadsState st && st == OffTreadsState.OnTreads,
+            shouldResumeLast: false,
+            subscribe: handle =>
+            {
+                void on(OffTreadsState from, OffTreadsState to) => handle(TagRobotOffTreadsStateChanged, to);
+                robot.Sensors.OffTreadsStateChanged += on;
+                return () => robot.Sensors.OffTreadsStateChanged -= on;
+            });
+        self = s;
+        return s;
+    }
+
+    /// <summary>UnexpectedMovement: {60}, no filter (0x60D96A).</summary>
+    public static GenericReactionStrategy UnexpectedMovement(CozmoRobot robot) =>
+        new(ReactionTrigger.UnexpectedMovement,
+            "CreateReactionTriggerStrategy 0x60D618 UnexpectedMovement -> {UnexpectedMovement 60}, no filter; broadcast by CheckForUnexpectedMovement 0x63E932",
+            () => robot.Engine.Timer.TimeStampMs, new[] { TagUnexpectedMovement },
+            shouldResumeLast: true,
+            subscribe: handle =>
+            {
+                void on(UnexpectedMovementReport r) => handle(TagUnexpectedMovement, r);
+                robot.Sensors.UnexpectedMovementDetected += on;
+                return () => robot.Sensors.UnexpectedMovementDetected -= on;
+            });
+
+    /// <summary>A state callback (SetShouldTriggerCallback): no events, so WantsToRun is the callback.</summary>
+    private static GenericReactionStrategy Callback(CozmoRobot robot, ReactionTrigger t, string basis, Func<CozmoRobot, bool> cb) =>
+        new(t, basis, () => robot.Engine.Timer.TimeStampMs, shouldTriggerCallback: cb, shouldResumeLast: false);
+
+    /// <summary>PickedUp: +0x355 == 1 (lambda 0x60DDCE).</summary>
+    public static GenericReactionStrategy PickedUp(CozmoRobot robot) =>
+        Callback(robot, ReactionTrigger.RobotPickedUp, "CreateReactionTriggerStrategy 0x60D618 RobotPickedUp -> callback 0x60DDCE: robot+0x355 == 1",
+                 r => r.Sensors.OffTreadsState == OffTreadsState.InAir);
+
+    /// <summary>OnBack: +0x355 == 2 (lambda 0x60DEB2).</summary>
+    public static GenericReactionStrategy OnBack(CozmoRobot robot) =>
+        Callback(robot, ReactionTrigger.RobotOnBack, "CreateReactionTriggerStrategy 0x60D618 RobotOnBack -> callback 0x60DEB2: robot+0x355 == 2",
+                 r => r.Sensors.OffTreadsState == OffTreadsState.OnBack);
+
+    /// <summary>OnFace: +0x355 == 5 (lambda 0x60DF16).</summary>
+    public static GenericReactionStrategy OnFace(CozmoRobot robot) =>
+        Callback(robot, ReactionTrigger.RobotOnFace, "CreateReactionTriggerStrategy 0x60D618 RobotOnFace -> callback 0x60DF16: robot+0x355 == 5",
+                 r => r.Sensors.OffTreadsState == OffTreadsState.OnFace);
+
+    /// <summary>OnSide: (+0x355 − 3) &lt; 2 (lambda 0x60DF7E).</summary>
+    public static GenericReactionStrategy OnSide(CozmoRobot robot) =>
+        Callback(robot, ReactionTrigger.RobotOnSide, "CreateReactionTriggerStrategy 0x60D618 RobotOnSide -> callback 0x60DF7E: (robot+0x355 - 3) < 2",
+                 r => r.Sensors.OffTreadsState is OffTreadsState.OnLeftSide or OffTreadsState.OnRightSide);
+
+    /// <summary>
+    /// The strategies above plus Shaken, PlacedOnSlope and Frustration (the map's Minor entry: maxConfidence −0.6,
+    /// cooldown 60 s), for one robot. <paramref name="clockSec"/> is Frustration's BaseStationTimer seconds.
+    /// </summary>
+    public static IReadOnlyList<IReactionTriggerStrategy> ForRobot(CozmoRobot robot, Func<double>? clockSec = null) => new IReactionTriggerStrategy[]
+    {
+        PickedUp(robot), OnBack(robot), OnFace(robot), OnSide(robot),
+        ReturnedToTreads(robot), MotorCalibration(robot), UnexpectedMovement(robot), Cliff(robot), Falling(robot),
+        new RobotShakenStrategy(), new PlacedOnSlopeStrategy(),
+        new FrustrationStrategy(maxConfidence: -0.6f, cooldownSec: 60f, clockSec),
+        new PlacedOnChargerStrategy(),
+    };
 }

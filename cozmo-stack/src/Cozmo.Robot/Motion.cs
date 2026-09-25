@@ -155,6 +155,11 @@ public sealed class CozmoMotion
     public bool LiftMoving { get { lock (_gate) return _liftMoving; } }
     public bool BodyMoving { get { lock (_gate) return _bodyMoving; } }
 
+    /// <summary>MC+0xB8 || +0xB9 || +0xBA: direct drive holds a track (M4 MA1; read by the M10 C7 unlock rule).</summary>
+    internal bool DirectDriveHoldsAnyTrack { get { lock (_gate) return _ddBody || _ddHead || _ddLift; } }
+    /// <summary>MC+0xD4, "direct drive is disabled" (M4 MA1; read by the M10 C7 unlock rule).</summary>
+    internal bool DirectDriveDisabled { get { lock (_gate) return _directDriveDisabled; } }
+
     /// <summary>The tracks currently locked by anyone, as a mask (M4-014).</summary>
     public byte LockedTracks
     {

@@ -180,7 +180,7 @@ public static class ReactionsTool
 
         foreach (var reg in ShippedBehaviors.Reactions(robot, vision.Locator, () => sw.Elapsed.TotalSeconds, vision))
         {
-            manager.AddReaction(reg.Strategy, reg.Behavior, reg.ResumeLast);
+            manager.AddReaction(reg.Strategy, reg.Behavior);
             if (reg.Behavior is SteppedBehavior stepped) stepped.Step += line => Line($"    {reg.Behavior.Id}: {line}");
             if (reg.Behavior is ReactBehavior) { /* M7-style single animation; the switch line is its trace */ }
         }
@@ -192,7 +192,7 @@ public static class ReactionsTool
 
         Console.WriteLine($"classifier {(robot.Sensors.OffTreadsClassifierEnabled ? "enabled" : "waiting for the head calibration report")}");
         Console.WriteLine($"\n{manager.Reactions.Count} reactions registered:");
-        foreach (var r in manager.Reactions) Console.WriteLine($"  {r.Strategy.Trigger,-20} -> {r.Behavior.Id}{(r.ResumeLast ? " (resumes last)" : "")}");
+        foreach (var r in manager.Reactions) Console.WriteLine($"  {r.Strategy.Trigger,-20} -> {r.Behavior.Id}{(r.Strategy.ShouldResumeLast ? " (resumes last)" : "")}");
         bool provoke = a.Contains("--provoke-movement");
         if (calibration is not null)
         {

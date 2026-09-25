@@ -441,193 +441,223 @@ public sealed class SearchForFaceBehavior : FaceBehavior
 /// DEFERRED (no head pose for pets); the turn towards the image point is a head-and-body turn to the ray
 /// through the rectangle centre.
 /// </summary>
+// fidelity: M10-003
 /// <summary>
-/// <c>ReactionTriggerStrategyFacePositionUpdated</c> (vtable at 0x0102CE4C) over the same base as the object
-/// one, <c>ReactionTriggerStrategyPositionUpdate</c> (0x0061216E..0x00612A0C): its <c>AlwaysHandleInternal</c>
-/// and <c>AlwaysHandlePoseBasedInternal</c> feed the base's per-target record from the observations, and the
-/// base decides a target is desired when its last observed pose is not the pose last reacted to within 80 mm
-/// and 45 degrees and the observation is no older than 600000 ms. The shipped map sends this trigger to
-/// <c>AcknowledgeFace</c>; <c>FinishedReactingToFace</c> is the behaviour reporting back, which here is
-/// <see cref="AcknowledgeFaceBehavior.Acknowledged"/>.
-///
-/// Runnable only with a face detector: without one <see cref="FaceWorld"/> never sees a face and this never
-/// fires, which is the OKAO boundary, not a gap in the wiring.
+/// <c>ReactionTriggerStrategyFacePositionUpdated</c> (gap2 3a..3g, gap1 8); flags (1, 1, 0).
+/// <list type="bullet">
+/// <item>Ctor (3a): last-reaction time +0x54 = −1; desiredFaces +0x58; reactedFaces +0x64; the per-face "is close" map +0x70.</item>
+/// <item>EnabledStateChanged, either value (3b): desiredFaces cleared.</item>
+/// <item>AddDesiredFace (3d): inserts only while trigger 2 is enabled.</item>
+/// <item>Face observed (3e, 0x60CB84..0x60CE20): return for an id &lt; 0 or a face FaceWorld does not have; a named face
+/// not yet reacted to is added ("named for the first time") and the observation counts as handled; the distance from the
+/// robot pose to the face pose (failure: error and return); threshold 400 mm for a face in the map that is close, 300 mm
+/// otherwise; AddDesiredFace and "FaceBecomeClose" only when the face was known and not close, is now close, was not
+/// handled as first-named, and there is no cooldown (last ≥ 0 &amp;&amp; now &lt; last + 4.0 s); the close map always takes
+/// the new value.</item>
+/// <item>STBI (0x60CAB0..0x60CB5E): desiredFaces empty → false; AcknowledgeFace+0x120 = the set; on the charger platform →
+/// false; else IsRunnable. The base per-target map is never filled for faces (3g).</item>
+/// <item>FinishedReactingToFace (3f): the base's record (none for faces, so a debug log), reactedFaces += id, last = now;
+/// ClearDesiredTargets clears desiredFaces. RobotDelocalized's ResetReactionData changes nothing (3c).</item>
+/// </list>
+/// Seams (M11/M14): FaceWorld, the robot pose, BaseStationTimer seconds.
+/// The M14 AcknowledgeFace behaviour takes one requested face, not the set: the lowest id of the set is passed to it
+/// (<see cref="AcknowledgeFaceBehavior.RequestedFaceId"/>), as this stack did before; the set itself is <see cref="DesiredFaces"/>.
 /// </summary>
-public sealed class FacePositionUpdatedStrategy : IReactionTriggerStrategy, ITargetPreparingStrategy, IDisposable
+public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisposable
 {
-    public const double SameDistanceMm = ObjectPositionUpdatedStrategy.SameDistanceMm;
-    public const double SameAngleRad = ObjectPositionUpdatedStrategy.SameAngleRad;
-    public const uint MaxObservationAgeMs = ObjectPositionUpdatedStrategy.MaxObservationAgeMs;
-
-    private sealed class Data { public Pose3d? LastReacted; public Pose3d LastObserved; public uint Timestamp; }
+    public const double CloseMm = 300.0, StayCloseMm = 400.0, CooldownSec = 4.0;
 
     private readonly FaceWorld _world;
     private readonly AcknowledgeFaceBehavior _behavior;
-    private readonly Dictionary<int, Data> _data = new();
+    private readonly Func<Pose3d?> _robotPose;
+    private readonly Func<double> _clockSec;
     private readonly object _gate = new();
-    private uint _lastImageTimestamp;
-    private int? _staged, _targetBefore;
+    private readonly SortedSet<int> _desired = new();
+    private readonly HashSet<int> _reacted = new();
+    private readonly Dictionary<int, bool> _isClose = new();
+    private double _lastReactionSec = -1;
 
-    public FacePositionUpdatedStrategy(FaceWorld world, AcknowledgeFaceBehavior behavior)
+    public FacePositionUpdatedStrategy(FaceWorld world, AcknowledgeFaceBehavior behavior, Func<Pose3d?> robotPose, Func<double> clockSec)
     {
-        _world = world; _behavior = behavior;
+        _world = world; _behavior = behavior; _robotPose = robotPose; _clockSec = clockSec;
         world.FaceObserved += OnObserved;
-        behavior.Acknowledged += ReactedTo;
+        behavior.Acknowledged += FinishedReactingToFace;
     }
 
-    public ReactionTrigger Trigger => ReactionTrigger.FacePositionUpdated;
-    public string Basis => "ReactionTriggerStrategyPositionUpdate ctor 0x0061216E (shared with ObjectPositionUpdated): " +
-                           "IsSameAs(lastReacted, observed, 80 mm, 0.785398 rad) false && age <= 600000 ms; " +
-                           "reactionTrigger_behavior_map.json: FacePositionUpdated -> AcknowledgeFace";
+    public override ReactionTrigger Trigger => ReactionTrigger.FacePositionUpdated;
+    public override string Basis => "ReactionTriggerStrategyFacePositionUpdated ctor 0x60C62E..0x60C69C, STBI 0x60CAB0..0x60CB5E, " +
+                                    "face observed 0x60CB84..0x60CE20 (300/300/400 mm, 4 s cooldown)";
+    public override bool ShouldResumeLast => true;
+    public override bool CanInterruptOtherTriggeredBehavior => true;
+    public override bool CanInterruptSelf => false;
 
-    private void OnObserved(FaceObservation o)
+    /// <summary>The engine's log lines (3e, 3f).</summary>
+    public event Action<string>? Log;
+
+    /// <summary>desiredFaces (+0x58).</summary>
+    public IReadOnlyCollection<int> DesiredFaces { get { lock (_gate) return _desired.ToList(); } }
+
+    /// <summary>3d.</summary>
+    public bool AddDesiredFace(int id)
     {
+        if (!IsReactionTriggerEnabled(ReactionTrigger.FacePositionUpdated)) return false;
+        lock (_gate) return _desired.Add(id);
+    }
+
+    private void OnObserved(FaceObservation o) => HandleFaceObserved(o.Face.Id);
+
+    /// <summary>3e.</summary>
+    public void HandleFaceObserved(int id)
+    {
+        if (id < 0 || _world.GetFace(id) is not { } face) return;
+        bool handled = false;
+        bool reacted;
+        lock (_gate) reacted = _reacted.Contains(id);
+        if (face.HasName && !reacted)
+        {
+            AddDesiredFace(id);
+            Log?.Invoke($"ReactionTriggerStrategyFacePositionUpdated: face {id} named for the first time");
+            handled = true;
+        }
+        if (_robotPose() is not { } robot)
+        {
+            Log?.Invoke($"error: ReactionTriggerStrategyFacePositionUpdated: could not get the distance to face {id}");
+            return;
+        }
+        var d = robot.Translation - face.HeadPose.Translation;
+        double dist = Math.Sqrt(d.X * d.X + d.Y * d.Y + d.Z * d.Z);
+        bool inMap, wasClose;
+        double last;
+        lock (_gate) { inMap = _isClose.TryGetValue(id, out wasClose); last = _lastReactionSec; }
+        double threshold = inMap && wasClose ? StayCloseMm : CloseMm;
+        bool isClose = dist < threshold;
+        double now = _clockSec();
+        bool cooldown = last >= 0 && now < last + CooldownSec;
+        if (inMap && !wasClose && isClose && !handled && !cooldown)
+        {
+            AddDesiredFace(id);
+            Log?.Invoke($"BehaviorAcknowledgeFace.FaceBecomeClose: face {id}");
+        }
+        lock (_gate) _isClose[id] = isClose;
+    }
+
+    protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior)
+    {
+        List<int> set;
+        lock (_gate) set = _desired.ToList();
+        if (set.Count == 0) return false;
+        _behavior.RequestedFaceId = set[0];                                                        // +0x120 = the set
+        if (rc.Context.Robot.Sensors.OnChargerPlatform) return false;
+        return behavior.IsRunnable(rc.Context);
+    }
+
+    /// <summary>3f: FinishedReactingToFace.</summary>
+    public void FinishedReactingToFace(int id)
+    {
+        Log?.Invoke($"debug: ReactionTriggerStrategyPositionUpdate.RobotReactedToId: no record for {id}");
         lock (_gate)
         {
-            _lastImageTimestamp = o.Timestamp;
-            if (!_data.TryGetValue(o.Face.Id, out var d)) _data[o.Face.Id] = d = new Data();
-            d.LastObserved = o.Face.HeadPose;
-            d.Timestamp = o.Timestamp;
+            _reacted.Add(id);
+            _lastReactionSec = _clockSec();
         }
     }
 
-    /// <summary><c>FinishedReactingToFace</c> / the base's <c>ReactedToID</c>.</summary>
-    public void ReactedTo(int faceId)
-    {
-        lock (_gate) if (_data.TryGetValue(faceId, out var d)) d.LastReacted = d.LastObserved;
-    }
+    /// <summary>3f: ClearDesiredTargets.</summary>
+    public void ClearDesiredTargets() { lock (_gate) _desired.Clear(); }
 
-    public bool ShouldReactTo(int faceId)
-    {
-        lock (_gate)
-        {
-            if (!_data.TryGetValue(faceId, out var d)) return false;
-            if (_world.GetFace(faceId) is null) return false;
-            if (unchecked(_lastImageTimestamp - d.Timestamp) > MaxObservationAgeMs) return false;
-            return d.LastReacted is not { } reacted || !reacted.IsSameAs(d.LastObserved, SameDistanceMm, SameAngleRad);
-        }
-    }
-
-    /// <summary><c>GetDesiredReactionTargets</c>.</summary>
-    public IReadOnlyList<int> DesiredTargets()
-    {
-        List<int> ids;
-        lock (_gate) ids = _data.Keys.ToList();
-        return ids.Where(ShouldReactTo).OrderBy(i => i).ToList();
-    }
-
-    public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec)
-    {
-        if (!PrepareTarget(context, current, nowSec)) return false;
-        CommitTarget();
-        return true;
-    }
-
-    public bool PrepareTarget(BehaviorContext context, ReactionTrigger? current, double nowSec)
-    {
-        if (current == ReactionTrigger.FacePositionUpdated) return false;
-        var targets = DesiredTargets();
-        if (targets.Count == 0) return false;
-        _targetBefore = _behavior.RequestedFaceId;
-        _staged = targets[0];
-        _behavior.RequestedFaceId = targets[0];
-        return true;
-    }
-
-    public void CommitTarget() { _staged = null; _targetBefore = null; }
-
-    public void AbandonTarget()
-    {
-        if (_staged is not null) _behavior.RequestedFaceId = _targetBefore;
-        _staged = null; _targetBefore = null;
-    }
+    /// <summary>3b.</summary>
+    public override void EnabledStateChanged(BehaviorContext context, bool enabled) => ClearDesiredTargets();
 
     public void Dispose()
     {
         _world.FaceObserved -= OnObserved;
-        _behavior.Acknowledged -= ReactedTo;
+        _behavior.Acknowledged -= FinishedReactingToFace;
     }
 }
 
+// fidelity: M10-003
 /// <summary>
-/// <c>PetInitialDetection</c> -> <c>ReactToPet</c> in the shipped map: a pet the world model has not
-/// reacted to yet, and not too soon after the last reaction.
-///
-/// <c>ReactionTriggerStrategyPetInitialDetection</c> 0x0061175C keeps two things. The first is the set of
-/// pet ids it has already reacted to: <c>UpdateReactedTo</c> 0x00611E1C walks the pets the robot knows and
-/// inserts each id into the tree at +0x34, and <c>InitReactedTo</c> 0x00611FA4 fills it when the strategy
-/// starts, so a pet that was already there when it began is not new. The second is the time of the last
-/// reaction at +0x40: <c>RecentlyReacted</c> 0x00611DD0 answers true while that time is not -1 and
-/// <c>lastReacted + 60</c> is still ahead of now - the 60 built at 0x00611DE8 - so a reaction is followed
-/// by a minute in which no pet triggers another.
+/// <c>ReactionTriggerStrategyPetInitialDetection</c> (gap1 8, 0x611AE4..0x611CB6); flags (1, 1, 0).
+/// <list type="bullet">
+/// <item>STBI: RecentlyReacted (last +0x40 &gt; −1 and last + 60 s &gt; now) → UpdateReactedTo (add all current pet ids) and
+/// false; else collect each pet not in reactedTo whose numTimesObserved &gt; 2; none → false; on the charger platform
+/// (robot+0x34A) → false; else ReactToPet+0x11C = the targets, and IsRunnable.</item>
+/// <item>BehaviorDidReact: reset the set, add the current and the reacted ids, last = now. Ctor: +0x40 = −1.</item>
+/// </list>
+/// MISSING: EnabledStateChanged calls InitReactedTo (0x611FA4), whose body is not in the rows; nothing is done.
+/// The ReactToPet behaviour (M14) picks its own pet; the targets are handed over as <see cref="Targets"/>.
 /// </summary>
-public sealed class PetInitialDetectionStrategy : IReactionTriggerStrategy, IDisposable
+public sealed class PetInitialDetectionStrategy : ReactionTriggerStrategy, IDisposable
 {
-    /// <summary>The minute after a reaction in which no pet triggers another (0x42700000 at 0x00611DE8).</summary>
     public const double RecentlyReactedSec = 60.0;
+    public const int MinTimesObserved = 3;
 
     private readonly PetWorld _world;
     private readonly HashSet<int> _reactedTo = new();
     private readonly object _gate = new();
-    private bool _latched;
-    private double _lastReactedSec = double.NegativeInfinity;
-
     private readonly ReactToPetBehavior? _behavior;
     private readonly Func<double>? _clockSec;
+    private double _lastReactedSec = -1;
+    private IReadOnlyCollection<int> _targets = Array.Empty<int>();
 
-    public PetInitialDetectionStrategy(PetWorld world) { _world = world; world.PetObserved += OnObserved; }
+    public PetInitialDetectionStrategy(PetWorld world) { _world = world; }
 
-    /// <summary>
-    /// The strategy paired with the behaviour it triggers, so a reaction records the pet and starts the
-    /// minute. <paramref name="clockSec"/> is the behaviour clock the cooldown is measured on.
-    /// </summary>
-    public PetInitialDetectionStrategy(PetWorld world, ReactToPetBehavior behavior, Func<double> clockSec)
-        : this(world)
+    public PetInitialDetectionStrategy(PetWorld world, ReactToPetBehavior behavior, Func<double> clockSec) : this(world)
     {
         _behavior = behavior;
         _clockSec = clockSec;
         behavior.Reacted += OnReacted;
     }
 
-    private void OnReacted(int petId) => ReactedTo(petId, _clockSec?.Invoke() ?? 0);
+    public override ReactionTrigger Trigger => ReactionTrigger.PetInitialDetection;
+    public override string Basis => "ReactionTriggerStrategyPetInitialDetection STBI 0x611AE4..0x611CB6: RecentlyReacted 60 s (0x611DD0), " +
+                                    "numTimesObserved > 2, robot+0x34A; BehaviorDidReact 0x611E80..0x611F28";
+    public override bool ShouldResumeLast => true;
+    public override bool CanInterruptOtherTriggeredBehavior => true;
+    public override bool CanInterruptSelf => false;
 
-    public ReactionTrigger Trigger => ReactionTrigger.PetInitialDetection;
-    public string Basis => "reactionTrigger_behavior_map.json: PetInitialDetection -> ReactToPet; a pet id not " +
-                           "reacted to yet, and not within 60 s of the last reaction (RecentlyReacted 0x00611DD0)";
+    /// <summary>ReactToPet+0x11C as the strategy last set it.</summary>
+    public IReadOnlyCollection<int> Targets { get { lock (_gate) return _targets; } }
 
-    /// <summary>True while the engine's <c>RecentlyReacted</c> would be.</summary>
-    public bool RecentlyReacted(double nowSec) => nowSec < _lastReactedSec + RecentlyReactedSec;
+    public bool RecentlyReacted(double nowSec) { lock (_gate) return _lastReactedSec > -1 && _lastReactedSec + RecentlyReactedSec > nowSec; }
 
-    /// <summary>What <c>UpdateReactedTo</c> records when the reaction runs.</summary>
-    public void ReactedTo(int petId, double nowSec)
+    private void OnReacted(int petId) => BehaviorDidReact(new[] { petId }, _clockSec?.Invoke() ?? 0);
+
+    /// <summary>BehaviorDidReact: reset the set, add the current and the reacted ids, last = now.</summary>
+    public void BehaviorDidReact(IEnumerable<int> reacted, double nowSec)
     {
         lock (_gate)
         {
-            _reactedTo.Add(petId);
+            _reactedTo.Clear();
+            foreach (var p in _world.Pets) _reactedTo.Add(p.Id);
+            foreach (var id in reacted) _reactedTo.Add(id);
             _lastReactedSec = nowSec;
-            _latched = false;
         }
     }
 
-    private void OnObserved(PetEntry pet, bool isNew)
+    protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior)
     {
-        lock (_gate) if (!_reactedTo.Contains(pet.Id)) _latched = true;
-    }
-
-    public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec)
-    {
+        var pets = _world.Pets;
+        List<int> targets;
         lock (_gate)
         {
-            if (nowSec < _lastReactedSec + RecentlyReactedSec) return false;
-            bool w = _latched;
-            _latched = false;
-            return w;
+            if (_lastReactedSec > -1 && _lastReactedSec + RecentlyReactedSec > rc.NowSec)
+            {
+                foreach (var p in pets) _reactedTo.Add(p.Id);                                     // UpdateReactedTo
+                return false;
+            }
+            targets = pets.Where(p => !_reactedTo.Contains(p.Id) && p.TimesObserved >= MinTimesObserved).Select(p => p.Id).ToList();
         }
+        if (targets.Count == 0) return false;
+        if (rc.Context.Robot.Sensors.OnChargerPlatform) return false;
+        lock (_gate) _targets = targets;
+        return behavior.IsRunnable(rc.Context);
     }
+
+    public override void EnabledStateChanged(BehaviorContext context, bool enabled) { }
 
     public void Dispose()
     {
-        _world.PetObserved -= OnObserved;
         if (_behavior is not null) _behavior.Reacted -= OnReacted;
     }
 }

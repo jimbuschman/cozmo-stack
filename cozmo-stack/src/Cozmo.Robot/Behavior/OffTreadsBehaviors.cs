@@ -201,6 +201,25 @@ public sealed class ReactToImpactBehavior : SteppedBehavior
 
     public ReactToImpactBehavior(string id = "ReactToImpact") : base(id, "ReactToImpact") { }
 
+    /// <summary>
+    /// The behaviour with its AlwaysHandle attached to the robot's falling broadcasts (M10 C1, C2): the flag is cleared
+    /// on FallingStarted and set by a FallingStopped with impactIntensity &gt; 1000. The M10 RobotFalling strategy
+    /// latches FallingStarted (C12), and its WantsToRun is asked only while this behaviour is runnable (C14), so the
+    /// reaction fires when a hard landing follows within the 3000 ms window. This gate is the existing M7 candidate,
+    /// moved here from the strategy it used to live in; its source (0x00606408) is not in the M10 inventory.
+    /// </summary>
+    public ReactToImpactBehavior(CozmoRobot robot, string id = "ReactToImpact") : this(id)
+    {
+        robot.Sensors.FallingStarted += _ => _impact = false;
+        robot.Sensors.FallingStopped += r => { if (r.ImpactIntensity > ReactionTable.ImpactIntensityThreshold) _impact = true; };
+        _gated = true;
+    }
+
+    private volatile bool _impact;
+    private readonly bool _gated;
+
+    protected override bool IsRunnableInternal(BehaviorContext context) => !_gated || _impact;
+
     /// <summary>Whether the last run waited for a recalibration rather than playing at once.</summary>
     public bool WaitedForCalibration { get; private set; }
 

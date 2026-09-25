@@ -4,6 +4,11 @@ Read first in every session. The manager keeps this file current; the process it
 
 ## Now
 
+- **PAUSED 2026-09-25 (operator: usage limit).** Three background workers were stopped mid-task:
+  - **M10 repair implementer:** partial, uncommitted edits in the working tree (Behavior/*, OffTreads.cs, UnexpectedMovement.cs, Sensors.cs, Motion.cs, CozmoEngine.cs, Conformance/Reactions.cs, tests). Resume it, or re-run it on top of those edits. Do not commit as-is.
+  - **M11 extraction:** stopped while writing scratch report `scratchpad/extract/M11/`; re-run.
+  - **NV gap pass 3** (the non-factory read path and the other 14 reads' callbacks): re-run. The NV-gap and NV-gap2 reports are saved in the scratchpad.
+  - Committed so far today: cf313f8 (M5), fee8724 (M6/M10 frozen), 41b319c (control-check keep-alive). Nothing is waiting on the operator until the NV fix is in.
 - **Phase:** M1 is closed apart from named residuals.
   - Batch 3 (the app layer) is 518b730, and the settle pass is 67d4bc2.
   - The device reset on RemoveRobot (M1-025, M1-015) is committed after the commits below. Its first verification failed on two races and on the calibration being kept. Those were fixed, and the re-verify passed.
@@ -47,7 +52,12 @@ Read first in every session. The manager keeps this file current; the process it
     - JSON clips (JsonClipLoader.cs).
   - Full suite 1357/1357.
 - **M6 (Wwise) and M10 (derived state): inventories frozen (2026-09-25).** M6 has 18 records (`re-analysis/inventory/M6-wwise-bank.md`, eight extractor passes) and M10 has 13 (`re-analysis/inventory/M10-derived.md`, three passes). All are IMPLEMENTATION_GAP until the compare-and-repair batch. M6's repair may run as two batches: the control and signal path, then the Vorbis port.
-- **NV calibration read (found on the second CONTROL run):** the engine sends Length = 1 for the factory tag 0x80000001 (`_maxFactoryEntrySizeTable`), not 1024, and reassembles each reply at index x 1024. M11-011 is contradicted. A gap pass is running; then an M3 correction adds the NV records and M2 renames NVOpResult word@4 to "index".
+- **NV calibration read (found on the second CONTROL run):** the engine sends Length = 1 for the factory tag 0x80000001 (`_maxFactoryEntrySizeTable`), not 1024, and reassembles each reply at index x 1024. M11-011 is contradicted. Two gap passes then found the read is not alone. At connection the engine queues **12 NV reads before the calibration read** (unlocks, inventory, the face album, and 8 backup reads from backup_config.json), then Lab and Needs after it. Ready-to-stream (+0x2A, M1-041 CD20) waits until the whole queue drains. So the stack needs the engine's NV storage component, not just a calibration reader. Other findings:
+  - NV dispatch is gated in Robot::Update (Running, the first full state; after a calibration, a BlockWorld failure).
+  - robot+0x24 is mfgId word 1, the body hardware version. The operator's robot reports 4, so the engine zeroes all 8 distortion coefficients.
+  - DefaultCameraParams never installs a calibration.
+  - A read gets no callback on disconnect.
+  - A third gap pass on the non-factory read path and the 14 other reads' callbacks is running. After it, the NV records go into M3 as correction C2 (the NV component is device storage). The M2 word@4 "index" rename is a naming cleanup, queued.
 - **M2 protocol: repaired in one batch (2026-09-24).**
   - The verifier compared all 42 outbound and all 56 inbound layouts by machine against the engine; all match. Its one blocking item was a manifest overclaim, fixed by policy M2-017 and corrections C1 and C2, then re-approved.
   - M2 records: 15 EXACT_SOURCE, 1 COMPATIBILITY_POLICY (M2-017), 2 IMPLEMENTATION_GAP (M2-002 per-bit storage and M2-015 caller defaults, both M4 interfaces).

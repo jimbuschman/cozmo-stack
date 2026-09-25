@@ -593,11 +593,14 @@ public static class ShippedBehaviors
         ReactToFrustrationBehavior.Minor(),
     };
 
+    // fidelity: M10-003, M10-004
     /// <summary>
-    /// The shipped reaction map (<c>reactionTrigger_behavior_map.json</c>) as registrations for a
-    /// <see cref="BehaviorManager"/>: each trigger's engine strategy paired with the behaviour the map names,
-    /// and its <c>shouldResumeLast</c>. Only triggers whose input this stack has are included; the cube-moved
-    /// entry appears when a <paramref name="cubes"/> world model is attached.
+    /// The shipped reaction map (<c>reactionTrigger_behavior_map.json</c>) as trigger-map entries for a
+    /// <see cref="BehaviorManager"/>: each trigger's engine strategy (C12, gap1 8, gap2) paired with the behaviour the map
+    /// names. A Generic strategy's shouldResumeLast is the map's genericStrategyParams; the purpose-built strategies'
+    /// flags are their classes' (gap1 8). Only triggers whose behaviour this stack has are entered; the cube-moved entry
+    /// needs a world model, the face and pet entries a vision system. Not built: FistBump, Hiccup and Sparked (their
+    /// behaviours and the needs, progression, spark and objective inputs are other layers).
     /// </summary>
     public static IReadOnlyList<BehaviorManager.ReactionRegistration> Reactions(CozmoRobot robot, ICubeLocator? cubes = null,
                                                                                 Func<double>? clockSec = null, Cozmo.Robot.Vision.VisionSystem? vision = null,
@@ -605,75 +608,54 @@ public static class ShippedBehaviors
     {
         var strategies = ShippedReactionStrategies.ForRobot(robot, clockSec).ToDictionary(s => s.Trigger);
         var frustration = (FrustrationStrategy)strategies[ReactionTrigger.Frustration];
-        var sensors = robot.Sensors;
 
         var list = new List<BehaviorManager.ReactionRegistration>
         {
-            // CliffDetected: shouldResumeLast true; the engine latches CliffEvent / RobotStopped (tags 34, 52)
-            new(new LatchedEventStrategy(ReactionTrigger.CliffDetected, latch =>
-                {
-                    void on(CliffReport _) => latch();
-                    sensors.CliffDetected += on;
-                    return () => sensors.CliffDetected -= on;
-                }, "CreateReactionTriggerStrategy 0x0060D6A4 -> ConfigureRelevantEvents({CliffEvent, RobotStopped}), filter lambda 0x0060DC76", clockSec: clockSec),
-                new ReactBehavior("ReactToCliff", "ReactToCliff", ReactionTrigger.CliffDetected, r => r.Sensors.CliffDetectedNow),
-                ResumeLast: true),
+            new(strategies[ReactionTrigger.CliffDetected],
+                new ReactBehavior("ReactToCliff", "ReactToCliff", ReactionTrigger.CliffDetected, r => r.Sensors.CliffDetectedNow)),
             new(strategies[ReactionTrigger.RobotPickedUp],
-                new ReactBehavior("ReactToPickup", "ReactToPickup", ReactionTrigger.RobotPickedUp, PickedUpForReaction),
-                ResumeLast: false),
-            new(strategies[ReactionTrigger.RobotOnBack], new ReactToRobotOnBackBehavior(), ResumeLast: false),
-            new(strategies[ReactionTrigger.RobotOnFace], new ReactToRobotOnFaceBehavior(), ResumeLast: false),
-            new(strategies[ReactionTrigger.RobotOnSide], new ReactToRobotOnSideBehavior(), ResumeLast: false),
-            new(strategies[ReactionTrigger.RobotPlacedOnSlope], new ReactToPlacedOnSlopeBehavior(), ResumeLast: false),
-            new(strategies[ReactionTrigger.ReturnedToTreads], new ReactToReturnedToTreadsBehavior(), ResumeLast: false),
-            new(strategies[ReactionTrigger.RobotShaken], new ReactToRobotShakenBehavior(), ResumeLast: false),
-            new(strategies[ReactionTrigger.UnexpectedMovement], new ReactToUnexpectedMovementBehavior(), ResumeLast: true),
-            new(strategies[ReactionTrigger.MotorCalibration], new ReactToMotorCalibrationBehavior(), ResumeLast: true),
-            new(frustration, ReactToFrustrationBehavior.Minor(frustration), ResumeLast: false),
-
-            // RobotFalling -> ReactToImpact. The engine's AlwaysHandle (0x00606408) ignores the start of the
-            // fall and gates the landing on impactIntensity > 1000; that filter is the latch's here.
-            new(new LatchedEventStrategy(ReactionTrigger.RobotFalling, latch =>
-                {
-                    void on(FallingStoppedReport r) { if (r.ImpactIntensity > ReactionTable.ImpactIntensityThreshold) latch(); }
-                    sensors.FallingStopped += on;
-                    return () => sensors.FallingStopped -= on;
-                }, "BehaviorReactToImpact::AlwaysHandle 0x00606408: FallingStopped with impactIntensity > 1000 (0x447A0000)", clockSec: clockSec),
-                new ReactToImpactBehavior(), ResumeLast: false),
-
-            // PlacedOnCharger -> ReactToOnCharger, latched on the IS_ON_CHARGER flag rising.
-            new(new LatchedEventStrategy(ReactionTrigger.PlacedOnCharger, latch =>
-                {
-                    void on(bool onCharger) { if (onCharger) latch(); }
-                    sensors.OnChargerChanged += on;
-                    return () => sensors.OnChargerChanged -= on;
-                }, "reactionTrigger_behavior_map.json: PlacedOnCharger -> ReactToOnCharger; BehaviorReactToOnCharger::InitInternal 0x00606C94", clockSec: clockSec),
-                new ReactToOnChargerBehavior(), ResumeLast: false),
+                new ReactBehavior("ReactToPickup", "ReactToPickup", ReactionTrigger.RobotPickedUp, PickedUpForReaction)),
+            new(strategies[ReactionTrigger.RobotOnBack], new ReactToRobotOnBackBehavior()),
+            new(strategies[ReactionTrigger.RobotOnFace], new ReactToRobotOnFaceBehavior()),
+            new(strategies[ReactionTrigger.RobotOnSide], new ReactToRobotOnSideBehavior()),
+            new(strategies[ReactionTrigger.RobotPlacedOnSlope], new ReactToPlacedOnSlopeBehavior()),
+            new(strategies[ReactionTrigger.ReturnedToTreads], new ReactToReturnedToTreadsBehavior()),
+            new(strategies[ReactionTrigger.RobotShaken], new ReactToRobotShakenBehavior()),
+            new(strategies[ReactionTrigger.UnexpectedMovement], new ReactToUnexpectedMovementBehavior()),
+            new(strategies[ReactionTrigger.MotorCalibration], new ReactToMotorCalibrationBehavior()),
+            new(frustration, ReactToFrustrationBehavior.Minor(frustration)),
+            // RobotFalling -> ReactToImpact: the Generic strategy latches FallingStarted with the 3000 ms window (C12).
+            new(strategies[ReactionTrigger.RobotFalling], new ReactToImpactBehavior(robot)),
+            // PlacedOnCharger -> ReactToOnCharger (StrategyPlacedOnCharger, gap2 1).
+            new(strategies[ReactionTrigger.PlacedOnCharger], new ReactToOnChargerBehavior()),
         };
 
         if (cubes is null && vision is not null) cubes = vision.Locator;
         if (cubes is not null)
         {
             var behavior = new AcknowledgeCubeMovedBehavior(cubes);
-            list.Add(new(new CubeMovedReactionStrategy(robot, behavior, cubes, vision?.World), behavior, ResumeLast: false));
+            list.Add(new(new CubeMovedReactionStrategy(robot, behavior, cubes, vision?.World), behavior));
         }
         if (vision is not null)
         {
-            // ObjectPositionUpdated -> AcknowledgeObject (shouldResumeLast false in the shipped map)
             var ack = new AcknowledgeObjectBehavior(vision.World, vision.Locator);
-            list.Add(new(new ObjectPositionUpdatedStrategy(vision.World, ack), ack, ResumeLast: false));
+            // Robot::GetLastImageTimeStamp is the vision system's last raw frame timestamp (M11 interface); the carried and
+            // docking object ids are M12's and not attached here.
+            list.Add(new(new ObjectPositionUpdatedStrategy(vision.World, ack, robot)
+            {
+                LastImageTimestamp = () => vision.LastRawFrameTimestamp ?? 0,
+            }, ack));
 
-            // FacePositionUpdated -> AcknowledgeFace and PetInitialDetection -> ReactToPet. Registered
-            // whenever there is a vision system: with no face detector the worlds stay empty and neither ever
-            // fires, which is the OKAO boundary doing its job rather than the wiring being absent.
+            // FacePositionUpdated -> AcknowledgeFace and PetInitialDetection -> ReactToPet. With no face detector the
+            // worlds stay empty and neither ever fires (the OKAO boundary).
             var ackFace = new AcknowledgeFaceBehavior(vision);
-            list.Add(new(new FacePositionUpdatedStrategy(vision.Faces, ackFace), ackFace, ResumeLast: false));
+            list.Add(new(new FacePositionUpdatedStrategy(vision.Faces, ackFace, () => vision.History.Latest?.RobotPose, clockSec ?? (() => robot.Engine.Timer.Seconds)), ackFace));
             var reactToPet = new ReactToPetBehavior(vision);
-            list.Add(new(new PetInitialDetectionStrategy(vision.Pets, reactToPet, clockSec ?? (() => 0)), reactToPet, ResumeLast: false));
+            list.Add(new(new PetInitialDetectionStrategy(vision.Pets, reactToPet, clockSec ?? (() => robot.Engine.Timer.Seconds)), reactToPet));
         }
         // NoPreDockPoses -> RamIntoBlock, the freeplay behaviour instance itself (FindBehaviorByIDAndDowncast)
         if (ramIntoBlock is not null && whiteboard is not null)
-            list.Add(new(new NoPreDockPosesStrategy(whiteboard, ramIntoBlock), ramIntoBlock, ResumeLast: false));
+            list.Add(new(new NoPreDockPosesStrategy(whiteboard, ramIntoBlock), ramIntoBlock));
         return list;
     }
 }

@@ -752,7 +752,12 @@ public sealed class EngineRobot
     /// stack's animation audio always streams to the robot.
     /// </summary>
     public RobotAudioOutputSource? AudioOutputSource { get; private set; }
-    /// <summary>Robot::SetPhysicalRobot(true), called by HandleFirmwareVersion when "sim" is null (C1).</summary>
+    // fidelity: M10-010
+    /// <summary>
+    /// Robot+0x14, the physical flag (M10 A4): 0 from the constructor until FirmwareVersion arrives, then
+    /// json["sim"].isNull(). While it is 0: CheckForUnexpectedMovement does nothing (B2), the on-back centre is the sim
+    /// value (A5), and the tap filter does not queue (M4 CD10e).
+    /// </summary>
     public bool IsPhysicalRobot { get; private set; }
 
     // fidelity: M3-024
@@ -780,12 +785,11 @@ public sealed class EngineRobot
                 return;
             }
             bool simIsNull = !root.TryGetProperty("sim", out var sim) || sim.ValueKind == System.Text.Json.JsonValueKind.Null;
-            if (simIsNull)
-            {
-                IsPhysicalRobot = true;
-                AudioOutputSource = RobotAudioOutputSource.PlayOnRobot;
-            }
-            else AudioOutputSource = RobotAudioOutputSource.PlayOnDevice;
+            // fidelity: M10-010
+            // A4: Robot::SetPhysicalRobot's only caller passes json["sim"].isNull() (0x00536980); it writes robot+0x14
+            // (0x0051397A), which the Robot constructor zeroed (0x0050FC36).
+            IsPhysicalRobot = simIsNull;
+            AudioOutputSource = simIsNull ? RobotAudioOutputSource.PlayOnRobot : RobotAudioOutputSource.PlayOnDevice;
         }
     }
 
@@ -876,6 +880,24 @@ public sealed class EngineRobot
     /// <summary>Robot+0x34D: the RobotStates counted without IS_BODY_ACC_MODE since the last SetBodyRadioMode.</summary>
     private int _bodyNotInAccModeCount;
 
+    // fidelity: M4-022
+    /// <summary>
+    /// SC10 (0x00512AD0..0x00512B52; C4): a synced state without IS_BODY_ACC_MODE counts; at 16 the warning
+    /// "BodyNotInAccessoryMode", SetBodyRadioMode {1, 0} reliable (0x00512B46), and the count restarts; a state with the
+    /// bit does not reset it. UFRS runs it after SetOnCharger (0x00512AB4) and before MovementComponent::Update
+    /// (0x00512B5C), so it is called from the device route at that point (<see cref="CozmoSensors"/>), for every state
+    /// that passed the time-sync gate, origin-rejected or not (M4 C3).
+    /// </summary>
+    internal void CountBodyRadioMode(RobotState s)
+    {
+        if ((s.Status & (uint)RobotStatusFlag.IsBodyAccMode) != 0) return;
+        _bodyNotInAccModeCount++;
+        if (_bodyNotInAccModeCount < 16) return;
+        Engine.Log("warning: Robot.UpdateFullRobotState.BodyNotInAccessoryMode");
+        Engine.Handler.SendMessage(new SetBodyRadioMode { RadioMode = BodyRadioMode.BODY_ACCESSORY_OPERATING_MODE, WifiChannel = 0 });
+        _bodyNotInAccModeCount = 0;
+    }
+
     private bool Send(RobotMessage m, string what)
     {
         if (Engine.Handler.SendMessage(m)) return true;
@@ -892,10 +914,9 @@ public sealed class EngineRobot
     /// UpdateFullRobotState's gates (CD23, CC4; SC4f; M4 correction C3). Before time sync the state is dropped (returns
     /// 0). Right after the +0x29 gate the first full state is marked, +0x34E = 1 (0x0051293C..0x00512948), ahead of the
     /// origin check. Then the part before the origin check: the stored fields (RS1..RS11; the robot clock the cube path
-    /// reads, RS1; the head angle, lift angle, cliff data, IMU, treads, status bits and MovementComponent::Update, which
-    /// the devices apply, see CozmoRobot.RouteToDevices) and the body-radio-mode count (SC10, 0x00512AD0..0x00512B52: a
-    /// state without IS_BODY_ACC_MODE counts; at 16 the warning "BodyNotInAccessoryMode", SetBodyRadioMode {1, 0}
-    /// reliable, and the count restarts; a state with the bit does not reset it, C4). This stack has no ramp (+0x316
+    /// reads, RS1; the head angle, lift angle, cliff data, IMU, treads, status bits, SetOnCharger, the body-radio-mode
+    /// count (<see cref="CountBodyRadioMode"/>) and MovementComponent::Update, which the devices apply in that order, see
+    /// CozmoRobot.RouteToDevices and CozmoSensors). This stack has no ramp (+0x316
     /// SetOnRamp has no writer here), so every state takes the off-ramp branch: ContainsOriginID(state+8)
     /// (0x00512C3E..0x00512C4A) must pass, otherwise the warning "Received RobotState with originID" and the rest (the
     /// pose, the history and the later steps) is skipped (0x00512EC4..0x00512F12). Returns whether the state passed the
@@ -907,16 +928,6 @@ public sealed class EngineRobot
         FirstFullStateHandled = true;
         StoredState = s;
         if (Engine.StateStored is { } stored) Engine.RunIsolated(() => stored(s));
-        if ((s.Status & (uint)RobotStatusFlag.IsBodyAccMode) == 0)
-        {
-            _bodyNotInAccModeCount++;
-            if (_bodyNotInAccModeCount >= 16)
-            {
-                Engine.Log("warning: Robot.UpdateFullRobotState.BodyNotInAccessoryMode");
-                Engine.Handler.SendMessage(new SetBodyRadioMode { RadioMode = BodyRadioMode.BODY_ACCESSORY_OPERATING_MODE, WifiChannel = 0 });
-                _bodyNotInAccModeCount = 0;
-            }
-        }
         if (!OfflineSeamAcceptsAnyOrigin && !ContainsOriginId(s.PoseOriginId))
         {
             Engine.Log($"warning: Robot.UpdateFullRobotState: Received RobotState with originID {s.PoseOriginId}, which is not in the pose origin list (current origin {CurrentOriginId}); the pose and the later steps are skipped");

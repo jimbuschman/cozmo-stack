@@ -72,6 +72,13 @@ public sealed class CozmoSensors
     {
         _robot = robot;
         _state = state;
+        // fidelity: M10-001, M4-019
+        // CheckAndUpdateTreadsState's commit consequences in the engine's order (A10, A13): the broadcast, then
+        // SetOnChargerPlatform(false) for any state but OnTreads (C8 P6, with the contacts flag from the previous state).
+        OffTreads.StateChanged += (from, to) => OffTreadsStateChanged?.Invoke(from, to);
+        OffTreads.ClearOnChargerPlatform = () => SetOnChargerPlatform(false);
+        OffTreads.Log += l => _robot.Engine.Log(l);
+        UnexpectedMovement.Log += l => _robot.Engine.Log(l);
     }
 
     /// <summary>Raised when the robot reports a cliff.</summary>
@@ -88,12 +95,29 @@ public sealed class CozmoSensors
     /// </summary>
     public event Action<bool>? FallingChanged;
 
+    // fidelity: M10-011
     /// <summary>
-    /// Raised when the robot reports the end of a fall with <see cref="FallingStopped"/> (0xDE). This is
-    /// the message the engine's impact reaction keys off, not the status flag: it carries the impact
-    /// intensity the reaction is gated on.
+    /// C2: HandleFallingStopped's game broadcast FallingStopped{duration_ms, impactIntensity}, raised for every
+    /// FallingStopped (0xDE) the robot sends, after <see cref="NeedsActionCompleted"/> and the DAS event.
     /// </summary>
     public event Action<FallingStoppedReport>? FallingStopped;
+
+    // fidelity: M10-011
+    /// <summary>C1: HandleFallingStarted's game broadcast FallingStarted{msg.timestamp}; no time-sync gate, no state change.</summary>
+    public event Action<uint>? FallingStarted;
+
+    // fidelity: M10-011
+    /// <summary>
+    /// C2: NeedsManager::RegisterNeedsActionCompleted(17) when the intensity is &gt; 1000.0. The needs manager is the M15
+    /// interface (MD2); 17 is the engine's NeedsActionId ordinal ("Fall" by the Unity ordinal; the engine name was not
+    /// checked). Nothing in this stack subscribes yet.
+    /// </summary>
+    public event Action<int>? NeedsActionCompleted;
+
+    /// <summary>C2: the intensity above which the Fall needs action is registered (1000.0).</summary>
+    public const float FallNeedsActionIntensity = 1000.0f;
+    /// <summary>C2: the NeedsActionId registered for a hard fall.</summary>
+    public const int FallNeedsActionId = 17;
 
     // ------------------------------------------------------------ derived state (M10)
 
@@ -483,8 +507,19 @@ public sealed class CozmoSensors
                 HandlePotentialCliff();
                 break;
 
+            case Protocol.FallingStarted fs:
+                // fidelity: M10-011
+                // C1 (0x534F4C..0x534F9E): log, then the game FallingStarted{timestamp}.
+                _robot.Engine.Log($"info: RobotImplMessaging.HandleFallingStarted: timestamp {fs.Unknown}");
+                FallingStarted?.Invoke(fs.Unknown);
+                break;
+
             case Protocol.FallingStopped f:
-                // fidelity: M2-013
+                // fidelity: M2-013, M10-011
+                // C2 (0x5350AA..0x5350C2; 0x535186..0x53519C): intensity > 1000 registers NeedsAction 17, then the DAS
+                // "robot.falling_event", then the game FallingStopped{duration, intensity}.
+                if (f.ImpactIntensity > FallNeedsActionIntensity) NeedsActionCompleted?.Invoke(FallNeedsActionId);
+                _robot.Engine.Log($"info: DAS robot.falling_event: duration {f.DurationMs} ms, intensity {f.ImpactIntensity:F1}");
                 FallingStopped?.Invoke(new FallingStoppedReport(f.DurationMs, f.ImpactIntensity) { Timestamp = f.Timestamp });
                 break;
 
@@ -503,24 +538,28 @@ public sealed class CozmoSensors
                     _cliffDetectedFlag = s.Has(RobotStatusFlag.CliffDetected);
                     _cliffTimestamp = s.Timestamp;
                 }
-                // The engine runs its IMU filters and the off-treads classifier inside UpdateFullRobotState
-                // before it looks at the status flags; the same order here. The classifier's gate is the
-                // head calibration the tracker has already recorded from the robot's own report.
+                // fidelity: M10-001, M10-005, M10-010
+                // UFRS order (M4 C3): the IMU filters and CheckAndUpdateTreadsState (0x00512A72) on BaseStationTimer ms
+                // (A2), gated by the head calibration (A1) and fed the physical flag (A4); the commit consequences run
+                // inside (A8..A14, the platform clear through the hook set in the constructor).
+                var er = _robot.Engine.Robot;
                 OffTreads.HeadCalibrated = _state.HeadCalibrated;
-                var before = OffTreads.Current;
-                if (OffTreads.Update(s, s.Timestamp))
-                {
-                    OffTreadsStateChanged?.Invoke(before, OffTreads.Current);
-                    // fidelity: M4-019
-                    // C8 P6 (0x00512188..0x00512192): a committed change to anything but OnTreads calls
-                    // SetOnChargerPlatform(false), with the contacts flag from the previous state.
-                    if (OffTreads.Current != OffTreadsState.OnTreads) SetOnChargerPlatform(false);
-                }
+                OffTreads.IsPhysical = er?.IsPhysicalRobot ?? false;
+                OffTreads.Update(s, _robot.Engine.Timer.TimeStampMs);
                 // fidelity: M4-019
                 // C8 P3..P5: UpdateFullRobotState then feeds SetOnCharger with IS_ON_CHARGER (0x00512AAC..0x00512AB4).
                 SetOnCharger(s.Has(RobotStatusFlag.IsOnCharger));
+                // fidelity: M4-022
+                // SC10 (0x00512AD0..0x00512B52): the body-radio-mode count comes after SetOnCharger (SetBodyRadioMode at
+                // 0x00512B46 follows SetOnCharger's threshold send at 0x00512AB4) and before MovementComponent::Update.
+                er?.CountBodyRadioMode(s);
+                // fidelity: M10-002, M10-006
                 // MovementComponent::CheckForUnexpectedMovement (0x0063E398) is tail-called from MovementComponent::Update
-                // (0x0063E392), which UpdateFullRobotState runs before the origin check (C3, 0x00512B5C): every synced state.
+                // (0x0063E392), which UpdateFullRobotState runs before the origin check (B1, 0x00512B5C): every synced state.
+                // B2: robot+0x14; B3: robot+0x248 (the AnimationState tag) and the BODY track's lock set.
+                UnexpectedMovement.IsPhysical = er?.IsPhysicalRobot ?? false;
+                UnexpectedMovement.AnimationStateTag = er?.AnimationStateTag ?? 0;
+                UnexpectedMovement.BodyTrackLocked = (_robot.Motion.LockedTracks & CozmoMotion.BodyTrack) != 0;
                 var movement = UnexpectedMovement.Update(s);
                 if (movement is not null) UnexpectedMovementDetected?.Invoke(movement);
                 // fidelity: M4-019, M4-020

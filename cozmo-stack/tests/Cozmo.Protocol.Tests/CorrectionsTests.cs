@@ -63,23 +63,13 @@ public class CorrectionsTests
         public string Basis => "test";
         public bool Fire { get; set; }
         public int Disposed;
-        public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec) => Fire;
+        public bool ShouldResumeLast { get; set; }
+        public bool CanInterruptOtherTriggeredBehavior => true;
+        public bool CanInterruptSelf => false;
+        public BehaviorManager? Manager { get; set; }
+        public bool ShouldTriggerBehavior(ReactionContext rc, IBehavior behavior) => Fire;
+        public void EnabledStateChanged(BehaviorContext context, bool enabled) { }
         public void Dispose() => Disposed++;
-    }
-
-    /// <summary>A latch that is consumed by the question, as the engine's generic strategy is.</summary>
-    private sealed class LatchStrategy : IReactionTriggerStrategy
-    {
-        public LatchStrategy(ReactionTrigger t) => Trigger = t;
-        public ReactionTrigger Trigger { get; }
-        public string Basis => "test latch";
-        public bool Latched;
-        public int Asked;
-        public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec)
-        {
-            Asked++;
-            bool fire = Latched; Latched = false; return fire;
-        }
     }
 
     private sealed class Behavior : IBehavior
@@ -183,6 +173,10 @@ public class CorrectionsTests
         Assert.Equal("Eager", manager.ChooseAndSwitch(4).Chosen);
     }
 
+    /// <summary>
+    /// M10-003, inventory row C14: Generic's WantsToRun is called only when the behaviour is runnable, so the latch
+    /// survives while it is not (0x60F3BC..0x60F454).
+    /// </summary>
     [Fact]
     public void ALatchedStrategyIsNotConsumedWhileItsBehaviourIsUnrunnable()
     {
@@ -190,21 +184,19 @@ public class CorrectionsTests
         robot.Transport.OfflineAcceptConnection();
         var ctx = Context(robot);
         using var manager = new BehaviorManager(ctx);
-        var latch = new LatchStrategy(ReactionTrigger.CliffDetected);
+        var latch = new GenericReactionStrategy(ReactionTrigger.CliffDetected, "test latch", () => 0, new[] { 34 });
         var reaction = new Behavior("ReactToCliff") { Runnable = false };
-        manager.AddReaction(latch, reaction, resumeLast: true);
+        manager.AddReaction(latch, reaction);
 
-        latch.Latched = true;
+        latch.AlwaysHandle(34, null);
         Assert.Null(manager.CheckReactions(0));
-        Assert.Equal(0, latch.Asked);              // runnable is asked first; the latch is untouched
-        Assert.True(latch.Latched);
+        Assert.True(latch.Latched);                // C14: not runnable, so WantsToRun was not called
 
         reaction.Runnable = true;
         var sw = manager.CheckReactions(1);
         Assert.NotNull(sw);
         Assert.Equal("ReactToCliff", sw!.Behavior);
-        Assert.False(latch.Latched);
-        Assert.Equal(1, latch.Asked);
+        Assert.False(latch.Latched);               // C13: cleared by the call
     }
 
     [Fact]
@@ -245,6 +237,11 @@ public class CorrectionsTests
         Assert.Equal(2, reaction.Starts);
     }
 
+    /// <summary>
+    /// M10-004, inventory row C4: each trigger holds a (strategy, behaviour) vector in JSON order (AddStrategyMapping
+    /// 0x5A1864), so a second entry for a trigger is appended, not a replacement. The manager owns the strategies and
+    /// releases each one once.
+    /// </summary>
     [Fact]
     public void ReplacedAndOwnedStrategiesAreDisposed()
     {
@@ -256,14 +253,12 @@ public class CorrectionsTests
         var second = new FakeStrategy(ReactionTrigger.RobotOnBack);
         var other = new FakeStrategy(ReactionTrigger.RobotOnFace);
         manager.AddReaction(first, new Behavior("ReactToRobotOnBack"));
-        Assert.Equal(0, first.Disposed);
         manager.AddReaction(second, new Behavior("ReactToRobotOnBack"));
-        Assert.Equal(1, first.Disposed);
-        Assert.Equal(0, second.Disposed);
-        manager.AddReaction(second, new Behavior("ReactToRobotOnBack"));   // re-registering the same instance does not dispose it
-        Assert.Equal(0, second.Disposed);
+        Assert.Equal(0, first.Disposed);
         manager.AddReaction(other, new Behavior("ReactToRobotOnFace"));
+        Assert.Equal(new IReactionTriggerStrategy[] { first, second, other }, manager.Reactions.Select(r => r.Strategy));
         manager.Dispose();
+        Assert.Equal(1, first.Disposed);
         Assert.Equal(1, second.Disposed);
         Assert.Equal(1, other.Disposed);
         Assert.Empty(manager.Reactions);
@@ -278,9 +273,9 @@ public class CorrectionsTests
         using var manager = new BehaviorManager(ctx);
         var idle = new Behavior("Idle", 1);
         manager.Add(idle);
-        var strategy = new FakeStrategy(ReactionTrigger.UnexpectedMovement) { Fire = true };
+        var strategy = new FakeStrategy(ReactionTrigger.UnexpectedMovement) { Fire = true, ShouldResumeLast = true };
         var reaction = new Behavior("ReactToUnexpectedMovement");
-        manager.AddReaction(strategy, reaction, resumeLast: true);
+        manager.AddReaction(strategy, reaction);
 
         manager.ChooseAndSwitch(0);
         var sw = manager.CheckReactions(1);

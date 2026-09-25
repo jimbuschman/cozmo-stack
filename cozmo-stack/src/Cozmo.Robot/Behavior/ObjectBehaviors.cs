@@ -1,129 +1,165 @@
+using Cozmo.Protocol;
 using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
 
+// fidelity: M10-003
 /// <summary>
-/// <c>ReactionTriggerStrategyObjectPositionUpdated</c> (0x00611054) over its base
-/// <c>ReactionTriggerStrategyPositionUpdate</c> (0x0061216E..0x00612A0C): the shipped map sends
-/// <c>ObjectPositionUpdated</c> to the behaviour <c>AcknowledgeObject</c>. NATIVE, from the base constructor's
-/// stores: an object is a desired target when its last observed pose is not the pose the robot last reacted to
-/// within 80 mm (0x42A00000) and 45 degrees (0x3F490FDB) (<c>ShouldReactToTarget_poseHelper</c> →
-/// <c>Pose3d::IsSameAs</c>), and the observation is no older than 600000 ms (0x927C0) against the last image
-/// timestamp. <c>HandleObjectObserved</c> feeds it from <c>RobotObservedObject</c> (tag 0x44), which here is
-/// <see cref="BlockWorld.ObjectObserved"/>; <c>ReactedToID</c> records the reacted pose. A 30.0 constant stored
-/// beside them was not traced to a use (unlabelled). The strategy does not fire while AcknowledgeObject itself
-/// is the running behaviour.
+/// <c>ReactionTriggerStrategyObjectPositionUpdated</c> over <c>ReactionTriggerStrategyPositionUpdate</c> (gap2 4a..4l,
+/// gap1 8); flags (1, 1, 0).
+/// <list type="bullet">
+/// <item>Base (4a): angle tolerance 0.785398, time threshold 600 000 ms, distance tolerance 80 mm, trigger 8; per-target
+/// record {observed pose, reacted pose, observed time, reacted time} (4b).</item>
+/// <item>Recording (4c) with the flag IsReactionTriggerEnabled(8): an existing target takes the observed pose and time, and
+/// with the flag false also the reacted ones; a new one is added with reacted time 0, or with the observation as reacted
+/// when the flag is false.</item>
+/// <item>poseHelper (4d): moved more than 80 mm or 45°; ShouldReactToTarget(anyMode false) (4e): reacted time 0, or
+/// poseHelper, or lastImageTimeStamp − reacted time &gt; 600 000 (u32). Has/GetDesiredReactionTargets (4f).</item>
+/// <item>Event handler (4j): tag 0x44 only if a current behaviour exists and its class ≠ +0x54 (the bound behaviour's
+/// class, 4i); with no current behaviour observations are dropped. The observed handler (4k): only the families
+/// {LightCube, Block}; the carried object or the docking object records with the flag forced false.</item>
+/// <item>STBI (0x6113E8..0x611470): false if carrying, picking or placing, or on the charger platform; false without a
+/// desired target; else AcknowledgeObject+0x14C = the targets, and IsRunnable.</item>
+/// <item>RobotReactedToId (4h): reacted pose = observed, reacted time = Robot::GetLastImageTimeStamp.
+/// ClearDesiredTargets (4l): RobotReactedToId for each desired target. RobotDelocalized's ResetReactionData changes
+/// nothing (3c); GetBestTarget is on no path (4g). EnabledStateChanged is a no-op (0x60B73A).</item>
+/// </list>
+/// Seams (M11/M12): the carried and docking object ids, Robot::GetLastImageTimeStamp, the manager's current behaviour.
+/// MISSING (4d): the frame the {80, 80, 80} per-axis test is made in (GetWithRespectTo then IsSameAs) is not in the rows;
+/// the world-frame <see cref="Pose3d.IsSameAs"/> is used.
 /// </summary>
-public sealed class ObjectPositionUpdatedStrategy : IReactionTriggerStrategy, ITargetPreparingStrategy, IDisposable
+public sealed class ObjectPositionUpdatedStrategy : ReactionTriggerStrategy, IDisposable
 {
     public const double SameDistanceMm = 80.0;
     public const double SameAngleRad = 0.785398;
-    public const uint MaxObservationAgeMs = 600000;
+    public const uint TimeThresholdMs = 600000;
 
-    private sealed class ReactionData
+    private sealed class Record
     {
-        public Pose3d? LastReactedPose;
-        public Pose3d LastObservedPose;
-        public uint ObservedTimestamp;
+        public Pose3d ObservedPose, ReactedPose;
+        public uint ObservedTime, ReactedTime;
     }
 
+    private readonly CozmoRobot? _robot;
     private readonly BlockWorld _world;
     private readonly AcknowledgeObjectBehavior _behavior;
-    private readonly Dictionary<uint, ReactionData> _data = new();
+    private readonly Dictionary<uint, Record> _records = new();
     private readonly object _gate = new();
-    private uint _lastImageTimestamp;
 
-    public ObjectPositionUpdatedStrategy(BlockWorld world, AcknowledgeObjectBehavior behavior)
+    public ObjectPositionUpdatedStrategy(BlockWorld world, AcknowledgeObjectBehavior behavior, CozmoRobot? robot = null)
     {
         _world = world;
         _behavior = behavior;
+        _robot = robot;
         world.ObjectObserved += OnObserved;
-        behavior.ReactedTo += ReactedToId;
+        behavior.ReactedTo += RobotReactedToId;
     }
 
-    public ReactionTrigger Trigger => ReactionTrigger.ObjectPositionUpdated;
-    public string Basis => "ReactionTriggerStrategyPositionUpdate ctor 0x0061216E: IsSameAs(lastReacted, observed, 80 mm, 0.785398 rad) false && age <= 600000 ms; " +
-                           "ReactionTriggerStrategyObjectPositionUpdated::HandleObjectObserved 0x006114A0";
+    public override ReactionTrigger Trigger => ReactionTrigger.ObjectPositionUpdated;
+    public override string Basis => "ReactionTriggerStrategyPositionUpdate ctor 0x612168..0x6121D4 (80 mm, 45 deg, 600000 ms); " +
+                                    "ObjectPositionUpdated STBI 0x6113E8..0x611470, handlers 0x6114A0..0x611582";
+    public override bool ShouldResumeLast => true;
+    public override bool CanInterruptOtherTriggeredBehavior => true;
+    public override bool CanInterruptSelf => false;
 
+    /// <summary>[robot+0x284]+4: the carried object (M12). Null: nothing is carried.</summary>
+    public Func<uint?>? CarriedObjectId { get; set; }
+    /// <summary>[robot+0x280]+8: the docking component's ObjectID (M12). Null: none.</summary>
+    public Func<uint?>? DockingObjectId { get; set; }
+    /// <summary>Robot::GetLastImageTimeStamp (M11).</summary>
+    public Func<uint>? LastImageTimestamp { get; set; }
+
+    private uint LastImageTs() => LastImageTimestamp?.Invoke() ?? 0;
+
+    /// <summary>The event handler (4j) and the object-observed handler (4k).</summary>
     private void OnObserved(ObjectObservation o)
     {
-        lock (_gate)
-        {
-            _lastImageTimestamp = o.Timestamp;
-            if (!_data.TryGetValue(o.Object.ObjectId, out var d)) _data[o.Object.ObjectId] = d = new ReactionData();
-            d.LastObservedPose = o.Object.Pose;
-            d.ObservedTimestamp = o.Timestamp;
-        }
+        var current = Manager?.Current;
+        if (current is null || current.Class == _behavior.Class) return;                          // 4j
+        var obj = o.Object;
+        if (obj.Family is not (ObjectFamily.LightCube or ObjectFamily.Block)) return;             // 4k
+        uint id = obj.ObjectId;
+        bool forcedReacted = id == CarriedObjectId?.Invoke() || id == DockingObjectId?.Invoke();
+        bool enabled = !forcedReacted && IsReactionTriggerEnabled(ReactionTrigger.ObjectPositionUpdated);
+        RecordObservation(id, obj.Pose, o.Timestamp, enabled);
     }
 
-    /// <summary><c>ReactedToID</c>: the pose the robot has now acknowledged.</summary>
-    public void ReactedToId(uint objectId)
-    {
-        lock (_gate)
-            if (_data.TryGetValue(objectId, out var d)) d.LastReactedPose = d.LastObservedPose;
-    }
-
-    /// <summary><c>ShouldReactToTarget</c> for one object.</summary>
-    public bool ShouldReactTo(uint objectId)
+    /// <summary>4c: recording an observation with the enabled flag.</summary>
+    public void RecordObservation(uint id, Pose3d pose, uint time, bool enabled)
     {
         lock (_gate)
         {
-            if (!_data.TryGetValue(objectId, out var d)) return false;
-            if (_world.GetLocatedObjectById(objectId) is null) return false;
-            if (unchecked(_lastImageTimestamp - d.ObservedTimestamp) > MaxObservationAgeMs) return false;
-            return d.LastReactedPose is not { } reacted || !reacted.IsSameAs(d.LastObservedPose, SameDistanceMm, SameAngleRad);
+            if (_records.TryGetValue(id, out var r))
+            {
+                r.ObservedPose = pose; r.ObservedTime = time;
+                if (!enabled) { r.ReactedPose = pose; r.ReactedTime = time; }
+                return;
+            }
+            _records[id] = new Record
+            {
+                ObservedPose = pose, ObservedTime = time,
+                ReactedPose = enabled ? default : pose, ReactedTime = enabled ? 0 : time,
+            };
         }
     }
 
-    /// <summary><c>GetDesiredReactionTargets</c>.</summary>
+    /// <summary>4h: RobotReactedToId.</summary>
+    public void RobotReactedToId(uint id)
+    {
+        lock (_gate)
+        {
+            if (!_records.TryGetValue(id, out var r))
+            {
+                _robot?.Engine.Log($"debug: ReactionTriggerStrategyPositionUpdate.RobotReactedToId: no record for {id}");
+                return;
+            }
+            r.ReactedPose = r.ObservedPose;
+            r.ReactedTime = LastImageTs();
+        }
+    }
+
+    /// <summary>4d: moved more than 80 mm or 45°.</summary>
+    private static bool PoseHelper(Pose3d observed, Pose3d reacted) => !reacted.IsSameAs(observed, SameDistanceMm, SameAngleRad);
+
+    /// <summary>4e with anyMode false.</summary>
+    public bool ShouldReactToTarget(uint id)
+    {
+        lock (_gate)
+        {
+            if (!_records.TryGetValue(id, out var r)) return false;
+            if (r.ReactedTime == 0) return true;
+            return PoseHelper(r.ObservedPose, r.ReactedPose) || unchecked(LastImageTs() - r.ReactedTime) > TimeThresholdMs;
+        }
+    }
+
+    /// <summary>4f: GetDesiredReactionTargets.</summary>
     public IReadOnlyList<uint> DesiredTargets()
     {
         List<uint> ids;
-        lock (_gate) ids = _data.Keys.ToList();
-        return ids.Where(ShouldReactTo).OrderBy(i => i).ToList();
+        lock (_gate) ids = _records.Keys.ToList();
+        return ids.Where(ShouldReactToTarget).ToList();
     }
 
-    public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec)
+    protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior)
     {
-        if (!PrepareTarget(context, current, nowSec)) return false;
-        CommitTarget();
-        return true;
-    }
-
-    /// <summary>
-    /// <c>GetDesiredReactionTargets</c> put on the behaviour, which is how the engine's
-    /// <c>ShouldTriggerBehavior(robot, behavior)</c> hands them over. Nothing here is consumed: the strategy's
-    /// reacted-to record only moves when the behaviour reports an acknowledgement.
-    /// </summary>
-    public bool PrepareTarget(BehaviorContext context, ReactionTrigger? current, double nowSec)
-    {
-        if (current == ReactionTrigger.ObjectPositionUpdated) return false;
+        if (CarriedObjectId?.Invoke() is not null) return false;
+        if (rc.Context.Robot.State.Latest?.Has(RobotStatusFlag.IsPickingOrPlacing) == true) return false;
+        if (rc.Context.Robot.Sensors.OnChargerPlatform) return false;
         var targets = DesiredTargets();
         if (targets.Count == 0) return false;
-        _stagedBefore = _behavior.PendingTargets;
-        _behavior.SetTargets(targets);
-        _staged = true;
-        return true;
+        _behavior.ResetTargets(targets);                                                          // +0x14C = the targets
+        return behavior.IsRunnable(rc.Context);
     }
 
-    public void CommitTarget() { _staged = false; _stagedBefore = null; }
+    /// <summary>4l: ClearDesiredTargets.</summary>
+    public void ClearDesiredTargets() { foreach (var id in DesiredTargets()) RobotReactedToId(id); }
 
-    public void AbandonTarget()
-    {
-        if (_staged && _stagedBefore is { } before) _behavior.ResetTargets(before);
-        _staged = false; _stagedBefore = null;
-    }
-
-    private bool _staged;
-    private IReadOnlyList<uint>? _stagedBefore;
-
-    /// <summary><c>ClearDesiredTargets</c>: everything currently desired counts as reacted to.</summary>
-    public void ClearDesiredTargets() { foreach (var id in DesiredTargets()) ReactedToId(id); }
+    public override void EnabledStateChanged(BehaviorContext context, bool enabled) { }
 
     public void Dispose()
     {
         _world.ObjectObserved -= OnObserved;
-        _behavior.ReactedTo -= ReactedToId;
+        _behavior.ReactedTo -= RobotReactedToId;
     }
 }
 

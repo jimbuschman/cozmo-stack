@@ -72,17 +72,19 @@ public sealed class CubeMotionTracker
 
     public void Forget(uint objectId) { lock (_gate) _entries.Remove(objectId); }
 
-    /// <summary><c>ObjectStartedMoving</c> (0x0060C336).</summary>
-    public void ObjectMoved(ObjectMoved m, bool located)
+    // fidelity: M10-003
+    /// <summary>
+    /// ObjectMoved (0xF) → StartedMoving (gap1 8, 0x60C336..0x60C37C): if not moving, moving = 1, ts = msg.ts,
+    /// axis = msg+0x14; if moving and the axis differs, changed = 1.
+    /// </summary>
+    public void ObjectMoved(ObjectMoved m)
     {
         var e = Track(m.ObjectID);
         lock (_gate)
         {
-            if (!located) { e.Moving = false; return; }
             if (e.Moving)
             {
                 if (m.AxisOfAccel != e.UpAxis) e.UpAxisChanged = true;
-                e.UpAxis = m.AxisOfAccel;
                 return;
             }
             e.Moving = true;
@@ -91,14 +93,17 @@ public sealed class CubeMotionTracker
         }
     }
 
-    /// <summary><c>ObjectStoppedMoving</c> (0x0060C37E).</summary>
+    /// <summary>ObjectStoppedMoving (0x10): moving = 0 (gap1 8).</summary>
     public void ObjectStopped(uint objectId) { var e = Track(objectId); lock (_gate) e.Moving = false; }
 
-    /// <summary>The strategy's <c>HandleObjectUpAxisChanged</c> (0x0060C008): a located object's axis changed.</summary>
-    public void ObjectUpAxisChanged(uint objectId, bool located)
+    /// <summary>ObjectUpAxisChanged (0x11): a lookup only, no state change (gap1 8).</summary>
+    public void ObjectUpAxisChanged(uint objectId) => Track(objectId);
+
+    /// <summary>The enable callback with enabled = false (gap2 2b): every record cleared.</summary>
+    public void ClearAll()
     {
-        var e = Track(objectId);
-        lock (_gate) if (located) e.UpAxisChanged = true;
+        lock (_gate)
+            foreach (var e in _entries.Values) { e.UpAxisChanged = false; e.MovedTimestamp = 0; e.Moving = false; e.Observed = false; }
     }
 
     /// <summary><c>ObjectObserved</c> (0x0060C314): seeing a located object clears its movement and marks it observed.</summary>
@@ -134,27 +139,33 @@ public sealed class CubeMotionTracker
     public static bool OutsideIgnoreArea(float? distanceMm) => distanceMm is { } d && d > IgnoreAreaMm;
 }
 
+// fidelity: M10-003
 /// <summary>
-/// <c>ReactionTriggerStrategyCubeMoved</c> (0x0060B810..0x0060C280). <c>AlwaysHandleInternal</c> feeds
-/// <see cref="CubeMotionTracker"/> from <c>ObjectMoved</c> (tag 0xF), <c>ObjectStoppedMoving</c> (0x10),
-/// <c>ObjectUpAxisChanged</c> (0x11) and <c>RobotObservedObject</c> (0x44), while the trigger is enabled.
-/// <c>ShouldTriggerBehaviorInternal</c> (0x0060BC80) walks the tracked objects: one the world model cannot
-/// locate is erased; one outside the 50 mm ignore area that has moved for over a second (or changed its up axis)
-/// and is <b>not</b> where the camera can see it fires the reaction, after resetting its record and handing its
-/// id to the behaviour. Every test needs the located pose, so without a locator the strategy never fires.
+/// <c>ReactionTriggerStrategyCubeMoved</c> (gap1 8, gap2 2a..2d); flags (1, 1, 1).
+/// <list type="bullet">
+/// <item>AlwaysHandle, only while ObjectPositionUpdated (trigger 8) is enabled (0x60BEB4): ObjectMoved, ObjectStoppedMoving
+/// and ObjectUpAxisChanged as <see cref="CubeMotionTracker"/> has them; RobotObservedObject (0x44): if located, clear and
+/// observed = 1.</item>
+/// <item>ShouldTriggerBehaviorInternal (0x60BC80..0x60BDDA), over the records in order: not located → erase; skip unless
+/// the distance to the robot is &gt; 50 mm; candidate if (moving &amp;&amp; observed &amp;&amp; robotTs(+0x2C) − ts &gt; 1000 &amp;&amp;
+/// ts ≠ 0) or (located &amp;&amp; changed &amp;&amp; observed); skip if IsVisibleFrom(camera, 0.785398, 0, false, 0, 0); else reset
+/// the record, AcknowledgeCubeMoved+0x124 = id, and return running || IsRunnable (first hit only).</item>
+/// <item>EnabledStateChanged (0x60C04A..0x60C1E2): true → each located LightCube/Block with PoseState Known gets its
+/// record, cleared and observed; false → every record cleared.</item>
+/// <item>SetupForceTriggerBehavior (0x60B91C..0x60BA14): erase unlocated records; the first located one is cleared and
+/// handed to the behaviour; none → warning.</item>
+/// </list>
+/// The located pose, distance and visibility come from the world model through <see cref="ICubeLocator"/> (M11).
+/// The cube messages are the robot's; their translation to the engine's game messages is the M4/M11 interface.
 /// </summary>
-public sealed class CubeMovedReactionStrategy : IReactionTriggerStrategy, ITargetPreparingStrategy, IDisposable
+public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDisposable
 {
     private readonly CozmoRobot _robot;
     private readonly ICubeLocator? _locator;
     private readonly AcknowledgeCubeMovedBehavior _behavior;
     private readonly Cozmo.Robot.Vision.BlockWorld? _world;
-    private uint? _staged, _targetBeforeStaging;
 
-    /// <param name="world">
-    /// The world model whose <c>ObjectObserved</c> is the engine's <c>RobotObservedObject</c> (tag 0x44) for
-    /// this strategy's <c>AlwaysHandleInternal</c>. Without it the sighting path has to be driven by hand.
-    /// </param>
+    /// <param name="world">The world model whose <c>ObjectObserved</c> is the engine's RobotObservedObject (tag 0x44).</param>
     public CubeMovedReactionStrategy(CozmoRobot robot, AcknowledgeCubeMovedBehavior behavior, ICubeLocator? locator,
                                      Cozmo.Robot.Vision.BlockWorld? world = null)
     {
@@ -166,77 +177,79 @@ public sealed class CubeMovedReactionStrategy : IReactionTriggerStrategy, ITarge
         if (_world is not null) _world.ObjectObserved += OnWorldObserved;
     }
 
-    private void OnWorldObserved(Cozmo.Robot.Vision.ObjectObservation o) => ObjectObserved(o.Object.ObjectId);
-
     public CubeMotionTracker Tracker { get; } = new();
-    public ReactionTrigger Trigger => ReactionTrigger.CubeMoved;
-    public string Basis => "ReactionTriggerStrategyCubeMoved::ShouldTriggerBehaviorInternal 0x0060BC80 over ReactionObjectData 0x0060BC60..0x0060C3C0; " +
-                           "located (BlockWorld) && distance > 50 mm && (moved > 1000 ms || up axis changed) && !IsVisibleFrom(camera, 0.785398)";
+    public override ReactionTrigger Trigger => ReactionTrigger.CubeMoved;
+    public override string Basis => "ReactionTriggerStrategyCubeMoved ShouldTriggerBehaviorInternal 0x60BC80..0x60BDDA, AlwaysHandle 0x60BEA8..0x60BF62 " +
+                                    "(gate trigger 8 at 0x60BEB4); > 50 mm, moved > 1000 ms or up axis changed, !IsVisibleFrom(camera, 0.785398)";
+    public override bool ShouldResumeLast => true;
+    public override bool CanInterruptOtherTriggeredBehavior => true;
+    public override bool CanInterruptSelf => true;
 
-    /// <summary>Whether a world model is attached. Without one the reaction is unreachable, as in the engine before it sees a cube.</summary>
+    /// <summary>Whether a world model is attached. Without one nothing is located and the reaction cannot fire.</summary>
     public bool HasLocator => _locator is not null;
 
     private bool Located(uint id) => _locator?.IsLocated(id) ?? false;
+    private bool Handling => IsReactionTriggerEnabled(ReactionTrigger.ObjectPositionUpdated);
 
     private void OnMessage(RobotMessage m)
     {
+        if (!Handling) return;
         switch (m)
         {
-            case ObjectMoved mv: Tracker.ObjectMoved(mv, Located(mv.ObjectID)); break;
+            case ObjectMoved mv: Tracker.ObjectMoved(mv); break;
             case ObjectStoppedMoving sm: Tracker.ObjectStopped(sm.ObjectID); break;
-            case ObjectUpAxisChanged ua: Tracker.ObjectUpAxisChanged(ua.ObjectID, Located(ua.ObjectID)); break;
+            case ObjectUpAxisChanged ua: Tracker.ObjectUpAxisChanged(ua.ObjectID); break;
         }
     }
 
-    /// <summary>The world model reports a sighting: the engine's <c>RobotObservedObject</c> path.</summary>
+    private void OnWorldObserved(Cozmo.Robot.Vision.ObjectObservation o) => ObjectObserved(o.Object.ObjectId);
+
+    /// <summary>RobotObservedObject (0x44): if located, clear and observed = 1. The behaviour's own sighting handler runs as well.</summary>
     public void ObjectObserved(uint objectId)
     {
-        Tracker.ObjectObserved(objectId, Located(objectId));
+        if (Handling) Tracker.ObjectObserved(objectId, Located(objectId));
         _behavior.ObjectObserved(objectId);
     }
 
-    public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec)
+    protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior)
     {
-        if (!PrepareTarget(context, current, nowSec)) return false;
-        CommitTarget();
-        return true;
-    }
-
-    /// <summary>
-    /// <c>ShouldTriggerBehaviorInternal</c> (0x0060BC80) without the <c>ResetObject</c> at the end: the
-    /// candidate's id is put on the behaviour (the engine passes the behaviour in) but the tracker entry is
-    /// left alone until the manager has seen that the behaviour can run.
-    /// </summary>
-    public bool PrepareTarget(BehaviorContext context, ReactionTrigger? current, double nowSec)
-    {
-        if (_locator is null) return false;
-        uint robotTimestamp = _robot.State.Latest?.Timestamp ?? 0;
+        uint robotTs = _robot.State.Latest?.Timestamp ?? 0;
         foreach (var e in Tracker.Entries)
         {
-            bool located = _locator.IsLocated(e.ObjectId);
+            bool located = Located(e.ObjectId);
             if (!located) { Tracker.Forget(e.ObjectId); continue; }
-            if (!CubeMotionTracker.OutsideIgnoreArea(_locator.DistanceFromRobotMm(e.ObjectId))) continue;
-            if (!Tracker.HasMovedLongEnough(e, located, robotTimestamp) && !Tracker.UpAxisHasChanged(e, located)) continue;
+            if (!CubeMotionTracker.OutsideIgnoreArea(_locator!.DistanceFromRobotMm(e.ObjectId))) continue;
+            if (!Tracker.HasMovedLongEnough(e, located, robotTs) && !Tracker.UpAxisHasChanged(e, located)) continue;
             if (_locator.IsVisibleFromCamera(e.ObjectId)) continue;
-            _targetBeforeStaging = _behavior.TargetObjectId;
-            _staged = e.ObjectId;
+            Tracker.Reset(e.ObjectId);
             _behavior.TargetObjectId = e.ObjectId;
-            return true;
+            return rc.RunningOrRunnable(behavior);
         }
         return false;
     }
 
-    /// <summary>The <c>ResetObject</c> the engine does once the reaction is taken.</summary>
-    public void CommitTarget()
+    protected override void SetupForceTriggerBehavior(ReactionContext rc, IBehavior behavior)
     {
-        if (_staged is { } id) Tracker.Reset(id);
-        _staged = null; _targetBeforeStaging = null;
+        foreach (var e in Tracker.Entries)
+        {
+            if (!Located(e.ObjectId)) { Tracker.Forget(e.ObjectId); continue; }
+            Tracker.Reset(e.ObjectId);
+            _behavior.TargetObjectId = e.ObjectId;
+            return;
+        }
+        rc.Context.Robot.Engine.Log("warning: ReactionTriggerStrategyCubeMoved.SetupForceTriggerBehavior: no located object to react to");
     }
 
-    public void AbandonTarget()
+    public override void EnabledStateChanged(BehaviorContext context, bool enabled)
     {
-        if (_staged is not null) _behavior.TargetObjectId = _targetBeforeStaging;
-        _staged = null; _targetBeforeStaging = null;
+        if (!enabled) { Tracker.ClearAll(); return; }
+        if (_world is null) return;
+        foreach (var o in _world.LocatedObjects)
+        {
+            if (o.Family is not (Cozmo.Robot.Vision.ObjectFamily.LightCube or Cozmo.Robot.Vision.ObjectFamily.Block)) continue;
+            if (o.PoseState != Cozmo.Robot.Vision.PoseState.Known) continue;
+            Tracker.ObjectObserved(o.ObjectId, Located(o.ObjectId));
+        }
     }
 
     public void Dispose()
