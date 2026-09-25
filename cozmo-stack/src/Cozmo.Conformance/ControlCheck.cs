@@ -1880,6 +1880,14 @@ internal sealed class ControlRun
     private void DisconnectCheck(CheckRec c, bool judge)
     {
         var robot = _robot!;
+        var transport = robot.Transport;
+        // Diagnostics for the teardown race: was the transport still connected at Dispose, and did it send
+        // anything during the teardown? Distinguishes "no peer" (teardown defect) from "peer present but the
+        // one flushed DisconnectRequest send attempt did not emit a frame" (the M1-019 one-attempt caveat).
+        string? peerAtDispose = transport.Peer?.ToString();
+        string stateAtDispose = transport.State.ToString();
+        long udpSentAtDispose = transport.UdpMessagesSent;
+        long udpBytesAtDispose = transport.UdpBytesSent;
         double call = Mark("disposeCall");
         string? ex = null;
         var sw = Stopwatch.StartNew();
@@ -1896,6 +1904,10 @@ internal sealed class ControlRun
 
         c.Measured["disposeMs"] = LinkCheck.Num(returned - call);
         c.Measured["exception"] = ex;
+        c.Measured["peerAtDispose"] = peerAtDispose;
+        c.Measured["stateAtDispose"] = stateAtDispose;
+        c.Measured["udpMessagesSentDelta"] = transport.UdpMessagesSent - udpSentAtDispose;
+        c.Measured["udpBytesSentDelta"] = transport.UdpBytesSent - udpBytesAtDispose;
         c.Measured["disconnectRequestFrames"] = type3.Count;
         c.Measured["disconnectRequestAfterDisposeMs"] = first3 is null ? null : LinkCheck.Num(first3.T - call);
         c.Measured["messagesSentBetweenDisposeAndType3"] = new JsonArray(beforeType3.Select(t => (JsonNode)t).ToArray());
