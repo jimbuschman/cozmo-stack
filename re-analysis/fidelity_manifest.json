@@ -3146,7 +3146,7 @@
       "test": "DerivedStateTests",
       "effect": "the robot state (picked up, on back, on side) is classified differently",
       "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "A5: the Anki Radians operator> / operator< (0x84CC90: diff > 0 && !IsNear(1e-5)) and whether the difference is wrapped are not in the rows, so the plain float comparisons are kept. The M11/M12/M15 consequences are seams.",
       "hardware_required": false
     },
     {
@@ -3164,7 +3164,7 @@
       "test": "DerivedStateTests",
       "effect": "unexpected movement is detected differently",
       "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "B8: whether the +1 paths add l and r to the sums. B9: whether the same-sign decrement is guarded by count > 0. Both keep the existing reading until the rows are extracted.",
       "hardware_required": false
     },
     {
@@ -3183,7 +3183,7 @@
       "test": "DerivedStateTests",
       "effect": "reactions trigger differently",
       "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "EnabledStateChanged for Shaken, Slope and Frustration is not in gap1 4j (a no-op here); Hiccup, FistBump, Sparked, the NoPreDockPoses +0x70 writers and Pet EnabledStateChanged (InitReactedTo) are not built.",
       "hardware_required": false
     },
     {
@@ -3201,7 +3201,7 @@
       "test": "CorrectionTests",
       "effect": "reactions are enabled, ordered or suppressed differently",
       "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "CompletelyUnlockAllTracks body (which locks it clears and what it sends) is not in the rows; the C3 sticky first-action gate cannot be evaluated without an ActionList and is logged when absent.",
       "hardware_required": false
     },
     {
@@ -3210,14 +3210,14 @@
       "title": "The off-treads debounce clock is BaseStationTimer ms (engine tick-start time since run start, per tick)",
       "location": "cozmo-stack/src/Cozmo.Robot/OffTreads.cs",
       "effect": "state changes commit at different times",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md",
+      "provenance": "the native paths at the cited addresses, reproduced in the stack and compared against the frozen inventory on 2026-09-25",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "A2 now = GetCurrentTimeStamp 0x511E2A..0x511E36, 0x84BCC0..0x84BCD0",
         "gap1 6a..6c UpdateTime only from CozmoEngine::Update 0x4ED626; ns = tickStart - runStart 0x65B3B6..0x65B420"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
       "test": "DerivedStateTests"
@@ -3226,7 +3226,7 @@
       "subsystem": "M10-derived",
       "title": "The unexpected-movement body-lock gate applies only while AnimationState.tag (robot+0x248) != 0",
       "location": "cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B3 0x63E3BA..0x63E3DC; tag writer 0x53800C"
@@ -3236,8 +3236,8 @@
       "test": "DerivedStateTests.TheCheckOnlyRunsWhileTheBodyTrackIsLocked",
       "id": "M10-006",
       "effect": "unexpected movement is checked at different times",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "the native paths at the cited addresses, reproduced in the stack and compared against the frozen inventory on 2026-09-25",
+      "unresolved": null,
       "hardware_required": false
     },
     {
@@ -3253,7 +3253,7 @@
         "B18 kCreateUnexpectedMovementObstacles has no reader"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "SetNewPose, its AbsoluteLocalizationUpdate and the collision obstacle are not performed: the M4 C9 F1..F3 fields are not in the rows and there is no RobotStateHistory::ComputeStateAt (M11). kCreateUnexpectedMovementObstacles has no reader.",
       "hardware_required": false,
       "live_path": true,
       "test": "DerivedStateTests.TheReportRewindsThePoseAndLeavesACollisionObstacle",
@@ -3276,14 +3276,14 @@
       "id": "M10-008",
       "effect": "a behaviour resumes differently after a reaction",
       "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "CompletelyUnlockAllTracks is not in the rows; the manager+8/+0xC constructor values and MoveLiftToHeightAction's defaults are not in the rows.",
       "hardware_required": false
     },
     {
       "subsystem": "M10-derived",
       "title": "Nothing in this build ever raises the obstacle-detected flag",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "StrategyObstacleDetected 0x006141F8 is a StrategyGeneric whose predicate is the three-instruction function object at 0x006143CA: return *(bool*)(*(void**)(robot + 0x264) + 4)",
@@ -3296,8 +3296,8 @@
       "live_path": true,
       "test": "DerivedStateTests.NothingRaisesTheObstacleStrategyByItself",
       "id": "M10-009",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "the native paths at the cited addresses, reproduced in the stack and compared against the frozen inventory on 2026-09-25",
+      "unresolved": null,
       "effect": "the robot reacts to an obstacle that the original never reports",
       "hardware_required": false
     },
@@ -5676,12 +5676,12 @@
       ],
       "effect": "physical-only behaviour runs at different times",
       "authority": "libcozmoEngine.so 3.4.0-1204",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "the native paths at the cited addresses, reproduced in the stack and compared against the frozen inventory on 2026-09-25",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "DerivedStateTests.OnBackTakesOneSecondAndUsesThePhysicalCentre"
     },
     {
       "id": "M10-011",
@@ -5694,12 +5694,12 @@
       ],
       "effect": "falls are reported differently",
       "authority": "libcozmoEngine.so 3.4.0-1204",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "the native paths at the cited addresses, reproduced in the stack and compared against the frozen inventory on 2026-09-25",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "DerivedStateTests.FallingNeedsTheFlagAndSomethingElse"
     },
     {
       "id": "M10-012",
@@ -5712,12 +5712,12 @@
       ],
       "effect": "early classifications differ",
       "authority": "libcozmoEngine.so 3.4.0-1204",
-      "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "provenance": "the native paths at the cited addresses, reproduced in the stack and compared against the frozen inventory on 2026-09-25",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "DerivedStateTests.TheAccelerometerFiltersMatchTheEngineConstants"
     },
     {
       "id": "M10-013",
@@ -5731,7 +5731,7 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "status": "IMPLEMENTATION_GAP",
       "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "The forced policy MD1 (0 before the first RobotState) is implemented; the record stays a forced choice and is COMPATIBILITY_POLICY at the next approval.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

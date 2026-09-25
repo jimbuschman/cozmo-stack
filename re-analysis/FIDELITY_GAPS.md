@@ -7,10 +7,10 @@ Manifest of **304 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 182 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 188 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 14 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 0 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 64 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 58 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 27 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 9 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -33,7 +33,7 @@ remains after both, and they do not go away by working harder on this repository
 | M7-behaviour — Idle, mood and reactions | 17 | 0 | 0 | 0 | 0 | yes | yes |
 | M8-framework — Behaviour framework and scoring | 10 | 0 | 0 | 0 | 0 | yes | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
-| M10-derived — Derived robot state and reaction strategies | 13 | 0 | 13 | 0 | 0 | yes | no |
+| M10-derived — Derived robot state and reaction strategies | 13 | 0 | 7 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 20 | 0 | 0 | 1 | 0 | yes | yes |
 | M12-manipulation — Docking, carrying and pre-action poses | 16 | 0 | 0 | 0 | 0 | yes | yes |
 | M13-navigation — Planning, charger and block configurations | 15 | 0 | 0 | 0 | 0 | yes | yes |
@@ -61,7 +61,7 @@ status.
 | M7-behaviour | UNREVIEWED | 17 | 3 | 0 | 0 |
 | M8-framework | UNREVIEWED | 6 | 1 | 0 | 0 |
 | M9-wwise-music | UNREVIEWED | 20 | 14 | 0 | 0 |
-| M10-derived | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
+| M10-derived | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
 | M11-vision | UNREVIEWED | 17 | 5 | 0 | 0 |
 | M12-manipulation | UNREVIEWED | 16 | 5 | 0 | 0 |
 | M13-navigation | UNREVIEWED | 15 | 5 | 0 | 0 |
@@ -557,7 +557,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: A1..A7 CheckAndUpdateTreadsState 0x511E00..0x5121F8 (thresholds 0x5121FC, 0x5122A0..0x5122BC); A8..A15 consequences: Falling DAS + ActionList::Cancel(-1) (0x511FF0..0x512084; gap1 3a..3e), RobotOffTreadsStateChanged broadcast 0x512092, OnTreads 0x512112..0x512184, carried 0x512100, SetOnChargerPlatform 0x512188, pause flag 0x5121E2; gap1 5a IMU filter state zeroed (0x5100E0..0x5100FE)
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: A5: the Anki Radians operator> / operator< (0x84CC90: diff > 0 && !IsNear(1e-5)) and whether the difference is wrapped are not in the rows, so the plain float comparisons are kept. The M11/M12/M15 consequences are seams.
 
 **M10-002 — Unexpected-movement detector: gates, wheel/gyro rules and constants, fire at count > 10** (live path)
 
@@ -566,7 +566,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: B1 tail call 0x63E392; B2..B5 gates 0x63E3B4..0x63E426; B6 ctor constants 0x63DAB0..0x63DB00; B7..B11 rules 0x63E428..0x63E5DA
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: B8: whether the +1 paths add l and r to the sums. B9: whether the same-sign decrement is guarded by count > 0. Both keep the existing reading until the rows are extracted.
 
 **M10-003 — Reaction-strategy factory rules and strategy classes (Cliff, Falling, PickedUp, Shaken, Slope, Frustration, PlacedOnCharger, Sparked, NoPreDockPoses, FistBump, Hiccup, Pet, CubeMoved, FacePositionUpdated, ObjectPositionUpdated)** (live path)
 
@@ -575,7 +575,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: C12 factory switch 0x60D618; C13..C17 Generic, Shaken, Slope, Frustration; gap1 1 Cliff filter 0x60DC7C..0x60DCA2; gap1 8 strategy predicates; gap2 1..6 PlacedOnCharger 0x614474..0x6144D0, CubeMoved 0x60C04A..0x60C1E2 / 0x60BEB4, Face 0x60CB84..0x60CE20, position-update base 0x612168..0x612B22, Object 0x6114A0..0x611582
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: EnabledStateChanged for Shaken, Slope and Frustration is not in gap1 4j (a no-op here); Hiccup, FistBump, Sparked, the NoPreDockPoses +0x70 writers and Pet EnabledStateChanged (InitReactedTo) are not built.
 
 **M10-004 — CheckReactionTriggerStrategies: sticky action gate, map order, disable locks, predicates, StopAllMotors and track unlock, no-break loop, IsReactionTriggerEnabled and lock messages** (live path)
 
@@ -584,25 +584,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: C3 gate 0x5A355A..0x5A357A; C4..C8 0x5A359A..0x5A37CA; gap1 4a IsReactionTriggerEnabled 0x5A40B8; 4b DisableReactionsWithLock 0x5A27F6..0x5A2960; 4c RemoveDisableReactionsLock 0x5A3A52..0x5A3B94; 4e game messages 0x5A4D2A..0x5A4F3A
-* outstanding: compare the code against the inventory rows (the step after approval)
-
-**M10-005 — The off-treads debounce clock is BaseStationTimer ms (engine tick-start time since run start, per tick)** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/OffTreads.cs`
-* effect: state changes commit at different times
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: A2 now = GetCurrentTimeStamp 0x511E2A..0x511E36, 0x84BCC0..0x84BCD0; gap1 6a..6c UpdateTime only from CozmoEngine::Update 0x4ED626; ns = tickStart - runStart 0x65B3B6..0x65B420
-* outstanding: compare the code against the inventory rows (the step after approval)
-
-**M10-006 — The unexpected-movement body-lock gate applies only while AnimationState.tag (robot+0x248) != 0** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs`
-* effect: unexpected movement is checked at different times
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: B3 0x63E3BA..0x63E3DC; tag writer 0x53800C
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: CompletelyUnlockAllTracks body (which locks it clears and what it sends) is not in the rows; the C3 sticky first-action gate cannot be evaluated without an ActionList and is logged when absent.
 
 **M10-007 — Unexpected-movement response: gate, history lookup, side and obstacle (d = 25), rewind SetNewPose, AddCollisionObstacle, broadcast always, reset** (live path)
 
@@ -611,7 +593,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: B12..B17 0x63E604..0x63E962; gap1 7a GetSizeByType CollisionObstacle {20, 54.2, 67.7} 0x50270E..0x502772; B18 kCreateUnexpectedMovementObstacles has no reader
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: SetNewPose, its AbsoluteLocalizationUpdate and the collision obstacle are not performed: the M4 C9 F1..F3 fields are not in the rows and there is no RobotStateHistory::ComputeStateAt (M11). kCreateUnexpectedMovementObstacles has no reader.
 
 **M10-008 — Resume after a reaction: SwitchToReactionTrigger parking, the track unlock rule, head/lift restore from SetDefaultHeadAndLiftState** (live path)
 
@@ -620,43 +602,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: C7 0x5A3610..0x5A3682; C9 0x5A25E4..0x5A26DA; C10 flags 0x60F904; C11 0x5A2BB8..0x5A2C3A, 0x5A1BCC..0x5A1D26
-* outstanding: compare the code against the inventory rows (the step after approval)
-
-**M10-009 — Nothing in this build ever raises the obstacle-detected flag** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs`
-* effect: the robot reacts to an obstacle that the original never reports
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: StrategyObstacleDetected 0x006141F8 is a StrategyGeneric whose predicate is the three-instruction function object at 0x006143CA: return *(bool*)(*(void**)(robot + 0x264) + 4); Robot+0x264 is the AIComponent: Robot::Delocalize calls AIComponent::OnRobotDelocalized on it at 0x00510D72; AIComponent+4 is a plain bool the constructor zeroes at 0x00569A80, and that store is the only byte written at +4 anywhere in AIComponent code; no wide strb to +4 exists in the binary outside MemoryMapData_ProxObstacle's constructor, and no function that fetches the component from Robot+0x264 writes a byte at its +4 within forty-five instructions of doing so; so the strategy never becomes true, and ReactToObstacle - listed by hiking, nothingToDo, playAlone and socialize, with reactToObstacle.json giving it this strategy - never runs
-* outstanding: compare the code against the inventory rows (the step after approval)
-
-**M10-010 — The physical flag robot+0x14: 0 until FirmwareVersion, then json["sim"].isNull(); its gates** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
-* effect: physical-only behaviour runs at different times
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: A4 ctor 0x50FC36; SetPhysicalRobot 0x51397A from HandleFirmwareVersion 0x536980; B2 0x63E3B4..0x63E3B8
-* outstanding: compare the code against the inventory rows (the step after approval)
-
-**M10-011 — Falling events: FallingStarted broadcast; FallingStopped NeedsAction 17 above 1000, DAS, broadcast** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Sensors.cs`
-* effect: falls are reported differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: C1 0x534F4C..0x534F9E; C2 0x5350AA..0x5350C2, 0x535186..0x53519C
-* outstanding: compare the code against the inventory rows (the step after approval)
-
-**M10-012 — IMU filter state starts at 0; raw accel/gyro written only by UFRS** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/OffTreads.cs`
-* effect: early classifications differ
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: gap1 5a memclr8(robot+0x378, 0x18) 0x5100E0..0x5100FE; gap2 7a UFRS 0x5129A4..0x5129BE
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: CompletelyUnlockAllTracks is not in the rows; the manager+8/+0xC constructor values and MoveLiftToHeightAction's defaults are not in the rows.
 
 **M10-013 — Raw accel/gyro before the first RobotState: heap contents in the engine; 0 here (forced policy)** (live path)
 
@@ -665,7 +611,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: gap2 7b: no ctor store to +0x35C..+0x377; operator new(0x530) without memset (0x52EE8E..0x52EE9C)
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: The forced policy MD1 (0 before the first RobotState) is implemented; the record stays a forced choice and is COMPATIBILITY_POLICY at the next approval.
 
 ## What remains after both: blocked externally, or needing hardware
 

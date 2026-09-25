@@ -313,25 +313,40 @@ public class FaceTests
         using var rig = FaceRig();
         var world = rig.Vision.Pets;
         using var strategy = new PetInitialDetectionStrategy(world);
+        var ctx = Ctx(rig);
+        var runnable = M10Support.RunnableBehaviour();
         Assert.Equal(60.0, PetInitialDetectionStrategy.RecentlyReactedSec, 6);
         var cat = new DetectedPet(3, PetType.Cat, new FaceRect(10, 10, 20, 20));
         var dog = new DetectedPet(4, PetType.Dog, new FaceRect(50, 10, 20, 20));
 
+        // gap1 8: a pet must have been observed more than twice (threshold 3) before it is a target.
         world.Update(new[] { cat }, 100, false);
-        Assert.True(strategy.ShouldTrigger(null!, null, 0));
+        Assert.False(strategy.ShouldTrigger(ctx, null, 0, runnable));
+        world.Update(new[] { cat }, 200, false);
+        Assert.False(strategy.ShouldTrigger(ctx, null, 0, runnable));
+        world.Update(new[] { cat }, 300, false);
+        Assert.True(strategy.ShouldTrigger(ctx, null, 0, runnable));
+        Assert.Equal(new[] { 3 }, strategy.Targets);
 
         // reacting to it records the id and starts the minute
-        strategy.ReactedTo(3, 10);
+        strategy.BehaviorDidReact(new[] { 3 }, 10);
         Assert.True(strategy.RecentlyReacted(11));
-        world.Update(new[] { cat, dog }, 200, false);
-        Assert.False(strategy.ShouldTrigger(null!, null, 11));      // inside the minute, even for a new pet
+        world.Update(new[] { cat }, 400, false);
+        Assert.False(strategy.ShouldTrigger(ctx, null, 11, runnable));   // inside the minute
         Assert.False(strategy.RecentlyReacted(71));
 
-        world.Update(new[] { cat, dog }, 300, false);
-        Assert.True(strategy.ShouldTrigger(null!, null, 71));       // the minute is up and pet 4 is new
-        strategy.ReactedTo(4, 71);
-        world.Update(new[] { cat, dog }, 400, false);
-        Assert.False(strategy.ShouldTrigger(null!, null, 200));     // both have been reacted to now
+        // the minute is up, but the only pet has already reacted: nothing to do
+        Assert.False(strategy.ShouldTrigger(ctx, null, 71, runnable));
+
+        // a new pet observed three times after the minute is a target
+        world.Update(new[] { cat, dog }, 800, false);
+        world.Update(new[] { cat, dog }, 900, false);
+        world.Update(new[] { cat, dog }, 1000, false);
+        Assert.True(strategy.ShouldTrigger(ctx, null, 71, runnable));
+        Assert.Equal(new[] { 4 }, strategy.Targets);
+        strategy.BehaviorDidReact(new[] { 4 }, 71);
+        world.Update(new[] { cat, dog }, 1100, false);
+        Assert.False(strategy.ShouldTrigger(ctx, null, 200, runnable));  // both have reacted now
     }
 
     [Fact]

@@ -49,7 +49,7 @@ public class CorrectionTests
         using var manager = new BehaviorManager(ctx);
         var registrations = ShippedBehaviors.Reactions(rig.Robot, clockSec: () => rig.Clock.NowMs / 1000.0, vision: rig.Vision);
         var reg = registrations.Single(r => r.Strategy.Trigger == ReactionTrigger.CubeMoved);
-        manager.AddReaction(reg.Strategy, reg.Behavior, reg.ResumeLast);
+        manager.AddReaction(reg.Strategy, reg.Behavior);
         var strategy = (CubeMovedReactionStrategy)reg.Strategy;
 
         // the cube is seen: the world locates it and the strategy learns of the sighting from BlockWorld,
@@ -87,7 +87,7 @@ public class CorrectionTests
         using var manager = new BehaviorManager(ctx);
         var reg = ShippedBehaviors.Reactions(rig.Robot, clockSec: () => rig.Clock.NowMs / 1000.0, vision: rig.Vision)
                                   .Single(r => r.Strategy.Trigger == ReactionTrigger.ObjectPositionUpdated);
-        manager.AddReaction(reg.Strategy, reg.Behavior, reg.ResumeLast);
+        manager.AddReaction(reg.Strategy, reg.Behavior);
 
         rig.Cube = new Pose3d(Mat3.Identity, new Vec3(200, 0, 22));
         var seen = rig.Frame();
@@ -101,25 +101,28 @@ public class CorrectionTests
         Assert.Equal(cubeId, behaviour.CurrentTarget);            // the strategy's target, taken up by the behaviour
     }
 
-    /// <summary>A prepared target is put back when the behaviour turns out not to be runnable.</summary>
+    /// <summary>
+    /// The strategy only writes the behaviour's target when it actually has a candidate; a call with nothing
+    /// located leaves the caller's target alone. The engine has one decision function (C6 over STBI), not a
+    /// stage / commit / abandon contract, so there is nothing to put back.
+    /// </summary>
     [Fact]
-    public void APreparedTargetIsAbandonedWhenTheBehaviourCannotRun()
+    public void ACallerTargetIsUntouchedWhenNothingIsLocated()
     {
         using var rig = new Rig();
         var behaviour = new AcknowledgeCubeMovedBehavior(rig.Vision.Locator) { TargetObjectId = 42 };
-        var strategy = new CubeMovedReactionStrategy(rig.Robot, behaviour, rig.Vision.Locator, rig.Vision.World);
-        ITargetPreparingStrategy prep = strategy;
-        Assert.False(prep.PrepareTarget(Ctx(rig), null, 0));   // nothing located, nothing staged
-        prep.AbandonTarget();
-        Assert.Equal(42u, behaviour.TargetObjectId);           // the caller's target is untouched
-        strategy.Dispose();
+        using var strategy = new CubeMovedReactionStrategy(rig.Robot, behaviour, rig.Vision.Locator, rig.Vision.World);
+        Assert.False(strategy.ShouldTrigger(Ctx(rig), null, 0, behaviour));   // nothing located, no candidate
+        Assert.Equal(42u, behaviour.TargetObjectId);                           // the caller's target is untouched
     }
 
     // ---------------------------------------------------------------- 3: one reaction dispatcher
 
     /// <summary>
-    /// A hard landing plays ReactToImpact through the manager, and being put on the charger plays
-    /// ReactToOnCharger: both used to live only in the M7 dispatcher, which the freeplay stack never starts.
+    /// A fall plays ReactToImpact through the manager: the RobotFalling strategy watches FallingStarted (C1, C12),
+    /// WithTimeout 3000. Being put on the charger plays ReactToOnCharger once its ChargerEvent latch is set. Where
+    /// the engine broadcasts ChargerEvent and with what onCharger value is not in the M4/M10 rows (gap2 1), so the
+    /// latch is driven directly here rather than through an invented broadcaster.
     /// </summary>
     [Fact]
     public void TheWholeStackKeepsTheImpactAndChargerReactions()
@@ -134,26 +137,39 @@ public class CorrectionTests
 
         var triggers = new List<ReactionTrigger>();
         stack.Manager.ReactionTriggered += r => triggers.Add(r.Trigger);
+        // C3: the sticky gate opens on the first queued action or the "sdk" lock removal; with no ActionList here,
+        // open it the second way (gap1 4c).
+        stack.Manager.RemoveDisableReactionsLock("sdk");
 
-        // a hard landing: FallingStopped over the 1000 threshold
+        // a hard landing: FallingStarted latches the RobotFalling strategy (C1, C12); the FallingStopped over the 1000
+        // threshold is what makes ReactToImpact runnable (its AlwaysHandle gate, M10 C2). Its 3000 ms WithTimeout
+        // window compares BaseStationTimer ms, so let the run clock pass 3000 first, as a real robot's would have.
+        rig.Clock.Advance(4000);
+        rig.Send(new FallingStarted { Unknown = 1000 });
         rig.Send(new FallingStopped { DurationMs = 400, ImpactIntensity = 2500f });
         clock = 1;
         Assert.NotNull(stack.Manager.CheckReactions(clock));
         Assert.Equal(new[] { ReactionTrigger.RobotFalling }, triggers);
         stack.Manager.Stop(BehaviorStopReason.Interrupted, clock);
 
-        // and no second one from the same landing
+        // and no second one from the same fall
         clock = 2;
         Assert.Null(stack.Manager.CheckReactions(clock));
 
-        // put on the charger
-        rig.OnCharger = true; rig.State();
-        clock = 3;
+        // put on the charger: 20 s from the strategy's first wants-to-run call, then the ChargerEvent latch
+        var charger = (PlacedOnChargerStrategy)stack.Manager.Reactions
+            .Single(r => r.Strategy.Trigger == ReactionTrigger.PlacedOnCharger).Strategy;
+        charger.WantsToRun(clock);              // the first call starts the 20 s deadline (gap2 1d)
+        charger.HandleChargerEvent(true);       // vtable +0xC on tag 57 ChargerEvent
+        clock = 30;
         Assert.NotNull(stack.Manager.CheckReactions(clock));
         Assert.Equal(new[] { ReactionTrigger.RobotFalling, ReactionTrigger.PlacedOnCharger }, triggers);
     }
 
-    /// <summary>A landing softer than the engine's threshold plays nothing.</summary>
+    /// <summary>
+    /// A fall whose impact is under the 1000 threshold: FallingStarted latches the RobotFalling strategy (C12), but
+    /// ReactToImpact stays not runnable, so the reaction does not fire (M10 C2).
+    /// </summary>
     [Fact]
     public void ASoftLandingDoesNotReact()
     {
@@ -163,6 +179,9 @@ public class CorrectionTests
         rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
         double clock = 0;
         using var stack = FreeplayStack.Create(obb, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, random: new Random(1));
+        stack.Manager.RemoveDisableReactionsLock("sdk");   // open the C3 sticky gate so the runnable gate is what is tested
+        rig.Clock.Advance(4000);
+        rig.Send(new FallingStarted { Unknown = 1000 });
         rig.Send(new FallingStopped { DurationMs = 100, ImpactIntensity = 500f });
         clock = 1;
         Assert.Null(stack.Manager.CheckReactions(clock));

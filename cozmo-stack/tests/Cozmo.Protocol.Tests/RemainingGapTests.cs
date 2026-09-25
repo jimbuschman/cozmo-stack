@@ -133,12 +133,11 @@ public class RemainingGapTests
         var ram = new RamIntoBlockBehavior(rig.M);
         var strategy = new NoPreDockPosesStrategy(rig.M.Whiteboard, ram);
         var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap() };
-        Assert.False(strategy.PrepareTarget(ctx, null, 0));
+        Assert.False(strategy.ShouldTrigger(ctx, null, 0, M10Support.RunnableBehaviour()));
         rig.M.Whiteboard.NoPreDockPosesObjectId = 7;
-        Assert.True(strategy.PrepareTarget(ctx, null, 0));
+        Assert.True(strategy.ShouldTrigger(ctx, null, 0, M10Support.RunnableBehaviour()));
         Assert.Equal(7u, ram.PendingTarget);
         // consumed whether the behaviour then runs or not: the reset precedes IsRunnable (0x00610E60)
-        strategy.AbandonTarget();
         Assert.Null(rig.M.Whiteboard.NoPreDockPosesObjectId);
     }
 }

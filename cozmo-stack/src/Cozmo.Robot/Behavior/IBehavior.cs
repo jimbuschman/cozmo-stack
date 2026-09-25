@@ -55,6 +55,7 @@ public sealed class BehaviorContext
     ///
     /// The hook stays for a caller that wants to raise it deliberately; nothing in this stack does.
     /// </summary>
+    // fidelity: M10-009
     public Func<bool>? ObstacleDetected { get; set; }
 
     /// <summary>

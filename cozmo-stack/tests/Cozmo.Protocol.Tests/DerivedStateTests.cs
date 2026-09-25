@@ -36,8 +36,8 @@ public class DerivedStateTests
         return s;
     }
 
-    /// <summary>A classifier already past its head-calibration gate, on a physical robot.</summary>
-    private static OffTreadsClassifier Classifier() => new() { HeadCalibrated = true };
+    /// <summary>A classifier already past its head-calibration gate, on a physical robot (A4/M10-010).</summary>
+    private static OffTreadsClassifier Classifier() => new() { HeadCalibrated = true, IsPhysical = true };
 
     /// <summary>Feeds level, at-rest states for a while so the accelerometer filters settle.</summary>
     private static uint Settle(OffTreadsClassifier c, uint t, float ay = 0, float az = 9800, float pitch = 0,
@@ -77,6 +77,22 @@ public class DerivedStateTests
         {
             Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false, AutoStarted = false });
             Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false, AutoStarted = false });
+        }
+
+        /// <summary>
+        /// Feeds states straight to the robot's classifier with an explicit BaseStationTimer clock (A2/M10-005),
+        /// standing in for the engine tick. The rig's engine clock advances in real time, which cannot make a
+        /// debounce deterministic, so a debounce test drives the classifier it is testing directly. The head gate
+        /// and the physical flag stand in for CalibrateMotors and a firmwareVersion (A4/M10-010).
+        /// </summary>
+        public void Classify(int ticks, float ax = 0, float ay = 0, float az = 9800, float pitch = 0,
+                             RobotStatusFlag flags = 0, uint startMs = 1_000_000)
+        {
+            var c = Robot.Sensors.OffTreads;
+            c.HeadCalibrated = true;
+            c.IsPhysical = true;
+            uint now = startMs;
+            for (int i = 0; i < ticks; i++, now += 33) c.Update(State(now, ax, ay, az, pitch, flags), now);
         }
 
         /// <summary>Streams states for a number of 33 ms ticks.</summary>
@@ -351,10 +367,25 @@ public class DerivedStateTests
         Assert.False(ctx.ObstacleDetected?.Invoke() ?? false);
     }
 
+    /// <summary>
+    /// A physical detector with the response seams the manager installs: the UnexpectedMovement trigger enabled
+    /// (B12) and a ComputeStateAt that succeeds (B13). The seams are consulted only on a fire, so tests that
+    /// never fire can still use it.
+    /// </summary>
+    private static UnexpectedMovementDetector Mov() => new()
+    {
+        IsPhysical = true,                                              // B2 / M10-010: after FirmwareVersion
+        ReactionTriggerEnabled = () => true,                            // B12: IsReactionTriggerEnabled(20)
+        ComputeStateAt = _ => (HistoryLookupResult.Ok, new Pose3d(Mat3.Identity, new Vec3(0, 0, 0))),
+        CurrentRobotPose = () => new Pose3d(Mat3.Identity, new Vec3(0, 0, 0)),
+    };
+
     [Fact]
     public void TheCheckOnlyRunsWhileTheBodyTrackIsLocked()
     {
-        var d = new UnexpectedMovementDetector { TrackGateApplies = true };
+        // B3 / M10-006: the body-track gate applies only while robot+0x248 (AnimationState.tag) is set.
+        var d = Mov();
+        d.AnimationStateTag = 1;
         for (uint i = 0; i < 12; i++) Assert.Null(d.Update(State(100 + i * 33, left: -50, right: 50)));
         Assert.Equal(0, d.Count);                       // nothing owns the body, so nothing was counted
 
@@ -363,8 +394,8 @@ public class DerivedStateTests
         Assert.Equal(10, d.Count);
         Assert.NotNull(d.Update(State(1000, left: -50, right: 50)));
 
-        // and with the robot-level flag clear the gate does not apply at all
-        var open = new UnexpectedMovementDetector();
+        // and with the robot-level flag clear (tag 0) the gate does not apply at all
+        var open = Mov();
         for (uint i = 0; i < 10; i++) open.Update(State(100 + i * 33, left: -50, right: 50));
         Assert.Equal(10, open.Count);
     }
@@ -372,7 +403,7 @@ public class DerivedStateTests
     [Fact]
     public void ATurnThatDoesNotTurnIsDetectedAfterElevenStates()
     {
-        var d = new UnexpectedMovementDetector();
+        var d = Mov();
         UnexpectedMovementReport? report = null;
         d.Detected += r => report = r;
         for (uint i = 0; i < 10; i++)
@@ -385,41 +416,41 @@ public class DerivedStateTests
         Assert.Same(r, report);
         Assert.Equal(UnexpectedMovementType.TurnedButStopped, r!.Type);
         Assert.Equal(UnexpectedMovementSide.Left, r.Side);
-        Assert.Equal(100u, r.Timestamp);
+        Assert.Equal(430u, r.Timestamp);            // B17: the broadcast carries the current state's timestamp
+        Assert.Equal(100u, r.StartTimestamp);       // B10: the first increment's timestamp
         Assert.Equal(0, d.Count);
     }
 
     /// <summary>
-    /// What the engine does with the report (0x0063E6BC..0x0063E8E6): it asks the state history where the
-    /// robot was when the disagreement began, puts it back there with the heading it ended up with
-    /// (SetNewPose, the rotation copied over the historical transform at 0x0063E868), and leaves a
-    /// collision obstacle on the side the wheel averages point to - the object's own 20 mm plus 5 mm of
-    /// clearance, then 22.1 mm in front, 55.9 mm behind, or 27.1 mm to a side with the pose turned a
-    /// right angle. MarkerlessObject::GetSizeByType gives the box: 20 x 54.2 x 67.7 mm, standing on the
-    /// ground.
+    /// The response geometry (B14..B16, gap1 7a..7b): the rewind keeps the historical translation and takes
+    /// the heading the robot ended up with; the collision obstacle's box is 20 x 54.2 x 67.7 mm, placed d =
+    /// 20 + 5 clear of the robot, 22.1 mm ahead / 55.9 mm behind / 27.1 mm to a side with the pose turned a
+    /// right angle, and parented to the pose after the rewind (B16).
+    ///
+    /// The detector picks the side from the wheel means (B14) and takes the failure path when the history has
+    /// no state (B13). The engine then SetNewPose and AddCollisionObstacle (B15/B16); that execution is
+    /// MISSING here (M4 C9 F1..F3 are not in the rows and there is no ComputeStateAt), so no obstacle object is
+    /// added and the world stays empty. That gap is recorded, not asserted as the engine's behaviour.
     /// </summary>
     [Fact]
     public void TheReportRewindsThePoseAndLeavesACollisionObstacle()
     {
-        var history = new RobotStateHistory();
-        history.Add(new RobotState { Timestamp = 100, Pose = new RobotPose { X = 100, Y = 0, Angle = 0 } });
-        var now = new Pose3d(Mat3.AboutZ(0.2), new Vec3(140, 5, 0));                 // where it drifted to
-        var world = new BlockWorld(Array.Empty<(uint, ObjectType)>);
-        var report = new UnexpectedMovementReport(100, UnexpectedMovementType.TurnedInOppositeDirection,
-                                                  UnexpectedMovementSide.Front, 50, 60, 12);
+        var historical = new Pose3d(Mat3.Identity, new Vec3(100, 0, 0));               // B13's ComputeStateAt result
+        var now = new Pose3d(Mat3.AboutZ(0.2), new Vec3(140, 5, 0));                   // where it drifted to
 
-        var applied = UnexpectedMovementResponse.Apply(report, history, world, now);
-        Assert.NotNull(applied);
-        var (rewound, obstacle) = applied!.Value;
+        // B15: the historical translation keeps the heading it has now.
+        var rewound = UnexpectedMovementResponse.RewoundPose(historical, now);
         Assert.Equal(100, rewound.Translation.X, 3);
         Assert.Equal(0, rewound.Translation.Y, 3);
-        Assert.Equal(0.2, rewound.AngleAroundZ, 3);                                   // the heading it has now
+        Assert.Equal(0.2, rewound.AngleAroundZ, 3);
 
-        Assert.Equal(ObjectType.CollisionObstacle, obstacle.Type);
-        Assert.Single(world.Objects);
-        var ahead = obstacle.Pose.Translation - rewound.Translation;
-        Assert.Equal(20 + 5 + 22.1, Math.Sqrt(ahead.X * ahead.X + ahead.Y * ahead.Y), 3);
-        Assert.Equal(67.7 / 2, obstacle.Pose.Translation.Z, 3);                       // standing on the ground
+        // B14 + gap1 7a/7b: d = 20 + 5, so the obstacle sits 47.1 mm ahead.
+        var ahead = UnexpectedMovementResponse.ObstacleInRobotFrame(UnexpectedMovementSide.Front);
+        Assert.Equal(20 + 5 + 22.1, Math.Sqrt(ahead.Translation.X * ahead.Translation.X + ahead.Translation.Y * ahead.Translation.Y), 3);
+        var size = MarkerlessObject.SizeByType(ObjectType.CollisionObstacle)!.Value;
+        Assert.Equal(20f, size.X, 3);
+        Assert.Equal(54.2f, size.Y, 3);
+        Assert.Equal(67.7f, size.Z, 3);
 
         var left = UnexpectedMovementResponse.ObstacleInRobotFrame(UnexpectedMovementSide.Left);
         Assert.Equal(20 + 5 + 27.1, left.Translation.Y, 3);
@@ -429,11 +460,36 @@ public class DerivedStateTests
         Assert.Equal(-Math.PI / 2, right.AngleAroundZ, 3);
         Assert.Equal(-55.9 - 25, UnexpectedMovementResponse.ObstacleInRobotFrame(UnexpectedMovementSide.Back).Translation.X, 3);
 
-        // no state at that timestamp: neither the rewind nor the obstacle happens
+        // B16: the obstacle is parented to the pose after the rewind. The expected world point is computed
+        // independently here rather than by calling ObstacleInWorld again.
+        var inWorld = UnexpectedMovementResponse.ObstacleInWorld(rewound, UnexpectedMovementSide.Front);
+        double c = Math.Cos(0.2), s = Math.Sin(0.2);
+        Assert.Equal(100 + (20 + 5 + 22.1) * c, inWorld.Translation.X, 2);
+        Assert.Equal(0 + (20 + 5 + 22.1) * s, inWorld.Translation.Y, 2);
+
+        // B13: the history has no state, so side is UNKNOWN and the failure is logged.
         var log = new List<string>();
-        Assert.Null(UnexpectedMovementResponse.Apply(report with { Timestamp = 5000 }, new RobotStateHistory(), world, now, log.Add));
-        Assert.Contains(log, l => l.Contains("Could not get robot pose at t=5000"));
-        Assert.Single(world.Objects);
+        var detector = new UnexpectedMovementDetector
+        {
+            IsPhysical = true,
+            ReactionTriggerEnabled = () => true,
+            ComputeStateAt = _ => (HistoryLookupResult.Failure, default),
+        };
+        detector.Log += log.Add;
+        UnexpectedMovementReport? fired = null;
+        detector.Detected += x => fired = x;
+        for (uint i = 0; i < 11 && fired is null; i++) fired = detector.Update(State(i * 33, left: 50, right: 60, gz: -1.0f));
+        Assert.NotNull(fired);
+        Assert.Equal(UnexpectedMovementSide.Unknown, fired!.Side);
+        Assert.Contains(log, l => l.Contains("Could not get robot pose at t="));
+
+        // B12: with the trigger disabled the side is UNKNOWN without asking the history.
+        var gated = new UnexpectedMovementDetector { IsPhysical = true, ReactionTriggerEnabled = () => false };
+        UnexpectedMovementReport? gatedReport = null;
+        gated.Detected += x => gatedReport = x;
+        for (uint i = 0; i < 11 && gatedReport is null; i++) gatedReport = gated.Update(State(i * 33, left: 50, right: 60, gz: -1.0f));
+        Assert.NotNull(gatedReport);
+        Assert.Equal(UnexpectedMovementSide.Unknown, gatedReport!.Side);
     }
 
     /// <summary>
@@ -443,7 +499,7 @@ public class DerivedStateTests
     [Fact]
     public void BeingSpunAgainstTheCommandCountsDouble()
     {
-        var d = new UnexpectedMovementDetector();
+        var d = Mov();
         UnexpectedMovementReport? r = null;
         for (uint i = 0; i < 6 && r is null; i++) r = d.Update(State(i * 33, left: 50, right: 60, gz: -1.0f));
         Assert.NotNull(r);
@@ -455,7 +511,7 @@ public class DerivedStateTests
     [Fact]
     public void TheDetectorResetsWhenPickedUpAndDecaysWhenStill()
     {
-        var d = new UnexpectedMovementDetector();
+        var d = Mov();
         for (uint i = 0; i < 5; i++) d.Update(State(i, left: -50, right: 50));
         Assert.Equal(5, d.Count);
         d.Update(State(10, left: -50, right: 50, flags: RobotStatusFlag.IsPickedUp));
@@ -474,12 +530,12 @@ public class DerivedStateTests
     [Fact]
     public void DrivingStraightWithMatchingGyroIsNotUnexpected()
     {
-        var d = new UnexpectedMovementDetector();
+        var d = Mov();
         // right − left = 46 mm/s → 1 rad/s commanded, half is 0.5; a gyro of 0.45 is within 0.2, but below
         // the 0.1745 turning threshold it would have to be compared: use 0.16 to stay in the "not turning" branch
         for (uint i = 0; i < 20; i++) d.Update(State(i, left: 27, right: 73, gz: 0.16f));
         Assert.True(d.Count <= 20);
-        var d2 = new UnexpectedMovementDetector();
+        var d2 = Mov();
         for (uint i = 0; i < 20; i++) d2.Update(State(i, left: 100, right: 100, gz: 0.0f));
         Assert.Equal(0, d2.Count);                 // straight and not turning: expected 0, measured 0
     }
@@ -529,13 +585,15 @@ public class DerivedStateTests
         rig.Stream(60);
         var ctx = rig.Context();
         var strategies = ShippedReactionStrategies.ForRobot(rig.Robot).ToDictionary(s => s.Trigger);
+        using var manager = new BehaviorManager(ctx);
+        foreach (var s in strategies.Values) manager.AddReaction(s, M10Support.RunnableBehaviour(s.Trigger.ToString()));
 
         Assert.False(strategies[ReactionTrigger.RobotPickedUp].ShouldTrigger(ctx, null, 0));
         rig.Stream(1, flags: RobotStatusFlag.IsPickedUp);
         Assert.True(strategies[ReactionTrigger.RobotPickedUp].ShouldTrigger(ctx, null, 0));
         Assert.False(strategies[ReactionTrigger.RobotOnBack].ShouldTrigger(ctx, null, 0));
 
-        rig.Stream(40, ay: 9800, az: 0, flags: RobotStatusFlag.IsPickedUp);
+        rig.Classify(40, ay: 9800, az: 0, flags: RobotStatusFlag.IsPickedUp);
         Assert.Equal(OffTreadsState.OnRightSide, rig.Robot.Sensors.OffTreadsState);
         Assert.True(strategies[ReactionTrigger.RobotOnSide].ShouldTrigger(ctx, null, 0));
         Assert.False(strategies[ReactionTrigger.RobotPickedUp].ShouldTrigger(ctx, null, 0));
@@ -549,6 +607,8 @@ public class DerivedStateTests
         rig.Stream(60);
         var ctx = rig.Context();
         var s = ShippedReactionStrategies.ForRobot(rig.Robot).First(x => x.Trigger == ReactionTrigger.ReturnedToTreads);
+        using var manager = new BehaviorManager(ctx);
+        manager.AddReaction(s, M10Support.RunnableBehaviour());   // its filter asks IsReactionTriggerEnabled (gap1 4a)
         Assert.False(s.ShouldTrigger(ctx, null, 0));
         rig.Stream(1, flags: RobotStatusFlag.IsPickedUp);
         Assert.False(s.ShouldTrigger(ctx, null, 0));
@@ -729,10 +789,9 @@ public class DerivedStateTests
         var obb = ObbRoot();
         if (obb is null) return;
         using var rig = new Rig();
-        rig.CalibrateMotors();
-        rig.Stream(60);
+        rig.CalibrateMotors();                 // the Sensors reopen the head gate from the robot state on each stream
         float back = (float)OffTreadsClassifier.OnBackCentrePhysicalRad;
-        rig.Stream(40, ax: 9800, az: 0, pitch: back, flags: RobotStatusFlag.IsPickedUp);
+        rig.Classify(40, ax: 9800, az: 0, pitch: back, flags: RobotStatusFlag.IsPickedUp);
         Assert.Equal(OffTreadsState.OnBack, rig.Robot.Sensors.OffTreadsState);
 
         var ctx = rig.Context(obb);
@@ -756,9 +815,7 @@ public class DerivedStateTests
         var obb = ObbRoot();
         if (obb is null) return;
         using var rig = new Rig();
-        rig.CalibrateMotors();
-        rig.Stream(60);
-        rig.Stream(40, ay: -9800, az: 0, flags: RobotStatusFlag.IsPickedUp);
+        rig.Classify(40, ay: -9800, az: 0, flags: RobotStatusFlag.IsPickedUp);
         Assert.Equal(OffTreadsState.OnLeftSide, rig.Robot.Sensors.OffTreadsState);
 
         var ctx = rig.Context(obb);
@@ -816,7 +873,12 @@ public class DerivedStateTests
         public ReactionTrigger Trigger { get; }
         public string Basis => "test";
         public bool Fire { get; set; }
-        public bool ShouldTrigger(BehaviorContext context, ReactionTrigger? current, double nowSec) => Fire;
+        public bool ShouldResumeLast { get; set; }
+        public bool CanInterruptOtherTriggeredBehavior => true;
+        public bool CanInterruptSelf => false;
+        public BehaviorManager? Manager { get; set; }
+        public bool ShouldTriggerBehavior(ReactionContext rc, IBehavior behavior) => Fire;
+        public void EnabledStateChanged(BehaviorContext context, bool enabled) { }
     }
 
     private sealed class CountingBehavior : IBehavior
@@ -842,9 +904,9 @@ public class DerivedStateTests
         var manager = new BehaviorManager(ctx);
         var idle = new CountingBehavior("Idle");
         manager.Add(idle);
-        var strategy = new FakeStrategy(ReactionTrigger.UnexpectedMovement);
+        var strategy = new FakeStrategy(ReactionTrigger.UnexpectedMovement) { ShouldResumeLast = true };
         var reaction = new CountingBehavior("ReactToUnexpectedMovement");
-        manager.AddReaction(strategy, reaction, resumeLast: true);
+        manager.AddReaction(strategy, reaction);
 
         manager.ChooseAndSwitch(0);
         Assert.Same(idle, manager.Current);
@@ -888,9 +950,9 @@ public class DerivedStateTests
         var manager = new BehaviorManager(ctx);
         var idle = new CountingBehavior("Idle");
         manager.Add(idle);
-        var strategy = new FakeStrategy(ReactionTrigger.UnexpectedMovement);
+        var strategy = new FakeStrategy(ReactionTrigger.UnexpectedMovement) { ShouldResumeLast = true };
         var reaction = new CountingBehavior("ReactToUnexpectedMovement");
-        manager.AddReaction(strategy, reaction, resumeLast: true);
+        manager.AddReaction(strategy, reaction);
 
         manager.ChooseAndSwitch(0);
         strategy.Fire = true;
@@ -914,9 +976,12 @@ public class DerivedStateTests
         var strategy = new FakeStrategy(ReactionTrigger.RobotOnBack) { Fire = true };
         manager.AddReaction(strategy, new CountingBehavior("ReactToRobotOnBack"));
 
-        manager.SetTriggerEnabled(ReactionTrigger.RobotOnBack, false);
+        // M10-004 / gap1 4a..4e: enable state is the node's lock set; there is no boolean per-trigger switch.
+        var off = new bool[BehaviorManager.TriggerCount];
+        off[(int)ReactionTrigger.RobotOnBack] = true;
+        manager.DisableReactionsWithLock("test", off);
         Assert.Null(manager.CheckReactions(0));
-        manager.SetTriggerEnabled(ReactionTrigger.RobotOnBack, true);
+        manager.RemoveDisableReactionsLock("test");
 
         var holder = new object();
         arbiter.DisableReactions(holder);
@@ -955,13 +1020,17 @@ public class DerivedStateTests
         var ctx = rig.Context();
         var behavior = new AcknowledgeCubeMovedBehavior();
         using var strategy = new CubeMovedReactionStrategy(rig.Robot, behavior, locator: null);
+        using var manager = new BehaviorManager(ctx);
+        manager.AddReaction(strategy, behavior);           // enables the ObjectPositionUpdated gate the handler needs
         rig.Send(new ObjectMoved { Timestamp = 1000, ObjectID = 7, AxisOfAccel = UpAxis.ZPositive });
         rig.Stream(1);
         Assert.False(strategy.HasLocator);
-        Assert.False(strategy.ShouldTrigger(ctx, null, 0));
-        Assert.False(behavior.IsRunnable(ctx));
         Assert.Single(strategy.Tracker.Entries);
-        Assert.False(strategy.Tracker.Entries[0].Moving);   // unlocated: the record is marked not moving
+        Assert.True(strategy.Tracker.Entries[0].Moving);   // ObjectMoved marks it moving (gap1 8), located or not
+        // STBI drops an unlocated record and cannot fire; the behaviour never gets a target.
+        Assert.False(strategy.ShouldTrigger(ctx, null, 0, behavior));
+        Assert.Empty(strategy.Tracker.Entries);
+        Assert.False(behavior.IsRunnable(ctx));
     }
 
     [Fact]
@@ -972,16 +1041,22 @@ public class DerivedStateTests
         var locator = new FakeLocator { Located = { 7 } };
         var behavior = new AcknowledgeCubeMovedBehavior(locator);
         using var strategy = new CubeMovedReactionStrategy(rig.Robot, behavior, locator);
+        using var manager = new BehaviorManager(ctx);
+        manager.AddReaction(strategy, behavior);
+        // The strategy writes its target onto the class it is bound to (AcknowledgeCubeMoved+0x124); the runnable
+        // gate C6 checks is supplied by a runnable stand-in, because no animation assets are loaded offline and
+        // SteppedBehavior.IsRunnable needs the library.
+        var runnable = M10Support.RunnableBehaviour();
 
         strategy.ObjectObserved(7);                                       // the engine needs a sighting first
         rig.Send(new ObjectMoved { Timestamp = 1000, ObjectID = 7, AxisOfAccel = UpAxis.ZPositive });
         rig.T = 1500; rig.Stream(1);
-        Assert.False(strategy.ShouldTrigger(ctx, null, 0));               // moved 500 ms: not long enough
+        Assert.False(strategy.ShouldTrigger(ctx, null, 0, runnable));     // moved 500 ms: not long enough
         rig.T = 2100; rig.Stream(1);
         locator.Visible = true;
-        Assert.False(strategy.ShouldTrigger(ctx, null, 0));               // in view: no reaction
+        Assert.False(strategy.ShouldTrigger(ctx, null, 0, runnable));     // in view: no reaction
         locator.Visible = false;
-        Assert.True(strategy.ShouldTrigger(ctx, null, 0));
+        Assert.True(strategy.ShouldTrigger(ctx, null, 0, runnable));
         Assert.Equal(7u, behavior.TargetObjectId);
         Assert.False(strategy.Tracker.Entries[0].Moving);                 // reset after firing
 
@@ -990,19 +1065,22 @@ public class DerivedStateTests
         rig.Send(new ObjectMoved { Timestamp = 3000, ObjectID = 7, AxisOfAccel = UpAxis.ZPositive });
         rig.T = 4200; rig.Stream(1);
         locator.Distance = 30;
-        Assert.False(strategy.ShouldTrigger(ctx, null, 0));
+        Assert.False(strategy.ShouldTrigger(ctx, null, 0, runnable));
         locator.Distance = 100;
-        Assert.True(strategy.ShouldTrigger(ctx, null, 0));
+        Assert.True(strategy.ShouldTrigger(ctx, null, 0, runnable));
 
-        // an up-axis change fires without the second
+        // an up-axis change while moving fires without the second (gap1 8: ObjectMoved sets the change,
+        // ObjectUpAxisChanged itself is a lookup only)
         strategy.ObjectObserved(7);
-        rig.Send(new ObjectUpAxisChanged { Timestamp = 5000, ObjectID = 7, UpAxis = UpAxis.XPositive });
-        Assert.True(strategy.ShouldTrigger(ctx, null, 0));
+        rig.Send(new ObjectMoved { Timestamp = 5000, ObjectID = 7, AxisOfAccel = UpAxis.ZPositive });
+        rig.Send(new ObjectMoved { Timestamp = 5010, ObjectID = 7, AxisOfAccel = UpAxis.XPositive });
+        rig.Stream(1);
+        Assert.True(strategy.ShouldTrigger(ctx, null, 0, runnable));
 
         // a cube the world model loses is dropped
         locator.Located.Clear();
         rig.Send(new ObjectMoved { Timestamp = 6000, ObjectID = 7, AxisOfAccel = UpAxis.ZPositive });
-        Assert.False(strategy.ShouldTrigger(ctx, null, 0));
+        Assert.False(strategy.ShouldTrigger(ctx, null, 0, runnable));
         Assert.Empty(strategy.Tracker.Entries);
     }
 
@@ -1130,11 +1208,11 @@ public class DerivedStateTests
             Assert.Contains("0x", r.Strategy.Basis);
         }
         // shouldResumeLast as the shipped map states it
-        Assert.True(regs.Single(r => r.Strategy.Trigger == ReactionTrigger.UnexpectedMovement).ResumeLast);
-        Assert.True(regs.Single(r => r.Strategy.Trigger == ReactionTrigger.MotorCalibration).ResumeLast);
-        Assert.True(regs.Single(r => r.Strategy.Trigger == ReactionTrigger.CliffDetected).ResumeLast);
-        Assert.False(regs.Single(r => r.Strategy.Trigger == ReactionTrigger.RobotOnBack).ResumeLast);
-        Assert.False(regs.Single(r => r.Strategy.Trigger == ReactionTrigger.RobotPickedUp).ResumeLast);
+        Assert.True(regs.Single(r => r.Strategy.Trigger == ReactionTrigger.UnexpectedMovement).Strategy.ShouldResumeLast);
+        Assert.True(regs.Single(r => r.Strategy.Trigger == ReactionTrigger.MotorCalibration).Strategy.ShouldResumeLast);
+        Assert.True(regs.Single(r => r.Strategy.Trigger == ReactionTrigger.CliffDetected).Strategy.ShouldResumeLast);
+        Assert.False(regs.Single(r => r.Strategy.Trigger == ReactionTrigger.RobotOnBack).Strategy.ShouldResumeLast);
+        Assert.False(regs.Single(r => r.Strategy.Trigger == ReactionTrigger.RobotPickedUp).Strategy.ShouldResumeLast);
     }
 
     /// <summary>Every animation trigger the M10 behaviours can ask for resolves against the shipped assets.</summary>

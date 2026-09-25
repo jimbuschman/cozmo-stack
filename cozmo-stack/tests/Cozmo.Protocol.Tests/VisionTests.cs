@@ -807,9 +807,11 @@ public class VisionTests
         using var rig = new WorldRig();
         rig.Frame(CubeAhead(), head: -0.15f);
         var behavior = new AcknowledgeCubeMovedBehavior(rig.Vision.Locator);
-        using var strategy = new CubeMovedReactionStrategy(rig.Robot, behavior, rig.Vision.Locator);
+        using var strategy = new CubeMovedReactionStrategy(rig.Robot, behavior, rig.Vision.Locator, rig.Vision.World);
         Assert.True(strategy.HasLocator);
         var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap() };
+        using var manager = new BehaviorManager(ctx);
+        manager.AddReaction(strategy, behavior);          // enables the trigger-8 gate the message handler needs
 
         // the world model saw the cube: the strategy's record is marked observed
         strategy.ObjectObserved(7);
@@ -818,14 +820,14 @@ public class VisionTests
         rig.T += 1200;
         rig.State(head: -0.15f);
         Assert.True(rig.Vision.Locator.IsVisibleFromCamera(7));
-        Assert.False(strategy.ShouldTrigger(ctx, null, 0));
+        Assert.False(strategy.ShouldTrigger(ctx, null, 0, behavior));
 
         // the robot has turned away: the located pose is outside the camera's view
         rig.T += 33;
         rig.State(angle: 1.6f, head: -0.15f);
         Assert.True(rig.Vision.Locator.IsLocated(7));
         Assert.False(rig.Vision.Locator.IsVisibleFromCamera(7));
-        Assert.True(strategy.ShouldTrigger(ctx, null, 0));
+        Assert.True(strategy.ShouldTrigger(ctx, null, 0, behavior));
         Assert.Equal(7u, behavior.TargetObjectId);      // the behaviour is now runnable once its animations resolve (DerivedStateTests)
     }
 
@@ -854,35 +856,42 @@ public class VisionTests
     [Fact]
     public void ObjectPositionUpdatedFiresOnAFirstSightingAndAgainOnlyAfterAnEightyMillimetreMove()
     {
-        if (NoLibrary) return;
+        // No marker library is needed: the observations are recorded directly (4c), so this runs everywhere.
         using var rig = new WorldRig();
         var behavior = new AcknowledgeObjectBehavior(rig.Vision.World);
         using var strategy = new ObjectPositionUpdatedStrategy(rig.Vision.World, behavior);
+        // Robot::GetLastImageTimeStamp (M11): a nonzero stamp, so RobotReactedToId (4h) takes effect.
+        strategy.LastImageTimestamp = () => 1u;
         var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap() };
-        Assert.False(strategy.ShouldTrigger(ctx, null, 0));
+        // The strategy writes its targets onto the class it is bound to (AcknowledgeObject+0x14C); the runnable
+        // gate C6 checks is supplied by a runnable stand-in, because no animation assets are loaded offline and
+        // SteppedBehavior.IsRunnable needs the library.
+        var runnable = M10Support.RunnableBehaviour();
 
-        rig.Frame(CubeAhead(150), head: -0.15f);
-        Assert.True(strategy.ShouldTrigger(ctx, null, 0));
+        // 4c/4e: a first sighting has no reacted time yet, so it is a target at once.
+        strategy.RecordObservation(7, new Pose3d(Mat3.Identity, new Vec3(150, 0, 22)), 1, enabled: true);
+        Assert.True(strategy.ShouldTrigger(ctx, null, 0, runnable));
         Assert.Equal(new uint[] { 7 }, behavior.PendingTargets);
-        // not while the acknowledgement itself is running
-        Assert.False(strategy.ShouldTrigger(ctx, ReactionTrigger.ObjectPositionUpdated, 0));
 
-        // reacted: the same pose no longer triggers, even when seen again
-        strategy.ReactedToId(7);
-        rig.Frame(CubeAhead(152, 3), head: -0.15f);
-        Assert.False(strategy.ShouldTrigger(ctx, null, 0));
+        // gap1 8: ObjectPositionUpdated may not interrupt itself; that is the manager's C5 predicate, declared here.
+        Assert.False(strategy.CanInterruptSelf);
+
+        // 4h/4d: reacted; the same pose is no longer a target.
+        strategy.RobotReactedToId(7);
+        Assert.False(strategy.ShouldTrigger(ctx, null, 0, runnable));
+
         // a 40 mm shift is within the 80 mm tolerance
-        rig.Frame(CubeAhead(150, 40), head: -0.15f);
-        Assert.False(strategy.ShouldTrigger(ctx, null, 0));
+        strategy.RecordObservation(7, new Pose3d(Mat3.Identity, new Vec3(150, 40, 22)), 2, enabled: true);
+        Assert.False(strategy.ShouldTrigger(ctx, null, 0, runnable));
+
         // 100 mm away is a new position
-        rig.Frame(CubeAhead(250, 0), head: -0.05f);
-        Assert.True(strategy.ShouldTrigger(ctx, null, 0));
-        // a forgotten object is not a target
-        strategy.ReactedToId(7);
-        rig.Frame(CubeAhead(250, 0, 1.2), head: -0.05f);   // turned 69 degrees: over the 45 degree angle tolerance
-        Assert.True(strategy.ShouldTrigger(ctx, null, 0));
-        rig.Vision.World.MarkUnknown(7);
-        Assert.False(strategy.ShouldTrigger(ctx, null, 0));
+        strategy.RecordObservation(7, new Pose3d(Mat3.Identity, new Vec3(250, 0, 22)), 3, enabled: true);
+        Assert.True(strategy.ShouldTrigger(ctx, null, 0, runnable));
+
+        // a 69 degree turn is over the 45 degree angle tolerance
+        strategy.RobotReactedToId(7);
+        strategy.RecordObservation(7, new Pose3d(Mat3.AboutZ(1.2), new Vec3(250, 0, 22)), 4, enabled: true);
+        Assert.True(strategy.ShouldTrigger(ctx, null, 0, runnable));
     }
 
     [Fact]
