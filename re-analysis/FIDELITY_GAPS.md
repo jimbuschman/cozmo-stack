@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **289 records** over 16 subsystems.
+Manifest of **304 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 195 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 17 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| EXACT_SOURCE | 182 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EQUIVALENT_IMPLEMENTATION | 14 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 0 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 33 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 64 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 27 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 9 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -29,11 +29,11 @@ remains after both, and they do not go away by working harder on this repository
 | M3-device — Camera, display and audio device layer | 24 | 0 | 6 | 0 | 2 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 24 | 0 | 10 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 36 | 0 | 15 | 0 | 1 | yes | no |
-| M6-wwise-bank — Wwise bank reading and codecs | 7 | 0 | 0 | 0 | 0 | yes | yes |
+| M6-wwise-bank — Wwise bank reading and codecs | 18 | 0 | 18 | 0 | 0 | yes | no |
 | M7-behaviour — Idle, mood and reactions | 17 | 0 | 0 | 0 | 0 | yes | yes |
 | M8-framework — Behaviour framework and scoring | 10 | 0 | 0 | 0 | 0 | yes | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
-| M10-derived — Derived robot state and reaction strategies | 9 | 0 | 0 | 0 | 0 | yes | yes |
+| M10-derived — Derived robot state and reaction strategies | 13 | 0 | 13 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 20 | 0 | 0 | 1 | 0 | yes | yes |
 | M12-manipulation — Docking, carrying and pre-action poses | 16 | 0 | 0 | 0 | 0 | yes | yes |
 | M13-navigation — Planning, charger and block configurations | 15 | 0 | 0 | 0 | 0 | yes | yes |
@@ -57,11 +57,11 @@ status.
 | M3-device | INVENTORY_APPROVED | 12 | 0 | 0 | 0 |
 | M4-control | INVENTORY_APPROVED | 9 | 0 | 0 | 0 |
 | M5-animation | INVENTORY_APPROVED | 19 | 0 | 0 | 0 |
-| M6-wwise-bank | UNREVIEWED | 7 | 5 | 0 | 0 |
+| M6-wwise-bank | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | M7-behaviour | UNREVIEWED | 17 | 3 | 0 | 0 |
 | M8-framework | UNREVIEWED | 6 | 1 | 0 | 0 |
 | M9-wwise-music | UNREVIEWED | 20 | 14 | 0 | 0 |
-| M10-derived | UNREVIEWED | 9 | 0 | 0 | 0 |
+| M10-derived | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | M11-vision | UNREVIEWED | 17 | 5 | 0 | 0 |
 | M12-manipulation | UNREVIEWED | 16 | 5 | 0 | 0 |
 | M13-navigation | UNREVIEWED | 15 | 5 | 0 | 0 |
@@ -384,6 +384,289 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: E1 0x00585B30..0x00585D9A; E2 0x00585D9C..0x00585E94; gap1 D4, D5; gap3 C1..C6 warpAffine 0x00081850.., invoker 0x0007FC60..0x0008016A, remapNearest 0x00072C38..0x00072D8C (matches stock 3.1.0)
 * outstanding: The face matrix is built in float and converted to double (gap3 open question 2: the engine M type not re-read).
 
+### M6-wwise-bank — Wwise bank reading and codecs
+
+**M6-001 — Bank and HIRC readers in the runtime field order (Event, Action, Sound, RanSeq, Switch, ActorMixer, Bus, Layer, NodeBase, RTPC varint, STMG)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHierarchy.cs`
+* effect: a bank object is read with different fields
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: HIRC dispatch 0x009B338C; Event 0x9CD01C; Action 0xA613B0 / factory 0xA60C1C; Sound 0xA1DA08; RanSeq 0xA0828C; Switch 0xA2F1D0; ActorMixer 0xA669EC; NodeBase 0x9F6EF8; Bus 0x9C3FFC; Layer 0x9D24D4; RTPC entry 0x9F7254..0x9F72EC (varint param id); STMG 0x9B0B14; conditional branches (positioning 0x9ECF44, source plugin params 0x9B9C90, BKHD flag 0x9B2224) read exactly
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-002 — Vorbis decoding is the runtime Tremor-lowmem fork: stripped setup, library codebooks, 1-bit mode, integer residue and dequantisation, Tremor floor table, float IMDCT, planar float, skip/trim** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseVorbis.cs`
+* effect: Cozmo sounds decode to different samples
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: setup 0x00AB63E0..0x00AB6780; codebook unpack 0x00ABA188; library 0x01058290; packet 0x00AB37FC..0x00AB3934 (1-bit mode); residue 0x00AB73F8 / decodev_add 0x00ABAA6C / decodevv_add 0x00ABABB8; decode_map 0x00AB9BB0; floor table 0x01058BF0; IMDCT 0x00AB4E34 (x2^-24 at 0x00AB3CB4); windows 0x01054490; skip/trim 0x00AB3244, 0x00AB0B98..0x00AB0CA8
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-003 — IMA ADPCM exactly: header predictor is sample 0, 63 nibbles, diff ((2n+1)*step)>>3, interleaved int16, 64 frames per block** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAdpcm.cs`
+* effect: ADPCM sounds decode to different samples
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: decoder 0x00A7A194..0x00A7A3C4 (step table 0x00FFD650, index 0x00FFD708); callers 0x00A725F8..0x00A72624, 0x00A73E88..0x00A73EAC, 0x00A740E0..0x00A7410C
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-004 — CAkResampler linear interpolation at the voice stage (int16 Q16, bypass x1/32768) and the Hijack stage (float to 22320 Hz); step formula; pitch ramp** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs`
+* effect: sounds are resampled differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: Init 0x00A47038, SetPitch 0x00A47384, Execute 0x00A47178, kernel table 0x0103C0B8; kernels 0x00A48F5C, 0x00A4913C, 0x00A49E40, ramp 0x00A4A2D8
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-005 — FNV-1 32-bit with ASCII lowercasing over at most 0x103 bytes** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHash.cs`
+* effect: event and object ids hash differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: GetIDFromString 0x0099DB84..0x0099DC40
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-006 — Control path: queued PostEvent, ExecuteEvent, EnqueueOrExecute (frames + remainder; PlayAndContinue one frame early), drain order, Play/Stop/Seek execute, switch resolution** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwisePlayback.cs`
+* effect: events play different sounds or at different times
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: PostEvent 0x009A6704 / core 0x9A0EF8; pump 0x9AE0B0; ExecuteEvent 0x9AA3DC; EnqueueOrExecute 0x9AA0FC; drain 0x9A9F88; Perform 0x9AF8A8; Play 0xA62D38 / 0xA62A1C; Stop 0xA663C8; Seek 0xA645C8; Switch PlayInternal 0xA2C730
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-007 — Random/sequence step selection: global time-seeded 64-bit LCG, shared state, k-th eligible, shuffle, avoid list, weights, sequence wrap/ping-pong** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs`
+* effect: a different alternative plays
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: LCG 0xA08A7C..0xA08AC0; SetSeed 0x99DB58 from SoundEngine::Init 0x99EF80; state 0xA09698 / 0xA099BC; SelectPlayable 0xA0A3B4; SelectRandomly 0xA08A44; avoid 0xA08694; sequence 0xA0A524..0xA0A6E8
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-008 — Continuous containers: loop semantics, next chosen at voice start, modes 1/2 cross-fades, mode 4 same-voice chaining, mode 5 trigger rate, EndOfEvent at the last PBI Term** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwisePlayback.cs`
+* effect: looping and chained sounds play differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: PlayInternal 0xA0AFDC; loop info 0xA091CC; next 0xA09C40; PrepareNextToPlay 0xA6A07C; modes 1/2 scheduling 0xA6A580; PlayAndContinue 0xA62ED4; fades 0xA35998; mode 4 0xA6A2DC, voice attach 0xA4304C, switch 0xA52B90 / 0xA549A0; mode 5 0xA09F04; end 0xA6ACC0; EndOfEvent 0xA03618
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-009 — RTPC: curve shapes and scaling after the curve, sum/product accumulation, value store precedence with STMG defaults at entry+8, bus RTPC empty key, immediate ramps** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHierarchy.cs`
+* effect: parameter curves change sounds differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: curve 0xA14E28..0xA15244; accumulation 0xA17724 / 0xA17878; node pull 0xA11590; store 0xA0F07C, STMG defaults 0xA0F594; set 0xA1404C..0xA12CA0; lookup 0xA17280; bus key 0x9C3A48..0x9C3A78
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-010 — Gain composition: GetAudioParameters links and sums, randomizer once per voice, dBToLin fast pow, game-defined aux send gain, muted dry path, Bus Volume after FX (robot_volume does not reach the Hijack)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBus.cs`
+* effect: the robot gets a different level
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: GetAudioParameters 0x9EF258 (links 0x9F1C40 / 0x9F1F4C); CalcEffectiveParams 0x9FFAD4; dBToLin 0xA4B608..0xA4B674; sends 0x9BD368..0x9BD8B4; mix gains 0xA597A4..0xA597BC, 0xA4FBEC; bus gain after FX 0xA4FEF8 / 0xA4D994; collapsed buses 0x9C54E8
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-011 — Voice filter A: Butterworth LPF/HPF biquad before the aux sends, value-to-cutoff map, 8-step chunked ramp; filter B dry-only** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs`
+* effect: the robot audio has a different tone
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: composition 0x9FFD14..0x9FFD74; per connection 0xA4BC58; targets 0xA550D8..0xA551EC; order 0xA44630; LPF 0xA766F0 / HPF 0xA77480; cutoff 0xA7A3D8 / 0xA7A4AC; ramp 0xA76728..0xA77428
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-012 — Mixer: linear per-frame gain ramp, first update not ramped, mono to mono 1.0, stereo to mono 0.70710677 per channel** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBus.cs`
+* effect: mixing levels differ
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: ConsumeBuffer 0xA4FBEC; mixer 0xA45E9C; ramp kernel 0xA46668; pan 0xA25FF8 / 0xA1F79C / 0xA209BC (table 0xFFA970)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-013 — Robot_Bus FX chain in slot order: two Parametric EQs and the Peak Limiter before the Hijack, with their settings and algorithms** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs`
+* effect: the robot audio is equalised and limited differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: FX loop 0xA4FD84..0xA4FEF4; registration .init_array 0x4DEB18 / 0x4DEB8C; EQ coefficients 0xAA25E0, execute 0xAA2A84, biquad 0xAA2324; ShareSets 0x6767FC1F, 0x174901C6; limiter setup 0xAA19CC, DSP 0xAA0EB4; ShareSet 0xDF2230FF
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-014 — Bus and Hijack lifetime: on-demand bus, lazy FX instantiation, destroyed after an idle frame with no connections, the one-frame tail and zero-length chunk** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs`
+* effect: robot audio streams open and close at different times
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: CreateMixBus 0xA42210; GetResultingBuffer 0xA4FEF8 / SetInsertFx 0xA4F754; ReleaseBuffer 0xA4F36C; destruction 0xA43F64; teardown 0xA4ECE4; UpdateBuffer 0x005985FC
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-015 — The Hijack plug-in: registration (last caller wins), Init (1024 floats/channel, resampler 22320, pitch 0), Execute to 744-sample chunks, Term** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs`
+* effect: the robot receives different audio frames
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: RegisterPlugin 0x008DB300; static registration 0x004DD90C; create 0x008DBC70; Init 0x008DBD74; Execute 0x008DBFE8; Term 0x008DBDF8; SetupPlugins 0x005942C6..0x00594354
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-016 — The engine robot-audio path: alternatives drawn up front, wall-clock posting, event_volume per playing id, routing 7..10 to Robot_Bus_1..4, queued callbacks, states, PopRobotAudioMessage, abort** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs`
+* effect: animation sounds reach the robot differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: InitAnimation 0x0059687E..0x00596914; BeginBuffering 0x00597F12..0x00597F8E; lambda 0x0059818C..0x005982A0; routing 0x0059962A..0x005999A4; callbacks 0x00599E6A..0x00599EB8, 0x008D8D40, drain 0x008D88CC from 0x004ED6C4; UpdateLoading 0x00597C9E..0x00597D7E; PopRobotAudioMessage 0x00597DB4..0x00597E8E; abort 0x0059678E..0x005967B8
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-017 — Audio-thread frame model: Perform order, sink-driven frames, EndOfEvent after the bus pass of the last frame** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwisePlayback.cs`
+* effect: audio events end at different times
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: Perform 0x9AF8A8 / 0x9AF9F4..0x9AFAB8; audio thread 0xA4087C; RenderAudio 0x9AFD10; PBI teardown 0xA38600 / flush 0xA38420; EndOfEvent 0xA03618
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M6-018 — Mix rate 48000 Hz and frame 1024 samples (phone-dependent in the original: min(native, 48000) and hardware rounding)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs`
+* effect: derived timings and resampling differ
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: platform init 0x00A57724: rate cache 0x0108DF90 = min(getNativeOutputSampleRate, 48000), 48000 default 0x00A578B4..0x00A578C8; frame rounding 0x00A577B8..0x00A57830; SetRate 0xA1C75C / SetFrame 0xA1C7D4
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+### M10-derived — Derived robot state and reaction strategies
+
+**M10-001 — Off-treads classifier CheckAndUpdateTreadsState: gate, inputs, thresholds, branches, 250 ms debounce commit and every consequence** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/OffTreads.cs`
+* effect: the robot state (picked up, on back, on side) is classified differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: A1..A7 CheckAndUpdateTreadsState 0x511E00..0x5121F8 (thresholds 0x5121FC, 0x5122A0..0x5122BC); A8..A15 consequences: Falling DAS + ActionList::Cancel(-1) (0x511FF0..0x512084; gap1 3a..3e), RobotOffTreadsStateChanged broadcast 0x512092, OnTreads 0x512112..0x512184, carried 0x512100, SetOnChargerPlatform 0x512188, pause flag 0x5121E2; gap1 5a IMU filter state zeroed (0x5100E0..0x5100FE)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M10-002 — Unexpected-movement detector: gates, wheel/gyro rules and constants, fire at count > 10** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs`
+* effect: unexpected movement is detected differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: B1 tail call 0x63E392; B2..B5 gates 0x63E3B4..0x63E426; B6 ctor constants 0x63DAB0..0x63DB00; B7..B11 rules 0x63E428..0x63E5DA
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M10-003 — Reaction-strategy factory rules and strategy classes (Cliff, Falling, PickedUp, Shaken, Slope, Frustration, PlacedOnCharger, Sparked, NoPreDockPoses, FistBump, Hiccup, Pet, CubeMoved, FacePositionUpdated, ObjectPositionUpdated)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/ReactionStrategies.cs`
+* effect: reactions trigger differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: C12 factory switch 0x60D618; C13..C17 Generic, Shaken, Slope, Frustration; gap1 1 Cliff filter 0x60DC7C..0x60DCA2; gap1 8 strategy predicates; gap2 1..6 PlacedOnCharger 0x614474..0x6144D0, CubeMoved 0x60C04A..0x60C1E2 / 0x60BEB4, Face 0x60CB84..0x60CE20, position-update base 0x612168..0x612B22, Object 0x6114A0..0x611582
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M10-004 — CheckReactionTriggerStrategies: sticky action gate, map order, disable locks, predicates, StopAllMotors and track unlock, no-break loop, IsReactionTriggerEnabled and lock messages** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs`
+* effect: reactions are enabled, ordered or suppressed differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: C3 gate 0x5A355A..0x5A357A; C4..C8 0x5A359A..0x5A37CA; gap1 4a IsReactionTriggerEnabled 0x5A40B8; 4b DisableReactionsWithLock 0x5A27F6..0x5A2960; 4c RemoveDisableReactionsLock 0x5A3A52..0x5A3B94; 4e game messages 0x5A4D2A..0x5A4F3A
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M10-005 — The off-treads debounce clock is BaseStationTimer ms (engine tick-start time since run start, per tick)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/OffTreads.cs`
+* effect: state changes commit at different times
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: A2 now = GetCurrentTimeStamp 0x511E2A..0x511E36, 0x84BCC0..0x84BCD0; gap1 6a..6c UpdateTime only from CozmoEngine::Update 0x4ED626; ns = tickStart - runStart 0x65B3B6..0x65B420
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M10-006 — The unexpected-movement body-lock gate applies only while AnimationState.tag (robot+0x248) != 0** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs`
+* effect: unexpected movement is checked at different times
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: B3 0x63E3BA..0x63E3DC; tag writer 0x53800C
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M10-007 — Unexpected-movement response: gate, history lookup, side and obstacle (d = 25), rewind SetNewPose, AddCollisionObstacle, broadcast always, reset** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs`
+* effect: the robot re-localises or maps obstacles differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: B12..B17 0x63E604..0x63E962; gap1 7a GetSizeByType CollisionObstacle {20, 54.2, 67.7} 0x50270E..0x502772; B18 kCreateUnexpectedMovementObstacles has no reader
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M10-008 — Resume after a reaction: SwitchToReactionTrigger parking, the track unlock rule, head/lift restore from SetDefaultHeadAndLiftState** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs`
+* effect: a behaviour resumes differently after a reaction
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: C7 0x5A3610..0x5A3682; C9 0x5A25E4..0x5A26DA; C10 flags 0x60F904; C11 0x5A2BB8..0x5A2C3A, 0x5A1BCC..0x5A1D26
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M10-009 — Nothing in this build ever raises the obstacle-detected flag** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs`
+* effect: the robot reacts to an obstacle that the original never reports
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: StrategyObstacleDetected 0x006141F8 is a StrategyGeneric whose predicate is the three-instruction function object at 0x006143CA: return *(bool*)(*(void**)(robot + 0x264) + 4); Robot+0x264 is the AIComponent: Robot::Delocalize calls AIComponent::OnRobotDelocalized on it at 0x00510D72; AIComponent+4 is a plain bool the constructor zeroes at 0x00569A80, and that store is the only byte written at +4 anywhere in AIComponent code; no wide strb to +4 exists in the binary outside MemoryMapData_ProxObstacle's constructor, and no function that fetches the component from Robot+0x264 writes a byte at its +4 within forty-five instructions of doing so; so the strategy never becomes true, and ReactToObstacle - listed by hiking, nothingToDo, playAlone and socialize, with reactToObstacle.json giving it this strategy - never runs
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M10-010 — The physical flag robot+0x14: 0 until FirmwareVersion, then json["sim"].isNull(); its gates** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: physical-only behaviour runs at different times
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: A4 ctor 0x50FC36; SetPhysicalRobot 0x51397A from HandleFirmwareVersion 0x536980; B2 0x63E3B4..0x63E3B8
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M10-011 — Falling events: FallingStarted broadcast; FallingStopped NeedsAction 17 above 1000, DAS, broadcast** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Sensors.cs`
+* effect: falls are reported differently
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: C1 0x534F4C..0x534F9E; C2 0x5350AA..0x5350C2, 0x535186..0x53519C
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M10-012 — IMU filter state starts at 0; raw accel/gyro written only by UFRS** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/OffTreads.cs`
+* effect: early classifications differ
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: gap1 5a memclr8(robot+0x378, 0x18) 0x5100E0..0x5100FE; gap2 7a UFRS 0x5129A4..0x5129BE
+* outstanding: compare the code against the inventory rows (the step after approval)
+
+**M10-013 — Raw accel/gyro before the first RobotState: heap contents in the engine; 0 here (forced policy)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/OffTreads.cs`
+* effect: the slope reaction could differ before the first state
+* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: gap2 7b: no ctor store to +0x35C..+0x377; operator new(0x530) without memset (0x52EE8E..0x52EE9C)
+* outstanding: compare the code against the inventory rows (the step after approval)
+
 ## What remains after both: blocked externally, or needing hardware
 
 | id | subsystem | status | what | why it cannot be settled here |
@@ -426,8 +709,6 @@ Each of these is a question already answered. The original's behaviour is establ
 | M4-006 | M4-control | COMPATIBILITY_POLICY | Wheel confirmation tolerance 35 percent / 5 mm per s | libcozmoEngine.so 3.4.0-1204 |
 | M5-003 | M5-animation | EQUIVALENT_IMPLEMENTATION | Face per frame and blending: GetFaceHelper, Interpolate, the Clip table, Combine for layers | libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped) |
 | M5-020 | M5-animation | COMPATIBILITY_POLICY | Expressions helper faces | not applicable |
-| M6-002 | M6-wwise-bank | EQUIVALENT_IMPLEMENTATION | Vorbis rebuild with external codebooks and granule computation | the Wwise Vorbis packing; no runtime in the package to check against |
-| M6-004 | M6-wwise-bank | EQUIVALENT_IMPLEMENTATION | Resampling to the robot rate is a band-limited windowed sinc, not Audiokinetic resampler | the Wwise runtime resampler, which does not ship in the APK. What was fixed here is a defect of this stack, not a reproduction of theirs: nearest-sample decimation aliases, and no competent resampler does |
 | M7-015 | M7-behaviour | EQUIVALENT_IMPLEMENTATION | Pick-up falls back to the raw status flag until the off-treads classifier is enabled | Robot::CheckAndUpdateTreadsState 0x00511E00, which is implemented and used once calibration is reported |
 | M8-004 | M8-framework | COMPATIBILITY_POLICY | Behaviours built in code carry a score of their own; the engine's default is zero | IBehavior::IBehavior 0x005BBB74 and IBehavior::EvaluateScoreInternal 0x005BEEC2, read |
 | M8-008 | M8-framework | COMPATIBILITY_POLICY | The head recalibration wait: the engine has no timeout, this stack keeps a backstop | CalibrateMotorAction::CheckIfDone 0x00547D38 and IAction::IAction 0x00540C44, read |
@@ -438,7 +719,6 @@ Each of these is a question already answered. The original's behaviour is establ
 | M9-018 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A Stop action ends the streaming song when its target is the Play target or an ancestor | the shipped bank. The three tempo events play targets 914766641, 139286641 and 602865028, and Stop__Robot_VO__Cozmo_Singing_Stop holds three action-type-1 actions targeting exactly those three, so every stop the product can post is a direct hit on the container that is playing |
 | M9-020 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A clip plays its source from BeginTrim for its length; a note still held at the clip end is released there | the shipped clip fields, which are read exactly. Every clip in every bank has PlayAt 0 and BeginTrim 0, so the start of the window is never moved; the end of it is what makes a twelve-second song out of a MIDI source minutes long, and is far from decorative. The one part of the rule that is a runtime judgement - what becomes of a note still held at the end - reaches two notes in the whole product, and the segment ends at the same instant, so what they would have sounded past it is outside the rendered song under either reading |
 | M9-027 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | Robot_Bus_Eq_HiLowPass low-pass at 14298 Hz is above Nyquist for the robot's rate | Init.bnk gives 14298 Hz; AnimConstants::AUDIO_SAMPLE_RATE gives 22320 Hz, so Nyquist is 11160 Hz in the engine too |
-| M10-005 | M10-derived | EQUIVALENT_IMPLEMENTATION | The off-treads debounce runs on the local clock | the engine debounces against its own base-station clock in milliseconds; the same quantity, a different source |
 | M11-005 | M11-vision | EQUIVALENT_IMPLEMENTATION | The sub-pixel corner refinement | VisionMarker::RefineCorners 0x0089FD98, VisionMarker::ComputeBrightDarkValues 0x0089F8E8, RefineQuadrilateral 0x008C55E0 and its corner helper 0x008C66C4, MarkerDetector::Parameters::Initialize 0x008752F8, DetectFiducialMarkers 0x00898760, read |
 | M11-012 | M11-vision | COMPATIBILITY_POLICY | The nominal camera calibration stand-in | not applicable: the live path reads the robot own calibration and fails closed without it |
 | M11-013 | M11-vision | COMPATIBILITY_POLICY | AllowUnconnectedObjects switch | the engine connected-object rule, which is implemented |

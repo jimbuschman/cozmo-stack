@@ -1,0 +1,221 @@
+{
+  "subsystem": "M6-wwise-bank",
+  "approved": "2026-09-25",
+  "inventory": "re-analysis/inventory/M6-wwise-bank.md",
+  "inventory_sha256": "fc25c79f2c9a293fb6f62526b1d30ae82bee11e73fd7e9887818bb144f1161d8",
+  "records": {
+    "M6-001": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Bank and HIRC readers in the runtime field order (Event, Action, Sound, RanSeq, Switch, ActorMixer, Bus, Layer, NodeBase, RTPC varint, STMG)",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "HIRC dispatch 0x009B338C; Event 0x9CD01C; Action 0xA613B0 / factory 0xA60C1C; Sound 0xA1DA08; RanSeq 0xA0828C; Switch 0xA2F1D0; ActorMixer 0xA669EC; NodeBase 0x9F6EF8",
+        "Bus 0x9C3FFC; Layer 0x9D24D4; RTPC entry 0x9F7254..0x9F72EC (varint param id); STMG 0x9B0B14",
+        "conditional branches (positioning 0x9ECF44, source plugin params 0x9B9C90, BKHD flag 0x9B2224) read exactly"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-002": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Vorbis decoding is the runtime Tremor-lowmem fork: stripped setup, library codebooks, 1-bit mode, integer residue and dequantisation, Tremor floor table, float IMDCT, planar float, skip/trim",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "setup 0x00AB63E0..0x00AB6780; codebook unpack 0x00ABA188; library 0x01058290",
+        "packet 0x00AB37FC..0x00AB3934 (1-bit mode); residue 0x00AB73F8 / decodev_add 0x00ABAA6C / decodevv_add 0x00ABABB8; decode_map 0x00AB9BB0",
+        "floor table 0x01058BF0; IMDCT 0x00AB4E34 (x2^-24 at 0x00AB3CB4); windows 0x01054490; skip/trim 0x00AB3244, 0x00AB0B98..0x00AB0CA8"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-003": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "IMA ADPCM exactly: header predictor is sample 0, 63 nibbles, diff ((2n+1)*step)>>3, interleaved int16, 64 frames per block",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "decoder 0x00A7A194..0x00A7A3C4 (step table 0x00FFD650, index 0x00FFD708)",
+        "callers 0x00A725F8..0x00A72624, 0x00A73E88..0x00A73EAC, 0x00A740E0..0x00A7410C"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-004": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "CAkResampler linear interpolation at the voice stage (int16 Q16, bypass x1/32768) and the Hijack stage (float to 22320 Hz); step formula; pitch ramp",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "Init 0x00A47038, SetPitch 0x00A47384, Execute 0x00A47178, kernel table 0x0103C0B8",
+        "kernels 0x00A48F5C, 0x00A4913C, 0x00A49E40, ramp 0x00A4A2D8"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-005": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "FNV-1 32-bit with ASCII lowercasing over at most 0x103 bytes",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "GetIDFromString 0x0099DB84..0x0099DC40"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-006": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Control path: queued PostEvent, ExecuteEvent, EnqueueOrExecute (frames + remainder; PlayAndContinue one frame early), drain order, Play/Stop/Seek execute, switch resolution",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "PostEvent 0x009A6704 / core 0x9A0EF8; pump 0x9AE0B0; ExecuteEvent 0x9AA3DC",
+        "EnqueueOrExecute 0x9AA0FC; drain 0x9A9F88; Perform 0x9AF8A8",
+        "Play 0xA62D38 / 0xA62A1C; Stop 0xA663C8; Seek 0xA645C8",
+        "Switch PlayInternal 0xA2C730"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-007": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Random/sequence step selection: global time-seeded 64-bit LCG, shared state, k-th eligible, shuffle, avoid list, weights, sequence wrap/ping-pong",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "LCG 0xA08A7C..0xA08AC0; SetSeed 0x99DB58 from SoundEngine::Init 0x99EF80",
+        "state 0xA09698 / 0xA099BC; SelectPlayable 0xA0A3B4; SelectRandomly 0xA08A44; avoid 0xA08694; sequence 0xA0A524..0xA0A6E8"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-008": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Continuous containers: loop semantics, next chosen at voice start, modes 1/2 cross-fades, mode 4 same-voice chaining, mode 5 trigger rate, EndOfEvent at the last PBI Term",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "PlayInternal 0xA0AFDC; loop info 0xA091CC; next 0xA09C40",
+        "PrepareNextToPlay 0xA6A07C; modes 1/2 scheduling 0xA6A580; PlayAndContinue 0xA62ED4; fades 0xA35998",
+        "mode 4 0xA6A2DC, voice attach 0xA4304C, switch 0xA52B90 / 0xA549A0",
+        "mode 5 0xA09F04; end 0xA6ACC0; EndOfEvent 0xA03618"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-009": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "RTPC: curve shapes and scaling after the curve, sum/product accumulation, value store precedence with STMG defaults at entry+8, bus RTPC empty key, immediate ramps",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "curve 0xA14E28..0xA15244",
+        "accumulation 0xA17724 / 0xA17878; node pull 0xA11590",
+        "store 0xA0F07C, STMG defaults 0xA0F594; set 0xA1404C..0xA12CA0; lookup 0xA17280",
+        "bus key 0x9C3A48..0x9C3A78"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-010": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Gain composition: GetAudioParameters links and sums, randomizer once per voice, dBToLin fast pow, game-defined aux send gain, muted dry path, Bus Volume after FX (robot_volume does not reach the Hijack)",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "GetAudioParameters 0x9EF258 (links 0x9F1C40 / 0x9F1F4C)",
+        "CalcEffectiveParams 0x9FFAD4; dBToLin 0xA4B608..0xA4B674",
+        "sends 0x9BD368..0x9BD8B4; mix gains 0xA597A4..0xA597BC, 0xA4FBEC",
+        "bus gain after FX 0xA4FEF8 / 0xA4D994; collapsed buses 0x9C54E8"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-011": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Voice filter A: Butterworth LPF/HPF biquad before the aux sends, value-to-cutoff map, 8-step chunked ramp; filter B dry-only",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "composition 0x9FFD14..0x9FFD74; per connection 0xA4BC58",
+        "targets 0xA550D8..0xA551EC; order 0xA44630",
+        "LPF 0xA766F0 / HPF 0xA77480; cutoff 0xA7A3D8 / 0xA7A4AC; ramp 0xA76728..0xA77428"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-012": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Mixer: linear per-frame gain ramp, first update not ramped, mono to mono 1.0, stereo to mono 0.70710677 per channel",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "ConsumeBuffer 0xA4FBEC; mixer 0xA45E9C; ramp kernel 0xA46668",
+        "pan 0xA25FF8 / 0xA1F79C / 0xA209BC (table 0xFFA970)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-013": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Robot_Bus FX chain in slot order: two Parametric EQs and the Peak Limiter before the Hijack, with their settings and algorithms",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "FX loop 0xA4FD84..0xA4FEF4; registration .init_array 0x4DEB18 / 0x4DEB8C",
+        "EQ coefficients 0xAA25E0, execute 0xAA2A84, biquad 0xAA2324; ShareSets 0x6767FC1F, 0x174901C6",
+        "limiter setup 0xAA19CC, DSP 0xAA0EB4; ShareSet 0xDF2230FF"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-014": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Bus and Hijack lifetime: on-demand bus, lazy FX instantiation, destroyed after an idle frame with no connections, the one-frame tail and zero-length chunk",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "CreateMixBus 0xA42210; GetResultingBuffer 0xA4FEF8 / SetInsertFx 0xA4F754",
+        "ReleaseBuffer 0xA4F36C; destruction 0xA43F64; teardown 0xA4ECE4",
+        "UpdateBuffer 0x005985FC"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-015": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The Hijack plug-in: registration (last caller wins), Init (1024 floats/channel, resampler 22320, pitch 0), Execute to 744-sample chunks, Term",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "RegisterPlugin 0x008DB300; static registration 0x004DD90C; create 0x008DBC70",
+        "Init 0x008DBD74; Execute 0x008DBFE8; Term 0x008DBDF8",
+        "SetupPlugins 0x005942C6..0x00594354"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-016": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The engine robot-audio path: alternatives drawn up front, wall-clock posting, event_volume per playing id, routing 7..10 to Robot_Bus_1..4, queued callbacks, states, PopRobotAudioMessage, abort",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "InitAnimation 0x0059687E..0x00596914; BeginBuffering 0x00597F12..0x00597F8E; lambda 0x0059818C..0x005982A0",
+        "routing 0x0059962A..0x005999A4",
+        "callbacks 0x00599E6A..0x00599EB8, 0x008D8D40, drain 0x008D88CC from 0x004ED6C4",
+        "UpdateLoading 0x00597C9E..0x00597D7E; PopRobotAudioMessage 0x00597DB4..0x00597E8E; abort 0x0059678E..0x005967B8"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-017": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Audio-thread frame model: Perform order, sink-driven frames, EndOfEvent after the bus pass of the last frame",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "Perform 0x9AF8A8 / 0x9AF9F4..0x9AFAB8; audio thread 0xA4087C; RenderAudio 0x9AFD10",
+        "PBI teardown 0xA38600 / flush 0xA38420; EndOfEvent 0xA03618"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-018": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Mix rate 48000 Hz and frame 1024 samples (phone-dependent in the original: min(native, 48000) and hardware rounding)",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "platform init 0x00A57724: rate cache 0x0108DF90 = min(getNativeOutputSampleRate, 48000), 48000 default 0x00A578B4..0x00A578C8",
+        "frame rounding 0x00A577B8..0x00A57830; SetRate 0xA1C75C / SetFrame 0xA1C7D4"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    }
+  }
+}

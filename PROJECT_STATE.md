@@ -46,7 +46,8 @@ Read first in every session. The manager keeps this file current; the process it
     - the ScanlineDistorter (mt19937 seeded 1), entropy-seeded mt19937 elsewhere (EngineRandom.cs);
     - JSON clips (JsonClipLoader.cs).
   - Full suite 1357/1357.
-- **M6 (Wwise):** the extraction found the Wwise 2016.2 runtime statically linked into the engine. Two gap passes are running.
+- **M6 (Wwise) and M10 (derived state): inventories frozen (2026-09-25).** M6 has 18 records (`re-analysis/inventory/M6-wwise-bank.md`, eight extractor passes) and M10 has 13 (`re-analysis/inventory/M10-derived.md`, three passes). All are IMPLEMENTATION_GAP until the compare-and-repair batch. M6's repair may run as two batches: the control and signal path, then the Vorbis port.
+- **NV calibration read (found on the second CONTROL run):** the engine sends Length = 1 for the factory tag 0x80000001 (`_maxFactoryEntrySizeTable`), not 1024, and reassembles each reply at index x 1024. M11-011 is contradicted. A gap pass is running; then an M3 correction adds the NV records and M2 renames NVOpResult word@4 to "index".
 - **M2 protocol: repaired in one batch (2026-09-24).**
   - The verifier compared all 42 outbound and all 56 inbound layouts by machine against the engine; all match. Its one blocking item was a manifest overclaim, fixed by policy M2-017 and corrections C1 and C2, then re-approved.
   - M2 records: 15 EXACT_SOURCE, 1 COMPATIBILITY_POLICY (M2-017), 2 IMPLEMENTATION_GAP (M2-002 per-bit storage and M2-015 caller defaults, both M4 interfaces).
@@ -269,8 +270,8 @@ Review state per subsystem is in `re-analysis/fidelity_manifest.json`, and FIDEL
 | 3 | M3-device (camera, display, audio device) | full | INVENTORY_APPROVED (repaired 2026-09-24) | colour camera format is HARDWARE_ONLY; FACE, AUDIO and CAMERA passed on hardware 2026-09-24 |
 | 4 | M4-control (motion, sensors, lights, cubes) | full | INVENTORY_APPROVED (repaired 2026-09-25) | second CONTROL run 12/12 PASS, cube telemetry arrives; NV calibration read defect found (fix pending) |
 | 5 | M5-animation | full | INVENTORY_APPROVED (2026-09-24, manager) | repaired 2026-09-25; 18 EXACT, 15 IMPL_GAP with residuals; keep-alive and neutral replay not yet on hardware |
-| 6 | M6-wwise-bank | full | UNREVIEWED | Cozmo's own sounds; M5 audio depends on it |
-| 7 | M10-derived | full | UNREVIEWED | picked up, falling, stuck and similar |
+| 6 | M6-wwise-bank | full | INVENTORY_APPROVED (2026-09-25, manager) | 18 records; the Wwise 2016.2 runtime is statically linked, so the whole audio path is primary source; MD1 mix-rate policy (M6-018) |
+| 7 | M10-derived | full | INVENTORY_APPROVED (2026-09-25, manager) | 13 records; M10-006/007/008 contradicted by the source; MD1 forced policy (M10-013) |
 | 8 | M11-vision | full | UNREVIEWED | |
 | 9 | M12-manipulation | full | UNREVIEWED | M2-014 (BlockStatus) feeds it |
 | 10 | M13-navigation | full | UNREVIEWED | |
