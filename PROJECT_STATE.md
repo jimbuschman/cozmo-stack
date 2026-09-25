@@ -101,6 +101,30 @@ Read first in every session. The manager keeps this file current; the process it
 
 - **Process change (operator, 2026-09-24):** only behavioural or source-fidelity defects, circular tests, and races or deadlocks block a commit. Non-behavioural cleanup is queued under "Cleanup queue" while the checker passes and no status becomes misleading. After a behavioural fix, only the affected diff is re-verified. The full suite runs once, just before the commit. Batches are large, and batch 3 is one batch after the closure pass. See AGENTS.md, Process, step 4.
 
+## Hardware run 20260925-061148-CONTROL (operator, 2026-09-25; main b4a9c9a: M2 + M3 + M4)
+
+**Result: 12 of 12 PASS**, including CUBES (78 ObjectAccel in 3 s). The run was on firmware 2457.
+
+**Observations that answer HARDWARE_ONLY and open questions:**
+- **M4-021:** the robot echoes the origin. All 890 RobotStates after AbsoluteLocalizationUpdate {0, frame 0, origin 1} reported origin 1, with 0 origin-rejected warnings.
+- **M4-024:** cube telemetry flows. After the connection, the WakeUp lights went out: SetCubeGamma 0x80, then CubeID ×3, then CubeLights. Then StreamObjectAccel gave 78 ObjectAccel, and one ObjectMoved arrived.
+  - In the first run there were no lights and no telemetry. The difference supports hypothesis (b), that the missing engine messages were the cause.
+  - Which message the robot needs has not been isolated. That would be a hardware experiment, and it is not planned.
+- **M3-019 / M3-021:** DefaultCameraParams arrived 27 ms after the connection-time SetCameraParams {0, 0, true}:
+  - fields: maxGain 3.984, gain 2.0, exposure 0..67, gamma table;
+  - the engine then sent SetCameraSettings {2.0, 16, false};
+  - in the first run, which had no SetCameraParams, none arrived.
+  - Frame mean luminance is about 14.5/255, a dark room. There is no earlier baseline to compare against.
+- **Track locks:** 0x9D {4} before each DriveWheels and 0x9E {4} at each stop, as M4-014 says. There was no PotentialCliff.
+- **Backpack Off lights:** 16.7/s each for 0x03 and 0x11 (one per engine tick), with no link trouble.
+- **ANIM_CANCEL:** no AbortAnimation 0x8D (the known M5-023 gap).
+
+**Defect found: the NV calibration read.**
+- **What happened:** the robot answered NVCommand read 0x80000001 with 9 NV_MORE parts (index field 5,6,7,0,3,2,1,4,15) plus a final NV_OKAY. The stack concatenated 248 bytes; the engine expects 56. It logged SizeMismatch, and no calibration was installed.
+- **Status:** vision was enabled, as the engine does on every path, so CAMERA passed. Anything that needs the calibration (markers, M11) would not work.
+- **Cause:** the stack's NV reader was never inventoried.
+- **Next:** being traced from source (NVStorageComponent) under the hardware-failure workflow.
+
 ## Hardware run 20260924-202748-CONTROL (operator, 2026-09-24)
 
 **Result: 11 of 12 PASS.**

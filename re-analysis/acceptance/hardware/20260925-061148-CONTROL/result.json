@@ -1,0 +1,2558 @@
+{
+  "test": "CONTROL",
+  "overall": "PASS",
+  "overallRule": "PASS only if every check is PASS; FAIL if any check is FAIL; INCOMPLETE if none failed but some were SKIPPED (a skipped check is not passed). A check is PASS when every judged criterion passed; a criterion with pass null was not judged (its notJudged says why), does not enter the status and is listed in the check's unjudgedCriteria. humanNote verdicts do not enter it.",
+  "tool": "cozmo-conformance control-check",
+  "robot": {
+    "ip": "172.31.1.1",
+    "port": 5551,
+    "fwVersion": 2457,
+    "fwIsShipped2381": false,
+    "firmwareWarning": "robot firmware 2457 is not 2381, the build the protocol was recovered from (policy M1-040: accepted)",
+    "serial": "0x0240e889"
+  },
+  "options": {
+    "allowDrive": true,
+    "obb": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\obb",
+    "noObb": false,
+    "yes": false
+  },
+  "provenance": "hardware verification only: a PASS does not raise the provenance or status of any cited record (AGENTS.md: hardware success does not upgrade provenance). The manager judges the bundle.",
+  "checks": [
+    {
+      "id": "CONNECT",
+      "title": "Connect through the app layer: Success response, firmware logged, time synced, first full state, ready to stream, within 10 s; the pose origins the robot reports, DefaultCameraParams and the NV calibration read recorded",
+      "status": "PASS",
+      "pass": true,
+      "skipReason": null,
+      "records": [
+        {
+          "id": "M1-024",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M1-025",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M1-026",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M1-028",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M1-029",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M1-030",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M1-033",
+          "status": "HARDWARE_ONLY"
+        },
+        {
+          "id": "M1-040",
+          "status": "COMPATIBILITY_POLICY"
+        },
+        {
+          "id": "M1-041",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M1-042",
+          "status": "COMPATIBILITY_POLICY"
+        },
+        {
+          "id": "M3-019",
+          "status": "COMPATIBILITY_POLICY"
+        },
+        {
+          "id": "M3-021",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M3-022",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M4-020",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M4-021",
+          "status": "HARDWARE_ONLY"
+        }
+      ],
+      "prerequisites": {},
+      "criteria": [
+        {
+          "name": "connectionResponse",
+          "expected": "RobotConnectionResponse with Result Success",
+          "measured": "Success",
+          "pass": true
+        },
+        {
+          "name": "firmwareLogged",
+          "expected": "the engine logged the robot's firmware version (a \"robot firmware: <v>\" line, G5.7 / policy M1-040)",
+          "measured": 2,
+          "pass": true
+        },
+        {
+          "name": "syncTimeAck",
+          "expected": "SyncTimeAck received: Robot 1 time synced",
+          "measured": true,
+          "pass": true
+        },
+        {
+          "name": "firstFullState",
+          "expected": "the first full RobotState after time sync handled",
+          "measured": true,
+          "pass": true
+        },
+        {
+          "name": "readyToStream",
+          "expected": "ready to stream set",
+          "measured": true,
+          "pass": true
+        },
+        {
+          "name": "within10s",
+          "expected": "all of the above within 10000 ms of the ConnectToRobot call",
+          "measured": 1659.895,
+          "pass": true
+        },
+        {
+          "name": "originAccepted (M4-021)",
+          "expected": "at least one RobotState after the AbsoluteLocalizationUpdate reports origin 1, so the engine takes it into the pose and history (M4-020)",
+          "measured": {
+            "statesAfterUpdate": 890,
+            "reportingOrigin1": 890,
+            "originRejectedWarnings": 0
+          },
+          "pass": null,
+          "notJudged": "M4-021 is HARDWARE_ONLY: whether the robot echoes the origin id from AbsoluteLocalizationUpdate is not established by source; an observation, not a verdict"
+        }
+      ],
+      "unjudgedCriteria": [
+        "originAccepted (M4-021)"
+      ],
+      "measured": {
+        "connectionResponseAfterMs": 158.738,
+        "result": "Success",
+        "fwVersion": 2457,
+        "serial": "0x0240e889",
+        "bodyHwVersion": 4,
+        "bodyColor": 0,
+        "robotValidated": true,
+        "connectionState": 2,
+        "expectedFirmwareVersionFromHeader": 2381,
+        "expectedFirmwareTimeFromHeader": 1546972025,
+        "timeSyncedAfterMs": 234.942,
+        "firstFullStateAfterMs": 1659.895,
+        "readyToStreamAfterMs": 160.45,
+        "syncTimeAckMessages": 1,
+        "firmwareLogLines": [
+          "info: robot firmware: 2457 (app: 2381)",
+          "warning: robot firmware 2457 is not 2381 (policy M1-040: accepted)"
+        ],
+        "animationStreamingOpen": true,
+        "handshakeSends": [
+          {
+            "afterMs": 114.794,
+            "tag": "0x25",
+            "msg": "getMfgInfo"
+          },
+          {
+            "afterMs": 184.164,
+            "tag": "0x4B",
+            "msg": "syncTime"
+          },
+          {
+            "afterMs": 184.164,
+            "tag": "0x9F",
+            "msg": "initAnimController"
+          },
+          {
+            "afterMs": 184.164,
+            "tag": "0x4C",
+            "msg": "imageRequest",
+            "mode": "Stream",
+            "resolution": 4
+          },
+          {
+            "afterMs": 184.164,
+            "tag": "0x45",
+            "msg": "absLocalizationUpdate"
+          },
+          {
+            "afterMs": 184.164,
+            "tag": "0x57",
+            "msg": "setCameraParams"
+          },
+          {
+            "afterMs": 184.164,
+            "tag": "0x81",
+            "msg": "commandNV"
+          },
+          {
+            "afterMs": 184.164,
+            "tag": "0xA0",
+            "msg": "appRunID"
+          },
+          {
+            "afterMs": 184.164,
+            "tag": "0x80",
+            "msg": "requestCrashReports"
+          },
+          {
+            "afterMs": 252.172,
+            "tag": "0x64",
+            "msg": "setAudioVolume"
+          },
+          {
+            "afterMs": 252.172,
+            "tag": "0x80",
+            "msg": "requestCrashReports"
+          },
+          {
+            "afterMs": 252.172,
+            "tag": "0x57",
+            "msg": "setCameraParams"
+          },
+          {
+            "afterMs": 284.668,
+            "tag": "0x80",
+            "msg": "requestCrashReports"
+          },
+          {
+            "afterMs": 353.062,
+            "tag": "0x80",
+            "msg": "requestCrashReports"
+          }
+        ],
+        "note": "times are host ms after the ConnectToRobot call; the flags are polled every 2 ms"
+      },
+      "warnings": [
+        "robot firmware 2457 is not 2381, the build the protocol was recovered from (policy M1-040: accepted)"
+      ],
+      "humanNote": null,
+      "humanVerdict": null,
+      "observation": null,
+      "observations": [
+        {
+          "name": "originsReported",
+          "records": [
+            {
+              "id": "M4-020",
+              "status": "EXACT_SOURCE"
+            },
+            {
+              "id": "M4-021",
+              "status": "HARDWARE_ONLY"
+            }
+          ],
+          "question": "which pose origin id and frame id does the robot report in RobotState after the AbsoluteLocalizationUpdate {frame 0, origin 1} the engine sends at SyncTime, and does any report origin 1?",
+          "measured": {
+            "window": "from the ConnectToRobot call to the Dispose call (or the bundle write); times are host ms after the ConnectToRobot call",
+            "absoluteLocalizationUpdateSends": [
+              {
+                "afterMs": 184.164,
+                "tag": "0x45",
+                "msg": "absLocalizationUpdate",
+                "fields": {
+                  "timestamp": 0,
+                  "frameId": 0,
+                  "originId": 1,
+                  "x": 0,
+                  "y": 0,
+                  "angleRad": 0
+                }
+              }
+            ],
+            "statesInWindow": 890,
+            "statesAfterFirstAbsoluteLocalizationUpdate": 890,
+            "first10StatesAfterIt": [
+              {
+                "afterUpdateMs": 1475.51,
+                "robotTs": 7390,
+                "originId": 1,
+                "frameId": 0
+              },
+              {
+                "afterUpdateMs": 1478.672,
+                "robotTs": 7420,
+                "originId": 1,
+                "frameId": 0
+              },
+              {
+                "afterUpdateMs": 1533.283,
+                "robotTs": 7450,
+                "originId": 1,
+                "frameId": 0
+              },
+              {
+                "afterUpdateMs": 1533.329,
+                "robotTs": 7480,
+                "originId": 1,
+                "frameId": 0
+              },
+              {
+                "afterUpdateMs": 1533.406,
+                "robotTs": 7510,
+                "originId": 1,
+                "frameId": 0
+              },
+              {
+                "afterUpdateMs": 1593.322,
+                "robotTs": 7540,
+                "originId": 1,
+                "frameId": 0
+              },
+              {
+                "afterUpdateMs": 1593.388,
+                "robotTs": 7570,
+                "originId": 1,
+                "frameId": 0
+              },
+              {
+                "afterUpdateMs": 1653.526,
+                "robotTs": 7600,
+                "originId": 1,
+                "frameId": 0
+              },
+              {
+                "afterUpdateMs": 1653.603,
+                "robotTs": 7630,
+                "originId": 1,
+                "frameId": 0
+              },
+              {
+                "afterUpdateMs": 1713.307,
+                "robotTs": 7660,
+                "originId": 1,
+                "frameId": 0
+              }
+            ],
+            "originIdsInWindow": {
+              "1": 890
+            },
+            "frameIdsInWindow": {
+              "0": 890
+            },
+            "statesReportingOrigin1AfterIt": 890,
+            "firstOrigin1AfterUpdateMs": 1475.51,
+            "note": "a state's host time is when the engine's tick handed it to the devices, so a state the robot built before the update reached it can still carry a later host time"
+          },
+          "pass": null,
+          "notJudged": "M4-021 is HARDWARE_ONLY: whether the robot reports the origin and frame from AbsoluteLocalizationUpdate is not established by source"
+        },
+        {
+          "name": "originRejectedStates",
+          "records": [
+            {
+              "id": "M4-020",
+              "status": "EXACT_SOURCE"
+            }
+          ],
+          "question": "how many RobotStates did the engine drop from the pose and history for an origin id not in its origin list (the warning \"Received RobotState with originID\")?",
+          "measured": {
+            "window": "from the ConnectToRobot call to the Dispose call (or the bundle write); times are host ms after the ConnectToRobot call",
+            "warnings": 0,
+            "firstAfterConnectMs": null,
+            "lastAfterConnectMs": null,
+            "firstLine": null,
+            "note": "the first-full-state flag and the steps before the origin check run for a rejected state too (M4 correction C3), so CONNECT's firstFullState does not depend on this"
+          },
+          "pass": null,
+          "notJudged": "a count of what the engine did with the robot's reports; the reports themselves are M4-021 (HARDWARE_ONLY)"
+        },
+        {
+          "name": "defaultCameraParams",
+          "records": [
+            {
+              "id": "M3-021",
+              "status": "IMPLEMENTATION_GAP"
+            }
+          ],
+          "question": "did the robot send DefaultCameraParams 0xC8, when, and with which fields; what exposure and gain limits did the engine take from it?",
+          "measured": {
+            "window": "from the ConnectToRobot call to the Dispose call (or the bundle write); times are host ms after the ConnectToRobot call",
+            "received": 1,
+            "messages": [
+              {
+                "afterConnectMs": 211.722,
+                "fields": {
+                  "f32@0 (HandleDefaultCameraParams: max gain)": 3.984,
+                  "f32@4 (gain)": 2,
+                  "u16@8 (min exposure ms)": 0,
+                  "u16@0xA (max exposure ms)": 67,
+                  "u8[17]@0xC (gamma)": "0B1D33495D6E7C99AFC2D0DAE2E7F0F7FF"
+                }
+              }
+            ],
+            "cameraSettingsAfter": {
+              "minExposureMs": 1,
+              "maxExposureMs": 67,
+              "minGain": 0.1,
+              "maxGain": 3.984,
+              "gammaTableBytes": 17,
+              "nextCameraParams": "16 ms, gain 2"
+            },
+            "setCameraParamsSends": [
+              {
+                "afterMs": 184.164,
+                "tag": "0x57",
+                "msg": "setCameraParams",
+                "fields": {
+                  "gain": 0,
+                  "exposureMs": 0,
+                  "bool@6": true
+                }
+              },
+              {
+                "afterMs": 252.172,
+                "tag": "0x57",
+                "msg": "setCameraParams",
+                "fields": {
+                  "gain": 2,
+                  "exposureMs": 16,
+                  "bool@6": false
+                }
+              }
+            ],
+            "fieldNames": "the names are HandleDefaultCameraParams's reading (1k); the message's own field names are not established"
+          },
+          "pass": null,
+          "notJudged": "the engine never requests DefaultCameraParams (1o), so whether the robot sends it is robot-side; M3-021 is IMPLEMENTATION_GAP"
+        },
+        {
+          "name": "connectionSetCameraParams",
+          "records": [
+            {
+              "id": "M3-019",
+              "status": "COMPATIBILITY_POLICY"
+            }
+          ],
+          "question": "which SetCameraParams went out at connection (policy M3-019: this stack sends {0.0, 0, true} where the engine sends stale stack bytes and true)?",
+          "measured": {
+            "sends": [
+              {
+                "afterMs": 184.164,
+                "tag": "0x57",
+                "msg": "setCameraParams",
+                "fields": {
+                  "gain": 0,
+                  "exposureMs": 0,
+                  "bool@6": true
+                }
+              },
+              {
+                "afterMs": 252.172,
+                "tag": "0x57",
+                "msg": "setCameraParams",
+                "fields": {
+                  "gain": 2,
+                  "exposureMs": 16,
+                  "bool@6": false
+                }
+              }
+            ],
+            "window": "from the ConnectToRobot call to the Dispose call (or the bundle write); times are host ms after the ConnectToRobot call"
+          },
+          "pass": null,
+          "notJudged": "M3-019 is COMPATIBILITY_POLICY; what the robot does with these bytes is not established (CAMERA records the frames' luminance)"
+        },
+        {
+          "name": "nvCalibrationRead",
+          "records": [
+            {
+              "id": "M3-022",
+              "status": "IMPLEMENTATION_GAP"
+            }
+          ],
+          "question": "did the connection-time NV CameraCalib read (0x80000001) complete, with which result, and was vision enabled?",
+          "measured": {
+            "window": "from the ConnectToRobot call to the Dispose call (or the bundle write); times are host ms after the ConnectToRobot call",
+            "nvCommandSends": [
+              {
+                "afterMs": 184.164,
+                "tag": "0x81",
+                "msg": "commandNV",
+                "fields": {
+                  "tag": "0x80000001",
+                  "length": 1024,
+                  "op": 0
+                }
+              }
+            ],
+            "nvOpResultsForCameraCalib": [
+              {
+                "afterConnectMs": 211.722,
+                "fields": {
+                  "tag": "0x80000001",
+                  "op": 0,
+                  "result": 3,
+                  "length": 5,
+                  "dataBytes": 4
+                }
+              },
+              {
+                "afterConnectMs": 211.722,
+                "fields": {
+                  "tag": "0x80000001",
+                  "op": 0,
+                  "result": 3,
+                  "length": 6,
+                  "dataBytes": 4
+                }
+              },
+              {
+                "afterConnectMs": 211.722,
+                "fields": {
+                  "tag": "0x80000001",
+                  "op": 0,
+                  "result": 3,
+                  "length": 7,
+                  "dataBytes": 4
+                }
+              },
+              {
+                "afterConnectMs": 211.722,
+                "fields": {
+                  "tag": "0x80000001",
+                  "op": 0,
+                  "result": 3,
+                  "length": 0,
+                  "dataBytes": 56
+                }
+              },
+              {
+                "afterConnectMs": 211.722,
+                "fields": {
+                  "tag": "0x80000001",
+                  "op": 0,
+                  "result": 3,
+                  "length": 3,
+                  "dataBytes": 4
+                }
+              },
+              {
+                "afterConnectMs": 211.722,
+                "fields": {
+                  "tag": "0x80000001",
+                  "op": 0,
+                  "result": 3,
+                  "length": 2,
+                  "dataBytes": 24
+                }
+              },
+              {
+                "afterConnectMs": 211.722,
+                "fields": {
+                  "tag": "0x80000001",
+                  "op": 0,
+                  "result": 3,
+                  "length": 1,
+                  "dataBytes": 36
+                }
+              },
+              {
+                "afterConnectMs": 243.911,
+                "fields": {
+                  "tag": "0x80000001",
+                  "op": 0,
+                  "result": 3,
+                  "length": 4,
+                  "dataBytes": 24
+                }
+              },
+              {
+                "afterConnectMs": 243.911,
+                "fields": {
+                  "tag": "0x80000001",
+                  "op": 0,
+                  "result": 3,
+                  "length": 15,
+                  "dataBytes": 92
+                }
+              },
+              {
+                "afterConnectMs": 243.911,
+                "fields": {
+                  "tag": "0x80000001",
+                  "op": 0,
+                  "result": 0,
+                  "length": 0,
+                  "dataBytes": 0
+                }
+              }
+            ],
+            "nvOpResultCount": 10,
+            "readCompletedLogLines": [
+              {
+                "afterConnectMs": 278.257,
+                "line": "warning: VisionComponent.ReadCameraCalibration.SizeMismatch: 248 bytes, expected 56"
+              }
+            ],
+            "readCompleted": true,
+            "visionEnabledAfterConnectMs": 278.474,
+            "visionEnabled": true,
+            "calibrationInstalledAfterConnectMs": null,
+            "calibration": null
+          },
+          "pass": null,
+          "notJudged": "M3-022 is IMPLEMENTATION_GAP, and the robot's answer to the read is robot-side"
+        }
+      ],
+      "note": "Connected with CozmoRobot.Create, the ConnectToRobot game message and the engine's ConnectionResponse event: the body of CozmoRobot.ConnectAsync, done step by step so the handshake frames are in frames.jsonl.",
+      "startMs": 31296.119,
+      "endMs": 32968.372
+    },
+    {
+      "id": "STATE",
+      "title": "RobotState streams for 5 s at 25..40 Hz by the robot's own timestamps, with a plausible battery voltage and no timeout",
+      "status": "PASS",
+      "pass": true,
+      "skipReason": null,
+      "records": [
+        {
+          "id": "M1-024",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M1-033",
+          "status": "HARDWARE_ONLY"
+        },
+        {
+          "id": "M1-041",
+          "status": "EXACT_SOURCE"
+        }
+      ],
+      "prerequisites": {},
+      "criteria": [
+        {
+          "name": "stateRate",
+          "expected": "RobotState rate from the robot's own timestamps, (n-1)*1000/(ts_last-ts_first) over the 5000 ms window, within 25..40 Hz. The band is this test's tolerance, not source: no engine source gives the rate; the capture re-analysis/captures/2026-09-18_fw2457_hw1.5_smoke_head0.4.console.txt measured 33.5 Hz",
+          "measured": 33.333,
+          "pass": true
+        },
+        {
+          "name": "battery",
+          "expected": "every battery voltage in the window within 3.0..4.5 V",
+          "measured": {
+            "min": 4.008,
+            "max": 4.036
+          },
+          "pass": true
+        },
+        {
+          "name": "noTimeout",
+          "expected": "no transport timeout (timed-out flag clear), no disconnect event in the window, and the engine still connected (state 2)",
+          "measured": {
+            "timedOutFlag": false,
+            "disconnectEvents": 0,
+            "connectionState": 2
+          },
+          "pass": true
+        }
+      ],
+      "unjudgedCriteria": [],
+      "measured": {
+        "windowMs": 5001.219,
+        "robotStates": 167,
+        "hostRatePerSecond": 33.392,
+        "robotTimestampRateHz": 33.333,
+        "robotTimestampFirst": 7450,
+        "robotTimestampLast": 12430,
+        "batteryVolts": {
+          "count": 167,
+          "min": 4.008,
+          "median": 4.024,
+          "p95": 4.024,
+          "max": 4.036,
+          "mean": 4.024
+        },
+        "maxHostGapMs": 64.918,
+        "maxRobotTimestampGapMs": 30,
+        "onCharger": false,
+        "animationStatesInWindow": 165,
+        "note": "host times are when the engine's 60 ms tick handed each state to the devices, so states arrive in batches and the host count in 5 s is not the rate; the rate is judged from the robot's own timestamps, and the host count and host rate are recorded, not judged"
+      },
+      "warnings": [],
+      "humanNote": null,
+      "humanVerdict": null,
+      "observation": null,
+      "observations": [],
+      "note": null,
+      "startMs": 32970.04,
+      "endMs": 37985.08
+    },
+    {
+      "id": "HEAD",
+      "title": "Head to +0.3 rad then -0.3 rad, each within 0.05 rad in RobotState within 2 s",
+      "status": "PASS",
+      "pass": true,
+      "skipReason": null,
+      "records": [
+        {
+          "id": "M4-001",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M4-003",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M4-004",
+          "status": "COMPATIBILITY_POLICY"
+        },
+        {
+          "id": "M4-005",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M4-016",
+          "status": "IMPLEMENTATION_GAP"
+        }
+      ],
+      "prerequisites": {
+        "motorCalibrationComplete": true,
+        "calibrationWaitMs": 0.186,
+        "calibrationSeen": true,
+        "headCalibrated": true,
+        "liftCalibrated": true,
+        "motorCalibrationMessages": 4
+      },
+      "criteria": [
+        {
+          "name": "headUp",
+          "expected": "RobotState head angle within 0.05 rad of +0.3 rad within 2000 ms of the command",
+          "measured": 426.915,
+          "pass": true
+        },
+        {
+          "name": "headDown",
+          "expected": "RobotState head angle within 0.05 rad of -0.3 rad within 2000 ms of the command",
+          "measured": 411.407,
+          "pass": true
+        }
+      ],
+      "unjudgedCriteria": [],
+      "measured": {
+        "steps": [
+          {
+            "what": "head to +0.3 rad",
+            "target": 0.3,
+            "tolerance": 0.05,
+            "startValue": -0.427,
+            "reachedAfterMs": 426.915,
+            "valueWhenReached": 0.25,
+            "closestValue": 0.282,
+            "lastValue": 0.282,
+            "statesAfterCommand": 25,
+            "action": "Acknowledged",
+            "actionDetail": "head to 0.300 rad: robot acknowledged action 1 and reports it in position",
+            "pass": true
+          },
+          {
+            "what": "head to -0.3 rad",
+            "target": -0.3,
+            "tolerance": 0.05,
+            "startValue": 0.282,
+            "reachedAfterMs": 411.407,
+            "valueWhenReached": -0.274,
+            "closestValue": -0.287,
+            "lastValue": -0.287,
+            "statesAfterCommand": 22,
+            "action": "Acknowledged",
+            "actionDetail": "head to -0.300 rad: robot acknowledged action 2 and reports it in position",
+            "pass": true
+          }
+        ]
+      },
+      "warnings": [],
+      "humanNote": null,
+      "humanVerdict": null,
+      "observation": null,
+      "observations": [],
+      "note": "commanded with CozmoMotion.SetHeadAngleAsync: SetHeadAngle with the original app's speed 10 rad/s and acceleration 20 rad/s² (M4-003, MD1). The action completes on its ack followed by the head in position and stopped (M4-016); its outcome and the robot's MotorActionAck are reported, not judged",
+      "startMs": 37985.612,
+      "endMs": 39315.912
+    },
+    {
+      "id": "LIFT",
+      "title": "Lift to 50 mm then 32 mm, each within 5 mm in RobotState within 3 s",
+      "status": "PASS",
+      "pass": true,
+      "skipReason": null,
+      "records": [
+        {
+          "id": "M2-003",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M4-002",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M4-003",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M4-004",
+          "status": "COMPATIBILITY_POLICY"
+        },
+        {
+          "id": "M4-005",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M4-016",
+          "status": "IMPLEMENTATION_GAP"
+        }
+      ],
+      "prerequisites": {
+        "motorCalibrationComplete": true
+      },
+      "criteria": [
+        {
+          "name": "lift50mm",
+          "expected": "RobotState lift height (45 + 66 sin(liftAngle)) within 5 mm of 50 mm within 3000 ms of the command",
+          "measured": 238.021,
+          "pass": true
+        },
+        {
+          "name": "lift32mm",
+          "expected": "RobotState lift height (45 + 66 sin(liftAngle)) within 5 mm of 32 mm within 3000 ms of the command",
+          "measured": 239.617,
+          "pass": true
+        }
+      ],
+      "unjudgedCriteria": [],
+      "measured": {
+        "steps": [
+          {
+            "what": "lift to 50 mm",
+            "target": 50,
+            "tolerance": 5,
+            "startValue": 32,
+            "reachedAfterMs": 238.021,
+            "valueWhenReached": 46.32,
+            "closestValue": 49.916,
+            "lastValue": 51.113,
+            "statesAfterCommand": 14,
+            "action": "Acknowledged",
+            "actionDetail": "lift to 50.0 mm: robot acknowledged action 3 and reports it in position",
+            "pass": true
+          },
+          {
+            "what": "lift to 32 mm",
+            "target": 32,
+            "tolerance": 5,
+            "startValue": 51.113,
+            "reachedAfterMs": 239.617,
+            "valueWhenReached": 35.548,
+            "closestValue": 32,
+            "lastValue": 32,
+            "statesAfterCommand": 16,
+            "action": "Acknowledged",
+            "actionDetail": "lift to 32.0 mm: robot acknowledged action 4 and reports it in position",
+            "pass": true
+          }
+        ]
+      },
+      "warnings": [],
+      "humanNote": null,
+      "humanVerdict": null,
+      "observation": null,
+      "observations": [],
+      "note": "commanded with CozmoMotion.SetLiftHeightAsync: SetLiftHeight with the original app's speed 10 rad/s and acceleration 20 rad/s² (M4-003, MD1). The action completes on its ack followed by the lift in position and stopped (M4-016); its outcome and the robot's MotorActionAck are reported, not judged",
+      "startMs": 39316.158,
+      "endMs": 40215.581
+    },
+    {
+      "id": "DRIVE",
+      "title": "Drive 30 mm forward and back at 30 mm/s with stop-on-cliff on; the pose moves 20..40 mm each way and the wheels stop; track locks and cliff handling recorded",
+      "status": "PASS",
+      "pass": true,
+      "skipReason": null,
+      "records": [
+        {
+          "id": "M4-006",
+          "status": "COMPATIBILITY_POLICY"
+        },
+        {
+          "id": "M4-007",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M4-014",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M4-019",
+          "status": "IMPLEMENTATION_GAP"
+        }
+      ],
+      "prerequisites": {
+        "allowDrive": true,
+        "motorCalibrationComplete": true,
+        "stopOnCliffEnabledAtMs": 32969.659,
+        "stopOnCliffSent": true
+      },
+      "criteria": [
+        {
+          "name": "forwardDistance",
+          "expected": "the pose moved +20..+40 mm along the starting heading, pose origin unchanged",
+          "measured": 26.001,
+          "pass": true
+        },
+        {
+          "name": "forwardWheelsStop",
+          "expected": "after the stop command, a RobotState with both wheel speeds at most 1 mm/s and AreWheelsMoving clear within 2000 ms",
+          "measured": 552.245,
+          "pass": true
+        },
+        {
+          "name": "backDistance",
+          "expected": "the pose moved -40..-20 mm along the starting heading, pose origin unchanged",
+          "measured": -27.771,
+          "pass": true
+        },
+        {
+          "name": "backWheelsStop",
+          "expected": "after the stop command, a RobotState with both wheel speeds at most 1 mm/s and AreWheelsMoving clear within 2000 ms",
+          "measured": 492.931,
+          "pass": true
+        }
+      ],
+      "unjudgedCriteria": [],
+      "measured": {
+        "legs": [
+          {
+            "leg": "forward",
+            "speedMmps": 30,
+            "commandMs": 1000,
+            "start": {
+              "x": 0,
+              "y": 0,
+              "angleRad": -0.002,
+              "originId": 1,
+              "frameId": 0,
+              "robotTs": 14740
+            },
+            "end": {
+              "x": 26.001,
+              "y": 0.028,
+              "angleRad": 0.003,
+              "originId": 1,
+              "frameId": 0,
+              "robotTs": 16630
+            },
+            "alongStartHeadingMm": 26.001,
+            "dxMm": 26.001,
+            "poseOriginUnchanged": true,
+            "poseFrameIdChanged": false,
+            "poseFrameIdsSeen": [
+              0
+            ],
+            "peakWheelSpeedMmps": 30,
+            "driveConfirm": "Acknowledged: robot reports wheels at 23/25 mm/s, asked for 30/30",
+            "stopConfirm": "Acknowledged: robot reports wheels at 0/0 mm/s, asked for 0/0",
+            "wheelsStoppedAfterMs": 552.245,
+            "cliffEvents": 0
+          },
+          {
+            "leg": "back",
+            "speedMmps": -30,
+            "commandMs": 1000,
+            "start": {
+              "x": 26.001,
+              "y": 0.028,
+              "angleRad": 0.003,
+              "originId": 1,
+              "frameId": 0,
+              "robotTs": 16630
+            },
+            "end": {
+              "x": -1.77,
+              "y": 0.015,
+              "angleRad": -0.004,
+              "originId": 1,
+              "frameId": 0,
+              "robotTs": 18400
+            },
+            "alongStartHeadingMm": -27.771,
+            "dxMm": -27.771,
+            "poseOriginUnchanged": true,
+            "poseFrameIdChanged": false,
+            "poseFrameIdsSeen": [
+              0
+            ],
+            "peakWheelSpeedMmps": 33,
+            "driveConfirm": "Acknowledged: robot reports wheels at -28/-28 mm/s, asked for -30/-30",
+            "stopConfirm": "Acknowledged: robot reports wheels at 0/0 mm/s, asked for 0/0",
+            "wheelsStoppedAfterMs": 492.931,
+            "cliffEvents": 0
+          }
+        ],
+        "finalStopAll": "Acknowledged: robot reports all wheels stopped"
+      },
+      "warnings": [],
+      "humanNote": null,
+      "humanVerdict": null,
+      "observation": null,
+      "observations": [
+        {
+          "name": "trackLocks",
+          "records": [
+            {
+              "id": "M4-014",
+              "status": "EXACT_SOURCE"
+            }
+          ],
+          "question": "which DisableAnimTracks 0x9D / EnableAnimTracks 0x9E went out around each leg's DriveWheels and its stop?",
+          "measured": {
+            "legs": {
+              "forward": {
+                "windowMs": 1857.72,
+                "sends": [
+                  {
+                    "afterMs": 7.62,
+                    "tag": "0x9D",
+                    "msg": "disableAnimTracks",
+                    "fields": {
+                      "mask": "0x04"
+                    }
+                  },
+                  {
+                    "afterMs": 7.62,
+                    "tag": "0x32",
+                    "msg": "drive",
+                    "fields": "0000F0410000F0410000000000000000"
+                  },
+                  {
+                    "afterMs": 1032.1,
+                    "tag": "0x9E",
+                    "msg": "enableAnimTracks",
+                    "fields": {
+                      "mask": "0x04"
+                    }
+                  },
+                  {
+                    "afterMs": 1032.1,
+                    "tag": "0x32",
+                    "msg": "drive",
+                    "fields": "00000000000000000000000000000000"
+                  }
+                ]
+              },
+              "back": {
+                "windowMs": 1797.312,
+                "sends": [
+                  {
+                    "afterMs": 22.15,
+                    "tag": "0x9D",
+                    "msg": "disableAnimTracks",
+                    "fields": {
+                      "mask": "0x04"
+                    }
+                  },
+                  {
+                    "afterMs": 22.15,
+                    "tag": "0x32",
+                    "msg": "drive",
+                    "fields": "0000F0C10000F0C10000000000000000"
+                  },
+                  {
+                    "afterMs": 1008.77,
+                    "tag": "0x9E",
+                    "msg": "enableAnimTracks",
+                    "fields": {
+                      "mask": "0x04"
+                    }
+                  },
+                  {
+                    "afterMs": 1008.77,
+                    "tag": "0x32",
+                    "msg": "drive",
+                    "fields": "00000000000000000000000000000000"
+                  }
+                ]
+              },
+              "finalStopAll": {
+                "sends": [
+                  {
+                    "afterMs": 33.504,
+                    "tag": "0x3B",
+                    "msg": "stop",
+                    "fields": null
+                  }
+                ]
+              }
+            },
+            "times": "afterMs is host ms after the leg's drive command (after the StopAllAsync call for finalStopAll); each leg's window runs to the end of its settle",
+            "sourceExpectation": "M4-014 (MA1..MA3): a DriveWheels with a non-zero speed locks the BODY track (DisableAnimTracks {0x04}) when this is the track's first lock, and one with zero speeds unlocks it (EnableAnimTracks {0x04}) when it empties the lock set; the DriveWheels itself follows"
+          },
+          "pass": null,
+          "notJudged": "recorded for comparison with the source expectation, not judged by this run"
+        },
+        {
+          "name": "cliffHandling",
+          "records": [
+            {
+              "id": "M4-019",
+              "status": "IMPLEMENTATION_GAP"
+            }
+          ],
+          "question": "did the robot report PotentialCliff 0xC1 during DRIVE, and did the engine answer it with StopAllMotors and EnableStopOnCliff {0} (SC7)?",
+          "measured": {
+            "potentialCliffs": [],
+            "cliffEvents": [],
+            "cliffTimes": "host ms after DRIVE's first drive command",
+            "enableStopOnCliffSendsSinceConnect": [
+              {
+                "afterMs": 1692.11,
+                "tag": "0x60",
+                "msg": "enableStopOnCliff",
+                "fields": {
+                  "enable": true
+                }
+              }
+            ],
+            "enableStopOnCliffTimes": "afterMs is host ms after the ConnectToRobot call; the first (enable true) is this run's own, sent after CONNECT",
+            "stopAllMotorsSendsInDrive": [
+              {
+                "afterMs": 3693.674,
+                "tag": "0x3B",
+                "msg": "stop",
+                "fields": null
+              }
+            ],
+            "stopOnCliffOffAfterDrive": false
+          },
+          "pass": null,
+          "notJudged": "M4-019 is IMPLEMENTATION_GAP, and whether the robot reports a PotentialCliff on this floor is robot-side"
+        }
+      ],
+      "note": "the spec's \"pose x changes\" is measured as the signed displacement along the heading at the start of each leg (the robot's own pose frame; the stack does not reset it at connect), which equals the x change when the heading is 0. Driven with CozmoMotion.DriveWheelsAsync for 1000 ms, then StopWheelsAsync. Robot-side behaviour no manifest record covers, assumed here and not judged: that DriveWheels with accelerations 0 (the stack's default) makes the robot drive at the commanded speed, and that PoseFrameId stays the same while driving (a change is recorded in poseFrameIdChanged and the leg's distance is then not judged). Stop-on-cliff is turned on after CONNECT, but the engine answers a PotentialCliff with StopAllMotors and EnableStopOnCliff {0} (M4-019, SC7), which turns it off for the rest of the run: the setup asks for the floor. The track-lock sends (M4-014) and the cliff handling are observations, not criteria.",
+      "startMs": 40215.907,
+      "endMs": 44186.017
+    },
+    {
+      "id": "FACE",
+      "title": "A known test image held on the face for 3 s: the robot's animation byte count rises and its drop count stays",
+      "status": "PASS",
+      "pass": true,
+      "skipReason": null,
+      "records": [
+        {
+          "id": "M3-006",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M3-007",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M3-008",
+          "status": "HARDWARE_ONLY"
+        },
+        {
+          "id": "M3-015",
+          "status": "EXACT_SOURCE"
+        }
+      ],
+      "prerequisites": {},
+      "criteria": [
+        {
+          "name": "animBytesPlayedRises",
+          "expected": "AnimationState NumAnimBytesPlayed after the hold (+500 ms) is greater than before it",
+          "measured": 19800,
+          "pass": true
+        },
+        {
+          "name": "noClientDrops",
+          "expected": "AnimationState ClientDropCount unchanged across the hold",
+          "measured": 0,
+          "pass": true
+        }
+      ],
+      "unjudgedCriteria": [],
+      "measured": {
+        "faceFramesSent": 92,
+        "payloadBytes": 216,
+        "payloadSha256": "ff8095b416fe92bc6c6dda3bee8cb7ffb293f235d1e28b6a3f8356a2a4b27ceb",
+        "holdMs": 3027.392,
+        "animStateBefore": {
+          "t": 44175.149,
+          "ts": 100043030,
+          "numAnimBytesPlayed": 0,
+          "numAudioFramesPlayed": 0,
+          "clientDropCount": 0,
+          "tag": 0,
+          "enabledAnimTracks": "0xff"
+        },
+        "animStateAfter": {
+          "t": 47715.107,
+          "ts": 103586523,
+          "numAnimBytesPlayed": 19800,
+          "numAudioFramesPlayed": 90,
+          "clientDropCount": 0,
+          "tag": 0,
+          "enabledAnimTracks": "0xff"
+        },
+        "image": "face-test-pattern.txt (FaceBitmap.TestPattern, 128x32; '#' lit)"
+      },
+      "warnings": [],
+      "humanNote": "a test pattern (the art in face-test-pattern.txt: a border, a cross and blocks) appeared on Cozmo's face for about 3 s",
+      "humanVerdict": null,
+      "observation": null,
+      "observations": [],
+      "note": "animBytesPlayedRises assumes robot-side behaviour no manifest record covers: that the robot's NumAnimBytesPlayed counts face-image bytes streamed by CozmoDisplay.Hold, which re-sends the image with no StartOfAnimation before it. A criterion failure may be that assumption, not the face path.",
+      "startMs": 44186.159,
+      "endMs": 47719.14
+    },
+    {
+      "id": "AUDIO",
+      "title": "A 1 s two-beep sequence through CozmoAudio.Play: at least 25 audio frames played and the drop count stays",
+      "status": "PASS",
+      "pass": true,
+      "skipReason": null,
+      "records": [
+        {
+          "id": "M1-042",
+          "status": "COMPATIBILITY_POLICY"
+        },
+        {
+          "id": "M3-010",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M3-011",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M3-012",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M3-013",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M3-014",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M3-017",
+          "status": "COMPATIBILITY_POLICY"
+        }
+      ],
+      "prerequisites": {},
+      "criteria": [
+        {
+          "name": "audioFramesPlayed",
+          "expected": "AnimationState NumAudioFramesPlayed rises by at least 25 over the play",
+          "measured": 32,
+          "pass": true
+        },
+        {
+          "name": "noClientDrops",
+          "expected": "AnimationState ClientDropCount unchanged across the play",
+          "measured": 0,
+          "pass": true
+        }
+      ],
+      "unjudgedCriteria": [],
+      "measured": {
+        "pcmSamples": 22320,
+        "audioFramesInSound": 30,
+        "audioFramesSent": 31,
+        "playCallMs": 775.166,
+        "settleMs": 406.07,
+        "animStateBefore": {
+          "t": 47715.107,
+          "ts": 103586523,
+          "numAnimBytesPlayed": 19800,
+          "numAudioFramesPlayed": 90,
+          "clientDropCount": 0,
+          "tag": 0,
+          "enabledAnimTracks": "0xff"
+        },
+        "animStateAfter": {
+          "t": 48855.105,
+          "ts": 104727553,
+          "numAnimBytesPlayed": 42526,
+          "numAudioFramesPlayed": 122,
+          "clientDropCount": 0,
+          "tag": 0,
+          "enabledAnimTracks": "0xff"
+        },
+        "sound": "CozmoAudio.Beeps(2): two 880 Hz beeps of 0.25 s, each followed by 0.25 s of silence, Anki companding"
+      },
+      "warnings": [],
+      "humanNote": "you heard exactly 2 separate beeps, evenly spaced",
+      "humanVerdict": null,
+      "observation": null,
+      "observations": [],
+      "note": null,
+      "startMs": 47719.263,
+      "endMs": 48902.503
+    },
+    {
+      "id": "ANIM",
+      "title": "anim_bored_01 plays to completion (only with --allow-drive: it rolls back about 2 cm): every keyframe fires, no stall, streaming stops at the end",
+      "status": "PASS",
+      "pass": true,
+      "skipReason": null,
+      "records": [
+        {
+          "id": "M1-041",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M5-001",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M5-004",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M5-006",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M5-007",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M5-008",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M5-016",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M5-018",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M5-019",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M5-023",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M5-026",
+          "status": "IMPLEMENTATION_GAP"
+        }
+      ],
+      "prerequisites": {
+        "allowDrive": true,
+        "animationsLoaded": true,
+        "clip": "anim_bored_01",
+        "clipFound": true,
+        "animationStreamingOpen": true
+      },
+      "criteria": [
+        {
+          "name": "completed",
+          "expected": "the animation ended with AnimationEndReason.Completed",
+          "measured": "Completed",
+          "pass": true
+        },
+        {
+          "name": "keyframesFired",
+          "expected": "keyframes fired == the clip's keyframes (54)",
+          "measured": 54,
+          "pass": true
+        },
+        {
+          "name": "noStall",
+          "expected": "no stall: no gap over 250 ms between consecutive animation audio frames sent, and StartOfAnimation to EndOfAnimation within the clip's 1089 ms + 1000 ms",
+          "measured": {
+            "maxAudioFrameGapMs": 101.067,
+            "streamWallMs": 778.644
+          },
+          "pass": true
+        },
+        {
+          "name": "streamingStops",
+          "expected": "no animation message (audio, face, head, lift, body, start/end) first sent more than 100 ms after the EndOfAnimation, over a 1000 ms watch; the animation loop no longer ticking",
+          "measured": {
+            "lateMessages": 0,
+            "ticking": false,
+            "endOfAnimationSends": 1
+          },
+          "pass": true
+        }
+      ],
+      "unjudgedCriteria": [],
+      "measured": {
+        "clip": "anim_bored_01",
+        "clipDurationMs": 1089,
+        "clipKeyframes": 54,
+        "clipTracks": "Face, Audio, Head, Lift, Body, Lights",
+        "bodyKeyframes": 1,
+        "keyframesFired": 54,
+        "keyframeFiredEvents": 54,
+        "endReason": "Completed",
+        "playToCompletionMs": 789.749,
+        "startOfAnimationTag": 1,
+        "startOfAnimationAfterPlayMs": 42.747,
+        "endOfAnimationSends": 1,
+        "streamWallMs": 778.644,
+        "audioFramesStreamed": 34,
+        "maxAudioFrameGapMs": 101.067,
+        "animMessagesAfterEnd": {},
+        "tickingAfterWatch": false,
+        "robotReportedTags": [
+          0,
+          1
+        ],
+        "notImplemented": {
+          "backpack lights keyframe ignored: the shipping engine never implemented this track from animation assets (SetMembersFromFlatBuf is a stub), so there is no behaviour to reproduce": 12
+        },
+        "audioSource": "none: audio keyframes stream silence (the Wwise decoder is not loaded by this run)"
+      },
+      "warnings": [],
+      "humanNote": null,
+      "humanVerdict": null,
+      "observation": null,
+      "observations": [],
+      "note": "the spec's \"no stall reported\" has no stall report in the public API; it is measured as the largest gap between the animation's audio frames on the wire and the stream's wall duration. The clip has a body keyframe (a short backward roll). keyframesFired, noStall and streamingStops are judged from the stack's own side: the scheduler's keyframe count and the messages the stack sent. The robot-side evidence (robotReportedTags, the AnimationState stream in events.jsonl) is recorded, not judged.",
+      "startMs": 48902.709,
+      "endMs": 50705.392
+    },
+    {
+      "id": "ANIM_CANCEL",
+      "title": "A long animation cancelled after 1 s: it ends Cancelled, no new frame is built after the cancel (at most one buffered frame goes out) and no EndOfAnimation is sent",
+      "status": "PASS",
+      "pass": true,
+      "skipReason": null,
+      "records": [
+        {
+          "id": "M5-008",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M5-023",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M5-026",
+          "status": "IMPLEMENTATION_GAP"
+        }
+      ],
+      "prerequisites": {
+        "animationsLoaded": true,
+        "clip": "anim_codelab_staring_loop",
+        "clipFound": true,
+        "animationStreamingOpen": true
+      },
+      "criteria": [
+        {
+          "name": "streamedBeforeCancel",
+          "expected": "the animation was streaming before the cancel: StartOfAnimation and at least one audio frame sent",
+          "measured": 83,
+          "pass": true
+        },
+        {
+          "name": "cancelled",
+          "expected": "the animation ended with AnimationEndReason.Cancelled",
+          "measured": "Cancelled",
+          "pass": true
+        },
+        {
+          "name": "noNewFrameAfterCancel",
+          "expected": "no new animation frame is built after the cancel: the clip is no longer playing when StopIfCurrent returns, and at most 1 audio frame of already-buffered messages is sent after it, over a 1500 ms watch (M5 inventory A24/A25: the cancel keeps the send buffer, the next engine Update flushes it within the budget; the buffer holds at most one built frame)",
+          "measured": {
+            "streamFramesSentAfterCancel": 1,
+            "playingAfterCancel": false,
+            "streamBufferMessagesAtCancel": 3
+          },
+          "pass": true
+        },
+        {
+          "name": "noEndOfAnimationAfterCancel",
+          "expected": "no EndOfAnimation sent after the cancel, over a 1500 ms watch (A25: Abort clears startSent, so none follows)",
+          "measured": 0,
+          "pass": true
+        }
+      ],
+      "unjudgedCriteria": [],
+      "measured": {
+        "clip": "anim_codelab_staring_loop",
+        "clipDurationMs": 5280,
+        "clipTracks": "Face, Audio",
+        "cancelAfterPlayMs": 1000.495,
+        "stopIfCurrent": true,
+        "endReason": "Cancelled",
+        "animMessagesBeforeCancel": {
+          "animAudioSilence": 41,
+          "animFaceImage": 41,
+          "animStartOfAnimation": 1
+        },
+        "animMessagesAfterCancel": {
+          "animAudioSilence": 1,
+          "animFaceImage": 1
+        },
+        "lastAnimMessageAfterCancelMs": 52.609,
+        "audioFramesOnWireAfterCancel": 1,
+        "endOfAnimationAfterCancel": 0,
+        "stopIfCurrentMs": 0.348,
+        "streamBufferMessagesAtCancel": 3,
+        "streamFramesSentAfterCancel": 1,
+        "playingAfterCancel": false,
+        "liveStreamActive": false,
+        "watchMs": 1501.812,
+        "tickingAfterWatch": false,
+        "note": "streamFramesSentAfterCancel is the send buffer's frame counter (StreamSendBuffer.FramesStreamed: one per AudioSample, AudioSilence or EndOfAnimation sent) from StopIfCurrent's return to the end of the watch. The wire counts (audioFramesOnWireAfterCancel, lastAnimMessageAfterCancelMs) are measured from the host's cancel call; they are recorded, not judged, because the transport queues sends (flush 0) and can put a frame built before the cancel on the wire after it"
+      },
+      "warnings": [],
+      "humanNote": null,
+      "humanVerdict": null,
+      "observation": null,
+      "observations": [
+        {
+          "name": "abortAnimationSent",
+          "records": [
+            {
+              "id": "M5-023",
+              "status": "IMPLEMENTATION_GAP"
+            }
+          ],
+          "question": "was AbortAnimation 0x8D sent on the cancel? The engine sends it reliable, synchronously inside Abort (A22, A23); this stack does not send it yet",
+          "measured": {
+            "abortAnimationSends": [],
+            "count": 0
+          },
+          "pass": null,
+          "notJudged": "M5-023 is IMPLEMENTATION_GAP: the 0x8D send is not built in this stack, and how the robot reacts to 0x8D is HARDWARE_ONLY (M5 inventory A23, A25)"
+        }
+      ],
+      "note": "the cancel is StopIfCurrent, this stack's Abort (M5-023): the send buffer is kept and flushed by the next Update, and no EndOfAnimation follows (A24, A25). AbortAnimation 0x8D is not sent by this stack yet (the M5-023 gap); abortAnimationSent records whether it was. The clip has face and audio tracks only.",
+      "startMs": 50705.493,
+      "endMs": 53213.089
+    },
+    {
+      "id": "CUBES",
+      "title": "Block pool enabled at connect; a cube is heard, one connects, and its accelerometer stream arrives; cube-light sends and cube telemetry recorded",
+      "status": "PASS",
+      "pass": true,
+      "skipReason": null,
+      "records": [
+        {
+          "id": "M1-042",
+          "status": "COMPATIBILITY_POLICY"
+        },
+        {
+          "id": "M4-008",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M4-009",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M4-010",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M4-011",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M4-018",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M4-023",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M4-024",
+          "status": "HARDWARE_ONLY"
+        },
+        {
+          "id": "M9-017",
+          "status": "EXACT_SOURCE"
+        }
+      ],
+      "prerequisites": {},
+      "criteria": [
+        {
+          "name": "blockPoolEnabled",
+          "expected": "the auto block pool was enabled after the Success response (policy M1-042)",
+          "measured": true,
+          "pass": true
+        },
+        {
+          "name": "cubeHeard",
+          "expected": "at least one light cube heard (ObjectAvailable or ObjectConnectionState)",
+          "measured": 1,
+          "pass": true
+        },
+        {
+          "name": "cubeConnected",
+          "expected": "one cube reported Connected by ObjectConnectionState within 20000 ms",
+          "measured": "0x241a8eec",
+          "pass": true
+        },
+        {
+          "name": "accelStream",
+          "expected": "at least 1 ObjectAccel for that cube in the 3000 ms after StreamObjectAccel on (CubeAccelStreams.AddListener, M9-017); whether the robot forwards it is HARDWARE_ONLY (M4-024)",
+          "measured": 76,
+          "pass": true
+        }
+      ],
+      "unjudgedCriteria": [],
+      "measured": {
+        "waitedMs": 2.496,
+        "cubesHeard": [
+          {
+            "factoryId": "0x241a8eec",
+            "objectId": 0,
+            "type": "Block_LIGHTCUBE2",
+            "rssi": 75,
+            "connected": true,
+            "advertisements": 1,
+            "batteryLevelRaw": 158
+          }
+        ],
+        "setPropSlotSent": [
+          {
+            "factoryId": "0x241a8eec",
+            "slot": 0
+          }
+        ],
+        "slots": [
+          {
+            "slot": 0,
+            "factoryId": "0x241a8eec",
+            "type": "Block_LIGHTCUBE2",
+            "state": "Connected"
+          },
+          {
+            "slot": 1,
+            "factoryId": "0x00000000",
+            "type": "InvalidObject",
+            "state": "Empty"
+          },
+          {
+            "slot": 2,
+            "factoryId": "0x00000000",
+            "type": "InvalidObject",
+            "state": "Empty"
+          },
+          {
+            "slot": 3,
+            "factoryId": "0x00000000",
+            "type": "InvalidObject",
+            "state": "Empty"
+          },
+          {
+            "slot": 4,
+            "factoryId": "0x00000000",
+            "type": "InvalidObject",
+            "state": "Empty"
+          }
+        ],
+        "charger": null,
+        "objectId": 0,
+        "objectAccelMessages": 76,
+        "firstObjectAccelAfterMs": 135.504,
+        "objectAccelPerSecond": 25.305
+      },
+      "warnings": [],
+      "humanNote": null,
+      "humanVerdict": null,
+      "observation": null,
+      "observations": [
+        {
+          "name": "cubeLightSends",
+          "records": [
+            {
+              "id": "M4-018",
+              "status": "IMPLEMENTATION_GAP"
+            }
+          ],
+          "question": "were CubeID 0x10, CubeLights 0x04 and SetCubeGamma 0x0C sent after the cube connected (the WakeUp lights: SetCubeGamma, then CubeID, then CubeLights, LC1..LC6)?",
+          "measured": {
+            "cubeConnectedAtMs": 1958.666,
+            "sends": {
+              "0x0C setCubeGamma": {
+                "count": 1,
+                "afterCubeConnected": 1,
+                "inCubesCheck": 0,
+                "firstAfterConnectMs": 1963.772,
+                "firstAfterCubeConnectedMs": 5.106,
+                "first": [
+                  {
+                    "afterConnectMs": 1963.772,
+                    "fields": {
+                      "gamma": "0x80"
+                    }
+                  }
+                ]
+              },
+              "0x10 setCubeID": {
+                "count": 3,
+                "afterCubeConnected": 3,
+                "inCubesCheck": 0,
+                "firstAfterConnectMs": 1963.772,
+                "firstAfterCubeConnectedMs": 5.106,
+                "first": [
+                  {
+                    "afterConnectMs": 1963.772,
+                    "fields": {
+                      "objectId": 0,
+                      "rotationPeriodFrames": 0
+                    }
+                  },
+                  {
+                    "afterConnectMs": 3293.139,
+                    "fields": {
+                      "objectId": 0,
+                      "rotationPeriodFrames": 0
+                    }
+                  },
+                  {
+                    "afterConnectMs": 8383.503,
+                    "fields": {
+                      "objectId": 0,
+                      "rotationPeriodFrames": 0
+                    }
+                  }
+                ]
+              },
+              "0x04 setCubeLights": {
+                "count": 3,
+                "afterCubeConnected": 3,
+                "inCubesCheck": 0,
+                "firstAfterConnectMs": 1963.772,
+                "firstAfterCubeConnectedMs": 5.106,
+                "first": [
+                  {
+                    "afterConnectMs": 1963.772,
+                    "fields": "E0830080010D07020000E0830080010D07020400E0830080010D07020700E0830080010D07020A00"
+                  },
+                  {
+                    "afterConnectMs": 3293.139,
+                    "fields": "E0830080226404220000E0830080226404220000E0830080226404220000E0830080226404220000"
+                  },
+                  {
+                    "afterConnectMs": 8383.503,
+                    "fields": "EF81008001A722220000EF81008001A722220000EF81008001A722220000EF81008001A722220000"
+                  }
+                ]
+              }
+            },
+            "times": "counted from the ConnectToRobot call to the end of CUBES; afterCubeConnected counts from the first cube Connected event (ObjectConnectionState)"
+          },
+          "pass": null,
+          "notJudged": "M4-018 is IMPLEMENTATION_GAP; what the cube shows is robot-side"
+        },
+        {
+          "name": "cubeTelemetry",
+          "records": [
+            {
+              "id": "M4-024",
+              "status": "HARDWARE_ONLY"
+            },
+            {
+              "id": "M4-009",
+              "status": "IMPLEMENTATION_GAP"
+            },
+            {
+              "id": "M4-023",
+              "status": "EXACT_SOURCE"
+            },
+            {
+              "id": "M9-017",
+              "status": "EXACT_SOURCE"
+            }
+          ],
+          "question": "which cube telemetry did the robot forward after the connection (ObjectAccel 0xF5, 0xB4..0xB9, ObjectPowerLevel 0xCE, UpAxisChanged 0xD7), and when was StreamObjectAccel sent?",
+          "measured": {
+            "cubeConnectedAtMs": 1958.666,
+            "received": {
+              "0xF5 objectAccel": {
+                "count": 78,
+                "afterCubeConnected": 78,
+                "inCubesCheck": 78,
+                "firstAfterConnectMs": 21997.653,
+                "firstAfterCubeConnectedMs": 20038.987,
+                "first": [
+                  {
+                    "afterConnectMs": 21997.653,
+                    "fields": "066D000000000000000080BF000000000000F841"
+                  },
+                  {
+                    "afterConnectMs": 22132.031,
+                    "fields": "746D000000000000000080BF000000000000F841"
+                  }
+                ]
+              },
+              "0xB4 activeObjectMoved": {
+                "count": 1,
+                "afterCubeConnected": 1,
+                "inCubesCheck": 0,
+                "firstAfterConnectMs": 2106.583,
+                "firstAfterCubeConnectedMs": 147.917,
+                "first": [
+                  {
+                    "afterConnectMs": 2106.583,
+                    "fields": "E61E000000000000000080BF000000000000F84105"
+                  }
+                ]
+              },
+              "0xB5 activeObjectStopped": {
+                "count": 1,
+                "afterCubeConnected": 1,
+                "inCubesCheck": 0,
+                "firstAfterConnectMs": 3113.159,
+                "firstAfterCubeConnectedMs": 1154.493,
+                "first": [
+                  {
+                    "afterConnectMs": 3113.159,
+                    "fields": "E222000000000000"
+                  }
+                ]
+              },
+              "0xB6 activeObjectTapped": {
+                "count": 1,
+                "afterCubeConnected": 1,
+                "inCubesCheck": 0,
+                "firstAfterConnectMs": 1959.611,
+                "firstAfterCubeConnectedMs": 0.946,
+                "first": [
+                  {
+                    "afterConnectMs": 1959.611,
+                    "fields": "5A1E0000000000000131EC29"
+                  }
+                ]
+              },
+              "0xB7 dataDump": {
+                "count": 0,
+                "afterCubeConnected": 0,
+                "inCubesCheck": 0,
+                "firstAfterConnectMs": null,
+                "firstAfterCubeConnectedMs": null,
+                "first": []
+              },
+              "0xB8 pickAndPlaceResult": {
+                "count": 0,
+                "afterCubeConnected": 0,
+                "inCubesCheck": 0,
+                "firstAfterConnectMs": null,
+                "firstAfterCubeConnectedMs": null,
+                "first": []
+              },
+              "0xB9 objectTappedFiltered": {
+                "count": 1,
+                "afterCubeConnected": 1,
+                "inCubesCheck": 0,
+                "firstAfterConnectMs": 1971.644,
+                "firstAfterCubeConnectedMs": 12.978,
+                "first": [
+                  {
+                    "afterConnectMs": 1971.644,
+                    "fields": "5A1E000000000000313D"
+                  }
+                ]
+              },
+              "0xCE objectPowerLevel": {
+                "count": 3,
+                "afterCubeConnected": 3,
+                "inCubesCheck": 1,
+                "firstAfterConnectMs": 1959.611,
+                "firstAfterCubeConnectedMs": 0.946,
+                "first": [
+                  {
+                    "afterConnectMs": 1959.611,
+                    "fields": "0000000001000000A0"
+                  },
+                  {
+                    "afterConnectMs": 12791.533,
+                    "fields": "000000000A0000009E"
+                  }
+                ]
+              },
+              "0xD7 activeObjectUpAxisChanged": {
+                "count": 1,
+                "afterCubeConnected": 1,
+                "inCubesCheck": 0,
+                "firstAfterConnectMs": 2566.214,
+                "firstAfterCubeConnectedMs": 607.548,
+                "first": [
+                  {
+                    "afterConnectMs": 2566.214,
+                    "fields": "B22000000000000005"
+                  }
+                ]
+              }
+            },
+            "streamObjectAccelSends": [
+              {
+                "afterMs": 21955.277,
+                "tag": "0x08",
+                "msg": "streamObjectAccel",
+                "fields": "0000000001"
+              }
+            ],
+            "times": "counted from the ConnectToRobot call to the end of CUBES; afterCubeConnected counts from the first cube Connected event (ObjectConnectionState); received counts are wire messages (reliable resends dropped), before the engine's drain"
+          },
+          "pass": null,
+          "notJudged": "M4-024 is HARDWARE_ONLY: what makes the robot forward cube telemetry after connection is not established by source"
+        }
+      ],
+      "note": "the accelerometer criterion is a presence test (at least one message): the stream's rate is not in any record. It depends on robot-side forwarding that source does not establish (M4-024, HARDWARE_ONLY): a failure is evidence about the robot as much as about the stack; cubeTelemetry records everything the robot forwarded",
+      "startMs": 53213.2,
+      "endMs": 56229.968
+    },
+    {
+      "id": "CAMERA",
+      "title": "The camera stream opened at connect gives at least 30 complete frames in 3 s, each grey frame a 320x240 JPEG",
+      "status": "PASS",
+      "pass": true,
+      "skipReason": null,
+      "records": [
+        {
+          "id": "M1-041",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M3-001",
+          "status": "IMPLEMENTATION_GAP"
+        },
+        {
+          "id": "M3-002",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M3-003",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M3-004",
+          "status": "COMPATIBILITY_POLICY"
+        },
+        {
+          "id": "M3-005",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M3-016",
+          "status": "HARDWARE_ONLY"
+        }
+      ],
+      "prerequisites": {},
+      "criteria": [
+        {
+          "name": "frames",
+          "expected": "at least 30 complete frames reassembled in 3000 ms. The threshold is the test spec's, not source: no record gives the stream's frame rate; the measured rate is framesPerSecond",
+          "measured": {
+            "frames": 45,
+            "framesPerSecond": 14.994
+          },
+          "pass": true
+        },
+        {
+          "name": "decodes",
+          "expected": "every frame in the window that is not colour-flagged decodes as a JPEG of 320x240 with reported resolution 320x240; colour-flagged frames are left out (M3-016 is HARDWARE_ONLY; their geometry is in the observation)",
+          "measured": {
+            "framesJudged": 45,
+            "decodeFailures": 0,
+            "wrongGeometry": 0
+          },
+          "pass": true
+        },
+        {
+          "name": "saved",
+          "expected": "3 frames saved to the bundle",
+          "measured": 3,
+          "pass": true
+        }
+      ],
+      "unjudgedCriteria": [],
+      "measured": {
+        "windowMs": 3001.208,
+        "completeFrames": 45,
+        "framesPerSecond": 14.994,
+        "framesJudgedForGeometry": 45,
+        "colourFlaggedFramesLeftOut": 0,
+        "framesDroppedInWindow": 0,
+        "warmUpFramesInWindow": 0,
+        "decodeFailures": 0,
+        "wrongGeometry": 0,
+        "decodedGeometriesUnflaggedFrames": {
+          "320x240x1": 45
+        },
+        "framesSinceConnect": 414,
+        "imageRequestsSent": [
+          "Stream res 4"
+        ],
+        "saved": [
+          {
+            "file": "camera-01662.jpg",
+            "imageId": 1662,
+            "bytes": 2602,
+            "colourFlag": false,
+            "channelSpread": 0,
+            "meanLuminance": 14.487
+          },
+          {
+            "file": "camera-01663.jpg",
+            "imageId": 1663,
+            "bytes": 2648,
+            "colourFlag": false,
+            "channelSpread": 0,
+            "meanLuminance": 14.526
+          },
+          {
+            "file": "camera-01664.jpg",
+            "imageId": 1664,
+            "bytes": 2636,
+            "colourFlag": false,
+            "channelSpread": 0,
+            "meanLuminance": 14.677
+          }
+        ],
+        "decoder": "StbImageSharp ImageResult.FromMemory on the reconstructed JPEG (CameraFrame.Jpeg)"
+      },
+      "warnings": [],
+      "humanNote": null,
+      "humanVerdict": null,
+      "observation": {
+        "record": "M3-016",
+        "status": "HARDWARE_ONLY",
+        "verdict": null,
+        "question": "does any frame look colour?",
+        "framesWithColourFlag": 0,
+        "framesDecodedWithThreeComponents": 0,
+        "colourFramesNotDecoded": 0,
+        "colourFrameGeometries": {},
+        "savedChannelSpread": "mean |R-G| + |G-B| of each saved frame decoded as RGB: 0 for a grey image"
+      },
+      "observations": [
+        {
+          "name": "savedFrameLuminance",
+          "records": [
+            {
+              "id": "M3-019",
+              "status": "COMPATIBILITY_POLICY"
+            }
+          ],
+          "question": "how bright are the saved frames after the connection-time SetCameraParams {0.0, 0, true} (policy M3-019) and whatever exposure the robot then used?",
+          "measured": {
+            "frames": [
+              {
+                "file": "camera-01662.jpg",
+                "meanLuminance": 14.487
+              },
+              {
+                "file": "camera-01663.jpg",
+                "meanLuminance": 14.526
+              },
+              {
+                "file": "camera-01664.jpg",
+                "meanLuminance": 14.677
+              }
+            ],
+            "scale": "mean of the JPEG decoded as one grey channel, 0 (black) .. 255 (white)"
+          },
+          "pass": null,
+          "notJudged": "no source gives the brightness the robot's camera produces; M3-019 is COMPATIBILITY_POLICY"
+        }
+      ],
+      "note": "no camera command is sent by this check: the stream is the ImageRequest {Stream, QVGA} the engine sends after SyncTime (M1-041); this check measures a 3 s window of it",
+      "startMs": 56230.211,
+      "endMs": 59449.164
+    },
+    {
+      "id": "DISCONNECT",
+      "title": "Dispose sends the DisconnectRequest, nothing is sent after it, and Dispose returns",
+      "status": "PASS",
+      "pass": true,
+      "skipReason": null,
+      "records": [
+        {
+          "id": "M1-015",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M1-019",
+          "status": "EXACT_SOURCE"
+        },
+        {
+          "id": "M1-025",
+          "status": "EXACT_SOURCE"
+        }
+      ],
+      "prerequisites": {
+        "linkUpBeforeDispose": true
+      },
+      "criteria": [
+        {
+          "name": "disconnectRequest",
+          "expected": "exactly one outbound frame carrying a DisconnectRequest after Dispose",
+          "measured": 1,
+          "pass": true
+        },
+        {
+          "name": "nothingAfter",
+          "expected": "no outbound frame after that DisconnectRequest (watched 1000 ms after Dispose returned)",
+          "measured": 0,
+          "pass": true
+        },
+        {
+          "name": "disposeReturns",
+          "expected": "Dispose returned without an exception within 5000 ms",
+          "measured": 18.182,
+          "pass": true
+        }
+      ],
+      "unjudgedCriteria": [],
+      "measured": {
+        "disposeMs": 18.182,
+        "exception": null,
+        "disconnectRequestFrames": 1,
+        "disconnectRequestAfterDisposeMs": 15.505,
+        "messagesSentBetweenDisposeAndType3": [
+          "stop",
+          "drive"
+        ],
+        "outboundFramesAfterType3": 0,
+        "inboundFramesTracedAfterType3": 0,
+        "watchMs": 1000.439,
+        "transportState": "Disconnected"
+      },
+      "warnings": [],
+      "humanNote": "the command returned to the prompt by itself after printing the bundle path (the process cannot observe its own exit)",
+      "humanVerdict": null,
+      "observation": null,
+      "observations": [],
+      "note": "CozmoRobot.Dispose sends StopAllMotors and DriveWheels(0) before the DisconnectRequest (a decision note in PROJECT_STATE.md, not engine behaviour); they are listed in messagesSentBetweenDisposeAndType3",
+      "startMs": 59459.969,
+      "endMs": 60480.69
+    }
+  ],
+  "observations": {
+    "backpackLights": {
+      "question": "at what rate did this stack send the backpack light messages? It resends the Off lights on every engine tick (60 ms) while no light source exists (M4 inventory LB1..LB6, BodyLightComponent), so one per tick is about 16.7 per second of each",
+      "pass": null,
+      "notJudged": "an observation of the load on the link, with no criterion",
+      "windowMs": 28152.586,
+      "window": "first sends (resends dropped) from the ConnectToRobot call to the Dispose call",
+      "0x03 setBackpackLightsMiddle": {
+        "sends": 442,
+        "firstAfterConnectMs": 1692.11,
+        "perSecondFirstToLast": 16.674,
+        "perSecondOverWindow": 15.7,
+        "maxGapMs": 105.812
+      },
+      "0x11 setBackpackLightsTurnSignals": {
+        "sends": 442,
+        "firstAfterConnectMs": 1692.11,
+        "perSecondFirstToLast": 16.674,
+        "perSecondOverWindow": 15.7,
+        "maxGapMs": 105.812
+      }
+    }
+  },
+  "hardwareOnlyUncertainty": [
+    {
+      "id": "M1-033",
+      "status": "HARDWARE_ONLY",
+      "note": "robot-side transport behaviour (how the robot answers, acks and resends) is an input to every check; it has no expected value from source"
+    },
+    {
+      "id": "M3-008",
+      "status": "HARDWARE_ONLY",
+      "note": "scanline parity of the face image on the robot's display: FACE's humanNote is where a wrong image would be seen"
+    },
+    {
+      "id": "M3-016",
+      "status": "HARDWARE_ONLY",
+      "note": "the colour camera format: CAMERA records whether any frame looks colour, with no verdict"
+    },
+    {
+      "id": "M4-021",
+      "status": "HARDWARE_ONLY",
+      "note": "whether the robot reports the origin id and frame from AbsoluteLocalizationUpdate in RobotState: CONNECT records the origins and frames it reported and the origin-rejected count, with no verdict (originAccepted). If it never reports origin 1, the engine drops every state from the pose and history (M4-020) while the first-full-state and Update steps still run"
+    },
+    {
+      "id": "M4-024",
+      "status": "HARDWARE_ONLY",
+      "note": "what makes the robot forward cube telemetry after connection, and the robot-side effect of StreamObjectAccel: CUBES records every cube telemetry message received, with no verdict; its accelStream criterion depends on this"
+    }
+  ],
+  "reports": {
+    "judged": false,
+    "handlerFaults": 0,
+    "exceptions": [],
+    "transportWarnings": {
+      "unconnected destination 172.31.1.1": 1
+    },
+    "engineWarnings": [
+      "warning: robot firmware 2457 is not 2381 (policy M1-040: accepted)",
+      "warning: policy M1-040: the original's result OutdatedApp is not applied; the robot is accepted",
+      "warning: VisionSystem.SetNextCameraParams.OverwritingPreviousParams",
+      "warning: VisionComponent.ReadCameraCalibration.SizeMismatch: 248 bytes, expected 56"
+    ],
+    "framesOut": 843,
+    "framesIn": 1357
+  },
+  "records": [
+    {
+      "id": "M1-015",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M1-019",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M1-024",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M1-025",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M1-026",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M1-028",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M1-029",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M1-030",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M1-033",
+      "status": "HARDWARE_ONLY"
+    },
+    {
+      "id": "M1-040",
+      "status": "COMPATIBILITY_POLICY"
+    },
+    {
+      "id": "M1-041",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M1-042",
+      "status": "COMPATIBILITY_POLICY"
+    },
+    {
+      "id": "M2-003",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M3-001",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M3-002",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M3-003",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M3-004",
+      "status": "COMPATIBILITY_POLICY"
+    },
+    {
+      "id": "M3-005",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M3-006",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M3-007",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M3-008",
+      "status": "HARDWARE_ONLY"
+    },
+    {
+      "id": "M3-010",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M3-011",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M3-012",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M3-013",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M3-014",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M3-015",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M3-016",
+      "status": "HARDWARE_ONLY"
+    },
+    {
+      "id": "M3-017",
+      "status": "COMPATIBILITY_POLICY"
+    },
+    {
+      "id": "M3-019",
+      "status": "COMPATIBILITY_POLICY"
+    },
+    {
+      "id": "M3-021",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M3-022",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M4-001",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M4-002",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M4-003",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M4-004",
+      "status": "COMPATIBILITY_POLICY"
+    },
+    {
+      "id": "M4-005",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M4-006",
+      "status": "COMPATIBILITY_POLICY"
+    },
+    {
+      "id": "M4-007",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M4-008",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M4-009",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M4-010",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M4-011",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M4-014",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M4-016",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M4-018",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M4-019",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M4-020",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M4-021",
+      "status": "HARDWARE_ONLY"
+    },
+    {
+      "id": "M4-023",
+      "status": "EXACT_SOURCE"
+    },
+    {
+      "id": "M4-024",
+      "status": "HARDWARE_ONLY"
+    },
+    {
+      "id": "M5-001",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M5-004",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M5-006",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M5-007",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M5-008",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M5-016",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M5-018",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M5-019",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M5-023",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M5-026",
+      "status": "IMPLEMENTATION_GAP"
+    },
+    {
+      "id": "M9-017",
+      "status": "EXACT_SOURCE"
+    }
+  ],
+  "animation": {
+    "assets": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\cozmo-stack\\re-analysis\\obb\\assets\\cozmo_resources\\assets",
+    "loaded": true,
+    "clips": 1139,
+    "loadMs": 5834,
+    "audioSource": "none: audio keyframes stream silence (the Wwise decoder is not loaded by this run)"
+  },
+  "savedImages": [
+    "camera-01662.jpg",
+    "camera-01663.jpg",
+    "camera-01664.jpg"
+  ],
+  "phases": [
+    {
+      "name": "create",
+      "startMs": 25042.38
+    },
+    {
+      "name": "CONNECT",
+      "startMs": 31295.392
+    },
+    {
+      "name": "STATE",
+      "startMs": 32970.033
+    },
+    {
+      "name": "HEAD",
+      "startMs": 37985.28
+    },
+    {
+      "name": "LIFT",
+      "startMs": 39316.152
+    },
+    {
+      "name": "DRIVE",
+      "startMs": 40215.891
+    },
+    {
+      "name": "FACE",
+      "startMs": 44186.155
+    },
+    {
+      "name": "AUDIO",
+      "startMs": 47719.256
+    },
+    {
+      "name": "ANIM",
+      "startMs": 48902.698
+    },
+    {
+      "name": "ANIM_CANCEL",
+      "startMs": 50705.488
+    },
+    {
+      "name": "CUBES",
+      "startMs": 53213.196
+    },
+    {
+      "name": "CAMERA",
+      "startMs": 56230.207
+    },
+    {
+      "name": "DISCONNECT",
+      "startMs": 59459.962
+    }
+  ],
+  "marksMs": {
+    "connectCall": 31297.654,
+    "connectDone": 32957.55,
+    "stopOnCliffCall": 32969.659,
+    "stateStart": 32970.942,
+    "stateEnd": 37972.161,
+    "faceStart": 44189.485,
+    "faceHoldEnd": 47216.878,
+    "audioStart": 47721.033,
+    "audioPlayEnd": 48496.199,
+    "audioSettled": 48902.268,
+    "animPlay": 48906.461,
+    "animWatchEnd": 50699.815,
+    "cancelPlay": 50707.69,
+    "cancelCall": 51708.185,
+    "cancelReturned": 51708.534,
+    "cancelWatchEnd": 53209.998,
+    "cubesStart": 53213.654,
+    "cubeAccelStart": 53220.025,
+    "cubeAccelEnd": 56223.33,
+    "cameraStart": 56373.718,
+    "cameraEnd": 59374.926,
+    "disposeCall": 59460.692,
+    "disposeReturned": 59478.873,
+    "afterDisposeEnd": 60479.312
+  }
+}
