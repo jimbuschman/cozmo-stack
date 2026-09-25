@@ -61,6 +61,8 @@ public sealed class VisionSystem : IDisposable
         robot.CameraSettings.CalibrationInstalled += OnCalibrationInstalled;
         robot.CameraSettings.VisionEnabledSet += OnVisionEnabledSet;
         if (robot.CameraSettings.Calibration is { } read) Calibration = read;
+        // A VisionSystem built after the connection's NV callback already fired picks up the enable (2d).
+        if (robot.CameraSettings.VisionEnabled) Enabled = true;
         robot.RobotRemoved += ResetToConstructed;
         // fidelity: M1-041
         robot.StateHistoryCleared += History.Clear;
@@ -148,8 +150,12 @@ public sealed class VisionSystem : IDisposable
     public Func<double, double, CancellationToken, Task<bool>>? PanTiltOverride { get; set; }
     /// <summary>Faces seen in the last processed frame.</summary>
     public IReadOnlyList<TrackedFace> LastFaces { get; private set; } = Array.Empty<TrackedFace>();
-    /// <summary>Whether frames from the camera are processed as they arrive.</summary>
-    public bool Enabled { get; set; } = true;
+    /// <summary>
+    /// Whether frames from the camera are processed as they arrive. The engine's VisionComponent +0x48 starts 0
+    /// (2a) and is set to 1 only by the NV calibration callback (1j, 2d), so this starts false and the callback
+    /// turns it on; a caller that drives frames directly (offline tools and tests) sets it itself.
+    /// </summary>
+    public bool Enabled { get; set; }
     public int FramesProcessed { get; private set; }
     public int FramesDropped { get; private set; }
     public VisionFrameResult? LastResult { get; private set; }
@@ -157,13 +163,22 @@ public sealed class VisionSystem : IDisposable
     public event Action<VisionFrameResult>? FrameProcessed;
     public event Action<string>? Log;
 
-    /// <summary>Reads the calibration from the robot (the engine's connection-time <c>NVStorageComponent::Read</c>).</summary>
+    /// <summary>
+    /// Reads the calibration from the robot through the shared NV queue (the engine's connection-time
+    /// <c>NVStorageComponent::Read</c>). The camera calibration is a single-blob entry, so the request length is
+    /// <see cref="CameraSettings.CalibrationReadLength"/> and the reply's index-0 blob is the 56-byte struct.
+    /// </summary>
     public async Task<CameraCalibration?> ReadCalibrationAsync(TimeSpan? timeout = null)
     {
-        using var reader = new NvCalibrationReader(_robot);
-        var cal = await reader.ReadAsync(timeout);
-        foreach (var l in reader.Log) Log?.Invoke(l);
-        if (cal is not null) Calibration = cal;
+        var nv = _robot.Engine.NvStorage;
+        if (nv is null) return null;
+        var r = await nv.ReadAsync(CameraCalibration.NvEntryTag, CameraSettings.CalibrationReadLength, timeout).ConfigureAwait(false);
+        foreach (var l in nv.Log) Log?.Invoke(l);
+        if (r.Result != 0 || r.Data.Length != CameraSettings.CalibrationBytes) return null;
+        var cal = CameraCalibration.Unpack(r.Data);
+        // The connection-time callback's rule (1j): a body hardware version <= 6 zeroes the distortion.
+        if (_robot.CameraSettings.BodyHwVersion <= 6) cal = cal with { DistortionCoefficients = new double[8] };
+        Calibration = cal;
         return cal;
     }
 

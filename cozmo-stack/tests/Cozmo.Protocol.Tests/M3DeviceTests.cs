@@ -935,7 +935,7 @@ public class M3DeviceTests
         public void Tick() { NowNs += 60_000_000; Engine.Tick(); }
         public void Data(RobotMessage m) => Port.Raise(ReceiverMarker.Data, RobotEp, m.ToBytes());
 
-        public void ToSuccess(string fw = ShippedFw)
+        public void ToSuccess(string fw = ShippedFw, uint bodyHw = 7)
         {
             Engine.ConnectToRobot(RobotIp);
             Tick();
@@ -944,7 +944,7 @@ public class M3DeviceTests
             Data(new RobotAvailable { SerialNumberHead = 0x1234, HwVersion = 5 });
             Data(new FirmwareVersion { RobotId = 1, Signature = Encoding.UTF8.GetBytes(fw) });
             Tick();
-            Data(new ManufacturingID { SerialNumber = 0xABCD, BodyHwVersion = 7, BodyColor = 2 });
+            Data(new ManufacturingID { SerialNumber = 0xABCD, BodyHwVersion = bodyHw, BodyColor = 2 });
             Tick();
         }
 
@@ -971,6 +971,10 @@ public class M3DeviceTests
         Assert.Equal(new byte[] { 0x57, 0, 0, 0, 0, 0, 0, 1 }, sent[camera].ToBytes());
         var read = (NVCommand)sent[nv];
         Assert.Equal(0x80000001u, read.Tag);
+        Assert.Equal(1, read.Length);                              // NVEntry_CameraCalib's factory size-table value
+        Assert.Equal(NvStorageComponent.OpRead, read.Op);
+        Assert.Equal(0, read.Unknown);
+        Assert.Empty(read.Data);
         Assert.DoesNotContain(sent, m => m is EnableColorImages);
         Assert.Single(sent.OfType<SetCameraParams>());
     }
@@ -987,7 +991,7 @@ public class M3DeviceTests
     /// <summary>
     /// 1j, 2a, 2d (M3-022): vision starts disabled (+0x48 = 0) and the NV callback enables it on all three paths:
     /// NVResult ≠ 0, a size other than 56 (MakeWordAligned(CameraCalibration::Size())), and success, which also installs
-    /// the calibration as read (the robot+0x24 &lt;= 6 zeroing is MISSING and not applied) and hands it to vision.
+    /// the calibration and hands it to vision. The reply's Length is the index, so the 56-byte blob sits at index 0.
     /// </summary>
     [Theory]
     [InlineData(-1, 56, false)]
@@ -997,10 +1001,10 @@ public class M3DeviceTests
     {
         using var rig = new Rig();
         using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
-        rig.ToSuccess();
+        rig.ToSuccess();                                            // body hardware 7: distortion kept
         Assert.False(rig.Robot.CameraSettings.VisionEnabled);
         var data = Calibration56()[..Math.Min(size, 56)];
-        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = (sbyte)result, Length = data.Length, Data = data });
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = (sbyte)result, Length = 0, Data = data });
         rig.Tick();
         Assert.True(rig.Robot.CameraSettings.VisionEnabled);
         Assert.True(vision.Enabled);
@@ -1008,7 +1012,7 @@ public class M3DeviceTests
         {
             var cal = rig.Robot.CameraSettings.Calibration!;
             Assert.Equal((290.0, 291.0, 320, 240), (cal.FocalLengthX, cal.FocalLengthY, cal.Columns, cal.Rows));
-            Assert.Equal(0.01, cal.DistortionCoefficients[0], 6);
+            Assert.Equal(0.01, cal.DistortionCoefficients[0], 6);    // hardware 7: not zeroed
             Assert.Same(cal, vision.Calibration);
         }
         else
@@ -1016,6 +1020,23 @@ public class M3DeviceTests
             Assert.Null(rig.Robot.CameraSettings.Calibration);
             Assert.Null(vision.Calibration);
         }
+    }
+
+    /// <summary>
+    /// 1j (M3-022): when the body hardware version (mfgId word 1, the engine Robot's +0x24) is at most 6, the
+    /// callback zeroes all eight distortion coefficients before installing the calibration ("IgnoringDistCoeffs").
+    /// The operator's robot reports 4.
+    /// </summary>
+    [Fact]
+    public void M3_022_1j_BodyHardwareAtMostSixZeroesTheDistortionCoefficients()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess(bodyHw: 4);
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
+        rig.Tick();
+        var cal = rig.Robot.CameraSettings.Calibration!;
+        Assert.All(cal.DistortionCoefficients, d => Assert.Equal(0.0, d, 6));
+        Assert.True(rig.Robot.CameraSettings.VisionEnabled);
     }
 
     private static DefaultCameraParams Defaults(float maxGain, float gain, ushort min, ushort max) => new()
@@ -1147,6 +1168,8 @@ public class M3DeviceTests
         int updates = 0;
         rig.Engine.AnimationStreamerUpdate = () => updates++;
         rig.ToSuccess();
+        // CD20: ready to stream waits for the NV queue to drain, so answer the calibration read first.
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
         rig.Tick();
         Assert.Equal(0, updates);                                  // not time synced, no full state yet
         rig.Data(new SyncTimeAck());
@@ -1183,6 +1206,8 @@ public class M3DeviceTests
         Assert.True(SpinWait.SpinUntil(() => Sent(m => m is GetManufacturingInfo), 3000), "no GetManufacturingInfo");
         Data(new ManufacturingID { SerialNumber = 0xABCD, BodyHwVersion = 7, BodyColor = 2 });
         Assert.True(SpinWait.SpinUntil(() => Sent(m => m is SyncTime), 3000), "no SyncTime");
+        // CD20: ready to stream waits for the NV queue to drain, so answer the calibration read first.
+        Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
         Data(new SyncTimeAck());
         Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });
         Assert.True(SpinWait.SpinUntil(() => robot.AnimationStreamingOpen, 3000), "streaming never opened");

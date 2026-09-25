@@ -657,10 +657,17 @@ public sealed class CameraSettings
     /// <summary>The NV calibration size check: MakeWordAligned(CameraCalibration::Size()) = 56 (A17, 1j).</summary>
     public const int CalibrationBytes = (Vision.CameraCalibration.WireSize + 3) & ~3;
 
+    /// <summary>
+    /// The READ length for <c>NVEntry_CameraCalib</c>: 1, the factory size table's value for the tag
+    /// (<c>_maxFactoryEntrySizeTable</c>; PROJECT_STATE's NV finding, contradicting M11-011's 1024).
+    /// </summary>
+    public const int CalibrationReadLength = 1;
+
     private readonly CozmoRobot _robot;
     private readonly Func<RobotMessage, bool> _send;
     private readonly object _gate = new();
-    private Vision.NvCalibrationReader? _calibrationRead;
+    /// <summary>The body hardware version (mfgId word 1, the engine Robot's +0x24); -1 until the connection response.</summary>
+    private int _bodyHwVersion = -1;
 
     internal CameraSettings(CozmoRobot robot, Func<RobotMessage, bool> send)
     {
@@ -700,6 +707,8 @@ public sealed class CameraSettings
     public bool VisionEnabled { get; private set; }
     /// <summary>The calibration the NV read installed (SetCameraCalibration, 1j), or null.</summary>
     public Vision.CameraCalibration? Calibration { get; private set; }
+    /// <summary>The body hardware version from the last connection (mfgId word 1, the engine Robot's +0x24); -1 before one.</summary>
+    public int BodyHwVersion { get { lock (_gate) return _bodyHwVersion; } }
 
     /// <summary>The NV callback installed a calibration (1j success path).</summary>
     public event Action<Vision.CameraCalibration>? CalibrationInstalled;
@@ -792,51 +801,47 @@ public sealed class CameraSettings
     /// VisionComponent's RobotConnectionResponse subscriber, for response 0 (1h, A17, A18; 0x006583BA..0x0065842C):
     /// it queues NVStorageComponent::Read(0x80000001, callback) and then sends SetCameraParams, reliable, not hot.
     /// Policy M3-019 (MD1): the engine's f32 @0 and u16 @4 are stale stack bytes (1i), so this stack sends 0.0 and 0;
-    /// the bool @6 is 1, as in the engine. The read is this stack's NV path (<see cref="Vision.NvCalibrationReader"/>),
-    /// whose wire exchange is the NV subsystem's: the engine only queues it here, so its request goes out after the
-    /// SetCameraParams. It has no timeout: the callback runs when the robot answers.
+    /// the bool @6 is 1, as in the engine. The read goes through the robot's shared NV queue (M3-022), with
+    /// <see cref="CalibrationReadLength"/> = 1 and READ; its callback runs when the read completes. The engine only
+    /// queues it here, so the request goes out after the SetCameraParams. <paramref name="bodyHwVersion"/> is mfgId
+    /// word 1, the engine Robot's +0x24, which the calibration callback's distortion rule reads.
     /// </summary>
-    internal void OnRobotConnected()
+    internal void OnRobotConnected(int bodyHwVersion)
     {
-        Vision.NvCalibrationReader reader;
-        lock (_gate)
-        {
-            _calibrationRead?.Dispose();
-            reader = _calibrationRead = new Vision.NvCalibrationReader(_robot);
-        }
-        reader.Completed += (result, data) => OnCalibrationRead(reader, result, data);
+        lock (_gate) _bodyHwVersion = bodyHwVersion;
         _send(new SetCameraParams { Gain = 0.0f, ExposureMs = 0, AutoExposureEnabled = true });
-        reader.Request();
+        _robot.Engine.NvStorage!.Read(Vision.CameraCalibration.NvEntryTag, CalibrationReadLength, OnCalibrationRead);
     }
 
     // fidelity: M3-022
     /// <summary>
     /// The NV callback (1j; 0x0065AB68): NVResult ≠ 0 logs "ReadCameraCalibration.Failed"; a size other than
-    /// <see cref="CalibrationBytes"/> logs "SizeMismatch"; otherwise it unpacks, logs "…Recvd" and installs the
-    /// calibration (SetCameraCalibration, which starts processing). All three paths then set vision enabled
-    /// (+0x48 = 1, 0x0065AE7E/0x0065AE80).
-    /// MISSING: when robot+0x24 &lt;= 6 the engine zeroes the distortion coefficients ("IgnoringDistCoeffs"); what
-    /// robot+0x24 holds is not established (gap pass open question 4), so the coefficients are installed as read.
+    /// <see cref="CalibrationBytes"/> logs "SizeMismatch"; otherwise it unpacks, zeroes the distortion coefficients
+    /// when the body hardware version (robot+0x24, mfgId word 1) ≤ 6 ("IgnoringDistCoeffs"), logs "…Recvd" and
+    /// installs the calibration (SetCameraCalibration, which starts processing). All three paths then set vision
+    /// enabled (+0x48 = 1, 0x0065AE7E/0x0065AE80).
     /// </summary>
-    private void OnCalibrationRead(Vision.NvCalibrationReader reader, sbyte result, byte[] data)
+    private void OnCalibrationRead(NvResult r)
     {
         Vision.CameraCalibration? installed = null;
         lock (_gate)
         {
-            if (!ReferenceEquals(_calibrationRead, reader)) return;       // a removal (or a newer read) replaced it
-            _calibrationRead = null;
-            if (result != 0) Emit($"warning: VisionComponent.ReadCameraCalibration.Failed: {result}");
-            else if (data.Length != CalibrationBytes)
-                Emit($"warning: VisionComponent.ReadCameraCalibration.SizeMismatch: {data.Length} bytes, expected {CalibrationBytes}");
+            if (r.Result != 0) Emit($"warning: VisionComponent.ReadCameraCalibration.Failed: {r.Result}");
+            else if (r.Data.Length != CalibrationBytes)
+                Emit($"warning: VisionComponent.ReadCameraCalibration.SizeMismatch: {r.Data.Length} bytes, expected {CalibrationBytes}");
             else
             {
-                installed = Vision.CameraCalibration.Unpack(data);
+                installed = Vision.CameraCalibration.Unpack(r.Data);
+                if (_bodyHwVersion <= 6)
+                {
+                    Emit($"info: VisionComponent.ReadCameraCalibration.IgnoringDistCoeffs: body hardware version {_bodyHwVersion} <= 6");
+                    installed = installed with { DistortionCoefficients = new double[8] };
+                }
                 Emit($"info: VisionComponent.ReadCameraCalibration.Recvd: {installed}");
                 Calibration = installed;
             }
             VisionEnabled = true;
         }
-        reader.Dispose();
         if (installed is not null) CalibrationInstalled?.Invoke(installed);
         VisionEnabledSet?.Invoke();
     }
@@ -847,11 +852,9 @@ public sealed class CameraSettings
     /// <summary>The as-constructed state, for a removed robot (the VisionComponent and VisionSystem are built afresh). Subscribers are kept.</summary>
     internal void ResetToConstructed()
     {
-        Vision.NvCalibrationReader? pending;
         lock (_gate)
         {
-            pending = _calibrationRead;
-            _calibrationRead = null;
+            _bodyHwVersion = -1;
             MaxExposureMs = ConstructorMaxExposureMs;
             MinExposureMs = ConstructorMinExposureMs;
             MinGain = ConstructorMinGain;
@@ -865,6 +868,5 @@ public sealed class CameraSettings
             VisionEnabled = false;
             Calibration = null;
         }
-        pending?.Dispose();
     }
 }
