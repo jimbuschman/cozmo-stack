@@ -23,7 +23,8 @@ Committed on `main`:
 | `3827137` | M6-009 part: RTPC curve shapes and post-curve scaling |
 | `8b64904` | M6-007: random/sequence step selection engine |
 
-Working tree, **uncommitted and unverified** (M6-006):
+Working tree, **uncommitted and unverified** (M6-006) — now preserved on the branch
+`work/m6-006-unverified` (`e684194`), **not** on `main`:
 
 - `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAction.cs`
 - `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseEventRuntime.cs`
