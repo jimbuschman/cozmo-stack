@@ -972,3 +972,14 @@ I reused gapF `r.py`, gapB `base.py`/`q.py`/`wwise_arm.txt` and gapC `nodes.py`/
 5. The writers of pbi+0x164 (the resampling ratio used in the offset conversion).
 6. Whether the float MDCT is normalised exactly like libvorbis.
 7. Sequence 725225627 has a non-continuous child container (990835622); how a PlayAndContinue behaves when its target is a container has not been traced.
+
+## Correction C1 (manager, 2026-09-26): the STMG reader and the seed seam
+
+**Why.** The `m6-wip` batch was merged to main; the STMG middle layout (its §7 record) was recovered outside this frozen inventory and needs its own record, and the verifier flagged two record overclaims. Approved under the standing authorisation for inventory corrections.
+
+**Added records:**
+- **M6-019** (EXACT_SOURCE) — the STMG state-manager reader 0x9B0B14: the f32 threshold and u16 max voices, the two group tables (state groups `{u32 id,u32,u32 n, n×{u32,u32,u32}}`; switch groups `{u32 id,u32,u8 flags, u32 n, n×12 bytes}`, the flags a **1-byte** read), and the 37-parameter table (`{u32 id, f32 value→entry+8, u32 ramp, f32 up, f32 down, u8 built-in}` 21 bytes). Dispatch 0x9B7864; the shipped Init.bnk STMG body is 1095 bytes (offsets 0/4/6/82/306). Tagged in `WwiseStmg.cs`.
+- **M6-020** (RECOVERABLE_GAP, not on a live path) — the group-item field meanings (`0xA27CA4` state items, `0xA325E0` switch items) and the two **trailing bodies**: the extractor corrected M6-STATUS §7 — a non-zero trailing count A is **not refused** but reads a 56-byte body (`0xA3B84C`) per entry, and B a 40-byte body (`0xA3BA44`); both counts are 0 in every shipped bank, so the code's refusal is unexercised. Read the handlers to name them.
+- **M6-021** (COMPATIBILITY_POLICY, not on a live path) — the injectable RNG seed seam. The engine seeds the LCG with `time(NULL)` (SetSeed 0x99DB58 from SoundEngine::Init 0x99EF80); `WwiseSelection`'s default seed is the current Unix time (the same behaviour) and the constructor's seed parameter exists for deterministic selection tests. MD2: reproduced, not a divergence in behaviour.
+
+**Amended records:** M6-001 — the unexercised conditional branches (3D positioning, bus A/B bits, the LayerCntr layer body) are not "read exactly": the rows are partial and the code fails closed, so they move to its `unresolved`. M6-005 — the 0x103 bound is the native **copy** bound; for a NUL-terminated name of length L the hashed input is min(L, 0x102) bytes (GetIDFromString 0x0099DB84). M6-006/007/018 `location` and `test` corrected to the files and test classes the merged code uses.

@@ -132,7 +132,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-        "approved": "2026-09-25",
+        "approved": "2026-09-26",
         "snapshot": "re-analysis/inventory/M6-wwise-bank.approved.json"
       }
     },
@@ -2143,13 +2143,13 @@
       "evidence": [
         "HIRC dispatch 0x009B338C; Event 0x9CD01C; Action 0xA613B0 / factory 0xA60C1C; Sound 0xA1DA08; RanSeq 0xA0828C; Switch 0xA2F1D0; ActorMixer 0xA669EC; NodeBase 0x9F6EF8",
         "Bus 0x9C3FFC; Layer 0x9D24D4; RTPC entry 0x9F7254..0x9F72EC (varint param id); STMG 0x9B0B14",
-        "conditional branches (positioning 0x9ECF44, source plugin params 0x9B9C90, BKHD flag 0x9B2224) read exactly"
+        "conditional branches the shipped banks never exercise (3D positioning 0x9ECF44, bus A/B bits, the LayerCntr layer body): the rows are partial and the code fails closed (throws) rather than guessing"
       ],
       "live_path": true,
       "test": "WwiseTests.EveryHierarchyObjectInTheShippedBanksConsumesExactly",
       "effect": "a bank object is read with different fields",
       "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "compare the code against the inventory rows; the unread conditional branches (positioning, bus A/B bits, the LayerCntr layer body) stay gaps",
       "hardware_required": false
     },
     {
@@ -2215,7 +2215,7 @@
       "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
       "evidence": [
-        "GetIDFromString 0x0099DB84..0x0099DC40"
+        "GetIDFromString 0x0099DB84: strncpy copies min(strlen+1, 0x103) bytes (0x0099DBB0), then lowercases and hashes strlen bytes (0x0099DBD4/0x0099DC04); for a NUL-terminated name of length L the hashed input is min(L, 0x102) bytes"
       ],
       "live_path": true,
       "test": "WwiseHashTests",
@@ -2228,7 +2228,7 @@
       "id": "M6-006",
       "subsystem": "M6-wwise-bank",
       "title": "Control path: queued PostEvent, ExecuteEvent, EnqueueOrExecute (frames + remainder; PlayAndContinue one frame early), drain order, Play/Stop/Seek execute, switch resolution",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwisePlayback.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseEventRuntime.cs",
       "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
       "evidence": [
@@ -2238,7 +2238,7 @@
         "Switch PlayInternal 0xA2C730"
       ],
       "live_path": true,
-      "test": "WwisePlaybackTests.TheGetInEventPlaysATwoPartPhraseRatherThanOneRecording",
+      "test": "WwiseEventRuntimeTests",
       "effect": "events play different sounds or at different times",
       "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md",
       "unresolved": "compare the code against the inventory rows (the step after approval)",
@@ -2248,7 +2248,7 @@
       "id": "M6-007",
       "subsystem": "M6-wwise-bank",
       "title": "Random/sequence step selection: global time-seeded 64-bit LCG, shared state, k-th eligible, shuffle, avoid list, weights, sequence wrap/ping-pong",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSelection.cs",
       "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
       "evidence": [
@@ -2256,7 +2256,7 @@
         "state 0xA09698 / 0xA099BC; SelectPlayable 0xA0A3B4; SelectRandomly 0xA08A44; avoid 0xA08694; sequence 0xA0A524..0xA0A6E8"
       ],
       "live_path": true,
-      "test": "WwisePlaybackTests.DifferentDrawsReachDifferentRecordings",
+      "test": "WwiseSelectionTests",
       "effect": "a different alternative plays",
       "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md",
       "unresolved": "compare the code against the inventory rows (the step after approval)",
@@ -5648,7 +5648,7 @@
       "id": "M6-018",
       "subsystem": "M6-wwise-bank",
       "title": "Mix rate 48000 Hz and frame 1024 samples (phone-dependent in the original: min(native, 48000) and hardware rounding)",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseRuntimeSettings.cs",
       "evidence": [
         "platform init 0x00A57724: rate cache 0x0108DF90 = min(getNativeOutputSampleRate, 48000), 48000 default 0x00A578B4..0x00A578C8",
         "frame rounding 0x00A577B8..0x00A57830; SetRate 0xA1C75C / SetFrame 0xA1C7D4"
@@ -5951,6 +5951,66 @@
       "hardware_required": true,
       "live_path": true,
       "test": "M3DeviceTests.M3_036_Hardware"
+    },
+    {
+      "id": "M6-019",
+      "subsystem": "M6-wwise-bank",
+      "title": "The STMG state-manager reader (0x9B0B14): the threshold, max voices, the two group tables and the 37-parameter table",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseStmg.cs",
+      "effect": "the state manager's default RTPC values and group tables are read wrong",
+      "provenance": "WwiseStmg.cs implements the layout the M6 worker recovered (M6-STATUS.md §7); the extractor confirmed it and corrected two points (see M6-020)",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "R1/R2 threshold: f32 0x9B0B28..0x9B0B48 -> setter 0x9A080C(type 2); u16 max voices 0x9B0B64..0x9B0B88 -> 0x9A0EA4",
+        "R3/R3d state groups: count 0x9B0BA0..0x9B0B/0x9B0D40; entry {u32 id, u32 field2, u32 n, n x {u32,u32,u32}}; n=0 in every shipped group",
+        "R4/R4e switch groups: count 0x9B0D50..0x9B0D8C; entry {u32 id, u32, u8 flags, u32 n, n x 12-byte bulk}; the flags field is a 1-byte read (0x9B0DCC mov r2,r0 -> 0x9B0DD8; consumed 0x9B1474 ldrb); items strided 12 (0xA3274C)",
+        "R5/R5g parameters: count 0x9B0E7C..0x9B0FAC; entry {u32 id, f32 value -> entry+8 (0xA0F594), u32 ramp type, f32 up, f32 down, u8 built-in (1-byte, 0x9B0F70 mov r2,sl -> 0x9B0F7C)} 21 bytes; ramp via 0xA0F5AC",
+        "shipped Init.bnk STMG body 1095 bytes: offsets 0/4/6/82/306; event_volume 0xD2687048 index 30 = 1.0, robot_volume 0x637C1240 index 12 = 1.0",
+        "dispatch 0x9B7864 (sl='STMG'); read primitive 0x9BBF64"
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseRuntimeTests.AnStmgChunkIsReadInTheRuntimeFieldOrder, WwiseRuntimeTests.TheShippedStmgTableHoldsTheRecoveredDefaults"
+    },
+    {
+      "id": "M6-020",
+      "subsystem": "M6-wwise-bank",
+      "title": "STMG: the group-item field meanings and the two trailing bodies (unread source; unexercised by shipped banks)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseStmg.cs",
+      "effect": "a non-zero trailing count or a named group item would be read differently from the engine",
+      "provenance": "the stack keeps the group items raw and refuses a non-zero trailing count (WwiseRuntimeTests.AnStmgSectionAfterTheParameterTableIsRefusedRatherThanGuessed); the engine instead reads the bodies",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "R6 trailing count A 0x9B0FBC..0x9B0FE8: a non-zero count reads a 56-byte body per entry (1 x u32, 6 x u16, 10 x u32; 0x9B1038/0x9B1060/0x9B10E8) and calls 0xA3B84C; A=0 in every shipped bank",
+        "R7 trailing count B 0x9B12A4..0x9B12C8: a non-zero count reads a 40-byte body per entry (10 x u32; 0x9B1430/0x9B12E0) and calls 0xA3BA44; B=0 in every shipped bank",
+        "state-group item handler 0xA27CA4 (stores f2 at element+8, stride 0xC); switch-group item handler 0xA325E0 (f0 at +0, float(index) at +4, f2 at +8, f1 into an id array)",
+        "the Wwise field names of the item triples and the two trailing bodies are not in the binary"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "read 0xA27CA4 and 0xA325E0 to name the group-item triples, and 0xA3B84C / 0xA3BA44 for the trailing A/B bodies; or record them as raw",
+      "hardware_required": false,
+      "live_path": false,
+      "test": ""
+    },
+    {
+      "id": "M6-021",
+      "subsystem": "M6-wwise-bank",
+      "title": "The injectable RNG seed seam: WwiseSelection's constructor takes a seed for tests; the live default is Unix seconds, matching the engine's time(NULL)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSelection.cs",
+      "effect": "only which alternative plays on a non-deterministic draw; a test seam, not a live divergence",
+      "provenance": "the engine seeds the global LCG with time(NULL) at SoundEngine::Init; the stack's default seed is the current Unix time (the same behaviour), and the constructor's seed parameter exists so selection tests are deterministic",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "LCG 0xA08A7C..0xA08AC0; SetSeed 0x99DB58 called from SoundEngine::Init 0x99EF80 with time(NULL)",
+        "the selection tests use the injectable seed (WwiseSelectionTests.TheLcgPinsAFixedSeed)"
+      ],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": null,
+      "hardware_required": false,
+      "live_path": false,
+      "test": "WwiseSelectionTests.TheLcgPinsAFixedSeed"
     }
   ]
 }

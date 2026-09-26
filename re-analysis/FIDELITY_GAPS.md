@@ -3,15 +3,15 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **316 records** over 16 subsystems.
+Manifest of **319 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 197 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 198 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 14 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 0 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 1 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 60 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 27 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| COMPATIBILITY_POLICY | 28 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -29,7 +29,7 @@ remains after both, and they do not go away by working harder on this repository
 | M3-device — Camera, display and audio device layer | 36 | 0 | 8 | 0 | 3 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 24 | 0 | 10 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 36 | 0 | 15 | 0 | 1 | yes | no |
-| M6-wwise-bank — Wwise bank reading and codecs | 18 | 0 | 18 | 0 | 0 | yes | no |
+| M6-wwise-bank — Wwise bank reading and codecs | 21 | 0 | 18 | 0 | 0 | yes | no |
 | M7-behaviour — Idle, mood and reactions | 17 | 0 | 0 | 0 | 0 | yes | yes |
 | M8-framework — Behaviour framework and scoring | 10 | 0 | 0 | 0 | 0 | yes | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
@@ -57,7 +57,7 @@ status.
 | M3-device | INVENTORY_APPROVED | 21 | 0 | 0 | 0 |
 | M4-control | INVENTORY_APPROVED | 9 | 0 | 0 | 0 |
 | M5-animation | INVENTORY_APPROVED | 19 | 0 | 0 | 0 |
-| M6-wwise-bank | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
+| M6-wwise-bank | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M7-behaviour | UNREVIEWED | 17 | 3 | 0 | 0 |
 | M8-framework | UNREVIEWED | 6 | 1 | 0 | 0 |
 | M9-wwise-music | UNREVIEWED | 20 | 14 | 0 | 0 |
@@ -72,6 +72,17 @@ status.
 ## Still to read: every RECOVERABLE_GAP
 
 Each of these is a question the original can answer and nobody has asked it yet.
+
+### M6-wwise-bank — Wwise bank reading and codecs
+
+**M6-020 — STMG: the group-item field meanings and the two trailing bodies (unread source; unexercised by shipped banks)** (not on the live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseStmg.cs`
+* effect: a non-zero trailing count or a named group item would be read differently from the engine
+* rests on: the stack keeps the group items raw and refuses a non-zero trailing count (WwiseRuntimeTests.AnStmgSectionAfterTheParameterTableIsRefusedRatherThanGuessed); the engine instead reads the bodies
+* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
+* evidence: R6 trailing count A 0x9B0FBC..0x9B0FE8: a non-zero count reads a 56-byte body per entry (1 x u32, 6 x u16, 10 x u32; 0x9B1038/0x9B1060/0x9B10E8) and calls 0xA3B84C; A=0 in every shipped bank; R7 trailing count B 0x9B12A4..0x9B12C8: a non-zero count reads a 40-byte body per entry (10 x u32; 0x9B1430/0x9B12E0) and calls 0xA3BA44; B=0 in every shipped bank; state-group item handler 0xA27CA4 (stores f2 at element+8, stride 0xC); switch-group item handler 0xA325E0 (f0 at +0, float(index) at +4, f2 at +8, f1 into an id array); the Wwise field names of the item triples and the two trailing bodies are not in the binary
+* outstanding: read 0xA27CA4 and 0xA325E0 to name the group-item triples, and 0xA3B84C / 0xA3BA44 for the trailing A/B bodies; or record them as raw
 
 ## Still to build: every IMPLEMENTATION_GAP
 
@@ -410,8 +421,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: a bank object is read with different fields
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
 * best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
-* evidence: HIRC dispatch 0x009B338C; Event 0x9CD01C; Action 0xA613B0 / factory 0xA60C1C; Sound 0xA1DA08; RanSeq 0xA0828C; Switch 0xA2F1D0; ActorMixer 0xA669EC; NodeBase 0x9F6EF8; Bus 0x9C3FFC; Layer 0x9D24D4; RTPC entry 0x9F7254..0x9F72EC (varint param id); STMG 0x9B0B14; conditional branches (positioning 0x9ECF44, source plugin params 0x9B9C90, BKHD flag 0x9B2224) read exactly
-* outstanding: compare the code against the inventory rows (the step after approval)
+* evidence: HIRC dispatch 0x009B338C; Event 0x9CD01C; Action 0xA613B0 / factory 0xA60C1C; Sound 0xA1DA08; RanSeq 0xA0828C; Switch 0xA2F1D0; ActorMixer 0xA669EC; NodeBase 0x9F6EF8; Bus 0x9C3FFC; Layer 0x9D24D4; RTPC entry 0x9F7254..0x9F72EC (varint param id); STMG 0x9B0B14; conditional branches the shipped banks never exercise (3D positioning 0x9ECF44, bus A/B bits, the LayerCntr layer body): the rows are partial and the code fails closed (throws) rather than guessing
+* outstanding: compare the code against the inventory rows; the unread conditional branches (positioning, bus A/B bits, the LayerCntr layer body) stay gaps
 
 **M6-002 — Vorbis decoding is the runtime Tremor-lowmem fork: stripped setup, library codebooks, 1-bit mode, integer residue and dequantisation, Tremor floor table, float IMDCT, planar float, skip/trim** (live path)
 
@@ -446,12 +457,12 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: event and object ids hash differently
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
 * best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
-* evidence: GetIDFromString 0x0099DB84..0x0099DC40
+* evidence: GetIDFromString 0x0099DB84: strncpy copies min(strlen+1, 0x103) bytes (0x0099DBB0), then lowercases and hashes strlen bytes (0x0099DBD4/0x0099DC04); for a NUL-terminated name of length L the hashed input is min(L, 0x102) bytes
 * outstanding: compare the code against the inventory rows (the step after approval)
 
 **M6-006 — Control path: queued PostEvent, ExecuteEvent, EnqueueOrExecute (frames + remainder; PlayAndContinue one frame early), drain order, Play/Stop/Seek execute, switch resolution** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwisePlayback.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseEventRuntime.cs`
 * effect: events play different sounds or at different times
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
 * best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
@@ -460,7 +471,7 @@ Each of these is a question already answered. The original's behaviour is establ
 
 **M6-007 — Random/sequence step selection: global time-seeded 64-bit LCG, shared state, k-th eligible, shuffle, avoid list, weights, sequence wrap/ping-pong** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSelection.cs`
 * effect: a different alternative plays
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
 * best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
@@ -559,7 +570,7 @@ Each of these is a question already answered. The original's behaviour is establ
 
 **M6-018 — Mix rate 48000 Hz and frame 1024 samples (phone-dependent in the original: min(native, 48000) and hardware rounding)** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseRuntimeSettings.cs`
 * effect: derived timings and resampling differ
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
 * best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
@@ -699,4 +710,5 @@ Each of these is a question already answered. The original's behaviour is establ
 | M2-017 | M2-protocol | COMPATIBILITY_POLICY | A field whose read failed in a kept malformed message holds 0 / false (the engine leaves stale stack bytes) | libcozmoEngine.so 3.4.0-1204 |
 | M3-019 | M3-device | COMPATIBILITY_POLICY | The connection-time SetCameraParams: the engine sends stale stack bytes for f32@0 and u16@4 and bool@6 = 1; this stack sends 0.0, 0, true | libcozmoEngine.so 3.4.0-1204 |
 | M3-020 | M3-device | COMPATIBILITY_POLICY | A payload that is empty or all 0xFF: the engine reads data[-1] (undefined); this stack treats it as a decode failure | libcozmoEngine.so 3.4.0-1204 |
+| M6-021 | M6-wwise-bank | COMPATIBILITY_POLICY | The injectable RNG seed seam: WwiseSelection's constructor takes a seed for tests; the live default is Unix seconds, matching the engine's time(NULL) | libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40) |
 

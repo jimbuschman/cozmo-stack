@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 
 namespace Cozmo.Robot.Animation.Wwise;
 
+// fidelity: M6-019
 /// <summary>
 /// One entry of the STMG parameter table: an RTPC's default value and ramp. The reader stores the default
 /// at the value-store entry's <c>+8</c> and the ramp fields at <c>+0xC/+0x10/+0x14</c> (gapF 1.2).

@@ -1,8 +1,8 @@
 {
   "subsystem": "M6-wwise-bank",
-  "approved": "2026-09-25",
+  "approved": "2026-09-26",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "fc25c79f2c9a293fb6f62526b1d30ae82bee11e73fd7e9887818bb144f1161d8",
+  "inventory_sha256": "1d70f985dfdab0c71f2d322eec19658e3281a4a693cbc06c3475bdd5376343c8",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -11,7 +11,7 @@
       "evidence": [
         "HIRC dispatch 0x009B338C; Event 0x9CD01C; Action 0xA613B0 / factory 0xA60C1C; Sound 0xA1DA08; RanSeq 0xA0828C; Switch 0xA2F1D0; ActorMixer 0xA669EC; NodeBase 0x9F6EF8",
         "Bus 0x9C3FFC; Layer 0x9D24D4; RTPC entry 0x9F7254..0x9F72EC (varint param id); STMG 0x9B0B14",
-        "conditional branches (positioning 0x9ECF44, source plugin params 0x9B9C90, BKHD flag 0x9B2224) read exactly"
+        "conditional branches the shipped banks never exercise (3D positioning 0x9ECF44, bus A/B bits, the LayerCntr layer body): the rows are partial and the code fails closed (throws) rather than guessing"
       ],
       "live_path": true,
       "hardware_required": false
@@ -55,7 +55,7 @@
       "title": "FNV-1 32-bit with ASCII lowercasing over at most 0x103 bytes",
       "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
       "evidence": [
-        "GetIDFromString 0x0099DB84..0x0099DC40"
+        "GetIDFromString 0x0099DB84: strncpy copies min(strlen+1, 0x103) bytes (0x0099DBB0), then lowercases and hashes strlen bytes (0x0099DBD4/0x0099DC04); for a NUL-terminated name of length L the hashed input is min(L, 0x102) bytes"
       ],
       "live_path": true,
       "hardware_required": false
@@ -215,6 +215,45 @@
         "frame rounding 0x00A577B8..0x00A57830; SetRate 0xA1C75C / SetFrame 0xA1C7D4"
       ],
       "live_path": true,
+      "hardware_required": false
+    },
+    "M6-019": {
+      "status": "EXACT_SOURCE",
+      "title": "The STMG state-manager reader (0x9B0B14): the threshold, max voices, the two group tables and the 37-parameter table",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "R1/R2 threshold: f32 0x9B0B28..0x9B0B48 -> setter 0x9A080C(type 2); u16 max voices 0x9B0B64..0x9B0B88 -> 0x9A0EA4",
+        "R3/R3d state groups: count 0x9B0BA0..0x9B0B/0x9B0D40; entry {u32 id, u32 field2, u32 n, n x {u32,u32,u32}}; n=0 in every shipped group",
+        "R4/R4e switch groups: count 0x9B0D50..0x9B0D8C; entry {u32 id, u32, u8 flags, u32 n, n x 12-byte bulk}; the flags field is a 1-byte read (0x9B0DCC mov r2,r0 -> 0x9B0DD8; consumed 0x9B1474 ldrb); items strided 12 (0xA3274C)",
+        "R5/R5g parameters: count 0x9B0E7C..0x9B0FAC; entry {u32 id, f32 value -> entry+8 (0xA0F594), u32 ramp type, f32 up, f32 down, u8 built-in (1-byte, 0x9B0F70 mov r2,sl -> 0x9B0F7C)} 21 bytes; ramp via 0xA0F5AC",
+        "shipped Init.bnk STMG body 1095 bytes: offsets 0/4/6/82/306; event_volume 0xD2687048 index 30 = 1.0, robot_volume 0x637C1240 index 12 = 1.0",
+        "dispatch 0x9B7864 (sl='STMG'); read primitive 0x9BBF64"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-020": {
+      "status": "RECOVERABLE_GAP",
+      "title": "STMG: the group-item field meanings and the two trailing bodies (unread source; unexercised by shipped banks)",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "R6 trailing count A 0x9B0FBC..0x9B0FE8: a non-zero count reads a 56-byte body per entry (1 x u32, 6 x u16, 10 x u32; 0x9B1038/0x9B1060/0x9B10E8) and calls 0xA3B84C; A=0 in every shipped bank",
+        "R7 trailing count B 0x9B12A4..0x9B12C8: a non-zero count reads a 40-byte body per entry (10 x u32; 0x9B1430/0x9B12E0) and calls 0xA3BA44; B=0 in every shipped bank",
+        "state-group item handler 0xA27CA4 (stores f2 at element+8, stride 0xC); switch-group item handler 0xA325E0 (f0 at +0, float(index) at +4, f2 at +8, f1 into an id array)",
+        "the Wwise field names of the item triples and the two trailing bodies are not in the binary"
+      ],
+      "live_path": false,
+      "hardware_required": false
+    },
+    "M6-021": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "The injectable RNG seed seam: WwiseSelection's constructor takes a seed for tests; the live default is Unix seconds, matching the engine's time(NULL)",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "LCG 0xA08A7C..0xA08AC0; SetSeed 0x99DB58 called from SoundEngine::Init 0x99EF80 with time(NULL)",
+        "the selection tests use the injectable seed (WwiseSelectionTests.TheLcgPinsAFixedSeed)"
+      ],
+      "live_path": false,
       "hardware_required": false
     }
   }
