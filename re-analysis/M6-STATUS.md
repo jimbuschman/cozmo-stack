@@ -193,20 +193,22 @@ read but their field *meanings* are not named in the rows (kept raw in `WwiseStm
 Plan batches: 1 (done) → 2 (M6-006/007/008/009/017) → 3 (M6-003/004/010/011/012) →
 4 (M6-013/014/015/016) → 5 (M6-002).
 
-Done: M6-001, M6-005, M6-018, M6-009 (curves/scaling only), M6-007. M6-006 implemented but
-unverified/uncommitted.
+Done (on `main`): M6-001, M6-005, M6-018, M6-007, M6-006 (merged 7e9676c, verifier PASS — still a
+partial, unwired WIP), and M6-009 — the curves/scaling *and* this batch's **value store**
+(`WwiseRtpcStore.cs`, `d2ec5cf`, unwired). The STMG layout is recorded (M6-019/020) and the RNG
+seed seam (M6-021). Corrections C1 (STMG/seed/locations) and C2 (the RTPC ramp rows) are approved.
 
 Next:
-1. Verify M6-006 (run `WwiseEventRuntimeTests`, build, `fidelity.py --check`, review the diff for
-   invented behavior), fix failures, commit.
-2. M6-017 (audio-thread frame order: messages → pending drain → render/bus/notification flush →
-   tick) and M6-008 (continuous containers). Both are heavily RECOVERABLE_GAP; the continuous bodies
-   0xA0ABC4 / 0xA09F04 and several timing details are not read. Implement the established parts and
-   leave the rest explicitly unresolved.
-3. Finish M6-009's value store/accumulation once M6-006's runtime provides scopes.
-4. Batches 3–5.
-5. Final pass: re-run the whole suite once, update `re-analysis/fidelity_manifest.json` statuses and
-   add `// fidelity:` tags for every settled record, then `fidelity.py --check`.
+1. M6-008 (continuous containers). The rows are settled now: Appendix G §2 (loop=0 infinite / loop=1
+   one pass, selection at the current voice's start, modes 1/2 cross-fades, mode 5 trigger) and
+   Appendix H §1 (mode-4 sample-accurate chaining), plus H's EndOfEvent and `src+0x10` corrections.
+   Build the standalone selection/scheduling module, unwired; leave the live-voice/PBI pieces the rows
+   mark RECOVERABLE_GAP.
+2. M6-017 (audio-thread frame order: messages → pending drain → render/bus/notification flush → tick)
+   — the new central runtime architecture; depends on 006/008/012–016/018.
+3. Batches 3–5.
+4. Final pass: re-run the whole suite once, settle the records that the wired runtime reproduces, add
+   `// fidelity:` tags, then `fidelity.py --check`.
 
 Do not wire the new runtime into `WwisePlayback` / `WwiseAudioSource` / `WwiseSongRenderer` /
 `AnimationScheduler` until the live voice/mixer (Batches 3–4) exists, or M9 singing regresses.
