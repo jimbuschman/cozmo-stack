@@ -1,0 +1,428 @@
+{
+  "format": "cozmo-m11-native-evidence-v1",
+  "inputs": {
+    "libcozmoEngine.so": {
+      "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+      "size": 17139336
+    },
+    "vision_config.json": {
+      "sha256": "d99a7a00ffbdc07f6cd9834159a65f6c67dd8ce51da598fce6eded9e9312cdde",
+      "size": 4115
+    }
+  },
+  "notes": [
+    "Addresses are ARM Thumb addresses normalized to an even value.",
+    "A local byte digest detects binary drift; it does not interpret behavior.",
+    "Behavior claims remain in NATIVE-EVIDENCE.md and require disassembly review."
+  ],
+  "points": [
+    {
+      "label": "VisionSystem.ctor",
+      "address": "0x006affd0",
+      "containing_symbol": "_ZN4Anki5Cozmo12VisionSystemC1EPKNS0_12CozmoContextE",
+      "symbol_address": "0x006affd0",
+      "symbol_size": 1304,
+      "bytes_32_sha256": "7dfa847e17edf403c9f78966ab5812b6801f943c40a3a79f8001b25c08ad9dd5"
+    },
+    {
+      "label": "VisionSystem.Init",
+      "address": "0x006b0658",
+      "containing_symbol": "_ZN4Anki5Cozmo12VisionSystem4InitERKN4Json5ValueE",
+      "symbol_address": "0x006b0658",
+      "symbol_size": 4604,
+      "bytes_32_sha256": "8f1ec27bea81989ae204b609f0e64b60a156d0a6a1737a9174831311165c7d44"
+    },
+    {
+      "label": "VisionSystem.EnableMode",
+      "address": "0x006b19c0",
+      "containing_symbol": "_ZN4Anki5Cozmo12VisionSystem10EnableModeENS0_10VisionModeEb",
+      "symbol_address": "0x006b19c0",
+      "symbol_size": 1060,
+      "bytes_32_sha256": "9f713308967f27f3921b21d8ab1ce374c81f977ac105887aebb1596866cb75da"
+    },
+    {
+      "label": "VisionSystem.UpdatePoseData",
+      "address": "0x006b24d0",
+      "containing_symbol": "_ZN4Anki5Cozmo12VisionSystem14UpdatePoseDataERKNS0_14VisionPoseDataE",
+      "symbol_address": "0x006b24d0",
+      "symbol_size": 1056,
+      "bytes_32_sha256": "6832588a5cca7678789f97a81bf4002d9551ea63d3ccb067bf90a8a41986e7ae"
+    },
+    {
+      "label": "VisionSystem.DetectFaces",
+      "address": "0x006b3548",
+      "containing_symbol": "_ZN4Anki5Cozmo12VisionSystem11DetectFacesERKNS_6Vision5ImageERNSt6__ndk16vectorINS_9RectangleIiEENS6_9allocatorIS9_EEEE",
+      "symbol_address": "0x006b3548",
+      "symbol_size": 1016,
+      "bytes_32_sha256": "61bc8650773cc48c28de791d130f1656246979bc9e48e580aeb7813723c74fa4"
+    },
+    {
+      "label": "VisionSystem.DetectPets",
+      "address": "0x006b3940",
+      "containing_symbol": "_ZN4Anki5Cozmo12VisionSystem10DetectPetsERKNS_6Vision5ImageERNSt6__ndk16vectorINS_9RectangleIiEENS6_9allocatorIS9_EEEE",
+      "symbol_address": "0x006b3940",
+      "symbol_size": 592,
+      "bytes_32_sha256": "dbdaadf6849018e4b47dd3310e9da796c05f142553732f110b9f342fcfcf6953"
+    },
+    {
+      "label": "VisionSystem.DetectMotion",
+      "address": "0x006b3b90",
+      "containing_symbol": "_ZN4Anki5Cozmo12VisionSystem12DetectMotionERNS_6Vision10ImageCacheE",
+      "symbol_address": "0x006b3b90",
+      "symbol_size": 40,
+      "bytes_32_sha256": "90ed13c25b22f53fa8cee4b23e52f677e8337b9543eb8f71c0ee59a9f07a7a52"
+    },
+    {
+      "label": "VisionSystem.DetectMarkersWithCLAHE",
+      "address": "0x006b4780",
+      "containing_symbol": "_ZN4Anki5Cozmo12VisionSystem22DetectMarkersWithCLAHEERKNS_6Vision5ImageES5_RNSt6__ndk16vectorINS_9RectangleIiEENS6_9allocatorIS9_EEEENS1_20MarkerDetectionCLAHEE",
+      "symbol_address": "0x006b4780",
+      "symbol_size": 1000,
+      "bytes_32_sha256": "4da73b5b1fd8f012f42d0dde5f3b58f5b7fe1f33fcf76c670365bded70ffb3ab"
+    },
+    {
+      "label": "VisionSystem.UpdateEncoded",
+      "address": "0x006b4b68",
+      "containing_symbol": "_ZN4Anki5Cozmo12VisionSystem6UpdateERKNS0_14VisionPoseDataERKNS0_12EncodedImageE",
+      "symbol_address": "0x006b4b68",
+      "symbol_size": 500,
+      "bytes_32_sha256": "0b2b2ef910ab9963fe7b65477667aaee7315c0337a96ffcda36a0a1ebd61868d"
+    },
+    {
+      "label": "VisionSystem.UpdateImageCache",
+      "address": "0x006b4d5c",
+      "containing_symbol": "_ZN4Anki5Cozmo12VisionSystem6UpdateERKNS0_14VisionPoseDataERNS_6Vision10ImageCacheE",
+      "symbol_address": "0x006b4d5c",
+      "symbol_size": 3240,
+      "bytes_32_sha256": "6c563870bfde0b3f3059072cc0282b73da6a8e69283bb600b3edfb51b6d57cb6"
+    },
+    {
+      "label": "VisionSystem.ShouldProcessVisionMode",
+      "address": "0x006b5aa4",
+      "containing_symbol": "_ZN4Anki5Cozmo12VisionSystem23ShouldProcessVisionModeENS0_10VisionModeE",
+      "symbol_address": "0x006b5aa4",
+      "symbol_size": 244,
+      "bytes_32_sha256": "d8a8a217f7314cf7d9c99dc844ac8b008703898e4d693d435c7d15c271a1e55d"
+    },
+    {
+      "label": "VisionComponent.SetNextImage",
+      "address": "0x00652b04",
+      "containing_symbol": "_ZN4Anki5Cozmo15VisionComponent12SetNextImageERNS0_12EncodedImageE",
+      "symbol_address": "0x00652b04",
+      "symbol_size": 2240,
+      "bytes_32_sha256": "a2e05a758ab024f3762797fc9e5165a2158c87344354b0eb51229ae838b73c20"
+    },
+    {
+      "label": "VisionComponent.WasRotatingTooFast",
+      "address": "0x0065359c",
+      "containing_symbol": "_ZNK4Anki5Cozmo15VisionComponent18WasRotatingTooFastEjffi",
+      "symbol_address": "0x0065359c",
+      "symbol_size": 46,
+      "bytes_32_sha256": "d7862444631d6b71bc2d5e2009aa276f1f67a8756d66200d927a9119f71a22ab"
+    },
+    {
+      "label": "VisionComponent.UpdateVisionSystem",
+      "address": "0x00653d28",
+      "containing_symbol": "_ZN4Anki5Cozmo15VisionComponent18UpdateVisionSystemERKNS0_14VisionPoseDataERKNS0_12EncodedImageE",
+      "symbol_address": "0x00653d28",
+      "symbol_size": 264,
+      "bytes_32_sha256": "e98587388abf7f76df007ce96a11cde7470bd1399663c6d74acaaf85bc8c7505"
+    },
+    {
+      "label": "VisionComponent.UpdateAllResults",
+      "address": "0x006542ec",
+      "containing_symbol": "_ZN4Anki5Cozmo15VisionComponent16UpdateAllResultsEv",
+      "symbol_address": "0x006542ec",
+      "symbol_size": 2676,
+      "bytes_32_sha256": "f2a4dd29b0a9fa55bb47ad994da941b659a185898f9fa3c666a622eb88dc03d1"
+    },
+    {
+      "label": "VisionComponent.UpdateVisionMarkers",
+      "address": "0x00654d60",
+      "containing_symbol": "_ZN4Anki5Cozmo15VisionComponent19UpdateVisionMarkersERKNS0_22VisionProcessingResultE",
+      "symbol_address": "0x00654d60",
+      "symbol_size": 1152,
+      "bytes_32_sha256": "74c70af6fc26a9a07c4c805166dd3d32722b55a04eda6e9f447335bd0da8dd2c"
+    },
+    {
+      "label": "VisionComponent.AddLiftOccluder",
+      "address": "0x006564d8",
+      "containing_symbol": "_ZN4Anki5Cozmo15VisionComponent15AddLiftOccluderEj",
+      "symbol_address": "0x006564d8",
+      "symbol_size": 580,
+      "bytes_32_sha256": "03d5f1bdf0a45f37c6196ab79cd9aa7a33edbd288f5f1a724680cdfce4290c30"
+    },
+    {
+      "label": "RobotStateHistory.CullToWindowSize",
+      "address": "0x005309d0",
+      "containing_symbol": "_ZN4Anki5Cozmo17RobotStateHistory16CullToWindowSizeEv",
+      "symbol_address": "0x005309d0",
+      "symbol_size": 808,
+      "bytes_32_sha256": "a6df45c6c1364951f5f8449e372bb701ca67b13e9389d91b81bc6db02da8dc6a"
+    },
+    {
+      "label": "RobotStateHistory.GetRawStateAt",
+      "address": "0x00531430",
+      "containing_symbol": "_ZNK4Anki5Cozmo17RobotStateHistory13GetRawStateAtEjRjRNS0_14HistRobotStateEb",
+      "symbol_address": "0x00531430",
+      "symbol_size": 768,
+      "bytes_32_sha256": "513220e6d84a3e53f427bc17e314e27996ebcac8462a031a2853c9c9f804c4bb"
+    },
+    {
+      "label": "RobotStateHistory.ComputeStateAt",
+      "address": "0x00531784",
+      "containing_symbol": "_ZNK4Anki5Cozmo17RobotStateHistory14ComputeStateAtEjRjRNS0_14HistRobotStateEb",
+      "symbol_address": "0x00531784",
+      "symbol_size": 1024,
+      "bytes_32_sha256": "9dbd6d248a0088340f0f41f43e2cdc3c6ace165f81f3d96422861916a0255aa1"
+    },
+    {
+      "label": "BlockWorld.AddAndUpdateObjects",
+      "address": "0x00620ad4",
+      "containing_symbol": "_ZN4Anki5Cozmo10BlockWorld19AddAndUpdateObjectsERKNSt6__ndk18multimapIfPNS0_16ObservableObjectENS2_4lessIfEENS2_9allocatorINS2_4pairIKfS5_EEEEEEj",
+      "symbol_address": "0x00620ad4",
+      "symbol_size": 2800,
+      "bytes_32_sha256": "56345a4ea5e7ae8fedaf2315165564e8df2db884bf7dd8c7e9a70cac80ebb785"
+    },
+    {
+      "label": "BlockWorld.CheckForUnobservedObjects",
+      "address": "0x00621c6c",
+      "containing_symbol": "_ZN4Anki5Cozmo10BlockWorld25CheckForUnobservedObjectsEj",
+      "symbol_address": "0x00621c6c",
+      "symbol_size": 1812,
+      "bytes_32_sha256": "c2d7424b0d9c3388c48e326314c41894ae933dcd02189ccbc6568b761ed15a4b"
+    },
+    {
+      "label": "BlockWorld.OnRobotDelocalized",
+      "address": "0x006249c4",
+      "containing_symbol": "_ZN4Anki5Cozmo10BlockWorld18OnRobotDelocalizedEj",
+      "symbol_address": "0x006249c4",
+      "symbol_size": 44,
+      "bytes_32_sha256": "075ed3ba2b949a749b8c0fc986e9a0ffc61127e99a55a3b6ce09ff4232830061"
+    },
+    {
+      "label": "BlockWorld.UpdateObservedMarkers",
+      "address": "0x00624ee8",
+      "containing_symbol": "_ZN4Anki5Cozmo10BlockWorld21UpdateObservedMarkersERKNSt6__ndk14listINS_6Vision14ObservedMarkerENS2_9allocatorIS5_EEEE",
+      "symbol_address": "0x00624ee8",
+      "symbol_size": 1204,
+      "bytes_32_sha256": "33a7e806d94e4a5d5eef1d62ad5c822e387fdb11ef06c1302c27212d02fef6b8"
+    },
+    {
+      "label": "BlockWorld.CreateObjectsFromMarkers",
+      "address": "0x0062539c",
+      "containing_symbol": "_ZNK4Anki6Vision23ObservableObjectLibraryINS_5Cozmo16ObservableObjectEE24CreateObjectsFromMarkersERKNSt6__ndk14listINS0_14ObservedMarkerENS5_9allocatorIS7_EEEERNS5_8multimapIfPS3_NS5_4lessIfEENS8_INS5_4pairIKfSE_EEEEEEjb",
+      "symbol_address": "0x0062539c",
+      "symbol_size": 872,
+      "bytes_32_sha256": "ce217a0d46ba5c70b838516b6196c3570341440c34803c6b8bf5070e406ed0c7"
+    },
+    {
+      "label": "ObjectPoseConfirmer.UpdatePoseInInstance",
+      "address": "0x00505de0",
+      "containing_symbol": "_ZN4Anki5Cozmo19ObjectPoseConfirmer20UpdatePoseInInstanceEPNS0_16ObservableObjectEPKS2_S5_RKNS_6Pose3dEbf",
+      "symbol_address": "0x00505de0",
+      "symbol_size": 700,
+      "bytes_32_sha256": "c8ecf62a17dc33ae256fa53a6c8827b8290ffbd6448bf53ba90de45d22422286"
+    },
+    {
+      "label": "ObjectPoseConfirmer.AddVisualObservation",
+      "address": "0x0050684c",
+      "containing_symbol": "_ZN4Anki5Cozmo19ObjectPoseConfirmer20AddVisualObservationERKNSt6__ndk110shared_ptrINS0_16ObservableObjectEEEPS4_bf",
+      "symbol_address": "0x0050684c",
+      "symbol_size": 804,
+      "bytes_32_sha256": "04ef6b29d9134a0e0cfea6d841bcbdacc60fa545192275c8e050769915b8f28a"
+    },
+    {
+      "label": "ObjectPoseConfirmer.MarkObjectUnobserved",
+      "address": "0x00506fbc",
+      "containing_symbol": "_ZN4Anki5Cozmo19ObjectPoseConfirmer20MarkObjectUnobservedERPNS0_16ObservableObjectE",
+      "symbol_address": "0x00506fbc",
+      "symbol_size": 364,
+      "bytes_32_sha256": "0f57d8e83b46328d0c4571fd1b75e9589f8fca2d3084a1835189326819534896"
+    },
+    {
+      "label": "ObjectPoseConfirmer.MarkObjectDirty",
+      "address": "0x005075a4",
+      "containing_symbol": "_ZN4Anki5Cozmo19ObjectPoseConfirmer15MarkObjectDirtyEPNS0_16ObservableObjectEb",
+      "symbol_address": "0x005075a4",
+      "symbol_size": 584,
+      "bytes_32_sha256": "78811aa8d1018bbb7fdf935929977717a8f2cf6465a251867732f1995525ddfa"
+    },
+    {
+      "label": "Camera.ComputeObjectPoseHelper",
+      "address": "0x0085d750",
+      "containing_symbol": "_ZNK4Anki6Vision6Camera23ComputeObjectPoseHelperERKNSt6__ndk16vectorIN2cv6Point_IfEENS2_9allocatorIS6_EEEERKNS3_INS4_7Point3_IfEENS7_ISD_EEEE",
+      "symbol_address": "0x0085d750",
+      "symbol_size": 840,
+      "bytes_32_sha256": "620e6019adafea984d0b39dbfe2280767191200038ad16241c808504a9fdf366"
+    },
+    {
+      "label": "Camera.solvePnP_callsite",
+      "address": "0x0085d8a2",
+      "containing_symbol": "_ZNK4Anki6Vision6Camera23ComputeObjectPoseHelperERKNSt6__ndk16vectorIN2cv6Point_IfEENS2_9allocatorIS6_EEEERKNS3_INS4_7Point3_IfEENS7_ISD_EEEE",
+      "symbol_address": "0x0085d750",
+      "symbol_size": 840,
+      "bytes_32_sha256": "01509ac48853631dd21f9809562e53bfd910a4bda3c5a47833f67aa2d5e6df5d"
+    },
+    {
+      "label": "Camera.AddOccluderKnownMarker",
+      "address": "0x0085e76c",
+      "containing_symbol": "_ZN4Anki6Vision6Camera11AddOccluderERKNS0_11KnownMarkerE",
+      "symbol_address": "0x0085e76c",
+      "symbol_size": 376,
+      "bytes_32_sha256": "fa63c4d035a384da96c470483b6238f9ce22e552978098b9f586495a659e1937"
+    },
+    {
+      "label": "KnownMarker.IsVisibleFrom",
+      "address": "0x0087e4a8",
+      "containing_symbol": "_ZNK4Anki6Vision11KnownMarker13IsVisibleFromERKNS0_6CameraEffbttRNS1_16NotVisibleReasonE",
+      "symbol_address": "0x0087e4a8",
+      "symbol_size": 1200,
+      "bytes_32_sha256": "06f21aeef50285a017445fec66f4aae8f97f83b6faa10fa0ad9c490d9667aaac"
+    },
+    {
+      "label": "Marker.GetNearestNeighborLibrary",
+      "address": "0x0089ed1c",
+      "containing_symbol": "_ZN4Anki8Embedded12VisionMarker25GetNearestNeighborLibraryEv",
+      "symbol_address": "0x0089ed1c",
+      "symbol_size": 252,
+      "bytes_32_sha256": "6455caf113a9cb2385bd420ad1bbf9d3c4ac21f96e049cc8adbee77aa43a20f6"
+    },
+    {
+      "label": "Marker.GetProbeValues",
+      "address": "0x0089ef40",
+      "containing_symbol": "_ZN4Anki8Embedded12VisionMarker14GetProbeValuesERKNS0_5ArrayIhEERKNS2_IfEEbRN2cv4Mat_IhEE",
+      "symbol_address": "0x0089ef40",
+      "symbol_size": 2452,
+      "bytes_32_sha256": "700d5915e13d647bf913083e41271e42ebb66c097ac784e8868d1f3fb9d99d38"
+    },
+    {
+      "label": "Marker.ComputeBrightDarkValues",
+      "address": "0x0089f8e8",
+      "containing_symbol": "_ZN4Anki8Embedded12VisionMarker23ComputeBrightDarkValuesERKNS0_5ArrayIhEEfRfS6_Rb",
+      "symbol_address": "0x0089f8e8",
+      "symbol_size": 1200,
+      "bytes_32_sha256": "5fcd5f18103cfa461932218631004bfd173fd0c777063a7850015c1252cc4800"
+    },
+    {
+      "label": "Marker.RefineCorners",
+      "address": "0x0089fd98",
+      "containing_symbol": "_ZN4Anki8Embedded12VisionMarker13RefineCornersERKNS0_5ArrayIhEEfiiffiiiRKNS0_5PointIfEES9_RhNS0_11MemoryStackE",
+      "symbol_address": "0x0089fd98",
+      "symbol_size": 736,
+      "bytes_32_sha256": "c6673b88b59455c4b8747840cfa773c3a16f4e9b05b3d42ad5de3257250a7f04"
+    },
+    {
+      "label": "Marker.DetectFiducialMarkers",
+      "address": "0x00898760",
+      "containing_symbol": "_ZN4Anki8Embedded21DetectFiducialMarkersERKNS0_5ArrayIhEERNS0_15FixedLengthListINS0_12VisionMarkerEEERKNS0_27FiducialDetectionParametersENS0_11MemoryStackESC_SC_",
+      "symbol_address": "0x00898760",
+      "symbol_size": 4964,
+      "bytes_32_sha256": "c077c230a33703562f74963d3142625e08dbe93e147ed6ced0514e1e5e961a4a"
+    },
+    {
+      "label": "Marker.CharacteristicScale",
+      "address": "0x00890448",
+      "containing_symbol": "_ZN4Anki8Embedded48ExtractComponentsViaCharacteristicScale_binomialERKNS0_5ArrayIhEEiissRNS0_19ConnectedComponentsENS0_11MemoryStackES7_S7_",
+      "symbol_address": "0x00890448",
+      "symbol_size": 2476,
+      "bytes_32_sha256": "0270faa07dbc29bc9e3ea41b5232c64efd4a61f28fd31fd7a0a2827dde8091af"
+    },
+    {
+      "label": "Marker.BinomialFilter",
+      "address": "0x008a2344",
+      "containing_symbol": "_ZN4Anki8Embedded15ImageProcessing14BinomialFilterIhhhEENS_6ResultERKNS0_5ArrayIT_EERNS4_IT1_EENS0_11MemoryStackE",
+      "symbol_address": "0x008a2344",
+      "symbol_size": 1036,
+      "bytes_32_sha256": "288c0eb092c9aaf69bc84e8a2c18cc44182ce1fd952489433bb9a83174285679"
+    },
+    {
+      "label": "Marker.IsQuadrilateralReasonable",
+      "address": "0x00892b18",
+      "containing_symbol": "_ZN4Anki8Embedded25IsQuadrilateralReasonableERKNS0_13QuadrilateralIsEEiiiiiRb",
+      "symbol_address": "0x00892b18",
+      "symbol_size": 598,
+      "bytes_32_sha256": "6bbbda407cd59cffaca0f24dcc1a05549709ea441851c33794501a20e8bb82ba"
+    },
+    {
+      "label": "Marker.ComputeQuadrilaterals",
+      "address": "0x00892d70",
+      "containing_symbol": "_ZN4Anki8Embedded44ComputeQuadrilateralsFromConnectedComponentsERKNS0_19ConnectedComponentsEiiiiiiNS0_12CornerMethodERNS0_15FixedLengthListINS0_13QuadrilateralIsEEEENS0_11MemoryStackE",
+      "symbol_address": "0x00892d70",
+      "symbol_size": 816,
+      "bytes_32_sha256": "ca155323510174c14525fe3dc4b8b1b5371a130db6c12669f1fd9a0ec4958acd"
+    },
+    {
+      "label": "Marker.ExtractLineFitsPeaks",
+      "address": "0x008a5db8",
+      "containing_symbol": "_ZN4Anki8Embedded20ExtractLineFitsPeaksERKNS0_15FixedLengthListINS0_5PointIsEEEERS4_iiNS0_11MemoryStackE",
+      "symbol_address": "0x008a5db8",
+      "symbol_size": 6154,
+      "bytes_32_sha256": "ea1f737fd7639e90db8a38941acfc85f7b782fd5ccd36344e03b7e93060742ac"
+    },
+    {
+      "label": "Marker.RefineQuadrilateral",
+      "address": "0x008c55e0",
+      "containing_symbol": "_ZN4Anki8Embedded19RefineQuadrilateralERKNS0_13QuadrilateralIfEERKNS0_5ArrayIfEERKNS5_IhEERKNS0_5PointIfEESF_iffiffRS2_RS6_NS0_11MemoryStackE",
+      "symbol_address": "0x008c55e0",
+      "symbol_size": 3980,
+      "bytes_32_sha256": "4ca5852ee9228f5b9b36ad0ef81ee9026d997a953d0242c1bf0059045ceb0a81"
+    },
+    {
+      "label": "Marker.TraceBoundary",
+      "address": "0x008c6b18",
+      "containing_symbol": "_ZN4Anki8Embedded25TraceNextExteriorBoundaryERKNS0_19ConnectedComponentsEiRNS0_15FixedLengthListINS0_5PointIsEEEERiNS0_11MemoryStackE",
+      "symbol_address": "0x008c6b18",
+      "symbol_size": 2200,
+      "bytes_32_sha256": "11de388bb53b8dc943098a2781f0c4c05280eab1415d8d846c76bbca349d1c0c"
+    },
+    {
+      "label": "OverheadEdgesDetector.Detect",
+      "address": "0x006abe34",
+      "containing_symbol": "_ZN4Anki5Cozmo21OverheadEdgesDetector6DetectERNS_6Vision10ImageCacheERKNS0_14VisionPoseDataERNS0_22VisionProcessingResultE",
+      "symbol_address": "0x006abe34",
+      "symbol_size": 7620,
+      "bytes_32_sha256": "9dd4b7d94ba32c1628ff2a94d70802f6de50af603325107e3b17e3ac97fa2c21"
+    },
+    {
+      "label": "MapComponent.ProcessVisionOverheadEdges",
+      "address": "0x0067f7ac",
+      "containing_symbol": "_ZN4Anki5Cozmo12MapComponent26ProcessVisionOverheadEdgesERKNS0_17OverheadEdgeFrameE",
+      "symbol_address": "0x0067f7ac",
+      "symbol_size": 104,
+      "bytes_32_sha256": "92e5b6ce1f40240afccb3706e01409d8dfa79a4ba2a67b025fa146cf34b27640"
+    },
+    {
+      "label": "MapComponent.AddVisionOverheadEdges",
+      "address": "0x0067f814",
+      "containing_symbol": "_ZN4Anki5Cozmo12MapComponent22AddVisionOverheadEdgesERKNS0_17OverheadEdgeFrameE",
+      "symbol_address": "0x0067f814",
+      "symbol_size": 3724,
+      "bytes_32_sha256": "3fd5b8637a54cb67b28a372a9ffedb2e0dbeb29f71329c7688245a54427ac073"
+    },
+    {
+      "label": "MotionDetector.Detect",
+      "address": "0x006aaaf0",
+      "containing_symbol": "_ZN4Anki5Cozmo14MotionDetector6DetectERNS_6Vision10ImageCacheERKNS0_14VisionPoseDataES7_RNSt6__ndk14listINS0_17ExternalInterface19RobotObservedMotionENS8_9allocatorISB_EEEERNS9_INS8_4pairINS8_12basic_stringIcNS8_11char_traitsIcEENSC_IcEEEENS2_8ImageRGBEEENSC_ISN_EEEE",
+      "symbol_address": "0x006aaaf0",
+      "symbol_size": 116,
+      "bytes_32_sha256": "d021017ccac1355021be421827dd3c2cb3cf12f029e13f15a6a12f9914cac04c"
+    },
+    {
+      "label": "FaceTracker.Impl.Update",
+      "address": "0x0086d740",
+      "containing_symbol": "_ZN4Anki6Vision11FaceTracker4Impl6UpdateERKNS0_5ImageERNSt6__ndk14listINS0_11TrackedFaceENS6_9allocatorIS8_EEEERNS7_INS0_13UpdatedFaceIDENS9_ISD_EEEE",
+      "symbol_address": "0x0086d740",
+      "symbol_size": 2300,
+      "bytes_32_sha256": "972491f15c18cffe48542a315df904bfe7b2cd16bc39d2f3d943b4654b91ad6e"
+    },
+    {
+      "label": "PetTracker.Update",
+      "address": "0x0087c980",
+      "containing_symbol": "_ZN4Anki6Vision10PetTracker6UpdateERKNS0_5ImageERNSt6__ndk14listINS0_10TrackedPetENS5_9allocatorIS7_EEEE",
+      "symbol_address": "0x0087c980",
+      "symbol_size": 908,
+      "bytes_32_sha256": "d8c2f66519cb71b088e53ad26e964e107826de6a59357baa8c9e9d17f62c5ec0"
+    }
+  ]
+}
