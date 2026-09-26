@@ -120,6 +120,8 @@ Adopted 2026-09-23. It exists because recovery and implementation were being don
   - `cozmo-extractor` (read-only): traces the original's production path and returns an inventory with a citation or UNKNOWN for every behaviour-changing step.
   - `cozmo-implementer`: changes code only from an approved inventory, and stops with `MISSING:` on anything the inventory does not settle.
   - `cozmo-verifier` (read-only): tries to find unsupported, contradicted or omitted behaviour and circular tests in the implementer's diff.
+- **The same roles in opencode** are `.opencode/agent/cozmo-manager.md` (the primary agent) and `cozmo-extractor`, `cozmo-implementer` and `cozmo-verifier` (subagents). Scratch output goes to `.scratch/`, which is gitignored.
+- **Research (Codex / ChatGPT)** works only in `re-analysis/research/`, under the rules in `re-analysis/research/README.md`: no branches, no worktrees, no commits. Background research is authority 6, and a Codex extraction is checked like any extractor report.
 
 No role does both extraction and implementation in the same task.
 
@@ -151,6 +153,23 @@ Layers go bottom-up, one at a time: M1 transport, M2 protocol, then device, cont
 - a record's `verification` (NONE, CAPTURE_VERIFIED, HARDWARE_VERIFIED) names the bundles it rests on. It is independent of status: a hardware pass never raises provenance.
 
 The checker proves the evidence is present and unchanged. Whether the evidence says what the record claims is the verifier's job.
+
+Two rules the checker cannot see, so they are the manager's:
+
+- **A settled record owns its whole production path.** If any behaviour-changing part of
+  the path it claims has no record of its own, that part is a gap (RECOVERABLE_GAP or
+  IMPLEMENTATION_GAP) and gets a record *before* the claiming record is settled. A
+  settled record never defers part of its path to another record, to a code comment, or
+  to prose. (M3-022 claimed the whole connection-time NV read while the NV wire — its
+  queue, timeout, retries, header and reassembly — had no records; the gap lived in a
+  code comment and readiness was set early. That is the `Current warning` failure mode
+  again.)
+- **A claim about an existing record is checked against the current manifest, not
+  recalled.** When an extractor, verifier or pass calls a record contradicted, too weak,
+  or already covering something, it quotes that record's current title, status and
+  evidence; the manager re-reads the manifest before acting. A claim made against an
+  earlier revision is a lead to check, never a finding. (A pass asserted M11-011 still
+  described the old Length=1024 request after the record had been rewritten to Length=1.)
 
 ### Hardware runs
 
