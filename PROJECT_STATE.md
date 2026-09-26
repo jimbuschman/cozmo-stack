@@ -8,11 +8,22 @@ Read first in every session. The manager keeps this file current; the process it
   - While working, run the focused tests or `dotnet test cozmo-stack/Cozmo.sln --filter "Category!=Exhaustive"` (about 2 minutes).
   - The full suite, Exhaustive included, still runs once before every commit.
   - **Known failures on main since b85decd (M10):** `CorrectionTests.TheObjectPositionUpdatedReactionFiresThroughTheManager` and `VisionTests.TheRealLocatorFiresTheCubeMovedReactionOnlyWhenTheCubeIsOutOfSight`. Both return early when the marker library or the OBB is missing, so they were not running where M10 was committed. They are open M10 defects.
-- **PAUSED 2026-09-25 (operator: usage limit).** Three background workers were stopped mid-task:
-  - **M10 repair implementer:** partial, uncommitted edits in the working tree (Behavior/*, OffTreads.cs, UnexpectedMovement.cs, Sensors.cs, Motion.cs, CozmoEngine.cs, Conformance/Reactions.cs, tests). Resume it, or re-run it on top of those edits. Do not commit as-is.
-  - **M11 extraction:** stopped while writing scratch report `scratchpad/extract/M11/`; re-run.
-  - **NV gap pass 3** (the non-factory read path and the other 14 reads' callbacks): re-run. The NV-gap and NV-gap2 reports are saved in the scratchpad.
-  - Committed so far today: cf313f8 (M5), fee8724 (M6/M10 frozen), 41b319c (control-check keep-alive). Nothing is waiting on the operator until the NV fix is in.
+- **Current state (2026-09-26, after the branch cleanup).**
+  - **Branches:** `main` is the only line of verified work. Unverified work lives on one named branch at a time and is merged only after the verify step. Unmerged older material is kept as `archive/*` tags, not branches.
+  - **Merged on main since the pause:**
+    - M10 repair: b85decd. It has 2 failing tests; see "Test runs" above.
+    - M3 NV calibration read: 2f01813, 1d2ee2c.
+    - control-check DISCONNECT diagnostics: 6f050a3.
+    - the M6 plan: `re-analysis/workplans/M6-plan.md`.
+    - the test-runtime fix: 22cf9bc.
+    - CONTROL bundles 20260925-165740, -165815 and -173447. The -180557 bundle was never committed and is still on the other PC.
+  - **The NV fix is incomplete, but its records claim it is done.** M3-022 is EXACT_SOURCE, yet the engine's startup NV queue, the timeout, the retries and the Robot::Update dispatch gating are not built. They are listed only in `NvStorage.cs`'s summary, not as manifest records. So ready-to-stream is set much earlier than in the engine. The evidence is in the NV gap passes. The pass-1 and pass-2 texts are reproduced in the manager's scratchpad and summarised in the NV bullet further down. The fix is an M3 inventory correction with NV records, then the build.
+  - **M6 (Wwise), unverified:** branch `m6-wip` holds the 5 M6 commits made on the other PC (7842392 batch 1, 3827137 M6-009 part, 8b64904 M6-007, and two status commits); `re-analysis/M6-STATUS.md` on that branch is its resume record. The M6-006 files (`WwiseAction.cs`, `WwiseEventRuntime.cs`, `WwiseEventRuntimeTests.cs`) exist only in the other PC's working tree and on its local branch `work/m6-006-unverified`. No verifier pass is on record. M6-007 adds an RNG-seed policy with no manifest record, and an STMG layout was recovered outside the frozen inventory and must go back through extraction.
+  - **Archived as tags:**
+    - `archive/codex-hardware-fixes`: 09-22 Codex WIP, older than the M1 rework;
+    - `archive/m11-research-package`: M11 prep docs, unreviewed; its INVENTORY.md is not the frozen inventory;
+    - `archive/test-runtime-audit`: the audit behind 22cf9bc.
+  - **Not done:** the M11 extraction (never finished) and NV gap pass 3.
 - **Phase:** M1 is closed apart from named residuals.
   - Batch 3 (the app layer) is 518b730, and the settle pass is 67d4bc2.
   - The device reset on RemoveRobot (M1-025, M1-015) is committed after the commits below. Its first verification failed on two races and on the calibration being kept. Those were fixed, and the re-verify passed.
