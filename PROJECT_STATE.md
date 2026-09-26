@@ -233,6 +233,8 @@ Some items the batch 3 implementer listed as MISSING are answered by frozen rows
 
 Small behaviour choices are noted here rather than put to the operator. Each keeps its current behaviour until a test settles it.
 
+- **Process guard (manager, 2026-09-26, prompted by the NV correction).** AGENTS.md now carries two manager rules: a settled record owns its whole production path (an unrecorded part gets its own gap record before the claiming record is settled; no deferral to another record, a comment or prose), and a claim about an existing record is checked against the current manifest rather than recalled. Origin: M3-022 was EXACT_SOURCE while the NV wire had no records and the gap lived in `NvStorage.cs`'s summary, and the NV pass 4 report called M11-011 contradicted from an earlier revision of its text.
+
 - **Motor stop on shutdown.** CozmoRobot.Dispose sends StopAllMotors and DriveWheels(0) before disconnecting. The original only sends the DisconnectRequest (B33, CC29). Kept for now as a probable safety behaviour. Test later: does the robot stop on its own when the link drops?
 
 - **SyncTime stamp without AbsoluteLocalizationUpdate (obsolete since the M4 batch, 2026-09-25).** The stack now sends AbsoluteLocalizationUpdate {0, frame 0, origin 1} at SyncTime and stamps +0x520 only when that send succeeds, as the engine does (M1-041, M4-020).
