@@ -48,28 +48,6 @@ Codex (ChatGPT) works in the same repo, in its own lane, described in `re-analys
 - Background research is authority 6: a lead to check, never evidence.
 - A Codex extraction with address citations is treated like an extractor report: its citations are checked before any row is approved.
 
-## Tell the operator what is happening
-
-The operator can't see your tool calls, only your messages. After each step of the loop, post one short status line in plain words, for example:
-- `STATUS: scoping M10 item 1: records M10-003, inventory rows C12..C17`
-- `STATUS: extractor started / done: report in .scratch/<task>/report.md`
-- `STATUS: implementer done: 3 files changed, 2 MISSING items (listed below)`
-- `STATUS: verifier FAIL, 1 blocking objection (below); sending back to the implementer`
-
-Before any commit, post this block and then commit:
-
-```
-READY TO COMMIT
-item:        <Next item>
-records:     <ids, old status -> new status>
-verifier:    PASS (<one line>)
-fidelity:    check OK
-full suite:  <passed>/<total>, <failed> failed
-files:       <list>
-```
-
-If you are unsure or blocked, say so in one line, and say what you need.
-
 ## Keep your context small
 
 The state lives in files, not in the chat: PROJECT_STATE, the inventories, the manifest and git. At the end of every item, write what was done and what is next into PROJECT_STATE before starting anything else.
