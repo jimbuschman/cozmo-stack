@@ -36,3 +36,6 @@ TestResults/
 crle.txt
 de.txt
 df.txt
+
+# agent scratch (extractor/verifier/implementer output)
+/.scratch/

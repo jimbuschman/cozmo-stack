@@ -4,6 +4,17 @@ Read first in every session. The manager keeps this file current; the process it
 
 ## Now
 
+- **Next (in order; the manager takes the first open item):**
+  1. [ ] **Fix the two M10 test failures on main.** `CorrectionTests.TheObjectPositionUpdatedReactionFiresThroughTheManager` and `VisionTests.TheRealLocatorFiresTheCubeMovedReactionOnlyWhenTheCubeIsOutOfSight` fail since b85decd. Work against the frozen `re-analysis/inventory/M10-derived.md` (M10-003, the ObjectPositionUpdated and CubeMoved strategies). Find whether the code or the test oracle is wrong, then implement and verify.
+  2. [ ] **NV: record what the calibration fix left out.** Write an M3 inventory correction (C2) with NV records from `re-analysis/evidence/nv/`: the startup queue of 12 reads plus Lab and Needs, the dispatch gating, the 5 s timeout, the retries, no callback on disconnect, and a HARDWARE_ONLY record for the robot's reply to Length 1. First run the missing extraction pass on the non-factory read path and the other reads' callbacks. M3-022 covers only the callback; check its claim. Approve the correction, then build and verify it.
+  3. [ ] **Verify `m6-wip`** (the 5 M6 commits plus the M6-006 WIP): the verifier pass, `fidelity.py --check` and the full suite. The M6-007 RNG seed needs a policy record, and the STMG layout needs an extraction pass and approval. Merge into main only when it passes, then delete the branch.
+  4. [ ] **Continue M6** from `re-analysis/M6-STATUS.md` (on `m6-wip` until merged) and `re-analysis/workplans/M6-plan.md`.
+  5. [ ] **A robot run with `--allow-drive`,** so ANIM (the keep-alive face stream) and DRIVE are exercised. The manager writes the setup steps; the operator runs it.
+  6. [ ] **The remaining layers, in the table's order:** M11 vision, M12, M13, M14, M8, M7, M9, M15. Each gets the full cycle. `archive/m11-research-package` holds unreviewed M11 prep docs as leads.
+- **Tooling (2026-09-26):**
+  - The manager runs in opencode (`.opencode/agent/cozmo-manager.md`) with the three role subagents; Codex does research in `re-analysis/research/`.
+  - `AssetPresenceTests` fails when the OBB or the marker library is missing. It was added after that absence hid two M10 failures; set `COZMO_TESTS_WITHOUT_ASSETS=1` only for a run that knowingly has no assets.
+  - `HANDOFF.md` is removed; this file carries the state.
 - **Test runs (2026-09-26).** The full suite takes about 3 minutes, down from 10–12. Idle tests stepped simulated time, but CozmoDisplay paced each face with a real 33 ms sleep; they now use `SimulatedFacePacing`. The four whole-library sweeps are tagged `Category=Exhaustive`.
   - While working, run the focused tests or `dotnet test cozmo-stack/Cozmo.sln --filter "Category!=Exhaustive"` (about 2 minutes).
   - The full suite, Exhaustive included, still runs once before every commit.
