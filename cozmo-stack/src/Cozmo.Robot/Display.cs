@@ -298,6 +298,14 @@ public sealed class CozmoDisplay
     private DateTime _last = DateTime.MinValue;
 
     /// <summary>
+    /// The clock and the wait <see cref="MinInterval"/> is paced with: the system clock and a real sleep. Tests that
+    /// drive a robot through simulated time (idle faces) replace both, so a simulated minute does not take a real one;
+    /// the pacing arithmetic is unchanged. Nothing in production sets them.
+    /// </summary>
+    internal Func<DateTime> UtcNow { get; set; } = () => DateTime.UtcNow;
+    internal Action<TimeSpan> Wait { get; set; } = Thread.Sleep;
+
+    /// <summary>
     /// 33.3 ms between raw frames: this stack's pacing for the raw-bitmap API (MD3), which has no engine counterpart. It
     /// is one frame of robot audio, 744 / 22320 s, so a long Hold does not outrun the robot.
     /// </summary>
@@ -361,21 +369,21 @@ public sealed class CozmoDisplay
                 $"this face is too complex to send: it encodes to {payload.Length} bytes and one frame holds " +
                 $"{MaxPayload}. Splitting it would need the robot's multipart path, which is unverified.",
                 nameof(payload));
-        var wait = MinInterval - (DateTime.UtcNow - _last);
-        if (wait > TimeSpan.Zero) Thread.Sleep(wait);
+        var wait = MinInterval - (UtcNow() - _last);
+        if (wait > TimeSpan.Zero) Wait(wait);
         BeforeFrame?.Invoke();
         _send(new Protocol.FaceImage { Image = payload });
         LastPayload = payload;
         FramesSent++;
-        _last = DateTime.UtcNow;
+        _last = UtcNow();
     }
 
     /// <summary>Holds one image on the face for a duration by re-sending it at the animation rate.</summary>
     public void Hold(FaceBitmap image, TimeSpan duration)
     {
         var payload = FaceBitmapCodec.Encode(image);
-        var end = DateTime.UtcNow + duration;
-        while (DateTime.UtcNow < end) SendRaw(payload);
+        var end = UtcNow() + duration;
+        while (UtcNow() < end) SendRaw(payload);
     }
 
     public void Clear() => Show(new FaceBitmap());

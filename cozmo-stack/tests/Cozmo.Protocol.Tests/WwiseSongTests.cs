@@ -226,7 +226,7 @@ public class WwiseSongTests
     /// with at least one sung note, no problems and no clipping. Notes outside the voice's 48..61 range are
     /// counted, not hidden; some songs have them.
     /// </summary>
-    [Fact]
+    [Fact, Trait("Category", "Exhaustive")]
     public void EveryShippedSongRendersCompletely()
     {
         if (Library.Value is not { } lib || Obb() is not { } obb) return;

@@ -179,7 +179,7 @@ public class BehaviorHardeningTests
     [Fact]
     public void IdleStillBlinksWhenMotorsAreNotPermitted()
     {
-        using var robot = CozmoRobot.CreateOffline();
+        using var robot = SimulatedFacePacing.Use(CozmoRobot.CreateOffline());
         robot.Transport.OfflineAcceptConnection();
         var arbiter = new BehaviorArbiter { AutonomyEnabled = true };
         var idle = new IdleBehavior(robot, arbiter, random: new Random(3))

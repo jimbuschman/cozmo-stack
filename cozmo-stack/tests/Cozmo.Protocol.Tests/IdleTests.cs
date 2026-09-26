@@ -12,7 +12,7 @@ public class IdleTests
 {
     private static (IdleBehavior Idle, BehaviorArbiter Arb, CozmoRobot Robot) Make(int seed = 3)
     {
-        var robot = CozmoRobot.CreateOffline();
+        var robot = SimulatedFacePacing.Use(CozmoRobot.CreateOffline());
         robot.Transport.OfflineAcceptConnection();
         var arb = new BehaviorArbiter { AutonomyEnabled = true };
         var idle = new IdleBehavior(robot, arb, random: new Random(seed)) { Execute = false };

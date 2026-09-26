@@ -26,7 +26,7 @@ public class IdleFaceTests
     private static (List<ProceduralFacePose> Sent, ProceduralFacePose Start, IdleBehavior Idle, CozmoRobot Robot)
         RunIdle(double forMs, int seed = 9)
     {
-        var robot = CozmoRobot.CreateOffline();
+        var robot = SimulatedFacePacing.Use(CozmoRobot.CreateOffline());
         robot.Transport.OfflineAcceptConnection();
         var start = robot.Face.Current.Clone();
         var arbiter = new BehaviorArbiter { AutonomyEnabled = true };
@@ -42,6 +42,16 @@ public class IdleFaceTests
         }
         return (sent, start, idle, robot);
     }
+
+    /// <summary>
+    /// The four-minute seeded run both long-run tests read. It is deterministic and only read, so it is run once and
+    /// shared rather than simulated twice.
+    /// </summary>
+    private static readonly Lazy<(List<ProceduralFacePose> Sent, ProceduralFacePose Start, int ActionCount)> FourMinutes = new(() =>
+    {
+        var (sent, start, idle, robot) = RunIdle(240_000);
+        using (robot) return (sent, start, idle.ActionCount);
+    });
 
     private static float Max(IEnumerable<ProceduralFacePose> poses, EyeParam p) =>
         poses.SelectMany(x => new[] { x.Left[(int)p], x.Right[(int)p] }).Max();
@@ -59,11 +69,10 @@ public class IdleFaceTests
     [Fact]
     public void FacePositionStaysBoundedAcrossHundredsOfDarts()
     {
-        var (sent, start, idle, robot) = RunIdle(240_000);
-        using (robot)
+        var (sent, start, actionCount) = FourMinutes.Value;
         {
-            Assert.True(idle.ActionCount > 200,
-                $"only {idle.ActionCount} idle actions occurred; the test needs hundreds of darts");
+            Assert.True(actionCount > 200,
+                $"only {actionCount} idle actions occurred; the test needs hundreds of darts");
 
             var p = IdleParameters.Default;
             float reach = (float)p.EyeDartMaxDistancePix + 0.001f;
@@ -93,8 +102,7 @@ public class IdleFaceTests
     [Fact]
     public void EyeScalesStayBoundedAndDoNotGrowCumulatively()
     {
-        var (sent, start, _, robot) = RunIdle(240_000);
-        using (robot)
+        var (sent, start, _) = FourMinutes.Value;
         {
             float baseX = Math.Max(start.Left[(int)EyeParam.EyeScaleX], start.Right[(int)EyeParam.EyeScaleX]);
             float baseY = Math.Max(start.Left[(int)EyeParam.EyeScaleY], start.Right[(int)EyeParam.EyeScaleY]);
@@ -136,7 +144,7 @@ public class IdleFaceTests
     [Fact]
     public void TheFaceIsAlwaysTheBasePlusOneGazeAndNeverASumOfThem()
     {
-        var robot = CozmoRobot.CreateOffline();
+        var robot = SimulatedFacePacing.Use(CozmoRobot.CreateOffline());
         robot.Transport.OfflineAcceptConnection();
         using (robot)
         {
@@ -198,7 +206,7 @@ public class IdleFaceTests
     [Fact]
     public void ABlinkRestoresTheStableFaceRatherThanAMutatedDartPose()
     {
-        var robot = CozmoRobot.CreateOffline();
+        var robot = SimulatedFacePacing.Use(CozmoRobot.CreateOffline());
         robot.Transport.OfflineAcceptConnection();
         using (robot)
         {
@@ -240,7 +248,7 @@ public class IdleFaceTests
     [Fact]
     public void ADartRampsToItsGazeOverItsDurationAndThenHoldsIt()
     {
-        var robot = CozmoRobot.CreateOffline();
+        var robot = SimulatedFacePacing.Use(CozmoRobot.CreateOffline());
         robot.Transport.OfflineAcceptConnection();
         using (robot)
         {
@@ -299,7 +307,7 @@ public class IdleFaceTests
     [Fact]
     public void IdleForgetsItsBaseWhenSomethingElseTakesTheFace()
     {
-        var robot = CozmoRobot.CreateOffline();
+        var robot = SimulatedFacePacing.Use(CozmoRobot.CreateOffline());
         robot.Transport.OfflineAcceptConnection();
         using (robot)
         {

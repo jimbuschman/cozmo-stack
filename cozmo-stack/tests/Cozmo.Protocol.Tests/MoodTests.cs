@@ -89,7 +89,7 @@ public class MoodTests
     /// "Default", so no mood can change what is selected. If a future build adds mood-specific
     /// alternatives this test fails, which is exactly when the selector would need writing.
     /// </summary>
-    [Fact]
+    [Fact, Trait("Category", "Exhaustive")]
     public void AnimationSelectionIsMoodInvariantInThisBuild()
     {
         var obb = ObbRoot();

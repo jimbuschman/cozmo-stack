@@ -156,7 +156,7 @@ public class WwiseBusTests
     /// -1 dB threshold does, and what the local peak normalisation this replaced could not do: that stage
     /// scaled each song by whatever its own loudest sample happened to be.
     /// </summary>
-    [Fact]
+    [Fact, Trait("Category", "Exhaustive")]
     public void EverySongLeavesTheChainAtAboutTheSameLevel()
     {
         if (Library.Value is not { } lib || WwiseAssets.ObbRoot is not { } obb) return;

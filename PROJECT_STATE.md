@@ -4,6 +4,10 @@ Read first in every session. The manager keeps this file current; the process it
 
 ## Now
 
+- **Test runs (2026-09-26).** The full suite takes about 3 minutes, down from 10–12. Idle tests stepped simulated time, but CozmoDisplay paced each face with a real 33 ms sleep; they now use `SimulatedFacePacing`. The four whole-library sweeps are tagged `Category=Exhaustive`.
+  - While working, run the focused tests or `dotnet test cozmo-stack/Cozmo.sln --filter "Category!=Exhaustive"` (about 2 minutes).
+  - The full suite, Exhaustive included, still runs once before every commit.
+  - **Known failures on main since b85decd (M10):** `CorrectionTests.TheObjectPositionUpdatedReactionFiresThroughTheManager` and `VisionTests.TheRealLocatorFiresTheCubeMovedReactionOnlyWhenTheCubeIsOutOfSight`. Both return early when the marker library or the OBB is missing, so they were not running where M10 was committed. They are open M10 defects.
 - **PAUSED 2026-09-25 (operator: usage limit).** Three background workers were stopped mid-task:
   - **M10 repair implementer:** partial, uncommitted edits in the working tree (Behavior/*, OffTreads.cs, UnexpectedMovement.cs, Sensors.cs, Motion.cs, CozmoEngine.cs, Conformance/Reactions.cs, tests). Resume it, or re-run it on top of those edits. Do not commit as-is.
   - **M11 extraction:** stopped while writing scratch report `scratchpad/extract/M11/`; re-run.

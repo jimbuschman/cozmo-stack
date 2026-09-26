@@ -146,7 +146,7 @@ public class WwisePlaybackTests
     /// a recording the library does not also list as reachable. This is the whole-library check that makes
     /// the walk trustworthy rather than trustworthy-for-the-get-in.
     /// </summary>
-    [Fact]
+    [Fact, Trait("Category", "Exhaustive")]
     public void EveryEventResolvesToAPlanDrawnFromItsOwnReachableRecordings()
     {
         if (Library.Value is not { } lib) return;
