@@ -4,6 +4,14 @@ Read first in every session. The manager keeps this file current; the process it
 
 ## Now
 
+- **M6 (Wwise) implementation in progress — see `re-analysis/M6-STATUS.md` for the full resume record.**
+  - Committed on `main`: `7842392` (Batch 1: M6-001, M6-005, M6-018 + the shipped-bank verification
+    gap fix), `3827137` (M6-009 part: RTPC curve shapes and scaling), `8b64904` (M6-007 selection).
+  - Uncommitted and **unverified**: M6-006 (`WwiseAction.cs`, `WwiseEventRuntime.cs`,
+    `WwiseEventRuntimeTests.cs`). Verify before committing.
+  - The STMG middle-section layout recovered from native `0x9B0B14` is recorded in `M6-STATUS.md` §7
+    and must go back to extraction for a new approval before it is treated as settled.
+  - Remaining: M6-006 verify/commit, M6-008, M6-017, the rest of M6-009, then Batches 3–5.
 - **PAUSED 2026-09-25 (operator: usage limit).** Three background workers were stopped mid-task:
   - **M10 repair implementer:** partial, uncommitted edits in the working tree (Behavior/*, OffTreads.cs, UnexpectedMovement.cs, Sensors.cs, Motion.cs, CozmoEngine.cs, Conformance/Reactions.cs, tests). Resume it, or re-run it on top of those edits. Do not commit as-is.
   - **M11 extraction:** stopped while writing scratch report `scratchpad/extract/M11/`; re-run.
