@@ -3,16 +3,16 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **304 records** over 16 subsystems.
+Manifest of **316 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 189 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 14 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 0 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 57 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 68 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 27 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
-| HARDWARE_ONLY | 9 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
+| HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
 ## Where each subsystem stands
@@ -26,7 +26,7 @@ remains after both, and they do not go away by working harder on this repository
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | M1-transport — UDP transport and reliability | 43 | 0 | 1 | 0 | 2 | yes | no |
 | M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 1 | 0 | 0 | yes | no |
-| M3-device — Camera, display and audio device layer | 24 | 0 | 5 | 0 | 2 | yes | no |
+| M3-device — Camera, display and audio device layer | 36 | 0 | 16 | 0 | 3 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 24 | 0 | 10 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 36 | 0 | 15 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 18 | 0 | 18 | 0 | 0 | yes | no |
@@ -145,6 +145,105 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: 1a VisionSystem ctor: max 66, min 1, minGain 0.1, maxGain 4.0, cur 16, gain 2.0 (0x006B002A..0x006B004A); 1b Init changes none (0x006B0658); 1f VisionComponent::Init reads ImageQuality.InitialExposureTime_ms into .data 0x01051054 (0x00650DAE..0x00650DCA); vision_config.json:46 = 16; 1k HandleDefaultCameraParams: no time-sync gate (0x00537114..0x0053712A); needs IsInitialized (0x006B2CD6); min <= init <= max; SetCameraSettings(init, gain) first (0x00657CCA), then SetCameraExposureParams (0x00657D04); 1l SetCameraSettings: IsExposureValid/IsGainValid (0x006B9DAA..0x006B9DBE, 0x006B9E80..0x006B9EA8), sends {f32 g, u16 e, false} reliable (0x0065614A..0x00656166); 1o the engine never requests DefaultCameraParams
 * outstanding: Not reproduced exactly: (1f) the initial exposure is the constant 16 (the .data value and the shipped vision_config.json value), because this stack does not load vision_config.json; (1g) VisionSystem::IsInitialized is taken as always true (there is no config load that can fail); (1d) applying the pending params to the current exposure and gain is VisionSystem::Update's (M11) and is not done.
+
+**M3-025 — NV entry-tag validity and the size tables: a valid non-factory tag is a _maxSizeTable key; factory tags take their table value** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: a read or erase of a tag the robot does not hold is accepted, or the header bound uses the wrong maximum size
+* rests on: NvStorageComponent keys replies by index and special-cases only the CameraCalib tag (M3-022); it does not model IsValidEntryTag, the size tables or GetMaxSizeForEntryTag
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: IsValidEntryTag 0x644148..0x6441A0: (tag-0x180000)>>14 <= 0x1e; tag != 0x198000; tag a multiple of 0x1000; an exact _maxSizeTable key (descent 0x644160..0x64419E); _maxSizeTable (0x4D7F41; InitSizeTable 0x643B48..0x643CE0): 0x180000..0x183000 -> 0x1000, 0x184000 -> 0x10000, 0x194000..0x197000 -> 0x1000, 0x198000 -> 0x64000, 0xDE000 -> 0x30, 0xDE030 -> 0x1DFD0; _maxFactoryEntrySizeTable 23 keys from 0xC81064; a factory value is 1 or 0xFFFF, 0x80000001 -> 1 (0x643CE2..0x643DA2); GetMaxSizeForEntryTag 0x643FC8..0x64404E; GetBaseEntryTag 0x6441F8..0x6443F4
+* outstanding: build IsValidEntryTag, the _maxSizeTable values, GetMaxSizeForEntryTag and GetBaseEntryTag, and use them in Read and the header bound
+
+**M3-026 — NV Read(): tag validation, the invalid-tag callback (-6), and the FIFO queue with one request in flight** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: an invalid-tag read never reports back, or two NV operations are in flight at once
+* rests on: NvStorageComponent queues FIFO, one in flight, and delivers callbacks, but does not validate entry tags or deliver the engine's -6 for an invalid tag
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Read 0x644E2A..0x644EF4: IsValidEntryTag; invalid warns, optionally broadcasts and calls cb(nullptr, 0, -6) (0x644E8A..0x644EEE); valid emplace_back on the deque +0xF8 (0x644E30..0x644E88); ProcessRequest pops the front, one in flight (0x644FF8..0x645022); Robot+0x2C is the clock (pass 2 4a)
+* outstanding: build entry-tag validation and the invalid-tag callback (-6); confirm the FIFO/one-in-flight path
+
+**M3-027 — NV ProcessRequest READ: the factory/non-factory Length, the reliable send, and the pending-read arm (5 s robot-clock deadline, retry counter 0)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: the wrong request Length is sent, or a read is never armed with a deadline so it can wedge the queue
+* rests on: NvStorageComponent sends the caller's Length verbatim and has no robot-clock timeout; its ReadAsync timeout is a local 3 s task, not the engine's callback
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: READ case 0x64503E..0x64507C: factory tag -> Length = _maxFactoryEntrySizeTable[tag]; non-factory -> mov #0x400 at 0x64536A, stored +0xE0 (0x64536E); op 0 -> +0xE4; byte 9 zero; send reliable = 1, hot = 0 (0x645392..0x6453D2); arm 0x6453F8..0x645484: +0x50 = request tag (0x64541E/0x64542A), +0x58 = cb, +0x71 = broadcast, +0x74 = robot+0x2C + 0x1388 (0x64543E), +0x54 = caller vector or a fresh one (0x645448..0x64546E), state 2, +0xF4 = 0
+* outstanding: build the factory/non-factory Length selection and the arm with the robot-clock deadline and retry counter, on top of the existing FIFO send
+
+**M3-028 — NV non-factory reads: the OMZC header check and the Length = size+16 re-request** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: a multi-blob non-factory entry is never completed, or a bad header is delivered as data
+* rests on: NvStorageComponent has no header check and no re-request; it takes index 0 as the whole entry
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: header gate 0x6430A6..0x6430EE (index 0, non-factory base, +0x79 == 0); <16 bytes -> TooLittleReadData, result -3 (0x6430F2..0x643478); magic != 0x435A4D4F -> InvalidHeader, result -1 (0x6430FC..0x643112); size > max-16 -> InvalidDataSize, result -1 (0x6430FE..0x64311C); fits -> resize to size+16 (0x6438E2..0x643936); otherwise ReadingRestOfData re-requests tag = the reply's tag, op 0, Length = size+16, reliable/not-hot, no re-arm (0x643840..0x6438CA)
+* outstanding: build the non-factory header validation and the re-request
+
+**M3-029 — NV reassembly at index*1024 with the 16-byte header skipped, zero-fill, and a re-armed timeout** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: multi-blob entries are delivered truncated or with holes in the wrong place; a short blob is rejected instead of kept
+* rests on: NvStorageComponent keys blobs by index and takes index 0 only; it does not place at index*1024 or skip the 16-byte header
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: offset = index*1024 - hdr; hdr = 16 for index>0 on a non-factory base, else 0; blob 0 skips the 16-byte header (0x643538..0x643594); resize (zero-fill) only when shorter (0x643574); each applied blob re-arms +0x74 = robot+0x2C + 0x1388 (0x64359A..0x6435AE); the inbound array reader 0x73213C has no cap and a short blob is kept (pass 3 Q3 3a..3f)
+* outstanding: build the index*1024 placement, the header skip, the zero-fill and the per-blob timeout re-arm; keep the engine's no-cap array reader
+
+**M3-030 — NV completion: the callback or the caller vector sink, the 0x400-chunk broadcast, and SetState(0)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: a read with no callback loses its data, or the game never sees an NVStorageOpResult it requested
+* rests on: NvStorageComponent invokes the callback and has an on-idle list, but has no broadcast and no caller-vector sink
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: completion 0x643600..0x643692: MORE(3) waits; -1 ReadEntryNotFound; 0 ReadSuccess; other negatives ReadFailed; the function (+0x58) is invoked only when [+0x68] != 0, else the +0x54 vector is the sink (0x6436B6..0x643714); broadcast when +0x71: 0x400 chunks, result 3 per non-final / 0 for the final, index byte (0x643718..0x6437D4); SetState(0) clears +0x48/+0x1C/+0x78 (0x6437EA)
+* outstanding: build the vector sink and the 0x400-chunk broadcast around the existing callback
+
+**M3-031 — NV read retry (up to 8, identical resend) and the 5 s timeout (-4, no retry)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: a transient NV failure is never retried, or a lost read wedges the queue forever / fails silently
+* rests on: NvStorageComponent has no retry and no robot-clock timeout; ReadAsync's 3 s is a local test convenience
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: retry set {-8,-7,-5,-4} (0x6431E6..0x6431FA); ResendLastCommand resends the identical +0xDC command, +0xF4 up to +0xF5 = 8, then ReadOpFailed (0x645C6A..0x645D7A, 0x6431FE..0x643234); timeout state 2: +0x78 set and robot+0x2C > +0x74 -> Update.ReadTimeout, cb(nullptr, 0, -4), SetState(0), no retry (0x64575A..0x6457C0)
+* outstanding: build the retry count and the robot-clock timeout delivering -4
+
+**M3-032 — NV dispatch is gated in Robot::Update (Running state, a first full state after SyncTimeAck, and a passing UpdateAllResults once calibrated)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: NV requests are sent before the engine is ready, or after a vision failure, where the original holds them
+* rests on: NvStorageComponent sends whenever enqueued; the engine's update walk has no Running-state, Gate A or Gate B; there is no SyncTimeAck watchdog
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: CozmoEngine::Update returns early unless engine+0x10 != 0 and UiMessageHandler::Update == 0 (0x4ED4DE..0x4ED51C); UpdateAllRobots runs only in state 3 Running (0x4ED5C4..0x4ED6BE); SyncTime watchdog 5 s (0x513BF6..0x513C5A); Gate A robot+0x34E (0x513C5C..0x513C62) is set only by UpdateFullRobotState when robot+0x29 (0x51293C..0x512948); Gate B vc+0x28 calibration + UpdateAllResults failure returns (0x513C6E..0x513CBC); replies are not gated (0x52F850..0x52F856)
+* outstanding: build the Running-state walk, Gate A (SyncTimeAck + first full state), Gate B and the SyncTimeAck watchdog around the NV send
+
+**M3-033 — At connection the engine queues 12 NV reads, then the CameraCalib read, then Lab and Needs; ready-to-stream waits for the whole queue** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: ready-to-stream (and the cube/audio/animation start it gates) is set before the robot's stored data is read, or reads the original never issues are sent
+* rests on: the stack queues only the CameraCalib read (M3-022); the 12 constructor reads and the Lab/Needs reads are not queued, so readiness is set early
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Robot ctor reads #1 ProgressionUnlock 0x182000 (0x64BEFA), #2 Inventory 0x195000 (0x63CA52), #3/#4 FaceAlbum 0x184000/0x183000 (0x6512F0/0x651330), #5..#12 the 8 RDBM backup reads (0x51AD0A); #13 CameraCalib 0x80000001 (0x6583FA) then Lab 0x196000 (0x6A5B1E) and Needs 0x194000 (0x6944CC) in the mfgId lambda (0x52E3A6..0x52E3B2); ProcessOnIdleCallbacks waits for the deque to drain (0x645B10..0x645B1A)
+* outstanding: build the connection-time read queue in the engine's order and let ready-to-stream wait for it
+
+**M3-034 — The connection reads' callbacks and data sinks (progression, inventory, face album, backup, lab, needs)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: the robot's stored progression, inventory, face album, backup, lab and needs data is read but never applied
+* rests on: the stack has no callers for the constructor/Lab/Needs reads; the camera calibration callback is the only one built (M3-022)
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: ProgressionUnlock 0x102F6B8+0x14 = 0x64CE34 (defaults on -1, SendUnlockStatus); Inventory 0x102EF3C+0x14 = 0x63D7C4 (+0x104 = 1, Unpack, SendInventoryAllToGame, RequestDefaultSparks on -1); FaceAlbum 0x184000 empty callback fills VC+0x2F4; 0x102F914+0x14 = 0x65A860 consumes it via SetSerializedFaceData + BroadcastLoadedNamesAndIDs; RDBM 0x101FD38+0x14 = 0x51DF34 (map store, OnboardingData for 0x181000, WriteBackupFile after the last); Lab 0x10317B8+0x14 = 0x6A6486 -> 0x6A5C34; Needs 0x1031098+0x14 = 0x69BEB2 -> FinishReadFromRobot + InitAfterReadFromRobotAttempt
+* outstanding: wire each connection read's callback to its layer (M15 needs/progression, M11 face album, M12 backup, lab); the consumers' own semantics are those layers' records
+
+**M3-035 — An NV read gets no callback on disconnect or destruction, and its timeout needs a live RobotState clock** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: a read callback runs after the robot is gone, or a disconnected read reports a timeout the original never sends
+* rests on: already built: NvStorageComponent.OnDisconnected clears the queue and the in-flight request without invoking callbacks; this record confirms it against the source
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: ~NVStorageComponent frees +0x54 and destroys the +0x58 function without invoking it (0x643E80..0x643F8C); no callback for a queued or pending read on disconnect (pass 2 4e/4f); the timeout needs robot+0x2C to advance (0x64576A), which needs a RobotState with +0x29 and Robot::Update past Gate B (pass 2 4g)
+* outstanding: confirm the existing disconnect path and that no local timeout fires without a live state clock
 
 ### M4-control — Motion, sensors, lights and cubes
 
@@ -625,6 +724,7 @@ Each of these is a question already answered. The original's behaviour is establ
 | M5-036 | M5-animation | HARDWARE_ONLY | Robot-side animation behaviour: AbortAnimation handling and leftovers, Start without End and the unbounded keep-alive stream, locked-track suppression, animStarted/animEnded echo | only the robot can answer it |
 | M4-021 | M4-control | HARDWARE_ONLY | Whether the robot reports the origin id and frame from AbsoluteLocalizationUpdate in RobotState | only the robot can answer it |
 | M4-024 | M4-control | HARDWARE_ONLY | What makes the robot forward cube telemetry after connection, and the robot-side effect of StreamObjectAccel | only the robot can answer it |
+| M3-036 | M3-device | HARDWARE_ONLY | The robot's reply to a factory read with Length = 1, and the non-factory Length = size+16 re-request contract | a robot run sending Length = 1 and recording the reply, and a non-factory read large enough to need a re-request |
 
 ## Settled differences: equivalent implementations and kept policies
 
