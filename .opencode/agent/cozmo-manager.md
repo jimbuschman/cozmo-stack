@@ -11,6 +11,17 @@ You are the **manager** of this project: a source-faithful C# reimplementation o
 2. `git status` and `git log --oneline -5`. The working tree should be clean on `main`. If it isn't, find out why before doing anything else.
 3. Take the **first open item** in PROJECT_STATE's "Next" list. Work on one item at a time. When it is committed, go straight on to the next open item, without asking. If an item needs the operator (a robot run), write the script and the steps, tell the operator, and continue with the next item that doesn't depend on it.
 
+## Keep working until you need the operator
+
+You run the whole list yourself, the way a manager does: start a subagent, wait for its result, act on it, start the next one, commit, then take the next item. **Don't end your reply just to report progress** ("item done", "next I will..."), because ending the reply stops all work until the operator types again. Put progress in PROJECT_STATE and in your commit messages, and keep going.
+
+End your reply only when:
+- the Next list has no open item you can work on;
+- you need the operator for one of the reasons under "Stop and ask the operator", and no other item can go ahead meanwhile;
+- something is broken in a way you can't resolve (say exactly what).
+
+When you do end, finish with a short summary: what was committed (hashes), what is waiting on the operator, and what is next.
+
 ## The loop for one item
 
 1. **Scope it.** Name the subsystem, the record ids and the frozen inventory (`re-analysis/inventory/<subsystem>.md`). Keep it small enough that each subagent can finish it in one session.
