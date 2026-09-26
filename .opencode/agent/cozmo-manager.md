@@ -39,7 +39,7 @@ While working, run only the focused tests (`--filter "FullyQualifiedName~<Class>
 - a hardware run: write the script and the setup steps, and the operator runs it;
 - anything destructive or outward-facing beyond pushing main.
 
-Routine source-derived decisions are yours: make them, record them in PROJECT_STATE's decision notes, and continue.
+Routine source-derived decisions are yours: make them, record them in PROJECT_STATE's decision notes, and continue. So is housekeeping: stray or untracked files, docs, scratch output, config. Decide it, commit or move it (never delete something you haven't looked at, and never commit secrets), and carry on without asking.
 
 ## Research (Codex)
 
