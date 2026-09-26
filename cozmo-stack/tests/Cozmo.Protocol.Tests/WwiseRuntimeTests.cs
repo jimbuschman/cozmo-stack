@@ -245,6 +245,26 @@ public class WwiseRuntimeTests
         Assert.Null(problem);
         Assert.Equal(40u, node.Params.ParentId);
         Assert.Equal(999u, node.MediaId);
+        Assert.True(node.IsSourcePlugin);
+    }
+
+    /// <summary>
+    /// gapA 2.4: the native source branch takes plugin &amp; 0xF == 2 <b>or 5</b>
+    /// (0x009B9D30 cmp ip,#5; 0x009B9D34 cmpne ip,#2; 0x009B9D38 beq), so a nibble-5 source consumes its
+    /// u32 parameter-block size and bytes exactly as a nibble-2 one does. No shipped bank exercises a
+    /// nibble-5 source, so this synthetic object is the only place the branch is checked.
+    /// </summary>
+    [Fact]
+    public void ASourcePluginsParameterBlockIsConsumedForNibbleFive()
+    {
+        // Plug-in 0x00040005 has low nibble 5, which the source branch accepts alongside 2.
+        var payload = SoundPayload(50, 0x00040005, 999, 40, sourceParams: new byte[] { 1, 2, 3, 4 });
+        var bank = WwiseBank.Parse(File(1, false, Hirc(((byte)2, payload))), "t.bnk");
+        var node = Assert.IsType<WwiseSoundNode>(WwiseHierarchy.TryRead(bank.Objects[50], out var problem));
+        Assert.Null(problem);
+        Assert.Equal(40u, node.Params.ParentId);
+        Assert.Equal(999u, node.MediaId);
+        Assert.True(node.IsSourcePlugin);
     }
 
     // ------------------------------------------------------------------ conditional branches
@@ -305,12 +325,38 @@ public class WwiseRuntimeTests
     public void TheNameHashIsBoundedToTheNativeCopy()
     {
         Assert.Equal(0x103, WwiseHash.MaxBytes);
-        // At most 0x102 string bytes are hashed, so appending to a 258-byte name changes nothing...
-        var atLimit = new string('a', WwiseHash.MaxBytes - 1);
-        Assert.Equal(WwiseHash.Of(atLimit), WwiseHash.Of(atLimit + "z"));
-        // ...but one byte below the bound, the next character still counts.
-        var below = new string('a', WwiseHash.MaxBytes - 2);
+
+        // The native copy takes min(strlen + 1, 0x103) bytes and hashes strlen of them, so a name of L
+        // bytes hashes min(L, 0x102) characters. A 258-byte (0x102) name is exactly at that bound and is
+        // hashed whole. The expected value is derived here from the documented FNV-1-over-lowercase
+        // definition, not from WwiseHash.Of, so this pins that all 0x102 bytes are hashed rather than
+        // echoing the implementation's own truncation.
+        var atLimit = new string('a', 0x102);
+        Assert.Equal(Fnv1OfLowercaseAscii(atLimit), WwiseHash.Of(atLimit));
+
+        // One byte below the bound the next character still counts, so the hashes differ.
+        var below = new string('a', 0x101);
         Assert.NotEqual(WwiseHash.Of(below), WwiseHash.Of(below + "z"));
+
+        // A name whose strlen reaches 0x103 is the native's undefined case (the copy is not
+        // NUL-terminated there, so the native strlen reads past it). This stack hashes min(L, 0x102) for
+        // it; no assertion is made about the native result.
+    }
+
+    /// <summary>
+    /// The documented FNV-1 over a lower-cased ASCII name, written from the definition so a bounded hash
+    /// is not its own oracle: h = 0x811C9DC5; per byte h = h·16777619, then h ^= byte.
+    /// </summary>
+    private static uint Fnv1OfLowercaseAscii(string name)
+    {
+        uint h = 2166136261;
+        foreach (char c in name)
+        {
+            byte b = (byte)(c is >= 'A' and <= 'Z' ? c + 32 : c);
+            h = unchecked(h * 16777619);
+            h ^= b;
+        }
+        return h;
     }
 
     [Fact]

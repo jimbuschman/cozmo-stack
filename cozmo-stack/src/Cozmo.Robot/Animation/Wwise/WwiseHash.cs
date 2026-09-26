@@ -1,3 +1,4 @@
+// fidelity: M6-005
 namespace Cozmo.Robot.Animation.Wwise;
 
 /// <summary>
@@ -29,9 +30,13 @@ public static class WwiseHash
     private const uint Prime = 16777619;
 
     /// <summary>
-    /// The native copy bound (<c>GetIDFromString</c> 0x0099DB84, M6 0.10): at most 0x103 bytes including the
-    /// NUL, so at most 0x102 string bytes are hashed. This is a byte-oriented C-string copy; do not add
-    /// Unicode or culture semantics.
+    /// The native copy bound (<c>GetIDFromString</c> 0x0099DB84, M6 0.10): the source copies
+    /// <c>min(strlen + 1, 0x103)</c> bytes and then hashes <c>strlen</c> of them, so a name of L bytes is
+    /// hashed over <c>min(L, 0x102)</c> characters. That is exact for every NUL-terminated name. A name
+    /// whose <c>strlen</c> reaches 0x103 is the native's undefined case: the copy is not NUL-terminated
+    /// there, so the native <c>strlen</c> reads past it, and no oracle in primary source settles it. This
+    /// stack still hashes <c>min(L, 0x102)</c> for those and makes no claim about the native result. This
+    /// is a byte-oriented C-string copy; do not add Unicode or culture semantics.
     /// </summary>
     public const int MaxBytes = 0x103;
 
@@ -43,7 +48,7 @@ public static class WwiseHash
         foreach (char c in name)
         {
             if (c == '\0') break;                               // the native copy is a C string
-            if (n >= MaxBytes - 1) break;                       // at most 0x103 bytes including the NUL
+            if (n >= MaxBytes - 1) break;                       // hash min(L, 0x102) chars; longer is the native's undefined case
             // Lower-cased ASCII: Wwise names are ASCII, and the hash is over the lower-cased form.
             byte b = (byte)(c is >= 'A' and <= 'Z' ? c + 32 : c);
             h = unchecked(h * Prime);

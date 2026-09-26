@@ -1,3 +1,4 @@
+// fidelity: M6-001
 using System.Buffers.Binary;
 
 namespace Cozmo.Robot.Animation.Wwise;
@@ -152,8 +153,11 @@ public sealed record WwiseSoundNode(uint Id, string Bank, WwiseNodeParams Params
                                     uint MediaId, uint InMemorySize, byte SourceBits)
     : WwiseNode(Id, WwiseObjectType.Sound, Bank, Params, Array.Empty<uint>())
 {
-    /// <summary>Source plug-ins (Wwise Sine, Silence, Anki Wave Portal) have plugin type 2 and no media.</summary>
-    public bool IsSourcePlugin => (PluginId & 0x0F) == 2;
+    /// <summary>
+    /// Source plug-ins (Wwise Sine, Silence, Anki Wave Portal) have plugin nibble 2 or 5 and no media
+    /// (gapA 2.4).
+    /// </summary>
+    public bool IsSourcePlugin => (PluginId & 0x0F) is 2 or 5;
 }
 
 public sealed record WwiseRandomSequenceNode(uint Id, string Bank, WwiseNodeParams Params, IReadOnlyList<uint> Children,
@@ -441,9 +445,10 @@ public static class WwiseHierarchy
     {
         uint id = r.U32();
         uint plugin = r.U32(); byte stream = r.U8(); uint media = r.U32(); uint size = r.U32(); byte srcBits = r.U8();
-        // Source plug-in (gapA 2.6): a u32 parameter-block size followed by that many bytes. All shipped
-        // sources are codecs, so the block is empty; it is still consumed exactly.
-        if ((plugin & 0x0F) == 2) { uint pluginSize = r.U32(); r.Skip((int)pluginSize); }
+        // Source plug-in (gapA 2.4): a u32 parameter-block size followed by that many bytes. The native
+        // branch takes plugin & 0xF == 2 or 5 (0x009B9D30 cmp ip,#5; 0x009B9D34 cmpne ip,#2; 0x009B9D38
+        // beq). All shipped sources are codecs, so the block is empty; it is still consumed exactly.
+        if ((plugin & 0x0F) is 2 or 5) { uint pluginSize = r.U32(); r.Skip((int)pluginSize); }
         var p = ReadNodeParams(ref r, o.FeedbackEnabled);
         return new WwiseSoundNode(id, o.Bank, p, plugin, stream, media, size, srcBits);
     }
