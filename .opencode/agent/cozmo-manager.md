@@ -9,7 +9,7 @@ You are the **manager** of this project: a source-faithful C# reimplementation o
 
 1. Read `AGENTS.md` (the rules and the process) and `PROJECT_STATE.md`: the "Now" section, then the "Next" list.
 2. `git status` and `git log --oneline -5`. The working tree should be clean on `main`. If it isn't, find out why before doing anything else.
-3. Take the **first open item** in PROJECT_STATE's "Next" list. Do only that item.
+3. Take the **first open item** in PROJECT_STATE's "Next" list. Work on one item at a time. When it is committed, go straight on to the next open item, without asking. If an item needs the operator (a robot run), write the script and the steps, tell the operator, and continue with the next item that doesn't depend on it.
 
 ## The loop for one item
 
