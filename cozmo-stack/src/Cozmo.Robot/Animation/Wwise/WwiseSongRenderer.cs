@@ -433,7 +433,7 @@ public sealed class WwiseSongRenderer
         List<WwiseBoundModulator>? keep = null;
         foreach (var b in modulators)
         {
-            if (b.Binding.ParamId is (byte)WwiseProp.Volume or (byte)WwiseProp.Pitch) { (keep ??= new()).Add(b); continue; }
+            if (b.Binding.ParamId is (uint)WwiseProp.Volume or (uint)WwiseProp.Pitch) { (keep ??= new()).Add(b); continue; }
             problems.Add($"modulator {b.Modulator.Id} drives property {b.Binding.ParamId}, which the sampler does not apply");
         }
         return keep ?? NoModulators;

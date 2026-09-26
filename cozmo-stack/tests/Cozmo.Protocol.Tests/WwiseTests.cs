@@ -343,7 +343,7 @@ public class WwiseTests
         Assert.NotEmpty(bound);
         Assert.All(bound, r =>
         {
-            Assert.Equal((byte)WwiseProp.Volume, r.ParamId);
+            Assert.Equal((uint)WwiseProp.Volume, r.ParamId);
             Assert.Equal(-1f, r.Points[0].To, 3);
             Assert.Equal(0f, r.Points[^1].To, 3);
         });
@@ -354,9 +354,16 @@ public class WwiseTests
         foreach (var root in AssetRoots())
         {
             var meta = Path.Combine(root, "sound_meta");
-            if (!Directory.Exists(meta) || Directory.GetFiles(meta, "*.bnk").Length == 0) continue;
             var media = Path.Combine(root, "assets", "cozmo_resources", "sound");
-            return Directory.Exists(media) ? new[] { meta, media } : new[] { meta };
+            if (Directory.Exists(meta) && Directory.GetFiles(meta, "*.bnk").Length > 0)
+                return Directory.Exists(media) ? new[] { meta, media } : new[] { meta };
+            // The unpacked OBB used here keeps the banks inside AudioAssets.zip under the media directory,
+            // and has no sound_meta. Falling back to the media directory makes the sweeps actually run
+            // instead of returning early and reporting a pass without loading anything.
+            if (Directory.Exists(media) &&
+                (Directory.GetFiles(media, "*.bnk", SearchOption.AllDirectories).Length > 0 ||
+                 Directory.GetFiles(media, "*.zip", SearchOption.AllDirectories).Length > 0))
+                return new[] { media };
         }
         return null;
     }

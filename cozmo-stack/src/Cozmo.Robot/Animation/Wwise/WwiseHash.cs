@@ -28,16 +28,27 @@ public static class WwiseHash
     private const uint Offset = 2166136261;
     private const uint Prime = 16777619;
 
+    /// <summary>
+    /// The native copy bound (<c>GetIDFromString</c> 0x0099DB84, M6 0.10): at most 0x103 bytes including the
+    /// NUL, so at most 0x102 string bytes are hashed. This is a byte-oriented C-string copy; do not add
+    /// Unicode or culture semantics.
+    /// </summary>
+    public const int MaxBytes = 0x103;
+
     /// <summary>The id Wwise would give this name.</summary>
     public static uint Of(string name)
     {
         uint h = Offset;
+        int n = 0;
         foreach (char c in name)
         {
+            if (c == '\0') break;                               // the native copy is a C string
+            if (n >= MaxBytes - 1) break;                       // at most 0x103 bytes including the NUL
             // Lower-cased ASCII: Wwise names are ASCII, and the hash is over the lower-cased form.
             byte b = (byte)(c is >= 'A' and <= 'Z' ? c + 32 : c);
             h = unchecked(h * Prime);
             h ^= b;
+            n++;
         }
         return h;
     }

@@ -42,6 +42,11 @@ public sealed class WwiseObject
     public required ReadOnlyMemory<byte> Payload { get; init; }
     /// <summary>Which bank file this came from, for diagnostics.</summary>
     public required string Bank { get; init; }
+    /// <summary>
+    /// The bank's BKHD feedback flag (BKHD dword 3, gapA 2.3). When set, a node's NodeBaseParams carries four
+    /// more bytes and a bus carries four more. It is zero in all six shipped banks; the reader still honors it.
+    /// </summary>
+    public bool FeedbackEnabled { get; init; }
 }
 
 /// <summary>
@@ -78,12 +83,19 @@ public sealed class WwiseBank
     /// <summary>Media embedded in the bank itself, from its DIDX index: media id to bytes.</summary>
     public IReadOnlyDictionary<uint, ReadOnlyMemory<byte>> EmbeddedMedia { get; }
 
+    /// <summary>
+    /// The bank's STMG state-manager chunk, when it has one. Only <c>Init.bnk</c> does, and it carries the
+    /// RTPC default table the value store falls back to (gapF 1.2/1.3).
+    /// </summary>
+    public WwiseStmg? Stmg { get; }
+
     private WwiseBank(string name, uint bankId, uint version,
                       Dictionary<uint, WwiseObject> objects,
-                      Dictionary<uint, ReadOnlyMemory<byte>> embedded)
+                      Dictionary<uint, ReadOnlyMemory<byte>> embedded,
+                      WwiseStmg? stmg)
     {
         Name = name; BankId = bankId; Version = version;
-        Objects = objects; EmbeddedMedia = embedded;
+        Objects = objects; EmbeddedMedia = embedded; Stmg = stmg;
     }
 
     /// <summary>Reads a bank from bytes. Throws <see cref="InvalidDataException"/> on anything malformed.</summary>
@@ -91,9 +103,11 @@ public sealed class WwiseBank
     {
         var span = data.Span;
         uint bankId = 0, version = 0;
+        bool feedback = false;
         var objects = new Dictionary<uint, WwiseObject>();
         var embedded = new Dictionary<uint, ReadOnlyMemory<byte>>();
         ReadOnlyMemory<byte> didx = default, dataChunk = default;
+        WwiseStmg? stmg = null;
 
         // A bank is a flat sequence of FourCC + length chunks. Nothing is nested and nothing is aligned.
         int off = 0;
@@ -110,10 +124,13 @@ public sealed class WwiseBank
                 if (size < 8) throw new InvalidDataException($"{name}: BKHD is only {size} bytes");
                 version = BinaryPrimitives.ReadUInt32LittleEndian(span.Slice(body, 4));
                 bankId = BinaryPrimitives.ReadUInt32LittleEndian(span.Slice(body + 4, 4));
+                // dword 3 is the feedback flag that adds four bytes to a node's NodeBaseParams (gapA 2.3).
+                if (size >= 16) feedback = BinaryPrimitives.ReadUInt32LittleEndian(span.Slice(body + 12, 4)) != 0;
             }
             else if (Match(tag, "DIDX")) didx = data.Slice(body, (int)size);
             else if (Match(tag, "DATA")) dataChunk = data.Slice(body, (int)size);
-            else if (Match(tag, "HIRC")) ReadHirc(data.Slice(body, (int)size), name, objects);
+            else if (Match(tag, "STMG")) stmg = WwiseStmg.Parse(data.Slice(body, (int)size), name);
+            else if (Match(tag, "HIRC")) ReadHirc(data.Slice(body, (int)size), name, feedback, objects);
 
             off = body + (int)size;
         }
@@ -135,7 +152,7 @@ public sealed class WwiseBank
                 embedded[id] = dataChunk.Slice((int)o, (int)n);
             }
         }
-        return new WwiseBank(name, bankId, version, objects, embedded);
+        return new WwiseBank(name, bankId, version, objects, embedded, stmg);
     }
 
     private static bool Match(ReadOnlySpan<byte> tag, string s) =>
@@ -146,7 +163,7 @@ public sealed class WwiseBank
     /// begins with the object's id. The reader insists the objects consume the chunk exactly, which is
     /// what caught the layout being right in the first place.
     /// </summary>
-    private static void ReadHirc(ReadOnlyMemory<byte> chunk, string bank, Dictionary<uint, WwiseObject> into)
+    private static void ReadHirc(ReadOnlyMemory<byte> chunk, string bank, bool feedback, Dictionary<uint, WwiseObject> into)
     {
         var s = chunk.Span;
         if (s.Length < 4) throw new InvalidDataException($"{bank}: HIRC is only {s.Length} bytes");
@@ -165,6 +182,7 @@ public sealed class WwiseBank
             into[id] = new WwiseObject
             {
                 Id = id, Type = type, Payload = chunk.Slice(body, (int)size), Bank = bank,
+                FeedbackEnabled = feedback,
             };
             p = body + (int)size;
         }
