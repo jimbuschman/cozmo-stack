@@ -8,6 +8,14 @@ These are three read-only extractor passes over `libcozmoEngine.so` 3.4.0-1204, 
 | `nv-pass2-dispatch-gates.md` | What gates NVStorageComponent::Update in Robot::Update (engine Running; the first full state after SyncTimeAck; after a calibration, a BlockWorld failure). Replies are not gated. robot+0x24 is mfgId word 1, the body hardware version. No callback on disconnect or destruction. |
 | `nv-pass3-connection-queue.md` | At connection, 12 NV reads are queued before the calibration read (unlocks, inventory, the face album, 8 backup reads from backup_config.json), then Lab and Needs after it. Ready-to-stream waits for the whole queue. DefaultCameraParams never installs a calibration. The array reader has no cap. |
 
+## Hardware record
+
+`vision-calibration-read-20260925-170150.json` is a `Cozmo.Conformance vision` acceptance record from a
+real robot (fw 2457, serial 206587486), moved here from the working tree. It is not an extractor report: it is
+the hardware observation that the built calibration read requests tag 0x80000001 with `length=1` and installs
+the 56-byte blob (`NVOpResult ... index=0 data=56B`, `calibrationRead: true`). The run found no markers in a
+90 s stream, so the record's automated `pass` is false; that is the marker detection, not the NV read.
+
 ## Where this stands
 
 - **Built on main (2f01813, 1d2ee2c):** only the calibration read and its callback.

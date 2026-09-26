@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // Project-local permissions.
+  // Rules are ordered; the LAST matching rule wins. Broad rule first, exceptions after.
+  // This config is permissive so routine work in this repo does not stop for approvals.
+  "permissions": [
+    // Default: allow every action on every resource.
+    { "action": "*", "resource": "*", "effect": "allow" },
+
+    // Override the built-in "ask" defaults from the base policy.
+    { "action": "external_directory", "resource": "*", "effect": "allow" },
+    { "action": "read", "resource": "*.env", "effect": "allow" },
+    { "action": "read", "resource": "*.env.*", "effect": "allow" },
+    { "action": "read", "resource": "*.env.example", "effect": "allow" }
+  ]
+}

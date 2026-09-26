@@ -1,0 +1,48 @@
+{
+  "tool": "vision",
+  "milestone": "M11",
+  "timestampUtc": "2026-09-25T22:01:50.8797183Z",
+  "firmware": 2457,
+  "serial": 206587486,
+  "automated": {
+    "pass": false,
+    "detail": {
+      "calibration": "fx=294.7 fy=294.9 c=(143.2,117.5) 320x240 dist=[0,0,0,0,0,0,0,0] (robot NV storage)",
+      "calibrationRead": true,
+      "frames": 1319,
+      "markers": 0,
+      "codes": [],
+      "objects": 0,
+      "log": [
+        "  vision: NV request tag=0x80000001 op=0 length=1 data=0B",
+        "  vision: NVOpResult tag=0x80000001 op=0 result=0 index=0 data=56B",
+        "  vision: NV request tag=0x80000001 op=0 length=1 data=0B",
+        "  vision: NVOpResult tag=0x80000001 op=0 result=0 index=0 data=56B",
+        "camera calibration from robot: fx=294.7 fy=294.9 c=(143.2,117.5) 320x240 dist=[0,0,0,0,0,0,0,0] (robot NV storage)",
+        "streaming for 90s: show Cozmo a cube, move it, hide it. connected cubes: 0",
+        "  vision: frame 4484: no robot state to pair with",
+        "  vision: frame 4485: no robot state to pair with",
+        "  vision: frame 4486: no robot state to pair with",
+        "  vision: frame 4487: no robot state to pair with",
+        "  vision: frame 4488: no robot state to pair with",
+        "  vision: frame 4489: no robot state to pair with",
+        "  vision: frame 4490: no robot state to pair with",
+        "  vision: frame 4491: no robot state to pair with",
+        "  vision: frame 4492: no robot state to pair with",
+        "  vision: frame 4493: no robot state to pair with",
+        "  vision: frame 4494: no robot state to pair with",
+        "  vision: frame 4495: no robot state to pair with",
+        "  vision: frame 4496: no robot state to pair with",
+        "  vision: frame 4497: no robot state to pair with",
+        "  vision: frame 4498: no robot state to pair with",
+        "  vision: frame 4499: no robot state to pair with",
+        "  vision: frame 4500: no robot state to pair with",
+        "\n1319 frames, 0 markers (), 0 object observations, 3 frames dropped; located now: "
+      ]
+    }
+  },
+  "human": {
+    "check": "the printed marker codes match the cube faces shown; the object\u0027s pose (mm, in the robot\u0027s frame) matches where the cube stands; hiding the cube in view forgets it after two frames; a cube moved out of view stays located",
+    "verdict": "PENDING - fill in after watching the robot"
+  }
+}
