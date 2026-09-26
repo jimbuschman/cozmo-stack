@@ -8,6 +8,7 @@
 # Unpacked OBB (441 MB, proprietary assets and firmware) — keep locally, never commit
 /re-analysis/obb/
 /re-analysis/obb/**
+/cozmo-stack/re-analysis/obb/
 
 # The fiducial-marker library is Anki's data, extracted from libcozmoEngine.so; regenerate locally with
 # re-analysis/tools/extract_marker_library.py (the build does it when python and the .so are present)
