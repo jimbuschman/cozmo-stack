@@ -165,14 +165,15 @@ public sealed class VisionSystem : IDisposable
 
     /// <summary>
     /// Reads the calibration from the robot through the shared NV queue (the engine's connection-time
-    /// <c>NVStorageComponent::Read</c>). The camera calibration is a single-blob entry, so the request length is
-    /// <see cref="CameraSettings.CalibrationReadLength"/> and the reply's index-0 blob is the 56-byte struct.
+    /// <c>NVStorageComponent::Read</c>). The camera calibration is a factory entry, so the component computes the
+    /// request length from the tag (M3-027; <see cref="CameraSettings.CalibrationReadLength"/> = 1) and the reply's
+    /// index-0 blob is the 56-byte struct.
     /// </summary>
     public async Task<CameraCalibration?> ReadCalibrationAsync(TimeSpan? timeout = null)
     {
         var nv = _robot.Engine.NvStorage;
         if (nv is null) return null;
-        var r = await nv.ReadAsync(CameraCalibration.NvEntryTag, CameraSettings.CalibrationReadLength, timeout).ConfigureAwait(false);
+        var r = await nv.ReadAsync(CameraCalibration.NvEntryTag, timeout).ConfigureAwait(false);
         foreach (var l in nv.Log) Log?.Invoke(l);
         if (r.Result != 0 || r.Data.Length != CameraSettings.CalibrationBytes) return null;
         var cal = CameraCalibration.Unpack(r.Data);

@@ -534,20 +534,31 @@ public class VisionTests
 
         using var rig = new WorldRig();
         var nv = rig.Robot.Engine.NvStorage!;
-        NvResult? got = null;
-        nv.Read(CameraCalibration.NvEntryTag, CameraSettings.CalibrationReadLength, r => got = r);
-        // The CONTROL capture's parts arrived 5,6,7,0,3,2,1,4,15: NVOpResult.Length is the index, so arrival
-        // order must not matter. Index 0 held the valid 56-byte calibration; the other blobs are other indices.
-        void Part(int index, byte[] data) =>
-            rig.Send(new NVOpResult { Tag = CameraCalibration.NvEntryTag, Op = 0, Result = NvStorageComponent.ResultMore, Length = index, Data = data });
-        foreach (var i in new[] { 5, 6, 7, 3, 2, 1, 4, 15 }) Part(i, new byte[] { 1, 2, 3, 4 });
-        Part(0, bytes);
-        rig.Send(new NVOpResult { Tag = CameraCalibration.NvEntryTag, Op = 0, Result = NvStorageComponent.ResultOkay, Length = 0, Data = Array.Empty<byte>() });
 
+        // M3-028/M3-029: a factory read has no 16-byte header. A single index-0 blob is delivered as-is, so the
+        // 56-byte calibration arrives as exactly 56 bytes (0x80000001 is a factory tag; no header/reassembly shift).
+        NvResult? got = null;
+        nv.Read(CameraCalibration.NvEntryTag, r => got = r);
+        rig.Send(new NVOpResult { Tag = CameraCalibration.NvEntryTag, Op = 0, Result = NvStorageComponent.ResultOkay, Length = 0, Data = bytes });
         Assert.NotNull(got);
         Assert.Equal(0, got!.Value.Result);
-        Assert.Equal(CameraCalibration.WireSize, got.Value.Data.Length);       // exactly 56, not concatenated
+        Assert.Equal(CameraCalibration.WireSize, got.Value.Data.Length);       // exactly 56, no header, no stride
         Assert.Equal(291.2, CameraCalibration.Unpack(got.Value.Data).FocalLengthY, 3);
+
+        // M3-029: NVOpResult.Length is a blob index. A blob at index k lands at offset k*1024 on a factory read, so
+        // the assembled buffer grows to index*1024 + its length (the CONTROL capture's blobs arrived at indices 0..7
+        // and 15, which is why the engine would have delivered 15452 bytes, not 56).
+        Assert.Equal(1024, NvStorageComponent.BlobStride);                     // 0x643538 lsls r0,r4,#0xa
+        NvResult? placed = null;
+        nv.Read(CameraCalibration.NvEntryTag, r => placed = r);
+        var chunk = new byte[] { 9, 8, 7, 6 };
+        rig.Send(new NVOpResult { Tag = CameraCalibration.NvEntryTag, Op = 0, Result = NvStorageComponent.ResultMore, Length = 3, Data = chunk });
+        rig.Send(new NVOpResult { Tag = CameraCalibration.NvEntryTag, Op = 0, Result = NvStorageComponent.ResultOkay, Length = 0, Data = Array.Empty<byte>() });
+        Assert.NotNull(placed);
+        Assert.Equal(0, placed!.Value.Result);
+        Assert.Equal(3 * 1024 + chunk.Length, placed.Value.Data.Length);
+        Assert.Equal(chunk, placed.Value.Data[(3 * 1024)..]);
+        Assert.All(placed.Value.Data[..(3 * 1024)], b => Assert.Equal(0, b));   // holes are zero-filled
 
         Assert.Throws<FormatException>(() => CameraCalibration.Parse(new byte[CameraCalibration.WireSize]));
     }
@@ -566,7 +577,7 @@ public class VisionTests
         using var robot = CozmoRobot.CreateOffline();
         robot.Transport.OfflineAcceptConnection();
         robot.Transport.OfflineOutbound.Clear();
-        robot.Engine.NvStorage!.Read(CameraCalibration.NvEntryTag, CameraSettings.CalibrationReadLength, _ => { });
+        robot.Engine.NvStorage!.Read(CameraCalibration.NvEntryTag, _ => { });
         robot.Transport.OfflineTick();
 
         List<NVCommand> Commands() => robot.Transport.OfflineOutbound

@@ -5744,13 +5744,13 @@
       "evidence": [
         "IsValidEntryTag 0x644148..0x6441A0: (tag-0x180000)>>14 <= 0x1e; tag != 0x198000; tag a multiple of 0x1000; an exact _maxSizeTable key (descent 0x644160..0x64419E)",
         "_maxSizeTable (0x4D7F41; InitSizeTable 0x643B48..0x643CE0): 0x180000..0x183000 -> 0x1000, 0x184000 -> 0x10000, 0x194000..0x197000 -> 0x1000, 0x198000 -> 0x64000, 0xDE000 -> 0x30, 0xDE030 -> 0x1DFD0",
-        "_maxFactoryEntrySizeTable 23 keys from 0xC81064; a factory value is 1 or 0xFFFF, 0x80000001 -> 1 (0x643CE2..0x643DA2); GetMaxSizeForEntryTag 0x643FC8..0x64404E; GetBaseEntryTag 0x6441F8..0x6443F4"
+        "_maxFactoryEntrySizeTable (0xC81064, 23 keys, pass 4b Q1): 0x80000000..0x80000008, 0x80000010..0x80000012 and 0xC0000000/1/4 -> 1; 0x80010000..0x80060000, 0x80100000, 0x80110000 -> 0xFFFF; IsFactoryEntryTag 0x6440D4..0x64412C is exact membership in those 23 keys; InitSizeTable value rule 0x643D5A..0x643D84 (0xFFFF only when (tag & 0x7FFF0000) != 0 and (tag & 0xFFFF0000) != 0xC0000000); GetMaxSizeForEntryTag 0x643FC8..0x64404E; GetBaseEntryTag 0x6441F8..0x6443F4"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "build IsValidEntryTag, the _maxSizeTable values, GetMaxSizeForEntryTag and GetBaseEntryTag, and use them in Read and the header bound",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "M3DeviceTests.M3_025_TheNvTagAndSizeTablesMatchTheEngine"
+      "test": "M3DeviceTests.M3_025_TheTagValidityAndSizeTables, M3DeviceTests.M3_025_GetBaseEntryTagFactoriesAndTheSentinel, M3DeviceTests.M3_025_TheReplyAcceptCheckUsesTheBaseTag"
     },
     {
       "id": "M3-026",
@@ -5764,11 +5764,11 @@
         "Read 0x644E2A..0x644EF4: IsValidEntryTag; invalid warns, optionally broadcasts and calls cb(nullptr, 0, -6) (0x644E8A..0x644EEE); valid emplace_back on the deque +0xF8 (0x644E30..0x644E88)",
         "ProcessRequest pops the front, one in flight (0x644FF8..0x645022); Robot+0x2C is the clock (pass 2 4a)"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "build entry-tag validation and the invalid-tag callback (-6); confirm the FIFO/one-in-flight path",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "M3DeviceTests.M3_026_TheNvReadValidatesTagsAndQueuesFifo"
+      "test": "M3DeviceTests.M3_026_AnInvalidTagIsNotSentAndTheCallbackGetsMinusSix"
     },
     {
       "id": "M3-027",
@@ -5782,11 +5782,11 @@
         "READ case 0x64503E..0x64507C: factory tag -> Length = _maxFactoryEntrySizeTable[tag]; non-factory -> mov #0x400 at 0x64536A, stored +0xE0 (0x64536E); op 0 -> +0xE4; byte 9 zero",
         "send reliable = 1, hot = 0 (0x645392..0x6453D2); arm 0x6453F8..0x645484: +0x50 = request tag (0x64541E/0x64542A), +0x58 = cb, +0x71 = broadcast, +0x74 = robot+0x2C + 0x1388 (0x64543E), +0x54 = caller vector or a fresh one (0x645448..0x64546E), state 2, +0xF4 = 0"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "build the factory/non-factory Length selection and the arm with the robot-clock deadline and retry counter, on top of the existing FIFO send",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "M3DeviceTests.M3_027_TheNvReadBuildsTheEngineCommandAndArmsTheDeadline"
+      "test": "M3DeviceTests.M3_027_AReadComputesItsLengthFromTheTag"
     },
     {
       "id": "M3-028",
@@ -5798,13 +5798,14 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "header gate 0x6430A6..0x6430EE (index 0, non-factory base, +0x79 == 0); <16 bytes -> TooLittleReadData, result -3 (0x6430F2..0x643478); magic != 0x435A4D4F -> InvalidHeader, result -1 (0x6430FC..0x643112); size > max-16 -> InvalidDataSize, result -1 (0x6430FE..0x64311C)",
-        "fits -> resize to size+16 (0x6438E2..0x643936); otherwise ReadingRestOfData re-requests tag = the reply's tag, op 0, Length = size+16, reliable/not-hot, no re-arm (0x643840..0x6438CA)"
+        "fits -> resize to size+16 (0x6438E2..0x643936); otherwise ReadingRestOfData re-requests tag = the reply's tag, op 0, Length = size+16, reliable/not-hot, no re-arm (0x643840..0x6438CA)",
+        "the fits-path resize at 0x643922 targets the reply vector (sp+0x44), not the pending buffer; it is a shrink/no-op, so the reassembly copy is bounded at the header total and the delivered non-factory buffer is exactly that total with no tail (pass 4b Q3)"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "build the non-factory header validation and the re-request",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "M3DeviceTests.M3_028_TheNvNonFactoryReadChecksTheHeaderAndReRequests"
+      "test": "M3DeviceTests.M3_028_TheNonFactoryHeaderRejectsShortBadAndOversizeBlobs, M3DeviceTests.M3_028_TheRestIsReRequestedWithoutReArming, M3DeviceTests.M3_028_M3_029_TheDeliveredNonFactorySizeIsTheHeaderTotal"
     },
     {
       "id": "M3-029",
@@ -5816,13 +5817,14 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "offset = index*1024 - hdr; hdr = 16 for index>0 on a non-factory base, else 0; blob 0 skips the 16-byte header (0x643538..0x643594)",
-        "resize (zero-fill) only when shorter (0x643574); each applied blob re-arms +0x74 = robot+0x2C + 0x1388 (0x64359A..0x6435AE); the inbound array reader 0x73213C has no cap and a short blob is kept (pass 3 Q3 3a..3f)"
+        "resize (zero-fill) only when shorter (0x643574); each applied blob re-arms +0x74 = robot+0x2C + 0x1388 (0x64359A..0x6435AE); the inbound array reader 0x73213C has no cap and a short blob is kept (pass 3 Q3 3a..3f)",
+        "a non-factory entry that fits in one blob delivers exactly the header total (TOT), header skipped, no zero tail: resize reply to TOT+16 (0x643922), copy TOT at offset 0 (0x64356C..0x643596)"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "build the index*1024 placement, the header skip, the zero-fill and the per-blob timeout re-arm; keep the engine's no-cap array reader",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "M3DeviceTests.M3_029_TheNvReassemblyPlacesBlobsAtIndexTimesStride"
+      "test": "M3DeviceTests.M3_028_M3_029_TheDeliveredNonFactorySizeIsTheHeaderTotal, M3DeviceTests.M3_028_M3_029_TheReRequestPathDoesNotTrimToTheHeaderTotal, VisionTests.TheCalibrationStructRoundTripsAndIndexedNvResultsAssemble"
     },
     {
       "id": "M3-030",
@@ -5836,29 +5838,29 @@
         "completion 0x643600..0x643692: MORE(3) waits; -1 ReadEntryNotFound; 0 ReadSuccess; other negatives ReadFailed; the function (+0x58) is invoked only when [+0x68] != 0, else the +0x54 vector is the sink (0x6436B6..0x643714)",
         "broadcast when +0x71: 0x400 chunks, result 3 per non-final / 0 for the final, index byte (0x643718..0x6437D4); SetState(0) clears +0x48/+0x1C/+0x78 (0x6437EA)"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "build the vector sink and the 0x400-chunk broadcast around the existing callback",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "M3DeviceTests.M3_030_TheNvCompletionFillsTheVectorAndBroadcasts"
+      "test": "M3DeviceTests.M3_030_TheSinkIsFilledAndTheBufferIsBroadcastInChunks"
     },
     {
       "id": "M3-031",
       "subsystem": "M3-device",
-      "title": "NV read retry (up to 8, identical resend) and the 5 s timeout (-4, no retry)",
+      "title": "NV read retry (7 resends / 8 transmissions, identical resend) and the 5 s timeout (-4, no retry)",
       "location": "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
       "effect": "a transient NV failure is never retried, or a lost read wedges the queue forever / fails silently",
       "provenance": "NvStorageComponent has no retry and no robot-clock timeout; ReadAsync's 3 s is a local test convenience",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "retry set {-8,-7,-5,-4} (0x6431E6..0x6431FA); ResendLastCommand resends the identical +0xDC command, +0xF4 up to +0xF5 = 8, then ReadOpFailed (0x645C6A..0x645D7A, 0x6431FE..0x643234)",
+        "retry set {-8,-7,-5,-4} (0x6431E6..0x6431FA); ResendLastCommand 0x645C6A..0x645D7A: the counter +0xF4 is 0-based (reset by the send/arm at 0x645484), incremented then compared < +0xF5 = 8 (bhs at 0x645C7C), so 7 resends / 8 transmissions, then ReadOpFailed (0x6431FE..0x643234); the second caller is the write/erase path 0x643194..0x6431A2",
         "timeout state 2: +0x78 set and robot+0x2C > +0x74 -> Update.ReadTimeout, cb(nullptr, 0, -4), SetState(0), no retry (0x64575A..0x6457C0)"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "build the retry count and the robot-clock timeout delivering -4",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "M3DeviceTests.M3_031_TheNvReadRetriesThenTimesOut"
+      "test": "M3DeviceTests.M3_031_ARetryableNegativeResultIsResentThenCompletes, M3DeviceTests.M3_031_TheRobotClockTimeoutDeliversMinusFour, M3DeviceTests.M3_031_TheDeadlineIsArmedBeforeTheFirstRobotState"
     },
     {
       "id": "M3-032",
@@ -5926,11 +5928,11 @@
         "~NVStorageComponent frees +0x54 and destroys the +0x58 function without invoking it (0x643E80..0x643F8C); no callback for a queued or pending read on disconnect (pass 2 4e/4f)",
         "the timeout needs robot+0x2C to advance (0x64576A), which needs a RobotState with +0x29 and Robot::Update past Gate B (pass 2 4g)"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "confirm the existing disconnect path and that no local timeout fires without a live state clock",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "M3DeviceTests.M3_035_ANvReadGetsNoCallbackOnDisconnect"
+      "test": "M3DeviceTests.M3_035_ADisconnectDiscardsTheReadWithNoCallbackOrTimeout"
     },
     {
       "id": "M3-036",

@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-09-26",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "452de48dee5b95580e60c0e11092f0bacc37b6f465051cc5e70596cbb85f9eb3",
+  "inventory_sha256": "0efa9a61eaf04e166a8d1c96fc8d645960cc1ad801f446c06111d11ee90871ae",
   "records": {
     "M3-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -282,19 +282,19 @@
       "hardware_required": false
     },
     "M3-025": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "NV entry-tag validity and the size tables: a valid non-factory tag is a _maxSizeTable key; factory tags take their table value",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "IsValidEntryTag 0x644148..0x6441A0: (tag-0x180000)>>14 <= 0x1e; tag != 0x198000; tag a multiple of 0x1000; an exact _maxSizeTable key (descent 0x644160..0x64419E)",
         "_maxSizeTable (0x4D7F41; InitSizeTable 0x643B48..0x643CE0): 0x180000..0x183000 -> 0x1000, 0x184000 -> 0x10000, 0x194000..0x197000 -> 0x1000, 0x198000 -> 0x64000, 0xDE000 -> 0x30, 0xDE030 -> 0x1DFD0",
-        "_maxFactoryEntrySizeTable 23 keys from 0xC81064; a factory value is 1 or 0xFFFF, 0x80000001 -> 1 (0x643CE2..0x643DA2); GetMaxSizeForEntryTag 0x643FC8..0x64404E; GetBaseEntryTag 0x6441F8..0x6443F4"
+        "_maxFactoryEntrySizeTable (0xC81064, 23 keys, pass 4b Q1): 0x80000000..0x80000008, 0x80000010..0x80000012 and 0xC0000000/1/4 -> 1; 0x80010000..0x80060000, 0x80100000, 0x80110000 -> 0xFFFF; IsFactoryEntryTag 0x6440D4..0x64412C is exact membership in those 23 keys; InitSizeTable value rule 0x643D5A..0x643D84 (0xFFFF only when (tag & 0x7FFF0000) != 0 and (tag & 0xFFFF0000) != 0xC0000000); GetMaxSizeForEntryTag 0x643FC8..0x64404E; GetBaseEntryTag 0x6441F8..0x6443F4"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M3-026": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "NV Read(): tag validation, the invalid-tag callback (-6), and the FIFO queue with one request in flight",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -305,7 +305,7 @@
       "hardware_required": false
     },
     "M3-027": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "NV ProcessRequest READ: the factory/non-factory Length, the reliable send, and the pending-read arm (5 s robot-clock deadline, retry counter 0)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -316,29 +316,31 @@
       "hardware_required": false
     },
     "M3-028": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "NV non-factory reads: the OMZC header check and the Length = size+16 re-request",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "header gate 0x6430A6..0x6430EE (index 0, non-factory base, +0x79 == 0); <16 bytes -> TooLittleReadData, result -3 (0x6430F2..0x643478); magic != 0x435A4D4F -> InvalidHeader, result -1 (0x6430FC..0x643112); size > max-16 -> InvalidDataSize, result -1 (0x6430FE..0x64311C)",
-        "fits -> resize to size+16 (0x6438E2..0x643936); otherwise ReadingRestOfData re-requests tag = the reply's tag, op 0, Length = size+16, reliable/not-hot, no re-arm (0x643840..0x6438CA)"
+        "fits -> resize to size+16 (0x6438E2..0x643936); otherwise ReadingRestOfData re-requests tag = the reply's tag, op 0, Length = size+16, reliable/not-hot, no re-arm (0x643840..0x6438CA)",
+        "the fits-path resize at 0x643922 targets the reply vector (sp+0x44), not the pending buffer; it is a shrink/no-op, so the reassembly copy is bounded at the header total and the delivered non-factory buffer is exactly that total with no tail (pass 4b Q3)"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M3-029": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "NV reassembly at index*1024 with the 16-byte header skipped, zero-fill, and a re-armed timeout",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "offset = index*1024 - hdr; hdr = 16 for index>0 on a non-factory base, else 0; blob 0 skips the 16-byte header (0x643538..0x643594)",
-        "resize (zero-fill) only when shorter (0x643574); each applied blob re-arms +0x74 = robot+0x2C + 0x1388 (0x64359A..0x6435AE); the inbound array reader 0x73213C has no cap and a short blob is kept (pass 3 Q3 3a..3f)"
+        "resize (zero-fill) only when shorter (0x643574); each applied blob re-arms +0x74 = robot+0x2C + 0x1388 (0x64359A..0x6435AE); the inbound array reader 0x73213C has no cap and a short blob is kept (pass 3 Q3 3a..3f)",
+        "a non-factory entry that fits in one blob delivers exactly the header total (TOT), header skipped, no zero tail: resize reply to TOT+16 (0x643922), copy TOT at offset 0 (0x64356C..0x643596)"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M3-030": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "NV completion: the callback or the caller vector sink, the 0x400-chunk broadcast, and SetState(0)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -349,11 +351,11 @@
       "hardware_required": false
     },
     "M3-031": {
-      "status": "IMPLEMENTATION_GAP",
-      "title": "NV read retry (up to 8, identical resend) and the 5 s timeout (-4, no retry)",
+      "status": "EXACT_SOURCE",
+      "title": "NV read retry (7 resends / 8 transmissions, identical resend) and the 5 s timeout (-4, no retry)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "retry set {-8,-7,-5,-4} (0x6431E6..0x6431FA); ResendLastCommand resends the identical +0xDC command, +0xF4 up to +0xF5 = 8, then ReadOpFailed (0x645C6A..0x645D7A, 0x6431FE..0x643234)",
+        "retry set {-8,-7,-5,-4} (0x6431E6..0x6431FA); ResendLastCommand 0x645C6A..0x645D7A: the counter +0xF4 is 0-based (reset by the send/arm at 0x645484), incremented then compared < +0xF5 = 8 (bhs at 0x645C7C), so 7 resends / 8 transmissions, then ReadOpFailed (0x6431FE..0x643234); the second caller is the write/erase path 0x643194..0x6431A2",
         "timeout state 2: +0x78 set and robot+0x2C > +0x74 -> Update.ReadTimeout, cb(nullptr, 0, -4), SetState(0), no retry (0x64575A..0x6457C0)"
       ],
       "live_path": true,
@@ -393,7 +395,7 @@
       "hardware_required": false
     },
     "M3-035": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "An NV read gets no callback on disconnect or destruction, and its timeout needs a live RobotState clock",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [

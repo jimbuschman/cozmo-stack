@@ -1039,6 +1039,393 @@ public class M3DeviceTests
         Assert.True(rig.Robot.CameraSettings.VisionEnabled);
     }
 
+    // ================================================================== NV storage wire core: M3-025..M3-031, M3-035
+
+    private static List<NVCommand> NvCommands(Rig rig) => rig.Port.Messages().OfType<NVCommand>().ToList();
+
+    /// <summary>ToSuccess queues the connection-time calibration read; finish it so the next read is sent.</summary>
+    private static void DrainCalibrationRead(Rig rig)
+    {
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+    }
+
+    private static byte[] NvHeader(uint total, uint magic)
+    {
+        var header = new byte[16];
+        BitConverter.GetBytes(magic).CopyTo(header, 0);
+        BitConverter.GetBytes(total).CopyTo(header, 8);
+        return header;
+    }
+
+    /// <summary>M3-025: the tag validity rules and the two size tables (0x644148..0x6441A0; 0x643FC8..0x64404E).</summary>
+    [Fact]
+    public void M3_025_TheTagValidityAndSizeTables()
+    {
+        Assert.True(NvStorageComponent.IsValidEntryTag(0x180000));
+        Assert.True(NvStorageComponent.IsValidEntryTag(0x183000));
+        Assert.True(NvStorageComponent.IsValidEntryTag(0x184000));
+        Assert.True(NvStorageComponent.IsValidEntryTag(0x197000));
+        Assert.True(NvStorageComponent.IsValidEntryTag(0xDE000));
+        Assert.True(NvStorageComponent.IsValidEntryTag(0xDE030));
+        Assert.False(NvStorageComponent.IsValidEntryTag(0x198000));   // the sentinel key is rejected explicitly
+        Assert.False(NvStorageComponent.IsValidEntryTag(0x199000));   // in range but not an exact key
+        Assert.False(NvStorageComponent.IsValidEntryTag(0x181001));   // not a multiple of 0x1000
+        Assert.False(NvStorageComponent.IsValidEntryTag(0x100000));   // fails (tag-0x180000)>>14 <= 0x1e
+
+        // M3-025 (pass 4b Q1): the 23 factory keys and their values.
+        Assert.True(NvStorageComponent.IsFactoryEntryTag(0x80000001));
+        Assert.True(NvStorageComponent.IsFactoryEntryTag(0x80000012));
+        Assert.True(NvStorageComponent.IsFactoryEntryTag(0xC0000004));
+        Assert.True(NvStorageComponent.IsFactoryEntryTag(0x80010000));
+        Assert.True(NvStorageComponent.IsFactoryEntryTag(0x80110000));
+        Assert.False(NvStorageComponent.IsFactoryEntryTag(0x80000009));
+        Assert.False(NvStorageComponent.IsFactoryEntryTag(0x80000013));
+        Assert.False(NvStorageComponent.IsFactoryEntryTag(0x80120000));
+        Assert.Equal(1, NvStorageComponent.MaxFactorySizeForEntryTag(0x80000001));
+        Assert.Equal(1, NvStorageComponent.MaxFactorySizeForEntryTag(0xC0000000));
+        Assert.Equal(0xFFFF, NvStorageComponent.MaxFactorySizeForEntryTag(0x80010000));
+        Assert.Equal(0xFFFF, NvStorageComponent.MaxFactorySizeForEntryTag(0x80100000));
+        Assert.Equal(0x1000, NvStorageComponent.MaxSizeForEntryTag(0x180000));
+        Assert.Equal(0x10000, NvStorageComponent.MaxSizeForEntryTag(0x184000));
+        Assert.Equal(0, NvStorageComponent.MaxSizeForEntryTag(0x198000));   // the getter refuses the sentinel (1c-4)
+        Assert.Equal(0x30, NvStorageComponent.MaxSizeForEntryTag(0xDE000));
+        Assert.Equal(0x1DFD0, NvStorageComponent.MaxSizeForEntryTag(0xDE030));
+        Assert.Equal(0, NvStorageComponent.MaxSizeForEntryTag(0x123456));
+    }
+
+    /// <summary>
+    /// M3-025/GetBaseEntryTag (0x6441F8..0x6443F4): an exact factory key is its own base; a factory-block tag
+    /// (0xC000… with the 0xC0000000 base key) takes tag &amp; 0xFFFF0000; anything unrecognised is the sentinel.
+    /// </summary>
+    [Fact]
+    public void M3_025_GetBaseEntryTagFactoriesAndTheSentinel()
+    {
+        Assert.Equal(0xC0000004u, NvStorageComponent.GetBaseEntryTag(0xC0000004));   // exact factory key: itself
+        Assert.Equal(0xC0000000u, NvStorageComponent.GetBaseEntryTag(0xC0001234));   // factory block: tag & 0xFFFF0000
+        Assert.Equal(0x80000000u, NvStorageComponent.GetBaseEntryTag(0x80000000));   // exact factory key: itself
+        Assert.Equal(0x182000u, NvStorageComponent.GetBaseEntryTag(0x182000));       // exact non-factory key: itself
+        Assert.Equal(0x198000u, NvStorageComponent.GetBaseEntryTag(0x90000000));     // top bit, unrecognised -> sentinel
+        Assert.Equal(0x198000u, NvStorageComponent.GetBaseEntryTag(0x199000));       // unrecognised positive -> sentinel
+        Assert.Equal(0x198000u, NvStorageComponent.GetBaseEntryTag(0x198000));       // the sentinel key maps to itself
+    }
+
+    /// <summary>
+    /// M3-028/1e-1: the reply-accept check compares GetBaseEntryTag(reply.tag) with the pending request tag, so a
+    /// reply carrying a tag in the request's factory block is accepted even though the raw tags differ.
+    /// </summary>
+    [Fact]
+    public void M3_025_TheReplyAcceptCheckUsesTheBaseTag()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        NvResult? got = null;
+        rig.Robot.Engine.NvStorage!.Read(0xC0000000, r => got = r);
+        rig.Data(new NVOpResult { Tag = 0xC0001234, Op = 0, Result = 0, Length = 0, Data = new byte[1] });
+        rig.Tick();
+        Assert.NotNull(got);
+        Assert.Equal(0, got!.Value.Result);
+        Assert.Single(got.Value.Data);
+    }
+
+    /// <summary>M3-026: a READ of an invalid tag is not sent, and the callback gets (-6, empty).</summary>
+    [Fact]
+    public void M3_026_AnInvalidTagIsNotSentAndTheCallbackGetsMinusSix()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        int before = NvCommands(rig).Count;
+        NvResult? got = null;
+        rig.Robot.Engine.NvStorage!.Read(0x123456, r => got = r);
+        Assert.NotNull(got);
+        Assert.Equal(-6, got!.Value.Result);
+        Assert.Empty(got.Value.Data);
+        Assert.Equal(before, NvCommands(rig).Count);                             // nothing was sent
+        Assert.Contains(rig.Robot.Engine.NvStorage.Log, l => l.Contains("InvalidTag"));
+    }
+
+    /// <summary>M3-027: a non-factory READ computes Length = 0x400 from the tag; the caller no longer passes it.</summary>
+    [Fact]
+    public void M3_027_AReadComputesItsLengthFromTheTag()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        rig.Robot.Engine.NvStorage!.Read(0x182000, _ => { });
+        Assert.Equal(0x400, NvStorageComponent.NonFactoryReadLength);            // 0x64536A mov.w r0,#0x400
+        var cmd = NvCommands(rig)[^1];
+        Assert.Equal(0x182000u, cmd.Tag);
+        Assert.Equal(0x400, cmd.Length);
+        Assert.Equal(NvStorageComponent.OpRead, cmd.Op);
+        Assert.Equal(0, cmd.Unknown);
+        Assert.Empty(cmd.Data);
+    }
+
+    /// <summary>
+    /// M3-028/0x6430F2..0x64311C: a non-factory header shorter than 16 bytes completes with -3; a bad magic or a
+    /// total over MaxSizeForEntryTag(base)-16 completes with -1.
+    /// </summary>
+    [Fact]
+    public void M3_028_TheNonFactoryHeaderRejectsShortBadAndOversizeBlobs()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        NvResult? got = null;
+        Assert.Equal(16, NvStorageComponent.NvHeaderSize);                       // 0x6430F2 cmp r3,#0x10
+        Assert.Equal(0x435A4D4Fu, NvStorageComponent.NonFactoryHeaderMagic);     // 0x643108 movw/movt
+
+        nv.Read(0x182000, r => got = r);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = new byte[15] });
+        rig.Tick();
+        Assert.Equal(-3, got!.Value.Result);
+
+        got = null;
+        nv.Read(0x182000, r => got = r);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = NvHeader(0x800, 0xDEADBEEF) });
+        rig.Tick();
+        Assert.Equal(-1, got!.Value.Result);
+
+        got = null;
+        nv.Read(0x182000, r => got = r);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = NvHeader(0x1000, 0x435A4D4F) });
+        rig.Tick();
+        Assert.Equal(-1, got!.Value.Result);                                     // 0x1000 > MaxSizeForEntryTag(0x182000)-16 = 0xFF0
+    }
+
+    /// <summary>
+    /// M3-028/0x643840..0x6438CA: when the header's total exceeds the blob, the rest is re-requested with
+    /// Length = total + 16, reliable and not hot, with no re-arm (the request stays in flight).
+    /// </summary>
+    [Fact]
+    public void M3_028_TheRestIsReRequestedWithoutReArming()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        NvResult? got = null;
+        rig.Robot.Engine.NvStorage!.Read(0x182000, r => got = r);
+        var blob = new byte[16 + 100];
+        NvHeader(0x800, 0x435A4D4F).CopyTo(blob, 0);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = blob });
+        rig.Tick();
+        var cmd = NvCommands(rig)[^1];
+        Assert.Equal(0x810, cmd.Length);                                         // Length = total (0x800) + 16
+        Assert.Equal(0x182000u, cmd.Tag);
+        Assert.Equal(NvStorageComponent.OpRead, cmd.Op);
+        Assert.Null(got);
+    }
+
+    /// <summary>
+    /// M3-028/M3-029: for a non-factory read whose header total fits in the first blob, the delivered entry is
+    /// exactly the header total (the resize at 0x643922 targets the reply vector, so reassembly copies total at
+    /// offset 0), with the 16-byte header skipped and no 16-byte zero tail.
+    /// </summary>
+    [Fact]
+    public void M3_028_M3_029_TheDeliveredNonFactorySizeIsTheHeaderTotal()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        NvResult? got = null;
+        rig.Robot.Engine.NvStorage!.Read(0x182000, r => got = r);
+        const int total = 100;
+        var blob = new byte[200];                                        // larger than header + total
+        for (int i = 16; i < blob.Length; i++) blob[i] = (byte)(i + 1);
+        NvHeader(total, 0x435A4D4F).CopyTo(blob, 0);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultOkay, Length = 0, Data = blob });
+        rig.Tick();
+        Assert.NotNull(got);
+        Assert.Equal(0, got!.Value.Result);
+        Assert.Equal(total, got.Value.Data.Length);                      // exactly TOT, no +16 and no zero tail
+        var payload = blob[16..(16 + total)];
+        Assert.Equal(payload, got.Value.Data);
+    }
+
+    /// <summary>
+    /// M3-028/M3-029 (pass 4b Q3): the total-size trim is only on the fits branch. After a Length = size+16
+    /// re-request the engine reassembles each blob with count = size - 16 and no TOT bound.
+    /// </summary>
+    [Fact]
+    public void M3_028_M3_029_TheReRequestPathDoesNotTrimToTheHeaderTotal()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        NvResult? got = null;
+        rig.Robot.Engine.NvStorage!.Read(0x182000, r => got = r);
+        const int total = 100;
+        // header only: the entry does not fit in the first blob -> re-request
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = NvHeader(total, 0x435A4D4F) });
+        rig.Tick();
+        Assert.Null(got);
+
+        // the robot resends; the header is already accepted, so no trim to total applies
+        var blob = new byte[200];
+        for (int i = 16; i < blob.Length; i++) blob[i] = (byte)(i + 1);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultOkay, Length = 0, Data = blob });
+        rig.Tick();
+        Assert.NotNull(got);
+        Assert.Equal(0, got!.Value.Result);
+        Assert.Equal(184, got.Value.Data.Length);                        // size - 16 = 200 - 16, not capped at 100
+        Assert.Equal(blob[16..200], got.Value.Data);
+    }
+
+    /// <summary>
+    /// M3-030: with an empty callback the assembled bytes go into the request's sink; with the broadcast flag the
+    /// completed buffer is re-chunked into 0x400 blocks (result 3 for a non-final chunk, 0 for the final, index in
+    /// word@4).
+    /// </summary>
+    [Fact]
+    public void M3_030_TheSinkIsFilledAndTheBufferIsBroadcastInChunks()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        Assert.Equal(1024, NvStorageComponent.BlobStride);                       // 0x643538 lsls r0,r4,#0xa
+        var sink = new List<byte>();
+        var chunks = new List<NVStorageOpResult>();
+        nv.NVStorageOpResultBroadcast += chunks.Add;
+
+        nv.Read(0x80000001, null, sink, broadcast: true);
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = new byte[1024] });
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = NvStorageComponent.ResultMore, Length = 1, Data = new byte[1024] });
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = NvStorageComponent.ResultOkay, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+
+        Assert.Equal(2048, sink.Count);                                          // index 0 and 1, stride 1024
+        Assert.Equal(2, chunks.Count);
+        Assert.Equal((sbyte)3, chunks[0].Result);                                // non-final chunk is MORE
+        Assert.Equal((sbyte)0, chunks[1].Result);                                // final chunk is OKAY
+        Assert.Equal(0, chunks[0].Index);
+        Assert.Equal(1, chunks[1].Index);
+        Assert.Equal(0x80000001u, chunks[0].Tag);
+        Assert.Equal(1024, chunks[0].Data.Length);
+    }
+
+    /// <summary>
+    /// M3-031/0x645C6A..0x645D7A: a retryable negative result resends the identical command 7 times (8
+    /// transmissions; ResendLastCommand increments +0xF4 then compares &lt; +0xF5 = 8), then completes with the
+    /// original result (ReadOpFailed).
+    /// </summary>
+    [Fact]
+    public void M3_031_ARetryableNegativeResultIsResentThenCompletes()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        Assert.Equal(7, NvStorageComponent.MaxReadResends);                      // +0xF5 = 8, 0-based counter -> 7 resends
+        NvResult? got = null;
+        nv.Read(0x80000001, r => got = r);
+        int afterRead = NvCommands(rig).Count;                                   // the initial transmission
+
+        for (int i = 0; i < NvStorageComponent.MaxReadResends; i++)
+        {
+            rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -8, Length = 0, Data = Array.Empty<byte>() });
+            rig.Tick();
+            Assert.Null(got);
+            Assert.Equal(afterRead + i + 1, NvCommands(rig).Count);              // one identical resend per retry
+        }
+        Assert.Equal(NvStorageComponent.MaxReadResends, NvCommands(rig).Count - afterRead);   // 7 resends after the initial
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -8, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.NotNull(got);
+        Assert.Equal(-8, got!.Value.Result);
+        Assert.Equal(afterRead + NvStorageComponent.MaxReadResends, NvCommands(rig).Count);
+        Assert.Contains(nv.Log, l => l.Contains("ReadOpFailed"));
+    }
+
+    /// <summary>
+    /// M3-031/0x64575A..0x6457C0: a read whose deadline (robot+0x2C + 5000) has passed delivers (-4, empty) and is
+    /// not retried. The clock is the RobotState timestamp.
+    /// </summary>
+    [Fact]
+    public void M3_031_TheRobotClockTimeoutDeliversMinusFour()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 1000, PoseOriginId = 1 });
+        rig.Tick();
+        Assert.Equal(1000u, rig.Robot.State.Latest!.Timestamp);
+
+        var nv = rig.Robot.Engine.NvStorage!;
+        NvResult? got = null;
+        nv.Read(0x182000, r => got = r);                                         // deadline = 1000 + 5000 = 6000
+        rig.Data(new RobotState { Timestamp = 6001, PoseOriginId = 1 });
+        rig.Tick();
+        Assert.NotNull(got);
+        Assert.Equal(-4, got!.Value.Result);
+        Assert.Empty(got.Value.Data);
+    }
+
+    /// <summary>
+    /// M3-027 (pass 1 step 8 / pass 4 1d-5): the deadline is armed unconditionally as robot+0x2C + 5000. Before the
+    /// first RobotState robot+0x2C is 0, so it is 5000; the live connection CameraCalib read (queued from the mfgId
+    /// response, before any state) must therefore time out once a state with a larger clock arrives. It does not
+    /// fire while the clock is still at or below 5000, and it cannot fire at all with no state (the clock cannot
+    /// advance).
+    /// </summary>
+    [Fact]
+    public void M3_031_TheDeadlineIsArmedBeforeTheFirstRobotState()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        NvResult? got = null;
+        nv.Read(0x182000, r => got = r);                                         // no state yet: deadline = 0 + 5000 = 5000
+
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 5000, PoseOriginId = 1 });
+        rig.Tick();
+        Assert.Null(got);                                                        // 5000 is not > 5000
+
+        rig.Data(new RobotState { Timestamp = 5001, PoseOriginId = 1 });
+        rig.Tick();
+        Assert.NotNull(got);
+        Assert.Equal(-4, got!.Value.Result);
+        Assert.Empty(got.Value.Data);
+    }
+
+    /// <summary>
+    /// M3-035/0x643E80..0x643F8C: a disconnect discards the in-flight read with no callback, and the old deadline
+    /// cannot fire afterwards even as the robot clock advances.
+    /// </summary>
+    [Fact]
+    public void M3_035_ADisconnectDiscardsTheReadWithNoCallbackOrTimeout()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 1000, PoseOriginId = 1 });
+        rig.Tick();
+
+        var nv = rig.Robot.Engine.NvStorage!;
+        NvResult? got = null;
+        nv.Read(0x182000, r => got = r);
+        nv.OnDisconnected();
+
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = 0, Length = 0, Data = new byte[20] });
+        rig.Tick();
+        Assert.Null(got);
+
+        rig.Data(new RobotState { Timestamp = 6001, PoseOriginId = 1 });
+        rig.Tick();
+        nv.Update();
+        Assert.Null(got);
+        Assert.True(nv.IsIdle);
+    }
+
     private static DefaultCameraParams Defaults(float maxGain, float gain, ushort min, ushort max) => new()
     {
         Field0 = maxGain, Field1 = gain, Field2 = min, Field3 = max,

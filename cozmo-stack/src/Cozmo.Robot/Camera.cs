@@ -659,7 +659,8 @@ public sealed class CameraSettings
 
     /// <summary>
     /// The READ length for <c>NVEntry_CameraCalib</c>: 1, the factory size table's value for the tag
-    /// (<c>_maxFactoryEntrySizeTable</c>; PROJECT_STATE's NV finding, contradicting M11-011's 1024).
+    /// (<c>_maxFactoryEntrySizeTable</c>, M3-027; PROJECT_STATE's NV finding, contradicting M11-011's 1024). The
+    /// component computes it from the tag now, so this is documentation of the value, not an argument.
     /// </summary>
     public const int CalibrationReadLength = 1;
 
@@ -803,14 +804,15 @@ public sealed class CameraSettings
     /// Policy M3-019 (MD1): the engine's f32 @0 and u16 @4 are stale stack bytes (1i), so this stack sends 0.0 and 0;
     /// the bool @6 is 1, as in the engine. The read goes through the robot's shared NV queue (M3-022), with
     /// <see cref="CalibrationReadLength"/> = 1 and READ; its callback runs when the read completes. The engine only
-    /// queues it here, so the request goes out after the SetCameraParams. <paramref name="bodyHwVersion"/> is mfgId
+    /// queues it here, so the request goes out after the SetCameraParams. The component computes
+    /// <see cref="CalibrationReadLength"/> = 1 from the tag (M3-027). <paramref name="bodyHwVersion"/> is mfgId
     /// word 1, the engine Robot's +0x24, which the calibration callback's distortion rule reads.
     /// </summary>
     internal void OnRobotConnected(int bodyHwVersion)
     {
         lock (_gate) _bodyHwVersion = bodyHwVersion;
         _send(new SetCameraParams { Gain = 0.0f, ExposureMs = 0, AutoExposureEnabled = true });
-        _robot.Engine.NvStorage!.Read(Vision.CameraCalibration.NvEntryTag, CalibrationReadLength, OnCalibrationRead);
+        _robot.Engine.NvStorage!.Read(Vision.CameraCalibration.NvEntryTag, OnCalibrationRead);
     }
 
     // fidelity: M3-022
