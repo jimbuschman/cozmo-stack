@@ -2,7 +2,7 @@
   "subsystem": "M6-wwise-bank",
   "approved": "2026-09-26",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "1d70f985dfdab0c71f2d322eec19658e3281a4a693cbc06c3475bdd5376343c8",
+  "inventory_sha256": "340690c342c8d68adeee5cee55ec60545bfbd235a563377271d241f97c6716ba",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -105,7 +105,10 @@
         "curve 0xA14E28..0xA15244",
         "accumulation 0xA17724 / 0xA17878; node pull 0xA11590",
         "store 0xA0F07C, STMG defaults 0xA0F594; set 0xA1404C..0xA12CA0; lookup 0xA17280",
-        "bus key 0x9C3A48..0x9C3A78"
+        "bus key 0x9C3A48..0x9C3A78",
+        "ramp 0xA137D8..0xA13A60: type 1 up/down zero-rate check (0xA139E8/0xA13A50 vcmp.f32 s14,#0 -> 0xA139F4/0xA13A58 beq skips the divide, no duration); duration = vcvt.s32.f32 truncation (0xA13A04/0xA13A40); final = signed max(computed, callerTime) (0xA139BC..0xA139C8); >0 -> transition 0xA0E5E4, else immediate 0xA12CA0 (0xA13940..0xA13944)",
+        "ramp gates gapF 1.5 omits: explicit-time byte [arg6+8] (0xA139A0..0xA139A8); when arg1==0 the 0xA1B5FC(entry.id,key) transition gate (0xA13948..0xA13A24)",
+        "shipped STMG 0xCE871DAC: type 1, up 2.0, down 0.0, builtin 1 (Init.bnk 0x498); builtin 1 -> 0xA0F678"
       ],
       "live_path": true,
       "hardware_required": false

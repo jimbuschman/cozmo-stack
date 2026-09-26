@@ -983,3 +983,14 @@ I reused gapF `r.py`, gapB `base.py`/`q.py`/`wwise_arm.txt` and gapC `nodes.py`/
 - **M6-021** (COMPATIBILITY_POLICY, not on a live path) — the injectable RNG seed seam. The engine seeds the LCG with `time(NULL)` (SetSeed 0x99DB58 from SoundEngine::Init 0x99EF80); `WwiseSelection`'s default seed is the current Unix time (the same behaviour) and the constructor's seed parameter exists for deterministic selection tests. MD2: reproduced, not a divergence in behaviour.
 
 **Amended records:** M6-001 — the unexercised conditional branches (3D positioning, bus A/B bits, the LayerCntr layer body) are not "read exactly": the rows are partial and the code fails closed, so they move to its `unresolved`. M6-005 — the 0x103 bound is the native **copy** bound; for a NUL-terminated name of length L the hashed input is min(L, 0x102) bytes (GetIDFromString 0x0099DB84). M6-006/007/018 `location` and `test` corrected to the files and test classes the merged code uses.
+
+## Correction C2 (manager, 2026-09-26): the RTPC ramp rows
+
+The M6-009 build surfaced one MISSING — the type-1 ramp duration when the applicable rate is 0 — settled by a targeted read of `0xA137D8..0xA13A60`:
+
+- **Type 1 has an explicit zero check** in both directions (`0xA139E8 vcmp.f32 s14,#0` → `0xA139F4 beq`; `0xA13A50` → `0xA13A58`). A zero rate skips the subtract/divide/multiply, so it contributes no duration; there is no infinity, NaN or forced-immediate. **Type 2** (`0xA13A28..0xA13A48`) has no zero check but `0.0 * 1000 = 0`, the same result.
+- The computed duration is `vcvt.s32.f32` **truncated toward zero** (`0xA13A04`/`0xA13A40`), and the final duration is the signed `max(computed, callerTime)` (`0xA139BC..0xA139C8`); `> 0` → transition `0xA0E5E4`, `<= 0` → immediate `0xA12CA0` (`0xA13940..0xA13944`).
+- Two gates gapF 1.5 omits: the explicit-time byte `[arg6+8]` (`0xA139A0..0xA139A8`) and, when `arg1 == 0` (the shipped set path), the `0xA1B5FC(entry.id, key)` transition gate (`0xA13948..0xA13A24`).
+- Shipped STMG `0xCE871DAC` is ramp type 1, up 2.0, **down 0.0**, builtin 1 (`Init.bnk` 0x498), so a downward set hits the zero check; builtin 1 makes the STMG reader call `0xA0F678` (registration semantics UNKNOWN).
+
+**Amended:** M6-009's `evidence` now carries these ramp rows (the earlier `set 0xA1404C..0xA12CA0` was a bare range) and `location` is `WwiseRtpcStore.cs`, which implements the store, precedence, accumulation, ramps and the set entry points. gapF 1.5's citation range (`0xA13930..0xA13A60`) starts after the prologue and stops before the gates, so the row is exact only for the formulas and the max; the surrounding rows are those above. M6-009 stays IMPLEMENTATION_GAP (the store is unwired).

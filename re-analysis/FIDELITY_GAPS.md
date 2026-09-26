@@ -489,12 +489,12 @@ Each of these is a question already answered. The original's behaviour is establ
 
 **M6-009 — RTPC: curve shapes and scaling after the curve, sum/product accumulation, value store precedence with STMG defaults at entry+8, bus RTPC empty key, immediate ramps** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHierarchy.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseRtpcStore.cs`
 * effect: parameter curves change sounds differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* rests on: WwiseRtpc.Evaluate/ApplyScaling/EvaluateScaled (WwiseHierarchy.cs) implement the curve shapes and post-curve scaling; WwiseRtpcStore.cs implements the value store, lookup precedence, accumulation, ramps and the set entry points, from re-analysis/inventory/M6-wwise-bank.md gapF 1.1..1.10, gapE 7.1..7.4 and gapA 5.1..5.4
 * best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
-* evidence: curve 0xA14E28..0xA15244; accumulation 0xA17724 / 0xA17878; node pull 0xA11590; store 0xA0F07C, STMG defaults 0xA0F594; set 0xA1404C..0xA12CA0; lookup 0xA17280; bus key 0x9C3A48..0x9C3A78
-* outstanding: compare the code against the inventory rows (the step after approval)
+* evidence: curve 0xA14E28..0xA15244; accumulation 0xA17724 / 0xA17878; node pull 0xA11590; store 0xA0F07C, STMG defaults 0xA0F594; set 0xA1404C..0xA12CA0; lookup 0xA17280; bus key 0x9C3A48..0x9C3A78; ramp 0xA137D8..0xA13A60: type 1 up/down zero-rate check (0xA139E8/0xA13A50 vcmp.f32 s14,#0 -> 0xA139F4/0xA13A58 beq skips the divide, no duration); duration = vcvt.s32.f32 truncation (0xA13A04/0xA13A40); final = signed max(computed, callerTime) (0xA139BC..0xA139C8); >0 -> transition 0xA0E5E4, else immediate 0xA12CA0 (0xA13940..0xA13944); ramp gates gapF 1.5 omits: explicit-time byte [arg6+8] (0xA139A0..0xA139A8); when arg1==0 the 0xA1B5FC(entry.id,key) transition gate (0xA13948..0xA13A24); shipped STMG 0xCE871DAC: type 1, up 2.0, down 0.0, builtin 1 (Init.bnk 0x498); builtin 1 -> 0xA0F678
+* outstanding: the store is not wired into the live voice/bus graph (M6-006, M6-010); the transition's value evolution across 0xA0E5E4 is not modelled (gapF 1.5 gives only the duration); the 0xA1B5FC(entry.id, key) transition gate (0xA13948..0xA13A24, correction C2) is not modelled — its meaning is only partly read, so a positive duration whose exact written slot had no valid prior value is reported as GatedTransition; WwiseStmgParam.BuiltIn (0xA0F678) is dropped (semantics UNKNOWN)
 
 **M6-010 — Gain composition: GetAudioParameters links and sums, randomizer once per voice, dBToLin fast pow, game-defined aux send gain, muted dry path, Bus Volume after FX (robot_volume does not reach the Hijack)** (live path)
 

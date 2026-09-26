@@ -1,4 +1,4 @@
-// fidelity: M6-001
+// fidelity: M6-001, M6-009
 using System.Buffers.Binary;
 
 namespace Cozmo.Robot.Animation.Wwise;
