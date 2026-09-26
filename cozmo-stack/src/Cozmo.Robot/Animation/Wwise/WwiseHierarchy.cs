@@ -48,15 +48,10 @@ public sealed record WwiseRtpc(uint SourceId, byte SourceType, byte Accumulate, 
     /// <summary>
     /// The curve at <paramref name="x"/>, clamped to the end points outside the range the curve defines.
     ///
-    /// Each point carries the interpolation to use from it to the next. Every curve on the singing path
-    /// uses type 4, which is linear, and type 9, which holds the left value; both are implemented. Any
-    /// other type is interpolated linearly, which is a reduction rather than a reading, so the renderer
-    /// names it in its problems list rather than passing it off.
-    ///
-    /// The curve's scaling byte is not applied. For the two bindings on the singing path that costs
-    /// nothing worth measuring: the pitch curve is stored unscaled, and the volume curve spans one
-    /// decibel, over which interpolating in decibels rather than in amplitude moves a sample by at most
-    /// about 0.03 dB.
+    /// Each point carries the interpolation to use from it to the next (gapA 5.3). Every shape the runtime
+    /// implements is here: 4 linear, 9 constant, 0 Log3, 1 Sine, 2 Log1, 3 InvSCurve, 5 SCurve, 6 Exp1,
+    /// 7 SineRecip and 8 Exp3. An unknown code falls back to linear and sets <paramref name="reduced"/>.
+    /// The result is the raw curve value; <see cref="ApplyScaling"/> applies the scaling byte.
     /// </summary>
     public double Evaluate(double x, out bool reduced)
     {
@@ -69,13 +64,53 @@ public sealed record WwiseRtpc(uint SourceId, byte SourceType, byte Accumulate, 
             var (x0, y0, interp) = Points[i];
             var (x1, y1, _) = Points[i + 1];
             if (x < x0 || x > x1) continue;
-            if (interp == 9) return y0;                                  // constant: hold the left value
-            if (interp != 4) reduced = true;                             // anything else is read as linear
             double span = x1 - x0;
-            return span <= 0 ? y1 : y0 + (y1 - y0) * (x - x0) / span;
+            double t = span <= 0 ? 1 : (x - x0) / span;
+            if (interp > 9) reduced = true;
+            return y0 + (y1 - y0) * Shape(interp, t);
         }
         return Points[^1].To;
     }
+
+    /// <summary>The interpolation weight for parameter <paramref name="t"/> in [0,1] (gapA 5.3).</summary>
+    private static double Shape(uint interp, double t) => interp switch
+    {
+        9 => 0,                                                      // constant: hold the left value
+        0 => 1 - Math.Pow(1 - t, 3),                                 // Log3
+        // Sine: sin(t·π/2). The native fast polynomial evaluates sin on [0,1]; the runtime result the
+        // inventory records (event_volume 0.5 → −3.01 dB) requires the π/2 argument, which is used here.
+        1 => Math.Sin(t * Math.PI / 2),
+        2 => t * (3 - t) / 2,                                        // Log1
+        3 => t <= 0.5 ? Math.Sin(Math.PI * t) / 2 : 1 - Math.Sin(Math.PI - Math.PI * t) / 2,  // InvSCurve
+        5 => SCurve(t),                                             // SCurve
+        6 => t * (t + 1) / 2,                                        // Exp1
+        7 => 1 - Math.Cos(Math.PI * t / 2),                          // SineRecip
+        8 => t * t * t,                                              // Exp3
+        _ => t,                                                      // 4 linear (and unknown codes)
+    };
+
+    private static double SCurve(double t)
+    {
+        double u = Math.PI * Math.PI * t * t;                        // (πt)²
+        return 0.0006967 + u * (0.2476748 + u * (-0.0196138 + 0.00048483 * u));
+    }
+
+    /// <summary>
+    /// The scaling byte applied after the curve (gapA 5.3): 2 is dB via ±20·log10(1∓|y|), 3 is 10^y,
+    /// 4 is 10^(0.05y), anything else leaves the value unchanged. The native fast log/pow are approximated
+    /// here by the standard library; the semantic and the clamp at ±764.616 dB match the rows.
+    /// </summary>
+    public static double ApplyScaling(byte scaling, double y) => scaling switch
+    {
+        2 => y >= 1 ? 764.616 : y <= -1 ? -764.616
+             : y >= 0 ? -20 * Math.Log10(1 - y) : 20 * Math.Log10(1 + y),
+        3 => y < -37 ? 0 : Math.Pow(10, y),
+        4 => 0.05 * y < -37 ? 0 : Math.Pow(10, 0.05 * y),
+        _ => y,
+    };
+
+    /// <summary>The curve value at <paramref name="x"/> with the scaling byte applied.</summary>
+    public double EvaluateScaled(double x, out bool reduced) => ApplyScaling(Scaling, Evaluate(x, out reduced));
 }
 
 /// <summary>
