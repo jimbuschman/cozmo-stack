@@ -815,6 +815,10 @@ public class VisionTests
         var behavior = new AcknowledgeCubeMovedBehavior(rig.Vision.Locator);
         using var strategy = new CubeMovedReactionStrategy(rig.Robot, behavior, rig.Vision.Locator, rig.Vision.World);
         Assert.True(strategy.HasLocator);
+        // The CubeMoved STBI (M10-003, gap1 8) returns "running || IsRunnable" through C6 (M10-004); no animation
+        // library is loaded here, so the real bound behaviour's IsRunnable is false. A runnable stand-in supplies the
+        // gate, while the strategy still writes its target onto the bound behaviour (CubeMoved+0x124).
+        var runnable = M10Support.RunnableBehaviour();
         var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap() };
         using var manager = new BehaviorManager(ctx);
         manager.AddReaction(strategy, behavior);          // enables the trigger-8 gate the message handler needs
@@ -826,15 +830,15 @@ public class VisionTests
         rig.T += 1200;
         rig.State(head: -0.15f);
         Assert.True(rig.Vision.Locator.IsVisibleFromCamera(7));
-        Assert.False(strategy.ShouldTrigger(ctx, null, 0, behavior));
+        Assert.False(strategy.ShouldTrigger(ctx, null, 0, runnable));
 
         // the robot has turned away: the located pose is outside the camera's view
         rig.T += 33;
         rig.State(angle: 1.6f, head: -0.15f);
         Assert.True(rig.Vision.Locator.IsLocated(7));
         Assert.False(rig.Vision.Locator.IsVisibleFromCamera(7));
-        Assert.True(strategy.ShouldTrigger(ctx, null, 0, behavior));
-        Assert.Equal(7u, behavior.TargetObjectId);      // the behaviour is now runnable once its animations resolve (DerivedStateTests)
+        Assert.True(strategy.ShouldTrigger(ctx, null, 0, runnable));
+        Assert.Equal(7u, behavior.TargetObjectId);      // the strategy writes the target onto its bound behaviour (DerivedStateTests)
     }
 
     [Fact]

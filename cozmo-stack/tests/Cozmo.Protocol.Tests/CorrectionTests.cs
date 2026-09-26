@@ -89,6 +89,13 @@ public class CorrectionTests
                                   .Single(r => r.Strategy.Trigger == ReactionTrigger.ObjectPositionUpdated);
         manager.AddReaction(reg.Strategy, reg.Behavior);
 
+        // ObjectPositionUpdated drops an observation when the manager has no current behaviour (M10-003 gap2 4j:
+        // only if a current behaviour exists and its class differs), so establish one before the frame. Its class
+        // ("test") differs from the bound AcknowledgeObject class, so the sighting is not discarded as self-observation.
+        var standIn = M10Support.RunnableBehaviour("m10-object-position-current");
+        manager.Add(standIn);
+        manager.StartAsync(standIn.Id, 0).GetAwaiter().GetResult();
+
         rig.Cube = new Pose3d(Mat3.Identity, new Vec3(200, 0, 22));
         var seen = rig.Frame();
         uint cubeId = seen.Objects[0].Object.ObjectId;
