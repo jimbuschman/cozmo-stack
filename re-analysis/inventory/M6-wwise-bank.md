@@ -994,3 +994,14 @@ The M6-009 build surfaced one MISSING — the type-1 ramp duration when the appl
 - Shipped STMG `0xCE871DAC` is ramp type 1, up 2.0, **down 0.0**, builtin 1 (`Init.bnk` 0x498), so a downward set hits the zero check; builtin 1 makes the STMG reader call `0xA0F678` (registration semantics UNKNOWN).
 
 **Amended:** M6-009's `evidence` now carries these ramp rows (the earlier `set 0xA1404C..0xA12CA0` was a bare range) and `location` is `WwiseRtpcStore.cs`, which implements the store, precedence, accumulation, ramps and the set entry points. gapF 1.5's citation range (`0xA13930..0xA13A60`) starts after the prologue and stops before the gates, so the row is exact only for the formulas and the max; the surrounding rows are those above. M6-009 stays IMPLEMENTATION_GAP (the store is unwired).
+
+## Correction C3 (manager, 2026-09-26): M6-008 continuous containers — three refinements
+
+The M6-008 build left three rows under-specified; they are settled by a targeted read:
+
+- **Ping-pong loop count** (`0xA0863C..0xA08664` forward reversal, `0xA085E4..0xA08630` start reversal): the counter is decremented **only at the start-side reversal** (backward, index reaches 0): bit0 clear → end, bit1/infinite → no decrement, else count−− and 0 → end. The **forward-side reversal** sets forward = 0 and index = index−1 with **no count change and no end check**. So `count` counts complete round trips, not passes.
+- **Loop-count draw** (`0xA09230..0xA09264`, `0xA09350..0xA093F0`): taken only when `loop >= 2`; `fraction = (rng.Hi >> 1) / 2147483647.0`, `draw = (int)(0.5 + fraction · (short)(loopMax − loopMin))` (truncation after +0.5 = round-half-up on the non-negative operand), `count = (short)(loop + loopMin + draw)` clamped ≥ 1. loop = node+0x88, loopMin = +0x8a, loopMax = +0x8c.
+- **Mode-5 re-entry period** (`0xA0A16C..0xA0A1C0`): `period = max(transitionTime_ms/1000, 0.022) + (params+0x74 / 48000)` seconds. `params+0x74` is the **PBI start offset in samples** (the action manager's sub-frame remainder `pending+0xC`); on this path `params+0x7C == 0`, so the `0x9F12E0` InitialDelay term is not added.
+- **Unobservability:** the ping-pong branch (every shipped RanSeq `+0x91` byte is 0x12/0x1A, bit5 clear), the drawn loop count and the loopMin/loopMax range are **unreachable in the shipped banks** (all 25 continuous containers are loop 0 or 1). They are source-exact but cannot be capture-verified.
+
+**Amended:** M6-008's `location` is the new `WwiseContinuous.cs` (the standalone decision module) and its `unresolved` lists the pieces the rows still mark RECOVERABLE_GAP (the mode-4 PBI internals beyond the start offset/chain id, the modes-1/2 action-manager delay resolution, EndOfEvent/PBI Term latency, the bit4-clear shared state, mode 3, zero-frame transitions, the start-notification/`src+0x10` timing). M6-008 stays IMPLEMENTATION_GAP (unwired).

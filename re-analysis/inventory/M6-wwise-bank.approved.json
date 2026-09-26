@@ -2,7 +2,7 @@
   "subsystem": "M6-wwise-bank",
   "approved": "2026-09-26",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "340690c342c8d68adeee5cee55ec60545bfbd235a563377271d241f97c6716ba",
+  "inventory_sha256": "e21547ad64c9a5e89232fe30673c4bf177701941957129e5334ffce0d6f60d72",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -92,7 +92,11 @@
         "PlayInternal 0xA0AFDC; loop info 0xA091CC; next 0xA09C40",
         "PrepareNextToPlay 0xA6A07C; modes 1/2 scheduling 0xA6A580; PlayAndContinue 0xA62ED4; fades 0xA35998",
         "mode 4 0xA6A2DC, voice attach 0xA4304C, switch 0xA52B90 / 0xA549A0",
-        "mode 5 0xA09F04; end 0xA6ACC0; EndOfEvent 0xA03618"
+        "mode 5 0xA09F04; end 0xA6ACC0; EndOfEvent 0xA03618",
+        "ping-pong loop count 0xA0863C..0xA08664 (forward reversal: forward=0, index-- and no count/end check) and 0xA085E4..0xA08630 (start reversal: bit0 clear -> end, bit1 -> no decrement, else count-- and 0 -> end)",
+        "loop-count draw 0xA09230..0xA09264 / 0xA09350..0xA093F0: only when loop >= 2; fraction = (rng.Hi>>1)/2147483647.0; draw = (int)(0.5 + fraction*(short)(loopMax-loopMin)); count = (short)(loop+loopMin+draw) clamped >= 1",
+        "mode-5 re-entry period 0xA0A16C..0xA0A1C0: max(transitionTime_ms/1000, 0.022) + params+0x74/48000, where params+0x74 is the PBI start offset in samples (pending+0xC) and params+0x7C == 0 so no InitialDelay term",
+        "unobservable in shipped banks: every RanSeq +0x91 byte is 0x12/0x1A (ping-pong bit5 clear) and all 25 continuous containers are loop 0 or 1"
       ],
       "live_path": true,
       "hardware_required": false
