@@ -78,7 +78,7 @@ public class WwiseModulatorTests
         var own = Assert.Single(lfo.Params.Rtpcs);
         Assert.Equal(VibratoParameter, own.SourceId);
         Assert.Equal(WwiseRtpc.GameParameterSource, own.SourceType);
-        Assert.Equal(0, own.ParamId);
+        Assert.Equal(0u, own.ParamId);
         Assert.Equal(0.0, own.Evaluate(0, out _), 6);
         Assert.Equal(100.0, own.Evaluate(1, out _), 6);
         Assert.Equal(50.0, own.Evaluate(0.5, out _), 6);
@@ -99,7 +99,7 @@ public class WwiseModulatorTests
         var pitch = Assert.Single(target.Params.Rtpcs);
         Assert.Equal(VibratoLfo, pitch.SourceId);
         Assert.Equal(WwiseRtpc.ModulatorSource, pitch.SourceType);
-        Assert.Equal((byte)WwiseProp.Pitch, pitch.ParamId);
+        Assert.Equal((uint)WwiseProp.Pitch, pitch.ParamId);
         Assert.Equal(0.0, pitch.Evaluate(0, out _), 6);
         Assert.Equal(580.0, pitch.Evaluate(1, out _), 6);
         Assert.Null(target.Params.Float(WwiseProp.Pitch));
@@ -108,7 +108,7 @@ public class WwiseModulatorTests
         var volume = Assert.Single(noteOn.Params.Rtpcs);
         Assert.Equal(NoteOffEnvelope, volume.SourceId);
         Assert.Equal(WwiseRtpc.ModulatorSource, volume.SourceType);
-        Assert.Equal((byte)WwiseProp.Volume, volume.ParamId);
+        Assert.Equal((uint)WwiseProp.Volume, volume.ParamId);
         Assert.Equal(0.0, volume.Evaluate(0, out _), 6);
         Assert.Equal(-1.0, volume.Evaluate(1, out _), 6);
         Assert.Null(noteOn.Params.Float(WwiseProp.Volume));

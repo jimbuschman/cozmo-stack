@@ -366,7 +366,7 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
                     {
                         if (r.SourceType != WwiseRtpc.GameParameterSource) continue;
                         if (r.SourceId != EventVolumeParameter) continue;
-                        if (r.ParamId != (byte)WwiseProp.Volume) continue;
+                        if (r.ParamId != (uint)WwiseProp.Volume) continue;
                         return _eventVolumeRtpc = r;
                     }
                 }

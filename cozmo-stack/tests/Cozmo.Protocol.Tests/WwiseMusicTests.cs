@@ -293,7 +293,7 @@ public class WwiseMusicTests
         Assert.Equal(3, target.Children.Count);
         var vibrato = Assert.Single(target.Params.Rtpcs);
         Assert.Equal(528935089u, vibrato.SourceId);
-        Assert.Equal((byte)WwiseProp.Pitch, vibrato.ParamId);
+        Assert.Equal((uint)WwiseProp.Pitch, vibrato.ParamId);
 
         // three children: the get-in sequences (a random container), the note-on blend, the note-off blend
         var blends = target.Children.Select(lib.Node).OfType<WwiseBlendNode>().ToList();

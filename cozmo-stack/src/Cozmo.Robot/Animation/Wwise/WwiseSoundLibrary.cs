@@ -92,6 +92,12 @@ public sealed class WwiseSoundLibrary : IDisposable
     public WwiseNames Names { get; } = new();
 
     /// <summary>
+    /// The STMG state-manager chunk from the bank that has one (<c>Init.bnk</c>), or null when no loaded
+    /// bank does. It carries the RTPC default table the value store falls back to (gapF 1.2/1.3).
+    /// </summary>
+    public WwiseStmg? Stmg => _banks.Select(b => b.Stmg).FirstOrDefault(s => s is not null);
+
+    /// <summary>
     /// The parsed hierarchy node for an object, or null when the object is absent, of a type the reader
     /// does not cover, or does not consume exactly. Parsed once and cached.
     /// </summary>

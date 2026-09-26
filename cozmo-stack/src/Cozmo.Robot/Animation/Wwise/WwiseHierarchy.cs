@@ -1,3 +1,4 @@
+// fidelity: M6-001
 using System.Buffers.Binary;
 
 namespace Cozmo.Robot.Animation.Wwise;
@@ -37,7 +38,7 @@ public enum WwiseProp : byte
 /// vibrato LFO binds <c>cozmo_singing_vibrato</c> to parameter 0 over a curve from 0 to 100, which is the
 /// depth in per cent.
 /// </summary>
-public sealed record WwiseRtpc(uint SourceId, byte SourceType, byte Accumulate, byte ParamId, uint CurveId,
+public sealed record WwiseRtpc(uint SourceId, byte SourceType, byte Accumulate, uint ParamId, uint CurveId,
                                byte Scaling, IReadOnlyList<(float From, float To, uint Interp)> Points)
 {
     /// <summary>A binding whose source is a modulator object rather than a game parameter.</summary>
@@ -48,15 +49,10 @@ public sealed record WwiseRtpc(uint SourceId, byte SourceType, byte Accumulate, 
     /// <summary>
     /// The curve at <paramref name="x"/>, clamped to the end points outside the range the curve defines.
     ///
-    /// Each point carries the interpolation to use from it to the next. Every curve on the singing path
-    /// uses type 4, which is linear, and type 9, which holds the left value; both are implemented. Any
-    /// other type is interpolated linearly, which is a reduction rather than a reading, so the renderer
-    /// names it in its problems list rather than passing it off.
-    ///
-    /// The curve's scaling byte is not applied. For the two bindings on the singing path that costs
-    /// nothing worth measuring: the pitch curve is stored unscaled, and the volume curve spans one
-    /// decibel, over which interpolating in decibels rather than in amplitude moves a sample by at most
-    /// about 0.03 dB.
+    /// Each point carries the interpolation to use from it to the next (gapA 5.3). Every shape the runtime
+    /// implements is here: 4 linear, 9 constant, 0 Log3, 1 Sine, 2 Log1, 3 InvSCurve, 5 SCurve, 6 Exp1,
+    /// 7 SineRecip and 8 Exp3. An unknown code falls back to linear and sets <paramref name="reduced"/>.
+    /// The result is the raw curve value; <see cref="ApplyScaling"/> applies the scaling byte.
     /// </summary>
     public double Evaluate(double x, out bool reduced)
     {
@@ -69,13 +65,53 @@ public sealed record WwiseRtpc(uint SourceId, byte SourceType, byte Accumulate, 
             var (x0, y0, interp) = Points[i];
             var (x1, y1, _) = Points[i + 1];
             if (x < x0 || x > x1) continue;
-            if (interp == 9) return y0;                                  // constant: hold the left value
-            if (interp != 4) reduced = true;                             // anything else is read as linear
             double span = x1 - x0;
-            return span <= 0 ? y1 : y0 + (y1 - y0) * (x - x0) / span;
+            double t = span <= 0 ? 1 : (x - x0) / span;
+            if (interp > 9) reduced = true;
+            return y0 + (y1 - y0) * Shape(interp, t);
         }
         return Points[^1].To;
     }
+
+    /// <summary>The interpolation weight for parameter <paramref name="t"/> in [0,1] (gapA 5.3).</summary>
+    private static double Shape(uint interp, double t) => interp switch
+    {
+        9 => 0,                                                      // constant: hold the left value
+        0 => 1 - Math.Pow(1 - t, 3),                                 // Log3
+        // Sine: sin(t·π/2). The native fast polynomial evaluates sin on [0,1]; the runtime result the
+        // inventory records (event_volume 0.5 → −3.01 dB) requires the π/2 argument, which is used here.
+        1 => Math.Sin(t * Math.PI / 2),
+        2 => t * (3 - t) / 2,                                        // Log1
+        3 => t <= 0.5 ? Math.Sin(Math.PI * t) / 2 : 1 - Math.Sin(Math.PI - Math.PI * t) / 2,  // InvSCurve
+        5 => SCurve(t),                                             // SCurve
+        6 => t * (t + 1) / 2,                                        // Exp1
+        7 => 1 - Math.Cos(Math.PI * t / 2),                          // SineRecip
+        8 => t * t * t,                                              // Exp3
+        _ => t,                                                      // 4 linear (and unknown codes)
+    };
+
+    private static double SCurve(double t)
+    {
+        double u = Math.PI * Math.PI * t * t;                        // (πt)²
+        return 0.0006967 + u * (0.2476748 + u * (-0.0196138 + 0.00048483 * u));
+    }
+
+    /// <summary>
+    /// The scaling byte applied after the curve (gapA 5.3): 2 is dB via ±20·log10(1∓|y|), 3 is 10^y,
+    /// 4 is 10^(0.05y), anything else leaves the value unchanged. The native fast log/pow are approximated
+    /// here by the standard library; the semantic and the clamp at ±764.616 dB match the rows.
+    /// </summary>
+    public static double ApplyScaling(byte scaling, double y) => scaling switch
+    {
+        2 => y >= 1 ? 764.616 : y <= -1 ? -764.616
+             : y >= 0 ? -20 * Math.Log10(1 - y) : 20 * Math.Log10(1 + y),
+        3 => y < -37 ? 0 : Math.Pow(10, y),
+        4 => 0.05 * y < -37 ? 0 : Math.Pow(10, 0.05 * y),
+        _ => y,
+    };
+
+    /// <summary>The curve value at <paramref name="x"/> with the scaling byte applied.</summary>
+    public double EvaluateScaled(double x, out bool reduced) => ApplyScaling(Scaling, Evaluate(x, out reduced));
 }
 
 /// <summary>
@@ -117,8 +153,11 @@ public sealed record WwiseSoundNode(uint Id, string Bank, WwiseNodeParams Params
                                     uint MediaId, uint InMemorySize, byte SourceBits)
     : WwiseNode(Id, WwiseObjectType.Sound, Bank, Params, Array.Empty<uint>())
 {
-    /// <summary>Source plug-ins (Wwise Sine, Silence, Anki Wave Portal) have plugin type 2 and no media.</summary>
-    public bool IsSourcePlugin => (PluginId & 0x0F) == 2;
+    /// <summary>
+    /// Source plug-ins (Wwise Sine, Silence, Anki Wave Portal) have plugin nibble 2 or 5 and no media
+    /// (gapA 2.4).
+    /// </summary>
+    public bool IsSourcePlugin => (PluginId & 0x0F) is 2 or 5;
 }
 
 public sealed record WwiseRandomSequenceNode(uint Id, string Bank, WwiseNodeParams Params, IReadOnlyList<uint> Children,
@@ -284,7 +323,7 @@ public static class WwiseHierarchy
 
     // ---------------------------------------------------------------- the shared blocks
 
-    private static WwiseNodeParams ReadNodeParams(ref Reader r)
+    private static WwiseNodeParams ReadNodeParams(ref Reader r, bool feedback)
     {
         // NodeInitialFxParams
         r.U8();
@@ -309,9 +348,14 @@ public static class WwiseHierarchy
         for (int i = 0; i < n; i++) ids[i] = r.U8();
         var ranged = new Dictionary<byte, (float, float)>(n);
         for (int i = 0; i < n; i++) ranged[ids[i]] = (r.F32(), r.F32());
-        // PositioningParams: one byte in every shipped object (no object here overrides 3D positioning).
-        r.U8();
-        // AuxParams
+        // PositioningParams (gapA 2.4): one byte; more follows only when b0 and b3 are both set. No shipped
+        // node has that, and the body past the attenuation is not in the rows, so it fails rather than
+        // silently realigning.
+        byte posBits = r.U8();
+        if ((posBits & 0x01) != 0 && (posBits & 0x08) != 0)
+            throw new InvalidDataException("positioning 3D body (b0 & b3) is not recovered in the frozen rows");
+        // AuxParams (gapA 2.4): u8 bits; b3 begins an aux list whose length is not in the rows. The shipped
+        // value is read as one byte; the list is left unresolved.
         byte aux = r.U8();
         if ((aux & 0x08) != 0) for (int i = 0; i < 4; i++) r.U32();
         // AdvSettingsParams
@@ -330,16 +374,35 @@ public static class WwiseHierarchy
         int curves = r.U16();
         var rtpcs = new List<WwiseRtpc>(curves);
         for (int c = 0; c < curves; c++) rtpcs.Add(ReadRtpc(ref r));
+        // NodeBaseParams: 4 more bytes only when the BKHD feedback flag is set (gapA 2.3). It is 0 in all six
+        // shipped banks.
+        if (feedback) r.Skip(4);
         return new WwiseNodeParams(bus, parent, bits, props, ranged, rtpcs, stateGroups);
     }
 
     private static WwiseRtpc ReadRtpc(ref Reader r)
     {
-        uint src = r.U32(); byte type = r.U8(); byte acc = r.U8(); byte param = r.U8();
+        uint src = r.U32(); byte type = r.U8(); byte acc = r.U8();
+        // The parameter id is a Wwise varint (gapA 2.5): 7 bits per byte, bit 0x80 = continue, big-endian
+        // accumulation. A one-byte read agrees only while every shipped id is below 0x80.
+        uint param = ReadVarint(ref r);
         uint curve = r.U32(); byte scaling = r.U8(); int npts = r.U16();
         var pts = new List<(float, float, uint)>(npts);
         for (int i = 0; i < npts; i++) pts.Add((r.F32(), r.F32(), r.U32()));
         return new WwiseRtpc(src, type, acc, param, curve, scaling, pts);
+    }
+
+    /// <summary>Wwise varint (7 bits per byte, bit 0x80 continues, high groups first).</summary>
+    private static uint ReadVarint(ref Reader r)
+    {
+        uint value = 0;
+        for (int i = 0; i < 5; i++)                                  // a 32-bit value needs at most 5 groups
+        {
+            byte b = r.U8();
+            value = (value << 7) | (uint)(b & 0x7F);
+            if ((b & 0x80) == 0) return value;
+        }
+        throw new InvalidDataException("varint longer than 5 bytes");
     }
 
     private static IReadOnlyList<uint> ReadChildren(ref Reader r)
@@ -382,15 +445,18 @@ public static class WwiseHierarchy
     {
         uint id = r.U32();
         uint plugin = r.U32(); byte stream = r.U8(); uint media = r.U32(); uint size = r.U32(); byte srcBits = r.U8();
-        if ((plugin & 0x0F) == 2) r.U32();                     // source plug-in: parameter block size
-        var p = ReadNodeParams(ref r);
+        // Source plug-in (gapA 2.4): a u32 parameter-block size followed by that many bytes. The native
+        // branch takes plugin & 0xF == 2 or 5 (0x009B9D30 cmp ip,#5; 0x009B9D34 cmpne ip,#2; 0x009B9D38
+        // beq). All shipped sources are codecs, so the block is empty; it is still consumed exactly.
+        if ((plugin & 0x0F) is 2 or 5) { uint pluginSize = r.U32(); r.Skip((int)pluginSize); }
+        var p = ReadNodeParams(ref r, o.FeedbackEnabled);
         return new WwiseSoundNode(id, o.Bank, p, plugin, stream, media, size, srcBits);
     }
 
     private static WwiseRandomSequenceNode ReadRandomSequence(ref Reader r, WwiseObject o)
     {
         uint id = r.U32();
-        var p = ReadNodeParams(ref r);
+        var p = ReadNodeParams(ref r, o.FeedbackEnabled);
         ushort loop = r.U16(); r.U16(); r.U16();
         r.F32(); r.F32(); r.F32();                              // transition time and its modulation range
         ushort avoid = r.U16(); byte transMode = r.U8(); byte randomMode = r.U8(); byte mode = r.U8(); byte flags = r.U8();
@@ -404,7 +470,7 @@ public static class WwiseHierarchy
     private static WwiseSwitchNode ReadSwitch(ref Reader r, WwiseObject o)
     {
         uint id = r.U32();
-        var p = ReadNodeParams(ref r);
+        var p = ReadNodeParams(ref r, o.FeedbackEnabled);
         byte groupType = r.U8(); uint group = r.U32(); uint def = r.U32(); byte cont = r.U8();
         var kids = ReadChildren(ref r);
         uint n = r.U32();
@@ -424,32 +490,28 @@ public static class WwiseHierarchy
     private static WwiseActorMixerNode ReadActorMixer(ref Reader r, WwiseObject o)
     {
         uint id = r.U32();
-        var p = ReadNodeParams(ref r);
+        var p = ReadNodeParams(ref r, o.FeedbackEnabled);
         return new WwiseActorMixerNode(id, o.Bank, p, ReadChildren(ref r));
     }
 
     private static WwiseBlendNode ReadBlend(ref Reader r, WwiseObject o)
     {
         uint id = r.U32();
-        var p = ReadNodeParams(ref r);
+        var p = ReadNodeParams(ref r, o.FeedbackEnabled);
         var kids = ReadChildren(ref r);
         // Blend tracks. Every one of the six blend containers in every shipped bank has none, so nothing a
         // crossfade curve would do is lost by reading past them: a blend container here always plays all of
         // its children at the level their own properties give (checked by
         // WwiseMusicTests.NoBlendContainerInAnyShippedBankHasABlendTrack).
         uint layers = r.U32();
-        for (uint i = 0; i < layers; i++)
-        {
-            ReadRtpc(ref r);                                    // the layer's crossfade RTPC
-            uint nc = r.U32();
-            for (uint c = 0; c < nc; c++)
-            {
-                r.U32(); r.U32();
-                uint npts = r.U32();
-                for (uint k = 0; k < npts; k++) { r.F32(); r.F32(); r.U32(); }
-            }
-        }
-        r.U8();                                                 // bIsContinuousValidation
+        // The real LayerCntr reader (0x9D24D4, gapD D6.3) is NodeBase, children, a u32 layer count whose
+        // entries are made by 0xA6D9EC/0xA6DD54, then a u8. That per-layer body is not recovered in the
+        // frozen rows, and every one of the six shipped LayerCntr objects has zero layers (checked by
+        // WwiseMusicTests.NoBlendContainerInAnyShippedBankHasABlendTrack), so it fails rather than reading
+        // an unrecovered body.
+        if (layers != 0)
+            throw new InvalidDataException("LayerCntr layer body (0xA6DD54) is not recovered in the frozen rows");
+        r.U8();                                                 // bIsContinuousValidation (+0x84)
         return new WwiseBlendNode(id, o.Bank, p, kids, (int)layers);
     }
 
@@ -457,7 +519,7 @@ public static class WwiseHierarchy
     {
         uint id = r.U32();
         byte flags = r.U8();
-        var p = ReadNodeParams(ref r);
+        var p = ReadNodeParams(ref r, o.FeedbackEnabled);
         var kids = ReadChildren(ref r);
         var meter = ReadMeter(ref r);
         SkipStingers(ref r);
@@ -490,7 +552,7 @@ public static class WwiseHierarchy
             uint npts = r.U32();
             for (uint k = 0; k < npts; k++) { r.F32(); r.F32(); r.U32(); }
         }
-        var p = ReadNodeParams(ref r);
+        var p = ReadNodeParams(ref r, o.FeedbackEnabled);
         byte trackType = r.U8();
         if (trackType == 3)
         {
@@ -506,7 +568,7 @@ public static class WwiseHierarchy
     {
         uint id = r.U32();
         byte flags = r.U8();
-        var p = ReadNodeParams(ref r);
+        var p = ReadNodeParams(ref r, o.FeedbackEnabled);
         var kids = ReadChildren(ref r);
         var meter = ReadMeter(ref r);
         SkipStingers(ref r);
@@ -556,9 +618,10 @@ public static class WwiseHierarchy
     }
 
     /// <summary>
-    /// An audio bus. Its two variable parts were settled by requiring all fifteen shipped buses to consume
-    /// exactly: the positioning byte carries one more byte when it is non-zero, and the ducked-bus list is
-    /// a count followed by eighteen bytes each. See <see cref="WwiseBusNode"/>.
+    /// An audio bus. The field order is the runtime's own (gapD D6.1): no ranged bundle, then the A/B/C bit
+    /// bytes, instance limits, channel config, recovery, duck list, FX chain, mixer id and RTPCs. The
+    /// conditional A/B/C bodies are not in the frozen rows; the shipped buses leave them clear, and a set
+    /// bit fails rather than guessing a body length. See <see cref="WwiseBusNode"/>.
     /// </summary>
     private static WwiseBusNode ReadBus(ref Reader r, WwiseObject o)
     {
@@ -569,20 +632,23 @@ public static class WwiseHierarchy
         for (int i = 0; i < n; i++) ids[i] = r.U8();
         var props = new Dictionary<byte, uint>(n);
         for (int i = 0; i < n; i++) props[ids[i]] = r.U32();
-        n = r.U8();
-        ids = new byte[n];
-        for (int i = 0; i < n; i++) ids[i] = r.U8();
-        var ranged = new Dictionary<byte, (float, float)>(n);
-        for (int i = 0; i < n; i++) ranged[ids[i]] = (r.F32(), r.F32());
+        // A bus has no ranged-property bundle.
 
-        if (r.U8() != 0) r.Skip(1);                        // positioning: one byte, two when it overrides
-        r.Skip(15);                                        // instance limits, virtual behaviour, volume threshold
+        byte a = r.U8();                                        // A: b0 → +0x46 b7, b1 → +0x47 b0
+        byte b = r.U8();                                        // B: b0..b3 → virtual-voice / aux handling
+        if ((b & 0x0F) != 0)
+            throw new InvalidDataException("bus B conditional body is not recovered in the frozen rows");
+        ushort maxInst = (ushort)(r.U16() & 0x3FF);
+        uint channelConfig = r.U32();
+        byte c = r.U8();                                        // C: b0 → +0x40, b1 → +0xCC
+        uint recoveryMs = r.U32();
+        float maxDuck = r.F32();
         uint ducks = r.U32();
         var ducked = new List<(uint, float, uint, uint)>((int)Math.Min(ducks, 32));
         for (uint i = 0; i < ducks; i++)
         {
             uint bus = r.U32(); float volume = r.F32(); uint fadeOut = r.U32(); uint fadeIn = r.U32();
-            r.U8(); r.U8();                                // fade curve and the property it ducks
+            r.U8(); r.U8();                                     // fade curve and the property it ducks
             ducked.Add((bus, volume, fadeOut, fadeIn));
         }
 
@@ -590,14 +656,15 @@ public static class WwiseHierarchy
         var effects = new List<WwiseBusEffect>(numFx);
         if (numFx > 0)
         {
-            r.U8();                                        // bypass bits
+            r.U8();                                             // bypass bits
             for (int i = 0; i < numFx; i++)
                 effects.Add(new WwiseBusEffect(r.U8(), r.U32(), r.U8() != 0, r.U8() != 0));
         }
-        r.Skip(6);
+        r.U32(); r.U8();                                        // mixer id + byte (vt+0xE0)
+        r.U8();                                                 // +0x45 b5
         int curves = r.U16();
         var rtpcs = new List<WwiseRtpc>(curves);
-        for (int c = 0; c < curves; c++) rtpcs.Add(ReadRtpc(ref r));
+        for (int i = 0; i < curves; i++) rtpcs.Add(ReadRtpc(ref r));
         uint groups = r.U32();
         var stateGroups = new List<(uint, byte, IReadOnlyList<(uint, uint)>)>((int)Math.Min(groups, 64));
         for (uint g = 0; g < groups; g++)
@@ -607,7 +674,9 @@ public static class WwiseHierarchy
             for (int i = 0; i < ns; i++) states.Add((r.U32(), r.U32()));
             stateGroups.Add((gid, sync, states));
         }
-        var p = new WwiseNodeParams(0, parent, 0, props, ranged, rtpcs, stateGroups);
+        if (o.FeedbackEnabled) r.Skip(4);                       // only when the BKHD feedback flag is set
+        _ = a; _ = c; _ = maxInst; _ = channelConfig; _ = recoveryMs; _ = maxDuck;
+        var p = new WwiseNodeParams(0, parent, 0, props, new Dictionary<byte, (float, float)>(), rtpcs, stateGroups);
         return new WwiseBusNode(id, o.Bank, p, effects, ducked);
     }
 
@@ -633,7 +702,7 @@ public static class WwiseHierarchy
     {
         uint id = r.U32();
         byte flags = r.U8();
-        var p = ReadNodeParams(ref r);
+        var p = ReadNodeParams(ref r, o.FeedbackEnabled);
         var kids = ReadChildren(ref r);
         var meter = ReadMeter(ref r);
         SkipStingers(ref r);

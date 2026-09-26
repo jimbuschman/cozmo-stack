@@ -108,7 +108,7 @@ public sealed class WwiseVoice
                 {
                     double value = b.Modulator.ValueAt(seconds, _heldSeconds, depth);
                     double mapped = b.Binding.Evaluate(value, out _);
-                    if (b.Binding.ParamId == (byte)WwiseProp.Volume) db += mapped; else cents += mapped;
+                    if (b.Binding.ParamId == (uint)WwiseProp.Volume) db += mapped; else cents += mapped;
                 }
                 if (db < stats.PeakDb) stats.PeakDb = db;
                 if (Math.Abs(cents) > Math.Abs(stats.PeakCents)) stats.PeakCents = cents;
