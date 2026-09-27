@@ -3,19 +3,13 @@
   // The default model for every session and runner in this repo. ":floor" makes OpenRouter itself send each
   // request to the cheapest provider serving the model, whatever routing options reach it.
   "model": "openrouter/deepseek/deepseek-v4.1-flash:floor",
-  // Project-local permissions.
-  // Rules are ordered; the LAST matching rule wins. Broad rule first, exceptions after.
-  // This config is permissive so routine work in this repo does not stop for approvals.
-  "permissions": [
-    // Default: allow every action on every resource.
-    { "action": "*", "resource": "*", "effect": "allow" },
-
-    // Override the built-in "ask" defaults from the base policy.
-    { "action": "external_directory", "resource": "*", "effect": "allow" },
-    { "action": "read", "resource": "*.env", "effect": "allow" },
-    { "action": "read", "resource": "*.env.*", "effect": "allow" },
-    { "action": "read", "resource": "*.env.example", "effect": "allow" }
-  ],
+  // Project-local permissions, in the V1 "permission" form so the opencode CLI (V1) used by the job runners accepts
+  // it; the V2 "permissions" rule list is rejected by V1. Everything is allowed so unattended runs never stop to ask.
+  "permission": {
+    "edit": "allow",
+    "bash": "allow",
+    "webfetch": "allow"
+  },
 
   // OpenRouter routing for DeepSeek V4.1 Flash: the cheapest provider first, falling back to the next cheapest.
   // Parasail charged about 5x InferenceNet for the same model (2026-09-27), so it is never used.
