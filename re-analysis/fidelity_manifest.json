@@ -5620,7 +5620,7 @@
       "id": "M6-016",
       "subsystem": "M6-wwise-bank",
       "title": "The engine robot-audio path: alternatives drawn up front, wall-clock posting, event_volume per playing id, routing 7..10 to Robot_Bus_1..4, queued callbacks, states, PopRobotAudioMessage, abort",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseRobotAudioPath.cs",
       "evidence": [
         "InitAnimation 0x0059687E..0x00596914; BeginBuffering 0x00597F12..0x00597F8E; lambda 0x0059818C..0x005982A0",
         "routing 0x0059962A..0x005999A4",
@@ -5630,11 +5630,11 @@
       "effect": "animation sounds reach the robot differently",
       "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
       "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "a standalone class built from re-analysis/inventory/M6-wwise-bank.md rows M6 A1..A25 (minus the unbuilt rows named in unresolved), gapC 2.8 and gapE 6.1..6.4: A1 states; A2 the up-front draw and the +0x3D flag; A3 the no-events/no-buffer/OnDevice branches and Dispatch::Create(queue, 2); A4 PrepareAnimation/Update dispatch; A5 wall-clock Dispatch::After; A6/A7/A8 the lambda, PostCozmoEvent, the playing id and event_volume per playing id; A9 Complete/Error; A11 the 7..10 (and 6) routing; A19 UpdateLoading; A20 UpdateAudioFramesReady; A21 PopRobotAudioMessage; A22 the no-stream silence; A23 abort; gapE 6.1..6.4 the queued context and drain. WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler are untouched",
+      "unresolved": "not wired into the runtime (WwisePlayback, WwiseAudioSource, WwiseSongRenderer, AnimationScheduler); the wired subsystem is M6-017's job. Not built from this record's rows: A3's OnDevice path (game object 6, 0x00596DC8) throws NotSupportedException, and A2's +0x3D is carried without its UNKNOWN use; A10's audio-thread scheduling and A12's mix rate are M6-017/M6-018; A13..A18 are the Hijack/bus records M6-013..M6-015; A24's robot_volume RTPC reach is unread (RECOVERABLE_GAP); A25's second Hijack registration is M6-015",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "WwiseRobotAudioPathTests.M6_016_A2_InitAnimationDrawsEveryKeyframesAlternativeUpFront; WwiseRobotAudioPathTests.M6_016_A2_AnEventIdOfZeroIsNotPushedAndTheIndexCountsPushedEvents; WwiseRobotAudioPathTests.M6_016_A2_ARejectedRefDoesNotAdvanceThePushedEventIndex; WwiseRobotAudioPathTests.M6_016_A2_Flag3DIsSetOnlyWhenAnEventIsPushed; WwiseRobotAudioPathTests.M6_016_A3_NoEventsCompletesWithoutCreatingADispatchQueue; WwiseRobotAudioPathTests.M6_016_A3_GameObject6TakesTheUnbuiltOnDevicePath; WwiseRobotAudioPathTests.M6_016_A3_AMissingBufferIsState5WithAnError; WwiseRobotAudioPathTests.M6_016_A11_GameObjects7To10RouteToRobotBus1To4WithAuxOneAndDryMuted; WwiseRobotAudioPathTests.M6_016_A5_BeginBufferingPostsAtWallClockOffsetsFromTheFirstEvent; WwiseRobotAudioPathTests.M6_016_A6_A8_EachLambdaPostsAndSetsEventVolumeForItsPlayingId; WwiseRobotAudioPathTests.M6_016_A8_AFailedPostEventIsAnImmediateErrorCallback; WwiseRobotAudioPathTests.M6_016_A9_CompleteAndErrorCallbacksAreQueuedUntilTheDrain; WwiseRobotAudioPathTests.M6_016_A19_DataStartsTheStreamOnlyWhenTheNextEventsTimeIsReached; WwiseRobotAudioPathTests.M6_016_A19_NoStreamCompletesOnceEveryEventHasACallback; WwiseRobotAudioPathTests.M6_016_A19_ACompleteStreamWithNoDataIsPoppedBackToState1; WwiseRobotAudioPathTests.M6_016_A19_OnceStartedACompleteStreamThatIsNotDueReturnsToState1; WwiseRobotAudioPathTests.M6_016_A20_NoDataStallsAndErrorEventsAreSkipped; WwiseRobotAudioPathTests.M6_016_A21_PopRobotAudioMessageEncodesMuLawAndZeroPadsTo744; WwiseRobotAudioPathTests.M6_016_A23_AbortStopsFlushesResetsStopsAllAndCompletes; WwiseRobotAudioPathTests.M6_016_A23_APostedLambdaAfterAbortDoesNothing; WwiseRobotAudioPathTests.M6_016_A22_TheUseGameAuxZeroNurtureEventSendsNothingToTheRobot"
     },
     {
       "id": "M6-017",

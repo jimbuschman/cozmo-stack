@@ -543,12 +543,12 @@ Each of these is a question already answered. The original's behaviour is establ
 
 **M6-016 — The engine robot-audio path: alternatives drawn up front, wall-clock posting, event_volume per playing id, routing 7..10 to Robot_Bus_1..4, queued callbacks, states, PopRobotAudioMessage, abort** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseRobotAudioPath.cs`
 * effect: animation sounds reach the robot differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* rests on: a standalone class built from re-analysis/inventory/M6-wwise-bank.md rows M6 A1..A25 (minus the unbuilt rows named in unresolved), gapC 2.8 and gapE 6.1..6.4: A1 states; A2 the up-front draw and the +0x3D flag; A3 the no-events/no-buffer/OnDevice branches and Dispatch::Create(queue, 2); A4 PrepareAnimation/Update dispatch; A5 wall-clock Dispatch::After; A6/A7/A8 the lambda, PostCozmoEvent, the playing id and event_volume per playing id; A9 Complete/Error; A11 the 7..10 (and 6) routing; A19 UpdateLoading; A20 UpdateAudioFramesReady; A21 PopRobotAudioMessage; A22 the no-stream silence; A23 abort; gapE 6.1..6.4 the queued context and drain. WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler are untouched
 * best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
 * evidence: InitAnimation 0x0059687E..0x00596914; BeginBuffering 0x00597F12..0x00597F8E; lambda 0x0059818C..0x005982A0; routing 0x0059962A..0x005999A4; callbacks 0x00599E6A..0x00599EB8, 0x008D8D40, drain 0x008D88CC from 0x004ED6C4; UpdateLoading 0x00597C9E..0x00597D7E; PopRobotAudioMessage 0x00597DB4..0x00597E8E; abort 0x0059678E..0x005967B8
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: not wired into the runtime (WwisePlayback, WwiseAudioSource, WwiseSongRenderer, AnimationScheduler); the wired subsystem is M6-017's job. Not built from this record's rows: A3's OnDevice path (game object 6, 0x00596DC8) throws NotSupportedException, and A2's +0x3D is carried without its UNKNOWN use; A10's audio-thread scheduling and A12's mix rate are M6-017/M6-018; A13..A18 are the Hijack/bus records M6-013..M6-015; A24's robot_volume RTPC reach is unread (RECOVERABLE_GAP); A25's second Hijack registration is M6-015
 
 **M6-017 — Audio-thread frame model: Perform order, sink-driven frames, EndOfEvent after the bus pass of the last frame** (live path)
 
