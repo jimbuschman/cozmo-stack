@@ -5640,7 +5640,7 @@
       "id": "M6-017",
       "subsystem": "M6-wwise-bank",
       "title": "Audio-thread frame model: Perform order, sink-driven frames, EndOfEvent after the bus pass of the last frame",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwisePlayback.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseFrameDriver.cs",
       "evidence": [
         "Perform 0x9AF8A8 / 0x9AF9F4..0x9AFAB8; audio thread 0xA4087C; RenderAudio 0x9AFD10",
         "PBI teardown 0xA38600 / flush 0xA38420; EndOfEvent 0xA03618"
@@ -5648,11 +5648,11 @@
       "effect": "audio events end at different times",
       "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
       "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "the standalone modules already built: WwiseEventRuntime (M6-006) supplies the message pump, the pending-action drain and the audio manager tick (+0x4C); WwiseFrameDriver (new) applies gapD D1.6's Perform order and D3.5's EndOfEvent position around a caller-supplied render seam. The three render steps (the row's \"buses\" group, LEngine 0xA57FF8, PBI-notification flush 0xA38420), the sink (gapB T2) and the frames-per-Perform count (D1.7) are caller inputs; M6-008..M6-016 plug into the render seam. The record stays IMPLEMENTATION_GAP while unwired.",
+      "unresolved": "not wired into the runtime (WwisePlayback, WwiseAudioSource, WwiseSongRenderer, AnimationScheduler); the wiring pass is separate. The render pass is a caller seam: D1.6's leading \"buses\" group (0xA36AC4(tick+1), 0x9FF308(tick+1), 0x9D3C98, 0x9E6D2C) is named by the row but its four members are not identified, and the voice engine inside LEngine (0xA57FF8; D2.7 voice pass 0xA44948, then bus pass 0xA44C18, then idle removal) is not built, so neither is implemented here. RECOVERABLE_GAP: D1.7's frames-per-Perform count (0x9D4778 -> 0x9EBE6C(0), or the clock-paced count at +0x70, and the writer of the gating flag) is a caller input (IWwiseFrameSource); the audio-thread/sink pacing is gapB T2's HARDWARE_ONLY model and is a caller input (IWwiseAudioSink). CHOICE reported to the manager: M6-006's only public tick advance is AdvanceFrame(), which also pumps and drains; after the driver's explicit pump and drain, and because the render seam does not enqueue control-path messages, those calls are no-ops, so the order stays messages -> drain -> render -> tick (a future M6-006 surface that exposes the tick alone would remove the detour; a render step that posts events would need it). The pending-action drain is M6-006's minimal play-count model (0xA04F54 internals unread); the EndOfEvent callback-manager internals (D3.3) and the post-Term latency (D2) remain those records' gaps.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "WwiseFrameDriverTests.M6_017_D1_6_ThePerformOrderIsMessagesDrainRenderThenTick; WwiseFrameDriverTests.M6_017_D1_8_NoFrameIsProducedUntilTheSinkHasRoom; WwiseFrameDriverTests.M6_017_D1_6_AZeroCountPerformStillPumpsAndDrainsOnceAndRendersNoFrame; WwiseFrameDriverTests.M6_017_D3_5_EndOfEventFiresAfterTheLastFramesBusPassAndBeforeTheNextPartialFlush"
     },
     {
       "id": "M6-018",
