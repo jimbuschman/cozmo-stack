@@ -183,8 +183,8 @@
       "id": "M11-vision",
       "name": "Markers, camera geometry and BlockWorld",
       "milestone": "M11",
-      "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true,
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": false,
       "review": {
         "state": "UNREVIEWED"
       }
@@ -3341,9 +3341,10 @@
       "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so",
       "evidence": [
-        "GetProbeValues",
-        "GetNearestNeighbor",
-        "Extract"
+        "GetProbeValues 0x0089EF40 (5 samples at centre+offset, the sign-branch round both axes 0x0089F0DA..0x0089F12E, the integer mean 0x0089F158)",
+        "GetNearestNeighbor 0x008C0938 (cv::normalize NORM_MINMAX 0x008C09D2, absdiff+sum 0x008C0AD6/0x008C0B50, distance 0x008C0B58, the 1.25x ambiguity reject 0x008C0C7E, integer average 0x008C0C70)",
+        "VisionMarker::Extract 0x008A0078 (label!=-1, distance<threshold, label not 149/150, code/cornerReorder/orientation)",
+        "library 0x00C9BCA8 u8[598][1024], labels 0x00DC6CA8, labelToCode 0x00DC7154, cornerReorder 0x00DC73AC, orientationDeg 0x00DC7D0C"
       ],
       "live_path": true,
       "test": "VisionTests"
@@ -3395,7 +3396,7 @@
         "Offline, a rendered marker's corners refine to within 1.5 px of where they were drawn and every marker-decoding test still decodes"
       ],
       "status": "EQUIVALENT_IMPLEMENTATION",
-      "unresolved": "",
+      "unresolved": "the sub-pixel equations of RefineQuadrilateral 0x008C55E0 (Cholesky least-squares) are not transcribed; the stack uses a different edge search (EQUIVALENT)",
       "hardware_required": false,
       "live_path": true,
       "test": "VisionTests.TheQuadDetectorFindsARenderedMarkerToSubPixelAccuracy",
@@ -3605,12 +3606,10 @@
       "provenance": "ExtractComponentsViaCharacteristicScale_binomial, BinomialFilter, IsQuadrilateralReasonable and the parameters they are given, read",
       "authority": "ExtractComponentsViaCharacteristicScale_binomial 0x00890448, ImageProcessing::BinomialFilter 0x008A2344, IsQuadrilateralReasonable 0x00892B18, ComputeQuadrilateralsFromConnectedComponents 0x00892D70, MarkerDetector::Parameters::Initialize 0x008752F8 and the call in DetectFiducialMarkers at 0x00898C18, read",
       "evidence": [
-        "The dark test is a filtered value and a Q16 multiplier, not a fraction of a box mean. ExtractComponentsViaCharacteristicScale_binomial 0x00890448 runs one pass per pyramid level - DownsampleByTwo, BinomialFilter, |filtered - image| as the response (Matrix::Elementwise::ApplyOperation<SumOfAbsDiff> at 0x008907F4), UpsampleByPowerOfTwoBilinear back to full size - and its \"ecvcsB_scale_select\" loop at 0x00890B14 keeps the filtered value wherever the response beats the best so far. Its \"ecvcsB_binarize\" loop at 0x00890BB6 then marks a pixel dark when (scale * multiplier) >> 16 > pixel.",
-        "The two numbers come from the parameters DetectFiducialMarkers hands it at 0x00898C18: the word at +4 is the number of pyramid levels and Initialize sets it to 1 (0x0087530E), and the word at +0xC is the threshold multiplier, 0xCCCC (0x00875314), which is 0.79998779 in Q16. This stack had a three-level box pyramid and a local guess of 0.75.",
-        "BinomialFilter 0x008A2344 (coretech vision/robot/src/filtering.cpp) is the separable five-tap [1 4 6 4 1] with a >> 4 after each pass (the interior at 0x008A2490..0x008A24A6), and at the borders the off-image taps take the edge pixel: the first column's weights fold into 11, 4, 1 (0x008A243C) and the second's into 5, 6, 4, 1 (0x008A2458).",
-        "IsQuadrilateralReasonable 0x00892B18 is four tests in order: the cross product of the first three corners must reach quads_minQuadArea in absolute value (0x00892B5C), the cross products the diagonals make must agree in sign (0x00892C68, 0x00892CCA), one diagonal's two triangles must satisfy max << 8 < threshold * min (0x00892CFC..0x00892D22), and every corner must be at least the margin from each edge (0x00892D3A). ComputeQuadrilateralsFromConnectedComponents passes them from the parameters' +0x30, +0x34 and +0x38: 25, 512 - which is 2.0 in 8.8, not the maximum number of quads this stack had recorded - and 2.",
-        "The side-length floor this stack applied instead (six pixels, and a tenth of the longest side) is not in the engine's test and is gone.",
-        "The stricter mask moves the smallest marker the front end will take. Rendered squares are found down to twenty pixels a side and lost at sixteen, where the dark run falls under component_minimumNumPixels (100, the parameters' +0x4C); the looser local mask had been scraping past that floor. One navigation test had a cube at 400 mm, far enough that its marker is under the floor, and now stands it at 300."
+        "BinomialFilter 0x008A2344 (separable [1 4 6 4 1], >>4, folded borders)",
+        "binarize 0x00890BB6 ((scale*0xCCCC)>>16 > pixel; 0xCCCC at Parameters+0xC 0x00875300/0x00875314)",
+        "IsQuadrilateralReasonable 0x00892B18 (minQuadArea 25, symmetry 512 8.8, minDistanceFromEdge 2)",
+        "the filter selector 0x00898B4C (ldrb [params]; binomial at 0x00898C5C, non-binomial 0x00898BE0)"
       ],
       "status": "EXACT_SOURCE",
       "unresolved": null,
@@ -6037,6 +6036,185 @@
       "hardware_required": false,
       "live_path": false,
       "test": "WwiseSelectionTests.TheLcgPinsAFixedSeed"
+    },
+    {
+      "id": "M11-021",
+      "subsystem": "M11-vision",
+      "title": "The per-frame marker-mode gate",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs",
+      "effect": "marker detection differs",
+      "provenance": "extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "ShouldProcessVisionMode gate 0x006B5124/0x006B5164",
+        "vision_config.json:5 DetectingMarkers true, no initial schedule"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "live_path": true,
+      "unresolved": "the managed fixed subset of marker modes (whether any mode is scheduled) is a gap",
+      "hardware_required": false,
+      "test": ""
+    },
+    {
+      "id": "M11-022",
+      "subsystem": "M11-vision",
+      "title": "The marker-detector entry and post-processing",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs",
+      "effect": "marker detection differs",
+      "provenance": "extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Detect 0x008753B8 ResetBuffers 0x008753C8; DetectFiducialMarkers 0x004CFCEC; post 0x004BF048 GetROI, 0x004CFCC8 GetNegative, 0x004BEBBC InitFromPointContainer"
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "live_path": true,
+      "unresolved": "the MarkerDetector post-processing (ROI/negative choice, the ObservedMarker build) is not built in the stack",
+      "hardware_required": false,
+      "test": ""
+    },
+    {
+      "id": "M11-023",
+      "subsystem": "M11-vision",
+      "title": "The front-end orchestration order",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs",
+      "effect": "marker detection differs",
+      "provenance": "extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x00898C5C extract, 0x00898C90/0x00898CF0/0x00898D50 compress, 0x00898CBC size, 0x00898D1C solid/sparse, 0x00898D78 hollow, 0x00898DD0 sort, 0x00898E2C quads, 0x00898E98 homography, 0x00899056 Extract, 0x00899528 Refine"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "live_path": true,
+      "unresolved": "the per-marker second loop details (illumination-normalise/refine/decode) are not read",
+      "hardware_required": false,
+      "test": ""
+    },
+    {
+      "id": "M11-024",
+      "subsystem": "M11-vision",
+      "title": "The component-extraction filter selector",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs",
+      "effect": "marker detection differs",
+      "provenance": "extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "selector 0x00898B4C ldrb/cmp/beq; calls 0x00898C5C / 0x00898BE0"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "live_path": true,
+      "unresolved": "read MarkerDetector::Detect 0x008753B6 / Parameters::Initialize to learn the shipped selector byte",
+      "hardware_required": false,
+      "test": ""
+    },
+    {
+      "id": "M11-025",
+      "subsystem": "M11-vision",
+      "title": "The characteristic-scale select",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs",
+      "effect": "marker detection differs",
+      "provenance": "extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x00890B14 select loop; Parameters::Initialize 0x0087530E strd (levels 1)"
+      ],
+      "status": "EXACT_SOURCE",
+      "live_path": true
+    },
+    {
+      "id": "M11-026",
+      "subsystem": "M11-vision",
+      "title": "The connected-component filters",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs",
+      "effect": "marker detection differs",
+      "provenance": "extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "size 0x00895758 operands 0x00898CAA; solid/sparse 0x00895954; hollow 0x00896110; setters 0x00875BE8/0x00875C2C"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "live_path": true,
+      "unresolved": "read the SetComputeComponentMin/MaxNumPixels callers for the effective min/max (the stack's 100/39000 is unverified); read the solid/sparse and hollow template bodies",
+      "hardware_required": false,
+      "test": ""
+    },
+    {
+      "id": "M11-027",
+      "subsystem": "M11-vision",
+      "title": "The exterior boundary trace",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs",
+      "effect": "marker detection differs",
+      "provenance": "extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x008C6B18 entry; capacity 0x00892DA8 movw 0x2710; sortedness 0x008C6B5C"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "live_path": false,
+      "unresolved": "the four-pass body 0x008C6FCA..0x008C72E8 is not transcribed",
+      "hardware_required": false,
+      "test": ""
+    },
+    {
+      "id": "M11-028",
+      "subsystem": "M11-vision",
+      "title": "The quad construction and acceptance",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs",
+      "effect": "marker detection differs",
+      "provenance": "extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x00892D70; method switch 0x00892E24; order 0x00892E66..; test 0x00892EF8; swap/append 0x00892F04/0x00892F62"
+      ],
+      "status": "EXACT_SOURCE",
+      "live_path": true
+    },
+    {
+      "id": "M11-029",
+      "subsystem": "M11-vision",
+      "title": "ExtractLineFitsPeaks and the corner fit",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs",
+      "effect": "marker detection differs",
+      "provenance": "extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x008A5DB8 sigma 0x008A5E90; kmeans 0x008A6490; labels 0x008A62D8; fit 0x008A6714; 4 intersections 0x008A6BA0/0x008A6BE2"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "live_path": true,
+      "unresolved": "the exact circular-convolution loop of ExtractLineFitsPeaks (0x008A613E..0x008A628A) and the least-squares fit body are not transcribed",
+      "hardware_required": false,
+      "test": ""
+    },
+    {
+      "id": "M11-030",
+      "subsystem": "M11-vision",
+      "title": "ComputeClockwiseCorners and the s16 rounding",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs",
+      "effect": "marker detection differs",
+      "provenance": "extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x008A1324; 0x008A6C1E/0x008A6C4A/0x008A6C7C"
+      ],
+      "status": "EXACT_SOURCE",
+      "live_path": true
+    },
+    {
+      "id": "M11-031",
+      "subsystem": "M11-vision",
+      "title": "The contrast gate (ComputeBrightDarkValues)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs",
+      "effect": "marker detection differs",
+      "provenance": "extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x0089F8E8; ratio 0x0087538E (1.01) / 0x008753A2; compare 0x0089FD10..0x0089FD30"
+      ],
+      "status": "RECOVERABLE_GAP",
+      "live_path": true,
+      "unresolved": "read which out param is border vs interior; the ratio is now the engine's 1.01 (applied to the stack's dark=border/bright=interior assignment, so the gate is bright > ratio*dark), but the direction of the comparison is still not settled",
+      "hardware_required": false,
+      "test": "VisionTests.TheDecoderContrastGateUsesTheEnginesOnePointZeroOneRatio"
     }
   ]
 }

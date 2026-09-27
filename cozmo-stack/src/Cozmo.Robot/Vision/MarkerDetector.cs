@@ -46,7 +46,8 @@ public sealed class MarkerDetector
                     continue;
                 }
             }
-            var m = Decoder.Extract(img, corners, h, timestamp, out var reason);
+            // fidelity: M11-002, M11-031 — the decoder algorithm and its 1.01 contrast gate
+            var m = Decoder.Extract(img, corners, h, Quads.Parameters, timestamp, out var reason);
             results.Add((q, m, reason));
             if (m is null) continue;
             // a black ring can yield the same marker twice (inner and outer edge components); keep the larger

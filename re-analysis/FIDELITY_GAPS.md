@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **319 records** over 16 subsystems.
+Manifest of **330 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 199 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 202 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 14 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 1 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 59 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 8 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 60 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 28 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -34,7 +34,7 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 10 | 0 | 0 | 0 | 0 | yes | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 13 | 0 | 7 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 20 | 0 | 0 | 1 | 0 | yes | yes |
+| M11-vision — Markers, camera geometry and BlockWorld | 31 | 6 | 1 | 1 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 16 | 0 | 0 | 0 | 0 | yes | yes |
 | M13-navigation — Planning, charger and block configurations | 15 | 0 | 0 | 0 | 0 | yes | yes |
 | M14-faces — Face and pet pipeline | 7 | 0 | 0 | 1 | 0 | yes | yes |
@@ -62,7 +62,7 @@ status.
 | M8-framework | UNREVIEWED | 6 | 1 | 0 | 0 |
 | M9-wwise-music | UNREVIEWED | 20 | 14 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
-| M11-vision | UNREVIEWED | 17 | 5 | 0 | 0 |
+| M11-vision | UNREVIEWED | 20 | 4 | 0 | 0 |
 | M12-manipulation | UNREVIEWED | 16 | 5 | 0 | 0 |
 | M13-navigation | UNREVIEWED | 15 | 5 | 0 | 0 |
 | M14-faces | UNREVIEWED | 6 | 0 | 0 | 0 |
@@ -83,6 +83,71 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
 * evidence: R6 trailing count A 0x9B0FBC..0x9B0FE8: a non-zero count reads a 56-byte body per entry (1 x u32, 6 x u16, 10 x u32; 0x9B1038/0x9B1060/0x9B10E8) and calls 0xA3B84C; A=0 in every shipped bank; R7 trailing count B 0x9B12A4..0x9B12C8: a non-zero count reads a 40-byte body per entry (10 x u32; 0x9B1430/0x9B12E0) and calls 0xA3BA44; B=0 in every shipped bank; state-group item handler 0xA27CA4 (stores f2 at element+8, stride 0xC); switch-group item handler 0xA325E0 (f0 at +0, float(index) at +4, f2 at +8, f1 into an id array); the Wwise field names of the item triples and the two trailing bodies are not in the binary
 * outstanding: read 0xA27CA4 and 0xA325E0 to name the group-item triples, and 0xA3B84C / 0xA3BA44 for the trailing A/B bodies; or record them as raw
+
+### M11-vision — Markers, camera geometry and BlockWorld
+
+**M11-021 — The per-frame marker-mode gate** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: ShouldProcessVisionMode gate 0x006B5124/0x006B5164; vision_config.json:5 DetectingMarkers true, no initial schedule
+* outstanding: the managed fixed subset of marker modes (whether any mode is scheduled) is a gap
+
+**M11-023 — The front-end orchestration order** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x00898C5C extract, 0x00898C90/0x00898CF0/0x00898D50 compress, 0x00898CBC size, 0x00898D1C solid/sparse, 0x00898D78 hollow, 0x00898DD0 sort, 0x00898E2C quads, 0x00898E98 homography, 0x00899056 Extract, 0x00899528 Refine
+* outstanding: the per-marker second loop details (illumination-normalise/refine/decode) are not read
+
+**M11-024 — The component-extraction filter selector** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: selector 0x00898B4C ldrb/cmp/beq; calls 0x00898C5C / 0x00898BE0
+* outstanding: read MarkerDetector::Detect 0x008753B6 / Parameters::Initialize to learn the shipped selector byte
+
+**M11-026 — The connected-component filters** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: size 0x00895758 operands 0x00898CAA; solid/sparse 0x00895954; hollow 0x00896110; setters 0x00875BE8/0x00875C2C
+* outstanding: read the SetComputeComponentMin/MaxNumPixels callers for the effective min/max (the stack's 100/39000 is unverified); read the solid/sparse and hollow template bodies
+
+**M11-027 — The exterior boundary trace** (not on the live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x008C6B18 entry; capacity 0x00892DA8 movw 0x2710; sortedness 0x008C6B5C
+* outstanding: the four-pass body 0x008C6FCA..0x008C72E8 is not transcribed
+
+**M11-029 — ExtractLineFitsPeaks and the corner fit** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x008A5DB8 sigma 0x008A5E90; kmeans 0x008A6490; labels 0x008A62D8; fit 0x008A6714; 4 intersections 0x008A6BA0/0x008A6BE2
+* outstanding: the exact circular-convolution loop of ExtractLineFitsPeaks (0x008A613E..0x008A628A) and the least-squares fit body are not transcribed
+
+**M11-031 — The contrast gate (ComputeBrightDarkValues)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x0089F8E8; ratio 0x0087538E (1.01) / 0x008753A2; compare 0x0089FD10..0x0089FD30
+* outstanding: read which out param is border vs interior; the ratio is now the engine's 1.01 (applied to the stack's dark=border/bright=interior assignment, so the gate is bright > ratio*dark), but the direction of the comparison is still not settled
 
 ## Still to build: every IMPLEMENTATION_GAP
 
@@ -632,6 +697,17 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: gap2 7b: no ctor store to +0x35C..+0x377; operator new(0x530) without memset (0x52EE8E..0x52EE9C)
 * outstanding: The forced policy MD1 (0 before the first RobotState) is implemented; the record stays a forced choice and is COMPATIBILITY_POLICY at the next approval.
+
+### M11-vision — Markers, camera geometry and BlockWorld
+
+**M11-022 — The marker-detector entry and post-processing** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Detect 0x008753B8 ResetBuffers 0x008753C8; DetectFiducialMarkers 0x004CFCEC; post 0x004BF048 GetROI, 0x004CFCC8 GetNegative, 0x004BEBBC InitFromPointContainer
+* outstanding: the MarkerDetector post-processing (ROI/negative choice, the ObservedMarker build) is not built in the stack
 
 ## What remains after both: blocked externally, or needing hardware
 

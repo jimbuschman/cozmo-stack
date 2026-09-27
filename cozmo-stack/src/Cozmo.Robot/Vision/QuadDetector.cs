@@ -192,6 +192,7 @@ public sealed class QuadDetector
     /// - a flat neighbourhood leaves the scale at zero and the pixel is never dark, which is the engine's
     /// behaviour and not a special case here.
     /// </summary>
+    // fidelity: M11-018 — the dark mask (BinomialFilter + Q16 threshold) and the quad test
     private GrayImage CharacteristicScaleMask(GrayImage img)
     {
         int w = img.Width, h = img.Height;

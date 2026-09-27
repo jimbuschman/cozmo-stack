@@ -134,6 +134,77 @@ public class VisionTests
         Assert.Contains("border", reason);
     }
 
+    /// <summary>
+    /// M11-002: <c>GetProbeValues</c>'s nearest-pixel rule applies the same sign branch to <b>both</b>
+    /// axes (0x0089F0DA..0x0089F12E): <c>floor(c + 0.5)</c> when <c>c &gt; 0</c>, else <c>ceil(c − 0.5)</c>.
+    /// The old y rule, an unconditional <c>ceil(y − 0.5)</c>, gave 2 for 2.5 where the engine gives 3.
+    /// </summary>
+    [Fact]
+    public void TheProbeSamplingRoundsBothAxesWithTheEnginesSignBranch()
+    {
+        Assert.Equal(3, MarkerDecoder.RoundNearest(2.5));
+        Assert.Equal(2, MarkerDecoder.RoundNearest(2.4));
+        Assert.Equal(-3, MarkerDecoder.RoundNearest(-2.5));
+        Assert.Equal(-2, MarkerDecoder.RoundNearest(-2.4));
+        Assert.Equal(1, MarkerDecoder.RoundNearest(0.5));
+        Assert.Equal(0, MarkerDecoder.RoundNearest(0.0));
+        Assert.Equal(-1, MarkerDecoder.RoundNearest(-0.5));
+    }
+
+    /// <summary>
+    /// M11-002: the disambiguation average is an integer division (<c>__aeabi_idiv</c> at 0x008C0C70) and
+    /// the match is rejected when that integer average reaches 1.25 × the threshold
+    /// (0x008C0C7E..0x008C0C96). 125 / 2 is 62, not 62.5, so it is accepted where double division would
+    /// have rejected it; 126 / 2 is 63 and is rejected.
+    /// </summary>
+    [Fact]
+    public void TheAmbiguityAverageIsIntegerDivisionAgainstOnePointTwoFive()
+    {
+        Assert.False(MarkerDecoder.RejectAmbiguous(125, 2, 50));   // 62 < 62.5
+        Assert.True(MarkerDecoder.RejectAmbiguous(126, 2, 50));    // 63 >= 62.5
+        Assert.False(MarkerDecoder.RejectAmbiguous(62, 1, 50));
+        Assert.True(MarkerDecoder.RejectAmbiguous(63, 1, 50));
+    }
+
+    /// <summary>
+    /// M11-002: <c>cv::normalize(query, query, 0, 255, NORM_MINMAX)</c> (0x008C09D2) rounds through
+    /// OpenCV's <c>saturate_cast&lt;u8&gt;</c> (<c>cvRound</c>), which is round half to even. With the range
+    /// 0..102 the scale is 2.5: 1 lands on 2.5 and must become the even 2 (not 3), 3 lands on 7.5 and must
+    /// become the even 8 (not 7).
+    /// </summary>
+    [Fact]
+    public void TheMinMaxNormalisationRoundsHalfToEvenLikeOpenCv()
+    {
+        var q = MarkerDecoder.NormalizeMinMax(new byte[] { 0, 1, 3, 102 });
+        Assert.Equal(0, q[0]);
+        Assert.Equal(2, q[1]);
+        Assert.Equal(8, q[2]);
+        Assert.Equal(255, q[3]);
+    }
+
+    /// <summary>
+    /// M11-031: <c>ComputeBrightDarkValues</c> uses <c>Parameters+0x3C</c> = 1.01 (0x0087538E,
+    /// 0x0089FD10..0x0089FD30), not a 1.0 <c>dark &gt;= bright</c>. With the border at 100 and the interior
+    /// at 101 the 1.0 gate would pass; 100 × 1.01 = 101 does not. The border/interior assignment itself is
+    /// still a RECOVERABLE_GAP (M11-031), kept as the stack had it.
+    /// </summary>
+    [Fact]
+    public void TheDecoderContrastGateUsesTheEnginesOnePointZeroOneRatio()
+    {
+        if (NoLibrary) return;
+        Assert.Equal(1.01, new QuadDetectorParameters().MinContrastRatio);
+
+        var img = new GrayImage(200, 200);
+        for (int y = 0; y < 200; y++)
+            for (int x = 0; x < 200; x++)
+                img[x, y] = (byte)((x < 20 || x >= 180 || y < 20 || y >= 180) ? 100 : 101);
+        var corners = new[] { new Vec2(0, 0), new Vec2(0, 200), new Vec2(200, 0), new Vec2(200, 200) };
+        var dec = new MarkerDecoder(Lib);
+        var m = dec.Extract(img, corners, 1, out var reason);
+        Assert.Null(m);
+        Assert.Contains("border not darker", reason);
+    }
+
     // ------------------------------------------------------------------ front end
 
     /// <summary>

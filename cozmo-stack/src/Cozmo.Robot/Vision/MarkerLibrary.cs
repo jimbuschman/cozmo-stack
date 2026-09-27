@@ -178,12 +178,14 @@ public sealed record ObservedMarker(MarkerType Code, Vec2[] Corners, uint Timest
 ///
 /// * <c>GetProbeValues</c> (0x0089EF41): for each of the 1024 probes, the mean of 5 samples at the homography
 ///   image of (centre + offset) for the 5 offsets in <c>ProbePoints</c>, each sample being the nearest pixel
-///   (x rounded as floor(x + 0.5), y as ceil(y − 0.5)).
+///   with the engine's sign branch on <b>both</b> axes: <c>floor(c + 0.5)</c> when <c>c &gt; 0</c>, else
+///   <c>ceil(c − 0.5)</c> (0x0089F0DA..0x0089F12E).
 /// * <c>NearestNeighborLibrary::GetNearestNeighbor</c>: the query is min-max normalised to 0..255
 ///   (<c>cv::normalize</c> NORM_MINMAX); the distance to each library row is the sum of absolute differences
 ///   divided by the probe count (integer); best and second best are kept. If they carry different labels, the
 ///   distance is recomputed over only the probes where the two rows differ by more than the threshold (50),
-///   and the match is rejected when that average is ≥ 1.25 × 50.
+///   the average is taken with integer division (<c>__aeabi_idiv</c>), and the match is rejected when that
+///   integer average reaches 1.25 × 50.
 /// * <c>Extract</c> rejects distance ≥ 50 and labels 149 or 150; otherwise code = labelToCode[label], the
 ///   corners are reordered by cornerReorder[label] and the orientation is orientationDeg[label].
 /// </summary>
@@ -219,8 +221,8 @@ public sealed class MarkerDecoder
                 double x = cx + MarkerLibrary.Fixed(_lib.ProbePointsX[k]);
                 double y = cy + MarkerLibrary.Fixed(_lib.ProbePointsY[k]);
                 var p = h.Apply(new Vec2(x, y));
-                int px = (int)Math.Floor(p.X + 0.5), py = (int)Math.Ceiling(p.Y - 0.5);
-                px = Math.Clamp(px, 0, img.Width - 1); py = Math.Clamp(py, 0, img.Height - 1);
+                // fidelity: M11-002 — the same sign branch on both axes (0x0089F0DA..0x0089F12E)
+                int px = Math.Clamp(RoundNearest(p.X), 0, img.Width - 1), py = Math.Clamp(RoundNearest(p.Y), 0, img.Height - 1);
                 sum += img[px, py];
             }
             values[i] = (byte)(sum / MarkerLibrary.NumProbePoints);
@@ -245,23 +247,25 @@ public sealed class MarkerDecoder
         return (dark / MarkerLibrary.NumThresholdProbes, bright / MarkerLibrary.NumThresholdProbes);
     }
 
+    /// <summary>
+    /// The engine's nearest-pixel coordinate rounding, applied to <b>both</b> axes:
+    /// <c>floor(c + 0.5)</c> when <c>c &gt; 0</c>, else <c>ceil(c − 0.5)</c> (0x0089F0DA..0x0089F12E).
+    /// This is the sampling rule of <c>GetProbeValues</c> and of the threshold probes.
+    /// </summary>
+    public static int RoundNearest(double c) => c > 0 ? (int)Math.Floor(c + 0.5) : (int)Math.Ceiling(c - 0.5);
+
     private static int Sample(GrayImage img, Homography h, double x, double y)
     {
         var p = h.Apply(new Vec2(x, y));
-        int px = Math.Clamp((int)Math.Floor(p.X + 0.5), 0, img.Width - 1), py = Math.Clamp((int)Math.Ceiling(p.Y - 0.5), 0, img.Height - 1);
-        return img[px, py];
+        return img[Math.Clamp(RoundNearest(p.X), 0, img.Width - 1), Math.Clamp(RoundNearest(p.Y), 0, img.Height - 1)];
     }
 
     /// <summary><c>NearestNeighborLibrary::GetNearestNeighbor</c>.</summary>
     public Match GetNearestNeighbor(ReadOnlySpan<byte> probeValues, int threshold = MarkerLibrary.MatchThreshold)
     {
         var _lib = Library;
-        // cv::normalize(query, query, 0, 255, NORM_MINMAX)
-        int min = 255, max = 0;
-        foreach (var v in probeValues) { if (v < min) min = v; if (v > max) max = v; }
-        var q = new byte[MarkerLibrary.NumProbes];
-        double scale = max > min ? 255.0 / (max - min) : 0;
-        for (int i = 0; i < q.Length; i++) q[i] = (byte)Math.Round((probeValues[i] - min) * scale);
+        // fidelity: M11-002 — cv::normalize(query, query, 0, 255, NORM_MINMAX) (0x008C09D2)
+        var q = NormalizeMinMax(probeValues);
 
         int best = int.MaxValue, second = int.MaxValue, bestRow = -1, secondRow = -1;
         for (int r = 0; r < _lib.NumImages; r++)
@@ -282,13 +286,38 @@ public sealed class MarkerDecoder
             int sum = 0, count = 0;
             for (int i = 0; i < MarkerLibrary.NumProbes; i++)
                 if (Math.Abs(a[i] - b[i]) > threshold) { sum += Math.Abs(q[i] - a[i]); count++; }
-            if (count > 0)
-            {
-                double avg = (double)sum / count;
-                if (avg >= 1.25 * threshold) return new Match(label, best, bestRow, true, $"ambiguous with label {_lib.Labels[secondRow]} (avg {avg:F1} over {count} probes)");
-            }
+            if (count > 0 && RejectAmbiguous(sum, count, threshold))
+                return new Match(label, best, bestRow, true, $"ambiguous with label {_lib.Labels[secondRow]} (avg {sum / count} over {count} probes)");
         }
         return new Match(label, best, bestRow, false, "");
+    }
+
+    /// <summary>
+    /// <c>cv::normalize(query, query, 0, 255, NORM_MINMAX)</c> (0x008C09D2): the query is scaled from its own
+    /// min..max onto 0..255, each result rounded to nearest even as OpenCV's <c>saturate_cast&lt;u8&gt;</c>
+    /// (<c>cvRound</c>) does — not truncation, and not half away from zero.
+    /// </summary>
+    public static byte[] NormalizeMinMax(ReadOnlySpan<byte> values)
+    {
+        int min = 255, max = 0;
+        foreach (var v in values) { if (v < min) min = v; if (v > max) max = v; }
+        var q = new byte[values.Length];
+        double scale = max > min ? 255.0 / (max - min) : 0;
+        for (int i = 0; i < q.Length; i++)
+            q[i] = (byte)Math.Round((values[i] - min) * scale, MidpointRounding.ToEven);
+        return q;
+    }
+
+    /// <summary>
+    /// The disambiguation test of <c>NearestNeighborLibrary::GetNearestNeighbor</c>
+    /// 0x008C0C70..0x008C0C96: the average of the per-probe distances is an <b>integer</b> division
+    /// (<c>__aeabi_idiv</c>), and the match is rejected when that integer average reaches 1.25 times the
+    /// threshold.
+    /// </summary>
+    public static bool RejectAmbiguous(int sum, int count, int threshold)
+    {
+        int avg = sum / count;                     // __aeabi_idiv at 0x008C0C70
+        return avg >= 1.25 * threshold;            // 0x008C0C7E..0x008C0C96: bpl reject
     }
 
     /// <summary>
@@ -296,18 +325,33 @@ public sealed class MarkerDecoder
     /// reason when the quad is not a known marker.
     /// </summary>
     public ObservedMarker? Extract(GrayImage img, Vec2[] quadCorners, uint timestamp, out string reason) =>
-        Extract(img, quadCorners, null, timestamp, out reason);
+        Extract(img, quadCorners, null, null, timestamp, out reason);
 
     /// <summary>
     /// The same with the marker's own homography, which after <c>RefineCorners</c> is the refined one the engine
     /// decodes with (this+0x2C), not one recomputed from the corners.
     /// </summary>
-    public ObservedMarker? Extract(GrayImage img, Vec2[] quadCorners, Homography? homography, uint timestamp, out string reason)
+    public ObservedMarker? Extract(GrayImage img, Vec2[] quadCorners, Homography? homography, uint timestamp, out string reason) =>
+        Extract(img, quadCorners, homography, null, timestamp, out reason);
+
+    /// <summary>
+    /// The same, with the detector parameters the engine's brightness gate is given.
+    ///
+    /// M11-031 (RECOVERABLE_GAP): the engine's <c>ComputeBrightDarkValues</c> 0x0089F8E8 compares one sampled
+    /// mean against <c>ratio</c> times the other, <c>ratio</c> = <c>Parameters+0x3C</c> = 1.01 (0x0087538E,
+    /// compare 0x0089FD10..0x0089FD30). Which returned mean is the border and which the interior is not
+    /// settled, so this keeps the stack's assignment (dark = border, bright = interior) and applies the ratio
+    /// to it: the gate is <c>bright &gt; ratio · dark</c>, not the old <c>dark &gt;= bright</c>. The direction
+    /// remains the outstanding question.
+    /// </summary>
+    public ObservedMarker? Extract(GrayImage img, Vec2[] quadCorners, Homography? homography, QuadDetectorParameters? parameters, uint timestamp, out string reason)
     {
         if (_lib is null) { reason = "no marker library on this machine (extract it from libcozmoEngine.so; see VISION.md)"; return null; }
         var h = homography ?? Homography.FromUnitSquare(quadCorners);
         var (dark, bright) = ThresholdProbes(img, h);
-        if (dark >= bright) { reason = $"border not darker than interior ({dark:F0} vs {bright:F0})"; return null; }
+        // fidelity: M11-031 — ratio 1.01 from Parameters+0x3C (0x0087538E)
+        double contrastRatio = (parameters ?? new QuadDetectorParameters()).MinContrastRatio;
+        if (dark * contrastRatio >= bright) { reason = $"border not darker than interior ({dark:F0} vs {bright:F0})"; return null; }
         var probes = GetProbeValues(img, h);
         var m = GetNearestNeighbor(probes);
         if (m.Rejected) { reason = m.Reason; return null; }
