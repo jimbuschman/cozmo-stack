@@ -4,6 +4,10 @@ The goal is source-faithful app-side behavior, not merely behavior that appears 
 
 **Start every session by reading `PROJECT_STATE.md`.** It says which layer is in progress, what has been approved and what is open. Work follows the Process section at the end of this file.
 
+## Exact, always
+
+The goal is exact reproduction (operator, 2026-09-27). Whatever ships in the APK or the OBB is reproduced exactly, however much extraction it takes. EQUIVALENT_IMPLEMENTATION is only for behaviour whose code doesn't ship at all, such as the phone's system libraries. Never ask the operator whether "equivalent" would do.
+
 ## Primary rule
 
 NEVER fill an unknown behavior with a plausible implementation and then treat it as recovered.

@@ -15,7 +15,7 @@ Read first in every session. The manager keeps this file current; the process it
   - `scripts/run-manager.ps1` runs the manager in rounds and restarts it whenever it ends a reply. It stops on NEED_OPERATOR or DONE (read from `.scratch/manager-status.txt`), after `-MaxRounds`, after `-MaxIdleRounds` rounds with no commit, or when a `STOP` file exists at the repo root. Logs are in `.scratch/runner/`.
   - `scripts/run-extractions.ps1` extracts the upcoming layers ahead of the manager. It writes one report per layer to `re-analysis/research/<date>-<subsystem>-extraction.md`, runs alongside the manager, and skips layers already reported.
   - The spending cap is the OpenRouter key's credit limit.
-  - The manager's standing decisions SD1–SD4 are in `.opencode/agent/cozmo-manager.md`. Under SD1 the **Vorbis IMDCT (M6 C8) is decided: a float inverse MDCT, EQUIVALENT_IMPLEMENTATION**, with the exact NEON transliteration queued as optional. Batches are one per layer, wired into the live path.
+  - The manager's standing decisions SD1–SD4 are in `.opencode/agent/cozmo-manager.md`. Under SD1 (operator, 2026-09-27: "exact. always exact") the **Vorbis IMDCT (M6 C8) is decided: exact.** Transliterate the NEON kernel and vendor its table. EQUIVALENT_IMPLEMENTATION is allowed only for code that doesn't ship (the phone's system libraries). Batches are one per layer, wired into the live path.
 - **Tooling (2026-09-26):**
   - The manager runs in opencode (`.opencode/agent/cozmo-manager.md`) with the three role subagents; Codex does research in `re-analysis/research/`.
   - `AssetPresenceTests` fails when the OBB or the marker library is missing. It was added after that absence hid two M10 failures; set `COZMO_TESTS_WITHOUT_ASSETS=1` only for a run that knowingly has no assets.
@@ -370,4 +370,4 @@ The user-level agents in `~/.claude/agents/` (`cozmo-m1-transport-auditor`, `coz
 
 ## Open decisions for the operator
 
-- **M6-002 Vorbis IMDCT (correction C8).** The engine's inverse MDCT is a float NEON transform whose per-lane arithmetic and table indexing are RECOVERABLE_GAP (ranges and the 615-float master table are named in `re-analysis/evidence/m6-vorbis/vorbis-imdct.md`). Two options: (a) fund the lane-level transliteration and vendor the 2460 table bytes; or (b) accept an EQUIVALENT_IMPLEMENTATION (a float Tremor-lowmem `mdct.c`) and record the divergence as policy. The kernel is fail-closed until this is decided; M6-002 cannot decode without it.
+- **M6-002 Vorbis IMDCT (correction C8).** The engine's inverse MDCT is a float NEON transform whose per-lane arithmetic and table indexing are RECOVERABLE_GAP (ranges and the 615-float master table are named in `re-analysis/evidence/m6-vorbis/vorbis-imdct.md`). **Decided (operator, 2026-09-27): exact.** Transliterate the lane-level arithmetic and vendor the 2460 table bytes. The RECOVERABLE_GAP rows go back to the extractor. The kernel stays fail-closed until then.
