@@ -94,15 +94,27 @@ public sealed record WwiseVorbisMappingSetup(
 /// <c>render_line</c> (C5 6a/6b, 0x00AB915C); the window tables, combine and planar layout (C5 8a/9/9b,
 /// 0x01054490 / 0x00AB5A94 / 0x00AB3520); and the start-skip/end-trim consumption (C5 10b, 0x00AB3884).
 ///
-/// <b>Refused, not guessed.</b> Correction C5 still leaves five pieces as RECOVERABLE_GAP, so
-/// <see cref="Decode"/> throws and names them: the decode-table builder (0x00AB96EC; its 16-bit store and
-/// 32-bit read are unreconciled), the residue inverse stage/partition walk (0xAB7808..0xAB7E00; only its
-/// control flow is read), the window-combine per-window branch (0x00AB5A94..0x00AB6038), the floor look
-/// helper (0x00AB8018) and the window default (0x00AB3728). The float
-/// NEON IMDCT (0x00AB4E34) is also refused: C5 7b contradicts the old normalisation claim, so the output
-/// scale is not established. The end-trim consumption is implemented (C5 10b) but the meaning of its
-/// <c>current</c>/<c>returned</c> inputs stays the row's.
-/// <see cref="Decode"/> throws, naming each piece.
+/// <b>Built from correction C6</b> (the pass-2 report <c>re-analysis/evidence/m6-vorbis/vorbis-arithmetic-2.md</c>):
+/// the corrected leaf polarity (C6 1e: internal nodes are <c>&gt;= 0</c>, leaves are bit31-set — C5 3a/3b
+/// inverted); the decode-table entry widths and leaf markers (C6 1c/1d: 8-bit bit7 for format 1, 16-bit
+/// bit15 for format 2, 32-bit default, no 32-bit store) with the two-word leaf payload
+/// (<see cref="MakeDecodeTableEntry"/> / <see cref="DecodeTableEntryPayload"/>) and the 8/16-bit
+/// <see cref="DecodeMapWalk"/>; the residue stage/partition accessors and the class-word split (C6 3a..3e,
+/// <see cref="ResidueSplitClassWord"/>); the window
+/// combine mirror/negate forms (C6 5d/5e); the floor1 low/high-neighbour scan (C6 7a) and the floor-look
+/// right-biased merge sort (C6 4a); and the MDCT's only output scale, 2^-24 at the <c>0x00AB39D8</c> tail
+/// (C6 2b, correcting C5 7b's "no decode caller"). C6 also corrects C5 9b's allocation attribution:
+/// <c>0x00AB3780</c> allocates and stores the per-channel pointers, <c>0x00AB3520</c> drives the overlap.
+///
+/// <b>Refused, not guessed.</b> The pieces the C5/C6 rows still do not settle stay refused, and
+/// <see cref="Decode"/> throws naming them: the decode-map builder's codeword-length-to-tree construction
+/// (0x00AB96EC: C6 settles only the entry widths and markers), the <c>codebook+0x14 == 4</c> single-entry
+/// case (C6 1f), the float NEON IMDCT kernel 0x00AB4E34 (C5 7a read its structure only; the
+/// butterfly/post-rotation arithmetic and the per-stage trig tables are not in the rows), and the floor1
+/// inverse1 decode 0x00AB8E60 that consumes the neighbour/sorted arrays. The window default 0x00AB3728 is
+/// modelled as a fail-closed refusal whose reachability from a shipped header is UNKNOWN (C6 6b/6c). The
+/// end-trim consumption is implemented (C5 10b) but the meaning of its <c>current</c>/<c>returned</c>
+/// inputs stays the row's.
 ///
 /// <b>Deviations, inert on shipped media</b> (gapG 6.8..6.10): a type-0 residue and a type-2 residue with
 /// any channel count other than two are refused, and the mode count must be 2 (the 1-bit mode read is exact
@@ -135,17 +147,18 @@ public static partial class WwiseVorbisNative
     public const int BlockSizeError = -0x85;
 
     /// <summary>
-    /// The pieces correction C5 still leaves as RECOVERABLE_GAP, with their addresses. Named here so
-    /// <see cref="Decode"/> refuses visibly and a caller or test can see exactly what is missing.
+    /// The pieces the C5/C6 rows still leave open, with their addresses. Named here so <see cref="Decode"/>
+    /// refuses visibly and a caller or test can see exactly what is missing. Correction C6 settled the
+    /// decode-table widths and polarity, the two-word leaf payload, the residue stage walk (accessors and
+    /// the class-word split), the window-combine branches, the floor look helper (the right-biased merge
+    /// sort), the floor neighbour scan and the IMDCT tail scale, so they are no longer listed.
     /// </summary>
     public static readonly IReadOnlyList<string> UnreadArithmetic = new[]
     {
-        "decode-table builder 0x00AB96EC (C5: the 16-bit store vs the 32-bit read is unreconciled)",
-        "residue inverse stage/partition walk 0xAB7808..0xAB7E00 (C5 4b: only the control flow is read; the inner offsets are RECOVERABLE_GAP)",
-        "window-combine per-window branch 0x00AB5A94..0x00AB6038 (C5 9: the exact branch selection is RECOVERABLE_GAP)",
-        "floor look helper 0x00AB8018 (C5 1d: the sorted-index build is unread)",
-        "float NEON IMDCT 0x00AB4E34 (C5 7b: its normalisation is not established; the 2^-24 constants belong to 0x00AB39D8)",
-        "window default 0x00AB3728 (C5 8b: the consequence of a 0 window pointer is UNKNOWN)",
+        "the decode-map builder's codeword-length-to-tree construction 0x00AB96EC (C6 1c settles only the entry widths and leaf markers; how codeword lengths become the table's internal nodes is not in the rows)",
+        "the codebook+0x14 == 4 single-entry case (C6 1f: the builder writes an 8-bit table while the decoder's default path reads 32-bit, so it cannot be reconciled)",
+        "the float NEON IMDCT kernel 0x00AB4E34 (C5 7a read the structure only: the butterfly/post-rotation arithmetic and the per-stage trig tables are not in the rows; only the 2^-24 tail scale, C6 2b, is settled)",
+        "the floor1 inverse1 decode 0x00AB8E60 that consumes the neighbour and sorted-index arrays (not in the C5/C6 rows)",
     };
 
     // ---- setup: block sizes (V2, 0x00AB6380..0x00AB63DC) ----
@@ -436,27 +449,139 @@ public static partial class WwiseVorbisNative
         return new WwiseVorbisMappingSetup(submaps, mux, floor, residue, coupling.Count, coupling.ToArray());
     }
 
-    // ---- decode_map (correction C5 rows 3a/3b, 0x00AB9BB0) ----
+    // ---- decode_map and the decode table (corrections C5 3a/3b and C6 1c..1f, 0x00AB9BB0 / 0x00AB96EC) ----
 
     /// <summary>The tree-walk node step (C5 3a, 0x00AB9C34): <c>node = bit + 2·node</c>.</summary>
     public static int DecodeMapNode(int node, bool bit) => (bit ? 1 : 0) + 2 * node;
 
     /// <summary>
-    /// The leaf unpacking (C5 3b, 0x00AB9C4C..0x00AB9CA0): <c>packed = entry &amp; 0x7FFFFFFF</c>, then
-    /// <c>dim</c> values of <c>q_bits</c> bits, lowest first. The decode table the walk consumes is built by
-    /// 0x00AB96EC, which stays RECOVERABLE_GAP, so only the leaf arithmetic is reproduced here.
+    /// C6 1e (0x00AB9C44/0x00AB9C48): a 32-bit table entry is a <b>leaf</b> when its bit31 is set, and an
+    /// <b>internal node</b> when it is non-negative (bit31 clear). This is C5 3a/3b inverted. The 8- and
+    /// 16-bit tables mark leaves at bit7/bit15 instead; see <see cref="DecodeTableEntryIsLeaf"/>.
+    /// </summary>
+    public static bool DecodeMapIsLeaf(uint entry) => (entry & 0x80000000u) != 0;   // C6 1e: bic at the fall-through
+
+    /// <summary>C6 1e: the complement of <see cref="DecodeMapIsLeaf"/>; the walk loops while this holds.</summary>
+    public static bool DecodeMapIsInternal(uint entry) => (entry & 0x80000000u) == 0;
+
+    /// <summary>
+    /// The leaf unpacking (C6 1e, 0x00AB9C4C..0x00AB9CA0): <c>packed = entry &amp; 0x7FFFFFFF</c> (bit31 is
+    /// the leaf marker, <c>bic ip,ip,#0x80000000</c>), then <c>dim</c> values of <c>q_bits</c> bits, lowest
+    /// first (mask <c>(1&lt;&lt;q_bits)−1</c>).
     /// </summary>
     public static int[] DecodeMapLeaf(uint entry, int qBits, int dim)
     {
-        uint packed = entry & 0x7FFFFFFFu;                                 // C5 3b: bit 31 is the internal-node marker
-        uint mask = (1u << qBits) - 1u;                                    // C5 3b: mask = (1<<q_bits)-1
+        uint packed = entry & 0x7FFFFFFFu;                                 // C6 1e: bit31 is the leaf marker
+        uint mask = (1u << qBits) - 1u;                                    // C6 1e: mask = (1<<q_bits)-1
         var values = new int[dim];
         for (int i = 0; i < dim; i++)
         {
-            values[i] = (int)(packed & mask);                              // C5 3b: low value first
-            packed >>= qBits;                                              // C5 3b: packed >>= q_bits
+            values[i] = (int)(packed & mask);                              // C6 1e: low value first
+            packed >>= qBits;                                              // C6 1e: packed >>= q_bits
         }
         return values;
+    }
+
+    /// <summary>The format selector value for the 8-bit decode table (C6 1c/1d, 0x00AB9708).</summary>
+    public const int DecodeTableFormatEight = 1;
+
+    /// <summary>The format selector value for the 16-bit decode table (C6 1c/1d).</summary>
+    public const int DecodeTableFormatSixteen = 2;
+
+    /// <summary>The single-entry format selector, unresolved in C6 (C6 1f).</summary>
+    public const int DecodeTableFormatSingleEntry = 4;
+
+    /// <summary>
+    /// The decode-table entry width in bits, from the <c>codebook+0x14</c> dispatch (C6 1d): 1 → 8-bit,
+    /// 2 → 16-bit, otherwise the decoder's 32-bit default. The format-4 single-entry case is refused: the
+    /// builder writes an 8-bit table while the decoder reads 32-bit, which C6 leaves unresolved.
+    /// </summary>
+    public static int DecodeTableEntryBits(int format) => format switch
+    {
+        DecodeTableFormatEight => 8,                                       // C6 1d: ldrb
+        DecodeTableFormatSixteen => 16,                                    // C6 1d: ldrh
+        DecodeTableFormatSingleEntry => throw new NotSupportedException(
+            "codebook+0x14 == 4 is unresolved (C6 1f): the builder writes an 8-bit table while the " +
+            "decoder's default path reads 32-bit, so it cannot be decoded faithfully"),
+        _ => 32,                                                           // C6 1d: default ldr [table+node*4]
+    };
+
+    /// <summary>
+    /// The two-slot leaf encoding of <c>_make_decode_table</c> (C6 1c/1d, 0x00AB96EC): a 32-bit node/leaf
+    /// word (<paramref name="node"/>; bit31 set = leaf) is stored as the entry's <b>high</b> bits plus the
+    /// adjacent slot's low bits, with the leaf marker moved down to bit7 (format 1,
+    /// <c>orr r1,r1,r1,lsr#24</c>) or bit15 (format 2, <c>orr ip,ip,r5,lsr#16</c>). Format 1 keeps the
+    /// payload's high 7 bits in the entry and its low 8 bits in the next byte; format 2 keeps the high 15
+    /// in the entry and the low 16 in the next halfword. The builder has no 32-bit store, and how the tree
+    /// is constructed from codeword lengths is not in the rows, so only this leaf encoding is settled.
+    /// </summary>
+    public static (uint Entry, uint Next) MakeDecodeTableEntry(int format, uint node)
+    {
+        uint marker = node & 0x80000000u;
+        return format switch
+        {
+            // C6 1c/1d: bit31 -> bit7; the adjacent byte carries the low 8 payload bits.
+            DecodeTableFormatEight => (((node >> 8) & 0x7Fu) | (marker >> 24), node & 0xFFu),
+            // C6 1c/1d: bit31 -> bit15; the adjacent halfword carries the low 16 payload bits.
+            DecodeTableFormatSixteen => (((node >> 16) & 0x7FFFu) | (marker >> 16), node & 0xFFFFu),
+            DecodeTableFormatSingleEntry => throw new NotSupportedException(
+                "codebook+0x14 == 4 is unresolved (C6 1f)"),
+            _ => throw new NotSupportedException(
+                "the decode-table builder has no 32-bit store (C6 1c); only formats 1 and 2 are settled"),
+        };
+    }
+
+    /// <summary>
+    /// The per-format leaf marker test (C6 1c/1d): bit7 for format 1 (<c>tst #0x80</c>), bit15 for format 2
+    /// (<c>tst #0x8000</c>), bit31 for the decoder's 32-bit default (C6 1e).
+    /// </summary>
+    public static bool DecodeTableEntryIsLeaf(int format, uint entry) => format switch
+    {
+        DecodeTableFormatEight => (entry & 0x80u) != 0,
+        DecodeTableFormatSixteen => (entry & 0x8000u) != 0,
+        _ => (entry & 0x80000000u) != 0,
+    };
+
+    /// <summary>
+    /// The payload of a leaf table entry (C6 1d/1e). Format 1 combines the entry's marker-cleared high 7
+    /// bits with the adjacent byte: <c>((entry &amp; 0x7F) &lt;&lt; 8) | next</c>, 15 bits
+    /// (<c>0x00AB9ECC lsl sb,sb,#8</c>, <c>0x00AB9EE0 ldrb ip,[ip,#1]</c>, <c>0x00AB9EE4 orr</c>,
+    /// <c>0x00AB9EE8 ubfx #0,#0xf</c>). Format 2 combines the marker-cleared 15 bits with the adjacent
+    /// halfword: <c>((entry &amp; 0x7FFF) &lt;&lt; 16) | next</c> (<c>0x00ABA0C0 lsl</c>,
+    /// <c>0x00ABA0DC ldrh ip,[sl,#2]</c>, <c>0x00ABA0E0 orr</c>). The 32-bit default carries the whole
+    /// payload in the entry (bit31 is the leaf marker).
+    /// </summary>
+    public static uint DecodeTableEntryPayload(int format, uint entry, uint next) => format switch
+    {
+        DecodeTableFormatEight => ((entry & 0x7Fu) << 8 | (next & 0xFFu)) & 0x7FFFu, // C6 1d: two bytes
+        DecodeTableFormatSixteen => ((entry & 0x7FFFu) << 16) | (next & 0xFFFFu),    // C6 1d: two halfwords
+        _ => entry & 0x7FFFFFFFu,                                                    // C6 1e: one word
+    };
+
+    /// <summary>
+    /// The <c>decode_map</c> tree walk (C6 1d/1e, 0x00AB9BB0): read a bit, <c>node = bit + 2·node</c>, load
+    /// the format's table entry; loop while the entry is an internal node; on the terminating leaf combine
+    /// the entry with the adjacent table word (C6 1d) and unpack its <c>dim</c> values of <c>q_bits</c>
+    /// bits.
+    ///
+    /// The table is the output of <c>_make_decode_table</c>. C6 settles its entry widths, markers, the
+    /// two-word leaf payload and the walk, but not how codeword lengths become the table's internal nodes,
+    /// so this consumes a table the caller has already built.
+    /// </summary>
+    internal static int[] DecodeMapWalk(uint[] table, int format, BitReader reader, int qBits, int dim)
+    {
+        int node = 0;
+        while (true)
+        {
+            int bit = reader.ReadBit() ? 1 : 0;
+            node = DecodeMapNode(node, bit != 0);                          // C6 1e: node = bit + 2*node
+            if (node < 0 || node >= table.Length)
+                throw new InvalidDataException("decode_map walked off the decode table (C6 1e)");
+            uint entry = table[node];
+            if (!DecodeTableEntryIsLeaf(format, entry)) continue;          // C6 1e: loop while internal
+            uint next = node + 1 < table.Length ? table[node + 1] : 0u;    // C6 1d: the adjacent table word
+            return DecodeMapLeaf(DecodeTableEntryPayload(format, entry, next), qBits, dim); // C6 1d/1e
+        }
     }
 
     // ---- residue inverse and coupling (correction C5 rows 4d..4f, 0x00ABAA6C / 0x00ABABB8 / 0x00AB6E30) ----
@@ -496,6 +621,90 @@ public static partial class WwiseVorbisNative
             ? (ang > 0 ? (mag, mag - ang) : (mag + ang, mag))
             : (ang > 0 ? (mag, mag + ang) : (mag - ang, mag));
 
+    // ---- residue stage/partition accessors (correction C6 rows 3a..3e, 0xAB7808..0xAB7E00) ----
+
+    /// <summary>
+    /// The residue type dispatch (C6 3a, 0x00AB7434): type 0 shares the type-0/1 branch at 0x00AB770C
+    /// (<c>cmp r3,#1; ble</c>); type 2 goes to 0x00AB745C.
+    /// </summary>
+    public static bool ResidueSharesType01Path(int type) => type <= 1;      // C6 3a: cmp r3,#1; ble
+
+    /// <summary>
+    /// The cascade gate (C6 3d, 0x00AB7D48/0x00AB7D4C): the per-class cascade mask
+    /// <c>info+4[class]</c> tested against <c>1&lt;&lt;stage</c>.
+    /// </summary>
+    public static bool ResidueStagePresent(byte cascadeMask, int stage)
+        => (cascadeMask & (1 << stage)) != 0;                              // C6 3d: tst r2,(1<<s)
+
+    /// <summary>
+    /// The stage-book index (C6 3d, 0x00AB7D70): the book is <c>info+8[class·8 + stage]</c>, where
+    /// <paramref name="classDigit"/> is the decoded class (<c>partword[channel][partition]</c>), not the
+    /// partition number.
+    /// </summary>
+    public static int ResidueStageBookIndex(int classDigit, int stage) => classDigit * 8 + stage; // C6 3d
+
+    /// <summary>
+    /// The codeword base for a book (C6 3d, 0x00AB7D88/0x00AB7D94): <c>fullbooks + 60·book</c>, i.e.
+    /// <c>15·book</c> then <c>&lt;&lt;2</c>.
+    /// </summary>
+    public static int ResidueBookOffset(int book) => 60 * book;            // C6 3d: rsb 15*book; lsl#2
+
+    /// <summary>
+    /// The residue class-word split (C6 3c, 0x00AB7C84/0x00AB7CBC/0x00AB7CC8/0x00AB7CD0/0x00AB7CD8): one
+    /// class word is decoded per partition (<c>bl 0x00ABA840</c>) and split across the channels by repeated
+    /// unsigned divide (<c>bl 0x4BE310</c> uidiv, <c>strb r0,[r6],#1</c>, <c>mls r7,sb,r3,r7</c>). For each
+    /// channel except the last, <c>quotient = running / partword[ch]</c> is stored back into
+    /// <paramref name="partword"/> and the remainder carries; the last channel takes the remainder.
+    /// The divisor array is the per-channel base computed by the caller and is overwritten in place.
+    /// </summary>
+    public static void ResidueSplitClassWord(int classWord, byte[] partword)
+    {
+        if (partword is null) throw new ArgumentNullException(nameof(partword));
+        if (partword.Length == 0) throw new ArgumentException("a class word needs at least one channel", nameof(partword));
+        int running = classWord;
+        for (int ch = 0; ch < partword.Length - 1; ch++)
+        {
+            int divisor = partword[ch];
+            int quotient = divisor == 0 ? 0 : running / divisor;           // C6 3c: uidiv
+            partword[ch] = (byte)quotient;                                 // C6 3c: strb r0,[r6],#1
+            running -= divisor * quotient;                                 // C6 3c: mls = remainder
+        }
+        partword[^1] = (byte)running;                                      // C6 3c: last channel takes the remainder
+    }
+
+    // ---- IMDCT structure and output scale (correction C6 rows 2a/2b; C5 7a, 0x00AB4E34 / 0x00AB39D8) ----
+
+    /// <summary>
+    /// The decode MDCT's only output scale (C6 2b, 0x00AB39D8): the four final vectors are multiplied by
+    /// <c>0x33800000</c> = 2^-24 before storing. C6 corrects C5 7b: <c>0x00AB4E34</c> tail-branches into
+    /// <c>0x00AB39D8</c> (<c>0x00AB5A44 b 0x00AB39D8</c>), so this is the decode path.
+    /// </summary>
+    public const float ImdctOutputScale = 1f / 16777216f;                  // C6 2b: 0x33800000 = 2^-24
+
+    /// <summary>
+    /// The MDCT control-flow shift (C5 7a, 0x00AB4E78..0x00AB4E94): <c>shift = 13 − ilog2(n)</c>, where
+    /// <c>n</c> is the transform size and <c>ilog2</c> is the floor of the base-2 logarithm.
+    /// </summary>
+    public static int ImdctShift(int n)
+    {
+        if (n <= 0) throw new ArgumentOutOfRangeException(nameof(n));
+        return 13 - (WwiseCodebookLibrary.ILog((uint)n) - 1);             // C5 7a: rsb r3,r5,#0xd
+    }
+
+    /// <summary>The unit trig constant 0x3F3504F3 = 0.70710677 used by the NEON loop (C5 7a).</summary>
+    public const float ImdctUnitTrig = 0.70710677f;
+
+    /// <summary>
+    /// Applies the decode MDCT's 2^-24 output scale in place (C6 2b, the four <c>vmul.f32</c>s at
+    /// 0x00AB3CB4..0x00AB3CC4). This is the only settled arithmetic step of the tail; the butterfly kernel
+    /// and its per-stage trig tables are not in the rows and are refused by <see cref="Decode"/>.
+    /// </summary>
+    public static void ApplyImdctOutputScale(float[] values)
+    {
+        if (values is null) throw new ArgumentNullException(nameof(values));
+        for (int i = 0; i < values.Length; i++) values[i] *= ImdctOutputScale; // C6 2b
+    }
+
     // ---- floor1 inverse2 / render_line (correction C5 rows 6a/6b, 0x00AB915C) ----
 
     /// <summary>
@@ -529,13 +738,90 @@ public static partial class WwiseVorbisNative
         }
     }
 
+    // ---- floor1 look arrays (correction C6 rows 4a and 7a, 0x00AB8018 / 0x00AB8D68) ----
+
+    /// <summary>
+    /// The floor1 low/high-neighbour scan (C6 7a, 0x00AB8D68..0x00AB8E14): for each post
+    /// <c>i = 2..posts-1</c>, the low neighbour is the largest earlier value strictly below
+    /// <c>postList[i]</c> and the high neighbour the smallest earlier value strictly above it, scanned over
+    /// the earlier posts. Initial state <c>lo=0, hi=1, lx=0, hx=postList[1]</c>. The result is indexed
+    /// <c>k = i−2</c>; low is stored at <c>floor+0x14</c> and high at <c>floor+0x10</c>.
+    /// </summary>
+    public static (byte[] Low, byte[] High) FloorNeighbours(int[] postList)
+    {
+        int posts = postList.Length;
+        int count = posts - 2;
+        var low = new byte[count];
+        var high = new byte[count];
+        for (int k = 0; k < count; k++)
+        {
+            int i = k + 2;
+            int currentx = postList[i];
+            int lo = 0, hi = 1;                                            // C6 7a: lo=0, hi=1
+            int lx = 0, hx = postList[1];                                  // C6 7a: lx=0, hx=postlist[1]
+            for (int j = 0; j < i; j++)
+            {
+                int x = postList[j];
+                if (x < currentx && x > lx) { lo = j; lx = x; }            // C6 7a: keep the largest low
+                if (x > currentx && x < hx) { hi = j; hx = x; }            // C6 7a: keep the smallest high
+            }
+            low[k] = (byte)lo;                                             // C6 7a: str low at floor+0x14
+            high[k] = (byte)hi;                                            // C6 7a: str high at floor+0x10
+        }
+        return (low, high);
+    }
+
+    /// <summary>
+    /// The floor look helper (C6 4a, 0x00AB8018): a <b>right-biased</b> bottom-up merge sort of the
+    /// <c>floor+0x0C</c> byte index array, keyed by the <c>floor+0x08</c> u16 postlist. The caller seeds
+    /// the array with the identity permutation <c>0..posts-1</c>, and the sort alternates the caller's
+    /// buffer and a stack temp buffer between passes. Returns the index permutation sorted by
+    /// <c>postList[index]</c> ascending, with the <b>right</b> element stored first on equal keys
+    /// (<c>0x00AB80C8 cmp sl,sb</c>; <c>strblo</c> takes the left only when strictly less, <c>strbhs</c>
+    /// takes the right on <c>&gt;=</c>).
+    /// </summary>
+    public static byte[] FloorSortedIndices(int[] postList)
+    {
+        int n = postList.Length;
+        var src = new byte[n];
+        for (int i = 0; i < n; i++) src[i] = (byte)i;                      // C6 4a: identity permutation
+        var tmp = new byte[n];
+        for (int width = 1; width < n; width *= 2)
+        {
+            for (int lo = 0; lo < n; lo += 2 * width)
+            {
+                int mid = Math.Min(lo + width, n);
+                int hi = Math.Min(lo + 2 * width, n);
+                int a = lo, b = mid, o = lo;
+                while (a < mid && b < hi)
+                {
+                    // C6 4a: compare postlist[idx_a] vs postlist[idx_b]; the left is taken only when
+                    // strictly less, so the right is stored first on equal keys (0x00AB80C8/0x00AB80CC/0x00AB80D8).
+                    if (postList[src[a]] < postList[src[b]]) tmp[o++] = src[a++];
+                    else tmp[o++] = src[b++];
+                }
+                while (a < mid) tmp[o++] = src[a++];
+                while (b < hi) tmp[o++] = src[b++];
+            }
+            (src, tmp) = (tmp, src);                                       // C6 4a: buffer swap between passes
+        }
+        return src;
+    }
+
     // ---- window combine and planar output (correction C5 rows 8a/9/9b, 0x01054490 / 0x00AB5A94 / 0x00AB3520) ----
+
+    /// <summary>
+    /// Whether a shipped mode can select the 0 window pointer (C6 6c): the mechanism is EXACT_SOURCE, but
+    /// whether any shipped header declares a blocksize of 64/128/8192 is UNKNOWN.
+    /// </summary>
+    public const bool WindowDefaultReachabilityKnown = false;              // C6 6c: UNKNOWN
 
     /// <summary>
     /// The window table for a block size (C5 8a/8b, 0x00AB3564..0x00AB3738): the dispatch on
     /// <c>blocksize/2</c> in {128, 256, 512, 1024, 2048}. Any other block size takes the native default,
-    /// which sets the window pointer to 0 — a RECOVERABLE_GAP whose consequence is UNKNOWN — so this
-    /// refuses rather than defaulting.
+    /// which stores a <b>0 window pointer</b> (<c>0x00AB3728</c>) that <c>0x00AB5A94</c> dereferences — a
+    /// NULL dereference (C6 6b). Whether a shipped header can reach it is UNKNOWN (C6 6c), so this fails
+    /// closed rather than dereferencing 0.
     /// </summary>
     public static float[] WindowTable(int blockSize) => (blockSize / 2) switch
     {
@@ -545,23 +831,56 @@ public static partial class WwiseVorbisNative
         1024 => VWin2048,                                                  // C5 8a: 0x01055290
         2048 => VWin4096,                                                  // C5 8a: 0x01056290
         _ => throw new NotSupportedException(
-            $"the native window dispatch has no table for blocksize/2 = {blockSize / 2}; its default path " +
-            "sets the window pointer to 0 and the consequence is UNKNOWN (C5 8b, 0x00AB3728)"),
+            $"the native window dispatch has no table for blocksize/2 = {blockSize / 2}: its default path " +
+            "stores a 0 window pointer (0x00AB3728) that 0x00AB5A94 dereferences — a NULL dereference. " +
+            "Whether a shipped mode declares blocksize 64/128/8192 is UNKNOWN (C6 6b/6c), so this fails closed"),
     };
 
-    /// <summary>The two-window combine (C5 9, 0x00AB5BA4..0x00AB5BB0): <c>out = a·wA + b·wB</c>.</summary>
+    /// <summary>The two-window combine (C5 9 / C6 5b, 0x00AB5BA4..0x00AB5BB0): <c>out = a·wA + b·wB</c>.</summary>
     public static float CombineAdd(float a, float wA, float b, float wB) => a * wA + b * wB;
 
-    /// <summary>The one-window combine (C5 9, 0x00AB5D64): <c>out = a·w − b·w2</c> (<c>vnmls.f32</c>).</summary>
-    public static float CombineSub(float a, float w, float b, float w2) => a * w - b * w2;
+    /// <summary>
+    /// The second-window-only combine (C5 9 / C6 5c, 0x00AB5D64): <c>out = a·wA − b·wB</c> with the
+    /// <c>vnmls.f32</c> order <c>a·wA − b·wB</c>.
+    /// </summary>
+    public static float CombineSub(float a, float wA, float b, float wB) => a * wA - b * wB;
 
     /// <summary>
-    /// The planar-float layout (C5 9b, 0x00AB3520): <c>n/2</c> frames per channel, allocated as
-    /// <c>n/2 · 4 · channels</c> bytes, and channel <c>c</c> at <c>base + c·maxFrames</c>.
+    /// The 64-bit mirror (C6 5d, 0x00AB5B8C/0x00AB5B9C and 0x00AB5BB4/0x00AB5BB8): on a 128-bit vector,
+    /// <c>vrev64.32</c> followed by <c>vswp</c> reverses the four f32 lanes. Applied to the incoming
+    /// window before the multiply and to the result before the store.
+    /// </summary>
+    public static void Mirror4(float[] v)
+    {
+        if (v is null || v.Length != 4)
+            throw new ArgumentException("the 64-bit mirror is a 4-lane vector (C6 5d)");
+        (v[0], v[3]) = (v[3], v[0]);                                       // C6 5d: vrev64.32 + vswp = reverse
+        (v[1], v[2]) = (v[2], v[1]);
+    }
+
+    /// <summary>
+    /// The single-window negate form (C6 5e, 0x00AB5DDC/0x00AB6048): <c>vneg.f32</c>, then store.
+    /// </summary>
+    public static float[] NegateWindow(float[] w)
+    {
+        if (w is null) throw new ArgumentNullException(nameof(w));
+        var r = new float[w.Length];
+        for (int i = 0; i < w.Length; i++) r[i] = -w[i];                   // C6 5e: vneg.f32
+        return r;
+    }
+
+    /// <summary>
+    /// The planar-float frame count, <c>n/2</c> (C5 9b). Correction C6 attributes the allocation and the
+    /// per-channel pointer stores to <c>0x00AB3780</c>, not <c>0x00AB3520</c>: <c>0x00AB3520</c> selects
+    /// the windows and drives the overlap.
     /// </summary>
     public static int PlanarFrames(int n) => n / 2;                        // C5 9b: n/2 frames
 
-    public static int PlanarChannelOffset(int channel, int maxFrames) => channel * maxFrames;   // C5 9b: base + c·maxFrames
+    /// <summary>The per-channel allocation size in bytes, <c>n/2 · 4 · channels</c> (C5 9b; C6: 0x00AB3780).</summary>
+    public static int PlanarAllocatedBytes(int n, int channels) => (n / 2) * 4 * channels; // C5 9b: 0x00AB3780
+
+    /// <summary>Channel <c>c</c> at <c>base + c·maxFrames</c> (C5 9b; C6: 0x00AB3780 stores the pointers).</summary>
+    public static int PlanarChannelOffset(int channel, int maxFrames) => channel * maxFrames; // C5 9b: base + c·maxFrames
 
     // ---- end-trim consumption (correction C5 row 10b, 0x00AB3884..0x00AB3910) ----
 
@@ -577,16 +896,16 @@ public static partial class WwiseVorbisNative
 
     /// <summary>
     /// Refuses the residue paths the rows record as deviations rather than defaulting them (gapG 6.8..6.10):
-    /// type 0 does not get <c>decodevs_add</c> in the native (it falls into the type-0/1 <c>decodev_add</c>
-    /// branch 0x00AB770C, whose stage walk is still unread), and type 2 is hard-wired to two channels.
-    /// Shipped mono is always type 1 and shipped stereo always type 2, so both deviations are inert on the
-    /// shipped library.
+    /// type 0 does not get <c>decodevs_add</c> in the native — it shares the type-0/1 <c>decodev_add</c>
+    /// branch 0x00AB770C (C6 3a), whose stage/partition accessors and class-word split are now built, but
+    /// which no shipped file exercises — and type 2 is hard-wired to two channels. Shipped mono is always
+    /// type 1 and shipped stereo always type 2, so both deviations are inert on the shipped library.
     /// </summary>
     public static void CheckResidueDeviation(int type, int channels)
     {
         if (type == 0)
             throw new NotSupportedException(
-                "Vorbis residue type 0 shares the type-0/1 branch 0x00AB770C, whose stage walk is unread (M6-002 gapG 6.8 deviation)");
+                "Vorbis residue type 0 shares the type-0/1 branch 0x00AB770C (C6 3a); it is inert on the shipped library (M6-002 gapG 6.8 deviation)");
         if (type == 2 && channels != 2)
             throw new NotSupportedException(
                 $"Vorbis residue type 2 is hard-wired to 2 channels (0x00ABABB8, M6-002 gapG 6.9); got {channels}");
@@ -645,13 +964,13 @@ public static partial class WwiseVorbisNative
     // ---- the decoder (refused: the rows do not settle the arithmetic) ----
 
     /// <summary>
-    /// The native decode path, refused. Correction C5 settles the setup, the leaf arithmetic, the tables and
-    /// skip/trim, but the decode-table builder (0x00AB96EC), the residue stage walk (0xAB7808..0xAB7E00),
-    /// the window-combine per-window branch (0x00AB5A94..0x00AB6038), the floor look helper (0x00AB8018), the
-    /// IMDCT (0x00AB4E34) and the window default (0x00AB3728) are
-    /// still unestablished (see <see cref="UnreadArithmetic"/>). The fidelity rules do not allow a plausible
-    /// substitute, so this throws rather than returning samples that are merely close. The method exists so
-    /// the gap is visible at the production entry point.
+    /// The native decode path, refused. Corrections C5 and C6 settle the setup, the decode-table widths and
+    /// polarity, the decode_map walk, the residue stage/partition accessors, the window-combine branches,
+    /// the floor look arrays and the IMDCT tail scale, but the decode-map builder's tree construction
+    /// (0x00AB96EC), the <c>codebook+0x14 == 4</c> case, the IMDCT kernel (0x00AB4E34) and the floor1
+    /// inverse1 decode (0x00AB8E60) remain unestablished (see <see cref="UnreadArithmetic"/>). The fidelity
+    /// rules do not allow a plausible substitute, so this throws rather than returning samples that are
+    /// merely close. The method exists so the gap is visible at the production entry point.
     /// </summary>
     public static float[] Decode(WwiseMedia media, WwiseCodebookLibrary codebooks)
     {
