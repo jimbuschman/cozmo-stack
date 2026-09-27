@@ -197,12 +197,13 @@ Done (on `main`): M6-001, M6-005, M6-018, M6-007, M6-006 (merged 7e9676c, verifi
 partial, unwired WIP), M6-009 — the curves/scaling *and* the value store (`WwiseRtpcStore.cs`,
 `d2ec5cf`, unwired) — M6-008 continuous containers (`WwiseContinuous.cs`, `04c1b19`, unwired),
 **M6-003 IMA ADPCM** (`9c55ab4`; the decoder and the stereo media gate are settled **EXACT_SOURCE**),
-and **M6-004 CAkResampler** (`WwiseResampler.cs`, `4173cc0`, unwired). The STMG layout is recorded
-(M6-019/020) and the RNG seed seam (M6-021). Corrections C1–C4 approved.
+and **M6-004 CAkResampler** (`WwiseResampler.cs`, `4173cc0`, unwired) and **M6-011 voice filter A
+LPF/HPF** (`WwiseVoiceFilter.cs`, `c0b87a3`, unwired). The STMG layout is recorded (M6-019/020) and
+the RNG seed seam (M6-021). Corrections C1–C4 approved.
 
 Next:
-1. **Batch 3:** M6-011 (voice LPF/HPF biquad, gapE 1.1–1.9), M6-012 (mixer, gapE 2.x/gapF 3.1/gapG
-   5.x), M6-010 (gain composition, gapC/gapE 1.1) — each a standalone module.
+1. **Batch 3:** M6-012 (mixer, gapE 2.x/gapF 3.1/gapG 5.x), M6-010 (gain composition, gapC/gapE 1.1)
+   — each a standalone module.
 2. **M6-017** (audio-thread frame order) — the runtime skeleton; depends on 012–016.
 3. Batch 4 (M6-013/014/015/016), 5 (M6-002), then the final wiring pass.
 
