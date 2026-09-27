@@ -5601,7 +5601,7 @@
       "id": "M6-015",
       "subsystem": "M6-wwise-bank",
       "title": "The Hijack plug-in: registration (last caller wins), Init (1024 floats/channel, resampler 22320, pitch 0), Execute to 744-sample chunks, Term",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHijackPlugin.cs",
       "evidence": [
         "RegisterPlugin 0x008DB300; static registration 0x004DD90C; create 0x008DBC70",
         "Init 0x008DBD74; Execute 0x008DBFE8; Term 0x008DBDF8",
@@ -5610,11 +5610,11 @@
       "effect": "the robot receives different audio frames",
       "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
       "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "built from re-analysis/inventory/M6-wwise-bank.md rows M6 A13..A18 and gapB R1..R5 into a standalone class (WwiseHijackPlugin.cs): the static registration {type 3, company 0x12C, id 1, create 0x008DBC71, params 0x008DBD11} prepended to g_pAKPluginList (R3, 0x004DD90C); RegisterPlugin swapping the instance into the global std::function with the last caller winning (R2, 0x008DB300; R5 leaves plug-in B's CozmoAudioController callbacks live); HijackFx create allocating the effect and calling the global to bind fx+0x0C = 22320, fx+0x10 = 744 and the create/process/destroy callbacks (R4, 0x008DBC70; A14, 0x008DB47C..0x008DB4EA); Init's numChannels x 1024-float allocation (numChannels from the format channel-config byte; 0 fails with error 2), CAkResampler Init(fmt, 22320), SetPitch(0), then the create callback (A15, 0x008DBD74); Execute resampling the caller's float input to 744-frame chunks through WwiseResampler (M6-004, gapB P8) and firing the process callback per chunk (A16, 0x008DBFE8); Term firing the destroy callback (A18, 0x008DBDF8). The audio-buffer callbacks (PrepareAudioBuffer 0x005984E8, UpdateBuffer 0x005985FC, CloseAudioBuffer 0x0059878C) and the input source are caller inputs; the class is not yet wired into WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler. WwiseResampler gained LastProducedFrames (the native output buffer's frame count; no arithmetic change) so Execute can report the chunk count the native flushes as validFrames.",
+      "unresolved": "not wired into the live bus/voice graph (M6-013/M6-014/M6-017); the record stays IMPLEMENTATION_GAP until that wiring exists. Caller inputs, not recovered values: the create/process/destroy callbacks (what PrepareAudioBuffer/UpdateBuffer/CloseAudioBuffer do) and the float input source. The rows settle only that 1024 floats per channel are allocated (A15), not what that allocation is used for, so it is exposed and left untouched. MISSING (reported to the manager; a row conflict, not guessed away): A16's Execute flush condition is written as result 45 (DataReady) or 17 (NoMoreData), but the stack's WwiseResampler (M6-004) returns 43 (DataNeeded) when the input runs out with a partial output and 17 only for a zero-frame input; this class flushes a full 744 frame on DataReady and the partial remainder when the input is exhausted, and flushes 0 frames on empty input. MISSING: the native accumulates the 744-frame output across engine frames (T2: a chunk about every 1.56 engine frames) and flushes the partial on the empty-input tail frame (D2.8), whereas this standalone class flushes the whole output of one caller-supplied input span; the accumulation buffer/offset is not in M6-015's rows (it belongs to the M6-017/M6-014 wiring).",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "Cozmo.Protocol.Tests.WwiseHijackPluginTests"
     },
     {
       "id": "M6-016",

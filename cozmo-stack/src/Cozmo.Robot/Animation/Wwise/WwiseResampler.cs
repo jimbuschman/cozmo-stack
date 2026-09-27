@@ -103,6 +103,14 @@ public sealed class WwiseResampler
     private bool _hasFloatNext;
 
     /// <summary>
+    /// The number of output frames the last <c>Execute</c> produced (M6-004). This is the native output
+    /// buffer's frame count, the tally the Hijack flushes to its process callback as <c>validFrames</c>
+    /// (M6-015 A16). It is the value the class already computes; it changes no arithmetic. Zero after the
+    /// empty-input <see cref="NoMoreData"/> return.
+    /// </summary>
+    public int LastProducedFrames { get; private set; }
+
+    /// <summary>
     /// <c>Init(fmt, outRate)</c> 0x00A47038 (M6 0.11): <c>+0x4C = inRate/outRate</c> and <c>+0x3C = 48000/outRate</c>.
     /// The kernel row is chosen by the sample format and channel count (gapB P1).
     /// </summary>
@@ -223,13 +231,13 @@ public sealed class WwiseResampler
     /// </summary>
     public int Execute(ReadOnlySpan<short> input, Span<float> output, int maxFrames)
     {
-        if (input.Length == 0) return NoMoreData;                     // 0x00A4717C..0x00A47188
+        if (input.Length == 0) { LastProducedFrames = 0; return NoMoreData; }  // 0x00A4717C..0x00A47188
         if (_isFloat)
             throw new InvalidOperationException("This resampler was Init'd for float input (M6 gapB P1); use the float overload");
         if (_channels != 1)
             throw new NotSupportedException("The stereo int16 kernel 0x00A49634 was not read (M6 gapB P2)");
         EnsurePitchSet();
-        if (maxFrames <= 0) return DataReady;
+        if (maxFrames <= 0) { LastProducedFrames = 0; return DataReady; }
 
         int i = 0, produced = 0;
         while (produced < maxFrames)
@@ -275,6 +283,7 @@ public sealed class WwiseResampler
         }
 
         AdvanceRamp(produced);
+        LastProducedFrames = produced;
         return produced == maxFrames ? DataReady : DataNeeded;
     }
 
@@ -285,7 +294,7 @@ public sealed class WwiseResampler
     /// </summary>
     public int Execute(ReadOnlySpan<float> input, Span<float> output, int maxFrames)
     {
-        if (input.Length == 0) return NoMoreData;                     // 0x00A4717C..0x00A47188
+        if (input.Length == 0) { LastProducedFrames = 0; return NoMoreData; }  // 0x00A4717C..0x00A47188
         if (!_isFloat)
             throw new InvalidOperationException("This resampler was Init'd for int16 input (M6 gapB P1); use the short overload");
         if (_channels != 1)
@@ -295,7 +304,7 @@ public sealed class WwiseResampler
             throw new NotSupportedException(
                 $"The float resampler was read only in mode 1 (0x00A49E40); mode {Mode} is the unread float bypass " +
                 "0x00A479F4 / ramp 0x00A4A958 (M6 gapE 3.6)");
-        if (maxFrames <= 0) return DataReady;
+        if (maxFrames <= 0) { LastProducedFrames = 0; return DataReady; }
 
         int i = 0, produced = 0;
         while (produced < maxFrames)
@@ -336,6 +345,7 @@ public sealed class WwiseResampler
         }
 
         AdvanceRamp(produced);
+        LastProducedFrames = produced;
         return produced == maxFrames ? DataReady : DataNeeded;
     }
 
@@ -347,7 +357,7 @@ public sealed class WwiseResampler
     /// </summary>
     public int ExecuteInPlace(Span<float> buffer, int maxFrames)
     {
-        if (buffer.Length == 0) return NoMoreData;                    // 0x00A4717C..0x00A47188
+        if (buffer.Length == 0) { LastProducedFrames = 0; return NoMoreData; }  // 0x00A4717C..0x00A47188
         var scratch = buffer.ToArray();
         return Execute(scratch, buffer, maxFrames);
     }
