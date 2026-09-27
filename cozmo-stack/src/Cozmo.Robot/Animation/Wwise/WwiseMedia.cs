@@ -166,6 +166,20 @@ public sealed class WwiseVorbisHeader
     /// <summary>log2 of the long block size. 11 in all but 32 files, which use 10.</summary>
     public required byte BlockSize1Pow { get; init; }
 
+    /// <summary>
+    /// The loop-back start skip, <c>u16 fmt+0x24</c> (<c>src+0x9C</c>): the start skip applied when a loop
+    /// wraps (M6-002 gapG 6.12, 0x00AB0398..0x00AB03C8).
+    /// </summary>
+    public required ushort LoopStartSkip { get; init; }
+    /// <summary>
+    /// The end trim used when the loop count is not 1, <c>u16 fmt+0x26</c> (M6-002 gapG 6.12).
+    /// </summary>
+    public required ushort EndTrimLoop { get; init; }
+    /// <summary>
+    /// The end trim used when the loop count <c>src+0x38</c> is 1, <c>u16 fmt+0x32</c> (M6-002 gapG 6.12).
+    /// </summary>
+    public required ushort EndTrimSingle { get; init; }
+
     /// <summary>The bytes between the setup packet and the first audio packet.</summary>
     public int SetupPacketLength => (int)(FirstAudioPacketOffset - SetupPacketOffset);
 
@@ -183,6 +197,10 @@ public sealed class WwiseVorbisHeader
             Uid = BinaryPrimitives.ReadUInt32LittleEndian(v.Slice(0x24, 4)),
             BlockSize0Pow = v[0x28],
             BlockSize1Pow = v[0x29],
+            // M6-002 gapG 6.12: fmt+0x24, fmt+0x26 and fmt+0x32, i.e. vorb +0x0C, +0x0E and +0x1A.
+            LoopStartSkip = BinaryPrimitives.ReadUInt16LittleEndian(v.Slice(0x0C, 2)),
+            EndTrimLoop = BinaryPrimitives.ReadUInt16LittleEndian(v.Slice(0x0E, 2)),
+            EndTrimSingle = BinaryPrimitives.ReadUInt16LittleEndian(v.Slice(0x1A, 2)),
         };
     }
 
