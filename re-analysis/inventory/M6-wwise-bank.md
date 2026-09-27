@@ -1047,3 +1047,16 @@ A second extractor pass (report `re-analysis/evidence/m6-vorbis/vorbis-arithmeti
 - **Allocation attribution (corrects C5 9b):** `0x00AB3780` allocates `n/2*4*channels` and stores the per-channel pointers; `0x00AB3520` selects the windows and drives the overlap.
 
 **Amended:** M6-002's `evidence` now carries these citations and the polarity/IMDCT corrections. M6-002 stays IMPLEMENTATION_GAP; the `+0x14 == 4` case and the window-default reachability remain open.
+
+## Correction C7 (manager, 2026-09-27): the Vorbis decode-table builder, floor1 inverse1, and the residue divisor array
+
+A third extractor pass (report `re-analysis/evidence/m6-vorbis/vorbis-arithmetic-3.md`) settles most of the remaining M6-002 build gaps and corrects C5/C6:
+
+- **The codebook fields are `dec_nodeb`/`dec_leafw`, not a format selector.** `+0x14` = `dec_nodeb` ∈ {1,2,4}, `+0x18` = `dec_leafw` ∈ {1,2}, `+0x1C` = `dec_type`, `+0x38` = `q_val`; `_determine_node_bytes`/`_determine_leaf_words` are inlined in the unpack (`0x00ABA314..0x00ABA440`).
+- **The decode-table builder `_make_decode_table 0x00AB96EC` has five forms:** (nodeb,leafw) = (1,1) 8/8, (1,2) 8/16, (2,1) 16/16, (2,2) 16/32, (4,*) 32/32. `_make_words 0x00AB9300` builds the tree into a 32-bit work array (`marker[33]`, `chase`, node append, `decpack(...)|0x80000000`, the overpopulated-tree `-1`), then the non-4 paths repack to the real width. **C6 is corrected:** the `dec_nodeb==4` path writes **32-bit** (no 8-bit store); the "16-bit store vs 32-bit read" mismatch C6 reported is void. The decoder dispatch `0x00AB9BB0` selects on nodeb then leafw.
+- **The `==4` case is unexercised:** `dec_nodeb==4` iff `used_entries < 2`, and no shipped library codebook has fewer than 4 used entries; `dec_type` 2 and 3 are unreachable.
+- **Floor1 inverse1 `0x00AB8E60`:** the quant table {256,128,86,64}, the tristate `read(1)`, `fit_value[0]/[1]`, the class lookup (11-byte class entries), the `class_subs` cascade word (`vorbis_book_decode`), the per-post sub-book (`0xFF` → memo 0), and the unwrap loop (render_point, `hiroom`/`loroom`/`room`, the step-2 odd/even case, the `0x7fff` masking).
+- **The residue divisor array `0x00AB770C..0x00AB7808`:** `spp`, `partitions_per_word = groupbook->dim`, `partwords`; the per-channel base with stride `dim*partwords`; and the divisor sequence `[partitions^(dim-1), …, partitions, 1]` built at stage 0 (so the last divisor is 1); the channel copy; and the class-word split.
+- **The IMDCT is `mdct_backward(n, in)` in place (two args)** with the stage order presymmetry (`0x00AB3D28`) → butterflies (`0x00AB3FCC`) → the step7/8 loop → the tail `0x00AB39D8` (2^−24). **Still RECOVERABLE_GAP:** the per-stage butterfly/lookup arithmetic and the trig-table indexing (the 13 precomputed tables are at `0x01004A40..` via GOT `0x01040230..0x01040264`).
+
+**Amended:** M6-002's `evidence` now carries these citations; the decode-table builder, floor1 inverse1 and the residue divisor array are buildable, leaving the IMDCT kernel as the last open piece.

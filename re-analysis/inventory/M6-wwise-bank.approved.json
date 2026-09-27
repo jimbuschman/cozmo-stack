@@ -2,7 +2,7 @@
   "subsystem": "M6-wwise-bank",
   "approved": "2026-09-27",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "638051fb120592967ddb0797d8cc523f7a3a44c1ecf0c60a8802635e381faf48",
+  "inventory_sha256": "588c78b61701e3b2f9b2029468431c6f2c59d6d75dc843276169eac8768d8cb8",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -31,7 +31,12 @@
         "C6: decode-table widths 8-bit (format 1, bit7 leaf) / 16-bit (format 2, bit15 leaf), no 32-bit store; the walk loops while the entry >= 0, so leaves are the bit31-set entries (0x00AB9C44 cmp/bge, 0x00AB9C4C bic 0x80000000) -- C5 3a/3b inverted; the +0x14==4 case unresolved",
         "C6: IMDCT 0x00AB4E34 tail-branches into 0x00AB39D8 (0x00AB5A44 b), which applies the only output scale 2^-24 -- C5 7b 'no decode caller' corrected; nominal output still UNKNOWN",
         "C6: residue stage walk 0xAB7808..0xAB7E00 (type 0 shares type 1; class digit, cascade info+4[class], book info+8[class*8+s], fullbooks+60*book, point -8); floor look 0x00AB8018 is a merge sort of floor+0x0C keyed by postlist",
-        "C6: window-combine branches (a*wA+b*wB vs a*wA-b*wB, the vrev64/vswp mirror, the single-window vneg); window default 0x00AB3728 is a 0 pointer dereference (reachability UNKNOWN); floor1 neighbour scan 0x00AB8D68; allocation is 0x00AB3780, overlap driver 0x00AB3520 (corrects C5 9b)"
+        "C6: window-combine branches (a*wA+b*wB vs a*wA-b*wB, the vrev64/vswp mirror, the single-window vneg); window default 0x00AB3728 is a 0 pointer dereference (reachability UNKNOWN); floor1 neighbour scan 0x00AB8D68; allocation is 0x00AB3780, overlap driver 0x00AB3520 (corrects C5 9b)",
+        "C7: codebook fields dec_nodeb (+0x14 in {1,2,4}), dec_leafw (+0x18 in {1,2}), dec_type (+0x1C), q_val (+0x38); _make_decode_table 0x00AB96EC has five forms (1,1)=8/8, (1,2)=8/16, (2,1)=16/16, (2,2)=16/32, (4,*)=32/32; _make_words 0x00AB9300 builds the tree (marker/chase/decpack); C6's 16-bit-vs-32-bit mismatch is void (the ==4 path writes 32-bit)",
+        "C7: the ==4 case (dec_nodeb==4 iff used<2) is unexercised (no shipped book has <4 used); dec_type 2/3 unreachable",
+        "C7: floor1 inverse1 0x00AB8E60 (quant table {256,128,86,64}, tristate read(1), fit_value, class lookup, cascade, sub-book 0xFF->0, the unwrap loop)",
+        "C7: residue divisor array 0x00AB770C..0x00AB7808 (spp, partitions_per_word=groupbook->dim, partwords; per-channel base stride dim*partwords; the divisor sequence [partitions^(dim-1)..1])",
+        "C7: IMDCT is mdct_backward(n,in) in place; stage order presymmetry 0x00AB3D28 -> butterflies 0x00AB3FCC -> step7/8 -> tail 0x00AB39D8 (2^-24); the per-stage butterfly and trig-table indexing remain RECOVERABLE_GAP (13 tables at 0x01004A40 via GOT 0x01040230)"
       ],
       "live_path": true,
       "hardware_required": false
