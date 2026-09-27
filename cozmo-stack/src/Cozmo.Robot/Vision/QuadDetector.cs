@@ -76,33 +76,6 @@ public sealed record QuadDetectorParameters
     /// <c>(scale * 0xCCCC) &gt;&gt; 16 &gt; pixel</c> (0x00890BBE..0x00890BC4). This had been a local guess of 0.75.
     /// </summary>
     public int DarkThresholdQ16 { get; init; } = 0xCCCC;
-
-    // ---- the live ecvcs extractor's reading of the same parameter bank (M11-032/M11-033) ----
-
-    /// <summary>
-    /// The parameters' +0x04 read as the live extractor's window bank does (L2): the number of windows is
-    /// <c>WindowCountMinusTwo + 2</c>. It is the same native word as <see cref="PyramidLevels"/>, which is
-    /// what the non-live binomial path makes of it; shipped 1 gives three windows.
-    /// </summary>
-    public int WindowCountMinusTwo { get; init; } = 1;
-    /// <summary>
-    /// The parameters' +0x08 (L2): <c>list[i] = WindowBase &lt;&lt; i</c>. Shipped 4 gives the half-widths
-    /// <c>{4, 8, 16}</c>.
-    /// </summary>
-    public int WindowBase { get; init; } = 4;
-    /// <summary>
-    /// The short at the parameters' +0x10 (L3), passed on to <c>Extract1dComponents</c> as its run-length
-    /// floor <c>a</c> (D4); a run shorter than this is dropped. Shipped 0 keeps every run.
-    /// <b>MISSING:</b> the evidence does not state that this short is that argument; see
-    /// re-analysis/evidence/m11/ecvcs-extractor.md L3/D4.
-    /// </summary>
-    public int MinRunLength { get; init; } = 0;
-    /// <summary>
-    /// The short at the parameters' +0x12 (L3), passed on to <c>Extract1dComponents</c> as its threshold
-    /// <c>b</c> (D4). Shipped 0; the meaning of any other value is a RECOVERABLE_GAP (open Q2), so the
-    /// extractor refuses it rather than guessing.
-    /// </summary>
-    public int RunThresholdB { get; init; } = 0;
 }
 
 /// <summary>A candidate quadrilateral from the front end, corners in the decoder's order TL, BL, TR, BR.</summary>
@@ -169,29 +142,12 @@ public sealed class QuadDetector
     public IReadOnlyList<DetectedQuad> Detect(GrayImage img)
     {
         var st = new Stats();
-        // M11-032/M11-033: the live (shipped) extractor's multi-window box-filter mask.
-        var mask = EcvcsExtractor.BinaryMask(img, Parameters);
+        var mask = CharacteristicScaleMask(img);
         LastMask = mask;
         st.DarkPixels = mask.Pixels.Count(p => p != 0);
 
-        // M11-034: the live extractor's per-row DP produces the segments; they are regrouped into the
-        // label image and component list the size/fill/hollow/corner stages below already consume. The
-        // engine's CompressConnectedComponentSegmentIds renumbering (D8) is folded into the 1-based label
-        // here; the resolved root ids themselves are not observable downstream.
-        var segments = EcvcsExtractor.ExtractComponents(mask, Parameters.MinRunLength, Parameters.RunThresholdB, out _);
         var labels = new int[img.Width * img.Height];
-        var comps = new List<Component>();
-        foreach (var c in EcvcsExtractor.ToComponents(segments))
-        {
-            var comp = new Component
-            {
-                Label = comps.Count + 1, Pixels = c.Pixels,
-                MinX = c.MinX, MinY = c.MinY, MaxX = c.MaxX, MaxY = c.MaxY,
-            };
-            foreach (var s in c.Segments)
-                for (int x = s.Start; x <= s.End; x++) labels[s.Row * img.Width + x] = comp.Label;
-            comps.Add(comp);
-        }
+        var comps = ConnectedComponents(mask, labels);
         st.Components = comps.Count;
         var quads = new List<DetectedQuad>();
         foreach (var c in comps)
@@ -221,7 +177,52 @@ public sealed class QuadDetector
         return quads;
     }
 
-    // ------------------------------------------------------------------ binomial filter (non-live; retained public API)
+    // ------------------------------------------------------------------ characteristic scale
+
+    /// <summary>
+    /// The engine's characteristic-scale binarization, <c>ExtractComponentsViaCharacteristicScale_binomial</c>
+    /// 0x00890448. Per level it downsamples by two, binomial-filters, takes <c>|filtered - image|</c> as the
+    /// response (<c>Matrix::Elementwise::ApplyOperation&lt;SumOfAbsDiff&gt;</c> at 0x008907F4), upsamples both
+    /// back to full size, and keeps the filtered value wherever the response beats the best so far
+    /// (0x00890B14: <c>if (dog &gt; best) { best = dog; scale = filtered; }</c>, with both buffers starting at
+    /// zero). Then a pixel is dark when <c>(scale * thresholdQ16) &gt;&gt; 16 &gt; pixel</c> (0x00890BBE).
+    ///
+    /// With <see cref="QuadDetectorParameters.PyramidLevels"/> at the shipped 1 there is one level and no
+    /// downsampling, so the scale image is the binomial-filtered image everywhere the response is non-zero
+    /// - a flat neighbourhood leaves the scale at zero and the pixel is never dark, which is the engine's
+    /// behaviour and not a special case here.
+    /// </summary>
+    // fidelity: M11-018 — the dark mask (BinomialFilter + Q16 threshold) and the quad test
+    private GrayImage CharacteristicScaleMask(GrayImage img)
+    {
+        int w = img.Width, h = img.Height;
+        var mask = new GrayImage(w, h);
+        var scale = new byte[w * h];
+        var best = new byte[w * h];
+
+        for (int level = 0; level < Math.Max(1, Parameters.PyramidLevels); level++)
+        {
+            var atLevel = level == 0 ? img : DownsampleByTwo(img, level);
+            var filtered = BinomialFilter(atLevel);
+            int lw = atLevel.Width, lh = atLevel.Height;
+            for (int y = 0; y < h; y++)
+            {
+                int sy = Math.Min(lh - 1, y >> level);
+                for (int x = 0; x < w; x++)
+                {
+                    int sx = Math.Min(lw - 1, x >> level);
+                    int f = filtered.Pixels[sy * lw + sx];
+                    int response = Math.Abs(f - atLevel.Pixels[sy * lw + sx]);
+                    int i = y * w + x;
+                    if (response > best[i]) { best[i] = (byte)Math.Min(255, response); scale[i] = (byte)f; }
+                }
+            }
+        }
+
+        for (int i = 0; i < mask.Pixels.Length; i++)
+            if ((scale[i] * Parameters.DarkThresholdQ16) >> 16 > img.Pixels[i]) mask.Pixels[i] = 1;
+        return mask;
+    }
 
     /// <summary>
     /// <c>ImageProcessing::BinomialFilter&lt;u8,u8,u8&gt;</c> 0x008A2344 (coretech
@@ -285,6 +286,40 @@ public sealed class QuadDetector
     {
         public int Label, Pixels, MinX = int.MaxValue, MinY = int.MaxValue, MaxX = -1, MaxY = -1;
         public double SumX, SumY;
+    }
+
+    private List<Component> ConnectedComponents(GrayImage mask, int[] labels)
+    {
+        int w = mask.Width, h = mask.Height;
+        var comps = new List<Component>();
+        var stack = new Stack<int>();
+        int next = 0;
+        for (int i = 0; i < labels.Length; i++)
+        {
+            if (mask.Pixels[i] == 0 || labels[i] != 0) continue;
+            var c = new Component { Label = ++next };
+            labels[i] = c.Label;
+            stack.Push(i);
+            while (stack.Count > 0)
+            {
+                int p = stack.Pop();
+                int x = p % w, y = p / w;
+                c.Pixels++; c.SumX += x; c.SumY += y;
+                if (x < c.MinX) c.MinX = x; if (x > c.MaxX) c.MaxX = x; if (y < c.MinY) c.MinY = y; if (y > c.MaxY) c.MaxY = y;
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++)
+                    {
+                        int nx = x + dx, ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+                        int q = ny * w + nx;
+                        if (mask.Pixels[q] != 0 && labels[q] == 0) { labels[q] = c.Label; stack.Push(q); }
+                    }
+                if (c.Pixels > Parameters.MaxComponentPixels * 2) { stack.Clear(); }   // runaway background: stop flooding, it will be rejected
+            }
+            comps.Add(c);
+            if (comps.Count >= Parameters.MaxSegments) break;
+        }
+        return comps;
     }
 
     /// <summary><c>InvalidateFilledCenterComponents_hollowRows</c>: the middle rows of a ring have a gap.</summary>

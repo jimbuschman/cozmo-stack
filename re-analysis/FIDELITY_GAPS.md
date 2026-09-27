@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **333 records** over 16 subsystems.
+Manifest of **331 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 203 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 14 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 5 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 65 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 63 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 28 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -34,7 +34,7 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 10 | 0 | 0 | 0 | 0 | yes | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 13 | 0 | 7 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 34 | 3 | 6 | 1 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 32 | 3 | 4 | 1 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 16 | 0 | 0 | 0 | 0 | yes | yes |
 | M13-navigation — Planning, charger and block configurations | 15 | 0 | 0 | 0 | 0 | yes | yes |
 | M14-faces — Face and pet pipeline | 7 | 0 | 0 | 1 | 0 | yes | yes |
@@ -676,7 +676,7 @@ Each of these is a question already answered. The original's behaviour is establ
 **M11-018 — The dark mask and the quad acceptance test are the engine's** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/QuadDetector.cs`
-* effect: None
+* effect: markers are found in different parts of the image, and so detected differently, from the engine
 * rests on: ExtractComponentsViaCharacteristicScale_binomial, BinomialFilter, IsQuadrilateralReasonable and the parameters they are given, read
 * best authority: ExtractComponentsViaCharacteristicScale_binomial 0x00890448, ImageProcessing::BinomialFilter 0x008A2344, IsQuadrilateralReasonable 0x00892B18, ComputeQuadrilateralsFromConnectedComponents 0x00892D70, MarkerDetector::Parameters::Initialize 0x008752F8 and the call in DetectFiducialMarkers at 0x00898C18, read
 * evidence: IsQuadrilateralReasonable 0x00892B18 (minQuadArea 25, symmetry 512 8.8, minDistanceFromEdge 2) -- live; the dark mask 0x008A2344 / binarize 0x00890BB6 are inside the non-live binomial extractor 0x00890448..0x00890DF4 (only caller 0x00890736); the live extractor selector: Parameters byte0=1 (0x008752FC/0x00875304), ExtractComponentsViaCharacteristicScale 0x0088F8BC
@@ -702,30 +702,12 @@ Each of these is a question already answered. The original's behaviour is establ
 
 **M11-032 — The live component extractor is the ecvcs integral-image variant** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/EcvcsExtractor.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/QuadDetector.cs`
 * effect: the connected components (and hence the quads) are found by the wrong algorithm
-* rests on: built in EcvcsExtractor.cs from re-analysis/evidence/m11/ecvcs-extractor.md (L1-L13, F1-F4, B1, D3-D7); QuadDetector's component step now calls it, so the binomial CharacteristicScaleMask and the flood-fill labeller are gone from the production path
+* rests on: the stack's QuadDetector implements the binomial path; the shipped selector byte is 1, so the live extractor is ExtractComponentsViaCharacteristicScale 0x0088F8BC (ecvcs_computeBinaryImage_numFilters3/_5, ScrollingIntegralImage_u8_s32::FilterRow)
 * best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: selector: Parameters byte0=1 (0x008752FC/0x00875304); DetectFiducialMarkers 0x00898B4C ldrb/cmp/beq; live call 0x00898BE0 -> ExtractComponentsViaCharacteristicScale 0x0088F8BC; window bank 0x00898B5A..: size = params+0x04+2, list[i] = params+0x08<<i (shipped {4,8,16}); arguments L3: image, window list, int mult = params+0x0C (0xCCCC), short params+0x10, short params+0x12, ConnectedComponents& 0x00898BAA..0x00898BDA; callback selector 0x0088FA8A..: count==3 -> ecvcs_computeBinaryImage_numFilters3 0x0088F61A; count==5 && mult==0x10000 -> _numFilters5_thresholdMultiplier1 0x0088F75E; else ecvcs_computeBinaryImage; ecvcs_filterRows 0x0088F4D0, ScrollingIntegralImage_u8_s32::FilterRow 0x0088F538, FilterRow_innerLoop 0x0088FA/0x008A5230; tables T1 0xC98958 / T2 0xC98A5C; no down/up-scale in this variant (the pyramid belongs to the non-live binomial function 0x00890448); 0xCCCC is read by BOTH paths (here as the numFilters3 binarise multiplier)
-* outstanding: built for the shipped settings; still IMPLEMENTATION_GAP because the SII vertical row bookkeeping (0x008A4DB0 ScrollDown / 0x008A51E0 get_maxRow, open Q1) is a RECOVERABLE_GAP modelled by replicating maxScale pixels/rows at both ends, and the non-3 binarise callbacks (numFilters5 / _thresholdMultiplier1 / generic, L12) are unbuilt. The Extract1dComponents run floor a and threshold b, and CompressConnectedComponentSegmentIds' remap ordering, are open (M11-034).
-
-**M11-033 — The ecvcs window bank, box-mean filter and numFilters3 selection** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/EcvcsExtractor.cs`
-* effect: the binary mask (and hence the components) is computed wrongly
-* rests on: built in EcvcsExtractor.cs from re-analysis/evidence/m11/ecvcs-extractor.md: the L2 window bank, the F1-F4 box mean over the integral image with the tables 0xC98958/0xC98A5C, and the B1 numFilters3 selection
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: window bank size = params+0x04+2, list[i] = params+0x08<<i (0x00898B5A..); ecvcs_filterRows 0x0088F4D0 builds Rectangle<s16>{-s,+s,-s,+s} and calls FilterRow<u8> 0x0088F538 with mult/shift from 0xC98958/0xC98A5C = round(2^T2[s]/(2s+1)^2); FilterRow_innerLoop 0x008A5230: out[i] = (p3-p2+p0-p1)*mult>>shift (the box mean); numFilters3 0x0088F61A: v = (|f1-f0|>|f2-f1|)?f1:f2 (strict gt); mask = ((v*0xCCCC)>>16) > pixel; numFilters5 0x0088F684 and _thresholdMultiplier1 0x0088F75E over five windows (>= tie); the latter uses v > pixel
-* outstanding: built for the shipped settings; still IMPLEMENTATION_GAP because the SII row bookkeeping (ScrollDown 0x008A4DB0 / get_maxRow 0x008A51E0) is a RECOVERABLE_GAP modelled by replicating maxScale pixels and rows at both ends, and the T1/T2 tables are recovered only at the shipped half-widths 4/8/16 (a general table is a RECOVERABLE_GAP). numFilters5 / _thresholdMultiplier1 / the generic callback (L12) are unbuilt: the shipped count is 3, and any other count is refused.
-
-**M11-034 — The per-row ConnectedComponents DP and the segment format** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/EcvcsExtractor.cs`
-* effect: components are merged/identified wrongly
-* rests on: built in EcvcsExtractor.cs from re-analysis/evidence/m11/ecvcs-extractor.md (D3-D7): the run extraction, the min union-find with no path compression, Finalize's id resolution and the 8-byte ConnectedComponentSegment<u16> format; QuadDetector rebuilds its label image and component list from the resolved segments
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: Extract2dComponents_PerRow_Initialize/NextRow/Finalize thunk 0x00893BAA..: state+0x104 (1->2->3), the three row lists +0x34/+0x68/+0x9c, the u16 parent/id array +0xd0 (capacity params+0x40=39000); Extract1dComponents 0x00896FD6: one ConnectedComponentSegment<u16> per run of 1s {s16 start, s16 end, u16 row 0xFFFF, u16 id 0xFFFF}; runs shorter than arg a dropped; NextRow 0x00893F5C: union-find (min, no path compression) across the previous row; a non-overlapping run gets a new id; Finalize 0x008943B8 resolves ids and sets the max id; output 8 bytes/element; CompressConnectedComponentSegmentIds 0x00894A48 renumbers surviving components to 1..N; TraceNextExteriorBoundary consumes the list via get_size/IsValid/get_isSortedInId (0x008C6B26/2E/5C)
-* outstanding: built; still IMPLEMENTATION_GAP because the Extract1dComponents threshold b (0x0089704A) meaning is a RECOVERABLE_GAP (only the shipped b=0 is modelled; a non-zero value is refused rather than guessed) and the source of the run-length floor a (wired from the parameters' +0x10 short) is not settled by the evidence. CompressConnectedComponentSegmentIds' remap ordering tail was not read, so the output is the resolved root ids, not a renumbered 1..N list.
+* evidence: 0x0088F8BC function; Extract2dComponents_PerRow_Initialize 0x0088FA70; ecvcs_computeBinaryImage_numFilters3 0x0088F61A / _5 0x0088F684 / _5_thresholdMultiplier1 0x0088F75E; ecvcs_filterRows 0x0088F4D0; ScrollingIntegralImage_u8_s32::FilterRow 0x0088F538
+* outstanding: rework QuadDetector from the binomial path to the live ecvcs integral-image extractor (0x0088F8BC); the dark-mask multiplier 0xCCCC belongs to the non-live path
 
 ## What remains after both: blocked externally, or needing hardware
 
