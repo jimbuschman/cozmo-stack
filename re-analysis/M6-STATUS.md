@@ -245,5 +245,8 @@ python re-analysis/tools/fidelity.py --check
 store (`d2ec5cf`), M6-008 continuous (`04c1b19`), M6-003 ADPCM (`9c55ab4`, settled EXACT_SOURCE),
 M6-004 resampler (`4173cc0`), M6-011 voice LPF/HPF (`c0b87a3`), M6-012 mixer (`6b479c4`), M6-010 gain
 (`777de36`). Corrections C1–C4 approved. Batch 4 complete: M6-014 (`4afd8da`), M6-015 (`acca8da`),
-M6-016 (`2661e91`), M6-013 (`4e24da3`). Remaining: M6-017 (the runtime skeleton), then M6-002 (Vorbis),
-then the final settle+wiring pass.
+M6-016 (`2661e91`), M6-013 (`4e24da3`). M6-017 (the runtime skeleton) built (`a209a88`). M6-002 (Vorbis) is partial (`041e21a`) plus the
+correction-C5 arithmetic; its remaining RECOVERABLE_GAPs (the decode-table builder `0x00AB96EC`, the
+IMDCT normalisation `0x00AB39D8`, the residue stage walk, the floor look helper `0x00AB8018`, the
+window-combine branch, the window default) need another extraction pass before it can decode. Then
+the final settle+wiring pass.
