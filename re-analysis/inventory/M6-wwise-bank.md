@@ -1069,3 +1069,93 @@ A fourth extractor pass (report `re-analysis/evidence/m6-vorbis/vorbis-imdct.md`
 - **The twiddles are one 615-float master table** `0x01004A40..0x010053DC` with **13 GOT views** (C7's "13 tables" was an over-read), `±sin/cos(k·pi/8192)` and `2·cos(k·pi/4096)` in 4-lane broadcast groups; the exact bytes must be **vendored**, not regenerated (many are 1–2 ULP off a .NET recomputation).
 - **Corrections:** the global `*0x0108E648` is a **pointer** (a data base), not `n`; its writer was not located, so "in place" is unproven. The tail's rotation (five tables + `bitrev9` at `0x01004640`) is RECOVERABLE_GAP (C7 2h said it was settled). The alternate entry `0x00AB5A54` (shift=9) is dead for shipped power-of-two block sizes.
 - **Decision needed (operator):** fund a lane-level transliteration and vendor the 2460 bytes, or accept an EQUIVALENT_IMPLEMENTATION (a float Tremor-lowmem `mdct.c`) and record the divergence as policy. The kernel stays **fail-closed** (the decoder refuses) until that is decided.
+
+## Correction C9 (manager, 2026-09-27): exact IMDCT and STMG unresolved bodies
+
+The operator's standing decision is exact reproduction. X5 therefore read the
+IMDCT instruction-by-instruction and reopened the consumers behind `M6-020`.
+The citation check reopened all 21 X5 rows in the shipped `.so` and passed.
+
+### M6-002: exact float NEON IMDCT
+
+- Packet inverse calls `mdct_backward(n, pcm[channel])` at
+  `0x00AB6EEC..0x00AB6F04`. Entry `0x00AB4E34` derives
+  `shift = 13-lowest_set_bit(n,>=5)` and `n2=n/2`.
+- The normative phase order and arithmetic are the literal instructions:
+  pre-symmetry `0x00AB3D28..0x00AB3FB0`, large butterfly
+  `0x00AB3FCC..0x00AB4E30`, recursive stages
+  `0x00AB4FAC..0x00AB5244`, fixed terminal butterfly
+  `0x00AB5248..0x00AB5A1C`, and bit-reversed rotation/tail
+  `0x00AB39D8..0x00AB3CF0`. Binary32 lane operations round after every listed
+  operation; there is no FMA. `vrev64.32`, `vswp`, `vtrn.32`, and `vld4.32`
+  retain their ARM lane semantics. Algebraic reassociation is not source-exact.
+- The tail applies `0x33800000` (`2^-24`) and indexes the complete 512-entry
+  `u16` bitrev9 table at `0x01004640..0x01004A40`.
+- **C8 correction:** the master trig region is **584 binary32 words** at
+  `0x01004A40..0x01005360`, not 615 floats. The following 31 words at
+  `0x01005360..0x010053DC` are integer masks `0,1,3,...,0x3fffffff`. The 13
+  GOT views start at float offsets
+  `0,36,72,108,144,172,200,228,256,296,368,440,512`; none crosses the trig
+  boundary. Both tables are copied byte-for-byte from the report, never
+  regenerated.
+- BSS `0x0108E648`, reached through GOT `0x01040268`, supplies the native work
+  pointer. Three gap passes found no writer: the slot's only direct Wwise
+  `.text` reference is the read/check at `0x00AB4E50..0x00AB4E64`; neither
+  setup `0x00AB6380..0x00AB6780` nor packet inverse
+  `0x00AB6B14..0x00AB6F20` writes it. Native allocation/lifetime remains
+  `RECOVERABLE_GAP`; B1 may use an explicit internal work buffer but must not
+  claim native ownership was recovered.
+
+`M6-002` stays `IMPLEMENTATION_GAP` until B1 transliterates the normative
+ranges, vendors both exact tables, and wires the completed decoder. C8's
+equivalent-implementation option is void under the operator's exact decision.
+
+### M6-020: STMG item consumers and trailing bodies
+
+- State items are `{u32,u32,u32}` keyed by the first ordered pair, with the
+  third word stored at item `+8` (`0x00A27CA4..0x00A27D60`). A nonzero handler
+  flag also writes the reversed pair (`0x00A27D78..0x00A27DD0`); the bank
+  reader passes zero. `{fromStateId,toStateId,transitionTimeMs}` are public
+  Wwise labels for this exact pair/value behavior, not recovered identifiers.
+- Switch items are 12-byte source records. `0x00A325E0..0x00A32914` copies
+  source word 0 to generated curve point `+0`, writes `float(itemIndex)` at
+  `+4`, copies source word 2 at `+8`, and copies source word 1 into a parallel
+  ID array before calling `0xA12050`. The public labels are
+  `{rtpcValue,switchId,interpolation}`; the raw copy/consumer shape is
+  normative.
+- Trailing A is exactly `u32 id + 6*u16 + 10*u32` (56 bytes). Handler
+  `0x00A3B84C..0x00A3B998` deduplicates by id/refcount or allocates 0x48 and
+  copies the 56 bytes to object `+0x10`. Numeric property-code stores are
+  exactly `0x00A3B0F8..0x00A3B1E8`.
+- Trailing B is exactly `u32 id + 9*u32` (40 bytes). Handler
+  `0x00A3BA44..0x00A3BB80` deduplicates by id/refcount or allocates 0x38 and
+  copies the 40 bytes to object `+0x10`. Numeric codes 0x10..0x18 write the
+  nine post-id words at body offsets 4..36 (`0x00A3B1EC..0x00A3B268`).
+- Human-readable trailing-object class/property names are stripped and
+  `BLOCKED_EXTERNAL`. The exact byte behavior does not depend on inventing
+  them. Both trailing counts and all state-item counts are zero in every
+  shipped bank; `M6-020.live_path` remains false.
+
+`M6-020` becomes `IMPLEMENTATION_GAP`: the raw layouts and consumers are
+settled for construction, but the stack still refuses nonzero trailing counts.
+
+## Appendix I: C9 extraction reports
+
+Normative report paths:
+
+- `re-analysis/research/20260927-X5-imdct-extraction.md` — rows X5-I1..I10,
+  complete instruction listings, the 584 exact trig words, and 512 exact
+  bit-reversal entries.
+- `re-analysis/research/20260927-X5-stmg-extraction.md` — rows X5-S1..S11,
+  exact raw layouts and property-code mappings.
+- `re-analysis/research/20260927-I-M6-gap1-extraction.md` — direct GOT/xref
+  pass for the work pointer.
+- `re-analysis/research/20260927-I-M6-gap2-extraction.md` — adjacent globals
+  and Vorbis lifecycle pass.
+- `re-analysis/research/20260927-I-M6-gap3-extraction.md` — ownership boundary
+  and the exact next operation required to settle it.
+
+The rows and conclusions above are copied from those reports. The large
+literal instruction/table appendices remain in the first report so the
+approved inventory has one unambiguous normative byte source without a second
+copy that could drift.
