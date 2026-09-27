@@ -49,6 +49,7 @@ public sealed class WwiseMedia
         _ => null,
     };
 
+    // fidelity: M6-003
     /// <summary>
     /// Whether this build can turn this file into samples. The one place that answers the question, so a
     /// diagnostic cannot drift out of step with what the decoder actually does — which it did once, still
@@ -56,11 +57,17 @@ public sealed class WwiseMedia
     ///
     /// Vorbis additionally needs the packed codebook library to be present; see
     /// <see cref="WwiseAudioSource.CanDecodeVorbis"/>.
+    ///
+    /// ADPCM has no channel-count gate in the original (M6-003): the codec source checks only the media
+    /// format tag (wFormatTag == 2 at 0x00A72704 and 0x00A73B2C), the decoder 0x00A7A194 is channel-count
+    /// generic — its fifth argument only sets the output interleave stride channels*2 (0x00A7A1C4) — and the
+    /// three callers map block half 0 to output channel 0 and half 1 to output channel 1 (0x00A72618,
+    /// 0x00A73EA0, 0x00A74100). So a format-tag-2 file is decodable at any channel count.
     /// </summary>
     public bool IsDecodable => Codec switch
     {
         WwiseCodec.Vorbis => true,
-        WwiseCodec.Adpcm => Channels == 1,   // the stereo block layout is not established
+        WwiseCodec.Adpcm => true,
         _ => false,
     };
 
@@ -68,8 +75,7 @@ public sealed class WwiseMedia
     public string? UndecodableReason => Codec switch
     {
         WwiseCodec.Vorbis => null,
-        WwiseCodec.Adpcm when Channels == 1 => null,
-        WwiseCodec.Adpcm => $"stereo ADPCM: the block layout is not established",
+        WwiseCodec.Adpcm => null,
         _ => $"unknown codec (format tag 0x{FormatTag:X4})",
     };
 

@@ -174,7 +174,118 @@ public class WwiseTests
         Assert.Throws<InvalidDataException>(() => WwiseMedia.Parse(notWave));
     }
 
-    // ------------------------------------------------------------------ the ADPCM decoder
+    // ------------------------------------------------------------------ the ADPCM decoder (M6-003)
+
+    /// <summary>A mono 36-byte block from a header predictor, a step index and the nibble bytes.</summary>
+    private static byte[] AdpcmBlock(short predictor, byte index, params byte[] nibbleBytes)
+    {
+        var block = new byte[36];
+        BitConverter.GetBytes(predictor).CopyTo(block, 0);
+        block[2] = index;
+        for (int i = 0; i < nibbleBytes.Length && i < 32; i++) block[4 + i] = nibbleBytes[i];
+        return block;
+    }
+
+    private static short[] DecodeMonoBlock(byte[] block)
+    {
+        var pcm = WwiseAdpcm.Decode(WwiseMedia.Parse(Riff("adpcm", 1, 44100, 36, block)));
+        Assert.Equal(64, pcm.Length);
+        return pcm;
+    }
+
+    /// <summary>
+    /// M6-003 / row 0.8 (0x00A7A208): the block header's i16 predictor is written as output sample 0.
+    /// Predictor 0x1234, index 0 and all nibbles zero: the diff is 7>>3 = 0 and the index cannot fall below
+    /// 0, so the predictor never moves and the whole block is the header sample.
+    /// </summary>
+    [Fact]
+    public void TheAdpcmHeaderPredictorIsOutputSampleZero()
+    {
+        var pcm = DecodeMonoBlock(AdpcmBlock(0x1234, 0, new byte[32]));
+        Assert.Equal(0x1234, pcm[0]);
+        Assert.All(pcm, s => Assert.Equal(0x1234, s));
+    }
+
+    /// <summary>
+    /// M6-003 / row 0.8 (0x00A7A220..0x00A7A250): the diff is ((2·(n&amp;7)+1)·step)&gt;&gt;3, not the IMA
+    /// shift sum. The inventory's own example: at step 7 (index 0), nibble 7 gives 13, where the shift sum
+    /// gives 11. The next nibble then uses the moved index 8 (step 16), so sample 2 is 15.
+    /// </summary>
+    [Fact]
+    public void TheAdpcmDiffIsTheWwiseFormulaNotTheImaShiftSum()
+    {
+        var pcm = DecodeMonoBlock(AdpcmBlock(0, 0, 0x07));
+        Assert.Equal(0, pcm[0]);
+        Assert.Equal(13, pcm[1]);        // ((2*7+1)*7)>>3 = 13, the shift sum would give 11
+        Assert.Equal(15, pcm[2]);        // step 16 at index 8, nibble 0: 16>>3 = 2
+    }
+
+    /// <summary>
+    /// M6-003 / row 0.8 (0x00A7A334..0x00A7A3B4): byte +0x23 contributes its low nibble only. Two blocks
+    /// that differ only in that byte's high nibble must decode identically, and the 64th sample is the low
+    /// nibble 7 applied at step 7, so 13.
+    /// </summary>
+    [Fact]
+    public void TheAdpcmLastByteUsesOnlyItsLowNibble()
+    {
+        var low = new byte[32];
+        low[31] = 0x07;
+        var high = new byte[32];
+        high[31] = 0xF7;
+        var a = DecodeMonoBlock(AdpcmBlock(0, 0, low));
+        var b = DecodeMonoBlock(AdpcmBlock(0, 0, high));
+        Assert.Equal(a, b);
+        Assert.Equal(13, a[63]);
+    }
+
+    /// <summary>
+    /// M6-003 / row 0.8 (0x00A7A260..0x00A7A27C): the predictor clamps to int16, it does not wrap. At index
+    /// 88 the step is 32767, so nibble 7 adds 61438 and nibble 15 (sign set) subtracts it.
+    /// </summary>
+    [Fact]
+    public void TheAdpcmPredictorSaturatesToInt16()
+    {
+        var positive = DecodeMonoBlock(AdpcmBlock(32767, 88, 0x07));
+        Assert.Equal(32767, positive[0]);
+        Assert.Equal(32767, positive[1]);        // 32767 + 61438 clamps, and does not wrap negative
+
+        var negative = DecodeMonoBlock(AdpcmBlock(-32768, 88, 0x0F));
+        Assert.Equal(-32768, negative[0]);
+        Assert.Equal(-32768, negative[1]);       // -32768 - 61438 clamps
+    }
+
+    /// <summary>
+    /// M6-003 / row 0.8 (0x00A7A2A0..0x00A7A2B0): the step index clamps to 0..88. Starting at 88, nibble 7
+    /// would move it to 96; it stays at 88, so the next nibble still uses the step at 88 rather than reading
+    /// past the table.
+    /// </summary>
+    [Fact]
+    public void TheAdpcmIndexClampsToTheTable()
+    {
+        var pcm = DecodeMonoBlock(AdpcmBlock(0, 88, 0x07, 0x00));
+        Assert.Equal(32767, pcm[1]);             // 61438 clamps
+        Assert.Equal(32767, pcm[2]);             // index stayed 88, so step 32767 again: +4095 clamps
+    }
+
+    /// <summary>
+    /// M6-003 / 0x00A7A194 and its callers (0x00A72618, 0x00A73EA0, 0x00A74100): a stereo block is two
+    /// 36-byte halves and half 0 is output channel 0, interleaved into int16. Distinct halves make the
+    /// mapping visible rather than coincidental.
+    /// </summary>
+    [Fact]
+    public void AStereoAdpcmBlockInterleavesHalfZeroAsChannelZero()
+    {
+        var block = new byte[72];
+        AdpcmBlock(0, 0, 0x07).CopyTo(block, 0);       // half 0 -> channel 0
+        AdpcmBlock(1000, 0, 0x07).CopyTo(block, 36);   // half 1 -> channel 1
+
+        var pcm = WwiseAdpcm.Decode(WwiseMedia.Parse(Riff("adpcm", 2, 48000, 72, block)));
+        Assert.Equal(128, pcm.Length);                  // 64 frames x 2 channels
+        Assert.Equal(0, pcm[0]);                        // ch0 sample 0 = half 0's header predictor
+        Assert.Equal(1000, pcm[1]);                     // ch1 sample 0 = half 1's header predictor
+        Assert.Equal(13, pcm[2]);                       // ch0 sample 1 = half 0's first nibble
+        Assert.Equal(1013, pcm[3]);                     // ch1 sample 1 = half 1's first nibble
+    }
 
     /// <summary>
     /// IMA is a feedback loop: a wrong step table, index table or nibble order makes the predictor run
@@ -200,8 +311,8 @@ public class WwiseTests
         var block = new byte[36];                     // predictor 0, index 0, all nibbles zero
         var pcm = WwiseAdpcm.Decode(WwiseMedia.Parse(Riff("adpcm", 1, 44100, 36, block)));
         Assert.Equal(64, pcm.Length);
-        // a zero nibble still moves by step>>3, so the signal stays tiny rather than exactly zero
-        Assert.All(pcm, s => Assert.InRange(s, (short)-64, (short)64));
+        // at step 7 a zero nibble moves by 7>>3 = 0 and the index cannot fall below 0, so it is exactly zero
+        Assert.All(pcm, s => Assert.Equal(0, s));
     }
 
     [Fact]
@@ -447,6 +558,44 @@ public class WwiseTests
     }
 
     /// <summary>
+    /// One shipped ADPCM block decoded exactly. The expected samples are the row's own arithmetic applied to
+    /// the block's bytes (M6-003 / row 0.8): the header predictor is sample 0, then 63 nibbles with
+    /// diff = ((2·(n&amp;7)+1)·step)&gt;&gt;3. Media 1006824986 is mono, 44100 Hz, 36-byte blocks; its first
+    /// block has predictor -16182 and index 70, and its first 64 samples are asserted in full.
+    /// </summary>
+    [Fact]
+    public void AShippedAdpcmBlockDecodesToTheRowsExactSamples()
+    {
+        var dirs = SoundDirs();
+        if (dirs is null) return;
+        using var lib = WwiseSoundLibrary.Load(dirs);
+        if (lib.MediaFileCount == 0) return;
+
+        var bytes = lib.ReadMedia(1006824986, out _);
+        Assert.NotNull(bytes);                        // a shipped file, not an optional one
+        var parsed = WwiseMedia.Parse(bytes!);
+        Assert.Equal(WwiseCodec.Adpcm, parsed.Codec);
+        Assert.Equal(1, parsed.Channels);
+        Assert.Equal(44100, parsed.SampleRate);
+        Assert.Equal(36, parsed.BlockAlign);
+
+        var pcm = WwiseAdpcm.Decode(parsed);
+        Assert.Equal(parsed.SampleCount, pcm.Length);
+        short[] expected =
+        [
+            -16182, -11025, -979, 9072, 15598, 14412, 6861, -5887,
+            -14573, -16152, -11845, -98, 10957, 15264, 13959, 5653,
+            -6213, -14109, -15544, -9018, 1661, 11712, 15627, 14441,
+            4733, -7014, -14910, -16345, -9819, 860, 10911, 17437,
+            13878, 4170, -7577, -15473, -14038, -7512, 3167, 13218,
+            17133, 11200, 1492, -7644, -15950, -14872, -8008, 3581,
+            14636, 16071, 12156, 1477, -8574, -15100, -13914, -6363,
+            4423, 14474, 15779, 9846, 138, -11609, -16347, -14912,
+        ];
+        Assert.Equal(expected, pcm[..64]);
+    }
+
+    /// <summary>
     /// The stereo ADPCM block is two mono blocks side by side. The header says 54000 bytes per second at
     /// 48000 Hz with a 72-byte block: 750 blocks a second, 64 samples per channel in each, which is what
     /// one 36-byte half holds. Read that way every per-channel header carries a step index inside the
@@ -488,6 +637,17 @@ public class WwiseTests
                 Assert.True(pinned <= pcm.Length / 500, $"{m.MediaId}: {pinned} of {pcm.Length} samples pinned");
             }
         Assert.Equal(7, files);
+
+        // M6-003 / row 0.8 (gapB D2): stereo is [ch0 36 B][ch1 36 B] interleaved into int16. Media
+        // 764520435 has different channels in its first block; its first 16 interleaved samples are the row's
+        // arithmetic on those two 36-byte halves, ch0 in the even positions and ch1 in the odd ones.
+        var sb = lib.ReadMedia(764520435, out _);
+        Assert.NotNull(sb);
+        var sp = WwiseMedia.Parse(sb!);
+        Assert.Equal(2, sp.Channels);
+        Assert.Equal(72, sp.BlockAlign);
+        var spcm = WwiseAdpcm.Decode(sp);
+        Assert.Equal(new short[] { 0, 0, 1, 1, 4, 0, 4, 2, 6, 2, 8, 2, 10, 4, 10, 6 }, spcm[..16]);
     }
 
     /// <summary>
@@ -659,9 +819,12 @@ public class WwiseTests
 
         var monoAdpcm = WwiseMedia.Parse(Riff("adpcm", 1, 44100, 36, new byte[36]));
         Assert.True(monoAdpcm.IsDecodable);
+        Assert.Null(monoAdpcm.UndecodableReason);
 
+        // M6-003 / 0x00A72704, 0x00A73B2C, 0x00A7A194: the original gates ADPCM on the format tag only, not
+        // on the channel count, so a stereo format-tag-2 media is decodable too.
         var stereoAdpcm = WwiseMedia.Parse(Riff("adpcm", 2, 48000, 72, new byte[72]));
-        Assert.False(stereoAdpcm.IsDecodable);
-        Assert.Contains("stereo", stereoAdpcm.UndecodableReason);
+        Assert.True(stereoAdpcm.IsDecodable);
+        Assert.Null(stereoAdpcm.UndecodableReason);
     }
 }

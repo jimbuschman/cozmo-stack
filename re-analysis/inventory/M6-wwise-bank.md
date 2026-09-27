@@ -1005,3 +1005,14 @@ The M6-008 build left three rows under-specified; they are settled by a targeted
 - **Unobservability:** the ping-pong branch (every shipped RanSeq `+0x91` byte is 0x12/0x1A, bit5 clear), the drawn loop count and the loopMin/loopMax range are **unreachable in the shipped banks** (all 25 continuous containers are loop 0 or 1). They are source-exact but cannot be capture-verified.
 
 **Amended:** M6-008's `location` is the new `WwiseContinuous.cs` (the standalone decision module) and its `unresolved` lists the pieces the rows still mark RECOVERABLE_GAP (the mode-4 PBI internals beyond the start offset/chain id, the modes-1/2 action-manager delay resolution, EndOfEvent/PBI Term latency, the bit4-clear shared state, mode 3, zero-frame transitions, the start-notification/`src+0x10` timing). M6-008 stays IMPLEMENTATION_GAP (unwired).
+
+## Correction C4 (manager, 2026-09-26): M6-003 ADPCM — tables, channel mapping, and the stereo gate
+
+The M6-003 build left one `MISSING` (the media decodability gate) and two details the row cited only by address; a targeted read settles them:
+
+- **The tables are the standard IMA/DVI4 tables.** Step table 89 i16 at `0x00FFD650` (7, 8, 9, … 32767) and index table 16 **i16** at `0x00FFD708` (`-1,-1,-1,-1,2,4,6,8,-1,-1,-1,-1,2,4,6,8`; 16-bit here, not the usual 16 bytes). The C# arrays are byte-exact.
+- **The channel mapping is half 0 = channel 0, half 1 = channel 1.** All three callers (`0x00A72618`, `0x00A73EA0`, `0x00A74100`) loop `c = 0..channels-1`, feeding input `base + c·0x24` and output `out + c·2`; the 5th argument only sets the interleave stride (`channels·2`, `0x00A7A1C4`). Row 0.8's RECOVERABLE_GAP is settled.
+- **There is no source-side channel gate.** The ADPCM source checks only the media format tag (`wFormatTag == 2`, `0x00A72704`/`0x00A73B2C`); the decoder is channel-count generic. The 7 stereo format-tag-2 media in Cozmo.bnk (blockAlign 72, 4 bits) decode and route; the stack's `WwiseMedia` refusal was a stack-side gate with no counterpart and has been removed.
+- **The arithmetic** was repaired to the row: the header predictor is output sample 0, byte +0x23 contributes its low nibble only (63 nibbles total, 64 samples/block), `diff = ((2·(n&7)+1)·step)>>3` with the sign from bit 3, predictor clamped to int16, index clamped 0..88.
+
+**Settled:** M6-003 is **EXACT_SOURCE** (per-block arithmetic, tables, layout and mapping confirmed against `0x00A7A194`, `0x00FFD650`/`0x00FFD708` and the callers; verifier PASS). Queued (non-blocking, unreachable on the 227 shipped ADPCM media): the header step-index clamp the source lacks, the `Decode` 1–2 channel limit against the channel-generic runtime, and the stale `WwiseAudioSource` "seven stereo ADPCM undecodable" comment. The `fmt+0x14` byte-1 semantics remain UNKNOWN (moot: byte 0 == nChannels in all 227 files).

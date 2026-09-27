@@ -2180,13 +2180,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
       "evidence": [
         "decoder 0x00A7A194..0x00A7A3C4 (step table 0x00FFD650, index 0x00FFD708)",
-        "callers 0x00A725F8..0x00A72624, 0x00A73E88..0x00A73EAC, 0x00A740E0..0x00A7410C"
+        "callers 0x00A725F8..0x00A72624, 0x00A73E88..0x00A73EAC, 0x00A740E0..0x00A7410C",
+        "step table 0x00FFD650 = the standard IMA 89 i16 (7,8,9,...,32767); index table 0x00FFD708 = 16 i16 (-1,-1,-1,-1,2,4,6,8,-1,-1,-1,-1,2,4,6,8), 16-bit entries",
+        "channel mapping half 0 = channel 0, half 1 = channel 1 (callers 0x00A72618, 0x00A73EA0, 0x00A74100; the 5th argument only sets the interleave stride channels*2 at 0x00A7A1C4)",
+        "no source-side channel gate: only wFormatTag == 2 (0x00A72704, 0x00A73B2C); the 7 shipped stereo format-tag-2 media (blockAlign 72, 4 bits) decode and route"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "WwiseTests.TheStereoAdpcmBlockIsTwoMonoBlocksSideBySide",
+      "test": "WwiseTests.TheAdpcmHeaderPredictorIsOutputSampleZero, WwiseTests.TheAdpcmDiffIsTheWwiseFormulaNotTheImaShiftSum, WwiseTests.AShippedAdpcmBlockDecodesToTheRowsExactSamples, WwiseTests.AStereoAdpcmBlockInterleavesHalfZeroAsChannelZero, WwiseTests.WhatIsDecodableIsDecidedInExactlyOnePlace",
       "id": "M6-003"
     },
     {

@@ -1,31 +1,30 @@
 namespace Cozmo.Robot.Animation.Wwise;
 
 /// <summary>
-/// Decoder for the ADPCM Wwise files in this build, which are ordinary IMA ADPCM in fixed blocks.
+/// The runtime's IMA ADPCM block decoder, 0x00A7A194, ported exactly (M6-003).
 ///
-/// That it is plain IMA was established by decoding rather than assumed. A 36-byte block at 44100 Hz with
-/// the header's stated 24806 average bytes per second implies 689.05 blocks per second and so exactly 64
-/// samples per block, which is what <c>(36 - 4) * 2</c> gives: a four-byte block header followed by 32
-/// bytes of nibble pairs, with the header's sample used as the starting predictor and not emitted. Decoding
-/// all 220 mono ADPCM files this way converges — peaks land just under full scale with no clipped samples at
-/// all — which a wrong nibble order or step table would not do, because IMA diverges and pins to the rails
-/// within a few dozen samples when its state is wrong.
+/// A 36-byte channel block is a signed 16-bit predictor at +0, an 8-bit step index at +2, an unused byte at
+/// +3, then nibbles. The predictor is emitted as output sample 0 (0x00A7A208). Bytes +4..+0x22 give two
+/// samples each, low nibble first (0x00A7A214..0x00A7A324), and byte +0x23 gives its low nibble only
+/// (0x00A7A334..0x00A7A3B4). So a block is the header sample plus 63 nibbles, 64 samples.
 ///
-/// Block layout: a signed 16-bit starting predictor, an unsigned 8-bit step index, one unused byte, then
-/// the nibbles, low nibble of each byte first. Blocks are 36 bytes.
+/// Each nibble n moves the predictor by diff = ((2·(n&amp;7)+1)·step)&gt;&gt;3, subtracted when bit 3 is set
+/// (0x00A7A220..0x00A7A250). The predictor is clamped to int16 (0x00A7A260..0x00A7A27C) and the index to
+/// 0..88 (0x00A7A2A0..0x00A7A2B0). This is not the IMA shift sum: at step 7 with nibble 7 it gives 13, where
+/// the shift sum gives 11.
 ///
-/// <b>Stereo.</b> The seven stereo files use a 72-byte block, and the block is two of those 36-byte mono
-/// blocks side by side - the left channel's header and nibbles, then the right channel's. The arithmetic
-/// says so before the bytes do: the header gives 54000 bytes per second at 48000 Hz, so 750 blocks per
-/// second and 64 samples per channel per block, which is exactly what one 36-byte half holds
-/// (<c>(36 - 4) * 2</c>). The bytes agree: read that way, all 226 per-channel headers across the seven
-/// files carry a step index inside the table's 0..88, and none of the 14464 samples in five of them ever
-/// reaches the rails (the other two touch them 2 and 14 times, which is ordinary near-full-scale
-/// content). Read as two four-byte headers up front followed by one run of nibbles, a quarter of the step
-/// indices are out of range - which is the reading an earlier version of this file tried and rejected.
+/// The step table is the i16 table at 0x00FFD650 and the index adjustment at 0x00FFD708 (= +0xB8). Stereo is
+/// [ch0 36 B][ch1 36 B], interleaved into int16, 64 frames per block (gapB D2).
+///
+/// The channel-to-half mapping, half c is output channel c, is from the three callers (0x00A72618,
+/// 0x00A73EA0, 0x00A74100): each advances the input by one 36-byte half per channel and writes channel c at
+/// output stride channels. The approved inventory still labels this mapping RECOVERABLE_GAP pending the
+/// manager's record update.
 /// </summary>
 public static class WwiseAdpcm
 {
+    // fidelity: M6-003
+
     // The IMA step table and index adjustment, unchanged from the IMA/DVI definition.
     private static readonly short[] StepTable =
     {
@@ -52,7 +51,7 @@ public static class WwiseAdpcm
         int channels = media.Channels, blockAlign = media.BlockAlign;
         if (channels is not (1 or 2))
             throw new InvalidDataException($"ADPCM with {channels} channels is not decoded");
-        if (blockAlign < HeaderBytes * channels || blockAlign % channels != 0)
+        if (blockAlign <= HeaderBytes * channels || blockAlign % channels != 0)
             throw new InvalidDataException($"ADPCM block of {blockAlign} bytes does not fit {channels} channels");
 
         var data = media.Data.Span;
@@ -77,7 +76,12 @@ public static class WwiseAdpcm
                 index[c] = Math.Clamp(half[2], 0, StepTable.Length - 1);
 
                 int write = (b * samplesPerBlock * channels) + c;
-                for (int i = HeaderBytes; i < perChannel; i++)
+                // The header predictor is output sample 0 (0x00A7A208).
+                outBuf[write] = (short)predictor[c];
+                write += channels;
+
+                // Bytes +4..+0x22 give two samples each, low nibble first (0x00A7A214..0x00A7A324).
+                for (int i = HeaderBytes; i < perChannel - 1; i++)
                 {
                     byte v = half[i];
                     outBuf[write] = Step(v & 0x0F, ref predictor[c], ref index[c]);
@@ -85,19 +89,23 @@ public static class WwiseAdpcm
                     outBuf[write] = Step(v >> 4, ref predictor[c], ref index[c]);
                     write += channels;
                 }
+
+                // The last byte gives its low nibble only; the high nibble is unused (0x00A7A334..0x00A7A3B4).
+                outBuf[write] = Step(half[perChannel - 1] & 0x0F, ref predictor[c], ref index[c]);
             }
         }
         return outBuf;
     }
 
-    /// <summary>One IMA nibble: adjust the predictor by a fraction of the current step, then move the step.</summary>
+    /// <summary>
+    /// One nibble, exactly as the runtime decodes it (0x00A7A220..0x00A7A2B0): the diff is
+    /// ((2·(n&amp;7)+1)·step)&gt;&gt;3, subtracted when bit 3 is set, and the predictor saturates to int16
+    /// while the step index clamps to 0..88.
+    /// </summary>
     private static short Step(int nibble, ref int predictor, ref int index)
     {
         int step = StepTable[index];
-        int diff = step >> 3;
-        if ((nibble & 1) != 0) diff += step >> 2;
-        if ((nibble & 2) != 0) diff += step >> 1;
-        if ((nibble & 4) != 0) diff += step;
+        int diff = ((2 * (nibble & 7) + 1) * step) >> 3;
         predictor = (nibble & 8) != 0 ? predictor - diff : predictor + diff;
         predictor = Math.Clamp(predictor, short.MinValue, short.MaxValue);
         index = Math.Clamp(index + IndexTable[nibble], 0, StepTable.Length - 1);

@@ -7,10 +7,10 @@ Manifest of **319 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 198 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 199 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 14 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 1 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 60 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 59 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 28 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -29,7 +29,7 @@ remains after both, and they do not go away by working harder on this repository
 | M3-device — Camera, display and audio device layer | 36 | 0 | 8 | 0 | 3 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 24 | 0 | 10 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 36 | 0 | 15 | 0 | 1 | yes | no |
-| M6-wwise-bank — Wwise bank reading and codecs | 21 | 0 | 18 | 0 | 0 | yes | no |
+| M6-wwise-bank — Wwise bank reading and codecs | 21 | 0 | 17 | 0 | 0 | yes | no |
 | M7-behaviour — Idle, mood and reactions | 17 | 0 | 0 | 0 | 0 | yes | yes |
 | M8-framework — Behaviour framework and scoring | 10 | 0 | 0 | 0 | 0 | yes | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
@@ -57,7 +57,7 @@ status.
 | M3-device | INVENTORY_APPROVED | 21 | 0 | 0 | 0 |
 | M4-control | INVENTORY_APPROVED | 9 | 0 | 0 | 0 |
 | M5-animation | INVENTORY_APPROVED | 19 | 0 | 0 | 0 |
-| M6-wwise-bank | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
+| M6-wwise-bank | INVENTORY_APPROVED | 2 | 0 | 0 | 0 |
 | M7-behaviour | UNREVIEWED | 17 | 3 | 0 | 0 |
 | M8-framework | UNREVIEWED | 6 | 1 | 0 | 0 |
 | M9-wwise-music | UNREVIEWED | 20 | 14 | 0 | 0 |
@@ -431,15 +431,6 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
 * best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
 * evidence: setup 0x00AB63E0..0x00AB6780; codebook unpack 0x00ABA188; library 0x01058290; packet 0x00AB37FC..0x00AB3934 (1-bit mode); residue 0x00AB73F8 / decodev_add 0x00ABAA6C / decodevv_add 0x00ABABB8; decode_map 0x00AB9BB0; floor table 0x01058BF0; IMDCT 0x00AB4E34 (x2^-24 at 0x00AB3CB4); windows 0x01054490; skip/trim 0x00AB3244, 0x00AB0B98..0x00AB0CA8
-* outstanding: compare the code against the inventory rows (the step after approval)
-
-**M6-003 — IMA ADPCM exactly: header predictor is sample 0, 63 nibbles, diff ((2n+1)*step)>>3, interleaved int16, 64 frames per block** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAdpcm.cs`
-* effect: ADPCM sounds decode to different samples
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
-* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
-* evidence: decoder 0x00A7A194..0x00A7A3C4 (step table 0x00FFD650, index 0x00FFD708); callers 0x00A725F8..0x00A72624, 0x00A73E88..0x00A73EAC, 0x00A740E0..0x00A7410C
 * outstanding: compare the code against the inventory rows (the step after approval)
 
 **M6-004 — CAkResampler linear interpolation at the voice stage (int16 Q16, bypass x1/32768) and the Hijack stage (float to 22320 Hz); step formula; pitch ramp** (live path)
