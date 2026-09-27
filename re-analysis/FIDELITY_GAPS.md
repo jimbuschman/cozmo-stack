@@ -498,12 +498,12 @@ Each of these is a question already answered. The original's behaviour is establ
 
 **M6-011 — Voice filter A: Butterworth LPF/HPF biquad before the aux sends, value-to-cutoff map, 8-step chunked ramp; filter B dry-only** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseVoiceFilter.cs`
 * effect: the robot audio has a different tone
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* rests on: built from re-analysis/inventory/M6-wwise-bank.md gapE 1.1..1.9 into a standalone class (WwiseVoiceFilter.cs); the aligned 4-sample NEON block matrix is not transcribed, so every sample uses the row's scalar DF-I form, which is equivalent and not block-exact (MD3); the class is not yet wired into WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler
 * best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
 * evidence: composition 0x9FFD14..0x9FFD74; per connection 0xA4BC58; targets 0xA550D8..0xA551EC; order 0xA44630; LPF 0xA766F0 / HPF 0xA77480; cutoff 0xA7A3D8 / 0xA7A4AC; ramp 0xA76728..0xA77428
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: not wired into the live voice path. The NEON aligned-block matrix 0xA767BC..0xA769C4 is not transcribed (scalar DF-I equivalent, not bit-exact). The 3D attenuation values are caller inputs; the inventory does not settle their source. gapE 1.1's pbi+0xA0/+0xA8 are inputs defaulting to 0 because the writer scan covered direct offsets only. gapE 1.7's HPF example '40 -> ~445' contradicts the row's own formula (map(100-40) ~ 527); it is not pinned and was reported up. gapE 1.8's +0xA countdown is armed to 4 only when a ramp finishes with the target at or below 0.1 (the ramp-start paths zero it, 0x00A76770/0x00A76A0C), so the ramp buffer and four more are filtered before the bypass; a target change whose current and new target are both at or below 0.1 bypasses at once with no ramp (0x00A769EC..0x00A76A2C).
 
 **M6-012 — Mixer: linear per-frame gain ramp, first update not ramped, mono to mono 1.0, stereo to mono 0.70710677 per channel** (live path)
 

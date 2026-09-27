@@ -5526,7 +5526,7 @@
       "id": "M6-011",
       "subsystem": "M6-wwise-bank",
       "title": "Voice filter A: Butterworth LPF/HPF biquad before the aux sends, value-to-cutoff map, 8-step chunked ramp; filter B dry-only",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseVoiceFilter.cs",
       "evidence": [
         "composition 0x9FFD14..0x9FFD74; per connection 0xA4BC58",
         "targets 0xA550D8..0xA551EC; order 0xA44630",
@@ -5535,11 +5535,11 @@
       "effect": "the robot audio has a different tone",
       "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
       "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "built from re-analysis/inventory/M6-wwise-bank.md gapE 1.1..1.9 into a standalone class (WwiseVoiceFilter.cs); the aligned 4-sample NEON block matrix is not transcribed, so every sample uses the row's scalar DF-I form, which is equivalent and not block-exact (MD3); the class is not yet wired into WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler",
+      "unresolved": "not wired into the live voice path. The NEON aligned-block matrix 0xA767BC..0xA769C4 is not transcribed (scalar DF-I equivalent, not bit-exact). The 3D attenuation values are caller inputs; the inventory does not settle their source. gapE 1.1's pbi+0xA0/+0xA8 are inputs defaulting to 0 because the writer scan covered direct offsets only. gapE 1.7's HPF example '40 -> ~445' contradicts the row's own formula (map(100-40) ~ 527); it is not pinned and was reported up. gapE 1.8's +0xA countdown is armed to 4 only when a ramp finishes with the target at or below 0.1 (the ramp-start paths zero it, 0x00A76770/0x00A76A0C), so the ramp buffer and four more are filtered before the bypass; a target change whose current and new target are both at or below 0.1 bypasses at once with no ramp (0x00A769EC..0x00A76A2C).",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "Cozmo.Protocol.Tests.WwiseVoiceFilterTests"
     },
     {
       "id": "M6-012",
