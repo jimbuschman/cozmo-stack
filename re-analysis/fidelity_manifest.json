@@ -5506,7 +5506,7 @@
       "id": "M6-010",
       "subsystem": "M6-wwise-bank",
       "title": "Gain composition: GetAudioParameters links and sums, randomizer once per voice, dBToLin fast pow, game-defined aux send gain, muted dry path, Bus Volume after FX (robot_volume does not reach the Hijack)",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBus.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseGain.cs",
       "evidence": [
         "GetAudioParameters 0x9EF258 (links 0x9F1C40 / 0x9F1F4C)",
         "CalcEffectiveParams 0x9FFAD4; dBToLin 0xA4B608..0xA4B674",
@@ -5516,11 +5516,11 @@
       "effect": "the robot gets a different level",
       "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
       "status": "IMPLEMENTATION_GAP",
-      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "provenance": "built from re-analysis/inventory/M6-wwise-bank.md gapC 1.1..1.11, 2.1..2.8, 3.2 and gapE 1.1 into a standalone class (WwiseGain.cs): GetAudioParameters over the parent (+0x34) / output-bus (+0x38) links with the paramSelect sums and the gated/global/game-object bundles (gapC 1.2..1.4), the per-voice randomizer draw (gapC 1.5/1.6), the fast-pow dBToLin with the −37·20 dB floor and the mute/fade product (gapC 1.11), the game-defined and user aux decisions and send gains (gapC 1.7/1.8, 2.1..2.3), the muted dry path (gapC 2.2/2.4), the collapsed-bus fold (gapC 2.7) and the bus-volume-after-FX placement (gapC 3.2); the RTPC pull composes with the M6-009 store (0xA11590). Caller-side inputs are the node graph and its links, the additive bundles of gapC 1.4 whose writers the rows call RECOVERABLE_GAP, the game object's send value, the 3D attenuation, the fade factors pbi+0x168/+0x16C, the send-emit thresholds and the 0x9FAE18 root-note value; the class is not yet wired into WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler",
+      "unresolved": "not wired into the live voice/bus graph (M6-011/M6-012/M6-013, M6-014, M6-017); the record stays IMPLEMENTATION_GAP until that wiring exists. MISSING: the send-emit thresholds [0x1052454] (game) and [0x1052450] (user) have addresses but no value in gapC 2.3 (gapF 3.3 names the STMG −80 dB threshold and says its dB→linear store is not read), so they are required caller inputs. The paramSelect bit notation (bit1/bit2/bit4/bit8/0x10) is read as masks 0x1/0x2/0x4/0x8/0x10; MakeUpGain (prop 6) has no named bit and is added whenever present; both are reported. The randomizer ranged draw order is Volume, Pitch, LPF, HPF, then MakeUpGain last (gapE 3.2; 0x9EF5D8..0x9EF968, 0x9EF8C8 cmp ip,#6, 0x9EF968 vstr s15,[r3,#4]); the base and gated (node+0x18) bundles run the select-gated path including MakeUpGain, while the global (node+0x24) and game-object (node+0x48) bundles add props 0/2/3/4 with no select test and never prop 6 (0x9EF2D8..0x9EF454, 0x9F011C..0x9F0228); Only the global (node+0x24) and object (node+0x48) readers insert MuteRatio (prop 0xB): the base and gated readers search 0/2/3/4/6 and 0/2/3/4/5/6 and never 0xB (cmp r0,#0xb at 0x9EF454, 0x9F02A4). The muted map is keyed by (node, flag bit): the global insert sets bit0 = 1 (orr r3,r3,#1 at 0x9EF494; lookup 0x9EF500) and the object insert clears it to 0 (and r3,r3,#0xfe at 0x9F02E4; lookup 0x9F0350), and the compare tests only bit0 (tst r2,#1 at 0x9EF510/0x9F0360), so one node's global and object entries are two entries that multiply; the insert overwrites per key and the effective muted product multiplies across the distinct entries (0x9FFDB0..0x9FFDC0). gapC 1.4's three additive bundles and their writers are RECOVERABLE_GAP and remain caller inputs; 0x9FAE18 (the Sound override's root note) is RECOVERABLE_GAP and is a caller input; gapC 1.9's `max(+0x6C (init −96.3), Σ ducking)` is implemented with the init default exposed on WwiseGainBus. gapE 1.1's pbi+0xA0/+0xA8 stay inputs on the M6-011 composer; this class supplies the node-chain-plus-randomizer LPF/HPF terms.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "Cozmo.Protocol.Tests.WwiseGainTests"
     },
     {
       "id": "M6-011",
