@@ -32,6 +32,34 @@ public sealed record WwiseVorbisResidueSetup(
 public sealed record WwiseVorbisSetupPrefix(IReadOnlyList<int> CodebookIds, int FloorCount);
 
 /// <summary>
+/// One floor1 class (M6-002 / correction C5 row 1b, 0x00AB8990): <c>dim = read(3) + 1</c>,
+/// <c>subs = read(2)</c>, <c>book = subs != 0 ? read(8) : 0</c>, and <c>1 &lt;&lt; subs</c> sub-books
+/// stored as <c>read(8) − 1</c> (so <c>−1</c> is the read(8)==0 sentinel).
+/// </summary>
+public sealed record WwiseVorbisFloorClass(int Dimensions, int Subclasses, int MasterBook, int[] SubBooks);
+
+/// <summary>
+/// The floor1 setup correction C5 settles (rows 1a..1e, 0x00AB88D8): partitions, the per-partition class,
+/// the classes, the multiplier, rangebits and the postlist. The native entry layout is +0x00 class base,
+/// +0x04 partitionclass, +0x08 postlist, +0x0C sorted index, +0x10 high neighbour, +0x14 low neighbour,
+/// +0x18 partitions, +0x1C posts (count+2), +0x20 multiplier; <b>there is no floor-type field</b>.
+/// </summary>
+/// <param name="PostList">The <c>count+2</c> post list; <c>[0] = 0</c>, <c>[1] = 1 &lt;&lt; RangeBits</c>.</param>
+public sealed record WwiseVorbisFloorSetup(
+    int Partitions, int[] PartitionClasses, WwiseVorbisFloorClass[] Classes,
+    int Multiplier, int RangeBits, int[] PostList);
+
+/// <summary>
+/// The mapping setup correction C5 settles (rows 2a..2d, 0x00AB6788): submaps, the per-channel mux, the
+/// per-submap floor/residue, and the coupling steps. The native entry is +0x00 submaps, +0x04 mux,
+/// +0x08 submap {floor,residue} pairs, +0x0C coupling steps, +0x10 mag/ang pairs.
+/// </summary>
+/// <param name="Mux">The per-channel submap index; empty when there is a single submap.</param>
+public sealed record WwiseVorbisMappingSetup(
+    int Submaps, int[] Mux, int[] SubmapFloor, int[] SubmapResidue,
+    int CouplingSteps, (int Mag, int Ang)[] Coupling);
+
+/// <summary>
 /// The runtime's Vorbis decoder (M6-002): an Audiokinetic fork of <b>Tremor lowmem</b>, whose codebook struct
 /// matches that branch field for field except that <c>q_seq</c> is missing (gapG 6.6, 0xABA1A8) and whose
 /// quantization is always <c>decode_map</c> type 1 (gapG 6.4/6.5).
@@ -58,14 +86,23 @@ public sealed record WwiseVorbisSetupPrefix(IReadOnlyList<int> CodebookIds, int 
 /// 0x00AB0B98..0x00AB0CA8) and the leading-skip consumption.</item>
 /// </list>
 ///
-/// <b>Refused, not guessed.</b> The rows read the addresses but not the arithmetic for: the floor1 body
-/// (0x00AB88D8), the mapping body (0x00AB6788), the decode-table builder (0x00AB96EC), the residue inverse
-/// (0x00AB73F8 and 0x00AB745C), the floor-table contents (0x01058BF0 has only [0] = 229/32768 and
-/// [255] = 65536.0 in the rows), the floor1 inverse (0x00AB915C), the float NEON IMDCT (0x00AB4E34; its
-/// libvorbis normalisation is the inventory's named RECOVERABLE_GAP at gapG 6.11), the libvorbis float
-/// windows (0x01054490) and the overlap-add (0x00AB5A94). The end-trim consumption arithmetic is also
-/// refused: gapG 6.12 states <c>end = max(current − trim, returned)</c> but not what <c>current</c> and
-/// <c>returned</c> count, so applying it would be a guess. <see cref="Decode"/> throws, naming each piece.
+/// <b>Built from correction C5</b> (the arithmetic report <c>re-analysis/evidence/m6-vorbis/vorbis-arithmetic.md</c>,
+/// each cited at the code): the floor1 setup fields (C5 1a..1e, 0x00AB88D8); the mapping setup fields (C5
+/// 2a..2d, 0x00AB6788); the <c>decode_map</c> tree step and leaf packing (C5 3a/3b, 0x00AB9BB0); the residue
+/// <c>decodev_add</c>/<c>decodevv_add</c> and the coupling inverse (C5 4d/4e/4f, 0x00ABAA6C / 0x00ABABB8 /
+/// 0x00AB6E30); the 256-entry floor dB table (C5 5, 0x01058BF0); the declined-value test and
+/// <c>render_line</c> (C5 6a/6b, 0x00AB915C); the window tables, combine and planar layout (C5 8a/9/9b,
+/// 0x01054490 / 0x00AB5A94 / 0x00AB3520); and the start-skip/end-trim consumption (C5 10b, 0x00AB3884).
+///
+/// <b>Refused, not guessed.</b> Correction C5 still leaves five pieces as RECOVERABLE_GAP, so
+/// <see cref="Decode"/> throws and names them: the decode-table builder (0x00AB96EC; its 16-bit store and
+/// 32-bit read are unreconciled), the residue inverse stage/partition walk (0xAB7808..0xAB7E00; only its
+/// control flow is read), the window-combine per-window branch (0x00AB5A94..0x00AB6038), the floor look
+/// helper (0x00AB8018) and the window default (0x00AB3728). The float
+/// NEON IMDCT (0x00AB4E34) is also refused: C5 7b contradicts the old normalisation claim, so the output
+/// scale is not established. The end-trim consumption is implemented (C5 10b) but the meaning of its
+/// <c>current</c>/<c>returned</c> inputs stays the row's.
+/// <see cref="Decode"/> throws, naming each piece.
 ///
 /// <b>Deviations, inert on shipped media</b> (gapG 6.8..6.10): a type-0 residue and a type-2 residue with
 /// any channel count other than two are refused, and the mode count must be 2 (the 1-bit mode read is exact
@@ -75,7 +112,7 @@ public sealed record WwiseVorbisSetupPrefix(IReadOnlyList<int> CodebookIds, int 
 /// Not wired into <see cref="WwisePlayback"/>, <see cref="WwiseAudioSource"/>, <see cref="WwiseSongRenderer"/>
 /// or the animation scheduler. See the M6-002 record's <c>unresolved</c>.
 /// </summary>
-public static class WwiseVorbisNative
+public static partial class WwiseVorbisNative
 {
     // ---- settled constants (M6-002) ----
 
@@ -98,21 +135,17 @@ public static class WwiseVorbisNative
     public const int BlockSizeError = -0x85;
 
     /// <summary>
-    /// The residue and decode pieces the rows leave as RECOVERABLE_GAP, with their addresses. Named here so
+    /// The pieces correction C5 still leaves as RECOVERABLE_GAP, with their addresses. Named here so
     /// <see cref="Decode"/> refuses visibly and a caller or test can see exactly what is missing.
     /// </summary>
     public static readonly IReadOnlyList<string> UnreadArithmetic = new[]
     {
-        "floor1 setup body 0x00AB88D8 (V3: floor type not read)",
-        "mapping setup body 0x00AB6788 (V3: only the channel count is read)",
-        "decode-table builder 0x00AB96EC (gapG 6.4: only the entry into it is read)",
-        "residue inverse 0x00AB73F8 type 1 and 0x00AB745C type 2 (gapG 6.8/6.9: vector decode not read)",
-        "floor table contents 0x01058BF0 (V7/gapG 6.11: only [0] and [255] are in the rows)",
-        "floor1 inverse2 0x00AB915C (V7: render_line not read)",
-        "float NEON IMDCT 0x00AB4E34 (V7/gapG 6.11: butterflies and normalisation not read)",
-        "libvorbis float windows 0x01054490 (V7: table contents not in the rows)",
-        "windowed overlap-add 0x00AB5A94 (V8: arithmetic not read)",
-        "end-trim consumption (gapG 6.12: current/returned semantics not read)",
+        "decode-table builder 0x00AB96EC (C5: the 16-bit store vs the 32-bit read is unreconciled)",
+        "residue inverse stage/partition walk 0xAB7808..0xAB7E00 (C5 4b: only the control flow is read; the inner offsets are RECOVERABLE_GAP)",
+        "window-combine per-window branch 0x00AB5A94..0x00AB6038 (C5 9: the exact branch selection is RECOVERABLE_GAP)",
+        "floor look helper 0x00AB8018 (C5 1d: the sorted-index build is unread)",
+        "float NEON IMDCT 0x00AB4E34 (C5 7b: its normalisation is not established; the 2^-24 constants belong to 0x00AB39D8)",
+        "window default 0x00AB3728 (C5 8b: the consequence of a 0 window pointer is UNKNOWN)",
     };
 
     // ---- setup: block sizes (V2, 0x00AB6380..0x00AB63DC) ----
@@ -269,19 +302,291 @@ public static class WwiseVorbisNative
         return add + scaled;
     }
 
+    // ---- floor1 setup (correction C5 rows 1a..1e, 0x00AB88D8) ----
+
+    /// <summary>
+    /// The floor1 setup body (C5 1a..1c, 0x00AB88D8..0x00AB8E14): <c>partitions = read(5)</c>; each
+    /// <c>partitionclass = read(4)</c>; <c>maxclass+1</c> classes; <c>mult = read(2)+1</c>;
+    /// <c>rangebits = read(4)</c>; <c>count = Σ class_dim[partitionclass[j]]</c>; then <c>count</c>
+    /// <c>read(rangebits)</c> posts at <c>postlist[2..]</c> with <c>postlist[0] = 0</c> and
+    /// <c>postlist[1] = 1 &lt;&lt; rangebits</c>. Each post is valid iff it is below <c>1 &lt;&lt; rangebits</c>
+    /// (C5 1c, 0x00AB8C64), so an out-of-range post is refused.
+    ///
+    /// The low/high-neighbour scan (C5 1d) and the sorted-index helper (0x00AB8018) are not built here:
+    /// the helper is a RECOVERABLE_GAP, so <see cref="Decode"/> still refuses the floor path.
+    /// </summary>
+    internal static WwiseVorbisFloorSetup ReadFloorSetup(BitReader reader, int codebookCount)
+    {
+        int partitions = (int)reader.Read(5);                              // C5 1a: read(5)
+        var partitionClasses = new int[partitions];
+        int maxClass = 0;
+        for (int j = 0; j < partitions; j++)
+        {
+            partitionClasses[j] = (int)reader.Read(4);                     // C5 1a: read(4)
+            if (partitionClasses[j] > maxClass) maxClass = partitionClasses[j];
+        }
+
+        var classes = new WwiseVorbisFloorClass[maxClass + 1];             // C5 1b: maxclass+1 classes
+        for (int j = 0; j <= maxClass; j++)
+        {
+            int dim = (int)reader.Read(3) + 1;                             // C5 1b: dim = read(3)+1
+            int subs = (int)reader.Read(2);                                // C5 1b: subs = read(2)
+            int book = subs != 0 ? (int)reader.Read(8) : 0;                // C5 1b: book = subs? read(8) : 0
+            if (book >= codebookCount)
+                throw new InvalidDataException(
+                    $"floor1 class {j} names masterbook {book}, outside {codebookCount} (C5 1b)");
+            var subBooks = new int[1 << subs];                             // C5 1b: 1<<subs sub-books
+            for (int k = 0; k < subBooks.Length; k++)
+            {
+                int sub = (int)reader.Read(8) - 1;                         // C5 1b: subbook = read(8)-1
+                if (sub >= codebookCount)                                  // valid: < books or == 0xFF (read(8)==0)
+                    throw new InvalidDataException(
+                        $"floor1 class {j} names sub-book {sub}, outside {codebookCount} (C5 1b)");
+                subBooks[k] = sub;
+            }
+            classes[j] = new WwiseVorbisFloorClass(dim, subs, book, subBooks);
+        }
+
+        int multiplier = (int)reader.Read(2) + 1;                          // C5 1c: mult = read(2)+1
+        int rangeBits = (int)reader.Read(4);                               // C5 1c: rangebits = read(4)
+
+        int count = 0;                                                     // C5 1c: count = Σ class_dim
+        for (int j = 0; j < partitions; j++) count += classes[partitionClasses[j]].Dimensions;
+
+        var postList = new int[count + 2];                                 // C5 1c: u16[count+2]
+        for (int k = 0; k < count; k++)
+        {
+            int post = (int)reader.Read(rangeBits);                        // C5 1c: postlist[k+2] = read(rangebits)
+            if (!FloorPostInRange(post, rangeBits))                        // C5 1c: valid iff < 1<<rangebits
+                throw new InvalidDataException(
+                    $"floor1 post {k} is {post}, not below {1 << rangeBits} (C5 1c, 0x00AB8C64)");
+            postList[k + 2] = post;
+        }
+        postList[0] = 0;                                                   // C5 1c: postlist[0] = 0
+        postList[1] = 1 << rangeBits;                                      // C5 1c: postlist[1] = 1<<rangebits
+
+        return new WwiseVorbisFloorSetup(partitions, partitionClasses, classes, multiplier, rangeBits, postList);
+    }
+
+    /// <summary>
+    /// The floor1 post range test (C5 1c, 0x00AB8C64 <c>cmp r2,r8</c> with <c>r8 = 1&lt;&lt;rangebits</c>):
+    /// a post is valid iff it is below <c>1 &lt;&lt; rangebits</c>.
+    /// </summary>
+    public static bool FloorPostInRange(int post, int rangeBits) => post < (1 << rangeBits);
+
+    // ---- mapping setup (correction C5 rows 2a..2d, 0x00AB6788) ----
+
+    /// <summary>
+    /// The mapping setup body (C5 2a..2c, 0x00AB6788): <c>submaps</c> (a flag, then <c>read(4)+1</c>);
+    /// coupling steps <c>read(8)+1</c> with <c>mag</c>/<c>ang</c> at <c>ilog(channels−1)</c> bits; the
+    /// reserved <c>read(2)</c> which must be 0; the mux <c>read(4)</c> per channel when <c>submaps &gt; 1</c>;
+    /// then <b>three</b> <c>read(8)</c> per submap — the time submap (discarded), the floor and the residue.
+    /// </summary>
+    internal static WwiseVorbisMappingSetup ReadMappingSetup(
+        BitReader reader, int channels, int floorCount, int residueCount)
+    {
+        bool hasSubmaps = reader.ReadBit();                                // C5 2a: submaps flag
+        int submaps = hasSubmaps ? (int)reader.Read(4) + 1 : 1;            // C5 2a: read(4)+1
+
+        bool hasCoupling = reader.ReadBit();                               // C5 2a: coupling flag
+        var coupling = new List<(int Mag, int Ang)>();
+        if (hasCoupling)
+        {
+            int steps = (int)reader.Read(8) + 1;                           // C5 2a: read(8)+1
+            int bits = WwiseCodebookLibrary.ILog((uint)(channels - 1));    // C5 2a: ilog(channels-1)
+            for (int j = 0; j < steps; j++)
+            {
+                int mag = (int)reader.Read(bits);                          // C5 2a: mag
+                int ang = (int)reader.Read(bits);                          // C5 2a: ang
+                if (mag == ang || mag >= channels || ang >= channels)
+                    throw new InvalidDataException($"mapping coupling {j} is invalid (C5 2a)");
+                coupling.Add((mag, ang));
+            }
+        }
+
+        uint reserved = reader.Read(2);                                    // C5 2a: reserved read(2) == 0
+        if (reserved != 0)
+            throw new InvalidDataException("mapping reserved field is not zero (C5 2a)");
+
+        int[] mux = Array.Empty<int>();
+        if (submaps > 1)                                                   // C5 2b: mux per channel
+        {
+            mux = new int[channels];
+            for (int j = 0; j < channels; j++)
+            {
+                mux[j] = (int)reader.Read(4);
+                if (mux[j] >= submaps)
+                    throw new InvalidDataException($"mapping mux {j} is out of range (C5 2b)");
+            }
+        }
+
+        var floor = new int[submaps];                                      // C5 2c: three read(8) per submap
+        var residue = new int[submaps];
+        for (int i = 0; i < submaps; i++)
+        {
+            _ = reader.Read(8);                                            // C5 2c: time submap, discarded
+            floor[i] = (int)reader.Read(8);
+            if (floor[i] >= floorCount)
+                throw new InvalidDataException($"mapping submap {i} names floor {floor[i]}, outside {floorCount} (C5 2c)");
+            residue[i] = (int)reader.Read(8);
+            if (residue[i] >= residueCount)
+                throw new InvalidDataException($"mapping submap {i} names residue {residue[i]}, outside {residueCount} (C5 2c)");
+        }
+
+        return new WwiseVorbisMappingSetup(submaps, mux, floor, residue, coupling.Count, coupling.ToArray());
+    }
+
+    // ---- decode_map (correction C5 rows 3a/3b, 0x00AB9BB0) ----
+
+    /// <summary>The tree-walk node step (C5 3a, 0x00AB9C34): <c>node = bit + 2·node</c>.</summary>
+    public static int DecodeMapNode(int node, bool bit) => (bit ? 1 : 0) + 2 * node;
+
+    /// <summary>
+    /// The leaf unpacking (C5 3b, 0x00AB9C4C..0x00AB9CA0): <c>packed = entry &amp; 0x7FFFFFFF</c>, then
+    /// <c>dim</c> values of <c>q_bits</c> bits, lowest first. The decode table the walk consumes is built by
+    /// 0x00AB96EC, which stays RECOVERABLE_GAP, so only the leaf arithmetic is reproduced here.
+    /// </summary>
+    public static int[] DecodeMapLeaf(uint entry, int qBits, int dim)
+    {
+        uint packed = entry & 0x7FFFFFFFu;                                 // C5 3b: bit 31 is the internal-node marker
+        uint mask = (1u << qBits) - 1u;                                    // C5 3b: mask = (1<<q_bits)-1
+        var values = new int[dim];
+        for (int i = 0; i < dim; i++)
+        {
+            values[i] = (int)(packed & mask);                              // C5 3b: low value first
+            packed >>= qBits;                                              // C5 3b: packed >>= q_bits
+        }
+        return values;
+    }
+
+    // ---- residue inverse and coupling (correction C5 rows 4d..4f, 0x00ABAA6C / 0x00ABABB8 / 0x00AB6E30) ----
+
+    /// <summary>The point the residue inverse passes to <see cref="Dequantize"/> (C5 4b..4e): −8.</summary>
+    public const int ResiduePoint = -8;
+
+    /// <summary>
+    /// <c>decodev_add</c> (C5 4d, 0x00ABAA6C): <c>out[i+j] += tmp[j]</c> for the <c>dim</c> entries of one
+    /// codeword, 32-bit with no saturation. <paramref name="index"/> is the codeword's position.
+    /// </summary>
+    public static void DecodevAdd(int[] output, int[] tmp, int index, int dim)
+    {
+        for (int j = 0; j < dim; j++) output[index + j] += tmp[j];         // C5 4d: out[i+j] += tmp[j]
+    }
+
+    /// <summary>
+    /// <c>decodevv_add</c> (C5 4e, 0x00ABABB8): as <see cref="DecodevAdd"/> but the channel index toggles
+    /// 0/1 between the <c>dim</c> values, so it is hard-wired to two channels.
+    /// </summary>
+    public static void DecodevvAdd(int[][] output, int[] tmp, int index, int dim)
+    {
+        int ch = 0;
+        for (int j = 0; j < dim; j++)
+        {
+            output[ch][index + j] += tmp[j];                               // C5 4e: out[ch][i+offset] += tmp[j]
+            ch ^= 1;                                                       // C5 4e: eor r5,#1
+        }
+    }
+
+    /// <summary>
+    /// The coupling inverse (C5 4f, 0x00AB6E30): integer add/sub on one mag/ang pair, with the right-hand
+    /// side using the pair's old values (the native loads both, then stores).
+    /// </summary>
+    public static (int Mag, int Ang) InverseCoupling(int mag, int ang)
+        => mag > 0
+            ? (ang > 0 ? (mag, mag - ang) : (mag + ang, mag))
+            : (ang > 0 ? (mag, mag + ang) : (mag - ang, mag));
+
+    // ---- floor1 inverse2 / render_line (correction C5 rows 6a/6b, 0x00AB915C) ----
+
+    /// <summary>
+    /// The declined-value test (C5 6a, 0x00AB91CC..0x00AB91D4): a memory value is declined when bit 15 is
+    /// set, i.e. <c>memo != (memo &amp; 0x7FFF)</c>. Declined posts are skipped and not rendered.
+    /// </summary>
+    public static bool FloorValueDeclined(int memo) => memo != (memo & 0x7FFF);
+
+    /// <summary>
+    /// <c>render_line</c> (C5 6b, 0x00AB9208..0x00AB92AC): the signed integer line from <c>(x0,y0)</c> to
+    /// <c>(x1,y1)</c>, multiplying <paramref name="d"/> in place by <paramref name="table"/> at each integer
+    /// <c>y</c>. All in <c>f32</c>; the native divides with a signed integer division (<c>0x4b3e70</c>) that
+    /// truncates toward zero, which is C#'s <c>/</c>.
+    /// </summary>
+    public static void RenderLine(float[] d, int x0, int y0, int x1, int y1, float[] table)
+    {
+        int dy = y1 - y0;                                                  // C5 6b: dy
+        int adx = x1 - x0;                                                 // C5 6b: adx = x - x_prev
+        int baseValue = dy / adx;                                          // C5 6b: base = dy / adx
+        int sy = dy < 0 ? baseValue - 1 : baseValue + 1;                   // C5 6b: sy
+        int ady = Math.Abs(dy) - Math.Abs(baseValue * adx);                // C5 6b: ady = |dy| - |base·adx|
+        int y = y0;
+        int err = 0;
+        d[x0] *= table[y];                                                 // C5 6b: out[x_prev] *= table[y_prev]
+        for (int x = x0 + 1; x < x1; x++)
+        {
+            err += ady;                                                    // C5 6b: err += ady
+            if (err >= adx) { err -= adx; y += sy; }                       // C5 6b: err >= adx -> err -= adx; y += sy
+            else y += baseValue;                                           // C5 6b: else y += base
+            d[x] *= table[y];                                              // C5 6b: out[x] *= table[y]
+        }
+    }
+
+    // ---- window combine and planar output (correction C5 rows 8a/9/9b, 0x01054490 / 0x00AB5A94 / 0x00AB3520) ----
+
+    /// <summary>
+    /// The window table for a block size (C5 8a/8b, 0x00AB3564..0x00AB3738): the dispatch on
+    /// <c>blocksize/2</c> in {128, 256, 512, 1024, 2048}. Any other block size takes the native default,
+    /// which sets the window pointer to 0 — a RECOVERABLE_GAP whose consequence is UNKNOWN — so this
+    /// refuses rather than defaulting.
+    /// </summary>
+    public static float[] WindowTable(int blockSize) => (blockSize / 2) switch
+    {
+        128 => VWin256,                                                    // C5 8a: 0x01054490
+        256 => VWin512,                                                    // C5 8a: 0x01054690
+        512 => VWin1024,                                                   // C5 8a: 0x01054A90
+        1024 => VWin2048,                                                  // C5 8a: 0x01055290
+        2048 => VWin4096,                                                  // C5 8a: 0x01056290
+        _ => throw new NotSupportedException(
+            $"the native window dispatch has no table for blocksize/2 = {blockSize / 2}; its default path " +
+            "sets the window pointer to 0 and the consequence is UNKNOWN (C5 8b, 0x00AB3728)"),
+    };
+
+    /// <summary>The two-window combine (C5 9, 0x00AB5BA4..0x00AB5BB0): <c>out = a·wA + b·wB</c>.</summary>
+    public static float CombineAdd(float a, float wA, float b, float wB) => a * wA + b * wB;
+
+    /// <summary>The one-window combine (C5 9, 0x00AB5D64): <c>out = a·w − b·w2</c> (<c>vnmls.f32</c>).</summary>
+    public static float CombineSub(float a, float w, float b, float w2) => a * w - b * w2;
+
+    /// <summary>
+    /// The planar-float layout (C5 9b, 0x00AB3520): <c>n/2</c> frames per channel, allocated as
+    /// <c>n/2 · 4 · channels</c> bytes, and channel <c>c</c> at <c>base + c·maxFrames</c>.
+    /// </summary>
+    public static int PlanarFrames(int n) => n / 2;                        // C5 9b: n/2 frames
+
+    public static int PlanarChannelOffset(int channel, int maxFrames) => channel * maxFrames;   // C5 9b: base + c·maxFrames
+
+    // ---- end-trim consumption (correction C5 row 10b, 0x00AB3884..0x00AB3910) ----
+
+    /// <summary>
+    /// The end-trim consumption (C5 10b): when the end-of-file flag <c>vb+8</c> is set,
+    /// <c>current = max(current − trim, returned)</c>; otherwise <c>current</c> is unchanged.
+    /// <paramref name="trim"/> is the u16 <c>dsp+0x2E</c> stored by 0x00AB3244 (C5 10a).
+    /// </summary>
+    public static int ApplyEndTrim(int current, int returned, int trim, bool endOfFile)
+        => endOfFile ? Math.Max(current - trim, returned) : current;       // C5 10b
+
     // ---- deviations, inert on shipped media (gapG 6.8..6.10) ----
 
     /// <summary>
     /// Refuses the residue paths the rows record as deviations rather than defaulting them (gapG 6.8..6.10):
     /// type 0 does not get <c>decodevs_add</c> in the native (it falls into the type-0/1 <c>decodev_add</c>
-    /// branch, whose vector arithmetic is unread), and type 2 is hard-wired to two channels. Shipped mono is
-    /// always type 1 and shipped stereo always type 2, so both deviations are inert on the shipped library.
+    /// branch 0x00AB770C, whose stage walk is still unread), and type 2 is hard-wired to two channels.
+    /// Shipped mono is always type 1 and shipped stereo always type 2, so both deviations are inert on the
+    /// shipped library.
     /// </summary>
     public static void CheckResidueDeviation(int type, int channels)
     {
         if (type == 0)
             throw new NotSupportedException(
-                "Vorbis residue type 0 is the unread type-0 decodev_add branch 0x00AB770C (M6-002 gapG 6.8 deviation)");
+                "Vorbis residue type 0 shares the type-0/1 branch 0x00AB770C, whose stage walk is unread (M6-002 gapG 6.8 deviation)");
         if (type == 2 && channels != 2)
             throw new NotSupportedException(
                 $"Vorbis residue type 2 is hard-wired to 2 channels (0x00ABABB8, M6-002 gapG 6.9); got {channels}");
@@ -324,8 +629,8 @@ public static class WwiseVorbisNative
     /// <summary>
     /// The leading-skip consumption the row states (gapG 6.12, 0xAB3884..0xAB3910): <c>skip</c> drops leading
     /// returned samples. Returns how many of <paramref name="returned"/> survive and advances
-    /// <paramref name="skip"/> past what it consumed. The end-trim consumption is refused — see
-    /// <see cref="UnreadArithmetic"/> — so it is not modelled here.
+    /// <paramref name="skip"/> past what it consumed. The end-trim consumption is
+    /// <see cref="ApplyEndTrim"/> (correction C5 10b).
     /// </summary>
     public static int ApplyLeadingSkip(int returned, ref int skip)
     {
@@ -340,11 +645,13 @@ public static class WwiseVorbisNative
     // ---- the decoder (refused: the rows do not settle the arithmetic) ----
 
     /// <summary>
-    /// The native decode path, refused. The rows establish the arithmetic types, the tables' addresses and
-    /// the output shape (planar float, skip/trim), but the floor1, residue-inverse, IMDCT, window,
-    /// overlap-add and end-trim arithmetic are unread (see <see cref="UnreadArithmetic"/>). The fidelity
-    /// rules do not allow a plausible substitute, so this throws rather than returning samples that are
-    /// merely close. The method exists so the gap is visible at the production entry point.
+    /// The native decode path, refused. Correction C5 settles the setup, the leaf arithmetic, the tables and
+    /// skip/trim, but the decode-table builder (0x00AB96EC), the residue stage walk (0xAB7808..0xAB7E00),
+    /// the window-combine per-window branch (0x00AB5A94..0x00AB6038), the floor look helper (0x00AB8018), the
+    /// IMDCT (0x00AB4E34) and the window default (0x00AB3728) are
+    /// still unestablished (see <see cref="UnreadArithmetic"/>). The fidelity rules do not allow a plausible
+    /// substitute, so this throws rather than returning samples that are merely close. The method exists so
+    /// the gap is visible at the production entry point.
     /// </summary>
     public static float[] Decode(WwiseMedia media, WwiseCodebookLibrary codebooks)
     {
