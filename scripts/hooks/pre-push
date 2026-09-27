@@ -1,0 +1,49 @@
+#!/bin/sh
+# Push gate for main: a push to main is refused unless the fidelity check and the full test suite pass on
+# exactly the commit being pushed. Enable it once per clone:
+#     git config core.hooksPath scripts/hooks
+# Pushes that change only reports and records (re-analysis/research, jobs, evidence, acceptance bundles) skip
+# the test suite. Never bypass this with --no-verify.
+
+zero=0000000000000000000000000000000000000000
+root=$(git rev-parse --show-toplevel)
+cd "$root" || exit 1
+docs_only='^(re-analysis/research/|re-analysis/jobs/|re-analysis/evidence/|re-analysis/acceptance/)'
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+    [ "$remote_ref" = "refs/heads/main" ] || continue
+    [ "$local_sha" = "$zero" ] && continue          # a delete, not a push of commits
+
+    if [ "$remote_sha" = "$zero" ]; then base=$(git rev-parse --verify -q origin/main || echo ""); else base=$remote_sha; fi
+    if [ -n "$base" ]; then changed=$(git diff --name-only "$base" "$local_sha"); else changed=$(git ls-tree -r --name-only "$local_sha"); fi
+
+    if [ -n "$changed" ] && ! echo "$changed" | grep -Eqv "$docs_only"; then
+        echo "pre-push: only reports and records changed; the test suite is skipped."
+        continue
+    fi
+
+    if [ "$(git rev-parse HEAD)" != "$local_sha" ]; then
+        echo "pre-push: REFUSED. Check out the commit you are pushing ($local_sha) so it can be tested."
+        exit 1
+    fi
+    if ! git diff --quiet HEAD -- || [ -n "$(git ls-files --others --exclude-standard -- cozmo-stack)" ]; then
+        echo "pre-push: REFUSED. The working tree has uncommitted or untracked changes under cozmo-stack, so the"
+        echo "tests would not test what you are pushing. Commit or move them first."
+        exit 1
+    fi
+
+    mkdir -p .scratch
+    log=.scratch/pre-push.log
+    echo "pre-push: fidelity check and full test suite for $local_sha (about 4 minutes); log in $log"
+    if ! python re-analysis/tools/fidelity.py --check > "$log" 2>&1; then
+        tail -20 "$log"; echo "pre-push: REFUSED. fidelity.py --check failed."; exit 1
+    fi
+    if ! dotnet test cozmo-stack/Cozmo.sln >> "$log" 2>&1; then
+        grep -E "\[FAIL\]|Failed!|error CS" "$log" | head -20
+        echo "pre-push: REFUSED. The full test suite failed."
+        exit 1
+    fi
+    grep -E "Passed!" "$log" | tail -1
+    echo "pre-push: gate passed."
+done
+exit 0

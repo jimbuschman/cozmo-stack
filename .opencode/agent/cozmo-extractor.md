@@ -12,6 +12,7 @@ You establish what the original Anki Cozmo app/engine does, for one scope the ma
 
 - **Native engine:** `resources/lib/armeabi-v7a/libcozmoEngine.so` (ARMv7/Thumb). Use Python with capstone and lief; `re-analysis/tools/disarm.py` and `re-analysis/tools/arm_disasm.py` help. Symbols are in `re-analysis/symbols/`. If the `.so` is missing, stop and tell the manager.
 - **Original app code:** `unity/` (decompiled Unity C#), `sources/`, `smali/`.
+- **Ghidra decompilation:** `re-analysis/decomp/libcozmoEngine/`, with one pseudo-C file per function and `index.tsv` (address, size, name). Its addresses are the ELF's own. Use it to find and read functions fast; it is not evidence, so cite and check the instructions in the `.so`. The decompiler can be wrong, especially on NEON code.
 - **Assets:** `re-analysis/obb/`. **Captures:** `re-analysis/captures/`. **Earlier NV passes:** `re-analysis/evidence/`.
 - **Manifest:** `re-analysis/fidelity_manifest.json`. Its records are claims to check, not evidence.
 - **C# under `cozmo-stack/src/`:** read it only to learn which behaviours need an answer. It is never evidence of what the original does.
@@ -51,6 +52,6 @@ Write the report to `.scratch/<task>/report.md` and also return it in full as yo
 
 ## Hard rules
 
-1. **Read only.** Never create, modify, move or delete anything in the repo outside `.scratch/`. No state-changing git, no `dotnet build/test/run`, no repo generators or `fidelity.py`.
+1. **Read only.** Never create, modify, move or delete anything in the repo outside `.scratch/`. No state-changing git, no `dotnet build/test/run`, no repo generators or `fidelity.py`. **The one exception:** when you run a job from `re-analysis/jobs/`, you write, commit and push exactly the files that job names (its reports and its status file), as the job says.
 2. **Stay inside the scope** you were given. Cross a boundary only to name an interface.
 3. **No implementation advice.** You describe the original, not the fix.
