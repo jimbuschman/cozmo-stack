@@ -29,6 +29,18 @@ public class ExportDecomp extends GhidraScript {
         File out = new File(args.length > 0 ? args[0] : "decomp");
         out.mkdirs();
 
+        // Ghidra loads a shared object at image base 0x10000. The repo cites the ELF's own virtual addresses
+        // (base 0), so rebase to 0 before exporting. In a -readOnly run the change is never saved.
+        if (currentProgram.getImageBase().getOffset() != 0) {
+            println("rebasing from " + currentProgram.getImageBase() + " to 0 so addresses match the ELF");
+            int tx = currentProgram.startTransaction("rebase to the ELF's own addresses");
+            try {
+                currentProgram.setImageBase(toAddr(0), true);
+            } finally {
+                currentProgram.endTransaction(tx, true);
+            }
+        }
+
         DecompInterface di = new DecompInterface();
         di.setOptions(new DecompileOptions());
         di.toggleCCode(true);
