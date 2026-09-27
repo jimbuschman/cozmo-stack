@@ -3606,13 +3606,12 @@
       "provenance": "ExtractComponentsViaCharacteristicScale_binomial, BinomialFilter, IsQuadrilateralReasonable and the parameters they are given, read",
       "authority": "ExtractComponentsViaCharacteristicScale_binomial 0x00890448, ImageProcessing::BinomialFilter 0x008A2344, IsQuadrilateralReasonable 0x00892B18, ComputeQuadrilateralsFromConnectedComponents 0x00892D70, MarkerDetector::Parameters::Initialize 0x008752F8 and the call in DetectFiducialMarkers at 0x00898C18, read",
       "evidence": [
-        "BinomialFilter 0x008A2344 (separable [1 4 6 4 1], >>4, folded borders)",
-        "binarize 0x00890BB6 ((scale*0xCCCC)>>16 > pixel; 0xCCCC at Parameters+0xC 0x00875300/0x00875314)",
-        "IsQuadrilateralReasonable 0x00892B18 (minQuadArea 25, symmetry 512 8.8, minDistanceFromEdge 2)",
-        "the filter selector 0x00898B4C (ldrb [params]; binomial at 0x00898C5C, non-binomial 0x00898BE0)"
+        "IsQuadrilateralReasonable 0x00892B18 (minQuadArea 25, symmetry 512 8.8, minDistanceFromEdge 2) -- live",
+        "the dark mask 0x008A2344 / binarize 0x00890BB6 are inside the non-live binomial extractor 0x00890448..0x00890DF4 (only caller 0x00890736)",
+        "the live extractor selector: Parameters byte0=1 (0x008752FC/0x00875304), ExtractComponentsViaCharacteristicScale 0x0088F8BC"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "the stack's dark mask is the binomial path (BinomialFilter 0x008A2344, one caller 0x00890736 inside ExtractComponentsViaCharacteristicScale_binomial 0x00890448..), but the shipped selector byte is 1 so the live extractor is the ecvcs integral-image variant 0x0088F8BC; the stack must be reworked to the live variant (M11-032). IsQuadrilateralReasonable is separate and live",
       "hardware_required": false,
       "live_path": true,
       "test": "VisionTests.TheDarkMaskIsABinomialFilterAndAQ16Threshold",
@@ -6098,11 +6097,12 @@
       "provenance": "extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "selector 0x00898B4C ldrb/cmp/beq; calls 0x00898C5C / 0x00898BE0"
+        "selector 0x00898B4C ldrb/cmp/beq; calls 0x00898C5C / 0x00898BE0",
+        "Parameters::Initialize 0x008752FC movw r2,#0x101 / 0x00875304 strh -> byte0=1; DetectFiducialMarkers 0x00898B4C ldrb/cmp/beq 0x898C18; the non-binomial ExtractComponentsViaCharacteristicScale 0x0088F8BC is live (call 0x00898BE0)"
       ],
-      "status": "RECOVERABLE_GAP",
+      "status": "EXACT_SOURCE",
       "live_path": true,
-      "unresolved": "read MarkerDetector::Detect 0x008753B6 / Parameters::Initialize to learn the shipped selector byte",
+      "unresolved": null,
       "hardware_required": false,
       "test": ""
     },
@@ -6115,10 +6115,14 @@
       "provenance": "extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "0x00890B14 select loop; Parameters::Initialize 0x0087530E strd (levels 1)"
+        "0x00890B14 select loop inside 0x00890448..0x00890DF4 (non-live)",
+        "live: 0x0088F8BC + ScrollingIntegralImage_u8_s32"
       ],
-      "status": "EXACT_SOURCE",
-      "live_path": true
+      "status": "IMPLEMENTATION_GAP",
+      "live_path": true,
+      "unresolved": "the select loop 0x00890B14 is inside the non-live binomial extractor; the live ecvcs variant 0x0088F8BC uses ScrollingIntegralImage (M11-032)",
+      "hardware_required": false,
+      "test": "VisionTests"
     },
     {
       "id": "M11-026",
@@ -6129,11 +6133,12 @@
       "provenance": "extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "size 0x00895758 operands 0x00898CAA; solid/sparse 0x00895954; hollow 0x00896110; setters 0x00875BE8/0x00875C2C"
+        "size 0x00895758 operands 0x00898CAA; solid/sparse 0x00895954; hollow 0x00896110; setters 0x00875BE8/0x00875C2C",
+        "the size-filter operands params+0x14/+0x18 are computed inline in Detect: min=round((0.03*minDim)^2-(0.024*minDim)^2), max=round((0.97*maxDim)^2-(0.776*maxDim)^2) (0x008756E6..0x00875770); solid/sparse call uses +0x1c=32000/+0x20=64 (0x00898D0A); hollow uses +0x24=1.0 (0x00898D6A); the SetComputeComponentMin/MaxNumPixels setters are inlined/dead"
       ],
-      "status": "RECOVERABLE_GAP",
+      "status": "EXACT_SOURCE",
       "live_path": true,
-      "unresolved": "read the SetComputeComponentMin/MaxNumPixels callers for the effective min/max (the stack's 100/39000 is unverified); read the solid/sparse and hollow template bodies",
+      "unresolved": null,
       "hardware_required": false,
       "test": ""
     },
@@ -6208,13 +6213,31 @@
       "provenance": "extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "0x0089F8E8; ratio 0x0087538E (1.01) / 0x008753A2; compare 0x0089FD10..0x0089FD30"
+        "0x0089F8E8; ratio 0x0087538E (1.01) / 0x008753A2; compare 0x0089FD10..0x0089FD30",
+        "direction settled: ComputeBrightDarkValues 0x0089F8E8 puts the Bright/interior mean at r3 (sp+0x8c) and the Dark/border mean at sp+0x88; the bool is Bright > ratio*Dark (0x0089FD10..0x0089FD30); RefineCorners reads Dark=sp+0x88, Bright=sp+0x8c (0x0089FE46/4E)"
       ],
-      "status": "RECOVERABLE_GAP",
+      "status": "EXACT_SOURCE",
       "live_path": true,
-      "unresolved": "read which out param is border vs interior; the ratio is now the engine's 1.01 (applied to the stack's dark=border/bright=interior assignment, so the gate is bright > ratio*dark), but the direction of the comparison is still not settled",
+      "unresolved": null,
       "hardware_required": false,
       "test": "VisionTests.TheDecoderContrastGateUsesTheEnginesOnePointZeroOneRatio"
+    },
+    {
+      "id": "M11-032",
+      "subsystem": "M11-vision",
+      "title": "The live component extractor is the ecvcs integral-image variant",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/QuadDetector.cs",
+      "effect": "the connected components (and hence the quads) are found by the wrong algorithm",
+      "provenance": "the stack's QuadDetector implements the binomial path; the shipped selector byte is 1, so the live extractor is ExtractComponentsViaCharacteristicScale 0x0088F8BC (ecvcs_computeBinaryImage_numFilters3/_5, ScrollingIntegralImage_u8_s32::FilterRow)",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x0088F8BC function; Extract2dComponents_PerRow_Initialize 0x0088FA70; ecvcs_computeBinaryImage_numFilters3 0x0088F61A / _5 0x0088F684 / _5_thresholdMultiplier1 0x0088F75E; ecvcs_filterRows 0x0088F4D0; ScrollingIntegralImage_u8_s32::FilterRow 0x0088F538"
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "rework QuadDetector from the binomial path to the live ecvcs integral-image extractor (0x0088F8BC); the dark-mask multiplier 0xCCCC belongs to the non-live path",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "VisionTests"
     }
   ]
 }
