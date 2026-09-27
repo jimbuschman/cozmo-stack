@@ -1060,3 +1060,12 @@ A third extractor pass (report `re-analysis/evidence/m6-vorbis/vorbis-arithmetic
 - **The IMDCT is `mdct_backward(n, in)` in place (two args)** with the stage order presymmetry (`0x00AB3D28`) → butterflies (`0x00AB3FCC`) → the step7/8 loop → the tail `0x00AB39D8` (2^−24). **Still RECOVERABLE_GAP:** the per-stage butterfly/lookup arithmetic and the trig-table indexing (the 13 precomputed tables are at `0x01004A40..` via GOT `0x01040230..0x01040264`).
 
 **Amended:** M6-002's `evidence` now carries these citations; the decode-table builder, floor1 inverse1 and the residue divisor array are buildable, leaving the IMDCT kernel as the last open piece.
+
+## Correction C8 (manager, 2026-09-27): the Vorbis IMDCT — characterised, still RECOVERABLE_GAP
+
+A fourth extractor pass (report `re-analysis/evidence/m6-vorbis/vorbis-imdct.md`) read the float NEON inverse MDCT and characterised it precisely. It is **not** the integer Tremor `mdct.c`, and not a straight float port: it is float, 2-arg in-place `mdct_backward(n, in)` (`0x00AB4E34`), `shift = 13 - lowest_set_bit(n, >=4)`, stage order `presymmetry 0x00AB3D28` → `mdct_butterflies 0x00AB3FCC` → a recursive twiddle network (`0x00AB4F0C..0x00AB5244`) + a `mdct_butterfly_32`-shaped loop (`0x00AB5260..0x00AB5A1C`) → a bit-reversed rotation tail (`0x00AB39D8`) applying `2^-24`.
+
+- **The exact per-lane arithmetic and per-stage table indexing are RECOVERABLE_GAP** (the ranges to read: `0x00AB3D28..0x00AB3FCC`, `0x00AB3FCC..0x00AB4E34`, `0x00AB4F0C..0x00AB5244`, `0x00AB5260..0x00AB5A1C`, `0x00AB39D8..0x00AB3D28`, and the GOT-selection ranges).
+- **The twiddles are one 615-float master table** `0x01004A40..0x010053DC` with **13 GOT views** (C7's "13 tables" was an over-read), `±sin/cos(k·pi/8192)` and `2·cos(k·pi/4096)` in 4-lane broadcast groups; the exact bytes must be **vendored**, not regenerated (many are 1–2 ULP off a .NET recomputation).
+- **Corrections:** the global `*0x0108E648` is a **pointer** (a data base), not `n`; its writer was not located, so "in place" is unproven. The tail's rotation (five tables + `bitrev9` at `0x01004640`) is RECOVERABLE_GAP (C7 2h said it was settled). The alternate entry `0x00AB5A54` (shift=9) is dead for shipped power-of-two block sizes.
+- **Decision needed (operator):** fund a lane-level transliteration and vendor the 2460 bytes, or accept an EQUIVALENT_IMPLEMENTATION (a float Tremor-lowmem `mdct.c`) and record the divergence as policy. The kernel stays **fail-closed** (the decoder refuses) until that is decided.

@@ -2,7 +2,7 @@
   "subsystem": "M6-wwise-bank",
   "approved": "2026-09-27",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "588c78b61701e3b2f9b2029468431c6f2c59d6d75dc843276169eac8768d8cb8",
+  "inventory_sha256": "647040cdf0d726f9b295f9c966a546a7a0591ac2e0214fbd8d4ccd182c892610",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -23,7 +23,7 @@
       "evidence": [
         "setup 0x00AB63E0..0x00AB6780; codebook unpack 0x00ABA188; library 0x01058290",
         "packet 0x00AB37FC..0x00AB3934 (1-bit mode); residue 0x00AB73F8 / decodev_add 0x00ABAA6C / decodevv_add 0x00ABABB8; decode_map 0x00AB9BB0",
-        "floor table 0x01058BF0; IMDCT 0x00AB4E34 (the 2^-24 constants belong to 0x00AB39D8, which has no decode caller -> the normalisation is not established); windows 0x01054490; skip/trim 0x00AB3244, 0x00AB0B98..0x00AB0CA8",
+        "floor table 0x01058BF0; IMDCT 0x00AB4E34 tail-branches into 0x00AB39D8 (0x00AB5A44 b), which applies the only output scale 2^-24; windows 0x01054490; skip/trim 0x00AB3244, 0x00AB0B98..0x00AB0CA8",
         "floor1 setup 0x00AB88D8 (partitions/classes/mult/rangebits/postlist, entry +0x00..+0x20); mapping setup 0x00AB6788 (submaps/coupling/mux, three read(8) per submap); evidence re-analysis/evidence/m6-vorbis/vorbis-arithmetic.md",
         "decode_map 0x00AB9BB0 tree walk and leaf packing; builder _make_decode_table 0x00AB96EC RECOVERABLE_GAP (16-bit store vs 32-bit read unreconciled)",
         "residue 0x00AB770C / 0x00AB745C, decodev_add 0x00ABAA6C / decodevv_add 0x00ABABB8, coupling 0x00AB6E30; floor dB table 0x01058BF0 (256 floats transcribed)",
@@ -36,7 +36,10 @@
         "C7: the ==4 case (dec_nodeb==4 iff used<2) is unexercised (no shipped book has <4 used); dec_type 2/3 unreachable",
         "C7: floor1 inverse1 0x00AB8E60 (quant table {256,128,86,64}, tristate read(1), fit_value, class lookup, cascade, sub-book 0xFF->0, the unwrap loop)",
         "C7: residue divisor array 0x00AB770C..0x00AB7808 (spp, partitions_per_word=groupbook->dim, partwords; per-channel base stride dim*partwords; the divisor sequence [partitions^(dim-1)..1])",
-        "C7: IMDCT is mdct_backward(n,in) in place; stage order presymmetry 0x00AB3D28 -> butterflies 0x00AB3FCC -> step7/8 -> tail 0x00AB39D8 (2^-24); the per-stage butterfly and trig-table indexing remain RECOVERABLE_GAP (13 tables at 0x01004A40 via GOT 0x01040230)"
+        "C7: IMDCT is mdct_backward(n,in) in place; stage order presymmetry 0x00AB3D28 -> butterflies 0x00AB3FCC -> step7/8 -> tail 0x00AB39D8 (2^-24); the per-stage butterfly and trig-table indexing remain RECOVERABLE_GAP (13 tables at 0x01004A40 via GOT 0x01040230)",
+        "C8: the IMDCT is float, 2-arg in-place mdct_backward(n,in) 0x00AB4E34; the helpers differ from Tremor (presymmetry 0x00AB3D28 uses five tables + vld4; butterflies 0x00AB3FCC use nine tables + 64-float chunks; the tail 0x00AB39D8 is a bit-reversed rotation + 2^-24); the per-lane arithmetic and per-stage table indexing are RECOVERABLE_GAP",
+        "C8: the twiddles are one 615-float master table 0x01004A40..0x010053DC with 13 GOT views (C7's '13 tables' over-read); the exact bytes must be vendored, not regenerated (many 1-2 ULP off)",
+        "C8: the global *0x0108E648 is a pointer (in place unproven; writer unlocated); the alternate entry 0x00AB5A54 is dead for shipped power-of-two block sizes"
       ],
       "live_path": true,
       "hardware_required": false
