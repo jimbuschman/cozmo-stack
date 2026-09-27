@@ -40,3 +40,6 @@ df.txt
 
 # agent scratch (extractor/verifier/implementer output)
 /.scratch/
+
+# Ghidra decompilation of the proprietary engine (regenerate with re-analysis/tools/ghidra/decompile.ps1)
+/re-analysis/decomp/
