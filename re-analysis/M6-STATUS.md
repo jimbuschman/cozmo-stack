@@ -195,15 +195,15 @@ Plan batches: 1 (done) → 2 (M6-006/007/008/009/017) → 3 (M6-003/004/010/011/
 
 Done (on `main`): M6-001, M6-005, M6-018, M6-007, M6-006 (merged 7e9676c, verifier PASS — still a
 partial, unwired WIP), M6-009 — the curves/scaling *and* the value store (`WwiseRtpcStore.cs`,
-`d2ec5cf`, unwired) — and **M6-008** continuous containers (`WwiseContinuous.cs`, `04c1b19`, unwired).
-The STMG layout is recorded (M6-019/020) and the RNG seed seam (M6-021). Corrections C1 (STMG/seed/
-locations), C2 (the RTPC ramp rows) and C3 (the continuous-container refinements) are approved.
+`d2ec5cf`, unwired) — M6-008 continuous containers (`WwiseContinuous.cs`, `04c1b19`, unwired), and
+**M6-003 IMA ADPCM** (`9c55ab4`; the decoder and the stereo media gate are settled **EXACT_SOURCE**).
+The STMG layout is recorded (M6-019/020) and the RNG seed seam (M6-021). Corrections C1–C4 approved.
 
 Next:
-1. **M6-017** (audio-thread frame order: messages → pending drain → render/bus/notification flush → tick)
-   — the new central runtime architecture. It depends on M6-012–016 (batches 3–4), so expect to build
-   the ordering/pump skeleton and leave the bus/voice pieces the rows mark RECOVERABLE_GAP.
-2. Batches 3 (M6-003/004/010/011/012), 4 (M6-013/014/015/016), 5 (M6-002), then the final wiring pass.
+1. **M6-004** (CAkResampler: Init/SetPitch/Execute and the kernels actually used) — row 0.11 is
+   settled; self-contained and testable.
+2. **M6-017** (audio-thread frame order) — the new central runtime architecture; depends on 012–016.
+3. Batches 3 (M6-010/011/012), 4 (M6-013/014/015/016), 5 (M6-002), then the final wiring pass.
 
 Do not wire the new runtime into `WwisePlayback` / `WwiseAudioSource` / `WwiseSongRenderer` /
 `AnimationScheduler` until the live voice/mixer (Batches 3–4) exists, or M9 singing regresses.
