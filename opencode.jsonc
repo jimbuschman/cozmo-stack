@@ -12,5 +12,23 @@
     { "action": "read", "resource": "*.env", "effect": "allow" },
     { "action": "read", "resource": "*.env.*", "effect": "allow" },
     { "action": "read", "resource": "*.env.example", "effect": "allow" }
-  ]
+  ],
+
+  // OpenRouter routing for DeepSeek V4.1 Flash: the cheapest provider first, falling back to the next cheapest.
+  // Parasail charged about 5x InferenceNet for the same model (2026-09-27), so it is never used.
+  "provider": {
+    "openrouter": {
+      "models": {
+        "deepseek/deepseek-v4.1-flash": {
+          "options": {
+            "provider": {
+              "sort": "price",
+              "ignore": ["Parasail"],
+              "allow_fallbacks": true
+            }
+          }
+        }
+      }
+    }
+  }
 }
