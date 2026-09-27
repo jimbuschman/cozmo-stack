@@ -1159,3 +1159,29 @@ The rows and conclusions above are copied from those reports. The large
 literal instruction/table appendices remain in the first report so the
 approved inventory has one unambiguous normative byte source without a second
 copy that could drift.
+
+## Correction C10 (manager, 2026-09-27): send thresholds and Hijack accumulation
+
+B1's first wiring comparison exposed two caller inputs that earlier rows named
+but did not settle. The targeted binary pass is
+`re-analysis/research/20260927-B1-live-audio-gap-extraction.md`.
+
+- **M6-010 thresholds.** STMG calls `0x009A080C(value, 2)` for its first
+  binary32 value (`0x009B0B20..0x009B0B4C`). The setter stores the raw dB
+  value and the maximum of `powf(10, value*0.05)` and the runtime fast-power
+  approximation (`0x009A086C..0x009A08FC`). With shipped `-80 dB`, the
+  user-send threshold is `-80.0f` and the linear game-send/connection
+  threshold is binary32 `0x38D1B717` (`0.0001f`). Consumers are
+  `0x009BD37C..0x009BD404` (linear) and `0x009BD5F0..0x009BD614` (dB).
+- **M6-015 persistent output.** Init constructs one output `AkAudioBuffer`
+  with data at core `+0x6C`, max frames at `+0x78`, and valid frames at
+  `+0x7A` (`0x008DBF76..0x008DBFB6`). Execute reuses it across calls and
+  resets `uValidFrames` only after result `0x2D` or `0x11` invokes the process
+  callback (`0x008DBFE8..0x008DC034`). Thus partial resampler output
+  accumulates across engine frames; the empty-input tail delivers the
+  accumulated partial count, including zero, once. The output-valid stores in
+  the mono float kernel are `0x00A49FEC..0x00A4A020`.
+
+Both records stay `IMPLEMENTATION_GAP` until the corrected behavior is wired
+into the live path. C10 only closes these two `MISSING` inputs; it does not
+claim the M6-017 voice engine or the remaining SIMD arithmetic.

@@ -2,7 +2,7 @@
   "subsystem": "M6-wwise-bank",
   "approved": "2026-09-27",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "9f9f3fa71a3dc056ad7e139c4a878e69ad3aa7b181d9fbcaeab9d3c54b8c26b0",
+  "inventory_sha256": "7a1f903487a99865e52109bba614e405ed79ac1792eb8d229c9dbc0078fd6267",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -144,7 +144,8 @@
         "GetAudioParameters 0x9EF258 (links 0x9F1C40 / 0x9F1F4C)",
         "CalcEffectiveParams 0x9FFAD4; dBToLin 0xA4B608..0xA4B674",
         "sends 0x9BD368..0x9BD8B4; mix gains 0xA597A4..0xA597BC, 0xA4FBEC",
-        "bus gain after FX 0xA4FEF8 / 0xA4D994; collapsed buses 0x9C54E8"
+        "bus gain after FX 0xA4FEF8 / 0xA4D994; collapsed buses 0x9C54E8",
+        "C10 thresholds: STMG call 0x9B0B20..0x9B0B4C; setter 0x9A080C..0x9A08FC; linear consumer 0x9BD37C..0x9BD404; dB consumer 0x9BD5F0..0x9BD614"
       ],
       "live_path": true,
       "hardware_required": false
@@ -203,7 +204,8 @@
       "evidence": [
         "RegisterPlugin 0x008DB300; static registration 0x004DD90C; create 0x008DBC70",
         "Init 0x008DBD74; Execute 0x008DBFE8; Term 0x008DBDF8",
-        "SetupPlugins 0x005942C6..0x00594354"
+        "SetupPlugins 0x005942C6..0x00594354",
+        "C10 persistent output: layout 0x008DBF76..0x008DBFB6; Execute/reset 0x008DBFE8..0x008DC034; empty-input result 0x00A47178..0x00A47188; mono kernel stores 0x00A49FEC..0x00A4A020"
       ],
       "live_path": true,
       "hardware_required": false
