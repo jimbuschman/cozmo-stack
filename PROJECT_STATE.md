@@ -5,9 +5,12 @@ Read first in every session. The manager keeps this file current; the process it
 ## Now
 
 - **Parallel jobs (2026-09-27). This replaces the single-manager Next list below.**
-  - The work is split into jobs on `re-analysis/jobs/BOARD.md`: extraction X1..X5 (Codex and DeepSeek) and build B1 (DeepSeek: close M6).
-  - Claude is the integrator. It turns reports into approved inventories, adds the build jobs, reviews diffs and owns this file.
-  - Jobs run with `scripts/run-job.ps1` (opencode) or a pasted prompt (Codex).
+  - The work is split into three unattended chains on `re-analysis/jobs/BOARD.md`, one per opencode window, each in its own clone:
+    - window 1: M8, M7, M9, M15;
+    - window 2: the exact IMDCT and closing M6;
+    - window 3: M11, M12, M13, M14.
+  - Each chain runs extraction (X), integration (I: the approved inventory) and build (B) jobs in order, with `scripts/run-job.ps1`.
+  - Job progress lives in `re-analysis/jobs/status/`. Jobs don't edit this file.
   - The push gate is `scripts/hooks/pre-push`; enable it per clone with `git config core.hooksPath scripts/hooks`.
   - The Ghidra decompilation of the engine is in `re-analysis/decomp/libcozmoEngine/` (gitignored; regenerate with `re-analysis/tools/ghidra/decompile.ps1`). It is a navigation aid, not evidence.
   - `scripts/run-manager.ps1` and `scripts/run-extractions.ps1` are removed; `run-job.ps1` replaces both.

@@ -1,15 +1,15 @@
 # Parallel jobs
 
-Several agents work at once: Claude, Codex, and DeepSeek through opencode. They don't talk to each other.
-They coordinate only through git and the files here.
+Several opencode (DeepSeek) windows work at once, each in its own clone, each running one chain of jobs from `BOARD.md` unattended with `scripts/run-job.ps1`. They don't talk to each other. They coordinate only through git and the files here. Codex or Claude can take a job or spot-check one, but nothing depends on them.
 
 ## Roles
 
 | agent | role |
 | --- | --- |
-| **Claude** (the integrator) | Owns the shared files: `re-analysis/fidelity_manifest.json`, the inventories under `re-analysis/inventory/`, their approvals, and `PROJECT_STATE.md`. Turns extraction reports into approved inventories, reviews build diffs, and keeps main green. |
-| **Codex** | Extraction jobs and independent verification. |
-| **DeepSeek via opencode** | Extraction jobs and build jobs. |
+| **X jobs** (extraction) | Read-only; they write reports. |
+| **I jobs** (integration) | Turn a layer's reports into its approved inventory and records. |
+| **B jobs** (build) | Build a layer from its approved inventory and settle its records. |
+| **Claude or Codex** (optional) | A spot-check of a finished job now and then. |
 
 ## Rules
 

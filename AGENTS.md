@@ -125,7 +125,7 @@ Adopted 2026-09-23. It exists because recovery and implementation were being don
   - `cozmo-implementer`: changes code only from an approved inventory, and stops with `MISSING:` on anything the inventory does not settle.
   - `cozmo-verifier` (read-only): tries to find unsupported, contradicted or omitted behaviour and circular tests in the implementer's diff.
 - **The same roles in opencode** are `.opencode/agent/cozmo-manager.md` (the primary agent) and `cozmo-extractor`, `cozmo-implementer` and `cozmo-verifier` (subagents). Scratch output goes to `.scratch/`, which is gitignored.
-- **Parallel jobs (2026-09-27):** several agents work at once from the job board in `re-analysis/jobs/` (read its README). Claude is the integrator and owns the shared files; Codex and DeepSeek take extraction and build jobs, each within its job's write scope. The push gate (`git config core.hooksPath scripts/hooks`) refuses a push to main unless the fidelity check and the full suite pass.
+- **Parallel jobs (2026-09-27):** several opencode windows, each in its own clone, run chains of jobs from `re-analysis/jobs/BOARD.md` unattended: extraction (X), integration (I) and build (B). Each job stays within its write scope; read `re-analysis/jobs/README.md`. The push gate (`git config core.hooksPath scripts/hooks`) refuses a push to main unless the fidelity check and the full suite pass.
 - **Research (Codex / ChatGPT)** works only in `re-analysis/research/`, under the rules in `re-analysis/research/README.md`: no branches, no worktrees, no commits. Background research is authority 6, and a Codex extraction is checked like any extractor report.
 
 No role does both extraction and implementation in the same task.

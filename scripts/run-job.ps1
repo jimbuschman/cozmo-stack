@@ -3,7 +3,8 @@
   Runs one job from re-analysis/jobs/ with opencode, unattended, until the job's status says it is finished.
 
 .DESCRIPTION
-  Each round is one `opencode run` with the job's agent (cozmo-extractor for X jobs, cozmo-manager for B jobs).
+  Each round is one `opencode run` with the job's agent (cozmo-extractor for X jobs, cozmo-manager for I and B jobs).
+  With -Then it runs a chain, and stops the chain at the first job that doesn't end DONE.
   The job keeps its progress in its reports and its status file, re-analysis/jobs/status/<job>.md, so a new
   round carries on where the last stopped.
 
@@ -23,7 +24,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$Job,
     [string[]]$Then = @(),
-    [int]$MaxRounds = 25,
+    [int]$MaxRounds = 40,
     [int]$MaxIdleRounds = 3
 )
 
@@ -46,10 +47,13 @@ function Get-Status([string]$id) {
     if (Test-Path $f) { return ((Get-Content $f -TotalCount 1) -join '').Trim() } else { return '' }
 }
 
-foreach ($id in @($Job) + $Then) {
+# powershell -File passes "-Then X4,I-M8" as one string, so split it here.
+$chain = @($Job) + @($Then | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+Write-Summary "chain: $($chain -join ' -> ')"
+foreach ($id in $chain) {
     $jobFile = "re-analysis/jobs/$id.md"
     if (-not (Test-Path (Join-Path $root $jobFile))) { Write-Summary "$id : no job file $jobFile; skipped"; continue }
-    $agent = if ($id -like 'B*') { 'cozmo-manager' } else { 'cozmo-extractor' }
+    $agent = if ($id -like 'X*') { 'cozmo-extractor' } else { 'cozmo-manager' }
     $task = "Do job $id. Follow $jobFile exactly, including claiming it, committing and pushing only your own files, and setting its status file when you finish or are blocked. If the job is already claimed by you, carry on from its reports and status."
     if (-not $agentFlag) { $task = "Read .opencode/agent/$agent.md and act as that agent. " + $task }
 
@@ -73,5 +77,7 @@ foreach ($id in @($Job) + $Then) {
         if ($after -eq $before -and $newStatus -eq $status) { $idle++ } else { $idle = 0 }
         if ($idle -ge $MaxIdleRounds) { Write-Summary "$id : $idle rounds with no progress; stopping this job."; break }
     }
+    $final = Get-Status $id
+    if ($final -notmatch '^DONE') { Write-Summary "$id : ended '$final', not DONE; the rest of the chain is not started."; break }
 }
 Write-Summary 'run-job end'
