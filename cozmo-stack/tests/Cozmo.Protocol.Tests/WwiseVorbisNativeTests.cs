@@ -440,63 +440,214 @@ public class WwiseVorbisNativeTests
         Assert.Equal(new[] { 5, 2 }, WwiseVorbisNative.DecodeMapLeaf(0x80000000u | 21u, qBits: 3, dim: 2));
     }
 
+    // ---- correction C7 arithmetic (re-analysis/evidence/m6-vorbis/vorbis-arithmetic-3.md) ----
+
     /// <summary>
-    /// M6-002 / correction C6 rows 1c/1d/1f (0x00AB96EC / 0x00AB9BB0): the builder stores 8-bit entries
-    /// with a bit7 leaf marker for format 1 and 16-bit entries with a bit15 marker for format 2, moving
-    /// bit31 down; a leaf's payload is stored across the entry and the <b>adjacent</b> table word
-    /// (format 1: <c>((entry&amp;0x7f)&lt;&lt;8)|nextByte</c>, format 2:
-    /// <c>((entry&amp;0x7fff)&lt;&lt;16)|nextHalfword</c>). It has no 32-bit store; the format-4
-    /// single-entry case is refused. The decoder dispatches on the format and reads the marker at the
-    /// matching bit.
+    /// M6-002 / correction C7 row 1k (0x00ABA35C..0x00ABA3C4, and the leafwidth-3 arms 0x00ABA65C /
+    /// 0x00ABA7DC): <c>_determine_node_bytes</c> is 4 for <c>used &lt; 2</c>; a <c>leafwidth == 3</c> is
+    /// substituted with 4 locally and the ilog test still runs, so used 2 with leafwidth 3 gives 2, not 4.
+    /// Otherwise <c>leafwidth/2</c> (or 1 when leafwidth 1) while <c>ilog(3·used−6)+1 &lt;= leafwidth·4</c>,
+    /// else <c>leafwidth</c>. The leafwidth-4 boundary is used 10924 (ilog(32766)+1 = 16) versus 10925
+    /// (ilog(32769)+1 = 17). <c>_determine_leaf_words</c> is 2 iff leafwidth exceeds nodeb.
     /// </summary>
     [Fact]
-    public void TheDecodeTableBuilderAndWalkAreTheC6Widths()
+    public void TheCodebookNodeBytesAndLeafWordsAreTheC7Determination()
     {
-        // payload 259 = 0x103: high 7 bits 1 -> entry, low 8 bits 3 -> next byte.
-        Assert.Equal((0x80u | 1u, 3u), WwiseVorbisNative.MakeDecodeTableEntry(1, 0x80000000u | 259u));
-        // payload 0x00010003: high 15 bits 1 -> entry, low 16 bits 3 -> next halfword.
-        Assert.Equal((0x8000u | 1u, 3u), WwiseVorbisNative.MakeDecodeTableEntry(2, 0x80000000u | 0x00010003u));
-        Assert.Equal((0u, 0u), WwiseVorbisNative.MakeDecodeTableEntry(1, 0u));  // non-negative -> internal
-        Assert.Throws<NotSupportedException>(() => WwiseVorbisNative.MakeDecodeTableEntry(4, 0x80000000u));
-        Assert.Throws<NotSupportedException>(() => WwiseVorbisNative.MakeDecodeTableEntry(3, 0u));
+        Assert.Equal(4, WwiseVorbisNative.DetermineNodeBytes(used: 1, leafWidth: 1));   // used<2 -> 4
+        Assert.Equal(2, WwiseVorbisNative.DetermineNodeBytes(used: 2, leafWidth: 3));   // leafwidth 3 -> 4, then /2
+        Assert.Equal(2, WwiseVorbisNative.DetermineNodeBytes(used: 10924, leafWidth: 4));// ilog(32766)+1=16 <= 16
+        Assert.Equal(4, WwiseVorbisNative.DetermineNodeBytes(used: 10925, leafWidth: 4));// ilog(32769)+1=17 > 16
+        Assert.Equal(1, WwiseVorbisNative.DetermineNodeBytes(used: 2, leafWidth: 1));   // leafwidth/2, or 1
+        Assert.Equal(1, WwiseVorbisNative.DetermineNodeBytes(used: 20, leafWidth: 2));  // ilog(54)+1=7 <= 8
+        Assert.Equal(1, WwiseVorbisNative.DetermineNodeBytes(used: 44, leafWidth: 2));  // ilog(126)+1=8 <= 8
+        Assert.Equal(2, WwiseVorbisNative.DetermineNodeBytes(used: 45, leafWidth: 2));  // ilog(129)+1=9 > 8
 
-        Assert.Equal(8, WwiseVorbisNative.DecodeTableEntryBits(1));
-        Assert.Equal(16, WwiseVorbisNative.DecodeTableEntryBits(2));
-        Assert.Equal(32, WwiseVorbisNative.DecodeTableEntryBits(3));
-        Assert.Throws<NotSupportedException>(() => WwiseVorbisNative.DecodeTableEntryBits(4));
+        Assert.Equal(1, WwiseVorbisNative.DetermineLeafWords(nodeBytes: 1, leafWidth: 1));
+        Assert.Equal(2, WwiseVorbisNative.DetermineLeafWords(nodeBytes: 1, leafWidth: 2)); // leafwidth>nodeb
+        Assert.Equal(1, WwiseVorbisNative.DetermineLeafWords(nodeBytes: 2, leafWidth: 1));
 
-        Assert.True(WwiseVorbisNative.DecodeTableEntryIsLeaf(1, 0x80u));
-        Assert.False(WwiseVorbisNative.DecodeTableEntryIsLeaf(1, 0x7Fu));
-        Assert.True(WwiseVorbisNative.DecodeTableEntryIsLeaf(2, 0x8000u));
-        Assert.False(WwiseVorbisNative.DecodeTableEntryIsLeaf(2, 0x7FFFu));
-        Assert.True(WwiseVorbisNative.DecodeTableEntryIsLeaf(32, 0x80000000u));
+        Assert.Equal(1, WwiseVorbisNative.MapType0LeafWidth(2));                          // ilog(2)/8+1
+        Assert.Equal(2, WwiseVorbisNative.MapType0LeafWidth(256));                        // ilog(256)/8+1
+        Assert.Equal(2, WwiseVorbisNative.MapType1LeafWidth(qBits: 8, dim: 1));           // (8+8)/8
+        Assert.Equal(3, WwiseVorbisNative.MapType1LeafWidth(qBits: 16, dim: 1));          // (16+8)/8
+    }
 
-        // two-word payload: the entry is the high part, the adjacent word the low part.
-        Assert.Equal(259u, WwiseVorbisNative.DecodeTableEntryPayload(1, 0x81u, next: 3u));   // 1<<8 | 3
-        Assert.Equal(3u, WwiseVorbisNative.DecodeTableEntryPayload(1, 0x80u, next: 3u));     // 0<<8 | 3
-        Assert.Equal(0x00010003u, WwiseVorbisNative.DecodeTableEntryPayload(2, 0x8001u, next: 3u)); // 1<<16 | 3
-        Assert.Equal(3u, WwiseVorbisNative.DecodeTableEntryPayload(2, 0x8000u, next: 3u));   // 0<<16 | 3
-        Assert.Equal(21u, WwiseVorbisNative.DecodeTableEntryPayload(32, 0x80000000u | 21u, next: 0u));
+    /// <summary>
+    /// M6-002 / correction C7 rows 1i/1j (0x00AB9300): the lowmem tree builder. For lengths {1,1} the two
+    /// leaves are the root's two children (<c>r[0] = 0x80000000|0</c>, <c>r[1] = 0x80000000|1</c>). For
+    /// {1,2,2}, entry 0 takes bit0 and the length-2 entries hang from a new node 1 (r[2], r[3]); the helper
+    /// returns the payload with bit31 set. The overpopulated {1,1,1} tree is refused (the native's −1).
+    /// </summary>
+    [Fact]
+    public void TheMakeWordsBuildsTheC7Tree()
+    {
+        var reader = new BitReader(Array.Empty<byte>());
 
-        // 8-bit walk: node1 is a leaf whose payload 21 sits in the entry's high 7 bits and the next byte.
-        var eight = new[] { 0u, 0x80u, 21u };
-        Assert.Equal(new[] { 5, 2 }, WwiseVorbisNative.DecodeMapWalk(eight, 1, Bits((1, 1)), qBits: 3, dim: 2));
+        var two = new uint[4];
+        WwiseVorbisNative.MakeWords(new[] { 1, 1 }, entries: 2, two, quantvals: 0,
+            decType: WwiseVorbisNative.DecTypeIndex, mapType: 0, dim: 1, qBits: 0, qVal: null, reader);
+        Assert.Equal(new[] { 0x80000000u, 0x80000001u, 0u, 0u }, two);
 
-        // a larger 8-bit leaf: payload 259 = 0x103 read as 8-bit values -> {3, 1}.
-        var eightWide = new[] { 0u, 0x81u, 3u };
-        Assert.Equal(new[] { 3, 1 }, WwiseVorbisNative.DecodeMapWalk(eightWide, 1, Bits((1, 1)), qBits: 8, dim: 2));
+        var three = new uint[6];
+        WwiseVorbisNative.MakeWords(new[] { 1, 2, 2 }, entries: 3, three, quantvals: 0,
+            decType: WwiseVorbisNative.DecTypeIndex, mapType: 0, dim: 1, qBits: 0, qVal: null, reader);
+        Assert.Equal(new[] { 0x80000000u, 1u, 0x80000001u, 0x80000002u, 0u, 0u }, three);
 
-        // internal nodes loop: node1 is internal, the leaf at node 3 holds its low byte at t[4].
-        var loop = new[] { 0u, 0u, 0u, 0x80u, 21u };
-        Assert.Equal(new[] { 5, 2 }, WwiseVorbisNative.DecodeMapWalk(loop, 1, Bits((1, 1), (1, 1)), qBits: 3, dim: 2));
+        Assert.Throws<InvalidDataException>(() =>
+            WwiseVorbisNative.MakeWords(new[] { 1, 1, 1 }, entries: 3, new uint[6], quantvals: 0,
+                decType: WwiseVorbisNative.DecTypeIndex, mapType: 0, dim: 1, qBits: 0, qVal: null, reader));
+    }
 
-        // a node index beyond the table fails closed rather than reading past it.
-        var tooSmall = new[] { 0u };
-        Assert.Throws<InvalidDataException>(() => WwiseVorbisNative.DecodeMapWalk(tooSmall, 1, Bits((1, 1)), qBits: 3, dim: 1));
+    /// <summary>
+    /// M6-002 / correction C7 rows 1e/1c (0x00AB96EC): the decode-table builder repacks the work array to
+    /// the 8/8 form (<c>table[i] = ((work[i]&amp;0x80000000)&gt;&gt;24)|work[i]</c>): {1,1} gives {0x80, 0x81}
+    /// and {1,2,2} gives {0x80, 0x01, 0x81, 0x82} (node 1's children at bytes 2,3). The
+    /// <c>dec_nodeb == 4</c> path is direct and 32-bit (C7 1c/5b): used &lt; 2 gives a 3-word table whose
+    /// first word is the leaf.
+    /// </summary>
+    [Fact]
+    public void TheMakeDecodeTableRepacksTheC7Forms()
+    {
+        var reader = new BitReader(Array.Empty<byte>());
 
-        // 16-bit table: the marker moves to bit15 and the low halfword follows the entry.
-        var sixteen = new[] { 0u, 0x8000u, 21u };
-        Assert.Equal(new[] { 5, 2 }, WwiseVorbisNative.DecodeMapWalk(sixteen, 2, Bits((1, 1)), qBits: 3, dim: 2));
+        var two = WwiseVorbisNative.MakeDecodeTable(usedEntries: 2, leafWidth: 1, new[] { 1, 1 }, entries: 2,
+            quantvals: 0, decType: WwiseVorbisNative.DecTypeIndex, mapType: 0, dim: 1, qBits: 0, qVal: null, reader);
+        Assert.Equal(WwiseVorbisNative.DecNodebByte, two.DecNodeb);
+        Assert.Equal(WwiseVorbisNative.DecLeafwOne, two.DecLeafw);
+        Assert.Equal(new[] { 0x80u, 0x81u }, two.Entries);                  // 8/8 form
+
+        var three = WwiseVorbisNative.MakeDecodeTable(usedEntries: 3, leafWidth: 1, new[] { 1, 2, 2 }, entries: 3,
+            quantvals: 0, decType: WwiseVorbisNative.DecTypeIndex, mapType: 0, dim: 1, qBits: 0, qVal: null, reader);
+        Assert.Equal(new[] { 0x80u, 0x01u, 0x81u, 0x82u }, three.Entries);
+
+        // dec_nodeb == 4: used<2, write the 32-bit table directly.
+        var single = WwiseVorbisNative.MakeDecodeTable(usedEntries: 1, leafWidth: 1, new[] { 1 }, entries: 1,
+            quantvals: 0, decType: WwiseVorbisNative.DecTypeIndex, mapType: 0, dim: 1, qBits: 0, qVal: null, reader);
+        Assert.Equal(WwiseVorbisNative.DecNodebWord, single.DecNodeb);
+        Assert.Equal(new[] { 0x80000000u, 0u, 0u }, single.Entries);
+    }
+
+    /// <summary>
+    /// M6-002 / correction C7 row 1j (0x00AB9624..0x00AB96B4): decpack case 1 maptype 1 packs dim values of
+    /// q_bits bits from the u16 q_val column vector, little-endian by j. dim 2, q_bits 3, q_val {5,2}: entry
+    /// 0 packs 5|40 = 45 and entry 1 packs 2|40 = 42. dec_type 0 returns the entry index.
+    /// </summary>
+    [Fact]
+    public void TheDecpackPacksTheC7LeafPayload()
+    {
+        var reader = new BitReader(Array.Empty<byte>());
+        var qVal = new ushort[] { 5, 2 };
+
+        Assert.Equal(3u, WwiseVorbisNative.Decpack(WwiseVorbisNative.DecTypeIndex, mapType: 0, entry: 3,
+            usedEntry: 0, dim: 1, qBits: 0, qVal: null, quantvals: 0, reader));
+        Assert.Equal(45u, WwiseVorbisNative.Decpack(WwiseVorbisNative.DecTypeValue, mapType: 1, entry: 0,
+            usedEntry: 0, dim: 2, qBits: 3, qVal, quantvals: 2, reader));
+        Assert.Equal(42u, WwiseVorbisNative.Decpack(WwiseVorbisNative.DecTypeValue, mapType: 1, entry: 1,
+            usedEntry: 0, dim: 2, qBits: 3, qVal, quantvals: 2, reader));
+
+        // dec_type 2 and 3 are unreachable (C7 5d) and refused rather than guessed.
+        Assert.Throws<NotSupportedException>(() => WwiseVorbisNative.Decpack(2, mapType: 1, entry: 0,
+            usedEntry: 0, dim: 2, qBits: 3, qVal, quantvals: 2, reader));
+    }
+
+    /// <summary>
+    /// M6-002 / correction C7 row 6a (0x00AB9BC..0x00AB9C48): the decoder dispatch reads the node width
+    /// from <c>dec_nodeb</c> (1→8, 2→16, 4→32) and the leaf marker at bit7/bit15/bit31. This replaces C6's
+    /// "format selector".
+    /// </summary>
+    [Fact]
+    public void TheDecodeTableDispatchIsTheC7Widths()
+    {
+        Assert.Equal(8, WwiseVorbisNative.DecodeTableEntryBits(WwiseVorbisNative.DecNodebByte));
+        Assert.Equal(16, WwiseVorbisNative.DecodeTableEntryBits(WwiseVorbisNative.DecNodebHalf));
+        Assert.Equal(32, WwiseVorbisNative.DecodeTableEntryBits(WwiseVorbisNative.DecNodebWord));
+        Assert.Throws<NotSupportedException>(() => WwiseVorbisNative.DecodeTableEntryBits(3));
+
+        Assert.True(WwiseVorbisNative.DecodeTableEntryIsLeaf(WwiseVorbisNative.DecNodebByte, 0x80u));
+        Assert.False(WwiseVorbisNative.DecodeTableEntryIsLeaf(WwiseVorbisNative.DecNodebByte, 0x7Fu));
+        Assert.True(WwiseVorbisNative.DecodeTableEntryIsLeaf(WwiseVorbisNative.DecNodebHalf, 0x8000u));
+        Assert.False(WwiseVorbisNative.DecodeTableEntryIsLeaf(WwiseVorbisNative.DecNodebHalf, 0x7FFFu));
+        Assert.True(WwiseVorbisNative.DecodeTableEntryIsLeaf(WwiseVorbisNative.DecNodebWord, 0x80000000u));
+    }
+
+    /// <summary>
+    /// M6-002 / correction C7 rows 3a..3g (0x00AB8E60): floor1 inverse1. The quant table is {256,128,86,64};
+    /// the tristate read(1) must be 1; fit_value[0]/[1] are read at ilog(quant_q−1) bits; a partition class
+    /// with subs 1 decodes a cascade word, then each of its dim posts takes
+    /// <c>class_subbook[cval &amp; (csub−1)]</c> (the read(8)==0 sentinel gives memo 0); the unwrap loop
+    /// renders the predicted value and halves the step-2 value. This stream is hand-built.
+    /// </summary>
+    [Fact]
+    public void TheFloor1Inverse1ReadsTheC7FitValuesAndUnwrap()
+    {
+        Assert.Equal(256, WwiseVorbisNative.Floor1QuantQ(1));
+        Assert.Equal(64, WwiseVorbisNative.Floor1QuantQ(4));
+
+        // 0 partitions: only the tristate and the two fit values are read. quant_q 256 -> ilog(255) = 8 bits.
+        var emptyClass = new WwiseVorbisFloorClass(Dimensions: 1, Subclasses: 0, MasterBook: 0, SubBooks: new[] { -1 });
+        var flat = new WwiseVorbisFloorSetup(Partitions: 0, PartitionClasses: Array.Empty<int>(),
+            Classes: new[] { emptyClass }, Multiplier: 1, RangeBits: 4, PostList: new[] { 0, 16 });
+        var flatMemo = new int[2];
+        var flatReader = Bits((1, 1), (2, 8), (3, 8));
+        Assert.True(WwiseVorbisNative.Floor1Inverse1(flatReader, flat, flatMemo,
+            (Array.Empty<byte>(), Array.Empty<byte>()), _ => 0));
+        Assert.Equal(new[] { 2, 3 }, flatMemo);
+
+        // A partition class dim 2, subs 1: cval 1 makes post 2 use subbook[1] (the 0xFF sentinel -> 0) and
+        // post 3 use subbook[0]=2 (decoded to 7). The unwrap then renders posts 2 and 3.
+        var cls = new WwiseVorbisFloorClass(Dimensions: 2, Subclasses: 1, MasterBook: 5, SubBooks: new[] { 2, -1 });
+        var floor = new WwiseVorbisFloorSetup(Partitions: 1, PartitionClasses: new[] { 0 },
+            Classes: new[] { cls }, Multiplier: 1, RangeBits: 4, PostList: new[] { 0, 16, 4, 12 });
+        var memo = new int[4];
+        var reader = Bits((1, 1), (2, 8), (3, 8));
+        var neighbours = WwiseVorbisNative.FloorNeighbours(floor.PostList);
+        Assert.Equal(new byte[] { 0, 2 }, neighbours.Low);
+        Assert.Equal(new byte[] { 1, 1 }, neighbours.High);
+        Assert.True(WwiseVorbisNative.Floor1Inverse1(reader, floor, memo, neighbours,
+            book => book == 5 ? 1 : 7));                                  // cascade 1, subbook 2 -> 7
+        // post 2: val 0 -> predicted 2 | 0x8000, masked back to 2; post 3: 7 stays (hiroom > loroom).
+        Assert.Equal(new[] { 2, 3, 2, 7 }, memo);
+    }
+
+    /// <summary>
+    /// M6-002 / correction C7 row 3g (0x00AB90e0..0x00AB9120): the unwrap's step-2 case. With predicted 10
+    /// and quant_q 100, hiroom 90, loroom 10, room 20: val 5 (odd) gives −3 + 10 = 7, val 6 (even) gives
+    /// 3 + 10 = 13; val 30 (≥ room, hiroom &gt; loroom) gives 30 − 10 = 20; val 0 gives predicted|0x8000.
+    /// render_point is the signed linear interpolation.
+    /// </summary>
+    [Fact]
+    public void TheFloor1UnwrapStep2IsTheC7Arithmetic()
+    {
+        Assert.Equal(7, WwiseVorbisNative.Floor1UnwrapValue(predicted: 10, quantQ: 100, val: 5));   // odd -> -3
+        Assert.Equal(13, WwiseVorbisNative.Floor1UnwrapValue(predicted: 10, quantQ: 100, val: 6));  // even -> 3
+        Assert.Equal(30, WwiseVorbisNative.Floor1UnwrapValue(predicted: 10, quantQ: 100, val: 30)); // (30-10)+10
+        Assert.Equal(10 | 0x8000, WwiseVorbisNative.Floor1UnwrapValue(predicted: 10, quantQ: 100, val: 0));
+        Assert.Equal(39, WwiseVorbisNative.Floor1UnwrapValue(predicted: 90, quantQ: 100, val: 60)); // (10-60-1)+90
+
+        Assert.Equal(12, WwiseVorbisNative.Floor1RenderPoint(0, 100, 0, 50, 25));                   // 50*25/100
+    }
+
+    /// <summary>
+    /// M6-002 / correction C7 rows 4a..4e (0x00AB770C..0x00AB7808): the residue divisor array.
+    /// <c>spp = n/grouping</c>, <c>partitions_per_word = groupbook→dim</c>,
+    /// <c>partwords = ceil(spp/ppw)</c>; the per-channel stride is <c>dim·partwords</c>; and each group is
+    /// <c>[partitions^(dim−1), …, partitions, 1]</c>, truncated to a byte. partitions 4, dim 2 gives {4,1};
+    /// partitions 2, dim 4 gives {8,4,2,1}; partitions 256, dim 3 truncates to {0,0,1}.
+    /// </summary>
+    [Fact]
+    public void TheResidueDivisorArrayIsTheC7Sequence()
+    {
+        Assert.Equal(new byte[] { 4, 1 }, WwiseVorbisNative.ResidueDivisorSequence(partitions: 4, dim: 2));
+        Assert.Equal(new byte[] { 8, 4, 2, 1 }, WwiseVorbisNative.ResidueDivisorSequence(partitions: 2, dim: 4));
+        Assert.Equal(new byte[] { 0, 0, 1 }, WwiseVorbisNative.ResidueDivisorSequence(partitions: 256, dim: 3));
+
+        Assert.Equal(10, WwiseVorbisNative.ResidueSamplesPerPartition(coveredSamples: 100, grouping: 10));
+        Assert.Equal(4, WwiseVorbisNative.ResiduePartwords(samplesPerPartition: 10, partitionsPerWord: 3));
+        Assert.Equal(12, WwiseVorbisNative.ResiduePartwordChannelOffset(channel: 2, dim: 2, partwords: 3));
+
+        var array = WwiseVorbisNative.ResidueDivisorArray(channels: 2, partitions: 4, dim: 2, partwords: 2);
+        Assert.Equal(new byte[] { 4, 1, 4, 1 }, array[0]);
+        Assert.Equal(new byte[] { 4, 1, 4, 1 }, array[1]);                 // the native's channel copy
     }
 
     /// <summary>
@@ -636,12 +787,10 @@ public class WwiseVorbisNativeTests
     // ---- the decoder entry refuses the unread arithmetic ----
 
     /// <summary>
-    /// M6-002 / corrections C5 and C6: C6 settles the decode-table widths/polarity, the residue stage walk,
-    /// the window-combine branches, the floor look helper, the floor neighbour scan and the IMDCT tail
-    /// scale, so they are no longer refused. The pieces the rows still leave open are the decode-map
-    /// builder's tree construction (0x00AB96EC), the <c>codebook+0x14 == 4</c> case, the IMDCT kernel
-    /// (0x00AB4E34) and the floor1 inverse1 decode (0x00AB8E60); the decoder entry must name those rather
-    /// than return plausible samples.
+    /// M6-002 / corrections C5, C6 and C7: C7 settles the decode-table builder/fields, the
+    /// <c>dec_nodeb == 4</c> case, floor1 inverse1 and the residue divisor array, so they are no longer
+    /// refused. The one piece the rows still leave open is the IMDCT kernel (0x00AB4E34); the decoder entry
+    /// must name it rather than return plausible samples.
     /// </summary>
     [Fact]
     public void TheUnreadDecoderArithmeticIsRefusedNotGuessed()
@@ -651,10 +800,9 @@ public class WwiseVorbisNativeTests
         Assert.NotNull(cbl);
 
         var ex = Assert.Throws<NotSupportedException>(() => WwiseVorbisNative.Decode(media, cbl!));
-        Assert.Contains("0x00AB96EC", ex.Message);          // decode-map builder tree construction
-        Assert.Contains("codebook+0x14 == 4", ex.Message);  // the single-entry case
         Assert.Contains("0x00AB4E34", ex.Message);          // IMDCT kernel
-        Assert.Contains("0x00AB8E60", ex.Message);          // floor1 inverse1
+        Assert.DoesNotContain("0x00AB96EC", ex.Message);    // the builder is now built (C7)
+        Assert.DoesNotContain("0x00AB8E60", ex.Message);    // floor1 inverse1 is now built (C7)
     }
 
     /// <summary>

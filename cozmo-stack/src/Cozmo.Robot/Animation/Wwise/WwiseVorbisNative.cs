@@ -60,6 +60,16 @@ public sealed record WwiseVorbisMappingSetup(
     int CouplingSteps, (int Mag, int Ang)[] Coupling);
 
 /// <summary>
+/// One built Vorbis decode table (C7 1a..1h, <c>_make_decode_table</c> 0x00AB96EC). <see cref="DecNodeb"/>
+/// is the storage width (1, 2 or 4 bytes) and <see cref="DecLeafw"/> the leaf-word multiple (1 or 2). The
+/// entries are the raw stored words widened to <see cref="uint"/>; only the low <c>DecNodeb·8</c> bits of
+/// each are meaningful. The internal-node indexing differs by form (C7 6a): the 8/8, 16/16 and 32/32 forms
+/// index <c>entry[2·node+bit]</c>, while the 8/16 and 16/32 forms index <c>entry[node+bit]</c> with
+/// <c>node</c> a byte/halfword offset and a two-slot leaf payload.
+/// </summary>
+public sealed record WwiseVorbisDecodeTable(int DecNodeb, int DecLeafw, uint[] Entries);
+
+/// <summary>
 /// The runtime's Vorbis decoder (M6-002): an Audiokinetic fork of <b>Tremor lowmem</b>, whose codebook struct
 /// matches that branch field for field except that <c>q_seq</c> is missing (gapG 6.6, 0xABA1A8) and whose
 /// quantization is always <c>decode_map</c> type 1 (gapG 6.4/6.5).
@@ -96,22 +106,28 @@ public sealed record WwiseVorbisMappingSetup(
 ///
 /// <b>Built from correction C6</b> (the pass-2 report <c>re-analysis/evidence/m6-vorbis/vorbis-arithmetic-2.md</c>):
 /// the corrected leaf polarity (C6 1e: internal nodes are <c>&gt;= 0</c>, leaves are bit31-set — C5 3a/3b
-/// inverted); the decode-table entry widths and leaf markers (C6 1c/1d: 8-bit bit7 for format 1, 16-bit
-/// bit15 for format 2, 32-bit default, no 32-bit store) with the two-word leaf payload
-/// (<see cref="MakeDecodeTableEntry"/> / <see cref="DecodeTableEntryPayload"/>) and the 8/16-bit
-/// <see cref="DecodeMapWalk"/>; the residue stage/partition accessors and the class-word split (C6 3a..3e,
+/// inverted); the residue stage/partition accessors and the class-word split (C6 3a..3e,
 /// <see cref="ResidueSplitClassWord"/>); the window
 /// combine mirror/negate forms (C6 5d/5e); the floor1 low/high-neighbour scan (C6 7a) and the floor-look
 /// right-biased merge sort (C6 4a); and the MDCT's only output scale, 2^-24 at the <c>0x00AB39D8</c> tail
 /// (C6 2b, correcting C5 7b's "no decode caller"). C6 also corrects C5 9b's allocation attribution:
 /// <c>0x00AB3780</c> allocates and stores the per-channel pointers, <c>0x00AB3520</c> drives the overlap.
 ///
-/// <b>Refused, not guessed.</b> The pieces the C5/C6 rows still do not settle stay refused, and
-/// <see cref="Decode"/> throws naming them: the decode-map builder's codeword-length-to-tree construction
-/// (0x00AB96EC: C6 settles only the entry widths and markers), the <c>codebook+0x14 == 4</c> single-entry
-/// case (C6 1f), the float NEON IMDCT kernel 0x00AB4E34 (C5 7a read its structure only; the
-/// butterfly/post-rotation arithmetic and the per-stage trig tables are not in the rows), and the floor1
-/// inverse1 decode 0x00AB8E60 that consumes the neighbour/sorted arrays. The window default 0x00AB3728 is
+/// <b>Built from correction C7</b> (the pass-3 report
+/// <c>re-analysis/evidence/m6-vorbis/vorbis-arithmetic-3.md</c>, each cited at the code): the codebook fields
+/// are <c>dec_nodeb</c> (+0x14 in {1,2,4}), <c>dec_leafw</c> (+0x18 in {1,2}), <c>dec_type</c> (+0x1C) and
+/// <c>q_val</c> (+0x38), with <c>_determine_node_bytes</c>/<c>_determine_leaf_words</c> inlined at
+/// 0x00ABA314..0x00ABA440; the <c>_make_decode_table</c>/<c>_make_words</c>/<c>decpack</c> builder and its
+/// five (nodeb, leafw) forms, correcting C6: the <c>dec_nodeb == 4</c> path writes a 32-bit table and is
+/// unexercised by shipped books; floor1 inverse1 0x00AB8E60 (quant table, tristate, fit values, class
+/// cascade, sub-books and the unwrap loop); the residue divisor array 0x00AB770C..0x00AB7808; and the
+/// decoder dispatch on nodeb/leafw (C7 6a). See <see cref="MakeDecodeTable"/>, <see cref="MakeWords"/>,
+/// <see cref="Decpack"/>, <see cref="Floor1Inverse1"/> and <see cref="ResidueDivisorArray"/>.
+///
+/// <b>Refused, not guessed.</b> The one piece the rows still do not settle stays refused, and
+/// <see cref="Decode"/> throws naming it: the float NEON IMDCT kernel 0x00AB4E34 (C5 7a/C7 2d/2e/2f read the
+/// stage order and the 13 trig table addresses, but the per-stage butterfly arithmetic and the trig-table
+/// indexing are not in the rows). The window default 0x00AB3728 is
 /// modelled as a fail-closed refusal whose reachability from a shipped header is UNKNOWN (C6 6b/6c). The
 /// end-trim consumption is implemented (C5 10b) but the meaning of its <c>current</c>/<c>returned</c>
 /// inputs stays the row's.
@@ -147,18 +163,15 @@ public static partial class WwiseVorbisNative
     public const int BlockSizeError = -0x85;
 
     /// <summary>
-    /// The pieces the C5/C6 rows still leave open, with their addresses. Named here so <see cref="Decode"/>
-    /// refuses visibly and a caller or test can see exactly what is missing. Correction C6 settled the
-    /// decode-table widths and polarity, the two-word leaf payload, the residue stage walk (accessors and
-    /// the class-word split), the window-combine branches, the floor look helper (the right-biased merge
-    /// sort), the floor neighbour scan and the IMDCT tail scale, so they are no longer listed.
+    /// The one piece the C5/C6/C7 rows still leave open, with its address. Named here so <see cref="Decode"/>
+    /// refuses visibly and a caller or test can see exactly what is missing. Correction C7 settled the
+    /// decode-table builder together with the codebook field names and <c>_determine_node_bytes</c> /
+    /// <c>_determine_leaf_words</c>, the <c>dec_nodeb == 4</c> case, floor1 inverse1 and the residue divisor
+    /// array, so they are no longer listed.
     /// </summary>
     public static readonly IReadOnlyList<string> UnreadArithmetic = new[]
     {
-        "the decode-map builder's codeword-length-to-tree construction 0x00AB96EC (C6 1c settles only the entry widths and leaf markers; how codeword lengths become the table's internal nodes is not in the rows)",
-        "the codebook+0x14 == 4 single-entry case (C6 1f: the builder writes an 8-bit table while the decoder's default path reads 32-bit, so it cannot be reconciled)",
-        "the float NEON IMDCT kernel 0x00AB4E34 (C5 7a read the structure only: the butterfly/post-rotation arithmetic and the per-stage trig tables are not in the rows; only the 2^-24 tail scale, C6 2b, is settled)",
-        "the floor1 inverse1 decode 0x00AB8E60 that consumes the neighbour and sorted-index arrays (not in the C5/C6 rows)",
+        "the float NEON IMDCT kernel 0x00AB4E34 (C7 2a..2h: the stage order presymmetry 0x00AB3D28 -> butterflies 0x00AB3FCC -> the step7/8 loop -> the tail 0x00AB39D8 is read, but the per-stage butterfly arithmetic and the 13 trig-table indices at 0x01004A40 via GOT 0x01040230 are RECOVERABLE_GAP)",
     };
 
     // ---- setup: block sizes (V2, 0x00AB6380..0x00AB63DC) ----
@@ -449,15 +462,71 @@ public static partial class WwiseVorbisNative
         return new WwiseVorbisMappingSetup(submaps, mux, floor, residue, coupling.Count, coupling.ToArray());
     }
 
-    // ---- decode_map and the decode table (corrections C5 3a/3b and C6 1c..1f, 0x00AB9BB0 / 0x00AB96EC) ----
+    // ---- decode_map and the decode table (C5 3a, C6 1c..1e, C7 1a..1k, 0x00AB96EC / 0x00AB9300 / 0x00AB9BB0) ----
+
+    /// <summary>
+    /// The codebook's decode-table node width, <c>codebook+0x14</c> (C7 1a/1k): 1, 2 or 4 bytes, chosen by
+    /// <see cref="DetermineNodeBytes"/>. Correction C7 repurposes this from C6's "format selector".
+    /// </summary>
+    public const int DecNodebByte = 1;
+
+    /// <summary>The halfword node width (C7 1a/1k).</summary>
+    public const int DecNodebHalf = 2;
+
+    /// <summary>The word node width (C7 1a/1k); the only 32-bit path, unexercised by shipped books (C7 5c).</summary>
+    public const int DecNodebWord = 4;
+
+    /// <summary>The codebook's leaf-word multiple, <c>codebook+0x18</c> (C7 1a/1k): 1 or 2.</summary>
+    public const int DecLeafwOne = 1;
+
+    /// <summary>The two-word leaf form (C7 1a/1k).</summary>
+    public const int DecLeafwTwo = 2;
+
+    /// <summary>The decode type <c>codebook+0x1C</c> for maptype 0 (C7 1a/1j/5d): the leaf payload is the index.</summary>
+    public const int DecTypeIndex = 0;
+
+    /// <summary>The decode type for maptype 1 (C7 1a/1j/5d): the leaf payload is the packed value.</summary>
+    public const int DecTypeValue = 1;
+
+    /// <summary>
+    /// The inlined <c>_determine_node_bytes</c> (C7 1k, 0x00ABA35C..0x00ABA3C4 and the
+    /// <c>0x00ABA65C</c>/<c>0x00ABA7DC</c> leafwidth-3 arms): 4 for <c>used &lt; 2</c>. A
+    /// <c>leafwidth == 3</c> is substituted with 4 <b>locally</b> and the rest of the rule still runs
+    /// (0x00ABA668 <c>mov ip,#0x10; mov r0,#4; b 0x00ABA378</c>), so for every reachable <c>used</c> the
+    /// test passes up to <c>used = 10924</c> and gives <c>2</c>, not 4. Otherwise
+    /// <c>leafwidth/2</c> (or 1 when <c>leafwidth == 1</c>) when <c>ilog(3·used−6)+1 &lt;= leafwidth·4</c>,
+    /// else <c>leafwidth</c>.
+    /// </summary>
+    public static int DetermineNodeBytes(int used, int leafWidth)
+    {
+        if (used < 2) return DecNodebWord;                                  // C7 1k: used<2 -> 4
+        if (leafWidth == 3) leafWidth = 4;                                  // C7 1k: leafwidth==3 substituted locally
+        if (WwiseCodebookLibrary.ILog((uint)(3 * used - 6)) + 1 <= leafWidth * 4)
+            return leafWidth == 1 ? 1 : leafWidth / 2;                      // C7 1k: leafwidth/2 (or 1)
+        return leafWidth;                                                   // C7 1k: else leafwidth
+    }
+
+    /// <summary>
+    /// The inlined <c>_determine_leaf_words</c> (C7 1k): 2 iff the leaf width exceeds the node width, else 1.
+    /// </summary>
+    public static int DetermineLeafWords(int nodeBytes, int leafWidth)
+        => leafWidth > nodeBytes ? DecLeafwTwo : DecLeafwOne;               // C7 1k: leafwidth>nodeb -> 2
+
+    /// <summary>The maptype-0 <c>leafwidth = ilog(entries)/8 + 1</c> (C7 1k, 0x00ABA33C..0x00ABA358).</summary>
+    public static int MapType0LeafWidth(int entries) => WwiseCodebookLibrary.ILog((uint)entries) / 8 + 1;
+
+    /// <summary>
+    /// The maptype-1 <c>leafwidth = (q_bits·dim + 8)/8</c> (C7 1k, 0x00ABA6F0..0x00ABA6FC); the native shifts
+    /// a non-negative value right by three.
+    /// </summary>
+    public static int MapType1LeafWidth(int qBits, int dim) => (qBits * dim + 8) / 8;
 
     /// <summary>The tree-walk node step (C5 3a, 0x00AB9C34): <c>node = bit + 2·node</c>.</summary>
     public static int DecodeMapNode(int node, bool bit) => (bit ? 1 : 0) + 2 * node;
 
     /// <summary>
-    /// C6 1e (0x00AB9C44/0x00AB9C48): a 32-bit table entry is a <b>leaf</b> when its bit31 is set, and an
-    /// <b>internal node</b> when it is non-negative (bit31 clear). This is C5 3a/3b inverted. The 8- and
-    /// 16-bit tables mark leaves at bit7/bit15 instead; see <see cref="DecodeTableEntryIsLeaf"/>.
+    /// C6 1e / C7 6a: the 32-bit decode-table leaf marker, bit31 (<c>0x00AB9C4C bic ip,ip,#0x80000000</c>).
+    /// The 8- and 16-bit tables mark leaves at bit7/bit15 instead; see <see cref="DecodeTableEntryIsLeaf"/>.
     /// </summary>
     public static bool DecodeMapIsLeaf(uint entry) => (entry & 0x80000000u) != 0;   // C6 1e: bic at the fall-through
 
@@ -465,9 +534,9 @@ public static partial class WwiseVorbisNative
     public static bool DecodeMapIsInternal(uint entry) => (entry & 0x80000000u) == 0;
 
     /// <summary>
-    /// The leaf unpacking (C6 1e, 0x00AB9C4C..0x00AB9CA0): <c>packed = entry &amp; 0x7FFFFFFF</c> (bit31 is
-    /// the leaf marker, <c>bic ip,ip,#0x80000000</c>), then <c>dim</c> values of <c>q_bits</c> bits, lowest
-    /// first (mask <c>(1&lt;&lt;q_bits)−1</c>).
+    /// The decode_map type-1 leaf unpacking (C5 3b / C6 1e, 0x00AB9C4C..0x00AB9CA0): <c>packed = entry &amp;
+    /// 0x7FFFFFFF</c>, then <c>dim</c> values of <c>q_bits</c> bits, lowest first (mask
+    /// <c>(1&lt;&lt;q_bits)−1</c>).
     /// </summary>
     public static int[] DecodeMapLeaf(uint entry, int qBits, int dim)
     {
@@ -482,106 +551,339 @@ public static partial class WwiseVorbisNative
         return values;
     }
 
-    /// <summary>The format selector value for the 8-bit decode table (C6 1c/1d, 0x00AB9708).</summary>
-    public const int DecodeTableFormatEight = 1;
-
-    /// <summary>The format selector value for the 16-bit decode table (C6 1c/1d).</summary>
-    public const int DecodeTableFormatSixteen = 2;
-
-    /// <summary>The single-entry format selector, unresolved in C6 (C6 1f).</summary>
-    public const int DecodeTableFormatSingleEntry = 4;
-
     /// <summary>
-    /// The decode-table entry width in bits, from the <c>codebook+0x14</c> dispatch (C6 1d): 1 → 8-bit,
-    /// 2 → 16-bit, otherwise the decoder's 32-bit default. The format-4 single-entry case is refused: the
-    /// builder writes an 8-bit table while the decoder reads 32-bit, which C6 leaves unresolved.
+    /// The native <c>decpack</c> leaf payload for dec_type 0 and 1 (C7 1j, 0x00AB9440..0x00AB96D8):
+    /// <br>- dec_type 0 returns the entry index (0x00AB961C);
+    /// <br>- dec_type 1, maptype 1 packs <c>dim</c> values of <c>q_bits</c> bits from the little-endian
+    /// <c>q_val</c> u16 array (0x00AB9624..0x00AB96B4);
+    /// <br>- dec_type 1, maptype != 1 reads <c>q_bits</c> from the stream (0x00AB95D0..0x00AB9618).
+    /// dec_type 2 and 3 (0x00AB9530 / 0x00AB94F8) are unreachable in this engine (C7 5d: the packed lookup
+    /// type is one bit, and maptype 1 only ever stores dec_type 1) and are refused.
     /// </summary>
-    public static int DecodeTableEntryBits(int format) => format switch
+    internal static uint Decpack(int decType, int mapType, long entry, long usedEntry, int dim, int qBits,
+        ushort[]? qVal, int quantvals, BitReader reader)
     {
-        DecodeTableFormatEight => 8,                                       // C6 1d: ldrb
-        DecodeTableFormatSixteen => 16,                                    // C6 1d: ldrh
-        DecodeTableFormatSingleEntry => throw new NotSupportedException(
-            "codebook+0x14 == 4 is unresolved (C6 1f): the builder writes an 8-bit table while the " +
-            "decoder's default path reads 32-bit, so it cannot be decoded faithfully"),
-        _ => 32,                                                           // C6 1d: default ldr [table+node*4]
-    };
-
-    /// <summary>
-    /// The two-slot leaf encoding of <c>_make_decode_table</c> (C6 1c/1d, 0x00AB96EC): a 32-bit node/leaf
-    /// word (<paramref name="node"/>; bit31 set = leaf) is stored as the entry's <b>high</b> bits plus the
-    /// adjacent slot's low bits, with the leaf marker moved down to bit7 (format 1,
-    /// <c>orr r1,r1,r1,lsr#24</c>) or bit15 (format 2, <c>orr ip,ip,r5,lsr#16</c>). Format 1 keeps the
-    /// payload's high 7 bits in the entry and its low 8 bits in the next byte; format 2 keeps the high 15
-    /// in the entry and the low 16 in the next halfword. The builder has no 32-bit store, and how the tree
-    /// is constructed from codeword lengths is not in the rows, so only this leaf encoding is settled.
-    /// </summary>
-    public static (uint Entry, uint Next) MakeDecodeTableEntry(int format, uint node)
-    {
-        uint marker = node & 0x80000000u;
-        return format switch
+        switch (decType)
         {
-            // C6 1c/1d: bit31 -> bit7; the adjacent byte carries the low 8 payload bits.
-            DecodeTableFormatEight => (((node >> 8) & 0x7Fu) | (marker >> 24), node & 0xFFu),
-            // C6 1c/1d: bit31 -> bit15; the adjacent halfword carries the low 16 payload bits.
-            DecodeTableFormatSixteen => (((node >> 16) & 0x7FFFu) | (marker >> 16), node & 0xFFFFu),
-            DecodeTableFormatSingleEntry => throw new NotSupportedException(
-                "codebook+0x14 == 4 is unresolved (C6 1f)"),
-            _ => throw new NotSupportedException(
-                "the decode-table builder has no 32-bit store (C6 1c); only formats 1 and 2 are settled"),
-        };
+            case DecTypeIndex:
+                return (uint)entry;                                        // C7 1j: case 0 -> the entry index
+            case DecTypeValue when mapType == 1:
+            {
+                uint ret = 0;
+                long e = entry;
+                for (int j = 0; j < dim; j++)
+                {
+                    int off = (int)(e % quantvals);                        // C7 1j: uidivmod
+                    e /= quantvals;
+                    ret |= (uint)qVal![off] << (qBits * j);                // C7 1j: q_val u16 << q_bits*j
+                }
+                return ret;
+            }
+            case DecTypeValue:
+            {
+                uint ret = 0;
+                for (int j = 0; j < dim; j++)
+                    ret |= reader.Read(qBits) << (qBits * j);              // C7 1j: read(q_bits) << q_bits*j
+                return ret;
+            }
+            default:
+                throw new NotSupportedException(
+                    $"Vorbis decpack dec_type {decType} is unreachable in this engine (C7 5d: the packed " +
+                    "lookup type is one bit, and maptype 1 only ever stores dec_type 1)");
+        }
     }
 
     /// <summary>
-    /// The per-format leaf marker test (C6 1c/1d): bit7 for format 1 (<c>tst #0x80</c>), bit15 for format 2
-    /// (<c>tst #0x8000</c>), bit31 for the decoder's 32-bit default (C6 1e).
+    /// The native <c>_make_words</c> (C7 1i, 0x00AB9300..0x00AB96E8): the lowmem tree builder. It fills
+    /// <paramref name="r"/> with 32-bit words: internal nodes store child node indices (non-negative) and
+    /// leaves are the <c>decpack(...)|0x80000000</c> word. An overpopulated tree is refused, which is the
+    /// native's <c>return −1</c>.
     /// </summary>
-    public static bool DecodeTableEntryIsLeaf(int format, uint entry) => format switch
+    internal static void MakeWords(int[] lengthList, int entries, uint[] r, int quantvals,
+        int decType, int mapType, int dim, int qBits, ushort[]? qVal, BitReader reader)
     {
-        DecodeTableFormatEight => (entry & 0x80u) != 0,
-        DecodeTableFormatSixteen => (entry & 0x8000u) != 0,
-        _ => (entry & 0x80000000u) != 0,
+        if (entries < 2)
+        {
+            r[0] = 0x80000000u;                                            // C7 1i: n<2 -> r[0] = 0x80000000
+            return;
+        }
+
+        var marker = new uint[33];                                         // C7 1i: marker[33] zeroed
+        long count = 0, top = 0;
+        for (int i = 0; i < entries; i++)
+        {
+            int length = lengthList[i];
+            if (length == 0) continue;
+            uint entry = marker[length];                                   // C7 1i: entry = marker[length]
+            long chase = 0;
+            if (count != 0 && entry == 0)
+                throw new InvalidDataException(
+                    "Vorbis codebook is an overpopulated tree (C7 1i: count && !entry returns −1)");
+
+            // chase the tree as far as it is populated, appending new nodes from top (C7 1i chase/node append)
+            int j;
+            for (j = 0; j < length - 1; j++)
+            {
+                int bit = (int)((entry >> (length - j - 1)) & 1);          // C7 1i: MSB first
+                if (chase >= top)
+                {
+                    top++;
+                    r[chase * 2] = (uint)top;
+                    r[chase * 2 + 1] = 0;
+                }
+                else if (r[chase * 2 + bit] == 0)
+                {
+                    r[chase * 2 + bit] = (uint)top;
+                }
+                chase = r[chase * 2 + bit];
+            }
+
+            {
+                int bit = (int)((entry >> (length - j - 1)) & 1);
+                if (chase >= top)
+                {
+                    top++;
+                    r[chase * 2 + 1] = 0;
+                }
+                r[chase * 2 + bit] = Decpack(decType, mapType, i, count, dim, qBits, qVal, quantvals, reader)
+                    | 0x80000000u;                                         // C7 1i: decpack(...)|0x80000000
+            }
+            count++;
+
+            // the next shorter marker points to the node above (C7 1i marker bump)
+            for (j = length; j > 0; j--)
+            {
+                if ((marker[j] & 1) != 0) { marker[j] = marker[j - 1] << 1; break; }
+                marker[j]++;
+            }
+            // prune: the longer markers dangling from the just-taken node hang from the new one (C7 1i prune)
+            for (j = length + 1; j < 33; j++)
+            {
+                if ((marker[j] >> 1) == entry) { entry = marker[j]; marker[j] = marker[j - 1] << 1; }
+                else break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// The native <c>_make_decode_table</c> (C7 1b..1h, 0x00AB96EC..0x00AB9BB0): builds the decode table for
+    /// one codebook and repacks the 32-bit <c>_make_words</c> work array. The five (nodeb, leafw) forms are
+    /// (1,1) 8/8, (1,2) 8/16, (2,1) 16/16, (2,2) 16/32 and (4,*) 32/32. C6's "16-bit store vs 32-bit read"
+    /// mismatch is void: the <c>dec_nodeb == 4</c> path writes the 32-bit table directly (C7 1c/5b) and is
+    /// unexercised by shipped books (C7 5c).
+    /// </summary>
+    internal static WwiseVorbisDecodeTable MakeDecodeTable(
+        int usedEntries, int leafWidth, int[] lengthList, int entries, int quantvals,
+        int decType, int mapType, int dim, int qBits, ushort[]? qVal, BitReader reader)
+    {
+        int nodeb = DetermineNodeBytes(usedEntries, leafWidth);             // C7 1a/1k
+        int leafw = DetermineLeafWords(nodeb, leafWidth);                   // C7 1a/1k
+
+        if (nodeb == DecNodebWord)
+        {
+            // C7 1c/5b: (used*2+1) words; _make_words writes the table directly with no repack.
+            var direct = new uint[usedEntries * 2 + 1];
+            MakeWords(lengthList, entries, direct, quantvals, decType, mapType, dim, qBits, qVal, reader);
+            return new WwiseVorbisDecodeTable(nodeb, leafw, direct);
+        }
+
+        var work = new uint[usedEntries * 2];                               // C7 1d: alloca(used*8)
+        MakeWords(lengthList, entries, work, quantvals, decType, mapType, dim, qBits, qVal, reader);
+
+        if (leafw == DecLeafwOne)
+        {
+            if (nodeb == DecNodebByte)
+            {
+                // C7 1e: 8/8; the entry is one byte, table[i] = ((work[i] & 0x80000000) >> 24) | work[i].
+                var table = new uint[usedEntries * 2 - 2];
+                for (int i = 0; i < table.Length; i++)
+                    table[i] = (((work[i] & 0x80000000u) >> 24) | work[i]) & 0xFFu;
+                return new WwiseVorbisDecodeTable(nodeb, leafw, table);
+            }
+            if (nodeb == DecNodebHalf)
+            {
+                // C7 1f: 16/16; the entry is one halfword, ((u16*)table)[i] = ((work[i] & 0x80000000) >> 16) | work[i].
+                var table = new uint[usedEntries * 2 - 2];
+                for (int i = 0; i < table.Length; i++)
+                    table[i] = (((work[i] & 0x80000000u) >> 16) | work[i]) & 0xFFFFu;
+                return new WwiseVorbisDecodeTable(nodeb, leafw, table);
+            }
+        }
+
+        // C7 1g/1h: the two-pass repack that updates the node indexing; top starts at used*3−2.
+        int top = usedEntries * 3 - 2;
+        if (nodeb == DecNodebByte)
+        {
+            var table = new uint[usedEntries * 3 - 2];
+            for (int i = usedEntries * 2 - 4; i >= 0; i -= 2)
+            {
+                if ((work[i] & 0x80000000u) != 0)
+                {
+                    if ((work[i + 1] & 0x80000000u) != 0)
+                    {
+                        top -= 4;
+                        table[top] = ((work[i] >> 8) & 0x7Fu) | 0x80u;
+                        table[top + 1] = ((work[i + 1] >> 8) & 0x7Fu) | 0x80u;
+                        table[top + 2] = work[i] & 0xFFu;
+                        table[top + 3] = work[i + 1] & 0xFFu;
+                    }
+                    else
+                    {
+                        top -= 3;
+                        table[top] = ((work[i] >> 8) & 0x7Fu) | 0x80u;
+                        table[top + 1] = work[work[i + 1] * 2];
+                        table[top + 2] = work[i] & 0xFFu;
+                    }
+                }
+                else if ((work[i + 1] & 0x80000000u) != 0)
+                {
+                    top -= 3;
+                    table[top] = work[work[i] * 2];
+                    table[top + 1] = ((work[i + 1] >> 8) & 0x7Fu) | 0x80u;
+                    table[top + 2] = work[i + 1] & 0xFFu;
+                }
+                else
+                {
+                    top -= 2;
+                    table[top] = work[work[i] * 2];
+                    table[top + 1] = work[work[i + 1] * 2];
+                }
+                work[i] = (uint)top;
+            }
+            return new WwiseVorbisDecodeTable(nodeb, leafw, table);
+        }
+        if (nodeb == DecNodebHalf)
+        {
+            var table = new uint[usedEntries * 3 - 2];
+            for (int i = usedEntries * 2 - 4; i >= 0; i -= 2)
+            {
+                if ((work[i] & 0x80000000u) != 0)
+                {
+                    if ((work[i + 1] & 0x80000000u) != 0)
+                    {
+                        top -= 4;
+                        table[top] = ((work[i] >> 16) & 0x7FFFu) | 0x8000u;
+                        table[top + 1] = ((work[i + 1] >> 16) & 0x7FFFu) | 0x8000u;
+                        table[top + 2] = work[i] & 0xFFFFu;
+                        table[top + 3] = work[i + 1] & 0xFFFFu;
+                    }
+                    else
+                    {
+                        top -= 3;
+                        table[top] = ((work[i] >> 16) & 0x7FFFu) | 0x8000u;
+                        table[top + 1] = work[work[i + 1] * 2];
+                        table[top + 2] = work[i] & 0xFFFFu;
+                    }
+                }
+                else if ((work[i + 1] & 0x80000000u) != 0)
+                {
+                    top -= 3;
+                    table[top] = work[work[i] * 2];
+                    table[top + 1] = ((work[i + 1] >> 16) & 0x7FFFu) | 0x8000u;
+                    table[top + 2] = work[i + 1] & 0xFFFFu;
+                }
+                else
+                {
+                    top -= 2;
+                    table[top] = work[work[i] * 2];
+                    table[top + 1] = work[work[i + 1] * 2];
+                }
+                work[i] = (uint)top;
+            }
+            return new WwiseVorbisDecodeTable(nodeb, leafw, table);
+        }
+        throw new InvalidDataException($"Vorbis decode-table node width {nodeb} is not 1, 2 or 4 (C7 1a)");
+    }
+
+    /// <summary>
+    /// The decode-table entry width in bits (C7 6a, 0x00AB9C00..0x00AB9C18): nodeb 1 → 8, 2 → 16, 4 → 32.
+    /// This replaces C6's "format selector" reading of <c>codebook+0x14</c>.
+    /// </summary>
+    public static int DecodeTableEntryBits(int nodeb) => nodeb switch
+    {
+        DecNodebByte => 8,                                                  // C7 6a: ldrb
+        DecNodebHalf => 16,                                                 // C7 6a: ldrh
+        DecNodebWord => 32,                                                 // C7 6a: ldr
+        _ => throw new NotSupportedException($"decode-table node width {nodeb} is not 1, 2 or 4 (C7 1a)"),
     };
 
     /// <summary>
-    /// The payload of a leaf table entry (C6 1d/1e). Format 1 combines the entry's marker-cleared high 7
-    /// bits with the adjacent byte: <c>((entry &amp; 0x7F) &lt;&lt; 8) | next</c>, 15 bits
-    /// (<c>0x00AB9ECC lsl sb,sb,#8</c>, <c>0x00AB9EE0 ldrb ip,[ip,#1]</c>, <c>0x00AB9EE4 orr</c>,
-    /// <c>0x00AB9EE8 ubfx #0,#0xf</c>). Format 2 combines the marker-cleared 15 bits with the adjacent
-    /// halfword: <c>((entry &amp; 0x7FFF) &lt;&lt; 16) | next</c> (<c>0x00ABA0C0 lsl</c>,
-    /// <c>0x00ABA0DC ldrh ip,[sl,#2]</c>, <c>0x00ABA0E0 orr</c>). The 32-bit default carries the whole
-    /// payload in the entry (bit31 is the leaf marker).
+    /// The per-(nodeb, leafw) leaf marker test (C7 6a, 0x00AB9BB0): the 8-bit leafw-1 form marks bit7, the
+    /// 8-bit leafw-2 form also marks bit7, the 16-bit leafw-1 form marks bit15, the 16-bit leafw-2 form also
+    /// marks bit15, and the 32-bit form marks bit31.
     /// </summary>
-    public static uint DecodeTableEntryPayload(int format, uint entry, uint next) => format switch
+    public static bool DecodeTableEntryIsLeaf(int nodeb, uint entry) => nodeb switch
     {
-        DecodeTableFormatEight => ((entry & 0x7Fu) << 8 | (next & 0xFFu)) & 0x7FFFu, // C6 1d: two bytes
-        DecodeTableFormatSixteen => ((entry & 0x7FFFu) << 16) | (next & 0xFFFFu),    // C6 1d: two halfwords
-        _ => entry & 0x7FFFFFFFu,                                                    // C6 1e: one word
+        DecNodebByte => (entry & 0x80u) != 0,                               // C7 6a: 8/8 and 8/16
+        DecNodebHalf => (entry & 0x8000u) != 0,                             // C7 6a: 16/16 and 16/32
+        DecNodebWord => (entry & 0x80000000u) != 0,                         // C7 6a: 32/32
+        _ => throw new NotSupportedException($"decode-table node width {nodeb} is not 1, 2 or 4 (C7 1a)"),
     };
 
     /// <summary>
-    /// The <c>decode_map</c> tree walk (C6 1d/1e, 0x00AB9BB0): read a bit, <c>node = bit + 2·node</c>, load
-    /// the format's table entry; loop while the entry is an internal node; on the terminating leaf combine
-    /// the entry with the adjacent table word (C6 1d) and unpack its <c>dim</c> values of <c>q_bits</c>
-    /// bits.
-    ///
-    /// The table is the output of <c>_make_decode_table</c>. C6 settles its entry widths, markers, the
-    /// two-word leaf payload and the walk, but not how codeword lengths become the table's internal nodes,
-    /// so this consumes a table the caller has already built.
+    /// The native <c>decode_packed_entry_number</c> (C7 6a, 0x00AB9BB0..0x00AB9C4C): chase the decode table
+    /// bit by bit, following the (nodeb, leafw) form, and return the leaf payload, or −1 when no leaf is
+    /// reached within <paramref name="maxLength"/> bits. Internal nodes are non-negative for the 32-bit form;
+    /// the 8- and 16-bit forms carry their marker at bit7/bit15.
     /// </summary>
-    internal static int[] DecodeMapWalk(uint[] table, int format, BitReader reader, int qBits, int dim)
+    internal static int DecodeMapEntry(WwiseVorbisDecodeTable table, BitReader reader, int maxLength)
     {
-        int node = 0;
-        while (true)
+        uint chase = 0;
+        for (int i = 0; i < maxLength; i++)
         {
             int bit = reader.ReadBit() ? 1 : 0;
-            node = DecodeMapNode(node, bit != 0);                          // C6 1e: node = bit + 2*node
-            if (node < 0 || node >= table.Length)
-                throw new InvalidDataException("decode_map walked off the decode table (C6 1e)");
-            uint entry = table[node];
-            if (!DecodeTableEntryIsLeaf(format, entry)) continue;          // C6 1e: loop while internal
-            uint next = node + 1 < table.Length ? table[node + 1] : 0u;    // C6 1d: the adjacent table word
-            return DecodeMapLeaf(DecodeTableEntryPayload(format, entry, next), qBits, dim); // C6 1d/1e
+            switch (table.DecNodeb)
+            {
+                case DecNodebByte:
+                    if (table.DecLeafw == DecLeafwOne)
+                    {
+                        chase = Entry(table, (int)(chase * 2) + bit);       // C7 6a: 8/8 t[chase*2+bit]
+                        if ((chase & 0x80u) != 0) return (int)(chase & 0x7Fu);
+                    }
+                    else
+                    {
+                        uint next = Entry(table, (int)chase + bit);         // C7 6a: 8/16 t[chase+bit]
+                        if ((next & 0x80u) != 0)
+                        {
+                            uint extra = (bit == 0 || (Entry(table, (int)chase) & 0x80u) != 0) ? 1u : 0u;
+                            chase = (next << 8) | Entry(table, (int)(chase + (uint)bit + 1 + extra));
+                            return (int)(chase & 0x7FFFu);                  // C7 6a: 15-bit payload
+                        }
+                        chase = next;
+                    }
+                    break;
+                case DecNodebHalf:
+                    if (table.DecLeafw == DecLeafwOne)
+                    {
+                        chase = Entry(table, (int)(chase * 2) + bit);       // C7 6a: 16/16
+                        if ((chase & 0x8000u) != 0) return (int)(chase & 0x7FFFu);
+                    }
+                    else
+                    {
+                        uint next = Entry(table, (int)chase + bit);         // C7 6a: 16/32 t[chase+bit]
+                        if ((next & 0x8000u) != 0)
+                        {
+                            uint extra = (bit == 0 || (Entry(table, (int)chase) & 0x8000u) != 0) ? 1u : 0u;
+                            chase = (next << 16) | Entry(table, (int)(chase + (uint)bit + 1 + extra));
+                            return (int)(chase & 0x7FFFFFFFu);              // C7 6a: 31-bit payload
+                        }
+                        chase = next;
+                    }
+                    break;
+                default:
+                    chase = Entry(table, (int)(chase * 2) + bit);           // C7 6a: 32/32
+                    if ((chase & 0x80000000u) != 0) return (int)(chase & 0x7FFFFFFFu);
+                    break;
+            }
         }
+        return -1;                                                         // C7 6a: no leaf within dec_maxlength
+    }
+
+    private static uint Entry(WwiseVorbisDecodeTable table, int index)
+    {
+        if (index < 0 || index >= table.Entries.Length)
+            throw new InvalidDataException("decode_map walked off the decode table (C7 6a)");
+        return table.Entries[index];
     }
 
     // ---- residue inverse and coupling (correction C5 rows 4d..4f, 0x00ABAA6C / 0x00ABABB8 / 0x00AB6E30) ----
@@ -808,6 +1110,152 @@ public static partial class WwiseVorbisNative
         return src;
     }
 
+    // ---- floor1 inverse1 (correction C7 rows 3a..3h, 0x00AB8E60) ----
+
+    /// <summary>The floor1 quant table at 0x01016D20 (C7 3a): <c>{256, 128, 86, 64}</c>, indexed by mult−1.</summary>
+    public static readonly int[] Floor1QuantLook = { 256, 128, 86, 64 };
+
+    /// <summary>C7 3a: <c>quant_q = Floor1QuantLook[multiplier − 1]</c> (0x00AB8E80).</summary>
+    public static int Floor1QuantQ(int multiplier) => Floor1QuantLook[multiplier - 1];
+
+    /// <summary>
+    /// The floor1 <c>render_point</c> (C7 3g, 0x00AB90a8..0x00AB90dc): mask the flag bits off both y, then
+    /// <c>off = |dy|·(x−x0)/(x1−x0)</c> (signed, truncating toward zero, the native idiv) added to or
+    /// subtracted from y0 by the sign of dy.
+    /// </summary>
+    public static int Floor1RenderPoint(int x0, int x1, int y0, int y1, int x)
+    {
+        y0 &= 0x7fff; y1 &= 0x7fff;
+        int dy = y1 - y0;
+        int err = Math.Abs(dy) * (x - x0);                                 // C7 3g: |dy|·(x−x0)
+        int off = err / (x1 - x0);                                         // C7 3g: idiv truncates toward zero
+        return dy < 0 ? y0 - off : y0 + off;                               // C7 3g
+    }
+
+    /// <summary>
+    /// The floor1 inverse1 unwrap of one post (C7 3g, 0x00AB90e0..0x00AB9120): with
+    /// <c>hiroom = quant_q − predicted</c>, <c>loroom = predicted</c> and <c>room = min(hiroom,loroom)·2</c>,
+    /// returns the memo value. <c>val == 0</c> gives <c>predicted|0x8000</c>; <c>val &gt;= room</c> the
+    /// <c>hiroom&gt;loroom ? val−loroom : hiroom−val−1</c> difference; otherwise the step-2 case halves the
+    /// value, negating the odd branch.
+    /// </summary>
+    public static int Floor1UnwrapValue(int predicted, int quantQ, int val)
+    {
+        int hiroom = quantQ - predicted;                                   // C7 3g
+        int loroom = predicted;
+        int room = Math.Min(hiroom, loroom) << 1;                          // C7 3g: min<<1
+        if (val == 0) return predicted | 0x8000;                           // C7 3g: predicted|0x8000
+        if (val >= room)                                                   // C7 3g: val>=room
+            return (hiroom > loroom ? val - loroom : hiroom - val - 1) + predicted;
+        int v = (val & 1) != 0 ? -((val + 1) >> 1) : (val >> 1);           // C7 3g: the step-2 odd/even case
+        return v + predicted;
+    }
+
+    /// <summary>
+    /// The floor1 <c>inverse1</c> decode (C7 3a..3h, 0x00AB8E60..0x00AB9148): the tristate
+    /// <c>read(1)==1</c> check (returns false where the native returns 0), the two
+    /// <c>read(ilog(quant_q−1))</c> fit values, the per-partition class cascade and sub-books, and the unwrap
+    /// loop. <paramref name="decodeBook"/> decodes a book to its entry number (the native
+    /// <c>vorbis_book_decode</c>); <paramref name="neighbours"/> is <see cref="FloorNeighbours"/>.
+    /// </summary>
+    internal static bool Floor1Inverse1(BitReader reader, WwiseVorbisFloorSetup floor, int[] memo,
+        (byte[] Low, byte[] High) neighbours, Func<int, int> decodeBook)
+    {
+        if (reader is null) throw new ArgumentNullException(nameof(reader));
+        if (floor is null) throw new ArgumentNullException(nameof(floor));
+        if (memo is null) throw new ArgumentNullException(nameof(memo));
+        if (decodeBook is null) throw new ArgumentNullException(nameof(decodeBook));
+
+        int quantQ = Floor1QuantQ(floor.Multiplier);                       // C7 3a
+        if (reader.Read(1) != 1) return false;                             // C7 3b: tristate read(1) must be 1
+
+        int bits = WwiseCodebookLibrary.ILog((uint)(quantQ - 1));          // C7 3c: ilog(quant_q-1)
+        memo[0] = (int)reader.Read(bits);                                  // C7 3c: fit_value[0]
+        memo[1] = (int)reader.Read(bits);                                  // C7 3c: fit_value[1]
+
+        int j = 2;
+        for (int p = 0; p < floor.Partitions; p++)                         // C7 3d: per partition
+        {
+            var cls = floor.Classes[floor.PartitionClasses[p]];
+            int dim = cls.Dimensions;
+            int subs = cls.Subclasses;
+            int csub = 1 << subs;                                          // C7 3d: csub = 1<<subs
+            int cval = subs == 0 ? 0 : decodeBook(cls.MasterBook);         // C7 3e: cascade word, else 0
+            for (int k = 0; k < dim; k++)
+            {
+                int sub = cls.SubBooks[cval & (csub - 1)];                 // C7 3f: class_subbook[cval & (csub-1)]
+                cval >>= subs;                                             // C7 3f: cval >>= class_subs
+                memo[j++] = sub < 0 ? 0 : decodeBook(sub);                 // C7 3f: the read(8)==0 sentinel -> memo 0
+            }
+        }
+
+        int posts = floor.PostList.Length;                                 // C7 3g: posts = count+2
+        if (posts <= 2) return true;                                       // C7 3g: posts<=2 skips the unwrap
+        for (int i = 2; i < posts; i++)
+        {
+            int ln = neighbours.Low[i - 2];                                // C7 3g: floor+0x14
+            int hn = neighbours.High[i - 2];                               // C7 3g: floor+0x10
+            int predicted = Floor1RenderPoint(floor.PostList[ln], floor.PostList[hn],
+                memo[ln], memo[hn], floor.PostList[i]);                    // C7 3g: render_point
+            memo[i] = Floor1UnwrapValue(predicted, quantQ, memo[i]);       // C7 3g: the unwrap
+            memo[ln] &= 0x7fff;                                            // C7 3g: mask the low neighbour
+            memo[hn] &= 0x7fff;                                            // C7 3g: mask the high neighbour
+        }
+        return true;
+    }
+
+    // ---- residue divisor array (correction C7 rows 4a..4g, 0x00AB770C..0x00AB7808) ----
+
+    /// <summary>The residue samples per partition, <c>n / grouping</c> (C7 4b, 0x00AB777C).</summary>
+    public static int ResidueSamplesPerPartition(int coveredSamples, int grouping) => coveredSamples / grouping;
+
+    /// <summary>The residue <c>partitions_per_word = groupbook-&gt;dim</c> (C7 4b, 0x00AB7448).</summary>
+    public static int ResiduePartitionsPerWord(int groupBookDim) => groupBookDim;
+
+    /// <summary>The residue <c>partwords = ceil(spp / partitions_per_word)</c> (C7 4b, 0x00AB7798).</summary>
+    public static int ResiduePartwords(int samplesPerPartition, int partitionsPerWord)
+        => (samplesPerPartition + partitionsPerWord - 1) / partitionsPerWord;
+
+    /// <summary>
+    /// The per-group divisor sequence built at stage 0 (C7 4d, 0x00AB788C..0x00AB78CC):
+    /// <c>[partitions^(dim−1), …, partitions, 1]</c>, each multiply truncated to a byte (the native's uxtb).
+    /// The last divisor is 1.
+    /// </summary>
+    public static byte[] ResidueDivisorSequence(int partitions, int dim)
+    {
+        var seq = new byte[dim];
+        seq[dim - 1] = 1;                                                  // C7 4d: the last divisor is 1
+        for (int k = dim - 2; k >= 0; k--)
+            seq[k] = (byte)(seq[k + 1] * partitions);                      // C7 4d: ×partitions, truncated to a byte
+        return seq;
+    }
+
+    /// <summary>
+    /// The per-channel base stride (C7 4c, 0x00AB77B8..0x00AB77EC):
+    /// <c>partword[j] = base + j·dim·partwords</c>.
+    /// </summary>
+    public static int ResiduePartwordChannelOffset(int channel, int dim, int partwords)
+        => channel * dim * partwords;
+
+    /// <summary>
+    /// The stage-0 divisor array (C7 4c/4d/4e): every group of every channel carries the
+    /// <see cref="ResidueDivisorSequence"/>; the native builds channel 0 and byte-copies it to the rest, and
+    /// the per-channel stride is <see cref="ResiduePartwordChannelOffset"/>.
+    /// </summary>
+    public static byte[][] ResidueDivisorArray(int channels, int partitions, int dim, int partwords)
+    {
+        if (channels < 1) throw new ArgumentOutOfRangeException(nameof(channels));
+        var seq = ResidueDivisorSequence(partitions, dim);
+        var result = new byte[channels][];
+        for (int ch = 0; ch < channels; ch++)
+        {
+            result[ch] = new byte[partwords * dim];
+            for (int w = 0; w < partwords; w++)
+                Array.Copy(seq, 0, result[ch], w * dim, dim);
+        }
+        return result;
+    }
+
     // ---- window combine and planar output (correction C5 rows 8a/9/9b, 0x01054490 / 0x00AB5A94 / 0x00AB3520) ----
 
     /// <summary>
@@ -964,14 +1412,14 @@ public static partial class WwiseVorbisNative
     // ---- the decoder (refused: the rows do not settle the arithmetic) ----
 
     /// <summary>
-    /// The native decode path, refused. Corrections C5 and C6 settle the setup, the decode-table widths and
-    /// polarity, the decode_map walk, the residue stage/partition accessors, the window-combine branches,
-    /// the floor look arrays and the IMDCT tail scale, but the decode-map builder's tree construction
-    /// (0x00AB96EC), the <c>codebook+0x14 == 4</c> case, the IMDCT kernel (0x00AB4E34) and the floor1
-    /// inverse1 decode (0x00AB8E60) remain unestablished (see <see cref="UnreadArithmetic"/>). The fidelity
-    /// rules do not allow a plausible substitute, so this throws rather than returning samples that are
-    /// merely close. The method exists so the gap is visible at the production entry point.
-    /// </summary>
+    /// The native decode path, refused. Correction C7 settles the decode-table builder and the codebook field
+    /// names (0x00AB96EC / 0x00AB9300), the <c>dec_nodeb == 4</c> case, the floor1 inverse1 decode
+    /// (0x00AB8E60) and the residue divisor array (0x00AB770C), on top of C5/C6's setup, decode-map walk,
+    /// residue stage/partition accessors, window-combine branches, floor look arrays and IMDCT tail scale.
+    /// The one piece still unestablished is the float NEON IMDCT kernel (0x00AB4E34, see
+    /// <see cref="UnreadArithmetic"/>). The fidelity rules do not allow a plausible substitute, so this
+    /// throws rather than returning samples that are merely close. The method exists so the gap is visible at
+    /// the production entry point.</summary>
     public static float[] Decode(WwiseMedia media, WwiseCodebookLibrary codebooks)
     {
         _ = media;
