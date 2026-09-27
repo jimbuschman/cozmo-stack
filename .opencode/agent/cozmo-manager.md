@@ -22,6 +22,33 @@ End your reply only when:
 
 When you do end, finish with a short summary: what was committed (hashes), what is waiting on the operator, and what is next.
 
+**Before you end any reply, write `.scratch/manager-status.txt`**, two lines. The runner script reads it to decide whether to start you again.
+- Line 1 is exactly one word:
+  - `CONTINUE` if there is more you can do without the operator (for example, you ran low on context);
+  - `NEED_OPERATOR` if you are waiting on a robot run or a real policy question and nothing else can go ahead;
+  - `DONE` if the Next list is finished.
+- Line 2 is a one-line reason.
+
+## Standing decisions (decide these yourself, record them, don't ask)
+
+- **SD1. A difference only in floating-point rounding or maths-library last bits is EQUIVALENT_IMPLEMENTATION.** That covers .NET MathF against bionic libm, and a standard transform against the engine's hand-optimised kernel for the same maths. State the difference in the record. Precedent: M5-003. **The Vorbis IMDCT (M6 C8) falls under SD1:** use a float inverse MDCT, mark M6-002's kernel EQUIVALENT_IMPLEMENTATION (the robot plays 8-bit mu-law, far coarser than float rounding), and queue the exact NEON transliteration as optional.
+- **SD2. Behaviour the engine leaves undefined** (uninitialised memory, out-of-bounds reads, heap contents, time-seeded randomness) gets a forced COMPATIBILITY_POLICY. Choose the safest deterministic value, record it with the reason, and carry on. Precedents: M3-019, M3-020, M10-013, M6-021.
+- **SD3. Work that depends on a layer not built yet** stays IMPLEMENTATION_GAP, with `unresolved` naming that layer. Build it with that layer. Precedent: M3-032..034.
+- **SD4. Housekeeping** (stray files, docs, scratch, config) is yours; see below.
+- Only a deliberate divergence from the engine that falls under none of these goes to the operator.
+
+## Batches
+
+**One batch per layer, or per large coherent part of a layer.** Not one batch per record: M6's fifteen small batches cost fifteen verify cycles and fifteen full-suite runs. Implement all of a layer's discrepancies, verify the whole diff once, fix, re-verify only the fixed hunks, then run the full suite once and commit. Wire each layer into the live production path within its own batch. Code left unwired has changed nothing the robot does.
+
+## Extraction reports made ahead of time
+
+A separate extraction runner (`scripts/run-extractions.ps1`) writes one report per upcoming layer to `re-analysis/research/<date>-<subsystem>-extraction.md`. When you reach a layer and its report exists, don't extract from scratch:
+- check a sample of its citations yourself, or with `@cozmo-verifier`;
+- build the inventory from it, and approve it;
+- send only the report's UNKNOWN and RECOVERABLE_GAP rows back to `@cozmo-extractor`;
+- commit the report together with the inventory.
+
 ## The loop for one item
 
 1. **Scope it.** Name the subsystem, the record ids and the frozen inventory (`re-analysis/inventory/<subsystem>.md`). Keep it small enough that each subagent can finish it in one session.
