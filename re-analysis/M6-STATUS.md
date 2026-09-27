@@ -246,7 +246,9 @@ store (`d2ec5cf`), M6-008 continuous (`04c1b19`), M6-003 ADPCM (`9c55ab4`, settl
 M6-004 resampler (`4173cc0`), M6-011 voice LPF/HPF (`c0b87a3`), M6-012 mixer (`6b479c4`), M6-010 gain
 (`777de36`). Corrections C1–C4 approved. Batch 4 complete: M6-014 (`4afd8da`), M6-015 (`acca8da`),
 M6-016 (`2661e91`), M6-013 (`4e24da3`). M6-017 (the runtime skeleton) built (`a209a88`). M6-002 (Vorbis) is partial (`041e21a`) plus the
-correction-C5 arithmetic; its remaining RECOVERABLE_GAPs (the decode-table builder `0x00AB96EC`, the
-IMDCT normalisation `0x00AB39D8`, the residue stage walk, the floor look helper `0x00AB8018`, the
-window-combine branch, the window default) need another extraction pass before it can decode. Then
-the final settle+wiring pass.
+correction-C5 and C6 arithmetic. C6 settled the decode-table widths/polarity, the IMDCT
+normalisation (0x00AB39D8), the residue stage walk, the floor look, the window-combine branches, the
+window default and the floor1 neighbour scan. Open before it can decode: the decode-table **tree
+construction** of `0x00AB96EC`, the `+0x14==4` case, the float NEON IMDCT **kernel**, floor1
+inverse1 `0x00AB8E60`, and the initial per-channel residue divisor array. Then the final
+settle+wiring pass.
