@@ -238,3 +238,11 @@ dotnet test tests/Cozmo.Protocol.Tests/Cozmo.Protocol.Tests.csproj --nologo -v q
 # then, from the repo root:
 python re-analysis/tools/fidelity.py --check
 ```
+
+## 12. Progress log (manager, 2026-09-26)
+
+**Batch 3 complete.** Built (each standalone, unwired, verifier-PASS, full-suite green): M6-009 value
+store (`d2ec5cf`), M6-008 continuous (`04c1b19`), M6-003 ADPCM (`9c55ab4`, settled EXACT_SOURCE),
+M6-004 resampler (`4173cc0`), M6-011 voice LPF/HPF (`c0b87a3`), M6-012 mixer (`6b479c4`), M6-010 gain
+(`777de36`). Corrections C1–C4 approved. Next: batch 4 (M6-014, M6-015, M6-016, M6-013), then
+M6-017 (the runtime skeleton), then M6-002, then the final wiring pass.
