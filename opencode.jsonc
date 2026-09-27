@@ -1,5 +1,8 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  // The default model for every session and runner in this repo. ":floor" makes OpenRouter itself send each
+  // request to the cheapest provider serving the model, whatever routing options reach it.
+  "model": "openrouter/deepseek/deepseek-v4.1-flash:floor",
   // Project-local permissions.
   // Rules are ordered; the LAST matching rule wins. Broad rule first, exceptions after.
   // This config is permissive so routine work in this repo does not stop for approvals.
@@ -19,6 +22,9 @@
   "provider": {
     "openrouter": {
       "models": {
+        "deepseek/deepseek-v4.1-flash:floor": {
+          "name": "DeepSeek V4.1 Flash (cheapest provider)"
+        },
         "deepseek/deepseek-v4.1-flash": {
           "options": {
             "provider": {
