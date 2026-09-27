@@ -1,8 +1,8 @@
 {
   "subsystem": "M6-wwise-bank",
-  "approved": "2026-09-26",
+  "approved": "2026-09-27",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "89859fb0fb8b1d4d62d93aecede0523dd28f44336232578a6b3e7fda6aa07a1d",
+  "inventory_sha256": "61792b0b9bdba8ac27dd7fcf34210e26c1b07377d8af765321702345f1f45d05",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -23,7 +23,11 @@
       "evidence": [
         "setup 0x00AB63E0..0x00AB6780; codebook unpack 0x00ABA188; library 0x01058290",
         "packet 0x00AB37FC..0x00AB3934 (1-bit mode); residue 0x00AB73F8 / decodev_add 0x00ABAA6C / decodevv_add 0x00ABABB8; decode_map 0x00AB9BB0",
-        "floor table 0x01058BF0; IMDCT 0x00AB4E34 (x2^-24 at 0x00AB3CB4); windows 0x01054490; skip/trim 0x00AB3244, 0x00AB0B98..0x00AB0CA8"
+        "floor table 0x01058BF0; IMDCT 0x00AB4E34 (x2^-24 at 0x00AB3CB4); windows 0x01054490; skip/trim 0x00AB3244, 0x00AB0B98..0x00AB0CA8",
+        "floor1 setup 0x00AB88D8 (partitions/classes/mult/rangebits/postlist, entry +0x00..+0x20); mapping setup 0x00AB6788 (submaps/coupling/mux, three read(8) per submap); evidence re-analysis/evidence/m6-vorbis/vorbis-arithmetic.md",
+        "decode_map 0x00AB9BB0 tree walk and leaf packing; builder _make_decode_table 0x00AB96EC RECOVERABLE_GAP (16-bit store vs 32-bit read unreconciled)",
+        "residue 0x00AB770C / 0x00AB745C, decodev_add 0x00ABAA6C / decodevv_add 0x00ABABB8, coupling 0x00AB6E30; floor dB table 0x01058BF0 (256 floats transcribed)",
+        "floor1 inverse2 0x00AB915C; IMDCT 0x00AB4E34 (the 2^-24 constants belong to 0x00AB39D8, no decode caller -> normalisation RECOVERABLE_GAP); windows 0x01054490 = vwin256/512/1024/2048/4096; window-combine 0x00AB5A94; skip/trim 0x00AB3244/0x00AB3884"
       ],
       "live_path": true,
       "hardware_required": false

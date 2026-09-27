@@ -1016,3 +1016,19 @@ The M6-003 build left one `MISSING` (the media decodability gate) and two detail
 - **The arithmetic** was repaired to the row: the header predictor is output sample 0, byte +0x23 contributes its low nibble only (63 nibbles total, 64 samples/block), `diff = ((2·(n&7)+1)·step)>>3` with the sign from bit 3, predictor clamped to int16, index clamped 0..88.
 
 **Settled:** M6-003 is **EXACT_SOURCE** (per-block arithmetic, tables, layout and mapping confirmed against `0x00A7A194`, `0x00FFD650`/`0x00FFD708` and the callers; verifier PASS). Queued (non-blocking, unreachable on the 227 shipped ADPCM media): the header step-index clamp the source lacks, the `Decode` 1–2 channel limit against the channel-generic runtime, and the stale `WwiseAudioSource` "seven stereo ADPCM undecodable" comment. The `fmt+0x14` byte-1 semantics remain UNKNOWN (moot: byte 0 == nChannels in all 227 files).
+
+## Correction C5 (manager, 2026-09-26): the Vorbis arithmetic
+
+M6-002 was built only for the parts the frozen rows settled; ten arithmetic steps were read by a follow-up extractor pass (report in `re-analysis/evidence/m6-vorbis/vorbis-arithmetic.md`) so the decoder can be completed.
+
+- **Floor1 setup** (`0x00AB88D8`): partitions `read(5)`; classes 11 bytes each (`dim=read(3)+1`, `subs=read(2)`, `book=(subs?read(8):0)`, `subbook[k]=read(8)-1`); `mult=read(2)+1`, `rangebits=read(4)`, the postlist `u16[count+2]` with `postlist[0]=0`, `postlist[1]=1<<rangebits`; the low/high-neighbour arrays. Entry layout +0x00 class, +0x04 partitionclass, +0x08 postlist, +0x0C sorted-index, +0x10 high, +0x14 low, +0x18 partitions, +0x1C posts, +0x20 multiplier; no floor-type field.
+- **Mapping setup** (`0x00AB6788`): `submaps` (flag/`read(4)+1`), coupling steps `read(8)+1` with `mag`/`ang` at `ilog(channels-1)`, the reserved `read(2)==0`, the mux `read(4)` per channel, and **three** `read(8)` per submap (time discarded, floor, residue). Entry +0x00 submaps, +0x04 mux, +0x08 submap pairs, +0x0C coupling steps, +0x10 mag/ang.
+- **`decode_map`** (`0x00AB9BB0`): the tree walk `node = bit + 2*node`, `entry = t[node]`; a leaf `entry & 0x7FFFFFFF` packs `dim` values of `q_bits` bits (low first). The **builder** `_make_decode_table 0x00AB96EC` stays RECOVERABLE_GAP (the 16-bit store vs the 32-bit read is unreconciled — see the evidence report).
+- **Residue inverse** (type 0/1 `0x00AB770C`, type 2 `0x00AB745C`), `decodev_add 0x00ABAA6C` / `decodevv_add 0x00ABABB8` (`out[i+j] += tmp[j]` for `dim` entries, point `-8`, no saturation; type 2 toggles channel 0/1), and the **coupling inverse** (`0x00AB6E30`, integer add/sub).
+- **Floor dB table** `0x01058BF0`: all 256 floats transcribed (= Tremor's integer table /2^15).
+- **Floor1 inverse2 / render_line** (`0x00AB915C`): the declined-value test (`memo != memo & 0x7FFF`) and the linear-interpolation arithmetic.
+- **IMDCT** (`0x00AB4E34`): the structure (shift `13-ilog2(n)`, the pre-symmetry/butterfly helpers, the NEON trig loop). **Contradiction:** the `2^-24` constants belong to `0x00AB39D8`, which has no caller in the decode path; the record's normalisation chain is not established (stays RECOVERABLE_GAP).
+- **Windows** `0x01054490`: the five libvorbis tables vwin256/512/1024/2048/4096 (vwin64/128/8192 absent); the dispatch on `blocksize/2`. The window-combine `0x00AB5A94` and the planar-float layout (`0x00AB3520`) are read; the exact per-window branch is RECOVERABLE_GAP.
+- **Skip/trim** (`0x00AB3244`, `0x00AB3884..0x00AB3910`): start-skip and end-trim (`current = max(current − trim, returned)` when the eofflag is set).
+
+**Amended:** M6-002's `evidence` now carries these citations. M6-002 stays IMPLEMENTATION_GAP; the remaining RECOVERABLE_GAPs are the decode-table builder, the IMDCT normalisation, the floor look helper `0x00AB8018`, and the window default.

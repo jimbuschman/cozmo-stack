@@ -132,7 +132,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-        "approved": "2026-09-26",
+        "approved": "2026-09-27",
         "snapshot": "re-analysis/inventory/M6-wwise-bank.approved.json"
       }
     },
@@ -2163,7 +2163,11 @@
       "evidence": [
         "setup 0x00AB63E0..0x00AB6780; codebook unpack 0x00ABA188; library 0x01058290",
         "packet 0x00AB37FC..0x00AB3934 (1-bit mode); residue 0x00AB73F8 / decodev_add 0x00ABAA6C / decodevv_add 0x00ABABB8; decode_map 0x00AB9BB0",
-        "floor table 0x01058BF0; IMDCT 0x00AB4E34 (x2^-24 at 0x00AB3CB4); windows 0x01054490; skip/trim 0x00AB3244, 0x00AB0B98..0x00AB0CA8"
+        "floor table 0x01058BF0; IMDCT 0x00AB4E34 (x2^-24 at 0x00AB3CB4); windows 0x01054490; skip/trim 0x00AB3244, 0x00AB0B98..0x00AB0CA8",
+        "floor1 setup 0x00AB88D8 (partitions/classes/mult/rangebits/postlist, entry +0x00..+0x20); mapping setup 0x00AB6788 (submaps/coupling/mux, three read(8) per submap); evidence re-analysis/evidence/m6-vorbis/vorbis-arithmetic.md",
+        "decode_map 0x00AB9BB0 tree walk and leaf packing; builder _make_decode_table 0x00AB96EC RECOVERABLE_GAP (16-bit store vs 32-bit read unreconciled)",
+        "residue 0x00AB770C / 0x00AB745C, decodev_add 0x00ABAA6C / decodevv_add 0x00ABABB8, coupling 0x00AB6E30; floor dB table 0x01058BF0 (256 floats transcribed)",
+        "floor1 inverse2 0x00AB915C; IMDCT 0x00AB4E34 (the 2^-24 constants belong to 0x00AB39D8, no decode caller -> normalisation RECOVERABLE_GAP); windows 0x01054490 = vwin256/512/1024/2048/4096; window-combine 0x00AB5A94; skip/trim 0x00AB3244/0x00AB3884"
       ],
       "status": "IMPLEMENTATION_GAP",
       "unresolved": "The rows do not settle the decode arithmetic, so no shipped Vorbis stream decodes through this module yet: floor1 setup body 0x00AB88D8, mapping setup body 0x00AB6788, decode-table builder 0x00AB96EC, residue inverse 0x00AB73F8 (type 1) and 0x00AB745C (type 2), floor table contents 0x01058BF0 (only [0] = 229/32768 and [255] = 65536.0 are in the rows), floor1 inverse2 0x00AB915C, float NEON IMDCT 0x00AB4E34 (its libvorbis normalisation is gapG 6.11 RECOVERABLE_GAP), libvorbis windows 0x01054490, windowed overlap-add 0x00AB5A94, and the end-trim consumption (gapG 6.12 gives end = max(current - trim, returned) without the meaning of current and returned). Deviations inert on shipped media: residue type 0 and type 2 with channels != 2 are refused; mode count must be 2. The host field widths for the seek start-skip (pbi+0x1B4) and the loop count are not in the rows. Wiring into WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler is deferred until Decode is complete; WwiseVorbis.cs still decodes via NVorbis and is not the native path.",
