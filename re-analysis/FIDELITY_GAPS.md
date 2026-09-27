@@ -435,12 +435,12 @@ Each of these is a question already answered. The original's behaviour is establ
 
 **M6-004 — CAkResampler linear interpolation at the voice stage (int16 Q16, bypass x1/32768) and the Hijack stage (float to 22320 Hz); step formula; pitch ramp** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseResampler.cs`
 * effect: sounds are resampled differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* rests on: the frozen rows were read and reproduced in the standalone cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseResampler.cs (Init 0x00A47038, SetPitch 0x00A47384, Execute 0x00A47178 and the mono kernels 0x00A48F5C, 0x00A4913C, 0x00A49E40, 0x00A4A2D8) against M6 0.11, gapB P1..P2/P8 and gapE 3.5..3.6. +0x3C is the integer __aeabi_uidiv(48000, outRate) (0xA470B0), and the sample index is (phase>>16)-1, so the ctor phase 0x10000 still starts at input[0]. The class is not wired into the runtime: WwiseAudioSource still resamples with its own windowed-sinc ToRobotRate/Lanczos, so the production path this record describes is still the old code.
 * best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
 * evidence: Init 0x00A47038, SetPitch 0x00A47384, Execute 0x00A47178, kernel table 0x0103C0B8; kernels 0x00A48F5C, 0x00A4913C, 0x00A49E40, ramp 0x00A4A2D8
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: wiring: WwiseAudioSource.ToRobotRate/Lanczos is deliberately untouched until the live voice/mixer (M6 batches 3-4) can replace it with WwiseResampler; the row's format offsets (which fields carry channels and the input rate) are not in the rows and are carried as named fields on WwiseResamplerFormat. Not read by the rows, and refused with NotSupportedException rather than guessed: the stereo int16 kernel 0x00A49634, the float stereo kernels, and the float mono bypass 0x00A479F4 and ramp 0x00A4A958 (a float Execute is valid only in the read mode 1, kernel 0x00A49E40). Execute's zero-input 0x11/17 and the ctor's initial phase 0x10000 (+0x2C, 0x00A46D80..0x00A46D88) are cited from outside the scoped rows (gapD D2.8; the ctor).
 
 **M6-005 — FNV-1 32-bit with ASCII lowercasing over at most 0x103 bytes** (live path)
 
