@@ -1032,3 +1032,18 @@ M6-002 was built only for the parts the frozen rows settled; ten arithmetic step
 - **Skip/trim** (`0x00AB3244`, `0x00AB3884..0x00AB3910`): start-skip and end-trim (`current = max(current − trim, returned)` when the eofflag is set).
 
 **Amended:** M6-002's `evidence` now carries these citations. M6-002 stays IMPLEMENTATION_GAP; the remaining RECOVERABLE_GAPs are the decode-table builder, the IMDCT normalisation, the floor look helper `0x00AB8018`, and the window default.
+
+## Correction C6 (manager, 2026-09-26): the Vorbis arithmetic, pass 2
+
+A second extractor pass (report `re-analysis/evidence/m6-vorbis/vorbis-arithmetic-2.md`) settled the C5 leftovers and corrected two C5 errors:
+
+- **Decode-table widths and polarity (contradicts C5 3a/3b).** The builder `0x00AB96EC` writes **8-bit** entries for format 1 (bit7 leaf marker) and **16-bit** for format 2 (bit15 leaf marker); it has no 32-bit store. The decoder dispatches on `codebook+0x14` (1 → 8-bit, 2 → 16-bit, otherwise 32-bit, fed only by the unpack's format-4 single-entry path). **The walk loops while the entry is non-negative** (`0x00AB9C44 cmp ip,#0; 0x00AB9C48 bge`), so internal nodes are `>= 0` and **leaves are the bit31-set entries** (`0x00AB9C4C bic ip,ip,#0x80000000`) — C5's "entry < 0 continue / negative entries are internal" is inverted. The `+0x14 == 4` case is still unresolved (builder 8-bit vs decoder 32-bit).
+- **IMDCT normalisation (contradicts C5 7b).** `0x00AB4E34` tail-branches into `0x00AB39D8` (`0x00AB5A44 b 0x00AB39D8`), which applies the only output scale, `2^-24`. So the decode MDCT **is** scaled there; C5's "no decode caller" is wrong. The "nominally ±1.0" claim remains UNKNOWN.
+- **Residue stage/partition walk** (`0xAB7808..0xAB7E00`): type 0 shares type 1 (`cmp r3,#1; ble 0x00AB770C`); per channel/partition the class digit is `partword[ch][pw]`, the cascade mask `info+4[class]`, the book `info+8[class*8+s]`, the codeword base `fullbooks+60*book`, point `-8`.
+- **Floor look `0x00AB8018` is a stable bottom-up merge sort** of the `floor+0x0C` index array keyed by the `floor+0x08` postlist; the caller initialises it to the identity permutation. `floor1_inverse2` consumes `+0x08/+0x0C/+0x1C/+0x20` only (the `+0x10/+0x14` neighbours are inverse1's).
+- **Window-combine branches** (`0x00AB5A94`): `a*wA + b*wB` when both args are non-zero, `a*wA − b*wB` (`vnmls`) for the second-window-only region, the 64-bit mirror (`vrev64.32`+`vswp`), and the single-window `vneg`/copy forms.
+- **Window default** (`0x00AB3728`): a half-size outside {128,256,512,1024,2048} selects a **0 window pointer**, which `0x00AB5A94` dereferences — a NULL dereference; whether a shipped mode declares a blocksize of 64/128/8192 is UNKNOWN.
+- **Floor1 low/high-neighbour scan** (`0x00AB8D68..0x00AB8E14`): for each post, low = the largest earlier value strictly below, high = the smallest earlier value strictly above; stored low at `floor+0x14`, high at `floor+0x10`.
+- **Allocation attribution (corrects C5 9b):** `0x00AB3780` allocates `n/2*4*channels` and stores the per-channel pointers; `0x00AB3520` selects the windows and drives the overlap.
+
+**Amended:** M6-002's `evidence` now carries these citations and the polarity/IMDCT corrections. M6-002 stays IMPLEMENTATION_GAP; the `+0x14 == 4` case and the window-default reachability remain open.
