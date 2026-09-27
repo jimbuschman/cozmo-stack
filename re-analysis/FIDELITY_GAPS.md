@@ -507,12 +507,12 @@ Each of these is a question already answered. The original's behaviour is establ
 
 **M6-012 — Mixer: linear per-frame gain ramp, first update not ramped, mono to mono 1.0, stereo to mono 0.70710677 per channel** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBus.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMixer.cs`
 * effect: mixing levels differ
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
+* rests on: built from re-analysis/inventory/M6-wwise-bank.md gapE 2.1..2.7, gapF 3.1 and gapG 5.1..5.3 into a standalone class (WwiseMixer.cs); the double-buffered gain pair and the first-update force (gapE 2.5), the concrete start/delta ramp (gapE 2.2..2.4), the consume/zero-pad order (gapE 2.1) and the two shipped robot matrices (mono->mono 1.0, stereo->mono 0.70710677) are built; the pan result is a caller-supplied matrix, not computed by the class; the per-connection gain product of gapE 2.1 is the caller's composition (M6-010); the class is not yet wired into WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler
 * best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
 * evidence: ConsumeBuffer 0xA4FBEC; mixer 0xA45E9C; ramp kernel 0xA46668; pan 0xA25FF8 / 0xA1F79C / 0xA209BC (table 0xFFA970)
-* outstanding: compare the code against the inventory rows (the step after approval)
+* outstanding: not wired into the live voice/bus graph (M6-010, M6-014, M6-017). The general 2D panner arithmetic (gapE 2.6, 0x00A25FF8) beyond the settled mono->mono and stereo->mono matrices is not built; the pan result is a caller input. LFE->LFE (gapE 2.2) is refused with NotSupportedException because the row names it but gives no arithmetic. The conn+0x6C bit2 fade-in (gapE 2.5) is a caller flag; its arming condition (the ctor arg = !(voice+0xCD bit0)) is not modelled. The ramp is the scalar g(k)=start+k·delta over all frames; the native's NEON 4-lane/8-sample ordering is not transcribed (equivalent, not bit-exact, MD3).
 
 **M6-013 — Robot_Bus FX chain in slot order: two Parametric EQs and the Peak Limiter before the Hijack, with their settings and algorithms** (live path)
 
