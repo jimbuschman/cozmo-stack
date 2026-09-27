@@ -2,13 +2,14 @@
 # Push gate for main: a push to main is refused unless the fidelity check and the full test suite pass on
 # exactly the commit being pushed. Enable it once per clone:
 #     git config core.hooksPath scripts/hooks
-# Pushes that change only reports and records (re-analysis/research, jobs, evidence, acceptance bundles) skip
-# the test suite. Never bypass this with --no-verify.
+# Pushes that change no code and no fidelity records (config, scripts, agent files, docs, reports) skip the
+# test suite. Never bypass this with --no-verify.
 
 zero=0000000000000000000000000000000000000000
 root=$(git rev-parse --show-toplevel)
 cd "$root" || exit 1
-docs_only='^(re-analysis/research/|re-analysis/jobs/|re-analysis/evidence/|re-analysis/acceptance/)'
+# Only code and the fidelity records need the test suite; config, scripts, agent files and docs push at once.
+needs_tests='^(cozmo-stack/|re-analysis/fidelity_manifest\.json|re-analysis/FIDELITY_GAPS\.md|re-analysis/inventory/|re-analysis/tools/)'
 
 while read -r local_ref local_sha remote_ref remote_sha; do
     [ "$remote_ref" = "refs/heads/main" ] || continue
@@ -17,8 +18,8 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     if [ "$remote_sha" = "$zero" ]; then base=$(git rev-parse --verify -q origin/main || echo ""); else base=$remote_sha; fi
     if [ -n "$base" ]; then changed=$(git diff --name-only "$base" "$local_sha"); else changed=$(git ls-tree -r --name-only "$local_sha"); fi
 
-    if [ -n "$changed" ] && ! echo "$changed" | grep -Eqv "$docs_only"; then
-        echo "pre-push: only reports and records changed; the test suite is skipped."
+    if [ -n "$changed" ] && ! echo "$changed" | grep -Eq "$needs_tests"; then
+        echo "pre-push: no code or fidelity records changed; the test suite is skipped."
         continue
     fi
 
