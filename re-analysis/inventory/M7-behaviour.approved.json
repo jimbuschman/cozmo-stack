@@ -1,0 +1,288 @@
+{
+  "subsystem": "M7-behaviour",
+  "approved": "2026-09-28",
+  "inventory": "re-analysis/inventory/M7-behaviour.md",
+  "inventory_sha256": "8f78ab6f2d3399364e2e9a37c5d501a8a1d781f7bc066e908f2bf0b43be64d9c",
+  "records": {
+    "M7-001": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The shipped AnimationTrigger, ReactionTrigger, BehaviorClass and BehaviorID enums",
+      "authority": "decompiled Unity enums checked against the engine EnumToString tables",
+      "evidence": [
+        "unity/scripts/csharp/Anki.Cozmo/AnimationTrigger.cs",
+        "unity/scripts/csharp/Anki.Cozmo/ReactionTrigger.cs",
+        "unity/scripts/csharp/Anki.Cozmo/BehaviorClass.cs",
+        "unity/scripts/csharp/Anki.Cozmo/BehaviorID.cs"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-002": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The shipped animation/reaction maps, behaviour configs and activity tree",
+      "authority": "shipped OBB configuration plus libcozmoEngine.so loaders",
+      "evidence": [
+        "re-analysis/obb/assets/cozmo_resources/assets/AnimationTriggerMap.json (573 pairs)",
+        "re-analysis/obb/assets/cozmo_resources/assets/CubeAnimationTriggerMap.json (40 pairs)",
+        "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/reactionTrigger_behavior_map.json",
+        "RobotDataLoader::LoadReactionTriggerMap 0x00520bc8",
+        "BehaviorManager::InitReactionTriggerMap 0x005a16e4",
+        "178 shipped behaviour configs enumerated in re-analysis/inventory/M7-behaviour.md Appendix C"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-003": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "ReactToImpact FallingStopped, intensity, recalibration and animation state machine",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "BehaviorReactToImpact::InitInternal 0x006061f8",
+        "TransitionToPlayingAnim 0x00606348",
+        "AlwaysHandle 0x00606408",
+        "1000.0 threshold literal at 0x00606470",
+        "5.0 second wait literal 0x40a00000 in InitInternal"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-004": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "All 30 live-idle tunables and defaults",
+      "authority": "AnimationStreamer::SetDefaultParams 0x0057db40, read",
+      "evidence": [
+        "SetDefaultParams 0x0057db40..0x0057dcd0; decoded values in M7 inventory Appendix A row 4"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-005": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Blink is a fixed seven-frame squash multiplied onto the base face",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "ProceduralFaceDrawer::GetNextBlinkFrame 0x00585f18",
+        "blink table 0x00c5aad8",
+        "FaceLayerManager::GenerateBlink 0x0058d2ac",
+        "ProceduralFace::Combine 0x005846a8"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-006": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Eye shift moves the whole face through LookAt with the engine bounds",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "FaceLayerManager::GenerateEyeShift 0x0058d100",
+        "ProceduralFace::LookAt 0x00584158"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-007": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The eye dart interpolates to a persistent gaze and does not fade to centre",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "ITrackLayerManager::ApplyLayersToFrame 0x0058e644",
+        "AddToPersistentLayer 0x0058eaa0",
+        "FaceLayerManager::GetFaceHelper 0x0058cd80",
+        "KeepFaceAlive persistent dart call 0x0058d3e2"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-008": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Idle timers are integer milliseconds advanced by the engine's 60 ms tick",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "CozmoInstanceRunner::Run 0x0065b3a8 uses 0x03938700 ns",
+        "UpdateLiveAnimation decrements at 0x0057d650/0x0057d68a/0x0057d6ba",
+        "KeepFaceAlive decrements at 0x0058d388",
+        "idle clock increments at 0x0057d444"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-009": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Idle head and lift are keyframes of the live animation",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "AnimationStreamer live Animation construction 0x0057a060",
+        "head keyframe 0x0057d85c/append 0x0057d866",
+        "lift keyframe 0x0057d9c0/append 0x0057d9ca",
+        "HeadAngleKeyFrame::GetStreamMessage 0x004f8c08"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-010": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Idle body shuffle and its paired turn eye shift",
+      "authority": "AnimationStreamer::UpdateLiveAnimation 0x0057d5f8, read",
+      "evidence": [
+        "body decision and draws 0x0057d6cc..0x0057d8f4",
+        "turn eye layer 0x0057d7fc",
+        "straight removal 0x0057d8d2",
+        "next spacing 0x0057d978"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-011": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "A reaction is held off only where its own strategy config names a cooldown",
+      "authority": "libcozmoEngine.so plus shipped reactionTrigger_behavior_map.json",
+      "evidence": [
+        "reactionTrigger_behavior_map.json: FrustrationMinor cooldownTime_s 60.0; other objective cooldowns remain per-objective",
+        "ReactionTriggerStrategyFrustration::ShouldTriggerBehaviorInternal 0x0060ee6e..0x0060eed8"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-012": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Mood schema, decay graphs, action-result events, affectors, update and game output",
+      "authority": "shipped mood_config.json plus libcozmoEngine.so",
+      "evidence": [
+        "re-analysis/obb/assets/cozmo_resources/config/engine/mood_config.json",
+        "StaticMoodData::ReadFromJson 0x0067ce6c",
+        "MoodManager::Update 0x0067b5d4",
+        "MoodManager::SendEmotionsToGame 0x0067b724..0x0067b7f8"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-013": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Mood clamp, graph evaluation and decay-clock restart arithmetic",
+      "authority": "libcozmoEngine.so plus shipped mood graphs",
+      "evidence": [
+        "Emotion::Add 0x00679618",
+        "Emotion::Update 0x006795a4",
+        "old<=1e-5 raw-new multiply at 0x006795ee..0x006795fc",
+        "GraphEvaluator2d::EvaluateY 0x00804bd0",
+        "mood_config.json decayGraphs"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-014": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Reaction-lock manager lifetime and concrete per-class lock tables",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "IBehavior::SmartDisableReactionsWithLock 0x005bce3c",
+        "BehaviorManager::DisableReactionsWithLock 0x005a27e8",
+        "BehaviorManager::RemoveDisableReactionsLock 0x005a3a48",
+        "13 concrete 21-entry tables in M7 inventory Appendix F"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-015": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Pick-up and off-treads reaction gating follows the engine state path",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Robot::CheckAndUpdateTreadsState 0x00511e00",
+        "BehaviorReactToPickup 0x00607750..0x00607d9c"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-016": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The idle face composes a stack of named persistent and transient layers",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "ITrackLayerManager::ApplyLayersToFrame 0x0058e644",
+        "ProceduralFace::Combine 0x005846a8",
+        "KeepFaceAlive dart 0x0058d3e2 and blink 0x0058d4be"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-017": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The exact live-animation wire lifecycle used by idle behavior",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "AnimationStreamer::UpdateLiveAnimation 0x0057d5f8",
+        "Update 0x0057ce5c",
+        "InitStream 0x0057b674",
+        "UpdateStream 0x0057c84c",
+        "SendStartOfAnimation 0x0057c400",
+        "SendBufferedMessages 0x0057bf60"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-018": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Shipped behaviour configuration and BehaviorClass factory binding",
+      "authority": "shipped OBB configuration plus libcozmoEngine.so BehaviorContainer",
+      "evidence": [
+        "178-config table in M7 inventory Appendix C",
+        "79-class entry-point table in Appendix B",
+        "BehaviorContainer::CreateBehavior 0x0059c888",
+        "class 0x39 BehaviorWait case constructs base IBehavior and installs the BehaviorWait vtable"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-019": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "M7 concrete reaction-behaviour state machines",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "reaction-class rows in M7 inventory Appendices E and F",
+        "corrected ReactToCliff mood-event sequence 0x00604d70..0x00604d84",
+        "ReactToImpact 0x006061f8..0x0060647c",
+        "ReactToOnCharger 0x00606c94..0x00606e86",
+        "ReactToPickup 0x00607750..0x00607d9c"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-020": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Mood event production, repetition penalty and affector application",
+      "authority": "libcozmoEngine.so plus shipped mood_config.json",
+      "evidence": [
+        "MoodManager::TriggerEmotionEvent 0x0067b85c",
+        "MoodManager::AddToEmotion 0x0067bdca",
+        "MoodManager::HandleActionEnded 0x0067c770",
+        "EmotionAffector::ReadFromJson 0x00679910",
+        "MoodManager::SendEmotionsToGame 0x0067b724"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-021": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Reaction robot-field meanings and cliff helper bodies remain to be recovered",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "M7 gap1 G8: live reaction rows read offsets robot+0x355, +0x338, +0x300 and +0x37c",
+        "unread helper bodies 0x0055b554 and 0x005c0ca8"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-022": {
+      "status": "RECOVERABLE_GAP",
+      "title": "DockingTestSimple developer-test state machine is not exhaustively recovered",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "BehaviorDockingTestSimple::UpdateInternal 0x005cbc10..0x005ccc3f",
+        "M7 gap1 G7"
+      ],
+      "live_path": false,
+      "hardware_required": false
+    }
+  }
+}

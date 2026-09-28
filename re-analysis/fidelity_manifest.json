@@ -140,10 +140,13 @@
       "id": "M7-behaviour",
       "name": "Idle, mood and reactions",
       "milestone": "M7",
-      "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true,
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": false,
       "review": {
-        "state": "UNREVIEWED"
+        "state": "INVENTORY_APPROVED",
+        "inventory": "re-analysis/inventory/M7-behaviour.md",
+        "approved": "2026-09-28",
+        "snapshot": "re-analysis/inventory/M7-behaviour.approved.json"
       }
     },
     {
@@ -2299,253 +2302,316 @@
     {
       "id": "M7-001",
       "subsystem": "M7-behaviour",
-      "title": "AnimationTrigger and ReactionTrigger enums",
+      "title": "The shipped AnimationTrigger, ReactionTrigger, BehaviorClass and BehaviorID enums",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/AnimationTrigger.g.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "decompiled Unity",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "decompiled Unity enums checked against the engine EnumToString tables",
       "evidence": [
-        "Anki.Cozmo.AnimationTrigger",
-        "Anki.Cozmo.ReactionTrigger"
+        "unity/scripts/csharp/Anki.Cozmo/AnimationTrigger.cs",
+        "unity/scripts/csharp/Anki.Cozmo/ReactionTrigger.cs",
+        "unity/scripts/csharp/Anki.Cozmo/BehaviorClass.cs",
+        "unity/scripts/csharp/Anki.Cozmo/BehaviorID.cs"
       ],
-      "live_path": true
+      "effect": "trigger, class or behaviour identifiers differ from the shipped app",
+      "unresolved": "Compare all generated enum values and consumers with the shipped sets.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "TriggerTests",
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
     },
     {
       "id": "M7-002",
       "subsystem": "M7-behaviour",
-      "title": "AnimationTriggerMap.json and reactionTrigger_behavior_map.json are the shipped maps",
+      "title": "The shipped animation/reaction maps, behaviour configs and activity tree",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/AnimationTriggerMap.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "shipped OBB configuration",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "shipped OBB configuration plus libcozmoEngine.so loaders",
       "evidence": [
-        "config/engine/behaviorSystem/reactionTrigger_behavior_map.json",
-        "RobotDataLoader::LoadReactionTriggerMap 0x00520BC8"
+        "re-analysis/obb/assets/cozmo_resources/assets/AnimationTriggerMap.json (573 pairs)",
+        "re-analysis/obb/assets/cozmo_resources/assets/CubeAnimationTriggerMap.json (40 pairs)",
+        "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/reactionTrigger_behavior_map.json",
+        "RobotDataLoader::LoadReactionTriggerMap 0x00520bc8",
+        "BehaviorManager::InitReactionTriggerMap 0x005a16e4",
+        "178 shipped behaviour configs enumerated in re-analysis/inventory/M7-behaviour.md Appendix C"
       ],
+      "effect": "a trigger resolves to the wrong animation or reaction, or the activity tree selects the wrong configured behaviour",
+      "unresolved": "Compare the complete shipped map/config corpus and loader behavior with production.",
+      "hardware_required": false,
       "live_path": true,
-      "test": "TriggerTests"
+      "test": "TriggerTests",
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
     },
     {
       "id": "M7-003",
       "subsystem": "M7-behaviour",
-      "title": "ReactToImpact gating: FallingStopped, impact intensity over 1000, up to 5 s recalibration",
+      "title": "ReactToImpact FallingStopped, intensity, recalibration and animation state machine",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ReactionTable.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "BehaviorReactToImpact::TransitionToPlayingAnim 0x00606348",
-        "AlwaysHandle 0x00606408"
+        "BehaviorReactToImpact::InitInternal 0x006061f8",
+        "TransitionToPlayingAnim 0x00606348",
+        "AlwaysHandle 0x00606408",
+        "1000.0 threshold literal at 0x00606470",
+        "5.0 second wait literal 0x40a00000 in InitInternal"
       ],
+      "effect": "impact reactions gate, calibrate, time out or animate differently",
+      "unresolved": "Compare/build the complete cited state machine, including trigger 0x1a0 and its 60 second action argument.",
+      "hardware_required": false,
       "live_path": true,
-      "test": "CorrectionTests"
+      "test": "CorrectionTests",
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
     },
     {
       "id": "M7-004",
       "subsystem": "M7-behaviour",
-      "title": "All 30 idle tunables",
+      "title": "All 30 live-idle tunables and defaults",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleParameters.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "AnimationStreamer::SetDefaultParams 0x0057db40, read",
       "evidence": [
-        "SetDefaultParams 0x0057DB40"
+        "SetDefaultParams 0x0057db40..0x0057dcd0; decoded values in M7 inventory Appendix A row 4"
       ],
+      "effect": "idle blink, gaze and motion distributions differ",
+      "unresolved": "Compare all 30 production values and their types with the decoded table.",
+      "hardware_required": false,
       "live_path": true,
-      "test": "IdleTests"
+      "test": "IdleTests",
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
     },
     {
       "id": "M7-005",
       "subsystem": "M7-behaviour",
       "title": "Blink is a fixed seven-frame squash multiplied onto the base face",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "ProceduralFaceDrawer::GetNextBlinkFrame 0x00585F18",
-        "table 0x00C5AAD8",
-        "FaceLayerManager::GenerateBlink 0x0058D2AC",
-        "ProceduralFace::Combine 0x005846A8"
+        "ProceduralFaceDrawer::GetNextBlinkFrame 0x00585f18",
+        "blink table 0x00c5aad8",
+        "FaceLayerManager::GenerateBlink 0x0058d2ac",
+        "ProceduralFace::Combine 0x005846a8"
       ],
+      "effect": "blink shape, timing or composition differs",
+      "unresolved": "Compare the complete blink table and compositor call path.",
+      "hardware_required": false,
       "live_path": true,
-      "test": "IdleFaceTests"
+      "test": "IdleFaceTests",
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
     },
     {
       "id": "M7-006",
       "subsystem": "M7-behaviour",
-      "title": "Eye dart moves the whole face by (x,y) through LookAt with xMax = yMax = 5",
+      "title": "Eye shift moves the whole face through LookAt with the engine bounds",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "FaceLayerManager::GenerateEyeShift 0x0058D100",
+        "FaceLayerManager::GenerateEyeShift 0x0058d100",
         "ProceduralFace::LookAt 0x00584158"
       ],
+      "effect": "idle gaze displacement or clipping differs",
+      "unresolved": "Compare the complete shift and bounds path.",
+      "hardware_required": false,
       "live_path": true,
-      "test": "IdleFaceTests"
+      "test": "IdleFaceTests",
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
     },
     {
+      "id": "M7-007",
       "subsystem": "M7-behaviour",
-      "title": "An eye dart ramps to its gaze and holds it; it does not fade back to centre",
+      "title": "The eye dart interpolates to a persistent gaze and does not fade to centre",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "ITrackLayerManager::ApplyLayersToFrame 0x0058E644 queues a layer for removal when it runs out only if it is not persistent - the branch at 0x0058E6A0, taken when the byte at layer+0x30 is zero. A persistent layer is instead rewound to its first keyframe and trimmed of the consumed ones (0x0058E682..0x0058E698), so it keeps applying its last face indefinitely",
-        "the dart is added with AddToPersistentLayer (KeepFaceAlive 0x0058D3E2) and the blink with AddLayer (0x0058D4BE), so the dart holds and the blink is removed",
-        "the drawn EyeDartDuration is the time the move takes, not how long the gaze lasts: AddToPersistentLayer 0x0058EAA0 sets the new keyframe's trigger time to lastKeyFrameTime + drawn + 0x21 (one 33 ms frame)",
-        "FaceLayerManager::GetFaceHelper 0x0058CD80 interpolates between the current keyframe and the next with ProceduralFaceKeyFrame::GetInterpolatedFace 0x004F99E6, a linear blend of the two layer faces clamped at 1, and applies the current face unchanged when there is no next one",
-        "GenerateEyeShift 0x0058CFC4 also clamps the shift against the eyes' bounding box so they stay on the 128 x 64 screen (0x0058D004, 0x0058D026); a six pixel dart never reaches that from the resting face, and that clamp is not reproduced"
+        "ITrackLayerManager::ApplyLayersToFrame 0x0058e644",
+        "AddToPersistentLayer 0x0058eaa0",
+        "FaceLayerManager::GetFaceHelper 0x0058cd80",
+        "KeepFaceAlive persistent dart call 0x0058d3e2"
       ],
-      "prior": "the dart snapped to its gaze and returned to the base face when its drawn duration expired, and the drawn duration was read as the hold time",
+      "effect": "the gaze returns early, snaps, or removes the wrong layer",
+      "unresolved": "Compare interpolation, rewind/trim and persistence with the cited path.",
+      "hardware_required": false,
       "live_path": true,
       "test": "IdleFaceTests, KeepAliveTests",
-      "id": "M7-007"
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
     },
     {
+      "id": "M7-008",
       "subsystem": "M7-behaviour",
-      "title": "Idle timers are whole milliseconds counted down by the engine's 60 ms tick",
+      "title": "Idle timers are integer milliseconds advanced by the engine's 60 ms tick",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "CozmoInstanceRunner::Run 0x0065B3A8 deadlines each loop iteration at steady_clock::now() + 0x03938700 ns (60 000 000 ns = 60 ms) and calls CozmoEngine::Update once per iteration",
-        "every keep-alive countdown is decremented by exactly 0x3c per call: UpdateLiveAnimation 0x0057D650 (body), 0x0057D68A (lift), 0x0057D6BA (head), KeepFaceAlive 0x0058D388 (blink and dart together), and the idle clock at this+0x44 is incremented by 0x3c at 0x0057D444",
-        "so the unit is the millisecond and the quantum is one 60 ms tick; BlinkSpacingMin_ms 3000 is 3000 ms, not 3000 ticks",
-        "every spacing and duration is drawn with RandomGenerator::RandIntInRange after a vcvt.s32.f32 of the float tunable (0x0058D45A), so they are whole milliseconds, inclusive at both ends",
-        "all six motion counters start at zero (__aeabi_memclr4 of 0x18 bytes at this+0x198, 0x0057A03C) and so do the two face counters (FaceLayerManager::FaceLayerManager 0x0058CD70), so each is due on the first tick it may run",
-        "a motion countdown is set to the movement's own duration when it starts and the gap is drawn separately into the second half of the pair (0x0057D6F2 with 0x0057D978), and the next movement is due when countdown + gap runs out",
-        "a timer that cannot fire is decremented and left alone - the engine never reschedules it - so the action happens on the first tick its track comes free"
+        "CozmoInstanceRunner::Run 0x0065b3a8 uses 0x03938700 ns",
+        "UpdateLiveAnimation decrements at 0x0057d650/0x0057d68a/0x0057d6ba",
+        "KeepFaceAlive decrements at 0x0058d388",
+        "idle clock increments at 0x0057d444"
       ],
-      "prior": "the timers ran on the continuous wall clock with continuous draws, were rescheduled as though they had fired whenever a track was owned, and spaced movements by the gap alone",
+      "effect": "idle actions fire at different times or are rescheduled when their track is busy",
+      "unresolved": "Compare initialization, inclusive integer draws, counter updates and blocked-track handling.",
+      "hardware_required": false,
       "live_path": true,
       "test": "KeepAliveTests",
-      "id": "M7-008"
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
     },
     {
+      "id": "M7-009",
       "subsystem": "M7-behaviour",
       "title": "Idle head and lift are keyframes of the live animation",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "AnimationStreamer constructs an Animation of its own at this+0xA8 and marks it live (SetIsLive(true), 0x0057A060); AnimationStreamer::Update reaches it only when nothing else is streaming (0x0057D070)",
-        "UpdateLiveAnimation appends HeadAngleKeyFrame((signed char)(headAngle_rad * 57.2958), GetParam<u8>(HeadAngleVariability_deg) = 6, duration) at 0x0057D85C and LiftHeightKeyFrame(GetParam<u8>(LiftHeightMean_mm) = 35, GetParam<u8>(LiftHeightVariability_mm) = 8, duration) at 0x0057D9C0",
-        "the angle is the robot's current head angle, so the movement comes entirely from the variability, which HeadAngleKeyFrame::GetStreamMessage 0x004F8C08 draws at stream time",
-        "they reach the robot as animHeadAngle 0x93 and animLiftHeight 0x94, not as SetHeadAngle or SetLiftHeight",
-        "AnimationScheduler.StreamLive is the path here, and it applies the same stream-time variability draw"
+        "AnimationStreamer live Animation construction 0x0057a060",
+        "head keyframe 0x0057d85c/append 0x0057d866",
+        "lift keyframe 0x0057d9c0/append 0x0057d9ca",
+        "HeadAngleKeyFrame::GetStreamMessage 0x004f8c08"
       ],
-      "prior": "idle drove the head and lift through the M4 motion API, so different messages went on the wire and none of the stream-time variability was applied",
+      "effect": "idle head/lift uses different wire messages or variability",
+      "unresolved": "Compare the M7 scheduling interface to M5's live-keyframe path.",
+      "hardware_required": false,
       "live_path": true,
       "test": "KeepAliveTests",
-      "id": "M7-009"
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
     },
     {
+      "id": "M7-010",
       "subsystem": "M7-behaviour",
-      "title": "The idle body shuffle is driven, with the eye shift that goes with a turn",
+      "title": "Idle body shuffle and its paired turn eye shift",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "AnimationStreamer::UpdateLiveAnimation 0x0057d5f8, read",
       "evidence": [
-        "UpdateLiveAnimation 0x0057D6CC: duration RandIntInRange(BodyMovementDurationMin_ms, Max) = 250..1500, speed RandIntInRange(-BodyMovementSpeed_mmps, +same) = -10..10, and RandDblInRange(0, 1) against BodyMovementStraightFraction 0.5",
-        "straight is BodyMotionKeyFrame(speed, 0x7FFF, duration) (radius set at 0x0057D8DA), a turn is BodyMotionKeyFrame(speed, 0, duration) (0x0057D80E), both appended at 0x0057D8EA",
-        "a turn also adds the LiveIdleTurn eye-shift layer at 0x0057D7FC: x = sign(speed) * RandIntInRange(0, 21), y = RandIntInRange(-10, 10), duration 33 ms, and the five trailing floats of AddOrUpdateEyeShift are 64, 32, 1.1, 0.85, 0.1 rather than the eye-dart tunables",
-        "a straight shuffle removes that layer again with RemoveEyeShift at 0x0057D8D2",
-        "the gap to the next shuffle is RandIntInRange(BodyMovementSpacingMin_ms, Max) = 100..1000, drawn at 0x0057D978"
+        "body decision and draws 0x0057d6cc..0x0057d8f4",
+        "turn eye layer 0x0057d7fc",
+        "straight removal 0x0057d8d2",
+        "next spacing 0x0057d978"
       ],
-      "prior": "the numbers were written down in the file and nothing used them: the robot sat still where the app shuffles",
+      "effect": "the robot stays still or shuffles/looks with different values",
+      "unresolved": "Compare the complete body/eye keyframe path with M5 streaming.",
+      "hardware_required": false,
       "live_path": true,
       "test": "KeepAliveTests",
-      "id": "M7-010"
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
     },
     {
+      "id": "M7-011",
       "subsystem": "M7-behaviour",
       "title": "A reaction is held off only where its own strategy config names a cooldown",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorArbiter.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so + config/engine/behaviorSystem/reactionTrigger_behavior_map.json",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so plus shipped reactionTrigger_behavior_map.json",
       "evidence": [
-        "reactionTrigger_behavior_map.json holds exactly one reaction cooldown: Frustration -> ReactToFrustrationMinor, frustrationParams.cooldownTime_s 60.0. CliffDetected, RobotPickedUp, PlacedOnCharger, RobotFalling and the rest carry genericStrategyParams or wantsToRunStrategyConfig with no cooldown at all",
-        "the fist-bump cooldowns in the same file (180-300 s) are behaviorObjectiveTriggerParams, per objective rather than per trigger",
-        "the 60 s lives in ReactionTriggerStrategyFrustration::ShouldTriggerBehaviorInternal 0x0060EE6E, and this stack keeps it there too (FrustrationStrategy), not in the arbiter",
-        "re-triggering of the uncooled reactions is prevented instead by SmartDisableReactionsWithLock, held for the reaction's duration (M7-014), and by strategies that watch transitions rather than levels"
+        "reactionTrigger_behavior_map.json: FrustrationMinor cooldownTime_s 60.0; other objective cooldowns remain per-objective",
+        "ReactionTriggerStrategyFrustration::ShouldTriggerBehaviorInternal 0x0060ee6e..0x0060eed8"
       ],
-      "prior": "this stack imposed a blanket 5 s cooldown on every reaction, so cliff, pick-up and charger reactions fired less often than the app fires them",
+      "effect": "a reaction is suppressed or repeated on the wrong schedule",
+      "unresolved": "Compare each configured strategy cooldown and separate objective cooldown behavior.",
+      "hardware_required": false,
       "live_path": true,
       "test": "BehaviorTests.AReactionHasNoCooldownUnlessItsTriggerNamesOne",
-      "id": "M7-011"
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
     },
     {
       "id": "M7-012",
       "subsystem": "M7-behaviour",
-      "title": "Mood axes, events and decay curves",
+      "title": "Mood schema, decay graphs, action-result events, affectors, update and game output",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Mood.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "shipped mood_config.json",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "shipped mood_config.json plus libcozmoEngine.so",
       "evidence": [
-        "config/engine/mood_config.json"
+        "re-analysis/obb/assets/cozmo_resources/config/engine/mood_config.json",
+        "StaticMoodData::ReadFromJson 0x0067ce6c",
+        "MoodManager::Update 0x0067b5d4",
+        "MoodManager::SendEmotionsToGame 0x0067b724..0x0067b7f8"
       ],
-      "live_path": true,
-      "test": "MoodTests"
-    },
-    {
-      "subsystem": "M7-behaviour",
-      "title": "Mood: the clamp, the decay curve outside its nodes, and what restarts the decay clock",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Mood.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
-      "evidence": [
-        "Emotion::Add 0x00679618 clamps the sum to [-1, +1] against the two literals it loads at 0x00679622 and 0x00679630 before storing it",
-        "GraphEvaluator2d::EvaluateY 0x00804BD0: below the first node it returns that node's y (0x00804BE2), above the last it returns the last node's y (the loop at 0x00804C00 falling through), a graph of fewer than two nodes is its first node's y at every x, and between two nodes it interpolates unless they are within 1e-5 in x",
-        "Emotion::Update 0x006795A4 multiplies the current value by the RATIO of the curve at the new decay time to the curve at the old one, leaving it alone when the old reading is below 1e-5 - it does not re-multiply the value the emotion had when it last changed",
-        "Emotion::Add zeroes the decay clock at this+0x1C only when three tests pass: the value kept its sign (teq at 0x006796A8), the change was larger than 0.05 (0x0067968A), and the change pushed the value away from zero rather than back towards it (eor at 0x006796AE). Emotion::SetValue 0x006796C8 always zeroes it",
-        "every shipped decay graph starts at (0, 1) and never exceeds 1 (mood_config.json: default, WantToPlay, Social, Confident), so the telescoped and ratio forms agree while nothing changes the value"
-      ],
-      "prior": "the clamp and the edge behaviour were a plausible reading, and every affector restarted the decay clock",
+      "effect": "mood axes, event effects, decay or app-visible state differ",
+      "unresolved": "Compare/build the full parser, nine-emotion update and broadcast path.",
+      "hardware_required": false,
       "live_path": true,
       "test": "MoodTests",
-      "id": "M7-013"
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
+    },
+    {
+      "id": "M7-013",
+      "subsystem": "M7-behaviour",
+      "title": "Mood clamp, graph evaluation and decay-clock restart arithmetic",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Mood.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so plus shipped mood graphs",
+      "evidence": [
+        "Emotion::Add 0x00679618",
+        "Emotion::Update 0x006795a4",
+        "old<=1e-5 raw-new multiply at 0x006795ee..0x006795fc",
+        "GraphEvaluator2d::EvaluateY 0x00804bd0",
+        "mood_config.json decayGraphs"
+      ],
+      "effect": "emotion magnitude or decay differs at clamps, graph edges or clock resets",
+      "unresolved": "Correct the prior old<=1e-5 wording and compare every arithmetic branch.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "MoodTests",
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
     },
     {
       "id": "M7-014",
       "subsystem": "M7-behaviour",
-      "title": "SmartDisableReactionsWithLock is held for the duration of a reaction",
+      "title": "Reaction-lock manager lifetime and concrete per-class lock tables",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ReactiveBehavior.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "called in each BehaviorReactToX InitInternal"
+        "IBehavior::SmartDisableReactionsWithLock 0x005bce3c",
+        "BehaviorManager::DisableReactionsWithLock 0x005a27e8",
+        "BehaviorManager::RemoveDisableReactionsLock 0x005a3a48",
+        "13 concrete 21-entry tables in M7 inventory Appendix F"
       ],
-      "live_path": true
+      "effect": "reactions interrupt one another when locked, remain disabled, or use the wrong per-class set",
+      "unresolved": "Compare the manager lock bookkeeping, name suffix and all recovered class tables.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "BehaviorFrameworkTests",
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
     },
     {
       "id": "M7-015",
       "subsystem": "M7-behaviour",
-      "title": "Pick-up falls back to the raw status flag until the off-treads classifier is enabled",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs:372",
-      "effect": "pick-up reactions fire on the raw flag rather than on derived InAir",
-      "provenance": "a labelled fallback of this stack, used only before the robot reports head calibration",
-      "authority": "Robot::CheckAndUpdateTreadsState 0x00511E00, which is implemented and used once calibration is reported",
+      "title": "Pick-up and off-treads reaction gating follows the engine state path",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "Robot::CheckAndUpdateTreadsState 0x00511E00"
+        "Robot::CheckAndUpdateTreadsState 0x00511e00",
+        "BehaviorReactToPickup 0x00607750..0x00607d9c"
       ],
-      "status": "EQUIVALENT_IMPLEMENTATION",
-      "unresolved": "",
+      "effect": "pick-up reactions fire from a stack-specific raw fallback instead of the engine state",
+      "unresolved": "Compare/build the complete classifier and ReactToPickup gates; do not retain the former equivalence label without a full source path.",
       "hardware_required": false,
       "live_path": true,
-      "test": "DerivedStateTests"
+      "test": "DerivedStateTests",
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
     },
     {
+      "id": "M7-016",
       "subsystem": "M7-behaviour",
-      "title": "The face carries a stack of named layers, not one transient at a time",
+      "title": "The idle face composes a stack of named persistent and transient layers",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "ITrackLayerManager holds a list of named layers - Blink, KeepAliveEyeDart and LiveIdleTurn are the three the keep-alive adds - and ProceduralFace::Combine 0x005846A8 folds each onto the result of the last",
-        "KeepFaceAlive adds the dart to a persistent layer (AddToPersistentLayer 0x0058D3E2) and the blink as an ordinary one (AddLayer 0x0058D4BE) on the same tick when both timers are due, which they are on the first tick since both start at zero",
-        "the dart is held off while another layer is up: KeepFaceAlive proceeds only when the manager holds no layer, or exactly one and that one is the dart's own (0x0058D3B2..0x0058D3C4)",
-        "found by this pass: a single transient slot dropped whichever of a simultaneous blink and dart came second"
+        "ITrackLayerManager::ApplyLayersToFrame 0x0058e644",
+        "ProceduralFace::Combine 0x005846a8",
+        "KeepFaceAlive dart 0x0058d3e2 and blink 0x0058d4be"
       ],
+      "effect": "simultaneous blink, dart and turn layers overwrite rather than compose",
+      "unresolved": "Compare the live named-layer stack and ordering with M5's compositor.",
+      "hardware_required": false,
       "live_path": true,
       "test": "KeepAliveTests, IdleFaceTests",
-      "id": "M7-016"
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
     },
     {
       "id": "M9-001",
@@ -4610,25 +4676,122 @@
     {
       "id": "M7-017",
       "subsystem": "M7-behaviour",
-      "title": "The complete live-animation wire lifecycle",
+      "title": "The exact live-animation wire lifecycle used by idle behavior",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "effect": "live keyframes (idle body, head, lift, face) start, interleave with a streamed animation, or stop on the wire differently from the engine",
-      "provenance": "once the live stream is active it is streamed on every tick in which no clip runs: opened with one audio silence and StartOfAnimation tag 0xFF, then one audio silence per frame within the robot's audio budget, the live keyframes appended into it; a clip taking over ends it without an EndOfAnimation and the next tick after the clip reopens it. The stream becomes active at the first live keyframe, which is when this stack's idle behaviour starts, rather than at engine start; and a tick streams one frame where the engine streams to its budget - the same frames on the wire at the same cadence",
-      "authority": "AnimationStreamer::UpdateLiveAnimation 0x0057D5F8, AnimationStreamer::Update 0x0057CE5C, InitStream 0x0057B674, UpdateStream 0x0057C84C, SendStartOfAnimation 0x0057C400, SendBufferedMessages 0x0057BF60, read",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "UpdateLiveAnimation 0x0057D5F8 sends nothing itself: it appends HeadAngle, BodyMotion and LiftHeight keyframes to the live Animation (AddKeyFrameToBack at 0x0057D866, 0x0057D8F4, 0x0057D9CA)",
-        "Update 0x0057CE5C, with no streaming animation: sets the idle animation to the live one at this+0xA8 (0x0057D070..0x0057D07C), calls UpdateLiveAnimation (0x0057D080), and when the live animation is not already the one streaming calls InitStream(live, 0xFF) (movs r2, #0xff; 0x0057D3FC..0x0057D3FE), otherwise UpdateStream(live) (0x0057D430) - every update",
-        "InitStream 0x0057B674 stores the tag at this+0xA0 (0x0057B68E), clears the send buffer (0x0057B7CE), sets endSent-suppression this+0x72 from Animation::IsEmpty (0x0057B7D8) and clears startSent this+0x71 (0x0057B7E2); it sends nothing, and it does not end the previous animation",
-        "UpdateStream 0x0057C84C, per frame: an AudioSample or AudioSilence is buffered first (0x0057C9A8 / 0x0057C9C4), then SendStartOfAnimation once when this+0x71 is clear (0x0057C9C8..0x0057C9D0; SendStartOfAnimation 0x0057C400 buffers StartOfAnimation with the tag at this+0xA0), then head, lift, event, face, procedural face, backpack lights, body (0x0057CA4E..0x0057CA56), record heading, turn to recorded heading, then SendBufferedMessages (0x0057CA82)",
-        "the live animation is empty when InitStream runs, so this+0x72 is set and the UpdateStream end path (0x0057CB64..0x0057CB6C) and the Update end path (0x0057D1D0..0x0057D1D6) never send its EndOfAnimation: the live stream stays open until another animation's InitStream replaces it",
-        "SendBufferedMessages 0x0057BF60 sends each buffered message reliably (Robot::SendMessage(msg, true, false) at 0x0057BFAA) within the byte budget at this+0x98 and counts tags 0x8E/0x8F ((tag & 0xFE) == 0x8E at 0x0057BF8C) against the budget at this+0x9C computed by UpdateAmountToSend 0x0057C6F0",
-        "Whether the robot requires StartOfAnimation or the audio framing to execute a body keyframe is firmware behaviour and is not answered by the engine; what the engine establishes is that it never sends a live keyframe outside a StartOfAnimation-opened, audio-framed stream. CR1's zero wheel movement is not explained by this reading"
+        "AnimationStreamer::UpdateLiveAnimation 0x0057d5f8",
+        "Update 0x0057ce5c",
+        "InitStream 0x0057b674",
+        "UpdateStream 0x0057c84c",
+        "SendStartOfAnimation 0x0057c400",
+        "SendBufferedMessages 0x0057bf60"
       ],
-      "status": "EQUIVALENT_IMPLEMENTATION",
-      "unresolved": "",
+      "effect": "idle keyframes open, frame, interleave or close differently on the wire",
+      "unresolved": "Compare the M7 caller lifecycle against M5's exact stream; the former equivalence claim is not retained.",
       "hardware_required": false,
       "live_path": true,
-      "test": "AnimationStreamLifecycleTests.TheLiveIdleReInitsOnEveryUpdateOnceItsKeyframesAreConsumed"
+      "test": "AnimationStreamLifecycleTests.TheLiveIdleReInitsOnEveryUpdateOnceItsKeyframesAreConsumed",
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
+    },
+    {
+      "id": "M7-018",
+      "subsystem": "M7-behaviour",
+      "title": "Shipped behaviour configuration and BehaviorClass factory binding",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "shipped OBB configuration plus libcozmoEngine.so BehaviorContainer",
+      "evidence": [
+        "178-config table in M7 inventory Appendix C",
+        "79-class entry-point table in Appendix B",
+        "BehaviorContainer::CreateBehavior 0x0059c888",
+        "class 0x39 BehaviorWait case constructs base IBehavior and installs the BehaviorWait vtable"
+      ],
+      "effect": "a shipped behaviour ID instantiates the wrong class, animation list or executable behavior",
+      "unresolved": "Compare all 178 IDs and 79 class bindings, including the five differently named native classes and BehaviorWait's base defaults.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "BehaviorFrameworkTests",
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
+    },
+    {
+      "id": "M7-019",
+      "subsystem": "M7-behaviour",
+      "title": "M7 concrete reaction-behaviour state machines",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "reaction-class rows in M7 inventory Appendices E and F",
+        "corrected ReactToCliff mood-event sequence 0x00604d70..0x00604d84",
+        "ReactToImpact 0x006061f8..0x0060647c",
+        "ReactToOnCharger 0x00606c94..0x00606e86",
+        "ReactToPickup 0x00607750..0x00607d9c"
+      ],
+      "effect": "a reaction selects a different animation, action, state transition, lock or completion condition",
+      "unresolved": "Compare/build every M7-owned reaction row. Cross-layer derived-state and face/object inputs remain owned by M10/M14.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "CorrectionTests, BehaviorTests",
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
+    },
+    {
+      "id": "M7-020",
+      "subsystem": "M7-behaviour",
+      "title": "Mood event production, repetition penalty and affector application",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Mood.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so plus shipped mood_config.json",
+      "evidence": [
+        "MoodManager::TriggerEmotionEvent 0x0067b85c",
+        "MoodManager::AddToEmotion 0x0067bdca",
+        "MoodManager::HandleActionEnded 0x0067c770",
+        "EmotionAffector::ReadFromJson 0x00679910",
+        "MoodManager::SendEmotionsToGame 0x0067b724"
+      ],
+      "effect": "completed actions or repeated events change the wrong emotions or amount",
+      "unresolved": "Compare/build the action-result map, enable set, repetition clocks/graphs and each affector add.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "MoodTests",
+      "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset"
+    },
+    {
+      "id": "M7-021",
+      "subsystem": "M7-behaviour",
+      "title": "Reaction robot-field meanings and cliff helper bodies remain to be recovered",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/OffTreadsBehaviors.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "M7 gap1 G8: live reaction rows read offsets robot+0x355, +0x338, +0x300 and +0x37c",
+        "unread helper bodies 0x0055b554 and 0x005c0ca8"
+      ],
+      "effect": "reaction variants or cliff recovery may be named or implemented from an unsupported interpretation",
+      "unresolved": "Trace every writer/reader of the four robot offsets and disassemble helper bodies 0x0055b554 and 0x005c0ca8 with all callers.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null,
+      "provenance": "the cited source path is only partially recovered; the unresolved field names or branches remain explicit"
+    },
+    {
+      "id": "M7-022",
+      "subsystem": "M7-behaviour",
+      "title": "DockingTestSimple developer-test state machine is not exhaustively recovered",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "BehaviorDockingTestSimple::UpdateInternal 0x005cbc10..0x005ccc3f",
+        "M7 gap1 G7"
+      ],
+      "effect": "the non-live developer docking test follows different states, callbacks or random arguments",
+      "unresolved": "Enumerate every +0x11c state, callback transition, random range and action argument in 0x005cbc10..0x005ccc3f.",
+      "hardware_required": false,
+      "live_path": false,
+      "test": null,
+      "provenance": "the cited source path is only partially recovered; the unresolved field names or branches remain explicit"
     },
     {
       "id": "M11-019",
