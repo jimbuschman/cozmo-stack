@@ -2,7 +2,10 @@
 
 **Agent:** opencode, as cozmo-manager, in the main clone. **Type:** build. Part of the B-M6b split (B-M6b blocked, correctly, as too large for one job).
 
-**Needs:** B-M6b-1 DONE. If it isn't, set `WAITING B-M6b-1` and end.
+**Needs:** nothing more. It may run while B-M6b-1 is still open (manager, 2026-09-28): the voice and bus engine doesn't depend on the Vorbis decoder's output values.
+
+- **Don't edit** `WwiseVorbisDecode.cs`, `WwiseVorbisImdct.cs` or `WwiseVorbisNative*.cs`: the manager is fixing the decoder there.
+- **Test the voice and bus engine** with ADPCM or synthetic sources, not decoded Vorbis output.
 
 **Scope:** replace the seams left in `WwiseVoiceEngine.cs` (427d27a):
 - the voice pass;
