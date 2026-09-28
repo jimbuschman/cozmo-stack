@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **362 records** over 16 subsystems.
+Manifest of **366 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 167 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 3 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| EXACT_SOURCE | 153 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EQUIVALENT_IMPLEMENTATION | 2 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 7 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 143 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 162 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 30 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -36,7 +36,7 @@ remains after both, and they do not go away by working harder on this repository
 | M10-derived — Derived robot state and reaction strategies | 13 | 0 | 7 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 40 | 0 | 9 | 1 | 0 | yes | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 22 | 0 | 4 | 0 | 0 | yes | no |
-| M13-navigation — Planning, charger and block configurations | 15 | 0 | 0 | 0 | 0 | yes | yes |
+| M13-navigation — Planning, charger and block configurations | 19 | 0 | 19 | 0 | 0 | yes | no |
 | M14-faces — Face and pet pipeline | 7 | 0 | 0 | 1 | 0 | yes | yes |
 | M15-freeplay — Needs, activities and freeplay | 16 | 1 | 15 | 0 | 0 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
@@ -64,7 +64,7 @@ status.
 | M10-derived | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
 | M11-vision | INVENTORY_APPROVED | 28 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 17 | 0 | 0 | 0 |
-| M13-navigation | UNREVIEWED | 15 | 5 | 0 | 0 |
+| M13-navigation | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | M14-faces | UNREVIEWED | 6 | 0 | 0 | 0 |
 | M15-freeplay | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
@@ -1322,6 +1322,179 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: 0x005590AE objectPose.GetWithRespectTo(robot.parent, local_5c); 0x005590E6..0x005590FE delta = robot.xy - local_5c.xy; 0x00559100..0x00559160 normalize; 0x005591C2 vldr s2,[sb,#0x84]; 0x005591E4 vmul delta *= distance; 0x00559220 vadd goal.y = delta.y + local_5c.y; 0x00559224 goal.x = delta.x + local_5c.x; 0x00559230 goal.z = robot.z; 0x00559232 eor r0,r1,#0x80000000 / 0x00559236 eor r1,r2,#0x80000000 / 0x0055923A blx 0x4A4510 (atan2f); 0x00559278 blx 0x4A47E0 Pose3d(yaw, Z_AXIS, goal, parent, name); the C# uses the chosen pre-action pose's position with the heading toward the object; the engine's +0x84 distance and exact point are unread
 * outstanding: read the value/setter of DriveToObjectAction+0x84 (the 7-arg ctor sets -1.0) and build the engine's object+delta goal; until then the C# pre-action-pose position is a labelled reduction
 
+### M13-navigation — Planning, charger and block configurations
+
+**M13-001 — Lattice planner motion primitives loaded from the shipped cozmo_mprim.json** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs`
+* effect: the planner builds its motion primitives from a different file or schema
+* rests on: the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md
+* best authority: libcozmoEngine.so 3.4.0-1204 and the shipped asset config/engine/cozmo_mprim.json
+* evidence: xythetaEnvironment::ReadMotionPrimitives 0x008529C0 opens the file "r" (0x00852A44/0x00852A48), Json::Reader::parse (0x00852A62) and ParseMotionPrims with oldFormat=false (0x00852B04/0x00852B06); xythetaEnvironment::ParseMotionPrims body 0x00852014 reads resolution_mm -> env+0 then 1/env[0] -> env+4 (0x0085203C/0x008520AA), num_angles -> env+8 (0x00852062), actions -> 24-byte ActionType vector at env+0x30 (0x008520BA), angle_definitions -> env+0x38 (0x008521C6), angles -> env+0x14 resized to num_angles (0x00852248/0x00852264), each prim -> MotionPrimitive::Create (0x0085230E); config/engine/cozmo_mprim.json sha256 4C79666BDD5F3F5FE6C7458B0E7D59ECBCCDB2AB3C12F1844D68BCC57887431D
+* outstanding: compare LatticePlanner.cs's loader and schema against the cited instructions and the asset, then settle
+
+**M13-002 — FlipBlockAction's constants and IAction type** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/FlipBlockAction.cs`
+* effect: FlipBlock drives a different distance, angle or tolerance
+* rests on: the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: FlipBlockAction ctor 0x0055EC80: IAction type 0xF (0x0055ECA8/0x0055ECAA); +0x12C=150.0 (0x43160000), +0x130=20.0 (0x41A00000) at 0x0055ECF6/0x0055ECFA; +0x134=45.0 (0x42340000), +0x138=40.0 (0x42200000), +0x13C=-1 at 0x0055ECFE..0x0055ED0E; +0x140=1 at 0x0055ED10/0x0055ED12
+* outstanding: compare FlipBlockAction.cs against the cited constants and settle
+
+**M13-003 — Obstacle expansion: two paddings, a constant penalty, and one C-space polygon per heading** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs`
+* effect: the planner expands obstacles by the wrong padding or penalty and routes differently
+* rests on: the current stack code; its old 45 mm radius / 20 mm ring / penalty 100 design is not the engine's
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: ImportBlockworldObstaclesIfNeeded 0x004FD4B8: paddings 7.0/6.0 (0x004FD4EE/0x004FD4F2) or 2.0/1.0 (0x004FD4EA/0x004FD4EC) selected by the function's own first bool argument (r4=r1 0x004FD4D2; cmp 0x004FD4E8; itt ne 0x004FD4F6); callers pass 0 (0x004FD2AC, 0x004FF92A) or 1 (StartPlanning 0x004FEC38); import log "robot padding %f, obstacle padding %f , didBlocksChange %d" (0x004FD51A/0x004FD546); penalty 0.1 (0x3DCCCCCD at 0x004FE0CE); AddObstacleWithExpansion 0x00855528 and ExpandCSpace 0x008550E8; ConvexPolygon::RadialExpand 0x004FDF9E; IsInCollision(State) 0x008515BC tail-calls IsInCollision(State_c) 0x008515F8; IsInSoftCollision 0x00851708 and GetCollisionPenalty 0x008517B0 read the per-theta table
+* outstanding: compare the paddings, the 0.1 penalty, the per-heading C-space polygon and the collision queries against the cited instructions and settle
+
+**M13-004 — The primitive file's schema, arcs and turn costs** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs`
+* effect: the planner uses a different cost, radius, arc or turn direction
+* rests on: the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md
+* best authority: libcozmoEngine.so 3.4.0-1204 and the shipped asset config/engine/cozmo_mprim.json
+* evidence: ActionType::Import 0x00851A18: extra_cost_factor -> +0 (0x00851A96), index -> +4 (0x00851AB8), name -> +8 (0x00851ADC), reverse_action -> +0x14 (0x00851B48); ctor 0x008519EC; MotionPrimitive::Create 0x00853DD0: action_index -> +1 (0x00853E06), end_pose -> +8 (0x00853E30), intermediate_poses -> +0x14 (0x00853E3E), straight_length_mm (0x00854094/0x008540D0/0x00854140), arc keys sweepRad/radius_mm/centerPt_x_mm/centerPt_y_mm/startRad (0x00854160/0x0085417C/0x008541CE/0x008541E4/0x0085420C) -> AppendArc 0x0085425A, turn_in_place_direction -> AppendPointTurn 0x0085431A; a per-primitive extra_cost_factor is rejected (0x00853FFC); asset: resolution_mm 10.0, num_angles 16, 9 actions with cost factors 1.0001/1.0/1.0/1.0/1.0/1.0/2.0/2.0/1.2, 144 primitives; sha256 4C79666BDD5F3F5FE6C7458B0E7D59ECBCCDB2AB3C12F1844D68BCC57887431D
+* outstanding: compare the schema keys and the asset's arcs and turn costs against the cited instructions and settle
+
+**M13-005 — A lattice-planner failure sends no path** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/DriveActions.cs`
+* effect: a failed plan drives a guessed line instead of ending the action
+* rests on: the current stack code; it previously had a labelled straight-line fallback
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: DoPlanning 0x00500090 has no substitute path: the non-empty-plan branch appends GetPlan() (0x00500540) and returns; the failure condition is Replan == 0: 0x00500106 saves the result, 0x00500136 selects "robot.lattice_planner_failure" when it is zero, 0x00500202 cbz returns 0
+* outstanding: compare DriveActions.cs's failure handling against the cited instructions and settle
+
+**M13-006 — The whiteboard keeps a list of beacons and the active one is the first** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/AIWhiteboard.cs`
+* effect: the active beacon is the newest rather than the oldest
+* rests on: the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: AIWhiteboard::AddBeacon 0x0056C39C appends a 20-byte AIBeacon (Pose3d, a float radius at +0xC, an int at +0x10) to the vector at whiteboard+0x60, growing it through __emplace_back_slow_path (0x0056C3A8/0x0056C3D2); ClearAllBeacons 0x0056AA08 walks it back (0x0056AA10 subs r0,#0x14); GetActiveBeacon 0x0056C404 compares begin/end and returns begin, or null when equal (0x0056C408/0x0056C40C); the active beacon is the oldest still standing; FailedToFindLocationInBeacon 0x0056C3F0 forwards to AIBeacon::FailedToFindLocation
+* outstanding: compare AIWhiteboard.cs against the cited instructions and settle
+
+**M13-007 — The stack tolerance is 30 mm when building a stack and 15 mm everywhere else** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/BlockConfigurations.cs`
+* effect: the stack list is built with the tighter tolerance or a neighbour is missed
+* rests on: the current stack code used 15 for building the stack list
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: BlockWorld::FindObjectOnTopOrUnderneathHelper(obj, float tolerance, filter, bool) 0x0062601C takes the tolerance as its second argument (r2 captured at 0x00626038 into the lambda at 0x006260CE/0x006260D8), reads the height through GetDimInParentFrame<(char)90> (0x00626070), adds +/-half to the parent Z (0x0062607E..0x006260A0) and calls FindLocatedObjectHelper (0x0062610E); StackOfCubes::BuildTallestStackForObject passes 30 (0x41F00000 at 0x0061928C and 0x00619344); BlockWorld::UpdatePoseOfStackedObjects 0x00621908, DockingComponent::CanInteractWithObjectHelper 0x0063C728 and CarryingComponent::SetObjectAsAttachedToLift 0x00632F0C pass 15 (0x41700000)
+* outstanding: compare BlockConfigurations.cs against the 30/15 split and settle
+
+**M13-008 — The mount sequence and the reverse onto the charger, with the retry result codes** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs`
+* effect: the mount turns or reverses at the wrong speed, or reports a different failure/retry result
+* rests on: the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: ConfigureTurnAndMountAction 0x0054E500: TurnInPlaceAction at atan2 of the vector to the marker (0x0054E52E/0x0054E536), SetMaxSpeed(0x3FDF66F3 = 1.745329 rad/s) at 0x0054E550/0x0054E55A and SetAccel(0x40A78D36 = 5.235988 rad/s^2) at 0x0054E55E/0x0054E568; then DriveStraightAction(-120 mm, 30 mm/s, false) whose vtable becomes BackupOntoChargerAction's (0x0054E5FC..0x0054E618); BackupOntoChargerAction::CheckIfDone 0x0054E7A8: on contacts (robot+0x338) SetPoseOnCharger and return 0 (0x0054E7B0..0x0054E7BE); pitch below -0.261799 rad (0xBE860A92 at 0x0054E7CC) returns 0x0400000A (0x0054E7DE adds r4,#4); fall-through returns 0x04000006 when DriveStraightAction::CheckIfDone returns 0 (0x0054E7E4..0x0054E7EC); MountChargerAction::CheckIfDone 0x0054E2D0 reaches the pi/2 comparison (0x3FC90FDB at 0x0054E374) only when the turn-and-mount sub-action FAILED (0x0054E31A skips 0 and 0x1000000); outside the window ConfigureDriveForRetryAction 0x0054E72C runs DriveStraightAction(120, 100) returning 0x04000006 (0x0054E3E8/0x0054E742/0x0054E748); an align failure ends the action (0x0054E2FA)
+* outstanding: compare ChargerActions.cs against the turn numbers, the reverse and the result codes, and settle
+
+**M13-009 — The charger's dimensions, its docked pose and its one pre-dock pose** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/ChargerGeometry.cs`
+* effect: the charger marker, docked pose or pre-dock pose is at the wrong place or size
+* rests on: the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Charger::Charger 0x004E9B6C stores 96.0/80.0/31.0 at +0xF0..+0xF8 (0x004E9B98/0x004E9BB4/0x004E9BB0/0x004E9BB8) and adds one marker: id 2 (0x004E9C16), angle -pi/2 about Z (0xBFC90FDB at 0x004E9BBC) at (86,0,22) (0x004E9BD6/0x004E9BE2), size Point2 x=27.0 at sp+0x14 and y=20.0 at sp+0x18, the AddMarker pointer being sp+0x14 (0x004E9C28/0x004E9C30/0x004E9C36/0x004E9C38); Charger::GetRobotDockedPose 0x004EA1A0 = Pose3d(Radians(pi), Z_AXIS, (30,0,0)) on the charger pose (0x004EA1AC/0x004EA1C6/0x004EA202); Charger::GeneratePreActionPoses 0x004E9FB0 emits one pose for action types 0 and 1 only (0x004E9FD4/0x004E9FD6): Pose3d(Radians(p.angle + pi/2), Z_AXIS, (p.x, -p.y, -15.5)) parented to the marker (0x004E9FE4/0x004E9FF2/0x004EA012/0x004EA018/0x004EA01E); p is the file-static Pose2d at 0x01059148 initialised (Radians(0), 0.0, 250.0) at 0x004D6BC4/0x004D6BD6
+* outstanding: compare ChargerGeometry.cs against the cited dimensions, the marker (x=27,y=20) and the poses, and settle
+
+**M13-010 — The workouts run in file order and the last one repeats** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/Workouts.cs`
+* effect: workouts run out of order or the last one does not repeat
+* rests on: the current stack code picked by index with a medium default
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: WorkoutComponent::GetCurrentWorkout 0x00573DE8 returns the pointer at +0xC (0x00573DE8/0x00573DF0); CompleteCurrentWorkout 0x00573DEC triggers the workout emotion event (MoodManager::TriggerEmotionEvent 0x00573E1C) and advances by one 0x40-byte entry unless it is the last (0x00573E24/0x00573E28/0x00573E2A); ShouldPlayEightiesMusic 0x00573E30 caches its answer at +0x11 and otherwise scores the current workout
+* outstanding: compare Workouts.cs against the file-order advance and settle
+
+**M13-011 — The three path segment messages are a Planning::PathSegment copied field for field** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/RobotPath.cs`
+* effect: the robot drives a different path from the one the planner produced
+* rests on: the current stack code already sent the same values in the same order
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: PathDolerOuter::Dole 0x00507E4C switches on the segment type at PathSegment+0 (1 line, 2 arc, 3 point turn; 0x00507F40/0x00507F44/0x00507F48) and copies words at +4, +8, +0xC, +0x10 (arc adds +0x14), then the speed profile at +0x1C, +0x20, +0x24; a point turn also copies the byte at +0x14 (line 0x00507FB6..0x00507FD2; arc 0x00508008..0x00508028; point turn 0x00507F5E..0x00507F7E); the field definers: PathSegment::DefineLine 0x0085BC00, DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, SetSpeedProfile 0x0085BC90
+* outstanding: compare RobotPath.cs against the field layout and settle
+
+**M13-012 — The mount raises the lift to 45 mm when it is below it, not when it is above** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs`
+* effect: the lift is lowered to 45 when it is above, or not raised when it is below
+* rests on: the current stack code had the comparison the other way round
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: ConfigureTurnAndMountAction reads Robot::GetLiftHeight (0x0054E58A) and branches past the lift move when the lift is at or above 45.0 (0x42340000 at 0x0054E592; bpl at 0x0054E59E); otherwise MoveLiftToHeightAction(45, 5, 0) (0x0054E5B2..0x0054E5C6)
+* outstanding: compare the lift branch against the cited instructions and settle
+
+**M13-013 — DriveOffChargerContactsAction: a drive straight that retries while still on the charger** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs`
+* effect: the robot does not leave the charger, or the SDK track lock is left cleared/kept wrongly
+* rests on: the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: DriveOffChargerContactsAction ctor 0x00558228: DriveStraightAction(10 mm, 20 mm/s, false) (0x00558232/0x00558236/0x0055823E), +0x44=7, and in SDK mode only SetTracksToLock(0) (0x0055827C/0x00558286/0x00558288) - the clear is in the constructor; Init 0x005582D0 copies robot+0x338 into action+0x8B (0x005582D2/0x005582D6) and returns 0 when not on contacts; CheckIfDone 0x005582E4 retries while the drive is still running and fails 0x04000009 if still on the contacts (0x00558344)
+* outstanding: compare ChargerActions.cs against the cited constructor/Init/CheckIfDone and settle
+
+**M13-014 — Knock over a stack: BehaviorKnockOverCubes flow, DriveAndFlipBlockAction and IDriveToInteractWithObject** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`
+* effect: the approach, the flip of the bottom block, the blind-flip fallback or the reactions differ from the engine
+* rests on: the current stack code; the engine flow was read in gap pass 2 (G5) but the code has not been compared
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: BehaviorKnockOverCubes body 0x005C2EA0..0x005C3E2A; IsRunnableInternal 0x005C314C needs StackOfCubes::GetStackHeight() >= +0x124 (minimumStackHeight default 3); InitInternal 0x005C31A2 runs the reach unless +0xD9 or +0xD8 is set; TransitionToReachingForBlock 0x005C3254: TurnTowardsObjectAction(max pi), then DriveStraightAction(x-85, 60) when the block x+10 > 85.0, then TriggerLiftSafeAnimationAction(+0x150), then TransitionToKnockingOverStack regardless of result; TransitionToKnockingOverStack 0x005C34A8: TurnTowardsObjectAction(max pi), DriveAndFlipBlockAction with maxTurn = pi/2 on the first attempt (0x005C36BC) and 0.0 once +0x140 > 0 (0x005C36C0), WaitAction(0.5); the callback 0x005C3DCE writes AIWhiteboard+0x70 on NoPreActionPoses (0x03000010), re-runs while +0x140 <= 1 on a Retry result and otherwise blind-flips, incrementing +0x140 either way; success goes to TransitionToPlayingReaction 0x005C3908, which selects the success trigger +0x15C or failure trigger +0x160 by the tipped-object set size at +0x14C; IDriveToInteractWithObject 0x0055B1F4 adds TWO actions when maxTurn > 0 (0x0055B37C..0x0055B392): a TurnTowardsLastFacePoseAction (vtable overwritten from TurnTowardsFaceAction at 0x0055B3C4..0x0055B3D8) and a TurnTowardsObjectAction (0x0055B42E/0x0055B43C), both with failure ignored; the trailing float 20.0 is not read by DriveAndFlipBlockAction ctor 0x0055E208
+* outstanding: compare CubeGameBehaviors.cs against the cited flow, including the second TurnTowardsObjectAction, TurnTowardsLastFacePoseAction and the +0x14C trigger selector, and settle
+
+**M13-015 — Pop a wheelie: one retry, the realign or retry animation, and what a failure marks** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`
+* effect: the wheelie retries more than once, or a failure marks the wrong object
+* rests on: the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: TransitionToPerformingAction(Robot&, bool) 0x005C7758 bumps +0x12C on a retry (0x005C777E) and zeroes it otherwise (0x005C780C); the completion lambda 0x005C7CBC splits on result >> 24: success sets +0x128=-1, plays SuccessfulWheelie 0x21C and reports objective 0x16 and the needs action; a Retry result calls SetupRetryAction only while the count is at most 0, otherwise AIWhiteboard::SetFailedToUse(obj, 3); SetupRetryAction 0x005C79D0 plays PopAWheelieRealign 0x18D for exactly 0x04000001 (0x005C79F8/0x005C79FE) and PopAWheelieRetry 0x18E otherwise (0x005C7A10/0x005C7A32); ResetBehavior 0x005C76B0 sends EnableStopOnCliff(true) (0x005C76E4)
+* outstanding: compare CubeGameBehaviors.cs against the retry count, the animations and the failure mark, and settle
+
+**M13-016 — AlignWithObjectAction's alignment-type table and pre-action type** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/FlipBlockAction.cs`
+* effect: the alignment distance, the flag or the pre-action type is wrong for a given alignment type
+* rests on: the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: AlignWithObjectAction ctor body 0x00553370: cmp r6,#3 / bhi 0x005533CC/0x005533E4; tbb [pc,r6] 0x005533E6 with table base 0x005533EA = 02 05 09 0c (TBB scales by 2): type 0 -> 0x005533EE vmov.f32 s16,#6.0; type 1 -> 0x005533F4 flag +0xBB=2; type 2 -> 0x005533FC vmov.f32 s16,#-15.0; type 3 -> 0x00553402 vadd.f32 s16,s0,s2 (argument + -27.0); clamp: 0x00553414 vldr s0,[pc,#0x68] -> 0x00553480 = 0xC1800005 = -16.000009536743164; vcmpe/it mi/vmovmi at 0x0055341C..0x00553426 set 0.0 when below it; GetPreActionTypeFromAlignmentType 0x005532B8: table at 0x00553360 maps 0->1, 1->0, 2->1, 3->1; invalid type logs and returns 1 (0x005532CC/0x00553320)
+* outstanding: compare the alignment-type table, the clamp and the pre-action type against the cited instructions and settle
+
+**M13-017 — BehaviorDriveOffCharger: runnable on the charger, the drive distance and the leaving-the-contacts update** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`
+* effect: the drive-off behaviour runs when it should not, drives the wrong distance or never stops
+* rests on: the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: ctor 0x005C0980 stores 96.0 + json extraDistanceToDrive_mm at +0x11C (0x005C09D4/0x005C09E2/0x005C09E6); IsRunnableInternal 0x005C0B10 returns robot+0x34A; InitInternal 0x005C0B18 takes the reaction lock, pushes driving animations when the animation state is 3 (0x005C0B4A) and transitions unless robot+0x355 is set; TransitionToDrivingForward 0x005C0BB8 drives +0x11C (0x005C0C02/0x005C0C08); UpdateInternal 0x005C0DA8: while still on the contacts and robot+0x355 set it calls StopActing (0x005C0DC4) and waits; once off the contacts (robot+0x34A == 0) it records the time and returns 2 (0x005C0DF4..0x005C0E0A)
+* outstanding: compare the drive-off behaviour against the cited constructor/IsRunnable/Init/Transition/Update and settle
+
+**M13-018 — LatticePlannerImpl's planning entry and worker, the Replan argument and the result codes** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs`
+* effect: the planner starts differently, waits the wrong time, aborts early or reports the wrong result
+* rests on: the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: StartPlanning 0x004FEB44 stores its bool argument at impl+0xA1 (0x004FEB56/0x004FEB7E) and calls ImportBlockworldObstaclesIfNeeded with the bool hard-coded 1 (0x004FEC38/0x004FEC3A); DoPlanning 0x00500090 sets status 1 (0x00500098), sleeps in chunks of min(remaining,10) ms up to impl+0x108 ms checking the abort flag each iteration (0x005000A2..0x005000EA; 0x005000C8/0x005000CE), then calls Replan(0x01C9C380, abortFlag) (0x005000F2/0x005000FA/0x00500102); 0x01C9C380 = 30,000,000 is the maximum number of state expansions: xythetaPlannerImpl::ComputePath 0x008586A0 warns "exceeded max expansions of %u, stopping" and returns 0 on overflow (0x008588C6/0x008588CA/0x00858A96); Replan returns 0 on failure, 1 on success; DoPlanning returns 0 when Replan == 0 (0x00500202), 3 when Replan != 0 with an empty plan (0x00500212) and 2 on success (0x0050058E/0x00500590)
+* outstanding: compare the planner entry/worker, the 30,000,000 expansion cap and the result codes against the cited instructions and settle
+
+**M13-019 — xythetaEnvironment::Init hard-codes 16 headings and overrides the JSON num_angles** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs`
+* effect: the planner uses a heading count other than 16
+* rests on: the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: xythetaEnvironment::Init 0x008528A8 calls ReadMotionPrimitives (0x008528AE) then overwrites env+8 with 0x10 (0x008528B6/0x008528BA), resizes the per-theta obstacle table at env+0x44 to 16 (0x008528C0) and sets env+0xC = 2pi/16 and env+0x10 = 1/(2pi/16) (0x008528C4..0x008528E6)
+* outstanding: compare the 16-heading override and the two derived values against the cited instructions and settle
+
 ### M15-freeplay — Needs, activities and freeplay
 
 **M15-001 — NeedsManager initialization, periodic update and need-bracket rules** (live path)
@@ -1504,7 +1677,6 @@ Each of these is a question already answered. The original's behaviour is establ
 | TOOL-002 | tools | COMPATIBILITY_POLICY | The fake robot side answers place docks without a marker signal | not applicable: this is the test double, not the robot |
 | TOOL-003 | tools | COMPATIBILITY_POLICY | The --nominal calibration override in the vision, manipulation and freeplay tools | the live path fails closed without a real calibration |
 | TOOL-005 | tools | COMPATIBILITY_POLICY | The hardware acceptance campaign: how a check is judged, and what a result may change | not applicable: the harness is not part of the app. The rule that matters runs the other way - a hardware result never changes a fidelity record's status. A check that passes says the behaviour was observed; a check that fails is an investigation item, not a licence to tune a source-backed constant. M11-005 stays open whatever the vision check reports, and the charger's 20 x 27 mm marker geometry is not adjusted to make the mount succeed |
-| M13-014 | M13-navigation | EQUIVALENT_IMPLEMENTATION | Knock over a stack: BehaviorKnockOverCubes has no verified fidelity record | BehaviorKnockOverCubes 0x005C2EA0..0x005C3C00, its knock-over callback 0x005C3DCE, IBehavior::StartActing(action, function<void(Robot&)>) 0x005BE0E4 and its lambda 0x005BF8F4, IBehavior::Init 0x005BCB54 and ReadFromJson 0x005BBFB4, read; DriveAndFlipBlockAction 0x0055E208 not read past its arguments; DriveAndFlipBlockAction 0x0055E208, IDriveToInteractWithObject 0x0055B1F4, ReactionTriggerStrategyNoPreDockPoses::ShouldTriggerBehaviorInternal 0x00610E32, AIWhiteboard::AIWhiteboard 0x0056A270 and BehaviorRamIntoBlock's transitions, read |
 | M2-017 | M2-protocol | COMPATIBILITY_POLICY | A field whose read failed in a kept malformed message holds 0 / false (the engine leaves stale stack bytes) | libcozmoEngine.so 3.4.0-1204 |
 | M3-019 | M3-device | COMPATIBILITY_POLICY | The connection-time SetCameraParams: the engine sends stale stack bytes for f32@0 and u16@4 and bool@6 = 1; this stack sends 0.0, 0, true | libcozmoEngine.so 3.4.0-1204 |
 | M3-020 | M3-device | COMPATIBILITY_POLICY | A payload that is empty or all 0xFF: the engine reads data[-1] (undefined); this stack treats it as a decode failure | libcozmoEngine.so 3.4.0-1204 |
