@@ -18,6 +18,7 @@ Several opencode (DeepSeek) windows work at once, each in its own clone, each ru
 3. **Stay in the job's write scope**, which the job file lists.
    - An extraction job writes only its report and its status file.
    - A build job writes only its layer's code and tests, and its own layer's records in the manifest.
+   - An integration job may also update tests whose only purpose is to restate a record's status or its listing in the hardware checks: `FidelityManifestTests`, `HardwareCatalogFidelityTests`, `ControlCheckFidelityTests`. It changes them only to match the newly approved status, and names each change in its status file. It changes no behaviour test.
    - Anything else you think should change goes in your report, under "for the integrator".
 4. **Committing:**
    - add only your own files (`git add <paths>`, never `git add -A`);

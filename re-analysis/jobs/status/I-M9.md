@@ -1,1 +1,1 @@
-BLOCKED 2026-09-28 10:58:00 -05:00 — push gate: HardwareCatalogFidelityTests hard-codes the superseded BLOCKED_EXTERNAL statuses for M9-013, M9-022 and M9-026; correcting that test is outside this job's exact write scope
+CLAIMED 2026-09-28 resumed: integration jobs may now update the status-restating tests (re-analysis/jobs/README.md rule 3), so update HardwareCatalogFidelityTests' M9-013/M9-022/M9-026 rows to the approved statuses and finish
