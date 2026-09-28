@@ -78,11 +78,14 @@ public static class CubeGeometry
     public const double MarkerSizeMm = 25.0;
     private const double Ax = 0.5773502691896258;
 
+    // The engine's face-def vector order (Block::LookupBlockInfo 0x004E4C8C; M12-021 H1) is
+    // Front, Back, Left, Right, Top, Bottom. The per-face geometry is the same whichever order this list is
+    // walked in; it is written in the engine's order so the two line up.
     private static readonly (BlockFace Face, double AngleRad, Vec3 Axis, Vec3 Offset)[] FaceTable =
     {
         (BlockFace.Front, -Math.PI / 2, new Vec3(0, 0, 1), new Vec3(-0.5, 0, 0)),
-        (BlockFace.Left, Math.PI, new Vec3(0, 0, 1), new Vec3(0, 0.5, 0)),
         (BlockFace.Back, Math.PI / 2, new Vec3(0, 0, 1), new Vec3(0.5, 0, 0)),
+        (BlockFace.Left, Math.PI, new Vec3(0, 0, 1), new Vec3(0, 0.5, 0)),
         (BlockFace.Right, 0, new Vec3(0, 0, 1), new Vec3(0, -0.5, 0)),
         (BlockFace.Top, 2.0943951023931953, new Vec3(-Ax, Ax, -Ax), new Vec3(0, 0, 0.5)),
         (BlockFace.Bottom, 2.0943951023931953, new Vec3(Ax, -Ax, -Ax), new Vec3(0, 0, -0.5)),
@@ -144,4 +147,33 @@ public static class CubeGeometry
 
     /// <summary>The engine's <c>ObservableObject::GetSize()</c> for a cube: 44 mm on every axis.</summary>
     public static Vec3 CubeSize => new(CubeSizeMm, CubeSizeMm, CubeSizeMm);
+
+    /// <summary>
+    /// <c>ObservableObject::GetDimInParentFrame&lt;'Z'&gt;</c> 0x00557794: the object's extent along the
+    /// parent axis its own Z lies closest to. The axis choice is the one <c>IsRestingFlat</c> makes (the
+    /// largest-magnitude component of the object's Z in the parent frame); a cube is 44 on every axis.
+    /// </summary>
+    // fidelity: M12-012
+    public static double DimInParentFrameZ(ObservableObject o)
+    {
+        var r = o.Pose.Rotation;
+        double x = Math.Abs(r[0, 2]), y = Math.Abs(r[1, 2]), z = Math.Abs(r[2, 2]);
+        var size = SizeOf(o.Type);
+        if (z >= x && z >= y) return size.Z;
+        if (x >= y) return size.X;
+        return size.Y;
+    }
+
+    /// <summary>
+    /// <c>ObservableObject::IsPoseTooHigh(pose, f1, f2, f3)</c> 0x00877954 (PLT 0x4ACFF4): returns
+    /// <c>D*f1 + f2 + 1e-5 &lt; D*f3 + pose.translation.z</c>, with <c>D = GetDimInParentFrame&lt;'Z'&gt;</c>.
+    /// <c>CanStackOnTopOfObject</c> calls it with <c>f1 = 1.0, f2 = 15.0, f3 = 0.5</c>, i.e.
+    /// <c>pose.z &gt; 0.5*D + 15.0 + 1e-5</c> (M12-012 C-E4). The 15.0 is M13-007's.
+    /// </summary>
+    // fidelity: M12-012
+    public static bool IsPoseTooHigh(ObservableObject o, double f1, double f2, double f3)
+    {
+        double d = DimInParentFrameZ(o);
+        return d * f1 + f2 + 1e-5 < d * f3 + o.Pose.Translation.Z;
+    }
 }

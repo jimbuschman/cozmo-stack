@@ -37,6 +37,15 @@ public sealed class DriveToPoseAction
     /// <summary>Objects not to treat as obstacles (the one being docked with).</summary>
     public IEnumerable<uint>? IgnoreObstacleIds { get; set; }
     public double DistanceToleranceMm { get; set; } = DefaultGoalDistanceToleranceMm;
+    /// <summary>
+    /// The object pose the goal's pre-action pose belongs to. When set, <c>CheckIfDone</c> takes its distance
+    /// tolerance from <see cref="CubePreActionPoses.DistanceThresholdMm"/> (the engine's
+    /// <c>DriveToPoseAction::CheckIfDone</c> 0x0055AB4C calls it at 0x0055ACF0, M12-020), not from the plain
+    /// <see cref="DistanceToleranceMm"/>.
+    /// </summary>
+    public Pose3d? PreActionObjectPose { get; set; }
+    /// <summary>The angle tolerance fed to the pre-action distance threshold (the constructor's 0.1309 rad).</summary>
+    public double PreActionAngleToleranceRad { get; set; } = DriveToObjectAction.PreActionAngleToleranceRad;
     public PathMotionProfile Profile { get; set; } = PathMotionProfile.Default;
     public IReadOnlyList<string> Trace => _trace;
     private readonly List<string> _trace = new();
@@ -85,17 +94,39 @@ public sealed class DriveToPoseAction
         if (ev == PathEventType.Interrupted) { _trace.Add("path interrupted"); return ActionResult.FailedTraversingPath; }
         var now = _m.RobotPose();
         if (now is null) return ActionResult.Abort;
-        var d = now.Value.Translation - goal.Translation;
-        double dist = Math.Sqrt(d.X * d.X + d.Y * d.Y);
-        double dAngle = Math.Abs(StraightLinePlanner.Wrap(now.Value.AngleAroundZ - goal.AngleAroundZ));
-        if (dist <= DistanceToleranceMm && dAngle <= GoalAngleToleranceRad)
+        // fidelity: M12-020
+        // DriveToPoseAction::CheckIfDone 0x0055AB4C calls ComputePreActionPoseDistThreshold at 0x0055ACF0
+        // and reads BOTH outputs (0x0055ACF4 ldrd) as the x/y of the Point3 position tolerance of
+        // Pose3d::IsSameAs(robotPose, preActionPose, Point3{out0, out1, Robot::GetHeight}, this+0x9c).
+        double tx = DistanceToleranceMm, ty = DistanceToleranceMm;
+        if (PreActionObjectPose is { } objectPose
+            && CubePreActionPoses.DistanceThresholdMm(objectPose, goal, PreActionAngleToleranceRad, out double out0, out double out1))
         {
-            _trace.Add($"DriveToPoseAction.CheckIfDone.Success: Tdiff={dist:F1}mm");
+            tx = out0;
+            ty = out1;
+        }
+        var tol = new Vec3(tx, ty, RobotHeightMm());
+        // E9: Pose3d::IsSameAs 0x00846EA4 uses a default-constructed empty RotationAmbiguities and compares
+        // the full relative rotation (GetAngleDiffFrom 0x0084A694), so the full goal pose is passed.
+        if (now.Value.IsSameAs(goal, tol, GoalAngleToleranceRad, out _))
+        {
+            _trace.Add($"DriveToPoseAction.CheckIfDone.Success: threshold=({tx:F1},{ty:F1})");
             Goal = goal;
             return ActionResult.Success;
         }
-        _trace.Add($"DriveToPoseAction.CheckIfDone.DoneNotInPlace: dist={dist:F1}mm angle={dAngle * 180 / Math.PI:F1}deg");
+        _trace.Add($"DriveToPoseAction.CheckIfDone.DoneNotInPlace: not within threshold=({tx:F1},{ty:F1})");
         return ActionResult.DidNotReachPreActionPose;
+    }
+
+    /// <summary>
+    /// <c>Robot::GetHeight</c> 0x00516F0C = <c>max(66·sin(liftAngle) + 45 + 5, 67.7)</c> (66 at 0x00516F54,
+    /// 45 at 0x00516F58, 5.0, floor 0x42876666 = 67.7; C-E7/E9). It is the z of the <c>Point3</c> tolerance
+    /// <c>DriveToPoseAction::CheckIfDone</c> passes to <c>IsSameAs</c> (0x0055ACBA, 0x0055ACC2/0x0055ACF8).
+    /// </summary>
+    private double RobotHeightMm()
+    {
+        float lift = _m.Robot.State.Latest?.LiftAngle ?? 0f;
+        return Math.Max((double)RobotState.LiftHeightMmFromAngle(lift) + 5.0, 67.7);
     }
 
 }
@@ -111,6 +142,7 @@ public sealed class DriveToPoseAction
 /// </summary>
 public sealed class DriveToObjectAction
 {
+    // fidelity: M12-011
     public const double PreActionAngleToleranceRad = 0.1309;
 
     private readonly ManipulationSystem _m;
@@ -126,7 +158,7 @@ public sealed class DriveToObjectAction
     public PreActionPose? Chosen { get; private set; }
     /// <summary>
     /// Pre-action poses a previous attempt already failed from, excluded here the way
-    /// <c>IBehavior::UseSecondClosestPreActionPose</c> (0x005BEE40) does it: it re-reads the possible poses and
+    /// <c>IBehavior::UseSecondClosestPreActionPose</c> (0x005BEE56) does it: it re-reads the possible poses and
     /// calls <c>IDockAction::RemoveMatchingPredockPose</c> (0x00551418), which drops the entry that
     /// <c>Pose3d::IsSameAs</c> matches within 100 mm on each axis and 0.523599 rad, but only while more than
     /// one pose remains.
@@ -145,7 +177,7 @@ public sealed class DriveToObjectAction
         if (obj is null) { _trace.Add($"DriveToObjectAction.CheckPreconditions.NoObjectWithID {ObjectId}"); return ActionResult.BadObject; }
         var robot = _m.RobotPose();
         if (robot is null) return ActionResult.Abort;
-        var poses = CubePreActionPoses.For(obj, Type);
+        var poses = CubePreActionPoses.For(obj, Type, robot.Value);
         if (poses.Count == 0) { _trace.Add($"DriveToObjectAction.CheckPreconditions.NoPreActionPoses for {Type}"); return ActionResult.NoPreActionPoses; }
         foreach (var used in ExcludePoses)
         {
@@ -157,19 +189,38 @@ public sealed class DriveToObjectAction
         }
         var closest = CubePreActionPoses.Closest(poses, robot.Value)!;
         Chosen = closest;
-        double thresh = CubePreActionPoses.DistanceThresholdMm(obj.Pose, closest.WorldPose, PreActionAngleToleranceRad);
-        var d = robot.Value.Translation - closest.WorldPose.Translation;
-        bool close = Math.Abs(d.X) <= thresh && Math.Abs(d.Y) <= thresh
-                     && Math.Abs(StraightLinePlanner.Wrap(robot.Value.AngleAroundZ - closest.WorldPose.AngleAroundZ)) <= PreActionAngleToleranceRad;
-        if (close) _trace.Add($"DriveToObjectAction.GetPossiblePoses.UseRobotPose: within ({thresh:F1},{thresh:F1}) of the pre-action pose");
+        // The engine's DriveToObjectAction::InitHelper keeps the current pose when the robot is already
+        // within the closest pose's threshold pair (IDockAction::GetPreActionPoses, reached through
+        // GetPossiblePoses/GetClosestPreDockPose); it is not a fixed box.
+        bool close = DockActionBase.IsCloseEnoughToPreActionPose(obj, poses, robot.Value, PreActionAngleToleranceRad);
+        if (close) _trace.Add("DriveToObjectAction.GetPossiblePoses.UseRobotPose: within the pre-action pose threshold");
         else
         {
-            var drive = new DriveToPoseAction(_m) { Goal = closest.WorldPose, Goals = poses.Select(p => p.WorldPose).ToList(), IgnoreObstacleIds = new[] { ObjectId },
-                                                     DistanceToleranceMm = Math.Max(thresh, DriveToPoseAction.DefaultGoalDistanceToleranceMm), Profile = Profile };
+            // fidelity: M12-022
+            // DriveToObjectAction::InitHelper 0x00558FB4 builds a yaw-only DriveToPoseAction goal. The goal
+            // position is the chosen pre-action pose's position; the yaw is atan2f(-delta.y, -delta.x) with
+            // delta = normalize(robot.xy - objectInRobotParent.xy) * DriveToObjectAction+0x84 (0x005591E6
+            // vmul; goal = object.xy + delta at 0x00559220/0x00559224; yaw at 0x00559232/0x00559236/
+            // 0x0055923A). -delta points from the goal toward the object, so the yaw is the heading from
+            // the pose position toward the object pose. DriveToPoseAction itself does not flatten:
+            // CheckIfDone passes the full (yaw-only) goal to Pose3d::IsSameAs.
+            var goal = new Pose3d(Mat3.AboutZ(YawTowardObject(obj.Pose, closest.WorldPose)), closest.WorldPose.Translation);
+            var goals = new[] { goal };
+            var drive = new DriveToPoseAction(_m) { Goal = goal, Goals = goals, IgnoreObstacleIds = new[] { ObjectId },
+                                                     PreActionObjectPose = obj.Pose, Profile = Profile };
             var r = await drive.RunAsync(cancel);
             _trace.AddRange(drive.Trace);
             if (r != ActionResult.Success) return r;
-            if (drive.Goal is { } reached) Chosen = poses.FirstOrDefault(p => p.WorldPose.Equals(reached)) ?? closest;
+            if (drive.Goal is { } reached)
+            {
+                // the goal is yaw-only with the heading toward the object, so match the reached goal to a
+                // pre-action pose by position and that same heading; keep the closest when nothing matches
+                // (never null).
+                var match = poses.FirstOrDefault(p =>
+                    (p.WorldPose.Translation - reached.Translation).Length <= 0.5
+                    && Math.Abs(StraightLinePlanner.Wrap(YawTowardObject(obj.Pose, p.WorldPose) - reached.AngleAroundZ)) <= 1e-3);
+                Chosen = match ?? closest;
+            }
         }
         if (!_m.Docking.Carrying.IsCarrying(ObjectId))
         {
@@ -197,6 +248,15 @@ public sealed class DriveToObjectAction
         return Math.Abs(d.X) <= SamePoseDistanceMm && Math.Abs(d.Y) <= SamePoseDistanceMm && Math.Abs(d.Z) <= SamePoseDistanceMm
                && Math.Abs(StraightLinePlanner.Wrap(a.AngleAroundZ - b.AngleAroundZ)) <= SamePoseAngleRad;
     }
+
+    /// <summary>
+    /// <c>DriveToObjectAction::InitHelper</c> 0x00558FB4's yaw-only goal heading: the heading from
+    /// <paramref name="pose"/>'s position toward <paramref name="objectPose"/>, i.e. the engine's
+    /// <c>atan2f(-delta.y, -delta.x)</c> with <c>delta = normalize(robot.xy - object.xy) *
+    /// DriveToObjectAction+0x84</c> (0x00559232/0x00559236/0x0055923A).
+    /// </summary>
+    internal static double YawTowardObject(Pose3d objectPose, Pose3d pose) =>
+        Math.Atan2(objectPose.Translation.Y - pose.Translation.Y, objectPose.Translation.X - pose.Translation.X);
 }
 
 /// <summary>

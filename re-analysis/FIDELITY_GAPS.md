@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **361 records** over 16 subsystems.
+Manifest of **362 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 150 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 167 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 3 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 7 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 159 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 143 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 30 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -35,7 +35,7 @@ remains after both, and they do not go away by working harder on this repository
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 28 | 4 | 21 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 13 | 0 | 7 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 40 | 0 | 9 | 1 | 0 | yes | no |
-| M12-manipulation — Docking, carrying and pre-action poses | 21 | 0 | 20 | 0 | 0 | yes | no |
+| M12-manipulation — Docking, carrying and pre-action poses | 22 | 0 | 4 | 0 | 0 | yes | no |
 | M13-navigation — Planning, charger and block configurations | 15 | 0 | 0 | 0 | 0 | yes | yes |
 | M14-faces — Face and pet pipeline | 7 | 0 | 0 | 1 | 0 | yes | yes |
 | M15-freeplay — Needs, activities and freeplay | 16 | 1 | 15 | 0 | 0 | no | no |
@@ -63,7 +63,7 @@ status.
 | M9-wwise-music | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
 | M11-vision | INVENTORY_APPROVED | 28 | 0 | 0 | 0 |
-| M12-manipulation | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
+| M12-manipulation | INVENTORY_APPROVED | 17 | 0 | 0 | 0 |
 | M13-navigation | UNREVIEWED | 15 | 5 | 0 | 0 |
 | M14-faces | UNREVIEWED | 6 | 0 | 0 | 0 |
 | M15-freeplay | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
@@ -1286,69 +1286,6 @@ Each of these is a question already answered. The original's behaviour is establ
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 
-**M12-001 — Pre-action pose types, their per-type ctor distances and the distance threshold** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/PreActionPose.cs`
-* effect: a pre-action pose is built at the wrong distance or angle, or the drive threshold accepts a pose the engine would reject
-* rests on: the current code used 49 for PlaceOnGround and 56.5771 for Flipping as the distance, a planar X/Y threshold, and a guessed floor; none of that is the engine's
-* best authority: libcozmoEngine.so 3.4.0-1204: Block::GeneratePreActionPoses 0x004E5808 (tbh 0x004E595E, table 0x004E5962); PreActionPose ctor 0x0050DCFC stores the 4th arg at +0x18 (0x0050DD46) and SetHeightTolerance 0x0050DAA4 writes +0x14 (0x0050DB06, 0x3F13CD3A at 0x0050DB10); ActionableObject::GetCurrentPreActionPoses 0x004DF850 reads element+0x18 as a value (0x004DF9DE, arithmetic 0x004DFA26/0x004DFA78/0x004DFCD8/0x004DFCDC, stride 0x1C at 0x004DFDC4); ComputePreActionPoseDistThreshold 0x00550098 (3-D norm 0x00550102..0x00550122, sinf 0x00550140, vmul 0x0055014E, out 0x005501A4/0x005501A8, -1.0f sentinels 0x005501AE/0x005501C0)
-* evidence: dispatch on actionType 0..5: 0x004E5958 cmp r5,#5 / 0x004E595E tbh / table 0x004E5962; type 0 Docking 75.0: 0x004E5A36 movt r1,#0x4296; angle marker+pi/2; type 1 PlaceRelative 40.0: 0x004E5ADA movt r1,#0x4220; pose offset -100.0: 0x004E5A70 movt r0,#0xc2c8; type 2 PlaceOnGround 4th arg 0: 0x004E5B5A mov.w r8,#0 / 0x004E5B80 str.w r8,[sp]; pose offset -49.0: 0x004E5B0C movt r0,#0xc244; type 3 Entry: 0x004E5DA2 (loop tail), no pose; type 4 Rolling 75.0: 0x004E5C50 movt r1,#0x4296; type 5 Flipping 4th arg 0: 0x004E5D04/0x004E5D28; corner offset 56.5771: 0x004E5CB8 movt r0,#0xc262 (0xC2624EEF); PreActionPose ctor 0x0050DCFC stores +0x18 at 0x0050DD46; second ctor 0x0050DB14; SetHeightTolerance 0x0050DAA4 writes +0x14 at 0x0050DB06 (0.5773503 at 0x0050DB10); the +0x18 value consumer: ActionableObject::GetCurrentPreActionPoses 0x004DF850, 0x004DF9DE vldr s28,[sl,#0x18], stride 0x004DFDC4; ComputePreActionPoseDistThreshold 0x00550098: 3-D distance (0x00550102 vldr s0,[r0,#0x20]; 0x00550122 vsqrt.f32); out[0]=2*dist*sin at 0x00550164/0x005501A4, out[1]=dist*sin at 0x005501A8; the only tolerance branch is angleTolerance > Radians(0): 0x005500BC blx 0x4A4528 / 0x005500C0 cmp r0,#0 / 0x005500C2 beq 0x5501AE; operator> 0x0084CC90 with the ~1e-5 epsilon 0x3727C5AC; false writes -1.0f at 0x005501B6; a GetWithRespectTo failure writes -1.0f at 0x005501C0; no floor; Block::LookupBlockInfo symbol 0x004E4C8C; 0x00503DC8 (75.0) is inside MinimalAnglePlanner::ComputeNewPathIfNeeded 0x00503C18 and unrelated
-* outstanding: compare PreActionPose.cs with the mapping above: the 4th ctor arg is 75/40/0/-/75/0, PlaceOnGround carries -49 and PlaceRelative -100 as pose offsets, the threshold distance is the 3-D norm and writes out[0]=2*dist*sin and out[1]=dist*sin with a -1.0f sentinel, and the 'floor' comment is refuted
-
-**M12-002 — Path segment, ExecutePath and ClearPath packings; the path-motion-profile defaults and their wiring** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/RobotPath.cs`
-* effect: the robot receives path segments with the wrong fields, or an execute/clear with the wrong id
-* rests on: the record's packing citation pointed at the PlaceObjectOnGround builder, and the profile's consumer was misidentified as UpdatePlanning
-* best authority: libcozmoEngine.so 3.4.0-1204: PathDolerOuter::Dole 0x00507E4C (line send 0x00507FE0, arc 0x00508036, point turn 0x00507F8E); PathComponent::ExecutePath 0x0064A340 (build 0x0064A426/0x0064A42A/0x0064A430, send 0x0064A436/0x0064A442); PathComponent::ClearPath 0x00649220 (0x00649268/0x0064926A) with the id correlation 0x00649234/0x0064923A; SpeedChooser::GetPathMotionProfile 0x0053B798 from the table 0x00C535E0; the consumer path DriveToPoseAction::Init 0x0055A86C -> StartDrivingToPose 0x0055A998 -> 0x0064ADE0 -> [PathComponent+0x4C] -> HandlePlanComplete 0x00649F76/0x00649F82 -> ExecutePath 0x0064A0A4
-* evidence: PathDolerOuter::Dole 0x00507E4C: 0x00507F40/0x00507F44/0x00507F48 cmp r1,#1/2/3; line 0x00507FE0 blx 0x4A7234; arc 0x00508036 blx 0x4A7240; point turn 0x00507F8E blx 0x4A7228; PathComponent::ExecutePath 0x0064A340: 0x0064A426 ldrh r0,[r5,#-0x12]; 0x0064A430 strh.w r0,[sp,#8]; 0x0064A42A strb.w r6,[sp,#0xa]; 0x0064A436 blx 0x4B9D8C; 0x0064A442 blx 0x4A5368; PathComponent::ClearPath 0x00649220: 0x00649268 movs r0,#0; 0x0064926A strh.w r0,[sp]; 0x00649234 ldrh.w r0,[r4,#0x42]; 0x0064923A strh.w r0,[r4,#0x4a]; SpeedChooser::GetPathMotionProfile 0x0053B798 copies the 11-word table 0x00C535E0 = 100,200,500,2,10,10,60,200,500,80,0; DriveToPoseAction::Init 0x0055A86C; 0x0055A998 blx 0x4ABEE4 (StartDrivingToPose); 0x0064ADE0 blx 0x4B9DBC (GetPathMotionProfile); 0x0064ADD2/0x0064ADE4 copy into [this+0x4C]; PathComponent::UpdatePlanning 0x006495E0 tail-calls HandlePlanComplete on status 2: 0x006496DE b.w veneer -> 0x4B9D2C; HandlePlanComplete reads [this+0x4C] and passes it to IPathPlanner::GetCompletePath: 0x00649F76 ldr r1,[r4,#0x4c]; 0x00649F82 blx 0x4B9D68; the packing citation 0x00632BAE..0x00632BEE is the PlaceObjectOnGround builder (0x00632B88), not path packing
-* outstanding: compare RobotPath.cs with PathDolerOuter::Dole, ExecutePath, ClearPath and the 0x00C535E0 profile table; DriveToObjectAction's own ctor constants are separate (0x0055850C)
-
-**M12-003 — The dock-message order: CheckIfDone -> DockWithObject -> builder -> send** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs`
-* effect: the dock message is never sent, or is sent from the wrong place in the action state machine
-* rests on: the record had the bare phrase 'IDockAction and the firmware exchange'; it is narrowed to the order that M12-005's field layout is sent through
-* best authority: libcozmoEngine.so 3.4.0-1204: IDockAction::CheckIfDone 0x005521AC is the only caller of DockingComponent::DockWithObject 0x0063BA44 (0x005522AE blx 0x4AB9F8), which is the only caller of the builder 0x0063BD50; the builder sends via EngineToRobot(DockWithObject&&) 0x0063BDB8 (blx 0x4B94BC) and SendMessage 0x0063BDC4 (blx 0x4A5368)
-* evidence: 0x005521AC IDockAction::CheckIfDone; 0x005522AE blx 0x4AB9F8 (DockWithObject); 0x0063BA44 DockingComponent::DockWithObject; 0x0063BD50 builder; 0x0063BDB8 blx 0x4B94BC (EngineToRobot(DockWithObject&&)); 0x0063BDC4 blx 0x4A5368 (SendMessage)
-* outstanding: compare Docking.cs with the order above
-
-**M12-004 — The dock retry drops the pose it just failed from** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs`
-* effect: the retry re-drives to the pose that just failed instead of the next closest
-* rests on: the record cited the wrong entry address 0x005BEE40
-* best authority: libcozmoEngine.so 3.4.0-1204: IBehavior::UseSecondClosestPreActionPose 0x005BEE56 calls DriveToObjectAction::GetPossiblePoses (0x005BEE66), requires at least two poses (0x005BEE7C asrs r0,r0,#2 / 0x005BEE80 cmp r0,#2), then calls IDockAction::RemoveMatchingPredockPose (0x005BEE90; function 0x00551418)
-* evidence: IBehavior::UseSecondClosestPreActionPose starts at 0x005BEE56 (0x005BEE40 is asrs r4,r4,#1 mid-function); 0x005BEE66 blx 0x4ABFBC (GetPossiblePoses); 0x005BEE7C asrs r0,r0,#2; 0x005BEE80 cmp r0,#2; 0x005BEE88 ldr r0,[r6,#0x2c]; 0x005BEE90 blx 0x4B20A0 (RemoveMatchingPredockPose); 0x005BEE98 cmp r1,#1; 0x005BEE9C strbeq r0,[r4]; IDockAction::RemoveMatchingPredockPose 0x00551418
-* outstanding: compare DockActions.cs with UseSecondClosestPreActionPose 0x005BEE56
-
-**M12-005 — Every field of DockWithObject** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs`
-* effect: every dock this stack sends carries a wrong field
-* rests on: the three speeds were written one word early, so every dock carried its speed in word 0 and no deceleration
-* best authority: libcozmoEngine.so 3.4.0-1204: the builder 0x0063BD50 is the only place the 21 bytes are constructed (reached through DockingComponent::DockWithObject 0x0063BA44 from IDockAction::CheckIfDone 0x005521AC; the order is M12-003)
-* evidence: word 0 = 0: 0x0063BB34 movs r4,#0 / 0x0063BB7E str r4,[sp,#0x1c]; words 1..3 = IDockAction +0xAC/+0xB0/+0xB4, defaults 60/200/500 at the ctor 0x005502D8 (0x42700000/0x43480000/0x43FA0000); byte 4 = DockAction +0x80; byte 5 = +0x95; byte 6 = +0xBA (0); byte 7 = +0xBB (0; PickupObjectAction 0x005536EA writes 2, RollObjectAction 0x005565DC writes 5); byte 8 = +0xC1 (0; PickupObjectAction 0x005536F8 writes 1)
-* outstanding: compare Docking.cs with the builder 0x0063BD50
-
-**M12-006 — Letting go of a carried object leaves it Dirty where the lift left it** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs`
-* effect: a released cube stays Known at its last-seen pose instead of Dirty where the lift left it
-* rests on: the current code only cleared a flag; the cube stayed Known at its last pose
-* best authority: libcozmoEngine.so 3.4.0-1204: CarryingComponent::SetCarriedObjectAsUnattached(bool) 0x006333D4 takes the object pose with respect to the robot and hands it to ObjectPoseConfirmer::AddRobotRelativeObservation(object, pose, PoseState 2) 0x00633458; set, 0x00633930 also runs BlockWorld::DeleteLocatedObjects
-* evidence: 0x006333D4 SetCarriedObjectAsUnattached; 0x00633458 AddRobotRelativeObservation; 0x00633930 DeleteLocatedObjects; BehaviorPutDownBlock passes false: 0x005C84CE; PickupObjectAction::Verify passes true: 0x00553CAA, 0x00553D2A
-* outstanding: compare Docking.cs with SetCarriedObjectAsUnattached 0x006333D4
-
-**M12-007 — The two timed checks a pick-up is verified against** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs`
-* effect: a failed pick-up is not detected, or a good one is discarded
-* rests on: the record had the checks but the dock-action-dependent timeout selection was incomplete
-* best authority: libcozmoEngine.so 3.4.0-1204: PickupObjectAction::Verify 0x00553BE0 stamps the first call at +0x10C (0x00553BF8), tests IsMoving (virtual, 0x00553C8E) against +0x118 = 500 ms (0x00553C98) and the last-observed time against a dock-action timeout at +0x80 (0x00553D0A/0x00553D0E/0x00553D12/0x00553D18), both ending in SetCarriedObjectAsUnattached(true) (0x00553CAA, 0x00553D2A); the ctor sets the timeouts at 0x005536CC
-* evidence: 0x00553BE0 Verify; 0x00553BF8 str.w r5,[r7,#0x10c]; 0x00553C8E blx r2 (IsMoving); 0x00553C98 ldr.w r0,[r7,#0x118]; 0x00553CAA blx 0x4A7B7C; 0x00553D0A ldrb.w r2,[r7,#0x80]; 0x00553D0E add.w r3,r7,#0x120; 0x00553D12; 0x00553D18 addeq.w r3,r7,#0x11c; +0x11C = 500 ms low, +0x120 = 2000 ms high, set at the ctor 0x005536CC
-* outstanding: compare DockActions.cs with PickupObjectAction::Verify 0x00553BE0
-
 **M12-008 — The pose chain that holds a carried object** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Manipulation/LiftGeometry.cs`
@@ -1356,25 +1293,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the -41 was missing, so a carried cube could not be placed from the lift height alone
 * best authority: libcozmoEngine.so 3.4.0-1204: Robot::Robot 0x0050FBF0 builds the lift pivot at robot+0x2E4 (child of the origin at (-41,0,45); 0xC2240000 at 0x0050FFE0, 0x42340000) and the lift pose at robot+0x2F0 (child of the pivot at (66,0,0); 0x42840000 at 0x00510038); Robot::ComputeLiftPose 0x005151AC; CarryingComponent::SetObjectAsAttachedToLift 0x00632CC4 places the object at (|dockMarkerOffset|+4, 0, -12.5) (norm 0x00632E42..0x00632E74, 4.0 at 0x00632E7C, 0xC1480000 at 0x00632E82, sum 0x00632E8C)
 * evidence: 0x0050FBF0 Robot ctor; 0x0050FFE0 -41.0 (0xC2240000) and 45.0 (0x42340000); 0x00510038 66.0 (0x42840000); 0x005151AC ComputeLiftPose; 0x00632CC4 SetObjectAsAttachedToLift; 0x00632E42/0x00632E4A/0x00632E5C/0x00632E62/0x00632E74 norm; 0x00632E7C 4.0; 0x00632E82 0xC1480000 = -12.5; 0x00632E8C vadd; the 15.0 stack tolerance this function passes to FindObjectOnTopOrUnderneathHelper is owned by M13-007
-* outstanding: compare LiftGeometry.cs with the pivot/lift chain and the attach offset; the 15.0 is M13-007's
-
-**M12-009 — The dock helper allows two attempts** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs`
-* effect: the stack keeps trying after the app would have given up
-* rests on: the current code allowed three attempts
-* best authority: libcozmoEngine.so 3.4.0-1204: PickupBlockHelper::RespondToPickupResult 0x005B8050 reads the attempt count at helper+0x108 (0x005B8192) and retries only while it is 1 or less (0x005B8196 cmp r0,#1 / 0x005B8198 bls); the log literal 2 is at 0x005B814A; the entry point PickupBlockHelper::StartPickupAction is 0x005B7B48
-* evidence: 0x005B8050 RespondToPickupResult; 0x005B8192 ldr.w r0,[sl,#0x108]; 0x005B8196 cmp r0,#1; 0x005B8198 bls 0x5b826c; 0x005B814A movs r6,#2 (the log literal); PickupBlockHelper::StartPickupAction 0x005B7B48
-* outstanding: compare ManipulationSystem.cs with RespondToPickupResult 0x005B8050
-
-**M12-010 — The search-for-block pattern, built** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/SearchActions.cs`
-* effect: the robot gives up where the app looks around for the cube
-* rests on: the record's state-1 text stopped after the second drive and omitted the last two turns and the second search; the caller site was wrong
-* best authority: libcozmoEngine.so 3.4.0-1204: SearchForNearbyObjectAction ctor 0x005469C0 and Init 0x00546C14; SearchForBlockHelper::SearchForBlock 0x005BAF24 (state 0 0x005BAF9A, state 1 0x005BB1AA, state 2 0x005BB066); SearchFinishedWithoutInterruption 0x005BB478 (object+0x24 == 1 at 0x005BB49E/0x005BB4A2); the callers DriveToHelper::RespondToDriveResult (0x005B5D68) and PickupBlockHelper::RespondToPickupResult (0x005B83B6)
-* evidence: ctor 0x005469C0: 0x00546A38 0x3F4CCCCD (0.8); 0x00546A6C 0x3F99999A (1.2); 0x00546A52 0x3E860A92 (0.261799); 0x00546A56 0x3EB2B8C2 (0.349066); stores +0x14C/+0x150/+0x154 at 0x00546A68/70/74; Init 0x00546C14: three waits (0x00546C3A/3E, 0x00546C9C/A4, 0x00546D16/2A); two turns (0x00546C76/7A, 0x00546CDA/DE); coin 0x00546CCE; 0x00546DD2..0x00546F4C: Wait; Compound(DriveStraight, MoveHeadToAngle tol 0x3D0EFA35); Wait; TurnInPlace tol 0x3D8EFA35; Wait; TurnInPlace(-sign*(a1+a2)); Wait; speed 100.0 at 0x00547044 selects the default-speed ctor: 0x00546E1E vs 0x00546E34; state 0 0x005BAF9A: nearby(target,-20,100,-0.0872665) then TurnTowardsObjectAction(pi); state 1 0x005BB1AA: DriveStraight(-20,20); two TurnInPlace(+0.785398); nearby search; DriveStraight again 0x005BB2DA; TurnInPlace(-3pi/4) 0x005BB312; TurnInPlace(-0.785398) 0x005BB34A; second nearby search 0x005BB39A; state 2 0x005BB066: the mirror with -0.785398; SearchFinishedWithoutInterruption 0x005BB478: 0x005BB49E ldrb.w r0,[r0,#0x24]; 0x005BB4A2 cmp r0,#1; callers: 0x005B5D68 blx 0x4B2064 and 0x005B83B6 blx 0x4B2064
-* outstanding: compare SearchActions.cs with the pattern above
+* outstanding: the FindObjectOnTopOrUnderneathHelper 15.0 stack tolerance this path passes is owned by M13-007 and is not built here; build it with M13.
 
 **M12-011 — A drive that ends outside the pre-action pose tolerance reports DidNotReachPreActionPose** (live path)
 
@@ -1383,88 +1302,25 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the record carried a truncated BadObject citation and an incorrect claim that this function calls the threshold
 * best authority: libcozmoEngine.so 3.4.0-1204: DriveToObjectAction::CheckIfDone 0x00559880 forms 0x04000001 (0x005598E2 movw r8,#1 + 0x005598E6 movt r8,#0x400), compares the distance from the pre-action pose against the tolerance at +0x84, and on failure moves it into the result (0x005599FE); it returns 0x03000004 BadObject when the object is not located (0x005598B6 movs r4,#4 + 0x005598BA movt r4,#0x300)
 * evidence: 0x00559880 CheckIfDone; 0x005598E2/0x005598E6 form 0x04000001; 0x005599FE mov r4,r8; 0x005598B6/0x005598BA form 0x03000004 BadObject; this function does not call ComputePreActionPoseDistThreshold (M12-020)
-* outstanding: compare DriveActions.cs with DriveToObjectAction::CheckIfDone 0x00559880
-
-**M12-012 — What makes a cube a valid bottom to stack on: resting flat within ten degrees** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/ManipulationBehaviors.cs`
-* effect: the stack refuses a cube lying on its side that the engine would stack on, or accepts a tilted one
-* rests on: the current code tested UpAxisFromPose() == ZPositive; the engine tests acos(|dot|) < 10 deg
-* best authority: libcozmoEngine.so 3.4.0-1204: DockingComponent::CanStackOnTopOfObject 0x0063C5C4 = CanInteractWithObjectHelper 0x0063C654 then !IsPoseTooHigh(pose, 1.0, 15.0, 0.5) (1.0 0x0063C614, 15.0 0x0063C60E, 0.5 0x0063C606, call 0x0063C618); the helper tests IsRestingFlat(Radians(0.174533)) (0x3E32B8C2 at 0x0063C66C/0x0063C670); ObservableObject::IsRestingFlat 0x0087751C
-* evidence: 0x0063C5C4 CanStackOnTopOfObject; 0x0063C654 CanInteractWithObjectHelper; 0x0063C66C movw r1,#0xB8C2 + 0x0063C670 movt r1,#0x3E32 = 0.174533 rad = 10 deg; 0x0087751C IsRestingFlat; the 15.0 is owned by M13-007
-* outstanding: compare ManipulationBehaviors.cs with CanStackOnTopOfObject 0x0063C5C4
-
-**M12-013 — DockingErrorSignal begins with the timestamp, not the geometry** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs`
-* effect: the robot reads a distance where the timestamp goes, shifting every field
-* rests on: the record had x_dist in word 0 and shifted every field by one word
-* best authority: libcozmoEngine.so 3.4.0-1204: DockingComponent::UpdateDockingErrorSignal 0x0063BE80 builds the struct at sp+0xa0: word 0 = the timestamp (0x0063C14A), x +0xa4 (0x0063C15E), y +0xa8 (0x0063C174), z +0xac (0x0063C180), angle +0xb0 (0x0063C1CE); DockingErrorSignal::Pack 0x007C0B26 reads five words then two bytes
-* evidence: 0x0063BE80 UpdateDockingErrorSignal; 0x0063C14A str r6,[sp,#0xa0] (timestamp); 0x0063C15E/0x0063C174/0x0063C180/0x0063C1CE; 0x007C0B26 Pack reads words at +0, +4, +8, +0xc, +0x10 then bytes at +0x14, +0x15; the clamp is 40 degrees (M12-019)
-* outstanding: compare Docking.cs with UpdateDockingErrorSignal 0x0063BE80
-
-**M12-015 — PlaceObjectOnGround sends three zero offsets and a constant speed triple** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs`
-* effect: the robot reads a speed where the offsets go and nothing where the speeds go
-* rests on: the current code put the docking speeds in the first three words and zeros in the rest
-* best authority: libcozmoEngine.so 3.4.0-1204: the builder 0x00632B88, reached only from CarryingComponent::PlaceObjectOnGround 0x00632A88, reads the first three words as integer locals converted with vcvt.f32.s32 (0x00632BAE/0x00632BB2/0x00632BB6) and the next three from the constant triple 0x00C7CD90 = 100 (0x42C80000), 200 (0x43480000), 500 (0x43FA0000)
-* evidence: 0x00632A88 PlaceObjectOnGround zeroes the offsets (0x00632AA6 str r2,[sp,#0x18]; 0x00632AA8 strd r2,r2,[sp,#0x10]); 0x00632B88 builder; 0x00632BAE/0x00632BB2/0x00632BB6 vldr; 0x00C7CD90/94/98 = 100/200/500
-* outstanding: compare DockActions.cs with the builder 0x00632B88
-
-**M12-016 — A roll gets three attempts** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs`
-* effect: a roll keeps trying after the app would have given up, or stops early
-* rests on: the pickup limit of 2 stood in for the roll as well
-* best authority: libcozmoEngine.so 3.4.0-1204: RollBlockHelper::StartRollingAction 0x005B9EF8 reads its attempt count at helper+0x124 (0x005B9F0A), compares with 3 (0x005B9F0E cmp r0,#3) and at or above it calls MarkTargetAsFailedToRoll (0x005B9F16) instead of another DriveToRollObjectAction (0x005B9F10 blo); the count is zeroed in the ctor 0x005B98D4
-* evidence: 0x005B9EF8 StartRollingAction; 0x005B9F0A ldr.w r0,[r4,#0x124]; 0x005B9F0E cmp r0,#3; 0x005B9F10 blo 0x5b9f20; 0x005B9F16 blx 0x4B26AC (MarkTargetAsFailedToRoll); there is no charger helper in the build; the charger mount's one attempt is M13-008
-* outstanding: compare ManipulationSystem.cs with StartRollingAction 0x005B9EF8
-
-**M12-017 — IDockAction::Init setup, handler registration and the docking squint** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs`
-* effect: the dock action never completes or never sets the squint the engine sets
-* rests on: the setup and handler registration had no record
-* best authority: libcozmoEngine.so 3.4.0-1204: IDockAction::Init 0x005514FC looks up the object (0x00551598 blx 0x4A7114), checks the pre-action pose (0x00551640 blx 0x4AB950), registers the completion handlers for tags 0xc5 (0x005516EA) and 0xda (0x00551750), and sets the docking squint (0x00552394 blx 0x4ABA04)
-* evidence: 0x005514FC Init; 0x00551598 GetLocatedObjectByIdHelper; 0x00551640 GetPreActionPoses; 0x005516EA movs r3,#0xc5; 0x00551750 movs r3,#0xda; 0x00552394 AddSquint; the handler bodies are the action's own state machine
-* outstanding: compare DockActions.cs with IDockAction::Init 0x005514FC
-
-**M12-018 — The dock abort path** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs`
-* effect: a dock abort is never sent, so the robot keeps docking
-* rests on: the abort path had no record
-* best authority: libcozmoEngine.so 3.4.0-1204: DockingComponent::AbortDocking 0x0063BE10 builds an AbortDocking and sends it via EngineToRobot(AbortDocking&&) 0x0063BE2A (blx 0x4B94C8) and SendMessage 0x0063BE36 (blx 0x4A5368)
-* evidence: 0x0063BE10 AbortDocking; 0x0063BE2A blx 0x4B94C8; 0x0063BE36 blx 0x4A5368
-* outstanding: compare Docking.cs with AbortDocking 0x0063BE10
-
-**M12-019 — The docking-error-signal clamp is 40 degrees** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs`
-* effect: the error signal's angle is clamped to the wrong range
-* rests on: the 40-degree clamp had no record; the 20-degree pose-confirm clamp is M11-006
-* best authority: libcozmoEngine.so 3.4.0-1204: UpdateDockingErrorSignal 0x0063BE80 clamps the pose to flat with 0x3F32B8C2 = 0.698132 rad = 40 deg (0x0063C182 movw r1,#0xB8C2 + 0x0063C188 movt r1,#0x3F32) at ObservableObject::ClampPoseToFlat 0x0063C194
-* evidence: 0x0063C182/0x0063C188 form 0x3F32B8C2 (40 deg); 0x0063C194 blx 0x4A6FD0 (ClampPoseToFlat); distinct from the 20 degrees M11-006 records for the pose-confirmation path (0x3EB2B8C2)
-* outstanding: compare Docking.cs with the clamp at 0x0063C182/0x0063C188
+* outstanding: the drive goal its CheckIfDone checks is M12-022's InitHelper goal, not yet built exactly; build M12-022.
 
 **M12-020 — The production callers of ComputePreActionPoseDistThreshold** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Manipulation/PreActionPose.cs`
 * effect: a caller uses the threshold without the engine's sentinel handling, or a non-caller uses it
 * rests on: the report had DriveToObjectAction::CheckIfDone as a caller; it is not
-* best authority: libcozmoEngine.so 3.4.0-1204: a whole-.text scan finds exactly three callers of PLT 0x004AB938: DriveToPoseAction::CheckIfDone 0x0055AB4C (call at 0x0055ACF0), PlaceRelObjectAction::ComputePlaceRelObjectOffsetPoses 0x005558F4 (call at 0x005561A0) and IDockAction::GetPreActionPoses 0x005508C8 (call at 0x00550FF8)
-* evidence: 0x0055ACF0 blx 0x4AB938 (DriveToPoseAction::CheckIfDone); 0x005561A0 blx 0x4AB938 (PlaceRelObjectAction::ComputePlaceRelObjectOffsetPoses); 0x00550FF8 blx 0x4AB938 (IDockAction::GetPreActionPoses); DriveToObjectAction::CheckIfDone 0x00559880 contains no call to 0x4AB938; the formula itself is M12-001
-* outstanding: compare the three call sites with the C# callers of DistanceThresholdMm
+* best authority: libcozmoEngine.so 3.4.0-1204: a whole-.text scan finds exactly three callers of PLT 0x004AB938: DriveToPoseAction::CheckIfDone 0x0055AB4C (call at 0x0055ACF0), PlaceRelObjectAction::ComputePlaceRelObjectOffsetPoses 0x005558F4 (call at 0x005561A0) and IDockAction::GetPreActionPoses 0x005508C8 (call at 0x00550FF8); each caller reads BOTH outputs with one ldrd: DriveToPoseAction::CheckIfDone 0x0055ACF4 ldrd -> Point3 {out[0],out[1],GetHeight} at sp+0x8c used as the x/y position tolerance of Pose3d::IsSameAs 0x4A7060; PlaceRelObjectAction 0x005561B0 ldrd -> Point3 {out[0],out[1],100.0} for IsSameAs with Radians(0.1308997); IDockAction::GetPreActionPoses 0x00550FFC ldrd -> sb+0x20/sb+0x24, both must be > 0 and are compared against the robot's |dx|/|dy| to the closest pose, failing with 0x04000001; FlipBlockAction::Init 0x0055EDC8 also reaches the threshold through IDockAction::GetPreActionPoses (call 0x0055EE5E), so its pre-action check uses the pair; Pose3d::IsSameAs 0x00846EA4 compares the full rotation (the static RotationAmbiguities 0x0084B496 is default-constructed empty), no yaw flattening; the Point3 z of caller 1 is Robot::GetHeight 0x00516F0C = max(66*sin(liftAngle)+45+5, 67.7)
+* evidence: 0x0055ACF0 blx 0x4AB938 (DriveToPoseAction::CheckIfDone); 0x005561A0 blx 0x4AB938 (PlaceRelObjectAction::ComputePlaceRelObjectOffsetPoses); 0x00550FF8 blx 0x4AB938 (IDockAction::GetPreActionPoses); DriveToObjectAction::CheckIfDone 0x00559880 contains no call to 0x4AB938; the formula itself is M12-001; DriveToPoseAction 0x0055ACF0 blx then 0x0055ACF4 ldrd r0,r1,[sp,#0x80] / 0x0055ACF8 strd -> sp+0x8c; used at 0x0055ADA8 IsSameAs 0x4A7060; PlaceRelObjectAction 0x005561A0 blx then 0x005561B0 ldrd r0,r1,[sp,#0x54]; 0x005561B4 r2=100.0; 0x005561BC stm r3!,{r0,r1,r2}; used at 0x005561EA IsSameAs with Radians(0x3E060A92); IDockAction::GetPreActionPoses 0x00550FF8 blx then 0x00550FFC ldrd r1,r2,[sp,#0x70]; stored at sb+0x20 (0x00551002) and sb+0x24 (0x00551008); positivity checks 0x0055101C/0x00551048; TooFarFromGoal 0x04000001; FlipBlockAction::Init 0x0055EE5E blx 0x4AB950 (GetPreActionPoses); the pre-action check uses the threshold pair out[0]/out[1] (0x00551002/0x00551008), not a 100 mm box; Pose3d::IsSameAs 0x00846EA4 -> IsSameAs_WithAmbiguity 0x00846F3C -> GetAngleDiffFrom 0x0084A694 (full quaternion, acos(2*dot^2-1)); RotationAmbiguities 0x0084B496 is empty (begin=end=0); Robot::GetHeight 0x00516F0C: sinf; *66.0 (0x00516F54); +45.0 (0x00516F58); +5.0; vcmpe 67.7 (0x00516F60 = 0x42876666)
+* outstanding: caller 2, PlaceRelObjectAction::ComputePlaceRelObjectOffsetPoses 0x005558F4 (threshold call 0x005561A0), is not built: the C# PlaceRelObjectAction has no placement-pose computation; build it and wire the threshold pair {out0, out1, 100.0} with Radians(0.1308997) there.
 
-**M12-021 — The block face-def records and the per-face, per-rotation pre-action-pose gate** (live path)
+**M12-022 — DriveToObjectAction::InitHelper's DriveToPoseAction goal** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/PreActionPose.cs`
-* effect: the robot is offered pre-action poses on faces or rotations the engine would skip, or misses ones it would use
-* rests on: the per-face mask gate and the GHOST entry had no record
-* best authority: libcozmoEngine.so 3.4.0-1204: Block::LookupBlockInfo 0x004E4C8C builds a process-static map (guard 0x010590A8) with four entries, keys 1..4 (LIGHTCUBE1/2/3 and LIGHTCUBE_GHOST); each entry's face-def vector at info+0x20 is six 16-byte records copied verbatim from rodata (LIGHTCUBE1 0x00C45C40, LIGHTCUBE2 0x00C45CA0, LIGHTCUBE3 0x00C45D00, GHOST 0x00C45D60; copy loops 0x004E4D12/0x004E4DD2/0x004E4E88/0x004E4F3C); GeneratePreActionPoses 0x004E5808 tests (1<<sb) & mask, +0xC for types 0 and 5 (0x004E5976/0x004E5C80) and +0xD for type 4 (0x004E5B94)
-* evidence: record layout {FaceName u32 @0; MarkerType code u32 @4; size 25.0 @8; maskForTypes0And5 u8 @0xC; maskForType4 u8 @0xD}; LIGHTCUBE1 0x00C45C40, LIGHTCUBE2 0x00C45CA0, LIGHTCUBE3 0x00C45D00, GHOST 0x00C45D60; for the three real cubes +0xC = 0x05 for FaceNames 0..3, 0x00 for FaceName 4, 0x0F for FaceName 5; +0xD = 0x0F for all; GHOST 0x0F/0x0F everywhere; types 1 and 2 have no mask test; type 3 produces nothing; the rotation table is 0x0105B0AC..0x0105B0E8 (stride 0x14); Block::Block/AddFace pass 0,0 and ignore the masks (0x004E5FF8/0x004E6010; 0x004E564C)
-* outstanding: compare the C# pre-action pose generation with the face-def masks and the four map entries
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/DriveActions.cs`
+* effect: the drive goes to the wrong point or heading, or fails where the engine would dock
+* rests on: the C# DriveToObjectAction drove to the pre-action pose's full rotation (later yaw-reduced); the engine's goal is a yaw-only point built from the object, the robot and +0x84
+* best authority: libcozmoEngine.so 3.4.0-1204: DriveToObjectAction::InitHelper 0x00558FB4 builds the goal at 0x00559200..0x00559278: objectInRobotParent = objectPose.GetWithRespectTo(robotPose.GetParent()) (0x005590AE); delta = normalize(robot.xy - objectInRobotParent.xy) * DriveToObjectAction+0x84 (0x005590E6..0x005591E4; 0x005591C2 vldr s2,[sb,#0x84]); goal Point3 = {objectInRobotParent.x + delta.x, objectInRobotParent.y + delta.y, robot.z} (0x00559220..0x00559230); yaw = atan2f(-delta.y, -delta.x) (0x00559232/0x00559236/0x0055923A); Pose3d(yaw, Z_AXIS_3D, goal, parent=objectInRobotParent.GetParent()) (0x00559278); SetGoals 0x0055A6D0 stores the vector as-is
+* evidence: 0x005590AE objectPose.GetWithRespectTo(robot.parent, local_5c); 0x005590E6..0x005590FE delta = robot.xy - local_5c.xy; 0x00559100..0x00559160 normalize; 0x005591C2 vldr s2,[sb,#0x84]; 0x005591E4 vmul delta *= distance; 0x00559220 vadd goal.y = delta.y + local_5c.y; 0x00559224 goal.x = delta.x + local_5c.x; 0x00559230 goal.z = robot.z; 0x00559232 eor r0,r1,#0x80000000 / 0x00559236 eor r1,r2,#0x80000000 / 0x0055923A blx 0x4A4510 (atan2f); 0x00559278 blx 0x4A47E0 Pose3d(yaw, Z_AXIS, goal, parent, name); the C# uses the chosen pre-action pose's position with the heading toward the object; the engine's +0x84 distance and exact point are unread
+* outstanding: read the value/setter of DriveToObjectAction+0x84 (the 7-arg ctor sets -1.0) and build the engine's object+delta goal; until then the C# pre-action-pose position is a labelled reduction
 
 ### M15-freeplay — Needs, activities and freeplay
 

@@ -139,13 +139,17 @@ public sealed class SearchForNearbyObjectAction
 /// is known again.
 ///
 /// <list type="bullet">
-/// <item><b>State 0</b> (0x005BAF9A): a <see cref="SearchForNearbyObjectAction"/> with
-/// <c>-20 mm</c>, <c>100 mm/s</c> and a head angle of <c>-0.0872665</c> (-5 degrees), followed by a
-/// <c>TurnTowardsObjectAction(target, Radians(pi))</c> when the target id is set.</item>
+/// <item><b>State 0</b> (0x005BAF9A): a <c>TurnTowardsObjectAction(target, Radians(pi))</c> when the target
+/// id is set, <b>then</b> a <see cref="SearchForNearbyObjectAction"/> with <c>-20 mm</c>, <c>100 mm/s</c>
+/// and a head angle of <c>-0.0872665</c> (-5 degrees) (C-E3: the turn is added at 0x005BB024 before the
+/// search at 0x005BB03E).</item>
 /// <item><b>State 1</b> (0x005BB1AA): <c>DriveStraightAction(-20 mm, 20 mm/s)</c>, two
 /// <c>TurnInPlaceAction(+0.785398)</c> - 45 degrees each, so 90 in all - then the same nearby search,
-/// then the drive again.</item>
-/// <item><b>State 2</b> (0x005BB066): the mirror of state 1, with <c>-0.785398</c>.</item>
+/// then a second <c>DriveStraightAction</c>, <c>TurnInPlaceAction(-3pi/4)</c> (0x005BB312),
+/// <c>TurnInPlaceAction(-0.785398)</c> (0x005BB34A) and a second nearby search (0x005BB39A).</item>
+/// <item><b>State 2</b> (0x005BB066): a <b>two-iteration loop</b> (r8 = -1 at 0x005BB078, <c>add r8,#1</c>
+/// at 0x005BB16E, <c>blt</c> at 0x005BB176) of <c>DriveStraightAction(-20 mm, 20 mm/s)</c>, two
+/// <c>TurnInPlaceAction(-0.785398)</c> and the nearby search. It has no state-1 tail (C-E3/E5).</item>
 /// </list>
 ///
 /// Whether searching is worth starting at all is <c>ShouldBeAbleToFindTarget</c> 0x005BB73C, which asks
@@ -153,6 +157,7 @@ public sealed class SearchForNearbyObjectAction
 /// </summary>
 public sealed class SearchForBlockHelper
 {
+    // fidelity: M12-010
     /// <summary>-20 mm: the distance every stage backs off (0xC1A00000).</summary>
     public const double BackOffMm = -20.0;
     /// <summary>100 mm/s for the nearby search's own drive.</summary>
@@ -206,8 +211,8 @@ public sealed class SearchForBlockHelper
             var r = State switch
             {
                 0 => await LookAroundAsync(cancel),
-                1 => await SweepAsync(+StageTurnRad, cancel),
-                _ => await SweepAsync(-StageTurnRad, cancel),
+                1 => await SweepState1Async(cancel),
+                _ => await SweepState2Async(cancel),
             };
             if (r is ActionResult.CancelledWhileRunning or ActionResult.Abort) return r;
 
@@ -221,38 +226,66 @@ public sealed class SearchForBlockHelper
         return ActionResult.VisualObservationFailed;
     }
 
-    /// <summary>State 0.</summary>
+    /// <summary>
+    /// State 0: <c>TurnTowardsObjectAction(target, pi)</c> first, then the nearby search (C-E3). The turn is
+    /// added only when the target id is set (0x005BAFDA) and the search unconditionally (0x005BB03E).
+    /// </summary>
     private async Task<ActionResult> LookAroundAsync(CancellationToken cancel)
+    {
+        await _m.TurnTowardsObjectAsync(ObjectId, Math.PI, cancel);
+        return await NearbySearchAsync(cancel);
+    }
+
+    /// <summary>
+    /// State 1: <c>DriveStraight(-20, 20)</c>, two <c>TurnInPlace(+0.785398)</c>, the nearby search, a
+    /// second <c>DriveStraight</c>, <c>TurnInPlace(-3pi/4)</c> (0x005BB312), <c>TurnInPlace(-0.785398)</c>
+    /// (0x005BB34A) and a second nearby search (0x005BB39A) (C-E3/G7.8).
+    /// </summary>
+    private async Task<ActionResult> SweepState1Async(CancellationToken cancel)
+    {
+        if (await DriveAsync(cancel) is { } d1) return d1;
+        for (int i = 0; i < 2; i++)
+            if (await TurnAsync(+StageTurnRad, cancel) is { } bad) { _trace.Add($"the sweep's turn {i + 1}: {bad}"); return bad; }
+        var s1 = await NearbySearchAsync(cancel);
+        if (s1 != ActionResult.Success) return s1;
+        if (await DriveAsync(cancel) is { } d2) return d2;
+        if (await TurnAsync(-3 * StageTurnRad, cancel) is { } b1) { _trace.Add($"the sweep's tail turn 1: {b1}"); return b1; }
+        if (await TurnAsync(-StageTurnRad, cancel) is { } b2) { _trace.Add($"the sweep's tail turn 2: {b2}"); return b2; }
+        return await NearbySearchAsync(cancel);
+    }
+
+    /// <summary>
+    /// State 2: a <b>two-iteration loop</b> (r8 = -1 at 0x005BB078, add r8,#1 at 0x005BB16E, blt at
+    /// 0x005BB176) of <c>DriveStraight(-20, 20)</c>, <c>TurnInPlace(-0.785398)</c>,
+    /// <c>TurnInPlace(-0.785398)</c>, the nearby search. It has no state-1 tail (C-E3/E5).
+    /// </summary>
+    private async Task<ActionResult> SweepState2Async(CancellationToken cancel)
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            if (await DriveAsync(cancel) is { } d) return d;
+            for (int j = 0; j < 2; j++)
+                if (await TurnAsync(-StageTurnRad, cancel) is { } bad) { _trace.Add($"the sweep's turn {j + 1}: {bad}"); return bad; }
+            var s = await NearbySearchAsync(cancel);
+            if (s != ActionResult.Success) return s;
+        }
+        return ActionResult.Success;
+    }
+
+    private async Task<ActionResult?> DriveAsync(CancellationToken cancel)
+    {
+        var r = await new DriveStraightAction(_m, BackOffMm, StageSpeedMmps).RunAsync(cancel);
+        if (r != ActionResult.Success) { _trace.Add($"the sweep's drive: {r}"); return r; }
+        return null;
+    }
+
+    private async Task<ActionResult> NearbySearchAsync(CancellationToken cancel)
     {
         var search = new SearchForNearbyObjectAction(_m, ObjectId, BackOffMm, SearchSpeedMmps,
                                                      SearchHeadAngleRad, _random) { Wait = Wait };
         var r = await search.RunAsync(cancel);
         _trace.AddRange(search.Trace);
-        if (r != ActionResult.Success) return r;
-        // the engine appends the turn only when the target id is set
-        await _m.TurnTowardsObjectAsync(ObjectId, Math.PI, cancel);
-        return ActionResult.Success;
-    }
-
-    /// <summary>States 1 and 2: back off, turn twice one way, look around, then back off again.</summary>
-    private async Task<ActionResult> SweepAsync(double turnRad, CancellationToken cancel)
-    {
-        var r = await new DriveStraightAction(_m, BackOffMm, StageSpeedMmps).RunAsync(cancel);
-        if (r != ActionResult.Success) { _trace.Add($"the sweep's first drive: {r}"); return r; }
-
-        for (int i = 0; i < 2; i++)
-        {
-            var t = await TurnAsync(turnRad, cancel);
-            if (t is { } bad) { _trace.Add($"the sweep's turn {i + 1}: {bad}"); return bad; }
-        }
-
-        var search = new SearchForNearbyObjectAction(_m, ObjectId, BackOffMm, SearchSpeedMmps,
-                                                     SearchHeadAngleRad, _random) { Wait = Wait };
-        var s = await search.RunAsync(cancel);
-        _trace.AddRange(search.Trace);
-        if (s != ActionResult.Success) return s;
-
-        return await new DriveStraightAction(_m, BackOffMm, StageSpeedMmps).RunAsync(cancel);
+        return r;
     }
 
     private async Task<ActionResult?> TurnAsync(double relativeRad, CancellationToken cancel)

@@ -243,6 +243,7 @@ public sealed class RollBlockBehavior : ManipulationBehavior
 /// </summary>
 public sealed class StackBlocksBehavior : ManipulationBehavior
 {
+    // fidelity: M12-012
     public enum Phase { Idle, PickingUpBlock, StackingBlock, PlayingFinalAnim, FailedToStack }
 
     public StackBlocksBehavior(ManipulationSystem m, string id = "StackBlocks") : base(id, "StackBlocks", m) { }
@@ -256,9 +257,11 @@ public sealed class StackBlocksBehavior : ManipulationBehavior
     /// <summary>Ten degrees: <c>CanInteractWithObjectHelper</c> 0x0063C670 passes Radians(0.174533).</summary>
     public const double RestingFlatToleranceRad = 0.174533;
 
+    // CanStackOnTopOfObject 0x0063C5C4 = CanInteractWithObjectHelper 0x0063C654 (located, and resting flat
+    // within ten degrees) and !IsPoseTooHigh(pose, 1.0, 15.0, 0.5) (M12-012 C-E4; the 15.0 is M13-007's).
     private ObservableObject? ClosestUpright(uint? except = null) =>
         ClosestCube(o => o.ObjectId != except && o.IsRestingFlat(RestingFlatToleranceRad)
-                         && o.Pose.Translation.Z < PickupObjectAction.HighDockHeightMm);
+                         && !CubeGeometry.IsPoseTooHigh(o, 1.0, 15.0, 0.5));
 
     protected override bool IsRunnableInternal(BehaviorContext context)
     {

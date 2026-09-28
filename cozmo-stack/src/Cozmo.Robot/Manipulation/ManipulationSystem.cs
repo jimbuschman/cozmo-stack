@@ -133,7 +133,7 @@ public sealed class ManipulationSystem : IDisposable
 /// on a failed dock, retry ("Failed dock attempt %d / %d"), giving up after the attempt limit ("Failing helper
 /// because pickup was already attempted %d times"); a visual-observation failure that saw an unexpected
 /// object marks the target as failed and tries another; other failures retry from a different pre-dock pose.
-/// INFERRED: the attempt limit (3). The search-for-block fallback is DEFERRED.
+/// The pickup limit is two (M12-009) and the roll limit three (M12-016).
 /// </summary>
 /// <summary>
 /// A path this process started and owns until it ends: the reservation is taken before the path is sent, the
@@ -188,6 +188,7 @@ public sealed class PathRun : IDisposable
 
 public sealed class DockHelper
 {
+    // fidelity: M12-009, M12-016
     /// <summary>
     /// Two, which is what <c>PickupBlockHelper::RespondToPickupResult</c> allows: at 0x005B8192 it reads
     /// the attempt count at +0x108 and takes the retry branch only while it is <c>&lt;= 1</c>, and the
@@ -224,7 +225,7 @@ public sealed class DockHelper
     /// Drive to the object (for the action's pre-action type) and run the dock action, with retries.
     ///
     /// A retry approaches from a different pre-dock pose, as <c>IBehavior::UseSecondClosestPreActionPose</c>
-    /// (0x005BEE40) does: it asks <c>DriveToObjectAction::GetPossiblePoses</c> again and, while more than one
+    /// (0x005BEE56) does: it asks <c>DriveToObjectAction::GetPossiblePoses</c> again and, while more than one
     /// pose remains (<c>cmp r0, #2</c> at 0x005BEE80), removes the one just used through
     /// <c>IDockAction::RemoveMatchingPredockPose</c>. Retrying from the identical geometry that just failed is
     /// what the engine avoids; the pose to exclude is the one the failed attempt actually drove to.
@@ -264,7 +265,7 @@ public sealed class DockHelper
     }
 
     /// <summary>
-    /// The search a failed stage delegates to. <c>DriveToHelper::RespondToDriveResult</c> at 0x005B5D30
+    /// The search a failed stage delegates to. <c>DriveToHelper::RespondToDriveResult</c> at 0x005B5D68
     /// and <c>PickupBlockHelper::RespondToPickupResult</c> at 0x005B83B6 both build a
     /// <c>SearchForBlockHelper</c> when their stage has failed and the target is still in the world;
     /// 0x005B5D3E skips it when the lookup comes back empty.

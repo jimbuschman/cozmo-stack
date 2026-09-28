@@ -28,28 +28,125 @@ public class ManipulationTests
     // ------------------------------------------------------------------ pre-action poses
 
     [Fact]
-    public void ACubeHasFourDockingPosesSeventyFiveMillimetresOutFacingItsSides()
+    public void ACubeHasTheEnginesGatedPreActionPosesAndDistances()
     {
         var cube = new ObservableObject(7, ObjectType.Block_LIGHTCUBE1, CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE1)) { Pose = CubeAt(200, 50, 0.3), PoseState = PoseState.Known };
-        var poses = CubePreActionPoses.For(cube, PreActionType.Docking);
-        Assert.Equal(4, poses.Count);
-        foreach (var p in poses)
-        {
-            Assert.Equal(0, p.WorldPose.Translation.Z, 6);
-            var toCentre = cube.Pose.Translation - p.WorldPose.Translation;
-            double dist = Math.Sqrt(toCentre.X * toCentre.X + toCentre.Y * toCentre.Y);
-            Assert.InRange(dist, 75 + 22 - 0.01, 75 + 22 + 0.01);                       // 75 mm from the face, 22 mm half-cube
-            Assert.InRange(Math.Abs(StraightLinePlanner.Wrap(Math.Atan2(toCentre.Y, toCentre.X) - p.WorldPose.AngleAroundZ)), 0, 1e-6);   // facing the cube
-            Assert.DoesNotContain(p.Marker.Face, new[] { BlockFace.Top, BlockFace.Bottom });
-        }
-        Assert.Equal(4, CubePreActionPoses.For(cube, PreActionType.Rolling).Count);
-        Assert.Equal(8, CubePreActionPoses.For(cube, PreActionType.Flipping).Count);
-        Assert.Empty(CubePreActionPoses.For(cube, PreActionType.None));
-        var robot = new Pose3d(Mat3.Identity, new Vec3(0, 40, 0));
-        var closest = CubePreActionPoses.Closest(poses, robot)!;
-        Assert.Equal(BlockFace.Front, closest.Marker.Face);                                 // the face towards the origin
-        // the "close enough" box grows with the distance to the object: 97 mm * sin(7.5 deg)
-        Assert.InRange(CubePreActionPoses.DistanceThresholdMm(cube.Pose, closest.WorldPose, DriveToObjectAction.PreActionAngleToleranceRad), 12.5, 12.8);
+        var robot = new Pose3d(Mat3.Identity, new Vec3(0, 0, 0));
+
+        // M12-021 gate. For the three real cubes +0xC = 0x05 on FaceNames 0..3, 0x00 on FaceName 4 (Top) and
+        // 0x0F on FaceName 5 (Bottom); +0xD = 0x0F on every face. sb = 0..3 are the Y rotations 0, pi/2, pi, -pi/2.
+        // Docking and Flipping (+0xC): 4 side faces x 2 rotations + bottom x 4 = 12.
+        var docking = CubePreActionPoses.For(cube, PreActionType.Docking, robot);
+        Assert.Equal(12, docking.Count);
+        Assert.Equal(12, CubePreActionPoses.For(cube, PreActionType.Flipping, robot).Count);
+        // Rolling (+0xD): all six faces x four rotations = 24.
+        Assert.Equal(24, CubePreActionPoses.For(cube, PreActionType.Rolling, robot).Count);
+        // Types 1 and 2 are ungated: six faces x four rotations.
+        Assert.Equal(24, CubePreActionPoses.For(cube, PreActionType.PlaceRelative, robot).Count);
+        Assert.Equal(24, CubePreActionPoses.For(cube, PreActionType.PlaceOnGround, robot).Count);
+        // Type 3 (Entry) produces nothing; None (>5) produces nothing.
+        Assert.Empty(CubePreActionPoses.For(cube, PreActionType.Entry, robot));
+        Assert.Empty(CubePreActionPoses.For(cube, PreActionType.None, robot));
+
+        // M12-001: the 4th ctor arg stored at PreActionPose+0x18 is the DistanceMm, not the pose offset.
+        Assert.All(docking, p => Assert.Equal(75.0, p.DistanceMm));
+        Assert.All(CubePreActionPoses.For(cube, PreActionType.Rolling, robot), p => Assert.Equal(75.0, p.DistanceMm));
+        Assert.All(CubePreActionPoses.For(cube, PreActionType.PlaceRelative, robot), p => Assert.Equal(40.0, p.DistanceMm));
+        Assert.All(CubePreActionPoses.For(cube, PreActionType.PlaceOnGround, robot), p => Assert.Equal(0.0, p.DistanceMm));
+        Assert.All(CubePreActionPoses.For(cube, PreActionType.Flipping, robot), p => Assert.Equal(0.0, p.DistanceMm));
+
+        // the enabled (face, rotation) set is exactly the mask
+        var byFace = docking.GroupBy(p => p.Marker.Face).ToDictionary(g => g.Key, g => g.Select(p => p.RotationIndex).OrderBy(i => i).ToArray());
+        Assert.Equal(new[] { 0, 2 }, byFace[BlockFace.Front]);
+        Assert.Equal(new[] { 0, 2 }, byFace[BlockFace.Back]);
+        Assert.Equal(new[] { 0, 2 }, byFace[BlockFace.Left]);
+        Assert.Equal(new[] { 0, 2 }, byFace[BlockFace.Right]);
+        Assert.DoesNotContain(BlockFace.Top, byFace.Keys);                    // 0x00 on FaceName 4
+        Assert.Equal(new[] { 0, 1, 2, 3 }, byFace[BlockFace.Bottom]);         // 0x0F on FaceName 5
+
+        // the built poses are the engine's (C-E7): Pose3d(angle, Z, translation), -size.z/2 = -22 for a cube
+        var front = docking.First(p => p.Marker.Face == BlockFace.Front && p.RotationIndex == 0);
+        Assert.Equal(new Vec3(0, -65, -22), front.LocalOffsetMm);
+        Assert.Equal(Math.PI / 2, front.LocalAngleRad, 6);
+        var pr = CubePreActionPoses.For(cube, PreActionType.PlaceRelative, robot).First(p => p.Marker.Face == BlockFace.Front);
+        Assert.Equal(new Vec3(0, -100, -22), pr.LocalOffsetMm);
+        Assert.Equal(Math.PI / 2, pr.LocalAngleRad, 6);
+        var pg = CubePreActionPoses.For(cube, PreActionType.PlaceOnGround, robot).First(p => p.Marker.Face == BlockFace.Front);
+        Assert.Equal(new Vec3(0, -49, -22), pg.LocalOffsetMm);
+        Assert.Equal(Math.PI / 2, pg.LocalAngleRad, 6);
+        var ro = CubePreActionPoses.For(cube, PreActionType.Rolling, robot).First(p => p.Marker.Face == BlockFace.Front);
+        Assert.Equal(new Vec3(0, -65, -22), ro.LocalOffsetMm);
+        Assert.Equal(Math.PI / 2, ro.LocalAngleRad, 6);
+        var fl = CubePreActionPoses.For(cube, PreActionType.Flipping, robot).First(p => p.Marker.Face == BlockFace.Front);
+        Assert.Equal(new Vec3(CubeGeometry.CubeSizeMm / 2 + 56.5771, -56.5771, -22), fl.LocalOffsetMm);
+        Assert.Equal(3 * Math.PI / 4, fl.LocalAngleRad, 6);
+
+        // the face-def tables are the four rodata vectors in the engine's vector order
+        Assert.Equal(new[] { BlockFace.Front, BlockFace.Back, BlockFace.Left, BlockFace.Right, BlockFace.Top, BlockFace.Bottom },
+                     CubePreActionPoses.LightCube1FaceDefs.Select(d => d.Face));
+        Assert.All(CubePreActionPoses.GhostFaceDefs, d => { Assert.Equal(0x0F, d.MaskForTypes0And5); Assert.Equal(0x0F, d.MaskForType4); });
+    }
+
+    /// <summary>
+    /// The world-pose composition in <c>ActionableObject::GetCurrentPreActionPoses</c> 0x004DF850 / the
+    /// copy-with-pose ctor 0x0050DF00 (M12-001 E1/E8, C-E7):
+    /// <c>world = objectPose ∘ Pose3d(stored.rotation, unit(stored.translation)·(|stored.translation| + b))</c>.
+    /// The Front/Docking built pose is <c>Pose3d(pi/2, Z, (0,-65,-22))</c>; with the Front marker
+    /// (AboutZ(-pi/2), (-22,0,0)) as parent, <c>stored = (I, (-87,0,-22))</c> (|t| = 89.7385). A robot at
+    /// the origin projects to <c>dist2 = 113</c>, so <c>b</c> caps at the 75 mm DistanceMm and the pose is
+    /// pushed to (40.289, 0, -18.387); a robot at (150,0) gives <c>dist2 = 37 &lt; 75</c> and (77.129, 0,
+    /// -9.071). These values are computed from the table and the E1/E8 formula, not from the code.
+    /// </summary>
+    [Fact]
+    public void TheWorldPreActionPoseIsTheObjectPoseComposedWithThePushedOutStoredPose()
+    {
+        var cube = new ObservableObject(7, ObjectType.Block_LIGHTCUBE1, CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE1))
+        { Pose = new Pose3d(Mat3.Identity, new Vec3(200, 0, 22)), PoseState = PoseState.Known };
+        var far = new Pose3d(Mat3.Identity, new Vec3(0, 0, 0));
+
+        var front = CubePreActionPoses.For(cube, PreActionType.Docking, far)
+            .First(p => p.Marker.Face == BlockFace.Front && p.RotationIndex == 0);
+        Assert.Equal(40.289, front.WorldPose.Translation.X, 3);
+        Assert.Equal(0.0, front.WorldPose.Translation.Y, 3);
+        Assert.Equal(-18.387, front.WorldPose.Translation.Z, 3);
+
+        // a robot close enough that the projection is shorter than the DistanceMm cap: b = dist2 = 37
+        var close = new Pose3d(Mat3.Identity, new Vec3(150, 0, 0));
+        var near = CubePreActionPoses.For(cube, PreActionType.Docking, close)
+            .First(p => p.Marker.Face == BlockFace.Front && p.RotationIndex == 0);
+        Assert.Equal(77.129, near.WorldPose.Translation.X, 3);
+        Assert.Equal(-9.071, near.WorldPose.Translation.Z, 3);
+
+        // the non-zero preDockPoseOffset_mm argument replaces b (E7: 0 on every path this stack builds)
+        var offset = CubePreActionPoses.For(cube, PreActionType.Docking, far, preDockPoseOffsetMm: 10)
+            .First(p => p.Marker.Face == BlockFace.Front && p.RotationIndex == 0);
+        Assert.Equal(103.305, offset.WorldPose.Translation.X, 3);
+        Assert.Equal(-2.452, offset.WorldPose.Translation.Z, 3);
+    }
+
+    /// <summary>
+    /// <c>ComputePreActionPoseDistThreshold</c> 0x00550098 (fidelity manifest M12-001): the distance is the
+    /// 3-D norm of the relative transform's translation, and it writes two outputs, 2·dist·sin(tol) and
+    /// dist·sin(tol). The only tolerance branch is the positivity guard angleTolerance &gt; Radians(0)
+    /// (~1e-5 rad); false writes the -1.0f sentinel pair. There is no floor.
+    /// </summary>
+    [Fact]
+    public void TheDistanceThresholdIsThreeDimensionalTwoOutputAndGuarded()
+    {
+        var obj = new Pose3d(Mat3.Identity, new Vec3(0, 0, 30));     // 30 mm up: a planar threshold would read 0
+        var pose = new Pose3d(Mat3.Identity, new Vec3(0, 0, 0));
+        Assert.True(CubePreActionPoses.DistanceThresholdMm(obj, pose, 0.5, out double twice, out double once));
+        double s = Math.Sin(0.5);
+        Assert.Equal(30.0 * s, once, 6);
+        Assert.Equal(2 * 30.0 * s, twice, 6);
+
+        // the positivity guard, with operator>'s ~1e-5 rad epsilon
+        Assert.False(CubePreActionPoses.DistanceThresholdMm(obj, pose, 1e-5, out double t0, out double t1));
+        Assert.Equal(-1.0, t0); Assert.Equal(-1.0, t1);
+        Assert.False(CubePreActionPoses.DistanceThresholdMm(obj, pose, 0.0, out t0, out t1));
+        Assert.Equal(-1.0, t0); Assert.Equal(-1.0, t1);
+        Assert.False(CubePreActionPoses.DistanceThresholdMm(obj, pose, -0.1, out t0, out t1));
+        Assert.Equal(-1.0, t0); Assert.Equal(-1.0, t1);
     }
 
     // ------------------------------------------------------------------ paths
@@ -259,7 +356,7 @@ public class ManipulationTests
         var drive = new DriveToObjectAction(rig.M, 7, PreActionType.Docking);
         var task = drive.RunAsync(default);
         SpinUntil(() => task.IsCompleted, () => rig.Pump());
-        Assert.Equal(ActionResult.Success, task.Result);
+        Assert.True(task.Result == ActionResult.Success, "obj=" + obj.Pose + " result=" + task.Result + " trace: " + string.Join(" | ", drive.Trace));
         var chosen = drive.Chosen!;
         Assert.InRange(Math.Abs(rig.X - chosen.WorldPose.Translation.X), 0, 0.5);
         Assert.InRange(Math.Abs(rig.Y - chosen.WorldPose.Translation.Y), 0, 0.5);

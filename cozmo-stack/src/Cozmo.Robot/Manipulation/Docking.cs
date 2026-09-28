@@ -118,7 +118,7 @@ public sealed class DockingSystem : IDisposable
     private readonly VisionSystem _vision;
     private readonly object _gate = new();
     private TaskCompletionSource<DockResult>? _pending;
-    private (uint ObjectId, KnownMarker Marker, double OffX, double OffY, double OffAngle)? _active;
+    private (uint ObjectId, KnownMarker Marker, double OffX, double OffY, double OffAngle, DockAction Action)? _active;
 
     public DockingSystem(CozmoRobot robot, VisionSystem vision)
     {
@@ -151,6 +151,12 @@ public sealed class DockingSystem : IDisposable
     public event Action<string>? Log;
     /// <summary>Raised when the robot reports it is moving the lift after a dock (<c>MovingLiftPostDock</c>).</summary>
     public event Action<bool>? MovingLiftPostDock;
+    /// <summary>
+    /// Raised when the robot reports a <c>LiftLoad</c> (0xDA) while a dock is running. The engine registers a
+    /// handler for this tag in <c>IDockAction::Init</c> 0x00551750; its body is the action's own state machine,
+    /// so the stack only receives it (M12-017).
+    /// </summary>
+    public event Action<bool>? LiftLoad;
 
     private void Send(RobotMessage m) { Sent.Add(m); _robot.SendMessage(m, flush: true); }
 
@@ -179,6 +185,7 @@ public sealed class DockingSystem : IDisposable
     /// </summary>
     public void ReleaseCarriedObject(bool forget = false)
     {
+        // fidelity: M12-006
         if (Carrying.CarriedObjectId is { } id)
         {
             if (forget) _vision.World.MarkUnknown(id);
@@ -232,6 +239,7 @@ public sealed class DockingSystem : IDisposable
                                          bool unlockLiftTrack = false, DockingMethod method = DockingMethod.Default,
                                          bool flag8 = false) => new()
     {
+        // fidelity: M12-005
         UnusedZero = 0,
         SpeedMmps = speedMmps,
         AccelMmps2 = accelMmps2,
@@ -252,12 +260,13 @@ public sealed class DockingSystem : IDisposable
                                              bool unlockLiftTrack = false, DockingMethod method = DockingMethod.Default,
                                              bool flag8 = false, TimeSpan? timeout = null, CancellationToken cancel = default)
     {
+        // fidelity: M12-003
         TaskCompletionSource<DockResult> tcs;
         lock (_gate)
         {
             if (_pending is not null) throw new InvalidOperationException("a dock is already running");
             tcs = _pending = new TaskCompletionSource<DockResult>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _active = (target.ObjectId, marker, placementOffsetX, placementOffsetY, placementOffsetAngle);
+            _active = (target.ObjectId, marker, placementOffsetX, placementOffsetY, placementOffsetAngle, action);
             ErrorSignalsSent = 0;
         }
         _vision.World.MarkDirty(target.ObjectId);                          // ObjectPoseConfirmer::MarkObjectDirty in DockWithObject
@@ -300,13 +309,15 @@ public sealed class DockingSystem : IDisposable
     /// <summary><c>DockingComponent::AbortDocking</c>.</summary>
     public void Abort()
     {
+        // fidelity: M12-018
         Send(new AbortDocking());
         lock (_gate) { _pending?.TrySetCanceled(); _pending = null; _active = null; }
     }
 
     private void OnFrame(VisionFrameResult r)
     {
-        (uint ObjectId, KnownMarker Marker, double OffX, double OffY, double OffAngle) active;
+        // fidelity: M12-013, M12-014, M12-019
+        (uint ObjectId, KnownMarker Marker, double OffX, double OffY, double OffAngle, DockAction Action) active;
         lock (_gate) { if (_active is not { } a) return; active = a; }
         if (r.PoseData.RotatingTooFast) return;
         var seen = r.Markers.FirstOrDefault(m => m.Code == active.Marker.Code);
@@ -350,12 +361,27 @@ public sealed class DockingSystem : IDisposable
                     Carrying.SetCarrying(id, dockMarker);
                     UpdateCarriedObjectPose();
                 }
-                if (result.Status == BlockStatus.BlockPlaced) ReleaseCarriedObject();
+                if (result.Succeeded && result.Status == BlockStatus.BlockPlaced) ReleaseCarriedObject();
                 TaskCompletionSource<DockResult>? tcs; lock (_gate) tcs = _pending;
                 tcs?.TrySetResult(result);
                 break;
             }
-            case MovingLiftPostDock ml: MovingLiftPostDock?.Invoke(ml.Field0 != 0); break;
+            // M12-005 / R-P4: the engine compares the received byte for equality with IDockAction+0x80
+            // (the DockAction this dock was started with), not for non-zero.
+            case MovingLiftPostDock ml:
+            {
+                DockAction? activeAction; lock (_gate) activeAction = _active?.Action;
+                MovingLiftPostDock?.Invoke(activeAction is { } a && ml.Field0 == (byte)a);
+                break;
+            }
+            // M12-017: IDockAction::Init 0x00551750 registers a handler for tag 0xDA (LiftLoad); it is
+            // action-scoped, so only while a dock is active.
+            case LiftLoad ll:
+            {
+                bool activeDock; lock (_gate) activeDock = _active is not null;
+                if (activeDock) LiftLoad?.Invoke(ll.Field0);
+                break;
+            }
         }
     }
 

@@ -42,15 +42,11 @@ public sealed class FlipBlockAction
         if (robot is null) return ActionResult.Abort;
         if (CheckPreActionPose)
         {
-            var poses = CubePreActionPoses.For(target, PreActionType.Flipping);
-            bool near = poses.Any(p =>
-            {
-                double thresh = CubePreActionPoses.DistanceThresholdMm(target.Pose, p.WorldPose, PreActionAngleToleranceRad);
-                var d = robot.Value.Translation - p.WorldPose.Translation;
-                return Math.Abs(d.X) <= Math.Max(thresh, 10) && Math.Abs(d.Y) <= Math.Max(thresh, 10)
-                       && Math.Abs(StraightLinePlanner.Wrap(robot.Value.AngleAroundZ - p.WorldPose.AngleAroundZ)) <= PreActionAngleToleranceRad;
-            });
-            if (!near) { _trace.Add("FlipBlockAction.Init.NotAtPreActionPose"); return ActionResult.DidNotReachPreActionPose; }
+            // M12-020 C-E7/E9: FlipBlockAction::Init 0x0055EDC8 reaches IDockAction::GetPreActionPoses at
+            // 0x0055EE5E, so it uses the threshold pair, not a fixed box.
+            var poses = CubePreActionPoses.For(target, PreActionType.Flipping, robot.Value);
+            if (!DockActionBase.IsCloseEnoughToPreActionPose(target, poses, robot.Value, PreActionAngleToleranceRad))
+            { _trace.Add("FlipBlockAction.Init.NotAtPreActionPose"); return ActionResult.DidNotReachPreActionPose; }
         }
         var toCube = target.Pose.Translation - robot.Value.Translation;
         double dist = Math.Sqrt(toCube.X * toCube.X + toCube.Y * toCube.Y);

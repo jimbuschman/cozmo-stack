@@ -113,12 +113,14 @@ public class SearchForBlockTests
         Assert.Equal(SearchForBlockHelper.StateCount, helper.State);
 
         // state 0: one nearby search (one backing-off line, two turns)
-        // states 1 and 2: a 20 mm/s drive, two 45 degree turns, a nearby search, a second 20 mm/s drive
+        // state 1 and state 2: a 20 mm/s drive, two 45 degree turns, a nearby search, a second 20 mm/s drive,
+        // the two mirrored tail turns and a second nearby search (M12-010 / G7.8)
         var lines = rig.Sent.OfType<AppendPathSegmentLine>().ToList();
         Assert.Equal(4, lines.Count(l => Math.Abs(l.Speed.SpeedMmps) == SearchForBlockHelper.StageSpeedMmps));
-        Assert.Equal(3, lines.Count(l => Math.Abs(l.Speed.SpeedMmps) == SearchForBlockHelper.SearchSpeedMmps));
-        // two look-around turns per nearby search, plus two 45 degree turns in each sweep
-        Assert.Equal(3 * 2 + 2 * 2, rig.Sent.OfType<AppendPathSegmentPointTurn>().Count());
+        Assert.Equal(5, lines.Count(l => Math.Abs(l.Speed.SpeedMmps) == SearchForBlockHelper.SearchSpeedMmps));
+        // two look-around turns per nearby search (five searches), plus two 45 degree turns in each sweep and
+        // its tail (four pairs)
+        Assert.Equal(5 * 2 + 4 * 2, rig.Sent.OfType<AppendPathSegmentPointTurn>().Count());
     }
 
     private static void SpinUntil(Func<bool> done, Action pump, int ms)

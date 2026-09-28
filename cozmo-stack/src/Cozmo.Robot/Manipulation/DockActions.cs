@@ -1,4 +1,5 @@
 using Cozmo.Protocol;
+using Cozmo.Robot.Animation;
 using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Manipulation;
@@ -6,19 +7,24 @@ namespace Cozmo.Robot.Manipulation;
 /// <summary>
 /// The engine's <c>IDockAction</c> (0x005502D8..0x00552560) as the base of the dock actions. <c>Init</c>: the
 /// object must be located ("Dock object is null"); unless the action was told to skip it, the robot must be
-/// close enough to one of the object's pre-action poses (<c>GetPreActionPoses</c> → <c>IsCloseEnoughToPreActionPose</c>,
-/// 100 mm box (0x42C80000) and 30 degrees (0x3F060A92)) or the action fails with
-/// <c>DidNotReachPreActionPose</c>; then <c>SetupTurnAndVerifyAction</c> turns towards the object and visually
-/// verifies it (a <c>VisuallyVerifyObjectAction</c>, or for a place a <c>VisuallyVerifyNoObjectAtPoseAction</c>),
-/// reactions are locked out ("dockActions"), the object's cube lights play, and <c>CheckIfDone</c> begins the
-/// dock ("Docking with marker %d (%s) using action %s") with the closest visible marker. The subclass's
-/// <c>SelectDockAction</c> picks the firmware action and <c>Verify</c> judges the result. The default
-/// pre-action angle tolerance is 0.1309 rad (7.5 degrees) from the constructor.
+/// close enough to one of the object's pre-action poses (<c>GetPreActionPoses</c> 0x005508C8 →
+/// <c>ComputePreActionPoseDistThreshold</c> 0x00550FF8, whose two outputs are the x/y distance thresholds
+/// compared against the robot's deltas, 0x0055101C..0x00551050; the angle tolerance is 0.523599 rad,
+/// 30 degrees) or the action fails with <c>DidNotReachPreActionPose</c>; then <c>SetupTurnAndVerifyAction</c>
+/// turns towards the object and visually verifies it (a <c>VisuallyVerifyObjectAction</c>, or for a place a
+/// <c>VisuallyVerifyNoObjectAtPoseAction</c>), reactions are locked out ("dockActions"), the object's cube
+/// lights play, and <c>CheckIfDone</c> begins the dock ("Docking with marker %d (%s) using action %s") with
+/// the closest visible marker. The subclass's <c>SelectDockAction</c> picks the firmware action and
+/// <c>Verify</c> judges the result. The default pre-action angle tolerance is 0.1309 rad (7.5 degrees) from
+/// the constructor.
 /// </summary>
 public abstract class DockActionBase
 {
-    public const double CloseEnoughDistanceMm = 100.0;
+    // fidelity: M12-004, M12-017, M12-020
+    /// <summary>The angle tolerance of the pre-action-pose closeness test (0.523599 rad, 30 degrees).</summary>
     public const double CloseEnoughAngleRad = 0.523599;
+    /// <summary>The <c>IDockAction</c> constructor's pre-action angle tolerance: 0.1309 rad (7.5 degrees).</summary>
+    public const double PreActionAngleToleranceRad = 0.1309;
 
     protected readonly ManipulationSystem M;
     protected readonly List<string> _trace = new();
@@ -31,6 +37,8 @@ public abstract class DockActionBase
     public bool CheckPreActionPose { get; set; } = true;
     public DockAction? SelectedDockAction { get; protected set; }
     public DockResult? Result { get; protected set; }
+    /// <summary>The bool <c>IDockAction::CheckIfDone</c> stores from <c>AddSquint</c> at <c>IDockAction+0xF4</c> (M12-017).</summary>
+    public bool DockSquintAdded { get; private set; }
     public IReadOnlyList<string> Trace => _trace;
 
     protected abstract PreActionType PreActionType { get; }
@@ -68,6 +76,27 @@ public abstract class DockActionBase
         return best;
     }
 
+    /// <summary>
+    /// <c>IDockAction::GetPreActionPoses</c>' closeness test (0x00550FF8..0x00551048, M12-020 C-E6): the
+    /// <c>ComputePreActionPoseDistThreshold</c> pair of the closest pose is stored at <c>sb+0x20</c>/<c>sb+0x24</c>,
+    /// both must be &gt; 0, and are compared against the robot's <c>|dx|</c>/<c>|dy|</c> to that pose, failing
+    /// <c>0x04000001</c>; the heading is checked within <paramref name="headingToleranceRad"/>.
+    ///
+    /// Both <c>IDockAction</c> and <c>FlipBlockAction::Init</c> 0x0055EDC8 reach this through
+    /// <c>GetPreActionPoses</c> (0x0055EE5E), so both use this test rather than a fixed 100 mm box.
+    /// </summary>
+    public static bool IsCloseEnoughToPreActionPose(ObservableObject target, IReadOnlyList<PreActionPose> poses,
+                                                    Pose3d robot, double headingToleranceRad)
+    {
+        var closest = CubePreActionPoses.Closest(poses, robot);
+        if (closest is not { } p) return false;
+        if (!CubePreActionPoses.DistanceThresholdMm(target.Pose, p.WorldPose, PreActionAngleToleranceRad, out double tx, out double ty)
+            || tx <= 0 || ty <= 0) return false;
+        var d = robot.Translation - p.WorldPose.Translation;
+        return Math.Abs(d.X) <= tx && Math.Abs(d.Y) <= ty
+               && Math.Abs(StraightLinePlanner.Wrap(robot.AngleAroundZ - p.WorldPose.AngleAroundZ)) <= headingToleranceRad;
+    }
+
     /// <summary><c>VisuallyVerifyNoObjectAtPoseAction</c> against the world model: no other located object within half a cube of where the carried object goes.</summary>
     protected bool VerifyNoObjectAtPlacementPose(ObservableObject target, Pose3d robot)
     {
@@ -87,25 +116,26 @@ public abstract class DockActionBase
 
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
+        // IDockAction::CheckIfDone 0x005521AC sets the docking squint (TrackLayerComponent::AddSquint
+        // 0x00552394); AddDockSquint below installs it. IDockAction::Init 0x005514FC registers the two
+        // completion-handler tags, 0xC5 and 0xDA, which DockingSystem.OnMessage receives.
         var target = M.World.GetLocatedObjectById(ObjectId);
         if (target is null) { _trace.Add("IDockAction.NullDockObject: Dock object is null"); return ActionResult.BadObject; }
         var robot = M.RobotPose();
         if (robot is null) return ActionResult.Abort;
         if (CheckPreActionPose)
         {
-            var poses = CubePreActionPoses.For(target, PreActionType);
-            bool near = poses.Any(p =>
-            {
-                var d = robot.Value.Translation - p.WorldPose.Translation;
-                return Math.Abs(d.X) <= CloseEnoughDistanceMm && Math.Abs(d.Y) <= CloseEnoughDistanceMm
-                       && Math.Abs(StraightLinePlanner.Wrap(robot.Value.AngleAroundZ - p.WorldPose.AngleAroundZ)) <= CloseEnoughAngleRad;
-            });
-            if (!near) { _trace.Add("IDockAction.Init: not within (100mm, 30deg) of a pre-action pose"); return ActionResult.DidNotReachPreActionPose; }
+            // fidelity: M12-020
+            var poses = CubePreActionPoses.For(target, PreActionType, robot.Value);
+            if (!IsCloseEnoughToPreActionPose(target, poses, robot.Value, CloseEnoughAngleRad))
+            { _trace.Add("IDockAction.Init: not within the threshold of a pre-action pose"); return ActionResult.DidNotReachPreActionPose; }
             _trace.Add("IDockAction.Init.BeginDockingFromPreActionPose");
         }
         var action = SelectDockAction(target);
         if (action is null) { _trace.Add("IDockAction.Init.DockActionSelectionFailure"); return ActionResult.Abort; }
         SelectedDockAction = action;
+        // M12-017 C-E5: the docking squint is called from IDockAction::CheckIfDone 0x00552394, not Init.
+        DockSquintAdded = AddDockSquint();
 
         // SetupTurnAndVerifyAction: face the object and see it (two images, as VisuallyVerifyObjectAction); a
         // place verifies instead that nothing is located where the carried object will go
@@ -136,6 +166,29 @@ public abstract class DockActionBase
         _trace.Add($"Verify -> {verified}");
         return verified;
     }
+
+    /// <summary>
+    /// <c>IDockAction::CheckIfDone</c>'s docking squint (0x00552394, M12-017 C-E5):
+    /// <c>AddSquint(robot+0xC0, "DockSquint", 1.05, 0.35, -10.0)</c> adds a persistent face layer named
+    /// "DockSquint". <c>FaceLayerManager::GenerateSquint</c> 0x0058D738 ignores its float arguments and
+    /// clips <c>EyeScaleY = 0.35</c>, <c>EyeScaleX = 1.05</c> and <c>UpperLidAngle = -10.0</c> on both eyes,
+    /// with a reset keyframe at 250 ms. The engine stores the returned bool at <c>IDockAction+0xF4</c>.
+    /// </summary>
+    // fidelity: M12-017
+    private bool AddDockSquint()
+    {
+        var face = new ProceduralFacePose();
+        foreach (var eye in new[] { face.Left, face.Right })
+        {
+            eye[EyeParam.EyeScaleY] = 0.35f;
+            eye[EyeParam.EyeScaleX] = 1.05f;
+            eye[EyeParam.UpperLidAngle] = -10.0f;
+        }
+        var track = new StreamTrack<FaceFrame>();
+        track.AddKeyFrameToBack(new FaceFrame(0, face));
+        track.AddKeyFrameToBack(new FaceFrame(250, new ProceduralFacePose()));
+        return M.Robot.Animations.Scheduler.Layers.Face.AddPersistentLayer("DockSquint", track) != 0;
+    }
 }
 
 /// <summary>
@@ -163,6 +216,7 @@ public abstract class DockActionBase
 /// </summary>
 public sealed class PickupObjectAction : DockActionBase
 {
+    // fidelity: M12-007
     public const double HighDockHeightMm = 33.85;
 
     /// <summary>+0x118: how long the object may still be moving after the verify starts.</summary>
@@ -299,6 +353,7 @@ public sealed class PopAWheelieAction : DockActionBase
 /// </summary>
 public sealed class PlaceObjectOnGroundAction
 {
+    // fidelity: M12-015
     private readonly ManipulationSystem _m;
     public PlaceObjectOnGroundAction(ManipulationSystem m) => _m = m;
     public IReadOnlyList<string> Trace => _trace;

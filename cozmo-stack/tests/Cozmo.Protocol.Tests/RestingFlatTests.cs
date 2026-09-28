@@ -37,6 +37,25 @@ public class RestingFlatTests
     }
 
     /// <summary>
+    /// <c>IsPoseTooHigh(pose, 1.0, 15.0, 0.5)</c> 0x00877954 (M12-012 C-E4): true iff
+    /// <c>pose.z &gt; 0.5*D + 15.0 + 1e-5</c>, with <c>D = GetDimInParentFrame&lt;'Z'&gt;</c> 0x00557794. A
+    /// cube is 44 on every axis, so the threshold is 37.0: a cube on the ground (centre 22) is not too high,
+    /// one resting on another (centre 66) is.
+    /// </summary>
+    [Fact]
+    public void ACubeIsTooHighWhenItsCentreIsAboveHalfItsExtentPlusFifteen()
+    {
+        var ground = new ObservableObject(7, ObjectType.Block_LIGHTCUBE1, CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1))
+        { Pose = new Pose3d(Mat3.Identity, new Vec3(100, 0, 22)), PoseState = PoseState.Known };
+        var onTop = new ObservableObject(8, ObjectType.Block_LIGHTCUBE2, CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE2))
+        { Pose = new Pose3d(Mat3.Identity, new Vec3(100, 0, 66)), PoseState = PoseState.Known };
+
+        Assert.Equal(44.0, CubeGeometry.DimInParentFrameZ(ground), 6);
+        Assert.False(CubeGeometry.IsPoseTooHigh(ground, 1.0, 15.0, 0.5));
+        Assert.True(CubeGeometry.IsPoseTooHigh(onTop, 1.0, 15.0, 0.5));
+    }
+
+    /// <summary>
     /// A rotation about Z does not tilt the cube at all, so spinning it on the table never makes it an
     /// invalid bottom.
     /// </summary>

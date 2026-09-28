@@ -182,9 +182,14 @@ public class NavigationTests
         var drive = new DriveToObjectAction(rig.M, 7, PreActionType.Docking);
         var task = drive.RunAsync(default);
         SpinUntil(() => task.IsCompleted, () => rig.Pump());
-        Assert.Equal(ActionResult.Success, task.Result);
+        Assert.True(task.Result == ActionResult.Success, "result=" + task.Result + " trace: " + string.Join(" | ", drive.Trace));
         Assert.Equal(0, rig.M.Planner!.Env.ObstacleCount);                         // the target is not an obstacle
-        Assert.InRange(rig.X, 150, 175);                                            // the front pre-dock pose, 97 mm out
+        // the drive reached the pre-action pose it chose. The corrected geometry (C-E7) puts the front
+        // docking pose at ~90 mm for a cube at 260, not the refuted 97 mm standoff the old 150..175 range
+        // assumed; the chosen pose comes from the source-derived pre-action table.
+        var chosen = drive.Chosen!.WorldPose;
+        Assert.True((new Vec3(rig.X, rig.Y, 0) - chosen.Translation with { Z = 0 }).Length <= 3.0,
+                    $"X={rig.X} Y={rig.Y} chosen={chosen} trace: " + string.Join(" | ", drive.Trace));
     }
 
     // ------------------------------------------------------------------ the charger

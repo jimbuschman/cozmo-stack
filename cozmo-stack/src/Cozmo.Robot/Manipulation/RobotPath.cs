@@ -4,9 +4,15 @@ using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Manipulation;
 
 /// <summary>
-/// <c>Anki::Cozmo::PathMotionProfile</c>, defaults from the decompiled Unity class (UNITY): drive 100 mm/s,
-/// 200 / 500 mm/s² accel / decel; point turns 2 rad/s, 10 rad/s²; docking 60 mm/s, 200 / 500; reverse 80 mm/s.
+/// <c>Anki::Cozmo::PathMotionProfile</c>. The defaults are the 11-word rodata table at 0x00C535E0 that
+/// <c>SpeedChooser::GetPathMotionProfile</c> 0x0053B798 copies: drive 100 mm/s, 200 / 500 mm/s² accel /
+/// decel; point turns 2 rad/s, 10 rad/s²; docking 60 mm/s, 200 / 500; reverse 80 mm/s. The live path is
+/// <c>DriveToPoseAction::Init</c> 0x0055A86C → <c>PathComponent::StartDrivingToPose</c> 0x0064ACC4 (its
+/// only caller) → <c>GetPathMotionProfile</c> (its only caller at 0x0064ADE0) → stored at
+/// <c>[PathComponent+0x4C]</c> → <c>HandlePlanComplete</c> → <c>IPathPlanner::GetCompletePath(profile)</c>
+/// → <c>PathComponent::ExecutePath</c> → <c>PathDolerOuter::Dole</c>.
 /// </summary>
+// fidelity: M12-002
 public sealed record PathMotionProfile
 {
     public float SpeedMmps { get; init; } = 100f;

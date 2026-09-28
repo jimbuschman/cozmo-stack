@@ -27,6 +27,7 @@ namespace Cozmo.Robot.Manipulation;
 /// </summary>
 public static class LiftGeometry
 {
+    // fidelity: M12-008
     /// <summary>The lift pivot in the robot frame: robot+0x2E4's translation.</summary>
     public static readonly Vec3 PivotInRobotFrame = new(-41, 0, 45);
     /// <summary>The arm from the pivot to the plate: robot+0x2F0's translation.</summary>
