@@ -5,10 +5,15 @@
   "model": "openrouter/deepseek/deepseek-v4.1-flash:floor",
   // Project-local permissions, in the V1 "permission" form so the opencode CLI (V1) used by the job runners accepts
   // it; the V2 "permissions" rule list is rejected by V1. Everything is allowed so unattended runs never stop to ask.
+  // external_directory: the clones reach resources/, unity/, the OBB and the decompilation through junctions that
+  // point outside the clone, so reads there count as outside the project. doom_loop: a repeated identical tool
+  // call. Both default to "ask", and an unattended `opencode run` refuses anything that asks.
   "permission": {
     "edit": "allow",
     "bash": "allow",
-    "webfetch": "allow"
+    "webfetch": "allow",
+    "external_directory": "allow",
+    "doom_loop": "allow"
   },
 
   // OpenRouter routing for DeepSeek V4.1 Flash: the cheapest provider first, falling back to the next cheapest.
