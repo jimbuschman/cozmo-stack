@@ -626,7 +626,7 @@ Each of these is a question already answered. The original's behaviour is establ
 
 **M6-022 — The live voice and bus engine: the 0xA57FF8 wrapper and 0xA44D4C render body, the voice pass, the bus pass, idle removal, the per-voice DSP chain, the four Perform group members, the PBI flush, the 0x108DAE8 output-device state and its three gate bytes, and the JNI audio-route poll** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseVoiceEngine.cs`
 * effect: the live voice and bus graph renders differently, or not at all
 * rests on: read from libcozmoEngine.so in re-analysis/research/20260927-B1-voice-engine-extraction.md (rows B1-V1..V30), citation-checked in re-analysis/research/20260928-I-M6b-citation-check.md, and gap-passed in re-analysis/research/20260928-I-M6b-gap1-extraction.md; frozen as correction C11. The four group members' Wwise class names are UNKNOWN (no RTTI/symbols). The callee bodies C11 named but did not give were read by the five C12 passes (re-analysis/research/20260928-B-M6b-voice-callees.md, -bus-group-callees.md, -bus-metering.md, -source-classes.md, -modulator-evaluator.md), frozen as correction C12.
 * best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)

@@ -14,11 +14,14 @@ public interface IWwiseAudioSink
 }
 
 /// <summary>
-/// How many engine frames the current Perform renders (M6-017, gapD D1.7). <b>RECOVERABLE_GAP:</b> D1.7
-/// gives two computations (the device frames needed <c>0x9D4778 → 0x9EBE6C(0)</c>, or a clock-paced count
-/// with a carried fraction at <c>+0x70</c>, capped) and says the writer of the gating flag and
-/// <c>0x9EBE6C</c>'s internals were not read. The count therefore stays a caller input; the driver neither
-/// computes it nor defaults it.
+/// How many engine frames the current Perform renders (M6-017, gapD D1.7; corrected by C11). The branch is
+/// dynamic, not static: Perform calls <c>0x9D4778 → 0x9EC38C → 0x9EBE6C(0)</c>, which writes gate1
+/// <c>0x108DAF0</c>, and only then reads gate1 at <c>0x9AF900</c> (M6-022 V4/G10). The count is therefore
+/// either the device frames needed (the <c>0x9EBE6C</c> minimum over the output devices' <c>vt+0x20</c>) or
+/// the clock-paced branch; <c>0x9EBE6C</c>'s internals and the gate writers are settled (M6-022 D1..D4,
+/// G1..G10), but the per-device <c>vt+0x20</c> sink value and the OpenSL pacing are <b>HARDWARE_ONLY</b>
+/// (M6-022 D4, M6-018). The runtime value is therefore not derivable from the artifact, so the count stays
+/// a caller input; the driver neither computes it nor defaults it.
 /// </summary>
 public interface IWwiseFrameSource
 {
@@ -33,13 +36,14 @@ public interface IWwiseFrameSource
 ///
 /// <list type="bullet">
 /// <item><b><see cref="RenderBuses"/> — the row's "buses".</b> D1.6's leading render calls
-/// <c>0xA36AC4(tick+1)</c>, <c>0x9FF308(tick+1)</c>, <c>0x9D3C98</c>, <c>0x9E6D2C</c>. Those four functions
-/// are not identified in the rows, so this step is a seam. It is not the M6-014 bus pass: D2.7 puts the bus
-/// pass inside LEngine, after the voice pass.</item>
+/// <c>0xA36AC4(tick+1)</c>, <c>0x9FF308(tick+1)</c>, <c>0x9D3C98</c>, <c>0x9E6D2C</c>. C11 identifies these
+/// as the four group members (M6-022 V25..V28): their Wwise class names are UNKNOWN (no RTTI/symbols) and
+/// their callee bodies are M6-022's rows. It is not the M6-014 bus pass: D2.7 puts the bus pass inside
+/// LEngine, after the voice pass.</item>
 /// <item><b><see cref="RunLEngine"/> — 0xA57FF8.</b> D2.7: the voice pass (0xA44948) first, each voice
 /// mixing into its buses; then the bus pass (0xA44C18, GetResultingBuffer + ReleaseBuffer per bus); then
-/// idle removal. The voice engine is not built, so this is a seam; the M6-014
-/// <see cref="WwiseMixBusHierarchy"/> is the intended bus-pass/idle-removal half.</item>
+/// idle removal. The M6-022 voice/bus engine is the intended implementation; until it is built this is a
+/// seam, and the M6-014 <see cref="WwiseMixBusHierarchy"/> is the intended bus-pass/idle-removal half.</item>
 /// <item><b><see cref="FlushPbiNotifications"/> — 0xA38420.</b> D3.4: the deferred PBI teardown queued by
 /// the voice Term (0xA38600, reason 4) is handled here; its Term (PBI <c>vt+0x10</c>) drives the playing-id
 /// counters and CheckEndOfEvent 0xA03618, so the EndOfEvent callback fires in this step.</item>
@@ -65,10 +69,21 @@ public interface IWwiseFrameRender
 /// before the next frame's render, which is where D3.5 puts EndOfEvent (after the last voice's final-frame
 /// bus pass, before the next frame's partial-chunk flush and CloseAudioBuffer).
 ///
+/// <para><b>The audio-thread lifecycle</b> (M6-017, C11 amendment; Appendix L E1..E7) is part of this
+/// record's production path: <c>SoundEngine::Init 0x0099E3EC</c> sets the thread-active byte
+/// <c>0x0108D949</c> and calls <c>FUN_009B0200</c>, which posts a type-0x36 init message and calls
+/// <c>FUN_00A40940(engine+0x54)</c>; that <c>sem_init</c>s the semaphore and
+/// <c>pthread_create</c>s entry <c>0x00A4087C</c>, whose loop is <c>Perform 0x9AF8A8</c> then
+/// <c>sem_wait</c>. <c>RenderAudio</c> is the veneer <c>0x0099F130</c> -> <c>0x9AFD10(engine,1)</c>: if the
+/// thread-active flag is set it <c>sem_post</c>s <c>engine+0x54</c> (<c>FUN_00A40924</c>), else it runs
+/// <c>Perform</c> synchronously. This stack has no phone sink, so which of those two the caller uses is a
+/// caller decision (Appendix L open question 1); the driver models the per-Perform frame body.</para>
+///
 /// <para><b>Wiring.</b> The message pump and the pending-action drain are
 /// <see cref="WwiseEventRuntime.PumpMessages"/> and <see cref="WwiseEventRuntime.DrainDueActions"/> from
 /// M6-006, which owns the queue and the <c>+0x4C</c> tick. The render is a caller seam
-/// (<see cref="IWwiseFrameRender"/>); the M6-008…M6-016 modules plug into it. The sink and the frame source
+/// (<see cref="IWwiseFrameRender"/>); the M6-008…M6-016 modules plug into it, and the M6-022 voice/bus
+/// engine is the intended implementation of the LEngine step. The sink and the frame source
 /// are caller inputs. <b>Not wired:</b> this is a standalone class; it is not yet part of
 /// <c>WwisePlayback</c>, <c>WwiseAudioSource</c>, <c>WwiseSongRenderer</c> or <c>AnimationScheduler</c>.</para>
 ///
@@ -158,4 +173,75 @@ public sealed class WwiseFrameDriver
     /// and the render seam does not enqueue, so its two calls are no-ops here and this is the tick++.
     /// </summary>
     private void AdvanceTick() => _eventRuntime.AdvanceFrame();
+}
+
+/// <summary>
+/// The audio-thread signal (M6-017, C11 amendment; Appendix L E1..E7): the semaphore at
+/// <c>engine+0x54</c>. <c>SoundEngine::Init 0x0099E3EC</c> sets the thread-active byte
+/// <c>0x0108D949</c>; <c>FUN_009B0200</c> calls <c>FUN_00A40940</c>, which <c>sem_init</c>s and
+/// <c>pthread_create</c>s entry <c>0x00A4087C</c>. The thread loop is <c>Perform</c> then <c>sem_wait</c>;
+/// <c>FUN_00A40924</c> is <c>sem_post</c> when the thread flag is set, and the OpenSL sink posts the same
+/// semaphore.
+///
+/// <para>This stack has no phone sink, so whether it runs a real thread or renders synchronously is a
+/// caller decision (Appendix L open question 1); the recovered decision structure is modelled and the
+/// semaphore is a caller seam.</para>
+/// </summary>
+public interface IWwiseAudioThreadSignal
+{
+    /// <summary>E1/E2: the audio-thread-active byte <c>0x0108D949</c>.</summary>
+    bool ThreadActive { get; }
+
+    /// <summary>E7 <c>FUN_00A40924</c>: <c>sem_post(engine+0x54)</c> when the thread flag is set.</summary>
+    void Post();
+
+    /// <summary>
+    /// E4: one <c>sem_wait</c> on the thread's semaphore. Returns true when the loop should stop (the
+    /// semaphore's stop flag is set); false otherwise.
+    /// </summary>
+    bool Wait();
+}
+
+/// <summary>
+/// The audio thread's <c>RenderAudio</c> decision and its <c>Perform</c>/<c>sem_wait</c> loop (M6-017,
+/// C11 amendment; E4/E6/E7). The public <c>RenderAudio</c> veneer <c>0x0099F130</c> tail-branches to
+/// <c>0x9AFD10(engine,1)</c>: if the thread-active flag is set it <c>sem_post</c>s <c>engine+0x54</c>,
+/// otherwise it runs <c>Perform</c> synchronously. The thread entry <c>0x00A4087C</c> loops
+/// <c>Perform</c> then <c>sem_wait</c>. The stack does not spawn the thread; <see cref="RenderAudio"/> and
+/// <see cref="DrainThreadOnce"/> expose both halves so the caller can choose (Appendix L Q1).
+/// </summary>
+public sealed class WwiseAudioThread
+{
+    private readonly WwiseFrameDriver _driver;
+    private readonly IWwiseAudioThreadSignal _signal;
+
+    /// <param name="driver">The M6-017 frame driver whose <see cref="WwiseFrameDriver.Perform"/> is the loop body.</param>
+    /// <param name="signal">The semaphore/thread-active seam.</param>
+    public WwiseAudioThread(WwiseFrameDriver driver, IWwiseAudioThreadSignal signal)
+    {
+        _driver = driver ?? throw new ArgumentNullException(nameof(driver));
+        _signal = signal ?? throw new ArgumentNullException(nameof(signal));
+    }
+
+    /// <summary>E6: <c>0x9AFD10(engine,1)</c>. Posts when the thread is active, else performs synchronously.</summary>
+    /// <returns>The frames rendered, or 0 when the frame was handed to the audio thread.</returns>
+    public int RenderAudio()
+    {
+        if (_signal.ThreadActive)
+        {
+            _signal.Post();                             // E6/E7: 0x00A40924
+            return 0;
+        }
+        return _driver.Perform();                       // E6: the synchronous fallback
+    }
+
+    /// <summary>
+    /// E4: one turn of the thread loop — <c>Perform</c> then <c>sem_wait</c>. Returns false when the
+    /// semaphore signals stop, so a caller running a real thread can exit.
+    /// </summary>
+    public bool DrainThreadOnce()
+    {
+        _driver.Perform();
+        return !_signal.Wait();
+    }
 }

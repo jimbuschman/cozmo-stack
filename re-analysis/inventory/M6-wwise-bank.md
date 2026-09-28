@@ -1469,6 +1469,9 @@ report source-classes Q3.
   `0x9E2BD0`/`0x9E52F8` NEON lane order, `0x9FD910`, the FX-slot class identity, the
   `[node+0x70]` sub-object identity, the callback registry `0x0108D95C` owner) and the
   HARDWARE_ONLY sink/OpenSL values, rather than "bodies not read".
+- **M6-022's build location** is `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseVoiceEngine.cs`
+  (the engine skeleton); the provisional `WwiseBusChain.cs` is superseded. Its test is
+  `WwiseVoiceEngineTests`.
 - **M6-002** stays `IMPLEMENTATION_GAP`; the source render wrappers are added to its
   evidence and its `unresolved` names the driver build and the same residuals.
 - No record is settled by C12; C12 only supplies the build specification.
