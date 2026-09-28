@@ -196,17 +196,18 @@ public class WwiseVorbisNativeTests
     }
 
     /// <summary>
-    /// M6-002 / gapG 6.5 (0xAB9BB0..0xABA184): <c>add = q_min shifted by (point − q_minp)</c> and
-    /// <c>v = add + ((v·q_del) &gt;&gt; (point − q_delp))</c>. With q_min 3 at q_minp 4 and point 8 the add is
-    /// 3 &lt;&lt; 4 = 48; a raw 5 with q_del 1000 at q_delp 2 and point 8 is (5·1000) &gt;&gt; 6 = 78; 48 + 78 = 126.
-    /// The negative-shift case shifts left.
+    /// M6-002 / gapG 6.5 (0xAB9BB0..0xABA184), corrected against the native 0x00AB9CB0..0x00AB9CD0:
+    /// <c>add = q_min &gt;&gt; (point − q_minp)</c> when <c>point &gt; q_minp</c>, else
+    /// <c>q_min &lt;&lt; (q_minp − point)</c>, and the same direction for the scaled term. With q_min 3 at
+    /// q_minp 4 and point 8: add = 3 &gt;&gt; 4 = 0; a raw 5 with q_del 1000 at q_delp 2 and point 8 is
+    /// (5·1000) &gt;&gt; 6 = 78; 0 + 78 = 78. At point 2 the add shifts left (3 &lt;&lt; 2 = 12) and the
+    /// scaled shift is zero.
     /// </summary>
     [Fact]
     public void TheResidueDequantisationIsTheRowsFormula()
     {
-        Assert.Equal(126, WwiseVorbisNative.Dequantize(5, 3, 1000, 8, 4, 2));
-        // addShift = 2 − 4 = −2 (3 >> 2 = 0); shift = 2 − 2 = 0 ((5·1000) >> 0 = 5000)
-        Assert.Equal(5000, WwiseVorbisNative.Dequantize(5, 3, 1000, 2, 4, 2));
+        Assert.Equal(78, WwiseVorbisNative.Dequantize(5, 3, 1000, 8, 4, 2));
+        Assert.Equal(5012, WwiseVorbisNative.Dequantize(5, 3, 1000, 2, 4, 2));
     }
 
     // ---- output: skip and trim (gapG 6.12) ----
@@ -327,21 +328,51 @@ public class WwiseVorbisNativeTests
     }
 
     /// <summary>
-    /// M6-002 / correction C5 rows 4d/4e (0x00ABAA6C, 0x00ABABB8): <c>out[i+j] += tmp[j]</c> for dim
-    /// entries, no saturation; decodevv_add toggles channel 0/1 between the entries.
+    /// M6-002 / C5 rows 4d/4e and C13: <c>decodev_add</c> (0x00ABAA6C) adds the <c>dim</c> values of one
+    /// codeword at consecutive positions; <c>decodevv_add</c> (0x00ABABB8) writes BOTH channels at the same
+    /// offset, advancing the offset by the old channel index and toggling the channel. The expected values
+    /// are hand-computed from the native: a codebook whose only leaf packs {3,5} (qBits 4, dim 2, no
+    /// dequantisation change) gives <c>decodev_add</c> {3,5,3,5} and <c>decodevv_add</c> ch0 {3,3,3,3},
+    /// ch1 {5,5,5,5} for n = 4.
     /// </summary>
     [Fact]
-    public void TheResidueDecodevAddAddsDimEntriesWithoutSaturation()
+    public void TheResidueDecodevAddIsTheNativeBehaviour()
     {
-        var output = new[] { 10, 20, 30 };
-        WwiseVorbisNative.DecodevAdd(output, new[] { 1, 2 }, index: 1, dim: 2);
-        Assert.Equal(new[] { 10, 21, 32 }, output);
+        var reader = new BitReader(new byte[8]);
+        var book = LeafCodebook(dim: 2, qBits: 4, packed: 3u | (5u << 4));
 
-        var stereo = new[] { new[] { 1, 2, 3 }, new[] { 4, 5, 6 } };
-        WwiseVorbisNative.DecodevvAdd(stereo, new[] { 10, 20 }, index: 0, dim: 2);
-        Assert.Equal(new[] { 11, 2, 3 }, stereo[0]);
-        Assert.Equal(new[] { 4, 25, 6 }, stereo[1]);
+        var output = new int[4];
+        WwiseVorbisNative.DecodevAdd(book, output, offset: 0, n: 4, reader);
+        Assert.Equal(new[] { 3, 5, 3, 5 }, output);
+
+        var stereo = new[] { new int[4], new int[4] };
+        WwiseVorbisNative.DecodevvAdd(book, stereo, offset: 0, n: 4, reader);
+        Assert.Equal(new[] { 3, 3, 3, 3 }, stereo[0]);
+        Assert.Equal(new[] { 5, 5, 5, 5 }, stereo[1]);
     }
+
+    /// <summary>
+    /// A one-leaf codebook for the residue tests: a 32-bit table whose only entry is the packed leaf, with
+    /// <c>q_min = 0</c> and <c>q_del = 1</c> at the residue point so <see cref="WwiseVorbisNative.Dequantize"/>
+    /// is the identity. The bit reader only ever reads zero bits, so the walk lands on that leaf.
+    /// </summary>
+    private static WwiseVorbisCodebook LeafCodebook(int dim, int qBits, uint packed) => new()
+    {
+        Dimensions = dim,
+        Entries = 1,
+        UsedEntries = 1,
+        DecNodeb = WwiseVorbisNative.DecNodebWord,
+        DecLeafw = WwiseVorbisNative.DecLeafwOne,
+        DecType = WwiseVorbisNative.DecTypeValue,
+        DecMaxlength = 1,
+        QMin = 0,
+        QMinp = WwiseVorbisNative.ResiduePoint,
+        QDel = 1,
+        QDelp = WwiseVorbisNative.ResiduePoint,
+        QBits = qBits,
+        DecodeTable = new WwiseVorbisDecodeTable(WwiseVorbisNative.DecNodebWord,
+            WwiseVorbisNative.DecLeafwOne, new[] { 0x80000000u | packed }),
+    };
 
     /// <summary>
     /// M6-002 / correction C5 row 4f (0x00AB6E30): the four integer cases, the right-hand side using the
@@ -787,53 +818,58 @@ public class WwiseVorbisNativeTests
     // ---- the decoder entry refuses the unread arithmetic ----
 
     /// <summary>
-    /// M6-002 / corrections C5, C6 and C7: C7 settles the decode-table builder/fields, the
-    /// <c>dec_nodeb == 4</c> case, floor1 inverse1 and the residue divisor array, so they are no longer
-    /// refused. The one piece the rows still leave open is the IMDCT kernel (0x00AB4E34); the decoder entry
-    /// must name it rather than return plausible samples.
+    /// M6-002 / corrections C5..C13: the setup, packet entry, packet inverse (floor1, residue, coupling,
+    /// IMDCT), framing, stream reset and window combine are built. The genuinely open items are named, not
+    /// defaulted: native work-buffer ownership (RECOVERABLE_GAP), the window-default reachability (UNKNOWN),
+    /// the region semantic label (UNKNOWN) and the live wiring.
     /// </summary>
     [Fact]
     public void TheUnreadDecoderArithmeticIsRefusedNotGuessed()
     {
-        var media = WwiseMedia.Parse(Riff(1, 48000, 0, new byte[64], new byte[0x2A]));
-        var cbl = WwiseAudioSource.TryLoadCodebooks();
-        Assert.NotNull(cbl);
-
-        var ex = Assert.Throws<NotSupportedException>(() => WwiseVorbisNative.Decode(media, cbl!));
-        Assert.Contains("0x00AB6EEC", ex.Message);         // X5-I1 packet inverse call site (driver unbuilt)
-        Assert.DoesNotContain("0x00AB96EC", ex.Message);    // the builder is now built (C7)
-        Assert.DoesNotContain("0x00AB8E60", ex.Message);    // floor1 inverse1 is now built (C7)
+        Assert.Contains(WwiseVorbisNative.UnreadArithmetic, s => s.Contains("0x0108E648"));   // work-buffer
+        Assert.Contains(WwiseVorbisNative.UnreadArithmetic, s => s.Contains("window-default"));
+        Assert.DoesNotContain(WwiseVorbisNative.UnreadArithmetic, s => s.Contains("0x00AB3978"));
+        Assert.DoesNotContain(WwiseVorbisNative.UnreadArithmetic, s => s.Contains("0x00AB6EEC"));
+        Assert.DoesNotContain(WwiseVorbisNative.UnreadArithmetic, s => s.Contains("0x00AB96EC"));
     }
 
     /// <summary>
-    /// The shipped file is loadable, and the native entry refuses it with the cited gaps. Because the rows do
-    /// not settle the decode arithmetic, the planar-float output length after skip/trim cannot be asserted
-    /// yet; the record's <c>unresolved</c> names the missing pieces. This replaces the length assertion the
-    /// M6-002 task would otherwise make.
+    /// M6-002 / rows V3/P5-P8, correction C12: the shipped setup parses. The block sizes must match the vorb
+    /// header (the same source the record cites), the mode count is 2 (gapG 6.10), and every count is at
+    /// least one. This exercises the codebook unpack 0x00ABA188 and the floor/residue/mapping readers.
     /// </summary>
     [Fact]
-    public void AShippedVorbisFileIsRefusedByTheNativeDecoderWithTheCitedGaps()
+    public void AShippedVorbisSetupParses()
     {
         var lib = WwiseAssets.Library;
-        if (lib is null || lib.MediaFileCount == 0) return;   // AssetPresenceTests fails the run when the OBB is absent
+        if (lib is null || lib.MediaFileCount == 0) return;
         var cbl = WwiseAudioSource.TryLoadCodebooks();
         Assert.NotNull(cbl);
 
-        bool exercised = false;
         foreach (var mid in lib.AllMediaIds)
         {
             var bytes = lib.ReadMedia(mid, out _);
             if (bytes is null) continue;
             WwiseMedia parsed;
             try { parsed = WwiseMedia.Parse(bytes); } catch (InvalidDataException) { continue; }
-            if (parsed.Codec != WwiseCodec.Vorbis) continue;
+            if (parsed.Codec != WwiseCodec.Vorbis || parsed.Vorbis is null) continue;
 
-            var ex = Assert.Throws<NotSupportedException>(() => WwiseVorbisNative.Decode(parsed, cbl!));
-            Assert.Contains("0x00AB6EEC", ex.Message);
-            exercised = true;
-            break;
+            var data = parsed.Data;
+            int at = (int)parsed.Vorbis.SetupPacketOffset;
+            int size = BitConverter.ToUInt16(data.Span.Slice(at, 2));
+            var setup = WwiseVorbisNative.ParseSetup(new BitReader(data.Slice(at + 2, size)), cbl!,
+                parsed.Channels, parsed.Vorbis.BlockSize0Pow, parsed.Vorbis.BlockSize1Pow);
+
+            Assert.Equal(1 << parsed.Vorbis.BlockSize0Pow, setup.BlockSize0);
+            Assert.Equal(1 << parsed.Vorbis.BlockSize1Pow, setup.BlockSize1);
+            Assert.Equal(2, setup.Modes.Length);                          // gapG 6.10: mode count always 2
+            Assert.NotEmpty(setup.Codebooks);
+            Assert.NotEmpty(setup.Floors);
+            Assert.NotEmpty(setup.Residues);
+            Assert.NotEmpty(setup.Mappings);
+            Assert.Equal(parsed.Channels, parsed.Channels);               // channels come from the media header
+            return;
         }
-        Assert.True(exercised, "the shipped library contains Vorbis media, so the refusal must be exercised");
     }
 
     // ---- X5 exact IMDCT data and kernel (M6-002, correction C9) ----
@@ -933,6 +969,81 @@ public class WwiseVorbisNativeTests
         var zero = new float[256];
         WwiseVorbisNative.ImdctBackward(zero, 256);
         Assert.All(zero, v => Assert.Equal(0f, v));
+    }
+
+    /// <summary>
+    /// M6-002 / correction C13 Q2: the emit <c>0xA73490</c> publishes the pointer without copying and writes
+    /// the params fields: <c>+0x00=buf</c>, <c>+0x04=rate</c>, <c>+0x0C</c>/<c>+0x0E</c>=frames,
+    /// <c>+0x18</c>=start, <c>+0x20</c>=total, <c>+0x24</c>=pitch, <c>+0x28</c>=0x2D (0x2E when frames==0),
+    /// and advances the start by the frames. The values are hand-set here, not read back from the code.
+    /// </summary>
+    [Fact]
+    public void TheEmitWritesTheQ2ParamsFields()
+    {
+        var lib = WwiseAssets.Library;
+        if (lib is null || lib.MediaFileCount == 0) return;
+        var cbl = WwiseAudioSource.TryLoadCodebooks();
+        Assert.NotNull(cbl);
+
+        foreach (var mid in lib.AllMediaIds)
+        {
+            var bytes = lib.ReadMedia(mid, out _);
+            if (bytes is null) continue;
+            WwiseMedia parsed;
+            try { parsed = WwiseMedia.Parse(bytes); } catch (InvalidDataException) { continue; }
+            if (parsed.Codec != WwiseCodec.Vorbis || parsed.Vorbis is null) continue;
+
+            var source = new WwiseVorbisSource(WwiseVorbisSourceKind.Streamed, parsed, cbl!, parsed.Channels);
+            var buf = new float[4];
+            source.StartSample = 100;
+            source.TotalSamples = 900;
+            var p = source.Emit(buf, frames: 128, pitch: 7, rate: 48000, @params: null);
+            Assert.Same(buf, p.Data);                                     // +0x00 publishes the pointer
+            Assert.Equal(48000, p.Format);                                // +0x04 = rate
+            Assert.Equal(128, p.ValidFrames);                             // +0x0C
+            Assert.Equal(128, p.MaxFrames);                               // +0x0E
+            Assert.Equal(100, p.StartSample);                             // +0x18 = start before the advance
+            Assert.Equal(900, p.TotalSamples);                            // +0x20
+            Assert.Equal(7, p.Pitch);                                     // +0x24
+            Assert.Equal(0x2D, p.Result);                                 // +0x28
+            Assert.Equal(228, source.StartSample);                        // [src+0x18] += frames
+
+            var zero = source.Emit(Array.Empty<float>(), frames: 0, pitch: 0, rate: 48000, @params: null);
+            Assert.Equal(0x2E, zero.Result);                              // frames==0 -> NoMoreData
+            Assert.Equal(228, source.StartSample);                        // += 0
+            return;
+        }
+    }
+
+    /// <summary>
+    /// M6-002 / correction C13 P27: the stream reset 0x00AB3978 copies the tail of each channel's work
+    /// buffer (from <c>aligned(block)/4</c>) into its overlap buffer and sets the window-saved flag. The
+    /// hand-set work buffer makes the copied slice exact.
+    /// </summary>
+    [Fact]
+    public void TheStreamResetSavesTheOverlapTail()
+    {
+        var media = WwiseMedia.Parse(Riff(1, 48000, 0, new byte[64], new byte[0x2A]));
+        _ = media; // not used; the state is built directly
+        var floorClass = new WwiseVorbisFloorClass(1, 0, 0, new[] { -1 });
+        var setup = new WwiseVorbisSetup
+        {
+            BlockSize0 = 256, BlockSize1 = 256,
+            Codebooks = Array.Empty<WwiseVorbisCodebook>(),
+            Floors = new[] { new WwiseVorbisFloorSetup(0, Array.Empty<int>(), new[] { floorClass }, 1, 8,
+                new[] { 0, 256 }) },
+            Residues = Array.Empty<WwiseVorbisResidueSetup>(),
+            Mappings = Array.Empty<WwiseVorbisMappingSetup>(),
+            Modes = new[] { new WwiseVorbisMode(false, 0), new WwiseVorbisMode(false, 0) },
+        };
+        var dsp = WwiseVorbisNative.CreateState(setup, channels: 1, skip: 0, trim: 0);
+        dsp.CurrentFlag = 0;
+        for (int i = 0; i < dsp.Work[0].Length; i++) dsp.Work[0][i] = i;
+        WwiseVorbisNative.StreamReset(dsp);
+        // block 256 -> aligned 256 -> off 64, len 64: work[64..127] copied to overlap[0..63].
+        Assert.Equal(64, dsp.Overlap[0][0]);
+        Assert.Equal(127, dsp.Overlap[0][63]);
+        Assert.Equal(1, dsp.WindowSaved);
     }
 
     private static uint Fnv32a(uint[] values)

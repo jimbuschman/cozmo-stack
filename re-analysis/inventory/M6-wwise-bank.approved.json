@@ -2,7 +2,7 @@
   "subsystem": "M6-wwise-bank",
   "approved": "2026-09-28",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "4f9e0f89a7b55caf1705af22190a34cc4a9ebb4a563665c7b33e37a7d6fdae2b",
+  "inventory_sha256": "8aba88662d77c748b90a7ba491fc9531edd79e614e609c8554defb3ad41636bf",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -46,7 +46,16 @@
         "C11 decoder-state offsets dsp+0x00 (bit data), +0x04 (bit pos), +0x08 (remaining), +0x0c (channels), +0x10 (setup), +0x14 (per-channel output), +0x18 (overlap), +0x1c/+0x20 (skip/end), +0x24/+0x28 (prev/cur block flag), +0x2c/+0x2e (start-skip/end-trim), +0x30 (prev-window flag)",
         "C11 setup offsets +0x00/+0x04 (bs0/bs1), +0x08..+0x18 (mode/mapping/floor/residue/codebook counts), +0x1c (mode array stride 2), +0x20 (mapping stride 0x14), +0x24 (floor stride 0x24), +0x28 (residue stride 0x1c), +0x2c (codebook stride 0x3c); setup parser 0x00AB6380/0x00AB63E0 from the cache 0x00AB2D74",
         "C11 residual: stream reset 0x00AB3978 (called from 0x00AB7E40 on a flagged last packet) is unread (RECOVERABLE_GAP)",
-        "C12 source render wrappers (report 20260928-B-M6b-source-classes.md): the shipped Vorbis source classes and their live render slots - streamed 0x103E0B8 render 0xAB0448 (0xAB0448..0xAB04E8: decoder state, framing 0xAB7E40, emit 0xA73490), in-memory 0x103E138 render 0xAB1550 (internal read buffer +0xEC..+0xF8, framing 0xAB7E40, emit 0xA73490); StartStream vt+0x28 = 0xAB0B20 / 0xAB22D4; decoder fields [src+0x38] config, [src+0x80] output, [src+0x3C] frames, [src+0xBC] rate"
+        "C12 source render wrappers (report 20260928-B-M6b-source-classes.md): the shipped Vorbis source classes and their live render slots - streamed 0x103E0B8 render 0xAB0448 (0xAB0448..0xAB04E8: decoder state, framing 0xAB7E40, emit 0xA73490), in-memory 0x103E138 render 0xAB1550 (internal read buffer +0xEC..+0xF8, framing 0xAB7E40, emit 0xA73490); StartStream vt+0x28 = 0xAB0B20 / 0xAB22D4; decoder fields [src+0x38] config, [src+0x80] output, [src+0x3C] frames, [src+0xBC] rate",
+        "C13 stream reset 0x00AB3978..0x00AB39D3 (92 bytes, not ..0x00AB3D28): per-channel overlap-save memcpy(dsp+0x18[ch], dsp+0x14[ch]+aligned(setup[dsp+0x28]), aligned) then dsp+0x30=1; the framing gate is dsp+0x14[0]!=0 (0x00AB7F04/0x00AB7F08), not the eofflag; report re-analysis/research/20260928-B-M6b-1-stream-reset.md",
+        "C13 window combine 0x00AB5A94 (args at 0x00AB3620..0x00AB3664; channels passed but unread): top branch prev&curr (both-long uses W1, [sp+4]=0; else W0/small window); regions add (0x00AB5B60..0x00AB5C3C), sub (0x00AB5CB4..0x00AB5D6C), [sp+4]-gated negate/copy (0x00AB5D88..0x00AB5F3C); forward W+i / reverse W+h-1-i with vrev64.32+vswp; no FMA; overlap write-back is in the caller 0x00AB3520 (0x00AB3668..0x00AB3698); semantic large/small mapping UNKNOWN; report re-analysis/research/20260928-B-M6b-1-driver-residuals.md",
+        "C13 emit 0xA73490..0x00A73564: params+0x00=buf, +0x04=arg5 rate, +0x0C/+0x0E=frames u16, +0x18=[src+0x18], +0x20=[src+0x14], +0x24=arg4 pitch, +0x28=0x2E if frames==0 else 0x2D; advances [src+0x18]+=frames; does not set 0x11/2; publishes the pointer (no copy); 0x9D4C24 builds the params+0x10/+0x14 marker array",
+        "C13 geometry: dsp+0x14[c] is bs1/2 floats (stride (bs1/2)*4 bytes, 0x00AB37A4..0x00AB37D0); mdct_backward(n) operates in place on n/2 floats (0x00AB4E9C and 0x00AB39DC halve); dsp+0x18[c] is block_size/4 floats; no factor-of-two mismatch",
+        "C13 corrections: residue stages is computed (highest set cascade bit + 1, 0x00AB7180..0x00AB737C), contradicting P8/gapG 6.7 read(8); packed length is read(lengthBits)+1 with lengthBits=read(3) (0x00ABA1FC/0x00ABA420/0x00ABA274); 0x00ABA840 returns the raw leaf with no dequantisation; residue type 2 uses perChannel=grouping/channels and offset subpart*perChannel+begin/channels (0x00AB7518..0x00AB76CC)",
+        "C14.1 corrects C6 3c/C7 4f: the residue type-0/1 class word is decoded once per used channel inside the channel loop (0x00AB7C84 inside 0x00AB7CE0..0x00AB7CE8; partword[r5] at 0x00AB7CA8), not once per partition group",
+        "C14.2: the coupling-channel mark iterates forward (0x00AB6C38..0x00AB6C7C); only the inverse coupling is backwards (0x00AB6DC4..0x00AB6E78)",
+        "C14.3: the emit 0xA73490 params+0x04 is its 5th argument (0x00A734A8/0x00A734BC) and it sets only result 0x2D/0x2E (0x00A73510/0x00A7351C)",
+        "C14.4: the framing stream-reset gate is dsp+0x14[0]!=0 (0x00AB7F04/0x00AB7F08); the eofflag only sets framing+8=4 (0x00AB7E98..0x00AB7EBC)"
       ],
       "live_path": true,
       "hardware_required": false

@@ -70,6 +70,17 @@ public sealed class WwiseCodebookLibrary
     }
 
     /// <summary>
+    /// The packed bitstream for codebook <paramref name="id"/> (M6-002, gapG 6.6). The runtime decoder
+    /// reads this packed form directly (0x00ABA188), not the standard Ogg form <see cref="Rebuild"/> writes.
+    /// </summary>
+    internal BitReader OpenPacked(int id)
+    {
+        if (id < 0 || id >= Count) throw new InvalidDataException($"no codebook {id} in the library");
+        int start = _offsets[id], end = _offsets[id + 1];
+        return new BitReader(new ReadOnlyMemory<byte>(_data, start, end - start));
+    }
+
+    /// <summary>
     /// Expands one packed codebook. <paramref name="size"/> is the packed length, checked at the end so a
     /// codebook that decodes to the wrong length is rejected rather than corrupting the stream; pass 0 to
     /// skip that check for an inline bitstream.

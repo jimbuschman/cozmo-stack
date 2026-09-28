@@ -1476,6 +1476,66 @@ report source-classes Q3.
   evidence and its `unresolved` names the driver build and the same residuals.
 - No record is settled by C12; C12 only supplies the build specification.
 
+## Correction C13 (manager, 2026-09-28): the window combine, the emit, the work-buffer geometry, and the stream reset
+
+Job B-M6b-1's implementer stopped with three `MISSING` items after building the packet
+driver and the source wrappers. Three bounded extraction passes answered them. The
+reports are committed:
+
+- stream reset: `re-analysis/research/20260928-B-M6b-1-stream-reset.md`
+- window combine, emit, work-buffer geometry, derived choices:
+  `re-analysis/research/20260928-B-M6b-1-driver-residuals.md`
+
+### M6-002 - settled rows added
+
+| step | what the original does | citation | classification |
+|---|---|---|---|
+| P27-corrected | **Stream reset `0x00AB3978`** is 92 bytes (`0x00AB3978..0x00AB39D3`, not `..0x00AB3D28`). It performs the same per-channel overlap-save as the window driver (`memcpy(dsp+0x18[ch], dsp+0x14[ch]+aligned(setup[dsp+0x28]), aligned(...))`, loop `ch < dsp+0x0c`), then sets `dsp+0x30 = 1`. It never touches `dsp+0x14` or the caller's PCM. The framing's gate is `dsp+0x14[0] != 0` (`0x00AB7F04`/`0x00AB7F08`), not the eofflag. | `0x00AB3978..0x00AB39D3`; `0x00AB7EF4..0x00AB7F18` | EXACT_SOURCE (the function is read; whether a shipped path re-decodes and consumes the primed overlap is UNKNOWN) |
+| P24-window | **Window combine `0x00AB5A94`** args: `(bs0, bs1, prevFlag, currFlag, in=dsp+0x14[ch], overlap=dsp+0x18[ch], W0, W1, out, channels, skip=dsp+0x1c, end=skip+samples)`; channels is passed but unread. Top branch `prev&curr`: both-long uses W1 and `[sp+4]=0`; otherwise W0 and the small window. Regions: add `min(END,fp)-min(SKIP,fp)` (`fp=n/4`), then sub, then the `[sp+4]`-gated negate/copy. No FMA. Window forward `W+i`, reverse `W+h-1-i` (`vrev64.32`+`vswp`). The overlap write-back is in the caller `0x00AB3520`, not the combine. | `0x00AB5A94..0x00AB624C`; `0x00AB3620..0x00AB3664`; `0x00AB3668..0x00AB3698` | EXACT_SOURCE for the instruction-level gates; the semantic mapping to libvorbis large/small cases is UNKNOWN |
+| Q2-emit | **Emit `0xA73490(src, buf, frames, pitch, rate, params)`** publishes the pointer (no copy): `params+0x00=buf`, `+0x04=rate` (arg5), `+0x0C`/`+0x0E`=frames u16, `+0x18=[src+0x18]`, `+0x20=[src+0x14]`, `+0x24=pitch`, `+0x28`= result `0x2E` when frames==0 else `0x2D`; advances `[src+0x18] += frames`. It does **not** set result `0x11` or `2` (the framing/mode-2 do). The `[src+0x2C]` object call `0x9D4C24` builds a marker descriptor array at `params+0x10`/`+0x14` and does not touch the buffer. | `0x00A73490..0x00A73564`; `0x009D4C24..0x009D4D24` | EXACT_SOURCE |
+| Q3-geometry | The per-channel buffer `dsp+0x14[c]` is `bs1/2` floats (stride `(bs1/2)*4` bytes); `mdct_backward(n,...)` is passed the block size but operates in place on `n/2` floats (halved at `0x00AB4E9C` and again at `0x00AB39DC`); the overlap buffer `dsp+0x18[c]` is `block_size/4` floats. There is no factor-of-two mismatch. | `0x00AB37A4..0x00AB37D0`; `0x00AB4E9C`; `0x00AB39DC`; `0x00AB3668..0x00AB3698` | EXACT_SOURCE |
+| Q4-corrections | Residue `stages` is computed (highest set cascade bit + 1), not read; `read(lengthBits)+1` uses `lengthBits = read(3)`; `0x00ABA840` returns the raw leaf (no dequantisation); residue type 2 uses `perChannel = grouping/channels` and offset `subpart*perChannel + begin/channels`. | `0x00AB7180..0x00AB737C`; `0x00ABA1FC`; `0x00ABA420`; `0x00ABA274`; `0x00ABA8D8..0x00ABA8E0`; `0x00AB7518..0x00AB76CC` | EXACT_SOURCE |
+
+### Premise corrections
+
+- **P8 / gapG 6.7** is contradicted: `+0x1a stages` is not `read(8)`; it is computed
+  from the cascade bits.
+- **source-classes Q4** `params+0x04` is the emit's 5th argument, not its 3rd; and the
+  emit sets only `0x2D`/`0x2E` (not `0x11`/`2`).
+- **P27's range** is `0x00AB3978..0x00AB39D3`.
+- **P2's reset gate** is `dsp+0x14[0] != 0`, not `param_1[9]`.
+
+### Records after C13
+
+- **M6-002** stays `IMPLEMENTATION_GAP` until the driver is complete and wired. The
+  remaining `unresolved` is: the semantic mapping of the combine regions (UNKNOWN, not
+  behaviour-changing), native work-buffer ownership (RECOVERABLE_GAP), the window
+  default reachability, and the wiring (B-M6b-3). The stream reset, the window combine,
+  the emit and the geometry are now settled for construction.
+
+## Correction C14 (manager, 2026-09-28): the residue class-word count, the coupling mark direction, and the emit argument
+
+The B-M6b-1 verifier checked the built driver against the instructions and found one
+contradicted row and two too-weak rows. The citations were re-read in the `.so`.
+
+| # | earlier row said | the source says | citation |
+|---|---|---|---|
+| C14.1 | **C6 3c / C7 4f:** one class word is decoded per partition group and split across the channels | The class word is decoded **once per used channel, inside the channel loop**; each channel's split is written into its own partword array. The class decode at `0x00AB7C84` sits inside the loop `0x00AB7CE0: add r5,r5,#1` / `0x00AB7CE4: cmp r5,sl` / `0x00AB7CE8: bne #0xab7c7c`, and `partword[r5]` is indexed at `0x00AB7CA8: ldr r4,[r3,r5,lsl #2]`. Inert on the shipped library (mono type-1 has one used channel; stereo is type-2), but the built code consumed one codeword where the source consumes `used`. | `0x00AB7C54..0x00AB7CE8` |
+| C14.2 | **C11 P18** (via the C11 gap report): the coupling channels are marked **backwards** | The mark loop iterates **forward** over the coupling steps (`0x00AB6C38..0x00AB6C7C`); only the inverse coupling is backwards (`0x00AB6DC4..0x00AB6E78`). The built marks forward, which is correct. | `0x00AB6C24..0x00AB6C7C` |
+| C14.3 | **source-classes Q4:** the emit's `params+0x04` is its "3rd arg" | It is the emit's **5th** argument (`0x00A734A8: ldr r3,[sp,#0x18]`; `0x00A734BC: str r3,[r4,#4]`), and the emit sets only result `0x2D`/`0x2E` (not `0x11`/`2`). | `0x00A734A8`, `0x00A734BC`, `0x00A73510`, `0x00A7351C` |
+| C14.4 | **gap2 P2:** the framing calls the stream reset when the last packet was flagged | The reset gate is `dsp+0x14[0] != 0`; the eofflag only sets `framing+8 = 4`. | `0x00AB7F04`, `0x00AB7F08`; `0x00AB7E98..0x00AB7EBC` |
+
+### B-M6b-1 outcome (partial)
+
+The driver (`WwiseVorbisDecode.cs`) and the source wrappers (`WwiseVorbisSource.cs`) are
+built and their per-packet **bit consumption matches the packet byte length exactly**, so
+the parse is structurally faithful. The decoded **sample values are not faithful**: a
+cross-check against the NVorbis rebuild gives correlation ≈ 0.002 on shipped mono and
+stereo media with no lag peak. The divergent **value stage is not localised**; the
+candidates are floor1 inverse1/inverse2, the IMDCT input/output convention, or the
+combine. `M6-002` stays `IMPLEMENTATION_GAP`; its `unresolved` names this. The decoder is
+unwired (B-M6b-3).
+
 ## Appendix J: C11 gap-1 report (voice-engine residuals)
 
 Copied verbatim from `re-analysis/research/20260928-I-M6b-gap1-extraction.md`.

@@ -18,9 +18,11 @@ public sealed record WwiseVorbisMode(bool BlockFlag, int Mapping);
 /// <param name="GroupBook">The book that decodes the class words.</param>
 /// <param name="Cascades">One 8-bit cascade mask per partition; bit <c>s</c> means stage <c>s</c> is present.</param>
 /// <param name="StageBooks">Per partition, the book id for each stage (0 where the cascade bit is clear).</param>
+/// <param name="Stages">The number of stages, computed as the highest set cascade bit + 1 (Tremor lowmem
+/// <c>vorbis_info_residue0.stages</c>, consumed at <c>info+0x1A</c>; 0x00AB77FC).</param>
 public sealed record WwiseVorbisResidueSetup(
     int Type, int Begin, int End, int Grouping, int Partitions, int GroupBook,
-    byte[] Cascades, byte[][] StageBooks);
+    byte[] Cascades, byte[][] StageBooks, int Stages);
 
 /// <summary>
 /// The part of the Wwise-stripped setup header the frozen rows settle: the codebook count and its 10-bit
@@ -173,7 +175,15 @@ public static partial class WwiseVorbisNative
     /// </summary>
     public static readonly IReadOnlyList<string> UnreadArithmetic = new[]
     {
-        "the Vorbis packet driver (setup -> floor -> residue -> inverse -> window/overlap) is not built, so the packet inverse call site mdct_backward(n, pcm[channel]) at 0x00AB6EEC (X5-I1) is not reached; the IMDCT kernel it calls is transliterated",
+        "native work-buffer ownership: BSS 0x0108E648 via 0x0108E650 has no located writer (C9), so the " +
+        "driver uses an explicit internal work buffer and does not claim native ownership was recovered",
+        "the window-default reachability (C6 6b/6c): the native's default window pointer is 0 and " +
+        "0x00AB5A94 dereferences it; whether a shipped header can select a block size of 64/128/8192 is " +
+        "UNKNOWN, so WindowTable fails closed",
+        "the semantic mapping of the combine regions to libvorbis's large/small cases is UNKNOWN (C13); " +
+        "the instruction-level gates are settled and reproduced, but the label is not",
+        "the decoder is not wired into WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler " +
+        "(B-M6b-3)",
     };
 
     // ---- setup: block sizes (V2, 0x00AB6380..0x00AB63DC) ----
@@ -249,15 +259,20 @@ public static partial class WwiseVorbisNative
         }
 
         var stageBooks = new byte[partitions][];
+        int stages = 0;
         for (int j = 0; j < partitions; j++)
         {
             stageBooks[j] = new byte[8];
             for (int s = 0; s < 8; s++)
                 if ((cascades[j] & (1 << s)) != 0)
+                {
                     stageBooks[j][s] = (byte)reader.Read(8);
+                    if (s + 1 > stages) stages = s + 1;                 // gapG 6.7: info+0x1A
+                }
         }
 
-        return new WwiseVorbisResidueSetup(type, begin, end, grouping, partitions, groupBook, cascades, stageBooks);
+        return new WwiseVorbisResidueSetup(type, begin, end, grouping, partitions, groupBook, cascades,
+            stageBooks, stages);
     }
 
     /// <summary>One mode table entry (V3): <c>blockflag read(1)</c>, then <c>mapping read(8)</c>.</summary>
@@ -322,11 +337,14 @@ public static partial class WwiseVorbisNative
     /// <param name="qDelp">The point with which <c>q_del</c> was stored (after <c>+= q_bits</c>).</param>
     public static int Dequantize(int value, int qMin, int qDel, int point, int qMinp, int qDelp)
     {
+        // 0x00AB9CB0..0x00AB9CD0: add = q_min >> (point - q_minp) when point > q_minp, else
+        // q_min << (q_minp - point) (the `rsble`/`lslle` pair). 0x00AB9CD4..0x00AB9D14: the same
+        // direction for the scaled term.
         int addShift = point - qMinp;
-        int add = addShift >= 0 ? qMin << addShift : qMin >> -addShift;
+        int add = addShift > 0 ? qMin >> addShift : qMin << -addShift;
         int shift = point - qDelp;
         int product = unchecked(value * qDel);
-        int scaled = shift >= 0 ? product >> shift : product << -shift;
+        int scaled = shift > 0 ? product >> shift : product << -shift;
         return add + scaled;
     }
 
@@ -894,29 +912,6 @@ public static partial class WwiseVorbisNative
     public const int ResiduePoint = -8;
 
     /// <summary>
-    /// <c>decodev_add</c> (C5 4d, 0x00ABAA6C): <c>out[i+j] += tmp[j]</c> for the <c>dim</c> entries of one
-    /// codeword, 32-bit with no saturation. <paramref name="index"/> is the codeword's position.
-    /// </summary>
-    public static void DecodevAdd(int[] output, int[] tmp, int index, int dim)
-    {
-        for (int j = 0; j < dim; j++) output[index + j] += tmp[j];         // C5 4d: out[i+j] += tmp[j]
-    }
-
-    /// <summary>
-    /// <c>decodevv_add</c> (C5 4e, 0x00ABABB8): as <see cref="DecodevAdd"/> but the channel index toggles
-    /// 0/1 between the <c>dim</c> values, so it is hard-wired to two channels.
-    /// </summary>
-    public static void DecodevvAdd(int[][] output, int[] tmp, int index, int dim)
-    {
-        int ch = 0;
-        for (int j = 0; j < dim; j++)
-        {
-            output[ch][index + j] += tmp[j];                               // C5 4e: out[ch][i+offset] += tmp[j]
-            ch ^= 1;                                                       // C5 4e: eor r5,#1
-        }
-    }
-
-    /// <summary>
     /// The coupling inverse (C5 4f, 0x00AB6E30): integer add/sub on one mag/ang pair, with the right-hand
     /// side using the pair's old values (the native loads both, then stores).
     /// </summary>
@@ -1411,25 +1406,5 @@ public static partial class WwiseVorbisNative
         return returned;
     }
 
-    // ---- the decoder (refused: the rows do not settle the arithmetic) ----
-
-    /// <summary>
-    /// The native decode path, refused. Correction C7 settles the decode-table builder and the codebook field
-    /// names (0x00AB96EC / 0x00AB9300), the <c>dec_nodeb == 4</c> case, the floor1 inverse1 decode
-    /// (0x00AB8E60) and the residue divisor array (0x00AB770C), on top of C5/C6's setup, decode-map walk,
-    /// residue stage/partition accessors, window-combine branches, floor look arrays and IMDCT tail scale.
-    /// Correction C9/X5 settles the exact IMDCT: every phase is transliterated in
-    /// <c>WwiseVorbisImdct.cs</c> and <see cref="ImdctBackward"/> no longer refuses. What is still missing is
-    /// the packet driver around the kernel, so the call site <c>mdct_backward(n, pcm[channel])</c> at
-    /// 0x00AB6EEC (X5-I1) is not reached (see <see cref="UnreadArithmetic"/>). The fidelity rules do not
-    /// allow a plausible substitute, so this throws rather than returning samples that are merely close.
-    /// The method exists so the gap is visible at the production entry point.</summary>
-    public static float[] Decode(WwiseMedia media, WwiseCodebookLibrary codebooks)
-    {
-        _ = media;
-        _ = codebooks;
-        throw new NotSupportedException(
-            "The native Wwise Vorbis decoder is not implemented: the frozen rows do not settle " +
-            string.Join("; ", UnreadArithmetic) + " (M6-002)");
-    }
+    // ---- the decoder entry (see WwiseVorbisDecode.cs) ----
 }
