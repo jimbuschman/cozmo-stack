@@ -385,13 +385,18 @@ public readonly record struct WwiseUserAuxSend(uint Id, float Gain);
 /// </summary>
 public static class WwiseAuxSendBuilder
 {
+    /// <summary>C10: [0x1052454], binary32 0x38D1B717 from Init.bnk's -80 dB threshold.</summary>
+    public const float GameSendThreshold = 0.0001f;
+
+    /// <summary>C10: the raw STMG threshold at [0x1052450].</summary>
+    public const float UserSendThresholdDb = -80f;
+
     /// <summary>
     /// The game-defined send list (gapC 2.3): built only when the deciding node set use-game-aux and the
-    /// game object has entries. Each entry emits when its gain is above the caller's threshold; the row
-    /// gives that threshold's address ([0x1052454]) but not its value, so it is a caller input.
+    /// game object has entries. Each entry emits when its gain is above [0x1052454] (C10).
     /// </summary>
     public static IReadOnlyList<WwiseAuxSend> BuildGameSends(in WwiseAudioParameters io,
-        IReadOnlyList<WwiseGameAuxSend> gameObjectSends, float emitLinearThreshold)
+        IReadOnlyList<WwiseGameAuxSend> gameObjectSends, float emitLinearThreshold = GameSendThreshold)
     {
         ArgumentNullException.ThrowIfNull(gameObjectSends);
         var result = new List<WwiseAuxSend>();
@@ -410,10 +415,10 @@ public static class WwiseAuxSendBuilder
     /// The user send list (gapC 1.8, 2.3, 2.4): for each of the four slots, a non-zero id and a dB volume
     /// above the caller's threshold emits {id, dBToLin(volume)} of type 2. gapC 2.4 builds the send list
     /// only when use-game-aux is set "or any user ID" is present, so a slot whose id is 0 emits nothing.
-    /// No shipped node has aux bit3, so this is empty in the shipped data. The row gives the threshold's
-    /// address ([0x1052450]) but not its value.
+    /// No shipped node has aux bit3, so this is empty in the shipped data. C10 settles [0x1052450] as -80 dB.
     /// </summary>
-    public static IReadOnlyList<WwiseUserAuxSend> BuildUserSends(in WwiseAudioParameters io, float emitDbThreshold)
+    public static IReadOnlyList<WwiseUserAuxSend> BuildUserSends(in WwiseAudioParameters io,
+        float emitDbThreshold = UserSendThresholdDb)
     {
         var result = new List<WwiseUserAuxSend>();
         if (!io.UserAuxDecided) return result;
@@ -460,13 +465,11 @@ public static class WwiseGain
     public const float BusVolumeInitDb = -96.3f;
 
     /// <summary>
-    /// The game send's emit threshold address, [0x1052454]. The row gives the address and the comparison
-    /// but not the value, so it stays a caller input (gapC 2.3; gapF 3.3 names the STMG −80 dB threshold
-    /// but says its dB→linear store is not read).
+    /// The game send's emit threshold address, [0x1052454] (C10: binary32 0x38D1B717).
     /// </summary>
     public const uint GameSendThresholdAddress = 0x1052454;
 
-    /// <summary>The user send's emit threshold address, [0x1052450]; its value is not in the rows (gapC 2.3).</summary>
+    /// <summary>The user send's emit threshold address, [0x1052450] (C10: -80 dB).</summary>
     public const uint UserSendThresholdAddress = 0x1052450;
 
     // ------------------------------------------------------------------ GetAudioParameters

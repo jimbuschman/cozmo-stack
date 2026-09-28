@@ -619,8 +619,35 @@ public class WwiseGainTests
         on.UseGameAux = true;
         on.GameAuxDecided = true;
         on.GameAuxSendVolumeDb = 0f;
-        // The emit threshold's value is not in the rows; passing it above the gain drops the send.
+        // A caller may still supply a stricter diagnostic threshold; C10 settles the production default.
         Assert.Empty(WwiseAuxSendBuilder.BuildGameSends(on, sends, DbToLin0 + 0.01f));
+    }
+
+    /// <summary>
+    /// M6-010 / C10: Init.bnk's -80 dB is stored raw at 0x1052450 and as binary32 0x38D1B717 at
+    /// 0x1052454. The production overloads use those values without a caller-supplied guess.
+    /// </summary>
+    [Fact]
+    public void TheProductionSendThresholdsComeFromStmg()
+    {
+        Assert.Equal(-80f, WwiseAuxSendBuilder.UserSendThresholdDb);
+        Assert.Equal(0x38D1B717u,
+            BitConverter.ToUInt32(BitConverter.GetBytes(WwiseAuxSendBuilder.GameSendThreshold), 0));
+
+        var game = WwiseAudioParameters.Create();
+        game.UseGameAux = true;
+        game.GameAuxDecided = true;
+        game.GameAuxSendVolumeDb = 0f;
+        Assert.Single(WwiseAuxSendBuilder.BuildGameSends(game,
+            new[] { new WwiseGameAuxSend(100, 1f) }));
+
+        var user = WwiseAudioParameters.Create();
+        user.UserAuxDecided = true;
+        user.UserAuxIds[0] = 77;
+        user.UserAuxVolumesDb[0] = -80f;
+        Assert.Empty(WwiseAuxSendBuilder.BuildUserSends(user));
+        user.UserAuxVolumesDb[0] = -79f;
+        Assert.Single(WwiseAuxSendBuilder.BuildUserSends(user));
     }
 
     /// <summary>

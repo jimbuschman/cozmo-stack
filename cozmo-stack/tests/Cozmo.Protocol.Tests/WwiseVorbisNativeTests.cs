@@ -800,7 +800,7 @@ public class WwiseVorbisNativeTests
         Assert.NotNull(cbl);
 
         var ex = Assert.Throws<NotSupportedException>(() => WwiseVorbisNative.Decode(media, cbl!));
-        Assert.Contains("0x00AB4E34", ex.Message);          // IMDCT kernel
+        Assert.Contains("0x00AB6EEC", ex.Message);         // X5-I1 packet inverse call site (driver unbuilt)
         Assert.DoesNotContain("0x00AB96EC", ex.Message);    // the builder is now built (C7)
         Assert.DoesNotContain("0x00AB8E60", ex.Message);    // floor1 inverse1 is now built (C7)
     }
@@ -829,10 +829,130 @@ public class WwiseVorbisNativeTests
             if (parsed.Codec != WwiseCodec.Vorbis) continue;
 
             var ex = Assert.Throws<NotSupportedException>(() => WwiseVorbisNative.Decode(parsed, cbl!));
-            Assert.Contains("0x00AB4E34", ex.Message);
+            Assert.Contains("0x00AB6EEC", ex.Message);
             exercised = true;
             break;
         }
         Assert.True(exercised, "the shipped library contains Vorbis media, so the refusal must be exercised");
+    }
+
+    // ---- X5 exact IMDCT data and kernel (M6-002, correction C9) ----
+
+    /// <summary>
+    /// X5-I9 / Appendix E: the trig master region is exactly the 584 binary32 words at
+    /// 0x01004A40..0x01005360. The checksum is over the raw bits in address order; the index
+    /// assertions are read from Appendix E.
+    /// </summary>
+    [Fact]
+    public void TheImdctTrigTableIsTheExactX5AppendixE()
+    {
+        var words = WwiseVorbisNative.ImdctTrigWords;
+        Assert.Equal(584, words.Length);
+        Assert.Equal(0x4ED265EEu, Fnv32a(words));
+        Assert.Equal(0x5762D6DDu, unchecked((uint)Sum(words)));
+        Assert.Equal(0x3F3310AFu, words[0]);       // Appendix E[0]
+        Assert.Equal(0x3F33E7BCu, words[3]);       // Appendix E[3]
+        Assert.Equal(0xBF3504F3u, words[35]);      // Appendix E[35]
+        Assert.Equal(0x3FFFFFB1u, words[256]);     // Appendix E[256] = view 8[0]
+        Assert.Equal(0xBEC3EF13u, words[582]);     // Appendix E[582]
+        Assert.Equal(0x00000000u, words[583]);     // Appendix E[583]
+    }
+
+    /// <summary>
+    /// X5-I10 / Appendix F: the bit-reversal data is exactly the 512 little-endian u16 entries at
+    /// 0x01004640..0x01004A40, the 9-bit reversal. The sum and the first/last entries are read from
+    /// Appendix F.
+    /// </summary>
+    [Fact]
+    public void TheImdctBitRevTableIsTheExactX5AppendixF()
+    {
+        var rev = WwiseVorbisNative.ImdctBitRev;
+        Assert.Equal(512, rev.Length);
+        Assert.Equal(0x1FF00, Sum(rev));
+        Assert.Equal(0, rev[0]);                   // Appendix F[0]
+        Assert.Equal(256, rev[1]);                 // Appendix F[1]
+        Assert.Equal(128, rev[2]);                 // Appendix F[2]
+        Assert.Equal(384, rev[3]);                 // Appendix F[3]
+        Assert.Equal(511, rev[511]);               // Appendix F[511]
+    }
+
+    /// <summary>
+    /// X5-I9: the 13 GOT views start at float offsets 0, 36, 72, 108, 144, 172, 200, 228, 256, 296,
+    /// 368, 440 and 512 into the single master region, and no view crosses the 0x01005360 boundary.
+    /// </summary>
+    [Fact]
+    public void TheImdctTrigViewsAreTheThirteenX5Offsets()
+    {
+        Assert.Equal(new[] { 0, 36, 72, 108, 144, 172, 200, 228, 256, 296, 368, 440, 512 },
+            WwiseVorbisNative.ImdctViewOffsets);
+        Assert.Equal(BitConverter.UInt32BitsToSingle(0x3F3310AFu), WwiseVorbisNative.ImdctTrig(0, 0));
+        Assert.Equal(BitConverter.UInt32BitsToSingle(0x3FFFFFB1u), WwiseVorbisNative.ImdctTrig(8, 0));
+        Assert.Equal(BitConverter.UInt32BitsToSingle(0xBBC90F87u), WwiseVorbisNative.ImdctTrig(12, 0));
+    }
+
+    /// <summary>
+    /// X5-I3: the shift is <c>13 - lowest_set_bit(n, &gt;= 5)</c>. For the shipped power-of-two sizes
+    /// this is 13 - log2(n): 64 -> 7, 128 -> 6, 256 -> 5, 512 -> 4, 2048 -> 2, 8192 -> 0.
+    /// </summary>
+    [Fact]
+    public void TheImdctShiftIsTheX5LowestSetBitRule()
+    {
+        Assert.Equal(6, WwiseVorbisNative.ImdctLowestSetBit5(64));
+        Assert.Equal(7, WwiseVorbisNative.ImdctShift(64));
+        Assert.Equal(6, WwiseVorbisNative.ImdctShift(128));
+        Assert.Equal(5, WwiseVorbisNative.ImdctShift(256));
+        Assert.Equal(4, WwiseVorbisNative.ImdctShift(512));
+        Assert.Equal(2, WwiseVorbisNative.ImdctShift(2048));
+        Assert.Equal(0, WwiseVorbisNative.ImdctShift(8192));
+    }
+
+    /// <summary>
+    /// M6-002 / correction C9: the full IMDCT path (entry, pre-symmetry, large butterfly, stage network,
+    /// terminal butterfly, tail) now runs. For the shipped block sizes it must produce a finite, NaN-free
+    /// output of the same length. The transform is linear and homogeneous, so the all-zero input must map
+    /// to the all-zero output (a hand-checkable invariant; the report gives no worked numeric example).
+    /// </summary>
+    [Fact]
+    public void TheFullImdctRunsAndIsFiniteAndLinearAtTheShippedSizes()
+    {
+        foreach (var n in new[] { 64, 128, 256, 2048 })
+        {
+            var buf = new float[n];
+            for (int i = 0; i < n; i++) buf[i] = (i % 7) - 3;   // deterministic, non-trivial
+            WwiseVorbisNative.ImdctBackward(buf, n);
+
+            Assert.Equal(n, buf.Length);
+            foreach (var v in buf)
+            {
+                Assert.False(float.IsNaN(v), $"n={n} produced NaN");
+                Assert.False(float.IsInfinity(v), $"n={n} produced an infinity");
+            }
+        }
+
+        // Zero in -> zero out (homogeneity of every multiply/add in the kernel).
+        var zero = new float[256];
+        WwiseVorbisNative.ImdctBackward(zero, 256);
+        Assert.All(zero, v => Assert.Equal(0f, v));
+    }
+
+    private static uint Fnv32a(uint[] values)
+    {
+        uint h = 2166136261u;
+        foreach (var v in values) { h ^= v; h = unchecked(h * 16777619u); }
+        return h;
+    }
+
+    private static int Sum(uint[] values)
+    {
+        int s = 0;
+        foreach (var v in values) s = unchecked(s + (int)v);
+        return s;
+    }
+
+    private static int Sum(ushort[] values)
+    {
+        int s = 0;
+        foreach (var v in values) s += v;
+        return s;
     }
 }

@@ -144,6 +144,7 @@ public sealed class WwiseHijackFx
 
     private readonly WwiseResampler _resampler = new();
     private float[] _output = Array.Empty<float>();
+    private int _validFrames;
 
     internal WwiseHijackFx() { }
 
@@ -186,6 +187,7 @@ public sealed class WwiseHijackFx
 
         _resampler.Init(fmt, OutputRateHz);               // A15: Init(fmt, 22320)
         _resampler.SetPitch(0);                            // A15: SetPitch(0 cents)
+        _validFrames = 0;                                  // C10: core+0x7A starts at zero
 
         Initialized = true;
         CreateCallback?.Invoke(this);                      // A15: create → PrepareAudioBuffer
@@ -193,9 +195,10 @@ public sealed class WwiseHijackFx
 
     /// <summary>
     /// Hijack Execute <c>0x008DBFE8</c> (A16): resample the caller's float input to 22,320 Hz and fire the
-    /// process callback for every full 744-frame chunk and for the partial final one. An empty input is the
-    /// <c>NoMoreData</c> (17) case and fires the callback with 0 frames (A16, D2.8). The input is not
-    /// modified.
+    /// process callback for every full 744-frame chunk. C10: the native output buffer and its
+    /// <c>uValidFrames</c> at core+0x7A persist across Execute calls; a partial result remains until a later
+    /// call completes the chunk. Empty input is <c>NoMoreData</c> (17) and flushes that persistent count,
+    /// including zero (A16, D2.8). The input is not modified.
     /// </summary>
     public void Execute(ReadOnlySpan<float> input)
     {
@@ -204,8 +207,9 @@ public sealed class WwiseHijackFx
 
         if (input.Length == 0)
         {
-            // A16: result 17 (NoMoreData) → process callback with the partial output; D2.8: possibly 0.
-            ProcessCallback?.Invoke(this, Array.Empty<float>(), 0);
+            // C10: result 17 delivers persistent uValidFrames, then 0x8DC02C resets it.
+            Flush(ChannelBuffers[0], 0, _validFrames);
+            _validFrames = 0;
             return;
         }
 
@@ -219,13 +223,17 @@ public sealed class WwiseHijackFx
         int produced = _resampler.LastProducedFrames;      // A16: the validFrames count
 
         int offset = 0;
-        while (produced - offset >= ChunkSize)
+        while (offset < produced)
         {
-            Flush(_output, offset, ChunkSize);             // A16: 45 DataReady → 744 frames
-            offset += ChunkSize;
+            int copy = Math.Min(ChunkSize - _validFrames, produced - offset);
+            Array.Copy(_output, offset, ChannelBuffers[0], _validFrames, copy);
+            offset += copy;
+            _validFrames += copy;
+            if (_validFrames != ChunkSize) continue;
+
+            Flush(ChannelBuffers[0], 0, ChunkSize);        // A16: 0x2D DataReady → 744 frames
+            _validFrames = 0;                              // 0x008DC02C..0x008DC030
         }
-        int rest = produced - offset;
-        if (rest > 0) Flush(_output, offset, rest);        // A16/D2.8: the partial final chunk
     }
 
     /// <summary>Hijack Term <c>0x008DBDF8</c> (A18): the destroy callback → CloseAudioBuffer.</summary>

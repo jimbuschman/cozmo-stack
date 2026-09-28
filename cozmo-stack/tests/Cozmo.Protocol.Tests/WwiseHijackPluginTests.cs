@@ -13,7 +13,7 @@ namespace Cozmo.Protocol.Tests;
 /// (R3, <c>0x004DD90C</c>);</item>
 /// <item>1,024 floats per channel and Init(fmt, 22320) then SetPitch(0) (A15);</item>
 /// <item>the 48 kHz→22,320 Hz step <c>round(48000/22320·65536)</c> = 140938 (gapB P8 / M6 0.11);</item>
-/// <item>744-frame chunks and a partial final chunk (A16). The output count for N input frames is
+/// <item>744-frame chunks with a persistent partial count flushed by the empty-input tail (A16/C10). The output count for N input frames is
 /// <c>ceil(65536·(N−1)/140938)</c>, from the mono float kernel's phase walk: output k needs input index
 /// <c>((0x10000 + k·step)&gt;&gt;16)−1</c> plus its next sample, i.e. <c>k·step &lt; 65536·(N−1)</c>
 /// (M6 0.11, 0x00A49E40).</item>
@@ -175,12 +175,11 @@ public class WwiseHijackPluginTests
     }
 
     /// <summary>
-    /// M6-015 / A16, D2.8: an input whose resampled output is 1,000 frames fires the process callback with a
-    /// full 744-frame chunk and a 256-frame partial final chunk. <c>ceil(65536·2150/140938) = ceil(999.7475)
-    /// = 1000 = 744 + 256</c>.
+    /// M6-015 / A16, C10: an input whose resampled output is 1,000 frames fires one full 744-frame chunk
+    /// and retains 256 frames in core+0x7A. The empty-input tail (D2.8) then flushes those 256.
     /// </summary>
     [Fact]
-    public void ExecuteEmitsThePartialFinalChunk()
+    public void ExecuteAccumulatesThePartialUntilTheEmptyInputTail()
     {
         var chunks = new Chunks();
         WwiseHijackPlugin.RegisterPlugin(new WwiseHijackPlugin(processCallback: chunks.Receive));
@@ -189,9 +188,30 @@ public class WwiseHijackPluginTests
 
         fx.Execute(new float[2151]);
 
-        Assert.Equal(new[] { 744, 256 }, chunks.Lengths);
+        Assert.Equal(new[] { 744 }, chunks.Lengths);
         Assert.Equal(744, chunks.Buffers[0].Length);
+        fx.Execute(ReadOnlySpan<float>.Empty);
+        Assert.Equal(new[] { 744, 256 }, chunks.Lengths);
         Assert.Equal(256, chunks.Buffers[1].Length);
+    }
+
+    /// <summary>
+    /// M6-015 / C10 (0x008DBFE8..0x008DC034): core+0x7A survives engine frames. Two calls whose
+    /// resampled results total one chunk emit only when the second call completes 744 frames.
+    /// </summary>
+    [Fact]
+    public void ExecuteAccumulatesAcrossCallsUntilAFullChunk()
+    {
+        var chunks = new Chunks();
+        WwiseHijackPlugin.RegisterPlugin(new WwiseHijackPlugin(processCallback: chunks.Receive));
+        var fx = WwiseHijackPlugin.Create();
+        fx.Init(FloatMono(48000));
+
+        fx.Execute(new float[801]);
+        Assert.Empty(chunks.Lengths);
+        fx.Execute(new float[801]);
+
+        Assert.Equal(new[] { 744 }, chunks.Lengths);
     }
 
     /// <summary>

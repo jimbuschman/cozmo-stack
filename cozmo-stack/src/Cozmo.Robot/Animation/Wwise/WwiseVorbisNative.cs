@@ -163,15 +163,17 @@ public static partial class WwiseVorbisNative
     public const int BlockSizeError = -0x85;
 
     /// <summary>
-    /// The one piece the C5/C6/C7 rows still leave open, with its address. Named here so <see cref="Decode"/>
-    /// refuses visibly and a caller or test can see exactly what is missing. Correction C7 settled the
-    /// decode-table builder together with the codebook field names and <c>_determine_node_bytes</c> /
-    /// <c>_determine_leaf_words</c>, the <c>dec_nodeb == 4</c> case, floor1 inverse1 and the residue divisor
-    /// array, so they are no longer listed.
+    /// The pieces of the decode path that are still unbuilt, with their addresses. Named here so
+    /// <see cref="Decode"/> refuses visibly and a caller or test can see exactly what is missing.
+    /// Correction C7 settled the decode-table builder, the <c>dec_nodeb == 4</c> case, floor1 inverse1 and
+    /// the residue divisor array. Correction C9/X5 settled the exact IMDCT: the entry, the pre-symmetry
+    /// (X5-I4), the large butterfly (X5-I5), the stage network (X5-I6), the terminal butterfly (X5-I7)
+    /// and the tail (X5-I8) are all transliterated in <c>WwiseVorbisImdct.cs</c>. What remains is the
+    /// packet driver that would call the kernel at <c>0x00AB6EEC</c> (X5-I1).
     /// </summary>
     public static readonly IReadOnlyList<string> UnreadArithmetic = new[]
     {
-        "the float NEON IMDCT kernel 0x00AB4E34 (C7 2a..2h: the stage order presymmetry 0x00AB3D28 -> butterflies 0x00AB3FCC -> the step7/8 loop -> the tail 0x00AB39D8 is read, but the per-stage butterfly arithmetic and the 13 trig-table indices at 0x01004A40 via GOT 0x01040230 are RECOVERABLE_GAP)",
+        "the Vorbis packet driver (setup -> floor -> residue -> inverse -> window/overlap) is not built, so the packet inverse call site mdct_backward(n, pcm[channel]) at 0x00AB6EEC (X5-I1) is not reached; the IMDCT kernel it calls is transliterated",
     };
 
     // ---- setup: block sizes (V2, 0x00AB6380..0x00AB63DC) ----
@@ -1416,10 +1418,12 @@ public static partial class WwiseVorbisNative
     /// names (0x00AB96EC / 0x00AB9300), the <c>dec_nodeb == 4</c> case, the floor1 inverse1 decode
     /// (0x00AB8E60) and the residue divisor array (0x00AB770C), on top of C5/C6's setup, decode-map walk,
     /// residue stage/partition accessors, window-combine branches, floor look arrays and IMDCT tail scale.
-    /// The one piece still unestablished is the float NEON IMDCT kernel (0x00AB4E34, see
-    /// <see cref="UnreadArithmetic"/>). The fidelity rules do not allow a plausible substitute, so this
-    /// throws rather than returning samples that are merely close. The method exists so the gap is visible at
-    /// the production entry point.</summary>
+    /// Correction C9/X5 settles the exact IMDCT: every phase is transliterated in
+    /// <c>WwiseVorbisImdct.cs</c> and <see cref="ImdctBackward"/> no longer refuses. What is still missing is
+    /// the packet driver around the kernel, so the call site <c>mdct_backward(n, pcm[channel])</c> at
+    /// 0x00AB6EEC (X5-I1) is not reached (see <see cref="UnreadArithmetic"/>). The fidelity rules do not
+    /// allow a plausible substitute, so this throws rather than returning samples that are merely close.
+    /// The method exists so the gap is visible at the production entry point.</summary>
     public static float[] Decode(WwiseMedia media, WwiseCodebookLibrary codebooks)
     {
         _ = media;
