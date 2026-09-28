@@ -55,6 +55,12 @@ The earlier repo position was that "Wwise runtime semantics" were BLOCKED_EXTERN
 | M6-016 | IMPLEMENTATION_GAP | The engine's robot-audio path (Anki side). <br>- **Draws:** InitAnimation draws every keyframe's alternative up front. <br>- **Posting:** BeginBuffering posts the events at wall-clock offsets (Dispatch::After) through PostCozmoEvent, with event_volume set per playing id. <br>- **Routing:** game objects 7..10 go to Robot_Bus_1..4 with an aux send of 1.0 and the dry path muted. <br>- **Callbacks:** queued (ctx+0x38 = 0) and drained at the end of CozmoEngine::Update. <br>- **States:** as read, with UpdateLoading and UpdateAudioFramesReady; PopRobotAudioMessage; abort. <br>- Play__Robot_VO__Nurture_Play_Concern_Short has use-game-aux 0, so **it sends nothing to the robot**. | M6 A1..A25, gapC 2.8, gapE 6.1..6.4 |
 | M6-017 | IMPLEMENTATION_GAP | Audio-thread frame model. <br>- **Perform order:** messages, then drain, then render (buses, LEngine, PBI-notification flush), then tick++. <br>- **Driver:** the sink signals when there is room for a frame. <br>- **EndOfEvent** fires after the bus pass of the last voice's final frame, and before the next frame's partial flush. | gapD D1.6..D1.8, D3.1..D3.5 |
 | M6-018 | IMPLEMENTATION_GAP (a forced policy, to build; COMPATIBILITY_POLICY once built) | Mix rate 48000 Hz and frame 1024 samples. <br>- In the original both depend on the phone: rate = min(native output rate, 48000), and the frame size is rounded to the hardware buffer. <br>- Everything derived uses these values: the ms→samples conversions, msPerFrame 21, the LPF chunk 128, the limiter L, and the Hijack resampling step. See MD1. | gapB P3..P4, gapD D1.1..D1.3, gapE §4 |
+| M6-019 | EXACT_SOURCE | The STMG state-manager reader (0x9B0B14): the threshold, max voices, the two group tables and the 37-parameter table. | C1 |
+| M6-020 | IMPLEMENTATION_GAP | STMG: the group-item field meanings and the two trailing bodies (unread source; unexercised by shipped banks). | C9 |
+| M6-021 | COMPATIBILITY_POLICY | The injectable RNG seed seam; the live default is Unix seconds, matching the engine's time(NULL). | MD2 |
+| M6-022 | IMPLEMENTATION_GAP | **The live voice and bus engine** (new in C11): the `0xA57FF8` wrapper and `0xA44D4C` render body, the voice pass `0xA44948`, the bus pass `0xA44C18`, idle removal `0xA43F64`, voice mix `0xA44630`, mix-in `0xA4FBEC`, the per-voice DSP chain (`0xA54F1C`, `0xA4C60C`->`0xA766B8`, `0xA56E00`->`0xA56A7C`, `0xA548C0`, `0xA53134`, `0xA52D4C`, `0xA03E8C`, `0xA05574`, `0xA56650`, `0xA4F9E0`, `0x9E9E78`, `0x9E9F08`, `0xA55750`, `0xA4AF50`, `0x9D3CC0`), the four Perform group members, the PBI flush `0xA38420`, the `0x108DAE8` output-device state and its three gate bytes with their writers, `0x9EADE8`/`0x9EAF90` init/term, `0x9EBA54`/`0x9EBE6C` device advance, the SetOutputDevice command `0x9EC418`, and the `0xA57D64` Android JNI audio-route poll. | C11, gap1 |
+| M6-023 | IMPLEMENTATION_GAP | **The app audio-input dispatch** (new in C11): Unity `PostAudioEvent` -> `AudioUnityInput` -> `AudioMuxInput` -> `AudioMultiplexer` -> `AudioEngineController::PostAudioEvent` -> Wwise `PostEvent 0x009A6704`. | C11, gap3 |
+| M6-024 | IMPLEMENTATION_GAP | **Bank and scene loading call sites** (new in C11): the `CozmoAudioController` ctor's six-bank list and `InitScene`, `RegisterAudioScene`/`LoadAudioScene 0x008D2EE8` -> `LoadSoundbank 0x008D2FE4`, `AddZipFiles 0x008D1E3E`. | C11, gap3 |
 
 ## Decisions (the manager's, recorded for audit)
 
@@ -1185,3 +1191,731 @@ but did not settle. The targeted binary pass is
 Both records stay `IMPLEMENTATION_GAP` until the corrected behavior is wired
 into the live path. C10 only closes these two `MISSING` inputs; it does not
 claim the M6-017 voice engine or the remaining SIMD arithmetic.
+
+## Correction C11 (manager, 2026-09-28): the live voice and bus engine, the packet driver, and the live-path reach
+
+B1's voice-engine report `re-analysis/research/20260927-B1-voice-engine-extraction.md`
+(rows B1-V1..V30) was citation-checked instruction-by-instruction and then gap-passed
+three times. The reports:
+
+- citation check: `re-analysis/research/20260928-I-M6b-citation-check.md`
+- gap 1, voice-engine residuals: `re-analysis/research/20260928-I-M6b-gap1-extraction.md`
+- gap 2, the Vorbis packet driver: `re-analysis/research/20260928-I-M6b-gap2-extraction.md`
+- gap 3, the live-path reach: `re-analysis/research/20260928-I-M6b-gap3-extraction.md`
+
+The full reports are copied into Appendices J-L. The two headlines:
+
+1. **B1-V23 is wrong** (the gate conditions/outcomes are inverted) and **B1-V24 is
+   contradicted**: the three gate bytes are not independent globals with no writer.
+   They are fields of one output-device state struct at `0x108DAE8` (gate1
+   `0x108DAF0` at `+8`, the device count `0x108DAFC` at `+0x14`, the device-list head
+   `0x108DB04` at `+0x1C`, gate2 `0x108DB08` at `+0x20`, the countdown `0x108DB0C` at
+   `+0x24`, the flag `0x108DB18` at `+0x30`); gate3 `0x1052430` is written alongside
+   gate2. The earlier "no writer" scan looked only for the absolute global addresses
+   and their GOT slots and so missed every access through the struct base. So the
+   bus-pass arg `(gate2==0) ? 1 : gate3` and the frames-per-Perform branch are
+   **dynamic**, and their runtime value is HARDWARE_ONLY. The branch code is fully
+   recovered.
+2. **The packet driver's cited range is not the driver.** The packet entry is
+   `0x00AB3780` (mode/header/block-size/first-window/skip-trim), which tail-calls the
+   per-packet inverse `0x00AB6B14` (floor1 inverse1, residue, coupling, floor1
+   inverse2, `mdct_backward`); the framing is `0x00AB7E40` and the window/overlap
+   driver is `0x00AB3520`. Gap 2 gives the whole call order, the decoder-state and
+   setup field offsets, and the per-channel/per-submap loops. The arithmetic leaves
+   were already settled by C5-C9.
+
+**Record ids.** B1 proposed `M6-021` for the voice engine, but the manifest already
+uses `M6-021` for the RNG seed seam (COMPATIBILITY_POLICY). The new records are
+therefore `M6-022` (live voice and bus engine), `M6-023` (the app audio-input
+dispatch) and `M6-024` (bank and scene loading call sites). The four group members'
+Wwise class names stay UNKNOWN (no RTTI or symbols; behaviour is read).
+
+**Rows that failed or were too narrow in the citation check.** B1-V23 (FAIL, gate
+logic inverted); B1-V2 (`vt+0x84` three times, not two; `0xA58008` is not a 3-instruction
+thunk); B1-V9 (`vt+0x58` dispatches on the bus, not the source); B1-V11 (the copy is
+40 bytes, not 24; `0xA69A70` is at `0xA5303C`); B1-V16 (no connection-destroy call in
+the cited range); B1-V18 (the `0xA4E974`/`0x9CC2AC` detail is inside `0xA4F754`,
+outside the cited range); B1-V25 (the first `0xA3693C` call takes a third `manager`
+argument); B1-V27 (`0xA437E0` and `0xA4B4B0` are not called by `0x9D3644`/`0x9D3864`).
+The corrected values are in the rows below.
+
+### M6-022 - the live voice and bus engine (new)
+
+| step | what the original does | citation | classification |
+|---|---|---|---|
+| V1 | `0xA57FF8` is a wrapper: `push {r3,lr}; bl 0xA57D64; pop {r3,lr}; b 0xA44D4C`. | 0xA57FF8 `bl 0xA57D64`; 0xA58004 `b 0xA44D4C` | EXACT_SOURCE |
+| V3/N1 | The render body's pre-loop walks the global output-device list: `[0x10400B8]` -> `0x108DAFC`, head `[0x108DAFC+8]` = `[0x108DB04]`, next `[node+4]`; per node `r0=[node+0x70]` (the device object), `vt+0x2c`, and if non-zero `vt+0x30`. | 0xA44D5C, 0xA44D60, 0xA44D70, 0xA44D7C, 0xA44D88, 0xA44DA0 | EXACT_SOURCE |
+| N2 | The node class is the Wwise output-device node; its class name is UNKNOWN (no RTTI). | 0xA44D7C; 0x9EBF64; 0x9EBA54 | list/offsets EXACT_SOURCE; identity UNKNOWN |
+| N3 | Throttle: `last=[0x108DA9C]`, `tick=[0x108D870]+0x4c`; store when `last==0`, skip when `0 < tick-last <= 8`, else store. | 0xA44DAC..0xA44DD4 | EXACT_SOURCE |
+| V4/G10 | Bus-pass arg: `r4 = (gate2==0) ? 1 : gate3`; `0xA44948(r4)`, tail `0xA44C18(r4)`. Both gates are dynamic (see G2-G5). | 0xA44DD8..0xA44E08 | reader EXACT_SOURCE; runtime value HARDWARE_ONLY |
+| G1 | The output-device state is one struct at `0x108DAE8`: gate1 `+8`, `0x108DAFC` `+0x14`, gate2 `+0x20`, `0x108DB0C` `+0x24`, list `0x108DB04` `+0x1C`, flag `0x108DB18` `+0x30`. | 0x9EBE8C `ldr r5,[pc,#0x4dc]`; 0x9EBE9C `add r5,pc,r5`; 0x9EBF2C; 0x9EBF34; 0x9EBF74 | EXACT_SOURCE |
+| G2 | gate1 writers: `0x9EB090` (term, 0), `0x9EBBA8`, `0x9EC00C`/`0x9EC1B4`. | 0x9EB090 `strb r5,[r4,#8]`; 0x9EBBA8; 0x9EC00C; 0x9EC1B4 | EXACT_SOURCE |
+| G3 | gate2 writers: `0x9EAE18` (init, 0), `0x9EC47C`/`0x9EC4A0` (SetOutputDevice). | 0x9EAE18; 0x9EC47C; 0x9EC4A0 | EXACT_SOURCE |
+| G4 | gate3 `0x1052430` writers: `0x9EAE24` (init, 1), `0x9EBBAC`, `0x9EC488`/`0x9EC4A8`. | 0x9EAE24; 0x9EBBAC; 0x9EC488; 0x9EC4A8 | EXACT_SOURCE |
+| G5 | `0x9EC418(param_1,param_2,param_3)` is the SetOutputDevice command: returns 3 if unchanged, clamps `0x108DB0C`, calls `0x9B08F4`, sets gate2/gate3, then `0x9EBA54`/`0x9EBE6C`. | 0x9EC418..0x9EC583; call site 0x9AE3B0 | EXACT_SOURCE |
+| G6 | `0x9EADE8` is the output-device module init: gate2=0, countdown=0, gate3=1, `sem_init(0x108DAEC)`, `pthread_create(LAB_009e9378)` at `0x108DB10`. | 0x9EADE8..0x9EAF73; 0x9EAE18/0x9EAE20/0x9EAE24; 0x9EAE28; 0x9EAE7C | EXACT_SOURCE |
+| G7 | `0x9EAF90` is the output-device module term: empties the device list, resets `0x108DAFC`, `0x108DAF4`, `0x108DAF8`, gate1=0, `0x108DAE8=1`, posts/joins the thread, destroys the sem, `0x108DB18=0`. | 0x9EAF90..0x9EB0E7; 0x9EB090; 0x9EB0D8; 0x9EB0A8; 0x9EB0B4; 0x9EB0C8 | EXACT_SOURCE |
+| G8 | `0x9EBA54(param_1)` is the per-frame device advance: walks the device list, resets a device's `+0x88` through a PBI/GetJSON object, sets gate3=param_1 and gate1=(all devices idle), posts the sem when param_1 != 0. | 0x9EBA54..0x9EBC37; 0x9EBBA8; 0x9EBBAC; call sites 0x9AFB80, 0x9EC320 | EXACT_SOURCE |
+| V5 | Voice-pass pre-pass: `0x9D3CC0` (bus/source tick counters), `0xA43D24` (ducking/volume pre-pass walking the voice list base `0x108DF54`), `0xA39564` (node cleanup). | 0xA44978, 0xA4497C, 0xA44980; 0xA43D24..0xA43E2C | EXACT_SOURCE for the calls; bodies now read (C11/C12) |
+| V6 | Voice container: base `0x108DF54`, head `[+0x14]`, next `+0xD0`, state `+0xDC`, active `1`, bus chain `+0xD4` (`[+0xC]` bus), pending `+0xD8`; count `[base+0xC]` decremented on unlink. | 0xA44984..0xA449B4; 0xA449E0..0xA449F8; 0xA44B18..0xA44B2C | EXACT_SOURCE |
+| V7/C1 | `0xA54F1C(voice,&params)` is the per-voice parameter/state machine: reads `source=[voice+0xD4]`, `bus=[source+0xC]`, id `[voice+0xF0]`; `[bus+0x1F8]` gate; a dB gain `(vol+vol2)*0.05` clamped at -37.0 (`0xC2140000`) linearised by the fast pow; calls `0xA4BC58`; the per-connection state machine over `[voice+0xE0]`/`[voice+0xE4]`/`+0xCD`; the 0x11 path sets `bus[0x31]=0x42CA0000` (101.0f) and calls `0xA4B4B0`. | 0xA54F1C; 0xA54F20; 0xA54F28; 0xA54F34; 0xA55058; 0xA5572C; 0xA55644 | EXACT_SOURCE |
+| V8 | Voice render + mix dispatcher `0xA44630(voice)`: insert-FX slot updates (`vt+0x38` slots 4..1, `vt+0x3c` the rest), `0xA4C60C(r7+0x1C0)`, `0xA56E00(r7+0x380)`, `0xA548C0(r7)`, `0xA53134(r7+0x100)`, `0xA52D4C(r7+0x100)`, `[r7+0xD4] vt+0x30`, `0xA03E8C(voice)`, the aux-send walk with `0xA4FBEC` per bus connection. | 0xA44630..0xA44938; 0xA44670, 0xA446B8, 0xA446E8, 0xA446F4, 0xA44700, 0xA44738, 0xA4477C, 0xA447A4, 0xA447D4, 0xA448A8/0xA448EC | EXACT_SOURCE |
+| V9 | Voice source execute `0xA548C0`: reads `[voice+0xD4]` -> `[+0xC]` bus; if `bus+4` bit 0x100000 and `params+0x18 != -1` calls `0xA05574`; `vt+0x58` on the **bus**; stores valid frames into `params+0xE` (`strhlo`); `params+0x2C=1`; `0xA56650` on `[voice+0xD8]`. | 0xA548C0..0xA54954; 0xA54904 | EXACT_SOURCE |
+| V10 | Resampler pitch `0xA53134(r7+0x100)`: `vt+0x20`, valid frames at `[r4+0x48]`, `0xA47384` SetPitch with the pitch flag from `[bus+0x1BE] & 0x380`; frames 0 and `[r4+0xB8]` set -> `params+0x28=0x11`, else tail `0xA52D4C`. | 0xA53134..0xA531B0; 0xA53180 | EXACT_SOURCE |
+| V11 | Voice-stage resampler execute `0xA52D4C`: copies **40 bytes** (10 words) of the buffer into `source+0x60`; `frames=[source+0x6E]`; `0xA47178` CAkResampler::Execute at `source+8`; `0xA5268C` segment append; DataReady/NoMoreData `0xA4721C`/`0xA47224`; `0xA69A70` at `0xA5303C`. | 0xA52D4C..0xA5302C; 0xA52D88..0xA52DA4; 0xA52E30; 0xA52E50; 0xA5303C | EXACT_SOURCE |
+| V12 | Voice insert-FX slots: fixed 4-slot array at `r7+0x370..0x37C` (index 4..1), `vt+0x38`/`vt+0x3c`; bypass bytes `[bus+0x1BD]`/`[bus+0x1BE]`. | 0xA44650..0xA44728; 0xA52DBC; 0xA52DF0 | EXACT_SOURCE for the array/calls; slot identity RECOVERABLE_GAP |
+| V13/C2/C3 | `0xA4C60C` is a thunk: `if ([voice]==0) return; r0+=0x10; b 0xA766B8` (LPF `0xA766F0`, HPF `0xA77480`). `0xA56E00` is a thunk: `if ([voice]==0) return; r3=[[r0+8]+0x34]; if 0 return; b 0xA56A7C` (per-connection gain/ramp). | 0xA4C60C; 0xA4C61C; 0xA766D4; 0xA766EC; 0xA56E00; 0xA56E1C; 0xA56A7C | EXACT_SOURCE |
+| V14 | Voice->bus mix `0xA4FBEC(bus, source, ...)`: valid-frames 0 returns; `[bus+0x1BC]==4` -> 1; `[bus+0x68]=0x2D`; zero-pad; if `[bus+0x1A8]`/`[[bus+0x1A8]+0xC]` call `vt+0x28`, else the mixer `0xA45E9C` with the product gains. | 0xA4FBEC..0xA4FD7C; 0xA4FD04; 0xA4FD6C | EXACT_SOURCE |
+| V15 | State 0x11 tail: `0xA55D04(voice,0)`; if `[voice+0xD8]` then `0xA55A84(voice,pending,1,0)` -> `0xA54A30(voice)` -> `0xA56478(pending)`. | 0xA44A9C..0xA44BF8; 0xA44ABC, 0xA44AD0, 0xA44BE8, 0xA44BF8 | EXACT_SOURCE |
+| V16 | Voice stop and destroy: `vt+0x48(voice)`; a voice whose state became 2 is unlinked from the global list and destroyed with `0x9D40C4`. The citation shows **no** connection-destruction call in this range. | 0xA44AE8; 0xA44AF8..0xA44B30; 0xA44B30 | EXACT_SOURCE |
+| V17 | Bus pass `0xA44C18(arg)`: if arg != 0, walk the bus array last-to-first: `0xA4FEF8(bus,&out)`; `[bus+0x1C8]` -> `0xA4F9E0`; else valid frames -> device-list walk matching `[bus+0x28]/[bus+0x2C]` -> `0x9E9E78`; `0xA4F36C(bus)` ReleaseBuffer. Both paths converge on the `0x9E9F08` device walk, `[g]=[g+4]`, `0xA43F64` idle removal. | 0xA44C18..0xA44D38; 0xA44C48; 0xA44C6C; 0xA44CD8; 0xA44CAC; 0xA44CB8; 0xA44D2C | EXACT_SOURCE |
+| V18 | Bus output `0xA4FEF8(bus,out)`: if `([bus+0x1B8]&0xC)!=4` -> `0xA4F754` (SetInsertFx; the `0xA4E974` per-slot create/`0x9CC2AC`/type-3 `0x9CC4D8`/`vt+0x1C` detail is inside it, `0xA4F964`; mask 0xF only when bit2 clear); then if `[bus+0x1A8]`/`[+0xC]` call `vt+0x2C`, `0xA4FD84` FX, then `0xA4D994`; else `0xA50120`. | 0xA4FEF8..0xA4FF3C; 0xA4F964; 0xA4FF30; 0xA4FF74; 0xA4FFB0 | EXACT_SOURCE |
+| V19 | FX execute `0xA4FD84(bus)`: slots 0..3 only when `+0x1BC==1`, in slot order, in-place `vt+0x20` on `+0x60` or the out-of-place buffer when `[slot+0x138]` is set; bypass -> `vt+0xC` Reset. | 0xA4FD84..0xA4FEF4 | EXACT_SOURCE |
+| V20 | Idle removal `0xA43F64`: predicate `[bus+0x1BC]!=1 && [bus+0x1C0]==0` -> disconnect `0xA4F6F0` (when `[bus+0x1C8]!=0`), destroy `0xA4EED8`, free `0xA7A988`, remove; else clear `[bus+0x1CC]` bit0. | 0xA43F64..0xA44064; 0xA44028..0xA44044; 0xA43FBC..0xA43FD4 | EXACT_SOURCE |
+| V21 | PBI-notification flush `0xA38420`: per item `0xA0188C`; `[item+8]==4` (Term) -> unlink PBI, `0x9D3470`, `vt+0x10`, `vt+4`, `0xA7A988`. Once per rendered frame after LEngine. | 0xA38420..0xA385A0; 0xA38480; 0xA384CC; 0xA384E0; 0xA384FC; 0xA38508 | EXACT_SOURCE |
+| V22/D1-D4 | Frame count `0x9D4778` = `b 0x9EC38C`; `0x9EC38C` = `mov r0,#0; b 0x9EBE6C`. `0x9EBE6C` advances the output devices, reads `vt+0x20` per device, takes the minimum, and writes gate1. The device's `vt+0x20` (sink frame count/pacing) is HARDWARE_ONLY. | 0x9D4778; 0x9EC38C; 0x9EBE6C; 0x9EBF64; 0x9EBFC0; 0x9EC00C; 0x9EC1B4 | code EXACT_SOURCE; sink value HARDWARE_ONLY |
+| C4 | `0xA03E8C(manager,list)` notifies per-listener callbacks: per entry index the manager hash by `[obj+0x140]`, find the bucket node at `+0x4C`, and if `[node+0x48]&4` and `[node+0x40]` call the callback under the two mutexes; then `0xA69A38`. | 0xA03E8C..0xA03FEF | EXACT_SOURCE |
+| C5 | `0xA05574(map,key1,val,key2)` inserts/updates into a small mutex-protected insertion-ordered map (mutex `+0x18`, clock `+0x20`, 0x20-byte entries). | 0xA05574..0xA0576B; 0xA0557C; 0xA0569C | EXACT_SOURCE |
+| C6 | `0xA56650(obj)`: 1 if `[obj+0x10]&1` already set, else call `obj->vt+0x28` and set the bit on success. | 0xA56650; 0xA56654; 0xA5665C; 0xA56664 | EXACT_SOURCE |
+| C7 | `0xA4F9E0(bus,out,voice)` mixes a child bus/voice: `[bus+0x1BC]==4` -> 1; `[bus+0x68]=0x2D`; zero-pad; `[bus+0x1A8]`+`+0xC` -> `vt+0x28`, else `0xA45E9C` with `[voice+0x40]/[voice+0x3C]` gains. | 0xA4F9E0; 0xA4F9E4; 0xA4F9EC; 0xA4FA0C; 0xA4FB44 | EXACT_SOURCE |
+| C8 | `0x9E9E78(device,buffer)` applies the device master gain: `buffer+0x10 *= [device+0x74]*0x108DAF4`, `buffer+0x14 *= [device+0x78]*0x108DAF8`; `[device+0x7C]` -> `0xA1C9CC`; then `[device+0x70]->vt+0x24`. | 0x9E9E78; 0x9E9E7C; 0x9E9E90; 0x9E9EA0; 0x9E9EA4 | EXACT_SOURCE |
+| C9 | `0x9E9F08(device)` releases the frame: `[device+0x7C]` -> zero when `[device+0x80]+0xE==0`, `0xA69268`, clear the count; `[device+0x70]->vt+0x28`; `[device+0x74]=[device+0x78]`. | 0x9E9F08; 0x9E9F1C; 0x9E9F24; 0x9E9F64; 0x9E9F68 | EXACT_SOURCE |
+| C10 | `0xA55750(voice)` ducking/stop pre-pass: bus `[voice+0xD4]+0xC`; `[bus+0xE8]&0x20` and `[bus+0xE9]&1` -> `vt+0x28`; `[bus+0x1BE]&0x14==0` -> `0xA4B93C`; else `voice+0xE4=2`, `voice+0xE0=1`, clear the 0x4C-stride array count, `0xA01BD8`, and if `[voice+0xCC]` `0x9D4228`. | 0xA55750; 0xA55750; 0xA5575C; 0xA55768; 0xA55778; 0xA55784; 0xA5587C; 0xA557EC; 0xA55844 | EXACT_SOURCE |
+| C11 | `0xA4AF50(voice)` computes the voice output dB and applies ducking: device volume via `0x9E84C8`; walks the connection list (`voice+0x28`), max `[conn+0x60]` or `+0x64/+0x68` by `[conn+0x6C]&0xFB`, times bus `+0x8C`; `20*log10` (0.4342945, 0.6931472); stores `voice+0x20`; no-connection sets `0xBA800000` (-0.0009765625f). | 0xA4AF50; 0xA4AF68; 0xA4AF74; 0xA4B078; 0xA4B170; 0xA4B3B8 | EXACT_SOURCE |
+| C12 | `0x9D3CC0(ticks)` advances bus/source tick counters: list `0x108DA30`; `[obj+0x1B0]&0x20` and `[obj+0x1EC]==-1` -> unlink `0x108DA10`, `0x9D40C4`; else if `[obj+0x1B0]&0x80==0` subtract `round(ticks*[obj+0x158])` from `[obj+0x1CC]` when >= 0. | 0x9D3CC0; 0x9D3CD0; 0x9D3D34; 0x9D3D38; 0x9D3D68 | EXACT_SOURCE |
+| V25 | Group member 1 `0xA36AC4(manager,tick)` (manager `0x108D8EC`): calls `0xA3693C(manager,tick,manager)` and `0xA3693C(manager,tick,manager+0xC)`. `0xA3693C` walks an array of items with a state at `+0x30`: 4/1 -> `0xA35998`, 2 -> `[+0x1C]=tick`/`[+0x30]=3`, 6 -> `0xA3587C`+free. | 0xA36AC4..0xA36AE8; 0xA3693C..0xA36AB8 | EXACT_SOURCE for behaviour; class name UNKNOWN |
+| V26 | Group member 2 `0x9FF308(manager,tick)` (manager `0x108D8E8`): items with `[item]==1` -> `0x9FDD90(item,tick)`, a 3-component interpolation storing floats at `[target+0x18/+0x1C/+0x20]`. | 0x9FF308..0x9FF364; 0x9FDD90..0x9FDE30 | EXACT_SOURCE for behaviour; class name UNKNOWN |
+| V27 | Group member 3 `0x9D3C98()`: gate `byte[[GOT]+0x28]` -> `0x9D3644`; tail `0x9D3864`. Both walk global lists and tear down finished objects (`0xA4304C`, `0xA01800`, `0xA41854`, `0xA7A988`, `0xA431A8`, `0xA54480`). `0xA437E0`/`0xA4B4B0` are **not** called here. | 0x9D3C98..0x9D3CB8; 0x9D3644..0x9D3830; 0x9D3864.. | EXACT_SOURCE for behaviour; class name UNKNOWN |
+| V28 | Group member 4 `0x9E6D2C(manager)` (manager `0x108D8DC`): `0x9E2BD0(manager+0x10)`, lock `[manager]+0x8C` (`0x4D3064`), walk the bucket hash (`+0x90` array, `+0x94` count) calling `0x9D8A24`, unlock (`0x4D3070`), tail `0x9E2AE4`. `0x9E2AE4` frees nodes whose refcount `+0x40` reaches 0. | 0x9E6D2C..0x9E6DC0; 0x9E2AE4..0x9E2BC8 | EXACT_SOURCE for behaviour; class name UNKNOWN |
+| V29 | Perform call order: `0xA36AC4(tick+1)` -> `0x9FF308(tick+1)` -> `0x9D3C98()` -> `0x9E6D2C()` -> `0xA57FF8` -> `0xA38420` -> `0x99DA54(0x10)` -> `tick++`. | 0x9AFA4C..0x9AFAA8 | EXACT_SOURCE |
+| V30 | Mixer `0xA45E9C` is the per-connection sample mixer reached from `0xA4FBEC`; gains are the product at `0xA4FD18..0xA4FD68`. | 0xA4FD6C; 0xA4FD18..0xA4FD68 | EXACT_SOURCE |
+| P1-P7 | `0xA57D64` is the per-64-tick **Android JNI audio-route poll**, not a Wwise pre-update: gates on `[0x108DA84]` (JavaVM), `[0x108DF9C]` (Context) and `([0x108D870]+0x4c & 0x3f)==0`; `vt+0x18` GetEnv / AttachCurrentThread ("NativeThread"), FindClass "android/app/NativeActivity"/"android/media/AudioManager", NewStringUTF "audio", GetMethodID "getSystemService"/"isBluetoothA2dpOn"/"isBluetoothScoOn"; `0x593E58` = CallObjectMethodV, `0xA58008` = CallBooleanMethodV (`vt+0x98`); the OR-ed result is stored at `0x108DF98` and a change calls `0x9EA66C`. | 0xA57D64..0xA5803C; 0xA57D70; 0xA57DA0; 0xA57DD0; 0xA57E34; 0xA57E60; 0x593E58; 0xA58028; 0xA57F38 | EXACT_SOURCE |
+
+`M6-022` stays `IMPLEMENTATION_GAP` until the engine is built and wired. Its
+`unresolved` names the unbuilt bodies: the FX-slot object identity (V12), the
+native device frame count `0x9EBE6C`'s sink value and the OpenSL pacing
+(HARDWARE_ONLY), and the four group members' class names (UNKNOWN, behaviour read).
+The gate bytes and their writers are settled and must be modelled.
+
+### M6-023 - the app audio-input dispatch (new)
+
+| step | what the original does | citation | classification |
+|---|---|---|---|
+| A1 | `PlaySound.Play()`/`Update()` calls `GameAudioClient.PostAudioEvent(_AudioEventParameter)`. | `unity/scripts/csharp/Anki.Cozmo.Audio/PlaySound.cs:29,72-82` | EXACT_SOURCE |
+| A2 | `GameAudioClient.PostAudioEvent` -> `UnityAudioClient.Instance.PostEvent(event, gameObjectType, flag, handler)`. | `unity/scripts/csharp/Anki.Cozmo.Audio/GameAudioClient.cs:17-45` | EXACT_SOURCE |
+| A3 | `UnityAudioClient.PostEvent` allocates a play id (`_GetPlayId`, ++, skips 0), sets `callbackId = (flag!=EventNone)?id:0`, builds `PostAudioEvent`, sets `Message.PostAudioEvent`, `SendMessage()`. | `unity/scripts/csharp/Anki.Cozmo.Audio/UnityAudioClient.cs:224-237,279-287` | EXACT_SOURCE |
+| A4 | `PostAudioEvent` wire layout: `u32 audioEvent, u32 gameObject, u16 callbackId`, size 10; `MessageAudioClient` tag 0. | `unity/scripts/csharp/Anki.AudioEngine.Multiplexer/PostAudioEvent.cs:89-107`; `MessageAudioClient.cs:10` | EXACT_SOURCE |
+| A5 | The envelope is `MessageGameToEngine`, tag `PostAudioEvent = 1` (2..6 StopAll/GameState/Switch/Parameter/MusicState). | `unity/scripts/csharp/Anki.Cozmo.ExternalInterface/MessageGameToEngine.cs:14-16` | EXACT_SOURCE |
+| B1 | `AudioUnityInput` ctor registers handlers for tags 1..6 through the external interface (vtable +0x2c). | native `0x00591590` (six subscribe calls) | EXACT_SOURCE |
+| B2 | `AudioUnityInput::HandleGameEvents` switches on the u16 tag; case 1 loads vtable +0xc and calls `Get_PostAudioEvent`. | `0x005919B8..0x005919D4`; case-1 `0x005919CA`, `0x005919CC`, `0x005919D0`, `0x00591A14` | EXACT_SOURCE |
+| B3 | The vtable slot +0xc resolves to `AudioMuxInput::HandleMessage(PostAudioEvent)` = `0x008DFC4C`. | vtable `0x1023CA8` reloc `0x1023CBC` -> `0x008DFC4C` | EXACT_SOURCE |
+| B4 | `AudioMuxInput::HandleMessage(PostAudioEvent)` -> `AudioMultiplexer::ProcessMessage` `0x008DED14`. | `0x008DFC4C:0x008DFC5E b.w 0xAE3130`; `0x008DED14` | EXACT_SOURCE |
+| B5 | `AudioMultiplexer::ProcessMessage` builds a callback context and calls `AudioEngineController::PostAudioEvent(event, gameObj, ctx)` `0x008D1F20`. | `0x008DED14:0x008DED92`; `0x008D1F20` | EXACT_SOURCE |
+| B6 | `AudioEngineController::PostAudioEvent` -> `FUN_008D8CE4` -> Wwise `PostEvent 0x009A6704(event, gameObj, flags, callback 0x008D8D41, cookie)`, which queues and returns the playing id (M6-006). | `0x008D8CE4:0x008D8D32 blx 0x009A6704`; `0x008D8CF8..0x008D8D0C` | EXACT_SOURCE (dispatch); M6-006 owns the core |
+
+`M6-023` stays `IMPLEMENTATION_GAP` until the dispatch is wired.
+
+### M6-024 - bank and scene loading call sites (new)
+
+| step | what the original does | citation | classification |
+|---|---|---|---|
+| F1 | `CozmoAudioController` ctor calls `AudioEngineController::InitializeAudioEngine`, `SetupPlugins`, builds the bank list `Init.bnk, Music.bnk, UI.bnk, SFX.bnk, Cozmo.bnk, Dev_Debug.bnk` and the scene `InitScene`, and calls `RegisterAudioScene` + `LoadAudioScene`. | `0x00592BB0`; `0x005933CC`; `0x00593478`; `0x005935E2`; `0x005935EA`; bank strings in the decomp | EXACT_SOURCE (call sites) |
+| F2 | `LoadAudioScene 0x008D2EE8` -> `LoadSoundbank 0x008D2FE4`; `AddZipFiles 0x008D1E3E` feeds the OBB archives. | `0x008D2EE8`; `0x008D2FE4`; `0x008D1E3E` | EXACT_SOURCE (call sites); bank parsing M6-001 |
+| F3 | The Unity app has no bank-load call; the engine loads the banks at construction from the OBB `AudioAssets.zip`. | no `.bnk`/`LoadSoundbank` reference under `unity/scripts/csharp/` | EXACT_SOURCE |
+
+`M6-024` stays `IMPLEMENTATION_GAP` until the loading is wired.
+
+### M6-017 - amendment (the frame model's thread and gates)
+
+- **The gate bytes have writers (B1-V24 contradicted).** The bus-pass arg and the
+  frames-per-Perform branch are dynamic; their runtime value is HARDWARE_ONLY. See
+  G1-G10 and M6-022. The frame-model text must no longer say "always the device path"
+  or "arg=1".
+- **The audio-thread lifecycle is part of this record's production path:** `SoundEngine::Init
+  0x0099E3EC` sets the thread-active byte `0x0108D949` and calls `FUN_009B0200`, which
+  posts a type-0x36 init message and calls `FUN_00A40940(engine+0x54)`; `FUN_00A40940`
+  `sem_init`s the semaphore, sets a detached attr and `pthread_create(&0x0108DF50, attr,
+  entry 0x00A4087C, sem)`. The thread loop is `Perform 0x9AF8A8` then `sem_wait`; the
+  signal helper is `FUN_00A40924` (`sem_post` when the flag is set).
+- **RenderAudio:** the veneer `0x0099F130` tail-branches to `0x9AFD10(engine,1)`; if the
+  thread-active flag is set it `sem_post`s `engine+0x54`, else it runs `Perform`
+  synchronously. `Perform` locks the engine mutex, computes the frame budget, then
+  `0x9ADFD8` (message pump + render body), `0x9A9F88` (pending-action drain), the render
+  group (`0xA36AC4`, `0x9FF308`, `0x9D3C98`, `0x9E6D2C`, `0xA57FF8`, `0xA38420`), and
+  `+0x4C++`.
+- **The engine tick pumps the controller:** `CozmoEngine::Update` `0x004ED4D4` ->
+  `AudioMultiplexer::UpdateAudioController` `0x008DF3DA` -> `AudioEngineController::Update`
+  `0x008D2928` -> `FUN_008D88C0` -> the RenderAudio veneer, then the queued-callback
+  drain. `RobotAudioClient::ProcessEvents` `0x00599FE2` -> `ProcessAudioQueue` `0x008D2946`
+  -> `FUN_008D88C0` is the robot path's pump.
+- **The four "buses" group members move to M6-022** (V25-V28); the voice engine inside
+  LEngine is M6-022 (V1-V30). M6-017 keeps the frame model and its render seam.
+- **Sink pacing** stays HARDWARE_ONLY (the OpenSL sink posts the semaphore;
+  `0x009E9420`, `0x009EBE6C`).
+
+### M6-002 - the Vorbis packet driver (new rows under the same record)
+
+Gap 2 establishes the whole packet path. The packet entry is `0x00AB3780` (mode read
+`0x00AB37FC`; block flag/block size; the first-window copy; start-skip/end-trim), which
+tail-calls the per-packet inverse `0x00AB6B14` at `0x00AB3934`. The inverse runs, per
+channel, floor1 inverse1 `0x00AB8E60`; marks the coupling channels; per submap compacts
+the channels and runs the residue inverse `0x00AB73F8`; the inline coupling inverse
+`0x00AB6DC4..0x00AB6E78` (the built `InverseCoupling`); per channel floor1 inverse2
+`0x00AB915C` and `mdct_backward 0x00AB4E34` at `0x00AB6EEC..0x00AB6F10`; then clears
+`dsp+0x30`. The framing is `0x00AB7E40` (u16 packet size, result codes 0x2D/0x2E/0x11)
+and the window/overlap driver is `0x00AB3520` (per channel `0x00AB5A94`, overlap save).
+The setup parser is `0x00AB6380`/`0x00AB63E0` (called from the setup cache
+`0x00AB2D74`), with the block-size check `setup+0`/`+4`, and the decoder-state field
+offsets `dsp+0x00..+0x30` and setup offsets `+0x00..+0x2c` as listed in the gap-2
+report. The driver is a **new set of rows for M6-002**, not a new record: the existing
+evidence names every arithmetic leaf, but no driver row, and the built decoder still
+refuses at the entry point. One residual: `0x00AB3978` (stream reset, called from
+`0x00AB7E40` on a flagged last packet) is not read; it is on the end-of-stream path.
+
+`M6-002` stays `IMPLEMENTATION_GAP`: the driver rows are settled for construction, and
+the record's `unresolved` now names the driver rather than "the packet driver is not
+built".
+
+### M6-011 - evidence correction
+
+The voice filter A is reached by `0xA44630` step (2): `0xA4C60C(source+0x1C0, voice)`,
+which thunks (`r0 += 0x10; b 0xA766B8`) to `0xA766B8`, which calls `0xA766F0` (LPF) then
+`0xA77480` (HPF). `0xA4BC58` is **not** the filter body: it is the per-connection
+gain/buffer update (connection list `voice+0x28`, conversion buffers `+0x20/+0x24`, the
+min over `+0x50..+0x5c`, `[conn+0xc]=[voice+0x1C]*param_4`, `0xA5975C`). M6-011's
+evidence gains the filter body; the biquad claim itself rests on `0xA766F0`/`0xA77480`
+and is unchanged.
+
+### M6-014 - residual closed
+
+The "bus-pass gating flag writer (D2.8, the arg of `0xA44C18`) is RECOVERABLE_GAP" note
+is closed: the arg is `(gate2==0) ? 1 : gate3`, gate2 is written at `0x9EAE18`
+(init 0) and `0x9EC47C`/`0x9EC4A0` (SetOutputDevice), and gate3 at `0x9EAE24` (init 1),
+`0x9EBBAC`, `0x9EC488`/`0x9EC4A8`. The runtime value is HARDWARE_ONLY. M6-014 stays
+`IMPLEMENTATION_GAP`.
+
+## Appendix J: C11 gap-1 report (voice-engine residuals)
+
+Copied verbatim from `re-analysis/research/20260928-I-M6b-gap1-extraction.md`.
+
+## Appendix K: C11 gap-2 report (Vorbis packet driver)
+
+Copied verbatim from `re-analysis/research/20260928-I-M6b-gap2-extraction.md`.
+
+## Appendix L: C11 gap-3 report (live-path reach)
+
+Copied verbatim from `re-analysis/research/20260928-I-M6b-gap3-extraction.md`.
+
+### Appendix J - gap-1 report: voice-engine residuals
+
+
+# B1-voice residual pass - gate writers, 0xA57D64, callee bodies, pre-loop node class
+
+Read-only extraction from `resources/lib/armeabi-v7a/libcozmoEngine.so` (3.4.0-1204, ARM mode; Wwise 2016.2 statically linked at 0x0095E540..0x00AE2E40). Citations are instructions in the `.so`. The Ghidra tree `re-analysis/decomp/libcozmoEngine/` exists in this clone and was used only to navigate; Ghidra function boundaries are wrong in several places (noted), so every citation below was checked against the raw instruction stream. GOT base is 0x104028C (0x9AF8C4+0x6909C8 and 0xA44D58+0x5FB52C agree); a slot at base+off holds a pointer to the named global.
+
+## Headline
+
+**B1-V24 is contradicted: the three gate bytes all have writers.** They are not independent globals. Gate1 `0x108DAF0`, gate2 `0x108DB08`, the device count `0x108DAFC`, the device list head `0x108DB04`, the countdown `0x108DB0C` and the flag `0x108DB18` are fields of one global output-device state struct based at **0x108DAE8**; gate3 `0x1052430` is a separate global written alongside gate2. The earlier "no writer" scan searched only for the absolute global addresses and their GOT-slot offsets, and therefore missed every access made through the struct base 0x108DAE8 (`strb rX,[base,#8]` = gate1, `[base,#0x20]` = gate2). Writers exist and are listed below.
+
+Consequences: B1-V23/V24's "the clock-paced branch is dead, the engine always takes the device path, arg=1" is not established and is probably wrong. gate1 is written by the same call Perform makes at the top of every frame (`0x9D4778` -> `0x9EC38C` -> `0x9EBE6C`), so the branch Perform reads is dynamic. Whether it is 0 or 1 at runtime depends on the Wwise output-device object (phone audio), which is HARDWARE_ONLY; the code path itself is fully recovered.
+
+---
+
+## Rows
+
+### 1. The three gate bytes' writers (B1 residual 1)
+
+| step | what the original does | citation | existing record id or NEW | classification |
+|---|---|---|---|---|
+| G1 | **The output-device state is one struct at 0x108DAE8.** 0x9EBE6C builds `r5 = pc + 0x6A1C44` and `add r5,pc,r5` -> 0x108DAE8; field `+8` is gate1 0x108DAF0, `+0x14` is 0x108DAFC, `+0x20` is gate2 0x108DB08, `+0x24` is 0x108DB0C, `+0x30` is 0x108DB18, `+0x1C` is the device list 0x108DB04. | 0x9EBE8C `ldr r5,[pc,#0x4dc]` (lit 0x9EC370=0x006A1C44); 0x9EBE9C `add r5,pc,r5` -> 0x108DAE8; 0x9EBF2C `ldr r2,[r3,#0x14]`; 0x9EBF34 `ldrb r3,[r3,#8]`; 0x9EBF74 `ldrb r3,[r8,#0x20]` | M6-022 (new) | EXACT_SOURCE |
+| G2 | **Gate1 0x108DAF0 is written by the device init/term and by the per-frame device advance.** `0x9EAF90` (device term) stores 0; `0x9EBA54` stores a boolean; `0x9EBE6C` stores `sl` and, in the no-device branch, 1. | 0x9EB090 `strb r5,[r4,#8]` (0x9EAF90); 0x9EBBA8 `strb r4,[r0,#8]` (0x9EBA54); 0x9EC00C `strb sl,[r3,#8]` and 0x9EC1B4 `strb r2,[r3,#8]` (0x9EBE6C) | B1-V24 contradicted; M6-022 (new) | EXACT_SOURCE |
+| G3 | **Gate2 0x108DB08 is written by the output init and by the SetOutputDevice command.** `0x9EADE8` stores 0; `0x9EC418` stores its `param_1` byte (with special cases that store 0 or 1). | 0x9EAE18 `strb r5,[r6,#0x20]` (0x9EADE8); 0x9EC47C `strb r0,[r4,#0x20]` and 0x9EC4A0 `strb r1,[r4,#0x20]` (0x9EC418; r4 = 0x108DAE8, 0x9EC444 `add r4,pc,r4`) | B1-V24 contradicted; M6-022 (new) | EXACT_SOURCE |
+| G4 | **Gate3 0x1052430 is written with gate2.** `0x9EADE8` stores 1; `0x9EBA54` stores its `param_1` byte; `0x9EC418` stores its `param_2` byte, or 1 in the `param_1==0` case. | 0x9EAE24 `strb r8,[r3]` (0x9EADE8); 0x9EBBAC `strb r8,[r3]` (0x9EBA54); 0x9EC488 `strb ip,[r3]` and 0x9EC4A8 `strb r2,[r3]` (0x9EC418; r3 = 0x1052430, 0x9EC480 `add r3,pc,r3`) | B1-V24 contradicted; M6-022 (new) | EXACT_SOURCE |
+| G5 | **`0x9EC418(param_1,param_2,param_3)` is the Wwise SetOutputDevice command.** Returns 3 if the pair is unchanged; else clamps a countdown 0x108DB0C, calls 0x9B08F4, then sets gate2 = param_1 and gate3 = param_2, then 0x9EBA54/0x9EBE6C. | 0x9EC418..0x9EC583; call site 0x9AE3B0 `bl 0x9EC418` (inside the 0x9ADFD8 command drain, case 0x35) | M6-022 (new) | EXACT_SOURCE |
+| G6 | **`0x9EADE8` is the output-device module init.** Sets gate2=0, 0x108DB0C=0, gate3=1, `sem_init(0x108DAEC)`, creates the audio thread (`pthread_create` of LAB_009e9378) at 0x108DB10. | 0x9EADE8..0x9EAF73; 0x9EAE18, 0x9EAE20, 0x9EAE24; 0x9EAE28 `bl 0x4D6784` (sem_init); 0x9EAE7C `bl 0x4A6934` (pthread_create) | M6-022 (new) | EXACT_SOURCE |
+| G7 | **`0x9EAF90` is the output-device module term.** Empties the device list, sets 0x108DAFC=0, 0x108DAF4=1.0, 0x108DAF8=1.0, gate1=0, 0x108DAE8=1, posts/joins the thread, destroys the sem, 0x108DB18=0. | 0x9EAF90..0x9EB0E7; 0x9EB090 `strb r5,[r4,#8]`; 0x9EB0D8 `strb r3,[r4,#0x30]`; 0x9EB0A8 `bl 0x4D676C` (sem_post); 0x9EB0B4 `bl 0x4D673C` (pthread_join); 0x9EB0C8 `bl 0x4D6790` (sem_destroy) | M6-022 (new) | EXACT_SOURCE |
+| G8 | **`0x9EBA54(param_1)` is the per-frame device advance.** Walks the device list; for a device with state +0x88 != 0 it creates a PBI/GetJSON object and resets +0x88; then gate3 = param_1, gate1 = (all devices idle); if param_1 != 0, sem_post. Called from Perform's device path. | 0x9EBA54..0x9EBC37; 0x9EBBA8, 0x9EBBAC; call site 0x9AFB80 `bl 0x9EBA54`; also 0x9EC320 `bl 0x9EBA54` | M6-022 (new) | EXACT_SOURCE |
+| G9 | **The neighbouring globals.** 0x108DAFC is the device count (0x9EAF90 `DAT_0108dafc=0`; 0x9EBE6C reads it at 0x9EBF2C and tests it); 0x108DA9C is the render body's last-tick throttle (0xA44DAC); 0x108D870 is the Wwise manager pointer (tick at +0x4C). None of the three is a writer target of the gates. | 0xA44DAC `ldr r2,[r5,r2]` (slot 0x1040160->0x108DA9C); 0xA44DB0 `ldr r1,[r5,r3]` (0x10400D0->0x108D870); 0xA44DC0 `ldr r1,[r1,#0x4c]`; 0x9EBF2C | M6-022 (new) | EXACT_SOURCE |
+| G10 | **Which branch Perform takes is dynamic, not static.** Perform calls 0x9D4778 -> 0x9EC38C (`mov r0,#0`) -> 0x9EBE6C, which writes gate1, and only then reads gate1 at 0x9AF900. So the "clock-paced" branch is not dead code. The runtime value of gate1 depends on the phone's Wwise output-device object. | 0x9AF8F4 `bl 0x9D4778`; 0x9D4778 `b 0x9EC38C`; 0x9EC38C `mov r0,#0`; 0x9EC390 `b 0x9EBE6C`; 0x9AF900 `ldrb r3,[r8]`; 0x9AF904 `cmp r3,#0` | B1-V23/V24 contradicted; M6-022 (new) | branch code EXACT_SOURCE; runtime value HARDWARE_ONLY |
+
+**Item 1 residual: CLOSED (writers exist). B1-V24 must be rewritten.**
+
+### 2. 0xA57D64 identity (B1 residual 3)
+
+| step | what the original does | citation | record | classification |
+|---|---|---|---|---|
+| P1 | **0xA57D64 is an Android-JNI audio-route poll, not a Wwise pre-update.** It gates on `[0x108DA84] != 0` (a `JavaVM*`), `[0x108DF9C] != 0` (the app Context jobject) and `(manager[0x108D870]+0x4C & 0x3f) == 0` (once per 64 ticks). | 0xA57D64..0xA57DA8; 0xA57D70/0xA57D74 `ldr r6,[pc,r6]`/`ldr r7,[r6,#0x4c]`; 0xA57D88 `ldr r3,[r8,#0xc]`; 0xA57DA0 `ldr r3,[r3,#0x4c]`; 0xA57DA4 `ands r4,r3,#0x3f` | M6-022 (new) | EXACT_SOURCE |
+| P2 | **vt+0x18 on the JavaVM = GetEnv** (`r2 = 0x10006`, JNI_VERSION_1_6); if it returns null it calls **vt+0x10 = AttachCurrentThread** with `JavaVMAttachArgs{version=0x10006, name="NativeThread", group=0}`. | 0xA57DC4 `ldr r3,[r7]`; 0xA57DCC `ldr r3,[r3,#0x18]`; 0xA57DD0 `blx r3`; 0xA57F90 `ldr r3,[lr,#0x10]`; 0xA57F94 `str sb,[sp,#4]` (0x10006); string 0xFA7AE8 "NativeThread"; 0xA57F50 `ldr r3,[r3,#0x14]` = DetachCurrentThread | M6-022 (new) | EXACT_SOURCE |
+| P3 | **vt+0x18 on the JNIEnv = FindClass**: "android/app/NativeActivity" and "android/media/AudioManager". | 0xA57DF0 `ldr r3,[r2,#0x18]`; strings 0xFA79DC, 0xFA79F8 | M6-022 (new) | EXACT_SOURCE |
+| P4 | **vt+0x29c = NewStringUTF** ("audio"); **vt+0x84 = GetMethodID** ("getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;", then "isBluetoothA2dpOn"/"isBluetoothScoOn", "()Z"). | 0xA57E34 `ldr r3,[r3,#0x29c]`; 0xA57E60 `ldr ip,[ip,#0x84]`; strings 0xFA7A4C, 0xFA7A60, 0xFA7ABC, 0xFA7AD4, 0xFA7AD0 | M6-022 (new) | EXACT_SOURCE |
+| P5 | **0x593E58 = a varargs JNI thunk to env->vt+0x8c = CallObjectMethodV**; it builds a va_list from r3 and calls it. Used here to call `getSystemService("audio")` on the Context. | 0x593E58: `sub sp,#4`; `str r3,[sp,#0xc]`; `add r3,sp,#0xc`; `str r3,[sp]`; `ldr ip,[r0]`; `ldr ip,[ip,#0x8c]`; `blx ip` | M6-022 (new) | EXACT_SOURCE |
+| P6 | **0xA58008 = a varargs JNI thunk to env->vt+0x98 = CallBooleanMethodV**, used for isBluetoothA2dpOn/isBluetoothScoOn. The result is OR-ed and stored to 0x108DF98; on a change it calls 0x9EA66C. | 0xA58008..0xA5803C; 0xA58028 `ldr ip,[lr,#0x98]`; 0xA57F00..0xA57F38; 0xA57F38 `bl 0x9EA66C`; 0xA57F04 `strb r5,[r8,#8]` (0x108DF98) | M6-022 (new) | EXACT_SOURCE |
+| P7 | **The object types.** `[0x108DA84]` is the `JavaVM*`; the `JNIEnv*` is obtained per call; `[0x108DF9C]` is the Android Context (`android/app/NativeActivity`); `[0x108DF98]` is the bluetooth-active byte; `[0x108DF90]`/`[0x108DF94]` are the cached native output sample rate / frames-per-buffer written by 0xA56E20; 0x9EA66C is the Wwise output-device notification on a route change. | as above; 0xA56E20 (sample-rate/property reader) writes 0x108DF90 (0xA56EA4 `str r3,[r6]`), 0x108DF94 (0xA591B8), 0x108DF98 (0xA56FDC/0xA57004) | M6-022 (new) | EXACT_SOURCE |
+
+**Item 2 residual: CLOSED.** 0xA57D64 is the per-64-tick Android audio-route (bluetooth A2DP/SCO) poll; 0x593E58 is the JNI CallObjectMethodV thunk, not "Anki-side".
+
+### 3. Four group members' Wwise class identities (B1 residual 4)
+
+| step | what the original does | citation | record | classification |
+|---|---|---|---|---|
+| I1 | **Identity is UNKNOWN.** Attempted: (a) `.dynsym` scan for Wwise/CAk/Ak* names - 0 matches; (b) `.rodata` string scan for Wwise/SoundEngine/CAk/Ak* - only `N2AK15IAkSourcePluginE` at 0x00DCA100; (c) no RTTI typeinfo for these managers. Behaviour is read and unchanged from B1-V25..V28. | 0x9EADE8 init / no symbols; `re-analysis/symbols/classes_by_method_count.txt` has no Wwise class; `re-analysis/tools/strings.py` output only 0xDCA100 | M6-022 (new); B1-V25..V28 identity label stays UNKNOWN | UNKNOWN |
+
+### 4. Callee bodies not read (B1 residual 5)
+
+| step | what the original does | citation | record | classification |
+|---|---|---|---|---|
+| C1 | **0xA54F1C(voice,&params) is the per-voice parameter/state machine.** Loads `source=[voice+0xD4]`, `bus=[source+0xC]`, `id=[voice+0xF0]`; if `[bus+0x1F8] != -1` sets `params+0x2C=1`, and returns 0 when it is 0; computes a dB gain `(vol+vol2)*0.05` clamped at -37.0 (0xC2140000) and linearised with the 27866352.0/1.0653532e9 fast-pow; calls 0xA4BC58; per-connection state machine over `[voice+0xE0]`, `[voice+0xE4]`, `+0xCD` bits; on the 0x11 path sets `bus[0x31]=0x42CA0000` (101.0f) and calls 0xA4B4B0. | 0xA54F1C; 0xA54F20 `ldr r5,[r0,#0xd4]`; 0xA54F28 `ldr r8,[r0,#0xf0]`; 0xA54F34 `ldr r2,[r6,#0x1f8]`; constants 0x3D4CCCCD, 0xC2140000, 0x42CA0000; calls 0xA4BC58 at 0xA55058 and 0xA5572C, 0xA56650 at 0xA554F8, 0xA54A30 at 0xA555C0, 0xA4B4B0 at 0xA55644 | M6-022 (new) | EXACT_SOURCE (body read) |
+| C2 | **0xA4C60C is a thunk, not the filter body.** `if ([voice]==0) return; r0 += 0x10; b 0xA766B8`. 0xA766B8 calls 0xA766F0 (LPF coefficients) and tail-calls 0xA77480 (HPF). So the "voice filter A" body is 0xA766B8/0xA766F0/0xA77480. | 0xA4C60C `ldr r3,[r1]`; 0xA4C614 `bxeq lr`; 0xA4C618 `add r0,r0,#0x10`; 0xA4C61C `b 0xA766B8`; 0xA766D4 `bl 0xA766F0`; 0xA766EC `b 0xA77480` | M6-011 (evidence gap, see F1) | EXACT_SOURCE |
+| C3 | **0xA56E00 is a thunk, not the volume body.** `if ([voice]==0) return; r3=[[r0+8]+0x34]; if 0 return; b 0xA56A7C`. The body 0xA56A7C is the per-connection gain/ramp application (guard 0x108DF80/0x108DF88/0x108DF8C, 0x9E8114/0x9E8248/0x9E83FC, multiplies the source buffer by a float). | 0xA56E00 `ldr r3,[r1]`; 0xA56E0C `ldr r3,[r0,#8]`; 0xA56E10 `ldr r3,[r3,#0x34]`; 0xA56E1C `b 0xA56A7C`; 0xA56A7C..0xA56E1F (decomp) | M6-022 (new) | EXACT_SOURCE |
+| C4 | **0xA03E8C(manager, list) notifies per-listener callbacks.** For each entry `[param_2+0x14]`, index into the manager hash by `id=[obj+0x140]`, find the bucket node at `+0x4C`, and if `[node+0x48]&4` and `[node+0x40]` set, call the callback with a 4-word context under the two mutexes; then 0xA69A38. | 0xA03E8C..0xA03FEF; 0xA03E8C `ldr r3,[r1,#0x14]`; 0xA03E98 `ldrh r2,[r1,#0x10]`; `pthread_mutex_lock`; `(*pcVar4)(4,&local_44)` | M6-022 (new) | EXACT_SOURCE |
+| C5 | **0xA05574(map,key1,val,key2) is an insert/update into a small sorted-by-insertion map** with a mutex at +0x18 and a clock timestamp at +0x20; grows by 0x20-byte entries. | 0xA05574..0xA0576B; 0xA0557C `ldr r1,[r0,#4]`; 0xA05594 `add r1,r2,r1,lsl #5`; 0xA0559C; 0xA05694; 0xA0569C `bl 0x4D3658` (clock) | M6-022 (new) | EXACT_SOURCE |
+| C6 | **0xA56650(obj) returns 1 if `[obj+0x10]&1` is already set, else calls `obj->vt+0x28` and sets the bit on success.** | 0xA56650 `ldrb ip,[r0,#0x10]`; 0xA56654 `tst ip,#1`; 0xA5665C `mov r0,#1`; 0xA56664 `ldr r3,[r0]`; `ldr r3,[r3,#0x28]` | M6-022 (new) | EXACT_SOURCE |
+| C7 | **0xA4F9E0(bus,out,voice) mixes a child bus/voice into the bus.** If `[bus+0x1BC]==4` set 1; set `[bus+0x68]=0x2D`; zero-pad past valid frames; if `[bus+0x1A8]` and its `+0xC` exist call that object's `vt+0x28`; else call the mixer 0xA45E9C with `[param_3+0x40]/[+0x3C]` gains. | 0xA4F9E0; 0xA4F9E4 `cmp ip,#0`; 0xA4F9EC `ldr r3,[r0,#0x1bc]`; 0xA4FA0C `mov lr,#0x2d`; 0xA4FB44 `bl 0xA45E9C` | M6-022 / M6-012 | EXACT_SOURCE |
+| C8 | **0x9E9E78(device,buffer) applies the device master gain and consumes the bus buffer.** Multiplies `buffer+0x10` by `[device+0x74]*0x108DAF4` and `buffer+0x14` by `[device+0x78]*0x108DAF8`; if `[device+0x7C]` calls 0xA1C9CC and copies the frame count; then calls `[device+0x70]->vt+0x24`. | 0x9E9E78; 0x9E9E7C `vldr s15,[r0,#0x74]`; 0x9E9E90 `vldr s13,[r0,#0x78]`; 0x9E9EA0 `vldr s12,[r3,#0xc]` (0x108DAF4); 0x9E9EA4 `vldr s11,[r3,#0x10]` (0x108DAF8); `ldr ... [..+0x70]` vt+0x24 | M6-022 (new) | EXACT_SOURCE |
+| C9 | **0x9E9F08(device) releases the device frame.** If `[device+0x7C]`: zero the buffer when the frame count `[device+0x80]+0xE==0`, call 0xA69268, clear the count; then `[device+0x70]->vt+0x28`; `[device+0x74]=[device+0x78]`. | 0x9E9F08; 0x9E9F1C `ldr r3,[r4,#0x80]`; 0x9E9F24 `ldrh r1,[r3,#0xe]`; 0x9E9F28 `ldrh r2,[r3,#0xc]`; vt+0x28; 0x9E9F64 `ldr r3,[r4,#0x78]`; 0x9E9F68 `str r3,[r4,#0x74]` | M6-022 (new) | EXACT_SOURCE |
+| C10 | **0xA55750(voice) is the ducking/stop pre-pass.** Reads the bus `[voice+0xD4]+0xC`; if `[bus+0xE8]&0x20` and `[bus+0xE9]&1` calls `vt+0x28`; if `[bus+0x1BE]&0x14` is 0 calls 0xA4B93C; else sets `voice+0xE4=2`, `voice+0xE0=1`, clears the 0x4C-stride array count, calls 0xA01BD8 and (if `[voice+0xCC]`) 0x9D4228. | 0xA55750; 0xA55750 `ldr r3,[r0,#0xd4]`; 0xA5575C `ldr r5,[r3,#0xc]`; 0xA55768 `ldrb r1,[r5,#0xe8]`; 0xA55778 `ldrb r3,[r5,#0xe9]`; 0xA55784 `ldrb r3,[r5,#0x1be]`; 0xA5587C `bl 0xA4B93C`; 0xA557EC `bl 0xA01BD8`; 0xA55844 `bl 0x9D4228` | M6-022 (new) | EXACT_SOURCE |
+| C11 | **0xA4AF50(voice) computes the voice's output dB and applies ducking.** `fVar18=[voice+0x1C]`; device volume via 0x9E84C8; walks the connection list (`voice+0x28`), takes the max `[conn+0x60]` or `+0x64/+0x68` by `[conn+0x6C]&0xFB`, multiplies by the bus `+0x8C`; converts to dB with `20*log10` (0.4342945, 0.6931472); stores `voice+0x20`; updates `+0x1D0` (or `[voice+0x1C]+0x1D0`); no-connection path sets `voice+0x20 = 0xBA800000` (-0.0009765625f). | 0xA4AF50; 0xA4AF68 `vldr s16,[sb,#0x1c]`; 0xA4AF74 `ldr r0,[r3,#0x28]`; 0xA4B0? `fVar17=fVar17*fVar18*fVar5*[conn+0x8c]`; 0xA4B170 `vstr s16,[sb,#0x20]`; 0xA4B3B8 `str r3,[sb,#0x20]` (-0x3a800000); constants 0.33333334, 0.6931472, 0.4342945, 20.0 | M6-022 (new) | EXACT_SOURCE |
+| C12 | **0x9D3CC0(ticks) advances the bus/source tick counters and retires finished ones.** Iterates the list at 0x108DA30; if `[obj+0x1B0]&0x20` and `[obj+0x1EC]==-1`, unlink from 0x108DA10 and destroy via 0x9D40C4; else if `[obj+0x1B0]&0x80==0` subtracts `round(ticks*[obj+0x158])` from `[obj+0x1CC]` when >=0. | 0x9D3CC0; 0x9D3CD0 `ldr r4,[r3,#0x24]` (0x108DA30); 0x9D3CE4..; 0x9D3D34 `ldr r3,[r2,#0x1cc]`; 0x9D3D38 `vldr s14,[r2,#0x158]`; 0x9D3D68 `strge r3,[r2,#0x1cc]` | M6-022 (new) | EXACT_SOURCE |
+| C13 | **0xA58008's vt+0x98 is JNI CallBooleanMethodV**, not a Wwise vtable (see P6). | 0xA58008..0xA5803C; 0xA58028 `ldr ip,[lr,#0x98]` | M6-022 (new) | EXACT_SOURCE |
+
+**Item 4 residual: CLOSED** for the listed bodies (all read; three are thunks to mislabeled bodies). **B1 residual 5 is closed.**
+
+### 5. 0xA4BC58 vs M6-011 (B1 residual 6)
+
+| step | what the original does | citation | record | classification |
+|---|---|---|---|---|
+| F1 | **0xA4BC58 is the per-connection gain/format update, not the voice filter.** It walks the voice's connection list (`voice+0x28`), manages each connection's `+0x20/+0x24` conversion buffers (memcpy, zero-fill), sets `[conn+0xc]=[voice+0x1C]*param_4`, keeps the minimum of `[conn+0x50..0x5c]` in the four output floats, calls 0xA5975C (or 0xA5B9D0+0xA5993C), and propagates `param_2+0xB8..0xC4` from `+0xA8..+0xB4`. The filter A biquad is 0xA766B8/0xA766F0/0xA77480 (M6-011's LPF/HPF citations). | 0xA4BC58; 0xA4BC68 `ldr r0,[r0,#0x28]`; 0xA4BD54 `ldrb r3,[r4,#0x6c]`; 0xA4BE70 `vstr s15,[fp,#0xc]`; 0xA4BEC8 min over `+0x50..+0x5c`; 0xA4BFC4 `[param_2+0xb8..0xc4]=[+0xa8..+0xb4]`; callers 0xA54F1C | M6-011 | **M6-011 evidence is partial:** it cites "per connection 0xA4BC58" but 0xA4BC58 is the connection gain/buffer step, and it does not name 0xA4C60C/0xA766B8 (the filter body). The filter claim rests on 0xA766F0/0xA77480, which are correct. |
+| F2 | **The filter A call site.** 0xA44630 step (2) calls `0xA4C60C(source+0x1C0, voice)`, which thunks to 0xA766B8, which calls 0xA766F0 (LPF) then 0xA77480 (HPF). | 0xA446E0 `add r0,r7,#0x1c0`; 0xA446E8 `bl 0xA4C60C`; 0xA4C61C `b 0xA766B8`; 0xA766D4 `bl 0xA766F0`; 0xA766EC `b 0xA77480` | M6-011 / M6-022 | EXACT_SOURCE |
+
+**Item 5 residual: CLOSED with an M6-011 evidence correction (see below).**
+
+### 6. 0xA44D4C pre-loop node class (B1 residual 7)
+
+| step | what the original does | citation | record | classification |
+|---|---|---|---|---|
+| N1 | **The pre-loop walks the global Wwise output-device list.** `r5=GOT base`; `r3=[slot 0x10400B8]=0x108DAFC`; `r4=[r3+8]=[0x108DB04]` = the device list head; next `[node+4]`. For each node `r0=[node+0x70]` (the device object), call `vt+0x2c`; if non-zero call `vt+0x30`. | 0xA44D50/0xA44D58 (base); 0xA44D5C `ldr r3,[r5,r3]`; 0xA44D60 `ldr r4,[r3,#8]`; 0xA44D70 `ldr r4,[r4,#4]`; 0xA44D7C `ldr r0,[r4,#0x70]`; 0xA44D88 `blx r3` (vt+0x2c); 0xA44DA0 `blx r3` (vt+0x30) | M6-022 (new); B1-V3 node meaning corrected | EXACT_SOURCE |
+| N2 | **The node class is the Wwise output-device object** in the same list 0x9EBE6C iterates (`node+0x70` = device object, node+0x04 = next, node+0x10/+0x14 = type/id used by 0x9EBE6C and 0x9EBA54). Its Wwise class name is UNKNOWN (no RTTI/symbols; see I1). | 0x9EBE6C 0x9EBF64 `ldr r0,[r4,#0x70]`; 0x9EBFF4 `ldr r4,[r4,#4]`; 0x9EC0B0 `ldr r0,[r4,#0x10]`; 0x9EBA54 `[iVar4+0x10]/[+0x14]` | M6-022 (new) | node identity UNKNOWN; list/offsets EXACT_SOURCE |
+| N3 | **Throttle.** `last=[0x108DA9C]`, `tick=[0x108D870]+0x4c`; if last==0 store tick; else if tick-last <= 8 skip; else store tick. | 0xA44DAC `ldr r2,[r5,r2]`; 0xA44DB0 `ldr r1,[r5,r3]`; 0xA44DB4 `ldr r3,[r2]`; 0xA44DB8 `ldr r1,[r1]`; 0xA44DC0 `ldr r1,[r1,#0x4c]`; 0xA44DC8 `rsb r3,r3,r1`; 0xA44DCC `cmp r3,#8`; 0xA44DD4 `str r1,[r2]` | M6-022 (new) | EXACT_SOURCE |
+
+**Item 6 residual: CLOSED** (node = the Wwise output-device node in 0x108DB04; class name UNKNOWN).
+
+### 7. 0x9A9B40's start and caller (B1 residual 8)
+
+| step | what the original does | citation | record | classification |
+|---|---|---|---|---|
+| H1 | **0x9A9B40 is mid-function; the function starts at 0x9A9B38.** It is `push {r4,r5,r6,r7,r8,lr}; mov r6,r0`, then calls 0x9D4778 and reads the three gates (same logic as Perform) and returns a frame count. | 0x9A9B38 `push {r4,r5,r6,r7,r8,lr}`; 0x9A9B3C `mov r6,r0`; 0x9A9B40 `bl 0x9D4778`; 0x9A9B48/0x9A9B4C (gate1 slot 0xFFFFFE30) | M6-022 (new) | EXACT_SOURCE |
+| H2 | **No caller exists in the shipped binary.** Scans: no direct ARM `bl`/`b` to 0x9A9B38 or 0x9A9B40 in `.text`; no 32-bit literal equal to either address anywhere in the file; Ghidra reports callers: (none). It is dead code in 3.4.0-1204. | raw 32-bit scan for 0x009A9B38/0x009A9B40 = 0 hits; ARM branch scan over 0x4D6860..0xAE3684 = 0 hits | M6-022 (new) | EXACT_SOURCE |
+
+**Item 7 residual: CLOSED** (start 0x9A9B38; no caller; dead).
+
+### 8. 0x9EBE6C (B1 residual 2)
+
+| step | what the original does | citation | record | classification |
+|---|---|---|---|---|
+| D1 | **0x9EBE6C(param) renders/advances the Wwise output devices and returns the frame count.** It reads `uRam01062444` and the manager tick (`[0x108D870]+0x4c`), OR-s `param` bit0 when a sub-tick condition holds, then walks the device list 0x108DB04. | 0x9EBE6C; 0x9EBE84 `mov r0,#0x3e8`; 0x9EBE94 `bl __aeabi_idiv`; 0x9EBEA8 `ldr r0,[r7,#0x4c]`; 0x9EBEBC `ldrh r3,[r3,#0x3c]`; 0x9EBEC0 `cmp r1,r3`; 0x9EBEC8 `orrlo sb,r4,#1` | M6-022 (new) | EXACT_SOURCE |
+| D2 | **It reads the output-device object** (`[node+0x70]`) and calls `vt+0x20` on it to obtain the per-device frame count; it takes the minimum into the return. | 0x9EBF64 `ldr r0,[r4,#0x70]`; 0x9EBFC0 `blx r3` (vt+0x20); 0x9EC104 `ldr r3,[r3,#0x20]`; 0x9EC15C `ldr r3,[fp,#-0x28]`/`cmp`/`movhs` min | M6-022 (new) | EXACT_SOURCE |
+| D3 | **It writes gate1** (see G2) and reads gate2. | 0x9EC00C `strb sl,[r3,#8]`; 0x9EC1B4 `strb r2,[r3,#8]`; 0x9EBF74 `ldrb r3,[r8,#0x20]` | M6-022 (new) | EXACT_SOURCE |
+| D4 | **The device object's actual `vt+0x20` (the audio sink frame count / pacing) is HARDWARE_ONLY.** Without the phone's audio device the value is not derivable from the shipped artifact; everything around it (list walk, gate writes, min reduction) is source. | 0x9EBF64..0x9EC064 | M6-022 / M6-018 | HARDWARE_ONLY |
+
+**Item 8 residual: CLOSED as HARDWARE_ONLY** (reads the device/sink; confirmed).
+
+---
+
+## B1 residuals - status
+
+1. Writers of the gate bytes: **CLOSED** - writers exist (G2/G3/G4); B1-V24 contradicted.
+2. 0x9EBE6C internals: **CLOSED** (device render; gate writer; sink frame count HARDWARE_ONLY).
+3. 0xA57D64 identity / 0x593E58: **CLOSED** (Android JNI audio-route poll; 0x593E58 = CallObjectMethodV thunk).
+4. Four group members' class names: **STILL A GAP** - UNKNOWN (no RTTI/symbols); behaviour unchanged from B1-V25..V28.
+5. Callee bodies: **CLOSED** - all listed bodies read; 0xA4C60C and 0xA56E00 are thunks to 0xA766B8 and 0xA56A7C.
+6. 0xA4BC58 vs M6-011: **CLOSED** - 0xA4BC58 is the per-connection gain/buffer update; M6-011's filter claim rests on 0xA766F0/0xA77480, which are correct, but the record should name the filter body.
+7. Pre-loop node class: **CLOSED** - Wwise output-device node in 0x108DB04; class name UNKNOWN.
+8. 0x9A9B40 start/caller: **CLOSED** - start 0x9A9B38, no caller, dead.
+
+## Existing records contradicted or too weak
+
+- **B1-V24 (proposed M6-022) - contradicted.** "No writer to 0x108DAF0/0x108DB08/0x1052430" is false: gate1 0x108DAF0 is written at 0x9EB090, 0x9EBBA8, 0x9EC00C, 0x9EC1B4; gate2 0x108DB08 at 0x9EAE18, 0x9EC47C, 0x9EC4A0; gate3 0x1052430 at 0x9EAE24, 0x9EBBAC, 0x9EC488, 0x9EC4A8. The scan missed the struct base 0x108DAE8 (fields +8/+0x20).
+- **B1-V23/V24 conclusion - contradicted.** "The clock-paced branch is dead; the engine always takes the device path; arg=1" is not established. Perform reads gate1 immediately after 0x9EBE6C writes it; the branch is dynamic. The bus-pass arg `(gate2==0)?1:gate3` is also dynamic because gate2/gate3 are written by SetOutputDevice.
+- **M6-017 (amendment needed).** Its frame model and its "gate bytes" note inherit B1-V23/V24; the four "buses" group and the device-state struct/gate writers should move into the new voice/bus record.
+- **M6-014's unresolved** "the bus-pass gating flag writer (D2.8, the arg of 0xA44C18) is RECOVERABLE_GAP" can now be closed with 0x9EC418/0x9EAE18/0x9EBA54.
+- **M6-011 evidence is partial.** It cites "per connection 0xA4BC58" (the connection gain/buffer update) but does not name the filter body 0xA4C60C -> 0xA766B8 -> 0xA766F0/0xA77480. The biquad claim itself is supported by 0xA766F0/0xA77480.
+- **M6-018 (mix rate)** still rests on 0xA56E20 (0x108DF90); unchanged, and the JNI vt+0x29c identity (NewStringUTF) is now confirmed.
+
+## New record needed
+
+- **M6-022 - Live voice and bus engine / output-device state.** (B1 proposed the id M6-021, but the manifest already uses M6-021 for the RNG seed seam.) It should own: the 0xA57FF8 wrapper and 0xA44D4C body; the 0x108DAE8 output-device state struct and the three gate bytes with their writers; 0x9EADE8/0x9EAF90 init/term; 0x9EBA54/0x9EBE6C device advance and the SetOutputDevice command 0x9EC418; the 0xA57D64 Android audio-route poll and its JNI thunks 0x593E58/0xA58008; the voice-pass/bus-pass per-voice bodies (0xA54F1C, 0xA4BC58, 0xA4C60C->0xA766B8, 0xA56E00->0xA56A7C, 0xA03E8C, 0xA05574, 0xA56650, 0xA4F9E0, 0x9E9E78, 0x9E9F08, 0xA55750, 0xA4AF50, 0x9D3CC0); the pre-loop device list 0x108DB04; and the four group members (behaviour only; class names UNKNOWN).
+
+## Open questions for the manager
+
+1. **Id collision:** the B1 report proposed M6-021 for the voice engine, but M6-021 is the RNG seed seam. Freeze the new record as M6-022 (or renumber).
+2. **Gate semantics at runtime:** gate1/gate2/gate3 are dynamic. The manager must decide whether the new record models the output-device state (recommended: yes, it is source-backed) or defers the runtime values to HARDWARE_ONLY. A capture of the original phone's Wwise device state is not available; the code path is.
+3. **M6-017 amendment:** move the four "buses" group and the gate/device-state rows into M6-022 and correct M6-017's frame-model text.
+4. **M6-011 evidence:** decide whether to add 0xA4C60C/0xA766B8 to M6-011's evidence or to M6-022's, so the filter's production path is owned by one record.
+5. **M6-014 residual:** close the "bus-pass gating flag writer" gap with the 0x9EC418/0x9EAE18/0x9EBA54 citations.
+
+## Method notes (for reproduction)
+
+- Gate writers found with a function-scoped ARM scanner over the Ghidra index functions in 0x95E540..0xAE2E40: track `ldr rY,[pc,#imm]` literal values and `add rX,pc,rY` to recover a pc-relative base, then report `strb`/`str` to `base+off` for the target globals. This is why the earlier address-only scan missed them.
+- No-writer evidence for other globals was not re-derived; only the three gate bytes and their struct were re-checked.
+
+
+### Appendix K - gap-2 report: Vorbis packet driver
+
+
+# M6-002 Vorbis packet driver: inventory (0x00AB6B14..0x00AB6F20) and setup context (0x00AB6380..0x00AB6780)
+
+Read-only extraction. All addresses are libcozmoEngine.so VAs (ARM mode). Instructions were read with
+capstone; `re-analysis/decomp/libcozmoEngine/` was used only for navigation. Nothing in the repo was modified
+outside `.scratch/m6-vorbis-packet/`.
+
+## Premise corrections (the task's ranges do not line up with the source)
+
+1. **The packet entry is `0x00AB3780`, not `0x00AB6B14`.** `0x00AB6B14` is a separate function that
+   `0x00AB3780` reaches by a tail call: `0x00AB3934: b #0x00AB6B14`. The mode/header read, the block-size
+   selection, the first-window copy and start-skip/end-trim are all in `0x00AB3780`
+   (`0x00AB37FC..0x00AB3934`). `0x00AB6B14` is the per-packet inverse (floor1 inverse1, residue inverse,
+   coupling inverse, floor1 inverse2, `mdct_backward`). Ghidra did not create a function for `0x00AB6B14`
+   (its `index.tsv` ends `FUN_00ab6788` at `0x00AB6B13` and starts the next at `0x00AB6F34`), which is why the
+   decompiler inlined it into `FUN_00ab3780` and why the built C# calls the range "not built".
+2. **Window/overlap assembly is not in `0x00AB6B14`.** It is `0x00AB3520`, called from the framing function
+   `0x00AB7E40` (`0x00AB7FB4` and `0x00AB7FF0`), which calls the window-combine `0x00AB5A94` per channel
+   (`0x00AB3664`). `0x00AB6B14` writes only the per-channel MDCT spectra.
+3. **The top-level entry is `0x00AB7E40`** (packet framing, u16 size per packet, V5). It calls
+   `0x00AB3780` at `0x00AB7EC8` for each packet and `0x00AB3520` at `0x00AB7FB4` for the window/output.
+4. **Setup `0x00AB6380`/`0x00AB63E0` is not called from the packet path.** It is called from the setup cache
+   `0x00AB2D74`. It fills the setup struct that `0x00AB3780`/`0x00AB6B14` read through `dsp+0x10`.
+
+## Coverage against M6-002 / corrections C5..C9
+
+The M6-002 record's evidence already names every arithmetic leaf this path calls: floor1 inverse1
+`0x00AB8E60`, residue inverse `0x00AB73F8`, coupling inverse `0x00AB6E30`, floor1 inverse2 `0x00AB915C`,
+the IMDCT `0x00AB4E34`, window-combine `0x00AB5A94`, the output driver `0x00AB3520`, and the mode / skip /
+trim `0x00AB37FC`/`0x00AB3884`. C5/C6/C7 settled the arithmetic inside those leaves; C9/X5 settled the IMDCT.
+
+What no record states is the **driver**: the decoder-state field offsets, the call order, the per-channel and
+per-submap loops, the block-size selection, the mapping/submap channel compaction, the first-window copy,
+and where the window/overlap driver sits in the sequence. The built `WwiseVorbisNative.cs` names exactly this
+as its only unread item (`UnreadArithmetic`, line 176: "the Vorbis packet driver ... is not built, so the
+packet inverse call site mdct_backward(n, pcm[channel]) at 0x00AB6EEC ... is not reached"). Therefore the
+packet driver is **a NEW set of rows** (new evidence rows for M6-002), not already covered. M6-002 stays
+IMPLEMENTATION_GAP (unbuilt); these rows are what B1 must build.
+
+## Production path (call order)
+
+```
+0x00AB7E40  framing: for each u16-sized packet -> 0x00AB3780(dsp, packet)
+  0x00AB3780  mode read; blockflag/block size; first-window copy; start-skip/end-trim
+     tail b 0x00AB6B14(dsp, mapping)
+        0x00AB6B14  per channel: 0x00AB8E60 floor1 inverse1
+                    mark coupling channels
+                    per submap: 0x00AB73F8 residue inverse
+                    coupling inverse (inline)
+                    per channel: 0x00AB915C floor1 inverse2
+                    per channel: 0x00AB4E34 mdct_backward
+  (back in 0x00AB7E40) alloc output; 0x00AB3520(dsp, out, n, ch?)
+        0x00AB3520  per channel: 0x00AB5A94 window-combine + overlap-add; save overlap
+```
+
+## Rows
+
+| step | what the original does | citation | existing record id or NEW | classification |
+|---|---|---|---|---|
+| P1 | **Packet framing.** The decoder state is `param_1`; the Vorbis source is at `param_1+4` (`piVar8 = param_1+4`, decomp 0xab7e40). Loop while `offset+2 <= total`: read the next packet's size as `u16` (`ldrh r2,[r6,r3]`); if the remaining bytes `< size` set result `{0, 2}` and return (error); call the packet decoder with a 0x10-byte descriptor `{body pointer, size, eofflag}` (`r0 = data+offset+2` is the body pointer, `r2` the u16 size, `[sp+0x14]` the eofflag). | `0x00AB7E78: ldrh r2,[r6,r3]`; `0x00AB7E7C: cmp sb,r2`; `0x00AB7E88: ldr ip,[r4,#8]`; `0x00AB7EC8: bl #0xab3780`; `0x00AB7F20..0x00AB7F28` | M6-002 V5 | EXACT_SOURCE |
+| P2 | **Result codes.** After the last packet: store the consumed offset, result 0x2E (NoMoreData); if the last packet was flagged (`param_1[9] != 0`) call `0x00AB3978` (stream reset). When a packet yields samples: allocate `channels * samples * 4` with `FUN_00a7a894`, result 0x2D (DataReady), else 0x11; the end-of-stream call `0x00AB3520(dsp,0,0,0)` returns 0x11/0x2D/0x2E. | `0x00AB7EF4..0x00AB7F14`; `0x00AB7F34..0x00AB7F78`; `0x00AB7FB4`; `0x00AB7FF0..0x00AB800C` | M6-002 V5 | EXACT_SOURCE |
+| P3 | **Setup cache context.** A decoded setup is kept in a hash keyed by `hdr+0x78` with a refcount; a miss allocates 0x1C bytes + an arena and runs the block-size check then the setup parse. | `0x00AB2D74..0x00AB2F58` (callers of 0x00AB6380/0x00AB63E0 per decomp) | M6-002 V1 | EXACT_SOURCE |
+| P4 | **Block sizes.** `setup+0 = 1<<bs0` (`hdr+0x7C`), `setup+4 = 1<<bs1` (`hdr+0x7D`); the function zeroes 0x30 bytes first. Range check: fail (-0x85) when `bs0 < 64`, `bs0 > bs1` or `bs1 > 8192`. | `0x00AB6398: bl memset`; `0x00AB63A0: lsl r1,r3,r4`; `0x00AB63A4: lsl r3,r3,r6`; `0x00AB63B0: str r1,[r5]`; `0x00AB63AC: str r3,[r5,#4]`; `0x00AB63A8..0x00AB63DC` | M6-002 V2 | EXACT_SOURCE |
+| P5 | **Setup header field order** (all bit reads LSB-first through `0x00AB62E0`, mask table `0x01005360`): codebook count `read(8)+1` -> `setup+0x18`; per codebook `read(10)` id -> pointer table (`0x00AB64A4`), unpacked by `0x00ABA188`; floor count `read(6)+1` -> `setup+0x10`; residue count `read(6)+1` -> `setup+0x14`; mapping count `read(6)+1` -> `setup+0xc`; mode count `read(6)+1` -> `setup+8`; each mode `{read(1) blockflag, read(8) mapping}` at `setup+0x1c` stride 2, error if mapping >= mapping count. | `0x00AB6400..0x00AB6408`; `0x00AB64A4/0x00AB64B0`; `0x00AB64C0..0x00AB64D0`; `0x00AB6578..0x00AB6588`; `0x00AB6610..0x00AB6620`; `0x00AB66B0..0x00AB66C0`; `0x00AB6718..0x00AB675C` | M6-002 V3 | EXACT_SOURCE |
+| P6 | **Setup array allocations.** codebook array `setup+0x2c` stride 0x3c; floor array `setup+0x24` stride 0x24, each parsed by `0x00AB88D8` (`0x00AB6558`); residue array `setup+0x28` stride 0x1c, each parsed by `0x00AB6F34` (`0x00AB65F8`); mapping array `setup+0x20` stride 0x14, each parsed by `0x00AB6788` (`0x00AB666C`); mode array `setup+0x1c`. | `0x00AB640C..0x00AB6458`; `0x00AB64D4..0x00AB6524`; `0x00AB6558`; `0x00AB658C..0x00AB65C4`; `0x00AB65F8`; `0x00AB6624..0x00AB6634`; `0x00AB666C`; `0x00AB66C4..0x00AB66FC` | M6-002 V3 | EXACT_SOURCE |
+| P7 | **Mapping entry layout** (`0x00AB6788`): `memset(entry,0,0x14)`; `+0` submaps (`read(1)==0 ? 1 : read(4)+1`); `+0xc` coupling steps (`read(8)+1`) and `+0x10` mag/ang pairs; `read(2)` reserved must be 0; `+4` mux (`read(4)` per channel when submaps>=2); `+8` submap table, `read(8)` x3 per submap with the first discarded, storing `{floor, residue}` bytes. | `0x00AB6788` body; `0x00AB63E0` call at `0x00AB666C` | M6-002 (mapping setup, C5) | EXACT_SOURCE (field order); the C5 submap-byte claim is confirmed here: floor at `+0`, residue at `+1`, stride 2 |
+| P8 | **Residue setup** (`0x00AB6F34`): `memset(entry,0,0x1c)`; `+0` type `read(2)`; `+0xc` begin `read(24)`; `+0x10` end `read(24)`; `+0x14` grouping `read(24)+1`; `+0x18` partitions `read(6)+1`; `+0x19` groupbook `read(8)`; `+0x1a` stages (`read(8)` count of cascades actually present); stage books read per stage. | `0x00AB6F34` body; `0x00AB6F48 bl memset`; `0x00AB6F54..0x00AB6F5C`; call at `0x00AB65F8` | M6-002 V3 / gapG 6.7 | EXACT_SOURCE |
+| P9 | **Packet entry prologue.** `r0 = dsp`, `r1 = packet`. `dsp+0x10 = setup`, `dsp+0xc = channels`. Compute the per-channel output stride = `round_up((bs1/2)*4*channels,16)/channels` and store `dsp+0x14[c] = work_base + c*stride` where `work_base = [0x0108E650]` (`r3 = 0x0108E648`, `ldr r5,[r3,#8]`). The stride always uses `bs1` (the long block), independent of the current block flag. | `0x00AB3780: push`; `0x00AB3788: ldr r8,[r0,#0x10]`; `0x00AB3790: ldr r6,[r0,#0xc]`; `0x00AB3794: ldr r3,[pc,#0x1d8]` -> `0x00AB3974 = 0x005DAEA4`; `0x00AB3798: ldr r0,[r8,#4]`; `0x00AB37A8: ldr r5,[r3,#8]`; `0x00AB37BC: bl #0x4b3e70` (idiv); `0x00AB37CC..0x00AB37E0` | NEW | EXACT_SOURCE |
+| P10 | **Bit reader state.** `dsp+0 = packet data pointer`, `dsp+8 = packet length`, `dsp+4 = 0` (bit position). The reader `0x00AB62E0(struct, bits)` is LSB-first: `return mask[bits] & (u32 from dsp+0 shifted by dsp+4)`, advances `dsp+0` by `(bits+bitpos)>>3` and `dsp+4 = (bits+bitpos)&7`; `dsp+8` is the remaining-byte counter. | `0x00AB37E8..0x00AB3804`; `0x00AB62E0` body (`0x00AB62E4 ldr pbVar6,[param_1]`; `0x00AB62E8 uVar7=param_1[1]`; `0x00AB62F0 ldr uVar2,[&DAT_01005360+param_2*4]`; `0x00AB6378 str param_1[1]=uVar4&7`) | M6-002 V3 (reader) | EXACT_SOURCE |
+| P11 | **Mode / header read.** Exactly one bit: `read_bits(dsp, 1)` -> mode number. No packet-type bit and no prev/next window bits. Mode table entry at `setup+0x1c + mode*2`: byte 0 = blockflag, byte 1 = mapping. | `0x00AB37FC: mov r1,#1`; `0x00AB3808: bl #0xab62e0`; `0x00AB3810: ldr r2,[r8,#0x1c]`; `0x00AB3824: ldrb r2,[r2,r0,lsl #1]`; `0x00AB3924: ldrb r3,[sl,#1]` | M6-002 V6 | EXACT_SOURCE |
+| P12 | **Block-size handling.** Save the previous block flag at `dsp+0x24`; read the new block flag to `dsp+0x28`; the previous block size is `setup[old_blockflag]` and the current is `setup[new_blockflag]` (`setup+0` = bs0, `setup+4` = bs1). | `0x00AB380C: ldr r3,[r4,#0x28]`; `0x00AB3818: str r3,[r4,#0x24]`; `0x00AB3820: ldr sb,[r8,r3,lsl #2]`; `0x00AB382C: str r2,[r4,#0x28]`; `0x00AB3894: ldr r3,[r8,r3,lsl #2]`; `0x00AB6B30: ldr r2,[r0,#0x28]`; `0x00AB6B40: ldr r2,[sl,r2,lsl #2]` | NEW | EXACT_SOURCE |
+| P13 | **First-window copy.** If `dsp+0x30 == 0`, for each channel `memcpy(dsp+0x18[ch], dsp+0x14[ch] + aligned(old_block_size), aligned(old_block_size))`, then set `dsp+0x30 = 1`. (`dsp+0x18` is the overlap/previous buffer array.) `0x00AB3520` later sets `dsp+0x30 = 1` (`0x00AB36B4`), and `0x00AB6B14` clears it to 0 (`0x00AB6F18`). | `0x00AB3814: ldrb r5,[r4,#0x30]`; `0x00AB381C: cmp r5,#0`; `0x00AB3830: bne #0xab3878`; `0x00AB3844..0x00AB3874`; `0x00AB36B4: strb r2,[r4,#0x30]`; `0x00AB6F18: strb r0,[r4,#0x30]` | NEW | EXACT_SOURCE (the flag's gating intent beyond "previous window saved" is not asserted) |
+| P14 | **Start-skip / end-trim.** `dsp+0x2c` = start-skip (u16), `dsp+0x2e` = end-trim (u16). On the first packet (`dsp+0x1c == -1`) `dsp+0x1c = 0`, `dsp+0x20 = 0`, and if `skip >= bs1/2` the packet is dropped (return). Otherwise `dsp+0x20 = new_bs/4 + old_bs/4`; if `skip == 0` skip the trim; if `total < skip` set `dsp+0x1c = total`, `dsp+0x2c = skip-total`, and drop if `skip-total >= bs1/2`; else `dsp+0x1c = skip`, `dsp+0x2c = 0`. If the packet eofflag (`packet+8`) is set, `dsp+0x20 = max(total - trim, returned)`. | `0x00AB3878..0x00AB3910`; `0x00AB3938..0x00AB3970` | gapG 6.12 / M6-002 evidence `0x00AB3244/0x00AB3884` | EXACT_SOURCE |
+| P15 | **Tail call to the inverse.** `pop {...,lr}` then compute `r1 = setup+0x20 + mode.mapping*0x14` (mapping array) and `b 0x00AB6B14` with `r0 = dsp`, `r1 = &mapping[mode.mapping]`. This is a tail call: the callee returns directly to the framing caller. | `0x00AB3914..0x00AB3934` (`0x00AB391c ldr r1,[r8,#0x20]`; `0x00AB392c add r3,r3,r3,lsl #2`; `0x00AB3930 add r1,r1,r3,lsl #2`; `0x00AB3934: b #0xab6b14`) | NEW | EXACT_SOURCE |
+| P16 | **Inverse prologue.** `r4 = dsp`, `r6 = mapping`, `sl = dsp+0x10 = setup`, `ip = dsp+0xc = channels`. `n = setup[blockflag]` (the current block size) is stored at `[fp-0x2c]`. Four per-channel `u32` stack arrays are allocated: A (`[fp-0x34]`, the per-submap channel-data pointer list), B (`r8`, the per-submap nonzero flags), C (`r7`, the per-channel floor-nonzero flags), D (`[fp-0x30]`, the per-channel floor-value pointers). | `0x00AB6B14: push`; `0x00AB6B20: ldr ip,[r0,#0xc]`; `0x00AB6B2C: ldr sl,[r0,#0x10]`; `0x00AB6B30..0x00AB6B40`; `0x00AB6B48..0x00AB6B70` | NEW | EXACT_SOURCE |
+| P17 | **Floor decode (floor1 inverse1), per channel.** For each channel: select its submap floor byte (`submaps<2 ? 0 : mux[ch]<<1`), look up `floor_entry = setup+0x24 + floorbyte*0x24`, alloca `floor+0x1c` (post count) u32, call `0x00AB8E60(dsp, floor_entry, out)`. Store the returned pointer in `D[ch]`; set `C[ch] = (result != 0)`; zero the channel output buffer `dsp+0x14[ch]` for `n*2` bytes (`n/2` floats). | `0x00AB6B98..0x00AB6C18` (`0x00AB6ba8 cmp r3,#1`; `0x00AB6bb8 ldrbgt r1,[r3,sb]`; `0x00AB6bbc lslgt r1,r1,#1`; `0x00AB6bc0 ldrb r1,[lr,r1]`; `0x00AB6bc8 add r1,r2,r1,lsl #2`; `0x00AB6be4 bl #0xab8e60`; `0x00AB6bf4 str r0,[r5,#4]!`; `0x00AB6bfc str r0,[r7,sb,lsl #2]`; `0x00AB6c0c bl #0x4d36dc`) | C7 (floor1 inverse1) for the arithmetic; the driver row NEW | EXACT_SOURCE |
+| P18 | **Coupling channel marking.** For each coupling step `{mag,ang}` (backwards from `mapping+0x10 + steps*2`): if `C[mag]` or `C[ang]` is set, set both. | `0x00AB6C24..0x00AB6C7C` (`0x00AB6c2c str r3,[fp,#-0x28]`; `0x00AB6c38 ldr r3,[r6,#0x10]`; `0x00AB6c44..0x00AB6c7c`) | NEW | EXACT_SOURCE |
+| P19 | **Residue decode, per submap.** For each submap `s` (`mapping+0`): compact the channels whose `mux[ch]==s` into `A[count]=dsp+0x14[ch]` and `B[count]=C[ch]`; look up `residue_entry = setup+0x28 + submap[s].residue*0x1c`; call `0x00AB73F8(dsp, residue_entry, A, B, count)` (5th arg on the stack). The no-mux path (`mapping+4 == 0`) takes `0x00AB6D68` and compacts all channels. | `0x00AB6C80..0x00AB6DB4` (`0x00AB6ca4 ldr r3,[r6,#4]`; `0x00AB6cc0..0x00AB6d10`; `0x00AB6d20 add r3,r3,r5,lsl #1`; `0x00AB6d28 ldrb lr,[r3,#1]`; `0x00AB6d30 ldr r1,[r2,#0x28]`; `0x00AB6d3c rsb lr,lr,lr,lsl #3`; `0x00AB6d40 add r1,r1,lr,lsl #2`; `0x00AB6d44 bl #0xab73f8`; `0x00AB6d38 str ip,[sp]`) | C5/C6/C7 (residue arithmetic) for the leaf; the driver row NEW | EXACT_SOURCE |
+| P20 | **Coupling inverse (inline).** For each coupling step (backwards) over `n/2` samples, with `A = pcm[pair[0]]`, `B = pcm[pair[1]]`: `A>0,B>0 -> (A, A-B)`; `A>0,B<=0 -> (A+B, A)`; `A<=0,B>0 -> (A, A+B)`; `A<=0,B<=0 -> (A-B, A)`. Integer add/sub, no saturation. This exactly matches the built `InverseCoupling` (WwiseVorbisNative.cs:923). | `0x00AB6DC4..0x00AB6E78` (`0x00AB6e30 ldr r3,[r0]`; `0x00AB6e34 ldr r2,[r1]`; `0x00AB6e38 cmp r3,#0`; `0x00AB6e3c rsb r7,r2,r3`; `0x00AB6e48 add r7,r3,r2`; `0x00AB6e50 str r3,[r1]`; `0x00AB6e5c rsb r3,r2,r3`; `0x00AB6e64 str r3,[r0,#-4]`; `0x00AB6f24 str r3,[r1]`; `0x00AB6f28 add r2,r3,r2`; `0x00AB6f2c str r2,[r0]`) | M6-002 / C5 4f / built `InverseCoupling` | EXACT_SOURCE |
+| P21 | **Floor curve multiply (floor1 inverse2), per channel.** For each channel: select the floor entry as in P17; call `0x00AB915C(dsp, floor_entry, D[ch], dsp+0x14[ch])`, which multiplies the residue by the floor curve and writes the result into the channel output buffer. | `0x00AB6E7C..0x00AB6EE0` (`0x00AB6e94 ldr r2,[r6]`; `0x00AB6ea8 ldr r1,[sl,#0x24]`; `0x00AB6ec0 ldr r2,[r8,#4]!`; `0x00AB6ed0 add r1,r1,ip,lsl #2`; `0x00AB6ed4 bl #0xab915c`) | C5 6a/6b (floor1 inverse2) for the arithmetic; the driver row NEW | EXACT_SOURCE |
+| P22 | **Inverse MDCT, per channel.** For each channel, call `mdct_backward(n, dsp+0x14[ch])` where `n = setup[blockflag]` (the current block size). | `0x00AB6EEC..0x00AB6F10` (`0x00AB6eec ldr r6,[fp,#-0x2c]`; `0x00AB6ef8 mov r0,r6`; `0x00AB6efc ldr r1,[r3,r5,lsl #2]`; `0x00AB6f04 bl #0xab4e34`; `0x00AB6f08 ldr r3,[r4,#0xc]`; `0x00AB6f10 bgt #0xab6ef4`) | M6-002 C9 X5-I1 (call site named); the per-channel loop NEW | EXACT_SOURCE |
+| P23 | **Inverse return.** Clear `dsp+0x30 = 0`; restore the stack and return. | `0x00AB6F14: mov r0,#0`; `0x00AB6F18: strb r0,[r4,#0x30]`; `0x00AB6F1C: sub sp,fp,#0x20`; `0x00AB6F20: pop {...pc}` | NEW | EXACT_SOURCE |
+| P24 | **Window/overlap driver** (`0x00AB3520`, called from `0x00AB7E40`). `dsp+0x1c` = start skip, `dsp+0x20` = end; `available = dsp+0x20 - dsp+0x1c`; if `param_2 == 0` return `available`. Otherwise select two window pointers from `setup+0`/`setup+4` (`block_size/2` in {128,256,512,1024,2048}; otherwise NULL, which `0x00AB5A94` would dereference). Per channel call `0x00AB5A94(bs0, bs1, dsp+0x24, dsp+0x28, dsp+0x14[ch], dsp+0x18[ch], winA, winB, out + samples*ch*4, channels, skip, end)`, then `memcpy(dsp+0x18[ch], dsp+0x14[ch] + aligned(block_size), aligned(block_size))` (overlap save), then `dsp+0x1c += returned`; set `dsp+0x30 = 1`. | `0x00AB3520` body (`0x00AB3528 ldr lr,[r0,#0x1c]`; `0x00AB3530 ldr fp,[r0,#0x20]`; `0x00AB3564..0x00AB35E4` window selection; `0x00AB3664 bl #0xab5a94`; `0x00AB3698 bl #0x4d37f0`; `0x00AB36B4 strb r2,[r4,#0x30]`; `0x00AB36BC str r7,[r4,#0x1c]`) | M6-002 evidence `0x00AB3520`; C5 8b/9b (window-combine, planar layout) | EXACT_SOURCE for the driver; the window table bytes are C5 |
+| P25 | **Window combine** (`0x00AB5A94`). Per channel: `a*wA + b*wB` when both arguments are non-zero, `a*wA - b*wB` for the second-window-only region, the 64-bit mirror (`vrev64.32`+`vswp`), and the single-window negate/copy forms. | `0x00AB5A94` body (C6 5; `0x00AB5A94..0x00AB624B`) | C5 8b / C6 5 | EXACT_SOURCE |
+| P26 | **Output layout.** `0x00AB3520` writes the final float output planarly: channel `c` at `out + samples*c*4` (`param_2 + param_3*iVar10*4`); the last channel's index is forced to `channels-1`. The decoder's intermediate buffers `dsp+0x14` are also planar with the long-block stride (P9). | `0x00AB3520` (`0x00AB3618 ldr r2,[r4,#0x14]`; `0x00AB3620 ldr fp,[r2,r5,lsl #2]`; `0x00AB3624 mul ip,r3,ip`; `0x00AB363C add ip,r3,ip,lsl #2`; `0x00AB3644 str ip,[sp,#0x10]`); `0x00AB3780` P9 | M6-002 V8 / C5 9b | EXACT_SOURCE |
+| P27 | **Stream reset** (`0x00AB3978`, called from `0x00AB7E40` when the last packet was flagged). Not read in this pass; it is on the end-of-stream path only. | call at `0x00AB7F14` | NEW | RECOVERABLE_GAP: read `0x00AB3978` (its callers are `0x00AB7E40`; the body is `0x00AB3978..0x00AB3D28`) |
+
+## Decoder-state field offsets (dsp), as used by this path
+
+| offset | meaning | citation |
+|---|---|---|
+| +0x00 | bit-reader data pointer | `0x00AB3800: str r2,[r4]` |
+| +0x04 | bit-reader bit position | `0x00AB37F8: str r1,[r4,#4]`; `0x00AB62E8` |
+| +0x08 | bit-reader remaining bytes | `0x00AB3804: str r3,[r4,#8]`; `0x00AB62E0` |
+| +0x0c | channels | `0x00AB3790: ldr r6,[r0,#0xc]`; `0x00AB6B20` |
+| +0x10 | setup struct pointer | `0x00AB3788`; `0x00AB6B2C` |
+| +0x14 | per-channel output buffer pointers (planar) | `0x00AB37CC..0x00AB37E0`; `0x00AB6be8`; `0x00AB6ef4` |
+| +0x18 | per-channel previous/overlap buffer pointers | `0x00AB384c..0x00AB3854`; `0x00AB3618/0x00AB3628` |
+| +0x1c | current start skip (int) | `0x00AB3878`; `0x00AB3528` |
+| +0x20 | current end / sample count (int) | `0x00AB38bc`; `0x00AB3530` |
+| +0x24 | previous block flag | `0x00AB3818`; `0x00AB362c` |
+| +0x28 | current block flag | `0x00AB382c`; `0x00AB3640` |
+| +0x2c | start-skip (u16, from vorb header) | `0x00AB3890`; `0x00AB38e0` |
+| +0x2e | end-trim (u16, from vorb header) | `0x00AB3900` |
+| +0x30 | previous-window-saved flag (u8) | `0x00AB3814`; `0x00AB3874`; `0x00AB6F18`; `0x00AB36B4` |
+
+## Setup struct field offsets (`dsp+0x10`), filled by `0x00AB6380`/`0x00AB63E0`
+
+| offset | meaning | citation |
+|---|---|---|
+| +0x00 | bs0 = `1<<hdr+0x7C` | `0x00AB63A0/0x00AB63B0` |
+| +0x04 | bs1 = `1<<hdr+0x7D` | `0x00AB63A4/0x00AB63AC` |
+| +0x08 | mode count | `0x00AB66C0` |
+| +0x0c | mapping count | `0x00AB6620` |
+| +0x10 | floor count | `0x00AB64D0` |
+| +0x14 | residue count | `0x00AB6588` |
+| +0x18 | codebook count | `0x00AB6408` |
+| +0x1c | mode array, 2 bytes each `{blockflag, mapping}` | `0x00AB66FC`, `0x00AB672C`, `0x00AB6744` |
+| +0x20 | mapping array, 0x14 each | `0x00AB6634` |
+| +0x24 | floor array, 0x24 each | `0x00AB6524` |
+| +0x28 | residue array, 0x1c each | `0x00AB65C4` |
+| +0x2c | codebook array, 0x3c each | `0x00AB6458` |
+
+## Existing records contradicted by the source
+
+- **None.** The M6-002/C5..C9 citations checked against the instructions agree. In particular the C5 claim
+  that each mapping submap reads three `read(8)` with the first discarded and stores `{floor, residue}` is
+  confirmed (`0x00AB6788` body; the packet driver indexes `mapping+8[mux*2]` for the floor byte and
+  `mapping+8[mux*2+1]` for the residue byte, `0x00AB6bc0`/`0x00AB6d28`).
+- The C9 correction that `0x0108E648` supplies the work pointer is confirmed at `0x00AB3794/0x00AB37A8`
+  (`r3 = 0x0108E648`, `ldr r5,[r3,#8]` = `[0x0108E650]`).
+
+## Existing records whose evidence is too weak to keep their status
+
+- **M6-002's title ("Vorbis decoding is the runtime Tremor-lowmem fork: ... 1-bit mode ... planar float,
+  skip/trim")** is a claim about the whole decoder. Its evidence cites the arithmetic leaves but no driver
+  row, and the built code refuses at the entry point. The record is correctly IMPLEMENTATION_GAP, but its
+  `evidence` should gain the driver rows above so a later comparison does not read the title as "the path is
+  settled". This is the AGENTS.md "settled record owns its whole production path" rule applied to an
+  IMPLEMENTATION_GAP: the packet driver is the unowned part and now has its own rows.
+
+## Open questions for the manager
+
+1. **Are the driver rows part of M6-002 or a new record?** The process says a settled record owns its whole
+   path; M6-002 is not settled. The rows can be appended to M6-002's `evidence` (my recommendation) or
+   promoted to M6-022 (the packet driver) with M6-002 pointing at it. The built `UnreadArithmetic` string and
+   the location `WwiseVorbisNative.cs` should follow whichever is chosen.
+2. **`dsp+0x30` gating intent.** The code writes 0 at the end of `0x00AB6B14`, 1 at the end of `0x00AB3520`,
+   and copies the previous window when it is 0 at the start of `0x00AB3780`. The literal behaviour is read;
+   the intent (why the inverse clears it) is not asserted. If B1 needs it, read `0x00AB3520`'s callers and
+   the stream reset `0x00AB3978`.
+3. **`0x00AB3978` (stream reset)** is on the end-of-stream path (`0x00AB7F14`) and was not read (P27). It is
+   a RECOVERABLE_GAP.
+4. **The window default** (`block_size/2` outside {128,256,512,1024,2048} -> NULL) is reachable only for a
+   block size outside 256..4096. C6 5g leaves shipped reachability UNKNOWN; the packet driver reads the same
+   setup, so this is unchanged.
+5. **The 5th argument of `0x00AB73F8`** (`count`, pushed at `0x00AB6d38`) is the per-submap channel count.
+   The built `ResidueInverse` signature should take it; the current C# has no packet driver, so this is an
+   interface note for B1.
+
+## Artifacts
+
+- `.scratch/m6-vorbis-packet/packet_entry.txt` (0x00AB3780..0x00AB3978)
+- `.scratch/m6-vorbis-packet/packet_driver.txt` (0x00AB6B00..0x00AB6F60)
+- `.scratch/m6-vorbis-packet/setup.txt` (0x00AB6380..0x00AB6788)
+- `.scratch/m6-vorbis-packet/framing.txt` (0x00AB7E40..0x00AB8014)
+- `.scratch/m6-vorbis-packet/window.txt` (0x00AB3520..0x00AB3758)
+
+
+
+
+### Appendix L - gap-3 report: live-path reach
+
+
+# Extraction: the live path to the engine's audio (app play request -> engine per-frame render)
+
+Read-only extraction. Scope: exactly how the live path reaches the engine's audio, for the M6 build
+job to wire it. Authority: libcozmoEngine.so 3.4.0-1204 (`resources/lib/armeabi-v7a/libcozmoEngine.so`,
+SHA-256 02263C07...89E1) first; then the decompiled Unity C# under `unity/`. The stack's C# under
+`cozmo-stack/src/` was read only to learn which behaviours need an answer; it is not evidence.
+
+All native addresses are VAs. The Wwise runtime is ARM-mode in `0x0095E540..0x00AE2E40`; the Anki code
+around it is Thumb. Ghidra files are navigation aids; the instructions below were re-read from the `.so`
+with capstone (ARM and Thumb).
+
+## The finding in one line
+
+The app posts a Wwise event as a CLAD `MessageGameToEngine`; the engine queues it to Wwise; the engine's
+per-frame tick (`CozmoEngine::Update` -> `AudioMultiplexer::UpdateAudioController` ->
+`AudioEngineController::Update`) and the robot-audio lambda both call the same `RenderAudio` wrapper
+(`0x0099F130(1)` -> `0x9AFD10`), which signals the Wwise audio thread (semaphore at engine+0x54) or runs
+`Perform` (`0x9AF8A8`) synchronously. `Perform` calls the message-pump/render body `0x9ADFD8`. The
+robot-audio path (M6-016) is pumped by `RobotAudioClient::ProcessEvents` (`0x00599FE2`), which the A6
+lambda calls right after `PostCozmoEvent`.
+
+## The chain (step | what the original does | citation | existing record id or NEW | classification)
+
+### A. App-side play request (Unity)
+
+| # | step | what the original does | citation | record | class |
+|---|---|---|---|---|---|
+| A1 | Play request | `PlaySound.Play()` arms the event; `Update()` calls `GameAudioClient.PostAudioEvent(_AudioEventParameter)`. | `unity/scripts/csharp/Anki.Cozmo.Audio/PlaySound.cs:29,72-82` | NEW | EXACT_SOURCE |
+| A2 | Client facade | `GameAudioClient.PostAudioEvent(parameter,...)` -> `UnityAudioClient.Instance.PostEvent(parameter.Event, parameter.GetGameObjectType(), flag, handler)`. UI/SFX/CodeLab variants pick the game object. | `unity/scripts/csharp/Anki.Cozmo.Audio/GameAudioClient.cs:17-45` | NEW | EXACT_SOURCE |
+| A3 | Build the CLAD message | `UnityAudioClient.PostEvent` allocates a play id (`_GetPlayId`, ++, skips 0), sets `callbackId = (flag!=EventNone)?id:0`, builds `PostAudioEvent`, sets `_RobotEngineManager.Message.PostAudioEvent` and calls `SendMessage()`. | `unity/scripts/csharp/Anki.Cozmo.Audio/UnityAudioClient.cs:224-237,279-287` | NEW | EXACT_SOURCE |
+| A4 | Wire layout | `PostAudioEvent` = `u32 audioEvent, u32 gameObject, u16 callbackId`, `Size = 10`; `MessageAudioClient` tag 0 = PostAudioEvent. | `unity/scripts/csharp/Anki.AudioEngine.Multiplexer/PostAudioEvent.cs:89-107`; `MessageAudioClient.cs:10` | NEW | EXACT_SOURCE |
+| A5 | Envelope tag | The envelope is `MessageGameToEngine`, tag `PostAudioEvent = 1` (tags 2..6 are StopAll/GameState/Switch/Parameter/MusicState). | `unity/scripts/csharp/Anki.Cozmo.ExternalInterface/MessageGameToEngine.cs:14-16` | NEW | EXACT_SOURCE |
+| A6 | Robot volume (interface) | `SetRobotVolume` is a separate `MessageGameToEngine` tag 104 -> `Robot.SetRobotVolume`; the engine's `SetRobotVolume` posts RTPC `robot_volume`. The actual robot volume is the robot-side `SetAudioVolume` (M1-042). | `unity/scripts/csharp/Robot.cs:1461-1464`; M6 inventory A24 | M1-042, M3 C17 | EXACT_SOURCE (send) / RTPC reach IMPLEMENTATION_GAP |
+
+### B. Engine receives the app message (AudioUnityInput -> multiplexer -> AudioEngineController)
+
+| # | step | what the original does | citation | record | class |
+|---|---|---|---|---|---|
+| B1 | Subscription | `AudioUnityInput` ctor registers handlers for `MessageGameToEngine` tags 1..6 through the external interface (vtable +0x2c); tag value 1..6. | Thumb ctor `0x00591590` (decomp 00591590.c:69,102,135,168,201,234), six subscribe calls, each through the external interface vtable +0x2c | NEW | EXACT_SOURCE |
+| B2 | Dispatch by tag | `AudioUnityInput::HandleGameEvents`: switch on the u16 tag; case 1 loads vtable slot +0xc and calls `MessageGameToEngine::Get_PostAudioEvent`. | `0x005919B8..0x005919D4`: `ldrh r0,[r5]; subs r1,r0,#1; cmp r1,#5; tbb`; case-1 body `0x005919CA ldr r0,[r4]`, `0x005919CC ldr r6,[r0,#0xc]`, `0x005919D0 blx 0x4AEEC0`, `0x00591A14 blx r6` | NEW | EXACT_SOURCE |
+| B3 | The slot | The AudioUnityInput vtable (`_ZTVN4Anki5Cozmo5Audio15AudioUnityInputE` = 0x1023CA8; vptr = +8) slot +0xc resolves to `AudioMuxInput::HandleMessage(PostAudioEvent)` = `0x008DFC4C`. | vtable reloc `0x1023CBC` -> `_ZN4Anki11AudioEngine11Multiplexer13AudioMuxInput13HandleMessageERKNS1_14PostAudioEventE` = `0x008DFC4C` | NEW | EXACT_SOURCE |
+| B4 | To the multiplexer | `AudioMuxInput::HandleMessage(PostAudioEvent)` calls `AudioMultiplexer::ProcessMessage(multiplexer, msg, channel)`. | `0x008DFC4C:0x008DFC5E b.w 0xAE3130` (Thumb->ARM veneer) -> `AudioMultiplexer::ProcessMessage 0x008DED14` | NEW | EXACT_SOURCE |
+| B5 | To the controller | `AudioMultiplexer::ProcessMessage(PostAudioEvent)` builds a callback context (if callbackId != 0) and calls `AudioEngineController::PostAudioEvent(event, gameObj, ctx)`. | `0x008DED14:0x008DED92 blx 0x4AF274` -> `AudioEngineController::PostAudioEvent 0x008D1F20` | NEW | EXACT_SOURCE |
+| B6 | Wwise PostEvent | `AudioEngineController::PostAudioEvent` -> `FUN_008D8CE4` -> Wwise core `PostEvent 0x009A6704(event, gameObj, flags = 1 \| (ctx&2)<<1 \| (ctx&1)<<3, callback 0x008D8D41, cookie ctx)`. The core **queues** a type-1 message and returns a playing id (atomic ++), or 0 when the event id is unknown. | `0x008D8CE4:0x008D8D32 blx 0x009A6704`; flags at `0x008D8CF8..0x008D8D0C` | M6-006 (PostEvent 0x9A6704) | IMPLEMENTATION_GAP |
+
+### C. The engine tick pumps the controller
+
+| # | step | what the original does | citation | record | class |
+|---|---|---|---|---|---|
+| C1 | Engine tick | `CozmoEngine::Update` (state 3 branch) ends by calling `AudioMultiplexer::UpdateAudioController` when the context's multiplexer is non-null. | `0x004ED4D4:0x004ED6BE ldr r0,[r4,#0x34]; 0x004ED6C0 ldr r0,[r0,#0xc]; 0x004ED6C2 cbz; 0x004ED6C4 blx 0x4A5290` | NEW | EXACT_SOURCE |
+| C2 | UpdateAudioController | `AudioMultiplexer::UpdateAudioController()` calls `AudioEngineController::Update()`. | `0x008DF3DA:0x008DF3DC b.w 0xAE3110` (veneer) -> `AudioEngineController::Update 0x008D2928` (decomp 008df3da.c:14) | NEW | EXACT_SOURCE |
+| C3 | Controller update | `AudioEngineController::Update` runs `MusicConductor::UpdateTick` then `FUN_008D88C0(this+8, 0)`. | `0x008D2928` (decomp 008d2928.c:21-24) | NEW | EXACT_SOURCE |
+| C4 | Render gate | `FUN_008D88C0(flag, 0)`: if `*flag == 0` returns; otherwise tail-calls the RenderAudio veneer with argument 1. | `0x008D88C0` (`0x008D88C6 b.w 0xAE3060` veneer -> `0x0099F130`; decomp 008d88c0.c:11-15) | NEW | EXACT_SOURCE |
+| C5 | Callback drain | The same `AudioEngineController::Update` then drains the queued audio callbacks (`AudioCallbackContext::HandleCallback`) under a mutex. This is the end-of-tick drain M6-016 refers to. | `0x008D2928` (decomp 008d2928.c:25-45); `AudioCallbackContext::HandleCallback 0x004D2428` | M6-016 (gapE 6.1..6.4) | IMPLEMENTATION_GAP |
+
+### D. Robot-audio path (M6-016)
+
+| # | step | what the original does | citation | record | class |
+|---|---|---|---|---|---|
+| D1 | Create the animation | `AnimationStreamer::InitStream` calls `RobotAudioClient::CreateAudioAnimation(animation)`. | `0x0057B674:0x0057B7DE ldr.w r0,[r5,#0x1b0]; 0x0057B7E8 blx 0x4ADBF4` | M6-016 (A3) | IMPLEMENTATION_GAP |
+| D2 | Per-robot animation object | `CreateAudioAnimation` builds `RobotAudioAnimationOnRobot` (or OnDevice for game object 6). | `0x00599FF0`; ctor `0x00597C20` / `0x005974B0` | M6-016 (A3) | IMPLEMENTATION_GAP |
+| D3 | Draw alternatives | `RobotAudioAnimation::InitAnimation` calls `GetAudioRefIndex(true)` per keyframe, `GetAudioRef`, pushes `{u16 idx, eventId, kf+0xC time, ref+4 volume, state 0}`, sets `+0x3D` if `ref+0xC != 0`, and advances the track to its end. | `0x00596814` (A2) | M6-016 (A2), M5 C14 | IMPLEMENTATION_GAP |
+| D4 | Post at wall-clock offsets | `BeginBufferingAudioOnRobotMode` sets state 1 and posts each event with `Dispatch::After(queue, event.time - first.time, lambda)`. | `0x00597F00:0x00597F72 blx 0x4AF4D8` (`Util::Dispatch::After`), string "PostAudioEventToRobotDelay" | M6-016 (A5) | IMPLEMENTATION_GAP |
+| D5 | The lambda | The posted lambda (function at `0x00597760`, body `0x00597830..`; a second copy at `0x0059818C`/`0x00598260`) sets state 1, `+0x44++`, calls `PostCozmoEvent`, and if the playing id != 0 calls `SetCozmoEventParameter(playingId, 0xD2687048 event_volume, volume)`, then `ProcessEvents`. | `0x0059783C blx 0x4AF4F0` (PostCozmoEvent); `0x00597868 blx 0x4AF4FC` (SetCozmoEventParameter, r2=0xD2687048); `0x0059786E blx 0x4AF508` (ProcessEvents). Second copy: `0x0059826C`, `0x00598298`, `0x0059829E`. | M6-016 (A6) | IMPLEMENTATION_GAP |
+| D6 | Post synchronously | `RobotAudioClient::PostCozmoEvent` builds an `AudioCallbackContext` (ctx+0x38 = 0, so the trampoline queues) and calls `AudioEngineController::PostAudioEvent` **directly** (no multiplexer). | `0x00599E50:0x00599F00 blx 0x4AF274` (decomp 00599e50.c:63-64) | M6-016 (A7) | IMPLEMENTATION_GAP |
+| D7 | Routing | `RobotAudioClient` ctor registers game objects 7..10 -> plug-ins 1..4 -> `Robot_Bus_1..4` with `SetGameObjectAuxSendValues(gain 1.0)` and `SetGameObjectOutputBusVolume(0.0)`; game object 6 -> plug-in 0/no bus. | `0x005994A0`; M6 inventory A11 (0x0059962A..0x005999A4) | M6-016 (A11) | IMPLEMENTATION_GAP |
+| D8 | Pump entry (the answer) | `RobotAudioClient::ProcessEvents` = `AudioEngineController::ProcessAudioQueue(this+0x30)`. | `0x00599FE2:0x00599FEA b 0x008D2946` (decomp 00599fe2.c:13) | M6-016 (A10) | IMPLEMENTATION_GAP |
+| D9 | ProcessAudioQueue -> RenderAudio | `ProcessAudioQueue` -> `FUN_008D88C0(this+8, 0)` -> the same RenderAudio veneer. | `0x008D2946:0x008D294A b.w 0x008D88C0` (decomp 008d2946.c:14) | M6-016 (A10) / M6-017 | IMPLEMENTATION_GAP |
+| D10 | Handoff to the robot | `AnimationStreamer::UpdateStream` -> `GetAudioToSend` pops the front audio frame (744 bytes, `0x2E8`) from the `RobotAudioClient`'s current animation and buffers it as `AudioSample` (0x8E); `RobotAudioAnimationOnRobot::PopRobotAudioMessage` (state 3) does the mu-law encode and zero-pad to 744. | `0x0057C84C` -> `0x0057C016` (`0x0057C03E mov.w r2,#0x2e8; blx memcpy`); `0x00597DB4` (A21) | M6-016 (A21), M3 C5 | IMPLEMENTATION_GAP |
+| D11 | Abort | `AbortAnimation` -> `Dispatch::Stop`; `FlushAudioCallbackQueue`; `ResetAudioBufferAnimationCompleted`; `StopCozmoEvent = StopAll(gameObj)` + `ProcessEvents`; state 4. | `0x0059678E` (A23) | M6-016 (A23) | IMPLEMENTATION_GAP |
+
+### E. Wwise audio thread, RenderAudio and Perform
+
+| # | step | what the original does | citation | record | class |
+|---|---|---|---|---|---|
+| E1 | SoundEngine::Init | `AudioEngineController::InitializeAudioEngine` -> `FUN_008D80D8` -> `FUN_008D81B0` -> `FUN_0099E3EC` (SoundEngine::Init). With default settings it sets the audio-thread-active byte (0x0108D949) = 1 and later calls `FUN_009B0200`. | `0x008D1D1E` -> `0x008D80D8` -> `0x008D81B0:0x008D81FC blx 0x0099E3EC`; flag store `0x0099EAD8 strb r3,[r4,#0xe1]` (r3=1, r4=0x0108D868); thread call `0x0099EF80 bl 0x009B0200` | NEW | EXACT_SOURCE |
+| E2 | Start the thread | `FUN_009B0200` checks the flag (`0x009B026C ldrb r3,[ip,#0x3d]`) and, when set, calls `FUN_00A40940(engine+0x54)` with the semaphore at engine+0x54. It also posts a type-0x36 init message. | `0x009B0200:0x009B022C bl 0x9AF778` (type 0x36); `0x009B026C ldrb r3,[ip,#0x3d]; 0x009B0298 add r0,r5,#0x54; 0x009B029C bl 0x00A40940` | NEW | EXACT_SOURCE |
+| E3 | pthread_create | `FUN_00A40940` sem_init's the semaphore, re-checks the flag, sets a detached attr and stack size, and `pthread_create(&DAT_0108df50, attr, FUN_00a4087c, sem)`. | `0x00A40954 bl 0x4D6784` (sem_init); `0x00A4096C ldrb r3,[r3,#0x3d]`; `0x00A409F4 bl 0x4A6934` (pthread_create) | NEW | EXACT_SOURCE |
+| E4 | Thread loop | `FUN_00A4087C` (the entry): sets thread-local state, then `do { Perform(engine); sem_wait(sem); } while (sem->flag == 0)`. | `0x00A4087C:0x00A408BC bl 0x9AF8A8` (Perform); `0x00A408C8 bl 0x4D679C` (sem_wait); `0x00A408CC ldrb r3,[r4,#4]; 0x00A408D4 beq 0xA408BC` | M6-017 (audio thread 0xA4087C) | IMPLEMENTATION_GAP |
+| E5 | RenderAudio veneer | `0x0099F130` is the public RenderAudio: it loads the engine global and tail-branches to `0x9AFD10` with argument 1. | `0x0099F130 ldr r3,[pc,#0xc]; 0x0099F134 mov r1,r0; 0x0099F13C ldr r0,[r3,#8]; 0x0099F140 b 0x9AFD10` | M6-017 (RenderAudio 0x9AFD10) | IMPLEMENTATION_GAP |
+| E6 | RenderAudio | `0x9AFD10(engine, 1)`: if the message ring is non-empty, enqueue a type-4 message, wait for the in-flight counter to drain, and ++ a counter; then, if `1 <= thread-active flag`, `sem_post(engine+0x54)` and return, else `Perform(engine)`. | `0x009AFD50 bl 0x9AF778` (type 4); `0x009AFDD4 ldrb r3,[r3,#0x3d]; 0x009AFDDC blo 0x9AFDF0`; `0x009AFDE0 add r0,r5,#0x54; 0x009AFDE4 bl 0x00A40924`; `0x009AFDF4 bl 0x9AF8A8` | M6-017 (RenderAudio 0x9AFD10) | IMPLEMENTATION_GAP |
+| E7 | Semaphore post | `FUN_00A40924` is the signal helper: if the thread flag is 0 it does nothing, else `sem_post(sem)`. The sink posts the same semaphore. | `0x00A40924` (decomp 00a40924.c:11-15); sink `0x009E9420:0x009E9440 bl 0x00A40924 (engine+0x54)`; `0x009EBE6C` posts `iRam0109d870+0x54` | NEW | EXACT_SOURCE |
+| E8 | Perform | `0x9AF8A8(engine)`: locks the engine mutex, computes the frame budget from the clock and `+0x70`, then loops: `0x9ADFD8(engine, 0, &flag)` (message pump + render body), `0x9A9F88(engine)` (pending-action drain), the render group (`0xA36AC4`, `0x9FF308`, `0x9D3C98`, `0x9E6D2C`, `0xA57FF8`, `0xA38420`), then `+0x4C++` (tick). | `0x9AF8A8`; `0x009AFA08 bl 0x9ADFD8`; `0x009AFA20 bl 0x9A9F88`; render group `0x009AFA64..0x009AFA94`; tick `0x009AFAA0..0x009AFAA8` | M6-017 (Perform order) | IMPLEMENTATION_GAP |
+| E9 | Frame body / message pump | `0x9ADFD8(engine, 0, &flag)` is the message pump plus render: the type jump table at `0x9AE0B0` covers 0..0x37; type 1 -> `0x9AF244` -> `ExecuteEvent 0x009AA3DC`. | `0x009ADFD8`; `0x009AE0B0 addls pc,pc,r3,lsl#2`; case 1 `0x009AE0BC b 0x9AF244`; `0x009AF244` | M6-006 (message pump / ExecuteEvent) | IMPLEMENTATION_GAP |
+| E10 | Pending-action drain | `0x9A9F88` walks the pending-action list whose launch tick <= `engine+0x4C` and executes each (Play/Stop/Seek), firing `EndOfEvent`/callback bookkeeping. | `0x009A9F88` (decomp 009a9f88.c) | M6-006 (EnqueueOrExecute / drain) | IMPLEMENTATION_GAP |
+| E11 | Sink pacing | On Android the OpenSL sink requests a frame and posts the semaphore; the engine never paces itself. The sink's ring size/pacing is phone hardware. | sink posts at `0x009E9420`, `0x009EBE6C`; inventory gapB T2 | M6-017 (sink caller input) / M6-018 | HARDWARE_ONLY (sink pacing) |
+| E12 | Frames per Perform | `Perform`'s frame count comes from the clock/frames calculation (`0x9D4778 -> 0x9EBE6C(0)` or the carried fraction at `+0x70`); the writer of the gating flag is unread. | inventory gapD D1.7; `0x009AF92C..0x009AF9B8` | M6-017 (RECOVERABLE_GAP) | RECOVERABLE_GAP |
+
+### F. Sound banks and scenes
+
+| # | step | what the original does | citation | record | class |
+|---|---|---|---|---|---|
+| F1 | Engine setup | `CozmoAudioController` ctor calls `AudioEngineController::InitializeAudioEngine`, `SetupPlugins`, then builds the bank list `Init.bnk, Music.bnk, UI.bnk, SFX.bnk, Cozmo.bnk, Dev_Debug.bnk` and the scene `InitScene`, and calls `RegisterAudioScene` + `LoadAudioScene`. | `0x00592BB0`; `0x005933CC blx 0x4AF0F4`; `0x00593478 blx 0x4AF10C`; bank strings decomp 00592bb0.c:590-646; `0x005935E2 blx 0x4AF124`; `0x005935EA blx 0x4AF130` | NEW (loading call sites); bank parsing M6-001 | EXACT_SOURCE (call sites) |
+| F2 | Load scene/bank | `LoadAudioScene 0x008D2EE8` -> `LoadSoundbank 0x008D2FE4`; `AddZipFiles 0x008D1E3E` feeds archives. The banks live in the OBB (`AudioAssets.zip`). | `0x008D2EE8` (LoadAudioScene, decomp 008d2ee8.c:37 `iVar2 = LoadSoundbank(this,pbVar7)`); `0x008D1E3E` | M6-001 / M6-018 | IMPLEMENTATION_GAP |
+| F3 | App side | The Unity app has no bank-load call; it ships the banks in the OBB and the engine's `CozmoAudioController` loads them at construction. | no `.bnk`/`LoadSoundbank` reference under `unity/scripts/csharp/` | NEW | EXACT_SOURCE |
+
+## What the stack must call to run the engine's path (interface list, no implementation advice)
+
+Native entry points (the original's production path):
+1. App-input: `AudioUnityInput::HandleGameEvents` `0x00591968` (tag 1) -> vtable slot +0xc =
+   `AudioMuxInput::HandleMessage(PostAudioEvent)` `0x008DFC4C` -> `AudioMultiplexer::ProcessMessage`
+   `0x008DED14` -> `AudioEngineController::PostAudioEvent` `0x008D1F20` -> `FUN_008D8CE4`
+   `0x008D8CE4` -> Wwise `PostEvent` `0x009A6704`.
+2. Engine tick: `AudioMultiplexer::UpdateAudioController` `0x008DF3DA` ->
+   `AudioEngineController::Update` `0x008D2928` -> `FUN_008D88C0` `0x008D88C0` -> RenderAudio veneer
+   `0x0099F130` -> `0x9AFD10(engine, 1)`.
+3. Robot-audio pump: `RobotAudioClient::ProcessEvents` `0x00599FE2` ->
+   `AudioEngineController::ProcessAudioQueue` `0x008D2946` -> `FUN_008D88C0` -> RenderAudio.
+4. Audio thread: `SoundEngine::Init` `0x0099E3EC` -> `FUN_009B0200` `0x009B0200` ->
+   `FUN_00A40940` `0x00A40940` -> `pthread_create(entry 0x00A4087C, sem engine+0x54)`;
+   `0x00A4087C` loops `Perform 0x009AF8A8` then `sem_wait`; `0x00A40924` is `sem_post`.
+5. Per-frame render: `0x009AF8A8(engine)` -> `0x9ADFD8(engine, 0, &flag)` (message pump +
+   render) -> `0x9A9F88(engine)` (pending-action drain) -> the render group
+   `0xA36AC4/0x9FF308/0x9D3C98/0x9E6D2C/0xA57FF8/0xA38420` -> `+0x4C++`.
+6. Bank feed: `CozmoAudioController` ctor `0x00592BB0` -> `InitializeAudioEngine` `0x008D1D1E`,
+   `LoadAudioScene` `0x008D2EE8` -> `LoadSoundbank` `0x008D2FE4`, `AddZipFiles` `0x008D1E3E`.
+
+Existing stack seams the build job must satisfy (read from `cozmo-stack/src/`, not evidence of the
+original):
+- `WwiseRobotAudioPath` (M6-016): `IWwiseRobotAudioHost` (routing + buffer lookup),
+  `IWwiseRobotAudioEngine` (`PostEvent`, `SetEventVolume`, `RenderAudio`, `StopAll`),
+  `IWwiseRobotAudioBuffer`, `IWwiseDispatchFactory`/`IWwiseDispatchQueue`,
+  `WwiseRobotAudioRefSelector`, `IWwiseRobotAudioCallback`.
+- `WwiseFrameDriver` (M6-017): `IWwiseAudioSink.HasRoomForFrame`, `IWwiseFrameSource.FramesToRender`,
+  `IWwiseFrameRender` (`RenderBuses`, `RunLEngine`, `FlushPbiNotifications`), and the M6-006
+  `WwiseEventRuntime` (`PumpMessages`, `DrainDueActions`, `AdvanceFrame`).
+- The engine tick and the app-input dispatch (B/C above) have no stack seam yet; the `RenderAudio`
+  seam in `IWwiseRobotAudioEngine` is the one that must reach `0x0099F130`/`0x9AFD10`.
+
+## Existing records contradicted by the source
+
+- None found. The M6 inventory's A10 (`ProcessEvents = RenderAudio(true) 0x0099F130`) and M6-017's
+  `Perform 0x9AF8A8 / audio thread 0xA4087C / RenderAudio 0x9AFD10` all match the instructions.
+- The inventory's A12 "the actual rate is phone-dependent: HARDWARE_ONLY" is consistent; M6-018's
+  48000 Hz is a forced policy, not a source claim.
+
+## Existing records whose evidence is too weak to keep their status (or whose path is incomplete)
+
+- **M6-017 (IMPLEMENTATION_GAP):** its evidence names the audio thread `0xA4087C`, `Perform` and
+  `RenderAudio`, but not the thread's start (`SoundEngine::Init 0x0099E3EC` -> `FUN_009B0200` ->
+  `FUN_00A40940` -> `pthread_create`), the semaphore at engine+0x54, or `sem_post 0x00A40924`. Its
+  `unresolved` calls the sink a caller input, which is fair, but the thread-start path is part of the
+  record's own production path and has no record of its own. Per the manager's "a settled record owns
+  its whole production path" rule, a new record for the thread start/semaphore is needed before
+  M6-017 can be settled. It is IMPLEMENTATION_GAP today, so no status is yet misleading.
+- **M6-016 (IMPLEMENTATION_GAP):** its evidence's "audio-thread scheduling RECOVERABLE_GAP" is now
+  partly read (E1-E7). The record's A6 lambda call to `ProcessEvents` is confirmed at
+  `0x0059786E`/`0x0059829E`, and A10's `0x00599FE2 -> 0x008D2946 -> 0x008D88C0` is confirmed. The
+  record's routing (A11), states (A19/A20), and abort (A23) were not re-read here.
+- **M6-018 (IMPLEMENTATION_GAP, forced policy):** the original mix rate is `min(native, 48000)`; the
+  stack's 48000 is a policy. The evidence is fine; no change.
+
+## Open questions the manager must decide or send back
+
+1. **How the stack drives the audio thread.** The original starts a real pthread
+   (`FUN_00A40940`/`0x00A4087C`) and the OpenSL sink posts the semaphore. The stack has no phone
+   sink. The M6-017 `IWwiseAudioSink`/`IWwiseFrameSource` seams ask the caller; the manager must
+   decide whether the stack runs a thread or calls `Perform`/`RenderAudio` synchronously, and whether
+   that is a COMPATIBILITY_POLICY (no sink) or a build of the original model.
+2. **Frames per Perform (D1.7).** The count computation and the writer of the gating flag are still
+   unread (M6-017's RECOVERABLE_GAP). The build job cannot pin the frame count from source yet.
+3. **The audio-thread-active flag (0x0108D949).** Set during `SoundEngine::Init`; whether it comes
+   from the default branch (`0x0099EAD8`) or from the `GetDefaultInitSettings` copy into the settings
+   struct is not settled. This affects when `RenderAudio` signals vs renders synchronously.
+4. **The app-input dispatch (B1-B5) has no record.** The general (non-animation) audio path
+   `AudioUnityInput -> AudioMuxInput -> AudioMultiplexer -> AudioEngineController` is primary source
+   but is not in any M6 record; M6-016 only covers `RobotAudioClient::PostCozmoEvent`. It needs its
+   own records before the M6 build job can wire the app's SFX/VO/UI path.
+5. **The engine tick call site (C1) has no record.** `CozmoEngine::Update -> UpdateAudioController`
+   is the engine's per-frame pump; M6-016/M6-017 describe the audio thread and the robot path but not
+   this caller. It needs a record (or an explicit note that M6-016 A10 owns it).
+6. **Bank/scene loading call sites (F1-F3) have no record.** `CozmoAudioController`'s six-bank list
+   and `InitScene` are source-backed but not in the frozen M6 inventory.
+
+## UNKNOWN / not settled
+
+- The exact frames-per-Perform count and the gating-flag writer (D1.7) - tried: decomp of `0x9AF8A8`
+  and `0x9EBE6C`; the inventory itself records them unread.
+- Whether the thread-active flag is set from the default branch or the settings copy in
+  `SoundEngine::Init` - tried: disassembly of `0x0099E3EC` (default branch `0x0099EAD8`) and the
+  `FUN_008D81B0` call (`param_6` is a local settings struct, so the memcpy branch is taken); the
+  settings' byte at +0x3c was not traced to `GetDefaultInitSettings 0x0099DC68`.
+- The OpenSL sink's ring size and pacing (gapB T2) - phone hardware, HARDWARE_ONLY.
+

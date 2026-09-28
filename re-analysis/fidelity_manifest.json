@@ -132,7 +132,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-        "approved": "2026-09-27",
+        "approved": "2026-09-28",
         "snapshot": "re-analysis/inventory/M6-wwise-bank.approved.json"
       }
     },
@@ -2185,10 +2185,16 @@
         "C7: IMDCT is mdct_backward(n,in) in place; stage order presymmetry 0x00AB3D28 -> butterflies 0x00AB3FCC -> step7/8 -> tail 0x00AB39D8 (2^-24); the per-stage butterfly and trig-table indexing remain RECOVERABLE_GAP (13 tables at 0x01004A40 via GOT 0x01040230)",
         "C9: exact IMDCT lane arithmetic and indexing: pre-symmetry 0x00AB3D28..0x00AB3FB0; large butterfly 0x00AB3FCC..0x00AB4E30; recursive stages 0x00AB4FAC..0x00AB5244; terminal butterfly 0x00AB5248..0x00AB5A1C; bit-reversed rotation/tail 0x00AB39D8..0x00AB3CF0; report re-analysis/research/20260927-X5-imdct-extraction.md",
         "C9 corrects C8: the exact trig data is 584 binary32 words at 0x01004A40..0x01005360, followed by 31 integer masks at 0x01005360..0x010053DC; 13 GOT views start at float offsets 0,36,72,108,144,172,200,228,256,296,368,440,512; bitrev9 is 512 u16 at 0x01004640..0x01004A40",
-        "C9: GOT 0x01040268 -> BSS 0x0108E648 supplies the native work pointer (reads 0x00AB4E50..0x00AB4E64/0x00AB4FAC/0x00AB526C/0x00AB5A2C); three static gap passes did not locate its writer, so native allocation/lifetime remains RECOVERABLE_GAP; an explicit internal implementation buffer does not claim that ownership path"
+        "C9: GOT 0x01040268 -> BSS 0x0108E648 supplies the native work pointer (reads 0x00AB4E50..0x00AB4E64/0x00AB4FAC/0x00AB526C/0x00AB5A2C); three static gap passes did not locate its writer, so native allocation/lifetime remains RECOVERABLE_GAP; an explicit internal implementation buffer does not claim that ownership path",
+        "C11 packet driver: entry 0x00AB3780 (mode read 0x00AB37FC; block flag/block size 0x00AB380C..0x00AB382C; first-window copy 0x00AB3814..0x00AB3874; start-skip/end-trim 0x00AB3878..0x00AB3970) tail-calls the inverse 0x00AB6B14 at 0x00AB3934",
+        "C11 inverse 0x00AB6B14: per channel floor1 inverse1 0x00AB8E60 (0x00AB6B98..0x00AB6C18); coupling mark 0x00AB6C24..0x00AB6C7C; per submap residue 0x00AB73F8 (0x00AB6C80..0x00AB6DB4); inline coupling inverse 0x00AB6DC4..0x00AB6E78; per channel floor1 inverse2 0x00AB915C (0x00AB6E7C..0x00AB6EE0); mdct_backward 0x00AB4E34 at 0x00AB6EEC..0x00AB6F10; clear dsp+0x30 0x00AB6F18",
+        "C11 framing 0x00AB7E40 (u16 packet size, results 0x2D/0x2E/0x11) and window/overlap driver 0x00AB3520 (per channel 0x00AB5A94 at 0x00AB3664, overlap save 0x00AB3698, planar output)",
+        "C11 decoder-state offsets dsp+0x00 (bit data), +0x04 (bit pos), +0x08 (remaining), +0x0c (channels), +0x10 (setup), +0x14 (per-channel output), +0x18 (overlap), +0x1c/+0x20 (skip/end), +0x24/+0x28 (prev/cur block flag), +0x2c/+0x2e (start-skip/end-trim), +0x30 (prev-window flag)",
+        "C11 setup offsets +0x00/+0x04 (bs0/bs1), +0x08..+0x18 (mode/mapping/floor/residue/codebook counts), +0x1c (mode array stride 2), +0x20 (mapping stride 0x14), +0x24 (floor stride 0x24), +0x28 (residue stride 0x1c), +0x2c (codebook stride 0x3c); setup parser 0x00AB6380/0x00AB63E0 from the cache 0x00AB2D74",
+        "C11 residual: stream reset 0x00AB3978 (called from 0x00AB7E40 on a flagged last packet) is unread (RECOVERABLE_GAP)"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "B1 built and verified the C9 exact IMDCT (WwiseVorbisImdct.cs; the 584 trig words and 512 bitrev entries vendored in WwiseVorbisNative.Windows.cs). What remains for this record is the packet driver around mdct_backward (0x00AB6B14..0x00AB6F20: the per-packet setup/floor/residue/inverse/window/overlap assembly) and wiring the completed native decoder into WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler. Native work-buffer ownership remains RECOVERABLE_GAP: three static passes found no writer for BSS 0x0108E648; settle it by a runtime write watchpoint followed by reopening the writer and its allocation/free callers. An explicit decoder-internal work buffer is permitted for B1 but does not establish the native allocation/lifetime path. The window-default reachability, seek start-skip and loop-count host widths, and DecodeMapEntry failure-path extra-bit consumption remain as previously recorded; inert shipped-media deviations remain fail-closed.",
+      "unresolved": "B1 built and verified the C9 exact IMDCT (WwiseVorbisImdct.cs; the 584 trig words and 512 bitrev entries vendored in WwiseVorbisNative.Windows.cs). C11 now settles the packet driver: the entry 0x00AB3780, the inverse 0x00AB6B14, the framing 0x00AB7E40 and the window/overlap driver 0x00AB3520, with the decoder-state and setup field offsets. What remains for this record is building those driver rows in WwiseVorbisNative.cs and wiring the completed decoder into WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler. Native work-buffer ownership remains RECOVERABLE_GAP: three static passes found no writer for BSS 0x0108E648; settle it by a runtime write watchpoint followed by reopening the writer and its allocation/free callers. An explicit decoder-internal work buffer is permitted for B1 but does not establish the native allocation/lifetime path. The stream reset 0x00AB3978 (end-of-stream path) is now an explicit RECOVERABLE_GAP. The window-default reachability, seek start-skip and loop-count host widths, and DecodeMapEntry failure-path extra-bit consumption remain as previously recorded; inert shipped-media deviations remain fail-closed.",
       "hardware_required": false,
       "live_path": true,
       "test": "WwiseVorbisNativeTests.TheBlockSizeCheckIsTheRowsValidation, WwiseVorbisNativeTests.TheCodebookIdsAreSelectedFromTheBuiltInLibrary, WwiseVorbisNativeTests.TheModeNumberIsTheRowsOneBit, WwiseVorbisNativeTests.AModeEntryReadsTheBlockFlagThenTheMapping, WwiseVorbisNativeTests.TheResidueSetupFieldsAreReadInTheRowsOrder, WwiseVorbisNativeTests.TheFloat32UnpackIsStockTremor, WwiseVorbisNativeTests.TheQbitsSequenceIsReadAndDiscarded, WwiseVorbisNativeTests.TheResidueDequantisationIsTheRowsFormula, WwiseVorbisNativeTests.TheSkipAndTrimAreSelectedFromTheVorbHeader, WwiseVorbisNativeTests.TheLeadingSkipDropsReturnedSamples, WwiseVorbisNativeTests.TheUnreadResidueAndModeDeviationsAreRefused, WwiseVorbisNativeTests.TheUnreadDecoderArithmeticIsRefusedNotGuessed, WwiseVorbisNativeTests.AShippedVorbisFileIsRefusedByTheNativeDecoderWithTheCitedGaps, WwiseVorbisNativeTests.TheFloor1SetupFieldsAreReadInTheC5Order, WwiseVorbisNativeTests.TheMappingSetupFieldsAreReadInTheC5Order, WwiseVorbisNativeTests.TheDecodeMapLeafPacksDimValuesLowFirst, WwiseVorbisNativeTests.TheResidueDecodevAddAddsDimEntriesWithoutSaturation, WwiseVorbisNativeTests.TheCouplingInverseIsTheC5IntegerAddSub, WwiseVorbisNativeTests.TheFloorTableAndRenderLineAreTheC5Arithmetic, WwiseVorbisNativeTests.TheWindowTablesAndCombineAreTheC5Arithmetic, WwiseVorbisNativeTests.TheEndTrimIsTheC5Consumption, WwiseVorbisNativeTests.TheFloor1PostRangeCheckIsTheC5Guard, WwiseVorbisNativeTests.TheDecodeMapPolarityIsC6NotC5, WwiseVorbisNativeTests.TheResidueStageGateAndBookSelectionIsTheC6InnerOffsets, WwiseVorbisNativeTests.TheWindowCombineMirrorAndNegateAreTheC6Forms, WwiseVorbisNativeTests.TheFloorNeighbourScanIsTheC6Rule, WwiseVorbisNativeTests.TheFloorMergeSortKeyOrderIsTheC6RightBiasedOrder, WwiseVorbisNativeTests.TheImdctShiftAndTailScaleAreTheC6Facts, WwiseVorbisNativeTests.TheWindowDefaultFailsClosedAndTheAllocationIsC6, WwiseVorbisNativeTests.TheCodebookNodeBytesAndLeafWordsAreTheC7Determination, WwiseVorbisNativeTests.TheMakeWordsBuildsTheC7Tree, WwiseVorbisNativeTests.TheMakeDecodeTableRepacksTheC7Forms, WwiseVorbisNativeTests.TheDecpackPacksTheC7LeafPayload, WwiseVorbisNativeTests.TheDecodeTableDispatchIsTheC7Widths, WwiseVorbisNativeTests.TheFloor1Inverse1ReadsTheC7FitValuesAndUnwrap, WwiseVorbisNativeTests.TheFloor1UnwrapStep2IsTheC7Arithmetic, WwiseVorbisNativeTests.TheResidueDivisorArrayIsTheC7Sequence"
@@ -5771,7 +5777,7 @@
       "title": "Voice filter A: Butterworth LPF/HPF biquad before the aux sends, value-to-cutoff map, 8-step chunked ramp; filter B dry-only",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseVoiceFilter.cs",
       "evidence": [
-        "composition 0x9FFD14..0x9FFD74; per connection 0xA4BC58",
+        "composition 0x9FFD14..0x9FFD74; filter call site 0xA44630 step (2) -> 0xA4C60C (thunk r0+=0x10; b 0xA766B8) -> 0xA766B8 -> 0xA766F0 (LPF) / 0xA77480 (HPF); 0xA4BC58 is the per-connection gain/buffer update, not the filter body (C11)",
         "targets 0xA550D8..0xA551EC; order 0xA44630",
         "LPF 0xA766F0 / HPF 0xA77480; cutoff 0xA7A3D8 / 0xA7A4AC; ramp 0xA76728..0xA77428"
       ],
@@ -5835,7 +5841,7 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
       "status": "IMPLEMENTATION_GAP",
       "provenance": "built from re-analysis/inventory/M6-wwise-bank.md gapD D2.1..D2.9 into a standalone class (WwiseBusLifetime.cs): on-demand CreateMixBus with key reuse and +0x1CC b0 (D2.1), lazy SetInsertFx at the first GetResultingBuffer with Init vt+0x1C then Reset vt+0xC before the first Execute vt+0x20 (D2.2), the FX loop gated on state +0x1BC == 1 in slot order with the slot-b0/+0x1B8-b0 newly-bypassed Reset (D2.4), the ReleaseBuffer state machine (+0x68 == 0x11 ? 4 : 1, non-bypassed out-of-place override, +0x6E = 0, buffer zeroed, D2.5), the empty-input tail frame (D2.8) and the destruction predicate (state != 1, +0x1C0 == 0, +0x1CC b0 == 0) with Term vt+8 (D2.6); the bus identity key, the FX slots, the frame size (M6-018) and the UpdateBuffer chunk sink are caller inputs; the class is not yet wired into WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler",
-      "unresolved": "not wired into the live voice/bus graph (M6-010/M6-012/M6-013/M6-015/M6-017); the record stays IMPLEMENTATION_GAP until that wiring exists and until the FX chain itself is built (M6-013/M6-015). The aux-send connection policy (gapB P9) is RECOVERABLE_GAP and stays a caller decision (Connect/Disconnect). The bus-pass gating flag writer (D2.8, the arg of 0xA44C18) is RECOVERABLE_GAP. Caller inputs, not recovered values: the reuse-key field meanings (node ctx +0x4C/+0x50, device key +0x28/+0x2C), the bus-level FX bypass +0x1B8 b0 and the slot bypass bits (from the bank, gapB P6), the FX factory (create 0x9CC2AC / type-3 check 0x9CC4D8 / async flag / in-place flag / slot state), and the flushed chunk (M6-015). The eState (+0x68) initial value is not read (D2.1 Init only sets +0x1BC = 4); the class starts it at 0x11, the value ReleaseBuffer writes, so a never-mixed bus releases to state 4 - the native creates a bus only when it is mixed into, so that path is unreachable there. Disconnect throws rather than letting +0x1C0 underflow. State 2 (the not-reusable value in D2.1) is never produced by this class's transitions, so that reuse branch is unreachable until another owner sets it.",
+      "unresolved": "not wired into the live voice/bus graph (M6-010/M6-012/M6-013/M6-015/M6-017); the record stays IMPLEMENTATION_GAP until that wiring exists and until the FX chain itself is built (M6-013/M6-015). The aux-send connection policy (gapB P9) is RECOVERABLE_GAP and stays a caller decision (Connect/Disconnect). The bus-pass gating flag writer (D2.8, the arg of 0xA44C18) is settled by C11: gate2 0x108DB08 is written at 0x9EAE18/0x9EC47C/0x9EC4A0 and gate3 0x1052430 at 0x9EAE24/0x9EBBAC/0x9EC488/0x9EC4A8 (SetOutputDevice 0x9EC418); the runtime value is HARDWARE_ONLY. Caller inputs, not recovered values: the reuse-key field meanings (node ctx +0x4C/+0x50, device key +0x28/+0x2C), the bus-level FX bypass +0x1B8 b0 and the slot bypass bits (from the bank, gapB P6), the FX factory (create 0x9CC2AC / type-3 check 0x9CC4D8 / async flag / in-place flag / slot state), and the flushed chunk (M6-015). The eState (+0x68) initial value is not read (D2.1 Init only sets +0x1BC = 4); the class starts it at 0x11, the value ReleaseBuffer writes, so a never-mixed bus releases to state 4 - the native creates a bus only when it is mixed into, so that path is unreachable there. Disconnect throws rather than letting +0x1C0 underflow. State 2 (the not-reusable value in D2.1) is never produced by this class's transitions, so that reuse branch is unreachable until another owner sets it.",
       "hardware_required": false,
       "live_path": true,
       "test": "Cozmo.Protocol.Tests.WwiseBusLifetimeTests"
@@ -5887,13 +5893,17 @@
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseFrameDriver.cs",
       "evidence": [
         "Perform 0x9AF8A8 / 0x9AF9F4..0x9AFAB8; audio thread 0xA4087C; RenderAudio 0x9AFD10",
-        "PBI teardown 0xA38600 / flush 0xA38420; EndOfEvent 0xA03618"
+        "PBI teardown 0xA38600 / flush 0xA38420; EndOfEvent 0xA03618",
+        "C11 correction: the three gate bytes have writers and the branch is dynamic. gate1 0x108DAF0 written at 0x9EB090/0x9EBBA8/0x9EC00C/0x9EC1B4; gate2 0x108DB08 at 0x9EAE18/0x9EC47C/0x9EC4A0; gate3 0x1052430 at 0x9EAE24/0x9EBBAC/0x9EC488/0x9EC4A8; SetOutputDevice 0x9EC418 (call site 0x9AE3B0); output-device state struct 0x108DAE8",
+        "C11 audio thread: SoundEngine::Init 0x0099E3EC (thread-active byte 0x0108D949) -> FUN_009B0200 -> FUN_00A40940 (sem_init 0x4D6784, pthread_create 0x4A6934, entry 0x00A4087C, sem engine+0x54); thread loop Perform 0x9AF8A8 then sem_wait 0x4D679C; sem_post helper 0x00A40924",
+        "C11 render pump: RenderAudio veneer 0x0099F130 -> 0x9AFD10(engine,1) (sem_post engine+0x54 when the thread flag is set, else Perform); engine tick CozmoEngine::Update 0x004ED4D4 -> AudioMultiplexer::UpdateAudioController 0x008DF3DA -> AudioEngineController::Update 0x008D2928 -> FUN_008D88C0; robot pump RobotAudioClient::ProcessEvents 0x00599FE2 -> ProcessAudioQueue 0x008D2946 -> FUN_008D88C0",
+        "C11: the four Perform group members (0xA36AC4, 0x9FF308, 0x9D3C98, 0x9E6D2C) and the voice engine inside LEngine (0xA57FF8 -> 0x44D4C) are M6-022"
       ],
       "effect": "audio events end at different times",
       "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
       "status": "IMPLEMENTATION_GAP",
       "provenance": "the standalone modules already built: WwiseEventRuntime (M6-006) supplies the message pump, the pending-action drain and the audio manager tick (+0x4C); WwiseFrameDriver (new) applies gapD D1.6's Perform order and D3.5's EndOfEvent position around a caller-supplied render seam. The three render steps (the row's \"buses\" group, LEngine 0xA57FF8, PBI-notification flush 0xA38420), the sink (gapB T2) and the frames-per-Perform count (D1.7) are caller inputs; M6-008..M6-016 plug into the render seam. The record stays IMPLEMENTATION_GAP while unwired.",
-      "unresolved": "not wired into the runtime (WwisePlayback, WwiseAudioSource, WwiseSongRenderer, AnimationScheduler); the wiring pass is separate. The render pass is a caller seam: D1.6's leading \"buses\" group (0xA36AC4(tick+1), 0x9FF308(tick+1), 0x9D3C98, 0x9E6D2C) is named by the row but its four members are not identified, and the voice engine inside LEngine (0xA57FF8; D2.7 voice pass 0xA44948, then bus pass 0xA44C18, then idle removal) is not built, so neither is implemented here. RECOVERABLE_GAP: D1.7's frames-per-Perform count (0x9D4778 -> 0x9EBE6C(0), or the clock-paced count at +0x70, and the writer of the gating flag) is a caller input (IWwiseFrameSource); the audio-thread/sink pacing is gapB T2's HARDWARE_ONLY model and is a caller input (IWwiseAudioSink). CHOICE reported to the manager: M6-006's only public tick advance is AdvanceFrame(), which also pumps and drains; after the driver's explicit pump and drain, and because the render seam does not enqueue control-path messages, those calls are no-ops, so the order stays messages -> drain -> render -> tick (a future M6-006 surface that exposes the tick alone would remove the detour; a render step that posts events would need it). The pending-action drain is M6-006's minimal play-count model (0xA04F54 internals unread); the EndOfEvent callback-manager internals (D3.3) and the post-Term latency (D2) remain those records' gaps.",
+      "unresolved": "not wired into the runtime (WwisePlayback, WwiseAudioSource, WwiseSongRenderer, AnimationScheduler); the wiring pass is separate. C11 corrected the frame model: the gate bytes have writers (the bus-pass arg is (gate2==0)?1:gate3 and the frames-per-Perform branch is dynamic; the runtime value depends on the Wwise output-device state and is HARDWARE_ONLY). The audio-thread lifecycle is now read (SoundEngine::Init -> FUN_009B0200 -> FUN_00A40940 pthread_create entry 0x00A4087C, semaphore engine+0x54, sem_post 0x00A40924) and is part of this record's production path. The four group members and the voice engine inside LEngine are M6-022. The render pass is a caller seam; D1.7's frames-per-Perform count is the device path (0x9D4778 -> 0x9EBE6C(0)) or the clock-paced branch, and the device/sink pacing (gapB T2) is HARDWARE_ONLY. M6-006's only public tick advance is AdvanceFrame(), which also pumps and drains; after the driver's explicit pump and drain those calls are no-ops, so the order stays messages -> drain -> render -> tick. The pending-action drain is M6-006's minimal play-count model (0xA04F54 internals unread); the EndOfEvent callback-manager internals (D3.3) and the post-Term latency (D2) remain those records' gaps.",
       "hardware_required": false,
       "live_path": true,
       "test": "WwiseFrameDriverTests.M6_017_D1_6_ThePerformOrderIsMessagesDrainRenderThenTick; WwiseFrameDriverTests.M6_017_D1_8_NoFrameIsProducedUntilTheSinkHasRoom; WwiseFrameDriverTests.M6_017_D1_6_AZeroCountPerformStillPumpsAndDrainsOnceAndRendersNoFrame; WwiseFrameDriverTests.M6_017_D3_5_EndOfEventFiresAfterTheLastFramesBusPassAndBeforeTheNextPartialFlush"
@@ -6266,6 +6276,66 @@
       "hardware_required": false,
       "live_path": false,
       "test": "WwiseSelectionTests.TheLcgPinsAFixedSeed"
+    },
+    {
+      "id": "M6-022",
+      "subsystem": "M6-wwise-bank",
+      "title": "The live voice and bus engine: the 0xA57FF8 wrapper and 0xA44D4C render body, the voice pass, the bus pass, idle removal, the per-voice DSP chain, the four Perform group members, the PBI flush, the 0x108DAE8 output-device state and its three gate bytes, and the JNI audio-route poll",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs",
+      "effect": "the live voice and bus graph renders differently, or not at all",
+      "provenance": "read from libcozmoEngine.so in re-analysis/research/20260927-B1-voice-engine-extraction.md (rows B1-V1..V30), citation-checked in re-analysis/research/20260928-I-M6b-citation-check.md, and gap-passed in re-analysis/research/20260928-I-M6b-gap1-extraction.md; frozen as correction C11. The four group members' Wwise class names are UNKNOWN (no RTTI/symbols).",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "wrapper 0xA57FF8 -> 0xA57D64 + 0xA44D4C; render body 0xA44D4C pre-loop over the output-device list 0x108DB04 (0xA44D5C..0xA44DA0); throttle 0x108DA9C/0x108D870+0x4c (0xA44DAC..0xA44DD4)",
+        "voice pass 0xA44948 (pre-pass 0x9D3CC0/0xA43D24/0xA39564; voice list base 0x108DF54, head +0x14, next +0xD0, state +0xDC); bus pass 0xA44C18; idle removal 0xA43F64",
+        "voice mix dispatcher 0xA44630; params fill 0xA54F1C; source execute 0xA548C0; pitch 0xA53134; resampler execute 0xA52D4C; mix-in 0xA4FBEC; mixer 0xA45E9C",
+        "callee bodies 0xA4C60C -> 0xA766B8 (0xA766F0 LPF / 0xA77480 HPF), 0xA56E00 -> 0xA56A7C, 0xA03E8C, 0xA05574, 0xA56650, 0xA4F9E0, 0x9E9E78, 0x9E9F08, 0xA55750, 0xA4AF50, 0x9D3CC0",
+        "group members 0xA36AC4, 0x9FF308, 0x9D3C98, 0x9E6D2C; Perform call order 0x9AFA4C..0x9AFAA8; PBI flush 0xA38420",
+        "output-device state struct 0x108DAE8 (gate1 0x108DAF0 at +8, 0x108DAFC at +0x14, list 0x108DB04 at +0x1C, gate2 0x108DB08 at +0x20, 0x108DB0C at +0x24, 0x108DB18 at +0x30); gate3 0x1052430",
+        "gate writers: gate1 0x9EB090/0x9EBBA8/0x9EC00C/0x9EC1B4; gate2 0x9EAE18/0x9EC47C/0x9EC4A0; gate3 0x9EAE24/0x9EBBAC/0x9EC488/0x9EC4A8; module init 0x9EADE8; term 0x9EAF90; device advance 0x9EBA54; SetOutputDevice 0x9EC418 (call site 0x9AE3B0); frame count 0x9D4778 -> 0x9EC38C -> 0x9EBE6C",
+        "JNI audio-route poll 0xA57D64..0xA5803C (GetEnv/AttachCurrentThread, FindClass, NewStringUTF, GetMethodID, CallObjectMethodV 0x593E58, CallBooleanMethodV 0xA58008, result 0x108DF98, notify 0x9EA66C)"
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "not built and not wired into WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler (the wiring is the M6 build job). The FX-slot object identity (B1-V12) is RECOVERABLE_GAP. The native device frame count 0x9EBE6C's sink value and the OpenSL pacing are HARDWARE_ONLY (the code path is recovered; this stack has no phone sink). The four group members' Wwise class names are UNKNOWN (no RTTI/symbols; behaviour is read). The gate bytes are dynamic: the bus-pass arg (gate2==0 ? 1 : gate3) and the frames-per-Perform branch depend on the Wwise output-device state, whose runtime value is HARDWARE_ONLY; both the code path and the writers are settled.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M6-023",
+      "subsystem": "M6-wwise-bank",
+      "title": "The app audio-input dispatch: Unity PostAudioEvent -> AudioUnityInput -> AudioMuxInput -> AudioMultiplexer -> AudioEngineController::PostAudioEvent -> Wwise PostEvent",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseEventRuntime.cs",
+      "effect": "app-posted SFX, UI and VO events do not reach the engine",
+      "provenance": "read from the Unity code and libcozmoEngine.so in re-analysis/research/20260928-I-M6b-gap3-extraction.md (rows A1-A5, B1-B6); frozen as correction C11",
+      "authority": "unity/ (decompiled Unity C#) and libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Unity: unity/scripts/csharp/Anki.Cozmo.Audio/PlaySound.cs:29,72-82; GameAudioClient.cs:17-45; UnityAudioClient.cs:224-237,279-287; Anki.AudioEngine.Multiplexer/PostAudioEvent.cs:89-107; Anki.Cozmo.ExternalInterface/MessageGameToEngine.cs:14-16",
+        "native: AudioUnityInput ctor 0x00591590; HandleGameEvents 0x005919B8; vtable 0x1023CA8 reloc 0x1023CBC -> AudioMuxInput::HandleMessage 0x008DFC4C; AudioMultiplexer::ProcessMessage 0x008DED14; AudioEngineController::PostAudioEvent 0x008D1F20 -> 0x008D8CE4 -> Wwise PostEvent 0x009A6704"
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "not built and not wired. The Wwise core PostEvent it reaches is M6-006.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M6-024",
+      "subsystem": "M6-wwise-bank",
+      "title": "Bank and scene loading call sites: the CozmoAudioController six-bank list and InitScene, LoadAudioScene/LoadSoundbank, AddZipFiles",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSoundLibrary.cs",
+      "effect": "the engine loads a different bank/scene set",
+      "provenance": "read from libcozmoEngine.so in re-analysis/research/20260928-I-M6b-gap3-extraction.md (rows F1-F3); frozen as correction C11",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "CozmoAudioController ctor 0x00592BB0; InitializeAudioEngine 0x008D1D1E; RegisterAudioScene 0x005935E2; LoadAudioScene 0x005935EA; banks Init.bnk/Music.bnk/UI.bnk/SFX.bnk/Cozmo.bnk/Dev_Debug.bnk and scene InitScene",
+        "LoadAudioScene 0x008D2EE8 -> LoadSoundbank 0x008D2FE4; AddZipFiles 0x008D1E3E feeds the OBB archives"
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "not built and not wired. Bank parsing is M6-001.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     },
     {
       "id": "M11-021",
