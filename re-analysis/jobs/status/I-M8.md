@@ -1,1 +1,1 @@
-CLAIMED opencode 2026-09-28 08:13
+DONE 2026-09-28 10:04 - M8-framework inventory approved: 14 records (IMPLEMENTATION_GAP 10, COMPATIBILITY_POLICY 4), 0 live-path RECOVERABLE_GAP; X3 reports verified, gap passes 1-3 closed every UNKNOWN (action-tag guard, ReactionTrigger ordinals, Smart* bodies, IsRunnable, reaction locks, +0x104/+0x108/+0x110/+0x111)
