@@ -1394,6 +1394,85 @@ is closed: the arg is `(gate2==0) ? 1 : gate3`, gate2 is written at `0x9EAE18`
 `0x9EBBAC`, `0x9EC488`/`0x9EC4A8`. The runtime value is HARDWARE_ONLY. M6-014 stays
 `IMPLEMENTATION_GAP`.
 
+## Correction C12 (manager, 2026-09-28): the M6-022 callee bodies, the source classes, the bus-output tail and the modulator evaluator
+
+A build pass on `M6-022` stopped with a `MISSING` list: C11 named the voice-engine
+callees but did not give their bodies (B1's own residual list 5/7 said the same).
+Five bounded extraction passes read them. The reports are committed:
+
+- voice callees: `re-analysis/research/20260928-B-M6b-voice-callees.md`
+- bus-output/group callees: `re-analysis/research/20260928-B-M6b-bus-group-callees.md`
+- bus-output tail (the region C11 called the mix kernel): `re-analysis/research/20260928-B-M6b-bus-metering.md`
+- source classes and their render/stream slots: `re-analysis/research/20260928-B-M6b-source-classes.md`
+- the per-voice curve/modulator evaluator: `re-analysis/research/20260928-B-M6b-modulator-evaluator.md`
+
+The reports are the full specification; the rows below are the settled behaviour-changing
+steps and the corrections to earlier rows.
+
+### Premises C11 got wrong (corrected here)
+
+| # | C11 said | The source says | citation |
+|---|---|---|---|
+| X1 | `0xA50044..0xA50FD0` is the bus sample-mixing kernel | It is the bus **level-analysis/metering** stage: no store to the output samples, only the per-channel meter arrays and the filter state. Mixing is the connection vfuncs `vt+0x2c`/`vt+0x30` inside `0xA4FEF8` and `0xA4F9E0`/`0xA45E9C` after it. | `0xA4FEF8` tail; report bus-metering N1 |
+| X2 | V8's source `vt+0x30` targets are the six factory classes | Vorbis (`plugin>>16==4`) is **not** one of the six; it is the registered-plugin path `0x9CC3EC` (vtables `0x103E0B8` streamed / `0x103E138` in-memory). The shipped robot audio is Vorbis-first (1826 stream 1 + 27 stream 0) plus 333 ADPCM; no bank uses the PCM classes. The six ctors store `vtable_base+8`; the real render slots are `0xA73D34` (ADPCM t1), `0xA72554` (ADPCM t3), `0xAB0448` (Vorbis streamed), `0xAB1550` (Vorbis in-memory). | report source-classes Q1/Q3 |
+| X3 | `bus = [source+0xC]` | `[source+0xC]` is the **PBI** (the playing instance), the factory's third argument. The bus is reached elsewhere. | `0xA56284 str r1,[r0,#0xc]`; report source-classes Q4 |
+| X4 | `strh [params+0xC] = 0x108DF98` | It is the frame size `0x400` from `0x1052440`. | `0xA44760`/`0xA44794`/`0xA4479C` |
+| X5 | `0xA4F9E0` is inside the per-voice DSP chain | It is the bus→output-bus mix called by `0xA4FEF8`'s **callers** (`0xA44C18`), not by `0xA4FEF8`. | report bus-metering Q3 |
+| X6 | V21's `[item+8]==4` is a "reason" | `0xA38600` stores `{next,obj,code,reason,extra}`; `[item+8]` is the message **code** (4 = Term); the reason is `[item+0xC]`. | report bus-group Q3 |
+| X7 | `+0x138` is an in-place flag | `+0x138` is the **out-of-place buffer pointer**; the in-place decision is the byte from `0x9CF644`. | report bus-group Q2 |
+
+### M6-022 — settled rows (new bodies; all EXACT_SOURCE unless noted)
+
+| step | what the original does | citation |
+|---|---|---|
+| V3/N1 | Render-body pre-loop device node `vt+0x2c = 0x9E935C` returns `[obj+0x84]`; `vt+0x30 = 0x9E9420` returns 2 when `[obj+0x84]==0`, else `sem_post` and 1. Node vtable `0x103B498`; the `[node+0x70]` sub-object identity UNKNOWN. | report voice-callees Q1 |
+| V5a | `0xA43D24` ducking/volume pre-pass: `0xA55750` per active voice → per-bus `+0x88 = ([bus+0x1C8]?[+0x88]:0)+[bus+0x90]`, `+0x8C = dBToLin(+0x88*0.05)` → `0xA4AF50` per voice → `0xA437E0` on buses with `+0x1CC & 2` (descending) → `0xA4B4B0` per voice. Container base `0x108DF50`, bus count `0x108DF54`, voice count `0x108DF5C`, voice head `0x108DF64`. | `0xA43D24..0xA43EFC` |
+| V5b | `0xA39564` node cleanup: clear bit2 of `[node+0x1BE]` on the `0x108DEC8` list; optionally `0xA00494` per node and clear `0x108DED8`; then `0x9F3BA4` per non-null `0x108DECC` element. | `0xA39564..0xA395FC` |
+| V7/C1 | Full `0xA54F1C` branch table (states `E4=[voice+0xE4]`, `E0=[voice+0xE0]`, `A=[voice+0xCD]&1`, `E8=[voice+0xE8]&1`, `SRC10=[source+0x10]&1`; bus `vt+0x3C`, `voice+0x1C0 vt+0x18/+0x14/+0x10/+0xC`, `0xA56650`, `0xA4BC58`, `0xA4B4B0`, `0xA54A30`; returns 1 when the voice has a live source). `params+0x2C=1` when `[PBI+0x1F8]` present. `0xA4B4B0` applies ducking to `voice+0x1C`/connection `+0x60`/`+0x6C` bit1. `0xA4BC58` is the per-connection gain/format update (not the filter). | report voice-callees Q4 |
+| V8 | Full `0xA44630` order: insert-FX slots `vt+0x38` (4..1) then `vt+0x3C` on state 0x2D/0x11; filter A `0xA4C60C(voice+0x1C0)`; gain/ramp `0xA56E00(voice+0x380)`; source execute `0xA548C0`; on 0x11/0x2D pitch `0xA53134`, `source->vt+0x30` (params+0xC = 0x400), resampler `0xA52D4C`; `0xA03E8C` notify; aux-send walk `0xA4FBEC`; filter B `0xA4C60C(voice+0x390)` before the first dry mix; dry-mix walk `0xA4FBEC` gain 1.0. FX-slot class identity RECOVERABLE_GAP. | report voice-callees Q5 |
+| V9 | `0xA548C0`: bus `vt+0x58 = 0x9C07C4` recursively collects over the bus's child arrays `+0x58`/`+0x48` and returns the last child's count; `-1` = none. Bus vtable `0x103ACE0`. | report voice-callees Q6 |
+| V11 | `0xA52D4C` resampler execute in full; `0xA5268C` merges list-A entries into list-B by offset window (void, no result code); `0xA4721C` always returns 0, `0xA47224` returns 1 or `0xA69A70`'s result. Result codes `[params+0x28]` = 0x11/0x2B/0x2D/2. | report voice-callees Q7 |
+| V15 | `0xA55D04` voice DSP teardown; `0xA55A84` attach-existing source; `0xA54A30` start-stream/build insert-FX chain; the state-0x11 tail order `0xA55D04 → 0xA55A84 → 0xA54A30 → 0xA56478` with the destroy path. | report voice-callees Q8 |
+| C10 | `0xA01BD8` body: `[bus+0xE8]&3==0` → `[bus+0xC4]=101.0`; `&0xC==4` → `bus->vt+0x54` with `0xA36D34(...)/[bus+0x14]+0x64`; else `0x9FE794`/`0x9FDD80`/`0x9BCED4`. | report voice-callees Q9 |
+| C11 | `0x9E84C8` device volume: product over the node list of `value + slope*(sub?[sub+0xC]:node+0x4C)` for each set bit of the 64-bit key; 1.0 when empty. | report voice-callees Q10 |
+| V18 | Bus output `0xA4FEF8` branch and mask (`mask = ([bus+0x1B8]&4)==0 ? 0xF : 0`); non-FX path `0xA50120`; `[bus+0x1BC]==1` branch; merge; the tail is metering (X1). | report bus-metering Q1 |
+| V18b | `0xA4F754` SetInsertFx and `0xA4E974` per-slot create/init/reset/bypass in full; `0xA4E7CC` slot drop; slot fields `+0xD4/+0xD8/+0xDC/+0xE0/+0x138/+0x13C/+0x140/+0x144/+0x150`. FX-slot object identity RECOVERABLE_GAP. | report bus-group Q2 |
+| V18c | `0xA4D994` bus output gain/param update: `bus+0x80=bus+0x84`, `bus+0x84 = dBToLin(bus+0x90)` (0.05/-37/pow), params `+0x94/+0x98/+0x9c`, registry lookup by `bus+0x28/+0x2c`, call `0xA25FF8` (RECOVERABLE_GAP), `bus+0xc0 & 4` scales by `0x9C7FE4`. | report bus-metering Q2 |
+| V21 | `0xA38420` PBI flush in full; `0x9D3470` unlink; PBI vtable base `0x103B768` `+0x10=0xA029DC` Term, `+4=0x009FF54C` destructor; `ContinuousPBI` `0x103D3B0` `+0x10=0xA6ACC0`. `0xA38600` queue append; `0xA01800` code 4. | report bus-group Q3 |
+| V25 | `0xA3587C` frees `[obj+0x20]`, zeroes `+0x24/+0x28`; reached from `0xA3693C` state 6 with `0xA35878` and the array removal. | report bus-group Q4 |
+| V26 | `0x9FDD90` in full: `val=[obj+0x40]+tick*[obj+0x3c]` clamped to [0,1]; `out = [obj+0x48/+0x4c/+0x50] + t*[obj+0x54/+0x58/+0x5c]`; per target in `[obj+0x20]` (count `[obj+0x24]`) with `([target+0x3c]&4)==0` write `+0x18/+0x1c/+0x20`; tail `0x9FD910` when `tick >= [obj+0x34]` (RECOVERABLE_GAP). | report bus-group Q5 |
+| V27 | `0x9D3644`/`0x9D3864` in full; `0xA01800`, `0xA41854`, `0xA431A8`, `0xA54480` bodies; `0xA4304C` return contract; confirms `0xA437E0`/`0xA4B4B0` are **not** called here. | report bus-group Q6 |
+| V28 | `0x9E6D2C` purge in full (`0x9E2AE4`, `0x9E21FC`, `0x9E2510`, `0x9D8A24`), plus `0x9E2BD0`/`0x9E52F8` bodies (per-voice LFO + transition evaluator): five shapes 0..4, coefficient recompute from `voice+0x84/+0x88`, type-0 records 0x4C / type-1 records 0x30, pool node layout, `0x9E52F8` five-segment ramp. NEON lane order RECOVERABLE_GAP; class names UNKNOWN. | report modulator-evaluator |
+
+### M6-002 — the Vorbis source render wrappers (new rows under the record)
+
+The shipped Vorbis source classes and their render slots: streamed `0x103E0B8` render
+`0xAB0448` (sets decoder state, calls framing `0xAB7E40`, emits through `0xA73490`);
+in-memory `0x103E138` render `0xAB1550` (internal read buffer `+0xEC..+0xF8`, calls
+`0xAB7E40`, emits `0xA73490`). StartStream `vt+0x28` = `0xAB0B20` / `0xAB22D4`.
+`0xAB0448` reads `[src+0x38]` config, `[src+0x80]` output, `[src+0x3C]` frames,
+`[src+0xBC]` rate. These are the live callers the decoder must satisfy. Source:
+report source-classes Q3.
+
+### M6-011 / M6-014 — evidence notes
+
+- M6-011's filter body is confirmed (`0xA4C60C → 0xA766B8 → 0xA766F0/0xA77480`);
+  `0xA4BC58` is the connection gain/format update. The C1 label `[source+0xC] = bus`
+  is corrected to PBI (X3).
+- M6-014's bus-pass gate residual stays closed; `0xA4F9E0` is the caller-side bus
+  output mix, not `0xA4FEF8`'s callee (X5).
+
+### Records after C12
+
+- **M6-022** stays `IMPLEMENTATION_GAP`; its `unresolved` now names the RECOVERABLE_GAPs
+  the reports leave (the bus metering DSP identity `0xA50044..0xA50FD0`, `0xA25FF8`,
+  `0x9E2BD0`/`0x9E52F8` NEON lane order, `0x9FD910`, the FX-slot class identity, the
+  `[node+0x70]` sub-object identity, the callback registry `0x0108D95C` owner) and the
+  HARDWARE_ONLY sink/OpenSL values, rather than "bodies not read".
+- **M6-002** stays `IMPLEMENTATION_GAP`; the source render wrappers are added to its
+  evidence and its `unresolved` names the driver build and the same residuals.
+- No record is settled by C12; C12 only supplies the build specification.
+
 ## Appendix J: C11 gap-1 report (voice-engine residuals)
 
 Copied verbatim from `re-analysis/research/20260928-I-M6b-gap1-extraction.md`.
