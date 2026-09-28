@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **357 records** over 16 subsystems.
+Manifest of **361 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 162 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 150 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 3 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 6 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 144 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 7 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 159 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 30 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 21 | 0 | 20 | 0 | 0 | yes | no |
 | M13-navigation — Planning, charger and block configurations | 15 | 0 | 0 | 0 | 0 | yes | yes |
 | M14-faces — Face and pet pipeline | 7 | 0 | 0 | 1 | 0 | yes | yes |
-| M15-freeplay — Needs, activities and freeplay | 12 | 0 | 0 | 0 | 0 | yes | yes |
+| M15-freeplay — Needs, activities and freeplay | 16 | 1 | 15 | 0 | 0 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -66,7 +66,7 @@ status.
 | M12-manipulation | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | M13-navigation | UNREVIEWED | 15 | 5 | 0 | 0 |
 | M14-faces | UNREVIEWED | 6 | 0 | 0 | 0 |
-| M15-freeplay | UNREVIEWED | 12 | 1 | 0 | 0 |
+| M15-freeplay | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
 ## Still to read: every RECOVERABLE_GAP
@@ -130,6 +130,17 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: statically linked Wwise runtime in libcozmoEngine.so
 * evidence: 0x009D671C..0x009D7727; 0x009D7FC0..0x009D8137; 0x009E266C..0x009E2813
 * outstanding: Follow the type-21 per-voice object created at 0x009D7FC0 through vtable 0x0104B268 and map reads of LFO state +0x34..+0x48 to the waveform sample equation.
+
+### M15-freeplay — Needs, activities and freeplay
+
+**M15-014 — Needs connection and per-serial persistence lifecycle** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs`
+* effect: the robot-specific needs file selected, read and written changes
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: NeedsManager::WriteToDevice 0x00693BB0; NeedsManager::InitAfterSerialNumberAcquired 0x006943A0; NeedsManager::NeedsFilenameFromSerialNumber 0x00695224; NeedsManager::ReadFromDevice 0x006998B4; persistence string initializer 0x004D8DDC; RobotInterface::MessageHandler::ConnectRobotToNeedsManager 0x0069DEE4
+* outstanding: The generated or indirect dispatch registration that calls 0x0069DEE4 was not recovered. Read that table to identify the inbound serial field and connection ordering.
 
 ## Still to build: every IMPLEMENTATION_GAP
 
@@ -1454,6 +1465,143 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204: Block::LookupBlockInfo 0x004E4C8C builds a process-static map (guard 0x010590A8) with four entries, keys 1..4 (LIGHTCUBE1/2/3 and LIGHTCUBE_GHOST); each entry's face-def vector at info+0x20 is six 16-byte records copied verbatim from rodata (LIGHTCUBE1 0x00C45C40, LIGHTCUBE2 0x00C45CA0, LIGHTCUBE3 0x00C45D00, GHOST 0x00C45D60; copy loops 0x004E4D12/0x004E4DD2/0x004E4E88/0x004E4F3C); GeneratePreActionPoses 0x004E5808 tests (1<<sb) & mask, +0xC for types 0 and 5 (0x004E5976/0x004E5C80) and +0xD for type 4 (0x004E5B94)
 * evidence: record layout {FaceName u32 @0; MarkerType code u32 @4; size 25.0 @8; maskForTypes0And5 u8 @0xC; maskForType4 u8 @0xD}; LIGHTCUBE1 0x00C45C40, LIGHTCUBE2 0x00C45CA0, LIGHTCUBE3 0x00C45D00, GHOST 0x00C45D60; for the three real cubes +0xC = 0x05 for FaceNames 0..3, 0x00 for FaceName 4, 0x0F for FaceName 5; +0xD = 0x0F for all; GHOST 0x0F/0x0F everywhere; types 1 and 2 have no mask test; type 3 produces nothing; the rotation table is 0x0105B0AC..0x0105B0E8 (stride 0x14); Block::Block/AddFace pass 0,0 and ignore the masks (0x004E5FF8/0x004E6010; 0x004E564C)
 * outstanding: compare the C# pre-action pose generation with the face-def masks and the four map entries
+
+### M15-freeplay — Needs, activities and freeplay
+
+**M15-001 — NeedsManager initialization, periodic update and need-bracket rules** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs`
+* effect: need levels, notifications, persistence cadence and bracket observations change
+* rests on: libcozmoEngine.so and shipped needs configuration
+* best authority: libcozmoEngine.so and shipped needs configuration
+* evidence: CozmoEngine::Init 0x004EC9E6..0x004ECA0A; NeedsManager::Init 0x00692574; NeedsManager::Update 0x00695C9C; NeedsState::UpdateCurNeedsBrackets 0x0069C12C; needs_config.json
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M15-002 — Chooser factory, scoring, strict-priority and selection chooser semantics** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs`
+* effect: the behavior selected for an activity changes
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: BSRunnableChooserFactory::CreateBSRunnableChooser 0x00609C88; ScoringBSRunnableChooser::ReloadFromConfig 0x00609F8C; ScoringBSRunnableChooser::GetDesiredActiveBehavior 0x0060A3D8; StrictPriorityBSRunnableChooser::GetDesiredActiveBehavior 0x0060B23E; SelectionBSRunnableChooser::OnSelected 0x0060AF20
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M15-003 — Activity start/end predicates and cooldown lifecycle** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs`
+* effect: an activity becomes eligible, remains active or ends at different times
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: IActivityStrategy constructor 0x005B4EC8; IActivityStrategy::WantsToStart 0x005B529C; IActivityStrategy::RandomizeCooldown 0x005B5408; IActivityStrategy::WantsToEnd 0x005B5444; IActivityStrategy::SetCooldown 0x005B54E4
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M15-004 — Needs decay modifiers and damaged-part thresholds** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs`
+* effect: need decay rates and the reported damaged-part count change
+* rests on: libcozmoEngine.so and shipped needs configuration
+* best authority: libcozmoEngine.so and shipped needs configuration
+* evidence: NeedsState::GetDecayMultipliers 0x0069C214; decay modifier descending sort 0x00691040; NeedsState::NumDamagedPartsForRepairLevel 0x0069CCAC; needs_decay_config.json; needs_config.json
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M15-005 — Flat three-second cooldown after an activity ends within two ticks** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs`
+* effect: an immediately ending activity is delayed before it can restart
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: IActivityStrategy::WantsToStart 0x005B529C; activity times call site 0x005B26FE; IActivityStrategy::RandomizeCooldown 0x005B5408
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M15-006 — Freeplay activity selection and selected/deselected lifecycle** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs`
+* effect: the active activity and behavior, animation state and pending reward handling change
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: ActivityFreeplay::PickNewActivityForSpark 0x005ADC44; ActivityFreeplay::GetDesiredActiveBehaviorInternal 0x005AE29C; IActivity::OnSelected 0x005B312C; IActivity::OnDeselected 0x005B33B8; IActivity::GetDesiredActiveBehavior 0x005B387C
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M15-007 — Activity feature gate and dead boredomMultiplier scoring data** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs`
+* effect: feature-disabled activities are excluded while dead scoring data has no effect
+* rests on: libcozmoEngine.so and shipped configs
+* best authority: libcozmoEngine.so and shipped configs
+* evidence: IActivityStrategy::WantsToStart 0x005B529C; CozmoFeatureGate::IsFeatureEnabled 0x006A679C; features.json; BehaviorPounceOnMotion constructor 0x005F7F91
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M15-008 — Desired activity from objects and behavior-owned needs-action reporting** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs`
+* effect: the chosen freeplay activity and needs rewards change
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: ActivityFreeplay::CalculateDesiredActivityFromObjects 0x005ADF4C; IBehavior::ExtractNeedsActionIDFromConfig 0x005BBAE8; IBehavior::NeedActionCompleted 0x005BE40C; ActivityGatherCubes::Update 0x005AF2F0
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M15-009 — Emotion event names fired when a cube is placed in a beacon** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`
+* effect: the mood events emitted by cube placement change
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: BehaviorExploreBringCubeToBeacon::FireEmotionEvents 0x005E002C
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M15-010 — Missing moved-block location ends the behavior without a reaction** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeReactions.cs`
+* effect: the cube-moved behavior either acts or ends
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: BehaviorAcknowledgeCubeMoved::TransitionToTurningToLastLocationOfBlock 0x00602270
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M15-011 — Freeplay beacon is centered on the robot pose** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`
+* effect: the location used for subsequent cube gathering changes
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: BehaviorThinkAboutBeacons::SelectNewBeacon 0x005E5F0C; AIWhiteboard::AddBeacon 0x0056C39C
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M15-012 — Put-down image wait and CantHandleTallStack animation trigger** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/ManipulationBehaviors.cs`
+* effect: the post-put-down action sequence and tall-stack reaction animation change
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: BehaviorPutDownBlock::CreateLookAfterPlaceAction 0x005C8174; BehaviorCantHandleTallStack::TransitionToDisapointment 0x005ED0F0
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M15-013 — Activity tree construction, desired names and discarded activityPriority** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs`
+* effect: activity membership and ordering change
+* rests on: libcozmoEngine.so and shipped activity configuration
+* best authority: libcozmoEngine.so and shipped activity configuration
+* evidence: ActivityFreeplay::CreateFromConfig 0x005AD478; ActivityStrictPriority constructor 0x005B23DC; activities_config.json
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M15-015 — Freeplay active-time tracker and its four pause sources** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs`
+* effect: active freeplay telemetry accumulation and reporting change
+* rests on: libcozmoEngine.so plus Unity HighLevelActivity enum
+* best authority: libcozmoEngine.so plus Unity HighLevelActivity enum
+* evidence: FreeplayDataTracker constructor 0x0056EBD4; FreeplayDataTracker::SendData 0x0056EC48; FreeplayDataTracker::SetFreeplayPauseFlag 0x0056EEBC; BehaviorManager::SetCurrentActivity 0x005A106C; Robot::CheckAndUpdateTreadsState 0x005121F4; Robot::SetOnChargerPlatform 0x00511DB0; unity/scripts/csharp/Anki.Cozmo/HighLevelActivity.cs
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M15-016 — NeedsManager pause and disconnect transitions** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs`
+* effect: needs writes, schedules, notifications and bracket telemetry change across pause or disconnect
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: NeedsManager::SetPaused 0x00695E04; NeedsManager::OnRobotDisconnected 0x00695908
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
 
 ## What remains after both: blocked externally, or needing hardware
 

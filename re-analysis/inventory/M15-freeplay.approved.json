@@ -1,0 +1,212 @@
+{
+  "subsystem": "M15-freeplay",
+  "approved": "2026-09-28",
+  "inventory": "re-analysis/inventory/M15-freeplay.md",
+  "inventory_sha256": "58e3def71e1785052438cb15462732b0b70c29cd26cab05b568d57d066c27183",
+  "records": {
+    "M15-001": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "NeedsManager initialization, periodic update and need-bracket rules",
+      "authority": "libcozmoEngine.so and shipped needs configuration",
+      "evidence": [
+        "CozmoEngine::Init 0x004EC9E6..0x004ECA0A",
+        "NeedsManager::Init 0x00692574",
+        "NeedsManager::Update 0x00695C9C",
+        "NeedsState::UpdateCurNeedsBrackets 0x0069C12C",
+        "needs_config.json"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-002": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Chooser factory, scoring, strict-priority and selection chooser semantics",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "BSRunnableChooserFactory::CreateBSRunnableChooser 0x00609C88",
+        "ScoringBSRunnableChooser::ReloadFromConfig 0x00609F8C",
+        "ScoringBSRunnableChooser::GetDesiredActiveBehavior 0x0060A3D8",
+        "StrictPriorityBSRunnableChooser::GetDesiredActiveBehavior 0x0060B23E",
+        "SelectionBSRunnableChooser::OnSelected 0x0060AF20"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-003": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Activity start/end predicates and cooldown lifecycle",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "IActivityStrategy constructor 0x005B4EC8",
+        "IActivityStrategy::WantsToStart 0x005B529C",
+        "IActivityStrategy::RandomizeCooldown 0x005B5408",
+        "IActivityStrategy::WantsToEnd 0x005B5444",
+        "IActivityStrategy::SetCooldown 0x005B54E4"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-004": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Needs decay modifiers and damaged-part thresholds",
+      "authority": "libcozmoEngine.so and shipped needs configuration",
+      "evidence": [
+        "NeedsState::GetDecayMultipliers 0x0069C214",
+        "decay modifier descending sort 0x00691040",
+        "NeedsState::NumDamagedPartsForRepairLevel 0x0069CCAC",
+        "needs_decay_config.json",
+        "needs_config.json"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-005": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Flat three-second cooldown after an activity ends within two ticks",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "IActivityStrategy::WantsToStart 0x005B529C",
+        "activity times call site 0x005B26FE",
+        "IActivityStrategy::RandomizeCooldown 0x005B5408"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-006": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Freeplay activity selection and selected/deselected lifecycle",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "ActivityFreeplay::PickNewActivityForSpark 0x005ADC44",
+        "ActivityFreeplay::GetDesiredActiveBehaviorInternal 0x005AE29C",
+        "IActivity::OnSelected 0x005B312C",
+        "IActivity::OnDeselected 0x005B33B8",
+        "IActivity::GetDesiredActiveBehavior 0x005B387C"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-007": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Activity feature gate and dead boredomMultiplier scoring data",
+      "authority": "libcozmoEngine.so and shipped configs",
+      "evidence": [
+        "IActivityStrategy::WantsToStart 0x005B529C",
+        "CozmoFeatureGate::IsFeatureEnabled 0x006A679C",
+        "features.json",
+        "BehaviorPounceOnMotion constructor 0x005F7F91"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-008": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Desired activity from objects and behavior-owned needs-action reporting",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "ActivityFreeplay::CalculateDesiredActivityFromObjects 0x005ADF4C",
+        "IBehavior::ExtractNeedsActionIDFromConfig 0x005BBAE8",
+        "IBehavior::NeedActionCompleted 0x005BE40C",
+        "ActivityGatherCubes::Update 0x005AF2F0"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-009": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Emotion event names fired when a cube is placed in a beacon",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "BehaviorExploreBringCubeToBeacon::FireEmotionEvents 0x005E002C"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-010": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Missing moved-block location ends the behavior without a reaction",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "BehaviorAcknowledgeCubeMoved::TransitionToTurningToLastLocationOfBlock 0x00602270"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-011": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Freeplay beacon is centered on the robot pose",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "BehaviorThinkAboutBeacons::SelectNewBeacon 0x005E5F0C",
+        "AIWhiteboard::AddBeacon 0x0056C39C"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-012": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Put-down image wait and CantHandleTallStack animation trigger",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "BehaviorPutDownBlock::CreateLookAfterPlaceAction 0x005C8174",
+        "BehaviorCantHandleTallStack::TransitionToDisapointment 0x005ED0F0"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-013": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Activity tree construction, desired names and discarded activityPriority",
+      "authority": "libcozmoEngine.so and shipped activity configuration",
+      "evidence": [
+        "ActivityFreeplay::CreateFromConfig 0x005AD478",
+        "ActivityStrictPriority constructor 0x005B23DC",
+        "activities_config.json"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-014": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Needs connection and per-serial persistence lifecycle",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "NeedsManager::WriteToDevice 0x00693BB0",
+        "NeedsManager::InitAfterSerialNumberAcquired 0x006943A0",
+        "NeedsManager::NeedsFilenameFromSerialNumber 0x00695224",
+        "NeedsManager::ReadFromDevice 0x006998B4",
+        "persistence string initializer 0x004D8DDC",
+        "RobotInterface::MessageHandler::ConnectRobotToNeedsManager 0x0069DEE4"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-015": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Freeplay active-time tracker and its four pause sources",
+      "authority": "libcozmoEngine.so plus Unity HighLevelActivity enum",
+      "evidence": [
+        "FreeplayDataTracker constructor 0x0056EBD4",
+        "FreeplayDataTracker::SendData 0x0056EC48",
+        "FreeplayDataTracker::SetFreeplayPauseFlag 0x0056EEBC",
+        "BehaviorManager::SetCurrentActivity 0x005A106C",
+        "Robot::CheckAndUpdateTreadsState 0x005121F4",
+        "Robot::SetOnChargerPlatform 0x00511DB0",
+        "unity/scripts/csharp/Anki.Cozmo/HighLevelActivity.cs"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-016": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "NeedsManager pause and disconnect transitions",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "NeedsManager::SetPaused 0x00695E04",
+        "NeedsManager::OnRobotDisconnected 0x00695908"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    }
+  }
+}
