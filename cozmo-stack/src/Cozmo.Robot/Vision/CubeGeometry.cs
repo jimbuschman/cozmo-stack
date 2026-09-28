@@ -19,25 +19,29 @@ public sealed record KnownMarker(MarkerType Code, BlockFace Face, Pose3d PoseOnO
     private double H => double.IsNaN(HeightMm) ? SizeMm : HeightMm;
 
     /// <summary>
-    /// <c>KnownMarker::_canonicalCorners3d</c> (initialiser 0x004DD7D8): the unit marker lies in the X–Z plane
-    /// with its normal along −Y; in marker coordinates the corners are TL(−½, 0, +½), BL(−½, 0, −½),
-    /// TR(+½, 0, +½), BR(+½, 0, −½); <c>Get3dCorners</c> scales X and Z by the marker size. The order matches the
-    /// decoder's TL, BL, TR, BR.
+    /// <c>KnownMarker::_canonicalCorners3d</c> (initialiser 0x004DD7D8, ctor 0x004E9636): the unit marker
+    /// lies in the X–Z plane with its normal along −Y; the four points are stored in memory order
+    /// <c>[0]=(−½, 0, +½)</c>, <c>[1]=(−½, 0, −½)</c>, <c>[2]=(+½, 0, +½)</c>, <c>[3]=(+½, 0, −½)</c>
+    /// (C3.1). <c>Get3dCorners</c> scales X by the marker's width and Z by its height. The decoder pairs
+    /// canonical corner <c>i</c> with the detected corner <c>cornerReorder[label][i]</c>
+    /// (<c>VisionMarker::Extract</c> 0x8A0130..0x8A018A).
     /// </summary>
+    // fidelity: M11-003
     public static readonly Vec3[] CanonicalCorners =
     {
         new(-0.5, 0, 0.5), new(-0.5, 0, -0.5), new(0.5, 0, 0.5), new(0.5, 0, -0.5),
     };
 
     /// <summary>
-    /// The marker's own four corners, in the marker's frame, TL, BL, TR, BR: the canonical corners with X
-    /// scaled by the marker's width and Z by its height, as <c>Get3dCorners</c> scales them. The two are
-    /// scaled separately because not every marker is square - the charger's is 20 x 27 - and a solve given
-    /// square corners for it returns a pose with the error that mismatch implies.
+    /// The marker's own four corners in the marker's frame, in the engine's memory order (0..3): the
+    /// canonical corners with X scaled by the marker's width and Z by its height, as <c>Get3dCorners</c>
+    /// scales them. The two are scaled separately because not every marker is square - the charger's is
+    /// 20 x 27 - and a solve given square corners for it returns a pose with the error that mismatch
+    /// implies.
     /// </summary>
     public Vec3[] Corners3d() => CanonicalCorners.Select(c => new Vec3(c.X * SizeMm, 0, c.Z * H)).ToArray();
 
-    /// <summary>The marker's four corners in the object's frame, TL, BL, TR, BR.</summary>
+    /// <summary>The marker's four corners in the object's frame, in the engine's memory order.</summary>
     public Vec3[] CornersOnObject() => Corners3d().Select(PoseOnObject.Apply).ToArray();
 
     /// <summary>The marker's four corners in the world for an object pose.</summary>
@@ -67,6 +71,7 @@ public sealed record KnownMarker(MarkerType Code, BlockFace Face, Pose3d PoseOnO
 /// Note that the marker on the face the engine calls Front sits at −X: the "front" is the face that looks at
 /// a robot approaching from −X, and the cube's own +X axis points from that face through the cube.
 /// </summary>
+// fidelity: M11-003
 public static class CubeGeometry
 {
     public const double CubeSizeMm = 44.0;

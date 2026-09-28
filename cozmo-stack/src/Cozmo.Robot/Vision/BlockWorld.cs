@@ -1,4 +1,5 @@
 using Cozmo.Protocol;
+using Cozmo.Robot.Manipulation;
 
 namespace Cozmo.Robot.Vision;
 
@@ -39,6 +40,7 @@ public static class MarkerlessObject
 /// This stack had seven values in a different order, which mattered as soon as anything compared them -
 /// <c>SearchForBlockHelper::ShouldBeAbleToFindTarget</c> tests the reason against 7, Occluded.
 /// </summary>
+// fidelity: M11-010
 public enum NotVisibleReason
 {
     IsVisible = 0,
@@ -59,6 +61,7 @@ public enum NotVisibleReason
 /// corners with respect to the camera and projects them; <c>BlockWorld::UpdateObservedMarkers</c>
 /// 0x00624F98 clears the list first. So the occluders are what the camera actually saw this frame.
 /// </summary>
+// fidelity: M11-010
 public readonly record struct Occluder(Vec2[] Quad, double DepthMm);
 
 /// <summary>
@@ -92,6 +95,22 @@ public sealed class ObservableObject
     /// </summary>
     public bool IsMoving { get; internal set; }
     public int TimesObserved { get; internal set; }
+    /// <summary>
+    /// M11-007 / C3.4: the <c>ObjectPoseConfirmer</c> sighting count. A new entry starts at 1
+    /// (<c>PoseConfirmation</c> ctor 0x5062E0 stores 1 at +0xc); a matching second sighting increments it
+    /// (<c>AddVisualObservation</c> 0x506A04..0x506A26); a mismatching sighting resets it to 1
+    /// (0x506A46..0x506A4E). <see cref="IsPoseConfirmed"/> is <c>count &gt; 1</c>
+    /// (<c>IsReferencePoseConfirmed</c> 0x506340), so the first sighting does not confirm. MISSING: the
+    /// inventory does not settle what the caller does with <c>AddVisualObservation</c>'s return, so this
+    /// stack still sets the object's <c>PoseState</c> to Known on the first sighting and keeps the
+    /// confirmation count separate; whether Known should require the count is not established.
+    /// </summary>
+    // fidelity: M11-007
+    public int PoseConfirmationCount { get; internal set; }
+    /// <summary>The pose the confirmation count is measured against (the entry's stored pose).</summary>
+    public Pose3d ReferencePose { get; internal set; } = Pose3d.Identity;
+    /// <summary><c>IsReferencePoseConfirmed</c> 0x506340: <c>count &gt; 1</c>.</summary>
+    public bool IsPoseConfirmed => PoseConfirmationCount > 1;
     /// <summary><c>BlockWorld::MarkObjectUnobserved</c> counter: frames in which the object should have been seen but was not.</summary>
     public int UnobservedCount { get; internal set; }
     /// <summary>The marker codes seen in the last observation.</summary>
@@ -235,23 +254,29 @@ public sealed class ObservableObject
 /// <summary>What one frame did to the world model, for logs and tests.</summary>
 public sealed record ObjectObservation(ObservableObject Object, uint Timestamp, IReadOnlyList<MarkerType> Markers, Pose3d PreviousPose, PoseState PreviousState, bool IsNew, double RmsPx);
 
+/// <summary>What <c>BlockWorld::UpdateObservedMarkers</c> produced for one frame.</summary>
+public sealed record BlockWorldFrameResult(IReadOnlyList<ObjectObservation> Objects, IReadOnlyList<ObservableObject> Forgotten);
+
 /// <summary>
 /// The engine's <c>BlockWorld</c> reduced to what cubes need: located objects, their pose states, and the
-/// per-frame update <c>UpdateObservedMarkers</c> → <c>CreateObjectsFromMarkers</c> → <c>AddAndUpdateObjects</c> →
-/// <c>CheckForUnobservedObjects</c>.
+/// per-frame update <c>UpdateObservedMarkers</c> (C3.2): <c>ClearOccluders</c>, <c>AddLiftOccluder</c>,
+/// <c>CreateObjectsFromMarkers</c>, <c>AddAndUpdateObjects</c>, then - only if that succeeds -
+/// <c>CheckForUnobservedObjects</c>, <c>UpdatePoseOfStackedObjects</c>, <c>BlockConfigurationManager::Update</c>
+/// and <c>UpdateMarkerlessObjects</c>. The empty-observed-list branch skips the object creation and the
+/// stacked-pose update.
 ///
-/// NATIVE rules transcribed: an observed active object must match a connected active object of its type or it
-/// is dropped ("Observed active object of type %s but it's not connected"); unobserved checks are skipped while
-/// the robot was moving or rotating faster than 0.174533 rad/s; an object that should be visible
-/// (<c>IsVisibleFrom(camera, 0.785398, ...)</c>) and is not gets <c>MarkObjectUnobserved</c>, and after enough
-/// misses <c>MarkObjectUnknown</c>. INFERRED: the miss threshold (read as <c>cmp r3, #1</c>, taken as 2 misses);
-/// a first observation makes the pose Known at once (the <c>ObjectPoseConfirmer</c>'s confirmation counting is
-/// not transcribed); an <c>ObjectMoved</c> report marks a located cube Dirty (the engine's use of Dirty).
+/// NATIVE rules transcribed: an unconnected observed active object warns and applies a 10 s cooldown and is
+/// kept (H1); unobserved checks are skipped while the robot was moving (the <c>IS_MOVING</c> status bit) or
+/// rotating faster than 0.174533 rad/s (head <c>rateY</c> / body <c>rateZ</c> from the ImuDataHistory);
+/// an object that should be visible (<c>IsVisibleFrom(camera, 0.785398, ...)</c>) and is not gets
+/// <c>MarkObjectUnobserved</c>, and after enough misses <c>MarkObjectUnknown</c>. The first sighting leaves
+/// the <c>ObjectPoseConfirmer</c> count at 1; the second confirms (C3.4).
 /// Pose clustering across an object's markers uses the engine's own tolerances, 5 mm and 5 degrees.
 /// </summary>
 public sealed class BlockWorld
 {
     /// <summary><c>CheckForUnobservedObjects</c>'s rotation gate: 0.174533 rad/s (10 deg/s).</summary>
+    // fidelity: M11-004
     public const double MaxRotationRateRadPerSec = 0.174533;
 
     /// <summary>
@@ -259,12 +284,14 @@ public sealed class BlockWorld
     /// <c>ClusterObjectPoses(poses, object, distThreshold, angleThreshold, clusters)</c> as the third
     /// argument: <c>0x40A00000</c> built at 0x006254F4.
     /// </summary>
+    // fidelity: M11-006
     public const double ClusterDistanceMm = 5.0;
 
     /// <summary>
     /// 0.0872665 rad, 5 degrees: the angle threshold of the same call, built from <c>0x3DB2B8C3</c> at
     /// 0x00625498 through the <c>Radians</c> constructor at 0x006254E0.
     /// </summary>
+    // fidelity: M11-006
     public const double ClusterAngleRad = 0.0872665;
 
     /// <summary>
@@ -274,7 +301,20 @@ public sealed class BlockWorld
     /// <c>CreateObjectsFromMarkers</c> asks the object itself for the angle in degrees and multiplies by
     /// 0.0174533 (0x00625566); no shipped object overrides it to anything this stack can see.
     /// </summary>
+    // fidelity: M11-006
     public const double FlatClampAngleRad = 0.349066;
+
+    /// <summary>
+    /// M11-004 / C3.3: the object-match translation factor, 0.8 (thunk 0x4E025C, literal 0x3F4CCCCD at
+    /// 0x4E028C). The thunk multiplies the object's stored extent (<c>+0x88</c>) by it, so a light cube's
+    /// tolerance is <c>(35.2, 35.2, 35.2)</c> mm.
+    /// </summary>
+    // fidelity: M11-004
+    public const double ObjectMatchDistanceFactor = 0.8;
+
+    /// <summary>M11-004 / C3.3: the object-match rotation tolerance, pi/4 (thunk 0x4E0290, 0x3F490FDB).</summary>
+    // fidelity: M11-004
+    public const double ObjectMatchAngleRad = Math.PI / 4;
     /// <summary>The visibility angle the world model and the cube-moved strategy use: 0.785398 rad (45 deg).</summary>
     public const double VisibilityNormalAngleRad = 0.785398;
     /// <summary>
@@ -285,6 +325,7 @@ public sealed class BlockWorld
     /// (<c>cmp r3, #1 / blt</c> at 0x00506FDE). So the first miss only counts, and the second acts.
     /// The confirming side at 0x00506A04 is the mirror image of it.
     /// </summary>
+    // fidelity: M11-007
     public int UnobservedMissesToUnknown { get; set; } = 2;
 
     /// <summary>
@@ -295,13 +336,17 @@ public sealed class BlockWorld
     /// ghost-block check both pass 0 - but this is the call that decides whether a located object should
     /// have been seen, which is what this threshold is for here.
     /// </summary>
+    // fidelity: M11-008
     public double MinVisibleMarkerSizePx { get; set; } = 40;
     /// <summary>Markers whose pose solve leaves more than this reprojection error are ignored (LOCAL, 3 px).</summary>
     public double MaxReprojectionRmsPx { get; set; } = 3.0;
     /// <summary>
-    /// LOCAL_POLICY for offline tools and tests without a cube radio: observed cube types that are not connected
-    /// still get an object, with the object id taken from the type (LIGHTCUBE1 → 1, ...). Off by default, which is
-    /// the engine's behaviour.
+    /// M11-013 (COMPATIBILITY_POLICY, offline tools only, off on the live path): when set, an observed
+    /// active object with no connected counterpart is given an object id taken from its type
+    /// (LIGHTCUBE1 → 1, ...). The native path does not drop the observation either (M11-004: warn +
+    /// 10 s cooldown + continue), but it looks the connected counterpart up by ObjectID, and the
+    /// inventory does not settle where an unconnected observation's own ObjectID comes from; this
+    /// stack therefore keeps the type-derived id and records the choice as a policy.
     /// </summary>
     public bool AllowUnconnectedObjects { get; set; }
 
@@ -309,10 +354,23 @@ public sealed class BlockWorld
     private readonly Dictionary<uint, ObservableObject> _objects = new();
     private readonly object _gate = new();
 
+    /// <summary>
+    /// M11-004: the native <c>unordered_map&lt;int,float&gt;</c> at 0x00620E9E..0x00620EDA that rate-limits
+    /// the "not connected" warning. The key is the observed object's id; the value is the time in seconds
+    /// until which the warning is suppressed (now + 10.0, the literal at 0x00620B1E and the global
+    /// <c>kUnconnectedObservationCooldownDuration_sec</c> at 0x00C781EC).
+    /// </summary>
+    private readonly Dictionary<uint, double> _unconnectedWarnCooldown = new();
+    private const double UnconnectedWarnCooldownSec = 10.0;
+
     /// <summary><paramref name="connectedActiveObjects"/> answers the engine's "connected active object of this type" question (from the cube radio).</summary>
     public BlockWorld(Func<IEnumerable<(uint ObjectId, ObjectType Type)>> connectedActiveObjects) => _connected = connectedActiveObjects;
 
     public event Action<ObjectObservation>? ObjectObserved;
+    // fidelity: M11-038
+    // BroadcastObjectObservation 0x0061FED8 is this observation event; BroadcastLocatedObjectStates
+    // 0x0061E6C0, BroadcastConnectedObjects 0x0061E91C and VisionSystem::CheckMailbox 0x006B2AD4 have
+    // no stack entry point yet (M11-038's unresolved: their bodies/layouts belong to M2/M10).
     public event Action<ObservableObject, PoseState, PoseState>? PoseStateChanged;
     /// <summary>Lines the world model would log, for the conformance tool.</summary>
     public event Action<string>? Log;
@@ -375,15 +433,48 @@ public sealed class BlockWorld
     public ObservableObject? GetObjectById(uint objectId) { lock (_gate) return _objects.GetValueOrDefault(objectId); }
 
     /// <summary>
-    /// <c>UpdateObservedMarkers</c>: turn a frame's markers into object observations. <paramref name="camera"/>
-    /// is the camera at the frame's timestamp. Returns the objects observed in this frame.
+    /// <c>BlockWorld::UpdateObservedMarkers</c> 0x00624EE8 (C3.2): the per-frame sequence. <paramref name="camera"/>
+    /// is the camera at the frame's timestamp and <paramref name="pd"/> the robot state paired with it.
     /// </summary>
-    public IReadOnlyList<ObjectObservation> UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp)
+    // fidelity: M11-036, M11-037, M11-006, M11-010
+    public BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd)
+    {
+        // 0x624F98: Camera::ClearOccluders
+        camera.Occluders.Clear();
+        // 0x624FA4: VisionComponent::AddLiftOccluder
+        AddLiftOccluder(camera, pd);
+        var observations = new List<ObjectObservation>();
+        var forgotten = new List<ObservableObject>();
+        if (markers.Count == 0)
+        {
+            // 0x625020 empty-observed-list branch: no object creation; CheckForUnobservedObjects only,
+            // then skip UpdatePoseOfStackedObjects (0x625052 -> 0x6250D4).
+            forgotten.AddRange(CheckForUnobservedObjects(camera, timestamp, new HashSet<uint>(), pd.Moving, pd.RotatingTooFast));
+        }
+        else
+        {
+            // 0x624FC4 CreateObjectsFromMarkers -> 0x62505A AddAndUpdateObjects. Its return is a status
+            // code: 0 is success, and only then does the normal path continue (0x625062 -> 0x62523A).
+            observations.AddRange(CreateAndAddObjects(markers, camera, timestamp));
+            forgotten.AddRange(CheckForUnobservedObjects(camera, timestamp,
+                observations.Select(o => o.Object.ObjectId).ToHashSet(), pd.Moving, pd.RotatingTooFast));
+            UpdatePoseOfStackedObjects();
+        }
+        // 0x6250D4: both paths reach here.
+        BlockConfigurationManagerUpdate?.Invoke();
+        UpdateMarkerlessObjects(timestamp);
+        return new BlockWorldFrameResult(observations, forgotten);
+    }
+
+    /// <summary>
+    /// <c>CreateObjectsFromMarkers</c> + <c>AddAndUpdateObjects</c>: one candidate pose per marker, grouped
+    /// and clustered by object type; each cluster is added or updated and one occluder per observed marker is
+    /// filed.
+    /// </summary>
+    // fidelity: M11-006, M11-010
+    private IReadOnlyList<ObjectObservation> CreateAndAddObjects(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp)
     {
         var observations = new List<ObjectObservation>();
-        // BlockWorld::UpdateObservedMarkers 0x00624F98 clears the camera's occluder list at the top of
-        // the frame; AddAndUpdateObjects fills it again from the markers this frame actually saw.
-        camera.Occluders.Clear();
         // CreateObjectsFromMarkers: one candidate pose per marker, grouped by object type
         var candidates = new List<(ObjectType Type, KnownMarker Known, ObservedMarker Seen, Pose3d World, double Rms)>();
         foreach (var seen in markers)
@@ -442,6 +533,75 @@ public sealed class BlockWorld
         return observations;
     }
 
+    /// <summary>
+    /// The occluder points <c>VisionComponent</c> carries at <c>+4</c> and <c>AddLiftOccluder</c> applies the
+    /// lift transform to. MISSING: the inventory names the call
+    /// (<c>Transform3d::ApplyTo&lt;float&gt;(vector&lt;Point3f&gt; const&amp;, vector&lt;Point3f&gt;&amp;)</c> at
+    /// 0x65653E on <c>(this+4, sp+0x14)</c>) but not the <c>Point3f</c> values at <c>VisionComponent+4</c>,
+    /// so the lift occluder cannot be filed exactly. Empty until that read.
+    /// </summary>
+    public IReadOnlyList<Vec3> LiftOccluderPoints { get; set; } = Array.Empty<Vec3>();
+
+    // fidelity: M11-037
+    /// <summary>
+    /// <c>VisionComponent::AddLiftOccluder(unsigned int)</c> 0x6564D8 (C3.2/Q2.1): the raw robot state at the
+    /// timestamp -> <c>Robot::GetLiftTransformWrtCamera(liftHeight, liftAngle)</c> 0x4BA6F8 ->
+    /// <c>Transform3d::ApplyTo</c> the occluder points (0x65653E) -> <c>Camera::Project3dPoints</c> 0x4BA710
+    /// -> <c>Camera::AddOccluder</c> 0x4BA71C with the transform's z scale
+    /// <c>sqrt(t[0x20]^2+t[0x24]^2+t[0x28]^2)</c>. The point values are MISSING (see
+    /// <see cref="LiftOccluderPoints"/>), so with the default empty list this files nothing.
+    /// </summary>
+    public void AddLiftOccluder(CameraModel camera, VisionPoseData pd)
+    {
+        if (LiftOccluderPoints.Count == 0) return;
+        var liftInCamera = camera.Pose.Inverse().Compose(pd.RobotPose.Compose(LiftGeometry.LiftPoseInRobotFrame(pd.LiftAngleRad)));
+        var px = new Vec2[LiftOccluderPoints.Count];
+        for (int i = 0; i < LiftOccluderPoints.Count; i++)
+        {
+            var p = camera.Project(liftInCamera.Apply(LiftOccluderPoints[i]));
+            if (p is null) return;
+            px[i] = p.Value;
+        }
+        // the transform's z scale, sqrt(t[0x20]^2+t[0x24]^2+t[0x28]^2) (0x656554..0x656590)
+        double scale = liftInCamera.Rotation.Row(2).Length;
+        camera.Occluders.Add(px, scale);
+    }
+
+    /// <summary>
+    /// <c>BlockConfigurationManager::Update(Robot)</c> 0x616D7C (C3.2/Q2.2). The engine gates it on
+    /// <c>[this+0x24]</c>/<c>[this+0xc]</c> and <c>DidAnyObjectsMovePastThreshold</c>, then runs
+    /// <c>UpdateAllBlockConfigs</c>, <c>PruneFullPyramids</c>, <c>UpdateLastConfigCheckBlockPoses</c> and
+    /// <c>NotifyBroadcasterOfConfigurationManagerUpdate</c>. MISSING: the meanings of <c>[this+0x24]</c> and
+    /// <c>[this+0xc]</c> (what sets them) are not in the inventory, so the gate cannot be reproduced; the
+    /// stack's <c>BlockConfigurationManager.Update()</c> is hooked here (M12 sets it) without that gate.
+    /// </summary>
+    // fidelity: M11-037
+    public Action? BlockConfigurationManagerUpdate { get; set; }
+
+    // fidelity: M11-037
+    /// <summary>
+    /// <c>BlockWorld::UpdatePoseOfStackedObjects()</c> 0x621794 (C3.2/Q2.3). Cross-layer: its body needs the
+    /// M10 pose/transform stack, <c>CarryingComponent</c>, <c>ObservableObject::InitPose</c> and the
+    /// M11-007 confirmer's <c>AddObjectRelativeObservation</c> (0x6219C0). MISSING: those interfaces are not
+    /// built here, so this is the wired entry point only.
+    /// </summary>
+    public void UpdatePoseOfStackedObjects()
+    {
+        // entry point wired at 0x6250D0; body MISSING (M10/M12).
+    }
+
+    // fidelity: M11-037
+    /// <summary>
+    /// <c>BlockWorld::UpdateMarkerlessObjects(unsigned int)</c> 0x625704 (C3.2/Q2.4). Cross-layer: its body
+    /// needs the M10/M12 charger/dock pose, the robot bounding quad and the BlockWorld object lifecycle
+    /// (<c>DeleteLocatedObjects</c>). MISSING: those interfaces are not built here, so this is the wired entry
+    /// point only.
+    /// </summary>
+    public void UpdateMarkerlessObjects(uint timestamp)
+    {
+        // entry point wired at 0x62521A; body MISSING (M10/M12).
+    }
+
     private static double QuadArea(Vec2[] c)
     {
         var q = new[] { c[0], c[2], c[3], c[1] };
@@ -451,21 +611,33 @@ public sealed class BlockWorld
     }
 
     /// <summary><c>AddAndUpdateObjects</c> for one observed object.</summary>
+    // fidelity: M11-004
     private ObjectObservation? AddAndUpdateObject(ObjectType type, List<ObservedMarker> seen, Pose3d pose, double rms, uint timestamp)
     {
+        // The native path looks the connected counterpart up by ObjectID (GetConnectedActiveObjectByIdHelper
+        // 0x0061F58C, called at 0x00620E78). If it is absent the engine warns ("Observed active object of
+        // type %s but it's not connected. Is the battery plugged in?", string 0xBF854B) and rate-limits the
+        // warning with a 10 s cooldown (0x00620E9E..0x00620EDA), then continues to 0x00620EDE. It does
+        // not drop the observation. The stack keeps the observation too.
         uint? id = null;
-        foreach (var (oid, t) in _connected()) if (t == type) { id = oid; break; }
+        pose = ClampPoseToFlat(pose);
+        // When several connected objects share this type, the engine picks the one the observation matches
+        // by pose (FindObjectMatchForObservation 0x5063CC); the connected lookup alone would take the first.
+        var sameType = _connected().Where(c => c.Type == type).ToList();
+        if (sameType.Count > 0)
+        {
+            id = sameType[0].ObjectId;
+            if (sameType.Count > 1 && FindObjectMatchForObservation(type, pose) is { } match
+                && sameType.Any(c => c.ObjectId == match.ObjectId))
+                id = match.ObjectId;
+        }
         if (id is null)
         {
-            if (!AllowUnconnectedObjects && CubeGeometry.IsActiveObjectType(type))
-            {
-                Log?.Invoke($"Observed active object of type {type} but it's not connected");
-                return null;
-            }
-            // passive objects (the charger) get fixed ids; unconnected cubes theirs by type (LOCAL)
+            // passive objects (the charger) get fixed ids; an unconnected active observation gets its
+            // id from its type (M11-013 policy; the native id source for it is not in the inventory).
             id = type switch { ObjectType.Block_LIGHTCUBE1 => 1u, ObjectType.Block_LIGHTCUBE2 => 2u, ObjectType.Block_LIGHTCUBE3 => 3u, ObjectType.Charger_Basic => ChargerGeometry.ObjectId, _ => 0u };
+            if (CubeGeometry.IsActiveObjectType(type)) WarnUnconnectedObservation(id.Value, type, timestamp);
         }
-        pose = ClampPoseToFlat(pose);
         ObservableObject obj; bool isNew; Pose3d prevPose; PoseState prevState;
         lock (_gate)
         {
@@ -473,6 +645,10 @@ public sealed class BlockWorld
             if (isNew) { obj = new ObservableObject(id.Value, type, CubeGeometry.MarkersFor(type)); _objects[id.Value] = obj; }
             prevPose = obj.Pose; prevState = obj.PoseState;
             obj.Pose = pose;
+            // M11-007: the confirmer's sighting count. A new entry starts at 1; a matching second sighting
+            // makes 2, the first confirmation; a mismatch resets to 1. The pose state and this count are
+            // separate engine concepts (the count is ObjectPoseConfirmer's; PoseState is the object's).
+            AddVisualObservation(obj, pose, ObjectMatchToleranceMm(type), ObjectMatchAngleRad);
             obj.PoseState = PoseState.Known;
             obj.LastObservedTimestamp = timestamp;
             obj.TimesObserved++;
@@ -491,11 +667,95 @@ public sealed class BlockWorld
     }
 
     /// <summary>
+    /// M11-004: the native warning path at 0x00620E7C..0x00620EDA. The warning is emitted only when the
+    /// object's cooldown entry is absent or has elapsed; either way the entry is set to now + 10 s, so a
+    /// cube that stays unconnected warns at most once per ten seconds. The observation is not affected.
+    /// </summary>
+    private void WarnUnconnectedObservation(uint objectId, ObjectType type, uint timestamp)
+    {
+        double now = timestamp / 1000.0;
+        lock (_gate)
+        {
+            if (_unconnectedWarnCooldown.TryGetValue(objectId, out var until) && now < until) return;
+            _unconnectedWarnCooldown[objectId] = now + UnconnectedWarnCooldownSec;
+        }
+        Log?.Invoke($"Observed active object of type {type} but it's not connected. Is the battery plugged in?");
+    }
+
+    // fidelity: M11-004
+    /// <summary>
+    /// The object-match translation tolerance: the object's stored extent scaled by 0.8 (thunk 0x4E025C,
+    /// <c>ObservableObject</c> virtual <c>+0x30</c>; the extent virtual <c>+0x2c</c> returns <c>+0x88</c>).
+    /// A light cube's extent is <c>(44,44,44)</c>, so the tolerance is <c>(35.2, 35.2, 35.2)</c> mm.
+    /// </summary>
+    public static Vec3 ObjectMatchToleranceMm(ObjectType type)
+    {
+        var size = CubeGeometry.SizeOf(type);
+        return new Vec3(size.X * ObjectMatchDistanceFactor, size.Y * ObjectMatchDistanceFactor, size.Z * ObjectMatchDistanceFactor);
+    }
+
+    // fidelity: M11-004
+    /// <summary>
+    /// <c>ObjectPoseConfirmer::FindObjectMatchForObservation</c> 0x5063CC, reduced to the located objects of
+    /// this stack's world: the primary match is the closest located object of the same <see cref="ObjectType"/>
+    /// within <see cref="ObjectMatchToleranceMm"/> and <see cref="ObjectMatchAngleRad"/>
+    /// (<c>FindLocatedClosestMatchingObjectHelper</c> 0x61FA68, predicate 0x6281DA, which narrows the
+    /// captured tolerance to <c>abs(delta)</c> so the closest survives); if none, the fallback is the last
+    /// located object of the type within tolerance (<c>ObservableObject::IsSameAs</c> 0x8769A8, the
+    /// confirmer's list loop 0x5065AE..0x506674). The engine's exact <c>FindLocatedObjectHelper</c> return
+    /// (0x61EB78) is a RECOVERABLE_GAP, so this is the closest/last rule and not a proven tie-break.
+    /// </summary>
+    public ObservableObject? FindObjectMatchForObservation(ObjectType type, Pose3d observedPose)
+    {
+        var tol = ObjectMatchToleranceMm(type);
+        List<ObservableObject> located;
+        lock (_gate) located = _objects.Values.Where(o => o.IsLocated && o.Type == type).ToList();
+        ObservableObject? closest = null; double best = double.MaxValue;
+        foreach (var o in located)
+        {
+            if (!o.Pose.IsSameAs(observedPose, tol, ObjectMatchAngleRad, out var delta)) continue;
+            double d2 = delta.Dot(delta);
+            if (d2 < best) { best = d2; closest = o; }
+        }
+        if (closest is not null) return closest;
+        ObservableObject? last = null;
+        foreach (var o in located)
+            if (o.Pose.IsSameAs(observedPose, tol, ObjectMatchAngleRad, out _)) last = o;
+        return last;
+    }
+
+    // fidelity: M11-007
+    /// <summary>
+    /// <c>ObjectPoseConfirmer::AddVisualObservation</c> 0x50684C: a new entry starts at count 1; a matching
+    /// sighting increments the count; a mismatching sighting resets it to 1 and stores the new pose. Returns
+    /// the new count; the caller's confirmation test is <c>count &gt; 1</c>.
+    /// </summary>
+    public int AddVisualObservation(ObservableObject obj, Pose3d observedPose, Vec3 tolMm, double tolRad)
+    {
+        if (obj.PoseConfirmationCount == 0) { obj.PoseConfirmationCount = 1; obj.ReferencePose = observedPose; }
+        else if (observedPose.IsSameAs(obj.ReferencePose, tolMm, tolRad, out _)) obj.PoseConfirmationCount++;
+        else { obj.PoseConfirmationCount = 1; obj.ReferencePose = observedPose; }
+        return obj.PoseConfirmationCount;
+    }
+
+    // fidelity: M11-007
+    /// <summary>
+    /// <c>ObjectPoseConfirmer::IsObjectConfirmedAtObservedPose</c> 0x50634C..0x5063B8: the entry's count must
+    /// be at least 2 and the observed pose must match the stored reference pose.
+    /// </summary>
+    public bool IsObjectConfirmedAtObservedPose(ObservableObject obj, Pose3d observedPose)
+    {
+        var tol = ObjectMatchToleranceMm(obj.Type);
+        return obj.PoseConfirmationCount >= 2 && observedPose.IsSameAs(obj.ReferencePose, tol, ObjectMatchAngleRad, out _);
+    }
+
+    /// <summary>
     /// <c>ObservableObject::ClampPoseToFlat</c> 0x00877330: a cube resting on a surface has one axis
     /// vertical; when the solved pose is within <see cref="FlatClampAngleRad"/> of that, snap it. The
     /// engine takes the rotated parent Z axis, <c>acos</c> of the magnitude of its largest component, and
     /// compares that with the angle it was given (0x0087736A..0x0087737E).
     /// </summary>
+    // fidelity: M11-006
     public static Pose3d ClampPoseToFlat(Pose3d pose, double toleranceRad = FlatClampAngleRad)
     {
         var r = pose.Rotation;
@@ -520,6 +780,7 @@ public sealed class BlockWorld
     /// camera should have seen is marked unobserved, and forgotten after enough misses. Skipped while the robot
     /// is moving or rotating too fast (the engine's <c>WasMoving</c> / <c>WasRotatingTooFast</c> gates).
     /// </summary>
+    // fidelity: M11-004, M11-007, M11-008, M11-010
     public IReadOnlyList<ObservableObject> CheckForUnobservedObjects(CameraModel camera, uint timestamp, ISet<uint> observedIds, bool robotMoving, bool rotatingTooFast)
     {
         var forgotten = new List<ObservableObject>();
@@ -609,6 +870,7 @@ public sealed class BlockWorld
     ///
     /// Returns the objects that stopped being located.
     /// </summary>
+    // fidelity: M11-019
     public IReadOnlyList<ObservableObject> OnRobotDelocalized(IReadOnlySet<uint>? carriedObjectIds = null)
     {
         var forgotten = new List<ObservableObject>();
@@ -630,6 +892,9 @@ public sealed class BlockWorld
         ObservableObject? o; PoseState prev;
         lock (_gate)
         {
+            // M11-009: HandleActiveObjectMoved 0x00533E30 dirties only a pose that is exactly Known
+            // (MarkObjectDirty's own guard; the not-carrying guard is at the caller, 0x00534116).
+            // fidelity: M11-009
             if (!_objects.TryGetValue(objectId, out o) || o.PoseState != PoseState.Known) return;
             prev = o.PoseState; o.PoseState = PoseState.Dirty;
         }

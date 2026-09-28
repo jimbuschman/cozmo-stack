@@ -33,6 +33,12 @@ public static class QuadCorners
     public const int KMeansMaxIterations = 15;
     public const double KMeansEpsilon = 0.1;
 
+    /// <summary>
+    /// The M11-029 cluster reject threshold at 0x008A61C0/0x008A64B4: the word <c>0x3F6803C9</c> as a float,
+    /// cos(25 deg) = 0.90630776.
+    /// </summary>
+    public static readonly float Cos25Deg = BitConverter.Int32BitsToSingle(0x3F6803C9);
+
     /// <summary>A boundary point, in image coordinates, as the engine's <c>Point&lt;s16&gt;</c>.</summary>
     public readonly record struct BoundaryPoint(short X, short Y);
 
@@ -53,6 +59,7 @@ public static class QuadCorners
     /// Coordinates are traced inside the bounding box and the box origin is added back at the end
     /// (0x008C72D0..0x008C72E8).
     /// </summary>
+    // fidelity: M11-027
     public static List<BoundaryPoint>? ExteriorBoundary(int[] labels, int label, int imageWidth, int minX, int minY, int maxX, int maxY)
     {
         int w = maxX - minX + 1, h = maxY - minY + 1;
@@ -251,28 +258,36 @@ public static class QuadCorners
     /// </summary>
     public static void KMeans((float Y, float X)[] samples, int[] labels, int k = Clusters,
                               int maxIterations = KMeansMaxIterations, double epsilon = KMeansEpsilon)
+        => KMeans(samples, labels, out _, k, maxIterations, epsilon);
+
+    /// <summary>
+    /// The same clustering, also returning the final centres (<c>centers</c> in the engine's kmeans call,
+    /// 4x2 CV_32F) so the C1.4 cluster reject can use them.
+    /// </summary>
+    public static void KMeans((float Y, float X)[] samples, int[] labels, out (float Y, float X)[] centers,
+                              int k = Clusters, int maxIterations = KMeansMaxIterations, double epsilon = KMeansEpsilon)
     {
         int n = samples.Length;
-        if (n == 0) return;
+        if (n == 0) { centers = Array.Empty<(float Y, float X)>(); return; }
         double eps = Math.Max(epsilon, 0);
         eps *= eps;
 
-        var centers = new double[k, 2];
+        var centersD = new double[k, 2];
         var oldCenters = new double[k, 2];
         var counters = new int[k];
         double maxCenterShift = double.MaxValue;
 
         for (int iter = 0; ;)
         {
-            (centers, oldCenters) = (oldCenters, centers);
+            (centersD, oldCenters) = (oldCenters, centersD);
 
-            Array.Clear(centers);
+            Array.Clear(centersD);
             Array.Clear(counters);
             for (int i = 0; i < n; i++)
             {
                 int c = labels[i];
-                centers[c, 0] += samples[i].Y;
-                centers[c, 1] += samples[i].X;
+                centersD[c, 0] += samples[i].Y;
+                centersD[c, 1] += samples[i].X;
                 counters[c]++;
             }
             if (iter > 0) maxCenterShift = 0;
@@ -283,7 +298,7 @@ public static class QuadCorners
                 int biggest = 0;
                 for (int c1 = 1; c1 < k; c1++) if (counters[biggest] < counters[c1]) biggest = c1;
                 double scale = 1.0 / counters[biggest];
-                double oy = centers[biggest, 0] * scale, ox = centers[biggest, 1] * scale;
+                double oy = centersD[biggest, 0] * scale, ox = centersD[biggest, 1] * scale;
                 double maxDist = 0; int farthest = -1;
                 for (int i = 0; i < n; i++)
                 {
@@ -295,18 +310,18 @@ public static class QuadCorners
                 if (farthest < 0) continue;
                 counters[biggest]--; counters[c]++;
                 labels[farthest] = c;
-                centers[biggest, 0] -= samples[farthest].Y; centers[biggest, 1] -= samples[farthest].X;
-                centers[c, 0] += samples[farthest].Y; centers[c, 1] += samples[farthest].X;
+                centersD[biggest, 0] -= samples[farthest].Y; centersD[biggest, 1] -= samples[farthest].X;
+                centersD[c, 0] += samples[farthest].Y; centersD[c, 1] += samples[farthest].X;
             }
 
             for (int c = 0; c < k; c++)
             {
                 if (counters[c] == 0) continue;
                 double scale = 1.0 / counters[c];
-                centers[c, 0] *= scale; centers[c, 1] *= scale;
+                centersD[c, 0] *= scale; centersD[c, 1] *= scale;
                 if (iter > 0)
                 {
-                    double dy = centers[c, 0] - oldCenters[c, 0], dx = centers[c, 1] - oldCenters[c, 1];
+                    double dy = centersD[c, 0] - oldCenters[c, 0], dx = centersD[c, 1] - oldCenters[c, 1];
                     maxCenterShift = Math.Max(maxCenterShift, dy * dy + dx * dx);
                 }
             }
@@ -318,12 +333,32 @@ public static class QuadCorners
                 int best = 0; double minDist = double.MaxValue;
                 for (int c = 0; c < k; c++)
                 {
-                    double dy = samples[i].Y - centers[c, 0], dx = samples[i].X - centers[c, 1];
+                    double dy = samples[i].Y - centersD[c, 0], dx = samples[i].X - centersD[c, 1];
                     double dist = dy * dy + dx * dx;
                     if (minDist > dist) { minDist = dist; best = c; }
                 }
                 labels[i] = best;
             }
+        }
+
+        centers = new (float Y, float X)[k];
+        for (int c = 0; c < k; c++) centers[c] = ((float)centersD[c, 0], (float)centersD[c, 1]);
+    }
+
+    /// <summary>
+    /// C1.4 (M11-029): for each point, <c>dot(data.row(i), centers.row(labels[i])) &lt; cos(25 deg)</c> sets
+    /// the point's label to <c>-1</c> (0x008A64B4..0x008A65F2). The tangent and centre pairs are in the
+    /// engine's stored order <c>(y, x)</c>.
+    /// </summary>
+    // fidelity: M11-029
+    public static void ApplyClusterReject((float Y, float X)[] tangents, int[] labels, (float Y, float X)[] centers)
+    {
+        for (int i = 0; i < tangents.Length; i++)
+        {
+            int lab = labels[i];
+            if (lab < 0) continue;
+            float dot = tangents[i].Y * centers[lab].Y + tangents[i].X * centers[lab].X;
+            if (dot < Cos25Deg) labels[i] = -1;
         }
     }
 
@@ -421,6 +456,7 @@ public static class QuadCorners
     /// the corner nearest the negative x axis; a corner sitting exactly on the centroid is given angle
     /// zero rather than an atan2 of two zeros (0x008A13EE).
     /// </summary>
+    // fidelity: M11-030
     public static Vec2[] ComputeClockwiseCorners(IReadOnlyList<Vec2> corners)
     {
         int n = corners.Count;
@@ -453,6 +489,7 @@ public static class QuadCorners
     /// (0x008A6C30..0x008A6CD4): clamp to the range of an s16 first, then round half away from zero -
     /// <c>ceilf(v - 0.5)</c> at or below zero and <c>floorf(v + 0.5)</c> above it.
     /// </summary>
+    // fidelity: M11-030
     public static double RoundToS16(double v)
     {
         double c = v < -32768.0 ? -32768.0 : v > 32767.0 ? 32767.0 : v;
@@ -468,6 +505,7 @@ public static class QuadCorners
     /// <c>cmp r2, #0x20</c> at 0x008A6BE2, thirty-two bytes of <c>Point&lt;f32&gt;</c>. That is what
     /// rejects a component whose four sides do not actually meet in four places.
     /// </summary>
+    // fidelity: M11-029
     public static Vec2[]? ExtractLineFitsPeaks(IReadOnlyList<BoundaryPoint> boundary, int imageHeight, int imageWidth)
     {
         int n = boundary.Count;
@@ -479,7 +517,15 @@ public static class QuadCorners
         var tangents = Tangents(boundary, derivative);
 
         var labels = InitialLabels(n);
-        if (n >= Clusters) KMeans(tangents, labels);
+        (float Y, float X)[] centers = Array.Empty<(float Y, float X)>();
+        if (n >= Clusters) KMeans(tangents, labels, out centers);
+
+        // C1.4 (M11-029): reject at 0x008A64B4..0x008A65F2. For each point, dot(data.row(i),
+        // centers.row(labels[i])) is computed (float-converted at 0x008A65D2..0x008A65DE) and compared at
+        // 0x008A65E2; on less-than cos(25 deg) = 0x3F6803C9 the point's label is set to -1 (0x008A65EC/
+        // 0x008A65F2). The tangent arrays are unit vectors, so a point more than 25 deg from its cluster
+        // centre is discarded and its cluster can no longer be fitted.
+        if (n >= Clusters) ApplyClusterReject(tangents, labels, centers);
 
         var fits = new LineFit[Clusters];
         for (int c = 0; c < Clusters; c++)

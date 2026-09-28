@@ -21,6 +21,7 @@ namespace Cozmo.Robot.Vision;
 /// the marker's 3D corners with respect to the camera, projects them and adds the projected quad with
 /// its depth.
 /// </summary>
+// fidelity: M11-010
 public sealed class OccluderList
 {
     private readonly List<Occluder> _entries = new();

@@ -204,7 +204,7 @@ public sealed class NvStorageComponent : IDisposable
     public static int MaxFactorySizeForEntryTag(uint tag) =>
         MaxFactoryEntrySizeTable.TryGetValue(tag, out int value) ? value : 0;
 
-    // fidelity: M3-026, M3-030
+    // fidelity: M11-011, M3-026, M3-030
     /// <summary>
     /// Queues a READ and delivers the terminal result to <paramref name="callback"/>. An invalid tag is not sent:
     /// the callback gets <c>(-6, empty)</c> (M3-026). The request length is computed from the tag (M3-027). When

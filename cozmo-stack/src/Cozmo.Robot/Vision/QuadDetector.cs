@@ -16,19 +16,13 @@ public sealed record QuadDetectorParameters
     /// upsamples back with <c>UpsampleByPowerOfTwoBilinear&lt;1..5&gt;</c> - but this build runs it once.
     /// </summary>
     public int PyramidLevels { get; init; } = 1;
-    /// <summary>Components with fewer pixels than this are dropped (100).</summary>
-    public int MinComponentPixels { get; init; } = 100;
-    /// <summary>Components with more pixels than this are dropped (39000).</summary>
-    public int MaxComponentPixels { get; init; } = 39000;
-    /// <summary>Upper bound on 1-D segments per image (32000).</summary>
-    public int MaxSegments { get; init; } = 32000;
     /// <summary>
-    /// LOCAL guard on quads per image. The engine's own bound is the capacity of the list it fills - the
-    /// 10000-entry scratch list <c>ComputeQuadrilateralsFromConnectedComponents</c> allocates at
-    /// 0x00892DA8 - not a parameter; the 512 that used to be recorded here is the quad symmetry
-    /// threshold, <see cref="QuadSymmetryThresholdQ8"/>.
+    /// Upper bound on quads per image. The engine's own bound is the capacity of the boundary list
+    /// <c>ComputeQuadrilateralsFromConnectedComponents</c> allocates at 0x00892DA8 (10000), not a
+    /// parameter; the 512 that used to be recorded here is the quad symmetry threshold,
+    /// <see cref="QuadSymmetryThresholdQ8"/>. Kept as a safety bound only.
     /// </summary>
-    public int MaxQuads { get; init; } = 512;
+    public int MaxQuads { get; init; } = 10000;
     /// <summary>Upper bound on extracted markers: 500 at the parameters' +0x44 (0x00875386).</summary>
     public int MaxMarkers { get; init; } = 500;
 
@@ -47,15 +41,83 @@ public sealed record QuadDetectorParameters
     /// splits is within that factor.
     /// </summary>
     public int QuadSymmetryThresholdQ8 { get; init; } = 512;
-    /// <summary>Solid/sparse test: a component's fill of its bounding box must lie in (0.03, 0.8).</summary>
-    public double MinFillRatio { get; init; } = 0.03;
-    public double MaxFillRatio { get; init; } = 0.8;
     /// <summary>Fraction of the quad the rounded corners may occupy (0.15).</summary>
     public double RoundedCornersFraction { get; init; } = 0.15;
-    /// <summary>Two side-length fractions (0.1, 0.1): the shortest side relative to the longest, and to the image.</summary>
-    public double MinSideLengthFraction { get; init; } = 0.1;
-    /// <summary>Hollow test: the middle row must be at most this full (0.97) for the component to count as a ring.</summary>
-    public double MaxHollowRowFill { get; init; } = 0.97;
+    /// <summary>
+    /// <c>InvalidateSolidOrSparseComponents</c> operands (M11-026, S7): the parameters' +0x1c = 32000 and
+    /// +0x20 = 64. A component is invalid (sparse) when <c>area*32000 &lt; 32*bboxArea</c> (fill &lt; 0.001)
+    /// and invalid (solid) when <c>area*64 &gt; 32*bboxArea</c> (fill &gt; 0.5).
+    /// </summary>
+    public int SolidSparseMinFill { get; init; } = 32000;
+    public int SolidSparseMaxFill { get; init; } = 64;
+    /// <summary>
+    /// <c>InvalidateFilledCenterComponents_hollowRows</c> fraction, the parameters' +0x24 = 1.0 (M11-026).
+    /// <b>RECOVERABLE_GAP:</b> the numerator the engine divides by the component size is only partly
+    /// characterised (marker-frontend-2 S8); see <see cref="QuadDetector"/>'s note.
+    /// </summary>
+    public double HollowFraction { get; init; } = 1.0;
+    /// <summary>
+    /// The size-filter formula constants used inline in <c>MarkerDetector::Detect</c> (M11-026, S4):
+    /// <c>params+0x74</c> = 0.03, <c>params+0x70</c> = 0.8, <c>params+0x78</c> = 0.97. The min/max are
+    /// computed from the image dimensions, not constants.
+    /// </summary>
+    public double SizeFilterMinFraction { get; init; } = 0.03;
+    public double SizeFilterInnerFactor { get; init; } = 0.8;
+    public double SizeFilterMaxFraction { get; init; } = 0.97;
+
+    // ---- the live ecvcs extractor's reading of the same parameter bank (M11-032) ----
+
+    /// <summary>
+    /// The parameters' +0x04 read as the live extractor's window bank does (G1.1b): the number of windows
+    /// is <c>WindowCountMinusTwo + 2</c>. Shipped 1 gives three windows.
+    /// </summary>
+    public int WindowCountMinusTwo { get; init; } = 1;
+    /// <summary>
+    /// The parameters' +0x08 (G1.1b): <c>list[i] = WindowBase &lt;&lt; i</c>. Shipped 4 gives the half-widths
+    /// <c>{4, 8, 16}</c>.
+    /// </summary>
+    public int WindowBase { get; init; } = 4;
+    /// <summary>
+    /// The short at the parameters' +0x10, passed on to <c>Extract1dComponents</c> as its run-length floor
+    /// <c>a</c>. Correction C1.1: the live chain passes <c>Parameters+0x10</c> as <c>a</c> and
+    /// <c>Parameters+0x12</c> as <c>b</c>. <c>0x00898BA0: ldrsh.w r0,[r7,#0x10]</c> (short1) and
+    /// <c>0x00898BAC: ldrsh.w r6,[r7,#0x12]</c> (short2) feed the ecvcs call at <c>0x00898BE0</c> with
+    /// short1 in <c>r3</c>; <c>0x0088F8C8: mov r8,r3</c> and <c>0x0088F938: strd r8,sl,[sp,#0xc]</c> store
+    /// <c>a</c> at <c>[sp+0xc]</c> before <c>r8</c> is reused for <c>maxScale</c>; the main loop
+    /// <c>0x0088FBC0: ldrd sl,r5,[sp,#0xc]</c> / <c>0x0088FC1C: str.w sl,[sp]</c> / <c>0x0088FC28: blx
+    /// NextRow</c> passes it on, and the u16 body <c>0x00893F94/0x00893F96</c> forwards it to
+    /// <c>Extract1dComponents</c> (<c>0x00896FDC: strd r2,r3,[sp]</c>; length test
+    /// <c>0x00897052..0x00897064</c>). Shipped 0, so no run is dropped; <c>maxScale</c> is <b>not</b> the
+    /// argument (it is only the integral-image border).
+    /// </summary>
+    public int MinRunLength { get; init; } = 0;
+    /// <summary>
+    /// The short at the parameters' +0x12, passed on to <c>Extract1dComponents</c> as its threshold
+    /// <c>b</c> (G1.14b). Shipped 0; any other value is a RECOVERABLE_GAP, refused rather than guessed.
+    /// </summary>
+    public int RunThresholdB { get; init; } = 0;
+
+    /// <summary>
+    /// <c>MarkerDetector::Parameters+0x7c</c> (C1.2), the ROI/negative mode. <c>Parameters::Initialize</c>
+    /// writes <c>0x100</c> at <c>+0x7c</c> (<c>0x008753AE</c>), so the shipped byte is 0: one non-negative
+    /// pass. Semantics: 0 -&gt; <c>{false}</c>, 1 -&gt; <c>{true}</c>, 2 -&gt; <c>{false,true}</c>, any other
+    /// value -&gt; an empty list (Detect returns no markers).
+    /// </summary>
+    public int NegativeMode { get; init; } = 0;
+
+    /// <summary>
+    /// The size-filter min/max computed from the image dimensions (M11-026, S4):
+    /// <c>min = round((0.03*dmin)^2 - (0.8*0.03*dmin)^2)</c>,
+    /// <c>max = round((0.97*dmax)^2 - (0.8*0.97*dmax)^2)</c>, with dmin = min(w,h), dmax = max(w,h).
+    /// For a 320x240 frame that is 19 and 34685.
+    /// </summary>
+    public (int Min, int Max) ComponentSizeRange(int width, int height)
+    {
+        double dmin = Math.Min(width, height), dmax = Math.Max(width, height);
+        double lo = SizeFilterMinFraction * dmin, loInner = SizeFilterInnerFactor * lo;
+        double hi = SizeFilterMaxFraction * dmax, hiInner = SizeFilterInnerFactor * hi;
+        return ((int)Math.Round(lo * lo - loInner * loInner), (int)Math.Round(hi * hi - hiInner * hiInner));
+    }
     /// <summary>Corner refinement: 25 iterations, stop under 0.005 px change, reject over 5 px change (1.01 is the refinement step growth).</summary>
     public int RefinementIterations { get; init; } = 25;
     public double MinCornerChange { get; init; } = 0.005;
@@ -96,19 +158,16 @@ public sealed record DetectedQuad(Vec2[] Corners, int ComponentPixels)
 
 /// <summary>
 /// The quad-extraction front end of <c>Anki::Embedded::DetectFiducialMarkers</c>. The engine's pipeline is
-/// <c>ExtractComponentsViaCharacteristicScale_binomial → InvalidateSmallOrLargeComponents →
+/// <c>ExtractComponentsViaCharacteristicScale → InvalidateSmallOrLargeComponents →
 /// InvalidateSolidOrSparseComponents → InvalidateFilledCenterComponents_hollowRows →
-/// ComputeQuadrilateralsFromConnectedComponents → (refine) → ComputeHomographyFromQuad</c>; this class
-/// follows that structure with the engine's parameters, but the pixel-level algorithms are LOCAL
-/// re-implementations (the originals are Anki's embedded fixed-point code, not transcribed):
+/// ComputeQuadrilateralsFromConnectedComponents → (refine) → ComputeHomographyFromQuad</c>. The shipped
+/// selector byte is 1 (M11-024), so the live extractor is the ecvcs integral-image variant
+/// (<see cref="EcvcsExtractor"/>, M11-032), not the binomial path:
 ///
-/// 1. the image is binomial-filtered and each pixel compared with its own filtered value: dark when
-///    <c>(filtered * 0xCCCC) &gt;&gt; 16 &gt; pixel</c>. That is the engine's
-///    <c>ExtractComponentsViaCharacteristicScale_binomial</c> 0x00890448 with the one pyramid level its
-///    parameters ask for - the level loop filters, measures <c>|filtered - image|</c> and keeps the
-///    filtered value of the level with the largest response ("ecvcsB_scale_select", 0x00890B14), then
-///    binarizes ("ecvcsB_binarize", 0x00890BB6);
-/// 2. 8-connected components of dark pixels, filtered by size, fill ratio and hollowness;
+/// 1. the box-mean bank over the scrolling integral image is binarised by
+///    <c>ecvcs_computeBinaryImage_numFilters3</c> (M11-032);
+/// 2. the per-row <c>ConnectedComponents</c> DP yields the row segments, filtered by size, solid/sparse
+///    and hollowness (M11-026);
 /// 3. the four corners come from <see cref="QuadCorners"/>, which is the engine's own chain:
 ///    <c>TraceNextExteriorBoundary</c> 0x008C6B18 then, with the corner method the parameters select
 ///    (+0x28 = 1, the switch at 0x00892E24), <c>ExtractLineFitsPeaks</c> 0x008A5DB8. The quad the engine
@@ -118,13 +177,19 @@ public sealed record DetectedQuad(Vec2[] Corners, int ComponentPixels)
 /// 4. the corners are not refined here: the engine refines them per marker once it has the marker's
 ///    homography (<c>VisionMarker::RefineCorners</c>), which <see cref="MarkerDetector"/> does through
 ///    <see cref="CornerRefinement"/>.
-///    This last step is LOCAL: the engine refines later, inside <c>DetectFiducialMarkers</c>.
 /// </summary>
 public sealed class QuadDetector
 {
     public QuadDetector(QuadDetectorParameters? parameters = null) => Parameters = parameters ?? new QuadDetectorParameters();
 
-    public QuadDetectorParameters Parameters { get; }
+    public QuadDetectorParameters Parameters { get; private set; }
+
+    /// <summary>
+    /// <c>MarkerDetector::Parameters::Initialize</c> 0x008752F8, run again by <c>MarkerDetector::Init</c>
+    /// 0x008752E0 on the calibration install (M11-039): every parameter goes back to the shipped value.
+    /// </summary>
+    // fidelity: M11-039
+    internal void ResetParameters() => Parameters = new QuadDetectorParameters();
 
     /// <summary>Diagnostics from the last run, for the conformance tool.</summary>
     public sealed class Stats
@@ -142,29 +207,59 @@ public sealed class QuadDetector
     public IReadOnlyList<DetectedQuad> Detect(GrayImage img)
     {
         var st = new Stats();
-        var mask = CharacteristicScaleMask(img);
+        // fidelity: M11-032 — the live (shipped) extractor's multi-window box-filter mask (selector byte 1,
+        // ExtractComponentsViaCharacteristicScale 0x0088F8BC).
+        var mask = EcvcsExtractor.BinaryMask(img, Parameters);
         LastMask = mask;
         st.DarkPixels = mask.Pixels.Count(p => p != 0);
 
-        var labels = new int[img.Width * img.Height];
-        var comps = ConnectedComponents(mask, labels);
+        // M11-032: the per-row DP produces the raw segments; they are regrouped into the component list the
+        // filters and the corner stage consume. Correction C1.1: the run-length floor is params+0x10
+        // (shipped 0) and the threshold is params+0x12 (shipped 0).
+        // fidelity: M11-032
+        var segments = EcvcsExtractor.ExtractComponents(mask, Parameters.MinRunLength, Parameters.RunThresholdB, out _);
+        // M11-026: InvalidateFilledCenterComponents_hollowRows (C1.5) then CompressConnectedComponentSegmentIds.
+        // The ascending-id order is observable to the boundary trace and the sort 0x00898DD0.
+        EcvcsExtractor.InvalidateFilledCenterComponents(segments, Parameters.HollowFraction);
+        EcvcsExtractor.CompressIds(segments);
+        var comps = EcvcsExtractor.ToComponents(segments);
         st.Components = comps.Count;
+
+        // the boundary trace and the hollow test read the component by pixel label; build the label image
+        // from the segment list (the engine keeps the segment list; the extents it builds are the same).
+        // Labels are 1-based: the resolved component ids start at 0, which collides with an unset pixel.
+        var labels = new int[img.Width * img.Height];
+        var labelOf = new Dictionary<int, int>();
+        for (int i = 0; i < comps.Count; i++)
+        {
+            int label = i + 1;
+            labelOf[comps[i].Id] = label;
+            foreach (var s in comps[i].Segments)
+                for (int x = s.Start; x <= s.End; x++) labels[s.Row * img.Width + x] = label;
+        }
+
+        var (minPixels, maxPixels) = Parameters.ComponentSizeRange(img.Width, img.Height);
         var quads = new List<DetectedQuad>();
         foreach (var c in comps)
         {
-            if (c.Pixels < Parameters.MinComponentPixels || c.Pixels > Parameters.MaxComponentPixels) continue;
+            // M11-026 InvalidateSmallOrLargeComponents (S4/S5): count < min or count > max.
+            if (c.Pixels < minPixels || c.Pixels > maxPixels) continue;
             st.AfterSize++;
-            double fill = c.Pixels / (double)((c.MaxX - c.MinX + 1) * (c.MaxY - c.MinY + 1));
-            if (fill <= Parameters.MinFillRatio || fill >= Parameters.MaxFillRatio) continue;
+            // M11-026 InvalidateSolidOrSparseComponents (S7): sparse when area*minFill < 32*bboxArea,
+            // solid when area*maxFill > 32*bboxArea.
+            long bboxArea = (long)(c.MaxX - c.MinX + 1) * (c.MaxY - c.MinY + 1);
+            if ((long)c.Pixels * Parameters.SolidSparseMinFill < 32L * bboxArea) continue;
+            if ((long)c.Pixels * Parameters.SolidSparseMaxFill > 32L * bboxArea) continue;
             st.AfterFill++;
-            if (!IsHollow(c, labels, img.Width)) continue;
+            // M11-026 InvalidateFilledCenterComponents_hollowRows ran on the segment list before compression.
+            int label = labelOf[c.Id];
             st.AfterHollow++;
-            var boundary = QuadCorners.ExteriorBoundary(labels, c.Label, img.Width, c.MinX, c.MinY, c.MaxX, c.MaxY);
+            var boundary = QuadCorners.ExteriorBoundary(labels, label, img.Width, c.MinX, c.MinY, c.MaxX, c.MaxY);
             if (boundary is null || boundary.Count < 4) continue;
             var corners = QuadCorners.ExtractLineFitsPeaks(boundary, img.Height, img.Width);
             if (corners is null) continue;
             st.Quads++;
-            // the engine tests the unrefined quad, in the order its Quadrilateral stores
+            // M11-028: the engine tests the unrefined quad, in the order its Quadrilateral stores (0,3,1,2).
             if (!IsQuadrilateralReasonable(ToDecoderOrder(corners), img.Width, img.Height, Parameters, out bool swapped)) continue;
             st.AfterGeometry++;
             // the corners are refined per marker, after the homography, by CornerRefinement (MarkerDetector)
@@ -178,51 +273,6 @@ public sealed class QuadDetector
     }
 
     // ------------------------------------------------------------------ characteristic scale
-
-    /// <summary>
-    /// The engine's characteristic-scale binarization, <c>ExtractComponentsViaCharacteristicScale_binomial</c>
-    /// 0x00890448. Per level it downsamples by two, binomial-filters, takes <c>|filtered - image|</c> as the
-    /// response (<c>Matrix::Elementwise::ApplyOperation&lt;SumOfAbsDiff&gt;</c> at 0x008907F4), upsamples both
-    /// back to full size, and keeps the filtered value wherever the response beats the best so far
-    /// (0x00890B14: <c>if (dog &gt; best) { best = dog; scale = filtered; }</c>, with both buffers starting at
-    /// zero). Then a pixel is dark when <c>(scale * thresholdQ16) &gt;&gt; 16 &gt; pixel</c> (0x00890BBE).
-    ///
-    /// With <see cref="QuadDetectorParameters.PyramidLevels"/> at the shipped 1 there is one level and no
-    /// downsampling, so the scale image is the binomial-filtered image everywhere the response is non-zero
-    /// - a flat neighbourhood leaves the scale at zero and the pixel is never dark, which is the engine's
-    /// behaviour and not a special case here.
-    /// </summary>
-    // fidelity: M11-018 — the dark mask (BinomialFilter + Q16 threshold) and the quad test
-    private GrayImage CharacteristicScaleMask(GrayImage img)
-    {
-        int w = img.Width, h = img.Height;
-        var mask = new GrayImage(w, h);
-        var scale = new byte[w * h];
-        var best = new byte[w * h];
-
-        for (int level = 0; level < Math.Max(1, Parameters.PyramidLevels); level++)
-        {
-            var atLevel = level == 0 ? img : DownsampleByTwo(img, level);
-            var filtered = BinomialFilter(atLevel);
-            int lw = atLevel.Width, lh = atLevel.Height;
-            for (int y = 0; y < h; y++)
-            {
-                int sy = Math.Min(lh - 1, y >> level);
-                for (int x = 0; x < w; x++)
-                {
-                    int sx = Math.Min(lw - 1, x >> level);
-                    int f = filtered.Pixels[sy * lw + sx];
-                    int response = Math.Abs(f - atLevel.Pixels[sy * lw + sx]);
-                    int i = y * w + x;
-                    if (response > best[i]) { best[i] = (byte)Math.Min(255, response); scale[i] = (byte)f; }
-                }
-            }
-        }
-
-        for (int i = 0; i < mask.Pixels.Length; i++)
-            if ((scale[i] * Parameters.DarkThresholdQ16) >> 16 > img.Pixels[i]) mask.Pixels[i] = 1;
-        return mask;
-    }
 
     /// <summary>
     /// <c>ImageProcessing::BinomialFilter&lt;u8,u8,u8&gt;</c> 0x008A2344 (coretech
@@ -282,55 +332,8 @@ public sealed class QuadDetector
 
     // ------------------------------------------------------------------ connected components
 
-    private sealed class Component
-    {
-        public int Label, Pixels, MinX = int.MaxValue, MinY = int.MaxValue, MaxX = -1, MaxY = -1;
-        public double SumX, SumY;
-    }
-
-    private List<Component> ConnectedComponents(GrayImage mask, int[] labels)
-    {
-        int w = mask.Width, h = mask.Height;
-        var comps = new List<Component>();
-        var stack = new Stack<int>();
-        int next = 0;
-        for (int i = 0; i < labels.Length; i++)
-        {
-            if (mask.Pixels[i] == 0 || labels[i] != 0) continue;
-            var c = new Component { Label = ++next };
-            labels[i] = c.Label;
-            stack.Push(i);
-            while (stack.Count > 0)
-            {
-                int p = stack.Pop();
-                int x = p % w, y = p / w;
-                c.Pixels++; c.SumX += x; c.SumY += y;
-                if (x < c.MinX) c.MinX = x; if (x > c.MaxX) c.MaxX = x; if (y < c.MinY) c.MinY = y; if (y > c.MaxY) c.MaxY = y;
-                for (int dy = -1; dy <= 1; dy++)
-                    for (int dx = -1; dx <= 1; dx++)
-                    {
-                        int nx = x + dx, ny = y + dy;
-                        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-                        int q = ny * w + nx;
-                        if (mask.Pixels[q] != 0 && labels[q] == 0) { labels[q] = c.Label; stack.Push(q); }
-                    }
-                if (c.Pixels > Parameters.MaxComponentPixels * 2) { stack.Clear(); }   // runaway background: stop flooding, it will be rejected
-            }
-            comps.Add(c);
-            if (comps.Count >= Parameters.MaxSegments) break;
-        }
-        return comps;
-    }
-
-    /// <summary><c>InvalidateFilledCenterComponents_hollowRows</c>: the middle rows of a ring have a gap.</summary>
-    private bool IsHollow(Component c, int[] labels, int w)
-    {
-        int midY = (c.MinY + c.MaxY) / 2, midX = (c.MinX + c.MaxX) / 2;
-        if (labels[midY * w + midX] == c.Label) return false;
-        int filled = 0, width = c.MaxX - c.MinX + 1;
-        for (int x = c.MinX; x <= c.MaxX; x++) if (labels[midY * w + x] == c.Label) filled++;
-        return filled < width * Parameters.MaxHollowRowFill;
-    }
+    // M11-026's hollow test and id compression are EcvcsExtractor.InvalidateFilledCenterComponents and
+    // EcvcsExtractor.CompressIds (C1.5); Detect applies them to the segment list before ToComponents.
 
     // ------------------------------------------------------------------ refinement
 
@@ -458,6 +461,7 @@ public sealed class QuadDetector
     /// side - are not in the engine's test and are gone; <c>minQuadArea</c> is what rejects a degenerate
     /// quad.
     /// </summary>
+    // fidelity: M11-018
     public static bool IsQuadrilateralReasonable(Vec2[] c, int width, int height, QuadDetectorParameters? parameters = null) =>
         IsQuadrilateralReasonable(c, width, height, parameters, out _);
 
@@ -468,6 +472,7 @@ public sealed class QuadDetector
     /// <c>Quadrilateral</c> order - upper left, lower left, upper right, lower right - so the two
     /// diagonals are corners 1-2 and 0-3.
     /// </summary>
+    // fidelity: M11-018
     public static bool IsQuadrilateralReasonable(Vec2[] c, int width, int height, QuadDetectorParameters? parameters, out bool swapped)
     {
         var p = parameters ?? new QuadDetectorParameters();
@@ -511,6 +516,7 @@ public sealed class QuadDetector
     /// <c>Quadrilateral::ComputeClockwiseCorners</c> put first, the one nearest the negative x axis from
     /// the centroid - no separate search for a top-left corner.
     /// </summary>
+    // fidelity: M11-028
     private static Vec2[] ToDecoderOrder(Vec2[] clockwise) =>
         new[] { clockwise[0], clockwise[3], clockwise[1], clockwise[2] };
 }

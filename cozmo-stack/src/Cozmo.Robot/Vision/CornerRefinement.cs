@@ -1,3 +1,5 @@
+using Cozmo.Robot.Animation;
+
 namespace Cozmo.Robot.Vision;
 
 /// <summary>
@@ -26,6 +28,7 @@ public static class CornerRefinement
     /// <c>VisionMarker::RefineCorners</c> 0x0089FD98. <paramref name="corners"/> and <paramref name="h"/> are the
     /// marker's quad and homography; both are replaced by the refined ones.
     /// </summary>
+    // fidelity: M11-005, M11-031
     public static Outcome RefineCorners(GrayImage img, MarkerLibrary lib, ref Vec2[] corners, ref Homography h, QuadDetectorParameters p)
     {
         var (bright, dark, valid) = ComputeBrightDarkValues(img, lib, h, (float)p.MinContrastRatio);
@@ -75,7 +78,13 @@ public static class CornerRefinement
     /// region's CV_8U view). Returns the saved pixels, which <see cref="RestoreRegion"/> puts back after the
     /// refinement and before decoding (0x00899534..0x0089954E), or null for an empty region, which the engine logs
     /// ("Got empty ROI for given corners") and drops the marker for.
+    ///
+    /// MISSING: M11-020 was built from the OpenCV transcription in
+    /// <c>.scratch/B-M11/opencv-report.md</c>; <see cref="OpenCv310.BoxFilter8UTo16S"/>,
+    /// <see cref="OpenCv310.Subtract8U16STo16S"/> and <see cref="OpenCv310.NormalizeMinMax16STo8U"/> are the
+    /// shipped routines.
     /// </summary>
+    // fidelity: M11-020
     public static (int X, int Y, int W, int H, byte[] Saved)? NormalizeIllumination(GrayImage img, Vec2[] corners, QuadDetectorParameters p)
     {
         int left = (int)(float)corners[0].X, right = left, top = (int)(float)corners[0].Y, bottom = top;
@@ -95,37 +104,27 @@ public static class CornerRefinement
         var saved = new byte[w * h];
         for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) saved[y * w + x] = img[left + x, top + y];
 
+        // S26: k = round((params+0x60 + params+0x64) * 0.5 * sqrt2 * (|p0-p3| + |p2-p1|)); the shipped
+        // sqrt2 is 1.4142135 (0x00898F98). The engine does not clamp k; k < 1 is an OpenCV error, so under
+        // SD2 the clamp is a LOCAL GUARD (the safest deterministic value), not the engine's behaviour.
         float d1x = (float)(corners[0].X - corners[3].X), d1y = (float)(corners[0].Y - corners[3].Y);
         float d2x = (float)(corners[2].X - corners[1].X), d2y = (float)(corners[2].Y - corners[1].Y);
-        float scale = ((float)p.RefineInnerFraction + (float)p.RefineInnerFraction) * 0.5f * 1.4142f;
+        float scale = ((float)p.RefineInnerFraction + (float)p.RefineInnerFraction) * 0.5f * 1.4142135f;
         int k = (int)MathF.Round(scale * (MathF.Sqrt(d1x * d1x + d1y * d1y) + MathF.Sqrt(d2x * d2x + d2y * d2y)));
-        if (k < 1) k = 1;
-        int anchor = k / 2;
+        if (k < 1) k = 1;   // LOCAL GUARD (SD2): the engine has no clamp; k <= 0 would abort in OpenCV.
 
+        // S1..S10: cv::boxFilter(region CV_8U -> CV_16S, ksize k x k, anchor centre, normalize, REFLECT_101),
+        // with the border mapped against the parent image (BORDER_ISOLATED not set).
+        var blur = OpenCv310.BoxFilter8UTo16S(img.Pixels, img.Height, img.Width, left, top, w, h, k, k, OpenCv310.BorderReflect101);
+        // S11..S18: cv::subtract(region CV_8U, blur CV_16S -> CV_16S) in place.
         var diff = new short[w * h];
-        int min = int.MaxValue, max = int.MinValue;
-        double inv = 1.0 / (k * k);
+        OpenCv310.Subtract8U16STo16S(saved, blur, diff, w * h);
+        // S19..S24: cv::normalize(diff CV_16S -> region CV_8U, alpha 255, beta 0, NORM_MINMAX).
+        var normalised = new byte[w * h];
+        OpenCv310.NormalizeMinMax16STo8U(diff, normalised, w * h, 255.0, 0.0);
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
-            {
-                int sum = 0;
-                for (int dy = 0; dy < k; dy++)
-                {
-                    int yy = Reflect101(top + y - anchor + dy, img.Height);
-                    for (int dx = 0; dx < k; dx++) sum += img[Reflect101(left + x - anchor + dx, img.Width), yy];
-                }
-                short blur = (short)Math.Clamp(Math.Round(sum * inv, MidpointRounding.ToEven), short.MinValue, short.MaxValue);
-                int d = Math.Clamp(saved[y * w + x] - blur, short.MinValue, short.MaxValue);
-                diff[y * w + x] = (short)d;
-                if (d < min) min = d; if (d > max) max = d;
-            }
-
-        double range = max - min;
-        double sc = range > double.Epsilon ? 255.0 / range : 0.0;
-        double shift = 0.0 - min * sc;
-        for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
-                img[left + x, top + y] = (byte)Math.Clamp(Math.Round(diff[y * w + x] * sc + shift, MidpointRounding.ToEven), 0, 255);
+                img[left + x, top + y] = normalised[y * w + x];
         return (left, top, w, h, saved);
     }
 
@@ -135,13 +134,6 @@ public static class CornerRefinement
         for (int y = 0; y < region.H; y++)
             for (int x = 0; x < region.W; x++)
                 img[region.X + x, region.Y + y] = region.Saved[y * region.W + x];
-    }
-
-    private static int Reflect101(int i, int n)
-    {
-        if (n == 1) return 0;
-        while (i < 0 || i >= n) i = i < 0 ? -i : 2 * n - 2 - i;
-        return i;
     }
 
     private static short RoundS16(float v)
@@ -161,6 +153,7 @@ public static class CornerRefinement
     /// pair's means reported (0x0089FCA6..0x0089FCAE). Otherwise the means over every sample are reported,
     /// valid when bright exceeds the ratio times dark (0x0089FD26).
     /// </summary>
+    // fidelity: M11-031
     public static (float Bright, float Dark, bool Valid) ComputeBrightDarkValues(GrayImage img, MarkerLibrary lib, Homography h, float minContrastRatio)
     {
         float scale = 1f / (1 << MarkerLibrary.NumFractionalBits);
@@ -204,6 +197,7 @@ public static class CornerRefinement
     /// corners, <paramref name="initialH"/> row-major. Returns 0, or 1 when the refined corners moved more than
     /// <paramref name="maxCornerChange"/> from the initial ones (0x008C644A..0x008C6464).
     /// </summary>
+    // fidelity: M11-005
     public static int RefineQuadrilateral(float[] quad, float[] initialH, GrayImage img,
         float innerX, float innerY, float padX, float padY, int iterations, float bright, float dark, int numSamples,
         float maxCornerChange, float minCornerChange, out float[] refinedQuad, out float[] refinedH)
@@ -281,9 +275,12 @@ public static class CornerRefinement
         refinedQuad = (float[])quad.Clone();
         float mid = (bright + dark) * 0.5f;
         float maxRow = img.Height - 1f, maxCol = img.Width - 1f;
-        bool numericalFailure = false;
+        // H6: the Cholesky out-flag (`degeneratePivot`) is set true only on `pivot < FLT_EPSILON`, and the
+        // caller treats flag != 0 as the accept path (0x008C62CA..0x008C62D4; 0x008C6418 cmp r0,#1).
+        bool degeneratePivot = false;
+        int iteration = 0;
 
-        for (int iter = 0; iter < iterations; iter++)
+        while (true)
         {
             var h = refinedH;
             var ata = new float[8, 8];
@@ -315,7 +312,9 @@ public static class CornerRefinement
             }
             for (int a = 0; a < 8; a++) for (int b = 0; b < a; b++) ata[a, b] = ata[b, a];   // MakeSymmetric
 
-            var delta = SolveCholesky(ata, atb, out numericalFailure);
+            var delta = SolveLeastSquaresWithCholesky(ata, atb, out degeneratePivot);
+            // the solver returns Result 0 on the live path; only an invalid array would return non-zero, which
+            // this transcription's 8x8 call cannot hit (0x008C61FE bne is the guard)
 
             // the update [[1+d0, d1, d2], [d3, 1+d4, d5], [d6, d7, 1]], inverted, composed on the right
             // (0x008C620A..0x008C629A)
@@ -328,17 +327,18 @@ public static class CornerRefinement
                 for (int k = 0; k < 9; k++) next[k] /= h22;
             }
             refinedH = next;
+            // G3.10: stop when the corner move is under the stop threshold; otherwise count the iteration and
+            // stop at the maximum. A degenerate pivot (out-flag true) finishes at once and takes the accept path.
             float change = QuadFromHomography(refinedH, refinedQuad);
             if (change < minCornerChange) break;
-            if (numericalFailure) break;
+            if (++iteration >= iterations) break;
+            if (!degeneratePivot) continue;
+            break;
         }
 
-        if (numericalFailure)
-        {
-            refinedQuad = (float[])quad.Clone();
-            refinedH = (float[])initialH.Clone();
-            return 0;
-        }
+        // H6.6: flag != 0 falls through to the accept branch - the refined corners and homography are kept and
+        // the result is 0. flag == 0 measures the move from the original corners and fails only past the max.
+        if (degeneratePivot) return 0;
         var check = (float[])quad.Clone();
         float total = QuadFromHomography(refinedH, check);
         return total > maxCornerChange ? 1 : 0;
@@ -390,32 +390,51 @@ public static class CornerRefinement
     }
 
     /// <summary>
-    /// The normal equations solved by Cholesky decomposition, as <c>Matrix::SolveLeastSquaresWithCholesky</c>
-    /// (0x008C61F4) is asked to; a non-positive pivot is the numerical failure it reports.
+    /// <c>Anki::Embedded::Matrix::SolveLeastSquaresWithCholesky&lt;float&gt;</c> 0x0088DE68, the solver
+    /// <c>RefineQuadrilateral</c> calls at 0x008C61F4. The factorisation is in natural pivot order and is
+    /// written in place: the strict lower triangle of <paramref name="a"/> becomes <c>L</c> and the diagonal
+    /// becomes <c>1/L[i][i]</c>. If a pivot is below <c>FLT_EPSILON</c> (1.1920929e-07) the out-flag is set
+    /// true and the function returns the right-hand side unchanged (no substitution), which is what the engine
+    /// does (0x0088DF50..0x0088DF58 -> 0x0088E132..0x0088E138); the caller then takes that flag as accept.
+    /// Otherwise forward and backward substitution solve <c>L L' x = b</c> in place: the factorisation
+    /// writes <c>L</c> to the strict lower triangle and <c>1/L[i][i]</c> to the diagonal, the forward pass
+    /// reads <c>A[i][k]</c> (0x0088DFC4..0x0088DFEC), and the backward pass reads <c>A[k][i]</c> from the
+    /// same lower triangle (0x0088E052/0x0088E05A/0x0088E060/0x0088E06A/0x0088E06E) and multiplies by the
+    /// stored <c>A[i][i]</c> (0x0088E074/0x0088E07C). The upper triangle is never read after MakeSymmetric.
     /// </summary>
-    private static float[] SolveCholesky(float[,] a, float[] b, out bool failure)
+    // fidelity: M11-005
+    public static float[] SolveLeastSquaresWithCholesky(float[,] a, float[] b, out bool degeneratePivot)
     {
+        const float FltEpsilon = 1.1920929e-07f;
         int n = b.Length;
-        var l = new float[n, n];
-        failure = false;
+        degeneratePivot = false;
+
         for (int i = 0; i < n; i++)
         {
-            for (int k = 0; k <= i; k++)
+            for (int j = 0; j < i; j++)
             {
-                float sum = a[i, k];
-                for (int p = 0; p < k; p++) sum -= l[i, p] * l[k, p];
-                if (i == k)
-                {
-                    if (sum <= 0f) { failure = true; sum = 1e-20f; }
-                    l[i, i] = MathF.Sqrt(sum);
-                }
-                else l[i, k] = sum / l[k, k];
+                float s = a[i, j];
+                for (int k = 0; k < j; k++) s -= a[i, k] * a[j, k];
+                a[i, j] = s * a[j, j];                 // A[j][j] already holds 1/L[j][j] (0x0088DF1A)
             }
+            float p = a[i, i];
+            for (int k = 0; k < i; k++) p -= a[i, k] * a[i, k];
+            if (p < FltEpsilon) { degeneratePivot = true; return (float[])b.Clone(); }
+            a[i, i] = 1f / MathF.Sqrt(p);
         }
-        var y = new float[n];
-        for (int i = 0; i < n; i++) { float sum = b[i]; for (int p = 0; p < i; p++) sum -= l[i, p] * y[p]; y[i] = sum / l[i, i]; }
-        var x = new float[n];
-        for (int i = n - 1; i >= 0; i--) { float sum = y[i]; for (int p = i + 1; p < n; p++) sum -= l[p, i] * x[p]; x[i] = sum / l[i, i]; }
-        return x;
+
+        for (int i = 0; i < n; i++)
+        {
+            float s = b[i];
+            for (int k = 0; k < i; k++) s -= a[i, k] * b[k];
+            b[i] = s * a[i, i];
+        }
+        for (int i = n - 1; i >= 0; i--)
+        {
+            float s = b[i];
+            for (int k = i + 1; k < n; k++) s -= a[k, i] * b[k];
+            b[i] = s * a[i, i];
+        }
+        return b;
     }
 }

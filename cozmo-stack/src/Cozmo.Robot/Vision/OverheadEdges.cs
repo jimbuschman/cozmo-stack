@@ -78,6 +78,11 @@ public sealed record OverheadEdgeFrame(uint Timestamp, bool GroundPlaneValid, Ve
 /// The threshold is 50 and the fifth constructor argument 3, both from the one construction site in
 /// <c>VisionSystem::VisionSystem</c> (0x006B0120).
 /// </summary>
+// fidelity: M11-017
+// M11-017 is IMPLEMENTATION_GAP: SD1 requires the engine's exact detector, but the inventory carries
+// only the entry addresses (OverheadEdgesDetector::Detect 0x006ABE34, GroundPlaneROI 0x004F7774, the
+// four MapComponent entry points) and a prose description - not the instruction body. This class is
+// therefore the stack's equivalent (polygon map, double-precision filter), not a transcription.
 public sealed class OverheadEdgesDetector
 {
     /// <summary>The <c>float</c> argument <c>VisionSystem</c> constructs the detector with (0x006B0120), kept at the detector's +0xC and compared against the absolute filter response.</summary>

@@ -164,5 +164,19 @@ public readonly record struct Pose3d(Mat3 Rotation, Vec3 Translation)
         return Rotation.AngularDistance(other.Rotation) <= angleThresholdRad;
     }
 
+    /// <summary>
+    /// The engine's <c>Pose3d::IsSameAs(other, Point3f, Radians, Point3f* delta, Radians* rotDelta)</c>
+    /// 0x4A7060: a per-axis translation tolerance (the object-match thunk returns the extent scaled by 0.8)
+    /// and the rotation within the angle; <paramref name="delta"/> is the translation difference, which the
+    /// closest-match predicate narrows to <c>abs(delta)</c>.
+    /// </summary>
+    // fidelity: M11-004
+    public bool IsSameAs(Pose3d other, Vec3 distThresholdMm, double angleThresholdRad, out Vec3 delta)
+    {
+        delta = Translation - other.Translation;
+        if (Math.Abs(delta.X) > distThresholdMm.X || Math.Abs(delta.Y) > distThresholdMm.Y || Math.Abs(delta.Z) > distThresholdMm.Z) return false;
+        return Rotation.AngularDistance(other.Rotation) <= angleThresholdRad;
+    }
+
     public override string ToString() => $"T={Translation} yaw={AngleAroundZ * 180 / Math.PI:F1}deg";
 }

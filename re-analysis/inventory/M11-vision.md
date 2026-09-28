@@ -892,6 +892,219 @@ plus `WasRotatingTooFast(timestamp, 0.174533, 0.174533, 0)`.
   Still unfixed; the record cannot be settled until the clause is removed and its evidence
   replaced with instructions.
 
+## Correction C1 (B-M11 build job, 2026-09-28)
+
+A B-M11 implementer stopped with `MISSING:` on five points; `@cozmo-extractor` settled them from the
+`.so` (read-only report: `.scratch/B-M11/missing-report.md`). The rows below are corrected and the
+inventory was re-approved with `python re-analysis/tools/fidelity.py --approve M11-vision`.
+
+### C1.1 M11-032: the `Extract1dComponents` floor `a` is `Parameters+0x10`, not `maxScale`
+
+**Rows corrected:** Appendix B G1.4 (`NextRow(maskPtr, cols, y=row, a=maxScale, b=params+0x12)`) and
+G1.14b (`Extract1dComponents(maskRow, width, a=maxScale, b=params+0x12=0, list&)`). The `a=maxScale`
+clause in both is **contradicted**.
+
+The live chain passes `Parameters+0x10` as `a` and `Parameters+0x12` as `b`, and the shipped
+`Parameters::Initialize` sets both to 0:
+
+- `0x00898BA0: ldrsh.w r0,[r7,#0x10]` (short1 = `Parameters+0x10`), `0x00898BAC: ldrsh.w r6,[r7,#0x12]`
+  (short2 = `Parameters+0x12`); `0x00898BE0: blx 0x4D1360` (ecvcs), with short1 in `r3`.
+- ecvcs `0x0088F8C8: mov r8,r3`; `0x0088F938: strd r8,sl,[sp,#0xc]` stores `a` at `[sp+0xc]`
+  before `r8` is reused for `maxScale` (`0x0088F93C: mov.w r8,#-1`).
+- main loop `0x0088FBC0: ldrd sl,r5,[sp,#0xc]` (sl = a), `0x0088FC1C: str.w sl,[sp]`,
+  `0x0088FC28: blx 0x4D0D18` (`..._NextRow`); the u16 body `0x00893F94: mov r2,ip` passes a to
+  `Extract1dComponents` (`0x00893F96: blx 0x4D0FF4`).
+- `0x00896FDC: strd r2,r3,[sp]`; the length test `0x00897052..0x00897064` appends only when
+  `length >= a`.
+- `Parameters::Initialize` `0x00875316/0x00875318: strh r1,[r0,#0x10]` and
+  `0x0087531e: strh r1,[r0,#0x12]` with `r1 = 0`.
+
+So `a = 0` (the floor never drops a run) and `b = 0` (the `b` test is a no-op). `maxScale` (17) is
+used only for the integral-image border and the `get_maxRow`/`ScrollDown` bookkeeping. The
+implementer's `a = params+0x10` is confirmed and kept.
+
+### C1.2 M11-022: the ROI/negative mode is `MarkerDetector::Parameters+0x7c`, not `[camera+0x7c]`
+
+**Row corrected:** M11-022's evidence ("ROI/negative choice from [camera+0x7c]") and Appendix B
+G2.2. `MarkerDetector::MarkerDetector(Camera const&)` `0x0087509C` stores `[this+0] = Camera` and
+`[this+4] = Parameters` (`0x008750A4`, `0x008750B8`); `Detect` reads `[r7+4]` then `[r0,#0x7c]`
+(`0x00875400/0x00875402`). The only setter is `Parameters::Initialize`
+(`0x008753AE: strh.w r3,[r0,#0x7C]` with `r3 = 0x100`, i.e. `+0x7c = 0`, `+0x7d = 1`); the ctor
+`0x00875D48` does not write `+0x7c`. The live byte is 0, so the shipped mechanism is a single
+non-negative pass and the `size >= 2` guard (`0x0087551C..0x0087551E`) means the `Rectangle<int>`
+ROI vector is never populated. Mode semantics: 0 -> `{false}`, 1 -> `{true}`, 2 -> `{false,true}`,
+other -> empty list (Detect returns 0).
+
+**Also corrected:** Appendix B G2.6's `InitFromPointContainer` body is `0x006ABB38`
+(`Rectangle<int>`; truncating `vcvt.s32.f32`, fields `{xmin, ymin, width, height}`), not
+`0x0087855C` (the `Rectangle<float>` overload).
+
+### C1.3 M11-020: the OpenCV 3.1.0 routines are still RECOVERABLE_GAP
+
+The call-site arguments are exact and already in the manifest evidence (`boxFilter` CV_16S, anchor
+(-1,-1), normalize true, `borderType = 4` = BORDER_REFLECT_101; `subtract` dtype -1; `normalize`
+alpha 255.0, beta 0.0, NORM_MINMAX, dtype -1). The shipped routine bodies are **not yet read** and
+SD1 requires them: `libopencv_core.so` `arith_op` `0x0002B7DC` (the `dtype=-1` mixed CV_8U/CV_16S
+resolution and saturation), `libopencv_core.so` normalize's per-type applier `0x000407E8..0x00040A46`
+(the `saturate_cast` rounding), and `libopencv_imgproc.so` the separable box worker `0x000A6E74`
+and its `borderType=4` border helper. `cozmo-stack/src/Cozmo.Robot/Animation/OpenCv310.cs` has none
+of the three today. M11-020 cannot be settled until these are transcribed.
+
+### C1.4 M11-029: the cos-25-deg cluster reject operands
+
+The reject at `0x008A64B4..0x008A65F2` is `cv::Mat::dot(point, clusterCenter) < 0.90630776`, where
+operand 1 is `data.row(sb)` (the point's normalised tangent, 1x2 CV_32F; `0x008A64DC..0x008A64EC`)
+and operand 2 is `centers.row(labels[sb])` (that point's kmeans center, 1x2 CV_32F;
+`0x008A64FE..0x008A6506`). The float-converted dot (`0x008A65D2..0x008A65DE`) is compared at
+`0x008A65E2`; on `mi` (less than) the point's label is set to -1 (`0x008A65EC/0x008A65F2`).
+
+### C1.5 M11-026: the hollow test and the id compression, read in full
+
+Hollow (`InvalidateFilledCenterComponents_hollowRows`, u16 body `0x0089614C`, threshold
+`Parameters+0x24 = 1.0`): `ratio = merged[id] / size[id]`, where `merged[id]` is the per-component sum
+over rows of the largest inter-run gap on each row (`0x00896232..0x00896260`, tail
+`0x0089626E..0x00896296`) and `size[id]` is the component's pixel count from `ComputeComponentSizes`
+(`0x008962E8`); if `ratio < 1.0` (`0x0089631E..0x00896328`) the component's validity flag is cleared
+and all its segments get `componentId = 0` (`0x00896338..0x00896352`). Id compression
+(`CompressConnectedComponentSegmentIds`, `0x00894A7C..0x00894B82`): `used[id] = 1` for every id
+present, `lookup[0] = 0`, `lookup[id] = k++` for used ids in ascending order, each segment's id is
+replaced by `lookup[id]`, `maxId` recomputed. The resulting ascending-id order is observable to the
+boundary trace (which requires segments sorted by id) and the sort `0x00898DD0`.
+
+## Correction C2 (B-M11 build job, 2026-09-28)
+
+A second `MISSING:` round (`.scratch/B-M11/vision-missing-report.md`) filled the VisionSystem
+records' evidence and pinned the M11-002 distance. Re-approved with `--approve M11-vision`.
+
+### C2.1 M11-021: the CLAHE path is live and must be built
+
+`ApplyCLAHE(image, 4, out)` is `0x006B44EC` (dispatched by `tbb [pc,r2]`, table `0x006B44F4`;
+the only live value is 4). For enum 4 it (a) sets `[VisionSystem+0x358]=1`, then sums every 3rd
+byte of every 3rd row of the grey image and clears the flag when
+`sum >= 80 * ((cols+2)/3) * ((rows+2)/3)` (`0x006B451A..0x006B457E`, threshold constant 80 at
+`0xC8E14C`); (b) lazily `CLAHE::setTilesGridSize(4,4)` (`0x006B4580..0x006B45D8`, `0xC8E148`) and
+`setClipLimit(32.0)` (`0x006B45DC..0x006B4636`, `0xC8E144`, double at `0x6B4700`); (c)
+`CLAHE::apply` through the vtable `[vptr+0x20]` (`0x006B4656..0x006B4672`); (d) a post-CLAHE
+`cv::boxFilter(out,out,-1,ksize=(3,3),anchor=(-1,-1),normalize=true,borderType=4)`
+(`0x006B4686..0x006B46A8`); (e) copies `[image+0x3c]` to `[out+0x3c]` (`0x006B46B4`).
+`DetectMarkersWithCLAHE` (`0x006B4796`, `tbh [pc,r0,lsl#1]` table `0x006B479E`) for enum 4 picks
+the original grey image when `[VisionSystem+0x358]==0` and the CLAHE image otherwise
+(`0x006B47A8..0x006B47B4`); whichever it picks is what `MarkerDetector::Detect` copies into its
+`Array<u8>` and passes to `DetectFiducialMarkers` (`0x008757AC..0x008757B2`). The shipped
+`cv::CLAHE` is in `libopencv_imgproc.so` (apply body `0x20DAC`, worker `CLAHE_Apply_8u::operator()`
+`0x20834`; decisive ranges: clip redistribution `0x2094E..0x209B8`, tile LUT `0x209BA..0x209F2`).
+The record's evidence must gain these before it can own the path.
+
+### C2.2 M11-033: the colour branch, and it is inert for the shipped grey camera
+
+`EncodedImage::IsColor` (`0x4F2100`) is the encoding byte at `[this+0x20]`; the `tbb` table
+`0x4F2110` makes encodings 2,3,4,6,7 colour and 0,1,5,8 grey. Colour -> `DecodeImageRGB` +
+`ImageCache::Reset(ImageRGB const&)` (`0x0087459E`, RGB at entry `+0x54`, RGB-valid `+0x95`);
+grey -> `DecodeImageGray` + `Reset(Image const&)`. `ImageCache::GetGray` (`0x0087465C`) turns an
+RGB entry into grey via `ImageRGB::FillGray` (`0x00872998`), which calls
+`cv::cvtColor(rgb, gray, COLOR_RGB2GRAY=7, 0)` (`0x008729CA`; `libopencv_imgproc.so` `0x2BC78`).
+For the shipped camera (M3: 320x240 grey) the branch is inert: `IsColor` is false, only the grey
+member is populated, `+0x95` stays 0, and `FillGray` is never called. The record must gain the
+`ImageCache` layout (`+0x14` grey, `+0x54` RGB, `+0x94`/`+0x95` valid flags) and `FillGray`.
+
+### C2.3 M11-034: the vision-mode numbers
+
+`Anki::Cozmo::VisionModeFromString` (`0x796BD4`) fixes the ids: Idle 0, DetectingMarkers 1,
+DetectingFaces 2, DetectingMotion 3, DetectingOverheadEdges 4, ReadingToolCode 5,
+ComputingCalibration 6, CheckingQuality 7, ComputingStatistics 8, DetectingPets 9,
+EstimatingFacialExpression 10, DetectingSmileAmount 11, DetectingGaze 12, DetectingBlinkAmount 13,
+LimitedExposure 14, DetectingLaserPoints 15, Count 16. The `VisionSystem::Update` dispatcher calls
+`ShouldProcessVisionMode` with 8, 1, 2, 9, 3, 4, 5, 6, 0xF, 7 in that order (`0x006B5122..0x006B55E4`).
+Shipped `vision_config.json` enables markers 1, faces 2, motion 3, overhead 4, quality 7,
+statistics 8, pets 9, laser 15 (bits 0x0002/0x0004/0x0008/0x0010/0x0080/0x0100/0x0200/0x8000) and
+disables 10..13. The default of the unlisted modes 0, 5, 6, 14 is UNKNOWN.
+
+### C2.4 M11-035: the non-marker handlers are other layers' production paths
+
+The dispatch order and the `VisionProcessingResult` field offsets are M11's. The handler bodies
+belong elsewhere: faces and pets -> M14 (`FaceWorld::ChangeFaceID` `0x6551FA`, `FaceWorld::Update`
+`0x655274`, `PetWorld::Update` `0x4BA494`); motion -> M10 (`0x65536C`, `RobotObservedMotion`
+`0x655382`); tool code -> M11 `VisionSystem::ReadToolCode` `0x6B5B98` with the `RobotReadToolCode`
+layout in M2/M10; computed calibration -> M11-039/M3 with the `CameraCalibration` layout in M2/M10;
+image quality -> M11 auto-exposure with M3 `SetCameraSettings` and the `EngineErrorCodeMessage`
+layout in M2/M10; laser points -> M11 `LaserPointDetector` `0x6A7A10`/`0x6A7F46` with the
+`RobotObservedLaserPoint` layout in M2/M10; `CheckMailbox` `0x6B2AD4`; the `RobotProcessedImage`
+broadcast layout in M2/M10. M11-035 is a cross-layer IMPLEMENTATION_GAP.
+
+### C2.5 M11-002: the nearest-neighbour distance is the absdiff sum divided by 1024
+
+`0x008C0B58`: `s0 = [this+0x74]` (NUM_PROBES), `d0 = (double)NUM_PROBES`,
+`d1 = cv::sum(diff)`, `d0 = d1/d0`, `(int)d0` truncated; `NUM_PROBES = 0x400 = 1024`
+(`0xDC7F68`). The stack's integer divide by 1024 is correct. The record's evidence must state the
+divisor.
+
+## Correction C3 (B-M11 build job, 2026-09-28)
+
+A third read (`.scratch/B-M11/pass2-report.md`) corrected two rows and filled four live-path gaps.
+Re-approved with `--approve M11-vision`.
+
+### C3.1 M11-003: the canonical corner order is `(-0.5,0,+0.5)`, `(-0.5,0,-0.5)`, `(+0.5,0,+0.5)`, `(+0.5,0,-0.5)`
+
+**Row corrected:** G4.5 (and the M11-003 row) states the order `(-0.5,0,-0.5)`, `(-0.5,0,0.5)`,
+`(0.5,0,0.5)`, `(0.5,0,-0.5)`. The static ctor `_INIT_69` `0x004DD7D8..0x004DD81A` calls
+`Quadrilateral<3,float>` with the arguments in the order `(-0.5,0,+0.5)`, `(-0.5,0,-0.5)`,
+`(+0.5,0,+0.5)`, `(+0.5,0,-0.5)` (`0x4DD7F4/0x4DD7EC/0x4DD7FC/0x4DD810` with the point addresses
+`0x4DD802/0x4DD7F0/0x4DD80E/0x4DD80C`), and the ctor `0x4E9636` stores argument *i* at corner *i*
+(`0x4E964C..0x4E968E`). So memory corner 0 is `(-0.5,0,+0.5)` and corner 1 is `(-0.5,0,-0.5)`.
+`KnownMarker::Get3dCorners` `0x87E2E8` copies them in memory order and scales x by `size.x` and z by
+`size.y` (`0x87E312/0x87E326`). `VisionMarker::Extract` `0x8A0130..0x8A018A` produces
+`marker_corner[i] = detected[cornerReorder[label][i]]` (table `0xDC73AC`, 16 bytes/label;
+orientationDeg `0xDC7D0C`), so the stack must pair canonical corner `i` with detected
+`cornerReorder[label][i]`.
+
+### C3.2 M11-037: on the normal path `AddAndUpdateObjects` runs before `CheckForUnobservedObjects`
+
+**Row corrected:** V22 and the M11-037 row list `CheckForUnobservedObjects` (`0x0062504E`) before
+`AddAndUpdateObjects` (`0x0062505A`). `0x0062504E` is in the **empty-observed-list** branch
+(`0x624F86: beq 0x625020`); the normal path is `CreateObjectsFromMarkers` -> `AddAndUpdateObjects`
+(`0x62505A`) -> if it returns 0, `CheckForUnobservedObjects` (`0x6250CA`) -> `UpdatePoseOfStackedObjects`
+(`0x6250D0`) -> block config (`0x62520C`) -> `UpdateMarkerlessObjects` (`0x62521A`). Empty-list:
+`ClearOccluders`, `AddLiftOccluder`, `CheckForUnobservedObjects`, skip the stacked-pose update. The
+helper bodies: `AddLiftOccluder` `0x6564D8` (raw state at the timestamp -> lift transform ->
+`ApplyTo` the occluder points -> `Camera::Project3dPoints` -> `Camera::AddOccluder` with the
+transform's z scale); `BlockConfigurationManager::Update` `0x616D7C` (the `DidAnyObjectsMovePastThreshold`
+gate, `UpdateAllBlockConfigs`, `PruneFullPyramids`, `UpdateLastConfigCheckBlockPoses`,
+`NotifyBroadcasterOfConfigurationManagerUpdate`). `UpdatePoseOfStackedObjects` `0x621794` and
+`UpdateMarkerlessObjects` `0x625704` are cross-layer (M10/M12) entry points only.
+
+### C3.3 M11-004: the rotating gate's ImuData and the object match
+
+The `ImuDataHistory` is `VisionComponent+0xb0` (`0x656286/0x6562B4/0x6563AC/0x6563D8`); it is filled
+by `HandleImageImuData` `0x535C20` -> `ImuDataHistory::AddImuData(timestamp, rateX, rateY, rateZ, u8)`
+`0x538B24` (`ImuData` layout: timestamp +0, rateX +4, rateY +8, rateZ +0xC, u8 +0x10). Head uses
+`rateY`, body `rateZ`; `abs(rate) > threshold` is true, and a missing IMU bracket returns 1.
+Object match: `ObjectPoseConfirmer::FindObjectMatchForObservation` `0x5063CC`; tolerances from the
+observed object's virtuals (`vptr+0x30` = 0.8*extent, thunk `0x4E025C` with `0.8` at `0x4E028C`;
+`vptr+0x34` = `pi/4`, thunk `0x4E0290`); primary `BlockWorld::FindLocatedClosestMatchingObjectHelper`
+`0x61FA68` whose predicate `0x6281DA` requires the ObjectType and `Pose3d::IsSameAs` and narrows the
+captured tolerance to `abs(delta)` (closest wins); fallback iterates the confirmer's list with
+`ObservableObject::IsSameAs` `0x8769A8` (last match). The exact object returned by
+`FindLocatedObjectHelper` `0x61EB78` is RECOVERABLE_GAP.
+
+### C3.4 M11-007: the confirming side needs two sightings
+
+`ObjectPoseConfirmer::AddVisualObservation` `0x50684C`: a new entry starts at count 1; a matching
+second sighting increments to 2 and calls `UpdatePoseInInstance` (`0x506A04..0x506A26`); a
+mismatching sighting resets the count to 1 (`0x506A46..0x506A4E`). `IsReferencePoseConfirmed` is
+`count > 1` (`0x506340`); `IsObjectConfirmedAtObservedPose` requires count `>= 2` and the pose to
+match (`0x50634C..0x5063B8`). So the first sighting does not confirm; the second does.
+
+### C3.5 M11-021: the shipped CLAHE bodies
+
+`CLAHE_Impl::apply` `0x20DAC`; the tile LUT body is `CLAHE_CalcLut_Body<uchar,256,0>::operator()`
+`0x20834` and the bilinear body is `CLAHE_Interpolation_Body<uchar>::operator()` `0x203FE` (the
+inventory's "worker" wording must name both). Divisible branch (the shipped 320x240): tileW 80,
+tileH 60, tileSizeTotal 4800, histSize 256, `lutScale = 255/4800 = 0.053125`,
+`clipLimit = (int)(32.0*4800/256) = 600`; the LUT and the interpolation both use `vcvtr.s32.f32`
+(round to nearest, ties to even) then saturate; the interpolation weights `xa`/`ya` are floats.
+Ranges: clip `0x2094E..0x209B8`, LUT `0x209BA..0x209F2`, per-column tables `0x2129E..0x21370`,
+interpolation `0x204B8..0x20542`.
+
 ## Open questions the manager must decide or send back
 
 1. **M11-004 connected-object drop.** The native path read (G10.1) warns and cooldowns but does

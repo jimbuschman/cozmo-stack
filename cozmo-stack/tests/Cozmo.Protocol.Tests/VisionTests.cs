@@ -208,32 +208,68 @@ public class VisionTests
     // ------------------------------------------------------------------ front end
 
     /// <summary>
-    /// The dark mask is the engine's: <c>BinomialFilter</c> 0x008A2344 is the separable five-tap
-    /// [1 4 6 4 1] with a <c>&gt;&gt; 4</c> after each pass and the edge pixel standing in for the taps that
-    /// fall outside, and the binarize loop 0x00890BB6 marks a pixel dark when
-    /// <c>(filtered * 0xCCCC) &gt;&gt; 16 &gt; pixel</c> - 0xCCCC being <c>scaleImage_thresholdMultiplier</c> at
-    /// the parameters' +0xC (0x00875314), with one pyramid level from +4.
+    /// M11-005: <c>Matrix::SolveLeastSquaresWithCholesky&lt;float&gt;</c> 0x0088DE68. The factorisation is in
+    /// natural pivot order and writes <c>1/L[i][i]</c> on the diagonal; a pivot below FLT_EPSILON
+    /// (1.1920929e-07) sets the out-flag true and returns the right-hand side unchanged (no substitution),
+    /// which the caller treats as the accept path (H6). For <c>A=[[4,2],[2,3]]</c>, <c>b=[1,2]</c> the exact
+    /// solution is <c>[-0.125, 0.75]</c>.
     /// </summary>
     [Fact]
-    public void TheDarkMaskIsABinomialFilterAndAQ16Threshold()
+    public void TheCholeskySolveUsesTheEnginesPivotAndOutFlagPolarity()
+    {
+        // a normal 2x2 system: flag false and the exact solution
+        var a = new float[,] { { 4f, 2f }, { 2f, 3f } };
+        var x = CornerRefinement.SolveLeastSquaresWithCholesky(a, new[] { 1f, 2f }, out bool degenerate);
+        Assert.False(degenerate);
+        Assert.Equal(-0.125f, x[0], 6);
+        Assert.Equal(0.75f, x[1], 6);
+
+        // a zero first pivot: flag true, and the RHS comes back unchanged (0x0088DF58 -> 0x0088E132)
+        var z = CornerRefinement.SolveLeastSquaresWithCholesky(
+            new float[,] { { 0f, 0f }, { 0f, 1f } }, new[] { 5f, 6f }, out degenerate);
+        Assert.True(degenerate);
+        Assert.Equal(new[] { 5f, 6f }, z);
+
+        // a degenerate pivot after a good first one: still flag true and the RHS unchanged
+        var w = CornerRefinement.SolveLeastSquaresWithCholesky(
+            new float[,] { { 1f, 0f }, { 0f, 0f } }, new[] { 3f, 4f }, out degenerate);
+        Assert.True(degenerate);
+        Assert.Equal(new[] { 3f, 4f }, w);
+    }
+
+    /// <summary>
+    /// M11-032: the shipped selector byte is 1, so the live dark mask is the ecvcs integral-image variant,
+    /// not the binomial path. The shipped window bank is {4, 8, 16} (G1.1b), maxScale 17 (G1.2c), the box
+    /// reciprocals are 101&gt;&gt;13, 227&gt;&gt;16 and 241&gt;&gt;18 (F2), and <c>numFilters3</c>
+    /// 0x0088F61A picks <c>v = (|f1-f0| &gt; |f2-f1|) ? f1 : f2</c> (a strict <c>&gt;</c>) then marks the
+    /// pixel dark when <c>((v * 0xCCCC) &gt;&gt; 16) &gt; pixel</c>.
+    /// </summary>
+    [Fact]
+    public void TheLiveDarkMaskIsTheEcvcsBoxFilterBinarise()
     {
         var p = new QuadDetectorParameters();
         Assert.Equal(0xCCCC, p.DarkThresholdQ16);
-        Assert.Equal(1, p.PyramidLevels);
+        Assert.Equal(new[] { 4, 8, 16 }, EcvcsExtractor.WindowBank(p));
+        Assert.Equal(17, EcvcsExtractor.MaxScale(EcvcsExtractor.WindowBank(p)));
+        Assert.Equal((101, 13), EcvcsExtractor.FilterCoefficients(4));
+        Assert.Equal((227, 16), EcvcsExtractor.FilterCoefficients(8));
+        Assert.Equal((241, 18), EcvcsExtractor.FilterCoefficients(16));
 
-        var flat = new GrayImage(8, 8);
+        // B1: 100 * 0xCCCC >> 16 = 79, so 79 is not dark and 78 is.
+        Assert.Equal(79, (100 * p.DarkThresholdQ16) >> 16);
+        Assert.Equal((byte)1, EcvcsExtractor.NumFilters3(0, 100, 100, 78, p.DarkThresholdQ16));
+        Assert.Equal((byte)0, EcvcsExtractor.NumFilters3(0, 100, 100, 79, p.DarkThresholdQ16));
+        // an exact tie in the adjacent gaps keeps f2 (strict >)
+        Assert.Equal((byte)1, EcvcsExtractor.NumFilters3(0, 10, 20, 10, 0x10000));
+
+        // a flat image has every box mean equal, so no pixel is dark. The image must be at least as large as
+        // the border (the ctor 0x008A4D6A requires numBorderPixels <= rows and cols), so 64x64, not 9x9.
+        var flat = new GrayImage(64, 64);
         flat.Fill(100);
+        Assert.All(EcvcsExtractor.BinaryMask(flat, p).Pixels, v => Assert.Equal((byte)0, v));
+
+        // the non-live binomial filter is retained as a faithful transcription, but is not the live mask
         Assert.All(QuadDetector.BinomialFilter(flat).Pixels, v => Assert.Equal(100, v));
-
-        // one bright pixel in a dark row: the kernel's own weights, 1 4 6 4 1 over 16
-        var spike = new GrayImage(9, 1);
-        spike.Pixels[4] = 160;
-        var f = QuadDetector.BinomialFilter(spike);
-        Assert.Equal(new byte[] { 0, 0, 10, 40, 60, 40, 10, 0, 0 }, f.Pixels);
-
-        // and the threshold: 130 filtered against 100 is dark, against 105 is not
-        Assert.True((130 * p.DarkThresholdQ16) >> 16 > 100);
-        Assert.False((130 * p.DarkThresholdQ16) >> 16 > 105);
     }
 
     /// <summary>
@@ -280,17 +316,18 @@ public class VisionTests
     }
 
     /// <summary>
-    /// How small a marker the front end will take, which is decided by <c>component_minimumNumPixels</c>
-    /// (100, the parameters' +0x4C): a marker twenty pixels on a side leaves enough dark pixels and one of
-    /// sixteen does not. That floor is the engine's, and it is what puts a ceiling on how far away a cube
-    /// can be seen.
+    /// The size filter <c>InvalidateSmallOrLargeComponents</c> uses the operands computed inline from the
+    /// frame (M11-026, S4): <c>min = round((0.03*dmin)^2 - (0.024*dmin)^2)</c> = 19 and
+    /// <c>max = round((0.97*dmax)^2 - (0.776*dmax)^2)</c> = 34685 for a 320x240 frame. A marker twenty
+    /// pixels on a side leaves a component well above the floor; a tiny one does not.
     /// </summary>
     [Fact]
     public void AMarkerSmallerThanTheComponentFloorIsNotFound()
     {
         if (NoLibrary) return;
+        Assert.Equal((19, 34685), new QuadDetectorParameters().ComponentSizeRange(320, 240));
         var found = new List<(int Side, int Markers)>();
-        foreach (int side in new[] { 20, 16 })
+        foreach (int side in new[] { 20, 6 })
         {
             var frame = new GrayImage(320, 240);
             frame.Fill(140);
@@ -303,7 +340,6 @@ public class VisionTests
         }
         Assert.Equal(1, found[0].Markers);
         Assert.Equal(0, found[1].Markers);
-        Assert.Equal(100, new QuadDetectorParameters().MinComponentPixels);
     }
 
     /// <summary>
@@ -398,6 +434,50 @@ public class VisionTests
         // each from the largest one rather than being filled at random
         Assert.Empty(a.Take(4).Intersect(a.Skip(4)));
         Assert.Equal(4, a.Distinct().Count());
+    }
+
+    /// <summary>
+    /// C1.4 (M11-029): the reject at 0x008A64B4..0x008A65F2 compares the float dot of a point's unit
+    /// tangent with its kmeans centre against cos(25 deg) = 0x3F6803C9 = 0.90630776; on less-than the
+    /// point's label becomes -1.
+    /// </summary>
+    [Fact]
+    public void TheClusterRejectDropsPointsMoreThanTwentyFiveDegreesFromTheirCentre()
+    {
+        Assert.Equal(0.90630776f, QuadCorners.Cos25Deg, 7);
+        var tangents = new[] { (Y: 1f, X: 0f), (Y: 0f, X: 1f) };
+        var centers = new[] { (Y: 1f, X: 0f), (Y: 0.70710678f, X: 0.70710678f) };
+        var labels = new[] { 0, 1 };
+        QuadCorners.ApplyClusterReject(tangents, labels, centers);
+        Assert.Equal(0, labels[0]);    // dot = 1.0 >= cos25
+        Assert.Equal(-1, labels[1]);   // dot = 0.7071 < cos25
+    }
+
+    /// <summary>
+    /// C1.2 (M11-022): the ROI/negative mode is <c>Parameters+0x7c</c>, shipped 0 (a single non-negative
+    /// pass). Mode 3 selects an empty pass list, so Detect returns nothing; mode 2 is
+    /// <c>{false,true}</c>, and the ROI the first pass records masks the marker before the negative pass,
+    /// so the marker is still found exactly once.
+    /// </summary>
+    [Fact]
+    public void TheShippedRoiNegativeModeIsASingleNonNegativePass()
+    {
+        if (NoLibrary) return;
+        Assert.Equal(0, new QuadDetectorParameters().NegativeMode);
+
+        var frame = new GrayImage(320, 240);
+        frame.Fill(140);
+        var corners = new[] { new Vec2(100, 60), new Vec2(100, 160), new Vec2(200, 60), new Vec2(200, 160) };
+        MarkerRenderer.Draw(frame, Lib, MarkerRenderer.RowForCode(Lib, MarkerType.LightCubeI_Front), corners);
+
+        var shipped = new MarkerDetector(new QuadDetector(), new MarkerDecoder(Lib));
+        Assert.Single(shipped.Detect(frame, 1));
+
+        var empty = new MarkerDetector(new QuadDetector(new QuadDetectorParameters { NegativeMode = 3 }), new MarkerDecoder(Lib));
+        Assert.Empty(empty.Detect(frame, 1));
+
+        var twoPass = new MarkerDetector(new QuadDetector(new QuadDetectorParameters { NegativeMode = 2 }), new MarkerDecoder(Lib));
+        Assert.Single(twoPass.Detect(frame, 1));
     }
 
     /// <summary>
@@ -720,9 +800,14 @@ public class VisionTests
         }
 
         /// <summary>Renders what the camera would see of a cube at <paramref name="cube"/> (or an empty frame) and processes it.</summary>
-        public VisionFrameResult Frame(Pose3d? cube, float x = 0, float y = 0, float angle = 0, float head = 0, RobotStatusFlag flags = 0, float gz = 0)
+        public VisionFrameResult Frame(Pose3d? cube, float x = 0, float y = 0, float angle = 0, float head = 0, RobotStatusFlag flags = 0, float gz = 0,
+                                       float? imuRateY = null, float? imuRateZ = null)
         {
             State(x, y, angle, head, flags, gz);
+            // M11-004: every camera frame carries an image IMU sample (ImageImuData 0xF4), which feeds
+            // VisionComponent+0xb0's ImuDataHistory; zero rates mean "not rotating". The rotating gate's
+            // fail-safe (no bracket -> true) would otherwise skip every unobserved check offline.
+            Send(new ImageImuData { ImageId = T, RateX = 0, RateY = imuRateY ?? 0, RateZ = imuRateZ ?? 0, Line2Number = 0 });
             var pd = Vision.History.At(T)!.Value;
             var frame = new GrayImage(Cal.Columns, Cal.Rows);
             frame.Fill(150);
@@ -762,21 +847,38 @@ public class VisionTests
         Assert.True(rig.Vision.Locator.IsVisibleFromCamera(7));
     }
 
+    /// <summary>
+    /// M11-004 / H1: the native <c>AddAndUpdateObjects</c> does <b>not</b> drop an observed active object
+    /// with no connected counterpart. It warns ("Observed active object of type %s but it's not connected.
+    /// Is the battery plugged in?", string 0xBF854B at 0x00620E9E) and records a 10 s cooldown in the
+    /// <c>unordered_map&lt;int,float&gt;</c> (0x00620ED2..0x00620EDA), then continues to 0x00620EDE. The
+    /// observation is kept, and the warning is suppressed for ten seconds.
+    /// </summary>
     [Fact]
-    public void AnUnconnectedCubeIsSeenButNotAdded()
+    public void AnUnconnectedCubeIsStillObservedAndOnlyWarnsOncePerTenSeconds()
     {
         if (NoLibrary) return;
         using var rig = new WorldRig(connectCube: false);
         var r = rig.Frame(CubeAhead(), head: -0.15f);
         Assert.NotEmpty(r.Markers);
-        Assert.Empty(r.Objects);
+        Assert.Single(r.Objects);
+        Assert.Equal(1u, r.Objects[0].Object.ObjectId);        // M11-013 policy: id from the type
         Assert.Contains(rig.Log, l => l.Contains("not connected"));
-        Assert.Empty(rig.Vision.World.Objects);
-        // the offline switch the tools use
+        Assert.Single(rig.Vision.World.Objects);
+        // the next frame is inside the 10 s cooldown (the frames are 33 ms apart), so no second warning
+        int warnings = rig.Log.Count(l => l.Contains("not connected"));
+        rig.Frame(CubeAhead(), head: -0.15f);
+        Assert.Equal(warnings, rig.Log.Count(l => l.Contains("not connected")));
+        // the offline id switch is retained; it no longer gates whether the object is kept
         rig.Vision.World.AllowUnconnectedObjects = true;
         var r2 = rig.Frame(CubeAhead(), head: -0.15f);
         Assert.Single(r2.Objects);
         Assert.Equal(1u, r2.Objects[0].Object.ObjectId);
+        // after the 10 s cooldown (0x00620B1E, kUnconnectedObservationCooldownDuration_sec 0x00C781EC)
+        // elapses, the warning is emitted again
+        rig.T += 11_000;
+        rig.Frame(CubeAhead(), head: -0.15f);
+        Assert.Equal(warnings + 1, rig.Log.Count(l => l.Contains("not connected")));
     }
 
     /// <summary>
@@ -849,11 +951,146 @@ public class VisionTests
         using var rig = new WorldRig();
         rig.Frame(CubeAhead(), head: -0.15f);
         var o = rig.Vision.World.GetObjectById(7)!;
+        // Make the object eligible for a miss: a Dirty pose with nothing behind it (0x0062211E). A Known
+        // object that is merely not visible is skipped by the "should have been seen" test first, so the
+        // gate would never be exercised.
+        rig.Vision.World.MarkDirty(7);
         for (int i = 0; i < 4; i++) rig.Frame(null, head: -0.15f, flags: RobotStatusFlag.IsMoving);
-        Assert.Equal(0, o.UnobservedCount);
-        for (int i = 0; i < 4; i++) rig.Frame(null, head: -0.15f, gz: 0.5f);
-        Assert.Equal(0, o.UnobservedCount);
+        Assert.Equal(0, o.UnobservedCount);            // the moving gate (IS_MOVING) skipped the pass
+        // the body gate reads ImuData.rateZ (C3.3), not the robot state's gyro
+        for (int i = 0; i < 4; i++) rig.Frame(null, head: -0.15f, imuRateZ: 0.5f);
+        Assert.Equal(0, o.UnobservedCount);            // the rotating gate skipped it too
+        rig.Frame(null, head: -0.15f);                 // still: the miss advances
+        Assert.Equal(1, o.UnobservedCount);
         Assert.True(o.IsLocated);
+    }
+
+    /// <summary>
+    /// M11-004: the rotating gate is applied on the offline <c>ProcessImage</c> path too (not only
+    /// <c>ProcessCapture</c>), so an IMU rate reaches <c>BlockWorld::CheckForUnobservedObjects</c> through
+    /// the public entry point the offline rig uses.
+    /// </summary>
+    [Fact]
+    public void TheRotatingGateReachesBlockWorldThroughProcessImage()
+    {
+        if (NoLibrary) return;
+        using var rig = new WorldRig();
+        rig.Frame(CubeAhead(), head: -0.15f);
+        var o = rig.Vision.World.GetObjectById(7)!;
+        rig.Vision.World.MarkDirty(7);                 // eligible for a miss (Dirty + nothing behind)
+        rig.Frame(null, head: -0.15f, imuRateZ: 0.5f); // WorldRig.Frame drives Vision.ProcessImage
+        Assert.Equal(0, o.UnobservedCount);            // the gate skipped the pass
+        rig.Frame(null, head: -0.15f);                 // still: the miss advances, so the object was eligible
+        Assert.Equal(1, o.UnobservedCount);
+    }
+
+    /// <summary>
+    /// M11-004 / H2: <c>MovementComponent::WasMoving(timestamp)</c> reads only the <c>IS_MOVING</c> bit
+    /// (bit 0) of the <c>HistRobotState</c> nearest the timestamp (lambda 0x00642672,
+    /// <c>HistRobotState[+0x58] &amp; 1</c>). <c>AreWheelsMoving</c> is bit 15 and must not skip the pass.
+    /// </summary>
+    [Fact]
+    public void OnlyTheIsMovingBitSkipsTheUnobservedPass()
+    {
+        if (NoLibrary) return;
+        using var rig = new WorldRig();
+        rig.Frame(CubeAhead(), head: -0.15f);
+        var o = rig.Vision.World.GetObjectById(7)!;
+        rig.Vision.World.MarkDirty(7);                 // the Dirty-with-nothing-behind case applies
+        rig.Frame(null, head: -0.15f, flags: RobotStatusFlag.AreWheelsMoving);
+        Assert.Equal(1, o.UnobservedCount);            // AreWheelsMoving alone does not gate
+        Assert.True(o.IsLocated);
+    }
+
+    /// <summary>
+    /// M11-004 / C3.3: <c>WasHeadRotatingTooFast</c> 0x00656260 reads <c>ImuData.rateY</c> (ImuData+8) and
+    /// <c>WasBodyRotatingTooFast</c> 0x00656384 reads <c>rateZ</c> (+0xC); <c>|rate| &gt; 0.174533</c>
+    /// (0x3E32B8C2) is true, and a missing bracket returns true (fail-safe, 0x656306..0x656342).
+    /// </summary>
+    [Fact]
+    public void TheRotatingGateReadsImuRateYAndRateZ()
+    {
+        var imu = new ImuDataHistory();
+        imu.Add(100, 0, 0, 0, 0);
+        imu.Add(200, 0, 0.3f, 0, 0);
+        Assert.True(imu.WasHeadRotatingTooFast(150, BlockWorld.MaxRotationRateRadPerSec));
+        Assert.False(imu.WasBodyRotatingTooFast(150, BlockWorld.MaxRotationRateRadPerSec));
+        Assert.True(imu.WasRotatingTooFast(150, BlockWorld.MaxRotationRateRadPerSec));
+        // no bracket: fail-safe true; empty history too
+        Assert.True(imu.WasRotatingTooFast(500, BlockWorld.MaxRotationRateRadPerSec));
+        Assert.True(new ImuDataHistory().WasRotatingTooFast(100, BlockWorld.MaxRotationRateRadPerSec));
+    }
+
+    /// <summary>
+    /// M11-007 / C3.4: a new <c>PoseConfirmation</c> starts at count 1, the first sighting does not confirm;
+    /// the second matching sighting makes 2 and <c>IsReferencePoseConfirmed</c> (0x506340) is
+    /// <c>count &gt; 1</c>; a mismatching sighting resets to 1 (0x506A46..0x506A4E).
+    /// </summary>
+    [Fact]
+    public void TheFirstSightingDoesNotConfirmAndTheSecondDoes()
+    {
+        if (NoLibrary) return;
+        using var rig = new WorldRig();
+        rig.Frame(CubeAhead(), head: -0.15f);
+        var o = rig.Vision.World.GetObjectById(7)!;
+        Assert.Equal(1, o.PoseConfirmationCount);
+        Assert.False(o.IsPoseConfirmed);
+        rig.Frame(CubeAhead(), head: -0.15f);
+        Assert.Equal(2, o.PoseConfirmationCount);
+        Assert.True(o.IsPoseConfirmed);
+        Assert.True(rig.Vision.World.IsObjectConfirmedAtObservedPose(o, o.Pose));
+        // a mismatching sighting (70 mm away, over the 35.2 mm extent tolerance) resets the count
+        rig.Frame(CubeAhead(220), head: -0.15f);
+        Assert.Equal(1, o.PoseConfirmationCount);
+        Assert.False(o.IsPoseConfirmed);
+    }
+
+    /// <summary>
+    /// M11-004 / C3.3: the object-match tolerance is the object's extent times 0.8 (a cube's 44 mm gives
+    /// 35.2 mm) and the rotation tolerance is pi/4 (thunk 0x4E025C with 0.8 at 0x4E028C, thunk 0x4E0290);
+    /// the primary match is the closest located object within them (predicate 0x6281DA).
+    /// </summary>
+    [Fact]
+    public void TheObjectMatchToleranceIsTheExtentTimesZeroPointEightAndFortyFiveDegrees()
+    {
+        var tol = BlockWorld.ObjectMatchToleranceMm(ObjectType.Block_LIGHTCUBE1);
+        Assert.Equal(35.2, tol.X, 6);
+        Assert.Equal(35.2, tol.Y, 6);
+        Assert.Equal(35.2, tol.Z, 6);
+        Assert.Equal(Math.PI / 4, BlockWorld.ObjectMatchAngleRad, 9);
+
+        if (NoLibrary) return;
+        using var rig = new WorldRig();
+        rig.Frame(CubeAhead(), head: -0.15f);
+        var o = rig.Vision.World.GetObjectById(7)!;
+        var near = o.Pose;
+        Assert.Same(o, rig.Vision.World.FindObjectMatchForObservation(ObjectType.Block_LIGHTCUBE1, near));
+        Assert.Same(o, rig.Vision.World.FindObjectMatchForObservation(ObjectType.Block_LIGHTCUBE1,
+            new Pose3d(near.Rotation, near.Translation + new Vec3(0, 20, 0))));
+        Assert.Null(rig.Vision.World.FindObjectMatchForObservation(ObjectType.Block_LIGHTCUBE1,
+            new Pose3d(near.Rotation, near.Translation + new Vec3(0, 40, 0))));
+        Assert.Same(o, rig.Vision.World.FindObjectMatchForObservation(ObjectType.Block_LIGHTCUBE1,
+            new Pose3d(Mat3.AboutZ(0.7) * near.Rotation, near.Translation)));
+        Assert.Null(rig.Vision.World.FindObjectMatchForObservation(ObjectType.Block_LIGHTCUBE1,
+            new Pose3d(Mat3.AboutZ(0.9) * near.Rotation, near.Translation)));
+    }
+
+    /// <summary>
+    /// M11-037 / C3.2: the block-configuration update runs on both the normal and the empty-observed-list
+    /// paths (0x6250D4 is reached from both, then 0x62520C). The stacked-pose update runs only on the normal
+    /// path (0x6250D0; the empty branch jumps to 0x6250D4).
+    /// </summary>
+    [Fact]
+    public void TheFrameSequenceRunsTheBlockConfigurationHookOnBothPaths()
+    {
+        if (NoLibrary) return;
+        using var rig = new WorldRig();
+        int calls = 0;
+        rig.Vision.World.BlockConfigurationManagerUpdate = () => calls++;
+        rig.Frame(CubeAhead(), head: -0.15f);   // normal path
+        Assert.Equal(1, calls);
+        rig.Frame(null, head: -0.15f);          // empty-observed-list path
+        Assert.Equal(2, calls);
     }
 
     [Fact]
@@ -1101,5 +1338,27 @@ public class VisionTests
         Assert.Equal(1.0, Math.Abs(snapped.Rotation[2, 2]), 4);
         var kept = BlockWorld.ClampPoseToFlat(tilted25);
         Assert.True(Math.Abs(kept.Rotation[2, 2]) < 0.95, "a 25 degree tilt is beyond the engine's 20 and must not snap");
+    }
+
+    /// <summary>
+    /// M11-003 / C3.1: <c>KnownMarker::_canonicalCorners3d</c> is stored in the order
+    /// <c>[0]=(−0.5,0,+0.5)</c>, <c>[1]=(−0.5,0,−0.5)</c>, <c>[2]=(+0.5,0,+0.5)</c>,
+    /// <c>[3]=(+0.5,0,−0.5)</c> (static ctor 0x004DD7D8, ctor 0x004E9636), and
+    /// <c>VisionMarker::Extract</c> pairs canonical corner <c>i</c> with detected
+    /// <c>cornerReorder[label][i]</c> (0x8A0130..0x8A018A; table 0xDC73AC).
+    /// </summary>
+    [Fact]
+    public void TheCanonicalCornerOrderAndTheDecoderPairingAreTheEngines()
+    {
+        Assert.Equal(new Vec3(-0.5, 0, 0.5), KnownMarker.CanonicalCorners[0]);
+        Assert.Equal(new Vec3(-0.5, 0, -0.5), KnownMarker.CanonicalCorners[1]);
+        Assert.Equal(new Vec3(0.5, 0, 0.5), KnownMarker.CanonicalCorners[2]);
+        Assert.Equal(new Vec3(0.5, 0, -0.5), KnownMarker.CanonicalCorners[3]);
+        if (NoLibrary) return;
+        // K5: the first four cornerReorder rows (0xDC73AC: 0,1,2,3, 1,3,0,2, 3,2,1,0, 2,0,3,1)
+        Assert.Equal(new[] { 0, 1, 2, 3 }, Lib.CornerReorder.Take(4));
+        Assert.Equal(new[] { 1, 3, 0, 2 }, Lib.CornerReorder.Skip(4).Take(4));
+        Assert.Equal(new[] { 3, 2, 1, 0 }, Lib.CornerReorder.Skip(8).Take(4));
+        Assert.Equal(new[] { 2, 0, 3, 1 }, Lib.CornerReorder.Skip(12).Take(4));
     }
 }

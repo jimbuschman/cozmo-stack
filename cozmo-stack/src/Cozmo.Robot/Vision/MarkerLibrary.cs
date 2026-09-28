@@ -125,6 +125,9 @@ public sealed class MarkerLibrary
         ThresholdDarkX = dx; ThresholdDarkY = dy; ThresholdBrightX = bx; ThresholdBrightY = by;
     }
 
+    // fidelity: M11-001 — the library layout: images u8[598][1024] at 0x00C9BCA8, labels u16[598] at
+    // 0x00DC6CA8, labelToCode u32[150] at 0x00DC7154, cornerReorder u32[150][4] at 0x00DC73AC,
+    // orientationDeg f32[150] at 0x00DC7D0C; extracted byte for byte by re-analysis/tools/extract_marker_library.py.
     public static MarkerLibrary Parse(ReadOnlySpan<byte> blob)
     {
         if (blob.Length < 24 || !blob[..8].SequenceEqual("CZMKNN02"u8)) throw new FormatException("not a CZMKNN02 marker library");
@@ -273,6 +276,8 @@ public sealed class MarkerDecoder
             var row = _lib.Image(r);
             int sum = 0;
             for (int i = 0; i < MarkerLibrary.NumProbes; i++) sum += Math.Abs(q[i] - row[i]);
+            // fidelity: M11-002 — 0x008C0B58..0x008C0B68: d0 = (double)NUM_PROBES (0x400 = 1024 at 0xDC7F68),
+            // d1 = cv::sum(diff), d0 = d1/d0, (int)d0 truncated. The absdiff sum is divided by 1024.
             int d = sum / MarkerLibrary.NumProbes;
             if (d < best) { second = best; secondRow = bestRow; best = d; bestRow = r; }
             else if (d < second) { second = d; secondRow = r; }
@@ -344,6 +349,9 @@ public sealed class MarkerDecoder
     /// to it: the gate is <c>bright &gt; ratio · dark</c>, not the old <c>dark &gt;= bright</c>. The direction
     /// remains the outstanding question.
     /// </summary>
+    // fidelity: M11-002 — VisionMarker::Extract 0x008A0078: reject label -1 / the ambiguity reject,
+    // distance >= threshold 50, labels 149/150, then labelToCode 0x008A0130, cornerReorder 0x008A0158
+    // and orientationDeg 0x008A0180.
     public ObservedMarker? Extract(GrayImage img, Vec2[] quadCorners, Homography? homography, QuadDetectorParameters? parameters, uint timestamp, out string reason)
     {
         if (_lib is null) { reason = "no marker library on this machine (extract it from libcozmoEngine.so; see VISION.md)"; return null; }

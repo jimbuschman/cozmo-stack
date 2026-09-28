@@ -19,6 +19,10 @@ public sealed class ManipulationSystem : IDisposable
         Docking.Log += l => Log?.Invoke(l);
         Configurations = new BlockConfigurationManager(vision.World, () => ClockSec());
         Whiteboard = new AIWhiteboard(vision.World, () => ClockSec());
+        // M11-037 / C3.2: the engine runs BlockConfigurationManager::Update from
+        // BlockWorld::UpdateObservedMarkers (0x62520C). The per-frame hook is wired here (M12); the existing
+        // observation events are kept because the M12 gate (0x616D7C's [this+0x24]/[this+0xc]) is MISSING.
+        vision.World.BlockConfigurationManagerUpdate = Configurations.Update;
         vision.World.ObjectObserved += _ => Configurations.Update();
         vision.World.PoseStateChanged += (_, _, _) => Configurations.Update();
     }

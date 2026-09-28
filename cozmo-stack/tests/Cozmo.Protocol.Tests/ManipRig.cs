@@ -110,6 +110,9 @@ internal sealed class Rig : IDisposable
         T += 33;
         Send(new RobotState { Timestamp = T, PoseOriginId = OriginId, Pose = new RobotPose { X = X, Y = Y, Angle = Angle }, HeadAngle = Head, Status = flags ?? (OnCharger ? (uint)RobotStatusFlag.IsOnCharger : 0u),
                               Accel = new AccelData { Z = 9800 }, Gyro = new GyroData() });
+        // M11-004: the image IMU sample that arrives with every frame; zero rates mean "not rotating". The
+        // rotating gate's fail-safe (no bracket -> true) would otherwise skip faces and unobserved checks.
+        Send(new ImageImuData { ImageId = T, RateX = 0, RateY = 0, RateZ = 0, Line2Number = 0 });
     }
 
     /// <summary>Renders the cube (if any) from the current pose and processes the frame.</summary>

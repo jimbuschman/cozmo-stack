@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Cozmo.Protocol;
+using Cozmo.Robot.Animation;
 using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Robot.Vision;
@@ -72,7 +73,20 @@ public sealed class VisionSystem : IDisposable
 
     // fidelity: M3-022
     /// <summary>SetCameraCalibration from the connection-time NV read (1j).</summary>
-    private void OnCalibrationInstalled(CameraCalibration c) => Calibration = c;
+    private void OnCalibrationInstalled(CameraCalibration c) => UpdateCameraCalibration(c);
+
+    // fidelity: M11-039
+    /// <summary>
+    /// <c>VisionSystem::UpdateCameraCalibration</c> 0x006B1E3E: install the calibration
+    /// (<c>Camera::SetCalibration</c> 0x006B1E5E) and, on success, call <c>MarkerDetector::Init</c>
+    /// 0x006B1E78, which runs <c>Parameters::Initialize</c> 0x008752F8. The M3 NV callback only raises the
+    /// install event on the success path, so reaching here is the engine's success condition.
+    /// </summary>
+    public void UpdateCameraCalibration(CameraCalibration calibration)
+    {
+        Calibration = calibration;
+        Detector.Init();
+    }
 
     // fidelity: M3-022
     /// <summary>The NV callback's +0x48 = 1 (1j, 2d). The gate that reads it is M11's (A4).</summary>
@@ -102,6 +116,7 @@ public sealed class VisionSystem : IDisposable
             if (!locked) Log?.Invoke($"vision reset: a frame was still being processed after {RemovalWait.TotalSeconds:F0} s; it is discarded at its next check");
             Calibration = _constructedCalibration;
             History.ResetToConstructed();
+            Imu.ResetToConstructed();
             World.ResetToConstructed();
             Faces.ResetToConstructed();
             Pets.ResetToConstructed();
@@ -136,6 +151,12 @@ public sealed class VisionSystem : IDisposable
     public MarkerDetector Detector { get; }
     public BlockWorld World { get; }
     public RobotStateHistory History { get; }
+    /// <summary>
+    /// The engine's <c>ImuDataHistory</c> at <c>VisionComponent+0xb0</c> (C3.3), fed by
+    /// <c>HandleImageImuData</c> 0x00535C20 and read by <c>WasRotatingTooFast</c> 0x0065359C.
+    /// </summary>
+    // fidelity: M11-004
+    public ImuDataHistory Imu { get; } = new();
     /// <summary>The real <see cref="ICubeLocator"/> the M10 cube reaction was built against.</summary>
     public CubeLocator Locator { get; }
     /// <summary>The face world (M14); filled only while a <see cref="FaceDetector"/> that is available is attached.</summary>
@@ -156,6 +177,89 @@ public sealed class VisionSystem : IDisposable
     /// turns it on; a caller that drives frames directly (offline tools and tests) sets it itself.
     /// </summary>
     public bool Enabled { get; set; }
+
+    // fidelity: M11-021, M11-034
+    /// <summary>The vision-mode number of <c>DetectingMarkers</c> (0x006B5162: <c>movs r1,#1</c>).</summary>
+    public const int DetectingMarkers = (int)VisionMode.DetectingMarkers;
+
+    /// <summary>
+    /// The shipped <c>vision_config.json</c> <c>InitialVisionModes</c> as the mode-enable bitmask
+    /// (M11-034, C2.3): markers 1, faces 2, motion 3, overhead edges 4, quality 7, statistics 8, pets 9 and
+    /// laser points 15 are enabled; 10..13 are disabled. The modes the config does not list - 0 (Idle),
+    /// 5 (ReadingToolCode), 6 (ComputingCalibration), 14 (LimitedExposure) - have an UNKNOWN default and
+    /// are left clear.
+    /// </summary>
+    public const int ShippedModeEnableMask = 0x0002 | 0x0004 | 0x0008 | 0x0010 | 0x0080 | 0x0100 | 0x0200 | 0x8000;
+
+    /// <summary>
+    /// The front schedule list (<c>VisionSystem+0xd0</c>); the engine tail-calls
+    /// <c>CheckTimeToProcessAndAdvance</c> on its front schedule (0x006B5AB4..0x006B5AC6). The default is
+    /// <c>InitDefaultSchedules</c> (all 16 modes {true}, counter 0), so every enabled mode runs every frame.
+    /// </summary>
+    public AllVisionModesSchedule Schedules { get; set; } = AllVisionModesSchedule.Default;
+
+    /// <summary>The mode enable bitmask at <c>VisionSystem+0xac</c>, from the shipped config (C2.3).</summary>
+    public int ModeEnableMask { get; set; } = ShippedModeEnableMask;
+
+    /// <summary>
+    /// <c>VisionSystem::ShouldProcessVisionMode(mode)</c> 0x006B5AA4: the mode's enable bit in the
+    /// bitmask at <c>VisionSystem+0xac</c> AND the front schedule's
+    /// <c>AllVisionModesSchedule::CheckTimeToProcessAndAdvance(mode)</c> 0x006AF1F8. A mode whose bit is
+    /// clear returns false without touching the schedule (0x006B5AB0..0x006B5AB2).
+    /// </summary>
+    public bool ShouldProcessVisionMode(int mode)
+    {
+        if ((ModeEnableMask & (1 << mode)) == 0) return false;
+        // 0x006B5AB8: cbz r2,0x6b5aca — an empty front-schedule list returns 0 without advancing anything.
+        var schedules = Schedules;
+        if (schedules is null) return false;
+        return schedules[mode].CheckTimeToProcessAndAdvance();
+    }
+
+    // fidelity: M11-021
+    /// <summary>The CLAHE tile grid the engine sets (<c>setTilesGridSize(4,4)</c> 0x006B45D2, 0xC8E148).</summary>
+    internal const int ClaheTiles = 4;
+    /// <summary>The clip limit the engine sets (<c>setClipLimit(32.0)</c> 0x006B4630, 0xC8E144).</summary>
+    internal const double ClaheClipLimit = 32.0;
+
+    /// <summary>
+    /// <c>VisionSystem::ApplyCLAHE(image, 4, out)</c> 0x006B44EC and <c>DetectMarkersWithCLAHE</c>'s pick
+    /// 0x006B47A8..0x006B47B4. The enum-4 dark test sets the flag, sums every 3rd byte of every 3rd row and
+    /// clears it when <c>sum &gt;= 80*((cols+2)/3)*((rows+2)/3)</c> (80 at 0xC8E14C); a set flag means the
+    /// image is dark, so CLAHE runs and its output is returned, otherwise the original image is returned.
+    /// The CLAHE output is post-filtered with
+    /// <c>boxFilter(out,out,-1,(3,3),(-1,-1),normalize=true,borderType=4)</c> (0x006B4686..0x006B46A8).
+    /// The image timestamp copy <c>[image+0x3c] -&gt; [out+0x3c]</c> (0x006B46B4) is represented by passing the
+    /// same <c>timestamp</c> to <c>Detector.Detect</c>, since <see cref="GrayImage"/> carries no timestamp.
+    ///
+    /// The engine calls <c>setTilesGridSize</c>/<c>setClipLimit</c> only when its cached fields
+    /// (<c>VisionSystem+0x350</c>/<c>+0x354</c>) differ. Those fields are zero from the ctor and the shipped
+    /// values are 4 and 32.0, so the first call always sets both; this stack applies them every call (a
+    /// CLAHE object per frame), which is observationally the same and avoids a cached-field guess.
+    /// </summary>
+    internal static GrayImage SelectMarkerImage(GrayImage image)
+    {
+        if (!IsDarkForClahe(image)) return image;
+        var clahe = OpenCv310.Clahe8U(image.Pixels, image.Height, image.Width, ClaheTiles, ClaheTiles, ClaheClipLimit);
+        var filtered = OpenCv310.BoxFilter8UTo8U(clahe, image.Height, image.Width, 3, 3, OpenCv310.BorderReflect101);
+        return new GrayImage(image.Width, image.Height, filtered);
+    }
+
+    /// <summary>
+    /// The enum-4 dark test 0x006B451A..0x006B457E: sum every 3rd byte of every 3rd row; the flag is
+    /// cleared (CLAHE skipped) when the sum reaches <c>80*((cols+2)/3)*((rows+2)/3)</c>. Returns true when
+    /// the flag stayed set, i.e. CLAHE applies.
+    /// </summary>
+    internal static bool IsDarkForClahe(GrayImage image)
+    {
+        long sum = 0;
+        for (int y = 0; y < image.Height; y += 3)
+            for (int x = 0; x < image.Width; x += 3)
+                sum += image.Pixels[y * image.Width + x];
+        long threshold = 80L * ((image.Width + 2) / 3) * ((image.Height + 2) / 3);
+        return sum < threshold;
+    }
+
     public int FramesProcessed { get; private set; }
     public int FramesDropped { get; private set; }
     public VisionFrameResult? LastResult { get; private set; }
@@ -179,7 +283,8 @@ public sealed class VisionSystem : IDisposable
         var cal = CameraCalibration.Unpack(r.Data);
         // The connection-time callback's rule (1j): a body hardware version <= 6 zeroes the distortion.
         if (_robot.CameraSettings.BodyHwVersion <= 6) cal = cal with { DistortionCoefficients = new double[8] };
-        Calibration = cal;
+        // fidelity: M11-039 — the install path is UpdateCameraCalibration (0x006B1E3E), not a bare set.
+        UpdateCameraCalibration(cal);
         return cal;
     }
 
@@ -214,6 +319,7 @@ public sealed class VisionSystem : IDisposable
                 // - and everything located in the old one is in a frame that no longer exists. What the
                 // robot is carrying moves across with it (0x00510CF0); the rest stops being located, and
                 // whoever holds spatial state of their own is told so they can do the same.
+                // fidelity: M11-019
                 uint before = History.OriginId;
                 History.Add(s);
                 uint now = History.OriginId;
@@ -227,6 +333,7 @@ public sealed class VisionSystem : IDisposable
             }
             // HandleActiveObjectMoved 0x00533E30 dirties the pose only when the robot is not carrying
             // the object (the guard at 0x00534116); a cube on the lift reporting motion is ignored.
+            // fidelity: M11-009
             case ObjectMoved mv:
                 // fidelity: M4-009, M4-023
                 // HandleActiveObjectMoved (CD10a, 0x00533E4C..0x005341BA): an unknown active id, the charger's garbage
@@ -247,6 +354,10 @@ public sealed class VisionSystem : IDisposable
             // model; here its pose goes Unknown, which is what every located-object query already tests
             // (LOCAL: the engine's ObjectConnectionState handling was not transcribed, only its effect).
             case ObjectConnectionState cs when !cs.Connected: OnCubeDisconnected(cs.ObjectID); break;
+            // fidelity: M11-004
+            // HandleImageImuData 0x00535C20 appends every image IMU sample to VisionComponent+0xb0's
+            // ImuDataHistory (AddImuData 0x00538B24); the rotating gate reads it back.
+            case ImageImuData d: Imu.Add(d.ImageId, d.RateX, d.RateY, d.RateZ, d.Line2Number); break;
         }
     }
 
@@ -259,6 +370,10 @@ public sealed class VisionSystem : IDisposable
 
     private void OnFrame(CameraFrame f)
     {
+        // fidelity: M11-040 — VisionComponent::SetNextImage 0x00652B04 puts the EncodedImage in the
+        // component; the Processor thread 0x00651F08 pops it and calls UpdateVisionSystem(pose, image)
+        // 0x00653D30. The mailbox holds one image at a time (the M3 per-frame bound): a frame that arrives
+        // while one is being processed is dropped.
         if (!Enabled) return;
         if (Interlocked.CompareExchange(ref _processing, 1, 0) != 0) { FramesDropped++; return; }
         int removal = Volatile.Read(ref _removals);
@@ -279,22 +394,54 @@ public sealed class VisionSystem : IDisposable
     /// <summary>Processes one camera frame against the recorded robot state; null without calibration or state.</summary>
     public VisionFrameResult? ProcessFrame(CameraFrame f) => ProcessFrame(f, Volatile.Read(ref _removals));
 
+    // fidelity: M11-033 — VisionSystem::Update(PoseData, EncodedImage) 0x006B4B68: the EncodedImage's
+    // IsColor (0x006B4B7C, the encoding byte) chooses DecodeImageRGB (0x006B4B90) or DecodeImageGray
+    // (0x006B4C02), the ImageCache is reset with that result, then Update(PoseData, ImageCache) 0x006B4C78
+    // runs. The shipped camera is grey, so only the grey member is populated and the colour branch is
+    // inert (C2.2).
     private VisionFrameResult? ProcessFrame(CameraFrame f, int removal)
     {
         if (Calibration is null) { WarnNoCalibration(removal); return null; }
-        // fidelity: M3-001
-        // A6: a frame that does not decode (A8..A11, policy M3-020) is not processed.
-        if (!f.TryDecodeGray(out var gray, out var error)) { Log?.Invoke($"frame {f.ImageId}: {error}"); return null; }
-        return ProcessCapture(gray!, f.ImageId, f.Timestamp, removal);
+        var cache = new ImageCache();
+        if (f.IsColor)
+        {
+            // colour -> DecodeImageRGB + ImageCache::Reset(ImageRGB const&) (0x0087459E, RGB at +0x54)
+            if (!f.TryDecodeRgb(out var rgb, out var error)) { Log?.Invoke($"frame {f.ImageId}: {error}"); return null; }
+            cache.Reset(rgb!, f.Width, f.Height);
+        }
+        else
+        {
+            // fidelity: M3-001
+            // A6: a frame that does not decode (A8..A11, policy M3-020) is not processed.
+            if (!f.TryDecodeGray(out var gray, out var error)) { Log?.Invoke($"frame {f.ImageId}: {error}"); return null; }
+            cache.Reset(gray!);
+        }
+        return ProcessCapture(cache, f.ImageId, f.Timestamp, removal);
     }
 
     /// <summary>
     /// The camera path with the image already decoded: pairs the capture with the robot state at its
     /// timestamp and processes it. Split out from <see cref="ProcessFrame(CameraFrame)"/> so the fw2457
-    /// timestamp-zero path can be driven without a JPEG.
+    /// timestamp-zero path can be driven without a JPEG. This is <c>VisionSystem::Update(PoseData,
+    /// ImageCache)</c> 0x006B4D5C: it requires the pose and image, calls <c>UpdatePoseData</c> 0x006B4D88
+    /// and <c>GetGray</c> 0x006B4D94, then dispatches the enabled modes.
     /// </summary>
+    // fidelity: M11-033
     public VisionFrameResult? ProcessCapture(GrayImage gray, uint imageId, uint cameraTimestamp)
         => ProcessCapture(gray, imageId, cameraTimestamp, Volatile.Read(ref _removals));
+
+    /// <summary>The same from an <see cref="ImageCache"/>; <c>GetGray</c> supplies the grey image (M11-033).</summary>
+    // fidelity: M11-033
+    public VisionFrameResult? ProcessCapture(ImageCache cache, uint imageId, uint cameraTimestamp)
+        => ProcessCapture(cache, imageId, cameraTimestamp, Volatile.Read(ref _removals));
+
+    private VisionFrameResult? ProcessCapture(ImageCache cache, uint imageId, uint cameraTimestamp, int removal)
+    {
+        GrayImage gray;
+        try { gray = cache.GetGray(); }
+        catch (InvalidOperationException e) { Log?.Invoke($"frame {imageId}: {e.Message}"); return null; }
+        return ProcessCapture(gray, imageId, cameraTimestamp, removal);
+    }
 
     private VisionFrameResult? ProcessCapture(GrayImage gray, uint imageId, uint cameraTimestamp, int removal)
     {
@@ -308,9 +455,25 @@ public sealed class VisionSystem : IDisposable
         // frame. Passing the camera's zero through would date every marker, object and face at 0, which makes
         // observation age, face expiry and object-position age meaningless on real fw2457 hardware.
         uint effective = cameraTimestamp == 0 ? pd.Value.Timestamp : cameraTimestamp;
-        return ProcessImage(gray, imageId, effective, pd.Value, calibration, removal,
+        // fidelity: M11-004 — VisionComponent::WasRotatingTooFast(timestamp, 0.174533, 0.174533, 0)
+        // 0x00621C9A..0x00621CAE over the ImuDataHistory at VisionComponent+0xb0 (C3.3). The history is
+        // fed from ImageImuData by its first field (the image id/timestamp), the same field the engine's
+        // HandleImageImuData passes to AddImuData; a frame with no bracketing sample is treated as rotating
+        // (fail-safe true), as the engine's no-IMU-data path returns 1.
+        var poseData = WithRotatingGate(pd.Value, effective);
+        return ProcessImage(gray, imageId, effective, poseData, calibration, removal,
                             effective != cameraTimestamp ? cameraTimestamp : null);
     }
+
+    /// <summary>
+    /// Applies the engine's rotating gate to a frame's pose data: <c>VisionComponent::WasRotatingTooFast</c>
+    /// 0x0065359C over the <c>ImuDataHistory</c> at <c>VisionComponent+0xb0</c> (C3.3). Used by both the
+    /// capture path and the offline <see cref="ProcessImage(GrayImage, uint, uint, VisionPoseData)"/> path,
+    /// so the gate reaches <see cref="BlockWorld"/> either way.
+    /// </summary>
+    // fidelity: M11-004
+    private VisionPoseData WithRotatingGate(VisionPoseData pd, uint timestamp) =>
+        pd with { RotatingTooFast = Imu.WasRotatingTooFast(timestamp, BlockWorld.MaxRotationRateRadPerSec) };
 
     /// <summary>
     /// The core update over a decoded image and the robot's pose data for it (usable offline). Throws
@@ -319,6 +482,7 @@ public sealed class VisionSystem : IDisposable
     public VisionFrameResult ProcessImage(GrayImage gray, uint imageId, uint timestamp, VisionPoseData pd)
     {
         var calibration = Calibration ?? throw new InvalidOperationException("no camera calibration");
+        pd = WithRotatingGate(pd, timestamp);
         return ProcessImage(gray, imageId, timestamp, pd, calibration, Volatile.Read(ref _removals), null)
             ?? throw new OperationCanceledException("the robot was removed while this image was being processed");
     }
@@ -339,11 +503,29 @@ public sealed class VisionSystem : IDisposable
         lock (_busy)
         {
             if (RemovedSince(removal)) return null;
-            markers = Detector.Detect(gray, timestamp);
+            // fidelity: M11-021 — ApplyCLAHE(image, 4, out) 0x006B44EC runs unconditionally before the
+            // marker-mode gate; DetectMarkersWithCLAHE picks the original or the CLAHE image from the
+            // enum-4 dark-test flag (0x006B47A8..0x006B47B4). The marker-mode gate then decides whether
+            // Detect runs at all (0x006B5162..0x006B516A).
+            var markerImage = SelectMarkerImage(gray);
+            markers = ShouldProcessVisionMode(DetectingMarkers) ? Detector.Detect(markerImage, timestamp) : Array.Empty<ObservedMarker>();
             if (RemovedSince(removal)) return null;
-            objects = World.UpdateObservedMarkers(markers, camera, timestamp);
+            // fidelity: M11-035, M11-036 — UpdateVisionMarkers (0x00654D60) calls
+            // BlockWorld::UpdateObservedMarkers (0x00654DF4) first in the per-mode handler order. The whole
+            // frame sequence (M11-037, C3.2) runs inside it: occluders, lift occluder, create/add, then the
+            // unobserved check, stacked poses, block configs and markerless objects.
+            var worldFrame = World.UpdateObservedMarkers(markers, camera, timestamp, pd);
+            objects = worldFrame.Objects;
+            forgotten = worldFrame.Forgotten;
             if (RemovedSince(removal)) return null;
-            forgotten = World.CheckForUnobservedObjects(camera, timestamp, objects.Select(o => o.Object.ObjectId).ToHashSet(), pd.Moving, pd.RotatingTooFast);
+            // fidelity: M11-035 — VisionComponent::UpdateAllResults 0x006542EC runs the per-mode result handlers in
+            // order: markers (UpdateVisionMarkers 0x006544A2), faces (0x00654510), pets (PetWorld::Update
+            // 0x0065457E), motion (0x006545E8), overhead edges (0x00654652), tool code (0x006546BC),
+            // computed calibration (0x00654726), image quality (0x00654790), laser points (0x006547FA), then
+            // CheckMailbox 0x00654A74 and the RobotProcessedImage broadcast 0x00654A14/0x00654A1C. This
+            // stack runs the marker, face, pet and overhead-edge handlers in that relative order; the
+            // motion, tool-code, computed-calibration, image-quality and laser-point handlers, CheckMailbox
+            // and the RobotProcessedImage layout are not built (see M11-035's unresolved).
             // VisionSystem::Update in DetectingFaces mode: FaceTracker::Update, TrackedFace::UpdateTranslation(camera), FaceWorld::AddOrUpdateFace
             if (FaceDetector.IsAvailable)
             {
@@ -508,15 +690,20 @@ public sealed class CubeLocator : ICubeLocator
 /// <b>300 deg/s and 10 rad/s²</b>, with a 2 degree tolerance (0x3D0EFA35) and a 25 revolution bound.
 /// This stack had been turning at 100 deg/s.
 /// </summary>
+// fidelity: M11-014, M11-015
 public static class TurnTowardsPose
 {
     /// <summary>2 degrees; the <c>TurnInPlaceAction</c> constructor's 0x3D0EFA35 at +0xB0.</summary>
+    // fidelity: M11-015
     public const double ToleranceRad = 0.0349066;
     /// <summary>300 deg/s: the constructor's 0x40A78D36, copied to the action's max speed at +0xC4.</summary>
+    // fidelity: M11-015
     public const double MaxSpeedRadPerSec = 5.23599;
     /// <summary>The constructor's 0x41200000 at +0x7C, copied to the action's acceleration at +0xC8.</summary>
+    // fidelity: M11-015
     public const double AccelRadPerSec2 = 10.0;
     /// <summary>The bound a relative turn is refused above: 25 revolutions (+0x80, checked at 0x0054606E).</summary>
+    // fidelity: M11-015
     public const double MaxRevolutions = 25.0;
 
     /// <summary>The engine's message for a body turn; exposed so the conformance tool can show the bytes.</summary>

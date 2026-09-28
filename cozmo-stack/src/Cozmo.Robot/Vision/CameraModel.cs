@@ -16,6 +16,7 @@ namespace Cozmo.Robot.Vision;
 /// The robot pose comes from <c>RobotState.Pose</c>. Its pitch is not applied to the camera pose here
 /// (LOCAL: the engine builds the robot pose with pitch when it is off level; on flat ground it is ~0).
 /// </summary>
+// fidelity: M11-003
 public static class HeadGeometry
 {
     public static readonly Vec3 NeckPositionMm = new(-13.0, 0.0, 49.0);
