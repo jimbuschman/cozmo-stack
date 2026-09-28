@@ -1089,3 +1089,1148 @@ So DoPlanning returns **0** when Replan returns 0, **3** when Replan is non-zero
   and gap1 G8, not the record.
 
 *Read-only extraction. Nothing outside this report file was changed.*
+
+
+## Correction C-BM13: gap pass 3 (2026-09-28)
+The build job B-M13 stopped on 19 MISSING points. Two read-only extractor passes settled them from the instructions (reports in Appendices D and E below). This section is the corrected, authoritative statement of every M13 record's evidence; where it differs from the records table above, this section governs. The statuses remain IMPLEMENTATION_GAP until the build is verified.
+The corrections, per record:
+
+### M13-001 — Lattice planner motion primitives loaded from the shipped cozmo_mprim.json
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs`; test `MotionPrimitiveTests.TheShippedMotionPrimitivesParseAsTheEngineReadsThem`*
+- xythetaEnvironment::ReadMotionPrimitives 0x008529C0 opens the file "r" (0x00852A44/0x00852A48), Json::Reader::parse (0x00852A62) and ParseMotionPrims with oldFormat=false (0x00852B04/0x00852B06)
+- xythetaEnvironment::ParseMotionPrims body 0x00852014 reads resolution_mm -> env+0 then 1/env[0] -> env+4 (0x0085203C/0x008520AA), num_angles -> env+8 (0x00852062), actions -> 24-byte ActionType vector at env+0x30 (0x008520BA), angle_definitions -> env+0x38 (0x008521C6), angles -> env+0x14 resized to num_angles (0x00852248/0x00852264), each prim -> MotionPrimitive::Create (0x0085230E)
+- count mismatch aborts and returns 0: angle_definitions.size() != num_angles (0x0085223C bne -> 0x00852442 printf "ERROR: numAngles is %u, but we read %lu angle definitions" at 0x008527D8 -> 0x0085244C -> 0x0085274A movs r0,#0) and angles.size() != num_angles (0x0085225A bne -> 0x0085244E puts "error: could not find key 'angles' in motion primitives" 0x00C97D20 -> 0x0085244C); success calls PopulateReverseMotionPrims (0x008524AC) and returns 1 (0x008524B0)
+- config/engine/cozmo_mprim.json sha256 4C79666BDD5F3F5FE6C7458B0E7D59ECBCCDB2AB3C12F1844D68BCC57887431D
+- unresolved: compare LatticePlanner.cs's loader, schema and count validation against the cited instructions and the asset, then settle
+
+### M13-002 — FlipBlockAction's constants, their roles and IAction type
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Manipulation/FlipBlockAction.cs`; test `NavigationTests.FlipDrivesThroughTheCubeRaisingTheLiftAndForgetsItsPose`*
+- FlipBlockAction ctor 0x0055EC80: IAction type 0xF (0x0055ECA8/0x0055ECAA); +0x12C=150.0 (0x43160000), +0x130=20.0 (0x41A00000) at 0x0055ECF6/0x0055ECFA; +0x134=45.0 (0x42340000), +0x138=40.0 (0x42200000), +0x13C=-1 at 0x0055ECFE..0x0055ED0E; +0x140=1 at 0x0055ED10/0x0055ED12
+- +0x12C is the drive speed: Init 0x0055EF18 loads it into r3 and passes it to DriveStraightAction 0x0055EF2C; the r3 argument is stored at DriveStraightAction+0x7C (0x005472A4)
+- +0x130 is the drive-past distance: Init computes the robot-to-object distance (vsqrt.f32 0x0055EEFA), adds +0x130 (0x0055EF14/0x0055EF1C) and passes the sum as DriveStraightAction's distance argument 0x0055EF20 (stored at DriveStraightAction+0x78)
+- +0x134 is the approach lift height: Init 0x0055EF3A loads it into r2 for MoveLiftToHeightAction(45.0, 5.0, 0) 0x0055EF4A (added before the drive)
+- +0x138 is the lift trigger distance: CheckIfDone 0x0055F124 vldr s0,[r4,#0x138] / vcmpe / bpl 0x0055F130; when the object is closer than it and +0x13C is still -1 it queues MoveLiftToHeightAction(preset 2, speed 5.0) 0x0055F14E and stores that action's id in +0x13C (0x0055F15C) through ActionList::QueueAction position 5 (0x0055F16A)
+- +0x13C is the queued lift action's id, -1 when none; the destructor cancels it on robot+0x250 ActionList (0x0055ED6C/0x0055ED70/0x0055ED7A)
+- +0x140 is shouldCheckPreActionPose: Init reads it (0x0055EE10) into the PreActionPoseInput byte at sp+0x64 (0x0055EE1C) passed to IDockAction::GetPreActionPoses with ActionType 5 (0x0055EE14/0x0055EE5E); SetShouldCheckPreActionPose writes it (0x0055EDC2)
+- unresolved: compare FlipBlockAction.cs's constants and their roles against the cited instructions and settle
+
+### M13-003 — Obstacle expansion, per-heading C-space polygons, and the primitive collision test
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs`; test `NavigationTests.ThePlannerRoutesAroundACubeInTheWay`*
+- ImportBlockworldObstaclesIfNeeded 0x004FD4B8: paddings 7.0/6.0 (0x004FD4EE/0x004FD4F2) or 2.0/1.0 (0x004FD4EA/0x004FD4EC) selected by the function's own first bool argument (r4=r1 0x004FD4D2; cmp 0x004FD4E8; itt ne 0x004FD4F6); callers pass 0 (0x004FD2AC, 0x004FF92A) or 1 (StartPlanning 0x004FEC38)
+- import log "robot padding %f, obstacle padding %f , didBlocksChange %d" (0x004FD51A/0x004FD546); penalty 0.1 (0x3DCCCCCD at 0x004FE0CE); AddObstacleWithExpansion 0x00855528 stores the caller's penalty at pair+0x44 (0x00855612) and calls ExpandCSpace 0x008550E8; ConvexPolygon::RadialExpand 0x004FDF9E
+- ConvexPolygon::RadialExpand body 0x00841580: for each vertex v, v' = v + d*(v-c)/|v-c| with c the polygon centroid (ComputeCentroid 0x008415D8; per-vertex 0x008415F2..0x00841654), no bisector/cos and no clamp; a negative d only warns (0x00841590/0x00841598)
+- IsInCollision(State) 0x008515BC converts the grid shorts to mm and tail-calls IsInCollision(State_c) 0x008515F8, which buckets theta as round(theta*env+0x10) mod env+8 (0x00851614..0x0085167A) and returns 1 only for a containing polygon with penalty >= 1000.0 (0x008516D0/0x008516DC); IsInSoftCollision 0x00851708 returns 1 for any containing polygon; GetCollisionPenalty 0x008517B0 returns the first containing polygon's penalty or 0.0 (0x008517C4/0x0085184E)
+- the per-primitive test is Anki::Planning::SuccessorIterator::Next 0x0085110C: broad phase is the primitive's cached bbox (MotionPrimitive+0x1C..+0x28) against env+0x50 (0x0085123A..0x00851286); turning vs non-turning is decided by end_pose.theta vs MotionPrimitive+1 (0x008512CC/0x008512D0)
+- non-turning primitive: every intermediate pose is tested (loop 0x0085134A..0x008513A6, stride 0x14) at (start + IntermediatePosition.x_mm, +y_mm) in the end_pose.theta bucket (0x008512E0/0x008512E4); turning primitive: the intermediate poses are walked last to first (0x00851414/0x0085149E) each in its own bucket at IntermediatePosition+0xC (0x00851420/0x00851428)
+- soft hit (polygon penalty < 1000.0) adds base + penalty*IntermediatePosition+0x10 to the successor cost (non-turning 0x0085137E..0x00851398; turning 0x0085146E..0x00851490); penalty >= 1000.0 is a hard collision and rejects the primitive (0x0085138A/0x0085147A; threshold 1000.0 at 0x00851162); base is 0.0 forward and 1000.0 for a reverse primitive (0x008515B0/0x008515B4)
+- successor g = soft-collision cost + parent g + MotionPrimitive+4 (0x0085150A/0x00851516/0x0085151A/0x0085151E/0x00851522); the 0.1 penalty means the shipped obstacles are all soft
+- unresolved: compare the paddings, the 0.1 penalty, the per-heading C-space polygon, RadialExpand and the primitive collision test against the cited instructions and settle
+
+### M13-004 — The primitive file's schema, the end/intermediate pose import and the traversal cost
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs`; test `MotionPrimitiveTests.ATurningPrimitiveArcEndsOnItsEndCell`*
+- ActionType::Import 0x00851A18: extra_cost_factor -> +0 (0x00851A96), index -> +4 (0x00851AB8), name -> +8 (0x00851ADC), reverse_action -> +0x14 (0x00851B48); ctor 0x008519EC
+- MotionPrimitive::Create 0x00853DD0: action_index -> MotionPrimitive+0 (GetValueOptional<unsigned char> output sb at 0x00853E04/0x00853E06; read at 0x00854036), the heading/angle index -> +1 (Create's 2nd argument, 0x00853DEC; read at 0x00854280), end_pose -> +8 via State::Import (0x00853E30), intermediate_poses -> vector at +0x14 (0x00853E3E, each State_c::Import 0x00853E8C), straight_length_mm (0x00854094/0x008540D0/0x00854140), arc keys sweepRad/radius_mm/centerPt_x_mm/centerPt_y_mm/startRad (0x00854160/0x0085417C/0x008541CE/0x008541E4/0x0085420C) -> AppendArc 0x0085425A, turn_in_place_direction -> AppendPointTurn 0x0085431A; a per-primitive extra_cost_factor is rejected (0x00853FFC)
+- State::Import body 0x0084F8A4 reads "x" as a short -> State+0 (0x0084F920, key 0x0084FB08), "y" as a short -> +2 (0x0084F940, key 0x0084FB0C) and "theta" as an unsigned char -> +4 (0x0084F962, key 0x00C299A3); x/y are grid cells and theta a heading index
+- State_c::Import body 0x0084FD70 reads "x_mm"/"y_mm"/"theta_rads" as floats -> +0/+4/+8 (0x0084FDEE/0x0084FE10/0x0084FE34)
+- traversal cost = extra_cost_factor * d8 * (|straight_length_mm| + |sweepRad|*(|radius_mm| + halfWheelBase_mm) + halfWheelBase_mm*|dtheta|), stored as a float at MotionPrimitive+4: initialised 0 at 0x0085408A, straight 0x008540AA..0x008540C8, arc 0x00854188..0x008541C4, turn 0x008542D6..0x008542F2, then multiplied by extra_cost_factor 0x00854364/0x00854368/0x00854378
+- d8 = 1/maxVelocity_mmps (env+0x78) for a forward action (0x00854046/0x00854078) and 1/maxReverseVelocity_mmps (env+0x70) for a reverse one (0x0085404C/0x00854050); env+0x60 is a RobotActionParams constructed at 0x00851EDE with the defaults halfWheelBase 24.0, maxVelocity 60.0, maxReverseVelocity 25.0 (ctor 0x0084EDE6; Import 0x0084EF28 has no callers and the asset has no such keys)
+- a base or final cost below 1e-6 (0x008543E0) logs and makes Create return 0 (0x00854334/0x00854370/0x0085437C); on success it calls CacheBoundingBox (0x008543B2) and returns 1 (0x008543B8)
+- asset: resolution_mm 10.0, num_angles 16, 9 actions with cost factors 1.0001/1.0/1.0/1.0/1.0/1.0/2.0/2.0/1.2, 144 primitives; sha256 4C79666BDD5F3F5FE6C7458B0E7D59ECBCCDB2AB3C12F1844D68BCC57887431D
+- unresolved: compare the schema, the pose import, the arcs and the traversal cost formula against the cited instructions and settle
+
+### M13-005 — A lattice-planner failure sends no path
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Manipulation/DriveActions.cs`; test `CorrectionTests.APlannerFailureSendsNoPathEvenWhenTheStraightLineIsClear`*
+- DoPlanning 0x00500090 has no substitute path: the non-empty-plan branch appends GetPlan() (0x00500540) and returns
+- the failure condition is Replan == 0: 0x00500106 saves the result, 0x00500136 selects "robot.lattice_planner_failure" when it is zero, 0x00500202 cbz returns 0
+- unresolved: compare DriveActions.cs's failure handling against the cited instructions and settle
+
+### M13-006 — The whiteboard keeps a list of beacons and the active one is the first
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Manipulation/AIWhiteboard.cs`; test `BeaconTests.TheActiveBeaconIsTheFirstOneAdded`*
+- AIWhiteboard::AddBeacon 0x0056C39C appends a 20-byte AIBeacon (Pose3d, a float radius at +0xC, an int at +0x10) to the vector at whiteboard+0x60, growing it through __emplace_back_slow_path (0x0056C3A8/0x0056C3D2)
+- ClearAllBeacons 0x0056AA08 walks it back (0x0056AA10 subs r0,#0x14)
+- GetActiveBeacon 0x0056C404 compares begin/end and returns begin, or null when equal (0x0056C408/0x0056C40C); the active beacon is the oldest still standing
+- FailedToFindLocationInBeacon 0x0056C3F0 forwards to AIBeacon::FailedToFindLocation
+- unresolved: compare AIWhiteboard.cs against the cited instructions and settle
+
+### M13-007 — The stack tolerance is 30 mm when building a stack and 15 mm everywhere else
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Manipulation/BlockConfigurations.cs`; test `ManipulationTests`*
+- BlockWorld::FindObjectOnTopOrUnderneathHelper(obj, float tolerance, filter, bool) 0x0062601C takes the tolerance as its second argument (r2 captured at 0x00626038 into the lambda at 0x006260CE/0x006260D8), reads the height through GetDimInParentFrame<(char)90> (0x00626070), adds +/-half to the parent Z (0x0062607E..0x006260A0) and calls FindLocatedObjectHelper (0x0062610E)
+- StackOfCubes::BuildTallestStackForObject passes 30 (0x41F00000 at 0x0061928C and 0x00619344); BlockWorld::UpdatePoseOfStackedObjects 0x00621908, DockingComponent::CanInteractWithObjectHelper 0x0063C728 and CarryingComponent::SetObjectAsAttachedToLift 0x00632F0C pass 15 (0x41700000)
+- unresolved: compare BlockConfigurations.cs against the 30/15 split and settle
+
+### M13-008 — The mount sequence and the reverse onto the charger, with the retry result codes
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs`; test `NavigationTests.MountChargerAlignsTurnsAndBacksOntoTheContacts`*
+- ConfigureTurnAndMountAction 0x0054E500: TurnInPlaceAction at atan2 of the vector to the marker (0x0054E52E/0x0054E536), SetMaxSpeed(0x3FDF66F3 = 1.745329 rad/s) at 0x0054E550/0x0054E55A and SetAccel(0x40A78D36 = 5.235988 rad/s^2) at 0x0054E55E/0x0054E568; then DriveStraightAction(-120 mm, 30 mm/s, false) whose vtable becomes BackupOntoChargerAction's (0x0054E5FC..0x0054E618)
+- BackupOntoChargerAction::CheckIfDone 0x0054E7A8: on contacts (robot+0x338) SetPoseOnCharger and return 0 (0x0054E7B0..0x0054E7BE); pitch below -0.261799 rad (0xBE860A92 at 0x0054E7CC) returns 0x0400000A (0x0054E7DE adds r4,#4); fall-through returns 0x04000006 when DriveStraightAction::CheckIfDone returns 0 (0x0054E7E4..0x0054E7EC)
+- MountChargerAction::CheckIfDone 0x0054E2D0 reaches the pi/2 comparison (0x3FC90FDB at 0x0054E374) only when the turn-and-mount sub-action FAILED (0x0054E31A skips 0 and 0x1000000); outside the window ConfigureDriveForRetryAction 0x0054E72C runs DriveStraightAction(120, 100) returning 0x04000006 (0x0054E3E8/0x0054E742/0x0054E748); an align failure ends the action (0x0054E2FA)
+- unresolved: compare ChargerActions.cs against the turn numbers, the reverse and the result codes, and settle
+
+### M13-009 — The charger's dimensions, its docked pose and its one pre-dock pose
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Vision/ChargerGeometry.cs`; test `NavigationTests.TheChargerGeneratesOnePreDockPoseOnItsAxisTwoHundredAndFiftyMillimetresOut`*
+- Charger::Charger 0x004E9B6C stores 96.0/80.0/31.0 at +0xF0..+0xF8 (0x004E9B98/0x004E9BB4/0x004E9BB0/0x004E9BB8) and adds one marker: id 2 (0x004E9C16), angle -pi/2 about Z (0xBFC90FDB at 0x004E9BBC) at (86,0,22) (0x004E9BD6/0x004E9BE2), size Point2 x=27.0 at sp+0x14 and y=20.0 at sp+0x18, the AddMarker pointer being sp+0x14 (0x004E9C28/0x004E9C30/0x004E9C36/0x004E9C38)
+- Charger::GetRobotDockedPose 0x004EA1A0 = Pose3d(Radians(pi), Z_AXIS, (30,0,0)) on the charger pose (0x004EA1AC/0x004EA1C6/0x004EA202)
+- Charger::GeneratePreActionPoses 0x004E9FB0 emits one pose for action types 0 and 1 only (0x004E9FD4/0x004E9FD6): Pose3d(Radians(p.angle + pi/2), Z_AXIS, (p.x, -p.y, -15.5)) parented to the marker (0x004E9FE4/0x004E9FF2/0x004EA012/0x004EA018/0x004EA01E); p is the file-static Pose2d at 0x01059148 initialised (Radians(0), 0.0, 250.0) at 0x004D6BC4/0x004D6BD6
+- unresolved: compare ChargerGeometry.cs against the cited dimensions, the marker (x=27,y=20) and the poses, and settle
+
+### M13-010 — The workouts run in file order, the last one repeats, and ShouldPlayEightiesMusic rolls against the mood score
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Manipulation/Workouts.cs`; test `NavigationTests.TheWorkoutConfigParsesAndScoresLiftsFromConfidence`*
+- WorkoutComponent::GetCurrentWorkout 0x00573DE8 returns the pointer at +0xC (0x00573DE8/0x00573DF0)
+- CompleteCurrentWorkout 0x00573DEC triggers the workout emotion event (MoodManager::TriggerEmotionEvent 0x00573E1C) and advances by one 0x40-byte entry unless it is the last (0x00573E24/0x00573E28/0x00573E2A)
+- ShouldPlayEightiesMusic 0x00573E30 returns the cached answer at +0x10 once +0x11 is set (0x00573E34/0x00573E36/0x00573E38); otherwise it scores the current workout's MoodScorer at workout+0x18 through WorkoutConfig::MoodScoreHelper 0x00573B70 -> MoodScorer::EvaluateEmotionScore 0x0067C9B8 and roundf (0x00573E42/0x00573B86/0x00573B8A), skips the roll when the score is 0 (0x00573E48), and returns true iff RandomGenerator::RandDbl(1.0) < 0.1 (0x00573E58; threshold double 0.1 at 0x00573E80) ; it then sets +0x11 = 1 and stores the answer at +0x10 (0x00573E70/0x00573E72/0x00573E74)
+- unresolved: compare Workouts.cs against the file-order advance and ShouldPlayEightiesMusic's score/roll/cache, and settle
+
+### M13-011 — The three path segment messages are a Planning::PathSegment copied field for field
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Manipulation/RobotPath.cs`; test `NavigationTests`*
+- PathDolerOuter::Dole 0x00507E4C switches on the segment type at PathSegment+0 (1 line, 2 arc, 3 point turn; 0x00507F40/0x00507F44/0x00507F48) and copies words at +4, +8, +0xC, +0x10 (arc adds +0x14), then the speed profile at +0x1C, +0x20, +0x24; a point turn also copies the byte at +0x14 (line 0x00507FB6..0x00507FD2; arc 0x00508008..0x00508028; point turn 0x00507F5E..0x00507F7E)
+- the field definers: PathSegment::DefineLine 0x0085BC00, DefineArc 0x0085BC98, DefinePointTurn 0x0085BD28, SetSpeedProfile 0x0085BC90
+- unresolved: compare RobotPath.cs against the field layout and settle
+
+### M13-012 — The mount raises the lift to 45 mm when it is below it, not when it is above
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs`; test `NavigationTests.TheMountCarriesTheEnginesOwnNumbers`*
+- ConfigureTurnAndMountAction reads Robot::GetLiftHeight (0x0054E58A) and branches past the lift move when the lift is at or above 45.0 (0x42340000 at 0x0054E592; bpl at 0x0054E59E); otherwise MoveLiftToHeightAction(45, 5, 0) (0x0054E5B2..0x0054E5C6)
+- unresolved: compare the lift branch against the cited instructions and settle
+
+### M13-013 — DriveOffChargerContactsAction: a drive straight that retries while still on the charger
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs`; test `NavigationTests.DriveOffChargerContactsActionFailsWhileStillOnTheContacts`*
+- DriveOffChargerContactsAction ctor 0x00558228: DriveStraightAction(10 mm, 20 mm/s, false) (0x00558232/0x00558236/0x0055823E); then +0x44 = 7 (0x00558276/0x00558278), which is IActionRunner's RobotActionType (stored at +0x44 by the IActionRunner ctor 0x0053FDCC) and 7 = DRIVE_OFF_CHARGER_CONTACTS (RobotActionTypeFromString 0x0075A448 maps the string at 0x00C1604E to 7)
+- in SDK mode only, the constructor clears the required-track lock: CozmoContext::IsInSdkMode 0x0055827C, cmp #1 0x00558280, then IActionRunner::SetTracksToLock(0) 0x00558286/0x00558288; SetTracksToLock 0x00540918 writes the argument to IActionRunner+0x54 only when the action state (+0x18) is 0x2000001 (not started), else warns; it is a local pre-run flag consumed by IActionRunner::Update 0x00540438 (MovementComponent::AreAnyTracksLocked), not a robot message
+- Init 0x005582D0 copies robot+0x338 into action+0x8B (0x005582D2/0x005582D6) and returns 0 when not on contacts
+- CheckIfDone 0x005582E4 retries while the drive is still running and fails 0x04000009 if still on the contacts (0x00558344)
+- unresolved: compare ChargerActions.cs against the cited constructor/Init/CheckIfDone and settle
+
+### M13-014 — Knock over a stack: BehaviorKnockOverCubes flow, DriveAndFlipBlockAction and IDriveToInteractWithObject
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`; test `NavigationTests.DriveAndFlipBlockAddsBothTurnsWhenMaxTurnIsPositive`*
+- BehaviorKnockOverCubes body 0x005C2EA0..0x005C3E2A; IsRunnableInternal 0x005C314C needs StackOfCubes::GetStackHeight() >= +0x124 (minimumStackHeight default 3); InitInternal 0x005C31A2 runs the reach unless +0xD9 (alwaysStreamline) or +0xD8 (the soft/hard switch flag) is set (0x005C31B4/0x005C31BA)
+- TransitionToReachingForBlock 0x005C3254: TurnTowardsObjectAction(max pi), then DriveStraightAction(x-85, 60) when the block x+10 > 85.0, then TriggerLiftSafeAnimationAction(+0x150), then TransitionToKnockingOverStack regardless of result
+- TransitionToKnockingOverStack 0x005C34A8: TurnTowardsObjectAction(max pi), DriveAndFlipBlockAction with maxTurn = pi/2 on the first attempt (0x005C36BC) and 0.0 once +0x140 > 0 (0x005C36C0); +0xD9 or +0xD8 also forces 0.0 (0x005C34EA..0x005C34F8); WaitAction(0.5); the callback 0x005C3DCE writes AIWhiteboard+0x70 on NoPreActionPoses (0x03000010), re-runs while +0x140 <= 1 on a Retry result and otherwise blind-flips, incrementing +0x140 either way
+- success goes to TransitionToPlayingReaction 0x005C3908: it sets robot->[+0x34]->[+0x94]->[+0xC] = 1 (0x005C3946..0x005C394E), i.e. the BlockWorld's BlockConfigurationManager dirty flag (BlockWorld+0x94 is the manager; BlockConfigurationManager+0xC is read by its Update 0x00616D84) forcing all block configurations to recompute; the tipped-object set size at +0x14C selects the success trigger +0x15C with BehaviorObjectiveAchieved(0xD, true) and NeedActionCompleted(0) (0x005C3950..0x005C3964) or the failure trigger +0x160 (0x005C396E); when +0xD9 or +0xD8 is set the reaction animation is skipped (0x005C3972/0x005C3978)
+- IDriveToInteractWithObject 0x0055B1F4 adds TWO actions when maxTurn > 0 (0x0055B37C..0x0055B392): a TurnTowardsLastFacePoseAction (vtable overwritten from TurnTowardsFaceAction at 0x0055B3C4..0x0055B3D8) and a TurnTowardsObjectAction (0x0055B42E/0x0055B43C), both with failure ignored; the trailing float 20.0 is not read by DriveAndFlipBlockAction ctor 0x0055E208
+- +0xD9 is the JSON config key alwaysStreamline (IBehavior::ReadFromJson 0x005BC208/0x005BC216/0x005BC21E); +0xD8 is computed by IBehavior::Init 0x005BCCAA..0x005BCCC2 as 1 when the behaviour was entered by a soft spark switch and 0 for a hard switch or no current behaviour
+- unresolved: compare CubeGameBehaviors.cs against the cited flow, including the second TurnTowardsObjectAction, the BlockConfigurationManager dirty flag and the +0xD8/+0xD9 streamline gate, and settle
+
+### M13-015 — Pop a wheelie: one retry, the realign or retry animation, and what a failure marks
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`; test `NavigationTests.PopAWheelieRetriesWithTheRetryAnimationWhenTheDockFails`*
+- TransitionToPerformingAction(Robot&, bool) 0x005C7758 bumps +0x12C on a retry (0x005C777E) and zeroes it otherwise (0x005C780C); the completion lambda 0x005C7CBC splits on result >> 24: success sets +0x128=-1, plays SuccessfulWheelie 0x21C and reports objective 0x16 and the needs action; a Retry result calls SetupRetryAction only while the count is at most 0, otherwise AIWhiteboard::SetFailedToUse(obj, 3)
+- SetupRetryAction 0x005C79D0 plays PopAWheelieRealign 0x18D for exactly 0x04000001 (0x005C79F8/0x005C79FE) and PopAWheelieRetry 0x18E otherwise (0x005C7A10/0x005C7A32); ResetBehavior 0x005C76B0 sends EnableStopOnCliff(true) (0x005C76E4)
+- unresolved: compare CubeGameBehaviors.cs against the retry count, the animations and the failure mark, and settle
+
+### M13-016 — AlignWithObjectAction's alignment-type table and pre-action type
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs`; test `NavigationTests.AlignWithObjectUsesTheEnginesAlignmentTypeTable`*
+- AlignWithObjectAction ctor body 0x00553370: cmp r6,#3 / bhi 0x005533CC/0x005533E4; tbb [pc,r6] 0x005533E6 with table base 0x005533EA = 02 05 09 0c (TBB scales by 2): type 0 -> 0x005533EE vmov.f32 s16,#6.0; type 1 -> 0x005533F4 flag +0xBB=2; type 2 -> 0x005533FC vmov.f32 s16,#-15.0; type 3 -> 0x00553402 vadd.f32 s16,s0,s2 (argument + -27.0)
+- clamp: 0x00553414 vldr s0,[pc,#0x68] -> 0x00553480 = 0xC1800005 = -16.000009536743164; vcmpe/it mi/vmovmi at 0x0055341C..0x00553426 set 0.0 when below it
+- GetPreActionTypeFromAlignmentType 0x005532B8: table at 0x00553360 maps 0->1, 1->0, 2->1, 3->1; invalid type logs and returns 1 (0x005532CC/0x00553320); the result is stored at AlignWithObjectAction+0xFC (0x0055342A) and indexes Anki::Cozmo::PreActionPose::ActionType (passed as that type by DriveToAlignWithObjectAction 0x0055C3A0 to IDriveToInteractWithObject); the values 0..6 are native (Block::GeneratePreActionPoses 0x004E5808 cmp r5,#5 / tbh 0x004E595E), the names have no shipped table (UNKNOWN)
+- action+0xBB is IDockAction's DockingMethod field: the IDockAction ctor leaves it 0 (0x005503AA), DriveToPickupObjectAction::SetDockingMethod writes it (0x0055C584/0x0055C5A2) and IDockAction::CheckIfDone passes it to DockingComponent::DockWithObject (0x00552288/0x005522AE); DockingMethodFromString 0x007C013C gives BLIND_DOCKING 0, TRACKER_DOCKING 1, HYBRID_DOCKING 2, EVEN_BLINDER_DOCKING 3, so alignment type 1 runs the dock with HYBRID_DOCKING and every other type with BLIND_DOCKING
+- unresolved: compare the alignment-type table, the clamp, the pre-action type and the DockingMethod flag against the cited instructions and settle
+
+### M13-017 — BehaviorDriveOffCharger: runnable on the charger, the drive distance and the leaving-the-contacts update
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`; test `NavigationTests.DriveOffChargerDrivesTheChargerLengthPlusTheExtraAndFiresTheEvent`*
+- ctor 0x005C0980 stores 96.0 + json extraDistanceToDrive_mm at +0x11C (0x005C09D4/0x005C09E2/0x005C09E6); IsRunnableInternal 0x005C0B10 returns robot+0x34A (the on-contacts flag)
+- InitInternal 0x005C0B18 takes the reaction lock, pushes driving animations when the animation state is 3 (0x005C0B4A) and transitions only when robot+0x355 == 0 (0x005C0B54); +0x355 is the robot's OffTreadsState (OnTreads = 0), written only by Robot::CheckAndUpdateTreadsState 0x00512088/0x0051208E and named by OffTreadsStateFromString 0x0078DF58 (OnTreads 0, InAir 1, OnBack 2, OnLeftSide 3, OnRightSide 4, OnFace 5, Falling 6)
+- TransitionToDrivingForward 0x005C0BB8 drives +0x11C (0x005C0C02/0x005C0C08)
+- UpdateInternal 0x005C0DA8: once off the contacts (robot+0x34A == 0) it records the time at robot->[+0x264]->[+0x18]+0x44 and returns 2 (0x005C0DF4..0x005C0E0A); while still on the contacts and robot+0x355 != 0 it calls StopActing(false,false) (0x005C0DB6/0x005C0DC4) and waits; on the contacts with +0x355 == 0 it transitions to driving forward (0x005C0E18)
+- unresolved: compare the drive-off behaviour against the cited constructor/IsRunnable/Init/Transition/Update and settle
+
+### M13-018 — LatticePlannerImpl's planning entry and worker, the Replan argument, the heuristic and the result codes
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs`; test `NavigationTests.DoPlanningReturnsTheEngineResultCodes`*
+- StartPlanning 0x004FEB44 stores its bool argument at impl+0xA1 (0x004FEB56/0x004FEB7E); true forces an unconditional replan and imports with the 7.0/6.0 padding (ImportBlockworldObstaclesIfNeeded with bool 0 at 0x004FEEFE), false first imports with the 2.0/1.0 padding (bool 1 at 0x004FEC38/0x004FEC3A) and reuses a safe old plan (FindClosestPlanSegmentToPose 0x004FEC50; PlanIsSafe 0x004FF424 -> return 2 at 0x004FF42E); ComputePathHelper passes true through the vtable slot +0xC (0x004FD326..0x004FD330)
+- DoPlanning 0x00500090 sets status 1 at impl+0xF8 (0x00500098) and sleeps in chunks of min(remaining,10) ms up to impl+0x108 ms, checking the run flag each iteration (0x005000A2..0x005000EA; 0x005000C8/0x005000CE); impl+0x108 defaults 0 (ctor 0x004FCCF6) and is set by LatticePlanner::SetArtificialPlannerDelay_ms 0x004FFFEC; the flag is impl+0xF2, a run/continue flag (1 = keep planning): ctor 1 (0x004FCCCA), StartPlanning 1 (0x004FF310), StopPlanning 0 (0x004FD1C8); DoPlanning reads it at 0x005000BE/0x005000C0 and passes it to Replan at 0x005000FE
+- then calls Replan(0x01C9C380, runFlag) (0x005000F2/0x005000FA/0x00500102); 0x01C9C380 = 30,000,000 is the maximum number of state expansions: xythetaPlannerImpl::ComputePath 0x008586A0 warns "exceeded max expansions of %u, stopping" and returns 0 on overflow (0x008588C6/0x008588CA/0x00858A96); Replan returns 0 on failure, 1 on success
+- DoPlanning returns 0 when Replan == 0 (0x00500202), 3 when Replan != 0 with an empty plan (0x00500212) and 2 on success (0x0050058E/0x00500590); the code is stored at impl+0xF8 (0x00500218/0x00500590); both direct callers discard r0 (worker 0x00500838; the synchronous StartPlanning branch 0x004FF35E), and the only in-engine consumer of the status, GetCompletePath 0x004FFB64, treats 2 and 3 alike (append the plan when the robot is within 20.0 mm) and has no special case for 3
+- the A* heuristic is not a precomputed grid: heur_internal 0x0085A7B8 returns min_i(heurMap[i] + GetDistanceBetween(goal_i, state)/maxVelocity_mmps) (0x0085A7FA/0x0085A808/0x0085A816), memoized in the hash map at planner+0xAC by heur 0x0085A780; GetDistanceBetween 0x00850DCC is the Euclidean distance between (resolution_mm*state.x, resolution_mm*state.y) and the goal's x_mm/y_mm (0x00850DDC/0x00850DF0/0x00850E18)
+- heurMap comes from InitializeHeuristic 0x008598DC: it resizes planner+0xA0 to the goal count (0x0085991E) and for each goal runs ExpandCollisionStatesFromGoal 0x0085998E, a soft-collision Dijkstra (0x00859BF0..0x00859FBD), dropping goals whose cost exceeds 1000.0 (0x008599E0) and storing the rest at heurMap+4 (0x008599CA)
+- the open list is a min-f std::multimap<float,StateID> (0x0084E4E8; top/pop 0x0084E500/0x0084E508/0x0084E50E); ExpandState 0x0085A34C inserts with f = g + heur (0x0085A4AC) and ComputePath 0x008586A0 pops the smallest, checks the abort flag (0x00858886..0x00858890), looks up goals (0x008588A4), expands (0x008588B6) and compares the expansion count with the cap (0x008588C8)
+- unresolved: compare the planner entry/worker, the 30,000,000 cap, the heuristic and the result codes against the cited instructions and settle
+
+### M13-019 — The production xythetaEnvironment uses the JSON num_angles; the hard-coded 16 is in the uncalled Init(char const*) overload
+*status IMPLEMENTATION_GAP; location `cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs`; test `NavigationTests.TheShippedMotionPrimitivesParseAsTheEngineReadsThem`*
+- the production planner constructs its environment with the JSON overload xythetaEnvironment::Init(Json const&) 0x00851F9E (called from the LatticePlannerImpl ctor 0x004FCC44; PLT 0x004A64F0 resolves to 0x00851F9E), which calls ClearObstacles and ParseMotionPrims(env, json, false) and does not overwrite env+8, so the heading count is the JSON num_angles
+- the hard-coded-16 override is in the other, uncalled overload xythetaEnvironment::Init(char const*) 0x008528A8 (no callers in the shipped code): it calls ReadMotionPrimitives (0x008528AE) then overwrites env+8 with 0x10 (0x008528B6/0x008528BA), resizes the per-theta obstacle table at env+0x44 to 16 (0x008528C0) and sets env+0xC = 2pi/16 and env+0x10 = 1/(2pi/16) (0x008528C4..0x008528E6)
+- the shipped asset's num_angles is 16, so the production path and the uncalled overload agree on 16
+- unresolved: compare LatticePlanner.cs's heading count against the JSON num_angles (production) and settle
+
+**Records whose wording was contradicted by the instructions (corrected above):**
+- **M13-019** — the 16-heading override is on the uncalled `Init(char const*)` 0x008528A8; the production `Init(Json const&)` 0x00851F9E uses the JSON `num_angles` (asset 16). The old title "hard-codes 16 headings and overrides the JSON num_angles" was wrong for the production path.
+- **M13-004** — `action_index` is `MotionPrimitive+0`, not +1; +1 is the heading/angle index. The traversal-cost formula (and the `d8` speed reciprocals) was missing and is now stated.
+- **M13-014** — the store in `TransitionToPlayingReaction` is `robot+0x34 -> +0x94 -> +0xC` (BlockWorld -> BlockConfigurationManager dirty flag), not `robot+0x264 -> +0x18 -> +0xC`; the `+0xD8`/`+0xD9` streamline gate was missing and is now stated.
+- **M13-016** — the pre-action-type numeric indexes `PreActionPose::ActionType` (values native, names not in the binary); the +0xBB flag is IDockAction's `DockingMethod` (type 1 -> HYBRID_DOCKING).
+- **M13-002** — the constructor offsets' roles are now read (`Init` 0x0055EDC8, `CheckIfDone` 0x0055F074): +0x12C speed, +0x130 drive-past, +0x134 approach lift, +0x138 lift trigger, +0x13C queued-lift id, +0x140 shouldCheckPreActionPose.
+- **M13-003** — the per-primitive collision sampling (SuccessorIterator::Next) and the `RadialExpand` vertex math (`v + d*(v-c)/|v-c|`) are now stated; the stack's bisector/0.3-clamp guess was not the source.
+- **M13-013** — +0x44 is the IActionRunner `RobotActionType` 7 (`DRIVE_OFF_CHARGER_CONTACTS`); `SetTracksToLock(0)` is a local IActionRunner flag write, not a robot message.
+- **M13-017** — `robot+0x355` is the robot's `OffTreadsState` (OnTreads 0), not an opaque wait.
+- **M13-010** — `ShouldPlayEightiesMusic`'s score (`round(MoodScoreHelper)`), roll (`RandDbl(1.0) < 0.1`) and cache (+0x10 answer, +0x11 done) are now stated.
+
+
+## Appendix D: gap pass 3 extraction report (2026-09-28)
+
+﻿# B-M13 extractor — lattice planner internals (questions 1..7)
+
+Read-only extraction. Binary: `resources/lib/armeabi-v7a/libcozmoEngine.so`, file VAs, Thumb.
+Ghidra decomp in `re-analysis/decomp/libcozmoEngine/` used only to navigate; every claim below was
+re-read from the instructions with capstone (PC-relative literals resolved). Asset:
+`re-analysis/obb/assets/cozmo_resources/config/engine/cozmo_mprim.json`.
+
+Answer summary: all seven questions are settled from the shipped code. One prior-record error is
+contradicted (M13-004's `action_index` offset), and one record rests on the wrong overload
+(M13-019). Details and citations follow.
+
+---
+
+## Production-path steps (one row per behaviour-changing step)
+
+| step | what the original does | citation | record | class |
+|---|---|---|---|---|
+| P1 | `MotionPrimitive::Create` zeroes the primitive cost field at `MotionPrimitive+4`, then accumulates `d8*abs(straight_length_mm)` | 0x0085408A `str.w r0,[sb,#4]` (r0=0); 0x008540AA `vabs.f64 d0,d0`; 0x008540B4 `vmul.f64 d0,d8,d0`; 0x008540C8 `vstr s0,[sb,#4]` | M13-004 (partial) | EXACT_SOURCE |
+| P2 | `d8` is chosen per action: forward = env+0x78 (`1/maxVelocity_mmps`), reverse = `1/env+0x70` (`1/maxReverseVelocity_mmps`) | 0x00854044 `ldrb r7,[r0,#0x14]`; 0x00854046 `cbz r7,#0x854078`; 0x0085404C `vldr d9,[r4,#0x70]` / 0x00854050 `vdiv.f64 d8,d0,d9`; 0x00854078 `vldr d9,[r4,#0x68]` / 0x0085407C `vldr d8,[r4,#0x78]` | NEW | EXACT_SOURCE |
+| P3 | Arc adds `d8*abs(sweepRad)*(abs(radius_mm)+halfWheelBase_mm)` (halfWheelBase = env+0x60) | 0x00854188 `bfc r1,#0x1f,#1`; 0x008541A4 `vadd.f64 d0,d1,d0`; 0x008541AC `vmul.f64 d0,d8,d0`; 0x008541C4 `vstr s0,[sb,#4]` | NEW | EXACT_SOURCE |
+| P4 | Point turn adds `d8*halfWheelBase_mm*abs(dtheta)` | 0x008542D6 `vmul.f64 d1,d2,d1`; 0x008542DE `vmul.f64 d1,d8,d1`; 0x008542F2 `vstr s2,[sb,#4]` | NEW | EXACT_SOURCE |
+| P5 | The whole base cost is multiplied by `ActionType+0x00` (`extra_cost_factor`) and stored back at `MotionPrimitive+4` | 0x0085432E `ldr r2,[r4,#0x2c]`; 0x00854360 `add.w r2,r2,r0,lsl#3`; 0x00854364 `vldr s0,[r2]`; 0x00854368 `vmul.f32 s4,s4,s0`; 0x00854378 `vstr s4,[sb,#4]` | NEW | EXACT_SOURCE |
+| P6 | If base cost < 1e-6 or final cost < 1e-6 it logs "base/final action cost" and `Create` returns 0; else it calls `CacheBoundingBox` and returns 1 | 0x00854322 `vldr d1,[pc,#0xbc]` -> 0x008543E0 = 1e-6; 0x00854334/0x0085433C; 0x00854370/0x0085437C; 0x008543B2 `blx CacheBoundingBox`; 0x008543B8 `movs r0,#1` | NEW | EXACT_SOURCE |
+| P7 | The successor g is `parentG + MotionPrimitive+4 + softCollisionCost` | 0x0085150A `vldr s2,[r5,#0x14]`; 0x00851516 `vldr s4,[r1,#4]`; 0x0085151A `vadd.f32 s2,s2,s4`; 0x0085151E `vadd.f32 s0,s0,s2`; 0x00851522 `vstr s0,[r5,#0x24]` | NEW | EXACT_SOURCE |
+| P8 | Heuristic: `heur_internal(state) = min_i ( heurMap[i] + GetDistanceBetween(goal_i.State_c, state) / maxVelocity_mmps )`; `heur` memoizes in a hash map at planner+0xAC | 0x0085A7DE..0x0085A83A; 0x0085A780 (cache find); 0x00850DDC `vldr s2,[r0]` (resolution) | M13-018 (partial) | EXACT_SOURCE |
+| P9 | `InitializeHeuristic` resizes heurMap (planner+0xA0) to the goal count, and for each goal stores `ExpandCollisionStatesFromGoal(goal)` (a Dijkstra expansion through soft-collision states), dropping goals with cost > 1000 | 0x0085991E `resize`; 0x00859980 `IsInSoftCollision`; 0x0085998E `ExpandCollisionStatesFromGoal`; 0x00859942 s16=1000.0; 0x008599E0 `vcmpe`/0x008599E8 `ble`; 0x008599CA `vstr s20,[r0,#4]` | NEW | EXACT_SOURCE |
+| P10 | Open list is a `std::multimap<float,StateID>` ordered by `std::less<float>`; pop/top take the smallest key | 0x0084E4E8 (`__tree<...less<float>...>`); 0x0084E500 `ldr r1,[r1]` / `ldr r1,[r1,#0x14]` (top value); 0x0084E50E pop erases root; 0x0084E530 `__emplace_multi` | NEW | EXACT_SOURCE |
+| P11 | `ComputePath` loop: abort-flag check, `OpenList::pop`, goal-hash lookup, `ExpandState`, expansion counter vs max | 0x00858886..0x00858890 (abort); 0x00858898 `pop`; 0x008588A4 `find`; 0x008588B6 `ExpandState`; 0x008588C8 `cmp` max | M13-018 (partial) | EXACT_SOURCE |
+| P12 | `ExpandState`: f = g + heur; on a better g it removes the old open entry and reinserts; otherwise emplaces a new node | 0x0085A486/0x0085A48E `heur`; 0x0085A49E `OpenList::remove`; 0x0085A4AC `vadd.f32 s0,s18,s0`; 0x0085A4BC `insert`; 0x0085A522 `StateTable::emplace` | NEW | EXACT_SOURCE |
+| P13 | Per-primitive collision test in `SuccessorIterator::Next`: broad-phase primitive bbox vs `env+0x50` bounds; if overlap, sample every intermediate pose with `FastPolygon::Contains` | 0x0085123A..0x00851286 (bbox); 0x0085134A..0x008513A6 (non-turning); 0x00851414..0x008514A0 (turning) | M13-003 (partial) | EXACT_SOURCE |
+| P14 | Turning primitive: each sampled pose uses its own heading bucket (`IntermediatePosition+0xC`); non-turning: all poses use `end_pose.theta` | 0x008512D0 `ldrb r1,[r4,#1]` / `cmp`; 0x00851428 `ldrb r1,[r1,#0xc]`; 0x008512E0 bucket = end_pose.theta | NEW | EXACT_SOURCE |
+| P15 | Soft hit (polygon penalty < 1000): add `base + penalty*IntermediatePosition+0x10` to the successor g; penalty >= 1000 is a hard collision (reject) | 0x0085137E `vldr s0,[r7,#0x44]` / 0x0085138A `bge`; 0x0085138C..0x00851398; threshold 0x00851162 = 1000.0; base 0x008515B0=0.0 / 0x008515B4=1000.0 | NEW | EXACT_SOURCE |
+| P16 | `ConvexPolygon::RadialExpand` moves each vertex to `v + d*(v-c)/|v-c|` (c = centroid, d = padding); negative d only warns | 0x008415D8 `ComputeCentroid`; 0x008415F2..0x0084160A; 0x00841610 `hypotf`; 0x00841622 `vdiv.f32 s0,s16,s0`; 0x0084163C..0x00841654 | M13-003 (partial) | EXACT_SOURCE |
+| P17 | `ParseMotionPrims` count mismatch aborts and returns 0 | 0x0085223C `bne` -> 0x00852442 `printf` (0x8527D8) -> 0x0085244C `b 0x85274A`; 0x0085225A `bne` -> 0x0085244E `puts` -> 0x0085244C; 0x0085274A `movs r0,#0` | M13-001 (partial) | EXACT_SOURCE |
+| P18 | `State::Import` reads "x" (short)->+0, "y" (short)->+2, "theta" (uchar)->+4; `State_c::Import` reads "x_mm"/"y_mm"/"theta_rads" (float)->+0/+4/+8 | 0x0084F920/0x0084F940/0x0084F962; 0x0084FDEE/0x0084FE10/0x0084FE34 | NEW | EXACT_SOURCE |
+| P19 | `impl+0x108` pre-plan wait defaults to 0 (ctor) and is set by `LatticePlanner::SetArtificialPlannerDelay_ms` | 0x004FCCF6 `str.w r1,[r4,#0x108]`; 0x004FFFEC `str.w r1,[r2,#0x108]` | M13-018 (partial) | EXACT_SOURCE |
+| P20 | `impl+0xF2` is a run/abort flag: ctor=1, StartPlanning=1, StopPlanning=0; DoPlanning/Replan abort when it reads 0 | 0x004FCCCA `strb.w r3,[r4,#0xf2]`; 0x004FF310 `strb.w r0,[sl,#0xf2]`; 0x004FD1C8 `strb.w r1,[r0,#0xf2]`; 0x005000BE `ldrb r0,[r6]` / 0x005000C0 `cbz`; 0x0085888C/0x00858890 | NEW | EXACT_SOURCE |
+| P21 | DoPlanning's code is stored at `impl+0xF8`; direct callers ignore r0; `GetCompletePath` reads the status (0/1 -> no path, 2/3 -> append plan) | 0x0050009A, 0x00500218, 0x00500212, 0x00500590; 0x00500838 (worker); 0x004FF35E (StartPlanning); 0x004FFB64 status test | M13-018 (partial) | EXACT_SOURCE |
+| P22 | StartPlanning's bool is stored at `impl+0xA1`; true forces a replan, false first checks the old plan (import with the 2/1 padding) | 0x004FEB7E `strb.w r6,[sl,#0xa1]`; 0x004FEBAC `ldrb` / 0x004FEBB2 `cbz`; 0x004FEC38 `movs r1,#1`; 0x004FEEFE `movs r1,#0` | M13-018 (partial) | EXACT_SOURCE |
+
+---
+
+## Q1 — primitive traversal cost (M13-004)
+
+**Answer.** `MotionPrimitive::Create` computes
+
+```
+MotionPrimitive+4 (float) =
+    extra_cost_factor  *  d8  *  ( |straight_length_mm|
+                                   + |sweepRad| * (|radius_mm| + halfWheelBase_mm)
+                                   + halfWheelBase_mm * |dtheta| )
+```
+
+* `extra_cost_factor` = `ActionType+0x00`; it multiplies the whole sum once, at the end
+  (0x0085432E `ldr r2,[r4,#0x2c]` = actions begin; 0x00854330 `add.w r0,r1,r1,lsl#1`;
+  0x00854360 `add.w r2,r2,r0,lsl#3` = &action[action_index]; 0x00854364 `vldr s0,[r2]`;
+  0x00854368 `vmul.f32 s4,s4,s0`; 0x00854378 `vstr s4,[sb,#4]`).
+* `d8` is the reciprocal of the action's speed:
+  * forward action (`reverse_action == 0`): `d8 = env+0x78` = `invMaxVelocity` = `1/maxVelocity_mmps`
+    (0x00854046 `cbz r7,#0x854078`; 0x00854078 `vldr d9,[r4,#0x68]`; 0x0085407C `vldr d8,[r4,#0x78]`).
+  * reverse action: `d8 = 1.0 / env+0x70` = `1/maxReverseVelocity_mmps`
+    (0x0085404C `vldr d9,[r4,#0x70]`; 0x00854050 `vdiv.f64 d8,d0,d9`).
+* `env+0x60..+0x7F` is an embedded `Anki::Planning::RobotActionParams` (constructed at
+  0x00851EDE `add.w r0,r4,#0x60`; 0x00851EE2 `blx RobotActionParams::RobotActionParams`).
+  Its fields are doubles: `+0x00 halfWheelBase_mm`, `+0x08 maxVelocity_mmps`,
+  `+0x10 maxReverseVelocity_mmps`, `+0x18 1/maxVelocity_mmps`.
+  The constructor 0x0084EDE6 sets defaults **24.0** (`0x4038000000000000`, 0x0084EDF2),
+  **60.0** (`0x404E000000000000`, 0x0084EDFC/0x0084EE10), **25.0** (`0x4039000000000000`, 0x0084EE08),
+  and `1/60` (`0x3F91111111111111`, 0x0084EE04/0x0084EE18).
+  `RobotActionParams::Import` (0x0084EF28) has **no callers** in the binary, and the shipped
+  `cozmo_mprim.json` has no `halfWheelBase_mm`/`maxVelocity_mmps`/`maxReverseVelocity_mmps` keys,
+  so the defaults stand: halfWheelBase = 24.0, maxVelocity = 60.0, maxReverseVelocity = 25.0.
+* Straight term: 0x008540AA `vabs.f64 d0,d0`; 0x008540B4 `vmul.f64 d0,d8,d0`;
+  0x008540B8 `vldr s2,[sb,#4]`; 0x008540C0 `vadd.f64 d0,d0,d1`; 0x008540C8 `vstr s0,[sb,#4]`.
+* Arc term: 0x00854188 `bfc r1,#0x1f,#1` (clear sign of `radius_mm`'s high word);
+  0x00854190 `bfc r7,#0x1f,#1` (clear sign of `sweepRad`);
+  0x008541A4 `vadd.f64 d0,d1,d0` = radius + halfWheelBase;
+  0x008541A8 `vmul.f64 d0,d2,d0` = sweep * that; 0x008541AC `vmul.f64 d0,d8,d0`;
+  0x008541C4 `vstr s0,[sb,#4]`.
+  (0x008541C0 recomputes `d8` afterwards but that value is not used again — the arc branch jumps
+  to 0x0085431E, the extra-factor step; the recompute is dead in this path.)
+* Turn term: `dtheta` is the signed `Radians::angularDistance(angle_definitions[+1], angle_definitions[end_pose.theta], dir)`
+  (0x00854280 `ldrb r0,[sb,#1]`, 0x00854294 `ldrb r0,[sb,#0xc]`, 0x008542BC `blx angularDistance`);
+  0x008542CE `vabs.f32 s2,s0`; 0x008542D6 `vmul.f64 d1,d2,d1` (d2 = halfWheelBase);
+  0x008542DE `vmul.f64 d1,d8,d1`; 0x008542F2 `vstr s2,[sb,#4]`.
+* The result is stored at **`MotionPrimitive+4`** (float). The initial zero is 0x0085408A.
+* Guards: threshold `1e-6` at 0x008543E0 (`vldr d1,[pc,#0xbc]`); base < 1e-6 logs
+  "ERROR: base action cost is %f for action %d '%s'" (format 0x00C29D1A) and the final < 1e-6 logs
+  "ERROR: final action cost is %f (%f x) for action %d '%s'" (format 0x00C29D4C); either returns 0.
+  On success 0x008543B2 `blx MotionPrimitive::CacheBoundingBox` and 0x008543B8 returns 1.
+* The cost field is consumed as the successor edge cost: 0x00851516 `vldr s4,[r1,#4]` (r1 = the
+  primitive), 0x0085151A `vadd.f32 s2,s2,s4` (parent g), 0x00851522 `vstr s0,[r5,#0x24]`.
+
+**Primitive layout** (for the record): `+0` action_index (byte; `GetValueOptional<unsigned char>` output
+= `sb` at 0x00853E04/0x00853E06; read at 0x00854036), `+1` heading/angle index (byte; `strb.w r6,[sb,#1]`
+at 0x00853DEC from Create's 2nd argument; read at 0x00854280), `+4` cost (float), `+8` end_pose State
+(short x +0x8, short y +0xA, uchar theta +0xC; see Q6), `+0x10/+0x14/+0x18` vector<IntermediatePosition>
+begin/end/cap (emplace `this` = `sb+0x10` at 0x00853E68), `+0x1C..+0x28` cached bbox (used at
+0x0085121E..0x0085123A), `+0x2C` `Path`, total stride 0x124 (0x00851154 `mov.w lr,#0x124`).
+
+**UNKNOWN / caveats.** None for the formula. The intermediate-pose field at `IntermediatePosition+0x10`
+is a reciprocal, `1.0 / (halfWheelBase*|dtheta|/maxVelocity + dist)` (0x00853F1E `vldr d1,[r0,#0x60]`,
+0x00853F28 `vldr d2,[r0,#0x78]`, 0x00853F46 `vdiv.f32 s0,s20,s0`); it is not added to `MotionPrimitive+4`
+and is only used by the soft-collision penalty (Q3).
+
+## Q2 — A* heuristic and priority ordering (M13-018)
+
+**Heuristic is computed on demand, not a precomputed grid.**
+* `heur_internal(StateID)` 0x0085A7B8: for each goal entry in the vector at planner+0x24 (stride 0x10;
+  the State_c starts at +4), take the per-goal cost from the vector at planner+0xA0 (0x0085A7FA
+  `ldr.w r2,[r4,#0xa0]` + 0x0085A800 `add r2,r7`, `vldr s18,[r2]`), compute
+  `GetDistanceBetween(goal.State_c, state)` (0x0085A808), multiply by `env+0x78` (= `1/maxVelocity_mmps`,
+  0x0085A816 `vldr d1,[r0,#0x78]`), add the per-goal cost (0x0085A822 `vadd.f64 d0,d0,d1`) and keep the
+  minimum (0x0085A82A..0x0085A834). Empty goal list -> `FLT_MAX` (0x0085A83E `vldr s16,[pc,#0x10]`
+  = 0x7F7FFFFF).
+* `heur(StateID)` 0x0085A780: memoizes in the hash map at planner+0xAC (0x0085A78E `find`,
+  0x0085A798 `vldr s0,[r0,#0xc]`; miss -> `heur_internal`).
+* `GetDistanceBetween(State_c const&, State const&)` 0x00850DCC = Euclidean distance between
+  `(resolution_mm*state.x, resolution_mm*state.y)` and `(State_c.x_mm, State_c.y_mm)`:
+  0x00850DDC/0x00850DE0 convert the shorts, 0x00850DF0/0x00850DF4 multiply by `env[0]` (resolution_mm),
+  0x00850E18 `vsqrt.f32`.
+* The per-goal cost `heurMap[i]` comes from `InitializeHeuristic` 0x008598DC: it resizes planner+0xA0
+  to the goal count (0x0085991E), and for each goal calls `IsInSoftCollision` (0x00859980) and
+  `ExpandCollisionStatesFromGoal` (0x0085998E) — a Dijkstra over `OpenList` through states that are in
+  soft collision, returning the accumulated cost when free space is reached (0x00859BF0..0x00859FBD).
+  Goals whose cost > 1000.0 are removed with "very high cost of _costOutsideHeurMap = %f, so removing
+  goal %d" (0x008599E0 compare with 1000.0; 0x008599F2..0x00859A06 warning + swap-remove);
+  the surviving cost is stored at `[heurMap + 4]` (0x008599CA `vstr s20,[r0,#4]`).
+  `InitializeHeuristic` returns 1 iff any goal remains (0x008599E0..0x008599E6).
+
+**Priority/queue ordering.** `OpenList` is a `std::multimap<float, StateID>` ordered by
+`std::less<float>` (0x0084E4E8 references `__tree<... __map_value_compare<float,...,std::less<float>,true> ...>`);
+`topF` returns the root key `[root+0x10]`, `pop` erases the root and returns its StateID `[root+0x14]`
+(0x0084E500 `ldr r1,[r1]` / `ldr r1,[r1,#0x14]`? — key at +0x10: 0x0084E508 `ldr r0,[r0]` / `ldr r0,[r0,#0x10]`;
+value at +0x14: 0x0084E50E `pop` reads `[r2,#0x14]` and erases the root). So the search always expands
+the smallest `f`.
+
+**Cost accumulation (`ExpandState` 0x0085A34C).**
+* `s16 = [StateTable node + 0x14]` = the state's g (0x0085A3C6).
+* `GetSuccessors(env, stateID, g, false)` (0x0085A3DE) fills a `SuccessorIterator`.
+* For each successor: `s18 = [sp+0x5c]` = the successor's g (from `Next`).
+* `StateTable::find` (0x0085A45C): if found and not closed and `s18 < [node+0x20]` (0x0085A47C `vldr s0,[fp,#0x20]`),
+  remove the old open entry (0x0085A49E), compute `heur(successor)` (0x0085A48E), insert with
+  `f = s18 + heur` (0x0085A4AC `vadd.f32 s0,s18,s0`; 0x0085A4BC `insert`) and rewrite the node
+  (parent = current id, g = s18, closed = -1, 0x0085A4C0..0x0085A4DC).
+* If not found, `heur(successor)` (0x0085A4E6), insert `f = s18 + heur` (0x0085A4FE) and
+  `StateTable::emplace` (0x0085A522).
+* At the end the expanded state's closed flag is set to the current closed id (0x0085A53E..0x0085A544).
+So `f = g + h`; the stack's "Euclidean distance to nearest goal" is only the distance part — the
+original divides by `maxVelocity_mmps` and adds the per-goal `ExpandCollisionStatesFromGoal` cost.
+
+**UNKNOWN.** The exact edge weights used inside `ExpandCollisionStatesFromGoal` (0x00859BF0..0x00859FBD)
+are not fully transcribed here; the function returns the accumulated cost at which the Dijkstra leaves
+soft collision (0x00859FA0 return). If the manager needs the per-edge weight, that is a follow-up read.
+
+## Q3 — per-primitive collision sampling (M13-003)
+
+Collision testing for a primitive is in `Anki::Planning::SuccessorIterator::Next` 0x0085110C, not in
+`ExpandState`. `ExpandState` only consumes the resulting g.
+
+1. **Broad phase**: the primitive's cached bbox (`MotionPrimitive+0x1C/+0x20/+0x24/+0x28`, added to the
+   start pose `s20/s22`) is tested against every AABB in the vector at `env+0x50` (16-byte entries,
+   minX/maxX/minY/maxY): 0x0085123A `ldrd r1,r2,[fp,#0x50]`; 0x00851246..0x0085127C; no overlap ->
+   no collision and the primitive cost is added with zero collision penalty (0x00851286 -> 0x008514DC).
+2. **Turning vs non-turning** is decided by `end_pose.theta` (0x008512D0 `ldrb r1,[r4,#1]`, the
+   primitive's `+1` angle index) vs the byte at `MotionPrimitive+0xC` (0x008512CC/0x008512D0):
+   * **Non-turning** (`end_pose.theta == +1`): the polygons for the **end_pose.theta bucket** are used
+     (0x008512E0 `add.w r0,r0,r0,lsl#1`; 0x008512E4 `ldr.w r7,[r1,r0,lsl#2]` where r1 = `env+0x44`),
+     and **every intermediate pose** is tested (loop 0x0085134A `ldr.w r6,[lr]` (end),
+     0x00851356 `add.w r4,r0,#0x10`, stride 0x14, 0x008513A4 `cmp r0,r6`), each at
+     `(start + IntermediatePosition.x_mm, start + IntermediatePosition.y_mm)` (0x0085135C..0x00851376
+     `FastPolygon::Contains`). There is no stride; all poses are sampled.
+   * **Turning** (`end_pose.theta != +1`): the loop walks the intermediate poses from last to first
+     (0x00851414 `subs r4,r6,#1`, 0x0085149E `cmp r6,#2`, 0x008514A0 `bge`), and each pose uses
+     **its own bucket** at `IntermediatePosition+0xC` (0x00851428 `ldrb r1,[r1,#0xc]`), selecting
+     polygons from `env+0x44 + bucket*0xC` (0x00851420/0x0085142E).
+   The intermediate list is the sampled set; the end pose is its last element (e.g. asset angle 0
+   action 0 intermediate_poses end at x_mm = 1.0 = end_pose x).
+3. **Soft vs hard** for each `FastPolygon::Contains == 1`:
+   * polygon penalty (`FastPolygon+0x44`) `< 1000.0` -> **soft**: add
+     `base + penalty * IntermediatePosition+0x10` to the accumulated collision cost
+     (non-turning 0x0085137E `vldr s0,[r7,#0x44]`; 0x0085138A `bge`; 0x0085138C `vldr s2,[r4]`;
+     0x00851390 `vmul.f32 s0,s0,s2`; 0x00851394 `vadd.f32 s0,s19,s0`; 0x00851398 `vadd.f32 s24,s24,s0`;
+     turning 0x0085146E..0x00851490).
+   * penalty `>= 1000.0` -> **hard collision**: the primitive is rejected
+     (non-turning 0x0085138A `bge #0x8513BE`; turning 0x0085147A `bge #0x85149A`).
+   * `base` is 0.0 for a forward primitive and 1000.0 for a reverse primitive
+     (`reverse_action` at `MotionPrimitive+0`; non-turning 0x008512FA..0x0085130A reads
+     0x008515B0 = 0.0 / 0x008515B4 = 1000.0; turning 0x00851402..0x0085140C). The hard threshold
+     1000.0 is loaded at 0x00851162 (`vldr s18,[pc,#0x374]`).
+4. **Successor g** = `softCollisionCost + parentG + MotionPrimitive+4`:
+   0x0085150A `vldr s2,[r5,#0x14]`; 0x00851516 `vldr s4,[r1,#4]`; 0x0085151A `vadd.f32 s2,s2,s4`;
+   0x0085151E `vadd.f32 s0,s0,s2`; 0x00851522 `vstr s0,[r5,#0x24]`.
+
+**The separate collision queries** (used by `InitializeHeuristic` and elsewhere, not by `Next`):
+* `IsInCollision(State)` 0x008515BC converts the grid shorts to mm (`sxth`, `asrs`, multiply by
+  `env[0]` at 0x008515D2/0x008515DC) and tail-calls `IsInCollision(State_c)` (0x008515EE `b.w 0x8D15CC`).
+* `IsInCollision(State_c)` 0x008515F8 normalizes theta to `[0,2pi)` (0x00851614..0x00851658),
+  buckets it as `round(theta * env+0x10) mod env+8` (0x0085165A..0x0085167A), iterates the polygons
+  for that bucket and returns 1 only when a polygon contains the point **and** its penalty is
+  `>= 1000.0` (0x008516D0 `vldr s0,[r0,#0x44]`; 0x008516D8 `vcmpe`; 0x008516DC `bge #0x8516E6`).
+* `IsInSoftCollision` 0x00851708 returns 1 if **any** polygon in the bucket contains the point
+  (0x0085175A `blx FastPolygon::Contains`; 0x0085175E `cbnz r0,#0x8517A2`).
+* `GetCollisionPenalty` 0x008517B0 returns the first containing polygon's penalty
+  (0x0085184E..0x00851860) or 0.0 when none (0x008517C4 `vldr s16,[pc,#0xa4]` = 0.0).
+
+**Note.** `AddObstacleWithExpansion` 0x00855528 stores the caller's penalty at `pair+0x44`
+(0x0085557E `vldr s0,[sp,#0xb0]`; 0x00855612 `str r2,[r0,#0x44]`); the `ImportBlockworldObstaclesIfNeeded`
+caller passes **0.1**, so the shipped obstacles are soft. No shipped obstacle polygon with penalty
+`>= 1000.0` was found on this path.
+
+**UNKNOWN.** None for the sampling/penalty mechanism. The origin of any `>= 1000.0` polygon (if one
+exists elsewhere) was not traced.
+
+---
+
+## Q4 — `ConvexPolygon::RadialExpand` 0x004FDF9E (body 0x00841580)
+
+**Answer.** For each vertex `v` and padding `d >= 0`, the vertex becomes
+
+```
+v' = v + d * (v - c) / |v - c|
+```
+
+where `c` is the polygon's centroid, computed once before the loop. It is **not** a bisector or
+`cos(half-angle)` expansion and there is **no** `max(0.3, ...)` clamp.
+
+Instructions:
+* 0x00841590 `vcmpe.f32 s16,#0`; 0x00841598 `bge #0x8415D2` — only a negative distance is rejected,
+  with the warning "called expand with a negative distance." (0x008415A2..0x008415A8; strings at
+  0x00841690/0x008416AC).
+* 0x008415D8 `blx Polygon<2,float>::ComputeCentroid` -> centroid at `sp+4`.
+* Per vertex (0x008415DC `ldrd r6,r8,[r5]`, loop 0x008415E8..0x0084165A):
+  * 0x008415E8 `ldrd r0,r1,[r6]` copy vertex to `sp+0x18`;
+  * 0x008415F2..0x0084160A subtract the centroid component-wise;
+  * 0x00841610 `blx hypotf` = `|v-c|`;
+  * 0x00841622 `vdiv.f32 s0,s16,s0` = `d / |v-c|`;
+  * 0x00841626..0x00841638 multiply `(v-c)` by that;
+  * 0x0084163C..0x00841654 add it back to the vertex in place.
+* No clamp, no early-out other than the negative-distance guard; the vertex array is the polygon's
+  own (`r6 = [r5]`).
+
+The stack's guess (bisector, `cos(half-angle)`, `Math.Max(0.3, ...)`) is not what the source does.
+
+## Q5 — `ParseMotionPrims` count validation (M13-001)
+
+`xythetaEnvironment::ParseMotionPrims(Json const&, bool)` body **0x00852014** (the 0x004CE840 address is
+the ARM import veneer).
+
+* `angle_definitions.size() != num_angles`: 0x0085222E `ldr.w r1,[sl,#8]` (num_angles);
+  0x00852232 `ldrd r0,r2,[sl,#0x38]`; 0x00852238 `cmp.w r1,r0,asr #2`; **0x0085223C `bne.w #0x852442`**.
+  At 0x00852442 `asrs r2,r0,#2` (the count) and 0x00852448 `blx printf` with the format at
+  **0x008527D8** = `"ERROR: numAngles is %u, but we read %lu angle definitions\n"`, then
+  0x0085244C `b #0x85274A` -> **returns 0**.
+* `angles.size() != num_angles`: 0x0085224E `blx Json::Value::size()`; 0x00852254 `ldr.w r0,[sl,#8]`;
+  **0x0085225A `bne.w #0x85244E`**. At 0x0085244E `ldr r0,[pc,#0x3c8]` -> 0x00C97D20
+  `"error: could not find key 'angles' in motion primitives"`, 0x00852454 `puts`, 0x00852458
+  `PrintJsonCout`, 0x00852460 `b #0x85274A` -> **returns 0**. (The same string is used for a count
+  mismatch, not only a missing key.)
+* Both paths abort parsing (they jump to the shared epilogue 0x0085274A: `movs r0,#0`; `add sp,#0x19C`;
+  `pop`). Success is 0x008524AC `blx PopulateReverseMotionPrims`; 0x008524B0 `movs r0,#1` -> **returns 1**.
+* Note the index.tsv size for ParseMotionPrims (1192 bytes) does not cover the out-of-line
+  error/cleanup block that starts around 0x008524B4 and runs to 0x0085274E; the `b 0x85274A` targets
+  are inside that block.
+
+## Q6 — `State::Import` / `State_c::Import` (M13-004)
+
+* `Anki::Planning::State::Import(Json const&)` body **0x0084F8A4**:
+  * key `"x"` (0x0084FB08) -> `GetValueOptional<short>` (0x0084F920) writes **`State+0`** (short).
+  * key `"y"` (0x0084FB0C) -> `GetValueOptional<short>` (0x0084F940) writes **`State+2`** (short).
+  * key `"theta"` (0x00C299A3) -> `GetValueOptional<unsigned char>` (0x0084F962) writes **`State+4`**
+    (byte).
+  * `GetValue<short>` = `Json::Value::asInt` truncated to short (0x008400BA `blx asInt`), so the JSON
+    numbers are read as integers.
+  * Units: `x`/`y` are **grid cells**; `GetDistanceBetween` multiplies them by `resolution_mm`
+    (0x00850DDC `vldr s2,[r0]` = env[0]; 0x00850DF0/0x00850DF4), and the asset's `resolution_mm` is 10.0.
+    `theta` is the **heading bucket index** (0..num_angles-1), used at 0x00854294 to index
+    `angle_definitions`.
+  * Error paths: null -> "State.Import.Null"; any key missing -> "State.Import.Invalid" +
+    "could not parse state, dump follows" and return 0 (0x0084F99C..0x0084F9F6). Success returns 1.
+* `Anki::Planning::State_c::Import(Json const&)` body **0x0084FD70**:
+  * key `"x_mm"` (0x00C299A9) -> `GetValueOptional<float>` (0x0084FDEE) writes **`State_c+0`**.
+  * key `"y_mm"` (0x00C299AE) -> `GetValueOptional<float>` (0x0084FE10) writes **`State_c+4`**.
+  * key `"theta_rads"` (0x00C299B3) -> `GetValueOptional<float>` (0x0084FE34) writes **`State_c+8`**.
+  * Units: mm and radians (float). Error path "State_c.Import.Invalid" + "could not parse State_c,
+    dump follows"; success returns 1.
+* In `MotionPrimitive::Create`: `end_pose` is read via `State::Import` into `MotionPrimitive+8`
+  (0x00853E20 key, 0x00853E2C `add.w r0,sb,#8`, 0x00853E30 `blx State::Import`); each
+  `intermediate_poses[i]` via `State_c::Import` into a 0x14-byte `IntermediatePosition`
+  (0x00853E8A `mov r0,r6` (sp+0x40), 0x00853E8C `blx State_c::Import`; the struct stores x,y at
+  +0/+4, the step distance at +8, the bucket at +0xC, the reciprocal at +0x10).
+
+## Q7 — `StartPlanning` / `DoPlanning` callers and fields (M13-018)
+
+**(a) `impl+0x108` (pre-plan wait in ms).**
+* Constructor `FUN_004FCC44` (the LatticePlannerImpl ctor, called from `LatticePlanner::LatticePlanner`
+  0x004FCBB0; object size 0x118 allocated at 0x004FCBF0) sets it to 0:
+  **0x004FCCF6 `str.w r1,[r4,#0x108]`** with `r1 = 0`.
+* Setter `Anki::Cozmo::LatticePlanner::SetArtificialPlannerDelay_ms(int)` **0x004FFFE0**:
+  **0x004FFFEC `str.w r1,[r2,#0x108]`** where `r2 = [r0+0x130]` (the impl). It also logs
+  "Adding %dms of artificial delay" (0x00500000).
+* **UNKNOWN who calls the setter**: `SetArtificialPlannerDelay_ms` has no callers in the decompiled
+  call graph and no direct `blx` found; it is presumably called through a game message or the public
+  API. DoPlanning reads `impl+0x108` at 0x005000A2/0x005000C2.
+
+**(b) abort flag `impl+0xF2`.**
+* It is a **run/continue flag**, not an abort flag: 1 = keep planning, 0 = stop.
+* Constructor 0x004FCC44 sets 1: **0x004FCCCA `strb.w r3,[r4,#0xf2]`** (`r3 = 1`).
+* `StartPlanning` sets 1 before scheduling/planning: **0x004FF310 `strb.w r0,[sl,#0xf2]`** (`r0 = 1`).
+* `LatticePlannerImpl::StopPlanning` 0x004FD1BA clears it when `impl+0xDC` (the worker thread ptr) is
+  non-null and `impl+0xF3` (planning-in-progress) is non-zero: **0x004FD1C8 `strb.w r1,[r0,#0xf2]`**
+  (`r1 = 0`; guards 0x004FD1BE/0x004FD1C4).
+* `DoPlanning` 0x00500090 checks it during the pre-plan sleep: `r6 = fp+0xF2` (0x0050009E),
+  **0x005000BE `ldrb r0,[r6]`** / **0x005000C0 `cbz r0,#0x5000EC`** (leave the sleep when 0), and passes
+  it as the `bool volatile*` to `Replan` at **0x005000FE `mov r2,r6`** / 0x00500102 `blx Replan`.
+* `ComputePath` 0x008586A0 stores the pointer at `planner+0x90` (**0x008586B4 `str.w r2,[r8,#0x90]`**)
+  and aborts the A* loop when it reads 0: **0x00858886 `ldr r0,[r8,#0x90]`**; 0x0085888C `ldrb r0,[r0]`;
+  0x00858890 `beq.w #0x858B34` (return 0).
+* So `impl+0xF2` is the same flag object in both places: the planner context at impl+0xF2 and the
+  pointer `planner+0x90`.
+
+**(c) Who calls `DoPlanning` and what happens to 0 / 3 / 2.**
+* Direct callers (both discard the return in r0):
+  * `LatticePlannerImpl::worker` 0x005007E0 at **0x00500838 `blx DoPlanning`** (after setting
+    `impl+0xF3 = 1` and `impl+0xF0 = 0`; then `impl+0xF3 = 0`).
+  * `StartPlanning`'s synchronous branch at **0x004FF35E `blx DoPlanning`** (when `impl+0xF5`
+    (`SetIsSynchronous`) is non-zero; else it signals the worker and returns).
+* `DoPlanning` writes the code to `impl+0xF8`: status 1 at 0x0050009A, and at the end
+  **0x00500216/0x00500218** (0), **0x00500212** (3), **0x0050058E/0x00500590** (2); the same value is
+  in r0.
+* `LatticePlannerImpl::CheckPlanningStatus` 0x004FD19C returns `impl+0xF8`; the public
+  `LatticePlanner::CheckPlanningStatus` 0x004FD192 returns `[impl+0xF8]`.
+* The only in-engine consumer of the status is `LatticePlannerImpl::GetCompletePath` 0x004FFB64:
+  `status == 0` -> return 0; `status == 1` -> return 0 (still planning); **anything else (2 or 3)** ->
+  `*param_3 = impl+0x100` (chosen goal id), `FindClosestPlanSegmentToPose`, and if the robot is within
+  20.0 mm of the plan, append the plan (`AppendToPath`) and return 1; otherwise clear the plan, set
+  `impl+0xF8 = 0` and return 0 (0x004FFB64..0x004FFC15; the tests are at 0x004FFB64 `ldr [this+0xf8]`
+  / `cbz`, and 0x004FFB6A/0x004FFB6C `cmp`/`bne`).
+* **There is no special handling of code 3** in `GetCompletePath`; 3 and 2 take the same branch.
+  `LatticePlanner::GetCompletePath_Internal` (0x004FFB50, 0x004FFF14) only forwards and stores the
+  goal id (`this+0x2A`); `IPathPlanner::GetCompletePath` 0x00508AAC returns 1 iff the internal call
+  returns 1. No engine code distinguishes 3 from 2.
+* For completeness, `StartPlanning` itself returns (in r4) 0 when it only signalled the worker
+  (0x004FF3C8 `movs r4,#0`), 1 when it planned synchronously (0x004FF49E `movs r4,#1`), and 2 when the
+  existing plan was found safe (0x004FF42E `movs r4,#2`); the epilogue returns r4 at
+  0x004FF400/0x004FF402 (`moveq r0,r4`). `ComputeNewPathIfNeeded` 0x004FEB00 forwards that value (or 2
+  if the mutex try-lock fails, 0x004FEB30 `movs r4,#2`).
+
+**(d) `StartPlanning`'s bool argument (`impl+0xA1`).**
+* Stored at **0x004FEB7E `strb.w r6,[sl,#0xa1]`** (`r6 = r2`, the bool).
+* Passers:
+  * `LatticePlanner::ComputeNewPathIfNeeded(Pose3d const&, bool)` **0x004FEB00**: saves its own bool in
+    r4 (0x004FEB04 `mov r4,r2`) and calls StartPlanning at **0x004FEB22 `blx StartPlanning`** with
+    `r2 = r4`. So the bool is the caller's.
+  * `LatticePlanner::ComputePathHelper` 0x004FD1D0 calls the `LatticePlanner` vtable slot +0xC with a
+    hard-coded `true`: **0x004FD326 `ldr r0,[r6]`**; **0x004FD328 `ldr r3,[r0,#0xc]`**;
+    **0x004FD32E `movs r2,#1`**; **0x004FD330 `blx r3`**. The vtable relocation at 0x0101F194
+    (`_ZTVN4Anki5Cozmo14LatticePlannerE` + 0xC) is `Anki::Cozmo::LatticePlanner::ComputeNewPathIfNeeded(Pose3d const&, bool)`,
+    so the bool is **1**.
+* Meaning (from StartPlanning's own branches):
+  * `impl+0xA1 != 0` (true): 0x004FEBAC `ldrb r0,[sl,#0xa1]` / 0x004FEBB2 `cbz r0,#0x4FEC2E`; true
+    skips the old-plan check and goes to the replan path. In that path
+    `ImportBlockworldObstaclesIfNeeded(impl, false, BLOCK_BOUNDING_QUAD)` is called
+    (**0x004FEEFE `movs r1,#0`**; 0x004FEF02), i.e. the 7.0/6.0 padding pair, then StartIsValid /
+    GoalsAreValid / PrepareForPlanning and DoPlanning.
+  * `impl+0xA1 == 0` (false): first calls `ImportBlockworldObstaclesIfNeeded(impl, true,
+    REPLAN_BLOCK_BOUNDING_QUAD)` (**0x004FEC38 `movs r1,#1`**; 0x004FEC3A), i.e. the 2.0/1.0 padding
+    pair, then `FindClosestPlanSegmentToPose` (0x004FEC50) and only replans when the robot is >= 20.0
+    from the plan or `PlanIsSafe` fails (0x004FF424 `blx PlanIsSafe`; 0x004FF42A `beq` to the replan
+    path; 0x004FF42E `movs r4,#2` when safe).
+  So the bool means **force replan unconditionally** (true) vs **reuse the old plan if it is still safe**
+  (false). The two import calls also select the padding pair (see M13-003).
+
+---
+
+## Contradictions of existing records
+
+1. **M13-004, `action_index` offset.** The record says "`action_index` → +1 (0x00853DE8/0x00853E06)".
+   The instructions say `action_index` is read by `GetValueOptional<unsigned char>(fp, "action_index", sb)`
+   with the output pointer `r2 = sb` (**0x00853E04 `mov r2,sb`**; 0x00853E06), i.e. **`MotionPrimitive+0`**;
+   and `MotionPrimitive+1` is the **heading/angle index** passed as `Create`'s second argument
+   (**0x00853DEC `strb.w r6,[sb,#1]`**, `r6 = r2` from 0x00853DE4). This matters because the two bytes
+   index different tables (actions vs angle_definitions) at 0x00854036 and 0x00854280.
+2. **M13-019 ("`xythetaEnvironment::Init` hard-codes 16 headings")**. The evidence cites
+   `ReadMotionPrimitives` and `0x008528AE`, which are in the `Init(char const*)` overload at
+   **0x008528A8**. That overload has **no callers** (decomp header; and PLT 0x004A64F0 resolves to the
+   other overload 0x00851F9E, per 004a/004a64f0.c "thunk to ... @ 00851f9e"). The LatticePlannerImpl
+   constructor calls `xythetaEnvironment::Init(Json const&)` 0x00851F9E (0x004FCC44), which calls
+   `ClearObstacles` + `ParseMotionPrims(env, json, false)` and does **not** overwrite `env+8`.
+   Therefore the production planner uses the JSON `num_angles` (the asset also sets 16), not a
+   hard-coded 16. The record's mechanism is wrong for the production path; the value 16 happens to be
+   the same.
+
+## Records whose evidence is too weak / partial for what they claim
+
+* **M13-004** — the record is titled "schema and its arcs/turn costs" but its evidence has the schema
+  only; the actual cost formula (P1..P7 above), the `d8` speed reciprocals, the `extra_cost_factor`
+  multiply, the `1e-6` guards and the `+4` field are absent, and the `action_index` offset is wrong.
+* **M13-003** — the record's obstacle-expansion half is supported, but the per-primitive collision
+  sampling (SuccessorIterator::Next, the turning/non-turning bucket split, the intermediate-pose walk,
+  the soft/hard 1000.0 threshold and the `base + penalty*reciprocal` penalty) is not in the record and
+  is where the search actually spends its cost. The record's claim that `AddObstacleWithExpansion`
+  stores a constant 0.1 penalty is correct; the consequence (all shipped obstacles are soft) is not
+  stated.
+* **M13-001** — the loader/parser entry is supported; the count-mismatch abort/return-0 path and the
+  exact error strings (0x008527D8, 0x00C97D20) are not in the record.
+* **M13-018** — the entry/worker and the 0/3/2 status are supported, but the record does not say that
+  both direct callers discard r0, that `impl+0x108` is the ctor-defaulted / setter field
+  (`SetArtificialPlannerDelay_ms`), that `impl+0xF2` is a run flag (not an abort flag), or that the
+  engine's only status consumer (`GetCompletePath`) does not distinguish 3 from 2.
+
+## Open questions for the manager
+
+1. **Code 3.** No engine consumer distinguishes `DoPlanning`'s 3 (empty plan) from 2. If a hardware
+   test or the stack expects code 3 to change behaviour, the consumer is outside this binary (game /
+   C#) or was not found. Decide whether to keep the record's "3 = empty plan" as an engine-side fact
+   only, or to trace the game-side consumer.
+2. **M13-019.** The 16-heading override is on an uncalled overload. Decide whether to rewrite the
+   record to say "the JSON `num_angles` is used (asset 16)" and drop the hard-coded-16 claim, or to
+   keep the uncalled-overload fact as a separate NEW record.
+3. **M13-004 offset.** The `action_index`/heading-index offsets should be corrected and the cost
+   formula added; this is a behaviour-changing part of the path that the record currently omits.
+4. **`SetArtificialPlannerDelay_ms` caller.** Not found in the engine; if the manager needs the
+   artificial-delay source, it is a game-side call.
+5. **`ExpandCollisionStatesFromGoal` edge weights.** The heuristic's per-goal offset is produced there;
+   only its return (the cost when leaving soft collision) was read. If the exact weight matters, that
+   is a follow-up read (0x00859BF0..0x00859FBD).
+
+*Read-only extraction. Nothing outside `.scratch/B-M13/` was changed.*
+
+
+## Appendix E: gap pass 3 extraction report (2026-09-28)
+
+# B-M13 extractor actions  -  answers to the build pass MISSING points
+
+Scope: M13-navigation (records M13-002, M13-010, M13-013, M13-014, M13-016, M13-017).
+Binary: `resources/lib/armeabi-v7a/libcozmoEngine.so`, file VAs, Thumb (capstone CS_MODE_THUMB).
+The Ghidra decompilation was used as a navigation aid only; every instruction below was re-read
+from the `.so`. Read-only pass: nothing outside `.scratch/B-M13/` was written.
+
+Legend: `+0xNN` = byte/word offset on the object named in the sentence. All addresses are file VAs.
+
+---
+
+## Q1. `FlipBlockAction` (M13-002)  -  the role of each constructor offset
+
+`FlipBlockAction::FlipBlockAction` 0x0055EC80 stores the constants (0x0055ECF2..0x0055ED12).
+Two members read them: `Init` 0x0055EDC8 and `CheckIfDone` 0x0055F074; the destructor 0x0055ED54
+reads +0x13C only.
+
+| offset | value | role (what reads it and how) | citation |
+|---|---|---|---|
+| +0x12C | 150.0 (0x43160000) | **drive speed (mm/s)**. `Init` loads it into `r3` and passes it as the 3rd arg (speed) of `DriveStraightAction`. In `DriveStraightAction::DriveStraightAction(Robot&,float,float,bool)` 0x00547278 the `r3` arg is stored at `DriveStraightAction+0x7C`, the speed field (0x005472A4; the negative-speed warning at 0x005472BA/0x005472BE names it "Speed"). | ctor 0x0055ECF6/0x0055ECFA; Init 0x0055EF18 `ldr.w r3,[r6,#0x12c]`, 0x0055EF2C `blx DriveStraightAction`; speed field 0x005472A4 |
+| +0x130 | 20.0 (0x41A00000) | **drive-past distance (mm)** added to the distance from the robot to the object. `Init` computes the norm of the object's robot-relative translation (`vsqrt.f32` at 0x0055EEFA), loads +0x130 at 0x0055EF14, adds (`vadd.f32` 0x0055EF1C) and passes the sum as the `r2` arg (distance) of `DriveStraightAction`. The `r2` arg is stored at `DriveStraightAction+0x78` (0x005470F0+0x? -> `*(float*)(this+0x78)=in_r2`), the distance field. | ctor 0x0055ECF2/0x0055ECFA; Init 0x0055EF14 `vldr s0,[r6,#0x130]`, 0x0055EF1C `vadd.f32 s0,s2,s0`, 0x0055EF20 `vmov r2,s0` |
+| +0x134 | 45.0 (0x42340000) | **approach lift height (mm)**. `Init` loads it into `r2` and passes it as the height of `MoveLiftToHeightAction(robot, 45.0, 5.0, 0)` (added to the compound **before** the drive). | ctor 0x0055ECFE/0x0055ED0E; Init 0x0055EF3A `ldr.w r2,[r6,#0x134]`, 0x0055EF3E/0x0055EF42 `r3=5.0`, 0x0055EF48 `str r6,[sp]` (0), 0x0055EF4A `blx MoveLiftToHeightAction` |
+| +0x138 | 40.0 (0x42200000) | **lift trigger distance (mm)**. `CheckIfDone` computes the object distance and compares it with +0x138 (`vcmpe`/`bpl`); when the object is **closer than 40.0** and +0x13C is still -1, it queues a `MoveLiftToHeightAction(robot, Preset=2, 5.0)` (ctor 0x4A9A48), sets `action+0x56 = 1`, stores the new action's id (+0x60) into +0x13C and `ActionList::QueueAction(position 5, ...)`. | ctor 0x0055ED02/0x0055ED0E; CheckIfDone 0x0055F124 `vldr s0,[r4,#0x138]`, 0x0055F128 `vcmpe.f32 s2,s0`, 0x0055F130 `bpl`, 0x0055F14E `blx MoveLiftToHeightAction`, 0x0055F15C `str.w r1,[r4,#0x13c]`, 0x0055F16A `blx ActionList::QueueAction` |
+| +0x13C | -1 (0xFFFFFFFF) | **queued-lift-action id / state**. -1 = no lift queued. Written by `CheckIfDone` with the queued `MoveLiftToHeightAction`'s id (+0x60). The destructor 0x0055ED54 cancels that id on the robot's `ActionList` (`robot+0x250`) when it is not -1. | ctor 0x0055ED06/0x0055ED0E; CheckIfDone 0x0055F132/0x0055F138 (`adds r0,#1` / `bne`), 0x0055F15C; dtor 0x0055ED6C `ldr.w r1,[r4,#0x13c]`, 0x0055ED70 `adds r0,r1,#1`, 0x0055ED72 `beq`, 0x0055ED7A `blx ActionList::Cancel` |
+| +0x140 | 1 (byte) | **`shouldCheckPreActionPose` flag**. `Init` reads it (`ldrb.w r0,[r6,#0x140]`) and puts it into the `PreActionPoseInput` byte at `sp+0x64` passed to `IDockAction::GetPreActionPoses` (with ActionType 5 at `sp+0x60`). `SetShouldCheckPreActionPose(bool)` 0x0055EDC2 writes it (`strb.w r1,[r0,#0x140]`). | ctor 0x0055ED10/0x0055ED12; Init 0x0055EE10 `ldrb.w r0,[r6,#0x140]`, 0x0055EE14 `movs r1,#5`, 0x0055EE16 `strd r7,r1,[sp,#0x5c]`, 0x0055EE1C `strb.w r0,[sp,#0x64]`, 0x0055EE5E `blx IDockAction::GetPreActionPoses`; setter 0x0055EDC2 |
+
+**No offset is unread.** Every one of +0x12C/+0x130/+0x134/+0x138/+0x13C/+0x140 is read in the
+shipped code (sources: 0x0055EDC8, 0x0055F074, 0x0055ED54, 0x0055EDC2).
+The job's lead (45 = approach lift, 40 = trigger, 150/20 = speed/past) is confirmed.
+
+---
+
+## Q2. `AlignWithObjectAction` (M13-016)  -  the pre-action-type enum and +0xBB
+
+### Q2a. The numeric returned by `GetPreActionTypeFromAlignmentType` 0x005532B8
+
+- Table 0x00553360: [0x00553360]=1, [0x00553364]=0, [0x00553368]=1, [0x0055336C]=1
+  (`0x005532C0 adr r1,#0x9c` -> 0x00553360; 0x005532C4 `ldr.w r0,[r1,r0,lsl#2]`). So
+  alignment type 0 -> 1, 1 -> 0, 2 -> 1, 3 -> 1; invalid (r0 >= 4, 0x005532BC/0x005532BE) -> 1
+  (0x00553320 `movs r0,#1`).
+- The result is stored at `AlignWithObjectAction+0xFC` (ctor 0x0055342A `str.w r0,[r4,#0xfc]`).
+- **The enum it indexes is `Anki::Cozmo::PreActionPose::ActionType`**, not a distinct
+  "PreActionType". Evidence: `DriveToAlignWithObjectAction::DriveToAlignWithObjectAction`
+  0x0055C3A0 takes the result of `GetPreActionTypeFromAlignmentType` (0x0055C3A0+0x? line 28)
+  and passes it to `IDriveToInteractWithObject::IDriveToInteractWithObject`, whose mangled symbol
+  is `_ZN4Anki5Cozmo26IDriveToInteractWithObjectC1ERNS0_5RobotERKNS_8ObjectIDERKNS0_13PreActionPose10ActionTypeEfbfbNS_7RadiansEb`
+  (4th arg = `PreActionPose::ActionType const&`).
+- **Native enum values** (`PreActionPose::ActionType`): `Block::GeneratePreActionPoses`
+  0x004E5808 dispatches on it with `cmp r5,#5` / `bhi` (0x004E5958/0x004E595A) and
+  `tbh [pc,r5,lsl#1]` (0x004E595E, table 0x004E5962 = halfwords `06 00 75 00 c7 00 20 02 15 01 8b 01`):
+  0 -> 0x004E596E, 1 -> 0x004E5A4C, 2 -> 0x004E5AF0, 3 -> 0x004E5DA2, 4 -> 0x004E5B8C, 5 -> 0x004E5C78.
+  `PreActionPose::GetVisualizeColor` 0x0050D7D0 also maps values 0,1,2,3,5 to colors and
+  accepts up to 6 (`cmp r1,#6` / `movhi r0,#0`), so the enum has entries 0..6.
+- **Enum names: UNKNOWN from the shipped binary.** There is no `EnumToString(PreActionPose::ActionType)`
+  symbol and no name table; `PreActionPose::GetVisualizeColor` maps to colors only. The names in
+  `re-analysis/MANIPULATION.md` (Docking 0, PlaceRelative 1, PlaceOnGround 2, Entry 3, Rolling 4,
+  Flipping 5, None 6) are there explicitly marked **INFERRED**, and the only nearby string
+  "PlaceOnGround" (file 0x00E0704) is part of `IDockAction::SetPlaceOnGround(bool)`, not an enum name.
+  Treat the names as authority-6/inferred; the values are native.
+- Consequence for M13-016: alignment type **1 -> pre-action type 0**, alignment types 0, 2, 3 and
+  invalid -> pre-action type **1**.
+
+### Q2b. The flag at `action+0xBB = 2`
+
+- `+0xBB` is `IDockAction`'s **`DockingMethod`** field. It is set by
+  `DriveToPickupObjectAction::SetDockingMethod(DockingMethod)` 0x0055C584:
+  0x0055C59E `ldr.w r1,[r5,#0xf8]`; 0x0055C5A2 `strb.w r4,[r1,#0xbb]` (writes the argument to
+  `this->[+0xF8]+0xBB`). The IDockAction ctor 0x005502D8 leaves it at its default 0 (the
+  `stm r0!,{r2,r3,r6}` at 0x005503AA stores `r3=0x100` at +0xB8, i.e. +0xBB = 0x00).
+- **Values** (`Anki::Cozmo::DockingMethod`, `DockingMethodFromString` 0x007C013C):
+  - `BLIND_DOCKING` = 0 (0x007C0160 `movs r6,#0`; string 0x00C204FF)
+  - `TRACKER_DOCKING` = 1 (0x007C0190 `movs r0,#1`; string 0x00C2050D)
+  - `HYBRID_DOCKING` = 2 (0x007C01AA `movs r0,#2`; string 0x00C2051D)
+  - `EVEN_BLINDER_DOCKING` = 3 (0x007C01C4 `movs r1,#3`; string 0x00C2052C)
+- **Use**: `IDockAction::CheckIfDone` 0x005521AC passes it as the 14th argument
+  (`DockingMethod`) of `DockingComponent::DockWithObject(...)`: 0x00552288
+  `ldrb.w r5,[r4,#0xbb]`; 0x005522AE `blx DockingComponent::DockWithObject`.
+  So for `AlignWithObjectAction` alignment type 1, +0xBB = 2 means the dock runs with
+  **HYBRID_DOCKING**; every other alignment type leaves it at the ctor default 0 (BLIND_DOCKING).
+
+---
+
+## Q3. `WorkoutComponent::ShouldPlayEightiesMusic` 0x00573E30 (M13-010)
+
+Whole body 0x00573E30..0x00573E7F, disassembled:
+
+- 0x00573E34 `ldrb r0,[r4,#0x11]`; 0x00573E36 `cbz r0,#0x573e3c` -> if **+0x11 == 0** (not yet
+  evaluated) it computes; else 0x00573E38 `ldrb r5,[r4,#0x10]` and returns that cached value.
+- Compute:
+  - 0x00573E3C `ldr r1,[r4,#0xc]` (the current workout pointer), 0x00573E3E `ldr r0,[r4,#0x14]`
+    (the robot), 0x00573E40 `adds r1,#0x18` -> `MoodScorer` is at **workout+0x18**.
+  - 0x00573E42 `blx WorkoutConfig::MoodScoreHelper(robot, workout+0x18)`.
+    `MoodScoreHelper` 0x00573B70: if the scorer's entry vector is non-empty (`ldrd r2,r3,[r1]`;
+    `cmp r2,r3`; `itt eq; moveq r0,#0; bxeq lr`), it calls `MoodScorer::EvaluateEmotionScore(scorer,
+    robot->moodManager at robot+0x440)` (0x00573B86), `roundf`s the float (0x00573B8A) and returns
+    it as an **unsigned int** (`vcvt.u32.f32` 0x00573B92, so a negative/zero score becomes 0);
+    an empty scorer returns 0.
+    `EvaluateEmotionScore` 0x0067C9B8 sums, for each scorer entry with a flag at entry+0x10, the
+    `GraphEvaluator2d::EvaluateY` of the entry's graph over `Emotion::GetHistoryValueTicksAgo(..., 0x3c)`
+    (60 ticks ago), and returns 0 if any |value| < 1e-5, else the mean of the entries.
+    So the "score" is **round(mean emotion-graph value of the current workout's MoodScorer)**, used
+    only as a non-zero gate.
+  - 0x00573E48 `cbz r0,#0x573e70` -> if the score is 0, skip the roll (result stays 0).
+  - 0x00573E4A `ldr r0,[r4,#0x14]`; 0x00573E4C `blx Robot::GetRNG`; 0x00573E50
+    `vmov.f64 d0,#1.0` (r2/r3); 0x00573E58 `blx RandomGenerator::RandDbl(1.0)`.
+  - 0x00573E5C `vldr d0,[pc,#0x20]` -> 0x00573E80 = bytes `9a 99 99 99 99 99 b9 3f` =
+    **double 0.1**; 0x00573E64 `vcmpe.f64 d1,d0`; 0x00573E6C `it mi`; 0x00573E6E `movmi r5,#1`.
+    So the result is true iff `RandDbl(1.0) < 0.1` **and** the mood score was non-zero.
+- Cache: 0x00573E70 `movs r0,#1`; 0x00573E72 `strb r0,[r4,#0x11]` -> **+0x11 = 1 (the
+  "already evaluated" flag)**; 0x00573E74 `strb r5,[r4,#0x10]` -> **+0x10 = the cached boolean
+  answer**. The `else` branch reads +0x10, so the answer is cached at +0x10 and +0x11 only marks it done.
+
+Summary: score = `round(EvaluateEmotionScore(currentWorkout->MoodScorer at workout+0x18, robot's
+MoodManager))`, roll = `RandDbl(1.0)`, threshold = `0.1`, cache = flag at +0x11 and answer at +0x10.
+
+---
+
+## Q4. `DriveOffChargerContactsAction` +0x44 = 7 (M13-013)
+
+- The field is the **`RobotActionType`** of the action runner, defined on **`IActionRunner`**.
+  `IActionRunner::IActionRunner(Robot&, string, RobotActionType, unsigned char)` 0x0053FDB0
+  stores its 3rd explicit argument (r3) at +0x44: 0x0053FDCC `str r3,[r5,#0x44]`. The same
+  argument drives the completed-union `switch(param_4)` (0x0053FE?..) in that ctor.
+- The class chain is `DriveOffChargerContactsAction` -> `DriveStraightAction` -> `IAction` ->
+  `IActionRunner`. `DriveStraightAction`'s own `IAction::IAction` call passes RobotActionType **8**
+  (0x00547120 `movs r3,#8`); `DriveOffChargerContactsAction`'s ctor then overwrites +0x44 with 7
+  (0x00558276 `movs r1,#7`; 0x00558278 `str r1,[r4,#0x44]`).
+- **7 = `RobotActionType::DRIVE_OFF_CHARGER_CONTACTS`**. `RobotActionTypeFromString` 0x0075A448
+  builds the string->value map; the string "DRIVE_OFF_CHARGER_CONTACTS" (0x00C1604E) is paired with
+  value 7 (0x0075A59E `movs r0,#7`, stored at the pair's value slot 0x005? -> see 0x0075A5A6
+  `strd r0,r7,[sp,#0x9c]`), and the neighbouring known entries confirm the layout: "DRIVE_STRAIGHT"
+  = 8 (matches DriveStraightAction's `movs r3,#8`), "FLIP_BLOCK" = 15, "MOUNT_CHARGER" = 17.
+
+---
+
+## Q5. `DriveOffChargerContactsAction` SDK `SetTracksToLock(0)` (M13-013)
+
+- Constructor 0x00558228: 0x0055827A `ldr r0,[r0]` (context); 0x0055827C `blx
+  CozmoContext::IsInSdkMode()`; 0x00558280 `cmp r0,#1`; 0x00558282 `bne 0x55828C`; 0x00558284
+  `mov r0,r4`; 0x00558286 `movs r1,#0`; 0x00558288 `blx IActionRunner::SetTracksToLock(unsigned char)`.
+  **The argument is 0**, and the call is in the **constructor**, only when `IsInSdkMode() == 1`.
+- `IActionRunner::SetTracksToLock` 0x00540918:
+  - 0x0054091C `ldr r2,[r0,#0x18]`; 0x0054091E/0x00540920 `r3 = 0x2000001`; 0x00540924 `cmp`;
+    0x00540926 `bne 0x54092E`; 0x00540928 `strb.w r1,[r0,#0x54]` -> if the action state (+0x18) is
+    **0x2000001 (not started)** it writes the argument to **`IActionRunner+0x54` (the
+    `tracksToLock` byte)**; 0x0054092E..0x0054093C logs `Util::sWarningF("IActionRunner.SetTracksToLock",
+    "Trying to set tracks to lock while running")` and does nothing.
+- It is **not a robot-message send.** `+0x54` is a pre-run configuration byte, consumed by
+  `IActionRunner::Update` 0x00540370: 0x00540438 `ldrb.w sb,[r4,#0x54]`; 0x00540440
+  `blx MovementComponent::AreAnyTracksLocked`; if the required tracks are locked it warns
+  "not running because required tracks are locked". The actual lock/unlock is applied to the
+  in-process `MovementComponent` (`robot+0x254`) through `MovementComponent::UnlockTracks`
+  (FUN_004F0EB2) on interrupt/destruction. So `SetTracksToLock(0)` = **clear the required-track
+  lock mask to 0 (lock nothing)** for this action; no robot message.
+
+---
+
+## Q6. `BehaviorDriveOffCharger` `robot+0x355` (M13-017)
+
+- `robot+0x355` is the robot's **`OffTreadsState`** (current state), not "wait-for-on-treads".
+  Evidence: `Robot::CheckAndUpdateTreadsState(RobotState const&)` 0x00511E00 sets it and emits the
+  state message; the enum is `Anki::Cozmo::OffTreadsState`
+  (`EnumToString(OffTreadsState)` 0x0078DF40, `OffTreadsStateFromString` 0x0078DF58).
+- Enum values (`OffTreadsStateFromString` 0x0078DF58, pairs string -> value):
+  **OnTreads = 0, InAir = 1, OnBack = 2, OnLeftSide = 3, OnRightSide = 4, OnFace = 5, Falling = 6**
+  (0x0078DF58 builds "OnTreads".."Falling" with value bytes 0..6 at `local_74`, `local_64`, `local_54`,
+  `local_44`, `local_34`, `local_24`, `local_14`).
+- **Writer**: only `Robot::CheckAndUpdateTreadsState` 0x00511E00. It copies the pending state
+  `robot+0x356` into `robot+0x355` at 0x00512088 `ldrb.w r0,[sb,#0x356]` / 0x0051208E
+  `strb.w r0,[sb,#0x355]`, then constructs and sends `RobotOffTreadsStateChanged` (0x00512098
+  `blx ExternalInterface::MessageEngineToGame::MessageEngineToGame(RobotOffTreadsStateChanged&&)`).
+  A whole-decompilation scan finds no other store to `+0x355`.
+- Behaviour reads:
+  - `BehaviorDriveOffCharger::InitInternal` 0x005C0B18: 0x005C0B54 `ldrb.w r0,[r5,#0x355]`;
+    `if (== 0)` (OnTreads) -> `TransitionToDrivingForward`, else logs "WaitForOnTreads" (0x005C0B5A..)
+    and does not transition.
+  - `BehaviorDriveOffCharger::UpdateInternal` 0x005C0DA8: 0x005C0DB0 `ldrb.w r0,[r5,#0x34a]`
+    (on-contacts); if off-contacts -> record time, return 2; else 0x005C0DB6 `ldrb.w r0,[r5,#0x355]`;
+    `if (== 0)` -> `TransitionToDrivingForward`, else `StopActing(false,false)` and log
+    "WaitForOnTreads".
+  So the wait condition is `OffTreadsState == 0 (OnTreads)`; the stack's `OffTreadsState` field is the
+  right target, but the value compared is **0 = OnTreads**, and it is a separate field from
+  `robot+0x34A` (on-contacts).
+
+---
+
+## Q7. `BehaviorKnockOverCubes::TransitionToPlayingReaction` 0x005C3908 (M13-014)
+
+### Q7a. The store into the object chain  -  **the record's chain is wrong**
+
+The job (and the approved inventory M13-014) states the store is
+`robot->[+0x264]->[+0x18]->[+0xC] = 1`. The instructions at the cited addresses are:
+
+```
+0x005C3946  ldr      r0, [r5, #0x34]      ; r5 = robot (param_1); r0 = robot->[+0x34]
+0x005C3948  movs     r1, #1
+0x005C394A  ldr.w    r0, [r0, #0x94]      ; r0 = robot->[+0x34]->[+0x94]
+0x005C394E  strb     r1, [r0, #0xc]       ; [robot->[+0x34]->[+0x94]]+0xC = 1
+```
+
+The decompilation agrees (`*(undefined1 *)(*(int *)(*(int *)(param_1 + 0x34) + 0x94) + 0xc) = 1;`).
+The chain is **`robot+0x34` -> `+0x94` -> `+0xC`**, not `robot+0x264` -> `+0x18` -> `+0xC`.
+
+Identity:
+- `robot+0x34` = the robot's `BlockWorld*` (same base used by `BlockWorld::GetLocatedObjectByIdHelper`
+  throughout, e.g. FlipBlockAction 0x0055EDE4 `ldr r0,[r0,#0x34]`).
+- `BlockWorld+0x94` = the `BlockConfigurationManager*` (`BlockWorld::OnObjectPoseChanged` 0x00624808
+  line 76 calls `(*(BlockConfigurationManager **)(this + 0x94), ...)`).
+- `BlockConfigurationManager+0xC` = a byte flag initialised 0 by the ctor 0x00616B58 (0x00616B76
+  `strb r0,[r4,#0xc]`) and read by `BlockConfigurationManager::Update` 0x00616D7C (0x00616D84
+  `ldrb r0,[r4,#0xc]`; 0x00616D86..): when it is 0 and no object moved past threshold, Update
+  returns early; when it is 1, Update runs `UpdateAllBlockConfigs` unconditionally, then clears it
+  to 0 (decomp line 33). So setting it to 1 is **"force the block-configuration manager to recompute
+  all block configurations (stacks/pyramids) on the next Update"**  -  the dirty/force-update flag.
+  The same store appears in `BlockWorld::UpdateObjectOrigins` 0x00620534 (0x00620534 line 186) and
+  `CarryingComponent::SetObjectAsAttachedToLift` 0x00632CC4 (line 341), consistent with
+  "configuration changed, recompute".
+
+This is a real contradiction of M13-014's evidence wording (and of the implementer's MISSING item 10),
+not a behaviour change to the rest of the path.
+
+### Q7b. Success/failure trigger selection by the tipped-object count at +0x14C  -  **confirmed**
+
+```
+0x005C3950  ldr.w    r0, [r4, #0x14c]     ; r4 = this; r0 = size/count of the tipped-object set
+0x005C3954  cbz      r0, #0x5C396E        ; 0 -> failure path
+0x005C3956  mov      r0, r4               ; success path:
+0x005C3958  movs     r1, #0xd
+0x005C395A  movs     r2, #1
+0x005C395C  blx      IBehavior::BehaviorObjectiveAchieved(0xD, true)
+0x005C3960  mov      r0, r4
+0x005C3962  movs     r1, #0
+0x005C3964  blx      IBehavior::NeedActionCompleted(0)
+0x005C3968  add.w    r0, r4, #0x15c       ; success trigger
+0x005C396C  b        #0x5C3972
+0x005C396E  add.w    r0, r4, #0x160       ; failure trigger
+0x005C3972  ldrb.w   r1, [r4, #0xd9]      ; then the streamline gate (Q8)
+```
+
+So the tipped-object set size at `+0x14C` (the `std::set` at +0x144, zeroed by
+`PrepareForKnockOverAttempt` 0x005C3780 and filled by `HandleObjectUpAxisChanged` 0x005C3A98)
+selects the success trigger `+0x15C` (plus objective 0xD and `NeedActionCompleted(0)`) when
+non-zero, and the failure trigger `+0x160` when zero. Confirmed exactly as the inventory says.
+
+---
+
+## Q8. `BehaviorKnockOverCubes` streamline gate +0xD8/+0xD9 (M13-014)
+
+Both are bytes on the behaviour base class `IBehavior` (not on Robot).
+
+- **+0xD9 = `alwaysStreamline`**, the JSON config key. `IBehavior::ReadFromJson` 0x005BBFB4:
+  0x005BC208 `add r1,pc` -> 0x00BF2AF9 `"alwaysStreamline"`; 0x005BC216 `add.w r2,r5,#0xd9`
+  (destination); 0x005BC21E `blx JsonTools::GetValueOptional<bool>`.
+- **+0xD8 = a runtime streamline/resume flag**, computed by `IBehavior::Init` 0x005BCB54 from the
+  robot's `BehaviorManager` (robot+0x44):
+  ```
+  0x005BCCAA  ldr      r0, [r4, #0x2c]     ; robot
+  0x005BCCAC  ldr      r0, [r0, #0x44]     ; BehaviorManager
+  0x005BCCAE  ldr      r1, [r0, #0x58]     ; current behavior class (0x55 = none/default)
+  0x005BCCB0  cmp      r1, #0x55
+  0x005BCCB2  itte     ne
+  0x005BCCB4  ldrbne.w r0, [r0, #0x5c]     ; switch mode: 0="soft", 1="hard"
+  0x005BCCB8  eorne    r0, r0, #1          ; +0xD8 = NOT hard  (soft -> 1)
+  0x005BCCBC  moveq    r0, #0             ; no current class -> 0
+  0x005BCCC2  strb.w   r0, [r4, #0xd8]
+  ```
+  `BehaviorManager::BehaviorManager` 0x005A0864 initialises +0x58 = 0x55 (0x005A0864 line 62) and
+  +0x5C = 0 (line 65). `BehaviorManager::SwitchToRequestedSpark` 0x005A4198 sets
+  `+0x58 = +0x60` (0x005A4198 line 49) and `+0x5C = +0x64` (line 50), and logs the two modes as
+  the strings at 0x00BF0B78 `"soft"` / 0x00BF0B7D `"hard"`. So +0xD8 = 1 when the behavior was
+  entered by a **soft** spark switch (resume), 0 for a hard switch or no current behavior.
+  It is not a JSON key; it is derived at Init.
+- **Branches**:
+  - `InitInternal` 0x005C31A2: 0x005C31B4 `ldrb.w r0,[r5,#0xd9]`; 0x005C31B8 `cbnz 0x5C31C0`;
+    0x005C31BA `ldrb.w r0,[r5,#0xd8]`; 0x005C31BE `cbz 0x5C31CC`. If **+0xD9 != 0 or +0xD8 != 0**
+    -> `TransitionToKnockingOverStack` (0x005C31C4); else -> `TransitionToReachingForBlock`
+    (0x005C31D0). Streamline **skips the reach-for-block phase** and goes straight to knocking over.
+  - `TransitionToKnockingOverStack` 0x005C34A8: 0x005C34EA `ldrb.w r0,[sl,#0xd9]`;
+    0x005C34EE `vldr s16,[pc,#0x1c8]` -> 0x005C36B8 = **0.0**; 0x005C34F2 `cbnz 0x5C350A`;
+    0x005C34F4 `ldrb.w r0,[sl,#0xd8]`; 0x005C34F8 `cbnz 0x5C350A`. If either is set, `maxTurn`
+    stays **0.0**; else 0x005C34FA `ldr.w r0,[sl,#0x140]` (attempt count), 0x005C34FE
+    `adr r1,#0x1bc` -> 0x005C36BC = **pi/2**, 0x005C3500 `cmp r0,#0`, 0x005C3504 `addgt r1,#4`
+    -> 0x005C36C0 = **0.0**. So streamline (or a retry, +0x140 > 0) sets `maxTurn = 0` (no turn
+    towards the last face pose); the first non-streamline attempt uses pi/2.
+  - `TransitionToPlayingReaction` 0x005C3908: 0x005C3972 `ldrb.w r1,[r4,#0xd9]`; 0x005C3976
+    `cbnz 0x5C39CA`; 0x005C3978 `ldrb.w r1,[r4,#0xd8]`; 0x005C397C `cbnz 0x5C39CA`. If either is
+    set, it skips playing the `TriggerLiftSafeAnimationAction(trigger +0x15C/+0x160, 1, 1, 0,
+    60.0, 0)` (0x005C39A4); else it plays it. Streamline **suppresses the reaction animation**.
+
+---
+
+## Contradictions / records affected
+
+1. **M13-014 (and MISSING item 10)**  -  the store at 0x005C3946..0x005C394E is
+   `robot->[+0x34]->[+0x94]->[+0xC] = 1`, i.e. `BlockWorld->BlockConfigurationManager->dirty flag`,
+   **not** `robot->[+0x264]->[+0x18]->[+0xC]`. The `+0x264->+0x18` chain is the *callback's*
+   whiteboard write (0x005C3DDE..0x005C3DEA, `str r1,[r0,#0x70]`), a different path. The record's
+   `TransitionToPlayingReaction` clause must be re-cited/reworded.
+2. **M13-002 (and MISSING item 1)**  -  the role of each constructor offset is now settled (Q1); the
+   record should state the roles, not just the values. +0x12C = speed, +0x130 = extra drive distance,
+   +0x134 = lift height, +0x138 = lift trigger distance, +0x13C = queued-lift id, +0x140 =
+   shouldCheckPreActionPose.
+3. **M13-016 (and MISSING item 6)**  -  the numeric returned by `GetPreActionTypeFromAlignmentType`
+   indexes `PreActionPose::ActionType`; values 0..6 are native, **names are not in the shipped
+   binary** (the repo's names are INFERRED). Alignment type 1 -> 0; 0/2/3/invalid -> 1.
+4. **M13-013 (MISSING items 7/8)**  -  +0x44 = `RobotActionType` (7 =
+   `DRIVE_OFF_CHARGER_CONTACTS`); `SetTracksToLock(0)` is a local flag write to `IActionRunner+0x54`,
+   not a robot message.
+5. **M13-017 (MISSING item 16)**  -  `robot+0x355` = `OffTreadsState` (0 = OnTreads); it is not the
+   on-contacts flag (`robot+0x34A`). The stack should model the enum, not `OffTreadsState == OnTreads`
+   as an opaque "wait".
+6. **M13-010 (MISSING item 12)**  -  `ShouldPlayEightiesMusic` score = round of the workout's
+   `MoodScorer` mean graph value (via `MoodScoreHelper`), roll `RandDbl(1.0) < 0.1`, cache flag at
+   +0x11 and answer at +0x10.
+7. **M13-014 (MISSING item 11)**  -  +0xD9 = JSON `alwaysStreamline`; +0xD8 = runtime soft/hard
+   switch flag computed in `IBehavior::Init`; both bypass the reach and the reaction animation and
+   zero the maxTurn.
+
+## Open questions for the manager
+
+- Whether the `PreActionPose::ActionType` **names** should be recorded as authority-6/inferred or
+  left UNKNOWN (values are EXACT_SOURCE; names have no shipped table).
+- Whether the `BlockConfigurationManager+0xC` dirty flag deserves its own NEW record, or is folded
+  into M13-014's evidence (it is reached from M13-014 but is a BlockWorld/BlockConfigurations
+  behaviour).
+- `MoveLiftToHeightAction` `Preset=2` (used by `FlipBlockAction::CheckIfDone`) is a M12/manipulation
+  preset; its name is not read here (the enum only has the string `UnknownPreset` at file 0x00548F14
+  nearby). M13-002 only needs the numeric.
+
+*Read-only extraction. Nothing outside `.scratch/B-M13/` was changed.*
+
+**M13-018, gap pass 3 follow-up (2026-09-28):** the heuristic's per-goal Dijkstra and the reflected primitive set it walks are now read and folded into M13-018's evidence (Appendix F).
+
+
+## Appendix F: gap pass 3 heuristic extraction report (2026-09-28)
+
+﻿# B-M13 extractor — `ExpandCollisionStatesFromGoal` edge weights (resolves M13-018's last UNKNOWN)
+
+Scope: M13-navigation, the only UNKNOWN blocking record **M13-018** — the exact edge weights used by
+`xythetaPlannerImpl::ExpandCollisionStatesFromGoal` (entry 0x0085998E, body 0x00859BF0..0x00859FBD)
+and the meaning of its return, its loop bounds, and the 1000.0 comparison in `InitializeHeuristic`.
+
+Binary: `resources/lib/armeabi-v7a/libcozmoEngine.so`, file VAs, Thumb (`CS_MODE_THUMB`).
+The Ghidra decompilation under `re-analysis/decomp/libcozmoEngine/` was used only to navigate; every
+instruction below was re-read from the `.so`. Read-only: nothing outside `.scratch/B-M13/` was written.
+
+Legend: `+0xNN` = byte/word offset on the object named in the sentence. All addresses are file VAs.
+
+---
+
+## Direct answers
+
+### 1. What it starts from, and what "leaving soft collision" means for the return
+
+It starts from **the goal StateID itself**, not its neighbours.
+
+* It reads the goal StateID (`0x00859C04 ldr r0,[r5]`), seeds the per-state cost map at `planner+0xAC`
+  to 0 for that goal (`0x00859C0A mov r0,r8` with `r8=this+0xAC`; `0x00859C10 movs r1,#0`;
+  `0x00859C12 str r1,[r0]`), and pushes the goal onto the OpenList with cost 0
+  (`0x00859C28 ldr r0,[r5]`; `0x00859C2A str r0,[sp,#0x80]`; `0x00859C2C..0x00859C32 OpenList::insert`,
+  `r2=0`).
+
+Each iteration pops the smallest-cost state (`topF` 0x00859C6E, `pop` 0x00859C78), builds a `State`
+from the popped StateID (`0x00859C84..0x00859C88`), and calls
+`xythetaEnvironment::IsInSoftCollision` (`0x00859CA2 blx`). `IsInSoftCollision` 0x00851708 returns 1
+when a polygon in the heading bucket contains the point, 0 when none does (free space).
+
+* **"Leaving soft collision" = the first popped state for which `IsInSoftCollision` returns 0.**
+  When that happens the function stops (`0x00859CA8 cmp r0,#0`; `0x00859CAE beq.w #0x859F50`), logs
+  `"expanded %u states for heuristic, reached free space %d times with cost of %f and have %lu in
+  heurMap"` (string 0xC29F9F; `0x00859F50..0x00859F7A`), and returns the **popped accumulated cost**
+  (`0x00859F7E..0x00859F9C` cleanup, `0x00859FAE vmov r0,s18`).
+* So the returned value is the accumulated traversal cost from the goal, through states that are all
+  in soft collision, out to the first free state reached.
+
+Note: `InitializeHeuristic` only calls this function when the goal is itself in soft collision
+(see step 2); if the goal is already free it uses cost 0.0 and never calls it.
+
+### 2. The edge weight, the successor helper, and how the accumulated cost is stored/compared
+
+**Edge weight = parent accumulated cost + `MotionPrimitive+4` (primitive traversal cost) + the
+soft-collision penalty term. It is both, not one or the other.**
+
+* `SuccessorIterator::Next` 0x0085110C writes the successor cost to `iterator+0x24`:
+  * `0x0085150A vldr s2,[r5,#0x14]` = parent accumulated cost (stored at `iterator+0x14` by the ctor
+    from the 4th argument, 0x0085041E `str r3,[r0,#0x14]`);
+  * `0x00851516 vldr s4,[r1,#4]` = the primitive's traversal cost `MotionPrimitive+4`;
+  * `0x0085151A vadd.f32 s2,s2,s4` = parent + primitive;
+  * `0x0085151E vadd.f32 s0,s0,s2` = + the soft-collision sum `s0`;
+  * `0x00851522 vstr s0,[r5,#0x24]`.
+* The soft-collision term is the same one the A* successor uses: per containing polygon with penalty
+  `< 1000.0` (hard threshold loaded at `0x00851162`, literal 0x008514D8 = 0x447A0000 = 1000.0f),
+  `base + penalty * IntermediatePosition+0x10`, summed over the sampled intermediate poses
+  (non-turning `0x0085137E vldr s0,[r7,#0x44]`; `0x0085138A bge`; `0x0085138C..0x00851398`;
+  turning `0x0085146E..0x00851490`; `base` 0.0/1000.0 chosen at `0x008512FA..0x0085130A`).
+
+**Which helper produces the successors.** Both, layered:
+* `xythetaEnvironment::GetSuccessors` 0x00855D78 is a 24-byte wrapper that dereferences the StateID and
+  tail-calls the `SuccessorIterator` constructor (thunk 0x004CEA08 -> 0x008503D8).
+* The caller then drives the iterator with `SuccessorIterator::Done` 0x0085043A and
+  `SuccessorIterator::Next` 0x0085110C, reading the successor StateID at `iterator+0x1C` and the
+  successor cost at `iterator+0x24`.
+* **Important, and not in the record:** `GetSuccessors` is called here with its 5th argument = **1**
+  (`0x00859E62 movs r0,#1`; `0x00859E66 str r0,[sp]`; `0x00859E6A blx #0x4CED98`). The ctor stores
+  that byte at `iterator+0x2C` (`0x00850428 strb.w lr,[r0,#0x2C]`, `lr = [sp,#8]`). `Next`/`Done` read
+  it and select the primitive set: `0x00851130 cmp r2,#0` / `0x00851132 it eq` / `0x00851134 moveq r3,r0`
+  with `r0 = env+0x14`, else `r3 = env+0x20`; `Done` does the same at `0x00850448..0x0085044C`.
+  `env+0x14` is the forward/normal primitive set (`ParseMotionPrims`, 0x00852014, resizes and fills
+  `this+0x14`); `env+0x20` is the reflected set built by `PopulateReverseMotionPrims` 0x008544C0
+  (reads `this+0x14`, resizes and writes `this+0x20`, negating the end-pose x/y and rewriting the
+  theta byte: `0x008544C0` body, `local_140 = CONCAT22(-...,-(short)local_140)`).
+  The A* `ExpandState` 0x0085A34C passes **0** (`0x0085A3D8 movs r0,#0`; `0x0085A3DA str r0,[sp]`;
+  `0x0085A3DE blx`), i.e. the forward set. So the heuristic expansion walks the **reflected/reverse**
+  primitive set, which is why its costs mirror a forward move toward the goal.
+
+**How the accumulated cost is stored/compared.** No A* `StateTable`. Three structures:
+* **OpenList** (min-`f`, `std::multimap<float,StateID>` ordered by `std::less<float>`, 0x0084E4E8) on the
+  stack at `sp+0x84`; `topF` returns the smallest key, `pop` removes the root and returns its StateID.
+  Goal inserted with 0 (`0x00859C32`); successors inserted with their cost
+  (`0x00859EC0 mov r0,r7` (OpenList); `0x00859EB8 vmov r2,s20`; `0x00859EC2 blx OpenList::insert`).
+* A **visited set** `std::unordered_set<unsigned int>` at `sp+0x90` (the `__hash_table<unsigned_int,...>`
+  at `local_58`). Popped states are inserted (`0x00859D06..0x00859E58`); a successor already present is
+  skipped (`0x00859EAC mov r0,r5` (set at sp+0x90); `0x00859EAE str r6,[sp,#0x2C]`;
+  `0x00859EB0 blx hash_table<uint>::find`; `0x00859EB6 bne` back to the loop).
+* The **per-state best-cost map** at `planner+0xAC` — the same `std::unordered_map<unsigned int,float>`
+  that `heur` 0x0085A780 memoizes in. The goal is seeded to 0; each expanded state is inserted with its
+  cost if absent (`0x00859CDA operator_new(0x10)`; `0x00859CE6 vstr s18,[r6,#0xC]`;
+  `0x00859CF0..0x00859CF6 __node_insert_unique` into `this+0xAC`) or lowered if the new cost is smaller
+  (`0x00859CC6 vldr s0,[r0,#0xC]`; `0x00859CCA vcmpe.f32 s18,s0`; `0x00859CD4 vstrmi s18,[r0,#0xC]`).
+  (A consequence for `heur`: a state expanded here is later returned from the memo map directly rather
+  than via `heur_internal`.)
+
+### 3. The exact return
+
+* **Popped state no longer in soft collision** (`IsInSoftCollision` returns 0): returns the accumulated
+  cost of that popped state — the OpenList key read by `topF` into `[sp,#0x24]`
+  (`0x00859C6E..0x00859C72`) and moved to `s18` at `0x00859CAA vmov s18,r1`; `0x00859FAE vmov r0,s18`.
+* **OpenList empties before a free state is found:** returns **0.0**. `0x00859C58 cmp r0,#0`;
+  `0x00859C5A bne.w #0x859F0C`; log `"ran out of open list entries during ExpandStatesForHeur after %u
+  exps!"` (string 0xC2A083); `0x00859F4A vmov.f32 s18,s16`; `b #0x859FA0`. `s16` = literal at 0x00859FC0
+  = 0x00000000.
+* **Run/continue flag is 0 (abort):** returns **0.0**. `0x00859C5E ldr.w r0,[r4,#0x90]` (flag pointer);
+  `0x00859C64 ldrb r0,[r0]`; `0x00859C66 cmp r0,#0`; `0x00859C68 beq.w #0x859F4A` -> `s18 = s16 = 0.0`.
+* **Expansion cap exceeded:** returns the **last popped cost** (`s18`, already set for the current
+  iteration at `0x00859CAA`). `0x00859EC8 ldr r6,[sp,#0x1C]`; `0x00859ECA adds r6,#1`;
+  `0x00859ECC cmp.w r6,#0x3E8`; `0x00859ED0 bls.w #0x859C52`; fall-through warns
+  `"exceeded max allowed expansions of %d"` (string 0x85A080) with `r3 = 0x3E8` (1000)
+  (`0x00859EE4 mov.w r3,#0x3E8`), then `0x00859F9C..0x00859FA0` and returns `s18`.
+
+### 4. Loop bounds and the 1000.0 comparison in `InitializeHeuristic`
+
+* **Expansion cap:** counter initialised 0 at `0x00859C4C movs r6,#0`, stored each iteration at
+  `0x00859C7C str r6,[sp,#0x1C]`, incremented at the end of an expansion (`0x00859ECA adds r6,#1`),
+  and the loop continues while the counter is `<= 1000` (`0x00859ECC cmp.w r6,#0x3E8`;
+  `0x00859ED0 bls.w #0x859C52`). It therefore permits up to 1001 popped soft-collision expansions
+  before giving up, while the warning prints **1000** (`0x00859EE4 mov.w r3,#0x3E8`, string 0x85A080).
+* **`InitializeHeuristic` 0x008598DC, per goal:** if the goal is not in soft collision the cost is 0.0
+  (`0x00859980 blx IsInSoftCollision`; `0x00859984 cmp r0,#0`; `0x00859986 beq.w #0x859AB8`;
+  `0x00859AB8 vmov.f32 s20,s18`, `s18 = 0.0` from `0x00859946`). Otherwise it calls
+  `ExpandCollisionStatesFromGoal(goal)` and takes the return (`0x0085998A mov r0,r4`;
+  `0x0085998C mov r1,sb`; `0x0085998E blx`; `0x00859992 vmov s20,r0`).
+* **Comparison with 1000.0:** `0x008599E0 vcmpe.f32 s20,s16` with `s16 = 0x447A0000 = 1000.0f`
+  (literal at 0x00859B90, loaded at `0x00859942 vldr s16,[pc,#0x24C]`); `0x008599E8 ble #0x859ABC`.
+  So a goal with cost **<= 1000.0 survives**; a goal with cost **> 1000.0 is removed** with the warning
+  `"very high cost of _costOutsideHeurMap = %f, so removing goal %d"` (string 0xC29F5F;
+  `0x008599F2..0x00859A06`) and a swap-remove (`0x00859A28..0x00859AB6`).
+* **Stored value:** the surviving goal's id byte and cost go to the `heurMap` entry
+  (`0x00859AC4 strb r1,[r0,r6]`; `0x00859ACA vstr s20,[r0,#4]`) — `heurMap` is
+  `vector<pair<unsigned char,float>>` (resize thunk 0x00859BB8), cost at entry+4, consistent with
+  `heur_internal` reading `vldr s18,[r2]` with `r2 = heurMap_begin + 4` (`0x0085A800 add r2,r7`,
+  `r7` starts 4 and advances 8; `0x0085A802 vldr s18,[r2]`).
+* **Return:** 1 iff any goal remains, else 0 (`0x00859ADE ldr r1,[r4,#8]`;
+  `0x00859AE0 movs r0,#0`; `0x00859AE2 cmp r5,r1`; `0x00859AE4 it ne`; `0x00859AE6 movne r0,#1`).
+
+---
+
+## Production-path steps (one row per behaviour-changing step)
+
+| step | what the original does | citation | record | class |
+|---|---|---|---|---|
+| P1 | `InitializeHeuristic` clears `heurMap` (planner+0xA0) and the `heur` memo map (planner+0xAC), then resizes `heurMap` to the goal count | 0x008598EA `ldr r1,[r0,#0xA0]!`; 0x008598F2..0x00859908 (clear); 0x0085990C `blx` (map clear); 0x00859914..0x0085991E `resize` | M13-018 (partial) | EXACT_SOURCE |
+| P2 | per goal: if `IsInSoftCollision(goal) == 0` cost = 0.0, else cost = `ExpandCollisionStatesFromGoal(goal)` | 0x00859980 `blx`; 0x00859986 `beq.w #0x859AB8`; 0x00859AB8 `vmov.f32 s20,s18`; 0x0085998E `blx`; 0x00859992 `vmov s20,r0` | NEW | EXACT_SOURCE |
+| P3 | drop a goal whose cost `> 1000.0` (keep `<= 1000.0`) and warn | 0x00859942 `vldr s16,[pc,#0x24C]` -> 0x00859B90 = 0x447A0000; 0x008599E0 `vcmpe.f32 s20,s16`; 0x008599E8 `ble #0x859ABC`; warning 0xC29F5F | M13-018 (partial) | EXACT_SOURCE |
+| P4 | store the surviving goal's id + cost at `heurMap` (+0 / +4) | 0x00859AC4 `strb r1,[r0,r6]`; 0x00859ACA `vstr s20,[r0,#4]` | M13-018 (partial) | EXACT_SOURCE |
+| P5 | return 1 iff any goal remains | 0x00859ADE..0x00859AE6 | M13-018 (partial) | EXACT_SOURCE |
+| P6 | `ExpandCollisionStatesFromGoal` starts from the goal StateID: seeds its own map entry to 0 and pushes the goal on the OpenList with cost 0 | 0x00859C04 `ldr r0,[r5]`; 0x00859C0A..0x00859C12; 0x00859C28..0x00859C32 | NEW | EXACT_SOURCE |
+| P7 | pop the smallest-cost state; if it is not in soft collision, log and return its accumulated cost | 0x00859C6C..0x00859C78 (topF/pop); 0x00859CA2 `blx`; 0x00859CAE `beq.w #0x859F50`; 0x00859F50..0x00859FAE | NEW | EXACT_SOURCE |
+| P8 | record each expanded state's best cost in the map at planner+0xAC (insert, or lower if smaller) | 0x00859CB6..0x00859CD4; 0x00859CDA..0x00859D02 | NEW | EXACT_SOURCE |
+| P9 | mark each expanded state in a `std::unordered_set<unsigned int>` at sp+0x90; skip successors already there | 0x00859D06..0x00859E58; 0x00859EAC..0x00859EB6 | NEW | EXACT_SOURCE |
+| P10 | generate successors with `GetSuccessors` and its 5th argument = 1, which makes `SuccessorIterator` iterate the reflected set env+0x20 (the A* path uses 0 -> env+0x14) | 0x00859E5A..0x00859E6A (`0x00859E62 movs r0,#1`; `0x00859E66 str r0,[sp]`); 0x00855D78; ctor 0x008503D8 store 0x00850428 `strb.w lr,[r0,#0x2C]`; 0x00851130..0x00851136; 0x00850448..0x0085044C; `PopulateReverseMotionPrims` 0x008544C0 | NEW | EXACT_SOURCE |
+| P11 | successor cost = parent accumulated cost + `MotionPrimitive+4` + soft-collision penalty (both terms) | 0x0085150A `vldr s2,[r5,#0x14]`; 0x00851516 `vldr s4,[r1,#4]`; 0x0085151A `vadd.f32`; 0x0085151E `vadd.f32`; 0x00851522 `vstr s0,[r5,#0x24]`; penalty 0x0085137E..0x00851398 and 0x0085146E..0x00851490; base 0x008512FA..0x0085130A | NEW | EXACT_SOURCE |
+| P12 | push each non-visited successor into the OpenList with that cost | 0x00859E9C `ldr r6,[sp,#0x5C]`; 0x00859EA0 `vldr s20,[sp,#0x64]`; 0x00859EB8..0x00859EC2 | NEW | EXACT_SOURCE |
+| P13 | expansion cap: increment the counter, continue while `<= 1000`, else warn with 1000 and return the last popped cost | 0x00859EC8..0x00859ED0; 0x00859EE4 `mov.w r3,#0x3E8`; string 0x85A080 | NEW | EXACT_SOURCE |
+| P14 | empty OpenList returns 0.0 after logging | 0x00859C58/0x00859C5A; 0x00859F0C..0x00859F4A; s16 at 0x00859FC0 = 0x0 | NEW | EXACT_SOURCE |
+| P15 | run/continue flag 0 (planner+0x90 -> byte) aborts and returns 0.0 | 0x00859C5E..0x00859C68; 0x00859F4A `vmov.f32 s18,s16` | M13-018 (partial) | EXACT_SOURCE |
+| P16 | `Next` applies the hard-collision threshold 1000.0 to decide soft vs hard while sampling the reflected primitive | 0x00851162 `vldr s18,[pc,#0x374]` -> 0x008514D8 = 0x447A0000; 0x0085138A `bge`; 0x0085147A `bge` | NEW | EXACT_SOURCE |
+
+---
+
+## Contradictions of existing records
+
+None. Every M13-018 evidence clause about this function is confirmed:
+
+* "a soft-collision Dijkstra (0x00859BF0..0x00859FBD)" — confirmed.
+* "dropping goals whose cost exceeds 1000.0 (0x008599E0)" — confirmed (`vcmpe`/`ble`; `> 1000.0`
+  removed, `<= 1000.0` kept).
+* "storing the rest at heurMap+4 (0x008599CA)" — confirmed (`0x00859ACA vstr s20,[r0,#4]`).
+* "heurMap comes from InitializeHeuristic ... resizes planner+0xA0 to the goal count (0x0085991E)" —
+  confirmed.
+
+## Records whose evidence is too weak / partial for what they claim
+
+* **M13-018** — its evidence for this function is accurate but incomplete. It does not state:
+  (a) that `ExpandCollisionStatesFromGoal` is only called when the goal is in soft collision
+  (`IsInSoftCollision` gate at 0x00859980/0x00859986), so "for each goal runs
+  ExpandCollisionStatesFromGoal" is not unconditional;
+  (b) that its successors come from the **reflected/reverse** primitive set env+0x20 (GetSuccessors 5th
+  arg = 1), not the A* set;
+  (c) the edge weight (`parentG + MotionPrimitive+4 + soft-collision penalty`);
+  (d) the frontier/visited/best-cost structures (OpenList at sp+0x84, unordered_set at sp+0x90, memo map
+  at planner+0xAC) and the 1000-expansion cap with its return behaviour;
+  (e) that it writes its per-state costs into the same map `heur` memoizes in.
+  These are the behaviours the record's `unresolved` asks to settle; they are now read.
+
+## Open questions for the manager
+
+1. The `ExpandCollisionStatesFromGoal` return when the goal itself is free is not exercised through
+   `InitializeHeuristic` (that path short-circuits to 0.0), but the function would return 0.0. Decide
+   whether M13-018's effect text should mention the IsInSoftCollision gate explicitly.
+2. The function walks the **reflected** primitive set (env+0x20, `PopulateReverseMotionPrims`). The
+   manager may want a separate NEW record for that set's construction (the reflection of end-pose x/y
+   and theta, and the copied `+4` cost) rather than folding it into M13-018, since it is a
+   behaviour-changing input to the heuristic.
+3. The 1000.0 constant appears in three places on this path: the soft/hard collision threshold
+   (0x00851162), the expansion cap/print (0x00859EE4, 0x85A080) and the goal-drop comparison
+   (0x00859942/0x008599E0). The cap counter continues while `<= 1000` but the warning prints 1000
+   (an off-by-one in the source); decide whether that belongs in the record.
+
+*Read-only extraction. Nothing outside `.scratch/B-M13/` was changed.*
