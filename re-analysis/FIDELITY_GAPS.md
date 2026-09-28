@@ -3,17 +3,17 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **357 records** over 16 subsystems.
+Manifest of **356 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 162 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 3 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 6 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 144 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 30 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| EXACT_SOURCE | 177 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| RECOVERABLE_GAP | 2 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 122 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| COMPATIBILITY_POLICY | 29 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
-| BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
+| BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
 ## Where each subsystem stands
 
@@ -32,7 +32,7 @@ remains after both, and they do not go away by working harder on this repository
 | M6-wwise-bank — Wwise bank reading and codecs | 24 | 0 | 20 | 0 | 0 | yes | no |
 | M7-behaviour — Idle, mood and reactions | 22 | 1 | 20 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 14 | 0 | 10 | 0 | 0 | yes | no |
-| M9-wwise-music — Wwise music, the MIDI sampler and singing | 28 | 4 | 21 | 0 | 1 | no | no |
+| M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 13 | 0 | 7 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 40 | 0 | 9 | 1 | 0 | yes | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 21 | 0 | 20 | 0 | 0 | yes | no |
@@ -60,7 +60,7 @@ status.
 | M6-wwise-bank | INVENTORY_APPROVED | 2 | 0 | 0 | 0 |
 | M7-behaviour | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | M8-framework | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
-| M9-wwise-music | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
+| M9-wwise-music | UNREVIEWED | 20 | 14 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
 | M11-vision | INVENTORY_APPROVED | 28 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
@@ -92,44 +92,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: BehaviorDockingTestSimple::UpdateInternal 0x005cbc10..0x005ccc3f; M7 gap1 G7
 * outstanding: Enumerate every +0x11c state, callback transition, random range and action argument in 0x005cbc10..0x005ccc3f.
-
-### M9-wwise-music — Wwise music, the MIDI sampler and singing
-
-**M9-013 — Whether Wwise routes MIDI notes into the singing sampler get-in branch** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
-* effect: a get-in recording is layered onto roughly every sung note of every song, or none at all
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-013; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: statically linked Wwise runtime in libcozmoEngine.so
-* evidence: 0x009B3260..0x009B4033; 0x009BBF9C..0x009BC17B; 0x00A78D10..0x00A78DE3
-* outstanding: Trace the runtime MIDI-event entry from the post-load music/actor-mixer vtables through child filtering for MIDI target 110896138 and establish whether branch 403781184 receives the notes.
-
-**M9-014 — Whether MIDI note velocity implicitly changes voice level** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
-* effect: the softer notes of a song come out quieter, or every note comes out at the same level
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-014; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: statically linked Wwise runtime in libcozmoEngine.so
-* evidence: 0x009B3260..0x009B4033; 0x00A78D10..0x00A78DE3; re-analysis/research/20260928-I-M9-gap3-extraction.md
-* outstanding: Trace the MIDI velocity byte from the runtime event entry through every per-voice gain and RTPC input when the bank sets no velocity binding.
-
-**M9-024 — Whether the note-off envelope stops the voice it is attached to** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseModulator.cs`
-* effect: a held note is cut when it is released, or plays on past it
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-024; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: statically linked Wwise runtime in libcozmoEngine.so
-* evidence: 0x009D552C..0x009D55F3; 0x009D5934..0x009D6598; 0x009D7FC0..0x009D8137
-* outstanding: Trace the type-22 property-15 boolean from virtual method 0x009D552C through the per-voice object and identify whether it stops the attached note-off voice.
-
-**M9-025 — The exact waveform produced by the Wwise LFO between its extrema** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseModulator.cs`
-* effect: with a cube being shaken, the vibrato sharpens and flattens, or only sharpens, and by a different amount at each instant
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-025; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: statically linked Wwise runtime in libcozmoEngine.so
-* evidence: 0x009D671C..0x009D7727; 0x009D7FC0..0x009D8137; 0x009E266C..0x009E2813
-* outstanding: Follow the type-21 per-voice object created at 0x009D7FC0 through vtable 0x0104B268 and map reads of LFO state +0x34..+0x48 to the waveform sample equation.
 
 ## Still to build: every IMPLEMENTATION_GAP
 
@@ -925,206 +887,6 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: AIWhiteboard::Init 0x0056a394 registers three external-interface handlers when the robot has an external interface (HasExternalInterface 0x0056a39c; three bl at 0x0056a3b8/0x0056a3be/0x0056a3c4 to 0x56a444/0x56a504/0x56a5c4); otherwise it warns "Initialized whiteboard with no external interface. Will miss events." (0x0056a3d2).; AIWhiteboard::Update 0x0056a684 is a no-op (bx lr).; AIWhiteboard::AddBeacon(pose, radius) 0x0056c39c appends an AIBeacon (Pose3d plus a float at +0xc) to the vector at +0x60 (vstr s16,[r0,#0xc] 0x0056c3c0; str r0,[r4,#0x64] 0x0056c3ce) and calls UpdateBeaconRender 0x0056c3de.
 * outstanding: To build: the three handler registrations, the no-op update and the beacon vector/render. The handlers' bodies are interfaces to M11/M12.
 
-### M9-wwise-music — Wwise music, the MIDI sampler and singing
-
-**M9-001 — BehaviorSinging configuration, switch mapping and default tempo trigger** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/SingingBehavior.cs`
-* effect: singing behavior, timing, selection or rendered audio differs from the official app
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-001; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: libcozmoEngine.so
-* evidence: 0x005EE8DC..0x005EEA0F; X4 S1-S4
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-002 — Singing initialization posts the switch, locks reactions and starts the three-animation sequence in order** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/SingingBehavior.cs`
-* effect: singing behavior, timing, selection or rendered audio differs from the official app
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-002; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: libcozmoEngine.so
-* evidence: 0x005EEB30..0x005EEE9F; X4 S5-S6 and S17-S18
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-003 — Cube running means, vibrato smoothing/posting, duration log, update result and stop cleanup** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/SingingBehavior.cs`
-* effect: singing behavior, timing, selection or rendered audio differs from the official app
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-003; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: libcozmoEngine.so
-* evidence: 0x005EF0C8..0x005EF30F; 0x005EF490..0x005EF4DF; X4 S7 and S11-S16 and S19
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-004 — Music switch containers, decision trees, meters and MIDI target** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMusic.cs`
-* effect: singing behavior, timing, selection or rendered audio differs from the official app
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-004; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: shipped Wwise banks and approved M6 inventory
-* evidence: re-analysis/inventory/M6-wwise-bank.md; Cozmo.bnk objects 914766641, 139286641, 602865028 and MIDI target 110896138
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-005 — Singing MIDI sources use SMF division 9600 and the effective meter tempo** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMidi.cs`
-* effect: singing behavior, timing, selection or rendered audio differs from the official app
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-005; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: shipped Wwise banks
-* evidence: Cozmo.bnk MIDI source plugin 0x00100001 and division 0x2580; re-analysis/research/20260928-X4-M9-wwise-music-extraction.md
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-006 — HIRC LFO and Envelope payloads and their runtime classes** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseModulator.cs`
-* effect: singing behavior, timing, selection or rendered audio differs from the official app
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-006; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: shipped Wwise banks and libcozmoEngine.so
-* evidence: 0x009D7B6C..0x009D7C97; vtable 0x0103B1E8 and 0x0103B218; re-analysis/research/20260928-I-M9-gap1-extraction.md
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-007 — The note-off envelope binding applies Wwise scaling 2 after its curve** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
-* effect: singing behavior, timing, selection or rendered audio differs from the official app
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-007; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: libcozmoEngine.so and shipped Wwise bank
-* evidence: 0x00A14F88..0x00A15038; re-analysis/inventory/M6-wwise-bank.md; Cozmo.bnk object 381606890 and binding 462443456
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-008 — The vibrato LFO binding depth is driven by the posted cube-shake parameter** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
-* effect: singing behavior, timing, selection or rendered audio differs from the official app
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-008; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: shipped Wwise bank and libcozmoEngine.so
-* evidence: 0x009D671C..0x009D7727; 0x005EF184..0x005EF18C; Cozmo.bnk objects 528935089 and 110896138
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-009 — Modulator bindings evaluate their curves and accumulate onto the named property** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
-* effect: singing behavior, timing, selection or rendered audio differs from the official app
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-009; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: libcozmoEngine.so
-* evidence: 0x00A6E848..0x00A6F133; X4 S27
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-010 — Singing note-on and note-off layers determine held-note lifetime** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
-* effect: singing behavior, timing, selection or rendered audio differs from the official app
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-010; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: shipped Wwise banks and media
-* evidence: re-analysis/inventory/M6-wwise-bank.md; Cozmo.bnk singing sampler note-on and note-off layers
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-011 — Singing renders through the shipped Robot_Bus_1 EQ, limiter and Hijack chain** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs`
-* effect: a song is quieter or louder, and differently shaped, than the app made it
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-011; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: approved M6 inventory and shipped Init.bnk
-* evidence: re-analysis/inventory/M6-wwise-bank.md; 0x00AA257C; 0x00AA18F4
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-012 — MIDI note tracking is disabled on every shipped node** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHierarchy.cs`
-* effect: singing behavior, timing, selection or rendered audio differs from the official app
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-012; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: shipped Wwise banks and libcozmoEngine.so
-* evidence: re-analysis/inventory/M6-wwise-bank.md; M6 gapE 3.3; Cozmo.bnk node property 45 absence
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-015 — Each play draws container selections afresh using Wwise's own LCG** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs`
-* effect: singing behavior, timing, selection or rendered audio differs from the official app
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-015; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: libcozmoEngine.so
-* evidence: 0x0098A6D4..0x0098A7B8; re-analysis/inventory/M6-wwise-bank.md
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-017 — Cube acceleration stream, high-pass filter and shake hysteresis drive singing vibrato** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CubeAccel.cs`
-* effect: singing behavior, timing, selection or rendered audio differs from the official app
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-017; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: libcozmoEngine.so
-* evidence: 0x005EECB0..0x005EED6F; 0x00635474..0x006355BF; 0x00636598..0x0063682F
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-018 — The shipped singing Stop event ends the three tempo containers** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs`
-* effect: the song keeps playing past the end of the tempo clip, or is cut short
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-018; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: shipped Wwise banks
-* evidence: Cozmo.bnk Stop__Robot_VO__Cozmo_Singing_Stop and tempo Play events; re-analysis/research/20260928-X4-M9-wwise-music-extraction.md
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-019 — No shipped blend container has a blend track** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHierarchy.cs`
-* effect: singing behavior, timing, selection or rendered audio differs from the official app
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-019; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: all six shipped Wwise banks
-* evidence: re-analysis/inventory/M6-wwise-bank.md; Cozmo.bnk and SFX.bnk blend containers
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-020 — A music clip uses BeginTrim and length and releases a held note at clip end** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
-* effect: the wrong part of a song is sung, or its last note is cut or left hanging
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-020; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: shipped Wwise banks
-* evidence: re-analysis/inventory/M6-wwise-bank.md; re-analysis/research/20260928-X4-M9-wwise-music-extraction.md
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-021 — A multi-action event dispatches every Play action** (not on the live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMusic.cs`
-* effect: None
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-021; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: shipped Wwise banks
-* evidence: re-analysis/inventory/M6-wwise-bank.md; Cozmo.bnk singing events and action lists
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-022 — Wwise container selection uses the recovered eligibility, blocked-list, random and sequence algorithms** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
-* effect: the wrong recording, or too many recordings, sound for a note
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-022; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: libcozmoEngine.so and approved M6 inventory
-* evidence: 0x0098A6D4..0x0098A7B8; 0x00A08A44; 0x00A0A524; re-analysis/inventory/M6-wwise-bank.md
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-026 — The shipped parametric EQ and peak-limiter arithmetic** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs`
-* effect: the EQ curves and the limiter's knee differ in detail from the product's, at the same settings
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-026; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: libcozmoEngine.so and approved M6 inventory
-* evidence: 0x00AA257C; 0x00AA2A84; 0x00AA18F4; 0x00AA0EB4; re-analysis/inventory/M6-wwise-bank.md
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-027 — Robot_Bus_Eq_HiLowPass behavior at 14298 Hz and the robot output rate** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs`
-* effect: none: the band cannot act at 22320 Hz and is reported rather than applied at a frequency it cannot have
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-027; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: shipped Init.bnk and libcozmoEngine.so
-* evidence: re-analysis/inventory/M6-wwise-bank.md; 0x00AA25E0; Init.bnk Robot_Bus_Eq_HiLowPass settings
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
-**M9-028 — RobotAudioClient dispatches singing parameters and switches to game object 7 on-robot or 6 off-robot** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationAudio.cs`
-* effect: singing behavior, timing, selection or rendered audio differs from the official app
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-028; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: libcozmoEngine.so
-* evidence: 0x00599F60..0x00599FBF; X4 S20-S21
-* outstanding: Compare and, where different, build the complete production path described by this record against the approved inventory.
-
 ### M10-derived — Derived robot state and reaction strategies
 
 **M10-001 — Off-treads classifier CheckAndUpdateTreadsState: gate, inputs, thresholds, branches, 250 ms debounce commit and every consequence** (live path)
@@ -1463,7 +1225,13 @@ Each of these is a question already answered. The original's behaviour is establ
 | M1-043 | M1-transport | HARDWARE_ONLY | Whether a 0-byte UDP read warns | the errno value after a 0-byte recvmsg on the phone |
 | M3-008 | M3-device | HARDWARE_ONLY | How the firmware maps pair bits to physical display rows, and the robot playback period | only the robot can answer it |
 | M3-016 | M3-device | HARDWARE_ONLY | Whether firmware 2457 emits colour frames in this format, and how the robot reacts to EnableColorImages | only the robot can answer it |
-| M9-023 | M9-wwise-music | HARDWARE_ONLY | How the stock app and robot sounded when singing | Only an original-app/robot recording can establish the final audible result; a hardware pass verifies sound but cannot raise source provenance. |
+| M9-013 | M9-wwise-music | BLOCKED_EXTERNAL | Whether Wwise routes MIDI notes into the get-in branch of the singing sampler | the dispatch rule itself. Only a recording of the stock app singing, or a Wwise runtime of this bank version, can settle it. This is the largest remaining doubt about how a rendered song sounds |
+| M9-014 | M9-wwise-music | BLOCKED_EXTERNAL | Whether a note's velocity changes anything, when nothing in the bank binds it | whether Wwise applies a velocity-to-level mapping of its own to a MIDI voice. The shipped songs vary velocity over about 20 units, so if it does, some notes are a few dB quieter than this renders them. Only a Wwise runtime of this bank version, or a recording of the stock app, can settle it. Until the M9 re-audit this was recorded as an equivalent implementation, which the varying velocities do not support |
+| M9-022 | M9-wwise-music | BLOCKED_EXTERNAL | Container semantics: blend and actor-mixer play all children, random picks one by weight avoiding the last, sequence steps its playlist | the runtime dispatch rule, in particular whether a container pre-filters its playlist to children that accept a MIDI note or picks first and then filters |
+| M9-023 | M9-wwise-music | HARDWARE_ONLY | How the stock app sounded when it sang | sustain, release tails, level and whether the get-in branch is audible during a song |
+| M9-024 | M9-wwise-music | BLOCKED_EXTERNAL | Whether cozmo_singing_note_off also stops the voice it is attached to | the name of modulator property 15 and the enumeration of its values, which live in the Wwise SDK; no Wwise runtime or header ships in the APK. What is left open is only whether the stop is this modulator or the break-on-note-off bit, not whether the note stops |
+| M9-025 | M9-wwise-music | BLOCKED_EXTERNAL | The shape a Wwise LFO produces between its extremes | whether the output is unipolar or bipolar, and the exact waveform. This is on the live path: the cube shake is measured and the vibrato reaches a playing song, so any shake exercises this shape |
+| M9-026 | M9-wwise-music | BLOCKED_EXTERNAL | The filter and limiter arithmetic between the shipped settings | the exact coefficient formulas and detector behaviour. The settings they act on are exact, so the shape is right and the detail is not |
 | M11-016 | M11-vision | BLOCKED_EXTERNAL | Face, pet and motion detection | nothing recoverable: the detector is third-party binary code |
 | M14-006 | M14-faces | BLOCKED_EXTERNAL | Text to speech is not implemented | the voice model and the plug-in are third-party binaries |
 | M4-013 | M4-control | HARDWARE_ONLY | Whether the robot honours StartMotorCalibration after its connection-time calibration | only a robot can show whether the request is honoured |
@@ -1492,7 +1260,11 @@ Each of these is a question already answered. The original's behaviour is establ
 | M4-006 | M4-control | COMPATIBILITY_POLICY | Wheel confirmation tolerance 35 percent / 5 mm per s | libcozmoEngine.so 3.4.0-1204 |
 | M5-003 | M5-animation | EQUIVALENT_IMPLEMENTATION | Face per frame and blending: GetFaceHelper, Interpolate, the Clip table, Combine for layers | libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped) |
 | M5-020 | M5-animation | COMPATIBILITY_POLICY | Expressions helper faces | not applicable |
-| M9-016 | M9-wwise-music | COMPATIBILITY_POLICY | Streaming uses a 66 ms stack lead policy against the original 30000-byte and 14-frame budget | libcozmoEngine.so for the original budget; explicit stack policy for 66 ms |
+| M9-011 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | The render goes through the effect chain the robot bus carries, not a local peak normalisation | libcozmoEngine.so for the routing and Init.bnk for the chain and its parameters |
+| M9-016 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A song is rendered as it plays, a block at a time, about 66 ms ahead of the clock | BehaviorSinging::UpdateInternal 0x005EF0C8 posts Cozmo_Singing_Vibrato every tick, and the bank binds that parameter to the depth of the LFO on the sampler pitch. Continuous is what the engine does, and this reproduces it. The 66 ms is this stack's choice, and it is small against the engine's own: UpdateAmountToSend 0x0057C6F0 lets the engine run up to 14 audio frames ahead of what the robot has played, which at 744 samples and 22320 Hz is 467 ms of audio already committed before it is heard. A parameter cannot reach audio either stack has already sent |
+| M9-018 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A Stop action ends the streaming song when its target is the Play target or an ancestor | the shipped bank. The three tempo events play targets 914766641, 139286641 and 602865028, and Stop__Robot_VO__Cozmo_Singing_Stop holds three action-type-1 actions targeting exactly those three, so every stop the product can post is a direct hit on the container that is playing |
+| M9-020 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A clip plays its source from BeginTrim for its length; a note still held at the clip end is released there | the shipped clip fields, which are read exactly. Every clip in every bank has PlayAt 0 and BeginTrim 0, so the start of the window is never moved; the end of it is what makes a twelve-second song out of a MIDI source minutes long, and is far from decorative. The one part of the rule that is a runtime judgement - what becomes of a note still held at the end - reaches two notes in the whole product, and the segment ends at the same instant, so what they would have sounded past it is outside the rendered song under either reading |
+| M9-027 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | Robot_Bus_Eq_HiLowPass low-pass at 14298 Hz is above Nyquist for the robot's rate | Init.bnk gives 14298 Hz; AnimConstants::AUDIO_SAMPLE_RATE gives 22320 Hz, so Nyquist is 11160 Hz in the engine too |
 | M11-012 | M11-vision | COMPATIBILITY_POLICY | The nominal camera calibration stand-in | not applicable: the live path reads the robot own calibration and fails closed without it |
 | M11-013 | M11-vision | COMPATIBILITY_POLICY | AllowUnconnectedObjects switch | the engine connected-object rule, which is implemented |
 | M12-014 | M12-manipulation | COMPATIBILITY_POLICY | The docking error signal's last two bytes are whatever was on the engine's stack | libcozmoEngine.so 3.4.0-1204: UpdateDockingErrorSignal 0x0063BE80 is the only builder and never writes the struct bytes at +0x14/+0x15 (stack +0xb4/+0xb5); nothing clears the struct (no memclr, no ctor call), and Pack 0x007C0B26 reads both bytes and sends them |

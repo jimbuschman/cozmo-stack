@@ -1,1 +1,1 @@
-DONE Codex 2026-09-28 10:53:13 -05:00 — 28 records: 22 IMPLEMENTATION_GAP, 4 RECOVERABLE_GAP, 1 HARDWARE_ONLY, 1 COMPATIBILITY_POLICY
+BLOCKED 2026-09-28 10:58:00 -05:00 — push gate: HardwareCatalogFidelityTests hard-codes the superseded BLOCKED_EXTERNAL statuses for M9-013, M9-022 and M9-026; correcting that test is outside this job's exact write scope
