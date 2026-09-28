@@ -1,1 +1,1 @@
-CLAIMED 2026-09-28 resumed: integration jobs may now update the status-restating tests (re-analysis/jobs/README.md rule 3), so update HardwareCatalogFidelityTests' M9-013/M9-022/M9-026 rows to the approved statuses and finish
+DONE 2026-09-28 11:01:51 -05:00 — 28 records: 22 IMPLEMENTATION_GAP, 4 RECOVERABLE_GAP, 1 HARDWARE_ONLY, 1 COMPATIBILITY_POLICY; HardwareCatalogFidelityTests status rows updated for M9-013, M9-022 and M9-026
