@@ -231,10 +231,13 @@
       "id": "M14-faces",
       "name": "Face and pet pipeline",
       "milestone": "M14",
-      "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": true,
+      "source_investigation_exhausted": false,
+      "implementation_fidelity_complete": false,
       "review": {
-        "state": "UNREVIEWED"
+        "state": "INVENTORY_APPROVED",
+        "inventory": "re-analysis/inventory/M14-faces.md",
+        "approved": "2026-09-28",
+        "snapshot": "re-analysis/inventory/M14-faces.approved.json"
       }
     },
     {
@@ -4492,12 +4495,17 @@
       "subsystem": "M14-faces",
       "title": "TrackedFace geometry, FaceWorld match and forgetting rules",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs",
-      "status": "EXACT_SOURCE",
-      "authority": "libcozmoEngine.so",
+      "effect": "face identity matching, expiry and the 3D translation reported for an observed face change",
+      "provenance": "libcozmoEngine.so",
+      "authority": "FaceWorld::AddOrUpdateFace 0x004F4278, FaceWorld::Update 0x004F52F8 and TrackedFace::UpdateTranslation 0x0087DE24, read",
       "evidence": [
-        "TrackedFace 0x0087DE24",
-        "FaceWorld 220 mm match, 15 s forgetting"
+        "0x004F4428 loads 48400.0 and 0x004F44BA..0x004F44E8 computes and compares squared distance, alongside overlap scoring at 0x004F444C.",
+        "0x004F5380..0x004F53AC removes an unnamed entry when lastObserved+15000 is behind the last image timestamp.",
+        "0x0087DE3C..0x0087DF1C selects recognition eye distance or box-derived 0.5/0.25/-0.125 geometry and clamps to 6.0."
       ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "hardware_required": false,
       "live_path": true,
       "test": "FaceTests"
     },
@@ -4505,7 +4513,7 @@
       "subsystem": "M14-faces",
       "title": "Frame counts waited by VisuallyVerifyFaceAction and TurnTowardsFaceAction",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs",
-      "effect": null,
+      "effect": "the number of consecutive observed frames required before face verification succeeds changes",
       "provenance": "the two constructors, read",
       "authority": "TurnTowardsFaceAction::TurnTowardsFaceAction 0x0054B754 and IVisuallyVerifyAction::IVisuallyVerifyAction 0x005686D8, read",
       "evidence": [
@@ -4513,8 +4521,8 @@
         "IVisuallyVerifyAction's constructor writes the same 10 at +0x8C (movs r1, #0xa / str.w r1, [r4, #0x8c] at 0x0056873E), and VisuallyVerifyFaceAction 0x00568EB8 does not override it - it passes its vision mode (2) and lift preset (0) and nothing else.",
         "So both wait ten frames, not the five this stack guessed."
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
       "hardware_required": false,
       "live_path": true,
       "test": "FaceTests",
@@ -4524,7 +4532,7 @@
       "subsystem": "M14-faces",
       "title": "TrackFaceAction: the durations it turns in, and the flags it starts with",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs",
-      "effect": null,
+      "effect": "face tracking cadence, angular tolerances, motor speeds and optional animation/eye behavior change",
       "provenance": "ITrackAction's constructor and CheckIfDone, read",
       "authority": "ITrackAction::ITrackAction 0x0056465C and ITrackAction::CheckIfDone 0x00564F08, read",
       "evidence": [
@@ -4533,8 +4541,8 @@
         "CheckIfDone 0x00564F08 turns by giving each axis its own duration: MoveHeadToAngle at 0x00565104 takes the speed |delta| / tiltDuration computed at 0x005650F2 and the acceleration 10000 (0x005650EE), and it does not wait for the turn - the next tick recomputes the target. The driving animation's end plays only when +0xA8 is set (0x0056510E).",
         "This stack now turns with those speeds and does not wait, and carries the flags and the limits as named constants; the eye shift and the driving animation are off, as they are in the engine unless a caller asks."
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
       "hardware_required": false,
       "live_path": true,
       "test": "FaceTests",
@@ -4544,7 +4552,7 @@
       "subsystem": "M14-faces",
       "title": "PetInitialDetection: a pet not reacted to, and a minute between reactions",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs",
-      "effect": null,
+      "effect": "which pet observations trigger a reaction and the cooldown between reactions change",
       "provenance": "ReactionTriggerStrategyPetInitialDetection, read",
       "authority": "ReactionTriggerStrategyPetInitialDetection::RecentlyReacted 0x00611DD0, ::UpdateReactedTo 0x00611E1C and ::InitReactedTo 0x00611FA4, read",
       "evidence": [
@@ -4552,8 +4560,8 @@
         "RecentlyReacted 0x00611DD0 is the cooldown: the last reaction time sits at +0x40 as a float, -1 meaning never, and the answer is true while lastReacted + 60 is still ahead of BaseStationTimer::GetCurrentTimeInSeconds - the 60 is the 0x42700000 loaded at 0x00611DE8.",
         "This stack latched on the first sighting of any pet id and had no cooldown; it now keeps the reacted-to set and the sixty seconds."
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
       "hardware_required": false,
       "live_path": true,
       "test": "FaceTests",
@@ -4563,16 +4571,16 @@
       "subsystem": "M14-faces",
       "title": "TurnTowardsImagePoint turns by the angle the pixel subtends",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs",
-      "effect": null,
+      "effect": "the head/body angles used to turn toward an image point and the failure behavior change",
       "provenance": "Robot::ComputeTurnTowardsImagePointAngles and TurnTowardsImagePointAction::Init, read",
       "authority": "Robot::ComputeTurnTowardsImagePointAngles 0x0051879C and TurnTowardsImagePointAction::Init 0x0054B664, read",
       "evidence": [
-        "There is no distance in it. ComputeTurnTowardsImagePointAngles 0x0051879C subtracts the calibration's centre from the point (the two-float loop at 0x005187CC), takes the historical state at the image's timestamp through RobotStateHistory::ComputeStateAt, and computes atan2(-(v - cy), fy) for the head (0x0054886C with the focal length at calibration+8) and atan2(-(u - cx), fx) for the body (0x0051888E, focal length at +4). The head angle is added to the head angle in that state and the body angle to its heading, so both come out absolute.",
+        "There is no distance in it. ComputeTurnTowardsImagePointAngles 0x0051879C subtracts the calibration's centre from the point (the two-float loop at 0x005187CC), takes the historical state at the image's timestamp through RobotStateHistory::ComputeStateAt, and computes atan2(-(v - cy), fy) for the head (0x0051886C with the focal length at calibration+8) and atan2(-(u - cx), fx) for the body (0x0051888E, focal length at +4). The head angle is added to the head angle in that state and the body angle to its heading, so both come out absolute.",
         "TurnTowardsImagePointAction 0x0054B59C is a PanAndTiltAction: Init 0x0054B664 asks for those two angles, writes them into the pan and tilt fields at +0x114 and +0x11C, and runs PanAndTiltAction::Init. When the history cannot answer it warns \"TurnTowardsImagePointAction.Init.ComputeTurnTowardsImagePointAnglesFailed\" and turns nowhere.",
         "This stack aimed at a point 200 mm along the ray through the pixel, a range it invented, and then turned towards that pose. It now computes the same two angles and pans and tilts to them."
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
       "hardware_required": false,
       "live_path": true,
       "test": "FaceTests",
@@ -4600,7 +4608,7 @@
       "subsystem": "M14-faces",
       "title": "The memory map, and the question the face behaviour asks it before driving in",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs",
-      "effect": null,
+      "effect": "the distance chosen for face approach and which mapped regions block that approach change",
       "provenance": "CanDriveIdealDistanceForward, TransitionToDrivingForward, the content-type table, the family mapping and the two insertion paths, read",
       "authority": "BehaviorInteractWithFaces::CanDriveIdealDistanceForward 0x005C2420, BehaviorInteractWithFaces::TransitionToDrivingForward 0x005C254E, MemoryMap::HasCollisionRayWithTypes 0x0068176E, ObjectFamilyToMemoryMapContentType 0x0067F4C0, MapComponent::AddObservableObject 0x0067ECFC, BlockWorld::AddMarkerlessObject 0x00622380, the EContentType names at 0x00BFFAC8 and the mask at 0x00C67962, read",
       "evidence": [
@@ -4610,12 +4618,108 @@
         "What goes in the map: MapComponent::AddObservableObject 0x0067ECFC inserts the object's bounding quad (its virtual GetBoundingQuadXY(pose, 0), vtable +0x50) with a MemoryMapData_ObservableObject, whose constructor 0x00684A38 stamps content type 3; ObjectFamilyToMemoryMapContentType 0x0067F4C0 is the tbb that decides it - Block, LightCube and CustomObject give ObstacleObservable on add and ClearOfObstacle on remove, the charger gives ObstacleCharger and ObstacleChargerRemoved, Ramp and Mat give Unknown, and a markerless object is refused with \"ContentType MarkerlessObject addition is not supported\". BlockWorld::AddMarkerlessObject 0x00622380 inserts a Cliff (type 8) for a CliffDetection object and a ProxObstacle (type 6) for a ProxObstacle one, and nothing for a CollisionObstacle (the type test at 0x0062259A falls through) - so the obstacle an unexpected movement leaves behind is in the world model and never in the map.",
         "Implemented as Vision/MemoryMap.cs: the eleven content types, the family mapping, the mask, Insert, HasCollisionRayWithTypes and a sync that follows the world model's located objects, with the behaviour asking it before it drives. The engine keeps its regions in a quad tree (QuadTree 0x00684C08) subdivided to GetContentPrecisionMM; this keeps the polygons, which answers the same ray exactly rather than to the tree's precision. The map's vision-derived content - the overhead edges that become InterestingEdge and NotInterestingEdge, and the explored region the robot's own passage leaves - is M11-017."
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
       "hardware_required": false,
       "live_path": true,
       "test": "FaceTests.TheMemoryMapAnswersWhetherTheRobotCanDriveInToAFace",
       "id": "M14-007"
+    },
+    {
+      "id": "M14-008",
+      "subsystem": "M14-faces",
+      "title": "Vision face-result handoff and FaceWorld lifecycle broadcasts",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs",
+      "effect": "face-id changes, observations, expiry and deletion events visible to behaviors and the game change",
+      "provenance": "libcozmoEngine.so",
+      "authority": "VisionComponent::UpdateFaces 0x006551E0 and FaceWorld 0x004F3C24, 0x004F4B70, 0x004F52F8, read",
+      "evidence": [
+        "0x00654504..0x00654514 dispatches face results; 0x006551E8..0x0065528C applies changed ids, marks the tracker and calls FaceWorld::Update.",
+        "0x004F5316..0x004F535C calls AddOrUpdateFace per tracked face and 0x004F5380..0x004F54A8 expires unnamed faces after 15000 ms.",
+        "0x004F4B7A/0x004F4B82 broadcasts RobotObservedFace; 0x004F3C2C..0x004F3C64 broadcasts RobotDeletedFace, erases visualization and erases the map node."
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "FaceTests"
+    },
+    {
+      "id": "M14-009",
+      "subsystem": "M14-faces",
+      "title": "Face return eligibility and enrollment forwarding",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs",
+      "effect": "which stored faces are returned and which enrollment mode reaches the vision system change",
+      "provenance": "libcozmoEngine.so",
+      "authority": "FaceWorld::ShouldReturnFace 0x004F55B8 and FaceWorld::Enroll 0x004F5C9E, read",
+      "evidence": [
+        "0x004F55B8..0x004F55E2 rejects a stale entry, optionally rejects id<1, and requires Robot::IsPoseInWorldOrigin on the face pose.",
+        "0x004F5C9E..0x004F5CB2 selects mode 4 for nonzero id and -1 for zero, then tail-calls the VisionComponent enrollment veneer."
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "FaceTests"
+    },
+    {
+      "id": "M14-010",
+      "subsystem": "M14-faces",
+      "title": "FaceTracker OKAO call order, detector output handling and enrollment gates",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs",
+      "effect": "detected face geometry, parts, expression, smile, gaze, blink and enrollability values change",
+      "provenance": "libcozmoEngine.so around the third-party OKAO boundary",
+      "authority": "FaceTracker::Impl::Update 0x0086D740, detector helpers 0x0086CCC0..0x0086D686 and IsEnrollable 0x0086E074, read",
+      "evidence": [
+        "0x0086D776..0x0086D998 detects, enumerates raw results, creates TrackedFace entries and converts centre to square; 0x0086DA04..0x0086DB20 calls parts, expression, smile and gaze/blink in order.",
+        "0x0086CCC6..0x0086CF32 and 0x0086D1F8..0x0086D2FC establish the OKAO parts/expression calls and five-result conversion.",
+        "0x0086D474..0x0086D4A0 scales smile outputs by 0.01/0.001; 0x0086D5D0..0x0086D680 stores unscaled gaze and 0.001-scaled blink ratios under separate enable flags.",
+        "0x0086E074..0x0086E1AC enforces 16/64/128/32 px and 25/45/10 degree gates; 0x0086E36C returns 16.0."
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy. OKAO internals remain the M11-016 third-party boundary.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "FaceTests"
+    },
+    {
+      "id": "M14-011",
+      "subsystem": "M14-faces",
+      "title": "FaceRecognizer matching, registration, update and merge semantics",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs",
+      "effect": "recognized ids, scores, new users, album updates and face merges change",
+      "provenance": "partially recovered from libcozmoEngine.so",
+      "authority": "FaceRecognizer::RecognizeFace 0x008640E4 and MergeFaces 0x008638AC, partially read",
+      "evidence": [
+        "0x0086410C..0x00864370 establishes registered-user handling, first-user score 1000 and the ten-result OKAO identify call.",
+        "0x00864A18..0x00864AA8 establishes the below-550 new-user path; 0x00864756..0x008649F8 and 0x00864BDA..0x00864CBA establish the >675 lower-ranked named candidate, min(score-75,600) continuation rule and merge call.",
+        "0x008638AC..0x00863B9A establishes MergeFaces orchestration; 0x00861024..0x0086107A establishes the outer EnrolledFaceEntry serialization pack."
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "Finish all branches of RecognizeFace 0x008640E4..0x00864CD8; read RegisterNewUser 0x00862808, GetFaceIDforAlbumEntry 0x00862B24, UpdateExistingAlbumEntry 0x00862C7C, RemoveUser 0x008634A4, EnrolledFaceEntry::MergeWith 0x008600B4, ConvertToEnrolledFaceStorage 0x00860AE4, and inverse install from VisionSystem::SetSerializedFaceData 0x00858C74.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "FaceTests"
+    },
+    {
+      "id": "M14-012",
+      "subsystem": "M14-faces",
+      "title": "Face album NV persistence, loaded-name replay and enrollment completion",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs",
+      "effect": "persisted enrolled faces, names restored to the game and enrollment completion notifications change",
+      "provenance": "libcozmoEngine.so above the M3 NV interface",
+      "authority": "VisionComponent album functions 0x006512A0, 0x00651578, 0x00657144 and callback 0x0065A870; BehaviorEnrollFace::StopInternal 0x005FE2F4, read",
+      "evidence": [
+        "0x006512EA/0x00651330 reads NV tags 0x184000/0x183000; 0x0065A876..0x0065A896 installs the data under the vision mutex.",
+        "0x00651594..0x00651612 broadcasts RobotErasedAllEnrolledFaces before each LoadedKnownFace.",
+        "0x00657180..0x0065720E obtains and size-checks both vectors; 0x006573A0..0x006573EA writes album then enrollment after four-byte padding, with erase paths for empty data.",
+        "0x005FE520/0x005FE528 constructs and broadcasts FaceEnrollmentCompleted."
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy. The NV queue/wire itself remains owned by M3-033.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "FaceTests"
     },
     {
       "id": "M15-001",

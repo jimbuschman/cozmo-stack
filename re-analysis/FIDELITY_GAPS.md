@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **366 records** over 16 subsystems.
+Manifest of **371 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 153 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 147 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 2 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 7 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 162 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 8 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 172 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 30 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -37,7 +37,7 @@ remains after both, and they do not go away by working harder on this repository
 | M11-vision — Markers, camera geometry and BlockWorld | 40 | 0 | 9 | 1 | 0 | yes | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 22 | 0 | 4 | 0 | 0 | yes | no |
 | M13-navigation — Planning, charger and block configurations | 19 | 0 | 19 | 0 | 0 | yes | no |
-| M14-faces — Face and pet pipeline | 7 | 0 | 0 | 1 | 0 | yes | yes |
+| M14-faces — Face and pet pipeline | 12 | 1 | 10 | 1 | 0 | no | no |
 | M15-freeplay — Needs, activities and freeplay | 16 | 1 | 15 | 0 | 0 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
@@ -65,7 +65,7 @@ status.
 | M11-vision | INVENTORY_APPROVED | 28 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 17 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
-| M14-faces | UNREVIEWED | 6 | 0 | 0 | 0 |
+| M14-faces | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | M15-freeplay | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
@@ -130,6 +130,17 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: statically linked Wwise runtime in libcozmoEngine.so
 * evidence: 0x009D671C..0x009D7727; 0x009D7FC0..0x009D8137; 0x009E266C..0x009E2813
 * outstanding: Follow the type-21 per-voice object created at 0x009D7FC0 through vtable 0x0104B268 and map reads of LFO state +0x34..+0x48 to the waveform sample equation.
+
+### M14-faces — Face and pet pipeline
+
+**M14-011 — FaceRecognizer matching, registration, update and merge semantics** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs`
+* effect: recognized ids, scores, new users, album updates and face merges change
+* rests on: partially recovered from libcozmoEngine.so
+* best authority: FaceRecognizer::RecognizeFace 0x008640E4 and MergeFaces 0x008638AC, partially read
+* evidence: 0x0086410C..0x00864370 establishes registered-user handling, first-user score 1000 and the ten-result OKAO identify call.; 0x00864A18..0x00864AA8 establishes the below-550 new-user path; 0x00864756..0x008649F8 and 0x00864BDA..0x00864CBA establish the >675 lower-ranked named candidate, min(score-75,600) continuation rule and merge call.; 0x008638AC..0x00863B9A establishes MergeFaces orchestration; 0x00861024..0x0086107A establishes the outer EnrolledFaceEntry serialization pack.
+* outstanding: Finish all branches of RecognizeFace 0x008640E4..0x00864CD8; read RegisterNewUser 0x00862808, GetFaceIDforAlbumEntry 0x00862B24, UpdateExistingAlbumEntry 0x00862C7C, RemoveUser 0x008634A4, EnrolledFaceEntry::MergeWith 0x008600B4, ConvertToEnrolledFaceStorage 0x00860AE4, and inverse install from VisionSystem::SetSerializedFaceData 0x00858C74.
 
 ### M15-freeplay — Needs, activities and freeplay
 
@@ -1494,6 +1505,98 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: xythetaEnvironment::Init 0x008528A8 calls ReadMotionPrimitives (0x008528AE) then overwrites env+8 with 0x10 (0x008528B6/0x008528BA), resizes the per-theta obstacle table at env+0x44 to 16 (0x008528C0) and sets env+0xC = 2pi/16 and env+0x10 = 1/(2pi/16) (0x008528C4..0x008528E6)
 * outstanding: compare the 16-heading override and the two derived values against the cited instructions and settle
+
+### M14-faces — Face and pet pipeline
+
+**M14-001 — TrackedFace geometry, FaceWorld match and forgetting rules** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs`
+* effect: face identity matching, expiry and the 3D translation reported for an observed face change
+* rests on: libcozmoEngine.so
+* best authority: FaceWorld::AddOrUpdateFace 0x004F4278, FaceWorld::Update 0x004F52F8 and TrackedFace::UpdateTranslation 0x0087DE24, read
+* evidence: 0x004F4428 loads 48400.0 and 0x004F44BA..0x004F44E8 computes and compares squared distance, alongside overlap scoring at 0x004F444C.; 0x004F5380..0x004F53AC removes an unnamed entry when lastObserved+15000 is behind the last image timestamp.; 0x0087DE3C..0x0087DF1C selects recognition eye distance or box-derived 0.5/0.25/-0.125 geometry and clamps to 6.0.
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M14-002 — Frame counts waited by VisuallyVerifyFaceAction and TurnTowardsFaceAction** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs`
+* effect: the number of consecutive observed frames required before face verification succeeds changes
+* rests on: the two constructors, read
+* best authority: TurnTowardsFaceAction::TurnTowardsFaceAction 0x0054B754 and IVisuallyVerifyAction::IVisuallyVerifyAction 0x005686D8, read
+* evidence: TurnTowardsFaceAction's constructor writes 10 into the action at +0x188: movs r1, #0xa at 0x0054B798, stored at 0x0054B79E, beside the zero and 0xFFFF it puts at +0x180 and +0x184.; IVisuallyVerifyAction's constructor writes the same 10 at +0x8C (movs r1, #0xa / str.w r1, [r4, #0x8c] at 0x0056873E), and VisuallyVerifyFaceAction 0x00568EB8 does not override it - it passes its vision mode (2) and lift preset (0) and nothing else.; So both wait ten frames, not the five this stack guessed.
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M14-003 — TrackFaceAction: the durations it turns in, and the flags it starts with** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs`
+* effect: face tracking cadence, angular tolerances, motor speeds and optional animation/eye behavior change
+* rests on: ITrackAction's constructor and CheckIfDone, read
+* best authority: ITrackAction::ITrackAction 0x0056465C and ITrackAction::CheckIfDone 0x00564F08, read
+* evidence: There is no update period. Tracking happens inside CheckIfDone, which the action list calls every basestation tick; the constructor leaves the three times at +0xE4..+0xEC at -1 and the update timeout at +0x7C is not a period either. The 100 ms this stack polled at was invented; it now runs on the 33 ms tick.; What the constructor does set (0x0056465C..0x0056478A): the pan and tilt tolerances at +0x84 and +0x8C to 0.0349066 rad, two degrees; the maximum head angle at +0x94 to 0.776672 rad; the minimum pan and tilt angles for a sound at +0xC0 and +0xC8 to 0.174533 rad, ten degrees; the tilt duration at +0xD0 to 0.15 s and the pan duration at +0xD4 to 0.4 s (strd r1, r0 at 0x00564758, with SetTiltDuration 0x00564ADA writing +0xD0 and SetPanDuration 0x00564AD4 writing +0xD4); the desired time to reach the target at +0xD8 to 0.5 s; and the flags off - move eyes at +0xA1 (SetMoveEyes 0x00564B40), driving animation at +0xA8 (EnableDrivingAnimation 0x00564AEA), clamp small angles at +0xE0.; CheckIfDone 0x00564F08 turns by giving each axis its own duration: MoveHeadToAngle at 0x00565104 takes the speed |delta| / tiltDuration computed at 0x005650F2 and the acceleration 10000 (0x005650EE), and it does not wait for the turn - the next tick recomputes the target. The driving animation's end plays only when +0xA8 is set (0x0056510E).; This stack now turns with those speeds and does not wait, and carries the flags and the limits as named constants; the eye shift and the driving animation are off, as they are in the engine unless a caller asks.
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M14-004 — PetInitialDetection: a pet not reacted to, and a minute between reactions** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs`
+* effect: which pet observations trigger a reaction and the cooldown between reactions change
+* rests on: ReactionTriggerStrategyPetInitialDetection, read
+* best authority: ReactionTriggerStrategyPetInitialDetection::RecentlyReacted 0x00611DD0, ::UpdateReactedTo 0x00611E1C and ::InitReactedTo 0x00611FA4, read
+* evidence: The strategy keeps the pet ids it has reacted to in a tree at +0x34: UpdateReactedTo 0x00611E1C walks the pets the robot knows and inserts each id, and InitReactedTo 0x00611FA4 fills it when the strategy starts, so a pet that was already known is not treated as new.; RecentlyReacted 0x00611DD0 is the cooldown: the last reaction time sits at +0x40 as a float, -1 meaning never, and the answer is true while lastReacted + 60 is still ahead of BaseStationTimer::GetCurrentTimeInSeconds - the 60 is the 0x42700000 loaded at 0x00611DE8.; This stack latched on the first sighting of any pet id and had no cooldown; it now keeps the reacted-to set and the sixty seconds.
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M14-005 — TurnTowardsImagePoint turns by the angle the pixel subtends** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs`
+* effect: the head/body angles used to turn toward an image point and the failure behavior change
+* rests on: Robot::ComputeTurnTowardsImagePointAngles and TurnTowardsImagePointAction::Init, read
+* best authority: Robot::ComputeTurnTowardsImagePointAngles 0x0051879C and TurnTowardsImagePointAction::Init 0x0054B664, read
+* evidence: There is no distance in it. ComputeTurnTowardsImagePointAngles 0x0051879C subtracts the calibration's centre from the point (the two-float loop at 0x005187CC), takes the historical state at the image's timestamp through RobotStateHistory::ComputeStateAt, and computes atan2(-(v - cy), fy) for the head (0x0051886C with the focal length at calibration+8) and atan2(-(u - cx), fx) for the body (0x0051888E, focal length at +4). The head angle is added to the head angle in that state and the body angle to its heading, so both come out absolute.; TurnTowardsImagePointAction 0x0054B59C is a PanAndTiltAction: Init 0x0054B664 asks for those two angles, writes them into the pan and tilt fields at +0x114 and +0x11C, and runs PanAndTiltAction::Init. When the history cannot answer it warns "TurnTowardsImagePointAction.Init.ComputeTurnTowardsImagePointAnglesFailed" and turns nowhere.; This stack aimed at a point 200 mm along the ray through the pixel, a range it invented, and then turned towards that pose. It now computes the same two angles and pans and tilts to them.
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M14-007 — The memory map, and the question the face behaviour asks it before driving in** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs`
+* effect: the distance chosen for face approach and which mapped regions block that approach change
+* rests on: CanDriveIdealDistanceForward, TransitionToDrivingForward, the content-type table, the family mapping and the two insertion paths, read
+* best authority: BehaviorInteractWithFaces::CanDriveIdealDistanceForward 0x005C2420, BehaviorInteractWithFaces::TransitionToDrivingForward 0x005C254E, MemoryMap::HasCollisionRayWithTypes 0x0068176E, ObjectFamilyToMemoryMapContentType 0x0067F4C0, MapComponent::AddObservableObject 0x0067ECFC, BlockWorld::AddMarkerlessObject 0x00622380, the EContentType names at 0x00BFFAC8 and the mask at 0x00C67962, read
+* evidence: The question is a ray. CanDriveIdealDistanceForward 0x005C2420 takes the local point (40, 0, 0) (0x42200000 at 0x005C2442), turns it by the robot's rotation, adds the robot's translation, and calls the memory map's virtual at +0x30 with the two x,y pairs and the type array at 0x00C67962, returning the negation (0x005C24A4). HasCollisionRayWithTypes 0x0068176E folds the array into a flag mask - EContentTypeToFlag for every entry whose bool is set - and hands it to the quad tree's ray walk.; The mask is eleven (type, bool) pairs: 00 00, 01 00, 02 00, 03 01, 04 01, 05 00, 06 01, 07 01, 08 01, 09 01, 0a 01. With the names from the table at 0x00BFFAC8 - Unknown, ClearOfObstacle, ClearOfCliff, ObstacleObservable, ObstacleCharger, ObstacleChargerRemoved, ObstacleProx, ObstacleUnrecognized, Cliff, InterestingEdge, NotInterestingEdge - everything blocks the drive except the first three and ObstacleChargerRemoved.; The answer changes the distance, not whether it drives. TransitionToDrivingForward loads -15.0 (vmov.f32 s0, #-15.0 at 0x005C2566) and replaces it with 40.0 only when the call returned true (0x005C2572), then builds DriveStraightAction(robot, distance, 40.0) - so a blocked robot backs off 15 mm. This stack drove 40 mm at 50 mm/s either way.; What goes in the map: MapComponent::AddObservableObject 0x0067ECFC inserts the object's bounding quad (its virtual GetBoundingQuadXY(pose, 0), vtable +0x50) with a MemoryMapData_ObservableObject, whose constructor 0x00684A38 stamps content type 3; ObjectFamilyToMemoryMapContentType 0x0067F4C0 is the tbb that decides it - Block, LightCube and CustomObject give ObstacleObservable on add and ClearOfObstacle on remove, the charger gives ObstacleCharger and ObstacleChargerRemoved, Ramp and Mat give Unknown, and a markerless object is refused with "ContentType MarkerlessObject addition is not supported". BlockWorld::AddMarkerlessObject 0x00622380 inserts a Cliff (type 8) for a CliffDetection object and a ProxObstacle (type 6) for a ProxObstacle one, and nothing for a CollisionObstacle (the type test at 0x0062259A falls through) - so the obstacle an unexpected movement leaves behind is in the world model and never in the map.; Implemented as Vision/MemoryMap.cs: the eleven content types, the family mapping, the mask, Insert, HasCollisionRayWithTypes and a sync that follows the world model's located objects, with the behaviour asking it before it drives. The engine keeps its regions in a quad tree (QuadTree 0x00684C08) subdivided to GetContentPrecisionMM; this keeps the polygons, which answers the same ray exactly rather than to the tree's precision. The map's vision-derived content - the overhead edges that become InterestingEdge and NotInterestingEdge, and the explored region the robot's own passage leaves - is M11-017.
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M14-008 — Vision face-result handoff and FaceWorld lifecycle broadcasts** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs`
+* effect: face-id changes, observations, expiry and deletion events visible to behaviors and the game change
+* rests on: libcozmoEngine.so
+* best authority: VisionComponent::UpdateFaces 0x006551E0 and FaceWorld 0x004F3C24, 0x004F4B70, 0x004F52F8, read
+* evidence: 0x00654504..0x00654514 dispatches face results; 0x006551E8..0x0065528C applies changed ids, marks the tracker and calls FaceWorld::Update.; 0x004F5316..0x004F535C calls AddOrUpdateFace per tracked face and 0x004F5380..0x004F54A8 expires unnamed faces after 15000 ms.; 0x004F4B7A/0x004F4B82 broadcasts RobotObservedFace; 0x004F3C2C..0x004F3C64 broadcasts RobotDeletedFace, erases visualization and erases the map node.
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M14-009 — Face return eligibility and enrollment forwarding** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs`
+* effect: which stored faces are returned and which enrollment mode reaches the vision system change
+* rests on: libcozmoEngine.so
+* best authority: FaceWorld::ShouldReturnFace 0x004F55B8 and FaceWorld::Enroll 0x004F5C9E, read
+* evidence: 0x004F55B8..0x004F55E2 rejects a stale entry, optionally rejects id<1, and requires Robot::IsPoseInWorldOrigin on the face pose.; 0x004F5C9E..0x004F5CB2 selects mode 4 for nonzero id and -1 for zero, then tail-calls the VisionComponent enrollment veneer.
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy.
+
+**M14-010 — FaceTracker OKAO call order, detector output handling and enrollment gates** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs`
+* effect: detected face geometry, parts, expression, smile, gaze, blink and enrollability values change
+* rests on: libcozmoEngine.so around the third-party OKAO boundary
+* best authority: FaceTracker::Impl::Update 0x0086D740, detector helpers 0x0086CCC0..0x0086D686 and IsEnrollable 0x0086E074, read
+* evidence: 0x0086D776..0x0086D998 detects, enumerates raw results, creates TrackedFace entries and converts centre to square; 0x0086DA04..0x0086DB20 calls parts, expression, smile and gaze/blink in order.; 0x0086CCC6..0x0086CF32 and 0x0086D1F8..0x0086D2FC establish the OKAO parts/expression calls and five-result conversion.; 0x0086D474..0x0086D4A0 scales smile outputs by 0.01/0.001; 0x0086D5D0..0x0086D680 stores unscaled gaze and 0.001-scaled blink ratios under separate enable flags.; 0x0086E074..0x0086E1AC enforces 16/64/128/32 px and 25/45/10 degree gates; 0x0086E36C returns 16.0.
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy. OKAO internals remain the M11-016 third-party boundary.
+
+**M14-012 — Face album NV persistence, loaded-name replay and enrollment completion** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs`
+* effect: persisted enrolled faces, names restored to the game and enrollment completion notifications change
+* rests on: libcozmoEngine.so above the M3 NV interface
+* best authority: VisionComponent album functions 0x006512A0, 0x00651578, 0x00657144 and callback 0x0065A870; BehaviorEnrollFace::StopInternal 0x005FE2F4, read
+* evidence: 0x006512EA/0x00651330 reads NV tags 0x184000/0x183000; 0x0065A876..0x0065A896 installs the data under the vision mutex.; 0x00651594..0x00651612 broadcasts RobotErasedAllEnrolledFaces before each LoadedKnownFace.; 0x00657180..0x0065720E obtains and size-checks both vectors; 0x006573A0..0x006573EA writes album then enrollment after four-byte padding, with erase paths for empty data.; 0x005FE520/0x005FE528 constructs and broadcasts FaceEnrollmentCompleted.
+* outstanding: Compare the current implementation with this approved source inventory and build every discrepancy. The NV queue/wire itself remains owned by M3-033.
 
 ### M15-freeplay — Needs, activities and freeplay
 
