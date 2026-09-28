@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **331 records** over 16 subsystems.
+Manifest of **339 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 203 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 14 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 4 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 64 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| EXACT_SOURCE | 185 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EQUIVALENT_IMPLEMENTATION | 11 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| RECOVERABLE_GAP | 0 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 97 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 28 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 8 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -34,7 +34,7 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 10 | 0 | 0 | 0 | 0 | yes | yes |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 27 | 0 | 0 | 6 | 1 | yes | yes |
 | M10-derived — Derived robot state and reaction strategies | 13 | 0 | 7 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 32 | 3 | 4 | 1 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 40 | 0 | 37 | 1 | 0 | yes | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 16 | 0 | 0 | 0 | 0 | yes | yes |
 | M13-navigation — Planning, charger and block configurations | 15 | 0 | 0 | 0 | 0 | yes | yes |
 | M14-faces — Face and pet pipeline | 7 | 0 | 0 | 1 | 0 | yes | yes |
@@ -62,7 +62,7 @@ status.
 | M8-framework | UNREVIEWED | 6 | 1 | 0 | 0 |
 | M9-wwise-music | UNREVIEWED | 20 | 14 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
-| M11-vision | UNREVIEWED | 21 | 4 | 0 | 0 |
+| M11-vision | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | M12-manipulation | UNREVIEWED | 16 | 5 | 0 | 0 |
 | M13-navigation | UNREVIEWED | 15 | 5 | 0 | 0 |
 | M14-faces | UNREVIEWED | 6 | 0 | 0 | 0 |
@@ -72,44 +72,6 @@ status.
 ## Still to read: every RECOVERABLE_GAP
 
 Each of these is a question the original can answer and nobody has asked it yet.
-
-### M11-vision — Markers, camera geometry and BlockWorld
-
-**M11-021 — The per-frame marker-mode gate** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
-* effect: marker detection differs
-* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: ShouldProcessVisionMode gate 0x006B5124/0x006B5164; vision_config.json:5 DetectingMarkers true, no initial schedule
-* outstanding: the managed fixed subset of marker modes (whether any mode is scheduled) is a gap
-
-**M11-023 — The front-end orchestration order** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
-* effect: marker detection differs
-* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: 0x00898C5C extract, 0x00898C90/0x00898CF0/0x00898D50 compress, 0x00898CBC size, 0x00898D1C solid/sparse, 0x00898D78 hollow, 0x00898DD0 sort, 0x00898E2C quads, 0x00898E98 homography, 0x00899056 Extract, 0x00899528 Refine
-* outstanding: the per-marker second loop details (illumination-normalise/refine/decode) are not read
-
-**M11-027 — The exterior boundary trace** (not on the live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
-* effect: marker detection differs
-* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: 0x008C6B18 entry; capacity 0x00892DA8 movw 0x2710; sortedness 0x008C6B5C
-* outstanding: the four-pass body 0x008C6FCA..0x008C72E8 is not transcribed
-
-**M11-029 — ExtractLineFitsPeaks and the corner fit** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
-* effect: marker detection differs
-* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: 0x008A5DB8 sigma 0x008A5E90; kmeans 0x008A6490; labels 0x008A62D8; fit 0x008A6714; 4 intersections 0x008A6BA0/0x008A6BE2
-* outstanding: the exact circular-convolution loop of ExtractLineFitsPeaks (0x008A613E..0x008A628A) and the least-squares fit body are not transcribed
 
 ## Still to build: every IMPLEMENTATION_GAP
 
@@ -671,14 +633,167 @@ Each of these is a question already answered. The original's behaviour is establ
 
 ### M11-vision — Markers, camera geometry and BlockWorld
 
+**M11-001 — The marker type table and the nearest-neighbour library, extracted byte for byte** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerLibrary.cs`
+* effect: a marker decodes to the wrong code, so every marker pose is wrong
+* rests on: the stack's MarkerLibrary.cs was generated by re-analysis/tools/extract_marker_library.py; this record is to be compared against the addresses above
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: library 0x00C9BCA8 u8[598][1024]; labels 0x00DC6CA8; labelToCode 0x00DC7154; cornerReorder 0x00DC73AC; orientationDeg 0x00DC7D0C; VisionMarker::Extract 0x008A0078 reads the table and applies labelToCode 0x008A0130, cornerReorder 0x008A0158, orientationDeg 0x008A0180; re-analysis/tools/extract_marker_library.py records the same addresses and the byte-for-byte check
+* outstanding: compare MarkerLibrary.cs with the table at 0x00C9BCA8 and the labels at 0x00DC6CA8, and build any missing part
+
+**M11-002 — Marker decoder algorithm: probe values, nearest neighbour, extract** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: a marker decodes to the wrong code
+* rests on: the stack's MarkerDetector.cs decode path is to be compared against the instructions above
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: GetProbeValues 0x0089EF40: 5 samples at centre+offset, the sign-branch round both axes 0x0089F0DA..0x0089F12E, the integer mean 0x0089F158; GetNearestNeighbor 0x008C0938: normalize NORM_MINMAX 0x008C09D2, absdiff+sum 0x008C0AD6/0x008C0B50, distance 0x008C0B58, the 1.25x ambiguity reject 0x008C0C7E, integer average 0x008C0C70; VisionMarker::Extract 0x008A0078: label!=-1, distance<threshold, label not 149/150, then labelToCode 0x008A0130 / cornerReorder 0x008A0158 / orientationDeg 0x008A0180; library 0x00C9BCA8 u8[598][1024], labels 0x00DC6CA8
+* outstanding: compare GetProbeValues/GetNearestNeighbor/Extract in MarkerDetector.cs with the instructions above and build any missing part
+
+**M11-003 — Camera pose on the robot, cube size, marker size, face poses and codes** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/CubeGeometry.cs`
+* effect: cube and marker geometry is wrong, so every marker pose is wrong
+* rests on: the stack's CubeGeometry.cs is to be compared against the values above
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: _kDefaultHeadCamRotation is a RotationMatrix3d in .bss at 0x01059CF8, initialised by the static ctor 0x004D6DA4..0x004D6DB6 from the 9 floats at 0x00C4A854 = [0,-0.0698,0.9976,-1,0,0,0,-0.9976,-0.0698]; read in Robot::Robot at 0x0050FFAE/0x0050FFB0; GetCameraPose 0x00510FFC: copy [this+0x2d8], negate the angle 0x00511016, RotationVector3d(Radians, Y_AXIS_3D()) 0x00511020..0x0051102A, RotateBy 0x00511036; Block::LookupBlockInfo 0x004E4C8C: four entries, keys 1..4 LIGHTCUBE1/2/3/GHOST, ORANGE/YELLOW/RED/WHITE, each (44,44,44) (0x004E4CD6/0x004E4D8E/0x004E4E46/0x004E4EFA movt #0x4230); marker size 25.0 in every BlockFaceDef_t at +8 (tables 0xC45C40/0xC45CA0/0xC45D00/0xC45D60); KnownMarker stores it at +0x10 and Get3dCorners scales by it (0x0087E26E..0x0087E332); KnownMarker::_canonicalCorners3d is a Quadrilateral<3,float> in .bss at 0x0105E0F0, initialised by the static ctor 0x004DD7D8..0x004DD81A with (-0.5,0,-0.5),(-0.5,0,0.5),(0.5,0,0.5),(0.5,0,-0.5); Block::AddFace 0x004E53BC: tbb 0x004E5438, six cases (0x004E5442 face0 -pi/2, 0x004E557C face1 +pi, 0x004E54EA face2 +pi/2, 0x004E5534 face3 0, 0x004E5490 face4 2pi/3, 0x004E55D6 face5 2pi/3); translations +-22; the size getter is Block+0x88 (vtable +0x18 = 0x004E382C); face-to-code map: LIGHTCUBE1 6,7,4,8,9,5; LIGHTCUBE2 12,13,10,14,15,11; LIGHTCUBE3 18,19,16,20,21,17; GHOST all 39
+* outstanding: compare CubeGeometry.cs with the values above and build any missing part
+
+**M11-004 — BlockWorld connected-object rule, moving and rotating gates, position-update thresholds** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
+* effect: an unconnected cube is dropped where the engine keeps it, and the motion/rotation gates differ
+* rests on: the stack's BlockWorld.cs connected-object rule and gates are to be compared against the instructions above
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: position-update thresholds: 45 deg 0x3F490FDB to [this+0x2c] (ctor 0x00612182), 80 mm 0x42A00000 to [this+0x38] (0x006121A2), 600000 ms 0x000927C0 to [this+0x34] (0x00612198); used at 0x006124C6..0x006124F2 and 0x00612592..0x006125A6; connected-object rule: AddAndUpdateObjects 0x00620AD4 warns and records a 10 s cooldown when the connected counterpart is absent (0x00620E70..0x00620EDA) and continues to 0x00620EDE; it does not drop the object; moving gate: CheckForUnobservedObjects 0x00621C6C skips when MovementComponent::WasMoving(timestamp) != 0 (0x00621C88..0x00621C94); WasMoving is HistRobotState+0x58 & 1 (IS_MOVING), lambda 0x00642672; rotating gate: WasRotatingTooFast(timestamp, 0.174533, 0.174533, 0) 0x00621C9A..0x00621CAE; WasHeadRotatingTooFast 0x00656260 uses rateY, WasBodyRotatingTooFast 0x00656384 uses rateZ, each |rate| > threshold; object match: IsSameAs translation tolerance 0.8 * object extent (Block+0x88 = (44,44,44), thunk 0x004E025C, factor 0.8 at 0x004E028C) and rotation tolerance 45 deg (thunk 0x004E0290)
+* outstanding: build the native rule: the connected-object check warns and applies a 10 s cooldown and continues, it does not drop the observation, but the stack's AddAndUpdateObject returns null; also build WasMoving = IS_MOVING, the head/body rotation gates and the 0.8*extent / 45 deg object-match thresholds
+
+**M11-005 — The sub-pixel corner refinement** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/CornerRefinement.cs`
+* effect: a refined corner lands in a different place than the engine would put it, so the marker pose does too
+* rests on: the stack's CornerRefinement uses a different solver (EQUIVALENT); SD1 requires the engine's exactly
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: RefineCorners 0x0089FD98: ComputeBrightDarkValues 0x0089FE00 (validity 2 on failure), threshold (u8)((Bright+Dark)*0.5) 0x0089FE56..0x0089FE66, RefineQuadrilateral 0x0089FEA6 (blx 0x4D169C, body 0x008C55E0), re-check 0x0089FFCA, restore 0x0089FFD0..0x0089FFEA; sample generation 0x008C5E80..0x008C61E0: ceil(n*0.125) per block x 8, projection through the homography, the bilinear read at (floor,ceil) with weights (1-fracY)*[(1-fracX)*p00+fracX*p01] + fracY*[(1-fracX)*p10+fracX*p11] (0x008C6062..0x008C610A), residual (value-(bright+dark)/2)/255 (0x008C6112/0x008C6116); the 8-vector 0x008C5CE6..0x008C5D86: Tx*x, Tx*y, Tx, Ty*x, Ty*y, Ty, -(Tx*x*x+Ty*x*y), -(Tx*x*y+Ty*y*y); A = J'J upper triangle 0x008C611E..0x008C6188; MakeSymmetric(A,false) 0x008C61E0 (body 0x0088DDC0); SolveLeastSquaresWithCholesky 0x008C61F4 (body 0x0088DE68): natural pivot order, pivot < FLT_EPSILON (1.1920929e-07 at 0x88E1B0) sets the bool& out-flag true and returns 0 (0x0088DF50..0x0088E138), otherwise 1/sqrt(pivot); update U = [[s0+1,s1,s2],[s3,s4+1,s5],[s6,s7,1]] 0x008C620A..0x008C6268, Invert3x3 0x008C6290, H = H*inv(U) 0x008C629A; H22 renormalisation when |H22-1| >= 1e-5 (0x008C62AA..0x008C634A); stopping test 0x008C636C..0x008C6388 and helper 0x008C66C4; contrast gate 0x0089F8E8 and 0x0089FD10..0x0089FD30 (ratio 1.01 at 0x0087538E); the caller treats the Cholesky out-flag != 0 as the accept path: 0x008C6418 cmp r0,#1
+* outstanding: build RefineQuadrilateral exactly as the instructions above: the sample generation and bilinear read, the 8-vector, MakeSymmetric(false), the natural-pivot Cholesky with the FLT_EPSILON out-flag polarity, the update composition, the H22 renormalisation and the stopping test
+
+**M11-006 — The clustering tolerances and the flat-snap angle** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
+* effect: objects are clustered or snapped at the wrong tolerance
+* rests on: the stack BlockWorld.cs tolerances are to be compared against the instructions above
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: ObservableObjectLibrary::CreateObjectsFromMarkers 0x0062539C calls ClusterObjectPoses(poses, object, distThreshold, angleThreshold, clusters) with 5.0 mm (0x40A00000 built at 0x006254F4) and 0.0872665 rad, 5 degrees (0x3DB2B8C3 at 0x00625498, through the Radians constructor at 0x006254E0); ObjectPoseConfirmer::UpdatePoseInInstance calls ObservableObject::ClampPoseToFlat(pose, Radians(0.349066)) - 20 degrees, 0x3EB2B8C2 at 0x00505F16 - which is the path every observation of an object already in the world takes; on the creation path CreateObjectsFromMarkers asks the object itself for the angle in degrees and multiplies by 0.0174533 (0x00625566) before the same call; ClampPoseToFlat 0x00877330 itself is the shape this stack already had: the rotated parent Z axis, acos of the magnitude of its largest component, compared with the angle; CreateObjectsFromMarkers also passes 0.1 to ObservableObject::SetMarkerAsObserved (0x0062559C)
+* outstanding: compare BlockWorld.cs with the tolerances above and build any missing part
+
+**M11-007 — Two misses before an object pose is forgotten, and two sightings before one is confirmed** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
+* effect: an object pose is forgotten or confirmed one frame too early or late
+* rests on: the stack BlockWorld.cs counters are to be compared against the instructions above
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: ObjectPoseConfirmer::MarkObjectUnobserved 0x00506FBC reads the miss count at +0x28 and writes count+1 zeroing +0x24 (strd r2,r1,[r0,#0x24] at 0x00506FE0); the forgetting branch is at 0x00506FDE; the confirming side at 0x00506A04 mirrors it; the two counters reset each other, so the misses have to be consecutive; this stack already used two; what was missing was the counter it rests on
+* outstanding: compare BlockWorld.cs with the two counters above and build any missing part
+
+**M11-008 — The minimum projected marker size for deciding an object should have been seen is 40 pixels** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
+* effect: objects are marked unobserved that the app would not have expected to see
+* rests on: the stack BlockWorld.cs visibility threshold is to be compared against the instruction above
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 40, where this stack had 10, so it was calling objects missing that the app would not have expected to see at all; the same argument is 0 at the engine other two call sites - SearchForBlockHelper::ShouldBeAbleToFindTarget 0x005BB760 and the ghost-block check 0x00603E48 - so the threshold belongs to this call rather than to the visibility test
+* outstanding: compare BlockWorld.cs with the 40 px minimum above and build any missing part
+
+**M11-009 — A cube that reports movement is marked Dirty, unless the robot is carrying it** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
+* effect: a carried cube reporting motion dirties the pose the lift is holding it at
+* rests on: the stack VisionSystem.cs dirty path is to be compared against the guard above
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: the message is {u32 timestamp, u32 activeId, f32 x, f32 y, f32 z, u8 axis}, read at 0x00533E54; this stack dirtied the pose whatever the carrying state, so a cube on the lift reporting its own motion dirtied the pose the lift was holding it at; the motion flag itself is what PickupObjectAction::Verify reads, so both records rest on it
+* outstanding: compare VisionSystem.cs with the guard above and build any missing part
+
+**M11-010 — Occlusion, the nine visibility reasons, and the two ways an object is forgotten** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
+* effect: an object is forgotten or kept differently from the engine
+* rests on: the stack BlockWorld.cs occlusion model is to be compared against the instructions above
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Anki::Vision::NotVisibleReasonToString 0x0087E96C is one indexed load from a table of nine string pointers: IS_VISIBLE, CAMERA_NOT_CALIBRATED, POSE_PROBLEM, BEHIND_CAMERA, NORMAL_NOT_ALIGNED, TOO_SMALL, OUTSIDE_FOV, OCCLUDED, NOTHING_BEHIND; KnownMarker::IsVisibleFrom 0x0087E4A8 writes all nine: 5 TOO_SMALL 0x0087E7B6, 6 OUTSIDE_FOV 0x0087E83A, 7 OCCLUDED 0x0087E836, 8 NOTHING_BEHIND 0x0087E87A; BlockWorld::UpdateObservedMarkers 0x00624F98 clears the occluder list; BlockWorld::AddAndUpdateObjects 0x006211CC adds one entry per observed marker; the frame sequence itself is M11-037; BlockWorld::CheckForUnobservedObjects forgets an object either when it should have been visible (0x00622132) or when nothing was behind it and its pose is Dirty (0x0062211E)
+* outstanding: compare BlockWorld.cs with the nine visibility reasons, the occluder list and the two forget conditions; the frame sequence is M11-037
+
+**M11-011 — The NV CameraCalib read request: tag 0x80000001, length 1, READ, a zero second byte; replies assemble by index** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: the camera calibration read fails or misassembles
+* rests on: the stack NvStorage.cs request is to be compared against the request above
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: CONTROL hardware capture re-analysis/acceptance/hardware/20260925-061148-CONTROL/result.json (nvCalibrationRead): the stack's Length=1024 request drew 9 MORE replies whose Length values are indices 5,6,7,0,3,2,1,4,15, with index 0 holding a 56-byte calibration; concatenating them gave 248 bytes and failed the 56-byte check; PROJECT_STATE.md (NV calibration read): the engine sends Length = 1 for the factory tag 0x80000001 (_maxFactoryEntrySizeTable) and reassembles each reply at index x 1024; robot+0x24 is mfgId word 1; libcozmoEngine.so: EnumToString(NVEntryTag) 0x007CEE38 (index 1 = NVEntry_CameraCalib); ProcessRequest 0x00644FD4; HandleNVOpResult 0x00642F8C; IsMultiBlobEntryTag 0x00643FA6; the constructor zeroes the command's second byte at 0x006428AA; the message is commandNV 0x81, which the generated NVCommand carries
+* outstanding: compare NvStorage.cs with the request above; the engine-side NV path is M3's
+
+**M11-014 — SetBodyAngle carries an absolute body angle, and the fields that follow say how it was asked for** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
+* effect: the body turn is relative where the engine one is absolute, or vice versa
+* rests on: the stack VisionSystem.cs body-angle fields are to be compared against the instructions above
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: numHalfRevolutions is 0 when absolute and floor(|relative| / pi) when relative (0x00546164); on the relative path only, the sign of the turn is written into bit 31 of the speed word: bfi r1, r0, #0x1f, #1 at 0x0054610C; the absolute flag is +0xC0 normalised to 0 or 1 at 0x0054619C; hardware item L was going to ask a robot whether the angle is absolute; the engine answers it
+* outstanding: compare VisionSystem.cs with the body-angle fields above and build any missing part
+
+**M11-015 — The body turn speed, acceleration, tolerance and revolution bound** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
+* effect: the body turns at the wrong speed
+* rests on: the stack VisionSystem.cs turn constants are to be compared against the instructions above
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: TurnInPlaceAction ctor 0x005459D4 stores 5.23599, 10.0 and 25.0 as a triple at +0x78 (0x40A78D36, 0x41200000, 0x41C80000) and copies the first two to +0xC4/+0xC8 (0x00545AB0); the tolerance is Radians(0x3D0EFA35) = 2 deg at +0xB0; 25.0 is the revolution bound compared at 0x0054606E; 5.23599 rad/s is 300 deg/s; this stack had been turning at 100 deg/s, three times too slow
+* outstanding: compare VisionSystem.cs with the turn constants above and build any missing part
+
+**M11-017 — The memory map's vision-derived content: the overhead edges** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/OverheadEdges.cs`
+* effect: none known
+* rests on: the detector, the chains and the four MapComponent entry points that turn them into map content are the engine's, with every constant read from it
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: The detector. GroundPlaneROI is the trapezoid its four statics describe, 40 to 190 mm ahead and 40 to 150 mm wide (0x00C48F60, GetGroundQuad 0x004F7774). Detect projects it, filters the bounding rectangle with the seven-by-five kernel at 0x00C8E020 (identical for the colour and grey paths), masks everything outside the quad away (fillConvexPoly of the quad's corners 0, 2, 3, 1 then SetMaskTo), transposes and walks each column from the bottom up for the first response past the threshold of 50 that VisionSystem constructs it with (0x006B0120). A column with none reports the far end clear, but only between the x of the quad's two far corners (0x006AD23E). Image points become ground points through the homography, refused when its third component is not positive (0x006AE0A8). The lift is a gate rather than a mask: unless the first of two points on it projects below the ROI rectangle, or the second above it, the frame is abandoned (0x006AC4A2..0x006ACDC8). Points join a chain while they are of the same kind and within 5 mm (0x006AE1B0).; The map side. AddVisionOverheadEdges puts each point in world coordinates through the robot's pose at the frame's timestamp, splits the ray at the ROI's near edge and asks HasCollisionRayWithTypes about each half with the two masks at 0x00C8768B and 0x00C876A1, and accumulates runs that hold their direction to within forty degrees (0.766 at 0x0067F980). A run longer than the noise length (the literal 6.00001 at 0x0067FA14) becomes the triangle between the robot and its ends as ClearOfObstacle, or a line to its midpoint when the run is under fifteen millimetres (225 as a squared length at 0x0067FF5C); a run from a border chain also goes in as a two-point InterestingEdge (the type byte 9 at 0x006802AC). Then the border pass, QuadTreeProcessor::FillBorder 0x00689FAC through RefreshBorderCombination: an interesting edge touching one of the masked types - the obstacles and NotInterestingEdge, the table at 0x00C87675 - is written off as NotInterestingEdge.; The two entry points the visit behaviour uses are in as well: FlagQuadAsNotInterestingEdges 0x0067E6B0 inserts the quad as type 10 with the last image's timestamp, and FlagGroundPlaneROIInterestingEdgesAsUncertain 0x0067E50C transforms the content inside the ROI with a lambda (0x00680B54) that turns type 9 into type 0 and leaves the rest alone.; Two differences, neither observable in what the map answers: the engine carries its regions in a quad tree subdivided to ten millimetres (GetContentPrecisionMM 0x00685000) and this keeps the polygons, which is the same difference M14-007 already records; and the filter response is computed here in double over one channel rather than in 16-bit over three, which moves no threshold decision that a marker-sized step would not pass either way.
+* outstanding: reproduce the engine's overhead-edge detector exactly; the stack keeps a polygon map and computes the filter response in double over one channel (SD1)
+
 **M11-018 — The dark mask and the quad acceptance test are the engine's** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/QuadDetector.cs`
 * effect: markers are found in different parts of the image, and so detected differently, from the engine
 * rests on: ExtractComponentsViaCharacteristicScale_binomial, BinomialFilter, IsQuadrilateralReasonable and the parameters they are given, read
-* best authority: ExtractComponentsViaCharacteristicScale_binomial 0x00890448, ImageProcessing::BinomialFilter 0x008A2344, IsQuadrilateralReasonable 0x00892B18, ComputeQuadrilateralsFromConnectedComponents 0x00892D70, MarkerDetector::Parameters::Initialize 0x008752F8 and the call in DetectFiducialMarkers at 0x00898C18, read
-* evidence: IsQuadrilateralReasonable 0x00892B18 (minQuadArea 25, symmetry 512 8.8, minDistanceFromEdge 2) -- live; the dark mask 0x008A2344 / binarize 0x00890BB6 are inside the non-live binomial extractor 0x00890448..0x00890DF4 (only caller 0x00890736); the live extractor selector: Parameters byte0=1 (0x008752FC/0x00875304), ExtractComponentsViaCharacteristicScale 0x0088F8BC
-* outstanding: the stack's dark mask is the binomial path (BinomialFilter 0x008A2344, one caller 0x00890736 inside ExtractComponentsViaCharacteristicScale_binomial 0x00890448..), but the shipped selector byte is 1 so the live extractor is the ecvcs integral-image variant 0x0088F8BC; the stack must be reworked to the live variant (M11-032). IsQuadrilateralReasonable is separate and live
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: IsQuadrilateralReasonable 0x00892B18 is called at 0x00892EF8 (blx 0x4D0F28); its parameters are MarkerDetector::Parameters+0x30 (25), +0x34 (512, 8.8), +0x38 (2), written at 0x00875338/0x00875340 and read on the live path at 0x00898E00..0x00898E2C; the dark mask 0x008A2344 / binarize 0x00890BB6 are inside the non-live binomial extractor 0x00890448..0x00890DF4 (only caller 0x00890736); the live extractor selector: Parameters byte0=1 (0x008752FC/0x00875304), ExtractComponentsViaCharacteristicScale 0x0088F8BC
+* outstanding: the stack's dark mask is the binomial path, but the shipped selector byte is 1 so the live extractor is the ecvcs integral-image variant 0x0088F8BC; the stack must be reworked to the live variant (M11-032). IsQuadrilateralReasonable is separate and live
+
+**M11-019 — A new pose origin in RobotState delocalizes: located objects are forgotten, carried objects move across** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
+* effect: located objects survive a delocalize they should not
+* rests on: the stack VisionSystem.cs delocalize path is to be compared against the instructions above
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Robot::Delocalize 0x00510A24 allocates the new origin and tells the robot; 0x00510CF0 moves carried objects into the new origin; VisionSystem.OnMessage RobotState origin comparison and RobotDelocalized
+* outstanding: compare VisionSystem.cs with the delocalize path above and build any missing part
+
+**M11-020 — Illumination normalisation of each marker's region before its corners are refined and it is decoded** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/CornerRefinement.cs`
+* effect: the refinement and the decode read the raw image where the engine reads a locally normalised one, so contrast, the bright and dark levels and the refined corners can differ
+* rests on: CornerRefinement.NormalizeIllumination applies the engine's region, kernel size, blur, subtraction and min-max stretch in the same place - after the homography, before RefineCorners, with the region's pixels put back before decoding. The three OpenCV routines (boxFilter, subtract, normalize) are written out here with OpenCV's arithmetic - a normalised box sum rounded half to even into CV_16S, a saturating subtraction, and NORM_MINMAX's scale and shift rounded into CV_8U - rather than transcribed from the OpenCV build in the APK
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Gated on params+1 (0x008990BE..0x008990C4; Parameters::Initialize writes 0x101 at +0, so it is on); Region (0x008990CE..0x00899126): the quad's bounding rectangle - each coordinate truncated, min and max (0x0088A16C) - grown by 5 on every side; left and top floored at 0 (it le; movle 0), right and bottom capped at cols - 1 and rows - 1; cv::Rect(left, top, right - left, bottom - top) taken as a view of the image (cv::Mat(Mat, Rect) 0x00899132). An empty region is logged ('Got empty ROI for given corners') and the marker dropped (0x0089955A); The region is copied aside (copyTo 0x00899298). Kernel (0x008992BA..0x0089938E): round((params+0x60 + params+0x64) * 0.5 * 1.4142 (0x3FB50481) * (|c0 - c3| + |c2 - c1|)), square. cv::boxFilter(region -> CV_16S, ddepth 3, that size, anchor (-1, -1), normalize true, BORDER_REFLECT_101 = 4) at 0x008993D2; cv::subtract(region, blur -> the CV_16S image, dtype -1) at 0x0089942C; cv::normalize(difference -> the region's own CV_8U view, alpha 255.0, beta 0, NORM_MINMAX = 0x20, dtype -1) at 0x00899474 - so the normalised pixels are written into the image itself, ArrayToCvMat 0x00899B50 wrapping the image's buffer without a copy; RefineCorners (0x00899528) then runs on that image; after it the saved region is copied back (copyTo at 0x0089954E, or 0x00899598 when the marker is not refined), and Extract (0x00899056) reads the restored image
+* outstanding: transcribe the shipped OpenCV boxFilter, subtract and normalize routines exactly instead of the stack's re-implementation of their arithmetic (SD1)
+
+**M11-021 — The per-frame marker-mode gate** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: ShouldProcessVisionMode 0x006B5AA4: (1<<mode) & [VisionSystem+0xac] then the front schedule's CheckTimeToProcessAndAdvance 0x006AF1F8 (bool vector at schedule+0, wrapping counter at schedule+0xc); InitDefaultSchedules 0x006AEFDE fills all 16 modes with {true} and counter 0; sDefaultSchedules 0x0105C540; ApplyCLAHE(image, 4) 0x006B50EE before the marker mode; the call 0x006B5162 movs r1,#1 / 0x006B5164 / 0x006B5168 cmp r0,#1 / 0x006B516A bne / 0x006B5182 DetectMarkersWithCLAHE; re-analysis/obb/assets/cozmo_resources/config/engine/vision_config.json:5 DetectingMarkers true; InitialModeSchedules has no DetectingMarkers entry
+* outstanding: compare MarkerDetector.cs with the gate, the default schedule and the CLAHE call above and build any missing part
 
 **M11-022 — The marker-detector entry and post-processing** (live path)
 
@@ -686,8 +801,26 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: marker detection differs
 * rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
 * best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: Detect 0x008753B8 ResetBuffers 0x008753C8; DetectFiducialMarkers 0x004CFCEC; post 0x004BF048 GetROI, 0x004CFCC8 GetNegative, 0x004BEBBC InitFromPointContainer
-* outstanding: the MarkerDetector post-processing (ROI/negative choice, the ObservedMarker build) is not built in the stack
+* evidence: MarkerDetector::Detect 0x008753B6: ResetBuffers 0x008753C8, Array<u8> wrap 0x008753F0; ROI/negative choice from [camera+0x7c] 0x00875402..0x00875470; CopyTo/GetROI/FillWith 0x0087556E..0x008755AA; GetNegative 0x0087561A; the VisionMarker slot init 0x00875690..0x008756E2; DetectFiducialMarkers 0x008757B2 (body 0x00898760); the ObservedMarker build 0x00875546..0x0087555C (ctor 0x0087E1FC)
+* outstanding: compare MarkerDetector.cs with the entry, the ROI/negative choice and the ObservedMarker build above and build any missing part
+
+**M11-023 — The front-end orchestration order** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: per quad: homography 0x00898E98; params+1 gates illumination normalisation 0x008990BE, region 0x008990CE, boxFilter 0x008993D2, subtract 0x0089942C, normalize 0x00899474; exactly-4-corner check 0x008994CE; RefineCorners 0x00899528 and the copy-back 0x0089954E; decode params+0x69 0x00899032, ratio 0x0089903A, threshold 0x32 0x00899054, Extract 0x00899056
+* outstanding: compare MarkerDetector.cs with the per-marker order above and build any missing part
+
+**M11-024 — The component-extraction filter selector** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: selector 0x00898B4C ldrb/cmp/beq; calls 0x00898BE0 (live) / 0x00898C5C (binomial); Parameters::Initialize 0x008752FC movw r2,#0x101 / 0x00875304 strh -> byte0=1; the live ExtractComponentsViaCharacteristicScale 0x0088F8BC
+* outstanding: compare MarkerDetector.cs with the selector above and build any missing part
 
 **M11-025 — The characteristic-scale select** (live path)
 
@@ -698,14 +831,140 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: 0x00890B14 select loop inside 0x00890448..0x00890DF4 (non-live); live: 0x0088F8BC + ScrollingIntegralImage_u8_s32
 * outstanding: the select loop 0x00890B14 is inside the non-live binomial extractor; the live ecvcs variant 0x0088F8BC uses ScrollingIntegralImage (M11-032)
 
+**M11-026 — The connected-component filters** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: size filter 0x00898CAA (operands +0x14/+0x18); solid/sparse 0x00898D0A (+0x1c=32000/+0x20=64); hollow 0x00898D6A (+0x24=1.0); compress 0x00898C90..0x00898D50; sort 0x00898DD0; the size-filter operands are computed inline in Detect (0x008756E6..0x00875770)
+* outstanding: compare MarkerDetector.cs with the five filters above and build any missing part
+
+**M11-027 — The exterior boundary trace** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: TraceNextExteriorBoundary 0x008C6B18; capacity 0x00892DA8 movw 0x2710; sortedness 0x008C6B5C; the four staircase passes 0x008C6FF0..0x008C72CC; sentinels 0x7fff/0x8000 at 0x008C6FA6/0x008C6FB2; translate 0x008C72D6/0x008C72E4; it is live: called at 0x00892E0A from ComputeQuadrilateralsFromConnectedComponents, called at 0x00898E2C in DetectFiducialMarkers
+* outstanding: compare MarkerDetector.cs with the four-pass trace above and build any missing part
+
+**M11-028 — The quad construction and acceptance** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: the stack's QuadDetector.cs quad construction is to be compared against the instructions above
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: ComputeQuadrilateralsFromConnectedComponents 0x00892D70; method switch 0x00892E24; order 0x00892E66..; IsQuadrilateralReasonable at 0x00892EF8 (blx 0x4D0F28); swap 0x00892F04; append 0x00892F62
+* outstanding: compare QuadDetector.cs with the quad construction and acceptance above and build any missing part
+
+**M11-029 — ExtractLineFitsPeaks and the corner fit** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: sigma = n/64 0x008A5E90 (0.015625); getGaussianKernel 0x008A5F26; derivative 0x008A602C/0x008A6038; circular convolution 0x008A613E..0x008A628A (wrap 0x008A6166, unit-tangent normalisation 0x008A6248/0x008A6266); kmeans 0x008A6490 (K=4, type 3, 15, 0.1, attempts 1); cos-25-deg reject 0x008A64B4..0x008A65E2 (literal 0x3F6803C9 at 0x8A61C0); least-squares fit 0x008A6714 (swapped flag, (coord,1) rows, solve 0x008A68E0); exactly four intersections 0x008A6BE0; ComputeClockwiseCorners 0x008A1324; s16 round 0x008A6C1E/4A/7C
+* outstanding: compare MarkerDetector.cs with the circular convolution, the kmeans parameters and the fit above and build any missing part
+
+**M11-030 — ComputeClockwiseCorners and the s16 rounding** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: the stack's CornerRefinement/QuadCorners ordering is to be compared against the instructions above
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: ComputeClockwiseCorners 0x008A1324; s16 round half away from zero 0x008A6C1E/0x008A6C4A/0x008A6C7C
+* outstanding: compare the corner ordering and the s16 round above and build any missing part
+
+**M11-031 — The contrast gate (ComputeBrightDarkValues)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
+* effect: marker detection differs
+* rests on: extracted read-only; the stack's marker front end compared against it in re-analysis/evidence/m11/marker-frontend.md
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: ComputeBrightDarkValues 0x0089F8E8; ratio 1.01 (0x3F8147AE at 0x0087538E, read at params+0x3c); the compare 0x0089FD10..0x0089FD30
+* outstanding: compare MarkerDetector.cs with the contrast gate above and build any missing part
+
 **M11-032 — The live component extractor is the ecvcs integral-image variant** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/QuadDetector.cs`
 * effect: the connected components (and hence the quads) are found by the wrong algorithm
 * rests on: the stack's QuadDetector implements the binomial path; the shipped selector byte is 1, so the live extractor is ExtractComponentsViaCharacteristicScale 0x0088F8BC (ecvcs_computeBinaryImage_numFilters3/_5, ScrollingIntegralImage_u8_s32::FilterRow)
 * best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: 0x0088F8BC function; Extract2dComponents_PerRow_Initialize 0x0088FA70; ecvcs_computeBinaryImage_numFilters3 0x0088F61A / _5 0x0088F684 / _5_thresholdMultiplier1 0x0088F75E; ecvcs_filterRows 0x0088F4D0; ScrollingIntegralImage_u8_s32::FilterRow 0x0088F538
-* outstanding: rework QuadDetector from the binomial path to the live ecvcs integral-image extractor (0x0088F8BC); the dark-mask multiplier 0xCCCC belongs to the non-live path
+* evidence: selector byte 1 (0x008752FC/0x00875304) -> ExtractComponentsViaCharacteristicScale 0x0088F8BC; window bank {4,8,16} 0x00898B5A..0x00898B9E; ScrollingIntegralImage_u8_s32 ctor 0x008A4D34; FilterRow 0x0088F538; ecvcs_filterRows 0x0088F4D0; ScrollDown 0x008A4DB0; get_maxRow 0x008A51E0; numFilters3 0x0088F61A: a = |f1-f0| > |f2-f1| ? f1 : f2; mask = ((a * params+0x0c) >> 16) > pixel; the multiplier 0xCCCC is live at 0x00898BAA -> 0x0088F662 mul / 0x0088F66A asrs #0x10; the per-row DP Extract2dComponents_PerRow_* 0x00893BAA thunk; Extract1dComponents 0x00896FDC; NextRow 0x00893F96
+* outstanding: rework QuadDetector from the binomial path to the live ecvcs integral-image extractor 0x0088F8BC; the dark-mask multiplier 0xCCCC is read by the live path too (0x00898BAA), so it belongs to both paths
+
+**M11-033 — The image hand-off and the two VisionSystem::Update overloads** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
+* effect: the camera image reaches the vision system
+* rests on: the stack's vision input path is to be compared against the engine's two Update overloads
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: VisionComponent::SetNextImage 0x00652B04; Processor 0x00651F08; UpdateVisionSystem(pose, image) 0x00653D30; VisionSystem::Update(PoseData, EncodedImage) 0x006B4B68: IsColor 0x006B4B7C, DecodeImageRGB 0x006B4B90 or DecodeImageGray 0x006B4C02, then Update(PoseData, ImageCache) 0x006B4C78; Update(PoseData, ImageCache) 0x006B4D5C: the pose and image guards 0x006B4D66/0x006B4D70, UpdatePoseData 0x006B4D88, GetGray 0x006B4D94
+* outstanding: compare VisionSystem.cs with the hand-off and the two Update overloads above and build any missing part
+
+**M11-034 — The vision-mode schedule mechanism** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
+* effect: which vision modes run on a given frame
+* rests on: the stack's marker front end is to be compared against the engine's mode schedule
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: ShouldProcessVisionMode 0x006B5AA4: (1<<mode) & [VisionSystem+0xac], then the front schedule's CheckTimeToProcessAndAdvance 0x006AF1F8; CheckTimeToProcessAndAdvance 0x006AF1F8: a bool vector at schedule+0 and a wrapping counter at schedule+0xc; InitDefaultSchedules 0x006AEFDE: all 16 modes {true}, counter 0; sDefaultSchedules 0x0105C540
+* outstanding: compare the mode enable bitmask and the schedule with the instructions above and build any missing part
+
+**M11-035 — The VisionComponent per-mode result handlers and the frame broadcast** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
+* effect: the engine-to-game vision results and their order
+* rests on: the stack's vision result dispatch is to be compared against the engine's handler order
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: VisionComponent::UpdateAllResults 0x006542EC runs markers 0x006544A2, faces 0x00654510, pets 0x0065457E, motion 0x006545E8, overhead edges 0x00654652, tool code 0x006546BC, computed calibration 0x00654726, image quality 0x00654790, laser points 0x006547FA; then CheckMailbox 0x00654A74 and the RobotProcessedImage broadcast 0x00654A14/0x00654A1C
+* outstanding: compare the handler order, CheckMailbox and the RobotProcessedImage broadcast above and build any missing part
+
+**M11-036 — VisionComponent::UpdateVisionMarkers into BlockWorld** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
+* effect: observed markers reach the block world
+* rests on: the stack's marker-to-BlockWorld hand-off is to be compared against the engine's
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: VisionComponent::UpdateVisionMarkers 0x00654D60 calls BlockWorld::UpdateObservedMarkers(list<ObservedMarker>) 0x00654DF4
+* outstanding: compare the marker hand-off above and build any missing part
+
+**M11-037 — The BlockWorld frame sequence for observed markers** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
+* effect: objects are created, updated and forgotten each frame
+* rests on: the stack's BlockWorld frame update is to be compared against the engine's sequence
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: BlockWorld::UpdateObservedMarkers 0x00624EE8: ClearOccluders 0x00624F98, AddLiftOccluder 0x00624FA4, CreateObjectsFromMarkers 0x00624FC4, CheckForUnobservedObjects 0x0062504E, AddAndUpdateObjects 0x0062505A, UpdatePoseOfStackedObjects 0x006250D0, BlockConfigurationManager::Update 0x0062520C, UpdateMarkerlessObjects 0x0062521A
+* outstanding: compare the frame sequence above and build any missing part
+
+**M11-038 — The BlockWorld game-broadcast entry points** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
+* effect: the game sees object observations and connected states
+* rests on: the stack's BlockWorld broadcasts are to be compared against the engine's entry points
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: BroadcastObjectObservation 0x0061FED8; BroadcastLocatedObjectStates 0x0061E6C0; BroadcastConnectedObjects 0x0061E91C; VisionSystem::CheckMailbox 0x006B2AD4
+* outstanding: compare the broadcast entry points above; the individual message layouts belong to M2/M10
+
+**M11-039 — The calibration-install path into MarkerDetector::Init** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/CameraCalibration.cs`
+* effect: the marker detector is configured with the camera calibration
+* rests on: the stack's calibration install is to be compared against the engine's
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: VisionSystem::UpdateCameraCalibration 0x006B1E3E; Camera::SetCalibration 0x006B1E5E; MarkerDetector::Init 0x006B1E78; Parameters::Initialize 0x008752E4/0x008752E6
+* outstanding: compare the calibration install above and build any missing part; this is the M3 calibration interface
+
+**M11-040 — The VisionComponent mailbox and processor thread** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
+* effect: images are queued and processed on a thread
+* rests on: the stack's vision component thread is to be compared against the engine's
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: VisionComponent::SetNextImage 0x00652B04; Processor 0x00651F08
+* outstanding: compare the mailbox and processor above and build any missing part; the per-frame bound is M3's
 
 ## What remains after both: blocked externally, or needing hardware
 
@@ -760,10 +1019,8 @@ Each of these is a question already answered. The original's behaviour is establ
 | M9-018 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A Stop action ends the streaming song when its target is the Play target or an ancestor | the shipped bank. The three tempo events play targets 914766641, 139286641 and 602865028, and Stop__Robot_VO__Cozmo_Singing_Stop holds three action-type-1 actions targeting exactly those three, so every stop the product can post is a direct hit on the container that is playing |
 | M9-020 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | A clip plays its source from BeginTrim for its length; a note still held at the clip end is released there | the shipped clip fields, which are read exactly. Every clip in every bank has PlayAt 0 and BeginTrim 0, so the start of the window is never moved; the end of it is what makes a twelve-second song out of a MIDI source minutes long, and is far from decorative. The one part of the rule that is a runtime judgement - what becomes of a note still held at the end - reaches two notes in the whole product, and the segment ends at the same instant, so what they would have sounded past it is outside the rendered song under either reading |
 | M9-027 | M9-wwise-music | EQUIVALENT_IMPLEMENTATION | Robot_Bus_Eq_HiLowPass low-pass at 14298 Hz is above Nyquist for the robot's rate | Init.bnk gives 14298 Hz; AnimConstants::AUDIO_SAMPLE_RATE gives 22320 Hz, so Nyquist is 11160 Hz in the engine too |
-| M11-005 | M11-vision | EQUIVALENT_IMPLEMENTATION | The sub-pixel corner refinement | VisionMarker::RefineCorners 0x0089FD98, VisionMarker::ComputeBrightDarkValues 0x0089F8E8, RefineQuadrilateral 0x008C55E0 and its corner helper 0x008C66C4, MarkerDetector::Parameters::Initialize 0x008752F8, DetectFiducialMarkers 0x00898760, read |
 | M11-012 | M11-vision | COMPATIBILITY_POLICY | The nominal camera calibration stand-in | not applicable: the live path reads the robot own calibration and fails closed without it |
 | M11-013 | M11-vision | COMPATIBILITY_POLICY | AllowUnconnectedObjects switch | the engine connected-object rule, which is implemented |
-| M11-017 | M11-vision | EQUIVALENT_IMPLEMENTATION | The memory map's vision-derived content: the overhead edges | OverheadEdgesDetector::Detect 0x006ABE34, its construction in VisionSystem::VisionSystem 0x006B0120, GroundPlaneROI 0x004F7774 and its statics at 0x00C48F60, MapComponent::ProcessVisionOverheadEdges 0x0067F7AC, AddVisionOverheadEdges 0x0067F814, FlagQuadAsNotInterestingEdges 0x0067E6B0, FlagGroundPlaneROIInterestingEdgesAsUncertain 0x0067E50C with its lambda at 0x00680B54, MemoryMap::FillBorderInternal and QuadTreeProcessor::FillBorder 0x00689FAC, all read |
 | M12-014 | M12-manipulation | EQUIVALENT_IMPLEMENTATION | The docking error signal's last two bytes are whatever was on the engine's stack | UpdateDockingErrorSignal 0x0063BE80 is the only builder and it never writes the struct bytes at +0x14 and +0x15. Nothing clears the struct either: it is a stack local at sp+0xa0 filled field by field, with no memclr and no constructor call, and Pack 0x007C0B26 reads both bytes and sends them |
 | TOOL-001 | tools | COMPATIBILITY_POLICY | Conformance CLI pass and fail criteria | not applicable: the harness is not part of the app |
 | TOOL-002 | tools | COMPATIBILITY_POLICY | The fake robot side answers place docks without a marker signal | not applicable: this is the test double, not the robot |
@@ -771,7 +1028,6 @@ Each of these is a question already answered. The original's behaviour is establ
 | TOOL-005 | tools | COMPATIBILITY_POLICY | The hardware acceptance campaign: how a check is judged, and what a result may change | not applicable: the harness is not part of the app. The rule that matters runs the other way - a hardware result never changes a fidelity record's status. A check that passes says the behaviour was observed; a check that fails is an investigation item, not a licence to tune a source-backed constant. M11-005 stays open whatever the vision check reports, and the charger's 20 x 27 mm marker geometry is not adjusted to make the mount succeed |
 | M7-017 | M7-behaviour | EQUIVALENT_IMPLEMENTATION | The complete live-animation wire lifecycle | AnimationStreamer::UpdateLiveAnimation 0x0057D5F8, AnimationStreamer::Update 0x0057CE5C, InitStream 0x0057B674, UpdateStream 0x0057C84C, SendStartOfAnimation 0x0057C400, SendBufferedMessages 0x0057BF60, read |
 | M13-014 | M13-navigation | EQUIVALENT_IMPLEMENTATION | Knock over a stack: BehaviorKnockOverCubes has no verified fidelity record | BehaviorKnockOverCubes 0x005C2EA0..0x005C3C00, its knock-over callback 0x005C3DCE, IBehavior::StartActing(action, function<void(Robot&)>) 0x005BE0E4 and its lambda 0x005BF8F4, IBehavior::Init 0x005BCB54 and ReadFromJson 0x005BBFB4, read; DriveAndFlipBlockAction 0x0055E208 not read past its arguments; DriveAndFlipBlockAction 0x0055E208, IDriveToInteractWithObject 0x0055B1F4, ReactionTriggerStrategyNoPreDockPoses::ShouldTriggerBehaviorInternal 0x00610E32, AIWhiteboard::AIWhiteboard 0x0056A270 and BehaviorRamIntoBlock's transitions, read |
-| M11-020 | M11-vision | EQUIVALENT_IMPLEMENTATION | Illumination normalisation of each marker's region before its corners are refined and it is decoded | DetectFiducialMarkers 0x00898760 per-marker loop 0x008990AA..0x008995A2, Quadrilateral<float>::ComputeBoundingRectangle<int> 0x0088A16C, ArrayToCvMat<u8> 0x00899B50, read |
 | M2-017 | M2-protocol | COMPATIBILITY_POLICY | A field whose read failed in a kept malformed message holds 0 / false (the engine leaves stale stack bytes) | libcozmoEngine.so 3.4.0-1204 |
 | M3-019 | M3-device | COMPATIBILITY_POLICY | The connection-time SetCameraParams: the engine sends stale stack bytes for f32@0 and u16@4 and bool@6 = 1; this stack sends 0.0, 0, true | libcozmoEngine.so 3.4.0-1204 |
 | M3-020 | M3-device | COMPATIBILITY_POLICY | A payload that is empty or all 0xFF: the engine reads data[-1] (undefined); this stack treats it as a decode failure | libcozmoEngine.so 3.4.0-1204 |
