@@ -2,7 +2,7 @@ BLOCKED 2026-09-28 11:14 -05:00 opencode-w2 — the M6-002 packet driver and sou
 
 ## What is committed (main)
 
-`8c6fff2` (this job):
+`96b6f9d` (this job, after the rebase onto `f813461`):
 - `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseVorbisDecode.cs` (new): the runtime codebook unpack 0x00ABA188, the setup parse 0x00AB63E0, the packet entry 0x00AB3780, the packet inverse 0x00AB6B14 (floor1 inverse1 0x00AB8E60, residue inverse 0x00AB73F8 types 0/1 and 2, inline coupling inverse 0x00AB6E30, floor1 inverse2 0x00AB915C, mdct_backward 0x00AB4E34), the framing 0x00AB7E40, the window/overlap combine 0x00AB5A94 and driver 0x00AB3520, the stream reset 0x00AB3978, and the `Decode` entry.
 - `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseVorbisSource.cs` (new): the two shipped Vorbis source classes (0xAB0448 streamed / 0xAB1550 in-memory) and the emit 0xA73490. Unwired.
 - `WwiseVorbisNative.cs`: residue `Stages`, the corrected `Dequantize` shift direction (0x00AB9CB0..0x00AB9D14), `UnreadArithmetic`, and the dead pure `DecodevAdd`/`DecodevvAdd` removed.
