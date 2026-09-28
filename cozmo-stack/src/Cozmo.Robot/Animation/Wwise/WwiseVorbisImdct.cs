@@ -46,6 +46,12 @@ public static partial class WwiseVorbisNative
         for (int i = 0; i < 4; i++) d[4 * a + i] = -d[4 * a + i];
     }
 
+    /// <summary>vneg.f32 qDest, qSrc (two-register form).</summary>
+    private static void VNeg(float[] d, int dest, int src)
+    {
+        for (int i = 0; i < 4; i++) d[4 * dest + i] = -d[4 * src + i];
+    }
+
     private static void VMul(float[] d, int dest, int a, int b)
     {
         for (int i = 0; i < 4; i++) d[4 * dest + i] = d[4 * a + i] * d[4 * b + i];
@@ -187,7 +193,6 @@ public static partial class WwiseVorbisNative
 
         ImdctPreSymmetry(mem, n2, shift);                                  // X5-I4: 0x00AB3D28
         ImdctButterfliesCore(mem, n2, shift, gotBase * 4, log2n, spButterfly * 4, workSlot * 4); // X5-I5
-        Array.Copy(mem, 0, mem, workBase, n);                              // in -> work
         ImdctStagesTerminalCore(mem, n2, shift, gotBase * 4, log2n, spStages * 4, workSlot * 4); // X5-I6/I7
         ImdctTail(mem, workBase, n, shift, 0);                             // X5-I8: 0x00AB39D8
         mem.AsSpan(0, n).CopyTo(inout);
@@ -210,14 +215,14 @@ public static partial class WwiseVorbisNative
         VLoad4(d, 16, 17, TrigView(8, 4 * (shift + 1)), 0);                    // q8 = view256[shift+1] (0x3d40/3d58/3d68/3d78)
         VCopy(d, 10, 8);                                                   // q10 = q8
         VLoad4(d, 22, 23, TrigView(12, 4 * shift), 0);                        // q11 = view512[shift]
-        VMul(d, 8, 11);                                                    // q8 = q8 * q11
+        VStoreSp4(d, 16, 17, sp, 24);                                      // 0x3d94/0x3d98: sp[0x60] = q8, saved BEFORE the multiply
+        VMul(d, 8, 11);                                                    // 0x3d9c: q8 = q8 * q11
         VLoad4(d, 18, 19, TrigView(10, 4 * shift), 0);                        // q9 = view368[shift] (0x3d50/3d6c/3d80/3da8)
-        VMul(d, 13, 10);                                                   // q13 = q10 * q9
+        VMul(d, 13, 10, 9);                                                // 0x3dac: q13 = q10 * q9 (three-operand form)
         VLoad4(d, 28, 29, TrigView(11, 4 * shift), 0);                        // q14 = view440[shift] (0x3d70/3d8c/3da4/3db4)
         VSub(d, 15, 8, 14);                                                // q15 = q8 - q14
         VLoad4(d, 28, 29, TrigView(9, 4 * shift), 0);                        // q14 = view296[shift] (0x3d84/3da0/3db0/3dbc)
         VSub(d, 14, 13, 14);                                               // q14 = q13 - q14
-        VStoreSp4(d, 16, 17, sp, 24);                                      // sp[0x60] = q8 (saved)
 
         int p = 0, q = n2 - 16;                                            // r0 = in, r1 = in + n2 - 16
         while (p < q)
@@ -253,7 +258,7 @@ public static partial class WwiseVorbisNative
             float r2v = d[4 * 13];                                         // 0x3e40: r2 = d26[0] = q13[0]
             VLoad4Structures(d, 17, 19, 21, 23, mem, ip);                  // 0x3e44
             VStoreSp4(d, 24, 25, sp, 16);                                  // 0x3e48: sp[0x40] = q12
-            for (int i = 0; i < 8; i++) sp[i] = d[16 + i];                 // 0x3e50: vstmia sp,{d16..d23}
+            for (int i = 0; i < 16; i++) sp[i] = d[32 + i];                // 0x3e50: vstmia sp,{d16..d23}: 8 d-registers = 16 floats, dK at d[2K]
             VCopy(d, 8, 15);                                               // 0x3e54: q8 = q15
             VCopy(d, 9, 14);                                               // 0x3e58: q9 = q14
             VLoadSp4(d, 24, 25, sp, 0);                                   // 0x3e5c: q12 = sp[0x40]
@@ -508,6 +513,7 @@ public static partial class WwiseVorbisNative
             VSub(d, 13, 11, 13);                                           // 0x3c20: q13 = q11 - q13
             VSub(d, 9, 7, 9);                                              // 0x3c24: q9 = q7 - q9
             VAdd(d, 12, 12, 3);                                            // 0x3c28: q12 = q12 + q3
+            d[15] = BitConverter.UInt32BitsToSingle(0x3F3504F3u);          // 0x3c2c: vldr s15,[pc,#0xd4] (literal 0x00AB3D08 = sqrt(2)/2)
             VMul(d, 7, 9, 0);                                              // 0x3c30: q7 = q9 * q0
             VMul(d, 11, 13, 0);                                            // 0x3c34: q11 = q13 * q0
             VDup(d, 9, 7, 1);                                              // 0x3c38: q9 = vdup(d7[1])
@@ -566,6 +572,7 @@ private static void ImdctButterfliesCore(float[] mem, int points, int shift, int
     var d = new float[64];
     r0 = 0; r1 = points; r2 = shift; r3 = 0; r4 = 0; r5 = 0; r6 = 0; r7 = 0;
     r8 = 0; sb = 0; sl = 0; fp = 0; ip = 0; sp = 0; lr = 0;
+    r3 = IV(mem, workSlotBytes);                                       // 0x00AB4EBC: r3 = *work, the 4th argument: the butterfly writes the work buffer
     sp = unchecked(spBytes + 0x194);
 L_00AB3FCC:
 L_00AB3FD0:
@@ -3462,7 +3469,7 @@ L_00AB56DC:
 L_00AB56E0:
     VLoad4B(d, 4, 5, mem, sl);
 L_00AB56E4:
-    VNeg(d, 5);
+    VNeg(d, 5, 8);    // vneg.f32 q5, q8
 L_00AB56E8:
     sl = IV(mem, unchecked(sp + 24));
 L_00AB56EC:
@@ -3476,7 +3483,7 @@ L_00AB56F8:
 L_00AB56FC:
     sl = IV(mem, sp);
 L_00AB5700:
-    VNeg(d, 15);
+    VNeg(d, 15, 14);  // vneg.f32 q15, q14
 L_00AB5704:
     VLoad4B(d, 26, 27, mem, sl);
 L_00AB5708:
@@ -3726,9 +3733,9 @@ L_00AB58EC:
 L_00AB58F0:
     r2 = IV(mem, unchecked(sp + 76));
 L_00AB58F4:
-    VNeg(d, 15);
+    VNeg(d, 15, 14);  // vneg.f32 q15, q14
 L_00AB58F8:
-    VNeg(d, 5);
+    VNeg(d, 5, 8);    // vneg.f32 q5, q8
 L_00AB58FC:
     VSub(d, 14, 14, 6);
 L_00AB5900:
