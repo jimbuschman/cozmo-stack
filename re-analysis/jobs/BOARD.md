@@ -12,6 +12,16 @@ Each window is its own clone, so builds never collide. Each runs one `scripts/ru
 | 2 | `cozmo-stack` (the main clone) | [X5](X5.md) → [I-M6](I-M6.md) → [B1](B1.md), which BLOCKED correctly: the live voice engine had no record → [I-M6b](I-M6b.md) → [B-M6b](B-M6b.md), which built the voice-engine skeleton and blocked as too large → [B-M6b-1](B-M6b-1.md) → [B-M6b-2](B-M6b-2.md) → [B-M6b-3](B-M6b-3.md) |
 | 3 | `cozmo-stack-w3` | [X1](X1.md) → [X2](X2.md) → [I-M11](I-M11.md) → [B-M11](B-M11.md) → [I-M12](I-M12.md) → [B-M12](B-M12.md) → [I-M13](I-M13.md) → [B-M13](B-M13.md) → [I-M14](I-M14.md) → [B-M14](B-M14.md) |
 
+## Round 2 (2026-09-29): the three chains above are DONE
+
+| window | clone | chain |
+| --- | --- | --- |
+| 1 | `cozmo-stack-w1` | [G-M7](G-M7.md) → [G-M15](G-M15.md) |
+| 2 | `cozmo-stack` (the main clone) | [B-M6b-3](B-M6b-3.md) |
+| 3 | `cozmo-stack-w3` | [G-M14](G-M14.md) |
+
+G jobs fold one checked extraction (Codex's overnight reports) into an approved subsystem, then build it.
+
 ## Job types
 
 - **X, extraction:** read-only. Writes reports to `re-analysis/research/`.
