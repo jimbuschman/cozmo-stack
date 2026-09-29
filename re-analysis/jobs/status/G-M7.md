@@ -3,7 +3,7 @@ DONE 2026-09-29 06:35 -05:00
 Job G-M7: folded the M7-021 reaction-field extraction into M7-behaviour and built it.
 
 ## Commits
-- `7783420` G-M7: fold the M7-021 extraction into M7-behaviour; build the on-charger pickup gate (verifier PASS, suite 1845/1845).
+- `7f0863d` G-M7: fold the M7-021 extraction into M7-behaviour; build the on-charger pickup gate (verifier PASS, suite 1845/1845). (Rebased onto the M9 research push; the pre-push gate then ran the rebased suite green at 1859/1859.)
 - `40b2702` G-M7: claim job.
 
 ## Record
