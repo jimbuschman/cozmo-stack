@@ -9,8 +9,8 @@ Manifest of **372 records** over 16 subsystems.
 | --- | ---: | --- |
 | EXACT_SOURCE | 220 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 2 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 7 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 102 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 6 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 103 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 29 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -37,7 +37,7 @@ remains after both, and they do not go away by working harder on this repository
 | M11-vision — Markers, camera geometry and BlockWorld | 40 | 0 | 9 | 1 | 0 | yes | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 22 | 0 | 4 | 0 | 0 | yes | no |
 | M13-navigation — Planning, charger and block configurations | 19 | 0 | 3 | 0 | 0 | yes | no |
-| M14-faces — Face and pet pipeline | 12 | 1 | 4 | 1 | 0 | no | no |
+| M14-faces — Face and pet pipeline | 12 | 0 | 5 | 1 | 0 | yes | no |
 | M15-freeplay — Needs, activities and freeplay | 16 | 1 | 4 | 0 | 0 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
@@ -121,17 +121,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: statically linked Wwise runtime in libcozmoEngine.so
 * evidence: 0x009D671C..0x009D7727; 0x009D7FC0..0x009D8137; 0x009E266C..0x009E2813
 * outstanding: Follow the type-21 per-voice object created at 0x009D7FC0 through vtable 0x0104B268 and map reads of LFO state +0x34..+0x48 to the waveform sample equation.
-
-### M14-faces — Face and pet pipeline
-
-**M14-011 — FaceRecognizer matching, registration, update and merge semantics** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs`
-* effect: recognized ids, scores, new users, album updates and face merges change
-* rests on: partially recovered from libcozmoEngine.so
-* best authority: FaceRecognizer::RecognizeFace 0x008640E4 and MergeFaces 0x008638AC, partially read
-* evidence: 0x0086410C..0x00864370 establishes registered-user handling, first-user score 1000 and the ten-result OKAO identify call.; 0x00864A18..0x00864AA8 establishes the below-550 new-user path; 0x00864756..0x008649F8 and 0x00864BDA..0x00864CBA establish the >675 lower-ranked named candidate, min(score-75,600) continuation rule and merge call.; 0x008638AC..0x00863B9A establishes MergeFaces orchestration; 0x00861024..0x0086107A establishes the outer EnrolledFaceEntry serialization pack.
-* outstanding: Finish all branches of RecognizeFace 0x008640E4..0x00864CD8; read RegisterNewUser 0x00862808, GetFaceIDforAlbumEntry 0x00862B24, UpdateExistingAlbumEntry 0x00862C7C, RemoveUser 0x008634A4, EnrolledFaceEntry::MergeWith 0x008600B4, ConvertToEnrolledFaceStorage 0x00860AE4, and inverse install from VisionSystem::SetSerializedFaceData 0x00858C74.
 
 ### M15-freeplay — Needs, activities and freeplay
 
@@ -1048,6 +1037,15 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: FaceTracker::Impl::Update 0x0086D740, detector helpers 0x0086CCC0..0x0086D686 and IsEnrollable 0x0086E074, read
 * evidence: 0x0086D776..0x0086D998 detects, enumerates raw results, creates TrackedFace entries and converts centre to square; 0x0086DA04..0x0086DB20 calls parts, expression, smile and gaze/blink in order.; 0x0086CCC6..0x0086CF32 and 0x0086D1F8..0x0086D2FC establish the OKAO parts/expression calls and five-result conversion.; 0x0086D474..0x0086D4A0 scales smile outputs by 0.01/0.001; 0x0086D5D0..0x0086D680 stores unscaled gaze and 0.001-scaled blink ratios under separate enable flags.; 0x0086E074..0x0086E1AC enforces 16/64/128/32 px and 25/45/10 degree gates; 0x0086E36C returns 16.0.
 * outstanding: MISSING: the Anki-side handling operates on OKAO outputs (parts, expression, smile/gaze/blink values, face direction) that the IFaceDetector seam does not carry; the calls and the IsEnrollable gates are M11-016's third-party boundary. Nothing beyond the detector seam is buildable here.
+
+**M14-011 — FaceRecognizer matching, registration, update, merge, album and serialization semantics** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs`
+* effect: recognized ids, scores, new users, album updates, merges and the serialized face album change
+* rests on: recovered from libcozmoEngine.so (all branches instruction-checked, Correction C3)
+* best authority: FaceRecognizer::RecognizeFace 0x008640E4..0x00864CD8, RegisterNewUser 0x00865658, UpdateExistingAlbumEntry 0x00865A98, GetFaceIDforAlbumEntry 0x00866C1C, RemoveUser 0x00865544/0x00866AE0, MergeFaces 0x008638AC, MergeWith 0x008616AE, ConvertToEnrolledFaceStorage 0x00860D7C, FaceRecognizer::SetSerializedData 0x00867F54
+* evidence: RecognizeFace 0x008640E4..0x00864CD8 (confident gate 0x00864338, OKAO_FR_Identify 0x00864254..0x00864392, target path 0x008643A2..0x00864562, debug matches 0x008644F4..0x008646FC, lower-ranked 0x008646FC..0x008649F8, low-confidence new user 0x00864A18..0x00864AA8).; RegisterNewUser 0x00865658..0x008657A8; GetNextAlbumEntryToUse 0x00865178..0x008653D8; GetFaceIDforAlbumEntry 0x00866C1C..0x00866CAC; UpdateExistingAlbumEntry 0x00865A98..0x0086600E; RemoveUser 0x00865544..0x008655C6 and 0x00866AE0..0x00866B9A.; MergeFaces 0x008638AC..0x00863B9A with MergeWith 0x008616AE..0x0086173A and limit 5 at 0x008639C0; ConvertToEnrolledFaceStorage 0x00860D7C..0x00860EE0 and the inverse 0x00860728..0x0086091A.; Enrollment deserialize 0x008684D4..0x0086871C; album restore/consistency 0x00867384..0x008674E2 and 0x00863064..0x0086329C; capacity install 0x00868874..0x00868C5E; FaceRecognizer::SetSerializedData 0x00867F54..0x00868366.; Checked rows: re-analysis/research/20260929-G-M14-citation-check.md; inventory Correction C3.
+* outstanding: Build the FaceRecognizer state machine in cozmo-stack/src/Cozmo.Robot/Vision/ from C3-1..C3-24: the OKAO FR seam, RecognizeFace, RegisterNewUser, GetNextAlbumEntryToUse, GetFaceIDforAlbumEntry, UpdateExistingAlbumEntry (four-entry replacement), RemoveUser (both overloads), MergeFaces/MergeWith, ConvertToEnrolledFaceStorage and its inverse, enrollment deserialize, album restore/consistency/capacity install and the SetSerializedFaceData chain, wired into the VisionSystem face path. The source-level name of EnrolledFaceEntry +0x04 is UNKNOWN (rule exact, C3-18).
 
 **M14-012 — Face album NV persistence, loaded-name replay and enrollment completion** (live path)
 

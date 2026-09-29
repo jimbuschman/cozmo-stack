@@ -1,8 +1,8 @@
 {
   "subsystem": "M14-faces",
-  "approved": "2026-09-28",
+  "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M14-faces.md",
-  "inventory_sha256": "22e54cb1524b7f4197bb7e6c5819a2d17df188f048214c0bfe8dcdeaf503f42c",
+  "inventory_sha256": "d14bcf618d1998a1a7a94c4be29489c67acbd26e9bf2de1624c08a60109a4af8",
   "records": {
     "M14-001": {
       "status": "EXACT_SOURCE",
@@ -129,13 +129,15 @@
       "hardware_required": false
     },
     "M14-011": {
-      "status": "RECOVERABLE_GAP",
-      "title": "FaceRecognizer matching, registration, update and merge semantics",
-      "authority": "FaceRecognizer::RecognizeFace 0x008640E4 and MergeFaces 0x008638AC, partially read",
+      "status": "IMPLEMENTATION_GAP",
+      "title": "FaceRecognizer matching, registration, update, merge, album and serialization semantics",
+      "authority": "FaceRecognizer::RecognizeFace 0x008640E4..0x00864CD8, RegisterNewUser 0x00865658, UpdateExistingAlbumEntry 0x00865A98, GetFaceIDforAlbumEntry 0x00866C1C, RemoveUser 0x00865544/0x00866AE0, MergeFaces 0x008638AC, MergeWith 0x008616AE, ConvertToEnrolledFaceStorage 0x00860D7C, FaceRecognizer::SetSerializedData 0x00867F54",
       "evidence": [
-        "0x0086410C..0x00864370 establishes registered-user handling, first-user score 1000 and the ten-result OKAO identify call.",
-        "0x00864A18..0x00864AA8 establishes the below-550 new-user path; 0x00864756..0x008649F8 and 0x00864BDA..0x00864CBA establish the >675 lower-ranked named candidate, min(score-75,600) continuation rule and merge call.",
-        "0x008638AC..0x00863B9A establishes MergeFaces orchestration; 0x00861024..0x0086107A establishes the outer EnrolledFaceEntry serialization pack."
+        "RecognizeFace 0x008640E4..0x00864CD8 (confident gate 0x00864338, OKAO_FR_Identify 0x00864254..0x00864392, target path 0x008643A2..0x00864562, debug matches 0x008644F4..0x008646FC, lower-ranked 0x008646FC..0x008649F8, low-confidence new user 0x00864A18..0x00864AA8).",
+        "RegisterNewUser 0x00865658..0x008657A8; GetNextAlbumEntryToUse 0x00865178..0x008653D8; GetFaceIDforAlbumEntry 0x00866C1C..0x00866CAC; UpdateExistingAlbumEntry 0x00865A98..0x0086600E; RemoveUser 0x00865544..0x008655C6 and 0x00866AE0..0x00866B9A.",
+        "MergeFaces 0x008638AC..0x00863B9A with MergeWith 0x008616AE..0x0086173A and limit 5 at 0x008639C0; ConvertToEnrolledFaceStorage 0x00860D7C..0x00860EE0 and the inverse 0x00860728..0x0086091A.",
+        "Enrollment deserialize 0x008684D4..0x0086871C; album restore/consistency 0x00867384..0x008674E2 and 0x00863064..0x0086329C; capacity install 0x00868874..0x00868C5E; FaceRecognizer::SetSerializedData 0x00867F54..0x00868366.",
+        "Checked rows: re-analysis/research/20260929-G-M14-citation-check.md; inventory Correction C3."
       ],
       "live_path": true,
       "hardware_required": false

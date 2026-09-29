@@ -231,12 +231,12 @@
       "id": "M14-faces",
       "name": "Face and pet pipeline",
       "milestone": "M14",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": false,
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M14-faces.md",
-        "approved": "2026-09-28",
+        "approved": "2026-09-29",
         "snapshot": "re-analysis/inventory/M14-faces.approved.json"
       }
     },
@@ -4750,18 +4750,20 @@
     {
       "id": "M14-011",
       "subsystem": "M14-faces",
-      "title": "FaceRecognizer matching, registration, update and merge semantics",
+      "title": "FaceRecognizer matching, registration, update, merge, album and serialization semantics",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs",
-      "effect": "recognized ids, scores, new users, album updates and face merges change",
-      "provenance": "partially recovered from libcozmoEngine.so",
-      "authority": "FaceRecognizer::RecognizeFace 0x008640E4 and MergeFaces 0x008638AC, partially read",
+      "effect": "recognized ids, scores, new users, album updates, merges and the serialized face album change",
+      "provenance": "recovered from libcozmoEngine.so (all branches instruction-checked, Correction C3)",
+      "authority": "FaceRecognizer::RecognizeFace 0x008640E4..0x00864CD8, RegisterNewUser 0x00865658, UpdateExistingAlbumEntry 0x00865A98, GetFaceIDforAlbumEntry 0x00866C1C, RemoveUser 0x00865544/0x00866AE0, MergeFaces 0x008638AC, MergeWith 0x008616AE, ConvertToEnrolledFaceStorage 0x00860D7C, FaceRecognizer::SetSerializedData 0x00867F54",
       "evidence": [
-        "0x0086410C..0x00864370 establishes registered-user handling, first-user score 1000 and the ten-result OKAO identify call.",
-        "0x00864A18..0x00864AA8 establishes the below-550 new-user path; 0x00864756..0x008649F8 and 0x00864BDA..0x00864CBA establish the >675 lower-ranked named candidate, min(score-75,600) continuation rule and merge call.",
-        "0x008638AC..0x00863B9A establishes MergeFaces orchestration; 0x00861024..0x0086107A establishes the outer EnrolledFaceEntry serialization pack."
+        "RecognizeFace 0x008640E4..0x00864CD8 (confident gate 0x00864338, OKAO_FR_Identify 0x00864254..0x00864392, target path 0x008643A2..0x00864562, debug matches 0x008644F4..0x008646FC, lower-ranked 0x008646FC..0x008649F8, low-confidence new user 0x00864A18..0x00864AA8).",
+        "RegisterNewUser 0x00865658..0x008657A8; GetNextAlbumEntryToUse 0x00865178..0x008653D8; GetFaceIDforAlbumEntry 0x00866C1C..0x00866CAC; UpdateExistingAlbumEntry 0x00865A98..0x0086600E; RemoveUser 0x00865544..0x008655C6 and 0x00866AE0..0x00866B9A.",
+        "MergeFaces 0x008638AC..0x00863B9A with MergeWith 0x008616AE..0x0086173A and limit 5 at 0x008639C0; ConvertToEnrolledFaceStorage 0x00860D7C..0x00860EE0 and the inverse 0x00860728..0x0086091A.",
+        "Enrollment deserialize 0x008684D4..0x0086871C; album restore/consistency 0x00867384..0x008674E2 and 0x00863064..0x0086329C; capacity install 0x00868874..0x00868C5E; FaceRecognizer::SetSerializedData 0x00867F54..0x00868366.",
+        "Checked rows: re-analysis/research/20260929-G-M14-citation-check.md; inventory Correction C3."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "Finish all branches of RecognizeFace 0x008640E4..0x00864CD8; read RegisterNewUser 0x00862808, GetFaceIDforAlbumEntry 0x00862B24, UpdateExistingAlbumEntry 0x00862C7C, RemoveUser 0x008634A4, EnrolledFaceEntry::MergeWith 0x008600B4, ConvertToEnrolledFaceStorage 0x00860AE4, and inverse install from VisionSystem::SetSerializedFaceData 0x00858C74.",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Build the FaceRecognizer state machine in cozmo-stack/src/Cozmo.Robot/Vision/ from C3-1..C3-24: the OKAO FR seam, RecognizeFace, RegisterNewUser, GetNextAlbumEntryToUse, GetFaceIDforAlbumEntry, UpdateExistingAlbumEntry (four-entry replacement), RemoveUser (both overloads), MergeFaces/MergeWith, ConvertToEnrolledFaceStorage and its inverse, enrollment deserialize, album restore/consistency/capacity install and the SetSerializedFaceData chain, wired into the VisionSystem face path. The source-level name of EnrolledFaceEntry +0x04 is UNKNOWN (rule exact, C3-18).",
       "hardware_required": false,
       "live_path": true,
       "test": "FaceTests"
