@@ -30,7 +30,7 @@ so that no two windows work on the same layers at once. R-VIS moved to a Sonnet 
 
 | window | clone | chain |
 | --- | --- | --- |
-| 1 | `cozmo-stack-w1` | [R-BEH](R-BEH.md) (M7, M8) |
+| 1 | `cozmo-stack-w1` | [R-BEH](R-BEH.md) (M7, M8), DONE → [R-BEH2](R-BEH2.md) (the M7/M8 gap passes it left) |
 | 4 (Sonnet in Claude Code, on the manager's machine) | `cozmo-stack-r` | [B-M6b-4](B-M6b-4.md) (the M6 live-audio wiring) |
 | 5 (a second Sonnet, on the manager's machine) | `cozmo-stack-r2` | [R-VIS](R-VIS.md) (M11, M12, M13, M14), once G-M14 is DONE |
 | 2 | `cozmo-stack` (the main clone) | [R-ANIM](R-ANIM.md) (M5, M10), DONE → [R-M15](R-M15.md) (M15) → [R-M9](R-M9.md) and [R-M6](R-M6.md), which wait for B-M6b-4 |

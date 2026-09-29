@@ -1,5 +1,7 @@
 # Policy review: COMPATIBILITY_POLICY and EQUIVALENT_IMPLEMENTATION records
 
+> **Correction (manager, 2026-09-29):** the M8-008 row is wrong. IAction's -1.0 at +0x74 is the "timer not started" sentinel. The timeout is the vtable slot +0x2c, whose default (0x0052B0C2) returns 30.0f and which `IAction::UpdateInternal` adds to the start time (0x00540D98..0x00540D9E). R-BEH found this, and the manager verified it. The engine does time out, after 30 s.
+
 - **Answers:** `re-analysis/research/requests/20260929-policy-review.md`
 - **Date:** 2026-09-29
 - **Kind:** independent extraction (a review). Authority 1 to 3 where a native address is cited; the manager checks the citations before acting.
