@@ -28,7 +28,7 @@ public readonly record struct FaceRect(double X, double Y, double Width, double 
 /// expression scores (<c>TrackedFace::SetExpressionValue</c>, one per <see cref="FacialExpression"/>), and the
 /// name when the recogniser knows one.
 /// </summary>
-public sealed record DetectedFace(int Id, FaceRect Rect, Vec2? LeftEye = null, Vec2? RightEye = null, IReadOnlyList<byte>? ExpressionValues = null, string? Name = null, int Score = 0);
+public sealed record DetectedFace(int Id, FaceRect Rect, Vec2? LeftEye = null, Vec2? RightEye = null, IReadOnlyList<byte>? ExpressionValues = null, string? Name = null, int Score = 0, double? RollRad = null);
 
 /// <summary>
 /// The seam where the engine calls Omron's OKAO Vision library. <c>FaceTracker::Impl::Update</c>
@@ -58,16 +58,23 @@ public sealed class OkaoFaceDetector : IFaceDetector
 
 /// <summary>
 /// <c>Anki::Vision::TrackedFace</c>: a detected face with its head pose. <c>UpdateTranslation(camera)</c>
-/// (0x0087DE24): the eye midpoint and intra-eye distance come from the detected eyes when present, otherwise
-/// from the rectangle (midpoint = centre + (0, −0.125 h); eyes at ±0.25 w, so the distance is 0.5 w), floored
-/// at 6 px; the head lies along the camera ray through the midpoint at a distance of
-/// 62 mm (0x42780000, the human inter-pupil distance) × focal length / intra-eye pixels, and the head pose is
-/// parented to the camera pose (<c>SetParent</c>), so it lands in the world.
+/// (0x0087DE24, C2-F23): the selector is the parts/eye-detected flag at +0x30 (here: both eye centres
+/// present). With parts, the eye distance is <c>GetIntraEyeDistance</c> 0x0087DC68,
+/// <c>sqrt((x1-x2)^2+(y1-y2)^2) / cos(roll)</c> at +0xec (the divisor is 1.0 when |cos| &lt; 1e-5, and
+/// 6.0/divisor when the distance is under 1e-5); without parts, the box branch builds
+/// A=(x+0.25w, y+0.375h) and B=(x+0.75w, y+0.375h), so the distance is |0.5 w| floored at 6.0. The
+/// common tail takes the midpoint of the eye centres (the zeroed (0,0) slots, pixel (0,0), in the box
+/// branch), the ray through it (inverse calibration, unit length), scales by
+/// <c>focalX * 62.0 / eyeDistance</c> (0x42780000 = 62.0) and parents the pose to the camera pose.
 /// </summary>
 public sealed class TrackedFace
 {
+    /// <summary>The human inter-pupil distance the ray is scaled by, 62.0 mm (0x42780000).</summary>
     public const double InterPupilDistanceMm = 62.0;
+    /// <summary>The parts-branch fallback and the box-branch floor, 6.0 px (0x0087DD86 / 0x0087DF0A).</summary>
     public const double MinIntraEyeDistancePx = 6.0;
+    /// <summary>The 1e-5 literal (0x3727C5AC): the |cos| divisor threshold, and the distance fallback.</summary>
+    public const double MinCosOrDistance = 1e-5;
 
     public TrackedFace(DetectedFace d, uint timestamp) { Detection = d; Timestamp = timestamp; }
 
@@ -76,17 +83,25 @@ public sealed class TrackedFace
     public int Id => Detection.Id;
     public FaceRect Rect => Detection.Rect;
     public string? Name => Detection.Name;
-    public Pose3d HeadPose { get; private set; } = Pose3d.Identity;
+    public Pose3d HeadPose { get; internal set; } = Pose3d.Identity;
     public double DistanceMm { get; private set; }
 
-    public (Vec2 Midpoint, double IntraEyeDistancePx) EyeGeometry()
+    /// <summary>The parts/eye-detected flag at +0x30: both eye centres present.</summary>
+    public bool HasEyeParts => Detection.LeftEye is { } && Detection.RightEye is { };
+
+    /// <summary>
+    /// <c>TrackedFace::GetIntraEyeDistance</c> 0x0087DC68 (C2-F23): the two eye centres' distance divided
+    /// by the signed cosine of the roll at +0xec, except that the divisor is 1.0 when <c>|cos| &lt; 1e-5</c>
+    /// (the absolute value is only the threshold test). A distance under 1e-5 warns and returns
+    /// <c>6.0 / divisor</c>.
+    /// </summary>
+    public static double GetIntraEyeDistance(Vec2 left, Vec2 right, double rollRad)
     {
-        if (Detection.LeftEye is { } l && Detection.RightEye is { } r)
-            return (new Vec2((l.X + r.X) / 2, (l.Y + r.Y) / 2), Math.Max(MinIntraEyeDistancePx, (r - l).Length));
-        var c = Rect.Center;
-        var left = new Vec2(c.X - 0.25 * Rect.Width, c.Y - 0.125 * Rect.Height);
-        var right = new Vec2(c.X + 0.25 * Rect.Width, c.Y - 0.125 * Rect.Height);
-        return (new Vec2(c.X, c.Y - 0.125 * Rect.Height), Math.Max(MinIntraEyeDistancePx, (right - left).Length));
+        double dx = right.X - left.X, dy = right.Y - left.Y;
+        double dist = Math.Sqrt(dx * dx + dy * dy);
+        double c = Math.Cos(rollRad);
+        double divisor = Math.Abs(c) < MinCosOrDistance ? 1.0 : c;
+        return dist < MinCosOrDistance ? MinIntraEyeDistancePx / divisor : dist / divisor;
     }
 
     /// <summary><c>GetMaxExpression</c>: the highest-scoring expression, Unknown without scores.</summary>
@@ -98,11 +113,38 @@ public sealed class TrackedFace
         return (FacialExpression)best;
     }
 
+    // fidelity: M14-001
+    /// <summary>
+    /// <c>TrackedFace::UpdateTranslation(camera)</c> 0x0087DE24 (C2-F23).
+    /// The face roll (this+0xec) is the <see cref="DetectedFace.RollRad"/> seam input. A parts face (eye
+    /// centres present) with no roll is an incomplete detector input and is not defaulted: it throws,
+    /// because the engine always has the parts roll (the production detector is the M11-016 OKAO boundary
+    /// recorded by M14-010).
+    /// </summary>
     public void UpdateTranslation(CameraModel camera)
     {
-        var (mid, eyePx) = EyeGeometry();
+        double eyePx;
+        Vec2 rayPoint;
+        if (HasEyeParts)
+        {
+            var l = Detection.LeftEye!.Value;
+            var r = Detection.RightEye!.Value;
+            if (Detection.RollRad is not { } roll)
+                throw new NotSupportedException("TrackedFace::UpdateTranslation: the parts branch needs the face roll (this+0xec), which IFaceDetector does not carry (M14-010/M11-016)");
+            eyePx = GetIntraEyeDistance(l, r, roll);
+            rayPoint = new Vec2((l.X + r.X) / 2, (l.Y + r.Y) / 2);
+        }
+        else
+        {
+            // A=(x+0.25w, y+0.375h), B=(x+0.75w, y+0.375h): the x difference is 0.5w, the y difference 0.
+            double w = Rect.Width;
+            eyePx = Math.Max(MinIntraEyeDistancePx, Math.Abs(0.5 * w));
+            // C2-F23: the box branch writes A/B only to scratch slots for the distance and leaves its eye
+            // slots zeroed, so the midpoint is pixel (0,0); the engine's invK*(0,0,1) is Ray(pixel (0,0)).
+            rayPoint = new Vec2(0, 0);
+        }
         DistanceMm = InterPupilDistanceMm * camera.Calibration.FocalLengthX / eyePx;
-        var (origin, dir) = camera.Ray(mid);
+        var (origin, dir) = camera.Ray(rayPoint);
         var head = origin + dir.Normalized() * DistanceMm;
         HeadPose = new Pose3d(camera.Pose.Rotation, head);
     }
@@ -174,7 +216,13 @@ public sealed record FaceObservation(FaceEntry Face, uint Timestamp, bool IsNew,
 /// </summary>
 public sealed class FaceWorld
 {
+    // The C2-F7 dead branch's constants: present in the binary (0x004F441A / 0x004F4428) but unreachable,
+// because FaceTracker::IsRecognitionSupported 0x0086B244 returns 1 unconditionally. Kept as the record's
+// evidence, not used by the reachable match path.
     public const double MatchDistanceMm = 220.0;
+    /// <summary>The dead-branch match threshold squared, 220^2 = 48400.0 (0x004F4428 loads 0x473D1000).</summary>
+    public const double MatchDistanceSquaredMm = MatchDistanceMm * MatchDistanceMm;
+    /// <summary>The dead-branch overlap threshold, 0.5 (0x004F441A).</summary>
     public const double MatchOverlapScore = 0.5;
     public const uint UnnamedFaceLifetimeMs = 15000;
     public const double MaxBodyRotationRadPerSec = 0.174533;
@@ -182,8 +230,8 @@ public sealed class FaceWorld
 
     private readonly object _gate = new();
     private readonly Dictionary<int, FaceEntry> _faces = new();
-    private int _nextSessionId = 1;
 
+    // fidelity: M14-008
     public event Action<FaceObservation>? FaceObserved;
     public event Action<int>? FaceDeleted;
     public event Action<int, int>? FaceIdChanged;
@@ -193,41 +241,39 @@ public sealed class FaceWorld
     public int Count { get { lock (_gate) return _faces.Count; } }
 
     /// <summary>Adds or updates a face seen in a frame; null when it was ignored.</summary>
+    // fidelity: M14-008, M14-001
     public FaceObservation? AddOrUpdateFace(TrackedFace face, Pose3d robotPoseAtFrame, bool rotatingTooFast)
     {
         if (face.HeadPose.Translation.Z < robotPoseAtFrame.Translation.Z) { Log?.Invoke($"FaceWorld.AddOrUpdateFace.IgnoringFaceBelowRobot z={face.HeadPose.Translation.Z:F1}"); return null; }
-        if (rotatingTooFast) { Log?.Invoke("FaceWorld.AddOrUpdateFace: rotating too fast, skipping"); return null; }
         FaceEntry? entry; bool isNew = false; Pose3d prev;
         lock (_gate)
         {
-            entry = face.Id > 0 && _faces.TryGetValue(face.Id, out var byId) ? byId : null;
+            // C2-F7: the reachable match is the map lookup keyed by the TrackedFace id at +0. The
+            // pose/overlap loop is dead because FaceTracker::IsRecognitionSupported 0x0086B244 is
+            // `movs r0,#1; bx lr`, so the 0x004F43DE cbz never branches and no generated id exists.
+            entry = _faces.TryGetValue(face.Id, out var byId) ? byId : null;
+            bool existing = entry is not null;
             if (entry is null)
             {
-                // no recognition data: match by pose and rectangle
-                FaceEntry? best = null; double bestD = MatchDistanceMm * MatchDistanceMm;
-                foreach (var e in _faces.Values)
-                {
-                    var d = e.HeadPose.Translation - face.HeadPose.Translation;
-                    double d2 = d.X * d.X + d.Y * d.Y;
-                    if (d2 < bestD || e.Rect.OverlapScore(face.Rect) >= MatchOverlapScore) { bestD = d2; best = e; }
-                }
-                entry = best;
+                // C2-F7c: WasRotatingTooFast 0x004F4596 gates the new-entry path only.
+                if (rotatingTooFast) { Log?.Invoke("FaceWorld.AddOrUpdateFace: rotating too fast, skipping"); return null; }
+                entry = new FaceEntry { Id = face.Id, FirstObservedTimestamp = face.Timestamp };
+                _faces[face.Id] = entry; isNew = true;
+                Log?.Invoke($"FaceWorld.UpdateFace.NewFace: Added new face with ID={face.Id} at t={face.Timestamp}.");
             }
-            if (entry is not null && face.Timestamp < entry.LastObservedTimestamp)
+            else if (face.Timestamp <= entry.LastObservedTimestamp)
             {
+                // C2-F7b: a timestamp regression logs and continues with delta 0; it does not reject.
                 Log?.Invoke($"FaceWorld.UpdateFace.BadTimeStamp: Face observed before previous observation ({face.Timestamp} <= {entry.LastObservedTimestamp})");
-                return null;
-            }
-            if (entry is null)
-            {
-                int id = face.Id > 0 ? face.Id : _nextSessionId++;
-                while (_faces.ContainsKey(id)) id = _nextSessionId++;
-                entry = new FaceEntry { Id = id, FirstObservedTimestamp = face.Timestamp };
-                _faces[id] = entry; isNew = true;
-                Log?.Invoke($"FaceWorld.UpdateFace.NewFace: Added new face with ID={id} at t={face.Timestamp}.");
             }
             prev = entry.HeadPose;
-            entry.HeadPose = face.HeadPose; entry.Rect = face.Rect; entry.LastObservedTimestamp = face.Timestamp; entry.TimesObserved++;
+            // C2-F7c: on the found path a no-parts observation keeps the entry's existing translation
+            // (0x004F4784..0x004F47A8); its rotation still comes from the TrackedFace. A new entry, and a
+            // parts observation, take the face's full pose.
+            entry.HeadPose = existing && !face.HasEyeParts
+                ? new Pose3d(face.HeadPose.Rotation, prev.Translation)
+                : face.HeadPose;
+            entry.Rect = face.Rect; entry.LastObservedTimestamp = face.Timestamp; entry.TimesObserved++;
             entry.Expression = face.MaxExpression();
             if (face.Name is { Length: > 0 }) entry.Name = face.Name;
         }
@@ -237,6 +283,7 @@ public sealed class FaceWorld
     }
 
     /// <summary><c>FaceWorld::Update</c>: forget unnamed faces not seen for 15 s.</summary>
+    // fidelity: M14-008
     public IReadOnlyList<int> Update(uint lastProcessedImageTimestamp)
     {
         var removed = new List<int>();
@@ -277,10 +324,47 @@ public sealed class FaceWorld
 
     public IReadOnlyList<int> GetFaceIDsObservedSince(uint timestamp, bool namedOnly = false)
     {
-        lock (_gate) return _faces.Values.Where(f => f.LastObservedTimestamp >= timestamp && (!namedOnly || f.HasName)).Select(f => f.Id).ToList();
+        lock (_gate) return _faces.Values.Where(f => ShouldReturnFace(f, timestamp) && (!namedOnly || f.HasName)).Select(f => f.Id).ToList();
     }
     public IReadOnlyList<int> GetFaceIDs(bool namedOnly = false) => GetFaceIDsObservedSince(0, namedOnly);
     public bool HasAnyFaces(uint seenSinceTimestamp = 0, bool namedOnly = false) => GetFaceIDsObservedSince(seenSinceTimestamp, namedOnly).Count > 0;
+
+    // fidelity: M14-009
+    /// <summary>
+    /// <c>FaceWorld::ShouldReturnFace(entry, time, bool)</c> 0x004F55B8: an entry is returned only when
+    /// its last observation is at or after <paramref name="time"/> (the native rejects when entry+8 &lt;
+    /// time; entry+8 is the entry's last-observed timestamp, the field the observation queries use), and,
+    /// when <paramref name="requireId"/> is set, only when its id is at least 1 (the native rejects when
+    /// entry+0 &lt; 1).
+    /// </summary>
+    /// <remarks>
+    /// The engine's third gate is <c>Robot::IsPoseInWorldOrigin(entry+0xF4)</c>. This stack has a single
+    /// origin: <see cref="OnRobotDelocalized"/> clears every face when the origin changes, so a stored
+    /// face's pose is always in the current origin and that gate cannot reject here.
+    /// </remarks>
+    public bool ShouldReturnFace(FaceEntry entry, uint time, bool requireId = false)
+    {
+        if (entry.LastObservedTimestamp < time) return false;
+        if (requireId && entry.Id < 1) return false;
+        return true;   // Robot::IsPoseInWorldOrigin: faces are cleared on delocalisation (M14-008)
+    }
+
+    // fidelity: M14-009
+    /// <summary>The enrollment mode <c>FaceWorld::Enroll</c> 0x004F5C9E passes: 4 for a nonzero id.</summary>
+    public const int EnrollModeKnownFace = 4;
+    /// <summary>The enrollment mode for id 0: -1 (0x004F5CA8 <c>moveq.w r3, #-1</c>).</summary>
+    public const int EnrollModeNewFace = -1;
+
+    /// <summary>
+    /// <c>FaceWorld::Enroll(int)</c> 0x004F5C9E selects the mode (4 when the id is nonzero, -1 when it is
+    /// zero) and forwards id and mode to the VisionComponent at robot+0x258. The tail-call 0x8CAC3C
+    /// resolves through VisionComponent/VisionSystem/FaceTracker to
+    /// <c>FaceRecognizer::SetAllowedEnrollments</c> 0x008658AC (C1-F11), which stores the mode at
+    /// +0x108/+0x10c, the id at +0x100 and the entry data at +0x104.
+    /// MISSING: this stack has no FaceRecognizer component; its album semantics are M14-011's
+    /// RECOVERABLE_GAP, so only the mode/id selection is built and returned here.
+    /// </summary>
+    public (int Id, int Mode) Enroll(int id) => (id, id != 0 ? EnrollModeKnownFace : EnrollModeNewFace);
 
     /// <summary><c>GetLastObservedFace</c>: the most recently seen face's pose.</summary>
     public FaceEntry? GetLastObservedFace(bool namedOnly = false)
@@ -312,7 +396,6 @@ public sealed class FaceWorld
         lock (_gate)
         {
             _faces.Clear();
-            _nextSessionId = 1;
         }
     }
 }

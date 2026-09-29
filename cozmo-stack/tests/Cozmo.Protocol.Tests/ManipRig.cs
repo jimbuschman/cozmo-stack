@@ -308,7 +308,11 @@ internal sealed class FakeFaceDetector : IFaceDetector
             double w = 2 * eyePx, h = w;
             // the rectangle's eye midpoint (centre − 0.125 h) is the projected head point
             var rect = new FaceRect(px.Value.X - w / 2, px.Value.Y + 0.125 * h - h / 2, w, h);
-            out_.Add(new DetectedFace(id, rect, Name: name));
+            // a normal face has parts: eye centres at the projected head point and roll 0, so the parts
+            // branch recovers the same head pose the box fallback used to (midpoint px, eye distance eyePx).
+            out_.Add(new DetectedFace(id, rect,
+                new Vec2(px.Value.X - eyePx / 2, px.Value.Y), new Vec2(px.Value.X + eyePx / 2, px.Value.Y),
+                Name: name, RollRad: 0.0));
             Detections++;
         }
         return out_;

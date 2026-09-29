@@ -2,22 +2,23 @@
   "subsystem": "M14-faces",
   "approved": "2026-09-28",
   "inventory": "re-analysis/inventory/M14-faces.md",
-  "inventory_sha256": "3377adadcd2ba4d26b8d2718b792c676259d5d9a145ff01f88a91b3af942d8ef",
+  "inventory_sha256": "22e54cb1524b7f4197bb7e6c5819a2d17df188f048214c0bfe8dcdeaf503f42c",
   "records": {
     "M14-001": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "TrackedFace geometry, FaceWorld match and forgetting rules",
-      "authority": "FaceWorld::AddOrUpdateFace 0x004F4278, FaceWorld::Update 0x004F52F8 and TrackedFace::UpdateTranslation 0x0087DE24, read",
+      "authority": "FaceWorld::AddOrUpdateFace 0x004F4278, FaceTracker::IsRecognitionSupported 0x0086B244, FaceWorld::Update 0x004F52F8, TrackedFace::UpdateTranslation 0x0087DE24 and TrackedFace::GetIntraEyeDistance 0x0087DC68, read",
       "evidence": [
-        "0x004F4428 loads 48400.0 and 0x004F44BA..0x004F44E8 computes and compares squared distance, alongside overlap scoring at 0x004F444C.",
+        "0x0086B244 is `movs r0,#1; bx lr`, so 0x004F43D6 `blx IsRecognitionSupported` / 0x004F43DE `cbz r0,#0x004F440C` never branches: the pose/overlap loop 0x004F440C..0x004F4536 is dead, and the reachable match is the map at FaceWorld+4 searched by lower_bound on the TrackedFace id at +0 (0x004F43EC..0x004F4556); an absent id creates an entry keyed by that id (0x004F45EA/0x004F45FC). The 220^2 constant 0x004F4428 and the overlap-0.5 instructions are on the dead branch.",
         "0x004F5380..0x004F53AC removes an unnamed entry when lastObserved+15000 is behind the last image timestamp.",
-        "0x0087DE3C..0x0087DF1C selects recognition eye distance or box-derived 0.5/0.25/-0.125 geometry and clamps to 6.0."
+        "0x0087DE3C tests the parts-detected byte +0x30; 0x0087DE42..0x0087DE5E takes the eye centres +0x34..+0x40 through GetIntraEyeDistance 0x0087DC68 (sqrt(dx^2+dy^2)/cos(+0xec), divisor 1.0 when |cos|<1e-5, 6.0 when dist<1e-5); 0x0087DE60..0x0087DF1C derives the box eye distance |0.5*w| floored at 6.0; 0x0087DF20..0x0087E068 halves the (zeroed in the box branch) eye-slot sum for the midpoint, scales fx*62.0/eyeDistance (0x42780000) and parents the pose to Camera+0xc.",
+        "0x004F4596 WasRotatingTooFast is on the new-entry path only; the found path 0x004F4558..0x004F456C is not gated. On the found path, a no-parts observation (TrackedFace+0x30 == 0) replaces the local pose translation with the entry's existing translation (0x004F4784..0x004F47A8) before writing it back to entry+0xf4 (0x004F47BE); the rotation stays from the TrackedFace pose."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M14-002": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Frame counts waited by VisuallyVerifyFaceAction and TurnTowardsFaceAction",
       "authority": "TurnTowardsFaceAction::TurnTowardsFaceAction 0x0054B754 and IVisuallyVerifyAction::IVisuallyVerifyAction 0x005686D8, read",
       "evidence": [
@@ -29,24 +30,25 @@
       "hardware_required": false
     },
     "M14-003": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "TrackFaceAction: the durations it turns in, and the flags it starts with",
       "authority": "ITrackAction::ITrackAction 0x0056465C and ITrackAction::CheckIfDone 0x00564F08, read",
       "evidence": [
-        "There is no update period. Tracking happens inside CheckIfDone, which the action list calls every basestation tick; the constructor leaves the three times at +0xE4..+0xEC at -1 and the update timeout at +0x7C is not a period either. The 100 ms this stack polled at was invented; it now runs on the 33 ms tick.",
+        "There is no update period. Tracking happens inside CheckIfDone, which the action list calls every basestation tick; the constructor leaves the three times at +0xE4..+0xEC at -1 and the update timeout at +0x7C is not a period either. The 100 ms this stack polled at was invented; it now runs on the 60 ms basestation tick (C2-F6).",
         "What the constructor does set (0x0056465C..0x0056478A): the pan and tilt tolerances at +0x84 and +0x8C to 0.0349066 rad, two degrees; the maximum head angle at +0x94 to 0.776672 rad; the minimum pan and tilt angles for a sound at +0xC0 and +0xC8 to 0.174533 rad, ten degrees; the tilt duration at +0xD0 to 0.15 s and the pan duration at +0xD4 to 0.4 s (strd r1, r0 at 0x00564758, with SetTiltDuration 0x00564ADA writing +0xD0 and SetPanDuration 0x00564AD4 writing +0xD4); the desired time to reach the target at +0xD8 to 0.5 s; and the flags off - move eyes at +0xA1 (SetMoveEyes 0x00564B40), driving animation at +0xA8 (EnableDrivingAnimation 0x00564AEA), clamp small angles at +0xE0.",
         "CheckIfDone 0x00564F08 turns by giving each axis its own duration: MoveHeadToAngle at 0x00565104 takes the speed |delta| / tiltDuration computed at 0x005650F2 and the acceleration 10000 (0x005650EE), and it does not wait for the turn - the next tick recomputes the target. The driving animation's end plays only when +0xA8 is set (0x0056510E).",
-        "This stack now turns with those speeds and does not wait, and carries the flags and the limits as named constants; the eye shift and the driving animation are off, as they are in the engine unless a caller asks."
+        "This stack now turns with those speeds and does not wait, and carries the flags and the limits as named constants; the eye shift and the driving animation are off, as they are in the engine unless a caller asks.",
+        "The action list calls CheckIfDone once per basestation tick, and the tick is 60 ms (0x03938700 ns): CozmoInstanceRunner::Run 0x0065B3D2/0x0065B3D8 -> Update 0x0065B420 -> CozmoEngine::Update 0x0065BB16 -> RobotManager::UpdateAllRobots 0x004ED648 -> Robot::Update 0x0052F6E4 -> ActionList::Update 0x005140BC -> ActionQueue::Update 0x0053F598 -> IActionRunner::Update 0x0053F628 -> IAction::UpdateInternal 0x00540592 -> ITrackAction::CheckIfDone (vtable slot 0x01022F1C). 33 ms is the M5 keep-alive cadence, not an action tick."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M14-004": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "PetInitialDetection: a pet not reacted to, and a minute between reactions",
-      "authority": "ReactionTriggerStrategyPetInitialDetection::RecentlyReacted 0x00611DD0, ::UpdateReactedTo 0x00611E1C and ::InitReactedTo 0x00611FA4, read",
+      "authority": "ReactionTriggerStrategyPetInitialDetection::RecentlyReacted 0x00611DD0 and ::UpdateReactedTo 0x00611E1C, read; ::InitReactedTo 0x00611FA4 has no caller in libcozmoEngine.so",
       "evidence": [
-        "The strategy keeps the pet ids it has reacted to in a tree at +0x34: UpdateReactedTo 0x00611E1C walks the pets the robot knows and inserts each id, and InitReactedTo 0x00611FA4 fills it when the strategy starts, so a pet that was already known is not treated as new.",
+        "The strategy keeps the pet ids it has reacted to in a tree at +0x34: UpdateReactedTo 0x00611E1C walks the PetWorld (robot+0x3c) and inserts each pet id (node+0x10), and is called from ShouldTriggerBehaviorInternal 0x00611AE4 and BehaviorDidReact 0x00611E80. InitReactedTo 0x00611FA4 clears and refills the set, but no instruction in the shipped .so calls it (whole-.text BL/BLX, relocation and pointer scan): it is not part of the reachable path.",
         "RecentlyReacted 0x00611DD0 is the cooldown: the last reaction time sits at +0x40 as a float, -1 meaning never, and the answer is true while lastReacted + 60 is still ahead of BaseStationTimer::GetCurrentTimeInSeconds - the 60 is the 0x42700000 loaded at 0x00611DE8.",
         "This stack latched on the first sighting of any pet id and had no cooldown; it now keeps the reacted-to set and the sixty seconds."
       ],
@@ -54,7 +56,7 @@
       "hardware_required": false
     },
     "M14-005": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "TurnTowardsImagePoint turns by the angle the pixel subtends",
       "authority": "Robot::ComputeTurnTowardsImagePointAngles 0x0051879C and TurnTowardsImagePointAction::Init 0x0054B664, read",
       "evidence": [
@@ -77,7 +79,7 @@
       "hardware_required": false
     },
     "M14-007": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The memory map, and the question the face behaviour asks it before driving in",
       "authority": "BehaviorInteractWithFaces::CanDriveIdealDistanceForward 0x005C2420, BehaviorInteractWithFaces::TransitionToDrivingForward 0x005C254E, MemoryMap::HasCollisionRayWithTypes 0x0068176E, ObjectFamilyToMemoryMapContentType 0x0067F4C0, MapComponent::AddObservableObject 0x0067ECFC, BlockWorld::AddMarkerlessObject 0x00622380, the EContentType names at 0x00BFFAC8 and the mask at 0x00C67962, read",
       "evidence": [
@@ -93,9 +95,9 @@
     "M14-008": {
       "status": "IMPLEMENTATION_GAP",
       "title": "Vision face-result handoff and FaceWorld lifecycle broadcasts",
-      "authority": "VisionComponent::UpdateFaces 0x006551E0 and FaceWorld 0x004F3C24, 0x004F4B70, 0x004F52F8, read",
+      "authority": "VisionComponent::UpdateFaces 0x006551E0, FaceWorld::ChangeFaceID 0x004F3DB4 and FaceWorld 0x004F3C24, 0x004F4B70, 0x004F52F8, read",
       "evidence": [
-        "0x00654504..0x00654514 dispatches face results; 0x006551E8..0x0065528C applies changed ids, marks the tracker and calls FaceWorld::Update.",
+        "0x006551E8..0x00655202 walks the std::list<UpdatedFaceID> at VisionProcessingResult+0x54 ({int oldID, int newID, string name}) and calls FaceWorld::ChangeFaceID 0x004F3DB4 for each before the rest; 0x00655204..0x0065526C marks FaceWorld+0x24 when a tracked-face node has +0x14>0; 0x00655274 calls FaceWorld::Update.",
         "0x004F5316..0x004F535C calls AddOrUpdateFace per tracked face and 0x004F5380..0x004F54A8 expires unnamed faces after 15000 ms.",
         "0x004F4B7A/0x004F4B82 broadcasts RobotObservedFace; 0x004F3C2C..0x004F3C64 broadcasts RobotDeletedFace, erases visualization and erases the map node."
       ],
@@ -105,10 +107,10 @@
     "M14-009": {
       "status": "IMPLEMENTATION_GAP",
       "title": "Face return eligibility and enrollment forwarding",
-      "authority": "FaceWorld::ShouldReturnFace 0x004F55B8 and FaceWorld::Enroll 0x004F5C9E, read",
+      "authority": "FaceWorld::ShouldReturnFace 0x004F55B8 and FaceWorld::Enroll 0x004F5C9E, read; the enrollment chain resolves to FaceRecognizer::SetAllowedEnrollments 0x008658AC",
       "evidence": [
         "0x004F55B8..0x004F55E2 rejects a stale entry, optionally rejects id<1, and requires Robot::IsPoseInWorldOrigin on the face pose.",
-        "0x004F5C9E..0x004F5CB2 selects mode 4 for nonzero id and -1 for zero, then tail-calls the VisionComponent enrollment veneer."
+        "0x004F5C9E..0x004F5CB2 selects mode 4 for a nonzero id and -1 for zero; the tail-call 0x8CAC3C resolves through VisionComponent 0x00657A58 / VisionSystem 0x006B3394 / FaceTracker 0x0086B276 / Impl 0x0086E372 to FaceRecognizer::SetAllowedEnrollments 0x008658AC, which stores the mode at +0x108/+0x10c, the id at +0x100 and the entry data at +0x104 (C1-F11)."
       ],
       "live_path": true,
       "hardware_required": false

@@ -151,25 +151,53 @@ public class FaceTests
     {
         var cal = CameraCalibration.Nominal();
         var cam = new CameraModel(cal, new Pose3d(Mat3.Identity, new Vec3(0, 0, 0)).Compose(HeadGeometry.CameraPoseInWorld(Pose3d.Identity, 0)));
-        // a 62 px intra-eye distance at f = 290 puts the head 290 mm from the camera
         double f = cal.FocalLengthX;
-        var d = new DetectedFace(3, new FaceRect(cal.CenterX - 62, cal.CenterY - 62 + 0.125 * 124, 124, 124));
-        var tf = new TrackedFace(d, 1000);
-        var (mid, eyePx) = tf.EyeGeometry();
-        Assert.Equal(62.0, eyePx, 6);
-        Assert.Equal(cal.CenterX, mid.X, 6); Assert.Equal(cal.CenterY, mid.Y, 6);
-        tf.UpdateTranslation(cam);
-        Assert.Equal(TrackedFace.InterPupilDistanceMm * f / 62.0, tf.DistanceMm, 6);
-        Assert.Equal(290.0, (tf.HeadPose.Translation - cam.Pose.Translation).Length, 0.5);
-        // detected eyes take precedence, and the distance is floored at 6 px
-        var eyes = new TrackedFace(new DetectedFace(4, new FaceRect(0, 0, 10, 10), new Vec2(100, 100), new Vec2(102, 100)), 1000);
-        Assert.Equal(TrackedFace.MinIntraEyeDistancePx, eyes.EyeGeometry().IntraEyeDistancePx);
-        Assert.Equal(FacialExpression.Unknown, tf.MaxExpression());
+
+        // C2-F23 parts branch: eye centres at the projected head point, eye distance = eyePx, roll 0.
+        var target = new Vec3(400, 100, 250);
+        var px = cam.Project(target)!.Value;
+        double range = (target - cam.Pose.Translation).Length;
+        double eyePx = TrackedFace.InterPupilDistanceMm * f / range;
+        var parts = new TrackedFace(new DetectedFace(4, new FaceRect(px.X - eyePx, px.Y - eyePx, 2 * eyePx, 2 * eyePx),
+            new Vec2(px.X - eyePx / 2, px.Y), new Vec2(px.X + eyePx / 2, px.Y), RollRad: 0.0), 1000);
+        Assert.True(parts.HasEyeParts);
+        parts.UpdateTranslation(cam);
+        Assert.Equal(eyePx, TrackedFace.GetIntraEyeDistance(parts.Detection.LeftEye!.Value, parts.Detection.RightEye!.Value, 0.0), 6);
+        Assert.Equal(TrackedFace.InterPupilDistanceMm * f / eyePx, parts.DistanceMm, 6);
+        Assert.InRange((parts.HeadPose.Translation - target).Length, 0, 0.05);   // range along the ray through px
+
+        // C2-F23 box branch: the zeroed eye slots make the midpoint pixel (0,0); the engine's invK*(0,0,1)
+        // is Ray(pixel (0,0)), which is off-axis for a non-centred principal point. A 124 px box gives
+        // |0.5 * 124| = 62 px.
+        var box = new TrackedFace(new DetectedFace(3, new FaceRect(100, 200, 124, 124)), 1000);
+        Assert.False(box.HasEyeParts);
+        box.UpdateTranslation(cam);
+        Assert.Equal(62.0, TrackedFace.InterPupilDistanceMm * f / box.DistanceMm, 6);
+        Assert.Equal(TrackedFace.InterPupilDistanceMm * f / 62.0, box.DistanceMm, 6);
+        var (ray0Origin, ray0Dir) = cam.Ray(new Vec2(0, 0));
+        var expected0 = ray0Origin + ray0Dir.Normalized() * box.DistanceMm;
+        Assert.InRange((box.HeadPose.Translation - expected0).Length, 0, 0.05);
+        Assert.NotEqual(0.0, box.HeadPose.Translation.X - cam.Pose.Apply(new Vec3(0, 0, box.DistanceMm)).X);   // not the optical axis
+
+        // C2-F23 GetIntraEyeDistance: dist / divisor, divisor = 1.0 when |cos| < 1e-5 else the signed cos;
+        // dist < 1e-5 returns 6.0 / divisor.
+        Assert.Equal(62.0, TrackedFace.GetIntraEyeDistance(new Vec2(100, 100), new Vec2(162, 100), 0.0), 6);
+        Assert.Equal(62.0 / Math.Cos(0.5), TrackedFace.GetIntraEyeDistance(new Vec2(100, 100), new Vec2(162, 100), 0.5), 6);
+        Assert.Equal(-62.0, TrackedFace.GetIntraEyeDistance(new Vec2(100, 100), new Vec2(162, 100), Math.PI), 6);
+        Assert.Equal(62.0, TrackedFace.GetIntraEyeDistance(new Vec2(100, 100), new Vec2(162, 100), Math.PI / 2), 6);   // |cos| < 1e-5 -> divisor 1.0
+        Assert.Equal(6.0, TrackedFace.GetIntraEyeDistance(new Vec2(100, 100), new Vec2(100, 100), 0.0), 6);            // dist < 1e-5 -> 6.0 / 1.0
+        Assert.Equal(1e-5, TrackedFace.MinCosOrDistance);
+
+        // MISSING: a parts face (eyes present) with no roll is an incomplete detector input; it is not defaulted.
+        var noRoll = new TrackedFace(new DetectedFace(6, new FaceRect(0, 0, 10, 10), new Vec2(100, 100), new Vec2(162, 100)), 1000);
+        Assert.Throws<NotSupportedException>(() => noRoll.UpdateTranslation(cam));
+
+        Assert.Equal(FacialExpression.Unknown, box.MaxExpression());
         Assert.Equal(FacialExpression.Happiness, new TrackedFace(new DetectedFace(5, new FaceRect(0, 0, 1, 1), ExpressionValues: new byte[] { 10, 80, 5, 0, 0 }), 1).MaxExpression());
     }
 
     [Fact]
-    public void TheFaceWorldMatchesByPoseForgetsUnnamedFacesAndKeepsNamedOnes()
+    public void TheFaceWorldMatchesByIdForgetsUnnamedFacesAndKeepsNamedOnes()
     {
         var world = new FaceWorld();
         var robot = Pose3d.Identity;
@@ -178,28 +206,34 @@ public class FaceTests
         {
             var px = cam.Project(new Vec3(x, y, z))!.Value; double dist = (new Vec3(x, y, z) - cam.Pose.Translation).Length;
             double eye = 62 * cam.Calibration.FocalLengthX / dist, w = 2 * eye;
-            var tf = new TrackedFace(new DetectedFace(id, new FaceRect(px.X - w / 2, px.Y + 0.125 * w - w / 2, w, w), Name: name), ts);
+            // a normal face has parts (eye centres at the projected point, roll 0)
+            var tf = new TrackedFace(new DetectedFace(id, new FaceRect(px.X - w / 2, px.Y + 0.125 * w - w / 2, w, w),
+                new Vec2(px.X - eye / 2, px.Y), new Vec2(px.X + eye / 2, px.Y), Name: name, RollRad: 0.0), ts);
             tf.UpdateTranslation(cam); return tf;
         }
-        var o1 = world.AddOrUpdateFace(Face(0, 400, 0, 300, 1000), robot, false);
-        Assert.NotNull(o1); Assert.True(o1!.IsNew); Assert.Equal(1, o1.Face.Id);       // no tracker id: a session id
+        // C2-F7: the reachable match is by the tracker id, not by pose
+        var o1 = world.AddOrUpdateFace(Face(1, 400, 0, 300, 1000), robot, false);
+        Assert.NotNull(o1); Assert.True(o1!.IsNew); Assert.Equal(1, o1.Face.Id);
         Assert.InRange((o1.Face.HeadPose.Translation - new Vec3(400, 0, 300)).Length, 0, 5);
-        // the same person a little later, 100 mm away: matched by pose, not new
-        var o2 = world.AddOrUpdateFace(Face(0, 420, 90, 300, 1100), robot, false);
+        // the same tracker id a little later, 100 mm away: update, not a new entry
+        var o2 = world.AddOrUpdateFace(Face(1, 420, 90, 300, 1100), robot, false);
         Assert.False(o2!.IsNew); Assert.Equal(1, o2.Face.Id); Assert.Equal(2, o2.Face.TimesObserved);
-        // a face 500 mm away is another person
-        var o3 = world.AddOrUpdateFace(Face(0, 400, -500, 300, 1200, "Jim"), robot, false);
+        // a different tracker id is another person, even at the same pose
+        var o3 = world.AddOrUpdateFace(Face(2, 420, 90, 300, 1200, "Jim"), robot, false);
         Assert.True(o3!.IsNew); Assert.Equal(2, o3.Face.Id); Assert.True(o3.Face.HasName);
-        // rotating too fast and a face below the robot are ignored; an older observation is rejected
-        Assert.Null(world.AddOrUpdateFace(Face(0, 400, 0, 300, 1300), robot, rotatingTooFast: true));
-        Assert.Null(world.AddOrUpdateFace(Face(0, 400, 0, -50, 1300), robot, false));
-        Assert.Null(world.AddOrUpdateFace(Face(0, 420, 90, 300, 900), robot, false));
+        // C2-F7c: the rotating gate is new-entry-only; an existing face updates while rotating
+        var rotating = world.AddOrUpdateFace(Face(1, 400, 0, 300, 1300), robot, rotatingTooFast: true);
+        Assert.NotNull(rotating); Assert.False(rotating!.IsNew); Assert.Equal(1, rotating.Face.Id);
+        // below-robot still drops
+        Assert.Null(world.AddOrUpdateFace(Face(1, 400, 0, -50, 1300), robot, false));
+        // C2-F7b: an older timestamp logs and continues; it is not rejected
+        var regression = world.AddOrUpdateFace(Face(1, 420, 90, 300, 900), robot, false);
+        Assert.NotNull(regression); Assert.Equal(1, regression!.Face.Id); Assert.Equal(900u, regression.Face.LastObservedTimestamp);
         Assert.Equal(new[] { 1, 2 }, world.GetFaceIDs().OrderBy(i => i));
         Assert.Equal(new[] { 2 }, world.GetFaceIDs(namedOnly: true));
-        Assert.Equal(2, world.GetLastObservedFace()!.Id);
-        Assert.True(world.HasAnyFaces(1150)); Assert.False(world.HasAnyFaces(1300));
-        // 15 s later the unnamed face is forgotten, the named one stays
-        var removed = world.Update(1100 + FaceWorld.UnnamedFaceLifetimeMs + 1);
+        Assert.True(world.HasAnyFaces(900)); Assert.False(world.HasAnyFaces(1201));
+        // 15 s after id 1's last observation the unnamed face is forgotten, the named one stays
+        var removed = world.Update(900 + FaceWorld.UnnamedFaceLifetimeMs + 1);
         Assert.Equal(new[] { 1 }, removed);
         Assert.Equal(new[] { 2 }, world.GetFaceIDs());
         // a recognised id replaces a tracking id and smart ids follow
@@ -271,7 +305,7 @@ public class FaceTests
         Assert.Equal(0.776672, TrackFaceAction.MaxHeadAngleRad, 6);
         Assert.Equal(0.174533, TrackFaceAction.MinAngleForSoundRad, 6);
         Assert.Equal(10000, TrackFaceAction.TrackAccelRadPerSec2);
-        Assert.Equal(33, TrackFaceAction.UpdateIntervalMs);
+        Assert.Equal(60, TrackFaceAction.UpdateIntervalMs);   // the 60 ms basestation tick, not the M5 33 ms keep-alive
 
         using var rig = FaceRig((7, new Vec3(400, 0, 250), null));
         var track = new TrackFaceAction(rig.Vision, 7);
@@ -522,5 +556,207 @@ public class FaceTests
         Assert.Equal(12, ShippedBehaviors.Faces(rig.Vision).Count);                    // the two that drive need the manipulation system
         var ctx = Ctx(rig);
         foreach (var b in set.OfType<SteppedBehavior>().Where(b => b is not SearchForFaceBehavior)) Assert.False(Runnable(b, ctx), b.Id);
+    }
+
+    // ------------------------------------------------------------------ M14-001 / M14-008 / M14-009 / M14-012
+
+    /// <summary>
+    /// The constants the inventory records, exactly (SD4): an unnamed face expires after 15000 ms
+    /// (0x004F5380 loads 0x3A98), the eye-distance floor is 6.0 (0x0087DF0A vmov.f32 s0,#6.0), and the
+    /// 62.0 factor is at 0x0087E014. The 220^2 match distance (0x004F4428 loads 0x473D1000) and the
+    /// overlap score are present but on the dead C2-F7 branch, since IsRecognitionSupported 0x0086B244
+    /// returns 1 unconditionally.
+    /// </summary>
+    [Fact]
+    public void M14_001_TheFaceMatchForgettingAndEyeDistanceConstantsAreTheEnginesOwn()
+    {
+        Assert.Equal(15000u, FaceWorld.UnnamedFaceLifetimeMs);
+        Assert.Equal(6.0, TrackedFace.MinIntraEyeDistancePx, 6);
+        Assert.Equal(1e-5, TrackedFace.MinCosOrDistance);
+        Assert.Equal(62.0, TrackedFace.InterPupilDistanceMm, 6);
+        // the 220^2 / overlap constants are present but on the dead C2-F7 branch
+        Assert.Equal(48400.0, FaceWorld.MatchDistanceSquaredMm, 6);
+        Assert.Equal(0.5, FaceWorld.MatchOverlapScore, 6);
+    }
+
+    /// <summary>
+    /// M14-001 (C2-F7/C2-F7b/C2-F7c): the reachable match is the map lookup keyed by the tracked face's
+    /// id; a different id is a new entry (no pose matching); a timestamp regression logs and continues; the
+    /// rotating gate is on the new-entry path only; and a no-parts observation of a known face keeps its
+    /// previous translation.
+    /// </summary>
+    [Fact]
+    public void M14_001_FacesMatchByTrackerIdAndTimestampRegressionsContinue()
+    {
+        static TrackedFace At(int id, Vec3 head, uint ts, string? name = null) =>
+            new(new DetectedFace(id, new FaceRect(1000, 1000, 10, 10), Name: name), ts) { HeadPose = new Pose3d(Mat3.Identity, head) };
+
+        var world = new FaceWorld();
+        var first = world.AddOrUpdateFace(At(5, new Vec3(0, 0, 0), 1000), Pose3d.Identity, false)!;
+        Assert.True(first.IsNew); Assert.Equal(5, first.Face.Id);
+        // the same id updates even when the pose is 400 mm away (no pose matching)
+        var same = world.AddOrUpdateFace(At(5, new Vec3(0, 0, 400), 1100), Pose3d.Identity, false)!;
+        Assert.False(same.IsNew); Assert.Equal(5, same.Face.Id); Assert.Equal(1, world.Count);
+        // a different id is a new entry even at the same pose
+        var other = world.AddOrUpdateFace(At(6, new Vec3(0, 0, 400), 1100), Pose3d.Identity, false)!;
+        Assert.True(other.IsNew); Assert.Equal(6, other.Face.Id); Assert.Equal(2, world.Count);
+        // C2-F7b: a regression logs and continues (it is not rejected)
+        var regression = world.AddOrUpdateFace(At(5, new Vec3(0, 0, 400), 900), Pose3d.Identity, false)!;
+        Assert.False(regression.IsNew); Assert.Equal(900u, regression.Face.LastObservedTimestamp);
+        // C2-F7c: the rotating gate is new-entry-only; an existing face updates while rotating
+        var still = world.AddOrUpdateFace(At(5, new Vec3(0, 0, 400), 1200), Pose3d.Identity, rotatingTooFast: true)!;
+        Assert.False(still.IsNew); Assert.Equal(5, still.Face.Id);
+        // a new id while rotating is not added
+        Assert.Null(world.AddOrUpdateFace(At(7, new Vec3(0, 0, 0), 1200), Pose3d.Identity, rotatingTooFast: true));
+        Assert.Null(world.GetFace(7));
+        // below-robot still drops
+        Assert.Null(world.AddOrUpdateFace(At(5, new Vec3(0, 0, -50), 1200), Pose3d.Identity, false));
+
+        // C2-F7c: on the found path a no-parts observation keeps the entry's previous translation; its
+        // rotation still comes from the TrackedFace. A parts observation takes the full pose.
+        var poseWorld = new FaceWorld();
+        var partsPose = new Pose3d(Mat3.AboutZ(0.3), new Vec3(10, 20, 30));
+        var parts = poseWorld.AddOrUpdateFace(new TrackedFace(new DetectedFace(9, new FaceRect(0, 0, 10, 10),
+            new Vec2(100, 100), new Vec2(162, 100), RollRad: 0.0), 1000) { HeadPose = partsPose }, Pose3d.Identity, false)!;
+        Assert.Equal(partsPose.Translation, parts.Face.HeadPose.Translation);
+        var noPartsPose = new Pose3d(Mat3.AboutZ(0.9), new Vec3(100, 200, 300));
+        var noParts = poseWorld.AddOrUpdateFace(new TrackedFace(new DetectedFace(9, new FaceRect(0, 0, 10, 10)), 1100) { HeadPose = noPartsPose }, Pose3d.Identity, false)!;
+        Assert.Equal(partsPose.Translation, noParts.Face.HeadPose.Translation);
+        Assert.Equal(0.9, noParts.Face.HeadPose.AngleAroundZ, 6);
+    }
+
+    /// <summary>
+    /// M14-008: the observable lifecycle the stack's consumers use, as the M11-038 precedent represents
+    /// the engine's broadcasts. An add raises FaceObserved, a change raises FaceIdChanged, and the 15 s
+    /// expiry raises FaceDeleted.
+    /// </summary>
+    [Fact]
+    public void M14_008_TheFaceWorldRaisesObservedChangedAndDeleted()
+    {
+        var world = new FaceWorld();
+        var observed = new List<int>();
+        var deleted = new List<int>();
+        var changed = new List<(int Old, int New)>();
+        world.FaceObserved += o => observed.Add(o.Face.Id);
+        world.FaceDeleted += id => deleted.Add(id);
+        world.FaceIdChanged += (a, b) => changed.Add((a, b));
+
+        var tf = new TrackedFace(new DetectedFace(7, new FaceRect(0, 0, 10, 10)), 1000);
+        var o = world.AddOrUpdateFace(tf, Pose3d.Identity, false);
+        Assert.NotNull(o);
+        Assert.Equal(new[] { 7 }, observed);
+
+        int oldId = o.Face.Id;
+        Assert.True(world.ChangeFaceID(oldId, 42));
+        Assert.Equal((oldId, 42), changed.Single());
+
+        var removed = world.Update(1000 + FaceWorld.UnnamedFaceLifetimeMs + 1);
+        Assert.Equal(new[] { 42 }, removed);
+        Assert.Equal(new[] { 42 }, deleted);
+    }
+
+    /// <summary>
+    /// M14-009: <c>FaceWorld::ShouldReturnFace</c> 0x004F55B8 rejects when the entry's last observation
+    /// (entry+8) is before the time, rejects an id below 1 when the bool is set (entry+0 &lt; 1), and
+    /// <c>FaceWorld::Enroll</c> 0x004F5C9E selects mode 4 for a nonzero id and -1 for zero.
+    /// </summary>
+    [Fact]
+    public void M14_009_ShouldReturnFaceAndEnrollUseTheEnginesGates()
+    {
+        var world = new FaceWorld();
+        var entry = new FaceEntry { Id = 7, LastObservedTimestamp = 2000 };
+        Assert.True(world.ShouldReturnFace(entry, 1999));
+        Assert.True(world.ShouldReturnFace(entry, 2000));                 // entry+8 == time is not rejected (strict <)
+        Assert.False(world.ShouldReturnFace(entry, 2001));
+
+        var sessionOnly = new FaceEntry { Id = 0, LastObservedTimestamp = 2000 };
+        Assert.True(world.ShouldReturnFace(sessionOnly, 2000));           // the bool is off: the id is not tested
+        Assert.False(world.ShouldReturnFace(sessionOnly, 2000, requireId: true));
+
+        Assert.Equal(4, FaceWorld.EnrollModeKnownFace);
+        Assert.Equal(-1, FaceWorld.EnrollModeNewFace);
+        Assert.Equal((7, 4), world.Enroll(7));
+        Assert.Equal((0, -1), world.Enroll(0));
+    }
+
+    /// <summary>
+    /// M14-012 (F24/F25/F27): <c>LoadFaceAlbumFromRobot</c> reads NV 0x184000 first and 0x183000 second;
+    /// the enrollment completion installs the data and replays the loaded names as
+    /// <c>RobotErasedAllEnrolledFaces</c> first, then one <c>LoadedKnownFace</c> per entry.
+    /// </summary>
+    [Fact]
+    public void M14_012_TheFaceAlbumReadsAlbumThenEnrollmentAndReplaysEraseBeforeNames()
+    {
+        using var rig = new Rig();
+        int erased = 0;
+        var loaded = new List<(int Id, string Name)>();
+        rig.Vision.EnrolledFacesErased += () => erased++;
+        rig.Vision.LoadedFaceName += (id, name) => loaded.Add((id, name));
+        // a named face already in the world, so the replay has something to carry
+        var tf = new TrackedFace(new DetectedFace(5, new FaceRect(0, 0, 10, 10), Name: "Jim"), 1000);
+        Assert.NotNull(rig.Vision.Faces.AddOrUpdateFace(tf, Pose3d.Identity, false));
+
+        rig.Vision.LoadFaceAlbumFromRobot();
+        rig.Pump();
+        var first = rig.Sent.OfType<NVCommand>().Last();
+        Assert.Equal(0x184000u, first.Tag);                               // album first
+        Assert.Equal(NvStorageComponent.OpRead, first.Op);
+        Assert.Equal(NvStorageComponent.NonFactoryReadLength, first.Length);
+
+        ReplyNonFactoryRead(rig, 0x184000, Array.Empty<byte>());           // an empty album
+        var second = rig.Sent.OfType<NVCommand>().Last();
+        Assert.Equal(0x183000u, second.Tag);                              // enrollment second
+        Assert.Equal(NvStorageComponent.OpRead, second.Op);
+
+        ReplyNonFactoryRead(rig, 0x183000, Array.Empty<byte>());
+        Assert.Equal(1, erased);
+        Assert.Equal(new[] { (5, "Jim") }, loaded);
+    }
+
+    /// <summary>
+    /// M14-012 (F26/G1-4): <c>SaveFaceAlbumToRobot</c> writes the album (0x184000) first and the
+    /// enrollment (0x183000) second, rounds each vector size up to a four-byte boundary, and erases the
+    /// tag instead when the data is empty. The serialization format itself is MISSING (G2-6/G3-4).
+    /// </summary>
+    [Fact]
+    public void M14_012_TheFaceAlbumWritesAlbumThenEnrollmentPaddedAndErasesWhenEmpty()
+    {
+        using var rig = new Rig();
+        rig.Vision.InstallSerializedFaceData(new byte[] { 1, 2, 3 }, new byte[] { 4, 5 });
+        rig.Vision.SaveFaceAlbumToRobot();
+        rig.Pump();
+
+        var album = rig.Sent.OfType<NVCommand>().Last();
+        Assert.Equal(0x184000u, album.Tag);                               // album first
+        Assert.Equal(NvStorageComponent.OpWrite, album.Op);
+        Assert.Equal(4, album.Length);                                    // 3 rounded to a four-byte boundary
+        Assert.Equal(new byte[] { 1, 2, 3, 0 }, album.Data);
+
+        ReplyNonFactoryRead(rig, 0x184000, Array.Empty<byte>());           // complete the first write
+        var enrollment = rig.Sent.OfType<NVCommand>().Last();
+        Assert.Equal(0x183000u, enrollment.Tag);                          // enrollment second
+        Assert.Equal(NvStorageComponent.OpWrite, enrollment.Op);
+        Assert.Equal(4, enrollment.Length);                               // 2 rounded up
+        Assert.Equal(new byte[] { 4, 5, 0, 0 }, enrollment.Data);
+
+        // empty data takes the erase path
+        using var empty = new Rig();
+        empty.Vision.InstallSerializedFaceData(Array.Empty<byte>(), Array.Empty<byte>());
+        empty.Vision.SaveFaceAlbumToRobot();
+        empty.Pump();
+        var erase = empty.Sent.OfType<NVCommand>().Last();
+        Assert.Equal(0x184000u, erase.Tag);
+        Assert.Equal(NvStorageComponent.OpErase, erase.Op);
+    }
+
+    /// <summary>Answers the in-flight non-factory NV read/write with a valid 16-byte header and a payload.</summary>
+    private static void ReplyNonFactoryRead(Rig rig, uint tag, byte[] payload)
+    {
+        var data = new byte[16 + payload.Length];
+        BitConverter.GetBytes(NvStorageComponent.NonFactoryHeaderMagic).CopyTo(data, 0);
+        BitConverter.GetBytes((uint)payload.Length).CopyTo(data, 8);
+        payload.CopyTo(data, 16);
+        rig.Send(new NVOpResult { Tag = tag, Op = NvStorageComponent.OpRead, Result = NvStorageComponent.ResultOkay, Length = 0, Data = data });
+        rig.Pump();
     }
 }

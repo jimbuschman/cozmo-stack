@@ -584,9 +584,13 @@ public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisp
 /// (robot+0x34A) → false; else ReactToPet+0x11C = the targets, and IsRunnable.</item>
 /// <item>BehaviorDidReact: reset the set, add the current and the reacted ids, last = now. Ctor: +0x40 = −1.</item>
 /// </list>
-/// MISSING: EnabledStateChanged calls InitReactedTo (0x611FA4), whose body is not in the rows; nothing is done.
+/// C2-F4: InitReactedTo (0x611FA4) clears and refills the set, but no instruction in the shipped .so calls
+/// it (whole-.text BL/BLX, relocation and pointer scan): it is not part of the reachable path, and it is not
+/// called by EnabledStateChanged. The reachable set maintenance is UpdateReactedTo (0x611E1C), called by
+/// ShouldTriggerBehaviorInternal (0x611AE4) and BehaviorDidReact (0x611E80), which the code matches.
 /// The ReactToPet behaviour (M14) picks its own pet; the targets are handed over as <see cref="Targets"/>.
 /// </summary>
+// fidelity: M14-004
 public sealed class PetInitialDetectionStrategy : ReactionTriggerStrategy, IDisposable
 {
     public const double RecentlyReactedSec = 60.0;
@@ -696,7 +700,7 @@ public sealed class ReactToPetBehavior : FaceBehavior
         // see TurnTowardsImagePoint, which is Robot::ComputeTurnTowardsImagePointAngles 0x0051879C.
         var centre = pet.Rect.Center;
         RunFaceAction("TurnTowardsImagePoint",
-                      async ct => await TurnTowardsImagePoint.RunAsync(V, centre.X, centre.Y, ct)
+                      async ct => await TurnTowardsImagePoint.RunAsync(V, centre.X, centre.Y, pet.LastObservedTimestamp, ct)
                                   ? FaceActionResult.Success : FaceActionResult.Abort,
                       _ => PlayTrigger(Trigger.Value, Finish));
     }

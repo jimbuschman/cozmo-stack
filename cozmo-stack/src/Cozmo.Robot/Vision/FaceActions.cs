@@ -49,6 +49,7 @@ public sealed class TurnTowardsPoseAction
 /// the pan and tilt. When the history cannot answer, the action warns
 /// "TurnTowardsImagePointAction.Init.ComputeTurnTowardsImagePointAnglesFailed" and does not turn.
 /// </summary>
+// fidelity: M14-005
 public static class TurnTowardsImagePoint
 {
     /// <summary>
@@ -63,11 +64,19 @@ public static class TurnTowardsImagePoint
                 headAngleRad + Math.Atan2(-dv, cal.FocalLengthY));
     }
 
-    /// <summary>Turns to those angles, the way the action's PanAndTilt does.</summary>
-    public static async Task<bool> RunAsync(VisionSystem v, double u, double v_, CancellationToken cancel)
+    /// <summary>
+    /// Turns to those angles, the way the action's PanAndTilt does. The historical state is the one at
+    /// the image's own timestamp (F5, <c>RobotStateHistory::ComputeStateAt</c>); when it cannot answer the
+    /// action warns <c>ComputeTurnTowardsImagePointAnglesFailed</c> and turns nowhere.
+    /// </summary>
+    public static async Task<bool> RunAsync(VisionSystem v, double u, double v_, uint imageTimestamp, CancellationToken cancel)
     {
         if (v.Calibration is not { } cal) return false;
-        if (v.History.Latest is not { } state) return false;
+        if (v.History.At(imageTimestamp) is not { } state)
+        {
+            v.LogLine("TurnTowardsImagePointAction.Init.ComputeTurnTowardsImagePointAnglesFailed");
+            return false;
+        }
         var (body, head) = Angles(cal, u, v_, state.RobotPose.AngleAroundZ, state.HeadAngleRad);
         head = Math.Clamp(head, HeadGeometry.MinHeadAngleRad, HeadGeometry.MaxHeadAngleRad);
         return await PanAndTilt.RunAsync(v, body, head, TurnTowardsPose.MaxSpeedRadPerSec, cancel);
@@ -112,6 +121,7 @@ public sealed class TurnTowardsFaceAction : IDisposable
     public void Dispose() => FaceId.Dispose();
 
     public const double FineTuneMaxTurnRad = 0.785398;
+    // fidelity: M14-002
     /// <summary>
     /// How many frames the action will wait for the face to be seen: 10.
     /// <c>TurnTowardsFaceAction</c>'s constructor writes it at +0x188 (<c>movs r1, #0xa</c> at 0x0054B798),
@@ -200,6 +210,7 @@ public sealed class TurnTowardsFaceAction : IDisposable
 /// (<c>SetClampSmallAnglesToTolerances</c>, period 0.4/0.15 default) and shifts the eyes (±32/±16 px). The eye
 /// shift and driving animation are DEFERRED. Update period LOCAL (100 ms).
 /// </summary>
+// fidelity: M14-003
 public sealed class TrackFaceAction : IDisposable
 {
     public const double NeckHeightMm = 49.0;
@@ -245,10 +256,14 @@ public sealed class TrackFaceAction : IDisposable
     /// <summary>
     /// The action tick. The engine's tracking runs inside <c>CheckIfDone</c>, which the action list calls
     /// every basestation tick; there is no update period of its own (its update timeout at +0x7C is not
-    /// one, and the constructor leaves the three times at +0xE4..+0xEC at -1). This stack polled at 100 ms,
-    /// which was invented.
+    /// one, and the constructor leaves the three times at +0xE4..+0xEC at -1). The tick is 60 ms
+    /// (0x03938700 ns): CozmoInstanceRunner::Run 0x0065B3D2/0x0065B3D8 -> CozmoEngine::Update 0x0065BB16 ->
+    /// RobotManager::UpdateAllRobots 0x004ED648 -> Robot::Update 0x0052F6E4 -> ActionList::Update
+    /// 0x005140BC -> ActionQueue::Update 0x0053F598 -> IActionRunner::Update 0x0053F628 ->
+    /// IAction::UpdateInternal 0x00540592 -> ITrackAction::CheckIfDone (vtable slot 0x01022F1C). 33 ms is
+    /// the M5 face keep-alive cadence, not an action tick.
     /// </summary>
-    public const int UpdateIntervalMs = 33;
+    public const int UpdateIntervalMs = 60;
     private readonly VisionSystem _v;
     public TrackFaceAction(VisionSystem v, int faceId) { _v = v; FaceId = v.Faces.GetSmartFaceID(faceId); }
     public void Dispose() => FaceId.Dispose();

@@ -24,6 +24,7 @@ public enum MemoryMapContentType : byte
 }
 
 /// <summary>What the engine puts in the map, and what it treats as being in the way.</summary>
+// fidelity: M14-007
 public static class MemoryMapTypes
 {
     /// <summary>

@@ -267,6 +267,9 @@ public sealed class VisionSystem : IDisposable
     public event Action<VisionFrameResult>? FrameProcessed;
     public event Action<string>? Log;
 
+    /// <summary>Raises the system's log line (used by the face actions' failure paths).</summary>
+    internal void LogLine(string line) => Log?.Invoke(line);
+
     /// <summary>
     /// Reads the calibration from the robot through the shared NV queue (the engine's connection-time
     /// <c>NVStorageComponent::Read</c>). The camera calibration is a factory entry, so the component computes the
@@ -293,6 +296,129 @@ public sealed class VisionSystem : IDisposable
     {
         if (Calibration is null || History.Latest is not { } pd) return null;
         return new CameraModel(Calibration, pd.CameraPose);
+    }
+
+    // ------------------------------------------------------------------ the face album (M14-012)
+
+    // fidelity: M14-012
+    /// <summary>The album's NV tag, 0x184000 (F24).</summary>
+    public const uint FaceAlbumNvTag = 0x184000;
+    // fidelity: M14-012
+    /// <summary>The enrollment data's NV tag, 0x183000 (F24).</summary>
+    public const uint FaceEnrollmentNvTag = 0x183000;
+
+    private byte[] _serializedFaceAlbum = Array.Empty<byte>();
+    private byte[] _serializedFaceEnrollment = Array.Empty<byte>();
+
+    // fidelity: M14-012
+    /// <summary>
+    /// The observable replacement for <c>BroadcastLoadedNamesAndIDs</c>'s EngineToGame broadcasts (F27):
+    /// <c>RobotErasedAllEnrolledFaces</c> first, then one <c>LoadedKnownFace</c> per entry. This stack has
+    /// no EngineToGame channel (the M11-038 precedent), so the events carry the same observable ordering;
+    /// the wire broadcasts are the M2/M10 gap.
+    /// </summary>
+    public event Action? EnrolledFacesErased;
+    // fidelity: M14-012
+    public event Action<int, string>? LoadedFaceName;
+
+    // fidelity: M14-012
+    /// <summary>
+    /// <c>VisionSystem::SetSerializedFaceData</c> under the vision mutex (F25): stores the two byte
+    /// vectors the robot returned.
+    /// MISSING: the face-album deserialization/inverse install (G3-4, M14-011) is not recovered, so the
+    /// bytes are stored but cannot be parsed into names.
+    /// </summary>
+    public void InstallSerializedFaceData(byte[] album, byte[] enrollment)
+    {
+        lock (_busy)
+        {
+            _serializedFaceAlbum = album ?? Array.Empty<byte>();
+            _serializedFaceEnrollment = enrollment ?? Array.Empty<byte>();
+        }
+    }
+
+    // fidelity: M14-012
+    /// <summary>
+    /// <c>VisionSystem::GetSerializedFaceData</c> (F26).
+    /// MISSING: the face-album serialization format (G2-6/G3-4) is not recovered; the raw vectors last
+    /// installed are returned, so a save with no loaded album writes empty and takes the erase path.
+    /// </summary>
+    public (byte[] Album, byte[] Enrollment) GetSerializedFaceData()
+    {
+        lock (_busy) return (_serializedFaceAlbum, _serializedFaceEnrollment);
+    }
+
+    // fidelity: M14-012
+    /// <summary>
+    /// <c>VisionComponent::BroadcastLoadedNamesAndIDs</c> (F27): <c>RobotErasedAllEnrolledFaces</c> first,
+    /// then one <c>LoadedKnownFace</c> per named entry. The wire broadcasts are M2/M10's.
+    /// </summary>
+    public void BroadcastLoadedNamesAndIDs()
+    {
+        EnrolledFacesErased?.Invoke();
+        foreach (var f in Faces.Faces)
+            if (f.HasName) LoadedFaceName?.Invoke(f.Id, f.Name!);
+    }
+
+    // fidelity: M14-012
+    /// <summary>
+    /// <c>VisionComponent::LoadFaceAlbumFromRobot</c> (F24/F25): reads NV <see cref="FaceAlbumNvTag"/>
+    /// first and <see cref="FaceEnrollmentNvTag"/> second, then on the enrollment completion installs
+    /// both under the vision mutex and replays the loaded names. M3-033 owns the connection-time queue
+    /// that calls this; the NV wire itself is M3's.
+    /// </summary>
+    public void LoadFaceAlbumFromRobot()
+    {
+        var nv = _robot.Engine.NvStorage;
+        if (nv is null) return;
+        var album = new List<byte>();
+        nv.Read(FaceAlbumNvTag, _ => { }, album);
+        nv.Read(FaceEnrollmentNvTag, r =>
+        {
+            if (r.Result != NvStorageComponent.ResultOkay) return;
+            InstallSerializedFaceData(album.ToArray(), r.Data);
+            BroadcastLoadedNamesAndIDs();
+        });
+    }
+
+    // fidelity: M14-012
+    /// <summary>
+    /// <c>VisionComponent::SaveFaceAlbumToRobot</c> (F26/G1-4): the two serialized vectors, size-checked
+    /// against their NV tags, rounded up to a four-byte boundary, then the album written first and the
+    /// enrollment second; empty data takes the corresponding erase path.
+    /// MISSING: the face-album serialization format (G2-6/G3-4); and M3's
+    /// <see cref="NvStorageComponent.Request"/> has no enqueue-failure signal, so the engine's "stop
+    /// before the second write if the first enqueue fails" cannot be expressed here (both tags are
+    /// valid, so no live path differs).
+    /// </summary>
+    public void SaveFaceAlbumToRobot()
+    {
+        var nv = _robot.Engine.NvStorage;
+        if (nv is null) return;
+        var (album, enrollment) = GetSerializedFaceData();
+        int albumMax = NvStorageComponent.MaxSizeForEntryTag(FaceAlbumNvTag);            // 0x10000
+        int enrollmentMax = NvStorageComponent.MaxSizeForEntryTag(FaceEnrollmentNvTag);  // 0x1000
+        if (album.Length > albumMax || enrollment.Length > enrollmentMax)
+        {
+            Log?.Invoke($"SaveFaceAlbumToRobot: serialized data too large (album {album.Length}/{albumMax}, enrollment {enrollment.Length}/{enrollmentMax})");
+            return;
+        }
+        WriteAlbumEntry(nv, FaceAlbumNvTag, album);
+        WriteAlbumEntry(nv, FaceEnrollmentNvTag, enrollment);
+    }
+
+    // fidelity: M14-012
+    private static void WriteAlbumEntry(NvStorageComponent nv, uint tag, byte[] data)
+    {
+        if (data.Length == 0)
+        {
+            nv.Request(tag, 0, NvStorageComponent.OpErase, Array.Empty<byte>(), _ => { });
+            return;
+        }
+        int padded = (data.Length + 3) & ~3;      // the engine's four-byte alignment
+        var bytes = new byte[padded];
+        Array.Copy(data, bytes, data.Length);
+        nv.Request(tag, padded, NvStorageComponent.OpWrite, bytes, _ => { });
     }
 
     /// <summary>
@@ -527,6 +653,7 @@ public sealed class VisionSystem : IDisposable
             // motion, tool-code, computed-calibration, image-quality and laser-point handlers, CheckMailbox
             // and the RobotProcessedImage layout are not built (see M11-035's unresolved).
             // VisionSystem::Update in DetectingFaces mode: FaceTracker::Update, TrackedFace::UpdateTranslation(camera), FaceWorld::AddOrUpdateFace
+            // fidelity: M14-008
             if (FaceDetector.IsAvailable)
             {
                 var faces = new List<TrackedFace>();
