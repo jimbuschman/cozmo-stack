@@ -1,7 +1,7 @@
 # Job R-ANIM: close the remaining gaps in the animation and derived-state layers
 
 **Agent:** opencode, as cozmo-manager. **Type:** round 3 (triage, gap extraction, build). Follow [R.md](R.md).
-**Needs:** nothing. It runs after R-DEV in window 3's chain, so the two never edit the robot code at once.
+**Needs:** nothing. It runs in window 2, alongside R-DEV in window 3. Both touch the robot hub files (for example `CozmoRobot`, `EngineRobot`): keep your edits there to the wiring call sites, `git pull --rebase` before each batch, and resolve a conflict by keeping both sides' changes, then rerun the suite.
 
 **Subsystems:** M5-animation, M10-derived. Every IMPLEMENTATION_GAP record of these, as the manifest has it when the job starts.
 
