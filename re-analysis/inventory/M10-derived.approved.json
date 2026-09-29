@@ -1,8 +1,8 @@
 {
   "subsystem": "M10-derived",
-  "approved": "2026-09-25",
+  "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M10-derived.md",
-  "inventory_sha256": "e0b94d717c991746f6b58405cf10113bb707fbe3af5ac1914737ae00a55f3968",
+  "inventory_sha256": "711a84b43f937219bf831054055e6deea91dbd961ab4257b64664702d41ad783",
   "records": {
     "M10-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -11,7 +11,8 @@
       "evidence": [
         "A1..A7 CheckAndUpdateTreadsState 0x511E00..0x5121F8 (thresholds 0x5121FC, 0x5122A0..0x5122BC)",
         "A8..A15 consequences: Falling DAS + ActionList::Cancel(-1) (0x511FF0..0x512084; gap1 3a..3e), RobotOffTreadsStateChanged broadcast 0x512092, OnTreads 0x512112..0x512184, carried 0x512100, SetOnChargerPlatform 0x512188, pause flag 0x5121E2",
-        "gap1 5a IMU filter state zeroed (0x5100E0..0x5100FE)"
+        "gap1 5a IMU filter state zeroed (0x5100E0..0x5100FE)",
+        "R-ANIM pre-extraction part 2 item 1 O1..O4: Radians operator> 0x84CC90, IsNear 0x84CC0A, operator< 0x84CD12, rescale 0x84C87C"
       ],
       "live_path": true,
       "hardware_required": false
@@ -22,7 +23,8 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B1 tail call 0x63E392; B2..B5 gates 0x63E3B4..0x63E426",
-        "B6 ctor constants 0x63DAB0..0x63DB00; B7..B11 rules 0x63E428..0x63E5DA"
+        "B6 ctor constants 0x63DAB0..0x63DB00; B7..B11 rules 0x63E428..0x63E5DA",
+        "R-ANIM pre-extraction part 2 item 2 B7..B11-a: 0x63E474, 0x63E49C, 0x63E588, 0x63E51C..0x63E53E, 0x63E674, 0x63E5B2"
       ],
       "live_path": true,
       "hardware_required": false
@@ -34,7 +36,8 @@
       "evidence": [
         "C12 factory switch 0x60D618; C13..C17 Generic, Shaken, Slope, Frustration",
         "gap1 1 Cliff filter 0x60DC7C..0x60DCA2; gap1 8 strategy predicates",
-        "gap2 1..6 PlacedOnCharger 0x614474..0x6144D0, CubeMoved 0x60C04A..0x60C1E2 / 0x60BEB4, Face 0x60CB84..0x60CE20, position-update base 0x612168..0x612B22, Object 0x6114A0..0x611582"
+        "gap2 1..6 PlacedOnCharger 0x614474..0x6144D0, CubeMoved 0x60C04A..0x60C1E2 / 0x60BEB4, Face 0x60CB84..0x60CE20, position-update base 0x612168..0x612B22, Object 0x6114A0..0x611582",
+        "R-ANIM pre-extraction part 2 item 5.1: EnabledStateChanged +0x1C is a no-op (0x60B73B) for Shaken/Slope/Frustration"
       ],
       "live_path": true,
       "hardware_required": false
@@ -45,13 +48,14 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "C3 gate 0x5A355A..0x5A357A; C4..C8 0x5A359A..0x5A37CA",
-        "gap1 4a IsReactionTriggerEnabled 0x5A40B8; 4b DisableReactionsWithLock 0x5A27F6..0x5A2960; 4c RemoveDisableReactionsLock 0x5A3A52..0x5A3B94; 4e game messages 0x5A4D2A..0x5A4F3A"
+        "gap1 4a IsReactionTriggerEnabled 0x5A40B8; 4b DisableReactionsWithLock 0x5A27F6..0x5A2960; 4c RemoveDisableReactionsLock 0x5A3A52..0x5A3B94; 4e game messages 0x5A4D2A..0x5A4F3A",
+        "R-ANIM pre-extraction part 2 item 3.1..3.7: CompletelyUnlockAllTracks 0x640F84..0x641092 (sets MC+0x28+12k, index payload 0x64101A)"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M10-005": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The off-treads debounce clock is BaseStationTimer ms (engine tick-start time since run start, per tick)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -62,7 +66,7 @@
       "hardware_required": false
     },
     "M10-006": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The unexpected-movement body-lock gate applies only while AnimationState.tag (robot+0x248) != 0",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -90,13 +94,14 @@
       "evidence": [
         "C7 0x5A3610..0x5A3682",
         "C9 0x5A25E4..0x5A26DA; C10 flags 0x60F904",
-        "C11 0x5A2BB8..0x5A2C3A, 0x5A1BCC..0x5A1D26"
+        "C11 0x5A2BB8..0x5A2C3A, 0x5A1BCC..0x5A1D26",
+        "R-ANIM pre-extraction part 2 item 4.1..4.8: ctor 0x5A0864..0x5A0A6C, SetDefaultHeadAndLiftState 0x5A1B40, TryToResume 0x5A2B40, MoveLiftToHeightAction 0x54899C"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M10-009": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Nothing in this build ever raises the obstacle-detected flag",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -110,7 +115,7 @@
       "hardware_required": false
     },
     "M10-010": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The physical flag robot+0x14: 0 until FirmwareVersion, then json[\"sim\"].isNull(); its gates",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -121,7 +126,7 @@
       "hardware_required": false
     },
     "M10-011": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Falling events: FallingStarted broadcast; FallingStopped NeedsAction 17 above 1000, DAS, broadcast",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -132,7 +137,7 @@
       "hardware_required": false
     },
     "M10-012": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "IMU filter state starts at 0; raw accel/gyro written only by UFRS",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [

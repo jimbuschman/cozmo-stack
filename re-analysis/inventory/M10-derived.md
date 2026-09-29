@@ -72,6 +72,57 @@
 - **M10-001 and M10-002:** constants confirmed; the consequences and conditions were missing.
 - **M10-005:** it was EQUIVALENT on the local clock, and is now settled as BaseStationTimer.
 
+## Corrections after the first freeze (manager, 2026-09-29; re-approved under the standing authorisation)
+
+Source: `re-analysis/research/20260929-R-ANIM-pre-extraction.md` (Part 2, items 1 to 5), whose rows `@cozmo-verifier`
+checked against `libcozmoEngine.so` on 2026-09-29 (all behaviour-changing rows PASS; two address typos corrected in the
+report). The verified rows settle the `unresolved` text of M10-001, M10-002, M10-003, M10-004 and M10-008.
+
+- **C1: the M10-004 / M10-008 missing body, `MovementComponent::CompletelyUnlockAllTracks` (0x00640F84, export
+  0x640F85).** The lock storage is 8 sets, one per track index 0..7: `std::set<LockInfo>` at MC+0x28+12·k with its size
+  at MC+0x30+12·k. The function walks k = 0..7 ascending (`mov.w r8,#-1` 0x640F9E; `add r8,#1` 0x640FB4; `cmp.w
+  r8,#7; blt` 0x641036). A track whose set is empty is skipped entirely (`cbz r0,#0x641034` 0x640FB8). Every non-empty
+  set is cleared, whoever holds it, with no filter by lock name and no test of the direct-drive flags: logs
+  "MovementComponent.UnlockAllTracks" / "Unlocking track %s" with `EnumToString(AnimTrackFlag)` of the mask `1<<k`
+  (`lsl.w r0,sb,r8` 0x640FBA), then `__tree<LockInfo>::destroy` on the tree at `[r5+4]`, `begin_node = &end_node`,
+  size 0, root 0 (0x640FFE..0x641014). Right after clearing each non-empty track it builds one
+  `EngineToRobot(AnimKeyFrame::EnableAnimTracks&&)` and sends it inside the loop, not batched: the 1-byte payload is
+  the loop index k (`strb.w r8,[sp,#4]` 0x64101A; ctor PLT 0x4B96C0; `Robot::SendMessage(msg, reliable=1, hot=0)` at
+  0x641024..0x64102A), then `ClearCurrent()`. This differs from `UnlockTracks` (0x63FE5C), which erases one holder,
+  ORs `1<<k` into one accumulated mask and sends a single EnableAnimTracks only if the mask is non-zero. No
+  PrintLockState, no change to MC+0xB8..0xBA or MC+0xD4. **The firmware's interpretation of an index instead of a
+  mask is not settled by any shipped artifact: HARDWARE_ONLY.**
+- **C2: M10-008, `BehaviorManager`'s head/lift restore.** The constructor (0x5A0864) sets manager+4 = Robot& and
+  manager+8 = manager+0xC = 0x7F7FFFFF (FLT_MAX) (`movw r0,#0xffff`/`movt r0,#0x7f7f` 0x5A0882; `strd r6,r0,[r4,#4]`
+  0x5A0886; `strd r0,sb,[r4,#0xc]` 0x5A088A); no other store to +8/+0xC in the body. `SetDefaultHeadAndLiftState`
+  (0x5A1B40): disable arm sets +8 and +0xC to FLT_MAX; enable arm stores head to +8 and lift to +0xC unconditionally,
+  then if `ActionList(robot+0x250)::IsEmpty()` queues a `CompoundActionParallel` now, else only stores.
+  `TryToResumeBehavior` (0x5A2B40) runs the restore only if manager+8 != FLT_MAX (`vldr s2,[r4,#8]` 0x5A2B4C) **and**
+  the action list is empty; **+0xC is never tested**. The compound action is `MoveHeadToAngleAction(robot,
+  Radians(+8), tolerance Radians(0x3D0EFA35 = 0.0349066), variability Radians(0))` and `MoveLiftToHeightAction(robot,
+  height = +0xC, tolerance 5.0f (0x40A00000), variability 0.0f)`, list order {head, lift}, queued at position 0 with
+  idTag 0. `MoveLiftToHeightAction` ctor (0x54899C) has no defaults for height or tolerance; fields +0x78 height,
+  +0x7C tolerance, +0x80 variability, +0x88 = 0, +0x8C = 10.0f, +0x90 = 20.0f; it subscribes to RobotToEngine 0xC4.
+  (Its `Init`/`CheckIfDone` and the roles of +0x88/+0x8C/+0x90 are RECOVERABLE_GAP, not needed here.)
+- **C3: M10-001, the `Anki::Radians` comparisons (0x84CC90, 0x84CD12).** `operator>` computes diff = a.value − b.value
+  as a plain f32 `vsub` (**not wrapped**), returns false unless diff > 0 strictly, then returns
+  `!IsNear(a, b, Radians{1.0e-5f})`. `IsNear` (0x84CC0A) copies `a`, wraps it, subtracts `b.value` (b not re-wrapped),
+  wraps the difference, and returns `|diff| < |tol|` strictly. So the wrap to (−pi, pi] happens inside `IsNear`, at
+  the second stage only. `operator<` swaps the operands and tail-calls `operator>`. `rescale` (0x84C87C) leaves a
+  value already in (−pi, pi] alone, else adds/subtracts 2pi in a loop while |x| < 10, else
+  `x := x − 2pi·(float)(int)ceilf(x/2pi − 0.5)`.
+- **C4: M10-002, the `CheckForUnexpectedMovement` details.** The +1 paths (quiet gyro opposite signs; quiet gyro same
+  signs with `|0.5·|(r−l)/46| − |gz|| > 0.2` strictly) **do** add l and r to the sums at +0x98/+0x9C (0x63E588:
+  `ldr [r5]` timestamp if count==0, `adds r0,#1`, `vadd.f32` l then r). The gyro-active opposite-sign path adds 2 to
+  the count and adds 2l and 2r to the sums with type 2 (0x63E51C..0x63E53E). The same-sign decrement is guarded by
+  count > 0 (0x63E674 `cmp r1,#0; beq`; `subs r0,r1,#1`). The fire test is unsigned count > `[+0xAC]` (0x63E5B2) and
+  is reached from the quiet-gyro and gyro-active opposite-sign paths, not from the decay paths.
+- **C5: M10-003, `EnabledStateChanged` for Shaken, Slope and Frustration.** The strategy vtable slot +0x1C for all
+  three holds 0x60B73B (Thumb entry 0x60B73A = `bx lr`, a no-op), the same as the base
+  `IReactionTriggerStrategy` slot; no symbol-bound override exists before +0x20 (`SetupForceTriggerBehavior`). The
+  disable/enable calls therefore have no effect for these three. `Generic` overrides +0x1C with 0x60F911.
+  `CubeMoved` (0x60C03C) and `Hiccup` (0x610AF8) have their own bodies; still RECOVERABLE_GAP (as recorded).
+
 ## Appendix A: M10 pass, extractor report
 
 I worked read-only. Scratch is `C:\Windows\TEMP\claude\...\b4cb80cd-...\scratchpad\extract\M10\`. It holds tools copied from M5 (`da.py`, `xref.py`, `scan.py`, `veneer.py`, `vt.py`, `bl.pkl`) and new ones (`vscan.py` scans VLDR/VSTR offsets, `dref.py` finds references to a data address, `plt.py`, `strtab.py`). The dumps are `cuts.txt`, `ufrs.txt`, `cfum.txt`, `crts.txt`, `fact.txt`, `gen.txt`, `ctor.txt`, `bmupd.txt`, `ttr.txt` and `irts.txt`.

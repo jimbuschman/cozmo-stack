@@ -1,8 +1,8 @@
 {
   "subsystem": "M5-animation",
-  "approved": "2026-09-25",
+  "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M5-animation.md",
-  "inventory_sha256": "c29b0405825b58b3c0444c235f92968f6ba592d8513d33ea25a3dc71b7e15630",
+  "inventory_sha256": "f87dd3f4932ba9ed9e2bcfcc7854a91957c78e38564e77e17c2f54f5b1bb16cf",
   "records": {
     "M5-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -12,13 +12,14 @@
         "D1 AnimClip keyframe voffsets 0x0057571C..0x00575EFC; cozmo_anim.fbs:80-96",
         "gap1 C2 rejected keyframe returns at once (0x00575EA6..0x005760F2)",
         "gap1 C3..C6 container, LoadAnimationFile 0x00521308..0x005215B4, CollectAnimFiles 0x0051F4C8..0x0051F6A0",
-        "gap2 J1..J5 DefineFromJson 0x005886F4.. (first top-level key); the four shipped JSON clips"
+        "gap2 J1..J5 DefineFromJson 0x005886F4.. (first top-level key); the four shipped JSON clips",
+        "R-ANIM pre-extraction part 1 item 1 F1..T3: FaceAnimation 0x004F9434, Event 0x004FA8B8, DeviceAudio 0x004FA658, RecordHeading 0x004FBB54, TurnToRecordedHeading 0x004FBF2C; CheckRotationSpeed 0x004FBBE6"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M5-002": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "19 procedural-eye parameters and the ProceduralFace default (all 0 except EyeScaleX/Y 1, face scale 1, no distorter); SetFromFlatBuf rules",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -29,7 +30,7 @@
       "hardware_required": false
     },
     "M5-003": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "title": "Face per frame and blending: GetFaceHelper, Interpolate, the Clip table, Combine for layers",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -71,7 +72,8 @@
       "evidence": [
         "C4 0x004FB494..0x004FB68C",
         "C5 0x004FBA8C..0x004FBB0E",
-        "gap1 S1 0x004FB1A8..0x004FB3FE"
+        "gap1 S1 0x004FB1A8..0x004FB3FE",
+        "R-ANIM pre-extraction part 1 item 2 B1..B6: ProcessRadiusString 0x004FB588, compare 0x004FCB48"
       ],
       "live_path": true,
       "hardware_required": false
@@ -120,7 +122,8 @@
       "evidence": [
         "A2 0x0057A0D4..0x0057A20E, ProceduralFace::Reset 0x0058359C; AnimationTriggerMap.json:1308-1309",
         "A30 0x0057BA60..0x0057BD6E",
-        "A31 0x0057CF6A..0x0057CFF2"
+        "A31 0x0057CF6A..0x0057CFF2",
+        "R-ANIM pre-extraction part 1 item 3 P1..P8: _resetData GOT 0x103ED4C, Reset 0x0058359C, TLC::Init 0x0064EDE2, streamer ctor 0x0057A0D4..0x0057A288, default face 0x00583660"
       ],
       "live_path": true,
       "hardware_required": false
@@ -132,7 +135,8 @@
       "evidence": [
         "D4 0x0058C4C0..0x0058C7BE",
         "D5 0x0058A946..0x0058AB2E",
-        "D6 0x0058AB30..0x0058AE2A"
+        "D6 0x0058AB30..0x0058AE2A",
+        "R-ANIM pre-extraction part 1 item 4 4.1..4.12: group loop 0x0058A622..0x0058A73C, entry DefineFromJson 0x0058C4CC..0x0058C7D2, ctor 0x0058C4B0, backup 0x0058AC2A"
       ],
       "live_path": true,
       "hardware_required": false
@@ -154,7 +158,8 @@
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C12 0x004F9708..0x004F98C4; FaceAnimationManager 0x00581254..0x005812C4; GetFrame 0x005817B4..0x005817CA",
-        "M3 B4"
+        "M3 B4",
+        "R-ANIM pre-extraction part 1 item 5 5.1..5.8: Threshold 0x00871E98, libopencv_core 0x7A7A2, variant store 0x00581254, GetFrame 0x005817B4, GetStreamMessage 0x004F9812, IsDone 0x004F9770"
       ],
       "live_path": true,
       "hardware_required": false
@@ -166,7 +171,8 @@
       "evidence": [
         "D5 cooldown set on a pick; MoodManager::Update 0x0067B5E6",
         "D6 0x0058AB30..0x0058AE2A",
-        "D7 0x0058BA28..0x0058BA98"
+        "D7 0x0058BA28..0x0058BA98",
+        "R-ANIM pre-extraction part 1 item 4 4.8..4.12: CooldownTime default 0x0058C868, UseHeadAngle 0x0058C734, HeadAngle 0x0058C770, backup 0x0058AC2A"
       ],
       "live_path": true,
       "hardware_required": false
@@ -188,7 +194,8 @@
       "evidence": [
         "C16 0x005758C8..0x00575CBE",
         "C17 GetColorOptional 0x0084024C..0x0084050C; encoding 0x004FABDC..0x004FAC12",
-        "C18 0x004FAC7C..0x004FADB6, 0x004FB0F4..0x004FB11A; 7140 keyframes in 111 shipped clips"
+        "C18 0x004FAC7C..0x004FADB6, 0x004FB0F4..0x004FB11A; 7140 keyframes in 111 shipped clips",
+        "R-ANIM pre-extraction part 1 item 6 6.1..6.5: GetByString 0x0083F780, table 0x0105DFE0, GetColorOptional 0x0084024C"
       ],
       "live_path": true,
       "hardware_required": false
@@ -219,16 +226,21 @@
       "title": "The layer base face is written back only by a streaming animation, not idle ones",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "C11 0x0064EFA8..0x0064EFEA, 0x0064F154..0x0064F244"
+        "C11 0x0064EFA8..0x0064EFEA, 0x0064F154..0x0064F244",
+        "R-ANIM pre-extraction part 1 item 7 7a..7f: ApplyFaceLayersToAnim 0x0064F154, write-back 0x0064F1EE"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M5-020": {
-      "status": "COMPATIBILITY_POLICY",
-      "title": "Expressions helper faces",
-      "authority": "not applicable",
-      "evidence": [],
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Expressions: the shipped Code Lab AnimationTrigger mapping and Unity Random; no invented faces",
+      "authority": "unity/scripts/csharp/CodeLab/CodeLabGame.cs:3094; libunity.so (shipped); operator decision 2026-09-29",
+      "evidence": [
+        "operator decision 2026-09-29: no invented faces; rebuild on the shipped Code Lab expression mapping",
+        "CodeLabGame.GetAnimationTriggerForScratchIndex CodeLabGame.cs:3094, Random.Range(1,34) :3101, Random.Range(1,14) :3106",
+        "R-ANIM pre-extraction part 1 item 11 R3..R8: RandomRangeInt 0x10BCE8, xorshift128 0x10BD00..0x10BD2C, InitState 0x10BC00, time(NULL) seed 0x71ED4..0x71F04"
+      ],
       "live_path": false,
       "hardware_required": false
     },
@@ -262,7 +274,8 @@
         "A22 0x0057B3F2..0x0057B426",
         "A23 0x005276E8..0x0052771A, 0x0052C22E -> 0x00517DDE..0x00517E0A",
         "A24 0x0057B442..0x0057B58A",
-        "A25 0x0057D122..0x0057D1DE"
+        "A25 0x0057D122..0x0057D1DE",
+        "R-ANIM pre-extraction part 1 item 8 8a..8c: choice 0x0057B418..0x0057B430, reset 0x0057B562"
       ],
       "live_path": true,
       "hardware_required": false
@@ -311,7 +324,8 @@
         "A1 0x0057A064..0x0057A0AC",
         "A28 0x0057D03A..0x0057D060, 0x0057D122..0x0057D1E2",
         "A29 0x0057D064..0x0057D448",
-        "A30 0x0057B914..0x0057BD6E"
+        "A30 0x0057B914..0x0057BD6E",
+        "R-ANIM pre-extraction part 1 item 9 9a..9c: +0x64 writers 0x00579FC6, 0x0057B926, 0x0057BD66, 0x0057D022, 0x0057D3F6; drain 0x0057D168; HasResponse 0x00670AD0"
       ],
       "live_path": true,
       "hardware_required": false
@@ -352,7 +366,7 @@
       "hardware_required": false
     },
     "M5-031": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Glitch: AddGlitch face and backpack layers, GetNextDistortionFrame table, ScanlineDistorter, per-row shift, AddOffNoise",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -369,7 +383,8 @@
       "evidence": [
         "E1 0x00585B30..0x00585D9A; E2 0x00585D9C..0x00585E94",
         "gap1 D4, D5",
-        "gap3 C1..C6 warpAffine 0x00081850.., invoker 0x0007FC60..0x0008016A, remapNearest 0x00072C38..0x00072D8C (matches stock 3.1.0)"
+        "gap3 C1..C6 warpAffine 0x00081850.., invoker 0x0007FC60..0x0008016A, remapNearest 0x00072C38..0x00072D8C (matches stock 3.1.0)",
+        "R-ANIM pre-extraction part 1 item 10 10a..10e: GetTransformationMatrix 0x00584FF8, InputArray 0x00585C84, warpAffine imgproc 0x0008193C"
       ],
       "live_path": true,
       "hardware_required": false

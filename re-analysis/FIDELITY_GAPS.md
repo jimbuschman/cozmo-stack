@@ -10,8 +10,8 @@ Manifest of **372 records** over 16 subsystems.
 | EXACT_SOURCE | 220 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 2 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 7 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 101 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 30 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| IMPLEMENTATION_GAP | 102 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| COMPATIBILITY_POLICY | 29 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -344,8 +344,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: a clip loads with different content
 * rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AnimationLibrary.ParseClip reads the AnimClip keyframe tables in the D1/C1 track order (Lift, ProcFace, Head, RobotAudio, Backpack, FaceAnim, Event, Body, RecordHeading, TurnTo); a keyframe whose define fails or that the track refuses (BadTriggerTime: trigger not after the previous, TooManyFrames: more than 1000, L4) logs "Adding X frame %d failed." and ends the load, keeping everything before it and the clip itself (C2, C3; AnimationClip.LoadTruncated). Files come from assets/animations/ and config/engine/animations/ (C5), ".bin" as FlatBuffer and anything else as JSON (C4); a JSON clip is named by its first top-level key in ordinal (JsonCpp) order (J1, J2); a later file of the same name replaces the earlier (C3, C6). Verify round 1 (2026-09-25, corrections C1..C3, gap4): JsonClipLoader is gap4 J1.1..J1.10: each element's "Name" matched exactly to the keyframe class names; triggerTime_ms required (asUInt); Head, Lift, Body, ProceduralFace, BackpackLights and RobotAudio members as J1.5..J1.10 with JsonCpp's conversions (J1.4: range-checked, truncated; ±24.999999999999996 → ±24); AddNewKeyFrameToBack (BadTriggerTime); the first failure ends the load. The four shipped JSON clips load (MD3). "_PROCEDURAL_" is skipped (P1). Verify round 2 (2026-09-25, correction C4): AnimationLibrary.GetAnimation also catches the NotSupportedException of an unported JSON keyframe type, logs "error: <clip>: <message>" in the loader's form and returns null, so an idle group naming such a clip cannot throw into the engine tick.
 * best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
-* evidence: D1 AnimClip keyframe voffsets 0x0057571C..0x00575EFC; cozmo_anim.fbs:80-96; gap1 C2 rejected keyframe returns at once (0x00575EA6..0x005760F2); gap1 C3..C6 container, LoadAnimationFile 0x00521308..0x005215B4, CollectAnimFiles 0x0051F4C8..0x0051F6A0; gap2 J1..J5 DefineFromJson 0x005886F4.. (first top-level key); the four shipped JSON clips
-* outstanding: MISSING: SetMembersFromJson of FaceAnimation, Event, DeviceAudio, RecordHeading and TurnToRecordedHeading keyframes is not in the inventory (gap4 covers the six types the shipped JSON uses); such a JSON keyframe throws NotSupportedException. A JsonCpp conversion that throws (a value out of range or not a number) ends the load there. The TooManyFrames boundary is "refuse above 1000" (L4); BadTriggerTime is applied to every track. Cross-file load order and the 4-worker load are HARDWARE_ONLY (C5, C6).
+* evidence: D1 AnimClip keyframe voffsets 0x0057571C..0x00575EFC; cozmo_anim.fbs:80-96; gap1 C2 rejected keyframe returns at once (0x00575EA6..0x005760F2); gap1 C3..C6 container, LoadAnimationFile 0x00521308..0x005215B4, CollectAnimFiles 0x0051F4C8..0x0051F6A0; gap2 J1..J5 DefineFromJson 0x005886F4.. (first top-level key); the four shipped JSON clips; R-ANIM pre-extraction part 1 item 1 F1..T3: FaceAnimation 0x004F9434, Event 0x004FA8B8, DeviceAudio 0x004FA658, RecordHeading 0x004FBB54, TurnToRecordedHeading 0x004FBF2C; CheckRotationSpeed 0x004FBBE6
+* outstanding: Settled (C5): the five JSON keyframe readers exist and none throws; a rejected keyframe ends the clip's load with earlier keyframes kept. The TooManyFrames boundary is "refuse above 1000" (L4); BadTriggerTime is applied to every track. Cross-file load order and the 4-worker load are HARDWARE_ONLY (C5, C6).
 
 **M5-006 — Body 0x99: radius strings, speed clamps (point turn +-300, straight/turn +-220), negative duration never stops, the stop at duration end** (live path)
 
@@ -353,8 +353,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: the body moves differently
 * rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): DefineBody (C4, S1): the radius string (any digit: atoi clamped to int16 and CheckTurnSpeed; TURN_IN_PLACE/POINT_TURN: 0 and CheckRotationSpeed |v| > 300 → ±300; STRAIGHT: 0x7FFF and CheckStraightSpeed |v| >= 221 → ±220; anything else rejects the keyframe); a negative duration becomes INT_MAX. The stream (C5): counter 0 sends {speed, radius}, nothing while counter < duration, the stop {0, 0x7FFF} on the first frame with counter >= duration (IsDoneHelper, +33 per frame), whatever the speed; enableStop is the ctor's 1. No other BodyStop is sent (RobotAnimationSink.Finished sends nothing; the stack's own stops before End and on cancel are gone).
 * best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
-* evidence: C4 0x004FB494..0x004FB68C; C5 0x004FBA8C..0x004FBB0E; gap1 S1 0x004FB1A8..0x004FB3FE
-* outstanding: The radius tokens are matched case-insensitively (the earlier code's rule; C4 does not say whether the engine compares with strcmp); the speed is taken as read before the radius string is processed. A keyframe built in code with an unknown token sends neither its start nor its stop (the engine rejects it at load, so it never streams).
+* evidence: C4 0x004FB494..0x004FB68C; C5 0x004FBA8C..0x004FBB0E; gap1 S1 0x004FB1A8..0x004FB3FE; R-ANIM pre-extraction part 1 item 2 B1..B6: ProcessRadiusString 0x004FB588, compare 0x004FCB48
+* outstanding: The radius tokens are matched case-sensitively as whole strings (C5). A keyframe built in code with an unknown token sends neither its start nor its stop (the engine rejects it at load, so it never streams).
 
 **M5-010 — Neutral face: the first ProceduralFace keyframe of the first clip of ag_neutral_face; reset data and layer base; replayed after abort-to-nothing and RemoveIdle** (live path)
 
@@ -362,8 +362,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: the resting face differs
 * rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AnimationScheduler.LoadNeutralFace is A2 (GetAnimationForTrigger(NeutralFace) → GetFirstAnimationName; an empty group an error, more than one a warning; the clip stored as +0x40 and the face of its first ProceduralFace keyframe given to TrackLayerComponent.Init as the layer base); CozmoAnimations.LoadFrom runs it with the loaded library as the catalog. The keep-alive block replays it after an abort to nothing (+0x73, A6, A31) and RemoveIdleAnimation does when the top becomes Count while an idle plays and nothing streams (A30).
 * best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
-* evidence: A2 0x0057A0D4..0x0057A20E, ProceduralFace::Reset 0x0058359C; AnimationTriggerMap.json:1308-1309; A30 0x0057BA60..0x0057BD6E; A31 0x0057CF6A..0x0057CFF2
-* outstanding: ProceduralFace's reset data before a neutral face is loaded (no assets, or before LoadFrom) is not in the inventory; the layer base is the default face then. The engine reads the neutral in the streamer constructor with the assets already loaded; here it is read at LoadFrom.
+* evidence: A2 0x0057A0D4..0x0057A20E, ProceduralFace::Reset 0x0058359C; AnimationTriggerMap.json:1308-1309; A30 0x0057BA60..0x0057BD6E; A31 0x0057CF6A..0x0057CFF2; R-ANIM pre-extraction part 1 item 3 P1..P8: _resetData GOT 0x103ED4C, Reset 0x0058359C, TLC::Init 0x0064EDE2, streamer ctor 0x0057A0D4..0x0057A288, default face 0x00583660
+* outstanding: Settled (C5): the reset data is null until the streamer constructor's SetResetData; the layer base is the default face. The neutral face is read once in the streamer constructor, before TLC::Init.
 
 **M5-011 — Group choice: mood, head window and cooldown filters; RandDbl(sum w) weighted draw; fallback to the Default mood** (live path)
 
@@ -371,8 +371,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: a different clip is chosen
 * rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AnimationGroup.GetAnimationName is D5/D6: candidates by mood (SimpleMoodType), the head window in radians when UseHeadAngle, and cooldown; r = RandDbl(Σw) minus each weight, the pick where r < 0, else the last; the pick's cooldown end set to now + CooldownTime_Sec; nothing left and the mood not Default → again with Default. AnimationLibrary implements IAnimationCatalog.GetAnimationNameFromGroup with the mood, cooldown time and head angle providers. Verify round 1 (2026-09-25, corrections C1..C3, gap4): The group draw is on the context RNG (R3), shared with the live idle and the layer managers (AnimationLibrary.ContextRandom = AnimationScheduler.ContextRandom).
 * best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
-* evidence: D4 0x0058C4C0..0x0058C7BE; D5 0x0058A946..0x0058AB2E; D6 0x0058AB30..0x0058AE2A
-* outstanding: D4 says an entry's Name must exist as a clip; what the loader does with one that does not is not in the rows, so such entries are kept. The defaults of Weight (1), Mood ("Default") and HeadAngleMin/Max_Deg (±infinity) when absent are the earlier code's, not the rows'. The mood and the cooldown time come from MoodManager (M7): unset, Default and this machine's monotonic clock.
+* evidence: D4 0x0058C4C0..0x0058C7BE; D5 0x0058A946..0x0058AB2E; D6 0x0058AB30..0x0058AE2A; R-ANIM pre-extraction part 1 item 4 4.1..4.12: group loop 0x0058A622..0x0058A73C, entry DefineFromJson 0x0058C4CC..0x0058C7D2, ctor 0x0058C4B0, backup 0x0058AC2A
+* outstanding: The reject-and-continue rules and the absence of Weight/Mood/HeadAngle defaults are settled (C5). The mood and the cooldown time come from MoodManager (M7): unset, Default and this machine's monotonic clock.
 
 **M5-013 — faceAnimations: one sprite frame per stream frame, empty frames skipped, two RLE variants per image chosen by _firstScanLine, index reset on abort** (live path)
 
@@ -380,8 +380,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: sprite faces look different
 * rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): FaceAnimationLibrary.Variants stores each image thresholded at 0x80 as two CompressRLE variants, even rows cleared and odd rows cleared (C12); the FaceAnim track sends one stored frame per stream frame with the FaceAnimationManager's _firstScanLine (toggled by InitStream, A11), an empty frame skipped (index +1, no message), and is done when the index reaches the frame count; Abort resets the current keyframe's index (A24).
 * best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
-* evidence: C12 0x004F9708..0x004F98C4; FaceAnimationManager 0x00581254..0x005812C4; GetFrame 0x005817B4..0x005817CA; M3 B4
-* outstanding: Which stored variant GetFrame returns for which _firstScanLine value is not in C12; 0 takes the even-rows-cleared one (the drawer's convention, E2). The index is reset to 0 when the keyframe is done (a looping clip would otherwise find it done at once); the rows do not say. Image::Threshold(0x80) is taken as "at or above 0x80".
+* evidence: C12 0x004F9708..0x004F98C4; FaceAnimationManager 0x00581254..0x005812C4; GetFrame 0x005817B4..0x005817CA; M3 B4; R-ANIM pre-extraction part 1 item 5 5.1..5.8: Threshold 0x00871E98, libopencv_core 0x7A7A2, variant store 0x00581254, GetFrame 0x005817B4, GetStreamMessage 0x004F9812, IsDone 0x004F9770
+* outstanding: The threshold is strictly above 0x80, and the variant and lazy index reset are settled (C5). The writers of keyframe +0x28 (the IsDone override) are RECOVERABLE_GAP (0x004F9770, 0x004F97DE).
 
 **M5-014 — Cooldown keyed by clip name across groups; the Default-mood backup rule within +-0.05 rad, else the first entry** (live path)
 
@@ -389,8 +389,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: clips repeat or are skipped differently
 * rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): The cooldown map (GroupContainer) is keyed by animation name and shared by every group of the library (D7: on cooldown iff end > now); the Default backup (D6, not strict) is the Default entry with the smallest TimeUntilCooldownOver among those whose [min - 0.05, max + 0.05] rad window holds the head angle, whatever their UseHeadAngle, with no cooldown set; without one, the first entry; strict gives nothing.
 * best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
-* evidence: D5 cooldown set on a pick; MoodManager::Update 0x0067B5E6; D6 0x0058AB30..0x0058AE2A; D7 0x0058BA28..0x0058BA98
-* outstanding: The cooldown time is MoodManager+0x130 (D5; M7): unset, this machine's monotonic clock stands in. HeadAngleMin/Max_Deg defaults when absent (here ±infinity, so every entry qualifies for the backup) are not in the rows.
+* evidence: D5 cooldown set on a pick; MoodManager::Update 0x0067B5E6; D6 0x0058AB30..0x0058AE2A; D7 0x0058BA28..0x0058BA98; R-ANIM pre-extraction part 1 item 4 4.8..4.12: CooldownTime default 0x0058C868, UseHeadAngle 0x0058C734, HeadAngle 0x0058C770, backup 0x0058AC2A
+* outstanding: No defaults for Weight, Mood or HeadAngleMin/Max (C5). For an entry without UseHeadAngle the head-angle fields are uninitialised stack; the forced choice (SD2) is that such an entry is outside every head window, so the backup falls to the first entry - put to the policy review. The cooldown time is MoodManager+0x130 (M7): unset, this machine's monotonic clock stands in.
 
 **M5-016 — Backpack-lights track: loaded via JSON, colours raw-or-normalised, 0x98 sent every frame while current, LED order Left Front Middle Back Right** (live path)
 
@@ -398,8 +398,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: the backpack lights ignore or misplay animations
 * rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): The backpack track is loaded (DefineLights, C16) and each colour goes through BackpackColor.FromArray (GetColorOptional, C17: raw when any of r, g, b > 1, else x255, truncated; alpha from a 4th element >= 0; default 0xFF00CCFF) and BackpackColor.Encode; TrackLayerComponent.ApplyLayersToAnim sends 0x98 BackpackLights every frame while the keyframe is current and due, until counter >= duration, that frame included (C18), in the order Left, Front, Middle, Back, Right, at the A16 (10) slot. Verify round 1 (2026-09-25, corrections C1..C3, gap4): BackpackColor.TryReadAll is gap4 J1.9: "Back", "Front", "Middle", "Left", "Right" in that order into one reused ColorRGBA (a 3-element array keeps the previous alpha), each an array of 3 or 4 floats or the keyframe is rejected, vcvt.u32.f32 conversions; the FlatBuffer table goes the same way (C16). The animation keyframe is current and due (B1/B3: trigger <= stream - start); a backpack layer's current keyframe overwrites all five LEDs (B2).
 * best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
-* evidence: C16 0x005758C8..0x00575CBE; C17 GetColorOptional 0x0084024C..0x0084050C; encoding 0x004FABDC..0x004FAC12; C18 0x004FAC7C..0x004FADB6, 0x004FB0F4..0x004FB11A; 7140 keyframes in 111 shipped clips
-* outstanding: MISSING: a colour given as a string names a NamedColors entry (J1.9); the table is not in the inventory, so such a JSON keyframe throws NotSupportedException (no shipped keyframe uses one).
+* evidence: C16 0x005758C8..0x00575CBE; C17 GetColorOptional 0x0084024C..0x0084050C; encoding 0x004FABDC..0x004FAC12; C18 0x004FAC7C..0x004FADB6, 0x004FB0F4..0x004FB11A; 7140 keyframes in 111 shipped clips; R-ANIM pre-extraction part 1 item 6 6.1..6.5: GetByString 0x0083F780, table 0x0105DFE0, GetColorOptional 0x0084024C
+* outstanding: Settled (C5): the 13-entry NamedColors table; an unknown name returns DEFAULT, not a rejection.
 
 **M5-018 — Frames per Update while ShouldProcessAnimationFrame: empty buffer and keyframes left, or audio ready while audio exists** (live path)
 
@@ -416,8 +416,17 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: the held face differs
 * rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): ApplyLayersToAnim copies the stored face (TLC+0x10); an animation's face replaces it and only a streaming animation (storeFace = 1) writes it back as the new stored face (C11); idle animations and StreamLayers do not.
 * best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
-* evidence: C11 0x0064EFA8..0x0064EFEA, 0x0064F154..0x0064F244
-* outstanding: C11 does not say whether the face written back is the animation's (before the layers are Combined) or the composed one; the animation's is written.
+* evidence: C11 0x0064EFA8..0x0064EFEA, 0x0064F154..0x0064F244; R-ANIM pre-extraction part 1 item 7 7a..7f: ApplyFaceLayersToAnim 0x0064F154, write-back 0x0064F1EE
+* outstanding: Settled (C5): the write-back is the animation's face, before layers combine, and only when storeFace = 1 and GetFaceHelper returned 1.
+
+**M5-020 — Expressions: the shipped Code Lab AnimationTrigger mapping and Unity Random; no invented faces** (not on the live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Expressions.cs`
+* effect: none unless a caller asks for one
+* rests on: a local convenience built on the shipped neutral, labelled as such
+* best authority: unity/scripts/csharp/CodeLab/CodeLabGame.cs:3094; libunity.so (shipped); operator decision 2026-09-29
+* evidence: operator decision 2026-09-29: no invented faces; rebuild on the shipped Code Lab expression mapping; CodeLabGame.GetAnimationTriggerForScratchIndex CodeLabGame.cs:3094, Random.Range(1,34) :3101, Random.Range(1,14) :3106; R-ANIM pre-extraction part 1 item 11 R3..R8: RandomRangeInt 0x10BCE8, xorshift128 0x10BD00..0x10BD2C, InitState 0x10BC00, time(NULL) seed 0x71ED4..0x71F04
+* outstanding: The Code Lab AnimationTrigger mapping and the xorshift128 generator/range rule are settled (C5). The seed value comes from Mono's Environment.get_TickCount in libmono.so, which is not read, so it is UNKNOWN; the stack needs a deterministic stand-in (SD2, time-seeded randomness) - put to the policy review.
 
 **M5-021 — Eye fill = shipped OpenCV 3.1.0 fillConvexPoly LINE_4 and ellipse2Poly; DrawEye outline and lid polygons; _firstScanLine offset; fill order** (live path)
 
@@ -443,8 +452,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: a cancelled animation leaves the robot in a different state
 * rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AnimationScheduler.AbortLocked is A22/A24: with +0xA0 != 0 the AnimationAborted{tag} broadcast, synchronous; nothing more when neither +0x38 nor +0x34 is set; the current FaceAnimation keyframe's index reset to 0; startSent = endSent = 0; the audio animation aborted and cleared; +0x38, +0xA0 and the send buffer kept. CozmoAnimations subscribes the broadcast as RobotEventHandler does and sends AbortAnimation 0x8D directly through CozmoRobot.SendMessage (reliable, not budget-gated, A23). The leftovers are flushed by the next no-animation Update or dropped by an InitStream, and no EndOfAnimation follows (A25).
 * best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
-* evidence: A22 0x0057B3F2..0x0057B426; A23 0x005276E8..0x0052771A, 0x0052C22E -> 0x00517DDE..0x00517E0A; A24 0x0057B442..0x0057B58A; A25 0x0057D122..0x0057D1DE
-* outstanding: A24 does not say whose FaceAnimation keyframe is reset when both a streaming and an idle animation are set; the streaming one's is.
+* evidence: A22 0x0057B3F2..0x0057B426; A23 0x005276E8..0x0052771A, 0x0052C22E -> 0x00517DDE..0x00517E0A; A24 0x0057B442..0x0057B58A; A25 0x0057D122..0x0057D1DE; R-ANIM pre-extraction part 1 item 8 8a..8c: choice 0x0057B418..0x0057B430, reset 0x0057B562
+* outstanding: Settled (C5): the streaming animation's keyframe is reset when +0x38 is set, else the idle's.
 
 **M5-027 — Idle animations: the idle stack, PushIdle/RemoveIdle, idle InitStream with tag 0xFF, ProceduralLive, the no-animation path** (live path)
 
@@ -452,8 +461,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: idle behaviour differs
 * rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): The idle stack starts {Count 0x23F, "default_anim_lock"} (A1); PushIdleAnimation/RemoveIdleAnimation are A30 (Count clears +0x34/+0x64; the last entry and an unknown lock refused; a removal from the middle warns; a Count top with an idle playing and nothing streaming replays the neutral). The no-animation path is A28/A29: a Count top with layers → StreamLayers; a ProceduralLive top makes the live animation the idle; a non-empty buffer is flushed and then a pending End sent (Q1.9); a non-Count idle is picked through the catalog (HasAnimationForTrigger → GetAnimationForTrigger → GetAnimationNameFromGroup(strict = false) → GetAnimation, an error without popping) and initialised with InitStream(anim, 0xFF) and no frame, otherwise UpdateStream(storeFace = 0); +0x44 += 60. StreamLive (the M7-017 seam) appends to the live animation and puts ProceduralLive on the stack; it is refused while an animation streams. Verify round 1 (2026-09-25, corrections C1..C3, gap4): The no-animation path is now B1: with the stack empty or its top Count, StreamLayers when layers exist, otherwise the flush and a pending End, and nothing more; any other top goes straight to the idle, which neither flushes nor sends an End. The live idle is gap4 L8 (UpdateLiveAnimation first; InitStream(live, 0xFF) when the previous idle was not the live one or it has ended, otherwise UpdateStream); after an idle's or the live idle's UpdateStream +0x88 = now (B3). A failed pick sets the idle to null and returns (Q1); a trigger with no animation goes on to the tail with no error. Verify round 2 (2026-09-25, correction C4): the idle and live-idle tail is C4 (0x0057D3F0..0x0057D412): InitStream(idle, 0xFF) when the previous idle is not this one, +0x64 == 0, or the idle has ended, otherwise UpdateStream; a streaming Update clears +0x64 (A13), so after a clip the idle (the live one included) re-inits with 0xFF; the HasAnimationForTrigger-miss path reaches the same tail (0x0057D218), so a kept idle re-inits there too.
 * best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
-* evidence: A1 0x0057A064..0x0057A0AC; A28 0x0057D03A..0x0057D060, 0x0057D122..0x0057D1E2; A29 0x0057D064..0x0057D448; A30 0x0057B914..0x0057BD6E
-* outstanding: +0x64 is taken as set by an idle's InitStream (A29 says only that +0x64 = 0 re-inits). The Count-top flush refreshes the budgets before its drain; the rows do not say. HasAnimationForTrigger is HasResponse (0x00670AD0, not re-read), taken as "the key is present".
+* evidence: A1 0x0057A064..0x0057A0AC; A28 0x0057D03A..0x0057D060, 0x0057D122..0x0057D1E2; A29 0x0057D064..0x0057D448; A30 0x0057B914..0x0057BD6E; R-ANIM pre-extraction part 1 item 9 9a..9c: +0x64 writers 0x00579FC6, 0x0057B926, 0x0057BD66, 0x0057D022, 0x0057D3F6; drain 0x0057D168; HasResponse 0x00670AD0
+* outstanding: Settled (C5): +0x64 is set to 1 by an idle's InitStream tail; the Count-top flush refreshes the budgets before the drain; HasAnimationForTrigger is HasResponse.
 
 **M5-030 — Live idle (UpdateLiveAnimation): gates, body/lift/head wiggles with their parameters, LiveIdleTurn eye shift, lock and carry checks** (live path)
 
@@ -470,8 +479,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: the face is drawn with different pixels
 * rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): ProceduralFaceRenderer.DrawFace is E1/E2/G9: the 64 x 128 canvas, both eyes; with the identity face transform the row extent from the eye boxes, otherwise GetTransformationMatrix(angle, sx, sy, cx, cy, 64, 32) through OpenCv310.WarpAffineNearest (gap3 C1..C6: in place so the source cloned, the inverse, AB_BITS 10, remapNearest with BORDER_CONSTANT 0) and the extent from the transformed box corners (floor/ceil); rows clamped to 0..63; the rows of the drawer's _firstScanLine parity cleared in [min, max); the kept rows shifted by the distorter. The stream draws with the drawer's _firstScanLine and sends CompressRLE of the canvas (BufferFaceToSend, every frame, no de-duplication). Verify round 1 (2026-09-25, corrections C1..C3, gap4): The rotated row extent uses the 4 corners of each eye rectangle, 8 points, with floor/ceil, the min from 63 and the max from 0 (C2; ProceduralFaceRenderer.TransformedRowExtent).
 * best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
-* evidence: E1 0x00585B30..0x00585D9A; E2 0x00585D9C..0x00585E94; gap1 D4, D5; gap3 C1..C6 warpAffine 0x00081850.., invoker 0x0007FC60..0x0008016A, remapNearest 0x00072C38..0x00072D8C (matches stock 3.1.0)
-* outstanding: The face matrix is built in float and converted to double (gap3 open question 2: the engine M type not re-read).
+* evidence: E1 0x00585B30..0x00585D9A; E2 0x00585D9C..0x00585E94; gap1 D4, D5; gap3 C1..C6 warpAffine 0x00081850.., invoker 0x0007FC60..0x0008016A, remapNearest 0x00072C38..0x00072D8C (matches stock 3.1.0); R-ANIM pre-extraction part 1 item 10 10a..10e: GetTransformationMatrix 0x00584FF8, InputArray 0x00585C84, warpAffine imgproc 0x0008193C
+* outstanding: Settled (C5): the face matrix is float 2x3 CV_32FC1; warpAffine converts it to double.
 
 ### M6-wwise-bank — Wwise bank reading and codecs
 
@@ -804,8 +813,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: the robot state (picked up, on back, on side) is classified differently
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
 * best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: A1..A7 CheckAndUpdateTreadsState 0x511E00..0x5121F8 (thresholds 0x5121FC, 0x5122A0..0x5122BC); A8..A15 consequences: Falling DAS + ActionList::Cancel(-1) (0x511FF0..0x512084; gap1 3a..3e), RobotOffTreadsStateChanged broadcast 0x512092, OnTreads 0x512112..0x512184, carried 0x512100, SetOnChargerPlatform 0x512188, pause flag 0x5121E2; gap1 5a IMU filter state zeroed (0x5100E0..0x5100FE)
-* outstanding: A5: the Anki Radians operator> / operator< (0x84CC90: diff > 0 && !IsNear(1e-5)) and whether the difference is wrapped are not in the rows, so the plain float comparisons are kept. The M11/M12/M15 consequences are seams.
+* evidence: A1..A7 CheckAndUpdateTreadsState 0x511E00..0x5121F8 (thresholds 0x5121FC, 0x5122A0..0x5122BC); A8..A15 consequences: Falling DAS + ActionList::Cancel(-1) (0x511FF0..0x512084; gap1 3a..3e), RobotOffTreadsStateChanged broadcast 0x512092, OnTreads 0x512112..0x512184, carried 0x512100, SetOnChargerPlatform 0x512188, pause flag 0x5121E2; gap1 5a IMU filter state zeroed (0x5100E0..0x5100FE); R-ANIM pre-extraction part 2 item 1 O1..O4: Radians operator> 0x84CC90, IsNear 0x84CC0A, operator< 0x84CD12, rescale 0x84C87C
+* outstanding: The Radians comparisons are settled (C3): operator> tests the raw diff > 0 and wraps inside IsNear. The M11/M12/M15 consequences are seams.
 
 **M10-002 — Unexpected-movement detector: gates, wheel/gyro rules and constants, fire at count > 10** (live path)
 
@@ -813,8 +822,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: unexpected movement is detected differently
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
 * best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: B1 tail call 0x63E392; B2..B5 gates 0x63E3B4..0x63E426; B6 ctor constants 0x63DAB0..0x63DB00; B7..B11 rules 0x63E428..0x63E5DA
-* outstanding: B8: whether the +1 paths add l and r to the sums. B9: whether the same-sign decrement is guarded by count > 0. Both keep the existing reading until the rows are extracted.
+* evidence: B1 tail call 0x63E392; B2..B5 gates 0x63E3B4..0x63E426; B6 ctor constants 0x63DAB0..0x63DB00; B7..B11 rules 0x63E428..0x63E5DA; R-ANIM pre-extraction part 2 item 2 B7..B11-a: 0x63E474, 0x63E49C, 0x63E588, 0x63E51C..0x63E53E, 0x63E674, 0x63E5B2
+* outstanding: Settled (C4): the +1 paths add l and r to the sums, and the same-sign decrement is guarded by count > 0.
 
 **M10-003 — Reaction-strategy factory rules and strategy classes (Cliff, Falling, PickedUp, Shaken, Slope, Frustration, PlacedOnCharger, Sparked, NoPreDockPoses, FistBump, Hiccup, Pet, CubeMoved, FacePositionUpdated, ObjectPositionUpdated)** (live path)
 
@@ -822,8 +831,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: reactions trigger differently
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
 * best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: C12 factory switch 0x60D618; C13..C17 Generic, Shaken, Slope, Frustration; gap1 1 Cliff filter 0x60DC7C..0x60DCA2; gap1 8 strategy predicates; gap2 1..6 PlacedOnCharger 0x614474..0x6144D0, CubeMoved 0x60C04A..0x60C1E2 / 0x60BEB4, Face 0x60CB84..0x60CE20, position-update base 0x612168..0x612B22, Object 0x6114A0..0x611582
-* outstanding: EnabledStateChanged for Shaken, Slope and Frustration is not in gap1 4j (a no-op here); Hiccup, FistBump, Sparked, the NoPreDockPoses +0x70 writers and Pet EnabledStateChanged (InitReactedTo) are not built.
+* evidence: C12 factory switch 0x60D618; C13..C17 Generic, Shaken, Slope, Frustration; gap1 1 Cliff filter 0x60DC7C..0x60DCA2; gap1 8 strategy predicates; gap2 1..6 PlacedOnCharger 0x614474..0x6144D0, CubeMoved 0x60C04A..0x60C1E2 / 0x60BEB4, Face 0x60CB84..0x60CE20, position-update base 0x612168..0x612B22, Object 0x6114A0..0x611582; R-ANIM pre-extraction part 2 item 5.1: EnabledStateChanged +0x1C is a no-op (0x60B73B) for Shaken/Slope/Frustration
+* outstanding: The +0x1C EnabledStateChanged for Shaken, Slope and Frustration is settled as a no-op (C5). The CubeMoved (0x60C03C) and Hiccup (0x610AF8) +0x1C bodies are RECOVERABLE_GAP; FistBump, Sparked, the NoPreDockPoses +0x70 writers and Pet EnabledStateChanged (InitReactedTo) are not built.
 
 **M10-004 — CheckReactionTriggerStrategies: sticky action gate, map order, disable locks, predicates, StopAllMotors and track unlock, no-break loop, IsReactionTriggerEnabled and lock messages** (live path)
 
@@ -831,8 +840,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: reactions are enabled, ordered or suppressed differently
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
 * best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: C3 gate 0x5A355A..0x5A357A; C4..C8 0x5A359A..0x5A37CA; gap1 4a IsReactionTriggerEnabled 0x5A40B8; 4b DisableReactionsWithLock 0x5A27F6..0x5A2960; 4c RemoveDisableReactionsLock 0x5A3A52..0x5A3B94; 4e game messages 0x5A4D2A..0x5A4F3A
-* outstanding: CompletelyUnlockAllTracks body (which locks it clears and what it sends) is not in the rows; the C3 sticky first-action gate cannot be evaluated without an ActionList and is logged when absent.
+* evidence: C3 gate 0x5A355A..0x5A357A; C4..C8 0x5A359A..0x5A37CA; gap1 4a IsReactionTriggerEnabled 0x5A40B8; 4b DisableReactionsWithLock 0x5A27F6..0x5A2960; 4c RemoveDisableReactionsLock 0x5A3A52..0x5A3B94; 4e game messages 0x5A4D2A..0x5A4F3A; R-ANIM pre-extraction part 2 item 3.1..3.7: CompletelyUnlockAllTracks 0x640F84..0x641092 (sets MC+0x28+12k, index payload 0x64101A)
+* outstanding: CompletelyUnlockAllTracks is settled (C1); what the firmware does with a track index instead of a mask is HARDWARE_ONLY. The C3 sticky first-action gate cannot be evaluated without an ActionList (M8) and is logged when absent.
 
 **M10-007 — Unexpected-movement response: gate, history lookup, side and obstacle (d = 25), rewind SetNewPose, AddCollisionObstacle, broadcast always, reset** (live path)
 
@@ -849,8 +858,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: a behaviour resumes differently after a reaction
 * rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
 * best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: C7 0x5A3610..0x5A3682; C9 0x5A25E4..0x5A26DA; C10 flags 0x60F904; C11 0x5A2BB8..0x5A2C3A, 0x5A1BCC..0x5A1D26
-* outstanding: CompletelyUnlockAllTracks is not in the rows; the manager+8/+0xC constructor values and MoveLiftToHeightAction's defaults are not in the rows.
+* evidence: C7 0x5A3610..0x5A3682; C9 0x5A25E4..0x5A26DA; C10 flags 0x60F904; C11 0x5A2BB8..0x5A2C3A, 0x5A1BCC..0x5A1D26; R-ANIM pre-extraction part 2 item 4.1..4.8: ctor 0x5A0864..0x5A0A6C, SetDefaultHeadAndLiftState 0x5A1B40, TryToResume 0x5A2B40, MoveLiftToHeightAction 0x54899C
+* outstanding: Settled (C1, C2): CompletelyUnlockAllTracks; the ctor FLT_MAX in +8/+0xC; the restore gate reads +8 only; the compound action's parameters. MoveLiftToHeightAction::Init/CheckIfDone (+0x88/+0x8C/+0x90) are RECOVERABLE_GAP, not needed for this path.
 
 **M10-013 — Raw accel/gyro before the first RobotState: heap contents in the engine; 0 here (forced policy)** (live path)
 
@@ -1123,7 +1132,6 @@ Each of these is a question already answered. The original's behaviour is establ
 | M4-004 | M4-control | COMPATIBILITY_POLICY | Motion is gated on calibration here; the engine reacts to it instead | libcozmoEngine.so 3.4.0-1204 |
 | M4-006 | M4-control | COMPATIBILITY_POLICY | Wheel confirmation tolerance 35 percent / 5 mm per s | libcozmoEngine.so 3.4.0-1204 |
 | M5-003 | M5-animation | EQUIVALENT_IMPLEMENTATION | Face per frame and blending: GetFaceHelper, Interpolate, the Clip table, Combine for layers | libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped) |
-| M5-020 | M5-animation | COMPATIBILITY_POLICY | Expressions helper faces | not applicable |
 | M9-016 | M9-wwise-music | COMPATIBILITY_POLICY | Streaming uses a 66 ms stack lead policy against the original 30000-byte and 14-frame budget | libcozmoEngine.so for the original budget; explicit stack policy for 66 ms |
 | M11-012 | M11-vision | COMPATIBILITY_POLICY | The nominal camera calibration stand-in | not applicable: the live path reads the robot own calibration and fails closed without it |
 | M11-013 | M11-vision | COMPATIBILITY_POLICY | AllowUnconnectedObjects switch | the engine connected-object rule, which is implemented |

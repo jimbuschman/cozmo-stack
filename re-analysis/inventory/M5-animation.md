@@ -135,6 +135,119 @@
   - The HasAnimationForTrigger-miss path reaches the same tail (0x0057D218).
   - The rad-to-deg constant is 0x42652EE1 (180/π), both in UpdateLiveAnimation ([0x0057DB2C], loaded at 0x0057D838) and in the face angle blend (0x005842E0). The rows' printed "57.2958" is a rounding of it.
 
+- **C5 (2026-09-29): the R-ANIM pre-extraction settles the remaining M5 gaps.** Source:
+  `re-analysis/research/20260929-R-ANIM-pre-extraction.md`, Part 1 items 1..11 and Part 2 items 1..5; `@cozmo-verifier`
+  checked every behaviour-changing row against `libcozmoEngine.so` on 2026-09-29 (all PASS; two literal-address typos
+  corrected in the report). The rows below are EXACT_SOURCE unless stated.
+
+  - **M5-001, the five JSON keyframe readers (report Part 1 item 1, F1..T3).** They exist and none throws.
+    `IKeyFrame::DefineFromJson` (0x004F8AA4) requires "triggerTime_ms" then calls vptr+0xC; a return of 1 means failure
+    and `AddKeyFrameToBack(Json)` skips the keyframe, ending the clip's load (earlier keyframes stay). Readers:
+    FaceAnimation reads "animName" (`GetValueOptional<string>`, 0x004F9434..0x004F94D4; absent → error, return 1);
+    `FaceAnimationKeyFrame::Process` (0x004F9574) strips a path prefix up to the last '/' with a warning and sets the
+    frame index +0x24 = 0. Event reads "event_id" (0x004FA8B8): absent, non-string or an unrecognised name
+    (`AnimEventFromString` == 3) gives a warning and returns 1; success stores the byte at +0xC. DeviceAudio reads
+    "audioName" (0x004FA658); absent → error, return 1; its GetStreamMessage returns null and PlayOnDevice is empty.
+    RecordHeading reads nothing and always succeeds (0x004FBB54 `movs r0,#0; bx lr`). TurnToRecordedHeading reads eight
+    required members in order — "durationTime_ms" (no INT_MAX conversion, unlike the flat path), "offset_deg",
+    "speed_degPerSec", "accel_degPerSec2", "decel_degPerSec2", "tolerance_deg", "numHalfRevs", "useShortestDir" —
+    then `CheckRotationSpeed` (0x004FBF2C..0x004FC100); a missing member returns 1 with earlier members already
+    written. `CheckRotationSpeed` (T3, 0x004FBBE6..0x004FBDAC): speed clamps at |v| > 300 to ±300; accel and decel
+    clamp at |v| ≥ 0x3545 (13637) to ±13636.
+  - **M5-006 (Part 1 item 2, B1..B6).** The radius string is matched as a whole string, case-sensitively, by length
+    then `std::string::compare` (memcmp) against "TURN_IN_PLACE" (13), "POINT_TURN" (10), "STRAIGHT" (8)
+    (0x004FB588..0x004FB690; compare body 0x004FCB48, memcmp 0x004FCB96). There is no case folding or trimming.
+    TURN_IN_PLACE and POINT_TURN set radius 0 and call CheckRotationSpeed; STRAIGHT sets 0x7FFF and calls
+    CheckStraightSpeed; anything else is a `BadRadiusString` error and the keyframe is rejected. In the FlatBuffer
+    path only, a string containing any digit goes through `atoi` and clamps to int16; the JSON path sends a string
+    straight to `ProcessRadiusString`, so "50" is rejected. Speed is stored at +0x12 before the radius string is read
+    (both paths); the clamps run after the radius decision and act on the stored speed (|v| > 300 → ±300 for rotation;
+    |v| ≥ 221 → ±220 for turn and straight).
+  - **M5-010 (Part 1 item 3, P1..P8).** `ProceduralFace::_resetData` is a null static until
+    `AnimationStreamer`'s constructor calls `SetResetData` (0x0057A20E) after reading the first ProceduralFace
+    keyframe of the neutral clip; `ProceduralFace::Reset()` (0x0058359C) does nothing when it is null. The
+    TrackLayerComponent constructor allocates the layer-base face as a default-constructed ProceduralFace
+    (0x0064ED0A), and `TLC::Init` (called from the streamer ctor at 0x0057A282) calls Reset on it. The default face is
+    all 0 except EyeScaleX/Y = 1 (both eyes) and face scale X/Y = 1 (0x00583660..0x0058369E). The neutral face is read
+    once, in the streamer constructor, before TLC::Init; it is never loaded lazily. (An empty ProceduralFace track
+    passes address 0xC to SetResetData: defined only for valid assets, and ag_neutral_face is non-empty.)
+  - **M5-011 and M5-014 (Part 1 item 4, 4.1..4.12).** `AnimationGroup::DefineFromJson` adds the group by name first,
+    then reads "Animations" (must be an array, else failure). For each element it constructs a stack
+    `AnimationGroupEntry` and calls `DefineFromJson`; a non-zero return logs "Adding animation %d failed.", **skips
+    that entry and continues** with the rest. Entry rules: "Name" must be a string and name a clip the canned container
+    holds, else the entry is rejected (`GetAnimation`, 0x0058C550); "Weight" must be `isDouble` (no default of 1);
+    "Mood" must be a string, and an unrecognised mood (value 3) is a warning **and** a rejection (no default of
+    "Default"); "CooldownTime_Sec" defaults to 0.0; "UseHeadAngle" is an optional bool, and when it is absent or false
+    the entry succeeds **without writing +0x20/+0x24**; when true, "HeadAngleMin_Deg" and "HeadAngleMax_Deg" are
+    required `isDouble`, multiplied by pi/180 (0.017453292) and stored at +0x20/+0x24, else the entry is rejected.
+    The entry constructor zeroes only the 12-byte name; the group loop reuses the same stack slot, so for the 766 of
+    1047 shipped entries without UseHeadAngle, +0x20/+0x24 hold the previous element's leftover or stack garbage, and
+    the Default-mood backup loop reads them **without testing +0x1D** (0x0058AC2A/0x0058AC3C). The value is UNKNOWN.
+    **Forced choice (SD2): this stack treats a UseHeadAngle-less entry as outside every head window, so it never
+    qualifies for the backup and the backup falls to the first entry.** The choice is deterministic and cannot be
+    observed on the shipped data (all 1047 entries are Mood "Default", and the backup only runs when every Default
+    entry is on cooldown); it is put to the policy review.
+  - **M5-013 (Part 1 item 5, 5.1..5.8).** Both loader routes threshold at 0x80 with `Image::Threshold(uchar)`, which
+    calls `cv::operator>(Mat const&, double)` — strictly greater (CMP_GT = 1, libopencv_core 0x7A7A2 vs `>=` 0x7A74C
+    passing 2): a pixel equal to 0x80 becomes 0. Each image is stored as a pair of RLE vectors: the first (+0x0) with
+    even rows cleared, the second (+0xC) with odd rows cleared (0x00581254..0x005812C4). `GetFrame` returns the second
+    variant when `FaceAnimationManager::_firstScanLine != 0`, the first when it is 0 (0x005817B4..0x005817CA). In
+    `FaceAnimationKeyFrame::GetStreamMessage`: a null frame logs and returns no message without advancing the index; an
+    empty vector advances the index and returns no message; otherwise the vector is sent and the index advances
+    (0x004F9812..0x004F98C2). The index is reset to 0 in `Process` at load, in Abort, and lazily in `GetStreamMessage`
+    when `IsDone` is already true — that call returns no message, and the track then stays on the keyframe, so a replay
+    of the same keyframe object pauses one frame. There is **no** reset at the moment the last frame is sent.
+    `IsDone` returns false forever when the byte at +0x28 is set, and GetStreamMessage then streams the keyframe's own
+    vector at +0x18 (0x004F9770, 0x004F97DE); the writers of +0x28 are RECOVERABLE_GAP.
+  - **M5-016 (Part 1 item 6, 6.1..6.5).** `NamedColors::GetByString` (0x0083F780) looks up a 13-entry map:
+    RED, GREEN, BLUE, YELLOW, CYAN, ORANGE, MAGENTA, WHITE, BLACK, DEFAULT, DARKGRAY, DARKGREEN, OFFWHITE, with
+    values RED ff0000ff, GREEN 00ff00ff, BLUE 0000ffff, YELLOW ffff00ff, CYAN 00ffffff, ORANGE ff7f00ff,
+    MAGENTA ff00ffff, WHITE ffffffff, BLACK 000000ff, DEFAULT ffcc00ff, DARKGRAY 4c4c4cff, DARKGREEN 007f00ff,
+    OFFWHITE cccccccc (LIGHTGRAY b2b2b2ff exists as a symbol but is not in the map). The lookup is case-sensitive; a
+    miss logs "Unknown color name '%s', returning default" and returns DEFAULT. `JsonTools::GetColorOptional`
+    (0x0084024C) sends a string through GetByString, accepts a 3- or 4-element array by the float rule (C17), and
+    returns false for any other type. `BackpackLightsKeyFrame::SetMembersFromJson` uses it for Back, Front, Middle,
+    Left, Right; a bad type rejects the keyframe, but an unknown colour **name** becomes DEFAULT, not a rejection.
+  - **M5-019 (Part 1 item 7, 7a..7f).** The streaming Update passes storeFace = 1, the idle Update 0 (0x0057D01A,
+    0x0057D42E). In `TrackLayerComponent::ApplyFaceLayersToAnim` (0x0064F154) the animation's face is obtained from
+    `FaceLayerManager::GetFaceHelper` into LKF+0x318; when it returned 1 **and** storeFace == 1, that face is copied
+    back into the stored layer-base face (0x0064F1EE..0x0064F1FC) **before** the layer lambda runs
+    `GetFaceHelper(..., false)` and `ProceduralFace::Combine` (0x0064F204..0x0064F22C). So the write-back is the
+    animation's face, not the composed one; when the animation produced no face the stored face is unchanged.
+  - **M5-023 (Part 1 item 8, 8a..8c).** Abort picks the streaming animation (+0x38) when it is non-null, else the
+    idle one (+0x34), and resets only that one (0x0057B418..0x0057B430). It sets the FaceAnimation track's
+    current-keyframe frame index (+0x2C) to 0 when the iterator is not at the end (0x0057B562..0x0057B570), then
+    clears startSent and endSent together and aborts and clears the audio animation (0x0057B572..0x0057B58A).
+  - **M5-027 (Part 1 item 9, 9a..9c).** The byte at streamer+0x64 is written 0 by the constructor (0x00579FC6), by
+    `PushIdleAnimation` with trigger Count (0x0057B926, also clearing +0x34), by `RemoveIdleAnimation` (0x0057BD66),
+    and by the streaming Update (0x0057D022); it is set to **1** by the shared idle tail immediately after an idle's
+    `InitStream(..., 0xFF)` (0x0057D3F6..0x0057D406). `InitStream` itself does not write it. It is read by the pick
+    decision (0x0057D1FE), the tail (0x0057D40C) and `IsIdleAnimating` (0x0057DFC8). The Count-top flush runs
+    `UpdateAmountToSend` then `SendBufferedMessages` — budgets refreshed before the drain — in both the no-animation
+    path (0x0057D16C, 0x0057D174) and `StreamLayers` (0x0057C4F8, 0x0057C500); with count 0 it returns without an End.
+    `HasAnimationForTrigger` is `AnimationTriggerResponsesContainer::HasResponse` (0x00670AD0), which tests whether the
+    trigger's name is a key in the map, not that the mapped value is non-empty.
+  - **M5-032 (Part 1 item 10, 10a..10e).** `GetTransformationMatrix` (0x00584FF8) is float-only and returns six f32;
+    DrawFace builds the `_InputArray` as `FIXED_TYPE|FIXED_SIZE|ACCESS_READ|MATX`, type 5 = CV_32FC1, 2×3
+    (0x00585C84..0x00585C94), and calls `cv::warpAffine` (PLT 0x4AE4E8) with flags 0 (INTER_NEAREST) and border 0
+    (BORDER_CONSTANT, Scalar 0). The float-to-double conversion happens inside shipped `cv::warpAffine`
+    (libopencv_imgproc 0x0008193C..0x000819D4), not in the engine.
+  - **M5-020, the operator's decision (2026-09-29): no invented faces.** The engine has no named-expression table
+    (`SetFaceAction::SetFaceAction` 0x00563AFD takes an arbitrary `ProceduralFace const&`); `Neutral` is the shipped
+    neutral face and stays. The shipped app's named expressions are Code Lab's:
+    `CodeLabGame.GetAnimationTriggerForScratchIndex` (`unity/scripts/csharp/CodeLab/CodeLabGame.cs:3094`) maps each
+    block index to an `AnimationTrigger` (CodeLabHappy, CodeLabUnhappy, CodeLabSurprise, ...), played through the
+    shipped animation-group path. Rebuild the expression API on that mapping. Index 0 picks at random:
+    `Random.Range(1, 34)` for the vertical grammar, else `Random.Range(1, 14)` (`CodeLabGame.cs:3101, 3106`). Unity's
+    Random ships in `libunity.so`: a global xorshift128 state (four u32 words), `RandomRangeInt(min, max)` =
+    `min + (out mod (max-min))` for min < max (0x10BCE8, 0x10BCF8..0x10BD38), `InitState(seed)` sets
+    s1 = s0·0x6C078965 + 1, s2 = s1·0x6C078965 + 1, s3 = s2·0x6C078965 + 1 (0x10BC00), the native start-up seed is
+    `time(NULL)` (0x71ED4..0x71F04), and `StartupManager.TryLoadMainScene` re-seeds with
+    `Environment.TickCount` (`StartupManager.cs:340-345`). The xorshift128 generator and the range rule are exact;
+    the seed value comes from Mono's `Environment.get_TickCount` in `libmono.so`, which is **not read**, so the
+    seed is UNKNOWN and is put to the policy review (SD2, time-seeded randomness). The invented poses (Happy, Sad,
+    Angry, Surprised, Sleepy, Blinking, Squinting, LookingX) are removed.
+
 ## Appendix A: M5 pass, extractor report
 
 I wrote nothing under the repo root. All scripts and dumps are in `C:\Windows\TEMP\claude\C--Users-jbuschman-Downloads-com-anki-cozmo-3-4-0-1204-minAPI21-armeabi-v7a--nodpi--apkmirror-com-apk-Decompiler-com\b4cb80cd-acea-45cc-a212-7aecff92c2d6\scratchpad\extract\M5\`.
