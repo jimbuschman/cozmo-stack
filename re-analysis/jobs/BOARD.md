@@ -26,11 +26,12 @@ G jobs fold one checked extraction (Codex's overnight reports) into an approved 
 
 Every layer is built once, and 99 IMPLEMENTATION_GAP records are left. The R jobs close them layer group by layer
 group ([R.md](R.md)). Each window continues with its round-3 chain when its round-2 chain ends. The chains are ordered
-so that no two windows work on the same layers at once.
+so that no two windows work on the same layers at once. R-VIS moved to a Sonnet worker on 2026-09-29 (operator), so window 1 runs R-BEH only.
 
 | window | clone | chain |
 | --- | --- | --- |
-| 1 | `cozmo-stack-w1` | [R-BEH](R-BEH.md) (M7, M8, M9, M15) → [R-VIS](R-VIS.md) (M11, M12, M13, M14) |
+| 1 | `cozmo-stack-w1` | [R-BEH](R-BEH.md) (M7, M8, M9, M15) |
+| 4 (Sonnet in Claude Code, on the manager's machine) | `cozmo-stack-r` | [R-VIS](R-VIS.md) (M11, M12, M13, M14), once G-M14 is DONE |
 | 2 | `cozmo-stack` (the main clone) | [R-M6](R-M6.md) (the rest of M6) |
 | 3 | `cozmo-stack-w3` | [R-DEV](R-DEV.md) (M1, M2, M3, M4) → [R-ANIM](R-ANIM.md) (M5, M10) |
 

@@ -1,6 +1,10 @@
 # Job R-VIS: close the remaining gaps in the vision, manipulation, navigation and faces layers
 
-**Agent:** opencode, as cozmo-manager. **Type:** round 3 (triage, gap extraction, build). Follow [R.md](R.md).
+**Agent:** Claude Code with Sonnet, in the `cozmo-stack-r` clone on the manager's machine (operator, 2026-09-29), as
+the manager of this job. The role agents are Claude Code's `.claude/agents/` (cozmo-extractor, cozmo-implementer,
+cozmo-verifier): where this job or R.md says `@cozmo-extractor` etc., use those subagents. **Pushes:** this clone can't
+push by itself. Commit, then stop and tell the operator to push; carry on once the push is done. Claim, then commit
+the claim and have it pushed before any other work. **Type:** round 3 (triage, gap extraction, build). Follow [R.md](R.md).
 **Needs:** G-M14 DONE. If it isn't, set `WAITING G-M14` and end.
 
 **Subsystems:** M11-vision, M12-manipulation, M13-navigation, M14-faces. Every IMPLEMENTATION_GAP record of these, as the manifest has it when the job starts.
