@@ -1,5 +1,3 @@
-# B-M7 status
-
 DONE 2026-09-28 23:40 -05:00
 
 ## Commits
