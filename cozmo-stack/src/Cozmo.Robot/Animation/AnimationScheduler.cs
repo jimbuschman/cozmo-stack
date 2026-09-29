@@ -581,10 +581,11 @@ public sealed class AnimationScheduler
 
     // fidelity: M5-010
     /// <summary>
-    /// A2: the neutral-face animation, GetAnimationForTrigger(NeutralFace) → ag_neutral_face → GetFirstAnimationName (a
-    /// group with more than one warns and uses the first; a null or empty group is an error). It is stored (+0x40), the
-    /// face of its first ProceduralFace keyframe becomes ProceduralFace's reset data, and TrackLayerComponent::Init resets
-    /// the layer-base face to it.
+    /// A2, P1..P5: the neutral-face animation, GetAnimationForTrigger(NeutralFace) → ag_neutral_face →
+    /// GetFirstAnimationName (a group with more than one warns and uses the first; a null or empty group is an error). It
+    /// is stored (+0x40), the face of its first ProceduralFace keyframe becomes ProceduralFace's reset data
+    /// (SetResetData), and TLC::Init Resets the layer-base face from it. The read runs once, in the streamer constructor,
+    /// before TLC::Init; a missing neutral group leaves the reset data null and Reset a no-op, so the default face stays.
     /// </summary>
     public void LoadNeutralFace()
     {
@@ -597,14 +598,16 @@ public sealed class AnimationScheduler
             if (count == 0 || name.Length == 0)
             {
                 Log?.Invoke($"error: AnimationStreamer.Constructor.NeutralFaceGroupEmpty: neutral face animation group '{group}' is null or empty");
-                _tlc.Init(null);
+                _tlc.SetResetData(null);
+                _tlc.Init();
                 return;
             }
             if (count > 1)
                 Log?.Invoke($"warning: AnimationStreamer.Constructor.NeutralFaceGroupSize: Neutral face animation group {group} has {count} animations instead of one");
             _neutral = catalog!.GetAnimation(name);
             var face = _neutral?.Keyframes.OfType<FaceKeyframe>().FirstOrDefault()?.Pose;
-            _tlc.Init(face);
+            _tlc.SetResetData(face);
+            _tlc.Init();
         }
     }
 
@@ -1271,9 +1274,7 @@ public sealed class AnimationScheduler
         Pull(anim.FaceAnim, start, t, k =>
         {
             faceAnimBuffered = FaceAnimationFrameLocked(k);
-            var n = FrameCount((FaceAnimationKeyframe)k.Source);
-            if (k.FaceAnimIndex >= n) { k.FaceAnimIndex = 0; return true; }       // IsDone; the index back to 0
-            return false;
+            return FaceAnimationIsDone((FaceAnimationKeyframe)k.Source, k);
         });
 
         foreach (var k in consumed) BufferLocal(null, k);                           // backpack keyframes, for KeyframeFired
@@ -1329,10 +1330,25 @@ public sealed class AnimationScheduler
 
     private int FrameCount(FaceAnimationKeyframe k) => FramesOf(k)?.Count ?? 0;
 
+    // fidelity: M5-013
     /// <summary>
-    /// C12 FaceAnimationKeyFrame::GetStreamMessage: frame = GetFrame(name, index) with the FaceAnimationManager's
-    /// _firstScanLine; an empty frame is skipped (index++, no message); a missing one logs an error. Returns whether a
-    /// message was buffered.
+    /// C5 item 5.5/5.6: <c>FaceAnimationKeyFrame::IsDone</c> (0x004F9770). The +0x28 override (IsDone forever false) is
+    /// a RECOVERABLE_GAP and is not built; without it the keyframe is done once the index reaches the frame count.
+    /// <c>FaceAnimationManager::GetNumFrames</c> (0x005816D8) returns 0 on a map miss (0x0058173A), so an unknown
+    /// animation is done at once: the lazy reset consumes the keyframe in one frame and the track does not stall.
+    /// </summary>
+    private bool FaceAnimationIsDone(FaceAnimationKeyframe fa, StreamKeyframe k)
+    {
+        var frames = FramesOf(fa);
+        return frames is null || k.FaceAnimIndex >= frames.Count;
+    }
+
+    /// <summary>
+    /// C5 item 5.4/5.5: <c>FaceAnimationKeyFrame::GetStreamMessage</c> (0x004F97C8). The index is reset <b>lazily</b>:
+    /// when IsDone is already true (the index reached the frame count, or the name is unknown, whose frame count is 0)
+    /// this call stores 0 and returns no message (the keyframe then stays on the track, so a replay pauses one frame);
+    /// an empty vector advances the index and returns no message; otherwise the variant for the FaceAnimationManager's
+    /// <c>_firstScanLine</c> is sent and the index advances. Returns whether a message was buffered.
     /// </summary>
     private bool FaceAnimationFrameLocked(StreamKeyframe k)
     {
@@ -1340,12 +1356,12 @@ public sealed class AnimationScheduler
         var frames = FramesOf(fa);
         if (frames is null || k.FaceAnimIndex >= frames.Count)
         {
-            Log?.Invoke($"error: FaceAnimationKeyFrame.GetStreamMessage: no frame {k.FaceAnimIndex} of '{fa.AnimName}'");
+            k.FaceAnimIndex = 0;                          // the lazy reset; no message this call
             return false;
         }
         var payload = frames[k.FaceAnimIndex].ForScanLine(_scanLines.FaceAnimation);
         k.FaceAnimIndex++;
-        if (payload.Length == 0) return false;
+        if (payload.Length == 0) return false;            // an empty vector advances and sends nothing
         var shown = payload;
         Buffer(StreamSizes.Face(shown), false, () => _sink.FaceImage(shown), k);
         return true;
@@ -1684,7 +1700,8 @@ public sealed class AnimationScheduler
             _nowMs = 0;
             var neutralFace = _neutral?.Keyframes.OfType<FaceKeyframe>().FirstOrDefault()?.Pose;
             _tlc.Reset();
-            _tlc.Init(neutralFace);
+            _tlc.SetResetData(neutralFace);
+            _tlc.Init();
             AudioFramesSent = 0;
             PositionMs = 0;
             KeyframesFired = 0;

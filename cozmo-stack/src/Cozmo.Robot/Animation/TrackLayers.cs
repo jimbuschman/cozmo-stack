@@ -573,11 +573,30 @@ internal sealed class TrackLayerComponent
         set => Face.Log = value;
     }
 
+    // fidelity: M5-010
     /// <summary>
-    /// TrackLayerComponent::Init with the neutral face (A2): the stored face Reset to ProceduralFace's reset data. Without
-    /// a neutral face the reset data is not in the inventory; the default face is kept then.
+    /// <c>ProceduralFace::_resetData</c> (P1): null until the streamer constructor's SetResetData. In the engine it is a
+    /// process static; here it is held per component, which is equivalent with one streamer.
     /// </summary>
-    public void Init(ProceduralFacePose? resetData) => LastFace = resetData?.Clone() ?? new ProceduralFacePose();
+    private ProceduralFacePose? _resetData;
+
+    /// <summary>ProceduralFace::SetResetData (P7): copy the neutral face as the reset data (the old one is replaced).</summary>
+    public void SetResetData(ProceduralFacePose? pose) => _resetData = pose?.Clone();
+
+    /// <summary>
+    /// TrackLayerComponent::Init (P3..P5): Reset the stored layer-base face. The constructor calls it before any
+    /// SetResetData, so the reset data is null and the layer base stays the default-constructed face (P6).
+    /// </summary>
+    public void Init() => ResetLayerBaseFace();
+
+    /// <summary>
+    /// <c>ProceduralFace::Reset</c> (P2, 0x0058359C): a no-op when the reset data is null; otherwise the layer-base face
+    /// becomes the reset data.
+    /// </summary>
+    public void ResetLayerBaseFace()
+    {
+        if (_resetData is not null) LastFace = _resetData.Clone();
+    }
 
     /// <summary>Q1.1: audio OR backpack OR face, in that order.</summary>
     public bool HaveLayersToSend => AudioLayerCount != 0 || Backpack.HaveLayersToSend || Face.HaveLayersToSend;

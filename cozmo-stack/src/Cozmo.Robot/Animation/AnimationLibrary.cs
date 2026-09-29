@@ -8,8 +8,11 @@ public enum SimpleMood : byte { Happy, Sad, Default, Count }
 
 // fidelity: M5-011, M5-014
 /// <summary>
-/// One choice inside an animation group (D4, 0x0058C4C0..0x0058C7BE): Name, Weight, Mood (SimpleMoodType),
-/// CooldownTime_Sec (default 0), UseHeadAngle and HeadAngleMin/Max_Deg (converted to radians for the gate).
+/// One choice inside an animation group (D4, 0x0058C4C0..0x0058C7BE; C5 item 4): Name, Weight, Mood (SimpleMoodType),
+/// CooldownTime_Sec (default 0), UseHeadAngle and HeadAngleMin/Max_Deg (converted to radians for the gate). There are no
+/// defaults for Weight, Mood or HeadAngle: the loader rejects an entry that omits or mis-types any required one. An entry
+/// without UseHeadAngle has no defined head window (C5 4.11); <see cref="AnimationGroup.GetAnimationName"/>'s backup
+/// treats it as outside every window (forced policy SD2).
 /// </summary>
 public sealed record AnimationGroupEntry(string Name, float Weight, float CooldownSec, string Mood)
 {
@@ -68,7 +71,7 @@ public sealed class AnimationGroup
     public IReadOnlyList<AnimationGroupEntry> Entries
     {
         get => _entries;
-        init
+        set
         {
             _entries = value;
             var shared = new GroupContainer();
@@ -90,9 +93,9 @@ public sealed class AnimationGroup
     /// last candidate; the pick's cooldown end set to now + CooldownTime_Sec;</item>
     /// <item>none and the mood not Default: again with Default;</item>
     /// <item>in Default, when some Default entry exists and not strict: the Default entry with the smallest
-    /// TimeUntilCooldownOver among those whose [min − 0.05, max + 0.05] rad window holds the head angle, whatever their
-    /// UseHeadAngle, and no cooldown set; without one, the first entry of the list; otherwise (or strict) an error and
-    /// nothing.</item>
+    /// TimeUntilCooldownOver among those whose [min − 0.05, max + 0.05] rad window holds the head angle, with no cooldown
+    /// set; an entry without UseHeadAngle never qualifies (the forced policy SD2 for its uninitialised head-angle
+    /// fields); without a backup, the first entry of the list; otherwise (or strict) an error and nothing.</item>
     /// </list>
     /// A null <paramref name="nowSec"/> leaves the cooldown out and a null <paramref name="headAngleDeg"/> the head gate
     /// (this stack's callers without a clock or a robot).
@@ -139,6 +142,11 @@ public sealed class AnimationGroup
                 double best = double.PositiveInfinity;
                 foreach (var e in defaults)
                 {
+                    // C5 item 4.11/4.12: the backup loop reads +0x20/+0x24 without testing UseHeadAngle, and for an
+                    // entry without UseHeadAngle those fields are uninitialised stack. Forced policy (SD2): this stack
+                    // treats such an entry as outside every head window, so it never qualifies for the backup and the
+                    // backup falls to the first entry. Deterministic; not observable on the shipped data.
+                    if (!e.UseHeadAngle) continue;
                     if (headRad is { } h && !(h >= e.HeadAngleMinRad - 0.05 && h <= e.HeadAngleMaxRad + 0.05)) continue;
                     double left = nowSec is { } n ? e.Container.TimeUntilCooldownOver(e.Name, n) : 0;
                     if (backup is null || left < best) { backup = e; best = left; }
@@ -218,9 +226,10 @@ public sealed class AnimationLibrary : IAnimationCatalog
     private const int KfLift = 0, KfFace = 1, KfHead = 2, KfAudio = 3, KfLights = 4,
                       KfFaceAnim = 5, KfEvent = 6, KfBody = 7, KfRecordHeading = 8, KfTurnToHeading = 9;
 
-    private readonly Dictionary<string, string> _clipFiles = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, string> _jsonClipFiles = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, AnimationClip> _clipCache = new(StringComparer.OrdinalIgnoreCase);
+    // CannedAnimationContainer::GetAnimation is a case-sensitive map lookup, so the clip name maps are Ordinal.
+    private readonly Dictionary<string, string> _clipFiles = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _jsonClipFiles = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, AnimationClip> _clipCache = new(StringComparer.Ordinal);
     private readonly Dictionary<string, AnimationGroup> _groups = new(StringComparer.OrdinalIgnoreCase);
     private readonly GroupContainer _cooldowns = new();
     private readonly object _gate = new();
@@ -300,10 +309,16 @@ public sealed class AnimationLibrary : IAnimationCatalog
         if (groups is not null)
             foreach (var f in Directory.EnumerateFiles(groups, "*.json", SearchOption.AllDirectories))
             {
-                var g = LoadGroup(f);
-                if (g is null) continue;
+                // C5 item 4.1 (0x0058B89E AddAnimationGroup before 0x0058B8B2 DefineFromJson): the group is added by
+                // name first, so it stays in the container (empty or partial) even when the define fails.
+                string gname = Path.GetFileNameWithoutExtension(f);
+                if (!lib._groups.TryGetValue(gname, out var g))
+                {
+                    g = new AnimationGroup { Name = gname };
+                    lib._groups[gname] = g;
+                }
+                DefineGroup(g, f, lib.HasClip, lib.Log);
                 g.UseContainer(lib._cooldowns);
-                lib._groups[g.Name] = g;
             }
 
         lib.Triggers = AnimationTriggerResponses.Load(FindDir(assetsRoot, "animationGroupMaps"));
@@ -649,34 +664,89 @@ public sealed class AnimationLibrary : IAnimationCatalog
 
     // ------------------------------------------------------------------ groups (D4)
 
-    private static AnimationGroup? LoadGroup(string path)
+    // fidelity: M5-011, M5-014
+    /// <summary>
+    /// <c>AnimationGroup::DefineFromJson</c> (C5 item 4.2..4.10): reads "Animations", then each entry. A missing or
+    /// non-array "Animations", a JSON parse failure, or any rejected entry leaves the group in the container with the
+    /// entries that did define (the caller added it by name first, C5 item 4.1).
+    /// </summary>
+    private static void DefineGroup(AnimationGroup g, string path, Func<string, bool> hasClip, Action<string>? log)
     {
         try
         {
             using var doc = JsonDocument.Parse(File.ReadAllText(path));
             if (!doc.RootElement.TryGetProperty("Animations", out var arr) || arr.ValueKind != JsonValueKind.Array)
-                return null;
+            {
+                // 4.2: not an array logs NoAnimations and fails the define
+                log?.Invoke("error: AnimationGroup.DefineFromJson.NoAnimations: Missing 'Animations' field for animation group.");
+                return;
+            }
             var entries = new List<AnimationGroupEntry>();
             foreach (var e in arr.EnumerateArray())
             {
-                string name = e.TryGetProperty("Name", out var n) ? n.GetString() ?? "" : "";
-                if (name.Length == 0) continue;
-                entries.Add(new AnimationGroupEntry(
-                    name,
-                    e.TryGetProperty("Weight", out var w) ? (float)w.GetDouble() : 1f,
-                    e.TryGetProperty("CooldownTime_Sec", out var c) ? (float)c.GetDouble() : 0f,
-                    e.TryGetProperty("Mood", out var m) ? m.GetString() ?? "Default" : "Default")
+                // 4.4: Name must be a string, 4.5: and must name a loaded clip; otherwise the entry is rejected and the
+                // group continues with the rest (4.3).
+                if (!e.TryGetProperty("Name", out var n) || n.ValueKind != JsonValueKind.String)
                 {
-                    UseHeadAngle = e.TryGetProperty("UseHeadAngle", out var uh) && uh.GetBoolean(),
-                    HeadAngleMinDeg = e.TryGetProperty("HeadAngleMin_Deg", out var hmin) ? (float)hmin.GetDouble() : float.NegativeInfinity,
-                    HeadAngleMaxDeg = e.TryGetProperty("HeadAngleMax_Deg", out var hmax) ? (float)hmax.GetDouble() : float.PositiveInfinity,
+                    log?.Invoke("error: AnimationGroupEntry.DefineFromJson.NoName: Missing 'Name' field for animation.");
+                    continue;
+                }
+                string name = n.GetString()!;
+                if (!hasClip(name))
+                {
+                    log?.Invoke($"error: AnimationGroupEntry.DefineFromJson.InvalidName: No canned animation exists named '{name}'");
+                    continue;
+                }
+                // 4.6: Weight must be numeric; there is no default of 1.
+                if (!e.TryGetProperty("Weight", out var w) || w.ValueKind != JsonValueKind.Number)
+                {
+                    log?.Invoke("error: AnimationGroupEntry.DefineFromJson.NoWeight: Missing 'Weight' field for animation.");
+                    continue;
+                }
+                // 4.7: Mood must be a string and a recognised SimpleMoodType; there is no default of "Default".
+                if (!e.TryGetProperty("Mood", out var m) || m.ValueKind != JsonValueKind.String)
+                {
+                    log?.Invoke("error: AnimationGroupEntry.DefineFromJson.NoMood: Missing 'Mood' field for animation.");
+                    continue;
+                }
+                string mood = m.GetString()!;
+                if (!Enum.TryParse<SimpleMood>(mood, ignoreCase: false, out var moodType) || moodType == SimpleMood.Count)
+                {
+                    log?.Invoke($"warning: SimpleMoodScorer.ReadFromJson.BadType: Bad 'Mood' = '{mood}'");
+                    continue;
+                }
+                // 4.8: CooldownTime_Sec defaults to 0.0.
+                double cooldown = e.TryGetProperty("CooldownTime_Sec", out var c) && c.ValueKind == JsonValueKind.Number
+                    ? c.GetDouble() : 0.0;
+                // 4.9: UseHeadAngle is optional; absent or false succeeds without a head window. 4.10: when true both
+                // angles are required, else the entry is rejected. There are no infinity defaults.
+                bool useHead = e.TryGetProperty("UseHeadAngle", out var uh) && uh.ValueKind == JsonValueKind.True;
+                float minDeg = 0f, maxDeg = 0f;
+                if (useHead)
+                {
+                    if (!e.TryGetProperty("HeadAngleMin_Deg", out var mn) || mn.ValueKind != JsonValueKind.Number
+                        || !e.TryGetProperty("HeadAngleMax_Deg", out var mx) || mx.ValueKind != JsonValueKind.Number)
+                    {
+                        log?.Invoke("error: AnimationGroupEntry.DefineFromJson.NoHeadAngleWhenUsingHeadAngles: Missing " +
+                                    "'HeadAngleMin_Deg' or 'HeadAngleMax_Deg' field for animation.");
+                        continue;
+                    }
+                    minDeg = (float)mn.GetDouble();
+                    maxDeg = (float)mx.GetDouble();
+                }
+                entries.Add(new AnimationGroupEntry(name, (float)w.GetDouble(), (float)cooldown, mood)
+                {
+                    UseHeadAngle = useHead,
+                    HeadAngleMinDeg = minDeg,
+                    HeadAngleMaxDeg = maxDeg,
                 });
             }
-            return new AnimationGroup { Name = Path.GetFileNameWithoutExtension(path), Entries = entries };
+            g.Entries = entries;
         }
-        catch (JsonException)
+        catch (JsonException e)
         {
-            return null;       // a file that is not a group definition is simply not one
+            // a file that is not a group definition leaves the group empty; it stays in the container (C5 item 4.1)
+            log?.Invoke($"error: AnimationGroup.DefineFromJson: '{path}' is not a group definition: {e.Message}");
         }
     }
 }

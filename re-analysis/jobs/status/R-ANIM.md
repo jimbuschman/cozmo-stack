@@ -62,4 +62,18 @@ ahead of time; the manager spot-checked M5-006, M5-011, M10-004 and M5-013. Send
 - Test fix after the verifier: the vacuous `ShakenSlopeAndFrustrationIgnoreEnabledStateChanged` and the weak Radians
   `10.5f` expectation. Re-verified PASS.
 
-### Batch M5 (pending)
+### Batch M5-A (built; verifier PASS)
+
+- Records: M5-001 (five JSON keyframe readers, no throw; CheckRotationSpeed limits), M5-006 (case-sensitive radius
+  tokens; JSON string goes only to the token match), M5-010 (null reset data, default layer base), M5-011/M5-014
+  (entry reject-and-continue, no Weight/Mood/HeadAngle defaults, the forced UseHeadAngle-less choice), M5-013
+  (strictly-above-0x80 threshold, lazy index reset, unknown name consumed), M5-016 (NamedColors, DEFAULT corrected
+  from 0xFF00CCFF to 0xFFCC00FF in the stack's 0xRRGGBBAA word).
+- Verifier FAILed first on the unknown face-animation name (GetNumFrames returns 0 → IsDone true); fixed and
+  re-verified PASS.
+- Stays IMPLEMENTATION_GAP: none of these records is settled yet (the manager settles after batch B and C).
+- No other layer touched.
+
+### Batch M5-B (pending: M5-019, M5-023, M5-027, M5-032)
+
+### Batch M5-C (pending: M5-020 expressions)

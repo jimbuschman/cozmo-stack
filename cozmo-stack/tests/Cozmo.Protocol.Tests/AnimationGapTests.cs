@@ -60,11 +60,11 @@ public class AnimationGapTests
 
     /// <summary>
     /// The engine resolves the radius token itself and sends a 16-bit radius to the robot, letting the
-    /// firmware do the geometry. ProcessRadiusString at 0x004FB588 in libcozmoEngine.so defines this mapping.
+    /// firmware do the geometry. ProcessRadiusString at 0x004FB588 in libcozmoEngine.so defines this mapping,
+    /// a whole-string case-sensitive match (C5 item 2, B3): "straight" is not STRAIGHT.
     /// </summary>
     [Theory]
     [InlineData("STRAIGHT", 32767)]
-    [InlineData("straight", 32767)]
     [InlineData("TURN_IN_PLACE", 0)]
     [InlineData("POINT_TURN", 0)]
     [InlineData("40", 40)]
@@ -80,6 +80,9 @@ public class AnimationGapTests
         var k = new BodyKeyframe(0, 0, "SPIRAL", 50);
         Assert.Null(k.EncodedRadius);
         Assert.False(k.RadiusIsKnown);
+        // C5 item 2, B3: the match is case-sensitive, so a lowercase token is unknown
+        Assert.Null(new BodyKeyframe(0, 0, "straight", 0).EncodedRadius);
+        Assert.Null(new BodyKeyframe(0, 0, "turn_in_place", 0).EncodedRadius);
     }
 
     [Fact]

@@ -46,6 +46,7 @@ public sealed record HeadKeyframe(uint TriggerTimeMs, uint DurationTimeMs, sbyte
     public float AngleRad => AngleDeg * MathF.PI / 180f;
 }
 
+// fidelity: M5-006
 /// <summary>
 /// Drive the body. <c>radius_mm</c> is a string in the schema, not a number.
 ///
@@ -66,26 +67,40 @@ public sealed record BodyKeyframe(uint TriggerTimeMs, uint DurationTimeMs, strin
     public override AnimationTrack Track => AnimationTrack.Body;
     public override uint DurationMs => DurationTimeMs;
 
-    /// <summary>True when the clip asks for a straight line rather than an arc.</summary>
-    public bool IsStraight => RadiusRaw.Equals("STRAIGHT", StringComparison.OrdinalIgnoreCase);
+    /// <summary>
+    /// True when the clip asks for a straight line rather than an arc. The match is a case-sensitive whole-string
+    /// equality (B3: length then <c>memcmp</c>), so "straight" is not STRAIGHT.
+    /// </summary>
+    public bool IsStraight => RadiusRaw.Equals("STRAIGHT", StringComparison.Ordinal);
 
-    /// <summary>True when the clip asks the robot to turn on the spot.</summary>
+    /// <summary>
+    /// True when the clip asks the robot to turn on the spot. TURN_IN_PLACE and POINT_TURN, matched case-sensitively as
+    /// whole strings (B3).
+    /// </summary>
     public bool IsTurnInPlace =>
-        RadiusRaw.Equals("TURN_IN_PLACE", StringComparison.OrdinalIgnoreCase) ||
-        RadiusRaw.Equals("POINT_TURN", StringComparison.OrdinalIgnoreCase);
+        RadiusRaw.Equals("TURN_IN_PLACE", StringComparison.Ordinal) ||
+        RadiusRaw.Equals("POINT_TURN", StringComparison.Ordinal);
 
     /// <summary>The turn radius in mm when the token is a number, otherwise null.</summary>
     public float? RadiusMm =>
         float.TryParse(RadiusRaw, System.Globalization.NumberStyles.Float,
                        System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : null;
 
-    /// <summary>True when the token is one the engine understands.</summary>
+    /// <summary>
+    /// B3: <c>ProcessRadiusString</c>'s whole-string, case-sensitive token match: TURN_IN_PLACE and POINT_TURN give 0,
+    /// STRAIGHT gives 0x7FFF, and anything else (a digit string included) is null. The JSON path calls only this match
+    /// (B5), so a JSON radius of "50" is rejected rather than atoi'd.
+    /// </summary>
+    public short? TokenRadius => IsTurnInPlace ? TurnInPlaceRadius : IsStraight ? StraightRadius : null;
+
+    /// <summary>True when the token is one the engine understands (a FlatBuffer digit string counts, C4/B2).</summary>
     public bool RadiusIsKnown => IsStraight || IsTurnInPlace || HasDigits(RadiusRaw);
 
     /// <summary>
-    /// The 16-bit radius the engine puts on the wire, reproducing its own resolution order: a token with
-    /// any digit is parsed numerically first, then the two symbolic turn tokens, then STRAIGHT. A token the
-    /// engine does not recognise makes it log an error and drop the keyframe, which is what null means here.
+    /// The 16-bit radius the engine puts on the wire. The FlatBuffer path's resolution order (B2): a token with any digit
+    /// is parsed numerically first (<c>atoi</c>, clamped to int16), then the two symbolic turn tokens, then STRAIGHT. A
+    /// token the engine does not recognise makes it log an error and drop the keyframe, which is what null means here.
+    /// The JSON path never reaches the digit branch: its string goes to <see cref="TokenRadius"/> (B5).
     /// </summary>
     public short? EncodedRadius
     {
@@ -97,9 +112,7 @@ public sealed record BodyKeyframe(uint TriggerTimeMs, uint DurationTimeMs, strin
                 long v = Atoi(RadiusRaw);
                 return (short)Math.Clamp(v, short.MinValue, short.MaxValue);
             }
-            if (IsTurnInPlace) return TurnInPlaceRadius;
-            if (IsStraight) return StraightRadius;
-            return null;
+            return TokenRadius;
         }
     }
 
@@ -175,11 +188,67 @@ public sealed record LightsKeyframe(uint TriggerTimeMs, uint DurationTimeMs,
 }
 
 // fidelity: M5-016
+/// <summary>
+/// <c>Anki::NamedColors::GetByString</c> (0x0083F780; C5 item 6.1..6.3): the 13-entry map, inserted in this order, with
+/// the exact upper-case names and the <c>ColorRGBA</c> bytes r, g, b, a of the shipped globals (C5 item 6.2). The lookup
+/// is case-sensitive and exact; a miss logs "Unknown color name '%s', returning default" and returns DEFAULT.
+/// LIGHTGRAY exists as a symbol but is not in the map.
+/// </summary>
+public static class NamedColors
+{
+    /// <summary>NamedColors::DEFAULT (0xC9742B), the bytes ff cc 00 ff as this stack's 0xRRGGBBAA word.</summary>
+    public const uint Default = 0xFFCC00FF;
+
+    private static readonly Dictionary<string, uint> Map = new(StringComparer.Ordinal)
+    {
+        ["RED"] = 0xFF0000FF,
+        ["GREEN"] = 0x00FF00FF,
+        ["BLUE"] = 0x0000FFFF,
+        ["YELLOW"] = 0xFFFF00FF,
+        ["CYAN"] = 0x00FFFFFF,
+        ["ORANGE"] = 0xFF7F00FF,
+        ["MAGENTA"] = 0xFF00FFFF,
+        ["WHITE"] = 0xFFFFFFFF,
+        ["BLACK"] = 0x000000FF,
+        ["DEFAULT"] = 0xFFCC00FF,
+        ["DARKGRAY"] = 0x4C4C4CFF,
+        ["DARKGREEN"] = 0x007F00FF,
+        ["OFFWHITE"] = 0xCCCCCCCC,
+    };
+
+    /// <summary>The 13 names, for a caller that wants to enumerate them.</summary>
+    public static IReadOnlyCollection<string> Names => Map.Keys;
+
+    /// <summary>
+    /// <c>GetByString</c> (C5 item 6.3): a hit returns the stored colour; a miss logs and returns DEFAULT.
+    /// </summary>
+    public static uint GetByString(string name, Action<string>? log = null)
+    {
+        if (Map.TryGetValue(name, out var c)) return c;
+        log?.Invoke($"warning: NamedColors.GetByString: Unknown color name '{name}', returning default");
+        return Default;
+    }
+
+    /// <summary>
+    /// A named colour as the four raw components r, g, b, a, so the reused-<c>ColorRGBA</c> reader
+    /// (<see cref="BackpackColor.TryReadAll"/>) treats it by the raw rule (C17) and reproduces the same word.
+    /// </summary>
+    public static float[] AsRawComponents(string name, Action<string>? log = null)
+    {
+        uint c = GetByString(name, log);
+        return new[] { (float)((c >> 24) & 0xFF), (float)((c >> 16) & 0xFF), (float)((c >> 8) & 0xFF), (float)(c & 0xFF) };
+    }
+}
+
+// fidelity: M5-016
 /// <summary>The backpack keyframe colour rules (C17).</summary>
 public static class BackpackColor
 {
-    /// <summary>The default ColorRGBA, 0xFF00CCFF: R in the top byte, A in the bottom (C17, 0x0083F490).</summary>
-    public const uint Default = 0xFF00CCFF;
+    /// <summary>
+    /// The default ColorRGBA: NamedColors::DEFAULT (C5 item 6.2, 0xC9742B), the bytes ff cc 00 ff read as this stack's
+    /// 0xRRGGBBAA word (R in the top byte, A in the bottom; C17, 0x0083F490).
+    /// </summary>
+    public const uint Default = NamedColors.Default;
 
     /// <summary>
     /// <c>GetColorOptional</c> (C17, 0x0084024C..0x0084050C; gap4 J1.9) into <paramref name="c"/>: the array must hold 3 or
@@ -280,6 +349,17 @@ public enum AnimEvent : byte
 public sealed record RecordHeadingKeyframe(uint TriggerTimeMs) : Keyframe(TriggerTimeMs)
 {
     public override AnimationTrack Track => AnimationTrack.Body;
+}
+
+// fidelity: M5-001
+/// <summary>
+/// A DeviceAudio keyframe (C5 item 1, D2/D1 row: <c>DeviceAudioKeyFrame</c>): it reads "audioName" only, its
+/// <c>GetStreamMessage</c> returns null and <c>PlayOnDevice</c> is empty, so it has no wire effect and owns no track.
+/// The DeviceAudio track's own wall-clock handling (A14) is not part of this record's load path.
+/// </summary>
+public sealed record DeviceAudioKeyframe(uint TriggerTimeMs, string AudioName) : Keyframe(TriggerTimeMs)
+{
+    public override AnimationTrack Track => AnimationTrack.None;
 }
 
 /// <summary>Turn back to the heading a <see cref="RecordHeadingKeyframe"/> remembered.</summary>

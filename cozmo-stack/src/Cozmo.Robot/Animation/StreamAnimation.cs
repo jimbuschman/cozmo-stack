@@ -262,6 +262,9 @@ internal sealed class StreamAnimation
             case RecordHeadingKeyframe: RecHeading.AddKeyFrameToBack(new StreamKeyframe(k)); break;
             case TurnToRecordedHeadingKeyframe: TurnTo.AddKeyFrameToBack(new StreamKeyframe(k)); break;
             case AudioKeyframe: RobotAudio.AddKeyFrameToBack(new StreamKeyframe(k)); break;
+            // M5-001: DeviceAudio is a real track (D2); the keyframe's GetStreamMessage returns null, so it has no wire
+            // effect, but it counts for IsEmpty/HasFramesLeft/LastKeyFrameEndTime and the trigger-order check.
+            case DeviceAudioKeyframe: DeviceAudio.AddKeyFrameToBack(new StreamKeyframe(k)); break;
         }
     }
 
@@ -281,6 +284,7 @@ internal sealed class StreamAnimation
         RecordHeadingKeyframe => RecHeading.AddNewKeyFrameToBack(new StreamKeyframe(k)),
         TurnToRecordedHeadingKeyframe => TurnTo.AddNewKeyFrameToBack(new StreamKeyframe(k)),
         AudioKeyframe => RobotAudio.AddNewKeyFrameToBack(new StreamKeyframe(k)),
+        DeviceAudioKeyframe => DeviceAudio.AddNewKeyFrameToBack(new StreamKeyframe(k)),   // M5-001
         _ => false,
     };
 
@@ -302,6 +306,7 @@ internal sealed class StreamAnimation
             case RecordHeadingKeyframe: return RecHeading.AddKeyFrameToBack(new StreamKeyframe(k));
             case TurnToRecordedHeadingKeyframe: return TurnTo.AddKeyFrameToBack(new StreamKeyframe(k));
             case AudioKeyframe: return RobotAudio.AddKeyFrameToBack(new StreamKeyframe(k));
+            case DeviceAudioKeyframe: return DeviceAudio.AddKeyFrameToBack(new StreamKeyframe(k));   // M5-001
             default: return false;
         }
     }

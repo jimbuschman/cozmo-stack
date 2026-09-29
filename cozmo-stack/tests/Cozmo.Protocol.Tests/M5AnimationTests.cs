@@ -885,9 +885,11 @@ public class M5AnimationTests
     // ================================================================== M5-016: the backpack track (C16..C18)
 
     /// <summary>
-    /// C17: raw when any of r, g, b &gt; 1, else ×255, truncated; alpha only from a 4th element ≥ 0; default 0xFF00CCFF;
-    /// the word ((r&lt;&lt;7)&amp;0x7C00) | ((g&lt;&lt;2)&amp;0x3E0) | (b&gt;&gt;3) | (a ≠ 0 ? 0x8000 : 0). Worked: [1, 0, 0, 1] →
-    /// 0xFC00; [255, 128, 8, 0] → 0x7E01; [0.5, 0.5, 0.5] → 127s with the default alpha → 0xBDEF; [] → 0xFC19.
+    /// C17: raw when any of r, g, b &gt; 1, else ×255, truncated; alpha only from a 4th element ≥ 0; the default is
+    /// NamedColors::DEFAULT, ff cc 00 ff (C5 item 6.2); the word
+    /// ((r&lt;&lt;7)&amp;0x7C00) | ((g&lt;&lt;2)&amp;0x3E0) | (b&gt;&gt;3) | (a ≠ 0 ? 0x8000 : 0). Worked: [1, 0, 0, 1] →
+    /// 0xFC00; [255, 128, 8, 0] → 0x7E01; [0.5, 0.5, 0.5] → 127s with the default alpha → 0xBDEF; [] → the default
+    /// ff cc 00 ff → 0xFF20.
     /// C18: the order Left, Front, Middle, Back, Right.
     /// </summary>
     [Fact]
@@ -896,7 +898,7 @@ public class M5AnimationTests
         Assert.Equal(0xFC00, BackpackColor.Encode(BackpackColor.FromArray(new[] { 1f, 0f, 0f, 1f })));
         Assert.Equal(0x7E01, BackpackColor.Encode(BackpackColor.FromArray(new[] { 255f, 128f, 8f, 0f })));
         Assert.Equal(0xBDEF, BackpackColor.Encode(BackpackColor.FromArray(new[] { 0.5f, 0.5f, 0.5f })));
-        Assert.Equal(0xFC19, BackpackColor.Encode(BackpackColor.FromArray(Array.Empty<float>())));
+        Assert.Equal(0xFF20, BackpackColor.Encode(BackpackColor.FromArray(Array.Empty<float>())));
 
         var red = new[] { 1f, 0f, 0f, 1f };
         var off = new[] { 0f, 0f, 0f, 0f };
@@ -1699,6 +1701,301 @@ public class M5AnimationTests
 
         public void Dispose() => Robot.Dispose();
     }
+
+    /// <summary>
+    /// C5 item 5.1: <c>Image::Threshold</c> uses <c>cv::operator&gt;</c>, so the test is strictly above 0x80: a pixel
+    /// equal to 0x80 becomes 0 and 0x81 is lit.
+    /// </summary>
+    [Fact]
+    public void M5_013_5_1_TheThresholdIsStrictlyAbove0x80()
+    {
+        var img = new MiniPng.Gray8(64, 128, new byte[64 * 128]);
+        img.Pixels[1 * 64 + 0] = 0x80;
+        img.Pixels[1 * 64 + 1] = 0x81;
+        var frame = FaceAnimationFrame.FromImage(img);
+        var evenRowsCleared = FaceBitmapCodec.DecodeCanvas(frame.EvenRowsCleared);   // keeps the odd rows
+        Assert.Equal(0, evenRowsCleared[1 * 128 + 0]);
+        Assert.NotEqual(0, evenRowsCleared[1 * 128 + 1]);
+    }
+
+    /// <summary>
+    /// C5 item 5.4/5.5: an empty vector advances the index and returns no message; the reset is lazy, so replaying the
+    /// same keyframe object with its index at the frame count makes the first GetStreamMessage reset it and send
+    /// nothing, and the next frame sends frame 0.
+    /// </summary>
+    [Fact]
+    public void M5_013_5_4_5_5_TheIndexResetIsLazyAndAnEmptyFrameAdvances()
+    {
+        var lit = Enumerable.Repeat((byte)255, 64 * 128).ToArray();
+        var frame = FaceAnimationFrame.FromCanvas(lit);
+        var empty = new FaceAnimationFrame(Array.Empty<byte>(), Array.Empty<byte>());
+
+        // an empty first frame advances without a message; the second frame goes out
+        var log = new Log();
+        var s = new AnimationScheduler(log) { FaceAnimationVariants = _ => new[] { empty, frame } };
+        s.Play(Clip("e", new FaceAnimationKeyframe(0, "anim"), new EventKeyframe(300, "TAPPED_BLOCK")), 0);
+        s.Advance(0);
+        Assert.Empty(log.Faces);
+        s.Advance(33);
+        Assert.Single(log.Faces);
+
+        // replaying the same clip object: the keyframe's index is at 2, so the first GetStreamMessage resets it and
+        // sends nothing; frame 0 follows on the next Update
+        var log2 = new Log();
+        var s2 = new AnimationScheduler(log2) { FaceAnimationVariants = _ => new[] { frame, frame } };
+        var clip = Clip("r", new FaceAnimationKeyframe(0, "anim"), new EventKeyframe(300, "TAPPED_BLOCK"));
+        s2.Play(clip, 0);
+        Run(s2, 0, 66);
+        Assert.Equal(2, log2.Faces.Count);
+        log2.Faces.Clear();
+        s2.Play(clip, 100);
+        s2.Advance(100);
+        Assert.Empty(log2.Faces);                  // the lazy reset, no message
+        s2.Advance(133);
+        Assert.Single(log2.Faces);                 // frame 0
+    }
+
+    /// <summary>
+    /// C5 item 5.5, GetNumFrames 0x005816D8 / IsDone 0x004F9770: an unknown face-animation name has 0 frames, so IsDone
+    /// is true at once. GetStreamMessage's lazy reset consumes the keyframe in one frame; it must not stall the track,
+    /// and the animation must be able to end.
+    /// </summary>
+    [Fact]
+    public void M5_013_5_5_AnUnknownFaceAnimationNameIsConsumedAndDoesNotStall()
+    {
+        var log = new Log();
+        var s = new AnimationScheduler(log) { FaceAnimationVariants = _ => null };
+        var handle = s.Play(Clip("u", new FaceAnimationKeyframe(0, "absent"), new EventKeyframe(300, "TAPPED_BLOCK")), 0);
+        Run(s, 0, 600);
+        Assert.Empty(log.Faces);
+        Assert.Equal(AnimationEndReason.Completed, handle.Completion.Result);
+    }
+
+    // ================================================================== M5-001: the five JSON keyframe readers (C5 item 1)
+
+    private static AnimationClip LoadJson(string json, Action<string>? log = null)
+    {
+        var dir = Directory.CreateTempSubdirectory("m5json");
+        try
+        {
+            var file = Path.Combine(dir.FullName, "clip.json");
+            File.WriteAllText(file, json);
+            return JsonClipLoader.Load(file, log) ?? throw new InvalidDataException("the JSON defines no animation");
+        }
+        finally { dir.Delete(recursive: true); }
+    }
+
+    /// <summary>
+    /// C5 item 1 (F2/F3, E2, D2, R1, T1/T2): FaceAnimation reads "animName" and Process strips the path prefix up to the
+    /// last '/'; Event reads "event_id"; DeviceAudio reads "audioName"; RecordHeading reads nothing; TurnToRecordedHeading
+    /// reads the eight members in order and CheckRotationSpeed clamps speed to ±300 and accel/decel to ±13636.
+    /// </summary>
+    [Fact]
+    public void M5_001_F2_E2_D2_R1_T2_TheFiveJsonKeyframeReaders()
+    {
+        var clip = LoadJson("""
+        {
+          "c": [
+            { "Name": "FaceAnimationKeyFrame", "triggerTime_ms": 0, "animName": "dir/sub/face_a" },
+            { "Name": "EventKeyFrame", "triggerTime_ms": 10, "event_id": "TAPPED_BLOCK" },
+            { "Name": "DeviceAudioKeyFrame", "triggerTime_ms": 20, "audioName": "beep" },
+            { "Name": "RecordHeadingKeyFrame", "triggerTime_ms": 30 },
+            { "Name": "TurnToRecordedHeadingKeyFrame", "triggerTime_ms": 40,
+              "durationTime_ms": 100, "offset_deg": 5, "speed_degPerSec": 400,
+              "accel_degPerSec2": 14000, "decel_degPerSec2": -14000,
+              "tolerance_deg": 2, "numHalfRevs": 1, "useShortestDir": true }
+          ]
+        }
+        """);
+        Assert.False(clip.LoadTruncated);
+        Assert.Equal("face_a", Assert.Single(clip.Keyframes.OfType<FaceAnimationKeyframe>()).AnimName);
+        Assert.Equal(Cozmo.Robot.Animation.AnimEvent.TAPPED_BLOCK,
+                     Assert.Single(clip.Keyframes.OfType<EventKeyframe>()).Parsed!.Value);
+        Assert.Equal("beep", Assert.Single(clip.Keyframes.OfType<DeviceAudioKeyframe>()).AudioName);
+        Assert.NotNull(Assert.Single(clip.Keyframes.OfType<RecordHeadingKeyframe>()));
+        var t = Assert.Single(clip.Keyframes.OfType<TurnToRecordedHeadingKeyframe>());
+        Assert.Equal((uint)100, t.DurationTimeMs);
+        Assert.Equal((short)5, t.OffsetDeg);
+        Assert.Equal((short)300, t.SpeedDegPerSec);        // T3: |400| > 300
+        Assert.Equal((short)13636, t.AccelDegPerSec2);     // T3: |14000| >= 13637
+        Assert.Equal((short)-13636, t.DecelDegPerSec2);
+        Assert.Equal((ushort)2, t.ToleranceDeg);
+        Assert.Equal((ushort)1, t.NumHalfRevs);
+        Assert.True(t.UseShortestDir);
+    }
+
+    /// <summary>
+    /// C5 item 1 (F2, E2, D2): a reader that fails ends the clip's load with the earlier keyframes kept. FaceAnimation
+    /// without "animName", Event with an unrecognised "event_id", and DeviceAudio without "audioName" all reject.
+    /// </summary>
+    [Fact]
+    public void M5_001_F2_E2_D2_AnInvalidJsonKeyframeEndsTheLoadKeepingWhatCameBefore()
+    {
+        var face = LoadJson("""
+        { "c": [
+            { "Name": "HeadAngleKeyFrame", "triggerTime_ms": 0, "durationTime_ms": 100, "angle_deg": 5, "angleVariability_deg": 0 },
+            { "Name": "FaceAnimationKeyFrame", "triggerTime_ms": 10 }
+        ] }
+        """);
+        Assert.True(face.LoadTruncated);
+        Assert.Single(face.Keyframes.OfType<HeadKeyframe>());
+        Assert.Empty(face.Keyframes.OfType<FaceAnimationKeyframe>());
+
+        var ev = LoadJson("""{ "c": [ { "Name": "EventKeyFrame", "triggerTime_ms": 0, "event_id": "Count" } ] }""");
+        Assert.True(ev.LoadTruncated);
+        Assert.Empty(ev.Keyframes.OfType<EventKeyframe>());
+
+        var da = LoadJson("""{ "c": [ { "Name": "DeviceAudioKeyFrame", "triggerTime_ms": 0 } ] }""");
+        Assert.True(da.LoadTruncated);
+        Assert.Empty(da.Keyframes.OfType<DeviceAudioKeyframe>());
+    }
+
+    /// <summary>
+    /// C5 item 2 (B3, B5): the JSON radius string goes straight to the case-sensitive whole-string token match, so "50"
+    /// and "straight" are rejected; a JSON number (non-string) still goes through the s16/CheckTurnSpeed path.
+    /// </summary>
+    [Fact]
+    public void M5_006_B3_B5_AJsonRadiusStringMustBeATokenAndANumberIsNot()
+    {
+        var numericString = LoadJson("""
+        { "c": [ { "Name": "BodyMotionKeyFrame", "triggerTime_ms": 0, "durationTime_ms": 100, "speed": 10, "radius_mm": "50" } ] }
+        """);
+        Assert.True(numericString.LoadTruncated);
+        Assert.Empty(numericString.Keyframes.OfType<BodyKeyframe>());
+
+        var lower = LoadJson("""
+        { "c": [ { "Name": "BodyMotionKeyFrame", "triggerTime_ms": 0, "durationTime_ms": 100, "speed": 10, "radius_mm": "straight" } ] }
+        """);
+        Assert.True(lower.LoadTruncated);
+        Assert.Empty(lower.Keyframes.OfType<BodyKeyframe>());
+
+        var token = LoadJson("""
+        { "c": [ { "Name": "BodyMotionKeyFrame", "triggerTime_ms": 0, "durationTime_ms": 100, "speed": 10, "radius_mm": "STRAIGHT" } ] }
+        """);
+        Assert.False(token.LoadTruncated);
+        Assert.Equal((short?)0x7FFF, Assert.Single(token.Keyframes.OfType<BodyKeyframe>()).EncodedRadius);
+
+        var number = LoadJson("""
+        { "c": [ { "Name": "BodyMotionKeyFrame", "triggerTime_ms": 0, "durationTime_ms": 100, "speed": 150, "radius_mm": 50 } ] }
+        """);
+        var b = Assert.Single(number.Keyframes.OfType<BodyKeyframe>());
+        Assert.Equal((short?)50, b.EncodedRadius);
+        Assert.Equal((short)150, b.Speed);
+    }
+
+    // ================================================================== M5-010: the reset data (C5 item 3, P1..P5)
+
+    /// <summary>
+    /// C5 item 3 (P1..P5): the reset data is null until the streamer constructor's SetResetData, so Reset is a no-op and
+    /// the layer-base face stays the default-constructed ProceduralFace.
+    /// </summary>
+    [Fact]
+    public void M5_010_P1_P2_WithoutANeutralFaceTheLayerBaseStaysTheDefault()
+    {
+        var cat = new Catalog();
+        var s = new AnimationScheduler(new Log()) { Catalog = cat };
+        s.LoadNeutralFace();
+        Assert.Null(s.NeutralFaceAnimation);
+        // M5-002 (gap3 K4): the default face is all 0 except EyeScaleX/Y = 1 on both eyes, face scale 1, centre 0,
+        // angle 0, no distorter. Asserted as properties, not against another ProceduralFacePose.
+        var f = s.LayerBaseFace;
+        foreach (var eye in new[] { f.Left, f.Right })
+            for (int i = 0; i < Eye.ParamCount; i++)
+                Assert.Equal(i is 2 or 3 ? 1f : 0f, eye[i]);
+        Assert.Equal(1f, f.FaceScaleX);
+        Assert.Equal(1f, f.FaceScaleY);
+        Assert.Equal(0f, f.FaceAngle);
+        Assert.Equal(0f, f.FaceCenterX);
+        Assert.Equal(0f, f.FaceCenterY);
+        Assert.Null(f.Distorter);
+    }
+
+    // ================================================================== M5-016: NamedColors (C5 item 6)
+
+    /// <summary>
+    /// C5 item 6.1..6.3: the 13-entry table with the exact values; the lookup is case-sensitive; a miss returns DEFAULT.
+    /// LIGHTGRAY exists as a symbol but is not in the map.
+    /// </summary>
+    [Fact]
+    public void M5_016_6_1_6_3_TheNamedColorsTable()
+    {
+        Assert.Equal(13, NamedColors.Names.Count);
+        Assert.DoesNotContain("LIGHTGRAY", NamedColors.Names);
+        Assert.Equal(0xFF0000FFu, NamedColors.GetByString("RED"));
+        Assert.Equal(0x00FF00FFu, NamedColors.GetByString("GREEN"));
+        Assert.Equal(0x0000FFFFu, NamedColors.GetByString("BLUE"));
+        Assert.Equal(0xFFFF00FFu, NamedColors.GetByString("YELLOW"));
+        Assert.Equal(0x00FFFFFFu, NamedColors.GetByString("CYAN"));
+        Assert.Equal(0xFF7F00FFu, NamedColors.GetByString("ORANGE"));
+        Assert.Equal(0xFF00FFFFu, NamedColors.GetByString("MAGENTA"));
+        Assert.Equal(0xFFFFFFFFu, NamedColors.GetByString("WHITE"));
+        Assert.Equal(0x000000FFu, NamedColors.GetByString("BLACK"));
+        Assert.Equal(0xFFCC00FFu, NamedColors.GetByString("DEFAULT"));
+        Assert.Equal(0x4C4C4CFFu, NamedColors.GetByString("DARKGRAY"));
+        Assert.Equal(0x007F00FFu, NamedColors.GetByString("DARKGREEN"));
+        Assert.Equal(0xCCCCCCCCu, NamedColors.GetByString("OFFWHITE"));
+        Assert.Equal(NamedColors.Default, NamedColors.GetByString("red"));   // case-sensitive miss
+    }
+
+    /// <summary>
+    /// C5 item 6.4/6.5: a string colour goes through the table; an unknown name is DEFAULT with a warning, not a
+    /// rejection. The five reads reuse one ColorRGBA (a 3-element array would keep the previous alpha).
+    /// </summary>
+    [Fact]
+    public void M5_016_6_4_6_5_AStringColourGoesThroughTheTableAndAnUnknownNameIsDefault()
+    {
+        var clip = LoadJson("""
+        { "c": [ { "Name": "BackpackLightsKeyFrame", "triggerTime_ms": 0, "durationTime_ms": 0,
+                   "Back": "RED", "Front": "GREEN", "Middle": "NO_SUCH_COLOUR", "Left": "BLUE", "Right": "WHITE" } ] }
+        """);
+        Assert.False(clip.LoadTruncated);
+        var leds = Assert.Single(clip.Keyframes.OfType<LightsKeyframe>()).EncodedLeds!;
+        Assert.Equal(BackpackColor.Encode(0x0000FFFFu), leds[0]);   // Left  BLUE
+        Assert.Equal(BackpackColor.Encode(0x00FF00FFu), leds[1]);   // Front GREEN
+        Assert.Equal(BackpackColor.Encode(0xFFCC00FFu), leds[2]);   // Middle the DEFAULT for the unknown name
+        Assert.Equal(BackpackColor.Encode(0xFF0000FFu), leds[3]);   // Back  RED
+        Assert.Equal(BackpackColor.Encode(0xFFFFFFFFu), leds[4]);   // Right WHITE
+    }
+
+    // ================================================================== M5-011/M5-014: the group loader (C5 item 4)
+
+    /// <summary>
+    /// C5 item 4 (4.3..4.10): an entry whose Name is not a loaded clip, whose Weight is absent/non-numeric, whose Mood is
+    /// absent/non-string or unrecognised, or that sets UseHeadAngle without both angles, is rejected; the group keeps the
+    /// rest. There are no defaults for Weight, Mood or HeadAngle.
+    /// </summary>
+    [Fact]
+    public void M5_011_4_4_4_10_TheGroupLoaderRejectsInvalidEntriesAndContinues()
+    {
+        var dir = Directory.CreateTempSubdirectory("m5group");
+        try
+        {
+            var anims = Directory.CreateDirectory(Path.Combine(dir.FullName, "animations"));
+            File.WriteAllText(Path.Combine(anims.FullName, "a.json"),
+                """{ "clipA": [ { "Name": "HeadAngleKeyFrame", "triggerTime_ms": 0, "durationTime_ms": 100, "angle_deg": 0, "angleVariability_deg": 0 } ] }""");
+            var groups = Directory.CreateDirectory(Path.Combine(dir.FullName, "animationGroups"));
+            File.WriteAllText(Path.Combine(groups.FullName, "g.json"), """
+            { "Animations": [
+                { "Name": "clipA", "Weight": 1.0, "Mood": "Default" },
+                { "Name": "no_such_clip", "Weight": 1.0, "Mood": "Default" },
+                { "Name": "clipA", "Mood": "Default" },
+                { "Name": "clipA", "Weight": 1.0, "Mood": "NoSuchMood" },
+                { "Name": "clipA", "Weight": 1.0, "Mood": "Default", "UseHeadAngle": true },
+                { "Name": "clipA", "Weight": 2.0, "Mood": "Default", "UseHeadAngle": true, "HeadAngleMin_Deg": -10, "HeadAngleMax_Deg": 10 }
+            ] }
+            """);
+            var lib = AnimationLibrary.Open(dir.FullName);
+            var g = lib.GetGroup("g")!;
+            Assert.Equal(2, g.Entries.Count);
+            Assert.Equal("clipA", g.Entries[0].Name);
+            Assert.False(g.Entries[0].UseHeadAngle);
+            Assert.Equal(1f, g.Entries[0].Weight);
+            Assert.True(g.Entries[1].UseHeadAngle);
+            Assert.Equal(2f, g.Entries[1].Weight);
+            Assert.Equal(-10f, g.Entries[1].HeadAngleMinDeg);
+        }
+        finally { dir.Delete(recursive: true); }
+    }
 }
 
 [CollectionDefinition("M5 process statics", DisableParallelization = true)]
@@ -1795,4 +2092,5 @@ public class M5ScanLineTests
         Assert.Equal(2, log.Faces.Count);
         Assert.All(log.Faces, p => Assert.Equal(frame.ForScanLine(fsl), p));
     }
+
 }

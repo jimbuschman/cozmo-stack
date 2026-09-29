@@ -150,17 +150,20 @@ internal static class JsonClipLoader
             case "ProceduralFaceKeyFrame":
                 return DefineFace(trigger, el);
             case "BackpackLightsKeyFrame":
-                return DefineBackpack(trigger, el, out error);
+                return DefineBackpack(trigger, el, log, out error);
             case "RobotAudioKeyFrame":
                 return DefineAudio(trigger, el, out error);
             case "FaceAnimationKeyFrame":
+                return DefineFaceAnimation(trigger, el, log, clip);
             case "EventKeyFrame":
+                return DefineEvent(trigger, el, log, out error);
             case "DeviceAudioKeyFrame":
+                return DefineDeviceAudio(trigger, el);
             case "RecordHeadingKeyFrame":
+                // C5 item 1: RecordHeading reads nothing and always succeeds (0x004FBB54).
+                return new RecordHeadingKeyframe(trigger);
             case "TurnToRecordedHeadingKeyFrame":
-                throw new NotSupportedException(
-                    $"MISSING (M5-001): {type}::SetMembersFromJson is not in the M5 inventory (gap4 J1 covers Head, Lift, Body, " +
-                    "ProceduralFace, BackpackLights and RobotAudio; no shipped JSON clip holds this type)");
+                return DefineTurnTo(trigger, el);
             default:
                 error = $"Animation.DefineFromJson.UnrecognizedFrameName: {type}";
                 return null;
@@ -184,11 +187,15 @@ internal static class JsonClipLoader
         if (r.ValueKind == JsonValueKind.String)
         {
             var raw = r.GetString()!;
-            if (!BodyKeyframe.CheckSpeedForRadiusString(raw, ref speed))
+            // B5: the JSON path sends the string straight to ProcessRadiusString, which is the case-sensitive
+            // whole-string token match only. A numeric string such as "50" is not a token and rejects the keyframe.
+            var probe = new BodyKeyframe(trigger, duration, raw, speed);
+            if (probe.TokenRadius is null)
             {
                 error = $"BodyMotionKeyFrame.ProcessRadiusString: {clip}: unrecognised radius '{raw}'";
                 return null;
             }
+            BodyKeyframe.CheckSpeedForRadiusString(raw, ref speed);   // B6: the clamps run after the radius decision
             return new BodyKeyframe(trigger, duration, raw, speed);
         }
         short radius = unchecked((short)AsInt(r, "radius_mm"));
@@ -220,18 +227,22 @@ internal static class JsonClipLoader
     }
 
     /// <summary>
-    /// J1.9: "Back", "Front", "Middle", "Left", "Right" in that order, each required, through GetColorOptional with one
-    /// ColorRGBA reused (<see cref="BackpackColor.TryReadAll"/>); a string names a NamedColors entry (MISSING: the table is
-    /// not in the inventory; no shipped keyframe uses one); then "durationTime_ms" asInt, required.
+    /// J1.9 / C5 item 6: "Back", "Front", "Middle", "Left", "Right" in that order, each required, through GetColorOptional
+    /// with one ColorRGBA reused (<see cref="BackpackColor.TryReadAll"/>); a string goes through
+    /// <see cref="NamedColors.GetByString"/> (an unknown name is DEFAULT, not a rejection); then "durationTime_ms" asInt,
+    /// required.
     /// </summary>
-    private static Keyframe? DefineBackpack(uint trigger, JsonElement el, out string? error)
+    private static Keyframe? DefineBackpack(uint trigger, JsonElement el, Action<string>? log, out string? error)
     {
         error = null;
+        // fidelity: M5-016
         float[] Color(string key)
         {
             var v = Required(el, key);
+            // C5 item 6.4/6.5: a string goes through NamedColors::GetByString; an unknown name is DEFAULT with a
+            // warning, not a rejection. Any other type than a string or a 3/4-element array rejects the keyframe.
             if (v.ValueKind == JsonValueKind.String)
-                throw new NotSupportedException($"MISSING (M5-016): NamedColors::GetByString('{v.GetString()}') is not in the M5 inventory");
+                return NamedColors.AsRawComponents(v.GetString()!, log);
             if (v.ValueKind != JsonValueKind.Array) throw new JsonCppException($"BackpackLightsKeyFrame: '{key}' is not an array");
             return v.EnumerateArray().Select(x => AsFloat(x, key)).ToArray();
         }
@@ -274,5 +285,89 @@ internal static class JsonClipLoader
         long id = (long)(uint)(AsUInt64(idEl, "audioEventId") & 0xFFFFFFFF);
         float prob = Present(el, "probability", out var sp) ? AsFloat(sp, "probability") : 1f;
         return new AudioKeyframe(trigger, new[] { id }, volume, new[] { prob }, hasAlts);
+    }
+
+    /// <summary>
+    /// C5 item 1 (F2, F3): FaceAnimation reads "animName" as a string; absent (or not a string) is the common error macro
+    /// and rejects the keyframe. Then <c>Process</c> strips a path prefix up to and including the last '/', with a
+    /// warning, and resets the frame index to 0 (the keyframe's index starts at 0 here).
+    /// </summary>
+    private static Keyframe DefineFaceAnimation(uint trigger, JsonElement el, Action<string>? log, string clip)
+    {
+        var v = Required(el, "animName");
+        if (v.ValueKind != JsonValueKind.String)
+            throw new JsonCppException("IKeyFrame.GetMemberFromJsonMacro: Failed to get 'animName' from Json file.");
+        string name = v.GetString()!;
+        int slash = name.LastIndexOf('/');
+        if (slash >= 0)
+        {
+            log?.Invoke($"warning: FaceAnimationKeyFrame.Process: {clip}: Removing path from animation name: {name}");
+            name = name[(slash + 1)..];
+        }
+        return new FaceAnimationKeyframe(trigger, name);
+    }
+
+    /// <summary>
+    /// C5 item 1 (E2): Event reads "event_id". Absent, non-string, or a name <c>AnimEventFromString</c> does not
+    /// recognise ("Count", 3) gives a warning and rejects the keyframe. Success stores the byte (here the name, whose
+    /// <see cref="EventKeyframe.Parsed"/> is the byte).
+    /// </summary>
+    private static Keyframe? DefineEvent(uint trigger, JsonElement el, Action<string>? log, out string? error)
+    {
+        error = null;
+        if (!Present(el, "event_id", out var v))
+        {
+            log?.Invoke("warning: EventKeyFrame.NoEventIDFound");
+            error = "EventKeyFrame.NoEventIDFound";
+            return null;
+        }
+        if (v.ValueKind != JsonValueKind.String)
+        {
+            log?.Invoke("warning: EventKeyFrame.EventIDNotString");
+            error = "EventKeyFrame.EventIDNotString";
+            return null;
+        }
+        var e = new EventKeyframe(trigger, v.GetString()!);
+        if (e.Parsed is null)
+        {
+            log?.Invoke($"warning: EventKeyFrame.UnrecognizedEventName: {e.EventId}");
+            error = "EventKeyFrame.UnrecognizedEventName";
+            return null;
+        }
+        return e;
+    }
+
+    /// <summary>
+    /// C5 item 1 (D2): DeviceAudio reads "audioName" as a string; absent (or not a string) is the common error macro and
+    /// rejects the keyframe. Its GetStreamMessage returns null and PlayOnDevice is empty, so it has no wire effect.
+    /// </summary>
+    private static Keyframe DefineDeviceAudio(uint trigger, JsonElement el)
+    {
+        var v = Required(el, "audioName");
+        if (v.ValueKind != JsonValueKind.String)
+            throw new JsonCppException("IKeyFrame.GetMemberFromJsonMacro: Failed to get 'audioName' from Json file.");
+        return new DeviceAudioKeyframe(trigger, v.GetString()!);
+    }
+
+    /// <summary>
+    /// C5 item 1 (T2): TurnToRecordedHeading reads eight required members in order, each missing one rejecting the
+    /// keyframe with the earlier members already written. "durationTime_ms" has <b>no</b> negative-to-INT_MAX conversion
+    /// on this path (unlike the FlatBuffer one, C19). Then CheckRotationSpeed (T3): speed |v| &gt; 300 → ±300; accel and
+    /// decel |v| ≥ 13637 → ±13636.
+    /// </summary>
+    private static Keyframe DefineTurnTo(uint trigger, JsonElement el)
+    {
+        uint duration = unchecked((uint)AsInt(Required(el, "durationTime_ms"), "durationTime_ms"));
+        short offset = unchecked((short)AsInt(Required(el, "offset_deg"), "offset_deg"));
+        short speed = unchecked((short)AsInt(Required(el, "speed_degPerSec"), "speed_degPerSec"));
+        short accel = unchecked((short)AsInt(Required(el, "accel_degPerSec2"), "accel_degPerSec2"));
+        short decel = unchecked((short)AsInt(Required(el, "decel_degPerSec2"), "decel_degPerSec2"));
+        ushort tolerance = unchecked((ushort)AsUInt(Required(el, "tolerance_deg"), "tolerance_deg"));
+        ushort halfRevs = unchecked((ushort)AsUInt(Required(el, "numHalfRevs"), "numHalfRevs"));
+        bool shortest = Required(el, "useShortestDir").ValueKind == JsonValueKind.True;
+        if (Math.Abs((int)speed) > 300) speed = (short)Math.Clamp((int)speed, -300, 300);
+        if (Math.Abs((int)accel) >= 13637) accel = (short)Math.Clamp((int)accel, -13636, 13636);
+        if (Math.Abs((int)decel) >= 13637) decel = (short)Math.Clamp((int)decel, -13636, 13636);
+        return new TurnToRecordedHeadingKeyframe(trigger, duration, offset, speed, accel, decel, tolerance, halfRevs, shortest);
     }
 }

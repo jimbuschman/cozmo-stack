@@ -11,15 +11,18 @@ namespace Cozmo.Robot.Animation;
 /// the images inside each. The shipped tree has two of them, <c>face_bored_event_02</c> and <c>face_bored_event_04</c>,
 /// each a run of 128 x 64 eight-bit grayscale PNGs numbered in order.
 ///
-/// Each image is thresholded at 0x80 and stored as <b>two RLE variants</b> (C12, 0x00581254..0x005812C4): one with the
-/// even canvas rows cleared and one with the odd rows cleared, each through <c>CompressRLE</c>
+/// Each image is thresholded strictly above 0x80 and stored as <b>two RLE variants</b> (C12, 0x00581254..0x005812C4):
+/// one with the even canvas rows cleared and one with the odd rows cleared, each through <c>CompressRLE</c>
 /// (<see cref="FaceBitmapCodec.EncodeCanvas"/>). <c>GetFrame</c> picks one by <see cref="FirstScanLine"/>
-/// (0x005817B4..0x005817CA, M3 B4). Which stored variant belongs to which value is not in the row; this takes the
-/// even-rows-cleared variant for 0, the drawer's convention (E2: 0 clears even rows).
+/// (0x005817B4..0x005817CA, M3 B4; C5 item 5.3): 0 gives the even-rows-cleared variant, any non-zero the
+/// odd-rows-cleared one.
 /// </summary>
 public sealed class FaceAnimationLibrary
 {
-    /// <summary>The threshold <c>AddImage</c> applies, 0x80 (a sample at or above it is lit).</summary>
+    /// <summary>
+    /// The threshold <c>AddImage</c> applies, 0x80. <c>Image::Threshold</c> calls <c>cv::operator&gt;</c> (CMP_GT), so the
+    /// test is strictly above: a pixel equal to 0x80 becomes 0 (C5 item 5.1).
+    /// </summary>
     public const byte Threshold = 0x80;
 
     /// <summary>
@@ -105,8 +108,8 @@ public sealed class FaceAnimationLibrary
     }
 
     /// <summary>
-    /// One 128 x 64 grayscale image as this stack's 128 x 32 picture: lit where the sample is at or above the
-    /// threshold, the odd canvas row of each pair.
+    /// One 128 x 64 grayscale image as this stack's 128 x 32 picture: lit where the sample is strictly above the
+    /// threshold (a pixel equal to 0x80 is dark), the odd canvas row of each pair.
     /// </summary>
     public static FaceBitmap ToFace(MiniPng.Gray8 image)
     {
@@ -116,7 +119,7 @@ public sealed class FaceAnimationLibrary
             int row = 2 * y + 1;
             if (row >= image.Height) break;
             for (int x = 0; x < FaceBitmap.Width && x < image.Width; x++)
-                face[x, y] = (byte)(image.Pixels[row * image.Width + x] >= Threshold ? 1 : 0);
+                face[x, y] = (byte)(image.Pixels[row * image.Width + x] > Threshold ? 1 : 0);
         }
         return face;
     }
@@ -138,7 +141,7 @@ public sealed record FaceAnimationFrame(byte[] EvenRowsCleared, byte[] OddRowsCl
         var canvas = new byte[FaceBitmapCodec.CanvasRows * FaceBitmapCodec.CanvasColumns];
         for (int r = 0; r < FaceBitmapCodec.CanvasRows && r < image.Height; r++)
             for (int c = 0; c < FaceBitmapCodec.CanvasColumns && c < image.Width; c++)
-                if (image.Pixels[r * image.Width + c] >= FaceAnimationLibrary.Threshold)
+                if (image.Pixels[r * image.Width + c] > FaceAnimationLibrary.Threshold)
                     canvas[r * FaceBitmapCodec.CanvasColumns + c] = 255;
         return FromCanvas(canvas);
     }
