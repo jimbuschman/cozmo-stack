@@ -1,4 +1,5 @@
-// fidelity: M6-006
+// fidelity: M6-006, M6-023
+using System.Buffers.Binary;
 
 namespace Cozmo.Robot.Animation.Wwise;
 
@@ -472,5 +473,249 @@ public sealed class WwiseEventRuntime
     private sealed class PlayingEvent
     {
         public int Outstanding;
+    }
+}
+
+// =====================================================================================================
+// M6-023: the app audio-input dispatch
+//
+// Unity PostAudioEvent -> AudioUnityInput -> AudioMuxInput -> AudioMultiplexer ->
+// AudioEngineController::PostAudioEvent -> the M6-006 Wwise PostEvent. The whole path is source-backed
+// (rows A1-A5 on the Unity side, B1-B6 on the native side); the Wwise core it reaches is
+// WwiseEventRuntime above, so this stays the production control path.
+//
+// Explicitly not settled by the frozen rows, and therefore not invented here:
+// <list type="bullet">
+// <item><b>The callback context's first word.</b> B5 says AudioMultiplexer::ProcessMessage builds a
+// context when callbackId != 0, and 0x008DED46/0x008DED4C store 0xff as its first word (0x008DED48 stores
+// 0, the queued flag). The app path therefore supplies 0xff by default; a caller may still override the
+// bits explicitly for a context built another way.</item>
+// <item><b>Carrying the Wwise callback/cookie and the flags.</b> B6 passes callback 0x008D8D41, cookie ctx
+// and the computed flags into the core PostEvent. WwiseEventRuntime.PostEvent has no callback and no flags
+// seam (its third argument is <c>targetPlayingId</c>), so the callback id and the flags are recorded but
+// not delivered; delivering them is a later M6-006 wiring step.</item>
+// <item><b>The app-side callers.</b> A1's PlaySound.Play/Update and A2's GameAudioClient.PostAudioEvent
+// are not modelled; WwiseAppAudioClient starts at A3's UnityAudioClient.PostEvent.</item>
+// </list>
+// =====================================================================================================
+
+/// <summary>
+/// The app's callback request (Unity <c>AudioCallbackFlag</c>, row A3). The app sends a callback id only
+/// when the flag is not <see cref="EventNone"/>.
+/// </summary>
+[Flags]
+public enum WwiseAudioCallbackFlag : byte
+{
+    EventNone = 0,
+    EventDuration = 1,
+    EventMarker = 2,
+    EventComplete = 4,
+    EventAll = 7,
+    EventError = 255,
+}
+
+/// <summary>The <c>MessageGameToEngine</c> tags AudioUnityInput's ctor subscribes to (rows A5, B1): 1..6.</summary>
+public enum WwiseGameToEngineTag : ushort
+{
+    PostAudioEvent = 1,
+    StopAllAudioEvents = 2,
+    PostAudioGameState = 3,
+    PostAudioSwitchState = 4,
+    PostAudioParameter = 5,
+    PostAudioMusicState = 6,
+}
+
+/// <summary>The <c>MessageAudioClient</c> union tag (row A4): tag 0 is PostAudioEvent.</summary>
+public enum WwiseAudioClientTag : byte
+{
+    PostAudioEvent = 0,
+}
+
+/// <summary>
+/// The PostAudioEvent wire message (row A4): <c>u32 audioEvent, u32 gameObject, u16 callbackId</c>,
+/// <c>Size = 10</c>. Little-endian, the platform's order.
+/// </summary>
+public readonly record struct WwisePostAudioEvent(uint AudioEvent, uint GameObject, ushort CallbackId)
+{
+    /// <summary>The message's wire size (A4: <c>Size = 10</c>).</summary>
+    public const int Size = 10;
+
+    /// <summary>Reads the ten-byte body. A shorter span is refused rather than padded.</summary>
+    public static WwisePostAudioEvent Read(ReadOnlySpan<byte> bytes)
+    {
+        if (bytes.Length < Size)
+            throw new InvalidDataException($"PostAudioEvent is {Size} bytes, not {bytes.Length}");
+        return new WwisePostAudioEvent(
+            BinaryPrimitives.ReadUInt32LittleEndian(bytes),
+            BinaryPrimitives.ReadUInt32LittleEndian(bytes.Slice(4, 4)),
+            BinaryPrimitives.ReadUInt16LittleEndian(bytes.Slice(8, 2)));
+    }
+
+    /// <summary>Writes the ten-byte body in the row's field order (A4).</summary>
+    public void Write(Span<byte> bytes)
+    {
+        if (bytes.Length < Size)
+            throw new ArgumentException($"PostAudioEvent needs {Size} bytes, not {bytes.Length}", nameof(bytes));
+        BinaryPrimitives.WriteUInt32LittleEndian(bytes, AudioEvent);
+        BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(4, 4), GameObject);
+        BinaryPrimitives.WriteUInt16LittleEndian(bytes.Slice(8, 2), CallbackId);
+    }
+
+    /// <summary>The ten-byte body, for a caller that has nowhere to write it.</summary>
+    public byte[] ToBytes()
+    {
+        var bytes = new byte[Size];
+        Write(bytes);
+        return bytes;
+    }
+}
+
+/// <summary>
+/// The Unity side of the dispatch (rows A1-A3): the app's own play-id counter, which is separate from
+/// Wwise's, and the callback-id rule.
+/// </summary>
+public sealed class WwiseAppAudioClient
+{
+    private ushort _previousPlayId;
+
+    /// <param name="previousPlayId">
+    /// The counter's starting value. The field defaults to 0 (A3), which makes the first allocated id 1.
+    /// </param>
+    public WwiseAppAudioClient(ushort previousPlayId = 0) => _previousPlayId = previousPlayId;
+
+    /// <summary>The last id <see cref="AllocatePlayId"/> returned, or the seed before the first call.</summary>
+    public ushort PreviousPlayId => _previousPlayId;
+
+    /// <summary>
+    /// <c>_GetPlayId</c> (row A3): increment, and if the increment wraps to 0, increment again so 0 is
+    /// never handed out.
+    /// </summary>
+    public ushort AllocatePlayId()
+    {
+        _previousPlayId++;
+        if (_previousPlayId == 0) _previousPlayId++;
+        return _previousPlayId;
+    }
+
+    /// <summary>
+    /// <c>UnityAudioClient.PostEvent</c> (rows A2-A3): allocate the app play id, set the callback id to it
+    /// only when the flag is not <see cref="WwiseAudioCallbackFlag.EventNone"/>, and build the wire
+    /// message. The app play id is the app's counter; it is not Wwise's playing id.
+    /// </summary>
+    public WwisePostAudioEvent PostEvent(uint audioEvent, uint gameObject,
+                                         WwiseAudioCallbackFlag callbackFlag = WwiseAudioCallbackFlag.EventNone)
+    {
+        ushort playId = AllocatePlayId();
+        ushort callbackId = callbackFlag != WwiseAudioCallbackFlag.EventNone ? playId : (ushort)0;
+        return new WwisePostAudioEvent(audioEvent, gameObject, callbackId);
+    }
+}
+
+/// <summary>
+/// The callback context AudioMultiplexer::ProcessMessage builds when callbackId != 0 (row B5). Its first
+/// word is 0xff (0x008DED46/0x008DED4C), with 0 at +0x38 (queued, 0x008DED48); <see cref="CallbackId"/> is
+/// the cookie the row records. A null context is the callbackId == 0 branch (0x008D8CEC), where the Wwise
+/// PostEvent flags are 0 (0x008D8D30), not the formula.
+/// </summary>
+public readonly record struct WwiseAudioCallbackContext(ushort CallbackId, byte ContextBits)
+{
+    /// <summary>
+    /// The Wwise PostEvent flags for a non-null context (row B6):
+    /// <c>1 | (ctx&amp;2)&lt;&lt;1 | (ctx&amp;1)&lt;&lt;3</c>. Bit 0 (EndOfEvent) is always set; the
+    /// context's bit 0 becomes flag bit 3 and its bit 1 becomes flag bit 2.
+    /// </summary>
+    public static byte PostEventFlagsFor(byte contextBits) =>
+        (byte)(1 | ((contextBits & 2) << 1) | ((contextBits & 1) << 3));
+
+    /// <summary>
+    /// The flags the native wrapper passes for a context, or 0 when there is none. FUN_008D8CE4 tests the
+    /// context at 0x008D8CEC and its null branch sets the flags to 0 at 0x008D8D30; only the non-null
+    /// branch runs the formula. This keeps a null context from picking up
+    /// <see cref="PostEventFlagsFor(byte)"/>'s always-set bit 0.
+    /// </summary>
+    public static byte PostEventFlagsFor(WwiseAudioCallbackContext? context) =>
+        context is { } c ? c.PostEventFlags : (byte)0;
+
+    /// <summary>This context's flags, from its own low bits.</summary>
+    public byte PostEventFlags => PostEventFlagsFor(ContextBits);
+}
+
+/// <summary>What the engine's audio-input dispatch did with one envelope.</summary>
+public enum WwiseAudioInputOutcome
+{
+    /// <summary>Envelope tag 1 (PostAudioEvent): parsed and routed to <see cref="WwiseEventRuntime.PostEvent"/>.</summary>
+    Posted,
+    /// <summary>Envelope tags 2..6 are subscribed (row B1) but are other message types, not handled by M6-023.</summary>
+    SubscribedNotHandled,
+    /// <summary>The envelope tag is outside the subscribed 1..6 set.</summary>
+    NotSubscribed,
+}
+
+/// <summary>One dispatch result: the outcome, the envelope tag, the core's playing id and the context.</summary>
+public readonly record struct WwiseAudioInputResult(
+    WwiseAudioInputOutcome Outcome, ushort EnvelopeTag, uint PlayingId, ushort CallbackId,
+    WwiseAudioCallbackContext? Context, byte PostEventFlags);
+
+/// <summary>
+/// The app audio-input dispatch (M6-023, rows B1-B6): AudioUnityInput's subscription and tag switch, then
+/// AudioMuxInput::HandleMessage -> AudioMultiplexer::ProcessMessage -> AudioEngineController::PostAudioEvent
+/// -> the M6-006 Wwise PostEvent. This is the production control path; it queues on
+/// <see cref="WwiseEventRuntime"/> and returns the core's playing id, exactly as 0x009A6704 does.
+/// </summary>
+public sealed class WwiseAudioInputDispatch
+{
+    private readonly WwiseEventRuntime _runtime;
+
+    public WwiseAudioInputDispatch(WwiseEventRuntime runtime)
+        => _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+
+    /// <summary>The envelope tags AudioUnityInput's ctor subscribes to (row B1): 1..6.</summary>
+    public static IReadOnlyList<WwiseGameToEngineTag> SubscribedTags { get; } = new[]
+    {
+        WwiseGameToEngineTag.PostAudioEvent,
+        WwiseGameToEngineTag.StopAllAudioEvents,
+        WwiseGameToEngineTag.PostAudioGameState,
+        WwiseGameToEngineTag.PostAudioSwitchState,
+        WwiseGameToEngineTag.PostAudioParameter,
+        WwiseGameToEngineTag.PostAudioMusicState,
+    };
+
+    /// <summary>
+    /// <c>AudioUnityInput::HandleGameEvents</c> (row B2): switch on the envelope's u16 tag. Case 1 parses
+    /// the ten-byte PostAudioEvent, builds the callback context when callbackId != 0 (row B5), computes the
+    /// PostEvent flags (row B6) and routes to <see cref="WwiseEventRuntime.PostEvent"/>; cases 2..6 are the
+    /// other subscribed types, recognised but not handled here; anything else is not subscribed.
+    /// </summary>
+    /// <param name="envelopeTag">The <c>MessageGameToEngine</c> tag (row A5).</param>
+    /// <param name="body">The envelope body; for tag 1 it is the ten-byte PostAudioEvent.</param>
+    /// <param name="callbackContextBits">
+    /// The callback context's low bits. The app path stores 0xff as the context's first word
+    /// (0x008DED46/0x008DED4C), so that is the default; a caller may override it for a context built
+    /// another way.
+    /// </param>
+    public WwiseAudioInputResult HandleGameEvents(ushort envelopeTag, ReadOnlySpan<byte> body,
+                                                  byte callbackContextBits = 0xff)
+    {
+        if (envelopeTag is < (ushort)WwiseGameToEngineTag.PostAudioEvent
+                          or > (ushort)WwiseGameToEngineTag.PostAudioMusicState)
+            return new WwiseAudioInputResult(WwiseAudioInputOutcome.NotSubscribed, envelopeTag, 0, 0, null, 0);
+
+        if (envelopeTag != (ushort)WwiseGameToEngineTag.PostAudioEvent)
+            return new WwiseAudioInputResult(WwiseAudioInputOutcome.SubscribedNotHandled, envelopeTag, 0, 0, null, 0);
+
+        var ev = WwisePostAudioEvent.Read(body);                                       // row A4/B2
+        WwiseAudioCallbackContext? ctx = ev.CallbackId != 0                            // row B5
+            ? new WwiseAudioCallbackContext(ev.CallbackId, callbackContextBits)
+            : null;
+        // FUN_008D8CE4: the null-context branch sets the flags to 0 (0x008D8D30); only a non-null context
+        // runs the formula (row B6). The flags are computed but not delivered (M6-006 has no flags seam).
+        byte flags = WwiseAudioCallbackContext.PostEventFlagsFor(ctx);                  // row B6 / 0x008D8CEC
+
+        // AudioMuxInput::HandleMessage(PostAudioEvent) -> AudioMultiplexer::ProcessMessage ->
+        // AudioEngineController::PostAudioEvent -> Wwise PostEvent. ExecuteEvent's fourth argument
+        // (WwiseEventRuntime.PostEvent's targetPlayingId) is not set by this path, so it is 0.
+        uint playingId = _runtime.PostEvent(ev.AudioEvent, ev.GameObject, 0);           // M6-006
+        return new WwiseAudioInputResult(WwiseAudioInputOutcome.Posted, envelopeTag, playingId,
+                                         ev.CallbackId, ctx, flags);
     }
 }

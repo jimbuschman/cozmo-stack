@@ -1,7 +1,26 @@
+// fidelity: M6-024
 using System.IO.Compression;
 using System.Xml.Linq;
 
 namespace Cozmo.Robot.Animation.Wwise;
+
+/// <summary>
+/// The recovered bank and scene set (M6-024, row F1). <c>CozmoAudioController</c>'s ctor builds exactly
+/// this ordered list and the scene <see cref="SceneName"/>, and the engine loads the banks at construction
+/// from the OBB <c>AudioAssets.zip</c> (row F3): the Unity app has no bank-load call, so the scene set is
+/// the production set rather than a sweep of every <c>.bnk</c> present.
+/// </summary>
+public static class WwiseAudioScene
+{
+    /// <summary>The scene the ctor registers and loads (row F1): <c>InitScene</c>.</summary>
+    public const string SceneName = "InitScene";
+
+    /// <summary>The six banks in the ctor's order (row F1).</summary>
+    public static readonly IReadOnlyList<string> BankNames = new[]
+    {
+        "Init.bnk", "Music.bnk", "UI.bnk", "SFX.bnk", "Cozmo.bnk", "Dev_Debug.bnk",
+    };
+}
 
 /// <summary>One media file an event can play, with everything known about it before it is decoded.</summary>
 public sealed record WwiseMediaRef(uint MediaId, string Source, string Bank)
@@ -149,8 +168,23 @@ public sealed class WwiseSoundLibrary : IDisposable
     /// because the localised bank sits in its own subdirectory. The shipped <c>AudioAssets.zip</c> holds
     /// the banks and their text files as well as the media, so a directory holding only that archive is
     /// a complete library; loose banks, when present, take precedence over the archive's copies.
+    ///
+    /// When the recovered scene's six banks are present (the production OBB), this keeps exactly those and
+    /// puts them in the recovered order (M6-024, row F1); a plain directory that holds none of them keeps
+    /// the sweep, so tests that build their own banks still work.
     /// </summary>
     public static WwiseSoundLibrary Load(params string[] directories)
+        => LoadCore(directories, sceneOnly: false);
+
+    /// <summary>
+    /// The production scene loader (M6-024, rows F1-F3): loads exactly the recovered scene's six banks, in
+    /// the recovered order, from the loose files or the OBB <c>AudioAssets.zip</c> the <c>AddZipFiles</c>
+    /// feed points at. Media, names and definition text load the same way as <see cref="Load"/>.
+    /// </summary>
+    public static WwiseSoundLibrary LoadScene(params string[] directories)
+        => LoadCore(directories, sceneOnly: true);
+
+    private static WwiseSoundLibrary LoadCore(string[] directories, bool sceneOnly)
     {
         var lib = new WwiseSoundLibrary();
         foreach (var dir in directories)
@@ -171,8 +205,34 @@ public sealed class WwiseSoundLibrary : IDisposable
                 if (uint.TryParse(Path.GetFileNameWithoutExtension(wem), out var id))
                     lib._mediaFiles[id] = wem;
         }
+        lib.ApplySceneBankOrder(sceneOnly);
         lib.BuildTree();
         return lib;
+    }
+
+    /// <summary>
+    /// Keeps the recovered scene's banks, in the recovered order (M6-024, row F1), dropping any other
+    /// bank. <paramref name="sceneOnly"/> forces that even when the six are not all present; otherwise it
+    /// applies only when they are, so the general loader still works on a plain test directory. That
+    /// all-present condition is a test-compatibility fallback, not a source rule: the native ctor builds
+    /// the six-bank list unconditionally (0x00592BB0).
+    /// </summary>
+    private void ApplySceneBankOrder(bool sceneOnly)
+    {
+        bool allPresent = WwiseAudioScene.BankNames.All(
+            n => _banks.Any(b => string.Equals(b.Name, n, StringComparison.OrdinalIgnoreCase)));
+        if (!sceneOnly && !allPresent) return;
+
+        var byName = new Dictionary<string, WwiseBank>(StringComparer.OrdinalIgnoreCase);
+        foreach (var b in _banks) byName.TryAdd(b.Name, b);
+        _banks.Clear();
+        _objects.Clear();
+        foreach (var name in WwiseAudioScene.BankNames)
+            if (byName.TryGetValue(name, out var b))
+            {
+                _banks.Add(b);
+                foreach (var (id, o) in b.Objects) _objects[id] = o;
+            }
     }
 
     private void AddBank(WwiseBank bank)

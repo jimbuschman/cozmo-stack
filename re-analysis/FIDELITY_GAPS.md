@@ -659,19 +659,19 @@ Each of these is a question already answered. The original's behaviour is establ
 
 * where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseEventRuntime.cs`
 * effect: app-posted SFX, UI and VO events do not reach the engine
-* rests on: read from the Unity code and libcozmoEngine.so in re-analysis/research/20260928-I-M6b-gap3-extraction.md (rows A1-A5, B1-B6); frozen as correction C11
+* rests on: read from the Unity code and libcozmoEngine.so in re-analysis/research/20260928-I-M6b-gap3-extraction.md (rows A1-A5, B1-B6); frozen as correction C11; the dispatch, the app play-id allocator and the flags formula are built in WwiseEventRuntime.cs and checked by WwiseAppAudioInputTests
 * best authority: unity/ (decompiled Unity C#) and libcozmoEngine.so 3.4.0-1204
 * evidence: Unity: unity/scripts/csharp/Anki.Cozmo.Audio/PlaySound.cs:29,72-82; GameAudioClient.cs:17-45; UnityAudioClient.cs:224-237,279-287; Anki.AudioEngine.Multiplexer/PostAudioEvent.cs:89-107; Anki.Cozmo.ExternalInterface/MessageGameToEngine.cs:14-16; native: AudioUnityInput ctor 0x00591590; HandleGameEvents 0x005919B8; vtable 0x1023CA8 reloc 0x1023CBC -> AudioMuxInput::HandleMessage 0x008DFC4C; AudioMultiplexer::ProcessMessage 0x008DED14; AudioEngineController::PostAudioEvent 0x008D1F20 -> 0x008D8CE4 -> Wwise PostEvent 0x009A6704
-* outstanding: not built and not wired. The Wwise core PostEvent it reaches is M6-006.
+* outstanding: the dispatch is built (WwiseAppAudioInputTests) but it is not wired into the live app/engine path; the Wwise core PostEvent it reaches is M6-006. The computed PostEvent flags are not delivered to the core: WwiseEventRuntime.PostEvent has no flags seam (its third argument is targetPlayingId) and no callback/cookie seam either, so the callback id and the flags are recorded but not passed; delivering them is a later M6-006 wiring step. The callback context's first word is read as 0xff (0x008DED46/0x008DED4C, with 0 at +0x38 queued at 0x008DED48), so the app-path flags are 1|4|8 = 13; the null-context branch sets the flags to 0 (0x008D8CEC -> 0x008D8D30). A1's PlaySound.Play/Update and A2's GameAudioClient.PostAudioEvent are not modelled (the app side starts at A3).
 
 **M6-024 — Bank and scene loading call sites: the CozmoAudioController six-bank list and InitScene, LoadAudioScene/LoadSoundbank, AddZipFiles** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSoundLibrary.cs`
 * effect: the engine loads a different bank/scene set
-* rests on: read from libcozmoEngine.so in re-analysis/research/20260928-I-M6b-gap3-extraction.md (rows F1-F3); frozen as correction C11
+* rests on: read from libcozmoEngine.so in re-analysis/research/20260928-I-M6b-gap3-extraction.md (rows F1-F3); frozen as correction C11; the six-bank order, InitScene and the scene loader are built in WwiseSoundLibrary.cs and checked by WwiseAudioSceneTests
 * best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
 * evidence: CozmoAudioController ctor 0x00592BB0; InitializeAudioEngine 0x008D1D1E; RegisterAudioScene 0x005935E2; LoadAudioScene 0x005935EA; banks Init.bnk/Music.bnk/UI.bnk/SFX.bnk/Cozmo.bnk/Dev_Debug.bnk and scene InitScene; LoadAudioScene 0x008D2EE8 -> LoadSoundbank 0x008D2FE4; AddZipFiles 0x008D1E3E feeds the OBB archives
-* outstanding: not built and not wired. Bank parsing is M6-001.
+* outstanding: the six-bank list, InitScene and the scene loader (WwiseSoundLibrary.LoadScene, and Load keeps the scene set when the six are present) are built (WwiseAudioSceneTests), but the loader is not wired into the live engine construction path. Load's 'apply the scene order only when all six banks are present' is a test-compatibility fallback, not a source rule: the native ctor builds the six-bank list unconditionally (0x00592BB0). InitializeAudioEngine and SetupPlugins are not this record's path; the LoadAudioScene/LoadSoundbank/AddZipFiles internals are not read (the call sites only). Bank parsing is M6-001.
 
 ### M7-behaviour — Idle, mood and reactions
 

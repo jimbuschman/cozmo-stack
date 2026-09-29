@@ -1686,6 +1686,20 @@ V7-l's phrase "ret 1 -> `voice->vt+0x58` + `0xA4C584`" is corrected accordingly:
 `voice->vt+0x58` call happens for its side effect, but the bit passed to `0xA4C584` is
 the low bit of the saved `bus->vt+0x3C` return.
 
+## Correction C20 (manager, 2026-09-29): the M6-023 PostEvent flags
+
+The B-M6b-3 verifier read the M6-023 dispatch's flags path in the `.so` (Thumb) and
+found C11's B5/B6 rows did not settle two values. The instructions were re-read.
+
+| # | C11 said | The source says | citation |
+|---|---|---|---|
+| C20.1 | B6: the flags are `1 \| (ctx&2)<<1 \| (ctx&1)<<3`, unconditionally | the formula is the **non-null-context** branch only: `0x008D8CEC cbz r3,0x8D8D20` takes the null-context path, whose `0x8D8D30 movs r2,#0` sets the flags to **0** before `0x008D8D32 blx 0x9A6704`. The formula itself is `0x008D8CF8 movs r3,#4`; `0x008D8CFE and.w r3,r3,r0,lsl#1`; `0x008D8D06 bfi r3,r0,#3,#1`; `0x008D8D0C orr r3,r3,#1`. | `0x008D8CE4..0x008D8D38` |
+| C20.2 | B5: the callback context's contents are unread | `AudioMultiplexer::ProcessMessage` builds the context only when `callbackId != 0` (`0x008DED32 ldrh r5,[r4,#8]`; `0x008DED34 cbz r5,0x8DED7E`), and its **first word is `0xff`** (`0x008DED46 movs r1,#0xff`; `0x008DED4C str r1,[r6]`), with `[r6+0x38] = 0` (`0x008DED48 strb.w fp,[r6,#0x38]`, the queued flag A9). So the app path's flags are `1\|4\|8 = 13`. | `0x008DED14..0x008DED8E` |
+
+The computed flags are not yet delivered into the Wwise core: `WwiseEventRuntime.PostEvent`
+(M6-006) has no flags seam (its third argument is ExecuteEvent's `targetPlayingId`). M6-023's
+`unresolved` records that delivery, and the callback/cookie, as a later M6-006 wiring step.
+
 ## Appendix J: C11 gap-1 report (voice-engine residuals)
 
 Copied verbatim from `re-analysis/research/20260928-I-M6b-gap1-extraction.md`.
