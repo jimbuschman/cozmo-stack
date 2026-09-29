@@ -15,6 +15,11 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     [ "$remote_ref" = "refs/heads/main" ] || continue
     [ "$local_sha" = "$zero" ] && continue          # a delete, not a push of commits
 
+    # origin/main moved since the last fetch: the push would be rejected anyway, so don't run the suite first.
+    if [ "$remote_sha" != "$zero" ] && ! git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+        echo "pre-push: REFUSED. origin/main has new commits. Run: git pull --rebase, then push again."
+        exit 1
+    fi
     if [ "$remote_sha" = "$zero" ]; then base=$(git rev-parse --verify -q origin/main || echo ""); else base=$remote_sha; fi
     if [ -n "$base" ]; then changed=$(git diff --name-only "$base" "$local_sha"); else changed=$(git ls-tree -r --name-only "$local_sha"); fi
 
