@@ -3,7 +3,8 @@ DONE 2026-09-28 23:40 -05:00
 ## Commits
 - `f1b6e65` B-M7: build M7-behaviour from its inventory; settle 14 records (verifier PASS, suite 1770/1770). (Rebased onto M14's push; FIDELITY_GAPS.md regenerated.)
 - `248bac9` B-M7: claim job.
-- this status commit.
+- `12e9f14` B-M7: DONE status.
+- `416b25e` status-file correction: first line is now `DONE ...` (the runner reads only line 1; the old `# B-M7 status` header made it re-invoke a finished job). No code or records changed.
 
 ## Records settled EXACT_SOURCE (14)
 M7-001 (AnimationTrigger 575, ReactionTrigger 21, plus new `BehaviorClass.g.cs` 79 and `BehaviorID.g.cs` 179), M7-002 (reaction map loader + map-driven binding; 573/40 animation pairs), M7-003 (ReactToImpact FallingStopped/intensity/5 s wait/trigger 0x1a0/60 s), M7-004 (30 idle tunables), M7-005 (blink table; title now says seven-frame table, eight-keyframe track), M7-006 (eye shift/LookAt), M7-007 (persistent eye dart), M7-008 (60 ms idle timers), M7-009 (head/lift live keyframes; head uses the shipped 57.295780f constant), M7-010 (body shuffle + turn eye shift; zero speed is positive), M7-011 (reaction cooldowns), M7-013 (mood clamp/decay/arithmetic incl. sign-flip clock reset), M7-016 (face layer stack), M7-017 (live-animation wire interface).
