@@ -2,10 +2,10 @@
   "subsystem": "M8-framework",
   "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M8-framework.md",
-  "inventory_sha256": "dac572ab1698a3bb05fd278dd5c6ba4d4c77abba991f35421e3b042fd9ffe466",
+  "inventory_sha256": "3e4537ce16d3bf9926bbb1f27fd8da53d0086853a3541c3550fc79e933ed04f2",
   "records": {
     "M8-001": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The IBehavior lifecycle: constructor fields, Init, Update, Stop, StopActing, Resume, IsRunnable and IsRunnableScored",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -25,7 +25,7 @@
       "hardware_required": false
     },
     "M8-002": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The repetition penalty graph and its suppression window",
       "authority": "libcozmoEngine.so 3.4.0-1204 and the shipped mood_config.json",
       "evidence": [
@@ -40,7 +40,7 @@
       "hardware_required": false
     },
     "M8-003": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Scored selection: emotion scorers or the flat score, times the repetition and running penalties",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -69,7 +69,7 @@
       "hardware_required": false
     },
     "M8-005": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "PlayAnim plays every trigger it lists, in order, num_loops times",
       "authority": "BehaviorPlayAnimSequence::StartPlayingAnimations 0x005C0158 and BehaviorPlayAnimSequence::StartSequenceLoop 0x005C0294, read",
       "evidence": [
@@ -82,7 +82,7 @@
       "hardware_required": false
     },
     "M8-006": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The wants-to-run strategy types, and what each one tests",
       "authority": "WantsToRunStrategyFactory::CreateWantsToRunStrategy 0x00614710, StrategyInNeedsBracket::WantsToRunInternal 0x006141A0 and StrategyExpressNeedsTransition::WantsToRunInternal 0x006136D8, read",
       "evidence": [
@@ -95,7 +95,7 @@
       "hardware_required": false
     },
     "M8-007": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "An action's track mask is a lock, taken while it runs",
       "authority": "IActionRunner::Update 0x00540370, MovementComponent::LockTracks 0x00640098 and MovementComponent::UnlockTracks 0x0063FE5C, read",
       "evidence": [
@@ -120,7 +120,7 @@
       "hardware_required": false
     },
     "M8-009": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Behaviour scope undo order: the engine releases in a fixed order (reaction locks, idle, motion profile, track locks, light patterns)",
       "authority": "IBehavior::Stop 0x005bd08c, read",
       "evidence": [
@@ -158,7 +158,7 @@
       "hardware_required": false
     },
     "M8-012": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "BehaviorManager::Update's tick order, behaviour switching, finishing and the reaction gate",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [

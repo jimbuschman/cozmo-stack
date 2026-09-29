@@ -2,7 +2,7 @@
   "subsystem": "M7-behaviour",
   "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "4473dcf5626bcd86d788c4311b1c6b150123512b88efc4f8f6a75b774fce728a",
+  "inventory_sha256": "b5cd59577e442d3c24fee37c149bec19ea129c063f9ddf278836e29da1d2275b",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -18,7 +18,7 @@
       "hardware_required": false
     },
     "M7-002": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The shipped animation/reaction maps, behaviour configs and activity tree",
       "authority": "shipped OBB configuration plus libcozmoEngine.so loaders",
       "evidence": [
@@ -33,7 +33,7 @@
       "hardware_required": false
     },
     "M7-003": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "ReactToImpact FallingStopped, intensity, recalibration and animation state machine",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -57,7 +57,7 @@
       "hardware_required": false
     },
     "M7-005": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Blink is a fixed seven-frame squash table emitted as an eight-keyframe track",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -71,7 +71,7 @@
       "hardware_required": false
     },
     "M7-006": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Eye shift moves the whole face through LookAt with the engine bounds",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -82,7 +82,7 @@
       "hardware_required": false
     },
     "M7-007": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The eye dart interpolates to a persistent gaze and does not fade to centre",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -95,7 +95,7 @@
       "hardware_required": false
     },
     "M7-008": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Idle timers are integer milliseconds advanced by the engine's 60 ms tick",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -108,7 +108,7 @@
       "hardware_required": false
     },
     "M7-009": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Idle head and lift are keyframes of the live animation",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -122,7 +122,7 @@
       "hardware_required": false
     },
     "M7-010": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Idle body shuffle and its paired turn eye shift",
       "authority": "AnimationStreamer::UpdateLiveAnimation 0x0057d5f8, read",
       "evidence": [
@@ -160,7 +160,7 @@
       "hardware_required": false
     },
     "M7-013": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Mood clamp, graph evaluation and decay-clock restart arithmetic",
       "authority": "libcozmoEngine.so plus shipped mood graphs",
       "evidence": [
@@ -198,7 +198,7 @@
       "hardware_required": false
     },
     "M7-016": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The idle face composes a stack of named persistent and transient layers",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -210,7 +210,7 @@
       "hardware_required": false
     },
     "M7-017": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The exact live-animation wire lifecycle used by idle behavior",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [

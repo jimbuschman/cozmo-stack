@@ -3,7 +3,22 @@
 **Agent:** the next free Sonnet worker in Claude Code (operator, 2026-09-29: saving OpenRouter credits), as the manager of this job. Use the `.claude/agents` subagents for the roles, and have the operator push each commit. **Type:** round 3, second pass. Follow [R.md](R.md).
 **Needs:** R-BEH DONE. If it isn't, set `WAITING R-BEH` and end.
 
-**Subsystems:** M7-behaviour, M8-framework. **Start from R-BEH's status** (`status/R-BEH.md`), not from a new triage.
+**First, the audit (2026-09-29):** an independent audit found that 19 of M7/M8's 22 settled records don't hold
+(`re-analysis/research/20260929-audit-M7-M8.md`). They're back to IMPLEMENTATION_GAP, each with its defect in
+`unresolved`. **Rebuild those first, before anything else.** The worst are:
+- the behaviour vtable slots are mislabelled (M8-001: vptr+0x48 is InitInternal), which inverts the running flag;
+- `IdleBehavior` is a second, non-production copy of the live idle, and it disables the streamer's own port
+  (M7-005, M7-008..M7-010, M7-016, M7-017). The rebuild routes the idle through the streamer's gated
+  `UpdateLiveAnimation` port (M5-030) and ProceduralLive on the idle stack, as the engine does. Retire
+  IdleBehavior's own generator; don't repair it;
+- ReactToImpact is always runnable (M7-003);
+- PlayAnim's action parameters, and locked tracks failing the action (M8-005, M8-007);
+- BehaviorManager's tick order and the phantom 0x16 behaviour (M8-012).
+
+Several existing tests assert the contradicted behaviour (the report names them). Fix them from the source; don't
+keep them. Check the report's rows with the verifier before you build on them, as with any extractor report.
+
+**Subsystems:** M7-behaviour, M8-framework. **Then start from R-BEH's status** (`status/R-BEH.md`), not from a new triage.
 It lists every record left open and what each needs:
 - M7-012, M7-014, M7-015, M7-018, M7-019, M7-020, M7-021;
 - M8-011, M8-013, M8-014;

@@ -2362,7 +2362,7 @@
       "subsystem": "M7-behaviour",
       "title": "The shipped animation/reaction maps, behaviour configs and activity tree",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/AnimationTriggerMap.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "shipped OBB configuration plus libcozmoEngine.so loaders",
       "evidence": [
         "re-analysis/obb/assets/cozmo_resources/assets/animationGroupMaps/AnimationTriggerMap.json (573 pairs)",
@@ -2373,7 +2373,7 @@
         "178 shipped behaviour configs enumerated in re-analysis/inventory/M7-behaviour.md Appendix C"
       ],
       "effect": "a trigger resolves to the wrong animation or reaction, or the activity tree selects the wrong configured behaviour",
-      "unresolved": "",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the no-map fallback registers every reaction (the engine registers none, 0x520c2e..0x520c8a); the map's parameters are parsed but unused (literals stand in); no counterpart of RobotDataLoader::LoadBehaviors 0x005206bc.",
       "hardware_required": false,
       "live_path": true,
       "test": "TriggerTests",
@@ -2384,7 +2384,7 @@
       "subsystem": "M7-behaviour",
       "title": "ReactToImpact FallingStopped, intensity, recalibration and animation state machine",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ReactionTable.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "BehaviorReactToImpact::InitInternal 0x006061f8",
@@ -2394,7 +2394,7 @@
         "5.0 second wait literal 0x40a00000 in InitInternal"
       ],
       "effect": "impact reactions gate, calibrate, time out or animate differently",
-      "unresolved": "",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. ReactToImpact is always runnable (IsRunnableInternal 0x00606486 returns 1) but the stack gates it on the impact; the wait predicate is +0x11d && +0x11c (0x6064c6..0x6064dc) and the wait action is always built; the FallingStopped store is unconditional (0x60643c..0x60644e); FallingStarted and StopInternal clear the flags (0x606426, 0x6063fc).",
       "hardware_required": false,
       "live_path": true,
       "test": "CorrectionTests",
@@ -2422,7 +2422,7 @@
       "subsystem": "M7-behaviour",
       "title": "Blink is a fixed seven-frame squash table emitted as an eight-keyframe track",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "ProceduralFaceDrawer::GetNextBlinkFrame 0x00585f18",
@@ -2432,7 +2432,7 @@
         "ProceduralFace::Combine 0x005846a8"
       ],
       "effect": "blink shape, timing or composition differs",
-      "unresolved": "",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. IdleBehavior is not on the production path (only Cozmo.Conformance builds it); it delivers the face outside the stream on the caller's clock (the engine applies layers per streamed frame, 0x58e644/0x58e720); it runs a second blink generator beside M5's KeepFaceAlive; the scanline toggle (0x5861c4) and the RandIntInRange(7500,30000) fallback (0x58d506..0x58d544) are missing.",
       "hardware_required": false,
       "live_path": true,
       "test": "IdleFaceTests",
@@ -2443,14 +2443,14 @@
       "subsystem": "M7-behaviour",
       "title": "Eye shift moves the whole face through LookAt with the engine bounds",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "FaceLayerManager::GenerateEyeShift 0x0058d100",
         "ProceduralFace::LookAt 0x00584158"
       ],
       "effect": "idle gaze displacement or clipping differs",
-      "unresolved": "",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. SetFacePosition's clamp to the eye bounding box (0x583b20..0x583bf8, called at 0x584168) is omitted, justified by an uncomputed assumption; the engine clamps against the layer's default face (0x58d18e).",
       "hardware_required": false,
       "live_path": true,
       "test": "IdleFaceTests",
@@ -2461,7 +2461,7 @@
       "subsystem": "M7-behaviour",
       "title": "The eye dart interpolates to a persistent gaze and does not fade to centre",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "ITrackLayerManager::ApplyLayersToFrame 0x0058e644",
@@ -2470,7 +2470,7 @@
         "KeepFaceAlive persistent dart call 0x0058d3e2"
       ],
       "effect": "the gaze returns early, snaps, or removes the wrong layer",
-      "unresolved": "",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the first dart shows nothing for the drawn duration and then snaps (0x58d220, 0x58cd9e..0x58ce22); the stack ramps from identity; the ramp runs on the layer clock, not the wall clock (0x58e688, 0x58e71a..0x58e724).",
       "hardware_required": false,
       "live_path": true,
       "test": "IdleFaceTests, KeepAliveTests",
@@ -2481,7 +2481,7 @@
       "subsystem": "M7-behaviour",
       "title": "Idle timers are integer milliseconds advanced by the engine's 60 ms tick",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "CozmoInstanceRunner::Run 0x0065b3a8 uses 0x03938700 ns",
@@ -2490,7 +2490,7 @@
         "idle clock increments at 0x0057d444"
       ],
       "effect": "idle actions fire at different times or are rescheduled when their track is busy",
-      "unresolved": "",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the idle-motion gates are missing: docking (robot+0x280 +4), in-position (MovementComponent +9/+0xb/+0xa), AreAnyTracksLocked and carrying (0x57d606..0x57d6b8); the 60 ms tick is synthesized from the wall clock, with a catch-up cap no source has; the +0x44 clock resets differ (0x57d444); tests circular.",
       "hardware_required": false,
       "live_path": true,
       "test": "KeepAliveTests",
@@ -2501,7 +2501,7 @@
       "subsystem": "M7-behaviour",
       "title": "Idle head and lift are keyframes of the live animation",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "head keyframe 0x0057d85c/append 0x0057d866; lift keyframe 0x0057d9c0/append 0x0057d9ca",
@@ -2511,7 +2511,7 @@
         "LiftHeightKeyFrame ctor 0x004f8f5c / GetStreamMessage 0x004f8f80 (animLiftHeight 0x94)"
       ],
       "effect": "idle head/lift uses different wire messages or variability",
-      "unresolved": "",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the same missing idle-motion gates as M7-008 (0x57d61c..0x57d6b8); the head/lift test never exercises IdleBehavior.",
       "hardware_required": false,
       "live_path": true,
       "test": "KeepAliveTests",
@@ -2522,7 +2522,7 @@
       "subsystem": "M7-behaviour",
       "title": "Idle body shuffle and its paired turn eye shift",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "AnimationStreamer::UpdateLiveAnimation 0x0057d5f8, read",
       "evidence": [
         "body decision and draws 0x0057d6cc..0x0057d8f4",
@@ -2532,7 +2532,7 @@
         "straight removal 0x0057d8d2"
       ],
       "effect": "the robot stays still or shuffles/looks with different values",
-      "unresolved": "",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the turn eye shift is a persistent layer (AddOrUpdateEyeShift 0x64f41a/0x64f472, removed only by RemoveEyeShift 0x57d8d2), not a 33 ms transient; shuffles fire and are dropped while a clip streams (the engine never reaches UpdateLiveAnimation then, 0x57cff6..0x57d000); tests assert the opposite.",
       "hardware_required": false,
       "live_path": true,
       "test": "KeepAliveTests",
@@ -2581,7 +2581,7 @@
       "subsystem": "M7-behaviour",
       "title": "Mood clamp, graph evaluation and decay-clock restart arithmetic",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Mood.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so plus shipped mood graphs",
       "evidence": [
         "Emotion::Add 0x00679618",
@@ -2591,7 +2591,7 @@
         "mood_config.json decayGraphs"
       ],
       "effect": "emotion magnitude or decay differs at clamps, graph edges or clock resets",
-      "unresolved": "",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. EvaluateY returns the left node's y when the gap is <= 1e-5 (0x804c0c..0x804c3c), not the right one at <= 0; MoodState.Trigger decays before adding, which TriggerEmotionEvent 0x67b85c never does; double in place of float.",
       "hardware_required": false,
       "live_path": true,
       "test": "MoodTests",
@@ -2640,7 +2640,7 @@
       "subsystem": "M7-behaviour",
       "title": "The idle face composes a stack of named persistent and transient layers",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "ITrackLayerManager::ApplyLayersToFrame 0x0058e644",
@@ -2648,7 +2648,7 @@
         "KeepFaceAlive dart 0x0058d3e2 and blink 0x0058d4be"
       ],
       "effect": "simultaneous blink, dart and turn layers overwrite rather than compose",
-      "unresolved": "",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the composed face goes out as a direct FaceImage on the caller's clock, not per streamed frame (0x58e70a..0x58e724); the keep-alive runs twice (M5's and IdleBehavior's); blinks while a clip streams (the engine gates KeepFaceAlive on +0x38 == 0, 0x57cfb8..0x57cff2).",
       "hardware_required": false,
       "live_path": true,
       "test": "KeepAliveTests, IdleFaceTests",
@@ -5333,7 +5333,7 @@
       "subsystem": "M7-behaviour",
       "title": "The exact live-animation wire lifecycle used by idle behavior",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "AnimationStreamer::UpdateLiveAnimation 0x0057d5f8",
@@ -5344,7 +5344,7 @@
         "SendBufferedMessages 0x0057bf60"
       ],
       "effect": "idle keyframes open, frame, interleave or close differently on the wire",
-      "unresolved": "",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the entry into the live lifecycle is invented: StreamLive pushes ProceduralLive itself with an invented lock and disables the streamer's gated port (AnimationScheduler UpdateLiveAnimationLocked); the engine reaches the live path only with ProceduralLive already on top (0x57d064..0x57d080), on the +0x44 clock (0x57d000, 0x57d442..0x57d446).",
       "hardware_required": false,
       "live_path": true,
       "test": "AnimationStreamLifecycleTests.TheLiveIdleReInitsOnEveryUpdateOnceItsKeyframesAreConsumed",
@@ -7376,7 +7376,7 @@
       "subsystem": "M8-framework",
       "title": "The IBehavior lifecycle: constructor fields, Init, Update, Stop, StopActing, Resume, IsRunnable and IsRunnableScored",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "IBehavior::IBehavior 0x005bbc38 stores behaviourID at +0x3c, behaviourClass at +0x64, needsActionID at +0x68; zeroes +0x24/+0x28, the flat score at +0x100 and +0x104 (strd r8,r8,[r4,#0x100] 0x005bbd28); sets +0x108 = 0, +0x10c = 0x29 (invalid behaviour objective), and +0x110 = +0x111 = 1 (movw r0,#0x101 0x005bbd30, strh.w r0,[r4,#0x110] 0x005bbd34); constructs the repetition graph at +0xe8 and the running-penalty graph at +0xf4 (GraphEvaluator2d::GraphEvaluator2d 0x005bbd12/0x005bbd22); calls ReadFromJson 0x005bbd40 and ScoredConstructor 0x005bbe32.",
@@ -7393,7 +7393,7 @@
       ],
       "effect": "the behaviour never starts, stops, resumes or reports runnable the way the engine does",
       "provenance": "the original's IBehavior constructor and lifecycle functions, read at the addresses above",
-      "unresolved": "None",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. vptr+0x48 is InitInternal, not IsRunnableInternal (relocation 0x01026968): the running flag is inverted and InitInternal failure is never detected; StopActing's vptr+0x80 is ScoredActingStateChanged(false), which clears +0x104 (0x5bd35a -> 0x5bf046); Update's early return 2 precedes UpdateInternal (0x5bd074..0x5bd088); the TooManyResumes emotion event (0x5bcf68) is not triggered. Earlier note: None",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests"
@@ -7403,7 +7403,7 @@
       "subsystem": "M8-framework",
       "title": "The repetition penalty graph and its suppression window",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204 and the shipped mood_config.json",
       "evidence": [
         "config/engine/mood_config.json:88-99 ships defaultRepetitionPenalty with the nodes (0.0, 0.0) and (30.0, 1.0).",
@@ -7415,7 +7415,7 @@
       ],
       "effect": "a behaviour's score is penalised by the wrong curve, or not at all",
       "provenance": "the shipped config plus the code that reads and consumes it",
-      "unresolved": "None",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. a missing repetitionPenalty is a flat 1.0 (0x5bc55c..0x5bc566), not mood_config's default graph (used only by emotion events, 0x67befe..0x67bf0a); a stamp of 0 is not penalised (0x5beeee..0x5beef8); StopWithoutImmediateRepetitionPenalty calls Stop first (0x5beea4). Earlier note: None",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests"
@@ -7425,7 +7425,7 @@
       "subsystem": "M8-framework",
       "title": "Scored selection: emotion scorers or the flat score, times the repetition and running penalties",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "IBehavior::ReadFromScoredJson 0x005bc488 reads five keys, not four: \"emotionScorers\" into a MoodScorer at +0xdc, \"flatScore\" into the float at +0x100 (0x005bc4ca/0x005bc4e0), \"repetitionPenalty\" into the graph at +0xe8 (0x005bc4ee), \"considerThisHasRunForBehaviorObjective\" into a behaviour objective at +0x10c through BehaviorObjectiveFromString (call 0x005bc5a0), and \"runningPenalty\" into the graph at +0xf4 (string 0x005bc602; add.w r6,r4,#0xf4 0x005bc5f8; AddNode(0,1,true) 0x005bc678).",
@@ -7439,7 +7439,7 @@
       ],
       "effect": "behaviours are chosen by the wrong score",
       "provenance": "ReadFromScoredJson, EvaluateScore, EvaluateScoreInternal, EvaluateRunningPenalty and MoodScorer, read",
-      "unresolved": "None",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the +0x104 bonus is cleared on every Stop (0x5bf046) and a missing penalty graph is a flat 1.0 (see M8-001/M8-002); the trackDelta branch (GetHistoryValueTicksAgo(60), 0x67c9ee..0x67c9fc) is an unrecorded LOCAL_POLICY in a comment. Earlier note: None",
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests.AScoredEntryUsesItsEmotionScorersInsteadOfItsFlatScore"
@@ -7468,7 +7468,7 @@
       "subsystem": "M8-framework",
       "title": "PlayAnim plays every trigger it lists, in order, num_loops times",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "BehaviorPlayAnimSequence::StartPlayingAnimations 0x005C0158 and BehaviorPlayAnimSequence::StartSequenceLoop 0x005C0294, read",
       "evidence": [
         "StartPlayingAnimations 0x005C0158 measures the trigger vector at +0x11C: a byte length of exactly 4 - one trigger - is special-cased and played as a single TriggerLiftSafeAnimationAction with the loop count from +0x128 (0x005C0190). Anything else falls through to StartSequenceLoop.",
@@ -7478,7 +7478,7 @@
       ],
       "effect": "a PlayAnim behaviour plays the wrong set of triggers",
       "provenance": "BehaviorPlayAnimSequence, read; the bodies were not re-read in the M8 passes",
-      "unresolved": "None",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. each lift-safe action has a 60 s timeout (0x5c017e/0x5c02de); tracksToLock is 0 (0x5c02d8); ignoreFailure is 0, so a failed child ends the sequence (0x5c02f6, 0x54f81a); num_loops 0 plays nothing (0x5c02a8..0x5c02ae); ResumeInternal returns 1, so PlayAnim never resumes (0x5bff1e). Earlier note: None",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests.APlayAnimBehaviourWithSeveralTriggersTakesThemAll"
@@ -7488,7 +7488,7 @@
       "subsystem": "M8-framework",
       "title": "The wants-to-run strategy types, and what each one tests",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "WantsToRunStrategyFactory::CreateWantsToRunStrategy 0x00614710, StrategyInNeedsBracket::WantsToRunInternal 0x006141A0 and StrategyExpressNeedsTransition::WantsToRunInternal 0x006136D8, read",
       "evidence": [
         "The nine WantsToRunStrategyType values are the table EnumToString 0x007716A4 indexes at 0x01033820: Invalid, AlwaysRun, ExpressNeedsTransition, Generic, InNeedsBracket, ObstacleDetected, PlacedOnCharger, RobotPlacedOnSlope, RobotShaken. CreateWantsToRunStrategy 0x00614710 dispatches on that value through a tbb and constructs the matching Strategy class.",
@@ -7498,7 +7498,7 @@
       ],
       "effect": "a behaviour runs when the engine would not run it",
       "provenance": "the factory and the strategy classes, read; the bodies were not re-read in the M8 passes",
-      "unresolved": "None",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the needs-expressed input is one engine value [[robot+0x264]+0x30]+0x14 (0x6136dc..0x6136fe), not the stack's per-need set; the other strategy types' `false` has no cited body. Earlier note: None",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests.TheNeedsWantsToRunStrategiesFollowTheNeedsState"
@@ -7508,7 +7508,7 @@
       "subsystem": "M8-framework",
       "title": "An action's track mask is a lock, taken while it runs",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "IActionRunner::Update 0x00540370, MovementComponent::LockTracks 0x00640098 and MovementComponent::UnlockTracks 0x0063FE5C, read",
       "evidence": [
         "Every action carries a track mask at +0x54. IActionRunner::Update 0x00540370 reads it and asks MovementComponent::AreAnyTracksLocked(mask) at 0x00540440: while any of those tracks is held it warns \"Action %s [%d] not running because required tracks are locked\" (0x005404A8) and does not run the action - it stays queued and is tried again on the next tick. Otherwise it locks them through the helper at 0x004F0F4C, which calls MovementComponent::LockTracks(mask, tag, name), and then runs the action.",
@@ -7517,7 +7517,7 @@
       ],
       "effect": "a locked track is driven by two actions at once, or an action is dropped instead of retried",
       "provenance": "IActionRunner::Update and MovementComponent::LockTracks, read; the bodies were not re-read in the M8 passes",
-      "unresolved": "None",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. a locked track fails the action with 0x03000019 TRACKS_LOCKED (0x540572..0x54057c), it doesn't retry; the action's mask is the constructor's tracksToLock (0x53fe0e/0x53fe14), 0 for PlayAnim; the stack sends DisableAnimTracks for the clip's own tracks, which the engine never does. Earlier note: None",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorHardeningTests"
@@ -7547,7 +7547,7 @@
       "subsystem": "M8-framework",
       "title": "Behaviour scope undo order: the engine releases in a fixed order (reaction locks, idle, motion profile, track locks, light patterns)",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "IBehavior::Stop 0x005bd08c, read",
       "evidence": [
         "IBehavior::Stop 0x005bd08c releases the scope in a fixed order regardless of acquisition order: (a) remove every disable-reactions lock while +0xac != 0 (0x005bd12c ldr.w r0,[r4,#0xa4]; 0x005bd136 blx SmartRemoveDisableReactionsLock; 0x005bd13a/0x005bd13e/0x005bd140), (b) remove the idle animation if +0xb0 (0x005bd142 ldrb.w r0,[r4,#0xb0]; 0x005bd14c blx SmartRemoveIdleAnimation), (c) clear the motion profile if +0xc0 (0x005bd150 ldrb.w r0,[r4,#0xc0]; 0x005bd158 blx SmartClearMotionProfile), (d) walk the track-lock map at +0xb4 and MovementComponent::UnlockTracks(mask, name) each, then destroy the map (0x005bd15c/0x005bd16e/0x005bd174 blx 0x4a5794; 0x005bd19e blx __tree::destroy), then clear the custom light-pattern vector at +0xcc/+0xd0 (0x005bd1a2 ldrd r1,r0,[r4,#0xcc] ... 0x005bd1c6 strne.w r0,[r4,#0xd0]).",
@@ -7556,7 +7556,7 @@
       ],
       "effect": "locks are released in a different order at behaviour exit",
       "provenance": "IBehavior::Stop, read in full including the light-pattern tail; the built order matches",
-      "unresolved": "None",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. within a category the engine releases reaction locks in std::set name order and walks the track-lock std::map in key order (0x5bd12c/0x5bd130, 0x5bd168..0x5bd196), which is observable on the wire with two or more track locks; the stack releases most-recent-first. Earlier note: None",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests.AScopeReleasesInTheEnginesFixedCategoryOrder"
@@ -7606,7 +7606,7 @@
       "subsystem": "M8-framework",
       "title": "BehaviorManager::Update's tick order, behaviour switching, finishing and the reaction gate",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "BehaviorManager::Update 0x005a2f70 returns immediately when the manager's init byte at +0 is zero, logging \"BehaviorManager.Update.NotInitialized\" (0x005a2f70/0x005a2f72/0x005a2fea).",
@@ -7625,7 +7625,7 @@
       ],
       "effect": "the manager ticks, switches or finishes behaviours in the wrong order, or fires a reaction when it should not",
       "provenance": "BehaviorManager::Update and its switch/finish/resume helpers, read at the addresses above",
-      "unresolved": "None",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. 'class 0x16' is the running info's ReactionTrigger (NoneTrigger), not a behaviour (0x5a38f4, 0x5a2c46/0x5a2c68); FinishCurrentBehavior's second argument means try-to-resume (0x5a311e..0x5a3122, 0x5a38d6); TryToResume has no IsRunnable pre-check (0x5a2c5c..0x5a2c76); CheckReactionTriggerStrategies runs every tick (0x5a3060) and before the scored switch (0x5a3068..0x5a3078); the UI request-game paths (0x5a2f8e..0x5a309a) are missing. Earlier note: None",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests"
