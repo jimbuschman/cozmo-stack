@@ -2234,3 +2234,207 @@ None. Every M13-018 evidence clause about this function is confirmed:
    (an off-by-one in the source); decide whether that belongs in the record.
 
 *Read-only extraction. Nothing outside `.scratch/B-M13/` was changed.*
+
+**M13-003/010/018, gap pass 3 follow-up 2 (2026-09-28):** the per-intermediate reciprocal, the workout mood-scorer schema and the reflected primitive set / StartPlanning(false) branch are now read and folded into those records (Appendix G).
+
+
+## Appendix G: gap pass 3 follow-up extraction report (2026-09-28)
+
+﻿# B-M13 extractor follow-up: four UNKNOWN sub-parts
+
+Read-only follow-up for **M13-navigation**, repo `cozmo-stack-w3`.
+Engine: `resources/lib/armeabi-v7a/libcozmoEngine.so`, ELF VAs, Thumb.
+Ghidra decomp was used only to find functions; every fact below is cited to an instruction in the `.so`.
+
+Call sites the task named are **call sites inside `LatticePlannerImpl::StartPlanning` (0x004FEB44)**, not the callee entries:
+- `0x004FEC50` is the call to `xythetaEnvironment::FindClosestPlanSegmentToPose` (real body `0x00856310`, thunk `0x004A66F4`).
+- `0x004FF424` is the call to `xythetaEnvironment::PlanIsSafe` (real body `0x00850B78`, thunk `0x004A6778`).
+
+---
+
+## 1. `xythetaEnvironment::PopulateReverseMotionPrims` 0x008544C0 (called from `ParseMotionPrims` at 0x008524AC)
+
+Entry `0x008544C0`, body `0x008544C0..0x0085464F`. Called at `0x008524AC: blx #0x4CE8A0` from `ParseMotionPrims`.
+
+**Sets involved.** `this+8` = `num_angles` (0x008544E4/E8 load it, `resize` the destination). `this+0x14` = forward `vector<vector<MotionPrimitive>>` (source, written by `ParseMotionPrims`). `this+0x20` = reverse `vector<vector<MotionPrimitive>>` (destination). Outer element = 0xC bytes; `MotionPrimitive` stride = 0x124 (`0x00854612: add.w sb, sb, #0x124`).
+
+**Loop.** Outer index `sl` (starts 0 at `0x00854508: mov.w sl, #0`, increments at `0x00854640: add.w sl, sl, #1`) runs 0..num_angles-1 over the forward buckets. For every forward primitive:
+
+| step | what it does | citation |
+|---|---|---|
+| read forward end-pose theta | `r5 = *(u8*)(prim+0xC)`; this is the primitive's `end_state_offset.theta` | `0x00854540: ldrb r5, [r7, #0xc]` |
+| copy header | copies `prim+0`, `+4`, `+8` and the halfword at `+0xC` into the local struct | `0x00854542: ldm r1!, {r2,r3,r6}` / `0x00854544: stm r0!, {r2,r3,r6}` / `0x00854546: ldrh r1, [r1]` / `0x00854548: strh r1, [r0]` |
+| copy intermediate vector | `vector<IntermediatePosition>` at `prim+0x10` deep-copied to local | `0x0085454A: add.w r1, r7, #0x10` / `0x00854550: blx #0x4CE888` |
+| copy bbox | words at `prim+0x1C..0x28` copied verbatim | `0x00854554..0x0085455E: ldm.w r0,{r2,r3,r4,r6}; stm r1!,{r2,r3,r4,r6}` |
+| copy path | `Path` at `prim+0x2C` deep-copied to local (`Path::Path` is a copy ctor, `0x0085C74E`) | `0x00854560: add.w r1, r7, #0x2c` / `0x00854566: blx #0x4ABDD0` |
+| **negate end-pose x and y** | low half (x at `+8`) and high half (y at `+0xA`) each `0 - v`, 16-bit | `0x0085456A: ldrh r0,[sp,#0x22]` / `0x0085456E: ldrh r1,[sp,#0x20]` / `0x00854572: rsbs r0,r0,#0` / `0x00854578: rsbs r1,r1,#0` / `0x0085457A: strh.w r1,[sp,#0x20]` / `0x0085457E: strh.w r0,[sp,#0x22]` |
+| **set end-pose theta** | `*(u8*)(local+0xC) = sl` (the **outer loop index**, i.e. the forward primitive's start heading); the byte at `+0xD` is left as copied | `0x00854574: strb.w sl, [sp, #0x24]` |
+| push into reverse bucket | bucket index = the forward **end** theta `r5`; `r0 = reverse_begin + (3*r5)<<2`; append the local struct | `0x00854582: add.w r1, r5, r5, lsl #1` / `0x00854588: ldr r0, [r0]` / `0x0085458A: add.w r0, r0, r1, lsl #2` / `0x0085459A..0x008545CE` |
+
+**Exact answer to the theta question.** The theta byte is **not** `theta + num_angles/2 mod num_angles` and **not** a negation. It is **overwritten with the forward primitive's start-theta index** (the outer loop index `sl`). The reverse primitive is stored in bucket `forward_end_theta`, so its implicit start heading is the forward end heading and its explicit end heading is the forward start heading — a swap of the two headings, not a modular offset of the forward end theta. There is no arithmetic on the forward end theta at all (`r5` is used only as the bucket index).
+
+**Fields that do NOT change** (contrary to the "arc block / straight_length / turn" framing):
+- `MotionPrimitive+4` (cost): copied from `prim+4`, never touched (`0x00854544: stm r0!,{r2,r3,r6}` copies `+4`; only `sp+0x20`/`sp+0x22`/`sp+0x24` are rewritten afterwards).
+- `straight_length_mm`, the `arc` block (`sweepRad`/`radius_mm`/`centerPt_x_mm`/`centerPt_y_mm`/`startRad`) and `turn_in_place_direction` are **not stored as fields** in `MotionPrimitive`; `MotionPrimitive::Create` bakes them into the `Path` at `+0x2C` (M13-004 evidence). That `Path` is deep-copied verbatim (`0x00854560`/`0x008545C4`), so none of those quantities is recomputed or reflected.
+- The `IntermediatePosition` vector at `+0x10` and the cached bbox at `+0x1C..0x28` are copied verbatim.
+
+**NEW observation for M13-018.** M13-018's evidence says `PopulateReverseMotionPrims` "negates the end-pose x/y and rewrites the theta byte". That is correct as far as it goes, but it omits that the primitive's `Path`, intermediate poses and bbox are shared unchanged with the forward primitive. That is behaviour-changing for the goal-side expansion that consumes `env+0x20` (M13-018 evidence: `ExpandCollisionStatesFromGoal` calls `GetSuccessors(...,1)` and `SuccessorIterator::Next` selects `env+0x20` when its flag is 1, `0x00851130..0x00851136`; the collision test walks the primitive's intermediate poses, M13-003). I do **not** claim the reflection is geometrically wrong — only that the record must state the copied path/poses/bbox, because a downstream reader would otherwise assume they were mirrored.
+
+| step | what the original does | citation | record | class |
+|---|---|---|---|---|
+| R1-1 | reverse vector resized to num_angles, cleared | `0x008544E4: ldr.w r1,[r8,#8]`; `0x008544EA: blx #0x4CE864` | M13-001/M13-018 partial | EXACT_SOURCE |
+| R1-2 | end-pose x and y each negated (16-bit) | `0x0085456A..0x0085457E` | M13-018 partial | EXACT_SOURCE |
+| R1-3 | end-pose theta set to the forward start index, not theta±k | `0x00854540`; `0x00854574` | M13-018 partial / NEW | EXACT_SOURCE |
+| R1-4 | cost `+4`, Path `+0x2C`, intermediate vector `+0x10`, bbox `+0x1C..0x28` copied unchanged | `0x00854542..0x00854566`; `0x0085459A..0x008545C4` | NEW | EXACT_SOURCE |
+
+---
+
+## 2. `IntermediatePosition+0x10` in `MotionPrimitive::Create` 0x00853DD0 (range 0x00853E96..0x00853F4E)
+
+`IntermediatePosition` layout (from `IntermediatePosition::Import` 0x00850130 and the `emplace_back` at 0x00857FA4): `+0` float x_mm, `+4` float y_mm, `+8` float theta_rads, `+0xC` u8 theta index, `+0x10` float inverseDist. Stride 0x14 (`0x00857FA4`: `local_30[4] = fVar9` at +0x10, then `+5` words).
+
+For each JSON `intermediate_poses` entry, `State_c::Import` writes the current pose at `sp+0x40`/`sp+0x44`/`sp+0x48` (`0x00853E8A: mov r0, r6` where `r6 = sp+0x40`; `0x00853E8C: blx #0x4CE720`). Then:
+
+| step | what it does | citation |
+|---|---|---|
+| previous = last stored intermediate pose, or none | `begin`/`end` of the vector at `this+0x10`; if empty skip | `0x00853E9E: ldrd r1, r0, [sb, #0x10]`; `0x00853EA2: cmp r1, r0`; `0x00853EA4: beq #0x853F52` |
+| `dist` = Euclidean step distance to the previous pose | `dx = cur.x - prev.x` (`0x00853EA6/0x00853EAC/0x00853EBA`), `dy = cur.y - prev.y` (`0x00853EB2/0x00853EB6/0x00853EC2`), `sqrt(dx^2+dy^2)` -> `s22` | `0x00853EC6..0x00853EDE: vcvt/vmul/vadd/vsqrt s22` |
+| `dtheta` = rescaled heading change of that step | `cur.theta_rads` at `[sp+0x48]` (`0x00853EFA`) -> `Radians::Radians` (`0x00853EFE`); `prev.theta_rads` at `[prev+0x08]` (`0x00853EBE: vldr s24, [r0, #-0xc]`) -> `Radians::Radians` (`0x00853F0A`); `Anki::operator-` gives `cur - prev` (`0x00853F0E: blx #0x4A454C`, result at `sp+0x34`) | `0x00853EBE`; `0x00853EFA`; `0x00853F0E` |
+| formula | `inverseDist = 1.0 / (env[0x78] * env[0x60] * |dtheta| + dist)` | `0x00853F18: vldr s0,[sp,#0x34]`; `0x00853F1E: vldr d1,[r0,#0x60]`; `0x00853F24: vabs.f32 s0,s0`; `0x00853F28: vldr d2,[r0,#0x78]`; `0x00853F32/0x00853F36: vmul.f64`; `0x00853F3A: vcvt.f64.f32 d1,s22`; `0x00853F3E: vadd.f64 d0,d0,d1`; `0x00853F46: vdiv.f32 s0,s20,s0` (s20 = 1.0) |
+| first pose | no previous -> `inverseDist` stays 0.0 (r8 cleared at `0x00853E96/0x00853E9A`, stored at `0x00853F4E` only on the non-empty path) | `0x00853E96`; `0x00853E9A`; `0x00853E9E` |
+
+**Exact answer.** `dist` is the Euclidean distance **to the previous intermediate pose already in the vector**, not the distance from the start. `dtheta` is the **heading change of that step**: `Radians(cur.theta_rads) - Radians(prev.theta_rads)`, where `Radians::Radians` rescales into `[-pi, pi)` (`Radians::rescale`, called from `0x0084C832`). The first intermediate pose gets `inverseDist = 0`. This is the multiplier at `IntermediatePosition+0x10` that M13-003 uses for the soft-collision penalty (`successor cost += penalty * IntermediatePosition+0x10`).
+
+| step | what the original does | citation | record | class |
+|---|---|---|---|---|
+| R2-1 | `dist` = distance to previous intermediate pose | `0x00853E9E..0x00853EDE` | M13-003 / NEW detail | EXACT_SOURCE |
+| R2-2 | `dtheta` = cur.theta_rads - prev.theta_rads, rescaled | `0x00853EBE`; `0x00853EFA`; `0x00853F0E` | M13-003 / NEW detail | EXACT_SOURCE |
+| R2-3 | `inverseDist = 1/(env78*env60*|dtheta|+dist)`; first pose 0 | `0x00853F1E..0x00853F4E` | M13-003 / NEW detail | EXACT_SOURCE |
+
+---
+
+## 3. `WorkoutConfig` mood scorer and `ShouldPlayEightiesMusic`
+
+There is **no `WorkoutConfig::Import`** symbol in the binary. The JSON reader is `WorkoutConfig::InitConfiguration` 0x005736E8, called per `workouts` array entry by `WorkoutComponent::InitConfiguration` 0x00573BC0.
+
+**Keys read for the mood scorer** (`WorkoutConfig::InitConfiguration`):
+
+| JSON key | destination | citation |
+|---|---|---|
+| `numStrongLifts` | `MoodScorer` at `WorkoutConfig+0x18` | key pointer computed at `0x0057380E: adr r1,#0x30c` -> string `numStrongLifts` at `0x00573B1C`; `0x005738E4: add.w r0,r4,#0x18`; `0x005738EA: blx #0x4AD3A8` |
+| `numWeakLifts` | `MoodScorer` at `WorkoutConfig+0x24` | key at `0x005738EE: adr r1,#0x23c` -> `numWeakLifts` at `0x00573B2C`; `0x00573956: add.w r0,r4,#0x24`; `0x0057395C: blx #0x4AD3A8` |
+
+**`MoodScorer` schema.** `MoodScorer::ReadFromJson` 0x0067C67C requires an **array**; each element is an `EmotionScorer` (`0x0067C6C2: isArray`; `0x0067C67C`). `EmotionScorer::ReadFromJson` 0x0067AABC reads:
+
+| key | destination | citation |
+|---|---|---|
+| `emotionType` (string) | `EmotionScorer+0` u8 (`EmotionTypeFromString`; 9 = invalid -> warning) | `0x0067AAC4: ldr r1,[pc,#0x140]` -> `emotionType` at `0xBFF1E0`; `0x0067AACC: blx #0x4A5F2C`; `0x0067AB1E: blx #0x4BC438` |
+| `scoreGraph` | `GraphEvaluator2d` at `EmotionScorer+4` | `0x0067AAD0` -> `scoreGraph` at `0xBFF37A`; `0x0067AB5A: blx #0x4B1ED8` |
+| `trackDelta` (bool) | `EmotionScorer+0x10` | `0x0067AADC` -> `trackDelta` at `0xBFF385`; `0x0067ABC4: blx #0x4AE758`; `0x0067ABC8: strb r0,[r4,#0x10]` |
+
+**Graph schema.** `GraphEvaluator2d::ReadFromJson` 0x00804DAC reads key `nodes` (array); each node reads `x` and `y` as floats and calls `AddNode`:
+
+| key | citation |
+|---|---|
+| `nodes` | `0x00804DB2` -> string `nodes` at `0xC23E8A`; `0x00804DBC: blx #0x4A5F2C` |
+| `x` | `0x00804E60: adr r1,#0x14c` -> `x` at `0x00804FB0`; `0x00804E64: blx #0x4A5F2C`; `0x00804E8A: blx #0x4A7264` (asFloat) |
+| `y` | `0x00804E6A: adr r1,#0x148` -> `y` at `0x00804FB4`; `0x00804E6E: blx #0x4A5F2C`; `0x00804E92: blx #0x4A7264` |
+
+So the full schema is `[ { "emotionType": <string>, "scoreGraph": { "nodes": [ {"x": <float>, "y": <float>}, ... ] }, "trackDelta": <bool> }, ... ]`.
+
+**`MoodScorer::EvaluateEmotionScore` 0x0067C9B8 (206 bytes).** The scorer vector is `this..this+4`, element stride 0x14 (`0x0067C9C4: ldrd r6, r5, [r0]`; `0x0067CA5E: adds r6, #0x10`; `0x0067CA62: cmp r6, r5`).
+
+For each entry:
+- emotion pointer = `MoodManager + emotionType*0x20` (`0x0067C9E4: ldrb r0,[r6]`; `0x0067C9E8: add.w r0, r4, r0, lsl #5`). `r4` is the `MoodManager` argument (`this` of the function is the `MoodScorer`).
+- flag `trackDelta` = `entry+0x10` (`0x0067C9E6: ldrb r1, [r6, #0x10]`).
+  - if `trackDelta != 0`: `x = emotion+0x18 - Emotion::GetHistoryValueTicksAgo(emotion, 0x3C)`. `0x0067C9EC: cbz r1, #0x67CA02`; `0x0067C9EE: movs r1, #0x3c`; `0x0067C9F0: vldr s22, [r0, #0x18]`; `0x0067C9F4: blx #0x4BC804`; `0x0067C9FC: vsub.f32 s22, s22, s0`.
+  - if `trackDelta == 0`: `x = emotion+0x18` (the current value) — `0x0067CA02: vldr s22, [r0, #0x18]`.
+- `y = GraphEvaluator2d::EvaluateY(entry+4 graph, x)` — the graph's node vector is copied at `0x0067CA08/0x0067CA0C` (`blx #0x4BC810`), then `0x0067CA10: vmov r1, s22`; `0x0067CA14: blx #0x4B1EE4`. `EvaluateY` 0x00804BD0 linearly interpolates `y` between the bracketing nodes and returns the first/last node's `y` outside the range.
+- **zero rule:** if `|y| < 1e-5` (`s20` = `0x3727C5AC` at `0x0067C9DA`) the function returns 0.0 immediately — `0x0067CA3A..0x0067CA4C` (`vneg`, `it mi`, `vmovmi`), `0x0067CA50: vcmpe.f32 s2, s20`, `0x0067CA58: bmi #0x67CA76`, and `s16` is still 0.0 at `0x0067CA76: vmov r0, s16`.
+- otherwise it accumulates `s18 += y` (`0x0067CA5A`) and decrements a counter (`0x0067CA60: subs r7, #1`).
+
+After the loop:
+- if no entries (`r7 == 0`) return 0.0 (`0x0067CA66: cbz r7, #0x67CA76`).
+- else `mean = sum / count`: `0x0067CA68: rsbs r0, r7, #0`; `0x0067CA6E: vcvt.f32.u32 s0, s0`; `0x0067CA72: vdiv.f32 s16, s18, s0`. So the result is the **arithmetic mean** of the per-entry `EvaluateY` values, with an early 0.0 if any single entry's absolute value is below 1e-5.
+
+**`WorkoutConfig::MoodScoreHelper` 0x00573B70.** If the scorer vector is empty (`r2 == r3`) return 0 (`0x00573B74/0x00573B76`); else call `EvaluateEmotionScore(this, robot+0x440)` (`0x00573B7E: ldr.w r2, [r0, #0x440]`), `roundf` (`0x00573B8A: blx #0x4A6688`), then `vcvt.u32.f32` (`0x00573B92`) — i.e. `max(0, round(score))` (a negative score saturates to 0).
+
+**`WorkoutComponent::ShouldPlayEightiesMusic` 0x00573E30 input.** It is `*(u32*)(this+0xC) + 0x18` — the current workout config pointer (`this+0xC`, set by `WorkoutComponent::InitConfiguration` 0x00573BC0 line 137) plus `0x18`, i.e. the **`numStrongLifts` MoodScorer**:
+- `0x00573E3C: ldr r1, [r4, #0xc]`; `0x00573E3E: ldr r0, [r4, #0x14]` (robot); `0x00573E40: adds r1, #0x18`; `0x00573E42: blx #0x4AD3C0` (MoodScoreHelper).
+- if the helper returns non-zero, roll `RandomGenerator::RandDbl(GetRNG(robot), 1.0)` (`0x00573E4A/0x00573E4C/0x00573E58`) and set true iff the roll `< 0.1` (`0x00573E5C: vldr d0,[pc,#0x20]` -> double `0x3FB999999999999A` at `0x00573E80/0x00573E84`; `0x00573E64: vcmpe.f64`; `0x00573E6E: movmi r5,#1`).
+- cache: `this+0x11 = 1`, `this+0x10 = result` (`0x00573E70/0x00573E72/0x00573E74`).
+
+| step | what the original does | citation | record | class |
+|---|---|---|---|---|
+| R3-1 | `numStrongLifts` -> MoodScorer `workout+0x18`; `numWeakLifts` -> `workout+0x24` | `0x0057380E`/`0x005738EA`; `0x005738EE`/`0x0057395C` | M13-010 partial | EXACT_SOURCE |
+| R3-2 | EmotionScorer keys `emotionType`/`scoreGraph`/`trackDelta`; graph `nodes` of `{x,y}` | `0x0067AAC4..0x0067ABC8`; `0x00804DB2..0x00804E92` | M13-010 partial / NEW | EXACT_SOURCE |
+| R3-3 | x = delta-over-60-ticks if `trackDelta` else current; y = `EvaluateY` | `0x0067C9E4..0x0067CA14` | M13-010 partial | EXACT_SOURCE |
+| R3-4 | any `|y| < 1e-5` -> 0.0; else mean | `0x0067CA3A..0x0067CA72` | M13-010 partial / NEW | EXACT_SOURCE |
+| R3-5 | `MoodScoreHelper` = `max(0, round(score))`; empty scorer -> 0 | `0x00573B74..0x00573B96` | M13-010 partial | EXACT_SOURCE |
+| R3-6 | input to helper is `workout+0x18`; roll `< 0.1` | `0x00573E3C..0x00573E42`; `0x00573E5C..0x00573E6E` | M13-010 covered | EXACT_SOURCE |
+
+---
+
+## 4. `LatticePlanner::ComputePathHelper` 0x004FD1D0 and the `StartPlanning(false)` branch
+
+### 4a. `ComputePathHelper`'s reuse call
+`ComputePathHelper` calls the object's virtual slot `+0xC` with `true`:
+- `0x004FD326: ldr r0, [r6]` (vptr); `0x004FD328: ldr r3, [r0, #0xc]`; `0x004FD32A: mov r0, r6`; `0x004FD32C: mov r1, fp`; `0x004FD32E: movs r2, #1`; `0x004FD330: blx r3`.
+- The `LatticePlanner` vtable's address point is `0x101F188`; `+0xC` = `0x101F194` = `LatticePlanner::ComputeNewPathIfNeeded` (relocation at `0x101F194` for `_ZN4Anki5Cozmo14LatticePlanner22ComputeNewPathIfNeeded...`). `ComputeNewPathIfNeeded` 0x004FEB00 forwards its `bool` to `StartPlanning` (`0x004FEB20: mov r2, r4`; `0x004FEB22: blx #0x4A66E8`). So the live path passes **true**.
+
+### 4b. `StartPlanning(false)` — the false branch
+`StartPlanning` stores its bool at `impl+0xA1` (`0x004FEB7E: strb.w r6, [sl, #0xa1]`; `r6` = arg2). At `0x004FEBB2: ldrb.w r0, [sl, #0xa1]` / `0x004FEBB2: cbz r0, #0x4FEC2E`, false goes to `0x004FEC2E`:
+
+1. `ImportBlockworldObstaclesIfNeeded(this, true, ...)` — `0x004FEC36: mov r0, sl`; `0x004FEC38: movs r1, #1`; `0x004FEC3A: blx #0x4A65B0`.
+2. `FindClosestPlanSegmentToPose(env, plan, currentState, &dist, false)` — `0x004FEC50: blx #0x4A66F4`. Result index in `r4` (`0x004FEC54`), distance at `[sp+0x150]` (`0x004FEC40: str r0,[sp,#0x150]`).
+3. Force-replan test: `0x004FEC56: vmov.f32 s2, #2.000000e+01`; `0x004FEC5A: vldr s0,[sp,#0x150]`; `0x004FEC5E: vcmpe.f32 s0,s2`; `0x004FEC66: blt #0x4FECD0`. If `dist >= 20.0` it logs `LatticePlanner.GetPlan.ForcePlan` and clears the old plan (`0x004FECB2..0x004FECCC`).
+4. If still false, `0x004FECD0: ldrb.w r0,[sl,#0xa1]`; `0x004FECD6: beq.w #0x4FF410`.
+5. `PlanIsSafe(env, plan, 40.0, index, &state, &outPlan)` — `0x004FF410: add r0, sp, #0x1f0`; `0x004FF416: movt r2, #0x4220` (= 40.0f); `0x004FF41E: mov r0, r5`; `0x004FF420: mov r1, r6`; `0x004FF422: mov r3, r4`; `0x004FF424: blx #0x4A6778`.
+6. **Branch:**
+   - `0x004FF428: cmp r0, #0`; `0x004FF42A: beq.w #0x4FECDE` -> **replan** (store the plan and run `DoPlanning`; `0x004FECDE..`).
+   - else `0x004FF42E: movs r4, #2`; `0x004FF430: b #0x4FF3CA` -> cleanup/unlock and **return 2** (old plan reused, no replan). Return is `r4` (`0x004FF402: moveq r0, r4`).
+
+The true branch (`impl+0xA1 != 0`) clears the old plan (`0x004FEBB4..0x004FEBD0`), sets `r4 = 0`, and falls into the same store+`DoPlanning` path (`0x004FECDA`).
+
+### 4c. What `FindClosestPlanSegmentToPose` and `PlanIsSafe` test
+**`FindClosestPlanSegmentToPose` 0x00856310** (`(env, plan, State_c const&, float& outDist, bool verbose)`): walks the plan's action list and, for each action, the action's `MotionPrimitive` intermediate poses; computes the Euclidean distance (in mm, `env+4` scale) from the given state to each plan state (`0x008563F2..0x008564A6` first loop; `0x008566xx` second loop over intermediate poses `0x008567xx`); returns the action index of the minimum and writes the minimum distance to `outDist` (`0x008569BA: *param_3 = fVar24`; `return local_a4`). An exact state match short-circuits with distance 0 (`0x0085639A..0x008563A0`). It tests **distance only**, no collision.
+
+**`PlanIsSafe` 0x00850B78** (`(env, plan, float tolerance, int startIndex, State_c&, xythetaPlan& outPlan)`): if the plan is empty returns 0 (`0x00850B88..0x00850B92`). It reconstructs the state at `startIndex` by applying actions `0..startIndex-1` (`0x00850BF2..0x00850C18`), writes that state and the start pose into the out plan (`0x00850C1E..0x00850C5C`), then for each remaining action calls `ApplyAction` (`0x00850C90`) and compares the new collision penalty `fVar12` with the plan's stored per-action penalty `fVar13` at the action record:
+- `0x00850CA2: vldr s0,[r2]` (stored penalty); `0x00850CAA: vadd.f64 d3,d1,d11` where `d11 = 0.5` (`0x00850C66`); `0x00850CAE: vcmpe.f64 d3,d2`; `0x00850CB6: bmi #0x850D76` -> on `stored + 0.5 < new` it prints `"Collision along plan action %lu (starting from %d) Penalty increased from %f to %f"` (`0x00850D76..0x00850D84`) and returns 0 (`0x00850D88: movs r0, #0`).
+- otherwise it keeps updating the out plan and the start-distance bookkeeping (`0x00850CBE..0x00850D5E`), and returns 1 at the end (`0x00850D72: movs r0, #1`).
+It tests **collision penalty along the remaining plan** (plus the `tolerance` distance bookkeeping), and returns 1 = safe.
+
+### 4d. Reachability of `StartPlanning(false)`
+- `StartPlanning` 0x004FEB44 has exactly one caller: the thunk `0x004A66E8` (index and `0x004FEB00` callee list; `0x004FEB22: blx #0x4A66E8`).
+- The thunk's only caller is `LatticePlanner::ComputeNewPathIfNeeded` 0x004FEB00, which passes its own bool through unchanged.
+- `LatticePlanner::ComputeNewPathIfNeeded` is a virtual (`_ZN4Anki5Cozmo14LatticePlanner22ComputeNewPathIfNeeded...` relocation at the vtable slot `0x101F194` = vptr+0xC). The only call sites of that interface slot in the decompiled binary are the three `ComputePath` methods, and all pass `1` (true):
+  - `LatticePlanner::ComputePathHelper` `0x004FD330` (`movs r2, #1`);
+  - `FaceAndApproachPlanner::ComputePath` `0x004F355C` (`(**(code**)(*(int*)this + 0xc))(this,param_1,1)`);
+  - `MinimalAnglePlanner::ComputePath` `0x00503BC2` (`(**(code**)(*(int*)this + 0xc))(this,param_1,1)`).
+- No direct call to `LatticePlannerImpl::StartPlanning` with `false` exists (no relocations or direct `bl` to it other than the thunk), and `ComputeNewPathIfNeeded` has no other caller in the binary.
+
+**Conclusion.** The `StartPlanning(false)` branch (2.0/1.0 import padding, `FindClosestPlanSegmentToPose`, `PlanIsSafe`, return 2 on a safe old plan) is **not reachable from any caller recovered from the shipped engine**. The live path is `ComputePathHelper -> ComputeNewPathIfNeeded(pose, true) -> StartPlanning(pose, true)`. The residual uncertainty is only an indirect/virtual caller not present in the decompiled call graph; none was found.
+
+| step | what the original does | citation | record | class |
+|---|---|---|---|---|
+| R4-1 | `ComputePathHelper` calls vptr+0xC with `true` | `0x004FD326..0x004FD330` | M13-018 partial | EXACT_SOURCE |
+| R4-2 | false: import with padding 1, find closest segment, force replan if dist >= 20 | `0x004FEC36..0x004FEC66` | M13-018 partial | EXACT_SOURCE |
+| R4-3 | false: `PlanIsSafe` with 40.0; 0 -> replan, non-zero -> return 2 | `0x004FF410..0x004FF430`; `0x004FF42A`; `0x004FF42E` | M13-018 partial | EXACT_SOURCE |
+| R4-4 | `FindClosestPlanSegmentToPose` returns closest index + distance | `0x00856310` (return `0x008569BA`) | NEW detail | EXACT_SOURCE |
+| R4-5 | `PlanIsSafe` returns 0 on a collision penalty rise > 0.5, else 1 | `0x00850CA2..0x00850CB6`; `0x00850D88`; `0x00850D72` | NEW detail | EXACT_SOURCE |
+| R4-6 | false branch unreachable from any recovered caller; all three `ComputePath` callers pass true | `0x004FEB00`; `0x004FD330`; `0x004F355C`; `0x00503BC2` | M13-018 partial | EXACT_SOURCE (residual UNKNOWN below) |
+
+---
+
+## Records contradicted or too weak
+
+- **M13-018** (current title "LatticePlannerImpl's planning entry and worker, the Replan argument, the heuristic and the result codes", status IMPLEMENTATION_GAP). Its evidence already states the false branch "reuses a safe old plan (FindClosestPlanSegmentToPose 0x004FEC50; PlanIsSafe 0x004FF424 -> return 2 at 0x004FF42E)" and that `PopulateReverseMotionPrims` "negates the end-pose x/y and rewrites the theta byte". It is **not contradicted**, but its `PopulateReverseMotionPrims` clause is **partial**: it does not say what the theta byte is rewritten to (the forward start index, not a modular offset), and it does not record that the `Path`, intermediate poses and bbox are copied unchanged. Because M13-018's consumer is the goal-side expansion, that omission can mislead. Recommend adding R1-2/R1-3/R1-4 to M13-018 or a new sibling record before M13-018 is settled.
+- **M13-003** (status IMPLEMENTATION_GAP) cites `IntermediatePosition+0x10` as the soft-collision penalty multiplier but does not define it. R2-1..R2-3 supply the definition. Not contradicted.
+- **M13-010** (status IMPLEMENTATION_GAP) covers `ShouldPlayEightiesMusic`, `MoodScoreHelper` and `EvaluateEmotionScore` at the "scores ... through ..." level but does not record the mood-scorer JSON keys, the `EmotionScorer`/graph schema, the `trackDelta` branch or the mean/zero rule. R3-1..R3-6 supply them. Not contradicted.
+- **M13-001** (status IMPLEMENTATION_GAP) already cites the `PopulateReverseMotionPrims` call at `0x008524AC`; that call is confirmed (`0x008524AC: blx #0x4CE8A0`). Not contradicted.
+
+## Open questions for the manager
+
+1. Should the `PopulateReverseMotionPrims` theta-byte fact and the shared-path/poses/bbox fact be added to M13-018 or split into a NEW record? The current M13-018 wording is not wrong but is incomplete for the goal-side expansion it feeds.
+2. The three M13 records (`M13-003`, `M13-010`, `M13-018`) are all IMPLEMENTATION_GAP; the new facts are extracted but not yet in the manifest. The manager should fold R1..R4 in before any M13 approval.
+3. Residual UNKNOWN (low confidence): whether an indirect caller outside the decompiled call graph passes `false` to `LatticePlanner::ComputeNewPathIfNeeded`. No such caller was found; a full scan of the vtable slot's indirect call sites was not performed.
