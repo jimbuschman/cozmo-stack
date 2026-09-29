@@ -692,6 +692,28 @@ public class EngineAppLayerTests
         Assert.DoesNotContain(rig.Log, l => l.Contains("policy M1-040"));
     }
 
+    /// <summary>
+    /// M15-014 (C2 rows 5-8): the mfgId tag-0xED callback raises the serial edge with mfgId word 0, after
+    /// <c>SendConnectionResponse(Success)</c> has delivered synchronously and before the (unbuilt, M3-033)
+    /// lab-assignment read's counterpart. The engine records it for a stack that subscribes later.
+    /// </summary>
+    [Fact]
+    public void G_M15_014_TheMfgIdCallbackRaisesTheSerialEdgeAfterTheConnectionResponse()
+    {
+        using var rig = new Rig();
+        rig.ToValidated();
+        var order = new List<string>();
+        rig.Engine.ConnectionResponse += r => order.Add($"response:{r.SerialNumber}");
+        rig.Engine.SerialNumberAcquired += s => order.Add($"serial:{s}");
+        Assert.Null(rig.Engine.AcquiredSerialNumber);
+
+        rig.Data(new ManufacturingID { SerialNumber = 0x41D04D9D, BodyHwVersion = 7, BodyColor = 2 });
+        rig.Tick();
+
+        Assert.Equal(new[] { "response:1104170397", "serial:1104170397" }, order);
+        Assert.Equal(0x41D04D9Du, rig.Engine.AcquiredSerialNumber);
+    }
+
     /// <summary>PRIMARY-SOURCE ORACLE. M1-028 CB18: the colour is kept only if the low byte of word 2 is in {0,2,3,4}; otherwise an error and 0xFF (0x0052E304..0x0052E3B2).</summary>
     [Fact]
     public void M1_028_CB18_AnUnknownBodyColourIsReportedAs0xFF()

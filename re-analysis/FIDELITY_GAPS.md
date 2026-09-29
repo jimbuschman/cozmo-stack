@@ -3,15 +3,15 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **372 records** over 16 subsystems.
+Manifest of **374 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 220 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 221 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 2 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 6 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 103 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 29 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| RECOVERABLE_GAP | 5 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 104 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| COMPATIBILITY_POLICY | 30 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 22 | 0 | 4 | 0 | 0 | yes | no |
 | M13-navigation — Planning, charger and block configurations | 19 | 0 | 3 | 0 | 0 | yes | no |
 | M14-faces — Face and pet pipeline | 12 | 0 | 5 | 1 | 0 | yes | no |
-| M15-freeplay — Needs, activities and freeplay | 16 | 1 | 4 | 0 | 0 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 18 | 0 | 5 | 0 | 0 | yes | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -66,7 +66,7 @@ status.
 | M12-manipulation | INVENTORY_APPROVED | 17 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 16 | 0 | 0 | 0 |
 | M14-faces | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
-| M15-freeplay | INVENTORY_APPROVED | 11 | 0 | 0 | 0 |
+| M15-freeplay | INVENTORY_APPROVED | 12 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
 ## Still to read: every RECOVERABLE_GAP
@@ -121,17 +121,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: statically linked Wwise runtime in libcozmoEngine.so
 * evidence: 0x009D671C..0x009D7727; 0x009D7FC0..0x009D8137; 0x009E266C..0x009E2813
 * outstanding: Follow the type-21 per-voice object created at 0x009D7FC0 through vtable 0x0104B268 and map reads of LFO state +0x34..+0x48 to the waveform sample equation.
-
-### M15-freeplay — Needs, activities and freeplay
-
-**M15-014 — Needs connection and per-serial persistence lifecycle** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs`
-* effect: the robot-specific needs file selected, read and written changes
-* rests on: libcozmoEngine.so
-* best authority: libcozmoEngine.so
-* evidence: NeedsManager::WriteToDevice 0x00693BB0; NeedsManager::InitAfterSerialNumberAcquired 0x006943A0; NeedsManager::NeedsFilenameFromSerialNumber 0x00695224; NeedsManager::ReadFromDevice 0x006998B4; persistence string initializer 0x004D8DDC; RobotInterface::MessageHandler::ConnectRobotToNeedsManager 0x0069DEE4
-* outstanding: The generated or indirect dispatch registration that calls 0x0069DEE4 was not recovered. Read that table to identify the inbound serial field and connection ordering.
 
 ## Still to build: every IMPLEMENTATION_GAP
 
@@ -1085,6 +1074,15 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: ActivityFreeplay::PickNewActivityForSpark 0x005ADC44; ActivityFreeplay::GetDesiredActiveBehaviorInternal 0x005AE29C; IActivity::OnSelected 0x005B312C; IActivity::OnDeselected 0x005B33B8; IActivity::GetDesiredActiveBehavior 0x005B387C
 * outstanding: The inbound ActivateSpark message (sets BehaviorManager+0x60/+0x65, 0x005A3C92..0x005A3C9A) and the requested-activity message (+0x90) are unbuilt, so SetRequestedSpark/RequestNewActivity have no production caller. The selection/re-selection, interlude, null-pick, OnSelected/OnDeselected, reward-pending and the reselect logic are built.
 
+**M15-014 — Needs connection and per-serial persistence lifecycle** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs`
+* effect: the robot-specific needs file selected, read and written changes
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: NeedsManager::InitInternal 0x00693444..0x0069348E; NeedsManager::AttemptReadFromDevice 0x00693690..0x00693790; NeedsManager::ReadFromDevice 0x006998B4..0x00699BB8; RobotInitialConnection::OnNotified mfgId registration 0x0052DE04..0x0052DE40; RobotToEngine mfgId tag 0xED callback 0x0052E2F8..0x0052E3B2; ManufacturingID serializer 0x007B1750..0x007B1858; RobotInterface::MessageHandler::ConnectRobotToNeedsManager 0x0069DEE4 -> RobotManager::ConnectRobotToNeedsManager 0x0052FADC (veneer 0x008CDB0C, PLT 0x004BE214; veneer 0x008CB32C, PLT 0x004A9DB4); NeedsManager::InitAfterSerialNumberAcquired 0x006943A0..0x006943F8; NeedsManager::StartReadFromRobot 0x006944B4..0x0069453E; NeedsManager NV read callback 0x0069BEB2..0x0069BED4; FinishReadFromRobot 0x00699DB0..0x0069A1AC; NeedsFilenameFromSerialNumber 0x00695224..0x006952BA; InitAfterReadFromRobotAttempt resolver 0x0069481C..0x00694D06; NeedsManager::WriteToDevice 0x00693BB0; persistence string initializer 0x004D8DDC; NeedsManager::StartWriteToRobot 0x00695494..0x00695763 (call site 0x00694E50..0x00694EE4; NeedsStateOnRobot::Pack 0x0078479E, Size 0x007848C8); NeedsManager::FinishWriteToRobot 0x00699CD8..0x00699D39; NVStorageComponent::Read 0x00644E14..0x00644EF7 (1 = valid tag queued, 0 = invalid tag); NeedsStateOnRobot serialized layout (M15-017): Size 0x007848C8, Pack 0x0078479E, Unpack 0x007846B4; FinishReadFromRobot v1-4 conversion 0x00699E56..0x00699E88; version-0 path 0x00699FFE (M15-018); InitAfterReadFromRobotAttempt write scheduling 0x0069481C..0x00694EE4 (device-write flag 0x00694DA2, robot-write flag 0x00694E50, RobotChangedFromLastSession 0x00694AA8, SendNeedsStateToGame 0x00694B00/0x00694B46); NeedsManager::PossiblyStartWriteToRobot 0x00696ECC..0x00696F0D (600.999999 s throttle 0x00696EE2/0x00696EEA; callers RegisterNeedsActionCompleted 0x006960D0 force=false, UpdateStarsState 0x00696AAC force=true, HandleMessage<RegisterOnboardingComplete> 0x006984CC force=true); NVStorageComponent::HandleNVOpResult 0x00642F8C..0x00643937 (op dispatch 0x0064304A..0x00643052; WRITE terminal 0x00643054..0x00643424, callback result 0x006433F6); NeedsManager::ApplyDecayForTimeSinceLastDeviceWrite 0x00695304..0x00695374 (call sites 0x006936BE and 0x00694AF8 bool=false; 0x006990E8 bool=robot!=0); NeedsManager::ApplyDecayAllNeeds 0x00695CFE (connected table 0x00695D1E, unconnected 0x00695D16); NeedsState::ApplyDecay 0x0069C3C0
+* outstanding: Built from corrections C2 (Appendix F), C2 addendum (Appendix G), C3 (Appendix H) and C4 (Appendix I) of re-analysis/inventory/M15-freeplay.md: the mfgId callback's needs connection with mfgId word 0 after the connection response (and before the unbuilt M3-033 lab-assignment read), InitAfterSerialNumberAcquired, the NV read of key 0x194000 with its callback and immediate fallback, the per-serial filename needsState_<serial>.json, the nine-case robot/device resolution with SendNeedsStateToGame and RobotChangedFromLastSession, the device write, the robot write (StartWriteToRobot/FinishWriteToRobot/PossiblyStartWriteToRobot) with its 116-byte binary NeedsStateOnRobot (layout in M15-017), and the NVStorageComponent read-queued and write terminals. Still unbuilt on the live path: the construction-time fixed-file device read/write (C2 rows 1-3, InitInternal/AttemptReadFromDevice/ReadFromDevice) is only a host Save/Load seam; the per-serial alternate file needs a host AlternateDeviceFilePath; and the UpdateStarsState and RegisterOnboardingComplete PossiblyStartWriteToRobot callers are unbuilt layers. Whether the robot ever omits RobotToEngine mfgId tag 0xED is firmware behaviour and stays HARDWARE_ONLY; it is not designed around.
+
 **M15-016 — NeedsManager pause and disconnect transitions** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs`
@@ -1092,7 +1090,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: libcozmoEngine.so
 * best authority: libcozmoEngine.so
 * evidence: NeedsManager::SetPaused 0x00695E04; NeedsManager::OnRobotDisconnected 0x00695908
-* outstanding: The ConnectToRobot seam that calls NeedsManager::InitAfterConnection (0x004ED10E) is not exposed by FreeplayStack, and the SetPaused callers (SetGameBeingPaused tag 85, SetNeedsPauseState tag 201, RegisterOnboardingComplete 200, EnterSdkMode/ExitSdkMode 241/242) are unbuilt; the unpause shift omits +0x1F0/+0x214 (both consumers unbuilt). The SetPaused/OnRobotDisconnected bodies and the always-fired removal wiring are built.
+* outstanding: The ConnectToRobot seam that calls NeedsManager::InitAfterConnection (0x004ED10E) is not exposed by FreeplayStack, and the SetPaused callers (SetGameBeingPaused tag 85, SetNeedsPauseState tag 201, RegisterOnboardingComplete 200, EnterSdkMode/ExitSdkMode 241/242) are unbuilt; the unpause shift omits +0x1F0/+0x214 (both consumers unbuilt). The SetPaused/OnRobotDisconnected bodies and the always-fired removal wiring are built. HandleMessage<SetGameBeingPaused> 0x00698F44 also calls ApplyDecayForTimeSinceLastDeviceWrite(robot != 0) (0x006990DE..0x006990E8); that caller is unbuilt.
 
 ## What remains after both: blocked externally, or needing hardware
 
@@ -1134,6 +1132,7 @@ Each of these is a question already answered. The original's behaviour is establ
 | M11-012 | M11-vision | COMPATIBILITY_POLICY | The nominal camera calibration stand-in | not applicable: the live path reads the robot own calibration and fails closed without it |
 | M11-013 | M11-vision | COMPATIBILITY_POLICY | AllowUnconnectedObjects switch | the engine connected-object rule, which is implemented |
 | M12-014 | M12-manipulation | COMPATIBILITY_POLICY | The docking error signal's last two bytes are whatever was on the engine's stack | libcozmoEngine.so 3.4.0-1204: UpdateDockingErrorSignal 0x0063BE80 is the only builder and never writes the struct bytes at +0x14/+0x15 (stack +0xb4/+0xb5); nothing clears the struct (no memclr, no ctor call), and Pack 0x007C0B26 reads both bytes and sends them |
+| M15-018 | M15-freeplay | COMPATIBILITY_POLICY | NeedsStateOnRobot state version 0 / unsupported: the engine reads uninitialised fields | libcozmoEngine.so |
 | TOOL-001 | tools | COMPATIBILITY_POLICY | Conformance CLI pass and fail criteria | not applicable: the harness is not part of the app |
 | TOOL-002 | tools | COMPATIBILITY_POLICY | The fake robot side answers place docks without a marker signal | not applicable: this is the test double, not the robot |
 | TOOL-003 | tools | COMPATIBILITY_POLICY | The --nominal calibration override in the vision, manipulation and freeplay tools | the live path fails closed without a real calibration |

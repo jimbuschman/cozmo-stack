@@ -1211,8 +1211,9 @@ internal sealed class RobotInitialConnection
     /// The mfgId lambda (CB18): +0x24 = serial (word 0); +0x28 = hw (word 1); +0x2C = colour only if the low byte of
     /// word 2 is in {0, 2, 3, 4}, else an error and 0xFF; $session_id = a new UUID; SendConnectionResponse(0, fw);
     /// then ReadLabAssignmentsFromRobot(serial) and ConnectRobotToNeedsManager(serial) (CD16).
-    /// MISSING: the two NV reads (ReadLabAssignmentsFromRobot(serial) and ConnectRobotToNeedsManager(serial)) are
-    /// still not made; the robot-level NV component now exists (<see cref="NvStorageComponent"/>).
+    /// MISSING: the lab-assignment NV read (ReadLabAssignmentsFromRobot(serial)) is still not made; it is the
+    /// separate M3-033 step and precedes the needs connection. The needs connection is the serial edge raised
+    /// here (M15-014, C2 rows 6-9). The robot-level NV component exists (<see cref="NvStorageComponent"/>).
     /// </summary>
     private void HandleMfgId(ManufacturingID id, uint fw)
     {
@@ -1223,6 +1224,12 @@ internal sealed class RobotInitialConnection
         else { _engine.Log($"error: RobotInitialConnection: bad body colour {c}"); BodyColor = -1; }
         SessionId = Guid.NewGuid();
         SendConnectionResponse(RobotConnectionResult.Success, fw);
+        // fidelity: M15-014
+        // C2 row 6: after the response the callback calls ReadLabAssignmentsFromRobot(serial) and then
+        // RobotManager::ConnectRobotToNeedsManager(serial), with mfgId word 0. The lab-assignment read is the
+        // preceding, separate M3-033 step and is not built here, so the needs edge is raised at this point
+        // (after the synchronous response broadcast, C2 row 8) rather than after a lab read that does not run.
+        _engine.RaiseSerialNumberAcquired(id.SerialNumber);
     }
 
     // fidelity: M1-028
@@ -1316,6 +1323,10 @@ internal sealed class RobotManager
         var r = _robot;
         _robot = null;
         _ric = null;
+        // fidelity: M15-014
+        // A removal ends the serial edge, so a stack created after a reconnect does not replay the old serial;
+        // the next mfgId raises it again (the RIC's tag-0xED subscription is persistent).
+        _engine.ClearAcquiredSerialNumber();
         if (r is not null) r.AnimationStreamingOpen = false;
         _engine.RobotRemoved?.Invoke();
     }
@@ -1357,6 +1368,16 @@ public sealed class CozmoEngine : IDisposable
     internal Action<RobotMessage>? PublicRoute;
     /// <summary>Runs when Robot 1 is deleted (CB33), so the host can stop what belonged to it.</summary>
     internal Action? RobotRemoved;
+    /// <summary>
+    /// M15-014 (C2 rows 5-6): the serial-acquired edge. The mfgId tag-0xED callback raises it with mfgId word 0
+    /// after the connection response; in the original the (unbuilt, M3-033) lab-assignment read precedes the
+    /// needs connection, so it is raised at that point. The freeplay stack's NeedsManager subscriber is the
+    /// needs connection (<c>RobotManager::ConnectRobotToNeedsManager</c> 0x0052FADC ->
+    /// <c>NeedsManager::InitAfterSerialNumberAcquired</c>).
+    /// </summary>
+    internal Action<uint>? SerialNumberAcquired;
+    /// <summary>M15-014: the serial from the last raised edge, so a stack created after the handshake can catch up.</summary>
+    internal uint? AcquiredSerialNumber { get; private set; }
     /// <summary>The game side's reaction to a Success response (policy M1-042), run as a game message.</summary>
     internal Action? AfterSuccessDefaults;
     /// <summary>Raised when a subscriber or handler threw (policy M1-034: isolated, and reported).</summary>
@@ -1631,6 +1652,25 @@ public sealed class CozmoEngine : IDisposable
 
     internal void RaiseRobotDisconnected(RobotDisconnectedMessage m) => FanOut(RobotDisconnected, m);
     internal void RaiseRobotErrorPassThrough(RobotErrorPassThrough m) => FanOut(RobotErrorPassThrough, m);
+
+    // fidelity: M15-014
+    /// <summary>
+    /// M15-014 (C2 rows 5-6): the mfgId callback's serial edge. It records the serial for a later subscriber
+    /// and raises <see cref="SerialNumberAcquired"/>. The needs connection runs as that subscriber, after
+    /// <c>SendConnectionResponse(Success)</c> has delivered synchronously (C2 row 8).
+    /// </summary>
+    internal void RaiseSerialNumberAcquired(uint serial)
+    {
+        AcquiredSerialNumber = serial;
+        FanOut(SerialNumberAcquired, serial);
+    }
+
+    // fidelity: M15-014
+    /// <summary>
+    /// M15-014: end the serial edge on a robot removal, so a stack created after a reconnect does not catch up
+    /// on the previous robot's serial. The next mfgId raises <see cref="SerialNumberAcquired"/> again.
+    /// </summary>
+    internal void ClearAcquiredSerialNumber() => AcquiredSerialNumber = null;
 
     internal void QueueGoToSleep()
     {

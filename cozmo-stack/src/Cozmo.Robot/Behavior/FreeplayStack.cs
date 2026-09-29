@@ -43,6 +43,10 @@ public sealed class FreeplayStack : IDisposable
     {
         var problems = new List<string>();
         needs ??= NeedsManager.FromObb(obbRoot, clockSec, random);
+        // fidelity: M15-014
+        // C2 row 10: StartReadFromRobot queues an NVStorage read of key 0x194000 on the connected robot's
+        // NV component (robot.Engine.NvStorage, the same owner the camera's calibration read uses).
+        needs.NvStorage = robot.Engine.NvStorage;
         var all = new List<IBehavior>();
         all.AddRange(ShippedBehaviors.Implementable());
         all.AddRange(ShippedBehaviors.PlayAnims(obbRoot, problems));
@@ -115,6 +119,18 @@ public sealed class FreeplayStack : IDisposable
         system.SparkPauseChanged = p => tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.Spark, p);
         var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker) { Problems = problems };
 
+        // fidelity: M15-014
+        // C2 rows 5-9: the mfgId tag-0xED callback calls ConnectRobotToNeedsManager(mfgId word 0), whose
+        // wrapper chain ends at NeedsManager::InitAfterSerialNumberAcquired. The engine owns the handshake,
+        // so it exposes the serial-acquired edge and this stack, which owns the NeedsManager, subscribes.
+        // FreeplayTool.OnRobot connects before it creates the stack, so a serial that is already known is
+        // replayed here at creation. The RIC's tag-0xED subscription is persistent and the engine clears its
+        // recorded serial on removal, so every mfgId (including a reconnect) runs the edge again.
+        void onSerial(uint serial) => needs.InitAfterSerialNumberAcquired(serial);
+        robot.Engine.SerialNumberAcquired += onSerial;
+        stack._unsubscribe.Add(() => robot.Engine.SerialNumberAcquired -= onSerial);
+        if (robot.Engine.AcquiredSerialNumber is { } already) onSerial(already);
+
         // The four pause sources. OffTreads (flag 2) is Robot::CheckAndUpdateTreadsState's seam
         // (0x005121F4); OnCharger (flag 3) is Robot::SetOnChargerPlatform (0x00511DB0). GameControl (flag 0)
         // belongs to BehaviorManager::SetCurrentActivity (0x005A106C) when the high-level activity is not
@@ -145,9 +161,9 @@ public sealed class FreeplayStack : IDisposable
         // stack's ConnectToRobot (CozmoEngine.ConnectToRobot / CozmoRobot.ConnectToRobot) posts a game
         // message and exposes no event for that handler; Engine.ConnectionResponse is the later handshake
         // response (BroadcastConnectionResponse), not the ConnectToRobot seam, so wiring it there would be
-        // wrong. Adding a seam would edit CozmoEngine.cs, outside this batch's write scope. The public
-        // NeedsManager.InitAfterConnection remains the seam the host calls at ConnectToRobot handling;
-        // until then the live connect edge is a named gap, not guessed.
+        // wrong. The public NeedsManager.InitAfterConnection remains the seam the host calls at ConnectToRobot
+        // handling. M15-016 also needs the SetPaused game-message callers (tags 85/201/200/241/242) and the
+        // +0x1F0/+0x214 unpause shifts, so the record stays IMPLEMENTATION_GAP.
 
         // ActivityFreeplay::HandleMessage<RobotOffTreadsStateChanged>: being put back down kicks the activity
         // out and re-picks from what is around. That is part of what this stack assembles, so it is wired here

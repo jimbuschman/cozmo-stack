@@ -319,7 +319,11 @@ public class FreeplayTests
             {
                 [NeedId.Play] = new[] { (0.0, 0.6) }, [NeedId.Repair] = new[] { (0.0, 0.0) }, [NeedId.Energy] = new[] { (0.0, 0.0) },
             },
-            new Dictionary<NeedId, IReadOnlyList<(double, double)>>(),
+            new Dictionary<NeedId, IReadOnlyList<(double, double)>>
+            {
+                // the unconnected table: the engine's Load/robot-apply path passes connected=false (Appendix I4)
+                [NeedId.Play] = new[] { (0.0, 0.3) }, [NeedId.Repair] = new[] { (0.0, 0.0) }, [NeedId.Energy] = new[] { (0.0, 0.0) },
+            },
             new Dictionary<NeedId, IReadOnlyList<(double, NeedId, double)>>
             {
                 [NeedId.Repair] = new[] { (0.5, NeedId.Play, 1.0), (0.3, NeedId.Play, 2.0) },
@@ -351,7 +355,8 @@ public class FreeplayTests
         Assert.Equal(2, state.NumDamagedPartsForRepairLevel(0.5));
         Assert.Equal(3, state.NumDamagedPartsForRepairLevel(0.1));
 
-        // and the file round-trips, decaying for the time between the write and the read
+        // and the file round-trips, decaying for the time between the write and the read through the engine's
+        // unconnected path (ApplyDecayForTimeSinceLastDeviceWrite(false), Appendix I4)
         double now = 0;
         var needs = new NeedsManager(() => now, cfg, decay);
         needs.SetLevel(NeedId.Play, 1.0);
@@ -360,8 +365,9 @@ public class FreeplayTests
         {
             needs.Save(path, unixTimeSec: 1000);
             var back = new NeedsManager(() => now, cfg, decay);
-            Assert.True(back.Load(path, unixTimeSec: 1060));         // a minute later
-            Assert.Equal(0.4, back.State.GetNeedLevel(NeedId.Play), 3);
+            now = 1060;                                              // a minute later on the stack clock
+            Assert.True(back.Load(path));
+            Assert.Equal(0.7, back.State.GetNeedLevel(NeedId.Play), 3);   // 0.3/min unconnected, not the 0.6 connected rate
         }
         finally { if (File.Exists(path)) File.Delete(path); }
     }
@@ -1342,5 +1348,683 @@ public class FreeplayTests
         tracker.ForceUpdate();                          // a non-zero segment still reports
         Assert.Single(reports);
         Assert.Equal(30, reports[0], 6);
+    }
+
+    // ------------------------------------------------------------------ M15-014 needs connection and persistence
+
+    /// <summary>The JSON shape the engine's <c>WriteToDevice</c> uses (C2 rows 3/11): version, serial, timestamp and levels.</summary>
+    private static byte[] NeedsJson(int version, uint serial, long dateTime, double play)
+        => System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new Dictionary<string, object>
+        {
+            ["_StateFileVersion"] = version,
+            ["_DateTime"] = dateTime,
+            ["_SerialNumber"] = serial,
+            ["CurNeedLevel"] = new[] { 0.9, 0.8, play },
+        }));
+
+    /// <summary>Writes a device needs file and returns its path (the resolver's alternate-file case).</summary>
+    private static string DeviceNeedsFile(int version, uint serial, long dateTime, double play)
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"needs-device-{Guid.NewGuid():N}.json");
+        File.WriteAllText(path, System.Text.Encoding.UTF8.GetString(NeedsJson(version, serial, dateTime, play)));
+        return path;
+    }
+
+    /// <summary>
+    /// A version-5 <c>NeedsStateOnRobot</c> blob built by hand at the Appendix H offsets, so the tests
+    /// assert the layout rather than the implementation's own packer.
+    /// </summary>
+    private static byte[] RobotBlobV5(ulong timeLastWritten, double repair, double energy, double play)
+    {
+        var b = new byte[NeedsStateOnRobot.Size];
+        BitConverter.GetBytes(5u).CopyTo(b, 0x00);
+        BitConverter.GetBytes(timeLastWritten).CopyTo(b, 0x04);
+        BitConverter.GetBytes((int)(repair * 100000.0 + 0.5)).CopyTo(b, 0x0C);
+        BitConverter.GetBytes((int)(energy * 100000.0 + 0.5)).CopyTo(b, 0x10);
+        BitConverter.GetBytes((int)(play * 100000.0 + 0.5)).CopyTo(b, 0x14);
+        return b;
+    }
+
+    /// <summary>An older-version blob: the shorter Appendix H layout with only the Play level set (index 2 @0x14).</summary>
+    private static byte[] RobotBlobVersion(int version, ulong timeLastWritten, double play)
+    {
+        int size = version switch { 1 => 0x5C, 2 => 0x64, 3 => 0x68, 4 => 0x6C, _ => 0x74 };
+        var b = new byte[size];
+        b[0] = (byte)version;
+        BitConverter.GetBytes(timeLastWritten).CopyTo(b, 0x04);
+        BitConverter.GetBytes((int)(play * 100000.0 + 0.5)).CopyTo(b, 0x14);
+        return b;
+    }
+
+    /// <summary>Answers the in-flight needs NV read (key 0x194000) with a valid non-factory header and payload.</summary>
+    private static void ReplyNeedsRead(Rig rig, byte[] payload, sbyte result = 0)
+    {
+        byte[] data;
+        if (result == 0)
+        {
+            data = new byte[16 + payload.Length];
+            BitConverter.GetBytes(NvStorageComponent.NonFactoryHeaderMagic).CopyTo(data, 0);
+            BitConverter.GetBytes((uint)payload.Length).CopyTo(data, 8);
+            payload.CopyTo(data, 16);
+        }
+        else data = Array.Empty<byte>();
+        rig.Send(new NVOpResult { Tag = NeedsManager.NeedsNvKey, Op = NvStorageComponent.OpRead, Result = result, Length = 0, Data = data });
+        rig.Pump();
+    }
+
+    /// <summary>
+    /// The mfgId serial edge reaches the needs manager (C2 rows 5-9). The engine exposes the edge; the stack
+    /// owns the NeedsManager and subscribes. A serial already known when the stack is created (FreeplayTool
+    /// connects first) is replayed, and either way <c>StartReadFromRobot</c> queues key 0x194000 on the robot's
+    /// NV component (C2 row 10).
+    /// </summary>
+    [Fact]
+    public void TheFreeplayStackConnectsTheNeedsManagerOnTheMfgIdSerialEdge()
+    {
+        var obb = ObbRoot();
+        Assert.NotNull(obb);
+        double clock = 0;
+
+        // the edge arrives after the stack exists
+        using (var rig = new Rig())
+        {
+            var needs = new NeedsManager(() => clock);
+            using var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs, withReactions: false);
+            Assert.Null(rig.Robot.Engine.AcquiredSerialNumber);
+            rig.Robot.Engine.RaiseSerialNumberAcquired(0x41D04D9D);
+            Assert.Equal(0x41D04D9Du, needs.SerialNumber);
+            Assert.Equal(0u, needs.PreviousSerialNumber);
+            Assert.Equal(0x41D04D9Du, rig.Robot.Engine.AcquiredSerialNumber);
+
+            rig.Pump();
+            var read = rig.Sent.OfType<NVCommand>().Last();
+            Assert.Equal(NeedsManager.NeedsNvKey, read.Tag);
+            Assert.Equal(NvStorageComponent.OpRead, read.Op);
+        }
+
+        // the serial is already known when the stack is created: it is replayed
+        using (var rig = new Rig())
+        {
+            var needs = new NeedsManager(() => clock);
+            rig.Robot.Engine.RaiseSerialNumberAcquired(0x1234);
+            using var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs, withReactions: false);
+            Assert.Equal(0x1234u, needs.SerialNumber);
+        }
+    }
+
+    /// <summary>
+    /// <c>InitAfterSerialNumberAcquired</c> 0x006943A0 (C2 row 9): the prior serial moves to +0x1cc, the new
+    /// one lands at +0x34, +0x1c8/+0x1ca are cleared, and StartReadFromRobot runs. With no NV component to
+    /// queue on, the queue fails and the resolution runs at once.
+    /// </summary>
+    [Fact]
+    public void InitAfterSerialNumberAcquiredKeepsThePreviousSerialAndClearsTheReadFlags()
+    {
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        needs.NvStorage = null;                                       // the queue-failure path
+        needs.FinishReadFromRobot(RobotBlobVersion(1, 10, 0.5), 0);   // leave a rewrite flag set, then clear it
+        Assert.True(needs.RobotRewriteNeeded);
+
+        needs.InitAfterSerialNumberAcquired(7);
+        Assert.Equal(7u, needs.SerialNumber);
+        Assert.Equal(0u, needs.PreviousSerialNumber);
+        Assert.False(needs.RobotReadSucceeded);
+        Assert.False(needs.RobotRewriteNeeded);
+
+        needs.InitAfterSerialNumberAcquired(8);
+        Assert.Equal(8u, needs.SerialNumber);
+        Assert.Equal(7u, needs.PreviousSerialNumber);
+    }
+
+    /// <summary>
+    /// <c>StartReadFromRobot</c> 0x006944B4 (C2 row 10): with a connected NV component it queues a READ of
+    /// key 0x194000; the callback's <c>FinishReadFromRobot</c> Boolean is stored at +0x1c8 (C2 row 11) and the
+    /// resolution runs. Appendix G Q2: the engine's failure is an invalid tag only, so a bad tag logs, clears
+    /// <c>+0x3d0</c> and returns 0 without sending.
+    /// </summary>
+    [Fact]
+    public void StartReadFromRobotQueuesKey194000AndStoresTheCallbackResult()
+    {
+        double clock = 0;
+        using var rig = new Rig();
+        var needs = new NeedsManager(() => clock);
+        needs.NvStorage = rig.Robot.Engine.NvStorage;
+        needs.InitAfterSerialNumberAcquired(7);
+        rig.Pump();
+        var read = rig.Sent.OfType<NVCommand>().Last();
+        Assert.Equal(NeedsManager.NeedsNvKey, read.Tag);
+        Assert.Equal(NvStorageComponent.OpRead, read.Op);
+
+        // a successful version-5 blob: +0x1c8 true, no rewrite, the robot copy selected for a device write
+        ReplyNeedsRead(rig, RobotBlobV5(2000, 0.9, 0.8, 0.5));
+        Assert.True(needs.RobotReadSucceeded);
+        Assert.False(needs.RobotRewriteNeeded);
+        Assert.True(needs.HasRobotCopy);
+        Assert.Equal(0.5, needs.State.GetNeedLevel(NeedId.Play), 6);
+
+        // a missing item (-1): +0x1c8 false, and the resolution continues
+        needs.InitAfterSerialNumberAcquired(8);
+        rig.Pump();
+        ReplyNeedsRead(rig, Array.Empty<byte>(), -1);
+        Assert.False(needs.RobotReadSucceeded);
+
+        // an invalid tag: Read returns 0 and nothing is sent; the failure branch clears +0x3d0
+        int before = rig.Sent.OfType<NVCommand>().Count();
+        Assert.Equal(0, needs.StartReadFromRobot(0x123456));
+        Assert.False(needs.AwaitingRobotData);
+        rig.Pump();
+        Assert.Equal(before, rig.Sent.OfType<NVCommand>().Count());
+    }
+
+    /// <summary>
+    /// <c>NVStorageComponent.Read</c> (Appendix G Q2; 0x00644E14..0x00644EF7) returns 1 when the tag is
+    /// valid and queued and 0 for an invalid tag only; the invalid-tag path does not send.
+    /// </summary>
+    [Fact]
+    public void NvStorageReadReturnsZeroForAnInvalidTagAndDoesNotSend()
+    {
+        using var rig = new Rig();
+        int callbacks = 0;
+        Assert.Equal(0, rig.Robot.Engine.NvStorage!.Read(0x123456, _ => callbacks++));
+        Assert.Equal(1, callbacks);                                  // the callback still gets (-6, empty)
+        rig.Pump();
+        Assert.DoesNotContain(rig.Sent, m => m is NVCommand);
+        Assert.Equal(1, rig.Robot.Engine.NvStorage.Read(NeedsManager.NeedsNvKey, _ => { }));
+    }
+
+    /// <summary>
+    /// <c>NeedsStateOnRobot::Pack</c>/<c>Unpack</c> (Appendix H): the version-5 layout is 116 bytes with the
+    /// documented offsets, and a round trip preserves every field.
+    /// </summary>
+    [Fact]
+    public void TheNeedsStateOnRobotVersionFiveBlobRoundTrips()
+    {
+        Assert.Equal(0x74, NeedsStateOnRobot.Size);
+        var s = new NeedsStateOnRobot
+        {
+            Version = 5, TimeLastWritten = 0x1122334455667788, CurNeedsUnlockLevel = 7, NumStarsAwarded = 3,
+            TimeLastStarAwarded = 0xAABBCCDDEEFF0011, OnboardingStageCompleted = 2, ForceNextSong = 4, TimeCreated = 0x0102030405060708,
+        };
+        s.CurNeedLevel[0] = 90000; s.CurNeedLevel[1] = 80000; s.CurNeedLevel[2] = 50000;
+        s.PartIsDamaged[0] = 1; s.PartIsDamaged[5] = 1;
+
+        var bytes = NeedsStateOnRobot.Pack(s);
+        Assert.Equal(0x74, bytes.Length);
+        Assert.Equal(5u, BitConverter.ToUInt32(bytes, 0x00));
+        Assert.Equal(0x1122334455667788UL, BitConverter.ToUInt64(bytes, 0x04));
+        Assert.Equal(90000, BitConverter.ToInt32(bytes, 0x0C));
+        Assert.Equal(80000, BitConverter.ToInt32(bytes, 0x10));
+        Assert.Equal(50000, BitConverter.ToInt32(bytes, 0x14));
+        Assert.Equal(7, BitConverter.ToInt32(bytes, 0x34));
+        Assert.Equal(3, BitConverter.ToInt32(bytes, 0x38));
+        Assert.Equal(1, bytes[0x3C]); Assert.Equal(0, bytes[0x3D]); Assert.Equal(1, bytes[0x41]);
+        Assert.Equal(0xAABBCCDDEEFF0011UL, BitConverter.ToUInt64(bytes, 0x5C));
+        Assert.Equal(2, BitConverter.ToInt32(bytes, 0x64));
+        Assert.Equal(4, BitConverter.ToInt32(bytes, 0x68));
+        Assert.Equal(0x0102030405060708UL, BitConverter.ToUInt64(bytes, 0x6C));
+
+        var back = NeedsStateOnRobot.Unpack(bytes);
+        Assert.Equal(5u, back.Version);
+        Assert.Equal(s.TimeLastWritten, back.TimeLastWritten);
+        Assert.Equal(s.CurNeedLevel, back.CurNeedLevel);
+        Assert.Equal(s.CurNeedsUnlockLevel, back.CurNeedsUnlockLevel);
+        Assert.Equal(s.NumStarsAwarded, back.NumStarsAwarded);
+        Assert.Equal(s.PartIsDamaged, back.PartIsDamaged);
+        Assert.Equal(s.TimeLastStarAwarded, back.TimeLastStarAwarded);
+        Assert.Equal(s.OnboardingStageCompleted, back.OnboardingStageCompleted);
+        Assert.Equal(s.ForceNextSong, back.ForceNextSong);
+        Assert.Equal(s.TimeCreated, back.TimeCreated);
+    }
+
+    /// <summary>
+    /// The v1-4 conversion (Appendix H): the prefix is copied, a shorter layout's missing tail is zeroed and
+    /// the converted version is forced to 5.
+    /// </summary>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void TheV1ToV4ConversionZeroesTheMissingTailAndForcesVersionFive(int version)
+    {
+        int size = version switch { 1 => 0x5C, 2 => 0x64, 3 => 0x68, 4 => 0x6C, _ => 0x74 };
+        var blob = new byte[size];
+        blob[0] = (byte)version;
+        BitConverter.GetBytes(0x1122334455667788UL).CopyTo(blob, 0x04);
+        BitConverter.GetBytes(90000).CopyTo(blob, 0x0C);
+        if (version >= 2) BitConverter.GetBytes(0xAABBCCDDUL).CopyTo(blob, 0x5C);
+        if (version >= 3) BitConverter.GetBytes(0x0BADF00D).CopyTo(blob, 0x64);
+        if (version >= 4) BitConverter.GetBytes(4).CopyTo(blob, 0x68);
+
+        var s = NeedsStateOnRobot.UnpackVersioned(blob, version);
+        Assert.Equal(5u, s.Version);                                 // forced
+        Assert.Equal(0x1122334455667788UL, s.TimeLastWritten);
+        Assert.Equal(90000, s.CurNeedLevel[0]);
+        Assert.Equal(version >= 2 ? 0xAABBCCDDUL : 0UL, s.TimeLastStarAwarded);
+        Assert.Equal(version >= 3 ? 0x0BADF00D : 0, s.OnboardingStageCompleted);
+        Assert.Equal(version >= 4 ? 4 : 0, s.ForceNextSong);
+        Assert.Equal(0UL, s.TimeCreated);                            // never present below v5
+    }
+
+    /// <summary>
+    /// <c>FinishReadFromRobot</c> 0x00699DB0..0x0069A1AC, corrected contract (C2 row 11, Appendix H): result
+    /// -1 and any result below -1 return false; a version above 5 returns false; version 5 returns true
+    /// without +0x1ca; versions 1-4 return true with +0x1ca; version 0 returns true with +0x1ca and a
+    /// "not supported" log.
+    /// </summary>
+    [Fact]
+    public void FinishReadFromRobotFollowsTheCorrectedVersionContract()
+    {
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        var logs = new List<string>();
+        needs.Log += logs.Add;
+
+        Assert.False(needs.FinishReadFromRobot(Array.Empty<byte>(), -1));    // the missing NV item
+        Assert.False(needs.FinishReadFromRobot(Array.Empty<byte>(), -4));    // another NV failure
+
+        Assert.True(needs.FinishReadFromRobot(RobotBlobV5(1, 0.9, 0.8, 0.5), 0));   // version 5: no rewrite
+        Assert.False(needs.RobotRewriteNeeded);
+
+        Assert.True(needs.FinishReadFromRobot(RobotBlobVersion(4, 1, 0.5), 0));     // versions 1-4: rewrite
+        Assert.True(needs.RobotRewriteNeeded);
+
+        Assert.True(needs.FinishReadFromRobot(RobotBlobVersion(1, 1, 0.5), 0));
+        Assert.True(needs.RobotRewriteNeeded);
+
+        Assert.False(needs.FinishReadFromRobot(new byte[] { 6 }, 0));               // above 5: the only zero version path
+
+        Assert.True(needs.FinishReadFromRobot(new byte[] { 0 }, 0));                // the unsupported old version succeeds
+        Assert.True(needs.RobotRewriteNeeded);
+        Assert.Contains(logs, l => l.Contains("not supported"));
+    }
+
+    /// <summary>
+    /// M15-018: a version-0 blob is read as all-zero fields, sets the rewrite flag and returns success
+    /// (the engine's prefix is uninitialised; zeros are the forced SD2 policy).
+    /// </summary>
+    [Fact]
+    public void AVersionZeroBlobIsReadAsZerosWithTheRewriteFlagSet()
+    {
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        needs.WriteToDevice = _ => { };
+
+        Assert.True(needs.FinishReadFromRobot(new byte[] { 0 }, 0));
+        Assert.True(needs.RobotRewriteNeeded);
+        Assert.True(needs.HasRobotCopy);
+
+        // the all-zero levels are applied (clamped to the configured minimum)
+        needs.InitAfterReadFromRobotAttempt();
+        Assert.Equal(0.03, needs.State.GetNeedLevel(NeedId.Play), 6);
+        Assert.Equal(0.03, needs.State.GetNeedLevel(NeedId.Repair), 6);
+    }
+
+    /// <summary>
+    /// <c>StartWriteToRobot</c> 0x00695494..0x00695763 (Appendix G Q1): a fresh version-5
+    /// <c>NeedsStateOnRobot</c> (116 bytes) is written to NV key 0x194000, with <c>timeLastWritten</c> the
+    /// passed time and each level scaled by 100000.
+    /// </summary>
+    [Fact]
+    public void StartWriteToRobotWritesTheVersionFiveBlobToKey194000()
+    {
+        using var rig = new Rig();
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        needs.NvStorage = rig.Robot.Engine.NvStorage;
+        needs.SetLevel(NeedId.Repair, 0.9);
+        needs.SetLevel(NeedId.Energy, 0.8);
+        needs.SetLevel(NeedId.Play, 0.5);
+
+        clock = 1000;
+        needs.StartWriteToRobot(clock);
+        rig.Pump();
+
+        var write = rig.Sent.OfType<NVCommand>().Last();
+        Assert.Equal(NeedsManager.NeedsNvKey, write.Tag);
+        Assert.Equal(NvStorageComponent.OpWrite, write.Op);
+        Assert.Equal(NeedsStateOnRobot.Size, write.Data.Length);
+        Assert.Equal(5u, BitConverter.ToUInt32(write.Data, 0x00));
+        Assert.Equal(1000UL, BitConverter.ToUInt64(write.Data, 0x04));
+        Assert.Equal(90000, BitConverter.ToInt32(write.Data, 0x0C));
+        Assert.Equal(80000, BitConverter.ToInt32(write.Data, 0x10));
+        Assert.Equal(50000, BitConverter.ToInt32(write.Data, 0x14));
+        Assert.Equal(1000, needs.LastWriteToRobotSec, 6);
+
+        // the terminal callback: a failed write logs and sets the error flag, a good one is a no-op
+        needs.FinishWriteToRobot(-4);
+        Assert.True(needs.WriteToRobotError);
+        needs.FinishWriteToRobot(0);
+        Assert.True(needs.WriteToRobotError);
+    }
+
+    /// <summary>
+    /// The abort path (Appendix G Q1): while a robot read is outstanding (<c>+0x3d0</c>) the write logs
+    /// "Aborting writing needs state to robot, because we are reading needs state from robot" and queues
+    /// nothing.
+    /// </summary>
+    [Fact]
+    public void StartWriteToRobotAbortsWhileAReadIsOutstanding()
+    {
+        using var rig = new Rig();
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        needs.NvStorage = rig.Robot.Engine.NvStorage;
+        var logs = new List<string>();
+        needs.Log += logs.Add;
+        needs.InitAfterConnection();                                 // sets +0x3d0
+        Assert.True(needs.AwaitingRobotData);
+
+        needs.StartWriteToRobot(1);
+        rig.Pump();
+
+        Assert.DoesNotContain(rig.Sent.OfType<NVCommand>(), c => c.Op == NvStorageComponent.OpWrite);
+        Assert.Contains(logs, l => l.Contains("Aborting writing needs state to robot, because we are reading needs state from robot"));
+    }
+
+    /// <summary>
+    /// The per-serial filename <c>NeedsFilenameFromSerialNumber</c> 0x00695224 (C2 row 12): <c>needsState_</c> +
+    /// the unsigned decimal serial + <c>.json</c>, including the unguarded serial zero.
+    /// </summary>
+    [Fact]
+    public void TheNeedsFileNameIsPerSerial()
+    {
+        Assert.Equal("needsState_1104170397.json", NeedsManager.FileNameForSerial(0x41D04D9D));
+        Assert.Equal("needsState_0.json", NeedsManager.FileNameForSerial(0));
+        Assert.Equal("needsState_4294967295.json", NeedsManager.FileNameForSerial(uint.MaxValue));
+    }
+
+    /// <summary>
+    /// <c>InitAfterReadFromRobotAttempt</c> 0x0069481C..0x00694D06 (C2 rows 12-13, Appendix H): the robot
+    /// blob has no serial, so the stored-file serial <c>+0x1CC</c> is compared with the incoming serial
+    /// <c>+0x34</c>. Neither copy schedules both writes; robot-only selects the robot data for a device
+    /// write; matching serials compare timestamps and select the newer; mismatched serials select the robot
+    /// data and clear the disconnect timing; the per-serial alternate file is attempted when the robot has no
+    /// data and the stored serial differs.
+    /// </summary>
+    [Fact]
+    public void TheResolverComparesTheStoredAndIncomingSerialAndSelectsTheCopy()
+    {
+        double clock = 0;
+
+        // neither copy: a device write and a robot write are scheduled; with no NV storage the robot write fails
+        var none = new NeedsManager(() => clock);
+        var noneWrites = new List<bool>();
+        none.WriteToDevice = f => noneWrites.Add(f);
+        none.InitAfterReadFromRobotAttempt();
+        Assert.Equal(new[] { false }, noneWrites);
+        Assert.True(none.WriteToRobotError);
+
+        // robot-only: the robot data is selected for a device write
+        var robotOnly = new NeedsManager(() => clock);
+        var writes = new List<bool>();
+        robotOnly.WriteToDevice = f => writes.Add(f);
+        robotOnly.FinishReadFromRobot(RobotBlobV5(2000, 0.9, 0.8, 0.5), 0);
+        robotOnly.InitAfterReadFromRobotAttempt();
+        Assert.Equal(new[] { false }, writes);
+        Assert.Equal(0.5, robotOnly.State.GetNeedLevel(NeedId.Play), 6);
+
+        using var rig = new Rig();
+
+        // matching +0x1CC/+0x34: the newer timestamp wins. Device 3000 > robot 2000 -> device.
+        var deviceNewer = new NeedsManager(() => clock);
+        deviceNewer.WriteToDevice = _ => { };
+        deviceNewer.NvStorage = rig.Robot.Engine.NvStorage;
+        deviceNewer.Load(DeviceNeedsFile(5, 7, 3000, 0.9), applyElapsedDecay: false);
+        deviceNewer.InitAfterSerialNumberAcquired(7);                // +0x1CC = 7, +0x34 = 7
+        deviceNewer.FinishReadFromRobot(RobotBlobV5(2000, 0.9, 0.8, 0.5), 0);
+        deviceNewer.InitAfterReadFromRobotAttempt();
+        Assert.Equal(0.9, deviceNewer.State.GetNeedLevel(NeedId.Play), 6);
+
+        // matching +0x1CC/+0x34: robot 2000 > device 1000 -> robot
+        var robotNewer = new NeedsManager(() => clock);
+        robotNewer.WriteToDevice = _ => { };
+        robotNewer.NvStorage = rig.Robot.Engine.NvStorage;
+        robotNewer.Load(DeviceNeedsFile(5, 7, 1000, 0.9), applyElapsedDecay: false);
+        robotNewer.InitAfterSerialNumberAcquired(7);
+        robotNewer.FinishReadFromRobot(RobotBlobV5(2000, 0.9, 0.8, 0.5), 0);
+        robotNewer.InitAfterReadFromRobotAttempt();
+        Assert.Equal(0.5, robotNewer.State.GetNeedLevel(NeedId.Play), 6);
+
+        // mismatched +0x1CC (1) / +0x34 (7): the robot data wins and the old timing fields are cleared
+        var mismatch = new NeedsManager(() => clock);
+        mismatch.WriteToDevice = _ => { };
+        mismatch.NvStorage = rig.Robot.Engine.NvStorage;
+        mismatch.Load(DeviceNeedsFile(5, 1, 3000, 0.9), applyElapsedDecay: false);
+        mismatch.InitAfterSerialNumberAcquired(7);                   // +0x1CC = 1, +0x34 = 7
+        clock = 5;
+        mismatch.OnRobotDisconnected();
+        Assert.Equal(5, mismatch.LastDisconnectSec, 6);
+        mismatch.FinishReadFromRobot(RobotBlobV5(2000, 0.9, 0.8, 0.5), 0);
+        mismatch.InitAfterReadFromRobotAttempt();
+        Assert.Equal(0.5, mismatch.State.GetNeedLevel(NeedId.Play), 6);
+        Assert.Equal(0, mismatch.LastDisconnectSec, 6);
+
+        // robot has no data and +0x1CC != +0x34: the per-serial alternate is attempted
+        var alternate = new NeedsManager(() => clock);
+        alternate.WriteToDevice = _ => { };
+        alternate.NvStorage = rig.Robot.Engine.NvStorage;
+        alternate.Load(DeviceNeedsFile(5, 1, 1000, 0.1), applyElapsedDecay: false);
+        alternate.InitAfterSerialNumberAcquired(7);                  // +0x1CC = 1, +0x34 = 7
+        alternate.AlternateDeviceFilePath = s => s == 7 ? DeviceNeedsFile(5, 7, 1000, 0.9) : null;
+        alternate.InitAfterReadFromRobotAttempt();                   // the robot read has not answered
+        Assert.Equal(0.9, alternate.State.GetNeedLevel(NeedId.Play), 6);
+    }
+
+    /// <summary>
+    /// The Appendix I1 nine-case write-scheduling table. For each case: the device-write flag (a
+    /// <c>WriteToDevice</c> call), the robot-write flag (a queued NV WRITE), the selected copy, the
+    /// <c>SendNeedsStateToGame</c> action and whether <c>RobotChangedFromLastSession</c> fires.
+    /// </summary>
+    [Fact]
+    public void TheResolverFollowsTheNineCaseWriteSchedulingTable()
+    {
+        double clock = 0;
+
+        (int dw, int rw, List<NeedsActionId> sent, int changed, double play) Run(
+            bool hasDevice, uint deviceSerial, long deviceTime, double devicePlay,
+            bool hasRobot, int robotVersion, ulong robotTime, double robotPlay,
+            uint incomingSerial, bool? alternateOk)
+        {
+            using var rig = new Rig();
+            var needs = new NeedsManager(() => clock);
+            needs.NvStorage = rig.Robot.Engine.NvStorage;
+            int dw = 0;
+            needs.WriteToDevice = _ => dw++;
+            var sent = new List<NeedsActionId>();
+            needs.NeedsStateSent += sent.Add;
+            int changed = 0;
+            needs.RobotChangedFromLastSession += () => changed++;
+
+            if (hasDevice) needs.Load(DeviceNeedsFile(5, deviceSerial, deviceTime, devicePlay), applyElapsedDecay: false);
+            needs.InitAfterSerialNumberAcquired(incomingSerial);
+            rig.Pump();
+            if (alternateOk is { } ok)
+                needs.AlternateDeviceFilePath = s => s == incomingSerial && ok ? DeviceNeedsFile(5, incomingSerial, deviceTime, 0.9) : null;
+
+            if (hasRobot)
+                ReplyNeedsRead(rig, robotVersion == 5 ? RobotBlobV5(robotTime, 0.9, 0.8, robotPlay) : RobotBlobVersion(robotVersion, robotTime, robotPlay));
+            else
+                ReplyNeedsRead(rig, Array.Empty<byte>(), -1);
+
+            int rw = rig.Sent.OfType<NVCommand>().Count(c => c.Op == NvStorageComponent.OpWrite);
+            return (dw, rw, sent, changed, needs.State.GetNeedLevel(NeedId.Play));
+        }
+
+        // case 1: R=0 D=0 -> DW=1 RW=1, NoAction, no RobotChanged, defaults
+        var c1 = Run(false, 0, 0, 0, false, 5, 0, 0, 0, null);
+        Assert.Equal((1, 1), (c1.dw, c1.rw));
+        Assert.Equal(new[] { NeedsActionId.NoAction }, c1.sent);
+        Assert.Equal(0, c1.changed);
+        Assert.Equal(1.0, c1.play, 6);
+
+        // case 2: R=0 D=1 equal -> DW=0 RW=1, no send, device kept
+        var c2 = Run(true, 7, 3000, 0.9, false, 5, 0, 0, 7, null);
+        Assert.Equal((0, 1), (c2.dw, c2.rw));
+        Assert.Empty(c2.sent); Assert.Equal(0, c2.changed); Assert.Equal(0.9, c2.play, 6);
+
+        // case 3: R=0 D=1 mismatch, alternate ok -> DW=1 RW=1, Decay, RobotChanged, alternate copy
+        var c3 = Run(true, 1, 1000, 0.1, false, 5, 0, 0, 7, true);
+        Assert.Equal((1, 1), (c3.dw, c3.rw));
+        Assert.Equal(new[] { NeedsActionId.Decay }, c3.sent);
+        Assert.Equal(1, c3.changed); Assert.Equal(0.9, c3.play, 6);
+
+        // case 4: R=0 D=1 mismatch, alternate fails -> DW=0 RW=1, no send, RobotChanged, device kept
+        var c4 = Run(true, 1, 1000, 0.9, false, 5, 0, 0, 7, false);
+        Assert.Equal((0, 1), (c4.dw, c4.rw));
+        Assert.Empty(c4.sent); Assert.Equal(1, c4.changed); Assert.Equal(0.9, c4.play, 6);
+
+        // case 5: R=1 D=0 -> DW=1, RW=+0x1CA (0 for v5), Decay, RobotChanged, robot applied
+        var c5 = Run(false, 0, 0, 0, true, 5, 2000, 0.5, 7, null);
+        Assert.Equal((1, 0), (c5.dw, c5.rw));
+        Assert.Equal(new[] { NeedsActionId.Decay }, c5.sent);
+        Assert.Equal(1, c5.changed); Assert.Equal(0.5, c5.play, 6);
+
+        // case 5 with +0x1CA set (a v4 robot blob) -> RW=1
+        var c5b = Run(false, 0, 0, 0, true, 4, 2000, 0.5, 7, null);
+        Assert.Equal((1, 1), (c5b.dw, c5b.rw));
+
+        // case 6: R=1 D=1 mismatch -> DW=1 RW=0, Decay, RobotChanged, robot applied, timing cleared
+        var c6 = Run(true, 1, 3000, 0.9, true, 5, 2000, 0.5, 7, null);
+        Assert.Equal((1, 0), (c6.dw, c6.rw));
+        Assert.Equal(new[] { NeedsActionId.Decay }, c6.sent);
+        Assert.Equal(1, c6.changed); Assert.Equal(0.5, c6.play, 6);
+
+        // case 7: R=1 D=1 equal, robot newer -> DW=1 RW=0, Decay, RobotChanged, robot applied
+        var c7 = Run(true, 7, 1000, 0.9, true, 5, 2000, 0.5, 7, null);
+        Assert.Equal((1, 0), (c7.dw, c7.rw));
+        Assert.Equal(new[] { NeedsActionId.Decay }, c7.sent);
+        Assert.Equal(1, c7.changed); Assert.Equal(0.5, c7.play, 6);
+
+        // case 8: R=1 D=1 equal, device newer -> DW=0 RW=1, no send, device kept
+        var c8 = Run(true, 7, 3000, 0.9, true, 5, 1000, 0.5, 7, null);
+        Assert.Equal((0, 1), (c8.dw, c8.rw));
+        Assert.Empty(c8.sent); Assert.Equal(0, c8.changed); Assert.Equal(0.9, c8.play, 6);
+
+        // case 9: R=1 D=1 equal, identical timestamps -> DW=0 RW=0, no send, no apply
+        var c9 = Run(true, 7, 1000, 0.9, true, 5, 1000, 0.5, 7, null);
+        Assert.Equal((0, 0), (c9.dw, c9.rw));
+        Assert.Empty(c9.sent); Assert.Equal(0, c9.changed); Assert.Equal(0.9, c9.play, 6);
+    }
+
+    /// <summary>
+    /// <c>PossiblyStartWriteToRobot</c> 0x00696ECC..0x00696F0D (Appendix I2): a write starts when the elapsed
+    /// time since the last robot write is strictly greater than 600,999,999 clock units, or when forced; a
+    /// null robot returns at once.
+    /// </summary>
+    [Fact]
+    public void PossiblyStartWriteToRobotThrottlesAndForces()
+    {
+        using var rig = new Rig();
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        needs.NvStorage = rig.Robot.Engine.NvStorage;
+        int WriteCount() => rig.Sent.OfType<NVCommand>().Count(c => c.Op == NvStorageComponent.OpWrite);
+        void CompleteWrite()
+        {
+            rig.Send(new NVOpResult { Tag = NeedsManager.NeedsNvKey, Op = NvStorageComponent.OpWrite, Result = 0, Length = 0, Data = Array.Empty<byte>() });
+            rig.Pump();
+        }
+
+        clock = 600; needs.PossiblyStartWriteToRobot(false); rig.Pump(); Assert.Equal(0, WriteCount());
+        clock = 600.999999; needs.PossiblyStartWriteToRobot(false); rig.Pump(); Assert.Equal(0, WriteCount());   // not strictly greater
+        clock = 601; needs.PossiblyStartWriteToRobot(false); rig.Pump(); Assert.Equal(1, WriteCount());           // 601 > 600.999999
+        CompleteWrite();
+
+        // force writes even when not overdue
+        clock = 601.5; needs.PossiblyStartWriteToRobot(true); rig.Pump();
+        Assert.Equal(2, WriteCount());
+        CompleteWrite();
+
+        // no connected robot: no write
+        needs.Connected = false;
+        clock = 9999; needs.PossiblyStartWriteToRobot(true); rig.Pump();
+        Assert.Equal(2, WriteCount());
+    }
+
+    /// <summary>
+    /// The NV WRITE terminal (Appendix I3): a single-chunk write reply completes with the reply's own result
+    /// byte (0 on success, 1/2 deliver 1/2, not the read path's -3), and every negative result logs
+    /// <c>WriteOpFailed</c> and is delivered.
+    /// </summary>
+    [Fact]
+    public void TheNvWriteTerminalDeliversTheReplyResultByte()
+    {
+        using var rig = new Rig();
+        var nv = rig.Robot.Engine.NvStorage!;
+
+        sbyte? Deliver(sbyte replyResult)
+        {
+            sbyte? got = null;
+            Assert.Equal(1, nv.Write(NeedsManager.NeedsNvKey, new byte[NeedsStateOnRobot.Size], r => got = r.Result));
+            rig.Pump();
+            var cmd = rig.Sent.OfType<NVCommand>().Last();
+            Assert.Equal(NvStorageComponent.OpWrite, cmd.Op);
+            Assert.Equal(NeedsStateOnRobot.Size, cmd.Data.Length);
+            rig.Send(new NVOpResult { Tag = NeedsManager.NeedsNvKey, Op = NvStorageComponent.OpWrite, Result = replyResult, Length = 0, Data = Array.Empty<byte>() });
+            rig.Pump();
+            return got;
+        }
+
+        Assert.Equal((sbyte)0, Deliver(0));
+        Assert.Equal((sbyte)1, Deliver(1));
+        Assert.Equal((sbyte)2, Deliver(2));
+        Assert.Equal((sbyte)-1, Deliver(-1));
+        Assert.Equal((sbyte)-2, Deliver(-2));       // not retryable, so it still logs WriteOpFailed
+        Assert.Contains(nv.Log, l => l.Contains("WriteOpFailed"));
+    }
+
+    /// <summary>
+    /// Appendix I1 case 5 (R=1 D=0): the disconnect timestamp <c>+0x18/+0x1C</c> is cleared before the robot
+    /// copy is applied (0x00694A46..0x00694A4C).
+    /// </summary>
+    [Fact]
+    public void CaseFiveClearsTheDisconnectTimestampBeforeApplyingTheRobotCopy()
+    {
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        needs.WriteToDevice = _ => { };
+        clock = 5;
+        needs.OnRobotDisconnected();                                  // +0x18/+0x1c = 5
+        Assert.Equal(5, needs.LastDisconnectSec, 6);
+        needs.Connected = true;                                       // the resolver runs on a live connection
+
+        needs.FinishReadFromRobot(RobotBlobV5(2000, 0.9, 0.8, 0.5), 0);
+        needs.InitAfterReadFromRobotAttempt();                        // R=1 D=0 -> case 5
+        Assert.Equal(0, needs.LastDisconnectSec, 6);
+        Assert.Equal(0.5, needs.State.GetNeedLevel(NeedId.Play), 6);
+    }
+
+    /// <summary>
+    /// The reconnect edge (finding 6): a removal clears the engine's recorded serial, so a stack created
+    /// after a reconnect does not replay the old one, and the next mfgId runs the edge again.
+    /// </summary>
+    [Fact]
+    public void TheSerialEdgeHandlesEachNewMfgIdAcrossAReconnect()
+    {
+        var obb = ObbRoot();
+        Assert.NotNull(obb);
+        double clock = 0;
+        using var rig = new Rig();
+        var needs1 = new NeedsManager(() => clock);
+        using (var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs1, withReactions: false))
+        {
+            rig.Robot.Engine.RaiseSerialNumberAcquired(0x1111);
+            Assert.Equal(0x1111u, needs1.SerialNumber);
+        }
+
+        // a removal ends the edge: the recorded serial is cleared
+        rig.Robot.Engine.Robots.RemoveRobot(CozmoEngine.RobotId, wasConnecting: false);
+        Assert.Null(rig.Robot.Engine.AcquiredSerialNumber);
+
+        // a stack created now does not replay the old serial, and handles the new mfgId
+        var needs2 = new NeedsManager(() => clock);
+        using (var stack2 = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs2, withReactions: false))
+        {
+            Assert.Equal(0u, needs2.SerialNumber);
+            rig.Robot.Engine.RaiseSerialNumberAcquired(0x2222);
+            Assert.Equal(0x2222u, needs2.SerialNumber);
+        }
     }
 }

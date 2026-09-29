@@ -24,14 +24,20 @@ identified where used. Decompilation was navigation only.
 | M15-011 | New beacon is centered on the robot pose with configured radius (X4 44). | IMPLEMENTATION_GAP |
 | M15-012 | Put-down image wait/action sequence and CantHandleTallStack animation trigger (X4 45). | IMPLEMENTATION_GAP |
 | M15-013 | Shipped activity tree construction, desired-name fields, JSON ordering, and parsed-but-discarded `activityPriority` in both activity containers (X4 13–14; gap1 priority). | IMPLEMENTATION_GAP |
-| M15-014 | Needs connection and per-serial persistence lifecycle, exact filenames/keys and elapsed-time decay. The indirect generated dispatch edge that supplies the serial remains unrecovered (X4 6–10; gap1 persistence; gap2). | RECOVERABLE_GAP |
+| M15-014 | Needs connection and per-serial persistence lifecycle, exact filenames/keys and elapsed-time decay. The serial edge is recovered (C2): the `mfgId` tag-0xED callback calls `ConnectRobotToNeedsManager(serial)`; the wrapper chain, the key-0x194000 read and the resolver are cited. | IMPLEMENTATION_GAP |
 | M15-015 | FreeplayDataTracker lifetime, 30-second accumulation/reporting, force flush, and GameControl/Spark/OffTreads/OnCharger pause sources (X4 20, 32–38; gap1 enum). | IMPLEMENTATION_GAP |
 | M15-016 | NeedsManager pause and disconnect state transitions, forced/conditional writes, schedule adjustment, notifications and bracket/DAS handling (X4 47; gap1 pause/disconnect). | IMPLEMENTATION_GAP |
+| M15-017 | The `NeedsStateOnRobot` robot NV blob (key `0x194000`): the 0x74-byte serialized layout, `Pack`/`Unpack`, and the version 1-4 conversion in `FinishReadFromRobot` (C3, Appendix H). | EXACT_SOURCE |
+| M15-018 | The version-0/unsupported robot state blob: the engine reads uninitialised stack fields; forced policy reads zeros and sets the rewrite flag (C3, Appendix H; SD2). | COMPATIBILITY_POLICY |
 
 All source-settled records are `IMPLEMENTATION_GAP` until the implementation phase
-compares or builds them. M15-014 remains `RECOVERABLE_GAP`: recover the generated
-RobotInterface dispatch registration owning wrapper `0x0069DEE4` / thunk `0x004A9B2C`,
-then identify the inbound serial field and ordering relative to robot connection.
+compares or builds them. M15-014's live-path `RECOVERABLE_GAP` is closed by correction
+C2 (Appendix F): the missing production-path edge and its ordering are recovered, so the
+record becomes `IMPLEMENTATION_GAP` (to build). Its whole path — the `mfgId` callback's
+needs connection, `InitAfterSerialNumberAcquired`, the key-`0x194000` read with its
+callback and immediate fallback, the per-serial filename and the robot/device resolution
+and writes — is to be built from the C2 rows. Whether the robot ever omits `mfgId` tag
+`0xED` is firmware behaviour and stays HARDWARE_ONLY (C2 §14).
 
 ## Decisions
 
@@ -379,4 +385,287 @@ rows 5, 21, 31, 35, 37 and 47.
      `SendNeedsLevelsDasEvent("disconnect")` (string `0x0069594C`). There is **no**
      `SendNeedsStateToGame` here.
    Classification EXACT_SOURCE.
+
+## Appendix F — correction C2 (G-M15, 2026-09-29)
+
+Read-only source: Codex's independent extraction
+`re-analysis/research/20260929-M15-014-needs-connection-extraction.md` (the manager's
+spot-check confirmed the missing edge), checked row by row against
+`resources/lib/armeabi-v7a/libcozmoEngine.so` by `@cozmo-verifier`. Two rows failed the
+first pass and were re-extracted and re-verified; the corrected facts are below and
+supersede the report's rows 3, 4/14 and 11. Citations are Thumb VAs; the Ghidra
+decompilation was navigation only.
+
+### C2 production path (the M15-014 rows, checked)
+
+| # | what the original does | citation |
+|---|---|---|
+| 1 | Startup device read: `NeedsManager::InitInternal` calls `InitReset` (`0x00693450`), clears the device `versionUpdated` out-flag at `+0x1CB` (`0x0069345C`; the flag is passed to `AttemptReadFromDevice` at `0x00693456`/`0x00693466`) and the device-read result at `+0x1C9` (`0x00693462`), stores the attempt's result into `+0x1C9` (`0x0069346C`), sends the default state if the read failed (`0x00693472..0x00693476`) and calls `WriteToDevice(this,true)` unconditionally (`0x0069347A..0x00693480`). It does **not** touch the robot-rewrite flag `+0x1CA`. | `0x00693444..0x0069348E` |
+| 2 | `AttemptReadFromDevice` tests the fixed `needsState.json` exists (`0x0069369A..0x006936A0`), calls `ReadFromDevice` (`0x006936A2..0x006936AE`); a successful read snapshots the timestamp, applies elapsed-time decay, sends the needs state and increments the background counter and returns 1 (`0x006936B0..0x0069371E`); missing or failed returns 0 (`0x00693720..0x0069378E`). | `0x00693690..0x00693790` |
+| 3 | `ReadFromDevice` clears its out `versionUpdated` Boolean at `0x006998C8`; a failed `readAsJson` (`0x006998E8..0x00699988`) or a state-file version `> 5` (gate `0x00699904` asInt / `0x00699908` / `0x0069990A cmp sb,#6` / `0x0069990E blt`, rejection return 0 at `0x00699986`) returns 0; a supported version loads `_DateTime`, `_SerialNumber` (`0x00699A1C..0x00699A2C`), needs/repair/star fields and version-dependent fields, marks the device NeedsState dirty, updates brackets, sets the out Boolean only where an old format needs rewriting and returns 1 (`0x00699B90..0x00699BB0`). `0x006999B0..0x006999C0` is the `version < 3` timestamp branch (`0x006999B4 cmp.w sb,#3`), not the `>5` gate. | `0x006998B4..0x00699BB8` |
+| 4 | Successful-handshake registration: `RobotInitialConnection::OnNotified(0, fw)` sets validation (`0x0052DDD0`), registers the RobotToEngine tag `0xED` callback (`0x0052DE04`/`0x0052DE06`; subscribe `0x0052DE34` → `0x00519F8C`, handle retained by the append `0x0052DE3C` → `0x0052D44C`), and sends EngineToRobot `GetManufacturingInfo` tag `0x25` (`0x0052DE5E..0x0052DE80`; tag immediate `0x007A806E`). The subscription is **persistent, not one-shot**: `0x0052D44C..0x0052D46C` is a pure append, the callback `0x0052E2F8..0x0052E3B8` never unsubscribes, and no explicit unsubscribe path exists; it is released only by RAII when the `RobotInitialConnection` object is destroyed. | `0x0052DE04..0x0052DE40`, `0x0052DE5E..0x0052DE80` |
+| 5 | Inbound `mfgId` tag `0xED`: payload is three little-endian u32 (12 bytes). The callback stores word 0 at `RobotInitialConnection+0x24` (serial), word 1 at `+0x28` (hardware version) and the low byte of word 2 at `+0x2C` (body colour, validated as 0/2/3/4). The serial supplied to needs is `mfgId.word0`. | `0x0052E2F8..0x0052E31C`; generated `ManufacturingID` unpack `0x007B1750..0x007B177C`, pack `0x007B17E6..0x007B1820`, size `0x007B1856..0x007B1858` (`0xC`) |
+| 6 | The `mfgId` callback sends `SendConnectionResponse` (`0x0052E3A2`), calls `ReadLabAssignmentsFromRobot(serial)` (`0x0052E3AA`), then loads the same serial from `+0x24` and calls `blx #0x004A9B2C` (`0x0052E3AE..0x0052E3B2`), whose body is `RobotInterface::MessageHandler::ConnectRobotToNeedsManager` at `0x0069DEE4`. | `0x0052E39C..0x0052E3B2` |
+| 7 | Wrapper chain: `0x0069DEE4 ldr r0,[r0,#0x20]` / `b.w #0x8CDB0C` (veneer) → PLT `0x004BE214` = `RobotManager::ConnectRobotToNeedsManager`; body `0x0052FADC ldr r0,[r0,#0x18]` / `ldr r0,[r0,#0x34]` / `b.w #0x8CB32C` (veneer) → PLT `0x004A9DB4` = `NeedsManager::InitAfterSerialNumberAcquired`. The serial is preserved in `r1` across both hops. | `0x0069DEE4..0x0069DEE8`; `0x0052FADC..0x0052FAE6`; veneers `0x008CDB0C`, `0x008CB32C`; PLTs `0x004BE214`, `0x004A9DB4` |
+| 8 | Ordering: `SendConnectionResponse(Success)` runs before both the lab read and the needs connection (`0x0052DF2E..0x0052DF64`); its UI broadcast delivers synchronously (`0x006625C6..0x006625FA`) before the callback proceeds to the lab read and the needs wrapper. | callback `0x0052E39C..0x0052E3B2` |
+| 9 | `InitAfterSerialNumberAcquired` copies the prior device-loaded serial `+0x34` to `+0x1CC`, stores the inbound serial at `+0x34`, clears robot-data/robot-rewrite flags `+0x1C8`/`+0x1CA` and calls `StartReadFromRobot`. | `0x006943A0..0x006943F8`; esp. `0x006943A8..0x006943B0`, `0x006943EC..0x006943F8` |
+| 10 | `StartReadFromRobot` (body `0x0069449C..0x00694553`) queues an NVStorage read of key `0x194000` on the connected robot's NV component (`0x006944B4..0x006944D0`). Success returns 1 and resolution waits for the callback (`0x006944E6..0x006944EA`); failure logs, clears `+0x3D0`, returns 0 (`0x006944EC..0x0069453E`), and `InitAfterSerialNumberAcquired` immediately calls `InitAfterReadFromRobotAttempt` (`0x006943F8..0x00694402`). The queued/failed value is `NVStorageComponent::Read`'s return (`0x00644E14..0x00644EF7`): 1 = valid tag and queued, 0 = invalid tag only (no absent-component, queue-full or in-flight failure; see C2 §Q2). | `0x006944B4..0x006944D0`, `0x006943F8..0x00694402`, `0x00644E14..0x00644EF7` |
+| 11 | Robot-read callback: clears `+0x3D0` (`0x0069BEC0`), calls `FinishReadFromRobot(data,size,result)` (`0x0069BEC6`), stores its Boolean at `+0x1C8` (`0x0069BECA`), always tail-calls `InitAfterReadFromRobotAttempt` (`0x0069BED4` → `0x004BDAA0`). **Corrected return contract** of `FinishReadFromRobot` (`0x00699DB0..0x0069A1B3`): a missing NV item (result `-1`) and any other NV failure (result `< -1`) return 0; a state version `> 5` returns 0 via `sVerifyFailedReturnFalse`; versions 1–4 return 1 and set `+0x1CA = 1` (`0x00699E64`); version 5 returns 1 and does **not** set `+0x1CA`; the unsupported old version 0 also returns **1** and sets `+0x1CA = 1` (debug log `0x00699FFE`, same success tail). The only zero is `0x00699F06`; the success constant is `0x0069A176`. | callback `0x0069BEB2..0x0069BED4`; `0x00699DB0..0x00699F06`, `0x00699E56..0x0069A192`, `0x0069A192..0x0069A1AC` |
+| 12 | Per-serial filename and alternate read: `NeedsFilenameFromSerialNumber` reads the serial at `this+0x34` and returns `needsState_` + its unsigned decimal + `.json`. During resolution, if the robot has no data, the startup device read did, and the stored file serial differs from the incoming serial, the manager attempts this alternate per-serial file; a missing/failed alternate is logged as possible for a brand-new robot and resolution continues with a false alternate-read result. | filename `0x00695224..0x006952BA`, serial load `0x0069523A`; alternate condition/read `0x006949FA..0x00694A0A`, `0x00694BCE..0x00694BE4`; failed alternate `0x00694C3A..0x00694C90` |
+| 13 | `InitAfterReadFromRobotAttempt` resolves the robot/device copies: neither copy uses current defaults and schedules writes to both (`0x00694B06..0x00694BC8`); robot-only selects robot data for a device write; matching copies compare timestamps and select the newer; mismatched stored serials select robot data and clear the old disconnect/app-background timing fields (`0x00694A4E..0x00694AA6`). When the resolved-device-write flag is set it stamps the selected state with `system_clock::now`, calls `WriteToDevice(this,false)` and marks `+0x1C9` (`0x00694DA2..0x00694E4C`); independently the robot-write flag can call `StartWriteToRobot` at the call site `0x00694E50..0x00694EE4` (body `0x00695494..0x00695763`, C2 §Q1). | `0x0069481C..0x00694D06`; timestamp `0x00694960..0x006949B8`, `0x00694BEA..0x00694CE2` |
+| 14 | Missing reply versus zero serial: if the robot never supplies tag `0xED`, the registered callback never runs — there is no successful connection response, no `ConnectRobotToNeedsManager`, no per-serial resolution, timer or retry; only the startup fixed-file state remains. If `mfgId` arrives with word 0 equal to zero there is no zero guard: zero is installed and the per-serial filename is `needsState_0.json`. The app-side consequence of omission is exact; whether/when the robot omits the reply is **HARDWARE_ONLY** firmware behaviour. | `0x0052DE04..0x0052DE80`, `0x0052E2F8..0x0052E3B2`; no timer/retry in `0x0052D168..0x0052E3B8`; unguarded store/pass `0x0052E308..0x0052E3B2`; decimal filename `0x00695224..0x006952BA` |
+
+### C2 record change
+
+- **M15-014** goes from live-path `RECOVERABLE_GAP` to `IMPLEMENTATION_GAP` (to build): the
+  missing production-path edge, its ordering, the inbound field and the persistence
+  lifecycle are recovered above. Its `unresolved` names the firmware-side `mfgId`-omission
+  question (HARDWARE_ONLY) and any part of the path the build leaves unbuilt. The record is
+  settled only when its whole path is built and verified.
+- **M15-016** is unchanged; its `ConnectToRobot -> InitAfterConnection` seam is settled on
+  the same terms if this job completes it.
+
+## Appendix G — correction C2 addendum (G-M15, 2026-09-29)
+
+Two build-phase `MISSING:` items were extracted and checked against
+`resources/lib/armeabi-v7a/libcozmoEngine.so`. This corrects C2 rows 10 and 13 and adds the
+recovered bodies.
+
+### Q1 — `StartWriteToRobot`
+
+C2 row 13's `0x00694E50..0x00694EE4` is the **call site** inside
+`InitAfterReadFromRobotAttempt`, not the body. The body is
+`NeedsManager::StartWriteToRobot` `0x00695494..0x00695763`.
+
+Call site (`0x00694E50..0x00694EE4`): only when the robot-write result flag is 1
+(`0x00694E50 cmp.w r8,#1` / `0x00694E54 bne`); if `+0x1CA` is set it is cleared to 0 with a
+"storage version update" log (`0x00694E56`/`0x00694E62`); `+0x1C8` is read only to pick the
+log string and is neither cleared nor written (`0x00694E84..0x00694EA8`); it passes a fresh
+`system_clock::now()` and tail-calls `StartWriteToRobot` (`0x00694EDE`/`0x00694EE2`/`0x00694EE4`).
+
+Body (`0x00695494..0x00695763`): returns at once if the connected robot `+4` is null
+(`0x006954A6..0x006954AA`); if a read is in progress (`+0x3D0 != 0`) it logs "Aborting writing
+needs state to robot, because we are reading needs state from robot" and returns without
+queueing or deferring (`0x006954AE..0x006954B2`); stores the passed time_point at
+`+0x1C0/+0x1C4` (`0x006954F8`). It builds a fresh `NeedsStateOnRobot` on its own stack — **not**
+the robot's stored copy and **not** the `+0x1C8`/`+0x1CA` flags — with version **5**
+(`0x00695614`/`0x00695616`; the JSON key is `"version"`, `0x00784988`), `timeLastWritten`
+(passed / 1e6), `curNeedLevel[10]` each `level*100000.0+0.5` (`0x00695566..0x006955B0`),
+`curNeedsUnlockLevel`/`numStarsAwarded` (`+0x54`/`+0x58`), `partIsDamaged[32]` (`+0x48`),
+`timeLastStarAwarded` (`+0x60`), `timeCreated` (`+0x10`), `onboardingStageCompleted`
+(`+0x1D0`) and `forceNextSong` (`+0x68`). It sizes it with `NeedsStateOnRobot::Size()`
+= `0x74` (116 bytes; `0x007848C8`) and serializes with `NeedsStateOnRobot::Pack(uchar*,uint)`
+(`0x0078479E`; PLT `0x4BDB0C`) — not `writeAsJson`. It writes NV key `0x194000` (same base as
+the read) through `NVStorageComponent::Write` synchronously (`0x006956C6`, `0x006956D4` →
+`0x006444FC`); `Write` returning 0 logs `NeedsManager.StartWriteToRobot.WriteFailed` and sets
+`_errG` (`0x006956F0..0x006956FE`), and it never calls `Read` first and has no start/finish
+flag pair. The write's terminal `NeedsManager::FinishWriteToRobot` (`0x00699CD8..0x00699D39`,
+reached from the functor `0x0069BE4A` → veneer `0x008CDAC0` → PLT `0x004BE01C`) only logs
+`FinishWriteToRobot.WriteFailed` and sets `_errG` when the result is `< 0`; a result `>= 0`
+is a no-op, and it touches no NeedsManager flag and does not retry.
+
+### Q2 — the NV read queue-success contract
+
+C2 row 10's "if queuing fails" is only an invalid tag. `NVStorageComponent::Read`
+(`0x00644E14..0x00644EF7`) returns **1** when `IsValidEntryTag(tag)` holds and the request is
+`emplace_back`-ed, and **0** only for an invalid tag (`0x00644E2A`/`0x00644E2E`,
+`0x00644E82`/`0x00644E86`, invalid path `0x00644E9C..0x00644EEE`). There is no
+absent-robot/absent-component check inside `Read`, no queue-capacity check, no in-flight or
+duplicate check and no timeout. `StartReadFromRobot` passes the 5th (broadcast) arg 0
+(`0x006944C4`), so an invalid tag warns and returns 0; `0x194000` is valid, so on a connected
+robot the call returns 1. A C# port with a `void Read(...)` must expose the validity result to
+model this branch.
+
+### C2 addendum record change
+
+- **M15-014**'s evidence adds `NeedsManager::StartWriteToRobot 0x00695494..0x00695763` (call
+  site `0x00694E50..0x00694EE4`), `NeedsManager::FinishWriteToRobot 0x00699CD8..0x00699D39`
+  and `NVStorageComponent::Read 0x00644E14..0x00644EF7`. The robot write and the read's
+  queued/invalid-tag result are now buildable.
+
+## Appendix H — correction C3 (G-M15, 2026-09-29)
+
+The robot NV item at key `0x194000` is a **binary** CLAD struct
+`Anki::Cozmo::NeedsStateOnRobot` (written by `StartWriteToRobot`, read by
+`FinishReadFromRobot`), not the JSON device file that `ReadFromDevice`/`WriteToDevice`
+use. The serialized layout was not owned by any record; it is recovered here and gets
+record **M15-017**. The version-0 read path is engine-uninitialised and gets forced
+policy **M15-018** (SD2).
+
+### The serialized `NeedsStateOnRobot` layout (version 5, `Size()` = `0x74`)
+
+Little-endian; `Pack`/`Unpack` use the same order; `WriteBytes`/`ReadBytes` are raw
+`__aeabi_memcpy` with no byte swap (`0x0083C06C`, `0x0083C09A`). Serialized offsets differ
+from in-memory offsets by 4 bytes after the version (the in-memory struct pads `+0x04`).
+
+| ser offset | width | field | citations |
+|---|---|---|---|
+| `0x00` | 4 | `version` (u32; read side dispatches on byte 0) | Pack `0x007847DA`/`0x007847E4`; Unpack `0x007846C4` |
+| `0x04` | 8 | `timeLastWritten` (u64 seconds) | Pack `0x007847EA`; Unpack `0x007846D0` |
+| `0x0C` | 40 | `curNeedLevel[10]` (i32 each; `round(level*100000.0)`) | Pack `0x007847FC..0x0078480C`; Unpack `0x007846DC..0x007846F4` |
+| `0x34` | 4 | `curNeedsUnlockLevel` (i32) | Pack `0x00784816`; Unpack `0x007846FE` |
+| `0x38` | 4 | `numStarsAwarded` (i32) | Pack `0x00784824`; Unpack `0x0078470A` |
+| `0x3C` | 32 | `partIsDamaged[32]` (u8 each) | Pack `0x00784832..0x00784840`; Unpack `0x00784718..0x0078472E` |
+| `0x5C` | 8 | `timeLastStarAwarded` (u64 seconds) | Pack `0x0078484A`; Unpack `0x00784738` |
+| `0x64` | 4 | `onboardingStageCompleted` (i32) | Pack `0x0078485C`; Unpack `0x00784744` |
+| `0x68` | 4 | `forceNextSong` (`UnlockId` i32 enum, **not** a bool) | Pack `0x0078486A`; Unpack `0x00784750`; `GetJSON` calls `EnumToString(UnlockId)` `0x00784AAA` |
+| `0x6C` | 8 | `timeCreated` (u64 seconds) | Pack `0x00784878`; Unpack `0x0078475C` |
+| `0x74` | | total | `Size` `0x007848C8 movs r0,#0x74` |
+
+### Versioned layouts and `FinishReadFromRobot` conversion
+
+`FinishReadFromRobot` reads the version byte (`0x00699DD0 ldrb r3,[r1]`), rejects `> 5`
+(`0x00699DD2`/`0x00699DD4`) and dispatches: v5 `0x00699E5A` → `NeedsStateOnRobot::Unpack`
+(`0x007846B4`); v1-v4 via `tbb` `0x00699E70` to `_v0N::Unpack` (`0x00785ECC`, `0x00785998`,
+`0x007853E8`, `0x00784D8C`); v0 falls to `0x00699FFE`.
+
+| version | `_v0N::Size` | serialized layout | conversion |
+|---|---|---|---|
+| 5 | `0x74` | full table | none |
+| 4 | `0x6C` | prefix + `timeLastStarAwarded` + `onboardingStageCompleted` + `forceNextSong` | copy known; zero `timeCreated` |
+| 3 | `0x68` | prefix + `timeLastStarAwarded` + `onboardingStageCompleted` | copy known; zero `forceNextSong`/`timeCreated` |
+| 2 | `0x64` | prefix + `timeLastStarAwarded` | copy known; zero `onboardingStageCompleted`/`forceNextSong`/`timeCreated` |
+| 1 | `0x5C` | prefix only | copy prefix; zero `timeLastStarAwarded`/`onboardingStageCompleted`/`forceNextSong`/`timeCreated` |
+
+"prefix" = `version`(4)@0, `timeLastWritten`(8)@4, `curNeedLevel[10]`(40)@0x0C,
+`curNeedsUnlockLevel`(4)@0x34, `numStarsAwarded`(4)@0x38, `partIsDamaged[32]`(32)@0x3C.
+For every version other than 5 (including 0), `+0x1CA` is set (`0x00699E64`) and the
+converted struct's version is forced to 5 (`0x00699E86`/`0x00699E88`). After the common
+tail (`0x0069A052..`) the fields are scaled and stored: `timeLastWritten` × 1e6 to
+`this+0x98`, unlock/stars to `this+0xe4/0xe8`, levels /100000 to the map at `this+0xcc`,
+damaged parts to `this+0xd8`, `timeLastStarAwarded` × 1e6 to `this+0xf0`, `forceNextSong`
+to `this+0xf8`, `timeCreated` × 1e6 to `this+0xa0`, `onboardingStageCompleted` to
+`this+0x1d0`, then `NeedsState::UpdateCurNeedsBrackets` (`0x0069A186`).
+
+### Version 0 (forced policy, SD2)
+
+No unpack variant runs. `0x00699FFE..0x0069A01A` logs `"Version %d found on robot but not
+supported"`; `0x0069A03E..0x0069A04E` zero `this+0x60..+0x77`; the struct prefix
+`this+0x00..+0x5F` is **never written**, so the common tail reads uninitialised stack. It
+still sets `+0x1CA` and returns 1 (`0x0069A176`). No shipped writer emits version 0.
+**Policy (M15-018):** the stack reads a version-0 blob as all-zero fields, sets the rewrite
+flag and returns success — the safest deterministic value, since the engine's bytes are
+undefined.
+
+### C3 record changes
+
+- **M15-017** (new, EXACT_SOURCE): the `NeedsStateOnRobot` serialized layout and the v1-4
+  conversion. Evidence: `NeedsStateOnRobot::Size 0x007848C8`, `Pack 0x0078479E`,
+  `Unpack 0x007846B4`, `_v01..v04::Unpack 0x00785ECC/0x00785998/0x007853E8/0x00784D8C`,
+  `FinishReadFromRobot 0x00699E56..0x0069A192`.
+- **M15-018** (new, COMPATIBILITY_POLICY, forced SD2): the version-0/unsupported read path.
+- **M15-014**'s evidence adds the blob layout citations; the robot copy has no serial field,
+  so the resolver's serial comparison uses `+0x1CC` (device/stored file serial) vs `+0x34`
+  (incoming robot serial), not a serial inside the robot blob.
+
+## Appendix I — correction C4 (G-M15, 2026-09-29)
+
+The verifier found the resolver's write scheduling, `PossiblyStartWriteToRobot`, and the NV
+write terminal unbuilt or wrong. Extracted and checked against the binary. This replaces the
+vague part of C2 row 13 and adds the write terminal.
+
+### I1 — `InitAfterReadFromRobotAttempt` (`0x00694608..0x00694F55`; decision `0x0069481C..0x00694D06`) write scheduling
+
+Inputs: robot copy `+0x1C8`, device copy `+0x1C9`, robot rewrite `+0x1CA`, serials `+0x1CC`
+vs `+0x34`. Device-write flag `[sp,#0x18]` (tested `0x00694DA2`); robot-write flag `r8`
+(tested `0x00694E50`). DW/RW = the two flags.
+
+| # | state | selected/applied | DW | RW | `SendNeedsStateToGame` | citations |
+|---|---|---|---|---|---|---|
+| 1 | R=0 D=0 | neither; defaults written to both | 1 | 1 | `0x00694B46` arg **0** | `0x00694830`/`0x006949BC`/`0x00694B06..0x00694B46`/`0x00694BC6`/`0x00694BC8` |
+| 2 | R=0 D=1 serials equal | device kept; no apply | 0 | 1 | none | `0x006949C0..0x00694A0A` |
+| 3 | R=0 D=1 mismatch, alternate **ok** | alternate per-serial file; **no** robot apply | 1 | 1 | `0x006936C6` arg **1** (in `AttemptReadFromDevice`) | `0x006949FA..0x00694A0A`, `0x00694BCE..0x00694BE8`, `0x00694C92..0x00694ACA` |
+| 4 | R=0 D=1 mismatch, alternate **fails** | none; sends `RobotChangedFromLastSession` | 0 | 1 | none | `0x00694C3A..0x00694C90`, `0x00694AC2`, `0x00694AC8`, message `0x00694CA6 b 0x00694AA8` |
+| 5 | R=1 D=0 | clears `+0x18/+0x1C` then applies the robot copy; sends `RobotChangedFromLastSession` | 1 | `+0x1CA!=0` | `0x00694B00` arg **1** | `0x00694A0C..0x00694AA6` (clear `0x00694A46..0x00694A4C`), apply `0x00694AD0..0x00694B04` |
+| 6 | R=1 D=1 mismatch | robot copy applied; clears `+0x18..+0x24` | 1 | `+0x1CA!=0` | `0x00694B00` arg **1** | `0x00694880..0x0069488A`, `0x00694A4E..0x00694A96` |
+| 7 | R=1 D=1 equal, robot newer | robot copy applied | 1 | `+0x1CA!=0` | `0x00694B00` arg **1** | `0x00694960..0x0069496E`, `0x00694972..0x006949B8` |
+| 8 | R=1 D=1 equal, device newer | device kept; no apply | 0 | **1** (unconditional) | none | `0x00694BEA..0x00694C38`, `0x00694D02..0x00694D06` |
+| 9 | R=1 D=1 equal, timestamps identical | neither; no apply | 0 | `+0x1CA!=0` | none | `0x00694CA8..0x00694CE2`, `0x00694D02..0x00694D06` |
+
+DW is written at `0x00694AC2 str r6,[sp,#0x18]` (cases 3,5,6,7) and `0x00694D06 str r0,[sp,#0x18]`
+(cases 1,2,8,9). RW is unconditional 1 at `0x00694BC8` (1,2) and via `sb=1` at `0x00694CA2`
+(3,4) and `0x00694C34` (8); otherwise `r8 = (+0x1CA!=0)` (`0x00694A9A..0x00694AA0`,
+`0x00694CF2..0x00694CF8`). A device write sets `+0x1C9 = 1` (`0x00694E4C`) and clears `+0x1CB`
+with a "storage version update" log (`0x00694DB6`); a robot write clears `+0x1CA` likewise
+(`0x00694E62`). Both writes use one `system_clock::now()` captured at `0x00694D9C..0x00694DA0`
+(`0x00694E38`, `0x00694EDE`). The robot-copy apply is `FUN_00695870(this+8, this+0x98)`
+(`0x00694AD0..0x00694B04`) then `ApplyDecayForTimeSinceLastDeviceWrite(false)`. Cases 3,4,5,6,7
+send a `RobotChangedFromLastSession` game message (`0x00694AA8..0x00694AC4`; the alternate branch
+converges on `0x00694CA6 b 0x00694AA8` for both its success and failure tails); cases 1,2,8,9 do
+not. `AttemptReadFromDevice` on success snapshots the device timestamp, applies decay, sends
+`SendNeedsStateToGame(1)` and the background DAS event (`0x006936B0..0x006936D2`).
+
+### I2 — `PossiblyStartWriteToRobot` (`0x00696ECC..0x00696F0D`) and its callers
+
+Returns if the connected robot `+4` is null (`0x00696ED4`). Reads `+0x1C0/+0x1C4` (last robot
+write), takes `system_clock::now()` (`0x00696ED8..0x00696EE6`), and compares the elapsed time
+against `0x23D2883F` = **600,999,999 ns = 600.999999 s** (`0x00696EE2`/`0x00696EEA`); when the
+elapsed time is strictly greater it calls `StartWriteToRobot` (`0x00696F04`). If not overdue it
+returns unless `force == 1` (`0x00696F00..0x00696F02`). `StartWriteToRobot` writes `+0x1C0/+0x1C4`
+(`0x006954F8`). Callers: `NeedsManager::RegisterNeedsActionCompleted` `0x006960D0` with
+`force = false` (`0x00696534..0x00696536`); `NeedsManager::UpdateStarsState` `0x00696AAC` with
+`force = true` (`0x00696BDE..0x00696BE2`); `NeedsManager::HandleMessage<RegisterOnboardingComplete>`
+`0x006984CC` with `force = true` (`0x00698600..0x00698602`). (The earlier C2/G text that named
+`RegisterNeedsActionCompletedInternal` at `0x006960D0` is wrong: that address is
+`RegisterNeedsActionCompleted`; `RegisterNeedsActionCompletedInternal` is `0x00696778` and is not
+a caller.) The stars-state and onboarding callers are unbuilt layers.
+
+### I3 — `NVStorageComponent::HandleNVOpResult` (`0x00642F8C..0x00643937`) op dispatch and the WRITE terminal
+
+Reply fields: tag, index, op byte (`[sp,#0x40]`), result byte (`[sp,#0x41]`), data vector. Op 0
+takes the read header/reassembly path (`0x006430A2..0x006430A6`); ops 1-3 take the pending-write
+path (`0x0064304A subs r1,r0,#1` / `cmp r1,#3` / `bhs 0x006430A2`; write path `0x00643054`).
+For a single-chunk WRITE reply (`Op=1, Result=0, index=0, empty data`, `+0x1C == 0`): result is
+non-negative so no resend (`0x00643062..0x0064306A`); clear `+0x48` (`0x0064306E..0x00643074`);
+`+0x1C == 0` falls through to the completion (`0x00643078..0x0064307E`); `WriteSuccess` log;
+`BroadcastNVStorageOpResult` when `+0x40 != 0` (`0x00643384..0x0064339E`); the write callback
+`std::function<void(NVResult)>` at `this+0x28` is invoked with the **reply's result byte**
+(`0x006433A2..0x006433F6`; a successful write delivers 0, and a non-negative result delivers its
+own value); `RobotDataBackupManager::WriteDataForTag(..., op==1)` (`0x006433FA..0x00643418`);
+`SetState(0)` clears `+0x48`, `+0x1C`, `+0x78` (`0x0064341C..0x00643420`,
+`0x00642B0C..0x00642B65`). A negative result resends for `-8..-4` **except `-6`**
+(`0x00643194 uxtb r1,r1` / `0x00643196 subs r1,r1,#0xf8` / `0x00643198 cmp r1,#4` /
+`0x0064319E beq`) while retries remain; otherwise it logs `WriteOpFailed` for **every** negative
+result and clears `+0x48`/`+0x1C` before the same completion (`0x00643194..0x006432E6`). The current stack parses every
+reply through the read path, so a successful write completes with `-3` and `FinishWriteToRobot`
+logs a failure. M3-030/031 cover the read completion and the read retry set only, not this write
+terminal; the write terminal is built here as part of M15-014's robot-write path.
+
+### C4 record change
+
+- **M15-014**'s evidence adds the resolver write-scheduling ranges (`0x00694A0C..0x00694EE4`),
+  `PossiblyStartWriteToRobot 0x00696ECC..0x00696F0D` with its callers, and the NV write terminal
+  `NVStorageComponent::HandleNVOpResult 0x00642F8C..0x00643937` (write path `0x00643054..0x00643424`).
+  Its `unresolved` names the unbuilt stars-state/onboarding callers and the device-file host seam.
+
+### I4 — `NeedsManager::ApplyDecayForTimeSinceLastDeviceWrite(bool)` (`0x00695304..0x00695374`)
+
+Both `AttemptReadFromDevice` (`0x006936BA..0x006936BE`) and the resolver's robot-copy apply
+(`0x00694AF4..0x00694AF8`) call it with **`false`** (the unconnected decay table). A third
+caller, `NeedsManager::HandleMessage<SetGameBeingPaused>` `0x00698F44`
+(`0x006990DE..0x006990E8`: `ldr r1,[r4,#4]` / `cmp r1,#0` / `it ne` / `movne r1,#1` /
+`blx 0x4BDA1C`), passes `robot != 0`; that game-message caller is unbuilt (M15-016's gap). Body:
+`now_us = system_clock::now()` (`0x0069530E`; `system_clock` is microseconds), `stored_us =
+*(int64*)(this+8)` (the current `NeedsState` `DateTime`, `0x00695312`), `elapsed = (now_us -
+stored_us) / 1,000,000` as a float (`0x0069531C..0x00695334`). Then for each of the three needs
+(index 0,1,2): unconditionally `[+0x1E4+4i] = [+0x3AC] - elapsed` (`0x00695338..0x00695350`), and
+**only when `[+0x208+4i] != 0`** subtract elapsed from the fullness deadline `[+0x208+4i]` and the
+fullness start `[+0x1FC+4i]` (`0x00695344..0x00695368`). Then tail-call
+`ApplyDecayAllNeeds(this, connected)` (`0x00695370..0x00695374`), which selects the unconnected
+table at `this+0x17C` for `false` (connected `this+0x164` for `true`; `0x00695D16..0x00695D1E`).
+The `[+0x1E4] = [+0x3AC] - elapsed` rewind is what makes each need's `ApplyDecayAllNeeds` elapsed
+equal this whole gap. The C# port calls `NeedsState.ApplyDecay(...)` directly with the current
+connection flag and no rewind, so both the decay table and the fullness window are wrong on
+`Load` and the robot-copy apply.
+
+**Flagged for the integrator (M15-001 scope, not fixed here):** the extractor also showed that
+`PossiblyWriteToDevice`'s constant `0x03A2C940` is microseconds, i.e. **61 s**, not 61 ms (the
+C1 §2 text and the port's `WriteThrottleSec = 0.061` are wrong by 1000×). That is M15-001's
+record and batch.
+
+### C4/I4 record change
+
+- **M15-014**'s evidence adds `NeedsManager::ApplyDecayForTimeSinceLastDeviceWrite 0x00695304..0x00695374`,
+  `NeedsManager::ApplyDecayAllNeeds 0x00695CFE` (connected/unconnected tables `0x00695D16..0x00695D1E`)
+  and `NeedsState::ApplyDecay 0x0069C3C0`.
 

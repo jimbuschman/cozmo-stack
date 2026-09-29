@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "cb43a8c3475e4b38042231589ec8c74a6ec0ec132221d3f1359e39bdd1f73d22",
+  "inventory_sha256": "7cce8681d800bf7e2d4bd2b125060e0ada913ae26a0ed839909e45212e5e703a",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -33,7 +33,7 @@
       "hardware_required": false
     },
     "M15-003": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Activity start/end predicates and cooldown lifecycle",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -47,7 +47,7 @@
       "hardware_required": false
     },
     "M15-004": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Needs decay modifiers and damaged-part thresholds",
       "authority": "libcozmoEngine.so and shipped needs configuration",
       "evidence": [
@@ -61,7 +61,7 @@
       "hardware_required": false
     },
     "M15-005": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Flat three-second cooldown after an activity ends within two ticks",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -87,7 +87,7 @@
       "hardware_required": false
     },
     "M15-007": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Activity feature gate and dead boredomMultiplier scoring data",
       "authority": "libcozmoEngine.so and shipped configs",
       "evidence": [
@@ -100,7 +100,7 @@
       "hardware_required": false
     },
     "M15-008": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Desired activity from objects and behavior-owned needs-action reporting",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -113,7 +113,7 @@
       "hardware_required": false
     },
     "M15-009": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Emotion event names fired when a cube is placed in a beacon",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -123,7 +123,7 @@
       "hardware_required": false
     },
     "M15-010": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Missing moved-block location ends the behavior without a reaction",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -133,7 +133,7 @@
       "hardware_required": false
     },
     "M15-011": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Freeplay beacon is centered on the robot pose",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -144,7 +144,7 @@
       "hardware_required": false
     },
     "M15-012": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Put-down image wait and CantHandleTallStack animation trigger",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -155,7 +155,7 @@
       "hardware_required": false
     },
     "M15-013": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Activity tree construction, desired names and discarded activityPriority",
       "authority": "libcozmoEngine.so and shipped activity configuration",
       "evidence": [
@@ -167,22 +167,41 @@
       "hardware_required": false
     },
     "M15-014": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Needs connection and per-serial persistence lifecycle",
       "authority": "libcozmoEngine.so",
       "evidence": [
+        "NeedsManager::InitInternal 0x00693444..0x0069348E",
+        "NeedsManager::AttemptReadFromDevice 0x00693690..0x00693790",
+        "NeedsManager::ReadFromDevice 0x006998B4..0x00699BB8",
+        "RobotInitialConnection::OnNotified mfgId registration 0x0052DE04..0x0052DE40",
+        "RobotToEngine mfgId tag 0xED callback 0x0052E2F8..0x0052E3B2",
+        "ManufacturingID serializer 0x007B1750..0x007B1858",
+        "RobotInterface::MessageHandler::ConnectRobotToNeedsManager 0x0069DEE4 -> RobotManager::ConnectRobotToNeedsManager 0x0052FADC (veneer 0x008CDB0C, PLT 0x004BE214; veneer 0x008CB32C, PLT 0x004A9DB4)",
+        "NeedsManager::InitAfterSerialNumberAcquired 0x006943A0..0x006943F8",
+        "NeedsManager::StartReadFromRobot 0x006944B4..0x0069453E",
+        "NeedsManager NV read callback 0x0069BEB2..0x0069BED4; FinishReadFromRobot 0x00699DB0..0x0069A1AC",
+        "NeedsFilenameFromSerialNumber 0x00695224..0x006952BA",
+        "InitAfterReadFromRobotAttempt resolver 0x0069481C..0x00694D06",
         "NeedsManager::WriteToDevice 0x00693BB0",
-        "NeedsManager::InitAfterSerialNumberAcquired 0x006943A0",
-        "NeedsManager::NeedsFilenameFromSerialNumber 0x00695224",
-        "NeedsManager::ReadFromDevice 0x006998B4",
         "persistence string initializer 0x004D8DDC",
-        "RobotInterface::MessageHandler::ConnectRobotToNeedsManager 0x0069DEE4"
+        "NeedsManager::StartWriteToRobot 0x00695494..0x00695763 (call site 0x00694E50..0x00694EE4; NeedsStateOnRobot::Pack 0x0078479E, Size 0x007848C8)",
+        "NeedsManager::FinishWriteToRobot 0x00699CD8..0x00699D39",
+        "NVStorageComponent::Read 0x00644E14..0x00644EF7 (1 = valid tag queued, 0 = invalid tag)",
+        "NeedsStateOnRobot serialized layout (M15-017): Size 0x007848C8, Pack 0x0078479E, Unpack 0x007846B4",
+        "FinishReadFromRobot v1-4 conversion 0x00699E56..0x00699E88; version-0 path 0x00699FFE (M15-018)",
+        "InitAfterReadFromRobotAttempt write scheduling 0x0069481C..0x00694EE4 (device-write flag 0x00694DA2, robot-write flag 0x00694E50, RobotChangedFromLastSession 0x00694AA8, SendNeedsStateToGame 0x00694B00/0x00694B46)",
+        "NeedsManager::PossiblyStartWriteToRobot 0x00696ECC..0x00696F0D (600.999999 s throttle 0x00696EE2/0x00696EEA; callers RegisterNeedsActionCompleted 0x006960D0 force=false, UpdateStarsState 0x00696AAC force=true, HandleMessage<RegisterOnboardingComplete> 0x006984CC force=true)",
+        "NVStorageComponent::HandleNVOpResult 0x00642F8C..0x00643937 (op dispatch 0x0064304A..0x00643052; WRITE terminal 0x00643054..0x00643424, callback result 0x006433F6)",
+        "NeedsManager::ApplyDecayForTimeSinceLastDeviceWrite 0x00695304..0x00695374 (call sites 0x006936BE and 0x00694AF8 bool=false; 0x006990E8 bool=robot!=0)",
+        "NeedsManager::ApplyDecayAllNeeds 0x00695CFE (connected table 0x00695D1E, unconnected 0x00695D16)",
+        "NeedsState::ApplyDecay 0x0069C3C0"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M15-015": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Freeplay active-time tracker and its four pause sources",
       "authority": "libcozmoEngine.so plus Unity HighLevelActivity enum",
       "evidence": [
@@ -204,6 +223,31 @@
       "evidence": [
         "NeedsManager::SetPaused 0x00695E04",
         "NeedsManager::OnRobotDisconnected 0x00695908"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-017": {
+      "status": "EXACT_SOURCE",
+      "title": "NeedsStateOnRobot robot NV blob: serialized layout and the version 1-4 conversion",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "NeedsStateOnRobot::Size 0x007848C8 (0x74)",
+        "NeedsStateOnRobot::Pack(CLAD::SafeMessageBuffer&) 0x007847D2 (fields 0x007847DA..0x00784878); unsigned char* wrapper Pack 0x0078479E",
+        "NeedsStateOnRobot::Unpack 0x007846B4 (fields 0x007846C4..0x0078475C)",
+        "NeedsStateOnRobot_v01..v04::Unpack 0x00785ECC, 0x00785998, 0x007853E8, 0x00784D8C; Sizes 0x0078606E, 0x00785B5A, 0x007855C4, 0x00784F82",
+        "FinishReadFromRobot dispatch/conversion 0x00699DD0..0x00699E88, 0x00699E56..0x0069A192"
+      ],
+      "live_path": true,
+      "hardware_required": null
+    },
+    "M15-018": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "NeedsStateOnRobot state version 0 / unsupported: the engine reads uninitialised fields",
+      "authority": "libcozmoEngine.so",
+      "evidence": [
+        "FinishReadFromRobot version-0 path: no Unpack, log 0x00699FFE..0x0069A01A, zero 0x0069A03E..0x0069A04E, +0x1CA set 0x00699E64, return 1 0x0069A176",
+        "no shipped writer emits version 0 (StartWriteToRobot writes 5: 0x00695614/0x00695616)"
       ],
       "live_path": true,
       "hardware_required": false

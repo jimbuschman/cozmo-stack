@@ -204,14 +204,16 @@ public sealed class NvStorageComponent : IDisposable
     public static int MaxFactorySizeForEntryTag(uint tag) =>
         MaxFactoryEntrySizeTable.TryGetValue(tag, out int value) ? value : 0;
 
-    // fidelity: M11-011, M3-026, M3-030
+    // fidelity: M11-011, M3-026, M3-030, M15-014
     /// <summary>
     /// Queues a READ and delivers the terminal result to <paramref name="callback"/>. An invalid tag is not sent:
     /// the callback gets <c>(-6, empty)</c> (M3-026). The request length is computed from the tag (M3-027). When
     /// <paramref name="sink"/> is given the assembled bytes are copied into it (M3-030); when
     /// <paramref name="broadcast"/> is set the completed buffer is re-chunked to <see cref="NVStorageOpResultBroadcast"/>.
+    /// Returns 1 when the tag is valid and the request was queued, 0 for an invalid tag only (Appendix G Q2;
+    /// <c>NVStorageComponent::Read</c> 0x00644E14..0x00644EF7 - no absent-component, capacity or in-flight check).
     /// </summary>
-    public void Read(uint tag, Action<NvResult>? callback, List<byte>? sink = null, bool broadcast = false)
+    public int Read(uint tag, Action<NvResult>? callback, List<byte>? sink = null, bool broadcast = false)
     {
         if (!IsValidEntryTag(tag))
         {
@@ -219,14 +221,36 @@ public sealed class NvStorageComponent : IDisposable
             if (broadcast)
                 NVStorageOpResultBroadcast?.Invoke(new NVStorageOpResult(tag, OpRead, -6, 0, Array.Empty<byte>()));
             callback?.Invoke(new NvResult(-6, Array.Empty<byte>()));
-            return;
+            return 0;
         }
         Enqueue(new PendingRequest { Tag = tag, Op = OpRead, Callback = callback, Sink = sink, Broadcast = broadcast });
+        return 1;
     }
 
     /// <summary>Queues any NV operation with an explicit length; the callback owns the terminal result.</summary>
     public void Request(uint tag, int length, byte op, byte[] data, Action<NvResult> callback) =>
         Enqueue(new PendingRequest { Tag = tag, Length = length, Op = op, Data = data, Callback = callback });
+
+    // fidelity: M15-014
+    /// <summary>
+    /// <c>NVStorageComponent::Write</c> (Appendix G Q1, Appendix I): the engine returns 0 for an invalid tag,
+    /// for a factory tag when <c>+0x15C == 0</c> (the factory data is not loaded), for null data and for an
+    /// oversize request (<c>0x00644578..0x006446B8</c>); otherwise the WRITE is queued and returns 1.
+    /// <c>NeedsManager::StartWriteToRobot</c> uses this to put the 116-byte <c>NeedsStateOnRobot</c> blob on
+    /// the non-factory key 0x194000, which none of the extra zero conditions affect, and treats 0 as
+    /// <c>StartWriteToRobot.WriteFailed</c>. This port returns 0 only for the invalid tag.
+    /// </summary>
+    public int Write(uint tag, byte[] data, Action<NvResult>? callback)
+    {
+        if (!IsValidEntryTag(tag))
+        {
+            lock (_gate) _log.Add($"warning: NVStorageComponent.Write.InvalidTag: Tag: 0x{tag:X8}");
+            callback?.Invoke(new NvResult(-6, Array.Empty<byte>()));
+            return 0;
+        }
+        Enqueue(new PendingRequest { Tag = tag, Length = data.Length, Op = OpWrite, Data = data, Callback = callback });
+        return 1;
+    }
 
     /// <summary>Queues a READ and waits for its terminal result (the request length is computed by the component).</summary>
     public async Task<NvResult> ReadAsync(uint tag, TimeSpan? timeout = null)
@@ -350,7 +374,16 @@ public sealed class NvStorageComponent : IDisposable
             _log.Add($"NVOpResult tag=0x{r.Tag:X8} op={r.Op} result={r.Result} index={r.Length} data={r.Data.Length}B");
             sbyte result = r.Result;
 
-            if (result <= -1)
+            // fidelity: M15-014
+            // Appendix I3 (0x00642F8C..0x00643937): op 0 takes the read header/reassembly path; ops 1-3 (WRITE,
+            // ERASE, WIPEALL) take the write terminal (0x00643054..0x00643424). The write terminal completes with
+            // the result byte, delivering 0 for a successful write.
+            if (req.Op != OpRead)
+            {
+                completion = WriteTerminalLocked(req, result);
+                if (completion is null) return;               // a retry was sent; keep waiting
+            }
+            else if (result <= -1)
             {
                 // M3-031: only {-8,-7,-5,-4} are retried; -6 and -1 are not.
                 if (IsRetryableResult(result))
@@ -424,6 +457,34 @@ public sealed class NvStorageComponent : IDisposable
 
     // fidelity: M3-031
     private static bool IsRetryableResult(sbyte result) => result is -8 or -7 or -5 or -4;
+
+    // fidelity: M15-014
+    /// <summary>
+    /// The WRITE/ERASE/WIPEALL terminal (Appendix I3; 0x00643054..0x00643424). A negative result resends for
+    /// {-8,-7,-5,-4} (i.e. -8..-4 except -6) while retries remain; otherwise it logs <c>WriteOpFailed</c> for
+    /// <b>every</b> negative result and completes with that result. A non-negative result logs
+    /// <c>WriteSuccess</c> and completes with the reply's own result byte (0 on success; 1/2 deliver 1/2).
+    /// Clearing <c>+0x48</c>/<c>+0x1C</c> and <c>SetState(0)</c> are the queue/in-flight reset
+    /// <see cref="CompleteLocked"/> performs; the engine's <c>WriteDataForTag</c> backup side effect has no
+    /// counterpart here.
+    /// </summary>
+    private Completion? WriteTerminalLocked(PendingRequest req, sbyte result)
+    {
+        if (result <= -1)
+        {
+            if (IsRetryableResult(result) && req.Retries < MaxReadResends)
+            {
+                req.Retries++;
+                _log.Add($"info: NVStorageComponent.HandleNVOpResult.ResentFailedWrite: Tag 0x{req.Tag:X8} resent due to {result}");
+                if (req.LastCommand is { } resend) _robot.SendMessage(resend, flush: true);
+                return null;
+            }
+            _log.Add($"warning: NVStorageComponent.HandleNVOpResult.WriteOpFailed: Tag: 0x{req.Tag:X8}, result: {result}");
+            return CompleteLocked(req, result, req.Buffer);
+        }
+        _log.Add($"info: NVStorageComponent.HandleNVOpResult.WriteSuccess: Tag: 0x{req.Tag:X8}");
+        return CompleteLocked(req, result, req.Buffer);
+    }
 
     // fidelity: M3-029
     /// <summary>

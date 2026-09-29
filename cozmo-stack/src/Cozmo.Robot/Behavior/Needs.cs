@@ -368,6 +368,96 @@ public sealed class NeedsState
     public int NumDamagedParts() => NumDamagedPartsForRepairLevel(GetNeedLevel(NeedId.Repair));
 }
 
+// fidelity: M15-017
+/// <summary>
+/// <c>Anki::Cozmo::NeedsStateOnRobot</c>: the binary blob the robot's NV key 0x194000 holds (Appendix H).
+/// Little-endian; <c>Pack</c>/<c>Unpack</c> use the same field order and raw byte copies. The serialized
+/// offsets are: version u32 @0, <c>timeLastWritten</c> u64 @4, <c>curNeedLevel[10]</c> i32 @0x0C,
+/// <c>curNeedsUnlockLevel</c> i32 @0x34, <c>numStarsAwarded</c> i32 @0x38, <c>partIsDamaged[32]</c> u8 @0x3C,
+/// <c>timeLastStarAwarded</c> u64 @0x5C, <c>onboardingStageCompleted</c> i32 @0x64,
+/// <c>forceNextSong</c> i32 (UnlockId, not a bool) @0x68, <c>timeCreated</c> u64 @0x6C; total
+/// <see cref="Size"/> = 0x74 (116 bytes).
+/// </summary>
+public sealed class NeedsStateOnRobot
+{
+    /// <summary><c>NeedsStateOnRobot::Size</c> 0x007848C8: 0x74 bytes.</summary>
+    public const int Size = 0x74;
+    /// <summary>The engine's ten needs (<c>curNeedLevel[10]</c>).</summary>
+    public const int NeedCount = 10;
+    /// <summary>The engine's 32 part-damage flags (<c>partIsDamaged[32]</c>).</summary>
+    public const int PartCount = 32;
+
+    public uint Version;
+    public ulong TimeLastWritten;
+    public readonly int[] CurNeedLevel = new int[NeedCount];
+    public int CurNeedsUnlockLevel;
+    public int NumStarsAwarded;
+    public readonly byte[] PartIsDamaged = new byte[PartCount];
+    public ulong TimeLastStarAwarded;
+    public int OnboardingStageCompleted;
+    public int ForceNextSong;
+    public ulong TimeCreated;
+
+    // fidelity: M15-017
+    /// <summary><c>NeedsStateOnRobot::Pack</c> 0x0078479E: the version-5 layout, 116 bytes.</summary>
+    public static byte[] Pack(NeedsStateOnRobot s)
+    {
+        var b = new byte[Size];
+        WriteU32(b, 0x00, s.Version);
+        WriteU64(b, 0x04, s.TimeLastWritten);
+        for (int i = 0; i < NeedCount; i++) WriteI32(b, 0x0C + i * 4, s.CurNeedLevel[i]);
+        WriteI32(b, 0x34, s.CurNeedsUnlockLevel);
+        WriteI32(b, 0x38, s.NumStarsAwarded);
+        for (int i = 0; i < PartCount; i++) b[0x3C + i] = s.PartIsDamaged[i];
+        WriteU64(b, 0x5C, s.TimeLastStarAwarded);
+        WriteI32(b, 0x64, s.OnboardingStageCompleted);
+        WriteI32(b, 0x68, s.ForceNextSong);
+        WriteU64(b, 0x6C, s.TimeCreated);
+        return b;
+    }
+
+    // fidelity: M15-017
+    /// <summary><c>NeedsStateOnRobot::Unpack</c> 0x007846B4: the version-5 layout.</summary>
+    public static NeedsStateOnRobot Unpack(byte[] data) => UnpackVersioned(data, 5);
+
+    // fidelity: M15-017
+    /// <summary>
+    /// The v1-4 conversion (Appendix H): the prefix is always present; a shorter layout's missing tail is
+    /// zeroed; the converted struct's version is forced to 5. v2 adds <c>timeLastStarAwarded</c>, v3 adds
+    /// <c>onboardingStageCompleted</c>, v4 adds <c>forceNextSong</c>, v5 adds <c>timeCreated</c>.
+    /// </summary>
+    public static NeedsStateOnRobot UnpackVersioned(byte[] data, int version)
+    {
+        var s = new NeedsStateOnRobot { Version = 5 };
+        s.TimeLastWritten = ReadU64(data, 0x04);
+        for (int i = 0; i < NeedCount; i++) s.CurNeedLevel[i] = ReadI32(data, 0x0C + i * 4);
+        s.CurNeedsUnlockLevel = ReadI32(data, 0x34);
+        s.NumStarsAwarded = ReadI32(data, 0x38);
+        for (int i = 0; i < PartCount; i++) s.PartIsDamaged[i] = 0x3C + i < data.Length ? data[0x3C + i] : (byte)0;
+        if (version >= 2) s.TimeLastStarAwarded = ReadU64(data, 0x5C);
+        if (version >= 3) s.OnboardingStageCompleted = ReadI32(data, 0x64);
+        if (version >= 4) s.ForceNextSong = ReadI32(data, 0x68);
+        if (version >= 5) s.TimeCreated = ReadU64(data, 0x6C);
+        return s;
+    }
+
+    private static void WriteU32(byte[] b, int o, uint v) => BitConverter.GetBytes(v).CopyTo(b, o);
+    private static void WriteI32(byte[] b, int o, int v) => BitConverter.GetBytes(v).CopyTo(b, o);
+    private static void WriteU64(byte[] b, int o, ulong v) => BitConverter.GetBytes(v).CopyTo(b, o);
+    private static uint ReadU32(byte[] b, int o) => o + 4 <= b.Length ? BitConverter.ToUInt32(b, o) : 0;
+    private static int ReadI32(byte[] b, int o) => o + 4 <= b.Length ? BitConverter.ToInt32(b, o) : 0;
+    private static ulong ReadU64(byte[] b, int o) => o + 8 <= b.Length ? BitConverter.ToUInt64(b, o) : 0;
+}
+
+/// <summary>
+/// One parsed needs persistence copy (C2 rows 3/11/13): the levels, the stored serial and the write
+/// timestamp (<c>_DateTime</c>), plus the file version. The device file and the robot's NV item share the
+/// same shape, so the resolver can compare them. The robot blob has no serial field (Appendix H), so its
+/// <see cref="SerialNumber"/> is 0 and the resolver compares <c>+0x1CC</c> with <c>+0x34</c> instead.
+/// </summary>
+// fidelity: M15-014
+public sealed record NeedsCopy(double[] Levels, uint SerialNumber, long DateTimeSec, int Version);
+
 /// <summary>
 /// The engine's <c>NeedsManager</c> (0x0069210C..0x00696D70): owns the state and configs, decays every
 /// <c>DecayPeriodSeconds</c> (<c>Update</c> → <c>ApplyDecayAllNeeds</c>, skipped for a need within its fullness
@@ -420,8 +510,32 @@ public sealed class NeedsManager
     private double _nextDecaySec;
     /// <summary><c>+0x3b4</c>: the time still owed to the decay schedule when paused (0x00695EC2).</summary>
     private double _pausedRemainingSec;
-    /// <summary><c>+0x1cc</c>/<c>+0x34</c>: the previous and current robot serial (the serial-dispatch edge of M15-014 is the gap).</summary>
+    /// <summary><c>+0x1cc</c>/<c>+0x34</c>: the previous and current robot serial (C2 row 9; the current one is <see cref="SerialNumber"/>).</summary>
     private uint _previousSerial, _serial;
+    /// <summary><c>+0x1c8</c>: whether the robot NV read produced usable data (<c>FinishReadFromRobot</c>'s Boolean, C2 row 11).</summary>
+    private bool _robotReadSucceeded;
+    /// <summary><c>+0x1ca</c>: the robot copy needs rewriting (versions 0-4; C2 row 11).</summary>
+    private bool _robotRewriteNeeded;
+    /// <summary><c>+0x3d0</c>: a robot needs read is outstanding (set by <c>InitAfterConnection</c>, cleared by <c>StartReadFromRobot</c>'s failure or the callback; C2 rows 9-11).</summary>
+    private bool _awaitingRobotData;
+    /// <summary><c>+0x1c9</c>: the device copy is present (<c>InitInternal</c>'s attempt result, re-marked on a resolved device write; C2 rows 1/13).</summary>
+    private bool _deviceDataPresent;
+    /// <summary>The parsed robot NV copy, or null (C2 row 11).</summary>
+    private NeedsCopy? _robotCopy;
+    /// <summary>The device copy loaded from a file - the startup fixed file or the per-serial alternate (C2 rows 3/12).</summary>
+    private NeedsCopy? _deviceCopy;
+    /// <summary>The current <c>NeedsState</c>'s <c>DateTime</c> (<c>this+8</c>): the copy last applied to the state (Appendix I4).</summary>
+    private double _stateDateTimeSec;
+    /// <summary><c>TimeLastAppBackgrounded</c>: cleared when a mismatched serial selects the robot data (C2 row 13).</summary>
+    private double _lastAppBackgroundSec;
+    /// <summary><c>OpenAppAfterDisconnect</c>: cleared when a mismatched serial selects the robot data (C2 row 13).</summary>
+    private bool _openAppAfterDisconnect;
+    /// <summary><c>+0x1c0/+0x1c4</c>: the time the last robot write was built with (Appendix G Q1).</summary>
+    private double _lastWriteToRobotSec;
+    /// <summary><c>_errG</c>: set when a robot write fails (Appendix G Q1).</summary>
+    private bool _writeToRobotError;
+    /// <summary><c>+0x1cb</c>: the device file's <c>versionUpdated</c> out-flag, set when an old device format needs rewriting (C2 row 1, Appendix I1).</summary>
+    private bool _deviceVersionUpdated;
     /// <summary><c>+0x1d4</c>: whether a robot is connected (the flag <c>Update</c> passes as <c>robot != 0</c>).</summary>
     private bool _robotConnected = true;
     /// <summary>The clock time the current pause began (<c>+0x1d8</c>, 0x00695EB6).</summary>
@@ -650,11 +764,11 @@ public sealed class NeedsManager
 
     /// <summary>
     /// <c>NeedsManager::InitAfterConnection</c> 0x00694384: the robot pointer is set (the connected flag
-    /// <c>Update</c> reads) and <c>+0x1d4</c>/<c>+0x3d0</c> become 1. The serial arrives by a separate edge
-    /// (M15-014's recoverable gap).
+    /// <c>Update</c> reads), <c>+0x1d4</c> becomes 1 and the robot-data flag <c>+0x3d0</c> becomes 1
+    /// (C2 row 6). The serial arrives by a separate edge (C2 row 9, <see cref="InitAfterSerialNumberAcquired"/>).
     /// </summary>
-    // fidelity: M15-016
-    public void InitAfterConnection() { lock (_gate) _robotConnected = true; }
+    // fidelity: M15-014, M15-016
+    public void InitAfterConnection() { lock (_gate) { _robotConnected = true; _awaitingRobotData = true; } }
 
     /// <summary>
     /// <c>NeedsManager::OnRobotDisconnected</c> 0x00695908 (C1 §6): write the disconnect timestamp to
@@ -754,22 +868,449 @@ public sealed class NeedsManager
     public uint PreviousSerialNumber => _previousSerial;
 
     /// <summary>
-    /// <c>NeedsManager::InitAfterSerialNumberAcquired</c> 0x006943A0: keep the previous serial at +0x1cc,
-    /// store the new one at +0x34, clear +0x1ca/+0x1c8 and start the read from the robot. The generated
-    /// dispatch that would call this with a serial is the M15-014 RECOVERABLE_GAP; the read itself is the
-    /// host's seam here.
+    /// <c>NeedsManager::InitAfterSerialNumberAcquired</c> 0x006943A0 (C2 row 9): copy the prior device-loaded
+    /// serial <c>+0x34</c> to <c>+0x1cc</c>, store the inbound serial at <c>+0x34</c>, clear the robot-read
+    /// result <c>+0x1c8</c> and the robot-rewrite flag <c>+0x1ca</c>, and call <c>StartReadFromRobot</c>. If
+    /// that returns 0 the manager immediately calls <c>InitAfterReadFromRobotAttempt</c>
+    /// (0x006943F8..0x00694402). The serial comes from the engine's mfgId edge (C2 rows 5-6).
     /// </summary>
     // fidelity: M15-014
     public void InitAfterSerialNumberAcquired(uint serial)
     {
-        _previousSerial = _serial;
-        _serial = serial;
-        ReadFromRobot?.Invoke();
+        lock (_gate)
+        {
+            _previousSerial = _serial;
+            _serial = serial;
+            _robotReadSucceeded = false;       // +0x1c8
+            _robotRewriteNeeded = false;       // +0x1ca
+        }
+        // The NV read (and the immediate fallback) run outside _gate.
+        if (StartReadFromRobot() == 0) InitAfterReadFromRobotAttempt();
     }
 
-    /// <summary>The host's read seam, <c>StartReadFromRobot</c> 0x0069449C; null while the serial edge is the gap.</summary>
+    /// <summary>C2 row 10: the NV key <c>StartReadFromRobot</c> queues (the robot's needs item).</summary>
     // fidelity: M15-014
-    public Action? ReadFromRobot { get; set; }
+    public const uint NeedsNvKey = 0x194000;
+
+    /// <summary>
+    /// C2 row 10: the connected robot's NV component (<c>robot.Engine.NvStorage</c>, as the camera's
+    /// calibration read uses). A null component is this stack's defensive guard; the engine's own failure is
+    /// only an invalid tag (Appendix G Q2).
+    /// </summary>
+    // fidelity: M15-014
+    public NvStorageComponent? NvStorage { get; set; }
+
+    /// <summary>
+    /// <c>NeedsManager::StartReadFromRobot</c> 0x006944B4..0x0069453E (C2 row 10): queue an NVStorage read of
+    /// key <see cref="NeedsNvKey"/> on the connected robot's NV component. 1 when the tag is valid and queued
+    /// (Appendix G Q2), and the resolution waits for the callback; on failure it logs, clears <c>+0x3d0</c>
+    /// and returns 0. <paramref name="tag"/> is a test seam; the live path passes <see cref="NeedsNvKey"/>.
+    /// </summary>
+    // fidelity: M15-014
+    public int StartReadFromRobot(uint tag = NeedsNvKey)
+    {
+        NvStorageComponent? nv;
+        lock (_gate) nv = NvStorage;
+        if (nv is null)
+        {
+            Log?.Invoke("error: NeedsManager.StartReadFromRobot: no NV storage to queue the robot needs read on");
+            lock (_gate) _awaitingRobotData = false;    // +0x3d0
+            return 0;
+        }
+        // The NV read happens outside _gate; an invalid tag invokes OnRobotRead synchronously.
+        if (nv.Read(tag, OnRobotRead) == 0)
+        {
+            Log?.Invoke($"error: NeedsManager.StartReadFromRobot: the NV tag 0x{tag:X8} is invalid; the robot needs read was not queued");
+            lock (_gate) _awaitingRobotData = false;    // +0x3d0
+            return 0;
+        }
+        return 1;
+    }
+
+    /// <summary>
+    /// The robot-read NV callback 0x0069BEB2..0x0069BED4 (C2 row 11): clear <c>+0x3d0</c>, call
+    /// <c>FinishReadFromRobot(data,size,result)</c>, store its Boolean at <c>+0x1c8</c>, and always call
+    /// <c>InitAfterReadFromRobotAttempt</c>.
+    /// </summary>
+    // fidelity: M15-014
+    private void OnRobotRead(NvResult r)
+    {
+        bool ok;
+        lock (_gate)
+        {
+            _awaitingRobotData = false;            // +0x3d0
+            ok = FinishReadFromRobot(r.Data, r.Result);
+            _robotReadSucceeded = ok;              // +0x1c8
+        }
+        InitAfterReadFromRobotAttempt();
+    }
+
+    /// <summary>
+    /// <c>FinishReadFromRobot(data,size,result)</c> 0x00699DB0..0x0069A1AC, corrected contract (C2 row 11,
+    /// Appendix H): a missing NV item (result -1) and any other NV failure (result &lt; -1) return false; a
+    /// blob version above 5 returns false; version 5 unpacks the full binary layout and returns true without
+    /// <c>+0x1ca</c>; versions 1-4 unpack the shorter layout (missing tail zeroed, version forced to 5),
+    /// set <c>+0x1ca</c> and return true; version 0 is read as all-zero fields (M15-018), sets <c>+0x1ca</c>
+    /// and returns true. The success constant is 0x0069A176; the only zero is 0x00699F06.
+    /// </summary>
+    // fidelity: M15-014, M15-017, M15-018
+    public bool FinishReadFromRobot(byte[] data, sbyte result)
+    {
+        if (result <= -1) return false;                              // -1 missing, < -1 other failure
+        if (data.Length == 0) return false;                          // no version byte to dispatch on
+        int version = data[0];
+        if (version > 5) return false;                               // 0x00699DD2/0x00699DD4, sVerifyFailedReturnFalse
+
+        NeedsStateOnRobot robot;
+        if (version == 0)
+        {
+            // fidelity: M15-018
+            // The engine runs no Unpack variant and leaves the struct prefix uninitialised; the stack reads
+            // it as all-zero (the forced SD2 policy), sets the rewrite flag and returns success.
+            robot = new NeedsStateOnRobot { Version = 5 };
+            Log?.Invoke("warning: NeedsManager.FinishReadFromRobot: Version 0 found on robot but not supported");
+        }
+        else
+        {
+            robot = NeedsStateOnRobot.UnpackVersioned(data, version);
+        }
+
+        var levels = new double[3];
+        for (int i = 0; i < levels.Length; i++) levels[i] = robot.CurNeedLevel[i] / 100000.0;
+        _robotCopy = new NeedsCopy(levels, 0, (long)robot.TimeLastWritten, 5);   // the robot blob has no serial
+        if (version != 5) _robotRewriteNeeded = true;                // 0x00699E64: every version but 5 rewrites
+        return true;
+    }
+
+    /// <summary>
+    /// <c>InitAfterReadFromRobotAttempt</c> 0x00694608..0x00694F55 (decision 0x0069481C..0x00694D06;
+    /// Appendix I1): resolve the robot and device copies and schedule the writes. The nine cases set the
+    /// device-write flag (<c>[sp,#0x18]</c>) and the robot-write flag (<c>r8</c>) exactly as the table does:
+    /// robot-absent cases force RW=1, the device-newer case forces RW=1, otherwise RW is <c>+0x1CA != 0</c>;
+    /// DW is 0 when the device copy is kept (cases 2, 8, 9). The robot copy is applied (and decayed for the
+    /// time since its <c>timeLastWritten</c>) in cases 5-7; the per-serial alternate read replaces the device
+    /// copy in cases 3/4 and is not followed by a robot apply. Cases 1 and 5-7 send
+    /// <c>SendNeedsStateToGame</c> (arg 0 in case 1, Decay in 5-7; the successful alternate read in
+    /// <c>AttemptReadFromDevice</c> sends Decay too); cases 3, 5, 6 and 7 send
+    /// <c>RobotChangedFromLastSession</c>. One captured <c>system_clock::now()</c> is used for both writes; a
+    /// device write sets <c>+0x1c9</c> and clears <c>+0x1cb</c>, a robot write clears <c>+0x1ca</c>, both with
+    /// the "storage version update" log.
+    /// </summary>
+    // fidelity: M15-014
+    public void InitAfterReadFromRobotAttempt()
+    {
+        // Phase 1: the per-serial alternate read (I/O and the host path seam) outside _gate.
+        bool alternateTried;
+        uint serialForAlternate;
+        lock (_gate)
+        {
+            alternateTried = _robotCopy is null && _deviceCopy is not null && _previousSerial != _serial;
+            serialForAlternate = _serial;
+        }
+        bool alternateOk = false;
+        if (alternateTried)
+        {
+            alternateOk = TryLoadAlternateDeviceFile(serialForAlternate);
+            if (!alternateOk)
+                Log?.Invoke("NeedsManager.InitAfterReadFromRobotAttempt: no per-serial needs file; a brand-new robot is possible, resolution continues");
+        }
+
+        // Phase 2: the case decision and the selected-copy apply, under _gate.
+        bool deviceWrite, robotWrite, robotChanged, clearDisconnect, clearAll;
+        NeedsActionId? send;
+        lock (_gate)
+        {
+            bool hasRobot = _robotCopy is not null;
+            bool hasDevice = _deviceCopy is not null;
+            bool rewrite = _robotRewriteNeeded;
+            bool serialsEqual = _previousSerial == _serial;
+            robotChanged = false; clearDisconnect = false; clearAll = false; send = null;
+
+            if (!hasRobot && !hasDevice)                                 // case 1
+            {
+                deviceWrite = true; robotWrite = true; send = NeedsActionId.NoAction;
+            }
+            else if (!hasRobot && hasDevice)
+            {
+                if (alternateTried)                                      // case 3 / 4
+                {
+                    // Appendix I1: both the alternate success and failure tails converge on the
+                    // RobotChangedFromLastSession send (0x00694CA6 -> 0x00694AA8).
+                    deviceWrite = alternateOk; robotWrite = true; robotChanged = true;
+                    if (alternateOk) send = NeedsActionId.Decay;
+                }
+                else                                                     // case 2
+                {
+                    deviceWrite = false; robotWrite = true;
+                }
+            }
+            else if (hasRobot && !hasDevice)                             // case 5
+            {
+                // 0x00694A46..0x00694A4C: clear the disconnect timestamp +0x18/+0x1C before the apply.
+                clearDisconnect = true;
+                ApplyRobotCopyLocked(_robotCopy!);
+                deviceWrite = true; robotWrite = rewrite; send = NeedsActionId.Decay; robotChanged = true;
+            }
+            else if (!serialsEqual)                                      // case 6
+            {
+                ApplyRobotCopyLocked(_robotCopy!);
+                clearAll = true;                                         // +0x18..+0x24
+                deviceWrite = true; robotWrite = rewrite; send = NeedsActionId.Decay; robotChanged = true;
+            }
+            else if (_robotCopy!.DateTimeSec > _deviceCopy!.DateTimeSec) // case 7
+            {
+                ApplyRobotCopyLocked(_robotCopy);
+                deviceWrite = true; robotWrite = rewrite; send = NeedsActionId.Decay; robotChanged = true;
+            }
+            else if (_deviceCopy.DateTimeSec > _robotCopy.DateTimeSec)   // case 8
+            {
+                deviceWrite = false; robotWrite = true;
+            }
+            else                                                         // case 9
+            {
+                deviceWrite = false; robotWrite = rewrite;
+            }
+
+            if (clearDisconnect) _lastDisconnectSec = 0;
+            if (clearAll)
+            {
+                _lastDisconnectSec = 0;
+                _lastAppBackgroundSec = 0;
+                _openAppAfterDisconnect = false;
+            }
+        }
+
+        // Phase 3: the game messages and the writes, outside _gate.
+        if (send is { } action) { lock (_gate) SendNeedsStateToGame(action); }
+        if (robotChanged) RobotChangedFromLastSession?.Invoke();
+
+        if (deviceWrite || robotWrite)
+        {
+            long now = (long)_clockSec();                 // one system_clock::now() for both writes (0x00694D9C)
+            if (deviceWrite)
+            {
+                lock (_gate)
+                {
+                    _deviceCopy = SnapshotState(now);
+                    _deviceDataPresent = true;            // +0x1c9
+                    ResolvedDeviceWriteTimestampSec = now;
+                    if (_deviceVersionUpdated)
+                    {
+                        _deviceVersionUpdated = false;    // +0x1cb, cleared with the log (0x00694DB6)
+                        Log?.Invoke("info: NeedsManager.InitAfterReadFromRobotAttempt: storage version update (device)");
+                    }
+                }
+                WriteToDevice?.Invoke(false);
+            }
+            if (robotWrite)
+            {
+                lock (_gate)
+                {
+                    if (_robotRewriteNeeded)
+                    {
+                        _robotRewriteNeeded = false;      // +0x1ca, cleared with the log (0x00694E62)
+                        Log?.Invoke("info: NeedsManager.InitAfterReadFromRobotAttempt: storage version update (robot)");
+                    }
+                }
+                StartWriteToRobot(now);
+            }
+        }
+    }
+
+    /// <summary>C2 row 13: the timestamp a resolved device write was stamped with (<c>system_clock::now</c>).</summary>
+    // fidelity: M15-014
+    public long ResolvedDeviceWriteTimestampSec { get; private set; }
+
+    /// <summary>
+    /// <c>NeedsManager::StartWriteToRobot</c> 0x00695494..0x00695763 (Appendix G Q1): returns at once with
+    /// no connected robot; while a robot read is outstanding (<c>+0x3D0</c>) it logs "Aborting writing needs
+    /// state to robot, because we are reading needs state from robot" and returns without queueing; otherwise
+    /// it stores <paramref name="nowSec"/> at <c>+0x1C0/+0x1C4</c>, builds a fresh version-5
+    /// <see cref="NeedsStateOnRobot"/> (116 bytes) and writes it to NV key <see cref="NeedsNvKey"/> through
+    /// <see cref="NvStorageComponent.Write"/>. A <c>Write</c> return of 0 logs
+    /// <c>NeedsManager.StartWriteToRobot.WriteFailed</c> and sets the error flag; the terminal
+    /// <see cref="FinishWriteToRobot"/> handles the result.
+    /// </summary>
+    // fidelity: M15-014, M15-017
+    public void StartWriteToRobot(double nowSec)
+    {
+        byte[] blob;
+        NvStorageComponent? nv;
+        lock (_gate)
+        {
+            if (!_robotConnected) return;                            // the connected robot +4 is null
+            if (_awaitingRobotData)
+            {
+                Log?.Invoke("warning: NeedsManager.StartWriteToRobot: Aborting writing needs state to robot, because we are reading needs state from robot");
+                return;
+            }
+            _lastWriteToRobotSec = nowSec;                           // +0x1c0/+0x1c4
+
+            var needs = new[] { NeedId.Repair, NeedId.Energy, NeedId.Play };
+            var robot = new NeedsStateOnRobot { Version = 5, TimeLastWritten = (ulong)nowSec };
+            for (int i = 0; i < needs.Length; i++) robot.CurNeedLevel[i] = (int)(State.GetNeedLevel(needs[i]) * 100000.0 + 0.5);
+            int damaged = State.NumDamagedParts();
+            for (int i = 0; i < damaged && i < NeedsStateOnRobot.PartCount; i++) robot.PartIsDamaged[i] = 1;
+            // The engine copies its economy fields into the blob (0x00695540..0x00695640:
+            // curNeedsUnlockLevel, numStarsAwarded, timeLastStarAwarded, timeCreated, onboardingStageCompleted,
+            // forceNextSong). This stack does not model the stars/onboarding economy, so those fields stay at
+            // their zero defaults; they are not invented here.
+            blob = NeedsStateOnRobot.Pack(robot);
+            nv = NvStorage;
+        }
+
+        // The NV write happens outside _gate (finding 5: do not hold _gate across NvStorageComponent.Write).
+        if (nv is null)
+        {
+            Log?.Invoke("error: NeedsManager.StartWriteToRobot.WriteFailed: no NV storage to queue the robot needs write on");
+            _writeToRobotError = true;
+            return;
+        }
+        if (nv.Write(NeedsNvKey, blob, r => FinishWriteToRobot(r.Result)) == 0)
+        {
+            Log?.Invoke("error: NeedsManager.StartWriteToRobot.WriteFailed");
+            _writeToRobotError = true;
+        }
+    }
+
+    // fidelity: M15-014
+    /// <summary>
+    /// <c>NeedsManager::PossiblyStartWriteToRobot(force)</c> 0x00696ECC..0x00696F0D (Appendix I2): return when
+    /// the connected robot is null; read <c>+0x1C0/+0x1C4</c> (the last robot write) and start one when the
+    /// elapsed time is strictly greater than 600,999,999 clock units, or when <paramref name="force"/>.
+    /// <c>StartWriteToRobot</c> stamps <c>+0x1C0/+0x1C4</c>.
+    /// MISSING (unbuilt layers): the other two callers, <c>NeedsManager::UpdateStarsState</c> 0x00696AAC with
+    /// <c>force = true</c> and <c>HandleMessage&lt;RegisterOnboardingComplete&gt;</c> 0x006984CC with
+    /// <c>force = true</c>, belong to the app's stars/onboarding economy and are not built here.
+    /// </summary>
+    public void PossiblyStartWriteToRobot(bool force)
+    {
+        double now;
+        double last;
+        lock (_gate)
+        {
+            if (!_robotConnected) return;                            // the connected robot +4 is null
+            last = _lastWriteToRobotSec;
+            now = _clockSec();
+        }
+        bool overdue = now - last > RobotWriteIntervalSec;           // strictly greater
+        if (overdue || force) StartWriteToRobot(now);
+    }
+
+    /// <summary>
+    /// Appendix I2: the engine's 0x23D2883F clock value, 600,999,999 of its microsecond clock = 600.999999 s.
+    /// </summary>
+    // fidelity: M15-014
+    public const double RobotWriteIntervalSec = 600.999999;
+
+    /// <summary>
+    /// <c>NeedsManager::FinishWriteToRobot</c> 0x00699CD8..0x00699D39 (Appendix G Q1): a result below 0 logs
+    /// <c>FinishWriteToRobot.WriteFailed</c> and sets the error flag; a result of 0 or more is a no-op. It
+    /// touches no NeedsManager flag and does not retry.
+    /// </summary>
+    // fidelity: M15-014
+    public void FinishWriteToRobot(sbyte result)
+    {
+        if (result >= 0) return;
+        Log?.Invoke("error: NeedsManager.FinishWriteToRobot.WriteFailed");
+        _writeToRobotError = true;
+    }
+
+    /// <summary><c>+0x1c0/+0x1c4</c>: the time the last robot write was built with.</summary>
+    // fidelity: M15-014
+    public double LastWriteToRobotSec => _lastWriteToRobotSec;
+
+    /// <summary><c>_errG</c>: set by a failed robot write (Appendix G Q1).</summary>
+    // fidelity: M15-014
+    public bool WriteToRobotError => _writeToRobotError;
+
+    /// <summary>
+    /// C2 row 12: the path of a serial's alternate per-serial device file, or null when the host has none.
+    /// </summary>
+    // fidelity: M15-014
+    public Func<uint, string?>? AlternateDeviceFilePath { get; set; }
+
+    /// <summary><c>+0x1c8</c>: the robot read produced usable data.</summary>
+    // fidelity: M15-014
+    public bool RobotReadSucceeded => _robotReadSucceeded;
+    /// <summary><c>+0x1ca</c>: the robot copy needs rewriting (version 0-4).</summary>
+    // fidelity: M15-014
+    public bool RobotRewriteNeeded => _robotRewriteNeeded;
+    /// <summary><c>+0x1c9</c>: a device copy is present.</summary>
+    // fidelity: M15-014
+    public bool DeviceDataPresent => _deviceDataPresent;
+    /// <summary><c>+0x3d0</c>: a robot needs read is outstanding.</summary>
+    // fidelity: M15-014
+    public bool AwaitingRobotData => _awaitingRobotData;
+    /// <summary>Whether a parsed robot copy exists.</summary>
+    // fidelity: M15-014
+    public bool HasRobotCopy => _robotCopy is not null;
+    /// <summary>Whether a device copy exists.</summary>
+    // fidelity: M15-014
+    public bool HasDeviceCopy => _deviceCopy is not null;
+
+    /// <summary>
+    /// Appendix I1: cases 3, 4, 5, 6 and 7 send a <c>RobotChangedFromLastSession</c> game message
+    /// (0x00694AA8..0x00694AC4); cases 1, 2, 8 and 9 do not. The game wire is the app's, so it is an event.
+    /// </summary>
+    // fidelity: M15-014
+    public Action? RobotChangedFromLastSession { get; set; }
+
+    private bool TryLoadAlternateDeviceFile(uint serial)
+    {
+        if (AlternateDeviceFilePath?.Invoke(serial) is not { } path) return false;
+        return Load(path);
+    }
+
+    /// <summary>
+    /// Appendix I1: the robot-copy apply is the copy followed by <c>ApplyDecayForTimeSinceLastDeviceWrite(false)</c>
+    /// (0x00694AD0..0x00694B04). The state's <c>DateTime</c> becomes the robot blob's <c>timeLastWritten</c>.
+    /// </summary>
+    private void ApplyRobotCopyLocked(NeedsCopy copy)
+    {
+        var needs = new[] { NeedId.Repair, NeedId.Energy, NeedId.Play };
+        for (int i = 0; i < needs.Length && i < copy.Levels.Length; i++) State.SetNeedLevel(needs[i], copy.Levels[i]);
+        _stateDateTimeSec = copy.DateTimeSec;
+        ApplyDecayForTimeSinceLastDeviceWrite(false);
+    }
+
+    // fidelity: M15-014
+    /// <summary>
+    /// <c>NeedsManager::ApplyDecayForTimeSinceLastDeviceWrite(bool)</c> 0x00695304..0x00695374 (Appendix I4):
+    /// <c>elapsed = now - the current state's DateTime</c>; for each need, rewind <c>+0x1E4</c> to
+    /// <c>now - elapsed</c> (so <c>ApplyDecayAllNeeds</c> decays each need by this whole gap), and, only when
+    /// that need's fullness deadline <c>+0x208</c> is non-zero, subtract <c>elapsed</c> from the deadline and
+    /// the fullness start <c>+0x1FC</c>; then tail-call <c>ApplyDecayAllNeeds(connected)</c>. The device-read
+    /// and resolver callers pass <c>false</c> (the unconnected table at <c>this+0x17C</c>); a third caller,
+    /// <c>HandleMessage&lt;SetGameBeingPaused&gt;</c> 0x00698F44 (<c>0x006990DE..0x006990E8</c>), passes
+    /// <c>robot != 0</c>. That game-message caller is unbuilt (M15-016's named gap).
+    /// </summary>
+    public void ApplyDecayForTimeSinceLastDeviceWrite(bool connected)
+    {
+        lock (_gate)
+        {
+            double now = _clockSec();
+            double elapsed = now - _stateDateTimeSec;
+            foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
+            {
+                _lastDecaySec[n] = now - elapsed;                        // [+0x1E4] = [+0x3AC] - elapsed
+                if (_fullnessDeadlineSec.TryGetValue(n, out var deadline) && deadline != 0)
+                {
+                    _fullnessDeadlineSec[n] = deadline - elapsed;
+                    if (_fullnessStartSec.TryGetValue(n, out var start)) _fullnessStartSec[n] = start - elapsed;
+                }
+            }
+            ApplyDecayAllNeeds(connected);
+        }
+    }
+
+    private NeedsCopy SnapshotState(long dateTimeSec) => new(
+        new[] { State.GetNeedLevel(NeedId.Repair), State.GetNeedLevel(NeedId.Energy), State.GetNeedLevel(NeedId.Play) },
+        _serial, dateTimeSec, CurrentStateFileVersion);
+
+    /// <summary>C2 row 11: the version a non-rewriting robot/device copy carries (versions 1-4 rewrite, 5 does not).</summary>
+    // fidelity: M15-014
+    public const int CurrentStateFileVersion = 5;
 
     /// <summary><c>RegisterNeedsActionCompleted</c>: the action's deltas (± range) applied; unknown actions are ignored and logged.</summary>
     public bool RegisterNeedsActionCompleted(string actionId)
@@ -808,8 +1349,11 @@ public sealed class NeedsManager
             SparksRewardPending = true;
         }
         DetectBracketChanges();
-        return true;
         }
+        // Appendix I2: RegisterNeedsActionCompleted 0x006960D0 calls PossiblyStartWriteToRobot with force = false
+        // (0x00696534..0x00696536), after the deltas. Outside _gate so the NV write is not queued under it.
+        PossiblyStartWriteToRobot(false);
+        return true;
     }
 
     /// <summary>
@@ -831,9 +1375,9 @@ public sealed class NeedsManager
     /// <c>NumStarsAwarded</c>, <c>NumStarsForNextUnlock</c>, <c>TimeCreated</c>, <c>TimeLastStarAwarded</c>,
     /// <c>TimeLastDisconnect</c>, <c>TimeLastAppBackgrounded</c>, <c>OpenAppAfterDisconnect</c> and
     /// <c>ForceNextSong</c>. The stars/unlock/notification fields are the app economy's; only the levels,
-    /// damaged parts, serial and timestamp are meaningful here.
-    /// The serial-dispatch edge that would supply <paramref name="serialNumber"/> is the M15-014
-    /// RECOVERABLE_GAP, so the caller passes it (0 when unknown).
+    /// damaged parts, serial and timestamp are meaningful here. The state-file version is
+    /// <see cref="CurrentStateFileVersion"/> 5: versions 1-4 are rewritten on read (C2 row 11), 5 is not.
+    /// The serial is the current robot's (C2 row 9); the caller may override it for a fixed-file write.
     /// </summary>
     // fidelity: M15-014
     public void Save(string path, long? unixTimeSec = null, uint serialNumber = 0)
@@ -843,7 +1387,7 @@ public sealed class NeedsManager
         var damaged = new[] { NeedId.Repair, NeedId.Energy, NeedId.Play }.Select(n => State.NumDamagedPartsForRepairLevel(State.GetNeedLevel(n)) > 0).ToArray();
         var doc = new Dictionary<string, object>
         {
-            ["_StateFileVersion"] = 1,
+            ["_StateFileVersion"] = CurrentStateFileVersion,
             ["_DateTime"] = now,
             ["_SerialNumber"] = serialNumber,
             ["CurNeedLevel"] = levels,
@@ -853,9 +1397,9 @@ public sealed class NeedsManager
             ["NumStarsForNextUnlock"] = 0,
             ["TimeCreated"] = now,
             ["TimeLastStarAwarded"] = 0,
-            ["TimeLastDisconnect"] = 0,
-            ["TimeLastAppBackgrounded"] = 0,
-            ["OpenAppAfterDisconnect"] = false,
+            ["TimeLastDisconnect"] = _lastDisconnectSec,
+            ["TimeLastAppBackgrounded"] = _lastAppBackgroundSec,
+            ["OpenAppAfterDisconnect"] = _openAppAfterDisconnect,
             ["ForceNextSong"] = false,
         };
         File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(doc));
@@ -863,15 +1407,24 @@ public sealed class NeedsManager
 
     /// <summary>
     /// Reads a file written by <see cref="Save"/> (the exact keys above) and, as
-    /// <c>ApplyDecayForTimeSinceLastDeviceWrite</c> 0x00695304 does, decays the levels for the time that has
-    /// passed since <c>_DateTime</c> was written. Returns false when there is no file to read.
+    /// <c>AttemptReadFromDevice</c> 0x006936B0..0x0069371E does, calls
+    /// <see cref="ApplyDecayForTimeSinceLastDeviceWrite"/><c>(false)</c> for the time that has passed since
+    /// <c>_DateTime</c> was written. Returns false when there is no file to read, or when the state-file
+    /// version is above 5 (C2 row 3, <c>ReadFromDevice</c>). A successful read records the device copy
+    /// (<c>+0x1c9</c> set) so the resolver can compare it with the robot's. The elapsed decay uses the stack
+    /// clock (Appendix I4); <paramref name="unixTimeSec"/> is retained for callers that stamp a file time.
     /// </summary>
     // fidelity: M15-014
     public bool Load(string path, long? unixTimeSec = null, bool applyElapsedDecay = true)
     {
         if (!File.Exists(path)) return false;
-        using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));
+        string text = File.ReadAllText(path);            // the file I/O is outside _gate
+        lock (_gate)
+        {
+        using var doc = System.Text.Json.JsonDocument.Parse(text);
         var root = doc.RootElement;
+        int version = root.TryGetProperty("_StateFileVersion", out var ver) && ver.ValueKind == System.Text.Json.JsonValueKind.Number ? ver.GetInt32() : 1;
+        if (version > 5) { Log?.Invoke($"warning: NeedsManager.ReadFromDevice: state file version {version} is above 5; not read"); return false; }
         if (root.TryGetProperty("_SerialNumber", out var sn) && sn.ValueKind == System.Text.Json.JsonValueKind.Number)
         {
             _previousSerial = _serial;
@@ -888,14 +1441,15 @@ public sealed class NeedsManager
                 i++;
             }
         }
-        if (applyElapsedDecay && root.TryGetProperty("_DateTime", out var w) && w.ValueKind == System.Text.Json.JsonValueKind.Number)
-        {
-            long now = unixTimeSec ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            double elapsed = now - w.GetInt64();
-            if (elapsed > 0) State.ApplyDecay(Decay, elapsed, _robotConnected);
-        }
-        DetectBracketChanges();
+        long dateTime = root.TryGetProperty("_DateTime", out var w) && w.ValueKind == System.Text.Json.JsonValueKind.Number ? w.GetInt64() : 0;
+        _stateDateTimeSec = dateTime;
+        _deviceVersionUpdated = version != 5;            // +0x1cb (C2 row 1)
+        if (applyElapsedDecay) ApplyDecayForTimeSinceLastDeviceWrite(false);
+        else DetectBracketChanges();
+        _deviceCopy = SnapshotState(dateTime);
+        _deviceDataPresent = true;       // +0x1c9
         return true;
+        }
     }
 
     public bool IsSevereExpressed(NeedId n) => _severeExpressed.Contains(n);
