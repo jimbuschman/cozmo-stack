@@ -1,1 +1,4 @@
 __pycache__/
+vorbis_*.f32
+vorbis_*.taps
+vorbis_*.memo

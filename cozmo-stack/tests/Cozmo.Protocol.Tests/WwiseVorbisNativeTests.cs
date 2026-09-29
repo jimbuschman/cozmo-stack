@@ -636,8 +636,31 @@ public class WwiseVorbisNativeTests
         Assert.Equal(new byte[] { 1, 1 }, neighbours.High);
         Assert.True(WwiseVorbisNative.Floor1Inverse1(reader, floor, memo, neighbours,
             book => book == 5 ? 1 : 7));                                  // cascade 1, subbook 2 -> 7
-        // post 2: val 0 -> predicted 2 | 0x8000, masked back to 2; post 3: 7 stays (hiroom > loroom).
+        // post 2: val 0 -> predicted 2 | 0x8000; post 3 (val 7, hiroom > loroom) then masks its low neighbour,
+        // post 2, back to 2.
         Assert.Equal(new[] { 2, 3, 2, 7 }, memo);
+    }
+
+    /// <summary>
+    /// M6-002, 0x00AB90F4..0x00AB9100: a post whose value is 0 is stored as <c>predicted | 0x8000</c> and the
+    /// <c>beq 0xab9064</c> jumps past the neighbour masks at 0x00AB9044..0x00AB9060, so it leaves its low and
+    /// high neighbours as they are. Here posts 2 and 3 both read 0: post 3's low neighbour is post 2, which
+    /// stays flagged (and so is skipped by inverse2), while clearing it would have un-declined it. The whole
+    /// decode of the shipped sounds depends on it (WwiseVorbisWholeDecodeNativeTests).
+    /// </summary>
+    [Fact]
+    public void AZeroPostLeavesItsNeighboursFlagged()
+    {
+        var cls = new WwiseVorbisFloorClass(Dimensions: 2, Subclasses: 1, MasterBook: 5, SubBooks: new[] { 2, -1 });
+        var floor = new WwiseVorbisFloorSetup(Partitions: 1, PartitionClasses: new[] { 0 },
+            Classes: new[] { cls }, Multiplier: 1, RangeBits: 4, PostList: new[] { 0, 16, 4, 12 });
+        var memo = new int[4];
+        var reader = Bits((1, 1), (2, 8), (3, 8));
+        var neighbours = WwiseVorbisNative.FloorNeighbours(floor.PostList);
+        Assert.True(WwiseVorbisNative.Floor1Inverse1(reader, floor, memo, neighbours,
+            book => book == 5 ? 1 : 0));                                  // post 3's sub-book decodes 0
+        // post 2: predicted 2, val 0 -> 0x8002; post 3: predicted 2, val 0 -> 0x8002, with no masks.
+        Assert.Equal(new[] { 2, 3, 0x8002, 0x8002 }, memo);
     }
 
     /// <summary>

@@ -1194,9 +1194,11 @@ public static partial class WwiseVorbisNative
             int hn = neighbours.High[i - 2];                               // C7 3g: floor+0x10
             int predicted = Floor1RenderPoint(floor.PostList[ln], floor.PostList[hn],
                 memo[ln], memo[hn], floor.PostList[i]);                    // C7 3g: render_point
-            memo[i] = Floor1UnwrapValue(predicted, quantQ, memo[i]);       // C7 3g: the unwrap
-            memo[ln] &= 0x7fff;                                            // C7 3g: mask the low neighbour
-            memo[hn] &= 0x7fff;                                            // C7 3g: mask the high neighbour
+            int val = memo[i];
+            memo[i] = Floor1UnwrapValue(predicted, quantQ, val);           // C7 3g: the unwrap
+            if (val == 0) continue;                                        // 0x00AB9100: beq 0xab9064 skips the masks
+            memo[ln] &= 0x7fff;                                            // 0x00AB9044: mask the low neighbour
+            memo[hn] &= 0x7fff;                                            // 0x00AB9054: mask the high neighbour
         }
         return true;
     }
