@@ -1,7 +1,7 @@
-DONE 2026-09-29 00:41:00 -05:00 — M9-wwise-music built and verified: 19 records settled EXACT_SOURCE, 3 IMPLEMENTATION_GAP cross-layer, 4 RECOVERABLE_GAP, 1 HARDWARE_ONLY, 1 COMPATIBILITY_POLICY; verifier PASS; full suite 1790/1790; commit 11ddd4a.
+DONE 2026-09-29 00:41:00 -05:00 — M9-wwise-music built and verified: 19 records settled EXACT_SOURCE, 3 IMPLEMENTATION_GAP cross-layer, 4 RECOVERABLE_GAP, 1 HARDWARE_ONLY, 1 COMPATIBILITY_POLICY; verifier PASS; full suite 1790/1790 on the build commit (1827/1827 after rebasing onto B-M6b-2); build commit 5c5fece.
 
 ## Commit
-- 11ddd4a — B-M9: build M9-wwise-music from its inventory; settle 19 records (verifier PASS, suite 1790/1790). 32 files, 1327 insertions / 702 deletions.
+- 5c5fece — B-M9: build M9-wwise-music from its inventory; settle 19 records (verifier PASS, suite 1790/1790). 32 files, 1327 insertions / 702 deletions. (Rebased onto a770681 B-M6b-2 before push; the push gate then ran 1827/1827.)
 
 ## Records settled EXACT_SOURCE (19)
 M9-001, M9-002, M9-003, M9-004, M9-005, M9-006, M9-007, M9-008, M9-009, M9-010, M9-012, M9-015, M9-017, M9-018, M9-019, M9-020, M9-021, M9-022, M9-026.
