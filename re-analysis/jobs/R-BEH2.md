@@ -1,6 +1,6 @@
 # Job R-BEH2: the M7/M8 gap passes R-BEH left
 
-**Agent:** opencode, as cozmo-manager. **Type:** round 3, second pass. Follow [R.md](R.md).
+**Agent:** the next free Sonnet worker in Claude Code (operator, 2026-09-29: saving OpenRouter credits), as the manager of this job. Use the `.claude/agents` subagents for the roles, and have the operator push each commit. **Type:** round 3, second pass. Follow [R.md](R.md).
 **Needs:** R-BEH DONE. If it isn't, set `WAITING R-BEH` and end.
 
 **Subsystems:** M7-behaviour, M8-framework. **Start from R-BEH's status** (`status/R-BEH.md`), not from a new triage.
@@ -22,3 +22,5 @@ It lists every record left open and what each needs:
    result undelivered. Build that result seam, or establish from source that the M7 callers ignore it.
 
 **Files to avoid:** R-VIS (a Sonnet worker) is editing `cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs` and `ManipulationBehaviors.cs`, and `Manipulation/**`. Don't edit them. If a record needs a change there, name it in the status file for R-VIS, and leave that record open.
+
+**Pre-extraction:** Codex is answering the missing-source items in `re-analysis/research/20260929-R-BEH2-pre-extraction.md` (request `requests/20260929-R-BEH2-pre-extraction.md`). If it's there, have the verifier check its rows first, and extract only what it leaves open.
