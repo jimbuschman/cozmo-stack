@@ -46,6 +46,7 @@ public sealed class CubeHighPassFilter
 /// <c>BehaviorSinging::InitInternal</c> (0x005EECF4..0x005EED08) builds one of these per connected cube
 /// with <b>0.5, 2.5 and 3.9</b>.
 /// </summary>
+// fidelity: M9-017
 public sealed class CubeShakeListener
 {
     private readonly CubeHighPassFilter _filter;
@@ -85,9 +86,10 @@ public sealed class CubeShakeListener
 /// Cube accelerometer streams and the listeners on them, as <c>CubeAccelComponent</c> runs them.
 ///
 /// Adding the first listener for a cube turns its stream on: <c>CubeAccelComponent::AddListener</c>
-/// (0x0063547E) looks the object up in BlockWorld and sends <c>StreamObjectAccel</c> to the robot
-/// (0x00635562). Removing the last one turns it off again, which keeps a stream the engine would have
-/// running off the wire when nothing wants it.
+/// (0x00635474) tests the object's listener set at <c>[r6+0x30]</c> (0x006354E8) and, only when it is
+/// empty, sends <c>StreamObjectAccel</c> to the robot (0x00635558..0x0063556E). Removing the last one
+/// turns it off again, which keeps a stream the engine would have running off the wire when nothing wants
+/// it.
 ///
 /// An <c>ObjectAccel</c> message (0xF5, twenty bytes: timestamp, object id, three floats) is fed to every
 /// listener on that object, in the order they were added.

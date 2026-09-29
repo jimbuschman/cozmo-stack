@@ -9,9 +9,9 @@ namespace Cozmo.Protocol.Tests;
 ///
 /// Each test checks a value or a consequence that was read out of the bank, not that something happened:
 /// the property ids and values of the two singing modulators, the two bindings that say what they drive
-/// and how far, the fact that the note-off envelope's whole authority over the level is one decibel, and
-/// the fact that the vibrato is silent until a cube is shaken. The bit-vector test is the evidence behind
-/// the claim that MIDI note tracking is off everywhere.
+/// and how far, the fact that the note-off envelope's whole authority over the level is a fraction of a
+/// decibel through the Wwise dB scaling (M9-007), and the fact that the vibrato is silent until a cube is
+/// shaken. The bit-vector test is the evidence behind the claim that MIDI note tracking is off everywhere.
 /// </summary>
 public class WwiseModulatorTests
 {
@@ -86,12 +86,14 @@ public class WwiseModulatorTests
 
     /// <summary>
     /// The two bindings that say what the modulators do, and how far they can go: the LFO drives Pitch on
-    /// the MIDI target over 0 to 580 cents, the envelope drives Volume on the note-on layer over 0 to
-    /// -1 dB. Neither target node sets the property its modulator drives, so no question of how a bound
-    /// value accumulates onto an existing one arises on this path.
+    /// the MIDI target over 0 to 580 cents with scaling 0 (so the curve value is already cents), the
+    /// envelope drives Volume on the note-on layer over 0 to -1 with scaling 2 (so the curve value is
+    /// converted by the Wwise ±20·log10 dB map, M9-007). Neither target node sets the property its
+    /// modulator drives, so no question of how a bound value accumulates onto an existing one arises on
+    /// this path.
     /// </summary>
     [Fact]
-    public void TheBindingsBoundTheVibratoTo580CentsAndTheNoteOffEnvelopeToOneDecibel()
+    public void TheBindingsBoundTheVibratoTo580CentsAndTheNoteOffEnvelopeToTheWwiseDbMap()
     {
         if (Library.Value is not { } lib) return;
 
@@ -100,8 +102,10 @@ public class WwiseModulatorTests
         Assert.Equal(VibratoLfo, pitch.SourceId);
         Assert.Equal(WwiseRtpc.ModulatorSource, pitch.SourceType);
         Assert.Equal((uint)WwiseProp.Pitch, pitch.ParamId);
+        Assert.Equal(0, pitch.Scaling);                                 // cents, unchanged by scaling
         Assert.Equal(0.0, pitch.Evaluate(0, out _), 6);
         Assert.Equal(580.0, pitch.Evaluate(1, out _), 6);
+        Assert.Equal(580.0, pitch.EvaluateScaled(1, out _), 6);        // scaling 0: unchanged
         Assert.Null(target.Params.Float(WwiseProp.Pitch));
 
         var noteOn = lib.Node(NoteOnLayer)!;
@@ -109,8 +113,13 @@ public class WwiseModulatorTests
         Assert.Equal(NoteOffEnvelope, volume.SourceId);
         Assert.Equal(WwiseRtpc.ModulatorSource, volume.SourceType);
         Assert.Equal((uint)WwiseProp.Volume, volume.ParamId);
+        Assert.Equal(2, volume.Scaling);                                // the Wwise dB map
         Assert.Equal(0.0, volume.Evaluate(0, out _), 6);
         Assert.Equal(-1.0, volume.Evaluate(1, out _), 6);
+        // scaling 2 at the curve's end is the Wwise clamp, not -1 dB.
+        Assert.Equal(-764.616, volume.EvaluateScaled(1, out _), 3);
+        // and at the shipped 9.5 % sustain level it is 20*log10(1 - 0.095).
+        Assert.Equal(20 * Math.Log10(0.905), volume.EvaluateScaled(0.095, out _), 6);
         Assert.Null(noteOn.Params.Float(WwiseProp.Volume));
 
         // The note-off layer carries its own level instead, and plays at note-off rather than note-on.
@@ -120,24 +129,28 @@ public class WwiseModulatorTests
     }
 
     /// <summary>
-    /// A rendered song acts on the note-off envelope on every sung note, and the level change it makes is
-    /// the 0.095 dB the shipped sustain level of 9.5 per cent asks for through a curve that reaches -1 dB
-    /// at full output. The vibrato contributes nothing, because nothing is shaking a cube.
+    /// A rendered song acts on the note-off envelope on every sung note. The level change it makes is the
+    /// Wwise dB scaling (byte 2) applied after the binding's curve (M9-007), not the curve value read as
+    /// decibels: the curve maps the envelope's shipped sustain level of 9.5 per cent to -0.095, and
+    /// 20·log10(1 - 0.095) is about -0.87 dB. The vibrato contributes nothing, because nothing is shaking
+    /// a cube.
     ///
     /// This is the measurement behind the correction to WWISE_MUSIC.md: the note-off envelope was recorded
-    /// there as the reason notes sustain without release shaping. It cannot be. One decibel is all it has.
+    /// there as the reason notes sustain without release shaping. It cannot be. Under a decibel of level
+    /// change is all it has.
     /// </summary>
     [Fact]
-    public void TheNoteOffEnvelopeMovesTheLevelByATenthOfADecibelAndTheVibratoByNothing()
+    public void TheNoteOffEnvelopeMovesTheLevelByTheWwiseDbScalingAndTheVibratoByNothing()
     {
         if (Library.Value is not { } lib) return;
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(1));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(1));
         var render = source.RenderMusic(WwiseHash.Of("Play__Robot_VO__Cozmo_Singing_80bpm"),
             new Dictionary<uint, uint> { [Cozmo.Robot.Behavior.SingingBehavior.Group80] = 0x852F201Au });
 
         Assert.Equal(render.NotesPlayed, render.ModulationsApplied);
         Assert.True(render.ModulationsApplied > 0, "the note-on layer binds the envelope, so every sung note carries it");
-        Assert.InRange(render.ModulationPeakDb, -0.1, -0.09);
+        // 20*log10(1 - 0.095), the recovered scaling-2 map at the envelope's 9.5 % sustain.
+        Assert.InRange(render.ModulationPeakDb, -0.87, -0.86);
         Assert.Equal(0.0, render.ModulationPeakCents);
         Assert.Empty(render.Problems);
     }
@@ -151,7 +164,7 @@ public class WwiseModulatorTests
     public void WithTheShakeParameterAtFullTheVibratoReachesTheBindingsFullRange()
     {
         if (Library.Value is not { } lib) return;
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(1));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(1));
         source.SetParameter(VibratoParameter, 1f);
         var render = source.RenderMusic(WwiseHash.Of("Play__Robot_VO__Cozmo_Singing_80bpm"),
             new Dictionary<uint, uint> { [Cozmo.Robot.Behavior.SingingBehavior.Group80] = 0x852F201Au });

@@ -208,6 +208,34 @@ public class WwiseBusFxTests
         Assert.Equal(0.45f, WwiseEqCoefficients.NyquistFraction);
     }
 
+    /// <summary>
+    /// M9-027 / gapC 4.3, at the stack's current render rate: this stack runs the exact chain at its 22320 Hz
+    /// render rate, where the shipped <c>Robot_Bus_Eq_HiLowPass</c> low-pass at 14298 Hz is above Nyquist.
+    /// The exact routine caps it at <c>0.45·fs = 10044 Hz</c> and applies it rather than skipping it; the
+    /// coefficients are exactly those of a band authored at the cap. This is a stack-rate consequence: the
+    /// engine runs the chain at the 48000 Hz Wwise mix rate, where 14298 Hz is in band, and the Hijack then
+    /// resamples to 22320 (M6-017/M6-018). It is not a claim about the engine's low-pass.
+    /// </summary>
+    [Fact]
+    public void AtTheStacksRenderRateTheShippedLowPassIsCappedToFortyFivePercentNyquist()
+    {
+        const float stackRate = 22320f;
+        var shipped = new WwiseEqBand((uint)WwiseEqFilterType.LowPass, 0f, 14298f, 0f, true);
+        var capped = WwiseEqCoefficients.Design(shipped, stackRate);
+        var atCap = WwiseEqCoefficients.Design(
+            new WwiseEqBand((uint)WwiseEqFilterType.LowPass, 0f, 0.45f * stackRate, 0f, true), stackRate);
+
+        Assert.Equal(atCap, capped);
+        Assert.Equal(10044f, 0.45f * stackRate);            // the stack's 0.45 × 22320 = 10044
+
+        // The shipped high-pass at 333 Hz is well below the cap, so the cap leaves it alone.
+        var hp = WwiseEqCoefficients.Design(
+            new WwiseEqBand((uint)WwiseEqFilterType.HighPass, 0f, 333f, 0f, true), stackRate);
+        var hpAtCap = WwiseEqCoefficients.Design(
+            new WwiseEqBand((uint)WwiseEqFilterType.HighPass, 0f, 0.45f * stackRate, 0f, true), stackRate);
+        Assert.NotEqual(hpAtCap, hp);
+    }
+
     // ------------------------------------------------------------------ EQ execute
 
     /// <summary>

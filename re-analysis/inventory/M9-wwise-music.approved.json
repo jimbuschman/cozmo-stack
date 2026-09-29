@@ -1,11 +1,11 @@
 {
   "subsystem": "M9-wwise-music",
-  "approved": "2026-09-28",
+  "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M9-wwise-music.md",
-  "inventory_sha256": "94299655adc52dd28bff9bb0e2582a21d7276f8e43a8551902175997adbe1fbb",
+  "inventory_sha256": "f08cd4950577cc4d9453d1da9ef4792c2fb174e776d08a593c3d619db9eb8f0d",
   "records": {
     "M9-001": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "BehaviorSinging configuration, switch mapping and default tempo trigger",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -17,23 +17,31 @@
     },
     "M9-002": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Singing initialization posts the switch, locks reactions and starts the three-animation sequence in order",
+      "title": "Singing initialization posts the switch, locks reactions, then runs get-in/tempo/get-out as three TriggerAnimationActions with 60-second per-step timeouts in one sequential compound",
       "authority": "libcozmoEngine.so",
       "evidence": [
         "0x005EEB30..0x005EEE9F",
-        "X4 S5-S6 and S17-S18"
+        "0x005EEDCA (movt r8,#0x4270, per-step 60.0f)",
+        "0x00540D1C (IAction timeout, failure 0x3000018)",
+        "0x0054F70C (compound fails on a child failure)",
+        "X4 S5-S6 and S17-S18",
+        "Correction C1a"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M9-003": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Cube running means, vibrato smoothing/posting, duration log, update result and stop cleanup",
+      "title": "Cube running means, vibrato smoothing/posting, duration log, the +0x84 acting-tag 2/1 return, and stop cleanup",
       "authority": "libcozmoEngine.so",
       "evidence": [
         "0x005EF0C8..0x005EF30F",
         "0x005EF490..0x005EF4DF",
-        "X4 S7 and S11-S16 and S19"
+        "0x005EF240..0x005EF24A (returns 2 while IBehavior+0x84==0, else 1)",
+        "0x005A2F68 (BehaviorManager consumes 0/1/2)",
+        "0x005A5CB4 (BehaviorSystemManager consumes 0/1/2)",
+        "X4 S7 and S11-S16 and S19",
+        "Correction C1b"
       ],
       "live_path": true,
       "hardware_required": false
@@ -189,7 +197,7 @@
       "hardware_required": false
     },
     "M9-017": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Cube acceleration stream, high-pass filter and shake hysteresis drive singing vibrato",
       "authority": "libcozmoEngine.so",
       "evidence": [

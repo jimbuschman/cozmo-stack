@@ -48,13 +48,15 @@ public sealed record WwiseRenderedMusic(short[] Pcm, double DurationMs)
 /// played through their MIDI target as a sampler.
 ///
 /// Everything the renderer reads is bank data (<see cref="WwiseHierarchy"/>, <see cref="WwiseMidi"/>).
-/// How that data is acted on is Wwise runtime behaviour that this package does not contain, so the
-/// rules below are taken from Audiokinetic's public documentation of MIDI playback and are labelled
-/// CORROBORATED, not NATIVE; where the documentation leaves a choice open, the choice is named:
+/// The Wwise 2016.2 runtime is statically linked into <c>libcozmoEngine.so</c>, so the rules below are
+/// recovered native behaviour where the inventory has read them, and are named as unrecovered where it has
+/// not. In particular the container selection is the runtime's own (M9-015, M9-022; M6-007), and a
+/// modulator binding is evaluated through its curve, scaled and accumulated onto its target property
+/// (M9-007, M9-009; M6-009):
 ///
 /// * A note-on plays the MIDI target with the note attached. A blend container or actor-mixer plays every
-///   child; a random container plays one child by weight (not repeating the last, per its avoid-repeat
-///   count); a sequence container plays its next playlist item; a sound plays.
+///   child; a random container plays the k-th eligible item of the recovered selection with its
+///   blocked/avoid list; a sequence container plays its next playlist item; a sound plays.
 /// * At every node the note is filtered by that node's MIDI key range and velocity range properties
 ///   (49..52), where set; a node without them passes everything. A node whose MIDI play-on property (46)
 ///   is 2 plays at note-off instead of note-on; the setting is inherited down the tree, default note-on.
@@ -63,14 +65,16 @@ public sealed record WwiseRenderedMusic(short[] Pcm, double DurationMs)
 ///   times. See <see cref="LoopedLength"/>, which sets out why. Volume (dB) and Pitch (cents) properties
 ///   are summed down the path and applied as gain and a resampling ratio.
 /// * Every modulator bound to a node on the path (an RTPC whose source type is 2) is evaluated over the
-///   life of the voice and mapped through that binding's curve onto the property it drives: the note-off
-///   envelope onto Volume, the vibrato LFO onto Pitch. Neither target node sets the property its modulator
-///   drives, so how a bound value would combine with an existing one does not arise on this path. A
-///   modulator's own depth may itself be driven by a game parameter, which is how the cube shake reaches
-///   the vibrato; with no shake the depth is 0 and the LFO contributes nothing.
+///   life of the voice, its value is mapped through that binding's curve and its scaling byte, and the
+///   results are accumulated onto the property it drives: the note-off envelope onto Volume, the vibrato
+///   LFO onto Pitch. Neither target node sets the property its modulator drives, so how a bound value
+///   would combine with an existing one does not arise on this path. A modulator's own depth may itself be
+///   driven by a game parameter, which is how the cube shake reaches the vibrato; with no shake the depth
+///   is 0 and the LFO contributes nothing. The exact LFO waveform between its extrema is not recovered
+///   (M9-025, RECOVERABLE_GAP); see <see cref="WwiseModulatorNode.ValueAt"/>.
 /// * MIDI note tracking is off. Not because no root note is set — although none is, anywhere in any bank —
 ///   but because of the node bit vectors: see <see cref="WwiseNodeParams"/>, which sets out why no bit in
-///   any shipped bank can be the one that enables it.
+///   any shipped bank can be the one that enables it, and why there is therefore never a MIDI pitch shift.
 /// * Velocity is not applied: nothing in the shipped target binds an RTPC to it.
 /// * A clip plays its source from BeginTrim for its length, starting at PlayAt + BeginTrim on the
 ///   segment's timeline; a MIDI note that is still held when the clip ends is released there.
@@ -78,8 +82,8 @@ public sealed record WwiseRenderedMusic(short[] Pcm, double DurationMs)
 /// Mixing is additive into a wide accumulator, and the sum then goes through the effect chain the robot's
 /// own bus carries: two parametric EQs and a peak limiter, built from the shipped <c>Init.bnk</c> by
 /// <see cref="WwiseBusChain"/>, on the bus the engine's own registration table names for a robot game
-/// object. Their settings are the product's; the filter and limiter arithmetic between them is this
-/// stack's, because the Wwise runtime does not ship (fidelity manifest M9-011).
+/// object. Their settings are the product's; the arithmetic between them is the recovered Wwise plug-in
+/// path (fidelity manifest M9-011, M9-026).
 ///
 /// When the banks are not loaded there is no chain, and the render falls back to scaling the whole buffer
 /// so its peak sits at full scale — a stand-in, reported as such in <see cref="WwiseRenderedMusic"/>.
@@ -88,23 +92,36 @@ public sealed class WwiseSongRenderer
 {
     private readonly WwiseSoundLibrary _lib;
     private readonly Func<uint, short[]?> _decode;
-    private readonly Random _random;
-    private readonly Dictionary<uint, int> _sequenceCursor = new();
-    private readonly Dictionary<uint, uint> _lastPick = new();
     /// <summary>
-    /// One render at a time. <c>_random</c>, <c>_sequenceCursor</c> and <c>_lastPick</c> carry Wwise's
-    /// play-to-play state across a render, and two prewarms can now be in flight at once (a song and a
-    /// get-in, or two songs queued back to back), which would tear those dictionaries and draw from
-    /// <see cref="Random"/> concurrently.
+    /// The recovered Wwise container-selection engine and its single global 64-bit LCG (M9-015, M9-022;
+    /// M6-007). Every draw a RanSeq container makes is Wwise's own <see cref="WwiseRng"/> advanced by
+    /// <see cref="WwiseSelectionState"/>; the former <see cref="Random"/> draw and "weighted avoiding the
+    /// last" rule are rejected by the inventory.
+    /// </summary>
+    private readonly WwiseSelection _selection;
+    /// <summary>
+    /// One render at a time, so two prewarms in flight at once (a song and a get-in, or two songs queued
+    /// back to back) cannot tear this renderer's own <c>_selection</c> state. This gate does <b>not</b>
+    /// cover the shared global LCG: the ordinary-event path draws from the same <see cref="WwiseRng"/>
+    /// under the audio source's own lock, so <see cref="WwiseRng.Next"/> synchronises its state itself
+    /// (M9-015).
     /// </summary>
     private readonly object _renderGate = new();
 
+    /// <summary>
+    /// The game object whose container state this renderer draws from. Every shipped RanSeq container has
+    /// bank bit4 set (M6-007 §3.4), so its state is shared across robot game objects and this key does not
+    /// affect the draw; it is kept so the selection API is used as the runtime uses it.
+    /// </summary>
+    private const int SingingGameObject = 7;
+
     /// <param name="decode">Media id to mono PCM at <see cref="CozmoAudio.SampleRate"/>, or null when it cannot be decoded.</param>
-    public WwiseSongRenderer(WwiseSoundLibrary lib, Func<uint, short[]?> decode, Random? random = null)
+    /// <param name="rng">The single global LCG the whole engine shares; null makes a fresh time-seeded one.</param>
+    public WwiseSongRenderer(WwiseSoundLibrary lib, Func<uint, short[]?> decode, WwiseRng? rng = null)
     {
         _lib = lib;
         _decode = decode;
-        _random = random ?? new Random();
+        _selection = new WwiseSelection(rng ?? new WwiseRng(), sharedAcrossGameObjects: true);
     }
 
     /// <summary>
@@ -128,8 +145,9 @@ public sealed class WwiseSongRenderer
     /// behaviour's get-in animation raises before the song starts. It carries no MIDI filter of its own,
     /// and four of the eighteen containers under it carry no key range either, so under the rules above a
     /// note can reach it; measured on Aba Daba it adds 41 voices to a 42-note song. Whether Wwise's MIDI
-    /// dispatch really routes notes into it is Wwise runtime behaviour, and no Wwise runtime ships in the
-    /// package (fidelity manifest M9-013). Only a recording of the stock app singing can settle it, so this
+    /// dispatch really routes notes into it is in the statically linked runtime, but the dispatch path has
+    /// not been located (fidelity manifest M9-013, RECOVERABLE_GAP). Only a recording of the stock app
+    /// singing can settle it, so this
     /// lets the two readings be rendered and listened to side by side rather than argued about.
     /// </summary>
     public IReadOnlySet<uint> ExcludeBranches { get; set; } = new HashSet<uint>();
@@ -199,6 +217,7 @@ public sealed class WwiseSongRenderer
             {
                 foreach (var clip in seg.Clips)
                 {
+                    // fidelity: M9-020
                     double windowBegin = clip.Clip.BeginTrimMs, windowEnd = windowBegin + clip.Clip.LengthMs;
                     double clipStartOnTimeline = segOffsetMs + clip.Clip.PlayAtMs;     // where source time 0 falls
 
@@ -321,6 +340,7 @@ public sealed class WwiseSongRenderer
     /// which is what lets shaking a cube change a song that is already playing. A modulator this reader
     /// cannot find is named rather than skipped silently.
     /// </summary>
+    // fidelity: M9-008
     private IReadOnlyList<WwiseBoundModulator> BindingsOn(WwiseNodeParams p, IReadOnlyList<WwiseBoundModulator> inherited, List<string> problems)
     {
         List<WwiseBoundModulator>? added = null;
@@ -395,7 +415,7 @@ public sealed class WwiseSongRenderer
                     }
                     return total;
                 }
-                uint pick = rs.IsSequence ? NextInSequence(rs) : WeightedPick(rs);
+                uint pick = PickIndex(rs);
                 return Trigger(pick, key, velocity, startMs, heldMs, noteOff, gainDb, cents, playOn, modulators,
                                sink, ref voices, problems, depth + 1, branch);
             }
@@ -427,6 +447,7 @@ public sealed class WwiseSongRenderer
     /// modulator driving anything else is named rather than passed over. Nothing is resolved here, because
     /// an LFO's depth is read again at every block a voice is rendered in.
     /// </summary>
+    // fidelity: M9-007, M9-009
     private static IReadOnlyList<WwiseBoundModulator> Applicable(IReadOnlyList<WwiseBoundModulator> modulators, List<string> problems)
     {
         if (modulators.Count == 0) return NoModulators;
@@ -460,9 +481,10 @@ public sealed class WwiseSongRenderer
     /// A sound that does not loop is left alone: it plays once, or its finite count. None of the note-on
     /// recordings is such a sound, and the note-off and get-in recordings, which are, are played whole.
     ///
-    /// Whether Wwise fades the last few milliseconds of a cut voice is a runtime detail that does not ship
-    /// in the package; nothing is faded here (fidelity manifest M9-010).
+    /// Whether Wwise fades the last few milliseconds of a cut voice is in the statically linked runtime but
+    /// has not been read; nothing is faded here (fidelity manifest M9-010).
     /// </summary>
+    // fidelity: M9-010
     public static double LoopedLength(uint? loopProp, double sampleMs, double heldMs)
     {
         if (sampleMs <= 0) return 0;
@@ -471,31 +493,21 @@ public sealed class WwiseSongRenderer
         return Math.Max(0, heldMs);
     }
 
-    private uint NextInSequence(WwiseRandomSequenceNode rs)
+    /// <summary>
+    /// The next playlist index a step-mode RanSeq container plays, through the recovered Wwise selection
+    /// path (M9-022; M6-007 §3.5..§3.7): the k-th eligible item with the blocked/avoid list, the shuffle
+    /// played bits, or the sequence cursor. This is the live singing path's selection; the former
+    /// <c>WeightedPick</c>/<c>NextInSequence</c> pair drew from <see cref="Random"/> and is rejected by the
+    /// inventory. A container whose state cannot produce an item returns index 0 rather than dropping the
+    /// voice, because the caller cannot place a voice with no recording.
+    /// </summary>
+    // fidelity: M9-015, M9-022
+    private uint PickIndex(WwiseRandomSequenceNode rs)
     {
-        int i = _sequenceCursor.GetValueOrDefault(rs.Id);
-        _sequenceCursor[rs.Id] = (i + 1) % rs.Playlist.Count;
-        return rs.Playlist[i % rs.Playlist.Count].ChildId;
-    }
-
-    private uint WeightedPick(WwiseRandomSequenceNode rs)
-    {
-        var candidates = rs.Playlist.ToList();
-        if (rs.AvoidRepeatCount > 0 && candidates.Count > 1 && _lastPick.TryGetValue(rs.Id, out var last))
-            candidates.RemoveAll(c => c.ChildId == last);
-        long total = candidates.Sum(c => (long)Math.Max(0, c.Weight));
-        uint chosen = candidates[0].ChildId;
-        if (total > 0)
-        {
-            long r = (long)(_random.NextDouble() * total);
-            foreach (var c in candidates)
-            {
-                r -= Math.Max(0, c.Weight);
-                if (r < 0) { chosen = c.ChildId; break; }
-            }
-        }
-        _lastPick[rs.Id] = chosen;
-        return chosen;
+        if (rs.Playlist.Count == 0) return 0;
+        var settings = WwiseContainerSelectionSettings.FromNode(rs);
+        int index = _selection.NextIndex(rs.Id, SingingGameObject, settings);
+        return rs.Playlist[index < 0 ? 0 : index].ChildId;
     }
 
 }

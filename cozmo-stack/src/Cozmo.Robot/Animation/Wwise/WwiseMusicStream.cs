@@ -12,6 +12,7 @@ namespace Cozmo.Robot.Animation.Wwise;
 public sealed record WwiseBoundModulator(WwiseModulatorNode Modulator, WwiseRtpc Binding, WwiseRtpc? DepthFrom)
 {
     /// <summary>The modulator's depth in per cent under these parameter values.</summary>
+    // fidelity: M9-008
     public double DepthAt(IReadOnlyDictionary<uint, float> parameters)
     {
         if (DepthFrom is null) return Modulator.Value(WwiseModulatorProp.LfoDepth, 0);
@@ -77,6 +78,7 @@ public sealed class WwiseVoice
     /// the modulators evaluated under <paramref name="parameters"/> as they stand now. Blocks must be
     /// asked for in order; a block wholly before the voice starts, or after it ends, does nothing.
     /// </summary>
+    // fidelity: M9-007, M9-009
     public void RenderInto(double[] mix, int from, int to, IReadOnlyDictionary<uint, float> parameters,
                            WwiseModulationStats stats)
     {
@@ -87,29 +89,37 @@ public sealed class WwiseVoice
 
         // Which bindings can move anything at all under the parameters in force for this block. An LFO at
         // zero depth produces nothing at any instant, which is the ordinary case with no cube being
-        // shaken, so the loop below keeps its fast path.
-        List<(WwiseBoundModulator Bound, double Depth)>? live = null;
+        // shaken, so the loop below keeps its fast path. Bindings are grouped by the property they drive,
+        // because the recovered runtime accumulates onto the named target property (M9-009).
+        List<(WwiseBoundModulator Bound, double Depth)>? volume = null, pitch = null;
         foreach (var b in _modulators)
         {
             double depth = b.DepthAt(parameters);
             if (b.Modulator.IsLfo && depth <= 0) continue;
-            (live ??= new()).Add((b, depth));
+            if (b.Binding.ParamId == (uint)WwiseProp.Volume) (volume ??= new()).Add((b, depth));
+            else (pitch ??= new()).Add((b, depth));
         }
-        if (live is not null && !_counted) { stats.Applied += live.Count; _counted = true; }
+        if ((volume is not null || pitch is not null) && !_counted)
+        {
+            stats.Applied += (volume?.Count ?? 0) + (pitch?.Count ?? 0);
+            _counted = true;
+        }
 
+        // The scaling byte is applied after each binding's curve (M9-007, M6-009 gapA 5.3). Scaling 2 is
+        // the ±20·log10 dB map, so the note-off envelope's (0,0)->(1,-1) curve is not a one-decibel
+        // maximum. The group is then accumulated exactly as the runtime does (M6-009 gapA 5.4).
+        List<double>? values = null;
         for (int i = first; i < last; i++)
         {
             double gain = Gain, step = Ratio;
-            if (live is not null)
+            if (volume is not null || pitch is not null)
             {
                 double seconds = (i - _startSample) / (double)CozmoAudio.SampleRate;
                 double db = 0, cents = 0;
-                foreach (var (b, depth) in live)
-                {
-                    double value = b.Modulator.ValueAt(seconds, _heldSeconds, depth);
-                    double mapped = b.Binding.Evaluate(value, out _);
-                    if (b.Binding.ParamId == (uint)WwiseProp.Volume) db += mapped; else cents += mapped;
-                }
+                if (volume is not null)
+                    db = Accumulated(volume, seconds, ref values);
+                if (pitch is not null)
+                    cents = Accumulated(pitch, seconds, ref values);
                 if (db < stats.PeakDb) stats.PeakDb = db;
                 if (Math.Abs(cents) > Math.Abs(stats.PeakCents)) stats.PeakCents = cents;
                 if (db != 0) gain *= Math.Pow(10, db / 20.0);
@@ -119,6 +129,23 @@ public sealed class WwiseVoice
             _sourcePosition += step;
             _emitted++;
         }
+    }
+
+    /// <summary>
+    /// One property's bindings at <paramref name="seconds"/>: each modulator value through its own curve
+    /// and scaling byte, accumulated with the group's accumulate byte (M9-007, M9-009; M6-009 gapA
+    /// 5.3–5.4). The runtime's subscription carries one accumulate byte, so the first binding's is used.
+    /// </summary>
+    private double Accumulated(List<(WwiseBoundModulator Bound, double Depth)> group, double seconds, ref List<double>? values)
+    {
+        values ??= new List<double>(group.Count);
+        values.Clear();
+        foreach (var (b, depth) in group)
+        {
+            double value = b.Modulator.ValueAt(seconds, _heldSeconds, depth);
+            values.Add(b.Binding.EvaluateScaled(value, out _));
+        }
+        return WwiseRtpcStore.Accumulate(group[0].Bound.Binding.Accumulate, values);
     }
 }
 
@@ -169,7 +196,15 @@ public sealed class WwiseMusicStream : IDisposable
     /// the scheduler has taken and the scheduler takes exactly one 744-sample frame at a time. A lead of
     /// 66 ms is fifteen samples short of two frames, and those fifteen samples are enough that every other
     /// frame finds itself not quite ready: the sound comes out every second frame and the rest is silence.
+    ///
+    /// <b>Policy (M9-016).</b> 66 ms is this stack's explicit lead. The engine streams block-at-a-time so a
+    /// live vibrato affects future audio, but its <c>UpdateAmountToSend</c> budgets <c>+14</c> audio frames
+    /// beyond playback (<c>0x0057C79E add.w r1,r1,#0xe</c>) and 30,000 bytes
+    /// (<c>0x0057C798 movw r0,#0x7530</c>) rather than a millisecond lead. Two whole frames (66.67 ms) is
+    /// this stack's translation of the block-at-a-time policy into the units the renderer is bounded in;
+    /// the engine's frame/byte budget is recorded in the fidelity record, not reproduced.
     /// </summary>
+    // fidelity: M9-016
     public const int LeadFrames = 2;
 
     /// <summary>The lead as a sample count, which is how the worker bounds itself.</summary>

@@ -61,12 +61,12 @@ public sealed record WwiseMusicPlan(uint EventId)
 ///        -> MusicTrack (type 11): sources (audio media, or a MIDI sequence) placed as clips
 /// </code>
 ///
-/// The structure above is read from the banks (<see cref="WwiseHierarchy"/>). How Wwise walks it is
-/// runtime behaviour this package does not contain; the two rules used here are the smallest reading of
-/// the data and are named as such: a decision level takes the child keyed by the group's current value and
-/// otherwise the child keyed 0, and a continuous-sequence group plays its children in order. Anything
-/// this resolver cannot settle from the data (a random group, a switch value with no key) is reported in
-/// the plan rather than guessed.
+/// The structure above is read from the banks (<see cref="WwiseHierarchy"/>). How Wwise walks it is in the
+/// statically linked runtime; where the inventory has read it, the rule here is the recovered one, and
+/// where it has not, the rule is the smallest reading of the data and is named as such: a decision level
+/// takes the child keyed by the group's current value and otherwise the child keyed 0 (M9-004), and a
+/// continuous-sequence group plays its children in order. Anything this resolver cannot settle from the
+/// data (a random group, a switch value with no key) is reported in the plan rather than guessed.
 /// </summary>
 public static class WwiseMusic
 {
@@ -78,6 +78,7 @@ public static class WwiseMusic
     /// with several Play actions gets a plan for each: the first is this one and the rest are in
     /// <see cref="WwiseMusicPlan.AdditionalPlays"/>, all starting together.
     /// </summary>
+    // fidelity: M9-021
     public static WwiseMusicPlan Resolve(WwiseSoundLibrary lib, uint eventId, IReadOnlyDictionary<uint, uint> switches)
     {
         var res = lib.Resolve(eventId);
@@ -95,6 +96,7 @@ public static class WwiseMusic
     private static WwiseMusicPlan ResolveTarget(WwiseSoundLibrary lib, uint eventId, string? eventName, uint target,
                                                 IReadOnlyDictionary<uint, uint> switches)
     {
+        // fidelity: M9-004
         var plan = new WwiseMusicPlan(eventId) { EventName = eventName };
         var node = lib.Node(target);
         plan = plan with { TargetId = target, TargetType = node?.Type };

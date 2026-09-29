@@ -61,13 +61,16 @@ public enum WwiseModulatorProp : byte
 ///   depth, over a curve from 0 to 100 per cent. With no shake the depth is 0, so the LFO contributes
 ///   nothing at all; that is why a Cozmo that is not being shaken sings without vibrato.
 /// * <c>cozmo_singing_note_off</c> (381606890) is bound to Volume on the note-on layer, over a curve from
-///   0 to <b>-1 dB</b>. Whatever shape it produces, one decibel is the whole of its authority over the
-///   level. Its times are all zero and its sustain level is 9.5.
+///   0 to <b>-1</b> with scaling byte 2. Scaling is applied after the curve (M9-007), so the curve's -1
+///   is not directly minus one decibel: scaling 2 is the Wwise ±20·log10 map, and the envelope's shipped
+///   sustain level of 9.5 per cent moves the level by about -0.87 dB, while a full -1 output fades to
+///   -764.6 dB. Its times are all zero and its sustain level is 9.5.
 ///
 /// Neither target node sets the property its modulator drives — the blend container sets no Pitch, the
 /// note-on layer sets no Volume — so the question of how a bound value accumulates onto an existing
 /// property value does not arise anywhere on the singing path.
 /// </summary>
+// fidelity: M9-006
 public sealed record WwiseModulatorNode(uint Id, WwiseObjectType Type, string Bank, WwiseNodeParams Params)
     : WwiseNode(Id, Type, Bank, Params, Array.Empty<uint>())
 {
@@ -87,8 +90,17 @@ public sealed record WwiseModulatorNode(uint Id, WwiseObjectType Type, string Ba
     ///
     /// The result is in 0..1, the range both shipped bindings define their curves over, and it is 0 when
     /// the modulator can have no effect. <b>An LFO with zero depth returns 0 at every instant</b>, which is
-    /// the only part of its output this package can establish: the shape Wwise gives an LFO between its
-    /// extremes is in the Wwise runtime, which does not ship in the APK. See the fidelity manifest, M9-008.
+    /// the only part of its output the inventory establishes.
+    ///
+    /// <para><b>M9-025, RECOVERABLE_GAP.</b> The shape Wwise gives an LFO between its extrema is in the
+    /// statically linked runtime, but the per-voice waveform-sample consumer was not read
+    /// (<c>0x009D7FC0</c> through vtable <c>0x0104B268</c>; gap2 L3). The sine below is an <b>unclaimed
+    /// stand-in</b> for the live vibrato path, not source-backed: it ignores the waveform type
+    /// (<see cref="WwiseModulatorProp.LfoWaveform"/>) and pulse width
+    /// (<see cref="WwiseModulatorProp.LfoPulseWidth"/>), which the inventory has read but not the equation
+    /// that turns them into a sample. Do not treat this shape as fidelity. The recovered parts — the
+    /// property map, the attack ramp, the phase state and the type-specific phase offsets — are used as
+    /// far as they go.</para>
     /// </summary>
     public double ValueAt(double tSeconds, double heldSeconds, double depth)
     {
@@ -99,6 +111,7 @@ public sealed record WwiseModulatorNode(uint Id, WwiseObjectType Type, string Ba
             double ramp = attack > 0 ? Math.Min(1.0, tSeconds / attack) : 1.0;
             double f = Value(WwiseModulatorProp.LfoFrequency, 0);
             double phase = Value(WwiseModulatorProp.LfoInitialPhase, 0) / 360.0;
+            // M9-025 stand-in: a sine between 0 and 1. Not the recovered waveform equation.
             double s = 0.5 * (1 + Math.Sin(2 * Math.PI * (f * tSeconds + phase)));
             return Math.Clamp(depth / 100.0, 0, 1) * ramp * s;
         }

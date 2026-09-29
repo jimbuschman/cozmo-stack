@@ -371,8 +371,8 @@ internal sealed class WwiseOutputGainRamp
 /// per-planar-channel state (<c>Init</c> allocates <c>numCh·3·16</c> bytes) is not modelled; a multi-channel
 /// caller would need the per-channel biquads, which the row does not otherwise change.</para>
 ///
-/// <para>This is standalone: it is not wired into WwisePlayback/WwiseAudioSource/WwiseSongRenderer/
-/// AnimationScheduler or the M6-014 bus lifetime.</para>
+/// <para>This is the live DSP: <see cref="WwiseBusChain"/> builds one of these per shipped EQ slot on
+/// Robot_Bus_1..4 (M9-026).</para>
 /// </summary>
 public sealed class WwiseParametricEq
 {
@@ -515,6 +515,7 @@ public sealed class WwisePeakLimiter
     private float _over;
     private float _envelope;
     private float _gain = 1f;
+    private float _minGain = 1f;
     private int _tailRead;
 
     /// <summary>Builds a limiter for the settings at a sample rate.</summary>
@@ -555,6 +556,12 @@ public sealed class WwisePeakLimiter
 
     /// <summary>The current gain the detector applies (gapC 4.7).</summary>
     public float Gain => _gain;
+
+    /// <summary>
+    /// The smallest detector gain applied since the last <see cref="Reset"/>. A diagnostic for the bus
+    /// chain's report, not a native value: the native keeps only the current gain.
+    /// </summary>
+    public float MinGain => _minGain;
 
     /// <summary>The stored previous output gain (<c>+0x50</c>).</summary>
     public float PreviousOutputGain => _outputGain.PreviousGain;
@@ -602,6 +609,7 @@ public sealed class WwisePeakLimiter
             double factor = 1.0 / _settings.Ratio - 1.0;
             float gainsDb = (float)(factor * _envelope);
             _gain = WwiseGain.DbToLinear(gainsDb);
+            if (_gain < _minGain) _minGain = _gain;
 
             buffer[i] = d * _gain;
         }
@@ -643,6 +651,7 @@ public sealed class WwisePeakLimiter
         _over = 0f;
         _envelope = 0f;
         _gain = 1f;
+        _minGain = 1f;
         _outputGain.Reset();
         _outputGain.Init(WwiseGain.DbToLinear(_settings.OutputDb));
     }
@@ -693,9 +702,9 @@ public sealed class WwisePeakLimiter
 /// M6-014 bus's job; <see cref="Process"/> applies the three DSP stages, and
 /// <see cref="ProcessIfActive"/> adds the state-1 gate for a caller that does not have M6-014.</para>
 ///
-/// <para>This is standalone: it is not wired into WwisePlayback/WwiseAudioSource/WwiseSongRenderer/
-/// AnimationScheduler, and it does not implement <c>IWwiseBusInsertFx</c>, so the M6-014 bus cannot run it
-/// until a later wiring pass adapts it.</para>
+/// <para>The live path is <see cref="WwiseBusChain"/> (M9-026): it builds the same three recovered stages
+/// per shipped slot. This class is the convenience composition of those stages for tests and future buses,
+/// and it is not itself wired into WwiseAudioSource.</para>
 /// </summary>
 public sealed class WwiseRobotBusFx
 {

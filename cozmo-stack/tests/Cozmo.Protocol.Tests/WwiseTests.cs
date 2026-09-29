@@ -412,6 +412,51 @@ public class WwiseTests
         finally { dir.Delete(true); }
     }
 
+    // ------------------------------------------------------------------ RobotAudioClient dispatch (M9-028)
+
+    /// <summary>
+    /// M9-028 / S20-S21 (<c>0x00599F68..0x00599FA6</c>): <c>RobotAudioClient</c> posts to game object 7
+    /// when the client is on-robot (<c>[client+0x3c]==2</c>, <see cref="RobotAudioOutputSource.PlayOnRobot"/>)
+    /// and to game object 6 otherwise. A null source is not 2, so it selects 6, as the native test does.
+    /// </summary>
+    [Fact]
+    public void TheRobotAudioClientDispatchSelectsGameObject7OnRobotAnd6OffRobot()
+    {
+        Assert.Equal(7u, RobotAudioClient.OnRobotGameObject);
+        Assert.Equal(6u, RobotAudioClient.OffRobotGameObject);
+        Assert.Equal(7u, RobotAudioClient.GameObjectFor(RobotAudioOutputSource.PlayOnRobot));
+        Assert.Equal(6u, RobotAudioClient.GameObjectFor(RobotAudioOutputSource.PlayOnDevice));
+        Assert.Equal(6u, RobotAudioClient.GameObjectFor(RobotAudioOutputSource.None));
+        Assert.Equal(6u, RobotAudioClient.GameObjectFor(null));
+    }
+
+    /// <summary>
+    /// M9-028: the live sink dispatches a switch and a parameter to game object 7 on-robot, and the
+    /// off-robot game object 6 is M6-016's unbuilt OnDevice path, refused rather than posted to 7.
+    /// </summary>
+    [Fact]
+    public void TheSinkDispatchesToGameObject7AndRefusesTheUnbuiltGameObject6()
+    {
+        var dir = Directory.CreateTempSubdirectory("wwise-dispatch");
+        try
+        {
+            using var lib = WwiseSoundLibrary.Load(dir.FullName);
+            using var src = new WwiseAudioSource(lib);
+
+            src.SetSwitch(1, 2);
+            src.SetParameter(3, 0.5f);
+            Assert.Equal(7u, src.LastDispatchGameObject);
+            Assert.Equal(2u, src.Switches[1]);
+            Assert.Equal(0.5f, src.Parameters[3]);
+
+            src.OutputSource = RobotAudioOutputSource.PlayOnDevice;
+            Assert.Equal(6u, src.DispatchGameObject);
+            Assert.Throws<NotSupportedException>(() => src.SetSwitch(1, 2));
+            Assert.Throws<NotSupportedException>(() => src.SetParameter(3, 0.5f));
+        }
+        finally { dir.Delete(true); }
+    }
+
     // ------------------------------------------------------------------ against the shipped assets
 
     /// <summary>

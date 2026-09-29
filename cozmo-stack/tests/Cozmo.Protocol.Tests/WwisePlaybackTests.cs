@@ -20,7 +20,7 @@ public class WwisePlaybackTests
 
     private static WwisePlaybackPlan Plan(WwiseSoundLibrary lib, string eventName, int seed) =>
         WwisePlayback.Resolve(lib, lib.IdOf(eventName)!.Value, new Dictionary<uint, uint>(),
-                              new Random(seed), new Dictionary<uint, int>(), new Dictionary<uint, uint>());
+                              new WwiseSelection(new WwiseRng((ulong)seed), sharedAcrossGameObjects: true));
 
     /// <summary>
     /// The get-in the singing behaviour plays first. Its target is a random container of three phrases;
@@ -62,6 +62,61 @@ public class WwisePlaybackTests
         var all = lib.ResolveMediaIds(lib.IdOf("Play__Robot_VO__Singing_Getin_1")!.Value).ToHashSet();
         Assert.Equal(18, all.Count);
         Assert.All(reached, m => Assert.Contains(m, all));
+    }
+
+    /// <summary>
+    /// The live get-in draw is the recovered Wwise selection and LCG, not <see cref="Random"/>. The root
+    /// container is a shuffle random step container of three unweighted phrases (bank: id 399004754,
+    /// randomMode 1, avoidRepeat 1), so on a fresh state every phrase is eligible and the first draw is the
+    /// LCG's first output modulo the three phrases (M6-007 §3.1/§3.6b, M9-022). The expected phrase is
+    /// derived <b>independently</b>: the 64-bit LCG is hand-rolled here rather than called through
+    /// <see cref="WwiseRng"/> or <see cref="WwiseSelectionState"/>, and the fresh-state eligibility rule is
+    /// applied directly. The test fails if the production LCG, the fresh-state eligibility, or the
+    /// container's play mode is wrong.
+    /// </summary>
+    [Fact]
+    public void TheGetInDrawIsTheRecoveredLcgSelection()
+    {
+        if (Library.Value is not { } lib) return;
+        uint ev = lib.IdOf("Play__Robot_VO__Singing_Getin_1")!.Value;
+        uint target = lib.Resolve(ev).Actions
+            .Where(a => a.ActionType == WwiseBank.PlayAction).Select(a => a.Target).First();
+        var root = Assert.IsType<WwiseRandomSequenceNode>(lib.Node(target));
+        // The shipped root's own fields, read from the bank: shuffle, avoid 1, three unweighted phrases.
+        Assert.False(root.IsSequence);
+        Assert.Equal(1, root.RandomMode);
+        Assert.Equal(3, root.Playlist.Count);
+        Assert.All(root.Playlist, p => Assert.Equal(WwiseSelectionRows.DefaultWeight, p.Weight));
+
+        var reached = new HashSet<uint>();
+        for (ulong seed = 0; seed < 8; seed++)
+        {
+            // The recovered Wwise LCG, hand-rolled from the inventory: s = s*0x5851F42D4C957F2D + 1,
+            // output = (u32)(s >> 32) >> 1 (M6-007 §3.1; M9-022 0x0098A780..0x0098A7B8). With nothing
+            // played or blocked on a fresh state, the k-th eligible phrase is the k-th phrase.
+            ulong s = unchecked(seed * 0x5851F42D4C957F2DUL + 1UL);
+            uint draw = (uint)(s >> 32) >> 1;
+            int expected = (int)(draw % (uint)root.Playlist.Count);
+            uint chosen = root.Playlist[expected].ChildId;
+            reached.Add(chosen);
+
+            var plan = Plan(lib, "Play__Robot_VO__Singing_Getin_1", (int)seed);
+            Assert.NotEmpty(plan.Sounds);
+            Assert.True(Under(lib, chosen, plan.Sounds[0].SoundId),
+                $"seed {seed}: the recovered draw chose phrase {chosen}, but the first recording {plan.Sounds[0].SoundId} is not under it");
+        }
+        Assert.True(reached.Count > 1, "the eight seeds all named one phrase; the oracle is not exercising the draw");
+
+        // Recurses a node's children and a RanSeq's playlist; a node is its own ancestor.
+        static bool Under(WwiseSoundLibrary lib, uint root, uint target)
+        {
+            if (root == target) return true;
+            if (lib.Node(root) is not { } n) return false;
+            foreach (var c in n.Children) if (Under(lib, c, target)) return true;
+            if (n is WwiseRandomSequenceNode rs)
+                foreach (var (c, _) in rs.Playlist) if (Under(lib, c, target)) return true;
+            return false;
+        }
     }
 
     /// <summary>
@@ -112,7 +167,7 @@ public class WwisePlaybackTests
     public void TheProducedPcmIsAsLongAsThePhrase()
     {
         if (Library.Value is not { } lib) return;
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(1));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(1));
         uint ev = lib.IdOf("Play__Robot_VO__Singing_Getin_1")!.Value;
         var pcm = source.GetPcm(ev, 1f);
         Assert.NotNull(pcm);
@@ -135,8 +190,8 @@ public class WwisePlaybackTests
         uint ev = lib.IdOf("Play__Robot_Vo__Shared_Happy_Short")
                   ?? lib.IdOf("Play__Robot_Sfx__Scrn_Happy")
                   ?? lib.EventIds.First();
-        var plan = WwisePlayback.Resolve(lib, ev, new Dictionary<uint, uint>(), new Random(1),
-                                         new Dictionary<uint, int>(), new Dictionary<uint, uint>());
+        var plan = WwisePlayback.Resolve(lib, ev, new Dictionary<uint, uint>(),
+                                         new WwiseSelection(new WwiseRng(1), sharedAcrossGameObjects: true));
         if (plan.Root is null) return;                       // an event whose media are not in this bank set
         Assert.All(plan.Sounds, s => Assert.NotEqual(0u, s.MediaId));
     }
@@ -151,12 +206,10 @@ public class WwisePlaybackTests
     {
         if (Library.Value is not { } lib) return;
         int planned = 0, empty = 0;
-        var random = new Random(5);
-        var cursor = new Dictionary<uint, int>();
-        var last = new Dictionary<uint, uint>();
+        var selection = new WwiseSelection(new WwiseRng(5), sharedAcrossGameObjects: true);
         foreach (uint ev in lib.EventIds)
         {
-            var plan = WwisePlayback.Resolve(lib, ev, new Dictionary<uint, uint>(), random, cursor, last);
+            var plan = WwisePlayback.Resolve(lib, ev, new Dictionary<uint, uint>(), selection);
             if (plan.Root is null) { empty++; continue; }
             planned++;
             var reachable = lib.ResolveMediaIds(ev).ToHashSet();

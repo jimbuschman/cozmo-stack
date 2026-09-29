@@ -11,27 +11,44 @@ namespace Cozmo.Robot.Behavior;
 ///
 /// What the engine does, and this does:
 ///
-/// * The constructor (0x005EE8DC) turns the config's <c>audioSwitchGroup</c> and <c>audioSwitch</c> into
-///   ids and picks the tempo animation trigger from the group: <c>Singing_80bpm</c>, <c>_100bpm</c> or
-///   <c>_120bpm</c>. A group it does not recognise falls back to the 80 bpm group with switch 0, so the
-///   default song plays rather than nothing.
+/// * The constructor (0x005EE8DC) reads the config's optional <c>displayNameKey</c> and its
+///   <c>audioSwitchGroup</c> and <c>audioSwitch</c>, writes the tempo-trigger field to
+///   <see cref="UnresolvedTempoTrigger"/> (0x23f, <c>AnimationTrigger::Count</c>) before the switch
+///   resolves, and then picks the tempo animation trigger from the group: <c>Singing_80bpm</c>,
+///   <c>_100bpm</c> or <c>_120bpm</c>. A group it does not recognise falls back to the 80 bpm group with
+///   switch 0, so the default song plays rather than nothing.
 /// * <c>InitInternal</c> (0x005EEB30) posts the switch state <b>first</b>
-///   (<c>RobotAudioClient::PostRobotSwitchState</c>), locks reactions out
-///   (<c>SmartDisableReactionsWithLock</c>), then runs one sequential compound action of three
-///   <c>TriggerAnimationAction</c>s: <c>Singing_GetIn</c>, the tempo trigger, <c>Singing_GetOut</c>. The
-///   tempo animation's own audio keyframe raises <c>Play__Robot_VO__Cozmo_Singing_*bpm</c>, and the switch
-///   decides which song that event plays.
-/// * <c>UpdateInternal</c> (0x005EF0C8) smooths the largest cube shake into the <c>Cozmo_Singing_Vibrato</c>
-///   game parameter: <c>new = 0.5 * old + 0.5 * clamp(shake / 3000, 0, 1)</c>, posted every tick;
-///   <c>StopInternal</c> posts 0. That formula is <see cref="NextVibrato"/>. The engine's shake comes from a
-///   streamed cube accelerometer this stack does not receive (M4 has movement reports, not the stream), so
-///   <see cref="ShakeInput"/> is left for a caller and stays 0 otherwise. The parameter is posted to the
-///   audio source either way, and the banks act on it: it drives the depth of the vibrato LFO bound to the
-///   singing sampler's pitch, so at 0 there is no vibrato and at 1 the pitch swings by the binding's full
-///   580 cents. What is missing is the shake, not the vibrato (fidelity manifest M9-017).
+///   (<c>RobotAudioClient::PostRobotSwitchState</c>), then locks reactions out
+///   (<c>SmartDisableReactionsWithLock</c>), then attaches one <c>ShakeListener</c> to every connected
+///   cube, then runs one sequential compound action of three <c>TriggerAnimationAction</c>s:
+///   <c>Singing_GetIn</c>, the tempo trigger, <c>Singing_GetOut</c>. The tempo animation's own audio
+///   keyframe raises <c>Play__Robot_VO__Cozmo_Singing_*bpm</c>, and the switch decides which song that
+///   event plays.
+/// * <c>UpdateInternal</c> (0x005EF0C8) takes the largest per-cube shake mean, resets the means, smooths
+///   it into the <c>Cozmo_Singing_Vibrato</c> game parameter: <c>new = 0.5 * old + 0.5 * clamp(shake /
+///   3000, 0, 1)</c>, posted every tick, and logs <c>robot.song_shake_duration_ms</c> when a shake above
+///   0.1 has lasted over 500 ms. <c>StopInternal</c> posts 0 and then removes the listeners. The
+///   smoothing is <see cref="NextVibrato"/> and the per-cube mean is <see cref="AccumulateShake"/>. The
+///   parameter drives the depth of the vibrato LFO bound to the singing sampler's pitch, so at 0 there is
+///   no vibrato and at 1 the pitch swings by the binding's full 580 cents.
 ///
 /// Where the engine's compound action fails a step (a trigger with no clip), this moves to the next step
 /// and says so, rather than inventing a substitute animation.
+///
+/// <b>Per-step timeout (M9-002).</b> Each of the three <c>TriggerAnimationAction</c>s carries a
+/// 60.0-second per-action timeout (<c>movt r8,#0x4270</c> at 0x005EEDCA, stored at
+/// <c>PlayAnimationAction+0x94</c>). <c>IAction::UpdateInternal</c> (0x00540D1C) fails the action at
+/// <c>start+timeout</c> with failure <c>0x3000018</c>, and <c>CompoundActionSequential::UpdateInternal</c>
+/// (0x0054F70C) fails the whole compound on a child failure, because no ignore-failure predicate is
+/// installed. So a step that has not completed within 60 s fails the sequence: the in-flight animation is
+/// stopped and the behaviour finishes; it does not advance. The deadline is driven by
+/// <see cref="Update"/>'s clock and armed on the first tick after a step starts.
+///
+/// <b>The acting-state return (M9-003).</b> <c>UpdateInternal</c> returns 2 while <c>IBehavior+0x84</c>
+/// (the acting action's tag) is 0, else 1. The manager reads 2 and 0 as finish and 1 as keep-running; this
+/// stack's <see cref="IBehavior.Update"/> returns bool (an M8 interface), with true = 1 (running) and
+/// false = 2/0 (finish). <see cref="IsActing"/> exposes the <c>+0x84</c> state; the 0-vs-2 log
+/// distinction is not carried.
 /// </summary>
 public sealed class SingingBehavior : IBehavior
 {
@@ -44,12 +61,42 @@ public sealed class SingingBehavior : IBehavior
     private BehaviorContext? _context;
     private readonly List<string> _steps = new();
 
-    public SingingBehavior(string id, string switchGroup, string switchName, double score = 1.0)
+    /// <summary>
+    /// The 60.0-second per-step <c>TriggerAnimationAction</c> timeout (M9-002): <c>movt r8,#0x4270</c> at
+    /// <c>0x005EEDCA</c>, stored at <c>PlayAnimationAction+0x94</c>. <c>IAction::UpdateInternal</c>
+    /// (0x00540D1C) fails the action at <c>start+timeout</c> (failure <c>0x3000018</c>), so a step that has
+    /// not completed by then fails the compound rather than advancing.
+    /// </summary>
+    public const double StepTimeoutMs = 60000.0;
+
+    /// <summary>
+    /// The per-step deadline, in the <see cref="Update"/> clock. NaN until the first tick after a step's
+    /// animation starts (IAction arms <c>start+timeout</c> when it begins). Guarded by <see cref="_gate"/>.
+    /// </summary>
+    private double _stepDeadlineMs = double.NaN;
+
+    /// <summary>
+    /// The constructor (0x005EE8DC..0x005EEA0F): reads the config's optional display/switch strings,
+    /// defaults the tempo trigger to <see cref="UnresolvedTempoTrigger"/>, maps the group hash to a
+    /// switch state and tempo trigger, and falls back to the 80 bpm group with switch 0 for a group it
+    /// does not recognise.
+    /// </summary>
+    /// <param name="displayNameKey">
+    /// The config's optional <c>displayNameKey</c>, read by the constructor (0x005EE920). No M9 row uses it
+    /// after the read, so it is carried and nothing acts on it; it is kept so the constructor's read is
+    /// represented rather than silently dropped.
+    /// </param>
+    // fidelity: M9-001
+    public SingingBehavior(string id, string switchGroup, string switchName, string? displayNameKey = null,
+                           double score = 1.0)
     {
         Id = id;
         SwitchGroupName = switchGroup;
         SwitchName = switchName;
+        DisplayNameKey = displayNameKey;
         Score = score;
+        // S2: the tempo-trigger field is written to 0x23f (Count) before the switch resolves. Every branch
+        // of the group mapping below overwrites it, so the sentinel never survives construction.
         var (g, s) = EffectiveSwitch(WwiseHash.Of(switchGroup), WwiseHash.Of(switchName));
         SwitchGroupId = g;
         SwitchId = s;
@@ -60,6 +107,8 @@ public sealed class SingingBehavior : IBehavior
     public string Class => "Singing";
     public string SwitchGroupName { get; }
     public string SwitchName { get; }
+    /// <summary>The config's <c>displayNameKey</c> (read at 0x005EE920), or null when the config has none.</summary>
+    public string? DisplayNameKey { get; }
     /// <summary>The switch group and switch actually posted (after the engine's unknown-group fallback).</summary>
     public uint SwitchGroupId { get; }
     public uint SwitchId { get; }
@@ -69,22 +118,52 @@ public sealed class SingingBehavior : IBehavior
 
     /// <summary>The smoothed vibrato value, as the engine would post it. See <see cref="NextVibrato"/>.</summary>
     public float Vibrato { get; private set; }
-    /// <summary>
-    /// The largest cube shake this tick, in the engine's units: the squared magnitude of the high-pass
-    /// filtered acceleration, which is what <c>ShakeListener</c> hands its callback. Fed by the listeners
-    /// this behaviour registers on every connected cube; a caller can still set it, which is how the
-    /// offline tests drive it.
-    /// </summary>
-    public float ShakeInput { get; set; }
 
-    private readonly Dictionary<uint, (CubeShakeListener Listener, float Value)> _shake = new();
+    /// <summary>
+    /// One cube's shake history, the engine's entry at <c>this+0x134[id]</c>: a running mean at
+    /// <c>+0x18</c> and the sample count at <c>+0x1c</c>. S7 initialises <c>+0x18=0</c> and
+    /// <c>+0x1c=1</c>; the callback updates the pair and each tick reads the mean and resets it.
+    /// </summary>
+    private sealed class ShakeHistory
+    {
+        public CubeShakeListener? Listener;
+        public float Mean;       // +0x18
+        public int Count = 1;    // +0x1c
+    }
+
+    private readonly Dictionary<uint, ShakeHistory> _shake = new();
+
+    /// <summary>
+    /// The per-cube running mean the shake callback keeps (<c>BehaviorSinging</c> at
+    /// <c>0x005EF4B2..0x005EF4C4</c>): <c>avg += (m - avg) / count; count++</c>. The count starts at 1
+    /// (S7), so the first sample becomes the mean outright and later samples pull it.
+    /// </summary>
+    public static void AccumulateShake(ref float mean, ref int count, float magnitudeSquared)
+    {
+        mean += (magnitudeSquared - mean) / count;
+        count++;
+    }
+
+    /// <summary>
+    /// Feeds one shake callback for a cube, exactly as the <see cref="CubeShakeListener"/>'s callback
+    /// does. The live path reaches this through the listener registered in
+    /// <see cref="StartListeningForShake"/>; a caller (and the offline tests) can use it directly when no
+    /// cube stream exists. It does not create a stream or a listener.
+    /// </summary>
+    public void RecordShake(uint cubeId, float magnitudeSquared)
+    {
+        lock (_gate)
+        {
+            if (!_shake.TryGetValue(cubeId, out var history)) _shake[cubeId] = history = new ShakeHistory();
+            AccumulateShake(ref history.Mean, ref history.Count, magnitudeSquared);
+        }
+    }
 
     /// <summary>
     /// One <c>ShakeListener</c> per connected cube, with the constants
     /// <c>BehaviorSinging::InitInternal</c> passes (0x005EECF4..0x005EED08): filter coefficient 0.5, stop
-    /// threshold 2.5, start threshold 3.9. Each cube keeps its own last value and
-    /// <see cref="ShakeInput"/> is the largest of them, which is the "largest cube shake" UpdateInternal
-    /// takes the maximum of.
+    /// threshold 2.5, start threshold 3.9. Each cube's callback feeds its own running mean; UpdateInternal
+    /// takes the maximum of those means each tick.
     /// </summary>
     private void StartListeningForShake(BehaviorContext context)
     {
@@ -92,19 +171,14 @@ public sealed class SingingBehavior : IBehavior
         foreach (var cube in robot.Cubes.ConnectedCubes)
         {
             if (cube.ObjectId is not { } id) continue;
+            var history = new ShakeHistory();
+            lock (_gate) _shake[id] = history;
             var listener = new CubeShakeListener(
                 CubeShakeListener.SingingFilterCoefficient,
                 CubeShakeListener.SingingLowThreshold,
                 CubeShakeListener.SingingHighThreshold,
-                magnitudeSquared =>
-                {
-                    lock (_gate)
-                    {
-                        if (_shake.TryGetValue(id, out var entry)) _shake[id] = (entry.Listener, magnitudeSquared);
-                        ShakeInput = _shake.Values.Max(v => v.Value);
-                    }
-                });
-            lock (_gate) _shake[id] = (listener, 0f);
+                magnitudeSquared => RecordShake(id, magnitudeSquared));
+            history.Listener = listener;
             robot.CubeAccel.AddListener(id, listener);
             Trace?.Invoke($"listening for shake on cube {id}");
         }
@@ -114,18 +188,34 @@ public sealed class SingingBehavior : IBehavior
     private void StopListeningForShake()
     {
         if (_context is not { } context) return;
-        KeyValuePair<uint, (CubeShakeListener Listener, float Value)>[] entries;
+        KeyValuePair<uint, ShakeHistory>[] entries;
         lock (_gate) { entries = _shake.ToArray(); _shake.Clear(); }
-        foreach (var (id, entry) in entries) context.Robot.CubeAccel.RemoveListener(id, entry.Listener);
-        ShakeInput = 0;
+        foreach (var (id, history) in entries)
+            if (history.Listener is { } listener) context.Robot.CubeAccel.RemoveListener(id, listener);
     }
 
     /// <summary>The clips played so far, in order, for tracing and tests.</summary>
     public IReadOnlyList<string> Steps { get { lock (_gate) return _steps.ToList(); } }
+
+    /// <summary>
+    /// Whether a step's animation ticket is currently in flight: the engine's <c>IBehavior+0x84</c>, the tag
+    /// of the acting action, which is 0 when idle (M9-003). It is set when a step starts and cleared when the
+    /// step completes, fails or times out.
+    /// </summary>
+    // fidelity: M9-003
+    public bool IsActing { get { lock (_gate) return _owns; } }
     /// <summary>What happened at each step, in words.</summary>
     public event Action<string>? Trace;
 
     public const uint Group80 = 0xC8A59578, Group100 = 0xE017E775, Group120 = 0xB215BB17;
+
+    /// <summary>
+    /// The constructor's initial tempo-trigger value: <c>0x23f</c> (<c>AnimationTrigger::Count</c>, "no
+    /// animation"), written at <c>this+0x124</c> before the switch resolves (0x005EE8EA). Every branch of
+    /// <see cref="TempoTriggerFor"/> overwrites it, so it never survives construction; it is named here so
+    /// the field's initial value is not mistaken for a resolved trigger.
+    /// </summary>
+    public const AnimationTrigger UnresolvedTempoTrigger = (AnimationTrigger)0x23F;
 
     /// <summary>The engine's group-to-trigger table (constructor, 0x005EE9A0..0x005EE9FE): 0x1FF, 0x200, 0x201.</summary>
     public static AnimationTrigger TempoTriggerFor(uint groupId) => groupId switch
@@ -186,15 +276,18 @@ public sealed class SingingBehavior : IBehavior
         }
         else Trace?.Invoke("no switch-capable audio source is attached; the song cannot be selected and the tempo animation's audio event will not resolve");
 
-        // 2. a shake listener per connected cube, as InitInternal does between the switch and the
-        //    reaction lock: ShakeListener(0.5, 2.5, 3.9) on each, and adding the first turns that cube's
-        //    accelerometer stream on.
+        // 2. reactions held off for the duration. InitInternal takes the reaction lock (S6) before it
+        //    attaches any listener or builds the animation compound.
+        scope.DisableReactions();
+        Trace?.Invoke("reactions held off");
+
+        // 3. a shake listener per connected cube: ShakeListener(0.5, 2.5, 3.9) on each, and adding the
+        //    first turns that cube's accelerometer stream on.
         StartListeningForShake(context);
 
-        // 3. reactions held off for the duration
-        scope.DisableReactions();
-
-        // 4. get-in, tempo, get-out
+        // 4. get-in, tempo, get-out. The engine appends each to a CompoundActionSequential with a
+        //    60.0-second per-step TriggerAnimationAction timeout (0x005EEDCA); each step's deadline is
+        //    checked in Update (M9-002).
         StartStep(0);
         return Task.CompletedTask;
     }
@@ -257,6 +350,8 @@ public sealed class SingingBehavior : IBehavior
             _animations = context.Robot.Animations;
             _generation = ticket.Generation;
             _owns = true;
+            // M9-002: a new step's 60 s deadline is armed on the first Update tick after this play starts.
+            _stepDeadlineMs = double.NaN;
         }
         Trace?.Invoke($"step {index + 1}: {trigger} -> {resolved.Selected}");
         ticket.Completion.ContinueWith(t =>
@@ -274,9 +369,84 @@ public sealed class SingingBehavior : IBehavior
 
     public bool Update(BehaviorContext context, double nowMs)
     {
-        Vibrato = NextVibrato(Vibrato, ShakeInput);
+        // S12: take the maximum of the per-cube running means, then reset every cube's mean (+0x18=0,
+        // +0x1c=1). The reset is what makes a shake that stopped decay out of the vibrato.
+        float maxShake;
+        lock (_gate)
+        {
+            maxShake = 0;
+            foreach (var history in _shake.Values)
+                if (history.Mean > maxShake) maxShake = history.Mean;
+            foreach (var history in _shake.Values) { history.Mean = 0; history.Count = 1; }
+        }
+
+        // S13: v = max/3000, new = 0.5*old + 0.5*clamp(v, 0, 1) at this+0x140.
+        Vibrato = NextVibrato(Vibrato, maxShake);
+        // S14: post the vibrato parameter every tick.
         PostVibrato(context);
+        // S15: the shake-duration log.
+        LogShakeDuration(context, nowMs);
+
+        // M9-002: the 60.0-second per-step TriggerAnimationAction timeout. IAction::UpdateInternal
+        // (0x00540D1C) computes start+timeout and fails the action at expiry (failure 0x3000018);
+        // CompoundActionSequential::UpdateInternal (0x0054F70C) fails the whole compound on a child
+        // failure, because no ignore-failure predicate is installed. A step still in flight at the
+        // deadline therefore fails the sequence: stop its animation and finish, do not advance.
+        // fidelity: M9-002
+        if (ExpireStepTimeout(nowMs))
+        {
+            PlayAnimBehavior.StopOwnAnimation(ref _animations, ref _generation, ref _owns, _gate);
+            lock (_gate) _stepDeadlineMs = double.NaN;
+            Trace?.Invoke("step did not complete within 60 s; the sequence fails and does not advance");
+            _finished = true;
+        }
+
+        // S16 / M9-003: BehaviorSinging::UpdateInternal returns 2 while IBehavior+0x84 (the acting action's
+        // tag) is 0, else 1 (0x005EF240..0x005EF24A). BehaviorManager::Update (0x005A2F68) and
+        // BehaviorSystemManager::UpdateActiveBehavior (0x005A5CB4) read 2 as Status::Complete (finish), 0 as
+        // a failed update (also finish) and 1 as keep running. This stack's IBehavior.Update returns bool
+        // (an M8 interface): true = the engine's 1 (running), false = the engine's 2/0 (finish). The 0-vs-2
+        // log distinction is not carried; IsActing exposes the +0x84 state.
+        // fidelity: M9-003
         return !_finished;
+    }
+
+    /// <summary>
+    /// Arms and checks the 60.0-second per-step <c>TriggerAnimationAction</c> deadline (M9-002, 0x005EEDCA).
+    /// The deadline is armed on the first <see cref="Update"/> tick after a step's animation starts, as
+    /// <c>IAction</c> computes <c>start+timeout</c> when the action begins; it returns true once the step is
+    /// past its deadline. A step with no animation in flight has no deadline.
+    /// </summary>
+    private bool ExpireStepTimeout(double nowMs)
+    {
+        lock (_gate)
+        {
+            if (!_owns) return false;
+            if (double.IsNaN(_stepDeadlineMs)) { _stepDeadlineMs = nowMs + StepTimeoutMs; return false; }
+            return nowMs >= _stepDeadlineMs;
+        }
+    }
+
+    private double? _shakeStartMs;
+
+    /// <summary>
+    /// S15 (<c>0x005EF190..0x005EF214</c>): while the smoothed vibrato is above 0.1 the start is stamped;
+    /// when it drops, the engine logs <c>robot.song_shake_duration_ms</c> if the shake lasted more than
+    /// 500 ms (<c>cmp.w r5,#0x1f4</c>).
+    /// </summary>
+    private void LogShakeDuration(BehaviorContext context, double nowMs)
+    {
+        if (Vibrato > 0.1f)
+        {
+            _shakeStartMs ??= nowMs;
+        }
+        else if (_shakeStartMs is { } start)
+        {
+            _shakeStartMs = null;
+            double elapsedMs = nowMs - start;
+            if (elapsedMs > 500)
+                context.Robot.Engine.Log($"info: DAS robot.song_shake_duration_ms: duration {(int)elapsedMs} ms");
+        }
     }
 
     /// <summary>
@@ -299,9 +469,10 @@ public sealed class SingingBehavior : IBehavior
     {
         _stopped = true;
         _finished = true;
-        StopListeningForShake();                        // StopInternal removes the cube listeners
-        Vibrato = 0;                                    // StopInternal posts the parameter back to 0
+        // S19: StopInternal posts the parameter back to 0 FIRST, then removes the cube listeners.
+        Vibrato = 0;
         if (_context is { } c) PostVibrato(c);
+        StopListeningForShake();
         PlayAnimBehavior.StopOwnAnimation(ref _animations, ref _generation, ref _owns, _gate);
     }
 
@@ -322,9 +493,13 @@ public sealed class SingingBehavior : IBehavior
                 using var doc = JsonDocument.Parse(text);
                 var root = doc.RootElement;
                 if (root.GetProperty("behaviorClass").GetString() != "Singing") continue;
+                // displayNameKey is optional (JsonTools::GetValueOptional, 0x005EE920); the group and
+                // switch are what select the song and every shipped config carries them.
+                var displayNameKey = root.TryGetProperty("displayNameKey", out var dnk) ? dnk.GetString() : null;
                 list.Add(new SingingBehavior(root.GetProperty("behaviorID").GetString()!,
                                              root.GetProperty("audioSwitchGroup").GetString()!,
-                                             root.GetProperty("audioSwitch").GetString()!));
+                                             root.GetProperty("audioSwitch").GetString()!,
+                                             displayNameKey));
             }
             catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException) { }
         }

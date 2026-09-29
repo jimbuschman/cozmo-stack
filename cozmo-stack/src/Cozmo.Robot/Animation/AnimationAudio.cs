@@ -81,6 +81,35 @@ public interface IAudioSwitchStates
 }
 
 /// <summary>
+/// The engine's <c>RobotAudioClient</c> switch/parameter dispatch (M9-028,
+/// <c>0x00599F60..0x00599FBF</c>): a singing switch or parameter goes to game object <b>7</b> when the
+/// client is on-robot (<c>[client+0x3c]==2</c>, <see cref="RobotAudioOutputSource.PlayOnRobot"/>) and to
+/// game object <b>6</b> otherwise, on the switch slot <c>+0x14</c> and the parameter slot <c>+0x18</c>
+/// (S20/S21), with a zero transition time and curve for a parameter.
+///
+/// <para>The stack has no off-robot output path (M6-016's OnDevice path is not built), so the on-robot
+/// game object 7 is the path this build has; the off-robot game object 6 routing is refused rather than
+/// posted to 7.</para>
+/// </summary>
+// fidelity: M9-028
+public static class RobotAudioClient
+{
+    /// <summary>M9-028: the game object an on-robot client dispatches to (S20/S21).</summary>
+    public const uint OnRobotGameObject = 7;
+
+    /// <summary>M9-028: the game object an off-robot client dispatches to (S20/S21).</summary>
+    public const uint OffRobotGameObject = 6;
+
+    /// <summary>
+    /// The game object <c>PostRobotSwitchState</c>/<c>PostRobotParameter</c> target: 7 when the client is
+    /// on-robot, else 6 (<c>0x00599F68..0x00599F7E</c>, <c>0x00599F9A..0x00599FA6</c>). A null source is
+    /// not <see cref="RobotAudioOutputSource.PlayOnRobot"/>, so it selects 6, as the <c>==2</c> test does.
+    /// </summary>
+    public static uint GameObjectFor(RobotAudioOutputSource? outputSource) =>
+        outputSource == RobotAudioOutputSource.PlayOnRobot ? OnRobotGameObject : OffRobotGameObject;
+}
+
+/// <summary>
 /// Reads Cozmo's <c>SoundbanksInfo.xml</c> so an audio event id can at least be named, and says which bank
 /// it belongs to.
 ///

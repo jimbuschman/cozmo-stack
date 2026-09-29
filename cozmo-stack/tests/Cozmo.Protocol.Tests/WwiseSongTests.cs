@@ -119,9 +119,10 @@ public class WwiseSongTests
     /// The one thing about the render that the shipped data cannot settle, kept in plain sight instead of
     /// buried in the mix: the get-in branch is a child of the MIDI target and carries no filter of its
     /// own, so under the container rules a note reaches it, and on Aba Daba it contributes about one extra
-    /// voice per note. Whether Wwise's MIDI dispatch really routes notes there is Wwise runtime behaviour
-    /// and no Wwise runtime ships in the package (fidelity manifest M9-013). The render reports each
-    /// branch's share, and a branch can be left out so the two readings can be heard side by side.
+    /// voice per note. Whether Wwise's MIDI dispatch really routes notes there is Wwise runtime behaviour;
+    /// the runtime is statically linked, but the dispatch path has not been located (fidelity manifest
+    /// M9-013, RECOVERABLE_GAP). The render reports each branch's share, and a branch can be left out so
+    /// the two readings can be heard side by side.
     /// </summary>
     [Fact]
     public void TheRenderSaysHowManyVoicesEachBranchOfTheSamplerContributed()
@@ -131,14 +132,14 @@ public class WwiseSongTests
         var switches = new Dictionary<uint, uint> { [Group80] = AbaDaba };
         const uint noteOn = 462443456, noteOff = 774902407, getIn = 403781184;
 
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(7));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(7));
         var all = source.RenderMusic(ev, switches);
         Assert.Equal(all.NotesPlayed, all.VoicesByBranch[noteOn]);
         Assert.Equal(all.NoteOffsPlayed, all.VoicesByBranch[noteOff]);
         Assert.True(all.VoicesByBranch[getIn] > 0,
             "under the container rules the get-in branch does receive notes; if that ever stops being true, M9-013 has been decided");
 
-        using var without = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(7))
+        using var without = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(7))
         {
             ExcludeBranches = new HashSet<uint> { getIn },
         };
@@ -192,7 +193,7 @@ public class WwiseSongTests
     {
         if (Library.Value is not { } lib) return;
         var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_80bpm")!.Value;
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(7));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(7));
         var r = source.RenderMusic(ev, new Dictionary<uint, uint> { [Group80] = AbaDaba });
 
         Assert.Empty(r.Problems);
@@ -217,7 +218,7 @@ public class WwiseSongTests
         Assert.True(r.BusChain!.LimiterReductionDb < 0, "the sum was over the limiter's threshold, so it acted");
         Assert.Contains(r.Pcm.Take(CozmoAudio.SampleRate / 2), s => Math.Abs(s) > 500);   // sound in the first half second
 
-        using var again = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(7));
+        using var again = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(7));
         Assert.Equal(r.Pcm, again.RenderMusic(ev, new Dictionary<uint, uint> { [Group80] = AbaDaba }).Pcm);
     }
 
@@ -232,7 +233,7 @@ public class WwiseSongTests
         if (Library.Value is not { } lib || Obb() is not { } obb) return;
         var songs = SingingBehavior.LoadShipped(obb);
         Assert.Equal(39, songs.Count);
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(3));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(3));
         int silentTotal = 0;
         foreach (var b in songs)
         {
@@ -265,7 +266,7 @@ public class WwiseSongTests
     {
         if (Library.Value is not { } lib) return;
         var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_80bpm")!.Value;
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(1));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(1));
         Assert.True(source.IsMusicEvent(ev));
         Assert.False(source.IsMusicEvent(lib.IdOf("Play__Robot_Sfx__Scrn_Happy")!.Value));
 
@@ -304,7 +305,7 @@ public class WwiseSongTests
         if (Library.Value is not { } lib) return;
         var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_100bpm")!.Value;
         var stop = lib.IdOf("Stop__Robot_VO__Cozmo_Singing_Stop")!.Value;
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(2));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(2));
         source.SetSwitch(SingingBehavior.Group100, WwiseHash.Of("Cozmo_Sings_Bingo"));
         source.Prewarm(ev).Wait();                                     // the behaviour's prewarm; rendered off the scheduler
         var sink = new CountingSink();
@@ -364,7 +365,7 @@ public class WwiseSongTests
     {
         if (Library.Value is not { } lib) return;
         var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_100bpm")!.Value;
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(5));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(5));
         source.SetSwitch(SingingBehavior.Group100, WwiseHash.Of("Cozmo_Sings_Bingo"));
 
         var prewarm = source.Prewarm(ev);
@@ -399,7 +400,7 @@ public class WwiseSongTests
     {
         if (Library.Value is not { } lib) return;
         var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_80bpm")!.Value;
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(9));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(9));
         source.SetSwitch(Group80, AbaDaba);
 
         source.Prewarm(ev).Wait();
@@ -466,7 +467,7 @@ public class WwiseSongTests
         using var robot = CozmoRobot.CreateOffline();
         robot.Transport.OfflineAcceptConnection();
         robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(1));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(1));
         robot.Animations.AudioSource = source;
         var ctx = new BehaviorContext { Robot = robot, Triggers = AnimationTriggerMap.Load(obb), Random = new Random(4) };
         var b = new SingingBehavior("Singing_AbaDaba", "Cozmo_Sings_80Bpm", "Cozmo_Sings_Aba_Daba");
@@ -479,13 +480,20 @@ public class WwiseSongTests
 
         Assert.Equal(AbaDaba, source.Switches[Group80]);
         Assert.StartsWith("switch Cozmo_Sings_80Bpm = Cozmo_Sings_Aba_Daba posted", trace[0]);
+        // InitInternal takes the reaction lock (S6) after the switch and before it builds the animation
+        // compound (S17); the prewarm trace sits inside the switch step.
+        int switchAt = trace.FindIndex(t => t.StartsWith("switch "));
+        int lockedAt = trace.IndexOf("reactions held off");
+        Assert.True(switchAt >= 0 && lockedAt > switchAt,
+            $"the reaction lock did not follow the switch: [{string.Join(" | ", trace)}]");
         Assert.True(scope.ReactionsDisabled);
         var first = Assert.Single(b.Steps);
         Assert.StartsWith("anim_cozmosings_getin_", first);
         Assert.Equal(first, robot.Animations.Playing);
         Assert.True(b.Update(ctx, 0));
 
-        b.ShakeInput = 3000;
+        // the callback's squared magnitude feeds the running mean (S11): count 1 makes it the mean outright
+        b.RecordShake(1, 3000);
         b.Update(ctx, 33);
         Assert.Equal(0.5f, b.Vibrato, 5);
         b.Stop(BehaviorStopReason.Cancelled);
@@ -511,5 +519,188 @@ public class WwiseSongTests
         Assert.Contains(trace, t => t.StartsWith("no switch-capable audio source"));
         Assert.Single(b.Steps);
         b.Stop(BehaviorStopReason.Cancelled);
+    }
+
+    /// <summary>
+    /// M9-002 / Correction C1a: the three <c>TriggerAnimationAction</c>s run in order and a step that
+    /// completes normally advances the sequential compound to the next one. The get-in clip completes on the
+    /// animation ticker, and <c>StartStep(1)</c> plays the tempo clip.
+    /// </summary>
+    [Fact]
+    public void AStepThatCompletesNormallyAdvancesToTheNextStep()
+    {
+        if (Obb() is not { } obb) return;
+        using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
+        robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
+        var ctx = new BehaviorContext { Robot = robot, Triggers = AnimationTriggerMap.Load(obb), Random = new Random(4) };
+        var b = new SingingBehavior("Singing_AbaDaba", "Cozmo_Sings_80Bpm", "Cozmo_Sings_Aba_Daba");
+        using var scope = new BehaviorScope();
+        b.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
+
+        Assert.Single(b.Steps);
+        Assert.True(b.IsActing, "the get-in step's animation is in flight");
+        Assert.True(SpinWait.SpinUntil(() => b.Steps.Count >= 2, 15_000),
+            $"the get-in did not complete and advance: [{string.Join(" | ", b.Steps)}]");
+        Assert.True(b.IsActing, "the next step's animation is in flight");
+        b.Stop(BehaviorStopReason.Cancelled);
+    }
+
+    /// <summary>
+    /// M9-002 / Correction C1a: each <c>TriggerAnimationAction</c> carries a 60.0-second per-action timeout
+    /// (<c>0x005EEDCA</c>). <c>IAction::UpdateInternal</c> (0x00540D1C) fails the action at
+    /// <c>start+timeout</c> (failure <c>0x3000018</c>), and <c>CompoundActionSequential::UpdateInternal</c>
+    /// (0x0054F70C) fails the whole compound on a child failure, because no ignore-failure predicate is
+    /// installed. So a step still in flight at 60 s is stopped and the sequence does not advance.
+    /// </summary>
+    [Fact]
+    public void AStepStillRunningPastSixtySecondsFailsTheSequenceAndDoesNotAdvance()
+    {
+        if (Obb() is not { } obb) return;
+        using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
+        robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
+        var ctx = new BehaviorContext { Robot = robot, Triggers = AnimationTriggerMap.Load(obb), Random = new Random(4) };
+        var b = new SingingBehavior("Singing_AbaDaba", "Cozmo_Sings_80Bpm", "Cozmo_Sings_Aba_Daba");
+        using var scope = new BehaviorScope();
+        b.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
+
+        int before = b.Steps.Count;
+        Assert.True(b.IsActing);
+        Assert.True(b.Update(ctx, 0));                                  // arms the 60 s deadline at 0 ms
+        // still the same step at the deadline: 60.0 s (0x005EEDCA) fails the sequence
+        Assert.False(b.Update(ctx, SingingBehavior.StepTimeoutMs));
+        Assert.False(b.IsActing);
+        Assert.Equal(before, b.Steps.Count);                            // it did not advance
+        Assert.False(robot.Animations.IsPlaying);                       // the in-flight animation was stopped
+    }
+
+    /// <summary>
+    /// M9-003 / Correction C1b: <c>BehaviorSinging::UpdateInternal</c> returns 2 while <c>IBehavior+0x84</c>
+    /// (the acting action's tag) is 0, else 1 (0x005EF240..0x005EF24A). This stack's <see cref="IBehavior.Update"/>
+    /// returns bool (an M8 interface): true = the engine's 1 (running), false = the engine's 2/0 (finish).
+    /// <see cref="SingingBehavior.IsActing"/> is that <c>+0x84</c> state: true while a step's animation ticket
+    /// is in flight, false once the sequence finishes.
+    /// </summary>
+    [Fact]
+    public void IsActingIsTrueWhileAStepPlaysAndFalseWhenTheSequenceFinishes()
+    {
+        if (Obb() is not { } obb) return;
+        using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
+        robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
+        var ctx = new BehaviorContext { Robot = robot, Triggers = AnimationTriggerMap.Load(obb), Random = new Random(4) };
+        var b = new SingingBehavior("Singing_AbaDaba", "Cozmo_Sings_80Bpm", "Cozmo_Sings_Aba_Daba");
+        using var scope = new BehaviorScope();
+        b.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
+
+        Assert.True(b.IsActing);                                        // +0x84 non-zero: a step is in flight
+        Assert.True(b.Update(ctx, 0));                                  // true = engine 1 (running)
+        // M9-002's deadline finishes the sequence: +0x84 clears and Update now returns false
+        Assert.False(b.Update(ctx, SingingBehavior.StepTimeoutMs));
+        Assert.False(b.IsActing);
+        Assert.False(b.Update(ctx, SingingBehavior.StepTimeoutMs + 1));
+        b.Stop(BehaviorStopReason.Cancelled);
+    }
+
+    /// <summary>
+    /// BehaviorSinging's per-cube running mean (0x005EF4B2..0x005EF4C4): <c>avg += (m - avg)/count;
+    /// count++</c>, with the count initialised to 1 (S7, <c>+0x1c=1</c>). The first sample therefore
+    /// becomes the mean outright and each later sample pulls it by its own share.
+    /// </summary>
+    [Fact]
+    public void ThePerCubeShakeMeanIsARunningAverageFromCountOne()
+    {
+        float mean = 0; int count = 1;                  // S7: +0x18=0, +0x1c=1
+        SingingBehavior.AccumulateShake(ref mean, ref count, 100f);
+        Assert.Equal(100f, mean, 6);                    // (100-0)/1
+        Assert.Equal(2, count);
+
+        SingingBehavior.AccumulateShake(ref mean, ref count, 300f);
+        Assert.Equal(200f, mean, 6);                    // 100 + (300-100)/2
+        Assert.Equal(3, count);
+
+        SingingBehavior.AccumulateShake(ref mean, ref count, 600f);
+        Assert.Equal(200f + (600f - 200f) / 3f, mean, 6);
+        Assert.Equal(4, count);
+    }
+
+    /// <summary>
+    /// UpdateInternal (0x005EF0C8, S12) takes the maximum of the per-cube means and then resets every
+    /// mean to 0/count 1, so a shake that has stopped decays out of the vibrato instead of sticking.
+    /// </summary>
+    [Fact]
+    public void UpdateTakesTheMaximumMeanAndResetsItEachTick()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        var ctx = new BehaviorContext { Robot = robot, Triggers = null! };
+        var b = new SingingBehavior("Singing_AbaDaba", "Cozmo_Sings_80Bpm", "Cozmo_Sings_Aba_Daba");
+
+        b.RecordShake(7, 1000f);                        // cube 7's mean is 1000
+        b.RecordShake(8, 3000f);                        // cube 8's mean is 3000: the maximum
+        b.Update(ctx, 0);
+        Assert.Equal(0.5f, b.Vibrato, 6);               // 0.5*0 + 0.5*clamp(3000/3000)
+
+        // the tick reset both means, so with no new callback the maximum is 0 and the vibrato halves
+        b.Update(ctx, 33);
+        Assert.Equal(0.25f, b.Vibrato, 6);
+    }
+
+    /// <summary>
+    /// S15 (0x005EF190..0x005EF214): a smoothed vibrato above 0.1 stamps the start; when it drops, the
+    /// engine logs <c>robot.song_shake_duration_ms</c> only if the shake lasted more than 500 ms
+    /// (<c>cmp.w r5,#0x1f4</c>).
+    /// </summary>
+    [Fact]
+    public void AShakeAbovePointOneForOverHalfASecondLogsItsDuration()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        var log = new List<string>();
+        robot.Engine.LogLine += l => { lock (log) log.Add(l); };
+        var ctx = new BehaviorContext { Robot = robot, Triggers = null! };
+        var b = new SingingBehavior("Singing_AbaDaba", "Cozmo_Sings_80Bpm", "Cozmo_Sings_Aba_Daba");
+
+        b.RecordShake(7, 3000f);
+        b.Update(ctx, 0);                               // 0.5 > 0.1: stamped at 0
+        b.Update(ctx, 200);                             // 0.25
+        b.Update(ctx, 400);                             // 0.125
+        b.Update(ctx, 600);                             // 0.0625 drops at 600 ms > 500
+        Assert.Contains(log, l => l.Contains("robot.song_shake_duration_ms"));
+
+        // the same shape, dropped at 300 ms, stays quiet
+        lock (log) log.Clear();
+        b.RecordShake(7, 3000f);
+        b.Update(ctx, 1000);                            // 0.53125 > 0.1: stamped at 1000
+        b.Update(ctx, 1100);                            // 0.2656
+        b.Update(ctx, 1200);                            // 0.1328
+        b.Update(ctx, 1300);                            // 0.0664 drops at 300 ms
+        Assert.DoesNotContain(log, l => l.Contains("robot.song_shake_duration_ms"));
+    }
+
+    /// <summary>
+    /// InitInternal's order (0x005EEB30, S5-S8): the switch is posted first, then the reaction lock is
+    /// taken, and only then is a ShakeListener attached to each connected cube. The rig's fake robot has
+    /// three connected cubes, so the listener traces appear; the compound cannot start without animation
+    /// assets, which is why the listeners are the last thing observed here.
+    /// </summary>
+    [Fact]
+    public void InitTakesTheReactionLockBeforeAttachingTheShakeListeners()
+    {
+        using var rig = new Rig();
+        var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = null! };
+        var b = new SingingBehavior("Singing_AbaDaba", "Cozmo_Sings_80Bpm", "Cozmo_Sings_Aba_Daba");
+        var trace = new List<string>();
+        b.Trace += trace.Add;
+
+        using var scope = new BehaviorScope();
+        b.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
+
+        Assert.StartsWith("no switch-capable audio source", trace[0]);
+        int lockedAt = trace.IndexOf("reactions held off");
+        int listenAt = trace.FindIndex(t => t.StartsWith("listening for shake on cube"));
+        Assert.True(lockedAt >= 0, "the reaction lock was not taken");
+        Assert.True(listenAt > lockedAt,
+            $"the shake listeners were attached before the reaction lock: [{string.Join(" | ", trace)}]");
+        Assert.True(scope.ReactionsDisabled);
     }
 }

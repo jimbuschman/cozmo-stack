@@ -130,8 +130,11 @@ public sealed record WwiseRtpc(uint SourceId, byte SourceType, byte Accumulate, 
 /// never sound and a held note would never end. So no bit anywhere in any shipped bank can be the one that
 /// enables MIDI note tracking, and no node in any bank sets a tracking root note either (property 45 does
 /// not occur). Note tracking is therefore off throughout, and the per-key recordings play at the pitch they
-/// were recorded at.</para>
+/// were recorded at: the runtime's MIDI pitch override only shifts when a node carries the tracking bits
+/// or a root note, and none does (M6 gapE 3.3).
+/// </para>
 /// </summary>
+// fidelity: M9-012
 public sealed record WwiseNodeParams(
     uint BusId, uint ParentId, byte Bits,
     IReadOnlyDictionary<byte, uint> Props,
@@ -269,11 +272,12 @@ public sealed record WwiseMusicPlaylistNode(uint Id, string Bank, WwiseNodeParam
 /// <summary>
 /// Reads the hierarchy objects the music path needs, requiring every object to be consumed exactly.
 ///
-/// There is no Wwise runtime in this package to check against (see <see cref="WwiseBank"/>), so the layout
-/// comes from the public description of bank version 120 and was then settled against the shipped banks
-/// object by object: every field position below was hand-decoded from real objects (a 44-byte actor-mixer,
-/// 46- and 50-byte sounds, a 74-byte random container, the 91-byte blend container the songs target, a
-/// 112-byte segment, a 108-byte track, a 198-byte playlist and the 398-byte Cozmo_Sings_80Bpm switch), and
+/// The Wwise 2016.2 runtime is statically linked into <c>libcozmoEngine.so</c>; the layout below was read
+/// from the shipped banks object by object and is the layout the runtime's own per-type readers use where
+/// the M6 inventory has compared them (M6-001). Every field position was hand-decoded from real objects
+/// (a 44-byte actor-mixer, 46- and 50-byte sounds, a 74-byte random container, the 91-byte blend container
+/// the songs target, a 112-byte segment, a 108-byte track, a 198-byte playlist and the 398-byte
+/// Cozmo_Sings_80Bpm switch), and
 /// the reader then has to consume all 3,490 objects of these nine types in the six banks to the last byte,
 /// which it does (2360 sounds, 468 random/sequence containers, 21 switch containers, 31 actor-mixers, 6
 /// blend containers, 209 segments, 258 tracks, 14 music switches, 123 playlists). Two details differ from
@@ -496,6 +500,7 @@ public static class WwiseHierarchy
 
     private static WwiseBlendNode ReadBlend(ref Reader r, WwiseObject o)
     {
+        // fidelity: M9-019
         uint id = r.U32();
         var p = ReadNodeParams(ref r, o.FeedbackEnabled);
         var kids = ReadChildren(ref r);

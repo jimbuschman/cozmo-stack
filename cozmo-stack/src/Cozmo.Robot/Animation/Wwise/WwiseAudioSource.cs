@@ -26,60 +26,107 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     private readonly Dictionary<uint, short[]?> _mediaCache = new();
     private readonly Dictionary<uint, uint> _switches = new();
     private readonly Dictionary<uint, float> _parameters = new();
-    /// <summary>The draw, the sequence positions and the last pick a container play carries between plays.</summary>
-    private readonly Random _eventRandom;
-    private readonly Dictionary<uint, int> _eventCursor = new();
-    private readonly Dictionary<uint, uint> _eventLastPick = new();
+    /// <summary>
+    /// The single global Wwise 64-bit LCG and the container-selection state every play draws from
+    /// (M9-015; M6-007). One instance is shared by the music renderer and the ordinary-event playback
+    /// path, because the runtime's LCG is one global state, not one per renderer.
+    /// </summary>
+    // fidelity: M9-015
+    private readonly WwiseRng _rng;
+    private readonly WwiseSelection _selection;
     private readonly List<WwiseMiss> _misses = new();
     private readonly object _gate = new();
     private readonly WwiseSongRenderer _renderer;
 
     /// <summary>Wraps an already-loaded library. Without codebooks, Vorbis events cannot be produced.</summary>
-    /// <param name="random">Decides which of a note's recordings plays; pass a seeded instance for a reproducible render.</param>
+    /// <param name="random">The global selection LCG. Pass a seeded instance for a reproducible render.</param>
     public WwiseAudioSource(WwiseSoundLibrary library, bool ownsLibrary = false,
-                            WwiseCodebookLibrary? codebooks = null, Random? random = null)
+                            WwiseCodebookLibrary? codebooks = null, WwiseRng? random = null)
     {
         _library = library;
         _ownsLibrary = ownsLibrary;
         _codebooks = codebooks ?? TryLoadCodebooks();
-        _renderer = new WwiseSongRenderer(library, DecodeMedia, random)
+        _rng = random ?? new WwiseRng();
+        _renderer = new WwiseSongRenderer(library, DecodeMedia, _rng)
         {
             // What the robot hears is the output of Robot_Bus_1, which the engine's own registration
             // table binds to the robot game object a singing behaviour posts on. See WwiseBusChain.
             BusChain = WwiseBusChain.For(library, WwiseBusChain.RobotBus1, CozmoAudio.SampleRate),
         };
-        _eventRandom = random ?? new Random();
+        _selection = new WwiseSelection(_rng, sharedAcrossGameObjects: true);
     }
+
+    /// <summary>
+    /// M9-028: the RobotAudioClient output source this sink dispatches for (<c>[client+0x3c]</c>). The
+    /// stack's animation audio always streams to the robot (M3-024), so it defaults to
+    /// <see cref="RobotAudioOutputSource.PlayOnRobot"/>; set it to
+    /// <see cref="RobotAudioOutputSource.PlayOnDevice"/> to exercise the off-robot selection.
+    /// </summary>
+    // fidelity: M9-028
+    public RobotAudioOutputSource OutputSource { get; set; } = RobotAudioOutputSource.PlayOnRobot;
+
+    /// <summary>
+    /// M9-028: the game object the next switch/parameter post targets: 7 on-robot, 6 off-robot
+    /// (<see cref="RobotAudioClient.GameObjectFor"/>).
+    /// </summary>
+    public uint DispatchGameObject => RobotAudioClient.GameObjectFor(OutputSource);
+
+    /// <summary>The game object the last <see cref="SetSwitch"/>/<see cref="SetParameter"/> selected (M9-028).</summary>
+    public uint LastDispatchGameObject { get; private set; }
 
     /// <summary>
     /// Sets a switch group's value, as the engine does before a singing animation starts. A song rendered
     /// under one switch value is cached by the node it selected, so changing the switch and playing the
     /// event again renders the newly selected song.
+    ///
+    /// M9-028: the post is dispatched to <see cref="DispatchGameObject"/> (7 on-robot, 6 off-robot) as
+    /// <c>RobotAudioClient::PostRobotSwitchState</c> does. The stack's renderer resolves switches globally,
+    /// so the game object is the dispatch's own selection; the off-robot game object 6 is M6-016's unbuilt
+    /// OnDevice path and is refused.
     /// </summary>
     public void SetSwitch(uint groupId, uint switchId)
     {
-        lock (_gate) _switches[groupId] = switchId;
+        uint gameObject = DispatchGameObject;
+        EnsureOnRobotDispatch(gameObject);
+        lock (_gate) { _switches[groupId] = switchId; LastDispatchGameObject = gameObject; }
     }
 
     public IReadOnlyDictionary<uint, uint> Switches { get { lock (_gate) return new Dictionary<uint, uint>(_switches); } }
 
     /// <summary>
-    /// Sets a game parameter, as <c>RobotAudioClient::PostRobotParameter</c> does. The renderer reads
-    /// these when a modulator's depth is bound to one: <c>cozmo_singing_vibrato</c> drives the singing
-    /// vibrato's depth from nothing to full. A song already rendered is not re-rendered for a new value —
-    /// see <see cref="WwiseSongRenderer.Parameters"/>.
+    /// Sets a game parameter, as <c>RobotAudioClient::PostRobotParameter</c> does (M9-028): the parameter
+    /// slot <c>+0x18</c> with a zero transition time and curve, to game object 7 on-robot or 6 off-robot.
+    /// The renderer reads these when a modulator's depth is bound to one: <c>cozmo_singing_vibrato</c>
+    /// drives the singing vibrato's depth from nothing to full. A song already rendered is not re-rendered
+    /// for a new value — see <see cref="WwiseSongRenderer.Parameters"/>.
     /// </summary>
     public void SetParameter(uint parameterId, float value)
     {
+        uint gameObject = DispatchGameObject;
+        EnsureOnRobotDispatch(gameObject);
         lock (_gate)
         {
             _parameters[parameterId] = value;
+            LastDispatchGameObject = gameObject;
             var snapshot = new Dictionary<uint, float>(_parameters);
             _renderer.Parameters = snapshot;
             // and to every song already playing, which is the point: the vibrato reaches a song that has
             // already started rather than only one that has not.
             foreach (var stream in _streams.Values) stream.SetParameters(snapshot);
         }
+    }
+
+    /// <summary>
+    /// M9-028/M6-016 A3: the off-robot game object 6 selects the OnDevice path, which this stack does not
+    /// build. Refusing it keeps the gap visible rather than posting the singing switch/parameter to the
+    /// on-robot game object 7.
+    /// </summary>
+    private static void EnsureOnRobotDispatch(uint gameObject)
+    {
+        if (gameObject == RobotAudioClient.OffRobotGameObject)
+            throw new NotSupportedException(
+                "M9-028/M6-016 A3: game object 6 (off-robot) selects the OnDevice path, which is not built; " +
+                "the stack's animation audio streams to the robot on game object 7.");
     }
 
     public IReadOnlyDictionary<uint, float> Parameters { get { lock (_gate) return new Dictionary<uint, float>(_parameters); } }
@@ -120,6 +167,7 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     /// A Wwise Stop action (<c>WwiseBank.IsStopAction</c>): the event starts nothing and ends its target's
     /// voices. <c>Stop__Robot_VO__Cozmo_Singing_Stop</c> is one; the tempo animations raise it at their end.
     /// </summary>
+    // fidelity: M9-018
     public bool IsStopEvent(long eventId)
     {
         if (eventId is < 0 or > uint.MaxValue) return false;
@@ -489,7 +537,7 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     /// </summary>
     private short[]? Produce(uint eventId)
     {
-        var plan = WwisePlayback.Resolve(_library, eventId, _switches, _eventRandom, _eventCursor, _eventLastPick);
+        var plan = WwisePlayback.Resolve(_library, eventId, _switches, _selection);
         var reasons = new List<string>(plan.Problems);
         if (plan.Root is null)
         {
@@ -601,7 +649,8 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     ///
     /// So the kernel is a windowed sinc (Lanczos, three lobes) whose cutoff is the lower of the two
     /// Nyquists, which band-limits and interpolates in the one pass. That is a standard resampler, not
-    /// Audiokinetic's: Wwise's own is in its runtime, which does not ship in this package, so what is
+    /// Audiokinetic's: Wwise's own is the recovered <c>CAkResampler</c> (linear interpolation; M6-004),
+    /// which the runtime links statically, but this decode-side path has not been wired to it, so what is
     /// fixed here is a defect of this stack rather than a reproduction of theirs (fidelity manifest
     /// M6-004). <see cref="WavAudioSource"/> is left alone; it carries the harness's own test signals and
     /// captured WAVs, not shipped content.

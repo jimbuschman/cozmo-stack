@@ -97,20 +97,55 @@ public class WwiseBusTests
     }
 
     /// <summary>
-    /// The low-pass at 14298 Hz is above Nyquist for the robot's 22320 Hz and cannot act. That is reported
-    /// as a note rather than applied at a frequency it cannot have, and rather than passed over in silence.
+    /// M9-027 / gapC 4.3, at the stack's current render rate: the exact EQ coefficient routine caps every
+    /// band at <c>0.45·fs</c>. This stack renders and runs the chain at 22320 Hz, so the shipped 14298 Hz
+    /// low-pass is <b>capped to 10044 Hz and applied</b>, not skipped as a band above Nyquist. That cap is a
+    /// consequence of the stack's rate, not the engine's: the engine runs the chain at the 48000 Hz Wwise
+    /// mix rate, where 14298 Hz is in band, and the Hijack then resamples the mix to 22320 (M6-017/M6-018).
+    /// The chain reports the cap; the band stays in the stage.
     /// </summary>
     [Fact]
-    public void TheLowPassAboveNyquistIsReportedRatherThanApplied()
+    public void AtTheStacksRenderRateTheHiLowPassLowBandIsCappedToFortyFivePercentAndApplied()
     {
         if (Library.Value is not { } lib) return;
         var chain = WwiseBusChain.For(lib, RobotBus1, CozmoAudio.SampleRate);
         var report = chain.Process(new double[1000]);
         Assert.Empty(report.Problems);
-        Assert.Contains(report.Notes, n => n.Contains("14298") && n.Contains("Nyquist"));
+        // gapC 4.3: fc = min(freq, 0.45·fs); at the stack's 22320 Hz render rate, 0.45 × 22320 = 10044.
+        Assert.Contains(report.Notes, n => n.Contains("14298") && n.Contains("10044"));
         Assert.Equal(new[] { "Robot_Bus_Eq_MasterCurve", "Robot_Bus_Eq_HiLowPass", "Robot_Bus_Peak_Limiter" },
             report.Stages.Take(3).ToArray());
         Assert.Contains("tap for robot 1", report.Stages[3]);
+    }
+
+    /// <summary>
+    /// M9-026: the live chain runs the recovered DSP, not a stand-in. For the shipped Robot_Bus_1 it must
+    /// produce exactly what the recovered <see cref="WwiseRobotBusFx"/> composition (EQ 0x6767FC1F → EQ
+    /// 0x174901C6 → limiter 0xDF2230FF) does to the same block at the same rate.
+    /// </summary>
+    [Fact]
+    public void TheLiveChainMatchesTheRecoveredRobotBusFxOnAKnownBlock()
+    {
+        if (Library.Value is not { } lib) return;
+        var chain = WwiseBusChain.For(lib, RobotBus1, CozmoAudio.SampleRate);
+        var reference = new WwiseRobotBusFx(CozmoAudio.SampleRate);
+
+        var input = new double[1024];
+        for (int i = 0; i < input.Length; i++)
+            input[i] = 0.25 * Math.Sin(2 * Math.PI * 440 * i / CozmoAudio.SampleRate);
+        var live = (double[])input.Clone();
+        var known = (double[])input.Clone();
+
+        chain.Process(live);
+
+        // The recovered composition is native DSP: it takes Wwise's normalized float buffer. The chain
+        // normalizes internally, so the reference is fed the same normalized block and scaled back.
+        var knownFloat = new float[known.Length];
+        for (int i = 0; i < known.Length; i++) knownFloat[i] = (float)(known[i] / short.MaxValue);
+        reference.Process(knownFloat);
+        for (int i = 0; i < known.Length; i++) known[i] = knownFloat[i] * short.MaxValue;
+
+        Assert.Equal(known, live);
     }
 
     /// <summary>
@@ -151,19 +186,20 @@ public class WwiseBusTests
     }
 
     /// <summary>
-    /// What the chain is for. Every one of the 39 shipped songs comes out of it at about the same level,
-    /// just under full scale, however loud the sum that went in was — which is what a bus limiter with a
-    /// -1 dB threshold does, and what the local peak normalisation this replaced could not do: that stage
-    /// scaled each song by whatever its own loudest sample happened to be.
+    /// What the chain is for, on the recovered DSP (M9-026). Every one of the 39 shipped songs leaves the
+    /// chain with no clipped sample and with the limiter only ever reducing, and the loudest sums are
+    /// actually caught by it. The old 28000..32767 range belonged to the stand-in limiter; the recovered
+    /// EQ's Butterworth high/low-pass and shelf shape the sum first, so a quiet song's exact peak is lower.
     /// </summary>
     [Fact, Trait("Category", "Exhaustive")]
-    public void EverySongLeavesTheChainAtAboutTheSameLevel()
+    public void EverySongLeavesTheChainUnclippedAndTheLimiterActsOnTheLoudest()
     {
         if (Library.Value is not { } lib || WwiseAssets.ObbRoot is not { } obb) return;
         var songs = Cozmo.Robot.Behavior.SingingBehavior.LoadShipped(obb);
         Assert.Equal(39, songs.Count);
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(3));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(3));
 
+        bool anyLimited = false;
         foreach (var b in songs)
         {
             var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_" + b.SwitchGroupName["Cozmo_Sings_".Length..].ToLowerInvariant())!.Value;
@@ -171,8 +207,11 @@ public class WwiseBusTests
             Assert.NotNull(r.BusChain);
             Assert.Empty(r.BusChain!.Problems);
             Assert.Equal(0, r.ClippedSamples);
-            Assert.InRange(r.Peak, 28000, short.MaxValue);
+            Assert.True(r.Peak > 0, $"{b.SwitchName} produced silence");
+            Assert.True(r.Peak <= short.MaxValue);
             Assert.True(r.BusChain.LimiterReductionDb <= 0);
+            if (r.BusChain.LimiterReductionDb < 0) anyLimited = true;
         }
+        Assert.True(anyLimited, "the recovered limiter never reduced any of the 39 songs");
     }
 }

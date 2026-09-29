@@ -27,7 +27,7 @@ public class WwiseLiveVibratoTests
 
     private static WwiseAudioSource Prepared(WwiseSoundLibrary lib, int seed = 1)
     {
-        var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(seed));
+        var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng((ulong)seed));
         source.SetSwitch(Group80, AbaDaba);
         source.Prewarm(Song(lib)).Wait();
         return source;
@@ -43,7 +43,7 @@ public class WwiseLiveVibratoTests
     {
         if (Library.Value is not { } lib) return;
 
-        using var whole = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(11));
+        using var whole = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(11));
         var reference = whole.RenderMusic(Song(lib), new Dictionary<uint, uint> { [Group80] = AbaDaba });
 
         using var streamed = Prepared(lib, seed: 11);

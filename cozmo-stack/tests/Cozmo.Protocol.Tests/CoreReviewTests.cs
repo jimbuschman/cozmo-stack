@@ -647,7 +647,7 @@ public class CoreReviewTests
     {
         if (WwiseAssets.Library is not { } lib) return;
         uint song = lib.IdOf("Play__Robot_VO__Cozmo_Singing_80bpm")!.Value;
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(5));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(5));
         source.SetSwitch(SingingBehavior.Group80, 0x852F201Au);
         source.Prewarm(song).Wait();
 
@@ -686,7 +686,7 @@ public class CoreReviewTests
 
         WwiseAudioSource Prepared(int seed)
         {
-            var s = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(seed));
+            var s = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng((ulong)seed));
             s.SetSwitch(SingingBehavior.Group80, 0x852F201Au);
             s.Prewarm(song).Wait();
             return s;
@@ -733,7 +733,7 @@ public class CoreReviewTests
     {
         if (WwiseAssets.Library is not { } lib) return;
         uint song = lib.IdOf("Play__Robot_VO__Cozmo_Singing_80bpm")!.Value;
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(9));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(9));
         source.SetSwitch(SingingBehavior.Group80, 0x852F201Au);
         source.Prewarm(song).Wait();
 

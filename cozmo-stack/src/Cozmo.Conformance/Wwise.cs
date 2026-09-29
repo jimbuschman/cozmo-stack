@@ -219,7 +219,7 @@ public static class WwiseTool
     private static int Render(WwiseSoundLibrary lib, uint? id, IReadOnlyDictionary<uint, uint> switches, string? wav, int seed, uint? without)
     {
         if (id is null) { Console.WriteLine("no event with that id or name"); return 1; }
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(seed));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng((ulong)seed));
         if (without is not null)
         {
             source.ExcludeBranches = new HashSet<uint> { without.Value };
@@ -258,7 +258,7 @@ public static class WwiseTool
     /// </summary>
     private static int ValidateMusic(WwiseSoundLibrary lib, string? obb, int seed)
     {
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(seed));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng((ulong)seed));
         int ok = 0, bad = 0, empty = 0, silentNotes = 0, sungNotes = 0, outsideWindow = 0, cutByClipEnd = 0;
         var sw = System.Diagnostics.Stopwatch.StartNew();
         Console.WriteLine($"\n{"song / event",-48} {"ms",7} {"notes",6} {"sung",5} {"out",4} {"drop",5} {"cut",4} {"offs",5} {"rawpk",7} {"outpk",7} {"limit",6}  problems");
@@ -376,8 +376,8 @@ public static class WwiseTool
 
         // What one play actually does, as the containers say: which child a random draws, the order a
         // sequence plays its items in, which branch a switch selects. See WwisePlayback.
-        var plan = WwisePlayback.Resolve(lib, id.Value, new Dictionary<uint, uint>(), new Random(1),
-                                         new Dictionary<uint, int>(), new Dictionary<uint, uint>());
+        var plan = WwisePlayback.Resolve(lib, id.Value, new Dictionary<uint, uint>(),
+                                         new WwiseSelection(new WwiseRng(1), sharedAcrossGameObjects: true));
         Console.WriteLine("  -> one play, with no switches set and a fixed draw:");
         PrintPlan(plan.Root, 5);
         foreach (var p in plan.Problems) Console.WriteLine($"     !! {p}");

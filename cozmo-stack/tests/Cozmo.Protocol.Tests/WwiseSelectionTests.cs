@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Numerics;
+using System.Threading.Tasks;
 using Cozmo.Robot.Animation.Wwise;
 using Xunit;
 
@@ -47,6 +49,39 @@ public class WwiseSelectionTests
     {
         var rng = new WwiseRng(7);
         for (int i = 0; i < 1000; i++) Assert.InRange(rng.Next(), 0u, 0x7FFFFFFFu);
+    }
+
+    // ---------------------------------------------------------------- §3.1 one shared global LCG
+
+    /// <summary>
+    /// M9-015: the music renderer and the ordinary-event path draw from one process-wide LCG, each under
+    /// its own lock, so a render can run while an ordinary event plays. An unsynchronised
+    /// read-modify-write would tear the state and lose or repeat a draw. Many parallel draws from one
+    /// <see cref="WwiseRng"/> must therefore produce exactly the first N single-threaded draws as a
+    /// multiset: the order is not fixed, but no state may be lost or repeated.
+    /// </summary>
+    [Fact]
+    public void ConcurrentDrawsDoNotLoseOrRepeatLcgState()
+    {
+        const int Threads = 8, PerThread = 4000, Total = Threads * PerThread;
+        const ulong seed = 0x0123456789ABCDEFUL;
+
+        var reference = new WwiseRng(seed);
+        var expected = new uint[Total];
+        for (int i = 0; i < Total; i++) expected[i] = reference.Next();
+
+        var rng = new WwiseRng(seed);
+        var bag = new ConcurrentBag<uint>();
+        var tasks = new Task[Threads];
+        for (int t = 0; t < Threads; t++)
+            tasks[t] = Task.Run(() => { for (int i = 0; i < PerThread; i++) bag.Add(rng.Next()); });
+        Task.WaitAll(tasks);
+
+        var got = bag.ToArray();
+        Assert.Equal(Total, got.Length);
+        Array.Sort(expected);
+        Array.Sort(got);
+        Assert.Equal(expected, got);
     }
 
     // ---------------------------------------------------------------- §3.5 the single-item rule

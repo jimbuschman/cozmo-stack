@@ -321,3 +321,71 @@ Verifier verdict: **PASS**, with the corrected characterization of `0x009B3EBC`
 above and with M9-013, M9-014, M9-024 and M9-025 kept visible as
 `RECOVERABLE_GAP`.
 
+
+
+## Correction C1 (job B-M9, 2026-09-29): M9-002's per-step timeout, M9-003's `+0x84` return, and M9-027's mix rate
+
+Source: an extractor pass for job B-M9, citations are ELF VAs in
+`resources/lib/armeabi-v7a/libcozmoEngine.so` (engine code Thumb). It was run
+because the build stopped with `MISSING` on M9-002 and M9-003.
+
+### C1a. M9-002 — the 60.0 is a per-step action timeout, not a compound timeout
+
+- The `movt r8,#0x4270` (60.0f) is at **`0x005eedca`**, not `0x005eee0c` as X4 S17
+  wrote (`0x005eee0c` is `movs r0,#1`). X4's "60-second sequential compound"
+  wording is imprecise.
+- The 60.0 is the per-action timeout of each `TriggerAnimationAction` /
+  `PlayAnimationAction`, stored at `PlayAnimationAction+0x94` (ctor `0x00544228`,
+  store `0x00543c8e`) and returned by vtable slot `+0x2c` (getter `0x00545210`).
+  `InitInternal` passes it as the 7th argument of all three actions
+  (`0x005eedd0`, `0x005eee0e`, `0x005eee44`; forwarded `0x00544250..0x00544264`).
+- The `CompoundActionSequential` itself has no 60-second timeout: its `+0x9c`
+  delay is 0 and its `+0xa0` deadline is `-1.0f`. Its ctor is `0x0054f4f8`
+  (called `0x005eedb2`); actions are added through vtable `+0x20`
+  (`0x0054ec7c`) at `0x005eedee`, `0x005eee28`, `0x005eee62`.
+- The ctor's sentinel `id==0 && timeout==60.0 -> FLT_MAX`
+  (`0x00543c96..0x00543cb2`) is **not** triggered: these steps pass id 1.
+- Timeout semantics: `IAction::UpdateInternal` (`0x00540d1c`) computes
+  `start+timeout` (`0x540d9e..0x540daa`) and, on expiry, returns failure
+  `0x3000018` (`0x540e7c..0x540f00`). `CompoundActionSequential::UpdateInternal`
+  (`0x0054f70c`) fails the whole compound on a child failure
+  (`0x54f7f2..0x54f8f2`) because no ignore-failure predicate is installed (the
+  `AddAction` calls pass 0 at `0x005eedee`/`0x005eee28`/`0x005eee62`; wrapper
+  test `0x0054ec8c`). **A step that does not complete within 60 s fails the
+  compound; it does not advance.**
+
+### C1b. M9-003 — `IBehavior+0x84` is the acting action's tag
+
+- `+0x84` is the tag of the `IActionRunner` the behaviour is currently acting on
+  (`action+0x60`), 0 when idle. Zeroed in the ctor (`0x005bbcc4`), set in
+  `StartActing` (`0x005bdb4e`), cleared in `StopActing` (`0x005bd3e4`) and
+  `HandleActionComplete` (`0x005be1fc`).
+- `BehaviorSinging::UpdateInternal` returns 2 while `+0x84 == 0`, else 1
+  (`0x005ef240..0x005ef24a`). `IBehavior::Update` (`0x005bd074`) dispatches to
+  `UpdateInternal`; `BehaviorManager::Update` (`0x005a2f68`) and
+  `BehaviorSystemManager::UpdateActiveBehavior` (`0x005a5cb4`) read **2 as
+  `Status::Complete` and call `FinishCurrentBehavior`, 0 as a failed update
+  (log + `FinishCurrentBehavior`), and 1 (or other) as keep running.** So 2 and
+  0 both finish the behaviour; 1 keeps it running. The stack's
+  `IBehavior.Update` returns `bool` (an M8 interface); its `true` corresponds to
+  the engine's 1 (running) and its `false` to the engine's 2/0 (finish), which
+  is behaviourally equivalent. The 0-vs-2 log distinction is not carried.
+
+### C1c. M9-027 — the Robot_Bus_1 EQ/limiter run at the Wwise mix rate
+
+- gapC 4.6 fixes the bus limiter's `L = sr*lookahead` at the **Wwise mix rate**
+  ("At 48 kHz this is 431..."), and M6-018's policy is a 48000 Hz mix. The
+  Hijack then resamples the mix to 22320 for the robot (M6-015/gapC 4.8). So the
+  shipped `14298 Hz` low-pass is **in-band at the 48000 mix rate** (Nyquist
+  24000); the 22320 robot rate applies only after the Hijack.
+- The stack currently renders and runs the chain at 22320
+  (`CozmoAudio.SampleRate`), so the exact chain is wired but at the wrong rate.
+  Moving the Wwise mix to 48000 and resampling through the Hijack is M6-017 /
+  M6-018. **M9-027 therefore stays `IMPLEMENTATION_GAP`, `unresolved` naming
+  M6-017/M6-018.** The code must state the rate caveat rather than cap the
+  low-pass at 22320 as if that were the engine's behaviour.
+
+M9-002's evidence address is corrected to `0x005EEDCA` and its wording to
+"per-step 60-second TriggerAnimationAction timeout". M9-003's row now names
+`IBehavior+0x84` (the acting action tag). No other row changes.
+

@@ -65,9 +65,11 @@ public sealed record WwisePlaybackPlan(uint EventId)
 /// * <b>Switch assignments</b> and the default switch, for a switch container.
 /// * <b>Volume</b> and <b>Pitch</b> on every node, summed down the path.
 ///
-/// What Wwise does between those fields — the exact shuffle a "random" container uses, the crossfades a
-/// blend container's layers would apply — is runtime behaviour that does not ship in the package; a blend
-/// container's layers are recorded as unread in the fidelity manifest (M9-019).
+/// What Wwise does between those fields is the recovered runtime selection (M6-007, M9-022): a random
+/// container draws the k-th eligible item through the global 64-bit LCG with its blocked/avoid list, and
+/// a sequence container steps its cursor. A blend container's crossfades would be runtime behaviour, but
+/// every shipped blend container has no blend track (M9-019), so a blend container here plays all of its
+/// children at the level their own properties give.
 /// </summary>
 public static class WwisePlayback
 {
@@ -75,14 +77,19 @@ public static class WwisePlayback
     public const byte ContinuousFlag = 0x08;
 
     /// <summary>
-    /// Builds the plan for an event under the given switch values, drawing from <paramref name="random"/>
-    /// wherever a container chooses. <paramref name="sequenceCursor"/> carries a step-mode sequence
-    /// container's position across plays, as Wwise does; pass the same dictionary each time.
+    /// The game object whose container state an ordinary event's play draws from. Every shipped RanSeq
+    /// container has bank bit4 set (M6-007 §3.4), so its state is shared across game objects and this key
+    /// does not affect the draw.
+    /// </summary>
+    private const int GameObject = 0;
+
+    /// <summary>
+    /// Builds the plan for an event under the given switch values, drawing from the recovered Wwise
+    /// selection engine wherever a container chooses. <paramref name="selection"/> carries the global LCG
+    /// and every container's state across plays, as Wwise does; pass the same instance each time.
     /// </summary>
     public static WwisePlaybackPlan Resolve(WwiseSoundLibrary lib, uint eventId,
-                                            IReadOnlyDictionary<uint, uint> switches, Random random,
-                                            IDictionary<uint, int> sequenceCursor,
-                                            IDictionary<uint, uint>? lastPick = null)
+                                            IReadOnlyDictionary<uint, uint> switches, WwiseSelection selection)
     {
         var resolution = lib.Resolve(eventId);
         var problems = new List<string>();
@@ -99,7 +106,7 @@ public static class WwisePlayback
         var roots = new List<WwisePlayNode>();
         foreach (var t in targets)
         {
-            var node = Walk(lib, t, 0, 0, switches, random, sequenceCursor, lastPick, problems, 0);
+            var node = Walk(lib, t, 0, 0, switches, selection, problems, 0);
             if (node is not null) roots.Add(node);
         }
         return new WwisePlaybackPlan(eventId)
@@ -111,8 +118,7 @@ public static class WwisePlayback
     }
 
     private static WwisePlayNode? Walk(WwiseSoundLibrary lib, uint id, double gainDb, double cents,
-                                       IReadOnlyDictionary<uint, uint> switches, Random random,
-                                       IDictionary<uint, int> sequenceCursor, IDictionary<uint, uint>? lastPick,
+                                       IReadOnlyDictionary<uint, uint> switches, WwiseSelection selection,
                                        List<string> problems, int depth)
     {
         if (depth > 16) { problems.Add($"node {id}: the hierarchy is deeper than 16 levels"); return null; }
@@ -140,15 +146,17 @@ public static class WwisePlayback
                 bool continuous = (rs.Flags & ContinuousFlag) != 0;
                 if (continuous)
                 {
-                    var order = rs.IsSequence ? rs.Playlist.Select(p => p.ChildId).ToList() : Shuffle(rs, random);
+                    var order = rs.IsSequence ? rs.Playlist.Select(p => p.ChildId).ToList() : Shuffle(rs, selection.Rng);
                     var parts = new List<WwisePlayNode>();
                     foreach (var child in order)
-                        if (Walk(lib, child, gainDb, cents, switches, random, sequenceCursor, lastPick, problems, depth + 1) is { } n)
+                        if (Walk(lib, child, gainDb, cents, switches, selection, problems, depth + 1) is { } n)
                             parts.Add(n);
                     return parts.Count == 0 ? null : new WwisePlaySequence(parts);
                 }
-                uint pick = rs.IsSequence ? NextInSequence(rs, sequenceCursor) : WeightedPick(rs, random, lastPick);
-                return Walk(lib, pick, gainDb, cents, switches, random, sequenceCursor, lastPick, problems, depth + 1);
+                // fidelity: M9-022
+                int index = selection.NextIndex(rs.Id, GameObject, WwiseContainerSelectionSettings.FromNode(rs));
+                if (index < 0) { problems.Add($"container {rs.Id} selected no item"); return null; }
+                return Walk(lib, rs.Playlist[index].ChildId, gainDb, cents, switches, selection, problems, depth + 1);
             }
 
             case WwiseSwitchNode sw:
@@ -163,7 +171,7 @@ public static class WwisePlayback
                 }
                 var parts = new List<WwisePlayNode>();
                 foreach (var child in chosen)
-                    if (Walk(lib, child, gainDb, cents, switches, random, sequenceCursor, lastPick, problems, depth + 1) is { } n)
+                    if (Walk(lib, child, gainDb, cents, switches, selection, problems, depth + 1) is { } n)
                         parts.Add(n);
                 return parts.Count switch { 0 => null, 1 => parts[0], _ => new WwisePlayTogether(parts) };
             }
@@ -172,7 +180,7 @@ public static class WwisePlayback
             {
                 var parts = new List<WwisePlayNode>();
                 foreach (var child in node.Children)
-                    if (Walk(lib, child, gainDb, cents, switches, random, sequenceCursor, lastPick, problems, depth + 1) is { } n)
+                    if (Walk(lib, child, gainDb, cents, switches, selection, problems, depth + 1) is { } n)
                         parts.Add(n);
                 return parts.Count switch { 0 => null, 1 => parts[0], _ => new WwisePlayTogether(parts) };
             }
@@ -183,43 +191,19 @@ public static class WwisePlayback
         }
     }
 
-    /// <summary>A continuous random container plays its whole playlist, in an order drawn without replacement.</summary>
-    private static List<uint> Shuffle(WwiseRandomSequenceNode rs, Random random)
+    /// <summary>
+    /// A continuous random container plays its whole playlist, in an order drawn without replacement. The
+    /// continuous path itself is M6-008 and its algorithm is not recovered; this keeps the stack's
+    /// shuffle but sources the draw from the recovered global LCG rather than <see cref="Random"/>.
+    /// </summary>
+    private static List<uint> Shuffle(WwiseRandomSequenceNode rs, WwiseRng rng)
     {
         var items = rs.Playlist.Select(p => p.ChildId).ToList();
         for (int i = items.Count - 1; i > 0; i--)
         {
-            int j = random.Next(i + 1);
+            int j = (int)(rng.Next() % (uint)(i + 1));
             (items[i], items[j]) = (items[j], items[i]);
         }
         return items;
-    }
-
-    private static uint NextInSequence(WwiseRandomSequenceNode rs, IDictionary<uint, int> cursor)
-    {
-        int i = cursor.TryGetValue(rs.Id, out var c) ? c : 0;
-        cursor[rs.Id] = (i + 1) % rs.Playlist.Count;
-        return rs.Playlist[i % rs.Playlist.Count].ChildId;
-    }
-
-    private static uint WeightedPick(WwiseRandomSequenceNode rs, Random random, IDictionary<uint, uint>? lastPick)
-    {
-        var candidates = rs.Playlist.ToList();
-        if (rs.AvoidRepeatCount > 0 && candidates.Count > 1 && lastPick is not null
-            && lastPick.TryGetValue(rs.Id, out var last))
-            candidates.RemoveAll(c => c.ChildId == last);
-        long total = candidates.Sum(c => (long)Math.Max(0, c.Weight));
-        uint chosen = candidates[0].ChildId;
-        if (total > 0)
-        {
-            long r = (long)(random.NextDouble() * total);
-            foreach (var c in candidates)
-            {
-                r -= Math.Max(0, c.Weight);
-                if (r < 0) { chosen = c.ChildId; break; }
-            }
-        }
-        if (lastPick is not null) lastPick[rs.Id] = chosen;
-        return chosen;
     }
 }

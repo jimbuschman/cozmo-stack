@@ -33,6 +33,12 @@ public static class WwiseSelectionRows
 ///
 /// <code>s = s*0x5851F42D4C957F2D + 1; output = (u32)(s&gt;&gt;32) &gt;&gt; 1</code>
 ///
+/// The engine advances this one LCG on its audio thread, so this class is the process-wide state that the
+/// music renderer and the ordinary-event playback path both draw from (M9-015). They run under different
+/// locks — the renderer under its own render gate, the ordinary path under the audio source's gate — so
+/// <see cref="Next"/> synchronises the read-modify-write itself. Only the synchronisation is added; the
+/// arithmetic and the output are unchanged.
+///
 /// The seed is <b>not</b> source-reproducible: the original calls <c>SetSeed(0)</c> once at
 /// <c>SoundEngine::Init</c> (0x0099EF80 → 0x009B0210 → 0x0099DB58), which resolves to <c>time(NULL)</c>
 /// (§3.2). Cozmo's SetupConfig writes the SetRandomSeed field 0, so no other seed is ever installed. The
@@ -45,6 +51,7 @@ public sealed class WwiseRng
     private const ulong Multiplier = 0x5851F42D4C957F2DUL;
 
     private ulong _state;
+    private readonly object _lock = new();
 
     /// <summary>An RNG seeded with the current Unix time in seconds, as the original's <c>time(NULL)</c>.</summary>
     public WwiseRng()
@@ -58,11 +65,19 @@ public sealed class WwiseRng
     /// <summary>The seed the parameterless constructor uses: the current Unix time in seconds, as ulong.</summary>
     public static ulong TimeSeed() => unchecked((ulong)DateTimeOffset.UtcNow.ToUnixTimeSeconds());
 
-    /// <summary>The next draw: the high 32 bits of the advanced state, shifted right by one (a 31-bit value).</summary>
+    /// <summary>
+    /// The next draw: the high 32 bits of the advanced state, shifted right by one (a 31-bit value).
+    /// Thread-safe: the music renderer and the ordinary-event path share one global LCG (M9-015) and draw
+    /// from different locks, so the read-modify-write of <see cref="_state"/> is serialised here.
+    /// </summary>
+    // fidelity: M9-015
     public uint Next()
     {
-        _state = unchecked(_state * Multiplier + 1UL);
-        return (uint)(_state >> 32) >> 1;
+        lock (_lock)
+        {
+            _state = unchecked(_state * Multiplier + 1UL);
+            return (uint)(_state >> 32) >> 1;
+        }
     }
 }
 
@@ -106,6 +121,33 @@ public sealed record WwiseContainerSelectionSettings(
     /// <summary>A sequence container with wrap (no ping-pong).</summary>
     public static WwiseContainerSelectionSettings Sequence(int length, bool pingPong = false)
         => new(length, null, WwiseSelectionMode.Sequence, WwiseRandomMode.Standard, 0, false, pingPong);
+
+    /// <summary>
+    /// The settings a shipped RanSeq node gives its selection state (M6-007 §2.6, §3.9). The bank bits on
+    /// <see cref="WwiseRandomSequenceNode.Flags"/> are bit2 ping-pong and bit4 one shared state; the mode
+    /// is <see cref="WwiseRandomSequenceNode.IsSequence"/>; a non-zero
+    /// <see cref="WwiseRandomSequenceNode.RandomMode"/> is the shuffle path; any playlist weight other
+    /// than <see cref="WwiseSelectionRows.DefaultWeight"/> means weights are in use.
+    /// </summary>
+    public static WwiseContainerSelectionSettings FromNode(WwiseRandomSequenceNode rs)
+    {
+        ArgumentNullException.ThrowIfNull(rs);
+        bool usesWeights = false;
+        var weights = new int[rs.Playlist.Count];
+        for (int i = 0; i < weights.Length; i++)
+        {
+            weights[i] = rs.Playlist[i].Weight;
+            if (weights[i] != WwiseSelectionRows.DefaultWeight) usesWeights = true;
+        }
+        return new WwiseContainerSelectionSettings(
+            rs.Playlist.Count,
+            usesWeights ? weights : null,
+            rs.IsSequence ? WwiseSelectionMode.Sequence : WwiseSelectionMode.Random,
+            rs.RandomMode != 0 ? WwiseRandomMode.Shuffle : WwiseRandomMode.Standard,
+            rs.AvoidRepeatCount,
+            usesWeights,
+            (rs.Flags & 0x04) != 0);
+    }
 
     /// <summary>The weight of playlist item <paramref name="index"/>, or <see cref="WwiseSelectionRows.DefaultWeight"/>.</summary>
     public int WeightAt(int index) => Weights is null ? WwiseSelectionRows.DefaultWeight : Weights[index];

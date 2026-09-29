@@ -23,7 +23,7 @@ public class WwiseClipWindowTests
     /// <summary>One shipped song, by the event that names it, with no switch to get wrong.</summary>
     private static WwiseRenderedMusic Song(WwiseSoundLibrary lib, string songEvent)
     {
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(7));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(7));
         return source.RenderMusic(lib.IdOf(songEvent)!.Value, new Dictionary<uint, uint>());
     }
 
@@ -72,7 +72,7 @@ public class WwiseClipWindowTests
     {
         if (Library.Value is not { } lib) return;
 
-        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new Random(7));
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(7));
         var r = source.RenderMusic(lib.IdOf("Play__Robot_VO__Cozmo_Singing_80bpm")!.Value,
             new Dictionary<uint, uint> { [SingingBehavior.Group80] = 0x852F201Au });
         Assert.Equal(0, r.NotesOutsideWindow);

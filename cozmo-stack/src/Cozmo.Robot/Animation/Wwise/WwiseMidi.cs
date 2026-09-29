@@ -52,6 +52,7 @@ public sealed class WwiseMidi
     }
 
     /// <summary>Parses a source blob. Throws <see cref="InvalidDataException"/> when it is not this shape.</summary>
+    // fidelity: M9-005
     public static WwiseMidi Parse(ReadOnlySpan<byte> b)
     {
         if (b.Length < 7) throw new InvalidDataException("MIDI source shorter than its header");

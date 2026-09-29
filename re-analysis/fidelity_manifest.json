@@ -171,7 +171,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M9-wwise-music.md",
-        "approved": "2026-09-28",
+        "approved": "2026-09-29",
         "snapshot": "re-analysis/inventory/M9-wwise-music.approved.json"
       }
     },
@@ -2643,7 +2643,7 @@
       "subsystem": "M9-wwise-music",
       "title": "BehaviorSinging configuration, switch mapping and default tempo trigger",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SingingBehavior.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so",
       "evidence": [
         "0x005EE8DC..0x005EEA0F",
@@ -2652,45 +2652,53 @@
       "live_path": true,
       "test": "WwiseSongTests",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-001; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
+      "unresolved": null,
       "hardware_required": false
     },
     {
       "id": "M9-002",
       "subsystem": "M9-wwise-music",
-      "title": "Singing initialization posts the switch, locks reactions and starts the three-animation sequence in order",
+      "title": "Singing initialization posts the switch, locks reactions, then runs get-in/tempo/get-out as three TriggerAnimationActions with 60-second per-step timeouts in one sequential compound",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SingingBehavior.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so",
       "evidence": [
         "0x005EEB30..0x005EEE9F",
-        "X4 S5-S6 and S17-S18"
+        "0x005EEDCA (movt r8,#0x4270, per-step 60.0f)",
+        "0x00540D1C (IAction timeout, failure 0x3000018)",
+        "0x0054F70C (compound fails on a child failure)",
+        "X4 S5-S6 and S17-S18",
+        "Correction C1a"
       ],
       "live_path": true,
-      "test": "WwiseSongTests.StartingTheBehaviourPostsTheSwitchThenPlaysTheGetIn",
+      "test": "WwiseSongTests.StartingTheBehaviourPostsTheSwitchThenPlaysTheGetIn; WwiseSongTests.InitTakesTheReactionLockBeforeAttachingTheShakeListeners",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-002; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
+      "unresolved": null,
       "hardware_required": false
     },
     {
       "id": "M9-003",
       "subsystem": "M9-wwise-music",
-      "title": "Cube running means, vibrato smoothing/posting, duration log, update result and stop cleanup",
+      "title": "Cube running means, vibrato smoothing/posting, duration log, the +0x84 acting-tag 2/1 return, and stop cleanup",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SingingBehavior.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so",
       "evidence": [
         "0x005EF0C8..0x005EF30F",
         "0x005EF490..0x005EF4DF",
-        "X4 S7 and S11-S16 and S19"
+        "0x005EF240..0x005EF24A (returns 2 while IBehavior+0x84==0, else 1)",
+        "0x005A2F68 (BehaviorManager consumes 0/1/2)",
+        "0x005A5CB4 (BehaviorSystemManager consumes 0/1/2)",
+        "X4 S7 and S11-S16 and S19",
+        "Correction C1b"
       ],
       "live_path": true,
-      "test": "WwiseSongTests",
+      "test": "WwiseSongTests.ThePerCubeShakeMeanIsARunningAverageFromCountOne; WwiseSongTests.UpdateTakesTheMaximumMeanAndResetsItEachTick; WwiseSongTests.AShakeAbovePointOneForOverHalfASecondLogsItsDuration",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-003; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
+      "unresolved": null,
       "hardware_required": false
     },
     {
@@ -2698,7 +2706,7 @@
       "subsystem": "M9-wwise-music",
       "title": "Music switch containers, decision trees, meters and MIDI target",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMusic.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "shipped Wwise banks and approved M6 inventory",
       "evidence": [
         "re-analysis/inventory/M6-wwise-bank.md",
@@ -2707,8 +2715,8 @@
       "live_path": true,
       "test": "WwiseMusicTests",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-004; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
+      "unresolved": null,
       "hardware_required": false
     },
     {
@@ -2716,7 +2724,7 @@
       "subsystem": "M9-wwise-music",
       "title": "Singing MIDI sources use SMF division 9600 and the effective meter tempo",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMidi.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "shipped Wwise banks",
       "evidence": [
         "Cozmo.bnk MIDI source plugin 0x00100001 and division 0x2580",
@@ -2725,8 +2733,8 @@
       "live_path": true,
       "test": "WwiseMusicTests",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-005; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
+      "unresolved": null,
       "hardware_required": false
     },
     {
@@ -2734,7 +2742,7 @@
       "subsystem": "M9-wwise-music",
       "title": "HIRC LFO and Envelope payloads and their runtime classes",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseModulator.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "shipped Wwise banks and libcozmoEngine.so",
       "evidence": [
         "0x009D7B6C..0x009D7C97",
@@ -2744,8 +2752,8 @@
       "live_path": true,
       "test": "WwiseModulatorTests.TheTwoSingingModulatorsReadOutOfTheBankAtTheirShippedValues",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-006; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
+      "unresolved": null,
       "hardware_required": false
     },
     {
@@ -2753,7 +2761,7 @@
       "subsystem": "M9-wwise-music",
       "title": "The note-off envelope binding applies Wwise scaling 2 after its curve",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so and shipped Wwise bank",
       "evidence": [
         "0x00A14F88..0x00A15038",
@@ -2761,10 +2769,10 @@
         "Cozmo.bnk object 381606890 and binding 462443456"
       ],
       "live_path": true,
-      "test": "WwiseModulatorTests.TheNoteOffEnvelopeMovesTheLevelByATenthOfADecibelAndTheVibratoByNothing",
+      "test": "WwiseModulatorTests.TheNoteOffEnvelopeMovesTheLevelByTheWwiseDbScalingAndTheVibratoByNothing; WwiseModulatorTests.TheBindingsBoundTheVibratoTo580CentsAndTheNoteOffEnvelopeToTheWwiseDbMap",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-007; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
+      "unresolved": null,
       "hardware_required": false
     },
     {
@@ -2772,7 +2780,7 @@
       "subsystem": "M9-wwise-music",
       "title": "The vibrato LFO binding depth is driven by the posted cube-shake parameter",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "shipped Wwise bank and libcozmoEngine.so",
       "evidence": [
         "0x009D671C..0x009D7727",
@@ -2780,10 +2788,10 @@
         "Cozmo.bnk objects 528935089 and 110896138"
       ],
       "live_path": true,
-      "test": "WwiseModulatorTests.TheCubeShakeParameterDrivesTheVibratoDepthFromNothingToFull",
+      "test": "WwiseModulatorTests.TheCubeShakeParameterDrivesTheVibratoDepthFromNothingToFull; WwiseLiveVibratoTests.AVibratoPostedAfterTheSongHasBegunChangesTheRestOfIt",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-008; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
+      "unresolved": null,
       "hardware_required": false
     },
     {
@@ -2791,17 +2799,17 @@
       "subsystem": "M9-wwise-music",
       "title": "Modulator bindings evaluate their curves and accumulate onto the named property",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so",
       "evidence": [
         "0x00A6E848..0x00A6F133",
         "X4 S27"
       ],
       "live_path": true,
-      "test": "WwiseModulatorTests.TheBindingsBoundTheVibratoTo580CentsAndTheNoteOffEnvelopeToOneDecibel",
+      "test": "WwiseModulatorTests.TheBindingsBoundTheVibratoTo580CentsAndTheNoteOffEnvelopeToOneDecibel; WwiseModulatorTests.WithTheShakeParameterAtFullTheVibratoReachesTheBindingsFullRange",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-009; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
+      "unresolved": null,
       "hardware_required": false
     },
     {
@@ -2809,7 +2817,7 @@
       "subsystem": "M9-wwise-music",
       "title": "Singing note-on and note-off layers determine held-note lifetime",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "shipped Wwise banks and media",
       "evidence": [
         "re-analysis/inventory/M6-wwise-bank.md",
@@ -2818,8 +2826,8 @@
       "live_path": true,
       "test": "WwiseSongTests.ALoopingSoundSoundsForAsLongAsTheNoteIsHeld",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-010; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
+      "unresolved": null,
       "hardware_required": false
     },
     {
@@ -2828,7 +2836,7 @@
       "title": "Singing renders through the shipped Robot_Bus_1 EQ, limiter and Hijack chain",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs",
       "effect": "a song is quieter or louder, and differently shaped, than the app made it",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-011; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md: the exact Robot_Bus_1 chain (two EQs, limiter, Hijack order) and its recovered DSP are wired into the live path. Still outstanding: the engine runs the bus at the 48000 Hz Wwise mix rate and the Hijack resamples to 22320, while this stack runs the chain at 22320 (M6-017/M6-018).",
       "authority": "approved M6 inventory and shipped Init.bnk",
       "evidence": [
         "re-analysis/inventory/M6-wwise-bank.md",
@@ -2836,17 +2844,17 @@
         "0x00AA18F4"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "unresolved": "The exact Robot_Bus_1 chain (two EQs, limiter, Hijack order) and its recovered DSP are built and wired, but the engine runs the bus at the 48000 Hz Wwise mix rate and the Hijack resamples to 22320 (M6-018 / gapC 4.6/4.8), while this stack still renders and runs the chain at 22320. Wiring the Wwise mix rate and the Hijack resample is M6-017/M6-018; this record settles with them.",
       "hardware_required": false,
       "live_path": true,
-      "test": "WwiseBusTests.EverySongLeavesTheChainAtAboutTheSameLevel"
+      "test": "WwiseBusTests.EverySongLeavesTheChainUnclippedAndTheLimiterActsOnTheLoudest; WwiseBusTests.TheLiveChainMatchesTheRecoveredRobotBusFxOnAKnownBlock"
     },
     {
       "id": "M9-012",
       "subsystem": "M9-wwise-music",
       "title": "MIDI note tracking is disabled on every shipped node",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHierarchy.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "shipped Wwise banks and libcozmoEngine.so",
       "evidence": [
         "re-analysis/inventory/M6-wwise-bank.md",
@@ -2856,8 +2864,8 @@
       "live_path": true,
       "test": "WwiseModulatorTests.NoNodeInAnyShippedBankCouldHaveMidiNoteTrackingEnabled",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-012; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
+      "unresolved": null,
       "hardware_required": false
     },
     {
@@ -2903,17 +2911,17 @@
       "subsystem": "M9-wwise-music",
       "title": "Each play draws container selections afresh using Wwise's own LCG",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so",
       "evidence": [
         "0x0098A6D4..0x0098A7B8",
         "re-analysis/inventory/M6-wwise-bank.md"
       ],
       "live_path": true,
-      "test": "WwiseSongTests.EachPlayOfASongDrawsItsRecordingsAfresh",
+      "test": "WwiseSelectionTests.TheLcgMatchesTheFormulaFromAnIndependentOracle; WwiseSelectionTests.StandardUnweightedPicksTheKthEligibleItem; WwiseSelectionTests.ShufflePlaysEveryItemOnceBeforeResetting; WwiseSelectionTests.ConcurrentDrawsDoNotLoseOrRepeatLcgState; WwisePlaybackTests.TheGetInDrawIsTheRecoveredLcgSelection",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-015; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
+      "unresolved": null,
       "hardware_required": false
     },
     {
@@ -2922,7 +2930,7 @@
       "title": "Streaming uses a 66 ms stack lead policy against the original 30000-byte and 14-frame budget",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMusicStream.cs",
       "effect": "a vibrato posted while Cozmo sings reaches the audio, or does not reach it at all",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-016; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
+      "provenance": "COMPATIBILITY_POLICY: 66 ms is this stack's explicit lead. The source-backed engine side is confirmed at 0x0057C798 (movw r0,#0x7530, 30,000 bytes) and 0x0057C79E (add.w r1,r1,#0xe, +14 audio frames beyond playback). WwiseMusicStream's LeadFrames=2 (66.67 ms) is the stack's translation of block-at-a-time streaming into the renderer's frame units; the value is unchanged.",
       "authority": "libcozmoEngine.so for the original budget; explicit stack policy for 66 ms",
       "evidence": [
         "0x0057C780..0x0057C7BF",
@@ -2939,7 +2947,7 @@
       "subsystem": "M9-wwise-music",
       "title": "Cube acceleration stream, high-pass filter and shake hysteresis drive singing vibrato",
       "location": "cozmo-stack/src/Cozmo.Robot/CubeAccel.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so",
       "evidence": [
         "0x005EECB0..0x005EED6F",
@@ -2947,10 +2955,10 @@
         "0x00636598..0x0063682F"
       ],
       "live_path": true,
-      "test": "CubeShakeTests.TheShakeListenerUsesSquaredMagnitudesAndHysteresis",
+      "test": "CubeShakeTests.TheShakeListenerUsesSquaredMagnitudesAndHysteresis; CubeShakeTests.AddListenerTurnsTheCubeStreamOnOnlyForTheFirstListener",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-017; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
+      "unresolved": null,
       "hardware_required": false
     },
     {
@@ -2959,14 +2967,14 @@
       "title": "The shipped singing Stop event ends the three tempo containers",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs",
       "effect": "the song keeps playing past the end of the tempo clip, or is cut short",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-018; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
       "authority": "shipped Wwise banks",
       "evidence": [
         "Cozmo.bnk Stop__Robot_VO__Cozmo_Singing_Stop and tempo Play events",
         "re-analysis/research/20260928-X4-M9-wwise-music-extraction.md"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
       "test": "WwiseSongTests.TheSingingStopEventEndsTheSongOnTheScheduler"
@@ -2976,7 +2984,7 @@
       "subsystem": "M9-wwise-music",
       "title": "No shipped blend container has a blend track",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHierarchy.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "all six shipped Wwise banks",
       "evidence": [
         "re-analysis/inventory/M6-wwise-bank.md",
@@ -2985,8 +2993,8 @@
       "live_path": true,
       "test": "WwiseMusicTests.NoBlendContainerInAnyShippedBankHasABlendTrack",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-019; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
+      "unresolved": null,
       "hardware_required": false
     },
     {
@@ -2995,14 +3003,14 @@
       "title": "A music clip uses BeginTrim and length and releases a held note at clip end",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
       "effect": "the wrong part of a song is sung, or its last note is cut or left hanging",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-020; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
       "authority": "shipped Wwise banks",
       "evidence": [
         "re-analysis/inventory/M6-wwise-bank.md",
         "re-analysis/research/20260928-X4-M9-wwise-music-extraction.md"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
       "test": "WwiseClipWindowTests.TheClipEndDecidesWhichNotesAreSungAtAll"
@@ -3012,14 +3020,14 @@
       "title": "A multi-action event dispatches every Play action",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMusic.cs",
       "effect": "one or more sounds targeted by the event are omitted from playback",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-021; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
       "authority": "shipped Wwise banks",
       "evidence": [
         "re-analysis/inventory/M6-wwise-bank.md",
         "Cozmo.bnk singing events and action lists"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": false,
       "test": "WwiseMusicTests.AnEventWithSeveralPlayActionsResolvesAllOfThem",
@@ -3031,7 +3039,7 @@
       "title": "Wwise container selection uses the recovered eligibility, blocked-list, random and sequence algorithms",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
       "effect": "the wrong recording, or too many recordings, sound for a note",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-022; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
       "authority": "libcozmoEngine.so and approved M6 inventory",
       "evidence": [
         "0x0098A6D4..0x0098A7B8",
@@ -3039,11 +3047,11 @@
         "0x00A0A524",
         "re-analysis/inventory/M6-wwise-bank.md"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "WwiseSongTests"
+      "test": "WwiseSelectionTests.TheLcgMatchesTheFormulaFromAnIndependentOracle; WwiseSelectionTests.StandardUnweightedPicksTheKthEligibleItem; WwiseSelectionTests.StandardDoesNotRepeatAnItemWithinTheAvoidWindow; WwiseSelectionTests.ShufflePlaysEveryItemOnceBeforeResetting; WwisePlaybackTests.TheGetInDrawIsTheRecoveredLcgSelection"
     },
     {
       "id": "M9-023",
@@ -3106,7 +3114,7 @@
       "title": "The shipped parametric EQ and peak-limiter arithmetic",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs",
       "effect": "the EQ curves and the limiter's knee differ in detail from the product's, at the same settings",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-026; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
       "authority": "libcozmoEngine.so and approved M6 inventory",
       "evidence": [
         "0x00AA257C",
@@ -3115,11 +3123,11 @@
         "0x00AA0EB4",
         "re-analysis/inventory/M6-wwise-bank.md"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
-      "test": "WwiseBusTests.TheRobotBusEffectsReadTheirShippedSettings"
+      "test": "WwiseBusTests.TheLiveChainMatchesTheRecoveredRobotBusFxOnAKnownBlock; WwiseBusFxTests.TheShippedEqShareSetsMatchTheRowsSettings; WwiseBusFxTests.TheLimiterSettingsPinTheShippedShareSetAndDefaults"
     },
     {
       "id": "M9-027",
@@ -3127,7 +3135,7 @@
       "title": "Robot_Bus_Eq_HiLowPass behavior at 14298 Hz and the robot output rate",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs",
       "effect": "none: the band cannot act at 22320 Hz and is reported rather than applied at a frequency it cannot have",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-027; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md: the recovered EQ path is wired and the band cap is implemented. Still outstanding: the rate (M6-017/M6-018) - the engine runs the bus at the 48000 Hz mix rate where the shipped 14298 Hz low-pass is in-band; the stack runs at 22320.",
       "authority": "shipped Init.bnk and libcozmoEngine.so",
       "evidence": [
         "re-analysis/inventory/M6-wwise-bank.md",
@@ -3135,10 +3143,10 @@
         "Init.bnk Robot_Bus_Eq_HiLowPass settings"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "unresolved": "The recovered EQ path caps the shipped 14298 Hz low-pass only at the stack's current 22320 Hz render rate; the engine runs the Robot_Bus_1 EQ/limiter at the 48000 Hz Wwise mix rate where the band is in-band, with the Hijack resampling to 22320 (M6-018 / gapC 4.6/4.8). The record settles when M6-017/M6-018 move the mix to 48000 and the Hijack resamples.",
       "hardware_required": false,
       "live_path": true,
-      "test": "WwiseBusTests.TheLowPassAboveNyquistIsReportedRatherThanApplied"
+      "test": "WwiseBusTests.AtTheStacksRenderRateTheHiLowPassLowBandIsCappedToFortyFivePercentAndApplied; WwiseBusFxTests.AtTheStacksRenderRateTheShippedLowPassIsCappedToFortyFivePercentNyquist"
     },
     {
       "id": "M9-028",
@@ -3146,17 +3154,17 @@
       "title": "RobotAudioClient dispatches singing parameters and switches to game object 7 on-robot or 6 off-robot",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationAudio.cs",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
-      "provenance": "Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-028; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.",
+      "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md: the on-robot game-object-7 dispatch is built and wired. Still outstanding: the off-robot game-object-6 route (M6-016 OnDevice).",
       "authority": "libcozmoEngine.so",
       "evidence": [
         "0x00599F60..0x00599FBF",
         "X4 S20-S21"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare and, where different, build the complete production path described by this record against the approved inventory.",
+      "unresolved": "The on-robot dispatch (game object 7, vtable +0x18/+0x14, zero transition) is built and wired into the live singing path. The off-robot dispatch (game object 6) is not built: M6-016's OnDevice routing refuses game object 6 (WwiseRobotAudioPath.InitAnimation throws). This record settles when M6-016 builds the game-object-6 route.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "WwiseTests.TheRobotAudioClientDispatchSelectsGameObject7OnRobotAnd6OffRobot; WwiseTests.TheSinkDispatchesToGameObject7AndRefusesTheUnbuiltGameObject6"
     },
     {
       "id": "M10-001",

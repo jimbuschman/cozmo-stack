@@ -72,6 +72,18 @@ public sealed record WwiseEffectNode(uint Id, WwiseObjectType Type, string Bank,
         return (Float(0), Float(4), Float(8), Float(12), Float(16));
     }
 
+    /// <summary>
+    /// A Peak Limiter's two flag bytes (M6-013 / gapC 4.5, the 22-byte params block): <c>processLFE</c> then
+    /// <c>channelLink</c>, after the five floats. The row gives their runtime-object offsets as <c>+0x1C</c>
+    /// and <c>+0x1D</c>; the shipped <c>0xDF2230FF</c> carries 0 for both (gapC 4.5).
+    /// </summary>
+    public (bool ProcessLfe, byte ChannelLink) LimiterFlags()
+    {
+        if (PluginId is not (PeakLimiterPlugin or CompressorPlugin) || Parameters.Length < 22)
+            return (false, 0);
+        return (Parameters.Span[20] != 0, Parameters.Span[21]);
+    }
+
     /// <summary>The robot index an Anki Hijack taps a bus for: 1 to 4, matching the four Robot_Bus_N.</summary>
     public uint? HijackIndex() =>
         PluginId == AnkiHijackPlugin && Parameters.Length >= 4 ? Word(0) : null;

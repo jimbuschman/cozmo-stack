@@ -1,3 +1,4 @@
+// fidelity: M9-011, M9-026, M9-027
 namespace Cozmo.Robot.Animation.Wwise;
 
 /// <summary>What a bus chain did to a buffer, so a level can be reported rather than asserted.</summary>
@@ -8,9 +9,10 @@ public sealed record WwiseBusChainReport(double InputPeak, double OutputPeak, do
     /// <summary>Anything in the chain this build could not apply, named rather than skipped silently.</summary>
     public IReadOnlyList<string> Problems { get; init; } = Array.Empty<string>();
     /// <summary>
-    /// Things the chain established and acted on that a reader should know, but which are not faults: the
-    /// low-pass at 14298 Hz sitting above Nyquist for the robot's 22320 Hz, for instance, which means it
-    /// cannot act here and could not have acted in the engine either.
+    /// Things the chain established and acted on that a reader should know, but which are not faults. At the
+    /// stack's current render rate the exact EQ coefficient routine caps the shipped 14298 Hz low-pass to
+    /// <c>0.45·fs</c>; that is a consequence of the stack's rate, not of the engine's, which runs the chain
+    /// at the 48000 Hz Wwise mix rate and resamples through the Hijack (M6-017/M6-018). M9-027.
     /// </summary>
     public IReadOnlyList<string> Notes { get; init; } = Array.Empty<string>();
 }
@@ -37,24 +39,29 @@ public sealed record WwiseBusChainReport(double InputPeak, double OutputPeak, do
 /// A singing behaviour posts its switch on game object 7, so what the robot hears is Robot_Bus_1's output
 /// after <c>Robot_Bus_Eq_MasterCurve</c>, <c>Robot_Bus_Eq_HiLowPass</c> and <c>Robot_Bus_Peak_Limiter</c>.
 ///
-/// <b>What is exact and what is not.</b> Every parameter below is read from <c>Init.bnk</c>: three EQ
-/// bands with their type, gain, frequency and Q, and a limiter's threshold, ratio, look-ahead and release.
-/// The filters and the limiter themselves are ordinary, standard designs — biquads by the usual bilinear
-/// formulas, and a look-ahead peak limiter — because Audiokinetic's own implementations are in the Wwise
-/// runtime, which does not ship in the APK. So the settings are the product's and the arithmetic between
-/// them is this stack's, which the fidelity manifest records as M9-011.
+/// <b>What is exact.</b> Every parameter below is read from <c>Init.bnk</c>: three EQ bands with their
+/// type, gain, frequency and Q, and a limiter's threshold, ratio, look-ahead and release. The filters and
+/// the limiter are the recovered Wwise plug-in DSP (M6-013; M9-026): the parametric-EQ coefficient routine
+/// and direct-form-I biquad of <see cref="WwiseEqCoefficients"/> / <see cref="WwiseEqBiquad"/>, and the
+/// peak-hold look-ahead limiter of <see cref="WwisePeakLimiter"/>. The former stand-in biquad and limiter
+/// are gone from the live path. The chain runs at the rate its caller passes; the stack currently renders
+/// and runs it at the robot's 22320 Hz (<see cref="CozmoAudio.SampleRate"/>).
 ///
-/// <b>One band cannot act.</b> The robot's audio runs at 22320 Hz, so Nyquist is 11160 Hz and the
-/// low-pass at 14298 Hz is above it. It is reported as out of band rather than applied at a frequency it
-/// cannot have. The engine's own robot audio is at the same rate
-/// (<c>AnimConstants::AUDIO_SAMPLE_RATE</c>), so the band cannot have acted there either.
+/// <b>The rate caveat (M9-027).</b> This is the exact recovered chain, but the stack runs it at its current
+/// 22320 Hz render rate. The engine runs the bus FX at the 48000 Hz Wwise mix rate (M6-018 / gapC 4.6),
+/// where the shipped <c>14298 Hz</c> low-pass is in band (Nyquist 24000), and only then resamples the mix
+/// to 22320 for the robot through the Hijack (M6-015 / M6-017). At the stack's 22320 Hz the exact
+/// coefficient routine's <c>0.45·fs</c> cap (gapC 4.3) puts that low-pass at <b>10044 Hz and applies
+/// it</b>, not skipped. That cap is therefore a consequence of the stack's render rate, <b>not</b> the
+/// engine's behaviour; moving the Wwise mix to 48000 and resampling through the Hijack is M6-017/M6-018,
+/// and M9-027 stays an implementation gap until then.
 /// </summary>
 public sealed class WwiseBusChain
 {
     /// <summary>The bus a singing voice reaches, from the engine's own registration table.</summary>
     public const uint RobotBus1 = 2678428988;
 
-    private readonly List<(string Name, Action<double[], int, int> Apply)> _stages = new();
+    private readonly List<(string Name, Action<float[]> Apply)> _stages = new();
     private readonly List<Action> _resets = new();
     private readonly List<string> _problems = new();
     private readonly List<string> _notes = new();
@@ -89,45 +96,55 @@ public sealed class WwiseBusChain
         return chain;
     }
 
+    // fidelity: M9-011, M9-026, M9-027
     private void Add(string name, WwiseEffectNode fx)
     {
         if (fx.ParametricEq() is { } eq)
         {
-            var filters = new List<Biquad>();
+            // M9-026: the exact coefficient routine's bands, from the shipped ShareSet's own settings.
+            // M9-027: this stack runs the chain at its own render rate, not the engine's 48000 Hz Wwise mix
+            // rate (M6-017/M6-018). The routine caps every band at 0.45·fs (gapC 4.3), so at that stack rate
+            // the 14298 Hz low-pass is capped and applied; the cap is a stack-rate consequence, not the
+            // engine's behaviour, and is reported rather than the band skipped.
+            var bands = new List<WwiseEqBand>(eq.Bands.Count);
             foreach (var (type, gainDb, frequency, q, on) in eq.Bands)
             {
-                if (!on) continue;
-                if (frequency >= _rate * 0.49)
-                {
-                    _notes.Add($"{name}: the band at {frequency:F0} Hz is above Nyquist for {_rate} Hz and cannot act");
-                    continue;
-                }
-                if (Biquad.Design(type, gainDb, frequency, q, _rate) is { } b) filters.Add(b);
-                else _problems.Add($"{name}: filter type {type} is not one of the four the shipped banks use");
+                bands.Add(new WwiseEqBand(type, gainDb, frequency, q, on));
+                if (on && frequency > WwiseEqCoefficients.NyquistFraction * _rate)
+                    _notes.Add($"{name}: at this stack's {_rate} Hz render rate the {frequency:F0} Hz band is " +
+                               $"capped to 0.45·fs = {WwiseEqCoefficients.NyquistFraction * _rate:F0} Hz by the " +
+                               "exact EQ coefficient routine (gapC 4.3); the engine runs this chain at the " +
+                               "48000 Hz Wwise mix rate (M6-017/M6-018)");
             }
-            double output = Math.Pow(10, eq.OutputDb / 20.0);
-            _resets.Add(() => { foreach (var f in filters) f.Reset(); });
-            _stages.Add((name, (buffer, from, count) =>
-            {
-                foreach (var f in filters) f.Process(buffer, from, count);
-                if (Math.Abs(output - 1) > 1e-9)
-                    for (int i = from; i < from + count; i++) buffer[i] *= output;
-            }));
+            var settings = WwiseEqSettings.For(fx.Id, bands, eq.OutputDb);
+            var filter = new WwiseParametricEq(settings, _rate);
+            _resets.Add(filter.Reset);
+            _stages.Add((name, scratch => filter.Process(scratch)));
             return;
         }
 
         if (fx.PeakLimiter() is { } limiter && fx.PluginId == WwiseEffectNode.PeakLimiterPlugin)
         {
-            var state = new LimiterState();
-            _resets.Add(() => state.Gain = 1.0);
-            _stages.Add((name, (buffer, from, count) =>
-                _reductionDb = Math.Min(_reductionDb, ApplyLimiter(buffer, from, count, limiter, _rate, state))));
+            // M9-026: the exact peak-hold look-ahead limiter, including the L-sample delay and tail. The two
+            // flag bytes are the bank's own (gapC 4.5); the shipped ShareSet is unlinked (channelLink 0), and
+            // the unlinked/mono path is the only one with recovered arithmetic.
+            var (processLfe, channelLink) = fx.LimiterFlags();
+            var settings = new WwisePeakLimiterSettings(
+                limiter.ThresholdDb, limiter.Ratio, limiter.LookAheadSeconds, limiter.ReleaseSeconds,
+                limiter.OutputDb, processLfe, channelLink);
+            var device = new WwisePeakLimiter(settings, _rate);
+            _resets.Add(device.Reset);
+            _stages.Add((name, scratch =>
+            {
+                device.Process(scratch);
+                _reductionDb = Math.Min(_reductionDb, 20 * Math.Log10(Math.Max(device.MinGain, 1e-6)));
+            }));
             return;
         }
 
         if (fx.HijackIndex() is { } index)
         {
-            _stages.Add(($"{name} (tap for robot {index})", (_, _, _) => { }));
+            _stages.Add(($"{name} (tap for robot {index})", _ => { }));
             return;
         }
 
@@ -141,6 +158,10 @@ public sealed class WwiseBusChain
     /// Applies the chain to <c>[from, from + count)</c> in place, keeping every effect's state between
     /// calls, so a song can be run through it a block at a time as it plays. Blocks must be given in
     /// order: the filters carry their previous samples and the limiter carries its gain.
+    ///
+    /// The recovered plug-ins are float32 arithmetic on Wwise's normalized bus buffer (−1..1), so the
+    /// render's full-scale slice (<see cref="short.MaxValue"/>) is normalized once here, run through every
+    /// stage and scaled back.
     /// </summary>
     public WwiseBusChainReport ProcessBlock(double[] buffer, int from, int count)
     {
@@ -150,7 +171,14 @@ public sealed class WwiseBusChain
         count = Math.Max(0, Math.Min(count, buffer.Length - from));
         double inPeak = Peak(buffer, from, count);
         _reductionDb = 0;
-        foreach (var (_, apply) in _stages) apply(buffer, from, count);
+        if (count > 0)
+        {
+            const float fullScale = short.MaxValue;
+            var scratch = new float[count];
+            for (int i = 0; i < count; i++) scratch[i] = (float)(buffer[from + i] / fullScale);
+            foreach (var (_, apply) in _stages) apply(scratch);
+            for (int i = 0; i < count; i++) buffer[from + i] = scratch[i] * fullScale;
+        }
         return new WwiseBusChainReport(inPeak, Peak(buffer, from, count), _reductionDb)
         {
             Stages = _stages.Select(s => s.Name).ToList(),
@@ -170,136 +198,5 @@ public sealed class WwiseBusChain
         double p = 0;
         for (int i = from; i < from + count; i++) p = Math.Max(p, Math.Abs(b[i]));
         return p;
-    }
-
-    /// <summary>What a limiter carries from one block to the next.</summary>
-    private sealed class LimiterState { public double Gain = 1.0; }
-
-    /// <summary>
-    /// A look-ahead peak limiter. The gain for each sample is worked out from the loudest sample in the
-    /// look-ahead window that starts at it, so the reduction is already in place by the time a peak
-    /// arrives; anything over the threshold is pushed back towards it by the ratio, and the reduction is
-    /// let go again over the release time. Returns the deepest reduction it applied, in dB.
-    ///
-    /// The signal itself is not delayed. A hardware limiter delays it by the look-ahead and lives with the
-    /// latency; an offline render does not have to, and not delaying keeps the song aligned with the
-    /// animation that plays it.
-    ///
-    /// Full scale here is 32767, because that is what the render sums into and what the robot's frames
-    /// carry; the threshold is in dB relative to it.
-    /// </summary>
-    private static double ApplyLimiter(double[] buffer, int from, int count,
-                                       (float ThresholdDb, float Ratio, float LookAheadSeconds, float ReleaseSeconds, float OutputDb) p,
-                                       int rate, LimiterState state)
-    {
-        if (count <= 0) return 0;
-        double threshold = short.MaxValue * Math.Pow(10, p.ThresholdDb / 20.0);
-        double ratio = Math.Max(1.0, p.Ratio);
-        int look = Math.Max(1, (int)Math.Round(p.LookAheadSeconds * rate));
-        double releaseCoefficient = p.ReleaseSeconds > 0
-            ? Math.Exp(-1.0 / (p.ReleaseSeconds * rate))
-            : 0.0;
-        double output = Math.Pow(10, p.OutputDb / 20.0);
-
-        // The look-ahead window may run past this block; what is beyond it has not been rendered yet, so
-        // the window is clamped to what exists. A peak arriving in the next block is caught when that
-        // block is processed, which is what the limiter's instantaneous attack is for.
-        int end = from + count;
-        var input = new double[count];
-        Array.Copy(buffer, from, input, 0, count);
-
-        double gain = state.Gain, deepest = 0;
-        for (int i = 0; i < count; i++)
-        {
-            double ahead = 0;
-            int windowEnd = Math.Min(i + look, count);
-            for (int k = i; k < windowEnd; k++) ahead = Math.Max(ahead, Math.Abs(input[k]));
-
-            double wanted = 1.0;
-            if (ahead > threshold)
-            {
-                double over = 20 * Math.Log10(ahead / threshold);
-                wanted = Math.Pow(10, -(over - over / ratio) / 20.0);
-            }
-            // attack is instantaneous, which the look-ahead is what makes musical; release is exponential
-            gain = wanted < gain ? wanted : wanted + (gain - wanted) * releaseCoefficient;
-            deepest = Math.Min(deepest, 20 * Math.Log10(Math.Max(gain, 1e-6)));
-            buffer[from + i] = input[i] * gain * output;
-        }
-        state.Gain = gain;
-        return deepest;
-    }
-
-    /// <summary>
-    /// A direct-form-1 biquad, with the four filter shapes the shipped banks use. The coefficient formulas
-    /// are the standard bilinear-transform ones; Audiokinetic's are not in the package, so this is the
-    /// arithmetic between the product's settings and not the product's own (M9-011).
-    /// </summary>
-    private sealed class Biquad
-    {
-        private double _b0, _b1, _b2, _a1, _a2;
-
-        public static Biquad? Design(uint type, double gainDb, double frequency, double q, int rate)
-        {
-            double w = 2 * Math.PI * frequency / rate;
-            double cos = Math.Cos(w), sin = Math.Sin(w);
-            q = q <= 0 ? 0.7071 : q;
-            double alpha = sin / (2 * q);
-            double a0, b0, b1, b2, a1, a2;
-
-            switch (type)
-            {
-                case 0:                                            // low pass
-                    b0 = (1 - cos) / 2; b1 = 1 - cos; b2 = (1 - cos) / 2;
-                    a0 = 1 + alpha; a1 = -2 * cos; a2 = 1 - alpha;
-                    break;
-                case 1:                                            // high pass
-                    b0 = (1 + cos) / 2; b1 = -(1 + cos); b2 = (1 + cos) / 2;
-                    a0 = 1 + alpha; a1 = -2 * cos; a2 = 1 - alpha;
-                    break;
-                case 4:                                            // low shelf
-                {
-                    double a = Math.Pow(10, gainDb / 40.0);
-                    double beta = Math.Sqrt(a) / q;
-                    b0 = a * ((a + 1) - (a - 1) * cos + beta * sin);
-                    b1 = 2 * a * ((a - 1) - (a + 1) * cos);
-                    b2 = a * ((a + 1) - (a - 1) * cos - beta * sin);
-                    a0 = (a + 1) + (a - 1) * cos + beta * sin;
-                    a1 = -2 * ((a - 1) + (a + 1) * cos);
-                    a2 = (a + 1) + (a - 1) * cos - beta * sin;
-                    break;
-                }
-                case 6:                                            // peaking
-                {
-                    double a = Math.Pow(10, gainDb / 40.0);
-                    b0 = 1 + alpha * a; b1 = -2 * cos; b2 = 1 - alpha * a;
-                    a0 = 1 + alpha / a; a1 = -2 * cos; a2 = 1 - alpha / a;
-                    break;
-                }
-                default:
-                    return null;
-            }
-            return new Biquad { _b0 = b0 / a0, _b1 = b1 / a0, _b2 = b2 / a0, _a1 = a1 / a0, _a2 = a2 / a0 };
-        }
-
-        private double _x1, _x2, _y1, _y2;
-
-        public void Reset() { _x1 = _x2 = _y1 = _y2 = 0; }
-
-        /// <summary>
-        /// Filters <c>[from, from + count)</c> in place. The two previous inputs and outputs are kept on
-        /// the filter rather than on the stack, so a buffer can be run through a block at a time and hear
-        /// the same thing it would have heard in one pass.
-        /// </summary>
-        public void Process(double[] buffer, int from, int count)
-        {
-            for (int i = from; i < from + count; i++)
-            {
-                double x = buffer[i];
-                double y = _b0 * x + _b1 * _x1 + _b2 * _x2 - _a1 * _y1 - _a2 * _y2;
-                _x2 = _x1; _x1 = x; _y2 = _y1; _y1 = y;
-                buffer[i] = y;
-            }
-        }
     }
 }

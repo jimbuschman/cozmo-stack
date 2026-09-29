@@ -1,3 +1,4 @@
+using Cozmo.Protocol;
 using Cozmo.Robot;
 using Xunit;
 
@@ -101,5 +102,45 @@ public class CubeShakeTests
         float v = 0;
         for (int i = 0; i < 20; i++) v = Cozmo.Robot.Behavior.SingingBehavior.NextVibrato(v, 9000f);
         Assert.InRange(v, 0.999f, 1.0f);
+    }
+
+    /// <summary>
+    /// <c>CubeAccelComponent::AddListener</c> (0x00635474) sends <c>StreamObjectAccel</c> only when the
+    /// object's listener set is empty: the gate at <c>0x006354E8</c> tests <c>[r6+0x30]</c> and the send is
+    /// <c>0x00635558..0x0063556E</c> (M9-017, X4 S10). Removing the last listener turns the stream off
+    /// again (S14); removing one of two does not. The cube is one the rig's fake robot has connected.
+    /// </summary>
+    [Fact]
+    public void AddListenerTurnsTheCubeStreamOnOnlyForTheFirstListener()
+    {
+        using var rig = new Rig();
+        rig.Pump();
+        int baseline = rig.Sent.OfType<StreamObjectAccel>().Count();
+
+        var first = new CubeShakeListener(0.5f, 2.5f, 3.9f, _ => { });
+        var second = new CubeShakeListener(0.5f, 2.5f, 3.9f, _ => { });
+
+        rig.Robot.CubeAccel.AddListener(7, first);
+        rig.Pump();
+        var sent = Assert.Single(rig.Sent.OfType<StreamObjectAccel>().Skip(baseline));
+        Assert.True(sent.Enable);
+        Assert.Equal(7u, sent.ObjectID);
+
+        // a second listener for the same object sends nothing: the set was not empty
+        rig.Robot.CubeAccel.AddListener(7, second);
+        rig.Pump();
+        Assert.Equal(baseline + 1, rig.Sent.OfType<StreamObjectAccel>().Count());
+
+        // removing one of two leaves the stream on
+        rig.Robot.CubeAccel.RemoveListener(7, first);
+        rig.Pump();
+        Assert.Equal(baseline + 1, rig.Sent.OfType<StreamObjectAccel>().Count());
+
+        // removing the last turns it off
+        rig.Robot.CubeAccel.RemoveListener(7, second);
+        rig.Pump();
+        var off = Assert.Single(rig.Sent.OfType<StreamObjectAccel>().Skip(baseline + 1));
+        Assert.False(off.Enable);
+        Assert.Equal(7u, off.ObjectID);
     }
 }
