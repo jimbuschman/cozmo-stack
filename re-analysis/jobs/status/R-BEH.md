@@ -1,8 +1,27 @@
-CLAIMED opencode 2026-09-29 14:02
+DONE 2026-09-29 15:40
 
 Job R-BEH: close the remaining gaps in M7-behaviour and M8-framework, plus the policy
 review's C records M8-004, M8-008 and M8-009. (M9-016 moved to R-M9 on 2026-09-29;
 M15 to R-M15.)
+
+## Finish (step 8)
+
+**Commit:** ea6f8f2, pushed to origin/main (rebased onto 1aa4c77). Gates at the push: `fidelity.py
+--check` exit 0; `@cozmo-verifier` PASS after one FAIL round; full suite **1963 passed / 0 failed /
+0 skipped** (`AssetPresenceTests` included).
+
+**Records settled:** M8-009 (EXACT_SOURCE; the `BehaviorScope.Dispose` release order).
+**Records moved from policy to gap and partly built:** M8-004 (engine zero default/chooser selection;
+blocked on M8-013), M8-008 (30.0 s `CalibrateMotorAction` timeout built; the 0x03000018 failure-result
+delivery remains).
+**Record re-evidenced:** M8-011 (the `BehaviorHelperComponent` runtime is now read; the component and
+its M7/M15 helper subclasses are still unbuilt, so it stays IMPLEMENTATION_GAP).
+**Records left, each with a precise `unresolved` (the triage above names what is missing and what
+would build it):** M7-012, M7-014, M7-015, M7-018, M7-019, M7-020, M7-021 and M8-011, M8-013, M8-014.
+Their missing-source parts need M7/M8 extraction passes; their cross-layer parts wait on M10/M12/M14/M15
+(and M2 for M8-013). M7-022 is a non-live RECOVERABLE_GAP outside this job's IMPLEMENTATION_GAP scope.
+
+**Not blocked:** the job ran its verifiable batch; the remaining work is a next round, not a blocker.
 
 ## Triage (step 2), 2026-09-29
 
