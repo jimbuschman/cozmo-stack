@@ -98,8 +98,12 @@ public sealed class FreeplaySystem
         // reads mood - the scoring, the gating - read a value that should long since have decayed.
         _ctx.Mood?.Advance(nowSec);
         Inputs.Needs?.Update();
-        var reaction = _manager.CheckReactions(nowSec);
-        if (reaction is not null) { Record(nowSec, Current?.Id, reaction.Behavior, $"reaction {reaction.Trigger}"); _manager.Update(nowMs, nowSec); return _decisions[^1]; }
+        // The engine's BehaviorManager::Update tick order (0x005a2f70) runs the activity tick first
+        // (GetCurrentActivity 0x005a2f78, the activity's vtable+0x20) and CheckReactionTriggerStrategies
+        // after it (0x005a3060). The concrete activity tick body is M7/M15 and is not built; the stack's
+        // activity selection + chooser below is the closest seam. A reaction already running still holds
+        // the floor here (the engine would run the activity tick anyway; this is the stated divergence),
+        // and the new-reaction check is placed after the activity selection to match the engine's order.
         if (_manager.CurrentReactionTrigger is not null) { _manager.Update(nowMs, nowSec); return Record(nowSec, Current?.Id, _manager.Current?.Id, "a reaction is running"); }
 
         var current = _manager.Current;
@@ -168,6 +172,14 @@ public sealed class FreeplaySystem
             }
             break;
         }
+
+        // BehaviorManager::Update's reaction step (0x005a3060 CheckReactionTriggerStrategies): after the
+        // activity tick (0x005a2f78/vtable+0x20) and before the scored choice
+        // (ChooseNextScoredBehaviorAndSwitch 0x005a3078). A non-zero result skips the scored choice
+        // (cbnz r5,#0x5a307c 0x005a3068), so a firing reaction must prevent the switch below.
+        var reaction = _manager.CheckReactions(nowSec);
+        if (reaction is not null) { Record(nowSec, Current?.Id, reaction.Behavior, $"reaction {reaction.Trigger}"); _manager.Update(nowMs, nowSec); return _decisions[^1]; }
+
         if (desired is not null && (current is null || current.Id != desired.Id))
         {
             // IActivity::ChooseInterludeBehavior: between two different behaviours the interlude chooser gets a turn, once

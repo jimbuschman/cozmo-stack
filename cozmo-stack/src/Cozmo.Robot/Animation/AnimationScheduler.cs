@@ -283,11 +283,57 @@ public sealed record AnimationHandle(string ClipName, AnimationTrack Tracks)
     private readonly TaskCompletionSource<AnimationEndReason> _done =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+    // Synchronous end callbacks, run by Complete inside the scheduler's own end path (EndHandleLocked),
+    // so a lock taken for the action is released as the action ends rather than on a thread-pool
+    // continuation of _done.
+    private readonly List<Action<AnimationEndReason>> _onEnd = new();
+    // The completion flag is the authority, set under the _onEnd lock together with the callback clear, so
+    // a callback registered after Complete has cleared the list still runs (immediately) rather than being
+    // orphaned in the window before _done is set.
+    private bool _completed;
+    private AnimationEndReason _endReason;
+
     /// <summary>Completes when the animation stops, with the reason.</summary>
     public Task<AnimationEndReason> Completion => _done.Task;
     public bool IsRunning => !_done.Task.IsCompleted;
 
-    internal void Complete(AnimationEndReason reason) => _done.TrySetResult(reason);
+    /// <summary>
+    /// Registers a callback run synchronously by <see cref="Complete"/>. If the handle has already ended,
+    /// the callback runs immediately with the end reason; it is never lost and never run twice.
+    /// </summary>
+    internal void OnEnd(Action<AnimationEndReason> callback)
+    {
+        AnimationEndReason? immediate = null;
+        lock (_onEnd)
+        {
+            if (_completed) immediate = _endReason;
+            else _onEnd.Add(callback);
+        }
+        if (immediate is { } reason)
+        {
+            try { callback(reason); }
+            catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { }
+        }
+    }
+
+    internal void Complete(AnimationEndReason reason)
+    {
+        Action<AnimationEndReason>[] callbacks;
+        lock (_onEnd)
+        {
+            if (_completed) return;                 // never complete (or run callbacks) twice
+            _completed = true;
+            _endReason = reason;
+            callbacks = _onEnd.ToArray();
+            _onEnd.Clear();
+        }
+        foreach (var callback in callbacks)
+        {
+            try { callback(reason); }
+            catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { }
+        }
+        _done.TrySetResult(reason);
+    }
 }
 
 // fidelity: M5-027

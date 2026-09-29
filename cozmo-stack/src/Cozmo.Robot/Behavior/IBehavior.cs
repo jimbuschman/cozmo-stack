@@ -80,6 +80,14 @@ public sealed class BehaviorContext
     /// </summary>
     public Vision.MemoryMap? Map { get; set; }
 
+    /// <summary>
+    /// The shared repetition-penalty history. A behaviour that wants the engine's
+    /// <c>StopWithoutImmediateRepetitionPenalty</c> (the M7/M15 concrete behaviours that call it) needs
+    /// this to stamp its own +0x108 window; the scored chooser reads the same object. Set by
+    /// <see cref="BehaviorManager"/>'s constructor.
+    /// </summary>
+    public RepetitionPenalty? Penalty { get; set; }
+
     /// <summary>The behaviour clock (seconds), for the recent-event windows below. Null: the windows cannot be met.</summary>
     public Func<double>? ClockSec { get; set; }
     /// <summary>
@@ -152,18 +160,32 @@ public interface IBehavior
 /// forgetting to undo it: whatever it takes is released when it stops. This does the same, and
 /// <see cref="Dispose"/> is what releases everything at once.
 /// </summary>
+// fidelity: M8-011
 public sealed class BehaviorScope : IDisposable
 {
     private readonly List<Action> _undo = new();
     private readonly object _gate = new();
     private readonly BehaviorArbiter? _arbiter;
+    private readonly CozmoMotion? _motion;
+    private readonly string _owner = "scope-" + System.Threading.Interlocked.Increment(ref _scopeCounter);
+    private static int _scopeCounter;
+    private Animation.AnimationTrack _motionLocked;
     private bool _disposed;
 
+    // IBehavior's Smart* state: the per-resource flags the engine keeps at +0xb0 (idle), +0xc0
+    // (motion profile), +0xb4 (named track locks), +0xcc (custom light patterns) and +0xa4 (reaction
+    // locks). They make the double-acquire and missing-release VERIFY paths expressible.
+    private readonly Dictionary<string, Animation.AnimationTrack> _trackLocks = new(StringComparer.Ordinal);
+    private readonly HashSet<uint> _lightPatterns = new();
+    private readonly HashSet<string> _reactionLockNames = new(StringComparer.Ordinal);
+    private Action? _idleRemove;
+    private Action? _motionClear;
+
     /// <summary>
-    /// A scope with no arbiter models the locks without enforcing them, which is only useful in tests.
-    /// Pass the arbiter for the locks to actually take effect.
+    /// A scope with no arbiter/motion models the locks without enforcing them, which is only useful in
+    /// tests. Pass the arbiter for the reaction lock and the motion for the track lock to take effect.
     /// </summary>
-    public BehaviorScope(BehaviorArbiter? arbiter = null) => _arbiter = arbiter;
+    public BehaviorScope(BehaviorArbiter? arbiter = null, CozmoMotion? motion = null) { _arbiter = arbiter; _motion = motion; }
 
     /// <summary>Tracks this behaviour has claimed, released when it stops.</summary>
     public Animation.AnimationTrack LockedTracks { get; private set; }
@@ -171,7 +193,12 @@ public sealed class BehaviorScope : IDisposable
     /// <summary>Whether this behaviour has asked for reactions to be held off.</summary>
     public bool ReactionsDisabled { get; private set; }
 
-    /// <summary>The engine's SmartLockTracks: claim tracks for as long as this behaviour runs.</summary>
+    /// <summary>
+    /// The engine's <c>IBehavior::SmartLockTracks</c> 0x005be5bc: claim tracks for as long as this behaviour
+    /// runs. The claim is taken on the robot's <c>MovementComponent</c> (one owner per track in the multiset,
+    /// <c>LockTracks</c> 0x00640098) so another action's <c>AreAnyTracksLocked</c> sees it, and it is
+    /// released through <c>UnlockTracks</c> 0x0063fe5c when the scope is disposed.
+    /// </summary>
     public void LockTracks(Animation.AnimationTrack tracks)
     {
         lock (_gate)
@@ -179,7 +206,23 @@ public sealed class BehaviorScope : IDisposable
             if (_disposed) return;
             var before = LockedTracks;
             LockedTracks |= tracks;
-            _undo.Add(() => LockedTracks = before);
+            var newMotion = tracks & ~_motionLocked;
+            if (_motion is { } motion && newMotion != Animation.AnimationTrack.None)
+            {
+                byte mask = CozmoMotion.MaskFor(newMotion);
+                if (mask != 0) motion.LockTracks(mask, _owner);
+                _motionLocked |= newMotion;
+            }
+            _undo.Add(() =>
+            {
+                LockedTracks = before;
+                if (_motion is { } m && _motionLocked != Animation.AnimationTrack.None)
+                {
+                    byte mask = CozmoMotion.MaskFor(_motionLocked);
+                    if (mask != 0) m.UnlockTracks(mask, _owner);
+                    _motionLocked = Animation.AnimationTrack.None;
+                }
+            });
         }
     }
 
@@ -214,7 +257,226 @@ public sealed class BehaviorScope : IDisposable
         }
     }
 
+    // ============================================================== the Smart* scope helpers (M8-011)
+
+    /// <summary>Whether an idle animation is pushed (IBehavior +0xb0).</summary>
+    public bool IdleAnimationSet { get; private set; }
+    /// <summary>Whether a custom motion profile is set (IBehavior +0xc0).</summary>
+    public bool MotionProfileSet { get; private set; }
+    /// <summary>The custom light-pattern object ids set (IBehavior +0xcc).</summary>
+    public IReadOnlyCollection<uint> CustomLightPatterns => _lightPatterns;
+    /// <summary>The named track locks held (IBehavior +0xb4).</summary>
+    public IReadOnlyDictionary<string, Animation.AnimationTrack> NamedTrackLocks => _trackLocks;
+
+    /// <summary>
+    /// A VERIFY failure, the engine's <c>sVerifyFailedReturnFalse</c>. Raised when a Smart* helper is
+    /// misused (a double acquire or a release of something not held); the helper returns false.
+    /// </summary>
+    public event Action<string>? VerifyFailed;
+    private void Verify(string what) => VerifyFailed?.Invoke("VERIFY: IBehavior." + what);
+
+    /// <summary>
+    /// <c>IBehavior::SmartPushIdleAnimation</c> 0x005be41c: fails if +0xb0 is already set; otherwise
+    /// pushes the idle animation and sets +0xb0.
+    /// </summary>
+    public bool SmartPushIdleAnimation(Action push, Action remove)
+    {
+        lock (_gate)
+        {
+            if (_disposed) return false;
+            if (IdleAnimationSet) { Verify("SmartPushIdleAnimation: an idle is already set"); return false; }
+            push();
+            IdleAnimationSet = true;
+            _idleRemove = remove;
+            _undo.Add(() => { if (IdleAnimationSet) { IdleAnimationSet = false; _idleRemove = null; remove(); } });
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// <c>IBehavior::SmartRemoveIdleAnimation</c> 0x005bd4c8: when +0xb0 is clear it raises
+    /// <c>VERIFY(%s): Behavior %s is trying to remove an idle, but none is currently set</c> through
+    /// <c>sVerifyFailedReturnFalse</c>; otherwise it removes the idle and clears +0xb0.
+    /// </summary>
+    public bool SmartRemoveIdleAnimation()
+    {
+        lock (_gate)
+        {
+            if (_disposed) return false;
+            if (!IdleAnimationSet) { Verify("SmartRemoveIdleAnimation: no idle is currently set"); return false; }
+            IdleAnimationSet = false;
+            var remove = _idleRemove; _idleRemove = null;
+            remove?.Invoke();
+            return true;
+        }
+    }
+
+    /// <summary><c>IBehavior::SmartSetMotionProfile</c> 0x005be518 verifies +0xc0 == 0, sets it, and records the clear.</summary>
+    public bool SmartSetMotionProfile(Action set, Action clear)
+    {
+        lock (_gate)
+        {
+            if (_disposed) return false;
+            if (MotionProfileSet) { Verify("SmartSetMotionProfile: a motion profile is already set"); return false; }
+            set();
+            MotionProfileSet = true;
+            _motionClear = clear;
+            _undo.Add(() => { if (MotionProfileSet) { MotionProfileSet = false; _motionClear = null; clear(); } });
+            return true;
+        }
+    }
+
+    /// <summary><c>IBehavior::SmartClearMotionProfile</c> 0x005bd584 verifies +0xc0 != 0, clears it.</summary>
+    public bool SmartClearMotionProfile()
+    {
+        lock (_gate)
+        {
+            if (_disposed) return false;
+            if (!MotionProfileSet) { Verify("SmartClearMotionProfile: no motion profile is set"); return false; }
+            MotionProfileSet = false;
+            var clear = _motionClear; _motionClear = null;
+            clear?.Invoke();
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// <c>IBehavior::SmartLockTracks</c> 0x005be5bc: a new key locks the tracks and returns true; an
+    /// existing key warns "Attempted to lock tracks with key named %s but key already exists" and returns
+    /// false without locking twice.
+    /// </summary>
+    public bool SmartLockTracks(string name, Animation.AnimationTrack tracks)
+    {
+        lock (_gate)
+        {
+            if (_disposed) return false;
+            if (_trackLocks.ContainsKey(name)) { Verify($"SmartLockTracks: track lock '{name}' already exists"); return false; }
+            _trackLocks[name] = tracks;
+            var before = LockedTracks;
+            LockedTracks |= tracks;
+            byte mask = CozmoMotion.MaskFor(tracks);
+            if (_motion is { } m && mask != 0) m.LockTracks(mask, _owner + ":" + name);
+            _undo.Add(() =>
+            {
+                if (_trackLocks.Remove(name))
+                {
+                    LockedTracks = before;
+                    if (_motion is { } mm && mask != 0) mm.UnlockTracks(mask, _owner + ":" + name);
+                }
+            });
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// <c>IBehavior::SmartUnLockTracks</c> 0x005be6e0: found -> unlock, erase, true; absent -> warn, false.
+    /// </summary>
+    public bool SmartUnLockTracks(string name)
+    {
+        lock (_gate)
+        {
+            if (_disposed) return false;
+            if (!_trackLocks.TryGetValue(name, out var tracks)) { Verify($"SmartUnLockTracks: no track lock named '{name}'"); return false; }
+            _trackLocks.Remove(name);
+            LockedTracks &= ~tracks;
+            byte mask = CozmoMotion.MaskFor(tracks);
+            if (_motion is { } m && mask != 0) m.UnlockTracks(mask, _owner + ":" + name);
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// <c>IBehavior::SmartSetCustomLightPattern</c> 0x005be7f0: an ObjectID already in the vector at +0xcc
+    /// logs on the "Unnamed" channel and returns false; otherwise it plays the light animation, appends the
+    /// ObjectID and returns true.
+    /// </summary>
+    public bool SmartSetCustomLightPattern(uint objectId, Action play)
+    {
+        lock (_gate)
+        {
+            if (_disposed) return false;
+            if (!_lightPatterns.Add(objectId)) { Verify($"SmartSetCustomLightPattern: a light pattern is already set for object {objectId}"); return false; }
+            play();
+            _undo.Add(() => _lightPatterns.Remove(objectId));
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// <c>IBehavior::SmartRemoveCustomLightPattern</c> 0x005be9b0: an ObjectID not set logs "No custom light
+    /// pattern is set for object %d" and returns false; otherwise the triggers' animations are stopped and
+    /// the entry is erased.
+    /// </summary>
+    public bool SmartRemoveCustomLightPattern(uint objectId, Action remove)
+    {
+        lock (_gate)
+        {
+            if (_disposed) return false;
+            if (!_lightPatterns.Remove(objectId)) { Verify($"SmartRemoveCustomLightPattern: no light pattern is set for object {objectId}"); return false; }
+            remove();
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// <c>IBehavior::SmartDisableReactionsWithLock</c> 0x005bce3c: the name gets the "_behaviorLock"
+    /// suffix at the manager, and the original name goes into the per-behaviour set at +0xa4. The manager
+    /// side is M7-014; here it holds the scope's arbiter reaction lock.
+    /// </summary>
+    public bool SmartDisableReactionsWithLock(string name)
+    {
+        lock (_gate)
+        {
+            if (_disposed) return false;
+            if (!_reactionLockNames.Add(name)) { Verify($"SmartDisableReactionsWithLock: '{name}' is already held"); return false; }
+            if (!ReactionsDisabled)
+            {
+                ReactionsDisabled = true;
+                _arbiter?.DisableReactions(this);
+            }
+            _undo.Add(() =>
+            {
+                if (_reactionLockNames.Remove(name) && _reactionLockNames.Count == 0)
+                {
+                    ReactionsDisabled = false;
+                    _arbiter?.EnableReactions(this);
+                }
+            });
+            return true;
+        }
+    }
+
+    /// <summary><c>IBehavior::SmartRemoveDisableReactionsLock</c> 0x005bd470: remove the name from +0xa4; the manager side is M7-014.</summary>
+    public bool SmartRemoveDisableReactionsLock(string name)
+    {
+        lock (_gate)
+        {
+            if (_disposed) return false;
+            if (!_reactionLockNames.Remove(name)) { Verify($"SmartRemoveDisableReactionsLock: '{name}' is not held"); return false; }
+            if (_reactionLockNames.Count == 0 && ReactionsDisabled)
+            {
+                ReactionsDisabled = false;
+                _arbiter?.EnableReactions(this);
+            }
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// <c>IBehavior::SmartDelegateToHelper</c> 0x005beb10 calls
+    /// <c>BehaviorHelperComponent::DelegateToHelper</c> 0x0056dad8 at <c>[robot+0x264]+0x10</c> (an
+    /// <c>AIComponent</c> member) and stores the helper as a weak ref at +0xc4/+0xc8. The callee and its
+    /// helper-stack runtime (<c>PushHelperOntoStackAndUpdate</c>, <c>UpdateActiveHelper</c>,
+    /// <c>ClearStackMaintenanceVars</c>, <c>StopHelperWithoutCallback</c>) are <b>unowned by any record</b>
+    /// (not M7, not M8), so this is an explicit unsupported stub rather than a silent no-op.
+    /// </summary>
+    public bool SmartDelegateToHelper(object helper) =>
+        throw new NotSupportedException(
+            "IBehavior.SmartDelegateToHelper needs BehaviorHelperComponent::DelegateToHelper 0x0056dad8 at " +
+            "[robot+0x264]+0x10, which is unowned by any fidelity record (M8-011 gap).");
+
     /// <summary>Releases everything, most recent first.</summary>
+    // fidelity: M8-009
     public void Dispose()
     {
         List<Action> undo;
@@ -234,6 +496,33 @@ public sealed class BehaviorScope : IDisposable
 }
 
 /// <summary>
+/// The <c>IBehavior::Init</c> action-tag guard (0x005bcb54..0x005bcd80). <c>action+0x60</c> is the
+/// action's 32-bit tag; the guard flags an action whose tag is greater than <c>0x2dc6c0</c>
+/// (<c>movw r6,#0xc6c0</c> 0x005bcbd0 / <c>movt r6,#0x2d</c> 0x005bcbda; <c>cmp r2,r6</c> 0x005bcbec;
+/// <c>movhi r5,#1</c> 0x005bcbf0). <c>0x2dc6c0</c> is the integer 3,000,000, the tag-counter sentinel
+/// (<c>sTagCounter</c> at 0x01051020 starts at 0x002dc6c1), not a float and not a timeout.
+///
+/// The warning <c>IBehavior.Init.ActionsInQueue</c> fires only when at least one engine-tagged action is
+/// present; an action tagged through the game path (<c>IActionRunner::SetTag</c> 0x00540098) carries a tag
+/// in [1, 2,000,000] and does not set the flag. The count it reports is the main queue's (map key 0)
+/// current action plus its queued actions (<c>ldr r1,[r0,#0x14]</c> 0x005bcd64;
+/// <c>ldr r0,[r0,#0x20]</c> 0x005bcd66; <c>addne r0,#1</c> 0x005bcd6c).
+/// </summary>
+// fidelity: M8-001
+public static class BehaviorInit
+{
+    /// <summary>The tag-counter sentinel: an action tag above this is an engine tag.</summary>
+    public const int ActionTagSentinel = 0x2dc6c0;
+
+    /// <summary>Whether any action in the queues carries an engine tag, i.e. whether the warning fires.</summary>
+    public static bool HasEngineTaggedAction(IEnumerable<int> actionTags) => actionTags.Any(t => t > ActionTagSentinel);
+
+    /// <summary>The main queue's count: its queued actions plus one when a current action is set.</summary>
+    public static int MainQueueActionCount(bool hasCurrentAction, int queuedActionCount) =>
+        queuedActionCount + (hasCurrentAction ? 1 : 0);
+}
+
+/// <summary>
 /// The repetition penalty: how much a behaviour's score is reduced for having run recently.
 ///
 /// From the shipped <c>mood_config.json</c>, whose <c>defaultRepetitionPenalty</c> is a two-node graph
@@ -241,19 +530,39 @@ public sealed class BehaviorScope : IDisposable
 /// linearly to its full score after thirty seconds. This is what stops Cozmo doing the same thing twice
 /// in a row without anything having to forbid it.
 /// </summary>
+// fidelity: M8-002
 public sealed class RepetitionPenalty
 {
     private readonly DecayGraph _graph;
     private readonly Dictionary<string, double> _lastRunSec = new();
+    // IBehavior +0x108: the repetition-penalty suppression threshold, in seconds. Zero until
+    // StopWithoutImmediateRepetitionPenalty sets it to now + 1.0 (0x005beeb0..0x005beebc).
+    private readonly Dictionary<string, double> _suppressUntilSec = new();
 
     public RepetitionPenalty(DecayGraph? graph = null) =>
         _graph = graph ?? new DecayGraph("defaultRepetitionPenalty",
             new (double, double)[] { (0, 0), (30, 1) });
 
-    /// <summary>The multiplier for a behaviour, 0 immediately after it ran and 1 once recovered.</summary>
+    /// <summary>
+    /// The multiplier for a behaviour, 0 immediately after it ran and 1 once recovered.
+    /// <c>IBehavior::EvaluateRepetitionPenalty</c> 0x005beee6: 1.0 when the last-run stamp is &lt;= 0, else
+    /// the graph at <c>now - lastRun</c> (0x005beeea/0x005beef8/0x005bef0e). This is the pure graph
+    /// evaluation only; the <c>+0x108</c> suppression is applied by <c>EvaluateScore</c>'s non-running
+    /// branch, not here (<c>vldr s0,[r4,#0x108]</c> 0x005befe2 is in EvaluateScore).
+    /// </summary>
     public double For(string behaviorId, double nowSec)
     {
-        lock (_lastRunSec) return _lastRunSec.TryGetValue(behaviorId, out var last) ? _graph.At(nowSec - last) : 1.0;
+        lock (_lastRunSec)
+        {
+            if (!_lastRunSec.TryGetValue(behaviorId, out var last)) return 1.0;
+            return _graph.At(nowSec - last);
+        }
+    }
+
+    /// <summary>IBehavior +0x108 read on its own: whether the penalty is suppressed at <paramref name="nowSec"/>.</summary>
+    public bool IsSuppressed(string behaviorId, double nowSec)
+    {
+        lock (_lastRunSec) return _suppressUntilSec.TryGetValue(behaviorId, out var until) && nowSec < until;
     }
 
     /// <summary>
@@ -270,8 +579,21 @@ public sealed class RepetitionPenalty
     public void Ran(string behaviorId, double nowSec) { lock (_lastRunSec) _lastRunSec[behaviorId] = nowSec; }
 
     /// <summary>
+    /// The engine's <c>IBehavior::StopWithoutImmediateRepetitionPenalty</c> (0x005beea0): the +0x108
+    /// suppression threshold becomes <c>now + 1.0</c>, so the repetition penalty is skipped for about a
+    /// second while the last-run stamp itself is left in place. The only engine callers are
+    /// <c>BehaviorPickUpCube::UpdateInternal</c> 0x005c685c, <c>BehaviorStackBlocks::UpdateInternal</c>
+    /// 0x005c991c and <c>BehaviorBuildPyramidBase::UpdateInternal</c> 0x005dd110 (all M7/M15);
+    /// <c>IBehavior::Stop</c> does not call it, and nothing in M8 does.
+    /// </summary>
+    public void StopWithoutImmediateRepetitionPenalty(string behaviorId, double nowSec)
+    {
+        lock (_lastRunSec) _suppressUntilSec[behaviorId] = nowSec + 1.0;
+    }
+
+    /// <summary>
     /// The engine's <c>StopWithoutImmediateRepetitionPenalty</c>: a behaviour that was interrupted rather
     /// than completed is not penalised for it.
     /// </summary>
-    public void Forget(string behaviorId) { lock (_lastRunSec) _lastRunSec.Remove(behaviorId); }
+    public void Forget(string behaviorId) { lock (_lastRunSec) { _lastRunSec.Remove(behaviorId); _suppressUntilSec.Remove(behaviorId); } }
 }

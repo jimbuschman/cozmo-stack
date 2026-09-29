@@ -42,6 +42,9 @@ public sealed class BehaviorManager : IDisposable
     {
         _context = context;
         _penalty = penalty ?? new RepetitionPenalty();
+        // The concrete behaviours' StopWithoutImmediateRepetitionPenalty (M7/M15) stamps the +0x108
+        // suppression window on this shared history; the scored chooser reads it back.
+        context.Penalty ??= _penalty;
         if (context.Arbiter is { } arb) arb.ManagerDispatchesReactions = true;
         // fidelity: M10-004, M10-007
         // All 21 triggers are mapped and enabled at startup (gap1 4f, 4g); the detector's B12 gate asks this map.
@@ -55,8 +58,15 @@ public sealed class BehaviorManager : IDisposable
     /// <summary>Every behaviour this manager knows.</summary>
     public IReadOnlyList<IBehavior> Behaviors => _behaviors;
 
-    /// <summary>What is running, if anything.</summary>
-    public IBehavior? Current { get { lock (_gate) return _current; } }
+    /// <summary>What is running, if anything. The default class-0x16 placeholder reads as nothing.</summary>
+    public IBehavior? Current { get { lock (_gate) return _current is BehaviorRunningAndResumeInfo ? null : _current; } }
+
+    /// <summary>
+    /// The manager's init byte (IBehavior/BehaviorManager +0). The engine's <c>BehaviorManager::Update</c>
+    /// 0x005a2f70 returns immediately with <c>"BehaviorManager.Update.NotInitialized"</c> when it is zero;
+    /// this stack constructs the manager ready, so it is true unless a caller says otherwise.
+    /// </summary>
+    public bool Initialized { get; set; } = true;
 
     /// <summary>Raised for every selection, including the ones that chose nothing.</summary>
     public event Action<BehaviorSelection>? Selected;
@@ -238,6 +248,7 @@ public sealed class BehaviorManager : IDisposable
     /// The stack's arbiter reaction lock (BehaviorScope.DisableReactions, standing in for the M8 Smart* locks) is kept
     /// ahead of it as the M8 interface. <paramref name="nowSec"/> is BaseStationTimer seconds. Returns the last switch.
     /// </summary>
+    // fidelity: M8-012
     public ReactionSwitch? CheckReactions(double nowSec)
     {
         if (_context.Arbiter?.ReactionsDisabled == true) return null;
@@ -317,29 +328,28 @@ public sealed class BehaviorManager : IDisposable
     /// <summary>
     /// SwitchToReactionTrigger (C9, 0x5A25E4..0x5A26DA): a null behaviour fails; info = {current = the behaviour,
     /// trigger = strategy+0x18}; with shouldResumeLast (vslot +0x08) the resume is the existing parked one if there is
-    /// one, otherwise the running behaviour, reaction or not; without it the resume is none. Then SwitchToBehaviorBase
-    /// (M8, not in the rows): here the running behaviour is stopped and the reaction started.
+    /// one, otherwise the running behaviour, reaction or not; without it the resume is none. Then it calls
+    /// <c>SwitchToBehaviorBase</c> (<c>0x005a26da</c>), which stops the running behaviour and starts the reaction.
     /// </summary>
     private ReactionSwitch? SwitchToReactionTrigger(ReactionRegistration reg, double nowSec)
     {
         if (reg.Behavior is null) return null;
         string? interrupted;
-        bool willResume;
-        BehaviorScope scope;
+        IBehavior? resume;
         lock (_gate)
         {
             interrupted = _current?.Id;
-            var resume = reg.Strategy.ShouldResumeLast ? (_resumeAfterReaction ?? _current) : null;
-            if (_current is not null) StopCurrentLocked(BehaviorStopReason.Interrupted, nowSec, keepResume: true);
+            resume = reg.Strategy.ShouldResumeLast ? (_resumeAfterReaction ?? _current) : null;
+        }
+        // 0x005a26da SwitchToBehaviorBase
+        if (!SwitchToBehaviorBase(reg.Behavior, nowSec).GetAwaiter().GetResult()) return null;
+        bool willResume;
+        lock (_gate)
+        {
             _resumeAfterReaction = resume;
             willResume = resume is not null;
-            scope = new BehaviorScope(_context.Arbiter);
-            _current = reg.Behavior;
-            _scope = scope;
-            _startedSec = nowSec;
             _currentReaction = reg.Strategy.Trigger;
         }
-        _ = reg.Behavior.StartAsync(_context, scope, CancellationToken.None);
         var sw = new ReactionSwitch(reg.Strategy.Trigger, reg.Behavior.Id, interrupted, willResume);
         ReactionTriggered?.Invoke(sw);
         Selected?.Invoke(new BehaviorSelection(reg.Behavior.Id, $"reaction {reg.Strategy.Trigger}") { Replaced = interrupted });
@@ -468,7 +478,7 @@ public sealed class BehaviorManager : IDisposable
             // Actually switch. Without this the method would only ever name a winner, and nothing would
             // become current, so no behaviour would ever be recorded as having run and the repetition
             // penalty would never apply.
-            scope = new BehaviorScope(_context.Arbiter);
+            scope = new BehaviorScope(_context.Arbiter, _context.Robot.Motion);
             _current = best;
             _scope = scope;
             _startedSec = nowSec;
@@ -487,28 +497,107 @@ public sealed class BehaviorManager : IDisposable
     public async Task<bool> StartAsync(string id, double nowSec, CancellationToken cancel = default)
     {
         var b = Find(id);
-        if (b is null || !b.IsRunnable(_context)) return false;
+        return b is not null && await SwitchToBehaviorBase(b, nowSec, cancel).ConfigureAwait(false);
+    }
+
+    // fidelity: M8-012
+    /// <summary>
+    /// <c>BehaviorManager::SwitchToBehaviorBase</c> 0x005a1e6a: stops the current behaviour
+    /// (<c>StopAndNullifyCurrentBehavior</c>), calls <c>IBehavior::IsRunnable(robot)</c> and logs
+    /// "BehaviorManager.SwitchToBehaviorBase.BehaviorNotRunnable" on false (0x005a1e76/0x005a1e88), then
+    /// <c>IBehavior::Init</c> (0x005a1e94). An Init failure logs
+    /// "BehaviorManager.SetCurrentBehavior.InitFailed" (0x005a1eae), clears the behaviour, and still sets
+    /// the running/resume info (SetRunningAndResumeInfo 0x005a1f12) and sends the DAS transition
+    /// (SendDasTransitionMessage 0x005a1f1c). The stack's <c>StartAsync</c> has no Init-failure return and
+    /// the DAS message is another layer: both are seams (<see cref="DasTransition"/>).
+    /// </summary>
+    public async Task<bool> SwitchToBehaviorBase(IBehavior behavior, double nowSec, CancellationToken cancel = default,
+                                                 BehaviorStopReason stopReason = BehaviorStopReason.Interrupted)
+    {
+        lock (_gate) { if (_current is not null) StopCurrentLocked(stopReason, nowSec, keepResume: false); }
+
+        if (!behavior.IsRunnable(_context))
+        {
+            // 0x005a1e88 "BehaviorManager.SwitchToBehaviorBase.BehaviorNotRunnable" through
+            // sVerifyFailedReturnFalse (0x005a1e8e); it then falls through to 0x005a1e94 IBehavior::Init.
+            Log?.Invoke($"BehaviorManager.SwitchToBehaviorBase.BehaviorNotRunnable: {behavior.Id}");
+        }
 
         BehaviorScope scope;
         lock (_gate)
         {
-            if (_current is not null) StopCurrentLocked(BehaviorStopReason.Interrupted, nowSec, keepResume: false);
-            scope = new BehaviorScope(_context.Arbiter);
-            _current = b;
+            scope = new BehaviorScope(_context.Arbiter, _context.Robot.Motion);
+            _current = behavior;
             _scope = scope;
             _startedSec = nowSec;
         }
+        bool initFailed;
         try
         {
-            await b.StartAsync(_context, scope, cancel).ConfigureAwait(false);
-            return true;
+            await behavior.StartAsync(_context, scope, cancel).ConfigureAwait(false);
+            initFailed = behavior is SteppedBehavior sb && sb.InitFailed;
         }
         catch (OperationCanceledException)
         {
-            Stop(BehaviorStopReason.Cancelled, nowSec);
+            lock (_gate) StopCurrentLocked(BehaviorStopReason.Cancelled, nowSec, keepResume: false);
             return false;
         }
+        if (initFailed)
+        {
+            // 0x005a1eae "BehaviorManager.SetCurrentBehavior.InitFailed": clear the behaviour, but still set
+            // the running/resume info (SetRunningAndResumeInfo 0x005a1f12) and send the DAS transition
+            // (SendDasTransitionMessage 0x005a1f1c).
+            Log?.Invoke($"BehaviorManager.SetCurrentBehavior.InitFailed: {behavior.Id}");
+            lock (_gate) { _scope?.Dispose(); _scope = null; _current = null; }
+            DasTransition?.Invoke(behavior);
+            return false;
+        }
+        DasTransition?.Invoke(behavior);   // SendDasTransitionMessage 0x005a1f1c
+        return true;
     }
+
+    /// <summary>The DAS transition send (SendDasTransitionMessage 0x005a1f1c), a cross-layer seam.</summary>
+    public Action<IBehavior>? DasTransition { get; set; }
+
+    /// <summary>
+    /// The default class-0x16 <c>BehaviourRunningAndResumeInfo</c> the manager switches to from
+    /// <c>FinishCurrentBehavior</c>. Null means this stack has not bound one and <c>_current == null</c>
+    /// stands in (the cross-layer seam).
+    /// </summary>
+    public IBehavior? DefaultBehavior { get; set; }
+
+    // fidelity: M8-012
+    /// <summary>
+    /// <c>BehaviorManager::FinishCurrentBehavior</c> 0x005a38ca: when <paramref name="immediate"/> is true it
+    /// tail-branches to 0x8cbc9c (finish now); otherwise, if <paramref name="behavior"/> is the current one,
+    /// it calls <c>EnsureRequestGameIsClear</c> (0x005a38e6) and switches to the default class-0x16
+    /// <c>BehaviourRunningAndResumeInfo</c> (<c>movs r0,#0x16</c> 0x005a38f4; <c>SwitchToBehaviorBase</c>
+    /// 0x005a38fe). The switch's DAS send is the <see cref="DasTransition"/> seam.
+    /// </summary>
+    public void FinishCurrentBehavior(IBehavior behavior, bool immediate, double nowSec)
+    {
+        bool isCurrent;
+        lock (_gate) isCurrent = ReferenceEquals(_current, behavior);
+        if (immediate)
+        {
+            if (isCurrent) StopCurrentLocked(BehaviorStopReason.Completed, nowSec, keepResume: false);
+            return;
+        }
+        if (!isCurrent) return;
+        EnsureRequestGameIsClear?.Invoke();
+        if (DefaultBehavior is { } defaultBehavior)
+        {
+            _ = SwitchToBehaviorBase(defaultBehavior, nowSec, stopReason: BehaviorStopReason.Completed);
+        }
+        else
+        {
+            Log?.Invoke("MISSING: BehaviorManager.FinishCurrentBehavior: no default class-0x16 BehaviourRunningAndResumeInfo is bound; stopping instead");
+            lock (_gate) StopCurrentLocked(BehaviorStopReason.Completed, nowSec, keepResume: false);
+        }
+    }
+
+    /// <summary><c>EnsureRequestGameIsClear</c> (0x005a38e6), a cross-layer seam (the request-game component).</summary>
+    public Action? EnsureRequestGameIsClear { get; set; }
 
     // fidelity: M10-008
     /// <summary>
@@ -519,22 +608,37 @@ public sealed class BehaviorManager : IDisposable
     /// MISSING (C11): the constructor values of manager+8/+0xC, and whether the restore is skipped when they are FLT_MAX,
     /// are not in the rows; the restore runs only for values SetDefaultHeadAndLiftState(enable) stored.
     /// </summary>
+    // fidelity: M8-012
     public void Update(double nowMs, double nowSec)
     {
+        // BehaviorManager::Update 0x005a2f70's tick order. The activity tick (vtable+0x20, M7/M15),
+        // EnsureRequestGameIsClear, the UI game request (class 0x2e -> +0x220), CheckReactionTriggerStrategies,
+        // the reaction gate and the scored choice / UI fallback live in FreeplaySystem.Tick, which owns the
+        // activity tree and the choosers; this method owns the last step. The not-initialised guard
+        // (ldrb r0,[r4]; cbz 0x005a2f70/0x005a2f72) is the Initialized byte here.
+        if (!Initialized) { Log?.Invoke("BehaviorManager.Update.NotInitialized"); return; }
+
         IBehavior? current;
         lock (_gate) current = _current;
         if (current is null) return;
-        if (current.Update(_context, nowMs)) return;
+        bool keep = current.Update(_context, nowMs);
+        // IBehavior::Update 0x005bd074 returns 2 when +0xa0 is set and +0x84 is zero (0x005bd078/0x005bd07e/
+        // 0x005bd088); the manager finishes on 0 or 2 (FinishCurrentBehavior at 0x005a3128) and keeps on 1.
+        if (keep && current is SteppedBehavior stepped && stepped.UpdateStatus() == 2) keep = false;
+        if (keep) return;
 
         IBehavior? resume;
+        ReactionTrigger? resumeTrigger;
         float? headRad, liftMm;
         lock (_gate)
         {
             resume = _resumeAfterReaction;
+            resumeTrigger = _currentReaction;
             headRad = _defaultHeadRad;
             liftMm = _defaultLiftMm;
-            StopCurrentLocked(BehaviorStopReason.Completed, nowSec, keepResume: false);
         }
+        // IBehavior::Update returned 0 or 2, so FinishCurrentBehavior (0x005a3128).
+        FinishCurrentBehavior(current, immediate: false, nowSec);
         if (resume is null) return;
         if (headRad is { } h && liftMm is { } l && h != float.MaxValue) QueueHeadAndLift(h, l);
         else Log?.Invoke("MISSING: BehaviorManager.TryToResumeBehavior: no SetDefaultHeadAndLiftState values; the head and lift are not restored");
@@ -544,15 +648,28 @@ public sealed class BehaviorManager : IDisposable
             Selected?.Invoke(new BehaviorSelection(resume.Id, "tried to resume, but it would not run"));
             return;
         }
+
+        // IBehavior::Resume 0x005bceac: the CliffDetected/UnexpectedMovement counter +0x114, and the
+        // +0x118 = now + 15.0 TooManyResumesCliffOrMovement path only from the second such trigger.
+        // BehaviorManager::TryToResumeBehavior calls IBehavior::Resume (0x005a2c76) and does NOT call
+        // IBehavior::Init, so the resumed behaviour must not run InitLifecycle (which clears +0x114).
+        if (resume is SteppedBehavior rs && resumeTrigger is { } trigger && rs.Resume(trigger, nowSec))
+        {
+            Selected?.Invoke(new BehaviorSelection(resume.Id, "TooManyResumesCliffOrMovement; not resumed"));
+            return;
+        }
+
         BehaviorScope resumeScope;
         lock (_gate)
         {
-            resumeScope = new BehaviorScope(_context.Arbiter);
+            resumeScope = new BehaviorScope(_context.Arbiter, _context.Robot.Motion);
             _current = resume;
             _scope = resumeScope;
             _startedSec = nowSec;
         }
-        _ = resume.StartAsync(_context, resumeScope, CancellationToken.None);
+        _ = resume is SteppedBehavior steppedResume
+            ? steppedResume.ResumeAsync(_context, resumeScope, CancellationToken.None)
+            : resume.StartAsync(_context, resumeScope, CancellationToken.None);
         Selected?.Invoke(new BehaviorSelection(resume.Id, "resumed after the reaction"));
     }
 
@@ -569,9 +686,13 @@ public sealed class BehaviorManager : IDisposable
         try { b.Stop(reason); }
         catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { }
 
-        // Only a behaviour that ran to completion is penalised for repeating. The engine's
-        // StopWithoutImmediateRepetitionPenalty exists for exactly the interrupted case.
-        if (reason == BehaviorStopReason.Completed) _penalty.Ran(b.Id, nowSec);
+        // IBehavior::Stop 0x005bd11a/0x005bd11e stamps the last-run clock +0x30 on every stop, and
+        // EvaluateRepetitionPenalty 0x005beee6 reads it. The +0x108 suppression window is NOT written
+        // here: StopWithoutImmediateRepetitionPenalty's only callers are the M7/M15 concrete behaviours
+        // (BehaviorPickUpCube 0x005c685c, BehaviorStackBlocks 0x005c991c, BehaviorBuildPyramidBase
+        // 0x005dd110); IBehavior::Stop, StopActing, FinishCurrentBehavior and the manager do not call it.
+        // fidelity: M8-002
+        _penalty.Ran(b.Id, nowSec);
 
         _scope?.Dispose();
         _scope = null;

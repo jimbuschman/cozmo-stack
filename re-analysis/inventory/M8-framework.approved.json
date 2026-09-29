@@ -2,10 +2,10 @@
   "subsystem": "M8-framework",
   "approved": "2026-09-28",
   "inventory": "re-analysis/inventory/M8-framework.md",
-  "inventory_sha256": "862593720ff7d499398f940686c9808df4d2123023230b8bf4901a1539451355",
+  "inventory_sha256": "428aa9be0beb087dece8716ef42cba654f739e9e4d25cdcbce6ae9ac9c1aee5a",
   "records": {
     "M8-001": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The IBehavior lifecycle: constructor fields, Init, Update, Stop, StopActing, Resume, IsRunnable and IsRunnableScored",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -17,13 +17,15 @@
         "IBehavior::StopActing 0x005bd34c calls vtable+0x80(0) (blx r2 0x005bd360); when viaCallback is false and a helper is live it logs \"Stopping behavior helper because action stopped without callback\" and calls StopHelperWithoutCallback (0x005bd39c/0x005bd3d6); then, if +0x84 is set, cancels it in ActionList (0x005bd3f0) and clears +0x84 unless keepAction.",
         "IBehavior::Resume 0x005bceac: for any trigger other than 0 (CliffDetected) or 0x14 (UnexpectedMovement) it takes the normal resume path (cmp r5,#0x14 0x005bcf16; cmpne r5,#0 0x005bcf1a; bne 0x5bcf7e 0x005bcf1c). For those two it reads +0x114, increments it and takes the normal path while the pre-increment value is < 1 (ldr.w r0,[r4,#0x114] 0x005bcf1e; cmp r0,#1 0x005bcf22; str.w r1,[r4,#0x114] 0x005bcf28; blt 0x5bcf7e 0x005bcf2c); otherwise it sets +0x118 = now + 15.0, builds \"TooManyResumesCliffOrMovement\" and calls MoodManager::TriggerEmotionEvent(name, now), returning 1 (0x005bcf36..0x005bcf7a). The normal path sets +0xa2 = 1, stamps +0x34 = now, calls vtable+0x4c (ResumeInternal), clears +0xa2; on a zero result sets +0xa1 = 1 and, when +0x70 != 0x55 and equals robot+0x44->0x58, takes the SparkBehaviorDisables lock; on a non-zero result clears +0xa1 (0x005bcf80..0x005bcfde).",
         "IBehavior::IsRunnable 0x005bd750 calls IsRunnableBase(this->robot); a result other than 1 returns 0, otherwise it tail-calls vtable+0x50 with the caller's robot (0x005bd756..0x005bd770). IBehavior::IsRunnableScored 0x005bda28 returns 1 when the current time is >= the suppression stamp +0x118, else 0 (0x005bda38/0x005bda3e/0x005bda46/0x005bda48). IBehavior::IsRunnableBase 0x005bd778: +0xa1 (running) returns true; otherwise the AI process (robot+0x264), the robot state byte +0x74 against 3, the unlock id +0x70 (0x55 bypasses) through ProgressionUnlockComponent::IsUnlocked(robot+0x448, id, true) (0x005bd810), and the float timers at +0x78.",
-        "ReactionTrigger ordinals (table 0x10337c0; EnumToString 0x0077065c): 0 = CliffDetected, 0x14 = UnexpectedMovement, 0x15 = Count, 0x16 = NoneTrigger (ReactionTriggerFromString 0x00770674 confirms the same mapping)."
+        "ReactionTrigger ordinals (table 0x10337c0; EnumToString 0x0077065c): 0 = CliffDetected, 0x14 = UnexpectedMovement, 0x15 = Count, 0x16 = NoneTrigger (ReactionTriggerFromString 0x00770674 confirms the same mapping).",
+        "StopWithoutImmediateRepetitionPenalty 0x005beea0 has exactly three callers, all concrete-behaviour UpdateInternal methods, none of them IBehavior::Stop/StopActing/FinishCurrentBehavior: BehaviorPickUpCube::UpdateInternal (blx #0x4b3384 0x005c685c, then movs r0,#2 0x005c6860), BehaviorStackBlocks::UpdateInternal (0x005c991c/0x005c9920), BehaviorBuildPyramidBase::UpdateInternal (0x005dd110/0x005dd114). Those behaviours are M7/M15, not M8.",
+        "IncreaseScoreWhileActing 0x005bf02c has ten callers, all concrete behaviours (KnockOverCubes, PopAWheelie, PutDownBlock, RollBlock, StackBlocks and the FUN_0059ec54 helper that pairs it with StartActing); ScoredActingStateChanged 0x005bf044 (clears +0x104) has no engine caller at all (exhaustive bl/blx and data-word scan). IBehavior::IsRunnableScored 0x005bda28 likewise has no engine caller and is not in the IBehavior vtable (0x010264e0); only its .dynsym st_value 0x005bda29 exists."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M8-002": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The repetition penalty graph and its suppression window",
       "authority": "libcozmoEngine.so 3.4.0-1204 and the shipped mood_config.json",
       "evidence": [
@@ -31,13 +33,14 @@
         "IBehavior::ReadFromScoredJson 0x005bc488 reads repetitionPenalty into the GraphEvaluator2d at +0xe8; a missing or unreadable graph warns (IScoredBehavior.BadRepetitionPenalty) and leaves it empty, and an empty graph gets the single node AddNode(0, 1, true) at 0x005bc566 (0x005bc678).",
         "IBehavior::EvaluateRepetitionPenalty 0x005beee6 returns 1.0 when the last-run stamp +0x30 <= 0 (vldr s0,[r4,#0x30] 0x005beeea; movle.w r0,#0x3f800000 0x005beef8), otherwise evaluates the graph at +0xe8 at now - +0x30 (add.w r0,r4,#0xe8 0x005bef0e; b.w 0x8cbf9c 0x005bef1e).",
         "The +0x30 stamp is written by IBehavior::Stop 0x005bd11a/0x005bd11e as BaseStationTimer::GetCurrentTimeInSeconds().",
-        "The +0x108 suppression threshold: StopWithoutImmediateRepetitionPenalty 0x005beea0 sets +0x108 = now + 1.0 (vmov.f32 s0,#1.0 0x005beeb0; vadd.f32 0x005beeb8; vstr s0,[r4,#0x108] 0x005beebc); EvaluateScore applies the penalty only when now >= +0x108 (vldr s0,[r4,#0x108] 0x005befe2; vcmpe.f32 0x005befea; bpl 0x005beff2)."
+        "The +0x108 suppression threshold: StopWithoutImmediateRepetitionPenalty 0x005beea0 sets +0x108 = now + 1.0 (vmov.f32 s0,#1.0 0x005beeb0; vadd.f32 0x005beeb8; vstr s0,[r4,#0x108] 0x005beebc); EvaluateScore applies the penalty only when now >= +0x108 (vldr s0,[r4,#0x108] 0x005befe2; vcmpe.f32 0x005befea; bpl 0x005beff2).",
+        "StopWithoutImmediateRepetitionPenalty's only three callers are BehaviorPickUpCube::UpdateInternal 0x005c685c, BehaviorStackBlocks::UpdateInternal 0x005c991c and BehaviorBuildPyramidBase::UpdateInternal 0x005dd110 (all M7/M15); IBehavior::Stop does not call it."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M8-003": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Scored selection: emotion scorers or the flat score, times the repetition and running penalties",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -47,7 +50,8 @@
         "IBehavior::EvaluateScore 0x005bef60: while running it uses EvaluateScoreInternal plus the float at +0x104 (vldr s2,[r4,#0x104] 0x005bef80; vadd.f32 s16,s0,s2 0x005bef88) and multiplies by EvaluateRunningPenalty when +0x111 is set (ldrb.w r0,[r4,#0x111] 0x005bef84; cbz 0x005bef8c; blx EvaluateRunningPenalty 0x005bef90; vmul.f32 0x005bef98). Otherwise it scores only a behaviour that IsRunnableBase and passes the vtable+0x50 test, applies the repetition penalty only when +0x110 is set and now >= +0x108 (ldrb.w r0,[r4,#0x110] 0x005befd4; cbz 0x005befd8).",
         "IBehavior::EvaluateRunningPenalty 0x005bef22: returns 1.0 when +0x34 <= 0, otherwise evaluates the graph at +0xf4 at now - +0x34 (vldr s0,[r4,#0x34] 0x005bef26; add.w r0,r4,#0xf4 0x005bef4a; b.w 0x8cbf9c 0x005bef5a).",
         "The four constructor fields: +0x104 is the running-score bonus (IncreaseScoreWhileActing 0x005bf02c adds to it only while the current-action handle +0x84 is non-zero; ScoredActingStateChanged 0x005bf046 clears it); +0x108 is the repetition-penalty suppression threshold; +0x110 enables the repetition penalty; +0x111 enables the running penalty (both set to 1 by the halfword 0x0101 at 0x005bbd34, with no other writer).",
-        "EmotionScorer::ReadFromJson 0x0067aabc names emotionType, scoreGraph and trackDelta. No shipped behaviour or activity config carries an emotionScorers block, so every scored behaviour in the app is scored by its flatScore alone."
+        "EmotionScorer::ReadFromJson 0x0067aabc names emotionType, scoreGraph and trackDelta. No shipped behaviour or activity config carries an emotionScorers block, so every scored behaviour in the app is scored by its flatScore alone.",
+        "IncreaseScoreWhileActing 0x005bf02c is called only from concrete behaviour transitions (ten call sites, M7/M15); ScoredActingStateChanged 0x005bf044 has no engine caller, so +0x104 is never cleared in-engine."
       ],
       "live_path": true,
       "hardware_required": false
@@ -64,7 +68,7 @@
       "hardware_required": false
     },
     "M8-005": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "PlayAnim plays every trigger it lists, in order, num_loops times",
       "authority": "BehaviorPlayAnimSequence::StartPlayingAnimations 0x005C0158 and BehaviorPlayAnimSequence::StartSequenceLoop 0x005C0294, read",
       "evidence": [
@@ -77,7 +81,7 @@
       "hardware_required": false
     },
     "M8-006": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The wants-to-run strategy types, and what each one tests",
       "authority": "WantsToRunStrategyFactory::CreateWantsToRunStrategy 0x00614710, StrategyInNeedsBracket::WantsToRunInternal 0x006141A0 and StrategyExpressNeedsTransition::WantsToRunInternal 0x006136D8, read",
       "evidence": [
@@ -90,7 +94,7 @@
       "hardware_required": false
     },
     "M8-007": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "An action's track mask is a lock, taken while it runs",
       "authority": "IActionRunner::Update 0x00540370, MovementComponent::LockTracks 0x00640098 and MovementComponent::UnlockTracks 0x0063FE5C, read",
       "evidence": [
@@ -144,13 +148,14 @@
         "SmartSetCustomLightPattern 0x005be7f0: if the ObjectID is already in the vector at +0xcc it logs on the \"Unnamed\" channel and returns 0; otherwise CubeLightComponent::PlayLightAnim(objectID, trigger, callback, true, lights, timeout) and appends the ObjectID to the vector at +0xd0, returning 1 (0x005be806..0x005be8cc).",
         "SmartRemoveCustomLightPattern 0x005be9b0 searches the vector at +0xcc for the element whose +4 equals objectID+4; not found logs \"No custom light pattern is set for object %d\" and returns 0 (0x005bea4e/0x005bea74); found calls CubeLightComponent::StopLightAnimAndResumePrevious(trigger, objectID) for each trigger and erases the element, returning 1 (0x005be9e8/0x005bea34).",
         "SmartDelegateToHelper 0x005beb10 logs on the \"Behaviors\" channel, warns and calls StopHelperWithoutCallback() when the current helper +0xc8 is already live (0x005beba4/0x005bebe8), then calls BehaviorHelperComponent::DelegateToHelper on [robot+0x264]+0x10 (0x005bec2c); on success it stores the helper as a weak ref at +0xc4/+0xc8 through __add_weak at 0x005bec6e, otherwise logs \"SmartDelegateToHelper.Failed\" (0x005bec8c/0x005becb2).",
-        "SmartDisableReactionsWithLock 0x005bce3c appends \"_behaviorLock\" to the name, calls BehaviorManager::DisableReactionsWithLock(manager, name+\"_behaviorLock\", table, true) (0x005bce62) and inserts the original name into the per-behaviour set at +0xa4 (0x005bce7e). SmartRemoveDisableReactionsLock 0x005bd470 appends the same suffix, calls BehaviorManager::RemoveDisableReactionsLock (0x005bd48c) and erases the name from +0xa4 (0x005bd4a4). The manager side is M7-014."
+        "SmartDisableReactionsWithLock 0x005bce3c appends \"_behaviorLock\" to the name, calls BehaviorManager::DisableReactionsWithLock(manager, name+\"_behaviorLock\", table, true) (0x005bce62) and inserts the original name into the per-behaviour set at +0xa4 (0x005bce7e). SmartRemoveDisableReactionsLock 0x005bd470 appends the same suffix, calls BehaviorManager::RemoveDisableReactionsLock (0x005bd48c) and erases the name from +0xa4 (0x005bd4a4). The manager side is M7-014.",
+        "SmartDelegateToHelper 0x005beb10 calls BehaviorHelperComponent::DelegateToHelper, whose body is 0x0056dad8..0x0056db37 (PLT 0x004b29d0) at AIComponent+0x10 ([robot+0x264]+0x10, AIComponent constructed at 0x00569aae/0x00569ab2): it clears stack-maintenance vars, copies the two callbacks to +0x10/+0x28, and on an empty helper stack pushes the helper and stores Robot::GetWorldOriginID at +0x40, returning 1. No inventory record owns BehaviorHelperComponent or its helper-stack runtime (PushHelperOntoStackAndUpdate, UpdateActiveHelper, StopHelperWithoutCallback); the component is unowned."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M8-012": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "BehaviorManager::Update's tick order, behaviour switching, finishing and the reaction gate",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -181,7 +186,9 @@
         "StrictPriorityBSRunnableChooser::GetDesiredActiveBehavior 0x0060b23e walks its behaviour vector at +0x1c..+0x20; a behaviour with +0xa1 (running) non-zero is returned immediately, otherwise the first behaviour for which IBehavior::IsRunnable(robot) == 1 is returned; if none, it returns a null shared_ptr (0x0060b242..0x0060b266). No scoring and no tie-break.",
         "IActivity::GetDesiredActiveBehavior 0x005b387c returns the activity's current behaviour when it equals the caller's; otherwise it calls the activity's GetDesiredActiveBehaviorInternal at vtable+0x30 (0x005b38c2) and, when the activity holds an interlude behaviour at +0x28 and the result differs, calls the interlude's method at vtable+0x28 (0x005b38f6), logging \"Activity %s is inserting interlude %s between behaviors %s and %s\" (0x005b399c).",
         "IActivity::GetDesiredActiveBehaviorInternal 0x005b3a6c reads the chooser at +0x24; a null chooser warns \"VERIFY(%s): ChooseNextBehaviorInternal called without behavior chooser overwritten\" and returns a null behaviour; otherwise it calls the chooser's vtable+0x28 (0x005b3a70/0x005b3aa2/0x005b3a94).",
-        "The concrete activities implement GetDesiredActiveBehaviorInternal: ActivityFreeplay 0x005ae29c, ActivitySocialize 0x005b023c, ActivitySparked 0x005b1d18, ActivityStrictPriority 0x005b267c, ActivityBuildPyramid 0x005a8854, ActivityFeeding 0x005abdd8. Their bodies belong to M7/M15."
+        "The concrete activities implement GetDesiredActiveBehaviorInternal: ActivityFreeplay 0x005ae29c, ActivitySocialize 0x005b023c, ActivitySparked 0x005b1d18, ActivityStrictPriority 0x005b267c, ActivityBuildPyramid 0x005a8854, ActivityFeeding 0x005abdd8. Their bodies belong to M7/M15.",
+        "SelectionBSRunnableChooser::GetDesiredActiveBehavior 0x0060ad64 full algorithm: +0x2c is the behaviour named by the last ExecuteBehaviorByID/ByExecutableType game message (set 0x0060ac2c/0x0060ac30), +0x34 is the Wait behaviour (BehaviorID 0xb2 resolved in the ctor 0x0060a988/0x0060a99a), +0x3c is the message's numRuns (ctor writes -1 unlimited, 0x0060a880/0x0060a884; message stores 0x0060aa88/0x0060aac8), +0x40 is a byte latch holding the previous call's running state (0x0060adc8/0x0060ae3a). It returns +0x2c while it is running or IsRunnable (0x0060ad96) and numRuns has not run out, decrementing +0x3c once per running->stopped edge; otherwise the same for +0x34 (0x0060ae08) but its countdown block runs only when +0x34 == +0x2c (0x0060ae10/0x0060ae14); otherwise a null shared_ptr (0x0060ae64).",
+        "The selection chooser calls IBehavior::IsRunnable (PLT 0x004b0f54), not IsRunnableScored; IsRunnableScored has no engine caller."
       ],
       "live_path": true,
       "hardware_required": false
@@ -193,7 +200,9 @@
       "evidence": [
         "AIWhiteboard::Init 0x0056a394 registers three external-interface handlers when the robot has an external interface (HasExternalInterface 0x0056a39c; three bl at 0x0056a3b8/0x0056a3be/0x0056a3c4 to 0x56a444/0x56a504/0x56a5c4); otherwise it warns \"Initialized whiteboard with no external interface. Will miss events.\" (0x0056a3d2).",
         "AIWhiteboard::Update 0x0056a684 is a no-op (bx lr).",
-        "AIWhiteboard::AddBeacon(pose, radius) 0x0056c39c appends an AIBeacon (Pose3d plus a float at +0xc) to the vector at +0x60 (vstr s16,[r0,#0xc] 0x0056c3c0; str r0,[r4,#0x64] 0x0056c3ce) and calls UpdateBeaconRender 0x0056c3de."
+        "AIWhiteboard::AddBeacon(pose, radius) 0x0056c39c appends an AIBeacon (Pose3d plus a float at +0xc) to the vector at +0x60 (vstr s16,[r0,#0xc] 0x0056c3c0; str r0,[r4,#0x64] 0x0056c3ce) and calls UpdateBeaconRender 0x0056c3de.",
+        "AIWhiteboard::Init's three registrations are MessageEngineToGame subscriptions: tag 0x44=68 RobotObservedObject (0x0056a44c; handler functor 0x0056cbd6 -> AIWhiteboard::HandleMessage<RobotObservedObject>), tag 0x45=69 RobotObservedPossibleObject (0x0056a50c; 0x0056cc4e), and tag 0x35=53 RobotOffTreadsStateChanged (0x0056a5cc; records BaseStationTimer::GetCurrentTimeInSeconds at whiteboard+0x48, 0x0056ccf2/0x0056ccf6).",
+        "AIWhiteboard::UpdateBeaconRender 0x0056aa3c..0x0056abff is a real 452-byte body, not a bare interface: it erases the previous segments through VizManager::EraseSegments (PLT 0x004acb20) and draws each beacon at +0x60 as three XY circles (VizManager::DrawXYCircleAsSegments<float>, PLT 0x004acb50), loop bound whiteboard+0x64. VizManager and the three handler bodies are not recorded by M11/M12 either; they are unowned."
       ],
       "live_path": true,
       "hardware_required": false

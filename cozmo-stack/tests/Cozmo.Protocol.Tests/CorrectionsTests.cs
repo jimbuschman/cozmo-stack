@@ -296,9 +296,10 @@ public class CorrectionsTests
         Assert.Null(manager.Current);
         Assert.Equal(1, idle.Starts);
 
-        // and a reaction interrupted by a caller's StartAsync drops it too
+        // and a reaction interrupted by a caller's StartAsync drops it too. Idle was interrupted at 0x005bd11e's
+        // stop stamp, so at now=5 it is penalised (graph(4 s) ~ 0.13) and Other (graph(1 s) * 5 ~ 0.17) wins.
         manager.ChooseAndSwitch(5);
-        Assert.Same(idle, manager.Current);
+        Assert.Same(other, manager.Current);
         strategy.Fire = true;
         Assert.NotNull(manager.CheckReactions(6));
         strategy.Fire = false;
@@ -306,7 +307,7 @@ public class CorrectionsTests
         other.Running = false;
         manager.Update(8000, 8);
         Assert.Null(manager.Current);
-        Assert.Equal(2, idle.Starts);
+        Assert.Equal(1, idle.Starts);
     }
 
     private static string? Obb()

@@ -378,10 +378,10 @@ public sealed class CozmoAnimations : IDisposable
     /// Plays a clip and reports which animation it became, so the caller can stop exactly that one.
     /// Returns null when the scheduler refused it.
     /// </summary>
-    public AnimationTicket? PlayTracked(string name, bool replaceRunning = true)
+    public AnimationTicket? PlayTracked(string name, bool replaceRunning = true, AnimationTrack lockTracks = AnimationTrack.None)
     {
         var lib = Library ?? throw new InvalidOperationException("no animation assets are loaded; call LoadFrom first");
-        return PlayTracked(lib.GetClip(name), replaceRunning);
+        return PlayTracked(lib.GetClip(name), replaceRunning, lockTracks);
     }
 
     /// <summary>
@@ -390,13 +390,51 @@ public sealed class CozmoAnimations : IDisposable
     /// running, another caller can have replaced it, and the ticket would then carry their token - so
     /// stopping by it would stop their animation and not this one.
     /// </summary>
-    public AnimationTicket? PlayTracked(AnimationClip clip, bool replaceRunning = true)
+    public AnimationTicket? PlayTracked(AnimationClip clip, bool replaceRunning = true, AnimationTrack lockTracks = AnimationTrack.None)
     {
+        // IActionRunner::Update 0x00540370: AreAnyTracksLocked(mask) at 0x00540440; when a required track is
+        // held the action does not run and is retried next tick (0x005404a8). Otherwise MovementComponent::
+        // LockTracks 0x00640098 takes one owner entry per track, released by UnlockTracks 0x0063fe5c.
+        byte mask = CozmoMotion.MaskFor(lockTracks);
+        string? owner = null;
+        if (mask != 0)
+        {
+            if (_robot.Motion.AreAnyTracksLocked(mask))
+            {
+                _robot.Engine.Log("warning: Action not running because required tracks are locked");
+                return null;
+            }
+            owner = "play-" + System.Threading.Interlocked.Increment(ref _playLockCounter);
+            _robot.Motion.LockTracks(mask, owner);
+        }
         var handle = _scheduler.Play(clip, NowMs(), replaceRunning);
-        if (handle is null) return null;
+        if (handle is null)
+        {
+            if (owner is not null) _robot.Motion.UnlockTracks(mask, owner);
+            return null;
+        }
         StartTicker();
+        if (owner is not null)
+        {
+            // IActionRunner::Update 0x00540370 releases the lock as the action ends (MovementComponent::
+            // UnlockTracks 0x0063fe5c). Register it as a synchronous end callback so the unlock happens in
+            // EndHandleLocked, in the action's own end path, before a following play checks the tracks -
+            // not on a thread-pool continuation of the handle's Completion.
+            byte lockedMask = mask;
+            string lockedOwner = owner;
+            int released = 0;
+            void Release()
+            {
+                if (System.Threading.Interlocked.Exchange(ref released, 1) == 0)
+                    _robot.Motion.UnlockTracks(lockedMask, lockedOwner);
+            }
+            handle.OnEnd(_ => Release());
+            if (!handle.IsRunning) Release();   // ended between Play returning and the callback being registered
+        }
         return new AnimationTicket(handle.Completion, handle.Generation);
     }
+
+    private static int _playLockCounter;
 
     private static double NowMs() => Environment.TickCount64;
 

@@ -71,6 +71,12 @@ public sealed class FreeplayStack : IDisposable
         // sides read BaseStationTimer (MoodManager::GetCurrentTimeInSeconds 0x0067ADA8).
         foreach (var b in all.OfType<SteppedBehavior>()) b.Clock = () => clockSec() * 1000.0;
 
+        // IBehavior::ReadFromScoredJson 0x005bc488 reads considerThisHasRunForBehaviorObjective from the
+        // behaviour's own config into +0x10c; set each shipped behaviour's objective from it.
+        var objectives = BehaviorObjectives.Load(obbRoot);
+        foreach (var b in all.OfType<SteppedBehavior>())
+            if (objectives.TryGetValue(b.Id, out var objective)) b.BehaviorObjective = objective;
+
         ctx.ClockSec ??= clockSec;
         // the behaviours report needs actions themselves (IBehavior::NeedActionCompleted 0x005BE40C), so the
         // context carries both the manager and every shipped behaviour's own needsActionID
@@ -79,6 +85,10 @@ public sealed class FreeplayStack : IDisposable
         if (vision is not null) ctx.Map ??= new MemoryMap();
         ctx.NeedsActionIds ??= BehaviorNeedsActions.Load(obbRoot);
         var manager = new BehaviorManager(ctx);
+        // BehaviorManager::FinishCurrentBehavior switches to the default class-0x16
+        // BehaviourRunningAndResumeInfo (0x005a38fe); this stack treats that placeholder as "nothing
+        // running" (BehaviorManager.Current maps it to null).
+        manager.DefaultBehavior = new BehaviorRunningAndResumeInfo();
         if (withReactions)
             foreach (var reg in ShippedBehaviors.Reactions(robot, vision?.Locator, clockSec, vision,
                          bound.TryGetValue("RamIntoBlock", out var ram) ? ram as RamIntoBlockBehavior : null, m?.Whiteboard))

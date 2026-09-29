@@ -25,6 +25,18 @@ public sealed class AIBeacon
 public enum ObjectActionFailure { PickUpObject, StackOnObject, PlaceObjectAt, RollOrPopAWheelie, Any }
 
 /// <summary>
+/// The robot's external interface as <c>AIWhiteboard::Init</c> sees it. The engine asks
+/// <c>HasExternalInterface</c> (0x0056a39c) and, when there is one, registers three MessageEngineToGame
+/// subscriptions (0x0056a3b8/0x0056a3be/0x0056a3c4). The handler bodies belong to M11/M12 and are not
+/// modelled here; this is the subscription seam those layers implement.
+/// </summary>
+public interface IWhiteboardExternalInterface
+{
+    /// <summary>Subscribe the whiteboard's handler for one MessageEngineToGame tag.</summary>
+    void SubscribeWhiteboardHandler(int tag, AIWhiteboard whiteboard);
+}
+
+/// <summary>
 /// The engine's <c>AIWhiteboard</c> (exports <c>AddBeacon</c>, <c>GetActiveBeacon</c>, <c>ClearAllBeacons</c>,
 /// <c>FindCubesInBeacon</c>, <c>FindUsableCubesOutOfBeacons</c>, <c>AreAllCubesInBeacons</c>, <c>SetFailedToUse</c>,
 /// <c>DidFailToUse</c>, <c>GetObjectFailureTable</c>, <c>OnRobotDelocalized</c>): shared scratch state between
@@ -40,6 +52,7 @@ public enum ObjectActionFailure { PickUpObject, StackOnObject, PlaceObjectAt, Ro
 /// oldest one still standing, not the newest.
 /// </summary>
 // fidelity: M13-006
+// fidelity: M8-014
 public sealed class AIWhiteboard
 {
     private readonly BlockWorld _world;
@@ -52,7 +65,73 @@ public sealed class AIWhiteboard
     public IReadOnlyList<AIBeacon> Beacons => _beacons;
     /// <summary>The first beacon, as <c>GetActiveBeacon</c> 0x0056C404 returns begin rather than back.</summary>
     public AIBeacon? GetActiveBeacon() => _beacons.Count > 0 ? _beacons[0] : null;
-    public AIBeacon AddBeacon(Pose3d pose, double radiusMm) { var b = new AIBeacon(pose, radiusMm); _beacons.Add(b); return b; }
+
+    /// <summary>
+    /// <c>AIWhiteboard::Init</c> 0x0056a394: when the robot has an external interface it subscribes the
+    /// three MessageEngineToGame handlers; otherwise it warns "Initialized whiteboard with no external
+    /// interface. Will miss events." (0x0056a3d2). The handler bodies are M11/M12/unowned; this seam only
+    /// makes the three subscriptions.
+    /// </summary>
+    public void Init()
+    {
+        if (ExternalInterface is { } external)
+        {
+            external.SubscribeWhiteboardHandler(TagRobotObservedObject, this);
+            external.SubscribeWhiteboardHandler(TagRobotObservedPossibleObject, this);
+            external.SubscribeWhiteboardHandler(TagRobotOffTreadsStateChanged, this);
+        }
+        else Warn("Initialized whiteboard with no external interface. Will miss events.");
+    }
+
+    /// <summary>MessageEngineToGame tag 0x44 = 68, <c>RobotObservedObject</c> (0x0056a44c).</summary>
+    public const int TagRobotObservedObject = 0x44;
+    /// <summary>MessageEngineToGame tag 0x45 = 69, <c>RobotObservedPossibleObject</c> (0x0056a50c).</summary>
+    public const int TagRobotObservedPossibleObject = 0x45;
+    /// <summary>MessageEngineToGame tag 0x35 = 53, <c>RobotOffTreadsStateChanged</c> (0x0056a5cc).</summary>
+    public const int TagRobotOffTreadsStateChanged = 0x35;
+
+    /// <summary>
+    /// AIWhiteboard +0x48: the time the tag-53 handler recorded when the robot went off treads
+    /// (<c>str r0,[r4,#0x48]</c> 0x0056ccf6). The handler body is M11/M12; this is where it writes.
+    /// </summary>
+    public double OffTreadsStateChangedAtSec { get; private set; }
+
+    /// <summary>The tag-53 handler's write (BaseStationTimer::GetCurrentTimeInSeconds at 0x0056ccf2).</summary>
+    public void RecordOffTreadsStateChanged(double nowSec) => OffTreadsStateChangedAtSec = nowSec;
+
+    /// <summary><c>AIWhiteboard::Update</c> 0x0056a684 is a no-op (<c>bx lr</c>).</summary>
+    public void Update() { }
+
+    /// <summary>
+    /// <c>AIWhiteboard::AddBeacon(pose, radius)</c> 0x0056c39c: append the beacon to the vector at +0x60
+    /// (<c>str r0,[r4,#0x64]</c> 0x0056c3ce) and call <c>UpdateBeaconRender</c> (0x0056c3de).
+    /// </summary>
+    public AIBeacon AddBeacon(Pose3d pose, double radiusMm)
+    {
+        var b = new AIBeacon(pose, radiusMm);
+        _beacons.Add(b);
+        UpdateBeaconRender();
+        return b;
+    }
+
+    /// <summary>
+    /// <c>AIWhiteboard::UpdateBeaconRender</c> 0x0056aa3c..0x0056abff is a real 452-byte body that erases
+    /// the previous segments through <c>VizManager::EraseSegments</c> and draws each beacon at +0x60 as
+    /// three XY circles through <c>VizManager::DrawXYCircleAsSegments&lt;float&gt;</c>. <c>VizManager</c>
+    /// is unowned by any record, so this raises the render seam rather than drawing.
+    /// </summary>
+    private void UpdateBeaconRender() => BeaconRenderUpdated?.Invoke();
+
+    /// <summary>The VizManager render seam; <c>AddBeacon</c> raises it. VizManager is unowned.</summary>
+    public event Action? BeaconRenderUpdated;
+
+    /// <summary>The external interface <c>Init</c> registers handlers through, or null (the warning path).</summary>
+    public IWhiteboardExternalInterface? ExternalInterface { get; set; }
+
+    /// <summary>Warnings, for the no-external-interface path.</summary>
+    public event Action<string>? Log;
+    private void Warn(string message) => Log?.Invoke("warning: AIWhiteboard." + message);
+
     public void ClearAllBeacons() => _beacons.Clear();
 
     public IReadOnlyList<ObservableObject> FindCubesInBeacon(AIBeacon beacon) =>

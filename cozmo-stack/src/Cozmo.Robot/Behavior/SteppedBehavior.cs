@@ -39,6 +39,22 @@ public abstract class SteppedBehavior : IBehavior
     // remembers the epoch it began in; a stop advances the epoch and the stale completion is dropped.
     private int _actionEpoch;
 
+    // The IBehavior engine fields the M8 rows name, kept beside the stack's own run state so the
+    // lifecycle transitions are reproducible and testable. IBehavior +0xa1 running, +0xa0 acting-without-
+    // action, +0x34 running-penalty clock, +0x114 resume counter, +0x118 resume suppression, +0x80
+    // score-increase counter, +0xd8 spark gate, +0x104 running-score bonus.
+    private bool _engineRunning;
+    private bool _engineActingFlag;
+    private double _runningPenaltyClockSec;
+    private int _resumeCount;
+    private double _resumeSuppressionUntilSec;
+    private int _scoreIncreaseCount;
+    private bool _sparkDisabled;
+    private bool _resuming;
+    // IBehavior +0x84: the current-action handle is set. IBehavior +0x98: a shared handle Init/StopOnNextActionComplete release.
+    private bool _currentAction;
+    private object? _sharedHandle;
+
     protected SteppedBehavior(string id, string behaviorClass)
     {
         Id = id;
@@ -94,14 +110,255 @@ public abstract class SteppedBehavior : IBehavior
     protected virtual bool KeepsRunningWithoutAction => false;
 
     public virtual bool IsRunnable(BehaviorContext context) =>
-        context.Robot.Animations.Library is not null && IsRunnableInternal(context);
+        context.Robot.Animations.Library is not null && IsRunnableBase(context) && IsRunnableInternal(context);
 
-    /// <summary>The engine's <c>IsRunnableInternal</c>. Most reaction classes just return true.</summary>
+    /// <summary>The engine's <c>IsRunnableInternal</c> (the <c>vtable+0x50</c> gate). Most reaction classes just return true.</summary>
     protected virtual bool IsRunnableInternal(BehaviorContext context) => true;
 
-    public virtual double EvaluateScore(BehaviorContext context) => IsRunnable(context) ? Score : 0;
+    // ============================================================== the IBehavior engine lifecycle (M8-001)
 
-    public Task StartAsync(BehaviorContext context, BehaviorScope scope, CancellationToken cancel)
+    /// <summary>
+    /// <c>IBehavior::IsRunnableBase</c> 0x005bd778: the running flag <c>+0xa1</c> short-circuits to true
+    /// (<c>ldrb.w r0,[r4,#0xa1]</c> 0x005bd780); otherwise the required AI process (<c>+0x1c</c> against
+    /// <c>robot+0x264+8</c>, <c>AIInformationAnalyzer::IsProcessRunning</c> 0x005bd7de), the robot state
+    /// byte <c>+0x74</c> against 3 or <c>robot+0x264+0x30+0x14</c> (0x005bd7e6..0x005bd7f6), the unlock id
+    /// <c>+0x70</c> (0x55 bypasses) through <c>ProgressionUnlockComponent::IsUnlocked(robot+0x448, id,
+    /// true)</c> (0x005bd810), the float timers <c>+0x78</c>/<c>+0x7c</c> (0x005bd81a..), the wants-to-run
+    /// strategy <c>+0x38</c> (0x005bd8a4), and finally <c>now &gt;= +0x118</c> (0x005bd8b4..0x005bd8c8).
+    /// The robot/AI/progression inputs are cross-layer seams; a null seam means "no such requirement".
+    /// </summary>
+    // fidelity: M8-001
+    public bool IsRunnableBase(BehaviorContext context)
+    {
+        if (_engineRunning) return true;                                          // +0xa1
+        if (RequiredProcessRunning is { } process && !process()) return false;    // +0x1c
+        if (RobotStateAllowsRun is { } state && !state()) return false;           // +0x74
+        if (UnlockAllowsRun is { } unlock && !unlock()) return false;             // +0x70
+        if (RecentTimersAllowRun is { } timers && !timers()) return false;        // +0x78/+0x7c
+        // The three robot-byte gates and their behaviour virtuals (decomp 0x005bd864..0x005bd89c):
+        // robot+0x355 -> vtable+0x20, robot+0x34a -> vtable+0x24, robot+0x284->+8 != -1 -> vtable+0x28.
+        if (RobotState355?.Invoke() == true && !RunnableGate20(context)) return false;
+        if (RobotState34a?.Invoke() == true && !RunnableGate24(context)) return false;
+        if (RobotComponent284?.Invoke() == true && !RunnableGate28(context)) return false;
+        if (WantsToRunAllowsRun is { } wants && !wants()) return false;           // +0x38
+        double now = context.ClockSec?.Invoke() ?? Clock() / 1000.0;
+        return now >= _resumeSuppressionUntilSec;                                 // +0x118
+    }
+
+    /// <summary>The AI process seam (<c>+0x1c</c> against <c>robot+0x264+8</c>); null = no required process.</summary>
+    public Func<bool>? RequiredProcessRunning { get; set; }
+    /// <summary>The robot-state seam (<c>+0x74</c> against 3 or the AI state); null = allow.</summary>
+    public Func<bool>? RobotStateAllowsRun { get; set; }
+    /// <summary>The progression-unlock seam (<c>+0x70</c> through <c>IsUnlocked</c>); null = allow.</summary>
+    public Func<bool>? UnlockAllowsRun { get; set; }
+    /// <summary>The recent-event timer seam (<c>+0x78</c>/<c>+0x7c</c>); null = allow.</summary>
+    public Func<bool>? RecentTimersAllowRun { get; set; }
+    /// <summary>The wants-to-run strategy seam (<c>+0x38</c>); null = allow.</summary>
+    public Func<bool>? WantsToRunAllowsRun { get; set; }
+    /// <summary>Robot byte <c>+0x355</c> (0x005bd864); when true the <c>vtable+0x20</c> gate must pass. Null = not modelled.</summary>
+    public Func<bool>? RobotState355 { get; set; }
+    /// <summary>Robot byte <c>+0x34a</c> (0x005bd876); when true the <c>vtable+0x24</c> gate must pass. Null = not modelled.</summary>
+    public Func<bool>? RobotState34a { get; set; }
+    /// <summary>Robot component <c>+0x284</c> whose <c>+8</c> is checked (0x005bd888); when true the <c>vtable+0x28</c> gate must pass. Null = not modelled.</summary>
+    public Func<bool>? RobotComponent284 { get; set; }
+    /// <summary>The <c>vtable+0x20</c> runnable gate; the engine calls it when robot+0x355 is set.</summary>
+    protected virtual bool RunnableGate20(BehaviorContext context) => true;
+    /// <summary>The <c>vtable+0x24</c> runnable gate; the engine calls it when robot+0x34a is set.</summary>
+    protected virtual bool RunnableGate24(BehaviorContext context) => true;
+    /// <summary>The <c>vtable+0x28</c> runnable gate; the engine calls it when robot+0x284->+8 is not -1.</summary>
+    protected virtual bool RunnableGate28(BehaviorContext context) => true;
+
+    /// <summary>IBehavior +0xa1: the engine's running flag, as Init/Stop/Resume set it.</summary>
+    public bool EngineRunning => _engineRunning;
+    /// <summary>
+    /// The <c>IBehavior::Init</c> failure signal (0x005a1eae "BehaviorManager.SetCurrentBehavior.InitFailed").
+    /// The engine's <c>Init</c> returns a bool; the stack's <c>StartAsync</c> does not, so an M7/M15 class
+    /// whose Init can fail sets this. Nothing in M8 sets it.
+    /// </summary>
+    public bool InitFailed { get; set; }
+    /// <summary>IBehavior +0xd8: the spark gate Init computed (from the AI process).</summary>
+    public bool SparkDisabled => _sparkDisabled;
+    /// <summary>IBehavior +0x80: bumped by Init when <see cref="IsRunnableInternal"/> is zero.</summary>
+    public int ScoreIncreaseCount => _scoreIncreaseCount;
+    /// <summary>IBehavior +0x34: the running-penalty clock, stamped by Init and the Resume normal path.</summary>
+    public double RunningPenaltyClockSec => _runningPenaltyClockSec;
+    /// <summary>IBehavior +0x114: how many CliffDetected/UnexpectedMovement resumes have been counted.</summary>
+    public int ResumeCount => _resumeCount;
+    /// <summary>IBehavior +0x118: the TooManyResumesCliffOrMovement suppression stamp.</summary>
+    public double ResumeSuppressionUntilSec => _resumeSuppressionUntilSec;
+    /// <summary>IBehavior +0x104: the running-score bonus <see cref="IncreaseScoreWhileActing"/> adds to.</summary>
+    public double RunningScoreBonus { get; private set; }
+    /// <summary>IBehavior +0xa2: whether <see cref="Resume"/> is inside its normal path.</summary>
+    public bool ResumeInProgress => _resuming;
+    /// <summary>IBehavior +0x84: whether a current-action handle is set.</summary>
+    public bool HasCurrentAction => _currentAction;
+
+    /// <summary>
+    /// <c>IBehavior::IncreaseScoreWhileActing</c> 0x005bf02c: adds <paramref name="amount"/> to +0x104 only
+    /// while the current-action handle +0x84 is non-zero (<c>ldr.w r2,[r0,#0x84]</c> 0x005bf02c;
+    /// <c>cbz r2,#0x5bf042</c> 0x005bf030; <c>vadd.f32</c>/<c>vstr</c> 0x005bf03a/0x005bf03e). Its only
+    /// engine callers are M7/M15 concrete behaviours (KnockOverCubes 10.0f, PopAWheelie/PutDownBlock/
+    /// RollBlock/StackBlocks 0.8f/5.0f, and the FUN_0059ec54 helper); nothing in M8 calls it.
+    /// </summary>
+    // fidelity: M8-003
+    public void IncreaseScoreWhileActing(double amount)
+    {
+        if (_currentAction) RunningScoreBonus += amount;   // +0x84 non-zero
+    }
+
+    /// <summary>
+    /// <c>IBehavior::ScoredActingStateChanged</c> 0x005bf044 clears +0x104 (<c>movs r1,#0</c>;
+    /// <c>str.w r1,[r0,#0x104]</c>). It has <b>no</b> engine caller (exhaustive scan), so this is the
+    /// exported function only and nothing wires it.
+    /// </summary>
+    // fidelity: M8-003
+    public void ScoredActingStateChanged(bool acting) => RunningScoreBonus = 0;
+
+    /// <summary>IBehavior +0x10c: this behaviour's objective (from its config), default 0x29 invalid.</summary>
+    public BehaviorObjective BehaviorObjective { get; set; } = BehaviorObjective.Invalid;
+
+    /// <summary>
+    /// <c>IBehavior::HandleBehaviorObjective</c> 0x005bf00c: when this behaviour's <c>+0x10c</c> is not
+    /// 0x29 and the achieved objective equals it (<c>cmp r1,r0</c> 0x005bf01a), stamp the <b>last-run</b>
+    /// clock <c>+0x30 = now</c> (<c>str r0,[r4,#0x30]</c> 0x005bf028) - the stamp
+    /// <c>EvaluateRepetitionPenalty</c> 0x005beee6 reads. Returns whether it stamped.
+    /// </summary>
+    // fidelity: M8-003
+    public bool HandleBehaviorObjective(BehaviorObjective achieved, double nowSec)
+    {
+        if (BehaviorObjective == BehaviorObjective.Invalid || achieved != BehaviorObjective) return false;
+        Context?.Penalty?.Ran(Id, nowSec);   // +0x30 = now (str r0,[r4,#0x30] 0x005bf028)
+        return true;
+    }
+
+    /// <summary>
+    /// <c>IBehavior::IsRunnableScored</c> 0x005bda28: 1 when <c>now &gt;= +0x118</c>, else 0
+    /// (<c>vldr s0,[r4,#0x118]</c> 0x005bda38; <c>vcmpe.f32</c> 0x005bda3e; <c>movpl r0,#1</c> 0x005bda48).
+    /// It has <b>no</b> engine caller and is not in the IBehavior vtable, so no chooser and not the manager
+    /// consults it; this is the exported function only.
+    /// </summary>
+    // fidelity: M8-001
+    public bool IsRunnableScored(double nowSec) => nowSec >= _resumeSuppressionUntilSec;
+
+    /// <summary>
+    /// <c>IBehavior::StopWithoutImmediateRepetitionPenalty</c> 0x005beea0: stamp +0x108 = now + 1.0 on the
+    /// shared repetition history. Only the M7/M15 concrete behaviours call this; nothing in M8 does.
+    /// </summary>
+    // fidelity: M8-002
+    public void StopWithoutImmediateRepetitionPenalty()
+    {
+        double now = Context.ClockSec?.Invoke() ?? Clock() / 1000.0;
+        Context.Penalty?.StopWithoutImmediateRepetitionPenalty(Id, now);
+    }
+
+    /// <summary>
+    /// The engine's <c>IBehavior::Init</c> 0x005bcb54, on the parts this stack models. The spark gate +0xd8
+    /// comes from the AI process (<c>robot+0x44-&gt;+0x58</c>/<c>+0x5c</c>) and is an interface to that
+    /// layer; <c>vtable+0x48</c> is the <see cref="IsRunnableInternal"/> seam; the SparkBehaviorDisables
+    /// lock is <see cref="SparkBehaviorDisables"/>.
+    /// </summary>
+    // fidelity: M8-001
+    protected void InitLifecycle(BehaviorContext context, double nowSec, bool sparkDisabled)
+    {
+        _sparkDisabled = sparkDisabled;          // +0xd8
+        _engineActingFlag = false;               // halfword 0x0100 at +0xa0: +0xa0 = 0
+        _engineRunning = true;                   //                             +0xa1 = 1
+        _runningPenaltyClockSec = nowSec;        // +0x34 = now
+        _sharedHandle = null;                    // +0x98 cleared (releases whatever it held)
+        if (IsRunnableInternal(context)) _engineRunning = false; else _scoreIncreaseCount++;   // +0x80
+        SparkBehaviorDisables();                 // the "SparkBehaviorDisables" lock
+        _resumeCount = 0;                        // +0x114 = 0
+    }
+
+    /// <summary>
+    /// The <c>SparkBehaviorDisables</c> lock seam: the engine takes it when the unlock id +0x70 is not 0x55
+    /// and equals <c>robot+0x44-&gt;+0x58</c>. The progression/AI-process layer owns those values.
+    /// </summary>
+    protected virtual void SparkBehaviorDisables() { }
+
+    /// <summary>
+    /// <c>IBehavior::Update</c> 0x005bd074: returns 2 when byte +0xa0 is set and the current-action handle
+    /// +0x84 is zero (<c>cbz r1</c> 0x005bd078; <c>cbz r1</c> 0x005bd07e; <c>movs r0,#2</c> 0x005bd088),
+    /// else 0 for the update seam. The manager maps 2 to FinishCurrentBehavior.
+    /// </summary>
+    // fidelity: M8-001
+    public int UpdateStatus() => _engineActingFlag && !_currentAction ? 2 : 0;   // +0xa0 && +0x84 == 0
+
+    /// <summary>
+    /// <c>IBehavior::Resume</c> 0x005bceac. Returns true when the TooManyResumesCliffOrMovement path fired
+    /// (the caller must not resume); false for the normal path. Trigger 0 (CliffDetected) and 0x14
+    /// (UnexpectedMovement) count against +0x114 (<c>cmp r5,#0x14</c> 0x005bcf16; <c>cmpne r5,#0</c>
+    /// 0x005bcf1a); only when the pre-increment value is >= 1 does it set +0x118 = now + 15.0 and raise
+    /// <see cref="TooManyResumesCliffOrMovement"/> (<c>vstr s0,[r4,#0x118]</c> 0x005bcf4c). The normal path
+    /// sets +0xa2 = 1, stamps +0x34 = now, calls <c>vtable+0x4c</c> (<see cref="ResumeInternal"/>), clears
+    /// +0xa2, and on a zero result sets +0xa1 = 1 and takes the SparkBehaviorDisables lock; on a non-zero
+    /// result clears +0xa1 (0x005bcf80..0x005bcfde).
+    /// </summary>
+    // fidelity: M8-001
+    public bool Resume(ReactionTrigger trigger, double nowSec)
+    {
+        if (trigger is ReactionTrigger.CliffDetected or ReactionTrigger.UnexpectedMovement)
+        {
+            int prior = _resumeCount;
+            _resumeCount = prior + 1;
+            if (prior >= 1)
+            {
+                _resumeSuppressionUntilSec = nowSec + 15.0;
+                TooManyResumesCliffOrMovement?.Invoke();
+                return true;
+            }
+        }
+        _resuming = true;                        // +0xa2 = 1
+        _runningPenaltyClockSec = nowSec;        // +0x34 = now
+        int result = ResumeInternal();           // vtable+0x4c
+        _resuming = false;                       // +0xa2 = 0
+        if (result == 0)
+        {
+            _engineRunning = true;               // +0xa1 = 1
+            SparkBehaviorDisables();             // Spark lock when +0x70 == robot+0x44->+0x58
+        }
+        else
+        {
+            _engineRunning = false;              // +0xa1 = 0
+        }
+        return false;
+    }
+
+    /// <summary>Raised on the TooManyResumesCliffOrMovement path (MoodManager::TriggerEmotionEvent).</summary>
+    public event Action? TooManyResumesCliffOrMovement;
+
+    /// <summary>
+    /// The <c>vtable+0x4c ResumeInternal</c> seam; returns the engine's int (0 = resumed, non-zero =
+    /// failed). The M7/M15 classes override it.
+    /// </summary>
+    protected virtual int ResumeInternal() => 0;
+
+    /// <summary>
+    /// <c>IBehavior::StopOnNextActionComplete</c> 0x005bd624..0x005bd6bb: sets the acting flag
+    /// <c>+0xa0 = 1</c> (<c>strb.w r1,[r4,#0xa0]</c> 0x005bd698) and releases the <c>+0x98</c> handle
+    /// (0x005bd694/0x005bd6b4). Its callers are the M7/M15 concrete behaviours; <c>UpdateStatus</c> then
+    /// returns 2 once the current action handle <c>+0x84</c> is clear.
+    /// </summary>
+    // fidelity: M8-001
+    public void StopOnNextActionComplete()
+    {
+        _engineActingFlag = true;   // +0xa0 = 1 (0x005bd698)
+        _sharedHandle = null;       // +0x98 released (0x005bd694/0x005bd6b4)
+    }
+
+    /// <summary>IBehavior +0x98: the shared handle Init and StopOnNextActionComplete release.</summary>
+    public object? SharedHandle => _sharedHandle;
+
+    /// <summary>Sets the +0x98 handle (nothing in M8 sets it; the engine's action code does).</summary>
+    protected void SetSharedHandle(object? handle) => _sharedHandle = handle;
+
+    /// <summary>
+    /// The resume entry: sets up the run without <see cref="InitLifecycle"/>, so the +0x114 counter and the
+    /// other engine fields survive a resume. The engine's <c>BehaviorManager::TryToResumeBehavior</c>
+    /// (0x005a2c76) calls <c>IBehavior::Resume</c> and does not call <c>IBehavior::Init</c>.
+    /// </summary>
+    // fidelity: M8-001
+    public Task ResumeAsync(BehaviorContext context, BehaviorScope scope, CancellationToken cancel)
     {
         Context = context;
         Scope = scope;
@@ -114,6 +371,29 @@ public abstract class SteppedBehavior : IBehavior
         if (!_finished && !Busy && !KeepsRunningWithoutAction) _finished = true;
         return Task.CompletedTask;
     }
+
+    public virtual double EvaluateScore(BehaviorContext context) => IsRunnable(context) ? Score : 0;
+
+    public Task StartAsync(BehaviorContext context, BehaviorScope scope, CancellationToken cancel)
+    {
+        Context = context;
+        Scope = scope;
+        _finished = false;
+        StartedMs = null;
+        ClearWaits();
+        while (_pending.TryDequeue(out _)) { }
+        lock (_gate) _trace.Clear();
+        InitLifecycle(context, context.ClockSec?.Invoke() ?? Clock() / 1000.0, SparkGate?.Invoke() ?? false);
+        OnStart();
+        if (!_finished && !Busy && !KeepsRunningWithoutAction) _finished = true;
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// The spark-gate input (<c>robot+0x44-&gt;+0x58</c>/<c>+0x5c</c>), an interface to the AI/progression
+    /// layer. Null means the gate reads false, which is what a robot with no AI process attached means.
+    /// </summary>
+    public Func<bool>? SparkGate { get; set; }
 
     /// <summary>The engine's <c>InitInternal</c>: start the first action.</summary>
     protected abstract void OnStart();
@@ -165,10 +445,9 @@ public abstract class SteppedBehavior : IBehavior
     public void Stop(BehaviorStopReason reason)
     {
         _finished = true;
-        ClearWaits();
-        lock (_gate) _actionEpoch++;
-        StopOwnAnimation();
-        OnStop(reason);
+        _engineRunning = false;                  // IBehavior::Stop clears +0xa1 (0x005bd10c)
+        OnStop(reason);                          // vtable+0x54 StopInternal (0x005bd110/0x005bd114)
+        StopActing(keepAction: false, viaCallback: false);   // IBehavior::Stop calls StopActing(0,0) 0x005bd126
     }
 
     /// <summary>Ends the behaviour of its own accord: the engine's behaviour running out of actions.</summary>
@@ -179,14 +458,34 @@ public abstract class SteppedBehavior : IBehavior
         Log("done");
     }
 
-    /// <summary>The engine's <c>StopActing</c>: cancel whatever action is running, without ending the behaviour.</summary>
-    protected void StopActing()
+    /// <summary>
+    /// The engine's <c>IBehavior::StopActing(keepAction, viaCallback)</c> 0x005bd34c: calls
+    /// <c>vtable+0x80(0)</c> (<c>blx r2</c> 0x005bd360); when <c>viaCallback</c> is false and a helper is
+    /// live it logs "Stopping behavior helper because action stopped without callback" and calls
+    /// <c>StopHelperWithoutCallback</c> (0x005bd39c/0x005bd3d6); then, if the current-action handle
+    /// <c>+0x84</c> is set, it cancels it in <c>ActionList</c> (0x005bd3f0) and clears <c>+0x84</c> unless
+    /// <paramref name="keepAction"/> (0x005bd3e0/0x005bd3e4). This stack cancels by advancing the action
+    /// epoch and dropping the queued completion; the helper path is the unowned BehaviorHelperComponent.
+    /// </summary>
+    // fidelity: M8-001
+    protected void StopActing(bool keepAction, bool viaCallback)
     {
         ClearWaits();
         lock (_gate) _actionEpoch++;
         while (_pending.TryDequeue(out _)) { }
-        StopOwnAnimation();
+        StopOwnAnimation();                                  // vtable+0x80(0)
+        if (_currentAction && !keepAction) _currentAction = false;   // +0x84 cleared unless keepAction
+        if (!viaCallback) StopHelperWithoutCallback();
     }
+
+    /// <summary>The parameterless convenience: <c>StopActing(0,0)</c>.</summary>
+    protected void StopActing() => StopActing(keepAction: false, viaCallback: false);
+
+    /// <summary>
+    /// The helper-without-callback seam (0x005bd3d6). The helper component is unowned by any record, so
+    /// the default does nothing; a concrete M7/M15 class that has one overrides it.
+    /// </summary>
+    protected virtual void StopHelperWithoutCallback() { }
 
     /// <summary>
     /// The engine's <c>TriggerAnimationAction</c>: resolve the trigger through the shipped map, claim its
@@ -213,6 +512,7 @@ public abstract class SteppedBehavior : IBehavior
     /// came from behind. They are added to the scope's claim, which is what keeps the keep-alive off them
     /// for the length of the play.
     /// </param>
+    // fidelity: M8-007
     protected void PlayTrigger(AnimationTrigger trigger, Action onDone, AnimationTrack alsoLock = AnimationTrack.None)
     {
         var lib = Context.Robot.Animations.Library;
@@ -227,9 +527,19 @@ public abstract class SteppedBehavior : IBehavior
         }
 
         var clip = lib.GetClip(resolved.Selected!);
-        Scope.LockTracks(clip.Tracks | alsoLock);
+        var lockTracks = clip.Tracks | alsoLock;
+        byte mask = CozmoMotion.MaskFor(lockTracks);
+        if (mask != 0 && Context.Robot.Motion.AreAnyTracksLocked(mask))
+        {
+            // IActionRunner::Update 0x00540370: AreAnyTracksLocked 0x00540440; the action stays queued and is
+            // retried next tick, logging "Action %s [%d] not running because required tracks are locked"
+            // (0x005404a8).
+            Log($"{trigger} -> {resolved.Selected}: Action not running because required tracks are locked");
+            _pending.Enqueue(() => PlayTrigger(trigger, onDone, alsoLock));
+            return;
+        }
 
-        var ticket = Context.Robot.Animations.PlayTracked(resolved.Selected!);
+        var ticket = Context.Robot.Animations.PlayTracked(resolved.Selected!, lockTracks: lockTracks);
         if (ticket is null)
         {
             // A track it needs is owned. The engine waits: IActionRunner::Update leaves the action queued
@@ -247,6 +557,7 @@ public abstract class SteppedBehavior : IBehavior
             _generation = ticket.Generation;
             _owns = true;
             _acting = true;
+            _currentAction = true;               // +0x84 set
             epoch = _actionEpoch;
         }
         ticket.Completion.ContinueWith(_ =>
@@ -255,7 +566,7 @@ public abstract class SteppedBehavior : IBehavior
             lock (_gate)
             {
                 current = epoch == _actionEpoch;
-                if (current) { _owns = false; _acting = false; }
+                if (current) { _owns = false; _acting = false; _currentAction = false; }   // +0x84 cleared on completion
             }
             if (current) _pending.Enqueue(onDone);
         }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
@@ -301,6 +612,7 @@ public abstract class SteppedBehavior : IBehavior
     /// a recalibration - ReactToImpact and ReactToMotorCalibration - both wait five seconds, so that is
     /// the number used. On hardware the report arrives in about two.
     /// </summary>
+    // fidelity: M8-008
     protected void CalibrateHead(Action onDone)
     {
         var state = Context.Robot.State;

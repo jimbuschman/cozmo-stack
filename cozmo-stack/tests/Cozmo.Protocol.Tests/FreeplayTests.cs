@@ -191,6 +191,61 @@ public class FreeplayTests
         Assert.Equal(7.0, flat.Evaluate(b, ctx, 0, null, null, null), 3);
     }
 
+    /// <summary>
+    /// The non-running branch of <c>IBehavior::EvaluateScore</c> 0x005bef60 applies the repetition penalty
+    /// only when +0x110 is set (0x005befd4/0x005befd8) and <c>now &gt;= +0x108</c>
+    /// (0x005befe2..0x005beff2). The +0x108 threshold is what <c>StopWithoutImmediateRepetitionPenalty</c>
+    /// sets to now + 1.0, so an interrupted behaviour keeps its score for about a second.
+    /// </summary>
+    [Fact]
+    public void TheScoredEntrySkipsTheRepetitionPenaltyInsideTheSuppressionWindow()
+    {
+        using var rig = new Rig();
+        var ctx = Ctx(rig);
+        var b = new Fake("a");
+        var entry = new ScoredBehaviorEntry("a", 3.0, new Graph2d(new[] { (0.0, 0.0), (30.0, 1.0) }), null, null, Array.Empty<EmotionScorer>());
+
+        Assert.Equal(3.0 / 30.0, entry.Evaluate(b, ctx, 1, 0, null, null), 4);                        // the graph at 1 s
+        Assert.Equal(3.0, entry.Evaluate(b, ctx, 1, 0, null, null, penaltySuppressed: true), 4);      // inside +0x108
+        Assert.Equal(3.0, entry.Evaluate(b, ctx, 1, 0, null, null, repetitionPenaltyEnabled: false), 4); // +0x110 clear
+    }
+
+    /// <summary>
+    /// The running branch of <c>IBehavior::EvaluateScore</c> adds the float at +0x104
+    /// (0x005bef80/0x005bef88) and multiplies by <c>EvaluateRunningPenalty</c> only when +0x111 is set
+    /// (0x005bef84/0x005bef8c). The +0x104 bonus is not added when the behaviour is not running.
+    /// </summary>
+    [Fact]
+    public void TheScoredEntryAddsTheRunningBonusAndAppliesTheRunningPenaltyEnable()
+    {
+        using var rig = new Rig();
+        var ctx = Ctx(rig);
+        var b = new Fake("a");
+        var runGraph = new Graph2d(new[] { (0.0, 0.5), (10.0, 1.0) });
+        var entry = new ScoredBehaviorEntry("a", 2.0, null, runGraph, null, Array.Empty<EmotionScorer>());
+
+        Assert.Equal(3.0, entry.Evaluate(b, ctx, 0, null, 10, null, runningBonus: 1.0), 4);                          // (2 + 1) * 1
+        Assert.Equal(3.0, entry.Evaluate(b, ctx, 0, null, 10, null, runningBonus: 1.0, runningPenaltyEnabled: false), 4); // +0x111 clear
+        Assert.Equal(2.0, entry.Evaluate(b, ctx, 0, null, null, null, runningBonus: 1.0), 4);                        // not running
+    }
+
+    /// <summary>
+    /// The running branch of <c>IBehavior::EvaluateScore</c> 0x005bef60 is not gated on <c>IsRunnable</c>:
+    /// a running behaviour scores <c>EvaluateScoreInternal + +0x104</c> regardless (only the non-running
+    /// branch tests <c>IsRunnableBase</c> and <c>vtable+0x50</c>, 0x005befa2/0x005befce).
+    /// </summary>
+    [Fact]
+    public void ARunningBehaviourThatIsNotRunnableStillScores()
+    {
+        using var rig = new Rig();
+        var ctx = Ctx(rig);
+        var notRunnable = new Fake("a", runnable: false);
+        var entry = new ScoredBehaviorEntry("a", 2.0, null, null, null, Array.Empty<EmotionScorer>());
+
+        Assert.Equal(0.0, entry.Evaluate(notRunnable, ctx, 0, null, null, null), 4);              // non-running gate
+        Assert.Equal(3.0, entry.Evaluate(notRunnable, ctx, 0, null, 10, null, runningBonus: 1.0), 4);   // running: (2 + 1)
+    }
+
     [Fact]
     public void TheScoringChooserWeighsFlatScoresPenaltiesAndTheRunningBonus()
     {
@@ -206,6 +261,9 @@ public class FreeplayTests
             new ScoredBehaviorEntry("missing", 9.0, null, null, null, Array.Empty<EmotionScorer>()),
         };
         var chooser = new ScoringChooser(entries, bound, scoreBonusForCurrent: new Graph2d(new[] { (0.0, 1.0) }));
+        // ScoringBSRunnableChooser adds RandomGenerator::RandDbl (0x0060a4a8) to every non-running score;
+        // pin it to zero so the ordering assertions are the engine's score rule and not the draw.
+        chooser.RandomDraw = () => 0.0;
         Assert.Equal(new[] { "missing" }, chooser.Unbound);
         var d = chooser.GetDesiredActiveBehavior(null, 0, ctx, 0);
         Assert.Equal("a", d.Behavior!.Id);                                            // c is not runnable, missing is not built

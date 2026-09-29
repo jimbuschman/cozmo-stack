@@ -168,6 +168,11 @@ public class CorrectionTests
             .Single(r => r.Strategy.Trigger == ReactionTrigger.PlacedOnCharger).Strategy;
         charger.WantsToRun(clock);              // the first call starts the 20 s deadline (gap2 1d)
         charger.HandleChargerEvent(true);       // vtable +0xC on tag 57 ChargerEvent
+        // SwitchToReactionTrigger now calls SwitchToBehaviorBase (0x005a26da), which gates on
+        // IBehavior::IsRunnable (0x005a1e76); ReactToOnCharger's IsRunnableInternal reads the robot's
+        // on-charger state, so report it before the reaction is checked.
+        rig.OnCharger = true;
+        rig.State();
         clock = 30;
         Assert.NotNull(stack.Manager.CheckReactions(clock));
         Assert.Equal(new[] { ReactionTrigger.RobotFalling, ReactionTrigger.PlacedOnCharger }, triggers);
@@ -551,6 +556,10 @@ public class CorrectionTests
         var graph = new Graph2d(new[] { (0.0, 0.0), (30.0, 1.0) });
         var a = new ScoringChooser(new[] { Entry("shared", 10, graph) }, bound, penalty: penalty);
         var b = new ScoringChooser(new[] { Entry("shared", 10, graph) }, bound, penalty: penalty);
+        // ScoringBSRunnableChooser adds RandomGenerator::RandDbl to a non-running behaviour's score
+        // (0x0060a4a8); pin it to zero so the assertion is the shared-history rule alone.
+        a.RandomDraw = () => 0.0;
+        b.RandomDraw = () => 0.0;
 
         Assert.Equal(10.0, a.GetDesiredActiveBehavior(null, 0, ctx, 0).Scores.Single().Score, 3);
         penalty.Ran("shared", 0);                                   // the manager records it once
@@ -558,7 +567,13 @@ public class CorrectionTests
         Assert.Equal(10.0, b.GetDesiredActiveBehavior(null, 0, ctx, 30).Scores.Single().Score, 3);
     }
 
-    /// <summary>An interrupted behaviour is not penalised; one that completed is.</summary>
+    /// <summary>
+    /// <c>IBehavior::Stop</c> stamps the last-run clock +0x30 on <b>every</b> stop
+    /// (<c>BaseStationTimer::GetCurrentTimeInSeconds</c> 0x005bd11a/0x005bd11e), interrupted included, so
+    /// <c>LastRunSec</c> is set after an interrupted stop too. The "no immediate penalty" case is the +0x108
+    /// window written only by <c>StopWithoutImmediateRepetitionPenalty</c> (0x005beea0), whose callers are
+    /// the M7/M15 concrete behaviours - not <c>IBehavior::Stop</c>. (The old name is historical.)
+    /// </summary>
     [Fact]
     public void OnlyACompletedBehaviourIsPenalisedForRepeating()
     {
@@ -571,7 +586,8 @@ public class CorrectionTests
 
         manager.StartAsync("two", 0).GetAwaiter().GetResult();
         manager.Stop(BehaviorStopReason.Interrupted, 1);
-        Assert.Null(manager.Penalty.LastRunSec("two"));
+        // Stop stamps +0x30 whatever the reason (0x005bd11e), so the interrupted stop is recorded.
+        Assert.Equal(1.0, manager.Penalty.LastRunSec("two"));
 
         manager.StartAsync("one", 2).GetAwaiter().GetResult();
         manager.Update(0, 2);            // one tick and it is done

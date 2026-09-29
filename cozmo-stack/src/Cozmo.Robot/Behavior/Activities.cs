@@ -36,28 +36,43 @@ public sealed record Graph2d(IReadOnlyList<(double X, double Y)> Nodes)
 /// the constructor's zero (<c>IBehavior::IBehavior</c> writes 0 to +0x100 at 0x005BBD28), so it scores
 /// nothing in a scoring chooser.
 /// </summary>
+// fidelity: M8-003
 public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Graph2d? RepetitionPenalty, Graph2d? RunningPenalty, double? BoredomMultiplier,
                                          IReadOnlyList<EmotionScorer> EmotionScorers)
 {
     /// <summary>
     /// <c>IBehavior::EvaluateScore</c> 0x005BEF60 over
     /// <c>IBehavior::EvaluateScoreInternal</c> 0x005BEEC2: the emotion scorers if there are any,
-    /// <b>otherwise</b> the flat score - not the two added - times the running penalty while running and
-    /// the repetition penalty from the last run, and zero when the behaviour will not run.
+    /// <b>otherwise</b> the flat score - not the two added. The <b>running</b> branch
+    /// (<c>ldrb.w r0,[r4,#0xa1]</c> at 0x005bef7a) is <b>not</b> gated on <c>IsRunnable</c>: it is that
+    /// score plus the +0x104 running bonus, times the running penalty when +0x111 is set. The
+    /// <b>non-running</b> branch tests <c>IsRunnableBase</c> (0x005befa2) and the <c>vtable+0x50</c> gate
+    /// (0x005befce), then applies the repetition penalty only when +0x110 is set and
+    /// <c>now &gt;= +0x108</c> (0x005befd4/0x005befd8/0x005befe2).
     ///
     /// EvaluateScoreInternal is three instructions: if the MoodScorer's list is not empty it tail-calls
     /// <c>MoodScorer::EvaluateEmotionScore(moodManager)</c>, and only an empty list falls through to the
     /// float at +0x100, the flat score.
     /// </summary>
-    public double Evaluate(IBehavior b, BehaviorContext ctx, double nowSec, double? lastRunSec, double? runningSec, RepetitionPenalty? defaultPenalty)
+    public double Evaluate(IBehavior b, BehaviorContext ctx, double nowSec, double? lastRunSec, double? runningSec, RepetitionPenalty? defaultPenalty,
+                           double runningBonus = 0, bool repetitionPenaltyEnabled = true, bool runningPenaltyEnabled = true, bool penaltySuppressed = false)
     {
-        if (!b.IsRunnable(ctx)) return 0;
         double score = EmotionScorers.Count > 0 ? EmotionScore(ctx) : FlatScore;
-        if (runningSec is { } r && RunningPenalty is { } rp) score *= rp.EvaluateY(r);
-        if (lastRunSec is { } last)
+        if (runningSec is { } r)
         {
-            double since = nowSec - last;
-            score *= RepetitionPenalty is { } g2 ? g2.EvaluateY(since) : defaultPenalty?.For(BehaviorId, nowSec) ?? 1.0;
+            // Running branch: EvaluateScoreInternal + the float at +0x104 (vldr s2,[r4,#0x104]
+            // 0x005bef80; vadd.f32 0x005bef88), then multiplied by EvaluateRunningPenalty only when the
+            // +0x111 enable byte is set (0x005bef84/0x005bef8c). No IsRunnable gate here.
+            score += runningBonus;
+            if (runningPenaltyEnabled && RunningPenalty is { } rp) score *= rp.EvaluateY(r);
+        }
+        else
+        {
+            // Non-running branch: IsRunnableBase (0x005befa2) then the vtable+0x50 gate (0x005befce).
+            // The stack's IBehavior.IsRunnable is that IsRunnableBase + vtable+0x50 combination (M8-001 C1a).
+            if (!b.IsRunnable(ctx)) return 0;
+            if (repetitionPenaltyEnabled && !penaltySuppressed && lastRunSec is { } last)
+                score *= RepetitionPenalty is { } g2 ? g2.EvaluateY(nowSec - last) : defaultPenalty?.For(BehaviorId, nowSec) ?? 1.0;
         }
         return score;
     }
@@ -105,6 +120,60 @@ public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Gr
 }
 
 /// <summary>
+/// <c>BehaviorObjective</c> (IBehavior +0x10c), parsed from <c>considerThisHasRunForBehaviorObjective</c> by
+/// <c>BehaviorObjectiveFromString</c> (called at 0x005bc5a0). The ordinals are the
+/// <c>EnumToString(BehaviorObjective)</c> 0x769540 string table at 0x1033140: [0]="Unknown",
+/// [18]="PerformedWorkout", [22]="PoppedWheelie", [41]="Count" (0x29, the constructor's default sentinel).
+/// </summary>
+public enum BehaviorObjective
+{
+    Unknown = 0,
+    PerformedWorkout = 18,
+    PoppedWheelie = 22,
+    Count = 0x29,
+    Invalid = Count,
+}
+
+/// <summary>The <c>BehaviorObjectiveFromString</c> 0x005bc5a0 mapping for the shipped names.</summary>
+public static class BehaviorObjectives
+{
+    public static BehaviorObjective FromString(string? name) => name switch
+    {
+        "PerformedWorkout" => BehaviorObjective.PerformedWorkout,
+        "PoppedWheelie" => BehaviorObjective.PoppedWheelie,
+        _ => BehaviorObjective.Invalid,
+    };
+
+    /// <summary>
+    /// Every shipped behaviour config's <c>considerThisHasRunForBehaviorObjective</c>, by <c>behaviorID</c>.
+    /// The key lives in the behaviour's own config (<c>behaviors/freeplay/popAWheelie.json</c>,
+    /// <c>behaviors/freeplay/cubeLiftWorkout.json</c>), read by <c>IBehavior::ReadFromScoredJson</c>
+    /// 0x005bc488; it is not an activity chooser entry.
+    /// </summary>
+    public static IReadOnlyDictionary<string, BehaviorObjective> Load(string obbRoot)
+    {
+        var map = new Dictionary<string, BehaviorObjective>(StringComparer.Ordinal);
+        var dir = Path.Combine(obbRoot, "assets", "cozmo_resources", "config", "engine", "behaviorSystem", "behaviors");
+        if (!Directory.Exists(dir)) return map;
+        var options = new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
+        foreach (var f in Directory.EnumerateFiles(dir, "*.json", SearchOption.AllDirectories).OrderBy(x => x, StringComparer.Ordinal))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(File.ReadAllText(f), options);
+                var root = doc.RootElement;
+                if (root.ValueKind != JsonValueKind.Object) continue;
+                if (root.TryGetProperty("behaviorID", out var id) && id.GetString() is { } bid
+                    && root.TryGetProperty("considerThisHasRunForBehaviorObjective", out var ob) && ob.GetString() is { } name)
+                    map[bid] = FromString(name);
+            }
+            catch (JsonException) { }
+        }
+        return map;
+    }
+}
+
+/// <summary>
 /// One entry of a behaviour's MoodScorer: which emotion, the graph over its value, and whether the value
 /// is taken as a change rather than a level. <c>EmotionScorer::ReadFromJson</c> 0x0067AABC reads
 /// <c>emotionType</c>, <c>scoreGraph</c> and <c>trackDelta</c>.
@@ -143,6 +212,7 @@ public interface IBehaviorChooser
 /// broken at random (<c>RandDbl</c>). Behaviours named in the config but absent from the bound set are noted,
 /// not invented.
 /// </summary>
+// fidelity: M8-013
 public sealed class ScoringChooser : IBehaviorChooser
 {
     private readonly Dictionary<string, IBehavior> _bound;
@@ -162,6 +232,12 @@ public sealed class ScoringChooser : IBehaviorChooser
     public Random Random { get; set; } = new();
 
     /// <summary>
+    /// The <c>RandomGenerator::RandDbl</c> draw (0x0060a4a8) added to a non-running challenger's score.
+    /// Null uses <see cref="Random"/>; a test can pin it.
+    /// </summary>
+    public Func<double>? RandomDraw { get; set; }
+
+    /// <summary>
     /// Records a completed run in the shared repetition history. The manager already does this for every
     /// behaviour that reaches <c>BehaviorStopReason.Completed</c> — the engine's
     /// <c>StopWithoutImmediateRepetitionPenalty</c> exists precisely so an interrupted one is not penalised —
@@ -169,6 +245,12 @@ public sealed class ScoringChooser : IBehaviorChooser
     /// </summary>
     public void Ran(string behaviorId, double nowSec) => _penalty.Ran(behaviorId, nowSec);
 
+    /// <summary>
+    /// <c>ScoringBSRunnableChooser::GetDesiredActiveBehavior</c> 0x0060a44a: evaluate every listed
+    /// behaviour, skip a score &lt;= 0 (<c>vcmpe.f32 s0,#0</c> 0x0060a452; <c>ble</c> 0x0060a462), add the
+    /// running-duration graph bonus to the running one (<c>GraphEvaluator2d::EvaluateY</c> 0x0060a474) and a
+    /// <c>RandomGenerator::RandDbl</c> draw to a non-running challenger (0x0060a4a8), and keep the maximum.
+    /// </summary>
     public ChooserDecision GetDesiredActiveBehavior(IBehavior? current, double currentRunningSec, BehaviorContext ctx, double nowSec)
     {
         var scores = new List<(string, double, string)>();
@@ -177,21 +259,28 @@ public sealed class ScoringChooser : IBehaviorChooser
         {
             if (!_bound.TryGetValue(e.BehaviorId, out var b)) { scores.Add((e.BehaviorId, 0, "not built")); continue; }
             bool running = current is not null && current.Id == b.Id;
-            double s = e.Evaluate(b, ctx, nowSec, _penalty.LastRunSec(b.Id), running ? currentRunningSec : null, _penalty);
-            if (running && s > 0 && ScoreBonusForCurrent is { } bonus) s += bonus.EvaluateY(currentRunningSec);
-            scores.Add((b.Id, s, running ? "running" : s <= 0 ? (b.IsRunnable(ctx) ? "scored 0" : "not runnable") : ""));
-            if (running) currentScore = s;
-            if (s > bestScore || (s == bestScore && s > 0 && best is not null && Random.NextDouble() < 0.5)) { bestScore = s; best = b; }
+            // IBehavior +0x104: the running-score bonus IncreaseScoreWhileActing accumulates (M8-003).
+            double runningBonus = b is SteppedBehavior sb ? sb.RunningScoreBonus : 0;
+            double s = e.Evaluate(b, ctx, nowSec, _penalty.LastRunSec(b.Id), running ? currentRunningSec : null, _penalty,
+                                  runningBonus: runningBonus, penaltySuppressed: _penalty.IsSuppressed(b.Id, nowSec));
+            if (s <= 0) { scores.Add((b.Id, s, b.IsRunnable(ctx) ? "scored 0" : "not runnable")); continue; }
+            if (running)
+            {
+                if (ScoreBonusForCurrent is { } bonus) s += bonus.EvaluateY(currentRunningSec);   // 0x0060a474
+                currentScore = s;
+            }
+            else s += RandomDraw?.Invoke() ?? Random.NextDouble();                               // 0x0060a4a8
+            scores.Add((b.Id, s, running ? "running" : ""));
+            if (s > bestScore) { bestScore = s; best = b; }
         }
         if (best is null) return new ChooserDecision(null, "no listed behaviour is runnable and wants to run", scores);
-        if (current is not null && current.Id != best.Id && currentScore > 0 && bestScore <= currentScore)
-            return new ChooserDecision(current, "the running behaviour keeps its place", scores);
         if (current is not null && current.Id == best.Id) return new ChooserDecision(best, "already running", scores);
         return new ChooserDecision(best, current is null ? $"highest score {bestScore:F2}" : $"behavior '{best.Id}' has score of {bestScore:F2}, so is interrupting running behavior '{current.Id}' which scored {currentScore:F2}", scores);
     }
 }
 
 /// <summary>The engine's <c>StrictPriorityBSRunnableChooser</c>: the first runnable behaviour in the list (the running one stays while it is still the first runnable).</summary>
+// fidelity: M8-013
 public sealed class StrictPriorityChooser : IBehaviorChooser
 {
     private readonly IReadOnlyDictionary<string, IBehavior> _bound;
@@ -218,13 +307,86 @@ public sealed class StrictPriorityChooser : IBehaviorChooser
     }
 }
 
-/// <summary>The engine's <c>SelectionBSRunnableChooser</c>: the app names the behaviour (<c>ExecuteBehavior</c>); nothing to choose here.</summary>
+/// <summary>
+/// The engine's <c>SelectionBSRunnableChooser</c> 0x0060ad64..0x0060ae6f. +0x2c is the behaviour named by
+/// the last <c>ExecuteBehaviorByID</c>/<c>ByExecutableType</c> message (initially null), +0x34 is the
+/// <c>Wait</c> behaviour (BehaviorID 0xb2, resolved once in the ctor), +0x3c is the message's
+/// <c>numRuns</c> (constructor -1 = unlimited, one decrement per running-&gt;stopped edge) and +0x40 is a
+/// byte latch holding the previous call's running state. The requested behaviour is returned while it is
+/// running (<c>+0xa1</c>) or <c>IsRunnable</c> and its budget is not spent; otherwise the same rule is
+/// applied to <c>Wait</c>, whose countdown block only runs when <c>+0x34 == +0x2c</c>; otherwise null.
+/// </summary>
+// fidelity: M8-013
 public sealed class SelectionChooser : IBehaviorChooser
 {
+    private readonly IBehavior? _wait;
+    private IBehavior? _requested;   // +0x2c
+    private int _numRuns = -1;       // +0x3c
+    private bool _latch;             // +0x40
+
+    public SelectionChooser(IReadOnlyDictionary<string, IBehavior>? bound = null)
+    {
+        // ctor 0x0060a988/0x0060a99a: BehaviorID 0xb2 = 178 = "Wait" resolved through FindBehaviorByID.
+        _wait = bound is not null && bound.TryGetValue("Wait", out var w) ? w : null;
+    }
+
     public BehaviorChooserType Type => BehaviorChooserType.Selection;
-    public IReadOnlyList<string> BehaviorIds => Array.Empty<string>();
-    public ChooserDecision GetDesiredActiveBehavior(IBehavior? current, double currentRunningSec, BehaviorContext ctx, double nowSec) =>
-        new(current, "Selection: the app chooses (no request)", Array.Empty<(string, double, string)>());
+    public IReadOnlyList<string> BehaviorIds => _requested is null ? Array.Empty<string>() : new[] { _requested.Id };
+
+    /// <summary>+0x2c: the behaviour the last ExecuteBehavior message named, or null.</summary>
+    public IBehavior? Requested => _requested;
+    /// <summary>+0x34: the Wait behaviour (BehaviorID 0xb2), or null when the bound set has none.</summary>
+    public IBehavior? Wait => _wait;
+    /// <summary>+0x3c: the remaining runs; -1 is unlimited.</summary>
+    public int NumRuns => _numRuns;
+
+    /// <summary>
+    /// The ExecuteBehavior message's setter (+0x2c = the resolved behaviour, +0x3c = numRuns, default -1;
+    /// <c>str r7,[r5,#0x2c]</c> 0x0060ac2c, <c>str r0,[r5,#0x3c]</c> 0x0060aa88/0x0060aac8). The caller is
+    /// <c>SelectionBSRunnableChooser::HandleExecuteBehavior</c> 0x0060ac2c, which is unowned by any record:
+    /// the <c>ExecuteBehaviorByID</c>/<c>ByExecutableType</c> message is M2/M10 and is not built here, so
+    /// nothing in production calls this setter. It stays as the seam that message layer will call.
+    /// </summary>
+    public void RequestBehavior(IBehavior? behavior, int numRuns = -1)
+    {
+        _requested = behavior;
+        _numRuns = numRuns;
+    }
+
+    public ChooserDecision GetDesiredActiveBehavior(IBehavior? current, double currentRunningSec, BehaviorContext ctx, double nowSec)
+    {
+        var scores = new List<(string, double, string)>();
+        if (Candidate(_requested, current, ctx, scores, updateCountdown: true))
+            return new ChooserDecision(_requested, "the requested behaviour", scores);
+        if (Candidate(_wait, current, ctx, scores, updateCountdown: _wait is not null && ReferenceEquals(_wait, _requested)))
+            return new ChooserDecision(_wait, "the Wait fallback", scores);
+        return new ChooserDecision(null, "no requested behaviour and no Wait are runnable", scores);
+    }
+
+    /// <summary>
+    /// One candidate's rule (0x0060ad6e..0x0060add8 for +0x2c, 0x0060ade2..0x0060ae4a for +0x34):
+    /// running or runnable, then the countdown/latch block when <paramref name="updateCountdown"/>, then
+    /// return it when the flag is 1.
+    /// </summary>
+    private bool Candidate(IBehavior? candidate, IBehavior? current, BehaviorContext ctx,
+                           List<(string, double, string)> scores, bool updateCountdown)
+    {
+        if (candidate is null) return false;
+        bool running = current is not null && current.Id == candidate.Id;
+        bool runnable = running || candidate.IsRunnable(ctx);
+        if (updateCountdown)
+        {
+            if (_numRuns == 0) runnable = false;                                   // 0x0060ada4/0x0060adce
+            else if (_numRuns >= 1 && !running && _latch)                          // 0x0060ada8..0x0060adbc
+            {
+                _numRuns--;                                                        // 0x0060adbe/0x0060adc0
+                if (_numRuns == 0) runnable = false;                               // 0x0060adc2..0x0060adc6
+            }
+            _latch = running;                                                      // 0x0060adc8 / 0x0060ae3a
+        }
+        scores.Add((candidate.Id, runnable ? 1 : 0, running ? "running" : runnable ? "selected" : "not runnable"));
+        return runnable;
+    }
 }
 
 /// <summary>
@@ -631,7 +793,7 @@ public static class ActivityTreeLoader
             case "StrictPriority":
                 return new StrictPriorityChooser(c.TryGetProperty("behaviors", out var b) ? b.EnumerateArray().Select(x => x.GetString()!).ToList() : new List<string>(), bound);
             case "Selection":
-                return new SelectionChooser();
+                return new SelectionChooser(bound);
             default:
                 var entries = c.TryGetProperty("behaviors", out var bs) ? bs.EnumerateArray().Select(ScoredBehaviorEntry.FromJson).ToList() : new List<ScoredBehaviorEntry>();
                 var bonus = c.TryGetProperty("scoreBonusForCurrentBehavior", out var sb) ? Graph2d.FromJson(sb) : null;

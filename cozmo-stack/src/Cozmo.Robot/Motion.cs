@@ -243,6 +243,34 @@ public sealed class CozmoMotion
         return false;
     }
 
+    // fidelity: M8-007
+    /// <summary>
+    /// <c>MovementComponent::AreAnyTracksLocked(mask)</c> 0x00640098's reader at <c>0x00540440</c>: any bit
+    /// of <paramref name="mask"/> whose lock set is non-empty. <c>IActionRunner::Update</c> 0x00540370
+    /// refuses to run an action whose required tracks are locked (0x005404a8) and retries next tick.
+    /// </summary>
+    public bool AreAnyTracksLocked(byte mask) { lock (_gate) return IsTrackLockedLocked(mask); }
+
+    /// <summary><c>MovementComponent::LockTracks</c> 0x00640098: one owner entry per bit in the multiset.</summary>
+    public void LockTracks(byte mask, string who) { lock (_gate) LockTracksLocked(mask, who); }
+
+    /// <summary><c>MovementComponent::UnlockTracks</c> 0x0063fe5c: remove the owner's entry per bit.</summary>
+    public void UnlockTracks(byte mask, string who) { lock (_gate) UnlockTracksLocked(mask, who); }
+
+    /// <summary>
+    /// The motion-track mask for an animation's tracks: the engine's <c>IActionRunner</c> +0x54 mask uses the
+    /// same head/lift/body bits (M4-014 <see cref="HeadTrack"/>/<see cref="LiftTrack"/>/<see cref="BodyTrack"/>);
+    /// face/audio/lights/events have no motion track.
+    /// </summary>
+    public static byte MaskFor(Animation.AnimationTrack tracks)
+    {
+        byte m = 0;
+        if ((tracks & Animation.AnimationTrack.Head) != 0) m |= HeadTrack;
+        if ((tracks & Animation.AnimationTrack.Lift) != 0) m |= LiftTrack;
+        if ((tracks & Animation.AnimationTrack.Body) != 0) m |= BodyTrack;
+        return m;
+    }
+
     // fidelity: M4-014
     /// <summary>
     /// DirectDriveCheckSpeedAndLockTracks (MA2, 0x0063EFB0..0x0063F0B8): |speed| &lt; 1e-5 (0x0063F0F8) clears the flag

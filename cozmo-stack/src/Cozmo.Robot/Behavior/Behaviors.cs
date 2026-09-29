@@ -27,6 +27,7 @@ namespace Cozmo.Robot.Behavior;
 /// It claims the tracks its clip touches for as long as it runs, through the scope, so the idle layer
 /// yields those tracks and only those, which is what the engine's <c>SmartLockTracks</c> does.
 /// </summary>
+// fidelity: M8-005
 public sealed class PlayAnimBehavior : IBehavior
 {
     /// <summary>
@@ -101,6 +102,7 @@ public sealed class PlayAnimBehavior : IBehavior
     /// simple manager ranks behaviours directly, so one built in code needs a number; 1 is the plain
     /// behaviour's and 5 the reaction's, which keeps a reaction ahead of ordinary play.
     /// </param>
+    // fidelity: M8-004
     public PlayAnimBehavior(string id, string behaviorClass, IEnumerable<AnimationTrigger> triggers,
                             double score = 1.0)
     {
@@ -179,6 +181,7 @@ public sealed class PlayAnimBehavior : IBehavior
             && Within(RequiredRecentSwitchToParentSec, ctx.LastActivitySwitchSec, now);
     }
 
+    // fidelity: M8-006
     private bool WantsToRun(BehaviorContext context) => WantsToRunStrategy switch
     {
         null or "AlwaysRun" => true,
@@ -226,24 +229,33 @@ public sealed class PlayAnimBehavior : IBehavior
             return Task.CompletedTask;
         }
 
-        foreach (var name in clips) scope.LockTracks(lib.GetClip(name).Tracks);
+        // Each clip's tracks are locked for that action's duration by the scheduler (IActionRunner::Update
+        // 0x00540370 / MovementComponent::LockTracks 0x00640098), not pre-claimed on the scope.
         _ = PlaySequence(context, clips, cancel);
         return Task.CompletedTask;
     }
 
     /// <summary>
     /// The sequence <c>StartSequenceLoop</c> runs: each clip in turn, the whole list <c>num_loops</c>
-    /// times, stopping as soon as the behaviour is stopped or an animation will not start.
+    /// times, stopping as soon as the behaviour is stopped or an animation will not start. Each action's
+    /// tracks are locked by <see cref="CozmoAnimations.PlayTracked"/> for its own play; when they are held
+    /// the action waits and is retried, as <c>IActionRunner::Update</c> does.
     /// </summary>
     private async Task PlaySequence(BehaviorContext context, List<string> clips, CancellationToken cancel)
     {
         try
         {
+            var lib = context.Robot.Animations.Library;
             for (int loop = 0; loop < Math.Max(1, NumLoops); loop++)
                 foreach (var name in clips)
                 {
                     if (_finished || cancel.IsCancellationRequested) return;
-                    var ticket = context.Robot.Animations.PlayTracked(name);
+                    var ticket = lib is null ? null : context.Robot.Animations.PlayTracked(name, lockTracks: lib.GetClip(name).Tracks);
+                    while (ticket is null && !_finished && !cancel.IsCancellationRequested)
+                    {
+                        try { await Task.Delay(10, cancel).ConfigureAwait(false); } catch (OperationCanceledException) { return; }
+                        ticket = lib is null ? null : context.Robot.Animations.PlayTracked(name, lockTracks: lib.GetClip(name).Tracks);
+                    }
                     if (ticket is null) return;
                     LastSelected = name;
                     lock (_gate)
@@ -289,6 +301,22 @@ public sealed class PlayAnimBehavior : IBehavior
         }
         target?.StopIfCurrent(gen);
     }
+}
+
+/// <summary>
+/// The engine's default class-<c>0x16</c> <c>BehaviourRunningAndResumeInfo</c>: the placeholder
+/// <c>BehaviorManager::FinishCurrentBehavior</c> switches to (<c>movs r0,#0x16</c> 0x005a38f4;
+/// <c>SwitchToBehaviorBase</c> 0x005a38fe) and the state the scored choice runs from. It never acts and is
+/// not scored, so the chooser replaces it.
+/// </summary>
+// fidelity: M8-012
+public sealed class BehaviorRunningAndResumeInfo : SteppedBehavior
+{
+    public BehaviorRunningAndResumeInfo() : base("BehaviorRunningAndResumeInfo", "0x16") { }
+    protected override bool KeepsRunningWithoutAction => true;
+    public override bool IsRunnable(BehaviorContext context) => true;
+    protected override void OnStart() { }
+    public override double EvaluateScore(BehaviorContext context) => 0;   // class 0x16 is not scored
 }
 
 /// <summary>
