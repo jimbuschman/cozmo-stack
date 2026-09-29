@@ -1,5 +1,22 @@
 # R-ANIM status
 
+DONE opencode/cozmo-manager 2026-09-29
+
+## Summary
+
+- Subsystems M5-animation and M10-derived; the 22 IMPLEMENTATION_GAP records the manifest held at claim time.
+- **9 settled EXACT_SOURCE:** M5-001, M5-006, M5-010, M5-016, M5-019, M5-023, M5-027, M5-032, M10-002.
+- **13 left IMPLEMENTATION_GAP, each with a precise `unresolved`** (table below): 7 M5 (011, 013, 014, 018, 021, 022,
+  030) and 6 M10 (001, 003, 004, 007, 008, 013).
+- M5-020 (COMPATIBILITY_POLICY → IMPLEMENTATION_GAP): the invented faces are gone; the API is rebuilt on the shipped
+  Code Lab mapping with an exact xorshift128; only the unknowable seed is a forced stand-in.
+- Commits: `c1ee6b0` (C5/C1 corrections + both inventories re-approved), `43acbd3` (M10, suite 1891), `ad4913e`
+  (M5-A, suite 1901/1928), `f026d9f` (M5-B, suite 1932/1953), `7fcc4ad` (M5-C + settlements, suite 1958/1958).
+- Verifier: every batch PASS after its fixes; the pre-extraction report's behaviour-changing rows all PASS (two
+  literal-address typos corrected).
+- Cross-layer call sites touched: `Cozmo.Robot/Motion.cs` (M4, new M10-004 method), `Cozmo.Conformance/Anim.cs`
+  (the expression tool). No M4 behaviour changed.
+
 CLAIMED opencode/cozmo-manager 2026-09-29 10:40
 
 ## Scope
