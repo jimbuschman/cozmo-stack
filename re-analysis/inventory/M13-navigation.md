@@ -2438,3 +2438,5 @@ It tests **collision penalty along the remaining plan** (plus the `tolerance` di
 1. Should the `PopulateReverseMotionPrims` theta-byte fact and the shared-path/poses/bbox fact be added to M13-018 or split into a NEW record? The current M13-018 wording is not wrong but is incomplete for the goal-side expansion it feeds.
 2. The three M13 records (`M13-003`, `M13-010`, `M13-018`) are all IMPLEMENTATION_GAP; the new facts are extracted but not yet in the manifest. The manager should fold R1..R4 in before any M13 approval.
 3. Residual UNKNOWN (low confidence): whether an indirect caller outside the decompiled call graph passes `false` to `LatticePlanner::ComputeNewPathIfNeeded`. No such caller was found; a full scan of the vtable slot's indirect call sites was not performed.
+
+**Correction C-BM13b (verifier findings, 2026-09-28):** M13-004's cost formula is branched, not a sum: an arc primitive adds the arc term and not the turn term, a point turn adds the turn term. M13-015 marks SetFailedToUse(obj,3) for a category-3 result as well as a category-4 result with the retry used. Both are corrected in the records above.
