@@ -3,7 +3,8 @@
 # exactly the commit being pushed. Enable it once per clone:
 #     git config core.hooksPath scripts/hooks
 # Pushes that change no code and no fidelity records (config, scripts, agent files, docs, reports) skip the
-# test suite. Never bypass this with --no-verify.
+# test suite, and so does a push whose code and records already passed the suite in this clone (a retry after a
+# rebase onto other windows' status files). Never bypass this with --no-verify.
 
 zero=0000000000000000000000000000000000000000
 root=$(git rev-parse --show-toplevel)
@@ -40,16 +41,29 @@ while read -r local_ref local_sha remote_ref remote_sha; do
 
     mkdir -p .scratch
     log=.scratch/pre-push.log
-    echo "pre-push: fidelity check and full test suite for $local_sha (about 4 minutes); log in $log"
     if ! python re-analysis/tools/fidelity.py --check > "$log" 2>&1; then
         tail -20 "$log"; echo "pre-push: REFUSED. fidelity.py --check failed."; exit 1
     fi
+
+    # The suite's result depends only on the code and the fidelity records. If this clone has already passed it on
+    # byte-identical content (the usual case after a push is refused because another window pushed a status file or
+    # a report, and this one was rebased onto it), the result can't differ, so it isn't run again.
+    key=$(for p in cozmo-stack re-analysis/fidelity_manifest.json re-analysis/FIDELITY_GAPS.md re-analysis/inventory re-analysis/tools; do
+        git rev-parse -q --verify "$local_sha:$p" || echo "none:$p"; done | git hash-object --stdin)
+    passed=.scratch/pre-push-passed
+    if [ -f "$passed" ] && grep -qx "$key" "$passed"; then
+        echo "pre-push: this code and these records already passed the full suite in this clone; it is not run again."
+        continue
+    fi
+
+    echo "pre-push: fidelity check passed; full test suite for $local_sha (about 4 minutes); log in $log"
     if ! dotnet test cozmo-stack/Cozmo.sln >> "$log" 2>&1; then
         grep -E "\[FAIL\]|Failed!|error CS" "$log" | head -20
         echo "pre-push: REFUSED. The full test suite failed."
         exit 1
     fi
     grep -E "Passed!" "$log" | tail -1
+    echo "$key" >> "$passed"
     echo "pre-push: gate passed."
 done
 exit 0
