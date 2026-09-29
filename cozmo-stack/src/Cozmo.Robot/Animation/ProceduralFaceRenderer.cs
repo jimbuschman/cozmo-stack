@@ -88,11 +88,11 @@ public static class ProceduralFaceRenderer
         else
         {
             // E1: GetTransformationMatrix(angle, sx, sy, cx, cy, 64, 32) then cv::warpAffine(img, img, M, Size(128, 64),
-            // INTER_NEAREST, BORDER_CONSTANT, 0) (gap3 C1..C6).
+            // INTER_NEAREST, BORDER_CONSTANT, 0) (gap3 C1..C6). The matrix is float 2x3 (CV_32FC1, R-ANIM 10a/10c);
+            // the port widens it to double, as the shipped warpAffine's Mat::convertTo does (10e).
             var m = Matrix(face.FaceAngle, face.FaceScaleX, face.FaceScaleY, face.FaceCenterX, face.FaceCenterY,
                            FaceCentreX, FaceCentreY);
-            img = OpenCv310.WarpAffineNearest(img, CanvasHeight, CanvasWidth,
-                                              new double[] { m[0], m[1], m[2], m[3], m[4], m[5] });
+            img = OpenCv310.WarpAffineNearest(img, CanvasHeight, CanvasWidth, m);
             (rowMin, rowMax) = TransformedRowExtent(m, l, r);
         }
 

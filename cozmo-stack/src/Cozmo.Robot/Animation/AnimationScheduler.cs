@@ -355,7 +355,7 @@ public interface IAnimationCatalog
     AnimationClip? GetAnimation(string name);
 }
 
-// fidelity: M5-007, M5-008, M5-018, M5-022, M5-023, M5-024, M5-025, M5-026, M5-027, M5-028, M5-035, M3-013
+// fidelity: M5-007, M5-008, M5-018, M5-019, M5-022, M5-023, M5-024, M5-025, M5-026, M5-027, M5-028, M5-035, M3-013
 /// <summary>
 /// The engine's <c>AnimationStreamer</c> (robot+0x60), reproduced from the M5 inventory (Appendix A, A1..A37, and the
 /// gap passes). One Update (<see cref="Advance"/>) runs, in the engine's order:
@@ -518,6 +518,17 @@ public sealed class AnimationScheduler
 
     /// <summary>Whether the live animation is the idle animation (+0x34 == +0xA8).</summary>
     public bool LiveStreamActive { get { lock (_gate) return ReferenceEquals(_idleAnim, _live); } }
+
+    // fidelity: M5-027
+    /// <summary>
+    /// <c>AnimationStreamer::IsIdleAnimating</c> (0x0057DFC8, R-ANIM 9a6): the +0x64 byte, set to 1 by the shared idle
+    /// tail right after an idle's InitStream and cleared by the constructor, by a Count PushIdleAnimation, by the streaming
+    /// Update, and by RemoveIdleAnimation only when its new top is Count.
+    /// </summary>
+    public bool IsIdleAnimating { get { lock (_gate) return _idleInitialised; } }
+
+    /// <summary>The idle animation (+0x34) as it stands, for the M5-019/M5-023 choice tests.</summary>
+    internal StreamAnimation? IdleAnimation { get { lock (_gate) return _idleAnim; } }
 
     /// <summary>Whether a body keyframe of the live animation is still current.</summary>
     public bool LiveBodyRunning { get { lock (_gate) return _live.Body.Current is not null; } }
@@ -823,9 +834,11 @@ public sealed class AnimationScheduler
     }
 
     /// <summary>
-    /// RemoveIdleAnimation(lock) (A30): refuses to pop the last entry (1); a lock not found warns and returns 1; removing
-    /// from the middle warns. When the new top is Count while an idle plays and nothing streams:
-    /// SetStreamingAnimation(neutral, 1, true, false) and +0x34/+0x64 cleared. Returns 0 on success.
+    /// RemoveIdleAnimation(lock) (A30, R-ANIM 9a3): refuses to pop the last entry (1); a lock not found warns and returns
+    /// 1; removing from the middle warns. Only when the new top is Count (0x0057BD42..0x0057BD44; a non-Count new top
+    /// branches to the epilogue at 0x0057BD70) does it, when an idle plays and nothing streams,
+    /// SetStreamingAnimation(neutral, 1, true, false), and then unconditionally clear +0x34 and +0x64
+    /// (0x0057BD64..0x0057BD6A). A non-Count new top leaves both untouched. Returns 0 on success.
     /// </summary>
     public int RemoveIdleAnimation(string lockName, double nowMs)
     {
@@ -842,11 +855,12 @@ public sealed class AnimationScheduler
             if (i != _idleStack.Count - 1)
                 Log?.Invoke($"warning: AnimationStreamer.RemoveIdleAnimation.RemovingFromMiddle: {lockName}");
             _idleStack.RemoveAt(i);
-            if (TopTrigger == IdleCount && _idleAnim is not null && _streaming is null)
+            if (TopTrigger == IdleCount)
             {
-                SetStreamingAnimationLocked(_neutral, 1, interrupt: true);
-                _idleAnim = null;
-                _idleInitialised = false;
+                if (_idleAnim is not null && _streaming is null)
+                    SetStreamingAnimationLocked(_neutral, 1, interrupt: true);
+                _idleAnim = null;                                // 9a3: +0x34 = 0, inside the Count branch
+                _idleInitialised = false;                        // 9a3: +0x64 = 0, inside the Count branch
             }
             return 0;
         }

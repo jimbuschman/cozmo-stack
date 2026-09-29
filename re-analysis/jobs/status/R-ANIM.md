@@ -74,6 +74,15 @@ ahead of time; the manager spot-checked M5-006, M5-011, M10-004 and M5-013. Send
 - Stays IMPLEMENTATION_GAP: none of these records is settled yet (the manager settles after batch B and C).
 - No other layer touched.
 
-### Batch M5-B (pending: M5-019, M5-023, M5-027, M5-032)
+### Batch M5-B (built; verifier PASS)
+
+- Records: M5-019 (write-back is the animation's face before the layers combine; already matched, pinned by a test),
+  M5-023 (abort resets the streaming keyframe when set, else the idle's; already matched, pinned by a test),
+  M5-027 (the +0x64 flag's writers/readers; the Count-top flush order; HasResponse; `RemoveIdleAnimation` clears
+  +0x34/+0x64 only when the new top is Count — corrected after the verifier's first FAIL, and C5's wording fixed),
+  M5-032 (the face matrix is float CV_32FC1; the widening moved into the warpAffine port).
+- Verifier FAILed first on the `RemoveIdleAnimation` clear being over-generalised; fixed and re-verified PASS.
+- Stays IMPLEMENTATION_GAP: none of these records is settled yet (the manager settles after batch C).
+- No other layer touched.
 
 ### Batch M5-C (pending: M5-020 expressions)

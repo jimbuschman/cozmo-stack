@@ -2128,7 +2128,7 @@
       "unresolved": "Settled (C5): the write-back is the animation's face, before layers combine, and only when storeFace = 1 and GetFaceHelper returned 1.",
       "hardware_required": false,
       "live_path": true,
-      "test": "M5AnimationTests.M5_019_C11_OnlyAStreamingAnimationWritesTheBaseFace",
+      "test": "M5AnimationTests.M5_019_C11_OnlyAStreamingAnimationWritesTheBaseFace, M5AnimationTests.M5_019_7d_7e_TheWriteBackIsTheAnimationFaceBeforeTheLayersCombine",
       "id": "M5-019"
     },
     {
@@ -5486,7 +5486,7 @@
       "unresolved": "Settled (C5): the streaming animation's keyframe is reset when +0x38 is set, else the idle's.",
       "hardware_required": false,
       "live_path": true,
-      "test": "M5AnimationTests.M5_023_A22_A24_A25_AbortBroadcastsKeepsTheBufferAndSendsNoEnd, M5AnimationTests.M5_023_A23_TheRobotLayerSendsAbortAnimation, M3DeviceTests.M3_013_A24_A25_ACancelledClipsLeftoversAreFlushedWithNoEnd"
+      "test": "M5AnimationTests.M5_023_A22_A24_A25_AbortBroadcastsKeepsTheBufferAndSendsNoEnd, M5AnimationTests.M5_023_A23_TheRobotLayerSendsAbortAnimation, M5AnimationTests.M5_023_8a_AbortResetsTheStreamingKeyframeWhenSetElseTheIdles, M3DeviceTests.M3_013_A24_A25_ACancelledClipsLeftoversAreFlushedWithNoEnd"
     },
     {
       "id": "M11-020",
@@ -5892,7 +5892,7 @@
       "unresolved": "Settled (C5): +0x64 is set to 1 by an idle's InitStream tail; the Count-top flush refreshes the budgets before the drain; HasAnimationForTrigger is HasResponse.",
       "hardware_required": false,
       "live_path": true,
-      "test": "M5AnimationTests.M5_027_A1_A30_TheIdleStack, M5AnimationTests.M5_027_A29_AnIdleAnimationInitsWithTag0xFfThenStreams, M5AnimationTests.M5_027_A29_StreamLiveKeyframesGoOutInsideTheUpdate, M5AnimationTests.M5_027_A13_APlayThenStopInOneTickContinuesTheLiveStream, AnimationStreamLifecycleTests, M3DeviceTests.M3_013_A13_A29_A12_WithTheLiveStreamActiveACancelledClipsLeftoversAreDropped, M5AnimationTests.M5_027_B3_AnIdleStreamSetsTheLastStreamTime, M5AnimationTests.M5_027_B1_WithAnIdleOnTopTheLeftoversAreNotFlushed, M5AnimationTests.M5_027_C4_AfterAClipTheLiveIdleIsReinitialisedWithTag255"
+      "test": "M5AnimationTests.M5_027_A1_A30_TheIdleStack, M5AnimationTests.M5_027_9a3_RemoveIdleClearsOnlyOnACountTop, M5AnimationTests.M5_027_A29_AnIdleAnimationInitsWithTag0xFfThenStreams, M5AnimationTests.M5_027_A29_StreamLiveKeyframesGoOutInsideTheUpdate, M5AnimationTests.M5_027_A13_APlayThenStopInOneTickContinuesTheLiveStream, AnimationStreamLifecycleTests, M3DeviceTests.M3_013_A13_A29_A12_WithTheLiveStreamActiveACancelledClipsLeftoversAreDropped, M5AnimationTests.M5_027_B3_AnIdleStreamSetsTheLastStreamTime, M5AnimationTests.M5_027_B1_WithAnIdleOnTopTheLeftoversAreNotFlushed, M5AnimationTests.M5_027_C4_AfterAClipTheLiveIdleIsReinitialisedWithTag255"
     },
     {
       "id": "M5-028",
@@ -5986,7 +5986,7 @@
       "unresolved": "Settled (C5): the face matrix is float 2x3 CV_32FC1; warpAffine converts it to double.",
       "hardware_required": false,
       "live_path": true,
-      "test": "M5AnimationTests.M5_032_E1_E2_D4_TheScanLineParity, M5AnimationTests.M5_032_C1_C6_AFaceTransformGoesThroughWarpAffine, ProceduralFaceRendererTests.AWholeFaceScaleMovesTheEyeCentresAboutTheFaceCentre, M5AnimationTests.M5_032_C2_TheRotatedRowExtentUsesEachEyesCorners"
+      "test": "M5AnimationTests.M5_032_E1_E2_D4_TheScanLineParity, M5AnimationTests.M5_032_C1_C6_AFaceTransformGoesThroughWarpAffine, ProceduralFaceRendererTests.AWholeFaceScaleMovesTheEyeCentresAboutTheFaceCentre, M5AnimationTests.M5_032_C2_TheRotatedRowExtentUsesEachEyesCorners, M5AnimationTests.M5_032_10a_10e_TheFaceMatrixIsFloat"
     },
     {
       "id": "M5-033",

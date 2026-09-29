@@ -528,16 +528,21 @@ public static class OpenCv310
 
     /// <summary>
     /// <c>cv::warpAffine(img, img, M, Size(cols, rows), INTER_NEAREST, BORDER_CONSTANT, 0)</c> on a CV_8UC1 image (gap3
-    /// C1..C6). In place, so the source is cloned (C1); M (2×3, double) is inverted (C2); AB_BITS = 10, adelta[x] =
-    /// cvRound(M0·x·1024), bdelta[x] = cvRound(M3·x·1024) (C3); per row X0 = cvRound((M1·y + M2)·1024) + 512 and Y0 with
-    /// M4/M5; X = (X0 + adelta[x]) &gt;&gt; 10, Y likewise, each saturated to int16 (C4); remapNearest: inside the source
-    /// the pixel is copied, outside it is the border value 0 (C5, C6). Returns the destination.
+    /// C1..C6). The engine builds M as <c>Anki::SmallMatrix&lt;2,3,float&gt;</c> and passes it as <c>CV_32FC1</c> (R-ANIM
+    /// 10a, 10c); the float-to-double conversion happens inside the shipped <c>cv::warpAffine</c>'s
+    /// <c>Mat::convertTo</c> (10e), so it is done here on entry, not by the caller. In place, so the source is cloned
+    /// (C1); the widened M is inverted (C2); AB_BITS = 10, adelta[x] = cvRound(M0·x·1024), bdelta[x] = cvRound(M3·x·1024)
+    /// (C3); per row X0 = cvRound((M1·y + M2)·1024) + 512 and Y0 with M4/M5; X = (X0 + adelta[x]) &gt;&gt; 10, Y likewise,
+    /// each saturated to int16 (C4); remapNearest: inside the source the pixel is copied, outside it is the border value 0
+    /// (C5, C6). Returns the destination.
     /// </summary>
-    public static byte[] WarpAffineNearest(byte[] src, int rows, int cols, double[] m0)
+    public static byte[] WarpAffineNearest(byte[] src, int rows, int cols, float[] m0)
     {
         var s = (byte[])src.Clone();                // dst.data == src.data → src.clone() (C1)
         var dst = new byte[rows * cols];
-        double[] m = (double[])m0.Clone();
+        // 10e: the shipped warpAffine's Mat::convertTo(CV_64F) widens the CV_32FC1 matrix here.
+        var m = new double[m0.Length];
+        for (int i = 0; i < m0.Length; i++) m[i] = m0[i];
 
         // !(flags & WARP_INVERSE_MAP): invert (C2)
         {

@@ -219,14 +219,15 @@
     current-keyframe frame index (+0x2C) to 0 when the iterator is not at the end (0x0057B562..0x0057B570), then
     clears startSent and endSent together and aborts and clears the audio animation (0x0057B572..0x0057B58A).
   - **M5-027 (Part 1 item 9, 9a..9c).** The byte at streamer+0x64 is written 0 by the constructor (0x00579FC6), by
-    `PushIdleAnimation` with trigger Count (0x0057B926, also clearing +0x34), by `RemoveIdleAnimation` (0x0057BD66),
-    and by the streaming Update (0x0057D022); it is set to **1** by the shared idle tail immediately after an idle's
-    `InitStream(..., 0xFF)` (0x0057D3F6..0x0057D406). `InitStream` itself does not write it. It is read by the pick
-    decision (0x0057D1FE), the tail (0x0057D40C) and `IsIdleAnimating` (0x0057DFC8). The Count-top flush runs
-    `UpdateAmountToSend` then `SendBufferedMessages` — budgets refreshed before the drain — in both the no-animation
-    path (0x0057D16C, 0x0057D174) and `StreamLayers` (0x0057C4F8, 0x0057C500); with count 0 it returns without an End.
-    `HasAnimationForTrigger` is `AnimationTriggerResponsesContainer::HasResponse` (0x00670AD0), which tests whether the
-    trigger's name is a key in the map, not that the mapped value is non-empty.
+    `PushIdleAnimation` with trigger Count (0x0057B926, also clearing +0x34), by `RemoveIdleAnimation` **when the new
+    top is Count** (0x0057BD64..0x0057BD6A; a non-Count new top branches away at 0x0057BD44 `bne 0x57BD70` and leaves
+    +0x64 and +0x34 untouched), and by the streaming Update (0x0057D022); it is set to **1** by the shared idle tail
+    immediately after an idle's `InitStream(..., 0xFF)` (0x0057D3F6..0x0057D406). `InitStream` itself does not write
+    it. It is read by the pick decision (0x0057D1FE), the tail (0x0057D40C) and `IsIdleAnimating` (0x0057DFC8). The
+    Count-top flush runs `UpdateAmountToSend` then `SendBufferedMessages` — budgets refreshed before the drain — in
+    both the no-animation path (0x0057D16C, 0x0057D174) and `StreamLayers` (0x0057C4F8, 0x0057C500); with count 0 it
+    returns without an End. `HasAnimationForTrigger` is `AnimationTriggerResponsesContainer::HasResponse`
+    (0x00670AD0), which tests whether the trigger's name is a key in the map, not that the mapped value is non-empty.
   - **M5-032 (Part 1 item 10, 10a..10e).** `GetTransformationMatrix` (0x00584FF8) is float-only and returns six f32;
     DrawFace builds the `_InputArray` as `FIXED_TYPE|FIXED_SIZE|ACCESS_READ|MATX`, type 5 = CV_32FC1, 2×3
     (0x00585C84..0x00585C94), and calls `cv::warpAffine` (PLT 0x4AE4E8) with flags 0 (INTER_NEAREST) and border 0

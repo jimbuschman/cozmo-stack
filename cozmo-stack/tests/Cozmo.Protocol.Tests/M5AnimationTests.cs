@@ -882,6 +882,23 @@ public class M5AnimationTests
         Assert.Equal((7, 53), ProceduralFaceRenderer.TransformedRowExtent(m, l, r));
     }
 
+    /// <summary>
+    /// R-ANIM 10a, 10c, 10e: GetTransformationMatrix is float-only and DrawFace passes the 2x3 matrix as CV_32FC1; the
+    /// port widens it to double inside warpAffine. A float matrix with tx = 3 maps the lit source pixel (2, 1) to (5, 1).
+    /// </summary>
+    [Fact]
+    public void M5_032_10a_10e_TheFaceMatrixIsFloat()
+    {
+        var m = ProceduralFaceRenderer.Matrix(0f, 1f, 1f, 3f, 0f, 64f, 32f);
+        Assert.IsType<float[]>(m);
+        Assert.Equal(new[] { 1f, 0f, 3f, 0f, 1f, 0f }, m);
+
+        var src = new byte[3 * 8];
+        src[1 * 8 + 2] = 255;
+        var dst = OpenCv310.WarpAffineNearest(src, 3, 8, m);
+        Assert.Equal(255, dst[1 * 8 + 5]);
+    }
+
     // ================================================================== M5-016: the backpack track (C16..C18)
 
     /// <summary>
@@ -947,6 +964,35 @@ public class M5AnimationTests
         Assert.Equal(4f, s.LayerBaseFace.Left[EyeParam.EyeCenterX]);
     }
 
+    /// <summary>
+    /// R-ANIM 7b..7f (0x0064F1D4..0x0064F22C): the write-back is the animation's face, copied before the layer lambda
+    /// combines. The layers change only the frame's composed face, so with storeFace the stored base is the animation's
+    /// face (4), not the composed one (4 + 100); 7f: an animation that produced no face leaves the stored face unchanged.
+    /// </summary>
+    [Fact]
+    public void M5_019_7d_7e_TheWriteBackIsTheAnimationFaceBeforeTheLayersCombine()
+    {
+        var tlc = new TrackLayerComponent(new EngineRandom(new Random(1)), new ScanLineState());
+        var anim = StreamAnimation.Of(Clip("a", FaceAt(0, 4f)));
+        anim.Init();
+        var layerPose = new ProceduralFacePose();
+        layerPose.Left[EyeParam.EyeCenterX] = 100f;
+        var layer = new StreamTrack<FaceFrame>();
+        layer.AddKeyFrameToBack(new FaceFrame(0, layerPose));
+        tlc.Face.AddLayer("L", layer, 0);
+
+        var frame = tlc.ApplyLayersToAnim(anim, 0, 0, null, storeFace: true);
+        Assert.Equal(4f, tlc.LastFace.Left[EyeParam.EyeCenterX]);        // 7d: the animation's face
+        Assert.Equal(104f, frame.FaceOut!.Left[EyeParam.EyeCenterX]);    // 7e: the composed frame face
+
+        // 7f: the animation produced no face, so the stored face is unchanged (and the layer has run out)
+        var noFace = StreamAnimation.Of(Clip("b", new EventKeyframe(0, "TAPPED_BLOCK")));
+        noFace.Init();
+        var after = tlc.ApplyLayersToAnim(noFace, 0, 0, null, storeFace: true);
+        Assert.Equal(4f, tlc.LastFace.Left[EyeParam.EyeCenterX]);
+        Assert.Equal(4f, after.FaceOut!.Left[EyeParam.EyeCenterX]);
+    }
+
     // ================================================================== M5-023: abort (A22..A25)
 
     /// <summary>
@@ -973,6 +1019,42 @@ public class M5AnimationTests
         Assert.Equal(0, s.Stream.Count);
         Assert.Equal(15, log.Count("silence"));
         Assert.Equal(0, log.Count("end"));
+    }
+
+    /// <summary>
+    /// R-ANIM 8a..8c (0x0057B418..0x0057B58A): Abort takes the streaming animation (+0x38) when it is non-null, else the
+    /// idle one (+0x34), and resets only that animation's current FaceAnimation keyframe index to 0 when the iterator is
+    /// not at the end. When the streaming animation is the one set, the idle's keyframe is not touched.
+    /// </summary>
+    [Fact]
+    public void M5_023_8a_AbortResetsTheStreamingKeyframeWhenSetElseTheIdles()
+    {
+        var cat = new Catalog();
+        var idleClip = Clip("idle", new FaceAnimationKeyframe(0, "anim"), new EventKeyframe(2_000, "TAPPED_BLOCK"));
+        cat.Clips["idle"] = idleClip;
+        cat.Triggers[AnimationTrigger.AcknowledgeObject] = "g";
+        cat.Groups["g"] = new[] { "idle" };
+        var s = new AnimationScheduler(new Log()) { Catalog = cat };
+        var empty = Array.Empty<byte>();
+        s.FaceAnimationVariants = _ => new[] { new FaceAnimationFrame(empty, empty), new FaceAnimationFrame(empty, empty) };
+        s.PushIdleAnimation(AnimationTrigger.AcknowledgeObject, "test");
+        s.Advance(0);                                                     // InitStream(idle, 0xFF)
+        s.Advance(33);                                                    // UpdateStream(idle): the face index advances to 1
+        var idle = s.IdleAnimation!;
+        Assert.Equal(1, idle.FaceAnim.Current!.FaceAnimIndex);
+
+        // streaming is null: a Play aborts the idle and resets the idle's keyframe (8a "else the idle one's")
+        var streamClip = Clip("s", new FaceAnimationKeyframe(0, "anim2"), new EventKeyframe(2_000, "TAPPED_BLOCK"));
+        s.Play(streamClip, 66);
+        Assert.Equal(0, idle.FaceAnim.Current!.FaceAnimIndex);
+
+        // both set: an Abort resets only the streaming animation's keyframe; the idle's is untouched
+        var stream = StreamAnimation.Of(streamClip);
+        idle.FaceAnim.Current!.FaceAnimIndex = 5;
+        stream.FaceAnim.Current!.FaceAnimIndex = 5;
+        s.Stop();
+        Assert.Equal(0, stream.FaceAnim.Current!.FaceAnimIndex);
+        Assert.Equal(5, idle.FaceAnim.Current!.FaceAnimIndex);
     }
 
     /// <summary>A23: the broadcast makes the robot layer send AbortAnimation 0x8D directly (RobotEventHandler → SendAbortAnimation).</summary>
@@ -1100,6 +1182,48 @@ public class M5AnimationTests
         Assert.Equal(1, s.RemoveIdleAnimation("nope", 0));
         Assert.Equal(0, s.RemoveIdleAnimation("x", 0));
         Assert.Single(s.IdleStack);
+    }
+
+    /// <summary>
+    /// R-ANIM 9a3 (0x0057BD42..0x0057BD44, 0x0057BD64..0x0057BD6A): the +0x34/+0x64 clear is inside the
+    /// new-top-is-Count branch only (a non-Count new top branches to 0x0057BD70). A Count-top removal always clears,
+    /// whether or not the idle was playing; a non-Count new top leaves both alone.
+    /// </summary>
+    [Fact]
+    public void M5_027_9a3_RemoveIdleClearsOnlyOnACountTop()
+    {
+        // Count new top: [Count, "only"] -> [Count]; the clear is unconditional inside the branch
+        var countTop = WithIdle();
+        countTop.Advance(0);                                              // InitStream(idle, 0xFF): +0x64 = 1
+        Assert.True(countTop.IsIdleAnimating);
+        Assert.NotNull(countTop.IdleAnimation);
+        Assert.Equal(0, countTop.RemoveIdleAnimation("only", 33));
+        Assert.Equal(AnimationScheduler.IdleCount, countTop.IdleStack[^1].Trigger);
+        Assert.False(countTop.IsIdleAnimating);
+        Assert.Null(countTop.IdleAnimation);
+
+        // Non-Count new top: [Count, "only", "top"] -> [Count, "top"]; nothing is cleared
+        var nonCount = WithIdle();
+        nonCount.PushIdleAnimation(AnimationTrigger.AcknowledgeObject, "top");
+        nonCount.Advance(0);
+        Assert.True(nonCount.IsIdleAnimating);
+        Assert.NotNull(nonCount.IdleAnimation);
+        Assert.Equal(0, nonCount.RemoveIdleAnimation("only", 33));
+        Assert.Equal(AnimationTrigger.AcknowledgeObject, nonCount.IdleStack[^1].Trigger);
+        Assert.True(nonCount.IsIdleAnimating);
+        Assert.NotNull(nonCount.IdleAnimation);
+    }
+
+    /// <summary>A scheduler with one idle on the stack under the lock "only".</summary>
+    private static AnimationScheduler WithIdle()
+    {
+        var cat = new Catalog();
+        cat.Clips["idle"] = Clip("idle", new HeadKeyframe(0, 500, 5, 0));
+        cat.Triggers[AnimationTrigger.AcknowledgeObject] = "g";
+        cat.Groups["g"] = new[] { "idle" };
+        var s = new AnimationScheduler(new Log()) { Catalog = cat };
+        s.PushIdleAnimation(AnimationTrigger.AcknowledgeObject, "only");
+        return s;
     }
 
     /// <summary>
