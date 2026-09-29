@@ -1,6 +1,6 @@
 # Job R-VIS: close the remaining gaps in the vision, manipulation, navigation and faces layers
 
-**Agent:** Claude Code with Sonnet, in the `cozmo-stack-r` clone on the manager's machine (operator, 2026-09-29), as
+**Agent:** Claude Code with Sonnet, in the `cozmo-stack-r2` clone on the manager's machine (operator, 2026-09-29), as
 the manager of this job. The role agents are Claude Code's `.claude/agents/` (cozmo-extractor, cozmo-implementer,
 cozmo-verifier): where this job or R.md says `@cozmo-extractor` etc., use those subagents. **Pushes:** this clone can't
 push by itself. Commit, then stop and tell the operator to push; carry on once the push is done. Claim, then commit
