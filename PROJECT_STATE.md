@@ -34,6 +34,8 @@ Read first in every session. The manager keeps this file current; the process it
 - **Tooling fixes on 2026-09-29:**
   - `run-job.ps1` always gives the opencode CLI its own data directory (`%USERPROFILE%\.opencode-cli`);
   - the push gate refuses at once when origin/main has moved, instead of running the suite first.
+- **Operator decision (2026-09-29), M5-020:** no invented faces. The expression API is rebuilt on the shipped Code Lab
+  expression mapping (`CodeLabGame.GetAnimationTriggerForScratchIndex`), in R-ANIM.
 - **Waiting on the operator, once the jobs land:**
   - the B-M6b-3 listening check (its steps will be in `re-analysis/jobs/status/B-M6b-3.md`);
   - the freeplay acceptance run (steps in `re-analysis/jobs/status/B-M15.md`);

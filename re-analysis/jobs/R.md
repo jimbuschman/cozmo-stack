@@ -29,7 +29,7 @@ Its **C records** ship in the engine and the stack keeps something else. Each jo
 | job | records |
 | --- | --- |
 | R-DEV | M4-004 (the engine has no calibration gate on direct motion); M1-014's priority clause (the engine requests SCHED_RR at 75%, 0x008334CC) |
-| R-ANIM | M5-020 (invented expressions). **Don't build or remove anything:** whether ShowExpression's extra faces stay is the operator's decision. Name it in the status file. |
+| R-ANIM | M5-020 (invented expressions). **Operator decision (2026-09-29): no invented faces.** Remove the invented poses (Happy, Sad, Angry, Surprised, Sleepy, Blinking, Squinting, LookingX; Neutral is shipped and stays). The shipped app's named expressions are Code Lab's: `CodeLabGame.GetAnimationTriggerForScratchIndex` (`unity/scripts/csharp/CodeLab/CodeLabGame.cs:3094`) maps each block index to an AnimationTrigger (CodeLabHappy, CodeLabUnhappy, CodeLabSurprise, ...), played through the shipped animation-group path (M5 group choice). Rebuild the expression API on that mapping, including index 0's random pick; the RNG is Unity's `Random.Range`, so extract it exactly or record it as a gap. `CozmoPerforms/CozmoPerformsTalentDefinitions.cs` is a second shipped mapping, a lead. |
 | R-BEH | M8-004 (score default 0, chooser-based selection), M8-008 (no timeout on the head recalibration wait), M8-009 (the fixed release order), M9-016 (the render lead: read it, or BLOCKED_EXTERNAL with the reason) |
 | R-VIS | M11-013 (the record contradicts the code; it becomes RECOVERABLE_GAP: read `CreateObjectsFromMarkers` and the ObjectID assignment), and M11-012's provenance/evidence text |
 
