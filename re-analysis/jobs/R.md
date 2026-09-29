@@ -14,6 +14,30 @@ is still open, and there are four kinds:
   M12's.)
 - **still blocked:** the piece it needs is not built anywhere yet, or is HARDWARE_ONLY or BLOCKED_EXTERNAL.
 
+## The policy review (2026-09-29)
+
+`re-analysis/research/20260929-policy-review.md` reviewed the 32 COMPATIBILITY_POLICY and EQUIVALENT_IMPLEMENTATION
+records against "Exact, always" (Sonnet, read-only). The manager spot-checked M8-008 (the IAction timeout -1.0 at
+0x00540CA6) and M8-009 (the IBehavior::Stop release order at 0x005BD12C..0x005BD174). Both hold.
+
+Its **C records** ship in the engine and the stack keeps something else. Each job takes the ones in its subsystems:
+- a correction that moves the record to IMPLEMENTATION_GAP (or RECOVERABLE_GAP where the review says the source is
+  unread), with the review's citations checked by `@cozmo-verifier`;
+- `--approve`;
+- then build it with the rest.
+
+| job | records |
+| --- | --- |
+| R-DEV | M4-004 (the engine has no calibration gate on direct motion); M1-014's priority clause (the engine requests SCHED_RR at 75%, 0x008334CC) |
+| R-ANIM | M5-020 (invented expressions). **Don't build or remove anything:** whether ShowExpression's extra faces stay is the operator's decision. Name it in the status file. |
+| R-BEH | M8-004 (score default 0, chooser-based selection), M8-008 (no timeout on the head recalibration wait), M8-009 (the fixed release order), M9-016 (the render lead: read it, or BLOCKED_EXTERNAL with the reason) |
+| R-VIS | M11-013 (the record contradicts the code; it becomes RECOVERABLE_GAP: read `CreateObjectsFromMarkers` and the ObjectID assignment), and M11-012's provenance/evidence text |
+
+The records the review lists as **contradicting their code or incomplete** (its last section) are text fixes. Each
+job fixes those in its subsystems as cleanup: no extra verify round, while `--check` passes. A frozen field (for
+example M11-013's `live_path`) needs a correction and `--approve`. The A and B records stay as they are. B records are
+operator decisions.
+
 ## How to do it
 
 0. Read `re-analysis/jobs/README.md`, `AGENTS.md` and `.opencode/agent/cozmo-manager.md`. Exact, always; no guesses.
