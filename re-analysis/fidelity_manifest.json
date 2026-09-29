@@ -4139,7 +4139,7 @@
       "subsystem": "M13-navigation",
       "title": "Lattice planner motion primitives loaded from the shipped cozmo_mprim.json",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204 and the shipped asset config/engine/cozmo_mprim.json",
       "evidence": [
         "xythetaEnvironment::ReadMotionPrimitives 0x008529C0 opens the file \"r\" (0x00852A44/0x00852A48), Json::Reader::parse (0x00852A62) and ParseMotionPrims with oldFormat=false (0x00852B04/0x00852B06)",
@@ -4149,7 +4149,7 @@
       ],
       "effect": "the planner builds its motion primitives from a different file or schema",
       "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
-      "unresolved": "compare LatticePlanner.cs's loader, schema and count validation against the cited instructions and the asset, then settle",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "MotionPrimitiveTests.TheShippedMotionPrimitivesParseAsTheEngineReadsThem"
@@ -4159,7 +4159,7 @@
       "subsystem": "M13-navigation",
       "title": "FlipBlockAction's constants, their roles and IAction type",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/FlipBlockAction.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "FlipBlockAction ctor 0x0055EC80: IAction type 0xF (0x0055ECA8/0x0055ECAA); +0x12C=150.0 (0x43160000), +0x130=20.0 (0x41A00000) at 0x0055ECF6/0x0055ECFA; +0x134=45.0 (0x42340000), +0x138=40.0 (0x42200000), +0x13C=-1 at 0x0055ECFE..0x0055ED0E; +0x140=1 at 0x0055ED10/0x0055ED12",
@@ -4172,7 +4172,7 @@
       ],
       "effect": "FlipBlock drives a different distance, angle or tolerance",
       "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
-      "unresolved": "compare FlipBlockAction.cs's constants and their roles against the cited instructions and settle",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.FlipDrivesThroughTheCubeRaisingTheLiftAndForgetsItsPose"
@@ -4182,7 +4182,7 @@
       "subsystem": "M13-navigation",
       "title": "Obstacle expansion, per-heading C-space polygons, and the primitive collision test",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "ImportBlockworldObstaclesIfNeeded 0x004FD4B8: paddings 7.0/6.0 (0x004FD4EE/0x004FD4F2) or 2.0/1.0 (0x004FD4EA/0x004FD4EC) selected by the function's own first bool argument (r4=r1 0x004FD4D2; cmp 0x004FD4E8; itt ne 0x004FD4F6); callers pass 0 (0x004FD2AC, 0x004FF92A) or 1 (StartPlanning 0x004FEC38)",
@@ -4197,7 +4197,7 @@
       ],
       "effect": "the planner expands obstacles by the wrong padding or penalty and routes differently",
       "provenance": "the current stack code; its old 45 mm radius / 20 mm ring / penalty 100 design is not the engine's",
-      "unresolved": "compare the paddings, the 0.1 penalty, the per-heading C-space polygon, RadialExpand and the primitive collision test against the cited instructions and settle",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.ThePlannerRoutesAroundACubeInTheWay"
@@ -4207,7 +4207,7 @@
       "subsystem": "M13-navigation",
       "title": "The primitive file's schema, the end/intermediate pose import and the traversal cost",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204 and the shipped asset config/engine/cozmo_mprim.json",
       "evidence": [
         "ActionType::Import 0x00851A18: extra_cost_factor -> +0 (0x00851A96), index -> +4 (0x00851AB8), name -> +8 (0x00851ADC), reverse_action -> +0x14 (0x00851B48); ctor 0x008519EC",
@@ -4221,7 +4221,7 @@
       ],
       "effect": "the planner uses a different cost, radius, arc or turn direction",
       "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
-      "unresolved": "compare the schema, the pose import, the arcs and the traversal cost formula against the cited instructions and settle",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "MotionPrimitiveTests.ATurningPrimitiveArcEndsOnItsEndCell"
@@ -4231,7 +4231,7 @@
       "subsystem": "M13-navigation",
       "title": "A lattice-planner failure sends no path",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DriveActions.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "DoPlanning 0x00500090 has no substitute path: the non-empty-plan branch appends GetPlan() (0x00500540) and returns",
@@ -4239,7 +4239,7 @@
       ],
       "effect": "a failed plan drives a guessed line instead of ending the action",
       "provenance": "the current stack code; it previously had a labelled straight-line fallback",
-      "unresolved": "compare DriveActions.cs's failure handling against the cited instructions and settle",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "CorrectionTests.APlannerFailureSendsNoPathEvenWhenTheStraightLineIsClear"
@@ -4249,7 +4249,7 @@
       "subsystem": "M13-navigation",
       "title": "The whiteboard keeps a list of beacons and the active one is the first",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/AIWhiteboard.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "AIWhiteboard::AddBeacon 0x0056C39C appends a 20-byte AIBeacon (Pose3d, a float radius at +0xC, an int at +0x10) to the vector at whiteboard+0x60, growing it through __emplace_back_slow_path (0x0056C3A8/0x0056C3D2)",
@@ -4259,7 +4259,7 @@
       ],
       "effect": "the active beacon is the newest rather than the oldest",
       "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
-      "unresolved": "compare AIWhiteboard.cs against the cited instructions and settle",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "BeaconTests.TheActiveBeaconIsTheFirstOneAdded"
@@ -4277,7 +4277,7 @@
       ],
       "effect": "the stack list is built with the tighter tolerance or a neighbour is missed",
       "provenance": "the current stack code used 15 for building the stack list",
-      "unresolved": "compare BlockConfigurations.cs against the 30/15 split and settle",
+      "unresolved": "the 15 mm callers of FindObjectOnTopOrUnderneathHelper (BlockWorld::UpdatePoseOfStackedObjects 0x00621908, DockingComponent::CanInteractWithObjectHelper 0x0063C728, CarryingComponent::SetObjectAsAttachedToLift 0x00632F0C) belong to M11-vision/M12-manipulation and are not built; the helper's tolerance argument and the 30 mm stack-building caller are built",
       "hardware_required": false,
       "live_path": true,
       "test": "ManipulationTests"
@@ -4287,7 +4287,7 @@
       "subsystem": "M13-navigation",
       "title": "The mount sequence and the reverse onto the charger, with the retry result codes",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "ConfigureTurnAndMountAction 0x0054E500: TurnInPlaceAction at atan2 of the vector to the marker (0x0054E52E/0x0054E536), SetMaxSpeed(0x3FDF66F3 = 1.745329 rad/s) at 0x0054E550/0x0054E55A and SetAccel(0x40A78D36 = 5.235988 rad/s^2) at 0x0054E55E/0x0054E568; then DriveStraightAction(-120 mm, 30 mm/s, false) whose vtable becomes BackupOntoChargerAction's (0x0054E5FC..0x0054E618)",
@@ -4296,7 +4296,7 @@
       ],
       "effect": "the mount turns or reverses at the wrong speed, or reports a different failure/retry result",
       "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
-      "unresolved": "compare ChargerActions.cs against the turn numbers, the reverse and the result codes, and settle",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.MountChargerAlignsTurnsAndBacksOntoTheContacts"
@@ -4306,7 +4306,7 @@
       "subsystem": "M13-navigation",
       "title": "The charger's dimensions, its docked pose and its one pre-dock pose",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/ChargerGeometry.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Charger::Charger 0x004E9B6C stores 96.0/80.0/31.0 at +0xF0..+0xF8 (0x004E9B98/0x004E9BB4/0x004E9BB0/0x004E9BB8) and adds one marker: id 2 (0x004E9C16), angle -pi/2 about Z (0xBFC90FDB at 0x004E9BBC) at (86,0,22) (0x004E9BD6/0x004E9BE2), size Point2 x=27.0 at sp+0x14 and y=20.0 at sp+0x18, the AddMarker pointer being sp+0x14 (0x004E9C28/0x004E9C30/0x004E9C36/0x004E9C38)",
@@ -4315,7 +4315,7 @@
       ],
       "effect": "the charger marker, docked pose or pre-dock pose is at the wrong place or size",
       "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
-      "unresolved": "compare ChargerGeometry.cs against the cited dimensions, the marker (x=27,y=20) and the poses, and settle",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.TheChargerGeneratesOnePreDockPoseOnItsAxisTwoHundredAndFiftyMillimetresOut"
@@ -4337,7 +4337,7 @@
       ],
       "effect": "workouts run out of order or the last one does not repeat",
       "provenance": "the current stack code picked by index with a medium default",
-      "unresolved": "compare Workouts.cs against the file-order advance and ShouldPlayEightiesMusic's score/roll/cache, and settle",
+      "unresolved": "ShouldPlayEightiesMusic's trackDelta branch needs the emotion value 60 ticks ago (Emotion::GetHistoryValueTicksAgo 0x4BC804), which belongs to M7-mood; the stack's MoodState keeps no history. Every shipped workout scorer has trackDelta false. The method also has no caller in this layer.",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.TheWorkoutConfigParsesAndScoresLiftsFromConfidence"
@@ -4347,7 +4347,7 @@
       "subsystem": "M13-navigation",
       "title": "The three path segment messages are a Planning::PathSegment copied field for field",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/RobotPath.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "PathDolerOuter::Dole 0x00507E4C switches on the segment type at PathSegment+0 (1 line, 2 arc, 3 point turn; 0x00507F40/0x00507F44/0x00507F48) and copies words at +4, +8, +0xC, +0x10 (arc adds +0x14), then the speed profile at +0x1C, +0x20, +0x24; a point turn also copies the byte at +0x14 (line 0x00507FB6..0x00507FD2; arc 0x00508008..0x00508028; point turn 0x00507F5E..0x00507F7E)",
@@ -4355,7 +4355,7 @@
       ],
       "effect": "the robot drives a different path from the one the planner produced",
       "provenance": "the current stack code already sent the same values in the same order",
-      "unresolved": "compare RobotPath.cs against the field layout and settle",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests"
@@ -4365,14 +4365,14 @@
       "subsystem": "M13-navigation",
       "title": "The mount raises the lift to 45 mm when it is below it, not when it is above",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "ConfigureTurnAndMountAction reads Robot::GetLiftHeight (0x0054E58A) and branches past the lift move when the lift is at or above 45.0 (0x42340000 at 0x0054E592; bpl at 0x0054E59E); otherwise MoveLiftToHeightAction(45, 5, 0) (0x0054E5B2..0x0054E5C6)"
       ],
       "effect": "the lift is lowered to 45 when it is above, or not raised when it is below",
       "provenance": "the current stack code had the comparison the other way round",
-      "unresolved": "compare the lift branch against the cited instructions and settle",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.TheMountCarriesTheEnginesOwnNumbers"
@@ -4382,7 +4382,7 @@
       "subsystem": "M13-navigation",
       "title": "DriveOffChargerContactsAction: a drive straight that retries while still on the charger",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "DriveOffChargerContactsAction ctor 0x00558228: DriveStraightAction(10 mm, 20 mm/s, false) (0x00558232/0x00558236/0x0055823E); then +0x44 = 7 (0x00558276/0x00558278), which is IActionRunner's RobotActionType (stored at +0x44 by the IActionRunner ctor 0x0053FDCC) and 7 = DRIVE_OFF_CHARGER_CONTACTS (RobotActionTypeFromString 0x0075A448 maps the string at 0x00C1604E to 7)",
@@ -4392,7 +4392,7 @@
       ],
       "effect": "the robot does not leave the charger, or the SDK track lock is left cleared/kept wrongly",
       "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
-      "unresolved": "compare ChargerActions.cs against the cited constructor/Init/CheckIfDone and settle",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.DriveOffChargerContactsActionFailsWhileStillOnTheContacts"
@@ -4414,7 +4414,7 @@
       ],
       "effect": "the approach, the flip of the bottom block, the blind-flip fallback or the reactions differ from the engine",
       "provenance": "the current stack code; the engine flow was read in gap pass 2 (G5) but the code has not been compared",
-      "unresolved": "compare CubeGameBehaviors.cs against the cited flow, including the second TurnTowardsObjectAction, the BlockConfigurationManager dirty flag and the +0xD8/+0xD9 streamline gate, and settle",
+      "unresolved": "IDriveToInteractWithObject's TurnTowardsLastFacePoseAction (0x0055B3C4..0x0055B3D8) belongs to M11-vision and is substituted with TurnTowardsFaceAction; the +0xD8 soft-spark-switch source belongs to the M8 behaviour framework and is modelled as a settable flag",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.DriveAndFlipBlockAddsBothTurnsWhenMaxTurnIsPositive"
@@ -4424,7 +4424,7 @@
       "subsystem": "M13-navigation",
       "title": "Pop a wheelie: one retry, the realign or retry animation, and what a failure marks",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "TransitionToPerformingAction(Robot&, bool) 0x005C7758 bumps +0x12C on a retry (0x005C777E) and zeroes it otherwise (0x005C780C); the completion lambda 0x005C7CBC splits on result >> 24: success sets +0x128=-1, plays SuccessfulWheelie 0x21C and reports objective 0x16 and the needs action; a category-3 result marks AIWhiteboard::SetFailedToUse(obj, 3) (0x005C7CF0 cmp r1,#3 / beq 0x005C7D4C -> 0x005C7DAA), and a category-4 (Retry) result calls SetupRetryAction while the count is at most 0 (0x005C7D44) and otherwise falls into the same SetFailedToUse(obj,3) (0x005C7D4C); any other category logs BehaviorPopAWheelie.FailedPopAction (0x005C7DB0)",
@@ -4432,7 +4432,7 @@
       ],
       "effect": "the wheelie retries more than once, or a failure marks the wrong object",
       "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
-      "unresolved": "compare CubeGameBehaviors.cs against the retry count, the animations and the failure mark, and settle",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.PopAWheelieRetriesWithTheRetryAnimationWhenTheDockFails"
@@ -4442,7 +4442,7 @@
       "subsystem": "M13-navigation",
       "title": "AlignWithObjectAction's alignment-type table and pre-action type",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "AlignWithObjectAction ctor body 0x00553370: cmp r6,#3 / bhi 0x005533CC/0x005533E4; tbb [pc,r6] 0x005533E6 with table base 0x005533EA = 02 05 09 0c (TBB scales by 2): type 0 -> 0x005533EE vmov.f32 s16,#6.0; type 1 -> 0x005533F4 flag +0xBB=2; type 2 -> 0x005533FC vmov.f32 s16,#-15.0; type 3 -> 0x00553402 vadd.f32 s16,s0,s2 (argument + -27.0)",
@@ -4452,7 +4452,7 @@
       ],
       "effect": "the alignment distance, the flag or the pre-action type is wrong for a given alignment type",
       "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
-      "unresolved": "compare the alignment-type table, the clamp, the pre-action type and the DockingMethod flag against the cited instructions and settle",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.AlignWithObjectUsesTheEnginesAlignmentTypeTable"
@@ -4461,8 +4461,8 @@
       "id": "M13-017",
       "subsystem": "M13-navigation",
       "title": "BehaviorDriveOffCharger: runnable on the charger, the drive distance and the leaving-the-contacts update",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ChargerBehaviors.cs",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "ctor 0x005C0980 stores 96.0 + json extraDistanceToDrive_mm at +0x11C (0x005C09D4/0x005C09E2/0x005C09E6); IsRunnableInternal 0x005C0B10 returns robot+0x34A (the on-contacts flag)",
@@ -4472,7 +4472,7 @@
       ],
       "effect": "the drive-off behaviour runs when it should not, drives the wrong distance or never stops",
       "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
-      "unresolved": "compare the drive-off behaviour against the cited constructor/IsRunnable/Init/Transition/Update and settle",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.DriveOffChargerDrivesTheChargerLengthPlusTheExtraAndFiresTheEvent"
@@ -4482,7 +4482,7 @@
       "subsystem": "M13-navigation",
       "title": "LatticePlannerImpl's planning entry and worker, the Replan argument, the heuristic and the result codes",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "StartPlanning 0x004FEB44 stores its bool argument at impl+0xA1 (0x004FEB56/0x004FEB7E); true forces an unconditional replan and imports with the 7.0/6.0 padding (ImportBlockworldObstaclesIfNeeded with bool 0 at 0x004FEEFE), false first imports with the 2.0/1.0 padding (bool 1 at 0x004FEC38/0x004FEC3A) and reuses a safe old plan (FindClosestPlanSegmentToPose 0x004FEC50; PlanIsSafe 0x004FF424 -> return 2 at 0x004FF42E); ComputePathHelper passes true through the vtable slot +0xC (0x004FD326..0x004FD330)",
@@ -4501,7 +4501,7 @@
       ],
       "effect": "the planner starts differently, waits the wrong time, aborts early or reports the wrong result",
       "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
-      "unresolved": "compare the planner entry/worker, the 30,000,000 cap, the heuristic and the result codes against the cited instructions and settle",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.DoPlanningReturnsTheEngineResultCodes"
@@ -4511,7 +4511,7 @@
       "subsystem": "M13-navigation",
       "title": "The production xythetaEnvironment uses the JSON num_angles; the hard-coded 16 is in the uncalled Init(char const*) overload",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "the production planner constructs its environment with the JSON overload xythetaEnvironment::Init(Json const&) 0x00851F9E (called from the LatticePlannerImpl ctor 0x004FCC44; PLT 0x004A64F0 resolves to 0x00851F9E), which calls ClearObstacles and ParseMotionPrims(env, json, false) and does not overwrite env+8, so the heading count is the JSON num_angles",
@@ -4520,7 +4520,7 @@
       ],
       "effect": "the planner uses a heading count other than 16",
       "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
-      "unresolved": "compare LatticePlanner.cs's heading count against the JSON num_angles (production) and settle",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.TheShippedMotionPrimitivesParseAsTheEngineReadsThem"

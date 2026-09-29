@@ -10,12 +10,20 @@ namespace Cozmo.Robot.Manipulation;
 public sealed record PrimitiveAction(int Index, string Name, double ExtraCostFactor, bool Reverse);
 
 /// <summary>
+/// One sampled pose of a primitive (<c>Anki::Planning::IntermediatePosition</c>, 0x14 bytes): the pose in
+/// mm/radians relative to the start cell, the step distance at +8 and the soft-collision reciprocal at +0x10
+/// (M13-003, M13-004).
+/// </summary>
+public readonly record struct IntermediatePose(double X, double Y, double Theta, double Reciprocal);
+
+/// <summary>
 /// One motion primitive (<c>Anki::Planning::MotionPrimitive</c>): from a start heading index, the action moves
 /// the robot by (EndX, EndY) cells to heading EndTheta, through the listed intermediate poses (mm and radians,
-/// relative to the start cell). <see cref="Cost"/> is the primitive's traversal cost in mm-equivalents.
+/// relative to the start cell). <see cref="Cost"/> is the primitive's traversal cost, computed by
+/// <c>MotionPrimitive::Create</c> (M13-004).
 /// </summary>
 public sealed record MotionPrimitive(int ActionIndex, int StartTheta, int EndX, int EndY, int EndTheta,
-                                     IReadOnlyList<(double X, double Y, double Theta)> Intermediate, double LengthMm, double Cost)
+                                     IReadOnlyList<IntermediatePose> Intermediate, double LengthMm, double Cost)
 {
     /// <summary>
     /// The straight run before the arc, in millimetres, from the primitive's own <c>straight_length_mm</c>.
@@ -45,67 +53,165 @@ public sealed record MotionPrimitive(int ActionIndex, int StartTheta, int EndX, 
 public sealed class MotionPrimitiveSet
 {
     public double ResolutionMm { get; private init; }
+    /// <summary>
+    /// The JSON <c>num_angles</c> (env+8). The production <c>xythetaEnvironment::Init(Json const&amp;)</c>
+    /// 0x00851F9E does not overwrite it; the hard-coded-16 override is on the uncalled
+    /// <c>Init(char const*)</c> 0x008528A8 (M13-019). The shipped asset's value is 16.
+    /// </summary>
+    // fidelity: M13-019
     public int NumAngles { get; private init; }
     public IReadOnlyList<double> Angles { get; private init; } = Array.Empty<double>();
     public IReadOnlyList<PrimitiveAction> Actions { get; private init; } = Array.Empty<PrimitiveAction>();
     /// <summary>Primitives by start heading index.</summary>
     public IReadOnlyList<IReadOnlyList<MotionPrimitive>> ByAngle { get; private init; } = Array.Empty<IReadOnlyList<MotionPrimitive>>();
 
-    public static string ObbRelativePath => Path.Combine("assets", "cozmo_resources", "config", "engine", "cozmo_mprim.json");
+/// <summary>
+/// The <c>RobotActionParams</c> defaults the engine constructs at 0x00851EDE (ctor 0x0084EDE6): half wheel
+/// base 24.0 mm, max velocity 60.0 mm/s, max reverse velocity 25.0 mm/s. <c>RobotActionParams::Import</c>
+/// has no callers and the asset has no such keys, so these stand (M13-004).
+/// </summary>
+public const double HalfWheelBaseMm = 24.0;
+public const double MaxVelocityMmps = 60.0;
+public const double MaxReverseVelocityMmps = 25.0;
 
-    /// <summary>Loads the set from an OBB root; null when the file is not there.</summary>
-    public static MotionPrimitiveSet? FromObb(string obbRoot)
-    {
-        var p = Path.Combine(obbRoot, ObbRelativePath);
-        return File.Exists(p) ? Parse(File.ReadAllText(p)) : null;
-    }
+public static string ObbRelativePath => Path.Combine("assets", "cozmo_resources", "config", "engine", "cozmo_mprim.json");
 
-    public static MotionPrimitiveSet Parse(string json)
+/// <summary>Loads the set from an OBB root; null when the file is not there or the parse fails.</summary>
+public static MotionPrimitiveSet? FromObb(string obbRoot)
+{
+    var p = Path.Combine(obbRoot, ObbRelativePath);
+    if (!File.Exists(p)) return null;
+    try { return Parse(File.ReadAllText(p)); }
+    catch (InvalidDataException) { return null; }   // ReadMotionPrimitives returns 0 -> no planner
+}
+
+public static MotionPrimitiveSet Parse(string json)
+{
+    using var doc = JsonDocument.Parse(json, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+    var root = doc.RootElement;
+    double res = root.GetProperty("resolution_mm").GetDouble();
+    int n = root.GetProperty("num_angles").GetInt32();
+    var angles = root.GetProperty("angle_definitions").EnumerateArray().Select(a => a.GetDouble()).ToArray();
+    var actions = root.GetProperty("actions").EnumerateArray()
+        .Select(a => new PrimitiveAction(a.GetProperty("index").GetInt32(), a.GetProperty("name").GetString() ?? "",
+                                         a.GetProperty("extra_cost_factor").GetDouble(),
+                                         a.TryGetProperty("reverse_action", out var r) && r.GetBoolean()))
+        .OrderBy(a => a.Index).ToArray();
+    // fidelity: M13-001
+    // ParseMotionPrims 0x00852014 aborts and returns 0 when either count differs from num_angles
+    // (0x0085223C, 0x0085225A); the messages are the engine's.
+    if (angles.Length != n)
+        throw new InvalidDataException($"ERROR: numAngles is {n}, but we read {angles.Length} angle definitions");
+    var angleEntries = root.GetProperty("angles").EnumerateArray().ToArray();
+    if (angleEntries.Length != n)
+        throw new InvalidDataException("error: could not find key 'angles' in motion primitives");
+
+    var byAngle = new List<IReadOnlyList<MotionPrimitive>>();
+    int start = 0;
+    foreach (var ang in angleEntries)
     {
-        using var doc = JsonDocument.Parse(json, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
-        var root = doc.RootElement;
-        double res = root.GetProperty("resolution_mm").GetDouble();
-        int n = root.GetProperty("num_angles").GetInt32();
-        var angles = root.GetProperty("angle_definitions").EnumerateArray().Select(a => a.GetDouble()).ToArray();
-        var actions = root.GetProperty("actions").EnumerateArray()
-            .Select(a => new PrimitiveAction(a.GetProperty("index").GetInt32(), a.GetProperty("name").GetString() ?? "",
-                                             a.GetProperty("extra_cost_factor").GetDouble(),
-                                             a.TryGetProperty("reverse_action", out var r) && r.GetBoolean()))
-            .OrderBy(a => a.Index).ToArray();
-        var byAngle = new List<IReadOnlyList<MotionPrimitive>>();
-        foreach (var ang in root.GetProperty("angles").EnumerateArray())
+        var prims = new List<MotionPrimitive>();
+        foreach (var p in ang.GetProperty("prims").EnumerateArray())
         {
-            int start = ang.GetProperty("starting_angle").GetInt32();
-            var prims = new List<MotionPrimitive>();
-            foreach (var p in ang.GetProperty("prims").EnumerateArray())
+            // a per-primitive extra_cost_factor is rejected (0x00853FFC, M13-004)
+            if (p.TryGetProperty("extra_cost_factor", out _))
+                throw new InvalidDataException("ERROR: individual primitives shouldn't have cost factors. Old file format?");
+            int ai = p.GetProperty("action_index").GetInt32();
+            var action = actions[ai];
+            // State::Import 0x0084F8A4: "x"/"y" are shorts in grid cells, "theta" an unsigned byte heading
+            // index (0x0084F920/0x0084F940/0x0084F962, M13-004).
+            var end = p.GetProperty("end_pose");
+            int ex = (int)end.GetProperty("x").GetDouble();
+            int ey = (int)end.GetProperty("y").GetDouble();
+            int eth = end.GetProperty("theta").GetInt32();
+            var raw = p.GetProperty("intermediate_poses").EnumerateArray()
+                .Select(q => (X: q.GetProperty("x_mm").GetDouble(), Y: q.GetProperty("y_mm").GetDouble(), Th: q.GetProperty("theta_rads").GetDouble())).ToArray();
+            // IntermediatePosition+0x10: 1/(halfWheelBase*|dtheta|/maxVelocity + dist), the per-pose
+            // soft-collision reciprocal (M13-003 / Appendix G R2-1..R2-3). dist is the Euclidean distance to
+            // the previous intermediate pose, dtheta = wrap(cur.theta_rads - prev.theta_rads); the first pose
+            // gets 0.0.
+            var inter = new IntermediatePose[raw.Length];
+            for (int i = 0; i < raw.Length; i++)
             {
-                int ai = p.GetProperty("action_index").GetInt32();
-                var end = p.GetProperty("end_pose");
-                var inter = p.GetProperty("intermediate_poses").EnumerateArray()
-                    .Select(q => (q.GetProperty("x_mm").GetDouble(), q.GetProperty("y_mm").GetDouble(), q.GetProperty("theta_rads").GetDouble())).ToArray();
-                double len = 0;
-                for (int i = 1; i < inter.Length; i++) len += Math.Sqrt(Sq(inter[i].Item1 - inter[i - 1].Item1) + Sq(inter[i].Item2 - inter[i - 1].Item2));
-                // an in-place turn has no length: its cost is one cell times the action's factor (INFERRED; the
-                // engine's exact turn cost was not read)
-                double cost = Math.Max(len, res) * actions[ai].ExtraCostFactor;
-                (double, double, double, double, double)? arc = null;
-                if (p.TryGetProperty("arc", out var ja))
-                    arc = (ja.GetProperty("centerPt_x_mm").GetDouble(), ja.GetProperty("centerPt_y_mm").GetDouble(),
-                           ja.GetProperty("radius_mm").GetDouble(), ja.GetProperty("startRad").GetDouble(),
-                           ja.GetProperty("sweepRad").GetDouble());
-                prims.Add(new MotionPrimitive(ai, start, (int)Math.Round(end.GetProperty("x").GetDouble()), (int)Math.Round(end.GetProperty("y").GetDouble()),
-                                              end.GetProperty("theta").GetInt32(), inter, len, cost)
+                double recip = 0.0;
+                if (i > 0)
                 {
-                    StraightLengthMm = p.TryGetProperty("straight_length_mm", out var sl) ? sl.GetDouble() : 0,
-                    Arc = arc,
-                    TurnInPlaceDirection = p.TryGetProperty("turn_in_place_direction", out var td) ? td.GetDouble() : null,
-                });
+                    double dist = Math.Sqrt(Sq(raw[i].X - raw[i - 1].X) + Sq(raw[i].Y - raw[i - 1].Y));
+                    double dth = Math.Abs(StraightLinePlanner.Wrap(raw[i].Th - raw[i - 1].Th));
+                    double denom = HalfWheelBaseMm * dth / MaxVelocityMmps + dist;
+                    recip = denom > 1e-9 ? 1.0 / denom : 0.0;
+                }
+                inter[i] = new IntermediatePose(raw[i].X, raw[i].Y, raw[i].Th, recip);
             }
-            while (byAngle.Count <= start) byAngle.Add(Array.Empty<MotionPrimitive>());
-            byAngle[start] = prims;
+            double len = 0;
+            for (int i = 1; i < raw.Length; i++) len += Math.Sqrt(Sq(raw[i].X - raw[i - 1].X) + Sq(raw[i].Y - raw[i - 1].Y));
+            (double CenterX, double CenterY, double Radius, double StartRad, double SweepRad)? arc = null;
+            if (p.TryGetProperty("arc", out var ja))
+                arc = (ja.GetProperty("centerPt_x_mm").GetDouble(), ja.GetProperty("centerPt_y_mm").GetDouble(),
+                       ja.GetProperty("radius_mm").GetDouble(), ja.GetProperty("startRad").GetDouble(),
+                       ja.GetProperty("sweepRad").GetDouble());
+            double straight = p.TryGetProperty("straight_length_mm", out var sl) ? sl.GetDouble() : 0;
+            double? turnDir = p.TryGetProperty("turn_in_place_direction", out var td) ? td.GetDouble() : null;
+            // fidelity: M13-004
+            // MotionPrimitive::Create 0x00853DD0: base = d8*|straight_length_mm|; if the primitive has an
+            // arc, add d8*|sweepRad|*(|radius_mm| + halfWheelBase) and do NOT add the turn term (the arc
+            // branch jumps straight to the extra-cost-factor multiply at 0x0085425E); else if it has
+            // turn_in_place_direction, add d8*halfWheelBase*|dtheta|. d8 = 1/maxVelocity forward,
+            // 1/maxReverseVelocity reverse (0x00854046..0x00854378).
+            double d8 = action.Reverse ? 1.0 / MaxReverseVelocityMmps : 1.0 / MaxVelocityMmps;
+            double baseCost = d8 * Math.Abs(straight);
+            if (arc is { } arcValue)
+                baseCost += d8 * Math.Abs(arcValue.SweepRad) * (Math.Abs(arcValue.Radius) + HalfWheelBaseMm);
+            else if (turnDir is not null)
+            {
+                double dtheta = Math.Abs(StraightLinePlanner.Wrap(angles[eth] - angles[start]));
+                baseCost += d8 * HalfWheelBaseMm * dtheta;
+            }
+            double cost = baseCost * action.ExtraCostFactor;
+            if (baseCost < 1e-6 || cost < 1e-6)
+            {
+                // MotionPrimitive::Create returns 0 and ParseMotionPrims logs "Failed to import motion primitive".
+                Console.Error.WriteLine($"ERROR: base action cost is {baseCost} for action {ai} '{action.Name}'");
+                continue;
+            }
+            prims.Add(new MotionPrimitive(ai, start, ex, ey, eth, inter, len, cost)
+            {
+                StraightLengthMm = straight,
+                Arc = arc,
+                TurnInPlaceDirection = turnDir,
+            });
         }
-        return new MotionPrimitiveSet { ResolutionMm = res, NumAngles = n, Angles = angles, Actions = actions, ByAngle = byAngle };
+        while (byAngle.Count <= start) byAngle.Add(Array.Empty<MotionPrimitive>());
+        byAngle[start] = prims;
+        start++;
     }
+    // M13-001/M13-004: the angle's index in the array is its starting heading; M13-019: NumAngles is the
+    // JSON value (the production Init(Json const&) 0x00851F9E does not overwrite env+8).
+    // fidelity: M13-001, M13-004, M13-019
+    var set = new MotionPrimitiveSet { ResolutionMm = res, NumAngles = n, Angles = angles, Actions = actions, ByAngle = byAngle };
+    set.Reflected = BuildReflected(byAngle, n);
+    return set;
+}
+
+/// <summary>
+/// <c>PopulateReverseMotionPrims</c> 0x008544C0: the reflected primitive set the heuristic expansion walks
+/// (env+0x20). For each forward primitive it negates the end-pose x and y (16-bit), sets the end-pose theta
+/// byte to the forward primitive's <b>start</b> heading index, stores the result in the bucket of the forward
+/// <b>end</b> theta, and copies the cost (+4), the <c>Path</c> (+0x2C), the intermediate-pose vector (+0x10)
+/// and the cached bbox (+0x1C..+0x28) unchanged (Appendix G R1-2..R1-4).
+/// </summary>
+// fidelity: M13-018
+public IReadOnlyList<IReadOnlyList<MotionPrimitive>> Reflected { get; private set; } = Array.Empty<IReadOnlyList<MotionPrimitive>>();
+
+private static IReadOnlyList<IReadOnlyList<MotionPrimitive>> BuildReflected(IReadOnlyList<IReadOnlyList<MotionPrimitive>> byAngle, int n)
+{
+    var buckets = new List<MotionPrimitive>[n];
+    for (int i = 0; i < n; i++) buckets[i] = new List<MotionPrimitive>();
+    for (int start = 0; start < byAngle.Count; start++)
+        foreach (var p in byAngle[start])
+            buckets[p.EndTheta].Add(p with { EndX = -p.EndX, EndY = -p.EndY, EndTheta = start });
+    return buckets.Select(b => (IReadOnlyList<MotionPrimitive>)b).ToArray();
+}
 
     /// <summary>The heading index nearest an angle.</summary>
     public int ThetaIndex(double angleRad)
@@ -141,9 +247,11 @@ public readonly record struct LatticeState(int X, int Y, int Theta);
 /// <b>What the import puts in it.</b> <c>LatticePlannerImpl::ImportBlockworldObstaclesIfNeeded</c>
 /// 0x004FD4B8 logs its own numbers - "robot padding %f, obstacle padding %f, didBlocksChange %d" - and
 /// they are <see cref="RobotPaddingMm"/> 7 and <see cref="ObstaclePaddingMm"/> 6, or
-/// <see cref="TightRobotPaddingMm"/> 2 and <see cref="TightObstaclePaddingMm"/> 1 when the planner's
-/// tight flag is set (0x004FD4F6). Neither is a penalty: the penalty is the constant 0.1 the import
-/// passes to every obstacle (0x3DCCCCCD at 0x004FE0CE).
+/// <see cref="TightRobotPaddingMm"/> 2 and <see cref="TightObstaclePaddingMm"/> 1 selected by the
+/// <em>function's own first bool argument</em> (r4 = r1 at 0x004FD4D2; cmp r4,#0 at 0x004FD4E8; itt ne
+/// at 0x004FD4F6). Its callers pass an immediate: <c>ComputePathHelper</c> and <c>PreloadObstacles</c>
+/// pass 0, <c>StartPlanning</c> passes 1 (0x004FEC38). Neither is a penalty: the penalty is the constant
+/// 0.1 the import passes to every obstacle (0x3DCCCCCD at 0x004FE0CE).
 ///
 /// Each object's quad is radially expanded by the obstacle padding
 /// (<c>ConvexPolygon::RadialExpand</c> at 0x004FDF9E), the robot's own bounding quad is taken at each
@@ -270,9 +378,13 @@ public sealed class LatticeEnvironment
     /// <summary>
     /// <c>LatticePlannerImpl::ImportBlockworldObstaclesIfNeeded</c>: every located object except the one being
     /// carried becomes an obstacle from its bounding quad (<c>GetBoundingQuadXY</c>). The charger counts too.
+    /// <paramref name="tightPadding"/> is the function's own first bool argument: true selects 2/1, false 7/6.
+    /// <c>StartPlanning</c> calls it with a hard-coded true (0x004FEC38).
     /// </summary>
-    public void ImportBlockWorldObstacles(BlockWorld world, uint? carriedObjectId, IEnumerable<uint>? ignore = null)
+    // fidelity: M13-003
+    public void ImportBlockWorldObstacles(BlockWorld world, uint? carriedObjectId, bool tightPadding, IEnumerable<uint>? ignore = null)
     {
+        TightPadding = tightPadding;
         var skip = new HashSet<uint>(ignore ?? Array.Empty<uint>());
         if (carriedObjectId is { } c) skip.Add(c);
         ClearObstacles();
@@ -287,15 +399,29 @@ public sealed class LatticeEnvironment
         }
     }
 
-    /// <summary>Whether the robot's origin at this point and heading is inside any obstacle.</summary>
+    /// <summary>
+    /// <c>xythetaEnvironment::IsInCollision(State_c)</c> 0x008515F8: hard collision only - a containing
+    /// polygon whose penalty is <b>&gt;= 1000.0</b> (0x008516D0/0x008516DC).
+    /// </summary>
+    // fidelity: M13-003
     public bool IsInCollision(double xMm, double yMm, int theta)
+    {
+        var p = new Vec2(xMm, yMm);
+        foreach (var o in _obstacles) if (o.Penalty >= 1000.0 && Inside(o.ByTheta[theta], p)) return true;
+        return false;
+    }
+
+    /// <summary><c>xythetaEnvironment::IsInSoftCollision</c> 0x00851708: any containing polygon.</summary>
+    // fidelity: M13-003
+    public bool IsInSoftCollision(double xMm, double yMm, int theta)
     {
         var p = new Vec2(xMm, yMm);
         foreach (var o in _obstacles) if (Inside(o.ByTheta[theta], p)) return true;
         return false;
     }
 
-    /// <summary>The penalty of the first obstacle containing the point, or zero.</summary>
+    /// <summary><c>GetCollisionPenalty</c> 0x008517B0: the first containing polygon's penalty, or 0.0.</summary>
+    // fidelity: M13-003
     public double PenaltyAt(double xMm, double yMm, int theta)
     {
         var p = new Vec2(xMm, yMm);
@@ -304,38 +430,58 @@ public sealed class LatticeEnvironment
     }
 
     /// <summary>
-    /// The penalty for driving a primitive from a lattice state: null when it collides, else the sum of
-    /// the penalties it picked up. Each intermediate pose is tested in its own heading's bucket, which
-    /// is what indexing the obstacle list by the state's theta amounts to.
+    /// <c>SuccessorIterator::Next</c> 0x0085110C's per-primitive collision test. A non-turning primitive
+    /// (<c>end_pose.theta == +1</c> heading index) tests <b>every</b> intermediate pose in the end-pose
+    /// bucket; a turning primitive walks the poses last to first, each in its own bucket. A containing
+    /// polygon with penalty &lt; 1000.0 is soft and adds <c>base + penalty*reciprocal</c>; a penalty
+    /// &gt;= 1000.0 rejects the primitive. <c>base</c> is 0.0 forward, 1000.0 reverse. Returns false on a
+    /// hard collision.
     /// </summary>
-    public double? GetCollisionPenalty(LatticeState from, MotionPrimitive prim)
+    // fidelity: M13-003
+    public bool TryGetSoftCost(LatticeState from, MotionPrimitive prim, out double softCost)
     {
-        if (_obstacles.Count == 0) return 0;
+        softCost = 0;
+        if (_obstacles.Count == 0) return true;
         double res = Primitives.ResolutionMm;
         double x0 = from.X * res, y0 = from.Y * res;
-        double penalty = 0;
+        double baseCost = Primitives.Actions[prim.ActionIndex].Reverse ? 1000.0 : 0.0;
         var inter = prim.Intermediate;
-        // every fourth intermediate pose plus the last: the primitives are sampled every 0.5 mm
-        for (int i = 0; i < inter.Count; i += 4)
+        if (prim.EndTheta == prim.StartTheta)
         {
-            var (x, y, th) = inter[i];
-            int t = Primitives.ThetaIndex(th);
-            if (IsInCollision(x0 + x, y0 + y, t)) return null;
-            penalty += PenaltyAt(x0 + x, y0 + y, t);
+            for (int i = 0; i < inter.Count; i++)
+                if (!AddSoftOrHard(x0 + inter[i].X, y0 + inter[i].Y, prim.EndTheta, baseCost, inter[i].Reciprocal, ref softCost)) return false;
         }
-        var last = inter[^1];
-        if (IsInCollision(x0 + last.X, y0 + last.Y, Primitives.ThetaIndex(last.Theta))) return null;
-        return penalty;
+        else
+        {
+            for (int i = inter.Count - 1; i >= 0; i--)
+                if (!AddSoftOrHard(x0 + inter[i].X, y0 + inter[i].Y, Primitives.ThetaIndex(inter[i].Theta), baseCost, inter[i].Reciprocal, ref softCost)) return false;
+        }
+        return true;
     }
 
-    /// <summary>The successors of a state: every primitive from its heading that does not collide.</summary>
-    public IEnumerable<(LatticeState Next, MotionPrimitive Prim, double Cost)> GetSuccessors(LatticeState s)
+    private bool AddSoftOrHard(double x, double y, int bucket, double baseCost, double reciprocal, ref double soft)
     {
-        foreach (var p in Primitives.ByAngle[s.Theta])
+        var p = new Vec2(x, y);
+        foreach (var o in _obstacles)
         {
-            var pen = GetCollisionPenalty(s, p);
-            if (pen is null) continue;
-            yield return (new LatticeState(s.X + p.EndX, s.Y + p.EndY, p.EndTheta), p, p.Cost + pen.Value);
+            if (!Inside(o.ByTheta[bucket], p)) continue;
+            if (o.Penalty >= 1000.0) return false;
+            soft += baseCost + o.Penalty * reciprocal;
+        }
+        return true;
+    }
+
+    /// <summary>The successors of a state: every primitive from its heading that is not in hard collision.</summary>
+    public IEnumerable<(LatticeState Next, MotionPrimitive Prim, double Cost)> GetSuccessors(LatticeState s)
+        => GetSuccessors(s, Primitives.ByAngle);
+
+    /// <summary>Successors over an explicit primitive set (the reflected set for the heuristic).</summary>
+    public IEnumerable<(LatticeState Next, MotionPrimitive Prim, double Cost)> GetSuccessors(LatticeState s, IReadOnlyList<IReadOnlyList<MotionPrimitive>> set)
+    {
+        foreach (var p in set[s.Theta])
+        {
+            if (!TryGetSoftCost(s, p, out var soft)) continue;
+            yield return (new LatticeState(s.X + p.EndX, s.Y + p.EndY, p.EndTheta), p, p.Cost + soft);
         }
     }
 
@@ -345,27 +491,25 @@ public sealed class LatticeEnvironment
     public Pose3d ToPose(LatticeState s) =>
         new(Mat3.AboutZ(Primitives.Angles[s.Theta]), new Vec3(s.X * Primitives.ResolutionMm, s.Y * Primitives.ResolutionMm, 0));
 
-    /// <summary><c>ConvexPolygon::RadialExpand</c>: each vertex pushed out from the centroid so every edge moves out by the distance.</summary>
+    /// <summary>
+    /// <c>ConvexPolygon::RadialExpand</c> 0x004FDF9E (body 0x00841580): each vertex moves to
+    /// <c>v + d*(v-c)/|v-c|</c> with <c>c</c> the centroid computed once; no bisector, no cos, no clamp.
+    /// A negative distance only warns (0x00841590..0x008415A8).
+    /// </summary>
+    // fidelity: M13-003
     public static Vec2[] RadialExpand(Vec2[] poly, double byMm)
     {
-        if (byMm <= 0) return poly;
+        if (byMm < 0) { Console.Error.WriteLine("called expand with a negative distance."); return poly; }
         double cx = poly.Average(p => p.X), cy = poly.Average(p => p.Y);
         var outp = new Vec2[poly.Length];
         for (int i = 0; i < poly.Length; i++)
         {
-            // move the vertex so that both adjacent edges move out by byMm: along the bisector by byMm / cos(half-angle)
-            var prev = poly[(i + poly.Length - 1) % poly.Length]; var next = poly[(i + 1) % poly.Length];
-            var d1 = Norm(new Vec2(poly[i].X - prev.X, poly[i].Y - prev.Y)); var d2 = Norm(new Vec2(next.X - poly[i].X, next.Y - poly[i].Y));
-            var n1 = new Vec2(d1.Y, -d1.X); var n2 = new Vec2(d2.Y, -d2.X);           // outward normals for a counter-clockwise polygon
-            if ((poly[i].X - cx) * n1.X + (poly[i].Y - cy) * n1.Y < 0) { n1 = new Vec2(-n1.X, -n1.Y); n2 = new Vec2(-n2.X, -n2.Y); }
-            var bis = Norm(new Vec2(n1.X + n2.X, n1.Y + n2.Y));
-            double cosHalf = Math.Max(0.3, bis.X * n1.X + bis.Y * n1.Y);
-            outp[i] = new Vec2(poly[i].X + bis.X * byMm / cosHalf, poly[i].Y + bis.Y * byMm / cosHalf);
+            double dx = poly[i].X - cx, dy = poly[i].Y - cy;
+            double l = Math.Sqrt(dx * dx + dy * dy);
+            outp[i] = l > 0 ? new Vec2(poly[i].X + byMm * dx / l, poly[i].Y + byMm * dy / l) : poly[i];
         }
         return outp;
     }
-
-    private static Vec2 Norm(Vec2 v) { double l = Math.Sqrt(v.X * v.X + v.Y * v.Y); return l > 0 ? new Vec2(v.X / l, v.Y / l) : v; }
 
     /// <summary>Point-in-convex-polygon by consistent cross-product sign.</summary>
     public static bool Inside(Vec2[] poly, Vec2 p)
@@ -395,42 +539,135 @@ public sealed record LatticePlan(LatticeState Start, IReadOnlyList<MotionPrimiti
 
 /// <summary>
 /// The engine's <c>Anki::Planning::xythetaPlanner</c> / <c>xythetaPlannerImpl</c> (<c>ComputePath</c>,
-/// <c>ExpandState</c>, <c>InitializeHeuristic</c>, <c>CheckGoal</c>): an A* search over the lattice from the
-/// start state to any of the goal states, with the Euclidean distance to the nearest goal as the heuristic
-/// (INFERRED: the engine precomputes a heuristic table; distance is the admissible choice for mm-costed
-/// primitives). Several goals are supported, as the engine's <c>GoalsAreValid</c> implies (a cube's four
-/// pre-action poses). The search gives up after <see cref="MaxExpansions"/> expansions (LOCAL bound).
+/// <c>ExpandState</c>, <c>InitializeHeuristic</c>, <c>CheckGoal</c>): a min-<c>f</c> search over the lattice
+/// from the start state to any of the goal states. Several goals are supported, as the engine's
+/// <c>GoalsAreValid</c> implies (a cube's four pre-action poses).
+///
+/// <b>The heuristic (M13-018).</b> <c>heur_internal</c> 0x0085A7B8 returns
+/// <c>min_i( heurMap[i] + EuclideanDistance(state, goal_i)/maxVelocity )</c>, memoized in the map at
+/// planner+0xAC by <c>heur</c> 0x0085A780. <c>heurMap</c> comes from <c>InitializeHeuristic</c> 0x008598DC:
+/// for each goal, 0.0 when the goal is not in soft collision, else <c>ExpandCollisionStatesFromGoal</c>
+/// (a Dijkstra over the <b>reflected</b> primitive set through soft-collision states, returning the
+/// accumulated cost when free space is reached); a goal whose cost exceeds 1000.0 is dropped. The open list
+/// is a min-<c>f</c> priority queue with <c>f = g + h</c> (0x0084E4E8, <c>ExpandState</c> 0x0085A34C).
+///
+/// The expansion cap is the engine's: <c>Replan</c> is called with 0x01C9C380 = 30,000,000 (M13-018).
 /// </summary>
-public sealed class LatticePlanner
+// fidelity: M13-018
+public class LatticePlanner
 {
-    public const int MaxExpansions = 60000;
+    /// <summary>
+    /// 30,000,000 = 0x01C9C380: the maximum number of state expansions, the argument <c>DoPlanning</c>
+    /// passes to <c>Replan</c> (0x005000F2/0x005000FA; <c>ComputePath</c> warns "exceeded max expansions
+    /// of %u, stopping" at 0x00858A96 and returns 0).
+    /// </summary>
+    // fidelity: M13-018
+    public const int MaxExpansions = 30_000_000;
 
     public LatticePlanner(LatticeEnvironment env) => Env = env;
     public LatticeEnvironment Env { get; }
 
+    /// <summary>
+    /// impl+0x108: the pre-plan wait in ms. The ctor 0x004FCCF6 sets 0 and
+    /// <c>LatticePlanner::SetArtificialPlannerDelay_ms</c> 0x004FFFEC sets it (M13-018).
+    /// </summary>
+    // fidelity: M13-018
+    public int ArtificialPlannerDelayMs { get; set; }
+
+    /// <summary>impl+0xA1: the bool <c>StartPlanning</c> stores (0x004FEB7E): true = force a replan.</summary>
+    // fidelity: M13-018
+    public bool ReplanFlag { get; private set; }
+
+    /// <summary>
+    /// impl+0xF2: the run/continue flag, not an abort flag. 1 = keep planning (ctor 0x004FCCCA and
+    /// <c>StartPlanning</c> 0x004FF310), 0 = stop (<c>StopPlanning</c> 0x004FD1C8). <c>DoPlanning</c> reads it
+    /// during the sleep and passes it to <c>Replan</c> (M13-018).
+    /// </summary>
+    // fidelity: M13-018
+    public bool RunFlag { get; private set; } = true;
+
+    /// <summary><c>LatticePlannerImpl::StopPlanning</c> 0x004FD1BA: clear the run flag.</summary>
+    // fidelity: M13-018
+    public void StopPlanning() => RunFlag = false;
+
+    /// <summary>The engine's <c>DoPlanning</c> result: 0 failure, 3 empty plan, 2 success.</summary>
+    // fidelity: M13-018
+    public enum PlanningResult { Failure = 0, EmptyPlan = 3, Success = 2 }
+
+    /// <summary>The result of the last <see cref="PlanTo"/>: the engine's <c>DoPlanning</c> codes.</summary>
+    // fidelity: M13-018
+    public PlanningResult LastPlanningResult { get; private set; } = PlanningResult.Failure;
+
+    private readonly Dictionary<LatticeState, double> _heurMemo = new();
+    private double[] _heurMap = Array.Empty<double>();
+    private List<LatticeState> _heurGoals = new();
+
+    /// <summary>
+    /// <c>LatticePlannerImpl::StartPlanning</c> 0x004FEB44: store the bool at impl+0xA1, set the run flag to
+    /// 1 (0x004FF310) and import the world's obstacles. <paramref name="forceReplan"/> true selects the
+    /// 7.0/6.0 padding pair (bool 0 at 0x004FEEFE); false would first select 2.0/1.0 (bool 1 at 0x004FEC38)
+    /// and then reuse a safe old plan through <c>FindClosestPlanSegmentToPose</c> 0x00856310 and
+    /// <c>PlanIsSafe</c> 0x00850B78 (return 2 at 0x004FF42E). That false branch is <b>unreachable engine
+    /// code</b>: all three recovered <c>ComputePath</c> callers pass true (<c>ComputePathHelper</c> 0x004FD330,
+    /// <c>FaceAndApproachPlanner</c> 0x004F355C, <c>MinimalAnglePlanner</c> 0x00503BC2; Appendix G 4d), so
+    /// only the true/live path is built here.
+    /// </summary>
+    // fidelity: M13-018
+    public void StartPlanning(BlockWorld world, uint? carriedObjectId, bool forceReplan, IEnumerable<uint>? ignore = null)
+    {
+        ReplanFlag = forceReplan;
+        RunFlag = true;
+        Env.ImportBlockWorldObstacles(world, carriedObjectId, tightPadding: !forceReplan, ignore);
+    }
+
+    /// <summary>
+    /// <c>LatticePlannerImpl::DoPlanning</c> 0x00500090: sleep in <c>min(remaining, 10) ms</c> chunks up to
+    /// <see cref="ArtificialPlannerDelayMs"/> (impl+0x108) checking the run flag each iteration, then plan.
+    /// Returns 0 when the plan failed, 3 when it succeeded with an empty segment list and 2 on success.
+    /// </summary>
+    // fidelity: M13-018
+    public PlanningResult DoPlanning(LatticeState start, IReadOnlyList<LatticeState> goals, out LatticePlan? plan)
+    {
+        if (ArtificialPlannerDelayMs > 0)
+        {
+            int slept = 0;
+            while (slept < ArtificialPlannerDelayMs)
+            {
+                if (!RunFlag) { plan = null; return PlanningResult.Failure; }
+                int chunk = Math.Min(ArtificialPlannerDelayMs - slept, 10);
+                Thread.Sleep(chunk);
+                slept += chunk;
+            }
+        }
+        plan = ComputePath(start, goals);
+        if (plan is null) return PlanningResult.Failure;
+        if (plan.Actions.Count == 0) return PlanningResult.EmptyPlan;
+        return PlanningResult.Success;
+    }
+
     public bool StartIsValid(LatticeState s) { var p = Env.ToPose(s); return !Env.IsInCollision(p.Translation.X, p.Translation.Y, s.Theta); }
     public bool GoalsAreValid(IEnumerable<LatticeState> goals) => goals.Any(StartIsValid);
 
+    /// <summary>
+    /// <c>xythetaPlannerImpl::ComputePath</c> 0x008586A0: min-<c>f</c> A* with the engine's heuristic. The
+    /// goals are filtered by <see cref="InitializeHeuristic"/>; when none survive it returns null.
+    /// </summary>
+    // fidelity: M13-018
     public LatticePlan? ComputePath(LatticeState start, IReadOnlyList<LatticeState> goals)
     {
         if (goals.Count == 0) return null;
-        var goalSet = new HashSet<LatticeState>(goals);
+        if (!InitializeHeuristic(goals)) return null;
+        var goalSet = new HashSet<LatticeState>(_heurGoals);
         if (goalSet.Contains(start)) return new LatticePlan(start, Array.Empty<MotionPrimitive>(), 0, 0);
-        double res = Env.Primitives.ResolutionMm;
-        double H(LatticeState s)
-        {
-            double best = double.MaxValue;
-            foreach (var g in goals) best = Math.Min(best, Math.Sqrt((s.X - g.X) * (s.X - g.X) + (s.Y - g.Y) * (s.Y - g.Y)) * res);
-            return best;
-        }
         var open = new PriorityQueue<LatticeState, double>();
         var g = new Dictionary<LatticeState, double> { [start] = 0 };
         var parent = new Dictionary<LatticeState, (LatticeState From, MotionPrimitive Prim)>();
         var closed = new HashSet<LatticeState>();
-        open.Enqueue(start, H(start));
+        open.Enqueue(start, Heur(start));
         int expansions = 0;
         while (open.TryDequeue(out var s, out _))
         {
+            if (!RunFlag) return null;                     // 0x00858886..0x00858890
             if (!closed.Add(s)) continue;
             if (goalSet.Contains(s))
             {
@@ -440,7 +677,7 @@ public sealed class LatticePlanner
                 actions.Reverse();
                 return new LatticePlan(start, actions, g[s], expansions);
             }
-            if (++expansions > MaxExpansions) return null;
+            if (++expansions > MaxExpansions) return null; // 0x008588C8
             double gs = g[s];
             foreach (var (next, prim, cost) in Env.GetSuccessors(s))
             {
@@ -448,11 +685,102 @@ public sealed class LatticePlanner
                 double ng = gs + cost;
                 if (g.TryGetValue(next, out var old) && old <= ng) continue;
                 g[next] = ng; parent[next] = (s, prim);
-                open.Enqueue(next, ng + H(next));
+                open.Enqueue(next, ng + Heur(next));       // f = g + h, 0x0085A4AC
             }
         }
         return null;
     }
+
+    /// <summary>
+    /// <c>InitializeHeuristic</c> 0x008598DC: clear the memo, then for each goal 0.0 when it is not in soft
+    /// collision, else <see cref="ExpandCollisionStatesFromGoal"/>; drop a goal whose cost exceeds 1000.0.
+    /// Returns false when no goal survives.
+    /// </summary>
+    // fidelity: M13-018
+    private bool InitializeHeuristic(IReadOnlyList<LatticeState> goals)
+    {
+        _heurMemo.Clear();
+        var kept = new List<LatticeState>();
+        var costs = new List<double>();
+        foreach (var goal in goals)
+        {
+            var pose = Env.ToPose(goal);
+            double cost = Env.IsInSoftCollision(pose.Translation.X, pose.Translation.Y, goal.Theta)
+                ? ExpandCollisionStatesFromGoal(goal)
+                : 0.0;
+            if (cost > 1000.0) continue;                    // 0x008599E0 vcmpe/ble
+            kept.Add(goal); costs.Add(cost);
+        }
+        _heurGoals = kept;
+        _heurMap = costs.ToArray();
+        return kept.Count > 0;
+    }
+
+    /// <summary>
+    /// <c>heur_internal</c> 0x0085A7B8 memoized by <c>heur</c> 0x0085A780:
+    /// <c>min_i( heurMap[i] + EuclideanDistance(state, goal_i)/maxVelocity )</c>.
+    /// </summary>
+    // fidelity: M13-018
+    private double Heur(LatticeState s)
+    {
+        if (_heurMemo.TryGetValue(s, out var cached)) return cached;
+        double best = double.MaxValue;
+        double res = Env.Primitives.ResolutionMm;
+        for (int i = 0; i < _heurGoals.Count; i++)
+        {
+            var goal = _heurGoals[i];
+            double d = Math.Sqrt(Sq(s.X - goal.X) + Sq(s.Y - goal.Y)) * res;
+            best = Math.Min(best, _heurMap[i] + d / MotionPrimitiveSet.MaxVelocityMmps);
+        }
+        _heurMemo[s] = best;
+        return best;
+    }
+
+    /// <summary>
+    /// <c>ExpandCollisionStatesFromGoal</c> 0x0085998E: Dijkstra from the goal over the <b>reflected</b>
+    /// primitive set, through states in soft collision, edge weight = parent cost + primitive cost +
+    /// soft-collision penalty. Returns the accumulated cost of the first popped state that is not in soft
+    /// collision; an empty open list or a 0 run flag returns 0.0; after the 1000-expansion cap it warns and
+    /// returns the last popped cost (M13-018).
+    ///
+    /// It seeds and updates the <b>same</b> map <see cref="Heur"/> memoizes in (planner+0xAC): the goal at 0
+    /// and each expanded state's best cost (0x00859CB6..0x00859CF6). The map persists across goals, so
+    /// <c>heur</c> returns those values directly (0x0085A78E/0x0085A798).
+    /// </summary>
+    // fidelity: M13-018
+    private double ExpandCollisionStatesFromGoal(LatticeState goal)
+    {
+        var open = new PriorityQueue<LatticeState, double>();
+        var visited = new HashSet<LatticeState>();
+        _heurMemo[goal] = 0;
+        open.Enqueue(goal, 0);
+        int expansions = 0;
+        double lastPopped = 0;
+        while (open.TryDequeue(out var s, out var cost))
+        {
+            if (!RunFlag) return 0.0;                      // 0x00859C5E..0x00859C68
+            lastPopped = cost;
+            if (!visited.Add(s)) continue;
+            var pose = Env.ToPose(s);
+            if (!Env.IsInSoftCollision(pose.Translation.X, pose.Translation.Y, s.Theta)) return cost;
+            if (++expansions > 1000)                       // 0x00859ECC cmp #0x3E8
+            {
+                Console.Error.WriteLine("exceeded max allowed expansions of 1000");
+                return lastPopped;
+            }
+            foreach (var (next, prim, edge) in Env.GetSuccessors(s, Env.Primitives.Reflected))
+            {
+                if (visited.Contains(next)) continue;
+                double ng = cost + edge;                   // parent + primitive + soft penalty
+                if (_heurMemo.TryGetValue(next, out var old) && old <= ng) continue;
+                _heurMemo[next] = ng;
+                open.Enqueue(next, ng);
+            }
+        }
+        return 0.0;                                        // 0x00859F4A
+    }
+
+    private static double Sq(double v) => v * v;
 
     /// <summary>
     /// <c>MotionPrimitive::AddSegmentsToPath</c> / <c>LatticePlannerImpl::GetCompletePath</c>: the plan as robot
@@ -531,14 +859,19 @@ public sealed class LatticePlanner
         return path;
     }
 
-    /// <summary>Plans from a pose to one of several goal poses; null when no plan is found or the goals are all in collision.</summary>
-    public (LatticePlan Plan, IReadOnlyList<PathSegment> Path, Pose3d Goal)? PlanTo(Pose3d start, IReadOnlyList<Pose3d> goals, PathMotionProfile profile)
+    /// <summary>
+    /// Plans from a pose to one of several goal poses; null when no plan is found or the goals are all in
+    /// collision. <c>virtual</c> so the M13-005 failure-path test can force the no-plan result without
+    /// needing a hard obstacle the shipped import never produces.
+    /// </summary>
+    // fidelity: M13-005, M13-018
+    public virtual (LatticePlan Plan, IReadOnlyList<PathSegment> Path, Pose3d Goal)? PlanTo(Pose3d start, IReadOnlyList<Pose3d> goals, PathMotionProfile profile)
     {
         var s = Env.ToState(start);
         var gs = goals.Select(Env.ToState).ToList();
         var valid = gs.Where(StartIsValid).ToList();
-        if (valid.Count == 0) return null;
-        var plan = ComputePath(s, valid);
+        if (valid.Count == 0) { LastPlanningResult = PlanningResult.Failure; return null; }
+        LastPlanningResult = DoPlanning(s, valid, out var plan);
         if (plan is null) return null;
         var endState = plan.States().Last();
         int gi = gs.IndexOf(endState);

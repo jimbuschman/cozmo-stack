@@ -372,12 +372,14 @@ public class CorrectionTests
     // ---------------------------------------------------------------- 15: planner failure is not a blind drive
 
     /// <summary>
-    /// With a lattice planner configured and an obstacle straight across the route, a goal it cannot plan to
-    /// fails as a planning failure and sends nothing. Falling back to a straight line here drove through the
-    /// obstacle the planner had just refused to go round.
+    /// M13-003/M13-005. The shipped obstacle penalty is 0.1, so every imported obstacle is <b>soft</b>:
+    /// <c>IsInCollision(State_c)</c> counts only a containing polygon with penalty &gt;= 1000.0 as hard, and
+    /// <c>InitializeHeuristic</c> even computes a per-goal cost for a goal in soft collision. A cube on the
+    /// goal is therefore planned to (through the soft obstacle), not rejected. The straight-line fallback
+    /// that used to sit behind a planning failure is still gone (M13-005).
     /// </summary>
     [Fact]
-    public void ABlockedGoalFailsPlanningInsteadOfDrivingThroughTheObstacle()
+    public void ASoftObstacleDoesNotBlockTheGoal()
     {
         var obb = ObbRoot();
         if (obb is null) return;
@@ -392,16 +394,54 @@ public class CorrectionTests
         rig.Pump(); rig.Sent.Clear(); rig.M.Paths.Sent.Clear();
 
         var drive = new DriveToPoseAction(rig.M) { Goal = new Pose3d(Mat3.Identity, new Vec3(250, 0, 22)) };
+        var task = drive.RunAsync(default);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (!task.IsCompleted && sw.ElapsedMilliseconds < 30000) { rig.Pump(); Thread.Sleep(2); }
+        Assert.True(task.IsCompleted, "the drive did not finish: " + string.Join(" | ", drive.Trace));
+        var r = task.Result;
+
+        // the soft obstacle does not fail the plan; the action plans and sends a path
+        Assert.Equal(ActionResult.Success, r);
+        Assert.Contains(drive.Trace, l => l.Contains("lattice plan"));
+        // the straight-line fallback that used to sit here is gone (M13-005)
+        Assert.DoesNotContain(drive.Trace, l => l.Contains("straight line"));
+        Assert.Contains(rig.M.Paths.Sent, m => m is ExecutePath);
+    }
+
+    /// <summary>
+    /// M13-005. A planning failure sends no path and does not fall back to a straight line. The shipped
+    /// import only ever makes soft obstacles, so a real goal is never rejected; this forces <c>PlanTo</c> to
+    /// return null (the engine's <c>Replan == 0</c>) and checks <c>DriveToPoseAction</c> returns the
+    /// planning failure and sends nothing.
+    /// </summary>
+    [Fact]
+    public void APlannerFailureSendsNoPathEvenWhenTheStraightLineIsClear()
+    {
+        var obb = ObbRoot();
+        if (obb is null) return;
+        var prims = MotionPrimitiveSet.FromObb(obb);
+        if (prims is null) return;
+        using var rig = new Rig();
+        Assert.True(rig.M.LoadPlanner(obb));
+        rig.M.Planner = new NullPlanner(new LatticeEnvironment(prims));
+        rig.Pump(); rig.Sent.Clear(); rig.M.Paths.Sent.Clear();
+
+        var drive = new DriveToPoseAction(rig.M) { Goal = new Pose3d(Mat3.Identity, new Vec3(250, 0, 22)) };
         var r = drive.RunAsync(default).GetAwaiter().GetResult();
         rig.Pump();
 
         Assert.Equal(ActionResult.PathPlanningFailedAbort, r);
         Assert.Contains(drive.Trace, l => l.Contains("no path sent"));
-        // and nothing of this stack's own is substituted: the engine returns a planning failure and the
-        // action fails (M13-005). The straight-line fallback that used to sit here is gone.
         Assert.DoesNotContain(drive.Trace, l => l.Contains("straight line"));
         Assert.DoesNotContain(rig.M.Paths.Sent, m => m is ExecutePath);
         Assert.DoesNotContain(rig.Sent, m => m is ExecutePath);
+    }
+
+    /// <summary>Test double: <c>PlanTo</c> always returns null, the engine's <c>Replan == 0</c>.</summary>
+    private sealed class NullPlanner : LatticePlanner
+    {
+        public NullPlanner(LatticeEnvironment env) : base(env) { }
+        public override (LatticePlan Plan, IReadOnlyList<PathSegment> Path, Pose3d Goal)? PlanTo(Pose3d start, IReadOnlyList<Pose3d> goals, PathMotionProfile profile) => null;
     }
 
     // ---------------------------------------------------------------- 13: the native lift presets

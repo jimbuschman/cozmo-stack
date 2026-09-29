@@ -39,6 +39,7 @@ public enum ObjectActionFailure { PickUpObject, StackOnObject, PlaceObjectAt, Ro
 /// begin against end and hands back begin, or null when they are equal - so the active beacon is the
 /// oldest one still standing, not the newest.
 /// </summary>
+// fidelity: M13-006
 public sealed class AIWhiteboard
 {
     private readonly BlockWorld _world;

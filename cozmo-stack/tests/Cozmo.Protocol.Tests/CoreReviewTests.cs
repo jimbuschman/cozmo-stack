@@ -467,7 +467,7 @@ public class CoreReviewTests
     ///
     /// <c>DockingSystem.OnFrame</c> built its object points from the canonical corners times the marker's
     /// <em>width</em> in both directions, so a marker that is not square was solved as though it were.
-    /// The charger's is 20 x 27 (<c>ChargerGeometry.MarkerWidthMm</c> and <c>MarkerHeightMm</c>, from the
+    /// The charger's is 27 x 20 (<c>ChargerGeometry.MarkerWidthMm</c> and <c>MarkerHeightMm</c>, from the
     /// charger's own constructor), a 35 per cent error in one axis, and what comes out of it is the
     /// <c>DockingErrorSignal</c> the robot steers by. The world model never had the bug - it goes through
     /// the marker's own geometry - so the two paths disagreed about where the same marker was.
@@ -486,8 +486,8 @@ public class CoreReviewTests
         var obs = Assert.Single(r.Objects);
         var charger = obs.Object;
         var marker = Assert.Single(charger.Markers);
-        Assert.Equal(20.0, marker.SizeMm);
-        Assert.Equal(27.0, marker.HeightMm);
+        Assert.Equal(27.0, marker.SizeMm);
+        Assert.Equal(20.0, marker.HeightMm);
 
         rig.DockOutcome = BlockStatus.NoBlock;
         var dock = rig.M.Docking.DockAsync(charger, marker, DockAction.Align, PathMotionProfile.Default,
@@ -495,13 +495,13 @@ public class CoreReviewTests
         rig.Pump();
         var signal = Assert.Single(rig.Sent.OfType<DockingErrorSignal>());
 
-        // ground truth: the marker sits 286 mm ahead of the robot (200 + 86), 22 mm up, square on. The
-        // engine's marker pipeline (the ecvcs front end plus the exact illumination/refinement) recovers
-        // this synthetic charger marker about 0.6-1 px outside its true edge, so the signal is ~273-275 mm,
-        // not the 286 exact corners would give (the exact-corner solve is 286.02); the buggy width x width
-        // solve gives 214.8-216.9, 54 mm below the range. The ZDist and Angle assertions below already
-        // exclude that bug.
-        Assert.InRange(signal.XDist, 271, 277);
+        // ground truth: the marker sits 286 mm ahead of the robot (200 + 86), 22 mm up, square on (M13-009:
+        // x=27 mm wide, y=20 mm tall). The engine's marker pipeline (the ecvcs front end plus the exact
+        // illumination/refinement) recovers this synthetic charger marker a few millimetres inside its true
+        // edge, so the signal is close to the 286 exact corners would give (the exact-corner solve is
+        // 286.02). The buggy width x width solve gives 214.8-216.9, 65 mm below the range. The ZDist and
+        // Angle assertions below already exclude that bug.
+        Assert.InRange(signal.XDist, 286 - 8, 286 + 8);
         Assert.InRange(Math.Abs(signal.YDist), 0, 6);
         Assert.InRange(signal.ZDist, 22 - 8, 22 + 8);
         Assert.InRange(Math.Abs(StraightLinePlanner.Wrap(signal.Angle)), 0, 0.12);

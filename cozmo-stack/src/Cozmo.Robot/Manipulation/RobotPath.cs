@@ -51,6 +51,7 @@ public enum PathEventType : byte { Started = 0, Interrupted = 1, Completed = 2 }
 /// decel, use_shortest_direction}; <c>ExecutePath {pathID u16, manualSpeed bool}</c> (0x0064A426);
 /// <c>ClearPath {u16}</c>, always zero - see <see cref="ClearPathField"/>.
 /// </summary>
+// fidelity: M13-011
 public sealed class PathSender
 {
     /// <summary>

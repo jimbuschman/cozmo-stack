@@ -3,37 +3,51 @@ using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Robot.Manipulation;
 
-/// <summary>A piecewise-linear score graph from the workout config (<c>Anki::Util::GraphEvaluator2d</c>).</summary>
-public sealed record ScoreGraph(IReadOnlyList<(double X, double Y)> Nodes)
-{
-    public double Evaluate(double x)
-    {
-        if (Nodes.Count == 0) return 0;
-        if (x <= Nodes[0].X) return Nodes[0].Y;
-        for (int i = 1; i < Nodes.Count; i++)
-            if (x <= Nodes[i].X)
-            {
-                double t = (x - Nodes[i - 1].X) / (Nodes[i].X - Nodes[i - 1].X);
-                return Nodes[i - 1].Y + t * (Nodes[i].Y - Nodes[i - 1].Y);
-            }
-        return Nodes[^1].Y;
-    }
-}
-
 /// <summary>
 /// One workout from ASSET <c>config/engine/behaviorSystem/workout_config.json</c> (<c>WorkoutConfig</c>): the
-/// six animation triggers, the strong/weak lift counts as score graphs over an emotion (Confident in every
-/// shipped entry), the emotion event fired on completion and the extra behaviour objective.
+/// six animation triggers, the strong/weak lift scorers, the emotion event fired on completion and the extra
+/// behaviour objective. The scorers are the same <see cref="Cozmo.Robot.Behavior.EmotionScorer"/>
+/// (<c>emotionType</c>, <c>scoreGraph</c>, <c>trackDelta</c>) the mood model uses
+/// (<c>EmotionScorer::ReadFromJson</c> 0x0067AABC; M13-010 / Appendix G R3-2).
 /// </summary>
 public sealed record WorkoutConfig(AnimationTrigger PreLift, AnimationTrigger PostLift, AnimationTrigger StrongLift, AnimationTrigger Transition,
                                    AnimationTrigger WeakLift, AnimationTrigger PutDown,
-                                   IReadOnlyList<(EmotionType Emotion, ScoreGraph Graph)> NumStrongLifts,
-                                   IReadOnlyList<(EmotionType Emotion, ScoreGraph Graph)> NumWeakLifts,
+                                   IReadOnlyList<EmotionScorer> NumStrongLifts,
+                                   IReadOnlyList<EmotionScorer> NumWeakLifts,
                                    string EmotionEventOnComplete, string AdditionalObjectiveOnComplete)
 {
     /// <summary><c>WorkoutConfig::GetNumStrongLifts</c>: the graphs summed over the current mood, rounded.</summary>
-    public int GetNumStrongLifts(Func<EmotionType, double> mood) => (int)Math.Round(NumStrongLifts.Sum(g => g.Graph.Evaluate(mood(g.Emotion))));
-    public int GetNumWeakLifts(Func<EmotionType, double> mood) => (int)Math.Round(NumWeakLifts.Sum(g => g.Graph.Evaluate(mood(g.Emotion))));
+    public int GetNumStrongLifts(Func<EmotionType, double> mood) => (int)Math.Round(NumStrongLifts.Sum(g => g.Graph.EvaluateY(mood(g.Emotion))));
+    public int GetNumWeakLifts(Func<EmotionType, double> mood) => (int)Math.Round(NumWeakLifts.Sum(g => g.Graph.EvaluateY(mood(g.Emotion))));
+
+    /// <summary>
+    /// <c>MoodScorer::EvaluateEmotionScore</c> 0x0067C9B8: for each entry <c>x</c> is the emotion's current
+    /// value minus its value 60 ticks ago when <c>trackDelta</c>, else the current value, and
+    /// <c>y = scoreGraph.Evaluate(x)</c>; if any <c>|y| &lt; 1e-5</c> the whole score is 0.0; otherwise the
+    /// arithmetic mean; an empty scorer is 0.0 (M13-010 / Appendix G R3-3/R3-4).
+    /// </summary>
+    // fidelity: M13-010
+    public static double EvaluateEmotionScore(IReadOnlyList<EmotionScorer> entries,
+                                              Func<EmotionType, double> current, Func<EmotionType, double> value60TicksAgo)
+    {
+        if (entries.Count == 0) return 0.0;
+        double sum = 0;
+        foreach (var e in entries)
+        {
+            double x = e.TrackDelta ? current(e.Emotion) - value60TicksAgo(e.Emotion) : current(e.Emotion);
+            double y = e.Graph.EvaluateY(x);
+            if (Math.Abs(y) < 1e-5) return 0.0;
+            sum += y;
+        }
+        return sum / entries.Count;
+    }
+
+    /// <summary>
+    /// <c>WorkoutConfig::MoodScoreHelper</c> 0x00573B70: an empty scorer is 0; otherwise
+    /// <c>max(0, round(EvaluateEmotionScore))</c> (the native <c>roundf</c> then <c>vcvt.u32.f32</c>).
+    /// </summary>
+    // fidelity: M13-010
+    public static int MoodScoreHelper(double score) => Math.Max(0, (int)Math.Round(score, MidpointRounding.AwayFromZero));
 }
 
 /// <summary>
@@ -64,18 +78,58 @@ public sealed class WorkoutComponent
     /// <summary>Which entry is current: the engine starts at the first and never goes back.</summary>
     public int CurrentIndex { get; private set; }
 
+    /// <summary>
+    /// The mood hook <c>CompleteCurrentWorkout</c> uses to fire the finished workout's emotion event
+    /// (<c>MoodManager::TriggerEmotionEvent</c> 0x00573E1C, M13-010). The engine's component owns this
+    /// call; the C# component has no mood, so the caller wires it. Null means the event is not fired.
+    /// </summary>
+    public Func<string, double, bool>? TriggerEmotionEvent { get; set; }
+
+    /// <summary>The clock the emotion event is stamped with.</summary>
+    public Func<double> ClockSec { get; set; } = () => 0;
+
     public WorkoutConfig? GetCurrentWorkout() => Workouts.Count == 0 ? null : Workouts[CurrentIndex];
 
     /// <summary>
-    /// Finishes the current workout and moves to the next, stopping on the last - the engine's
-    /// <c>if (current != last) current += 0x40</c> at 0x00573E24. The emotion event the config names is
-    /// the caller's to fire, as it is in the engine, where CompleteCurrentWorkout triggers it directly.
+    /// Finishes the current workout: trigger the finished workout's emotion event
+    /// (<c>MoodManager::TriggerEmotionEvent</c> 0x00573E1C) and then move to the next, stopping on the last -
+    /// the engine's <c>if (current != last) current += 0x40</c> at 0x00573E24 (M13-010).
     /// </summary>
+    // fidelity: M13-010
     public void CompleteCurrentWorkout()
     {
+        var finished = GetCurrentWorkout();
         CompletedWorkouts++;
+        if (finished is not null && TriggerEmotionEvent is not null)
+            TriggerEmotionEvent(finished.EmotionEventOnComplete, ClockSec());
         if (CurrentIndex < Workouts.Count - 1) CurrentIndex++;
     }
+
+    /// <summary>
+    /// <c>ShouldPlayEightiesMusic</c> 0x00573E30: return the cached answer once evaluated (+0x11), else score
+    /// the current workout's <b>numStrongLifts</b> MoodScorer (workout+0x18) through
+    /// <c>MoodScoreHelper</c> 0x00573B70 -> <c>EvaluateEmotionScore</c> 0x0067C9B8, return false when that
+    /// score is 0, otherwise <c>RandDbl(1.0) &lt; 0.1</c>; cache the answer at +0x10 and the evaluated flag
+    /// at +0x11 (M13-010 / Appendix G R3-1..R3-6).
+    ///
+    /// <paramref name="current"/> and <paramref name="value60TicksAgo"/> are the emotion values the scorer
+    /// reads; the stack's <c>MoodState</c> keeps no history, so the 60-ticks-ago source is M7 (see the
+    /// report's MISSING).
+    /// </summary>
+    // fidelity: M13-010
+    public bool ShouldPlayEightiesMusic(Func<EmotionType, double> current, Func<EmotionType, double> value60TicksAgo, Func<double> randDbl)
+    {
+        if (_eightiesEvaluated) return _eightiesAnswer;
+        var workout = GetCurrentWorkout();
+        int score = workout is null ? 0 : WorkoutConfig.MoodScoreHelper(WorkoutConfig.EvaluateEmotionScore(workout.NumStrongLifts, current, value60TicksAgo));
+        bool answer = score != 0 && randDbl() < 0.1;
+        _eightiesAnswer = answer;
+        _eightiesEvaluated = true;
+        return answer;
+    }
+
+    private bool _eightiesEvaluated;
+    private bool _eightiesAnswer;
 
     public static WorkoutComponent? FromObb(string obbRoot)
     {
@@ -90,9 +144,10 @@ public sealed class WorkoutComponent
         foreach (var w in doc.RootElement.GetProperty("workouts").EnumerateArray())
         {
             AnimationTrigger T(string k) => Enum.Parse<AnimationTrigger>(w.GetProperty(k).GetString()!);
-            IReadOnlyList<(EmotionType, ScoreGraph)> Graphs(string k) => w.GetProperty(k).EnumerateArray().Select(g =>
-                (Enum.Parse<EmotionType>(g.GetProperty("emotionType").GetString()!),
-                 new ScoreGraph(g.GetProperty("scoreGraph").GetProperty("nodes").EnumerateArray().Select(n => (n.GetProperty("x").GetDouble(), n.GetProperty("y").GetDouble())).ToList()))).ToList();
+            IReadOnlyList<EmotionScorer> Graphs(string k) => w.GetProperty(k).EnumerateArray().Select(g =>
+                new EmotionScorer(Enum.Parse<EmotionType>(g.GetProperty("emotionType").GetString()!),
+                    Graph2d.FromJson(g.GetProperty("scoreGraph")) ?? new Graph2d(Array.Empty<(double, double)>()),
+                    g.TryGetProperty("trackDelta", out var td) && td.GetBoolean())).ToList();
             list.Add(new WorkoutConfig(T("preLiftAnim"), T("postLiftAnim"), T("strongLiftAnim"), T("transitionAnim"), T("weakLiftAnim"), T("putDownAnim"),
                                        Graphs("numStrongLifts"), Graphs("numWeakLifts"),
                                        w.TryGetProperty("emotionEventOnComplete", out var ev) ? ev.GetString() ?? "" : "",

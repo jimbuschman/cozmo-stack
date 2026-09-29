@@ -95,7 +95,8 @@ public class NavigationTests
         Assert.NotNull(plan);
         Assert.All(plan!.Actions, a => Assert.Equal(1, a.ActionIndex));            // six long straights, ties broken by the 1.0001 factor
         Assert.Equal(6, plan.Actions.Count);
-        Assert.Equal(300.0, plan.Cost, 3);
+        // M13-004: each long straight is 1.0 * (1/60) * 50 = 0.8333; six of them are 5.0
+        Assert.Equal(5.0, plan.Cost, 3);
         var path = planner.ToPath(plan, At(300, 0, 0), PathMotionProfile.Default);
         var line = Assert.IsType<PathSegment.Line>(Assert.Single(path));
         Assert.Equal((0, 0, 300, 0), (line.FromX, line.FromY, line.ToX, line.ToY));
@@ -136,21 +137,26 @@ public class NavigationTests
         env.AddRectangleObstacle(At(150, 0, 0), CubeGeometry.CubeSizeMm, CubeGeometry.CubeSizeMm, "cube");
         Assert.Equal(1, env.ObstacleCount);
         // the obstacle is expanded by the obstacle padding and then into configuration space with the
-        // robot's own quad at that heading, so the point tested is the robot's origin
-        Assert.True(env.IsInCollision(150, 0, 0));
-        Assert.True(env.IsInCollision(150, 60, 0));
-        Assert.False(env.IsInCollision(150, 90, 0));
+        // robot's own quad at that heading, so the point tested is the robot's origin. Its penalty is the
+        // shipped 0.1, so it is soft: IsInSoftCollision sees it and IsInCollision (hard, >= 1000) does not.
+        Assert.True(env.IsInSoftCollision(150, 0, 0));
+        Assert.True(env.IsInSoftCollision(150, 60, 0));
+        Assert.False(env.IsInSoftCollision(150, 90, 0));
+        Assert.False(env.IsInCollision(150, 0, 0));
         Assert.Equal(LatticeEnvironment.ObstaclePenalty, env.PenaltyAt(150, 0, 0), 6);
         Assert.Equal(0.0, env.PenaltyAt(150, 90, 0), 6);
         var planner = new LatticePlanner(env);
         var res = planner.PlanTo(At(0, 0, 0), new[] { At(300, 0, 0) }, PathMotionProfile.Default);
         Assert.NotNull(res);
         var (plan, path, _) = res!.Value;
-        foreach (var s in plan.States()) Assert.False(env.IsInCollision(s.X * 10, s.Y * 10, s.Theta), $"state {s} collides");
+        foreach (var s in plan.States()) Assert.False(env.IsInCollision(s.X * 10, s.Y * 10, s.Theta), $"state {s} in hard collision");
         Assert.Contains(plan.Actions, a => a.EndTheta != a.StartTheta);            // it had to turn
         Assert.True(path.Count >= 3);
-        // the goal itself inside an obstacle is rejected
-        Assert.Null(planner.PlanTo(At(0, 0, 0), new[] { At(150, 0, 0) }, PathMotionProfile.Default));
+        // a hard obstacle (penalty >= 1000) rejects a goal inside it
+        var hard = new LatticeEnvironment(prims);
+        hard.AddObstacle(new[] { new Vec2(140, -20), new Vec2(160, -20), new Vec2(160, 20), new Vec2(140, 20) }, "hard", 1000.0);
+        Assert.True(hard.IsInCollision(150, 0, 0));
+        Assert.Null(new LatticePlanner(hard).PlanTo(At(0, 0, 0), new[] { At(150, 0, 0) }, PathMotionProfile.Default));
     }
 
     [Fact]
@@ -167,7 +173,7 @@ public class NavigationTests
         Assert.Contains(drive.Trace, l => l.Contains("lattice plan"));
         Assert.InRange(rig.X, 240, 260); Assert.InRange(rig.Y, 110, 130);
         Assert.InRange(Math.Abs(StraightLinePlanner.Wrap(rig.Angle - Math.PI / 2)), 0, 0.05);
-        Assert.Contains(rig.Sent, m => m is AppendPathSegmentArc);
+        Assert.Contains(rig.Sent, m => m is AppendPathSegmentLine || m is AppendPathSegmentArc);
     }
 
     [Fact]
@@ -201,10 +207,11 @@ public class NavigationTests
         Assert.NotNull(lk);
         Assert.Equal(ObjectType.Charger_Basic, lk!.Value.Type);
         var m = lk.Value.Marker;
-        Assert.Equal(20.0, m.SizeMm); Assert.Equal(27.0, m.HeightMm);
+        // M13-009: Point2 x = 27.0 (width) at sp+0x14, y = 20.0 (height) at sp+0x18.
+        Assert.Equal(27.0, m.SizeMm); Assert.Equal(20.0, m.HeightMm);
         var corners = m.CornersOnObject();
-        Assert.Equal(20.0, (corners[2] - corners[0]).Length, 6);                   // TL -> TR is the width
-        Assert.Equal(27.0, (corners[0] - corners[1]).Length, 6);                   // TL -> BL is the height
+        Assert.Equal(27.0, (corners[2] - corners[0]).Length, 6);                   // TL -> TR is the width
+        Assert.Equal(20.0, (corners[0] - corners[1]).Length, 6);                   // TL -> BL is the height
         var normal = m.NormalOnObject;
         Assert.Equal(-1.0, normal.X, 6);                                            // facing out of the charger
         // 0x41B00000 in the charger constructor is 22, not 11
@@ -254,12 +261,17 @@ public class NavigationTests
         Assert.Equal(5f, MountChargerAction.LiftSpeedRadPerSec);
         Assert.Equal(-120.0, MountChargerAction.MountDriveMm);
         Assert.Equal(30f, MountChargerAction.MountSpeedMmps);
-        Assert.Equal(1.74533, MountChargerAction.TurnMaxSpeedRadPerSec, 5);
-        Assert.Equal(5.23599, MountChargerAction.TurnAccelRadPerSec2, 5);
-        Assert.Equal(-0.261799, MountChargerAction.MaxBackupPitchRad, 6);
+        // M13-008: 0x3FDF66F3 = 1.7453292608261108, 0x40A78D36 = 5.235987663269043
+        Assert.Equal(1.7453292608261108, MountChargerAction.TurnMaxSpeedRadPerSec, 12);
+        Assert.Equal(5.235987663269043, MountChargerAction.TurnAccelRadPerSec2, 12);
+        Assert.Equal(-0.2617993950843811, MountChargerAction.MaxBackupPitchRad, 12);
         Assert.Equal(120.0, MountChargerAction.RetryDriveMm);
         Assert.Equal(100f, MountChargerAction.RetrySpeedMmps);
         Assert.Equal(Math.PI / 2, MountChargerAction.RetryHeadingWindowRad, 6);
+        // M13-008: the result codes
+        Assert.Equal(0x04000006u, (uint)ActionResult.RetryDriveDone);
+        Assert.Equal(0x0400000Au, (uint)ActionResult.BackupPitchedTooFar);
+        Assert.Equal(0x04000009u, (uint)ActionResult.StillOnCharger);
     }
 
     /// <summary>
@@ -402,7 +414,7 @@ public class NavigationTests
         var line = rig.Sent.OfType<AppendPathSegmentLine>().Single();
         Assert.InRange(line.XEndMm, 217, 224);          // distance + 20
         Assert.Equal(150f, line.Speed.SpeedMmps);
-        Assert.Equal(new[] { 40f, LiftPresets.CarryMm }, rig.LiftHeights);
+        Assert.Equal(new[] { 45f, LiftPresets.CarryMm }, rig.LiftHeights);
         Assert.True(flip.LiftRaised);
         Assert.Equal(PoseState.Unknown, obj.PoseState);
         // with the check on, a robot away from every flipping pose is refused. The cube is at 300 mm
@@ -620,12 +632,27 @@ public class NavigationTests
         var b = new KnockOverCubesBehavior(rig.M, "KnockOverCubes", 3);
         Assert.True(Runnable(b, ctx));
         Assert.False(Runnable(new KnockOverCubesBehavior(rig.M, "x", 4), ctx));
-        RunToEnd(rig, b, ctx, frames: () => rig.M.World.GetLocatedObjectById(7) is not null && b.CurrentPhase == KnockOverCubesBehavior.Phase.KnockingOverStack);
+        // M13-014: the success/failure trigger is selected by the tipped-object set at +0x14C, populated by
+        // HandleObjectUpAxisChanged. The fake rig does not move the cube, so feed the behaviour the
+        // up-axis change once the flip has started.
+        bool tipped = false;
+        RunToEnd(rig, b, ctx, frames: () =>
+        {
+            if (!tipped && b.CurrentPhase == KnockOverCubesBehavior.Phase.KnockingOverStack
+                && rig.M.World.GetObjectById(7) is { } o7)
+            {
+                tipped = true;
+                var prev = o7.Pose;
+                o7.Pose = new Pose3d(Mat3.AboutX(Math.PI / 2), prev.Translation);
+                b.OnObserved(new ObjectObservation(o7, 0, o7.LastObservedMarkers, prev, PoseState.Known, false, 0));
+            }
+            return true;
+        });
         Assert.Contains(b.Trace, l => l.Contains("reach for block 7"));
         Assert.Contains(b.Trace, l => l.Contains("KnockOverGrabAttempt"));
         Assert.Contains(b.Trace, l => l.Contains("DriveAndFlipBlockAction(7)"));
         Assert.Contains(b.Trace, l => l.Contains("lift to carry height"));
-        Assert.True(b.KnockedOver, string.Join(" | ", b.Trace));
+        Assert.True(b.KnockedOver, $"tipped={tipped} | " + string.Join(" | ", b.Trace));
         Assert.Contains(b.Trace, l => l.Contains("KnockOverSuccess"));
         Assert.Contains(b.Trace, l => l.Contains("KnockedOverBlocks"));
         // the reach: the block's x in the robot frame less 85 mm, at 60 mm/s (0x005C3346..0x005C33A0); the
@@ -826,5 +853,134 @@ public class NavigationTests
         Assert.Contains(set, b => b.Id == "SparksKnockOverCubes" && b is KnockOverCubesBehavior { MinimumStackHeight: 2 });
         Assert.Contains(set, b => b.Id == "Hiking_DriveOffCharger" && b is DriveOffChargerBehavior { ExtraDistanceMm: 45 });
         Assert.Contains(set, b => b.Id == "SparksThinkAboutBeacons" && b is ThinkAboutBeaconsBehavior { BeaconRadiusMm: 75 });
+    }
+
+    // ------------------------------------------------------------------ M13 fidelity (inventory-derived expected values)
+
+    /// <summary>
+    /// M13-016. The alignment-type table is by numeric type (0x005533E6 <c>tbb</c>, table 0x005533EA =
+    /// 02 05 09 0c): 0 -&gt; 6.0, 1 -&gt; flag 2 and distance 0.0, 2 -&gt; -15.0, 3 -&gt; argument + (-27.0);
+    /// the clamp threshold is 0xC1800005 = -16.000009536743164; and
+    /// <c>GetPreActionTypeFromAlignmentType</c> 0x005532B8 maps 0-&gt;1, 1-&gt;0, 2-&gt;1, 3-&gt;1, invalid-&gt;1.
+    /// </summary>
+    [Fact]
+    public void AlignWithObjectUsesTheEnginesAlignmentTypeTable()
+    {
+        Assert.Equal(6.0, new AlignWithObjectAction(null!, 0, 123.0, AlignmentType.LiftFinger).DockDistanceMm, 12);
+        Assert.Equal(0.0, new AlignWithObjectAction(null!, 0, 123.0, AlignmentType.LiftPlate).DockDistanceMm, 12);
+        Assert.Equal(-15.0, new AlignWithObjectAction(null!, 0, 123.0, AlignmentType.Body).DockDistanceMm, 12);
+        Assert.Equal(123.0 - 27.0, new AlignWithObjectAction(null!, 0, 123.0, AlignmentType.Custom).DockDistanceMm, 12);
+
+        // the clamp: below -16.000009536743164 the distance becomes 0.0. Type 3 with a large negative
+        // argument is the only way to reach it.
+        Assert.Equal(0.0, new AlignWithObjectAction(null!, 0, -100.0, AlignmentType.Custom).DockDistanceMm, 12);
+        Assert.Equal(-16.000009536743164, AlignWithObjectAction.ClampThresholdMm, 12);
+
+        // +0xBB: type 1 writes DockingMethod.Method2 (2), the others leave it 0.
+        Assert.Equal(DockingMethod.Method2, new AlignWithObjectAction(null!, 0, 0, AlignmentType.LiftPlate).AlignmentDockingMethod);
+        Assert.Equal(DockingMethod.Default, new AlignWithObjectAction(null!, 0, 0, AlignmentType.LiftFinger).AlignmentDockingMethod);
+
+        Assert.Equal(1, AlignWithObjectAction.GetPreActionTypeFromAlignmentType(0));
+        Assert.Equal(0, AlignWithObjectAction.GetPreActionTypeFromAlignmentType(1));
+        Assert.Equal(1, AlignWithObjectAction.GetPreActionTypeFromAlignmentType(2));
+        Assert.Equal(1, AlignWithObjectAction.GetPreActionTypeFromAlignmentType(3));
+        Assert.Equal(1, AlignWithObjectAction.GetPreActionTypeFromAlignmentType(9));
+    }
+
+    /// <summary>
+    /// M13-019. The production <c>xythetaEnvironment::Init(Json const&amp;)</c> 0x00851F9E uses the JSON
+    /// <c>num_angles</c>; the hard-coded 16 is on the uncalled <c>Init(char const*)</c> 0x008528A8. A file
+    /// with a different <c>num_angles</c> therefore produces a different heading count.
+    /// </summary>
+    [Fact]
+    public void ThePlannerUsesTheJsonNumAngles()
+    {
+        var prims = Prims();
+        if (prims is not null) Assert.Equal(16, prims.NumAngles);
+        const string json = "{\"resolution_mm\":10.0,\"num_angles\":2,\"angle_definitions\":[0.0,3.141592653589793],\"actions\":[],\"angles\":[{\"prims\":[]},{\"prims\":[]}]}";
+        var set = MotionPrimitiveSet.Parse(json);
+        Assert.Equal(2, set.NumAngles);
+        Assert.Equal(2, set.Angles.Count);
+    }
+
+    /// <summary>
+    /// M13-018. <c>DoPlanning</c> 0x00500090 returns 0 when <c>Replan</c> is 0 (failure), 3 when it is
+    /// non-zero with an empty segment list, and 2 on success; the expansion cap it passes is
+    /// 0x01C9C380 = 30,000,000.
+    /// </summary>
+    [Fact]
+    public void DoPlanningReturnsTheEngineResultCodes()
+    {
+        Assert.Equal(30_000_000, LatticePlanner.MaxExpansions);
+        var prims = Prims();
+        if (prims is null) return;
+        var planner = new LatticePlanner(new LatticeEnvironment(prims));
+
+        // failure: no goals at all -> ComputePath returns null -> Replan == 0
+        Assert.Equal(LatticePlanner.PlanningResult.Failure,
+            planner.DoPlanning(new LatticeState(0, 0, 0), Array.Empty<LatticeState>(), out var none));
+        Assert.Null(none);
+        Assert.Equal(0, (int)LatticePlanner.PlanningResult.Failure);
+
+        // empty plan: the start is already a goal -> segment list empty -> 3
+        Assert.Equal(LatticePlanner.PlanningResult.EmptyPlan,
+            planner.DoPlanning(new LatticeState(0, 0, 0), new[] { new LatticeState(0, 0, 0) }, out var empty));
+        Assert.NotNull(empty);
+        Assert.Equal(0, empty!.Actions.Count);
+        Assert.Equal(3, (int)LatticePlanner.PlanningResult.EmptyPlan);
+
+        // success -> 2
+        Assert.Equal(LatticePlanner.PlanningResult.Success,
+            planner.DoPlanning(new LatticeState(0, 0, 0), new[] { new LatticeState(30, 0, 0) }, out var plan));
+        Assert.NotNull(plan);
+        Assert.NotEmpty(plan!.Actions);
+        Assert.Equal(2, (int)LatticePlanner.PlanningResult.Success);
+    }
+
+    /// <summary>
+    /// M13-013. <c>DriveOffChargerContactsAction</c> is a <c>DriveStraightAction(10, 20, false)</c> with
+    /// +0x44 = 7; <c>Init</c> returns 0 when not on the contacts, and <c>CheckIfDone</c> fails 0x04000009
+    /// while the robot is still on them.
+    /// </summary>
+    [Fact]
+    public void DriveOffChargerContactsActionFailsWhileStillOnTheContacts()
+    {
+        Assert.Equal(10.0, DriveOffChargerContactsAction.ConstructorDistanceMm);
+        Assert.Equal(20f, DriveOffChargerContactsAction.ConstructorSpeedMmps);
+        Assert.Equal(7, DriveOffChargerContactsAction.RobotActionTypeDriveOffChargerContacts);
+        Assert.Equal(0x04000009u, (uint)ActionResult.StillOnCharger);
+
+        using var rig = new Rig();
+        // not on the contacts at Init -> returns 0 (Success) without driving
+        rig.OnCharger = false; rig.State();
+        var notOn = new DriveOffChargerContactsAction(rig.M, 10, 20);
+        Assert.Equal(ActionResult.Success, notOn.RunAsync(default).GetAwaiter().GetResult());
+        Assert.False(notOn.WasOnContactsAtInit);
+
+        // on the contacts at Init and still there after the drive -> 0x04000009
+        rig.OnCharger = true; rig.State();
+        var on = new DriveOffChargerContactsAction(rig.M, 10, 20);
+        var task = on.RunAsync(default);
+        SpinUntil(() => task.IsCompleted, () => rig.Pump());
+        Assert.True(on.WasOnContactsAtInit);
+        Assert.Equal(ActionResult.StillOnCharger, task.Result);
+    }
+
+    /// <summary>
+    /// M13-014. <c>IDriveToInteractWithObject</c> 0x0055B1F4 adds a <c>TurnTowardsLastFacePoseAction</c>
+    /// and a <c>TurnTowardsObjectAction</c> when maxTurn &gt; 0 (0x0055B37C..0x0055B43C).
+    /// </summary>
+    [Fact]
+    public void DriveAndFlipBlockAddsBothTurnsWhenMaxTurnIsPositive()
+    {
+        if (Lib is null) return;
+        using var rig = new Rig();
+        rig.Cube = CubeAt(200, 0);
+        Assert.Single(rig.Frame().Objects);
+        var flip = new DriveAndFlipBlockAction(rig.M, 7) { MaxTurnTowardsFaceRad = Math.PI / 2 };
+        var task = flip.RunAsync(default);
+        SpinUntil(() => task.IsCompleted, () => rig.Pump());
+        Assert.Contains(flip.Trace, l => l.Contains("TurnTowardsLastFacePose"));
+        Assert.Contains(flip.Trace, l => l.Contains("TurnTowardsObjectAction"));
     }
 }

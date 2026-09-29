@@ -4,22 +4,35 @@ namespace Cozmo.Robot.Manipulation;
 
 /// <summary>
 /// The engine's <c>FlipBlockAction</c> (0x0055EC80..0x0055F1C0, a <c>CompoundActionSequential</c>, RobotActionType
-/// 0xF). Constructor members (NATIVE values; roles INFERRED from their use): +0x12C = 150.0 (the drive speed),
-/// +0x130 = 20.0 (driven past the cube's centre), +0x134 = 40.0 (the lift height while approaching),
-/// +0x138 = 45.0 (the distance at which the lift comes up). <c>Init</c>: the object must be located; unless
-/// told otherwise the robot must be at a Flipping pre-action pose within 5° (0.0872665); reactions are locked;
-/// a <c>DriveStraightAction(distance to the cube's centre + 20, 150, playAnim)</c> and a
-/// <c>MoveLiftToHeightAction(40, speed 5.0)</c> are added. <c>CheckIfDone</c>: once the robot is within 45 mm of
-/// the cube it queues <c>MoveLiftToHeightAction(preset 2 = carry height, speed 5.0)</c> IN_PARALLEL
-/// (<c>QueueActionPosition</c> 5) and marks the object's pose Unknown (<c>ObjectPoseConfirmer::MarkObjectUnknown</c>):
-/// the rising lift flips the cube over the robot's shoulder as it drives through.
+/// 0xF). Constructor constants, exactly as stored (M13-002): +0x12C = 150.0 (0x43160000), +0x130 = 20.0
+/// (0x41A00000), +0x134 = 45.0 (0x42340000), +0x138 = 40.0 (0x42200000), +0x13C = -1, +0x140 = 1.
+///
+/// <b>The role of each offset (M13-002, gap pass 3).</b> +0x12C is the drive speed (150 mm/s),
+/// +0x130 the drive-past distance (20 mm), +0x134 the approach lift height (45 mm), +0x138 the lift trigger
+/// distance (40 mm), +0x13C the queued-lift action id (-1 when none) and +0x140 shouldCheckPreActionPose.
+///
+/// <c>Init</c> 0x0055EDC8: the object must be located; unless told otherwise the robot must be at a Flipping
+/// pre-action pose within 5° (0.0872665); reactions are locked; a <c>MoveLiftToHeightAction(45, 5.0, 0)</c>
+/// and a <c>DriveStraightAction(distance to the cube's centre + 20, 150, playAnim)</c> are added.
+/// <c>CheckIfDone</c> 0x0055F074: once the robot is within <b>40 mm</b> of the cube and +0x13C is still -1 it
+/// queues <c>MoveLiftToHeightAction(preset 2 = carry height, speed 5.0)</c> IN_PARALLEL
+/// (<c>QueueActionPosition</c> 5) and stores its id at +0x13C.
 /// </summary>
+// fidelity: M13-002
 public sealed class FlipBlockAction
 {
+    // M13-002: the constructor's exact stores, by offset and role.
+    public const double Offset12C = 150.0;      // drive speed (mm/s)
+    public const double Offset130 = 20.0;       // drive-past distance (mm)
+    public const double Offset134 = 45.0;       // approach lift height (mm)
+    public const double Offset138 = 40.0;       // lift trigger distance (mm)
+    public const int Offset13C = -1;            // queued-lift action id (-1 = none)
+    public const int Offset140 = 1;             // shouldCheckPreActionPose
+
     public const float DriveSpeedMmps = 150f;
     public const double DrivePastMm = 20.0;
-    public const double ApproachLiftHeightMm = 40.0;
-    public const double LiftTriggerDistanceMm = 45.0;
+    public const double ApproachLiftHeightMm = 45.0;
+    public const double LiftTriggerDistanceMm = 40.0;
     public const double PreActionAngleToleranceRad = 0.0872665;
     public const float LiftSpeedRadPerSec = 5f;
 
@@ -115,11 +128,20 @@ public sealed class DriveAndFlipBlockAction
         var d = await drive.RunAsync(cancel);
         _trace.AddRange(drive.Trace);
         if (d != ActionResult.Success) return d;
+        // fidelity: M13-014
+        // IDriveToInteractWithObject 0x0055B1F4 adds TWO actions when maxTurn > 0: a
+        // TurnTowardsLastFacePoseAction (vtable overwritten from TurnTowardsFaceAction at
+        // 0x0055B3C4..0x0055B3D8) and a TurnTowardsObjectAction (0x0055B42E/0x0055B43C), both with
+        // failure ignored (AddAction(action, true)). This stack has no TurnTowardsLastFacePoseAction
+        // class, so the first is a TurnTowardsFaceAction to the last face - a labelled reduction, see
+        // the build report. The second is built here.
         if (MaxTurnTowardsFaceRad > 0)
         {
             using var face = new TurnTowardsFaceAction(_m.Vision, SmartFaceID.Invalid, MaxTurnTowardsFaceRad, sayName: false);
             var f = await face.RunAsync(cancel);
             _trace.Add($"TurnTowardsLastFacePose (max {MaxTurnTowardsFaceRad:F3} rad): {f}, ignored");
+            bool t = await _m.TurnTowardsObjectAsync(ObjectId, MaxTurnTowardsFaceRad, cancel);
+            _trace.Add($"TurnTowardsObjectAction (max {MaxTurnTowardsFaceRad:F3} rad): {t}, ignored");
         }
         Flip = new FlipBlockAction(_m, ObjectId) { CheckPreActionPose = false };
         var r = await Flip.RunAsync(cancel);

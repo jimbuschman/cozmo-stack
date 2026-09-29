@@ -86,4 +86,57 @@ public class MotionPrimitiveTests
         Assert.Equal(-1.0, right.TurnInPlaceDirection);
         Assert.Equal(0.0, left.StraightLengthMm);
     }
+
+    /// <summary>
+    /// M13-018 / Appendix G R1-2..R1-4: <c>PopulateReverseMotionPrims</c> 0x008544C0 negates the end-pose
+    /// x/y, sets the end-pose theta to the forward primitive's start heading, stores the result in the
+    /// bucket of the forward <em>end</em> theta, and copies the cost, the path (arc/straight) and the
+    /// intermediate poses unchanged.
+    /// </summary>
+    [Fact]
+    public void TheReflectedSetNegatesXYAndSwapsTheHeadings()
+    {
+        if (Set is not { } set) return;
+        var fwd = set.ByAngle[0].First(p => p.ActionIndex == 2);        // slight left: (5,1,1) from heading 0
+        var refl = set.Reflected[fwd.EndTheta].First(p => p.ActionIndex == 2 && p.EndX == -fwd.EndX);
+        Assert.Equal(-fwd.EndX, refl.EndX);
+        Assert.Equal(-fwd.EndY, refl.EndY);
+        Assert.Equal(fwd.StartTheta, refl.EndTheta);                   // end theta <- forward start heading
+        Assert.Equal(fwd.StartTheta, refl.StartTheta);                 // +1 copied unchanged
+        Assert.Equal(fwd.Cost, refl.Cost, 6);                          // cost copied
+        Assert.Equal(fwd.Arc, refl.Arc);                               // path copied
+        Assert.Same(fwd.Intermediate, refl.Intermediate);              // poses copied
+    }
+
+    /// <summary>
+    /// M13-003 / Appendix G R2-1..R2-3: the first intermediate pose's reciprocal is 0.0; each later one is
+    /// <c>1/(halfWheelBase*|dtheta|/maxVelocity + dist)</c> with <c>dist</c> the distance to the previous
+    /// pose. For the 0.5 mm short straight at heading 0 the later reciprocals are <c>1/0.5 = 2.0</c>.
+    /// </summary>
+    [Fact]
+    public void TheIntermediateReciprocalIsTheStepFormula()
+    {
+        if (Set is not { } set) return;
+        var prim = set.ByAngle[0].First(p => p.ActionIndex == 0);
+        Assert.Equal(0.0, prim.Intermediate[0].Reciprocal, 9);
+        Assert.Equal(2.0, prim.Intermediate[1].Reciprocal, 6);
+        Assert.Equal(2.0, prim.Intermediate[^1].Reciprocal, 6);
+    }
+
+    /// <summary>
+    /// M13-004 / C-BM13b: the cost is branched, not a sum. An arc primitive adds the arc term and not the
+    /// turn term. Asset angle 0 action 2 ("slight left") has straight 7.639320225, sweep 0.463647609 and
+    /// radius 94.72135955, so the cost is
+    /// <c>(7.639320225 + 0.463647609*(94.72135955+24))/60 = 1.0447365786280445</c>; the old sum gave
+    /// 1.23020 by also adding <c>24*0.463647609/60</c>.
+    /// </summary>
+    [Fact]
+    public void AnArcPrimitiveCostDoesNotAddTheTurnTerm()
+    {
+        if (Set is not { } set) return;
+        var prim = set.ByAngle[0].First(p => p.ActionIndex == 2);
+        Assert.NotNull(prim.Arc);
+        Assert.Equal(1.0447365786280445, prim.Cost, 9);
+        Assert.NotEqual(1.23020, prim.Cost, 4);
+    }
 }

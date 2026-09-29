@@ -10,6 +10,7 @@ namespace Cozmo.Robot.Behavior;
 /// for the charger's length (96) plus the extra distance, waits for the robot to be back on its treads
 /// (<c>WaitForOnTreads</c>), and fires the emotion event "DriveOffCharger" (charger_events.json: Confident +0.3).
 /// </summary>
+// fidelity: M13-017
 public sealed class DriveOffChargerBehavior : ManipulationBehavior
 {
     public enum Phase { Idle, Driving, WaitForOnTreads }

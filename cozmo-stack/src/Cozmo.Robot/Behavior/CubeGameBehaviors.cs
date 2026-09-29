@@ -17,6 +17,7 @@ namespace Cozmo.Robot.Behavior;
 /// failure trigger otherwise; the put-down trigger plays when the robot ends up holding a block. Objective
 /// <c>KnockedOverBlocks</c>.
 /// </summary>
+// fidelity: M13-014
 public sealed class KnockOverCubesBehavior : ManipulationBehavior
 {
     public enum Phase { Idle, ReachingForBlock, KnockingOverStack, BlindlyFlipping, PlayingReaction }
@@ -45,10 +46,23 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
     public AnimationTrigger SuccessTrigger { get; init; } = AnimationTrigger.KnockOverSuccess;
     public AnimationTrigger FailureTrigger { get; init; } = AnimationTrigger.KnockOverFailure;
     public AnimationTrigger PutDownTrigger { get; init; } = AnimationTrigger.PutDownBlockPutDown;
+    /// <summary>+0xD9: the JSON <c>alwaysStreamline</c> key (M13-014).</summary>
+    public bool AlwaysStreamline { get; init; }
+    /// <summary>
+    /// +0xD8: the runtime soft-spark-switch flag (<c>IBehavior::Init</c> 0x005BCCAA computes it from the
+    /// BehaviorManager's switch mode; 1 = soft). The stack has no spark-switch notion, so it is settable.
+    /// </summary>
+    public bool SoftSparkSwitch { get; set; }
     public Phase CurrentPhase { get; private set; }
     public StackOfCubes? TargetStack { get; private set; }
     public bool? KnockedOver { get; private set; }
-    private bool _upAxisChanged;
+    /// <summary>
+    /// The tipped-object set at BehaviourKnockOverCubes+0x144: <c>HandleObjectUpAxisChanged</c> 0x005C3A98
+    /// inserts every object whose up axis changed (the message tag is 0x11, ObjectUpAxisChanged), and
+    /// <c>TransitionToPlayingReaction</c> 0x005C3908 picks the success or failure trigger by its size at
+    /// +0x14C (0x005C3950..0x005C3972). This is not restricted to the target stack's blocks.
+    /// </summary>
+    private readonly HashSet<uint> _tipped = new();
 
     private StackOfCubes? Tallest() { var s = M.Configurations.GetTallestStack(); return s is not null && s.StackHeight >= MinimumStackHeight ? s : null; }
 
@@ -59,15 +73,19 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
         Scope.DisableReactions();
         TargetStack = Tallest();
         if (TargetStack is null) { Log("no stack"); Finish(); return; }
-        _upAxisChanged = false; KnockedOver = null; KnockOverAttempts = 0;
+        _tipped.Clear(); KnockedOver = null; KnockOverAttempts = 0;
         M.World.ObjectObserved += OnObserved;
-        TransitionToReachingForBlock();
+        // InitInternal 0x005C31A2: run the reach unless +0xD9 (alwaysStreamline) or +0xD8 (soft spark
+        // switch) is set; streamline goes straight to knocking over (0x005C31B4..0x005C31D0).
+        if (AlwaysStreamline || SoftSparkSwitch) TransitionToKnockingOverStack();
+        else TransitionToReachingForBlock();
     }
 
-    private void OnObserved(ObjectObservation o)
+    internal void OnObserved(ObjectObservation o)
     {
-        // HandleObjectUpAxisChanged: a block of the stack landing on another face means it fell
-        if (TargetStack is { } s && s.ContainsBlock(o.Object.ObjectId) && o.Object.UpAxisFromPose() != UpAxisOf(o.PreviousPose)) _upAxisChanged = true;
+        // HandleObjectUpAxisChanged 0x005C3A98: any object whose up axis changed is inserted into the
+        // tipped set; it is not restricted to the target stack.
+        if (o.Object.UpAxisFromPose() != UpAxisOf(o.PreviousPose)) _tipped.Add(o.Object.ObjectId);
     }
 
     private static UpAxis UpAxisOf(Pose3d p)
@@ -103,10 +121,11 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
     private void TransitionToKnockingOverStack()
     {
         CurrentPhase = Phase.KnockingOverStack;
+        PrepareForKnockOverAttempt();
         uint bottom = TargetStack!.BottomBlockId;
         // the maximum turn towards a face: pi/2 on the first attempt, 0 once the attempt count at +0x140 is
-        // above zero (adr/addgt over the table at 0x005C36BC); the trailing 20.0 has no effect
-        var flip = new DriveAndFlipBlockAction(M, bottom) { MaxTurnTowardsFaceRad = KnockOverAttempts > 0 ? 0.0 : Math.PI / 2 };
+        // above zero, and 0 when +0xD9/+0xD8 is set (0x005C34EA..0x005C3504); the trailing 20.0 has no effect
+        var flip = new DriveAndFlipBlockAction(M, bottom) { MaxTurnTowardsFaceRad = (AlwaysStreamline || SoftSparkSwitch || KnockOverAttempts > 0) ? 0.0 : Math.PI / 2 };
         // 0x005C355C..0x005C35FA: a sequence of TurnTowardsObjectAction (max pi) at the bottom block, the
         // DriveAndFlipBlockAction, and a WaitAction of 0.5 s.
         RunAction($"DriveAndFlipBlockAction({bottom})", async ct =>
@@ -146,6 +165,7 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
     private void TransitionToBlindlyFlipping()
     {
         CurrentPhase = Phase.BlindlyFlipping;
+        PrepareForKnockOverAttempt();
         uint bottom = TargetStack!.BottomBlockId;
         var flip = new FlipBlockAction(M, bottom) { CheckPreActionPose = false };
         RunAction("FlipBlockAction (blind)", flip.RunAsync, _ =>
@@ -155,17 +175,40 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
         });
     }
 
+    /// <summary>
+    /// <c>PrepareForKnockOverAttempt</c> 0x005C3780: zero the tipped-object set at +0x144/+0x14C at the
+    /// start of every knock-over attempt (called at 0x005C3606 inside <c>TransitionToKnockingOverStack</c>,
+    /// and from <c>TransitionToBlindlyFlipping</c>). A Retry must not carry a prior attempt's tipped object
+    /// into <c>TransitionToPlayingReaction</c>, or it would report success where the engine reports failure.
+    /// </summary>
+    // fidelity: M13-014
+    private void PrepareForKnockOverAttempt() => _tipped.Clear();
+
     private void TransitionToPlayingReaction()
     {
         CurrentPhase = Phase.PlayingReaction;
+        // TransitionToPlayingReaction 0x005C3946..0x005C394E sets robot+0x34->+0x94->+0xC = 1, i.e.
+        // BlockWorld's BlockConfigurationManager dirty flag, forcing all configurations to recompute on
+        // the next Update.
+        M.Configurations.ForceUpdate = true;
         M.Configurations.Update();
-        var still = M.Configurations.Stacks.FirstOrDefault(s => s.BottomBlockId == TargetStack!.BottomBlockId);
-        KnockedOver = _upAxisChanged || still is null || still.StackHeight < TargetStack!.StackHeight;
+        // TransitionToPlayingReaction 0x005C3908 selects the success trigger (+0x15C) or the failure
+        // trigger (+0x160) by the tipped-object set size at +0x14C != 0. The earlier stack-height check
+        // was not the engine's selector.
+        KnockedOver = _tipped.Count != 0;
         Log(KnockedOver.Value ? "the stack came apart" : "the stack is still standing");
         var trigger = KnockedOver.Value ? SuccessTrigger : FailureTrigger;
         // the flag at +0x14c gates both the objective and the needs action (0x005C3950): a stack still
         // standing reports neither
         if (KnockedOver.Value && NeedActionCompleted() is { } action) Log($"needs action {action}");
+        // when +0xD9/+0xD8 is set the reaction animation is skipped (0x005C3972..0x005C397C)
+        if (AlwaysStreamline || SoftSparkSwitch)
+        {
+            if (KnockedOver.Value) Log("objective achieved: KnockedOverBlocks");
+            CurrentPhase = Phase.Idle;
+            Finish();
+            return;
+        }
         PlayTrigger(trigger, () =>
         {
             if (KnockedOver.Value) Log("objective achieved: KnockedOverBlocks");
@@ -192,12 +235,13 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
 /// and reports the objective and the needs action (0x005C7E0C, 0x005C7E14); a Retry-category result retries
 /// only while the retry count at this+0x12C is still 0 (0x005C7D44..0x005C7D4A, then <c>SetupRetryAction</c> at
 /// 0x005C7DFA) - the count is bumped by <c>TransitionToPerformingAction(robot, true)</c> (0x005C777E) and zeroed
-/// otherwise (0x005C780C), so one retry at most; a Retry result with the retry used, or an Abort-category result,
-/// marks the cube failed to use for <see cref="ObjectActionFailure.RollOrPopAWheelie"/> (SetFailedToUse(obj, 3) at
-/// 0x005C7DAA); anything else logs BehaviorPopAWheelie.FailedPopAction and ends. <c>SetupRetryAction</c> 0x005C79D0
+/// otherwise (0x005C780C), so one retry at most; a Retry result with the retry used, or a category-3
+/// (Abort) result, marks the cube failed to use for <see cref="ObjectActionFailure.RollOrPopAWheelie"/>
+/// (SetFailedToUse(obj, 3) at 0x005C7DAA); anything else logs BehaviorPopAWheelie.FailedPopAction and ends. <c>SetupRetryAction</c> 0x005C79D0
 /// plays 0x18D when the result is exactly DidNotReachPreActionPose (0x04000001, 0x005C79F8..0x005C7A00) and 0x18E
 /// otherwise, then runs the action again as a retry (0x005C7F66).
 /// </summary>
+// fidelity: M13-015
 public sealed class PopAWheelieBehavior : ManipulationBehavior
 {
     public enum Phase { Idle, ReactingToBlock, PerformingAction, Retrying }
@@ -253,6 +297,9 @@ public sealed class PopAWheelieBehavior : ManipulationBehavior
             if (category == 4 && Retries < MaxRetries) { /* retry below */ }
             else
             {
+                // M13-015: an Abort-category (3) result, or a Retry-category (4) result with the one retry
+                // used, marks the cube failed to use (0x005C7CF0 cmp r1,#3 / 0x005C7D4C -> 0x005C7DAA);
+                // anything else logs BehaviorPopAWheelie.FailedPopAction (0x005C7DB0).
                 if (category is 3 or 4)
                 {
                     M.Whiteboard.SetFailedToUse(id, ObjectActionFailure.RollOrPopAWheelie);
@@ -433,12 +480,18 @@ public sealed class CubeLiftWorkoutBehavior : ManipulationBehavior
         CurrentPhase = Phase.PostLift;
         PlayTrigger(Workout!.PostLift, () =>
         {
+            // M13-010: CompleteCurrentWorkout itself fires the finished workout's emotion event
+            // (MoodManager::TriggerEmotionEvent 0x00573E1C) before advancing; wire the mood here.
+            M.Workouts!.TriggerEmotionEvent = (ev, now) =>
+            {
+                bool known = Context.Mood?.Trigger(ev, now) ?? false;
+                Log($"emotion event {ev}: {(Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model")}");
+                return known;
+            };
+            M.Workouts.ClockSec = () => Clock() / 1000.0;
             M.Workouts!.CompleteCurrentWorkout();
             // EndIteration reports the behaviour's own action here (0x005D8A18): Workout, or Workout_Sparked
             if (NeedActionCompleted() is { } action) Log($"needs action {action}");
-            double nowSec = Clock() / 1000.0;
-            bool known = Context.Mood?.Trigger(Workout.EmotionEventOnComplete, nowSec) ?? false;
-            Log($"emotion event {Workout.EmotionEventOnComplete}: {(Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model")}");
             Log($"objectives achieved: PerformedWorkout, {Workout.AdditionalObjectiveOnComplete}");
             CurrentPhase = Phase.Idle;
             Finish();

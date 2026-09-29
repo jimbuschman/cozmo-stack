@@ -3,20 +3,47 @@ using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Manipulation;
 
-/// <summary><c>Anki::Cozmo::AlignmentType</c> (UNITY): how <c>AlignWithObjectAction</c> measures its distance.</summary>
+/// <summary><c>Anki::Cozmo::AlignmentType</c>: how <c>AlignWithObjectAction</c> measures its distance.
+/// The numeric values 0..3 are the engine's; the names are this stack's labels (the M13-016 inventory
+/// settles the numeric table, not the enum names).</summary>
 public enum AlignmentType : byte { LiftFinger = 0, LiftPlate = 1, Body = 2, Custom = 3 }
 
 /// <summary>
-/// The engine's <c>AlignWithObjectAction</c> (constructor 0x0054C6xx): a dock action that stops a chosen part
-/// of the robot at a distance from the object's marker instead of engaging it. The constructor's alignment
-/// offsets (NATIVE): LIFT_FINGER 0, LIFT_PLATE 6, BODY −15, and CUSTOM = requested distance − 27 (the robot
-/// origin is 27 mm behind the lift fingers). The firmware dock action is <c>ALIGN</c> with the resulting
-/// distance as the dock's placement offset along X; the placement offset for a floor object is −16 (not used
-/// for the charger). Verify: success when the firmware reports the dock succeeded.
+/// The engine's <c>AlignWithObjectAction</c> (constructor body 0x00553370): a dock action that stops a
+/// chosen part of the robot at a distance from the object's marker instead of engaging it.
+///
+/// The alignment-type table (M13-016, corrected in gap pass 2) is by numeric type, not by name:
+/// <list type="bullet">
+/// <item>type 0 -&gt; distance <b>6.0</b> (<c>vmov.f32 s16,#6.0</c> at 0x005533EE);</item>
+/// <item>type 1 -&gt; flag +0xBB = <b>2</b> and distance stays <b>0.0</b> (0x005533F4);</item>
+/// <item>type 2 -&gt; distance <b>-15.0</b> (0x005533FC);</item>
+/// <item>type 3 -&gt; distance <b>argument + (-27.0)</b> (0x00553402..0x0055340A);</item>
+/// <item>invalid (&gt; 3) -&gt; distance stays 0.0 (0x005533C8, the table is skipped at 0x005533E4).</item>
+/// </list>
+/// The distance is clamped to 0.0 when it is below <b>-16.000009536743164</b> (0xC1800005 at 0x00553480;
+/// <c>vcmpe/it mi/vmovmi</c> at 0x0055341C..0x00553426).
+///
+/// <c>GetPreActionTypeFromAlignmentType</c> 0x005532B8 maps type 0-&gt;1, 1-&gt;0, 2-&gt;1, 3-&gt;1 and an
+/// invalid type logs and returns 1 (table at 0x00553360, default at 0x00553320). The value is stored at
+/// +0xFC. This stack casts it to <see cref="PreActionType"/> by numeric value; whether the engine's
+/// pre-action numbering is the same enum is not established by the M13 inventory (see the report).
+///
+/// The firmware dock action is <c>ALIGN</c> with the resulting distance as the dock's placement offset
+/// along X.
 /// </summary>
+// fidelity: M13-016
 public sealed class AlignWithObjectAction : DockActionBase
 {
-    public const double FingerToOriginMm = 27.0;
+    /// <summary>Alignment type 0's distance: 6.0 (0x005533EE).</summary>
+    public const double Type0DistanceMm = 6.0;
+    /// <summary>Alignment type 2's distance: -15.0 (0x005533FC).</summary>
+    public const double Type2DistanceMm = -15.0;
+    /// <summary>Alignment type 3's offset: argument + (-27.0) (0x00553402..0x0055340A).</summary>
+    public const double Type3OffsetMm = -27.0;
+    /// <summary>The clamp threshold: 0xC1800005 = -16.000009536743164 (0x00553480).</summary>
+    public const double ClampThresholdMm = -16.000009536743164;
+    /// <summary>The flag value type 1 writes at +0xBB (0x005533F4/0x005533F6): <see cref="DockingMethod.Method2"/>.</summary>
+    public const byte Type1Flag = 2;
 
     public AlignWithObjectAction(ManipulationSystem m, uint objectId, double distanceMm, AlignmentType alignment) : base(m, objectId)
     {
@@ -26,16 +53,46 @@ public sealed class AlignWithObjectAction : DockActionBase
     public double DistanceMm { get; }
     public AlignmentType Alignment { get; }
 
-    /// <summary>The distance the dock is asked for, after the alignment offset.</summary>
-    public double DockDistanceMm => Alignment switch
+    /// <summary>
+    /// +0xBB, <c>DockWithObject</c> field 7: the engine's constructor leaves it 0 and alignment type 1
+    /// writes 2 (0x005533F4/0x005533F6, M13-016).
+    /// </summary>
+    protected override DockingMethod DockingMethod => (int)Alignment == 1 ? DockingMethod.Method2 : DockingMethod.Default;
+
+    /// <summary>+0xBB as this stack sends it (see <see cref="DockingMethod"/>).</summary>
+    public DockingMethod AlignmentDockingMethod => DockingMethod;
+
+    /// <summary><c>GetPreActionTypeFromAlignmentType</c> 0x005532B8: 0-&gt;1, 1-&gt;0, 2-&gt;1, 3-&gt;1, invalid-&gt;1.</summary>
+    public static int GetPreActionTypeFromAlignmentType(int alignmentType) => alignmentType switch
     {
-        AlignmentType.LiftFinger => DistanceMm,
-        AlignmentType.LiftPlate => DistanceMm + 6,
-        AlignmentType.Body => DistanceMm - 15,
-        _ => DistanceMm - FingerToOriginMm,
+        0 => 1,
+        1 => 0,
+        2 => 1,
+        3 => 1,
+        _ => 1,
     };
 
-    protected override PreActionType PreActionType => PreActionType.Docking;
+    /// <summary>The pre-action type the engine stores at +0xFC, by numeric value.</summary>
+    public int AlignmentPreActionType => GetPreActionTypeFromAlignmentType((int)Alignment);
+
+    /// <summary>The distance the dock is asked for, after the alignment offset and the clamp.</summary>
+    public double DockDistanceMm
+    {
+        get
+        {
+            double d = (int)Alignment switch
+            {
+                0 => Type0DistanceMm,
+                1 => 0.0,
+                2 => Type2DistanceMm,
+                3 => DistanceMm + Type3OffsetMm,
+                _ => 0.0,
+            };
+            return d < ClampThresholdMm ? 0.0 : d;
+        }
+    }
+
+    protected override PreActionType PreActionType => (PreActionType)AlignmentPreActionType;
     protected override DockAction? SelectDockAction(ObservableObject target) => DockAction.Align;
     protected override (double X, double Y, double Angle) PlacementOffset => (DockDistanceMm, 0, 0);
     protected override ActionResult Verify(ObservableObject? target, DockResult result) => result.Succeeded ? ActionResult.Success : ActionResult.Retry;
@@ -80,6 +137,7 @@ public sealed class AlignWithObjectAction : DockActionBase
 /// completion returns 0x04000006. The engine does not loop: it hands a retryable result back to
 /// whoever ran it.
 /// </summary>
+// fidelity: M13-008, M13-012
 public sealed class MountChargerAction
 {
     /// <summary>120 mm: the custom align distance, 0x42F00000 at 0x0054E21C.</summary>
@@ -96,12 +154,16 @@ public sealed class MountChargerAction
     public const float MountSpeedMmps = 30f;
     public const double RetryDriveMm = 120.0;
     public const float RetrySpeedMmps = 100f;
-    public const double TurnMaxSpeedRadPerSec = 1.74533;
-    public const double TurnAccelRadPerSec2 = 5.23599;
-    /// <summary>-15 degrees: BackupOntoChargerAction fails below this pitch (0xBE860A92).</summary>
-    public const double MaxBackupPitchRad = -0.261799;
+    /// <summary>0x3FDF66F3 = 1.7453292608261108 rad/s = 100 deg/s (0x0054E550/0x0054E55A, M13-008).</summary>
+    public const double TurnMaxSpeedRadPerSec = 1.7453292608261108;
+    /// <summary>0x40A78D36 = 5.235987663269043 rad/s^2 (0x0054E55E/0x0054E568, M13-008).</summary>
+    public const double TurnAccelRadPerSec2 = 5.235987663269043;
+    /// <summary>-15 degrees: BackupOntoChargerAction fails below this pitch (0xBE860A92 = -0.2617993950843811, M13-008).</summary>
+    public const double MaxBackupPitchRad = -0.2617993950843811;
     /// <summary>pi/2: the window CheckIfDone uses to decide whether a failed mount is worth retrying.</summary>
     public const double RetryHeadingWindowRad = Math.PI / 2;
+    /// <summary>0x04000006: the retry drive's result (0x0054E3E8, M13-008).</summary>
+    public const ActionResult RetryDriveResult = ActionResult.RetryDriveDone;
 
     private readonly ManipulationSystem _m;
     public MountChargerAction(ManipulationSystem m, uint chargerId) { _m = m; ChargerId = chargerId; }
@@ -184,7 +246,7 @@ public sealed class MountChargerAction
         }
         _trace.Add($"Turning and mounting the charger failed ({r}). Driving forward to position for a retry");
         await new DriveStraightAction(_m, RetryDriveMm, RetrySpeedMmps).RunAsync(cancel);
-        return ActionResult.Retry;
+        return RetryDriveResult;
     }
 
     /// <summary>
@@ -220,12 +282,12 @@ public sealed class MountChargerAction
         if (_m.Robot.Sensors.OnCharger) return ActionResult.Success;
         if (_m.Robot.Sensors.PitchRad is { } pitch && pitch < MaxBackupPitchRad)
         {
-            _trace.Add($"BackupOntoChargerAction: pitched to {pitch} rad, below {MaxBackupPitchRad}");
-            return ActionResult.Retry;
+            _trace.Add($"BackupOntoChargerAction: pitched to {pitch} rad, below {MaxBackupPitchRad}; 0x0400000A");
+            return ActionResult.BackupPitchedTooFar;
         }
-        // the drive ran its length without ever reaching the contacts
-        _trace.Add($"BackupOntoChargerAction: the reverse finished ({ev}) off the contacts");
-        return ActionResult.Retry;
+        // the drive ran its length without ever reaching the contacts: the fall-through returns 0x04000006
+        _trace.Add($"BackupOntoChargerAction: the reverse finished ({ev}) off the contacts; 0x04000006");
+        return ActionResult.RetryDriveDone;
     }
 
     private async Task<bool> WaitForChargerAsync(TimeSpan timeout, CancellationToken cancel)
@@ -245,26 +307,48 @@ public sealed class MountChargerAction
 }
 
 /// <summary>
-/// The engine's <c>DriveOffChargerContactsAction</c> (0x00558228): a <c>DriveStraightAction</c> (constructed
-/// with 10 mm at 20 mm/s, then given its distance by the behaviour) whose <c>CheckIfDone</c> also requires the
-/// robot to have left the charger contacts ("StillOnCharger" retries). <c>BehaviorDriveOffCharger</c> drives the
-/// charger's length (96) plus its config's <c>extraDistanceToDrive_mm</c>.
+/// The engine's <c>DriveOffChargerContactsAction</c> (ctor 0x00558228): a <c>DriveStraightAction</c>
+/// constructed with <b>10 mm at 20 mm/s, false</b> (0x00558232/0x00558236/0x0055823E), with +0x44 = 7
+/// (0x00558276/0x00558278), which is <c>IActionRunner</c>'s <c>RobotActionType</c>
+/// <b>DRIVE_OFF_CHARGER_CONTACTS</b> (RobotActionTypeFromString 0x0075A448), and, <b>in SDK mode only</b>,
+/// <c>SetTracksToLock(0)</c> in the constructor (0x0055827C/0x00558286/0x00558288). That clear is a local
+/// <c>IActionRunner+0x54</c> flag write, not a robot message; this stack has no track-lock model, so it is
+/// noted in the trace and not sent.
+///
+/// <c>Init</c> 0x005582D0 copies the robot's on-contacts flag (robot+0x338) into action+0x8B and returns 0
+/// when the robot is not on the contacts. <c>CheckIfDone</c> 0x005582E4 retries while the drive is still
+/// running and fails <b>0x04000009</b> if the robot is still on the contacts (0x00558344).
+/// <c>BehaviorDriveOffCharger</c> gives it the charger's length plus its config's extra distance (M13-017).
 /// </summary>
+// fidelity: M13-013
 public sealed class DriveOffChargerContactsAction
 {
-    public const float DefaultSpeedMmps = 20f;
+    /// <summary>The constructor's 10 mm (0x41200000 at 0x00558232).</summary>
+    public const double ConstructorDistanceMm = 10.0;
+    /// <summary>The constructor's 20 mm/s (0x41A00000 at 0x00558236).</summary>
+    public const float ConstructorSpeedMmps = 20f;
+    /// <summary>+0x44 = 7 = <c>RobotActionType::DRIVE_OFF_CHARGER_CONTACTS</c> (0x00558276/0x00558278).</summary>
+    public const int RobotActionTypeDriveOffChargerContacts = 7;
+    public const float DefaultSpeedMmps = ConstructorSpeedMmps;
+
     private readonly ManipulationSystem _m;
     public DriveOffChargerContactsAction(ManipulationSystem m, double distanceMm, float speedMmps = DefaultSpeedMmps) { _m = m; DistanceMm = distanceMm; SpeedMmps = speedMmps; }
     public double DistanceMm { get; }
     public float SpeedMmps { get; }
+    /// <summary>action+0x8B: the robot's on-contacts flag captured at <c>Init</c>.</summary>
+    public bool WasOnContactsAtInit { get; private set; }
     public IReadOnlyList<string> Trace => _trace;
     private readonly List<string> _trace = new();
 
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
+        // Init 0x005582D0: capture robot+0x338 and return 0 (success) when not on the contacts.
+        WasOnContactsAtInit = _m.Robot.Sensors.OnCharger;
+        _trace.Add("IActionRunner.SetTracksToLock(0): local track-lock flag, no robot message (no track-lock model)");
+        if (!WasOnContactsAtInit) { _trace.Add("DriveOffChargerContactsAction.Init: not on contacts, nothing to do"); return ActionResult.Success; }
         var r = await new DriveStraightAction(_m, DistanceMm, SpeedMmps).RunAsync(cancel);
         if (r != ActionResult.Success) { _trace.Add($"drive off the charger: {r}"); return r; }
-        if (_m.Robot.Sensors.OnCharger) { _trace.Add("DriveOffChargerContactsAction.StillOnCharger"); return ActionResult.Retry; }
+        if (_m.Robot.Sensors.OnCharger) { _trace.Add("DriveOffChargerContactsAction.StillOnCharger: 0x04000009"); return ActionResult.StillOnCharger; }
         return ActionResult.Success;
     }
 }

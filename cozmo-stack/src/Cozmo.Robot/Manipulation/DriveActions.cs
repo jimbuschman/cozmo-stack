@@ -10,6 +10,14 @@ public enum ActionResult : uint
     BadObject = 0x03000004, BadPose = 0x03000005, NoPreActionPoses = 0x03000010, NotCarryingObjectAbort = 0x03000011,
     PathPlanningFailedAbort = 0x03000013, StillCarryingObject = 0x03000017, Timeout = 0x03000018, VisualObservationFailed = 0x0300001D,
     Retry = 0x04000000, DidNotReachPreActionPose = 0x04000001, FailedTraversingPath = 0x04000002,
+    /// <summary>0x04000006: <c>BackupOntoChargerAction::CheckIfDone</c>'s fall-through when the straight drive
+    /// finishes, and <c>ConfigureDriveForRetryAction</c>'s result (M13-008).</summary>
+    RetryDriveDone = 0x04000006,
+    /// <summary>0x04000009: <c>DriveOffChargerContactsAction::CheckIfDone</c> fails with this while the robot
+    /// is still on the charger contacts (0x00558344, M13-013).</summary>
+    StillOnCharger = 0x04000009,
+    /// <summary>0x0400000A: <c>BackupOntoChargerAction::CheckIfDone</c>'s pitch-below result (0x0054E7DE, M13-008).</summary>
+    BackupPitchedTooFar = 0x0400000A,
 }
 
 /// <summary>
@@ -19,7 +27,8 @@ public enum ActionResult : uint
 /// 0x3E32B8C2, from the constructor; distance from <see cref="CubePreActionPoses.DistanceThresholdMm"/> when a
 /// pre-action pose is the goal) once the path has been traversed. INFERRED: the planning timeout (the engine
 /// warns "Robot has been planning for more than %f seconds"; the value was not read, 5 s here) and the
-/// traversal timeout (LOCAL, from the path length). The planner itself is LOCAL (<see cref="StraightLinePlanner"/>).
+/// traversal timeout (LOCAL, from the path length). When no motion-primitive set is loaded the planner is
+/// LOCAL (<see cref="StraightLinePlanner"/>); the engine always has the lattice planner.
 /// </summary>
 public sealed class DriveToPoseAction
 {
@@ -59,14 +68,17 @@ public sealed class DriveToPoseAction
         IReadOnlyList<PathSegment> path;
         if (_m.Planner is { } planner)
         {
-            // LatticePlannerImpl::StartPlanning: import the world's obstacles, plan, and turn the plan into segments
-            planner.Env.ImportBlockWorldObstacles(_m.World, _m.Docking.Carrying.CarriedObjectId, IgnoreObstacleIds);
+            // LatticePlannerImpl::StartPlanning 0x004FEB44: store the replan bool at impl+0xA1 and import the
+            // world's obstacles with the bool hard-coded 1 (0x004FEC38); then DoPlanning, whose failure
+            // sends no path.
+            // fidelity: M13-003, M13-005, M13-018
+            planner.StartPlanning(_m.World, _m.Docking.Carrying.CarriedObjectId, forceReplan: true, IgnoreObstacleIds);
             var goals = Goals is { Count: > 0 } ? Goals : new[] { goal };
             var planned = planner.PlanTo(start.Value, goals, Profile);
             if (planned is { } pl)
             {
                 path = pl.Path; goal = pl.Goal;
-                _trace.Add($"lattice plan: {pl.Plan.Actions.Count} primitive(s), cost {pl.Plan.Cost:F0}, {pl.Plan.Expansions} expansions, {planner.Env.ObstacleCount} obstacle(s)");
+                _trace.Add($"lattice plan: {pl.Plan.Actions.Count} primitive(s), cost {pl.Plan.Cost:F0}, {pl.Plan.Expansions} expansions, {planner.Env.ObstacleCount} obstacle(s), DoPlanning={planner.LastPlanningResult}");
             }
             else
             {

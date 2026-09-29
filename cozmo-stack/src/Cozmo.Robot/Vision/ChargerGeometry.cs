@@ -8,10 +8,11 @@ namespace Cozmo.Robot.Vision;
 /// INFERRED from the robot's drive-off distance being the length), and it carries one marker, code
 /// <see cref="MarkerType.Charger"/> (2), added through <c>AddMarker</c> with a pose rotated −90° about Z
 /// (0xBFC90FDB) and translated (86, 0, 22) mm (0x42AC0000, 0x41B00000 - which is 22, not the 11 this
-/// stack had) and a marker size of 20 x 27 mm
-/// (0x41A00000, 0x41D80000). In this frame the charger's origin is at its front lip on the floor, +X runs into
-/// the charger towards the back wall, the marker sits on the back wall facing out (its normal is −X), and the
-/// robot drives onto it backwards.
+/// stack had) and a marker size of x = 27 mm (width) by y = 20 mm (height)
+/// (0x41D80000 at sp+0x14 and 0x41A00000 at sp+0x18; the AddMarker pointer is sp+0x14, and
+/// <c>Get3dCorners</c> scales x by size.x and z by size.y). In this frame the charger's origin is at its
+/// front lip on the floor, +X runs into the charger towards the back wall, the marker sits on the back wall
+/// facing out (its normal is −X), and the robot drives onto it backwards.
 ///
 /// <c>GetRobotDockedPose</c> (0x004EA1A0) is read exactly: <c>Pose3d(Radians(3.14159), Z_AXIS,
 /// (30, 0, 0), parent = the charger's pose)</c> - rotated π about Z, facing out of the charger, 30 mm
@@ -27,6 +28,7 @@ namespace Cozmo.Robot.Vision;
 /// charger's frame: on the charger's axis, 250 mm out from the marker, facing along the charger's +X,
 /// which is into the charger.
 /// </summary>
+// fidelity: M13-009
 public static class ChargerGeometry
 {
     public const double LengthMm = 96.0;
@@ -35,8 +37,10 @@ public static class ChargerGeometry
     public const double MarkerXMm = 86.0;
     /// <summary>22 mm up the back wall: 0x41B00000 in the constructor, which is 22 and not 11.</summary>
     public const double MarkerZMm = 22.0;
-    public const double MarkerWidthMm = 20.0;
-    public const double MarkerHeightMm = 27.0;
+    /// <summary>The marker's width (x): 27.0 at sp+0x14 (0x41D80000), the AddMarker pointer.</summary>
+    public const double MarkerWidthMm = 27.0;
+    /// <summary>The marker's height (y): 20.0 at sp+0x18 (0x41A00000).</summary>
+    public const double MarkerHeightMm = 20.0;
     public const double DockedXMm = 30.0;
     /// <summary>250 mm out from the marker: the y of the file-static Pose2d at 0x004D6BC4.</summary>
     public const double PreDockDistanceFromMarkerMm = 250.0;

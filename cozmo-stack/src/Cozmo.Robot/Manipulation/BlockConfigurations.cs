@@ -108,11 +108,21 @@ public sealed class BlockConfigurationManager
     public StackOfCubes? GetTallestStack() => Stacks.OrderByDescending(s => s.StackHeight).FirstOrDefault();
 
     /// <summary>
+    /// BlockConfigurationManager+0xC (M13-014): set to 1 to force all block configurations to recompute on
+    /// the next <see cref="Update"/> (the engine's <c>BlockConfigurationManager::Update</c> 0x00616D7C
+    /// returns early when it is 0 and nothing moved, and runs <c>UpdateAllBlockConfigs</c> when it is 1).
+    /// This stack's Update is always a full rebuild, so the flag is set for fidelity and cleared here.
+    /// </summary>
+    // fidelity: M13-014
+    public bool ForceUpdate { get; set; }
+
+    /// <summary>
     /// Rebuilds every configuration from the located cubes and publishes the result as one snapshot, so a
     /// reader on another thread never sees stacks from one pass beside pyramids from the next.
     /// </summary>
     public void Update()
     {
+        ForceUpdate = false;
         List<BlockConfiguration> newlySeen;
         double now;
         lock (_updateGate) (newlySeen, now) = BuildLocked();
@@ -182,15 +192,19 @@ public sealed class BlockConfigurationManager
         return new StackOfCubes(ids);
     }
 
-    /// <summary><c>BlockWorld::FindObjectOnTopOrUnderneathHelper</c>: the cube one height up (or down) with its centre over this one.</summary>
-    public static ObservableObject? FindObjectOnTopOrUnderneath(ObservableObject obj, IReadOnlyList<ObservableObject> cubes, bool onTop)
+    /// <summary><c>BlockWorld::FindObjectOnTopOrUnderneathHelper</c>: the cube one height up (or down) with its centre over this one.
+    /// The vertical tolerance is the helper's own second argument (M13-007): <c>BuildTallestStackForObject</c> passes
+    /// <see cref="OnTopPlanarToleranceMm"/> 30, the other callers pass <see cref="RestingOnToleranceMm"/> 15.</summary>
+    // fidelity: M13-007
+    public static ObservableObject? FindObjectOnTopOrUnderneath(ObservableObject obj, IReadOnlyList<ObservableObject> cubes, bool onTop,
+                                                                double toleranceMm = OnTopPlanarToleranceMm)
     {
         double targetZ = obj.Pose.Translation.Z + (onTop ? CubeGeometry.CubeSizeMm : -CubeGeometry.CubeSizeMm);
         foreach (var c in cubes)
         {
             if (c.ObjectId == obj.ObjectId) continue;
             var d = c.Pose.Translation - obj.Pose.Translation;
-            if (Math.Abs(c.Pose.Translation.Z - targetZ) > OnTopPlanarToleranceMm) continue;
+            if (Math.Abs(c.Pose.Translation.Z - targetZ) > toleranceMm) continue;
             if (Math.Sqrt(d.X * d.X + d.Y * d.Y) > CubeGeometry.CubeSizeMm / 2) continue;
             return c;
         }
