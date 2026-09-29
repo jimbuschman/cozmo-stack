@@ -44,13 +44,16 @@ public sealed class VisionSystem : IDisposable
     /// <summary>How long a removal waits for a frame being processed to reach a point where it can be discarded.</summary>
     internal static readonly TimeSpan RemovalWait = TimeSpan.FromSeconds(2);
 
-    public VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null)
+    public VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null, IOkaoFaceRecognizer? okaoRecognizer = null)
     {
         _robot = robot;
         Calibration = calibration;
         _constructedCalibration = calibration;
         Detector = detector ?? new MarkerDetector();
         Faces.Log += l => Log?.Invoke(l);
+        // fidelity: M14-011
+        Recognizer = new FaceRecognizer(okaoRecognizer ?? new OkaoFaceRecognizer());
+        Recognizer.Log += l => Log?.Invoke(l);
         World = new BlockWorld(() => robot.Cubes.ConnectedCubes.Where(c => c.ObjectId is not null).Select(c => (c.ObjectId!.Value, c.Type)));
         History = new RobotStateHistory();
         Locator = new CubeLocator(this);
@@ -164,6 +167,15 @@ public sealed class VisionSystem : IDisposable
     public PetWorld Pets { get; } = new();
     /// <summary>The face detector: the stock one is the OKAO boundary and reports itself unavailable.</summary>
     public IFaceDetector FaceDetector { get; set; } = new OkaoFaceDetector();
+    // fidelity: M14-011
+    /// <summary>
+    /// The engine's <c>FaceRecognizer</c> (0x008640E4): the Anki state machine over the OKAO_FR_* seam
+    /// (Correction C3).  The stock seam reports itself unavailable, so this runs only when a caller
+    /// attaches a working <see cref="IOkaoFaceRecognizer"/>.  The enrollment mode/id chain
+    /// (<c>FaceWorld::Enroll</c> -> <c>VisionComponent::SetFaceEnrollmentMode</c> -> ... ->
+    /// <c>SetAllowedEnrollments</c>, C1-F11) reaches it through <see cref="SetFaceEnrollmentMode"/>.
+    /// </summary>
+    public FaceRecognizer Recognizer { get; }
     public IPetDetector PetDetector { get; set; } = new OkaoPetDetector();
     /// <summary>Replaceable body-and-head turn for the face actions (tests move a fake robot with it).</summary>
     public Func<Pose3d, double, CancellationToken, Task<bool>>? TurnOverride { get; set; }
@@ -321,12 +333,14 @@ public sealed class VisionSystem : IDisposable
     // fidelity: M14-012
     public event Action<int, string>? LoadedFaceName;
 
-    // fidelity: M14-012
+    // fidelity: M14-011, M14-012
     /// <summary>
     /// <c>VisionSystem::SetSerializedFaceData</c> under the vision mutex (F25): stores the two byte
-    /// vectors the robot returned.
-    /// MISSING: the face-album deserialization/inverse install (G3-4, M14-011) is not recovered, so the
-    /// bytes are stored but cannot be parsed into names.
+    /// vectors the robot returned and, when the OKAO seam is available, installs them through the
+    /// recognizer's <c>SetSerializedData</c> endpoint (C3-24: album restore, enrollment parse,
+    /// consistency/capacity install, nextFaceID).  The stock seam reports itself unavailable, so the
+    /// bytes are stored and cannot be parsed: that is the M11-016 third-party boundary, not a silent
+    /// default.
     /// </summary>
     public void InstallSerializedFaceData(byte[] album, byte[] enrollment)
     {
@@ -334,18 +348,40 @@ public sealed class VisionSystem : IDisposable
         {
             _serializedFaceAlbum = album ?? Array.Empty<byte>();
             _serializedFaceEnrollment = enrollment ?? Array.Empty<byte>();
+            if (Recognizer.IsAvailable)
+                Recognizer.SetSerializedData(_serializedFaceAlbum, _serializedFaceEnrollment);
         }
     }
 
-    // fidelity: M14-012
+    // fidelity: M14-011, M14-012
     /// <summary>
-    /// <c>VisionSystem::GetSerializedFaceData</c> (F26).
-    /// MISSING: the face-album serialization format (G2-6/G3-4) is not recovered; the raw vectors last
-    /// installed are returned, so a save with no loaded album writes empty and takes the erase path.
+    /// <c>VisionSystem::GetSerializedFaceData</c> (F26/C5-12).  When the OKAO seam is available the album
+    /// vector is the restored album (whose inverse serialization is OKAO's <c>RestoreAlbum</c> boundary,
+    /// M11-016) and the enrollment vector is serialized from the recognizer's enrolled faces only when the
+    /// album vector is non-empty (<c>0x00867D5A..0x00867D66</c>); an empty album yields an empty
+    /// enrollment.  With the stock unavailable seam the raw vectors last installed are returned.
     /// </summary>
     public (byte[] Album, byte[] Enrollment) GetSerializedFaceData()
     {
-        lock (_busy) return (_serializedFaceAlbum, _serializedFaceEnrollment);
+        lock (_busy)
+        {
+            if (Recognizer.IsAvailable)
+                return (_serializedFaceAlbum,
+                        _serializedFaceAlbum.Length > 0 ? Recognizer.SerializeEnrollment() : Array.Empty<byte>());
+            return (_serializedFaceAlbum, _serializedFaceEnrollment);
+        }
+    }
+
+    // fidelity: M14-009, M14-011
+    /// <summary>
+    /// <c>VisionComponent::SetFaceEnrollmentMode(pose=0, id, mode)</c> (C1-F11): selects the mode
+    /// (4 for a nonzero id, -1 for zero) and stores the target through
+    /// <c>FaceRecognizer::SetAllowedEnrollments</c>.
+    /// </summary>
+    public void SetFaceEnrollmentMode(int id)
+    {
+        var (_, mode) = Faces.Enroll(id);
+        Recognizer.SetAllowedEnrollments(mode, id);
     }
 
     // fidelity: M14-012
@@ -383,13 +419,10 @@ public sealed class VisionSystem : IDisposable
 
     // fidelity: M14-012
     /// <summary>
-    /// <c>VisionComponent::SaveFaceAlbumToRobot</c> (F26/G1-4): the two serialized vectors, size-checked
-    /// against their NV tags, rounded up to a four-byte boundary, then the album written first and the
-    /// enrollment second; empty data takes the corresponding erase path.
-    /// MISSING: the face-album serialization format (G2-6/G3-4); and M3's
-    /// <see cref="NvStorageComponent.Request"/> has no enqueue-failure signal, so the engine's "stop
-    /// before the second write if the first enqueue fails" cannot be expressed here (both tags are
-    /// valid, so no live path differs).
+    /// <c>VisionComponent::SaveFaceAlbumToRobot</c> (F26/G1-4/C5-13): the two serialized vectors,
+    /// size-checked against their NV tags.  The erase path runs only when <b>both</b> vectors are empty,
+    /// album 0x184000 first and 0x183000 only if that erase succeeded; otherwise both are rounded up to a
+    /// four-byte boundary and written, album first.
     /// </summary>
     public void SaveFaceAlbumToRobot()
     {
@@ -403,6 +436,17 @@ public sealed class VisionSystem : IDisposable
             Log?.Invoke($"SaveFaceAlbumToRobot: serialized data too large (album {album.Length}/{albumMax}, enrollment {enrollment.Length}/{enrollmentMax})");
             return;
         }
+        if (album.Length == 0 && enrollment.Length == 0)
+        {
+            // C5-13: erase the album first, then the enrollment only when the album erase succeeded.
+            Log?.Invoke("SaveFaceAlbumToRobot: EmptyAlbumData");
+            nv.Request(FaceAlbumNvTag, 0, NvStorageComponent.OpErase, Array.Empty<byte>(), r =>
+            {
+                if (r.Result != NvStorageComponent.ResultOkay) return;
+                nv.Request(FaceEnrollmentNvTag, 0, NvStorageComponent.OpErase, Array.Empty<byte>(), _ => { });
+            });
+            return;
+        }
         WriteAlbumEntry(nv, FaceAlbumNvTag, album);
         WriteAlbumEntry(nv, FaceEnrollmentNvTag, enrollment);
     }
@@ -410,11 +454,6 @@ public sealed class VisionSystem : IDisposable
     // fidelity: M14-012
     private static void WriteAlbumEntry(NvStorageComponent nv, uint tag, byte[] data)
     {
-        if (data.Length == 0)
-        {
-            nv.Request(tag, 0, NvStorageComponent.OpErase, Array.Empty<byte>(), _ => { });
-            return;
-        }
         int padded = (data.Length + 3) & ~3;      // the engine's four-byte alignment
         var bytes = new byte[padded];
         Array.Copy(data, bytes, data.Length);
@@ -668,6 +707,12 @@ public sealed class VisionSystem : IDisposable
                 }
                 LastFaces = faces;
                 Faces.Update(timestamp);
+                // fidelity: M14-011
+                // FaceTracker::Impl::Update hands each enrollable face to FaceRecognizer::SetNextFaceToRecognize
+                // and reads GetRecognitionData (F22); RecognizeFace needs the OKAO feature blob. IFaceDetector
+                // does not carry that feature, so the recognizer is not called from here: the feature carrier is
+                // M14-010's unrecovered recognition scheduling, and inventing one would be a plausible
+                // substitution. The recognizer itself is built and its album/serialization endpoints are wired.
             }
             if (PetDetector.IsAvailable)
             {

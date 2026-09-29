@@ -2,7 +2,7 @@
   "subsystem": "M14-faces",
   "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M14-faces.md",
-  "inventory_sha256": "d14bcf618d1998a1a7a94c4be29489c67acbd26e9bf2de1624c08a60109a4af8",
+  "inventory_sha256": "4348c55d4cf9894d98c96d2022c665d618c9e5caae19e301f43a24b92f96be48",
   "records": {
     "M14-001": {
       "status": "EXACT_SOURCE",
@@ -137,7 +137,9 @@
         "RegisterNewUser 0x00865658..0x008657A8; GetNextAlbumEntryToUse 0x00865178..0x008653D8; GetFaceIDforAlbumEntry 0x00866C1C..0x00866CAC; UpdateExistingAlbumEntry 0x00865A98..0x0086600E; RemoveUser 0x00865544..0x008655C6 and 0x00866AE0..0x00866B9A.",
         "MergeFaces 0x008638AC..0x00863B9A with MergeWith 0x008616AE..0x0086173A and limit 5 at 0x008639C0; ConvertToEnrolledFaceStorage 0x00860D7C..0x00860EE0 and the inverse 0x00860728..0x0086091A.",
         "Enrollment deserialize 0x008684D4..0x0086871C; album restore/consistency 0x00867384..0x008674E2 and 0x00863064..0x0086329C; capacity install 0x00868874..0x00868C5E; FaceRecognizer::SetSerializedData 0x00867F54..0x00868366.",
-        "Checked rows: re-analysis/research/20260929-G-M14-citation-check.md; inventory Correction C3."
+        "Checked rows: re-analysis/research/20260929-G-M14-citation-check.md; inventory Correction C3.",
+        "Correction C4: EnrolledFaceStorage wire layout and the outer enrollment container 0x00799042/0x00799138/0x008684D4..0x0086871C; GetNextFaceID 0x0086561C and its seed 0x008621E0; C3-8 placement and gates 0x00864338..0x008643A2; the 999,999 us gate source 0x00865C08; the MergeFaces sequence 0x008639B6..0x00863B38; the OKAO-only free-index probe 0x00865182..0x0086537E; SanityCheckBookkeeping 0x00863064..0x0086329C; the OKAO_FR_* seam call shapes.",
+        "Correction C5: first-user gate field +0x100 (0x00864146..0x00864156); debug-candidate insertion with faceID 0 (0x008645A4..0x0086467A); the first-named lower-ranked selection and its conflict guard (0x008646FC..0x00864868, 0x00864C2A..0x00864C84); both capacity dimensions and the full index-range copy (0x00868942..0x008689FA, 0x00868B98..0x00868BFA); GetNextFaceID and the probe advance/store (0x00865620..0x00865654, 0x00865344..0x008653D6); the writer 0x00867DD8..0x00867ECE and the album gate 0x00867D5A..0x00867D66."
       ],
       "live_path": true,
       "hardware_required": false

@@ -360,10 +360,10 @@ public sealed class FaceWorld
     /// zero) and forwards id and mode to the VisionComponent at robot+0x258. The tail-call 0x8CAC3C
     /// resolves through VisionComponent/VisionSystem/FaceTracker to
     /// <c>FaceRecognizer::SetAllowedEnrollments</c> 0x008658AC (C1-F11), which stores the mode at
-    /// +0x108/+0x10c, the id at +0x100 and the entry data at +0x104.
-    /// MISSING: this stack has no FaceRecognizer component; its album semantics are M14-011's
-    /// RECOVERABLE_GAP, so only the mode/id selection is built and returned here.
+    /// +0x108/+0x10c, the id at +0x100 and the entry data at +0x104. The forward is
+    /// <see cref="VisionSystem.SetFaceEnrollmentMode"/>, which calls the M14-011 recognizer.
     /// </summary>
+    // fidelity: M14-009, M14-011
     public (int Id, int Mode) Enroll(int id) => (id, id != 0 ? EnrollModeKnownFace : EnrollModeNewFace);
 
     /// <summary><c>GetLastObservedFace</c>: the most recently seen face's pose.</summary>

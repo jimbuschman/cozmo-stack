@@ -4704,7 +4704,7 @@
         "0x004F4B7A/0x004F4B82 broadcasts RobotObservedFace; 0x004F3C2C..0x004F3C64 broadcasts RobotDeletedFace, erases visualization and erases the map node."
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Built: the FaceWorld lifecycle and the FaceObserved/FaceDeleted/FaceIdChanged observable events (the M11-038 precedent). MISSING: C1-F3's FaceWorld+0x24 flag needs a tracked-face node's +0x14 enrollment-reached count, which the TrackedFace/DetectedFace seam does not carry (owning layer M14-010/M11-016); C1-F2's UpdatedFaceID list is M14-011's recogniser output (RECOVERABLE_GAP); the F8/F9 RobotObservedFace/RobotDeletedFace EngineToGame broadcasts are M2/M10 (this stack has no EngineToGame channel).",
+      "unresolved": "Built: the FaceWorld lifecycle and the FaceObserved/FaceDeleted/FaceIdChanged observable events (the M11-038 precedent). MISSING: C1-F3's FaceWorld+0x24 flag needs a tracked-face node's +0x14 enrollment-reached count, which the TrackedFace/DetectedFace seam does not carry (owning layer M14-010/M11-016); C1-F2's UpdatedFaceID list is the recogniser output, now built in M14-011, but the per-frame feature carrier that produces it is M14-010's unrecovered recognition scheduling (IFaceDetector carries no OKAO feature); the F8/F9 RobotObservedFace/RobotDeletedFace EngineToGame broadcasts are M2/M10 (this stack has no EngineToGame channel).",
       "hardware_required": false,
       "live_path": true,
       "test": "FaceTests.M14_008_TheFaceWorldRaisesObservedChangedAndDeleted"
@@ -4722,7 +4722,7 @@
         "0x004F5C9E..0x004F5CB2 selects mode 4 for a nonzero id and -1 for zero; the tail-call 0x8CAC3C resolves through VisionComponent 0x00657A58 / VisionSystem 0x006B3394 / FaceTracker 0x0086B276 / Impl 0x0086E372 to FaceRecognizer::SetAllowedEnrollments 0x008658AC, which stores the mode at +0x108/+0x10c, the id at +0x100 and the entry data at +0x104 (C1-F11)."
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "ShouldReturnFace (F10) and Enroll's mode selection (4 for a nonzero id, -1 for zero) are built. The enrollment target is FaceRecognizer::SetAllowedEnrollments, whose album semantics are M14-011's RECOVERABLE_GAP; only the mode/id seam is exposed here.",
+      "unresolved": "ShouldReturnFace (F10) and Enroll's mode selection (4 for a nonzero id, -1 for zero) are built. The enrollment target forward is VisionSystem.SetFaceEnrollmentMode -> FaceRecognizer.SetAllowedEnrollments (M14-011, built), which stores the mode/id/track. The M14-011 recognizer is the album owner.",
       "hardware_required": false,
       "live_path": true,
       "test": "FaceTests.M14_009_ShouldReturnFaceAndEnrollUseTheEnginesGates"
@@ -4751,22 +4751,24 @@
       "id": "M14-011",
       "subsystem": "M14-faces",
       "title": "FaceRecognizer matching, registration, update, merge, album and serialization semantics",
-      "location": "cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/FaceRecognizer.cs",
       "effect": "recognized ids, scores, new users, album updates, merges and the serialized face album change",
-      "provenance": "recovered from libcozmoEngine.so (all branches instruction-checked, Correction C3)",
+      "provenance": "recovered from libcozmoEngine.so (all branches instruction-checked, Correction C3); built in FaceRecognizer.cs over the IOkaoFaceRecognizer seam",
       "authority": "FaceRecognizer::RecognizeFace 0x008640E4..0x00864CD8, RegisterNewUser 0x00865658, UpdateExistingAlbumEntry 0x00865A98, GetFaceIDforAlbumEntry 0x00866C1C, RemoveUser 0x00865544/0x00866AE0, MergeFaces 0x008638AC, MergeWith 0x008616AE, ConvertToEnrolledFaceStorage 0x00860D7C, FaceRecognizer::SetSerializedData 0x00867F54",
       "evidence": [
         "RecognizeFace 0x008640E4..0x00864CD8 (confident gate 0x00864338, OKAO_FR_Identify 0x00864254..0x00864392, target path 0x008643A2..0x00864562, debug matches 0x008644F4..0x008646FC, lower-ranked 0x008646FC..0x008649F8, low-confidence new user 0x00864A18..0x00864AA8).",
         "RegisterNewUser 0x00865658..0x008657A8; GetNextAlbumEntryToUse 0x00865178..0x008653D8; GetFaceIDforAlbumEntry 0x00866C1C..0x00866CAC; UpdateExistingAlbumEntry 0x00865A98..0x0086600E; RemoveUser 0x00865544..0x008655C6 and 0x00866AE0..0x00866B9A.",
         "MergeFaces 0x008638AC..0x00863B9A with MergeWith 0x008616AE..0x0086173A and limit 5 at 0x008639C0; ConvertToEnrolledFaceStorage 0x00860D7C..0x00860EE0 and the inverse 0x00860728..0x0086091A.",
         "Enrollment deserialize 0x008684D4..0x0086871C; album restore/consistency 0x00867384..0x008674E2 and 0x00863064..0x0086329C; capacity install 0x00868874..0x00868C5E; FaceRecognizer::SetSerializedData 0x00867F54..0x00868366.",
-        "Checked rows: re-analysis/research/20260929-G-M14-citation-check.md; inventory Correction C3."
+        "Checked rows: re-analysis/research/20260929-G-M14-citation-check.md; inventory Correction C3.",
+        "Correction C4: EnrolledFaceStorage wire layout and the outer enrollment container 0x00799042/0x00799138/0x008684D4..0x0086871C; GetNextFaceID 0x0086561C and its seed 0x008621E0; C3-8 placement and gates 0x00864338..0x008643A2; the 999,999 us gate source 0x00865C08; the MergeFaces sequence 0x008639B6..0x00863B38; the OKAO-only free-index probe 0x00865182..0x0086537E; SanityCheckBookkeeping 0x00863064..0x0086329C; the OKAO_FR_* seam call shapes.",
+        "Correction C5: first-user gate field +0x100 (0x00864146..0x00864156); debug-candidate insertion with faceID 0 (0x008645A4..0x0086467A); the first-named lower-ranked selection and its conflict guard (0x008646FC..0x00864868, 0x00864C2A..0x00864C84); both capacity dimensions and the full index-range copy (0x00868942..0x008689FA, 0x00868B98..0x00868BFA); GetNextFaceID and the probe advance/store (0x00865620..0x00865654, 0x00865344..0x008653D6); the writer 0x00867DD8..0x00867ECE and the album gate 0x00867D5A..0x00867D66."
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Build the FaceRecognizer state machine in cozmo-stack/src/Cozmo.Robot/Vision/ from C3-1..C3-24: the OKAO FR seam, RecognizeFace, RegisterNewUser, GetNextAlbumEntryToUse, GetFaceIDforAlbumEntry, UpdateExistingAlbumEntry (four-entry replacement), RemoveUser (both overloads), MergeFaces/MergeWith, ConvertToEnrolledFaceStorage and its inverse, enrollment deserialize, album restore/consistency/capacity install and the SetSerializedFaceData chain, wired into the VisionSystem face path. The source-level name of EnrolledFaceEntry +0x04 is UNKNOWN (rule exact, C3-18).",
+      "unresolved": "Built in cozmo-stack/src/Cozmo.Robot/Vision/FaceRecognizer.cs over the IOkaoFaceRecognizer seam, from C3/C4/C5: RecognizeFace (confident, debug, first-named lower-ranked with the conflict guard, ordinary update, active target, 550 new-user), RegisterNewUser, GetNextAlbumEntryToUse, GetFaceIDforAlbumEntry, UpdateExistingAlbumEntry (pre-update +0x30 gate, four-entry replacement), both RemoveUser overloads, MergeFaces/MergeWith, ConvertToEnrolledFaceStorage and its inverse, the enrollment container read/write, the album install and SetSerializedData. Still open: (a) the per-frame detector->recognizer feature carrier that drives RecognizeFace is M14-010's unrecovered recognition scheduling (IFaceDetector carries no OKAO feature), so the face loop does not call RecognizeFace per frame; (b) C5-8's track map +0xdc is written by UpdateRecognitionData 0x00863384, which is not built (its +0xac/+0x20 erase-key semantics are also open), so the track erase is a no-op here; (c) EnrolledFaceEntry +0x04's source-level name is UNKNOWN (C3-18), kept by offset.",
       "hardware_required": false,
       "live_path": true,
-      "test": "FaceTests"
+      "test": "FaceRecognizerTests"
     },
     {
       "id": "M14-012",
@@ -4783,7 +4785,7 @@
         "0x005FE520/0x005FE528 constructs and broadcasts FaceEnrollmentCompleted."
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Built: NV 0x184000/0x183000 read/write orchestration, install under the vision mutex, clear-then-replay observable events, size-check against the tag maxima, four-byte padding, ordered write/erase. MISSING: the face-album serialization/deserialization format (G2-6 outer pack plus G3-4 inverse install, M14-011); the EngineToGame broadcasts RobotErasedAllEnrolledFaces/LoadedKnownFace/FaceEnrollmentCompleted (M2/M10); the connection-time invocation is M3-033's queue. NvStorageComponent.Request has no enqueue-failure signal, so 'stop before the second write if the first enqueue fails' is not expressible (both tags are valid).",
+      "unresolved": "Built: NV 0x184000/0x183000 read/write orchestration, install under the vision mutex, clear-then-replay observable events, size-check against the tag maxima, four-byte padding, ordered write/erase. InstallSerializedFaceData now drives the M14-011 recognizer's SetSerializedData; GetSerializedFaceData calls the enrollment serializer only when the album vector is non-empty (C5-12); SaveFaceAlbumToRobot erases both tags only when both vectors are empty, album first and enrollment only on the album erase's success (C5-13), and otherwise writes both. MISSING: the album byte vector's serialization inverse is OKAO's RestoreAlbum boundary (M11-016), so the album side still round-trips as raw bytes; the EngineToGame broadcasts RobotErasedAllEnrolledFaces/LoadedKnownFace/FaceEnrollmentCompleted (M2/M10); the connection-time invocation is M3-033's queue.",
       "hardware_required": false,
       "live_path": true,
       "test": "FaceTests.M14_012_TheFaceAlbumReadsAlbumThenEnrollmentAndReplaysEraseBeforeNames"
