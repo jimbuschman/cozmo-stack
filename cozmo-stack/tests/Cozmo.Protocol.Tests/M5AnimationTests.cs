@@ -2217,4 +2217,93 @@ public class M5ScanLineTests
         Assert.All(log.Faces, p => Assert.Equal(frame.ForScanLine(fsl), p));
     }
 
+    // ================================================================== M5-020 (Code Lab expressions, Unity Random)
+
+    /// <summary>
+    /// R1: the index -> trigger switch of CodeLabGame.GetAnimationTriggerForScratchIndex (CodeLabGame.cs:3109..3244),
+    /// sampled at the start, at the 33/34 and 13/14 boundaries, and at the end; the default is AnimationTrigger.Count
+    /// (0x23F). TriggerFor maps the enum to the same switch.
+    /// </summary>
+    [Theory]
+    [InlineData(1, AnimationTrigger.CodeLabHappy)]
+    [InlineData(2, AnimationTrigger.CodeLabVictory)]
+    [InlineData(3, AnimationTrigger.CodeLabUnhappy)]
+    [InlineData(4, AnimationTrigger.CodeLabSurprise)]
+    [InlineData(13, AnimationTrigger.CodeLabDejected)]
+    [InlineData(14, AnimationTrigger.CodeLabSleep)]
+    [InlineData(33, AnimationTrigger.CodeLabGetInPos)]
+    [InlineData(34, AnimationTrigger.CodeLabIdle)]
+    [InlineData(35, AnimationTrigger.CodeLabWondering)]
+    [InlineData(64, AnimationTrigger.CodeLabChicken)]
+    [InlineData(65, AnimationTrigger.CodeLabRattleSnake)]
+    public void M5_020_R1_TheIndexToTriggerMappingMatchesTheShippedSwitch(int index, AnimationTrigger expected)
+        => Assert.Equal(expected, Expressions.TriggerForIndex(index, isVertical: false));
+
+    [Fact]
+    public void M5_020_R1_IndexesOutsideTheSwitchReturnCount()
+    {
+        Assert.Equal((AnimationTrigger)0x23F, Expressions.TriggerForIndex(66, isVertical: false));
+        Assert.Equal((AnimationTrigger)0x23F, Expressions.TriggerForIndex(1000, isVertical: true));
+    }
+
+    [Fact]
+    public void M5_020_R1_TriggerForMapsTheCodeLabExpressionsAndNeutralHasNone()
+    {
+        Assert.Null(Expressions.TriggerFor(Expression.Neutral));
+        Assert.Equal(AnimationTrigger.CodeLabHappy, Expressions.TriggerFor(Expression.CodeLabHappy));
+        Assert.Equal(AnimationTrigger.CodeLabRattleSnake, Expressions.TriggerFor(Expression.CodeLabRattleSnake));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Expressions.TriggerFor((Expression)66));
+    }
+
+    /// <summary>
+    /// R4/R5/R7, derived by hand from the rows: seed 1 gives InitState (0x1, 0x6C078966, 0x714ACB3F, 0xDBFFE6DC)
+    /// and the xorshift outputs below. These are computed from the row's recurrence, not read off this code.
+    /// </summary>
+    [Fact]
+    public void M5_020_R4_R7_AKnownSeedProducesTheKnownXorshiftSequence()
+    {
+        var rng = new UnityRandom();
+        rng.InitState(1);
+        Assert.Equal(0xDBFFF5AAu, rng.NextUInt());
+        Assert.Equal(0x8BE31B0Au, rng.NextUInt());
+        Assert.Equal(0xACD72A7Au, rng.NextUInt());
+        Assert.Equal(0x883AF03Au, rng.NextUInt());
+    }
+
+    /// <summary>R5: min + (out mod (max-min)) for min &lt; max, min - (out mod (min-max)) for max &lt; min, and no draw when equal. Derived from seed 1.</summary>
+    [Fact]
+    public void M5_020_R5_RangeFollowsTheModuloRule()
+    {
+        var rng = new UnityRandom();
+        rng.InitState(1);
+        Assert.Equal(new[] { 17, 14, 30, 1 }, new[] { rng.Range(1, 34), rng.Range(1, 34), rng.Range(1, 34), rng.Range(1, 34) });
+
+        rng.InitState(1);
+        Assert.Equal(new[] { 6, 8, 5, 7 }, new[] { rng.Range(1, 14), rng.Range(1, 14), rng.Range(1, 14), rng.Range(1, 14) });
+
+        rng.InitState(1);
+        Assert.Equal(new[] { 18, 21, 5, 34 }, new[] { rng.Range(34, 1), rng.Range(34, 1), rng.Range(34, 1), rng.Range(34, 1) });
+
+        rng.InitState(1);
+        Assert.Equal(5, rng.Range(5, 5));
+        Assert.Equal(0xDBFFF5AAu, rng.NextUInt());   // min == max did not advance the state
+    }
+
+    /// <summary>
+    /// R1/R5: index 0 draws from the global stream. With seed 1, Range(1,34) is 17 (CodeLabTakaTaka) and Range(1,14)
+    /// is 6 (CodeLabCat); the pick consumes exactly one draw, so the next output is the second in the sequence.
+    /// </summary>
+    [Fact]
+    public void M5_020_R1_IndexZeroPicksInRangeAndAdvancesTheXorshiftState()
+    {
+        var rng = new UnityRandom();
+        rng.InitState(1);
+        Assert.Equal(AnimationTrigger.CodeLabTakaTaka, Expressions.TriggerForIndex(0, isVertical: true, rng));
+        Assert.Equal(0x8BE31B0Au, rng.NextUInt());
+
+        rng.InitState(1);
+        Assert.Equal(AnimationTrigger.CodeLabCat, Expressions.TriggerForIndex(0, isVertical: false, rng));
+        Assert.Equal(0x8BE31B0Au, rng.NextUInt());
+    }
+
 }

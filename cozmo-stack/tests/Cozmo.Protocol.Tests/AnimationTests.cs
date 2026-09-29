@@ -440,56 +440,6 @@ public class AnimationTests
                 Assert.Equal(0, bmp[x, y]);
     }
 
-    [Theory]
-    [InlineData(Expression.Neutral)]
-    [InlineData(Expression.Happy)]
-    [InlineData(Expression.Sad)]
-    [InlineData(Expression.Angry)]
-    [InlineData(Expression.Surprised)]
-    [InlineData(Expression.Sleepy)]
-    [InlineData(Expression.Squinting)]
-    [InlineData(Expression.LookingLeft)]
-    [InlineData(Expression.LookingRight)]
-    public void EveryExpressionRendersSomethingThatFitsOneMessage(Expression e)
-    {
-        var bmp = ProceduralFaceRenderer.Render(Expressions.Get(e));
-        int lit = 0;
-        for (int y = 0; y < FaceBitmap.Height; y++)
-            for (int x = 0; x < FaceBitmap.Width; x++) if (bmp[x, y] != 0) lit++;
-        Assert.True(lit > 40, $"{e} drew only {lit} pixels");
-        Assert.True(FaceBitmapCodec.Encode(bmp).Length <= CozmoDisplay.DefaultMaxPayload,
-            $"{e} does not fit one message");
-    }
-
-    [Fact]
-    public void ABlinkClosesTheEyes()
-    {
-        var open = ProceduralFaceRenderer.Render(Expressions.Get(Expression.Neutral));
-        var shut = ProceduralFaceRenderer.Render(Expressions.Get(Expression.Blinking));
-        Assert.True(Count(shut) < Count(open) / 4, "a blink should close the eyes almost completely");
-
-        static int Count(FaceBitmap b)
-        {
-            int n = 0;
-            for (int y = 0; y < FaceBitmap.Height; y++)
-                for (int x = 0; x < FaceBitmap.Width; x++) if (b[x, y] != 0) n++;
-            return n;
-        }
-    }
-
-    [Fact]
-    public void LookingLeftAndRightMoveTheEyesOppositeWays()
-    {
-        int LeftMost(Expression e)
-        {
-            var b = ProceduralFaceRenderer.Render(Expressions.Get(e));
-            for (int x = 0; x < FaceBitmap.Width; x++)
-                for (int y = 0; y < FaceBitmap.Height; y++) if (b[x, y] != 0) return x;
-            return -1;
-        }
-        Assert.True(LeftMost(Expression.LookingLeft) < LeftMost(Expression.LookingRight));
-    }
-
     // ------------------------------------------------------------- flatbuffers
 
     [Fact]

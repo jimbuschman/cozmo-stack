@@ -1,131 +1,201 @@
+using Cozmo.Robot.Behavior;
+
 namespace Cozmo.Robot.Animation;
 
-/// <summary>Named faces built from the nineteen-parameter eye model.</summary>
+// fidelity: M5-020
+/// <summary>
+/// The shipped app's named expressions, which are Code Lab's animation triggers, not faces.
+///
+/// The engine has no named-expression table: Cozmo's faces come from animation clips
+/// (<c>SetFaceAction::SetFaceAction</c> 0x00563AFD takes an arbitrary <c>ProceduralFace const&amp;</c>), and the
+/// only face the engine holds as a value is the resting face it loads from the shipped neutral-face animation,
+/// <see cref="Expression.Neutral"/> (<see cref="ProceduralFacePose.ShippedNeutral"/>).
+///
+/// The named expressions the shipped app does have are Code Lab's: <c>CodeLabGame.GetAnimationTriggerForScratchIndex</c>
+/// (unity/scripts/csharp/CodeLab/CodeLabGame.cs:3094) maps each block index to an <c>AnimationTrigger</c>, played
+/// through the shipped animation-group path (the M5 group choice). The members below are those trigger names in
+/// the switch's index order, with <see cref="Neutral"/> as index 0. The invented poses this type used to carry
+/// (Happy, Sad, Angry, Surprised, Sleepy, Blinking, Squinting, LookingX) are removed: they were never Anki's
+/// (operator decision 2026-09-29).
+/// </summary>
 public enum Expression
 {
-    Neutral,
-    Happy,
-    Sad,
-    Angry,
-    Surprised,
-    Sleepy,
-    Blinking,
-    Squinting,
-    LookingLeft,
-    LookingRight,
-    LookingUp,
-    LookingDown,
+    /// <summary>The shipped neutral face, not a Code Lab trigger.</summary>
+    Neutral = 0,
+
+    CodeLabHappy = 1,
+    CodeLabVictory = 2,
+    CodeLabUnhappy = 3,
+    CodeLabSurprise = 4,
+    CodeLabDog = 5,
+    CodeLabCat = 6,
+    CodeLabSneeze = 7,
+    CodeLabExcited = 8,
+    CodeLabThinking = 9,
+    CodeLabBored = 10,
+    CodeLabFrustrated = 11,
+    CodeLabChatty = 12,
+    CodeLabDejected = 13,
+    CodeLabSleep = 14,
+    CodeLabReactHappy = 15,
+    CodeLabCelebrate = 16,
+    CodeLabTakaTaka = 17,
+    CodeLabAmazed = 18,
+    CodeLabCurious = 19,
+    CodeLabYes = 20,
+    CodeLabNo = 21,
+    CodeLabIDK = 22,
+    CodeLabConducting = 23,
+    CodeLabDancingMambo = 24,
+    CodeLabFireTruck = 25,
+    CodeLabPartyTime = 26,
+    CodeLabDizzy = 27,
+    CodeLabDizzyEnd = 28,
+    CodeLab123Go = 29,
+    CodeLabWin = 30,
+    CodeLabLose = 31,
+    CodeLabTapCube = 32,
+    CodeLabGetInPos = 33,
+    CodeLabIdle = 34,
+    CodeLabWondering = 35,
+    CodeLabWhee1 = 36,
+    CodeLabWhee2 = 37,
+    CodeLabWhee3 = 38,
+    CodeLabWhee4 = 39,
+    CodeLabWhoa = 40,
+    CodeLabWhew = 41,
+    CodeLabStaring = 42,
+    CodeLabHiccup = 43,
+    CodeLabHelium = 44,
+    CodeLabYuck = 45,
+    CodeLabEnergyEat = 46,
+    CodeLabHeadsUp = 47,
+    CodeLabBlink = 48,
+    CodeLabSquint1 = 49,
+    CodeLabSquint2 = 50,
+    CodeLabTwitch = 51,
+    CodeLabZombie = 52,
+    CodeLabVampire = 53,
+    CodeLabGhoul = 54,
+    CodeLabScaredCozmo = 55,
+    CodeLabScaryCozmo = 56,
+    CodeLabCow = 57,
+    CodeLabRooster = 58,
+    CodeLabFrog = 59,
+    CodeLabSheep = 60,
+    CodeLabDuck = 61,
+    CodeLabTiger = 62,
+    CodeLabElephant = 63,
+    CodeLabChicken = 64,
+    CodeLabRattleSnake = 65,
 }
 
+// fidelity: M5-020
 /// <summary>
-/// A small set of expressions built from the eye parameters.
-///
-/// <b>All but <see cref="Expression.Neutral"/> are ours, not Anki's.</b> The engine has no named
-/// expressions: Cozmo's faces come from animation clips. The one face the engine does hold as a value is the
-/// resting face, which it loads from the shipped neutral-face animation; <see cref="Expression.Neutral"/> is
-/// exactly that (<see cref="ProceduralFacePose.ShippedNeutral"/>). The rest are built from the parameter
-/// semantics the names imply, on top of that resting face: a happy face raises the lower lids, an angry one
-/// tilts the upper lids inward, and so on. They are a local convenience for exercising the renderer and
-/// are labelled as such; nothing in the stack's behaviour layers depends on them.
-///
-/// To reproduce an original expression exactly, play the animation clip that contains it rather than using
-/// one of these. <c>robot.Animations.Play("anim_...")</c> uses the real asset data.
+/// The Code Lab expression mapping, transliterated from
+/// <c>CodeLabGame.GetAnimationTriggerForScratchIndex</c> (unity/scripts/csharp/CodeLab/CodeLabGame.cs:3094..3244).
 /// </summary>
 public static class Expressions
 {
-    /// <summary>Builds the pose for a named expression.</summary>
-    public static ProceduralFacePose Get(Expression e) => e switch
-    {
-        Expression.Neutral => ProceduralFacePose.ShippedNeutral(),
-        Expression.Happy => Happy(),
-        Expression.Sad => Sad(),
-        Expression.Angry => Angry(),
-        Expression.Surprised => Surprised(),
-        Expression.Sleepy => Sleepy(),
-        Expression.Blinking => Blinking(),
-        Expression.Squinting => Squinting(),
-        Expression.LookingLeft => Looking(-8f, 0f),
-        Expression.LookingRight => Looking(8f, 0f),
-        Expression.LookingUp => Looking(0f, -5f),
-        Expression.LookingDown => Looking(0f, 5f),
-        _ => ProceduralFacePose.ShippedNeutral(),
-    };
+    /// <summary><c>AnimationTrigger.Count</c> (0x23F): the switch's default sentinel.</summary>
+    private const AnimationTrigger Count = (AnimationTrigger)0x23F;
 
-    /// <summary>The shipped resting face, which every local expression is a variation of.</summary>
-    private static ProceduralFacePose Base() => ProceduralFacePose.ShippedNeutral();
-
-    private static ProceduralFacePose Both(Action<Eye, bool> apply)
+    /// <summary>
+    /// The trigger an expression plays. <see cref="Expression.Neutral"/> is the shipped neutral face and has no
+    /// trigger, so it returns null. Anything outside the Code Lab set throws rather than falling back to a trigger.
+    /// </summary>
+    public static AnimationTrigger? TriggerFor(Expression expression)
     {
-        var p = Base();
-        apply(p.Left, true);
-        apply(p.Right, false);
-        return p;
+        if (expression == Expression.Neutral) return null;
+        var trigger = FromIndex((int)expression);
+        if (trigger == Count)
+            throw new ArgumentOutOfRangeException(nameof(expression), expression, "not a Code Lab expression");
+        return trigger;
     }
 
-    /// <summary>Lower lids raised, which is what makes a face read as smiling.</summary>
-    private static ProceduralFacePose Happy() => Both((eye, _) =>
-    {
-        eye[EyeParam.LowerLidY] = 0.35f;
-        eye[EyeParam.EyeScaleY] = 0.9f;
-        eye[EyeParam.LowerInnerRadiusY] = 0.9f;
-        eye[EyeParam.LowerOuterRadiusY] = 0.9f;
-    });
+    /// <summary>
+    /// <c>GetAnimationTriggerForScratchIndex(index, isVertical)</c>. Index 0 draws from the global Unity stream:
+    /// <c>Random.Range(1, 34)</c> for the vertical grammar, else <c>Random.Range(1, 14)</c> (CodeLabGame.cs:3096..3108).
+    /// </summary>
+    public static AnimationTrigger TriggerForIndex(int index, bool isVertical) =>
+        TriggerForIndex(index, isVertical, UnityRandom.Shared);
 
-    /// <summary>Upper lids down at the outer edge, eyes a little smaller.</summary>
-    private static ProceduralFacePose Sad() => Both((eye, isLeft) =>
+    /// <summary>The same with an explicit stream, so a caller (or a test) can supply one.</summary>
+    internal static AnimationTrigger TriggerForIndex(int index, bool isVertical, UnityRandom random)
     {
-        eye[EyeParam.UpperLidY] = 0.3f;
-        eye[EyeParam.UpperLidAngle] = isLeft ? -18f : 18f;
-        eye[EyeParam.EyeScaleY] = 0.85f;
-        eye[EyeParam.EyeCenterY] = 2f;
-    });
+        if (index == 0)
+            index = isVertical ? random.Range(1, 34) : random.Range(1, 14);
+        return FromIndex(index);
+    }
 
-    /// <summary>Upper lids down at the inner edge, the opposite tilt to sadness.</summary>
-    private static ProceduralFacePose Angry() => Both((eye, isLeft) =>
+    /// <summary>The switch body (CodeLabGame.cs:3109..3244), index 1..65, default <c>AnimationTrigger.Count</c>.</summary>
+    private static AnimationTrigger FromIndex(int index) => index switch
     {
-        eye[EyeParam.UpperLidY] = 0.32f;
-        eye[EyeParam.UpperLidAngle] = isLeft ? 22f : -22f;
-        eye[EyeParam.UpperInnerRadiusX] = 0.1f;
-        eye[EyeParam.UpperInnerRadiusY] = 0.1f;
-    });
-
-    /// <summary>Wide open and round.</summary>
-    private static ProceduralFacePose Surprised() => Both((eye, _) =>
-    {
-        eye[EyeParam.EyeScaleX] = 1.1f;
-        eye[EyeParam.EyeScaleY] = 1.15f;
-        foreach (var p in Corners) eye[p] = 1f;
-    });
-
-    /// <summary>Lids most of the way closed.</summary>
-    private static ProceduralFacePose Sleepy() => Both((eye, _) =>
-    {
-        eye[EyeParam.UpperLidY] = 0.55f;
-        eye[EyeParam.LowerLidY] = 0.15f;
-    });
-
-    /// <summary>Fully closed: the eyes vanish, which is what a blink frame looks like.</summary>
-    private static ProceduralFacePose Blinking() => Both((eye, _) => eye[EyeParam.EyeScaleY] = 0.04f);
-
-    /// <summary>Lids in from both sides.</summary>
-    private static ProceduralFacePose Squinting() => Both((eye, _) =>
-    {
-        eye[EyeParam.UpperLidY] = 0.35f;
-        eye[EyeParam.LowerLidY] = 0.35f;
-    });
-
-    /// <summary>Both eyes shifted, which is how the robot looks somewhere without moving its head.</summary>
-    private static ProceduralFacePose Looking(float dx, float dy) => Both((eye, _) =>
-    {
-        eye[EyeParam.EyeCenterX] = dx;
-        eye[EyeParam.EyeCenterY] = dy;
-    });
-
-    private static readonly EyeParam[] Corners =
-    {
-        EyeParam.LowerInnerRadiusX, EyeParam.LowerInnerRadiusY,
-        EyeParam.UpperInnerRadiusX, EyeParam.UpperInnerRadiusY,
-        EyeParam.UpperOuterRadiusX, EyeParam.UpperOuterRadiusY,
-        EyeParam.LowerOuterRadiusX, EyeParam.LowerOuterRadiusY,
+        1 => AnimationTrigger.CodeLabHappy,
+        2 => AnimationTrigger.CodeLabVictory,
+        3 => AnimationTrigger.CodeLabUnhappy,
+        4 => AnimationTrigger.CodeLabSurprise,
+        5 => AnimationTrigger.CodeLabDog,
+        6 => AnimationTrigger.CodeLabCat,
+        7 => AnimationTrigger.CodeLabSneeze,
+        8 => AnimationTrigger.CodeLabExcited,
+        9 => AnimationTrigger.CodeLabThinking,
+        10 => AnimationTrigger.CodeLabBored,
+        11 => AnimationTrigger.CodeLabFrustrated,
+        12 => AnimationTrigger.CodeLabChatty,
+        13 => AnimationTrigger.CodeLabDejected,
+        14 => AnimationTrigger.CodeLabSleep,
+        15 => AnimationTrigger.CodeLabReactHappy,
+        16 => AnimationTrigger.CodeLabCelebrate,
+        17 => AnimationTrigger.CodeLabTakaTaka,
+        18 => AnimationTrigger.CodeLabAmazed,
+        19 => AnimationTrigger.CodeLabCurious,
+        20 => AnimationTrigger.CodeLabYes,
+        21 => AnimationTrigger.CodeLabNo,
+        22 => AnimationTrigger.CodeLabIDK,
+        23 => AnimationTrigger.CodeLabConducting,
+        24 => AnimationTrigger.CodeLabDancingMambo,
+        25 => AnimationTrigger.CodeLabFireTruck,
+        26 => AnimationTrigger.CodeLabPartyTime,
+        27 => AnimationTrigger.CodeLabDizzy,
+        28 => AnimationTrigger.CodeLabDizzyEnd,
+        29 => AnimationTrigger.CodeLab123Go,
+        30 => AnimationTrigger.CodeLabWin,
+        31 => AnimationTrigger.CodeLabLose,
+        32 => AnimationTrigger.CodeLabTapCube,
+        33 => AnimationTrigger.CodeLabGetInPos,
+        34 => AnimationTrigger.CodeLabIdle,
+        35 => AnimationTrigger.CodeLabWondering,
+        36 => AnimationTrigger.CodeLabWhee1,
+        37 => AnimationTrigger.CodeLabWhee2,
+        38 => AnimationTrigger.CodeLabWhee3,
+        39 => AnimationTrigger.CodeLabWhee4,
+        40 => AnimationTrigger.CodeLabWhoa,
+        41 => AnimationTrigger.CodeLabWhew,
+        42 => AnimationTrigger.CodeLabStaring,
+        43 => AnimationTrigger.CodeLabHiccup,
+        44 => AnimationTrigger.CodeLabHelium,
+        45 => AnimationTrigger.CodeLabYuck,
+        46 => AnimationTrigger.CodeLabEnergyEat,
+        47 => AnimationTrigger.CodeLabHeadsUp,
+        48 => AnimationTrigger.CodeLabBlink,
+        49 => AnimationTrigger.CodeLabSquint1,
+        50 => AnimationTrigger.CodeLabSquint2,
+        51 => AnimationTrigger.CodeLabTwitch,
+        52 => AnimationTrigger.CodeLabZombie,
+        53 => AnimationTrigger.CodeLabVampire,
+        54 => AnimationTrigger.CodeLabGhoul,
+        55 => AnimationTrigger.CodeLabScaredCozmo,
+        56 => AnimationTrigger.CodeLabScaryCozmo,
+        57 => AnimationTrigger.CodeLabCow,
+        58 => AnimationTrigger.CodeLabRooster,
+        59 => AnimationTrigger.CodeLabFrog,
+        60 => AnimationTrigger.CodeLabSheep,
+        61 => AnimationTrigger.CodeLabDuck,
+        62 => AnimationTrigger.CodeLabTiger,
+        63 => AnimationTrigger.CodeLabElephant,
+        64 => AnimationTrigger.CodeLabChicken,
+        65 => AnimationTrigger.CodeLabRattleSnake,
+        _ => Count,
     };
 }

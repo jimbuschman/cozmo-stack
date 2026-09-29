@@ -286,28 +286,30 @@ public static class Anim
         };
     }
 
-    /// <summary>Shows each built-in procedural expression in turn.</summary>
+    // fidelity: M5-020
+    /// <summary>Shows the shipped neutral face and plays the Code Lab expressions' triggers in turn.</summary>
     public static async Task<int> Face(string[] a)
     {
         bool offline = a.Contains("--offline");
-        if (!offline && Target(a) is null) { Console.WriteLine("usage: face-expressions <robot-ip> [--seconds 2] | face-expressions --offline"); return 1; }
+        if (!offline && Target(a) is null) { Console.WriteLine("usage: face-expressions <robot-ip> [--seconds 2] [--assets <dir>] | face-expressions --offline"); return 1; }
 
-        // --offline prints the art only. The renderer is a port of ProceduralFaceDrawer and is covered by
-        // tests over the recovered constants; this is for looking at a pose without a robot to hand.
+        // --offline prints the one shipped face and the Code Lab index -> trigger table. The Code Lab
+        // expressions are animation triggers, not faces, so there is no per-expression art to print.
         if (offline)
         {
-            foreach (var e in Enum.GetValues<Expression>())
-            {
-                var art = ProceduralFaceRenderer.Render(Expressions.Get(e));
-                Console.WriteLine();
-                Console.WriteLine($"{e}:");
-                Console.WriteLine(art.ToText());
-            }
+            Console.WriteLine();
+            Console.WriteLine("Neutral (the shipped neutral face):");
+            Console.WriteLine(ProceduralFaceRenderer.Render(ProceduralFacePose.ShippedNeutral()).ToText());
+            Console.WriteLine();
+            Console.WriteLine("Code Lab expressions (index -> trigger); index 0 is a random pick:");
+            for (int i = 1; i <= 65; i++)
+                Console.WriteLine($"  {i,2} -> {Expressions.TriggerForIndex(i, isVertical: false)}");
             return 0;
         }
 
         if (Target(a) is not var (ip, simulated)) return 1;
         double hold = Num(a, "--seconds", 2);
+        var assets = Arg(a, "--assets");
 
         CozmoRobot robot;
         try { robot = await CozmoRobot.ConnectAsync(ip, simulated); }
@@ -318,25 +320,29 @@ public static class Anim
         Console.WriteLine(ready ? $"ready: {why}" : $"NOT READY: {why}");
         if (!ready) { robot.Disconnect(); return 10; }
 
+        // A Code Lab expression is an animation trigger, so it needs the animation library. Neutral is a face and
+        // does not.
+        if (assets is not null) robot.Animations.LoadFrom(assets);
+
         var shown = new List<string>();
         foreach (var e in Enum.GetValues<Expression>())
         {
-            var bmp = ProceduralFaceRenderer.Render(Expressions.Get(e));
-            int lit = 0;
-            for (int y = 0; y < FaceBitmap.Height; y++)
-                for (int x = 0; x < FaceBitmap.Width; x++) if (bmp[x, y] != 0) lit++;
-            Console.WriteLine($"\n{e} ({lit} lit pixels):");
-            Console.WriteLine(bmp.ToText());
-            robot.Display.Hold(bmp, TimeSpan.FromSeconds(hold));
+            if (e != Expression.Neutral && assets is null)
+            {
+                Console.WriteLine($"\n{e}: skipped (a Code Lab expression needs --assets)");
+                continue;
+            }
+            Console.WriteLine($"\n{e}:");
+            robot.Face.HoldExpression(e, TimeSpan.FromSeconds(hold));
             shown.Add(e.ToString());
+            await Task.Delay(TimeSpan.FromSeconds(hold));
         }
         robot.Display.Clear();
 
         Console.WriteLine();
-        Console.WriteLine($"AUTOMATED CHECKS PASSED (face): {shown.Count} expressions rendered and sent.");
-        Console.WriteLine("HUMAN CHECK REQUIRED: each face on the robot should match the art printed above it. " +
-                          "These expressions are our own construction from the engine's parameter names, not " +
-                          "Anki's originals, so they will not match the retail robot exactly.");
+        Console.WriteLine($"AUTOMATED CHECKS PASSED (face): {shown.Count} expressions shown.");
+        Console.WriteLine("HUMAN CHECK REQUIRED: Neutral should be the resting face, and each Code Lab expression " +
+                          "should play the animation its trigger maps to.");
         robot.Disconnect();
         return 0;
     }

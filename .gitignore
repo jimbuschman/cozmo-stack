@@ -43,3 +43,7 @@ df.txt
 
 # Ghidra decompilation of the proprietary engine (regenerate with re-analysis/tools/ghidra/decompile.ps1)
 /re-analysis/decomp/
+
+# Python bytecode
+__pycache__/
+*.pyc

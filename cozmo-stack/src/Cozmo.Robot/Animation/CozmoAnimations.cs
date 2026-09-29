@@ -1,4 +1,5 @@
 using Cozmo.Protocol;
+using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Robot.Animation;
 
@@ -343,6 +344,21 @@ public sealed class CozmoAnimations : IDisposable
         return Play(pick.Name, replaceRunning);
     }
 
+    // fidelity: M5-020
+    /// <summary>
+    /// Plays the clip a shipped trigger resolves to, the same chain the engine walks for a trigger
+    /// (M5-034 D8 <c>AnimationTriggerResponsesContainer::GetResponse</c> then M5-011's group choice): the
+    /// trigger names an animation group in the shipped <c>AnimationTriggerMap.json</c>, and the group picks a
+    /// clip. Returns null when the shipped map names no group for the trigger.
+    /// </summary>
+    public Task<AnimationEndReason>? PlayTrigger(AnimationTrigger trigger, bool replaceRunning = true)
+    {
+        var lib = Library ?? throw new InvalidOperationException("no animation assets are loaded; call LoadFrom first");
+        var group = lib.GetAnimationForTrigger(trigger);
+        if (string.IsNullOrEmpty(group)) return null;
+        return PlayGroup(group, replaceRunning: replaceRunning);
+    }
+
     /// <summary>Stops whatever is playing. Returns false when nothing was.</summary>
     public bool Stop() => _scheduler.Stop();
 
@@ -544,15 +560,42 @@ public sealed class CozmoFace
         return bmp;
     }
 
-    /// <summary>Shows one of the built-in expressions.</summary>
-    public FaceBitmap ShowExpression(Expression expression) => SetParameters(Expressions.Get(expression));
+    // fidelity: M5-020
+    /// <summary>
+    /// Shows one of the shipped named expressions. <see cref="Expression.Neutral"/> is the shipped neutral face and
+    /// is sent as a face image; a Code Lab expression is an animation trigger and plays through the shipped
+    /// animation-group path. Returns the neutral bitmap for Neutral, or null when an animation was started instead.
+    /// </summary>
+    public FaceBitmap? ShowExpression(Expression expression)
+    {
+        if (expression == Expression.Neutral) return SetParameters(ProceduralFacePose.ShippedNeutral());
+        PlayExpression(expression);
+        return null;
+    }
 
-    /// <summary>Holds an expression on the face for a while, re-sending it at the animation rate.</summary>
+    // fidelity: M5-020
+    /// <summary>
+    /// Holds one of the shipped named expressions. Neutral is held as a face for the duration; a Code Lab expression
+    /// is an animation, so it plays its mapped trigger and the duration is not used (the clip's own timeline decides
+    /// how long it runs).
+    /// </summary>
     public void HoldExpression(Expression expression, TimeSpan duration)
     {
-        var bmp = ProceduralFaceRenderer.Render(Expressions.Get(expression));
-        Current = Expressions.Get(expression);
-        _robot.Display.Hold(bmp, duration);
+        if (expression == Expression.Neutral)
+        {
+            var pose = ProceduralFacePose.ShippedNeutral();
+            Current = pose;
+            _robot.Display.Hold(ProceduralFaceRenderer.Render(pose), duration);
+            return;
+        }
+        PlayExpression(expression);
+    }
+
+    private void PlayExpression(Expression expression)
+    {
+        var trigger = Expressions.TriggerFor(expression)
+            ?? throw new ArgumentOutOfRangeException(nameof(expression), expression, "not a Code Lab expression");
+        _robot.Animations.PlayTrigger(trigger);
     }
 }
 

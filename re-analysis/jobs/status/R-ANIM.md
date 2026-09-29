@@ -85,4 +85,50 @@ ahead of time; the manager spot-checked M5-006, M5-011, M10-004 and M5-013. Send
 - Stays IMPLEMENTATION_GAP: none of these records is settled yet (the manager settles after batch C).
 - No other layer touched.
 
-### Batch M5-C (pending: M5-020 expressions)
+### Batch M5-C (built; verifier PASS)
+
+- M5-020 rebuilt on the shipped Code Lab mapping: `Expressions.cs` now holds the 65-entry index→AnimationTrigger
+  switch transliterated from `CodeLabGame.cs:3109..3244` (default `Count` = 0x23F); `UnityRandom.cs` implements
+  libunity's xorshift128 and `Range(min,max)` exactly (R4/R5/R7/R8), seeded from the host `Environment.TickCount`;
+  `CozmoFace.ShowExpression`/`HoldExpression` play the mapped trigger through the shipped animation-group path;
+  `Neutral` stays the shipped neutral face. No invented poses remain.
+- The `Cozmo.Conformance/Anim.cs` `face-expressions` tool is the wiring call site (now needs `--assets`).
+- Seed value is UNKNOWN (Mono `get_TickCount` unread) → forced stand-in, flagged for the policy review.
+- `AnimationTrigger.Count` is not in the generated enum (the generator strips the sentinel); represented as
+  `(AnimationTrigger)0x23F`. The generator's `--check` is out of date for a pre-existing `M7-001` tag line, not this
+  diff (for the integrator).
+- Verifier PASS (full suite 1958/1958 at that point).
+
+## Settled
+
+Settled EXACT_SOURCE (9): **M5-001, M5-006, M5-010, M5-016, M5-019, M5-023, M5-027, M5-032, M10-002.** Each record's
+whole claimed path is built, the rows were verifier-checked against the binary, and the diff was verified PASS.
+
+## Left open, with why
+
+| record | why it stays IMPLEMENTATION_GAP |
+| --- | --- |
+| M5-011 | mood and cooldown time come from MoodManager (M7) as stand-ins |
+| M5-013 | the keyframe +0x28 (IsDone override) writers are RECOVERABLE_GAP (0x004F9770, 0x004F97DE) |
+| M5-014 | the UseHeadAngle-less head-angle fields are uninitialised; the SD2 forced choice needs the policy review |
+| M5-018 | the live audio animation is M6's; B-M6b-3 is BLOCKED |
+| M5-020 | the seed value is a forced stand-in; needs the policy review |
+| M5-021 | bionic libm's last-ulp trig; an EQUIVALENT_IMPLEMENTATION candidate for the policy review |
+| M5-022 | PathComponent::Abort / AbortDocking are M12/M13's; DriveWheels(0) is this stack's |
+| M5-030 | CarryingComponent (M12) and the M7-017 live idle interface |
+| M10-001 | the M11/M12/M15 consequences are seams |
+| M10-003 | Hiccup/CubeMoved +0x1C bodies RECOVERABLE; FistBump/Sparked/Pet/NoPreDockPoses not built |
+| M10-004 | the C3 sticky first-action gate needs the M8 ActionList; the firmware index interpretation is HARDWARE_ONLY |
+| M10-007 | RobotStateHistory::ComputeStateAt (M11) and the M4 SetNewPose fields |
+| M10-008 | the M8 ActionList and the SetDefaultHeadAndLiftState caller are absent |
+| M10-013 | forced policy MD1, to be COMPATIBILITY_POLICY at the next approval |
+
+## For the policy review (do not change status in this job)
+
+- **M5-014** — an entry without UseHeadAngle reads uninitialised head-angle fields; the stack's forced choice is
+  "outside every head window". Needs classification.
+- **M5-020** — the Unity Random seed value is unknowable; the stack seeds from the host clock (mechanism faithful,
+  value a stand-in).
+- **M5-021** — MathF vs bionic libm in the last ULP; an EQUIVALENT_IMPLEMENTATION candidate.
+- **M10-013** — MD1, already a forced policy.
+- **M10-004** — what the firmware does with a track index instead of a mask is HARDWARE_ONLY.

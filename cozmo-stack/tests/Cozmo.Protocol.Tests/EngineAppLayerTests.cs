@@ -1306,7 +1306,7 @@ public class EngineAppLayerTests
 
         robot.Lights.SetBackpack(LedColor.Red);
         robot.Lights.SetHeadlight(true);
-        robot.Face.ShowExpression(Cozmo.Robot.Animation.Expression.Happy);
+        robot.Face.ShowExpression(Cozmo.Robot.Animation.Expression.Neutral);
         robot.Audio.SendSilence();
         _ = robot.Motion.SetHeadAngleAsync(0.1f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
         lock (rig.Port.Sent) Assert.Contains(rig.Port.Sent, b => b[0] == (byte)new SetHeadAngle(0.1f).Id);
