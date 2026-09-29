@@ -6,3 +6,5 @@
 **Subsystems:** M5-animation, M10-derived. Every IMPLEMENTATION_GAP record of these, as the manifest has it when the job starts.
 
 **Notes:** Several M5 gaps are the audio animation, the M6 stand-in for RobotAudioClient's RobotAudioAnimation. Check B-M6b-3's status: if the live audio path has landed, wire it. Otherwise the record stays open, naming B-M6b-3. M10's carrying and pose gaps wait on M11/M12 pieces that now exist.
+
+**Pre-extraction:** `re-analysis/research/20260929-R-ANIM-pre-extraction.md` (request `requests/20260929-R-ANIM-pre-extraction.md`) answers most of this job's missing-source questions ahead of time. If it's there, have `@cozmo-verifier` check its rows first, and send only what it leaves open to `@cozmo-extractor`.
