@@ -40,6 +40,57 @@ public interface IWwiseOutputDevice
     /// <c>0x9EC4C4..0x9EC4D0</c> skips nodes already in {1,2}, and the inline walk sets the others to 2.
     /// </summary>
     int AdvanceState { get; set; }
+
+    /// <summary>V17 device match: the bus's <c>+0x28</c> key half (C8 <c>0x9E9E78</c> caller's lookup).</summary>
+    int DeviceKey28 => 0;
+
+    /// <summary>V17 device match: the bus's <c>+0x2C</c> key half.</summary>
+    int DeviceKey2C => 0;
+
+    /// <summary>C8 <c>0x9E9E78</c>: the device master gain <c>[device+0x74]</c>.</summary>
+    float MasterGain74 => 1f;
+
+    /// <summary>C8 <c>0x9E9E78</c>: the device master gain <c>[device+0x78]</c>.</summary>
+    float MasterGain78 => 1f;
+
+    /// <summary>
+    /// C8 <c>0x9E9E78</c>: the sink at <c>[device+0x70]</c> whose <c>vt+0x24</c> consumes the bus output
+    /// buffer. Its class is UNKNOWN (voice-callees Q1), so it is a caller seam; null drops the frame.
+    /// </summary>
+    IWwiseOutputSink? Sink => null;
+
+    /// <summary>
+    /// C8-seam <c>0x9E9E78</c> <c>[device+0x7C]</c> (C17): when non-null the native calls
+    /// <c>0xA1C9CC(arg, [device+0x80], [arg+0x10], [arg+0x14])</c>, then copies the u16 at <c>arg+0xe</c>
+    /// to <c>[device+0x80]+0xe</c>, before the <c>[device+0x70]-&gt;vt+0x24(this=[device+0x70], arg,
+    /// [arg+0x10], [arg+0x14])</c> sink. <paramref name="device80"/> is <c>[device+0x80]</c> (UNKNOWN,
+    /// no RTTI); <paramref name="maxFrames"/> is the u16 at <c>arg+0xe</c>; the last two are
+    /// <c>arg+0x10</c>/<c>arg+0x14</c>. The <c>[device+0x7C]</c>/<c>[device+0x80]</c> objects are UNKNOWN,
+    /// so this is the named caller seam; null means the native <c>[device+0x7C]</c> is 0.
+    /// </summary>
+    Action<float[], object?, int, float, float>? Route7CSeam => null;
+
+    /// <summary>
+    /// C8-seam <c>0x9E9E78</c>: the UNKNOWN <c>[device+0x80]</c> object, the first argument to
+    /// <c>0xA1C9CC</c> and the destination of the <c>arg+0xe</c> u16 copy. Its class is not established
+    /// (C17 residual), so it is a caller input; null means the native <c>[device+0x80]</c> is 0.
+    /// </summary>
+    object? OutputObject80 => null;
+
+    /// <summary>C9 <c>0x9E9F08</c>: <c>[device+0x70]-&gt;vt+0x28</c>, the per-frame device release.</summary>
+    void ReleaseFrame() { }
+}
+
+/// <summary>
+/// C8 <c>0x9E9E78</c>: the device's buffer consumer (<c>[device+0x70]-&gt;vt+0x24</c>). The output-device
+/// object's class is UNKNOWN (voice-callees Q1); the robot-audio caller supplies the sink that receives the
+/// mixed frame. C8 scales <b>both</b> of the buffer's gain words: <c>buffer+0x10 *= [device+0x74]*0x108DAF4</c>
+/// and <c>buffer+0x14 *= [device+0x78]*0x108DAF8</c>, so the sink receives the two gain words.
+/// </summary>
+public interface IWwiseOutputSink
+{
+    /// <summary>Consumes <paramref name="frames"/> samples of the bus output at the two scaled gain words.</summary>
+    void Consume(ReadOnlySpan<float> samples, int frames, float gain74, float gain78);
 }
 
 /// <summary>
@@ -117,6 +168,53 @@ public sealed class WwiseOutputDeviceState
 
     /// <summary>G9: the list the render body and <c>0x9EBE6C</c> iterate.</summary>
     public IReadOnlyList<IWwiseOutputDevice> Devices => _devices;
+
+    /// <summary>G7 <c>0x9EAF90</c>: the device master gain <c>0x108DAF4</c> (term resets it to 1.0).</summary>
+    public float DeviceGain74 { get; set; } = 1f;
+
+    /// <summary>G7 <c>0x9EAF90</c>: the device master gain <c>0x108DAF8</c> (term resets it to 1.0).</summary>
+    public float DeviceGain78 { get; set; } = 1f;
+
+    /// <summary>
+    /// V17 device path <c>0x9E9E78(device, buffer)</c> (C8): the caller of the bus output finds the device
+    /// whose key matches the bus's <c>+0x28/+0x2C</c>, scales the buffer gain by the device master gains and
+    /// <c>0x108DAF4/0x108DAF8</c>, then calls <c>[device+0x70]-&gt;vt+0x24</c> (the <see cref="IWwiseOutputSink"/>).
+    /// </summary>
+    /// <returns>True when a matching device with a sink consumed the frame.</returns>
+    public bool RouteBus(WwiseMixBus bus)
+    {
+        ArgumentNullException.ThrowIfNull(bus);
+        foreach (var device in _devices)
+        {
+            if (device.DeviceKey28 != bus.Key.DeviceKey28 || device.DeviceKey2C != bus.Key.DeviceKey2C)
+                continue;
+            // C8 0x9E9E78: buffer+0x10 *= [device+0x74]*0x108DAF4, buffer+0x14 *= [device+0x78]*0x108DAF8.
+            float gain74 = device.MasterGain74 * DeviceGain74;
+            float gain78 = device.MasterGain78 * DeviceGain78;
+            // C8 0x9E9E78: the [device+0x7C] branch runs before the [device+0x70]->vt+0x24 sink. The
+            // [device+0x7C]/[device+0x80] object is UNKNOWN, so the named seam owns 0xA1C9CC(arg,
+            // [device+0x80], arg+0x10, arg+0x14) and the copy of arg+0xe to [device+0x80]+0xe.
+            device.Route7CSeam?.Invoke(bus.Buffer, device.OutputObject80, bus.MaxFrames, gain74, gain78);
+            if (device.Sink is not { } sink) return false;
+            sink.Consume(bus.Buffer, bus.Frames, gain74, gain78);
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// V17/C9 <c>0x9E9F08</c>: the per-frame device walk: <c>[device+0x70]-&gt;vt+0x28</c> then
+    /// <c>[device+0x74] = [device+0x78]</c>. The device-object release is the caller's.
+    /// </summary>
+    public void ReleaseDeviceFrames()
+    {
+        foreach (var device in _devices)
+        {
+            device.ReleaseFrame();
+            // 0x9E9F64/0x9E9F68: [device+0x74] = [device+0x78]. The interface exposes the pair read-only;
+            // the native stores the previous next gain into the current gain. The caller's device owns it.
+        }
+    }
 
     /// <summary>
     /// V3/N1 pre-loop: per device, call <c>vt+0x2c</c>; when non-zero call <c>vt+0x30</c> (voice-callees Q1).

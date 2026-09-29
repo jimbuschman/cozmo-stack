@@ -1536,6 +1536,156 @@ candidates are floor1 inverse1/inverse2, the IMDCT input/output convention, or t
 combine. `M6-002` stays `IMPLEMENTATION_GAP`; its `unresolved` names this. The decoder is
 unwired (B-M6b-3).
 
+## Correction C15 (manager, 2026-09-28): the six B-M6b-2 MISSING bodies
+
+The B-M6b-2 implementer stopped with six `MISSING` bodies after building the M6-022
+object model. One bounded extraction pass read them:
+
+- the six MISSING bodies: `re-analysis/research/20260928-B-M6b-2-missing-bodies.md`
+
+The report is the full specification; the rows below are the settled
+behaviour-changing steps and the corrections to earlier rows.
+
+### Premises C12 got wrong (corrected here)
+
+| # | C12 said | The source says | citation |
+|---|---|---|---|
+| Y1 | the modulator coefficient recompute `0x9E3630` computes `1-(2-cos w)^2`, giving a NaN `sqrt` for every real angle | `0x9E3630` is `vnmls.f64 d17,d11,d11` = `d11*d11 - 1.0`, so `arg = (2-cos w)^2 - 1 >= 0` for all real `w`; the NaN handler `0x9E52E4` is defensive | `0x9E3630`; decomp `009e2bd0.c:337` |
+| Y2 | the `0x9E2BD0`/`0x9E52F8` bodies have a NEON lane order to recover | both are scalar VFP; the only NEON is the two `vst1.32` node zero-inits at `0x9E5068`/`0x9E5128`; there is no lane order | `0x9E2BD0..0x9E52F4` |
+| Y3 | V26 `0x9FDD90..0x9FDE30` covers the completion | `0x9FD910` is a separate table/random segment selector tail-called when `tick >= [obj+0x34]` | `0x9FDE20/0x9FDE28/0x9FDE30`; `0x9FD910..0x9FDD5C` |
+| Y4 | V12's slot class is at `0xA54C50` (unnamed) | the voice slot stores vtable `0x103DC38` (plugin present) / `0x103DB98` (no plugin) from GOT `0x1040174`/`0x1040170`; the bus slot's effect object vtable is registry-assigned at `0x9CC2AC` (registry `0x108D9DC`) | `0xA54C30/0xA54C50`, `0xA54E70/0xA54E78`; `0xA4EA88` |
+
+### M6-022 — settled rows (new bodies; all EXACT_SOURCE unless noted)
+
+| step | what the original does | citation |
+|---|---|---|
+| V7-a | `0xA4C584(voice,bit)`: for every connection in `[voice+0x28]`, set bit2 of `[conn+0x6C]` to the low bit of `bit`; `bit` is the return of `voice->vt+0x58`. | `0xA4C584..0xA4C5AC` |
+| V7-b | `0xA022E8(bus,unused)`: if `[bus+0x1BE]&0x20` set, clear it, decrement a u16 at `[entry+0x22]` for each of `[bus+0x1F0]` entries in `[bus+0x1EC]`, then decrement the global dword `0x108DE78`. `0xA0228C(bus)` is the exact inverse (set bit5, increment). | `0xA022E8..0xA0232C`; `0xA0228C..0xA022E0` |
+| V7-c | `0xA01768(bus,&out)`: cached 4-bit next-source code and 3-bit index in `[bus+0x1BB]` (bit7 valid); calls `0x9EEDA4([bus+0xE0])`, then `[[bus+0xE0]]->vt+0x120([bus+0x14C])` when the result is 3. Called as `0xA01768(bus,&[voice+0xE0])`. | `0xA01768..0xA017EC` |
+| V7-d | `0xA4B93C(voice)`: initialises the voice's send/connection table (`[voice+0x10]` array, `[voice+0x14]` count, `[voice+0x18]` capacity, 0x4C-byte entries), copies the per-target byte and bus send gain into entry 0, gathers via `0x9BD368` then dispatches `0x9D4228`, and latches bit1 of `[voice+0xCD]`. | `0xA4B93C..0xA4BC30` |
+| V7-e | `0x9D4228(paramBlock,outArray,flag,&countByte,obj)`: gathers active entries (`value>0`) into the output array and calls `0x9D4108(obj,entry,mask)` per entry; `0x9D4108` looks up `0x9A7EB0` and calls `0xA43434` for nodes matching the mask, then `found->vt+0xC`. | `0x9D4228..0x9D46EC`; `0x9D4108..0x9D4218` |
+| V7-f | `0xA54A30(voice)` start-stream/insert-FX build: `0xA5321C(voice+0x100,...)`; up to four bus slots via `0xA019B8`, `0x9CC2AC` (plug-in create) and `0x9CC4D8` (version/type check); the 0x9C-byte voice slot object (vtable `0x103DC38`/`0x103DB98`, `vt+0x28` init `0xA79858`); then `0xA764D4` filter A/B init, `0xA5676C` gain init. `0x9CC2AC`/`0x9CC4D8` bodies read. | `0xA54A30..0xA54F1C`; `0x9CC2AC..0x9CC34C`; `0x9CC4D8..0x9CC508` |
+| V7-order | In `0xA54F1C`: `source->vt+0x4C` → `0xA4BC58` → state machine (`0xA56650` at `0xA554F8`; `0xA4C584` at `0xA554E8`; `0xA022E8`/`0xA0228C` at `0xA55398`/`0xA55484`; `0xA54A30` at `0xA555C0`) → `0xA4B4B0` (`0xA55644`) → `0xA4BC58` again (`0xA5572C`). `0xA4B93C`/`0x9D4228`/`0xA01768` are reached from the stop/duck and source-attach paths, not from this state machine. | `0xA54F1C..0xA5574C` |
+| V28-coeff | Modulator coefficient recompute `0x9E35C0..0x9E3664`: `damping=[r6+0x88]`, `f=[r6+0x84]`; damping 0 → `c1=1,c2=0`; else `t=(f<=48000)?24000/f:0.5`, `t=t^(-damping)`, `w=t*24000/48000*2π`, `a=2-cos(w)`, `c2=sqrt(a*a-1)-a`, `c1=c2+1`; store `[r6+0x94]=c1`, `[r6+0x98]=c2`. Phase `[r6+0xa0]=(f<48000)?f/48000:1`, `*2π` when `shape==0`; radians/cycles conversion on a shape change; `[r6+0xa4]=shape`, `[r6+0xa8]=0`. Recurrence `out[n]=gain*shape*c1 - out[n-1]*c2`. | `0x9E35C0..0x9E36B0` |
+| V28-pool | `0x9E2BD0` pool: type-0 records (0x4C B) in `[arg+0x20]`, type-1 records (0x30 B) in `[arg+0x14]`; chunk node 0x28 B (`+0` next, `+4/+8/+0xC` buffer1, `+0x10/+0x14/+0x18` buffer2, `+0x1C/+0x20/+0x24` float buffer); 16-entry nodes; compaction frees a node when `used < cap/2`. | `0x9E2BD0..0x9E3150`; `0x9E2F4C..0x9E3150` |
+| V26-tail | `0x9FD910(obj)`: picks the next 3-component target (next table row, or a random row via the LCG `0x108D868` and the `[obj+8]` shuffle bag), sets base `= row + rand*slope` (`rand` in `[-1,1)`), slopes `= target-base`, segment length `= max(1,(G+e3-1)/G)`, rate `1/len`, t-start `-old/len`; advances the threshold `[obj+0x34]`. | `0x9FD910..0x9FDD5C` |
+| V18b-vt | Bus insert-FX slot `0xA4E974`: slot at `bus+i*0x1C` (i=0..3); fields `+0xC8` format, `+0xCC` Init arg, `+0xD4` descriptor, `+0xD8` effect object (`vt+0x1C` Init, `vt+0xC` Reset, `vt+0x20` Execute), `+0xDC` 0x24-byte helper (vtable `0x103D538`), `+0xE0` flags, `+0x138` out buffer, `+0x13C` format, `+0x140` state, `+0x144/+0x146` u16 counts, `+0x150` object. | `0xA4E974..0xA4ECD4` |
+| V12-vt | Voice insert-FX slot object (0x9C B): vtable `0x103DC38` (plugin) / `0x103DB98` (no plugin); slots `+0x24=0xA52678`, `+0x28=0xA79858` (init), `+0x2C=0xA79DAC`, `+0x38=0xA79A2C`, `+0x3C=0xA79A78`. | `0xA54BE0..0xA54E98` |
+
+### M6-022 — residuals after C15
+
+The bus metering DSP identity and per-lane mapping `0xA501B0..0xA50B54`
+(`0xA50044..0xA50FD0`) stay **RECOVERABLE_GAP** (scalar flow, offsets, loop bounds,
+gains and store targets are EXACT_SOURCE; the filter identity needs the Wwise 2016.2 SDK
+meter source or a dynamic trace). The bus insert-FX effect class is registry-assigned
+and stays **UNKNOWN**. `0xA25FF8` stays RECOVERABLE_GAP. The sub-callees `0x9BE28C`,
+`0x9BDA88`, `0x9BD368`, `0x9BF8E4`, `0xA5E694` inside `0xA4B93C`, and `0x9EEDA4`
+inside `0xA01768`, are **RECOVERABLE_GAP**. Whether the shipped media exercises the
+`0xA022E8`/`0xA0228C`/`0xA01768` states is **UNKNOWN**. All class names stay UNKNOWN.
+`M6-022` stays `IMPLEMENTATION_GAP` (unbuilt/unwired).
+
+## Correction C16 (manager, 2026-09-28): the V7 completion branch 0xA552F0 and the budget step gate
+
+The B-M6b-2 build left one `MISSING`: the V7 continuation `0xA552F0`. One bounded
+extraction pass read it:
+
+- the V7 completion branch: `re-analysis/research/20260928-B-M6b-2-v7-completion.md`
+
+### Premise correction
+
+| # | C12 said | The source says | citation |
+|---|---|---|---|
+| Z1 | `[voice+0x1C0]->vt+0x18(E0)` (no third argument); the return-2 case was not distinguished | the call is `[voice+0x1C0]->vt+0x18(&voice[0x1C0], E0, r2)` with `r2 = 1` (from the `0xA555E8` branch) or `0` (fall-through); a `bus->vt+0x3C` return of 2 short-circuits to `0xA5530C` and never reaches `0xA552F0`; the wrapper vtable is `0x103C120` (from `[0x104017C]+8`) and the slot body is `0xA4C620` | `0xA552C8..0xA55308`, `0xA555E8`, `0xA552EC`, `0xA5485C/0xA54860`, `0xA4C620..0xA4C63C` |
+
+### M6-022 — settled rows added
+
+| step | what the original does | citation |
+|---|---|---|
+| V7-g | `0xA552F0` (entered when `(A=[voice+0xCD]&1)==0 && E4==2 && SRC10 bit0==1 && bus->vt+0x3C(E0) != 2`): `r3=[voice+0x1C0]`, call `[voice+0x1C0]->vt+0x18(&voice[0x1C0], E0, r2)`; return 1 → `0xA55218` (set the continue flag `r5=1`); otherwise `voice->vt+0x48(voice)` and return 0. `0xA55218` is just `mov r5,#1` and ignores `r2`. | `0xA552F0..0xA55328`; `0xA55218` |
+| V7-h | `0xA4C620` (the `0x103C120` slot `+0x18`): if `[this+4]` (=`[voice+0x1C4]`) is null return 1; else tail-call `[[voice+0x1C4]]->vt+0x18(inner, E0, r2)`. `[voice+0x1C4]` is set by `0xA52678` from the `0xA54A30` chain build. | `0xA4C620..0xA4C63C`; `0xA54854/0xA52678` |
+| V7-i | Budget step `0xA55228`: `r2 = s = round([params+0xC]*[r6+0x164])`; if `[r6+0x1D8] >= s` clear the start flag `r5=0`, else keep `r5&1`; if `[r6+0x1D8] >= 0` store `[r6+0x1D8] - s`. **There is no gate on `[r6+0x164]` itself**; the only gate is `[voice+0xE8]` bit0 at `0xA5521C`, and `0xA55228` is only ever reached with that bit clear. | `0xA55228..0xA55244`; `0xA5521C..0xA55224`, `0xA553C4..0xA553D4` |
+
+### Residuals
+
+The downstream node of the `voice+0x1C0` wrapper (`[voice+0x1C4]`), the meaning of
+`r2`/`E4`/`E0`, and whether the shipped media exercises the `0xA552F0` paths are
+**UNKNOWN**. The writer of `[r6+0x164]` stays RECOVERABLE_GAP (M6 line 909).
+
+## Correction C17 (manager, 2026-09-28): the V7 P2F==0 branch, the four parameter ramps, and the C8 seam
+
+The B-M6b-2 verifier read the instruction stream and contradicted the voice-callees
+report Q4 line 227 (the shared tail) and its four-ramp field offsets. One bounded
+extraction pass settled both:
+
+- the V7 P2F branch: `re-analysis/research/20260928-B-M6b-2-v7-p2f-branch.md`
+
+### Premises corrected
+
+| # | earlier row said | The source says | citation |
+|---|---|---|---|
+| W1 | Q4 line 227: `0xA5521C` is the tail (`r5=0; [voice+0xCD] |= 8; return 0`) | `0xA5521C` is the **E8 gate** (`ldrb r3,[r4,#0xe8]; tst #1; bne 0xA553A4`); the tail is `0xA5528C` (`orr r3,r3,#8`); the return is `r5` (`mov r0,r5`) | `0xA5521C..0xA55224`; `0xA5528C..0xA55290` |
+| W2 | Q4 lines 169-173: the ramp current field is `[voice+0x344]`, one target offset uncertain | the four 16-byte records are `{current +0, target +4, u16 rate +8, u8 flag +0xb}`; ramps update `+0x340/+0x510/+0x350/+0x520`, overwrite targets `+0x344/+0x514/+0x354/+0x524`, rates `+0x348/+0x518/+0x358/+0x528`, flags `+0x34b/+0x51b/+0x35b/+0x52b` | `0xA550CC..0xA551F0`; bodies `0xA55444/0xA55410/0xA553D8/0xA551C0` |
+
+### M6-022 — settled rows added
+
+| step | what the original does | citation |
+|---|---|---|
+| V7-j | `P2F=[sp+0x2f]` loaded at `0xA5509C`; `P2F!=0` runs the four ramps then the `0xA551F0` state machine; `P2F==0` enters `0xA5532C`. | `0xA5509C`, `0xA550BC..0xA550C8` |
+| V7-k | `0xA5532C`: `r3=E4`, `r2=[voice+0xCD]`; `E4==2` -> `0xA55490` (`A` set -> `0xA55534`: `[voice+0x1C0]->vt+0x14(E0)`, then `E0==2` -> `0xA554A4` else `[voice+0x1C0]->vt+0xC` -> `0xA55498`; `A` clear -> `0xA55498`: `E0==1` -> `0xA5556C` else `0xA554A4`); `E4==1` -> `voice->vt+0x48` -> `0xA5521C`; other -> `0xA55218`. `0xA5556C`: if `[bus+0x1D8] < s` call `[voice+0x1C0]->vt+0x10(&s)` and store the return in `[params+0x28]`; `r5=0`; -> `0xA5521C`. `0xA554A4`: `r5=0` -> `0xA5521C`. | `0xA5532C..0xA5559C` |
+| V7-l | Common continuation: `0xA5521C` E8 gate (`0xA553A4` detour: `bus->vt+0x3C(E0)`, ret 1 -> `voice->vt+0x58` + `0xA4C584`, ret 2 -> `voice->vt+0x48`, then clear E8 bit0) -> `0xA55228` budget step -> `0xA55248` dispatch (`E4==0` -> `0xA5526C`; `E4!=0 && A clear` -> `0xA55384`, `P2F!=0` -> `0xA022E8(bus,1)`; `E4!=0 && A set && P2F==0` -> `0xA5547C` `0xA0228C(bus)`) -> `0xA5526C` bit0=P2F, `r5!=0 && [voice+0x1B4]==0` -> `0xA555B8` (`0xA54A30`; ret 1 -> `0xA555F0` `0xA4B4B0`+gain recompute) -> `0xA5528C` tail (`[voice+0xCD] |= 8`, return `r5`). | `0xA5521C..0xA5529C` |
+| V7-m | The four parameter ramps (only `P2F!=0` and `[voice+0x28]!=0`): per record, if the clamped target differs from the stored target, `flag=1`, `target=new` (clamped to 100.0; ramps 2/4 first `max(target,[bus+0x68]/[bus+0x6c])`, then floor at 0), `cur += (target_old-cur)*0.125*rate`. | `0xA550CC..0xA551F0`, bodies as above |
+| C8-seam | `0x9E9E78` seam: `[device+0x7C]!=0` -> `0xA1C9CC(arg, [device+0x80], [arg+0x10], [arg+0x14])`, then `*(u16*)([device+0x80]+0xe) = *(u16*)(arg+0xe)`, then tail-call `[device+0x70]->vt+0x24(this=[device+0x70], arg, [arg+0x10], [arg+0x14])`. | `0x9E9E84..0x9E9F00` |
+
+### Residuals
+
+The `[device+0x70]` sub-object identity and its `vt+0x24` body, and the `[device+0x80]`
+object identity, stay **UNKNOWN**; the semantic names of `E4`/`E0`/`P2F` and the four
+ramp fields stay **UNKNOWN**; whether the shipped media exercises the `0xA5532C` path is
+**UNKNOWN**.
+
+## Correction C18 (manager, 2026-09-28): the `0xA4BC58` output arguments and the ramp targets
+
+The B-M6b-2 fix pass flagged that `[sp+0x2e]` and the ramp targets `sp+0x30..0x3C` were
+not settled. One bounded extraction pass read them:
+
+- the ramp targets: `re-analysis/research/20260928-B-M6b-2-ramp-targets.md`
+
+### Premises corrected
+
+| # | earlier row said | The source says | citation |
+|---|---|---|---|
+| X1 | Q4 line 162: the copy is `[voice+0x344], [voice+0x524], [voice+0x524], [voice+0x354]` | `sp+0x30=[voice+0x344]`, `sp+0x34=[voice+0x514]`, `sp+0x38=[voice+0x354]`, `sp+0x3c=[voice+0x524]` | `0xA55068..0xA5508C` |
+| X2 | Q4 line 253: the four output floats include `[sp+0x6c]` | only `[sp+0x5c..0x68]` (param_8..11) are outputs and are zeroed; `[sp+0x6c]` is param_12, an input pointer | `0xA4BC84..0xA4BCAC`, `0xA4BF38` |
+| X3 | Q4 line 264: the per-connection copy reads `[voice+0x3c]/[voice+0x40]` | it reads `[r7+0x3c]/[r7+0x40]` where `r7 = param_2 = [source+0xC]+0xC` | `0xA4BC6C`, `0xA4BE80..0xA4BE88` |
+
+### M6-022 — settled rows added
+
+| step | what the original does | citation |
+|---|---|---|
+| V7-n | `0xA4BC58` argument list: `param_1=voice` (in), `param_2=[source+0xC]+0xC` (in), `param_3=id` (in), `param_4=gain` (in), `param_5=source->vt+0x4C` return (in), `param_6=&sp+0x2e` (out byte), `param_7=&sp+0x2f` (out byte), `param_8..11=&sp+0x30/0x34/0x38/0x3c` (out floats), `param_12=([bus+4]&0x10)?&[bus+0x140]:0` (in). | `0xA55014..0xA55058` |
+| V7-o | The four float outputs are zeroed at entry; if `id!=0` set to 100.0; then per connection set to the running minima of `[conn+0x50]`/`[conn+0x54]`/`[conn+0x58]`/`[conn+0x5c]` (A-LPF/B-LPF/A-HPF/B-HPF). When the copy is skipped they hold the minima (or 0), never uninitialised memory. | `0xA4BC90..0xA4BCAC`, `0xA4BD74..0xA4BDAC`, `0xA4BE80..0xA4BF34` |
+| V7-p | `param_6` (`[sp+0x2e]`) = `r5`, written at the epilogue `strb r5,[r3]`; `r5=0` iff the connection list is non-empty, some `[conn+0x6C]&2 == 0`, and `voice->vt+0x3C` returns 0; otherwise `r5=1`. The caller copies the four voice targets only when `[sp+0x2e]!=0`. | `0xA4BCB4..0xA4BCDC`, `0xA4BD08..0xA4BD20`, `0xA4BFEC..0xA4BFF0`, `0xA5505C..0xA55064` |
+| V7-q | A second `0xA4BC58` call at `0xA5572C` (the `0xA555F0` completion path) passes the same `&sp+0x2e`/`&sp+0x2f` but its float outputs are `sp+0x40`; it therefore rewrites `[sp+0x2e]`/`[sp+0x2f]` after the ramps have run. | `0xA5570C..0xA5572C` |
+
+### Residuals
+
+The Wwise meaning of `[sp+0x2e]`, `[sp+0x2f]` and the connection bit `[conn+0x6C]&2` stays
+**UNKNOWN** (values and branches are exact). Whether the shipped media exercises the
+`[sp+0x2e]==0` copy-skip path stays **UNKNOWN**.
+
+## Correction C19 (manager, 2026-09-28): the 0xA4C584 bit argument
+
+The B-M6b-2 verifier read the `0xA5521C` E8-gate return-1 path and found the frozen row
+V7-a says the wrong source for `0xA4C584`'s second argument.
+
+| # | C15 said | The source says | citation |
+|---|---|---|---|
+| V7-a-corrected | "`bit` is the return of `voice->vt+0x58`" | the native saves the **`bus->vt+0x3C` return** in `[sp+0x24]` (`0xA554D0 str r0,[sp,#0x24]`) *before* calling `voice->vt+0x58` (`0xA554D8`/`0xA554DC`, return discarded), then passes that saved value as `r1` (`0xA554E4 ldr r1,[sp,#0x24]`) to `0xA4C584(voice,r1)` (`0xA554E8`) | `0xA554CC..0xA554E8` |
+
+V7-l's phrase "ret 1 -> `voice->vt+0x58` + `0xA4C584`" is corrected accordingly: the
+`voice->vt+0x58` call happens for its side effect, but the bit passed to `0xA4C584` is
+the low bit of the saved `bus->vt+0x3C` return.
+
 ## Appendix J: C11 gap-1 report (voice-engine residuals)
 
 Copied verbatim from `re-analysis/research/20260928-I-M6b-gap1-extraction.md`.
