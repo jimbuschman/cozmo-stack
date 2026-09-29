@@ -12,4 +12,15 @@ citations. Fold them in the way G-M7 did for M7-021: the verifier checks every r
 **A contradiction to fix:** the M9-024 report shows that property 15 is the modulator's trigger selector (value 2 is
 note-off), not stop-playback. The stop gate is property 1. So `WwiseModulatorProp.EnvelopeStopPlayback = 15` is wrong.
 Check every settled M9 record that relies on it. M9-013's MusicTrack-to-target hop and M9-024's `voice+0x20` check are
-still open: give them to `@cozmo-extractor`.
+answered in `20260929-M9-leftovers-extraction.md` (Sonnet). The manager spot-checked the `+0x128` call at 0x00A3DDFC,
+the owner gate at 0x009E2338, the only owner store at 0x009E27F8 and the note-state allocation at 0x00A3E4BC. All hold.
+Two corrections to that report:
+- its "Joining the two" section calls `0x00A71138` the tail of `0x00A70D90`. The function index has `0x00A71138` as a
+  separate 1008-byte function; `0x00A70D90` is 924 bytes. The link still holds through the call site 0x00A70EF4, which
+  is inside `0x00A70D90`;
+- it says no `.bnk` is on disk. The banks are inside `re-analysis/obb/assets/cozmo_resources/sound/AudioAssets.zip`,
+  and `WwiseSoundLibrary` reads them. So the Cozmo.bnk flag for 110896138 (Part 1 row 7), and whether the singing
+  note-offs pair with their note-ons (Part 2 row 12, from the shipped MIDI order), can both be read from the shipped
+  assets.
+
+What is still open goes to `@cozmo-extractor`: the report's open questions 1, 3 and 5..7.
