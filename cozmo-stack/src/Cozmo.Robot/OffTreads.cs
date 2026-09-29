@@ -41,10 +41,9 @@ public enum OffTreadsState : sbyte
 /// +0x2C4 = 1, +0x2B8 = −1; on anything but OnTreads SetOnChargerPlatform(false) (M4 C8 P6); the freeplay pause
 /// flag 2 "OffTreads" (M15 seam).
 ///
-/// MISSING (A5): pitchExtreme uses Anki's Radians <c>operator&gt;</c>/<c>operator&lt;</c> (0x84CC90: "diff &gt; 0 &amp;&amp;
-/// !IsNear(1e-5)"). Whether the Radians difference is wrapped to (−π, π] before the sign test, and IsNear's exact
-/// bound, are not in the rows; a wrapped difference would make every pitch below −1.2217 rad count as extreme. The
-/// plain float comparisons below are kept until those two facts are extracted.
+/// <b>pitchExtreme (A5, C3):</b> the pitch test uses Anki's <see cref="Radians"/> comparisons, not plain floats.
+/// See <see cref="Radians"/>: <c>operator&gt;</c> tests the raw diff &gt; 0 and wraps inside IsNear; <c>operator&lt;</c>
+/// swaps the operands. R-ANIM part 2 item 1 O1..O4 settle the whole pair.
 /// </summary>
 public sealed class OffTreadsClassifier
 {
@@ -189,7 +188,10 @@ public sealed class OffTreadsClassifier
         bool ySign = s24 > 0;
         double d = (double)pitch - (IsPhysical ? OnBackCentrePhysicalRad : OnBackCentreSimulatedRad);
         bool onBack = Math.Abs(d) <= OnBackHalfWidthRad;
-        bool pitchExtreme = pitch > OnFacePitchHighRad || pitch < OnFacePitchLowRad;   // MISSING: Radians operators (see summary)
+        // fidelity: M10-001
+        // A3: pitch = Radians(robot+0x304); A5/C3: the Anki Radians operators, not plain float comparisons.
+        var pitchRadians = new Radians(pitch);
+        bool pitchExtreme = pitchRadians > new Radians(OnFacePitchHighRad) || pitchRadians < new Radians(OnFacePitchLowRad);
         bool level = MathF.Abs(pitch) <= LevelPitchRad;
 
         // A6
@@ -277,4 +279,75 @@ public sealed class OffTreadsClassifier
 
     /// <summary>The on-back centre in use (A5).</summary>
     public double OnBackCentreRad => IsPhysical ? OnBackCentrePhysicalRad : OnBackCentreSimulatedRad;
+}
+
+// fidelity: M10-001
+/// <summary>
+/// Anki's <c>Radians</c> (layout: value at +0, rescale flag at +4). The constructor (0x84C832) stores the value,
+/// sets the flag and calls <see cref="Rescale"/> (C3, R-ANIM part 2 item 1 O1..O4). The comparison operators are
+/// the ones the off-treads classifier's pitch test uses.
+/// </summary>
+public struct Radians
+{
+    /// <summary>0x40490FDB (O3).</summary>
+    public const float Pi = 3.14159274f;
+    /// <summary>0x40C90FDB (O3).</summary>
+    public const float TwoPi = 6.28318548f;
+
+    /// <summary>+0: the value.</summary>
+    public float Value;
+    /// <summary>+4: the rescale flag; 1 for a value built by the constructor.</summary>
+    private bool _rescale;
+
+    public Radians(float value)
+    {
+        Value = value;
+        _rescale = true;
+        Rescale();
+    }
+
+    /// <summary>
+    /// 0x84C87C (O3, C3): a no-op when the flag is clear or the value is already in (−π, π]; for |x| &lt; 10,
+    /// add/subtract 2π in a loop; otherwise <c>x − 2π·(float)(int)ceilf(x/2π − 0.5)</c>.
+    /// </summary>
+    public void Rescale()
+    {
+        if (!_rescale) return;
+        if (Value > -Pi && Value <= Pi) return;
+        if (MathF.Abs(Value) < 10f)
+        {
+            while (Value <= -Pi) Value += TwoPi;
+            while (Value > Pi) Value -= TwoPi;
+        }
+        else
+        {
+            Value -= TwoPi * (float)(int)MathF.Ceiling(Value / TwoPi - 0.5f);
+        }
+    }
+
+    /// <summary>
+    /// 0x84CC90 (O1, C3): false unless the raw (unwrapped) <c>a.value − b.value</c> is strictly &gt; 0, then
+    /// <c>!IsNear(a, b, Radians(1.0e-5f))</c>. The difference is not wrapped here.
+    /// </summary>
+    public static bool operator >(Radians a, Radians b)
+    {
+        float diff = a.Value - b.Value;
+        if (!(diff > 0f)) return false;                 // strictly > 0; false on 0 or NaN
+        return !IsNear(a, b, new Radians(1.0e-5f));
+    }
+
+    /// <summary>0x84CD12 (O4): swaps the operands and calls <c>operator&gt;</c>.</summary>
+    public static bool operator <(Radians a, Radians b) => b > a;
+
+    /// <summary>
+    /// 0x84CC0A (O2, C3): copy <paramref name="a"/>, wrap it, subtract <paramref name="b"/>.value (b is not
+    /// re-wrapped), wrap the difference, and return <c>|diff| &lt; |tol|</c> strictly (false on NaN).
+    /// </summary>
+    private static bool IsNear(Radians a, Radians b, Radians tol)
+    {
+        var wrappedA = new Radians(a.Value);
+        float diff = wrappedA.Value - b.Value;
+        var wrappedDiff = new Radians(diff);
+        return MathF.Abs(wrappedDiff.Value) < MathF.Abs(tol.Value);
+    }
 }

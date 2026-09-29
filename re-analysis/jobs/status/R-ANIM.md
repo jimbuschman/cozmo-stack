@@ -47,4 +47,19 @@ ahead of time; the manager spot-checked M5-006, M5-011, M10-004 and M5-013. Send
 
 ## Batches
 
-(pending)
+### Batch M10 (built; verifier PASS)
+
+- Pre-extraction rows verified by `@cozmo-verifier` (all behaviour-changing rows PASS; two literal-address typos
+  corrected in the report).
+- Inventory correction C1 and manifest evidence approved (`--approve M10-derived`).
+- Built: M10-001 (Radians operators), M10-004 (CompletelyUnlockAllTracks), M10-008 (ctor FLT_MAX, +8-only restore
+  gate, compound action); M10-002 and M10-003 already matched C4/C5 and got tests and corrected comments.
+- **Cross-layer file touched:** `cozmo-stack/src/Cozmo.Robot/Motion.cs` (M4-control) — added
+  `CozmoMotion.CompletelyUnlockAllTracks()`, a new M10 method at the lock storage; no M4 behaviour changed.
+- Stays IMPLEMENTATION_GAP with a precise `unresolved`: M10-003 (Hiccup/CubeMoved/FistBump/Sparked/Pet/NoPreDockPoses
+  strategies), M10-004 (the M8 ActionList sticky gate), M10-007 (M11/M4 rewind), M10-008 (the M8 ActionList and the
+  SetDefaultHeadAndLiftState caller), M10-013 (forced policy MD1).
+- Test fix after the verifier: the vacuous `ShakenSlopeAndFrustrationIgnoreEnabledStateChanged` and the weak Radians
+  `10.5f` expectation. Re-verified PASS.
+
+### Batch M5 (pending)

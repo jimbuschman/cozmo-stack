@@ -257,6 +257,40 @@ public sealed class CozmoMotion
     /// <summary><c>MovementComponent::UnlockTracks</c> 0x0063fe5c: remove the owner's entry per bit.</summary>
     public void UnlockTracks(byte mask, string who) { lock (_gate) UnlockTracksLocked(mask, who); }
 
+    // fidelity: M10-004
+    /// <summary>
+    /// <c>MovementComponent::CompletelyUnlockAllTracks</c> (C1, 0x00640F84, export 0x640F85): walk the per-track lock
+    /// sets in ascending index; a track whose set is empty is skipped entirely; every non-empty set is cleared,
+    /// whoever holds it, with no filter by lock name and no test of the direct-drive flags. For each cleared track it
+    /// logs "Unlocking track %s" with the mask <c>1&lt;&lt;k</c> and sends one <c>EnableAnimTracks</c> whose 1-byte
+    /// payload is the track index <c>k</c>, not the mask, reliable and non-hot. This stack models only the three
+    /// motion tracks (head, lift, body; M4-014), so indices 0..2 are the only non-empty ones here; the engine walks
+    /// 0..7. What the firmware does with an index instead of a mask is HARDWARE_ONLY (M10-004 <c>unresolved</c>): the
+    /// byte is kept exact. Unlike <see cref="UnlockTracks"/>, it neither erases one holder nor accumulates one mask.
+    /// </summary>
+    public void CompletelyUnlockAllTracks()
+    {
+        lock (_gate)
+        {
+            for (int k = 0; k < _trackLocks.Length; k++)
+            {
+                if (_trackLocks[k].Count == 0) continue;                    // empty set: no log, no clear, no message
+                Log($"MovementComponent.UnlockAllTracks: Unlocking track {TrackName(k)}");
+                _trackLocks[k].Clear();
+                _robot.SendMessage(new EnableAnimTracks { Field0 = (byte)k });   // the index k, not 1<<k
+            }
+        }
+    }
+
+    /// <summary>The name <c>EnumToString(AnimTrackFlag)</c> gives the mask <c>1&lt;&lt;k</c> (C1).</summary>
+    private static string TrackName(int k) => k switch
+    {
+        0 => "Head",
+        1 => "Lift",
+        2 => "Body",
+        _ => k.ToString(),
+    };
+
     /// <summary>
     /// The motion-track mask for an animation's tracks: the engine's <c>IActionRunner</c> +0x54 mask uses the
     /// same head/lift/body bits (M4-014 <see cref="HeadTrack"/>/<see cref="LiftTrack"/>/<see cref="BodyTrack"/>);

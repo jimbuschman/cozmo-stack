@@ -111,18 +111,15 @@ public static class UnexpectedMovementResponse
 /// (AnimationState.tag) ≠ 0 the BODY track must be locked, otherwise return; IS_PICKING_OR_PLACING returns with no
 /// reset; status &amp; 0x5008 resets +0x94..+0xA0 and returns.
 ///
-/// <b>Rules (M10-002, B6..B11):</b> |l|+|r| &lt; 20 decays; quiet gyro (&lt; 0.174533): opposite wheel signs, or
-/// |0.5·|(r−l)/46| − |gz|| &gt; 0.2, adds 1 with type 0; active gyro with the opposite sign adds 2 with type 2
-/// (sums += 2l, 2r); the same sign decays and returns. The first increment stamps +0x94 with the state timestamp; it
-/// fires at count &gt; 10.
+/// <b>Rules (M10-002, B6..B11, C4):</b> |l|+|r| &lt; 20 decays; quiet gyro (&lt; 0.174533): opposite wheel signs, or
+/// |0.5·|(r−l)/46| − |gz|| &gt; 0.2, adds 1 with type 0 and adds l and r to the sums (+0x98/+0x9C); active gyro with
+/// the opposite sign adds 2 with type 2 (sums += 2l, 2r); the same sign decays and returns, its decrement guarded by
+/// count &gt; 0 as B7's is. The first increment stamps +0x94 with the state timestamp; it fires at count &gt; 10. The
+/// fire test is reached only from the quiet-gyro and active-opposite-sign paths, never the decay paths.
 ///
 /// <b>Response (M10-007, B12..B18):</b> gate IsReactionTriggerEnabled(20); ComputeStateAt(+0x94); side from the wheel
 /// means; the rewind and the obstacle; then on every fire the broadcast and the reset.
 ///
-/// MISSING (B8): whether the +1 paths add l and r to the sums (+0x98/+0x9C). B9 says the +2 path adds 2l and 2r;
-/// B8 is silent. The +1 paths here add l and r once, as the existing code did, until the row is extracted.
-/// MISSING (B9): whether the same-sign decrement is guarded by count &gt; 0 as B7's is ("count−− and return"). The
-/// guard is kept until the row is extracted.
 /// MISSING (B15): the AbsoluteLocalizationUpdate that SetNewPose leads to (AddVisionOnlyStateToHistory → +0x2C6 →
 /// Robot::Update's SendAbsLocalizationUpdate(), M4 C9 F1..F3): its field values (timestamp, frame id after the ++,
 /// origin, pose) are not in any inventory row (the F rows are not in the M4 inventory file). So the rewind is not
@@ -235,7 +232,7 @@ public sealed class UnexpectedMovementDetector
         {
             if (float.IsNegative(r - l) == float.IsNegative(gz))
             {
-                if (Count > 0) Count--;                                          // MISSING (B9): the guard
+                if (Count > 0) Count--;                                          // B9-a / C4: guarded by count > 0
                 return null;
             }
             type = UnexpectedMovementType.TurnedInOppositeDirection;

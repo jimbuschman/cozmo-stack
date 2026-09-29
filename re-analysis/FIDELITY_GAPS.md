@@ -811,7 +811,7 @@ Each of these is a question already answered. The original's behaviour is establ
 
 * where: `cozmo-stack/src/Cozmo.Robot/OffTreads.cs`
 * effect: the robot state (picked up, on back, on side) is classified differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* rests on: the existing stack code compared against re-analysis/inventory/M10-derived.md and its corrections C3 (R-ANIM part 2 item 1): the plain pitch comparisons were replaced with Anki's Radians operators
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: A1..A7 CheckAndUpdateTreadsState 0x511E00..0x5121F8 (thresholds 0x5121FC, 0x5122A0..0x5122BC); A8..A15 consequences: Falling DAS + ActionList::Cancel(-1) (0x511FF0..0x512084; gap1 3a..3e), RobotOffTreadsStateChanged broadcast 0x512092, OnTreads 0x512112..0x512184, carried 0x512100, SetOnChargerPlatform 0x512188, pause flag 0x5121E2; gap1 5a IMU filter state zeroed (0x5100E0..0x5100FE); R-ANIM pre-extraction part 2 item 1 O1..O4: Radians operator> 0x84CC90, IsNear 0x84CC0A, operator< 0x84CD12, rescale 0x84C87C
 * outstanding: The Radians comparisons are settled (C3): operator> tests the raw diff > 0 and wraps inside IsNear. The M11/M12/M15 consequences are seams.
@@ -820,7 +820,7 @@ Each of these is a question already answered. The original's behaviour is establ
 
 * where: `cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs`
 * effect: unexpected movement is detected differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* rests on: the existing stack code compared against re-analysis/inventory/M10-derived.md and its corrections C4 (R-ANIM part 2 item 2): the +1 paths' sums and the guarded same-sign decrement are reproduced
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: B1 tail call 0x63E392; B2..B5 gates 0x63E3B4..0x63E426; B6 ctor constants 0x63DAB0..0x63DB00; B7..B11 rules 0x63E428..0x63E5DA; R-ANIM pre-extraction part 2 item 2 B7..B11-a: 0x63E474, 0x63E49C, 0x63E588, 0x63E51C..0x63E53E, 0x63E674, 0x63E5B2
 * outstanding: Settled (C4): the +1 paths add l and r to the sums, and the same-sign decrement is guarded by count > 0.
@@ -829,7 +829,7 @@ Each of these is a question already answered. The original's behaviour is establ
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/ReactionStrategies.cs`
 * effect: reactions trigger differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* rests on: the existing stack code compared against re-analysis/inventory/M10-derived.md and its corrections C5 (R-ANIM part 2 item 5.1): the Shaken, Slope and Frustration EnabledStateChanged overrides are the base no-op
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: C12 factory switch 0x60D618; C13..C17 Generic, Shaken, Slope, Frustration; gap1 1 Cliff filter 0x60DC7C..0x60DCA2; gap1 8 strategy predicates; gap2 1..6 PlacedOnCharger 0x614474..0x6144D0, CubeMoved 0x60C04A..0x60C1E2 / 0x60BEB4, Face 0x60CB84..0x60CE20, position-update base 0x612168..0x612B22, Object 0x6114A0..0x611582; R-ANIM pre-extraction part 2 item 5.1: EnabledStateChanged +0x1C is a no-op (0x60B73B) for Shaken/Slope/Frustration
 * outstanding: The +0x1C EnabledStateChanged for Shaken, Slope and Frustration is settled as a no-op (C5). The CubeMoved (0x60C03C) and Hiccup (0x610AF8) +0x1C bodies are RECOVERABLE_GAP; FistBump, Sparked, the NoPreDockPoses +0x70 writers and Pet EnabledStateChanged (InitReactedTo) are not built.
@@ -838,10 +838,10 @@ Each of these is a question already answered. The original's behaviour is establ
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs`
 * effect: reactions are enabled, ordered or suppressed differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* rests on: the existing stack code compared against re-analysis/inventory/M10-derived.md and its corrections C1 (R-ANIM part 2 item 3.1..3.7): CompletelyUnlockAllTracks is built in CozmoMotion and called by the reaction path
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: C3 gate 0x5A355A..0x5A357A; C4..C8 0x5A359A..0x5A37CA; gap1 4a IsReactionTriggerEnabled 0x5A40B8; 4b DisableReactionsWithLock 0x5A27F6..0x5A2960; 4c RemoveDisableReactionsLock 0x5A3A52..0x5A3B94; 4e game messages 0x5A4D2A..0x5A4F3A; R-ANIM pre-extraction part 2 item 3.1..3.7: CompletelyUnlockAllTracks 0x640F84..0x641092 (sets MC+0x28+12k, index payload 0x64101A)
-* outstanding: CompletelyUnlockAllTracks is settled (C1); what the firmware does with a track index instead of a mask is HARDWARE_ONLY. The C3 sticky first-action gate cannot be evaluated without an ActionList (M8) and is logged when absent.
+* outstanding: CompletelyUnlockAllTracks is settled (C1); what the firmware does with a track index instead of a mask is HARDWARE_ONLY. This stack models 3 motion tracks (M4-014) where the engine walks 8; the other five can never be locked here. The C3 sticky first-action gate cannot be evaluated without an ActionList (M8) and is logged when absent.
 
 **M10-007 — Unexpected-movement response: gate, history lookup, side and obstacle (d = 25), rewind SetNewPose, AddCollisionObstacle, broadcast always, reset** (live path)
 
@@ -856,10 +856,10 @@ Each of these is a question already answered. The original's behaviour is establ
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs`
 * effect: a behaviour resumes differently after a reaction
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
+* rests on: the existing stack code compared against re-analysis/inventory/M10-derived.md and its corrections C1 and C2 (R-ANIM part 2 item 3 and 4): the ctor FLT_MAX, the +8-only restore gate and the compound head/lift action are reproduced
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: C7 0x5A3610..0x5A3682; C9 0x5A25E4..0x5A26DA; C10 flags 0x60F904; C11 0x5A2BB8..0x5A2C3A, 0x5A1BCC..0x5A1D26; R-ANIM pre-extraction part 2 item 4.1..4.8: ctor 0x5A0864..0x5A0A6C, SetDefaultHeadAndLiftState 0x5A1B40, TryToResume 0x5A2B40, MoveLiftToHeightAction 0x54899C
-* outstanding: Settled (C1, C2): CompletelyUnlockAllTracks; the ctor FLT_MAX in +8/+0xC; the restore gate reads +8 only; the compound action's parameters. MoveLiftToHeightAction::Init/CheckIfDone (+0x88/+0x8C/+0x90) are RECOVERABLE_GAP, not needed for this path.
+* outstanding: Settled (C1, C2): CompletelyUnlockAllTracks; the ctor FLT_MAX in +8/+0xC; the restore gate reads +8 only and requires the action list empty; the compound action's parameters. The restore is not reachable in this stack: there is no ActionList (M8) to answer "is the list empty", and SetDefaultHeadAndLiftState has no production caller (the engine's caller is the game message at 0x5A5042, which this stack replaces with a public API). MoveLiftToHeightAction::Init/CheckIfDone (+0x88/+0x8C/+0x90) are RECOVERABLE_GAP, not needed for this path.
 
 **M10-013 — Raw accel/gyro before the first RobotState: heap contents in the engine; 0 here (forced policy)** (live path)
 

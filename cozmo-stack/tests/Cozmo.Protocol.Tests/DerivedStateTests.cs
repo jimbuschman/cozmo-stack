@@ -340,6 +340,46 @@ public class DerivedStateTests
         Assert.Equal(OffTreadsState.OnTreads, c.Current);
     }
 
+    // ------------------------------------------------------------------ Anki::Radians (M10-001, C3)
+
+    /// <summary>
+    /// M10-001 / C3 (R-ANIM part 2 item 1 O1..O4): <c>operator&gt;</c> tests the raw, unwrapped
+    /// <c>a.value − b.value</c> strictly &gt; 0 and then <c>!IsNear(a, b, Radians(1e-5))</c>; IsNear wraps a and the
+    /// difference; <c>operator&lt;</c> swaps the operands.
+    /// </summary>
+    [Fact]
+    public void TheRadiansComparisonsTestTheRawDifferenceThenTheWrappedNearness()
+    {
+        // O1: strictly diff > 0; equal and reverse are false.
+        Assert.False(new Radians(1.0f) > new Radians(1.0f));
+        Assert.False(new Radians(0.5f) > new Radians(1.0f));
+        Assert.True(new Radians(1.0f) > new Radians(0.5f));
+
+        // O2: the nearness test wraps. pi-1e-6 and -pi+1e-6 are 2pi-2e-6 apart raw, but 2e-6 apart wrapped,
+        // below the 1e-5 tolerance, so operator> is false even though the raw diff is positive.
+        var a = new Radians(Radians.Pi - 1.0e-6f);
+        var b = new Radians(-Radians.Pi + 1.0e-6f);
+        Assert.True(a.Value - b.Value > 0f);
+        Assert.False(a > b);
+
+        // O4: operator< swaps the operands and calls operator>.
+        Assert.True(new Radians(0.5f) < new Radians(1.0f));
+        Assert.False(new Radians(1.0f) < new Radians(0.5f));
+    }
+
+    /// <summary>M10-001 / C3 (O3): <c>rescale</c> leaves (−π, π] alone, loops by 2π under |x| &lt; 10, and uses the ceil form above.</summary>
+    [Fact]
+    public void RadiansRescaleWrapsIntoMinusPiToPi()
+    {
+        Assert.Equal(0.5f, new Radians(0.5f).Value, 6);
+        Assert.Equal(Radians.Pi, new Radians(Radians.Pi).Value, 6);                 // π is in range (<= π)
+        Assert.Equal(-Radians.Pi + 0.1f, new Radians(Radians.Pi + 0.1f).Value, 5);
+        Assert.Equal(Radians.Pi - 0.1f, new Radians(-Radians.Pi - 0.1f).Value, 5);
+        // O3 else branch: x − 2π·(float)(int)ceilf(x/2π − 0.5). 2π = 6.28318548, so 10.5/2π − 0.5 = 1.171127,
+        // ceil = 2, and 10.5 − 2·6.28318548 = −2.066371. The expected value is that arithmetic, not a call.
+        Assert.Equal(-2.0664f, new Radians(10.5f).Value, 4);
+    }
+
     // ------------------------------------------------------------------ the detector
 
     /// <summary>
@@ -538,6 +578,91 @@ public class DerivedStateTests
         var d2 = Mov();
         for (uint i = 0; i < 20; i++) d2.Update(State(i, left: 100, right: 100, gz: 0.0f));
         Assert.Equal(0, d2.Count);                 // straight and not turning: expected 0, measured 0
+    }
+
+    /// <summary>
+    /// M10-002 / C4 (B8-b, B9-b): the quiet-gyro +1 paths add l and r once to the sums at +0x98/+0x9C, and the
+    /// gyro-active opposite-sign path adds 2 to the count and 2l, 2r.
+    /// </summary>
+    [Fact]
+    public void TheUnexpectedMovementSumsMatchTheAccumulationRule()
+    {
+        var d = Mov();
+        for (uint i = 0; i < 5; i++) d.Update(State(i, left: -50, right: 50));   // quiet gyro, opposite signs: +1 each
+        Assert.Equal(5, d.Count);
+        Assert.Equal(-250f, d.SumLeft, 3);      // 5·l
+        Assert.Equal(250f, d.SumRight, 3);      // 5·r
+
+        var spun = Mov();
+        spun.Update(State(0, left: 50, right: 60, gz: -1.0f));   // gyro active, opposite signs: +2
+        Assert.Equal(2, spun.Count);
+        Assert.Equal(100f, spun.SumLeft, 3);    // 2·l
+        Assert.Equal(120f, spun.SumRight, 3);   // 2·r
+    }
+
+    /// <summary>M10-002 / C4 (B9-a): the same-sign decrement is guarded by count &gt; 0, so it never goes negative.</summary>
+    [Fact]
+    public void TheSameSignDecayCannotMakeTheCountNegative()
+    {
+        var d = Mov();
+        d.Update(State(0, left: 50, right: 50, gz: 0.5f));   // active, same sign, count already 0
+        Assert.Equal(0, d.Count);
+    }
+
+    // ------------------------------------------------------------------ EnabledStateChanged (M10-003, C5)
+
+    /// <summary>
+    /// M10-003 / C5 (R-ANIM part 2 item 5.1): the +0x1C EnabledStateChanged for Shaken, Slope and Frustration is the
+    /// base no-op (0x60B73B). Each strategy's predicate (and, for the empty override, its base force flag) is true
+    /// before the disable/enable cycle and unchanged after it; a non-no-op override would move one of these.
+    /// </summary>
+    [Fact]
+    public void ShakenSlopeAndFrustrationIgnoreEnabledStateChanged()
+    {
+        using var rig = new Rig();
+        var ctx = rig.Context();
+
+        // Shaken: robot+0x37C (FilteredAccelMagnitude) > 16000, so its predicate is true.
+        var shaken = new RobotShakenStrategy();
+        rig.Stream(80, az: 30000);
+        Assert.True(RobotShakenStrategy.WantsToRun(rig.Robot));
+        Assert.True(shaken.ShouldTrigger(ctx, null, 0));
+        shaken.EnabledStateChanged(ctx, false);
+        shaken.EnabledStateChanged(ctx, true);
+        Assert.True(RobotShakenStrategy.WantsToRun(rig.Robot));
+        Assert.True(shaken.ShouldTrigger(ctx, null, 0));
+
+        // Slope: 28.6 degrees, picked up, gyro quiet for over 0.4 s, so its predicate is true.
+        var slope = new PlacedOnSlopeStrategy();
+        rig.Stream(1, pitch: 0.5f, flags: RobotStatusFlag.IsPickedUp);
+        Assert.True(slope.ShouldTrigger(ctx, null, 1.0));
+        slope.EnabledStateChanged(ctx, false);
+        slope.EnabledStateChanged(ctx, true);
+        Assert.True(slope.ShouldTrigger(ctx, null, 1.0));
+
+        // Frustration: Confident driven below the −0.6 threshold and the cooldown elapsed, so its predicate is true.
+        var model = new MoodModel();
+        model.AddEvent(new EmotionEvent("TestConfidenceDown", new[] { new EmotionAffector(EmotionType.Confident, -1.0) }));
+        var mood = new MoodState(model);
+        Assert.True(mood.Trigger("TestConfidenceDown", 0));
+        var moodCtx = rig.Context(mood: mood);
+        var frustration = new FrustrationStrategy(-0.6f, 60f);
+        Assert.True(frustration.ShouldTrigger(moodCtx, null, 10));
+        frustration.EnabledStateChanged(moodCtx, false);
+        frustration.EnabledStateChanged(moodCtx, true);
+        Assert.True(frustration.ShouldTrigger(moodCtx, null, 10));
+        Assert.Equal(0.0, frustration.LastAnimationCompleteSec);
+
+        // C6: the empty override leaves the base force flag alone across a disable/enable cycle too.
+        foreach (var s in new IReactionTriggerStrategy[] { shaken, slope, frustration })
+        {
+            var forced = (ReactionTriggerStrategy)s;
+            forced.Forced = true;
+            s.EnabledStateChanged(ctx, false);
+            s.EnabledStateChanged(ctx, true);
+            Assert.True(forced.Forced);
+            forced.Forced = false;
+        }
     }
 
     // ------------------------------------------------------------------ the sensors plumbing

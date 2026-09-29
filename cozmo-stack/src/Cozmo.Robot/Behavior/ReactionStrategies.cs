@@ -198,7 +198,7 @@ public sealed class GenericReactionStrategy : ReactionTriggerStrategy, IDisposab
 /// <summary>
 /// RobotShaken (C15, C5, C10): (running || IsRunnable) &amp;&amp; WantsToRun, where WantsToRun is always called and is
 /// robot+0x37C (the 0.05/0.95 filtered |accel|, RS8) &gt; 16000 (0x6146CC..0x6146E0). Flags (0, 1, 0).
-/// MISSING: its EnabledStateChanged (+0x1C) is not in gap1 4j; nothing is done.
+/// C5: its EnabledStateChanged (+0x1C) is the base no-op (0x60B73B); the disable/enable calls have no effect.
 /// </summary>
 public sealed class RobotShakenStrategy : ReactionTriggerStrategy
 {
@@ -228,7 +228,7 @@ public sealed class RobotShakenStrategy : ReactionTriggerStrategy
 /// (10, 55) &amp;&amp; quietFor &gt; 0.4 &amp;&amp; (pickedUp || now − lastPicked &lt; 1.5) &amp;&amp; +0x355 &lt; 2. Flags (0, 1, 0).
 /// MISSING (C16): whether the two stamps are updated before the pitch test returns, and whether "max of raw gyro" is
 /// over the absolute values: the existing order (both stamps first, max of |x|, |y|, |z|) is kept until extracted.
-/// MISSING: its EnabledStateChanged (+0x1C) is not in gap1 4j; nothing is done.
+/// C5: its EnabledStateChanged (+0x1C) is the base no-op (0x60B73B); the disable/enable calls have no effect.
 /// </summary>
 public sealed class PlacedOnSlopeStrategy : ReactionTriggerStrategy
 {
@@ -276,7 +276,7 @@ public sealed class PlacedOnSlopeStrategy : ReactionTriggerStrategy
 /// AnimationComplete stamps BaseStationTimer seconds (0x60EEF4). Flags: shouldResumeLast 0, CanInterruptOther 0;
 /// CanInterruptSelf is not in the rows and cannot be observed (the predicate is false while Frustration is current).
 /// The params are the map's frustrationParams (maxConfidence, cooldownTime_s). The mood is the M7 interface (MD2).
-/// MISSING: its EnabledStateChanged (+0x1C) is not in gap1 4j; nothing is done.
+/// C5: its EnabledStateChanged (+0x1C) is the base no-op (0x60B73B); the disable/enable calls have no effect.
 /// </summary>
 public sealed class FrustrationStrategy : ReactionTriggerStrategy
 {

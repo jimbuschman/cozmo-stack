@@ -656,4 +656,176 @@ public class CorrectionTests
         Assert.True(random.WantsToStart(inputs, 0, out _));
         Assert.True(random.EffectiveCooldownSec > 10);
     }
+
+    // ---------------------------------------------------------------- 10: CompletelyUnlockAllTracks (M10-004)
+
+    /// <summary>
+    /// M10-004 / C1 (R-ANIM part 2 item 3.1..3.7): <c>CompletelyUnlockAllTracks</c> walks the per-track lock sets,
+    /// skips the empty ones, clears every non-empty set and sends one <c>EnableAnimTracks</c> per cleared track whose
+    /// 1-byte payload is the track index k, not the mask 1&lt;&lt;k.
+    /// </summary>
+    [Fact]
+    public void CompletelyUnlockAllTracksClearsEverySetAndSendsTheIndex()
+    {
+        using var rig = new Rig();
+        var motion = rig.Robot.Motion;
+        motion.LockTracks(CozmoMotion.HeadTrack, "a");     // index 0, mask 1
+        motion.LockTracks(CozmoMotion.BodyTrack, "b");     // index 2, mask 4
+        rig.Pump();
+        rig.Sent.Clear();
+
+        motion.CompletelyUnlockAllTracks();
+
+        rig.Pump();
+        Assert.Equal(0, motion.LockedTracks);
+        Assert.Equal(new byte[] { 0, 2 }, rig.Sent.OfType<EnableAnimTracks>().Select(e => e.Field0));
+    }
+
+    /// <summary>M10-004 / C1 (3.2): a track whose lock set is empty is skipped: no log, no clear, no message.</summary>
+    [Fact]
+    public void CompletelyUnlockAllTracksSkipsEmptySets()
+    {
+        using var rig = new Rig();
+        var motion = rig.Robot.Motion;
+        motion.LockTracks(CozmoMotion.LiftTrack, "a");     // only lift: index 1
+        rig.Pump();
+        rig.Sent.Clear();
+
+        motion.CompletelyUnlockAllTracks();
+
+        rig.Pump();
+        Assert.Equal(new byte[] { 1 }, rig.Sent.OfType<EnableAnimTracks>().Select(e => e.Field0));
+        Assert.Equal(0, motion.LockedTracks);
+    }
+
+    /// <summary>
+    /// M10-004 / C7, C1: a reaction's StopAllMotors rule unlocks completely when any track is locked and the direct
+    /// drive does not hold them.
+    /// </summary>
+    [Fact]
+    public void AReactionCompletelyUnlocksTheTracksWhenDirectDriveDoesNotHoldThem()
+    {
+        using var rig = new Rig();
+        using var manager = new BehaviorManager(Ctx(rig));
+        manager.AddReaction(new FireStrategy(ReactionTrigger.UnexpectedMovement, resumeLast: false) { Fire = true },
+                            M10Support.RunnableBehaviour("react"));
+        rig.Robot.Motion.LockTracks(CozmoMotion.HeadTrack | CozmoMotion.BodyTrack, "someone");
+        rig.Pump();
+        rig.Sent.Clear();
+
+        Assert.NotNull(manager.CheckReactions(0));
+
+        rig.Pump();
+        Assert.Equal(0, rig.Robot.Motion.LockedTracks);
+        Assert.Equal(new byte[] { 0, 2 }, rig.Sent.OfType<EnableAnimTracks>().Select(e => e.Field0));
+    }
+
+    // ---------------------------------------------------------------- 11: the head/lift restore (M10-008)
+
+    /// <summary>
+    /// M10-008 / C2 (R-ANIM part 2 item 4.3..4.5): <c>SetDefaultHeadAndLiftState(enable)</c> stores the pair and,
+    /// when the action list is empty, queues the compound action now: the head action with the stored angle, the lift
+    /// with the stored height, in list order {head, lift}.
+    /// </summary>
+    [Fact]
+    public void SetDefaultHeadAndLiftQueuesTheCompoundActionWhenTheActionListIsEmpty()
+    {
+        using var rig = new Rig();
+        using var manager = new BehaviorManager(Ctx(rig)) { ActionListIsEmpty = () => true };
+
+        manager.SetDefaultHeadAndLiftState(true, 0.3f, 60f);
+
+        rig.Pump();
+        var head = rig.Sent.OfType<SetHeadAngle>().Last();
+        var lift = rig.Sent.OfType<SetLiftHeight>().Last();
+        Assert.Equal(0.3f, head.AngleRad, 4);
+        Assert.Equal(60f, lift.HeightMm, 4);
+        Assert.True(rig.Sent.IndexOf(head) < rig.Sent.IndexOf(lift));   // list order {head, lift}
+    }
+
+    /// <summary>
+    /// M10-008 / C2 (4.2, 4.4): with a non-empty action list the enable arm only stores; and the disable arm stores
+    /// FLT_MAX and moves nothing.
+    /// </summary>
+    [Fact]
+    public void SetDefaultHeadAndLiftOnlyStoresWhileTheActionListIsNotEmptyAndNeverMovesOnDisable()
+    {
+        using var rig = new Rig();
+        using var manager = new BehaviorManager(Ctx(rig)) { ActionListIsEmpty = () => false };
+
+        manager.SetDefaultHeadAndLiftState(true, 0.3f, 60f);   // non-empty list: stored only
+        manager.SetDefaultHeadAndLiftState(false, 0f, 0f);     // disable: FLT_MAX, no move
+        rig.Pump();
+        Assert.Empty(rig.Sent.OfType<SetHeadAngle>());
+        Assert.Empty(rig.Sent.OfType<SetLiftHeight>());
+    }
+
+    /// <summary>
+    /// M10-008 / C2 (4.6, 4.7): the TryToResume restore runs only when +8 != FLT_MAX and the action list is empty.
+    /// The constructor's FLT_MAX in +8 skips it before any SetDefaultHeadAndLiftState.
+    /// </summary>
+    [Fact]
+    public void TheConstructorDefaultSkipsTheResumeRestore()
+    {
+        using var rig = new Rig();
+        bool empty = false;
+        using var manager = new BehaviorManager(Ctx(rig)) { ActionListIsEmpty = () => empty };
+        manager.Add(new Fake("idle", ticks: 99));
+        manager.AddReaction(new FireStrategy(ReactionTrigger.UnexpectedMovement, resumeLast: true) { Fire = true },
+                            new Fake("react", ticks: 1));
+        manager.StartAsync("idle", 0).GetAwaiter().GetResult();
+        Assert.NotNull(manager.CheckReactions(1));
+
+        empty = true;                       // the restore gate would pass, but +8 is still the constructor's FLT_MAX
+        manager.Update(4000, 4);
+
+        rig.Pump();
+        Assert.Empty(rig.Sent.OfType<SetHeadAngle>());
+        Assert.Empty(rig.Sent.OfType<SetLiftHeight>());
+    }
+
+    /// <summary>
+    /// M10-008 / C2 (4.5, 4.6): when +8 holds a stored value and the action list is empty, TryToResume queues the
+    /// compound head/lift action before it resumes.
+    /// </summary>
+    [Fact]
+    public void TheResumeRestoresTheStoredHeadAndLiftWhenTheActionListIsEmpty()
+    {
+        using var rig = new Rig();
+        bool empty = false;
+        using var manager = new BehaviorManager(Ctx(rig)) { ActionListIsEmpty = () => empty };
+        manager.Add(new Fake("idle", ticks: 99));
+        manager.AddReaction(new FireStrategy(ReactionTrigger.UnexpectedMovement, resumeLast: true) { Fire = true },
+                            new Fake("react", ticks: 1));
+        manager.StartAsync("idle", 0).GetAwaiter().GetResult();
+        manager.SetDefaultHeadAndLiftState(true, 0.3f, 60f);   // list not empty: stored only
+        rig.Pump();
+        Assert.Empty(rig.Sent.OfType<SetHeadAngle>());
+
+        Assert.NotNull(manager.CheckReactions(1));
+        empty = true;
+        manager.Update(4000, 4);
+
+        rig.Pump();
+        var head = rig.Sent.OfType<SetHeadAngle>().Last();
+        var lift = rig.Sent.OfType<SetLiftHeight>().Last();
+        Assert.Equal(0.3f, head.AngleRad, 4);
+        Assert.Equal(60f, lift.HeightMm, 4);
+        Assert.True(rig.Sent.IndexOf(head) < rig.Sent.IndexOf(lift));
+    }
+
+    /// <summary>A strategy whose decision is a settable flag; for driving the manager's reaction paths.</summary>
+    private sealed class FireStrategy : IReactionTriggerStrategy
+    {
+        public FireStrategy(ReactionTrigger trigger, bool resumeLast) { Trigger = trigger; ShouldResumeLast = resumeLast; }
+        public ReactionTrigger Trigger { get; }
+        public string Basis => "test";
+        public bool Fire { get; set; }
+        public bool ShouldResumeLast { get; }
+        public bool CanInterruptOtherTriggeredBehavior => true;
+        public bool CanInterruptSelf => false;
+        public BehaviorManager? Manager { get; set; }
+        public bool ShouldTriggerBehavior(ReactionContext rc, IBehavior behavior) => Fire;
+        public void EnabledStateChanged(BehaviorContext context, bool enabled) { }
+    }
 }

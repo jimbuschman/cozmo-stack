@@ -99,8 +99,13 @@ public sealed class BehaviorManager : IDisposable
     /// <summary>manager+0x4C: the sticky gate (C3); 0 in the constructor (0x5A08F8).</summary>
     private bool _reactionGateOpen;
     private bool _warnedNoActionList;
-    /// <summary>manager+8 / +0xC (C11); null is the constructor's value, which the rows do not give.</summary>
-    private float? _defaultHeadRad, _defaultLiftMm;
+    // fidelity: M10-008
+    /// <summary>
+    /// manager+8 / +0xC (C2/C11): the constructor sets both to FLT_MAX (0x5A0882..0x5A088A), and
+    /// <see cref="SetDefaultHeadAndLiftState"/> overwrites them. The FLT_MAX in +8 is what makes
+    /// <see cref="Update"/> skip the restore until a default state has been set.
+    /// </summary>
+    private float _defaultHeadRad = float.MaxValue, _defaultLiftMm = float.MaxValue;
 
     /// <summary>The trigger map's entries, ascending trigger then JSON order.</summary>
     public IReadOnlyList<ReactionRegistration> Reactions { get { lock (_gate) return _map.Values.SelectMany(i => i.Entries).ToList(); } }
@@ -315,12 +320,10 @@ public sealed class BehaviorManager : IDisposable
         return last;
     }
 
-    // fidelity: M10-008
+    // fidelity: M10-004, M10-008
     /// <summary>
     /// C7 (0x5A3610..0x5A3682): StopAllMotors; then if AreAnyTracksLocked(0xFF) &amp;&amp; (!(MC+0xB8 || B9 || BA) || MC+0xD4),
-    /// warn "Some tracks are locked, unlocking them" and CompletelyUnlockAllTracks.
-    /// MISSING: CompletelyUnlockAllTracks' body (which locks it clears and what it sends) is not in any inventory row, so
-    /// the unlock is not performed; it is logged.
+    /// warn "Some tracks are locked, unlocking them" and CompletelyUnlockAllTracks (C1, 0x640F84).
     /// </summary>
     private void StopMotorsForReaction()
     {
@@ -329,7 +332,7 @@ public sealed class BehaviorManager : IDisposable
         if (motion.LockedTracks != 0 && (!motion.DirectDriveHoldsAnyTrack || motion.DirectDriveDisabled))
         {
             Log?.Invoke("warning: BehaviorManager.CheckReactionTriggerStrategies: Some tracks are locked, unlocking them");
-            Log?.Invoke("MISSING: MovementComponent::CompletelyUnlockAllTracks is not in the rows; the tracks stay locked");
+            motion.CompletelyUnlockAllTracks();
         }
     }
 
@@ -367,8 +370,9 @@ public sealed class BehaviorManager : IDisposable
 
     // fidelity: M10-008
     /// <summary>
-    /// The game SetDefaultHeadAndLiftState (C11, handler 0x5A5042): enable stores both (0x5A1BCC/0x5A1BD0) and moves now if
-    /// the action list is empty; disable stores FLT_MAX (0x5A1D1E..0x5A1D26). These are the values TryToResume restores.
+    /// The game SetDefaultHeadAndLiftState (C2/C11, handler 0x5A5042, 0x5A1B40): the disable arm sets +8 and +0xC to
+    /// FLT_MAX; the enable arm stores head to +8 and lift to +0xC unconditionally and, only when the action list is
+    /// empty, queues the compound head/lift action now.
     /// </summary>
     public void SetDefaultHeadAndLiftState(bool enable, float headRad, float liftHeightMm)
     {
@@ -386,15 +390,18 @@ public sealed class BehaviorManager : IDisposable
         if (empty()) QueueHeadAndLift(headRad, liftHeightMm);
     }
 
+    // fidelity: M10-008
     /// <summary>
-    /// C11: CompoundActionParallel{MoveHeadToAngleAction(tol 0.0349066), MoveLiftToHeightAction}; the head action with its
-    /// constructor's 15 rad/s and 20 rad/s² (M4 MA9).
-    /// MISSING: MoveLiftToHeightAction's engine-internal constructor defaults (speed, acceleration, tolerance) are not in
-    /// the rows; the stack's lift action is used with its own defaults.
+    /// C2/C11 (0x5A1C24..0x5A1C9C, 0x5A2BB6..0x5A2C3A): the CompoundActionParallel{MoveHeadToAngleAction,
+    /// MoveLiftToHeightAction}, list order {head, lift}. Head: <c>Radians(head)</c> with tolerance
+    /// <c>Radians(0x3D0EFA35 = 0.0349066)</c> and variability <c>Radians(0)</c>, and the action's constructor defaults
+    /// 15 rad/s and 20 rad/s² (MA9). Lift: <c>height</c>, tolerance 5.0f (0x40A00000), variability 0.0f, and the
+    /// constructor constants +0x8C = 10.0f and +0x90 = 20.0f. <c>MoveLiftToHeightAction</c> has no defaults for
+    /// height or tolerance.
     /// </summary>
     private void QueueHeadAndLift(float headRad, float liftMm)
     {
-        _ = _context.Robot.Motion.SetHeadAngleAsync(headRad, CozmoMotion.ActionDefaultHeadSpeedRadPerSec, CozmoMotion.ActionDefaultHeadAccelRadPerSec2, requireCalibration: false);
+        _ = _context.Robot.Motion.SetHeadAngleAsync(new Radians(headRad).Value, CozmoMotion.ActionDefaultHeadSpeedRadPerSec, CozmoMotion.ActionDefaultHeadAccelRadPerSec2, requireCalibration: false);
         _ = _context.Robot.Motion.SetLiftHeightAsync(liftMm, requireCalibration: false);
     }
 
@@ -611,11 +618,10 @@ public sealed class BehaviorManager : IDisposable
     // fidelity: M10-008
     /// <summary>
     /// Advances the running behaviour; stops it when it says it has finished. When a behaviour is parked (C9), the
-    /// engine's TryToResumeBehavior (0x5A2BB8..0x5A2C3A) restores the head and lift from SetDefaultHeadAndLiftState's
-    /// values (C11) and resumes it. IBehavior::Resume and its failure path are M8 (not in the rows); here the parked
+    /// engine's TryToResumeBehavior (0x5A2B40) restores the head and lift from SetDefaultHeadAndLiftState's values
+    /// (C2/C11) and resumes it. The restore runs only if manager+8 != FLT_MAX <b>and</b> the action list is empty;
+    /// +0xC is never tested. IBehavior::Resume and its failure path are M8 (not in the rows); here the parked
     /// behaviour is started again when it is runnable.
-    /// MISSING (C11): the constructor values of manager+8/+0xC, and whether the restore is skipped when they are FLT_MAX,
-    /// are not in the rows; the restore runs only for values SetDefaultHeadAndLiftState(enable) stored.
     /// </summary>
     // fidelity: M8-012
     public void Update(double nowMs, double nowSec)
@@ -638,7 +644,7 @@ public sealed class BehaviorManager : IDisposable
 
         IBehavior? resume;
         ReactionTrigger? resumeTrigger;
-        float? headRad, liftMm;
+        float headRad, liftMm;
         lock (_gate)
         {
             resume = _resumeAfterReaction;
@@ -649,8 +655,22 @@ public sealed class BehaviorManager : IDisposable
         // IBehavior::Update returned 0 or 2, so FinishCurrentBehavior (0x005a3128).
         FinishCurrentBehavior(current, immediate: false, nowSec);
         if (resume is null) return;
-        if (headRad is { } h && liftMm is { } l && h != float.MaxValue) QueueHeadAndLift(h, l);
-        else Log?.Invoke("MISSING: BehaviorManager.TryToResumeBehavior: no SetDefaultHeadAndLiftState values; the head and lift are not restored");
+        // C2/C11: the restore gate reads +8 only (lift is never tested) and requires the action list to be empty.
+        if (headRad != float.MaxValue)
+        {
+            if (ActionListIsEmpty is { } empty)
+            {
+                if (empty())
+                {
+                    Log?.Invoke($"BehaviorManager.DefaultHeadAnfLiftState.ResumeBehavior: Resuming behavior and don't have an action, so setting head angle {headRad}, lift height {liftMm}");
+                    QueueHeadAndLift(headRad, liftMm);
+                }
+            }
+            else
+            {
+                Log?.Invoke("MISSING: BehaviorManager.TryToResumeBehavior: no ActionList is attached, so whether the action list is empty (the C2/C11 restore gate) is not known; the head and lift are not restored");
+            }
+        }
 
         if (!resume.IsRunnable(_context))
         {
