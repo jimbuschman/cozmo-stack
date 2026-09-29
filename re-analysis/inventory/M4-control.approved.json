@@ -1,8 +1,8 @@
 {
   "subsystem": "M4-control",
-  "approved": "2026-09-25",
+  "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "274e1f020ae43d3fffd4a83d7d12f43349ba95a0e737692b1e862759ea952b8c",
+  "inventory_sha256": "1d26e85756f5fa53c1de12829c709f9d10c7e68ef3e4ca4f109a9b12394b838f",
   "records": {
     "M4-001": {
       "status": "EXACT_SOURCE",
@@ -42,12 +42,13 @@
       "hardware_required": false
     },
     "M4-004": {
-      "status": "COMPATIBILITY_POLICY",
-      "title": "Motion is gated on calibration here; the engine reacts to it instead",
-      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Direct motion is not gated on calibration (the engine has no gate)",
+      "authority": "libcozmoEngine.so 3.4.0-1204: no calibration gate on direct motor commands; MA21 readers, plus the getter callers 0x0052C5AE, 0x00547D40/0x00547D48, 0x00606456/0x00606460, 0x00606748..0x00606936 (policy review 20260929)",
       "evidence": [
         "MA21 no calibration gate in the engine: readers of Robot+0x314/+0x315 are 0x00511E1C, 0x00512378, 0x0051335E, 0x005151A6 only",
-        "MA20 HandleMotorCalibration 0x00536BAE..0x00536C0E"
+        "MA20 HandleMotorCalibration 0x00536BAE..0x00536C0E",
+        "policy review 20260929: getter callers by PLT scan are 0x0052C5AE (DetectGyroDrift), 0x00547D40/0x00547D48 (CalibrateMotorAction::CheckIfDone), 0x00606456/0x00606460 (BehaviorReactToImpact::AlwaysHandle), 0x00606748..0x00606936 (BehaviorReactToMotorCalibration); none gates DriveWheels, MoveHead or MoveLift"
       ],
       "live_path": true,
       "hardware_required": false
@@ -89,7 +90,9 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "SC2 UpdateRobotData 0x00634016..0x00634036",
-        "M2 RS12 cliffDataRaw 8-byte copy (0x0063401A..0x00634022)"
+        "U1 0x0051293C ldrb [r4,#0x29]; beq.w 0x512A8A (the only gate before the work)",
+        "U3 0x00512986 ldr.w r0,[r4,#0x288]; 0x0051298C blx UpdateRobotData; origin check ContainsOriginID 0x00512C3E..0x00512C4A runs later",
+        "U4 0x0063401A..0x00634036 raw cliff to +0xE/+0x12, CLIFF_DETECTED to +6, timestamp to +8"
       ],
       "live_path": true,
       "hardware_required": false
@@ -99,9 +102,10 @@
       "title": "Cube tracking: ObjectAvailable / ObjectConnectionState, Moved / Stopped / UpAxisChanged handling with the charger and carry filters, per-object IsMoving",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "S1 ObjectConnectionState handler 0x00533B56..0x00533D2C; S2 AddConnectedActiveObject 0x00623040..",
-        "CD10a Moved 0x00533E4C..0x005341BA; CD10b Stopped 0x00534636..0x00534AA4; CD10c UpAxisChanged 0x00534D66..0x00534E1E",
-        "LC8a..LC8e reuse rules 0x00623040..0x00623A8C, RemoveConnectedActiveObject 0x006243C6..0x00624436; one ObjectID per ActiveCube type (0x004EF468..0x004EF52A)"
+        "S1, S2, CD10a..CD10c, LC8a..LC8e as before",
+        "C11.1 DockingComponent+0xC is an ObjectID, the object currently being docked with (the dock target): default -1 (0x0063BA1E/0x0063BA2A); only writer DockWithObject (0x0063BAAC/0x0063BAB6); readers include the Moved 0x0053416E/74 and Stopped 0x0053497C/84 exclusions",
+        "LC8a 0x00533B56 slot > 4 is ignored; AddConnectedActiveObject rejects activeID >= 5 (0x00623040)",
+        "LC8e SetID gives every ActiveCube of a type the same ObjectID for the process lifetime (0x004EF468..0x004EF52A)"
       ],
       "live_path": true,
       "hardware_required": false
@@ -111,11 +115,12 @@
       "title": "Outbound cube connection: block pool, five slots, SetPropSlot, filter timers, advertisement expiry, slot states, disconnect handling",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "CD1 0x00514174..0x00514224",
-        "CD2 update order 0x0051422A..0x00514470",
-        "CD3 BlockFilter::Update 0x0061A79A..0x0061A7E0; CD4 UpdateConnecting 0x0061AA8C..0x0061AB88",
-        "CD5 ConnectToRequestedObjects 0x00514A88..0x00514C6C; CD6 0x005179DA..0x00517AA6; CD7 0x00517BD8..0x00517D14; CD8 0x00514924..0x00514A0E",
-        "S3 HandleConnectedToObject 0x005179D6..0x00517AA6"
+        "CD1..CD9 as before",
+        "D1 0x005101DE robot+0x490 = 0 at the ctor",
+        "D2 0x00517DD8 BroadcastAvailableObjects is the whole setter (strb [r0,#0x490]; bx lr)",
+        "D3/D4 no other store in .text and no caller of the setter anywhere in the shipped engine",
+        "D5 0x0051419A ObjectUnavailable is broadcast only when +0x490 is set; the node is erased either way (0x00514218)",
+        "D6 0x0053398E ObjectAvailable is also gated on +0x490 (M4-025)"
       ],
       "live_path": true,
       "hardware_required": false
@@ -180,16 +185,12 @@
       "hardware_required": false
     },
     "M4-016": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Head and lift move semantics: no send when in position, ack matched by id, completion in position and stopped, tolerances and error codes",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "MA15 IsHeadInPosition 0x005484F4..0x0054852C, Init no-send 0x00548544..0x0054854E; IsLiftInPosition 0x00548FEA..0x00549034, 0x005492F2..0x005492FE",
-        "MA16 ack lambdas 0x0054D624 (head), 0x0054D748 (lift)",
-        "MA17 completion 0x005485D8..0x005488B6, 0x005493F6..0x00549508; errors 0x04000004, 0x03000016",
-        "MA9 head tolerance >= 2 deg (0x0054803E..0x005480AC); MA13 lift angular tolerance >= 1.5 deg (0x005491D6..0x005492EE)",
-        "C1: head CheckIfDone latches in-position at +0xAC (0x005485E4..0x005485F4); hasMoved +0xAD set while MC+0xA (0x0054872E..0x00548734); failure 0x04000004 only if not in position, not moving and hasMoved (0x00548738..0x005488AC)",
-        "C6: lift CheckIfDone 0x005493F6..0x00549508 (latch after the sent-not-acked test; hasMoved while MC+0xB; 0x04000004 only if not in position, not moving and hasMoved); head latch after the ack test 0x005485D8..0x005485E2"
+        "MA9, MA13, MA15..MA17, C1, C6, C10.1 as before",
+        "C11.3 the lift CheckIfDone body 0x005493F6..0x00549508 contains no eye-shift removal; the head +0xA8 has only three writers, all zero (0x00547F3C, 0x005484B0, 0x00548724), so H4..H6 never execute"
       ],
       "live_path": true,
       "hardware_required": false
@@ -199,11 +200,14 @@
       "title": "Backpack lights: priority, Off resent every tick while no source, charging state machine, shared locator, wire conversion, headlight",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "LB1 BodyLightComponent::Update 0x00631D54..0x00631EB4",
-        "LB2/LB4h Off lights 0x0063221C..0x00632260",
-        "LB4a names 0x0102EA18 indexed by state^2 (0x00631BD0); LB4b DefineFromJson 0x00587558..0x00587638; LB4c lookup 0x00587434..0x005874A4; LB4d parser 0x00586D20..0x005870D0",
-        "LB4f SetBackpackLightsInternal 0x00631F3A..0x006321BE; LB4i shared locator 0x006322A4",
-        "LB5 0x006323C4..0x0063244E; LB6 headlight 0x00632344..0x00632374"
+        "LB1..LB6, LB4a..LB4i as before",
+        "E2 0x0063234A..0x00632364 SetHeadlight calls VisionComponent::EnableMode(14, enable) on robot+0x258",
+        "E3 VisionMode 14 = LimitedExposure (name table 0x01034230, entry 14 -> 0x00C1DC64)",
+        "E4 0x006527AC..0x006527B6 EnableMode tail-calls VisionSystem::SetNextMode (PLT 0x4BA35C)",
+        "E5 0x006B2282..0x006B2298 SetNextMode queues (mode,bool) on the deque at VisionSystem+0xB0",
+        "E6 0x006B4FB6..0x006B4FE4 VisionSystem::Update drains the deque",
+        "E7 0x006B1A76..0x006B1CC6 EnableMode(14) sets/clears mask bit 14 at VisionSystem+0xAC",
+        "E8 0x00632368..0x00632380 EngineToRobot(SetHeadlight) then SendMessage reliable, not hot"
       ],
       "live_path": true,
       "hardware_required": false
@@ -213,12 +217,13 @@
       "title": "Cube lights: WakeUp on connection and reconnect, layers and PlayLightAnim gates, SetObjectLights / SetLEDs, SetCubeGamma, CubeID, CubeLights, white balance, default-layer anims",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "S5/LC1 0x00639CE4..0x00639D8A (trigger 0x26)",
-        "LC2 PlayLightAnim 0x006382EA..0x006387D8",
-        "LC3 cubeLights/wakeUp.json; pattern advance 0x00637998..0x006379DA; default layer 0x00637D4C..0x00637E02",
-        "LC4 SetObjectLights 0x00637E6C..0x00637EFC; SetLEDs 0x004E48B0..0x004E49A2 (gamma 0x80)",
-        "LC5 SetLights 0x0063A654..0x0063A800; WhiteBalanceColor 0x0063A894..0x0063A98E",
-        "LC7 Robot::Broadcast delivery 0x00511DE8..0x00511DF8, 0x00662508..0x006625A8; LC8 reconnect replay"
+        "S5..S8, LC1..LC8, LC6, C10.3 rows S3..S7, W1..W5, P1..P5, D1..D5 as before",
+        "C11.2 robot+0x2C4 is the robot-is-localized flag: default 1 (0x0050FF10), 0 by Robot::Delocalize (0x00510A4A), 1 by SetLocalizedTo (0x0051245E, 0x005124EE) and CheckAndUpdateTreadsState (0x0051217C); the RobotDelocalized +0x21 refresh is held while delocalized and applied when it returns to 1 (gate 0x00637930)",
+        "S3 the cube-sleep flags are written only by EnableCubeSleep; the equivalent public API is Robot.cs:2090",
+        "C12.1 the static ObjectLights for EnableGameLayerOnly(enable=1) is 0x0105B4A0, filled by _INIT_36 (0x004D7EB4..0x004D7EE5): eight u32 0x000000FF at +0x00..+0x1F, the rest zero",
+        "C12.2 the enable=1 branch is live: game tag 0xBB EnableLightStates -> 0x0063A48A..0x0063A496 and 0x0063AFF8..0x0063B006 pass enable = (msg.byte0 == 0); the app sends it from Robot.cs:1902-1907",
+        "C13.1 EnableGameLayerOnly branch detail: all-objects enable=0 stops layer 0 once (0x00639ADA/DE, 0x00639AE6) and sets comp+0x22 := 0 (0x00639B32); single-object enable=0 stops layers 0 and 2 (0x00639AA2, 0x00639AB0) and does not touch comp+0x22; enable=1 sets ObjectInfo+0x1C := 1 and (all-objects only) comp+0x22 := 1",
+        "C13.4 EnableGameLayerOnly returns without acting when comp+0x22 (all-objects, 0x00639A16..0x00639A1C) or ObjectInfo+0x1C (single-object, 0x006399DC..0x006399E0) already equals enable"
       ],
       "live_path": true,
       "hardware_required": false
@@ -228,12 +233,28 @@
       "title": "Cliff: sensor defaults, CliffEvent and PotentialCliff handling, EnableStopOnCliff senders, the threshold schedule 50 / 400 / 150",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "SC1 ctor 0x00633FA0..0x00633FCE",
-        "SC3 SendCliffDetectThresholdToRobot 0x00634270..0x00634368",
-        "SC4 schedule 0x00512D7A..0x00512EA6; SC4a 0x00634514..0x006345AE; SC4b 0x006343B8..0x006344B0; SC4c 0x00634630..0x00634724; SC4d 0x006347A4..0x0063480C; SC4j 0x00511D66..0x00511DA0",
-        "SC5 CliffEvent 0x00535548..0x005356E6; SC6 0x00527E8E..0x00527EEA; SC7 PotentialCliff 0x0053582C..0x00535998; SC8 EnableStopOnCliff senders",
-        "C2: the 50 mm distance is the 3-D norm between MoveRobotPoseForward(pose, -20 mm or the carry literal) before and after UpdateCurrPoseFromHistory (0x00512D48..0x00512D74), accumulated from the first matching state (0x00512DD2..0x00512EA6)",
-        "C7: drive-centre XY displacement, MoveRobotPoseForward 0x00517ED0..0x00517F3E, d = -20 or 0.0 when carrying (0x00512D14); C8: charger platform SetOnChargerPlatform 0x00511D4C..0x00511DB0, set by SetOnCharger rising edge, cleared by CheckAndUpdateTreadsState 0x00512188..0x00512192 and Robot::Update 0x00513C5C..0x00513E2A"
+        "SC1..SC8, SC4a..SC4j, SC6, C2, C7, C8 as before",
+        "H1 HandleRobotStopped is subscribed for robot tag 0xD4 (0x00532B6E, GOT 0x0103EA8C)",
+        "H2 0x0053539C..0x0053542E body: Get_robotStopped, sEventF, EvaluateCliffSuspiciousnessWhenStopped",
+        "H3 0x00634840..0x00634846 Evaluate = comp+0x1C := robot+0x2C",
+        "H4 0x00535432..0x00535480 if the sensor is enabled: RequestCurrentBehaviorEndImmediately, ActionList::Cancel(-1), broadcast RobotStopped",
+        "S1 0x00512FB0..0x00512F22 stats/threshold run for frame-mismatched states for the first 100",
+        "S2 0x006343C6..0x006343D6 gates +0x1C != 0 and MC+0xC == 0",
+        "S3 0x006343D8..0x00634404 std::map::lower_bound(comp+0x1C) over RobotStateHistory at robot+0x390",
+        "S4 0x0063448E..0x006344AA in-order successor walk",
+        "S5 0x00634420..0x0063448A min(cliff[0]); Increment when variance > 10000.0f and min+15 < cliff",
+        "S6 0x006344AC..0x006344AE clears +0x1C at the end of the walk",
+        "S7 0x0063451A..0x006345AA Increment: cache < 151 returns; else cache = max(cache-250,150), send, count=0",
+        "S8 senders: 0x00511DA0, 0x00512DA2 (50), 0x00512EA0 (400), 0x006345A4, 0x006347F8",
+        "W1 0x00634636..0x00634656 sample gate: moving, robot+0x355 == 0, state+0x50 > cache",
+        "W3 0x0063466A/0x006346D0..0x006346FC add-only Welford with n = size",
+        "W4 0x0063466C..0x006346CE removal with N = the constant 100.0f (0x00634728), not the deque size",
+        "W5 0x00634700..0x0063471E M2 += s0; variance = M2/(size-1) once size >= 2",
+        "W6 0x00634668 the window is 100 samples",
+        "C12.3 robot+0x2C0 is per-mismatch-run: 0 at the ctor 0x0050FF08, 0 on a frame match 0x00512EAE, 0 on the treads Delocalize 0x00512B9C, old+1 on a mismatch 0x00512F1C, 0 after 0x65 0x00512F88",
+        "C12.4 the stats gate r6=0 is false on the AddRobotStateToHistory failure (0x00512BEE/0x00512BF4/0x00512C38), the GetLastStateWithFrameID failure (0x00513088/0x00513110) and the origin miss (0x00512F0C)",
+        "C13.2 the treads-change Delocalize stores +0x2C0 = 0 at 0x00512B9C then b 0x512FB4, skipping the frame compare, the frame-match reset and the mismatch increment; the stats run unconditionally",
+        "C13.3 RobotStateHistory ctor sets a 3000 ms retention window at +0x3c (0x0053088D..0x005308C6); the stack's parallel cliff history mirrors it"
       ],
       "live_path": true,
       "hardware_required": false
@@ -299,6 +320,20 @@
       ],
       "live_path": true,
       "hardware_required": true
+    },
+    "M4-025": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "ObjectAvailable and ObjectUnavailable broadcasts are gated on robot+0x490 (0 in this build)",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "D1 0x005101DE robot+0x490 = 0 at the ctor",
+        "D2 0x00517DD8 Robot::BroadcastAvailableObjects is the whole setter",
+        "D3/D4 no other store in .text and no caller of the setter anywhere in the shipped engine",
+        "D6 0x0053398E HandleActiveObjectAvailable gates ObjectAvailable on +0x490; RSSI <= 0x31 logs (0x0053399A); broadcast 0x005339FC/0x00533A04",
+        "D5 0x0051419A the expiry ObjectUnavailable broadcast is gated on +0x490"
+      ],
+      "live_path": true,
+      "hardware_required": false
     }
   }
 }

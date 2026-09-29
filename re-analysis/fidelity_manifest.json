@@ -106,7 +106,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M4-control.md",
-        "approved": "2026-09-25",
+        "approved": "2026-09-29",
         "snapshot": "re-analysis/inventory/M4-control.approved.json"
       }
     },
@@ -1656,8 +1656,8 @@
         "MA12 game SetLiftHeight: 32.0 while carrying -> PlaceObjectOnGroundAction (0x0052AC40..0x0052AC9E)",
         "MA9, MA13 action ctor defaults (head 15/20 at 0x00547F14..0x00547F28; lift 10/20 at 0x00548A68..0x00548A78)"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "MA12: on the game path a lift height of exactly 32 mm while carrying becomes PlaceObjectOnGroundAction; the carrying state is the M12 CarryingComponent, which CozmoMotion does not see, so that branch is not taken (MISSING, M12 interface)",
+      "status": "EXACT_SOURCE",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "M4ControlTests.M4_001_M4_003_MA9_MA11_HeadIsClippedAndCarriesTheAppDefaults, M4ControlTests.M4_002_MA13_MA14_LiftClampAndTheNegativeHeightGoesToTheNearerPreset, ControlTests.TheHeadAndLiftDefaultsAreTheAppsGamePathValues",
@@ -1665,20 +1665,21 @@
     },
     {
       "subsystem": "M4-control",
-      "title": "Motion is gated on calibration here; the engine reacts to it instead",
+      "title": "Direct motion is not gated on calibration (the engine has no gate)",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
       "effect": "whether a direct motor command during calibration is sent or refused",
-      "provenance": "a default of this stack over the engine's behaviour-layer response, which is implemented",
-      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "provenance": "the engine's behaviour: no calibration gate; calibration is answered by the behaviour layer",
+      "authority": "libcozmoEngine.so 3.4.0-1204: no calibration gate on direct motor commands; MA21 readers, plus the getter callers 0x0052C5AE, 0x00547D40/0x00547D48, 0x00606456/0x00606460, 0x00606748..0x00606936 (policy review 20260929)",
       "evidence": [
         "MA21 no calibration gate in the engine: readers of Robot+0x314/+0x315 are 0x00511E1C, 0x00512378, 0x0051335E, 0x005151A6 only",
-        "MA20 HandleMotorCalibration 0x00536BAE..0x00536C0E"
+        "MA20 HandleMotorCalibration 0x00536BAE..0x00536C0E",
+        "policy review 20260929: getter callers by PLT scan are 0x0052C5AE (DetectGyroDrift), 0x00547D40/0x00547D48 (CalibrateMotorAction::CheckIfDone), 0x00606456/0x00606460 (BehaviorReactToImpact::AlwaysHandle), 0x00606748..0x00606936 (BehaviorReactToMotorCalibration); none gates DriveWheels, MoveHead or MoveLift"
       ],
-      "status": "COMPATIBILITY_POLICY",
-      "unresolved": null,
+      "status": "EXACT_SOURCE",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "ControlTests.MotionIsRefusedWhileTheHeadAndLiftAreStillCalibrating",
+      "test": "ControlTests.MotionIsSentWhileTheHeadAndLiftAreStillCalibrating, ControlTests.MotionIsSentBeforeTheRobotHasReportedAnything, CorrectionTests.ARecalibrationDoesNotBlockDirectMotion, HardeningTests.MotionIsSentInTheWindowBeforeCalibrationIsEvenReported",
       "id": "M4-004"
     },
     {
@@ -1692,11 +1693,11 @@
       "evidence": [
         "MA8 MC+8 = 0 at construction (0x0063DA7C); pre-increment in MoveLiftToHeight 0x0064070C..0x0064071A, MoveHeadToAngle 0x006407D8..0x006407E6, GetNextMotorActionID 0x006406EC..0x006406F4"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "MA8 shares the counter with the body (TurnInPlace, GetNextMotorActionID); in this stack the TurnInPlace and direct SetHeadAngle sends outside M4 (VisionSystem, FaceActions, ExplorerBehaviors) use the fixed id 3 rather than CozmoMotion.NextActionId - those callers are M7/M11 and were not changed in the M4 batch",
+      "status": "EXACT_SOURCE",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
-      "test": "M4ControlTests.M4_005_MA8_ActionIdsRun1To255Then0AndAreShared"
+      "test": "M4ControlTests.M4_005_MA8_ActionIdsRun1To255Then0AndAreShared, M4ControlTests.M4_005_MA8_TheDirectHeadSendSharesTheCounter"
     },
     {
       "id": "M4-006",
@@ -1742,10 +1743,12 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "SC2 UpdateRobotData 0x00634016..0x00634036",
-        "M2 RS12 cliffDataRaw 8-byte copy (0x0063401A..0x00634022)"
+        "U1 0x0051293C ldrb [r4,#0x29]; beq.w 0x512A8A (the only gate before the work)",
+        "U3 0x00512986 ldr.w r0,[r4,#0x288]; 0x0051298C blx UpdateRobotData; origin check ContainsOriginID 0x00512C3E..0x00512C4A runs later",
+        "U4 0x0063401A..0x00634036 raw cliff to +0xE/+0x12, CLIFF_DETECTED to +6, timestamp to +8"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "where UpdateRobotData runs within UpdateFullRobotState (before or after the origin check) is not in the rows; the stack stores from accepted states only",
+      "status": "EXACT_SOURCE",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "M4ControlTests.M4_008_SC2_TheCliffDataOfAHandledStateIsStored, ControlTests.ACliffEventIsRecordedWithWhichSensorsTrippedAndWhetherTheRobotStopped",
@@ -1759,12 +1762,13 @@
       "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): Moved (CD10a) and Stopped (CD10b) look the connected object up by activeID (an unknown one warns), drop the charger's moves, ignore a Moved inside the double-tap window, SetIsMoving only on a change, and broadcast every message; UpAxisChanged for an unknown id is an error (CD10c); a disconnection erases the connected entry (LC8b). Verifier round (2026-09-25, corrections C1..C5): VisionSystem's ObjectMoved path (BlockWorld SetMoving and MarkDirty) now returns first for an unknown id, the charger and a movement inside the double-tap window (CD10a steps 1..3, CozmoCubes.MovedStopsBeforeTheWorld). Q-c: VisionSystem's ObjectStoppedMoving path applies the same lookup and charger filter before BlockWorld.SetMoving(false) (CD10b; the double-tap result is discarded).",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "S1 ObjectConnectionState handler 0x00533B56..0x00533D2C; S2 AddConnectedActiveObject 0x00623040..",
-        "CD10a Moved 0x00533E4C..0x005341BA; CD10b Stopped 0x00534636..0x00534AA4; CD10c UpAxisChanged 0x00534D66..0x00534E1E",
-        "LC8a..LC8e reuse rules 0x00623040..0x00623A8C, RemoveConnectedActiveObject 0x006243C6..0x00624436; one ObjectID per ActiveCube type (0x004EF468..0x004EF52A)"
+        "S1, S2, CD10a..CD10c, LC8a..LC8e as before",
+        "C11.1 DockingComponent+0xC is an ObjectID, the object currently being docked with (the dock target): default -1 (0x0063BA1E/0x0063BA2A); only writer DockWithObject (0x0063BAAC/0x0063BAB6); readers include the Moved 0x0053416E/74 and Stopped 0x0053497C/84 exclusions",
+        "LC8a 0x00533B56 slot > 4 is ignored; AddConnectedActiveObject rejects activeID >= 5 (0x00623040)",
+        "LC8e SetID gives every ActiveCube of a type the same ObjectID for the process lifetime (0x004EF468..0x004EF52A)"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "LC8a: the engine ignores a connection report for a slot above 4; this stack uses the slot as its BlockWorld ObjectID (M11 interface; the engine's ObjectIDs come from SetID, LC8e) and its manipulation/vision fixtures connect cubes on slots 7..9, so the bound is recorded but not enforced. CD10a/CD10b: the carried-object and [robot+0x280]+0xC broadcast exclusions are not wired (M12 interface; +0x280 not read), and robot+0x334 (the charger id) is stood in for by the object type; the located-copy updates (MarkObjectDirty, SetIsMoving on located objects) are M11",
+      "unresolved": "wire the [robot+0x280]+0xC dock-target exclusion (C11.1) into the Moved/Stopped broadcasts. The slot <= 4 bound is enforced on the connection path but not in Cubes.Handle, which uses the slot as the stack's BlockWorld ObjectID; separating ObjectID from slot is M11 work (LC8e).",
       "hardware_required": false,
       "live_path": true,
       "test": "M4ControlTests.M4_009_CD10a_CD10b_CD10c_MovedAndStoppedAreBroadcastPerMessage, ControlTests.CubeTelemetryLandsOnTheConnectedCube, M4ControlTests.M4_023_CD10g_TheDoubleTapWindowReachesTheWorld",
@@ -5255,19 +5259,20 @@
       "subsystem": "M4-control",
       "title": "Outbound cube connection: block pool, five slots, SetPropSlot, filter timers, advertisement expiry, slot states, disconnect handling",
       "location": "cozmo-stack/src/Cozmo.Robot/CubeConnections.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "live_path": true,
       "evidence": [
-        "CD1 0x00514174..0x00514224",
-        "CD2 update order 0x0051422A..0x00514470",
-        "CD3 BlockFilter::Update 0x0061A79A..0x0061A7E0; CD4 UpdateConnecting 0x0061AA8C..0x0061AB88",
-        "CD5 ConnectToRequestedObjects 0x00514A88..0x00514C6C; CD6 0x005179DA..0x00517AA6; CD7 0x00517BD8..0x00517D14; CD8 0x00514924..0x00514A0E",
-        "S3 HandleConnectedToObject 0x005179D6..0x00517AA6"
+        "CD1..CD9 as before",
+        "D1 0x005101DE robot+0x490 = 0 at the ctor",
+        "D2 0x00517DD8 BroadcastAvailableObjects is the whole setter (strb [r0,#0x490]; bx lr)",
+        "D3/D4 no other store in .text and no caller of the setter anywhere in the shipped engine",
+        "D5 0x0051419A ObjectUnavailable is broadcast only when +0x490 is set; the node is erased either way (0x00514218)",
+        "D6 0x0053398E ObjectAvailable is also gated on +0x490 (M4-025)"
       ],
       "effect": "cubes connect or disconnect differently",
       "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): the connection path (CubeConnections) now runs in Robot::Update after the first full state, in the CD2 order after the tap filter, on BaseStationTimer seconds, with the robot clock set from each synced state before the origin check (RS1); CD3..CD8 and S3 were already reproduced.",
-      "unresolved": "CD1: ObjectUnavailable is broadcast only behind robot+0x490, whose default and writers are not in the rows (the stack broadcasts nothing); no dedicated M4-010 regression test was added in this batch (the path is exercised by EngineAppLayerTests.M1_025_M1_015_* and RemainingGapTests)",
+      "unresolved": "",
       "hardware_required": false,
       "test": "EngineAppLayerTests.M1_025_M1_015_CB33_CC26_CC27_RemoveRobotLeavesEveryDeviceAsConstructed"
     },
@@ -5298,11 +5303,11 @@
         "MA19 CheckIfDone 0x00547D38..0x00547DC2",
         "MA20 HandleMotorCalibration 0x00536BAE..0x00536C0E"
       ],
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "live_path": true,
       "effect": "the robot recalibrates when the engine would not",
       "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): StartMotorCalibration {byte0 head, byte1 lift} is sent only by CozmoMotion.RequestMotorCalibration, called by the explicit calibration behaviour and the conformance tool, never automatically (MA18, MA19).",
-      "unresolved": "MA20: when the lift starts calibrating while carrying, HandleMotorCalibration calls SetCarriedObjectAsUnattached(true); the carrying state is the M12 CarryingComponent and this is not wired from the MotorCalibration handler (M12 interface)",
+      "unresolved": "",
       "hardware_required": false,
       "test": ""
     },
@@ -6121,18 +6126,14 @@
       "title": "Head and lift move semantics: no send when in position, ack matched by id, completion in position and stopped, tolerances and error codes",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
       "evidence": [
-        "MA15 IsHeadInPosition 0x005484F4..0x0054852C, Init no-send 0x00548544..0x0054854E; IsLiftInPosition 0x00548FEA..0x00549034, 0x005492F2..0x005492FE",
-        "MA16 ack lambdas 0x0054D624 (head), 0x0054D748 (lift)",
-        "MA17 completion 0x005485D8..0x005488B6, 0x005493F6..0x00549508; errors 0x04000004, 0x03000016",
-        "MA9 head tolerance >= 2 deg (0x0054803E..0x005480AC); MA13 lift angular tolerance >= 1.5 deg (0x005491D6..0x005492EE)",
-        "C1: head CheckIfDone latches in-position at +0xAC (0x005485E4..0x005485F4); hasMoved +0xAD set while MC+0xA (0x0054872E..0x00548734); failure 0x04000004 only if not in position, not moving and hasMoved (0x00548738..0x005488AC)",
-        "C6: lift CheckIfDone 0x005493F6..0x00549508 (latch after the sent-not-acked test; hasMoved while MC+0xB; 0x04000004 only if not in position, not moving and hasMoved); head latch after the ack test 0x005485D8..0x005485E2"
+        "MA9, MA13, MA15..MA17, C1, C6, C10.1 as before",
+        "C11.3 the lift CheckIfDone body 0x005493F6..0x00549508 contains no eye-shift removal; the head +0xA8 has only three writers, all zero (0x00547F3C, 0x005484B0, 0x00548724), so H4..H6 never execute"
       ],
       "effect": "a head or lift move completes, fails or is sent differently",
       "authority": "libcozmoEngine.so 3.4.0-1204",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): nothing is sent when the head is within tolerance + 1e-5 of the target, or the lift within 5 mm and not moving (MA15); the id is taken only when the command is sent; the ack counts only for a sent action with that id (MA16); after it the move succeeds once in position and not moving, fails with 0x04000004 when it stops out of position after having moved, and a failed send is 0x03000016 (MA17). Verifier round (2026-09-25, corrections C1..C5): the head completion follows C1: in-position latched at +0xAC (0x005485E4..0x005485F4), +0xAD set whenever MC+0xA is set before the in-position test (0x0054872E..0x00548734), success = latched and not moving, 0x04000004 only when not in position, not moving and having moved (0x00548738..0x005488AC). Re-verify round (2026-09-25, C6..C8): R1: the head latch now comes after the sent-not-acked test (0x005485D8..0x005485E2). C6 (rows L1..L6): the lift follows the same CheckIfDone: sent and not acked Running; the in-position latch (+0x97); has moved (+0x98) := 1 while MC+0xB; in position: Success if not moving, else Running; not in position: moving Running, not moving and has moved 0x04000004, otherwise Running; Init latches in-position and sends only when out of position, a failed send giving 0x03000016. A move already in position succeeds at once when the motor is not moving (always so for the lift). The MA13 lift angular-tolerance clip is omitted (its formula is not in the rows; it cannot bind at the game path's 5 mm), and the IAction timeout is M8.",
-      "unresolved": "the head's CheckIfDone has further code at 0x005485F8..0x00548728 that has not been read (C6)",
+      "unresolved": "",
       "hardware_required": false,
       "live_path": true,
       "test": "M4ControlTests.M4_016_MA15_NothingIsSentWhenAlreadyInPosition, M4ControlTests.M4_016_MA16_MA17_CompletionIsTheAckThenInPositionAndStopped, M4ControlTests.M4_016_MA17_StoppingOutOfPositionIsStoppedMakingProgress, ControlTests.SetHeadAngleWaitsForTheRobotToAcknowledgeThatExactAction, M4ControlTests.M4_016_C1_TheHeadInPositionIsLatched, M4ControlTests.M4_016_R1_PassingTheTargetBeforeTheAckDoesNotLatch, M4ControlTests.M4_016_C6_TheLiftCompletion"
@@ -6143,17 +6144,20 @@
       "title": "Backpack lights: priority, Off resent every tick while no source, charging state machine, shared locator, wire conversion, headlight",
       "location": "cozmo-stack/src/Cozmo.Robot/Lights.cs",
       "evidence": [
-        "LB1 BodyLightComponent::Update 0x00631D54..0x00631EB4",
-        "LB2/LB4h Off lights 0x0063221C..0x00632260",
-        "LB4a names 0x0102EA18 indexed by state^2 (0x00631BD0); LB4b DefineFromJson 0x00587558..0x00587638; LB4c lookup 0x00587434..0x005874A4; LB4d parser 0x00586D20..0x005870D0",
-        "LB4f SetBackpackLightsInternal 0x00631F3A..0x006321BE; LB4i shared locator 0x006322A4",
-        "LB5 0x006323C4..0x0063244E; LB6 headlight 0x00632344..0x00632374"
+        "LB1..LB6, LB4a..LB4i as before",
+        "E2 0x0063234A..0x00632364 SetHeadlight calls VisionComponent::EnableMode(14, enable) on robot+0x258",
+        "E3 VisionMode 14 = LimitedExposure (name table 0x01034230, entry 14 -> 0x00C1DC64)",
+        "E4 0x006527AC..0x006527B6 EnableMode tail-calls VisionSystem::SetNextMode (PLT 0x4BA35C)",
+        "E5 0x006B2282..0x006B2298 SetNextMode queues (mode,bool) on the deque at VisionSystem+0xB0",
+        "E6 0x006B4FB6..0x006B4FE4 VisionSystem::Update drains the deque",
+        "E7 0x006B1A76..0x006B1CC6 EnableMode(14) sets/clears mask bit 14 at VisionSystem+0xAC",
+        "E8 0x00632368..0x00632380 EngineToRobot(SetHeadlight) then SendMessage reliable, not hot"
       ],
       "effect": "the backpack lights show something different",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "status": "IMPLEMENTATION_GAP",
       "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): BodyLightComponent: sources in priority {1,0,2}, Off resent every Robot::Update while no source (LB1, LB2, LB4h); the charging state machine with the engine's own OffCharger and the JSON's Charging/Charged/BadCharger (LB4, LB4a..LB4e, loaded from config/engine/lights/backpackLights under CozmoEngineOptions.ResourcesPath); the shared locator at source 2 (LB4i, LB5: CozmoLights.SetBackpack/SetBackpackPattern/BlinkBackpack); the wire conversion to 0x03 (LEDs 1..3) then 0x11 (LEDs 0 and 4) with no white balance (LB3, LB4f, LB4g).",
-      "unresolved": "LB6: the engine calls EnableMode(14) before the headlight send; what EnableMode is is not in the inventory, so only the SetHeadlight send is reproduced",
+      "unresolved": "reproduce the EnableMode(14) call before the send: it queues LimitedExposure, applied at the next VisionSystem::Update (M11). No reader of mask bit 14 was found (E9); M11 owns that.",
       "hardware_required": false,
       "live_path": true,
       "test": "M4ControlTests.M4_017_LB1_LB2_LB3_TheOffLightsGoOutEveryTickWhileThereIsNoSource, M4ControlTests.M4_017_LB4_LB4i_LB5_TheChargingStateSharesTheLocatorWithSetBackpack, M4ControlTests.M4_017_LB4g_ChargingOnTheWireFromTheShippedPatterns, ControlTests.BackpackColoursArePackedAndRememberedAsSent"
@@ -6164,18 +6168,19 @@
       "title": "Cube lights: WakeUp on connection and reconnect, layers and PlayLightAnim gates, SetObjectLights / SetLEDs, SetCubeGamma, CubeID, CubeLights, white balance, default-layer anims",
       "location": "cozmo-stack/src/Cozmo.Robot/Lights.cs",
       "evidence": [
-        "S5/LC1 0x00639CE4..0x00639D8A (trigger 0x26)",
-        "LC2 PlayLightAnim 0x006382EA..0x006387D8",
-        "LC3 cubeLights/wakeUp.json; pattern advance 0x00637998..0x006379DA; default layer 0x00637D4C..0x00637E02",
-        "LC4 SetObjectLights 0x00637E6C..0x00637EFC; SetLEDs 0x004E48B0..0x004E49A2 (gamma 0x80)",
-        "LC5 SetLights 0x0063A654..0x0063A800; WhiteBalanceColor 0x0063A894..0x0063A98E",
-        "LC7 Robot::Broadcast delivery 0x00511DE8..0x00511DF8, 0x00662508..0x006625A8; LC8 reconnect replay"
+        "S5..S8, LC1..LC8, LC6, C10.3 rows S3..S7, W1..W5, P1..P5, D1..D5 as before",
+        "C11.2 robot+0x2C4 is the robot-is-localized flag: default 1 (0x0050FF10), 0 by Robot::Delocalize (0x00510A4A), 1 by SetLocalizedTo (0x0051245E, 0x005124EE) and CheckAndUpdateTreadsState (0x0051217C); the RobotDelocalized +0x21 refresh is held while delocalized and applied when it returns to 1 (gate 0x00637930)",
+        "S3 the cube-sleep flags are written only by EnableCubeSleep; the equivalent public API is Robot.cs:2090",
+        "C12.1 the static ObjectLights for EnableGameLayerOnly(enable=1) is 0x0105B4A0, filled by _INIT_36 (0x004D7EB4..0x004D7EE5): eight u32 0x000000FF at +0x00..+0x1F, the rest zero",
+        "C12.2 the enable=1 branch is live: game tag 0xBB EnableLightStates -> 0x0063A48A..0x0063A496 and 0x0063AFF8..0x0063B006 pass enable = (msg.byte0 == 0); the app sends it from Robot.cs:1902-1907",
+        "C13.1 EnableGameLayerOnly branch detail: all-objects enable=0 stops layer 0 once (0x00639ADA/DE, 0x00639AE6) and sets comp+0x22 := 0 (0x00639B32); single-object enable=0 stops layers 0 and 2 (0x00639AA2, 0x00639AB0) and does not touch comp+0x22; enable=1 sets ObjectInfo+0x1C := 1 and (all-objects only) comp+0x22 := 1",
+        "C13.4 EnableGameLayerOnly returns without acting when comp+0x22 (all-objects, 0x00639A16..0x00639A1C) or ObjectInfo+0x1C (single-object, 0x006399DC..0x006399E0) already equals enable"
       ],
       "effect": "cubes light up differently or not at all",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "status": "IMPLEMENTATION_GAP",
       "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): CubeLightComponent: a connecting light cube (and every reconnect) gets an ObjectInfo {layer 2} unless one exists and PlayLightAnim(WakeUp, layer 2) with the LC2 gates; SetObjectLights with the SetLEDs rules and gamma 0x80; SetLights sends SetCubeGamma on the first call and on a change, then CubeID {activeID, (rot+29)/30}, then CubeLights with white balance; patterns advance on their timers in Robot::Update and an emptied layer plays the default layer-2 animation (LC1..LC8, S5..S8). The patterns load from CubeAnimationTriggerMap.json and config/engine/lights/cubeLights under CozmoEngineOptions.ResourcesPath. Verifier round (2026-09-25, corrections C1..C5): SetLights' SetCubeGamma + CubeID + CubeLights are one group under a lock, so another SetLights cannot interleave; LC2 (b) is the requested layer's stack (0x006382FC..0x0063831C); a timer expires at now >= timer (0x00637998 bhs); a pattern with a timer of 0 (duration_ms 0) holds unless +0x41 is set (0x0063798A..0x00637994).",
-      "unresolved": "LC3 PickNextAnimForDefaultLayer: the cube-sleep flags (writers not in the inventory), the carried object (M12) and the located object's +0x24 (M11) are not wired, so the default is always Connected; +0x41 (which releases a timer-0 pattern) has no writer in the rows and is never set here; a pop that leaves an animation below it on the same layer (LC8 double WakeUp) resends nothing - not in the rows; makeRelative patterns need the located object (M11) and go to the connected cube; which directory the engine reads the cube animations from is not in the rows (loaded from config/engine/lights/cubeLights)",
+      "unresolved": "wire the robot-is-localized flag into the RobotDelocalized refresh gate (C11.2); the default-layer carried/visible choice needs M11. EnableGameLayerOnly matches C13.1 and C13.4; the single-object case with no ObjectInfo is not settled by the rows (unreachable from the app). SetLocalizedTo (0x0051245E/0x005124EE) and the runtime Robot::Delocalize callers are M11.",
       "hardware_required": false,
       "live_path": true,
       "test": "M4ControlTests.M4_018_LC1_LC6_WakeUpOnConnection, M4ControlTests.M4_018_LC8_AReconnectReplaysWakeUpWithoutGamma, M4ControlTests.M4_018_LC3_TheShippedWakeUpAnimationLoads, M4ControlTests.M4_018_LC4_LC5_LB4f_TheColourAndFrameConversions"
@@ -6186,18 +6191,34 @@
       "title": "Cliff: sensor defaults, CliffEvent and PotentialCliff handling, EnableStopOnCliff senders, the threshold schedule 50 / 400 / 150",
       "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
       "evidence": [
-        "SC1 ctor 0x00633FA0..0x00633FCE",
-        "SC3 SendCliffDetectThresholdToRobot 0x00634270..0x00634368",
-        "SC4 schedule 0x00512D7A..0x00512EA6; SC4a 0x00634514..0x006345AE; SC4b 0x006343B8..0x006344B0; SC4c 0x00634630..0x00634724; SC4d 0x006347A4..0x0063480C; SC4j 0x00511D66..0x00511DA0",
-        "SC5 CliffEvent 0x00535548..0x005356E6; SC6 0x00527E8E..0x00527EEA; SC7 PotentialCliff 0x0053582C..0x00535998; SC8 EnableStopOnCliff senders",
-        "C2: the 50 mm distance is the 3-D norm between MoveRobotPoseForward(pose, -20 mm or the carry literal) before and after UpdateCurrPoseFromHistory (0x00512D48..0x00512D74), accumulated from the first matching state (0x00512DD2..0x00512EA6)",
-        "C7: drive-centre XY displacement, MoveRobotPoseForward 0x00517ED0..0x00517F3E, d = -20 or 0.0 when carrying (0x00512D14); C8: charger platform SetOnChargerPlatform 0x00511D4C..0x00511DB0, set by SetOnCharger rising edge, cleared by CheckAndUpdateTreadsState 0x00512188..0x00512192 and Robot::Update 0x00513C5C..0x00513E2A"
+        "SC1..SC8, SC4a..SC4j, SC6, C2, C7, C8 as before",
+        "H1 HandleRobotStopped is subscribed for robot tag 0xD4 (0x00532B6E, GOT 0x0103EA8C)",
+        "H2 0x0053539C..0x0053542E body: Get_robotStopped, sEventF, EvaluateCliffSuspiciousnessWhenStopped",
+        "H3 0x00634840..0x00634846 Evaluate = comp+0x1C := robot+0x2C",
+        "H4 0x00535432..0x00535480 if the sensor is enabled: RequestCurrentBehaviorEndImmediately, ActionList::Cancel(-1), broadcast RobotStopped",
+        "S1 0x00512FB0..0x00512F22 stats/threshold run for frame-mismatched states for the first 100",
+        "S2 0x006343C6..0x006343D6 gates +0x1C != 0 and MC+0xC == 0",
+        "S3 0x006343D8..0x00634404 std::map::lower_bound(comp+0x1C) over RobotStateHistory at robot+0x390",
+        "S4 0x0063448E..0x006344AA in-order successor walk",
+        "S5 0x00634420..0x0063448A min(cliff[0]); Increment when variance > 10000.0f and min+15 < cliff",
+        "S6 0x006344AC..0x006344AE clears +0x1C at the end of the walk",
+        "S7 0x0063451A..0x006345AA Increment: cache < 151 returns; else cache = max(cache-250,150), send, count=0",
+        "S8 senders: 0x00511DA0, 0x00512DA2 (50), 0x00512EA0 (400), 0x006345A4, 0x006347F8",
+        "W1 0x00634636..0x00634656 sample gate: moving, robot+0x355 == 0, state+0x50 > cache",
+        "W3 0x0063466A/0x006346D0..0x006346FC add-only Welford with n = size",
+        "W4 0x0063466C..0x006346CE removal with N = the constant 100.0f (0x00634728), not the deque size",
+        "W5 0x00634700..0x0063471E M2 += s0; variance = M2/(size-1) once size >= 2",
+        "W6 0x00634668 the window is 100 samples",
+        "C12.3 robot+0x2C0 is per-mismatch-run: 0 at the ctor 0x0050FF08, 0 on a frame match 0x00512EAE, 0 on the treads Delocalize 0x00512B9C, old+1 on a mismatch 0x00512F1C, 0 after 0x65 0x00512F88",
+        "C12.4 the stats gate r6=0 is false on the AddRobotStateToHistory failure (0x00512BEE/0x00512BF4/0x00512C38), the GetLastStateWithFrameID failure (0x00513088/0x00513110) and the origin miss (0x00512F0C)",
+        "C13.2 the treads-change Delocalize stores +0x2C0 = 0 at 0x00512B9C then b 0x512FB4, skipping the frame compare, the frame-match reset and the mismatch increment; the stats run unconditionally",
+        "C13.3 RobotStateHistory ctor sets a 3000 ms retention window at +0x3c (0x0053088D..0x005308C6); the stack's parallel cliff history mirrors it"
       ],
       "effect": "cliffs are detected or handled differently",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "status": "IMPLEMENTATION_GAP",
       "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): CliffSensorComponent defaults (enabled, cache 400, raw 0xFFFF, SC1); SendCliffDetectThresholdToRobot always sends (SC3); CliffEvent with the sensor disabled and flags != 0 is dropped (SC5); the game EnableCliffSensor only stores +4 (SC6); PotentialCliff -> StopAllMotors + EnableStopOnCliff{0} (SC7); EnableStopOnCliff only from the caller (SC8); the first accepted state of the current frame sends 50 and 400 follows once after more than 50 mm (SC4, SC4e). Verifier round (2026-09-25, corrections C1..C5): the threshold schedule runs only for a state that passed the origin check (C3). Re-verify round (2026-09-25, C6..C8): C7 (rows D1..D5): the distance behind the 400 threshold is the XY displacement of the drive centre, MoveRobotPoseForward(pose, -20 mm) = (x + d cos(theta), y + d sin(theta), 0), between the robot pose before and after each accepted state's pose update, added on every state whose frame id matches from the first one (CozmoSensors.CliffThresholdSchedule). C8 (rows P1..P6): SetOnChargerPlatform(b) = b or the contacts flag, with RobotOnChargerPlatformEvent and 50/400 on a change; set true by SetOnCharger on the rising IS_ON_CHARGER edge, left alone by SetOnCharger(false), set false by a committed off-treads change to anything but OnTreads; SC7: a PotentialCliff on the platform is ignored.",
-      "unresolved": "C7 D2: MoveRobotPoseForward's distance is 0.0 while carrying (CarryingComponent(+0x284)+8 != -1); the carrying state is M12's and not seen here, so -20 mm is always used. C8 P7..P9: Robot::Update also clears the platform flag when no charger is located or the robot footprint no longer intersects the charger quad (0x00513C5C..0x00513E2A); that is M11 geometry (the charger quad 0x0087713A, the dock pose 0x004EA304, the filter's origin scope) and is not built; the FreeplayDataTracker pause flag 3 after a platform change is M15's. The 150 send (SC4a..SC4c) needs HandleRobotStopped's tag (not read), the removal step of the 100-sample sliding Welford window and RobotStateHistory's lower_bound walk; the 400 on Delocalize (SC4d) needs the UFRS Delocalize, which C9 records as the M11 interface; drone mode (SC7, SC8 EnableDroneMode) is not offered",
+      "unresolved": "the treads-change path must skip the frame logic and run the stats unconditionally with the counter at 0 (C13.2); the +0x2C0 counter resets on a frame match and after 0x65 (C12.3); the stats gate must also see an AddRobotStateToHistory / GetLastStateWithFrameID failure (C12.4, M11). H4's BehaviorManager::RequestCurrentBehaviorEndImmediately and ActionList::Cancel(-1) are M7/M8 interfaces. Robot::Update's charger-platform clearing and the runtime Delocalize callers are M11 geometry.",
       "hardware_required": false,
       "live_path": true,
       "test": "M4ControlTests.M4_019_SC1_SC5_SC6_CliffDefaultsAndTheDisabledDrop, M4ControlTests.M4_019_SC7_PotentialCliffStopsAllMotorsAndDisablesStopOnCliff, M4ControlTests.M4_019_SC4_SC8_TheThresholdSchedule, M4ControlTests.M4_019_C7_TheDistanceIsTheDriveCentreDisplacement, M4ControlTests.M4_019_C8_SC7_TheChargerPlatform"
@@ -7653,6 +7674,27 @@
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests"
+    },
+    {
+      "id": "M4-025",
+      "subsystem": "M4-control",
+      "title": "ObjectAvailable and ObjectUnavailable broadcasts are gated on robot+0x490 (0 in this build)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Cubes.cs",
+      "effect": "whether the game is told an object became available or unavailable",
+      "provenance": "the engine's behaviour",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "D1 0x005101DE robot+0x490 = 0 at the ctor",
+        "D2 0x00517DD8 Robot::BroadcastAvailableObjects is the whole setter",
+        "D3/D4 no other store in .text and no caller of the setter anywhere in the shipped engine",
+        "D6 0x0053398E HandleActiveObjectAvailable gates ObjectAvailable on +0x490; RSSI <= 0x31 logs (0x0053399A); broadcast 0x005339FC/0x00533A04",
+        "D5 0x0051419A the expiry ObjectUnavailable broadcast is gated on +0x490"
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     }
   ]
 }

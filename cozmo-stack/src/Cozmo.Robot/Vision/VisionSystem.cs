@@ -965,11 +965,14 @@ public static class TurnTowardsPose
         if (Math.Abs(turn) > maxTurnAngleRad) return false;
         double absolute = robot.Value.AngleAroundZ + turn;
         var transport = vision.Robot;   // M1-026: through the app send path (B28, CB26, CB29)
-        transport.SendMessage(Message(absolute, MaxSpeedRadPerSec, AccelRadPerSec2, ToleranceRad, 0, true, 2), flush: true);
+        // fidelity: M4-005
+        // MA8: TurnInPlace and the direct SetHeadAngle take the shared u8 counter (MC+8), pre-incremented, so the
+        // body and head commands here run on the same id sequence as the M4 head and lift actions.
+        transport.SendMessage(Message(absolute, MaxSpeedRadPerSec, AccelRadPerSec2, ToleranceRad, 0, true, transport.Motion.NextActionId()), flush: true);
         if (vision.Calibration is { } cal)
         {
             double head = HeadAngleToSee(cal, robot.Value, target.Translation);
-            transport.SendMessage(new SetHeadAngle { AngleRad = (float)head, MaxSpeedRadPerSec = 10f, AccelRadPerSec2 = 10f, DurationSec = 0f, ActionId = 3 }, flush: true);
+            transport.SendMessage(new SetHeadAngle { AngleRad = (float)head, MaxSpeedRadPerSec = 10f, AccelRadPerSec2 = 10f, DurationSec = 0f, ActionId = transport.Motion.NextActionId() }, flush: true);
         }
         var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(6));
         while (DateTime.UtcNow < deadline)

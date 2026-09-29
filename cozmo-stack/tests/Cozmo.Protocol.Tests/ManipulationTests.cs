@@ -344,6 +344,38 @@ public class ManipulationTests
         Assert.False(rig.M.Docking.Carrying.IsCarryingObject);
     }
 
+    /// <summary>
+    /// M4-009 CD10a/CD10b with C11.1 D1..D5 (0x0063BA1E/0x0063BA2A, 0x0063BAAC/0x0063BAB6, 0x0063BE10,
+    /// 0x0053416E/0x00534174, 0x0053497C/0x00534984): the M12 layer wires DockingComponent+0xC (the dock
+    /// target) into the Moved/Stopped exclusion, so a cube being docked with is not broadcast; the exclusion
+    /// survives AbortDocking (D3) and does not affect other cubes.
+    /// </summary>
+    [Fact]
+    public void TheDockTargetIsExcludedFromTheMovedBroadcast()
+    {
+        if (Lib is null) return;
+        using var rig = new Rig();
+        rig.Cube = CubeAt(150, 0);
+        var obj = Assert.Single(rig.Frame().Objects).Object;
+        Assert.Null(rig.M.Docking.DockTargetObjectId);                 // D1: default -1
+        _ = rig.M.Docking.DockAsync(obj, obj.Markers.First(k => k.Code == MarkerType.LightCubeI_Front),
+                                    DockAction.PickupLow, PathMotionProfile.Default, timeout: TimeSpan.FromSeconds(5));
+        Assert.Equal(obj.ObjectId, rig.M.Docking.DockTargetObjectId);  // D2: DockWithObject writes +0xC
+
+        int moved = 0;
+        rig.Robot.Cubes.CubeMoved += _ => moved++;
+        rig.Send(new ObjectMoved { Timestamp = rig.T, ObjectID = obj.ObjectId });
+        Assert.Equal(0, moved);                                        // D4: the dock target is excluded
+
+        rig.M.Docking.Abort();
+        Assert.Equal(obj.ObjectId, rig.M.Docking.DockTargetObjectId);  // D3: AbortDocking does not reset it
+        rig.Send(new ObjectMoved { Timestamp = rig.T + 1, ObjectID = obj.ObjectId });
+        Assert.Equal(0, moved);                                        // still excluded
+
+        rig.Send(new ObjectMoved { Timestamp = rig.T + 2, ObjectID = 8 });
+        Assert.Equal(1, moved);                                        // another cube still broadcasts
+    }
+
     // ------------------------------------------------------------------ actions
 
     [Fact]

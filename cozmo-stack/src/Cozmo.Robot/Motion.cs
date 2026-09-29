@@ -39,8 +39,8 @@ public sealed record MotionOutcome(MotionResult Result, string Detail)
 /// Direct drive (DriveWheels, MoveHead, MoveLift) locks the matching animation track while its speed is non-zero,
 /// which sends DisableAnimTracks, and unlocks it at zero, which sends EnableAnimTracks (M4-014).
 ///
-/// Two policies of this stack sit on top: motion is refused until calibration completes (M4-004) and a wheel
-/// command is confirmed against the reported wheel speeds (M4-006).
+/// There is no calibration gate on direct motion (M4-004): the engine has none. One policy of this stack sits on top:
+/// a wheel command is confirmed against the reported wheel speeds (M4-006).
 /// </summary>
 public sealed class CozmoMotion
 {
@@ -176,22 +176,12 @@ public sealed class CozmoMotion
 
     // fidelity: M4-004
     /// <summary>
-    /// Policy M4-004: the readiness gate. The engine has no equivalent (MA21: the readers of Robot+0x314/+0x315 are
-    /// 0x00511E1C, 0x00512378, 0x0051335E, 0x005151A6 only); it reacts to calibration instead (MA20). Every caller can
-    /// pass <c>requireCalibration: false</c>.
+    /// The engine has no calibration gate on direct motion (MA21): the only readers of Robot+0x314/+0x315 are
+    /// 0x00511E1C, 0x00512378, 0x0051335E and 0x005151A6, and none of them gates DriveWheels, MoveHead or MoveLift;
+    /// the engine reacts to calibration instead (MA20). The stack's old readiness gate - a state must already exist and
+    /// the head and lift must have finished calibrating - is removed. The <c>requireCalibration</c> parameter is kept
+    /// only so existing callers compile; it has no effect.
     /// </summary>
-    private MotionOutcome? NotReady(bool requireCalibration)
-    {
-        if (_robot.State.Latest is null)
-            return new MotionOutcome(MotionResult.Refused, "the robot has not sent any state yet");
-        if (requireCalibration && !_robot.State.CalibrationComplete)
-            return new MotionOutcome(MotionResult.Refused,
-                _robot.State.CalibratingMotors
-                    ? "head and lift are still calibrating"
-                    : "head and lift have not finished calibrating yet");
-        return null;
-    }
-
     private void Log(string line) => _robot.Engine.Log(line);
 
     // ------------------------------------------------------------------- track locks
@@ -356,9 +346,8 @@ public sealed class CozmoMotion
     public async Task<MotionOutcome> DriveWheelsAsync(float leftMmps, float rightMmps,
                                                       float leftAccelMmps2 = 0f, float rightAccelMmps2 = 0f,
                                                       TimeSpan? confirmWithin = null,
-                                                      bool requireCalibration = true)
+bool requireCalibration = true)
     {
-        if (NotReady(requireCalibration) is { } refused) return refused;
         lock (_gate)
         {
             if (DirectDriveRefused(_ddBody, BodyTrack, "DriveWheels", "WheelsLocked") is { } no) return no;
@@ -415,6 +404,17 @@ public sealed class CozmoMotion
     internal const float MinHeadToleranceRad = 0.034906585f;
     /// <summary>MA12: the game SetLiftHeight builds its action with tolerance 5.0 mm.</summary>
     internal const float GameLiftToleranceMm = 5.0f;
+
+    // fidelity: M4-003
+    /// <summary>
+    /// MA12: the M12 CarryingComponent interface. True while an object is on the lift
+    /// (<c>CarryingComponent(+0x284)+8 != −1</c>). Set by the manipulation layer when it is built.
+    /// </summary>
+    internal Func<bool>? IsCarryingObject { get; set; }
+    /// <summary>
+    /// MA12: the M12 interface that runs <c>PlaceObjectOnGroundAction</c>. Set by the manipulation layer.
+    /// </summary>
+    internal Func<Task<MotionOutcome>>? PlaceObjectOnGroundAsync { get; set; }
     /// <summary>MA15: IsHeadInPosition adds 1e-5 to the tolerance.</summary>
     internal const float HeadInPositionSlack = 1e-5f;
     /// <summary>MA17: StoppedMakingProgress.</summary>
@@ -438,7 +438,6 @@ public sealed class CozmoMotion
                                                  float durationSec = 0f,
                                                  TimeSpan? timeout = null, bool requireCalibration = true)
     {
-        if (NotReady(requireCalibration) is { } refused) return Task.FromResult(refused);
         float target = radians;
         if (target < MinHeadAngleRad)
         {
@@ -458,13 +457,12 @@ public sealed class CozmoMotion
     // fidelity: M4-002, M4-003, M4-016
     /// <summary>
     /// The game SetLiftHeight (MA12): MoveLiftToHeightAction(h, tolerance 5.0 mm, variability 0) with the caller's
-    /// speed, acceleration and duration. Init: a height in [0, ∞) outside [32, 92] is clamped with a warning; a
+    /// speed, acceleration and duration. A height of exactly 32 mm while carrying runs PlaceObjectOnGroundAction
+    /// instead (MA12, through the M12 <see cref="IsCarryingObject"/>/<see cref="PlaceObjectOnGroundAsync"/> seam).
+    /// Init: a height in [0, ∞) outside [32, 92] is clamped with a warning; a
     /// negative height goes to the nearer of 32 and 92 to the current height (MA13). Nothing is sent when
     /// |target − height| &lt; tolerance and the lift is not moving (MA15). Completion as for the head, on the lift's
     /// in-position test and MC+0xB (MA17).
-    /// MISSING (M12): on the game path a height of exactly 32 mm while carrying becomes PlaceObjectOnGroundAction
-    /// (MA12); the carrying state is the M12 CarryingComponent, which this component does not see, so that branch is
-    /// not taken here.
     /// The angular-tolerance clip (≥ 1.5°, MA13) cannot bind at 5 mm: the lift's steepest point, 66 mm/rad at 45 mm,
     /// makes 1.5° at most 1.73 mm. Its formula is not in the inventory and is not needed for this API.
     /// </summary>
@@ -474,7 +472,10 @@ public sealed class CozmoMotion
                                                   float durationSec = 0f,
                                                   TimeSpan? timeout = null, bool requireCalibration = true)
     {
-        if (NotReady(requireCalibration) is { } refused) return Task.FromResult(refused);
+        // fidelity: M4-003
+        // MA12: if the height is exactly 32.0 and something is carried, run PlaceObjectOnGroundAction instead.
+        if (heightMm == LowDockHeightMm && IsCarryingObject?.Invoke() == true && PlaceObjectOnGroundAsync is not null)
+            return PlaceObjectOnGroundAsync();
         float target = heightMm;
         if (target >= 0f && (target < LowDockHeightMm || target > CarryHeightMm))
         {
@@ -511,7 +512,6 @@ public sealed class CozmoMotion
     /// </summary>
     public MotionOutcome MoveHead(float radPerSec, bool requireCalibration = true)
     {
-        if (NotReady(requireCalibration) is { } refused) return refused;
         lock (_gate)
         {
             if (DirectDriveRefused(_ddHead, HeadTrack, "MoveHead", "HeadLocked") is { } no) return no;
@@ -528,7 +528,6 @@ public sealed class CozmoMotion
     /// </summary>
     public MotionOutcome MoveLift(float radPerSec, bool requireCalibration = true)
     {
-        if (NotReady(requireCalibration) is { } refused) return refused;
         lock (_gate)
         {
             if (DirectDriveRefused(_ddLift, LiftTrack, "MoveLift", "LiftLocked") is { } no) return no;
@@ -720,7 +719,10 @@ public sealed class CozmoMotion
     ///    0x0054941C..0x00549428);
     /// 4. in position: Success if not moving, else Running; not in position: moving Running, not moving and has moved
     ///    0x04000004 StoppedMakingProgress, otherwise Running (head 0x00548738..0x005488AC, lift 0x0054942C..0x00549508).
-    /// MISSING: the head's CheckIfDone has further code at 0x005485F8..0x00548728 that has not been read (M4-016).
+    /// The head's further code at 0x005485F8..0x00548728 is the eye-shift removal (H4..H6): it runs only while
+    /// +0x9D == 0 and +0xA8 != 0, and +0xA8 is never set in this build (H7), so it never executes and changes neither
+    /// the wire nor the result. The lift's CheckIfDone (0x005493F6..0x00549508) has no eye-shift block (C6). Neither
+    /// needs anything here.
     /// </summary>
     private void CheckIfDoneLocked(List<(MoveAction, MotionOutcome)> finished)
     {

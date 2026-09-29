@@ -88,6 +88,15 @@ public sealed class CozmoSensors
     /// <summary>Raised when the robot arrives on, or leaves, the charger contacts.</summary>
     public event Action<bool>? OnChargerChanged;
 
+    // fidelity: M4-019
+    /// <summary>
+    /// H4: <c>HandleRobotStopped</c>'s game-side <c>RobotStopped</c> broadcast (0x00535480), raised with the
+    /// reason byte when the cliff sensor is enabled. The behaviour-end and action-cancel calls that precede it
+    /// (<c>BehaviorManager::RequestCurrentBehaviorEndImmediately</c>, <c>ActionList::Cancel(-1)</c>) are the M7/M8
+    /// interfaces and are not wired here.
+    /// </summary>
+    public event Action<byte>? RobotStopped;
+
     /// <summary>
     /// Raised when the robot starts or stops reporting that it is falling, derived from
     /// <c>RobotStatusFlag.IsFalling</c> the same way pick-up and charger transitions are. Without this the
@@ -162,6 +171,14 @@ public sealed class CozmoSensors
 
     /// <summary>Raised for every MotorCalibration report, started or finished.</summary>
     public event Action<MotorCalibration>? MotorCalibrationReported;
+
+    // fidelity: M4-012
+    /// <summary>
+    /// MA20: <c>HandleMotorCalibration</c> 0x00536BAE..0x00536C0E calls <c>SetCarriedObjectAsUnattached(true)</c>
+    /// when the lift starts calibrating while an object is carried. The carrying component is M12's; this seam is
+    /// invoked on a lift <c>CalibStarted</c> and the manipulation layer decides.
+    /// </summary>
+    public Action? UnattachCarriedObjectIfCarrying { get; set; }
 
     // ------------------------------------------------------------------- power
 
@@ -304,6 +321,165 @@ public sealed class CozmoSensors
     /// <summary>RobotOnChargerPlatformEvent (C8 P1): raised with the new value when it changes.</summary>
     public event Action<bool>? OnChargerPlatformChanged;
 
+    // ------------------------------------------------ CliffSensorComponent running stats (M4-019)
+    //
+    // fidelity: M4-019
+    // UpdateCliffRunningStats (0x00634630..0x00634724) and UpdateCliffDetectThreshold (0x006343B8..0x006344B0):
+    // a 100-sample sliding Welford window over cliff[0] (comp+0x20 deque, mean +0x38, variance +0x3C, M2 +0x40);
+    // HandleRobotStopped stores the last state timestamp into +0x1C, and the next state walks the raw-state history
+    // from lower_bound(+0x1C) and sends 150 when the variance is over 10000 and a sample exceeds min+15.
+    private readonly Queue<ushort> _cliffSamples = new();   // comp+0x20, window 100
+    private float _cliffMean;                               // +0x38
+    private float _cliffVariance;                           // +0x3C
+    private float _cliffM2;                                 // +0x40
+    private int _cliffSuspiciousCount;                      // +0x18
+    private uint _cliffSuspiciousAt;                        // +0x1C
+    /// <summary>The raw-state history the lower_bound walk reads (RobotStateHistory's raw map): timestamp and cliff[0].</summary>
+    private readonly List<(uint Timestamp, ushort Cliff0)> _cliffHistory = new();
+
+    // fidelity: M4-019
+    /// <summary>SC4c W4: the constant divisor of the removal step, 100.0f (0x00634728), not the deque size.</summary>
+    internal const float CliffWelfordWindow = 100.0f;
+    /// <summary>SC4c W5: the variance above which IncrementSuspiciousCliffCount fires (10000.0f at 0x006344ec).</summary>
+    internal const float CliffVarianceThreshold = 10000.0f;
+    /// <summary>SC4a S7: the cache is reduced by 250, clamped up to 150 (0x00634562..0x00634568).</summary>
+    internal const ushort CliffSuspiciousThreshold = 150;
+    /// <summary>SC4a S7: the cache below which Increment returns, 151 (0x0063451c).</summary>
+    internal const ushort CliffSuspiciousCacheMin = 151;
+
+    // fidelity: M4-019
+    /// <summary>The variance of the running cliff statistics (+0x3C).</summary>
+    public float CliffVariance { get { lock (_gate) return _cliffVariance; } }
+    /// <summary>The count of suspicious cliffs (+0x18).</summary>
+    public int SuspiciousCliffCount { get { lock (_gate) return _cliffSuspiciousCount; } }
+    /// <summary>+0x1C: the timestamp the suspicious-cliff walk starts from (0 when idle).</summary>
+    internal uint CliffSuspiciousAt { get { lock (_gate) return _cliffSuspiciousAt; } }
+
+    // fidelity: M4-019
+    /// <summary>
+    /// H3 EvaluateCliffSuspiciousnessWhenStopped (0x00634840..0x00634846): +0x1C := the Robot's last state timestamp.
+    /// </summary>
+    internal void EvaluateCliffSuspiciousnessWhenStopped(uint lastStateTimestamp)
+    {
+        lock (_gate) _cliffSuspiciousAt = lastStateTimestamp;
+    }
+
+    // fidelity: M4-019
+    /// <summary>
+    /// SC4c UpdateCliffRunningStats (0x00634630..0x00634724). W1 sample gate: the body is moving (MC+0xC), the
+    /// committed off-treads state is OnTreads, and cliff[0] is greater than the threshold cache. W3/W4/W5: a
+    /// 100-sample sliding Welford window; the removal step's N is the constant 100.0f, not the deque size.
+    /// </summary>
+    internal void UpdateCliffRunningStats(ushort cliff0)
+    {
+        bool take;
+        lock (_gate)
+        {
+            take = _robot.Motion.BodyMoving && OffTreadsState == OffTreadsState.OnTreads && cliff0 > _cliffThresholdCache;
+        }
+        if (!take) return;
+        lock (_gate)
+        {
+            _cliffSamples.Enqueue(cliff0);
+            int n = _cliffSamples.Count;
+            if (n < 101)
+            {
+                // W3 add-only: n = float(size); mean += (x - mean) / n; M2 += (x - mean_old) * (x - mean_new).
+                float nf = n;
+                float d = cliff0 - _cliffMean;
+                float meanNew = _cliffMean + d / nf;
+                _cliffM2 += d * (cliff0 - meanNew);
+                _cliffMean = meanNew;
+            }
+            else
+            {
+                // W4 removal: N = 100.0f constant; pop the oldest first.
+                ushort old = _cliffSamples.Dequeue();
+                float meanOld = _cliffMean;
+                float meanNew = meanOld + (cliff0 - old) / CliffWelfordWindow;
+                _cliffM2 += (cliff0 - meanOld) * (cliff0 - meanNew) - (old - meanOld) * (old - meanNew);
+                _cliffMean = meanNew;
+                n = _cliffSamples.Count;   // 100
+            }
+            // W5: variance = M2 / (size - 1) once size >= 2.
+            _cliffVariance = n >= 2 ? _cliffM2 / (n - 1) : 0f;
+        }
+    }
+
+    // fidelity: M4-019
+    /// <summary>
+    /// SC4b UpdateCliffDetectThreshold (0x006343B8..0x006344B0). S2 gates: +0x1C != 0 and the body is not moving.
+    /// S3/S4: a lower_bound on the history timestamp and an in-order successor walk to the end. S5: min(cliff[0]),
+    /// and when the variance is over 10000 and min+15 &lt; cliff[0], IncrementSuspiciousCliffCount. S6: +0x1C := 0.
+    /// </summary>
+    private void UpdateCliffDetectThreshold()
+    {
+        List<ushort> cliffs;
+        lock (_gate)
+        {
+            if (_cliffSuspiciousAt == 0 || _robot.Motion.BodyMoving) return;
+            // S3: lower_bound(_cliffSuspiciousAt) - the first sample with timestamp >= the target.
+            int i = _cliffHistory.FindIndex(e => e.Timestamp >= _cliffSuspiciousAt);
+            if (i < 0) { _cliffSuspiciousAt = 0; return; }
+            cliffs = new List<ushort>();
+            for (; i < _cliffHistory.Count; i++) cliffs.Add(_cliffHistory[i].Cliff0);
+            _cliffSuspiciousAt = 0;   // S6
+        }
+        // S5: min is a local (0xFFFF), the variance is the component's +0x3C.
+        ushort min = 0xFFFF;
+        foreach (var cliff in cliffs)
+        {
+            if (min > cliff) min = cliff;
+            if (_cliffVariance > CliffVarianceThreshold && (uint)(min + 15) < cliff)
+                IncrementSuspiciousCliffCount();
+        }
+    }
+
+    // fidelity: M4-019
+    /// <summary>
+    /// SC4a S7 IncrementSuspiciousCliffCount (0x00634514..0x006345AE): returns while the cache is below 151;
+    /// otherwise count++, the cache becomes cache − 250 clamped up to 150, that is sent, and count := 0. From 400
+    /// this sends 150.
+    /// </summary>
+    internal void IncrementSuspiciousCliffCount()
+    {
+        ushort sent;
+        lock (_gate)
+        {
+            ushort cache = _cliffThresholdCache;
+            if (cache < CliffSuspiciousCacheMin) return;
+            _cliffSuspiciousCount++;
+            uint reduced = (uint)cache - 250u;
+            if (reduced <= 0x96u) reduced = CliffSuspiciousThreshold;
+            _cliffThresholdCache = (ushort)reduced;
+            sent = (ushort)reduced;
+            _cliffSuspiciousCount = 0;
+        }
+        SendCliffDetectThresholdToRobot(sent);
+    }
+
+    // fidelity: M4-019
+    /// <summary>
+    /// SC4d ClearCliffRunningStats (0x006347A4..0x0063480C): count = 0; if the threshold cache is not 400 it becomes
+    /// 400, the event "RestoringCliffDetectThreshold" is logged and 400 is sent; then the deque, mean, variance and M2
+    /// are cleared. +0x1C is not cleared. It is called only from <c>Robot::Delocalize</c> (0x00510A5A).
+    /// </summary>
+    internal void ClearCliffRunningStats()
+    {
+        bool send;
+        lock (_gate)
+        {
+            _cliffSuspiciousCount = 0;
+            send = _cliffThresholdCache != DefaultCliffThreshold;
+            if (send) _cliffThresholdCache = DefaultCliffThreshold;
+            _cliffSamples.Clear();
+            _cliffMean = _cliffVariance = _cliffM2 = 0f;
+        }
+        if (!send) return;
+        _robot.Engine.Log("info: CliffSensorComponent.ClearCliffRunningStats.RestoringCliffDetectThreshold");
+        SendCliffDetectThresholdToRobot(DefaultCliffThreshold);
+    }
+
     /// <summary>Whether the engine's cliff sensor component is enabled (+4); set by the game EnableCliffSensor (SC6).</summary>
     public bool CliffSensorEnabled { get { lock (_gate) return _cliffEnabled; } }
     /// <summary>+5: the last CliffEvent broadcast had flags ≠ 0 (SC5).</summary>
@@ -345,26 +521,46 @@ public sealed class CozmoSensors
 
     // fidelity: M4-019
     /// <summary>
+    /// SC4e: robot+0x2B0 is the current pose frame id; the schedule and the stats run on a state whose frame id
+    /// matches (0x00512D7A, 0x00512EAC), and on a frame-mismatched state only while robot+0x2C0 &lt; 101 (S1).
+    /// </summary>
+    private bool FrameMatches(RobotState s) => _robot.Engine.Robot is { } er && s.PoseFrameId == er.PoseFrameId;
+
+    // fidelity: M4-019
+    /// <summary>
+    /// Robot+0x2C0, the frame-mismatch run counter (S1, C12.3): 0 at construction (0x0050FF08), 0 on every frame-match
+    /// state (0x00512EAE), 0 on the treads-change Delocalize path (0x00512B9C), old+1 on a frame-mismatch (0x00512F1C)
+    /// and 0 once the count reaches 0x65 (0x00512F88). An origin-miss or a history-failure state leaves it untouched.
+    /// </summary>
+    private int _frameMismatchCount;
+
+    /// <summary>robot+0x2C0, the frame-mismatch run counter (C12.3), for the regression tests.</summary>
+    internal int FrameMismatchCount { get { lock (_gate) return _frameMismatchCount; } }
+
+    // fidelity: M4-019
+    /// <summary>
     /// The threshold schedule in UpdateFullRobotState, for an accepted state (SC4, SC4e, C7 D1..D5, 0x00512D48..0x00512EA6):
     /// the drive-centre point of the robot pose before the state's pose update and after it, MoveRobotPoseForward(pose,
-    /// −20 mm), both with z = 0; for a state whose frame id equals robot+0x2B0, the first time (+0x528 = −1) it sends 50
-    /// and falls through, then |after − before| is added, and past 50 mm it sends 400 once (+0x52C). Both happen once per
-    /// Robot object. The pose update itself happens on every accepted state.
-    /// MISSING: d is 0.0 while carrying (C7 D2, CarryingComponent(+0x284)+8 ≠ −1); the carrying state is M12's and not
-    /// seen here, so −20 is always used.
-    /// MISSING: the 150 send (SC4a..SC4c: HandleRobotStopped's tag, the sliding Welford removal step, RobotStateHistory's
-    /// lower_bound walk) and the 400 on Delocalize (SC4d: the UFRS Delocalize conditions) are not sent.
+    /// d) with z = 0, where d is −20 mm normally and 0.0 while carrying (C7 D2, CarryingComponent(+0x284)+8 != −1,
+    /// read once at 0x00512D14); for a state whose frame id equals robot+0x2B0, the first time (+0x528 = −1) it sends
+    /// 50 and falls through, then |after − before| is added, and past 50 mm it sends 400 once (+0x52C). Both happen once
+    /// per Robot object. The pose update itself happens on every accepted state.
+    /// The 150 send (SC4a..SC4c) is built in
+    /// <see cref="UpdateCliffRunningStats"/>/<see cref="UpdateCliffDetectThreshold"/>/<see cref="IncrementSuspiciousCliffCount"/>;
+    /// ClearCliffRunningStats is wired to the Delocalize path (<see cref="CozmoEngine.RobotDelocalized"/>).
     /// </summary>
     private void CliffThresholdSchedule(RobotState s)
     {
-        if (_robot.Engine.Robot is not { } er) return;
+        if (_robot.Engine.Robot is null) return;
         var sends = new List<ushort>();
         lock (_gate)
         {
-            var before = MoveRobotPoseForward(_poseX, _poseY, _poseAngle, DriveCenterOffsetMm);
+            // C7 D2: d = 0.0 while carrying, −20.0 otherwise; read once, the same value for both poses.
+            float d = _robot.Motion.IsCarryingObject?.Invoke() == true ? 0f : DriveCenterOffsetMm;
+            var before = MoveRobotPoseForward(_poseX, _poseY, _poseAngle, d);
             _poseX = s.Pose.X; _poseY = s.Pose.Y; _poseAngle = s.Pose.Angle;
-            var after = MoveRobotPoseForward(_poseX, _poseY, _poseAngle, DriveCenterOffsetMm);
-            if (s.PoseFrameId != er.PoseFrameId) return;
+            var after = MoveRobotPoseForward(_poseX, _poseY, _poseAngle, d);
+            if (!FrameMatches(s)) return;
             if (_cliffDistanceMm < 0f)
             {
                 _cliffDistanceMm = 0f;
@@ -477,6 +673,12 @@ public sealed class CozmoSensors
             _poseX = _poseY = _poseAngle = 0f;
             _onChargerContacts = false;
             _onChargerPlatform = false;
+            _cliffSamples.Clear();
+            _cliffMean = _cliffVariance = _cliffM2 = 0f;
+            _cliffSuspiciousCount = 0;
+            _cliffSuspiciousAt = 0;
+            _frameMismatchCount = 0;
+            _cliffHistory.Clear();
         }
         _lastFalling = false;
         _lastPickedUp = false;
@@ -517,6 +719,19 @@ public sealed class CozmoSensors
                 HandlePotentialCliff();
                 break;
 
+            case Protocol.RobotStopped rs:
+                // fidelity: M4-019
+                // H1..H4 HandleRobotStopped tag 0xD4 (0x0053539C..0x00535480): H3 Evaluate sets comp+0x1C := the
+                // Robot's last state timestamp (robot+0x2C); if the cliff sensor is enabled (+4 != 0), RobotStopped is
+                // broadcast. The preceding BehaviorManager::RequestCurrentBehaviorEndImmediately and
+                // ActionList::Cancel(-1) are the M7/M8 interfaces, named in M4-019's unresolved and not wired here.
+                // Nothing is sent to the robot.
+                EvaluateCliffSuspiciousnessWhenStopped(_robot.Engine.Robot?.StoredState?.Timestamp ?? _cliffTimestamp);
+                bool stoppedEnabled;
+                lock (_gate) stoppedEnabled = _cliffEnabled;
+                if (stoppedEnabled) RobotStopped?.Invoke(rs.Field0);
+                break;
+
             case Protocol.FallingStarted fs:
                 // fidelity: M10-011
                 // C1 (0x534F4C..0x534F9E): log, then the game FallingStarted{timestamp}.
@@ -536,6 +751,9 @@ public sealed class CozmoSensors
             case MotorCalibration mc:
                 MotorCalibrationReported?.Invoke(mc);
                 if (mc.CalibStarted && mc.AutoStarted) AutoCalibrationStarted?.Invoke(mc);
+                // fidelity: M4-012
+                // MA20: a lift that starts calibrating while carrying detaches the carried object.
+                if (mc.MotorID == MotorID.MOTOR_LIFT && mc.CalibStarted) UnattachCarriedObjectIfCarrying?.Invoke();
                 break;
 
             case RobotState s:
@@ -547,6 +765,17 @@ public sealed class CozmoSensors
                     if (s.CliffDataRaw is { Length: 4 } raw) _cliffRaw = raw.ToArray();
                     _cliffDetectedFlag = s.Has(RobotStatusFlag.CliffDetected);
                     _cliffTimestamp = s.Timestamp;
+                    // fidelity: M4-019
+                    // The raw-state history the S3 lower_bound walk reads (RobotStateHistory's raw map, history+0):
+                    // key = timestamp, value carries cliff[0]. C13.3: the engine's state-history retention is 3000 ms
+                    // (RobotStateHistory::RobotStateHistory sets the window at history+0x3c, 0x0053088D..0x005308C6);
+                    // the stack's parallel history uses the same window, which only bounds memory.
+                    if (s.CliffDataRaw is { Length: 4 } hraw)
+                    {
+                        _cliffHistory.Add((s.Timestamp, hraw[0]));
+                        while (_cliffHistory.Count > 0 && unchecked(s.Timestamp - _cliffHistory[0].Timestamp) > 3000)
+                            _cliffHistory.RemoveAt(0);
+                    }
                 }
                 // fidelity: M10-001, M10-005, M10-010
                 // UFRS order (M4 C3): the IMU filters and CheckAndUpdateTreadsState (0x00512A72) on BaseStationTimer ms
@@ -555,7 +784,16 @@ public sealed class CozmoSensors
                 var er = _robot.Engine.Robot;
                 OffTreads.HeadCalibrated = _state.HeadCalibrated;
                 OffTreads.IsPhysical = er?.IsPhysicalRobot ?? false;
+                bool onTreadsBefore = OffTreads.Current == OffTreadsState.OnTreads;
                 OffTreads.Update(s, _robot.Engine.Timer.TimeStampMs);
+                // fidelity: M4-019
+                // C13.2 (0x00512B9C..0x00512BAA): a committed change to or from OnTreads stores robot+0x2C0 = 0 and
+                // then branches straight to the stats/threshold body at 0x512FB4, past the origin check, the
+                // pose/history, the threshold schedule, the frame compare, the frame-match reset and the mismatch
+                // increment; the stats run unconditionally (the cmp r6,#0 gate at 0x512FB0 is not reached), so the
+                // counter stays 0 for that state.
+                bool treadsChanged = (OffTreads.Current == OffTreadsState.OnTreads) != onTreadsBefore;
+                if (treadsChanged) _frameMismatchCount = 0;
                 // fidelity: M4-019
                 // C8 P3..P5: UpdateFullRobotState then feeds SetOnCharger with IS_ON_CHARGER (0x00512AAC..0x00512AB4).
                 SetOnCharger(s.Has(RobotStatusFlag.IsOnCharger));
@@ -572,12 +810,54 @@ public sealed class CozmoSensors
                 UnexpectedMovement.BodyTrackLocked = (_robot.Motion.LockedTracks & CozmoMotion.BodyTrack) != 0;
                 var movement = UnexpectedMovement.Update(s);
                 if (movement is not null) UnexpectedMovementDetected?.Invoke(movement);
-                // fidelity: M4-019, M4-020
-                // The schedule is after the origin check (0x00512D7A..0x00512EA6, C3), so after the treads check
-                // (0x00512A72), SetOnCharger (0x00512AB4) and MovementComponent::Update (0x00512B5C): when both send a
-                // threshold in one state the engine's order is platform first, schedule last. An origin-rejected state
-                // skips it.
-                if (_robot.Engine.Robot?.OriginAccepted(s) == true) CliffThresholdSchedule(s);
+                // fidelity: M4-019
+                // C13.2: the treads-change branch (0x00512BAA) jumps straight to the stats/threshold body at
+                // 0x512FB4, so the stats run for a treads-change state whether or not its origin is accepted, and
+                // the threshold schedule and the frame logic are skipped.
+                if (treadsChanged)
+                {
+                    if (s.CliffDataRaw is { Length: 4 } traw) UpdateCliffRunningStats(traw[0]);
+                    UpdateCliffDetectThreshold();
+                }
+                else
+                {
+                    // fidelity: M4-019, M4-020
+                    // The schedule is after the origin check (0x00512D7A..0x00512EA6, C3), so after the treads check
+                    // (0x00512A72), SetOnCharger (0x00512AB4) and MovementComponent::Update (0x00512B5C): when both send a
+                    // threshold in one state the engine's order is platform first, schedule last. An origin-rejected state
+                    // skips it.
+                    if (_robot.Engine.Robot?.OriginAccepted(s) == true) CliffThresholdSchedule(s);
+                    // fidelity: M4-019
+                    // S1 (0x00512FB0..0x00512F22): UpdateCliffRunningStats (0x00512FCE) then UpdateCliffDetectThreshold
+                    // (0x00512FD6) run when r6 == 0 - the frame-match path and the frame-mismatch path while robot+0x2C0
+                    // < 0x65. C12.3: the counter is per-mismatch-run: 0 on a frame match, old+1 on a mismatch, 0 once the
+                    // count reaches 0x65 (so the 101st mismatch still skips the stats). C12.4: r6 = 1 also on an
+                    // AddRobotStateToHistory failure (0x00512C38) and a GetLastStateWithFrameID failure (0x00513110); the
+                    // origin miss is the OriginAccepted gate below. MISSING: this layer has no history-add or pose-frame
+                    // failure signal (the stack's RobotStateHistory.Add is void and lives in M11; there is no
+                    // GetLastStateWithFrameID), so those two cannot be included.
+                    if (_robot.Engine.Robot?.OriginAccepted(s) == true)
+                    {
+                        bool mismatch = !FrameMatches(s);
+                        bool statsAllowed;
+                        if (mismatch)
+                        {
+                            _frameMismatchCount++;
+                            statsAllowed = _frameMismatchCount < 0x65;
+                            if (_frameMismatchCount >= 0x65) _frameMismatchCount = 0;
+                        }
+                        else
+                        {
+                            _frameMismatchCount = 0;
+                            statsAllowed = true;
+                        }
+                        if (statsAllowed)
+                        {
+                            if (s.CliffDataRaw is { Length: 4 } sraw) UpdateCliffRunningStats(sraw[0]);
+                            UpdateCliffDetectThreshold();
+                        }
+                    }
+                }
 
                 bool picked = s.Has(RobotStatusFlag.IsPickedUp);
                 bool charger = s.Has(RobotStatusFlag.IsOnCharger);

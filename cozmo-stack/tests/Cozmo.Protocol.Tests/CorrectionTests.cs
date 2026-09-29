@@ -221,10 +221,15 @@ public class CorrectionTests
         Assert.Equal(before, decisions.Count);
     }
 
-    // ---------------------------------------------------------------- 4: recalibration readiness
+    // ---------------------------------------------------------------- 4: recalibration does not gate direct motion
 
+    /// <summary>
+    /// M4-004 / C10.7: the engine has no calibration gate on direct motion. A recalibration that starts after the
+    /// motors were calibrated does not refuse DriveWheels or SetHeadAngle; the command goes out and the action waits
+    /// for its ack (so a rig that sends no ack sees TimedOut, never Refused).
+    /// </summary>
     [Fact]
-    public void ARecalibrationInvalidatesReadinessUntilItFinishes()
+    public void ARecalibrationDoesNotBlockDirectMotion()
     {
         using var rig = new Rig();
         var state = rig.Robot.State;
@@ -234,22 +239,31 @@ public class CorrectionTests
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false, AutoStarted = false });
         Assert.True(state.CalibrationComplete);
 
-        // the head starts again: normal motion must be refused while it runs
+        // the head starts again: the engine still sends the command
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true, AutoStarted = true });
         Assert.False(state.HeadCalibrated);
         Assert.False(state.CalibrationComplete);
-        var refused = rig.Robot.Motion.DriveWheelsAsync(50, 50, confirmWithin: TimeSpan.FromMilliseconds(1)).GetAwaiter().GetResult();
-        Assert.Equal(MotionResult.Refused, refused.Result);
-        Assert.Contains("calibrating", refused.Detail);
+        var sent = rig.Robot.Motion.DriveWheelsAsync(50, 50, confirmWithin: TimeSpan.FromMilliseconds(1)).GetAwaiter().GetResult();
+        rig.Pump();
+        Assert.Contains(rig.Sent, m => m is DriveWheels);
+        Assert.NotEqual(MotionResult.Refused, sent.Result);
+        Assert.DoesNotContain("calibrating", sent.Detail);
 
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false, AutoStarted = true });
         Assert.True(state.CalibrationComplete);
+        int mark = rig.Sent.Count;
         var allowed = rig.Robot.Motion.DriveWheelsAsync(50, 50, confirmWithin: TimeSpan.FromMilliseconds(1)).GetAwaiter().GetResult();
+        rig.Pump();
+        Assert.Contains(rig.Sent.Skip(mark), m => m is DriveWheels);
         Assert.NotEqual(MotionResult.Refused, allowed.Result);
 
-        // the same for the lift
+        // the same for the lift: a lift recalibration does not gate a head move either
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = true, AutoStarted = true });
         Assert.False(state.CalibrationComplete);
+        mark = rig.Sent.Count;
+        _ = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(1)).GetAwaiter().GetResult();
+        rig.Pump();
+        Assert.Contains(rig.Sent.Skip(mark), m => m is SetHeadAngle);
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false, AutoStarted = true });
         Assert.True(state.CalibrationComplete);
     }

@@ -252,11 +252,13 @@ public static class PanAndTilt
     {
         if (v.PanTiltOverride is not null) return await v.PanTiltOverride(absoluteBodyRad, headRad, cancel);
         var t = v.Robot;   // M1-026: through the app send path (B28, CB26, CB29)
-        t.SendMessage(TurnTowardsPose.Message(absoluteBodyRad, bodySpeedRadPerSec, TurnTowardsPose.AccelRadPerSec2, TurnTowardsPose.ToleranceRad, 0, true, 2), flush: true);
+        // fidelity: M4-005
+        // MA8: TurnInPlace (SetBodyAngle) and the direct SetHeadAngle take the shared u8 counter (MC+8).
+        t.SendMessage(TurnTowardsPose.Message(absoluteBodyRad, bodySpeedRadPerSec, TurnTowardsPose.AccelRadPerSec2, TurnTowardsPose.ToleranceRad, 0, true, t.Motion.NextActionId()), flush: true);
         t.SendMessage(new SetHeadAngle
         {
             AngleRad = (float)headRad, MaxSpeedRadPerSec = (float)headSpeedRadPerSec,
-            AccelRadPerSec2 = (float)headAccelRadPerSec2, DurationSec = 0f, ActionId = 3,
+            AccelRadPerSec2 = (float)headAccelRadPerSec2, DurationSec = 0f, ActionId = t.Motion.NextActionId(),
         }, flush: true);
         if (!waitForSettle) return true;
         var deadline = DateTime.UtcNow.AddSeconds(6);

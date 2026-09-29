@@ -106,8 +106,15 @@ public sealed class OffTreadsClassifier
     public uint CandidateTimeMs { get; private set; }
     /// <summary>+0x35C: the robot timestamp at which the current fall was entered, 0 when not falling (A8, A9).</summary>
     public uint FallingStartedTimestamp { get; private set; }
-    /// <summary>+0x2C4 = 1 on a commit to OnTreads (A11). What it means is not in the rows (an M11 interface).</summary>
+    /// <summary>+0x2C4, the robot-is-localized flag (C11.2): 0 from the constructor's Delocalize, set 1 on a commit to OnTreads (A11).</summary>
     public byte Robot2C4 { get; private set; }
+
+    // fidelity: M4-018
+    /// <summary>
+    /// C11.2 L2 (0x00510A4A): <c>Robot::Delocalize</c> sets robot+0x2C4 = 0. The stack's Delocalize path is
+    /// <see cref="CozmoEngine.RobotDelocalized"/>; the runtime callers are M11 and not built.
+    /// </summary>
+    internal void MarkDelocalized() => Robot2C4 = 0;
     /// <summary>+0x2B8 = −1 on a commit to OnTreads (A11). What it means is not in the rows (an M11 interface).</summary>
     public int Robot2B8 { get; private set; }
     /// <summary>How many states have been fed (not an engine field).</summary>

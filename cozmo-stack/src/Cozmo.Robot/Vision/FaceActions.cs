@@ -95,7 +95,9 @@ public static class FaceTurns
             var robot = v.History.Latest?.RobotPose;
             if (robot is null || v.Calibration is null) return false;
             double head = Math.Clamp(TurnTowardsPose.HeadAngleToSee(v.Calibration, robot.Value, target.Translation), HeadGeometry.MinHeadAngleRad, HeadGeometry.MaxHeadAngleRad);
-            v.Robot.SendMessage(new SetHeadAngle { AngleRad = (float)head, MaxSpeedRadPerSec = 10f, AccelRadPerSec2 = 10f, DurationSec = 0f, ActionId = 3 }, flush: true);
+            // fidelity: M4-005
+            // MA8: the direct SetHeadAngle takes the shared u8 counter (MC+8), pre-incremented.
+            v.Robot.SendMessage(new SetHeadAngle { AngleRad = (float)head, MaxSpeedRadPerSec = 10f, AccelRadPerSec2 = 10f, DurationSec = 0f, ActionId = v.Robot.Motion.NextActionId() }, flush: true);
             return true;
         }
         return await TurnTowardsPose.RunAsync(v, target, maxTurnAngleRad, cancel);

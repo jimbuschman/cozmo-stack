@@ -120,6 +120,14 @@ public sealed class DockingSystem : IDisposable
     private TaskCompletionSource<DockResult>? _pending;
     private (uint ObjectId, KnownMarker Marker, double OffX, double OffY, double OffAngle, DockAction Action)? _active;
 
+    // fidelity: M4-009
+    /// <summary>
+    /// DockingComponent+0xC (C11.1 D1..D3): the engine ObjectID of the object the robot is currently docking
+    /// with. Default −1 (represented as null); the only writer is <c>DockWithObject</c>; <c>AbortDocking</c>
+    /// does not reset it. The Moved (CD10a) and Stopped (CD10b) broadcasts exclude a cube whose id equals it.
+    /// </summary>
+    public uint? DockTargetObjectId { get; private set; }
+
     public DockingSystem(CozmoRobot robot, VisionSystem vision)
     {
         _robot = robot; _vision = vision;
@@ -267,6 +275,9 @@ public sealed class DockingSystem : IDisposable
             if (_pending is not null) throw new InvalidOperationException("a dock is already running");
             tcs = _pending = new TaskCompletionSource<DockResult>(TaskCreationOptions.RunContinuationsAsynchronously);
             _active = (target.ObjectId, marker, placementOffsetX, placementOffsetY, placementOffsetAngle, action);
+            // fidelity: M4-009
+            // C11.1 D2 (0x0063BAAC/0x0063BAB6): DockWithObject copies the docked object's ObjectID into +0xC.
+            DockTargetObjectId = target.ObjectId;
             ErrorSignalsSent = 0;
         }
         _vision.World.MarkDirty(target.ObjectId);                          // ObjectPoseConfirmer::MarkObjectDirty in DockWithObject

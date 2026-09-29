@@ -272,6 +272,20 @@ public sealed class CozmoRobot : IDisposable
         Engine.StateStored = s => Cubes.Connections.SetRobotTime(s.Timestamp);
         Engine.RobotComponentsUpdate = UpdateComponents;
         Engine.RobotStateHistoryClear = () => StateHistoryCleared?.Invoke();
+        // fidelity: M4-019, M4-018
+        // SC4d: Robot::Delocalize calls ClearCliffRunningStats. The stack's Delocalize is the constructor's, which runs
+        // when the Robot is built on connection (M4-020 ConstructorDelocalize); the sensors exist by then.
+        // C11.2: Delocalize also sets robot+0x2C4 = 0 and raises RobotDelocalized, which the CubeLightComponent hears
+        // (S7: it sets comp+0x21, held until the flag returns to 1). The runtime Delocalize callers are M11 and not built.
+        Engine.RobotDelocalized = () =>
+        {
+            Sensors.ClearCliffRunningStats();
+            Sensors.OffTreads.MarkDelocalized();
+            Lights.Cubes.OnRobotDelocalized();
+        };
+        // fidelity: M4-018
+        // C11.2 L6: the cube-light refresh gate reads robot+0x2C4, the stack's OffTreadsClassifier.Robot2C4.
+        Lights.Cubes.IsLocalized = () => Sensors.OffTreads.Robot2C4 != 0;
         // fidelity: M1-024
         // Messages reach the devices only from the engine's per-tick drain (B25, CD10), not from the transport.
         Engine.DeviceRoute = RouteToDevices;
@@ -543,6 +557,15 @@ public sealed class CozmoRobot : IDisposable
 
     /// <summary>Prefer <see cref="Lights"/>.</summary>
     public void SetHeadlight(bool on) => Lights.SetHeadlight(on);
+
+    // fidelity: M4-018
+    /// <summary>
+    /// Robot.SetEnableFreeplayLightStates (unity/scripts/csharp/Robot.cs:1902-1907; game tag 0xBB EnableLightStates,
+    /// C12.2). The engine receives enable = (msg.byte0 == 0); see
+    /// <see cref="CubeLightComponent.SetEnableFreeplayLightStates"/>.
+    /// </summary>
+    public void SetEnableFreeplayLightStates(bool enable, int objectID = -1)
+        => Lights.Cubes.SetEnableFreeplayLightStates(enable, objectID);
 
     /// <summary>
     /// Stops every motor immediately. Safe to call at any time, including before the robot is ready, and

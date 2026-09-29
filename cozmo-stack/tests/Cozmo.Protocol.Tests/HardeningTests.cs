@@ -191,15 +191,32 @@ public class HardeningTests
             Robot.Transport.ProcessIncoming(FrameCodec.Encode(f));
         }
 
+        /// <summary>Every CLAD message the robot sent so far, after ticking the offline connection.</summary>
+        public List<RobotMessage> Sent()
+        {
+            Robot.Transport.OfflineTick();
+            var seen = new HashSet<ushort>();
+            var outp = new List<RobotMessage>();
+            foreach (var sm in Robot.Transport.OfflineOutbound.SelectMany(f => f.Messages))
+            {
+                if (sm.Type is not (ReliableMessageType.SingleReliableMessage or ReliableMessageType.SingleUnreliableMessage)
+                    || sm.Payload.Length == 0) continue;
+                if (sm.Seq != 0 && !seen.Add(sm.Seq)) continue;   // a resend of one already counted
+                outp.Add(RobotMessage.Parse(sm.Payload));
+            }
+            return outp;
+        }
+
         public void Dispose() => Robot.Dispose();
     }
 
     /// <summary>
-    /// A RobotState arriving before any calibration message is not evidence of readiness. Motion in that
-    /// window used to be allowed because nothing was "currently calibrating".
+    /// M4-004 / C10.7: the engine has no calibration gate on direct motion, so a head move in the window before any
+    /// calibration has been reported is still sent (and then waits for an ack the rig never sends). It used to be
+    /// refused because nothing was "currently calibrating".
     /// </summary>
     [Fact]
-    public async Task MotionIsRefusedInTheWindowBeforeCalibrationIsEvenReported()
+    public async Task MotionIsSentInTheWindowBeforeCalibrationIsEvenReported()
     {
         using var rig = new Rig();
         rig.Send(new RobotState { Status = 0 });
@@ -208,7 +225,8 @@ public class HardeningTests
         Assert.False(rig.Robot.State.CalibratingMotors);   // nothing is running, but nothing has finished
 
         var r = await rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(200));
-        Assert.Equal(MotionResult.Refused, r.Result);
+        Assert.Contains(rig.Sent(), m => m is SetHeadAngle);   // the command is sent
+        Assert.NotEqual(MotionResult.Refused, r.Result);
     }
 
     /// <summary>

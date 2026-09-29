@@ -29,6 +29,32 @@ public sealed class ManipulationSystem : IDisposable
         vision.World.BlockConfigurationManagerUpdate = Configurations.Update;
         vision.World.ObjectObserved += _ => Configurations.Update();
         vision.World.PoseStateChanged += (_, _, _) => Configurations.Update();
+
+        // fidelity: M4-003, M4-009, M4-012
+        // The M4 control layer's M12 seams. MA12: a lift height of exactly 32 mm while carrying becomes
+        // PlaceObjectOnGroundAction. MA20: a lift that starts calibrating while carrying detaches the carried object
+        // (SetCarriedObjectAsUnattached(true) = ReleaseCarriedObject(forget: true)). CD10a/CD10b and C11.1: the carried
+        // object (CarryingComponent+8) and the dock target (DockingComponent+0xC) are excluded from the
+        // Moved/Stopped broadcast.
+        robot.Motion.IsCarryingObject = () => Docking.Carrying.IsCarryingObject;
+        robot.Motion.PlaceObjectOnGroundAsync = async () =>
+        {
+            var result = await new PlaceObjectOnGroundAction(this).RunAsync(CancellationToken.None);
+            return new MotionOutcome(result == ActionResult.Success ? MotionResult.Acknowledged : MotionResult.Failed,
+                $"PlaceObjectOnGroundAction: {result}");
+        };
+        robot.Sensors.UnattachCarriedObjectIfCarrying = () =>
+        {
+            if (Docking.Carrying.IsCarryingObject) Docking.ReleaseCarriedObject(forget: true);
+        };
+        // fidelity: M4-009
+        // CD10a/CD10b: the carried object (CarryingComponent+8) and the dock target (DockingComponent+0xC, C11.1)
+        // are excluded from the Moved/Stopped broadcast.
+        robot.Cubes.ExcludeFromMovedBroadcast = c => c.ObjectId is { } id
+            && (Docking.Carrying.IsCarrying(id) || Docking.DockTargetObjectId == id);
+        // LC3: the default-layer choice prefers the carried object over Visible and Connected.
+        robot.Lights.Cubes.IsCarried = t => Docking.Carrying.CarriedObjectId is { } id
+            && robot.Cubes.ByObjectId(id)?.Type == t;
     }
 
     /// <summary>Seconds on the clock the components stamp with (the robot's clock by default; tests inject theirs).</summary>

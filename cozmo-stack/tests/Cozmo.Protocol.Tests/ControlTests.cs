@@ -152,28 +152,33 @@ public class ControlTests
 
     // ------------------------------------------------------------------- motion
 
+    /// <summary>
+    /// M4-004 MA21: the engine has no gate on direct motion, so a command is sent even before the robot has reported any
+    /// state. This test used to expect a refusal from the stack's own "no RobotState yet" gate, which is removed.
+    /// </summary>
     [Fact]
-    public async Task MotionIsRefusedBeforeTheRobotHasReportedAnything()
+    public async Task MotionIsSentBeforeTheRobotHasReportedAnything()
     {
         var rig = new Rig();
-        var r = await rig.Robot.Motion.DriveWheelsAsync(50, 50);
-        Assert.Equal(MotionResult.Refused, r.Result);
-        Assert.Contains("has not sent any state", r.Detail);
-        Assert.Empty(rig.Sent.OfType<DriveWheels>());       // nothing was sent, not merely unconfirmed
-        Assert.Empty(rig.SentSoFar.OfType<DriveWheels>());
+        var r = await rig.Robot.Motion.DriveWheelsAsync(50, 50, confirmWithin: TimeSpan.FromMilliseconds(1));
+        Assert.NotEqual(MotionResult.Refused, r.Result);
+        Assert.Single(rig.Sent.OfType<DriveWheels>());      // the command went out
     }
 
+    /// <summary>
+    /// M4-004 MA21: the engine has no calibration gate on direct motion, so a head move while the lift is calibrating is
+    /// sent. This test used to expect the stack's own refusal, which is removed.
+    /// </summary>
     [Fact]
-    public async Task MotionIsRefusedWhileTheHeadAndLiftAreStillCalibrating()
+    public async Task MotionIsSentWhileTheHeadAndLiftAreStillCalibrating()
     {
         var rig = new Rig();
         rig.Send(Rig.StateWith());
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = true });
 
-        var r = await rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(200));
-        Assert.Equal(MotionResult.Refused, r.Result);
-        Assert.Contains("calibrating", r.Detail);
-        Assert.Empty(rig.Sent.OfType<SetHeadAngle>());
+        var r = await rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(1));
+        Assert.NotEqual(MotionResult.Refused, r.Result);
+        Assert.Single(rig.Sent.OfType<SetHeadAngle>());
     }
 
     [Fact]

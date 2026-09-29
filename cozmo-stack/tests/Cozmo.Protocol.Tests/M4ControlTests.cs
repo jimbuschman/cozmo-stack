@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using Cozmo.Robot;
+using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 using Cozmo.Transport;
 using Xunit;
@@ -136,6 +137,41 @@ public class M4ControlTests
                              "offset": [0,0,0,0], "rotationPeriod_ms": 0 },
                 "duration_ms": 5100, "canBeOverridden": false, "patternDebugName": "wakeUp_fadeOut" } ] }
             """);
+        return root;
+    }
+
+    /// <summary>
+    /// A resources directory with one single-pattern animation per default-layer trigger (S1/S2) and the trigger map
+    /// that names them, so PickNextAnimForDefaultLayer can be observed by the pattern's debug name.
+    /// </summary>
+    private static string CubeLightResources()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "m4-cube-sleep-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(root, "assets", "cubeAnimationGroupMaps"));
+        Directory.CreateDirectory(Path.Combine(root, "config", "engine", "lights", "cubeLights"));
+        File.WriteAllText(Path.Combine(root, "assets", "cubeAnimationGroupMaps", "CubeAnimationTriggerMap.json"),
+            """
+            { "Pairs": [
+              { "CladEvent": "WakeUp", "AnimName": "wakeUp" },
+              { "CladEvent": "Sleep", "AnimName": "sleep" },
+              { "CladEvent": "SleepNoFade", "AnimName": "sleepNoFade" },
+              { "CladEvent": "Connected", "AnimName": "connected" },
+              { "CladEvent": "Carrying", "AnimName": "carrying" },
+              { "CladEvent": "Visible", "AnimName": "visible" } ] }
+            """);
+        static string Anim(string name, string debug) => $$"""
+              "{{name}}": [
+                { "pattern": { "onColors": [[0,255,0,255],[0,255,0,255],[0,255,0,255],[0,255,0,255]],
+                               "offColors": [[0,0,0,255],[0,0,0,255],[0,0,0,255],[0,0,0,255]],
+                               "onPeriod_ms": [10,10,10,10], "offPeriod_ms": [10,10,10,10],
+                               "transitionOnPeriod_ms": [0,0,0,0], "transitionOffPeriod_ms": [0,0,0,0],
+                               "offset": [0,0,0,0], "rotationPeriod_ms": 0 },
+                  "duration_ms": 100, "patternDebugName": "{{debug}}" }
+              ]
+            """;
+        File.WriteAllText(Path.Combine(root, "config", "engine", "lights", "cubeLights", "anims.json"),
+            "{\n" + string.Join(",\n", Anim("wakeUp", "wakeUp"), Anim("sleep", "sleep"), Anim("sleepNoFade", "sleepNoFade"),
+                Anim("connected", "connected"), Anim("carrying", "carrying"), Anim("visible", "visible")) + "\n}");
         return root;
     }
 
@@ -294,15 +330,20 @@ public class M4ControlTests
         Assert.True(s.CliffDetectedByEvent);
     }
 
-    /// <summary>M4-008 SC2: UpdateRobotData stores the raw values (+0xE), CLIFF_DETECTED (+6) and the timestamp (+8).</summary>
+    /// <summary>
+    /// M4-008 SC2 / U1..U4: UpdateRobotData runs after the +0x29 time-sync gate and before the origin check, so the
+    /// raw values (+0xE), CLIFF_DETECTED (+6) and the timestamp (+8) are stored for every time-synced state, including
+    /// one the origin check later drops (origin 0 is never in the pose-origin list, SC4g).
+    /// </summary>
     [Fact]
     public void M4_008_SC2_TheCliffDataOfAHandledStateIsStored()
     {
         using var rig = new Rig();
         rig.ToSynced();
-        var st = rig.MakeState(RobotStatusFlag.CliffDetected);
+        var st = rig.MakeState(RobotStatusFlag.CliffDetected, origin: 0);   // rejected at the origin check
         st.CliffDataRaw = new ushort[] { 11, 22, 33, 44 };
         rig.Data(st); rig.Tick();
+        Assert.Null(rig.Engine.Robot!.AcceptedState);                       // the state was dropped at the origin check
         Assert.Equal(new ushort[] { 11, 22, 33, 44 }, rig.Robot.Sensors.CliffDataRawStored);
         Assert.True(rig.Robot.Sensors.CliffDetectedStored);
         Assert.Equal(st.Timestamp, rig.Robot.Sensors.CliffDataTimestamp);
@@ -1064,5 +1105,667 @@ public class M4ControlTests
         rig.Tick();
         Assert.Equal(1, moves);
         Assert.True(rig.Robot.Cubes.ByObjectId(0)!.Moving);
+    }
+
+    // ------------------------------------------------------------------ M4-018 P3
+
+    /// <summary>
+    /// M4-018 W4/P2/P3 with the shipped WakeUp content: a reconnect pushes a second WakeUp on layer 2. When the top
+    /// one finishes and pops, the animation below it is resent immediately with its current pattern (the spin), with
+    /// no timer or iterator reset; its own expired timer then advances it to fadeOut on the next tick.
+    /// </summary>
+    [Fact]
+    public void M4_018_P3_APopResendsTheLowerAnimationsCurrentPattern()
+    {
+        var res = WakeUpResources();
+        try
+        {
+            using var rig = new Rig(res);
+            rig.ToSynced();
+            rig.State();
+            var conn = new ObjectConnectionState { ObjectID = 0, FactoryID = 0x241A8EEC, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true };
+            rig.Data(conn); rig.Tick();                    // WakeUp#1: spin
+            rig.Data(conn); rig.Tick();                    // reconnect: WakeUp#2: spin, sent immediately
+            int mark = rig.Mark();
+            for (int i = 0; i < 110; i++) rig.Tick();      // 6600 ms: WakeUp#2's spin + fadeOut end, and the resend
+            var lights = rig.RawSince(mark).Where(b => b[0] == 0x04).Select(Convert.ToHexString).ToList();
+            // P3: WakeUp#1's current pattern (the spin) is resent after WakeUp#2's fadeOut.
+            Assert.Contains(lights, h => h.Contains("E0830080010D070200"));
+            // Its own expired timer then advances it to the fadeOut.
+            Assert.Contains(lights, h => h.Contains("E0830080226404220000"));
+        }
+        finally { Directory.Delete(res, true); }
+    }
+
+    // ------------------------------------------------------------------ M4-018 C12 (EnableGameLayerOnly enable=1)
+
+    /// <summary>
+    /// M4-018 C12.1/C12.2 (EnableGameLayerOnly 0x006399C0..0x00639B36; the static at 0x0105B4A0, _INIT_36
+    /// 0x004D7EB4..0x004D7EE5): the enable = 1 branch sends the static off ObjectLights through SetObjectLights
+    /// (eight u32 0x000000FF, every period/transition/offset 0, rotation 0; through SetLEDs it is solid off with gamma
+    /// 0x80, so each LED is 00 00 00 00 45 45 00 00 00 00), then stops layers 1 and 2. The app's
+    /// SetEnableFreeplayLightStates(enable = false) is the engine's enable = 1. After it the layer is empty (P5 sends
+    /// the static off when it empties) and the cube is game-layer-only, so a WakeUp is refused.
+    /// </summary>
+    [Fact]
+    public void M4_018_C12_1_C12_2_EnableGameLayerOnlySendsTheStaticOffLights()
+    {
+        var res = CubeLightResources();
+        try
+        {
+            using var rig = new Rig(res);
+            rig.ToSynced();
+            rig.State();
+            var type = ObjectType.Block_LIGHTCUBE1;
+            ConnectCube(rig, slot: 0, type: type);
+            var cubes = rig.Robot.Lights.Cubes;
+            rig.Tick(); rig.Tick();                                  // WakeUp ends; the default layer is Connected
+            Assert.Equal("connected", cubes.TopPatternName(type));
+            int mark = rig.Mark();
+            rig.Robot.SetEnableFreeplayLightStates(enable: false, objectID: -1);   // app false -> engine enable 1
+            var cube = rig.RawSince(mark).Where(b => b[0] is 0x0C or 0x10 or 0x04).ToList();
+            Assert.DoesNotContain(cube, b => b[0] == 0x0C);          // gamma is cached at 0x80 after WakeUp
+            string off = string.Concat(Enumerable.Repeat("00000000454500000000", 4));
+            Assert.Contains(cube, b => b[0] == 0x10 && Convert.ToHexString(Body(b)) == "0000000000");
+            Assert.Contains(cube, b => b[0] == 0x04 && Convert.ToHexString(Body(b)) == off);
+            Assert.Null(cubes.TopPatternName(type));                 // P5: the layer is empty
+            Assert.False(cubes.PlayLightAnim(type, "WakeUp", CubeLightComponent.StateLayer));
+            Assert.True(rig.Logged("OnlyGameLayerEnabled"));
+        }
+        finally { Directory.Delete(res, true); }
+    }
+
+    /// <summary>
+    /// M4-018 C12.2: the app enable = true is the engine's enable = 0 (game tag 0xBB EnableLightStates passes
+    /// enable = (msg.byte0 == 0); Robot.cs:1902-1907). It clears the game-layer-only flag and picks the default
+    /// layer-2 animation again, so a WakeUp is allowed once more.
+    /// </summary>
+    [Fact]
+    public void M4_018_C12_2_AppEnableTrueRestoresTheDefaultLayer()
+    {
+        var res = CubeLightResources();
+        try
+        {
+            using var rig = new Rig(res);
+            rig.ToSynced();
+            rig.State();
+            var type = ObjectType.Block_LIGHTCUBE1;
+            ConnectCube(rig, slot: 0, type: type);
+            var cubes = rig.Robot.Lights.Cubes;
+            rig.Tick(); rig.Tick();
+            rig.Robot.SetEnableFreeplayLightStates(enable: false, objectID: -1);   // engine enable = 1
+            Assert.Null(cubes.TopPatternName(type));
+            rig.Robot.SetEnableFreeplayLightStates(enable: true, objectID: -1);    // engine enable = 0
+            Assert.Equal("connected", cubes.TopPatternName(type));
+            Assert.True(cubes.PlayLightAnim(type, "WakeUp", CubeLightComponent.StateLayer));
+        }
+        finally { Directory.Delete(res, true); }
+    }
+
+    /// <summary>
+    /// M4-018 C13.4 (0x006399DC..0x006399E0 single-object, 0x00639A16..0x00639A1C all-objects): EnableGameLayerOnly
+    /// branches to the epilogue without acting when the target is already in the requested state - comp+0x22 == enable
+    /// for id -1, ObjectInfo+0x1C == enable for a named object. A repeated SetEnableFreeplayLightStates with the same
+    /// value therefore sends nothing, on either direction and on both paths.
+    /// </summary>
+    [Fact]
+    public void M4_018_C13_4_ARepeatedEnableGameLayerOnlySendsNothing()
+    {
+        var res = CubeLightResources();
+        try
+        {
+            using var rig = new Rig(res);
+            rig.ToSynced();
+            rig.State();
+            var type = ObjectType.Block_LIGHTCUBE1;
+            ConnectCube(rig, slot: 0, type: type);
+            var cubes = rig.Robot.Lights.Cubes;
+            rig.Tick(); rig.Tick();                                  // WakeUp ends; the default layer is Connected
+
+            // all-objects enable = 1 (app false): the first call acts, the second is the already-in-state return.
+            rig.Robot.SetEnableFreeplayLightStates(enable: false, objectID: -1);
+            int mark = rig.Mark();
+            rig.Robot.SetEnableFreeplayLightStates(enable: false, objectID: -1);
+            Assert.Empty(rig.RawSince(mark));
+
+            // all-objects enable = 0 (app true): same.
+            rig.Robot.SetEnableFreeplayLightStates(enable: true, objectID: -1);
+            mark = rig.Mark();
+            rig.Robot.SetEnableFreeplayLightStates(enable: true, objectID: -1);
+            Assert.Empty(rig.RawSince(mark));
+
+            // single-object ObjectInfo+0x1C (cube 0, app false -> engine enable 1): same.
+            rig.Robot.SetEnableFreeplayLightStates(enable: false, objectID: 0);
+            mark = rig.Mark();
+            rig.Robot.SetEnableFreeplayLightStates(enable: false, objectID: 0);
+            Assert.Empty(rig.RawSince(mark));
+        }
+        finally { Directory.Delete(res, true); }
+    }
+
+    /// <summary>
+    /// M4-018 C12.1: the static off ObjectLights at 0x0105B4A0 (_INIT_36 0x004D7EB4..0x004D7EE5) is eight u32
+    /// 0x000000FF (rev(NamedColors::BLACK) at 0x00C9744F), all periods/transitions/offsets 0 and rotation 0.
+    /// This asserts the citation's bytes directly: the expected pattern is written out from C12.1, not composed
+    /// from BodyLightComponent.OffLights. Through SetLEDs with gamma 0x80 it is the solid off LED
+    /// `00 00 00 00 45 45 00 00 00 00`, which the production enable=1 path puts on the wire.
+    /// </summary>
+    [Fact]
+    public void M4_018_C12_1_TheStaticOffLightsAreTheCitedBytes()
+    {
+        // C12.1: eight u32 0x000000FF = four LEDs, each onColor and offColor (0,0,0,255); +0x20..+0x7F zero.
+        var cited = new[]
+        {
+            new LedPattern(new LedColor(0, 0, 0, 0xFF), new LedColor(0, 0, 0, 0xFF), 0, 0, 0, 0, 0),
+            new LedPattern(new LedColor(0, 0, 0, 0xFF), new LedColor(0, 0, 0, 0xFF), 0, 0, 0, 0, 0),
+            new LedPattern(new LedColor(0, 0, 0, 0xFF), new LedColor(0, 0, 0, 0xFF), 0, 0, 0, 0, 0),
+            new LedPattern(new LedColor(0, 0, 0, 0xFF), new LedColor(0, 0, 0, 0xFF), 0, 0, 0, 0, 0),
+        };
+        Assert.Equal(4, CubeLightComponent.OffLights.Leds.Length);
+        Assert.Equal(0u, CubeLightComponent.OffLights.RotationPeriodMs);
+        for (int i = 0; i < 4; i++)
+        {
+            var actual = CubeLightComponent.OffLights.Leds[i];
+            Assert.Equal(cited[i].OnColor, actual.OnColor);
+            Assert.Equal(cited[i].OffColor, actual.OffColor);
+            Assert.Equal(0u, actual.OnMs);
+            Assert.Equal(0u, actual.OffMs);
+            Assert.Equal(0u, actual.TransitionOnMs);
+            Assert.Equal(0u, actual.TransitionOffMs);
+            Assert.Equal(0, actual.OffsetMs);
+        }
+
+        // and through SetLEDs (both periods 0 -> colours 0, periods 0x7FFFFFFF) with gamma 0x80, solid off.
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.State();
+        ConnectCube(rig);
+        int mark = rig.Mark();
+        rig.Robot.SetEnableFreeplayLightStates(enable: false, objectID: -1);   // app false -> engine enable 1
+        string off = string.Concat(Enumerable.Repeat("00000000454500000000", 4));
+        Assert.Contains(rig.RawSince(mark), b => b[0] == 0x04 && Convert.ToHexString(Body(b)) == off);
+    }
+
+    // ------------------------------------------------------------------ M4-019 SC4a, SC4c, H1..H4
+
+    /// <summary>
+    /// M4-019 SC4c W1..W5: a sample is taken only while the body is moving, off the treads and above the threshold
+    /// cache; the sliding window's removal step uses N = the constant 100.0f, not the deque size, so 100 samples of
+    /// 500 then one of 1500 give a variance of exactly 10000.0 (mean' = 500 + 1000/100, M2 = 1000*990, /99).
+    /// </summary>
+    [Fact]
+    public void M4_019_SC4c_TheWelfordWindowUsesTheConstant100()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Calibrate();
+        rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.AreWheelsMoving);   // moving, OnTreads
+        var s = rig.Robot.Sensors;
+        for (int i = 0; i < 100; i++) s.UpdateCliffRunningStats(500);
+        Assert.Equal(0f, s.CliffVariance);
+        s.UpdateCliffRunningStats(1500);                       // the 101st: the removal branch
+        Assert.Equal(10000f, s.CliffVariance);
+    }
+
+    /// <summary>
+    /// M4-019 SC4a S7: IncrementSuspiciousCliffCount returns while the cache is below 151; from 400 it stores 150
+    /// and sends SetCliffDetectThreshold{150}, so a second call sends nothing.
+    /// </summary>
+    [Fact]
+    public void M4_019_SC4a_IncrementSends150FromTheCache()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        var s = rig.Robot.Sensors;
+        Assert.Equal(400, s.CliffDetectThreshold);
+        int mark = rig.Mark();
+        s.IncrementSuspiciousCliffCount();
+        Assert.Equal(150, s.CliffDetectThreshold);
+        var sent = Assert.Single(rig.RawSince(mark).Where(b => b[0] == (byte)RobotMessageId.SetCliffDetectThreshold));
+        Assert.Equal(Hex("9600"), Body(sent));
+        mark = rig.Mark();
+        s.IncrementSuspiciousCliffCount();                     // 150 < 151: returns
+        Assert.DoesNotContain(rig.RawSince(mark), b => b[0] == (byte)RobotMessageId.SetCliffDetectThreshold);
+    }
+
+    /// <summary>
+    /// M4-019 SC4b S2..S6: with +0x1C set and the body stopped, the walk over the history from lower_bound(+0x1C)
+    /// triggers IncrementSuspiciousCliffCount when the running variance is over 10000 and a sample exceeds min+15,
+    /// sending 150 (from the cache of 400); +0x1C is then cleared.
+    /// </summary>
+    [Fact]
+    public void M4_019_SC4b_TheSuspiciousWalkSends150()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Calibrate();
+        var s = rig.Robot.Sensors;
+        rig.State(x: 0); rig.State(x: 100);                    // > 50 mm: the cache becomes 400
+        Assert.Equal(400, s.CliffDetectThreshold);
+        for (int i = 0; i < 110; i++)
+        {
+            var st = rig.MakeState(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.AreWheelsMoving, x: 100);
+            st.CliffDataRaw = new ushort[] { (ushort)(i % 2 == 0 ? 500 : 1500), 500, 500, 500 };
+            rig.Data(st); rig.Tick();
+        }
+        Assert.True(s.CliffVariance > 10000f);
+        s.EvaluateCliffSuspiciousnessWhenStopped(1);           // start the walk from the beginning
+        int mark = rig.Mark();
+        var trig = rig.MakeState(RobotStatusFlag.IsBodyAccMode, x: 100);   // body stopped
+        trig.CliffDataRaw = new ushort[] { 1500, 500, 500, 500 };
+        rig.Data(trig); rig.Tick();
+        var thresholds = rig.RawSince(mark).Where(b => b[0] == (byte)RobotMessageId.SetCliffDetectThreshold).ToList();
+        Assert.Contains(thresholds, b => Convert.ToHexString(Body(b)) == "9600");
+        Assert.Equal(0u, s.CliffSuspiciousAt);                 // S6: cleared by the walk
+    }
+
+    /// <summary>
+    /// M4-019 H1..H4 (tag 0xD4, 0x0053539C..0x00535480): H3 Evaluate stores the Robot's last state timestamp into
+    /// +0x1C; H4 broadcasts RobotStopped only while the cliff sensor is enabled. Nothing is sent to the robot.
+    /// </summary>
+    [Fact]
+    public void M4_019_H1_H4_RobotStoppedEvaluatesAndBroadcasts()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.State();
+        var s = rig.Robot.Sensors;
+        var seen = new List<byte>();
+        s.RobotStopped += seen.Add;
+        s.SetCliffSensorEnabled(true);
+        int mark = rig.Mark();
+        rig.Data(new RobotStopped { Field0 = 7 }); rig.Tick();
+        Assert.Equal(7, Assert.Single(seen));
+        Assert.Equal(rig.Engine.Robot!.StoredState!.Timestamp, s.CliffSuspiciousAt);
+        Assert.DoesNotContain(rig.RawSince(mark), b => b[0] == 0x3B);      // no robot send
+        seen.Clear();
+        s.SetCliffSensorEnabled(false);
+        rig.Data(new RobotStopped { Field0 = 8 }); rig.Tick();
+        Assert.Empty(seen);                                                // disabled: no broadcast
+    }
+
+    // ------------------------------------------------------------------ M4-003, M4-005, M4-009, M4-012 (M12 wiring)
+
+    /// <summary>
+    /// M4-003 MA12: on the game path, a lift height of exactly 32.0 mm while carrying runs PlaceObjectOnGroundAction
+    /// instead of MoveLiftToHeight; any other height still sends SetLiftHeight.
+    /// </summary>
+    [Fact]
+    public async Task M4_003_MA12_A32mmLiftWhileCarryingRunsPlaceObjectOnGround()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.State();
+        int placed = 0;
+        rig.Robot.Motion.IsCarryingObject = () => true;
+        rig.Robot.Motion.PlaceObjectOnGroundAsync = () =>
+        {
+            placed++;
+            return Task.FromResult(new MotionOutcome(MotionResult.Acknowledged, "PlaceObjectOnGround"));
+        };
+        var r = await rig.Robot.Motion.SetLiftHeightAsync(32f);
+        Assert.True(r.Ok);
+        Assert.Equal(1, placed);
+        Assert.DoesNotContain(rig.SentSince(0), m => m is SetLiftHeight);
+        int mark = rig.Mark();
+        _ = rig.Robot.Motion.SetLiftHeightAsync(40f, timeout: TimeSpan.FromMilliseconds(1));
+        Assert.Equal(1, placed);                                           // not 32: the ordinary lift path
+        Assert.Contains(rig.SentSince(mark), m => m is SetLiftHeight);
+    }
+
+    /// <summary>
+    /// M4-012 MA20: a MotorCalibration that starts the lift invokes the SetCarriedObjectAsUnattached(true) seam; the
+    /// head starting or the lift finishing does not.
+    /// </summary>
+    [Fact]
+    public void M4_012_MA20_ALiftCalibrationWhileCarryingDetaches()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        int detached = 0;
+        rig.Robot.Sensors.UnattachCarriedObjectIfCarrying = () => detached++;
+        rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = true }); rig.Tick();
+        Assert.Equal(1, detached);
+        rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true }); rig.Tick();
+        Assert.Equal(1, detached);
+        rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false }); rig.Tick();
+        Assert.Equal(1, detached);
+    }
+
+    /// <summary>
+    /// M4-009 CD10a: the carried-object exclusion suppresses the ObjectMoved broadcast (the manipulation layer wires
+    /// the M12 CarryingComponent into this seam).
+    /// </summary>
+    [Fact]
+    public void M4_009_CD10a_TheCarriedObjectIsExcludedFromTheMovedBroadcast()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.State();
+        ConnectCube(rig);
+        var moved = new List<Cube>();
+        rig.Robot.Cubes.CubeMoved += moved.Add;
+        rig.Robot.Cubes.ExcludeFromMovedBroadcast = c => c.ObjectId == 0;
+        rig.Data(new ObjectMoved { Timestamp = 1, ObjectID = 0 }); rig.Tick();
+        Assert.Empty(moved);
+        rig.Data(new ObjectMoved { Timestamp = 2, ObjectID = 0 }); rig.Tick();
+        Assert.Empty(moved);
+    }
+
+    /// <summary>
+    /// M4-009 C11.1 D1..D3 (0x0063BA1E/0x0063BA2A, 0x0063BAAC/0x0063BAB6, 0x0063BE10): DockingComponent+0xC is
+    /// the dock target ObjectID. It defaults to −1 (none), DockWithObject writes it, and AbortDocking does not
+    /// reset it.
+    /// </summary>
+    [Fact]
+    public void M4_009_C11_1_DockWithObjectSetsAndAbortKeepsTheDockTarget()
+    {
+        using var rig = new Rig();
+        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        using var docking = new DockingSystem(rig.Robot, vision);
+        rig.ToSynced();
+        rig.State();
+        Assert.Null(docking.DockTargetObjectId);                       // D1: default -1
+        var target = vision.World.AddMarkerlessObject(Pose3d.Identity, ObjectType.CollisionObstacle);
+        var marker = new KnownMarker(MarkerType.LightCubeI_Front, BlockFace.Front, Pose3d.Identity, 30);
+        _ = docking.DockAsync(target, marker, DockAction.PickupLow, PathMotionProfile.Default,
+                              timeout: TimeSpan.FromMilliseconds(50));
+        Assert.Equal(target.ObjectId, docking.DockTargetObjectId);     // D2: DockWithObject writes +0xC
+        docking.Abort();
+        Assert.Equal(target.ObjectId, docking.DockTargetObjectId);     // D3: AbortDocking does not reset it
+    }
+
+    /// <summary>
+    /// M4-005 MA8: a direct SetHeadAngle outside M4 (the M11 face-turn path) takes the shared u8 counter, so its ids
+    /// run 1, 2, ... instead of the fixed 3.
+    /// </summary>
+    [Fact]
+    public async Task M4_005_MA8_TheDirectHeadSendSharesTheCounter()
+    {
+        using var rig = new Rig();
+        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        rig.ToSynced();
+        rig.State();
+        Assert.NotNull(vision.History.Latest);
+        int mark = rig.Mark();
+        await FaceTurns.TurnAsync(vision, Pose3d.Identity, 0, CancellationToken.None);
+        var h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
+        Assert.Equal(1, h.ActionId);
+        mark = rig.Mark();
+        await FaceTurns.TurnAsync(vision, Pose3d.Identity, 0, CancellationToken.None);
+        h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
+        Assert.Equal(2, h.ActionId);
+    }
+
+    // ------------------------------------------------------------------ M4-018 S1..S5 (cube-sleep flags)
+
+    /// <summary>
+    /// M4-018 S1..S5: the cube-sleep flags (comp+0x23/+0x24) are written only by the game EnableCubeSleep message
+    /// (S3); when set, the default layer plays Sleep (0x21) or SleepNoFade (0x22) on layer 2 and ignores the carried
+    /// object (S1); enable = 0 stops both on layer 2 and calls EnableGameLayerOnly(all, false) (S4). That call returns
+    /// at the epilogue because comp+0x22 is already 0 (C13.4), so it does not re-pick the default layer; the stops'
+    /// own Update pops Sleep and SleepNoFade and leaves the still-running WakeUp on top. No game-message id is
+    /// invented; the public API mirrors Robot.cs:2090.
+    /// </summary>
+    [Fact]
+    public void M4_018_S1_S3_S4_S5_EnableCubeSleepPicksSleepAndStopsIt()
+    {
+        var res = CubeLightResources();
+        try
+        {
+            using var rig = new Rig(res);
+            rig.ToSynced();
+            rig.State();
+            var type = ObjectType.Block_LIGHTCUBE1;
+            rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0x241A8EEC, ObjectType = type, Connected = true });
+            rig.Tick();
+            var cubes = rig.Robot.Lights.Cubes;
+            Assert.Equal("wakeUp", cubes.TopPatternName(type));                 // LC1: WakeUp on connection
+            cubes.IsCarried = _ => true;                                        // S1 must ignore this
+            cubes.EnableCubeSleep(true, skipAnimation: false);
+            cubes.PickNextAnimForDefaultLayer(type);
+            Assert.Equal("sleep", cubes.TopPatternName(type));                  // 0x21 Sleep, not Carrying
+            cubes.EnableCubeSleep(true, skipAnimation: true);
+            cubes.PickNextAnimForDefaultLayer(type);
+            Assert.Equal("sleepNoFade", cubes.TopPatternName(type));            // 0x22 SleepNoFade
+            cubes.EnableCubeSleep(false);                                       // S4: stop both, EnableGameLayerOnly(all, false)
+            Assert.Equal("wakeUp", cubes.TopPatternName(type));                 // C13.4: EnableGameLayerOnly(all, false) is a no-op (comp+0x22 == 0), so WakeUp survives
+        }
+        finally { Directory.Delete(res, true); }
+    }
+
+    // ------------------------------------------------------------------ M4-018 S7/C11.2 (robot-is-localized gate)
+
+    /// <summary>
+    /// M4-018 S7/C11.2 L6 (0x0063A3A8, 0x00637924..0x00637940): a RobotDelocalized refresh request (+0x21) is
+    /// held while robot+0x2C4 is 0 and applied on the first Update after it returns to 1, re-picking the default
+    /// layer for every object.
+    /// </summary>
+    [Fact]
+    public void M4_018_S7_C11_2_TheDelocalizeRefreshWaitsForRelocalization()
+    {
+        var res = CubeLightResources();
+        try
+        {
+            using var rig = new Rig(res);
+            rig.ToSynced();
+            rig.State();
+            var type = ObjectType.Block_LIGHTCUBE1;
+            ConnectCube(rig, slot: 0, type: type);
+            var cubes = rig.Robot.Lights.Cubes;
+            rig.Tick(); rig.Tick();                                   // WakeUp (100 ms) ends; the default layer is Connected
+            Assert.Equal("connected", cubes.TopPatternName(type));
+            cubes.IsCarried = _ => true;                              // the next default pick would be Carrying
+            cubes.IsLocalized = () => false;                          // robot+0x2C4 = 0: delocalized
+            cubes.OnRobotDelocalized();                               // the RobotDelocalized handler sets +0x21
+            cubes.Update();                                           // held: the default layer is not re-picked
+            Assert.Equal("connected", cubes.TopPatternName(type));
+            cubes.IsLocalized = () => true;                           // robot+0x2C4 returns to 1
+            cubes.Update();                                           // applied: +0x21 cleared, every object re-picked
+            Assert.Equal("carrying", cubes.TopPatternName(type));
+        }
+        finally { Directory.Delete(res, true); }
+    }
+
+    /// <summary>
+    /// M4-018 S7/C11.2 L2/L4/L6: the stack's Delocalize path (CozmoEngine.RobotDelocalized, wired by CozmoRobot)
+    /// clears robot+0x2C4 (OffTreadsClassifier.Robot2C4) and sets the cube-light refresh request, and the gate
+    /// reads that same flag. The only writer back to 1 here is a commit to OnTreads; SetLocalizedTo is M11 and
+    /// not built.
+    /// </summary>
+    [Fact]
+    public void M4_018_S7_TheDelocalizePathFeedsTheCubeLightGate()
+    {
+        var res = CubeLightResources();
+        try
+        {
+            using var rig = new Rig(res);
+            rig.ToSynced();
+            rig.State();
+            var type = ObjectType.Block_LIGHTCUBE1;
+            ConnectCube(rig, slot: 0, type: type);
+            var cubes = rig.Robot.Lights.Cubes;
+            rig.Tick(); rig.Tick();
+            Assert.Equal("connected", cubes.TopPatternName(type));
+
+            // A commit to OnTreads sets robot+0x2C4 = 1 (M10-001 A11 / C11.2 L4).
+            var off = rig.Robot.Sensors.OffTreads;
+            off.HeadCalibrated = true; off.IsPhysical = true;
+            off.Update(rig.MakeState(), 0);
+            off.Update(rig.MakeState(RobotStatusFlag.IsPickedUp), 0);  // InAir
+            off.Update(rig.MakeState(), 33);                           // back OnTreads: commit, flag = 1
+            Assert.Equal(1, off.Robot2C4);
+
+            cubes.IsCarried = _ => true;
+            rig.Engine.RobotDelocalized!.Invoke();                     // C11.2 L2: flag = 0; S7: +0x21 set
+            Assert.Equal(0, off.Robot2C4);
+            cubes.Update();                                            // the wired IsLocalized reads 0: held
+            Assert.Equal("connected", cubes.TopPatternName(type));
+
+            off.Update(rig.MakeState(RobotStatusFlag.IsPickedUp), 33); // InAir
+            off.Update(rig.MakeState(), 66);                           // OnTreads commit: flag = 1
+            Assert.Equal(1, off.Robot2C4);
+            cubes.Update();                                            // first Update after it returns to 1: applied
+            Assert.Equal("carrying", cubes.TopPatternName(type));
+        }
+        finally { Directory.Delete(res, true); }
+    }
+
+    // ------------------------------------------------------------------ M4-019 SC4d, C7, S1
+
+    /// <summary>
+    /// M4-019 SC4d: ClearCliffRunningStats sets the count to 0, restores the cache to 400 and sends 400 when it was
+    /// not already 400, and clears the window; a second call with the cache already at 400 sends nothing. The
+    /// constructor's Delocalize runs it (M4-020 ConstructorDelocalize) with the cache at 400.
+    /// </summary>
+    [Fact]
+    public void M4_019_SC4d_ClearCliffRunningStatsRestores400()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        var s = rig.Robot.Sensors;
+        s.IncrementSuspiciousCliffCount();                     // 400 -> 150, sends 150
+        Assert.Equal(150, s.CliffDetectThreshold);
+        int mark = rig.Mark();
+        s.ClearCliffRunningStats();
+        Assert.Equal(400, s.CliffDetectThreshold);
+        Assert.Equal(0, s.SuspiciousCliffCount);
+        Assert.Equal(0f, s.CliffVariance);
+        var sent = rig.RawSince(mark).Where(b => b[0] == (byte)RobotMessageId.SetCliffDetectThreshold).ToList();
+        Assert.Equal(Hex("9001"), Body(Assert.Single(sent)));
+        mark = rig.Mark();
+        s.ClearCliffRunningStats();                            // the cache is already 400: nothing is sent
+        Assert.DoesNotContain(rig.RawSince(mark), b => b[0] == (byte)RobotMessageId.SetCliffDetectThreshold);
+    }
+
+    /// <summary>
+    /// M4-019 SC4d: the Delocalize path (<see cref="CozmoEngine.RobotDelocalized"/>, run by the constructor's
+    /// Delocalize, M4-020 ConstructorDelocalize) is wired to ClearCliffRunningStats. With the cache at 150 it restores
+    /// 400 and sends 400.
+    /// </summary>
+    [Fact]
+    public void M4_019_SC4d_TheDelocalizePathRestoresTheThreshold()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        var s = rig.Robot.Sensors;
+        s.IncrementSuspiciousCliffCount();                     // 400 -> 150
+        Assert.Equal(150, s.CliffDetectThreshold);
+        int mark = rig.Mark();
+        rig.Engine.RobotDelocalized?.Invoke();                 // Robot::Delocalize's first step
+        Assert.Equal(400, s.CliffDetectThreshold);
+        var sent = rig.RawSince(mark).Where(b => b[0] == (byte)RobotMessageId.SetCliffDetectThreshold).ToList();
+        Assert.Equal(Hex("9001"), Body(Assert.Single(sent)));
+    }
+
+    /// <summary>
+    /// M4-019 C7 D2: MoveRobotPoseForward's distance is 0.0 while carrying and −20.0 otherwise, so a pure turn in place
+    /// moves the drive centre by d·Δθ: 0 while carrying, and 40 mm for a π turn when not. The 400 follows the drive
+    /// centre, not the robot origin.
+    /// </summary>
+    [Fact]
+    public void M4_019_C7_TheDistanceIsZeroWhileCarrying()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Robot.Motion.IsCarryingObject = () => true;
+        int mark = rig.Mark();
+        List<byte[]> Thresholds() => rig.RawSince(mark).Where(b => b[0] == (byte)RobotMessageId.SetCliffDetectThreshold).ToList();
+        var st = rig.MakeState(); st.Pose = new RobotPose { X = 0, Y = 0, Angle = 0 };
+        rig.Data(st); rig.Tick();
+        Assert.Equal(Hex("3200"), Body(Assert.Single(Thresholds())));           // the first accepted state sends 50
+        st = rig.MakeState(); st.Pose = new RobotPose { X = 0, Y = 0, Angle = MathF.PI };
+        rig.Data(st); rig.Tick();
+        st = rig.MakeState(); st.Pose = new RobotPose { X = 0, Y = 0, Angle = 2 * MathF.PI };
+        rig.Data(st); rig.Tick();
+        Assert.Single(Thresholds());                                          // d = 0: the drive centre did not move
+    }
+
+    /// <summary>
+    /// M4-019 S1 (0x00512FB0..0x00512F22): UpdateCliffRunningStats and UpdateCliffDetectThreshold also run on the
+    /// frame-mismatch path while robot+0x2C0 &lt; 0x65; the 101st mismatch skips them. C12.3: the counter is
+    /// per-mismatch-run, so the 101st also resets it to 0 (0x00512F88).
+    /// </summary>
+    [Fact]
+    public void M4_019_S1_TheStatsRunForTheFirst100FrameMismatches()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Calibrate();
+        var s = rig.Robot.Sensors;
+        for (int i = 0; i < 100; i++)
+        {
+            var st = rig.MakeState(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.AreWheelsMoving, frame: 1);
+            st.CliffDataRaw = new ushort[] { (ushort)(i % 2 == 0 ? 500 : 1500), 500, 500, 500 };
+            rig.Data(st); rig.Tick();
+        }
+        Assert.True(s.CliffVariance > 10000f);                 // the stats ran on the mismatched states
+        Assert.Equal(100, s.FrameMismatchCount);
+        float v = s.CliffVariance;
+        var last = rig.MakeState(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.AreWheelsMoving, frame: 1);
+        last.CliffDataRaw = new ushort[] { 500, 500, 500, 500 };
+        rig.Data(last); rig.Tick();
+        Assert.Equal(v, s.CliffVariance);                      // the 101st mismatch: r6 = 1, the stats do not run
+        Assert.Equal(0, s.FrameMismatchCount);                 // C12.3: 0 after the count reaches 0x65
+    }
+
+    /// <summary>
+    /// M4-019 C12.3 (0x00512F1C, 0x00512EAE): robot+0x2C0 is per-mismatch-run. A frame-mismatched accepted state
+    /// increments it; the next frame-matching state resets it to 0. (Origin-rejected states leave it untouched.)
+    /// </summary>
+    [Fact]
+    public void M4_019_C12_3_TheFrameMismatchCounterResetsOnAFrameMatch()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Calibrate();
+        var s = rig.Robot.Sensors;
+        rig.Data(rig.MakeState(frame: 1)); rig.Tick();
+        Assert.Equal(1, s.FrameMismatchCount);
+        rig.Data(rig.MakeState(frame: 1)); rig.Tick();
+        Assert.Equal(2, s.FrameMismatchCount);
+        rig.Data(rig.MakeState(frame: 0)); rig.Tick();          // frame match: reset
+        Assert.Equal(0, s.FrameMismatchCount);
+        rig.Data(rig.MakeState(origin: 0, frame: 1)); rig.Tick();   // origin miss: untouched
+        Assert.Equal(0, s.FrameMismatchCount);
+    }
+
+    /// <summary>
+    /// M4-019 C12.3 (0x00512F1C, 0x00512F88): a run of frame mismatches accumulates, the 101st (0x65) skips the
+    /// stats and resets the counter, and the next mismatch starts a new run at 1.
+    /// </summary>
+    [Fact]
+    public void M4_019_C12_3_TheFrameMismatchCounterResetsAfter0x65()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Calibrate();
+        var s = rig.Robot.Sensors;
+        for (int i = 0; i < 100; i++) { rig.Data(rig.MakeState(frame: 1)); rig.Tick(); }
+        Assert.Equal(100, s.FrameMismatchCount);
+        rig.Data(rig.MakeState(frame: 1)); rig.Tick();          // the 101st: 0x65 -> 0
+        Assert.Equal(0, s.FrameMismatchCount);
+        rig.Data(rig.MakeState(frame: 1)); rig.Tick();          // a new run
+        Assert.Equal(1, s.FrameMismatchCount);
+    }
+
+    /// <summary>
+    /// M4-019 C13.2 (0x00512B9C..0x00512BAA): a committed treads change stores robot+0x2C0 = 0 and branches straight
+    /// to the stats/threshold body at 0x512FB4, skipping the frame compare, the frame-match reset and the mismatch
+    /// increment. The counter therefore stays 0 for the committing state, even though its frame id is mismatched.
+    /// </summary>
+    [Fact]
+    public void M4_019_C13_2_TheTreadsChangeLeavesTheFrameMismatchCounterAtZero()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Calibrate();
+        var s = rig.Robot.Sensors;
+        rig.Data(rig.MakeState(frame: 1)); rig.Tick();
+        rig.Data(rig.MakeState(frame: 1)); rig.Tick();
+        Assert.Equal(2, s.FrameMismatchCount);
+        rig.Data(rig.MakeState(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.IsPickedUp, frame: 1)); rig.Tick();
+        Assert.Equal(OffTreadsState.InAir, s.OffTreadsState);   // the commit
+        Assert.Equal(0, s.FrameMismatchCount);                  // C13.2: the mismatch increment is skipped
     }
 }

@@ -854,6 +854,7 @@ public sealed class EngineRobot
     /// </summary>
     private void ConstructorDelocalize()
     {
+        Engine.RobotDelocalized?.Invoke();   // SC4d: ClearCliffRunningStats is the first thing Robot::Delocalize does
         CurrentOriginId = _nextOriginId++;
         _origins.Add(CurrentOriginId);
         PoseFrameId = 0;
@@ -1402,6 +1403,16 @@ public sealed class CozmoEngine : IDisposable
     internal Action<RobotState>? StateStored;
     /// <summary>The M4 components Robot::Update runs after the animation streamer (CD2, CD12).</summary>
     internal Action? RobotComponentsUpdate;
+
+    // fidelity: M4-019
+    /// <summary>
+    /// SC4d: <c>Robot::Delocalize</c> (0x00510A24) begins with <c>ClearCliffRunningStats</c> (0x00510A5A). This hook is
+    /// the M4-019 part of the stack's Delocalize path, run by the constructor's Delocalize (M4-020
+    /// <c>ConstructorDelocalize</c>, 0x00510324). The runtime Delocalize callers - the UFRS treads/carry path
+    /// (0x00512BA6) and the ≥101 frame mismatch (0x00512F82..0x00512F96) - are M11's pose-frame interface and are not
+    /// built. Wired by CozmoRobot to <see cref="CozmoSensors.ClearCliffRunningStats"/>.
+    /// </summary>
+    internal Action? RobotDelocalized;
 
     // ---- the game-facing messages
     /// <summary>RobotConnectionResponse to the game (CB19); raised on the engine thread before the engine's own subscribers (CD17).</summary>

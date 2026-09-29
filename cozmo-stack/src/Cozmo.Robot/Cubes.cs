@@ -126,10 +126,19 @@ public sealed class CozmoCubes
     /// The largest slot a connection report from the robot may carry, the last of the engine's
     /// <c>MAX_NUM_ACTIVE_OBJECTS</c> = 5 radio slots. <c>HandleActiveObjectConnectionState</c> reads the slot first
     /// and ignores a report above 4 (S1, LC8a: <c>cmp r7, #4; bhi</c> at 0x00533B58). The id this stack keys cube
-    /// telemetry on is that slot, the engine's activeID (S2: vbase+0x40). The bound is recorded and not enforced
-    /// here, because this stack also uses the slot as its world ObjectID (M11 interface); see Handle.
+    /// telemetry on is that slot, the engine's activeID (S2: vbase+0x40).
     /// </summary>
     public const uint MaxActiveObjectSlot = 4;
+
+    // fidelity: M4-025
+    /// <summary>
+    /// Robot+0x490: <c>Robot::BroadcastAvailableObjects</c> 0x00517DD8 is its only writer, it is 0 at the ctor
+    /// (0x005101DE) and has no caller in the shipped engine, so the engine never broadcasts ObjectAvailable or
+    /// ObjectUnavailable to the game (D1..D4; the two readers are 0x0053398E and 0x0051419A). This stack has no
+    /// game-facing broadcast for either message either; <see cref="CubeDiscovered"/> is this stack's own
+    /// advertisement notification, not the engine's gated broadcast.
+    /// </summary>
+    internal const bool BroadcastsAvailableObjects = false;
 
     internal CozmoCubes(CozmoRobot robot)
     {
@@ -429,9 +438,9 @@ public sealed class CozmoCubes
         _byObjectId.TryGetValue(activeId, out var c) && c.Connected ? c : null;
 
     /// <summary>
-    /// The carried-object test the Moved and Stopped broadcasts are excluded on (CD10a, CD10b). MISSING interface: the
-    /// carried object (M12 CarryingComponent) and the ID at [robot+0x280]+0xC (not read) are not wired, so nothing is
-    /// excluded until they are.
+    /// The exclusion the Moved and Stopped broadcasts apply (CD10a, CD10b): the carried object
+    /// (CarryingComponent+8, robot+0x284) and the dock target (DockingComponent+0xC, [robot+0x280]+0xC; C11.1
+    /// D1..D3). The M12 manipulation layer wires both; nothing is excluded until it does.
     /// </summary>
     internal Func<Cube, bool>? ExcludeFromMovedBroadcast { get; set; }
 
@@ -446,6 +455,11 @@ public sealed class CozmoCubes
             {
                 case ObjectAvailable a:
                 {
+                    // fidelity: M4-025
+                    // D6: HandleActiveObjectAvailable records the advertisement in the active-object map, then gates
+                    // the game-side ObjectAvailable broadcast on robot+0x490, which is never set (D1..D4), so the
+                    // engine broadcasts nothing. This stack records the advertisement (the internal tracking the
+                    // connection path needs) and raises no ObjectAvailable/ObjectUnavailable broadcast.
                     // The engine records an advertisement only for a light cube or the charger.
                     if (!IsTrackedActiveObject(a.ObjectType)) break;
                     bool isNew = !_byFactoryId.ContainsKey(a.FactoryId);

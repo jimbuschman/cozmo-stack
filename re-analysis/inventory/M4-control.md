@@ -447,3 +447,148 @@ Everything here is read-only work. Scripts and dumps are in `C:\Windows\TEMP\cla
   - That points to the cube link as a whole, not the accel stream alone, but it does not establish a cause.
   - The robot also runs firmware 2457, whose E2R schema hash differs from the 2381 build the engine targets (S19).
 - **What would decide between (b) and (c)** is a robot observation: whether 0xF5 (or any cube telemetry) appears after CubeID and CubeLights have been sent. No shipped artifact can settle it.
+
+## Correction C10 (M4, R-DEV pre-extraction 2026-09-29; manager, rows verified by the R-DEV verifier)
+
+Source: `re-analysis/research/20260929-R-DEV-pre-extraction.md` Part 2 items 5..10 (Sonnet), checked by
+`@cozmo-verifier` (verdict: one citation-range defect, E8, fixed below to 0x00632368..0x00632380; all other
+behaviour-changing rows hold). This correction adds the rows the records need to own their whole production path.
+It does not change any previously recorded behaviour.
+
+#### C10.1 M4-016 head CheckIfDone, the rest of the body (0x005485F8..0x005488BE)
+
+| step | what the original does | citation | record | class |
+|---|---|---|---|---|
+| H2 | Waiting-for-ack: bumps a static u16 at 0x01051028; below 11 returns RUNNING; on the 11th logs and resets. Log only. | 0x00548614..0x00548670; 0x005488B2 | M4-016 | EXACT_SOURCE |
+| H4 | The eye-shift block runs only if `+0x9D == 0` **and** `+0xA8 != 0`; otherwise straight to 0x00548728. | 0x005485F8 `ldrb +0x9d; bne.w 0x548728`; 0x00548602 `ldrb +0xa8; beq.w 0x548728` | M4-016 | EXACT_SOURCE |
+| H5 | If latched in position remove at once; else `Radians::IsNear(this+0x78, robot+0x2FC, this+0xA0)` must return 1. | 0x0054860C; 0x00548674..0x00548694 | M4-016 | EXACT_SOURCE for the branch; `Radians::IsNear` body (PLT 0x4a586c) not read (dead, see H7) |
+| H6 | Remove: log, then `TrackLayerComponent::RemoveEyeShift(robot+0xC0, tag = +0xA8, duration 99)` and `+0xA8 = 0`. No robot message. | 0x00548696..0x005486EC; 0x00548712..0x00548724 | M4-016 | EXACT_SOURCE |
+| H7 | `+0xA8` is never set to non-zero in this build: ctor zeroes it (0x00547F3C); `AddOrUpdateEyeShift` has exactly three callers (0x00546286 TurnInPlaceAction, 0x0056535A TrackFaceAction, 0x0057D7FC AnimationStreamer), none a MoveHeadToAngleAction; `+0x9D` is 0 at the ctor (0x00547F2C `strh #1,[fp,#0x9c]`), and only PanAndTiltAction (0x00549D14..0x00549D1E) writes +0x9C/+0x9D. **H4..H6 are dead in this build.** | as cited | M4-016 | EXACT_SOURCE (negative result, exhaustive over the AddOrUpdateEyeShift callers) |
+| H8 | Init tail: if `+0x9C != 0` and `+0x9D == 0`, sets `+0xA0 = 0.5 x \|target - robot+0x2FC\|`. Feeds H5 only. | 0x00548586..0x005485C2 | M4-016 | EXACT_SOURCE |
+| H11 | Not-in-position debug counter at 0x0105102A, log only; the RUNNING return is already C1. | 0x005487B4..0x00548864 | M4-016 | EXACT_SOURCE |
+
+#### C10.2 M4-017 EnableMode(14) before the headlight send
+
+| step | what the original does | citation | record | class |
+|---|---|---|---|---|
+| E2 | `BodyLightComponent::SetHeadlight` calls `VisionComponent::EnableMode(14, enable)` on `robot+0x258`; the result is ignored. | 0x0063234A..0x00632364 | M4-017 | EXACT_SOURCE |
+| E3 | VisionMode 14 = **LimitedExposure** (name table 0x01034230, entry 14 -> 0x00C1DC64). | 0x00796BBC..0x00796BD0; 0x00C1DC64 | NEW | EXACT_SOURCE |
+| E4 | `VisionComponent::EnableMode` tail-calls `VisionSystem::SetNextMode` (null VisionSystem -> sErrorF and return 1). | 0x006527AC..0x006527B6; veneer 0x008CD05C -> PLT 0x4BA35C | NEW | EXACT_SOURCE |
+| E5 | `VisionSystem::SetNextMode` only queues `(mode, bool)` on the deque at VisionSystem+0xB0; returns 0. Nothing sent. | 0x006B2282..0x006B2298 | NEW | EXACT_SOURCE |
+| E6 | The queue is drained in `VisionSystem::Update` (enable then pop_front). | 0x006B4FB6..0x006B4FE4 | NEW | EXACT_SOURCE |
+| E7 | `VisionSystem::EnableMode(14)` on the mask at +0xAC: enable clears Idle and sets bit 14; disable clears it, and if the mask becomes 0 sets Idle. | 0x006B1A76..0x006B1CC6 | NEW | EXACT_SOURCE |
+| E8 | After E2 it builds `EngineToRobot(SetHeadlight{enable})` and sends reliable, not hot. | 0x00632368..0x00632380 (ctor 0x00632374, SendMessage 0x00632380) | M4-017 | EXACT_SOURCE |
+| E9 | No reader of mask bit 14 was found; the mode is write-only in this build as far as the scans show. | sweeps in the report | M4-017 | RECOVERABLE_GAP (M11 owns it) |
+
+#### C10.3 M4-018 cube lights: sleep flags, +0x41, the pop resend, the directory
+
+| step | what the original does | citation | record | class |
+|---|---|---|---|---|
+| S3 | `HandleMessage<EnableCubeSleep>` (0x0063A4A5) is the **only** writer of `comp+0x23/+0x24`; defaults 0/0. | 0x0063A4F8..0x0063A502; ctor 0x00637106..0x0063710A | M4-018 | EXACT_SOURCE |
+| S4 | enable=0 -> `StopLightAnim(0x21, layer 2, all)` and `(0x22, layer 2, all)`, then `EnableGameLayerOnly(all, false)`. No cube message of its own. | 0x0063A538..0x0063A576 | M4-018 | EXACT_SOURCE |
+| S5 | `EnableGameLayerOnly` (0x00639905): enable=1 SetObjectLights + StopAllAnimsOnLayer(1)(2) + gameLayerOnly=1; enable=0 StopAllAnimsOnLayer(0)(2) + curLayer + PickNextAnimForDefaultLayer; id -1 also sets comp+0x22. | 0x006399C0..0x00639B36 | M4-018 | EXACT_SOURCE |
+| S7 | A second trigger: `RobotDelocalized` sets comp+0x21 (0x0063A3A8); Update clears it and re-picks every object when `robot+0x2C4` is non-zero (0x00637924..0x00637940). `robot+0x2C4` semantics UNKNOWN. | as cited | M4-018 | EXACT_SOURCE for the read |
+| W1 | `+0x41` (CurrentAnimInfo+0x39) is initialised 0 at PlayLightAnim and set to 1 before the push. | 0x00638582; 0x006386AE; 0x00638D0C | M4-018 | EXACT_SOURCE |
+| W2 | The only four stores of 1: `StopAllAnimsOnLayer` (0x00638DB6 specific id, 0x00638E26 all) and `StopLightAnim` (0x00639026 specific, 0x00639086 all). | as cited | M4-018 | EXACT_SOURCE |
+| W4 | Update pops the top even when patterns remain if `+0x41 == 1`; a timer-0 pattern waits for `+0x41`. | 0x0063798A..0x006379BC | M4-018 | EXACT_SOURCE |
+| W5 | Next pattern: timer := now + duration + modifier; SendTransitionMessage then SetObjectLights. | 0x00637B3A..0x00637B82 | M4-018 | EXACT_SOURCE |
+| P1 | Pop copies the callback, pop_back, invokes the callback (liveness helper 0x00564A64). | 0x006379BC..0x006379FC | M4-018 | EXACT_SOURCE |
+| P2 | If the new back also has `+0x41 == 1`, it pops that too; loop. | 0x00637A4A..0x00637A6A | M4-018 | EXACT_SOURCE |
+| P3 | Otherwise it resends the animation now on top: `SendTransitionMessage(id, cur)` then `SetObjectLights(id, cur)`, `cur` = its stored current pattern. **No timer change and no iterator reset.** | 0x00637A6C..0x00637B02 | M4-018 | EXACT_SOURCE |
+| P5 | Empty layer: gameLayerOnly -> static off ObjectLights; else curLayer := 2 and, when Update(true), PickNextAnimForDefaultLayer. | 0x00637B04..0x00637C06 | M4-018 | EXACT_SOURCE |
+| D1 | Directory `config/engine/lights/cubeLights` (len 31). | 0x0051F80C; 0x0051F5DA | M4-018 | EXACT_SOURCE |
+| D2 | `WalkAnimationDir`: scope 1, recursive, extensions json/bin, full paths. | 0x00520E50..0x00520F06 | M4-018 | EXACT_SOURCE |
+| D3 | `DataPlatform::pathToResource` scope 1 = the string at DataPlatform+0x24. | 0x0084BDBC..0x0084BE66 | M4-018 | EXACT_SOURCE |
+| D4 | The app fills it with `<persistentDataPath>/cozmo/cozmo_resources` (RobotEngineManager.cs:536, PlatformUtil.cs:5-13). | authority 2 | M4-018 | EXACT_SOURCE |
+| D5 | Loaded by `DispatchWorker<3>` -> `LoadCubeLightAnimationFile` -> DefineFromJson under mutex; definition order is not file order. | 0x0051FE24..0x0051FEE4; 0x00521C30..0x00521C9C | M4-018 | EXACT_SOURCE |
+
+#### C10.4 M4-010 robot+0x490 and the ObjectAvailable/Unavailable gate
+
+| step | what the original does | citation | record | class |
+|---|---|---|---|---|
+| D1 | `robot+0x490` = 0 at the ctor. | 0x005101DE | M4-010 | EXACT_SOURCE |
+| D2 | `Robot::BroadcastAvailableObjects(bool)` is the whole setter (`strb [r0,#0x490]; bx lr`). | 0x00517DD8 | NEW | EXACT_SOURCE |
+| D3/D4 | No other store in `.text`, and no caller of the setter anywhere in the shipped engine. **The engine never sets it after the ctor.** | scans in the report | M4-010 | EXACT_SOURCE |
+| D5 | Expiry: ObjectUnavailable is broadcast only if `+0x490` is set; the node is erased either way. | 0x0051419A; 0x005141FC; 0x00514218 | M4-010 | EXACT_SOURCE |
+| D6 | `HandleActiveObjectAvailable`: the game-side **ObjectAvailable** broadcast is also gated on `+0x490`; when set, an RSSI <= 0x31 is logged. | 0x0053398E; 0x0053399A; 0x005339FC; 0x00533A04 | **M4-025** | EXACT_SOURCE |
+
+#### C10.5 M4-008 where UpdateRobotData runs
+
+| step | what the original does | citation | record | class |
+|---|---|---|---|---|
+| U1 | The only gate before the work is `robot+0x29` (time-synced); 0 jumps to the epilogue. | 0x0051293C..0x00512942 | M4-008 | EXACT_SOURCE |
+| U2 | Pre-work: +0x34E = 1, +0x30 = 1, robot+0x2C = state timestamp, SetHeadAngle, +0x300, ComputeLiftPose, Radians(+0x304). | 0x00512946..0x00512982 | M4-008 | EXACT_SOURCE |
+| U3 | `CliffSensorComponent::UpdateRobotData` runs at 0x0051298C, **before** the origin check `ContainsOriginID` at 0x00512C3E..0x00512C4A. It stores the cliff data of every time-synced state, including ones the origin check later drops. | 0x00512986..0x0051298C; 0x00512C3E | M4-008 | EXACT_SOURCE. **Contradicts "the stack stores from accepted states only."** |
+| U4 | Body: 4 x u16 raw to +0xE/+0x12, CLIFF_DETECTED `(state+0x4C>>14)&1` to +6, timestamp to +8. | 0x0063401A..0x00634036 | M4-008 | EXACT_SOURCE |
+
+#### C10.6 M4-019 HandleRobotStopped, the 150 path, the Welford removal, lower_bound
+
+| step | what the original does | citation | record | class |
+|---|---|---|---|---|
+| H1 | HandleRobotStopped is subscribed for robot tag **0xD4** (GOT 0x0103EA8C). | 0x00532B6E | M4-019 | EXACT_SOURCE |
+| H2 | Body: Get_robotStopped, reason; sEventF; `EvaluateCliffSuspiciousnessWhenStopped`. | 0x0053539C..0x0053542E | M4-019 | EXACT_SOURCE |
+| H3 | Evaluate = `comp+0x1C := robot+0x2C` (the last state timestamp). Only caller 0x0053542E. | 0x00634840..0x00634846 | M4-019 | EXACT_SOURCE |
+| H4 | If the cliff sensor is enabled: `BehaviorManager::RequestCurrentBehaviorEndImmediately`, `ActionList::Cancel(-1)`, broadcast RobotStopped. Nothing to the robot. | 0x00535432..0x00535480 | M4-019 | EXACT_SOURCE |
+| S1 | The stats/threshold calls run for frame-mismatched states too, for the first 100 mismatches (r6=0 while `+0x2C0 < 0x65`). | 0x00512FB0..0x00512F22 | M4-019 | EXACT_SOURCE |
+| S2 | UpdateCliffDetectThreshold gates: `+0x1C != 0` and `MC+0xC == 0`. | 0x006343C6..0x006343D6 | M4-019 | EXACT_SOURCE |
+| S3 | `std::map::lower_bound(comp+0x1C)` over RobotStateHistory at robot+0x390 (key u32 at node+0x10). | 0x006343D8..0x00634404 | M4-019 | EXACT_SOURCE |
+| S4 | In-order successor walk. | 0x0063448E..0x006344AA | M4-019 | EXACT_SOURCE |
+| S5 | Per sample: min(cliff[0]); Increment when variance +0x3C > 10000.0f **and** `(min+15) < cliff`. | 0x00634420..0x0063448A; float 0x006344EC | M4-019 | EXACT_SOURCE |
+| S6 | Clears `+0x1C` at the end of the walk (not on the two early gate exits). | 0x006344AC..0x006344AE | M4-019 | EXACT_SOURCE |
+| S7 | IncrementSuspiciousCliffCount: cache < 151 returns; else count++, cache = max(cache-250,150), send, count=0. | 0x0063451A..0x006345AA | M4-019 | EXACT_SOURCE |
+| S8 | The only threshold senders: SetOnChargerPlatform 0x00511DA0, UFRS 0x00512DA2 (50) and 0x00512EA0 (400), Increment 0x006345A4, Clear 0x006347F8. | as cited | M4-019 | EXACT_SOURCE |
+| W1 | Sample gate: moving, `robot+0x355 == 0`, `state+0x50 > cache`. | 0x00634636..0x00634656 | M4-019 | EXACT_SOURCE |
+| W2 | push_back. | 0x00634658..0x00634666 | M4-019 | EXACT_SOURCE |
+| W3 | size < 101: Welford add-only, n = size. | 0x0063466A; 0x006346D0..0x006346FC | M4-019 | EXACT_SOURCE |
+| W4 | size >= 101: pop_front, then the removal step with **N = the constant 100.0f, not the deque size**; `mean' = mean + (x-old)/100`; two-term M2. | 0x0063466C..0x006346CE; 100.0f at 0x00634728 | M4-019 | EXACT_SOURCE |
+| W5 | M2 += s0; variance = M2/(size-1) once size >= 2. | 0x00634700..0x0063471E | M4-019 | EXACT_SOURCE |
+| W6 | The window is 100 samples (grows to 101 after the push, then the removal returns it to 100). | 0x00634668 | M4-019 | EXACT_SOURCE |
+
+#### C10.7 M4-004 reclassified: no calibration gate on direct motion
+
+- Verdict C of the policy review (`re-analysis/research/20260929-policy-review.md`): the engine has no calibration
+  gate on direct motor commands. Direct readers of Robot+0x314/+0x315 are 0x00511E1C, 0x00512378 (IsHeadCalibrated),
+  0x005151A6 (IsLiftCalibrated) and 0x0051335E; getter callers by PLT scan are 0x0052C5AE (DetectGyroDrift),
+  0x00547D40/0x00547D48 (CalibrateMotorAction::CheckIfDone), 0x00606456/0x00606460
+  (BehaviorReactToImpact::AlwaysHandle) and 0x00606748..0x00606936 (BehaviorReactToMotorCalibration). **None gates
+  DriveWheels, MoveHead or MoveLift.** The engine reacts through `HandleMotorCalibration` (MA20). MA21 already
+  recorded the getter readers; this correction adds the getter *callers*.
+- **Action:** M4-004 becomes IMPLEMENTATION_GAP. The public direct-motion defaults send with no calibration check.
+  The engine's own internal callers already pass `requireCalibration: false`. The stack's extra "no RobotState yet"
+  refusal (`Motion.cs:185-186`) has no engine counterpart traced; it is removed with the gate.
+
+## Correction C11 (M4, R-DEV M4 gap pass 1, 2026-09-29)
+
+Source: `re-analysis/research/20260929-R-DEV-M4-control-gap1-extraction.md` (extractor; the manager read the rows
+against the cited addresses). Fills the two UNKNOWN fields C10 left, and confirms M4-016's negative.
+
+| step | what the original does | citation | record | class |
+|---|---|---|---|---|
+| C11.1 | **`DockingComponent+0xC` is an `Anki::ObjectID`: the object currently being docked with (the dock target).** Default `-1` in the ctor. The only writer is `DockingComponent::DockWithObject`, which copies the argument ObjectID's id (id at `ObjectID+4`). `AbortDocking` does not reset it. It is **not** the carried object (that is `CarryingComponent+8` at robot+0x284). | default 0x0063BA1E `mov.w r3,#-1`; 0x0063BA2A `str r3,[r0,#0xc]`; writer 0x0063BAAC `ldr r0,[r6,#4]`, 0x0063BAB6 `str.w r0,[sb,#0xc]`; readers Moved 0x0053416E/0x00534174, Stopped 0x0053497C/0x00534984, ObjectPoseConfirmer 0x00505E9C/0x00505EA2, PotentialObjectsForLocalizingTo 0x0050D18C/0x0050D198, BlockWorld 0x00621D7A/0x00621D7E and 0x0062598A/0x0062598E | M4-009 | EXACT_SOURCE |
+| C11.2 | **`robot+0x2C4` is the "robot is localized" flag.** Default 1; set 0 by `Robot::Delocalize`; set 1 by `SetLocalizedTo` and `CheckAndUpdateTreadsState`. Readers include the `CubeLightComponent::Update` gate, `LocalizeToObject`, `LocalizeToMat` and `GetRobotState` (published as output +0x6C = flag AND not off-treads). For S7 the `RobotDelocalized` refresh request `+0x21` is held while delocalized and applied on the first Update after the flag returns to 1. | default 0x0050FF10; clear 0x00510A4A; set 0x0051245E, 0x005124EE, 0x0051217C; gate 0x00637930 | M4-018 | EXACT_SOURCE |
+| C11.3 | **M4-016 confirmed:** the lift `CheckIfDone` body (0x005493F6..0x00549508) contains **no** eye-shift removal (`RemoveEyeShift`/`AddOrUpdateEyeShift` are not called in that range), and the head's `+0xA8` has only three writers, all zero (ctor 0x00547F3C, destructor 0x005484B0, H6 0x00548724), so H4..H6 never execute. | as cited; full `.text` store and PLT scans in the report | M4-016 | EXACT_SOURCE |
+
+## Correction C12 (M4, R-DEV M4 gap pass 2, 2026-09-29)
+
+Source: `re-analysis/research/20260929-R-DEV-M4-control-gap2-extraction.md` (extractor; the manager read the rows
+against the cited addresses).
+
+| step | what the original does | citation | record | class |
+|---|---|---|---|---|
+| C12.1 | The static `ObjectLights` passed by `EnableGameLayerOnly(enable = 1)` is at **0x0105B4A0**, filled by `_INIT_36`: eight u32 `0x000000FF` (`rev(NamedColors::BLACK)` at 0x00C9744F) at +0x00..+0x1F, everything +0x20..+0x7F zero (all periods/transitions/offsets 0, rotation 0). Through `SetLEDs` it is solid off with gamma 0x80. | init 0x004D7EB4..0x004D7EE5; used 0x006399F2 (single) and 0x00639A2E (all); the same static is P5's off lights | M4-018 | EXACT_SOURCE |
+| C12.2 | The enable=1 branch **is live**: game tag **0xBB** `EnableLightStates` -> `HandleMessage<EnableLightStates>` (0x0063A48A..0x0063A496) and its lambda (0x0063AFF8..0x0063B006) pass `enable = (msg.byte0 == 0)`. The app sends it from `Robot.SetEnableFreeplayLightStates` (`unity/scripts/csharp/Robot.cs:1902-1907`). | as cited; `unity/.../MessageGameToEngine.cs:200` | M4-018 | EXACT_SOURCE |
+| C12.3 | `robot+0x2C0` (the frame-mismatch counter) is **per-mismatch-run, not cumulative**: 0 at the ctor (0x0050FF08), 0 on every frame-match state (0x00512EAE), 0 on the treads-change Delocalize path (0x00512B9C), old+1 on a frame-mismatch (0x00512F1C), 0 after the count reaches 0x65 (0x00512F88). Origin-miss and history-failure states leave it untouched. | as cited | M4-019 | EXACT_SOURCE |
+| C12.4 | The stats gate `r6 = 0` is not only the frame match: `r6 = 1` also on `Robot::AddRobotStateToHistory` returning nonzero (0x00512BEE blx 0x4A7C48; tested 0x00512BF4/BF8; r6=1 at 0x00512C38), on `RobotStateHistory::GetLastStateWithFrameID` failing (0x00513088/0x00513110) and on the origin miss (0x00512F0C). All skip the stats/threshold block at 0x00512FB0..0x00512FD6. | as cited | M4-019 | EXACT_SOURCE |
+
+## Correction C13 (M4, R-DEV verifier pass, 2026-09-29)
+
+Manager spot-checked the verifier's two contradictions against the binary; both hold. C13 corrects C10.3 S5 and
+C12.3 and adds the history retention.
+
+| step | what the original does | citation | record | class |
+|---|---|---|---|---|
+| C13.1 | **`EnableGameLayerOnly` branch detail (corrects C10.3 S5's "(0)(2)" for the all-objects case).** The all-objects (id -1) enable=0 path calls `StopAllAnimsOnLayer` **once, layer 0**, clears each `ObjectInfo+0x1C`, then sets `comp+0x22 := 0`, then curLayer and `PickNextAnimForDefaultLayer`. The **single-object** enable=0 path calls `StopAllAnimsOnLayer` for layer 0 **and** layer 2, clears `ObjectInfo+0x1C`, then curLayer and PickNext; it does **not** write `comp+0x22`. The enable=1 branch (both) does `SetObjectLights(static)`, `StopAllAnimsOnLayer(1)`, `StopAllAnimsOnLayer(2)`, `ObjectInfo+0x1C := 1`; only the all-objects path also sets `comp+0x22 := 1`. | all-objects enable=0: 0x00639ACC..0x00639AE6 (`str r6,[sp,#8]` r6=0, one `blx 0x4B930C`), per-object `strb r6,[r0,#0x1c]` 0x00639AFA, `strb.w r8,[sb,#0x22]` 0x00639B32; single-object enable=0: 0x00639A98..0x00639ACA (stops 0x00639AA2 and 0x00639AB0, `strb r4,[r7,#0x1c]` 0x00639AB8); enable=1: 0x006399EA..0x00639A14 and 0x00639A26..0x00639A96 | M4-018 | EXACT_SOURCE |
+| C13.2 | **The treads-change Delocalize path skips the frame logic (corrects C12.3).** On a to/from-OnTreads commit the engine stores `+0x2C0 = 0` at 0x00512B9C and branches to 0x512FB4, past the frame compare (0x00512D7A), the frame-match reset (0x00512EAE) and the mismatch increment (0x00512F14); the stats/threshold block then runs unconditionally, skipping the `cmp r6,#0` gate at 0x00512FB0. | 0x00512B9C `str.w sb,[r4,#0x2c0]`; 0x00512BAA `b #0x512fb4`; 0x00512FB4 stats body | M4-019 | EXACT_SOURCE |
+| C13.3 | **The engine's state-history retention is 3000 ms.** `RobotStateHistory::RobotStateHistory` sets a 3000 ms window at history+0x3c. The stack's parallel cliff history (Sensors) uses that window; the walk starts at `+0x1C`, so it only bounds memory. | 0x0053088D..0x005308C6 (`movw r?,#0xbb8` = 3000) | M4-019 | EXACT_SOURCE |
+
+| C13.4 | **`EnableGameLayerOnly` returns without acting when the target is already in the requested state.** All-objects: if `comp+0x22 == enable`, branch to the epilogue (0x00639A16..0x00639A1C). Single-object: if `ObjectInfo+0x1C == enable`, branch to the epilogue (0x006399DC..0x006399E0). | 0x006399DC `ldrbne r0,[r7,#0x1c]; cmpne r8,r0; beq.w 0x639b36`; 0x00639A16 `ldrb.w r0,[sb,#0x22]; cmp r0,r8; beq.w 0x639b36` | M4-018 | EXACT_SOURCE |
