@@ -2,6 +2,7 @@ using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
+using System.Text.Json;
 using Xunit;
 
 namespace Cozmo.Protocol.Tests;
@@ -302,11 +303,12 @@ public class FreeplayTests
     /// </summary>
     /// <summary>
     /// The decay modifiers, the damaged parts and the saved file.
-    /// GetDecayMultipliers 0x0069C214 multiplies in every entry whose threshold the level is at or under,
-    /// and the shipped config's only working entry doubles Play's decay while Repair is at or below 0.03;
-    /// NumDamagedPartsForRepairLevel 0x0069CCAC counts the leading broken-part thresholds at or above the
-    /// repair level (0.98, 0.6, 0.3); WriteToDevice 0x00693BB0 writes the levels with a timestamp and
-    /// ApplyDecayForTimeSinceLastDeviceWrite 0x00695304 decays for the gap on the way back in.
+    /// GetDecayMultipliers 0x0069C214 sorts each need's modifier list descending and applies the single
+    /// first entry whose threshold is at or below the level (0x0069C270 vcmpe / 0x0069C278 bge); it does
+    /// not combine every matching entry. NumDamagedPartsForRepairLevel 0x0069CCAC counts the leading
+    /// broken-part thresholds at or above the repair level (0.98, 0.6, 0.3); WriteToDevice 0x00693BB0
+    /// writes the levels with a timestamp and ApplyDecayForTimeSinceLastDeviceWrite 0x00695304 decays for
+    /// the gap on the way back in.
     /// </summary>
     [Fact]
     public void TheNeedsDecayModifiersAndDamagedPartsFollowTheConfig()
@@ -320,20 +322,27 @@ public class FreeplayTests
             new Dictionary<NeedId, IReadOnlyList<(double, double)>>(),
             new Dictionary<NeedId, IReadOnlyList<(double, NeedId, double)>>
             {
-                [NeedId.Repair] = new[] { (0.3, NeedId.Play, 1.0), (0.03, NeedId.Play, 2.0) },
+                [NeedId.Repair] = new[] { (0.5, NeedId.Play, 1.0), (0.3, NeedId.Play, 2.0) },
             });
 
         var state = new NeedsState(cfg);
         state.SetNeedLevel(NeedId.Repair, 1.0);
         state.SetNeedLevel(NeedId.Play, 1.0);
         state.ApplyDecay(decay, 60, connected: true);
-        Assert.Equal(0.4, state.GetNeedLevel(NeedId.Play), 3);      // 0.6 a minute, no modifier
+        Assert.Equal(0.4, state.GetNeedLevel(NeedId.Play), 3);      // 0.6 a minute; the 0.5 entry is first
 
-        state.SetNeedLevel(NeedId.Repair, 0.02);                     // at or under 0.03: Play decays twice
+        // Repair 0.3: the 0.3 entry is the first threshold at or below the level, so Play's multiplier is 2
+        state.SetNeedLevel(NeedId.Repair, 0.3);
         state.SetNeedLevel(NeedId.Play, 1.0);
         state.ApplyDecay(decay, 60, connected: true);
-        Assert.Equal(1.0 - 1.2, state.GetNeedLevel(NeedId.Play), 3 - 3);   // clamped at the minimum
-        Assert.Equal(cfg.MinimumNeedLevel, state.GetNeedLevel(NeedId.Play), 3);
+        Assert.Equal(cfg.MinimumNeedLevel, state.GetNeedLevel(NeedId.Play), 3);   // 1.2 a minute, clamped
+
+        // Repair 0.03: no entry's threshold is at or below the level, so the multiplier stays 1 and Play
+        // decays at its base rate; the old implementation multiplied every matching entry instead.
+        state.SetNeedLevel(NeedId.Repair, 0.03);
+        state.SetNeedLevel(NeedId.Play, 1.0);
+        state.ApplyDecay(decay, 60, connected: true);
+        Assert.Equal(0.4, state.GetNeedLevel(NeedId.Play), 3);
 
         // the damaged parts follow the repair level against 0.98, 0.6, 0.3
         Assert.Equal(new[] { 0.98, 0.6, 0.3 }, cfg.BrokenPartThresholds);
@@ -355,6 +364,373 @@ public class FreeplayTests
             Assert.Equal(0.4, back.State.GetNeedLevel(NeedId.Play), 3);
         }
         finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    /// <summary>
+    /// The needs brackets come from the cached first threshold at or below the level.
+    /// NeedsState::UpdateCurNeedsBrackets 0x0069C12C scans the need's shipped threshold vector (Repair
+    /// 0.99/0.60/0.27/0, Energy 0.99/0.60/0.21/0, Play 0.99/0.50/0.14/0), takes the first index whose
+    /// threshold is at or below the level (or the last when none is) and stores it at +0x70; GetNeedBracket
+    /// 0x0069CBCC refreshes then returns it, and an invalid need warns and returns 4 (IsNeedAtBracket
+    /// 0x0069CD80 errors and returns false).
+    /// </summary>
+    [Fact]
+    public void TheNeedsBracketsUseTheFirstThresholdAtOrBelowTheLevel()
+    {
+        var state = new NeedsState(NeedsConfig.Default);
+        Assert.Equal(NeedBracketId.Full, state.GetNeedBracket(NeedId.Repair));
+        state.SetNeedLevel(NeedId.Repair, 0.99); Assert.Equal(NeedBracketId.Full, state.GetNeedBracket(NeedId.Repair));
+        state.SetNeedLevel(NeedId.Repair, 0.9);  Assert.Equal(NeedBracketId.Normal, state.GetNeedBracket(NeedId.Repair));
+        state.SetNeedLevel(NeedId.Repair, 0.27); Assert.Equal(NeedBracketId.Warning, state.GetNeedBracket(NeedId.Repair));
+        state.SetNeedLevel(NeedId.Repair, 0.0);  Assert.Equal(NeedBracketId.Critical, state.GetNeedBracket(NeedId.Repair));
+        Assert.True(state.IsNeedAtBracket(NeedId.Repair, NeedBracketId.Critical));
+
+        // an invalid need index warns and returns 4 (there are only three needs)
+        Assert.Equal((NeedBracketId)4, state.GetNeedBracket(3));
+        Assert.Equal((NeedBracketId)4, state.GetNeedBracket(-1));
+    }
+
+    /// <summary>
+    /// The FreeplayDataTracker accumulates in <c>SendData</c>, not <c>Update</c> (correction C1 §4).
+    /// Constructor 0x0056EBD4 sets next-send to now + 30.0; Update 0x0056EC1A only sends at +0x18;
+    /// SendData 0x0056EC48 adds <c>now - lastTimestamp</c> while the pause set is empty, rounds, emits
+    /// robot.active_freeplay_time under 37 s, errors DataTooHigh at or above it, resets and sets next-send
+    /// to now + 30.0; SetFreeplayPauseFlag 0x0056EEBC flushes the running segment when the set becomes
+    /// non-empty and stamps the resume time when it becomes empty; ForceUpdate 0x0056EEB8 is SendData.
+    /// </summary>
+    [Fact]
+    public void TheFreeplayDataTrackerReportsEveryThirtySecondsAndHonoursItsPauseFlags()
+    {
+        double clock = 0;
+        var tracker = new FreeplayDataTracker(() => clock);
+        var reports = new List<double>();
+        tracker.ActiveFreeplayTime += reports.Add;
+
+        // Update alone only checks the send time; nothing accumulates until a send is due
+        tracker.Update(0); tracker.Update(10); tracker.Update(20);
+        Assert.Empty(reports);
+        Assert.Equal(0, tracker.ActiveSeconds, 6);
+        tracker.Update(30);                                   // next send was now + 30
+        Assert.Single(reports);
+        Assert.Equal(30, reports[0], 6);                      // the accumulated 30 s, rounded
+        Assert.Equal(0, tracker.ActiveSeconds, 6);
+        Assert.Equal(60, tracker.NextSendSec, 6);
+
+        // OffTreads pauses accumulation; pausing flushes the running segment 30..40 into the accumulator
+        clock = 40;
+        tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OffTreads, true);
+        Assert.Equal(10, tracker.ActiveSeconds, 6);
+        tracker.Update(60);                                   // the next send is due; paused, so only the flushed 10 is reported
+        Assert.Equal(2, reports.Count);
+        Assert.Equal(10, reports[1], 6);
+
+        // unpausing restarts the running segment; a forced update flushes it
+        clock = 70;
+        tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OffTreads, false);
+        clock = 80;
+        tracker.Update(80);                                   // next send is 90, so no report yet
+        Assert.Equal(2, reports.Count);
+        Assert.Equal(0, tracker.ActiveSeconds, 6);        // Update does not accumulate; only SendData does
+        tracker.ForceUpdate();                            // flushes the 70..80 segment
+        Assert.Equal(3, reports.Count);
+        Assert.Equal(10, reports[^1], 6);
+    }
+
+    /// <summary>
+    /// <c>SendData</c> rounds the accumulator before the 37 s test (C1 §4): under 37 s fires the event, at
+    /// or above it logs <c>DataTooHigh</c> and fires nothing.
+    /// </summary>
+    [Fact]
+    public void TheFreeplayDataTrackerErrorsWhenTheRoundedTimeReachesThirtySevenSeconds()
+    {
+        // 36.4 s rounds to 36 and is reported
+        double clock = 0;
+        var under = new FreeplayDataTracker(() => clock);
+        var underReports = new List<double>();
+        under.ActiveFreeplayTime += underReports.Add;
+        clock = 36.4;
+        under.ForceUpdate();
+        Assert.Equal(36, underReports[^1], 6);
+
+        // 37 s exactly rounds to 37 and is the DataTooHigh error
+        double clock2 = 0;
+        var at37 = new FreeplayDataTracker(() => clock2);
+        int reports = 0;
+        at37.ActiveFreeplayTime += _ => reports++;
+        var errors = new List<string>();
+        at37.Log += errors.Add;
+        clock2 = 37.0;
+        at37.ForceUpdate();
+        Assert.Equal(0, reports);
+        Assert.Contains(errors, e => e.Contains("DataTooHigh"));
+    }
+
+    /// <summary>
+    /// The NeedsManager pause transition (correction C1 §6). SetPaused 0x00695E04: a redundant call logs
+    /// <c>NeedsManager.SetPaused.Redundant</c> and returns with no send, write or notification
+    /// (0x00695E0C..0x00695E12); pausing stores the state and time, sends <c>NoAction</c> and forces a
+    /// write; unpausing shifts the decay schedule and sends/writes nothing; both branches end with the
+    /// local-notification and pause-state seams.
+    /// </summary>
+    [Fact]
+    public void TheNeedsManagerPauseAndUnpauseFollowTheEngine()
+    {
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        var writes = new List<bool>();
+        var actions = new List<NeedsActionId>();
+        var notifications = new List<bool>();
+        int pauseStates = 0;
+        var logs = new List<string>();
+        needs.WriteToDevice = forced => writes.Add(forced);
+        needs.NeedsStateSent += actions.Add;
+        needs.LocalNotificationsSetPaused += notifications.Add;
+        needs.SendNeedsPauseStateToGame = () => pauseStates++;
+        needs.Log += logs.Add;
+
+        // the first decay is due at 60; pausing at 10 leaves 50 owed
+        clock = 10;
+        needs.SetPaused(true);
+        Assert.True(needs.IsPaused);
+        Assert.Equal(new[] { NeedsActionId.NoAction }, actions);
+        Assert.Equal(new[] { true }, writes);                 // the pause write is forced
+        Assert.Equal(new[] { true }, notifications);
+        Assert.Equal(1, pauseStates);
+
+        // a redundant call does nothing at all
+        needs.SetPaused(true);
+        Assert.Single(actions); Assert.Single(writes); Assert.Single(notifications); Assert.Equal(1, pauseStates);
+        Assert.Contains(logs, l => l.Contains("NeedsManager.SetPaused.Redundant"));
+
+        // unpausing at 40 moves the next decay to 40 + 50 = 90 and sends/writes nothing
+        clock = 40;
+        needs.SetPaused(false);
+        Assert.False(needs.IsPaused);
+        Assert.Single(actions);
+        Assert.Single(writes);
+        Assert.Equal(new[] { true, false }, notifications);
+        Assert.Equal(2, pauseStates);
+
+        // the decay does not fire early, and fires at 90
+        clock = 89; needs.Update();
+        Assert.DoesNotContain(NeedsActionId.Decay, actions);
+        clock = 90; needs.Update();
+        Assert.Contains(NeedsActionId.Decay, actions);
+        Assert.Equal(new[] { true, false }, writes);          // the 90 s write goes through PossiblyWriteToDevice (not forced)
+    }
+
+    /// <summary>
+    /// Unpausing adds the pause duration to the per-need schedule (C1 §6). This stack keeps the fullness
+    /// fill time and derives its deadline as fill + cooldown, so the deadline shifts by the pause duration.
+    /// </summary>
+    [Fact]
+    public void TheUnpauseShiftsTheFullnessCooldownByThePauseDuration()
+    {
+        double clock = 0;
+        var cfg = NeedsConfig.Default with
+        {
+            FullnessDecayCooldownSec = new Dictionary<NeedId, double> { [NeedId.Repair] = 100, [NeedId.Energy] = 100, [NeedId.Play] = 100 },
+        };
+        var decay = new DecayConfig(
+            new Dictionary<NeedId, IReadOnlyList<(double, double)>>
+            {
+                [NeedId.Play] = new[] { (0.0, 0.06) }, [NeedId.Repair] = new[] { (0.0, 0.0) }, [NeedId.Energy] = new[] { (0.0, 0.0) },
+            },
+            new Dictionary<NeedId, IReadOnlyList<(double, double)>>());
+        var actions = new Dictionary<string, NeedsActionDelta> { ["Fill"] = new("Fill", 0, 0, 0, 0, 1.0, 0, 0, 0) };
+        var needs = new NeedsManager(() => clock, cfg, decay, actions);
+        needs.SetLevel(NeedId.Play, 0.9);
+        Assert.True(needs.RegisterNeedsActionCompleted("Fill"));   // Play to Full; the fill time is 0
+
+        clock = 10; needs.SetPaused(true);
+        clock = 30; needs.SetPaused(false);                        // a 20 s pause; fill 0 -> 20, deadline 100 -> 120
+        needs.SetLevel(NeedId.Play, 1.0);
+
+        clock = 119; needs.ApplyDecayAllNeeds(true);
+        Assert.Equal(1.0, needs.State.GetNeedLevel(NeedId.Play), 6);   // deadline 20 + 100 = 120; now <= deadline skips
+        // the deadline has passed: only the time outside the cooldown window decays. The shift put lastDecay
+        // at 20, and the excluded window (deadline - start = 100) moves it to 120, so 121 decays one second.
+        clock = 121; needs.ApplyDecayAllNeeds(true);
+        Assert.Equal(1.0 - 0.06 * 1 / 60.0, needs.State.GetNeedLevel(NeedId.Play), 6);
+    }
+
+    /// <summary>
+    /// A Full need's cooldown window is excluded from its decay. <c>ApplyDecayAllNeeds</c> 0x00695CFE, on
+    /// the passed-deadline branch (0x00695D5A..0x00695D6A), adds <c>+0x208 - +0x1FC</c> (the deadline minus
+    /// the fill time) to <c>+0x1E4</c> before decaying, so only the time after the deadline is decayed, not
+    /// the whole time since the fill. The skipped passes leave <c>+0x1E4</c> alone.
+    /// </summary>
+    [Fact]
+    public void AFullNeedDecaysOnlyTheTimeOutsideItsFullnessCooldown()
+    {
+        double clock = 0;
+        var cfg = NeedsConfig.Default with
+        {
+            FullnessDecayCooldownSec = new Dictionary<NeedId, double> { [NeedId.Repair] = 100, [NeedId.Energy] = 100, [NeedId.Play] = 100 },
+        };
+        var decay = new DecayConfig(
+            new Dictionary<NeedId, IReadOnlyList<(double, double)>>
+            {
+                [NeedId.Play] = new[] { (0.0, 0.06) }, [NeedId.Repair] = new[] { (0.0, 0.0) }, [NeedId.Energy] = new[] { (0.0, 0.0) },
+            },
+            new Dictionary<NeedId, IReadOnlyList<(double, double)>>());
+        var actions = new Dictionary<string, NeedsActionDelta> { ["Fill"] = new("Fill", 0, 0, 0, 0, 1.0, 0, 0, 0) };
+        var needs = new NeedsManager(() => clock, cfg, decay, actions);
+        needs.SetLevel(NeedId.Play, 0.9);
+        Assert.True(needs.RegisterNeedsActionCompleted("Fill"));   // Play to Full at t=0; deadline 100
+
+        clock = 60; needs.ApplyDecayAllNeeds(true);
+        Assert.Equal(1.0, needs.State.GetNeedLevel(NeedId.Play), 6);   // still inside the cooldown: skipped
+
+        // at 150 the deadline has passed; only 100..150 (50 s) is outside the window. The fixed-period
+        // version would have decayed the whole 150 s since the fill.
+        clock = 150; needs.ApplyDecayAllNeeds(true);
+        Assert.Equal(1.0 - 0.06 * 50 / 60.0, needs.State.GetNeedLevel(NeedId.Play), 6);
+    }
+
+    /// <summary>
+    /// The disconnect transition (C1 §6). OnRobotDisconnected 0x00695908 writes the timestamp, clears the
+    /// serial state, forces a write when not paused, clears the robot pointer, snapshots the needs, runs the
+    /// DAS bracket check and sends the "disconnect" DAS event - with <b>no</b> SendNeedsStateToGame.
+    /// </summary>
+    [Fact]
+    public void TheNeedsManagerDisconnectWritesAndSendsDasWithoutAStateBroadcast()
+    {
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        var writes = new List<bool>();
+        var actions = new List<NeedsActionId>();
+        var das = new List<string>();
+        needs.WriteToDevice = forced => writes.Add(forced);
+        needs.NeedsStateSent += actions.Add;
+        needs.SendNeedsLevelsDasEvent += das.Add;
+        needs.Connected = true;
+
+        clock = 5;
+        needs.OnRobotDisconnected();
+        Assert.False(needs.Connected);                       // the robot pointer is cleared
+        Assert.Equal(5, needs.LastDisconnectSec, 6);
+        Assert.Equal(new[] { true }, writes);                // forced write when not paused
+        Assert.NotNull(needs.DisconnectNeedsSnapshot);
+        Assert.Equal(new[] { "disconnect" }, das);
+        Assert.Empty(actions);                               // no SendNeedsStateToGame here
+
+        // while paused the disconnect does not write
+        clock = 10; needs.SetPaused(true);
+        writes.Clear();
+        needs.OnRobotDisconnected();
+        Assert.Empty(writes);
+    }
+
+    /// <summary>
+    /// The needs manager's disconnect transition is wired to the always-fired removal edge.
+    /// <c>NeedsManager::OnRobotDisconnected</c> 0x00695908 is called from
+    /// <c>RobotManager::RemoveRobot</c> 0x0052F2DC..0x0052F2E0 in <b>both</b> branches, but the engine's
+    /// <c>RobotDisconnected</c> broadcast is sent only when the connection manager did not answer the
+    /// disconnect (CozmoEngine.cs:1315). The stack therefore wires the transition to
+    /// <c>CozmoRobot.RobotRemoved</c>, raised by <c>ResetDevices</c> from <c>CozmoEngine.RemoveRobot</c> on
+    /// every removal. Invoking the engine's removal step here raises <c>RobotRemoved</c> without the
+    /// <c>RobotDisconnected</c> broadcast, which is the branch the broadcast edge would miss.
+    /// </summary>
+    [Fact]
+    public void TheFreeplayStackDisconnectsTheNeedsManagerOnTheAlwaysFiredRemovalEdge()
+    {
+        var obb = ObbRoot();
+        if (obb is null) return;
+        using var rig = new Rig();
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        var writes = new List<bool>();
+        needs.WriteToDevice = forced => writes.Add(forced);
+        using var stack = FreeplayStack.Create(obb, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs, withReactions: false);
+        Assert.True(needs.Connected);
+
+        // RemoveRobot's removal step, without Engine.RobotDisconnected being raised.
+        clock = 5;
+        rig.Robot.Engine.RobotRemoved?.Invoke();
+
+        Assert.False(needs.Connected);
+        Assert.Equal(5, needs.LastDisconnectSec, 6);
+        Assert.Equal(new[] { true }, writes);
+    }
+
+    /// <summary>
+    /// <c>PossiblyWriteToDevice</c> 0x00695DC4 is a 61 ms rate limiter: it writes only when the elapsed time
+    /// since the stored write time is at least <c>61,000,000</c> ns, and then stores now.
+    /// </summary>
+    [Fact]
+    public void PossiblyWriteToDeviceIsA61MillisecondRateLimiter()
+    {
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        var writes = new List<bool>();
+        needs.WriteToDevice = forced => writes.Add(forced);
+
+        clock = 0; needs.PossiblyWriteToDevice();
+        Assert.Empty(writes);                                // 0 ms elapsed
+        clock = 0.060; needs.PossiblyWriteToDevice();
+        Assert.Empty(writes);                                // 60 ms < 61 ms
+        clock = 0.061; needs.PossiblyWriteToDevice();
+        Assert.Single(writes);                               // exactly the throttle
+        clock = 0.120; needs.PossiblyWriteToDevice();
+        Assert.Single(writes);                               // 59 ms later
+        clock = 0.122; needs.PossiblyWriteToDevice();
+        Assert.Equal(2, writes.Count);                       // 61 ms later
+        Assert.All(writes, w => Assert.False(w));            // PossiblyWriteToDevice is never the forced write
+    }
+
+    /// <summary>
+    /// A need's <c>+0x1dc</c> pause flag, written by the <c>SetNeedsPauseStates</c> message, makes
+    /// <c>ApplyDecayAllNeeds</c> skip it (0x00695D36).
+    /// </summary>
+    [Fact]
+    public void APausedNeedIsSkippedByDecay()
+    {
+        double clock = 0;
+        var cfg = NeedsConfig.Default;
+        var decay = new DecayConfig(
+            new Dictionary<NeedId, IReadOnlyList<(double, double)>>
+            {
+                [NeedId.Play] = new[] { (0.0, 60.0) }, [NeedId.Repair] = new[] { (0.0, 0.0) }, [NeedId.Energy] = new[] { (0.0, 0.0) },
+            },
+            new Dictionary<NeedId, IReadOnlyList<(double, double)>>());
+        var needs = new NeedsManager(() => clock, cfg, decay);
+        needs.SetNeedPaused(NeedId.Play, true);
+        clock = 60; needs.ApplyDecayAllNeeds(true);
+        Assert.Equal(1.0, needs.State.GetNeedLevel(NeedId.Play), 6);
+        needs.SetNeedPaused(NeedId.Play, false);
+        clock = 120; needs.ApplyDecayAllNeeds(true);
+        Assert.True(needs.State.GetNeedLevel(NeedId.Play) < 1.0);
+    }
+
+    /// <summary>
+    /// The decay uses each need's own last-decay time (<c>+0x1E4</c>), not a fixed period.
+    /// <c>ApplyDecayAllNeeds</c> 0x00695CFE passes <c>now - this[need].lastDecay</c> to
+    /// <c>NeedsState::ApplyDecay</c> and stores <c>+0x1E4 = now</c>; a need skipped by its pause flag or by
+    /// its fullness deadline keeps <c>+0x1E4</c>, so the whole gap is decayed once the skip ends. Here Play
+    /// is paused for three periods and then decays 240 s' worth on the first unpaused pass.
+    /// </summary>
+    [Fact]
+    public void TheDecayUsesTheActualElapsedTimeSinceTheNeedLastDecayed()
+    {
+        double clock = 0;
+        var cfg = NeedsConfig.Default;
+        var decay = new DecayConfig(
+            new Dictionary<NeedId, IReadOnlyList<(double, double)>>
+            {
+                [NeedId.Play] = new[] { (0.0, 0.06) }, [NeedId.Repair] = new[] { (0.0, 0.0) }, [NeedId.Energy] = new[] { (0.0, 0.0) },
+            },
+            new Dictionary<NeedId, IReadOnlyList<(double, double)>>());
+        var needs = new NeedsManager(() => clock, cfg, decay);
+        needs.SetNeedPaused(NeedId.Play, true);
+        clock = 60; needs.Update();
+        clock = 120; needs.Update();
+        clock = 180; needs.Update();
+        Assert.Equal(1.0, needs.State.GetNeedLevel(NeedId.Play), 6);   // skipped, and +0x1E4 left alone
+        needs.SetNeedPaused(NeedId.Play, false);
+        clock = 240; needs.Update();
+        // 240 s at 0.06/min = 0.24; the fixed-period version would have taken only one period's 0.06.
+        Assert.Equal(0.76, needs.State.GetNeedLevel(NeedId.Play), 6);
     }
 
     [Fact]
@@ -454,15 +830,22 @@ public class FreeplayTests
         var freeplay = tree.Single(a => a.Id == "Freeplay");
         Assert.Equal("Freeplay", freeplay.Type);
         Assert.Equal(("Socialize", "Socialize", "PlayAlone", "Hiking"), freeplay.DesiredActivityNames);
-        // sparks first (priority 0), then the three needs activities, then the freeplay chain 10..17
+        // activityPriority is parsed with ParseUint8 and discarded (0x005AD63C/0x005AD640); the child order
+        // is the subActivities JSON array order (M15-013). The shipped array runs Sparks 0..13, the three
+        // needs activities, then PutDownDispatch, Socialize, Singing, PlayWithHumans, BuildPyramid, PlayAlone,
+        // Hiking and NothingToDo.
         var subs = freeplay.SubActivities;
         Assert.True(subs.Count >= 20);
-        Assert.All(subs.Where(s => s.Id.StartsWith("Sparks")), s => { Assert.Equal(0, s.Priority); Assert.Equal("Sparked", s.Type); Assert.NotNull(s.RequireSpark); });
-        Assert.Equal(1, subs.Single(s => s.Id == "NeedsSevereLowRepair").Priority);
-        Assert.Equal(2, subs.Single(s => s.Id == "NeedsSevereLowEnergy").Priority);
-        Assert.Equal(3, subs.Single(s => s.Id == "NeedsSevereLowPlayGetIn").Priority);
-        Assert.Equal(new[] { "PutDownDispatch", "Socialize", "Singing", "PlayWithHumans", "BuildPyramid", "PlayAlone", "Hiking", "NothingToDo" },
-                     subs.Where(s => s.Priority >= 10).OrderBy(s => s.Priority).Select(s => s.Id));
+        Assert.All(subs, s => Assert.Equal(0, s.Priority));
+        Assert.All(subs.Where(s => s.Id.StartsWith("Sparks")), s => { Assert.Equal("Sparked", s.Type); Assert.NotNull(s.RequireSpark); });
+        Assert.Equal(new[]
+        {
+            "SparksFireTruckAlarm", "SparksRollBlock", "SparksStackBlock", "SparksPeekABoo", "SparksPounceOnMotion",
+            "SparksPopAWheelie", "SparksKnockOverCubes", "SparksPickUpCube", "SparksWorkout", "SparksBuildPyramid",
+            "SparksFistBump", "SparksGatherCubes", "SparksTrackLaser", "SparksCozmoSings",
+            "NeedsSevereLowRepair", "NeedsSevereLowEnergy", "NeedsSevereLowPlayGetIn",
+            "PutDownDispatch", "Socialize", "Singing", "PlayWithHumans", "BuildPyramid", "PlayAlone", "Hiking", "NothingToDo",
+        }, subs.Select(s => s.Id));
         var hiking = subs.Single(s => s.Id == "Hiking");
         Assert.Equal(BehaviorChooserType.Scoring, hiking.Chooser!.Type);
         Assert.Equal(AnimationTrigger.HikingDrivingLoop, hiking.DriveLoopAnim);
@@ -786,5 +1169,178 @@ public class FreeplayTests
         Assert.Contains(decisions, d => d.Behavior == "RollBlockOnSide");
         Assert.Contains(rig.Sent, m => m is DockWithObject);
         Assert.Contains(log, l => l.Contains("robot.goal_from_face_and_cube 0:1 -> PlayAlone"));
+    }
+
+    /// <summary>
+    /// The spark re-selection (correction C1 §1). The invalid-spark latch at <c>BehaviorManager+0x65</c> is
+    /// set only by an <c>ActivateSpark</c> whose <c>UnlockId == 0x55</c> (the stack's null) and cleared by
+    /// <c>SwitchToRequestedSpark</c>. When the current activity's spark equals the requested spark and the
+    /// latch is set, <c>GetDesiredActiveBehaviorInternal</c> 0x005AE40C..0x005AE46E logs
+    /// <c>ActivityFreeplay.ChooseNextBehavior.SparkReselected</c> and re-picks with the "ask the current
+    /// activity WantsToEnd" flag cleared (arg 0).
+    /// </summary>
+    [Fact]
+    public void AReRequestedInvalidSparkDropsTheCurrentActivityAndRepicks()
+    {
+        using var rig = new Rig();
+        var ctx = Ctx(rig);
+        var a = new Fake("a", ticks: 100);
+        var b = new Fake("b", ticks: 100);
+        var bound = new Dictionary<string, IBehavior> { ["a"] = a, ["b"] = b };
+        var manager = new BehaviorManager(ctx);
+        var first = new Activity
+        {
+            Id = "First", Priority = 1, RequireSpark = null,
+            // Cooldown 0, so only the reselect exclusion keeps First from being chosen again.
+            Strategy = new ActivityStrategy { ShouldEndDurationSec = 1000, CooldownBaseSec = 0 },
+            Chooser = new StrictPriorityChooser(new[] { "a" }, bound),
+        };
+        var second = new Activity
+        {
+            Id = "Second", Priority = 2, RequireSpark = null,
+            Strategy = new ActivityStrategy { ShouldEndDurationSec = 1000, CooldownBaseSec = 0 },
+            Chooser = new StrictPriorityChooser(new[] { "b" }, bound),
+        };
+        var fp = new FreeplaySystem(manager, ctx, Fp(first, second), bound, new FreeplayInputs());
+        var log = new List<string>(); fp.Log += log.Add;
+
+        Assert.Equal("First", fp.Tick(0, 0).Activity);
+        Assert.False(fp.RequestedSparkInvalid);
+
+        // a real spark request does not set the latch
+        fp.SetRequestedSpark("SparksFireTruckAlarm");
+        Assert.False(fp.RequestedSparkInvalid);
+        // the invalid unlock 0x55 (the stack's null) sets it
+        fp.SetRequestedSpark(null);
+        Assert.True(fp.RequestedSparkInvalid);
+
+        var d = fp.Tick(1, 1000);
+        Assert.Contains(log, l => l.Contains("ActivityFreeplay.ChooseNextBehavior.SparkReselected: Spark re-selected: none behavior will be selected"));
+        Assert.False(fp.RequestedSparkInvalid);              // SwitchToRequestedSpark cleared it
+        Assert.Equal("Second", d.Activity);
+        Assert.Equal("b", d.Behavior);
+    }
+
+    /// <summary>
+    /// The invalid-spark latch <c>BehaviorManager+0x65</c> is cleared by <c>SwitchToRequestedSpark</c>
+    /// 0x005A4220 after <b>every</b> pick (C1 §1), not only the reselect branch. A requested-activity pick
+    /// that never reselects still clears it.
+    /// </summary>
+    [Fact]
+    public void TheInvalidSparkLatchClearsOnEveryPick()
+    {
+        using var rig = new Rig();
+        var ctx = Ctx(rig);
+        var a = new Fake("a", ticks: 100);
+        var b = new Fake("b", ticks: 100);
+        var bound = new Dictionary<string, IBehavior> { ["a"] = a, ["b"] = b };
+        var manager = new BehaviorManager(ctx);
+        var first = new Activity
+        {
+            Id = "First", Priority = 1, RequireSpark = "FireTruckAlarm",
+            Strategy = new ActivityStrategy { ShouldEndDurationSec = 1000, CooldownBaseSec = 0 },
+            Chooser = new StrictPriorityChooser(new[] { "a" }, bound),
+        };
+        var second = new Activity
+        {
+            Id = "Second", Priority = 2, RequireSpark = null,
+            Strategy = new ActivityStrategy { ShouldEndDurationSec = 1000, CooldownBaseSec = 0 },
+            Chooser = new StrictPriorityChooser(new[] { "b" }, bound),
+        };
+        var fp = new FreeplaySystem(manager, ctx, Fp(first, second), bound, new FreeplayInputs());
+        var log = new List<string>(); fp.Log += log.Add;
+
+        // First requires FireTruckAlarm; requesting it picks First and does not set the latch
+        fp.SetRequestedSpark("FireTruckAlarm");
+        Assert.False(fp.RequestedSparkInvalid);
+        Assert.Equal("First", fp.Tick(0, 0).Activity);
+
+        // the invalid unlock 0x55 (null) sets the latch, but First's spark is not null, so it is not a reselect
+        fp.SetRequestedSpark(null);
+        Assert.True(fp.RequestedSparkInvalid);
+        fp.RequestNewActivity();
+        var d = fp.Tick(1, 1000);
+        Assert.Equal("Second", d.Activity);
+        Assert.False(fp.RequestedSparkInvalid);              // the pick cleared +0x65
+        Assert.DoesNotContain(log, l => l.Contains("SparkReselected"));
+    }
+
+    /// <summary>
+    /// <c>DetectBracketChangeForDas(force)</c> 0x00695958 enters the event branch when
+    /// <c>cached != current || force</c>. On <c>force</c> it emits for all three needs even when unchanged
+    /// and does <b>not</b> update the cached bracket (<c>+0x214</c>), so a following conditional pass still
+    /// reports a changed need.
+    /// </summary>
+    [Fact]
+    public void TheDisconnectBracketCheckForcesAllThreeNeedsAndKeepsTheCache()
+    {
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        needs.SetLevel(NeedId.Energy, 0.0);                 // Energy cache becomes Critical
+        needs.State.SetNeedLevel(NeedId.Energy, 1.0);       // current Full; the cache stays Critical
+        var changes = new List<(NeedId, NeedBracketId, NeedBracketId)>();
+        needs.BracketChanged += (n, a, b) => changes.Add((n, a, b));
+
+        needs.DetectBracketChangeForDas(true);
+        Assert.Equal(3, changes.Count);                     // all three, even the two unchanged
+        Assert.Contains((NeedId.Energy, NeedBracketId.Critical, NeedBracketId.Full), changes);
+
+        changes.Clear();
+        needs.DetectBracketChangeForDas(false);             // +0x214 was not updated by the force
+        Assert.Equal(1, changes.Count);
+        Assert.Contains((NeedId.Energy, NeedBracketId.Critical, NeedBracketId.Full), changes);
+    }
+
+    /// <summary>
+    /// <c>ActivityStrategy::FromJson</c> keeps the <c>IActivityStrategy</c> constructor defaults (row 25) for
+    /// keys the config omits: <c>JsonTools::GetValueOptional&lt;float&gt;</c> 0x004FA580 only overwrites when
+    /// the member exists, so an absent <c>activityShouldEndDurationSecs</c> is 60 and an absent
+    /// <c>cooldownBaseSecs</c> is -1. The shipped <c>sparksFireTruckAlarm.json</c> carries neither key.
+    /// </summary>
+    [Fact]
+    public void AnActivityStrategyWithNoStrategyKeysKeepsTheConstructorDefaults()
+    {
+        using var doc = JsonDocument.Parse("{\"type\":\"Simple\"}");
+        var s = ActivityStrategy.FromJson(doc.RootElement);
+        Assert.Equal(-1, s.CanEndDurationSec);
+        Assert.Equal(60, s.ShouldEndDurationSec);
+        Assert.Equal(-1, s.CooldownBaseSec);
+        Assert.Equal(0, s.CooldownRandomnessSec);
+        Assert.False(s.StartInCooldown);
+        Assert.Equal(-1, s.RequiredRecentOnTreadsEventSec);
+        Assert.Equal(-1, s.RequiredMinStartMoodScore);
+        Assert.Null(s.FeatureGate);
+
+        var obb = ObbRoot();
+        if (obb is null) return;
+        var tree = ActivityTreeLoader.Load(obb, new Dictionary<string, IBehavior>());
+        var truck = tree.SelectMany(a => a.SubActivities.Prepend(a)).Single(a => a.Id == "SparksFireTruckAlarm");
+        Assert.Equal(60, truck.Strategy.ShouldEndDurationSec);
+        Assert.Equal(-1, truck.Strategy.CooldownBaseSec);
+    }
+
+    /// <summary>
+    /// <c>SendData</c> 0x0056EC48 guards the report/error block with the accumulator being non-zero: a zero
+    /// accumulator emits nothing, while the reset and the <c>+0x18 = now + 30.0</c> stamp still happen.
+    /// </summary>
+    [Fact]
+    public void TheFreeplayDataTrackerEmitsNothingWhenTheAccumulatorIsZero()
+    {
+        double clock = 0;
+        var tracker = new FreeplayDataTracker(() => clock);
+        var reports = new List<double>();
+        tracker.ActiveFreeplayTime += reports.Add;
+        var logs = new List<string>();
+        tracker.Log += logs.Add;
+
+        tracker.ForceUpdate();                          // 0 s accumulated: nothing to report
+        Assert.Empty(reports);
+        Assert.Empty(logs);
+        Assert.Equal(30, tracker.NextSendSec, 6);       // the next-send stamp still ran
+
+        clock = 30;
+        tracker.ForceUpdate();                          // a non-zero segment still reports
+        Assert.Single(reports);
+        Assert.Equal(30, reports[0], 6);
     }
 }

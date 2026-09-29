@@ -91,6 +91,7 @@ public sealed class PickUpCubeBehavior : ManipulationBehavior
 /// towards a face (max π; needs face tracking, DEFERRED). The carried object is released in the world model
 /// when the put-down animation completes (INFERRED: the engine learns it from the robot's carry state).
 /// </summary>
+// fidelity: M15-012
 public sealed class PutDownBlockBehavior : ManipulationBehavior
 {
     public enum Phase { Idle, BackingUp, PuttingDown, LookingDown, KeepAlive }

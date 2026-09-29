@@ -36,6 +36,8 @@ public sealed record FreeplayDecision(double AtSec, string? Activity, string? Be
 /// reward still to communicate (+0x3d8). Both loop back to the activity pick, which is why the tick's middle is
 /// a loop.
 /// </summary>
+// fidelity: M15-002
+// fidelity: M15-006
 public sealed class FreeplaySystem
 {
     private readonly BehaviorManager _manager;
@@ -44,6 +46,8 @@ public sealed class FreeplaySystem
     private IBehavior? _pendingInterlude;
     private string? _lastBehaviorId, _interludeAfter;
     private bool _putDownPending, _pickDesiredFirst = true, _requestPending;
+    /// <summary><c>BehaviorManager+0x65</c>: the invalid-spark latch (C1 §1).</summary>
+    private bool _requestedSparkInvalid;
 
     public FreeplaySystem(BehaviorManager manager, BehaviorContext ctx, Activity freeplay, IReadOnlyDictionary<string, IBehavior> bound, FreeplayInputs inputs)
     {
@@ -61,6 +65,15 @@ public sealed class FreeplaySystem
     /// <summary>Debug / test: force the next pick to this activity id (the engine's console var "debug is forcing '%s'").</summary>
     public string? ForcedActivity { get; set; }
 
+    /// <summary>
+    /// The Spark freeplay-pause flag (<c>FreeplayDataTracker</c> flag 1). Set after a pick as
+    /// <c>GetDesiredActiveBehaviorInternal</c> does: <c>SetFreeplayPauseFlag(spark != 0x55, 1)</c>
+    /// (0x005AE4E2..0x005AE4F2), where a null <see cref="Activity.RequireSpark"/> is the engine's invalid
+    /// spark 0x55. The host points this at the tracker.
+    /// </summary>
+    // fidelity: M15-015
+    public Action<bool>? SparkPauseChanged { get; set; }
+
     /// <summary>The robot was put back on its treads: the activity is kicked out and re-picked from what is around.</summary>
     public void OnRobotPutDown(double nowSec)
     {
@@ -76,6 +89,25 @@ public sealed class FreeplaySystem
     /// MeetCozmo and Selection activities run outside freeplay; a feed happens there, not inside a freeplay activity).
     /// </summary>
     public void RequestNewActivity() => _requestPending = true;
+
+    /// <summary>
+    /// The <c>ActivateSpark</c> message's setter for the requested spark (engine <c>BehaviorManager+0x60</c>)
+    /// and the invalid-spark latch at <c>BehaviorManager+0x65</c> (C1 §1): <c>HandleMessage</c> case tag 0
+    /// sets <c>+0x65 = 1</c> only when <c>UnlockId == 0x55</c> (0x005A3C92..0x005A3C9A); the stack's
+    /// <c>null</c> is that invalid spark. A non-null request does not clear the latch, and
+    /// <c>SwitchToRequestedSpark</c> 0x005A4220 clears it. The <c>ActivateSpark</c> message itself is
+    /// unbuilt; this is the seam it will call.
+    /// </summary>
+    // fidelity: M15-006
+    public void SetRequestedSpark(string? spark)
+    {
+        Inputs.RequestedSpark = spark;
+        if (spark is null) _requestedSparkInvalid = true;
+    }
+
+    /// <summary>The invalid-spark latch (<c>BehaviorManager+0x65</c>).</summary>
+    // fidelity: M15-006
+    public bool RequestedSparkInvalid => _requestedSparkInvalid;
 
     /// <summary><c>CalculateDesiredActivityFromObjects</c>: the configured activity for the faces and cubes known.</summary>
     public string? DesiredActivityFromObjects()
@@ -110,12 +142,26 @@ public sealed class FreeplaySystem
         if (_manager.CurrentReactionTrigger is not null) { _manager.Update(nowMs, nowSec); return Record(nowSec, Current?.Id, _manager.Current?.Id, "a reaction is running"); }
 
         var current = _manager.Current;
+        // The activity that the reselect branch must not let the re-pick choose again (C1 §1): the engine's
+        // PickNewActivityForSpark(..., 0) skips the current activity (0x005ADC70..0x005ADC74).
+        Activity? barred = null;
         // the activity: keep, end, or pick
         if (Current is not null)
         {
             bool wantsEnd = Current.Strategy.WantsToEnd(Inputs, Current.RunningSec(nowSec), out var endReason);
             bool behaviorFinished = current is null;
-            if (_putDownPending || _requestPending || (wantsEnd && behaviorFinished) || (Inputs.RequestedSpark is not null && Current.RequireSpark != Inputs.RequestedSpark) || (ForcedActivity is not null && ForcedActivity != Current.Id))
+            // C1 §1 (0x005AE40C..0x005AE46E): when the current activity already carries the requested spark
+            // and BehaviorManager+0x65 (the invalid-spark latch) is set, the engine logs SparkReselected and
+            // calls PickNewActivityForSpark with arg 0 - the "ask the current activity WantsToEnd" flag is
+            // cleared, so the activity is dropped whatever WantsToEnd says.
+            bool sparkReselected = _requestedSparkInvalid && Current.RequireSpark == Inputs.RequestedSpark;
+            if (sparkReselected)
+            {
+                Log?.Invoke("ActivityFreeplay.ChooseNextBehavior.SparkReselected: Spark re-selected: none behavior will be selected");
+                barred = Current;                             // the re-pick cannot choose it again
+                EndActivity(nowSec);
+            }
+            else if (_putDownPending || _requestPending || (wantsEnd && behaviorFinished) || (Inputs.RequestedSpark is not null && Current.RequireSpark != Inputs.RequestedSpark) || (ForcedActivity is not null && ForcedActivity != Current.Id))
             {
                 var why = _putDownPending ? "put down" : _requestPending ? $"'{Current.Id}' was requested" : ForcedActivity is not null ? $"debug is forcing '{ForcedActivity}'" : Inputs.RequestedSpark is not null ? $"to match spark '{Inputs.RequestedSpark}'" : $"'{Current.Id}' wants to end ({endReason}), and behavior finished";
                 Log?.Invoke($"ActivityFreeplay.ChooseNextBehavior: Picking new activity because {why}");
@@ -130,7 +176,6 @@ public sealed class FreeplaySystem
         // the tree: each pass either settles or ends an activity.
         ChooserDecision decision;
         IBehavior? desired;
-        Activity? barred = null;
         for (int pass = 0; ; pass++)
         {
             if (Current is null)
@@ -138,6 +183,11 @@ public sealed class FreeplaySystem
                 var picked = PickNewActivity(nowSec, out var pickReason, barred);
                 if (picked is null) return Record(nowSec, null, null, $"ActivityFreeplay.NoActivitySelected: Picked no activity ({pickReason})");
                 Current = picked; Current.OnSelected(nowSec); _ctx.LastActivitySwitchSec = nowSec;
+                // BehaviorManager::SwitchToRequestedSpark 0x005A4220 runs after every pick and clears the
+                // invalid-spark latch at +0x65 (C1 §1), so any new selection clears it.
+                _requestedSparkInvalid = false;
+                // 0x005AE4E2: SetFreeplayPauseFlag(spark != 0x55, 1); a null RequireSpark is spark 0x55.
+                SparkPauseChanged?.Invoke(Current.RequireSpark is not null);
                 Log?.Invoke($"robot.freeplay_goal_started {Current.Id}: {pickReason}");
                 // EndActivity stopped whatever was running, so the local snapshot taken above is stale. Handing it
                 // to the new activity's chooser would present a stopped behaviour as running, and a behaviour id
@@ -253,18 +303,21 @@ public sealed class FreeplaySystem
         // this stack reported the activity's id when the activity ended, which the engine never does.
         Log?.Invoke($"robot.freeplay_goal_ended {Current.Id}: ran {(int)ranSec} s");
         Current = null; _pendingInterlude = null;
+        // The engine only touches the Spark pause flag (flag 1) after a pick (row 20), never here.
     }
 
     /// <summary>
-    /// <c>ActivityFreeplay::PickNewActivity</c>: priority order. On the first pick and after a put-down the
+    /// <c>ActivityFreeplay::PickNewActivity</c>: child order. On the first pick and after a put-down the
     /// desired-from-objects activity is tried ahead of the freeplay chain (<c>CalculateDesiredActivityFromObjects</c>
     /// runs from the off-treads handler and on start; the config calls its names "parameters to decide between
     /// activities on put down"); the sparks and the needs activities keep their priorities ahead of it
-    /// (INFERRED: the exact interleaving was not traced).
+    /// (INFERRED: the exact interleaving was not traced). <c>activityPriority</c> is dead data (M15-013), so
+    /// the order is the JSON array order the loader preserved.
     /// </summary>
+    // fidelity: M15-013
     public Activity? PickNewActivity(double nowSec, out string reason, Activity? barred = null)
     {
-        var order = Freeplay.SubActivities.OrderBy(a => a.Priority).ToList();
+        var order = Freeplay.SubActivities.ToList();
         if (ForcedActivity is { } forced && order.FirstOrDefault(a => a.Id == forced) is { } f) { reason = $"debug is forcing '{forced}'"; return f; }
         var desiredId = _pickDesiredFirst ? DesiredActivityFromObjects() : null;
         _pickDesiredFirst = false;

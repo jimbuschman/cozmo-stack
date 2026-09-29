@@ -213,6 +213,7 @@ public interface IBehaviorChooser
 /// not invented.
 /// </summary>
 // fidelity: M8-013
+// fidelity: M15-002
 public sealed class ScoringChooser : IBehaviorChooser
 {
     private readonly Dictionary<string, IBehavior> _bound;
@@ -266,7 +267,11 @@ public sealed class ScoringChooser : IBehaviorChooser
             if (s <= 0) { scores.Add((b.Id, s, b.IsRunnable(ctx) ? "scored 0" : "not runnable")); continue; }
             if (running)
             {
-                if (ScoreBonusForCurrent is { } bonus) s += bonus.EvaluateY(currentRunningSec);   // 0x0060a474
+                // 0x0060a466 ldrb +0xa1; 0x0060a474 GraphEvaluator2d::EvaluateY(chooser+0x28, running duration);
+                // 0x0060a486 vadd the 0.1 constant; 0x0060a48a floor at 0.01.
+                s += ScoreBonusForCurrent?.EvaluateY(currentRunningSec) ?? 0;   // 0x0060a474
+                s += 0.1;                                                       // 0x0060a486
+                if (s < 0.01) s = 0.01;                                         // 0x0060a48a
                 currentScore = s;
             }
             else s += RandomDraw?.Invoke() ?? Random.NextDouble();                               // 0x0060a4a8
@@ -343,9 +348,11 @@ public sealed class SelectionChooser : IBehaviorChooser
     /// <summary>
     /// The ExecuteBehavior message's setter (+0x2c = the resolved behaviour, +0x3c = numRuns, default -1;
     /// <c>str r7,[r5,#0x2c]</c> 0x0060ac2c, <c>str r0,[r5,#0x3c]</c> 0x0060aa88/0x0060aac8). The caller is
-    /// <c>SelectionBSRunnableChooser::HandleExecuteBehavior</c> 0x0060ac2c, which is unowned by any record:
-    /// the <c>ExecuteBehaviorByID</c>/<c>ByExecutableType</c> message is M2/M10 and is not built here, so
-    /// nothing in production calls this setter. It stays as the seam that message layer will call.
+    /// <c>SelectionBSRunnableChooser::HandleExecuteBehavior</c> 0x0060AA58, reached from the constructor's
+    /// subscription to the RobotInterface/ExternalInterface <c>MessageGameToEngine</c> dispatch for
+    /// <c>ExecuteBehaviorByExecutableType</c> (tag 0x93) and <c>ExecuteBehaviorByID</c> (tag 0x94)
+    /// (0x0060A848..0x0060A93E, C1 §3). That game-message dispatch is unbuilt, so nothing in production
+    /// calls this setter; it stays as the seam that dispatch layer will call.
     /// </summary>
     public void RequestBehavior(IBehavior? behavior, int numRuns = -1)
     {
@@ -403,16 +410,21 @@ public sealed class SelectionChooser : IBehaviorChooser
 /// pyramid yet, a 300 s (0x43960000) cooldown), FPPlayWithHumans (<c>RequestGameComponent::IdentifyNextGameTypeToRequest</c>
 /// finds a game: the app's, so never here), Spark (the app requested the spark: never here).
 /// </summary>
+// fidelity: M15-003
 public sealed class ActivityStrategy
 {
     public string Type { get; init; } = "Simple";
     public double CanEndDurationSec { get; init; } = -1;
-    public double ShouldEndDurationSec { get; init; } = -1;
-    public double CooldownBaseSec { get; init; }
-    public double CooldownRandomnessSec { get; init; }
+    public double ShouldEndDurationSec { get; init; } = 60;
+    public double CooldownBaseSec { get; set; } = -1;
+    public double CooldownRandomnessSec { get; set; }
     public bool StartInCooldown { get; init; }
     public double RequiredRecentOnTreadsEventSec { get; init; } = -1;
-    public double RequiredMinStartMoodScore { get; init; } = double.NaN;
+    /// <summary>
+    /// <c>requiredMinStartMoodScore</c>, the constructor's <c>+0x30</c> default <c>-1</c> (row 25): a score
+    /// below <c>-1</c> is impossible, so an absent key is no minimum.
+    /// </summary>
+    public double RequiredMinStartMoodScore { get; init; } = -1;
     public IReadOnlyList<(EmotionType Emotion, Graph2d Graph)> StartMoodScorer { get; init; } = Array.Empty<(EmotionType, Graph2d)>();
     /// <summary>
     /// The config's <c>featureGate</c>: the name of a feature that has to be enabled before the activity
@@ -470,10 +482,13 @@ public sealed class ActivityStrategy
         return new ActivityStrategy
         {
             Type = e.TryGetProperty("type", out var t) ? t.GetString() ?? "Simple" : "Simple",
-            CanEndDurationSec = D("activityCanEndDurationSecs", -1), ShouldEndDurationSec = D("activityShouldEndDurationSecs", -1),
-            CooldownBaseSec = D("cooldownBaseSecs", 0), CooldownRandomnessSec = D("cooldownRandomnessSecs", 0),
+            // JsonTools::GetValueOptional<float> 0x004FA580 overwrites only when the member exists, so an
+            // absent key keeps the IActivityStrategy constructor default (row 25): canEnd -1, shouldEnd 60,
+            // cooldownBase -1, cooldownRandomness 0, requiredRecentOnTreads -1, requiredMinStartMoodScore -1.
+            CanEndDurationSec = D("activityCanEndDurationSecs", -1), ShouldEndDurationSec = D("activityShouldEndDurationSecs", 60),
+            CooldownBaseSec = D("cooldownBaseSecs", -1), CooldownRandomnessSec = D("cooldownRandomnessSecs", 0),
             StartInCooldown = e.TryGetProperty("startInCooldown", out var sic) && sic.ValueKind == JsonValueKind.True,
-            RequiredRecentOnTreadsEventSec = D("requiredRecentOnTreadsEventSecs", -1), RequiredMinStartMoodScore = D("requiredMinStartMoodScore", double.NaN),
+            RequiredRecentOnTreadsEventSec = D("requiredRecentOnTreadsEventSecs", -1), RequiredMinStartMoodScore = D("requiredMinStartMoodScore", -1),
             StartMoodScorer = scorers, WantsToRunStrategyType = wtr, Need = need, NeedBracket = bracket, HigherPriorityStrategy = higher,
             FeatureGate = e.TryGetProperty("featureGate", out var fg) ? fg.GetString() : null,
             NeedCooldownGraph = cd, NeedCooldownRandomnessGraph = cdr,
@@ -498,6 +513,20 @@ public sealed class ActivityStrategy
 
     /// <summary>The cooldown in force, the constructor's <c>cooldownBaseSecs</c> until the first randomisation.</summary>
     public double EffectiveCooldownSec => double.IsNaN(CurrentCooldownSec) ? CooldownBaseSec : CurrentCooldownSec;
+
+    /// <summary>
+    /// <c>IActivityStrategy::SetCooldown</c> 0x005B54E4: <c>+0x1c</c> (the base) and <c>+0x20</c> (the current
+    /// cooldown) become <paramref name="baseSec"/>, and <c>+0x24</c> (the randomness) becomes
+    /// <paramref name="randomnessSec"/>. This is the explicit cooldown setter beside
+    /// <see cref="RandomizeCooldown"/>.
+    /// </summary>
+    // fidelity: M15-003
+    public void SetCooldown(double baseSec, double randomnessSec)
+    {
+        CooldownBaseSec = baseSec;
+        CurrentCooldownSec = baseSec;
+        CooldownRandomnessSec = randomnessSec;
+    }
 
     /// <summary>
     /// The flat cooldown an activity gets when its last run lasted no longer than two ticks: 3 seconds
@@ -531,6 +560,7 @@ public sealed class ActivityStrategy
     /// a flat 3 seconds instead - an activity that ended as soon as it started waits three seconds before
     /// it may try again.
     /// </summary>
+    // fidelity: M15-005
     public bool InCooldown(double nowSec)
     {
         double cooldown = EffectiveCooldownSec;
@@ -538,12 +568,14 @@ public sealed class ActivityStrategy
         double ended = LastEndedSec ?? 0;
         if (ended <= Epsilon && !StartInCooldown) return false;
         double ran = ended - (LastStartedSec ?? 0);
+        // 0x005B5312: a run of at most two basestation ticks gets the flat 3.0 s cooldown (M15-005).
         if (ran > 0 && ran <= 2 * TickSec) cooldown = ShortRunCooldownSec;
         return nowSec < ended + cooldown;
     }
 
     public bool WantsToStart(FreeplayInputs inputs, double nowSec, out string reason)
     {
+        // fidelity: M15-007
         // The engine asks the feature gate first (0x005B52A8), before it looks at the cooldown.
         if (FeatureGate is { } gate && inputs.Features is { } features && !features.IsEnabled(gate))
         {
@@ -553,7 +585,7 @@ public sealed class ActivityStrategy
         if (InCooldown(nowSec)) { reason = $"in cooldown ({EffectiveCooldownSec:F0} s)"; return false; }
         RandomizeCooldown();     // the engine randomises here, once the cooldown has passed
         if (RequiredRecentOnTreadsEventSec > 0 && (inputs.LastOnTreadsEventSec is not { } t || nowSec - t > RequiredRecentOnTreadsEventSec)) { reason = "no recent on-treads event"; return false; }
-        if (!double.IsNaN(RequiredMinStartMoodScore) && StartMoodScorer.Count > 0)
+        if (StartMoodScorer.Count > 0)
         {
             double score = inputs.Mood is { } mood ? StartMoodScorer.Sum(s => s.Graph.EvaluateY(mood[s.Emotion])) : 0;
             if (score < RequiredMinStartMoodScore) { reason = $"mood score {score:F2} below {RequiredMinStartMoodScore:F2}"; return false; }
@@ -728,11 +760,13 @@ public sealed class Activity
 /// <summary>
 /// Loads the shipped activity tree: <c>behaviorSystem/activities_config.json</c> lists the top-level activities
 /// (Selection, MeetCozmo, Feeding, Freeplay), and Freeplay's <c>subActivities</c> name the activities under
-/// <c>activities/**</c> by <c>activityID</c> with their <c>activityPriority</c> (<c>ActivityFreeplay::CreateFromConfig</c>:
-/// "ActivityFreeplay.CreateFromConfig.ActivityID.KeyMissing", "activityPriority"). Behaviour ids are bound to the
+/// <c>activities/**</c> by <c>activityID</c>. <c>ActivityFreeplay::CreateFromConfig</c> parses
+/// <c>activityPriority</c> and discards it (0x005AD63C/0x005AD640), so the child order is the JSON array
+/// order, not a priority sort. Behaviour ids are bound to the
 /// implemented set; ids with no implementation are kept in the choosers as "not built" so the tree is the shipped
 /// one, not a trimmed copy.
 /// </summary>
+// fidelity: M15-013
 public static class ActivityTreeLoader
 {
     public static string ActivitiesDir(string obbRoot) => Path.Combine(obbRoot, "assets", "cozmo_resources", "config", "engine", "behaviorSystem");
@@ -763,9 +797,10 @@ public static class ActivityTreeLoader
             foreach (var s in sa.EnumerateArray())
             {
                 string sid = s.GetProperty("activityID").GetString()!;
-                int p = s.TryGetProperty("activityPriority", out var pr) ? pr.GetInt32() : 0;
-                if (byId.TryGetValue(sid, out var se)) subs.Add(Build(se, byId, bound, penalty, random, p));
-                else subs.Add(new Activity { Id = sid, Type = "Missing", Priority = p, Strategy = new ActivityStrategy { Type = "Missing" } });
+                // activityPriority is parsed with ParseUint8 and discarded (0x005AD63C/0x005AD640); the
+                // child order is the JSON array order, not a priority sort (M15-013).
+                if (byId.TryGetValue(sid, out var se)) subs.Add(Build(se, byId, bound, penalty, random, 0));
+                else subs.Add(new Activity { Id = sid, Type = "Missing", Priority = 0, Strategy = new ActivityStrategy { Type = "Missing" } });
             }
         AnimationTrigger? Trig(string k) => e.TryGetProperty(k, out var t) && Enum.TryParse<AnimationTrigger>(t.GetString(), out var tr) ? tr : null;
         (string, string, string, string)? desired = null;
@@ -781,7 +816,7 @@ public static class ActivityTreeLoader
             DriveStartAnim = Trig("driveStartAnimTrigger"), DriveLoopAnim = Trig("driveLoopAnimTrigger"), DriveEndAnim = Trig("driveEndAnimTrigger"), IdleAnim = Trig("idleAnimTrigger"),
             RequireSpark = e.TryGetProperty("requireSpark", out var rs) ? rs.GetString() : null,
             NeedsActionId = e.TryGetProperty("needsActionID", out var na) ? na.GetString() : null,
-            SubActivities = subs.OrderBy(s => s.Priority).ToList(), DesiredActivityNames = desired,
+            SubActivities = subs, DesiredActivityNames = desired,
         };
     }
 

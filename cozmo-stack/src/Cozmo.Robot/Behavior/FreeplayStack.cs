@@ -14,9 +14,9 @@ public sealed class FreeplayStack : IDisposable
 {
     private readonly List<Action> _unsubscribe = new();
 
-    private FreeplayStack(BehaviorManager manager, FreeplaySystem freeplay, IReadOnlyList<Activity> tree, IReadOnlyDictionary<string, IBehavior> bound, NeedsManager needs, BehaviorContext ctx)
+    private FreeplayStack(BehaviorManager manager, FreeplaySystem freeplay, IReadOnlyList<Activity> tree, IReadOnlyDictionary<string, IBehavior> bound, NeedsManager needs, BehaviorContext ctx, FreeplayDataTracker tracker)
     {
-        Manager = manager; Freeplay = freeplay; Tree = tree; Bound = bound; Needs = needs; Context = ctx;
+        Manager = manager; Freeplay = freeplay; Tree = tree; Bound = bound; Needs = needs; Context = ctx; DataTracker = tracker;
     }
 
     public BehaviorManager Manager { get; }
@@ -26,6 +26,8 @@ public sealed class FreeplayStack : IDisposable
     public IReadOnlyDictionary<string, IBehavior> Bound { get; }
     public NeedsManager Needs { get; }
     public BehaviorContext Context { get; }
+    /// <summary><c>AIComponent</c>'s <c>FreeplayDataTracker</c> (M15-015), created and ticked on this stack's live path.</summary>
+    public FreeplayDataTracker DataTracker { get; }
     public IReadOnlyList<string> Problems { get; private init; } = Array.Empty<string>();
 
     /// <summary>Every behaviour id the shipped activity tree names that no implemented behaviour answers to.</summary>
@@ -108,7 +110,44 @@ public sealed class FreeplayStack : IDisposable
         // featureGate (0x005B52A8).
         var inputs = new FreeplayInputs { Needs = needs, Mood = ctx.Mood, Features = FeatureGates.Load(obbRoot) };
         var system = new FreeplaySystem(manager, ctx, freeplayActivity, bound, inputs);
-        var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx) { Problems = problems };
+        // M15-015: the AIComponent's FreeplayDataTracker. Created here, ticked in Tick, flushed in Dispose.
+        var tracker = new FreeplayDataTracker(clockSec);
+        system.SparkPauseChanged = p => tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.Spark, p);
+        var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker) { Problems = problems };
+
+        // The four pause sources. OffTreads (flag 2) is Robot::CheckAndUpdateTreadsState's seam
+        // (0x005121F4); OnCharger (flag 3) is Robot::SetOnChargerPlatform (0x00511DB0). GameControl (flag 0)
+        // belongs to BehaviorManager::SetCurrentActivity (0x005A106C) when the high-level activity is not
+        // Freeplay. C1 §5: BehaviorManager::InitConfiguration (0x005A0DFC) also sets flag 0 paused, and only
+        // SetCurrentActivity(1 Freeplay) clears it; this stack is created as Freeplay starts, so clearing it
+        // here is the equivalent end state.
+        robot.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads = p => tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OffTreads, p);
+        stack._unsubscribe.Add(() => robot.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads = null);
+        void onCharger(bool on) => tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OnCharger, on);
+        robot.Sensors.OnChargerPlatformChanged += onCharger;
+        stack._unsubscribe.Add(() => robot.Sensors.OnChargerPlatformChanged -= onCharger);
+        tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl, false);
+
+        // M15-016: the live removal path drives the NeedsManager's disconnect transition.
+        // fidelity: M15-016
+        // OnRobotDisconnected 0x00695908 is reached from RobotManager::RemoveRobot 0x0052F2DC..0x0052F2E0 in
+        // both branches - whether or not the connection manager answered the disconnect - not only from the
+        // RobotDisconnected game broadcast (CozmoEngine.cs raises that broadcast only when it was not
+        // answered). CozmoRobot.RobotRemoved is raised by ResetDevices from CozmoEngine.RemoveRobot on every
+        // removal (CozmoEngine.cs:1320), so it is the stack's always-fired removal edge. It fires after the
+        // device reset, which is after the RobotDisconnected broadcast the engine sends before deleting the
+        // Robot, matching the engine's order (broadcast, then RemoveRobot's OnRobotDisconnected).
+        void onRemoved() => needs.OnRobotDisconnected();
+        robot.RobotRemoved += onRemoved;
+        stack._unsubscribe.Add(() => robot.RobotRemoved -= onRemoved);
+        // MISSING (M15-016, named gap): the engine calls NeedsManager::InitAfterConnection from
+        // CozmoEngine::HandleMessage<ConnectToRobot> 0x004ED10E, unconditionally after AddRobot. This
+        // stack's ConnectToRobot (CozmoEngine.ConnectToRobot / CozmoRobot.ConnectToRobot) posts a game
+        // message and exposes no event for that handler; Engine.ConnectionResponse is the later handshake
+        // response (BroadcastConnectionResponse), not the ConnectToRobot seam, so wiring it there would be
+        // wrong. Adding a seam would edit CozmoEngine.cs, outside this batch's write scope. The public
+        // NeedsManager.InitAfterConnection remains the seam the host calls at ConnectToRobot handling;
+        // until then the live connect edge is a named gap, not guessed.
 
         // ActivityFreeplay::HandleMessage<RobotOffTreadsStateChanged>: being put back down kicks the activity
         // out and re-picks from what is around. That is part of what this stack assembles, so it is wired here
@@ -158,6 +197,7 @@ public sealed class FreeplayStack : IDisposable
                 map.UpdateRobotPose(here, robot.Sensors.CliffDetectedNow, robot.State.Latest?.Timestamp ?? 0);
         }
         Freeplay.RefreshInputs(robot, vision, m, nowSec);
+        DataTracker.Update(nowSec);
         return Freeplay.Tick(nowSec, nowMs);
     }
 
@@ -165,6 +205,7 @@ public sealed class FreeplayStack : IDisposable
     {
         foreach (var off in _unsubscribe) { try { off(); } catch { } }
         _unsubscribe.Clear();
+        DataTracker.ForceUpdate();      // the BehaviorSystemManager destructor's ForceUpdate (0x005110D4)
         Manager.Dispose();
     }
 }

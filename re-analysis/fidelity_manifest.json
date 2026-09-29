@@ -249,7 +249,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M15-freeplay.md",
-        "approved": "2026-09-28",
+        "approved": "2026-09-29",
         "snapshot": "re-analysis/inventory/M15-freeplay.approved.json"
       }
     },
@@ -4785,7 +4785,7 @@
         "needs_config.json"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "unresolved": "NeedsManager::Init's StarRewardsConfig (needs_level_config.json), DesiredFaceDistortionComponent (needs_handlers_config.json) and LocalNotifications (local_notification_config.json) initialisation and the 16 message-handler registrations are not built; the SetNeedsPauseStates handler 0x00698918 and the NeedsState MessageEngineToGame wire (SendNeedsStateToGame raises the NeedsStateSent seam instead) are unbuilt. The tick update, per-need decay with the fullness window and per-need pause skip, the bracket cache and the 61 ms persistence throttle are built.",
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests"
@@ -4806,7 +4806,7 @@
         "SelectionBSRunnableChooser::OnSelected 0x0060AF20"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "unresolved": "The SelectionBSRunnableChooser inbound MessageGameToEngine dispatch for ExecuteBehaviorByExecutableType (0x93) / ExecuteBehaviorByID (0x94) (0x0060A848..0x0060A93E, handler 0x0060AA58) is unbuilt, so RequestBehavior has no production caller. The chooser factory, scoring and strict-priority choosers are built.",
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests"
@@ -4826,8 +4826,8 @@
         "IActivityStrategy::WantsToEnd 0x005B5444",
         "IActivityStrategy::SetCooldown 0x005B54E4"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests"
@@ -4847,8 +4847,8 @@
         "needs_decay_config.json",
         "needs_config.json"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests.TheNeedsDecayModifiersAndDamagedPartsFollowTheConfig"
@@ -4866,8 +4866,8 @@
         "activity times call site 0x005B26FE",
         "IActivityStrategy::RandomizeCooldown 0x005B5408"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests.StrategiesRespectCooldownsDurationsMoodAndNeeds"
@@ -4888,7 +4888,7 @@
         "IActivity::GetDesiredActiveBehavior 0x005B387C"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "unresolved": "The inbound ActivateSpark message (sets BehaviorManager+0x60/+0x65, 0x005A3C92..0x005A3C9A) and the requested-activity message (+0x90) are unbuilt, so SetRequestedSpark/RequestNewActivity have no production caller. The selection/re-selection, interlude, null-pick, OnSelected/OnDeselected, reward-pending and the reselect logic are built.",
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests.AnActivityThatChoosesNoBehaviourIsDroppedAndNotRepicked"
@@ -4907,8 +4907,8 @@
         "features.json",
         "BehaviorPounceOnMotion constructor 0x005F7F91"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests.AnActivityWhoseFeatureIsOffDoesNotStart"
@@ -4927,8 +4927,8 @@
         "IBehavior::NeedActionCompleted 0x005BE40C",
         "ActivityGatherCubes::Update 0x005AF2F0"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests.NeedsActionsAreReportedByTheBehavioursAndNotByTheActivity"
@@ -4944,8 +4944,8 @@
       "evidence": [
         "BehaviorExploreBringCubeToBeacon::FireEmotionEvents 0x005E002C"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside"
@@ -4961,8 +4961,8 @@
       "evidence": [
         "BehaviorAcknowledgeCubeMoved::TransitionToTurningToLastLocationOfBlock 0x00602270"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorTests"
@@ -4979,8 +4979,8 @@
         "BehaviorThinkAboutBeacons::SelectNewBeacon 0x005E5F0C",
         "AIWhiteboard::AddBeacon 0x0056C39C"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside"
@@ -4997,8 +4997,8 @@
         "BehaviorPutDownBlock::CreateLookAfterPlaceAction 0x005C8174",
         "BehaviorCantHandleTallStack::TransitionToDisapointment 0x005ED0F0"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
       "test": "ManipulationTests.PutDownBlockBacksUpPlaysThePutDownAndLooksDown"
@@ -5016,8 +5016,8 @@
         "ActivityStrictPriority constructor 0x005B23DC",
         "activities_config.json"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests"
@@ -5061,8 +5061,8 @@
         "Robot::SetOnChargerPlatform 0x00511DB0",
         "unity/scripts/csharp/Anki.Cozmo/HighLevelActivity.cs"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "status": "EXACT_SOURCE",
+      "unresolved": null,
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests"
@@ -5080,7 +5080,7 @@
         "NeedsManager::OnRobotDisconnected 0x00695908"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "unresolved": "The ConnectToRobot seam that calls NeedsManager::InitAfterConnection (0x004ED10E) is not exposed by FreeplayStack, and the SetPaused callers (SetGameBeingPaused tag 85, SetNeedsPauseState tag 201, RegisterOnboardingComplete 200, EnterSdkMode/ExitSdkMode 241/242) are unbuilt; the unpause shift omits +0x1F0/+0x214 (both consumers unbuilt). The SetPaused/OnRobotDisconnected bodies and the always-fired removal wiring are built.",
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests"

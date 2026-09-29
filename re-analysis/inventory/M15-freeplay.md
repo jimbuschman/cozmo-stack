@@ -294,3 +294,89 @@ old M15-001 evidence is also insufficient for its bundled claim, and the old M15
 and M15-003 citations need the corrected entry addresses. No additional unsupported,
 contradicted, omitted behavior, circular-test claim, race, or deadlock was found in
 the extraction evidence. The serial-dispatch edge remains the stated recoverable gap.
+
+## Appendix E — correction C1 (build pass, 2026-09-29)
+
+Read-only extraction for job B-M15, `2026-09-29` (report `.scratch/m15-build/extract.md`).
+Six open questions the build phase raised were read in `resources/lib/armeabi-v7a/libcozmoEngine.so`;
+every fact below was checked against the instruction stream, not the decompilation. This corrects
+rows 5, 21, 31, 35, 37 and 47.
+
+1. **Row 21 (M15-006) — the "spark re-selected" byte is `BehaviorManager+0x65`, not
+   `ActivityFreeplay+0x65`.** `0x005AE40C..0x005AE46E`: the block loads the current spark at
+   `BehaviorManager+0x58` and the desired spark at `+0x60`; when they are equal and
+   `BehaviorManager+0x65 != 0` it logs `ActivityFreeplay.ChooseNextBehavior.SparkReselected`
+   ("Spark re-selected: none behavior will be selected", strings `0x00BF1AD4`/`0x00BF1B08`) and
+   calls `PickNewActivityForSpark(..., 0)` (`0x005AE46E`). `+0x65` is set to 1 **only** by an
+   `ActivateSpark` message whose `UnlockId == 0x55` (`BehaviorManager::HandleMessage` case tag 0:
+   `0x005A3C92..0x005A3C9A`), and cleared by `BehaviorManager::SwitchToRequestedSpark`
+   (`0x005A4220`) and the constructor (`0x005A0900`). The fourth argument of
+   `PickNewActivityForSpark` is the "ask the current activity `WantsToEnd`" flag: arg 0 means it is
+   not asked (`0x005ADC64..0x005ADC74`). Classification EXACT_SOURCE.
+
+2. **Row 5 (M15-001) — `SendNeedsStateToGame`, `PossiblyWriteToDevice`, `ApplyDecayAllNeeds`.**
+   - `SendNeedsStateToGame` `0x0069383C` (thunk `0x004BD9D4`) takes a `NeedsActionId`; it refreshes
+     the brackets, builds the level/bracket/damaged-part vectors and sends one `MessageEngineToGame`
+     carrying a `NeedsState` whose `actionCausingTheUpdate` is the argument. The `Update` call passes
+     `1 = Decay` (`unity/scripts/csharp/Anki.Cozmo/NeedsActionId.cs`).
+   - `PossiblyWriteToDevice` `0x00695DC4` is a **61 ms rate limiter**: `0x00695DD2/DA` build
+     `0x03A2C940 = 61,000,000` ns; if the elapsed time since the stored write time
+     (`this+8/+0xC`) is at least that, it stores now and calls `WriteToDevice(this, false)`
+     (`0x00695DFA`), otherwise returns.
+   - `ApplyDecayAllNeeds` `0x00695CFE` contains **two** skips: a per-need pause flag at `+0x1DC`
+     (`0x00695D36`; written by `HandleMessage<SetNeedsPauseStates>` `0x00698918`), and the
+     fullness-cooldown deadline at `+0x208` (`0x00695D4C..0x00695D58`, `0x00695D84`; written by
+     `NeedsManager::StartFullnessCooldownForNeed` `0x006970AC` = `now + config value`). Both are in
+     this loop; the fullness cooldown was already the stack's behaviour and is now cited.
+   Classification EXACT_SOURCE.
+
+3. **Row 31 (M15-002) — the selection chooser's message.** `SelectionBSRunnableChooser`'s
+   constructor `0x0060A848` subscribes to the RobotInterface/ExternalInterface
+   `MessageGameToEngine` dispatch for `ExecuteBehaviorByExecutableType` (tag 0x93) and
+   `ExecuteBehaviorByID` (tag 0x94) (`0x0060A8AC..0x0060A93E`). `HandleExecuteBehavior`
+   (`0x0060AA58`) resolves the behaviour through `BehaviorManager::FindBehaviorByID`/`ByExecutableType`
+   and stores it at chooser `+0x2C` with `numRuns` (message field `+4`) at `+0x3C`
+   (`0x0060AA86..0x0060AC30`). So the requested-behaviour setter's caller is the game-message
+   dispatch, which this stack does not build. Classification EXACT_SOURCE; the unbuilt layer is the
+   game-message dispatch.
+
+4. **Row 35 (M15-015) — the tracker accumulates in `SendData`, not `Update`.**
+   `FreeplayDataTracker::Update` `0x0056EC1A` only checks `now >= +0x18` and tail-calls `SendData`.
+   `SendData` `0x0056EC48` reads `BaseStationTimer::GetCurrentTimeInNanoSeconds`, and while the pause
+   set is empty (`this+8 == 0`, `0x0056EC5A..0x0066`) adds `now - lastTimestamp` (`+0x10/+0x14`) to
+   the accumulator (`+0x20/+0x24`), storing the new accumulator and the new last timestamp. It then
+   rounds `accum / 1e9`: under 37 (`0x25`) it fires `robot.active_freeplay_time`, else
+   `FreeplayDataTracker.SendData.DataTooHigh`; it zeroes the accumulator and sets
+   `+0x18 = nowSeconds + 30.0`. The pause set's internal setter (`0x0056EECC`) flushes the running
+   segment into the accumulator when pausing, and `ClearFreeplayPauseFlag` `0x0056EFF8` stamps
+   `+0x10 = nowNanos` when the set becomes empty. The four flag names at `0x01023554` are
+   `GameControl` `0x00BEE313`, `Spark` `0x00BEE31F`, `OffTreads` `0x00BEE325`, `OnCharger`
+   `0x00BEE32F`. Classification EXACT_SOURCE.
+
+5. **Row 37 (M15-015) — GameControl is also set at init.** `BehaviorManager::SetCurrentActivity`
+   `0x005A120A..0x005A1220` calls `SetFreeplayPauseFlag(tracker, activity != 1, 0)` where the
+   `HighLevelActivity` values are 0 Feeding, 1 Freeplay, 2 Selection (Unity
+   `Anki.Cozmo.HighLevelActivity`). `BehaviorManager::InitConfiguration` `0x005A0DFC` also calls it
+   with flag 0: the null-config branch sets it paused (`0x005A0E48..0x005A0E56`), and the
+   config-present branch calls `SetCurrentActivity(2 Selection, 1)` (`0x005A0F46..0x005A0F4C`),
+   which also pauses it. So a Freeplay-only stack that never switches high-level activity leaves
+   GameControl set unless it explicitly clears it. Classification EXACT_SOURCE.
+
+6. **Row 47 (M15-016) — exact `SetPaused`/`OnRobotDisconnected`.**
+   - `SetPaused` `0x00695E04`: if the new state equals `+0x1D5` it logs
+     `NeedsManager.SetPaused.Redundant` and returns with no send, write or notification
+     (`0x00695E0C..0x00695E12`). Pausing: store `+0x1D5 = 1`, log `Pausing`, write the pause
+     timestamp to `+0x1D8 = now`, store `+0x3B4 = +0x3B0 - now`, call `SendNeedsStateToGame(0)`
+     (`NoAction`, `0x00695EC2`), `WriteToDevice(this, true)` (`0x00695ECA`). Unpausing: store
+     `+0x1D5 = 0`, log `UnPausing`, compute `pauseDuration = now - +0x1D8`, store
+     `+0x3B0 = now + +0x3B4`, add `pauseDuration` to each need's `+0x1E4`, `+0x1F0`, and (when
+     non-zero) `+0x208`/`+0x1FC`, and to `+0x214`; **no** `SendNeedsStateToGame` and **no**
+     `WriteToDevice`. Both non-redundant branches end with `LocalNotifications::SetPaused` and
+     `SendNeedsPauseStateToGame` (`0x00695F6C..0x00695F78`).
+   - `OnRobotDisconnected` `0x00695908`: write the timestamp to `+0x18/+0x1C`; clear `+0x30`; if not
+     paused call `WriteToDevice(this, true)` (`0x00695924..0x0069592A`); clear the robot pointer
+     `+4`; snapshot the needs into `+0x1B8`; `DetectBracketChangeForDas(true)` (`0x0069593C`); and
+     `SendNeedsLevelsDasEvent("disconnect")` (string `0x0069594C`). There is **no**
+     `SendNeedsStateToGame` here.
+   Classification EXACT_SOURCE.
+

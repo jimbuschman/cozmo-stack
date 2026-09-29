@@ -269,7 +269,7 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
 /// <see cref="AnimationTrigger.AcknowledgeObject"/> (3), state <c>ReactingToBlockPresence</c>; the turn finishing
 /// without a sighting → <see cref="AnimationTrigger.CubeMovedUpset"/> (0x73), objective achieved.
 /// If the pose is no longer valid the engine logs <c>"The robot's context has changed and the block's location is
-/// no longer valid"</c>; what it does next was not read, and going straight to the upset reaction is INFERRED.
+/// no longer valid"</c> and returns without starting the turn or a reaction (0x006022B8/0x00602370).
 /// </summary>
 public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
 {
@@ -313,6 +313,7 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
         PlayTrigger(AnimationTrigger.CubeMovedSense, () => { _turnDone = true; if (_waitDone) TransitionToTurningToLastLocationOfBlock(); });
     }
 
+    // fidelity: M15-010
     private void TransitionToTurningToLastLocationOfBlock()
     {
         CurrentPhase = Phase.TurningToLastLocation;
@@ -320,8 +321,11 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
         _waitDone = false; _turnDone = false;
         if (TargetObjectId is not { } id || _locator is null || !_locator.IsLocated(id))
         {
-            Log($"the block's location is no longer valid (ObjectID={TargetObjectId?.ToString() ?? "-1"}); treating the block as absent (INFERRED)");
-            TransitionToReactingToBlockAbsence();
+            // BehaviorAcknowledgeCubeMoved::TransitionToTurningToLastLocationOfBlock 0x00602270: when
+            // GetLocatedObjectByIdHelper returns nothing (0x006022B8 cbz) the behaviour warns and returns
+            // without starting the turn or the absence reaction (0x00602370).
+            Log($"the robot's context has changed and the block's location is no longer valid (ObjectID={TargetObjectId?.ToString() ?? "-1"}); ending without a reaction");
+            Finish();
             return;
         }
         Wait(0.5, () => { _waitDone = true; if (_turnDone) TransitionToReactingToBlockAbsence(); });

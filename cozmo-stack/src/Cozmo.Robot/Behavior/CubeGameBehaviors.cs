@@ -784,6 +784,7 @@ public sealed class OnConfigSeenBehavior : ManipulationBehavior
 /// carries trigger 0x1B, which is that name's place in the enum, so the guess by name was right.
 /// <c>AlwaysHandle</c>: an <c>ObjectMoved</c> of a stack block past the threshold ends it.
 /// </summary>
+// fidelity: M15-012
 public sealed class CantHandleTallStackBehavior : ManipulationBehavior
 {
     public enum Phase { Idle, LookingUpAndDown, Disappointment }
@@ -941,8 +942,9 @@ public sealed class ReactToConfigurationBehavior : ManipulationBehavior
 /// 0x005E5F0C takes the robot's pose, copies it, and calls
 /// <c>AIWhiteboard::AddBeacon(pose, radius)</c> with the float at behaviour+0x128 (0x005E5F28), so the
 /// centre is wherever the robot stood - and the new-area animation
-/// plays. INFERRED: the beacon is centred on the robot (the engine's selection logic was not read further).
+/// plays.
 /// </summary>
+// fidelity: M15-011
 public sealed class ThinkAboutBeaconsBehavior : ManipulationBehavior
 {
     public ThinkAboutBeaconsBehavior(ManipulationSystem m, string id = "Hiking_ThinkAboutBeacons", double beaconRadiusMm = 175, AnimationTrigger newAreaAnim = AnimationTrigger.HikingReactToNewArea)
@@ -973,8 +975,9 @@ public sealed class ThinkAboutBeaconsBehavior : ManipulationBehavior
 /// <c>SetFailedToUse</c>), then either stack it on a free upright cube already in the beacon
 /// (<c>PlaceRelObjectHelper</c>) or place it at a free pose inside the beacon (drive there, <c>PlaceObjectOnGround</c>).
 /// The free-pose search is LOCAL: the beacon centre, then a ring of candidates at half the radius, keeping
-/// 60 mm from every located cube. The emotion events' names were not read (DEFERRED).
+/// 60 mm from every located cube.
 /// </summary>
+// fidelity: M15-009
 public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
 {
     public enum Phase { Idle, PickingUp, StackingOn, PlacingAt }
