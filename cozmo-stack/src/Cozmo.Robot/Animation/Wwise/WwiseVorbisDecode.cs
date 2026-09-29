@@ -528,7 +528,7 @@ public static partial class WwiseVorbisNative
             int off = aligned / 4, len = aligned / 4;
             for (int c = 0; c < dsp.Channels; c++)
             {
-                Array.Clear(dsp.Overlap[c]);
+                // memcpy only (0x00AB3780): the rest of the overlap keeps its contents
                 int copy = Math.Min(len, Math.Min(dsp.Work[c].Length - off, dsp.Overlap[c].Length));
                 if (copy > 0) Array.Copy(dsp.Work[c], off, dsp.Overlap[c], 0, copy);
             }
@@ -672,7 +672,7 @@ public static partial class WwiseVorbisNative
         int off = aligned / 4, len = aligned / 4;
         for (int ch = 0; ch < dsp.Channels; ch++)                          // R4-R7
         {
-            Array.Clear(dsp.Overlap[ch]);
+            // memcpy only: the rest of the overlap keeps its contents
             int copy = Math.Min(len, Math.Min(dsp.Work[ch].Length - off, dsp.Overlap[ch].Length));
             if (copy > 0) Array.Copy(dsp.Work[ch], off, dsp.Overlap[ch], 0, copy); // R6: memcpy
         }
@@ -682,66 +682,73 @@ public static partial class WwiseVorbisNative
     // ---- window combine 0x00AB5A94 (C13 P24-window / Q1) ----
 
     /// <summary>
-    /// The per-channel window combine (0x00AB5A94; C13 Q1). The top branch is <c>prev &amp;&amp; curr</c>:
-    /// both-long uses W1, otherwise W0 with the small window. The regions run in order: add
-    /// (<c>min(END,fp)-min(SKIP,fp)</c>, <c>fp=n/4</c>), then sub, then the <c>[sp+4]</c>-gated negate/copy.
-    /// Window forward <c>W+i</c>, reverse <c>W+h-1-i</c>. No FMA. The semantic mapping of the regions to
-    /// libvorbis's large/small cases is UNKNOWN (C13) and is not substituted.
+    /// The per-channel window combine, 0x00AB5A94: the float form of Tremor's <c>mdct_unroll_lap</c>. It is
+    /// verified bit for bit against the engine's own code under emulation (re-analysis/tools/emu/emu_combine.py,
+    /// WwiseVorbisCombineNativeTests). The regions run in this order, their pointers carrying over, and
+    /// <c>start</c> and <c>end</c> are consumed as they go:
+    /// <list type="bullet">
+    /// <item>pre-lap, long to short only: <c>(n1&gt;&gt;2)-(n0&gt;&gt;2)</c> samples, copied from the overlap backwards;</item>
+    /// <item>cross-lap A: <c>(*--l)*(*wL++) + (*--r)*(*--wR)</c>;</item>
+    /// <item>cross-lap B: <c>(*r++)*(*--wR) - (*l++)*(*wL++)</c>;</item>
+    /// <item>post-lap, short to long only: <c>-(*l++)</c>.</item>
+    /// </list>
+    /// <c>l</c> starts at <c>in + halfLap</c>, <c>r</c> at <c>right + (lW ? n1&gt;&gt;2 : n0&gt;&gt;2)</c>, <c>wL</c> at the
+    /// window and <c>wR</c> at <c>window + (n&gt;&gt;1)</c>. The window and <c>halfLap</c> are the long ones only when
+    /// both blocks are long. No FMA.
     /// </summary>
     internal static void Combine(int bs0, int bs1, bool previous, bool current,
         float[] input, float[] overlap, float[] w0, float[] w1, Span<float> output, int skip, int end)
     {
-        if (previous && current)
-            CombineCommon(bs1, w1, input, overlap, output, skip, end, gate: 0);
-        else if (!previous && !current)
-            CombineCommon(bs0, w0, input, overlap, output, skip, end, gate: 0);
-        else
-            // short->long and long->short both use W0 and the small window; the gate is bs1/4-bs0/4
-            // (Q1.2c/Q1.2e). The long->short separate negate path (0x00AB5F9C) is folded into the common
-            // code; the region gates are the settled part and the semantic label stays UNKNOWN.
-            CombineCommon(bs0, w0, input, overlap, output, skip, end, gate: bs1 / 4 - bs0 / 4);
-    }
+        bool both = previous && current;                                   // 0x00AB5AB0: ands sb, r4, lr
+        int halfLap = both ? bs1 >> 2 : bs0 >> 2;
+        int preLap = previous && !current ? (bs1 >> 2) - (bs0 >> 2) : 0;
+        int postLap = !previous && current ? (bs1 >> 2) - (bs0 >> 2) : 0;
+        float[] w = both ? w1 : w0;
+        int wL = 0;                                                        // the window
+        int wR = both ? bs1 >> 1 : bs0 >> 1;                               // window + (n >> 1)
+        int l = halfLap;                                                   // in + halfLap
+        int r = previous ? bs1 >> 2 : bs0 >> 2;                            // right + (lW ? n1>>2 : n0>>2)
+        int start = skip;
+        int o = 0;
 
-    private static void CombineCommon(int n, float[] w, float[] input, float[] overlap, Span<float> output,
-        int skip, int end, int gate)
-    {
-        int fp = n / 4;                                                    // Q1.4: fp = n/4
-        int h = w.Length;
-        int minEnd = Math.Min(end, fp);
-        int minSkip = Math.Min(skip, fp);
-        int outPos = 0;
-
-        // Region A — add: input*window_fwd + overlap*window_rev (Q1.4/Q1.3).
-        int countA = minEnd - minSkip;
-        for (int i = 0; i < countA; i++)
+        if (preLap != 0)                                                   // long to short: a straight copy
         {
-            int idx = fp - minSkip - 1 - i;
-            output[outPos + i] = input[idx] * w[minSkip + i] + overlap[idx] * w[h - minSkip - 1 - i];
+            int n = Math.Min(end, preLap), off = Math.Min(start, preLap);
+            int post = r - n;
+            r -= off; start -= off; end -= n;
+            while (r > post) output[o++] = overlap[--r];
         }
-        outPos += Math.Max(0, countA);
 
-        // Region B — sub: overlap*window_rev - input*window_fwd (Q1.4/Q1.3).
-        int b0 = Math.Min(end - minEnd, fp);
-        int b1 = Math.Min(skip - minSkip, fp);
-        int countB = b0 - b1;
-        for (int i = 0; i < countB; i++)
-        {
-            int idx = fp - minSkip + b1 + i;
-            output[outPos + i] = overlap[idx] * w[h - minSkip - b1 - 1 - i] - input[idx] * w[minSkip + b1 + i];
-        }
-        outPos += Math.Max(0, countB);
-
-        // Region C — the [sp+4]-gated negate/copy (Q1.4).
-        if (gate != 0)
-        {
-            int c0 = Math.Min(end - minEnd - b0, gate);
-            int c1 = Math.Min(skip - minSkip - b1, gate);
-            int countC = c0 - c1;
-            for (int i = 0; i < countC; i++)
+        {                                                                  // cross-lap A
+            int n = Math.Min(end, halfLap), off = Math.Min(start, halfLap);
+            int post = r - n;
+            r -= off; l -= off; start -= off; wR -= off; wL += off; end -= n;
+            while (r > post)
             {
-                int idx = fp - minSkip + b1 + c1 + i;
-                output[outPos + i] = -input[idx];
+                --r; --l; --wR;
+                output[o++] = input[l] * w[wL] + overlap[r] * w[wR];
+                wL++;
             }
+        }
+
+        {                                                                  // cross-lap B
+            int n = Math.Min(end, halfLap), off = Math.Min(start, halfLap);
+            int post = r + n;
+            r += off; l += off; start -= off; wR -= off; wL += off; end -= n;
+            while (r < post)
+            {
+                --wR;
+                output[o++] = overlap[r] * w[wR] - input[l] * w[wL];
+                r++; l++; wL++;
+            }
+        }
+
+        if (postLap != 0)                                                  // short to long: a negated copy
+        {
+            int n = Math.Min(end, postLap), off = Math.Min(start, postLap);
+            int post = l + n;
+            l += off;
+            while (l < post) output[o++] = -input[l++];
         }
     }
 
@@ -818,7 +825,7 @@ public static partial class WwiseVorbisNative
             int blockSize = dsp.Setup.BlockSize(dsp.CurrentFlag);
             int aligned = (blockSize + 3) & ~3;
             int off = aligned / 4, len = aligned / 4;
-            Array.Clear(dsp.Overlap[ch]);
+            // memcpy only: the rest of the overlap keeps its contents
             int copy = Math.Min(len, Math.Min(dsp.Work[ch].Length - off, dsp.Overlap[ch].Length));
             if (copy > 0) Array.Copy(dsp.Work[ch], off, dsp.Overlap[ch], 0, copy);
         }
