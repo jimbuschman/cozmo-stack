@@ -528,8 +528,13 @@ public sealed class NeedsManager
     private double _stateDateTimeSec;
     /// <summary><c>TimeLastAppBackgrounded</c>: cleared when a mismatched serial selects the robot data (C2 row 13).</summary>
     private double _lastAppBackgroundSec;
-    /// <summary><c>OpenAppAfterDisconnect</c>: cleared when a mismatched serial selects the robot data (C2 row 13).</summary>
-    private bool _openAppAfterDisconnect;
+    /// <summary>
+    /// <c>+0x30</c> <c>OpenAppAfterDisconnect</c> (J5): an int counter, not a bool. Read as <c>asInt</c>
+    /// (0x00699A1C), written as <c>Value(int)</c> (0x00693CC6), incremented on a successful
+    /// <c>AttemptReadFromDevice</c> (0x006936CE), reset to 0 by <c>OnRobotDisconnected</c> (0x00695922) and
+    /// cleared when a mismatched serial selects the robot data (C2 row 13).
+    /// </summary>
+    private int _openAppAfterDisconnect;
     /// <summary><c>+0x1c0/+0x1c4</c>: the time the last robot write was built with (Appendix G Q1).</summary>
     private double _lastWriteToRobotSec;
     /// <summary><c>_errG</c>: set when a robot write fails (Appendix G Q1).</summary>
@@ -563,10 +568,15 @@ public sealed class NeedsManager
     /// (0x00695F66).
     /// </summary>
     private readonly double[] _bracketChangedSec = new double[3];
-    /// <summary><c>this+8/+0xc</c>: the stored write time for the 61 ms rate limiter (0x00695DD2).</summary>
+    /// <summary><c>this+8/+0xc</c>: the stored write time for the 61 s rate limiter (0x00695DD2; J14).</summary>
     private double _lastWriteSec;
-    /// <summary><c>+0x1b8</c>: the needs levels copied at disconnect before the DAS bracket check (0x00695930).</summary>
-    private double[]? _disconnectSnapshot;
+    /// <summary>
+    /// <c>+0x1b8/+0x1bc</c> (J4): the <c>NeedsState</c> <c>DateTime</c> (<c>+8/+0xC</c>) snapshotted at a
+    /// successful device read (0x006936B6) and at disconnect (0x00695934). The resolver compares the robot
+    /// copy's <c>timeLastWritten</c> (<c>+0x98</c>) against it (decomp <c>00694608.c:309-357</c>, around
+    /// 0x0069493C), not against the device copy's own timestamp.
+    /// </summary>
+    private double _deviceTimestampSnapshotSec;
 
     public NeedsManager(Func<double> clockSec, NeedsConfig? config = null, DecayConfig? decay = null, IReadOnlyDictionary<string, NeedsActionDelta>? actions = null, Random? random = null)
     {
@@ -577,15 +587,56 @@ public sealed class NeedsManager
         State = new NeedsState(Config);
         Random = random ?? new Random();
         State.Warn += m => Log?.Invoke(m);
-        double now = clockSec();
-        _nextDecaySec = now + Config.DecayPeriodSeconds;   // the first interval runs from Init
-        // +0x1E4 is initialised at construction, so the first decay is one period's worth.
+        InitReset(clockSec());
+    }
+
+    /// <summary>
+    /// <c>NeedsManager::InitReset</c> 0x006934A8..0x006935E0 (J2): seed the decay schedule and the per-need
+    /// clocks from the passed time. <c>+0x3B0 = +0x130 + now</c> (the first interval runs from Init), each
+    /// need's <c>+0x1E4</c> (last decay) and <c>+0x214</c> (bracket-change clock) is the passed time, and the
+    /// bracket cache <c>+0x70</c> is refreshed. <c>InitReset</c>'s other writes are already a fresh object's
+    /// defaults: the fullness fields <c>+0x1FC</c>/<c>+0x208</c> are zero (this stack's fullness
+    /// dictionaries are empty), the six per-need pause-flag bytes <c>+0x1DC..+0x1E1</c> are false, and
+    /// <c>+0x1F0</c> is not written (J2/J9); the <c>__aeabi_memclr4(this+0x244, 0x158)</c> at 0x006935D6
+    /// clears a region that is already zero on a fresh object.
+    /// </summary>
+    // fidelity: M15-014
+    private void InitReset(double nowSec)
+    {
+        _nextDecaySec = nowSec + Config.DecayPeriodSeconds;
+        // +0x1E4 is initialised here, so the first decay is one period's worth.
         foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
         {
-            _lastDecaySec[n] = now;
+            _lastDecaySec[n] = nowSec;
             _prevBrackets[n] = State.GetNeedBracket(n);
-            _bracketChangedSec[(int)n] = now;      // J10: InitReset seeds +0x214 = +0x3ac; +0x1f0 stays 0
+            _bracketChangedSec[(int)n] = nowSec;   // J10: InitReset seeds +0x214 = +0x3ac; +0x1f0 stays 0
         }
+    }
+
+    /// <summary>
+    /// <c>NeedsManager::InitInternal</c> 0x00693444..0x00693492 (J1): <c>InitReset</c>, clear the device
+    /// <c>versionUpdated</c> out-flag <c>+0x1CB</c> (0x0069345C) and the device-read result <c>+0x1C9</c>
+    /// (0x00693462), attempt the fixed <c>needsState.json</c> device read (0x00693466), store its result at
+    /// <c>+0x1C9</c> (0x0069346C), send the default state when it failed (0x00693476), force
+    /// <c>WriteToDevice(true)</c> (0x0069347E), raise the <c>app_start</c> DAS event (0x00693486) and run
+    /// <c>LocalNotifications::Generate</c> (tail branch 0x00693492). It does not touch the robot-rewrite
+    /// flag <c>+0x1CA</c>.
+    /// </summary>
+    // fidelity: M15-014
+    public void InitInternal(double nowSec)
+    {
+        InitReset(nowSec);
+        lock (_gate)
+        {
+            _deviceVersionUpdated = false;      // +0x1CB = 0 (0x0069345C)
+            _deviceDataPresent = false;         // +0x1C9 = 0 (0x00693462)
+        }
+        bool ok = AttemptReadFromDevice(FixedDeviceFilePath);      // 0x00693466
+        lock (_gate) _deviceDataPresent = ok;   // +0x1C9 = (byte)result (0x0069346C)
+        if (!ok) SendNeedsStateToGame(NeedsActionId.NoAction);   // 0x00693476
+        WriteToDevice?.Invoke(true);                             // 0x0069347E
+        SendNeedsLevelsDasEvent?.Invoke("app_start");            // 0x00693486
+        LocalNotificationsGenerate?.Invoke();                    // 0x00693492
     }
 
     public NeedsConfig Config { get; }
@@ -625,14 +676,24 @@ public sealed class NeedsManager
     public event Action<NeedId, NeedBracketId, NeedBracketId, double>? BracketChanged;
     public event Action<string>? Log;
 
-    public static NeedsManager FromObb(string obbRoot, Func<double> clockSec, Random? random = null)
+    // fidelity: M15-014
+    public static NeedsManager FromObb(string obbRoot, Func<double> clockSec, Random? random = null, string? deviceDirectory = null)
     {
         var dir = Path.Combine(obbRoot, "assets", "cozmo_resources", "config", "engine");
         string? Read(string name) { var p = Path.Combine(dir, name); return File.Exists(p) ? File.ReadAllText(p) : null; }
         var cfg = Read("needs_config.json") is { } c ? NeedsConfig.Parse(c) : null;
         var decay = Read("needs_decay_config.json") is { } d ? DecayConfig.Parse(d) : null;
         var actions = Read("needs_action_config.json") is { } a ? NeedsActionDelta.Parse(a) : null;
-        return new NeedsManager(clockSec, cfg, decay, actions, random);
+        var needs = new NeedsManager(clockSec, cfg, decay, actions, random);
+        // J3: the directory the engine's DataPlatform resolves ("nurture/") is the host's; the caller supplies it.
+        needs.DeviceDirectory = deviceDirectory;
+        // J7: InitInternal's forced WriteToDevice(true) (0x0069347E) must reach a real file when the host
+        // supplied a device directory, so the seam is wired before InitInternal runs.
+        if (deviceDirectory is not null) needs.WriteToDevice = needs.WriteDeviceFile;
+        // NeedsManager::Init 0x00692574 ends by calling InitInternal 0x006926CE (J1/J14): the construction
+        // analogue here, so a manager built from the OBB has run the startup device read and its tail.
+        needs.InitInternal(clockSec());
+        return needs;
     }
 
     /// <summary>
@@ -743,12 +804,13 @@ public sealed class NeedsManager
     public event Action? LocalNotificationsUpdate;
 
     /// <summary>
-    /// <c>NeedsManager::PossiblyWriteToDevice</c> 0x00695DC4: a 61 ms rate limiter. The engine builds
-    /// <c>0x03A2C940 = 61,000,000</c> ns (0x00695DD2/0x00695DDA); when the elapsed time since the stored
-    /// write time (<c>this+8/+0xc</c>) is at least that it stores now and calls
-    /// <c>WriteToDevice(this, false)</c> (0x00695DFA), otherwise it returns.
-    /// The file path is host state; the serial-dispatch edge that would choose it is the M15-014
-    /// RECOVERABLE_GAP, so the host supplies the path and the write only happens when one is set.
+    /// <c>NeedsManager::PossiblyWriteToDevice</c> 0x00695DC4: a 61-second rate limiter. The engine compares
+    /// <c>system_clock::now() - this+8/+0xC</c> against <c>0x03A2C940 = 61,000,000</c> on the microsecond
+    /// clock (<c>ApplyDecayForTimeSinceLastDeviceWrite</c> divides by 1,000,000 at 0x0069532C), so the
+    /// throttle is 61 s; when the elapsed time is at least that it stores now and calls
+    /// <c>WriteToDevice(this, false)</c> (0x00695DFA), otherwise it returns (J14).
+    /// The file path is host state; the serial-dispatch edge (C2) supplies the per-serial path, and the host
+    /// sets the seam, so the write only happens when one is set.
     /// </summary>
     // fidelity: M15-001
     public void PossiblyWriteToDevice()
@@ -759,8 +821,9 @@ public sealed class NeedsManager
         WriteToDevice?.Invoke(false);
     }
 
-    /// <summary>The engine's 61,000,000 ns write throttle, in seconds.</summary>
-    public const double WriteThrottleSec = 0.061;
+    /// <summary>The engine's 61,000,000-unit (microsecond) write throttle, 61 s (J14).</summary>
+    // fidelity: M15-001
+    public const double WriteThrottleSec = 61.0;
 
     /// <summary>
     /// The host's write seam. The forced flag is the engine's second argument: <c>true</c> from
@@ -792,6 +855,24 @@ public sealed class NeedsManager
     public Action<string>? SendNeedsLevelsDasEvent { get; set; }
 
     /// <summary>
+    /// <c>NeedsManager::SendTimeSinceBackgroundedDasEvent()</c> 0x0069770C..0x006977AA (J5): emits
+    /// <c>needs.app_backgrounded_time</c> with the <c>+0x30 OpenAppAfterDisconnect</c> counter and the
+    /// elapsed time since <c>+0x20/+0x24</c> (the last app background). It emits nothing when that time is
+    /// zero (0x0069771E), which the caller guards. The DAS wire is the app's.
+    /// </summary>
+    // fidelity: M15-014
+    public Action<int, double>? SendTimeSinceBackgroundedDasEvent { get; set; }
+
+    /// <summary>
+    /// <c>NeedsManager::InitInternal</c>'s tail calls <c>LocalNotifications::Generate</c> 0x0068CA9C
+    /// (J1/J8): the feature gate, the notification cache and the next-generate time
+    /// <c>+0x18 = NeedsManager[0x3AC] + 60.0</c>. The app-facing notification wire is unbuilt, so this is
+    /// the seam.
+    /// </summary>
+    // fidelity: M15-014
+    public Action? LocalNotificationsGenerate { get; set; }
+
+    /// <summary>
     /// <c>NeedsManager::InitAfterConnection</c> 0x00694384: the robot pointer is set (the connected flag
     /// <c>Update</c> reads), <c>+0x1d4</c> becomes 1 and the robot-data flag <c>+0x3d0</c> becomes 1
     /// (C2 row 6). The serial arrives by a separate edge (C2 row 9, <see cref="InitAfterSerialNumberAcquired"/>).
@@ -800,23 +881,23 @@ public sealed class NeedsManager
     public void InitAfterConnection() { lock (_gate) { _robotConnected = true; _awaitingRobotData = true; } }
 
     /// <summary>
-    /// <c>NeedsManager::OnRobotDisconnected</c> 0x00695908 (C1 §6): write the disconnect timestamp to
-    /// <c>+0x18/+0x1c</c>; clear the serial state <c>+0x30</c>; if not paused call
-    /// <c>WriteToDevice(this, true)</c> (0x00695924..0x0069592A); clear the robot pointer <c>+4</c>;
-    /// snapshot the needs into <c>+0x1b8</c>; <c>DetectBracketChangeForDas(true)</c> (0x0069593C); and
-    /// <c>SendNeedsLevelsDasEvent("disconnect")</c> (0x0069594C). There is <b>no</b>
+    /// <c>NeedsManager::OnRobotDisconnected</c> 0x00695908 (C1 §6, J5): write the disconnect timestamp to
+    /// <c>+0x18/+0x1c</c>; reset the <c>+0x30 OpenAppAfterDisconnect</c> counter to 0 (0x00695922); if not
+    /// paused call <c>WriteToDevice(this, true)</c> (0x00695924..0x0069592A); clear the robot pointer
+    /// <c>+4</c>; snapshot the state timestamp into <c>+0x1b8</c> (0x00695934); <c>DetectBracketChangeForDas(true)</c>
+    /// (0x0069593C); and <c>SendNeedsLevelsDasEvent("disconnect")</c> (0x0069594C). There is <b>no</b>
     /// <c>SendNeedsStateToGame</c> here.
     /// </summary>
-    // fidelity: M15-016
+    // fidelity: M15-014, M15-016
     public void OnRobotDisconnected()
     {
         lock (_gate)
         {
             _lastDisconnectSec = _clockSec();
-            _serial = 0;                                          // clear the serial state (+0x30)
+            _openAppAfterDisconnect = 0;                          // reset the +0x30 counter (J5, 0x00695922)
             if (!_paused) WriteToDevice?.Invoke(true);            // forced write (0x00695924..0x0069592A)
             _robotConnected = false;                              // clear the robot pointer (+4)
-            _disconnectSnapshot = new[] { State.GetNeedLevel(NeedId.Repair), State.GetNeedLevel(NeedId.Energy), State.GetNeedLevel(NeedId.Play) };
+            _deviceTimestampSnapshotSec = _stateDateTimeSec;      // +0x1B8/+0x1BC = +8/+0xC (0x00695934)
             DetectBracketChangeForDas(true);
             SendNeedsLevelsDasEvent?.Invoke("disconnect");
         }
@@ -837,9 +918,9 @@ public sealed class NeedsManager
     // fidelity: M15-016
     public double LastDisconnectSec { get { lock (_gate) return _lastDisconnectSec; } }
 
-    /// <summary><c>+0x1b8</c>: the needs levels copied at disconnect before the DAS bracket check.</summary>
-    // fidelity: M15-016
-    public IReadOnlyList<double>? DisconnectNeedsSnapshot { get { lock (_gate) return _disconnectSnapshot; } }
+    /// <summary><c>+0x1b8</c>: the device timestamp snapshotted at a device read or disconnect (J4).</summary>
+    // fidelity: M15-014, M15-016
+    public double DeviceTimestampSnapshotSec { get { lock (_gate) return _deviceTimestampSnapshotSec; } }
 
     /// <summary>
     /// <c>NeedsManager::SetPaused</c> 0x00695E04 (C1 §6): if the new state equals <c>+0x1d5</c> it logs
@@ -1070,9 +1151,10 @@ public sealed class NeedsManager
                 if (alternateTried)                                      // case 3 / 4
                 {
                     // Appendix I1: both the alternate success and failure tails converge on the
-                    // RobotChangedFromLastSession send (0x00694CA6 -> 0x00694AA8).
+                    // RobotChangedFromLastSession send (0x00694CA6 -> 0x00694AA8). The alternate read runs
+                    // AttemptReadFromDevice, whose success tail sends Decay (0x006936C6), so the resolver
+                    // sends nothing here.
                     deviceWrite = alternateOk; robotWrite = true; robotChanged = true;
-                    if (alternateOk) send = NeedsActionId.Decay;
                 }
                 else                                                     // case 2
                 {
@@ -1092,12 +1174,12 @@ public sealed class NeedsManager
                 clearAll = true;                                         // +0x18..+0x24
                 deviceWrite = true; robotWrite = rewrite; send = NeedsActionId.Decay; robotChanged = true;
             }
-            else if (_robotCopy!.DateTimeSec > _deviceCopy!.DateTimeSec) // case 7
+            else if (_robotCopy!.DateTimeSec > _deviceTimestampSnapshotSec) // case 7
             {
                 ApplyRobotCopyLocked(_robotCopy);
                 deviceWrite = true; robotWrite = rewrite; send = NeedsActionId.Decay; robotChanged = true;
             }
-            else if (_deviceCopy.DateTimeSec > _robotCopy.DateTimeSec)   // case 8
+            else if (_deviceTimestampSnapshotSec > _robotCopy.DateTimeSec)   // case 8
             {
                 deviceWrite = false; robotWrite = true;
             }
@@ -1111,7 +1193,7 @@ public sealed class NeedsManager
             {
                 _lastDisconnectSec = 0;
                 _lastAppBackgroundSec = 0;
-                _openAppAfterDisconnect = false;
+                _openAppAfterDisconnect = 0;
             }
         }
 
@@ -1265,6 +1347,19 @@ public sealed class NeedsManager
     // fidelity: M15-014
     public Func<uint, string?>? AlternateDeviceFilePath { get; set; }
 
+    /// <summary>
+    /// J3: the host directory holding the fixed <c>needsState.json</c> and the per-serial
+    /// <c>needsState_&lt;serial&gt;.json</c> files. The engine's directory is
+    /// <c>DataPlatform::pathToResource("nurture/")</c> (ctor 0x006921A6..0x006921D8); resolving it is host
+    /// business, so it is a seam here.
+    /// </summary>
+    // fidelity: M15-014
+    public string? DeviceDirectory { get; set; }
+
+    /// <summary>J3: <c>&lt;DeviceDirectory&gt;/needsState.json</c>, or null when no directory is set.</summary>
+    // fidelity: M15-014
+    public string? FixedDeviceFilePath => DeviceDirectory is null ? null : Path.Combine(DeviceDirectory, FixedFileName);
+
     /// <summary><c>+0x1c8</c>: the robot read produced usable data.</summary>
     // fidelity: M15-014
     public bool RobotReadSucceeded => _robotReadSucceeded;
@@ -1293,8 +1388,11 @@ public sealed class NeedsManager
 
     private bool TryLoadAlternateDeviceFile(uint serial)
     {
-        if (AlternateDeviceFilePath?.Invoke(serial) is not { } path) return false;
-        return Load(path);
+        // J3: the host may name the alternate file itself, or leave it to the device directory.
+        string? path = AlternateDeviceFilePath?.Invoke(serial)
+                       ?? (DeviceDirectory is null ? null : Path.Combine(DeviceDirectory, FileNameForSerial(serial)));
+        if (path is null) return false;
+        return AttemptReadFromDevice(path);
     }
 
     /// <summary>
@@ -1441,6 +1539,22 @@ public sealed class NeedsManager
     }
 
     /// <summary>
+    /// J7: <c>NeedsManager::WriteToDevice(bool refreshDateTime)</c> 0x00693BB0 reached through the host's
+    /// <see cref="WriteToDevice"/> seam. It returns when the host has no fixed file path
+    /// (<c>FixedDeviceFilePath</c> is null); with <paramref name="refreshDateTime"/> it stamps
+    /// <c>_stateDateTimeSec</c> (<c>+8/+0xC</c>) from the stack clock - the engine's
+    /// <c>system_clock::now()</c> at 0x00693BC4, which is the same base the decay uses - and then writes
+    /// <c>&lt;DeviceDirectory&gt;/needsState.json</c> with that timestamp.
+    /// </summary>
+    // fidelity: M15-014
+    public void WriteDeviceFile(bool refreshDateTime)
+    {
+        if (FixedDeviceFilePath is not { } path) return;
+        if (refreshDateTime) _stateDateTimeSec = _clockSec();    // 0x00693BC4
+        Save(path, unixTimeSec: (long)_stateDateTimeSec, serialNumber: _serial);   // 0x00693BB0 (+0x34)
+    }
+
+    /// <summary>
     /// Reads a file written by <see cref="Save"/> (the exact keys above) and, as
     /// <c>AttemptReadFromDevice</c> 0x006936B0..0x0069371E does, calls
     /// <see cref="ApplyDecayForTimeSinceLastDeviceWrite"/><c>(false)</c> for the time that has passed since
@@ -1478,6 +1592,7 @@ public sealed class NeedsManager
         }
         long dateTime = root.TryGetProperty("_DateTime", out var w) && w.ValueKind == System.Text.Json.JsonValueKind.Number ? w.GetInt64() : 0;
         _stateDateTimeSec = dateTime;
+        _deviceTimestampSnapshotSec = _stateDateTimeSec;   // +0x1B8/+0x1BC = +8/+0xC (J4)
         _deviceVersionUpdated = version != 5;            // +0x1cb (C2 row 1)
         if (applyElapsedDecay) ApplyDecayForTimeSinceLastDeviceWrite(false);
         else DetectBracketChanges();
@@ -1485,6 +1600,48 @@ public sealed class NeedsManager
         _deviceDataPresent = true;       // +0x1c9
         return true;
         }
+    }
+
+    /// <summary>
+    /// <c>NeedsManager::AttemptReadFromDevice</c> 0x00693690..0x00693792 (J4): if <paramref name="path"/>
+    /// (the fixed <c>needsState.json</c> at startup, or the per-serial alternate during resolution) is not
+    /// on the device it logs <c>"FAILED to FIND file &lt;name&gt; on device"</c> (0x0069378C) and returns
+    /// false; if <see cref="Load"/> (the engine's <c>ReadFromDevice</c>) fails it logs
+    /// <c>"FAILED to read file &lt;name&gt; on device"</c> and returns false. On success it snapshots the
+    /// state timestamp into <c>+0x1B8</c> (0x006936B6), sends <c>SendNeedsStateToGame(Decay)</c>
+    /// (0x006936C6), increments the <c>+0x30 OpenAppAfterDisconnect</c> counter (0x006936CE), raises
+    /// <see cref="SendTimeSinceBackgroundedDasEvent"/> (0x006936D2; the engine emits nothing when
+    /// <c>+0x20|+0x24 == 0</c>, 0x0069771E, so the caller guards on the app-background time) and logs
+    /// <c>"Successfully read file &lt;name&gt; from device"</c> (0x0069371C). <see cref="Load"/> already
+    /// applies the elapsed decay through its <c>applyElapsedDecay</c> default (the engine's
+    /// <c>ApplyDecayForTimeSinceLastDeviceWrite(false)</c> at 0x006936BE), so it is not applied again.
+    /// </summary>
+    // fidelity: M15-014
+    public bool AttemptReadFromDevice(string? path)
+    {
+        string name = path is null ? FixedFileName : Path.GetFileName(path);
+        if (path is null || !File.Exists(path))
+        {
+            Log?.Invoke($"FAILED to FIND file {name} on device");
+            return false;
+        }
+        if (!Load(path))
+        {
+            Log?.Invoke($"FAILED to read file {name} on device");
+            return false;
+        }
+        lock (_gate) _deviceTimestampSnapshotSec = _stateDateTimeSec;   // +0x1B8/+0x1BC = +8/+0xC (0x006936B6)
+        SendNeedsStateToGame(NeedsActionId.Decay);              // 0x006936C6
+        int openApp;
+        lock (_gate)
+        {
+            _openAppAfterDisconnect += 1;                       // +0x30 (0x006936CE)
+            openApp = _openAppAfterDisconnect;
+        }
+        if (_lastAppBackgroundSec != 0)
+            SendTimeSinceBackgroundedDasEvent?.Invoke(openApp, _clockSec() - _lastAppBackgroundSec);   // 0x006936D2
+        Log?.Invoke($"Successfully read file {name} from device");   // 0x0069371C
+        return true;
     }
 
     public bool IsSevereExpressed(NeedId n) => _severeExpressed.Contains(n);

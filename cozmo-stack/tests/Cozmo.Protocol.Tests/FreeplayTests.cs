@@ -622,9 +622,10 @@ public class FreeplayTests
     }
 
     /// <summary>
-    /// The disconnect transition (C1 §6). OnRobotDisconnected 0x00695908 writes the timestamp, clears the
-    /// serial state, forces a write when not paused, clears the robot pointer, snapshots the needs, runs the
-    /// DAS bracket check and sends the "disconnect" DAS event - with <b>no</b> SendNeedsStateToGame.
+    /// The disconnect transition (C1 §6). OnRobotDisconnected 0x00695908 writes the timestamp, resets the
+    /// <c>+0x30 OpenAppAfterDisconnect</c> counter, forces a write when not paused, clears the robot pointer,
+    /// snapshots the device timestamp into <c>+0x1B8</c> (J4), runs the DAS bracket check and sends the
+    /// "disconnect" DAS event - with <b>no</b> SendNeedsStateToGame.
     /// </summary>
     [Fact]
     public void TheNeedsManagerDisconnectWritesAndSendsDasWithoutAStateBroadcast()
@@ -639,12 +640,15 @@ public class FreeplayTests
         needs.SendNeedsLevelsDasEvent += das.Add;
         needs.Connected = true;
 
+        // +0x1B8 is the state DateTime snapshot, not the need levels (J4): Load sets +8/+0xC = 1234.
+        Assert.True(needs.Load(DeviceNeedsFile(5, 7, 1234, 0.9), applyElapsedDecay: false));
+
         clock = 5;
         needs.OnRobotDisconnected();
         Assert.False(needs.Connected);                       // the robot pointer is cleared
         Assert.Equal(5, needs.LastDisconnectSec, 6);
         Assert.Equal(new[] { true }, writes);                // forced write when not paused
-        Assert.NotNull(needs.DisconnectNeedsSnapshot);
+        Assert.Equal(1234, needs.DeviceTimestampSnapshotSec, 6);   // +0x1B8/+0x1BC = +8/+0xC (0x00695934)
         Assert.Equal(new[] { "disconnect" }, das);
         Assert.Empty(actions);                               // no SendNeedsStateToGame here
 
@@ -723,27 +727,30 @@ public class FreeplayTests
     }
 
     /// <summary>
-    /// <c>PossiblyWriteToDevice</c> 0x00695DC4 is a 61 ms rate limiter: it writes only when the elapsed time
-    /// since the stored write time is at least <c>61,000,000</c> ns, and then stores now.
+    /// <c>PossiblyWriteToDevice</c> 0x00695DC4 is a 61-second rate limiter (J14): it compares the elapsed
+    /// time since the stored write time against <c>0x03A2C940 = 61,000,000</c> on the microsecond clock
+    /// (<c>ApplyDecayForTimeSinceLastDeviceWrite</c> divides by 1,000,000 at 0x0069532C), so 61 s, and then
+    /// stores now.
     /// </summary>
     [Fact]
-    public void PossiblyWriteToDeviceIsA61MillisecondRateLimiter()
+    public void PossiblyWriteToDeviceIsA61SecondRateLimiter()
     {
+        Assert.Equal(61.0, NeedsManager.WriteThrottleSec, 6);
         double clock = 0;
         var needs = new NeedsManager(() => clock);
         var writes = new List<bool>();
         needs.WriteToDevice = forced => writes.Add(forced);
 
         clock = 0; needs.PossiblyWriteToDevice();
-        Assert.Empty(writes);                                // 0 ms elapsed
-        clock = 0.060; needs.PossiblyWriteToDevice();
-        Assert.Empty(writes);                                // 60 ms < 61 ms
-        clock = 0.061; needs.PossiblyWriteToDevice();
+        Assert.Empty(writes);                                // 0 s elapsed
+        clock = 60.999; needs.PossiblyWriteToDevice();
+        Assert.Empty(writes);                                // just under 61 s
+        clock = 61; needs.PossiblyWriteToDevice();
         Assert.Single(writes);                               // exactly the throttle
-        clock = 0.120; needs.PossiblyWriteToDevice();
-        Assert.Single(writes);                               // 59 ms later
-        clock = 0.122; needs.PossiblyWriteToDevice();
-        Assert.Equal(2, writes.Count);                       // 61 ms later
+        clock = 120; needs.PossiblyWriteToDevice();
+        Assert.Single(writes);                               // 59 s later
+        clock = 122; needs.PossiblyWriteToDevice();
+        Assert.Equal(2, writes.Count);                       // 61 s later
         Assert.All(writes, w => Assert.False(w));            // PossiblyWriteToDevice is never the forced write
     }
 
@@ -2092,5 +2099,189 @@ public class FreeplayTests
             rig.Robot.Engine.RaiseSerialNumberAcquired(0x2222);
             Assert.Equal(0x2222u, needs2.SerialNumber);
         }
+    }
+
+    // ------------------------------------------------------------------ J1-J5 startup device read
+
+    private static string TempDir()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "needs-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        return dir;
+    }
+
+    /// <summary>
+    /// J1: <c>NeedsManager::InitInternal</c> 0x00693444..0x00693492 with no device directory: the fixed
+    /// <c>needsState.json</c> cannot be found, so <c>AttemptReadFromDevice</c> returns false, the manager
+    /// sends <c>NoAction</c> (0x00693476), forces <c>WriteToDevice(true)</c> (0x0069347E), raises the
+    /// <c>app_start</c> DAS event (0x00693486) and runs <c>LocalNotifications::Generate</c> (0x00693492).
+    /// It does not touch the robot-rewrite flag <c>+0x1CA</c>.
+    /// </summary>
+    [Fact]
+    public void InitInternalWithNoDeviceDirectorySendsNoActionAndRunsTheTail()
+    {
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        var writes = new List<bool>();
+        var actions = new List<NeedsActionId>();
+        var das = new List<string>();
+        var logs = new List<string>();
+        int generated = 0;
+        needs.WriteToDevice = f => writes.Add(f);
+        needs.NeedsStateSent += actions.Add;
+        needs.SendNeedsLevelsDasEvent += das.Add;
+        needs.LocalNotificationsGenerate = () => generated++;
+        needs.Log += logs.Add;
+
+        needs.InitInternal(0);
+
+        Assert.Equal(new[] { NeedsActionId.NoAction }, actions);
+        Assert.Equal(new[] { true }, writes);
+        Assert.Equal(new[] { "app_start" }, das);
+        Assert.Equal(1, generated);
+        Assert.Contains(logs, l => l.Contains("FAILED to FIND file needsState.json on device"));
+        Assert.False(needs.DeviceDataPresent);          // +0x1C9 = (byte)result
+        Assert.False(needs.RobotRewriteNeeded);         // InitInternal does not touch +0x1CA
+    }
+
+    /// <summary>
+    /// J1/J4/J5: <c>InitInternal</c> with a device directory holding <c>needsState.json</c> reads it,
+    /// sends <c>Decay</c> (0x006936C6) and increments the <c>+0x30 OpenAppAfterDisconnect</c> counter
+    /// (0x006936CE). The counter is observable through <c>Save</c>'s JSON. The
+    /// <c>SendTimeSinceBackgroundedDasEvent</c> guard is <c>+0x20|+0x24 != 0</c> (0x0069771E); the current
+    /// <c>Load</c> does not read <c>TimeLastAppBackgrounded</c> (the named J6/J7 gap), so <c>+0x20/+0x24</c>
+    /// stay 0 and the event does not fire - the guard is tested with the counter only.
+    /// </summary>
+    [Fact]
+    public void InitInternalReadsTheFixedDeviceFileAndSendsDecay()
+    {
+        double clock = 0;
+        var dir = TempDir();
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, NeedsManager.FixedFileName),
+                System.Text.Encoding.UTF8.GetString(NeedsJson(5, 7, 1000, 0.9)));
+            var needs = new NeedsManager(() => clock) { DeviceDirectory = dir };
+            var writes = new List<bool>();
+            var actions = new List<NeedsActionId>();
+            var das = new List<string>();
+            var backgrounded = new List<(int, double)>();
+            var logs = new List<string>();
+            int generated = 0;
+            needs.WriteToDevice = f => writes.Add(f);
+            needs.NeedsStateSent += actions.Add;
+            needs.SendNeedsLevelsDasEvent += das.Add;
+            needs.SendTimeSinceBackgroundedDasEvent += (n, e) => backgrounded.Add((n, e));
+            needs.LocalNotificationsGenerate = () => generated++;
+            needs.Log += logs.Add;
+
+            needs.InitInternal(0);
+
+            Assert.Contains(NeedsActionId.Decay, actions);
+            Assert.DoesNotContain(NeedsActionId.NoAction, actions);
+            Assert.Equal(new[] { true }, writes);
+            Assert.Equal(new[] { "app_start" }, das);
+            Assert.Equal(1, generated);
+            Assert.Contains(logs, l => l.Contains("Successfully read file needsState.json from device"));
+            Assert.True(needs.DeviceDataPresent);
+            Assert.Equal(0.9, needs.State.GetNeedLevel(NeedId.Play), 6);
+
+            // J5: +0x20/+0x24 == 0 -> no needs.app_backgrounded_time event
+            Assert.Empty(backgrounded);
+            // the +0x30 counter incremented: Save writes it as the JSON OpenAppAfterDisconnect
+            var outPath = Path.Combine(dir, "counter.json");
+            needs.Save(outPath, unixTimeSec: 1000);
+            using var doc = JsonDocument.Parse(File.ReadAllText(outPath));
+            Assert.Equal(1, doc.RootElement.GetProperty("OpenAppAfterDisconnect").GetInt32());
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    /// <summary>
+    /// J4: <c>AttemptReadFromDevice</c> 0x00693690..0x00693792 logs and returns false when the fixed file
+    /// is missing, logs and returns false when <c>Load</c> (the engine's <c>ReadFromDevice</c>) fails, and
+    /// on success logs <c>"Successfully read file needsState.json from device"</c> and returns true.
+    /// </summary>
+    [Fact]
+    public void AttemptReadFromDeviceLogsMissingReadFailureAndSuccess()
+    {
+        double clock = 0;
+        var dir = TempDir();
+        try
+        {
+            var needs = new NeedsManager(() => clock) { DeviceDirectory = dir };
+            var logs = new List<string>();
+            needs.Log += logs.Add;
+
+            // missing
+            Assert.False(needs.AttemptReadFromDevice(needs.FixedDeviceFilePath));
+            Assert.Contains(logs, l => l.Contains("FAILED to FIND file needsState.json on device"));
+
+            // present but unreadable (version above 5 makes Load return false)
+            File.WriteAllText(Path.Combine(dir, NeedsManager.FixedFileName),
+                System.Text.Encoding.UTF8.GetString(NeedsJson(6, 7, 1000, 0.9)));
+            Assert.False(needs.AttemptReadFromDevice(needs.FixedDeviceFilePath));
+            Assert.Contains(logs, l => l.Contains("FAILED to read file needsState.json on device"));
+
+            // readable
+            File.WriteAllText(Path.Combine(dir, NeedsManager.FixedFileName),
+                System.Text.Encoding.UTF8.GetString(NeedsJson(5, 7, 1000, 0.9)));
+            Assert.True(needs.AttemptReadFromDevice(needs.FixedDeviceFilePath));
+            Assert.Contains(logs, l => l.Contains("Successfully read file needsState.json from device"));
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    /// <summary>
+    /// J3: <c>TryLoadAlternateDeviceFile</c> falls back to
+    /// <c>&lt;DeviceDirectory&gt;/needsState_&lt;serial&gt;.json</c> when <c>AlternateDeviceFilePath</c> is
+    /// null, so the resolver's per-serial alternate read (C2 row 12) is supplied by the host directory.
+    /// </summary>
+    [Fact]
+    public void TheDeviceDirectorySuppliesThePerSerialAlternateFile()
+    {
+        double clock = 0;
+        var dir = TempDir();
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, NeedsManager.FileNameForSerial(7)),
+                System.Text.Encoding.UTF8.GetString(NeedsJson(5, 7, 1000, 0.9)));
+            var needs = new NeedsManager(() => clock) { DeviceDirectory = dir, NvStorage = null, WriteToDevice = _ => { } };
+            needs.Load(DeviceNeedsFile(5, 1, 1000, 0.1), applyElapsedDecay: false);   // +0x1CC = 1
+            needs.InitAfterSerialNumberAcquired(7);                                   // +0x34 = 7, no robot data
+            Assert.Equal(0.9, needs.State.GetNeedLevel(NeedId.Play), 6);              // the per-serial file won
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    /// <summary>
+    /// J7: <c>FromObb</c> with a device directory wires <c>WriteToDevice</c> to <c>WriteDeviceFile</c> before
+    /// <c>InitInternal</c>, so the startup forced write (0x0069347E) creates <c>needsState.json</c>; the
+    /// same seam serves <c>PossiblyWriteToDevice</c> (0x00695DFA).
+    /// </summary>
+    [Fact]
+    public void FromObbWithADeviceDirectoryWiresTheWriteSeam()
+    {
+        var obb = ObbRoot();
+        if (obb is null) return;
+        var dir = TempDir();
+        try
+        {
+            double clock = 0;
+            var needs = NeedsManager.FromObb(obb, () => clock, new Random(1), deviceDirectory: dir);
+            var path = Path.Combine(dir, NeedsManager.FixedFileName);
+
+            // InitInternal's forced WriteToDevice(true) wrote the file
+            Assert.True(File.Exists(path));
+            using (var doc = JsonDocument.Parse(File.ReadAllText(path)))
+                Assert.Equal(NeedsManager.CurrentStateFileVersion, doc.RootElement.GetProperty("_StateFileVersion").GetInt32());
+
+            // PossiblyWriteToDevice goes through the same seam
+            File.Delete(path);
+            clock = NeedsManager.WriteThrottleSec;
+            needs.PossiblyWriteToDevice();
+            Assert.True(File.Exists(path));
+        }
+        finally { Directory.Delete(dir, true); }
     }
 }

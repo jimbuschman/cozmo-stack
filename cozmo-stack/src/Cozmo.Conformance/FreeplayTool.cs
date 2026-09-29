@@ -9,20 +9,22 @@ namespace Cozmo.Conformance;
 
 /// <summary>
 /// M15: the autonomy layer. <c>freeplay --tree --obb &lt;dir&gt;</c> prints the shipped activity tree with which
-/// behaviours this stack binds; <c>freeplay --simulate --obb &lt;dir&gt; [--ticks 200]</c> runs the freeplay
-/// decision loop offline on a disconnected robot (most behaviours are not runnable without a robot, so it
-/// shows the selection reasons); <c>freeplay &lt;robot-ip&gt; --obb &lt;dir&gt; [--seconds 300] [--acceptance [file]]</c>
-/// runs the whole stack on the robot: vision, manipulation, reactions, needs and freeplay, printing every
-/// activity and behaviour decision (hardware item Z).
+/// behaviours this stack binds; <c>freeplay --simulate --obb &lt;dir&gt; [--ticks 200] [--state-dir &lt;dir&gt;]</c>
+/// runs the freeplay decision loop offline on a disconnected robot (most behaviours are not runnable without
+/// a robot, so it shows the selection reasons); <c>freeplay &lt;robot-ip&gt; --obb &lt;dir&gt; [--seconds 300]
+/// [--acceptance [file]] [--state-dir &lt;dir&gt;]</c> runs the whole stack on the robot: vision, manipulation,
+/// reactions, needs and freeplay, printing every activity and behaviour decision (hardware item Z).
+/// <c>--state-dir</c> is the host directory the needs manager reads and writes <c>needsState.json</c> and the
+/// per-serial <c>needsState_&lt;serial&gt;.json</c> in (J3).
 /// </summary>
 public static class FreeplayTool
 {
     public static async Task<int> Run(string[] a)
     {
         var obb = Arg(a, "--obb");
-        if (a.Length < 2 || obb is null) { Console.WriteLine("freeplay --tree --obb <dir> | freeplay --simulate --obb <dir> [--ticks 200] | freeplay <robot-ip> --obb <dir> [--seconds 300] [--acceptance [file]]"); return 1; }
+        if (a.Length < 2 || obb is null) { Console.WriteLine("freeplay --tree --obb <dir> | freeplay --simulate --obb <dir> [--ticks 200] [--state-dir <dir>] | freeplay <robot-ip> --obb <dir> [--seconds 300] [--acceptance [file]] [--state-dir <dir>]"); return 1; }
         if (a[1] == "--tree") return Tree(obb);
-        if (a[1] == "--simulate") return Simulate(obb, int.TryParse(Arg(a, "--ticks"), out var t) ? t : 200);
+        if (a[1] == "--simulate") return Simulate(obb, int.TryParse(Arg(a, "--ticks"), out var t) ? t : 200, Arg(a, "--state-dir"));
         return await OnRobot(a, obb);
     }
 
@@ -61,7 +63,7 @@ public static class FreeplayTool
         foreach (var s in act.SubActivities) Print(s, stack, depth + 1);
     }
 
-    private static int Simulate(string obb, int ticks)
+    private static int Simulate(string obb, int ticks, string? stateDir)
     {
         using var robot = CozmoRobot.CreateOffline();
         robot.Transport.OfflineAcceptConnection();
@@ -71,7 +73,7 @@ public static class FreeplayTool
         using var m = new ManipulationSystem(robot, vision);
         var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap(), Mood = new MoodState(MoodModel.Load(obb)) };
         double clock = 0;
-        using var stack = FreeplayStack.Create(obb, robot, ctx, () => clock, vision, m, withReactions: false);
+        using var stack = FreeplayStack.Create(obb, robot, ctx, () => clock, vision, m, withReactions: false, needsDirectory: stateDir);
         stack.Freeplay.Log += l => Console.WriteLine("  " + l);
         stack.Needs.Log += l => Console.WriteLine("  needs: " + l);
         Console.WriteLine($"offline robot, {stack.Bound.Count} behaviours bound; ticking {ticks} times at 0.5 s");
@@ -126,7 +128,7 @@ public static class FreeplayTool
         var arbiter = new BehaviorArbiter { AutonomyEnabled = true };
         var ctx = new BehaviorContext { Robot = robot, Triggers = AnimationTriggerMap.Load(obb), Arbiter = arbiter, Mood = new MoodState(MoodModel.Load(obb)) };
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        using var stack = FreeplayStack.Create(obb, robot, ctx, () => sw.Elapsed.TotalSeconds, vision, m);
+        using var stack = FreeplayStack.Create(obb, robot, ctx, () => sw.Elapsed.TotalSeconds, vision, m, needsDirectory: Arg(a, "--state-dir"));
         bool noActivityError = false;
         var behaviorStarts = new List<(double AtSec, string Behavior)>();
         var moodSamples = new List<(double AtSec, Dictionary<EmotionType, double> Values)>();
