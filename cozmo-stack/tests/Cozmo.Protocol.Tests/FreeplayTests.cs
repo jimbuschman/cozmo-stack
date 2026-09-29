@@ -62,7 +62,7 @@ public class FreeplayTests
         needs.SetLevel(NeedId.Energy, 0.7); Assert.Equal(NeedBracketId.Normal, needs.State.GetNeedBracket(NeedId.Energy));   // Normal from 0.6
         needs.SetLevel(NeedId.Energy, 0.5); Assert.Equal(NeedBracketId.Warning, needs.State.GetNeedBracket(NeedId.Energy));  // Warning from 0.21
         var changes = new List<(NeedId, NeedBracketId, NeedBracketId)>();
-        needs.BracketChanged += (n, a, b) => changes.Add((n, a, b));
+        needs.BracketChanged += (n, a, b, _) => changes.Add((n, a, b));
         needs.SetLevel(NeedId.Energy, 0.0); Assert.Equal(NeedBracketId.Critical, needs.State.GetNeedBracket(NeedId.Energy));
         Assert.Equal(0.03, needs.State.GetNeedLevel(NeedId.Energy), 6);           // clamped to the minimum
         Assert.Contains((NeedId.Energy, NeedBracketId.Warning, NeedBracketId.Critical), changes);
@@ -561,6 +561,33 @@ public class FreeplayTests
     }
 
     /// <summary>
+    /// J11 (0x00695F02..0x00695F6A): on unpause the engine adds the pause duration to each need's
+    /// <c>+0x1f0</c> (the per-need pause start) and <c>+0x214</c> (the bracket-change clock) always, as it
+    /// does <c>+0x1e4</c>. The constructor zeroes <c>+0x1f0</c> and seeds <c>+0x214</c> to the init time
+    /// (J9/J10).
+    /// </summary>
+    [Fact]
+    public void TheUnpauseShiftsThePerNeedPauseStartAndTheBracketChangeClock()
+    {
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
+        {
+            Assert.Equal(0.0, needs.NeedPauseStartSec(n), 6);      // the ctor zeroes +0x1f0
+            Assert.Equal(0.0, needs.BracketChangedSec(n), 6);      // the ctor seeds +0x214 = now
+        }
+
+        clock = 10; needs.SetPaused(true);
+        clock = 30; needs.SetPaused(false);                        // a 20 s pause
+
+        foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
+        {
+            Assert.Equal(20.0, needs.NeedPauseStartSec(n), 6);     // +0x1f0 += pauseDuration always
+            Assert.Equal(20.0, needs.BracketChangedSec(n), 6);     // +0x214 += pauseDuration always
+        }
+    }
+
+    /// <summary>
     /// A Full need's cooldown window is excluded from its decay. <c>ApplyDecayAllNeeds</c> 0x00695CFE, on
     /// the passed-deadline branch (0x00695D5A..0x00695D6A), adds <c>+0x208 - +0x1FC</c> (the deadline minus
     /// the fill time) to <c>+0x1E4</c> before decaying, so only the time after the deadline is decayed, not
@@ -658,6 +685,41 @@ public class FreeplayTests
         Assert.False(needs.Connected);
         Assert.Equal(5, needs.LastDisconnectSec, 6);
         Assert.Equal(new[] { true }, writes);
+    }
+
+    /// <summary>
+    /// M15-016 (J13): <c>CozmoEngine::HandleMessage&lt;ConnectToRobot&gt;</c> 0x004ED018..0x004ED11C calls
+    /// <c>NeedsManager::InitAfterConnection</c> 0x004ED10E unconditionally after AddRobot. The engine's
+    /// <c>CozmoEngine.ConnectToRobotHandled</c> edge is raised from <c>CozmoEngine.ConnectToRobot</c>; the
+    /// stack subscribes to it and replays it once when Robot 1 already exists at creation (the offline rig's
+    /// engine has one). <c>CozmoEngine.ConnectToRobot</c> cannot complete a real transport connection in this
+    /// test, so the raised-edge path is invoked directly.
+    /// </summary>
+    [Fact]
+    public void TheConnectToRobotEdgeAndReplayCallInitAfterConnection()
+    {
+        var obb = ObbRoot();
+        if (obb is null) return;
+        using var rig = new Rig();
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        Assert.False(needs.AwaitingRobotData);
+
+        using var stack = FreeplayStack.Create(obb, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs, withReactions: false);
+        // the replay: Robot 1 already exists, so InitAfterConnection ran at creation (+0x3d0 = 1)
+        Assert.True(needs.AwaitingRobotData);
+
+        // the edge itself: a fresh manager that starts with +0x3d0 clear gets it set by the raised edge, and
+        // the stack's subscription is what makes a later ConnectToRobot handling set the stack's manager again.
+        var edgeNeeds = new NeedsManager(() => clock);
+        Assert.False(edgeNeeds.AwaitingRobotData);
+        rig.Robot.Engine.ConnectToRobotHandled += edgeNeeds.InitAfterConnection;
+        needs.OnRobotDisconnected();
+        Assert.False(needs.Connected);
+        rig.Robot.Engine.ConnectToRobotHandled?.Invoke();
+        Assert.True(edgeNeeds.AwaitingRobotData);
+        Assert.True(needs.Connected);
+        rig.Robot.Engine.ConnectToRobotHandled -= edgeNeeds.InitAfterConnection;
     }
 
     /// <summary>
@@ -1282,19 +1344,23 @@ public class FreeplayTests
     {
         double clock = 0;
         var needs = new NeedsManager(() => clock);
-        needs.SetLevel(NeedId.Energy, 0.0);                 // Energy cache becomes Critical
+        needs.SetLevel(NeedId.Energy, 0.0);                 // Energy cache becomes Critical; +0x214 written at 0
         needs.State.SetNeedLevel(NeedId.Energy, 1.0);       // current Full; the cache stays Critical
-        var changes = new List<(NeedId, NeedBracketId, NeedBracketId)>();
-        needs.BracketChanged += (n, a, b) => changes.Add((n, a, b));
+        var changes = new List<(NeedId, NeedBracketId, NeedBracketId, double)>();
+        needs.BracketChanged += (n, a, b, elapsed) => changes.Add((n, a, b, elapsed));
 
         needs.DetectBracketChangeForDas(true);
         Assert.Equal(3, changes.Count);                     // all three, even the two unchanged
-        Assert.Contains((NeedId.Energy, NeedBracketId.Critical, NeedBracketId.Full), changes);
+        Assert.Contains((NeedId.Energy, NeedBracketId.Critical, NeedBracketId.Full, 0.0), changes);
 
         changes.Clear();
+        clock = 5;
         needs.DetectBracketChangeForDas(false);             // +0x214 was not updated by the force
         Assert.Equal(1, changes.Count);
-        Assert.Contains((NeedId.Energy, NeedBracketId.Critical, NeedBracketId.Full), changes);
+        // J10: the elapsed is now - +0x214; the force pass did not write +0x214, so it is measured from the
+        // last conditional write at t=0, and this conditional pass writes +0x214 = 5.
+        Assert.Contains((NeedId.Energy, NeedBracketId.Critical, NeedBracketId.Full, 5.0), changes);
+        Assert.Equal(5.0, needs.BracketChangedSec(NeedId.Energy), 6);
     }
 
     /// <summary>

@@ -536,7 +536,7 @@ public sealed class NeedsManager
     private bool _writeToRobotError;
     /// <summary><c>+0x1cb</c>: the device file's <c>versionUpdated</c> out-flag, set when an old device format needs rewriting (C2 row 1, Appendix I1).</summary>
     private bool _deviceVersionUpdated;
-    /// <summary><c>+0x1d4</c>: whether a robot is connected (the flag <c>Update</c> passes as <c>robot != 0</c>).</summary>
+    /// <summary><c>+0x4</c>: whether a robot is connected (the flag <c>Update</c> passes as <c>robot != 0</c>; J12). <c>+0x1d4</c> is a separate field (the notification gate <c>LocalNotifications::ShouldBeRegistered</c> reads, J12) and is not modelled here.</summary>
     private bool _robotConnected = true;
     /// <summary>The clock time the current pause began (<c>+0x1d8</c>, 0x00695EB6).</summary>
     private double _pausedAtSec;
@@ -547,6 +547,22 @@ public sealed class NeedsManager
     /// 0x00698918; <c>ApplyDecayAllNeeds</c> skips a paused need (0x00695D36).
     /// </summary>
     private readonly bool[] _needPaused = new bool[3];
+    /// <summary>
+    /// <c>+0x1f0/+0x1f4/+0x1f8</c> (J9): the clock time a need's per-need pause began. The constructor zeroes
+    /// it (0x00692264); <c>HandleMessage&lt;SetNeedsPauseStates&gt;</c> sets it to <c>+0x3ac</c> when a need
+    /// becomes paused (0x00698A48) and reads it when the pause is unwound (0x00698A18); <c>SetPaused</c>'s
+    /// unpause adds the pause duration always (0x00695F40). That game message is unbuilt, so this stack only
+    /// shifts the field.
+    /// </summary>
+    private readonly double[] _needPauseStartSec = new double[3];
+    /// <summary>
+    /// <c>+0x214/+0x218/+0x21c</c> (J10): the clock time a need's bracket last changed. <c>InitReset</c>
+    /// seeds it to <c>+0x3ac</c> (0x006935BC); <c>DetectBracketChangeForDas</c> reads it (0x006959D6),
+    /// computes the DAS elapsed <c>now - +0x214</c> (0x006959FA) and writes <c>+0x214 = now</c> only when
+    /// <c>force == 0</c> (0x00695BA2); <c>SetPaused</c>'s unpause adds the pause duration always
+    /// (0x00695F66).
+    /// </summary>
+    private readonly double[] _bracketChangedSec = new double[3];
     /// <summary><c>this+8/+0xc</c>: the stored write time for the 61 ms rate limiter (0x00695DD2).</summary>
     private double _lastWriteSec;
     /// <summary><c>+0x1b8</c>: the needs levels copied at disconnect before the DAS bracket check (0x00695930).</summary>
@@ -568,6 +584,7 @@ public sealed class NeedsManager
         {
             _lastDecaySec[n] = now;
             _prevBrackets[n] = State.GetNeedBracket(n);
+            _bracketChangedSec[(int)n] = now;      // J10: InitReset seeds +0x214 = +0x3ac; +0x1f0 stays 0
         }
     }
 
@@ -601,7 +618,11 @@ public sealed class NeedsManager
         Log?.Invoke("needs.freeplay_sparks_awarded");
         SparksRewardAwarded?.Invoke();
     }
-    public event Action<NeedId, NeedBracketId, NeedBracketId>? BracketChanged;
+    /// <summary>
+    /// Raised by <see cref="DetectBracketChangeForDas"/>; the fourth argument is the DAS elapsed
+    /// <c>now - +0x214</c> (J10: read 0x006959D6, elapsed 0x006959FA).
+    /// </summary>
+    public event Action<NeedId, NeedBracketId, NeedBracketId, double>? BracketChanged;
     public event Action<string>? Log;
 
     public static NeedsManager FromObb(string obbRoot, Func<double> clockSec, Random? random = null)
@@ -693,6 +714,14 @@ public sealed class NeedsManager
     /// <summary>Whether a need's <c>+0x1dc</c> pause flag is set.</summary>
     // fidelity: M15-001
     public bool IsNeedPaused(NeedId need) { lock (_gate) return _needPaused[(int)need]; }
+
+    /// <summary><c>+0x1f0</c> (J9): the clock time a need's per-need pause began; zero until a pause unwinds.</summary>
+    // fidelity: M15-016
+    public double NeedPauseStartSec(NeedId need) { lock (_gate) return _needPauseStartSec[(int)need]; }
+
+    /// <summary><c>+0x214</c> (J10): the clock time a need's bracket last changed.</summary>
+    // fidelity: M15-016
+    public double BracketChangedSec(NeedId need) { lock (_gate) return _bracketChangedSec[(int)need]; }
 
     /// <summary>
     /// <c>NeedsManager::SendNeedsStateToGame(action)</c> 0x0069383C: refreshes the brackets, builds the
@@ -797,8 +826,9 @@ public sealed class NeedsManager
     /// <c>NeedsManager::DetectBracketChangeForDas(force)</c> 0x00695958: for each need the engine enters the
     /// event branch when the cached bracket (<c>+0x214</c>) differs from the current one <b>or</b>
     /// <paramref name="force"/> is set. On <paramref name="force"/> it emits for all three needs even when
-    /// unchanged and does <b>not</b> update the cached bracket; the disconnect path passes <c>true</c>. The
-    /// app-facing DAS wire is unbuilt, so the host observes <see cref="BracketChanged"/>.
+    /// unchanged and does <b>not</b> update the cached bracket; the disconnect path passes <c>true</c>. Each
+    /// emission carries the DAS elapsed <c>now - +0x214</c> (J10). The app-facing DAS wire is unbuilt, so the
+    /// host observes <see cref="BracketChanged"/>.
     /// </summary>
     // fidelity: M15-016
     public void DetectBracketChangeForDas(bool force) => DetectBracketChanges(force);
@@ -817,9 +847,10 @@ public sealed class NeedsManager
     /// (0x00695E0C..0x00695E12). Pausing stores <c>+0x1d5 = 1</c>, the pause time <c>+0x1d8 = now</c> and
     /// the owed decay time <c>+0x3b4 = +0x3b0 - now</c>, then <c>SendNeedsStateToGame(NoAction)</c> and the
     /// forced <c>WriteToDevice(this, true)</c>. Unpausing stores <c>+0x1d5 = 0</c>, shifts <c>+0x3b0</c> to
-    /// <c>now + +0x3b4</c> and adds the pause duration to each need's schedule; it sends no state and writes
-    /// nothing. Both non-redundant branches end with <c>LocalNotifications::SetPaused</c> and
-    /// <c>SendNeedsPauseStateToGame</c> (0x00695F6C..0x00695F78).
+    /// <c>now + +0x3b4</c> and adds the pause duration to each need's <c>+0x1e4</c>, <c>+0x1f0</c> and
+    /// <c>+0x214</c> always, and to <c>+0x208</c>/<c>+0x1fc</c> only when <c>+0x208 != 0</c> (J11); it sends
+    /// no state and writes nothing. Both non-redundant branches end with <c>LocalNotifications::SetPaused</c>
+    /// and <c>SendNeedsPauseStateToGame</c> (0x00695F6C..0x00695F78).
     ///
     /// This is reached <b>only</b> from app game messages: SetGameBeingPaused (tag 85),
     /// SetNeedsPauseState (tag 201, live through the generated invoker <c>FUN_0069B0E2</c>; the named
@@ -847,11 +878,15 @@ public sealed class NeedsManager
                 _paused = false;
                 double pauseDuration = now - _pausedAtSec;
                 _nextDecaySec = now + _pausedRemainingSec;        // +0x3b0 = now + +0x3b4
-                // C1 §6: the engine adds pauseDuration to each need's +0x1e4 (last decay) and, when non-zero,
-                // +0x208 (the fullness deadline) and +0x1FC (the fullness start). This stack keeps exactly
-                // those three per-need times.
+                // J11 (0x00695F02..0x00695F6A): the engine adds pauseDuration to each need's +0x1e4 (last
+                // decay) and +0x1f0 (the per-need pause start) always, and to +0x208 (the fullness deadline)
+                // and +0x1fc (the fullness start) only when +0x208 != 0, and to +0x214 (the bracket-change
+                // clock) always. This stack keeps the fullness start and derives its deadline as
+                // fill + cooldown.
                 foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
                 {
+                    _needPauseStartSec[(int)n] += pauseDuration;  // +0x1f0 always (0x00695F40)
+                    _bracketChangedSec[(int)n] += pauseDuration;  // +0x214 always (0x00695F66)
                     if (_lastDecaySec.TryGetValue(n, out var last)) _lastDecaySec[n] = last + pauseDuration;
                     if (_fullnessStartSec.TryGetValue(n, out var start)) _fullnessStartSec[n] = start + pauseDuration;
                     if (_fullnessDeadlineSec.TryGetValue(n, out var deadline)) _fullnessDeadlineSec[n] = deadline + pauseDuration;
@@ -1457,17 +1492,25 @@ public sealed class NeedsManager
 
     private void DetectBracketChanges(bool force = false)
     {
+        double now = _clockSec();
         foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
         {
             var b = State.GetNeedBracket(n);
             // 0x00695958 enters the event branch when cached (+0x214) != current or force is set.
             if (b != _prevBrackets[n] || force)
             {
+                // J10: the DAS elapsed is now - +0x214, read before the emit (0x006959D6, 0x006959FA).
+                double elapsed = now - _bracketChangedSec[(int)n];
                 Log?.Invoke($"need {n}: {_prevBrackets[n]} -> {b} (level {State.GetNeedLevel(n):F3})");
                 if (b != NeedBracketId.Critical) _severeExpressed.Remove(n);
-                BracketChanged?.Invoke(n, _prevBrackets[n], b);
-                // The force path emits for every need and does not update the cached bracket (+0x214).
-                if (!force) _prevBrackets[n] = b;
+                BracketChanged?.Invoke(n, _prevBrackets[n], b, elapsed);
+                // The force path emits for every need and does not update the cached bracket (+0x214);
+                // only the conditional pass writes +0x214 = now (0x00695BA2).
+                if (!force)
+                {
+                    _prevBrackets[n] = b;
+                    _bracketChangedSec[(int)n] = now;
+                }
             }
         }
     }

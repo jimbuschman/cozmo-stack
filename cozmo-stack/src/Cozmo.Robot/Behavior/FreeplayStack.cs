@@ -119,6 +119,19 @@ public sealed class FreeplayStack : IDisposable
         system.SparkPauseChanged = p => tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.Spark, p);
         var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker) { Problems = problems };
 
+        // fidelity: M15-016
+        // J13: CozmoEngine::HandleMessage<ConnectToRobot> 0x004ED018..0x004ED11C calls
+        // NeedsManager::InitAfterConnection 0x004ED10E unconditionally after AddRobot (the AddRobot-failed
+        // and the success path both reach 0x004ED10A), then DASPauseUploadingToServer(1). The engine owns the
+        // ConnectToRobot handling, so it exposes the edge; this stack, which owns the NeedsManager,
+        // subscribes. It comes before the serial edge because the engine's order is ConnectToRobot then the
+        // mfgId tag-0xED callback. A stack created after the handshake (Robot 1 already exists) replays the
+        // edge once, as the serial edge does below.
+        void onConnect() => needs.InitAfterConnection();
+        robot.Engine.ConnectToRobotHandled += onConnect;
+        stack._unsubscribe.Add(() => robot.Engine.ConnectToRobotHandled -= onConnect);
+        if (robot.Engine.Robot is not null) onConnect();
+
         // fidelity: M15-014
         // C2 rows 5-9: the mfgId tag-0xED callback calls ConnectRobotToNeedsManager(mfgId word 0), whose
         // wrapper chain ends at NeedsManager::InitAfterSerialNumberAcquired. The engine owns the handshake,
@@ -156,14 +169,13 @@ public sealed class FreeplayStack : IDisposable
         void onRemoved() => needs.OnRobotDisconnected();
         robot.RobotRemoved += onRemoved;
         stack._unsubscribe.Add(() => robot.RobotRemoved -= onRemoved);
-        // MISSING (M15-016, named gap): the engine calls NeedsManager::InitAfterConnection from
-        // CozmoEngine::HandleMessage<ConnectToRobot> 0x004ED10E, unconditionally after AddRobot. This
-        // stack's ConnectToRobot (CozmoEngine.ConnectToRobot / CozmoRobot.ConnectToRobot) posts a game
-        // message and exposes no event for that handler; Engine.ConnectionResponse is the later handshake
-        // response (BroadcastConnectionResponse), not the ConnectToRobot seam, so wiring it there would be
-        // wrong. The public NeedsManager.InitAfterConnection remains the seam the host calls at ConnectToRobot
-        // handling. M15-016 also needs the SetPaused game-message callers (tags 85/201/200/241/242) and the
-        // +0x1F0/+0x214 unpause shifts, so the record stays IMPLEMENTATION_GAP.
+        // M15-016: the ConnectToRobot -> InitAfterConnection edge is now wired above (J13): CozmoEngine
+        // exposes ConnectToRobotHandled and this stack subscribes, with a replay when Robot 1 already exists
+        // at creation. What remains unbuilt, so the record stays IMPLEMENTATION_GAP: the SetPaused
+        // game-message callers (SetGameBeingPaused tag 85, SetNeedsPauseState tag 201, RegisterOnboardingComplete
+        // tag 200, EnterSdkMode/ExitSdkMode tags 241/242) - this stack has no game-message channel for them;
+        // the +0x1F0 per-need pause-start consumer (HandleMessage<SetNeedsPauseStates> 0x00698918) and the
+        // +0x214 DAS-elapsed consumer (the app-facing DAS wire, which the host sees through BracketChanged).
 
         // ActivityFreeplay::HandleMessage<RobotOffTreadsStateChanged>: being put back down kicks the activity
         // out and re-picks from what is around. That is part of what this stack assembles, so it is wired here

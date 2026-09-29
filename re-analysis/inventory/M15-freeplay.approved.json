@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "7cce8681d800bf7e2d4bd2b125060e0ada913ae26a0ed839909e45212e5e703a",
+  "inventory_sha256": "ba5ecf630c6b162e8e6f891dbd5ac22662e979668ab41fc3839f32bfaf23c62d",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -13,7 +13,9 @@
         "NeedsManager::Init 0x00692574",
         "NeedsManager::Update 0x00695C9C",
         "NeedsState::UpdateCurNeedsBrackets 0x0069C12C",
-        "needs_config.json"
+        "needs_config.json",
+        "NeedsManager::Init time threading 0x004EC9DA..0x004ECA0A, 0x0069257E, 0x006926CE, 0x006934B0, 0x0069358A..0x0069359E",
+        "NeedsManager::PossiblyWriteToDevice 0x00695DC4 (0x03A2C940 against a microsecond clock = 61 s; ApplyDecayForTimeSinceLastDeviceWrite divides by 1e6 at 0x0069532C)"
       ],
       "live_path": true,
       "hardware_required": false
@@ -171,7 +173,7 @@
       "title": "Needs connection and per-serial persistence lifecycle",
       "authority": "libcozmoEngine.so",
       "evidence": [
-        "NeedsManager::InitInternal 0x00693444..0x0069348E",
+        "NeedsManager::InitInternal 0x00693444..0x00693492",
         "NeedsManager::AttemptReadFromDevice 0x00693690..0x00693790",
         "NeedsManager::ReadFromDevice 0x006998B4..0x00699BB8",
         "RobotInitialConnection::OnNotified mfgId registration 0x0052DE04..0x0052DE40",
@@ -195,7 +197,15 @@
         "NVStorageComponent::HandleNVOpResult 0x00642F8C..0x00643937 (op dispatch 0x0064304A..0x00643052; WRITE terminal 0x00643054..0x00643424, callback result 0x006433F6)",
         "NeedsManager::ApplyDecayForTimeSinceLastDeviceWrite 0x00695304..0x00695374 (call sites 0x006936BE and 0x00694AF8 bool=false; 0x006990E8 bool=robot!=0)",
         "NeedsManager::ApplyDecayAllNeeds 0x00695CFE (connected table 0x00695D1E, unconnected 0x00695D16)",
-        "NeedsState::ApplyDecay 0x0069C3C0"
+        "NeedsState::ApplyDecay 0x0069C3C0",
+        "NeedsManager::InitReset 0x006934A8..0x006935E0 (per-need loop 0x006935A2..0x006935CC; +0x3B0 = +0x130 + init time 0x0069358A..0x0069359E; memclr 0x006935D6)",
+        "NeedsManager::DeviceHasNeedsState 0x00699870 (this+0x3C4 + filename 0x00699878..0x00699884); the ctor's DataPlatform::pathToResource(\"nurture/\") 0x006921A6..0x006921D8",
+        "NeedsManager::AttemptReadFromDevice success tail 0x006936B0..0x0069371C (+0x1B8/+0x1BC = +8/+0xC, ApplyDecay(false), SendNeedsStateToGame(1), +0x30 += 1, SendTimeSinceBackgroundedDasEvent)",
+        "NeedsManager::SendTimeSinceBackgroundedDasEvent 0x0069770C..0x006977AA (needs.app_backgrounded_time 0x00697844; reads +0x30 0x0069772E)",
+        "NeedsManager::ReadFromDevice field/version contract 0x006998C8..0x00699BB2 (out Boolean 0x00699BA0 only when version < 5, v>=5 jumps 0x00699B8E -> 0x00699BA6; version branches 0x00699A0C, 0x00699B18, 0x00699B44, 0x00699B72, 0x00699B74)",
+        "NeedsManager::WriteToDevice 0x00693BB0..0x00693F18 (refreshDateTime 0x00693BC4; key set 0x00693BD8..0x00693E9C; DataPlatform::writeAsJson 0x00693EE6)",
+        "LocalNotifications::Generate 0x0068CA9C (feature gate 0xb 0x0068CABC; next-generate +0x18 0x0068CCC4; tail branch 0x00693492)",
+        "+0x30 OpenAppAfterDisconnect counter 0x006936CE, 0x006990EC, 0x00695922, 0x00699A1C, 0x00693CC6"
       ],
       "live_path": true,
       "hardware_required": false
@@ -222,7 +232,13 @@
       "authority": "libcozmoEngine.so",
       "evidence": [
         "NeedsManager::SetPaused 0x00695E04",
-        "NeedsManager::OnRobotDisconnected 0x00695908"
+        "NeedsManager::OnRobotDisconnected 0x00695908",
+        "NeedsManager::SetPaused unpause shift 0x00695F02..0x00695F6A (+0x1E4/+0x1F0/+0x214 always; +0x208/+0x1FC when +0x208 != 0)",
+        "NeedsManager::DetectBracketChangeForDas 0x00695958 (+0x214 read 0x006959D6, elapsed 0x006959FA, update 0x00695BA2 only when force == 0)",
+        "NeedsManager::HandleMessage<SetNeedsPauseStates> 0x00698918 (+0x1F0 write 0x00698A48, read 0x00698A18; unbuilt game message)",
+        "NeedsManager::InitAfterConnection 0x00694384..0x0069439C (+4 robot pointer, +0x3D0 = 1, +0x1D4 = 1)",
+        "CozmoEngine::HandleMessage<ConnectToRobot> 0x004ED018..0x004ED11C (InitAfterConnection 0x004ED10E unconditionally after AddRobot, DASPauseUploadingToServer 0x004ED114)",
+        "NeedsManager::ApplyDecayForTimeSinceLastDeviceWrite caller HandleMessage<SetGameBeingPaused> 0x006990E8; +0x30 increment 0x006990EC; +0x20 write 0x00698FA6 (unbuilt game message)"
       ],
       "live_path": true,
       "hardware_required": false

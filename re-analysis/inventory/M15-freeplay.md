@@ -669,3 +669,158 @@ record and batch.
   `NeedsManager::ApplyDecayAllNeeds 0x00695CFE` (connected/unconnected tables `0x00695D16..0x00695D1E`)
   and `NeedsState::ApplyDecay 0x0069C3C0`.
 
+## Appendix J — correction C5 (R-M15, 2026-09-29)
+
+Source: `re-analysis/research/20260929-R-M15-M15-freeplay-gap1-extraction.md` (gap pass 1) and
+`re-analysis/research/20260929-R-M15-M15-freeplay-gap2-extraction.md` (gap pass 2). The manager
+spot-checked the instruction stream at every row below. One extractor row was corrected by the
+spot-check: `ReadFromDevice` sets its out Boolean only when the version is **below 5** (the v>=5 path
+at 0x00699B8E jumps over the store at 0x00699BA0 to 0x00699BA6), which agrees with C2 row 3, not with
+gap pass 2's summary line. Citations are Thumb VAs; the Ghidra decompilation was navigation only.
+
+### J1 — `NeedsManager::InitInternal` 0x00693444..0x00693492 (full body)
+
+`InitReset(this, float=r1, param2=-1, param3=0)` (`mov.w r2,#-1` 0x00693446, `movs r3,#0`
+0x0069344A, `blx 0x4bd9bc` 0x00693450); `+0x1CB = 0` (0x0069345C); `+0x1C9 = 0` (0x00693462);
+`AttemptReadFromDevice(this, "needsState.json", &+0x1CB)` (0x00693466); `+0x1C9 = (byte)result`
+(0x0069346C); if result == 0 `SendNeedsStateToGame(this, 0)` (0x00693476); `WriteToDevice(this, true)`
+(0x0069347E); `SendNeedsLevelsDasEvent(this, "app_start")` (literal at 0x0069349C, 0x00693486);
+tail branch to `LocalNotifications::Generate(this[0x1B0])` (`b.w 0x8cd8ac` 0x00693492 → body
+0x0068CA9C). +0x1CA is not touched.
+
+### J2 — `NeedsManager::InitReset` 0x006934A8..0x006935E0
+
+The onboarding-skipped branch is taken when the 4th argument (r3) is 1 **and** `+0x1C8 != 0`
+(0x006934B4..0x006934BE); `InitInternal` passes 0, so it always takes the else branch:
+`NeedsState::Init(this+8, this+0x128, r2=-1, &shared_ptr<StarRewardsConfig>, RNG)` (0x0069357E). Then
+`+0x3B0 = +0x130 + <the float argument>` (0x0069358A..0x0069359E; the addend is the passed float,
+which is the same `BaseStationTimer` time as `+0x3AC`; see J14). The per-need loop (0x006935A2..0x006935CC,
+stride 4, three iterations) writes `+0x1E4/+0x1E8/+0x1EC = +0x3AC`, `+0x1FC/+0x200/+0x204 = 0`,
+`+0x208/+0x20C/+0x210 = 0`, `+0x214/+0x218/+0x21C = +0x3AC`, and the six pause-flag bytes
+`+0x1DC..+0x1E1 = 0`. It does **not** write `+0x1F0`. `__aeabi_memclr4(this+0x244, 0x158)` at 0x006935D6.
+
+### J3 — the device file location is host business
+
+The ctor 0x0069210C builds `this+0x3C4 = DataPlatform::pathToResource(DataPlatform, "nurture/")`
+(`"nurt"`/`"ure/"` literals at 0x006921A6..0x006921CE, call 0x006921D8). The fixed filename is the
+global `"needsState.json"` at 0x0105C2AC, built by `_INIT_48` 0x004D8DDC..0x004D8E26 from `"needsState"`
+and `".json"`. `DeviceHasNeedsState` 0x00699870 concatenates `this+0x3C4 + filename` (0x00699878/0x0069987E)
+and tests `FileUtils::FileExists` (0x00699884). `ReadFromDevice` uses `DataPlatform::readAsJson`
+(0x006998E4) and `WriteToDevice` uses `DataPlatform::writeAsJson(scope, "nurture/needsState.json", json)`
+(0x00693EA0..0x00693EE6, PLT 0x004A6514). The only engine constants are `"nurture/"` and
+`"needsState.json"`; the directory resolution is the host DataPlatform. The stack's directory/path is
+therefore a host seam, not a divergence.
+
+### J4 — `NeedsManager::AttemptReadFromDevice` 0x00693690..0x00693792
+
+If `DeviceHasNeedsState` is false (0x0069369A/0x006936A0) it logs `"FAILED to FIND file %s on device"`
+and returns 0 (0x0069378C). If `ReadFromDevice` != 1 (0x006936A8/0x006936AE) it logs
+`"FAILED to read file %s on device"` and returns 0. On success: `+0x1B8/+0x1BC = +8/+0xC` (0x006936B6);
+`ApplyDecayForTimeSinceLastDeviceWrite(this, false)` (0x006936BE); `SendNeedsStateToGame(this, 1 = Decay)`
+(0x006936C6); `+0x30 += 1` (0x006936CA/0x006936CE); `SendTimeSinceBackgroundedDasEvent(this)` (0x006936D2);
+logs `"Successfully read file %s from device"`; returns 1 (0x0069371C).
+
+### J5 — `+0x30` (`OpenAppAfterDisconnect`) and `SendTimeSinceBackgroundedDasEvent`
+
+`+0x30` is an **int counter**, the JSON key `OpenAppAfterDisconnect`: loaded by `ReadFromDevice`
+0x00699A1C (`asInt`), written by `WriteToDevice` 0x00693CC6 (`Value(int)`), `+1` on a successful
+`AttemptReadFromDevice` (0x006936CE) and on the unpause branch of `HandleMessage<SetGameBeingPaused>`
+(0x006990EC/0x006990F2), reset to 0 by `OnRobotDisconnected` (0x00695922). It is the `"$data"` of the
+event. `NeedsManager::SendTimeSinceBackgroundedDasEvent` 0x0069770C emits `"needs.app_backgrounded_time"`
+(string 0x00697844) with data `("$data" 0x00BE44C1, to_string(+0x30))` and elapsed
+`to_string((now - +0x20)/1_000_000)`; it emits nothing when `+0x20|+0x24 == 0` (0x0069771E). The stack's
+`_openAppAfterDisconnect` is a bool and must become this int counter.
+
+### J6 — `NeedsManager::ReadFromDevice` 0x006998B4..0x00699BB8 contract
+
+Clears the out Boolean first (0x006998C8). `readAsJson` failure returns 0 (0x006998F8 → 0x00699986).
+Version `_StateFileVersion` `>= 6` is rejected (`sVerifyFailedReturnFalse`, 0x0069990E/0x00699924,
+return 0). Key set and destination (from `_INIT_48` 0x004D8DDC..0x004D9142): `_DateTime` (×1e6 to
++0x8/+0xC), `_SerialNumber` (asUInt to +0x34), `CurNeedsUnlockLevel`/`NumStarsAwarded`/
+`NumStarsForNextUnlock` (asInt to +0x54/+0x58/+0x5C), `CurNeedLevel` (object keyed by
+`EnumToString(NeedId)`, asInt/100000.0 into the level map), `PartIsDamaged` (object keyed by
+`EnumToString(RepairablePartId)`, asBool), `TimeCreated`/`TimeLastStarAwarded`/`TimeLastDisconnect`/
+`TimeLastAppBackgrounded` (×1e6), `OpenAppAfterDisconnect` (asInt), `ForceNextSong`
+(`UnlockIdFromString`). Version branches: v<3 zeroes +0x18..+0x30 (0x00699A0C..0x00699A1C); v<=1 zeroes
++0x60/+0x64/+0x68/+0x10/+0x14 (0x00699B18..0x00699B9C); v 2-3 zero `ForceNextSong`/`TimeCreated`
+(0x00699B44/0x00699B72); v 4 zeroes `TimeCreated` (0x00699B72); v>=5 loads `TimeCreated` (0x00699B74).
+Out Boolean is set **only when version < 5** (0x00699B8E jumps over 0x00699BA0 to 0x00699BA6). Sets
+the dirty flag +0x90 (0x00699BA8), calls `NeedsState::UpdateCurNeedsBrackets` (0x00699BB2), returns 1.
+
+### J7 — `NeedsManager::WriteToDevice(bool refreshDateTime)` 0x00693BB0
+
+If `refreshDateTime`, `+8/+0xC = system_clock::now()` (0x00693BC4/0x00693BCC). Writes `_StateFileVersion`
+= 5, `_DateTime` = +8/+0xC / 1e6, `TimeCreated`, `TimeLastDisconnect`, `TimeLastAppBackgrounded`
+(÷1e6), `OpenAppAfterDisconnect` (int), `_SerialNumber`, `CurNeedsUnlockLevel`, `NumStarsAwarded`,
+`NumStarsForNextUnlock`, `CurNeedLevel` (object, `round(level*100000)`), `PartIsDamaged` (object,
+bool), `TimeLastStarAwarded` (÷1e6), `ForceNextSong` (`EnumToString(UnlockId)`), through
+`DataPlatform::writeAsJson`. A write failure logs `sErrorF` and sets `_errG` (0x00693F08..0x00693F18).
+
+### J8 — `LocalNotifications::Generate` 0x0068CA9C
+
+Feature gate `CozmoFeatureGate::IsFeatureEnabled(FeatureType 0xb)` (0x0068CABC; Unity names it
+`LocalNotifications`); when disabled it returns with no effect. When enabled it sends
+`MessageEngineToGame(ClearNotificationCache)` and one `CacheNotificationToSchedule` per registered item
+to the ExternalInterface, and sets `LocalNotifications+0x18 = NeedsManager[0x3AC] + 60.0`
+(0x0068CCC4). It writes nothing back to the NeedsManager and does not touch the device.
+
+### J9 — the per-need `+0x1F0` field
+
+Three floats at stride 4 (`+0x1F0/+0x1F4/+0x1F8`): the clock time a need's **per-need pause began**.
+Writers: ctor zero (0x00692264), `HandleMessage<SetNeedsPauseStates>` sets it to `+0x3AC` when a need
+becomes paused (0x00698A48) and reads it when the pause is unwound (0x00698A18), `SetPaused` adds the
+pause duration (0x00695F2C/0x00695F38/0x00695F40). `InitReset` does **not** write it. Its consumer is
+the unbuilt `SetNeedsPauseStates` message (M15-001).
+
+### J10 — the per-need `+0x214` field
+
+Three floats at stride 4 (`+0x214/+0x218/+0x21C`): the clock time a need's **bracket last changed**.
+`InitReset` seeds it to `+0x3AC` (0x006935BC); `DetectBracketChangeForDas` 0x00695958 reads it
+(0x006959D6), computes the DAS elapsed `now - +0x214` (0x006959FA), and writes `+0x214 = now` only
+when `force == 0` (0x00695B98/0x00695BA2); `SetPaused` adds the pause duration (0x00695F5E..0x00695F66).
+
+### J11 — `SetPaused` unpause loop 0x00695F02..0x00695F6A
+
+`elapsed = now - +0x1D8` (0x00695F10); `+0x3B0 = now + +0x3B4` (0x00695F18); for each of three needs
+(stride 4): `+0x1E4 += elapsed` and `+0x1F0 += elapsed` always (0x00695F3C/0x00695F40), and
+`+0x208 += elapsed` + `+0x1FC += elapsed` only when `+0x208 != 0` (0x00695F44..0x00695F58), and
+`+0x214 += elapsed` always (0x00695F66). Then `LocalNotifications::SetPaused` and
+`SendNeedsPauseStateToGame` (0x00695F72/0x00695F78).
+
+### J12 — `InitAfterConnection` and `+0x1D4`
+
+`+4 = RobotManager::GetFirstRobot()` (0x00694390), `+0x3D0 = 1` (0x00694394), `+0x1D4 = 1`
+(0x00694398). `Update` passes `+4 != 0` as the connected flag (0x00695C9C). `+0x1D4` is cleared by
+`NeedsManager::Init` (0x00692652) and read by `LocalNotifications::ShouldBeRegistered` 0x0068D00C
+(0x0068D01E) to gate notification conditions 1 and 2; its domain name is UNKNOWN.
+
+### J13 — `CozmoEngine::HandleMessage<ConnectToRobot>` 0x004ED018..0x004ED11C
+
+The already-connected branch returns at 0x004ED118 without `InitAfterConnection`. Otherwise:
+`AddRobotConnection` (0x004ED074), `AddRobot(engine, 1)` (0x004ED07C), then
+`NeedsManager::InitAfterConnection` at 0x004ED10E **unconditionally** (both the AddRobot-failed and
+the success paths reach 0x004ED10A), then `DASPauseUploadingToServer(1)` (0x004ED114). The handler
+neither sets nor reads a serial.
+
+### J14 — the Init time (M15-001)
+
+`CozmoEngine::Init` passes `BaseStationTimer::GetCurrentTimeInSeconds()` to `NeedsManager::Init`
+(0x004EC9DA..0x004ECA0A); `Init`'s float parameter is held in r8 (0x0069257E) and passed unchanged to
+`InitInternal` (0x006926CE) and on to `InitReset` (0x006934B0/0x0069358A), so `+0x3B0 = +0x130 + now`
+and `+0x3AC` is the same clock (written by `Update` 0x00695CA8). The stack's
+`nextDecay = now + DecayPeriodSeconds` is faithful. `PossiblyWriteToDevice` 0x00695DC4 compares
+`system_clock::now() - +8/+0xC` against `0x03A2C940`; the clock and the DateTime are in microseconds
+(`ApplyDecayForTimeSinceLastDeviceWrite` divides by 1,000,000 at 0x0069532C), so the throttle is
+**61 seconds**, not 61 ms (C4/I4's flag; the stack's `WriteThrottleSec = 0.061` is 1000× too small).
+
+### C5 record changes
+
+- **M15-014**'s evidence adds the J1-J8 citations (`InitInternal` extended to 0x00693492, `InitReset`,
+  `DeviceHasNeedsState`, `AttemptReadFromDevice`, `SendTimeSinceBackgroundedDasEvent`,
+  `ReadFromDevice`, `WriteToDevice`, `LocalNotifications::Generate`, the `+0x30` counter). Its
+  `unresolved` names the stars/onboarding callers and the host directory as the remaining work.
+- **M15-016**'s evidence adds J9-J13 (`SetPaused` unpause loop, `DetectBracketChangeForDas`,
+  `HandleMessage<SetNeedsPauseStates>`, `InitAfterConnection`, `CozmoEngine::HandleMessage<ConnectToRobot>`).
+  Its `unresolved` names the `SetPaused` game-message callers and the unbuilt `+0x1F0`/DAS consumers.
+- **M15-001**'s evidence adds J14 (the Init time threading and the 61 s throttle).
+

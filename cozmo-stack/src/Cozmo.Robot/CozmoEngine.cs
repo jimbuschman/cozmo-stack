@@ -1378,6 +1378,14 @@ public sealed class CozmoEngine : IDisposable
     internal Action<uint>? SerialNumberAcquired;
     /// <summary>M15-014: the serial from the last raised edge, so a stack created after the handshake can catch up.</summary>
     internal uint? AcquiredSerialNumber { get; private set; }
+    /// <summary>
+    /// M15-016 (J13): the ConnectToRobot game message's needs edge.
+    /// <c>CozmoEngine::HandleMessage&lt;ConnectToRobot&gt;</c> 0x004ED018..0x004ED11C calls
+    /// <c>NeedsManager::InitAfterConnection</c> at 0x004ED10E unconditionally after <c>AddRobot</c> (both the
+    /// AddRobot-failed and the success path reach 0x004ED10A), before <c>DASPauseUploadingToServer(1)</c>.
+    /// Raised from <see cref="ConnectToRobot"/> so the stack that owns the NeedsManager can subscribe.
+    /// </summary>
+    internal Action? ConnectToRobotHandled;
     /// <summary>The game side's reaction to a Success response (policy M1-042), run as a game message.</summary>
     internal Action? AfterSuccessDefaults;
     /// <summary>Raised when a subscriber or handler threw (policy M1-034: isolated, and reported).</summary>
@@ -1522,13 +1530,21 @@ public sealed class CozmoEngine : IDisposable
     /// The ConnectToRobot game message (B1, B2, CB1..CB6): if robot 1 exists, "Robot already connected" and nothing
     /// else (CB36). Otherwise AddRobotConnection (port 5552 simulated, else 5551, CB3; RCM::Connect, CB4) and then
     /// AddRobot(1) at once, before any transport exchange; "Connected to robot!" is logged; nothing goes to the game.
+    /// The needs edge <see cref="ConnectToRobotHandled"/> is raised after AddRobot in both the failed and the
+    /// success path (M15-016, J13).
     /// </summary>
     public void ConnectToRobot(IPAddress ip, bool isSimulated = false) => Post(() =>
     {
         if (Robots.RobotExists(RobotId)) { Log("info: Robot already connected"); return; }
         Rcm.Connect(ip, isSimulated);
-        if (Robots.AddRobot(RobotId) is null) { Log("error: CozmoEngine.AddRobot failed"); return; }
-        Log("info: Connected to robot!");
+        if (Robots.AddRobot(RobotId) is null) Log("error: CozmoEngine.AddRobot failed");
+        else Log("info: Connected to robot!");
+        // fidelity: M15-016
+        // J13: both the AddRobot-failed and the success path reach 0x004ED10A, so the needs edge is raised
+        // unconditionally here; the already-connected branch above returns without it. DASPauseUploadingToServer(1)
+        // follows in the engine and has no stack equivalent.
+        var handled = ConnectToRobotHandled;
+        if (handled is not null) foreach (var t in handled.GetInvocationList()) Isolated((Action)t);
     });
 
     // fidelity: M1-025
