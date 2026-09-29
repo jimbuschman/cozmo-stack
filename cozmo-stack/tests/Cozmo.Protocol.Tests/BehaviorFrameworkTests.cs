@@ -46,6 +46,22 @@ public class BehaviorFrameworkTests
         Assert.False(scope.ReactionsDisabled);
     }
 
+    /// <summary>
+    /// Two track locks on one scope: the undos restore a saved mask, so they must run most-recent-first or
+    /// the earlier mask is left behind (IBehavior::Stop unlocks every map entry, so Dispose must clear all).
+    /// </summary>
+    [Fact]
+    public void TwoTrackLocksOnOneScopeAreBothReleased()
+    {
+        var scope = new BehaviorScope();
+        scope.LockTracks(AnimationTrack.Head);
+        scope.LockTracks(AnimationTrack.Lift);
+        Assert.Equal(AnimationTrack.Head | AnimationTrack.Lift, scope.LockedTracks);
+
+        scope.Dispose();
+        Assert.Equal(AnimationTrack.None, scope.LockedTracks);
+    }
+
     [Fact]
     public void AScopeRunsCustomUndoInReverseOrder()
     {
@@ -55,6 +71,79 @@ public class BehaviorFrameworkTests
         scope.OnRelease(() => order.Add(2));
         scope.Dispose();
         Assert.Equal(new[] { 2, 1 }, order);
+    }
+
+    /// <summary>
+    /// IBehavior::Stop 0x005bd08c releases the scope in a fixed category order regardless of acquisition
+    /// order: (a) disable-reaction locks 0x005bd12c, (b) the idle animation 0x005bd142, (c) the motion
+    /// profile 0x005bd150, (d) the track locks 0x005bd15c..0x005bd174. Acquire them in that same order,
+    /// so a LIFO release (the old behaviour) would produce the exact reverse.
+    /// </summary>
+    // fidelity: M8-009
+    [Fact]
+    public void AScopeReleasesInTheEnginesFixedCategoryOrder()
+    {
+        var order = new List<string>();
+        bool? reactionsStillDisabledAtIdleRemove = null;
+        bool? idleStillSetAtMotionClear = null;
+        AnimationTrack? tracksAtMotionClear = null;
+
+        var scope = new BehaviorScope();
+        scope.DisableReactions();                                    // (a)
+        scope.SmartPushIdleAnimation(() => { }, () =>               // (b)
+        {
+            reactionsStillDisabledAtIdleRemove = scope.ReactionsDisabled;
+            order.Add("idle");
+        });
+        scope.SmartSetMotionProfile(() => { }, () =>                // (c)
+        {
+            idleStillSetAtMotionClear = scope.IdleAnimationSet;
+            tracksAtMotionClear = scope.LockedTracks;
+            order.Add("motion");
+        });
+        scope.LockTracks(AnimationTrack.Head);                       // (d)
+
+        scope.Dispose();
+
+        Assert.Equal(new[] { "idle", "motion" }, order);             // (b) before (c); LIFO would be motion, idle
+        Assert.False(reactionsStillDisabledAtIdleRemove);            // (a) before (b)
+        Assert.False(idleStillSetAtMotionClear);                     // (b) before (c)
+        Assert.Equal(AnimationTrack.Head, tracksAtMotionClear);      // (c) before (d): still held
+        Assert.Equal(AnimationTrack.None, scope.LockedTracks);       // (d) released last
+    }
+
+    /// <summary>
+    /// CalibrateMotorAction inherits a 30.0 s IAction timeout: IAction::IAction 0x00540c44 writes -1.0f
+    /// to +0x74 as the "not started" sentinel; IAction::UpdateInternal 0x00540d1c computes
+    /// start + vtable[+0x2c], and CalibrateMotorAction's slot +0x2c (vtable vptr 0x0102194c, slot
+    /// 0x01021978 -> thunk 0x0052b0c2) returns 0x41f00000 = 30.0f. A calibration that never reports is
+    /// still waited on at five seconds and completes at thirty.
+    /// </summary>
+    // fidelity: M8-008
+    [Fact]
+    public void TheHeadCalibrationWaitRunsToThirtySeconds()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        robot.Transport.OfflineAcceptConnection();
+        var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap(), Random = new Random(7) };
+        var probe = new CalibrationProbe();
+        using var scope = new BehaviorScope();
+
+        probe.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
+        Assert.False(probe.Done);
+        probe.Update(ctx, 0);           // arms the deadline
+        probe.Update(ctx, 5_000);       // the old backstop would have completed here
+        Assert.False(probe.Done);
+        probe.Update(ctx, 30_000);
+        Assert.True(probe.Done);
+    }
+
+    private sealed class CalibrationProbe : SteppedBehavior
+    {
+        public CalibrationProbe() : base("calibrationProbe", "CalibrateMotorAction") { }
+        public bool Done;
+        protected override void OnStart() => CalibrateHead(() => Done = true);
+        protected override bool KeepsRunningWithoutAction => true;
     }
 
     /// <summary>Registering after disposal runs the undo immediately rather than leaking it.</summary>

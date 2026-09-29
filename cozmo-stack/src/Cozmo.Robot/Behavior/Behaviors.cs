@@ -96,11 +96,11 @@ public sealed class PlayAnimBehavior : IBehavior
     private volatile bool _finished;
 
     /// <param name="score">
-    /// LOCAL_POLICY. The engine has no default score: a behaviour whose config carries no scoring keeps
-    /// the zero <c>IBehavior::IBehavior</c> writes at 0x005BBD28, and a scoring chooser therefore never
-    /// picks it - the app's scored behaviours all carry a flatScore in their activity config. This stack's
-    /// simple manager ranks behaviours directly, so one built in code needs a number; 1 is the plain
-    /// behaviour's and 5 the reaction's, which keeps a reaction ahead of ordinary play.
+    /// M8-004 gap. The engine has no in-code default score: <c>IBehavior::IBehavior</c> 0x005BBD28 writes
+    /// zero to +0x100, and selection is by the activity chooser or the reaction map. This stack's
+    /// <see cref="BehaviorManager.ChooseAndSwitch"/> ranks behaviours by <see cref="EvaluateScore"/>
+    /// instead, so a behaviour built in code needs a number here (1 for plain play, 5 for a reaction).
+    /// The engine's zero default replaces this once the chooser path has a production caller (M8-013).
     /// </param>
     // fidelity: M8-004
     public PlayAnimBehavior(string id, string behaviorClass, IEnumerable<AnimationTrigger> triggers,
@@ -401,9 +401,10 @@ public sealed class ReactBehavior : IBehavior
     private bool _owns;
     private volatile bool _finished = true;
 
-    /// <param name="score">LOCAL_POLICY, as <see cref="PlayAnimBehavior"/>'s is: 5 keeps a reaction ahead
-    /// of ordinary play in this stack's manager. The engine dispatches a reaction by its trigger and never
-    /// scores it.</param>
+    /// <param name="score">M8-004 gap, as <see cref="PlayAnimBehavior"/>'s is: 5 keeps a reaction ahead of
+    /// ordinary play in this stack's <see cref="BehaviorManager.ChooseAndSwitch"/>. The engine dispatches a
+    /// reaction by its trigger and never scores it; the in-code score goes when the chooser path is wired
+    /// (M8-013).</param>
     /// <param name="preempt">
     /// M7-021 C2h: the engine's pickup reaction body checks robot+0x338 before starting its animation and,
     /// when it is set, logs <c>BehaviorReactToPickup.OnCharger</c> and completes without playing even though

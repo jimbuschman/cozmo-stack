@@ -163,7 +163,14 @@ public interface IBehavior
 // fidelity: M8-011
 public sealed class BehaviorScope : IDisposable
 {
-    private readonly List<Action> _undo = new();
+    // IBehavior::Stop 0x005bd08c releases the scope in this fixed order regardless of acquisition order:
+    // (a) disable-reaction locks (0x005bd12c), (b) the idle animation (0x005bd142), (c) the motion
+    // profile (0x005bd150), (d) the track-lock map (0x005bd15c..0x005bd174), then the custom light-pattern
+    // vector at +0xcc/+0xd0 (0x005bd1a2..0x005bd1c6). This stack's own OnRelease hooks have no engine
+    // counterpart and run last. M8-009.
+    private const int OrderReactionLocks = 0, OrderIdle = 1, OrderMotionProfile = 2, OrderTrackLocks = 3,
+                      OrderLightPatterns = 4, OrderOther = 5;
+    private readonly List<(int Order, Action Undo)> _undo = new();
     private readonly object _gate = new();
     private readonly BehaviorArbiter? _arbiter;
     private readonly CozmoMotion? _motion;
@@ -172,6 +179,12 @@ public sealed class BehaviorScope : IDisposable
     private static int _scopeCounter;
     private Animation.AnimationTrack _motionLocked;
     private bool _disposed;
+
+    private void AddUndo(int order, Action undo)
+    {
+        if (_disposed) undo();
+        else _undo.Add((order, undo));
+    }
 
     // IBehavior's Smart* state: the per-resource flags the engine keeps at +0xb0 (idle), +0xc0
     // (motion profile), +0xb4 (named track locks), +0xcc (custom light patterns) and +0xa4 (reaction
@@ -220,7 +233,7 @@ public sealed class BehaviorScope : IDisposable
                 if (mask != 0) motion.LockTracks(mask, _owner);
                 _motionLocked |= newMotion;
             }
-            _undo.Add(() =>
+            _undo.Add((OrderTrackLocks, () =>
             {
                 LockedTracks = before;
                 if (_motion is { } m && _motionLocked != Animation.AnimationTrack.None)
@@ -229,7 +242,7 @@ public sealed class BehaviorScope : IDisposable
                     if (mask != 0) m.UnlockTracks(mask, _owner);
                     _motionLocked = Animation.AnimationTrack.None;
                 }
-            });
+            }));
         }
     }
 
@@ -247,23 +260,19 @@ public sealed class BehaviorScope : IDisposable
             _arbiterReactionLock = true;
             ReactionsDisabled = true;
             _arbiter?.DisableReactions(this);
-            _undo.Add(() =>
+            _undo.Add((OrderReactionLocks, () =>
             {
                 _arbiterReactionLock = false;
                 ReactionsDisabled = false;
                 _arbiter?.EnableReactions(this);
-            });
+            }));
         }
     }
 
     /// <summary>Registers any other undo, for resources this type does not model directly.</summary>
     public void OnRelease(Action undo)
     {
-        lock (_gate)
-        {
-            if (_disposed) undo();
-            else _undo.Add(undo);
-        }
+        lock (_gate) AddUndo(OrderOther, undo);
     }
 
     // ============================================================== the Smart* scope helpers (M8-011)
@@ -297,7 +306,7 @@ public sealed class BehaviorScope : IDisposable
             push();
             IdleAnimationSet = true;
             _idleRemove = remove;
-            _undo.Add(() => { if (IdleAnimationSet) { IdleAnimationSet = false; _idleRemove = null; remove(); } });
+            _undo.Add((OrderIdle, () => { if (IdleAnimationSet) { IdleAnimationSet = false; _idleRemove = null; remove(); } }));
             return true;
         }
     }
@@ -330,7 +339,7 @@ public sealed class BehaviorScope : IDisposable
             set();
             MotionProfileSet = true;
             _motionClear = clear;
-            _undo.Add(() => { if (MotionProfileSet) { MotionProfileSet = false; _motionClear = null; clear(); } });
+            _undo.Add((OrderMotionProfile, () => { if (MotionProfileSet) { MotionProfileSet = false; _motionClear = null; clear(); } }));
             return true;
         }
     }
@@ -365,14 +374,14 @@ public sealed class BehaviorScope : IDisposable
             LockedTracks |= tracks;
             byte mask = CozmoMotion.MaskFor(tracks);
             if (_motion is { } m && mask != 0) m.LockTracks(mask, _owner + ":" + name);
-            _undo.Add(() =>
+            _undo.Add((OrderTrackLocks, () =>
             {
                 if (_trackLocks.Remove(name))
                 {
                     LockedTracks = before;
                     if (_motion is { } mm && mask != 0) mm.UnlockTracks(mask, _owner + ":" + name);
                 }
-            });
+            }));
             return true;
         }
     }
@@ -406,7 +415,7 @@ public sealed class BehaviorScope : IDisposable
             if (_disposed) return false;
             if (!_lightPatterns.Add(objectId)) { Verify($"SmartSetCustomLightPattern: a light pattern is already set for object {objectId}"); return false; }
             play();
-            _undo.Add(() => _lightPatterns.Remove(objectId));
+            _undo.Add((OrderLightPatterns, () => _lightPatterns.Remove(objectId)));
             return true;
         }
     }
@@ -444,7 +453,7 @@ public sealed class BehaviorScope : IDisposable
                 _arbiterReactionLock = true;
                 _arbiter?.DisableReactions(this);
             }
-            _undo.Add(() =>
+            _undo.Add((OrderReactionLocks, () =>
             {
                 if (_reactionLockNames.Remove(name) && _reactionLockNames.Count == 0)
                 {
@@ -452,7 +461,7 @@ public sealed class BehaviorScope : IDisposable
                     ReactionsDisabled = false;
                     _arbiter?.EnableReactions(this);
                 }
-            });
+            }));
             return true;
         }
     }
@@ -475,14 +484,14 @@ public sealed class BehaviorScope : IDisposable
             ReactionsDisabled = true;
             string managerName = name + "_behaviorLock";
             _manager?.DisableReactionsWithLock(managerName, table, stopCurrent: true);
-            _undo.Add(() =>
+            _undo.Add((OrderReactionLocks, () =>
             {
                 if (_reactionLockNames.Remove(name))
                 {
                     _manager?.RemoveDisableReactionsLock(managerName);
                     if (_reactionLockNames.Count == 0) ReactionsDisabled = false;
                 }
-            });
+            }));
             return true;
         }
     }
@@ -521,23 +530,39 @@ public sealed class BehaviorScope : IDisposable
             "IBehavior.SmartDelegateToHelper needs BehaviorHelperComponent::DelegateToHelper 0x0056dad8 at " +
             "[robot+0x264]+0x10, which is unowned by any fidelity record (M8-011 gap).");
 
-    /// <summary>Releases everything, most recent first.</summary>
+    /// <summary>
+    /// Releases the scope in the engine's fixed order (<c>IBehavior::Stop</c> 0x005bd08c):
+    /// (a) disable-reaction locks (0x005bd12c), (b) the idle animation (0x005bd142), (c) the motion
+    /// profile (0x005bd150), (d) the track locks (0x005bd15c..0x005bd174), then the custom light-pattern
+    /// vector at +0xcc/+0xd0 (0x005bd1a2..0x005bd1c6). Within one category the undos run most-recent-first,
+    /// because the track-lock undos restore a saved mask; the engine unlocks each map entry independently
+    /// and then destroys the map (0x005bd174/0x005bd19e), so only the order of the categories is
+    /// observable. This stack's own OnRelease hooks have no engine counterpart and run last.
+    /// </summary>
     // fidelity: M8-009
     public void Dispose()
     {
-        List<Action> undo;
+        List<(int Order, Action Undo)> undo;
         lock (_gate)
         {
             if (_disposed) return;
             _disposed = true;
-            undo = new List<Action>(_undo);
+            undo = new List<(int Order, Action Undo)>(_undo);
             _undo.Clear();
         }
-        for (int i = undo.Count - 1; i >= 0; i--)
+        for (int order = OrderReactionLocks; order <= OrderOther; order++)
         {
-            try { undo[i](); }
-            catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { }
+            for (int i = undo.Count - 1; i >= 0; i--)
+            {
+                if (undo[i].Order == order) Run(undo[i].Undo);
+            }
         }
+    }
+
+    private static void Run(Action action)
+    {
+        try { action(); }
+        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { }
     }
 }
 

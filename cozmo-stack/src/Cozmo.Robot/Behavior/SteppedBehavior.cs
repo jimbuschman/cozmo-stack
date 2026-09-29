@@ -70,7 +70,8 @@ public abstract class SteppedBehavior : IBehavior
     public string Id { get; }
     public string Class { get; }
 
-    /// <summary>Reactions outscore ordinary behaviours by default, as the engine's preempt them.</summary>
+    /// <summary>M8-004 gap: the engine's default is zero; this in-code score is used only by
+    /// <see cref="BehaviorManager.ChooseAndSwitch"/> until the chooser path is wired (M8-013).</summary>
     public double Score { get; set; } = 5.0;
 
     /// <summary>
@@ -634,17 +635,18 @@ public abstract class SteppedBehavior : IBehavior
     /// The engine's <c>CalibrateMotorAction(head: true, lift: false)</c>: ask the robot to recalibrate the
     /// head and wait for its report that the calibration started and then finished.
     ///
-    /// <c>CalibrateMotorAction::CheckIfDone</c> 0x00547D38 is the whole rule - it stays running until the
-    /// motors it was asked for report calibrated, testing <c>Robot::IsHeadCalibrated</c> and
-    /// <c>IsLiftCalibrated</c> against the two request flags at +0x78 and +0x79 and the two
-    /// already-started flags at +0x7A and +0x7B - and it has no timeout to cut it short: the action's
-    /// timeout, at <c>IAction</c>+0x74, is the -1 the constructor writes there
-    /// (<c>movt r1, #0xbf80</c> at 0x00540CA2), which is the engine's "no timeout".
+    /// <c>CalibrateMotorAction::CheckIfDone</c> 0x00547D38 stays running until the motors it was asked for
+    /// report calibrated, testing <c>Robot::IsHeadCalibrated</c> and <c>IsLiftCalibrated</c> against the
+    /// two request flags at +0x78 and +0x79 and the two already-started flags at +0x7A and +0x7B.
     ///
-    /// LOCAL_POLICY: the five seconds here is this stack's backstop, not the engine's. Waiting for ever on
-    /// a robot that never answers is not something to reproduce; the engine's own behaviours that sit out
-    /// a recalibration - ReactToImpact and ReactToMotorCalibration - both wait five seconds, so that is
-    /// the number used. On hardware the report arrives in about two.
+    /// The action does time out, at 30.0 s. <c>IAction::IAction</c> 0x00540C44 writes -1.0f to +0x74
+    /// (<c>movs r1, #0</c> 0x00540C9E / <c>movt r1, #0xbf80</c> 0x00540CA2 / <c>str r1,[r4,#0x74]</c>
+    /// 0x00540CA6), but that is the "timer not started" sentinel: <c>IAction::UpdateInternal</c>
+    /// 0x00540D1C arms it (0x00540D52/0x00540D5A/0x00540D64) and computes the deadline as
+    /// <c>start + vtable[+0x2c]</c> (0x00540D94/0x00540D9E/0x00540DA2). <c>CalibrateMotorAction</c>
+    /// inherits the default slot +0x2c (vtable vptr 0x0102194C, slot 0x01021978 -> thunk 0x0052B0C2)
+    /// which returns <c>0x41F00000</c> = 30.0f, and on expiry the action fails with 0x03000018
+    /// ("IAction.Update.TimedOut" 0x00540FE0 / "%s timed out after %.1f seconds." 0x00540FF8).
     /// </summary>
     // fidelity: M8-008
     protected void CalibrateHead(Action onDone)
@@ -659,13 +661,17 @@ public abstract class SteppedBehavior : IBehavior
             return started && !state.HeadCalibrating;
         }, CalibrationAllowanceSec, ok =>
         {
-            Log(ok ? "head calibration reported complete" : "no head calibration report within the allowance");
+            Log(ok ? "head calibration reported complete"
+                   : $"head calibration timed out after {CalibrationAllowanceSec:F1} seconds");
             onDone();
         }, "head calibration");
     }
 
-    /// <summary>The allowance for a requested calibration to report back (see <see cref="CalibrateHead"/>).</summary>
-    public const double CalibrationAllowanceSec = 5.0;
+    /// <summary>
+    /// The engine's <c>CalibrateMotorAction</c> timeout: the inherited <c>IAction</c> vtable[+0x2c] value
+    /// 30.0 s (thunk 0x0052B0C2 returns 0x41F00000). See <see cref="CalibrateHead"/>.
+    /// </summary>
+    public const double CalibrationAllowanceSec = 30.0;
 
     /// <summary>
     /// Queues a completion to run on the next <see cref="Update"/>, on the manager's thread. Animation

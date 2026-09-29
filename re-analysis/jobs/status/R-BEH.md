@@ -68,5 +68,36 @@ the rows and needs extraction), **cross-layer wiring** (needs another layer's bu
 
 ## Progress
 
-- (next) Policy records M8-004/M8-008/M8-009: verify the review's citations, correct,
-  `--approve M8-framework`, build, verify, commit.
+### Batch M8-A (2026-09-29): the policy review's C records, M8-framework
+
+- **Citations checked.** `@cozmo-verifier` opened the review's addresses. M8-004 and M8-009 were
+  confirmed; **M8-008's "no timeout" was contradicted**: `CalibrateMotorAction` inherits a 30.0 s
+  `IAction` timeout (`IAction::UpdateInternal` 0x00540d1c, vtable+0x2c thunk 0x0052b0c2 = 0x41f00000).
+  A focused `@cozmo-extractor` pass (`re-analysis/research/20260929-R-BEH-M8-framework-gap1-extraction.md`)
+  confirmed it and read the `BehaviorHelperComponent` runtime for M8-011.
+- **Records (correction C2, M8-framework re-approved):**
+  - **M8-004** COMPATIBILITY_POLICY -> IMPLEMENTATION_GAP. The engine's zero default and chooser
+    selection are cited; the code-built 1.0/5.0 go when M8-013's chooser path has a production caller.
+  - **M8-008** COMPATIBILITY_POLICY -> IMPLEMENTATION_GAP. Built the 30.0 s wait; the remaining gap is
+    that the engine's 0x03000018 failure result is not delivered.
+  - **M8-009** COMPATIBILITY_POLICY -> IMPLEMENTATION_GAP -> **EXACT_SOURCE**. `BehaviorScope.Dispose`
+    now releases in the engine's order: reaction locks, idle, motion profile, track locks, light
+    patterns (0x005bd12c/0x5bd142/0x5bd150/0x5bd15c..0x5bd174/0x5bd1a2..0x5bd1c6).
+  - **M8-011** `unresolved`/evidence updated with the now-read component runtime; stays IMPLEMENTATION_GAP.
+- **Verify:** `@cozmo-verifier` PASS after one FAIL round (the first `Dispose` order broke the track-lock
+  saved-mask restore and two tests were circular; both fixed and the fixed hunks re-verified).
+- **Gates:** `fidelity.py --check` exit 0; full suite **1961 passed / 0 failed / 0 skipped**
+  (`AssetPresenceTests` included).
+- **Commit:** (below).
+- **Files touched:** `cozmo-stack/src/Cozmo.Robot/Behavior/{IBehavior,SteppedBehavior,Behaviors}.cs`,
+  `cozmo-stack/tests/Cozmo.Protocol.Tests/BehaviorFrameworkTests.cs`,
+  `re-analysis/{fidelity_manifest.json,FIDELITY_GAPS.md}`,
+  `re-analysis/inventory/M8-framework.{md,approved.json}`,
+  `re-analysis/research/20260929-R-BEH-M8-framework-gap1-extraction.md`.
+
+### Remaining in scope
+
+M7-012, M7-014, M7-015, M7-018, M7-019, M7-020, M7-021 and M8-011, M8-013, M8-014 keep their
+IMPLEMENTATION_GAP with the precise `unresolved` in the triage above. Their missing-source parts need
+extraction passes; the cross-layer parts wait on M10/M12/M14/M15 (and M2 for M8-013). M7-022 is a
+non-live RECOVERABLE_GAP outside this job's IMPLEMENTATION_GAP scope.

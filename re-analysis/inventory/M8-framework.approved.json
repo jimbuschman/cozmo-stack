@@ -1,8 +1,8 @@
 {
   "subsystem": "M8-framework",
-  "approved": "2026-09-28",
+  "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M8-framework.md",
-  "inventory_sha256": "428aa9be0beb087dece8716ef42cba654f739e9e4d25cdcbce6ae9ac9c1aee5a",
+  "inventory_sha256": "dac572ab1698a3bb05fd278dd5c6ba4d4c77abba991f35421e3b042fd9ffe466",
   "records": {
     "M8-001": {
       "status": "EXACT_SOURCE",
@@ -57,12 +57,13 @@
       "hardware_required": false
     },
     "M8-004": {
-      "status": "COMPATIBILITY_POLICY",
-      "title": "Behaviours built in code carry a score of their own; the engine's default is zero",
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The engine's behaviour score default is zero; this stack's code-built behaviours carry 1.0/5.0",
       "authority": "IBehavior::IBehavior 0x005bbb74 and IBehavior::EvaluateScoreInternal 0x005beec2, read",
       "evidence": [
-        "There is no engine default to copy. IBehavior's constructor writes zero to the flat score at +0x100 (strd of the zero register at 0x005bbd28, alongside +0x104 and +0x108), and EvaluateScoreInternal returns that float when the behaviour has no emotion scorers. So a behaviour whose config carries no scoring scores zero and a scoring chooser never picks it - which is consistent, because the app's scored behaviours are the ones an activity config lists with a flatScore.",
-        "This stack's ScoredBehaviorEntry.FromJson already defaults flatScore to zero, so the config-driven path matches. The 1 and 5 are on behaviours built in code, where this stack's simple BehaviorManager ranks every behaviour by EvaluateScore and the engine would instead have an activity chooser or the reaction map decide. They are named LOCAL_POLICY in both constructors."
+        "The engine has no in-code default score. IBehavior::IBehavior 0x005bbb74 writes zero to the flat score at +0x100 and to +0x104 (0x005bbd1c mov.w r8,#0; 0x005bbd28 strd r8,r8,[r4,#0x100]). EvaluateScoreInternal 0x005beec2 returns that float when the mood-scorer vector at +0xdc is empty (0x005beec2 ldr r2,[r0,#0xdc]!; 0x005beec6 ldr r3,[r0,#4]; 0x005beed4 vldr s0,[r0,#0x24] -> +0x100). The only non-zero writer is ReadFromScoredJson 0x005bc488 from the optional flatScore key (0x005bc4e0 str.w r0,[r4,#0x100]); there is no hard-coded default.",
+        "Selection is by the activity chooser or the reaction map, not a flat ranking: the app's scored behaviours are the ones an activity config lists with a flatScore, and ScoringBSRunnableChooser 0x0060a44a skips a score <= 0 (0x0060a452). The policy review of 2026-09-29 (verdict C) found this divergence; @cozmo-verifier re-read 0x005bbd28 and 0x005beec2 and confirmed it.",
+        "This stack's ScoredBehaviorEntry.FromJson already defaults flatScore to zero, so the config-driven chooser path matches. The divergence is on behaviours built in code: PlayAnimBehavior's constructor defaults score 1.0, ReactBehavior 5.0, SteppedBehavior.Score 5.0, PlayArbitraryAnimBehavior.Score 1.0 and SingingBehavior 1.0. Those feed this stack's BehaviorManager.ChooseAndSwitch, which ranks every behaviour by IBehavior.EvaluateScore; the engine has no such path."
       ],
       "live_path": true,
       "hardware_required": false
@@ -106,24 +107,26 @@
       "hardware_required": false
     },
     "M8-008": {
-      "status": "COMPATIBILITY_POLICY",
-      "title": "The head recalibration wait: the engine has no timeout, this stack keeps a backstop",
-      "authority": "CalibrateMotorAction::CheckIfDone 0x00547D38 and IAction::IAction 0x00540C44, read",
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The head recalibration wait: the engine fails the timed-out action with 0x03000018, this stack only continues",
+      "authority": "CalibrateMotorAction::CheckIfDone 0x00547D38, IAction::IAction 0x00540C44 and IAction::UpdateInternal 0x00540D1C, read",
       "evidence": [
-        "CalibrateMotorAction::CheckIfDone 0x00547D38 is the whole completion rule: it stays running until the motors it was asked for report calibrated, testing Robot::IsHeadCalibrated and IsLiftCalibrated against the request flags at +0x78 and +0x79 and the already-started flags at +0x7A and +0x7B, and returns the running marker 0x01000000 until then.",
-        "There is no timeout behind it. IAction's constructor writes -1 to the action's timeout at +0x74 (movs r1, #0 / movt r1, #0xbf80 at 0x00540CA2), which is the engine's \"no timeout\", and CalibrateMotorAction does not override it. So the engine waits as long as it takes.",
-        "This stack waits five seconds and carries on. That is a backstop, not a reading: a wait that never ends is not worth reproducing, and five seconds is what the engine's own behaviours give a recalibration when they sit one out - BehaviorReactToImpact's WaitAction and BehaviorReactToMotorCalibration's, both 0x40A00000. The robot reports in about two."
+        "CalibrateMotorAction::CheckIfDone 0x00547D38 is the completion rule: it stays running until the motors it was asked for report calibrated, testing Robot::IsHeadCalibrated and IsLiftCalibrated against the request flags at +0x78 and +0x79 and the already-started flags at +0x7A and +0x7B, and returns the running marker 0x01000000 until then.",
+        "The action has a timeout, 30.0 s. IAction::IAction 0x00540C44 writes -1.0f to +0x74 (0x00540c9e movs r1,#0; 0x00540ca2 movt r1,#0xbf80; 0x00540ca6 str r1,[r4,#0x74]), but that is the 'timer not started' sentinel, not a disabled timeout: IAction::UpdateInternal 0x00540D1C arms it (0x00540d52/0x00540d5a/0x00540d64) and then computes the deadline as start + vtable[+0x2c] (0x00540d8e/0x00540d90/0x00540d94/0x00540d98/0x00540d9e/0x00540da2/0x00540daa).",
+        "CalibrateMotorAction does not override the slot: vtable vptr 0x0102194c, slot +0x2c at 0x01021978 is the default thunk 0x0052b0c2 (0x0052b0c2 movs r0,#0; 0x0052b0c4 movt r0,#0x41f0; 0x0052b0c8 bx lr) returning 0x41f00000 = 30.0f. The constructor 0x00547a9c and Init 0x00547c28 never write +0x74 or the slot. On expiry the action fails with result 0x03000018 and warns 'IAction.Update.TimedOut' / '%s timed out after %.1f seconds.' (0x00540e80/0x00540e82/0x00540eaa/0x00540eae).",
+        "The policy review of 2026-09-29 (verdict C, row M8-008) called this 'no timeout'; @cozmo-verifier and a focused @cozmo-extractor pass (re-analysis/research/20260929-R-BEH-M8-framework-gap1-extraction.md) read 0x00540D1C and the CalibrateMotorAction vtable and contradicted that. The stack now waits 30.0 s (CalibrationAllowanceSec) and logs the timeout, but its WaitUntil carries no action result, so the 0x03000018 failure is not delivered to the behaviour's completion."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M8-009": {
-      "status": "COMPATIBILITY_POLICY",
-      "title": "Behaviour scope undo order: the engine releases in a fixed order, this stack releases most-recent-first",
+      "status": "EXACT_SOURCE",
+      "title": "Behaviour scope undo order: the engine releases in a fixed order (reaction locks, idle, motion profile, track locks, light patterns)",
       "authority": "IBehavior::Stop 0x005bd08c, read",
       "evidence": [
-        "IBehavior::Stop 0x005bd08c releases the scope in a fixed order regardless of acquisition order: (a) remove every disable-reactions lock while +0xac != 0 (0x005bd12c/0x005bd136), (b) remove the idle animation if +0xb0 (0x005bd148), (c) clear the motion profile if +0xc0 (0x005bd158), (d) walk the track-lock map at +0xb4 and MovementComponent::UnlockTracks(mask, name) each, then destroy the map (0x005bd16c/0x005bd174). The same order appears in gap pass 1 row 6.",
-        "This stack's BehaviorScope records each undo as it is taken and releases them most-recent-first (IBehavior.cs, BehaviorScope.Dispose: `for (int i = undo.Count - 1; i >= 0; i--)`). That is a choice of this stack, not the engine's order: the two differ whenever a behaviour takes an idle animation before a track lock, or a track lock before a motion profile."
+        "IBehavior::Stop 0x005bd08c releases the scope in a fixed order regardless of acquisition order: (a) remove every disable-reactions lock while +0xac != 0 (0x005bd12c ldr.w r0,[r4,#0xa4]; 0x005bd136 blx SmartRemoveDisableReactionsLock; 0x005bd13a/0x005bd13e/0x005bd140), (b) remove the idle animation if +0xb0 (0x005bd142 ldrb.w r0,[r4,#0xb0]; 0x005bd14c blx SmartRemoveIdleAnimation), (c) clear the motion profile if +0xc0 (0x005bd150 ldrb.w r0,[r4,#0xc0]; 0x005bd158 blx SmartClearMotionProfile), (d) walk the track-lock map at +0xb4 and MovementComponent::UnlockTracks(mask, name) each, then destroy the map (0x005bd15c/0x005bd16e/0x005bd174 blx 0x4a5794; 0x005bd19e blx __tree::destroy), then clear the custom light-pattern vector at +0xcc/+0xd0 (0x005bd1a2 ldrd r1,r0,[r4,#0xcc] ... 0x005bd1c6 strne.w r0,[r4,#0xd0]).",
+        "This stack's BehaviorScope groups its undos by the same categories and releases them in that order (IBehavior.cs, BehaviorScope.Dispose): reaction locks (SmartDisableReactionsWithLock/DisableReactions), idle (SmartPushIdleAnimation), motion profile (SmartSetMotionProfile), track locks (LockTracks/SmartLockTracks), custom light patterns (SmartSetCustomLightPattern). OnRelease hooks have no engine counterpart and run last. Within a category the undos run most-recent-first, which is required by the track-lock undos' saved-mask restore; the engine unlocks each map entry independently, so only the category order is observable.",
+        "The policy review of 2026-09-29 (verdict C) found the divergence; @cozmo-verifier re-read all five release sites and the light-pattern tail (0x005bd1a2..0x005bd1c6), which the review had not read past 0x5bd180."
       ],
       "live_path": true,
       "hardware_required": false
@@ -149,7 +152,7 @@
         "SmartRemoveCustomLightPattern 0x005be9b0 searches the vector at +0xcc for the element whose +4 equals objectID+4; not found logs \"No custom light pattern is set for object %d\" and returns 0 (0x005bea4e/0x005bea74); found calls CubeLightComponent::StopLightAnimAndResumePrevious(trigger, objectID) for each trigger and erases the element, returning 1 (0x005be9e8/0x005bea34).",
         "SmartDelegateToHelper 0x005beb10 logs on the \"Behaviors\" channel, warns and calls StopHelperWithoutCallback() when the current helper +0xc8 is already live (0x005beba4/0x005bebe8), then calls BehaviorHelperComponent::DelegateToHelper on [robot+0x264]+0x10 (0x005bec2c); on success it stores the helper as a weak ref at +0xc4/+0xc8 through __add_weak at 0x005bec6e, otherwise logs \"SmartDelegateToHelper.Failed\" (0x005bec8c/0x005becb2).",
         "SmartDisableReactionsWithLock 0x005bce3c appends \"_behaviorLock\" to the name, calls BehaviorManager::DisableReactionsWithLock(manager, name+\"_behaviorLock\", table, true) (0x005bce62) and inserts the original name into the per-behaviour set at +0xa4 (0x005bce7e). SmartRemoveDisableReactionsLock 0x005bd470 appends the same suffix, calls BehaviorManager::RemoveDisableReactionsLock (0x005bd48c) and erases the name from +0xa4 (0x005bd4a4). The manager side is M7-014.",
-        "SmartDelegateToHelper 0x005beb10 calls BehaviorHelperComponent::DelegateToHelper, whose body is 0x0056dad8..0x0056db37 (PLT 0x004b29d0) at AIComponent+0x10 ([robot+0x264]+0x10, AIComponent constructed at 0x00569aae/0x00569ab2): it clears stack-maintenance vars, copies the two callbacks to +0x10/+0x28, and on an empty helper stack pushes the helper and stores Robot::GetWorldOriginID at +0x40, returning 1. No inventory record owns BehaviorHelperComponent or its helper-stack runtime (PushHelperOntoStackAndUpdate, UpdateActiveHelper, StopHelperWithoutCallback); the component is unowned."
+        "SmartDelegateToHelper 0x005beb10 calls BehaviorHelperComponent::DelegateToHelper, whose body is 0x0056dad8..0x0056db37 (PLT 0x004b29d0) at AIComponent+0x10 ([robot+0x264]+0x10, AIComponent constructed at 0x00569aae/0x00569ab2): it clears stack-maintenance vars, copies the two callbacks to +0x10/+0x28, and on an empty helper stack pushes the helper and stores Robot::GetWorldOriginID at +0x40, returning 1. R-BEH C2 read the component and its helper-stack runtime in full (report re-analysis/research/20260929-R-BEH-M8-framework-gap1-extraction.md); the component and the M7/M15 helper subclasses are still unbuilt, so the record stays IMPLEMENTATION_GAP."
       ],
       "live_path": true,
       "hardware_required": false
